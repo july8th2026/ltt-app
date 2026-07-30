@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Điều khiển worker — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>Điều khiển worker</strong>{% endblock %}
+{% block content %}
+
+  {% if error %}<div class="card" style="border-color:#7f1d1d; background:#2a1416;">
+    <strong style="color:#f26161;">{{ error }}</strong></div>{% endif %}
+  {% if notice %}<div class="card"><strong>{{ notice }}</strong></div>{% endif %}
+
+  <div class="card">
+    <strong id="run-state">
+      {% if snapshot.running %}🟢 Đang chạy{% else %}⚪ Đang dừng{% endif %}
+    </strong>
+    <p style="color:#9aa4b2; margin:6px 0 12px;">
+      Worker chạy trong tiến trình máy chủ — đóng trình duyệt <em>không</em> làm nó dừng.
+    </p>
+
+    {% if snapshot.running %}
+      <form method="post" action="/workers/stop" style="max-width:none; flex-direction:row;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" style="background:#b91c1c;">Dừng worker</button>
+      </form>
+    {% else %}
+      <form method="post" action="/workers/start" style="max-width:none; flex-direction:row; align-items:center; gap:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <select name="platform" style="padding:10px; border-radius:6px; background:#1b1f27; color:#e6e8eb; border:1px solid #2a2e37;">
+          <option value="facebook">Facebook</option>
+          <option value="tiktok">TikTok</option>
+        </select>
+        <button type="submit">Bắt đầu chạy</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <strong>Worker đã cấu hình ({{ configured|length }})</strong>
+    {% if configured %}
+      <table style="width:100%; margin-top:10px; border-collapse:collapse; font-size:13px;">
+        <tr style="color:#6B7280; text-align:left;">
+          <th style="padding:4px 0;">Tab sheet</th><th>Page / Account</th>
+        </tr>
+        {% for w in configured %}
+          <tr style="border-top:1px solid #2a2e37;">
+            <td style="padding:6px 0;">{{ w.tab }}</td>
+            <td style="color:#9aa4b2;">{{ w.page or '—' }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <p style="color:#f0b429; margin-bottom:0;">
+        Chưa có worker nào. Thêm ở trang <a href="/sheet/facebook">Sheet FB</a> hoặc <a href="/sheet/tiktok">Sheet TikTok</a> (danh sách được lưu và dùng chung).
+      </p>
+    {% endif %}
+  </div>
+
+  {% if snapshot.workers %}
+    <div class="card">
+      <strong>Tiến độ</strong>
+      <table style="width:100%; margin-top:10px; border-collapse:collapse; font-size:13px;">
+        <tr style="color:#6B7280; text-align:left;">
+          <th style="padding:4px 0;">Tab</th><th>Trạng thái</th><th>Job</th><th>Xong</th><th>Lỗi</th>
+        </tr>
+        {% for w in snapshot.workers %}
+          <tr style="border-top:1px solid #2a2e37;">
+            <td style="padding:6px 0;">{{ w.tab }}</td>
+            <td>{{ w.state }}</td>
+            <td style="color:#9aa4b2;">{{ w.current_job or '—' }}</td>
+            <td>{{ w.jobs_done }}</td>
+            <td>{{ w.jobs_error }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <strong>Nhật ký</strong>
+    <pre id="log" style="white-space:pre-wrap; margin:8px 0 0; color:#c3c9d4;
+         font-size:12px; max-height:320px; overflow:auto;">{% for l in snapshot.log %}[{{ l.level }}] {{ l.message }}
+{% endfor %}</pre>
+  </div>
+
+  <script>
+    // Poll the JSON endpoint rather than reloading: a full re-render would
+    // also re-run the health checks on every tick.
+    async function refresh() {
+      try {
+        const r = await fetch('/api/workers/status', {credentials: 'same-origin'});
+        if (!r.ok) return;
+        const d = await r.json();
+        document.getElementById('run-state').textContent =
+          d.running ? '🟢 Đang chạy' : '⚪ Đang dừng';
+        document.getElementById('log').textContent =
+          d.log.map(l => '[' + l.level + '] ' + l.message).join('\n');
+      } catch (e) { /* transient network error — next tick retries */ }
+    }
+    setInterval(refresh, 4000);
+  </script>
+{% endblock %}

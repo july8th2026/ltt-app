@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta Platform Compliance — LTTStudios</title>
+<meta name="description" content="LTTStudios VideoBot tuân thủ Meta Platform Terms như thế nào. Scope-by-scope mapping.">
+<link rel="canonical" href="https://lttstudios.com/vi/compliance/meta.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/meta.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/meta.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/compliance/meta.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Meta Platform Compliance — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/compliance/meta.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Compliance · Meta</span>
+    <h1>Tuân thủ Meta Platform</h1>
+    <p class="lead">Cách chúng tôi map từng Meta Platform Term sang behavior cụ thể của bot.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Cam kết tuân thủ</h2>
+    <p>LTTStudios VideoBot xây dựng để tuân thủ toàn bộ
+    <a href="https://developers.facebook.com/terms/" target="_blank" rel="noopener">Meta Platform Terms</a>,
+    Developer Policies, và Community Standards. Trang này map từng policy area
+    sang behavior cụ thể của bot để Meta reviewer/auditor verify nhanh.</p>
+
+    <h2>OAuth scopes &amp; cách sử dụng</h2>
+    <table class="table">
+      <tr><th>Scope</th><th>Bot làm gì với nó</th><th>Trong code</th></tr>
+      <tr>
+        <td><code>pages_show_list</code></td>
+        <td>Gọi <code>GET /me/accounts</code> 1 lần sau OAuth để populate Page picker. List cache local, refresh chỉ khi user action.</td>
+        <td><code>core/auth_manager.py:274</code></td>
+      </tr>
+      <tr>
+        <td><code>pages_manage_posts</code></td>
+        <td>Gọi <code>POST /{page_id}/videos</code> (feed) và <code>POST /{page_id}/video_reels</code> (Reels) cho content user cung cấp. Mỗi call cần explicit user action.</td>
+        <td><code>core/graph_uploader.py</code>, <code>core/reels_uploader.py</code></td>
+      </tr>
+      <tr>
+        <td><code>pages_read_engagement</code></td>
+        <td>Gọi <code>GET /{video_id}/video_insights</code> cho Monitor dashboard. Chỉ fetch video user đã publish qua bot.</td>
+        <td><code>core/insights_fetcher.py</code></td>
+      </tr>
+      <tr>
+        <td><code>pages_manage_engagement</code></td>
+        <td>Optional first-comment qua <code>POST /{video_id}/comments</code>. Text từ sheet column. Reels exclude.</td>
+        <td><code>core/facebook/commenter.py</code></td>
+      </tr>
+    </table>
+
+    <h2>Tuân thủ Platform Terms</h2>
+
+    <h3>Term: Dùng API chỉ cho mục đích cho phép</h3>
+    <p>Bot chỉ gọi documented endpoint trong <code>graph.facebook.com</code>
+    cho Page của user. Không scrape, không undocumented endpoint, không
+    mobile API spoofing. Full endpoint list:
+    <a href="/vi/architecture.html">Architecture page</a>.</p>
+
+    <h3>Term: Không enable spam, abuse, harassment</h3>
+    <p>Multi-layer anti-spam tích hợp sẵn:</p>
+    <ul>
+      <li>Hard rate limit: 4h giữa post cùng Page, 3 post/Page/ngày</li>
+      <li>SHA-256 + perceptual hash dedup (30 ngày)</li>
+      <li>Page warm-up cap cho Page mới &lt;30 ngày</li>
+      <li>Circuit breaker theo FB error code 4, 17, 32, 368 (spam)</li>
+      <li>Caption Rotator OFF mặc định (không auto-CTA)</li>
+      <li>Active hours (default 7-22h) — không spam đêm khuya</li>
+    </ul>
+
+    <h3>Term: Respect rate limit</h3>
+    <p>Bot honor FB rate limit với enforcement bảo thủ hơn limit thật của Meta.
+    Backoff trên <code>code=4</code>, <code>code=32</code>, <code>code=368</code>.</p>
+
+    <h3>Term: Dùng user data chỉ khi authorized</h3>
+    <p>User authorize specific scope qua OAuth. Bot KHÔNG access:</p>
+    <ul>
+      <li>Friend list (không request <code>user_friends</code>)</li>
+      <li>Private message (không <code>read_mailbox</code>)</li>
+      <li>Page user không admin</li>
+      <li>Data ngoài OAuth grant</li>
+    </ul>
+
+    <h3>Term: Privacy policy + data deletion</h3>
+    <ul>
+      <li>Privacy Policy: <a href="/vi/legal/privacy.html">/vi/legal/privacy.html</a></li>
+      <li>Data Deletion: <a href="/vi/legal/data-deletion.html">/vi/legal/data-deletion.html</a> — 30 ngày completion theo GDPR Art. 17</li>
+      <li>DPA: <a href="/vi/legal/dpa.html">/vi/legal/dpa.html</a></li>
+    </ul>
+
+    <h3>Term: Notify breach</h3>
+    <p>Security policy cam kết 72-hour breach notification theo GDPR Article 33.
+    Xem <a href="/vi/legal/security.html">Security policy</a>.</p>
+
+    <h2>App Review readiness</h2>
+    <ul>
+      <li>✅ 4 permission required đều actively used (no over-request)</li>
+      <li>✅ Public Privacy Policy, Terms, Data Deletion, Security</li>
+      <li>✅ App icon 1024×1024 ready</li>
+      <li>✅ Test environment documented cho reviewer</li>
+      <li>⏳ Business Verification in progress (DNS TXT)</li>
+      <li>⏳ Use case screencasts đang record</li>
+    </ul>
+
+    <p>Submission Q3 2026 sau khi Business Verification approve.</p>
+
+    <h2>Contact</h2>
+    <p>Compliance questions:
+    <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a><br>
+    Security: <a href="mailto:security@lttstudios.com">security@lttstudios.com</a></p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

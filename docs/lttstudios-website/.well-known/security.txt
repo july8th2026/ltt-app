@@ -1,0 +1,9 @@
+# LTTStudios — security.txt (RFC 9116)
+# https://lttstudios.com/.well-known/security.txt
+
+Contact: mailto:security@lttstudios.com
+Expires: 2027-06-02T00:00:00.000Z
+Preferred-Languages: en, vi
+Canonical: https://lttstudios.com/.well-known/security.txt
+Policy: https://lttstudios.com/legal/security.html
+Acknowledgments: https://lttstudios.com/legal/security.html#known-limitations--acknowledged-risks

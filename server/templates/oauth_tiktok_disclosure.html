@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Kết nối TikTok — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>🔑  Xác nhận quyền truy cập TikTok</strong>{% endblock %}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:#6A0DAD;"></div>
+    <h2>{{ app_name }} sẽ xin những quyền sau</h2>
+    <p class="muted" style="margin:0 0 12px;">
+      Đây là bước bắt buộc theo yêu cầu audit của TikTok: bạn phải biết rõ
+      app xin quyền gì <em>trước khi</em> chuyển sang TikTok.
+    </p>
+    {% for s in scopes %}
+      <div style="border-top:1px solid var(--line); padding:10px 0;">
+        <div class="mono" style="color:#9C27B0;">{{ s.scope }}</div>
+        <div class="muted">{{ s.explain }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="card-accent" style="background:#0277BD;"></div>
+    <h2>Những điều app KHÔNG làm</h2>
+    <ul class="muted" style="margin:0; padding-left:20px; line-height:1.8;">
+      <li>Không đăng bài mà bạn chưa xác nhận từng lần.</li>
+      <li>Không đọc video riêng tư hay tin nhắn của bạn.</li>
+      <li>Không chia sẻ token cho bên thứ ba. Token được mã hoá trên máy chủ này.</li>
+      <li>Bạn có thể thu hồi quyền bất cứ lúc nào ở trang Tài khoản TikTok,
+          hoặc trong phần cài đặt TikTok của bạn.</li>
+    </ul>
+  </div>
+
+  <form method="post" action="/oauth/tiktok/start" style="max-width:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label style="display:flex; gap:10px; align-items:flex-start; margin-bottom:14px;">
+      <input type="checkbox" name="consent" value="yes" required style="margin-top:3px;">
+      <span>Tôi đã đọc và đồng ý cấp các quyền trên cho {{ app_name }}.</span>
+    </label>
+    <button type="submit">Tiếp tục sang TikTok  →</button>
+    <a class="btn-ghost" href="/tiktok"
+       style="display:inline-block; margin-left:8px; text-decoration:none;">Huỷ</a>
+  </form>
+{% endblock %}

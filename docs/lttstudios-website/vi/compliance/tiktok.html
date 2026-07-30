@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuân thủ TikTok Developer — LTTStudios</title>
+<meta name="description" content="LTTStudios VideoBot tuân thủ TikTok Developer Terms và Content Sharing Guidelines như thế nào.">
+<link rel="canonical" href="https://lttstudios.com/vi/compliance/tiktok.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/tiktok.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/tiktok.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/compliance/tiktok.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Tuân thủ TikTok Developer — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/compliance/tiktok.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Compliance · TikTok</span>
+    <h1>Tuân thủ TikTok Developer</h1>
+    <p class="lead">Cách chúng tôi map từng TikTok policy sang behavior cụ thể của bot.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Cam kết tuân thủ TikTok</h2>
+    <p>LTTStudios VideoBot tuân thủ toàn bộ
+    <a href="https://developers.tiktok.com/doc/tiktok-developer-terms-of-service" target="_blank" rel="noopener">TikTok Developer Terms of Service</a>,
+    Content Sharing Guidelines, Community Guidelines.</p>
+
+    <h2>OAuth scopes &amp; cách sử dụng</h2>
+    <table class="table">
+      <tr><th>Scope</th><th>Bot làm gì</th><th>Trong code</th></tr>
+      <tr>
+        <td><code>user.info.basic</code></td>
+        <td>Gọi <code>GET /v2/user/info/</code> sau OAuth — hiển thị account đã connect (open_id, display_name, avatar_url).</td>
+        <td><code>core/tiktok/auth_manager.py</code></td>
+      </tr>
+      <tr>
+        <td><code>video.upload</code></td>
+        <td>Gọi <code>POST /v2/post/publish/inbox/video/init/</code> cho draft upload (creator manual review trước publish).</td>
+        <td><code>core/tiktok/uploader_draft.py</code></td>
+      </tr>
+      <tr>
+        <td><code>video.publish</code></td>
+        <td>Gọi <code>POST /v2/post/publish/video/init/</code> cho direct post. CHỈ dùng sau khi TikTok app audit approve.</td>
+        <td><code>core/tiktok/uploader_direct.py</code></td>
+      </tr>
+    </table>
+
+    <h2>Content Sharing Guidelines</h2>
+
+    <h3>Required: User consent từng post</h3>
+    <p>Bot enforce consent qua sheet column <code>tiktok_confirmed_at</code>.
+    Mỗi row phải có confirmation timestamp trước khi publish — đáp ứng
+    yêu cầu "Creator must take explicit action" cho Direct Post.</p>
+
+    <p>Implementation: <code>core/tiktok/compliance_guard.py</code> reject
+    row missing <code>tiktok_confirmed_at</code> với error
+    <code>ERR_NO_ACCOUNT</code> or <code>ERR_AUDIT_NOT_APPROVED</code> depending on which compliance check fails first.</p>
+
+    <h3>Required: TikTok branding trên confirmation UI</h3>
+    <p>TikTok branding (logo + "TikTok" text) hiển thị trong confirm dialog
+    trước publish. Source: <code>gui/tiktok_oauth_disclosure.py</code>.</p>
+
+    <h3>Required: Privacy level enforcement</h3>
+    <p>Cho đến khi TikTok app audit approve Direct Public Posting, bot
+    enforce <code>privacy_level=SELF_ONLY</code> tự động cho mọi Direct Post.
+    Enforce server-side trong <code>ComplianceGuard.enforce_sandbox_privacy()</code>
+    — user không override được kể cả qua sheet column.</p>
+
+    <h2>TikTok Direct Post audit status</h2>
+    <table class="table">
+      <tr><th>Item</th><th>Status</th></tr>
+      <tr><td>Audit submitted</td><td>2026-05-22</td></tr>
+      <tr><td>Expected review time</td><td>2-4 tuần</td></tr>
+      <tr><td>Current mode</td><td>Draft upload only (creator inbox)</td></tr>
+      <tr><td>privacy_level enforcement</td><td><code>SELF_ONLY</code> hardcoded</td></tr>
+    </table>
+
+    <h2>Audit log evidence</h2>
+    <p>Mọi TikTok API call log trong <code>data/audit_log.jsonl</code>:</p>
+    <ul>
+      <li><code>tiktok_video_uploaded</code></li>
+      <li><code>tiktok_video_failed</code></li>
+      <li><code>tiktok_comment_posted</code></li>
+      <li><code>tiktok_validation_failed</code></li>
+      <li><code>tiktok_token_refresh</code></li>
+    </ul>
+
+    <h2>Cái KHÔNG làm</h2>
+    <ul>
+      <li>❌ Không scrape TikTok video hoặc user data</li>
+      <li>❌ Không auto-generate content</li>
+      <li>❌ Không access friend list hoặc follower data ngoài OAuth grant</li>
+      <li>❌ Không bypass privacy_level restriction</li>
+      <li>❌ Không bypass watermark requirement</li>
+      <li>❌ Không undocumented mobile API</li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p>TikTok compliance:
+    <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a></p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

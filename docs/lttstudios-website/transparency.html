@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transparency — LTTStudios</title>
+<meta name="description" content="LTTStudios open metrics: bot operation stats, infrastructure transparency, privacy practices, funding, team composition.">
+<link rel="canonical" href="https://lttstudios.com/transparency.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/transparency.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/transparency.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/transparency.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Transparency — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/transparency.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Transparency</span>
+    <h1>Transparency report</h1>
+    <p class="lead">Open metrics about LTTStudios operation. We believe transparency builds trust — including honest weaknesses.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Open metrics</h2>
+    <p>We believe in transparency. These are real, current metrics about
+    LTTStudios VideoBot operation. Updated manually (small studio, no fancy
+    dashboards yet).</p>
+
+    <p class="text-muted">Last updated: 2026-06-04</p>
+
+    <h2>Bot operation</h2>
+    <table class="table">
+      <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+      <tr><td>Brand Pages currently managed by founder</td><td>20+</td><td>Across multiple niches</td></tr>
+      <tr><td>Total API calls logged</td><td>589</td><td>Counted across all <code>pages_*</code> permissions</td></tr>
+      <tr><td>Active versions in use</td><td>v1.0.0</td><td>Build 2025-01</td></tr>
+      <tr><td>Open issues</td><td>0 critical</td><td>Test suite 608/608 passing</td></tr>
+      <tr><td>Compliance review state (Meta)</td><td>Preparing submission</td><td>Q3 2026 target</td></tr>
+      <tr><td>Compliance review state (TikTok Direct Post)</td><td>In review</td><td>Submitted 2026-05-22, 2-4 week queue</td></tr>
+    </table>
+
+    <h2>Infrastructure transparency</h2>
+    <table class="table">
+      <tr><th>Item</th><th>What it is</th></tr>
+      <tr><td>LTTStudios backend servers</td><td>None. Bot is desktop-only.</td></tr>
+      <tr><td>User data on LTTStudios infrastructure</td><td>None. All data on user's machine.</td></tr>
+      <tr><td>Marketing website hosting</td><td>inet.vn (Vietnam) — static HTML only</td></tr>
+      <tr><td>OAuth callback domain</td><td>lttstudios.com — serves static HTML callback handlers</td></tr>
+      <tr><td>Optional TikTok OAuth relay</td><td>PHP files on the same hosting (optional, no DB)</td></tr>
+      <tr><td>CDN / proxy</td><td>None currently. Considering Cloudflare for static cache.</td></tr>
+      <tr><td>Analytics service</td><td>None. No Google Analytics, Plausible, etc.</td></tr>
+      <tr><td>Error reporting service</td><td>None. No Sentry, Rollbar, etc.</td></tr>
+    </table>
+
+    <h2>Privacy transparency</h2>
+    <table class="table">
+      <tr><th>Question</th><th>Answer</th></tr>
+      <tr><td>Do we share user data with third parties?</td><td>Never. We have no data to share.</td></tr>
+      <tr><td>Do we sell user data?</td><td>Never. Same reason.</td></tr>
+      <tr><td>Do we train AI on user data?</td><td>Never.</td></tr>
+      <tr><td>Do we have an admin panel that can read user data?</td><td>No. There is no LTTStudios backend.</td></tr>
+      <tr><td>Government data requests received</td><td>0</td></tr>
+      <tr><td>Data breach incidents</td><td>0</td></tr>
+      <tr><td>Data deletion requests received</td><td>0</td></tr>
+    </table>
+
+    <h2>Funding transparency</h2>
+    <table class="table">
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td>Funding source</td><td>Founder's own creator income</td></tr>
+      <tr><td>Venture investors</td><td>None</td></tr>
+      <tr><td>Revenue from LTTStudios VideoBot</td><td>$0 (currently free)</td></tr>
+      <tr><td>Advertising</td><td>None</td></tr>
+      <tr><td>Affiliate programs</td><td>None</td></tr>
+    </table>
+
+    <h2>Team transparency</h2>
+    <table class="table">
+      <tr><th>Role</th><th>Count</th></tr>
+      <tr><td>Founder + sole developer</td><td>1 (LE THANH TRUNG)</td></tr>
+      <tr><td>Employees</td><td>0</td></tr>
+      <tr><td>Contractors</td><td>0</td></tr>
+      <tr><td>Board members</td><td>0</td></tr>
+    </table>
+
+    <h2>Security transparency</h2>
+    <table class="table">
+      <tr><th>Item</th><th>Status</th></tr>
+      <tr><td>CVEs assigned to LTTStudios software</td><td>0</td></tr>
+      <tr><td>Security advisories published</td><td>0 (see <a href="/legal/security.html">Security page</a>)</td></tr>
+      <tr><td>Bug bounty program</td><td>Not formal. Acknowledgments in changelog.</td></tr>
+      <tr><td>Code signing certificate</td><td>Not yet. Plan for 2026 H2 when budget allows ($300/year).</td></tr>
+      <tr><td>SOC 2 / ISO 27001</td><td>Not applicable (no backend infrastructure).</td></tr>
+    </table>
+
+    <h2>Honest weaknesses</h2>
+    <p>Things we're transparent about that aren't great:</p>
+    <ul>
+      <li>Single-developer studio — bus factor of 1 is a risk for long-term maintenance</li>
+      <li>No formal QA team — quality enforced by 608-test automated suite + founder personal use</li>
+      <li>No 24/7 support — Mon-Fri 9am-6pm ICT only</li>
+      <li>Windows only — no macOS/Linux build yet</li>
+      <li>Brand new domain (lttstudios.com registered June 2026) — trust score with Meta still building</li>
+      <li>No code signing — SmartScreen warning on first run is a known UX problem</li>
+    </ul>
+
+    <h2>Contact for verification</h2>
+    <p>If any number above looks suspicious or you want documentation:
+    <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a></p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

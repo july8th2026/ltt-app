@@ -1,0 +1,44 @@
+# Caddy reverse proxy for app.lttstudios.com (ADR-007).
+#
+# Copy to C:\LTTPlatform\caddy\Caddyfile and edit the e-mail address.
+# Caddy obtains and renews the TLS certificate automatically, so nothing
+# here references a certificate file.
+#
+# Prerequisites before Caddy can issue a certificate:
+#   - DNS A record: app.lttstudios.com -> this server's public IPv4
+#   - Inbound TCP 80 AND 443 open (80 is required for the ACME challenge)
+
+{
+	# Used by Let's Encrypt for expiry warnings. Replace before use.
+	email admin@lttstudios.com
+}
+
+app.lttstudios.com {
+	encode zstd gzip
+
+	# The application listens on loopback only; Caddy is the sole public
+	# surface (AGENTS.md: "Application ports bind to 127.0.0.1").
+	reverse_proxy 127.0.0.1:8000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+		header_up Host {host}
+	}
+
+	# Facebook accepts up to 10 GB and TikTok up to 4 GB, and the manual
+	# publish page streams the video through this proxy. A smaller cap
+	# rejects a legitimate upload with an opaque 413.
+	request_body {
+		max_size 10GB
+	}
+
+	log {
+		output file C:\LTTPlatform\logs\caddy-access.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}
+
+# Optional: serve a plain-HTTP redirect for anyone typing the bare host.
+# Caddy already redirects http->https automatically for the site above,
+# so this block is only needed if you add extra hostnames later.

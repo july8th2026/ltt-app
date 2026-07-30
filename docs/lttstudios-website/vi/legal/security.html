@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bảo mật — LTTStudios</title>
+<meta name="description" content="Practices bảo mật LTTStudios, chi tiết mã hoá, vulnerability disclosure policy.">
+<link rel="canonical" href="https://lttstudios.com/vi/legal/security.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/security.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/security.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/security.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Bảo mật — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/legal/security.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Pháp lý · Bảo mật</span>
+    <h1>Bảo mật</h1>
+    <p class="lead">Cách chúng tôi bảo vệ dữ liệu user, vulnerability disclosure policy, contact security team.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+  <p class="text-muted">Hiệu lực: 02-06-2026 · Version 1.0</p>
+
+  <h2>Kiến trúc: zero-backend by design</h2>
+  <p>Property bảo mật quan trọng nhất của LTTStudios VideoBot:
+  <strong>không có server LTTStudios nào lưu dữ liệu user</strong>. Không
+  thể bị breach hàng loạt vì không có gì để breach. Token, sheet, log, video
+  cache của từng user chỉ tồn tại trên máy Windows của họ.</p>
+
+  <h2>Mã hoá at rest</h2>
+
+  <h3>Token</h3>
+  <ul>
+    <li><strong>Thuật toán</strong>: AES-128-CBC + HMAC-SHA256 (Fernet spec)</li>
+    <li><strong>Key derivation</strong>: SHA-256 hash of (Machine GUID + salt),
+      salt riêng cho FB và TikTok</li>
+    <li><strong>Key source</strong>: Windows Machine GUID
+      (HKLM\Software\Microsoft\Cryptography → MachineGuid)</li>
+    <li><strong>Hệ quả</strong>: token copy giữa máy không thể decrypt trên máy mới</li>
+    <li><strong>File</strong>: <code>data/tokens.enc</code> (FB),
+      <code>data/tiktok_tokens.enc</code> (TikTok)</li>
+  </ul>
+
+  <h3>OAuth state</h3>
+  <p>CSRF state là 32-byte random
+  (<code>secrets.token_urlsafe(32)</code>). Validate server-side trong callback.</p>
+
+  <h3>TikTok OAuth relay (optional)</h3>
+  <p>Cross-machine TikTok OAuth dùng HTTPS relay endpoint. Bot poll relay
+  với HMAC-SHA256 signed request (timestamp 300s validity chống replay).</p>
+
+  <h2>Transport security</h2>
+  <ul>
+    <li>Mọi API call dùng HTTPS với TLS 1.2+</li>
+    <li>Cert validation enforce (no <code>verify=False</code>)</li>
+    <li>OAuth callback serve qua HTTPS (Let's Encrypt cert)</li>
+  </ul>
+
+  <h2>Cái KHÔNG lưu</h2>
+  <ul>
+    <li>❌ Password user (dùng OAuth — không thấy password FB/TikTok)</li>
+    <li>❌ Caption content trong audit log (chỉ post ID và event type)</li>
+    <li>❌ Video file content ngoài cache tạm khi upload</li>
+    <li>❌ Email user message của bạn</li>
+    <li>❌ Friend list hoặc contact graph</li>
+    <li>❌ Analytics về bạn dùng bot thế nào</li>
+  </ul>
+
+  <h2>Audit log integrity</h2>
+  <p>Audit log (<code>data/audit_log.jsonl</code>) là JSONL append-only với
+  timestamp + event + minimal metadata. Rotation 10MB, 5 backup. Không tamper
+  detection — security boundary là OS-level access control.</p>
+
+  <h2>Dependency security</h2>
+  <p>Chúng tôi minimize third-party deps. Current production
+  (<code>requirements.txt</code>):</p>
+  <ul>
+    <li><code>customtkinter</code> — GUI framework</li>
+    <li><code>Pillow</code> — image processing</li>
+    <li><code>google-api-python-client</code>, <code>google-auth-oauthlib</code>,
+      <code>google-auth</code> — Google APIs</li>
+    <li><code>requests</code> — HTTP client</li>
+    <li><code>cryptography</code> — Fernet</li>
+    <li><code>qrcode[pil]</code> — QR cho TikTok OAuth</li>
+    <li><code>pytz</code>, <code>tzdata</code> — timezone</li>
+  </ul>
+  <p>Không analytics SDK, không error reporting, không payment SDK,
+  không push notification SDK. Mỗi dep được review về license + active maintenance.</p>
+
+  <h2>Vulnerability disclosure policy</h2>
+
+  <h3>Phạm vi</h3>
+  <p>In scope:</p>
+  <ul>
+    <li>Ứng dụng desktop LTTStudios VideoBot</li>
+    <li>OAuth callback flow (<code>lttstudios.com/auth/*</code>)</li>
+    <li>TikTok OAuth relay (<code>lttstudios.com/api/oauth-relay/*</code>)</li>
+    <li>Website marketing (<code>lttstudios.com/*</code>)</li>
+  </ul>
+  <p>Out of scope:</p>
+  <ul>
+    <li>Vulnerability trong third-party (Meta, TikTok, Google) — report cho vendor</li>
+    <li>Social engineering nhân viên LTTStudios</li>
+    <li>Physical attack hạ tầng LTTStudios (chúng tôi không có)</li>
+    <li>Vulnerability lý thuyết không có impact demonstrate</li>
+  </ul>
+
+  <h3>Quy trình report</h3>
+  <ol>
+    <li>Email <a href="mailto:security@lttstudios.com">security@lttstudios.com</a>
+      với mô tả rõ, reproduction step, impact assessment</li>
+    <li>Vuln nhạy cảm: request PGP key trong email đầu, chúng tôi sẽ provide</li>
+    <li>Acknowledge trong 48h cho critical, 7 ngày cho lower severity</li>
+    <li>Work toward fix + coordinate disclosure timing với bạn</li>
+    <li>Public disclosure: credit researcher (với permission) trong
+      <a href="/vi/changelog.html">changelog</a> sau khi fix ship</li>
+  </ol>
+
+  <h3>Safe harbor</h3>
+  <p>Nếu bạn good-faith comply policy này, chúng tôi sẽ:</p>
+  <ul>
+    <li>Không pursue legal action</li>
+    <li>Không report law enforcement</li>
+    <li>Work với bạn để hiểu và resolve nhanh</li>
+  </ul>
+
+  <h2>Giới hạn đã biết / risk acknowledged</h2>
+
+  <details class="faq-item">
+    <summary>Machine GUID-based key derivation</summary>
+    <div class="answer">
+      <p>Dùng Windows Machine GUID làm input PBKDF2 để mã hoá token. Attacker
+      có admin access máy có thể đọc GUID từ registry và decrypt token. Đây
+      là design — trust machine boundary, không phải user account boundary.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Chưa có code signing</summary>
+    <div class="answer">
+      <p>.exe binary chưa sign Authenticode cert. User thấy SmartScreen warning
+      lần đầu chạy. Plan add code signing 2026 H2 khi budget cho phép
+      ($300+/năm cho EV cert).</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>Bot HTTPServer bind 127.0.0.1 only</summary>
+    <div class="answer">
+      <p>OAuth callback receiver listen tại <code>127.0.0.1:8765</code> (FB) và
+      <code>127.0.0.1:8766</code> (TikTok). Chỉ accept loopback, không
+      LAN/WAN. Browser extension cùng máy có thể đọc OAuth code — same risk
+      như mọi OAuth flow dùng localhost callback.</p>
+    </div>
+  </details>
+
+  <h2>Lịch sử security advisory</h2>
+  <p>Chưa có. Trang này sẽ document advisory tương lai với CVE number nếu có.</p>
+
+  <h2>Liên hệ</h2>
+  <p>Security disclosures: <a href="mailto:security@lttstudios.com">security@lttstudios.com</a><br>
+     Response: 48h cho critical, 7 ngày cho khác</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+
+</body>
+</html>

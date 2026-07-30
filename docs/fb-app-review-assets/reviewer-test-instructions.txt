@@ -1,0 +1,179 @@
+================================================================
+TEST INSTRUCTIONS FOR FACEBOOK APP REVIEWER
+LTTStudio VideoBot — App ID: 2021063792619148
+
+Paste this verbatim into the "Instructions for Testing" field of
+the App Review submission form.
+================================================================
+
+ENVIRONMENT
+===========
+
+Test User Credentials
+---------------------
+  Facebook Test User:  reviewer-test@lttstudios.com
+  Password:            [FILL IN — generate a fresh password, save securely]
+  FB User ID:          [FILL IN — visible after creating test user]
+
+Test Page
+---------
+  Page Name:           LTTStudio Reviewer Test Page
+  Page ID:             [FILL IN after creating]
+  Page Category:       Video Creator
+  Owned by:            test user above
+  Public:              Yes (set during Page creation)
+
+Test Google Sheet
+-----------------
+  URL:                 [FILL IN — share editor access with the test user's
+                       Gmail address used for OAuth]
+  Sheet ID:            [FILL IN — visible in URL]
+  Tab Name:            "ReviewerTest"
+  Sample rows:         3 rows pre-populated:
+                       Row 2 = simple feed video, no comment
+                       Row 3 = feed video with a "binh_luan_video" comment
+                       Row 4 = Reels (post_type=reels)
+
+Application Download
+--------------------
+  Installer URL:       https://lttstudios.com/download/lttstudio-videobot-reviewer.zip
+  Size:                ~50 MB
+  Format:              Portable .exe — no installation, just unzip and run
+  Antivirus note:      File is signed; Windows SmartScreen may show warning
+                       on first run — click "More info" → "Run anyway"
+
+
+STEP-BY-STEP TEST FLOW
+======================
+
+PART 1 — pages_show_list + pages_manage_posts
+---------------------------------------------
+
+  1. Download and unzip the installer above
+  2. Run BOT_UP_FACEBOOK.exe (Windows 10/11)
+  3. In the app, click the "Settings" tab and fill:
+        Google Credentials Path: secrets/oauth/client.json
+                                 (already in the zip)
+        Sheet ID:                <paste Sheet ID from above>
+  4. Click "Facebook Accounts" tab
+  5. Click the "Connect Facebook Account" button
+  6. Browser opens — log in as the test user above
+  7. On the Facebook OAuth consent screen, click "Continue as <test user>"
+  8. Approve the requested permissions
+  9. Browser shows "Authentication successful" — switch back to the app
+  10. The app displays a list of Pages — verify "LTTStudio Reviewer Test
+      Page" appears  ← THIS PROVES pages_show_list WORKS
+  11. Tick the box next to the test Page and click Save
+
+  12. Click the "Sheet FB" tab
+  13. Click the "Sheet" dropdown → select the test sheet alias
+  14. Click "Tab" dropdown 🔄 reload → select "ReviewerTest"
+  15. Page dropdown → select "LTTStudio Reviewer Test Page"
+  16. Click "+ Thêm" (Add) — a worker row appears
+  17. Click the "▶ Start" button (bottom right)
+  18. The log panel shows:
+        - "Sheet Runner started"
+        - "Job picked up: row #2"
+        - "Downloading video from Drive..."
+        - "Starting upload..."
+        - Upload chunk progress 0% → 100%
+        - "Video status: processing"
+        - "Video status: ready"
+        - "✅ Upload successful: https://www.facebook.com/<page>/videos/<id>"
+  19. Open the URL shown — verify the video is live on the test Page
+      ← THIS PROVES pages_manage_posts WORKS
+
+
+PART 2 — pages_manage_engagement
+--------------------------------
+
+  20. The bot automatically processes row #3 next (after the rate-limit
+      delay configured for testing: 30 seconds between rows for review,
+      not the production 4 hours)
+  21. Wait ~3 minutes; the log shows:
+        - "Job picked up: row #3"
+        - "Upload successful..."
+        - "Posting comment..."
+        - "✅ Comment posted: <comment_id>"
+  22. Navigate to the test Page on facebook.com
+  23. Open the video posted from row #3
+  24. Scroll to the comments — verify the comment "Test comment from
+      LTTStudio reviewer review" is visible
+      ← THIS PROVES pages_manage_engagement WORKS
+
+
+PART 3 — pages_read_engagement
+------------------------------
+
+  25. Click the "Monitor" tab in the app
+  26. Click the "🔄 Refresh" button
+  27. The table populates with columns: video_url, views, reach,
+      reactions, comments, shares, minutes_viewed
+  28. The two test videos appear in the list
+      ← THIS PROVES pages_read_engagement WORKS
+
+  Note: insights are normally fetched 24 hours after publish to allow
+  Facebook to populate the data. For review testing, the bot includes
+  a "force refresh insights now" button in the Monitor tab — click it
+  to fetch insights immediately after publish. Live values may show 0
+  for the first hour, which is Facebook's documented behavior, not an
+  app bug.
+
+
+WHAT THE APP DOES — SUMMARY
+============================
+
+LTTStudio VideoBot is a Windows desktop tool that lets video content
+creators bulk-publish pre-recorded videos to multiple Facebook Pages
+they own, with optional scheduling, optional first-comment, and
+engagement analytics — all driven by a Google Sheets row queue.
+
+
+WHAT THE APP DOES NOT DO
+========================
+
+- Does NOT collect or transmit user PII beyond Page name and Page ID
+- Does NOT share data with third parties
+- Does NOT operate any LTTStudio backend server that stores FB data
+- Does NOT post on behalf of users without explicit row-by-row sched
+- Does NOT auto-generate content (creators supply ALL text/video)
+- Does NOT support Instagram, Messenger, Ads, or Business management
+
+
+DATA HANDLING
+=============
+
+  Page access_token:  encrypted at rest (AES-128 Fernet, bound to
+                      Windows Machine GUID; cannot be moved between
+                      machines)
+  Sheet data:         read-only access; bot writes back only status
+                      columns (status, uploaded_at, video_url,
+                      video_id, error_message)
+  Audit log:          local JSONL file (data/audit_log.jsonl);
+                      records timestamp, event type, page_id,
+                      video_id, error_code — no caption content,
+                      no PII, no token values
+  Video files:        downloaded to temp folder, deleted after each
+                      upload (default behavior, can be disabled)
+  Data deletion:      https://lttstudios.com/legal/data-deletion.html
+                      User can self-service or email
+                      akakenly.design@gmail.com — completed within
+                      30 days
+
+
+CONTACT
+=======
+
+  Developer:      LE THANH TRUNG (LTTStudio)
+  Email:          akakenly.design@gmail.com
+  Support:        support@lttstudios.com
+  Website:        https://lttstudios.com
+  Privacy:        https://lttstudios.com/legal/privacy.html
+  Terms:          https://lttstudios.com/legal/terms.html
+  Data Deletion:  https://lttstudios.com/legal/data-deletion.html
+
+================================================================
+END OF FILE — Please contact the developer above if any test step
+fails. The app includes verbose logging in logs/app.log to aid in
+debugging any issue.
+================================================================

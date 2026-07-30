@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>Ứng dụng</strong>{% endblock %}
+{% block topbar_right %}
+  <span class="dim" style="font-size:12px;">{{ apps|length }} app đã nạp</span>
+{% endblock %}
+{% block content %}
+
+  {% if blockers %}
+    <div class="alert alert-warn">
+      <strong style="color:var(--warn);">{{ blockers|length }} việc đang chặn bot đăng bài</strong>
+      {% for b in blockers %}
+        <div style="margin-top:6px;">
+          • <strong>{{ b.check }}</strong>{% if b.fix %} — {{ b.fix }}{% endif %}
+        </div>
+      {% endfor %}
+      <p class="dim" style="font-size:11px; margin:8px 0 0;">
+        Xem chi tiết ở <a href="/status">Tình trạng</a>.
+      </p>
+    </div>
+  {% endif %}
+
+  {% if broken %}
+    <div class="alert alert-err">
+      <strong style="color:var(--err);">{{ broken|length }} app nạp lỗi</strong>
+      <p class="muted" style="margin:6px 0 0;">
+        Nền tảng vẫn chạy để bạn xem được lý do — một app lỗi không làm sập
+        cả hệ thống.
+      </p>
+      {% for item in broken %}
+        <div class="mono" style="margin-top:8px; font-size:12px;">
+          <span style="color:var(--err);">{{ item.slug }}</span> — {{ item.error }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div style="display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(320px,1fr));">
+    {% for item in apps %}
+      {% set m = item.manifest %}
+      <div class="card" style="margin:0;">
+        <div class="card-accent" style="background:{{ m.accent }};"></div>
+        <h2 style="margin-bottom:6px;">
+          {{ m.icon }}&nbsp; {{ m.display_name }}
+          {% if not m.enabled %}
+            <span class="badge badge-warn" style="margin-left:6px;">đang xây</span>
+          {% endif %}
+        </h2>
+        <p class="muted" style="margin:0 0 12px;">{{ m.summary }}</p>
+
+        <div class="dim mono" style="font-size:11px; margin-bottom:10px;">
+          {{ m.route_prefix }}
+          {%- if m.requires %} · cần: {{ m.requires|join(', ') }}{% endif %}
+          {%- if m.credit_cost %} · có tính credit{% endif %}
+        </div>
+
+        {% if m.enabled %}
+          <a href="{{ m.route_prefix }}" class="btn-ghost"
+             style="display:inline-block; text-decoration:none;">Mở &nbsp;→</a>
+        {% else %}
+          <button disabled>Chưa dùng được</button>
+        {% endif %}
+
+        {% if m.notes %}
+          <p class="dim" style="font-size:11px; margin:10px 0 0;">{{ m.notes }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if not apps %}
+    <div class="card">
+      <p class="dim" style="margin:0;">
+        Chưa có app nào. Thêm một thư mục vào <span class="mono">apps/</span>
+        kèm <span class="mono">manifest.py</span> — xem
+        <span class="mono">docs/03_THEM_APP_MOI.md</span>.
+      </p>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Technical Architecture — LTTStudios</title>
+<meta name="description" content="LTTStudios VideoBot architecture: zero-backend desktop app, Meta Graph API v21 + TikTok Content Posting API v2, AES-128 encryption, audit trail.">
+<link rel="canonical" href="https://lttstudios.com/architecture.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/architecture.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/architecture.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/architecture.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Technical Architecture — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/architecture.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Technical</span>
+    <h1>Architecture &amp; API Reference</h1>
+    <p class="lead">Complete technical reference for LTTStudios VideoBot —
+    every API endpoint called, OAuth scope used, data flow path. Designed
+    for Meta and TikTok app reviewers + security auditors.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>System overview</h2>
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">Note on visuals</h4>
+      <p>The diagram below uses ASCII art for accessibility (renders in any terminal, screen reader, or text-only browser). Real bot GUI screenshots are available on request for app review purposes — contact <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a>.</p>
+    </div>
+
+    <p>LTTStudios VideoBot is a <strong>standalone Windows desktop application</strong>.
+    The bot itself, the user's content queue (Google Sheets), and the user's video
+    library (Google Drive) all sit on the user's side. The bot calls vendor APIs
+    directly from the user's machine — there is no LTTStudios backend.</p>
+
+    <pre><code>┌──────────────────────────── USER'S MACHINE ────────────────────────────┐
+│                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  LTTStudios VideoBot (Windows desktop, Python 3.10+)            │   │
+│  │  ─────────────────────────────────────────────────────────────  │   │
+│  │  GUI Tkinter (customtkinter)                                    │   │
+│  │  ├─ SettingsTab     ── creds, scopes, paths                     │   │
+│  │  ├─ AccountTab      ── FB OAuth + token store                   │   │
+│  │  ├─ TikTokAccountTab── TT OAuth (incl. QR cross-machine)        │   │
+│  │  ├─ SheetRunnerTab  ── batch publish from Google Sheet rows     │   │
+│  │  ├─ OperationTab    ── manual single-video publish              │   │
+│  │  ├─ MonitorTab      ── insights dashboard                       │   │
+│  │  └─ AuditTab        ── log viewer                               │   │
+│  │                                                                  │   │
+│  │  Background daemons                                              │   │
+│  │  ├─ TokenRefresher  ── auto-extend tokens hourly                 │   │
+│  │  ├─ InsightsFetcher ── poll engagement every 30 min              │   │
+│  │  ├─ Maintenance     ── prune content history, audit log         │   │
+│  │  └─ MultiApp        ── rotate Meta app pool                      │   │
+│  │                                                                  │   │
+│  │  Local data (encrypted)                                          │   │
+│  │  ├─ data/tokens.enc            (AES-128 Fernet, FB tokens)       │   │
+│  │  ├─ data/tiktok_tokens.enc     (AES-128 Fernet, TT tokens)       │   │
+│  │  ├─ data/audit_log.jsonl       (rotation 10MB, 5 backup)         │   │
+│  │  ├─ data/content_history.db    (SQLite, anti-spam dedup)         │   │
+│  │  └─ logs/app.log               (rotation 5MB)                    │   │
+│  └──┬──────────────┬──────────────┬──────────────┬──────────────────┘   │
+│     │HTTPS/TLS1.2+ │HTTPS         │HTTPS         │HTTPS (optional)      │
+└─────┼──────────────┼──────────────┼──────────────┼──────────────────────┘
+      │              │              │              │
+      ▼              ▼              ▼              ▼
+ ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────┐
+ │ Meta     │  │ TikTok    │  │ Google   │  │ Telegram     │
+ │ Graph    │  │ Content   │  │ Sheets+  │  │ Bot API      │
+ │ API v21  │  │ Post API  │  │ Drive    │  │ (opt-in)     │
+ │          │  │ v2        │  │ APIs     │  │              │
+ └──────────┘  └───────────┘  └──────────┘  └──────────────┘</code></pre>
+
+    <h2>Meta Graph API endpoints used</h2>
+
+    <table class="table">
+      <tr><th>Endpoint</th><th>HTTP</th><th>Purpose</th><th>OAuth scope required</th></tr>
+      <tr>
+        <td><code>oauth/access_token</code></td>
+        <td>POST</td>
+        <td>Exchange short-lived → long-lived (60-day) token</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>/me</code></td>
+        <td>GET</td>
+        <td>Fetch authenticated user info after OAuth</td>
+        <td>basic OAuth</td>
+      </tr>
+      <tr>
+        <td><code>/me/accounts</code></td>
+        <td>GET</td>
+        <td>List Pages the user admins (Page picker UI)</td>
+        <td><code>pages_show_list</code></td>
+      </tr>
+      <tr>
+        <td><code>/{page_id}/videos</code> (3 phases)</td>
+        <td>POST</td>
+        <td>Resumable upload: start → transfer chunks (8MB) → finish</td>
+        <td><code>pages_manage_posts</code></td>
+      </tr>
+      <tr>
+        <td><code>/{page_id}/video_reels</code> (2 phases)</td>
+        <td>POST</td>
+        <td>Reels upload + publish</td>
+        <td><code>pages_manage_posts</code></td>
+      </tr>
+      <tr>
+        <td><code>/{video_id}/comments</code></td>
+        <td>POST</td>
+        <td>Optional first-comment after video publish</td>
+        <td><code>pages_manage_engagement</code></td>
+      </tr>
+      <tr>
+        <td><code>/{video_id}?fields=status</code></td>
+        <td>GET</td>
+        <td>Poll video processing status until <code>ready</code></td>
+        <td><code>pages_read_engagement</code></td>
+      </tr>
+      <tr>
+        <td><code>/{video_id}?fields=reactions.summary(),comments.summary(),shares</code></td>
+        <td>GET</td>
+        <td>Engagement metrics for Monitor dashboard</td>
+        <td><code>pages_read_engagement</code></td>
+      </tr>
+      <tr>
+        <td><code>/{video_id}/video_insights</code></td>
+        <td>GET</td>
+        <td>Detailed metrics: <code>post_impressions_unique</code>, <code>post_video_views</code>, <code>post_video_view_time</code></td>
+        <td><code>pages_read_engagement</code></td>
+      </tr>
+      <tr>
+        <td><code>/{page_id}?fields=created_time</code></td>
+        <td>GET</td>
+        <td>Page warm-up logic (cap reduced for Pages &lt;30 days)</td>
+        <td><code>pages_read_engagement</code></td>
+      </tr>
+      <tr>
+        <td><code>/{app_id}?fields=name</code></td>
+        <td>GET</td>
+        <td>App health probe (detect disabled app)</td>
+        <td>app token</td>
+      </tr>
+    </table>
+
+    <h2>TikTok Content Posting API endpoints used</h2>
+
+    <table class="table">
+      <tr><th>Endpoint</th><th>HTTP</th><th>Purpose</th><th>Scope</th></tr>
+      <tr>
+        <td><code>/v2/oauth/token/</code></td>
+        <td>POST</td>
+        <td>OAuth access_token + refresh_token exchange</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>/v2/user/info/</code></td>
+        <td>GET</td>
+        <td>Authenticated user profile (open_id, display_name, avatar_url)</td>
+        <td><code>user.info.basic</code></td>
+      </tr>
+      <tr>
+        <td><code>/v2/post/publish/inbox/video/init/</code></td>
+        <td>POST</td>
+        <td>Draft upload — sends video to creator's inbox for manual review</td>
+        <td><code>video.upload</code></td>
+      </tr>
+      <tr>
+        <td><code>/v2/post/publish/video/init/</code></td>
+        <td>POST</td>
+        <td>Direct publish — posts immediately at specified privacy_level</td>
+        <td><code>video.publish</code></td>
+      </tr>
+      <tr>
+        <td><code>/v2/post/publish/status/fetch/</code></td>
+        <td>POST</td>
+        <td>Poll publish status until <code>PUBLISH_COMPLETE</code></td>
+        <td><code>video.upload</code> or <code>video.publish</code></td>
+      </tr>
+      <tr>
+        <td><code>/v2/comment/create/</code></td>
+        <td>POST</td>
+        <td>Optional first-comment after video publish</td>
+        <td>(comment scope — under audit)</td>
+      </tr>
+    </table>
+
+    <h2>Google APIs used</h2>
+
+    <table class="table">
+      <tr><th>API</th><th>Operation</th><th>Scope</th></tr>
+      <tr>
+        <td>Sheets API v4</td>
+        <td>Read rows + write status back to user-owned Sheet</td>
+        <td><code>https://www.googleapis.com/auth/spreadsheets</code></td>
+      </tr>
+      <tr>
+        <td>Drive API v3</td>
+        <td>Download videos from user-owned Drive shared links</td>
+        <td><code>https://www.googleapis.com/auth/drive.readonly</code></td>
+      </tr>
+    </table>
+
+    <h2>OAuth flow (Facebook example)</h2>
+
+    <pre><code>1. User clicks "Connect Facebook" in bot
+   ↓
+2. Bot opens browser to:
+   https://www.facebook.com/v21.0/dialog/oauth?
+     client_id={app_id}&
+     redirect_uri=https://lttstudios.com/auth/fb-callback.html&
+     scope=pages_show_list,pages_manage_posts,
+           pages_read_engagement,pages_manage_engagement&
+     response_type=code&
+     state={csrf_token}
+   ↓
+3. User approves on Facebook
+   ↓
+4. FB redirects to lttstudios.com/auth/fb-callback.html?code=...&amp;state=...
+   ↓
+5. Callback page (JS) validates state, POSTs code to:
+   http://127.0.0.1:8765/callback  (bot's local HTTPServer)
+   ↓
+6. Bot exchanges code for short-lived token via:
+   POST graph.facebook.com/v21.0/oauth/access_token
+   ↓
+7. Bot exchanges short → long-lived (60 day):
+   POST oauth/access_token?grant_type=fb_exchange_token
+   ↓
+8. Bot fetches user's Pages:
+   GET /me/accounts?fields=id,name,access_token,category
+   ↓
+9. User picks Pages → saved encrypted to data/tokens.enc</code></pre>
+
+    <h2>Cross-machine OAuth (TikTok)</h2>
+
+    <pre><code>1. User clicks "Connect TikTok" — bot shows QR code dialog
+   ↓
+2. User scans QR with phone (logged into TikTok)
+   ↓
+3. TikTok redirects phone browser to:
+   https://lttstudios.com/legal/callback.html?code=...
+   ↓
+4. Callback page POSTs to relay:
+   POST lttstudios.com/api/oauth-relay/store.php
+   Body: code, state, scopes
+   Signed with HMAC-SHA256 (300s timestamp validity)
+   ↓
+5. Bot polls relay every 2s:
+   GET lttstudios.com/api/oauth-relay/fetch.php?state=...&amp;sig=...
+   ↓
+6. Bot receives code → exchanges for tokens (same as step 6+ above)</code></pre>
+
+    <h2>Anti-spam algorithms</h2>
+
+    <table class="table">
+      <tr><th>Algorithm</th><th>Implementation</th><th>Purpose</th></tr>
+      <tr>
+        <td>SHA-256 content dedup</td>
+        <td><code>hashlib.sha256(video_bytes)</code></td>
+        <td>Prevent re-posting identical bytes to same target within 30 days</td>
+      </tr>
+      <tr>
+        <td>Perceptual hash (pHash)</td>
+        <td>Custom dHash variant, 64-bit, threshold 2 Hamming</td>
+        <td>Catch re-encoded variants of same video</td>
+      </tr>
+      <tr>
+        <td>Cross-target warning</td>
+        <td>Same video on ≥3 different Pages within 7 days</td>
+        <td>Detect page-farm spam pattern</td>
+      </tr>
+      <tr>
+        <td>Page warm-up cap</td>
+        <td>FB Page age &lt;30 days → reduced daily cap</td>
+        <td>Respect FB's stricter limits for new Pages</td>
+      </tr>
+      <tr>
+        <td>Circuit breaker</td>
+        <td>Per <code>platform:target_id</code>, exponential backoff</td>
+        <td>Pause publish to a failing target (15 min → 1h → 24h)</td>
+      </tr>
+      <tr>
+        <td>Session lock</td>
+        <td>File-based lock in <code>data/session_locks/</code></td>
+        <td>Prevent two bot instances publishing to same account</td>
+      </tr>
+      <tr>
+        <td>Random row order</td>
+        <td>Shuffle pending rows per scan (configurable)</td>
+        <td>Avoid posting in deterministic order (bot signature)</td>
+      </tr>
+      <tr>
+        <td>Caption rotator</td>
+        <td>Deterministic per (target, video, day) — OFF by default</td>
+        <td>Per-target caption variation (off by default to respect user content)</td>
+      </tr>
+    </table>
+
+    <h2>Encryption details</h2>
+
+    <table class="table">
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td>Algorithm</td><td>AES-128-CBC + HMAC-SHA256 (Fernet specification)</td></tr>
+      <tr><td>Key derivation</td><td>SHA-256 hash of (Machine GUID + salt) — single-pass, sufficient because key derivation is local and not exposed to brute-force from a remote attacker</td></tr>
+      <tr><td>Salt</td><td><code>b"fb_bot_token_salt_v1_2026"</code> (FB), <code>b"tiktok_bot_token_salt_v1_2026"</code> (TT)</td></tr>
+      <tr><td>Key source</td><td>Windows Machine GUID (HKLM\Software\Microsoft\Cryptography → MachineGuid)</td></tr>
+      <tr><td>Implication</td><td>Tokens cannot be decrypted on a different machine</td></tr>
+      <tr><td>Library</td><td><code>cryptography</code> v42+ (Python, well-audited)</td></tr>
+    </table>
+
+    <h2>Rate limit enforcement</h2>
+
+    <p>The bot's RateLimiter is the central authority for all publish operations.
+    Defaults (configurable in Settings):</p>
+
+    <pre><code>min_interval_per_page_s        = 14400  # 4 hours between posts on same Page
+min_inter_page_interval_s      = 900    # 15 minutes between posts on different Pages
+max_posts_per_page_per_day     = 3      # hard cap
+max_posts_per_account_per_day  = 12     # cap across all Pages of one account
+jitter_s                       = 600    # ±10 min random delay (anti-pattern)
+active_hours_start             = 7      # 7am ICT
+active_hours_end               = 22     # 10pm ICT
+skip_overdue_minutes           = 60     # skip rows whose schedule is >60min overdue</code></pre>
+
+    <p>Backoff applied for Meta error codes: 4 (rate limit), 17, 32, 368 (spam),
+    322. Cooldown values match Meta's documented backoff guidance.</p>
+
+    <h2>Audit log format</h2>
+
+    <p>Every publish, OAuth, comment, and admin action is appended to
+    <code>data/audit_log.jsonl</code> as one JSON object per line:</p>
+
+    <pre><code>{"ts":"2026-06-04T10:30:00Z","event":"video_published",
+ "platform":"facebook","page_id":"123456","video_id":"789012",
+ "duration_s":367,"row_idx":18}
+{"ts":"2026-06-04T10:30:15Z","event":"comment_posted",
+ "platform":"facebook","video_id":"789012","comment_id":"345678"}
+{"ts":"2026-06-04T11:15:00Z","event":"token_refresh",
+ "platform":"facebook","account_id":"abc","new_expiry":"2026-08-03T11:15:00Z"}</code></pre>
+
+    <p>No caption content, no email addresses, no token values in audit log.
+    Rotation: 10MB cap, 5 backup files retained.</p>
+
+    <h2>Where this matters</h2>
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">For Meta App reviewers</h4>
+      <p>This page documents every Graph API endpoint we call. Cross-reference
+      with our <a href="/legal/privacy.html">Privacy Policy</a> Section 3.1 (which
+      lists OAuth scopes) and <a href="/products.html">Products page</a>
+      (which describes user-facing features). The OAuth scope mapping above
+      shows exactly which permission unlocks which feature — there is no
+      "extra" permission requested beyond what's actively used.</p>
+    </div>
+
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">For TikTok auditors</h4>
+      <p>Every TikTok endpoint used is listed above with the required scope.
+      The bot enforces <code>privacy_level=SELF_ONLY</code> in Sandbox mode
+      via the ComplianceGuard module (<code>core/tiktok/compliance_guard.py</code>).
+      User consent is recorded in <code>tiktok_confirmed_at</code> sheet column
+      per the Direct Post audit requirement.</p>
+    </div>
+
+    <p>See also: <a href="/legal/security.html">Security policy</a>,
+    <a href="/legal/privacy.html">Privacy Policy</a>,
+    <a href="/legal/dpa.html">DPA</a>.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Kết nối {{ provider }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>Kết quả kết nối</strong>{% endblock %}
+{% block content %}
+  <div class="card">
+    <div class="card-accent" style="background:{{ '#2E7D32' if ok else '#B71C1C' }};"></div>
+    <h2>{{ '✅' if ok else '❌' }}  {{ title }}</h2>
+    <pre style="white-space:pre-wrap; margin:0;">{{ detail }}</pre>
+  </div>
+  <a class="btn-ghost" href="{{ back_url }}" style="display:inline-block; text-decoration:none;">
+    ← Về trang tài khoản
+  </a>
+{% endblock %}

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products — LTTStudios VideoBot</title>
+<meta name="description" content="LTTStudios VideoBot: desktop tool for bulk video publishing to Facebook Pages and TikTok with scheduling, deduplication, and engagement analytics.">
+<link rel="canonical" href="https://lttstudios.com/products.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/products.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/products.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/products.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="VideoBot — Bulk video publishing for creators">
+<meta property="og:description" content="Schedule and publish videos to many FB Pages and TikTok accounts from one dashboard. Free for individual creators.">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/products.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Products</span>
+    <h1>LTTStudios VideoBot</h1>
+    <p class="lead">A Windows desktop tool that lets video content creators
+    bulk-publish pre-recorded videos to multiple Facebook Pages and TikTok
+    accounts from a single Google Sheets queue.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>At a glance</h2>
+    <table class="table">
+      <tr><th width="220">Platform</th><td>Windows 10 / 11 (64-bit)</td></tr>
+      <tr><th>License</th><td>Free for individual creators · See <a href="/legal/terms.html">Terms</a></td></tr>
+      <tr><th>Latest version</th><td>v1.0.0 · Build 2025-01 · See <a href="/changelog.html">changelog</a></td></tr>
+      <tr><th>Backend</th><td>None — runs entirely on your machine</td></tr>
+      <tr><th>Telemetry</th><td>None — zero phone-home behavior</td></tr>
+      <tr><th>Open source</th><td>Source available for security review on request</td></tr>
+      <tr><th>Languages</th><td>Vietnamese, English</td></tr>
+    </table>
+
+    <h2>Feature breakdown</h2>
+
+    <h3>📤 Facebook Pages publishing (Graph API v21.0)</h3>
+    <ul>
+      <li>OAuth: <code>POST oauth/access_token</code> for long-lived token exchange + <code>GET /me/accounts</code> to list user's Pages</li>
+      <li>3-phase resumable upload to <code>POST /{page_id}/videos</code>
+        (feed format, up to 10GB, up to 4 hours)</li>
+      <li>2-phase upload to <code>POST /{page_id}/video_reels</code>
+        (Reels format, up to 90 seconds)</li>
+      <li>Scheduled publishing via <code>scheduled_publish_time</code>
+        parameter — schedule weeks in advance</li>
+      <li>Thumbnail upload (optional, fails gracefully)</li>
+      <li>Video status polling until <code>video_status=ready</code> before
+        considering the upload complete</li>
+      <li>Optional first-comment via <code>POST /{video_id}/comments</code>
+        for affiliate links or context</li>
+    </ul>
+
+    <h3>🎵 TikTok account publishing (Content Posting API v2)</h3>
+    <ul>
+      <li>OAuth: <code>POST /v2/oauth/token/</code> for access token + refresh token</li>
+      <li>Endpoints used: <code>POST /v2/post/publish/inbox/video/init/</code> (draft), <code>POST /v2/post/publish/video/init/</code> (direct), <code>POST /v2/post/publish/status/fetch/</code> (polling), <code>POST /v2/comment/create/</code> (comment)</li>
+      <li>3 publishing modes: <code>draft_upload</code> (creator inbox),
+        <code>direct_private</code> (SELF_ONLY), <code>direct_public</code>
+        (requires app audit)</li>
+      <li>Privacy level enforcement per TikTok policy</li>
+      <li>Optional first-comment via <code>POST /v2/comment/create/</code></li>
+      <li>Cross-machine OAuth via QR code (HMAC-signed relay)</li>
+      <li>ComplianceGuard pre-flight check for caption length, hashtag count,
+        banned hashtags, AI-content disclosure flags</li>
+    </ul>
+
+    <h3>📊 Google Sheets queue</h3>
+    <ul>
+      <li>Read/write Google Sheets v4 — bot ticks every minute, picks rows
+        whose <code>schedule_time</code> &lt;= now</li>
+      <li>Multi-sheet, multi-tab, multi-worker (up to 20 concurrent)</li>
+      <li>Status writeback: <code>status</code>, <code>uploaded_at</code>,
+        <code>video_url</code>, <code>fb_video_id</code>,
+        <code>upload_duration_s</code>, <code>error_message</code></li>
+      <li>Row color-coding: pending (yellow), running (yellow),
+        done (green), error (red), skipped (gray)</li>
+    </ul>
+
+    <h3>📈 Engagement analytics (Monitor)</h3>
+    <ul>
+      <li>API: <code>GET /{video_id}/video_insights?metric=post_impressions_unique,post_video_views,post_video_view_time</code> for per-video stats</li>
+      <li>Background daemon refreshes insights every 30 minutes</li>
+      <li>Per-video stats: views, unique reach, reactions, comments count,
+        shares, total minutes viewed</li>
+      <li>Insights fetched 24 hours after publish (Facebook needs time to
+        populate) — configurable</li>
+      <li>Click-through to original post on Facebook</li>
+    </ul>
+
+    <h3>🛡 Anti-spam &amp; safety features</h3>
+    <ul>
+      <li><strong>SHA-256 content dedup</strong> — refuses to re-post the
+        same video to the same Page within configurable window
+        (default 30 days)</li>
+      <li><strong>Perceptual hash dedup</strong> — catches re-encoded
+        variants of the same video</li>
+      <li><strong>Cross-target warning</strong> — alerts when the same video
+        is posted to ≥3 different Pages in 7 days (page-farm pattern)</li>
+      <li><strong>Caption rotator</strong> — optional, deterministic
+        per-(target, video, day) caption variation</li>
+      <li><strong>Video light variation</strong> — optional FFmpeg-based or
+        metadata-only video file variation per target Page</li>
+      <li><strong>Page warm-up cap</strong> — new Pages (&lt; 30 days) get
+        reduced daily publish caps automatically</li>
+      <li><strong>Circuit breaker</strong> — pauses publishing to a Page
+        after consecutive failures, with cooldown matching FB documented
+        backoff values</li>
+      <li><strong>Session lock</strong> — file-based cross-instance lock
+        prevents two bot instances from publishing to the same account</li>
+      <li><strong>Active hours</strong> — configurable daily window (default
+        7am-10pm) when publishing is allowed</li>
+      <li><strong>Rate limiter</strong> — per-Page minimum interval (default
+        4 hours), per-account daily cap (default 12 posts), jitter to avoid
+        bot signature</li>
+    </ul>
+
+    <h3>🔐 Authentication &amp; tokens</h3>
+    <ul>
+      <li>OAuth 2.0 standard for Facebook (long-lived 60-day Page tokens)
+        and TikTok (with refresh token support)</li>
+      <li>Tokens encrypted with AES-128 Fernet, key derived from Windows
+        Machine GUID (cannot be moved between machines)</li>
+      <li>Background token refresher: auto-extends Facebook tokens 7 days
+        before expiry, refreshes TikTok tokens before access_token expires</li>
+      <li>Multi-app pool for Facebook (rotate between multiple Meta apps
+        for resilience)</li>
+    </ul>
+
+    <h3>📋 Audit &amp; compliance</h3>
+    <ul>
+      <li>JSONL audit log with 10MB rotation, 5 backup files</li>
+      <li>Every publish, comment, upload, OAuth, and error logged with
+        timestamp + event type + relevant IDs</li>
+      <li>No PII or caption content in audit log (coarse metadata only)</li>
+      <li>Audit log viewable in the Audit tab of the GUI</li>
+      <li>Designed to support Meta and TikTok review processes</li>
+    </ul>
+
+    <h2>Integrations</h2>
+    <p>Required (you bring credentials):</p>
+    <ul>
+      <li><strong>Meta Developer App</strong> — your own app with
+        <code>pages_show_list</code>, <code>pages_manage_posts</code>,
+        <code>pages_read_engagement</code>, <code>pages_manage_engagement</code></li>
+      <li><strong>TikTok Developer App</strong> — your own client_key with
+        <code>user.info.basic</code>, <code>video.upload</code>,
+        <code>video.publish</code> (audit for direct public posting)</li>
+      <li><strong>Google Cloud Project</strong> — OAuth 2.0 client OR service
+        account with Sheets API + Drive API enabled</li>
+    </ul>
+    <p>Optional:</p>
+    <ul>
+      <li>Telegram bot — for failure notifications</li>
+      <li>FFmpeg — for video variation features (bot falls back to metadata-only
+        variation if FFmpeg not available)</li>
+    </ul>
+
+    <h2>System requirements</h2>
+    <ul>
+      <li><strong>OS</strong>: Windows 10 / 11 (64-bit)</li>
+      <li><strong>Python</strong>: 3.10 or newer (bundled in Windows installer)</li>
+      <li><strong>RAM</strong>: 2 GB minimum, 4 GB recommended for multi-worker mode</li>
+      <li><strong>Disk</strong>: 500 MB for app + temporary video cache (configurable)</li>
+      <li><strong>Network</strong>: Stable broadband; FB upload prefers ≥10 Mbps for large videos</li>
+      <li><strong>Browser</strong>: Chrome / Edge / Cốc Cốc / Brave for OAuth flows</li>
+      <li><strong>Optional</strong>: FFmpeg on PATH for full video variation</li>
+    </ul>
+
+    <h2>What it does NOT do</h2>
+    <ul>
+      <li>❌ Does not generate content (text, captions, or videos via AI)</li>
+      <li>❌ Does not scrape or download videos from other creators</li>
+      <li>❌ Does not run on macOS or Linux (Windows-only currently)</li>
+      <li>❌ Does not support Instagram cross-posting</li>
+      <li>❌ Does not run as a SaaS — you install on your own machine</li>
+      <li>❌ Does not have a mobile app</li>
+      <li>❌ Does not integrate with paid analytics platforms</li>
+    </ul>
+
+    <h2>Get started</h2>
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">Ready to install?</h4>
+      <p>Download the latest Windows portable build from the
+      <a href="/download.html">download page</a>, then follow the in-app
+      setup wizard. Most creators are publishing within 15 minutes.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

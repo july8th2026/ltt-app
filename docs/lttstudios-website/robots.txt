@@ -1,0 +1,47 @@
+# LTTStudios robots.txt
+# https://lttstudios.com/robots.txt
+
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /api/
+Disallow: /assets/_partials.html
+
+# Block AI training crawlers (we don't consent to AI training on our content)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+# Allow major search engines on everything except auth/api
+User-agent: Googlebot
+Allow: /
+Disallow: /auth/
+Disallow: /api/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /auth/
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://lttstudios.com/sitemap.xml

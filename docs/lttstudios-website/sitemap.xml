@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- ============ HOMEPAGE ============ -->
+  <url>
+    <loc>https://lttstudios.com/</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/"/>
+  </url>
+
+  <!-- ============ ABOUT ============ -->
+  <url>
+    <loc>https://lttstudios.com/about.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/about.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/about.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/about.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/about.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/about.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/about.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/about.html"/>
+  </url>
+
+  <!-- ============ PRODUCTS ============ -->
+  <url>
+    <loc>https://lttstudios.com/products.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/products.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/products.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/products.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/products.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/products.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/products.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/products.html"/>
+  </url>
+
+  <!-- ============ SUPPORT ============ -->
+  <url>
+    <loc>https://lttstudios.com/support.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/support.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/support.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/support.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/support.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/support.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/support.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/support.html"/>
+  </url>
+
+  <!-- ============ CONTACT ============ -->
+  <url>
+    <loc>https://lttstudios.com/contact.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/contact.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/contact.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/contact.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/contact.html"/>
+  </url>
+
+  <!-- ============ DOWNLOAD ============ -->
+  <url>
+    <loc>https://lttstudios.com/download.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/download.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/download.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/download.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/download.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/download.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/download.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lttstudios.com/download.html"/>
+  </url>
+
+  <!-- ============ CHANGELOG ============ -->
+  <url>
+    <loc>https://lttstudios.com/changelog.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/changelog.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/changelog.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/changelog.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/changelog.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/changelog.html"/>
+  </url>
+
+  <!-- ============ LEGAL: PRIVACY ============ -->
+  <url>
+    <loc>https://lttstudios.com/legal/privacy.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/privacy.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/legal/privacy.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/privacy.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/privacy.html"/>
+  </url>
+
+  <!-- ============ LEGAL: TERMS ============ -->
+  <url>
+    <loc>https://lttstudios.com/legal/terms.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/terms.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/terms.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/legal/terms.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/terms.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/terms.html"/>
+  </url>
+
+  <!-- ============ LEGAL: DATA DELETION ============ -->
+  <url>
+    <loc>https://lttstudios.com/legal/data-deletion.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/data-deletion.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/data-deletion.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/legal/data-deletion.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/data-deletion.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/data-deletion.html"/>
+  </url>
+
+  <!-- ============ LEGAL: COOKIES ============ -->
+  <url>
+    <loc>https://lttstudios.com/legal/cookies.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/cookies.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/cookies.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/legal/cookies.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/cookies.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/cookies.html"/>
+  </url>
+
+  <!-- ============ LEGAL: SECURITY ============ -->
+  <url>
+    <loc>https://lttstudios.com/legal/security.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/security.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/security.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/legal/security.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/security.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/security.html"/>
+  </url>
+
+  <!-- ============ LEGAL: DPA ============ -->
+  <url>
+    <loc>https://lttstudios.com/legal/dpa.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/dpa.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/dpa.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/legal/dpa.html</loc>
+    <lastmod>2026-06-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/dpa.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/dpa.html"/>
+  </url>
+
+
+  <!-- ============ ARCHITECTURE ============ -->
+  <url>
+    <loc>https://lttstudios.com/architecture.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/architecture.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/architecture.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/architecture.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/architecture.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/architecture.html"/>
+  </url>
+
+  <!-- ============ COMPLIANCE ============ -->
+  <url>
+    <loc>https://lttstudios.com/compliance/meta.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/meta.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/meta.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/compliance/meta.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/meta.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/meta.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/compliance/tiktok.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/tiktok.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/tiktok.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/compliance/tiktok.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/tiktok.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/tiktok.html"/>
+  </url>
+
+  <!-- ============ TRANSPARENCY ============ -->
+  <url>
+    <loc>https://lttstudios.com/transparency.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/transparency.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/transparency.html"/>
+  </url>
+  <url>
+    <loc>https://lttstudios.com/vi/transparency.html</loc>
+    <lastmod>2026-06-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lttstudios.com/transparency.html"/>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/transparency.html"/>
+  </url>
+
+</urlset>

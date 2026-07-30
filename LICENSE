@@ -1,0 +1,75 @@
+LTTStudio VideoBot License (Custom — Free for Personal & Commercial Use)
+
+Copyright (c) 2025 LTTStudio
+
+────────────────────────────────────────────────────────────────────────────
+1. PERMISSION GRANTED
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software ("LTTStudio VideoBot"), to use, copy, modify, and distribute
+the software for personal and commercial purposes, subject to the conditions
+listed in Section 2 below.
+
+────────────────────────────────────────────────────────────────────────────
+2. CONDITIONS
+
+   a) ATTRIBUTION
+      You must retain this copyright notice and license in all copies or
+      substantial portions of the software.
+
+   b) NO RESALE
+      You may not sell, sublicense, or rebrand this software as your own
+      paid product without explicit written permission from LTTStudio.
+
+   c) NO MISUSE
+      You may not use this software to:
+      - Violate TikTok Community Guidelines or Terms of Service
+      - Violate Facebook/Meta Platform Policies
+      - Engage in spam, fraud, harassment, or illegal activities
+      - Process personal data of third parties without their consent
+      - Reverse engineer the software to extract OAuth secrets
+
+   d) THIRD-PARTY COMPLIANCE
+      Users must comply with TikTok Developer Terms of Service, Meta
+      Platform Terms, and applicable laws (including Vietnamese Cybersecurity
+      Law 2018 and Personal Data Protection Decree 13/2023).
+
+   e) NO WARRANTY
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+      OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+      FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+      THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+      FROM USE OF THE SOFTWARE.
+
+────────────────────────────────────────────────────────────────────────────
+3. TRADEMARKS
+
+   TikTok™ is a trademark of TikTok Pte. Ltd.
+   Facebook™, Meta™, Instagram™ are trademarks of Meta Platforms, Inc.
+
+   LTTStudio is an independent application and is NOT affiliated with,
+   endorsed by, sponsored by, or otherwise officially connected with
+   TikTok or Meta Platforms.
+
+────────────────────────────────────────────────────────────────────────────
+4. THIRD-PARTY LICENSES
+
+This software uses the following open-source libraries:
+   - Python Standard Library (PSF License)
+   - requests (Apache 2.0)
+   - cryptography (Apache 2.0 / BSD)
+   - customtkinter (MIT)
+   - google-api-python-client (Apache 2.0)
+   - openpyxl (MIT)
+   - pytest (MIT)
+
+Their respective licenses apply to those libraries.
+
+────────────────────────────────────────────────────────────────────────────
+5. CONTACT
+
+For licensing questions: licensing@lttstudios.com
+For security issues:     security@lttstudios.com
+For general support:     support@lttstudios.com
+
+Website: https://lttstudios.com

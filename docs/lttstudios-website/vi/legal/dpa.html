@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thoả thuận Xử lý Dữ liệu — LTTStudios</title>
+<meta name="description" content="LTTStudios Data Processing Agreement template cho tổ chức dùng VideoBot dưới GDPR.">
+<link rel="canonical" href="https://lttstudios.com/vi/legal/dpa.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/dpa.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/dpa.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/dpa.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Thoả thuận Xử lý Dữ liệu — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/legal/dpa.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Pháp lý · DPA</span>
+    <h1>Thoả thuận Xử lý Dữ liệu</h1>
+    <p class="lead">DPA reference cho tổ chức subject GDPR dùng LTTStudios VideoBot.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+  <p class="text-muted">Hiệu lực: 02-06-2026 · Version 1.0</p>
+
+  <div class="alert alert-info">
+    <h4 style="margin-top:0">Lưu ý quan trọng</h4>
+    <p>LTTStudios VideoBot là <strong>ứng dụng desktop</strong> chạy hoàn toàn
+    trên máy user. LTTStudios KHÔNG vận hành hạ tầng backend xử lý data
+    thay mặt customer.</p>
+    <p>Với hầu hết user, điều này nghĩa là DPA riêng <strong>không cần thiết</strong> —
+    bot xử lý data trên máy user, user vừa là controller vừa là processor.
+    Trang này tồn tại cho user có team compliance yêu cầu DPA reference
+    coi LTTStudios là software vendor.</p>
+  </div>
+
+  <h2>1. Các bên</h2>
+  <p>DPA này giữa:</p>
+  <ul>
+    <li><strong>Customer</strong> ("Data Controller"): cá nhân hoặc tổ chức
+      dùng LTTStudios VideoBot</li>
+    <li><strong>LTTStudios</strong> ("Software Provider"): studio độc lập
+      vận hành bởi LE THANH TRUNG, Mê Linh, Hà Nội, Việt Nam</li>
+  </ul>
+  <p>Lưu ý: vì LTTStudios không xử lý data user của Customer trên hạ tầng
+  riêng, LTTStudios KHÔNG đóng vai trò "Data Processor" theo GDPR.
+  LTTStudios là software vendor.</p>
+
+  <h2>2. Phạm vi</h2>
+  <p>DPA này áp dụng cho:</p>
+  <ul>
+    <li>Ứng dụng desktop LTTStudios VideoBot</li>
+    <li>Website marketing tại <code>lttstudios.com</code></li>
+    <li>OAuth callback handler + optional TikTok OAuth relay</li>
+  </ul>
+
+  <h2>3. Bản chất và mục đích xử lý</h2>
+  <p>Bot xử lý các category data sau <strong>chỉ trên máy Customer</strong>:</p>
+  <ul>
+    <li>Facebook Page access token + metadata (id, name)</li>
+    <li>TikTok account access token + basic profile</li>
+    <li>Google Sheets data qua OAuth credentials của Customer</li>
+    <li>File video tạm tải từ Drive của Customer</li>
+    <li>Engagement metrics cho post của Customer</li>
+  </ul>
+
+  <h2>4. Phân bổ Controller / Processor</h2>
+  <table class="table">
+    <tr><th width="200">Hoạt động</th><th>Controller</th><th>Processor</th></tr>
+    <tr><td>Lưu token local</td><td>Customer</td><td>Không (self-hosted)</td></tr>
+    <tr><td>Gọi Meta Graph API</td><td>Customer</td><td>Meta (theo terms Meta)</td></tr>
+    <tr><td>Gọi TikTok API</td><td>Customer</td><td>TikTok (theo terms TikTok)</td></tr>
+    <tr><td>Gọi Google API</td><td>Customer</td><td>Google (theo terms Google)</td></tr>
+    <tr><td>Visit website marketing</td><td>LTTStudios</td><td>Hosting provider</td></tr>
+  </table>
+
+  <h2>5. Sub-processor</h2>
+  <p>LTTStudios không có sub-processor cho data Customer vì data Customer
+  không xử lý trên hạ tầng LTTStudios.</p>
+  <p>Cho website marketing LTTStudios, sub-processor:</p>
+  <ul>
+    <li>Web hosting provider (serve static HTML/CSS) — xem
+      <a href="/vi/contact.html">trang liên hệ</a> cho hosting partner hiện tại</li>
+  </ul>
+
+  <h2>6. Security measures</h2>
+  <p>Cho LTTStudios VideoBot (software):</p>
+  <ul>
+    <li>AES-128 Fernet mã hoá mọi token lưu trữ</li>
+    <li>Key từ Machine GUID Windows (token không di chuyển giữa máy)</li>
+    <li>TLS 1.2+ cho mọi API communication</li>
+    <li>OAuth 2.0 standard với CSRF state validation</li>
+    <li>HMAC-signed cross-machine OAuth relay</li>
+    <li>Audit log mọi operation nhạy cảm</li>
+  </ul>
+  <p>Cho website LTTStudios:</p>
+  <ul>
+    <li>HTTPS-only (Let's Encrypt hoặc tương đương)</li>
+    <li>HSTS khuyến nghị ở hosting layer</li>
+    <li>Không user account, không cookie</li>
+  </ul>
+  <p>Xem đầy đủ <a href="/vi/legal/security.html">Security policy</a>.</p>
+
+  <h2>7. Quyền data subject</h2>
+  <p>Vì data Customer sống trên máy Customer, Customer chịu trách nhiệm
+  honor data subject request (access, rectification, erasure, portability).
+  LTTStudios cung cấp tool support:</p>
+  <ul>
+    <li>Export audit log local (JSONL format)</li>
+    <li>Xoá token, log, cached data local — xem
+      <a href="/vi/legal/data-deletion.html">Data Deletion</a></li>
+  </ul>
+
+  <h2>8. Data transfer</h2>
+  <p>Bot tạo outbound API call tới:</p>
+  <ul>
+    <li>Meta (USA / Ireland)</li>
+    <li>TikTok (Singapore / Ireland tuỳ regional routing)</li>
+    <li>Google (USA / Ireland)</li>
+  </ul>
+  <p>Đây là standard SaaS data transfer initiate bởi Customer dùng
+  credentials của Customer. LTTStudios không kiểm soát third party đó
+  lưu data Customer ở đâu — xem privacy policy + SCC riêng của họ.</p>
+
+  <h2>9. Thông báo breach</h2>
+  <p>Nếu LTTStudios phát hiện security incident ảnh hưởng software hoặc
+  website có thể ảnh hưởng data Customer, sẽ thông báo Customer trong 72h
+  qua email support, theo GDPR Điều 33.</p>
+
+  <h2>10. Quyền audit</h2>
+  <p>Cho compliance audit nội bộ của Customer:</p>
+  <ul>
+    <li>Source code review có thể request qua
+      <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a>
+      dưới NDA</li>
+    <li>Security questionnaire (SIG-Lite, VSA) complete best-effort</li>
+  </ul>
+
+  <h2>11. Term và termination</h2>
+  <p>DPA này hiệu lực khi Customer cài đặt + sử dụng LTTStudios VideoBot
+  và terminate khi Customer gỡ bot + revoke OAuth permission.</p>
+
+  <h2>12. Luật áp dụng</h2>
+  <p>DPA này tuân theo pháp luật Cộng hoà Xã hội Chủ nghĩa Việt Nam, nhất
+  quán với <a href="/vi/legal/terms.html">Điều khoản Dịch vụ</a> chính.</p>
+
+  <h2>13. Liên hệ DPA</h2>
+  <p>
+    Email: <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a><br>
+    Subject: <code>DPA inquiry</code>
+  </p>
+  <p>Cho bản DPA PDF có ký phù hợp procurement workflow, email với tên
+  công ty, chúng tôi gửi lại signed PDF trong 5 business days.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+
+</body>
+</html>

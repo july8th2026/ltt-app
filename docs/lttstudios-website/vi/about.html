@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giới thiệu — LTTStudios</title>
+<meta name="description" content="LTTStudios là studio độc lập tại Việt Nam xây dựng công cụ tự động hoá desktop cho creator video. Founded bởi LE THANH TRUNG năm 2024.">
+<link rel="canonical" href="https://lttstudios.com/vi/about.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/about.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/about.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/about.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Giới thiệu — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/about.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Giới thiệu</span>
+    <h1>Built by creators, for creators</h1>
+    <p class="lead">Một studio nhỏ tại Việt Nam, tập trung làm ra những công
+    cụ tự động hoá mà chính chúng tôi từng ước có khi vận hành brand page
+    của mình.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Câu chuyện của chúng tôi</h2>
+    <p>LTTStudios được thành lập năm 2024 bởi LE THANH TRUNG (LTT), một
+    người làm content sau nhiều năm quản lý 20+ Page Facebook và TikTok
+    bằng tay, đã chính thức chán việc click <em>"Schedule post"</em> 50
+    lần mỗi ngày.</p>
+
+    <p>Phiên bản đầu của LTTStudios VideoBot là 1 script Python làm 1 việc:
+    đọc Google Sheet row, tải video từ Drive, đăng lên Page Facebook.
+    Script lớn dần. Nó học về rate-limit theo cách khó khăn (Page
+    <em>warning</em>, rồi Page <em>restriction</em>). Học về content
+    deduplication theo cách khó (video bị flag spam). Học về API quota,
+    OAuth refresh, và TikTok content posting policy.</p>
+
+    <p>Hôm nay LTTStudios VideoBot là 1 desktop tool polished xử lý mọi
+    thứ chúng tôi từng ước có ngày 1: spam-policy-safe scheduling,
+    multi-Page rate limit coordination, audit trail, engagement analytics,
+    perceptual-hash deduplication, và UI tiếng Việt.</p>
+
+    <h2>Chúng tôi tin gì</h2>
+
+    <h3>Creator sở hữu tool, data, và token của mình</h3>
+    <p>Bot chạy trên máy bạn. Token Facebook không rời khỏi máy bạn.
+    Không có backend LTTStudios nào để bị breach. Không có telemetry ping
+    "home" với post stats. Chúng tôi không có admin panel đọc data của
+    bạn — vì không có panel nào.</p>
+
+    <h3>Tôn trọng platform, tôn trọng policy</h3>
+    <p>Mọi tính năng đều xây để tuân thủ policy Meta và TikTok. Rate-limit
+    bảo thủ mặc định (thà đăng ít hơn nguy cơ Page bị warning).
+    Content dedup chạy trước mỗi upload. Warm-up logic chống Page mới
+    bị treat như brand established. Circuit breaker dừng publish khi
+    platform báo có vấn đề.</p>
+
+    <h3>Documentation là 1 feature</h3>
+    <p>Mỗi config key có giải thích. Mỗi error có message tiếng Việt.
+    Help system có Quick Start guide cho mọi tab. Source code đọc được.
+    Website bạn đang đọc là 1 phần của product.</p>
+
+    <h2>Ai vận hành LTTStudios</h2>
+    <div class="card" style="display:flex;gap:var(--sp-5);align-items:flex-start">
+      <div style="font-size:48px">👨‍💻</div>
+      <div>
+        <h3 style="margin-top:0">LE THANH TRUNG</h3>
+        <p><strong>Founder, developer duy nhất, customer support</strong></p>
+        <p>Creator Việt Nam từ đầu 2020s. Self-taught Python developer.
+        Vận hành 20+ Page brand trên nhiều niche khác nhau. Liên hệ tại
+        <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a>.
+        </p>
+      </div>
+    </div>
+
+    <h2>Ở đâu</h2>
+    <p>LTTStudios đăng ký và vận hành tại Mê Linh, Hà Nội, Việt Nam.
+    Không có văn phòng nước ngoài. Không có venture funding. Không có
+    sales team.</p>
+
+    <h2>Kiếm tiền thế nào</h2>
+    <p>Câu trả lời thẳng: <strong>LTTStudios VideoBot hiện tại miễn phí</strong>.
+    Project được tài trợ bởi creator income của chính LTT. Nếu sau này
+    có gói trả phí, gói free vẫn sẽ functional cho creator cá nhân với
+    số Page nhỏ.</p>
+
+    <p>Chúng tôi không chạy ads. Không bán user data (kể cả muốn cũng
+    không thể — không có data trên server).</p>
+
+    <h2>Cam kết của chúng tôi</h2>
+    <ul>
+      <li><strong>Không telemetry</strong> — bot không bao giờ report
+      về endpoint LTTStudios nào về việc bạn dùng.</li>
+      <li><strong>Không upsell</strong> — không nag screen, không
+      "premium" lock-out.</li>
+      <li><strong>Không vendor lock-in</strong> — Google Sheet của bạn
+      là của bạn, video đã đăng là của bạn, audit log là của bạn.</li>
+      <li><strong>Policy-aligned mặc định</strong> — mọi default err về
+      phía an toàn platform, dù điều đó nghĩa là đăng chậm hơn.</li>
+      <li><strong>Documented breakage</strong> — khi Meta hoặc TikTok đổi
+      API và chúng tôi phải update, sẽ giải thích cụ thể trong
+      <a href="/vi/changelog.html">changelog</a>.</li>
+    </ul>
+
+    <h2>Sắp tới</h2>
+    <p>Chúng tôi đang work để LTTStudios VideoBot fully approved bởi
+    Meta App Review (đang trong tiến độ, tháng 6/2026) và pass TikTok
+    Direct Post audit (submitted tháng 5/2026). Khi cả 2 live, sẽ mở
+    rộng sang cross-posting giữa các platform giữ nguyên kiến trúc
+    privacy-first desktop.</p>
+
+    <p>Muốn được thông báo? Email
+    <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>
+    với tiêu đề "notify me", chúng tôi sẽ gửi 1 email duy nhất khi mỗi
+    milestone hoàn thành.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios. Mọi quyền được bảo lưu.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

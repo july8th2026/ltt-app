@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}TT Audit — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>📋  TikTok Audit Readiness</strong>{% endblock %}
+{% block topbar_right %}
+  <span class="dim" style="font-size:12px;">Cập nhật: {{ report.age_text }}</span>
+{% endblock %}
+{% block content %}
+
+  {% if report.running %}
+    <div class="alert alert-warn" id="running_note">
+      …đang chạy checklist… <span class="muted">(gọi 3 request HTTPS tới URL
+      Privacy/Terms của bạn — chạy ở tiến trình nền, trang tự cập nhật)</span>
+    </div>
+  {% endif %}
+
+  {% if report.error %}
+    <div class="alert alert-err"><pre>{{ report.error }}</pre></div>
+  {% endif %}
+
+  {% if report.items %}
+    <div class="card">
+      <p style="color:{{ report.summary_colour }}; margin:0; font-weight:600;">
+        {{ report.summary }}
+      </p>
+    </div>
+  {% elif not report.running %}
+    <div class="card">
+      <p class="dim" style="margin:0;">Chưa có kết quả — nhấn "Làm mới" để chạy checklist.</p>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/audit/refresh" style="max-width:none; margin-bottom:14px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn-ghost" {% if report.running %}disabled{% endif %}>
+      🔄  Làm mới
+    </button>
+  </form>
+
+  {% if report.items %}
+    <div class="card">
+      <h2>✓ Checklist</h2>
+      {% for item in report.items %}
+        <div style="border-top:1px solid var(--line); padding:10px 0;">
+          <div style="color:{{ item.colour }}; font-weight:600;">
+            {{ item.icon }}  {{ item.name }}
+          </div>
+          <div class="muted" style="margin:4px 0 0;">{{ item.message }}</div>
+          {% if item.show_fix %}
+            <div style="color:#A8C8FF; margin:4px 0 0; font-style:italic;">
+              💡  {{ item.fix_hint }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if report.scopes %}
+    <div class="card">
+      <h2>🔑 OAuth Scopes đang dùng</h2>
+      {% for s in report.scopes %}
+        <div style="border-top:1px solid var(--line); padding:8px 0;">
+          <div class="mono" style="color:#9C27B0;">{{ s.scope }}</div>
+          <div class="muted">{{ s.explain }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if report.running %}
+    <script>
+      // Poll only the lightweight status endpoint; reload once it finishes.
+      var tick = setInterval(function () {
+        fetch('/api/audit/status', {credentials: 'same-origin'})
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (d && !d.running) { clearInterval(tick); location.reload(); }
+          })
+          .catch(function () {});
+      }, 3000);
+    </script>
+  {% endif %}
+{% endblock %}

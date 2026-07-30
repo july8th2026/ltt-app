@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sản phẩm — LTTStudios VideoBot</title>
+<meta name="description" content="LTTStudios VideoBot: desktop tool đăng video lên Facebook Pages và TikTok với scheduling, deduplication, analytics.">
+<link rel="canonical" href="https://lttstudios.com/vi/products.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/products.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/products.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/products.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Sản phẩm — LTTStudios VideoBot">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/products.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Sản phẩm</span>
+    <h1>LTTStudios VideoBot</h1>
+    <p class="lead">Windows desktop tool cho creator video — bulk publish lên nhiều Page Facebook và TikTok từ 1 Google Sheets queue.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Tóm tắt nhanh</h2>
+    <table class="table">
+      <tr><th width="220">Platform</th><td>Windows 10 / 11 (64-bit)</td></tr>
+      <tr><th>License</th><td>Miễn phí cho creator cá nhân · Xem <a href="/vi/legal/terms.html">Điều khoản</a></td></tr>
+      <tr><th>Version mới nhất</th><td>v1.0.0 · Build 2025-01 · <a href="/vi/changelog.html">changelog</a></td></tr>
+      <tr><th>Backend</th><td>Không — chạy trên máy bạn</td></tr>
+      <tr><th>Telemetry</th><td>Không — zero phone-home</td></tr>
+      <tr><th>Ngôn ngữ</th><td>Tiếng Việt, English</td></tr>
+    </table>
+
+    <h2>Tính năng chi tiết</h2>
+
+    <h3>📤 Đăng Facebook Pages (Graph API v21.0)</h3>
+    <ul>
+      <li>OAuth: <code>POST oauth/access_token</code> exchange short-lived → long-lived token (60 ngày), <code>GET /me/accounts</code> liệt kê Page user admin</li>
+      <li>3-phase resumable upload feed video (lên tới 10GB, 4 giờ)</li>
+      <li>2-phase upload Reels (lên tới 90 giây)</li>
+      <li>Schedule publish trước hàng tuần</li>
+      <li>Upload thumbnail (optional)</li>
+      <li>Poll video status đến ready</li>
+      <li>Optional first-comment cho affiliate link/context</li>
+    </ul>
+
+    <h3>🎵 Đăng TikTok (Content Posting API v2)</h3>
+    <ul>
+      <li>OAuth: <code>POST /v2/oauth/token/</code> cho access token + refresh token</li>
+      <li>Endpoints: <code>POST /v2/post/publish/inbox/video/init/</code> (draft), <code>POST /v2/post/publish/video/init/</code> (direct), <code>POST /v2/post/publish/status/fetch/</code> (poll), <code>POST /v2/comment/create/</code> (comment)</li>
+      <li>3 mode: <code>draft_upload</code>, <code>direct_private</code>, <code>direct_public</code></li>
+      <li>Privacy level enforcement theo policy TikTok</li>
+      <li>Optional first-comment</li>
+      <li>Cross-machine OAuth qua QR code (HMAC-signed)</li>
+      <li>ComplianceGuard pre-flight check</li>
+    </ul>
+
+    <h3>📊 Google Sheets queue</h3>
+    <ul>
+      <li>Multi-sheet, multi-tab, multi-worker (tới 20 song song)</li>
+      <li>Status writeback đầy đủ</li>
+      <li>Tô màu row theo trạng thái</li>
+    </ul>
+
+    <h3>📈 Engagement analytics</h3>
+    <ul>
+      <li>API: <code>GET /{video_id}/video_insights?metric=post_impressions_unique,post_video_views,post_video_view_time</code> cho per-video stats</li>
+      <li>Background daemon refresh insights 30 phút/lần</li>
+      <li>Per-video: views, reach, reactions, comments, shares, minutes viewed</li>
+    </ul>
+
+    <h3>🛡 Anti-spam &amp; safety</h3>
+    <ul>
+      <li>SHA-256 dedup (mặc định 30 ngày)</li>
+      <li>Perceptual hash dedup catch re-encoded variant</li>
+      <li>Cross-target warning (page-farm pattern)</li>
+      <li>Caption rotator deterministic (optional)</li>
+      <li>Video light variation (FFmpeg hoặc metadata-only)</li>
+      <li>Page warm-up cap cho Page mới</li>
+      <li>Circuit breaker theo FB documented backoff</li>
+      <li>Session lock file-based cross-instance</li>
+      <li>Active hours (mặc định 7-22h)</li>
+      <li>Rate limiter min interval, daily cap, jitter</li>
+    </ul>
+
+    <h3>🔐 Authentication &amp; tokens</h3>
+    <ul>
+      <li>OAuth 2.0 standard FB (long-lived 60 ngày) + TikTok (có refresh)</li>
+      <li>Token mã hoá AES-128 Fernet, key từ Machine GUID Windows</li>
+      <li>Background token refresher tự extend trước expiry</li>
+      <li>Multi-app pool cho Facebook</li>
+    </ul>
+
+    <h3>📋 Audit &amp; compliance</h3>
+    <ul>
+      <li>JSONL audit log rotation 10MB, 5 backup</li>
+      <li>Mọi action đều log với timestamp + event + IDs</li>
+      <li>Không PII trong audit log</li>
+      <li>Designed support Meta + TikTok review</li>
+    </ul>
+
+    <h2>Integrations</h2>
+    <p>Required (bạn cung cấp credentials):</p>
+    <ul>
+      <li><strong>Meta Developer App</strong> — app của bạn với scope
+        <code>pages_show_list</code>, <code>pages_manage_posts</code>,
+        <code>pages_read_engagement</code>, <code>pages_manage_engagement</code></li>
+      <li><strong>TikTok Developer App</strong> — client_key với scope
+        <code>user.info.basic</code>, <code>video.upload</code>,
+        <code>video.publish</code> (audit cho direct public)</li>
+      <li><strong>Google Cloud Project</strong> — OAuth 2.0 client HOẶC service
+        account với Sheets API v4 + Drive API v3 enabled</li>
+    </ul>
+
+    <h2>Open-source dependencies</h2>
+    <p>Bot dùng tối thiểu third-party deps (xem <code>requirements.txt</code>):</p>
+    <ul>
+      <li><code>customtkinter</code> — GUI framework</li>
+      <li><code>Pillow</code> — image processing</li>
+      <li><code>google-api-python-client</code>, <code>google-auth-oauthlib</code>,
+        <code>google-auth</code> — Google APIs</li>
+      <li><code>requests</code> — HTTP client</li>
+      <li><code>cryptography</code> — Fernet AES-128 encryption</li>
+      <li><code>qrcode[pil]</code> — QR generation cho TikTok cross-machine OAuth</li>
+      <li><code>pytz</code>, <code>tzdata</code> — timezone handling</li>
+    </ul>
+    <p>KHONG analytics SDK, error reporting service, payment SDK. Mỗi dep
+    review license + active maintenance.</p>
+
+    <h2>Compliance &amp; policy</h2>
+    <ul>
+      <li>Meta Platform Terms + Developer Policies</li>
+      <li>TikTok Developer Terms of Service</li>
+      <li>Google API Services User Data Policy (Limited Use)</li>
+      <li>GDPR — honor mọi data subject rights</li>
+    </ul>
+
+    <h2>Yêu cầu hệ thống</h2>
+    <ul>
+      <li>OS: Windows 10/11 (64-bit)</li>
+      <li>Python 3.10+ (bundled trong installer)</li>
+      <li>RAM 2 GB tối thiểu, 4 GB cho multi-worker</li>
+      <li>Disk 500 MB + cache video</li>
+      <li>Network broadband, ≥10 Mbps cho video lớn</li>
+      <li>Browser cho OAuth</li>
+      <li>Optional FFmpeg cho video variation</li>
+    </ul>
+
+    <h2>KHÔNG làm gì</h2>
+    <ul>
+      <li>❌ Không tạo content bằng AI</li>
+      <li>❌ Không scrape video creator khác</li>
+      <li>❌ Không chạy macOS/Linux (Windows only)</li>
+      <li>❌ Không support Instagram cross-post</li>
+      <li>❌ Không SaaS — bạn tự cài</li>
+      <li>❌ Không mobile app</li>
+    </ul>
+
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">Sẵn sàng cài?</h4>
+      <p>Tải Windows mới nhất tại <a href="/vi/download.html">trang download</a>.
+      Hầu hết creator publish được trong 15 phút.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios. Mọi quyền được bảo lưu.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+
+</body>
+</html>

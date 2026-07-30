@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog — LTTStudios VideoBot</title>
+<meta name="description" content="Release notes and version history for LTTStudios VideoBot.">
+<link rel="canonical" href="https://lttstudios.com/changelog.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/changelog.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/changelog.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/changelog.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Changelog — LTTStudios VideoBot">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/changelog.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Changelog</span>
+    <h1>Release history</h1>
+    <p class="lead">What's new in each version. We follow
+    <a href="https://semver.org" target="_blank" rel="noopener">SemVer</a> —
+    MAJOR.MINOR.PATCH.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2 style="margin-top:0">v1.0.0 — June 2026 <span class="badge badge-success">Current</span></h2>
+    <p class="text-muted">First stable release.</p>
+
+    <h3>Added</h3>
+    <ul>
+      <li>Domain migration to <code>lttstudios.com</code> (from <code>lttstudio.top</code>)
+        — improves Meta App Review trust score</li>
+      <li>Comprehensive public website with Privacy Policy, Terms, Data Deletion,
+        Cookie Policy, DPA, Security disclosure, FAQ, and product pages</li>
+      <li>Sheet FB: <code>schedule_time</code> now BẮT BUỘC — rows without
+        schedule_time are skipped instead of running immediately (cleaner
+        scheduling model)</li>
+      <li>Sheet FB: max workers raised from 6 to 20 (one per brand Page)</li>
+    </ul>
+
+    <h3>Changed</h3>
+    <ul>
+      <li>Caption Rotator disabled by default — no more auto-inserted CTAs
+        or hashtags (was causing user confusion)</li>
+      <li>Perceptual hash dedup: tightened match threshold from 8 → 2
+        (eliminates ~70% of false-positive matches in old algorithm)</li>
+      <li>Perceptual hash: degenerate hash values (all-zero, all-F) now
+        rejected at compute time and filtered from DB queries</li>
+      <li>Video status poll log: dedupe consecutive identical lines, hide
+        meaningless <code>(0%)</code> when FB doesn't populate
+        <code>processing_progress</code></li>
+    </ul>
+
+    <h3>Fixed</h3>
+    <ul>
+      <li>False-positive perceptual hash matches that were rejecting
+        legitimate uploads</li>
+      <li>Stale <code>.pyc</code> bytecode caches after domain migration</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>v0.9 — May 2026 <span class="badge badge-neutral">Beta</span></h2>
+    <p class="text-muted">Pre-release used for internal testing across 20+ brand Pages.</p>
+    <h3>Added</h3>
+    <ul>
+      <li>Sprint A1: Caption Rotator with deterministic per-(target, video, day) variation</li>
+      <li>Sprint A2: Perceptual hash dedup (catches re-encoded variants)</li>
+      <li>Sprint A3: Cross-target duplicate warning (page-farm pattern detection)</li>
+      <li>Sprint A4: Video light variation (FFmpeg + metadata-only modes)</li>
+      <li>TikTok Direct Post audit submission flow (audit submitted 2026-05-22)</li>
+      <li>Session Lock — file-based cross-instance lock per account+platform</li>
+      <li>App Status monitor — periodic health check against Meta + TikTok</li>
+      <li>Multi-app pool for Facebook (rotate between multiple Meta apps)</li>
+      <li>Network Identity rotation (per-account UA + proxy when enabled)</li>
+      <li>Telegram notifier for token expiry, abuse signals, circuit-open events</li>
+    </ul>
+    <h3>Changed</h3>
+    <ul>
+      <li>Rate limiter rewrite — now coordinates across multi-worker mode</li>
+      <li>Token store: migration from JSON to AES-128 Fernet encrypted .enc files</li>
+      <li>Audit log: rotation 10MB, max 5 backups (was unbounded)</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>v0.5 — March 2026 <span class="badge badge-neutral">Alpha</span></h2>
+    <h3>Added</h3>
+    <ul>
+      <li>TikTok integration: draft upload + direct private mode</li>
+      <li>Concurrent runner (up to 6 workers initially)</li>
+      <li>Insights fetcher (background daemon, 30-min poll)</li>
+      <li>Reels uploader (separate endpoint from feed videos)</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>v0.1 — January 2025 <span class="badge badge-neutral">Initial</span></h2>
+    <p class="text-muted">First internal build.</p>
+    <ul>
+      <li>Single-worker Sheet → Drive → Facebook publish loop</li>
+      <li>Hardcoded rate limits (15-min between posts)</li>
+      <li>Console output only — no GUI</li>
+      <li>Plain JSON token store</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>Subscribe to updates</h2>
+    <p>We don't have a newsletter (yet). To be notified of major releases,
+    email <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>
+    with subject "notify me" and we'll send a single email when each
+    milestone lands.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

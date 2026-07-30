@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — LTTStudios</title>
+<meta name="description" content="LTTStudios is a Vietnam-based independent studio building desktop automation tools for video content creators. Founded by LE THANH TRUNG in 2024.">
+<link rel="canonical" href="https://lttstudios.com/about.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/about.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/about.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/about.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="About — LTTStudios">
+<meta property="og:description" content="Vietnam-based studio building creator-first video publishing automation since 2024.">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/about.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">About</span>
+    <h1>Built by creators, for creators</h1>
+    <p class="lead">A small, focused Vietnam-based studio building the
+    automation tools we wished existed when we ran our own brand pages.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Our story</h2>
+    <p>LTTStudios was founded in 2024 by LE THANH TRUNG (LTT), a content creator
+    who, after years of managing 20+ brand Facebook Pages and TikTok accounts
+    by hand, finally got tired of clicking <em>"Schedule post"</em> 50 times a
+    day.</p>
+
+    <p>The first version of LTTStudios VideoBot was a Python script that did
+    one thing: read a Google Sheet row, download a video from Drive, post to a
+    Facebook Page. The script grew. It learned about rate limits the hard way
+    (Page <em>warnings</em>, then Page <em>restrictions</em>). It learned
+    about content deduplication the hard way (videos flagged as spam). It
+    learned about API quotas, OAuth refresh, and TikTok's content posting
+    policies.</p>
+
+    <p>Today LTTStudios VideoBot is a polished desktop tool that handles
+    everything we wished we'd had on day one: spam-policy-safe scheduling,
+    multi-Page rate limit coordination, audit trails, engagement analytics,
+    perceptual-hash deduplication, and a Vietnamese-first UI.</p>
+
+    <h2>What we believe</h2>
+
+    <h3>Creators own their tools, their data, and their tokens</h3>
+    <p>The bot runs on your machine. Your Facebook tokens never leave your
+    computer. There is no LTTStudios backend that could be breached. There is
+    no telemetry pinging "home" with your post stats. We do not have an admin
+    panel that can read your data — because there is no panel.</p>
+
+    <h3>Respect the platforms, respect the policies</h3>
+    <p>Every feature in the bot is built to comply with Meta and TikTok
+    policies. Rate limits are conservative by default (we'd rather under-post
+    than risk a Page warning). Content dedup runs before every upload.
+    Warmup logic prevents new Pages from being treated like established
+    brands. Circuit breakers stop publishing when the platform tells us
+    something is wrong.</p>
+
+    <h3>Documentation is a feature</h3>
+    <p>Every config key has an explanation. Every error has a Vietnamese
+    message. The Help system has Quick Start guides for every tab. Source
+    code is readable. This website you're reading is part of the product.</p>
+
+    <h2>Who runs LTTStudios</h2>
+    <div class="card" style="display:flex;gap:var(--sp-5);align-items:flex-start">
+      <div style="font-size:48px">👨‍💻</div>
+      <div>
+        <h3 style="margin-top:0">LE THANH TRUNG</h3>
+        <p><strong>Founder, sole developer, customer support</strong></p>
+        <p>Vietnamese content creator since the early 2020s. Self-taught
+        Python developer. Maintains 20+ brand Pages across multiple niches.
+        Reachable at
+        <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a>.
+        </p>
+      </div>
+    </div>
+
+    <h2>Where we are</h2>
+    <p>LTTStudios is registered and operated from Mê Linh, Hà Nội, Vietnam.
+    We do not have offices in other countries. We do not have venture funding.
+    We do not have a sales team.</p>
+
+    <h2>How we make money</h2>
+    <p>Honest answer: <strong>LTTStudios VideoBot is currently free</strong>.
+    The project is funded by LTT's own creator income. If we add paid tiers
+    in the future, the free tier will remain functional for individual
+    creators with a small number of Pages.</p>
+
+    <p>We do not run ads. We do not sell user data (we couldn't even if we
+    wanted to — we don't have your data on our servers).</p>
+
+    <h2>Our open commitments</h2>
+    <ul>
+      <li><strong>No telemetry</strong> — the bot never reports back to any
+      LTTStudios endpoint about your usage.</li>
+      <li><strong>No upsells</strong> — no nag screens, no "premium" lock-outs.</li>
+      <li><strong>No vendor lock-in</strong> — your Google Sheets are yours,
+      your published videos are yours, your audit logs are yours.</li>
+      <li><strong>Policy-aligned by default</strong> — all defaults err on
+      the side of platform safety, even if that means slower posting.</li>
+      <li><strong>Documented breakage</strong> — when Meta or TikTok change
+      their APIs and we have to update the bot, we explain what changed and
+      why in <a href="/changelog.html">the changelog</a>.</li>
+    </ul>
+
+    <h2>What's next</h2>
+    <p>We're working on getting LTTStudios VideoBot fully approved by Meta
+    App Review (in progress as of June 2026) and through the TikTok Direct
+    Post audit (submitted May 2026). Once both are live, we plan to expand
+    cross-posting between platforms while maintaining the same privacy-first
+    desktop architecture.</p>
+
+    <p>Want to be notified? Email
+    <a href="mailto:support@lttstudios.com">support@lttstudios.com</a> with
+    subject "notify me" and we'll send a single email when each milestone
+    lands.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changelog — LTTStudios</title>
+<meta name="description" content="Release notes và lịch sử version LTTStudios VideoBot.">
+<link rel="canonical" href="https://lttstudios.com/vi/changelog.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/changelog.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/changelog.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/changelog.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Changelog — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/changelog.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Changelog</span>
+    <h1>Lịch sử release</h1>
+    <p class="lead">Có gì mới trong mỗi version. Theo SemVer — MAJOR.MINOR.PATCH.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2 style="margin-top:0">v1.0.0 — Tháng 6/2026 <span class="badge badge-success">Hiện tại</span></h2>
+    <p class="text-muted">Stable release đầu tiên. Build 2025-01.</p>
+    <h3>Thêm</h3>
+    <ul>
+      <li>Migration domain sang <code>lttstudios.com</code></li>
+      <li>Website public toàn diện (Privacy, Terms, Data Deletion, Cookies, DPA, Security, FAQ)</li>
+      <li>Sheet FB: <code>schedule_time</code> BẮT BUỘC</li>
+      <li>Sheet FB: tối đa worker 6 → 20</li>
+    </ul>
+    <h3>Đổi</h3>
+    <ul>
+      <li>Caption Rotator tắt mặc định</li>
+      <li>Perceptual hash threshold 8 → 2 — giảm false-positive 175× (từ ~70% xuống ~0.4%)</li>
+      <li>Reject degenerate hash values (all-zero <code>0000...</code> và all-F <code>ffff...</code>) — tránh ghost-match</li>
+      <li>Sheet client: <code>schedule_time</code> giờ BẮT BUỘC — row trống bị skip</li>
+      <li>Bot version + build metadata được show trong footer mọi page web</li>
+      <li>Video status log dedupe + ẩn (0%) vô nghĩa</li>
+    </ul>
+    <h3>Sửa</h3>
+    <ul>
+      <li>False-positive perceptual hash</li>
+      <li>Stale .pyc cache sau migration</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>v0.9 — Tháng 5/2026 <span class="badge badge-neutral">Beta</span></h2>
+    <h3>Thêm</h3>
+    <ul>
+      <li>Caption Rotator + Perceptual hash dedup</li>
+      <li>Cross-target warning + Video variation</li>
+      <li>TikTok Direct Post audit flow</li>
+      <li>Session Lock, App Status monitor, Multi-app pool</li>
+      <li>Network Identity rotation, Telegram notifier</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>v0.5 — Tháng 3/2026 <span class="badge badge-neutral">Alpha</span></h2>
+    <ul>
+      <li>TikTok integration</li>
+      <li>Concurrent runner (6 workers ban đầu)</li>
+      <li>Insights fetcher</li>
+      <li>Reels uploader</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>Compliance đang in-progress</h2>
+    <ul>
+      <li><strong>Meta App Review</strong>: chuẩn bị submission cho 4 permission
+        (<code>pages_show_list</code>, <code>pages_manage_posts</code>,
+        <code>pages_read_engagement</code>, <code>pages_manage_engagement</code>).
+        Ước tính nhận response Q3 2026.</li>
+      <li><strong>TikTok Direct Post audit</strong>: đã submit 2026-05-22.
+        Trong queue review (2-4 tuần).</li>
+      <li><strong>Business Verification</strong>: chuẩn bị submit qua Domain Verification
+        (DNS TXT cho <code>lttstudios.com</code>).</li>
+    </ul>
+
+    <hr style="margin: var(--sp-12) 0; border: 0; border-top: 1px solid var(--c-border);">
+
+    <h2>v0.1 — Tháng 1/2025 <span class="badge badge-neutral">Initial</span></h2>
+    <ul>
+      <li>Single-worker Sheet → Drive → Facebook</li>
+      <li>Console only, plain JSON token store</li>
+    </ul>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios. Mọi quyền được bảo lưu.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+
+</body>
+</html>

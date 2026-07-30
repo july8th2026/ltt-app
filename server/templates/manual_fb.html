@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Manual FB — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>Manual FB</strong>{% endblock %}
+{% block content %}
+
+  {% if error %}<div class="alert alert-err"><pre>{{ error }}</pre></div>{% endif %}
+  {% if notice %}<div class="alert alert-ok">{{ notice }}</div>{% endif %}
+
+  {% if not page_options %}
+    <div class="alert alert-warn">
+      <strong style="color:var(--warn);">Chưa có Page nào được chọn</strong>
+      <p class="muted" style="margin:6px 0 0;">
+        Vào <a href="/facebook">Tài khoản FB</a> → dán token System User → tick chọn Page.
+      </p>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/manual/facebook" enctype="multipart/form-data" style="max-width:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="card">
+      <div class="card-accent" style="background:#1565C0;"></div>
+      <h2>🔐  TÀI KHOẢN &amp; PAGE</h2>
+      <div class="field">
+        <label for="page">Page đăng:</label>
+        <select id="page" name="page" required {% if not page_options %}disabled{% endif %}>
+          {% for o in page_options %}<option value="{{ o.label }}">{{ o.label }}</option>{% endfor %}
+          {% if not page_options %}<option value="">(Chưa có page — vào /facebook để tick chọn)</option>{% endif %}
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent" style="background:#0277BD;"></div>
+      <h2>🎬  FILE VIDEO</h2>
+      <div class="field">
+        <label for="video">Video:</label>
+        <input id="video" type="file" name="video" accept="{{ accept }}" required>
+        <span class="hint">Hỗ trợ: {{ accept }} · tối đa 10 GB (giới hạn Graph API)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent" style="background:#6A1B9A;"></div>
+      <h2>📝  NỘI DUNG</h2>
+      <div class="field">
+        <label for="title">Tiêu đề: <span id="title_count" class="dim">0 / {{ title_limit }}</span></label>
+        <input id="title" name="title" maxlength="{{ title_limit }}"
+               placeholder="Tiêu đề video (bắt buộc)..." required
+               oninput="document.getElementById('title_count').textContent = this.value.length + ' / {{ title_limit }}'">
+      </div>
+      <div class="field">
+        <label for="description">Mô tả: <span id="desc_count" class="dim">0 / {{ desc_limit }}</span></label>
+        <textarea id="description" name="description" maxlength="{{ desc_limit }}"
+                  oninput="document.getElementById('desc_count').textContent = this.value.length + ' / {{ desc_limit }}'"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent" style="background:#E65100;"></div>
+      <h2>⚙️  THIẾT LẬP ĐĂNG</h2>
+      <div class="row">
+        <div class="field">
+          <label for="privacy">Quyền riêng tư:</label>
+          <select id="privacy" name="privacy">
+            {% for label, enum in privacy_options %}
+              <option value="{{ label }}" {% if label == privacy_default %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="schedule">Lên lịch:</label>
+          <input id="schedule" name="schedule" placeholder="DD/MM/YYYY HH:MM">
+          <span class="hint">(trống = đăng ngay)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sticky-save">
+      <button type="submit" style="background:{{ colors.fb }};"
+              {% if not page_options %}disabled{% endif %}>▶  Đăng Facebook</button>
+      <span class="dim">Video được tải lên máy chủ rồi đăng ở tiến trình nền — đóng trình duyệt không làm dừng.</span>
+    </div>
+  </form>
+
+  {% if job %}
+    <div class="card">
+      <h2>Tiến trình <span class="dim mono">job {{ job.id }}</span></h2>
+      <p><strong id="job_state">{{ job.state }}</strong> <span class="dim" id="job_status">{{ job.status }}</span></p>
+      {% if job.result_link %}<p><a href="{{ job.result_link }}" target="_blank" rel="noopener">{{ job.result_link }}</a></p>{% endif %}
+      {% if job.error %}<div class="alert alert-err"><pre>{{ job.error }}</pre></div>{% endif %}
+      <pre id="job_log" style="max-height:260px; overflow:auto;">{% for l in job.log %}[{{ l.level }}] {{ l.message }}
+{% endfor %}</pre>
+    </div>
+    <script>
+      setInterval(async () => {
+        try {
+          const r = await fetch('/api/manual/facebook/status', {credentials:'same-origin'});
+          if (!r.ok) return;
+          const d = await r.json();
+          document.getElementById('job_state').textContent = d.state || '';
+          document.getElementById('job_status').textContent = d.status || '';
+          document.getElementById('job_log').textContent =
+            (d.log || []).map(l => '[' + l.level + '] ' + l.message).join('\n');
+        } catch (e) {}
+      }, 3000);
+    </script>
+  {% endif %}
+{% endblock %}

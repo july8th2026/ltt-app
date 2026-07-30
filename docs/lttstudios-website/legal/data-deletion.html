@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Deletion — LTTStudios</title>
+<meta name="description" content="How to delete your LTTStudios VideoBot data — self-service or email request. Completed within 30 days per GDPR.">
+<link rel="canonical" href="https://lttstudios.com/legal/data-deletion.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/data-deletion.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/data-deletion.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/data-deletion.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Data Deletion — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/legal/data-deletion.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Legal</span>
+    <h1>Data Deletion Instructions</h1>
+    <p class="text-muted">
+      LTTStudios VideoBot · Facebook App ID 2021063792619148<br>
+      Effective: 2026-06-02 · Version 2.0
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+  <h2>What data we store</h2>
+  <p>LTTStudios VideoBot is a <strong>desktop application</strong>. All user
+  data is stored <strong>locally on the user's own machine</strong> — we do
+  NOT operate any LTTStudios backend server that stores Facebook, TikTok, or
+  Google user data.</p>
+
+  <p>Data stored locally on the user's machine:</p>
+  <ul>
+    <li>Facebook Page <strong>access tokens</strong> (AES-128 Fernet-encrypted,
+      bound to Windows Machine GUID)</li>
+    <li>TikTok account access tokens (same encryption)</li>
+    <li>Page IDs and Page names of accounts connected to the app</li>
+    <li>Operation logs and audit trail (timestamps, post IDs — no caption content)</li>
+    <li>Temporary cached video files (auto-deleted after each upload by default)</li>
+    <li>Content history database (video hashes for duplicate detection, no video bytes stored)</li>
+  </ul>
+
+  <h2>How to delete your data</h2>
+
+  <h3>Option A — Self-service (instant)</h3>
+  <ol>
+    <li>Close the LTTStudios VideoBot application</li>
+    <li>Delete the folder containing the bot installation (this removes all
+      local data: tokens, logs, audit trail, content history database)</li>
+    <li>Revoke the app at
+      <a href="https://www.facebook.com/settings?tab=business_tools" target="_blank" rel="noopener">
+        Facebook Settings → Business Integrations
+      </a> — find <strong>"Lttstudios"</strong> and click <strong>Remove</strong>
+    </li>
+    <li>For TikTok: open the TikTok app → Settings and privacy → Security and
+      permissions → Manage app permissions → find LTTStudios → Remove</li>
+  </ol>
+  <p>This removes all access tokens, cached files, audit logs, and revokes
+  Facebook/TikTok access in a single workflow.</p>
+
+  <h3>Option B — Email request</h3>
+  <p>If you cannot perform Option A (e.g., you no longer have access to the
+  machine), email
+  <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a>
+  with:</p>
+  <ul>
+    <li>Subject line: <code>Data Deletion Request</code></li>
+    <li>Your Facebook user ID OR the email address used during the OAuth connection</li>
+    <li>Confirmation that you want all data associated with your account
+      deleted</li>
+  </ul>
+
+  <div class="alert alert-info">
+    <h4 style="margin-top:0">Response time</h4>
+    <p>We acknowledge within <strong>5 business days</strong> and complete
+    deletion within <strong>30 days</strong>, as required by GDPR Article 17
+    and the Meta Platform Terms.</p>
+  </div>
+
+  <h2>What you cannot delete from us</h2>
+  <p>Because we do not run a backend server, there is nothing on LTTStudios
+  infrastructure to delete. Content you have already published to your Facebook
+  Pages or TikTok account remains on those platforms and is governed by their
+  own data retention policies — to remove published posts, delete them directly
+  from your Page using the Facebook/TikTok UI or Meta Business Suite.</p>
+
+  <h2>Data Protection Officer (GDPR)</h2>
+  <p>
+    Name: LE THANH TRUNG<br>
+    Email: <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a><br>
+    Address: Mê Linh, Hà Nội, Vietnam
+  </p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

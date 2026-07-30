@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta Platform Compliance — LTTStudios</title>
+<meta name="description" content="How LTTStudios VideoBot complies with Meta Platform Terms, Developer Policies, and Community Standards. Scope-by-scope mapping.">
+<link rel="canonical" href="https://lttstudios.com/compliance/meta.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/meta.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/meta.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/compliance/meta.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Meta Platform Compliance — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/compliance/meta.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Compliance · Meta</span>
+    <h1>Meta Platform Compliance</h1>
+    <p class="lead">How we map every Meta Platform Term to specific bot behavior. Designed for fast reviewer verification.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Our compliance commitment</h2>
+    <p>LTTStudios VideoBot is built to comply with all
+    <a href="https://developers.facebook.com/terms/" target="_blank" rel="noopener">Meta Platform Terms</a>,
+    Developer Policies, and Community Standards. This page maps each policy
+    area to specific bot behavior so Meta reviewers and auditors can verify
+    compliance quickly.</p>
+
+    <h2>OAuth scopes &amp; their use</h2>
+    <table class="table">
+      <tr><th>Scope</th><th>What the bot does with it</th><th>Where in code</th></tr>
+      <tr>
+        <td><code>pages_show_list</code></td>
+        <td>Calls <code>GET /me/accounts</code> ONCE after OAuth to populate the Page picker. The list is cached locally and refreshed only on user action.</td>
+        <td><code>core/auth_manager.py:274</code></td>
+      </tr>
+      <tr>
+        <td><code>pages_manage_posts</code></td>
+        <td>Calls <code>POST /{page_id}/videos</code> (feed) and <code>POST /{page_id}/video_reels</code> (Reels) for user-supplied content only. Each call requires explicit user action (sheet row or manual button).</td>
+        <td><code>core/graph_uploader.py</code>, <code>core/reels_uploader.py</code></td>
+      </tr>
+      <tr>
+        <td><code>pages_read_engagement</code></td>
+        <td>Calls <code>GET /{video_id}/video_insights</code> for the Monitor dashboard. Only fetches data for videos the user published through the bot.</td>
+        <td><code>core/insights_fetcher.py</code></td>
+      </tr>
+      <tr>
+        <td><code>pages_manage_engagement</code></td>
+        <td>Optional first-comment via <code>POST /{video_id}/comments</code>. Comment text comes from user's sheet column. Reels excluded.</td>
+        <td><code>core/facebook/commenter.py</code></td>
+      </tr>
+    </table>
+
+    <h2>Platform Terms alignment</h2>
+
+    <h3>Term: Use APIs only for permitted purposes</h3>
+    <p>The bot only calls documented endpoints in <code>graph.facebook.com</code>
+    for the user's own Pages. No scraping, no undocumented endpoints, no
+    mobile API spoofing. Full endpoint list:
+    <a href="/architecture.html">Architecture page</a>.</p>
+
+    <h3>Term: Don't enable spam, abuse, or harassment</h3>
+    <p>Multi-layer anti-spam built in:</p>
+    <ul>
+      <li>Hard rate limits: 4h between same-Page posts, 3 posts/Page/day</li>
+      <li>SHA-256 + perceptual hash dedup (30-day window)</li>
+      <li>Page warm-up cap for Pages &lt;30 days old</li>
+      <li>Circuit breaker on FB error codes 4, 17, 32, 368 (spam-related)</li>
+      <li>Caption Rotator disabled by default (no auto-CTA)</li>
+      <li>Active hours window (default 7am-10pm) — no late-night spam</li>
+    </ul>
+
+    <h3>Term: Respect rate limits</h3>
+    <p>Bot honors documented FB rate limits with conservative client-side
+    enforcement that's stricter than Meta's actual limits. Backoff on
+    <code>code=4</code> (rate limit), <code>code=32</code> (rate limit),
+    <code>code=368</code> (spam-related cooldown).</p>
+
+    <h3>Term: Use user data only as authorized</h3>
+    <p>User authorizes specific scopes via OAuth. Bot never accesses:</p>
+    <ul>
+      <li>Friends lists (no <code>user_friends</code> scope)</li>
+      <li>Private messages (no <code>read_mailbox</code> scope)</li>
+      <li>Other Pages the user doesn't admin</li>
+      <li>Any data outside what OAuth explicitly granted</li>
+    </ul>
+
+    <h3>Term: Provide privacy policy + data deletion</h3>
+    <ul>
+      <li>Privacy Policy: <a href="/legal/privacy.html">/legal/privacy.html</a> — comprehensive disclosure of all FB data accessed and how it's used</li>
+      <li>Data Deletion: <a href="/legal/data-deletion.html">/legal/data-deletion.html</a> — self-service + email request, 30-day completion per GDPR Art. 17</li>
+      <li>DPA: <a href="/legal/dpa.html">/legal/dpa.html</a> — for enterprise customers</li>
+    </ul>
+
+    <h3>Term: Notify users of breaches</h3>
+    <p>Our security policy commits to 72-hour breach notification per GDPR
+    Article 33. See <a href="/legal/security.html">Security policy</a>.</p>
+
+    <h2>App Review readiness</h2>
+    <p>The bot is in active preparation for Meta App Review submission. Key
+    artifacts already in place:</p>
+    <ul>
+      <li>✅ All 4 required permissions actually used (no over-request)</li>
+      <li>✅ Public Privacy Policy at lttstudios.com/legal/privacy.html</li>
+      <li>✅ Public Terms of Service at lttstudios.com/legal/terms.html</li>
+      <li>✅ Public Data Deletion at lttstudios.com/legal/data-deletion.html</li>
+      <li>✅ Public Security disclosure at lttstudios.com/legal/security.html</li>
+      <li>✅ App icon 1024×1024 ready</li>
+      <li>✅ Test environment documented for reviewer</li>
+      <li>⏳ Business Verification in progress (Domain Verification via DNS TXT)</li>
+      <li>⏳ Use case screencasts being recorded for each permission</li>
+    </ul>
+
+    <p>Submission planned for Q3 2026 once Business Verification approves.</p>
+
+    <h2>For Meta reviewers</h2>
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">Cross-references for quick verification</h4>
+      <ul>
+        <li><strong>What the app does</strong>: <a href="/products.html">Products page</a> + <a href="/architecture.html">Architecture page</a></li>
+        <li><strong>How data is stored</strong>: <a href="/legal/privacy.html">Privacy Policy Section 3.1</a></li>
+        <li><strong>How data is protected</strong>: <a href="/legal/security.html">Security page</a></li>
+        <li><strong>How to test</strong>: contact us for reviewer test environment + test user credentials</li>
+      </ul>
+    </div>
+
+    <h2>Contact</h2>
+    <p>Compliance questions:
+    <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a><br>
+    Security concerns:
+    <a href="mailto:security@lttstudios.com">security@lttstudios.com</a></p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

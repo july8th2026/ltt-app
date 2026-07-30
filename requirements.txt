@@ -1,0 +1,17 @@
+# Core runtime — Google Sheets, the Graph / TikTok HTTP clients, and the
+# encrypted token store. Shared by the web app and worker_main.py.
+#
+# Dropped when the Tkinter desktop app was removed (W6): customtkinter,
+# Pillow, qrcode[pil] (QR code for cross-machine OAuth), and
+# google-auth-oauthlib — that last one only ever provided InstalledAppFlow,
+# which needs a browser and is now refused outright on a server
+# (utils/sheet_client.py::_load_credentials).
+#
+# Can tren ("<") co mat vi cung mot ly do da ghi trong requirements-server.txt:
+# khong de mot ban cai lai keo ve major moi va doi hanh vi ma khong ai quyet dinh.
+google-api-python-client>=2.120.0,<3.0
+google-auth>=2.28.0,<3.0
+requests>=2.31.0,<3.0
+pytz>=2024.1
+tzdata>=2024.1
+cryptography>=42.0.0,<47.0

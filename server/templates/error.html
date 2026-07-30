@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — LTT AI Studio{% endblock %}
+{% block content %}
+  <div class="card">
+    <h1 style="margin-top:0;">{{ code }}</h1>
+    <p>{{ message }}</p>
+    <p><a href="/" style="color:#7aa2f7;">← Về trang chính</a></p>
+    {% if correlation_id %}
+      <p style="color:#6B7280; font-size:12px; margin-bottom:0;">
+        Mã tra cứu: <code>{{ correlation_id }}</code>
+      </p>
+    {% endif %}
+  </div>
+{% endblock %}

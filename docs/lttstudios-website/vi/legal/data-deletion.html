@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xoá Dữ liệu — LTTStudios</title>
+<meta name="description" content="Hướng dẫn xoá dữ liệu LTTStudios VideoBot. Self-service hoặc yêu cầu qua email.">
+<link rel="canonical" href="https://lttstudios.com/vi/legal/data-deletion.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/data-deletion.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/data-deletion.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/data-deletion.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Xoá Dữ liệu — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/legal/data-deletion.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Pháp lý</span>
+    <h1>Hướng dẫn Xoá Dữ liệu</h1>
+    <p class="lead">LTTStudios VideoBot · Facebook App ID 2021063792619148 · Hiệu lực 02-06-2026</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+  <h2>Dữ liệu chúng tôi lưu</h2>
+  <p>LTTStudios VideoBot là <strong>ứng dụng desktop</strong>. Toàn bộ
+  dữ liệu user lưu <strong>trên máy của chính user</strong> — chúng tôi
+  KHÔNG vận hành server LTTStudios lưu dữ liệu Facebook, TikTok, Google.</p>
+
+  <p>Dữ liệu lưu trên máy user:</p>
+  <ul>
+    <li>Token truy cập Facebook Page (AES-128 Fernet, gắn Machine GUID Windows)</li>
+    <li>Token TikTok (same encryption)</li>
+    <li>Page ID + tên các Page đã connect</li>
+    <li>Log thao tác + audit trail (timestamp, post ID — không lưu caption)</li>
+    <li>File video cache tạm (auto xoá sau upload mặc định)</li>
+    <li>DB lịch sử content (chỉ hash để dedup, không lưu byte video)</li>
+  </ul>
+
+  <h2>Cách xoá dữ liệu</h2>
+
+  <h3>Cách A — Tự xoá (tức thời)</h3>
+  <ol>
+    <li>Đóng app LTTStudios VideoBot</li>
+    <li>Xoá folder chứa bot (xoá toàn bộ dữ liệu local)</li>
+    <li>Huỷ app tại
+      <a href="https://www.facebook.com/settings?tab=business_tools" target="_blank" rel="noopener">
+        Facebook Settings → Business Integrations
+      </a> — tìm <strong>"Lttstudios"</strong> → <strong>Xoá</strong>
+    </li>
+    <li>TikTok: app TikTok → Cài đặt &amp; quyền riêng tư → Bảo mật &amp;
+      permission → Quản lý app → tìm LTTStudios → Remove</li>
+  </ol>
+
+  <h3>Cách B — Yêu cầu qua email</h3>
+  <p>Nếu không thể làm Cách A, email
+  <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a>
+  kèm:</p>
+  <ul>
+    <li>Tiêu đề: <code>Data Deletion Request</code></li>
+    <li>FB user ID HOẶC email dùng khi OAuth</li>
+    <li>Xác nhận muốn xoá toàn bộ dữ liệu liên quan</li>
+  </ul>
+
+  <div class="alert alert-info">
+    <h4 style="margin-top:0">Thời gian phản hồi</h4>
+    <p>Xác nhận trong <strong>5 business days</strong> và hoàn tất xoá
+    trong <strong>30 ngày</strong>, theo GDPR Điều 17 và Meta Platform Terms.</p>
+  </div>
+
+  <h2>Không xoá được gì từ chúng tôi</h2>
+  <p>Vì chúng tôi không chạy backend, không có gì trên hạ tầng LTTStudios
+  để xoá. Nội dung bạn đã publish lên Facebook Pages hay TikTok vẫn còn trên
+  platform đó theo policy retention của họ — muốn xoá post đã publish, xoá
+  trực tiếp từ Page Facebook/TikTok UI.</p>
+
+  <h2>Data Protection Officer (GDPR)</h2>
+  <p>
+    Name: LE THANH TRUNG<br>
+    Email: <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a><br>
+    Địa chỉ: Mê Linh, Hà Nội, Việt Nam
+  </p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+
+</body>
+</html>

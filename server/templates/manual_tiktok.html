@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Manual TikTok — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>Manual TikTok</strong>{% endblock %}
+{% block content %}
+
+  {% if error %}<div class="alert alert-err"><pre>{{ error }}</pre></div>{% endif %}
+  {% if notice %}<div class="alert alert-ok">{{ notice }}</div>{% endif %}
+
+  {% if not audit_approved %}
+    <div class="alert alert-warn" style="color:#FFCC02;">
+      ⚠  Chờ kiểm duyệt TikTok — Chỉ Draft Upload &amp; SELF_ONLY được phép đăng.<br>
+      &nbsp;&nbsp;&nbsp;Bật 'tiktok_audit_approved=true' trong Cài đặt khi app được phê duyệt.
+    </div>
+  {% endif %}
+
+  {% if not accounts %}
+    <div class="alert alert-warn">
+      <strong style="color:var(--warn);">Chưa có tài khoản TikTok</strong>
+      <p class="muted" style="margin:6px 0 0;">
+        TikTok bắt buộc OAuth qua trình duyệt — xem <a href="/tiktok">Tài khoản TikTok</a>.
+      </p>
+    </div>
+  {% endif %}
+
+  {% if pending %}
+    {# Bước 2 — màn xác nhận bắt buộc (yêu cầu audit của TikTok) #}
+    <div class="card">
+      <div class="card-accent" style="background:#9C27B0;"></div>
+      <h2>🎵  Xác nhận đăng video lên TikTok</h2>
+
+      {% if pending.info.fetch_error %}
+        <div class="alert alert-warn" style="margin:0 0 12px;">{{ pending.info.fetch_error }}</div>
+      {% endif %}
+
+      <table>
+        <tr><th style="width:150px;">Tiêu đề</th><td>{{ pending.title[:80] }}</td></tr>
+        <tr><th>Video</th><td class="mono">{{ pending.video_name }}</td></tr>
+        <tr><th>Loại đăng</th><td>{{ pending.post_label }}</td></tr>
+        <tr><th>Tài khoản</th><td>{{ pending.account_label }}
+          {% if pending.info.creator_username %}<span class="dim">(@{{ pending.info.creator_username }})</span>{% endif %}
+        </td></tr>
+      </table>
+
+      <form method="post" action="/manual/tiktok/publish" style="max-width:none; margin-top:14px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="account_id" value="{{ pending.account_id }}">
+        <input type="hidden" name="post_label" value="{{ pending.post_label }}">
+        <input type="hidden" name="title" value="{{ pending.title }}">
+        <input type="hidden" name="description" value="{{ pending.description }}">
+        <input type="hidden" name="video_path" value="{{ pending.video_path }}">
+
+        <h2 style="margin-top:14px;">🔐  Quyền riêng tư (bạn chọn)</h2>
+        <div class="field">
+          <select name="privacy_level" required>
+            {% for enum, label in pending.privacy_options %}
+              <option value="{{ enum }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if pending.privacy_options|length == 1 %}
+            <span class="hint" style="color:var(--warn);">
+              ℹ  App chưa được TikTok duyệt audit, chỉ có thể đăng SELF_ONLY (riêng tư).
+            </span>
+          {% endif %}
+        </div>
+
+        <h2 style="margin-top:14px;">💬  Tương tác (theo cài đặt creator)</h2>
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" name="allow_comment" value="1"
+                   {% if pending.info.comment_disabled %}disabled{% else %}checked{% endif %}>
+            Cho phép comment
+          </label>
+          {% if pending.info.comment_disabled %}
+            <span class="hint" style="color:var(--warn);">🔒 Creator đã tắt comment ở cài đặt TikTok</span>
+          {% endif %}
+
+          <label class="check">
+            <input type="checkbox" name="allow_duet" value="1"
+                   {% if pending.info.duet_disabled %}disabled{% else %}checked{% endif %}>
+            Cho phép Duet
+          </label>
+          {% if pending.info.duet_disabled %}
+            <span class="hint" style="color:var(--warn);">🔒 Creator đã tắt Duet ở cài đặt TikTok</span>
+          {% endif %}
+
+          <label class="check">
+            <input type="checkbox" name="allow_stitch" value="1"
+                   {% if pending.info.stitch_disabled %}disabled{% else %}checked{% endif %}>
+            Cho phép Stitch
+          </label>
+          {% if pending.info.stitch_disabled %}
+            <span class="hint" style="color:var(--warn);">🔒 Creator đã tắt Stitch ở cài đặt TikTok</span>
+          {% endif %}
+        </div>
+
+        <h2 style="margin-top:14px;">📢  Khai báo nội dung</h2>
+        <div class="field">
+          <label class="check"><input type="checkbox" name="is_ai" value="1">
+            🤖  Nội dung do AI tạo / chỉnh sửa (AI-generated)</label>
+          <span class="hint">Bắt buộc tick nếu video tạo bằng AI tool. TikTok yêu cầu khai báo.</span>
+          <label class="check"><input type="checkbox" name="branded" value="1">
+            💼  Nội dung quảng cáo / tài trợ (Branded content)</label>
+          <span class="hint">Tick nếu là sponsored/branded post. Bắt buộc theo Branded Content Policy.</span>
+        </div>
+
+        <h2 style="margin-top:14px;">✓  Xác nhận</h2>
+        <div class="field">
+          <label class="check">
+            <input type="checkbox" name="acknowledge" value="1" required
+                   onchange="document.getElementById('tt_publish').disabled = !this.checked">
+            Tôi xác nhận nội dung này tuân thủ Điều khoản dịch vụ và Nguyên tắc cộng đồng của TikTok.
+          </label>
+        </div>
+
+        <div style="margin-top:14px; display:flex; gap:10px;">
+          <button id="tt_publish" type="submit" style="background:#1B5E20;" disabled>
+            ✅  Xác nhận và Đăng
+          </button>
+          <a class="btn btn-ghost" href="/manual/tiktok">❌  Huỷ</a>
+        </div>
+      </form>
+    </div>
+
+  {% else %}
+    {# Bước 1 — nhập nội dung #}
+    <form method="post" action="/manual/tiktok/prepare" enctype="multipart/form-data" style="max-width:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="card">
+        <div class="card-accent" style="background:#0277BD;"></div>
+        <h2>🎬  FILE VIDEO</h2>
+        <div class="field">
+          <label for="video">Video:</label>
+          <input id="video" type="file" name="video" accept="{{ accept }}" required>
+          <span class="hint">
+            Hỗ trợ: {{ accept }} · tối đa 4 GB · 600 giây<br>
+            ℹ  TikTok không hỗ trợ thumbnail tuỳ chỉnh — cover chọn tự động từ khung video.
+          </span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-accent" style="background:#6A1B9A;"></div>
+        <h2>📝  NỘI DUNG</h2>
+        <div class="field">
+          <label for="title">Tiêu đề: <span id="tt_count" class="dim">0 / {{ caption_limit }}</span></label>
+          <input id="title" name="title" maxlength="{{ caption_limit }}" required oninput="ttCount()">
+        </div>
+        <div class="field">
+          <label for="description">Mô tả:</label>
+          <textarea id="description" name="description" maxlength="{{ caption_limit }}"
+                    oninput="ttCount()"></textarea>
+          <span class="hint">Tiêu đề + mô tả tính chung giới hạn {{ caption_limit }} ký tự.</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-accent" style="background:#6A0DAD;"></div>
+        <h2>🎵  ĐĂNG LÊN TIKTOK (THỦ CÔNG)</h2>
+        <div class="row">
+          <div class="field">
+            <label for="account_id">Tài khoản TikTok:</label>
+            <select id="account_id" name="account_id" required {% if not accounts %}disabled{% endif %}>
+              {% for a in accounts %}<option value="{{ a.account_id }}">{{ a.label }}</option>{% endfor %}
+              {% if not accounts %}<option value="">(Chưa kết nối TikTok)</option>{% endif %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="post_label">Loại đăng:</label>
+            <select id="post_label" name="post_label">
+              {% for label, pt, pl in post_options %}<option value="{{ label }}">{{ label }}</option>{% endfor %}
+            </select>
+            {% if audit_hint %}<span class="hint" style="color:var(--warn);">{{ audit_hint }}</span>{% endif %}
+          </div>
+        </div>
+        <p class="dim" style="margin:6px 0 0;">ℹ  Bot sẽ hiển thị màn xác nhận trước khi đăng.</p>
+      </div>
+
+      <div class="sticky-save">
+        <button type="submit" style="background:{{ colors.tt }};"
+                {% if not accounts %}disabled{% endif %}>🎵  Tiếp tục → xác nhận</button>
+        <span class="dim">Bước xác nhận là yêu cầu bắt buộc của TikTok, không thể bỏ qua.</span>
+      </div>
+    </form>
+
+    <script>
+      function ttCount() {
+        var t = document.getElementById('title').value.length;
+        var d = document.getElementById('description').value.length;
+        var el = document.getElementById('tt_count');
+        el.textContent = (t + d) + ' / {{ caption_limit }}';
+        el.style.color = (t + d) > {{ caption_limit }} ? 'var(--err)' : '';
+      }
+    </script>
+  {% endif %}
+
+  {% if job %}
+    <div class="card">
+      <h2>Tiến trình <span class="dim mono">job {{ job.id }}</span></h2>
+      <p><strong id="job_state">{{ job.state }}</strong>
+         <span class="dim" id="job_status">{{ job.status }}</span></p>
+      {% if job.error %}<div class="alert alert-err"><pre>{{ job.error }}</pre></div>{% endif %}
+      <pre id="job_log" style="max-height:260px; overflow:auto;">{% for l in job.log %}[{{ l.level }}] {{ l.message }}
+{% endfor %}</pre>
+    </div>
+    <script>
+      setInterval(function () {
+        fetch('/api/manual/tiktok/status', {credentials: 'same-origin'})
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d) return;
+            document.getElementById('job_state').textContent = d.state || '';
+            document.getElementById('job_status').textContent = d.status || '';
+            document.getElementById('job_log').textContent =
+              (d.log || []).map(function (l) { return '[' + l.level + '] ' + l.message; }).join('\n');
+          })
+          .catch(function () {});
+      }, 3000);
+    </script>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,144 @@
+# Hướng dẫn cho Claude
+
+Đọc file này trước khi làm bất cứ việc gì trong thư mục này.
+
+## Đây là gì
+
+Nền tảng nhiều app tự động hoá, chạy trên Windows. Mỗi app một đường dẫn dưới
+`app.lttstudios.com`. Vào Internet qua **Cloudflare Tunnel** (không mở cổng,
+không cần IP tĩnh).
+
+Thư mục này vừa là **mã nguồn** vừa là **bộ cài**. Người dùng chép nguyên nó
+sang máy chủ, rồi mở Claude Code **ngay trên máy đó**.
+
+## Kiểm tra đầu tiên: đang ở máy nào?
+
+```powershell
+Test-Path C:\LTTPlatform
+```
+
+- **Có** → đây là máy chủ, đã cài. Làm việc bình thường, cẩn thận vì đang chạy thật.
+- **Không** → hoặc là máy phát triển, hoặc là máy chủ chưa cài. Hỏi người dùng.
+
+## Cài lần đầu trên máy chủ
+
+Chạy đúng thứ tự. **Đừng bỏ qua bước 1.**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup\1-kiem-tra-may.ps1   # chỉ đọc
+powershell -ExecutionPolicy Bypass -File .\setup\2-cai-dat.ps1        # cần Administrator
+powershell -ExecutionPolicy Bypass -File .\setup\3-cloudflare.ps1     # DỪNG chờ người dùng
+powershell -ExecutionPolicy Bypass -File .\setup\4-nghiem-thu.ps1     # chỉ đọc
+```
+
+**Bước 2 in mật khẩu admin đúng MỘT LẦN.** Nhắc người dùng lưu lại ngay. Mật
+khẩu không lưu ở đâu cả, chỉ lưu dạng hash.
+
+**Bước 3 sẽ dừng ở phần đăng nhập Cloudflare.** `cloudflared tunnel login` in
+ra một đường link rồi **đợi**. Đưa link đó cho người dùng, họ mở trên trình
+duyệt máy nào cũng được, đăng nhập và chọn tên miền `lttstudios.com`. Xong thì
+script tự chạy tiếp. Đừng ngắt lệnh vì tưởng nó treo.
+
+Giữa bước 2 và 3, người dùng cần sửa `C:\LTTPlatform\data\config.json`
+(Sheet ID, tên cột, thông tin app).
+
+## Bố cục trên máy chủ sau khi cài
+
+```
+C:\LTTPlatform\
+├── app\            MÃ NGUỒN — bị xoá và thay TOÀN BỘ mỗi lần cập nhật
+├── app.previous\   bản trước, dùng để rollback
+├── data\           dữ liệu vận hành — cập nhật KHÔNG chạm tới
+├── secrets\        app.env: khoá phiên, khoá mã hoá token, hash mật khẩu
+├── venv\           Python + thư viện
+├── cloudflare\     config.yml + credentials tunnel
+├── logs\
+└── tools\          nssm.exe, cloudflared.exe
+```
+
+**Đừng bao giờ sửa file trực tiếp trong `app\`.** Lần cập nhật sau là mất
+trắng, mất âm thầm, không báo lỗi. Sửa trong thư mục nguồn rồi chạy lại
+`setup\2-cai-dat.ps1`.
+
+## Quy tắc bắt buộc
+
+**1. Ghi file cấu hình phải KHÔNG BOM.**
+```powershell
+[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding($false)))
+```
+Đừng dùng `Out-File -Encoding utf8` hay `Set-Content -Encoding utf8` —
+PowerShell 5.1 chèn BOM, `json.load()` vỡ, và `/health/ready` trả 503 trong
+khi dịch vụ vẫn chạy bình thường. Lỗi này **đã thực sự làm sập production** ở
+dự án này. Có test chốt (`tests/test_61_setup_scripts.py`).
+
+**2. File `.ps1` phải thuần ASCII.** PowerShell 5.1 đọc `.ps1` không BOM theo
+bảng mã ANSI; một dấu tiếng Việt làm hỏng cả câu lệnh và báo lỗi ở dòng khác.
+
+**3. Đừng viết Python inline qua PowerShell.** PowerShell nuốt dấu ngoặc kép
+khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
+
+**4. Chạy test trước khi báo xong.**
+```powershell
+python -m pytest -q                    # phải xanh hết
+python tools\scan_source_secrets.py    # phải 0 finding
+```
+
+**5. Kiểm tra thật bằng trình duyệt sau mỗi thay đổi giao diện.** Test xanh
+không chứng minh trang hiển thị đúng. Việc này đã hai lần bắt được lỗi mà test
+không thấy.
+
+## Thêm app mới
+
+Thêm **một thư mục** vào `apps/`. **Không sửa** `platform_core/` hay `server/`.
+
+Nếu thấy buộc phải sửa nền tảng thì **dừng lại và nói rõ vì sao** — đó là dấu
+hiệu hợp đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không đi vòng.
+
+Xem `docs/03_THEM_APP_MOI.md`. Copy `apps/demo/` làm khuôn.
+
+## Giới hạn Cloudflare quyết định cách viết app
+
+| Giới hạn | Free/Pro | Hệ quả |
+|---|---|---|
+| Upload mỗi request | **100 MB** | Lớn hơn bị HTTP 413 trước khi tới máy chủ |
+| Chờ phản hồi | **100 giây** | Lâu hơn bị 524 dù bot vẫn chạy tốt |
+| Serve video lớn ngoài Cloudflare | hạn chế ToS | Phải chuyển sang R2 |
+
+**Việc dài hơn vài giây bắt buộc đi qua hàng đợi job**, không được làm đồng bộ
+trong một request. `apps/demo` chạy thẳng trong request chỉ vì nó mất vài
+mili-giây — **đừng lấy đó làm mẫu cho app thật**.
+
+Khi chạm trần: thêm backend R2 vào `platform_core/storage.py`, **không sửa app
+nào**.
+
+## Việc còn dở
+
+| Hạng mục | Trạng thái |
+|---|---|
+| Vỏ nền tảng + hợp đồng app | ✅ xong, có test |
+| App socialbot (FB+TikTok) | ✅ chạy được |
+| App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
+| Hàng đợi job dùng chung | ❌ chưa |
+| Nhiều người dùng + credit thật | ❌ chưa |
+
+Hai mục cuối **bắt buộc phải có trước khi mở cho khách ngoài**. Hiện chỉ có
+một tài khoản admin duy nhất từ biến môi trường.
+
+## Không bao giờ commit hay copy đi
+
+```
+data/config.json      data/*.enc      secrets/
+cloudflare/config.yml cloudflare/*.json
+```
+
+## Tài liệu
+
+| File | Nội dung |
+|---|---|
+| `docs/00_BAT_DAU_TU_DAY.md` | bố cục, nguyên tắc |
+| `docs/01_COPY_LEN_SERVER.md` | chuyển sang máy chủ + cập nhật |
+| `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
+| `docs/03_THEM_APP_MOI.md` | thêm app |
+| `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |
+| `docs/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
+| `AGENTS.md` | quy ước kỹ thuật chi tiết |

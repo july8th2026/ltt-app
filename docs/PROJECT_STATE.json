@@ -1,0 +1,277 @@
+{
+  "_README": "Machine-readable state of LTTStudio VideoBot project. See HANDOFF.md for narrative.",
+  "_last_updated": "2026-05-15",
+
+  "project": {
+    "name": "LTTStudio VideoBot",
+    "version": "1.0.0",
+    "brand": "LTTStudio",
+    "domain": "lttstudio.top",
+    "owner_email": "letammeiu@gmail.com",
+    "language": "Python 3.10+",
+    "gui_framework": "CustomTkinter",
+    "deployment": "Desktop app (Windows) + static website (inet.vn shared hosting)"
+  },
+
+  "paths": {
+    "bot_root":            "D:\\CODE AI\\BOT UP FB + TikTok\\BOT UP Facebook",
+    "website_root":        "D:\\CODE AI\\BOT UP FB + TikTok\\lttstudio-web",
+    "bot_entry":           "main.py",
+    "bot_run_script":      "run_gui.bat",
+    "website_preview":     "preview.bat",
+    "config_file":         "data/config.json",
+    "fb_token_store":      "data/tokens.enc",
+    "tiktok_token_store":  "data/tiktok_tokens.enc",
+    "audit_log":           "data/audit_log.jsonl"
+  },
+
+  "credentials": {
+    "meta_app": {
+      "status": "created",
+      "app_id": "2021063792619148",
+      "app_secret": null,
+      "app_secret_storage_policy": "NEVER store secret values in source or documentation",
+      "app_secret_needs_reset": true,
+      "_secret_reset_reason": "Secret was visible in chat screenshots — must reset via Meta App Settings → Cơ bản",
+      "redirect_uri_old_failed": "http://localhost:8765/callback",
+      "redirect_uri_new_target": "https://lttstudio.top/auth/fb-callback.html",
+      "permissions_granted": [
+        "pages_show_list",
+        "pages_manage_posts",
+        "pages_manage_engagement",
+        "pages_read_engagement",
+        "pages_read_user_content",
+        "email",
+        "read_insights",
+        "public_profile",
+        "business_management"
+      ],
+      "mode": "Development",
+      "use_case_added": "Quản lý mọi thứ trên Trang"
+    },
+    "tiktok_app": {
+      "status": "not_yet_created",
+      "client_key": null,
+      "client_secret": null,
+      "redirect_uri_target": "https://lttstudio.top/legal/callback.html",
+      "scopes_planned": "user.info.basic,video.upload,video.publish,comment.create",
+      "audit_approved": false
+    },
+    "hosting": {
+      "provider": "inet.vn",
+      "plan": "WordPress WP-H1",
+      "monthly_cost_vnd": 39000,
+      "domain_registered": true,
+      "ssl_active": true,
+      "website_deployed": true,
+      "email_mx_setup": false
+    }
+  },
+
+  "tests": {
+    "bot_pytest": {
+      "total": 554,
+      "passing": 554,
+      "failing": 0,
+      "status": "PASS"
+    },
+    "gui_smoke_test": {
+      "total_tabs": 6,
+      "passing": 6,
+      "tabs": ["Sheet Runner", "Vận hành thủ công", "Tài khoản FB", "Tài khoản TikTok", "Monitor", "Cài đặt"],
+      "status": "PASS"
+    },
+    "web_validator": {
+      "total_pages": 17,
+      "passing": 17,
+      "status": "PASS"
+    },
+    "gui_audit_score": {
+      "final": 100,
+      "max": 100,
+      "loops_performed": 6,
+      "status": "PASS"
+    }
+  },
+
+  "completed_phases": [
+    {"id": "phase_1_to_9", "description": "Original TikTok integration phases", "status": "done"},
+    {"id": "code_audit_34_issues", "description": "All 34 code audit findings fixed (BUG-01..07, INC-03..05, OPT-04, P0-P3 fixes)", "status": "done"},
+    {"id": "gui_audit_6_loops", "description": "6 rounds of GUI audit cycles to reach 100/100", "status": "done"},
+    {"id": "tiktok_commenter", "description": "Stage 7: TikTokCommenter module + 23 tests", "status": "done"},
+    {"id": "facebook_commenter", "description": "Stage 7: FacebookCommenter module + 25 tests", "status": "done"},
+    {"id": "configurable_redirect_uri", "description": "Both FB and TikTok support meta_redirect_uri / tiktok_redirect_uri config", "status": "done"},
+    {"id": "website_v1", "description": "Initial website (14 pages) deployed to lttstudio.top", "status": "done"},
+    {"id": "website_redesign", "description": "Menu restructure + 3 new feature pages (FB/TT/Excel) + 404 fix", "status": "done"},
+    {"id": "facebook_oauth_bridge_html", "description": "Created lttstudio-web/auth/fb-callback.html (NOT yet uploaded)", "status": "done"},
+    {"id": "meta_app_creation", "description": "Created Facebook App with App ID 2021063792619148", "status": "done"},
+    {"id": "documentation", "description": "Workflow docs + submission docs + version.py", "status": "done"}
+  ],
+
+  "pending_tasks": [
+    {
+      "id": 1,
+      "priority": "P0_critical",
+      "title": "Upload fb-callback.html to Hostinger",
+      "description": "Upload lttstudio-web/auth/fb-callback.html to inet.vn public_html/auth/ folder",
+      "verify": "Open https://lttstudio.top/auth/fb-callback.html in browser — should show spinner",
+      "blocker_for": ["FB OAuth flow"]
+    },
+    {
+      "id": 2,
+      "priority": "P0_critical",
+      "title": "Configure new Redirect URI in Facebook Developer Portal",
+      "description": "Replace http://localhost:8765/callback with https://lttstudio.top/auth/fb-callback.html in FB Login settings",
+      "verify": "Lưu thay đổi không bị reject",
+      "blocker_for": ["FB OAuth flow"]
+    },
+    {
+      "id": 3,
+      "priority": "P0_critical",
+      "title": "Reset App Secret (đã lộ trong chat)",
+      "description": "Click 'Đặt lại' next to App Secret in Meta App Settings → Cơ bản. Copy new secret.",
+      "verify": "Secret cũ không còn valid"
+    },
+    {
+      "id": 4,
+      "priority": "P0_critical",
+      "title": "Update bot Settings with credentials",
+      "description": "Tab Cài đặt → META APP → paste new App Secret + meta_redirect_uri → Lưu",
+      "verify": "data/config.json contains updated values"
+    },
+    {
+      "id": 5,
+      "priority": "P0_critical",
+      "title": "Test Facebook OAuth flow end-to-end",
+      "description": "Tab Tài khoản FB → Kết nối → verify Chrome opens, auth succeeds, pages list appears",
+      "verify": "Bot shows list of user's FB pages, can tick them"
+    },
+    {
+      "id": 6,
+      "priority": "P1_high",
+      "title": "Create TikTok Developer Portal app",
+      "description": "developers.tiktok.com → My Apps → Create with redirect https://lttstudio.top/legal/callback.html",
+      "verify": "Get Client Key + Client Secret"
+    },
+    {
+      "id": 7,
+      "priority": "P1_high",
+      "title": "Update bot with TikTok credentials",
+      "description": "Tab Cài đặt → TIKTOK → paste Client Key/Secret → Lưu",
+      "verify": "TikTok OAuth flow works"
+    },
+    {
+      "id": 8,
+      "priority": "P2_medium",
+      "title": "Record demo video for TikTok audit",
+      "description": "Follow docs/tiktok-submission/demo-video-script.md (2-3 min showing OAuth + upload flow)",
+      "verify": "Upload to YouTube unlisted"
+    },
+    {
+      "id": 9,
+      "priority": "P2_medium",
+      "title": "Setup email MX records",
+      "description": "Create email accounts: support@/security@/privacy@/report@lttstudio.top in inet.vn cPanel",
+      "verify": "Send test email"
+    },
+    {
+      "id": 10,
+      "priority": "P2_medium",
+      "title": "Submit TikTok Audit",
+      "description": "Provide demo video URL + scope justifications + app icon → Submit for review",
+      "verify": "Wait 7-14 days for TikTok response"
+    },
+    {
+      "id": 11,
+      "priority": "P3_optional",
+      "title": "Facebook App Review (Live mode)",
+      "description": "Only needed if distributing bot publicly. For personal/team use, Development mode is sufficient.",
+      "verify": "Not required for v1.0"
+    }
+  ],
+
+  "architecture_summary": {
+    "bot_modules": {
+      "facebook": "core/facebook/ — publisher_service, commenter, error_codes",
+      "tiktok": "core/tiktok/ — 13 files including publisher_service, commenter, compliance_guard, spam_check, status_poller, etc.",
+      "shared": "core/upload_engine, graph_client, sheet_runner, token_store, etc.",
+      "gui": "gui/ — 10 files (main_window, account_tab, tiktok_account_tab, operation_tab, sheet_runner_tab, monitor_tab, settings_tab, result_tabs, publish_confirm_dialog, about_dialog, tooltip)"
+    },
+    "website_structure": {
+      "pages_total": 17,
+      "folders": ["", "components", "features", "products/videobot", "legal", "auth", "support", "assets", "_test", ".well-known"],
+      "components_injected_via_js": ["header.html", "footer.html"],
+      "css_files": 5,
+      "js_files": 1,
+      "static_only": true,
+      "needs_http_server": true
+    },
+    "workflow_stages": {
+      "tiktok": [
+        "0_job_intake",
+        "1_account_resolution",
+        "2_token_freshness",
+        "3_compliance_preflight",
+        "4_upload_init",
+        "5_chunk_upload",
+        "6_status_polling",
+        "7_comment_optional",
+        "8_result_audit"
+      ],
+      "facebook": [
+        "0_job_intake",
+        "1_token_page_resolution",
+        "2_token_freshness",
+        "3_rate_limiting",
+        "4_upload_dispatch",
+        "5_multiphase_upload",
+        "6_postupload_extras",
+        "7_comment_optional",
+        "8_result_audit"
+      ]
+    }
+  },
+
+  "known_issues": [
+    {
+      "id": "website_file_protocol",
+      "description": "Website requires HTTP server (preview.bat or Live Server) — file:// breaks fetch() + absolute paths",
+      "severity": "info",
+      "fix": "Documented — use preview.bat or visit https://lttstudio.top/"
+    },
+    {
+      "id": "fb_localhost_blocked",
+      "description": "Facebook 2024+ rejects http://localhost callback URIs in OAuth settings",
+      "severity": "blocker_resolved",
+      "fix": "Use HTTPS bridge: lttstudio-web/auth/fb-callback.html → redirects to localhost via JS"
+    },
+    {
+      "id": "app_secret_leaked",
+      "description": "Facebook App Secret 96cdd1... was visible in chat screenshots",
+      "severity": "high",
+      "fix": "User must click 'Đặt lại' to generate new Secret in Meta App Settings"
+    }
+  ],
+
+  "key_files_for_new_chat": [
+    "docs/HANDOFF.md",
+    "docs/PROJECT_STATE.json",
+    "docs/tiktok-workflow.md",
+    "docs/facebook-workflow.md",
+    "docs/tiktok-submission/*.md",
+    "version.py",
+    "core/auth_manager.py",
+    "core/tiktok/auth_manager.py",
+    "gui/main_window.py",
+    "lttstudio-web/auth/fb-callback.html",
+    "lttstudio-web/components/header.html"
+  ],
+
+  "test_commands": {
+    "run_bot_gui": "cd 'D:\\CODE AI\\BOT UP FB + TikTok\\BOT UP Facebook' && .\\run_gui.bat",
+    "run_pytest": "cd 'D:\\CODE AI\\BOT UP FB + TikTok\\BOT UP Facebook' && python -m pytest tests/ -q",
+    "gui_smoke_test": "cd 'D:\\CODE AI\\BOT UP FB + TikTok\\BOT UP Facebook' && set PYTHONIOENCODING=utf-8 && python tests/gui_smoke_validator.py",
+    "preview_website": "cd 'D:\\CODE AI\\BOT UP FB + TikTok\\lttstudio-web' && .\\preview.bat",
+    "web_validator": "cd 'D:\\CODE AI\\BOT UP FB + TikTok\\lttstudio-web' && set PYTHONIOENCODING=utf-8 && python _test/web_validator.py"
+  }
+}

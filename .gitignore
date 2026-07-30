@@ -1,0 +1,101 @@
+# ─── Sensitive data — NEVER commit these ─────────────────────────────────────
+data/tokens.enc
+data/tiktok_tokens.enc
+data/tokens.tmp
+data/tiktok_tokens.tmp
+data/config.json
+data/config*.json
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.jsonl
+secrets/
+data/fb_setup_progress.json
+data/profiles.json
+data/window_geometry.txt
+
+# Retry state (machine-specific)
+data/retry_*.json
+
+# Session ownership locks (runtime, machine/pid-specific)
+data/session_locks/
+
+# Worker list (operator's own sheet/page configuration, machine-specific)
+data/workers.json
+
+# Audit log (may contain PII)
+data/audit_log.jsonl
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ─── Downloaded videos (temp) ─────────────────────────────────────────────────
+temp_videos/
+temp_videos_test/
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# ─── Build / dist ─────────────────────────────────────────────────────────────
+build/
+dist/
+*.spec
+*.exe
+
+# Generated visual test/demo output
+tests/screenshots/
+tools/demo_*/output/
+
+# ─── Chrome profiles (Selenium artefacts — not used but keep guard) ──────────
+profiles/
+.backup_*/
+
+# ─── Python cache ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# ─── Virtual environments ─────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+.env
+.env.*
+
+# ─── IDE ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.claude/
+*.sublime-project
+*.sublime-workspace
+
+# ─── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Cloudflare Tunnel — chua tunnel ID va credentials ───────────────────────
+cloudflare/config.yml
+cloudflare/*.json
+cloudflare/cert.pem
+
+# ─── File nguoi dung upload / ket qua job ────────────────────────────────────
+data/files/
+
+# ─── NGOAI LE: day la tai nguyen NGUON, khong phai du lieu van hanh ──────────
+# Cac quy tac data/* o tren se nuot chung neu khong mo lai o day.
+!data/translations/
+!data/translations/*.json
+!data/assets/
+!data/assets/*
+
+# Ngoai le o tren mo lai CA desktop.ini cua Windows. Dong nay dong lai.
+data/assets/desktop.ini
+data/translations/desktop.ini

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chính sách Quyền riêng tư — LTTStudios</title>
+<meta name="description" content="Chính sách quyền riêng tư LTTStudios VideoBot. Tiết lộ đầy đủ cách xử lý dữ liệu Facebook, TikTok, Google.">
+<link rel="canonical" href="https://lttstudios.com/vi/legal/privacy.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/privacy.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/privacy.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/privacy.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Chính sách Quyền riêng tư — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/legal/privacy.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Pháp lý</span>
+    <h1>Chính sách Quyền riêng tư</h1>
+    <p class="lead">LTTStudios VideoBot · Facebook App ID 2021063792619148 · TikTok Client awqbvizbrptynef1 · Hiệu lực 02-06-2026</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+  <h2>1. Về chúng tôi</h2>
+  <p><strong>LTTStudios</strong> ("chúng tôi") là studio phần mềm độc lập
+  tại Việt Nam, vận hành bởi LE THANH TRUNG. Chúng tôi phát triển công cụ
+  tự động hoá desktop cho người làm nội dung video. Chính sách này giải
+  thích cách sản phẩm <strong>LTTStudios VideoBot</strong> xử lý dữ liệu
+  người dùng.</p>
+  <p><strong>Liên hệ</strong>: <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a> · Mê Linh, Hà Nội, Việt Nam</p>
+
+  <h2>2. Phạm vi áp dụng</h2>
+  <p>Chính sách này áp dụng cho ứng dụng desktop LTTStudios VideoBot khi
+  tương tác với Meta Graph API, TikTok Content Posting API, và Google APIs
+  thay mặt người dùng chạy ứng dụng.</p>
+  <p>LTTStudios VideoBot là <strong>ứng dụng desktop</strong>. Chúng tôi
+  KHÔNG vận hành server lưu trữ dữ liệu người dùng Facebook, TikTok, hay
+  Google. Toàn bộ dữ liệu xử lý trên máy Windows của người dùng.</p>
+
+  <h2>3. Dữ liệu chúng tôi truy cập và lưu</h2>
+
+  <h3>3.1 Từ Facebook (qua Meta Graph API)</h3>
+  <table class="table">
+    <tr><th>Dữ liệu</th><th>Mục đích</th><th>Lưu trữ</th></tr>
+    <tr><td>Facebook User ID + tên hiển thị</td>
+        <td>Xác định account đang kết nối; hiển thị UI</td>
+        <td>Local, mã hoá AES-128 Fernet</td></tr>
+    <tr><td>Page ID + tên Page</td>
+        <td>Liệt kê Pages có thể publish (Page picker)</td>
+        <td>Local, mã hoá</td></tr>
+    <tr><td>Page access token (long-lived)</td>
+        <td>Cần để publish video và đọc insights</td>
+        <td>Local, AES-128 Fernet, gắn Machine GUID Windows</td></tr>
+    <tr><td>Metadata video (post ID, URL)</td>
+        <td>Ghi về Google Sheet để tracking</td>
+        <td>Google Sheet của user (user kiểm soát)</td></tr>
+    <tr><td>Insights (views, reach, reactions, comments, shares)</td>
+        <td>Hiển thị tab "Monitor"</td>
+        <td>Cache local</td></tr>
+  </table>
+
+  <h3>3.2 Từ TikTok</h3>
+  <table class="table">
+    <tr><th>Dữ liệu</th><th>Mục đích</th><th>Lưu trữ</th></tr>
+    <tr><td>open_id, display_name, avatar_url</td>
+        <td>Xác định account; hiển thị UI</td>
+        <td>Local, mã hoá Fernet</td></tr>
+    <tr><td>Access + refresh token</td>
+        <td>Publish video lên TikTok của user</td>
+        <td>Local, mã hoá, gắn máy</td></tr>
+  </table>
+
+  <h3>3.3 Từ Google (Sheets &amp; Drive)</h3>
+  <table class="table">
+    <tr><th>Dữ liệu</th><th>Mục đích</th><th>Lưu trữ</th></tr>
+    <tr><td>OAuth credentials (refresh token)</td>
+        <td>Re-authenticate giữa các session</td>
+        <td>Local, file token cạnh credentials</td></tr>
+    <tr><td>Row Sheet (video URL, title, description)</td>
+        <td>Queue content bot xử lý</td>
+        <td>Đọc trực tiếp; không lưu lâu dài</td></tr>
+    <tr><td>File video từ Drive link</td>
+        <td>Tải về tạm, upload lên FB/TikTok, xoá</td>
+        <td>Cache tạm, auto xoá sau publish</td></tr>
+  </table>
+
+  <h3>3.4 Dữ liệu chúng tôi KHÔNG thu thập</h3>
+  <ul>
+    <li>Không thu email, số điện thoại, tên thật, giấy tờ tuỳ thân vượt
+      ngoài public profile Facebook/TikTok</li>
+    <li>Không truy cập friend list, tin nhắn riêng, hoặc data ngoài
+      Pages user explicitly authorize</li>
+    <li>Không truy cập data TikTok ngoài account của user</li>
+    <li>Không thu telemetry hoặc analytics về hành vi user trong app</li>
+  </ul>
+
+  <h2>4. Cách sử dụng dữ liệu</h2>
+  <ol>
+    <li>Xác thực user với Facebook, TikTok, Google.</li>
+    <li>Publish video lên Pages/accounts user authorize.</li>
+    <li>Hiển thị engagement analytics cho user.</li>
+    <li>Maintain audit log để user xem lịch sử automation.</li>
+  </ol>
+  <p><strong>Chúng tôi không bao giờ sử dụng dữ liệu cho quảng cáo,
+  training AI model, hoặc chia sẻ third party.</strong></p>
+
+  <h2>5. Chia sẻ dữ liệu</h2>
+  <p>LTTStudios <strong>không chia sẻ dữ liệu user với bất kỳ third party
+  nào</strong>. Service ngoài duy nhất bot liên hệ:</p>
+  <ul>
+    <li>Meta Graph API (<code>graph.facebook.com</code>)</li>
+    <li>TikTok Content Posting API (<code>open.tiktokapis.com</code>)</li>
+    <li>Google APIs (<code>googleapis.com</code>)</li>
+    <li>Telegram API — chỉ khi user explicitly setup notification bot</li>
+  </ul>
+
+  <h2>6. Thời gian lưu trữ</h2>
+  <ul>
+    <li>Token: lưu đến khi user revoke hoặc xoá file. FB page token tự
+      rotate ~60 ngày.</li>
+    <li>Audit log: local, rotation 10MB, max 5 backup.</li>
+    <li>Cache video: xoá sau mỗi upload (default; user có thể tắt).</li>
+    <li>Content history (SHA-256 hash): mặc định 90 ngày, configurable.</li>
+  </ul>
+
+  <h2>7. Xoá dữ liệu</h2>
+  <p>User có thể xoá toàn bộ data bất kỳ lúc nào. Xem
+  <a href="/vi/legal/data-deletion.html">trang Xoá Dữ liệu</a>.</p>
+
+  <h2>8. Bảo mật</h2>
+  <ul>
+    <li>Mã hoá AES-128 Fernet với key từ Windows Machine GUID</li>
+    <li>Mọi API call dùng HTTPS / TLS 1.2+</li>
+    <li>Không backend → không thể bị breach hàng loạt</li>
+    <li>OAuth state validation chống CSRF</li>
+    <li>HMAC-signed TikTok OAuth relay</li>
+  </ul>
+  <p>Chi tiết tại <a href="/vi/legal/security.html">trang Bảo mật</a>.</p>
+
+  <h2>9. Tuân thủ</h2>
+  <ul>
+    <li>Meta Platform Terms + Developer Policies</li>
+    <li>TikTok Developer Terms of Service</li>
+    <li>Google API Services User Data Policy (Limited Use)</li>
+    <li>GDPR — honor request về truy cập, sửa, xoá, portability. Xem <a href="/vi/legal/dpa.html">DPA</a>.</li>
+  </ul>
+
+  <h2>10. Quyền riêng tư trẻ em</h2>
+  <p>LTTStudios VideoBot không dành cho người dưới 13 tuổi. Chúng tôi không
+  cố ý thu thập data từ ai dưới 13 tuổi.</p>
+
+  <h2>11. Thay đổi chính sách</h2>
+  <p>Chúng tôi có thể update. Ngày hiệu lực ở đầu trang luôn cập nhật mới
+  nhất. Material change sẽ có thông báo trong app UI ít nhất 30 ngày trước
+  khi áp dụng.</p>
+
+  <h2>12. Liên hệ</h2>
+  <p>
+    Data Protection Officer: LE THANH TRUNG<br>
+    Email: <a href="mailto:akakenly.design@gmail.com">akakenly.design@gmail.com</a><br>
+    Support: <a href="mailto:support@lttstudios.com">support@lttstudios.com</a><br>
+    Địa chỉ: Mê Linh, Hà Nội, Việt Nam
+  </p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikTok Authentication — LTTStudios</title>
+<meta name="description" content="TikTok OAuth callback handler for LTTStudios VideoBot desktop app.">
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 0; padding: 0; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1a1a1a 0%, #FE2C55 100%);
+    color: #fff;
+  }
+  .card {
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    padding: 48px 40px; max-width: 480px; width: 90%;
+    text-align: center;
+  }
+  .logo { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+  .status { font-size: 20px; margin-bottom: 24px; }
+  .spinner {
+    width: 56px; height: 56px; margin: 0 auto 24px;
+    border: 4px solid rgba(255,255,255,0.18);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .detail { font-size: 14px; opacity: 0.85; margin-top: 16px; line-height: 1.6; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+  .code-box {
+    background: rgba(0,0,0,0.5); padding: 10px 14px;
+    border-radius: 6px; margin: 14px 0;
+    font-family: "Consolas", monospace; font-size: 12px;
+    word-break: break-all; max-height: 80px; overflow: auto;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .btn {
+    background: #fff; color: #1a1a1a; border: none;
+    padding: 10px 20px; border-radius: 8px; cursor: pointer;
+    font-weight: 600; font-size: 14px; margin-top: 8px;
+  }
+  .footer { margin-top: 32px; font-size: 12px; opacity: 0.6; }
+  .footer a { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">LTT Studios · TikTok</div>
+  <div class="spinner" id="spinner"></div>
+  <div class="status" id="status">Đang xử lý xác thực TikTok...</div>
+  <div class="detail" id="detail">
+    Bạn có thể đóng tab này khi quá trình hoàn tất.<br>
+    Ứng dụng bot trên máy bạn sẽ tự động nhận thông tin.
+  </div>
+  <div class="footer">
+    LTT Studios · <a href="/legal/privacy.html">Privacy</a> · <a href="/legal/terms.html">Terms</a>
+  </div>
+</div>
+
+<script>
+/*
+ * TikTok OAuth callback handler.
+ *
+ * Flow:
+ *   TikTok redirects user here with ?code=...&state=...&scopes=...
+ *   We:
+ *     1. POST to local bot (http://127.0.0.1:8766/callback) for same-machine
+ *     2. POST to web relay (/api/oauth-relay/store.php) for cross-machine
+ *   Whichever path succeeds first, the bot picks it up.
+ *
+ * Why web relay:
+ *   Cross-machine OAuth — user logs in on phone/another laptop, bot polls
+ *   the relay endpoint and pulls the code via HMAC-verified GET.
+ */
+
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const code     = params.get('code');
+  const state    = params.get('state');
+  const scopes   = params.get('scopes');
+  const error    = params.get('error');
+  const errDesc  = params.get('error_description');
+
+  const statusEl  = document.getElementById('status');
+  const detailEl  = document.getElementById('detail');
+  const spinnerEl = document.getElementById('spinner');
+
+  function showOK(msg, detail) {
+    spinnerEl.style.display = 'none';
+    statusEl.textContent = msg;
+    statusEl.classList.add('ok');
+    detailEl.innerHTML = detail;
+  }
+
+  function showError(msg, detail) {
+    spinnerEl.style.display = 'none';
+    statusEl.textContent = msg;
+    statusEl.classList.add('err');
+    detailEl.innerHTML = detail;
+  }
+
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Đã copy code vào clipboard. Paste vào ứng dụng.');
+    });
+  }
+
+  if (error) {
+    showError(
+      'Xác thực bị huỷ',
+      `TikTok báo: <code>${error}</code><br>${errDesc || ''}<br><br>` +
+      'Bạn có thể đóng tab và thử lại từ ứng dụng.'
+    );
+    return;
+  }
+
+  if (!code || !state) {
+    showError(
+      'Tham số không hợp lệ',
+      'URL không có <code>code</code> hoặc <code>state</code>.<br>' +
+      'Hãy bắt đầu OAuth flow lại từ ứng dụng.'
+    );
+    return;
+  }
+
+  let localOK = false;
+  let relayOK = false;
+
+  // Path 1: Local bot HTTPServer (same-machine flow)
+  const localBot = 'http://127.0.0.1:8766/callback';
+  fetch(localBot, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({
+                code: code, state: state, scopes: scopes || ''
+             }).toString(),
+    mode:    'no-cors'
+  }).then(() => { localOK = true; checkDone(); }).catch(() => {});
+
+  // Path 2: Web relay (cross-machine flow)
+  // POSTs to relay; bot polls relay separately to pick up code.
+  // Origin must match what the relay PHP expects (this domain).
+  const relayURL = '/api/oauth-relay/store.php';
+  fetch(relayURL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({
+                code: code, state: state, scopes: scopes || ''
+             }).toString(),
+  }).then(r => r.ok ? r.json() : null)
+    .then(j => { if (j && j.ok) { relayOK = true; } checkDone(); })
+    .catch(() => { checkDone(); });
+
+  function checkDone() {
+    if (localOK || relayOK) {
+      const detail = localOK
+        ? 'Đã gửi mã trực tiếp về bot trên máy này.<br>Đóng tab và quay lại ứng dụng.'
+        : 'Đã gửi mã qua web relay.<br>Ứng dụng (trên máy khác) sẽ tự pull trong vài giây.';
+      showOK('✅ Xác thực thành công', detail);
+    }
+  }
+
+  // Fallback timeout — show manual copy if neither path responds
+  setTimeout(() => {
+    if (spinnerEl.style.display !== 'none' && !localOK && !relayOK) {
+      showError(
+        '⚠ Không kết nối được bot',
+        'Bot có thể đang không chạy. Bạn có thể copy mã này thủ công:' +
+        `<div class="code-box">${code}</div>` +
+        `<button class="btn" onclick="navigator.clipboard.writeText('${code}')">📋 Copy code</button>`
+      );
+    }
+  }, 15000);
+})();
+</script>
+
+</body>
+</html>

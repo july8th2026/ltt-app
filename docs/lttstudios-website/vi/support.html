@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hỗ trợ &amp; FAQ — LTTStudios</title>
+<meta name="description" content="Câu hỏi thường gặp về cài đặt LTTStudios VideoBot, OAuth Facebook Graph API v21 + TikTok API v2, rate limit, troubleshooting.">
+<link rel="canonical" href="https://lttstudios.com/vi/support.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/support.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/support.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/support.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Hỗ trợ &amp; FAQ — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "inLanguage": "vi-VN",
+  "mainEntity": [
+    {"@type":"Question","name":"Cài bot trên Windows thế nào?",
+     "acceptedAnswer":{"@type":"Answer","text":"Tải .zip → giải nén → chạy setup_new_machine.bat 1 lần → chạy run_gui.bat."}},
+    {"@type":"Question","name":"Vì sao video hiển thị công khai nhưng không ai xem được?",
+     "acceptedAnswer":{"@type":"Answer","text":"Meta App đang Development Mode, chưa pass App Review. Fix: submit Meta App Review cho pages_manage_posts."}},
+    {"@type":"Question","name":"Bot có thể đăng bao nhiêu lần lên 1 Page mỗi ngày?",
+     "acceptedAnswer":{"@type":"Answer","text":"Default 4 giờ giữa các post, 3 posts/Page/ngày max. min_interval_per_page_s=14400, max_posts_per_page_per_day=3."}}
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/vi/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/vi/about.html">Giới thiệu</a>
+      <a href="/vi/products.html">Sản phẩm</a>
+      <a href="/vi/support.html">Hỗ trợ</a>
+      <a href="/vi/contact.html">Liên hệ</a>
+      <a href="/vi/download.html" class="btn btn-primary btn-sm">Tải về</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="/support.html" hreflang="en" lang="en" title="English">EN</a>
+        <span class="active" aria-current="true">VI</span>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Hỗ trợ</span>
+    <h1>Câu hỏi thường gặp</h1>
+    <p class="lead">Câu hỏi setup phổ biến, OAuth issues, rate limit,
+    troubleshooting cho Facebook Graph API v21 + TikTok Content Posting API v2.
+    Nếu câu của bạn chưa có ở đây, email
+    <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Bắt đầu</h2>
+
+    <details class="faq-item">
+      <summary>Cài bot trên Windows thế nào?</summary>
+      <div class="answer">
+        <p>1. Tải <code>.zip</code> mới nhất tại <a href="/vi/download.html">trang download</a>.<br>
+           2. Giải nén bất kỳ đâu (Desktop, Documents...).<br>
+           3. Chạy <code>setup_new_machine.bat</code> 1 lần — script check Python 3.10+,
+              tạo virtual environment, cài dependencies (customtkinter, google-api-python-client,
+              cryptography, requests, qrcode), validate config.<br>
+           4. Chạy <code>run_gui.bat</code> để mở app.</p>
+        <p>Script setup là idempotent — chạy lại an toàn nếu có lỗi.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Cần credentials gì để dùng?</summary>
+      <div class="answer">
+        <p>Bạn tự chuẩn bị:</p>
+        <ul>
+          <li><strong>Meta Developer App</strong> (miễn phí) — cho Facebook Page publishing.
+              Cần scope <code>pages_show_list</code>, <code>pages_manage_posts</code>,
+              <code>pages_read_engagement</code>, <code>pages_manage_engagement</code></li>
+          <li><strong>TikTok Developer App</strong> (miễn phí) — cho TikTok publishing.
+              Cần scope <code>user.info.basic</code>, <code>video.upload</code>,
+              <code>video.publish</code></li>
+          <li><strong>Google Cloud OAuth credentials</strong> (free tier đủ) —
+              cho Sheets API v4 + Drive API v3 access</li>
+        </ul>
+        <p>Bot KHÔNG cung cấp credentials. Bạn nhập trong Settings tab lần đầu.
+        Chúng tôi không bao giờ thấy credentials của bạn vì không có server LTTStudios.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Kết nối Page Facebook thế nào?</summary>
+      <div class="answer">
+        <p>Mở bot → click tab <strong>FB Accounts</strong> → click
+        <strong>Connect Facebook Account</strong>. Browser mở FB OAuth dialog.
+        Login, grant permission, được redirect về callback page tại
+        <code>lttstudios.com/auth/fb-callback.html</code>.</p>
+        <p>Bot tự động gọi <code>GET /me/accounts</code> để lấy list Page bạn admin.
+        Tick Page muốn enable publish, click Save. Token lưu mã hoá AES-128 Fernet
+        cho từng Page riêng biệt.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Kết nối tài khoản TikTok thế nào?</summary>
+      <div class="answer">
+        <p>Tab <strong>TikTok Accounts</strong> → <strong>Connect TikTok Account</strong>.
+        Có 2 cách:</p>
+        <ul>
+          <li><strong>Cùng máy</strong>: browser mở TikTok OAuth → login → grant scope</li>
+          <li><strong>Khác máy (QR code)</strong>: bot hiện QR code → scan bằng phone đã
+              login TikTok → complete OAuth trên phone. Callback POST về relay endpoint
+              <code>lttstudios.com/api/oauth-relay/store.php</code> với HMAC-SHA256 signed,
+              bot poll relay để pull code.</li>
+        </ul>
+      </div>
+    </details>
+
+    <h2>Permissions &amp; visibility</h2>
+
+    <details class="faq-item">
+      <summary>Vì sao video hiển thị "công khai" nhưng không ai xem được?</summary>
+      <div class="answer">
+        <p>Câu hỏi #1 của user mới. Nguyên nhân hầu như luôn là:
+        <strong>Meta App của bạn đang Development Mode</strong> và chưa
+        pass App Review.</p>
+        <p>Facebook ẩn bài tạo qua app chưa review, dù bài hiện "Published"
+        và "Public" trong Business Suite. Đây là chính sách Meta từ Q3/2021.
+        Fix: submit Meta App Review cho permission
+        <code>pages_manage_posts</code> + <code>pages_manage_engagement</code>.
+        Xem <a href="/vi/about.html">about page</a> để biết chúng tôi đang work
+        qua quy trình này như thế nào.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Bài bị "Hạn chế hiển thị" (Reduced distribution). Vì sao?</summary>
+      <div class="answer">
+        <p>Facebook spam filter giảm reach organic cho bài đó. Trigger phổ biến:</p>
+        <ul>
+          <li>Quá nhiều hashtag (FB khuyến nghị ≤ 5)</li>
+          <li>External link kiểu sub-promotion ("youtube.com/...?sub_confirmation=1")</li>
+          <li>"Engagement bait" ("Comment phía dưới!" "Tag bạn bè!")</li>
+          <li>Page mới score trust thấp</li>
+          <li>Content trigger nudity/violence/misinformation classifier (kể cả false positive)</li>
+        </ul>
+        <p>Fix: review caption, bỏ trigger, viết tự nhiên hơn. Bot không
+        tự thêm hashtag/CTA trừ khi bật Caption Rotator (mặc định OFF).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>TikTok Direct Post đang Sandbox — đăng được không?</summary>
+      <div class="answer">
+        <p>Trong Sandbox mode, TikTok bắt buộc privacy_level = <code>SELF_ONLY</code>
+        cho mọi post. Bot tự enforce điều này qua ComplianceGuard. Bài đăng được
+        nhưng chỉ creator xem được, public không thấy.</p>
+        <p>Để direct public post cần submit TikTok app audit và được approve.
+        Xem trang Audit trong bot để check readiness.</p>
+      </div>
+    </details>
+
+    <h2>Rate limit &amp; scheduling</h2>
+
+    <details class="faq-item">
+      <summary>Bot có thể đăng bao nhiêu lên 1 Page mỗi ngày?</summary>
+      <div class="answer">
+        <p>Default bảo thủ:</p>
+        <ul>
+          <li><code>min_interval_per_page_s = 14400</code> — 4 giờ giữa các post cùng Page</li>
+          <li><code>min_inter_page_interval_s = 900</code> — 15 phút giữa các Page khác</li>
+          <li><code>max_posts_per_page_per_day = 3</code> — hard cap/Page/ngày</li>
+          <li><code>max_posts_per_account_per_day = 12</code> — cap toàn tài khoản</li>
+          <li><code>jitter_s = 600</code> — random delay ±10 phút (chống pattern bot)</li>
+          <li><code>active_hours_start = 7</code>, <code>active_hours_end = 22</code> — chỉ chạy 7h-22h</li>
+        </ul>
+        <p>Tuned để stay trong threshold spam của Facebook. Có thể adjust trong
+        Settings nhưng tăng risk Page warning. Page mới (&lt;30 ngày) còn có
+        warmup cap thấp hơn tự động áp dụng.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Format thời gian schedule_time?</summary>
+      <div class="answer">
+        <p>Bot accept 8 format:</p>
+        <pre><code>2026-06-15 14:30        ← khuyên dùng
+2026-06-15 14:30:00
+15/06/2026 14:30
+15-06-2026 14:30
+2026-06-15T14:30
+2026-06-15T14:30:00
+... và serial date float từ Google Sheets</code></pre>
+        <p>Timezone theo config <code>timezone</code> (default
+        <code>Asia/Ho_Chi_Minh</code> = UTC+7).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Để publish ngay, điền giờ gì?</summary>
+      <div class="answer">
+        <p>Điền giờ hiện tại hoặc lùi tối đa 60 phút. Bot pickup row có
+        <code>schedule_time ≤ now</code> và không quá <code>skip_overdue_minutes</code>
+        (default 60 phút). Row có schedule_time trống KHÔNG được pickup
+        (đã thay đổi từ v1.0.0).</p>
+        <p>Tip: dùng <code>=NOW()</code> trong Google Sheet, copy as value.</p>
+      </div>
+    </details>
+
+    <h2>Lỗi thường gặp</h2>
+
+    <details class="faq-item">
+      <summary>Lỗi: "(#100) Length of param title must be less than or equal to 255"</summary>
+      <div class="answer">
+        <p>Facebook Graph API v21 cap title video tại 255 ký tự. Rút ngắn title
+        trong cột <code>tieu_de_seo</code> của sheet.</p>
+        <p>Nếu bật Caption Rotator, nó wrap title với text khác → vượt limit.
+        Tắt Rotator hoặc dùng base title ngắn hơn (Rotator mặc định OFF từ v1.0.0).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Lỗi: "Token Page hết hạn" / Code 190</summary>
+      <div class="answer">
+        <p>Token Facebook Page hết hạn (long-lived ~60 ngày). Re-OAuth account:</p>
+        <p>Settings → FB Accounts → click <strong>Reconnect</strong> bên Page bị lỗi.
+        Token mới sẽ replace cái cũ. Past posts và audit log không ảnh hưởng.
+        Bot có background TokenRefresher chạy mỗi 1 giờ để auto-extend token
+        7 ngày trước khi expire — nhưng nếu lỡ rồi vẫn phải re-OAuth.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Anti-spam báo "video tương đồng" (pHash match) — false positive?</summary>
+      <div class="answer">
+        <p>Thuật toán perceptual hash bản cũ (&lt;v1.0.0) có bug false-positive
+        (only 15-bit effective). Bản v1.0.0 đã:</p>
+        <ul>
+          <li>Tighten match threshold từ 8 → 2 (giảm 175× false positive)</li>
+          <li>Reject degenerate hash values (0000... và ffff...)</li>
+        </ul>
+        <p>Nếu vẫn false-positive, tạm tắt dedup bằng
+        <code>anti_spam_dedup = false</code> (note: tắt cả SHA-256 dedup —
+        bật lại sau khi upload).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Video upload thành Reel dù set post_type=feed. Vì sao?</summary>
+      <div class="answer">
+        <p>Facebook tự classify video dọc (9:16) ≤ 90 giây thành Reel kể cả
+        khi upload qua endpoint feed video (<code>POST /{page_id}/videos</code>).
+        Log sẽ thấy <code>facebook.com/reel/...</code> thay vì
+        <code>facebook.com/videos/...</code>.</p>
+        <p>Để force feed (non-Reel): encode video 16:9 (vd 1920×1080)
+        HOẶC duration &gt; 90s. Phải đạt CẢ 2 điều kiện FB mới giữ là feed video.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Circuit breaker OPEN — bot dừng publish lên Page</summary>
+      <div class="answer">
+        <p>Bot có circuit breaker per-account (key = <code>platform:target_id</code>).
+        Sau N fail liên tục, breaker OPEN, dừng publish lên Page đó với cooldown
+        theo FB documented backoff (15 phút → 1 giờ → 24 giờ tăng dần).</p>
+        <p>Verify Page health: vào FB Page Settings → Support Inbox → check
+        có warning gì không. Đợi cooldown hoặc reset breaker (delete file
+        <code>data/circuit_breaker.db</code> rồi restart bot — KHÔNG khuyên trừ khi
+        chắc Page OK).</p>
+      </div>
+    </details>
+
+    <h2>OAuth callback &amp; cross-machine</h2>
+
+    <details class="faq-item">
+      <summary>Sau OAuth bot báo "Bot không phản hồi"</summary>
+      <div class="answer">
+        <p>Trang callback (<code>lttstudios.com/auth/fb-callback.html</code>)
+        POST OAuth code về HTTPServer local của bot tại
+        <code>127.0.0.1:8765</code>. Check:</p>
+        <ul>
+          <li>Bot vẫn đang chạy khi complete OAuth</li>
+          <li>Windows Firewall không block port 8765 cho Python process</li>
+          <li>Antivirus không quarantine .exe</li>
+          <li>Thử re-initiate OAuth từ bot (Settings → Reconnect)</li>
+        </ul>
+        <p>Bot listen trên 127.0.0.1 only (loopback) → không bị WAN attack.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>OAuth TikTok trên máy khác (vd điện thoại) được không?</summary>
+      <div class="answer">
+        <p>Có — bot support cross-machine TikTok OAuth qua QR code. Click
+        <strong>Connect TikTok</strong> → dialog hiện QR code chứa OAuth URL.
+        Scan bằng phone đã login TikTok, complete OAuth.</p>
+        <p>Callback POST về relay endpoint
+        <code>lttstudios.com/api/oauth-relay/store.php</code>
+        với HMAC-SHA256 signed payload (300s timestamp validity chống replay).
+        Bot poll <code>fetch.php</code> để pull code.</p>
+        <p>Cần upload PHP relay file lên hosting. Nếu KHÔNG config, fallback
+        same-machine OAuth (mở browser trên máy bot).</p>
+      </div>
+    </details>
+
+    <h2>Sheets &amp; Drive</h2>
+
+    <details class="faq-item">
+      <summary>Bot không thấy sheet — "Permission denied"</summary>
+      <div class="answer">
+        <p>Một trong hai:</p>
+        <ol>
+          <li><strong>Service Account</strong>: share Sheet với email service account
+            (trong <code>service_account.json</code> tại key
+            <code>client_email</code>) với quyền Editor.</li>
+          <li><strong>OAuth2</strong>: flow mở browser lần đầu — login với Google
+            account sở hữu/có access Sheet. Token cache tại
+            <code>{credentials_path}.token.json</code>.</li>
+        </ol>
+        <p>Bot dùng Google Sheets API v4 + Drive API v3 chính thức, scope tối thiểu
+        (chỉ Sheets read/write + Drive read).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Download Drive fail "virus scan warning"</summary>
+      <div class="answer">
+        <p>Video &gt; 100MB Google hiện trang confirm trước khi download. Bot
+        xử lý tự động — parse form HTML, extract token, submit confirm. Nếu vẫn
+        fail:</p>
+        <ul>
+          <li>Verify link Drive có "Anyone with link can view"</li>
+          <li>Check bot có Drive read scope trong OAuth</li>
+          <li>Thử mở file trong incognito browser xác nhận accessible không login</li>
+          <li>Kiểm tra log <code>logs/app.log</code> có dòng "Drive download failed: ..."</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Sheet header column phải đặt tên gì?</summary>
+      <div class="answer">
+        <p>Default header names (configurable trong Settings):</p>
+        <pre><code>video_drive_url    ← link Drive video gốc
+schedule_time      ← giờ lên lịch (bắt buộc từ v1.0.0)
+title              ← tiêu đề video
+description        ← mô tả
+keywords           ← keyword
+thumbnail_url      ← link thumbnail (optional)
+target_page        ← tên Page đăng (nếu sheet có nhiều Page)
+post_type          ← "feed" hoặc "reels"
+platform           ← "facebook" hoặc "tiktok"
+comment            ← first comment (optional)
+status             ← bot ghi: PENDING/RUNNING/DONE/ERROR/SKIPPED
+video_url_fb       ← bot ghi link bài đã đăng
+uploaded_at        ← bot ghi timestamp upload
+error_message      ← bot ghi nếu fail</code></pre>
+      </div>
+    </details>
+
+    <h2>Data &amp; privacy</h2>
+
+    <details class="faq-item">
+      <summary>Data lưu ở đâu?</summary>
+      <div class="answer">
+        <p><strong>Chỉ trên máy bạn.</strong> Token tại
+        <code>data/tokens.enc</code> và <code>data/tiktok_tokens.enc</code>
+        (mã hoá AES-128 Fernet, key từ Windows Machine GUID qua
+        PBKDF2-HMAC-SHA256 200,000 iterations). Log tại
+        <code>logs/app.log</code>. Audit trail tại
+        <code>data/audit_log.jsonl</code> (JSONL append-only, rotation 10MB,
+        max 5 backup). Cache video tại <code>temp_videos/</code>
+        (auto xoá sau upload mặc định).</p>
+        <p>Token mã hoá gắn máy → KHÔNG decrypt được nếu copy sang máy khác.</p>
+        <p>Không gì gửi về server LTTStudios — chúng tôi không có server.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Xoá toàn bộ data thế nào?</summary>
+      <div class="answer">
+        <p>Xem chi tiết <a href="/vi/legal/data-deletion.html">Trang Xoá Dữ liệu</a>.
+        Tóm tắt:</p>
+        <ol>
+          <li>Đóng bot</li>
+          <li>Xoá folder cài bot</li>
+          <li>Revoke app tại Facebook Settings → Business Integrations →
+              tìm "Lttstudios" → Remove</li>
+          <li>Cho TikTok: app TikTok → Settings &amp; privacy → Security &amp;
+              permissions → Manage app permissions → Remove</li>
+        </ol>
+        <p>Toàn bộ token, log, cache video sẽ bị xoá. GDPR Article 17 compliance.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Bot có gửi telemetry không?</summary>
+      <div class="answer">
+        <p><strong>KHÔNG.</strong> Bot không có analytics, không có crash reporting
+        service, không phone-home. Chỉ liên hệ với Meta Graph API
+        (<code>graph.facebook.com</code>), TikTok API (<code>open.tiktokapis.com</code>),
+        Google APIs (<code>googleapis.com</code>), và Telegram API
+        (<code>api.telegram.org</code>) khi user explicitly setup.</p>
+        <p>Có thể verify bằng cách monitor network traffic với Wireshark hoặc Fiddler.</p>
+      </div>
+    </details>
+
+    <h2>Vẫn bí?</h2>
+    <p>Email <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>
+    với:</p>
+    <ul>
+      <li>Bot version (Settings tab → "Phiên bản") — vd v1.0.0 build 2025-01</li>
+      <li>Windows version (vd Windows 11 Pro 23H2)</li>
+      <li>Đã thử gì</li>
+      <li>50 dòng cuối <code>logs/app.log</code> (che access token + email khác)</li>
+      <li>Screenshot GUI tại moment issue</li>
+    </ul>
+    <p>Reply trong 5 business days (Mon-Fri 9h-18h ICT, UTC+7).</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Công cụ đăng video dành cho creator.<br>Built in Vietnam từ 2024.
+        </p>
+      </div>
+      <div><h4>Sản phẩm</h4><ul>
+        <li><a href="/vi/products.html">VideoBot</a></li>
+        <li><a href="/vi/download.html">Tải về</a></li>
+        <li><a href="/vi/changelog.html">Changelog</a></li>
+        <li><a href="/vi/support.html">Hỗ trợ &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Công ty</h4><ul>
+        <li><a href="/vi/about.html">Giới thiệu</a></li>
+        <li><a href="/vi/contact.html">Liên hệ</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Pháp lý</h4><ul>
+        <li><a href="/vi/legal/privacy.html">Quyền riêng tư</a></li>
+        <li><a href="/vi/legal/terms.html">Điều khoản</a></li>
+        <li><a href="/vi/legal/cookies.html">Cookies</a></li>
+        <li><a href="/vi/legal/data-deletion.html">Xoá dữ liệu</a></li>
+        <li><a href="/vi/legal/security.html">Bảo mật</a></li>
+        <li><a href="/vi/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios. Mọi quyền được bảo lưu.
+      <a href="/vi/legal/privacy.html">Quyền riêng tư</a>
+      <a href="/vi/legal/terms.html">Điều khoản</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

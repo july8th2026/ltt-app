@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security — LTTStudios</title>
+<meta name="description" content="LTTStudios security practices, encryption details, vulnerability disclosure policy, and contact for security researchers.">
+<link rel="canonical" href="https://lttstudios.com/legal/security.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/security.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/security.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/security.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Security — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/legal/security.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Legal · Security</span>
+    <h1>Security</h1>
+    <p class="lead">How we protect user data, our vulnerability disclosure
+    policy, and how to reach the security team.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <p class="text-muted">Effective: 2026-06-02 · Version 1.0</p>
+
+    <h2>Architecture: zero-backend by design</h2>
+    <p>The most important security property of LTTStudios VideoBot:
+    <strong>there is no LTTStudios server holding user data</strong>. We
+    cannot be breached at scale because there is nothing to breach. Each
+    user's tokens, sheets, logs, and cached videos live only on their own
+    Windows machine.</p>
+
+    <h2>Encryption at rest</h2>
+
+    <h3>Tokens</h3>
+    <ul>
+      <li><strong>Algorithm</strong>: AES-128-CBC + HMAC-SHA256 (Fernet
+        specification, <a href="https://cryptography.io/en/latest/fernet/"
+        target="_blank" rel="noopener">cryptography.io/fernet</a>)</li>
+      <li><strong>Key derivation</strong>: <code>hashlib.sha256(machine_id + SALT).digest()</code> (single-pass, deterministic per machine)</li>
+      <li><strong>Key source</strong>: Windows Machine GUID
+        (HKLM\Software\Microsoft\Cryptography → MachineGuid)</li>
+      <li><strong>Implication</strong>: tokens copied between machines
+        cannot be decrypted on the new machine</li>
+      <li><strong>Files</strong>:
+        <code>data/tokens.enc</code> (Facebook),
+        <code>data/tiktok_tokens.enc</code> (TikTok)</li>
+    </ul>
+
+    <h3>OAuth state</h3>
+    <p>CSRF state parameter is a cryptographically random 32-byte token
+    (<code>secrets.token_urlsafe(32)</code>) generated per OAuth flow.
+    Validated server-side in the callback handler.</p>
+
+    <h3>TikTok OAuth relay (optional)</h3>
+    <p>Cross-machine TikTok OAuth uses an HTTPS relay endpoint. Bot polls
+    the relay with HMAC-SHA256 signed requests
+    (<code>hash_hmac('sha256', "$state|$ts", $secret)</code>) with 300-second
+    timestamp validity window to prevent replay.</p>
+
+    <h2>Transport security</h2>
+    <ul>
+      <li>All API calls use HTTPS with TLS 1.2 or higher</li>
+      <li>Certificate validation enforced (no <code>verify=False</code> anywhere)</li>
+      <li>OAuth callbacks served over HTTPS (Let's Encrypt certificates)</li>
+    </ul>
+
+    <h2>What we DON'T store</h2>
+    <ul>
+      <li>❌ User passwords (we use OAuth — never see your FB/TikTok password)</li>
+      <li>❌ Caption content in audit logs (only post IDs and event types)</li>
+      <li>❌ Video file content beyond temporary cache during upload</li>
+      <li>❌ Email addresses of users you message</li>
+      <li>❌ Friend lists or contact graphs</li>
+      <li>❌ Analytics about your usage of the bot itself</li>
+    </ul>
+
+    <h2>Audit log integrity</h2>
+    <p>The audit log (<code>data/audit_log.jsonl</code>) is append-only JSONL
+    with timestamp + event + minimal metadata. Rotated at 10MB, max 5 backup
+    files retained. No tamper detection — but the file is local to the
+    user's machine, so the security boundary is the OS-level access control.</p>
+
+    <h2>Dependency security</h2>
+    <p>We minimize third-party dependencies. Current production deps
+    (see <code>requirements.txt</code>):</p>
+    <ul>
+      <li><code>customtkinter</code> — GUI framework (modern Tk wrapper)</li>
+      <li><code>Pillow</code> — image processing</li>
+      <li><code>google-api-python-client</code>, <code>google-auth-oauthlib</code>,
+        <code>google-auth</code> — Google APIs</li>
+      <li><code>requests</code> — HTTP client</li>
+      <li><code>cryptography</code> — Fernet encryption</li>
+      <li><code>qrcode[pil]</code> — QR generation for TikTok OAuth</li>
+      <li><code>pytz</code>, <code>tzdata</code> — timezone handling</li>
+    </ul>
+    <p>No analytics SDKs, no error reporting services, no payment SDKs, no
+    push notification SDKs. Each dep has been reviewed for license
+    compatibility and active maintenance.</p>
+
+    <h2>Vulnerability disclosure policy</h2>
+
+    <h3>Scope</h3>
+    <p>In scope for responsible disclosure:</p>
+    <ul>
+      <li>The LTTStudios VideoBot desktop application</li>
+      <li>The OAuth callback flow (<code>lttstudios.com/auth/*</code>)</li>
+      <li>The TikTok OAuth relay (<code>lttstudios.com/api/oauth-relay/*</code>)</li>
+      <li>The marketing website (<code>lttstudios.com/*</code>)</li>
+    </ul>
+
+    <p>Out of scope:</p>
+    <ul>
+      <li>Vulnerabilities in third-party services we depend on
+        (Meta, TikTok, Google) — report those to the respective vendor</li>
+      <li>Social engineering of LTTStudios staff</li>
+      <li>Physical attacks against LTTStudios infrastructure
+        (we don't have any)</li>
+      <li>Theoretical vulnerabilities without a demonstrated impact</li>
+    </ul>
+
+    <h3>Reporting process</h3>
+    <ol>
+      <li>Email <a href="mailto:security@lttstudios.com">security@lttstudios.com</a>
+        with a clear description, reproduction steps, and impact assessment</li>
+      <li>If the vulnerability is sensitive, request our PGP key in your
+        first email and we'll provide one</li>
+      <li>We acknowledge within 48 hours for critical issues, 7 days for
+        lower severity</li>
+      <li>We work toward a fix and coordinate disclosure timing with you</li>
+      <li>Public disclosure: we credit researchers (with permission) in the
+        <a href="/changelog.html">changelog</a> after the fix ships</li>
+    </ol>
+
+    <h3>Safe harbor</h3>
+    <p>If you make a good-faith effort to comply with this policy, we will:</p>
+    <ul>
+      <li>Not pursue legal action against you</li>
+      <li>Not report you to law enforcement</li>
+      <li>Work with you to understand and resolve the issue quickly</li>
+    </ul>
+
+    <h2>Known limitations / acknowledged risks</h2>
+
+    <details class="faq-item">
+      <summary>Machine GUID-based key derivation</summary>
+      <div class="answer">
+        <p>We use Windows Machine GUID as input to PBKDF2 for token
+        encryption. An attacker with admin access to the machine can read
+        the GUID from registry and decrypt the token file. This is by design
+        — we trust the machine boundary, not the user account boundary. For
+        higher security, store tokens on a hardware security module (not
+        currently supported).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>No code signing yet</summary>
+      <div class="answer">
+        <p>The .exe binary is not signed with an Authenticode certificate.
+        Users see a SmartScreen warning on first run. We plan to add code
+        signing in 2026 H2 when budget allows ($300+/year for EV cert).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Bot HTTPServer binds to 127.0.0.1 only</summary>
+      <div class="answer">
+        <p>The OAuth callback receiver listens on <code>127.0.0.1:8765</code>
+        (FB) and <code>127.0.0.1:8766</code> (TikTok). It only accepts
+        loopback connections, not LAN/WAN. Browser extensions on the same
+        machine could theoretically read the OAuth code — same risk as any
+        OAuth flow that uses localhost callback.</p>
+      </div>
+    </details>
+
+    <h2>Past security advisories</h2>
+    <p>None to date. This page will document any future advisories with
+    CVE numbers where applicable.</p>
+
+    <h2>Contact</h2>
+    <p>Security disclosures: <a href="mailto:security@lttstudios.com">security@lttstudios.com</a><br>
+       Response time: within 48 hours for critical, 7 days otherwise</p>
+
+    <p>For non-security matters, see the general
+    <a href="/contact.html">Contact page</a>.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

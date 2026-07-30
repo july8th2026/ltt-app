@@ -1,0 +1,45 @@
+# Cloudflare Tunnel - cau hinh mau cho LTT AI Studio
+#
+# Copy thanh config.yml roi dien lai. KHONG commit config.yml (da co trong
+# .gitignore) vi no chua tunnel ID.
+#
+# GIOI HAN CAN BIET TRUOC (goi Free/Pro):
+#   - Request body toi da 100 MB. Upload lon hon bi Cloudflare tra HTTP 413
+#     TRUOC KHI toi may chu. App video se cham tran nay.
+#   - Timeout cho origin 100 giay. Viec chay lau hon bi loi 524 du bot van
+#     dang chay. Vi vay moi viec dai phai di qua hang doi job, khong lam
+#     dong bo trong mot request.
+#   - Serve video/file lon khong host tren Cloudflare bi han che theo ToS.
+#
+# Khi cham cac tran nay: chuyen file sang object storage (R2) va cho trinh
+# duyet tai truc tiep. Lop platform_core/storage.py da tach san cho viec do,
+# chi can them mot backend.
+
+tunnel: THAY_BANG_TUNNEL_ID
+credentials-file: C:\LTTPlatform\cloudflare\THAY_BANG_TUNNEL_ID.json
+
+# Ghi log de con doi chieu khi su co
+loglevel: info
+logfile: C:\LTTPlatform\logs\cloudflared.log
+
+# Giu ket noi on dinh khi mang nha thay doi IP
+retries: 5
+grace-period: 30s
+
+ingress:
+  # ── App chinh ─────────────────────────────────────────────────────────────
+  - hostname: app.lttstudios.com
+    service: http://127.0.0.1:8000
+    originRequest:
+      # Uvicorn chi nghe loopback, khong ai vao truc tiep cong 8000 duoc.
+      connectTimeout: 30s
+      # Tang thoi gian cho phan hoi. Van bi tran 100 giay cua Cloudflare o
+      # tang tren, nhung it nhat cloudflared khong tu cat som hon.
+      tcpKeepAlive: 30s
+      noHappyEyeballs: false
+      # Upload video: khong dem toan bo request vao bo nho truoc khi chuyen.
+      disableChunkedEncoding: false
+
+  # ── Bat buoc: quy tac cuoi cung ──────────────────────────────────────────
+  # Thieu dong nay cloudflared se tu choi khoi dong.
+  - service: http_status:404

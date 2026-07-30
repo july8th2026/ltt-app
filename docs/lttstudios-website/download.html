@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download — LTTStudios VideoBot</title>
+<meta name="description" content="Download LTTStudios VideoBot for Windows. Free for individual creators. Latest build with full Meta Graph and TikTok Content Posting API support.">
+<link rel="canonical" href="https://lttstudios.com/download.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/download.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/download.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/download.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Download LTTStudios VideoBot">
+<meta property="og:description" content="Free Windows desktop tool for bulk video publishing to Facebook Pages and TikTok.">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/download.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Download</span>
+    <h1>LTTStudios VideoBot for Windows</h1>
+    <p class="lead">Free for individual creators. Portable .zip — no installer
+    required. Set up in under 15 minutes.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <div class="card" style="text-align:center;padding:var(--sp-10) var(--sp-6);">
+      <span class="badge badge-success">v1.0.0 · Stable</span>
+      <h2 style="margin-top:var(--sp-3)">Latest release — Windows 10/11 (64-bit)</h2>
+      <p class="text-muted">Build 2025-01 · Released June 2026 · ~50 MB</p>
+      <p style="margin-top:var(--sp-6)">
+        <a href="mailto:support@lttstudios.com?subject=Download%20request"
+           class="btn btn-primary btn-lg">
+          ⬇  Request download link
+        </a>
+      </p>
+      <p class="text-muted" style="font-size:13px;margin-top:var(--sp-3)">
+        We currently provide downloads via email to deter automated scraping.
+        Email us and you'll receive the link within 1 business day.
+      </p>
+    </div>
+
+    <h2>What you get in the .zip</h2>
+    <ul>
+      <li><code>BOT_UP_FACEBOOK.exe</code> — main application</li>
+      <li><code>run_gui.bat</code> — launcher</li>
+      <li><code>setup_new_machine.bat</code> — first-time setup script</li>
+      <li><code>requirements.txt</code> — Python dependencies</li>
+      <li><code>data/config.json</code> — default config (you customize via Settings tab)</li>
+      <li><code>secrets/</code> — empty folder for your credentials</li>
+      <li><code>LICENSE</code> — license terms</li>
+      <li><code>README.md</code> — quick start</li>
+    </ul>
+
+    <h2>Quick start (after extracting)</h2>
+    <ol>
+      <li>Run <code>setup_new_machine.bat</code> — installs Python deps,
+        validates config (~2 min)</li>
+      <li>Run <code>run_gui.bat</code> — launches the GUI</li>
+      <li>Go to <strong>Settings</strong> tab → fill in Meta App ID,
+        TikTok Client Key, Google credentials path</li>
+      <li>Go to <strong>FB Accounts</strong> tab → click <strong>Connect</strong>
+        → OAuth via browser</li>
+      <li>Go to <strong>Sheet FB</strong> tab → add a worker → click
+        <strong>Start</strong></li>
+    </ol>
+
+    <h2>System requirements</h2>
+    <table class="table">
+      <tr><th width="200">OS</th><td>Windows 10 (1903+) or Windows 11, 64-bit</td></tr>
+      <tr><th>Python</th><td>3.10 or newer (bundled in installer if missing)</td></tr>
+      <tr><th>RAM</th><td>2 GB minimum, 4 GB recommended for 6+ workers</td></tr>
+      <tr><th>Disk</th><td>500 MB for app, 5-10 GB free for video cache</td></tr>
+      <tr><th>Network</th><td>Stable broadband, ≥10 Mbps for large video uploads</td></tr>
+      <tr><th>Browser</th><td>Chrome, Edge, Cốc Cốc, or Brave (for OAuth flows)</td></tr>
+      <tr><th>Optional</th><td>FFmpeg on PATH (for full video variation features)</td></tr>
+    </table>
+
+    <h2>Verify integrity</h2>
+    <p>After downloading, verify the .zip with SHA-256 hash provided in the
+    email. To verify on Windows:</p>
+    <pre><code>certutil -hashfile lttstudios-videobot-v1.0.0.zip SHA256</code></pre>
+    <p>Compare with the hash in the email. If they don't match, do not extract
+    — email <a href="mailto:security@lttstudios.com">security@lttstudios.com</a>
+    immediately.</p>
+
+    <h2>Antivirus &amp; SmartScreen</h2>
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">First-run warning is normal</h4>
+      <p>Because we're a small studio without code-signing certificates yet,
+      Windows SmartScreen may show a warning on first run. Click
+      <strong>More info</strong> → <strong>Run anyway</strong>.</p>
+      <p>If your antivirus quarantines the .exe, please email
+      <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>
+      with the AV vendor name — we'll submit the binary for false-positive
+      review.</p>
+    </div>
+
+    <h2>License</h2>
+    <p>LTTStudios VideoBot is free for individual creators under the terms of
+    our <a href="/legal/terms.html">Terms of Service</a>. Bulk redistribution,
+    reselling, or sublicensing is not permitted. See the full
+    <code>LICENSE</code> file inside the .zip for details.</p>
+
+    <h2>Older versions</h2>
+    <p>We do not host older versions for download. If you need a specific
+    historical build for compatibility or audit reasons, email
+    <a href="mailto:support@lttstudios.com">support@lttstudios.com</a> with
+    the version number and reason.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

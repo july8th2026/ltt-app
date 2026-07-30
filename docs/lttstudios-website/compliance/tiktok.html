@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikTok Developer Compliance — LTTStudios</title>
+<meta name="description" content="How LTTStudios VideoBot complies with TikTok Developer Terms, Content Sharing Guidelines, and Community Guidelines.">
+<link rel="canonical" href="https://lttstudios.com/compliance/tiktok.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/compliance/tiktok.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/compliance/tiktok.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/compliance/tiktok.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="TikTok Developer Compliance — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/compliance/tiktok.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Compliance · TikTok</span>
+    <h1>TikTok Developer Compliance</h1>
+    <p class="lead">How we map every TikTok policy to specific bot behavior. Direct Post audit submitted 2026-05-22.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Our TikTok compliance commitment</h2>
+    <p>LTTStudios VideoBot is built to comply with all
+    <a href="https://developers.tiktok.com/doc/tiktok-developer-terms-of-service" target="_blank" rel="noopener">TikTok Developer Terms of Service</a>,
+    Content Sharing Guidelines, and Community Guidelines. This page maps
+    every TikTok policy area to specific bot behavior.</p>
+
+    <h2>OAuth scopes &amp; their use</h2>
+    <table class="table">
+      <tr><th>Scope</th><th>What the bot does</th><th>Where in code</th></tr>
+      <tr>
+        <td><code>user.info.basic</code></td>
+        <td>Calls <code>GET /v2/user/info/</code> after OAuth to display the connected account in the GUI (open_id, display_name, avatar_url).</td>
+        <td><code>core/tiktok/auth_manager.py</code></td>
+      </tr>
+      <tr>
+        <td><code>video.upload</code></td>
+        <td>Calls <code>POST /v2/post/publish/inbox/video/init/</code> for draft uploads (creator manually reviews in TikTok app before publishing).</td>
+        <td><code>core/tiktok/uploader_draft.py</code></td>
+      </tr>
+      <tr>
+        <td><code>video.publish</code></td>
+        <td>Calls <code>POST /v2/post/publish/video/init/</code> for direct posts. ONLY used after the TikTok app audit approves Direct Post.</td>
+        <td><code>core/tiktok/uploader_direct.py</code></td>
+      </tr>
+    </table>
+
+    <h2>Content Sharing Guidelines compliance</h2>
+
+    <h3>Required: User consent for each post</h3>
+    <p>Bot enforces user consent via the <code>tiktok_confirmed_at</code> sheet
+    column. Each row must have a confirmation timestamp before the bot will
+    publish — this satisfies TikTok's "Creator must take explicit action"
+    requirement for Direct Post.</p>
+
+    <p>Implementation: <code>core/tiktok/compliance_guard.py</code> rejects
+    any row missing <code>tiktok_confirmed_at</code> with error:
+    <code>ERR_NO_ACCOUNT</code> or <code>ERR_AUDIT_NOT_APPROVED</code> depending on which compliance check fails first.</p>
+
+    <h3>Required: Show TikTok branding on confirmation UI</h3>
+    <p>The TikTok branding (logo + "TikTok" text) is displayed in the bot's
+    confirmation dialog before publish. Source:
+    <code>gui/tiktok_oauth_disclosure.py</code>.</p>
+
+    <h3>Required: Privacy level enforcement</h3>
+    <p>Until the TikTok app audit approves Direct Public Posting, the bot
+    enforces <code>privacy_level=SELF_ONLY</code> automatically for all
+    Direct Posts. This is enforced server-side in
+    <code>ComplianceGuard.enforce_sandbox_privacy()</code> — user cannot
+    override even via sheet column.</p>
+
+    <h3>Required: Compliance disclosure URL</h3>
+    <p>Per Content Sharing Guidelines, our Direct Post UI links to:</p>
+    <ul>
+      <li>Privacy Policy: <a href="/legal/privacy.html">lttstudios.com/legal/privacy.html</a></li>
+      <li>Terms of Service: <a href="/legal/terms.html">lttstudios.com/legal/terms.html</a></li>
+    </ul>
+
+    <h2>TikTok Direct Post audit status</h2>
+
+    <table class="table">
+      <tr><th>Item</th><th>Status</th></tr>
+      <tr><td>Audit submitted</td><td>2026-05-22</td></tr>
+      <tr><td>Expected review time</td><td>2-4 weeks</td></tr>
+      <tr><td>Current mode (until approved)</td><td>Draft upload only (creator inbox)</td></tr>
+      <tr><td>privacy_level enforcement</td><td><code>SELF_ONLY</code> hardcoded in Sandbox</td></tr>
+    </table>
+
+    <h2>Audit log evidence</h2>
+    <p>Every TikTok API call is logged in <code>data/audit_log.jsonl</code>
+    with event types:</p>
+    <ul>
+      <li><code>tiktok_video_uploaded</code> — successful publish</li>
+      <li><code>tiktok_video_failed</code> — failure with reason</li>
+      <li><code>tiktok_comment_posted</code> — first comment</li>
+      <li><code>tiktok_validation_failed</code> — rejected by ComplianceGuard</li>
+      <li><code>tiktok_token_refresh</code> — refresh token rotation</li>
+    </ul>
+
+    <h2>What we DON'T do</h2>
+    <ul>
+      <li>❌ Don't scrape TikTok videos or user data</li>
+      <li>❌ Don't auto-generate content (creator supplies all videos)</li>
+      <li>❌ Don't access friend lists or follower data beyond what OAuth grants</li>
+      <li>❌ Don't bypass privacy_level restrictions</li>
+      <li>❌ Don't bypass watermark requirements</li>
+      <li>❌ Don't use undocumented mobile APIs</li>
+    </ul>
+
+    <h2>For TikTok reviewers</h2>
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">Cross-references for quick verification</h4>
+      <ul>
+        <li><strong>Architecture</strong>: <a href="/architecture.html">/architecture.html</a> lists every TikTok endpoint called</li>
+        <li><strong>Privacy</strong>: <a href="/legal/privacy.html">/legal/privacy.html</a> Section 3.2 details TikTok data handling</li>
+        <li><strong>Security</strong>: <a href="/legal/security.html">/legal/security.html</a> covers encryption + token handling</li>
+        <li><strong>Testing</strong>: contact us for test environment + test TikTok account</li>
+      </ul>
+    </div>
+
+    <h2>Contact</h2>
+    <p>TikTok compliance:
+    <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a></p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

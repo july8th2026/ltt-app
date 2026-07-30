@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Processing Agreement — LTTStudios</title>
+<meta name="description" content="LTTStudios Data Processing Agreement (DPA) template for organizations using LTTStudios VideoBot under GDPR.">
+<link rel="canonical" href="https://lttstudios.com/legal/dpa.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/legal/dpa.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/legal/dpa.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/legal/dpa.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Data Processing Agreement — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/legal/dpa.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Legal · DPA</span>
+    <h1>Data Processing Agreement</h1>
+    <p class="lead">Reference DPA for organizations subject to GDPR who use
+    LTTStudios VideoBot.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <p class="text-muted">Effective: 2026-06-02 · Version 1.0</p>
+
+    <div class="alert alert-info">
+      <h4 style="margin-top:0">Important context</h4>
+      <p>LTTStudios VideoBot is a <strong>desktop application</strong> that
+      runs entirely on the user's own machine. LTTStudios does NOT operate
+      backend infrastructure that processes user data on behalf of customers.</p>
+      <p>For most users, this means a separate DPA is <strong>not required</strong>
+      — the bot processes data on the user's own machine, with the user
+      acting as both controller and processor. This page exists for users
+      whose internal compliance teams require a written DPA reference for
+      LTTStudios as a software vendor.</p>
+    </div>
+
+    <h2>1. Parties</h2>
+    <p>This Data Processing Agreement ("DPA") is between:</p>
+    <ul>
+      <li><strong>Customer</strong> ("Data Controller"): the natural or
+        legal person using LTTStudios VideoBot</li>
+      <li><strong>LTTStudios</strong> ("Software Provider"): independent
+        studio operated by LE THANH TRUNG, Mê Linh, Hà Nội, Vietnam</li>
+    </ul>
+
+    <p>Note: because LTTStudios does not process Customer's user data on its
+    own infrastructure, LTTStudios does NOT act as a "Data Processor" in the
+    GDPR sense for Customer's data. LTTStudios is a software vendor.</p>
+
+    <h2>2. Scope</h2>
+    <p>This DPA applies to:</p>
+    <ul>
+      <li>The LTTStudios VideoBot desktop application</li>
+      <li>The associated marketing website at <code>lttstudios.com</code></li>
+      <li>OAuth callback handlers and optional TikTok OAuth relay</li>
+    </ul>
+
+    <h2>3. Nature and purpose of processing</h2>
+    <p>The bot processes the following categories of data <strong>on the
+    Customer's machine only</strong>:</p>
+    <ul>
+      <li>Facebook Page access tokens and Page metadata (id, name)</li>
+      <li>TikTok account access tokens and basic profile (open_id, display_name)</li>
+      <li>Google Sheets data accessed via the Customer's own OAuth credentials</li>
+      <li>Video files temporarily downloaded from the Customer's own Drive</li>
+      <li>Engagement metrics for posts published by the Customer</li>
+    </ul>
+
+    <h2>4. Controller / processor allocation</h2>
+    <table class="table">
+      <tr><th width="200">Activity</th><th>Controller</th><th>Processor</th></tr>
+      <tr>
+        <td>Storing tokens locally</td>
+        <td>Customer</td>
+        <td>None (self-hosted)</td>
+      </tr>
+      <tr>
+        <td>Calling Meta Graph API</td>
+        <td>Customer</td>
+        <td>Meta (per Meta's terms)</td>
+      </tr>
+      <tr>
+        <td>Calling TikTok API</td>
+        <td>Customer</td>
+        <td>TikTok (per TikTok's terms)</td>
+      </tr>
+      <tr>
+        <td>Calling Google Sheets/Drive API</td>
+        <td>Customer</td>
+        <td>Google (per Google's terms)</td>
+      </tr>
+      <tr>
+        <td>Marketing website visits (lttstudios.com)</td>
+        <td>LTTStudios</td>
+        <td>Hosting provider</td>
+      </tr>
+    </table>
+
+    <h2>5. Sub-processors</h2>
+    <p>LTTStudios does not have sub-processors for Customer data because
+    Customer data is not processed on LTTStudios infrastructure.</p>
+
+    <p>For LTTStudios' own marketing website, our sub-processors are:</p>
+    <ul>
+      <li>Web hosting provider (for serving static HTML/CSS) — see
+        <a href="/contact.html">contact page</a> for current hosting partner</li>
+    </ul>
+
+    <h2>6. Security measures</h2>
+    <p>For LTTStudios VideoBot (software):</p>
+    <ul>
+      <li>AES-128 Fernet encryption of all stored tokens</li>
+      <li>Machine GUID-derived encryption keys (tokens cannot be moved between machines)</li>
+      <li>TLS 1.2+ for all API communication</li>
+      <li>OAuth 2.0 standard flows with CSRF state validation</li>
+      <li>HMAC-signed cross-machine OAuth relay</li>
+      <li>Audit logging of all sensitive operations</li>
+    </ul>
+
+    <p>For LTTStudios website:</p>
+    <ul>
+      <li>HTTPS-only (Let's Encrypt or equivalent)</li>
+      <li>HSTS recommended at hosting layer</li>
+      <li>No user accounts, no cookies (nothing to compromise)</li>
+    </ul>
+
+    <p>See the full <a href="/legal/security.html">Security policy</a>.</p>
+
+    <h2>7. Data subject rights</h2>
+    <p>Because Customer's data lives on Customer's own machine, Customer is
+    responsible for honoring data subject requests (access, rectification,
+    erasure, portability). LTTStudios provides tools to facilitate:</p>
+    <ul>
+      <li>Local export of audit logs (JSONL format)</li>
+      <li>Local deletion of tokens, logs, and cached data — see
+        <a href="/legal/data-deletion.html">Data Deletion</a></li>
+    </ul>
+
+    <h2>8. Data transfers</h2>
+    <p>The bot makes outbound API calls to:</p>
+    <ul>
+      <li>Meta (USA / Ireland)</li>
+      <li>TikTok (Singapore / Ireland depending on TikTok's regional routing)</li>
+      <li>Google (USA / Ireland)</li>
+    </ul>
+    <p>These are standard SaaS data transfers initiated by Customer using
+    Customer's own credentials. LTTStudios does not control where these
+    third parties store Customer's data — see their respective privacy
+    policies and standard contractual clauses (SCCs).</p>
+
+    <h2>9. Breach notification</h2>
+    <p>If LTTStudios discovers a security incident affecting our software or
+    website that could affect Customer data, we will notify Customer within
+    72 hours via the email address used for support, in compliance with
+    GDPR Article 33.</p>
+
+    <h2>10. Audit rights</h2>
+    <p>For Customer's internal compliance audit:</p>
+    <ul>
+      <li>Source code review can be requested via
+        <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a>
+        under NDA</li>
+      <li>Security questionnaires (standard ones like SIG-Lite, VSA) will be
+        completed on a best-effort basis</li>
+    </ul>
+
+    <h2>11. Term and termination</h2>
+    <p>This DPA is effective when Customer installs and uses LTTStudios
+    VideoBot and terminates when Customer uninstalls the bot and revokes
+    OAuth permissions.</p>
+
+    <h2>12. Governing law</h2>
+    <p>This DPA is governed by the laws of the Socialist Republic of Vietnam,
+    consistent with the main <a href="/legal/terms.html">Terms of Service</a>.</p>
+
+    <h2>13. Contact for DPA matters</h2>
+    <p>
+      Email: <a href="mailto:licensing@lttstudios.com">licensing@lttstudios.com</a><br>
+      Subject line: <code>DPA inquiry</code>
+    </p>
+
+    <p>For a signed PDF version of this DPA suitable for procurement
+    workflows, email us with your company name and we'll send back a signed
+    PDF within 5 business days.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>

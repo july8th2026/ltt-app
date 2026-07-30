@@ -1,0 +1,18 @@
+# Thu vien chi danh cho phan web. Cai kem requirements.txt.
+#
+# TAI SAO CO CAN TREN ("<"):
+# Truoc day file nay chi ghi ">=", nen "pip install" tren may chu keo ve BAN
+# MOI NHAT tai thoi diem cai. Ngay 2026-07-31 dieu do da xay ra that: Starlette
+# nhay tu 0.x len 1.3 va viec liet ke route qua "app.routes" khong con hoat
+# dong nua. Ung dung van chay dung, nhung hanh vi da doi ma khong ai chu dong
+# quyet dinh - va hai lan cai cung mot ma nguon cho ra hai moi truong khac nhau.
+#
+# Vi vay: chan ban major ke tiep, van cho nhan ban va trong cung major.
+# Muon nang major thi nang co y thuc: chay lai toan bo test roi moi sua so o day.
+fastapi>=0.141.1,<1.0
+starlette>=1.3.1,<2.0
+uvicorn[standard]>=0.52.0,<1.0
+itsdangerous>=2.2.0,<3.0
+jinja2>=3.1.6,<4.0
+python-multipart>=0.0.29,<1.0
+httpx>=0.28.1,<1.0

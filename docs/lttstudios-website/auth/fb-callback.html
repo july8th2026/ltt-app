@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authenticating — LTTStudios</title>
+<meta name="description" content="Facebook OAuth callback handler for LTTStudios VideoBot desktop app.">
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 0; padding: 0; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0d47a1 0%, #1565C0 100%);
+    color: #fff;
+  }
+  .card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 16px;
+    padding: 48px 40px; max-width: 480px; width: 90%;
+    text-align: center;
+  }
+  .logo { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+  .status { font-size: 20px; margin-bottom: 24px; }
+  .spinner {
+    width: 56px; height: 56px; margin: 0 auto 24px;
+    border: 4px solid rgba(255,255,255,0.2);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .detail { font-size: 14px; opacity: 0.8; margin-top: 16px; line-height: 1.6; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+  .code-box {
+    background: rgba(0,0,0,0.3); padding: 10px 14px;
+    border-radius: 6px; margin-top: 12px;
+    font-family: "Consolas", monospace; font-size: 12px;
+    word-break: break-all; max-height: 80px; overflow: auto;
+  }
+  .footer { margin-top: 32px; font-size: 12px; opacity: 0.6; }
+  .footer a { color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">LTT Studios</div>
+  <div class="spinner" id="spinner"></div>
+  <div class="status" id="status">Đang xử lý xác thực Facebook...</div>
+  <div class="detail" id="detail">
+    Bạn có thể đóng tab này khi quá trình hoàn tất.<br>
+    Ứng dụng bot trên máy bạn sẽ tự động nhận thông tin.
+  </div>
+  <div class="footer">
+    LTT Studios · <a href="/legal/privacy.html">Privacy</a> · <a href="/legal/terms.html">Terms</a>
+  </div>
+</div>
+
+<script>
+/*
+ * Facebook OAuth callback handler.
+ *
+ * Flow:
+ *   FB redirects user here with ?code=...&state=...
+ *   We forward code+state to the local bot's HTTP server (127.0.0.1:8765).
+ *
+ * Why this exists (instead of redirecting FB straight to localhost):
+ *   FB blocks localhost redirect URIs in 2024+. So we use a public HTTPS
+ *   URL that the bot polls / posts to.
+ */
+
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('code');
+  const state  = params.get('state');
+  const error  = params.get('error');
+  const errDesc = params.get('error_description');
+
+  const statusEl  = document.getElementById('status');
+  const detailEl  = document.getElementById('detail');
+  const spinnerEl = document.getElementById('spinner');
+
+  function showOK(msg, detail) {
+    spinnerEl.style.display = 'none';
+    statusEl.textContent = msg;
+    statusEl.classList.add('ok');
+    detailEl.innerHTML = detail;
+  }
+
+  function showError(msg, detail) {
+    spinnerEl.style.display = 'none';
+    statusEl.textContent = msg;
+    statusEl.classList.add('err');
+    detailEl.innerHTML = detail;
+  }
+
+  if (error) {
+    showError(
+      'Xác thực bị huỷ',
+      `Facebook báo: <code>${error}</code><br>${errDesc || ''}<br><br>` +
+      'Bạn có thể đóng tab và thử lại từ ứng dụng.'
+    );
+    return;
+  }
+
+  if (!code || !state) {
+    showError(
+      'Tham số không hợp lệ',
+      'URL không có <code>code</code> hoặc <code>state</code>.<br>' +
+      'Hãy bắt đầu OAuth flow lại từ ứng dụng.'
+    );
+    return;
+  }
+
+  // Local bot HTTPServer endpoint
+  const localBot = 'http://127.0.0.1:8765/callback';
+
+  // Try POST first (preferred — bot uses HEAD/POST API)
+  fetch(localBot, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    new URLSearchParams({ code: code, state: state }).toString(),
+    mode:    'no-cors'
+  }).then(() => {
+    showOK(
+      '✅ Đã kết nối thành công',
+      'Bạn có thể đóng tab này.<br>Quay lại ứng dụng để xem danh sách Pages.'
+    );
+  }).catch(() => {
+    // Fallback: GET via redirect (in case bot only listens for GET)
+    showOK(
+      '✅ Đã gửi mã xác thực về bot',
+      'Nếu ứng dụng không phản hồi, vui lòng kiểm tra ' +
+      'bot có đang chạy không (port 8765).'
+    );
+    window.location.href = localBot + '?code=' + encodeURIComponent(code) +
+                           '&state=' + encodeURIComponent(state);
+  });
+
+  // 30s timeout if bot doesn't respond
+  setTimeout(() => {
+    if (spinnerEl.style.display !== 'none') {
+      showError(
+        '⚠ Bot không phản hồi',
+        'Đảm bảo ứng dụng LTTStudios VideoBot đang chạy trên máy bạn.<br>' +
+        'Sau đó thử lại từ tab Settings → Connect Facebook.'
+      );
+    }
+  }, 30000);
+})();
+</script>
+
+</body>
+</html>

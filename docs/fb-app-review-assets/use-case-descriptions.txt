@@ -1,0 +1,217 @@
+================================================================
+FACEBOOK APP REVIEW — USE CASE DESCRIPTIONS (PASTE-READY)
+LTTStudio VideoBot — App ID: 2021063792619148
+================================================================
+
+Use these EXACT texts in the Meta App Review submission form.
+Each block is one permission. Paste verbatim into the corresponding
+"Tell us how you're using this permission" field.
+
+----------------------------------------------------------------
+[1] pages_show_list
+----------------------------------------------------------------
+
+How are you using this permission?
+----------------------------------
+Our app allows content creators to bulk-publish video content to
+multiple Facebook Pages they manage from a single desktop dashboard.
+
+After the creator authenticates via OAuth, we call
+GET /me/accounts to retrieve the list of Pages they administer.
+The Page picker UI then lets the creator select which Pages to
+enable for automated publishing.
+
+We store only page_id, page_name, page_category, and the page
+access_token returned by Facebook. Tokens are encrypted at rest
+using AES-128 Fernet, bound to the user's Windows Machine GUID,
+and never transmitted to any third party.
+
+Step-by-step creator flow (matches screencast):
+1. Creator opens BOT_UP_FACEBOOK.exe → "Facebook Accounts" tab
+2. Clicks "Connect Facebook Account"
+3. Browser opens FB OAuth dialog, grants pages_show_list
+4. App displays the Page list (name + thumbnail)
+5. Creator tick-selects Pages and clicks Save
+
+Without Advanced Access, creators who manage business Pages they
+do not personally test under cannot use the app — the picker would
+return an empty list.
+
+
+----------------------------------------------------------------
+[2] pages_manage_posts
+----------------------------------------------------------------
+
+How are you using this permission?
+----------------------------------
+This is our app's core feature. We publish creator-supplied videos
+to the creator's own Facebook Pages via:
+
+  - POST /{page_id}/videos       (3-phase resumable upload for feed)
+  - POST /{page_id}/video_reels  (2-phase upload for Reels)
+
+Video files come from the creator's own Google Drive (via a shared
+link they paste into a Google Sheet row). Title, description,
+keywords, optional thumbnail, and optional scheduled_publish_time
+are also supplied by the creator per row.
+
+We support scheduled publishing using the scheduled_publish_time
+parameter when the creator wants content to publish at off-hours.
+
+Step-by-step creator flow (matches screencast):
+1. Creator fills a Google Sheet row: {video_url, title,
+   description, schedule_time, target_page}
+2. Opens "Sheet FB" tab, adds a worker for that sheet+Page
+3. Clicks "Start" — bot downloads video, uploads in 3 phases
+4. On success, video URL and FB video ID are written back to sheet
+5. Audit log entry created (timestamp + page_id + video_id only)
+
+We enforce client-side rate limits to be a respectful API consumer:
+  - 4 hours minimum between posts on the same Page
+  - 15 minutes minimum between posts on different Pages
+  - Max 3 posts per Page per day
+  - Active hours: 7am-10pm only
+  - Exponential backoff on FB error codes 4, 17, 32 (rate limit)
+    and 368 (spam-related cooldown)
+  - Circuit-breaker: pause publishing to a Page after consecutive
+    failures, with cooldown matching FB documented values
+
+Without Advanced Access, content published by the app is hidden
+from non-app-role users, making the app unusable for creators
+who publish for real audiences.
+
+
+----------------------------------------------------------------
+[3] pages_read_engagement
+----------------------------------------------------------------
+
+How are you using this permission?
+----------------------------------
+After a video is published, our app displays engagement analytics
+so creators can see how their content is performing without
+switching to a separate tool. We call:
+
+  - GET /{video_id}?fields=reactions.summary(),comments.summary(),shares
+  - GET /{video_id}/video_insights?metric=post_impressions_unique,
+        post_video_views,post_video_view_time
+
+A background daemon refreshes these metrics every 30 minutes
+(configurable), starting 24 hours after each publish (also
+configurable) to allow Facebook time to populate insights.
+
+Data shown in the "Monitor" tab:
+  - Views, unique reach, reactions count
+  - Comments count, shares count
+  - Total minutes viewed
+  - Click-through to the original Facebook post
+
+Step-by-step creator flow (matches screencast):
+1. Creator opens "Monitor" tab
+2. Table populates with insights for all published videos
+3. Creator clicks a row to open the post on facebook.com
+
+Without Advanced Access, creators cannot see analytics for Pages
+where they aren't also a Tester of the app — defeating the purpose
+of multi-Page analytics consolidation.
+
+
+----------------------------------------------------------------
+[4] pages_manage_engagement
+----------------------------------------------------------------
+
+How are you using this permission?
+----------------------------------
+After successfully publishing a video, our app optionally posts a
+SINGLE first-comment on that video. The comment text is supplied
+by the creator in the Google Sheet column named "binh_luan_video"
+(Vietnamese for "video_comment").
+
+We call:
+  - POST /{video_id}/comments  with body {"message": "<text>"}
+
+This is the standard creator workflow for placing additional
+information that doesn't fit in the main caption: external links,
+video index/chapters, related video references, hashtags.
+
+Step-by-step creator flow (matches screencast):
+1. Creator fills the "binh_luan_video" column in their sheet row
+2. After successful video upload, bot waits a configurable
+   randomized delay (0-300 seconds) to avoid burst patterns
+3. Bot calls POST /{video_id}/comments exactly ONCE
+4. On failure, video remains published — comment failure NEVER
+   reverts the publish (separate try/except scope)
+
+Safety measures:
+  - Maximum 1 comment per video (hardcoded — never spams threads)
+  - Maximum 8000 characters per comment (Graph API limit, enforced
+    client-side with friendly error)
+  - Reels excluded by default (comment API behavior differs and we
+    don't want inconsistent UX)
+  - Audit log records every comment attempt with publish_id
+
+Without Advanced Access, the first-comment feature would only work
+when the comment text is read by an app-role user, eliminating its
+value for real audience engagement.
+
+
+----------------------------------------------------------------
+SHORT APP DESCRIPTION (50-100 words)
+----------------------------------------------------------------
+
+LTTStudio VideoBot is a Windows desktop tool that lets video
+content creators bulk-publish pre-recorded videos to multiple
+Facebook Pages they own. Creators supply video files via Google
+Drive links and metadata via Google Sheets rows. The app handles
+3-phase resumable upload to Page feeds and Reels, optional
+scheduled publishing, optional first-comment, and engagement
+analytics fetching. All data is processed locally — no LTTStudio
+backend stores user data. Built for solo creators and small studios
+managing multiple brand Pages.
+
+
+----------------------------------------------------------------
+LONG APP DESCRIPTION (~300 words)
+----------------------------------------------------------------
+
+LTTStudio VideoBot is a Windows desktop application designed for
+video content creators and small studios who manage multiple
+Facebook Pages and need to bulk-schedule video publishing across
+those Pages without the manual click-by-click overhead of
+Facebook Creator Studio.
+
+The creator workflow:
+  1. Connect their Facebook account via OAuth (we request
+     pages_show_list, pages_manage_posts, pages_read_engagement,
+     pages_manage_engagement)
+  2. Connect a Google Sheet (read/write) and Google Drive (read)
+     for the content queue
+  3. Fill sheet rows with video URL, title, description,
+     scheduled time, target Page, and optional comment
+  4. Start the bot — it processes rows respecting client-side
+     rate limits, downloads videos, uploads to Facebook,
+     optionally posts a first comment, and writes results back
+     to the sheet
+  5. Background daemons refresh engagement insights and warn on
+     token expiry
+
+Notable design choices for safety and Facebook policy compliance:
+  - Hardcoded conservative rate limits (4h between same-Page
+    posts, 3 posts/Page/day max, active hours 7am-10pm)
+  - Page warmup logic that further limits posting frequency for
+    new Pages (< 30 days old)
+  - Circuit-breaker that pauses publishing to a Page after
+    repeated failures, with cooldown matching FB documented
+    backoff values
+  - Content deduplication (SHA-256 + perceptual hash) to prevent
+    accidentally re-posting the same video to the same Page
+  - All tokens encrypted at rest (AES-128 Fernet)
+  - No third-party servers — all processing happens on the
+    creator's machine
+  - Comprehensive audit log for compliance review
+
+Built and maintained by LTTStudio, a Vietnam-based small studio
+operating since 2024.
+
+================================================================
+END OF FILE
+================================================================

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>🧪 Chạy thử một job</h2>
+    <p class="muted" style="margin-top:0;">
+      App này đi qua đủ chuỗi hạ tầng nhưng không gọi API nào, nên chạy bao
+      nhiêu lần cũng miễn phí. Dùng nó để nghiệm thu sau mỗi lần sửa hạ tầng
+      thay vì test bằng app tính tiền theo giây.
+    </p>
+
+    {% if error %}<div class="alert alert-err" style="margin:0 0 12px;"><pre>{{ error }}</pre></div>{% endif %}
+
+    <form method="post" action="{{ app.route_prefix }}" style="max-width:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="field">
+        <label for="text">Nội dung</label>
+        <textarea id="text" name="text" rows="4"
+                  placeholder="Nhập gì cũng được — job sẽ đảo ngược chuỗi này">{% if result %}{% endif %}</textarea>
+        <span class="hint">Giá: 1 credit mỗi 100 ký tự (do manifest quyết định).</span>
+      </div>
+      <div><button type="submit" style="background:{{ app.accent }};">▶  Chạy job</button></div>
+    </form>
+  </div>
+
+  {% if result %}
+    <div class="card">
+      <div class="card-accent" style="background:#2E7D32;"></div>
+      <h2>✅ Kết quả</h2>
+      <table>
+        <tr><th style="width:190px;">Độ dài đầu vào</th><td>{{ result.input_length }} ký tự</td></tr>
+        <tr><th>Số từ</th><td>{{ result.words }}</td></tr>
+        <tr><th>Credit đã tính</th><td>{{ result.credit_cost }}</td></tr>
+        <tr><th>Đầu ra</th><td class="mono" style="word-break:break-all;">{{ result.output }}</td></tr>
+      </table>
+      <p class="dim" style="font-size:11px; margin:12px 0 0;">
+        Credit ở đây chỉ được <em>tính</em>, chưa trừ vào sổ — sổ credit thuộc
+        giai đoạn sau. Con số này chứng minh <span class="mono">registry.credit_for()</span>
+        đọc đúng hàm giá từ manifest của app.
+      </p>
+    </div>
+  {% endif %}
+{% endblock %}

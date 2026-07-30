@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48">
+  <!-- Mark -->
+  <rect x="0" y="8" width="32" height="32" rx="6" fill="#1565C0"/>
+  <path d="M9 17h14M16 17v14M9 31h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Wordmark -->
+  <text x="44" y="32" font-family="-apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="22" font-weight="800" fill="#1565C0" letter-spacing="-0.5">
+    LTT Studios
+  </text>
+</svg>

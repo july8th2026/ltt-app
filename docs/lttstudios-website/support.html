@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support &amp; FAQ — LTTStudios</title>
+<meta name="description" content="Frequently asked questions about LTTStudios VideoBot setup, OAuth, rate limits, troubleshooting, and platform policies.">
+<link rel="canonical" href="https://lttstudios.com/support.html">
+<link rel="alternate" hreflang="en" href="https://lttstudios.com/support.html">
+<link rel="alternate" hreflang="vi" href="https://lttstudios.com/vi/support.html">
+<link rel="alternate" hreflang="x-default" href="https://lttstudios.com/support.html">
+<link rel="icon" type="image/svg+xml" href="/assets/img/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/img/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+<meta property="og:title" content="Support &amp; FAQ — LTTStudios">
+<meta property="og:image" content="https://lttstudios.com/assets/img/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+<meta name="theme-color" content="#1565C0">
+<link rel="stylesheet" href="/assets/css/main.css">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"How do I connect my Facebook Page?",
+     "acceptedAnswer":{"@type":"Answer","text":"Open the bot, click the 'Facebook Accounts' tab, click 'Connect Facebook Account', complete OAuth in the browser, then check the Pages you want to enable."}},
+    {"@type":"Question","name":"Why is my video showing as 'public' but no one can see it?",
+     "acceptedAnswer":{"@type":"Answer","text":"This usually means your Meta app is still in Development Mode. Until App Review approves your permissions for Advanced Access, posts published via the app are only visible to users with roles in the app."}},
+    {"@type":"Question","name":"How often can the bot publish to one Page?",
+     "acceptedAnswer":{"@type":"Answer","text":"By default, every 4 hours (min_interval_per_page_s = 14400), with a cap of 3 posts per Page per day. These are conservative defaults to stay safe with Facebook's spam filters."}}
+  ]
+}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="brand">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="6" fill="#1565C0"/>
+        <path d="M9 9h14M16 9v14M9 23h14" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>
+      </svg>
+      LTT Studios
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu">☰</button>
+    <nav class="nav-main" aria-label="Primary">
+      <a href="/about.html">About</a>
+      <a href="/products.html">Products</a>
+      <a href="/support.html">Support</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/download.html" class="btn btn-primary btn-sm">Download</a>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <span class="active" aria-current="true">EN</span>
+        <a href="/vi/support.html" hreflang="vi" lang="vi" title="Tiếng Việt">VI</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-title">
+  <div class="container">
+    <span class="eyebrow">Support</span>
+    <h1>Frequently Asked Questions</h1>
+    <p class="lead">Common setup questions, OAuth issues, rate limits, and
+    troubleshooting tips. If your question isn't here, email
+    <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container container-narrow">
+
+    <h2>Getting started</h2>
+
+    <details class="faq-item">
+      <summary>How do I install the bot on Windows?</summary>
+      <div class="answer">
+        <p>1. Download the latest <code>.zip</code> from the
+          <a href="/download.html">download page</a>.<br>
+          2. Extract anywhere (Desktop, Documents, etc.).<br>
+          3. Run <code>setup_new_machine.bat</code> once — it checks Python,
+          creates a venv, installs dependencies, and validates configuration.<br>
+          4. Run <code>run_gui.bat</code> to launch the app.</p>
+        <p>The setup script is idempotent — safe to re-run if anything fails.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What credentials do I need to provide?</summary>
+      <div class="answer">
+        <p>You bring your own:</p>
+        <ul>
+          <li><strong>Meta Developer App</strong> (free) — for Facebook Page publishing</li>
+          <li><strong>TikTok Developer App</strong> (free) — for TikTok publishing</li>
+          <li><strong>Google Cloud OAuth credentials</strong> (free tier
+            sufficient) — for Sheets + Drive access</li>
+        </ul>
+        <p>The bot does not provide credentials. You enter them in the
+        Settings tab on first run. We never see your credentials because
+        there is no LTTStudios server.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>How do I connect my Facebook Page?</summary>
+      <div class="answer">
+        <p>Open the bot → click the <strong>Facebook Accounts</strong> tab →
+        click <strong>Connect Facebook Account</strong>. Your browser opens
+        the FB OAuth dialog. Log in, grant permissions, and you'll be
+        redirected back to a confirmation page on
+        <code>lttstudios.com</code>.</p>
+        <p>Back in the app, the list of Pages you admin will appear. Check
+        the boxes for Pages you want to enable for publishing, then click
+        Save.</p>
+      </div>
+    </details>
+
+    <h2>Permissions &amp; visibility</h2>
+
+    <details class="faq-item">
+      <summary>Why is my video showing as "public" but no one can see it?</summary>
+      <div class="answer">
+        <p>This is the #1 question from new users. The cause is almost always:
+        <strong>your Meta App is in Development Mode</strong> and has not
+        passed App Review.</p>
+        <p>Facebook silently hides posts created via apps that haven't been
+        reviewed, even though they appear "Published" and "Public" in Business
+        Suite. To fix: go through Meta App Review for
+        <code>pages_manage_posts</code> permission. See our
+        <a href="/about.html">about page</a> for how we're working through
+        this ourselves.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>I see a red dot next to my post saying "Hạn chế hiển thị"
+        ("Reduced distribution"). Why?</summary>
+      <div class="answer">
+        <p>Facebook's spam filter has reduced organic reach for that post.
+        Common triggers:</p>
+        <ul>
+          <li>Too many hashtags (FB recommends ≤ 5)</li>
+          <li>External links promoting subscriptions ("youtube.com/...?sub_confirmation=1")</li>
+          <li>"Engagement bait" phrases ("Comment below!" "Tag a friend!")</li>
+          <li>New Page with low trust score</li>
+          <li>Content that triggers nudity / violence / misinformation classifiers (even false positives)</li>
+        </ul>
+        <p>Fix: review the caption, remove triggers, and write more naturally.
+        The bot itself does not add hashtags or CTAs unless you enable the
+        Caption Rotator feature.</p>
+      </div>
+    </details>
+
+    <h2>Rate limits &amp; scheduling</h2>
+
+    <details class="faq-item">
+      <summary>How often can the bot publish to one Page?</summary>
+      <div class="answer">
+        <p>Defaults are conservative:</p>
+        <ul>
+          <li><code>min_interval_per_page_s = 14400</code> — 4 hours between posts on the same Page</li>
+          <li><code>min_inter_page_interval_s = 900</code> — 15 minutes between posts on different Pages</li>
+          <li><code>max_posts_per_page_per_day = 3</code> — hard cap per Page per day</li>
+          <li><code>jitter_s = 600</code> — adds ±10 minute random delay</li>
+        </ul>
+        <p>These are tuned to stay well within Facebook's spam thresholds.
+        You can adjust them in Settings, but doing so increases the risk of
+        Page warnings.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>What time format should I use in the schedule_time column?</summary>
+      <div class="answer">
+        <p>The bot accepts 8 formats:</p>
+        <pre><code>2026-06-15 14:30        ← recommended
+2026-06-15 14:30:00
+15/06/2026 14:30
+15-06-2026 14:30
+2026-06-15T14:30
+... and serial date floats from Google Sheets</code></pre>
+        <p>Timezone follows the <code>timezone</code> config (default
+        <code>Asia/Ho_Chi_Minh</code> = UTC+7).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>To publish immediately, what time should I enter?</summary>
+      <div class="answer">
+        <p>Enter the current time or up to 60 minutes in the past. The bot
+        will pick up any row where <code>schedule_time ≤ now</code> and
+        <code>now - schedule_time ≤ skip_overdue_minutes</code> (default 60).</p>
+        <p>Tip: use <code>=NOW()</code> in Google Sheets, then copy as value.</p>
+      </div>
+    </details>
+
+    <h2>Common errors</h2>
+
+    <details class="faq-item">
+      <summary>Error: "(#100) Length of param title must be less than or equal to 255"</summary>
+      <div class="answer">
+        <p>Facebook caps the video title at 255 characters. Shorten the title
+        in your sheet's <code>tieu_de_seo</code> column.</p>
+        <p>If Caption Rotator is enabled, it may be wrapping your title with
+        extra text that pushes it over the limit. Either disable Caption
+        Rotator or use a shorter base title.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Error: "Token Page hết hạn" / Code 190</summary>
+      <div class="answer">
+        <p>The Facebook Page access token has expired (long-lived tokens
+        last ~60 days). Re-OAuth that account:</p>
+        <p>Settings → FB Accounts → click <strong>Reconnect</strong> next to
+        the affected account. New token will replace the expired one. Past
+        posts and audit logs are unaffected.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Anti-spam says "video tương đồng" (perceptual hash match) but it's a new video</summary>
+      <div class="answer">
+        <p>The perceptual hash algorithm in older bot versions had a known
+        weakness producing false-positive matches. Update to the latest
+        version which tightens the matching threshold and rejects degenerate
+        hash values.</p>
+        <p>If false positives persist, you can disable perceptual hash dedup
+        temporarily by setting <code>anti_spam_dedup = false</code>
+        (note: this also disables strict SHA dedup — re-enable after
+        upload).</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Video uploads as Reel even though I set post_type=feed. Why?</summary>
+      <div class="answer">
+        <p>Facebook auto-classifies vertical (9:16) videos ≤ 90 seconds as
+        Reels even when uploaded via the feed video endpoint. The bot logs
+        will show <code>facebook.com/reel/...</code> instead of
+        <code>facebook.com/videos/...</code>.</p>
+        <p>To force feed (non-Reel) format: re-encode video to 16:9 (e.g.,
+        1920×1080) OR ensure duration &gt; 90 seconds. Both conditions need
+        to be met for FB to keep it as a feed video.</p>
+      </div>
+    </details>
+
+    <h2>OAuth callbacks &amp; cross-machine</h2>
+
+    <details class="faq-item">
+      <summary>After approving OAuth in browser, the bot says "Bot không phản hồi"</summary>
+      <div class="answer">
+        <p>The callback page (<code>https://lttstudios.com/auth/fb-callback.html</code>)
+        tries to POST the OAuth code to the bot's local HTTPServer on
+        <code>127.0.0.1:8765</code>. Check:</p>
+        <ul>
+          <li>Bot is still running when you complete OAuth</li>
+          <li>Windows Firewall isn't blocking port 8765 for the Python process</li>
+          <li>Try re-initiating OAuth from the bot (Settings → Reconnect)</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I OAuth TikTok on a different machine (e.g., phone)?</summary>
+      <div class="answer">
+        <p>Yes — the bot supports cross-machine TikTok OAuth via a QR code.
+        Click <strong>Connect TikTok Account</strong> → a dialog shows a QR
+        code containing the OAuth URL. Scan with your phone, complete
+        TikTok login. The callback POSTs to a relay endpoint on
+        <code>lttstudios.com/api/oauth-relay/store.php</code>, and the bot
+        pulls the code from the relay.</p>
+        <p>This requires the relay PHP files to be uploaded to your hosting.
+        If not configured, fall back to same-machine OAuth (open browser on
+        the bot's PC).</p>
+      </div>
+    </details>
+
+    <h2>Sheets &amp; Drive</h2>
+
+    <details class="faq-item">
+      <summary>The bot can't see my sheet — "Permission denied"</summary>
+      <div class="answer">
+        <p>Either:</p>
+        <ol>
+          <li>If using a Service Account: share the Sheet with the service
+            account's email (visible in your <code>service_account.json</code>
+            as <code>client_email</code>) with Editor permission.</li>
+          <li>If using OAuth2: the OAuth flow opens browser on first run —
+            log in with the Google account that owns / has access to the
+            Sheet.</li>
+        </ol>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>Video download from Google Drive fails with "virus scan warning"</summary>
+      <div class="answer">
+        <p>For videos &gt; 100MB Google shows a virus-scan confirmation page
+        before download. The bot handles this automatically — it parses the
+        confirmation form and submits it. If it still fails:</p>
+        <ul>
+          <li>Verify the Drive link has "Anyone with link can view" permission</li>
+          <li>Check the bot has Drive read scope</li>
+          <li>Try the file in incognito browser to confirm it's accessible without login</li>
+        </ul>
+      </div>
+    </details>
+
+    <h2>Data &amp; privacy</h2>
+
+    <details class="faq-item">
+      <summary>Where is my data stored?</summary>
+      <div class="answer">
+        <p><strong>Only on your machine.</strong> Tokens in
+        <code>data/tokens.enc</code> and <code>data/tiktok_tokens.enc</code>
+        (encrypted). Logs in <code>logs/app.log</code>. Audit trail in
+        <code>data/audit_log.jsonl</code>. Cached videos in
+        <code>temp_videos/</code> (auto-deleted after upload).</p>
+        <p>Nothing is sent to LTTStudios servers — we don't have any.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary>How do I delete all data?</summary>
+      <div class="answer">
+        <p>See the <a href="/legal/data-deletion.html">Data Deletion</a> page
+        for step-by-step instructions. Summary: close the bot, delete the
+        installation folder, revoke the app at
+        Facebook Settings → Business Integrations.</p>
+      </div>
+    </details>
+
+    <h2>Still stuck?</h2>
+    <p>Email <a href="mailto:support@lttstudios.com">support@lttstudios.com</a>
+    with: bot version, Windows version, what you tried, and the last 50 lines
+    of <code>logs/app.log</code>. We reply within 5 business days.</p>
+
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:8px">LTT Studios</div>
+        <p style="color:#94a3b8;font-size:14px;line-height:1.6;max-width:280px">
+          Creator-first video publishing tools.<br>Built in Vietnam since 2024.
+        </p>
+      </div>
+      <div><h4>Product</h4><ul>
+        <li><a href="/products.html">VideoBot</a></li>
+        <li><a href="/download.html">Download</a></li>
+        <li><a href="/changelog.html">Changelog</a></li>
+        <li><a href="/support.html">Support &amp; FAQ</a></li>
+      </ul></div>
+      <div><h4>Company</h4><ul>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html">Contact</a></li>
+        <li><a href="mailto:support@lttstudios.com">support@lttstudios.com</a></li>
+      </ul></div>
+      <div><h4>Legal</h4><ul>
+        <li><a href="/legal/privacy.html">Privacy</a></li>
+        <li><a href="/legal/terms.html">Terms</a></li>
+        <li><a href="/legal/cookies.html">Cookies</a></li>
+        <li><a href="/legal/data-deletion.html">Data Deletion</a></li>
+        <li><a href="/legal/security.html">Security</a></li>
+        <li><a href="/legal/dpa.html">DPA</a></li>
+      </ul></div>
+    </div>
+    <div class="site-footer-bottom">
+      © 2024-<span data-year>2026</span> LTT Studios.
+      <a href="/legal/privacy.html">Privacy</a>
+      <a href="/legal/terms.html">Terms</a>
+      <a href="/sitemap.xml">Sitemap</a>
+    </div>
+  </div>
+</footer>
+<script src="/assets/js/main.js"></script>
+</body>
+</html>
