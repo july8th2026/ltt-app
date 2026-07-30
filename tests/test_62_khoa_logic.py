@@ -249,7 +249,45 @@ def test_chi_con_mot_he_danh_so_ke_hoach():
     )
 
 
-# ── Ràng buộc 6: quyết định không được trùng số ───────────────────────────────
+# ── Ràng buộc 6: script không được chứa ký tự điều khiển vô hình ─────────────
+
+def _script_files() -> list[pathlib.Path]:
+    out: list[pathlib.Path] = []
+    for d in ("setup", "deploy"):
+        out += [p for p in (ROOT / d).rglob("*.ps1")]
+    return out
+
+
+@pytest.mark.parametrize("ten", sorted(p.relative_to(ROOT).as_posix()
+                                       for p in _script_files()))
+def test_script_khong_co_ky_tu_dieu_khien(ten):
+    r"""Ký tự điều khiển trong script là lỗi vô hình và tốn kém nhất.
+
+    Đã xảy ra hai lần trong dự án này:
+
+    1. Một chuỗi Python không phải raw-string chứa ``.\setup\3-cloudflare`` —
+       ``\3`` là escape bát phân nên thành ``chr(3)``. Người đọc copy đường dẫn
+       về sẽ chạy sai. Dự án đã thêm test cho **tài liệu** sau lần đó.
+    2. Ngày 2026-07-31, đúng lỗi ấy lọt vào **script** khi thêm bước cài
+       PostgreSQL: ``'...\PostgreSQL\$v\bin'`` thành ``\x08in`` và
+       ``'secrets\app.env'`` thành ``secrets\x07pp.env``.
+
+    Lần thứ hai nguy hiểm hơn nhiều vì không ai đọc script bằng mắt:
+    - bộ cài không tìm thấy PostgreSQL rồi báo "cài thất bại" — sai nguyên nhân;
+    - `backup.ps1` không thấy `app.env` nên **âm thầm bỏ qua CSDL**, cho ra một
+      bản sao lưu trông y hệt bản đầy đủ và chỉ lộ ra đúng lúc cần khôi phục.
+
+    Kiểm tra ASCII sẵn có **không** bắt được: các ký tự này đều nhỏ hơn 128.
+    Kiểm tra cú pháp cũng không, vì chúng nằm trong chuỗi.
+    """
+    text = (ROOT / ten).read_text(encoding="utf-8")
+    bad = [(i, hex(ord(c))) for i, c in enumerate(text)
+           if ord(c) < 32 and c not in "\n\r\t"]
+    chi_tiet = [f"vi tri {i} ({m}): {text[max(0, i-25):i+10]!r}" for i, m in bad[:3]]
+    assert bad == [], f"{ten} co ky tu dieu khien vo hinh: " + " | ".join(chi_tiet)
+
+
+# ── Ràng buộc 7: quyết định không được trùng số ───────────────────────────────
 
 def test_moi_quyet_dinh_co_mot_so_duy_nhat():
     """Hai quyết định trùng số là hai câu trả lời cho cùng một câu hỏi.

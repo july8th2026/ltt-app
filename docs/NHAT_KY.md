@@ -14,6 +14,119 @@
 
 ---
 
+## 2026-07-31 — H1.1: lớp CSDL PostgreSQL + Alembic
+
+- **Mục tiêu:** dựng lớp CSDL và bộ máy di trú lược đồ.
+- **Hạng mục:** H1.1 — **dở, bị chặn**.
+- **Trạng thái:** phần code xong và đã kiểm chứng; phần cần quyền
+  Administrator chưa làm được.
+
+### Đã làm
+
+**1. `platform_core/db.py`** — engine dùng chung, session factory, và
+`che_mat_khau()` áp cho **mọi** đường lỗi. Lý do tồn tại của hàm che: thông báo
+lỗi của driver PostgreSQL thường nhúng nguyên chuỗi kết nối, `/health/ready`
+thì cố ý không yêu cầu đăng nhập (để reverse proxy thăm dò được), và người ta
+hay dán nguyên thông báo lỗi vào chat để hỏi. Ba điều đó cộng lại là một đường
+rò rất thật.
+
+**2. Alembic** — `alembic.ini` **cố ý không có dòng `sqlalchemy.url`** (file đó
+nằm trong git); `env.py` đọc từ `LTT_DATABASE_URL`. Migration đầu tiên tạo bảng
+`platform_info`.
+
+*Lệch so với kế hoạch, có chủ ý:* kế hoạch ghi "migration đầu tiên tạo bảng
+rỗng". Một migration không tạo gì thì **không kiểm chứng được** — vòng
+`upgrade` → `downgrade` → `upgrade` không chứng minh được điều gì. Đổi thành
+một bảng nhỏ có thật (ghi lược đồ này dựng khi nào, bởi bản nào), vừa hữu ích
+khi hỗ trợ vừa làm việc kiểm chứng có nghĩa.
+
+**3. `/health/ready` kiểm tra CSDL bằng `SELECT 1` thật**, không phải kiểm tra
+"đã cấu hình chuỗi kết nối chưa". Một CSDL đã cấu hình nhưng không với tới được
+chính là trạng thái khiến ứng dụng trông khoẻ mạnh trong khi mọi request đều
+hỏng.
+
+Tạm thời **chưa cấu hình CSDL chưa bị coi là lỗi** — chưa phần nào của ứng dụng
+phụ thuộc vào nó, và bắt trả 503 ngay bây giờ sẽ làm trình quản lý dịch vụ khởi
+động lại liên tục vì một phụ thuộc chưa ai dùng tới. **Phải đổi cùng lúc với
+H1.2**, test đã ghi rõ điều đó.
+
+**4. Bộ cài và sao lưu** — `setup/2-cai-dat.ps1` cài PostgreSQL, tạo role +
+database riêng, ghi `LTT_DATABASE_URL`, rồi chạy `alembic upgrade head`
+**trước** khi khởi động dịch vụ. `backup.ps1` thêm `pg_dump`.
+
+### Hai lỗi thật phát hiện trong lúc làm
+
+**Lỗi 1 — kết nối treo 130 giây.** Một test nối tới cổng chết mất 130 giây mới
+bỏ cuộc. Đây không phải lỗi của test mà là lỗi của lớp CSDL: trên production,
+một lần kết nối treo sẽ **giữ luôn worker phục vụ request** hai phút. Người
+dùng chỉ thấy trang treo, và trình quản lý dịch vụ không thấy gì bất thường để
+khởi động lại. Đã đặt `CONNECT_TIMEOUT_S = 5` → còn 5,16 giây, có test chốt
+ngưỡng.
+
+**Lỗi 2 — ký tự điều khiển vô hình lọt vào script (lỗi của tôi).** Khi chèn
+đoạn PowerShell bằng chuỗi Python không phải raw-string, `in` thành `in`
+và `pp.env` thành `pp.env`. Năm chỗ, hai file.
+
+Hậu quả nếu lọt qua:
+- bộ cài không tìm thấy PostgreSQL rồi báo "cài thất bại" — **sai nguyên nhân**;
+- `backup.ps1` không thấy `app.env` nên **âm thầm bỏ qua CSDL**, cho ra một bản
+  sao lưu trông y hệt bản đầy đủ và chỉ lộ ra đúng lúc cần khôi phục.
+
+Đáng chú ý: kiểm tra ASCII sẵn có **không** bắt được (các ký tự này < 128), và
+kiểm tra cú pháp PowerShell cũng không (chúng nằm trong chuỗi). Dự án đã có
+test ký tự điều khiển cho **tài liệu** từ một lần vấp trước, nhưng không có cho
+**script** — mà script mới là chỗ nguy hiểm hơn vì không ai đọc bằng mắt. Đã bổ
+sung vào `test_62_khoa_logic.py`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` | **1.450 passed**, 1 skipped, 23 subtests, 277s |
+| `python -m pytest tests/test_63_lop_csdl.py -q` | 17 passed |
+| Vòng di trú thật `upgrade` → `downgrade` → `upgrade` | sạch cả ba lần (SQLite tạm) |
+| Kiểm tra cú pháp + ASCII + BOM cho 2 script `.ps1` | OK |
+| `python tools/scan_source_secrets.py` | **0 finding** |
+
+1.422 → 1.450 = +28 test (17 ở `test_63`, 11 ở `test_62` gồm 5 ca kiểm ký tự
+điều khiển cho script).
+
+### Quyết định mới
+
+Q23 — ứng dụng dùng role `ltt_app`, **không bao giờ** dùng superuser
+`postgres`. Lý do và cái giá ghi ở `QUYET_DINH_NEN_TANG.md`.
+
+### Cách lùi lại
+
+Xoá `platform_core/db.py`, `platform_core/models.py`, `alembic.ini`,
+`alembic/`, `tests/test_63_lop_csdl.py`; hoàn `server/routes/health.py`,
+`requirements-server.txt`, `setup/2-cai-dat.ps1`, `deploy/windows/backup.ps1`
+về commit trước.
+
+### Bị chặn — cần người dùng
+
+**PostgreSQL chưa cài được: không có quyền Administrator.**
+Cài PostgreSQL dạng dịch vụ Windows cần quyền đó, và tôi không tự nâng quyền
+được (UAC là hộp thoại tương tác).
+
+Hệ quả: ba việc chưa kiểm chứng được trên PostgreSQL thật —
+1. migration chạy trên Postgres (mới chỉ chứng minh trên SQLite tạm);
+2. bộ cài tạo được role/database;
+3. **khôi phục thật** từ file `pg_dump`.
+
+Việc thứ 3 quan trọng nhất: một bản sao lưu chưa từng được khôi phục thử thì
+chưa phải là bản sao lưu.
+
+### Việc tiếp theo
+
+1. **Người dùng:** cài PostgreSQL (xem lựa chọn tôi đưa ra cuối phiên).
+2. Sau khi có PostgreSQL: chạy migration thật + thử khôi phục `pg_dump` →
+   đóng nốt H1.1.
+3. H1.2 — bảng người dùng + đăng nhập, dựng `fastapi-users` **song song** với
+   phần auth hiện có, chỉ gỡ cũ khi phần mới đã xanh.
+
+---
+
 ## 2026-07-31 — H0: dọn nền, đưa vào git, chuẩn hoá tài liệu
 
 - **Mục tiêu:** dọn sạch nền trước khi xây hạ tầng nhiều người dùng; chuẩn hoá

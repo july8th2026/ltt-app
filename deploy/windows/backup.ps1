@@ -48,6 +48,48 @@ if ($IncludeSecrets) {
     }
 }
 
+# ---- PostgreSQL ------------------------------------------------------------
+# Sao luu file KHONG bat duoc du lieu Postgres: no nam trong thu muc du lieu
+# rieng cua PostgreSQL, va chep file .db cua mot CSDL dang chay cho ra ban sao
+# hong. Phai dung pg_dump.
+$envFile = Join-Path $Root 'secrets\app.env'
+if (Test-Path $envFile) {
+    $envText = Get-Content $envFile -Raw
+    if ($envText -match '(?m)^LTT_DATABASE_URL=postgresql\+?\w*://([^:]+):([^@]+)@([^:/]+):(\d+)/(\S+)\s*$') {
+        $dbUser = $Matches[1]; $dbPass = $Matches[2]
+        $dbHost = $Matches[3]; $dbPort = $Matches[4]; $dbName = $Matches[5]
+
+        $pgDump = $null
+        foreach ($v in @('18','17','16','15','14')) {
+            $c = "C:\Program Files\PostgreSQL\$v\bin\pg_dump.exe"
+            if (Test-Path $c) { $pgDump = $c; break }
+        }
+        if (-not $pgDump) {
+            $cmd = Get-Command pg_dump.exe -ErrorAction SilentlyContinue
+            if ($cmd) { $pgDump = $cmd.Source }
+        }
+
+        if ($pgDump) {
+            $dumpFile = Join-Path $staging "$dbName.dump"
+            $env:PGPASSWORD = $dbPass
+            # Dinh dang custom (-Fc): nen san va khoi phuc chon loc duoc bang
+            # pg_restore, khac han mot file .sql phang.
+            & $pgDump -U $dbUser -h $dbHost -p $dbPort -d $dbName -Fc -f $dumpFile
+            $rc = $LASTEXITCODE
+            $env:PGPASSWORD = $null
+            if ($rc -ne 0 -or -not (Test-Path $dumpFile)) {
+                # KHONG bo qua am tham: mot ban sao luu thieu CSDL trong giong
+                # het mot ban sao luu day du, va chi lo ra dung luc can khoi phuc.
+                throw "pg_dump that bai (ma $rc). Sao luu DUNG LAI de ban khong nham tuong da co ban du."
+            }
+            $copied++
+            Write-Host "  [OK] pg_dump: $dbName" -ForegroundColor Green
+        } else {
+            throw 'Co LTT_DATABASE_URL nhung khong tim thay pg_dump.exe. Sao luu dung lai.'
+        }
+    }
+}
+
 if ($copied -eq 0) {
     # An empty data directory is a legitimate state (fresh install, before
     # any config or token exists) - not an error. Throwing here used to

@@ -146,6 +146,106 @@ if (Test-Path $envFile) {
     Ok 'Da sinh app.env voi bi mat ngau nhien'
 }
 
+Head 'PostgreSQL'
+# CSDL cua nen tang (quyet dinh Q2). Cai dat va tao database + role rieng.
+# Chay lai duoc nhieu lan: da co thi dung lai, KHONG BAO GIO ghi de mat khau
+# hay du lieu dang co.
+$pgBin = $null
+foreach ($v in @('18','17','16','15','14')) {
+    $p = "C:\Program Files\PostgreSQL\$v\bin"
+    if (Test-Path (Join-Path $p 'psql.exe')) { $pgBin = $p; break }
+}
+if (-not $pgBin) {
+    $cmd = Get-Command psql.exe -ErrorAction SilentlyContinue
+    if ($cmd) { $pgBin = Split-Path $cmd.Source }
+}
+
+if ($pgBin) {
+    Ok "PostgreSQL da co: $pgBin"
+} else {
+    Note 'Chua co PostgreSQL - dang cai bang winget...'
+    $wg = Get-Command winget -ErrorAction SilentlyContinue
+    if (-not $wg) {
+        throw 'Khong co winget va cung khong co PostgreSQL. Cai PostgreSQL thu cong roi chay lai script nay.'
+    }
+    # Mat khau superuser sinh ngau nhien va CHI dung luc cai. Ung dung khong
+    # dung tai khoan nay - no chay bang role rieng tao o duoi.
+    $pgSuper = & $venvPy -c "import secrets,string;a=string.ascii_letters+string.digits;print(''.join(secrets.choice(a) for _ in range(24)))"
+    winget install --id PostgreSQL.PostgreSQL.17 --silent --accept-package-agreements --accept-source-agreements --override "--mode unattended --unattendedmodeui none --superpassword $pgSuper --serverport 5432" 2>&1 | Out-Null
+    foreach ($v in @('18','17','16','15','14')) {
+        $p = "C:\Program Files\PostgreSQL\$v\bin"
+        if (Test-Path (Join-Path $p 'psql.exe')) { $pgBin = $p; break }
+    }
+    if (-not $pgBin) { throw 'Cai PostgreSQL that bai - khong tim thay psql.exe' }
+    # Ghi lai mat khau superuser vao secrets\ de con vao bao tri CSDL sau nay.
+    Write-NoBom (Join-Path $secrets 'postgres-superuser.txt') $pgSuper
+    Ok 'Da cai PostgreSQL. Mat khau superuser luu o secrets\postgres-superuser.txt'
+}
+
+Head 'CSDL cua ung dung'
+# Tao database + role RIENG cho ung dung. Ung dung khong bao gio chay bang
+# tai khoan superuser: mot lo hong SQL injection voi quyen superuser doc duoc
+# moi database tren may, con voi role rieng thi chi trong pham vi cua no.
+$envText = if (Test-Path $envFile) { Get-Content $envFile -Raw } else { '' }
+if ($envText -match '(?m)^LTT_DATABASE_URL=') {
+    Ok 'LTT_DATABASE_URL da co trong app.env - GIU NGUYEN'
+} else {
+    $superFile = Join-Path $secrets 'postgres-superuser.txt'
+    if (-not (Test-Path $superFile)) {
+        Note 'Khong co mat khau superuser PostgreSQL (CSDL nay da co truoc khi cai).'
+        Note 'CAN LAM THU CONG - chay 2 lenh sau bang tai khoan postgres:'
+        Note '  CREATE ROLE ltt_app LOGIN PASSWORD ''<dat-mat-khau>'';'
+        Note '  CREATE DATABASE lttplatform OWNER ltt_app;'
+        Note 'Roi them dong nay vao secrets\app.env:'
+        Note '  LTT_DATABASE_URL=postgresql+psycopg://ltt_app:<mat-khau>@127.0.0.1:5432/lttplatform'
+    } else {
+        $superPw = (Get-Content $superFile -Raw).Trim()
+        $appPw   = & $venvPy -c "import secrets,string;a=string.ascii_letters+string.digits;print(''.join(secrets.choice(a) for _ in range(24)))"
+        $psql    = Join-Path $pgBin 'psql.exe'
+        $env:PGPASSWORD = $superPw
+
+        # Tao role neu chua co. DO_ block de chay lai duoc nhieu lan.
+        $sqlRole = "DO `$`$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='ltt_app') THEN CREATE ROLE ltt_app LOGIN PASSWORD '$appPw'; END IF; END `$`$;"
+        & $psql -U postgres -h 127.0.0.1 -p 5432 -d postgres -v ON_ERROR_STOP=1 -c $sqlRole | Out-Null
+        if ($LASTEXITCODE -ne 0) { $env:PGPASSWORD=$null; throw 'Tao role ltt_app that bai' }
+
+        # CREATE DATABASE khong chay duoc trong DO block -> kiem tra roi tao.
+        $coDb = & $psql -U postgres -h 127.0.0.1 -p 5432 -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='lttplatform'"
+        if ($coDb -ne '1') {
+            & $psql -U postgres -h 127.0.0.1 -p 5432 -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE lttplatform OWNER ltt_app;' | Out-Null
+            if ($LASTEXITCODE -ne 0) { $env:PGPASSWORD=$null; throw 'Tao database lttplatform that bai' }
+            Ok 'Da tao database lttplatform'
+        } else {
+            Ok 'Database lttplatform da co'
+            # Da co database nhung chua co dong trong app.env -> mat khau cu
+            # khong con biet. Dat lai de hai ben khop nhau.
+            & $psql -U postgres -h 127.0.0.1 -p 5432 -d postgres -v ON_ERROR_STOP=1 -c "ALTER ROLE ltt_app PASSWORD '$appPw';" | Out-Null
+        }
+        $env:PGPASSWORD = $null
+
+        $url = "postgresql+psycopg://ltt_app:$appPw@127.0.0.1:5432/lttplatform"
+        Write-NoBom $envFile ($envText.TrimEnd() + "`r`n" + "LTT_DATABASE_URL=$url" + "`r`n")
+        Ok 'Da tao role + database va ghi LTT_DATABASE_URL vao app.env'
+    }
+}
+
+Head 'Di tru luoc do CSDL'
+# Chay migration TRUOC khi khoi dong dich vu: dich vu khoi dong voi luoc do cu
+# se loi o request dau tien chu khong loi luc khoi dong - kho truy hon nhieu.
+$envText = if (Test-Path $envFile) { Get-Content $envFile -Raw } else { '' }
+if ($envText -match '(?m)^LTT_DATABASE_URL=(.+)$') {
+    $env:LTT_DATABASE_URL = $Matches[1].Trim()
+    Push-Location $appDir
+    & $venvPy -m alembic upgrade head
+    $rc = $LASTEXITCODE
+    Pop-Location
+    $env:LTT_DATABASE_URL = $null
+    if ($rc -ne 0) { throw 'alembic upgrade head that bai - xem thong bao o tren' }
+    Ok 'Luoc do CSDL da o ban moi nhat'
+} else {
+    Note 'Bo qua migration - chua co LTT_DATABASE_URL'
+}
+
 Head 'NSSM (trinh quan ly dich vu)'
 $nssmExe = Join-Path $tools 'nssm.exe'
 if (-not (Test-Path $nssmExe)) {

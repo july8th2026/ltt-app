@@ -119,28 +119,45 @@ trước mọi thứ khác, không phải một dòng chú thích.
 **Mục tiêu:** hệ thống biết "ai đang dùng", và dữ liệu của người này người kia
 không thấy được.
 
-### H1.1 — Dựng PostgreSQL và lớp CSDL
+### H1.1 — Dựng PostgreSQL và lớp CSDL ⏳ DỞ — chặn ở quyền Administrator
 
-- [ ] Cài PostgreSQL trên máy chủ; bổ sung bước này vào `setup/2-cai-dat.ps1`
-      (tạo database + user riêng cho ứng dụng, mật khẩu sinh ngẫu nhiên, ghi
-      vào `secrets/app.env` không BOM)
-- [ ] Thêm `sqlalchemy`, `alembic`, `psycopg` vào `requirements-server.txt`
-      **kèm cận trên** (Q17)
-- [ ] `platform_core/db.py`: engine + session factory, đọc chuỗi kết nối từ
-      biến môi trường `LTT_DATABASE_URL`, không bao giờ viết cứng
-- [ ] Khởi tạo Alembic; migration đầu tiên tạo bảng rỗng
-- [ ] Thêm bước sao lưu CSDL vào `deploy/windows/backup.ps1` (`pg_dump`) — sao
-      lưu file như trước sẽ **không** bắt được dữ liệu Postgres
+**Phần code: xong và đã kiểm chứng.**
+
+- [x] Thêm `sqlalchemy`, `alembic`, `psycopg[binary]` vào
+      `requirements-server.txt` **kèm cận trên** (Q17) — 2026-07-31
+- [x] `platform_core/db.py`: engine + session factory, đọc chuỗi kết nối từ
+      `LTT_DATABASE_URL`, **che mật khẩu ở mọi đường lỗi**
+- [x] `platform_core/models.py` + Alembic + migration đầu tiên
+      (`0001_platform_info`)
+- [x] `/health/ready` kiểm tra CSDL bằng `SELECT 1` thật và báo rõ lý do
+- [x] Bổ sung bước cài PostgreSQL + tạo role/database + chạy migration vào
+      `setup/2-cai-dat.ps1`
+- [x] Bổ sung `pg_dump` vào `deploy/windows/backup.ps1`
+- [x] `tests/test_63_lop_csdl.py` — 17 test
+
+**Phần cần quyền Administrator: chưa làm được.**
+
+- [ ] Cài PostgreSQL trên máy này
+- [ ] Chạy `alembic upgrade head` trên **PostgreSQL thật** (mới chỉ kiểm chứng
+      vòng tiến–lùi–tiến trên SQLite tạm)
+- [ ] Thử **khôi phục thật** từ file `pg_dump` — không chỉ tạo ra file
 
 **Tiêu chí hoàn thành**
-- `alembic upgrade head` chạy sạch trên một CSDL trống
-- `alembic downgrade -1` rồi `upgrade` lại vẫn sạch (lùi được thì mới dám tiến)
-- `/health/ready` báo `not_ready` khi CSDL không kết nối được, **kèm lý do**
-- `backup.ps1` tạo ra file `pg_dump` khôi phục lại được — **đã thử khôi phục
-  thật**, không chỉ tạo file
+- [x] `alembic upgrade head` chạy sạch trên một CSDL trống
+- [x] `alembic downgrade -1` rồi `upgrade` lại vẫn sạch
+- [x] `/health/ready` báo lý do khi CSDL không kết nối được
+- [x] Mật khẩu không lọt vào thông báo lỗi (có test cho đường lỗi thật)
+- [ ] `backup.ps1` tạo ra file `pg_dump` **khôi phục lại được**
 
-**Rủi ro:** mật khẩu CSDL lọt vào log hoặc thông báo lỗi. Test phải khẳng định
-chuỗi kết nối không xuất hiện trong bất kỳ thông báo lỗi nào.
+**Rủi ro đã xử lý:** mật khẩu CSDL lọt vào log hoặc thông báo lỗi →
+`che_mat_khau()` áp cho mọi đường ra, có test chạy đường lỗi thật (nối tới cổng
+chết) và khẳng định mật khẩu không xuất hiện.
+
+**Một lỗi thật phát hiện trong lúc làm:** kết nối tới địa chỉ chết mất **130
+giây** mới bỏ cuộc — trên production nghĩa là một worker phục vụ request nằm im
+hai phút, người dùng chỉ thấy trang treo, và trình quản lý dịch vụ không thấy
+gì bất thường để khởi động lại. Đã đặt `CONNECT_TIMEOUT_S = 5`, còn 5 giây, có
+test chốt.
 
 ### H1.2 — Bảng người dùng và đăng nhập
 

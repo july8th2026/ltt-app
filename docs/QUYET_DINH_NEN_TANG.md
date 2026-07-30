@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Hai mươi hai quyết định đã chốt
+## 1. Hai mươi ba quyết định đã chốt
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -53,6 +53,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q20 | Chống đăng ký ảo | **Cloudflare Turnstile** | Miễn phí không giới hạn lượt, đa số người dùng không phải giải câu đố, không theo dõi người dùng như reCAPTCHA. **Chạy được ngay, không phụ thuộc việc DNS có nằm ở Cloudflare hay không** — nó chỉ là widget JS + một lệnh gọi API xác minh phía máy chủ. |
 | Q21 | Bắt lỗi production | **Sentry**, gói miễn phí | Khi có người trả tiền, phải biết lỗi **trước khi khách gọi điện**; không ai đọc log lúc 2 giờ sáng. **Bắt buộc kèm theo: bật lọc dữ liệu cá nhân trước khi gửi đi** — email, token, nội dung job không được rời máy chủ. GlitchTip (tự host) bị hoãn vì cần Docker → trên Windows phải qua WSL2. |
 | Q22 | DNS cho `app.lttstudios.com` | **Giữ DNS ở inet.vn, uỷ quyền riêng subdomain `app` sang Cloudflare** | Trang giới thiệu đang chạy ở `lttstudios.com` không bị đụng tới — rủi ro thấp nhất cho thứ đang hoạt động. **⚠️ ĐIỀU KIỆN CHƯA XÁC MINH:** Cloudflare theo truyền thống chỉ cho quản lý cả zone ở gói miễn phí; zone cấp subdomain là tính năng gói trả phí. **Phải kiểm chứng trước khi làm bất cứ việc gì khác** — xem H0.1 trong kế hoạch. Nếu gói miễn phí không hỗ trợ: quay lại chọn giữa "chuyển cả zone sang Cloudflare" và "bỏ Tunnel, mở cổng + Caddy", và ghi quyết định thay thế theo đúng giao thức đổi quyết định. |
+| Q23 | Tài khoản CSDL của ứng dụng | **Role riêng `ltt_app`, không bao giờ dùng superuser `postgres`** | Một lỗ hổng SQL injection với quyền superuser đọc được **mọi** database trên máy và ghi được cả file hệ thống; với role riêng thì thiệt hại giới hạn trong đúng database của ứng dụng. Mật khẩu superuser chỉ dùng lúc cài, lưu ở `secrets/postgres-superuser.txt` để còn vào bảo trì CSDL sau này. Có test chốt. |
 
 ---
 
