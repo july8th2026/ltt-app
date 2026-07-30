@@ -25,7 +25,27 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 
 _lock = threading.Lock()
-_DEFAULT_PATH = os.path.join("data", "audit_log.jsonl")
+
+# None = tu dong giai qua LTT_DATA_DIR luc ghi. Dat duong dan cu the de ep buoc.
+_DEFAULT_PATH: Optional[str] = None
+
+
+def default_log_path() -> str:
+    """Nơi ghi nhật ký kiểm toán, giải qua ranh giới đường dẫn của P2.
+
+    Công khai (không có gạch dưới) vì `core/time_intel.py` và
+    `core/rate_tuner.py` **đọc lại chính file này** để dựng thống kê. Trước đây
+    mỗi nơi tự viết `os.path.join("data", "audit_log.jsonl")`, nên chỉ cần một
+    chỗ đặt thư mục dữ liệu khác là bên ghi và bên đọc trỏ vào hai file khác
+    nhau — thống kê sẽ rỗng mà không có lỗi nào hiện ra.
+    """
+    if _DEFAULT_PATH:
+        return _DEFAULT_PATH
+    try:
+        from core.runtime_paths import data_path
+        return data_path("audit_log.jsonl")
+    except Exception:
+        return os.path.join("data", "audit_log.jsonl")
 
 
 def append_event(
@@ -72,7 +92,7 @@ def append_event(
         "error_code":    error_code,
         "details":       details or {},
     }
-    path = log_path or _DEFAULT_PATH
+    path = log_path or default_log_path()
     try:
         _write(path, record)
     except Exception as exc:  # pragma: no cover

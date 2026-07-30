@@ -74,7 +74,15 @@ def test_caddyfile_example_exists_and_binds_loopback():
         content = f.read()
     assert "app.lttstudios.com" in content
     # The app must never be proxied from a public bind address.
-    assert "127.0.0.1:8000" in content
+    #
+    # Asserted on the loopback prefix, not on a specific port number: the port
+    # is a deployment detail that legitimately changes (it moved 8000 -> 8100
+    # when this host turned out to already run another service on 8000), while
+    # "never proxy a publicly-bound address" is the actual invariant. Pinning
+    # the number made a routine port change look like a security regression.
+    assert "reverse_proxy 127.0.0.1:" in content
+    for public_bind in ("reverse_proxy 0.0.0.0:", "reverse_proxy :"):
+        assert public_bind not in content, public_bind
 
 
 def test_no_secret_values_in_deploy_scripts():

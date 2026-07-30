@@ -13,7 +13,7 @@
 param(
     [string]$Hostname = 'app.lttstudios.com',
     [string]$Root = 'C:\LTTPlatform',
-    [int]$Port = 8000
+    [int]$Port = 8100
 )
 
 $ErrorActionPreference = 'Continue'
@@ -45,7 +45,7 @@ try {
     else { Bad "health/ready tra status=$($r.status)" }
 } catch { Bad "Khong goi duoc health/ready tren loopback: $($_.Exception.Message)" }
 
-Head 'Cong 8000 chi nghe loopback'
+Head 'Cong ung dung chi nghe loopback'
 # Neu nghe 0.0.0.0 thi ai cung goi thang vao app duoc, bo qua Cloudflare.
 $listen = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if ($listen) {

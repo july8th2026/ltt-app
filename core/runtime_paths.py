@@ -61,3 +61,29 @@ def resolve_runtime_paths(env: dict | None = None) -> RuntimePaths:
         data_dir=data_dir, secrets_dir=secrets_dir, logs_dir=logs_dir,
         temp_video_dir=temp_dir, config_path=config_path,
     )
+
+
+def data_path(*parts: str) -> str:
+    """Đường dẫn tới một file nằm TRONG thư mục dữ liệu đang chạy.
+
+    Vì sao cần hàm này thay vì `os.path.join("data", ...)` rải khắp nơi:
+
+    `os.path.join("data", "tokens.enc")` là đường dẫn tương đối theo **thư mục
+    làm việc của tiến trình**, không phải theo `LTT_DATA_DIR`. Trên máy chủ,
+    dịch vụ chạy với thư mục làm việc là `C:\\LTTPlatform\\app`, nên chuỗi đó
+    trỏ vào `app\\data\\` — chính là thư mục **bị xoá và thay toàn bộ mỗi lần
+    cập nhật**. Token Facebook/TikTok ghi vào đó sẽ biến mất sau lần cập nhật
+    kế tiếp, và biến mất **âm thầm**: `_save()` có `os.makedirs(exist_ok=True)`
+    nên nó tạo thư mục rồi ghi bình thường, không báo lỗi gì.
+
+    Lỗi này đã từng được phát hiện và sửa cho `core/session_lock.py`, nhưng chỉ
+    sửa đúng một module. Hàm này là chỗ duy nhất để mọi module còn lại đi qua.
+
+    Luôn có đường lui: nếu vì lý do nào đó không giải được đường dẫn, trả về
+    dạng tương đối cũ thay vì ném lỗi — sai chỗ lưu vẫn hơn là sập ứng dụng.
+    """
+    try:
+        base = resolve_runtime_paths().data_dir
+    except Exception:
+        base = "data"
+    return os.path.join(base, *parts)

@@ -49,4 +49,4 @@ Expand-Archive -Path $Archive -DestinationPath (Join-Path $Root 'data') -Force
 Write-Host '  [OK] Data restored' -ForegroundColor Green
 
 Start-Service $ServiceName
-Write-Host '  Service restarted. Verify: curl http://127.0.0.1:8000/health/ready' -ForegroundColor Cyan
+Write-Host '  Service restarted. Verify: curl http://127.0.0.1:8100/health/ready' -ForegroundColor Cyan

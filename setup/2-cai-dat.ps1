@@ -22,7 +22,7 @@
 [CmdletBinding()]
 param(
     [string]$Root = 'C:\LTTPlatform',
-    [int]$Port = 8000,
+    [int]$Port = 8100,
     [string]$ServiceName = 'LTTStudioWeb',
     [string]$AdminUser = 'admin'
 )

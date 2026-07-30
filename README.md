@@ -24,7 +24,7 @@ Xem [`docs/03_THEM_APP_MOI.md`](docs/03_THEM_APP_MOI.md).
 ```powershell
 python -m pip install -r requirements.txt -r requirements-server.txt
 python -m pytest -q
-python -m uvicorn server.run:app --host 127.0.0.1 --port 8000
+python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 ```
 
 ## Tài liệu

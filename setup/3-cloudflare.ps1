@@ -25,7 +25,7 @@ param(
     [string]$Hostname = 'app.lttstudios.com',
     [string]$TunnelName = 'ltt-app',
     [string]$Root = 'C:\LTTPlatform',
-    [int]$Port = 8000,
+    [int]$Port = 8100,
     [switch]$DisableCaddy
 )
 

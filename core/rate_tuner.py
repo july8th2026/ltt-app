@@ -77,7 +77,7 @@ class TunerRecommendation:
 # ─── Analysis ────────────────────────────────────────────────────────────────
 
 def parse_audit_log(
-    log_path: str = os.path.join("data", "audit_log.jsonl"),
+    log_path: Optional[str] = None,   # None -> utils.audit_logger.default_log_path()
     *,
     within_days: int = 7,
     platforms:   Iterable[str] = ("facebook", "tiktok"),
@@ -87,6 +87,11 @@ def parse_audit_log(
     Returns dict mapping target_id → TargetStats. Empty when log is missing.
     """
     out: dict[str, TargetStats] = {}
+    if log_path is None:
+        # Cung ly do nhu core/time_intel.py: phai la CHINH file ma
+        # utils/audit_logger.py ghi vao, khong phai mot chuoi tuong doi rieng.
+        from utils.audit_logger import default_log_path
+        log_path = default_log_path()
     if not os.path.exists(log_path):
         return out
 

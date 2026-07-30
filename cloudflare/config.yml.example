@@ -29,9 +29,9 @@ grace-period: 30s
 ingress:
   # ── App chinh ─────────────────────────────────────────────────────────────
   - hostname: app.lttstudios.com
-    service: http://127.0.0.1:8000
+    service: http://127.0.0.1:8100
     originRequest:
-      # Uvicorn chi nghe loopback, khong ai vao truc tiep cong 8000 duoc.
+      # Uvicorn chi nghe loopback, khong ai vao truc tiep cong 8100 duoc.
       connectTimeout: 30s
       # Tang thoi gian cho phan hoi. Van bi tran 100 giay cua Cloudflare o
       # tang tren, nhung it nhat cloudflared khong tu cat som hon.

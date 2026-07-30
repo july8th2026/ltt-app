@@ -32,7 +32,27 @@ except ImportError:
         stacklevel=2,
     )
 
-TOKEN_FILE = os.path.join("data", "tokens.enc")
+# None = tu dong giai qua LTT_DATA_DIR luc tao doi tuong (xem _default_token_file).
+# Dat mot duong dan cu the de ep buoc — test dang dung cach nay.
+TOKEN_FILE: Optional[str] = None
+
+
+def _default_token_file() -> str:
+    """Nơi lưu token, giải qua ranh giới đường dẫn của P2.
+
+    Trước đây là hằng số `os.path.join("data", "tokens.enc")` — tương đối theo
+    thư mục làm việc. Trên máy chủ, dịch vụ chạy tại `C:\\LTTPlatform\\app` nên
+    token rơi vào `app\\data\\tokens.enc`, tức **nằm trong thư mục bị xoá và
+    thay toàn bộ mỗi lần cập nhật**. Mất token là mọi tài khoản Facebook/TikTok
+    phải kết nối lại, và không có cách khôi phục.
+    """
+    if TOKEN_FILE:
+        return TOKEN_FILE
+    try:
+        from core.runtime_paths import data_path
+        return data_path("tokens.enc")
+    except Exception:
+        return os.path.join("data", "tokens.enc")
 _SALT = b"fb_bot_token_salt_v1_2026"
 
 # BUG-07/OPT-01 fix: shared singleton instance for the default TOKEN_FILE path.
@@ -269,8 +289,10 @@ class TokenStore:
     Thread-safe: all mutations hold _lock.
     """
 
-    def __init__(self, path: str = TOKEN_FILE):
-        self.path = path
+    def __init__(self, path: Optional[str] = None):
+        # Giai luc tao doi tuong, khong phai luc import: bien moi truong
+        # LTT_DATA_DIR phai duoc ton trong ke ca khi module da nap tu truoc.
+        self.path = path or _default_token_file()
         self._accounts: dict[str, AccountInfo] = {}
         self._load_error: Optional[str] = None
         self._lock = threading.Lock()

@@ -12,7 +12,7 @@
 [CmdletBinding()]
 param(
     [string]$Root = 'C:\LTTPlatform',
-    [int]$Port = 8000
+    [int]$Port = 8100
 )
 
 $ErrorActionPreference = 'Continue'

@@ -12,7 +12,7 @@
 param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$ServiceName = 'LTTStudioWeb',
-    [int]$Port = 8000
+    [int]$Port = 8100
 )
 
 $ErrorActionPreference = 'Stop'

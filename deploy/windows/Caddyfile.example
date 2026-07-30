@@ -18,7 +18,9 @@ app.lttstudios.com {
 
 	# The application listens on loopback only; Caddy is the sole public
 	# surface (AGENTS.md: "Application ports bind to 127.0.0.1").
-	reverse_proxy 127.0.0.1:8000 {
+	# Cong 8100 chu khong phai 8000: may chu nay con chay mot he thong noi bo
+	# khac da chiem 8000 tu truoc (xem docs/QUYET_DINH_NEN_TANG.md, Q4).
+	reverse_proxy 127.0.0.1:8100 {
 		header_up X-Forwarded-Proto {scheme}
 		header_up X-Forwarded-For {remote_host}
 		header_up Host {host}

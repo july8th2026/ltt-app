@@ -29,8 +29,25 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 
-_CACHE_PATH       = os.path.join("data", "tiktok_account_age_cache.json")
-_AUDIT_LOG_PATH   = os.path.join("data", "audit_log.jsonl")
+# None = tu dong giai qua LTT_DATA_DIR luc dung. Dat duong dan cu the de ep buoc.
+_CACHE_PATH: Optional[str] = None
+
+
+def _cache_path() -> str:
+    """Nơi lưu cache tuổi tài khoản TikTok, giải qua ranh giới đường dẫn P2."""
+    if _CACHE_PATH:
+        return _CACHE_PATH
+    try:
+        from core.runtime_paths import data_path
+        return data_path("tiktok_account_age_cache.json")
+    except Exception:
+        return os.path.join("data", "tiktok_account_age_cache.json")
+
+
+def _audit_log_path() -> str:
+    """Nhật ký kiểm toán — phải là chính file mà utils/audit_logger.py ghi."""
+    from utils.audit_logger import default_log_path
+    return default_log_path()
 
 # Same warm-up curve shape as page_warmup, slightly stricter (TT shadow-bans
 # faster). (max_age_days, recommended_posts_per_day)
@@ -72,11 +89,12 @@ def _load_cache() -> dict:
     with _cache_lock:
         if _cache is not None:
             return _cache
-        if not os.path.exists(_CACHE_PATH):
+        path = _cache_path()
+        if not os.path.exists(path):
             _cache = {}
             return _cache
         try:
-            with open(_CACHE_PATH, encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 _cache = json.load(f)
                 if not isinstance(_cache, dict):
                     _cache = {}
@@ -89,9 +107,10 @@ def _save_cache() -> None:
     with _cache_lock:
         if _cache is None:
             return
-        os.makedirs(os.path.dirname(_CACHE_PATH) or ".", exist_ok=True)
+        path = _cache_path()
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         try:
-            with open(_CACHE_PATH, "w", encoding="utf-8") as f:
+            with open(path, "w", encoding="utf-8") as f:
                 json.dump(_cache, f, ensure_ascii=False, indent=2)
         except OSError:
             pass
@@ -103,17 +122,20 @@ def clear_cache() -> None:
     with _cache_lock:
         _cache = {}
     try:
-        if os.path.exists(_CACHE_PATH):
-            os.unlink(_CACHE_PATH)
+        path = _cache_path()
+        if os.path.exists(path):
+            os.unlink(path)
     except OSError:
         pass
 
 
-def _first_seen_at(open_id: str, log_path: str = _AUDIT_LOG_PATH) -> Optional[datetime]:
+def _first_seen_at(open_id: str, log_path: Optional[str] = None) -> Optional[datetime]:
     """Find the earliest timestamp the audit log mentions *open_id*.
 
     Returns None when the log is missing or the open_id never appeared.
     """
+    if log_path is None:
+        log_path = _audit_log_path()
     if not os.path.exists(log_path) or not open_id:
         return None
     earliest: Optional[datetime] = None
@@ -145,7 +167,7 @@ def get_warmup_advice(
     open_id:       str,
     *,
     force_refresh: bool = False,
-    audit_log_path: str = _AUDIT_LOG_PATH,
+    audit_log_path: Optional[str] = None,   # None -> audit_logger.default_log_path()
 ) -> TikTokWarmupAdvice:
     """Return warm-up advice for *open_id*.
 

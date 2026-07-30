@@ -42,7 +42,30 @@ from typing import Optional
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 
-_DEFAULT_DB_PATH    = os.path.join("data", "content_history.db")
+# None = tu dong giai qua LTT_DATA_DIR. Dat duong dan cu the de ep buoc —
+# tests/conftest.py dung cach nay de cach ly khoi CSDL that.
+_DEFAULT_DB_PATH: Optional[str] = None
+
+
+def _default_db_path() -> str:
+    """Nơi lưu CSDL lịch sử nội dung, giải qua ranh giới đường dẫn của P2.
+
+    Trước đây là hằng số tương đối theo thư mục làm việc. Hai hệ quả:
+
+    1. Trên máy chủ nó rơi vào `app\\data\\` — thư mục bị thay mỗi lần cập nhật,
+       nên lịch sử chống trùng nội dung mất sạch sau mỗi lần deploy.
+    2. `tests/conftest.py` gán đè `_DEFAULT_DB_PATH` để cách ly test, nhưng vì
+       hằng số này được dùng làm **giá trị mặc định của tham số** (gán một lần
+       lúc import) nên việc gán đè đó không bao giờ có tác dụng — bộ test vẫn
+       ghi vào CSDL thật. Giải lười ở đây vá luôn cả điều đó.
+    """
+    if _DEFAULT_DB_PATH:
+        return _DEFAULT_DB_PATH
+    try:
+        from core.runtime_paths import data_path
+        return data_path("content_history.db")
+    except Exception:
+        return os.path.join("data", "content_history.db")
 _VIDEO_SAMPLE_BYTES = 4 * 1024 * 1024        # 4 MB — enough for SHA collision-resistance
 _DB_LOCK            = threading.Lock()        # serialises writes across threads
 
@@ -90,7 +113,8 @@ class ContentHistoryStore:
     (b) feed the anti-spam dashboard with per-page history.
     """
 
-    def __init__(self, db_path: str = _DEFAULT_DB_PATH):
+    def __init__(self, db_path: Optional[str] = None):
+        db_path = db_path or _default_db_path()
         self.db_path = db_path
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
         self._init_schema()
@@ -330,9 +354,10 @@ _default_store: Optional[ContentHistoryStore] = None
 _default_lock = threading.Lock()
 
 
-def get_default_store(db_path: str = _DEFAULT_DB_PATH) -> ContentHistoryStore:
+def get_default_store(db_path: Optional[str] = None) -> ContentHistoryStore:
     """Process-wide singleton. Pass a custom path to override (tests use this)."""
     global _default_store
+    db_path = db_path or _default_db_path()
     with _default_lock:
         if _default_store is None or _default_store.db_path != db_path:
             _default_store = ContentHistoryStore(db_path)

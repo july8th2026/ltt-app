@@ -36,7 +36,19 @@ from typing import Optional
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 
-_DEFAULT_DB_PATH       = os.path.join("data", "page_health.db")
+# None = tu dong giai qua LTT_DATA_DIR. Cung khuon voi core/content_history.py.
+_DEFAULT_DB_PATH: Optional[str] = None
+
+
+def _default_db_path() -> str:
+    """Nơi lưu CSDL sức khoẻ Page, giải qua ranh giới đường dẫn của P2."""
+    if _DEFAULT_DB_PATH:
+        return _DEFAULT_DB_PATH
+    try:
+        from core.runtime_paths import data_path
+        return data_path("page_health.db")
+    except Exception:
+        return os.path.join("data", "page_health.db")
 _THROTTLE_THRESHOLD    = 0.60   # current/baseline < 0.6 → flagged
 _SAMPLES_FOR_BASELINE  = 10     # need 10+ recent samples for confident baseline
 
@@ -71,7 +83,8 @@ class PageHealthStore:
     rolling baselines without re-querying FB on every dashboard refresh.
     """
 
-    def __init__(self, db_path: str = _DEFAULT_DB_PATH):
+    def __init__(self, db_path: Optional[str] = None):
+        db_path = db_path or _default_db_path()
         self.db_path = db_path
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
         self._init_schema()

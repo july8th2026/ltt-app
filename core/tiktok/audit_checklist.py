@@ -249,9 +249,10 @@ def check_privacy_terms_urls(config: dict) -> CheckItem:
 
 
 def check_app_icon(config: dict) -> CheckItem:
+    from core.runtime_paths import data_path
     candidates = [
         "docs/tiktok-submission/lttstudio-icon-1024.png",
-        os.path.join("data", "icon.png"),
+        data_path("icon.png"),
     ]
     for path in candidates:
         if os.path.exists(path):
@@ -390,7 +391,13 @@ def check_login_button_branding(config: dict) -> CheckItem:
     TT yêu cầu nút Login phải dùng logo official, không emoji. Code đã
     fallback nếu thiếu nhưng audit có thể phê bình.
     """
-    path = os.path.join("data", "assets", "tiktok_logo.png")
+    # Phai giai qua LTT_DATA_DIR. Bo cai dat chep data\assets\ vao
+    # C:\LTTPlatform\data\assets\, trong khi chuoi tuong doi "data/assets/..."
+    # lai tro vao C:\LTTPlatform\app\data\assets\ — mot thu muc bo cai KHONG
+    # tao. Hau qua: nguoi dung tai logo ve dung cho tai lieu chi dan ma canh
+    # bao nay van khong bao gio tat.
+    from core.runtime_paths import data_path
+    path = data_path("assets", "tiktok_logo.png")
     if os.path.exists(path) and os.path.getsize(path) > 0:
         return CheckItem(
             "Login button branding", CheckResult.PASS,

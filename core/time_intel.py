@@ -73,7 +73,7 @@ class HourlyDistribution:
 # ─── Build from audit log ─────────────────────────────────────────────────────
 
 def build_distributions(
-    log_path:     str = os.path.join("data", "audit_log.jsonl"),
+    log_path:     Optional[str] = None,   # None -> utils.audit_logger.default_log_path()
     within_days:  int = 30,
     *,
     timezone_offset_hours: int = 7,    # Asia/Ho_Chi_Minh default
@@ -84,6 +84,13 @@ def build_distributions(
     Returns {target → HourlyDistribution}. Empty dict on missing log.
     """
     out: dict[str, HourlyDistribution] = {}
+    if log_path is None:
+        # Phai la CHINH file ma utils/audit_logger.py ghi vao. Truoc day moi
+        # ben tu viet "data/audit_log.jsonl" nen chi can doi thu muc du lieu
+        # la ben doc va ben ghi tro vao hai file khac nhau — thong ke rong ma
+        # khong co loi nao hien ra.
+        from utils.audit_logger import default_log_path
+        log_path = default_log_path()
     if not os.path.exists(log_path):
         return out
 

@@ -36,8 +36,26 @@ except ImportError:
         stacklevel=2,
     )
 
-_TOKEN_FILE = os.path.join("data", "tiktok_tokens.enc")
+# None = tu dong giai qua LTT_DATA_DIR luc tao doi tuong. Dat duong dan cu the
+# de ep buoc. Cung khuon voi core/token_store.py — xem giai thich day du o do.
+_TOKEN_FILE: Optional[str] = None
 _SALT = b"tiktok_bot_token_salt_v1_2026"
+
+
+def _default_token_file() -> str:
+    """Nơi lưu token TikTok, giải qua ranh giới đường dẫn của P2.
+
+    Cùng lý do với `core/token_store.py::_default_token_file`: đường dẫn tương
+    đối theo thư mục làm việc sẽ rơi vào `app\\data\\` trên máy chủ — thư mục
+    bị thay toàn bộ mỗi lần cập nhật.
+    """
+    if _TOKEN_FILE:
+        return _TOKEN_FILE
+    try:
+        from core.runtime_paths import data_path
+        return data_path("tiktok_tokens.enc")
+    except Exception:
+        return os.path.join("data", "tiktok_tokens.enc")
 
 # P1-01 fix: singleton instance to avoid repeated Fernet decrypt on every
 # GUI render. Callers without a custom path should use get_default_store().
@@ -146,8 +164,9 @@ class TikTokTokenStore:
     Thread-safe; uses same Fernet pattern as Facebook TokenStore.
     """
 
-    def __init__(self, path: str = _TOKEN_FILE):
-        self.path = path
+    def __init__(self, path: Optional[str] = None):
+        # Giai luc tao doi tuong, khong phai luc import.
+        self.path = path or _default_token_file()
         self._accounts: dict[str, TikTokAccount] = {}
         self._load_error: Optional[str] = None
         self._lock = threading.Lock()

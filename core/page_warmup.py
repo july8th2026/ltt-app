@@ -55,9 +55,21 @@ class WarmupAdvice:
 
 # ─── Cache (in-memory + JSON file) ───────────────────────────────────────────
 
-_CACHE_PATH = os.path.join("data", "page_warmup_cache.json")
+# None = tu dong giai qua LTT_DATA_DIR luc dung. Dat duong dan cu the de ep buoc.
+_CACHE_PATH: Optional[str] = None
 _cache_lock = threading.Lock()
 _cache: Optional[dict] = None
+
+
+def _cache_path() -> str:
+    """Nơi lưu cache warm-up Page, giải qua ranh giới đường dẫn của P2."""
+    if _CACHE_PATH:
+        return _CACHE_PATH
+    try:
+        from core.runtime_paths import data_path
+        return data_path("page_warmup_cache.json")
+    except Exception:
+        return os.path.join("data", "page_warmup_cache.json")
 
 
 def _load_cache() -> dict:
@@ -66,11 +78,12 @@ def _load_cache() -> dict:
     with _cache_lock:
         if _cache is not None:
             return _cache
-        if not os.path.exists(_CACHE_PATH):
+        path = _cache_path()
+        if not os.path.exists(path):
             _cache = {}
             return _cache
         try:
-            with open(_CACHE_PATH, encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 _cache = json.load(f)
                 if not isinstance(_cache, dict):
                     _cache = {}
@@ -83,9 +96,10 @@ def _save_cache():
     with _cache_lock:
         if _cache is None:
             return
-        os.makedirs(os.path.dirname(_CACHE_PATH) or ".", exist_ok=True)
+        path = _cache_path()
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         try:
-            with open(_CACHE_PATH, "w", encoding="utf-8") as f:
+            with open(path, "w", encoding="utf-8") as f:
                 json.dump(_cache, f, ensure_ascii=False, indent=2)
         except OSError:
             pass
@@ -97,8 +111,9 @@ def clear_cache():
     with _cache_lock:
         _cache = {}
     try:
-        if os.path.exists(_CACHE_PATH):
-            os.unlink(_CACHE_PATH)
+        path = _cache_path()
+        if os.path.exists(path):
+            os.unlink(path)
     except OSError:
         pass
 

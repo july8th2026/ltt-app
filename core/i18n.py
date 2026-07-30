@@ -155,15 +155,31 @@ def _load_translations() -> None:
     itself.
     """
     global _translations
-    base = Path(__file__).resolve().parent.parent / "data" / "translations"
+
+    # Hai nơi phải thử, theo đúng thứ tự:
+    #   1. thư mục dữ liệu đang chạy (LTT_DATA_DIR) — bộ cài chép bản dịch vào
+    #      C:\LTTPlatform\data\translations\ và cố ý KHÔNG chép data\ vào app\;
+    #   2. cạnh mã nguồn — đúng khi chạy ở máy phát triển.
+    # Trước đây chỉ có (2), nên trên máy chủ không nạp được bản dịch nào mà
+    # cũng không ai biết: t() lặng lẽ rơi về tiếng Anh rồi về chính khoá.
+    candidates = []
+    try:
+        from core.runtime_paths import resolve_runtime_paths
+        candidates.append(Path(resolve_runtime_paths().data_dir) / "translations")
+    except Exception:
+        pass
+    candidates.append(Path(__file__).resolve().parent.parent / "data" / "translations")
+
     for lang in ("en", "vi"):
-        f = base / f"{lang}.json"
+        f = next((c / f"{lang}.json" for c in candidates
+                  if (c / f"{lang}.json").exists()), candidates[0] / f"{lang}.json")
         try:
             with f.open(encoding="utf-8") as fp:
                 _translations[lang] = json.load(fp)
             log.debug("i18n: loaded %d keys for '%s'", len(_translations[lang]), lang)
         except FileNotFoundError:
-            log.warning("i18n: translation file not found — %s", f)
+            log.warning("i18n: translation file not found — tried %s",
+                        ", ".join(str(c / f"{lang}.json") for c in candidates))
             _translations[lang] = {}
         except json.JSONDecodeError as exc:
             log.error("i18n: invalid JSON in %s — %s", f, exc)

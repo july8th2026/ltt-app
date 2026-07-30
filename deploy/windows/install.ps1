@@ -22,7 +22,7 @@ param(
     [Parameter(Mandatory = $true)][string]$SourceZip,
     [string]$Root = 'C:\LTTPlatform',
     [string]$PythonExe = 'python',
-    [int]$Port = 8000
+    [int]$Port = 8100
 )
 
 $ErrorActionPreference = 'Stop'
