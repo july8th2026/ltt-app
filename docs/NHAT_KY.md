@@ -99,7 +99,11 @@ ký tự điều khiển nữa — chúng đã đóng băng, không ai đọc.
 ### Quyết định mới ghi trong phiên này
 
 Q13 procrastinate · Q14 fastapi-users · Q15 sqladmin · Q16 SQLAlchemy+Alembic ·
-Q17 chốt cận trên phiên bản. Chi tiết và lý do ở `QUYET_DINH_NEN_TANG.md`.
+Q17 chốt cận trên phiên bản · Q18 HTMX · Q19 Resend · Q20 Cloudflare Turnstile ·
+Q21 Sentry · Q22 uỷ quyền subdomain `app` (có điều kiện chưa xác minh).
+Chi tiết và lý do ở `QUYET_DINH_NEN_TANG.md`.
+
+Tổng chi phí dịch vụ ngoài khi bắt đầu: **0 đồng/tháng** (đều dùng gói miễn phí).
 
 ### Hai test đã sửa — và vì sao không phải là làm yếu test đi
 
@@ -110,6 +114,23 @@ Q17 chốt cận trên phiên bản. Chi tiết và lý do ở `QUYET_DINH_NEN_T
 - `test_45_deploy_scripts.py` đổi từ khoá cứng `127.0.0.1:8000` sang khoá bất
   biến "chỉ được proxy địa chỉ loopback". Khoá con số làm một lần đổi cổng hợp
   lệ trông giống lỗi bảo mật.
+
+### Đo được về hạ tầng mạng — và một quyết định bị chặn
+
+`nslookup` cho thấy `lttstudios.com` đang dùng nameserver của inet.vn
+(`hoian/danang.vclouddns.com`), **không phải Cloudflare**. Cloudflare Tunnel
+cần một CNAME trỏ tới `<tunnel-id>.cfargotunnel.com`, mà tên miền đó chỉ phân
+giải được qua chính hệ thống Cloudflare — nên `setup/3-cloudflare.ps1` sẽ hỏng
+ở khâu gần cuối, sau khi đã tải cloudflared, đăng nhập và tạo tunnel.
+
+Chủ dự án chọn hướng **uỷ quyền riêng subdomain `app`** (Q22) để không đụng vào
+trang giới thiệu đang chạy. Hướng này phụ thuộc một điều **tôi không xác minh
+được từ đây**: gói miễn phí của Cloudflare có cho tạo zone cấp subdomain không.
+Đã ghi rõ điều kiện đó ngay trong Q22 và tách thành hạng mục **H0.1** đứng
+trước mọi việc khác, kèm hai đường lui nếu câu trả lời là không.
+
+Cũng đo được: tên miền **không có bản ghi MX hay TXT nào** → thêm SPF/DKIM cho
+Resend sẽ sạch, không đụng gì đang chạy.
 
 ### Còn tồn đọng
 
@@ -122,11 +143,13 @@ Q17 chốt cận trên phiên bản. Chi tiết và lý do ở `QUYET_DINH_NEN_T
 
 ### Việc tiếp theo
 
-1. H1.1 — dựng PostgreSQL + SQLAlchemy + Alembic, migration đầu tiên.
-2. Bổ sung cài Postgres vào `setup/2-cai-dat.ps1` và `pg_dump` vào `backup.ps1`
+1. **Người dùng — H0.1:** kiểm tra trên bảng điều khiển Cloudflare xem gói miễn
+   phí có cho tạo zone cấp subdomain `app.lttstudios.com` không. **Chưa biết kết
+   quả thì chưa chạy `setup/3-cloudflare.ps1`.**
+2. H1.1 — dựng PostgreSQL + SQLAlchemy + Alembic, migration đầu tiên. Không phụ
+   thuộc việc 1, làm song song được.
+3. Bổ sung cài Postgres vào `setup/2-cai-dat.ps1` và `pg_dump` vào `backup.ps1`
    **trong cùng lần đó**.
-3. Dựng Cloudflare Tunnel (`setup/3-cloudflare.ps1`) — cần người dùng đăng nhập
-   Cloudflare bằng trình duyệt.
 
 ---
 

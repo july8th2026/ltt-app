@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Mười hai quyết định đã chốt
+## 1. Hai mươi hai quyết định đã chốt
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -48,6 +48,11 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q15 | Trang quản trị | **sqladmin** | Sinh trang xem/lọc/sửa trực tiếp từ model SQLAlchemy. Trang quản trị không phải thứ khách nhìn thấy, không đáng viết tay. Bắt buộc: chỉ vai trò admin vào được, có test chốt. |
 | Q16 | ORM + di trú CSDL | **SQLAlchemy 2.0 + Alembic** | Với Postgres sẽ đổi schema hàng chục lần. Tự viết script di trú là tự tạo sự cố mất dữ liệu. Không phải tuỳ chọn. |
 | Q17 | Chốt phiên bản thư viện | **Mọi thư viện phải có cận trên (`<`)** | Ngày 2026-07-31 chuyện này đã xảy ra thật: `requirements` chỉ ghi `>=` nên `pip install` kéo về Starlette 1.3 (bản major mới), làm hỏng việc liệt kê route. Ứng dụng vẫn chạy nhưng **hai lần cài cùng một mã nguồn cho ra hai môi trường khác nhau**. Nâng major phải là hành động có ý thức. |
+| Q18 | Giao diện động (tiến độ job) | **HTMX** — máy chủ trả HTML, trang tự cập nhật | Không cần Node.js, không có bước build, không thêm hệ sinh thái nào lên Windows. Quan trọng hơn: **mọi logic ở lại phía máy chủ**, trình duyệt không bao giờ nhìn thấy quy tắc nghiệp vụ hay cách tính tiền. Cùng phong cách với Jinja2 đang dùng. Đổi lại: việc tương tác phức tạp (kéo thả, editor nhiều bước) sẽ gượng — lúc đó mới cân nhắc thêm Alpine.js cho riêng trang đó. |
+| Q19 | Gửi email (xác thực tài khoản, đặt lại mật khẩu) | **Resend** | Không tự dựng SMTP: thư vào hộp thư hay rơi vào spam là chuyện **danh tiếng IP**, không phải chuyện code — IP dân dụng gần như chắc chắn bị Gmail chặn. Hạn mức miễn phí thừa cho nhu cầu vài chục thư/ngày. Công sức thật không nằm ở code mà ở **3 bản ghi DNS** (SPF, DKIM, DMARC). |
+| Q20 | Chống đăng ký ảo | **Cloudflare Turnstile** | Miễn phí không giới hạn lượt, đa số người dùng không phải giải câu đố, không theo dõi người dùng như reCAPTCHA. **Chạy được ngay, không phụ thuộc việc DNS có nằm ở Cloudflare hay không** — nó chỉ là widget JS + một lệnh gọi API xác minh phía máy chủ. |
+| Q21 | Bắt lỗi production | **Sentry**, gói miễn phí | Khi có người trả tiền, phải biết lỗi **trước khi khách gọi điện**; không ai đọc log lúc 2 giờ sáng. **Bắt buộc kèm theo: bật lọc dữ liệu cá nhân trước khi gửi đi** — email, token, nội dung job không được rời máy chủ. GlitchTip (tự host) bị hoãn vì cần Docker → trên Windows phải qua WSL2. |
+| Q22 | DNS cho `app.lttstudios.com` | **Giữ DNS ở inet.vn, uỷ quyền riêng subdomain `app` sang Cloudflare** | Trang giới thiệu đang chạy ở `lttstudios.com` không bị đụng tới — rủi ro thấp nhất cho thứ đang hoạt động. **⚠️ ĐIỀU KIỆN CHƯA XÁC MINH:** Cloudflare theo truyền thống chỉ cho quản lý cả zone ở gói miễn phí; zone cấp subdomain là tính năng gói trả phí. **Phải kiểm chứng trước khi làm bất cứ việc gì khác** — xem H0.1 trong kế hoạch. Nếu gói miễn phí không hỗ trợ: quay lại chọn giữa "chuyển cả zone sang Cloudflare" và "bỏ Tunnel, mở cổng + Caddy", và ghi quyết định thay thế theo đúng giao thức đổi quyết định. |
 
 ---
 

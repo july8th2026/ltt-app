@@ -22,7 +22,8 @@
 ## Bản đồ tổng
 
 ```
-H0  Dọn nền                        ✅ 2026-07-31
+H0    Dọn nền                      ✅ 2026-07-31
+H0.1  Kiểm chứng đường ra Internet  ⚠️ CHẶN việc dựng Tunnel
      │
 H1  Người dùng + PostgreSQL   ─┐
 H2  Hàng đợi job              ─┼─►  H4  Nghiệm thu bằng apps/demo
@@ -62,6 +63,54 @@ xong mới nghiệm thu được ở H4.
 · `tests/test_62_khoa_logic.py` → 11 pass
 
 Chi tiết và lý do tổng số test đổi từ 1.424 → 1.423: xem `NHAT_KY.md`.
+
+---
+
+## H0.1 — Kiểm chứng đường ra Internet ⚠️ CHẶN VIỆC DỰNG TUNNEL
+
+**Mục tiêu:** biết chắc đường ra Internet khả thi **trước khi** viết thêm code
+hay chạy `setup/3-cloudflare.ps1`.
+
+### Vì sao đây là một hạng mục riêng
+
+Đo được ngày 2026-07-31:
+
+```
+lttstudios.com  →  hoian.vclouddns.com / danang.vclouddns.com   (inet.vn)
+MX  : không có       TXT : không có
+```
+
+Cloudflare Tunnel hoạt động bằng một CNAME trỏ tới
+`<tunnel-id>.cfargotunnel.com`, và tên miền đó **chỉ phân giải được qua chính
+hệ thống Cloudflare**. Lệnh `cloudflared tunnel route dns` trong
+`setup/3-cloudflare.ps1` gọi API Cloudflare để tạo bản ghi trong zone — zone chỉ
+hoạt động khi tên miền dùng nameserver của Cloudflare.
+
+Chạy bước 3 bây giờ sẽ **hỏng ở khâu gần cuối**, sau khi đã tải cloudflared,
+đăng nhập, tạo tunnel và ghi cấu hình. Đó là kiểu hỏng tốn thời gian nhất.
+
+### Việc phải làm — theo đúng thứ tự
+
+- [ ] **Người dùng:** thử thêm `app.lttstudios.com` như một site trong bảng điều
+      khiển Cloudflare, xem gói miễn phí có cho tạo **zone cấp subdomain** không
+- [ ] Nếu **được**: lấy 2 nameserver Cloudflare cấp → thêm bản ghi `NS` cho
+      `app` tại inet.vn → đợi phân giải → chạy `setup/3-cloudflare.ps1`
+- [ ] Nếu **không được**: dừng lại, **đổi quyết định Q22 theo đúng giao thức**
+      (`AGENTS.md` mục 6), chọn giữa hai đường còn lại:
+      - chuyển cả `lttstudios.com` sang nameserver Cloudflare — phải chép đủ và
+        đúng mọi bản ghi hiện có trước khi đổi, sót một bản ghi là trang giới
+        thiệu hoặc email công ty chết;
+      - bỏ Tunnel, mở cổng 80/443 + Caddy như máy chủ cũ đang chạy — cần DDNS vì
+        IP nhà là IP động, và mở cổng vào máy đang chứa token/khoá.
+
+**Tiêu chí hoàn thành:** `https://app.lttstudios.com/health/ready` trả
+`{"status":"ready"}` từ **một mạng bên ngoài** (không phải từ trong LAN — kiểm
+tra từ trong LAN cho kết quả dương tính giả do hairpin NAT).
+
+**Ghi chú thành thật:** tôi không xác minh được điều kiện gói miễn phí của
+Cloudflare từ đây, và đã nói rõ điều đó lúc đưa lựa chọn. Đây là việc 5 phút
+trên bảng điều khiển của bạn, và nó quyết định cả nhánh còn lại — nên nó đứng
+trước mọi thứ khác, không phải một dòng chú thích.
 
 ---
 
@@ -119,6 +168,11 @@ buộc. Gỡ trước rồi thay là cách chắc chắn nhất để mất đư
 Đây là hệ quả trực tiếp của Q7 (tự đăng ký + credit dùng thử). Không có phần
 này thì credit dùng thử **sẽ** bị hút cạn bằng tài khoản ảo.
 
+- [ ] Dựng đường gửi mail qua **Resend** (Q19): tạo tài khoản, xác minh tên
+      miền bằng 3 bản ghi DNS (SPF, DKIM, DMARC) tại inet.vn. Khoá API nằm
+      trong `secrets/app.env`, **không bao giờ trong mã nguồn**
+- [ ] Gắn **Cloudflare Turnstile** (Q20) vào form đăng ký — xác minh phía máy
+      chủ, không chỉ hiển thị widget
 - [ ] Luồng đăng ký + gửi mã xác thực email (token dùng một lần, có hạn)
 - [ ] **Chỉ cấp credit dùng thử SAU KHI xác thực email thành công**
 - [ ] Chặn danh sách tên miền mail dùng-một-lần
@@ -292,10 +346,12 @@ nhóm D.
 
 ## Việc phải làm ngay ở phiên tiếp theo
 
-1. **H1.1** — dựng PostgreSQL + SQLAlchemy + Alembic, migration đầu tiên.
-2. Bổ sung bước cài Postgres vào `setup/2-cai-dat.ps1` và bước `pg_dump` vào
+1. **Người dùng — H0.1:** kiểm tra trên bảng điều khiển Cloudflare xem gói miễn
+   phí có cho tạo zone cấp subdomain `app.lttstudios.com` không. Việc 5 phút,
+   nhưng nó quyết định cả nhánh đường ra Internet. **Chưa biết kết quả thì chưa
+   chạy `setup/3-cloudflare.ps1`.**
+2. **H1.1** — dựng PostgreSQL + SQLAlchemy + Alembic, migration đầu tiên. Việc
+   này **không phụ thuộc** H0.1, làm song song được.
+3. Bổ sung bước cài Postgres vào `setup/2-cai-dat.ps1` và bước `pg_dump` vào
    `backup.ps1` **trong cùng lần đó** — thêm CSDL mà quên sao lưu là một sự cố
    đang chờ xảy ra.
-3. Dựng Cloudflare Tunnel trên máy này (`setup/3-cloudflare.ps1`) — việc này
-   độc lập với H1, làm lúc nào cũng được, nhưng cần người dùng đăng nhập
-   Cloudflare bằng trình duyệt.
