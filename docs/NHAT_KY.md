@@ -14,6 +14,71 @@
 
 ---
 
+## 2026-07-31 — H1.1 đóng: nghiệm thu trên PostgreSQL thật
+
+- **Mục tiêu:** đóng nốt H1.1 sau khi có PostgreSQL.
+- **Hạng mục:** H1.1 — **hoàn thành**.
+- **Trạng thái:** xong.
+
+### Đã làm
+
+Người dùng cài PostgreSQL 17 qua winget và uỷ quyền tôi tự tạo + lưu mật khẩu
+(sẽ đổi sau khi hoàn tất). Trình cài winget đặt mật khẩu superuser mặc định là
+`postgres` — yếu, nên việc đầu tiên là thay.
+
+- Đổi mật khẩu `postgres` → mật khẩu ngẫu nhiên 28 ký tự, lưu
+  `secrets/postgres-superuser.txt` (đã gitignore, đọc bằng `utf-8-sig`).
+- Tạo role `ltt_app` + database `lttplatform` (Q23 — ứng dụng không dùng
+  superuser). Ghi `LTT_DATABASE_URL` vào `secrets/app.env`.
+- `alembic upgrade head` chạy trên **PostgreSQL thật** — không còn là SQLite
+  tạm. Bảng `platform_info` + `alembic_version` đúng, phiên bản
+  `0001_platform_info`.
+- `/health/ready` → `{"status":"ready","database":"ok"}` với CSDL thật.
+
+### Nghiệm thu khôi phục thật — mảnh quan trọng nhất
+
+Một bản sao lưu chưa từng thử khôi phục thì chưa phải bản sao lưu. Đã chạy đủ
+chu trình bằng chính công cụ mà `backup.ps1` dùng:
+
+1. ghi một dòng nhận biết được vào `lttplatform`;
+2. `pg_dump -Fc` ra file (3.952 bytes);
+3. tạo database mới `lttplatform_restore_test`, `pg_restore` vào đó;
+4. đọc lại dòng vừa ghi từ database khôi phục → **KHỚP**;
+5. dọn sạch: xoá database test, file dump, dòng nhận biết.
+
+### Cách kiểm chứng mật khẩu
+
+Toàn bộ thiết lập chạy bằng script Python (tránh bẫy quoting của PowerShell),
+mật khẩu **không bao giờ đi qua khung chat**: sinh bằng `secrets`, ghi thẳng
+vào `secrets/`, và chỉ in ra URL đã che mật khẩu để đối chiếu.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `alembic upgrade head` trên Postgres thật | thành công, bảng đúng |
+| `/health/ready` với CSDL thật | 200, `database: ok` |
+| Chu trình `pg_dump` → `pg_restore` → đọc lại | KHỚP |
+| `git check-ignore secrets/app.env, postgres-superuser.txt` | cả hai IGNORED |
+
+Bộ test đầy đủ đã 1.450 pass ở lần chạy trước đó (không đổi code kể từ đó).
+
+### Còn tồn đọng
+
+- Mật khẩu CSDL hiện do tôi tạo trong quá trình xây; **đổi lại khi hoàn tất**
+  (người dùng đã dặn).
+- Trên máy chủ thật, bộ cài `setup/2-cai-dat.ps1` sẽ tự làm lại đúng chuỗi này
+  — nhưng chuỗi đó **chưa chạy trên một máy chủ thật**, mới chạy tương đương
+  bằng tay trên máy phát triển này.
+
+### Việc tiếp theo
+
+1. H1.2 — bảng người dùng + `fastapi-users` dựng **song song** với auth hiện
+   có, chỉ gỡ cũ khi phần mới đã xanh.
+2. (người dùng, độc lập) H0.1 — kiểm tra Cloudflare cho tạo zone subdomain.
+
+---
+
 ## 2026-07-31 — H1.1: lớp CSDL PostgreSQL + Alembic
 
 - **Mục tiêu:** dựng lớp CSDL và bộ máy di trú lược đồ.

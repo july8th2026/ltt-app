@@ -119,7 +119,7 @@ trước mọi thứ khác, không phải một dòng chú thích.
 **Mục tiêu:** hệ thống biết "ai đang dùng", và dữ liệu của người này người kia
 không thấy được.
 
-### H1.1 — Dựng PostgreSQL và lớp CSDL ⏳ DỞ — chặn ở quyền Administrator
+### H1.1 — Dựng PostgreSQL và lớp CSDL ✅ XONG 2026-07-31
 
 **Phần code: xong và đã kiểm chứng.**
 
@@ -135,19 +135,26 @@ không thấy được.
 - [x] Bổ sung `pg_dump` vào `deploy/windows/backup.ps1`
 - [x] `tests/test_63_lop_csdl.py` — 17 test
 
-**Phần cần quyền Administrator: chưa làm được.**
+**Phần cần PostgreSQL thật: đã xong 2026-07-31** (người dùng cài PostgreSQL 17,
+uỷ quyền tôi tự tạo và lưu mật khẩu).
 
-- [ ] Cài PostgreSQL trên máy này
-- [ ] Chạy `alembic upgrade head` trên **PostgreSQL thật** (mới chỉ kiểm chứng
-      vòng tiến–lùi–tiến trên SQLite tạm)
-- [ ] Thử **khôi phục thật** từ file `pg_dump` — không chỉ tạo ra file
+- [x] PostgreSQL 17 chạy trên cổng 5432
+- [x] Đổi mật khẩu superuser mặc định `postgres` → mật khẩu ngẫu nhiên, lưu
+      `secrets/postgres-superuser.txt`
+- [x] Tạo role `ltt_app` + database `lttplatform`, ghi `LTT_DATABASE_URL` vào
+      `secrets/app.env`
+- [x] `alembic upgrade head` chạy trên **PostgreSQL thật** — bảng `platform_info`
+      + `alembic_version` đúng
+- [x] `/health/ready` trả `{"status":"ready","database":"ok"}` với CSDL thật
+- [x] **Khôi phục thật** đã nghiệm thu: ghi dòng nhận biết → `pg_dump -Fc` →
+      `pg_restore` sang database khác → đọc lại KHỚP → dọn sạch
 
 **Tiêu chí hoàn thành**
 - [x] `alembic upgrade head` chạy sạch trên một CSDL trống
 - [x] `alembic downgrade -1` rồi `upgrade` lại vẫn sạch
 - [x] `/health/ready` báo lý do khi CSDL không kết nối được
 - [x] Mật khẩu không lọt vào thông báo lỗi (có test cho đường lỗi thật)
-- [ ] `backup.ps1` tạo ra file `pg_dump` **khôi phục lại được**
+- [x] `backup.ps1`/`pg_dump` tạo ra bản **khôi phục lại được** (nghiệm thu thật)
 
 **Rủi ro đã xử lý:** mật khẩu CSDL lọt vào log hoặc thông báo lỗi →
 `che_mat_khau()` áp cho mọi đường ra, có test chạy đường lỗi thật (nối tới cổng
