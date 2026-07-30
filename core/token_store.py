@@ -53,6 +53,8 @@ def _default_token_file() -> str:
         return data_path("tokens.enc")
     except Exception:
         return os.path.join("data", "tokens.enc")
+
+
 _SALT = b"fb_bot_token_salt_v1_2026"
 
 # BUG-07/OPT-01 fix: shared singleton instance for the default TOKEN_FILE path.
@@ -310,7 +312,7 @@ class TokenStore:
 
         Distinguishes three states that were previously collapsed into a
         silent "0 accounts" (which made an undecryptable token file
-        indistinguishable from a fresh install — see docs/AUDIT_REPORT.md
+        indistinguishable from a fresh install — see docs/_luutru/AUDIT_REPORT.md
         finding D2):
 
           1. file absent            -> no accounts, no error (normal)

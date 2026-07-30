@@ -201,7 +201,7 @@ Danh sách phải rà:
 ## Bước 8 — Tài khoản Facebook / TikTok
 
 Token hiện tại **không dùng lại được trên VPS** — chúng được mã hoá theo
-danh tính máy cũ (xem `docs/AUDIT_REPORT.md` B1/B2). Trên VPS bạn phải
+danh tính máy cũ (xem `docs/_luutru/AUDIT_REPORT.md` B1/B2). Trên VPS bạn phải
 kết nối lại tài khoản.
 
 Vì `LTT_TOKEN_ENCRYPTION_KEY` đã được đặt ở Bước 5, các token lưu **từ

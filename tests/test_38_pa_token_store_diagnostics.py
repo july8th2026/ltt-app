@@ -1,7 +1,7 @@
 """
 PA-1 — token store must distinguish "no accounts" from "unreadable file".
 
-Regression guard for docs/AUDIT_REPORT.md finding D2: an undecryptable
+Regression guard for docs/_luutru/AUDIT_REPORT.md finding D2: an undecryptable
 token file used to be silently collapsed into "0 accounts", making a real
 credential outage look identical to a fresh install. The live audit hit
 exactly this — 27KB of real Facebook tokens reported as "no accounts

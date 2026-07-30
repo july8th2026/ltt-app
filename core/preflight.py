@@ -2,7 +2,7 @@
 preflight.py — verify a config's column mapping against a real sheet tab
 before a run starts (PA-3).
 
-Motivation (docs/AUDIT_REPORT.md finding B3): the live audit found 0 of 26
+Motivation (docs/_luutru/AUDIT_REPORT.md finding B3): the live audit found 0 of 26
 tabs matched the configured column names. The mandatory `col_schedule_time`
 was configured as `schedule_time_fb_dai` while the default tab actually
 uses `schedule_time` — a one-word difference that surfaced only as a

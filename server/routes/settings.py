@@ -112,7 +112,7 @@ async def upload_credentials(
 
     Replaces the desktop's native file picker. Rejects OAuth-client files,
     which would otherwise produce a config that looks fine and then blocks
-    forever waiting for a browser (docs/WEB_PARITY_PLAN.md B-1).
+    forever waiting for a browser (docs/_luutru/WEB_PARITY_PLAN.md B-1).
     """
     if not verify_csrf_token(request, csrf_token):
         return templates.TemplateResponse(

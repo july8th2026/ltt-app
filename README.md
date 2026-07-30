@@ -36,8 +36,8 @@ python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 | `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu cho Claude |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | dựng Tunnel |
-| `docs/PROJECT_MEMORY.md` | nhật ký thay đổi |
-| `docs/WEB_PARITY_PLAN.md` | lịch sử chuyển từ desktop sang web |
+| `docs/_luutru/PROJECT_MEMORY.md` | nhật ký thay đổi |
+| `docs/_luutru/WEB_PARITY_PLAN.md` | lịch sử chuyển từ desktop sang web |
 
 ## Không bao giờ commit
 

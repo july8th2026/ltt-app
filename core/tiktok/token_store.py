@@ -182,7 +182,7 @@ class TikTokTokenStore:
         """Populate self._accounts, recording *why* on failure.
 
         Mirrors core.token_store.TokenStore._load — see its docstring and
-        docs/AUDIT_REPORT.md finding D2 for why an unreadable store must
+        docs/_luutru/AUDIT_REPORT.md finding D2 for why an unreadable store must
         not look identical to a fresh install.
         """
         self._load_error = None

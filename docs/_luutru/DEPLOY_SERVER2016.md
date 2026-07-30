@@ -1,7 +1,7 @@
 # Triển khai lên VPS Windows Server 2016
 
 > Quy trình cụ thể cho Server 2016. Nếu VPS của bạn là 2019/2022, dùng
-> `docs/DEPLOY_APP_LTTSTUDIOS.md` thay vì file này — 2019+ cài OpenSSH
+> `docs/_luutru/DEPLOY_APP_LTTSTUDIOS.md` thay vì file này — 2019+ cài OpenSSH
 > bằng một dòng lệnh, không cần bước tải từ GitHub.
 >
 > **Không có giá trị bí mật nào trong file này.**
@@ -142,7 +142,7 @@ Xong bước này, `https://app.lttstudios.com` vào được dashboard.
 ## Bước 8 — Kết nối tài khoản Facebook / TikTok
 
 Token cũ **không dùng lại được** trên VPS (chúng mã hoá theo danh tính máy
-cũ — xem `docs/AUDIT_REPORT.md` B1/B2). Phải kết nối lại trên VPS.
+cũ — xem `docs/_luutru/AUDIT_REPORT.md` B1/B2). Phải kết nối lại trên VPS.
 
 Vì `LTT_TOKEN_ENCRYPTION_KEY` đã đặt ở Bước 3, token lưu **từ giờ trở đi**
 sẽ dùng lại được sau khi cài lại máy hoặc chuyển server — miễn là giữ

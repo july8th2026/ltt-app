@@ -8,7 +8,7 @@ The properties that matter most here are not cosmetic:
     stored secret (a round-trip through the UI would otherwise silently
     destroy an App Secret);
   * invalid input must leave the on-disk config untouched — a bad column
-    mapping silently stops the bot (docs/AUDIT_REPORT.md B3), so a
+    mapping silently stops the bot (docs/_luutru/AUDIT_REPORT.md B3), so a
     half-applied save is worse than a rejected one.
 """
 from __future__ import annotations

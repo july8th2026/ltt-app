@@ -139,8 +139,8 @@ app/modules/<module_id>/
    thường là `job_queue`, `quota_guard`, `artifact_store`, `user_manager`);
 3. model liên quan trong `app/models/`;
 4. template + static của nó (trong `ui/` hoặc `app/resources/`);
-5. tài liệu riêng trong `docs/` nếu có (ví dụ `docs/seedance_video/`,
-   `docs/CODEX_MODULE_PLAN.md`);
+5. tài liệu riêng trong `docs/` nếu có (ví dụ `D:\BOT GEMINI\docs\seedance_video/`,
+   `D:\BOT GEMINI\docs\CODEX_MODULE_PLAN.md`);
 6. binary/vendor đi kèm (ví dụ `vendor/upscale` 48 MB cho `video_upscale`).
 
 ---
@@ -149,10 +149,10 @@ app/modules/<module_id>/
 
 | File | Dòng | Nội dung |
 |---|---|---|
-| `docs/LTT_AI_Studio_Architecture.txt` | **15.272** | Sinh tự động từ mã nguồn. Mục 6 = danh mục 24 module; mục 9 = hàng đợi job; mục 12 = phân quyền; mục 14 = các quy tắc kiến trúc; mục 15 = danh sách file dữ liệu. **Đọc mục 14 trước tiên.** |
-| `docs/WHOLE_BOT_AUDIT_2026-07-24.md` | — | Audit toàn hệ thống |
-| `docs/CODEX_MODULE_PLAN.md` | — | Thiết kế module Codex |
-| `docs/seedance-multiuser.md` | — | Cách seedance xử lý nhiều người dùng |
+| `D:\BOT GEMINI\docs\LTT_AI_Studio_Architecture.txt` | **15.272** | Sinh tự động từ mã nguồn. Mục 6 = danh mục 24 module; mục 9 = hàng đợi job; mục 12 = phân quyền; mục 14 = các quy tắc kiến trúc; mục 15 = danh sách file dữ liệu. **Đọc mục 14 trước tiên.** |
+| `D:\BOT GEMINI\docs\WHOLE_BOT_AUDIT_2026-07-24.md` | — | Audit toàn hệ thống |
+| `D:\BOT GEMINI\docs\CODEX_MODULE_PLAN.md` | — | Thiết kế module Codex |
+| `D:\BOT GEMINI\docs\seedance-multiuser.md` | — | Cách seedance xử lý nhiều người dùng |
 | `CODEX_STUDIO_FULL_BUNDLE.md` | 456 KB | Bundle đầy đủ của Codex Studio |
 
 ---

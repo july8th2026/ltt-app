@@ -164,7 +164,7 @@ def test_update_script_still_pure_ascii():
 # ─── doctor must not send operators to the retired desktop app ────────────────
 
 def test_doctor_fix_hints_never_reference_the_desktop_app():
-    """The desktop is retired (docs/WEB_PARITY_PLAN.md). A fix hint saying
+    """The desktop is retired (docs/_luutru/WEB_PARITY_PLAN.md). A fix hint saying
     "open the app" sends the operator somewhere that no longer exists."""
     with open(os.path.join(_project_root(), "tools", "doctor.py"),
               encoding="utf-8") as f:

@@ -1,7 +1,7 @@
 """
 credentials_service.py — upload and validate the Google credentials file.
 
-Why this exists (docs/WEB_PARITY_PLAN.md B-1/B-3): the desktop picked the
+Why this exists (docs/_luutru/WEB_PARITY_PLAN.md B-1/B-3): the desktop picked the
 credentials file with a native `filedialog`, and `utils/sheet_client.py`
 falls back to `InstalledAppFlow.run_local_server()` — a browser on the
 machine running the code. Neither works on a remote server, so:

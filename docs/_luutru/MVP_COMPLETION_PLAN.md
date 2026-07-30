@@ -1,10 +1,10 @@
 # MVP Completion Plan
 
 > Detailed implementation plan from the 2026-07-29 audit
-> (`docs/AUDIT_REPORT.md`) to a working MVP. Sequenced so the bot becomes
+> (`docs/_luutru/AUDIT_REPORT.md`) to a working MVP. Sequenced so the bot becomes
 > *actually runnable* before more platform surface is built on top of it.
 > Phase numbering `PA`/`PB` is used for the new remediation work so it does
-> not collide with `WEB_PLATFORM_PLAN.md`'s P0–P11.
+> not collide with `docs/_luutru/WEB_PLATFORM_PLAN.md`'s P0–P11.
 
 ## Guiding constraint
 

@@ -36,7 +36,7 @@ Tôi đã probe live cả 2 domain. Kết quả:
 | **i18n** | `data/translations/vi.json`, `data/translations/en.json` | 2 files |
 | **Dev tools** | `tools/simulate_oauth_flow.py`, `tools/check_oauth_relay.py`, `tools/demo_v2/scene_config.py`, `tools/demo_v2/02_generate_slides.py`, `scripts/_demo_record.py`, `scripts/_demo_record_v3.py`, `scripts/demo_assets/_gen_slides.py` | 7 files |
 | **Tests** | `tests/test_28_tiktok_parity.py` | 1 file |
-| **Docs** | `docs/HANDOFF.md`, `docs/PROJECT_STATE.json`, `docs/fb-app-review-submission-plan.md`, `docs/fb-app-review-assets/*.txt`, `docs/tiktok-submission/*` | ~10 files |
+| **Docs** | `docs/_luutru/HANDOFF.md`, `docs/_luutru/PROJECT_STATE.json`, `docs/fb-app-review-submission-plan.md`, `docs/fb-app-review-assets/*.txt`, `docs/tiktok-submission/*` | ~10 files |
 | **TOTAL** | | **~30 files** |
 
 ### 2.2 Files KHÔNG đụng (historical / backup)

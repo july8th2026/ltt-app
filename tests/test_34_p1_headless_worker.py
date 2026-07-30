@@ -62,7 +62,7 @@ def _isolated_worker_store(tmp_path, monkeypatch, workers=None):
 def test_worker_main_end_to_end_with_stored_workers(tmp_path, monkeypatch):
     """Worker list now comes from the shared store the desktop app writes.
 
-    Behavior change (PA-5, docs/AUDIT_REPORT.md D3): this used to build a
+    Behavior change (PA-5, docs/_luutru/AUDIT_REPORT.md D3): this used to build a
     worker by guessing from the legacy top-level `sheet_tab`/`sheet_id`
     config keys. The audit proved that guess targeted a tab whose columns
     did not match the configured mapping, producing a run that connected

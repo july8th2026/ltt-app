@@ -60,7 +60,7 @@ def resolve_workers(path: str | None, platform: str) -> list[dict]:
 
     There is deliberately NO fallback to the legacy top-level
     `sheet_tab`/`sheet_id` config keys. The 2026-07-29 audit
-    (docs/AUDIT_REPORT.md) showed that guess targeted a tab whose columns
+    (docs/_luutru/AUDIT_REPORT.md) showed that guess targeted a tab whose columns
     did not match the configured mapping, so the "fallback" produced a run
     that connected successfully and then failed mid-flight. Failing loudly
     here is strictly better than silently running the wrong tab.
@@ -100,12 +100,21 @@ def _on_worker_update(idx: int, status) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Headless publishing worker")
-    parser.add_argument("--config", default=os.path.join("data", "config.json"))
+    # Mac dinh phai giai qua ranh gioi duong dan, khong phai chuoi tuong doi
+    # theo thu muc lam viec: worker chay nhu mot dich vu Windows, thu muc lam
+    # viec cua no la app\ chu khong phai goc du an.
+    parser.add_argument("--config", default=None,
+                        help="Mac dinh: LTT_CONFIG_PATH, hoac data/config.json "
+                             "trong thu muc du lieu dang chay")
     parser.add_argument("--workers", default=None, help="Path to a JSON worker-list file")
     parser.add_argument("--platform", default="", choices=["", "facebook", "tiktok"])
     args = parser.parse_args(argv)
 
-    config = load_config(args.config)
+    config_path = args.config
+    if config_path is None:
+        from core.runtime_paths import resolve_runtime_paths
+        config_path = resolve_runtime_paths().config_path
+    config = load_config(config_path)
     try:
         workers = resolve_workers(args.workers, args.platform)
     except NoWorkersError as exc:

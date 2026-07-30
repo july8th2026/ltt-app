@@ -1,7 +1,7 @@
 """
 PA-3 — preflight column validation tests.
 
-Guards docs/AUDIT_REPORT.md finding B3: a one-word column-name mismatch
+Guards docs/_luutru/AUDIT_REPORT.md finding B3: a one-word column-name mismatch
 (`schedule_time_fb_dai` vs `schedule_time`) took a live run down mid-flight,
 and a second mismatch (`error_message_dai`) silently disabled error
 write-back with no symptom at all.

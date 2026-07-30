@@ -2,7 +2,7 @@
 worker_store.py — persist the Sheet Runner worker list (PA-5).
 
 Before this, the worker list lived only in `gui/sheet_runner_tab.py`'s
-in-memory `self._workers` (docs/AUDIT_REPORT.md finding D3):
+in-memory `self._workers` (docs/_luutru/AUDIT_REPORT.md finding D3):
 
   - the operator had to re-add every worker on each app launch;
   - no headless/server process could reproduce the real configuration,

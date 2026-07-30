@@ -48,8 +48,8 @@ D:\CODE AI\BOT UP FB + TikTok\
 │   ├── tests/                             554 tests + GUI smoke validator
 │   ├── data/                              Runtime (tokens.enc, config.json, audit log)
 │   ├── docs/                              ← THIS FILE LIVES HERE
-│   │   ├── HANDOFF.md                     (this file)
-│   │   ├── PROJECT_STATE.json             (machine-readable state)
+│   │   ├── docs/_luutru/HANDOFF.md                     (this file)
+│   │   ├── docs/_luutru/PROJECT_STATE.json             (machine-readable state)
 │   │   ├── tiktok-workflow.md             Stage-by-stage doc
 │   │   ├── facebook-workflow.md           Stage-by-stage doc
 │   │   └── tiktok-submission/             (5 docs cho audit submit)
@@ -207,8 +207,8 @@ GUI audit score:   100/100 ✅
 ### 2.6 DOCUMENTATION
 
 ```
-docs/HANDOFF.md                        ← This file
-docs/PROJECT_STATE.json                ← Machine-readable state
+docs/_luutru/HANDOFF.md                        ← This file
+docs/_luutru/PROJECT_STATE.json                ← Machine-readable state
 docs/tiktok-workflow.md                ← 8-stage TikTok workflow
 docs/facebook-workflow.md              ← 8-stage Facebook workflow
 docs/tiktok-submission/
@@ -468,7 +468,7 @@ Deploy:         PyInstaller for .exe · inet.vn shared hosting for website
 ## 🎯 8. WHAT TO DO IN NEXT CHAT
 
 **Tell the new chat:**
-> "Đọc file `D:\CODE AI\BOT UP FB + TikTok\BOT UP Facebook\docs\HANDOFF.md` để hiểu toàn bộ dự án LTTStudio VideoBot. Cũng có `PROJECT_STATE.json` cùng folder cho dữ liệu cấu trúc."
+> "Đọc file `D:\CODE AI\BOT UP FB + TikTok\BOT UP Facebook\docs\docs/_luutru/HANDOFF.md` để hiểu toàn bộ dự án LTTStudio VideoBot. Cũng có `docs/_luutru/PROJECT_STATE.json` cùng folder cho dữ liệu cấu trúc."
 
 **Recommended next task order:**
 1. **Bước 1**: Upload `lttstudio-web/auth/fb-callback.html` lên Hostinger inet.vn (`public_html/auth/`)
@@ -531,4 +531,4 @@ Deploy:         PyInstaller for .exe · inet.vn shared hosting for website
 
 ---
 
-*End of HANDOFF.md*
+*End of docs/_luutru/HANDOFF.md*

@@ -4,9 +4,17 @@
 
 ## Đây là gì
 
-Nền tảng nhiều app tự động hoá, chạy trên Windows. Mỗi app một đường dẫn dưới
-`app.lttstudios.com`. Vào Internet qua **Cloudflare Tunnel** (không mở cổng,
-không cần IP tĩnh).
+Nền tảng SaaS đa người dùng bán công cụ AI theo credit, chạy trên Windows.
+Mỗi công cụ là một **app** ở một đường dẫn dưới `app.lttstudios.com`. Vào
+Internet qua **Cloudflare Tunnel** (không mở cổng, không cần IP tĩnh).
+
+**Nguồn chân lý là `docs/QUYET_DINH_NEN_TANG.md`** — đọc nó trước, rồi
+`docs/KE_HOACH_TRIEN_KHAI.md` và `docs/NHAT_KY.md`. Quy tắc làm việc đầy đủ
+(kể cả quy tắc cập nhật memory và giao thức đổi quyết định) ở `AGENTS.md`.
+
+⚠️ **`D:\BOT GEMINI` là kho tham chiếu CHỈ ĐỌC.** Nó đang phục vụ người dùng
+thật trên cổng 8000. Không sửa, không tạo, không xoá gì bên đó. Nền tảng này
+dùng cổng **8100**.
 
 Thư mục này vừa là **mã nguồn** vừa là **bộ cài**. Người dùng chép nguyên nó
 sang máy chủ, rồi mở Claude Code **ngay trên máy đó**.
@@ -116,10 +124,12 @@ nào**.
 | Hạng mục | Trạng thái |
 |---|---|
 | Vỏ nền tảng + hợp đồng app | ✅ xong, có test |
-| App socialbot (FB+TikTok) | ✅ chạy được |
+| Mã nguồn trong git | ✅ từ 2026-07-31 |
+| App socialbot (FB+TikTok) | ⏸️ đóng băng — không phát triển thêm |
 | App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
-| Hàng đợi job dùng chung | ❌ chưa |
-| Nhiều người dùng + credit thật | ❌ chưa |
+| PostgreSQL + nhiều người dùng | ❌ chưa |
+| Hàng đợi job + worker riêng | ❌ chưa |
+| Sổ credit | ❌ chưa |
 
 Hai mục cuối **bắt buộc phải có trước khi mở cho khách ngoài**. Hiện chỉ có
 một tài khoản admin duy nhất từ biến môi trường.
@@ -140,5 +150,5 @@ cloudflare/config.yml cloudflare/*.json
 | `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |
-| `docs/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
+| `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
 | `AGENTS.md` | quy ước kỹ thuật chi tiết |

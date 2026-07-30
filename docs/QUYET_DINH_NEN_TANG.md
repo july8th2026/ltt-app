@@ -43,6 +43,11 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q10 | App socialbot (FB/TikTok) | **Đóng băng** | Giữ chạy trong danh sách app, không sửa, không tối ưu. Giữ luôn `core/` (15.489 dòng) vì ~700 test đang dựa vào các phần dùng chung. |
 | Q11 | Tool thật đầu tiên | **`thumbnail_api`** | API thuần, ~5-15 giây, kết quả ảnh vài MB. Không đụng trần 100 MB, không đụng trần 100 giây → chứng minh được đủ chuỗi user → job → credit → tải về mà **chưa cần object storage**. |
 | Q12 | Tên gọi hai hệ thống | **Không đổi tên** — phân biệt bằng đường dẫn | Quy ước bắt buộc để bù lại: trong mọi tài liệu **luôn viết đủ đường dẫn** (`D:\BOT GEMINI` hoặc `D:\LTTSTUDIOSAPP`), không bao giờ chỉ viết "LTT AI Studio" trống không. |
+| Q13 | Hàng đợi job | **procrastinate** — hàng đợi chạy trên chính PostgreSQL | Không cần Redis, không thêm dịch vụ nào. Job và dữ liệu nghiệp vụ nằm trong **cùng một giao dịch** → trừ credit và tạo job không bao giờ lệch nhau. Celery bị loại vì cần broker riêng *và* chạy kém trên Windows (prefork không hoạt động). Đổi lại: cộng đồng nhỏ hơn Celery nhiều. |
+| Q14 | Đăng nhập / đăng ký | **fastapi-users** | Token xác thực email và đặt lại mật khẩu là chỗ dễ sai bảo mật nhất; dùng thư viện đã được nhiều người soi. **Cái giá đã biết:** phải thay phần auth hiện có (`server/auth/`, 4 file đã có test, đang chạy production). Bắt buộc di trú theo kiểu **dựng song song rồi mới gỡ cũ** — xem H1 trong kế hoạch. |
+| Q15 | Trang quản trị | **sqladmin** | Sinh trang xem/lọc/sửa trực tiếp từ model SQLAlchemy. Trang quản trị không phải thứ khách nhìn thấy, không đáng viết tay. Bắt buộc: chỉ vai trò admin vào được, có test chốt. |
+| Q16 | ORM + di trú CSDL | **SQLAlchemy 2.0 + Alembic** | Với Postgres sẽ đổi schema hàng chục lần. Tự viết script di trú là tự tạo sự cố mất dữ liệu. Không phải tuỳ chọn. |
+| Q17 | Chốt phiên bản thư viện | **Mọi thư viện phải có cận trên (`<`)** | Ngày 2026-07-31 chuyện này đã xảy ra thật: `requirements` chỉ ghi `>=` nên `pip install` kéo về Starlette 1.3 (bản major mới), làm hỏng việc liệt kê route. Ứng dụng vẫn chạy nhưng **hai lần cài cùng một mã nguồn cho ra hai môi trường khác nhau**. Nâng major phải là hành động có ý thức. |
 
 ---
 
@@ -66,99 +71,70 @@ Những điều dưới đây **không được vi phạm**, kể cả khi tiệ
 
 ---
 
-## 3. Việc phải làm ở giai đoạn hạ tầng (chưa bắt đầu)
+## 3. Việc phải làm
 
-Thứ tự dưới đây là thứ tự phụ thuộc, không phải thứ tự ưu tiên cảm tính.
+Danh sách chi tiết, tiêu chí hoàn thành và test bắt buộc của từng hạng mục nằm
+ở **`docs/KE_HOACH_TRIEN_KHAI.md`**. Đây chỉ là bản đồ tổng.
 
-### H0 — Dọn nền trước khi xây
+```
+H0 Dọn nền          ✅ XONG 2026-07-31
+   └─► H1 Người dùng ──┐
+       H2 Hàng đợi job ├─► H4 Nghiệm thu bằng apps/demo ─► H5 Tool thật đầu tiên
+       H3 Sổ credit  ──┘
+```
 
-- [ ] `git init` + commit đầu tiên. **Hiện chưa có version control** — đây là
-      rủi ro vận hành lớn nhất hiện tại, lớn hơn mọi lỗi kỹ thuật đã tìm thấy.
-- [ ] `pip install -r requirements-server.txt` (thiếu `itsdangerous` → 7 module
-      test không nạp được, `python -m pytest -q` đang đỏ ngay từ khâu collect).
-- [ ] Sửa lỗi ranh giới đường dẫn: `TokenStore`, `content_history.db`,
-      `audit_log.jsonl` … đang ghi theo thư mục làm việc chứ không theo
-      `LTT_DATA_DIR` → rơi vào `app\data\` là thư mục **bị xoá mỗi lần cập nhật**.
-- [ ] Chuyển cổng mặc định trong `setup/*.ps1` sang 8100 (Q4).
-- [ ] Dọn tài liệu vào `docs/_luutru/` (Q8) + viết lại bộ tài liệu gốc cho đúng
-      thực tế (xem mục 4).
-
-### H1 — Người dùng
-
-- [ ] Bảng `users` trong Postgres: vai trò, trạng thái, thời điểm tạo.
-- [ ] Đăng ký → xác thực email → mới được cấp credit dùng thử (Q7 + Q9).
-- [ ] Chặn tên miền mail dùng-một-lần; giới hạn tài khoản mới trên mỗi IP.
-- [ ] Phiên đăng nhập phía máy chủ (hiện đang là cookie ký, không thu hồi được).
-- [ ] Phân quyền từng app cho từng user (tham chiếu `workspace_policy.py` của
-      BOT GEMINI: ENABLED / LOCKED / HIDDEN).
-
-### H2 — Hàng đợi job
-
-- [ ] Bảng `jobs`: trạng thái, chủ sở hữu, tham số, tiến độ, kết quả, lỗi.
-- [ ] Cơ chế **giữ chỗ job** để hai worker không cùng nhặt một job.
-- [ ] Dịch vụ `LTTWorker` riêng (Q6), khai báo năng lực `api`/`ffmpeg`/`gpu`.
-- [ ] Retry luỹ thừa + cửa sổ chống trùng (tham chiếu `job_queue.py`).
-- [ ] Đẩy tiến độ về trình duyệt (SSE hoặc polling).
-- [ ] Job phải sống sót qua restart máy chủ.
-
-### H3 — Sổ credit
-
-- [ ] Bảng ghi thêm (append-only), **có giao dịch** — không bao giờ sửa số dư
-      trực tiếp, số dư là tổng của sổ.
-- [ ] Ba thao tác: **giữ chỗ** → **quyết toán** → **hoàn lại khi lỗi**.
-- [ ] Chặn đường lách: nút "Tạo lại" phải qua đúng cổng kiểm tra như lần chạy
-      đầu. BOT GEMINI **đã từng bị đúng lỗi này** và phải vá (xem `P0-5` trong
-      `app/modules/seedance_video/api.py` của họ).
-- [ ] Trang admin: cấp/thu credit tay, xem lịch sử.
-
-### H4 — Nghiệm thu bằng `apps/demo`
-
-- [ ] Chạy đủ chuỗi: đăng ký → xác thực → nhận credit → tạo job → worker nhận →
-      xử lý → trả kết quả → trừ credit đúng → xem lịch sử.
-- [ ] Thử hỏng có chủ ý: worker chết giữa chừng → credit phải được hoàn.
-- [ ] Chỉ khi chuỗi này xanh mới sang H5.
-
-### H5 — Tool thật đầu tiên
-
-- [ ] Copy `app/modules/thumbnail_api/` từ BOT GEMINI sang (Q11) — theo đúng
-      danh sách "phải mang theo" trong `docs/KHAO_SAT_BOT_GEMINI.md` mục 3.
-- [ ] Dựng lại theo hợp đồng app; **không sửa** `platform_core/` hay `server/`.
+H1, H2, H3 phụ thuộc lẫn nhau (job cần chủ sở hữu, credit cần job) nên làm
+theo thứ tự đó, nhưng cả ba phải xong mới nghiệm thu được ở H4.
 
 ---
 
-## 4. Bộ tài liệu sau khi chuẩn hoá
+## 4. Bộ tài liệu — đã chuẩn hoá xong 2026-07-31
 
 Đích đến: **ai mở `docs/` ra cũng biết đọc file nào, và không có hai file nói
 hai chuyện khác nhau.**
 
 ```
 docs/
-├── 00_BAT_DAU_TU_DAY.md      bố cục, nguyên tắc, trạng thái thật
+├── 00_BAT_DAU_TU_DAY.md      đọc gì trước, bố cục, TRẠNG THÁI THẬT
 ├── QUYET_DINH_NEN_TANG.md    ★ file này — nguồn chân lý
+├── KE_HOACH_TRIEN_KHAI.md    việc cần làm, tiêu chí hoàn thành, tiến độ
+├── NHAT_KY.md                nhật ký từng phiên
 ├── KHAO_SAT_BOT_GEMINI.md    kho module nguồn + đánh giá khả thi
-├── 01_CAI_DAT_MAY_CHU.md     cài đặt + Cloudflare Tunnel + cập nhật
-├── 02_THEM_APP_MOI.md        hợp đồng app
-├── 03_VAN_HANH.md            sao lưu, rollback, xử lý sự cố
-├── NHAT_KY.md                nhật ký từng phiên (thay PROJECT_MEMORY.md)
-└── _luutru/                  tài liệu đã ngừng dùng + README giải thích
+├── 01_COPY_LEN_SERVER.md     đưa lên máy chủ, cập nhật, rollback
+├── 02_LENH_CHO_CLAUDE.md     câu lệnh mẫu giao việc cho Claude
+├── 03_THEM_APP_MOI.md        hợp đồng app
+├── 04_CLOUDFLARE_TUNNEL.md   dựng Tunnel, xử lý sự cố mạng
+├── SECURITY_CHECKLIST.md     bảng kiểm bảo mật kèm lệnh xác minh
+├── DATA_RETENTION_POLICY.md  giữ dữ liệu bao lâu, ai dọn
+├── tiktok-submission/        tài nguyên CODE ĐANG ĐỌC (audit_checklist)
+├── lttstudios-website/       mã nguồn trang giới thiệu công khai — không phải tài liệu
+└── _luutru/                  tài liệu đã ngừng dùng + README giải thích từng file
 ```
 
-### Sáu chỗ tài liệu hiện đang SAI so với thực tế — phải sửa khi viết lại
+> Giữ nguyên tên `00`–`04` thay vì đổi số như bản phác thảo ban đầu: có test
+> khoá năm tên file đó (`tests/test_61_setup_scripts.py`), và đổi tên chỉ để
+> cho đẹp là tạo ra thay đổi không mang lại gì.
 
-| # | Tài liệu nói | Thực tế đo được 2026-07-31 |
-|---|---|---|
-| 1 | `AGENTS.md` — "desktop CustomTkinter vẫn là đường production, không được xoá" | `gui/` và `main.py` **đã bị xoá** |
-| 2 | `PROJECT_MEMORY.md` đầu file — "Current product mode: Windows desktop application" | web-only |
-| 3 | `PROJECT_MEMORY.md` — "entry point `main.py`, CustomTkinter" | không còn tồn tại |
-| 4 | Bảng phase — P4/P5 PARTIAL (read-only) | manual publish + OAuth web **đã xong** (W3/W5) |
-| 5 | "31 file test, 962 test" | 55 file, ~1.350 test |
-| 6 | `CLAUDE.md` + `docs/00` + `docs/04` — vào Internet qua Cloudflare Tunnel | production **đang chạy Caddy trực tiếp**, DNS trỏ thẳng vào máy chủ, không qua Tunnel |
+### Sáu chỗ tài liệu từng SAI so với thực tế — đã sửa xong
 
-Nguyên nhân gốc của cả sáu: `PROJECT_MEMORY.md` dài 1.540 dòng, phần *nhật ký*
-được cập nhật rất kỷ luật nhưng phần *tóm tắt trạng thái* ở đầu file thì không
-ai sửa. **Người đọc mới luôn đọc phần tóm tắt trước.** Bộ tài liệu mới phải
-tách hẳn "nhật ký" khỏi "trạng thái hiện tại", và trạng thái hiện tại phải ngắn
-đủ để không ai ngại sửa.
+Giữ bảng này để nhớ **kiểu lỗi**, không phải để nhớ sáu lỗi cụ thể.
+
+| # | Tài liệu từng nói | Thực tế | Đã xử lý |
+|---|---|---|---|
+| 1 | `AGENTS.md` — "desktop CustomTkinter vẫn là đường production, không được xoá" | `gui/` và `main.py` đã bị xoá | ✅ viết lại `AGENTS.md` |
+| 2 | `PROJECT_MEMORY.md` — "Current product mode: Windows desktop application" | web-only | ✅ chuyển vào `_luutru/` |
+| 3 | `PROJECT_MEMORY.md` — "entry point `main.py`, CustomTkinter" | không còn tồn tại | ✅ như trên |
+| 4 | Bảng phase — P4/P5 PARTIAL (read-only) | manual publish + OAuth web đã xong | ✅ như trên |
+| 5 | "31 file test, 962 test" | 55 file, 1.424 test | ✅ `docs/00` ghi số thật |
+| 6 | Cả `CLAUDE.md`, `docs/00`, `docs/04` mô tả ba hạ tầng khác nhau | — | ✅ thống nhất một hướng: Cloudflare Tunnel, cổng 8100 |
+
+**Nguyên nhân gốc của cả sáu, và là thứ phải phòng về sau:**
+`PROJECT_MEMORY.md` dài 1.540 dòng. Phần *nhật ký* được cập nhật rất kỷ luật,
+nhưng phần *tóm tắt trạng thái* ở đầu file thì không ai sửa — trong khi người
+đọc mới luôn đọc phần tóm tắt trước.
+
+Cách phòng: **tách hẳn ba tầng** (quyết định / kế hoạch / nhật ký — xem
+`AGENTS.md` mục 6), và giữ phần trạng thái ngắn đủ để không ai ngại sửa.
 
 ---
 

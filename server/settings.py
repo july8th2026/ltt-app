@@ -58,7 +58,7 @@ def load_server_settings(env: dict | None = None) -> ServerSettings:
             raise MissingServerSecretError(
                 f"Missing required server secret(s) for environment "
                 f"'{environment.value}': {', '.join(missing)}. Set them as "
-                "environment variables (see docs/PROJECT_MEMORY.md for "
+                "environment variables (see docs/_luutru/PROJECT_MEMORY.md for "
                 "names/storage location — never commit the values)."
             )
 

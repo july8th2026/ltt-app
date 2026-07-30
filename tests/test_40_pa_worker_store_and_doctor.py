@@ -1,7 +1,7 @@
 """
 PA-4 / PA-5 — worker-list persistence and the doctor health report.
 
-Guards docs/AUDIT_REPORT.md finding D3 (worker list existed only in GUI
+Guards docs/_luutru/AUDIT_REPORT.md finding D3 (worker list existed only in GUI
 memory, so no headless run could reproduce the operator's real setup, and
 worker_main's legacy guess targeted the wrong tab).
 """

@@ -137,7 +137,7 @@ def check_tokens(report: Report) -> None:
          "Đây là cách kết nối chạy được trên máy chủ, không cần trình duyệt."),
         ("Tài khoản TikTok", "core.tiktok.token_store", "TikTokTokenStore",
          "TikTok bắt buộc OAuth qua trình duyệt — chức năng này đang được "
-         "chuyển sang web (xem docs/WEB_PARITY_PLAN.md W5)."),
+         "chuyển sang web (xem docs/_luutru/WEB_PARITY_PLAN.md W5)."),
     ]
     for label, module_name, cls_name, fix in specs:
         try:

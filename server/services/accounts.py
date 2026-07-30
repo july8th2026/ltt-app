@@ -8,7 +8,7 @@ render an access token into HTML.
 
 The `unreadable` state is first-class rather than an empty list, because
 the 2026-07-30 audit found a real 27KB token file being displayed as "no
-accounts connected" (docs/AUDIT_REPORT.md B1/D2).
+accounts connected" (docs/_luutru/AUDIT_REPORT.md B1/D2).
 """
 from __future__ import annotations
 

@@ -8,7 +8,7 @@ application. Develop and verify the platform locally first, then publish a
 versioned release to the existing Windows VPS.
 
 This plan is the implementation roadmap. Current truth, progress, blockers, and
-test outcomes belong in `PROJECT_MEMORY.md`.
+test outcomes belong in `docs/_luutru/PROJECT_MEMORY.md`.
 
 ## 2. Product outcomes
 
@@ -146,7 +146,7 @@ Create a safe baseline before architecture changes.
 
 ### Tasks
 
-- Create and maintain `AGENTS.md`, this plan, and `PROJECT_MEMORY.md`.
+- Create and maintain `AGENTS.md`, this plan, and `docs/_luutru/PROJECT_MEMORY.md`.
 - Back up source, runtime data, token files, databases, and operational config.
 - Verify that the backup can be listed/read; record location without secrets.
 - Expand `.gitignore` for all runtime and sensitive files.
@@ -175,7 +175,7 @@ Create a safe baseline before architecture changes.
 - Previously exposed credentials are marked rotated/verified by the owner.
 - Full test results are recorded accurately.
 - Desktop operational baseline is known.
-- `PROJECT_MEMORY.md` is updated.
+- `docs/_luutru/PROJECT_MEMORY.md` is updated.
 
 ### Rollback
 
@@ -679,7 +679,7 @@ A phase is done only when:
 - no new secret exposure exists;
 - desktop regression status is known;
 - rollback steps are verified or rehearsed as required;
-- `PROJECT_MEMORY.md` is updated with exact evidence;
+- `docs/_luutru/PROJECT_MEMORY.md` is updated with exact evidence;
 - the next phase's first three actions are identified.
 
 ## 9. Release versioning
@@ -700,7 +700,7 @@ credentials.
 At the start of a session:
 
 1. Read `AGENTS.md`.
-2. Read `PROJECT_MEMORY.md`.
+2. Read `docs/_luutru/PROJECT_MEMORY.md`.
 3. Read the active phase here.
 4. Inspect working-tree state.
 5. Verify assumptions before changing code.

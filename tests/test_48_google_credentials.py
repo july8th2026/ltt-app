@@ -5,7 +5,7 @@ The property that matters: an OAuth-client JSON must be REJECTED. Accepting
 one produces a config that looks valid and then hangs forever, because
 `utils/sheet_client.py` falls back to `InstalledAppFlow.run_local_server()`
 — a browser on the machine running the code, which a remote server does not
-have (docs/WEB_PARITY_PLAN.md B-1).
+have (docs/_luutru/WEB_PARITY_PLAN.md B-1).
 """
 from __future__ import annotations
 

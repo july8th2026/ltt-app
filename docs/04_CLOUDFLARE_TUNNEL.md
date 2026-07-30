@@ -91,7 +91,7 @@ Nếu dùng Tunnel thì **Cloudflare lo phần HTTPS**, Caddy không còn cần 
 
 Hai lựa chọn:
 
-**A. Chỉ dùng Tunnel** — gỡ Caddy, cloudflared trỏ thẳng vào `127.0.0.1:8000`.
+**A. Chỉ dùng Tunnel** — gỡ Caddy, cloudflared trỏ thẳng vào `127.0.0.1:8100`.
 Đơn giản nhất. Đóng được cổng 80/443 ở firewall.
 
 **B. Tunnel → Caddy → uvicorn** — giữ Caddy làm lớp trung gian. Chỉ đáng làm

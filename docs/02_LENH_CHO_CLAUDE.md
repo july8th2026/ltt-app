@@ -4,7 +4,7 @@ Chép nguyên câu, thay phần trong `<...>`. Mỗi lệnh viết sao cho Claud
 phải kiểm tra và nghiệm thu thế nào, không phải đoán.
 
 Mở Claude Code **ngay tại thư mục chứa mã nguồn** — trên máy phát triển là
-`d:\CODE AI\LTTSTUDIOSAPP`, trên máy chủ là chỗ bạn vừa chép sang. Claude đọc
+`d:\LTTSTUDIOSAPP`, trên máy chủ là chỗ bạn vừa chép sang. Claude đọc
 `CLAUDE.md` ở gốc để biết đang ở máy nào và phải làm gì.
 
 ---
@@ -12,7 +12,7 @@ Mở Claude Code **ngay tại thư mục chứa mã nguồn** — trên máy ph�
 ## Mở đầu phiên làm việc
 
 ```
-Đọc docs/00_BAT_DAU_TU_DAY.md và docs/PROJECT_MEMORY.md.
+Đọc docs/QUYET_DINH_NEN_TANG.md, docs/KE_HOACH_TRIEN_KHAI.md và docs/NHAT_KY.md.
 Chạy python -m pytest -q để biết trạng thái hiện tại.
 Tóm tắt: đang ở đâu, còn gì dở, việc tiếp theo nên làm là gì.
 ```
@@ -107,7 +107,7 @@ Báo cáo từng mục kèm file:dòng, và mức nghiêm trọng. Chưa sửa v
 ## Bàn giao cuối phiên
 
 ```
-Cập nhật docs/PROJECT_MEMORY.md theo mẫu ở cuối file đó:
+Cập nhật docs/_luutru/PROJECT_MEMORY.md theo mẫu ở cuối file đó:
 đã làm gì, lệnh test nào chạy và kết quả thật, quyết định gì và vì sao,
 còn tồn đọng gì, việc tiếp theo.
 ```

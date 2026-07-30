@@ -10,7 +10,7 @@ project:
   * The file is written atomically (utils.atomic_io), so a crash mid-save
     cannot truncate a working config.
   * A timestamped backup is kept before every write, because a bad column
-    mapping silently stops the bot (docs/AUDIT_REPORT.md B3).
+    mapping silently stops the bot (docs/_luutru/AUDIT_REPORT.md B3).
   * The new config is validated *before* it replaces the old one. Invalid
     input is rejected with per-field errors and nothing is written.
 """

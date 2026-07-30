@@ -20,7 +20,7 @@
 
 ## Backup scope (cross-reference: P7)
 
-Per `AGENTS.md` and `WEB_PLATFORM_PLAN.md` P7, scheduled backups must cover
+Per `AGENTS.md` and `docs/_luutru/WEB_PLATFORM_PLAN.md` P7, scheduled backups must cover
 databases, configuration, and required key material, and must **exclude**
 the disposable video cache. Given the table above, a P7 backup job should
 include:

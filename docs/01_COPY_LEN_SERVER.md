@@ -7,7 +7,7 @@
 Trên máy bạn:
 
 ```powershell
-cd "d:\CODE AI\LTTSTUDIOSAPP"
+cd d:\LTTSTUDIOSAPP
 python -m pytest -q                      # phải xanh hết
 python tools\scan_source_secrets.py      # phải 0 finding
 ```

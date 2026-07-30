@@ -228,7 +228,7 @@ class SheetClient:
         Public bulk reader for callers that need the whole tab — e.g. the
         desktop queue-preview panel. Added because that panel previously
         reached for a non-existent `client.worksheet` attribute left over
-        from the gspread migration (docs/AUDIT_REPORT.md finding D1).
+        from the gspread migration (docs/_luutru/AUDIT_REPORT.md finding D1).
         """
         return self._retry(
             lambda: self._svc().spreadsheets().values()

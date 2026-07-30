@@ -1,55 +1,57 @@
 # Bắt đầu từ đây
 
-Thư mục này vừa là **mã nguồn** vừa là **bộ cài**. Chép nguyên nó sang máy chủ
-rồi chạy `setup/` — không cần chuẩn bị gì thêm.
+Nền tảng SaaS đa người dùng bán công cụ AI theo credit. Mỗi công cụ là một
+**app** cắm vào nền tảng, ở một đường dẫn dưới `app.lttstudios.com`.
 
-Mọi app nằm trong đây, mỗi app một đường dẫn dưới `app.lttstudios.com`.
-
-> **Quan trọng:** thư mục cũ `BOT UP FB + TikTok\BOT UP Facebook\` giờ chỉ là
-> bản chụp dự phòng. **Từ giờ chỉ làm việc trong `LTTSTUDIOSAPP`.** Sửa ở hai
-> nơi là chắc chắn sẽ lệch nhau, và lỗi đó rất khó phát hiện. Khi bạn thấy yên
-> tâm thì xoá hẳn thư mục cũ đi.
-
-## Chép sang máy chủ rồi cài — 4 lệnh
-
-Chép **nguyên thư mục** sang máy chủ (USB, ổ mạng, Remote Desktop — cách nào
-cũng được). Thư mục này **không chứa bí mật nào**, bí mật sẽ được sinh trên
-máy chủ ở bước 2.
-
-Mở PowerShell bằng **Run as administrator**, vào thư mục vừa chép:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\setup\1-kiem-tra-may.ps1   # chỉ đọc
-powershell -ExecutionPolicy Bypass -File .\setup\2-cai-dat.ps1        # cài + sinh bí mật
-powershell -ExecutionPolicy Bypass -File .\setup\3-cloudflare.ps1     # DỪNG chờ bạn đăng nhập
-powershell -ExecutionPolicy Bypass -File .\setup\4-nghiem-thu.ps1     # chỉ đọc
-```
-
-Hoặc mở Claude Code ngay tại thư mục đó và bảo: *"Đọc CLAUDE.md rồi cài đặt hệ
-thống này lên máy chủ."*
-
-⚠️ **Bước 2 in mật khẩu admin đúng MỘT LẦN** — lưu lại ngay, không lưu ở đâu khác.
-
-⚠️ **Bước 3 sẽ dừng lại** và in một đường link. Mở link trên trình duyệt máy nào
-cũng được, đăng nhập Cloudflare, chọn `lttstudios.com`. Script tự chạy tiếp —
-đừng ngắt vì tưởng nó treo.
-
-Giữa bước 2 và 3: điền `C:\LTTPlatform\data\config.json` (Sheet ID, tên cột,
-thông tin app) và chép file Service Account của Google vào
-`C:\LTTPlatform\secrets\`.
+Thư mục này vừa là **mã nguồn** vừa là **bộ cài**.
 
 ---
 
-## Đọc theo thứ tự
+## Đọc theo thứ tự này
 
-| File | Nội dung | Khi nào cần |
+| # | File | Khi nào cần |
 |---|---|---|
-| `00_BAT_DAU_TU_DAY.md` | file này | đọc trước |
-| `01_COPY_LEN_SERVER.md` | đưa code lên VPS | mỗi lần cập nhật |
-| `02_LENH_CHO_CLAUDE.md` | các câu lệnh đưa cho Claude | khi cần làm việc gì đó |
-| `03_THEM_APP_MOI.md` | thêm app mới | mỗi lần có app mới |
-| `04_CLOUDFLARE_TUNNEL.md` | dựng Tunnel + xử lý sự cố | một lần, lúc đầu |
-| `../CLAUDE.md` | ngữ cảnh cho Claude khi chạy trên máy chủ | Claude tự đọc |
+| 1 | **`QUYET_DINH_NEN_TANG.md`** | **Đọc trước tiên.** Nguồn chân lý: dự án là gì, 12 quyết định đã chốt, ràng buộc bất biến. Tài liệu nào mâu thuẫn với nó thì nó đúng. |
+| 2 | `KE_HOACH_TRIEN_KHAI.md` | Đang làm tới đâu, việc kế tiếp là gì |
+| 3 | `NHAT_KY.md` | Phiên gần nhất đã làm gì, còn vướng gì |
+| 4 | `KHAO_SAT_BOT_GEMINI.md` | Khi cần dựng một tool mới — tra module nguồn ở đâu, cần gì |
+| 5 | `01_COPY_LEN_SERVER.md` | Đưa code lên máy chủ, cập nhật, rollback |
+| 6 | `02_LENH_CHO_CLAUDE.md` | Câu lệnh mẫu để giao việc cho Claude |
+| 7 | `03_THEM_APP_MOI.md` | Thêm một app |
+| 8 | `04_CLOUDFLARE_TUNNEL.md` | Dựng Tunnel, xử lý sự cố mạng |
+| — | `_luutru/` | Tài liệu đã ngừng dùng. **Đừng làm theo.** Chỉ để tra lý do lịch sử. |
+
+---
+
+## Trạng thái thật — cập nhật 2026-07-31
+
+Bảng này phải đúng. Nếu bạn thấy nó sai, sửa ngay chứ đừng để đó — một bảng
+trạng thái sai còn tệ hơn không có bảng nào.
+
+### Đang chạy
+
+| Hạng mục | Trạng thái |
+|---|---|
+| Vỏ nền tảng nhiều app + hợp đồng app | ✅ xong, 19 test chốt |
+| Đăng nhập một tài khoản admin (từ biến môi trường) | ✅ xong |
+| App socialbot (Facebook + TikTok) | ⏸️ **đóng băng** — giữ chạy, không phát triển thêm |
+| App demo (nghiệm thu hạ tầng, tốn 0 đồng) | ✅ xong |
+| Bộ cài 4 script + cập nhật + rollback | ✅ xong |
+| Kho mã nguồn trong git | ✅ từ 2026-07-31 |
+| Bộ test | ✅ 1.424 pass, 1 skip |
+
+### Chưa có — đây là toàn bộ việc phía trước
+
+| Hạng mục | Trạng thái |
+|---|---|
+| PostgreSQL + di trú schema | ❌ chưa |
+| Nhiều người dùng (đăng ký, xác thực email, phân quyền) | ❌ chưa |
+| Hàng đợi job + worker tiến trình riêng | ❌ chưa |
+| Sổ credit (giữ chỗ → quyết toán → hoàn) | ❌ chưa |
+| Cloudflare Tunnel trên máy chủ | ❌ chưa dựng |
+| Tool thật đầu tiên (`thumbnail_api`) | ❌ chưa |
+
+Chi tiết từng bước: `KE_HOACH_TRIEN_KHAI.md`.
 
 ---
 
@@ -57,24 +59,24 @@ thông tin app) và chép file Service Account của Google vào
 
 ```
 LTTSTUDIOSAPP/
-├── platform_core/           NỀN TẢNG — dùng chung, không biết app nào tồn tại
-│   ├── registry.py          ★ hợp đồng app. File quan trọng nhất.
-│   └── storage.py           lớp bọc lưu file (đổi sang R2 chỉ sửa ở đây)
+├── platform_core/       NỀN TẢNG — không biết app nào tồn tại
+│   ├── registry.py      ★ hợp đồng app. File quan trọng nhất của dự án.
+│   └── storage.py       lớp bọc lưu file (đổi sang R2 chỉ sửa ở đây)
 │
-├── apps/                    MỖI APP MỘT THƯ MỤC
-│   ├── socialbot/           app FB + TikTok đang chạy thật
-│   └── demo/                app mẫu — dùng để nghiệm thu hạ tầng, tốn 0 đồng
+├── apps/                MỖI APP MỘT THƯ MỤC
+│   ├── socialbot/       Facebook + TikTok — đóng băng
+│   └── demo/            app mẫu, dùng nghiệm thu hạ tầng
 │
-├── server/                  vỏ web: đăng nhập, trang chủ, route dùng chung
-├── core/                    nghiệp vụ bot (15.000 dòng, giữ nguyên đường import)
-├── utils/                   sheet_client, logger
-├── tools/                   doctor.py, build_release.py, quét bí mật
-├── tests/                   1.348 test
-├── deploy/windows/          install / update / rollback / backup
-├── setup/                   ★ BỘ CÀI — 4 script chạy theo thứ tự
-├── cloudflare/              mẫu cấu hình Tunnel
-├── data/                    dữ liệu khi chạy — KHÔNG đưa lên git
-└── secrets/                 khoá, token — KHÔNG đưa lên git, KHÔNG copy đi đâu
+├── server/              vỏ web: đăng nhập, trang chủ, route dùng chung
+├── core/                nghiệp vụ socialbot (15.489 dòng) — đóng băng
+├── utils/               sheet_client, logger, audit_logger
+├── tools/               doctor.py, build_release.py, quét bí mật
+├── tests/               ~1.400 test
+├── deploy/windows/      install / update / rollback / backup
+├── setup/               ★ BỘ CÀI — 4 script chạy theo thứ tự
+├── cloudflare/          mẫu cấu hình Tunnel
+├── data/                dữ liệu khi chạy — KHÔNG đưa lên git
+└── secrets/             khoá, token — KHÔNG đưa lên git, KHÔNG copy đi đâu
 ```
 
 ### Vì sao tên là `platform_core` chứ không phải `platform`
@@ -106,40 +108,36 @@ là mất tiền thật.
 
 ---
 
-## Chạy thử ở máy bạn
+## Chạy thử ở máy phát triển
 
 ```powershell
-cd "d:\CODE AI\LTTSTUDIOSAPP"
+cd d:\LTTSTUDIOSAPP
 python -m pip install -r requirements.txt -r requirements-server.txt
 python -m pytest -q                    # phải xanh hết trước khi làm gì tiếp
-python -m uvicorn server.run:app --host 127.0.0.1 --port 8000
+python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 ```
 
-Mở `http://127.0.0.1:8000` — trang chủ phải liệt kê **2 app**: Đăng bài
-Facebook + TikTok, và Demo.
+Mở `http://127.0.0.1:8100` — trang chủ phải liệt kê **2 app**.
 
-Vào `/demo`, gõ gì đó rồi bấm chạy. Nếu ra kết quả kèm số credit thì hợp đồng
+Vào `/demo`, gõ gì đó rồi bấm chạy. Ra kết quả kèm số credit nghĩa là hợp đồng
 app đang hoạt động đúng.
+
+> **Cổng 8100 chứ không phải 8000.** Máy này còn chạy một hệ thống nội bộ khác
+> đã chiếm 8000 từ trước (`D:\BOT GEMINI`). Dùng 8000 sẽ giành cổng với dịch vụ
+> đang phục vụ người dùng thật.
 
 ---
 
-## Trạng thái hiện tại
+## Ba giới hạn quyết định cách viết app
 
-| Hạng mục | Trạng thái |
-|---|---|
-| Vỏ nền tảng nhiều app | ✅ xong, có test |
-| Hợp đồng app (manifest) | ✅ xong, 19 test |
-| App socialbot (FB+TikTok) | ✅ đang chạy production |
-| App demo | ✅ xong, dùng để nghiệm thu |
-| Trang chủ + sidebar sinh động | ✅ xong |
-| Lớp storage tách rời | ✅ xong (đang dùng đĩa cục bộ) |
-| Bộ cài tự động (4 script) | ✅ xong, 59 test |
-| Cloudflare Tunnel | ⏳ chạy `setup\3-cloudflare.ps1` trên máy chủ |
-| Hàng đợi job dùng chung | ❌ chưa — giai đoạn sau |
-| Nhiều người dùng + credit thật | ❌ chưa — giai đoạn sau |
+| Giới hạn | Free/Pro | Hệ quả |
+|---|---|---|
+| Upload mỗi request | **100 MB** | Lớn hơn bị HTTP 413 trước khi tới máy chủ |
+| Chờ phản hồi | **100 giây** | Lâu hơn bị 524 dù job vẫn chạy tốt |
+| Serve file lớn ngoài Cloudflare | hạn chế ToS | Phải chuyển sang R2 |
 
-Hai mục cuối là phần lớn nhất còn lại. Chúng chưa chặn việc chạy nội bộ với
-nhân viên, nhưng **bắt buộc phải có trước khi mở cho khách ngoài**.
+**Việc dài hơn vài giây bắt buộc đi qua hàng đợi job.** `apps/demo` chạy thẳng
+trong request chỉ vì nó mất vài mili-giây — **đừng lấy đó làm mẫu cho app thật**.
 
 ---
 
@@ -147,7 +145,5 @@ nhân viên, nhưng **bắt buộc phải có trước khi mở cho khách ngoà
 
 | Mốc | Hạn | Ảnh hưởng |
 |---|---|---|
-| Giấy phép Windows Server 2016 trên VPS (bản Evaluation) | **~139 ngày** kể từ 30/07/2026 | Hết hạn máy tự tắt mỗi giờ |
-| Windows 10 hết bản vá bảo mật (ESU) | **13/10/2026** | Máy chạy bot không còn được vá |
-
-Cả hai đều rơi vào lúc bạn sẽ đang xây dở. Nên quyết sớm.
+| Giấy phép Windows Server (bản Evaluation) trên máy chủ | ~giữa 12/2026 | Hết hạn máy tự tắt mỗi giờ |
+| Windows 10 hết bản vá bảo mật (ESU) | **13/10/2026** | Máy chạy không còn được vá |
