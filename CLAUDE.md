@@ -125,14 +125,25 @@ nào**.
 |---|---|
 | Vỏ nền tảng + hợp đồng app | ✅ xong, có test |
 | Mã nguồn trong git | ✅ từ 2026-07-31 |
+| PostgreSQL + nhiều người dùng (đăng ký, xác thực email, phân quyền) | ✅ xong (H1) |
+| Hàng đợi job + worker tiến trình riêng | ✅ xong (H2) |
+| Sổ credit (giữ chỗ → quyết toán → hoàn) | ✅ xong (H3) |
+| Trang admin (sqladmin) + tài khoản admin trong CSDL | ✅ xong (H3-admin, Q29) |
+| Cloudflare Tunnel LIVE + Turnstile + Resend | ✅ xong (H0.1) |
+| Cốt lõi vận hành: catalog công khai + SSO + launcher | ✅ xong (H6/H6.6) |
+| Tool thật đầu tiên — thumbnail (Gemini, tính credit) | ✅ xong (H5) |
 | App socialbot (FB+TikTok) | ⏸️ đóng băng — không phát triển thêm |
 | App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
-| PostgreSQL + nhiều người dùng | ❌ chưa |
-| Hàng đợi job + worker riêng | ❌ chưa |
-| Sổ credit | ❌ chưa |
+| **Củng cố MVP (Hardening) trước khi mở khách trả tiền** | 🔧 **đang làm (H7)** |
+| Thanh toán / nạp credit | ❌ chưa (H8) |
+| Lưu file lớn qua R2 | ❌ chưa (H9) |
 
-Hai mục cuối **bắt buộc phải có trước khi mở cho khách ngoài**. Hiện chỉ có
-một tài khoản admin duy nhất từ biến môi trường.
+**Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
+bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
+
+**Trước khi mở cho khách TRẢ TIỀN, phải xong H7 (Củng cố MVP).** Audit
+2026-07-31 (`docs/AUDIT_MVP_2026-07-31.md`) tìm ra các lỗ hổng P0 về
+tiền/bảo mật/khôi phục đang được xử lý theo Wave 0.
 
 ## Không bao giờ commit hay copy đi
 

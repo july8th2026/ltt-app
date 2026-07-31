@@ -21,6 +21,7 @@ Khi gỡ đường admin-env (cuối H1), xoá nhánh `session["user"]` và cậ
 from __future__ import annotations
 
 from typing import Optional
+from urllib.parse import quote
 
 from fastapi import HTTPException
 from starlette.requests import Request
@@ -107,12 +108,62 @@ def _thu_hoi_sid_an_toan(sid: str) -> None:
 
 # ── Dependency dùng chung ─────────────────────────────────────────────────────
 
+def current_identity_optional(request: Request) -> Optional[str]:
+    """Định danh hiện tại (username admin-env HOẶC email CSDL) hoặc None.
+
+    KHÔNG raise — dùng cho trang CÔNG KHAI (catalog) cần biết đã đăng nhập chưa
+    mà không đá khách về /login. `require_login` vẫn dùng cho route app.
+    """
+    u = request.session.get(_SESSION_USER_KEY)
+    if u:
+        return u
+    sid = request.session.get(_SESSION_SID_KEY)
+    if sid:
+        return _resolve_sid(sid)
+    return None
+
+
+def client_ip(request: Request) -> str:
+    """IP THẬT của khách — nền tảng của rate-limit và antifraud.
+
+    Sau Cloudflare Tunnel, `cloudflared` mở kết nối tới origin qua LOOPBACK, nên
+    `request.client.host` là `127.0.0.1` cho MỌI khách. Nếu key rate-limit/
+    antifraud theo đó thì: 5 lần login sai của một người khoá TẤT CẢ mọi người
+    (DoS toàn hệ thống), và cap đăng ký theo IP chặn cả nền tảng sau vài lượt.
+
+    `cloudflared` đặt `CF-Connecting-IP` = IP thật của khách. Origin ở đây CHỈ
+    nhận kết nối loopback từ cloudflared (không mở cổng ra ngoài — xem
+    docs/04 + nghiệm thu setup), nên header này đáng tin trong mô hình này.
+    Fallback về peer khi không có header (chạy local/test trực tiếp).
+    """
+    cf = request.headers.get("cf-connecting-ip")
+    if cf and cf.strip():
+        return cf.strip()
+    return request.client.host if request.client else "unknown"
+
+
+def safe_next(raw: Optional[str]) -> str:
+    """Chỉ chấp nhận đường dẫn NỘI BỘ tương đối — chống open-redirect.
+
+    Click app khi chưa đăng nhập sẽ mang `?next=<đường-dẫn>` để quay lại đúng
+    app. Nếu không lọc, kẻ xấu gài `next=https://lua-dao` để cướp phiên sau đăng
+    nhập. Chỉ nhận thứ bắt đầu bằng '/' và không phải '//', không có scheme.
+    """
+    if not raw:
+        return "/"
+    raw = raw.strip()
+    if (not raw.startswith("/") or raw.startswith("//")
+            or "://" in raw or "\\" in raw or "\n" in raw or "\r" in raw):
+        return "/"
+    return raw
+
+
 def require_login(request: Request) -> str:
-    """FastAPI dependency: 303 về /login khi chưa đăng nhập.
+    """FastAPI dependency: 303 về /login?next=<đường-dẫn> khi chưa đăng nhập.
 
     Trả về chuỗi định danh (username của admin-env, hoặc email của user CSDL).
     Chữ ký không đổi so với bản cũ, nên mọi route `Depends(require_login)` giữ
-    nguyên.
+    nguyên. Thêm `?next=` để đăng nhập xong quay lại đúng trang đang mở (H6).
     """
     u = request.session.get(_SESSION_USER_KEY)
     if u:
@@ -124,4 +175,5 @@ def require_login(request: Request) -> str:
         if email:
             return email
 
-    raise HTTPException(status_code=303, headers={"Location": "/login"})
+    nxt = quote(request.url.path or "/", safe="/")
+    raise HTTPException(status_code=303, headers={"Location": f"/login?next={nxt}"})

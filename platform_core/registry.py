@@ -76,6 +76,20 @@ class AppManifest:
     # thay vì để người dùng bấm vào rồi gặp lỗi.
     enabled: bool = True
 
+    # Hiện trong CATALOG CÔNG KHAI (khách chưa đăng nhập) không? (Q30/H6)
+    #   True  - sản phẩm self-serve, hiện cho khách duyệt.
+    #   False - app nội bộ/đặc cách (app test hạ tầng, app đóng băng cần OAuth) —
+    #           ẩn khỏi trang chủ công khai, vẫn dùng được khi đã đăng nhập.
+    # App tự khai qua cờ này; nền tảng KHÔNG hardcode tên app (test_60 chốt).
+    public: bool = True
+
+    # Tiêu đề các mục kiểm tra (doctor) THUỘC app này (H6.6). Nền tảng dùng để
+    # gắn badge "cần thiết lập" lên ĐÚNG thẻ app, thay vì treo một banner blocker
+    # toàn cục ở trang chủ (mô hình cũ thời desktop-app). App tự khai danh sách
+    # tiêu đề của mình → nền tảng khớp báo cáo doctor với app mà KHÔNG hardcode
+    # tên app. Rỗng = app không có mục kiểm tra riêng.
+    blocker_titles: tuple = ()
+
     # Ghi chú nội bộ, hiện trên trang chủ cho admin.
     notes: str = ""
 

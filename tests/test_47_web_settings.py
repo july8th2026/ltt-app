@@ -206,7 +206,7 @@ def _csrf(html: str) -> str:
 def test_settings_requires_login(tmp_path):
     r = _client(tmp_path).get("/settings")
     assert r.status_code == 303
-    assert r.headers["location"] == "/login"
+    assert r.headers["location"].startswith("/login")
 
 
 def test_settings_page_renders_all_groups(tmp_path, monkeypatch):

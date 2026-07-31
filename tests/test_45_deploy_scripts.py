@@ -23,11 +23,37 @@ DEPLOY_DIR = os.path.join(
 EXPECTED_SCRIPTS = (
     "install.ps1", "update.ps1", "rollback.ps1",
     "backup.ps1", "restore.ps1", "set-service-env.ps1",
+    # Q28 lich backup + bootstrap: truoc day khong nam trong bo guard ASCII/BOM
+    # (audit 2026-07-31 W0/W1). Them vao de regression khong lot luoi.
+    "5-lich-backup.ps1", "bootstrap-server2016.ps1",
 )
 
 
 def _scripts() -> list:
     return [f for f in sorted(os.listdir(DEPLOY_DIR)) if f.endswith(".ps1")]
+
+
+def _read(name: str) -> str:
+    with open(os.path.join(DEPLOY_DIR, name), "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def test_restore_actually_restores_the_database():
+    """W0.4/P0-4: backup dung pg_dump (-Fc) nen restore PHAI pg_restore file
+    .dump; neu chi Expand-Archive thi 'khoi phuc' mat toan bo CSDL (user/credit/
+    job). Chot bang cach doi restore.ps1 co pg_restore + doc LTT_DATABASE_URL."""
+    text = _read("restore.ps1")
+    assert "pg_restore" in text, "restore.ps1 khong pg_restore -> backup khong cuu duoc DB"
+    assert "LTT_DATABASE_URL" in text
+
+
+def test_update_runs_migrations_before_start():
+    """W0.6/P0-6: ban phat hanh doi schema ma update.ps1 khong 'alembic upgrade
+    head' -> service boot tren schema cu, loi runtime/hong du lieu."""
+    text = _read("update.ps1")
+    assert "alembic upgrade head" in text
+    # Migration phai chay TRUOC khi Start-Service.
+    assert text.index("alembic upgrade head") < text.index("Start-Service $ServiceName")
 
 
 def test_all_expected_scripts_exist():

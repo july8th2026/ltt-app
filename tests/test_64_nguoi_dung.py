@@ -151,14 +151,18 @@ def test_phien_het_han_bi_tu_choi_va_don(db):
 
     u = tao_nguoi_dung(db, email="h@x.com", password="pw")
     sid = tao_phien(db, u)
-    # Ep het han bang cach lui thoi diem tao ve qua khu xa hon TTL.
+    # Ep het han bang cach lui thoi diem tao ve qua khu xa hon TTL. DB luu HASH
+    # cua token (P0-5), khong luu token tho, nen lay dong phien qua truy van
+    # (chi co mot dong) thay vi db.get(SessionRow, sid).
     from platform_core.models import Session as SessionRow
-    row = db.get(SessionRow, sid)
+    from sqlalchemy import select
+    row = db.execute(select(SessionRow)).scalars().one()
     row.expires_at = um._bay_gio() - timedelta(seconds=1)
     db.commit()
 
     assert lay_user_tu_phien(db, sid) is None
-    assert db.get(SessionRow, sid) is None, "phien het han phai bi don ngay"
+    assert db.execute(select(SessionRow)).scalars().first() is None, \
+        "phien het han phai bi don ngay"
 
 
 # ── Luồng đăng nhập qua HTTP ──────────────────────────────────────────────────
@@ -226,9 +230,12 @@ def test_dang_xuat_thu_hoi_phien(client_db):
     client_db.post("/login", data={
         "username": "user@x.com", "password": "matkhau-tot", "csrf_token": tok,
     }, follow_redirects=False)
-    assert client_db.get("/", follow_redirects=False).status_code == 200
+    # Da dang nhap: trang chu hien vo noi bo (sidebar co "Viec cua toi").
+    r1 = client_db.get("/", follow_redirects=False)
+    assert r1.status_code == 200 and "Việc của tôi" in r1.text
 
     client_db.post("/logout", follow_redirects=False)
-    # Sau dang xuat, trang chu da ve /login.
-    r = client_db.get("/", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/login"
+    # Sau dang xuat: phien bi thu hoi -> trang chu ve dang KHACH (catalog cong
+    # khai, khong con sidebar noi bo). Trang chu nay CONG KHAI (H6) nen van 200.
+    r2 = client_db.get("/", follow_redirects=False)
+    assert r2.status_code == 200 and "Việc của tôi" not in r2.text

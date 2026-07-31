@@ -14,6 +14,409 @@
 
 ---
 
+## 2026-07-31 — H7 Wave 0: sửa 6 lỗ hổng P0 (củng cố MVP trước khách trả tiền)
+
+Từ audit toàn diện (`docs/AUDIT_MVP_2026-07-31.md`, điểm tổng ~73/100). Sửa 6 lỗ
+hổng P0 tiền/bảo mật/khôi phục, MỖI lỗ kèm test:
+
+- **W0.1 Race double-spend credit** — `credit.giu_cho` thêm `pg_advisory_xact_lock`
+  theo user (chỉ Postgres; SQLite bỏ qua). Test **đồng thời trên PostgreSQL thật**
+  (`test_73_dong_thoi_pg.py`, cần `LTT_TEST_DATABASE_URL`): 8 request song song
+  giữ 10/10 credit → đúng 1 thành công, số dư 0 (không âm). + test claim SKIP LOCKED
+  không nhặt trùng. **Cả 2 PASS trên DB `lttplatform_test`.**
+- **W0.2 Dedupe không đấu dây** — thêm `job_submit.dedupe_key_for()`; đấu vào route
+  `apps/demo` + `apps/thumbnail`. Test: POST /demo/queue 2 lần cùng nội dung → 1 job.
+- **W0.3 IP thật sau Tunnel** — `session.client_ip()` đọc `CF-Connecting-IP`; dùng ở
+  `auth.py` + `register.py`. Test: 5 sai từ IP A khoá A, IP B không vạ lây.
+- **W0.4 Restore không khôi phục DB** — `restore.ps1` thêm `pg_restore --clean
+  --if-exists --no-owner -1` (parse LTT_DATABASE_URL như backup.ps1). Test guard
+  tĩnh + backup.ps1 pg_dump đã chạy thật lúc deploy.
+- **W0.5 Lộ token phiên ở admin** — **băm token khi lưu** (`users._bam_sid`, SHA-256):
+  cookie giữ token thô, DB giữ hash; `Session.id` String(43)→(64) + migration
+  `b1c2d3e4f5a6` (xoá phiên cũ → đăng nhập lại). SessionAdmin bỏ cột id. Test:
+  `/admin/session/list` không chứa token.
+- **W0.6 update.ps1 bỏ migration** — thêm `alembic upgrade head` trước `Start-Service`.
+  Test guard: có lệnh + đứng trước start.
+- **W0.7 CLAUDE.md drift** — bảng "Việc còn dở" sửa lại (PostgreSQL/job/credit ✅),
+  thêm H7 Hardening; đồng bộ mô hình admin (Q29).
+
+**Kiểm chứng:** full suite **1547 passed, 3 skipped** (2 skip là test PG khi không
+có env), scan 0. Deploy production + chạy migration (rc=0, sau khi pg_dump backup) +
+restart. Verify edge: login token-băm 303, /jobs không lặp 200, /admin/session/list
+không lộ token, health 200. Trình duyệt: /admin ẩn danh → /login (cổng auth đúng).
+
+**Hạ tầng test:** DB `lttplatform_test` (owner ltt_app) trên PostgreSQL máy chủ,
+dùng cho `test_73` khi đặt `LTT_TEST_DATABASE_URL`. Suite thường vẫn portable (tự
+skip khi không có env).
+
+## 2026-07-31 — H6.6: vỏ app launcher hai tầng + lối vào quản trị + sửa bug vòng lặp
+
+- **Vấn đề người dùng nêu:** đăng nhập admin thấy sidebar bị 8 mục của socialbot
+  (Sheet/Manual/Tài khoản FB+TikTok/Monitor/Audit) chiếm kín → tưởng "chưa tách
+  app FB/TikTok". Thực ra socialbot ĐÃ là 1 app; lỗi là **cách vẽ sidebar** gộp
+  phẳng mọi trang con của mọi app.
+- **Sửa (thuần nền tảng, KHÔNG đụng socialbot):** sidebar thành **hai tầng** —
+  tầng 1 mỗi app một dòng (launcher); tầng 2 (trang con) chỉ bung khi đang Ở
+  TRONG app đó (`active_app()` dùng `app_cho_path`). socialbot co còn 1 dòng.
+- **Lối vào quản trị:** thêm global `is_admin(request)` → link **🛡️ Quản trị**
+  (`/admin/`) chỉ hiện cho admin CSDL. Chốt: admin về trang chủ + dùng được mọi
+  app, KHÔNG ép vào panel (theo lựa chọn người dùng).
+- **Banner FB/TikTok:** bỏ banner blocker TOÀN CỤC ở trang chủ; blocker doctor
+  gắn vào ĐÚNG thẻ app qua field mới `AppManifest.blocker_titles` (socialbot tự
+  khai "Tài khoản Facebook/TikTok") → badge "cần thiết lập" trên thẻ. Nền tảng
+  KHÔNG hardcode tên app (test_60 vẫn xanh). Chi tiết vẫn ở /status.
+- **BUG THẬT phát hiện khi kiểm trình duyệt (ERR_TOO_MANY_REDIRECTS):**
+  `login_form` chỉ kiểm sid CÓ MẶT (`current_sid`) trong khi `require_login`
+  XÁC THỰC sid với CSDL. Phiên có sid nhưng đã bị thu hồi (đổi mật khẩu/hết hạn)
+  → `/login` đá sang trang, route đá về `/login` → **lặp vô tận**. Sửa:
+  `login_form` dùng `current_identity_optional` (resolve sid) — đồng nhất với
+  require_login. Thêm regression `test_phien_thu_hoi_khong_gay_vong_lap_redirect`.
+  Ảnh hưởng mọi user bị đổi mật khẩu/hết hạn phiên, không riêng phiên này.
+- **Test:** sửa `test_dashboard_surfaces_blockers` (banner→badge); thêm 4 test
+  test_72 (launcher gọn / sub-nav bung / link admin / redirect loop). Full suite
+  **1534 passed, 1 skipped**; scan 0.
+- **Kiểm chứng production (curl edge, đăng nhập admin):** trang chủ launcher gọn
+  (sub "Sheet TikTok"=0), link Quản trị hiện, badge "cần thiết lập" trên thẻ
+  socialbot, banner cũ=0; trong /facebook sub-nav bung; /jobs sau login=200
+  (không lặp); /login khi đã đăng nhập=303. Trình duyệt trên MÁY CHỦ chập vì
+  IPv6 hỏng (curl -6 fail) — lỗi mạng máy, không phải app; xem [[don-dep-sau-h6]].
+
+## 2026-07-31 — H6: cốt lõi vận hành (catalog công khai + SSO + login return-to) — XONG
+
+- **Xây xong H6.1–H6.4** đúng kế hoạch Q30:
+  - `current_identity_optional()` + `safe_next()` (chống open-redirect) trong
+    `server/auth/session.py`; `require_login` giờ 303 về `/login?next=<path>`.
+  - Trang chủ `/` **CÔNG KHAI**: `dashboard.home()` bỏ `require_login`, khách xem
+    catalog (app `enabled and public`), authed thấy launcher + blockers + credit.
+  - Vỏ công khai mới `base_public.html` (không sidebar); `home.html` `extends` động
+    theo `authed`. `login.html` mang `next` ẩn; POST/GET login về `safe_next(next)`.
+  - Trường **`public`** thêm vào `AppManifest` (mặc định True). `demo`+`socialbot`
+    đặt `public=False` → ẩn khỏi catalog khách, vẫn vào được qua sidebar+phân quyền.
+  - `so_du_credit(request)` global → topbar badge credit. socialbot giữ path gốc.
+- **Sửa comment `registry.py`** bỏ tên slug (test_60 quét slug hardcode trong nền).
+- **Test:** thêm `test_72_vanhanh.py` (6); sửa các test cũ giả định `/`→/login khi
+  ẩn danh (nay `/` công khai 200) ở test_37/41/47/64/66. Full suite **1530 passed,
+  1 skipped**; `scan_source_secrets` 0 finding.
+- **Kiểm trình duyệt thật (Playwright, qua Cloudflare):** khách `/` → catalog chỉ
+  hiện `thumbnail`; bấm → `/login?next=/thumbnail`; đăng nhập → về đúng `/thumbnail`;
+  vỏ authed hiện `💳 45 credit` + `[Đăng xuất (admin@lttstudios.com)]`. DNS máy đã
+  trỏ đúng Cloudflare (104.21.58.244/172.67.166.73), hết cache server cũ Vultr.
+- **Lỗi test-harness ghi lại để khỏi mắc lại:** curl trong Git-Bash **path-mangle**
+  `--data-urlencode "next=/thumbnail"` thành `C:/Program Files/Git/thumbnail` →
+  tưởng app sai. Thực ra `safe_next` từ chối đúng chuỗi méo. Trình duyệt thật đúng.
+- **Còn nợ (không phải code):** Cloudflare tự tiêm `beacon.min.js`, CSP chặn đúng →
+  1 console error vô hại; tắt ở Cloudflare dashboard. Server cũ Vultr 45.32.104.192
+  vẫn chạy nền (không còn trong DNS) — dọn sau.
+
+## 2026-07-31 — Q30 + H6: chốt mô hình vận hành nền tảng (kế hoạch, chưa code)
+
+- **Làm rõ thuật ngữ với người dùng:** mỗi app = 1 thư mục `apps/<slug>/` chạy tại
+  `app.lttstudios.com/<slug>` (path-based, KHÔNG subdomain). "1 tài khoản cho mọi
+  app" = SSO tự nhiên vì cùng 1 host, 1 cookie phiên — không cần thêm hạ tầng.
+- **Nghiên cứu thị trường + chấm điểm 4 phương án** (path-based / subdomain+cookie-cha
+  / subdomain+OIDC / hybrid). Path-based 1 host thắng: khớp ý người dùng, SSO miễn
+  phí, công sức thấp, rủi ro thấp, hiện đại (mô hình "app launcher").
+- **Chốt Q30:** đa-app path-based; trang chủ `/` = catalog CÔNG KHAI; đăng nhập có
+  return-to (`?next=`, chống open-redirect); slug thường-gạch-nối. socialbot giữ
+  path gốc (đặc cách Q10), là 1 box trong catalog; đổi `/socialbot` để sau.
+- **Viết H6 chi tiết** trong KE_HOACH (H6.1 trang chủ công khai → H6.2 login next →
+  H6.3 vỏ account/credit/launcher → H6.4 hai app đúng path → H6.5 slug+tài liệu+
+  test), kèm sơ đồ vận hành + file/hàm cụ thể + tiêu chí + rủi ro. Dời 3 mốc tương
+  lai: Thanh toán H6→H7, R2 H7→H8, Thêm tool H8→H9.
+- **Phiên này CHỈ phân tích + viết kế hoạch (không sửa code)** theo yêu cầu.
+
+## 2026-07-31 — H5: app thumbnail (tool tính phí đầu tiên) — dựng xong, chờ khoá
+
+- **Dựng `apps/thumbnail/`** theo hợp đồng app (manifest/jobs/routes/templates),
+  viết mới từ tham chiếu `D:/BOT GEMINI/.../thumbnail_api` (chỉ đọc): gọi
+  `gemini-2.5-flash-image` bằng httpx sync (bỏ api-pool/cascade của họ), lưu ảnh
+  qua `platform_core.storage`, `GEMINI_API_KEY` phía máy chủ + che khoá ở lỗi.
+- **Hai lỗ hổng hợp đồng lộ ra (H5 = phép thử hợp đồng) & đã lấp:**
+  (1) template app — `server/templating.py` ChoiceLoader tìm `apps/*/templates/`;
+  (2) tải file output — app tự phục vụ `/image/{key}` (kiểm sở hữu theo key);
+  download_token storage KHÔNG dùng được qua worker→web (RAM mỗi tiến trình).
+  Ghi vào `docs/03`. KHÔNG đụng `platform_core/`.
+- **Test:** `test_71` (5, Gemini mock) + `test_60` registry xanh; full suite
+  **1523 pass, 1 skip**; scan 0 (thêm `.playwright-mcp`/`.claude` vào loại trừ
+  của cả `scan_source_secrets.py` lẫn `build_release.py`).
+- **Nghiệm thu render (Cloudflare edge):** `/thumbnail` hiện form + gallery, app
+  **tự lên trang chủ/sidebar** không sửa giao diện nền tảng.
+- **✅ CHẠY THẬT — H5 KHÉP:** người dùng nạp `GEMINI_API_KEY` vào app.env; nạp lại
+  env dịch vụ + restart. Cấp 50 credit cho `admin@lttstudios.com`, tạo 1 thumbnail
+  qua Cloudflare edge → job **done**, ảnh **1.8 MB PNG thật** (magic `89 50 4e 47`)
+  lưu ở `data/files/thumbnail/<uid>/<job>/0.png`, số dư **50 → 45** (trừ đúng 5).
+
+- **🔴 LỖI BẢO MẬT phát hiện & VÁ khi test chặn truy cập:** ẩn danh gọi
+  `/thumbnail/image/<key>.png` vẫn nhận ảnh (HTTP 200) dù origin chặn (303) —
+  vì **Cloudflare cache file .png** theo đuôi (`cf-cache-status: HIT`,
+  `max-age=14400`) rồi phục vụ cho người KHÔNG đăng nhập, bỏ qua auth. Middleware
+  cũ chỉ `no-store` cho text/html. **Vá:** `server/app.py` đặt `Cache-Control:
+  no-store` cho MỌI response ngoài `/static/` (chặn cả lớp lỗi). Deploy + purge
+  cache → ẩn danh giờ **303 /login, cf-cache-status: BYPASS**; chủ vẫn 200. Thêm
+  test khoá `test_43::test_dynamic_responses_are_not_cacheable`. Full suite
+  **1524 pass**. BÀI HỌC: sau CDN, nội dung riêng-tư phải no-store; đừng để đuôi
+  file quyết định cache.
+
+## 2026-07-31 — Resend + Turnstile (điều khiển trình duyệt) — đăng ký sẵn sàng
+
+- **Turnstile:** tạo widget "LTT app" (Managed) cho `app.lttstudios.com` trong
+  Cloudflare. Site key `0x4AAAAAAECt29NR1TKkMFDx` (công khai), Secret key đặt vào
+  app.env (`TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY`). Kiểm: `/register` render
+  `cf-turnstile` + api.js.
+- **Resend:** thêm domain **`mail.lttstudios.com`** (subdomain riêng để không đụng
+  SPF trang chủ iNET). DNS (DKIM/SPF/MX) áp qua **Cloudflare Domain Connect** —
+  chuẩn one-time, Cloudflare ghi rõ "không cấp Resend quyền sửa về sau" (least-
+  privilege, hơn OAuth token). Domain **verified**. Bản ghi đã kiểm sống qua
+  8.8.8.8. API key **Sending access** (`re_...`) đặt vào `RESEND_API_KEY`;
+  `LTT_MAIL_FROM="LTT AI Studio <no-reply@mail.lttstudios.com>"`.
+- **Chú ý chép DKIM:** trang Resend cắt giữa giá trị (`[…]`) → chép tay sai. Domain
+  Connect (URL query `domainKey=...`) mang giá trị đầy đủ → dùng đường đó, chính xác.
+- **Nạp khoá:** cả 4 khoá vào `C:\LTTPlatform\secrets\app.env` + `nssm set
+  AppEnvironmentExtra` cho Web+Worker + restart. health ready. mailer → ResendMailer.
+- **Còn lại (người dùng tự kiểm khi muốn):** đăng ký thử bằng email thật → nhận
+  mail xác thực → +credit dùng thử. Chưa test end-to-end vì không có hộp thư kiểm.
+
+## 2026-07-31 — H3-admin đợt 2: admin trong DB + credit dùng thử + test
+
+- **`tools/create_admin.py`**: tạo/nâng user role=admin (băm PBKDF2, idempotent,
+  mật khẩu qua getpass hoặc `LTT_NEW_ADMIN_PASSWORD`, không in ra). Đã tạo
+  `admin@lttstudios.com`. **Nghiệm thu production thật** (curl ép Cloudflare edge):
+  login bằng email → 303, `/admin` với phiên đó → 200 → admin DB vào được, KHÔNG
+  cần admin-env.
+- **Credit dùng thử**: `/verify-email` gọi `credit.cap_tay` một lần đúng lần
+  verify đầu (idempotent theo `was_verified`); lượng `LTT_TRIAL_CREDIT` mặc định 20.
+- **Test `test_70_admin_h3.py`** (3): trial-credit idempotent, /admin đá ẩn danh,
+  chỉ role=admin vào /admin. Full suite **1518 pass, 1 skip**; scan 0 finding.
+- **Phát hiện thêm:** dashboard hiện `[email protected]` do **Cloudflare "Email
+  Obfuscation" (Scrape Shield)** tự sửa HTML động (cùng họ beacon) — bug hiển thị
+  thật, cần tắt Scrape Shield/beacon trong dashboard cho host proxied.
+- **admin-env: chốt Q29 (giữ break-glass, vô hiệu production).** Xoá
+  `LTT_ADMIN_PASSWORD_HASH` khỏi app.env + nạp lại env dịch vụ. LỖI GẶP: web
+  service chết (Paused, 502) vì `settings.py` bắt buộc hash ở production →
+  `MissingServerSecretError`. Sửa: bỏ ADMIN_USERNAME/HASH khỏi danh sách secret
+  bắt buộc (chỉ còn SESSION_SECRET), deploy settings.py, restart → web sống lại.
+  Nghiệm thu: admin-env → 401; DB admin → 303 + /admin 200. → **H3-admin XONG.**
+  BÀI HỌC: xoá secret bắt buộc mà không sửa validator = tự sập app.
+
+## 2026-07-31 — H3-admin: trang quản trị sqladmin (MVP xong)
+
+- **Kiểm tương thích trước:** app chạy Starlette 1.3.1; `pip install --dry-run`
+  cho thấy `sqladmin 0.20.1` chấp nhận Starlette 1.3 (không hạ version) → Q15
+  giữ nguyên. Thêm `sqladmin>=0.20.1,<0.21` + `wtforms>=3.1.2,<4.0` (Q17).
+- **`server/admin.py`:** `AdminAuth(AuthenticationBackend)` dùng CHUNG phiên nền
+  tảng (truyền `session_secret` → cùng cookie "session"); admin = admin-env
+  (`session["user"]`) hoặc user DB role=admin. Không admin → 303 /login. 7 view:
+  User (sửa role/active/verified, không sửa email/hash, không xoá), CreditEntry
+  **read-only (append-only H3)**, AppAccess CRUD, Job read-only, Session xoá-để-
+  thu-hồi, PlatformInfo read-only, và `GrantCreditView` /admin/grant-credit gọi
+  `credit.cap_tay`.
+- **Gắn ở `create_app` CÓ GUARD:** `try/except` quanh import+setup — thiếu
+  sqladmin (test chạy system python) hoặc chưa có CSDL → `admin_ready=False`,
+  bỏ qua, KHÔNG vỡ app. Đã cài sqladmin vào cả venv (bản chạy) lẫn system python
+  (môi trường test).
+- **Nghiệm thu browser thật:** đăng nhập admin → `/admin` hiện đủ 7 view, đọc
+  PostgreSQL thật OK; chưa đăng nhập → 303 /login. curl `/admin/` (ẩn danh) → 303.
+- **Test:** full suite **1512 pass, 1 skip** sau khi sửa 3 chỗ do thay đổi hôm
+  nay: (1) `test_41` assert wording home "đang chặn bot"→"việc cần thiết lập";
+  (2)(3) `test_44` release scanner bắt `.playwright-mcp/*.yml` → thêm
+  `.playwright-mcp` vào `EXCLUDED_DIRS` của `build_release.py` + `.gitignore` +
+  xoá rác. `scan_source_secrets` = 0 finding.
+- **Còn lại H3-admin:** tạo admin trong DB → gỡ admin-env; cấp credit dùng thử
+  sau verify email (nối H1.3); test tự động cho admin.py.
+
+---
+
+## 2026-07-31 — Dọn branding + fix Cache-Control + phát hiện DNS resolver cũ
+
+### Dọn nợ H0.1 (mục A — "socialbot chỉ là 1 app")
+
+- `base.html` + `home.html` vốn ĐÃ đúng: sidebar/danh sách app sinh từ
+  `apps/*/manifest.py` (không viết cứng). socialbot là 1 nav-group hợp lệ.
+- Sửa branding platform-level: `login.html` "đăng bài Facebook & TikTok" →
+  "Nền tảng công cụ AI — dùng theo credit"; `home.html` "việc đang chặn bot
+  đăng bài" → "việc cần thiết lập". Thêm favicon SVG (`server/static/favicon.svg`
+  + link ở base/base_plain) → hết 404.
+- **Nợ SÂU chưa động (cần quyết định, mâu thuẫn Q10 freeze):** route + template
+  socialbot (sheet/manual/accounts/monitor/oauth/workers) nằm trong `server/`,
+  không ở `apps/socialbot/`. Tách ra là refactor lớn code đóng băng → để sau.
+
+### Fix bảo mật: Cache-Control cho HTML
+
+- `server/app.py`: HTML response nay gửi `Cache-Control: no-store` (file tĩnh
+  không đụng). Trước đó không có → proxy/CDN có thể cache trang động (rủi ro
+  phục vụ trang người này cho người khác). Đã xác minh qua Cloudflare edge:
+  `cf-cache-status: DYNAMIC` (không cache). `test_43`+`test_37` xanh (41).
+
+### Phát hiện: máy chủ tự thấy nội dung CŨ do DNS resolver, KHÔNG phải lỗi nền tảng
+
+- curl/local trên máy chủ trỏ `app.lttstudios.com` → **45.32.104.192** (máy Vultr
+  CŨ vẫn chạy Caddy+bản LTT cũ) vì **DNS resolver của router/ISP còn cache A record
+  cũ** từ iNET trước khi đổi NS; `ipconfig /flushdns` không xoá được cache router.
+- **Public đúng:** ép curl qua Cloudflare edge 104.21.58.244 → tagline MỚI,
+  `Server: cloudflare`, `Cache-Control: no-store`, favicon 200, health ready.
+  Trình duyệt (IPv6→Cloudflare) cũng hiện bản mới. → **Người dùng thật thấy app
+  mới**; chỉ máy chủ thấy cũ tới khi cache resolver hết TTL (hoặc đổi DNS máy sang
+  1.1.1.1). **Lưu ý:** có một máy chủ CŨ ở 45.32.104.192 vẫn chạy — cân nhắc gỡ.
+- Còn 1 lỗi console: Cloudflare tự chèn `static.cloudflareinsights.com/beacon.min.js`,
+  bị CSP chặn (đúng — không nhận JS bên thứ ba). Vô hại; tắt auto-inject trong
+  dashboard sau nếu muốn.
+
+---
+
+## 2026-07-31 — ✅ H0.1 HOÀN TẤT: app.lttstudios.com sống, nghiệm thu thật
+
+- **Tunnel:** sửa `setup/3` cài `cloudflared` **qua NSSM** (`--config ... tunnel
+  run`) thay `cloudflared service install` (bản 2026.x cho ImagePath trần → không
+  kết nối). Hardened: kill process + `sc delete` thay `Stop-Service` (tránh treo
+  StopPending). Ổn định: curl **8/8 = 200**, `tunnel info` có active connection.
+- **Quyền Admin:** shell Claude không elevated → không cài dịch vụ được. Người
+  dùng **relaunch VS Code as administrator** → Claude tự chạy nốt (kill service
+  kẹt, `sc delete`, chạy `setup/3`, đặt mật khẩu, nghiệm thu).
+- **Mật khẩu admin:** đặt `admin` / (mật khẩu người dùng cấp, tạm, sẽ đổi) qua
+  hash + nạp vào env cả 2 dịch vụ + restart. Lưu ở memory cục bộ (ngoài git).
+- **Nghiệm thu browser thật:** đăng nhập admin → control plane hiện "2 app đã
+  nạp" (demo, socialbot). Demo "chạy qua hàng đợi" trả 400 **đúng thiết kế**
+  (admin bootstrap không có sổ credit; cần user đăng ký thật). `setup/4`: mọi
+  mục ĐẠT (3 dịch vụ Running, chỉ nghe 127.0.0.1, /docs 404, secrets siết, 2 app).
+- **Test:** `test_45` + `test_61` = 73 pass; `scan_source_secrets` = **0 finding**
+  (sau khi dọn rác `.playwright-mcp/`).
+- **Nợ để lại (không chặn):** control plane còn branding socialbot cũ + route gốc;
+  lỗi console Cloudflare beacon (CSP); favicon 404. Cần cấu hình Resend/Turnstile
+  trước khi mở đăng ký cho khách.
+
+---
+
+## 2026-07-31 — Q28: bố trí ổ đĩa + sao lưu chống mất dữ liệu; setup/2 đã cài xong
+
+### Bối cảnh — làm rõ hiểu lầm về bố trí
+
+- Người dùng lo mất dữ liệu nếu ổ C:/Windows hỏng. Ban đầu tưởng muốn dời bản
+  chạy sang D:, nhưng làm rõ lại: **giữ mô hình chuẩn** — bản chạy `C:\LTTPlatform`
+  (ổ C = Disk 0), nguồn/bộ cài `D:\LTTSTUDIOSAPP` (ổ D = Disk 1) — và **thêm cơ
+  chế backup C: → `D:\LTTBackups`** (ổ vật lý khác). Chốt thành **Q28**.
+- Ổ: C = Lexar 1TB (645GB trống, Disk 0), D = Samsung 970 EVO Plus 500GB (114GB
+  trống, Disk 1) — hai ổ vật lý riêng. PostgreSQL data ở `C:\Program Files\
+  PostgreSQL\17\data`.
+
+### Đã làm
+
+- **Q28** thêm vào `QUYET_DINH_NEN_TANG.md`: bản chạy C:, nguồn/backup D:,
+  off-site khi thương mại. Nhấn: backup PHẢI gồm `secrets\app.env` (mất
+  `LTT_TOKEN_ENCRYPTION_KEY` = mất token dù DB còn); tự động + định kỳ + restore
+  thử; cùng máy vẫn là điểm chết chung → off-site bắt buộc khi có tiền.
+- `deploy\windows\backup.ps1`: thêm tham số `-BackupDir` (mặc định `$Root\backups`,
+  cho phép trỏ sang ổ khác). Đã có sẵn `pg_dump -Fc` + gói `*.enc`/config/audit +
+  `-IncludeSecrets` + giữ 14 bản + kiểm zip đọc được.
+- `deploy\windows\5-lich-backup.ps1` (MỚI): đăng ký Scheduled Task chạy backup
+  mỗi ngày, tài khoản SYSTEM, ghi sang `D:\LTTBackups`; cảnh báo nếu BackupDir
+  cùng ổ với bản chạy; chạy thử một lần để kiểm.
+- Kiểm: cả 2 `.ps1` thuần ASCII + không BOM; PowerShell parse OK; `test_61` xanh
+  (49 passed).
+
+### setup/3 (Tunnel) — LỖI dịch vụ cloudflared + đã sửa bằng NSSM
+
+- Người dùng chạy `setup\3`: bước 5 (route dns) từng CRASH vì cloudflared ghi log
+  ra stderr → dưới `ErrorActionPreference='Stop'` + `2>&1` thành NativeCommandError.
+  Sửa bằng hàm `Invoke-Cf` (chuyển stderr ra file tạm rồi gộp, không thành error
+  record). Bản ghi `app.lttstudios.com` (CNAME → tunnel) đã tạo.
+- **Lỗi thật hơn:** `cloudflared service install` bản **2026.7.3** tạo dịch vụ
+  Windows với **ImagePath TRẦN** (`cloudflared.exe`, không tham số) → dịch vụ chạy
+  nhưng không biết chạy tunnel/config nào → `tunnel info` báo **"no active
+  connection"** → `app.lttstudios.com` trả **530/1033**. (Lúc script vừa cài, health
+  check thoáng qua `status=ready` rồi rớt — gây hiểu nhầm là đã xong.)
+- **Sửa:** viết lại bước 6 của `setup\3` — cài dịch vụ `cloudflared` **qua NSSM**
+  với đúng dòng lệnh `--config C:\LTTPlatform\cloudflare\config.yml tunnel run`
+  (giống cách setup\2 cài Web/Worker); tự gỡ bản dịch vụ cũ (kể cả ImagePath trần)
+  trước khi cài lại. ASCII + không BOM + parse OK + test_61 xanh.
+- **CHẶN:** cần người dùng chạy LẠI `setup\3` trong PowerShell Admin để áp bản sửa
+  (idempotent: dùng lại tunnel + cert, chỉ cài lại dịch vụ cho đúng).
+
+### setup/2 — người dùng đã tự chạy, THÀNH CÔNG
+
+- `C:\LTTPlatform\` nay có đủ `app\ venv\ secrets\app.env tools\nssm.exe data\ logs\`.
+- Dịch vụ `LTTStudioWeb` + `LTTStudioWorker`: **Running**. `:8100/health/ready` →
+  **200**. DB nối đúng (nhờ `postgres-superuser.txt` đã stage trước → setup/2 tự
+  tạo/khớp `LTT_DATABASE_URL` + migration).
+- ⚠️ setup/2 in mật khẩu admin MỘT LẦN — cần xác nhận người dùng đã lưu.
+
+### CHẶN — cần Admin (shell Claude không elevated)
+
+1. `deploy\windows\5-lich-backup.ps1` — cài lịch backup sang `D:\LTTBackups`.
+2. `setup\3-cloudflare.ps1` — dựng Tunnel (zone đã Active); có bước
+   `cloudflared tunnel login` chọn zone `lttstudios.com`.
+3. `setup\4-nghiem-thu.ps1` + kiểm `app.lttstudios.com` trên trình duyệt thật.
+
+---
+
+## 2026-07-31 — H0.1: thêm zone lttstudios.com vào Cloudflare + dọn DNS (điều khiển trình duyệt)
+
+- **Mục tiêu:** đưa `app.lttstudios.com` lên mạng qua Cloudflare (Q27 — chuyển
+  cả zone), giữ trang chủ `lttstudios.com` ở inet.vn OnePanel không đứt.
+- **Hạng mục:** H0.1 — đã tới bước cuối cùng: đổi nameserver (CHẶN, chờ người dùng).
+
+### Đã làm (điều khiển 2 tab qua Playwright)
+
+- **Thêm site `lttstudios.com` vào Cloudflare, gói Free.** Tài khoản Cloudflare
+  `Giaitritruyenthongltt@gmail.com` (account id 3530f3e5...).
+- **Phát hiện quan trọng — IP gốc thật vs IP biên OneShield.** Quét tự động của
+  Cloudflare chỉ thấy IP biên OneShield (rải: 103.166.183.10, 103.216.118.10,
+  103.56.163.10; và 1 AAAA). Panel iNET mới cho IP gốc thật: **103.57.220.210**.
+- **Đã kiểm chứng bằng curl:** gọi thẳng `103.57.220.210` (Host lttstudios.com,
+  HTTPS) trả 200 và đúng trang chủ ("LTT Studios | Digital Products, Automation
+  & Media Systems"), kích thước gần khớp bản qua OneShield. HTTP → 301 lên HTTPS.
+  → Trỏ thẳng vào IP gốc DNS-only là **an toàn**, không cần OneShield.
+- **Dọn DNS trên Cloudflare còn đúng bộ chuẩn (đều DNS only / mây xám):**
+  - `A  lttstudios.com  103.57.220.210`  (DNS only)
+  - `A  www            103.57.220.210`  (DNS only)
+  - Đã xoá: bản ghi `app A 45.32.104.192` (Tunnel sẽ tạo lại CNAME sau), toàn bộ
+    bản ghi IP-biên-OneShield của @ và www, và 1 bản ghi AAAA của www.
+- **Lấy được nameserver Cloudflare cấp:** `elsa.ns.cloudflare.com` +
+  `kipp.ns.cloudflare.com`.
+- **ĐÃ ĐỔI NAMESERVER Ở iNET** (người dùng xác nhận "đổi ngay"): trang Chi tiết
+  tên miền iNET nay hiện `elsa.ns.cloudflare.com` + `kipp.ns.cloudflare.com`.
+  Đã BỎ TRỐNG checkbox "Tự động bật OneShield" (ta rời OneShield). Đã bấm "I
+  updated my nameservers" ở Cloudflare → zone trạng thái **pending** ("Waiting
+  for registrar to propagate", ~1–2 giờ, tối đa 24 giờ, Cloudflare tự kiểm).
+- **Kiểm ngay sau đổi:** trang chủ vẫn 200 (còn qua IP biên OneShield do resolver
+  công cộng chưa hết cache NS cũ). Khi NS mới lan tới, sẽ chạy thẳng 103.57.220.210.
+
+### ZONE ĐÃ ACTIVE (2026-07-31, chỉ sau ít phút)
+
+- NS mới lan tới resolver công cộng rất nhanh (8.8.8.8 + 1.1.1.1 trả `elsa`/`kipp`,
+  `@` → 103.57.220.210). Cloudflare xác minh xong → zone **Active**: trang overview
+  hiện đủ tính năng (CDN/cache, DDoS, SSL/TLS, WAF mặc định; có "Pause Cloudflare",
+  đang cấp Universal SSL). **Phần zone/DNS Cloudflare COI NHƯ XONG.**
+- Còn lại để `app.lttstudios.com` sống = **dựng Tunnel** (setup/3), cần app chạy
+  `:8100` trước (setup/2). Cả hai cần Administrator.
+
+### Đã chuẩn bị sẵn cho lần cài (Admin) — giảm rủi ro
+
+- DB đã có sẵn từ dev H1–H4: role `ltt_app` + database `lttplatform` tồn tại,
+  mật khẩu superuser trong `secrets/postgres-superuser.txt` khớp PostgreSQL 17
+  đang chạy (đã kiểm bằng psql -w, auth OK).
+- Đã copy `postgres-superuser.txt` vào `C:\LTTPlatform\secrets\` để `setup/2` tự
+  tạo/khớp `LTT_DATABASE_URL` + chạy migration, không phải làm tay.
+- CỐ Ý KHÔNG copy `app.env` dev sang (nó thiếu hash admin/session/token) — để
+  `setup/2` tự sinh `app.env` đầy đủ + in mật khẩu admin mới đúng một lần.
+
+### CHẶN — cần quyền Admin (shell của Claude không elevated)
+
+1. `setup\2-cai-dat.ps1` (PowerShell **Run as administrator**) — cài nền tảng,
+   in mật khẩu admin MỘT LẦN.
+2. `setup\3-cloudflare.ps1` (Admin) — dựng Tunnel; có bước `cloudflared tunnel
+   login` mở trình duyệt chọn zone `lttstudios.com`.
+2. **Cài nền tảng:** `C:\LTTPlatform` hiện chỉ có thư mục `data` (rác từ test
+   H1–H4). PostgreSQL 17 đang chạy, nhưng CHƯA có dịch vụ LTTStudioWeb/Worker/
+   cloudflared, chưa có app/venv/secrets. Phải chạy `setup\2-cai-dat.ps1` trong
+   **PowerShell Administrator** (shell hiện tại của Claude KHÔNG elevated).
+   Script in mật khẩu admin đúng MỘT LẦN — lưu lại ngay.
+3. **Dựng Tunnel:** sau khi zone Active + đã cài, chạy `setup\3-cloudflare.ps1`
+   (Admin). Có một bước `cloudflared tunnel login` mở trình duyệt để cấp cert.
+- **Lưu ý:** khi rời DNS iNET, OneShield (CDN/WAF của iNET) ngừng cho tên miền
+  này; trang chủ chạy thẳng từ IP gốc 103.57.220.210 (đã kiểm chứng OK).
+
+---
+
 ## 2026-07-31 — H0.1: kiện toàn script Cloudflare cho Q22 (phần chuẩn bị)
 
 - **Mục tiêu:** chuẩn bị dựng Tunnel; người dùng chọn "đưa lên mạng trước H5".

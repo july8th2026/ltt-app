@@ -11,6 +11,8 @@ nhiều nhất, và mọi phản hồi đều cố ý **không tiết lộ email
 """
 from __future__ import annotations
 
+import os
+
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
@@ -27,9 +29,19 @@ from server.templating import templates
 
 router = APIRouter(tags=["register"])
 
+# Credit dùng thử cấp MỘT LẦN sau khi xác thực email (Q7). Chỉnh qua biến môi
+# trường LTT_TRIAL_CREDIT; mặc định 20 (đủ chạy thử demo/tool nhẹ). Đặt 0 để tắt.
+try:
+    TRIAL_CREDIT_AMOUNT = max(0, int((os.environ.get("LTT_TRIAL_CREDIT") or "20").strip()))
+except ValueError:
+    TRIAL_CREDIT_AMOUNT = 20
+
 
 def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else ""
+    # IP THẬT sau Cloudflare Tunnel — nếu dùng request.client.host thì mọi khách
+    # đều là 127.0.0.1, cap đăng ký theo IP sẽ chặn cả nền tảng. Xem client_ip.
+    from server.auth.session import client_ip
+    return client_ip(request)
 
 
 def _base_url(request: Request) -> str:
@@ -137,10 +149,16 @@ def verify_email(request: Request, token: str = ""):
                 from platform_core.models import User
                 user = db.get(User, user_id)
                 if user is not None:
+                    was_verified = user.is_verified
                     user.is_verified = True
                     ok = True
-                    # H3 sẽ nối vào đây: cấp credit dùng thử ngay sau xác thực.
-                    # Chưa có bảng credit nên chưa cấp — ghi chú để không quên.
+                    # Cấp credit dùng thử MỘT LẦN, đúng lần xác thực đầu tiên
+                    # (Q7 + Q9 — chỉ sau khi email đã xác thực). Idempotent theo
+                    # chuyển trạng thái: bấm lại link (đã verified) không cấp lại.
+                    if not was_verified and TRIAL_CREDIT_AMOUNT > 0:
+                        from platform_core.credit import cap_tay
+                        cap_tay(db, user.id, TRIAL_CREDIT_AMOUNT, by="system",
+                                note="Credit dùng thử sau xác thực email")
     return templates.TemplateResponse(
         request, "verify_result.html", {"ok": ok},
         status_code=200 if ok else 400,

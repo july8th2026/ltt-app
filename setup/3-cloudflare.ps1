@@ -34,6 +34,31 @@ function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan
 function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 function Note($m) { Write-Host "  $m" -ForegroundColor Yellow }
 
+# Chay cloudflared va gom ca stdout+stderr thanh CHUOI ma KHONG coi stderr la loi.
+# cloudflared ghi log INF ra stderr; voi ErrorActionPreference='Stop', neu dung
+# 2>&1 (gop vao pipeline) thi dong stderr bien thanh NativeCommandError va lam
+# DUNG script du lenh da chay xong (da that su xay ra o buoc 5/6 route dns).
+# Cach chac chan: chuyen stderr ra FILE (2>$f) nen no khong bao gio thanh error
+# record trong pipeline, roi doc lai gop vao. Kiem ket qua qua chuoi tra ve.
+function Invoke-Cf {
+    param([Parameter(ValueFromRemainingArguments = $true)]$CfArgs)
+    # HAI lop bao ve, deu can:
+    #  - EAP='Continue': stderr cua native KHONG thanh loi dung script (bat buoc;
+    #    thieu no la crash du da 2> ra file - da xay ra o lan chay truoc).
+    #  - 2> $errFile: chuyen stderr ra file nen khong hien dong do tren man hinh.
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $errFile = [IO.Path]::GetTempFileName()
+    try {
+        $out = (& $cfExe @CfArgs 2> $errFile | Out-String)
+        $err = (Get-Content $errFile -Raw -ErrorAction SilentlyContinue)
+        return (("$out`n$err").Trim())
+    } finally {
+        $ErrorActionPreference = $prev
+        Remove-Item $errFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
 $isAdmin = ([Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -88,7 +113,7 @@ if (Test-Path $cert) {
 }
 
 Head '3/6 Tao tunnel'
-$list = & $cfExe tunnel list 2>&1 | Out-String
+$list = Invoke-Cf tunnel list
 if ($list -match [regex]::Escape($TunnelName)) {
     Ok "Tunnel '$TunnelName' da ton tai"
 } else {
@@ -98,7 +123,7 @@ if ($list -match [regex]::Escape($TunnelName)) {
 }
 
 # Lay tunnel ID tu danh sach - dang tin hon la doc output luc tao.
-$list = & $cfExe tunnel list 2>&1 | Out-String
+$list = Invoke-Cf tunnel list
 $tunnelId = $null
 foreach ($line in $list -split "`n") {
     if ($line -match "^([0-9a-f\-]{36})\s+$([regex]::Escape($TunnelName))\s") { $tunnelId = $Matches[1]; break }
@@ -149,7 +174,7 @@ Head '5/6 Tro ten mien'
 # route dns tao ban ghi trong ZONE cua Cloudflare. Neu zone '$Hostname' chua
 # duoc them + uy quyen (dieu kien tien quyet Q22), lenh nay se bao khong tim
 # thay zone - bat loi do va giai thich, thay vi de mot loi mo mit.
-$routeOut = & $cfExe tunnel route dns $TunnelName $Hostname 2>&1 | Out-String
+$routeOut = Invoke-Cf tunnel route dns $TunnelName $Hostname
 Write-Host $routeOut.Trim()
 if ($routeOut -match 'already exists|record with that host') {
     Note 'Ban ghi da co tu truoc - giu nguyen.'
@@ -160,19 +185,46 @@ if ($routeOut -match 'already exists|record with that host') {
 }
 Ok "$Hostname -> tunnel $TunnelName"
 
-Head '6/6 Cai dich vu Windows'
-$svc = Get-Service cloudflared -ErrorAction SilentlyContinue
-if ($svc) {
-    Ok 'Dich vu cloudflared da co - khoi dong lai de nap cau hinh moi'
-    Restart-Service cloudflared
-} else {
-    & $cfExe --config $cfgPath service install
-    if ($LASTEXITCODE -ne 0) { throw 'Cai dich vu cloudflared that bai' }
-    Start-Service cloudflared
-    Ok 'Da cai va khoi dong cloudflared'
+Head '6/6 Cai dich vu Windows (qua NSSM)'
+# KHONG dung `cloudflared service install`: ban 2026.x tao service voi ImagePath
+# TRAN (khong tham so) -> service chay nhung khong biet chay tunnel/config nao
+# -> tunnel KHONG ket noi -> loi 1033/530. NSSM cho ta kiem soat DUNG dong lenh
+# (--config <path> tunnel run), giong cach cai LTTStudioWeb/Worker o setup\2.
+$nssmExe = Join-Path $tools 'nssm.exe'
+if (-not (Test-Path $nssmExe)) {
+    throw "Khong thay $nssmExe. Chay setup\2-cai-dat.ps1 truoc (buoc do tai NSSM)."
 }
-Start-Sleep -Seconds 5
-$svc = Get-Service cloudflared
+$svcName = 'cloudflared'
+
+# Go moi ban dich vu cu (ke ca ban ImagePath tran do 'cloudflared service
+# install' tao ra) de cai lai cho dung.
+# KHONG dung Stop-Service: ban ImagePath tran khong xu ly tin hieu stop nen dich
+# vu ket o StopPending va Stop-Service cho mai mai. Kill THANG tien trinh de xoa
+# StopPending, roi go dich vu bang ca 3 cach cho chac.
+$svc = Get-Service $svcName -ErrorAction SilentlyContinue
+if ($svc) {
+    Get-Process cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 2
+    & $cfExe service uninstall 2> $null | Out-Null
+    & $nssmExe remove $svcName confirm 2> $null | Out-Null
+    & sc.exe delete $svcName 2> $null | Out-Null
+    Start-Sleep -Seconds 3
+    Ok 'Da go dich vu cloudflared cu'
+}
+
+# $cfgPath khong co dau cach nen khong can bao ngoac kep.
+& $nssmExe install $svcName $cfExe "--config $cfgPath tunnel run" | Out-Null
+& $nssmExe set $svcName AppDirectory   $cfDir | Out-Null
+& $nssmExe set $svcName AppStdout      (Join-Path $logs 'cloudflared-nssm-out.log') | Out-Null
+& $nssmExe set $svcName AppStderr      (Join-Path $logs 'cloudflared-nssm-err.log') | Out-Null
+& $nssmExe set $svcName AppRotateFiles 1 | Out-Null
+& $nssmExe set $svcName Start          SERVICE_AUTO_START | Out-Null
+& $nssmExe set $svcName AppExit Default Restart | Out-Null
+& $nssmExe set $svcName AppRestartDelay 10000 | Out-Null
+Start-Service $svcName
+Ok 'Da cai (NSSM) va khoi dong cloudflared'
+Start-Sleep -Seconds 6
+$svc = Get-Service $svcName
 Ok "cloudflared: $($svc.Status)"
 
 if ($DisableCaddy) {

@@ -17,10 +17,24 @@ Thứ tự có chủ ý:
 """
 from __future__ import annotations
 
+import hashlib
+import json
+
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import credit, jobs
 from platform_core.models import Job
+
+
+def dedupe_key_for(job_type: str, params: dict) -> str:
+    """Khoá dedupe ổn định cho một yêu cầu: cùng `job_type` + cùng `params` →
+    cùng khoá. `jobs.submit` chỉ dedupe với job CHƯA kết thúc của cùng user, nên
+    F5 / double-click / bấm "Tạo lại" trong lúc job đang chạy sẽ trả về job cũ
+    (không tạo job mới, KHÔNG trừ tiền lần hai); job xong rồi thì gửi lại tạo job
+    mới bình thường. Mọi route submit NÊN truyền khoá này để chặn double-submit.
+    """
+    canon = json.dumps(params or {}, sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(f"{job_type}\x00{canon}".encode("utf-8")).hexdigest()
 
 
 def submit_with_credit(

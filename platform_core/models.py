@@ -116,7 +116,7 @@ class Session(Base):
 
     __tablename__ = "sessions"
 
-    id: Mapped[str] = mapped_column(String(43), primary_key=True)  # token_urlsafe(32)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)  # SHA-256 hex cua token (khong luu token tho)
     user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)

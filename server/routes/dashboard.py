@@ -13,25 +13,42 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
-from server.auth.session import require_login
+from server.auth.session import current_identity_optional
 from server.templating import templates
 
 router = APIRouter(tags=["home"])
 
 
 @router.get("/", response_class=HTMLResponse)
-def home(request: Request, user: str = Depends(require_login)):
+def home(request: Request):
+    """Trang chủ = CATALOG (H6/Q30).
+
+    CÔNG KHAI: khách chưa đăng nhập vẫn xem được danh sách app (chỉ app
+    `enabled and public`), bấm một app thì mới cần đăng nhập. Đã đăng nhập thì
+    lọc theo quyền (AppAccess) và hiện blocker/app-lỗi như trước.
+    """
     from platform_core.registry import discover
-    from tools import doctor
 
+    user = current_identity_optional(request)
+    authed = user is not None
     loaded = discover()
-    report = doctor.run(check_sheet_flag=False)
+    ok_apps = [a for a in loaded if not a.error]
 
-    # Lọc app theo quyền của người dùng (H1.4): bỏ app `hidden`. App `locked`
-    # vẫn hiện, template gắn nhãn. Bọc an toàn: khi chưa có CSDL hoặc là
-    # admin-env (đường lui), hiện đủ như trước — không được để phân quyền làm
-    # trang chủ trắng khi DB trục trặc.
-    visible = [a for a in loaded if not a.error]
+    if not authed:
+        # Khách: chỉ hiện app self-serve công khai; KHÔNG lộ blocker/app-lỗi.
+        visible = [a for a in ok_apps
+                   if a.manifest.enabled and a.manifest.public]
+        return templates.TemplateResponse(request, "home.html", {
+            "user": None, "authed": False, "nav": "home",
+            "apps": visible, "broken": [], "app_setup": {},
+        })
+
+    # Đã đăng nhập: lọc theo quyền (H1.4) + tính "cần thiết lập" theo TỪNG app.
+    # Bọc an toàn: DB trục trặc / admin-env thì hiện đủ, không để phân quyền làm
+    # trang trắng.
+    from tools import doctor
+    report = doctor.run(check_sheet_flag=False)
+    visible = ok_apps
     try:
         u = _user_hien_tai(request)
         if u is not None:
@@ -46,12 +63,24 @@ def home(request: Request, user: str = Depends(require_login)):
     except Exception:
         pass
 
+    # Blocker doctor gắn vào ĐÚNG thẻ app (H6.6): không còn banner FB/TikTok toàn
+    # cục. Khớp theo manifest.blocker_titles do app tự khai — nền tảng KHÔNG
+    # hardcode tên app. Blocker không thuộc app nào vẫn xem đầy đủ ở /status.
+    block_sections = [s for s in report.sections if s["status"] == doctor.BLOCK]
+    app_setup: dict = {}
+    for item in visible:
+        titles = getattr(item.manifest, "blocker_titles", ()) or ()
+        hits = [s for s in block_sections if s["check"] in titles]
+        if hits:
+            app_setup[item.manifest.slug] = hits
+
     return templates.TemplateResponse(request, "home.html", {
         "user": user,
+        "authed": True,
         "nav": "home",
         "apps": visible,
         "broken": [a for a in loaded if a.error],
-        "blockers": [s for s in report.sections if s["status"] == doctor.BLOCK],
+        "app_setup": app_setup,
     })
 
 

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core.models import (CREDIT_GRANT, CREDIT_HOLD, CREDIT_REFUND,
@@ -27,6 +27,24 @@ from platform_core.models import (CREDIT_GRANT, CREDIT_HOLD, CREDIT_REFUND,
 
 class ThieuCreditError(Exception):
     """Số dư không đủ để giữ chỗ. Job KHÔNG được tạo, API KHÔNG được gọi."""
+
+
+def _khoa_so_du_user(db: DbSession, user_id: str) -> None:
+    """Khoá TUẦN TỰ mọi thao tác credit của MỘT user trong transaction hiện tại.
+
+    Vì `so_du` là `SUM` của sổ rồi mới ghi bút toán, hai request song song của
+    cùng user (hai tab, script gọi API) có thể CÙNG đọc số dư cũ rồi CÙNG giữ
+    chỗ → số dư âm, mất tiền thật (double-spend). `pg_advisory_xact_lock` giữ
+    đến khi commit/rollback nên request thứ hai phải xếp hàng, đọc số dư SAU khi
+    request đầu đã ghi. Khoá theo khoá riêng của từng user nên user khác không
+    bị chặn.
+
+    Chỉ áp dụng cho PostgreSQL. SQLite (test/đơn máy) bỏ qua: nó tuần tự hoá ghi
+    ở mức tệp và các test chạy đơn luồng, nên không có race để chặn.
+    """
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+                   {"k": f"credit:{user_id}"})
 
 
 def so_du(db: DbSession, user_id: str) -> int:
@@ -86,9 +104,13 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
         raise ValueError("so credit giu cho khong the am")
     if amount == 0:
         return
-    if so_du(db, user_id) < amount:
+    # Khoá TRƯỚC khi đọc số dư: từ đây tới hết transaction, chỉ request này được
+    # giữ chỗ cho user này → check-then-write trở thành nguyên tử, hết double-spend.
+    _khoa_so_du_user(db, user_id)
+    con = so_du(db, user_id)
+    if con < amount:
         raise ThieuCreditError(
-            f"Khong du credit: can {amount}, con {so_du(db, user_id)}.")
+            f"Khong du credit: can {amount}, con {con}.")
     _ghi(db, user_id=user_id, delta=-amount, kind=CREDIT_HOLD, job_id=job_id,
          note=f"giu cho job {job_id[:8]}")
 

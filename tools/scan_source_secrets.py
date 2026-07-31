@@ -56,6 +56,10 @@ EXCLUDED_DIR_NAMES = {
     "secrets",
     "temp_videos",
     "temp_videos_test",
+    # Snapshot/log tam cua Playwright MCP (dieu khien trinh duyet). Khong phai
+    # source; chua nhieu chuoi hex 32 ky tu tu dashboard lam trip may quet.
+    ".playwright-mcp",
+    ".claude",
 }
 
 EXCLUDED_DIR_PREFIXES = (".backup_",)

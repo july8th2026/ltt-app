@@ -81,6 +81,25 @@ Write-Step 'Updating dependencies'
 & $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet
 Write-Ok 'Dependencies updated'
 
+Write-Step 'Applying database migrations'
+# Bat buoc: ban phat hanh doi schema ma khong nang cap thi service boot tren
+# schema cu -> loi runtime kho truy hoac hong du lieu. Chay alembic tren ban MOI
+# TRUOC khi start. LTT_DATABASE_URL lay tu app.env (service doc env qua NSSM,
+# tien trinh nay thi khong). Mirror dung cach setup/2-cai-dat.ps1 lam.
+$envFileForMig = Join-Path $Root 'secrets\app.env'
+if ((Test-Path $envFileForMig) -and ((Get-Content $envFileForMig -Raw) -match '(?m)^LTT_DATABASE_URL=(.+)$')) {
+    $env:LTT_DATABASE_URL = $Matches[1].Trim()
+    Push-Location $release
+    & $venvPy -m alembic upgrade head
+    $rc = $LASTEXITCODE
+    Pop-Location
+    $env:LTT_DATABASE_URL = $null
+    if ($rc -ne 0) { throw 'alembic upgrade head that bai - dung lai, roll back bang .\rollback.ps1' }
+    Write-Ok 'Database migrations applied'
+} else {
+    throw 'Khong doc duoc LTT_DATABASE_URL tu secrets\app.env - khong the chay migration. Dung lai.'
+}
+
 Write-Step 'Starting service'
 Start-Service $ServiceName
 Start-Service $WorkerServiceName -ErrorAction SilentlyContinue

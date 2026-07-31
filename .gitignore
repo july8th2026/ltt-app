@@ -102,3 +102,6 @@ data/translations/desktop.ini
 
 # Alembic - CSDL tam khi chay test cuc bo
 *.db-journal
+
+# Playwright MCP temp snapshots/logs (dieu khien trinh duyet)
+.playwright-mcp/

@@ -110,11 +110,11 @@ def test_health_ready_503_when_config_missing(tmp_path):
 
 # ─── authorization boundary ────────────────────────────────────────────────────
 
-def test_anonymous_dashboard_access_redirects_to_login(tmp_path):
+def test_anonymous_dashboard_is_public_catalog(tmp_path):
+    # H6/Q30: trang chu gio CONG KHAI (catalog) - khach xem duoc, khong dang nhap.
     client = _client(tmp_path)
     resp = client.get("/")
-    assert resp.status_code == 303
-    assert resp.headers["location"] == "/login"
+    assert resp.status_code == 200
 
 
 def test_login_page_reachable_anonymously(tmp_path):
@@ -173,8 +173,9 @@ def test_login_success_then_dashboard_then_logout(tmp_path):
     assert logout_resp.headers["location"] == "/login"
 
     dash_after = client.get("/")
-    assert dash_after.status_code == 303
-    assert dash_after.headers["location"] == "/login"
+    # H6: trang chu cong khai -> 200; phien da thu hoi nen khong con vo authed.
+    assert dash_after.status_code == 200
+    assert "Đăng xuất" not in dash_after.text
 
 
 # ─── rate limiting ──────────────────────────────────────────────────────────────
@@ -285,9 +286,9 @@ def test_anonymous_redirect_still_works_with_error_handler(tmp_path):
     """require_login raises an HTTPException carrying a redirect; the new
     error handler must let it through instead of rendering an error page."""
     client = _client(tmp_path)
-    resp = client.get("/")
+    resp = client.get("/status")   # H6: "/" gio cong khai; dung route con require_login
     assert resp.status_code == 303
-    assert resp.headers["location"] == "/login"
+    assert resp.headers["location"].startswith("/login")
 
 
 # ─── PB-2: /status page ────────────────────────────────────────────────────────
@@ -296,7 +297,7 @@ def test_status_page_requires_login(tmp_path):
     client = _client(tmp_path)
     resp = client.get("/status")
     assert resp.status_code == 303
-    assert resp.headers["location"] == "/login"
+    assert resp.headers["location"].startswith("/login")
 
 
 def test_status_page_renders_doctor_report_for_logged_in_user(tmp_path):

@@ -12,6 +12,7 @@ hệ thống là hai chỗ có thể sai, và tài khoản tạo bằng cách n�
 """
 from __future__ import annotations
 
+import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -134,15 +135,29 @@ def _aware(dt: datetime) -> datetime:
     return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
 
 
-def tao_phien(db: DbSession, user: User, *, user_agent: str = "", ip: str = "") -> str:
-    """Tạo một phiên, trả về session_id để đặt vào cookie.
+def _bam_sid(sid: str) -> str:
+    """Băm token phiên để LƯU (không lưu token thô).
 
-    session_id là 32 byte ngẫu nhiên mã hoá urlsafe — không đoán được, không
-    mang thông tin gì về user (khác với việc nhét user_id vào cookie).
+    `id` của bảng `sessions` vừa là token vừa là KHOÁ CHÍNH. sqladmin phơi khoá
+    chính ra checkbox/URL của từng dòng, nên nếu id = token thô thì admin xem
+    trang Phiên là lấy được token sống → mạo danh không cần mật khẩu (P0-5).
+    Giải pháp: cookie mang token THÔ, còn DB chỉ lưu SHA-256 của nó; tra cứu thì
+    băm token trong cookie rồi so với hash. Dump CSDL cũng không lộ token dùng
+    được (băm một chiều).
+    """
+    return hashlib.sha256(sid.encode("utf-8")).hexdigest()
+
+
+def tao_phien(db: DbSession, user: User, *, user_agent: str = "", ip: str = "") -> str:
+    """Tạo một phiên, trả về session_id (token THÔ) để đặt vào cookie.
+
+    Token là 32 byte ngẫu nhiên mã hoá urlsafe — không đoán được, không mang
+    thông tin gì về user. CSDL chỉ lưu HASH của token (xem `_bam_sid`), không
+    lưu token thô.
     """
     sid = secrets.token_urlsafe(32)
     db.add(SessionRow(
-        id=sid, user_id=user.id,
+        id=_bam_sid(sid), user_id=user.id,
         expires_at=_bay_gio() + SESSION_TTL,
         user_agent=(user_agent or "")[:255], ip=(ip or "")[:45],
     ))
@@ -152,13 +167,14 @@ def tao_phien(db: DbSession, user: User, *, user_agent: str = "", ip: str = "") 
 
 
 def lay_user_tu_phien(db: DbSession, sid: Optional[str]) -> Optional[User]:
-    """Đổi session_id lấy User, hoặc None nếu phiên sai/hết hạn/user bị khoá.
+    """Đổi session_id (token thô trong cookie) lấy User, hoặc None nếu phiên
+    sai/hết hạn/user bị khoá. Băm token trước khi tra vì DB chỉ lưu hash.
 
     Phiên hết hạn thì xoá luôn tại chỗ — dọn rác dần thay vì để bảng phình mãi.
     """
     if not sid:
         return None
-    row = db.get(SessionRow, sid)
+    row = db.get(SessionRow, _bam_sid(sid))
     if row is None:
         return None
     if _aware(row.expires_at) <= _bay_gio():
@@ -172,8 +188,8 @@ def lay_user_tu_phien(db: DbSession, sid: Optional[str]) -> Optional[User]:
 
 
 def thu_hoi_phien(db: DbSession, sid: str) -> None:
-    """Đăng xuất một phiên."""
-    row = db.get(SessionRow, sid)
+    """Đăng xuất một phiên. Băm token trước khi tra (DB lưu hash)."""
+    row = db.get(SessionRow, _bam_sid(sid))
     if row is not None:
         db.delete(row)
         db.flush()

@@ -78,7 +78,7 @@ def demo_queue(
     from fastapi.responses import RedirectResponse
 
     from platform_core import credit
-    from platform_core.job_submit import submit_with_credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
     from platform_core.registry import RegistryError
     from server.deps import user_hien_tai
 
@@ -94,9 +94,11 @@ def demo_queue(
     gen = get_session(); db = next(gen)
     try:
         try:
+            params = {"text": text}
             job = submit_with_credit(
                 db, user_id=u.id, app_slug=MANIFEST.slug,
-                job_type="demo.reverse", params={"text": text},
+                job_type="demo.reverse", params=params,
+                dedupe_key=dedupe_key_for("demo.reverse", params),
             )
             db.commit()
         except credit.ThieuCreditError as exc:

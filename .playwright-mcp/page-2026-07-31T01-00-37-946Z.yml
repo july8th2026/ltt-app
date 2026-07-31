@@ -1,7 +1,0 @@
-- generic [ref=f2e2]:
-  - heading "LTT AI Studio" [level=1] [ref=f2e4]
-  - generic [ref=f2e5]:
-    - paragraph [ref=f2e6]: Xác thực email thành công. Tài khoản của bạn đã kích hoạt.
-    - paragraph [ref=f2e7]:
-      - link "Đăng nhập ngay" [ref=f2e8] [cursor=pointer]:
-        - /url: /login

@@ -184,4 +184,4 @@ def test_an_danh_khong_bi_middleware_nuot_redirect(client):
     """Chưa đăng nhập vào /demo vẫn phải được require_login đưa về /login (303),
     middleware phân quyền không được nuốt mất redirect đó."""
     r = client.get("/demo", follow_redirects=False)
-    assert r.status_code == 303 and r.headers["location"] == "/login"
+    assert r.status_code == 303 and r.headers["location"].startswith("/login")

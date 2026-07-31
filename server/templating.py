@@ -23,6 +23,22 @@ _TEMPLATE_DIR = pathlib.Path(__file__).resolve().parent / "templates"
 
 templates = Jinja2Templates(directory=str(_TEMPLATE_DIR))
 
+# Hợp đồng app (H5): app được mang template RIÊNG trong `apps/<slug>/templates/`
+# để tự dựng UI (extends base.html) MÀ KHÔNG phải bỏ file vào server/templates/.
+# Không có phần này thì "thêm app = thêm thư mục" chỉ đúng với phần xử lý, còn
+# giao diện vẫn buộc chạm server/ — đúng lỗ hổng H5 phải lấp. server/templates/
+# đứng TRƯỚC nên nền tảng luôn thắng khi trùng tên (app không ghi đè được vỏ).
+_APPS_DIR = pathlib.Path(__file__).resolve().parent.parent / "apps"
+_app_template_dirs = sorted(
+    str(p) for p in _APPS_DIR.glob("*/templates") if p.is_dir()
+)
+if _app_template_dirs:
+    from jinja2 import ChoiceLoader, FileSystemLoader
+    templates.env.loader = ChoiceLoader(
+        [FileSystemLoader(str(_TEMPLATE_DIR))]
+        + [FileSystemLoader(d) for d in _app_template_dirs]
+    )
+
 # Which desktop tabs have a real web page yet. The sidebar reads this to
 # show an honest "đang xây" badge instead of pretending a link is finished.
 # Flip a value to True in the same commit that lands the real page.
@@ -84,3 +100,80 @@ def _nav_apps(request=None):
 
 templates.env.globals["nav_apps"] = _nav_apps
 templates.env.globals["app_version"] = _VER
+
+
+def _so_du_credit(request=None):
+    """Số dư credit của người dùng CSDL đang đăng nhập, hoặc None (H6).
+
+    None khi: chưa đăng nhập bằng phiên CSDL (admin-env / ẩn danh), chưa có CSDL,
+    hay bất kỳ lỗi nào — vỏ chỉ hiện badge khi có số thật, không làm sập trang.
+    """
+    if request is None:
+        return None
+    try:
+        sid = request.session.get("sid")
+        if not sid:
+            return None
+        from platform_core.credit import so_du
+        from platform_core.db import get_session
+        from platform_core.users import lay_user_tu_phien
+        gen = get_session(); db = next(gen)
+        try:
+            u = lay_user_tu_phien(db, sid)
+            return so_du(db, u.id) if u else None
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception:
+        return None
+
+
+templates.env.globals["so_du_credit"] = _so_du_credit
+
+
+def _active_app(request=None):
+    """Slug của app mà đường dẫn hiện tại thuộc về, hoặc None (H6.6).
+
+    Vỏ hai tầng: sidebar hiện MỖI APP MỘT DÒNG (launcher); trang con của app chỉ
+    bung ra khi đang ở TRONG app đó. Dùng app_cho_path (khớp tiền tố dài nhất
+    trên route_prefix + nav) nên không hardcode tên app. Bọc an toàn."""
+    if request is None:
+        return None
+    try:
+        from platform_core.app_access import app_cho_path
+        from platform_core.registry import discover
+        return app_cho_path(request.url.path, discover())
+    except Exception:
+        return None
+
+
+def _is_admin(request=None):
+    """True nếu phiên hiện tại là admin CSDL (H6.6) → hiện link Quản trị.
+
+    Chỉ True cho user CSDL role=admin. admin-env/ẩn danh/lỗi → False (không lộ
+    link quản trị nhầm). Bọc an toàn: lỗi không được làm sập vỏ."""
+    if request is None:
+        return False
+    try:
+        sid = request.session.get("sid")
+        if not sid:
+            return False
+        from platform_core.db import get_session
+        from platform_core.users import lay_user_tu_phien
+        gen = get_session(); db = next(gen)
+        try:
+            u = lay_user_tu_phien(db, sid)
+            return bool(u and u.role == "admin")
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception:
+        return False
+
+
+templates.env.globals["active_app"] = _active_app
+templates.env.globals["is_admin"] = _is_admin

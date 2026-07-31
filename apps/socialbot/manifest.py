@@ -45,7 +45,13 @@ MANIFEST = AppManifest(
     requires=("browser",),   # cần IP dân dụng: Meta/TikTok đánh dấu IP datacenter
     credit_cost=None,        # đang dùng nội bộ, chưa thu phí
 
+    # Các mục doctor thuộc app này → nền tảng gắn badge "cần thiết lập" lên thẻ
+    # app socialbot thay vì treo banner FB/TikTok toàn cục (H6.6). Tên phải khớp
+    # đúng tiêu đề trong tools/doctor.py (check_tokens).
+    blocker_titles=("Tài khoản Facebook", "Tài khoản TikTok"),
+
     enabled=True,
+    public=False,   # đóng băng (Q10) + cần OAuth/browser — ẩn khỏi catalog công khai (H6/Q30)
     notes="Đang chạy production. Route ở đường dẫn gốc vì lý do lịch sử — "
           "xem docstring của file này.",
 )

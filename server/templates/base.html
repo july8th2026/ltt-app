@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <title>{% block title %}LTT AI Studio{% endblock %}</title>
   <style>
     :root {
@@ -41,6 +42,12 @@
     }
     .nav a:hover { background:var(--panel2); }
     .nav a.active { background:var(--panel2); border-left-color:var(--accent); color:#fff; }
+    /* Vỏ hai tầng (H6.6): dòng app = tầng 1; trang con thụt vào = tầng 2, chỉ
+       hiện khi đang ở trong app đó. */
+    .nav a.app { font-weight:600; }
+    .nav a.sub { padding:7px 18px 7px 40px; font-size:13px; color:var(--muted); }
+    .nav a.sub .ico { width:16px; }
+    .nav a.sub.active { color:#fff; font-weight:500; }
     .nav .ico { width:18px; text-align:center; }
     .sidebar-foot { border-top:1px solid var(--line); padding:12px 18px; }
 
@@ -145,13 +152,24 @@
       <a href="/" class="{{ 'active' if nav=='home' else '' }}">
         <span class="ico">🏠</span> Trang chủ</a>
 
-      {% for item in nav_apps(request) %}
-        <div class="nav-group">{{ item.manifest.display_name }}</div>
-        {% for entry in item.manifest.nav_entries() %}
-          <a href="{{ entry.path }}" class="{{ 'active' if nav==entry.nav_key else '' }}">
-            <span class="ico">{{ entry.icon or item.manifest.icon }}</span> {{ entry.label }}
-            {%- if not entry.built %}<span class="badge badge-warn" style="margin-left:auto;">đang xây</span>{% endif %}</a>
-        {% endfor %}
+      {# Vỏ HAI TẦNG (H6.6): mỗi app MỘT dòng (launcher). Trang con của app chỉ
+         bung ra khi đang Ở TRONG app đó (active_app). Nhờ vậy một app nhiều
+         trang (vd socialbot 8 trang) không còn tràn kín sidebar. #}
+      {% set _apps = nav_apps(request) %}
+      {% set _active = active_app(request) %}
+      {% if _apps %}<div class="nav-group">Ứng dụng</div>{% endif %}
+      {% for item in _apps %}
+        {% set m = item.manifest %}
+        {% set entries = m.nav_entries() %}
+        <a href="{{ m.route_prefix }}" class="app {{ 'active' if _active==m.slug else '' }}">
+          <span class="ico">{{ m.icon }}</span> {{ m.display_name }}</a>
+        {% if _active==m.slug and entries|length > 1 %}
+          {% for entry in entries %}
+            <a href="{{ entry.path }}" class="sub {{ 'active' if nav==entry.nav_key else '' }}">
+              <span class="ico">{{ entry.icon or m.icon }}</span> {{ entry.label }}
+              {%- if not entry.built %}<span class="badge badge-warn" style="margin-left:auto;">đang xây</span>{% endif %}</a>
+          {% endfor %}
+        {% endif %}
       {% endfor %}
 
       <div class="nav-group">Hệ thống</div>
@@ -161,6 +179,10 @@
         <span class="ico">🔧</span> Cài đặt</a>
       <a href="/status"   class="{{ 'active' if nav=='status' else '' }}">
         <span class="ico">🩺</span> Tình trạng</a>
+      {% if is_admin(request) %}
+      <a href="/admin/" class="{{ 'active' if nav=='admin' else '' }}">
+        <span class="ico">🛡️</span> Quản trị</a>
+      {% endif %}
     </nav>
     <div class="sidebar-foot">
       <form method="post" action="/logout" style="margin:0;">
@@ -172,7 +194,15 @@
   <div class="main">
     <div class="topbar">
       <div>{% block topbar_title %}{% endblock %}</div>
-      <div>{% block topbar_right %}{% endblock %}</div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        {% block topbar_right %}{% endblock %}
+        {# Số dư credit — luôn hiện (ngoài block để trang con không nuốt), H6. #}
+        {% set _bal = so_du_credit(request) %}
+        {% if _bal is not none %}
+          <a href="/settings" class="badge badge-ok" style="text-decoration:none;"
+             title="Số dư credit">💳 {{ _bal }} credit</a>
+        {% endif %}
+      </div>
     </div>
     <div class="content">
       {% block content %}{% endblock %}

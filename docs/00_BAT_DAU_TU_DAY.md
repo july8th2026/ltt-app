@@ -32,24 +32,37 @@ trạng thái sai còn tệ hơn không có bảng nào.
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Vỏ nền tảng nhiều app + hợp đồng app | ✅ xong, 19 test chốt |
-| Đăng nhập một tài khoản admin (từ biến môi trường) | ✅ xong |
+| Vỏ nền tảng nhiều app + hợp đồng app | ✅ xong, có test chốt |
+| PostgreSQL + di trú schema (Alembic) | ✅ xong (H1) |
+| Nhiều người dùng: đăng ký, xác thực email (Resend), phân quyền app | ✅ xong (H1) |
+| Hàng đợi job + worker tiến trình riêng | ✅ xong (H2) |
+| Sổ credit (giữ chỗ → quyết toán → hoàn) | ✅ xong (H3) |
+| Trang admin (sqladmin) | ✅ xong (H3-admin) |
+| Cloudflare Tunnel LIVE `app.lttstudios.com` + Turnstile | ✅ xong (H0.1) |
+| **Cốt lõi vận hành: catalog công khai + SSO + login return-to** | ✅ xong (H6) |
+| Tool thật đầu tiên — `thumbnail` (Gemini Image, tính credit) | ✅ xong (H5) |
 | App socialbot (Facebook + TikTok) | ⏸️ **đóng băng** — giữ chạy, không phát triển thêm |
 | App demo (nghiệm thu hạ tầng, tốn 0 đồng) | ✅ xong |
-| Bộ cài 4 script + cập nhật + rollback | ✅ xong |
+| Bộ cài 4 script + cập nhật + rollback + lịch backup | ✅ xong |
 | Kho mã nguồn trong git | ✅ từ 2026-07-31 |
-| Bộ test | ✅ 1.424 pass, 1 skip |
+| Bộ test | ✅ 1.530 pass, 1 skip |
 
-### Chưa có — đây là toàn bộ việc phía trước
+### Mô hình vận hành (Q30 / H6)
+
+1 host `app.lttstudios.com`, **path-based**: mỗi app ở `/<slug>`. Trang chủ `/`
+là **catalog công khai** — khách chưa đăng nhập xem được các tool (manifest
+`public=True`), bấm vào thì bị đưa về `/login?next=/<slug>` rồi quay lại đúng
+chỗ. **1 tài khoản dùng cho mọi app** (SSO tự nhiên: cùng host, 1 cookie phiên).
+App `public=False` (demo, socialbot) ẩn khỏi catalog khách, chỉ vào qua sidebar
+sau khi đăng nhập + phân quyền.
+
+### Chưa có — việc phía trước
 
 | Hạng mục | Trạng thái |
 |---|---|
-| PostgreSQL + di trú schema | ❌ chưa |
-| Nhiều người dùng (đăng ký, xác thực email, phân quyền) | ❌ chưa |
-| Hàng đợi job + worker tiến trình riêng | ❌ chưa |
-| Sổ credit (giữ chỗ → quyết toán → hoàn) | ❌ chưa |
-| Cloudflare Tunnel trên máy chủ | ❌ chưa dựng |
-| Tool thật đầu tiên (`thumbnail_api`) | ❌ chưa |
+| Thanh toán / nạp credit (cổng chưa chốt) | ❌ chưa (H7) |
+| Lưu file lớn qua R2 (khi chạm trần Cloudflare) | ❌ chưa (H8) |
+| Thêm tool mới | ⏭️ mở (H9) |
 
 Chi tiết từng bước: `KE_HOACH_TRIEN_KHAI.md`.
 
@@ -64,8 +77,9 @@ LTTSTUDIOSAPP/
 │   └── storage.py       lớp bọc lưu file (đổi sang R2 chỉ sửa ở đây)
 │
 ├── apps/                MỖI APP MỘT THƯ MỤC
-│   ├── socialbot/       Facebook + TikTok — đóng băng
-│   └── demo/            app mẫu, dùng nghiệm thu hạ tầng
+│   ├── socialbot/       Facebook + TikTok — đóng băng (public=False)
+│   ├── thumbnail/       Tạo thumbnail YouTube (Gemini Image) — tool thật
+│   └── demo/            app mẫu, dùng nghiệm thu hạ tầng (public=False)
 │
 ├── server/              vỏ web: đăng nhập, trang chủ, route dùng chung
 ├── core/                nghiệp vụ socialbot (15.489 dòng) — đóng băng
@@ -117,10 +131,9 @@ python -m pytest -q                    # phải xanh hết trước khi làm gì
 python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 ```
 
-Mở `http://127.0.0.1:8100` — trang chủ phải liệt kê **2 app**.
-
-Vào `/demo`, gõ gì đó rồi bấm chạy. Ra kết quả kèm số credit nghĩa là hợp đồng
-app đang hoạt động đúng.
+Mở `http://127.0.0.1:8100` — chưa đăng nhập sẽ thấy **catalog công khai** (chỉ
+app `public=True`). Đăng nhập rồi vào `/demo`, gõ gì đó rồi bấm chạy. Ra kết quả
+kèm số credit nghĩa là hợp đồng app đang hoạt động đúng.
 
 > **Cổng 8100 chứ không phải 8000.** Máy này còn chạy một hệ thống nội bộ khác
 > đã chiếm 8000 từ trước (`D:\BOT GEMINI`). Dùng 8000 sẽ giành cổng với dịch vụ

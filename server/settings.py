@@ -47,11 +47,13 @@ def load_server_settings(env: dict | None = None) -> ServerSettings:
         # development still means "nobody can log in" rather than a known
         # default credential shipping in the codebase.
     else:
+        # Q29: admin-env chi la BREAK-GLASS, khong con bat buoc. Admin chinh la
+        # user role=admin trong CSDL (H3-admin, tools/create_admin.py). O
+        # production LTT_ADMIN_PASSWORD_HASH thuong RONG => admin-env vo hieu;
+        # dat lai qua env khi can cuu ho. Chi SESSION_SECRET la bat buoc o day.
         missing = [
             name for name, value in (
                 ("LTT_SESSION_SECRET", session_secret),
-                ("LTT_ADMIN_USERNAME", admin_username),
-                ("LTT_ADMIN_PASSWORD_HASH", admin_password_hash),
             ) if not value
         ]
         if missing:

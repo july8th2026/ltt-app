@@ -68,6 +68,21 @@ def test_security_headers_present_on_pages(tmp_path):
     assert "form-action 'self'" in csp
 
 
+def test_dynamic_responses_are_not_cacheable(tmp_path):
+    """Response ĐỘNG (ngoài /static/) phải `no-store` để CDN/proxy không cache.
+
+    Khoá lỗi thật ở H5: ảnh output per-user phục vụ ở URL `.png` bị Cloudflare
+    cache theo đuôi file rồi trả cho người KHÔNG đăng nhập (bỏ qua auth ở origin).
+    """
+    c = _client(tmp_path)
+    assert c.get("/login").headers.get("Cache-Control") == "no-store"
+    assert c.get("/health/ready").headers.get("Cache-Control") == "no-store"
+    # /static/ là asset công khai — KHÔNG bị ép no-store (được phép cache).
+    st = c.get("/static/htmx.min.js")
+    if st.status_code == 200:
+        assert st.headers.get("Cache-Control") != "no-store"
+
+
 def test_hsts_sent_outside_development(tmp_path):
     resp = _client(tmp_path, "production").get("/health/live")
     assert "max-age=" in resp.headers["Strict-Transport-Security"]

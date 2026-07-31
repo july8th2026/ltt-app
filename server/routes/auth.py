@@ -7,7 +7,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.password_hashing import verify_password
 from server.auth.rate_limit import RateLimiter
-from server.auth.session import current_user, current_sid, log_in, log_in_db, log_out
+from server.auth.session import (client_ip, current_identity_optional, log_in,
+                                 log_in_db, log_out, safe_next)
 from server.deps import mo_db_optional
 from server.templating import templates
 
@@ -28,17 +29,24 @@ def _limiter(request: Request) -> RateLimiter:
 
 
 def _client_key(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
+    # IP THẬT sau Cloudflare Tunnel (CF-Connecting-IP), không phải 127.0.0.1 của
+    # loopback — nếu không rate-limit sẽ khoá nhầm toàn hệ thống. Xem client_ip.
+    return client_ip(request)
 
 
 @router.get("/login", response_class=HTMLResponse)
-def login_form(request: Request):
+def login_form(request: Request, next: str = ""):
     # Đã đăng nhập bằng đường nào (admin-env hoặc phiên CSDL) đều khỏi hiện form.
-    if current_user(request) or current_sid(request):
-        return RedirectResponse("/", status_code=303)
+    # PHẢI xác thực đồng nhất với require_login (current_identity_optional có
+    # RESOLVE sid với CSDL), không chỉ kiểm sự hiện diện của sid. Nếu chỉ kiểm
+    # hiện diện: phiên có sid nhưng đã bị thu hồi/hết hạn sẽ khiến /login đá sang
+    # trang trong khi require_login đá ngược về /login → vòng lặp vô tận
+    # (ERR_TOO_MANY_REDIRECTS). `next` (H6): quay lại đúng trang, lọc open-redirect.
+    if current_identity_optional(request):
+        return RedirectResponse(safe_next(next), status_code=303)
     token = issue_csrf_token(request)
     return templates.TemplateResponse(
-        request, "login.html", {"csrf_token": token, "error": None},
+        request, "login.html", {"csrf_token": token, "error": None, "next": next},
     )
 
 
@@ -48,20 +56,21 @@ def login_submit(
     username: str = Form(...),
     password: str = Form(...),
     csrf_token: str = Form(...),
+    next: str = Form(""),
 ):
     settings = request.app.state.server_settings
 
     if not verify_csrf_token(request, csrf_token):
         return templates.TemplateResponse(
             request, "login.html",
-            {"csrf_token": issue_csrf_token(request), "error": "Phiên đăng nhập đã hết hạn, thử lại."},
+            {"csrf_token": issue_csrf_token(request), "error": "Phiên đăng nhập đã hết hạn, thử lại.", "next": next},
             status_code=400,
         )
 
     if not _limiter(request).allow(_client_key(request)):
         return templates.TemplateResponse(
             request, "login.html",
-            {"csrf_token": issue_csrf_token(request), "error": "Quá nhiều lần thử — vui lòng đợi 1 phút."},
+            {"csrf_token": issue_csrf_token(request), "error": "Quá nhiều lần thử — vui lòng đợi 1 phút.", "next": next},
             status_code=429,
         )
 
@@ -79,7 +88,7 @@ def login_submit(
                 )
                 _limiter(request).reset(_client_key(request))
                 log_in_db(request, sid)
-                return RedirectResponse("/", status_code=303)
+                return RedirectResponse(safe_next(next), status_code=303)
 
     # Đường 2 — admin-từ-biến-môi-trường (đường lui, luôn còn kể cả khi DB hỏng).
     valid = (
@@ -90,13 +99,13 @@ def login_submit(
     if not valid:
         return templates.TemplateResponse(
             request, "login.html",
-            {"csrf_token": issue_csrf_token(request), "error": "Sai tên đăng nhập hoặc mật khẩu."},
+            {"csrf_token": issue_csrf_token(request), "error": "Sai tên đăng nhập hoặc mật khẩu.", "next": next},
             status_code=401,
         )
 
     _limiter(request).reset(_client_key(request))
     log_in(request, username)
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(safe_next(next), status_code=303)
 
 
 @router.post("/logout")

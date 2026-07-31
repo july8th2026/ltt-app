@@ -1,36 +1,22 @@
-{% extends "base.html" %}
+{% extends "base.html" if authed else "base_public.html" %}
 {% block title %}LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>Ứng dụng</strong>{% endblock %}
 {% block topbar_right %}
-  <span class="dim" style="font-size:12px;">{{ apps|length }} app đã nạp</span>
+  {% if authed %}<span class="dim" style="font-size:12px;">{{ apps|length }} app</span>{% endif %}
 {% endblock %}
 {% block content %}
 
-  {% if blockers %}
-    <div class="alert alert-warn">
-      <strong style="color:var(--warn);">{{ blockers|length }} việc đang chặn bot đăng bài</strong>
-      {% for b in blockers %}
-        <div style="margin-top:6px;">
-          • <strong>{{ b.check }}</strong>{% if b.fix %} — {{ b.fix }}{% endif %}
-        </div>
-      {% endfor %}
-      <p class="dim" style="font-size:11px; margin:8px 0 0;">
-        Xem chi tiết ở <a href="/status">Tình trạng</a>.
-      </p>
-    </div>
+  {% if not authed %}
+    <h1>Công cụ AI theo credit</h1>
+    <p class="page-sub">Chọn một công cụ để bắt đầu. Đăng nhập một lần — dùng mọi công cụ.</p>
   {% endif %}
 
-  {% if broken %}
+  {% if authed and broken %}
     <div class="alert alert-err">
       <strong style="color:var(--err);">{{ broken|length }} app nạp lỗi</strong>
-      <p class="muted" style="margin:6px 0 0;">
-        Nền tảng vẫn chạy để bạn xem được lý do — một app lỗi không làm sập
-        cả hệ thống.
-      </p>
       {% for item in broken %}
         <div class="mono" style="margin-top:8px; font-size:12px;">
-          <span style="color:var(--err);">{{ item.slug }}</span> — {{ item.error }}
-        </div>
+          <span style="color:var(--err);">{{ item.slug }}</span> — {{ item.error }}</div>
       {% endfor %}
     </div>
   {% endif %}
@@ -42,39 +28,39 @@
         <div class="card-accent" style="background:{{ m.accent }};"></div>
         <h2 style="margin-bottom:6px;">
           {{ m.icon }}&nbsp; {{ m.display_name }}
-          {% if not m.enabled %}
-            <span class="badge badge-warn" style="margin-left:6px;">đang xây</span>
-          {% endif %}
+          {% if not m.enabled %}<span class="badge badge-warn" style="margin-left:6px;">đang xây</span>{% endif %}
+          {% if authed and app_setup.get(m.slug) %}<span class="badge badge-warn" style="margin-left:6px;">⚙ cần thiết lập</span>{% endif %}
         </h2>
         <p class="muted" style="margin:0 0 12px;">{{ m.summary }}</p>
-
+        {% if authed and app_setup.get(m.slug) %}
+          <div class="alert alert-warn" style="padding:8px 12px; margin:0 0 12px;">
+            <span class="dim" style="font-size:12px;">Cần thiết lập:
+              {{ app_setup[m.slug]|map(attribute='check')|join(', ') }} —
+              <a href="/status">chi tiết</a>.</span>
+          </div>
+        {% endif %}
         <div class="dim mono" style="font-size:11px; margin-bottom:10px;">
           {{ m.route_prefix }}
           {%- if m.requires %} · cần: {{ m.requires|join(', ') }}{% endif %}
           {%- if m.credit_cost %} · có tính credit{% endif %}
         </div>
-
         {% if m.enabled %}
-          <a href="{{ m.route_prefix }}" class="btn-ghost"
-             style="display:inline-block; text-decoration:none;">Mở &nbsp;→</a>
+          {% if authed %}
+            <a href="{{ m.route_prefix }}" class="btn btn-ghost" style="text-decoration:none;">Mở &nbsp;→</a>
+          {% else %}
+            <a href="/login?next={{ m.route_prefix }}" class="btn" style="text-decoration:none;">Đăng nhập để dùng</a>
+          {% endif %}
         {% else %}
           <button disabled>Chưa dùng được</button>
         {% endif %}
-
-        {% if m.notes %}
-          <p class="dim" style="font-size:11px; margin:10px 0 0;">{{ m.notes }}</p>
-        {% endif %}
+        {% if authed and m.notes %}<p class="dim" style="font-size:11px; margin:10px 0 0;">{{ m.notes }}</p>{% endif %}
       </div>
     {% endfor %}
   </div>
 
   {% if not apps %}
-    <div class="card">
-      <p class="dim" style="margin:0;">
-        Chưa có app nào. Thêm một thư mục vào <span class="mono">apps/</span>
-        kèm <span class="mono">manifest.py</span> — xem
-        <span class="mono">docs/03_THEM_APP_MOI.md</span>.
-      </p>
+    <div class="card" style="margin-top:14px;">
+      <p class="dim" style="margin:0;">Chưa có công cụ nào khả dụng.</p>
     </div>
   {% endif %}
 {% endblock %}

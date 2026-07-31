@@ -28,6 +28,9 @@ EXCLUDED_DIRS = {
     ".git", ".pytest_cache", ".venv", "venv", "__pycache__", "build", "dist",
     "data", "secrets", "logs", "profiles", "temp_videos", "temp_videos_test",
     "_recovery", "node_modules", ".claude",
+    # Snapshot/log tam cua Playwright MCP - khong bao gio thuoc release, va chua
+    # nhieu chuoi hex lam trip may quet secret. Chi la rac dieu khien trinh duyet.
+    ".playwright-mcp",
 }
 
 EXCLUDED_DIR_PREFIXES = (".backup_",)

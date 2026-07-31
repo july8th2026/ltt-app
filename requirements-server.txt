@@ -23,3 +23,8 @@ httpx>=0.28.1,<1.0
 sqlalchemy>=2.0.49,<3.0
 alembic>=1.18.4,<2.0
 psycopg[binary]>=3.3.4,<4.0
+
+# Trang quan tri (H3-admin, Q15). sqladmin sinh trang xem/sua tu model
+# SQLAlchemy; keo theo WTForms cho form. Ban 0.20.x tuong thich Starlette 1.3.
+sqladmin>=0.20.1,<0.21
+wtforms>=3.1.2,<4.0

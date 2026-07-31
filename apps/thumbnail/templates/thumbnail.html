@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block content %}
+
+  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
+
+  <div class="card">
+    <h2>Tạo thumbnail mới</h2>
+    <p class="muted" style="margin:0 0 12px;">
+      Nhập chủ đề, chọn tỉ lệ và số lượng. Mỗi ảnh tốn
+      {{ app.credit_cost({'count': 1}) }} credit. Job chạy nền — xem tiến độ ở
+      <a href="/jobs">Việc của tôi</a>, ảnh xong sẽ hiện bên dưới.
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/queue">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>Chủ đề / mô tả (bắt buộc)</label>
+          <input type="text" name="topic" required
+                 placeholder="vd: Hướng dẫn đầu tư chứng khoán cho người mới">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Tiêu đề trên ảnh (tuỳ chọn)</label>
+          <input type="text" name="title" placeholder="vd: KIẾM TIỀN 2026">
+        </div>
+        <div class="field">
+          <label>Tỉ lệ</label>
+          <select name="aspect_ratio">
+            {% for a in aspects %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Số ảnh (1–4)</label>
+          <input type="number" name="count" value="1" min="1" max="4">
+        </div>
+      </div>
+      <button type="submit">🖼️ Tạo thumbnail</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Ảnh của tôi</h2>
+    {% if not jobs %}
+      <p class="dim" style="margin:0;">Chưa có ảnh nào. Tạo cái đầu tiên ở trên.</p>
+    {% else %}
+      {% for j in jobs %}
+        <div style="border-top:1px solid var(--line); padding:12px 0;">
+          <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
+            {{ j.id[:8] }} ·
+            {% if j.status == 'done' %}<span class="badge badge-ok">xong</span>
+            {% elif j.status == 'error' %}<span class="badge badge-err">lỗi</span>
+            {% else %}<span class="badge badge-warn">{{ j.status }} {{ j.progress }}%</span>{% endif %}
+          </div>
+          {% if j.status == 'error' and j.error %}
+            <p class="dim" style="font-size:12px;">{{ j.error }}</p>
+          {% endif %}
+          {% if j.image_keys %}
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              {% for k in j.image_keys %}
+                <a href="{{ app.route_prefix }}/image/{{ k }}" target="_blank">
+                  <img src="{{ app.route_prefix }}/image/{{ k }}" alt="thumbnail"
+                       style="max-width:260px; border-radius:8px; border:1px solid var(--line);">
+                </a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+{% endblock %}

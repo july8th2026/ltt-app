@@ -47,5 +47,6 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
 
     enabled=True,
+    public=False,   # app test hạ tầng — ẩn khỏi catalog công khai (H6/Q30)
     notes="Giữ lại vĩnh viễn. Mỗi lần sửa hạ tầng thì test bằng app này trước.",
 )

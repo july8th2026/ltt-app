@@ -151,6 +151,17 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "same-origin"
+
+        # KHÔNG để proxy/CDN (Cloudflare) cache BẤT KỲ response động/riêng-tư
+        # nào — chỉ `/static/` (asset công khai) được phép cache.
+        #
+        # Trước đây chỉ chặn text/html. Hậu quả thật (phát hiện ở H5): ảnh output
+        # per-user phục vụ ở URL đuôi `.png` bị Cloudflare cache theo phần mở
+        # rộng (max-age mặc định) rồi TRẢ CHO NGƯỜI KHÔNG ĐĂNG NHẬP — origin đã
+        # chặn (303) nhưng edge phục vụ bản cache, bỏ qua auth. Mặc định no-store
+        # cho mọi thứ ngoài /static/ chặn cả lớp lỗi này.
+        if not request.url.path.startswith("/static/"):
+            response.headers["Cache-Control"] = "no-store"
         # HSTS only outside development — development runs plain HTTP, and
         # a browser that caches HSTS for localhost is painful to undo.
         if server_settings.environment is not Environment.DEVELOPMENT:
@@ -188,6 +199,18 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # nó đọc apps/*/manifest.py. Thêm app = thêm folder, không sửa file này.
     from platform_core.registry import mount_all
     app.state.loaded_apps = mount_all(app)
+
+    # Trang quan tri (H3-admin, Q15) o /admin. Chi admin vao duoc (AdminAuth).
+    # Bo qua an toan khi thieu sqladmin (moi truong test khong cai) HOAC chua co
+    # CSDL (nhieu test khong dung PostgreSQL) - admin chi co nghia khi co ca hai.
+    app.state.admin_ready = False
+    try:
+        from server.admin import setup_admin
+        app.state.admin_ready = setup_admin(
+            app, session_secret=server_settings.session_secret)
+    except Exception:
+        logging.getLogger(__name__).info(
+            "Bo qua trang quan tri (sqladmin chua san sang)")
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException):

@@ -23,18 +23,30 @@
 
 ```
 H0    Dọn nền                      ✅ 2026-07-31
-H0.1  Kiểm chứng đường ra Internet  ⚠️ CHẶN việc dựng Tunnel
+H0.1  Đưa lên mạng qua Cloudflare   ✅ 2026-07-31 (app.lttstudios.com sống)
      │
 H1  Người dùng + PostgreSQL   ─┐
-H2  Hàng đợi job              ─┼─►  H4  Nghiệm thu bằng apps/demo
+H2  Hàng đợi job              ─┼─►  H4  Nghiệm thu bằng apps/demo   ✅
 H3  Sổ credit                 ─┘         │
                                          ▼
-                              H5  Tool thật đầu tiên (thumbnail_api)
+                              H5  Tool thật đầu tiên (thumbnail)    ✅
+                                         │
+                              H6  Cốt lõi vận hành nền tảng          ✅
+                                  (catalog công khai + SSO UX + login return-to)
+                                         │
+                              H7  Củng cố MVP (Hardening)  ◄─ đang làm (Wave 0 ✅)
                                          │
                        ┌─────────────────┼─────────────────┐
                        ▼                 ▼                 ▼
-              H6 Thanh toán    H7 File lớn (R2)    H8 Thêm tool
+              H8 Thanh toán    H9 File lớn (R2)    H10 Thêm tool
 ```
+
+> **Chèn H6 (2026-07-31):** cốt lõi vận hành (catalog + đăng nhập một-lần cho mọi
+> app) là điều kiện để KHÁCH thật dùng được nền tảng, nên đứng TRƯỚC thanh toán.
+>
+> **Chèn H7 (2026-07-31):** audit toàn diện (`docs/AUDIT_MVP_2026-07-31.md`) tìm ra
+> các lỗ hổng P0 tiền/bảo mật/khôi phục → **Củng cố MVP** phải xong TRƯỚC khi mở
+> khách trả tiền. Dời tiếp: Thanh toán→**H8**, R2→**H9**, Thêm tool→**H10**.
 
 H1 → H2 → H3 làm theo thứ tự (job cần chủ sở hữu; credit cần job). Cả ba phải
 xong mới nghiệm thu được ở H4.
@@ -66,10 +78,22 @@ Chi tiết và lý do tổng số test đổi từ 1.424 → 1.423: xem `NHAT_KY
 
 ---
 
-## H0.1 — Đưa lên mạng qua Cloudflare (Q27) ⏳ đang làm
+## H0.1 — Đưa lên mạng qua Cloudflare (Q27) ✅ XONG 2026-07-31
 
 **Mục tiêu:** `https://app.lttstudios.com` chạy thật qua Cloudflare Tunnel, giữ
 trang chủ `lttstudios.com` ở inet.vn OnePanel.
+
+**Đã hoàn tất + nghiệm thu thật (xem NHAT_KY):** thêm zone (Free), dọn DNS (@ +
+www → 103.57.220.210 DNS-only, đã kiểm origin phục vụ trang chủ trực tiếp), đổi
+NS sang Cloudflare, zone Active. Cài `setup/2` (app :8100), backup Q28 sang
+`D:\LTTBackups`. Dựng Tunnel: PHẢI sửa `setup/3` — `cloudflared service install`
+2026.x tạo dịch vụ ImagePath trần (không kết nối) → cài lại **qua NSSM**
+(`--config ... tunnel run`). Tunnel ổn định (8/8 curl 200 + active connection).
+Đăng nhập admin → control plane OK. `setup/4` nghiệm thu ĐẠT. Đặt mật khẩu admin.
+
+**Nợ để lại (cleanup, không chặn):** control plane còn branding socialbot cũ
+("đăng bài Facebook & TikTok") + socialbot route ở đường gốc; lỗi console
+Cloudflare Insights beacon (CSP chặn — nên tắt auto-inject); favicon 404.
 
 **Quy trình đầy đủ (chia rõ việc bạn/tôi): `docs/05_LEN_MANG_CLOUDFLARE.md`.**
 
@@ -82,13 +106,13 @@ riêng là **Enterprise-only** (tài liệu chính thức Cloudflare). Nên đ�
 
 ### Các bước (chi tiết ở `docs/05`)
 
-- [ ] 🧑 Add site `lttstudios.com` vào Cloudflare (Free), kiểm đủ bản ghi, `@`/
+- [x] 🧑 Add site `lttstudios.com` vào Cloudflare (Free), kiểm đủ bản ghi, `@`/
       `www` để DNS-only; 🤖 rà danh sách trước khi đổi NS
-- [ ] 🧑 Đổi nameserver ở nhà đăng ký tên miền sang 2 NS Cloudflare
-- [ ] ⏳ Đợi zone Active; 🤖 kiểm NS + trang chủ vẫn sống
-- [ ] 🧑 Cài `C:\LTTPlatform` (`setup/2`, Administrator); 🤖 nghiệm thu cục bộ
-- [ ] 🧑 Chạy `setup/3-cloudflare.ps1`, đăng nhập chọn zone `lttstudios.com`
-- [ ] 🤖 Nghiệm thu `https://app.lttstudios.com` từ mạng ngoài + browser
+- [x] 🧑 Đổi nameserver ở nhà đăng ký tên miền sang 2 NS Cloudflare
+- [x] ⏳ Đợi zone Active; 🤖 kiểm NS + trang chủ vẫn sống
+- [x] 🧑 Cài `C:\LTTPlatform` (`setup/2`, Administrator); 🤖 nghiệm thu cục bộ
+- [x] 🧑 Chạy `setup/3-cloudflare.ps1` (sửa dùng NSSM), đăng nhập chọn zone `lttstudios.com`
+- [x] 🤖 Nghiệm thu `https://app.lttstudios.com` từ mạng ngoài + browser
 
 **Tiêu chí hoàn thành:** `https://app.lttstudios.com/health/ready` trả
 `{"status":"ready","environment":"production"}` từ **mạng ngoài** (không phải
@@ -198,13 +222,21 @@ này thì credit dùng thử **sẽ** bị hút cạn bằng tài khoản ảo.
 - [x] Quên mật khẩu / đặt lại mật khẩu (đặt lại **thu hồi mọi phiên**)
 - [x] `tests/test_65_dang_ky.py` — 8 test
 
-**Phần cần khoá thật của người dùng: để lại đúng cho người có khoá.**
+**Phần khoá thật: ĐÃ XONG 2026-07-31 (điều khiển trình duyệt).**
 
-- [ ] **Người dùng:** tạo tài khoản Resend, đặt `RESEND_API_KEY` + `LTT_MAIL_FROM`
-      vào `secrets/app.env`, thêm 3 bản ghi DNS (SPF, DKIM, DMARC) tại inet.vn
-      → khi đó thư xác thực tới hộp thư thật (giờ đang ghi vào log qua ConsoleMailer)
-- [ ] **Người dùng:** tạo widget Turnstile, đặt `TURNSTILE_SITE_KEY` +
-      `TURNSTILE_SECRET_KEY` → khi đó form đăng ký có ô chống bot thật
+- [x] **Resend:** tạo tài khoản, thêm domain **`mail.lttstudios.com`** (subdomain
+      riêng, không đụng SPF trang chủ). DNS (DKIM/SPF/MX) áp qua **Cloudflare
+      Domain Connect** (one-time, KHÔNG cấp Resend quyền thường trực) → domain
+      **verified**. API key **Sending access** (least-privilege). Đặt
+      `RESEND_API_KEY` + `LTT_MAIL_FROM="LTT AI Studio <no-reply@mail.lttstudios.com>"`
+      vào `secrets/app.env` → mailer chuyển sang **ResendMailer** (mail thật).
+- [x] **Turnstile:** tạo widget "LTT app" cho `app.lttstudios.com` (Managed);
+      đặt `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` → form đăng ký có ô chống
+      bot thật (đã kiểm: `/register` render `cf-turnstile` + script). CSP đã cho
+      phép `challenges.cloudflare.com` từ H1.4.
+
+→ **Đăng ký cho khách thật giờ đã đủ điều kiện chạy** (Turnstile + mail xác thực
++ credit dùng thử sau verify từ H3-admin).
 
 **Nối ở H3, chưa làm được bây giờ:**
 
@@ -325,12 +357,46 @@ phép sai nhất.
 - [x] Nghiệm thu sổ thật trên PostgreSQL: `topup +100 → hold -1 → settle +0`,
       số dư 99, dấu vết append-only đầy đủ
 
-### H3-admin — Trang quản trị credit/quyền (sqladmin, Q15) ⏳ CHƯA
+### H3-admin — Trang quản trị credit/quyền (sqladmin, Q15) ✅ XONG 2026-07-31
 
 Gom mọi trang admin vào một mốc: xem/sửa user, xem sổ credit, cấp credit tay,
 đặt quyền app (H1.4 hiện đặt bằng hàm), **tạo admin trong CSDL** → đó cũng là
 lúc gỡ đường admin-env (H1.2). Tách riêng vì cả cụm dùng chung sqladmin và đều
 là mặt admin, không phải mặt khách.
+
+**Đã làm (MVP, nghiệm thu browser thật):**
+- [x] Thêm `sqladmin>=0.20.1,<0.21` + `wtforms` (Q17 cận trên); tương thích
+      Starlette 1.3 (đã kiểm dry-run, không hạ version)
+- [x] `server/admin.py`: `AdminAuth` chỉ cho admin (dùng chung phiên nền tảng
+      qua `session_secret`; không admin → 303 /login), gắn ở `/admin`
+- [x] ModelView: User (sửa role/is_active/is_verified, KHÔNG sửa email/hash,
+      không xoá), **CreditEntry read-only (append-only)**, AppAccess (CRUD),
+      Job (read-only), Session (xoá = thu hồi), PlatformInfo (read-only)
+- [x] `GrantCreditView` `/admin/grant-credit`: cấp/điều chỉnh credit tay qua
+      `credit.cap_tay` (ghi bút toán `grant` mới, không sửa sổ cũ)
+- [x] `create_app` gắn admin có guard: thiếu sqladmin hoặc chưa có CSDL → bỏ qua
+      an toàn (không làm vỡ ~1500 test chạy bằng system python/không DB)
+- [x] Nghiệm thu browser: đăng nhập admin → /admin hiện 7 view, đọc PostgreSQL
+      thật OK; chưa đăng nhập → 303 /login. Full suite: 1512 pass (+3 test sửa
+      theo thay đổi: wording home + loại `.playwright-mcp` khỏi release scan).
+
+**Đã làm thêm (2026-07-31, đợt 2):**
+- [x] **Tạo admin TRONG CSDL**: `tools/create_admin.py` (tạo/nâng user role=admin,
+      băm mật khẩu đúng, idempotent). Đã tạo `admin@lttstudios.com` và **nghiệm thu
+      qua production thật** (curl ép Cloudflare edge: login email → 303, /admin → 200).
+- [x] **Cấp credit dùng thử sau xác thực email**: `/verify-email` gọi
+      `credit.cap_tay` MỘT LẦN đúng lần verify đầu (idempotent theo chuyển trạng
+      thái); lượng qua `LTT_TRIAL_CREDIT` (mặc định 20).
+- [x] Test `tests/test_70_admin_h3.py`: trial-credit idempotent + /admin đá ẩn
+      danh về /login + chỉ role=admin vào /admin (user thường bị chặn). Full suite
+      **1518 pass, 1 skip**.
+
+**admin-env — đã chốt Q29 (2026-07-31):** giữ code làm **break-glass**, **VÔ HIỆU
+ở production**. Đã xoá `LTT_ADMIN_PASSWORD_HASH` khỏi `secrets/app.env` + nạp lại
+env dịch vụ; `settings.py` bỏ hash/username khỏi danh sách secret bắt buộc (chỉ
+còn `LTT_SESSION_SECRET`). Nghiệm thu qua Cloudflare edge: admin-env `admin/...`
+→ **401**; DB admin `admin@lttstudios.com` → **303 + /admin 200**. Full suite
+1518 pass. Bật lại break-glass = đặt lại env hash khi cứu hộ.
 
 **Tham khảo:** `app/modules/seedance_video/cost.py` bên `D:\BOT GEMINI` có mô
 hình giá token thật + markup + VND — đọc khi port `seedance_video` (H8), không
@@ -371,16 +437,36 @@ chạy-lâu hoặc thuộc observability, không chặn H5.
 
 ---
 
-## H5 — Tool thật đầu tiên: `thumbnail_api`
+## H5 — Tool thật đầu tiên: `thumbnail_api` ✅ XONG 2026-07-31 (chạy thật, trừ credit đúng)
 
 **Mục tiêu:** một tool có người trả tiền, đi qua đúng hợp đồng app.
 
-- [ ] Copy `app/modules/thumbnail_api/` từ `D:\BOT GEMINI` sang — theo danh
-      sách "phải mang theo" ở `KHAO_SAT_BOT_GEMINI.md` mục 3
-- [ ] Dựng lại thành `apps/thumbnail/` theo hợp đồng app
-- [ ] Viết `credit_cost` cho nó
-- [ ] Khoá API của nhà cung cấp nằm phía máy chủ, **không bao giờ xuống trình
-      duyệt**
+- [x] Tham chiếu `D:/BOT GEMINI/app/modules/thumbnail_api` (chỉ đọc) — lấy đúng
+      cách gọi Gemini Image API, BỎ api-pool/cascade/prompt-fragment của họ (Q3)
+- [x] Dựng `apps/thumbnail/` theo hợp đồng: manifest + jobs (httpx sync gọi
+      `gemini-2.5-flash-image`, lưu ảnh qua storage) + routes + templates
+- [x] `credit_cost` = số ảnh × 5 (là hàm; TODO: quyết toán theo token thật)
+- [x] Khoá API đọc `GEMINI_API_KEY` phía máy chủ, che khoá ở mọi thông báo lỗi,
+      KHÔNG xuống trình duyệt
+- [x] Test `tests/test_71_thumbnail.py` (5, Gemini mock): thiếu topic/khoá → ném;
+      tạo ảnh → lưu storage; lỗi Gemini → ném + che khoá. Full suite 1523 pass.
+- [x] Nghiệm thu render: `/thumbnail` hiện form + gallery, app tự lên trang chủ/
+      sidebar (không sửa giao diện nền tảng) — kiểm qua Cloudflare edge.
+- [x] **Chạy thật (nghiệm thu):** `GEMINI_API_KEY` đã nạp; tạo thumbnail thật →
+      ảnh 1.8 MB PNG, số dư 50→45 (trừ đúng 5), ảnh phục vụ có kiểm sở hữu.
+- [x] **Vá lỗi bảo mật kèm:** ảnh .png bị Cloudflare cache → rò cho người chưa
+      đăng nhập. Fix: `no-store` cho mọi response ngoài `/static/` + purge +
+      test khoá. Xem NHAT_KY.
+
+**Hai lỗ hổng hợp đồng H5 lộ ra & đã lấp (đây là "phép thử thật của hợp đồng"):**
+1. **Template app:** `server/templating.py` nay tìm cả `apps/*/templates/`
+   (ChoiceLoader) → app tự mang UI, không đụng `server/templates/`.
+2. **File output tải về:** app tự phục vụ qua route `/image/{key}` đọc storage +
+   kiểm sở hữu theo key (download_token của storage không dùng được qua ranh giới
+   worker→web vì giữ trong RAM mỗi tiến trình). Ghi vào `docs/03`.
+
+**KHÔNG sửa `platform_core/`; chỉ sửa `server/templating.py`** (bổ sung hợp đồng
+có chủ đích, đã ghi tài liệu) — đúng tinh thần Q3/hợp đồng app.
 
 **Tiêu chí hoàn thành**
 - **Không sửa một dòng nào** trong `platform_core/` hay `server/`. Nếu buộc
@@ -392,7 +478,156 @@ chạy-lâu hoặc thuộc observability, không chặn H5.
 
 ---
 
-## H6 — Thanh toán *(chưa chốt cách làm)*
+## H6 — Cốt lõi vận hành nền tảng (catalog công khai + SSO UX) ✅ XONG 2026-07-31
+
+**Quyết định nền:** Q30. **Mục tiêu:** khách vào `app.lttstudios.com` thấy trang
+chủ công khai liệt kê app; bấm một app → (nếu chưa đăng nhập) đăng nhập rồi quay
+lại đúng app; một tài khoản dùng cho mọi app (SSO tự nhiên vì cùng một host).
+
+### Sơ đồ vận hành
+
+```
+Khách ─► app.lttstudios.com/  (CATALOG CÔNG KHAI: box app + [Đăng nhập][Đăng ký])
+              │ bấm "Dùng /thumbnail"
+       ┌──────┴───────┐
+   đã đăng nhập?     chưa
+       │ có            │
+       ▼               ▼
+  mở /thumbnail   /login?next=/thumbnail ─► đăng nhập (Turnstile+mail) ─► /thumbnail
+       │
+       ▼
+  VỎ ĐÃ ĐĂNG NHẬP: sidebar (app launcher) + topbar [số dư credit][email ▾ Đăng xuất]
+  1 phiên/1 host = 1 tài khoản cho MỌI /app. Trang động = no-store (H5).
+```
+
+### Nguyên tắc
+- 1 host, path-based (`apps/<slug>/` → `/<slug>`); **không** subdomain/cookie-cha/OIDC.
+- Hai lớp giao diện: **catalog công khai** (không sidebar) vs **vỏ app đã đăng nhập**.
+- `require_login` giữ nguyên cho **route app**; chỉ trang chủ `/` mở công khai.
+- Deep-link login `?next=` + **chống open-redirect** (chỉ nhận đường dẫn tương đối).
+
+### H6.1 — Trang chủ CÔNG KHAI (catalog)
+- `server/auth/session.py`: thêm `current_identity_optional(request) -> str|None`
+  (trả username admin-env HOẶC email DB HOẶC None; **không raise**).
+- `server/routes/dashboard.py` `home()`: bỏ `Depends(require_login)`; dùng
+  `current_identity_optional`. Truyền `authed = user is not None`. Lọc quyền app
+  (`loc_app_hien_thi`) CHỈ khi authed; khách thấy mọi app `enabled`. Blockers +
+  `broken` chỉ hiện khi authed.
+- `server/templates/base_public.html` (MỚI): vỏ công khai — logo + `[Đăng nhập]`
+  `[Đăng ký]`, **không sidebar**.
+- `server/templates/home.html`: `{% extends "base.html" if authed else
+  "base_public.html" %}`. Box app: authed → `[Mở →] {{ m.route_prefix }}`; khách
+  → `[Đăng nhập để dùng] /login?next={{ m.route_prefix }}`. Ẩn blockers khi khách.
+- **Tiêu chí:** khách GET `/` → 200 (KHÔNG redirect), thấy box app + Đăng nhập/
+  Đăng ký, không sidebar nội bộ, không blockers. User GET `/` → sidebar + Mở +
+  account. Test cũ giả định `/` redirect-khi-ẩn-danh (nếu có) → cập nhật.
+
+### H6.2 — Đăng nhập có return-to (`?next=`)
+- `server/auth/session.py`: thêm `safe_next(raw) -> str` — trả `raw` nếu bắt đầu
+  `/` **và** không `//` **và** không chứa `://` **và** không có ký tự xuống dòng;
+  ngược lại `/`. Sửa `require_login`: `Location = "/login?next=" + quote(path)`.
+- `server/routes/auth.py`: GET `/login` nhận `next` (đã đăng nhập → về
+  `safe_next(next)`); POST login nhận `next` (Form) → sau đăng nhập (cả DB lẫn
+  admin-env) `RedirectResponse(safe_next(next), 303)`.
+- `server/templates/login.html`: thêm `<input type="hidden" name="next"
+  value="{{ next|e }}">`.
+- **Tiêu chí (test):** GET `/thumbnail` khi logout → 303 `/login?next=/thumbnail`;
+  POST /login (next=/thumbnail) → 303 `/thumbnail`; `safe_next` từ chối
+  `//evil.com`, `https://evil`, `/\nx` → trả `/`.
+
+### H6.3 — Vỏ đã-đăng-nhập (account + credit + launcher)
+- `server/templating.py`: thêm global `so_du_credit(request) -> int|None` (an
+  toàn như `nav_apps`; None khi admin-env/không DB).
+- `server/templates/base.html`: topbar phải = email/username + `{{
+  so_du_credit(request) }} credit` + `[Đăng xuất]`. Sidebar = app launcher (đã có)
+  + "🏠 Trang chủ" (đã có).
+- **Tiêu chí:** trang authed hiện email + số dư credit + đăng xuất; đổi app qua
+  sidebar; số dư khớp `credit.so_du`.
+
+### H6.4 — Hai app đúng đường dẫn
+- **thumbnail:** `/thumbnail` ✅ — chỉ kiểm hiện đúng trong catalog (box, giá, Mở).
+- **socialbot (Q30/Q10):** GIỮ path gốc (`/facebook`...), hiện **1 box** catalog
+  trỏ `route_prefix`. KHÔNG sửa socialbot (đóng băng). Đổi `/socialbot` để sau
+  (kèm Redirect URI) khi tách bán riêng.
+- **Quyết định phụ (ĐÃ CHỐT):** `demo` và `socialbot` đặt `public=False` → **ẩn
+  khỏi catalog khách**, chỉ hiện trong sidebar sau khi đăng nhập + phân quyền.
+  Cờ dùng chung là `public` trên `AppManifest` (không thêm cờ `internal` riêng).
+  Đã kiểm trình duyệt: catalog khách chỉ hiện `thumbnail`.
+
+### H6.5 — Quy ước slug + tài liệu + test tổng
+- Slug **thường-gạch-nối** (`thumbnail`, `youtube-script`) → ghi `docs/03`.
+- Cập nhật `docs/00_BAT_DAU_TU_DAY.md` (mô hình vận hành + trạng thái).
+- `tests/test_72_vanhanh.py`: catalog công khai (khách 200 + có box + không
+  sidebar), login `next` + open-redirect, account/credit khi authed.
+- Full `pytest -q` + `scan_source_secrets` + **kiểm trình duyệt thật** (khách →
+  catalog → click → `/login?next` → dùng thumbnail → thấy account/credit).
+
+### Rủi ro & phòng
+- Mở `/` công khai chỉ lộ manifest (tên/mô tả/giá) — không dữ liệu user; app
+  routes vẫn `require_login`. An toàn.
+- Open-redirect → `safe_next`. | Jinja `extends` động → test cả 2 nhánh.
+- Không phá test cũ giả định `/`→/login khi ẩn danh → cập nhật cùng H6.1.
+
+### Thứ tự & tiêu chí hoàn thành H6
+H6.1 → H6.2 → H6.3 → H6.4 → H6.5; **mỗi bước** phải xanh test + kiểm trình duyệt
+mới sang bước sau. **Xong H6 khi:** khách duyệt catalog không cần đăng nhập; bấm
+app → đăng nhập → về đúng app; 1 tài khoản vào mọi app; account+credit hiện ở vỏ;
+full suite xanh + scan 0.
+
+**✅ Hoàn thành 2026-07-31.** Full suite **1530 passed, 1 skipped**; scan 0
+finding. Kiểm trình duyệt thật (Playwright) qua `app.lttstudios.com`: (1) khách
+GET `/` → 200 catalog công khai, CHỈ hiện `thumbnail` (demo/socialbot ẩn), có
+`[Đăng nhập][Đăng ký]`, không sidebar; (2) bấm "Đăng nhập để dùng" →
+`/login?next=/thumbnail`; (3) đăng nhập → nhảy đúng về `/thumbnail`; (4) vỏ
+authed hiện sidebar + badge `💳 45 credit` + `[Đăng xuất (admin@lttstudios.com)]`.
+`safe_next` chặn open-redirect (unit test + kiểm chứng chuỗi méo trả `/`). Console
+chỉ 1 lỗi: CSP chặn `beacon.min.js` Cloudflare tự tiêm — **CSP hoạt động đúng**,
+dọn ở dashboard (không phải code).
+
+### H6.6 — Vỏ app launcher hai tầng + lối vào quản trị ✅ XONG 2026-07-31
+
+Phát sinh từ phản hồi người dùng: sidebar bị 8 mục socialbot chiếm kín. Chốt 3
+điểm (người dùng chọn): admin về trang chủ + link Quản trị; banner FB/TikTok →
+badge trên thẻ app; xây luôn.
+
+- **Sidebar hai tầng:** `templating.py` thêm `active_app()` + `is_admin()`;
+  `base.html` render mỗi app một dòng (tầng 1), trang con chỉ bung khi đang trong
+  app (tầng 2). Không đụng socialbot.
+- **Link 🛡️ Quản trị** (`/admin/`) chỉ cho admin CSDL. Admin dùng được mọi app.
+- **Blocker theo app:** `AppManifest.blocker_titles` (mới) → badge "cần thiết lập"
+  trên đúng thẻ app; bỏ banner toàn cục ở trang chủ. Không hardcode tên app.
+- **Sửa bug ERR_TOO_MANY_REDIRECTS:** `login_form` xác thực sid đồng nhất với
+  `require_login` (`current_identity_optional`) — phiên bị thu hồi không còn gây
+  vòng lặp `/login` ⇄ route. Regression trong test_72.
+- Full suite **1534 passed**; kiểm chứng production qua edge (browser máy chủ chập
+  do IPv6 hỏng — lỗi mạng máy, không phải app).
+
+---
+
+## H7 — Củng cố MVP (Hardening) 🔧 ĐANG LÀM
+
+Nguồn: audit toàn diện `docs/AUDIT_MVP_2026-07-31.md` (điểm tổng ~73/100). Ba wave;
+mỗi mục có cổng test riêng. Kết mỗi wave: `pytest -q` xanh + `scan_source_secrets`
+0 + kiểm trình duyệt. Chi tiết đầy đủ ở file audit.
+
+- **Wave 0 (P0 — chặn khách ngoài) ✅ XONG 2026-07-31.** Khoá credit (advisory
+  lock) + test đồng thời PostgreSQL; đấu `dedupe_key`; `CF-Connecting-IP`; restore
+  `pg_restore`; băm token phiên (migration `b1c2d3e4f5a6`) + che SessionAdmin;
+  `update.ps1` chạy alembic; sửa drift CLAUDE.md. Full suite **1547 pass** + 2 test
+  PG đồng thời pass; deploy + migration production OK.
+- **Wave 1 (P1 — trước khách trả tiền):** thumbnail tính tiền theo ảnh thành công +
+  loop resume-safe; handler 500 tổng; CSRF sqladmin + validate AppAccess.level; khoá
+  theo tài khoản + rate-limit forgot-password + CSRF logout + chính sách is_verified;
+  mã hoá/siết ACL backup off-drive; validate hợp đồng sớm (`_validate`) + mở rộng
+  scan slug sang `server/`; scanner thêm rule session/token key.
+- **Wave 2 (hoàn thiện + quan sát được):** `Storage.url_for()` + presigned R2; FK +
+  CHECK (migration); log rotation + uptime probe + diễn tập restore; smoke Playwright
+  trong CI; sửa số đếm test + đánh dấu test socialbot đóng băng; API key qua header;
+  test HTTP kiểm sở hữu `/image/{key}`; reclaim_orphans SKIP LOCKED + index.
+
+---
+
+## H8 — Thanh toán *(chưa chốt cách làm)*
 
 Chỉ bắt đầu khi H5 đã có người dùng thật. Cần chốt trước: cổng thanh toán nào
 (VNPAY / MoMo / chuyển khoản có webhook), hoá đơn, hoàn tiền.
@@ -402,7 +637,7 @@ H3**, không bao giờ có đường tắt riêng cho thanh toán.
 
 ---
 
-## H7 — File lớn (R2) *(chưa chốt)*
+## H9 — File lớn (R2) *(chưa chốt)*
 
 Bắt buộc trước khi làm bất kỳ tool nào thuộc nhóm FFmpeg hoặc GPU
 (`auto_sub_video`, `concat_pro`, `cut_clip_short`, `video_upscale`).
@@ -415,7 +650,7 @@ Bắt buộc trước khi làm bất kỳ tool nào thuộc nhóm FFmpeg hoặc 
 
 ---
 
-## H8 — Thêm tool
+## H10 — Thêm tool
 
 Theo thứ tự khuyến nghị trong `KHAO_SAT_BOT_GEMINI.md`:
 

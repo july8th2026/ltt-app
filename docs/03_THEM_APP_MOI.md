@@ -15,8 +15,21 @@ apps/<slug>/
 ├── __init__.py      (rỗng)
 ├── manifest.py      ★ bản khai — nền tảng đọc file này
 ├── routes.py        giao diện (bỏ qua nếu app chỉ chạy job nền)
-└── jobs.py          phần xử lý thật
+├── jobs.py          phần xử lý thật
+└── templates/       (tuỳ chọn) template RIÊNG của app — extends "base.html"
 ```
+
+**Template của app (bổ sung hợp đồng từ H5):** đặt `.html` trong
+`apps/<slug>/templates/`. Jinja tìm ở cả `server/templates/` LẪN
+`apps/*/templates/`, nên `routes.py` gọi `templates.TemplateResponse(request,
+"ten_file.html", {...})` như thường — KHÔNG phải bỏ file vào `server/`.
+`server/templates/` được ưu tiên khi trùng tên (app không ghi đè được vỏ nền
+tảng). Nhờ vậy "thêm app = thêm thư mục" đúng cho cả giao diện.
+
+**File output cho người dùng tải:** app tự phục vụ qua route riêng đọc từ
+`platform_core.storage` (xem `apps/thumbnail/routes.py` route `/image/{key}`) —
+kiểm sở hữu theo key. KHÔNG dùng `storage.download_token` qua ranh giới
+worker→web (token giữ trong RAM mỗi tiến trình).
 
 Cách nhanh nhất: **copy `apps/demo/` rồi sửa**. Nó là khuôn mẫu tối thiểu và
 luôn chạy được.
@@ -56,9 +69,40 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
 
     enabled=True,
+    public=True,                           # hiện trên trang chủ CÔNG KHAI (khách chưa đăng nhập)
     notes="",
 )
 ```
+
+### `slug` — quy ước đặt tên (H6/Q30)
+
+`slug` vừa là **tên thư mục** `apps/<slug>/`, vừa là mặc định gợi ý cho
+`route_prefix`. Quy ước:
+
+- chỉ **chữ thường, số, gạch dưới** — không dấu, không khoảng trắng, không hoa;
+- **ngắn, ổn định** — slug đi vào URL `app.lttstudios.com/<...>`, đổi về sau là
+  gãy link người dùng đã lưu;
+- **duy nhất toàn hệ thống** — trùng `route_prefix` bị `test_60` chặn.
+
+`route_prefix` không bắt buộc trùng slug (socialbot slug là `socialbot` nhưng
+khai nav ở `/sheet/facebook`, `/manual/tiktok`… vì lý do lịch sử — xem Q10).
+App mới nên đặt `route_prefix="/<slug>"` cho nhất quán và dễ đoán.
+
+### `public` — hiện trên trang chủ công khai hay không (H6/Q30)
+
+Trang chủ `/` là **catalog công khai**: khách chưa đăng nhập xem được, mỗi app
+là một thẻ, bấm vào thì bị đưa về `/login?next=<route_prefix>` rồi quay lại
+đúng chỗ sau khi đăng nhập.
+
+- `public=True` (mặc định) → app xuất hiện trên catalog công khai. Dùng cho tool
+  thương mại muốn khách nhìn thấy để mua.
+- `public=False` → app **ẩn khỏi catalog khách**, chỉ hiện trong sidebar sau khi
+  đăng nhập và **được phân quyền** (`app_access`). Dùng cho công cụ nội bộ
+  (`demo` — nghiệm thu hạ tầng) hoặc app riêng chưa mở bán (`socialbot`).
+
+`public` chỉ chi phối **hiển thị trên catalog**. Chặn truy cập thật vẫn nằm ở
+tầng route (`require_login`) + phân quyền `app_access` — một app `public=False`
+gõ thẳng URL vẫn bị chặn đúng như app công khai.
 
 ### `requires` — quyết định app chạy ở máy nào
 

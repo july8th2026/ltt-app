@@ -210,7 +210,7 @@ def _csrf_from(html: str) -> str:
 def test_new_routes_require_login(tmp_path, path):
     resp = _client(tmp_path).get(path)
     assert resp.status_code == 303
-    assert resp.headers["location"] == "/login"
+    assert resp.headers["location"].startswith("/login")
 
 
 def test_facebook_page_renders_account_without_leaking_token(tmp_path, monkeypatch):
@@ -344,6 +344,8 @@ def test_start_then_status_api_then_stop(tmp_path, monkeypatch):
 
 
 def test_dashboard_surfaces_blockers(tmp_path, monkeypatch):
+    """H6.6: blocker doctor KHONG con la banner toan cuc. No gan vao dung the
+    app so huu (khop manifest.blocker_titles), hien badge 'can thiet lap'."""
     from tools import doctor
 
     def _fake_run(check_sheet_flag=False, env=None):
@@ -357,6 +359,6 @@ def test_dashboard_surfaces_blockers(tmp_path, monkeypatch):
     _login(client)
     resp = client.get("/")
     assert resp.status_code == 200
-    # Trang chu gio la danh sach app; phan blocker van phai hien o tren.
-    assert "đang chặn bot" in resp.text
+    # Badge tren the app (socialbot khai blocker_titles co "Tai khoan Facebook").
+    assert "cần thiết lập" in resp.text
     assert "Tài khoản Facebook" in resp.text

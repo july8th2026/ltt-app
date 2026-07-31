@@ -15,13 +15,16 @@
 param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$Stamp = (Get-Date -Format 'yyyyMMdd_HHmmss'),
-    [switch]$IncludeSecrets
+    [switch]$IncludeSecrets,
+    # Q28: mac dinh backup nam CUNG o voi ban chay ($Root\backups). De chong
+    # mat du lieu khi mot o hong, tro sang O KHAC bang -BackupDir D:\LTTBackups.
+    [string]$BackupDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
 
 $dataDir = Join-Path $Root 'data'
-$backups = Join-Path $Root 'backups'
+if ($BackupDir) { $backups = $BackupDir } else { $backups = Join-Path $Root 'backups' }
 $staging = Join-Path $env:TEMP "ltt_backup_$Stamp"
 
 if (-not (Test-Path $dataDir)) { throw "Data directory not found: $dataDir" }

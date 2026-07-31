@@ -45,8 +45,50 @@ if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
 # Safety net: never overwrite live data without a copy of what was there.
 & (Join-Path $PSScriptRoot 'backup.ps1') -Root $Root -Stamp ('pre_restore_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
 
-Expand-Archive -Path $Archive -DestinationPath (Join-Path $Root 'data') -Force
-Write-Host '  [OK] Data restored' -ForegroundColor Green
+$dataDir = Join-Path $Root 'data'
+Expand-Archive -Path $Archive -DestinationPath $dataDir -Force
+Write-Host '  [OK] Files restored (config, tokens, audit log)' -ForegroundColor Green
+
+# ---- PostgreSQL ------------------------------------------------------------
+# Giai nen KHONG khoi phuc CSDL: du lieu that nam trong PostgreSQL, ban sao la
+# file <db>.dump do pg_dump -Fc tao. Phai pg_restore no, neu khong "khoi phuc"
+# chi tra lai config/token con TAT CA nguoi dung/credit/job thi mat trang.
+$envFile = Join-Path $Root 'secrets\app.env'
+if (Test-Path $envFile) {
+    $envText = Get-Content $envFile -Raw
+    if ($envText -match '(?m)^LTT_DATABASE_URL=postgresql\+?\w*://([^:]+):([^@]+)@([^:/]+):(\d+)/(\S+)\s*$') {
+        $dbUser = $Matches[1]; $dbPass = $Matches[2]
+        $dbHost = $Matches[3]; $dbPort = $Matches[4]; $dbName = $Matches[5]
+        $dumpFile = Join-Path $dataDir "$dbName.dump"
+        if (-not (Test-Path $dumpFile)) {
+            throw "Khong thay $dbName.dump trong ban sao luu. Ban sao nay KHONG co CSDL - dung lai de khong tuong da khoi phuc."
+        }
+
+        $pgRestore = $null
+        foreach ($v in @('18','17','16','15','14')) {
+            $c = "C:\Program Files\PostgreSQL\$v\bin\pg_restore.exe"
+            if (Test-Path $c) { $pgRestore = $c; break }
+        }
+        if (-not $pgRestore) {
+            $cmd = Get-Command pg_restore.exe -ErrorAction SilentlyContinue
+            if ($cmd) { $pgRestore = $cmd.Source }
+        }
+        if (-not $pgRestore) { throw 'Co dump nhung khong tim thay pg_restore.exe. Dung lai.' }
+
+        $env:PGPASSWORD = $dbPass
+        # --clean --if-exists: xoa doi tuong cu roi nap lai (khoi phuc that su,
+        # khong chi chen them). --no-owner: bo qua chu so huu de khong ket owner
+        # cu. -1: mot transaction, loi thi rollback het (khong de CSDL nua voi).
+        & $pgRestore -U $dbUser -h $dbHost -p $dbPort -d $dbName --clean --if-exists --no-owner -1 $dumpFile
+        $rc = $LASTEXITCODE
+        $env:PGPASSWORD = $null
+        if ($rc -ne 0) {
+            throw "pg_restore that bai (ma $rc). CSDL co the chua khoi phuc day du - kiem tra truoc khi chay tiep."
+        }
+        Remove-Item $dumpFile -Force -ErrorAction SilentlyContinue
+        Write-Host "  [OK] pg_restore: $dbName" -ForegroundColor Green
+    }
+}
 
 Start-Service $ServiceName
 Write-Host '  Service restarted. Verify: curl http://127.0.0.1:8100/health/ready' -ForegroundColor Cyan
