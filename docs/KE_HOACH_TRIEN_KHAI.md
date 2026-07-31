@@ -66,51 +66,34 @@ Chi tiết và lý do tổng số test đổi từ 1.424 → 1.423: xem `NHAT_KY
 
 ---
 
-## H0.1 — Kiểm chứng đường ra Internet ⚠️ CHẶN VIỆC DỰNG TUNNEL
+## H0.1 — Đưa lên mạng qua Cloudflare (Q27) ⏳ đang làm
 
-**Mục tiêu:** biết chắc đường ra Internet khả thi **trước khi** viết thêm code
-hay chạy `setup/3-cloudflare.ps1`.
+**Mục tiêu:** `https://app.lttstudios.com` chạy thật qua Cloudflare Tunnel, giữ
+trang chủ `lttstudios.com` ở inet.vn OnePanel.
 
-### Vì sao đây là một hạng mục riêng
+**Quy trình đầy đủ (chia rõ việc bạn/tôi): `docs/05_LEN_MANG_CLOUDFLARE.md`.**
 
-Đo được ngày 2026-07-31:
+### Đã chốt (thay cho hướng subdomain ban đầu)
 
-```
-lttstudios.com  →  hoian.vclouddns.com / danang.vclouddns.com   (inet.vn)
-MX  : không có       TXT : không có
-```
+Điều kiện chưa xác minh của Q22 giờ **đã xác minh**: tạo subdomain thành zone
+riêng là **Enterprise-only** (tài liệu chính thức Cloudflare). Nên đổi sang Q27:
+**chuyển cả zone `lttstudios.com` sang Cloudflare**, để `@`/`www` ở "DNS only"
+(giữ inet.vn phục vụ trang chủ), chỉ `app` "Proxied" + Tunnel. Free đủ.
 
-Cloudflare Tunnel hoạt động bằng một CNAME trỏ tới
-`<tunnel-id>.cfargotunnel.com`, và tên miền đó **chỉ phân giải được qua chính
-hệ thống Cloudflare**. Lệnh `cloudflared tunnel route dns` trong
-`setup/3-cloudflare.ps1` gọi API Cloudflare để tạo bản ghi trong zone — zone chỉ
-hoạt động khi tên miền dùng nameserver của Cloudflare.
+### Các bước (chi tiết ở `docs/05`)
 
-Chạy bước 3 bây giờ sẽ **hỏng ở khâu gần cuối**, sau khi đã tải cloudflared,
-đăng nhập, tạo tunnel và ghi cấu hình. Đó là kiểu hỏng tốn thời gian nhất.
-
-### Việc phải làm — theo đúng thứ tự
-
-- [ ] **Người dùng:** thử thêm `app.lttstudios.com` như một site trong bảng điều
-      khiển Cloudflare, xem gói miễn phí có cho tạo **zone cấp subdomain** không
-- [ ] Nếu **được**: lấy 2 nameserver Cloudflare cấp → thêm bản ghi `NS` cho
-      `app` tại inet.vn → đợi phân giải → chạy `setup/3-cloudflare.ps1`
-- [ ] Nếu **không được**: dừng lại, **đổi quyết định Q22 theo đúng giao thức**
-      (`AGENTS.md` mục 6), chọn giữa hai đường còn lại:
-      - chuyển cả `lttstudios.com` sang nameserver Cloudflare — phải chép đủ và
-        đúng mọi bản ghi hiện có trước khi đổi, sót một bản ghi là trang giới
-        thiệu hoặc email công ty chết;
-      - bỏ Tunnel, mở cổng 80/443 + Caddy như máy chủ cũ đang chạy — cần DDNS vì
-        IP nhà là IP động, và mở cổng vào máy đang chứa token/khoá.
+- [ ] 🧑 Add site `lttstudios.com` vào Cloudflare (Free), kiểm đủ bản ghi, `@`/
+      `www` để DNS-only; 🤖 rà danh sách trước khi đổi NS
+- [ ] 🧑 Đổi nameserver ở nhà đăng ký tên miền sang 2 NS Cloudflare
+- [ ] ⏳ Đợi zone Active; 🤖 kiểm NS + trang chủ vẫn sống
+- [ ] 🧑 Cài `C:\LTTPlatform` (`setup/2`, Administrator); 🤖 nghiệm thu cục bộ
+- [ ] 🧑 Chạy `setup/3-cloudflare.ps1`, đăng nhập chọn zone `lttstudios.com`
+- [ ] 🤖 Nghiệm thu `https://app.lttstudios.com` từ mạng ngoài + browser
 
 **Tiêu chí hoàn thành:** `https://app.lttstudios.com/health/ready` trả
-`{"status":"ready"}` từ **một mạng bên ngoài** (không phải từ trong LAN — kiểm
-tra từ trong LAN cho kết quả dương tính giả do hairpin NAT).
-
-**Ghi chú thành thật:** tôi không xác minh được điều kiện gói miễn phí của
-Cloudflare từ đây, và đã nói rõ điều đó lúc đưa lựa chọn. Đây là việc 5 phút
-trên bảng điều khiển của bạn, và nó quyết định cả nhánh còn lại — nên nó đứng
-trước mọi thứ khác, không phải một dòng chú thích.
+`{"status":"ready","environment":"production"}` từ **mạng ngoài** (không phải
+trong LAN — hairpin NAT cho dương tính giả), và `https://lttstudios.com` (trang
+chủ) vẫn chạy như cũ.
 
 ---
 

@@ -63,12 +63,15 @@ if (Test-Path $cfExe) {
 }
 
 Head '2/6 Dang nhap Cloudflare  <-- CAN BAN LAM'
-# DIEU KIEN TIEN QUYET (quyet dinh Q22 - uy quyen rieng subdomain):
+# DIEU KIEN TIEN QUYET (quyet dinh Q27 - chuyen ca zone sang Cloudflare):
 #   TRUOC khi chay buoc nay, ban phai da:
-#   1. Them "app.lttstudios.com" nhu mot SITE (zone) trong Cloudflare;
-#   2. Lay 2 nameserver Cloudflare cap, them ban ghi NS cho "app" o inet.vn;
-#   3. Doi DNS lan truyen (zone o Cloudflare bao "Active").
-# Neu chua lam, xem docs/04_CLOUDFLARE_TUNNEL.md truoc.
+#   1. Them "lttstudios.com" nhu mot SITE trong Cloudflare (goi Free);
+#   2. Kiem DU ban ghi DNS hien co (@ /www /app...), de @ va www o "DNS only";
+#   3. Doi nameserver o nha dang ky ten mien sang 2 NS Cloudflare cap;
+#   4. Doi zone bao "Active" o Cloudflare.
+# Doi NS KHONG chuyen hosting - trang chu van o inet.vn OnePanel.
+# Neu chua lam, xem docs/05_LEN_MANG_CLOUDFLARE.md truoc.
+$zone = ($Hostname -split '\.')[-2..-1] -join '.'   # app.lttstudios.com -> lttstudios.com
 $cert = Join-Path $env:USERPROFILE '.cloudflared\cert.pem'
 if (Test-Path $cert) {
     Ok 'Da dang nhap tu truoc (co cert.pem)'
@@ -76,8 +79,7 @@ if (Test-Path $cert) {
     Write-Host ""
     Write-Host "  Lenh ben duoi se in ra MOT DUONG LINK." -ForegroundColor Yellow
     Write-Host "  Mo link tren trinh duyet BAT KY MAY NAO, dang nhap Cloudflare," -ForegroundColor Yellow
-    Write-Host "  va chon zone '$Hostname' (KHONG phai lttstudios.com goc -" -ForegroundColor Yellow
-    Write-Host "  ta uy quyen rieng subdomain, xem quyet dinh Q22)." -ForegroundColor Yellow
+    Write-Host "  va chon zone '$zone' (ca ten mien - da chuyen sang Cloudflare)." -ForegroundColor Yellow
     Write-Host "  Xong thi script tu chay tiep." -ForegroundColor Yellow
     Write-Host ""
     & $cfExe tunnel login
@@ -152,9 +154,9 @@ Write-Host $routeOut.Trim()
 if ($routeOut -match 'already exists|record with that host') {
     Note 'Ban ghi da co tu truoc - giu nguyen.'
 } elseif ($routeOut -match 'could not find zone|zone not found|no zone|failed to add') {
-    throw ("Khong tim thay zone cho '$Hostname' o Cloudflare. Ban da them " +
-           "'$Hostname' nhu mot site va uy quyen NS o inet.vn chua? " +
-           "Xem docs/04_CLOUDFLARE_TUNNEL.md (quyet dinh Q22).")
+    throw ("Khong tim thay zone cho '$Hostname' o Cloudflare. Ban da chuyen " +
+           "'$zone' sang Cloudflare (doi nameserver) va doi zone bao Active chua? " +
+           "Xem docs/05_LEN_MANG_CLOUDFLARE.md (quyet dinh Q27).")
 }
 Ok "$Hostname -> tunnel $TunnelName"
 
