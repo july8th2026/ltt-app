@@ -38,7 +38,11 @@ H3  Sổ credit                 ─┘         │
                                          │
                        ┌─────────────────┼─────────────────┐
                        ▼                 ▼                 ▼
-              H8 Thanh toán    H9 File lớn (R2)    H10 Thêm tool
+              H8 APIKEYS (quản trị nguồn API) ◄─ kế tiếp
+                       │
+       ┌───────────────┼───────────────┐
+       ▼               ▼               ▼
+  H9 Thanh toán   H10 File lớn (R2)   H11 Thêm tool
 ```
 
 > **Chèn H6 (2026-07-31):** cốt lõi vận hành (catalog + đăng nhập một-lần cho mọi
@@ -639,7 +643,96 @@ mỗi mục có cổng test riêng. Kết mỗi wave: `pytest -q` xanh + `scan_s
 
 ---
 
-## H8 — Thanh toán *(chưa chốt cách làm)*
+## H8 — Bộ máy APIKEYS (quản trị nguồn API) — Pha 1 📋 KẾ HOẠCH (chờ build)
+
+**Nguồn:** khảo sát `docs/KHAO_SAT_APIKEYS.md` (từ D:\BOT GEMINI). **Quyết định
+duyệt 2026-07-31:** Phương án **D** (nền tảng theo pha); model **provider + tập
+category** (model_control/chat/image/video); **import 6 key** thật ngay. Đứng
+TRƯỚC khi xây các app mới (app cần nguồn key). Không dùng file JSON/pool RAM như
+BOT GEMINI — bảng SQLAlchemy + mã hoá bằng `LTT_TOKEN_ENCRYPTION_KEY`.
+
+**Nguyên tắc:** app KHÔNG giữ key nữa; app xin key từ bộ máy theo (provider,
+category, model). Thêm loại API sau này = thêm 1 dòng Provider Registry (+ tuỳ 1
+adapter), KHÔNG sửa nền tảng. Credential cookie/browser (Veo, ChatGPT web) là
+loại KHÁC — KHÔNG thuộc bộ máy key này.
+
+### H8.1 — Model + lưu trữ mã hoá
+- `platform_core/models.py`: bảng `ApiKey` — `id`, `owner_user_id` (rỗng=pool
+  chung), `name`, `provider`, `categories` (CSV/JSON các loại), `credential_enc`
+  (Fernet), `base_url`, `supported_models` (JSON), `default_model`, `status`
+  (active/exhausted/cooldown/error/disabled), `enabled`, `priority`,
+  `health_score`, `error_count`, `auth_error_count`, `cooldown_until`,
+  `last_used_at`, `last_error`, `total_requests`, `total_success`, `total_failed`.
+- `platform_core/api_keys.py`: `tao_key/sua_key/xoa_key/lay_key_theo_id/liet_ke`,
+  `dat_credential`(mã hoá qua `core/token_store` bằng `LTT_TOKEN_ENCRYPTION_KEY`),
+  `key_preview` (4 số cuối). KHÔNG hàm nào trả credential thô ra ngoài.
+- Migration bảng `api_keys`.
+- **Test:** mã hoá round-trip; `key_preview` không lộ secret; categories nhiều giá
+  trị; liệt kê lọc theo provider/category.
+
+### H8.2 — Provider Registry (một chỗ)
+- `platform_core/providers.py`: dataclass `Provider` {`id`, `auth_style`
+  (query_key|bearer|x_api_key), `base_url` mặc định, `categories`, `models:
+  list[ModelInfo]`, `list_models_path` (None nếu không có)} + `ModelInfo` {`id`,
+  `provider_model_id`, `endpoint`/`endpoint_id`, `categories`, `is_active`,
+  `credit_cost` (hàm, tuỳ)}. Tách 3 ID (bài học ModelArk).
+- Seed: `gemini` (query_key, chat+image+model_control), `apiai`/`cheapkeyai`
+  (bearer OpenAI-compat, chat+image, có `/v1/models`), `byteplus` (bearer, video,
+  async), `plenx` (x_api_key, video, async).
+- **Test:** toàn vẹn registry; auth_style đúng từng provider; model thuộc đúng
+  category; không hardcode tên app.
+
+### H8.3 — Allocator gọn
+- `platform_core/api_pool.py`: `lay_key(db, provider, *, category=None, model=None)`
+  → chọn key `enabled && status∈{active}` (bỏ cooldown chưa hết/disabled), khớp
+  provider + (model ∈ supported_models hoặc supported_models rỗng), sắp theo
+  `priority desc, total_requests asc`; tự hồi cooldown khi hết hạn. (Key CHIA SẺ
+  được cho nhiều request — KHÔNG cần khoá độc quyền như job.)
+- `danh_dau_thanh_cong(key)` / `danh_dau_loi(key, http_status, retry_after)`:
+  401/403→`auth_error_count++`, disable sau 5 liên tiếp; 429→cooldown theo
+  retry-after (mặc định 60s), status exhausted/cooldown; 4xx→KHÔNG phạt; 5xx→error.
+- **Test:** chọn đúng key theo priority; bỏ key cooldown; disable sau 5 lần 401;
+  429 đặt cooldown; 4xx không phạt; ThieuKeyError khi không có key khả dụng.
+
+### H8.4 — Menu quản trị APIKEYS
+- `server/admin.py`: `ApiKeyAdmin` (ModelView, `column_list` gồm `key_preview`,
+  provider, categories, status, priority — TUYỆT ĐỐI không cột credential;
+  form thêm/sửa có ô nhập credential ghi-mã-hoá, đọc chỉ preview) + view tuỳ biến
+  **"Test key"** (probe sống: gọi `/v1/models` hoặc 1 call rẻ theo provider) +
+  actions bật/tắt/reset-cooldown. View **"Models"** (registry, chỉ đọc) + nút
+  "Làm mới model" cho provider có `list_models_path`.
+- **Test:** chỉ admin vào; HTML không chứa credential thô; test-key trả trạng
+  thái; bật/tắt đổi `enabled`.
+
+### H8.5 — Import 6 key từ BOT GEMINI (một lần)
+- `tools/import_api_keys_from_botgemini.py`: đọc `D:\BOT GEMINI\data\api_keys.json`,
+  giải mã bằng `FERNET_KEY` của BOT GEMINI (đọc từ env/.env của nó) → map trường
+  → mã hoá lại bằng `LTT_TOKEN_ENCRYPTION_KEY` → INSERT. Mang theo `base_url`,
+  `supported_models`. Secret KHÔNG ghi log/đĩa (chỉ 4 số cuối). Idempotent theo
+  (provider, key_preview). Chạy một lần trên máy chủ.
+- **Nghiệm thu:** 6 key vào bảng, `/admin` APIKEYS hiện 6 dòng, Test key xanh.
+
+### H8.6 — Đấu thumbnail dùng bộ máy key
+- `apps/thumbnail/jobs.py`: thay `os.environ["GEMINI_API_KEY"]` bằng
+  `api_pool.lay_key(db, "gemini", category="image", model=...)`; gọi
+  `danh_dau_thanh_cong/loi` theo kết quả. Fallback env khi không có key (dev/test).
+- **Test:** thumbnail lấy key từ engine (mock allocator); lỗi 429→đánh dấu cooldown.
+
+### H8.7 — Tài liệu + nghiệm thu
+- Cập nhật `docs/03_THEM_APP_MOI.md` (app xin key qua `api_pool`, không đọc env),
+  `docs/KHAO_SAT_APIKEYS.md` (đánh dấu Pha 1 xong), NHAT_KY.
+- Full `pytest -q` + scan 0 + **kiểm trình duyệt** menu APIKEYS (thêm/test/tắt).
+
+### Thứ tự & tiêu chí xong H8 (Pha 1)
+H8.1→H8.2→H8.3→H8.4→H8.5→H8.6→H8.7; mỗi bước xanh test mới sang bước sau. **Xong
+Pha 1 khi:** admin quản mọi key ở `/admin` APIKEYS (4 category), 6 key đã import +
+Test key xanh, thumbnail chạy bằng key từ engine (không còn env), full suite xanh
++ scan 0. **Pha 2 (sau):** telemetry rpm/tpm/token, cascade đa-provider, làm mới
+model tự động.
+
+---
+
+## H9 — Thanh toán *(chưa chốt cách làm)*
 
 Chỉ bắt đầu khi H5 đã có người dùng thật. Cần chốt trước: cổng thanh toán nào
 (VNPAY / MoMo / chuyển khoản có webhook), hoá đơn, hoàn tiền.
@@ -649,7 +742,7 @@ H3**, không bao giờ có đường tắt riêng cho thanh toán.
 
 ---
 
-## H9 — File lớn (R2) *(chưa chốt)*
+## H10 — File lớn (R2) *(chưa chốt)*
 
 Bắt buộc trước khi làm bất kỳ tool nào thuộc nhóm FFmpeg hoặc GPU
 (`auto_sub_video`, `concat_pro`, `cut_clip_short`, `video_upscale`).
@@ -667,7 +760,7 @@ Bắt buộc trước khi làm bất kỳ tool nào thuộc nhóm FFmpeg hoặc 
 
 ---
 
-## H10 — Thêm tool
+## H11 — Thêm tool
 
 Theo thứ tự khuyến nghị trong `KHAO_SAT_BOT_GEMINI.md`:
 
