@@ -14,6 +14,41 @@
 
 ---
 
+## 2026-07-31 — H7 Wave 1 + Wave 2: hoàn tất củng cố MVP
+
+**Wave 1 (P1) — commit 5f00302, full suite 1562 pass:**
+- thumbnail tính tiền theo ảnh THÀNH CÔNG (`credit_cost` trong result) + loop
+  resume-safe (bỏ qua ảnh đã lưu khi retry → không trả tiền Gemini hai lần; lỗi
+  1 ảnh không hỏng cả job).
+- Handler `Exception` tổng: 500 có style + `no-store` + correlation id.
+- CSRF cho GrantCreditView + dropdown enabled/locked/hidden cho AppAccess.level.
+- Auth: khoá theo TÀI KHOẢN (chống stuffing nhiều IP) + rate-limit forgot-password
+  + CSRF logout (global `phien_csrf`, KHÁC tên biến context `csrf_token`) + chặn
+  login khi `is_verified=False`.
+- Siết ACL thư mục backup off-drive (icacls SID `*S-1-5-18`/`*S-1-5-32-544`).
+- `_validate` fail SỚM: job_types thiếu credit_cost / trùng job_type → app lỗi
+  ngay lúc discover. (Mở rộng scan slug sang server/ BỎ — "thumbnail" trùng từ.)
+- Scanner thêm rule session_secret/token_encryption_key/encryption_key.
+
+**Wave 2 (P2) — commit 3ff3315, full suite 1564 pass:**
+- API key Gemini qua header `x-goog-api-key` (không URL query).
+- Test HTTP kiểm sở hữu `/image/{key}` (A đọc ảnh B → 404).
+- `reclaim_orphans` SKIP LOCKED + index `ix_jobs_claim` (migration c7d8e9f0a1b2,
+  đã áp production — lần đầu lệnh bị lỗi escaping PowerShell, chạy lại rc=0, xác
+  minh index tồn tại + alembic ở head).
+- Log rotation theo kích thước: AppRotateBytes 10MB + AppRotateOnline (setup/2 +
+  setup/3), áp cả 3 dịch vụ đang chạy qua nssm.
+- Smoke Playwright opt-in `test_74` (skip nếu chưa cài / chưa đặt LTT_SMOKE_URL).
+
+**Hoãn có chủ đích (ghi rõ trong AUDIT + KE_HOACH):** `url_for`/R2 → H9; FK
+constraints (rủi ro migration + FK `job_id` bất khả vì sentinel `""`);
+`CHECK(delta<>0)` SAI (settle ghi delta=0 hợp lệ); đánh dấu ~929 test socialbot.
+
+**Bài học:** nested PowerShell `-Command` với `$Matches`/`$env` qua Bash bị mất
+escaping → lệnh alembic "im lặng" không chạy (alembic version không đổi mới lộ).
+Luôn kiểm chứng migration bằng truy vấn thật (index/version), không tin exit code
+của lệnh lồng.
+
 ## 2026-07-31 — H7 Wave 0: sửa 6 lỗ hổng P0 (củng cố MVP trước khách trả tiền)
 
 Từ audit toàn diện (`docs/AUDIT_MVP_2026-07-31.md`, điểm tổng ~73/100). Sửa 6 lỗ

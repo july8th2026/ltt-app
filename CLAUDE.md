@@ -134,16 +134,20 @@ nào**.
 | Tool thật đầu tiên — thumbnail (Gemini, tính credit) | ✅ xong (H5) |
 | App socialbot (FB+TikTok) | ⏸️ đóng băng — không phát triển thêm |
 | App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
-| **Củng cố MVP (Hardening) trước khi mở khách trả tiền** | 🔧 **đang làm (H7)** |
+| **Củng cố MVP (Hardening)** — Wave 0+1+2 | ✅ xong 2026-07-31 (H7) |
 | Thanh toán / nạp credit | ❌ chưa (H8) |
-| Lưu file lớn qua R2 | ❌ chưa (H9) |
+| Lưu file lớn qua R2 + `Storage.url_for()` | ❌ chưa (H9) |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
 
-**Trước khi mở cho khách TRẢ TIỀN, phải xong H7 (Củng cố MVP).** Audit
-2026-07-31 (`docs/AUDIT_MVP_2026-07-31.md`) tìm ra các lỗ hổng P0 về
-tiền/bảo mật/khôi phục đang được xử lý theo Wave 0.
+**H7 (Củng cố MVP) — Wave 0+1+2 ĐÃ XONG 2026-07-31** theo audit
+`docs/AUDIT_MVP_2026-07-31.md`: đã bịt các lỗ P0 (double-spend, dedupe, IP thật
+sau Tunnel, restore DB, băm token phiên, migration trong update) và P1/P2
+(billing thumbnail theo ảnh, handler 500, CSRF admin/logout, khoá theo tài khoản,
+ACL backup, validate hợp đồng sớm, log rotation, smoke test). Việc **cố ý hoãn**
+sang H8/H9 ghi trong file audit + KE_HOACH (url_for/R2, FK constraints).
+Cửa mở khách trả tiền giờ phụ thuộc **H8 (Thanh toán)**.
 
 ## Không bao giờ commit hay copy đi
 
