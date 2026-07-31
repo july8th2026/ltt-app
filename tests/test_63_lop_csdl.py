@@ -152,35 +152,48 @@ def _chay_alembic(*args: str, db_url: str | None) -> subprocess.CompletedProcess
 
 
 def test_vong_di_tru_tien_lui_tien(tmp_path):
-    """`upgrade` → `downgrade` → `upgrade` phải sạch cả ba lần.
+    """`upgrade head` → `downgrade base` → `upgrade head` phải sạch cả ba lần.
 
     Lùi được thì mới dám tiến: một migration không có đường lùi nghĩa là khi
     nó hỏng trên CSDL có dữ liệu thật, lựa chọn duy nhất còn lại là khôi phục
     từ bản sao lưu.
+
+    Dùng `downgrade base` (gỡ HẾT) thay vì `downgrade -1` (gỡ một bước): khi có
+    nhiều migration, `-1` chỉ gỡ bản mới nhất nên số bảng còn lại phụ thuộc số
+    migration hiện có — một khẳng định giòn, cứ thêm migration là phải sửa test.
+    `base` thì luôn về sạch bất kể có bao nhiêu migration.
     """
     db = tmp_path / "thu.db"
     url = f"sqlite:///{db.as_posix()}"
 
-    r = _chay_alembic("upgrade", "head", db_url=url)
-    assert r.returncode == 0, r.stderr
-
     import sqlalchemy as sa
-    engine = sa.create_engine(url)
-    bang = set(sa.inspect(engine).get_table_names())
-    engine.dispose()
-    assert "platform_info" in bang
-    assert "alembic_version" in bang
-
-    r = _chay_alembic("downgrade", "-1", db_url=url)
-    assert r.returncode == 0, r.stderr
-
-    engine = sa.create_engine(url)
-    bang = set(sa.inspect(engine).get_table_names())
-    engine.dispose()
-    assert "platform_info" not in bang, "downgrade phai xoa bang no da tao"
 
     r = _chay_alembic("upgrade", "head", db_url=url)
     assert r.returncode == 0, r.stderr
+
+    engine = sa.create_engine(url)
+    bang = set(sa.inspect(engine).get_table_names())
+    engine.dispose()
+    assert "platform_info" in bang and "alembic_version" in bang
+
+    r = _chay_alembic("downgrade", "base", db_url=url)
+    assert r.returncode == 0, r.stderr
+
+    engine = sa.create_engine(url)
+    bang = set(sa.inspect(engine).get_table_names())
+    engine.dispose()
+    # Về base: mọi bảng nghiệp vụ phải biến mất (alembic_version có thể còn lại,
+    # đó là sổ theo dõi của chính alembic, không phải bảng của ta).
+    assert "platform_info" not in bang, "downgrade base phai xoa moi bang nghiep vu"
+    assert "users" not in bang and "sessions" not in bang
+
+    r = _chay_alembic("upgrade", "head", db_url=url)
+    assert r.returncode == 0, r.stderr
+
+    engine = sa.create_engine(url)
+    bang = set(sa.inspect(engine).get_table_names())
+    engine.dispose()
+    assert {"platform_info", "users", "sessions"} <= bang, "tien lai phai co du bang"
 
 
 def test_migration_bao_loi_ro_khi_chua_cau_hinh():

@@ -7,7 +7,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.password_hashing import verify_password
 from server.auth.rate_limit import RateLimiter
-from server.auth.session import current_user, log_in, log_out
+from server.auth.session import current_user, current_sid, log_in, log_in_db, log_out
+from server.deps import mo_db_optional
 from server.templating import templates
 
 router = APIRouter(tags=["auth"])
@@ -32,7 +33,8 @@ def _client_key(request: Request) -> str:
 
 @router.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    if current_user(request):
+    # Đã đăng nhập bằng đường nào (admin-env hoặc phiên CSDL) đều khỏi hiện form.
+    if current_user(request) or current_sid(request):
         return RedirectResponse("/", status_code=303)
     token = issue_csrf_token(request)
     return templates.TemplateResponse(
@@ -63,6 +65,23 @@ def login_submit(
             status_code=429,
         )
 
+    # Đường 1 — người dùng trong CSDL (email + mật khẩu). Thử trước.
+    # `username` cũng là ô nhập email; đường CSDL im lặng bỏ qua khi chưa có DB.
+    with mo_db_optional() as db:
+        if db is not None:
+            from platform_core.users import tao_phien, xac_thuc
+            user = xac_thuc(db, email=username, password=password)
+            if user is not None:
+                sid = tao_phien(
+                    db, user,
+                    user_agent=request.headers.get("user-agent", ""),
+                    ip=_client_key(request),
+                )
+                _limiter(request).reset(_client_key(request))
+                log_in_db(request, sid)
+                return RedirectResponse("/", status_code=303)
+
+    # Đường 2 — admin-từ-biến-môi-trường (đường lui, luôn còn kể cả khi DB hỏng).
     valid = (
         username == settings.admin_username
         and settings.admin_password_hash

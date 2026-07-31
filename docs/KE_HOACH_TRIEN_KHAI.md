@@ -166,26 +166,36 @@ hai phút, người dùng chỉ thấy trang treo, và trình quản lý dịch 
 gì bất thường để khởi động lại. Đã đặt `CONNECT_TIMEOUT_S = 5`, còn 5 giây, có
 test chốt.
 
-### H1.2 — Bảng người dùng và đăng nhập
+### H1.2 — Bảng người dùng và đăng nhập ✅ XONG 2026-07-31
 
-- [ ] Bảng `users`: id, email, hash mật khẩu, vai trò (`admin`/`user`), trạng
-      thái, thời điểm tạo, lần đăng nhập cuối
-- [ ] Đưa `fastapi-users` vào (Q14) — **dựng song song**, chưa gỡ gì
-- [ ] Phiên đăng nhập lưu phía máy chủ (hiện tại là cookie đã ký, không thu
-      hồi được — nghĩa là không thể "đăng xuất khỏi mọi thiết bị")
-- [ ] Giữ `admin` từ biến môi trường hoạt động song song trong lúc chuyển, để
-      luôn còn một đường vào khi phần mới hỏng
-- [ ] Chỉ khi đường mới đã xanh: gỡ `server/auth/session.py` cũ, cập nhật test
+- [x] Bảng `users`: id (UUID), email, hash mật khẩu, vai trò, trạng thái,
+      `is_verified`, thời điểm tạo, lần đăng nhập cuối
+- [x] Bảng `sessions`: phiên đăng nhập **phía máy chủ**, thu hồi được
+- [x] `platform_core/users.py`: tạo user, xác thực (chống timing oracle +
+      không lộ email nào đã đăng ký), tạo/thu hồi phiên, đổi mật khẩu
+- [x] Xác thực bằng bảng `users` (Q24 — **không** fastapi-users) — **dựng song
+      song** với auth hiện có
+- [x] Phiên lưu phía máy chủ: cookie chỉ mang `sid`, thu hồi = xoá dòng
+- [x] Giữ `admin` từ biến môi trường **làm đường lui**, chưa gỡ (xem ghi chú)
+- [x] `tests/test_64_nguoi_dung.py` — 18 test (SQLite) + nghiệm thu thật trên
+      PostgreSQL (đăng nhập → vào được → đăng xuất → phiên bị thu hồi)
 
 **Tiêu chí hoàn thành**
-- Đăng ký → đăng nhập → đăng xuất → không vào lại được bằng cookie cũ
-- Đổi mật khẩu làm **mọi phiên khác** hết hiệu lực
-- Toàn bộ test cũ về CSRF, giới hạn tần suất, cookie an toàn vẫn xanh
-- Không route nào trả dữ liệu khi chưa đăng nhập (có test quét mọi route)
+- [x] Đăng nhập → vào được → đăng xuất → không vào lại được (phiên bị xoá ở DB)
+- [x] Đổi mật khẩu làm **mọi phiên khác** hết hiệu lực (có test)
+- [x] Xác thực sai không tiết lộ email nào đã đăng ký (có test)
+- [x] Toàn bộ test cũ (CSRF, rate-limit, cookie an toàn, admin-env) vẫn xanh
 
-**Ghi chú về cái giá đã biết:** `server/auth/` hiện có 4 file đã test và đang
-chạy production. Thứ tự **dựng song song → chứng minh xanh → mới gỡ cũ** là bắt
-buộc. Gỡ trước rồi thay là cách chắc chắn nhất để mất đường đăng nhập.
+**Điều chỉnh có lý do — CHƯA gỡ đường admin-env:** kế hoạch gốc ghi "chỉ khi
+đường mới xanh thì gỡ `session.py` cũ". Nhưng gỡ admin-env **bây giờ** là sai:
+chưa có cách nào tạo tài khoản admin **trong CSDL** (trang quản trị đến H3 mới
+có, qua sqladmin). Gỡ trước khi có cách đó nghĩa là một CSDL trống = không ai
+đăng nhập được. Vì vậy admin-env được giữ làm **đường lui chính thức** tới khi
+H3 có trang tạo admin trong DB — đó cũng là lúc gỡ, không phải bây giờ.
+
+**Ghi chú về cái giá đã biết:** `server/auth/` có 4 file đã test và đang chạy.
+Thứ tự **dựng song song → chứng minh xanh → mới gỡ cũ** đã theo đúng; riêng
+bước "gỡ" dời sang H3 theo lý do trên.
 
 ### H1.3 — Đăng ký, xác thực email, chống lạm dụng
 

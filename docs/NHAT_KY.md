@@ -14,6 +14,92 @@
 
 ---
 
+## 2026-07-31 — H1.2: người dùng, phiên đăng nhập phía máy chủ
+
+- **Mục tiêu:** hệ thống biết "ai đang dùng"; dữ liệu người này người kia tách nhau.
+- **Hạng mục:** H1.2 — **hoàn thành**.
+- **Trạng thái:** xong (bước "gỡ đường admin-env" dời sang H3 — có lý do bên dưới).
+
+### Quyết định đổi hướng: bỏ fastapi-users (Q14 → Q24)
+
+Khi bắt tay H1.2 mới thấy `fastapi-users` (DB adapter) **bắt buộc
+`sqlalchemy[asyncio]`** — async-only từ v10. Nền H1.1 vừa xây là đồng bộ, và
+phần auth đang chạy production cũng đồng bộ. Đưa nó vào sẽ kéo async engine vào
+codebase đồng bộ, **thay luôn cơ chế session đang chạy production**, mà vẫn phải
+tự viết trang HTML. Lợi ích chính (logic token xác thực email) thì `itsdangerous`
+đã có sẵn làm được.
+
+Lúc chốt Q14 tôi chưa nhìn code thật. Đưa lựa chọn cho chủ dự án, chọn Q24: tự
+viết trên nền đồng bộ. Đã dọn Q14 theo đúng giao thức (đánh dấu ĐÃ THAY, thêm
+Q24, truy mọi nơi nhắc fastapi-users và sửa).
+
+### Đã làm
+
+- `platform_core/models.py`: bảng `users` (khoá chính UUID — không lộ quy mô,
+  không đoán được id người khác; email chuẩn hoá chữ thường; `is_verified` tách
+  khỏi `is_active`) và `sessions` (phiên phía máy chủ).
+- `platform_core/users.py`: nghiệp vụ tách khỏi HTTP — tạo user, xác thực,
+  tạo/thu hồi phiên, đổi mật khẩu. Băm mật khẩu **tái dùng** PBKDF2 của
+  `server/auth/password_hashing.py`, không phát minh cách băm thứ hai.
+- `server/deps.py`: `get_db` (bắt buộc, commit-khi-xong) và `mo_db_optional`
+  (trả None khi CSDL chưa cấu hình — để đường admin-env vẫn chạy khi không có DB).
+- `server/auth/session.py`: hai đường song song — admin-env (cookie, không chạm
+  DB, đường lui) và user CSDL (cookie mang `sid` trỏ bảng sessions). Đường CSDL
+  thất bại im lặng khi chưa có DB. `require_login` giữ nguyên chữ ký nên không
+  route nào phải đổi.
+- `server/routes/auth.py`: login thử user CSDL trước, admin-env sau.
+
+### Ba tính chất bảo mật, có test
+
+- **Mật khẩu không lưu thô** — chỉ hash PBKDF2.
+- **Xác thực sai không tiết lộ email nào đã đăng ký** — email-không-tồn-tại và
+  sai-mật-khẩu đều trả None, và vẫn băm-rồi-so với hash giả để thời gian phản
+  hồi không làm timing oracle.
+- **Phiên thu hồi được** — đăng xuất xoá dòng ở DB; đổi mật khẩu đá mọi phiên.
+  Đây là điểm khác biệt cốt lõi so với cookie ký thuần (không có id để thu hồi).
+
+### Điều chỉnh có lý do — CHƯA gỡ đường admin-env
+
+Kế hoạch gốc ghi "đường mới xanh thì gỡ session.py cũ". Nhưng gỡ admin-env bây
+giờ là sai: chưa có cách tạo admin **trong CSDL** (trang quản trị tới H3 mới có
+qua sqladmin). Gỡ trước = một CSDL trống thì không ai đăng nhập được. Giữ
+admin-env làm đường lui chính thức tới H3.
+
+### Hai lỗi thật phát hiện trong lúc làm
+
+1. **So sánh datetime naive vs aware.** SQLite không giữ tzinfo nên `expires_at`
+   đọc ra là naive, so với thời gian aware thì ném TypeError. PostgreSQL không
+   bị, nhưng code nên chịu được cả hai backend (test SQLite, production Postgres).
+   Thêm `_aware()` chuẩn hoá tại điểm so sánh.
+2. **Ký tự điều khiển tái diễn trong chính nhật ký H1.1** — đoạn văn mô tả lỗi
+   `\b`/`\a` lại chứa đúng ký tự đó (heredoc nuốt escape). Lần thứ hai trong một
+   phiên. `test_61` bắt được. Đã sửa và ghi lại như bằng chứng nó âm thầm cỡ nào.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` | **1.462 passed**, 1 skipped, 23 subtests, 256s |
+| `tests/test_64_nguoi_dung.py` (SQLite) | 18 passed |
+| Nghiệm thu đăng nhập trên **PostgreSQL thật** | 303→200→303, phiên bị thu hồi (0 dòng còn lại), user tạm đã dọn |
+| `python tools/scan_source_secrets.py` | 0 finding |
+
+### Cách lùi lại
+
+Xoá `platform_core/users.py`, `server/deps.py`,
+`tests/test_64_nguoi_dung.py`, migration `..._them_bang_users_va_sessions.py`;
+hoàn `platform_core/models.py`, `server/auth/session.py`,
+`server/routes/auth.py` về commit trước.
+
+### Việc tiếp theo
+
+1. H1.3 — đăng ký + xác thực email (Resend) + Turnstile chống lạm dụng. Đây là
+   phần bắt buộc trước khi cho tự đăng ký (Q7): không có nó, credit dùng thử bị
+   hút cạn bằng tài khoản ảo.
+2. (người dùng, độc lập) H0.1 — kiểm tra Cloudflare zone subdomain.
+
+---
+
 ## 2026-07-31 — H1.1 đóng: nghiệm thu trên PostgreSQL thật
 
 - **Mục tiêu:** đóng nốt H1.1 sau khi có PostgreSQL.
@@ -129,8 +215,11 @@ khởi động lại. Đã đặt `CONNECT_TIMEOUT_S = 5` → còn 5,16 giây, c
 ngưỡng.
 
 **Lỗi 2 — ký tự điều khiển vô hình lọt vào script (lỗi của tôi).** Khi chèn
-đoạn PowerShell bằng chuỗi Python không phải raw-string, `in` thành `in`
-và `pp.env` thành `pp.env`. Năm chỗ, hai file.
+đoạn PowerShell bằng chuỗi Python không phải raw-string, đường dẫn kết thúc
+bằng "backslash-b-i-n" bị biến thành ký tự chr(8) rồi "in", và
+"backslash-a-p-p" thành chr(7) rồi "pp". Năm chỗ, hai file. (Đúng lỗi này còn
+tái diễn ngay trong chính đoạn nhật ký mô tả nó — lần thứ hai trong một phiên,
+đủ để thấy nó âm thầm cỡ nào.)
 
 Hậu quả nếu lọt qua:
 - bộ cài không tìm thấy PostgreSQL rồi báo "cài thất bại" — **sai nguyên nhân**;
