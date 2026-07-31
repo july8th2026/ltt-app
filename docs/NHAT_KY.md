@@ -14,6 +14,94 @@
 
 ---
 
+## 2026-07-31 — H1.3: đăng ký, xác thực email, chống lạm dụng
+
+- **Mục tiêu:** cho tự đăng ký an toàn (Q7) — không để credit dùng thử bị hút
+  cạn bằng tài khoản ảo (Q9).
+- **Hạng mục:** H1.3 — **xong phần code**; phần cần khoá thật để lại cho người dùng.
+- **Trạng thái:** xong (code), có 2 việc chờ khoá của người dùng + 1 việc nối ở H3.
+
+### Đã làm
+
+- `platform_core/mailer.py`: tầng gửi mail tách khỏi nghiệp vụ. `ResendMailer`
+  (production, gọi API qua httpx — không thêm SDK) và `ConsoleMailer` (dev/test,
+  giữ thư trong RAM để test đọc lại link). Chọn theo biến môi trường. Nhờ tách
+  này, toàn bộ luồng đăng ký test được **không cần khoá Resend**.
+- `platform_core/tokens.py`: token xác thực email + đặt lại mật khẩu bằng
+  `itsdangerous` (đây là chỗ Q24 thay fastapi-users). Ký + hết hạn + mỗi loại
+  một salt riêng nên không dùng lẫn được.
+- `server/auth/turnstile.py`: xác minh Turnstile phía máy chủ (Q20). Bỏ qua có
+  kiểm soát khi chưa cấu hình; lỗi mạng tới Cloudflare thì TỪ CHỐI (an toàn
+  mặc định), không cho qua.
+- `platform_core/antifraud.py`: chặn tên miền mail dùng-một-lần (danh sách tĩnh,
+  không thêm phụ thuộc) + giới hạn số tài khoản/IP/ngày (đếm qua cột
+  `registration_ip` mới).
+- `server/routes/register.py` + 5 template: đăng ký, xác thực email, quên/đặt
+  lại mật khẩu. Đặt lại mật khẩu **thu hồi mọi phiên**.
+- Migration thêm cột `registration_ip`.
+- `tests/test_65_dang_ky.py` — 8 test.
+
+### Không lộ email nào đã đăng ký — ở ba chỗ
+
+- Đăng ký trùng email → trả trang "đã gửi thư" GIỐNG HỆT lần đầu (không báo
+  "email đã tồn tại").
+- Quên mật khẩu với email không tồn tại → phản hồi giống hệt email có tồn tại.
+- (từ H1.2) xác thực sai không phân biệt email-không-có với sai-mật-khẩu.
+
+### Nghiệm thu
+
+- 8 test trên SQLite.
+- **PostgreSQL thật + browser (Playwright):** mở /register → điền form → submit
+  → user vào Postgres với `is_verified=False`, `registration_ip=127.0.0.1` →
+  bấm link xác thực → trang báo thành công → DB đổi `is_verified=True`. Dọn
+  user tạm sau đó. Console chỉ có 1 lỗi favicon 404 (vô hại).
+
+### Lỗi thật phát hiện: migration chỉ-Postgres làm vỡ round-trip SQLite
+
+Migration `registration_ip` dùng `ALTER COLUMN ... DROP DEFAULT` (bỏ default sau
+khi backfill hàng cũ). PostgreSQL chạy được (đã nghiệm thu), nhưng SQLite không
+hỗ trợ `ALTER COLUMN` → test round-trip trên SQLite vỡ. Bọc bước đó theo
+`dialect.name == "postgresql"`: production là Postgres nên vẫn đúng ý định, còn
+SQLite (chỉ dùng test bộ máy migration) không cần bỏ default. Test round-trip
+SQLite chính là thứ bắt được — nó chạy MỌI migration nên tự bảo vệ chống lỗi
+này tái diễn.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` | **1.470 passed**, 1 skipped, 23 subtests |
+| `tests/test_65_dang_ky.py` | 8 passed |
+| Round-trip migration trên SQLite + PostgreSQL thật | sạch cả hai |
+| Nghiệm thu đăng ký→xác thực trên PostgreSQL + browser | thành công |
+| `python tools/scan_source_secrets.py` | 0 finding |
+
+### Còn chờ người dùng (code đã sẵn sàng)
+
+1. Resend: đặt `RESEND_API_KEY` + `LTT_MAIL_FROM` + 3 bản ghi DNS (Q19) → thư
+   xác thực tới hộp thư thật (giờ đang ghi vào log qua ConsoleMailer).
+2. Turnstile: đặt `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` (Q20) → form
+   đăng ký có ô chống bot thật.
+
+### Nối ở H3
+
+- Cấp credit dùng thử sau xác thực: `/verify-email` đã có đúng chỗ nối (ghi chú
+  trong code), chờ bảng credit ở H3.
+
+### Cách lùi lại
+
+Xoá `platform_core/{mailer,tokens,antifraud}.py`, `server/auth/turnstile.py`,
+`server/routes/register.py`, 5 template mới, `tests/test_65_dang_ky.py`,
+migration `..._them_cot_registration_ip.py`; hoàn `platform_core/models.py`,
+`platform_core/users.py`, `server/app.py`, `server/templates/{login,base_plain}.html`.
+
+### Việc tiếp theo
+
+1. H1.4 — phân quyền app cho từng người dùng (mở/khoá/ẩn), chặn ở tầng route.
+2. (người dùng, độc lập) H0.1 Cloudflare, và các khoá Resend/Turnstile ở trên.
+
+---
+
 ## 2026-07-31 — H1.2: người dùng, phiên đăng nhập phía máy chủ
 
 - **Mục tiêu:** hệ thống biết "ai đang dùng"; dữ liệu người này người kia tách nhau.

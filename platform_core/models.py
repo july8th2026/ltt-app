@@ -91,6 +91,9 @@ class User(Base):
         DateTime(timezone=True), default=_bay_gio, nullable=False)
     last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    # IP lúc đăng ký — dùng để giới hạn số tài khoản mới trên mỗi IP mỗi ngày
+    # (chống lạm dụng credit dùng thử, Q9). Rỗng khi admin tạo tay.
+    registration_ip: Mapped[str] = mapped_column(String(45), default="", nullable=False)
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<User {self.email} role={self.role} verified={self.is_verified}>"

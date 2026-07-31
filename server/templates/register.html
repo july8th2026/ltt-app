@@ -1,0 +1,24 @@
+{% extends "base_plain.html" %}
+{% block title %}Đăng ký — LTT AI Studio{% endblock %}
+{% block content %}
+  <div class="logo">
+    <h1>LTT AI Studio</h1>
+    <p>Tạo tài khoản</p>
+  </div>
+  <div class="card">
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/register">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="email" name="email" placeholder="Email" required autofocus
+             autocomplete="email" value="{{ email }}">
+      <input type="password" name="password" placeholder="Mật khẩu (tối thiểu 8 ký tự)"
+             required minlength="8" autocomplete="new-password">
+      {% if turnstile_site_key %}
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      {% endif %}
+      <button type="submit">Đăng ký</button>
+    </form>
+    <p class="hint"><a href="/login">Đã có tài khoản? Đăng nhập</a></p>
+  </div>
+{% endblock %}

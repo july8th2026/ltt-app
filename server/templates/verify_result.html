@@ -1,0 +1,14 @@
+{% extends "base_plain.html" %}
+{% block title %}Xác thực email — LTT AI Studio{% endblock %}
+{% block content %}
+  <div class="logo"><h1>LTT AI Studio</h1></div>
+  <div class="card">
+    {% if ok %}
+      <p>Xác thực email thành công. Tài khoản của bạn đã kích hoạt.</p>
+      <p class="hint"><a href="/login">Đăng nhập ngay</a></p>
+    {% else %}
+      <p class="error">Liên kết xác thực không hợp lệ hoặc đã hết hạn.</p>
+      <p class="hint"><a href="/register">Đăng ký lại</a></p>
+    {% endif %}
+  </div>
+{% endblock %}

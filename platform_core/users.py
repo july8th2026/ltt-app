@@ -40,7 +40,7 @@ def chuan_hoa_email(email: str) -> str:
 
 def tao_nguoi_dung(
     db: DbSession, *, email: str, password: str, display_name: str = "",
-    role: str = "user", is_verified: bool = False,
+    role: str = "user", is_verified: bool = False, registration_ip: str = "",
 ) -> User:
     """Tạo một người dùng. Ném `UserError` nếu email đã tồn tại.
 
@@ -64,6 +64,7 @@ def tao_nguoi_dung(
         password_hash=hash_password(password),
         role=role,
         is_verified=is_verified,
+        registration_ip=(registration_ip or "")[:45],
     )
     db.add(user)
     db.flush()      # gán id ngay, nhưng chưa commit

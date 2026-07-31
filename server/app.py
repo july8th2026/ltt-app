@@ -147,8 +147,11 @@ def create_app(*, env: dict | None = None) -> FastAPI:
             )
         return response
 
+    from server.routes import register as register_routes
+
     app.include_router(health_routes.router)
     app.include_router(auth_routes.router)
+    app.include_router(register_routes.router)
     app.include_router(dashboard_routes.router)
     app.include_router(status_routes.router)
     app.include_router(accounts_routes.router)

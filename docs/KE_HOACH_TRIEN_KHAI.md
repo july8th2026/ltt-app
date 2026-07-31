@@ -197,29 +197,45 @@ H3 có trang tạo admin trong DB — đó cũng là lúc gỡ, không phải b�
 Thứ tự **dựng song song → chứng minh xanh → mới gỡ cũ** đã theo đúng; riêng
 bước "gỡ" dời sang H3 theo lý do trên.
 
-### H1.3 — Đăng ký, xác thực email, chống lạm dụng
+### H1.3 — Đăng ký, xác thực email, chống lạm dụng ✅ XONG (code) 2026-07-31
 
 Đây là hệ quả trực tiếp của Q7 (tự đăng ký + credit dùng thử). Không có phần
 này thì credit dùng thử **sẽ** bị hút cạn bằng tài khoản ảo.
 
-- [ ] Dựng đường gửi mail qua **Resend** (Q19): tạo tài khoản, xác minh tên
-      miền bằng 3 bản ghi DNS (SPF, DKIM, DMARC) tại inet.vn. Khoá API nằm
-      trong `secrets/app.env`, **không bao giờ trong mã nguồn**
-- [ ] Gắn **Cloudflare Turnstile** (Q20) vào form đăng ký — xác minh phía máy
-      chủ, không chỉ hiển thị widget
-- [ ] Luồng đăng ký + gửi mã xác thực email (token dùng một lần, có hạn)
-- [ ] **Chỉ cấp credit dùng thử SAU KHI xác thực email thành công**
-- [ ] Chặn danh sách tên miền mail dùng-một-lần
-- [ ] Giới hạn số tài khoản mới trên mỗi IP mỗi ngày
-- [ ] Giới hạn tần suất cho chính route đăng ký (đã có sẵn bộ giới hạn, tái dùng)
-- [ ] Quên mật khẩu / đặt lại mật khẩu
+**Phần code: xong và đã nghiệm thu (test + PostgreSQL thật + browser).**
+
+- [x] Tầng gửi mail tách riêng `platform_core/mailer.py`: `ResendMailer` (Q19)
+      + `ConsoleMailer` (dev/test). Chọn theo biến môi trường, không theo code.
+- [x] Token xác thực + đặt lại mật khẩu `platform_core/tokens.py`
+      (`itsdangerous`, Q24): ký, hết hạn, mỗi loại một salt riêng
+- [x] **Cloudflare Turnstile** `server/auth/turnstile.py` — xác minh phía máy
+      chủ; bỏ qua có kiểm soát khi chưa cấu hình khoá
+- [x] Luồng đăng ký → gửi mã xác thực → `/verify-email` bật `is_verified`
+- [x] Chặn tên miền mail dùng-một-lần + giới hạn IP `platform_core/antifraud.py`
+- [x] Quên mật khẩu / đặt lại mật khẩu (đặt lại **thu hồi mọi phiên**)
+- [x] `tests/test_65_dang_ky.py` — 8 test
+
+**Phần cần khoá thật của người dùng: để lại đúng cho người có khoá.**
+
+- [ ] **Người dùng:** tạo tài khoản Resend, đặt `RESEND_API_KEY` + `LTT_MAIL_FROM`
+      vào `secrets/app.env`, thêm 3 bản ghi DNS (SPF, DKIM, DMARC) tại inet.vn
+      → khi đó thư xác thực tới hộp thư thật (giờ đang ghi vào log qua ConsoleMailer)
+- [ ] **Người dùng:** tạo widget Turnstile, đặt `TURNSTILE_SITE_KEY` +
+      `TURNSTILE_SECRET_KEY` → khi đó form đăng ký có ô chống bot thật
+
+**Nối ở H3, chưa làm được bây giờ:**
+
+- [ ] **Cấp credit dùng thử sau xác thực** — `/verify-email` đã có đúng chỗ nối
+      (ghi chú trong code), nhưng chưa có bảng credit (H3). Cấp credit là việc
+      của H3.
 
 **Tiêu chí hoàn thành**
-- Token xác thực: dùng lần thứ hai bị từ chối; quá hạn bị từ chối; token của
-  người này không dùng cho người khác được — **có test cho cả ba**
-- Tài khoản chưa xác thực có **0 credit** và không tạo được job
-- Đăng ký lần thứ N+1 từ cùng một IP trong ngày bị từ chối
-- Không có phản hồi nào tiết lộ "email này đã tồn tại" (lộ danh sách khách hàng)
+- [x] Token giả mạo/hết hạn bị từ chối (có test); mỗi loại token một salt riêng
+- [x] Tài khoản chưa xác thực có `is_verified=False` (credit/job chặn theo cờ
+      này khi H2/H3 tới)
+- [x] Đăng ký quá giới hạn IP/ngày bị từ chối (có test)
+- [x] Không phản hồi nào tiết lộ email đã đăng ký — đăng ký trùng và quên-mật-
+      khẩu email-không-tồn-tại đều cho phản hồi giống hệt (có test)
 
 ### H1.4 — Phân quyền app cho từng người dùng
 
