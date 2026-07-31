@@ -21,7 +21,7 @@ from typing import Optional
 
 from platform_core import jobs as jobq
 from platform_core.db import get_session
-from platform_core.models import Job
+from platform_core.models import JOB_ERROR, Job
 
 log = logging.getLogger(__name__)
 
@@ -89,23 +89,52 @@ def _chay_mot_job(worker_id: str) -> bool:
         if not isinstance(result, dict):
             result = {"result": result}
     except Exception as exc:
-        # 3a. Thất bại → fail() (có thể hẹn chạy lại).
+        # 3a. Thất bại → fail(). Chỉ HOÀN credit khi job hết lượt (thành error);
+        # nếu còn lượt (quay lại queued) thì giữ nguyên phần đã giữ để lần chạy
+        # sau dùng — hoàn rồi giữ lại mỗi lần retry là thừa và dễ sai.
         for db in _one_session():
             job = db.get(Job, job_id)
             if job is not None:
                 jobq.fail(db, job, f"{type(exc).__name__}: {exc}")
+                if job.status == JOB_ERROR:
+                    _hoan_credit(db, job)
                 db.commit()
         log.warning("job %s that bai: %s", job_id[:8], exc)
         return True
 
-    # 3b. Thành công → complete().
+    # 3b. Thành công → complete() + quyết toán credit (cùng transaction).
     for db in _one_session():
         job = db.get(Job, job_id)
         if job is not None:
             jobq.complete(db, job, result)
+            _quyet_toan_credit(db, job, result)
             db.commit()
     log.info("job %s xong", job_id[:8])
     return True
+
+
+def _quyet_toan_credit(db, job: Job, result: dict) -> None:
+    """Quyết toán credit khi job xong. Chỉ chạm sổ nếu job có giữ chỗ.
+
+    Giá thật lấy từ `result["credit_cost"]` nếu handler báo (như Seedance tính
+    theo token thật); nếu không, dùng đúng phần đã giữ (giá ước tính = giá thật,
+    như demo). Job không đi qua credit (không có hold) thì bỏ qua.
+    """
+    from platform_core import credit
+    if not job.user_id or credit.so_da_giu(db, job.id) == 0:
+        return
+    actual = result.get("credit_cost")
+    if actual is None:
+        actual = credit.so_da_giu(db, job.id)
+    credit.quyet_toan(db, job.user_id, job.id, int(actual))
+
+
+def _hoan_credit(db, job: Job) -> None:
+    """Hoàn credit khi job thất bại hẳn. Idempotent, bỏ qua nếu không có hold."""
+    from platform_core import credit
+    if not job.user_id or credit.so_da_giu(db, job.id) == 0:
+        return
+    credit.hoan(db, job.user_id, job.id)
 
 
 def run_forever(worker_id: str, *, stop=None) -> None:

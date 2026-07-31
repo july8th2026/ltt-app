@@ -220,3 +220,46 @@ class Job(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"
+
+
+# ── Loại bút toán credit ──────────────────────────────────────────────────────
+# topup  : người dùng nạp tiền → +credit
+# grant  : admin cấp tay (khuyến mãi, dùng thử, bồi thường) → +credit
+# hold   : giữ chỗ khi nhận job → -credit (theo giá ước tính)
+# settle : quyết toán khi job xong → điều chỉnh cho khớp giá thật
+# refund : hoàn khi job lỗi → +credit (trả lại phần đã giữ)
+CREDIT_TOPUP = "topup"
+CREDIT_GRANT = "grant"
+CREDIT_HOLD = "hold"
+CREDIT_SETTLE = "settle"
+CREDIT_REFUND = "refund"
+
+
+class CreditEntry(Base):
+    """Một bút toán trong sổ credit (H3). **Chỉ ghi thêm, không bao giờ sửa/xoá.**
+
+    Vì sao append-only: số dư là **tổng của sổ**, không phải một ô `balance` bị
+    sửa đè. Một ô số dư sửa đè là chỗ hai request đồng thời ghi chồng lên nhau
+    và tiền lệch mà không truy được. Sổ append-only thì mọi biến động có dấu
+    vết, và số dư luôn tái dựng được từ đầu — với tiền, truy được nguồn gốc
+    quan trọng hơn tiết kiệm vài dòng.
+
+    Mỗi bút toán gắn `job_id` (nếu liên quan một job) để:
+    - tính đã giữ bao nhiêu cho job đó (`hold`);
+    - chặn quyết toán/hoàn **hai lần** cùng một job (idempotent — worker có thể
+      gọi lại sau khi retry).
+    """
+
+    __tablename__ = "credit_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    delta: Mapped[int] = mapped_column(Integer, nullable=False)   # +nạp/hoàn, -trừ
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)
+    note: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<CreditEntry user={self.user_id} {self.kind} {self.delta:+d}>"

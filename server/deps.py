@@ -38,6 +38,33 @@ def get_db() -> Iterator[Session]:
             next(gen)      # để get_session chạy nốt phần đóng phiên
 
 
+def user_hien_tai(request) -> Optional["object"]:
+    """User CSDL từ phiên đăng nhập, hoặc None.
+
+    None khi: chưa đăng nhập, đăng nhập bằng đường admin-env (không có user_id
+    trong bảng users), hoặc CSDL chưa cấu hình. Dùng cho các route cần một user
+    thật (submit job, xem job, credit) — admin-env là đường lui vận hành, không
+    chạy job.
+    """
+    try:
+        sid = request.session.get("sid")
+        if not sid:
+            return None
+        from platform_core.db import get_session
+        from platform_core.users import lay_user_tu_phien
+        gen = get_session()
+        db = next(gen)
+        try:
+            return lay_user_tu_phien(db, sid)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception:
+        return None
+
+
 @contextlib.contextmanager
 def mo_db_optional() -> Iterator[Optional[Session]]:
     """Mở phiên CSDL nếu có thể, ngược lại trả None — không ném lỗi.

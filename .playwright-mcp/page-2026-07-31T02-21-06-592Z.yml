@@ -1,0 +1,15 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "LTT AI Studio" [level=1] [ref=e4]
+    - paragraph [ref=e5]: Bảng điều khiển đăng bài Facebook & TikTok
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - textbox "Tên đăng nhập" [ref=e8]
+      - textbox "Mật khẩu" [ref=e9]
+      - button "Đăng nhập" [ref=e10] [cursor=pointer]
+    - paragraph [ref=e11]:
+      - link "Tạo tài khoản" [ref=e12] [cursor=pointer]:
+        - /url: /register
+      - text: ·
+      - link "Quên mật khẩu?" [ref=e13] [cursor=pointer]:
+        - /url: /forgot-password

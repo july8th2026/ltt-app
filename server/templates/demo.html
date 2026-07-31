@@ -22,7 +22,14 @@
                   placeholder="Nhập gì cũng được — job sẽ đảo ngược chuỗi này">{% if result %}{% endif %}</textarea>
         <span class="hint">Giá: 1 credit mỗi 100 ký tự (do manifest quyết định).</span>
       </div>
-      <div><button type="submit" style="background:{{ app.accent }};">▶  Chạy job</button></div>
+      <div class="row" style="gap:10px;">
+        <button type="submit" style="background:{{ app.accent }};">▶  Chạy ngay</button>
+        <button type="submit" formaction="{{ app.route_prefix }}/queue"
+                class="btn-ghost">⏱  Chạy qua hàng đợi</button>
+      </div>
+      <span class="hint">"Chạy ngay" xử lý trong request (chỉ hợp với job vài
+        mili-giây như demo). "Chạy qua hàng đợi" là khuôn cho app thật: tạo job,
+        giữ chỗ credit, worker chạy nền, xem tiến độ ở trang việc.</span>
     </form>
   </div>
 

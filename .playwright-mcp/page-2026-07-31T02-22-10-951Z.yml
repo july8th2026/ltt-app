@@ -1,0 +1,71 @@
+- generic [ref=f3e2]:
+  - complementary [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - text: LTT AI Studio
+      - generic [ref=f3e5]: v1.0
+    - navigation [ref=f3e6]:
+      - link "🏠 Trang chủ" [ref=f3e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f3e8]: 🏠
+        - text: Trang chủ
+      - generic [ref=f3e9]: Demo — kiểm tra hạ tầng
+      - link "🧪 Demo hạ tầng" [ref=f3e10] [cursor=pointer]:
+        - /url: /demo
+        - generic [ref=f3e11]: 🧪
+        - text: Demo hạ tầng
+      - generic [ref=f3e12]: Đăng bài Facebook + TikTok
+      - link "📊 Sheet FB" [ref=f3e13] [cursor=pointer]:
+        - /url: /sheet/facebook
+        - generic [ref=f3e14]: 📊
+        - text: Sheet FB
+      - link "📊 Sheet TikTok" [ref=f3e15] [cursor=pointer]:
+        - /url: /sheet/tiktok
+        - generic [ref=f3e16]: 📊
+        - text: Sheet TikTok
+      - link "⚙️ Manual FB" [ref=f3e17] [cursor=pointer]:
+        - /url: /manual/facebook
+        - generic [ref=f3e18]: ⚙️
+        - text: Manual FB
+      - link "🎵 Manual TikTok" [ref=f3e19] [cursor=pointer]:
+        - /url: /manual/tiktok
+        - generic [ref=f3e20]: 🎵
+        - text: Manual TikTok
+      - link "🔐 Tài khoản FB" [ref=f3e21] [cursor=pointer]:
+        - /url: /facebook
+        - generic [ref=f3e22]: 🔐
+        - text: Tài khoản FB
+      - link "🎵 Tài khoản TikTok" [ref=f3e23] [cursor=pointer]:
+        - /url: /tiktok
+        - generic [ref=f3e24]: 🎵
+        - text: Tài khoản TikTok
+      - link "📈 Monitor" [ref=f3e25] [cursor=pointer]:
+        - /url: /monitor
+        - generic [ref=f3e26]: 📈
+        - text: Monitor
+      - link "📋 TT Audit" [ref=f3e27] [cursor=pointer]:
+        - /url: /audit
+        - generic [ref=f3e28]: 📋
+        - text: TT Audit
+      - generic [ref=f3e29]: Hệ thống
+      - link "📋 Việc của tôi" [ref=f3e30] [cursor=pointer]:
+        - /url: /jobs
+        - generic [ref=f3e31]: 📋
+        - text: Việc của tôi
+      - link "🔧 Cài đặt" [ref=f3e32] [cursor=pointer]:
+        - /url: /settings
+        - generic [ref=f3e33]: 🔧
+        - text: Cài đặt
+      - link "🩺 Tình trạng" [ref=f3e34] [cursor=pointer]:
+        - /url: /status
+        - generic [ref=f3e35]: 🩺
+        - text: Tình trạng
+    - button "Đăng xuất (h4@example.com)" [ref=f3e38] [cursor=pointer]
+  - generic [ref=f3e41]:
+    - heading "Job 3fea2fda" [level=1] [ref=f3e42]
+    - paragraph [ref=f3e43]: demo.reverse · tạo lúc 09:22 31/07/2026
+    - generic [ref=f3e46]:
+      - generic [ref=f3e47]: đang chờ
+      - generic [ref=f3e48]: 0%
+    - paragraph [ref=f3e50]:
+      - link "← Về danh sách việc" [ref=f3e51] [cursor=pointer]:
+        - /url: /jobs

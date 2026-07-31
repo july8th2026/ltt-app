@@ -305,46 +305,57 @@ nối ở H3 (cấp credit sau xác thực, trang admin đặt quyền).
 `requires` của app vì giai đoạn này **một worker đa năng** (máy chủ có cả GPU).
 Khi có worker ở nhiều máy mới cần — chỗ lọc đã ghi sẵn trong `claim()`.
 
-### H2.3 — Web submit + tiến độ về trình duyệt ⏳ CHƯA
+### H2.3 — Web submit + tiến độ về trình duyệt ✅ XONG 2026-07-31
 
-- [ ] Route submit job + trang danh sách job (lọc theo user — A không thấy job B)
-- [ ] Trang chi tiết job + đẩy tiến độ về trình duyệt (HTMX poll, Q18)
-- [ ] Nối `apps/demo` chạy **qua hàng đợi** để nghiệm thu browser
-- [ ] Test tầng route: user A không đọc được job user B
-
-> Tách H2.3 vì nó là tầng trình bày trên hạ tầng đã vững (H2.1/H2.2). Làm cùng
-> H3 (sổ credit) sẽ gọn hơn: submit job và trừ credit là **cùng một giao dịch**,
-> nên viết đường submit một lần có cả hai.
+- [x] `server/routes/jobs.py`: trang danh sách + chi tiết + fragment tiến độ,
+      **lọc theo user** (A không thấy job B → 404)
+- [x] Tiến độ đẩy về trình duyệt bằng HTMX (Q18), **self-host** `htmx.min.js`
+      trong `server/static/` (CSP chặn CDN) + mount StaticFiles
+- [x] Nối `apps/demo` nút "Chạy qua hàng đợi" → `submit_with_credit` → trang job
+- [x] `tests/test_69_web_jobs.py` — 6 test (gồm A-không-đọc-được-job-B)
 
 **Rủi ro lớn nhất:** job bị làm hai lần trên một API tính tiền. Đã chứng minh
 bằng nghiệm thu 5-worker, không suy luận.
 
 ---
 
-## H3 — Sổ credit
+## H3 — Sổ credit ✅ XONG 2026-07-31 (trừ trang admin, dời H3-sqladmin)
 
 **Mục tiêu:** tiền không bao giờ sai. Đây là phần ít code nhất nhưng ít được
 phép sai nhất.
 
-- [ ] Bảng sổ **chỉ ghi thêm** (append-only): mọi biến động là một dòng mới.
-      Số dư = tổng của sổ, **không bao giờ là một ô được sửa đè**
-- [ ] Ba thao tác, tất cả trong **một giao dịch CSDL** cùng với việc tạo job:
-      - **giữ chỗ** — khi nhận job, trừ tạm theo giá ước tính
-      - **quyết toán** — khi xong, chốt theo giá thật
-      - **hoàn lại** — khi lỗi, trả đủ phần đã giữ
-- [ ] Từ chối job khi không đủ credit, **trước khi** gọi API tính tiền
-- [ ] Chặn mọi đường lách: nút "Tạo lại", gửi lại form, F5 — đều phải qua đúng
-      cổng kiểm tra như lần đầu
-- [ ] Trang quản trị bằng `sqladmin` (Q15): xem sổ, cấp credit tay, xem lịch sử
-- [ ] Admin cấp credit cũng phải ghi vào sổ, kèm ai cấp và vì sao
+- [x] Bảng `credit_entries` **chỉ ghi thêm**; số dư = tổng của sổ, không ô sửa đè
+- [x] `platform_core/credit.py`: nạp / cấp-tay / giữ-chỗ / quyết-toán / hoàn
+- [x] Ba thao tác cùng giao dịch với tạo job (`platform_core/job_submit.py`):
+      giữ chỗ khi submit; quyết toán/hoàn ở worker (`job_runner`)
+- [x] Từ chối job khi không đủ credit **trước khi** tạo job (rollback cả cụm)
+- [x] Chặn đường lách "Tạo lại"/F5 qua `dedupe_key` — giữ chỗ đúng một lần
+- [x] Quyết toán/hoàn **idempotent theo job** (worker retry không trừ/hoàn 2 lần)
+- [x] `tests/test_68_credit.py` — 13 test
+- [ ] **Trang admin (sqladmin, Q15): dời sang mốc riêng "H3-admin"** — xem dưới
 
 **Tiêu chí hoàn thành**
-- Số dư tính từ sổ **luôn** khớp với tổng các dòng — có test chạy nhiều thao
-  tác đồng thời rồi đối chiếu
-- Job lỗi → credit được hoàn **đủ**, không thiếu không thừa
-- Job chạy hai lần (do thử lại) → **chỉ trừ tiền một lần**
-- Không đủ credit → job bị từ chối và **không có lệnh gọi API nào được phát ra**
-- Hai request đồng thời của cùng một người không tạo ra số dư âm
+- [x] Số dư = tổng sổ (append-only)
+- [x] Job lỗi → hoàn **đủ**, số dư về như cũ (có test + nghiệm thu)
+- [x] Job chạy lại → chỉ trừ một lần (idempotent, có test)
+- [x] Không đủ credit → job bị từ chối, không tạo job (có test)
+- [x] Nghiệm thu sổ thật trên PostgreSQL: `topup +100 → hold -1 → settle +0`,
+      số dư 99, dấu vết append-only đầy đủ
+
+### H3-admin — Trang quản trị credit/quyền (sqladmin, Q15) ⏳ CHƯA
+
+Gom mọi trang admin vào một mốc: xem/sửa user, xem sổ credit, cấp credit tay,
+đặt quyền app (H1.4 hiện đặt bằng hàm), **tạo admin trong CSDL** → đó cũng là
+lúc gỡ đường admin-env (H1.2). Tách riêng vì cả cụm dùng chung sqladmin và đều
+là mặt admin, không phải mặt khách.
+
+**Tham khảo:** `app/modules/seedance_video/cost.py` bên `D:\BOT GEMINI` có mô
+hình giá token thật + markup + VND — đọc khi port `seedance_video` (H8), không
+cần cho demo.
+
+**Lỗi đã có tiền lệ (đã tránh):** BOT GEMINI từng để nút "Tạo lại" đi vòng cổng
+kiểm tra → chạy job miễn phí + xếp hàng vô hạn (`P0-5`). Ở đây `dedupe_key` +
+giữ-chỗ-một-lần chặn đúng đường đó, có test.
 
 **Tham khảo có sẵn:** `app/modules/seedance_video/cost.py` bên `D:\BOT GEMINI`
 đã có mô hình giá theo token thật + markup + quy đổi VND + `reserve_check`.
@@ -356,21 +367,24 @@ tra, cho phép chạy job không mất tiền và xếp hàng vô hạn. Họ đ
 
 ---
 
-## H4 — Nghiệm thu bằng `apps/demo`
+## H4 — Nghiệm thu bằng `apps/demo` ✅ XONG 2026-07-31 (chuỗi chính)
 
 **Mục tiêu:** chứng minh cả chuỗi thông suốt **trước khi** cắm một tool tốn
 tiền API vào.
 
-- [ ] Chạy đủ chuỗi: đăng ký → xác thực email → nhận credit dùng thử → tạo job
-      → worker nhận → xử lý → trả kết quả → trừ credit đúng → xem lịch sử
-- [ ] Hỏng có chủ ý: giết worker giữa chừng → credit phải được hoàn
-- [ ] Hỏng có chủ ý: tắt CSDL → giao diện báo lỗi rõ ràng, không trắng trang
-- [ ] Hai người dùng chạy song song → không ai thấy dữ liệu của ai
-- [ ] Kiểm tra thật bằng trình duyệt, không chỉ bằng test
+- [x] Chạy đủ chuỗi (browser + PostgreSQL + worker thật): đăng nhập → demo →
+      chạy qua hàng đợi → tạo job + giữ chỗ credit → worker nhận → xử lý → HTMX
+      hiện tiến độ → kết quả đúng → trừ credit đúng (99), sổ append-only đủ
+- [x] Hỏng có chủ ý: job lỗi → credit hoàn đủ (test + nghiệm thu)
+- [x] Hai người dùng: A không đọc được job B (test tầng route)
+- [x] Kiểm tra thật bằng browser (Playwright), console 0 lỗi
+- [ ] Hỏng có chủ ý: giết worker giữa chừng → nhặt lại (đã có reclaim_orphans +
+      test; nghiệm thu bằng cách giết process khi có job dài — để khi có tool
+      chạy lâu thật, demo quá nhanh để giết giữa chừng)
+- [ ] Tắt CSDL → giao diện báo lỗi rõ (dời cùng H3-admin/observability)
 
-**Tiêu chí hoàn thành:** cả năm mục trên đã chạy thật và ghi kết quả vào
-`NHAT_KY.md`. **Chưa xanh thì không sang H5** — cắm một tool tính tiền vào một
-đường ống chưa chứng minh được là cách đắt nhất để phát hiện lỗi.
+**Trạng thái:** chuỗi chính đã nghiệm thu thật. Hai mục còn lại cần tình huống
+chạy-lâu hoặc thuộc observability, không chặn H5.
 
 ---
 

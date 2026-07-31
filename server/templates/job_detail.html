@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Job {{ job.id[:8] }} — LTT AI Studio{% endblock %}
+{% block content %}
+  <h1>Job {{ job.id[:8] }}</h1>
+  <p class="page-sub">{{ job.job_type }} · tạo lúc {{ job.created_at.strftime('%H:%M %d/%m/%Y') }}</p>
+  <div class="card">
+    {% include "_job_progress.html" %}
+  </div>
+  <p class="hint"><a href="/jobs">← Về danh sách việc</a></p>
+  <script src="/static/htmx.min.js"></script>
+{% endblock %}

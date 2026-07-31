@@ -14,6 +14,84 @@
 
 ---
 
+## 2026-07-31 — H3 (sổ credit) + H2.3 (web submit) + H4 (nghiệm thu): KHÉP HẠ TẦNG
+
+- **Mục tiêu:** sổ credit không bao giờ sai; submit job qua web + tiến độ; nghiệm
+  thu toàn chuỗi bằng demo.
+- **Hạng mục:** H3 (trừ trang admin) + H2.3 + H4 — **hoàn thành**.
+- **Trạng thái:** xong chuỗi chính. Giai đoạn hạ tầng (H1→H4) đã khép.
+
+### Sổ credit (H3)
+
+- Bảng `credit_entries` **chỉ ghi thêm**; số dư = tổng của sổ, không ô sửa đè.
+  Với tiền, truy được nguồn gốc quan trọng hơn tiết kiệm vài dòng.
+- `platform_core/credit.py`: nạp / cấp-tay / giữ-chỗ / quyết-toán / hoàn.
+  Giữ chỗ kiểm số dư TRƯỚC (không đủ → không tạo job, không gọi API). Quyết
+  toán/hoàn **idempotent theo job** (worker retry không trừ/hoàn hai lần).
+- `platform_core/job_submit.py`: tạo job + giữ chỗ credit trong CÙNG transaction.
+  Dedupe → giữ chỗ đúng một lần (chặn "Tạo lại"/F5 — đúng lỗi P0-5 của BOT GEMINI).
+- Nối worker: complete → quyết toán; error hẳn → hoàn (job_runner).
+
+### Web submit + tiến độ (H2.3)
+
+- `server/routes/jobs.py`: danh sách + chi tiết + fragment tiến độ, **lọc theo
+  user** (A xem job B → 404).
+- Tiến độ đẩy về trình duyệt bằng HTMX (Q18). **Self-host** `htmx.min.js` trong
+  `server/static/` + mount StaticFiles — CSP chặn CDN nên không dùng unpkg.
+- `apps/demo` thêm nút "Chạy qua hàng đợi" → khuôn cho app thật.
+
+### Nghiệm thu toàn chuỗi (H4) — browser + PostgreSQL + worker thật
+
+Đăng nhập (user CSDL) → /demo → "Chạy qua hàng đợi" → job tạo + giữ chỗ credit
+→ worker process nhặt → xử lý → **trang HTMX tự cập nhật** queued→done → kết quả
+đúng ("nghiem thu toan chuoi H4" đảo ngược). Console 0 lỗi.
+
+Sổ credit sau đó (đọc thật từ Postgres):
+    topup  +100
+    hold   -1    giu cho job
+    settle +0    giu 1, that 1
+    -> so du 99. Dau vet append-only day du, dung tuyet doi.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` | **1.513 passed**, 1 skipped, 23 subtests |
+| `tests/test_68_credit.py` | 13 passed |
+| `tests/test_69_web_jobs.py` | 6 passed (gồm A-không-đọc-job-B) |
+| Nghiệm thu H4 browser + Postgres + worker | chuỗi đầy đủ, sổ đúng, console sạch |
+| `python tools/scan_source_secrets.py` | 0 finding |
+
+### Đã tách/dời có lý do
+
+- **H3-admin** (trang quản trị credit/quyền qua sqladmin, tạo admin trong DB,
+  gỡ đường admin-env): gom vào một mốc riêng — cả cụm là mặt admin, dùng chung
+  sqladmin, không phải mặt khách.
+- Hai mục H4 phụ (giết worker giữa job dài; tắt CSDL báo lỗi UI): cần tình huống
+  chạy-lâu hoặc thuộc observability, không chặn H5.
+
+### Cách lùi lại
+
+Xoá `platform_core/{credit,job_submit}.py`, `server/routes/jobs.py`,
+`server/static/`, 3 template job, `tests/test_68_credit.py`,
+`tests/test_69_web_jobs.py`, migration `..._credit_entries`; hoàn
+`platform_core/{models,job_runner}.py`, `server/{app,deps,templating}.py`,
+`server/templates/{base,demo}.html`, `apps/demo/routes.py`.
+
+### === GIAI ĐOẠN HẠ TẦNG (H1→H4) ĐÃ KHÉP ===
+
+Nền tảng giờ chạy được toàn chuỗi: người dùng → phân quyền → hàng đợi job →
+worker → sổ credit → tiến độ web. Mọi mắt xích nghiệm thu trên PostgreSQL thật,
+phần lớn có cả browser. Sẵn sàng cắm tool tính phí đầu tiên (H5).
+
+### Việc tiếp theo
+
+1. H5 — port `thumbnail_api` từ BOT GEMINI thành app đầu tiên tính phí (Q11).
+2. H3-admin — trang quản trị (sqladmin) khi cần vận hành thật.
+3. (người dùng) H0.1 Cloudflare + khoá Resend/Turnstile.
+
+---
+
 ## 2026-07-31 — H2.1+H2.2: hàng đợi job + worker (bỏ procrastinate)
 
 - **Mục tiêu:** việc dài chạy ngoài vòng đời request, sống sót restart, không

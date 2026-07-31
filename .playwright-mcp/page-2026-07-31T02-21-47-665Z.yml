@@ -1,0 +1,77 @@
+- generic [ref=f2e2]:
+  - complementary [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - text: LTT AI Studio
+      - generic [ref=f2e5]: v1.0
+    - navigation [ref=f2e6]:
+      - link "🏠 Trang chủ" [ref=f2e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f2e8]: 🏠
+        - text: Trang chủ
+      - generic [ref=f2e9]: Demo — kiểm tra hạ tầng
+      - link "🧪 Demo hạ tầng" [ref=f2e10] [cursor=pointer]:
+        - /url: /demo
+        - generic [ref=f2e11]: 🧪
+        - text: Demo hạ tầng
+      - generic [ref=f2e12]: Đăng bài Facebook + TikTok
+      - link "📊 Sheet FB" [ref=f2e13] [cursor=pointer]:
+        - /url: /sheet/facebook
+        - generic [ref=f2e14]: 📊
+        - text: Sheet FB
+      - link "📊 Sheet TikTok" [ref=f2e15] [cursor=pointer]:
+        - /url: /sheet/tiktok
+        - generic [ref=f2e16]: 📊
+        - text: Sheet TikTok
+      - link "⚙️ Manual FB" [ref=f2e17] [cursor=pointer]:
+        - /url: /manual/facebook
+        - generic [ref=f2e18]: ⚙️
+        - text: Manual FB
+      - link "🎵 Manual TikTok" [ref=f2e19] [cursor=pointer]:
+        - /url: /manual/tiktok
+        - generic [ref=f2e20]: 🎵
+        - text: Manual TikTok
+      - link "🔐 Tài khoản FB" [ref=f2e21] [cursor=pointer]:
+        - /url: /facebook
+        - generic [ref=f2e22]: 🔐
+        - text: Tài khoản FB
+      - link "🎵 Tài khoản TikTok" [ref=f2e23] [cursor=pointer]:
+        - /url: /tiktok
+        - generic [ref=f2e24]: 🎵
+        - text: Tài khoản TikTok
+      - link "📈 Monitor" [ref=f2e25] [cursor=pointer]:
+        - /url: /monitor
+        - generic [ref=f2e26]: 📈
+        - text: Monitor
+      - link "📋 TT Audit" [ref=f2e27] [cursor=pointer]:
+        - /url: /audit
+        - generic [ref=f2e28]: 📋
+        - text: TT Audit
+      - generic [ref=f2e29]: Hệ thống
+      - link "📋 Việc của tôi" [ref=f2e30] [cursor=pointer]:
+        - /url: /jobs
+        - generic [ref=f2e31]: 📋
+        - text: Việc của tôi
+      - link "🔧 Cài đặt" [ref=f2e32] [cursor=pointer]:
+        - /url: /settings
+        - generic [ref=f2e33]: 🔧
+        - text: Cài đặt
+      - link "🩺 Tình trạng" [ref=f2e34] [cursor=pointer]:
+        - /url: /status
+        - generic [ref=f2e35]: 🩺
+        - text: Tình trạng
+    - button "Đăng xuất (h4@example.com)" [ref=f2e38] [cursor=pointer]
+  - generic [ref=f2e39]:
+    - strong [ref=f2e42]: 🧪 Demo — kiểm tra hạ tầng
+    - generic [ref=f2e44]:
+      - heading "🧪 Chạy thử một job" [level=2] [ref=f2e46]
+      - paragraph [ref=f2e47]: App này đi qua đủ chuỗi hạ tầng nhưng không gọi API nào, nên chạy bao nhiêu lần cũng miễn phí. Dùng nó để nghiệm thu sau mỗi lần sửa hạ tầng thay vì test bằng app tính tiền theo giây.
+      - generic [ref=f2e48]:
+        - generic [ref=f2e49]:
+          - generic [ref=f2e50]: Nội dung
+          - textbox "Nội dung" [ref=f2e51]:
+            - /placeholder: Nhập gì cũng được — job sẽ đảo ngược chuỗi này
+          - generic [ref=f2e52]: "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
+        - generic [ref=f2e53]:
+          - button "▶ Chạy ngay" [ref=f2e54] [cursor=pointer]
+          - button "⏱ Chạy qua hàng đợi" [ref=f2e55] [cursor=pointer]
+        - text: "\"Chạy ngay\" xử lý trong request (chỉ hợp với job vài mili-giây như demo). \"Chạy qua hàng đợi\" là khuôn cho app thật: tạo job, giữ chỗ credit, worker chạy nền, xem tiến độ ở trang việc."

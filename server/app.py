@@ -159,11 +159,13 @@ def create_app(*, env: dict | None = None) -> FastAPI:
             )
         return response
 
+    from server.routes import jobs as jobs_routes
     from server.routes import register as register_routes
 
     app.include_router(health_routes.router)
     app.include_router(auth_routes.router)
     app.include_router(register_routes.router)
+    app.include_router(jobs_routes.router)
     app.include_router(dashboard_routes.router)
     app.include_router(status_routes.router)
     app.include_router(accounts_routes.router)
@@ -173,6 +175,14 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(manual_routes.router)
     app.include_router(monitor_routes.router)
     app.include_router(oauth_routes.router)
+
+    # File tĩnh (HTMX self-host — Q18). Self-host chứ không CDN: CSP chặn
+    # script ngoài, và không phụ thuộc mạng để trang chạy.
+    import os as _os
+    from fastapi.staticfiles import StaticFiles
+    _static = _os.path.join(_os.path.dirname(__file__), "static")
+    if _os.path.isdir(_static):
+        app.mount("/static", StaticFiles(directory=_static), name="static")
 
     # Mount mọi app trong apps/. Nền tảng không biết trước app nào tồn tại —
     # nó đọc apps/*/manifest.py. Thêm app = thêm folder, không sửa file này.

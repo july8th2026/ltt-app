@@ -155,6 +155,8 @@
       {% endfor %}
 
       <div class="nav-group">Hệ thống</div>
+      <a href="/jobs" class="{{ 'active' if nav=='jobs' else '' }}">
+        <span class="ico">📋</span> Việc của tôi</a>
       <a href="/settings" class="{{ 'active' if nav=='settings' else '' }}">
         <span class="ico">🔧</span> Cài đặt</a>
       <a href="/status"   class="{{ 'active' if nav=='status' else '' }}">

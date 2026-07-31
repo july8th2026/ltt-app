@@ -1,0 +1,20 @@
+{# Mau HTML cho HTMX poll. Con chay thi tu poll tiep; xong thi dung. #}
+{% set running = job.status in ('queued','running') %}
+<div id="job-progress"
+     {% if running %}hx-get="/jobs/{{ job.id }}/progress" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <div class="row" style="align-items:center;gap:8px;">
+    {% if job.status == 'queued' %}<span class="badge badge-warn">đang chờ</span>
+    {% elif job.status == 'running' %}<span class="badge badge-warn">đang chạy</span>
+    {% elif job.status == 'done' %}<span class="badge badge-ok">xong</span>
+    {% else %}<span class="badge badge-err">lỗi</span>{% endif %}
+    <span class="muted">{{ job.progress }}%{% if job.progress_msg %} — {{ job.progress_msg }}{% endif %}</span>
+  </div>
+  <div style="height:8px;background:var(--panel2);border-radius:5px;margin:8px 0;overflow:hidden;">
+    <div style="height:100%;width:{{ job.progress }}%;background:var(--accent);"></div>
+  </div>
+  {% if job.status == 'done' and job.result %}
+    <div class="card"><h2>Kết quả</h2><pre>{{ job.result | tojson(indent=2) }}</pre></div>
+  {% elif job.status == 'error' %}
+    <div class="alert alert-err"><strong>Lỗi:</strong> {{ job.error }}</div>
+  {% endif %}
+</div>

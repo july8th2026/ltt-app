@@ -60,3 +60,62 @@ def demo_run(
         "csrf_token": issue_csrf_token(request),
         **ctx_result,
     }, status_code=200 if ctx_result["result"] else 400)
+
+
+@router.post("/queue", response_class=HTMLResponse)
+def demo_queue(
+    request: Request,
+    csrf_token: str = Form(...),
+    text: str = Form(""),
+    user: str = Depends(require_login),
+):
+    """Chạy demo QUA HÀNG ĐỢI — đây mới là khuôn cho app thật (Q1/H4).
+
+    Khác `demo_run` (chạy ngay trong request): tạo job + giữ chỗ credit trong
+    một giao dịch, rồi chuyển người dùng sang trang tiến độ; worker chạy job
+    nền. Đây là chuỗi mà mọi app tính phí phải đi qua.
+    """
+    from fastapi.responses import RedirectResponse
+
+    from platform_core import credit
+    from platform_core.job_submit import submit_with_credit
+    from platform_core.registry import RegistryError
+    from server.deps import user_hien_tai
+
+    if not verify_csrf_token(request, csrf_token):
+        return _loi(request, user, "Phiên đã hết hạn — tải lại trang rồi thử lại.")
+
+    u = user_hien_tai(request)
+    if u is None:
+        return _loi(request, user, "Chạy qua hàng đợi cần đăng nhập bằng tài "
+                    "khoản người dùng (không phải tài khoản quản trị nội bộ).")
+
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        try:
+            job = submit_with_credit(
+                db, user_id=u.id, app_slug=MANIFEST.slug,
+                job_type="demo.reverse", params={"text": text},
+            )
+            db.commit()
+        except credit.ThieuCreditError as exc:
+            db.rollback()
+            return _loi(request, user, str(exc))
+        except RegistryError as exc:
+            db.rollback()
+            return _loi(request, user, str(exc))
+        job_id = job.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+
+
+def _loi(request: Request, user: str, msg: str) -> HTMLResponse:
+    return templates.TemplateResponse(request, "demo.html", {
+        "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
+        "csrf_token": issue_csrf_token(request),
+        "result": None, "error": msg,
+    }, status_code=400)

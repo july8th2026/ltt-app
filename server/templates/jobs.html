@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Việc của tôi — LTT AI Studio{% endblock %}
+{% block content %}
+  <h1>Việc của tôi</h1>
+  {% if co_user_csdl %}
+    <p class="page-sub">Số dư credit: <strong>{{ so_du }}</strong></p>
+  {% else %}
+    <div class="alert alert-warn">Tài khoản quản trị nội bộ không chạy job.
+      Đăng nhập bằng tài khoản người dùng để tạo và xem việc.</div>
+  {% endif %}
+  {% if jobs %}
+  <div class="card">
+    <table>
+      <thead><tr><th>Job</th><th>Loại</th><th>Trạng thái</th><th>Tiến độ</th><th>Lúc</th></tr></thead>
+      <tbody>
+      {% for j in jobs %}
+        <tr>
+          <td><a href="/jobs/{{ j.id }}">{{ j.id[:8] }}</a></td>
+          <td class="mono">{{ j.job_type }}</td>
+          <td>
+            {% if j.status == 'done' %}<span class="badge badge-ok">xong</span>
+            {% elif j.status == 'error' %}<span class="badge badge-err">lỗi</span>
+            {% else %}<span class="badge badge-warn">{{ j.status }}</span>{% endif %}
+          </td>
+          <td>{{ j.progress }}%</td>
+          <td class="dim">{{ j.created_at.strftime('%H:%M %d/%m') }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="card"><p class="muted">Chưa có việc nào.</p></div>
+  {% endif %}
+{% endblock %}
