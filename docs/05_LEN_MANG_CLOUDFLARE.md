@@ -47,43 +47,66 @@ DNS do Cloudflare quản; trang chủ vẫn ở inet.vn; app đi qua Tunnel về
 
 ---
 
-## 2. Bản ghi DNS hiện có (đo ngày 2026-07-31)
+## 2. Bản ghi DNS hiện có (đo ngày 2026-07-31 bằng `Resolve-DnsName`)
 
 Phải chép **đủ** những bản ghi này sang Cloudflare trước khi đổi nameserver.
-Đây là toàn bộ — may mắn là ít và **không có email (MX)**, nên rủi ro thấp.
+May mắn: zone rất đơn giản.
 
 | Tên | Loại | Giá trị | Mây | Ghi chú |
 |---|---|---|---|---|
-| `@` (lttstudios.com) | A | `103.56.163.10` | xám | trang chủ inet.vn |
-| `@` | AAAA | `2001:df7:ce00:19::3:0` | xám | trang chủ IPv6 |
-| `www` | A/AAAA | (như `@`) | xám | trang chủ |
-| `app` | — | (sẽ tạo bằng Tunnel) | cam | **không chép bản ghi `app` cũ** (nó trỏ máy chủ cũ 45.32.104.192) |
-| MX | — | **không có** | — | không dùng email trên tên miền này |
-| TXT | — | **không có** | — | |
+| `@` (lttstudios.com) | A | `103.56.163.10` | **xám** | trang chủ inet.vn |
+| `@` | AAAA | `2001:df7:ce00:19::3:0` | **xám** | trang chủ IPv6 |
+| `www` | A/AAAA | (như `@`) | **xám** | trang chủ |
+| `app` | CNAME | (Tunnel tự tạo ở bước 5) | **cam** | **không chép bản ghi `app` cũ** (trỏ máy chủ cũ 45.32.104.192) |
 
-> 🤖 Trước khi bạn đổi nameserver, tôi sẽ `nslookup` lại một lần nữa để chốt
-> danh sách cuối (phòng khi có bản ghi phát sinh), và đối chiếu với những gì
-> Cloudflare tự quét được.
+Đã kiểm và **không có**: `MX`, `TXT` (SPF/DKIM/DMARC), `CAA`, `SRV`, `DNSSEC`
+(không DNSKEY/DS), và các subdomain `mail`/`ftp`/`cpanel`/`webmail`/
+`autodiscover`. Nghĩa là:
+- **Không lo mất email** (không có MX) — rủi ro lớn nhất khi đổi NS không áp dụng.
+- **Không phải tắt DNSSEC** trước khi đổi NS (nó chưa bật). *Nếu* sau này bạn
+  bật DNSSEC ở inet.vn, phải **tắt trước** khi đổi nameserver, không thì domain
+  chết hoàn toàn.
+
+> ⚠️ **Nhưng đừng chỉ tin bảng này.** Nó đo bằng truy vấn DNS công khai — bản
+> ghi chỉ dùng nội bộ, hay tên lạ, có thể không hiện; và Cloudflare cũng cảnh
+> báo **quét tự động không đảm bảo thấy hết**. **Nguồn chân lý là bảng DNS
+> trong panel iNET.** Bước 1 dưới đây buộc xuất toàn bộ từ đó rồi đối chiếu.
+
+> 🤖 Trước khi bạn đổi nameserver, tôi `Resolve-DnsName` lại một lượt để chốt,
+> và đối chiếu ba nguồn: panel iNET (bạn xuất) ↔ Cloudflare quét được ↔ đo của
+> tôi. Chỉ khi cả ba khớp mới đổi NS.
 
 ---
 
 ## 3. Quy trình — theo đúng thứ tự
 
-### Bước 1 🧑 — Tạo tài khoản + thêm site vào Cloudflare
+### Bước 1a 🧑 — Xuất TOÀN BỘ DNS từ panel iNET trước (nguồn chân lý)
+
+Trước khi thêm vào Cloudflare, vào **panel DNS của iNET**, xuất/chụp **toàn bộ**
+bản ghi. Kiểm đủ các loại: `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `CAA`, `SRV`, và
+các tên hay bị quên: `@`, `www`, `mail`, `ftp`, `cpanel`, `webmail`,
+`autodiscover`, `_dmarc`, `_domainkey`. Đây là **danh sách gốc để đối chiếu** —
+không dựa vào quét tự động của Cloudflare.
+
+Cũng kiểm ở panel iNET: **DNSSEC có đang bật không?** Nếu có, **tắt trước** khi
+đổi nameserver (đo hiện tại: chưa bật).
+
+### Bước 1b 🧑 — Thêm site vào Cloudflare
 
 1. Vào `dash.cloudflare.com`, tạo tài khoản miễn phí (nếu chưa có).
-2. **Add a site** → gõ `lttstudios.com` → chọn gói **Free**.
-3. Cloudflare tự quét bản ghi hiện có. **Đối chiếu với bảng ở mục 2.** Thiếu
-   cái nào thì thêm tay.
-4. Đặt `@` và `www` ở **DNS only** (bấm vào mây cho thành **xám**). Bản ghi
-   `app` cũ (nếu Cloudflare quét được, trỏ `45.32.104.192`) → **xoá** (Tunnel
-   sẽ tạo lại đúng ở bước 5).
+2. **Add a site** → gõ **`lttstudios.com`** (chỉ tên miền gốc — **không** gõ
+   `www.`, `app.`, hay `https://`) → chọn gói **Free**.
+3. Cloudflare tự quét. **Đối chiếu từng dòng với bảng xuất ở bước 1a** (không
+   chỉ với mục 2 của tài liệu này). Thiếu cái nào thêm tay.
+4. Đặt `@` và `www` ở **DNS only** (bấm mây cho thành **xám**). Bản ghi `app`
+   cũ (nếu quét được, trỏ `45.32.104.192`) → **xoá** (Tunnel tạo lại ở bước 5).
 5. Cloudflare hiện **2 nameserver** cấp cho bạn (dạng `x.ns.cloudflare.com`).
-   Ghi lại hai tên đó.
+   Ghi lại.
 
-> 🤖 Gửi tôi ảnh chụp trang DNS records của Cloudflare (che gì nhạy cảm nếu
-> muốn) hoặc gõ lại danh sách — tôi rà giúp xem đã đủ và đúng mây chưa **trước
-> khi** bạn đổi nameserver. Đây là bước dễ sót nhất.
+> 🤖 Gửi tôi (a) bảng xuất từ iNET ở bước 1a và (b) danh sách Cloudflare quét
+> được. Tôi đối chiếu **ba nguồn** (iNET ↔ Cloudflare ↔ đo của tôi) và xác nhận
+> đủ + đúng mây **trước khi** bạn đổi nameserver. Đây là bước dễ sót nhất và là
+> chỗ duy nhất có thể làm trang chủ/email gián đoạn.
 
 ### Bước 2 🧑 — Đổi nameserver ở nhà đăng ký tên miền
 
