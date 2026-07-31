@@ -85,6 +85,16 @@ def test_cloudflare_script_writes_config_without_bom():
     assert "UTF8Encoding($false)" in text
 
 
+def test_services_rotate_logs_by_size():
+    """W2.3: log phai xoay theo KICH THUOC (AppRotateBytes), khong chi khi restart
+    (AppRotateFiles mot minh de log phong to vo han giua hai lan restart)."""
+    inst = (SETUP / "2-cai-dat.ps1").read_text(encoding="ascii")
+    assert inst.count("AppRotateBytes") >= 2      # web + worker
+    assert "AppRotateOnline" in inst
+    cf = (SETUP / "3-cloudflare.ps1").read_text(encoding="ascii")
+    assert "AppRotateBytes" in cf
+
+
 # ── những thứ script bắt buộc phải làm ─────────────────────────────────────
 
 def test_install_sets_app_directory():

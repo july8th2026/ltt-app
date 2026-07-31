@@ -615,15 +615,27 @@ mỗi mục có cổng test riêng. Kết mỗi wave: `pytest -q` xanh + `scan_s
   `pg_restore`; băm token phiên (migration `b1c2d3e4f5a6`) + che SessionAdmin;
   `update.ps1` chạy alembic; sửa drift CLAUDE.md. Full suite **1547 pass** + 2 test
   PG đồng thời pass; deploy + migration production OK.
-- **Wave 1 (P1 — trước khách trả tiền):** thumbnail tính tiền theo ảnh thành công +
-  loop resume-safe; handler 500 tổng; CSRF sqladmin + validate AppAccess.level; khoá
-  theo tài khoản + rate-limit forgot-password + CSRF logout + chính sách is_verified;
-  mã hoá/siết ACL backup off-drive; validate hợp đồng sớm (`_validate`) + mở rộng
-  scan slug sang `server/`; scanner thêm rule session/token key.
-- **Wave 2 (hoàn thiện + quan sát được):** `Storage.url_for()` + presigned R2; FK +
-  CHECK (migration); log rotation + uptime probe + diễn tập restore; smoke Playwright
-  trong CI; sửa số đếm test + đánh dấu test socialbot đóng băng; API key qua header;
-  test HTTP kiểm sở hữu `/image/{key}`; reclaim_orphans SKIP LOCKED + index.
+- **Wave 1 (P1 — trước khách trả tiền) ✅ XONG 2026-07-31.** thumbnail tính tiền
+  theo ảnh thành công + loop resume-safe; handler 500 tổng (no-store + correlation
+  id); CSRF sqladmin/GrantCredit + dropdown AppAccess.level; khoá theo tài khoản +
+  rate-limit forgot-password + CSRF logout + chặn login khi chưa xác thực email;
+  siết ACL backup off-drive (icacls SID); validate hợp đồng sớm trong `_validate`
+  (job_types thiếu credit_cost / trùng job_type → fail lúc discover); scanner thêm
+  rule session/token key. Full suite **1562 pass**. Commit `5f00302`.
+  *Ghi chú:* mở rộng scan slug sang `server/` BỎ — từ "thumbnail" trùng trường
+  thumbnail-video của socialbot + "socialbot" trong comment → substring-scan báo
+  nhầm; không khả thi mà không có allowlist.
+- **Wave 2 (hoàn thiện + quan sát được) ✅ XONG 2026-07-31.** API key Gemini qua
+  header (không URL query); test HTTP kiểm sở hữu `/image/{key}` (cross-user 404);
+  `reclaim_orphans` SKIP LOCKED + index tổng hợp `ix_jobs_claim` (migration
+  `c7d8e9f0a1b2`); log rotation theo kích thước (AppRotateBytes 10MB × 3 dịch vụ,
+  áp cả bản đang chạy); smoke Playwright opt-in (`test_74`, skip nếu chưa cài).
+  *Hoãn có chủ đích:* **`Storage.url_for()` + presigned R2 → làm ở H9** (gắn chặt
+  với backend R2; làm nửa vời bây giờ chỉ thêm bề mặt, không lợi ích khi chưa có
+  file lớn). **FK constraints** hoãn (rủi ro migration trên DB tiền thật + FK trên
+  `credit_entries.job_id` bất khả vì sentinel `""`; `CHECK(delta<>0)` SAI vì
+  quyết toán ghi delta=0 hợp lệ). **Đánh dấu ~929 test socialbot đóng băng** hoãn
+  (churn lớn, giá trị thấp).
 
 ---
 
@@ -645,6 +657,11 @@ Bắt buộc trước khi làm bất kỳ tool nào thuộc nhóm FFmpeg hoặc 
 - Trình duyệt upload **thẳng** lên R2, không đi qua máy chủ — trần 100 MB của
   Cloudflare nằm ở đường qua máy chủ
 - Thêm backend R2 vào `platform_core/storage.py`, **không sửa app nào**
+- **Hiện thực `Storage.url_for(key)`** (hoãn từ H7 Wave 2): LocalStorage trả route
+  app hiện tại, R2Storage trả **presigned URL** để trình duyệt tải thẳng từ CDN.
+  App đổi sang `RedirectResponse(url_for(...))` thay vì stream qua tunnel bằng
+  `open()` (đang làm ở thumbnail) — nếu không, file lớn vẫn nghẽn 100 MB/100 s.
+  Docstring `storage.py` đã hứa `url_for` nhưng CHƯA có — H9 là lúc lấp.
 - Kiểm duyệt file người lạ tải lên trước khi đưa vào FFmpeg — file media dị
   dạng là đường thực thi mã có thật
 

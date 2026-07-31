@@ -166,8 +166,11 @@ def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> in
     thành `error`. Trả về số job đã xử lý.
     """
     nguong = _bay_gio() - timeout
+    # SKIP LOCKED: hai worker cùng reclaim không được nhặt trùng một orphan (nếu
+    # không, cả hai fail() nó → attempts += 2, đếm sai lượt). Worker kia đang khoá
+    # dòng nào thì bỏ qua. SQLite (test) bỏ qua mệnh đề này, vô hại.
     rows = db.execute(
-        select(Job).where(Job.status == JOB_RUNNING)
+        select(Job).where(Job.status == JOB_RUNNING).with_for_update(skip_locked=True)
     ).scalars().all()
 
     n = 0

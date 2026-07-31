@@ -140,6 +140,54 @@ def test_khong_tao_duoc_anh_nao_thi_nem(storage, monkeypatch):
         jobs.handle({"topic": "x", "count": 2, "owner_id": "u1"}, _Ctx("jobF"))
 
 
+def test_image_route_chan_cross_user(tmp_path, monkeypatch):
+    """W2.6: gõ thẳng URL ảnh của người khác → 404 (kiểm sở hữu ở tầng HTTP),
+    ảnh của chính mình → 200."""
+    import io as _io
+    import re as _re
+
+    import platform_core.db as dbmod
+    monkeypatch.setenv("LTT_DATABASE_URL", f"sqlite:///{(tmp_path / 'img.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-img")
+    monkeypatch.setenv("LTT_ADMIN_USERNAME", "admin")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from platform_core.storage import LocalStorage, set_storage
+    st = LocalStorage(str(tmp_path / "store")); set_storage(st)
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        a = tao_nguoi_dung(db, email="a@img.com", password="matkhau-tot-12", is_verified=True)
+        b = tao_nguoi_dung(db, email="b@img.com", password="matkhau-tot-12", is_verified=True)
+        db.commit(); a_id, b_id = a.id, b.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    st.put(f"thumbnail/{b_id}/job1/0.png", _io.BytesIO(b"PNGB"), content_type="image/png")
+    st.put(f"thumbnail/{a_id}/job2/0.png", _io.BytesIO(b"PNGA"), content_type="image/png")
+
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    c = TestClient(create_app(), base_url="https://testserver", follow_redirects=False)
+    try:
+        tok = _re.search(r'name="csrf_token" value="([^"]+)"', c.get("/login").text).group(1)
+        c.post("/login", data={"username": "a@img.com",
+                               "password": "matkhau-tot-12", "csrf_token": tok})
+        # A đọc ảnh của B → 404
+        r = c.get(f"/thumbnail/image/thumbnail/{b_id}/job1/0.png")
+        assert r.status_code == 404
+        # A đọc ảnh của CHÍNH MÌNH → 200
+        r2 = c.get(f"/thumbnail/image/thumbnail/{a_id}/job2/0.png")
+        assert r2.status_code == 200
+    finally:
+        set_storage(None); dbmod.reset_engine()
+
+
 def test_gemini_loi_thi_nem_va_che_khoa(storage, monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "sieu-bi-mat-key-123")
     import httpx

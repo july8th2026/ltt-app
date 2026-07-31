@@ -14,7 +14,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, DateTime, Integer, JSON, String, Text,
+from sqlalchemy import (Boolean, DateTime, Index, Integer, JSON, String, Text,
                         UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -217,6 +217,13 @@ class Job(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # Index đúng câu truy vấn claim (W2.6c): WHERE status=? AND next_run_at<=?
+        # ORDER BY created_at. Khi bảng job lớn, quét tuần tự mỗi vòng worker sẽ
+        # tốn; index tổng hợp này cho claim đi thẳng vào đúng dòng đến hạn.
+        Index("ix_jobs_claim", "status", "next_run_at", "created_at"),
+    )
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"

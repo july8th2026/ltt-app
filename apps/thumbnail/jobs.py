@@ -52,7 +52,11 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str) -> bytes:
     """Gọi Gemini Image API một lần, trả về bytes ảnh PNG. Ném lỗi nếu thất bại."""
     import httpx
 
-    url = f"{_BASE}/v1beta/models/{_MODEL}:generateContent?key={api_key}"
+    # Khoá ĐI QUA HEADER `x-goog-api-key`, KHÔNG nhét vào query `?key=` (W2.6):
+    # URL hay bị ghi lại (log proxy, access log, lịch sử) → khoá trong query là
+    # bề mặt rò khoá. Header không bị log mặc định.
+    url = f"{_BASE}/v1beta/models/{_MODEL}:generateContent"
+    headers = {"x-goog-api-key": api_key}
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -61,7 +65,7 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str) -> bytes:
         },
     }
     try:
-        resp = httpx.post(url, json=body, timeout=_TIMEOUT_S)
+        resp = httpx.post(url, json=body, headers=headers, timeout=_TIMEOUT_S)
     except httpx.HTTPError as e:
         raise RuntimeError(_sanitize(f"Lỗi kết nối Gemini: {e}", api_key))
 

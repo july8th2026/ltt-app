@@ -286,6 +286,11 @@ if ($existing) {
 & $nssmExe set $ServiceName AppStdout      (Join-Path $logs 'service-out.log') | Out-Null
 & $nssmExe set $ServiceName AppStderr      (Join-Path $logs 'service-err.log') | Out-Null
 & $nssmExe set $ServiceName AppRotateFiles 1 | Out-Null
+# Xoay log theo KICH THUOC, khong chi khi restart (AppRotateFiles mot minh de log
+# phong to vo han giua hai lan restart). AppRotateOnline 1 = xoay khi dang chay;
+# AppRotateBytes 10MB = moi file toi 10MB roi xoay.
+& $nssmExe set $ServiceName AppRotateOnline 1 | Out-Null
+& $nssmExe set $ServiceName AppRotateBytes 10485760 | Out-Null
 & $nssmExe set $ServiceName Start          SERVICE_AUTO_START | Out-Null
 & $nssmExe set $ServiceName AppExit Default Restart | Out-Null
 & $nssmExe set $ServiceName AppRestartDelay 10000 | Out-Null
@@ -315,6 +320,8 @@ if ($existingW) {
 & $nssmExe set $WorkerServiceName AppStdout      (Join-Path $logs 'worker-out.log') | Out-Null
 & $nssmExe set $WorkerServiceName AppStderr      (Join-Path $logs 'worker-err.log') | Out-Null
 & $nssmExe set $WorkerServiceName AppRotateFiles 1 | Out-Null
+& $nssmExe set $WorkerServiceName AppRotateOnline 1 | Out-Null
+& $nssmExe set $WorkerServiceName AppRotateBytes 10485760 | Out-Null
 & $nssmExe set $WorkerServiceName Start          SERVICE_AUTO_START | Out-Null
 & $nssmExe set $WorkerServiceName AppExit Default Restart | Out-Null
 & $nssmExe set $WorkerServiceName AppRestartDelay 10000 | Out-Null

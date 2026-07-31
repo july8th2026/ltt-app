@@ -218,6 +218,8 @@ if ($svc) {
 & $nssmExe set $svcName AppStdout      (Join-Path $logs 'cloudflared-nssm-out.log') | Out-Null
 & $nssmExe set $svcName AppStderr      (Join-Path $logs 'cloudflared-nssm-err.log') | Out-Null
 & $nssmExe set $svcName AppRotateFiles 1 | Out-Null
+& $nssmExe set $svcName AppRotateOnline 1 | Out-Null
+& $nssmExe set $svcName AppRotateBytes 10485760 | Out-Null
 & $nssmExe set $svcName Start          SERVICE_AUTO_START | Out-Null
 & $nssmExe set $svcName AppExit Default Restart | Out-Null
 & $nssmExe set $svcName AppRestartDelay 10000 | Out-Null
