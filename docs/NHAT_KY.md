@@ -14,6 +14,37 @@
 
 ---
 
+## 2026-08-01 — UX Pha 2: bố cục HEADER (bỏ sidebar) theo PLENX — XONG
+
+Từ phân tích `docs/PHAN_TICH_PLENX.md` (quan sát PLENX qua trình duyệt). Người
+dùng chốt: **điều hướng bằng HEADER ngang, bỏ sidebar trái**; nav app **dropdown
+theo NHÓM**; tài khoản gom vào **avatar-menu**; **vào app full-width, không sidebar**.
+Chỉ đổi BỐ CỤC/chrome — KHÔNG đụng tính năng/logic app.
+
+- **L1** `AppManifest` thêm `group` (nhãn nhóm header) + `badge` (nhãn thẻ). Gán:
+  thumbnail→"Ảnh"(badge MỚI), socialbot→"Đăng bài", demo→"Khác". Data-only.
+- **L2** templating: `nav_groups` (app gom theo nhóm, lọc quyền, sắp thứ tự — tool
+  thật trước, "Khác" cuối), `tai_khoan` (dữ liệu avatar-menu), `app_tabs` (nav nội
+  bộ app đang mở nếu >1 trang).
+- **L3** `_header.html` dùng chung: logo · dropdown theo nhóm (`<details>`) · phải
+  Bảng giá/💎credit/avatar-menu (Việc của tôi/Cài đặt/Tình trạng/Quản trị nếu
+  admin/Credit+Nạp/Đăng xuất CSRF). CSS header/dropdown/avatar/apptabs/cover vào
+  `ltt.css`.
+- **L4** `base.html` **BỎ sidebar** → include `_header`; nội dung full-width; app
+  nhiều trang → thanh **apptabs** đầu nội dung (thay sub-nav sidebar). Giữ block
+  topbar_title/right qua capture cho trang con.
+- **L5** `base_public.html` dùng `_header` (bản anon: Đăng nhập/Đăng ký).
+- **L7** catalog: thẻ **cover gradient + icon lớn + badge** + search + filter theo
+  nhóm (client-side JS).
+- **L8** sửa `test_31` (nav từ registry: base.html include _header, _header dùng
+  nav_groups) — bất biến "nav sinh từ registry" vẫn giữ.
+
+**Test:** full suite **1586 passed, 4 skipped**; scan 0. **Audit trực quan Chrome
+(loopback 127.0.0.1:8100** — tránh IPv6 máy chủ): catalog ẩn danh, login, home
+authed (header 3 nhóm + credit + avatar), avatar-menu, vào socialbot (tab nội bộ +
+full-width), vào thumbnail (không tab), admin console (vỏ riêng dark). Tất cả khớp
+tiêu chí + cơ chế PLENX, **không lỗi bố cục**. Deploy production OK.
+
 ## 2026-08-01 — UX Pha 1: nâng tầm giao diện (catalog/login/admin/APIKEYS) — XONG
 
 Từ đánh giá `docs/UX_DANH_GIA_VA_PHUONG_AN.md` (phương án D, có mockup artifact

@@ -11,26 +11,12 @@
       radial-gradient(1100px 500px at 82% -8%, #14213f22, transparent 60%),
       radial-gradient(900px 460px at -6% 6%, #16283f1f, transparent 55%), var(--bg);
       color:var(--fg); font-family:var(--font); font-size:14px}
-    .pub-top{display:flex; justify-content:space-between; align-items:center; gap:12px;
-      padding:13px 24px; background:var(--panel); border-bottom:1px solid var(--line);
-      position:sticky; top:0; z-index:5}
-    .pub-brand{display:flex; align-items:center; gap:11px}
-    .pub-brand b{font-weight:700; font-size:15px} .pub-brand small{color:var(--dim); font-size:11px}
-    .authbtns{display:flex; gap:10px; align-items:center}
-    .wrap{max-width:1100px; margin:0 auto; padding:26px 24px 60px}
-    @media(max-width:820px){ .wrap{padding:18px 16px} .pub-brand small{display:none} }
   </style>
 </head>
 <body>
-  <header class="pub-top">
-    <div class="pub-brand"><span class="mark">LTT</span>
-      <span><b>LTT AI Studio</b> <small>Nền tảng công cụ AI — dùng theo credit</small></span></div>
-    <div class="authbtns">
-      <a class="btn ghost" href="/login">Đăng nhập</a>
-      <a class="btn" href="/register">Đăng ký</a>
-    </div>
-  </header>
-  <main class="wrap">
+  {# Khách CHƯA đăng nhập: cùng HEADER (avatar → nút Đăng nhập/Đăng ký), KHÔNG sidebar. #}
+  {% include "_header.html" %}
+  <main class="page">
     {% block content %}{% endblock %}
   </main>
 </body>

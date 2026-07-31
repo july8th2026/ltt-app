@@ -195,3 +195,112 @@ def _csrf_token(request=None):
 # Tên KHÁC `csrf_token` vì nhiều route truyền biến context tên `csrf_token` (một
 # CHUỖI) — trùng tên sẽ che global và `{{ csrf_token(request) }}` gọi chuỗi → lỗi.
 templates.env.globals["phien_csrf"] = _csrf_token
+
+
+def _da_dang_nhap(request) -> bool:
+    try:
+        s = request.session
+        return bool(s.get("sid") or s.get("user"))
+    except Exception:
+        return False
+
+
+def _nav_groups(request=None):
+    """App gom theo `group` cho HEADER (UX Pha 2). Khách: chỉ app public; đã đăng
+    nhập: lọc theo quyền. Trả dict {group: [LoadedApp]} — bọc an toàn, lỗi trả {}."""
+    try:
+        from platform_core.registry import discover
+        loaded = [a for a in discover() if a.manifest.enabled and not a.error]
+    except Exception:
+        return {}
+
+    authed = _da_dang_nhap(request)
+    sid = None
+    try:
+        sid = request.session.get("sid") if request is not None else None
+    except Exception:
+        sid = None
+    if sid:
+        try:
+            from platform_core.app_access import loc_app_hien_thi
+            from platform_core.db import get_session
+            from platform_core.users import lay_user_tu_phien
+            gen = get_session(); db = next(gen)
+            try:
+                u = lay_user_tu_phien(db, sid)
+                if u is not None:
+                    loaded = loc_app_hien_thi(db, u, loaded)
+            finally:
+                try: next(gen)
+                except StopIteration: pass
+        except Exception:
+            pass
+    if not authed:
+        loaded = [a for a in loaded if a.manifest.public]
+
+    groups: dict = {}
+    for a in loaded:
+        groups.setdefault(a.manifest.group or "Ứng dụng", []).append(a)
+    # Sắp thứ tự nhóm cho header: nhóm năng lực chính trước, "Khác/Ứng dụng" cuối.
+    _uu_tien = {"Ảnh": 0, "Video": 1, "Giọng nói": 2, "Đăng bài": 3, "Workflow": 4}
+    def _khoa(g):
+        if g in ("Khác", "Ứng dụng"):
+            return (2, g)
+        return (0, _uu_tien.get(g, 1)) if g in _uu_tien else (1, g)
+    return {g: groups[g] for g in sorted(groups, key=_khoa)}
+
+
+def _tai_khoan(request=None):
+    """Dữ liệu tài khoản cho avatar-menu (UX Pha 2), hoặc None nếu chưa đăng nhập.
+    Không lộ gì nhạy cảm — chỉ tên/email/vai trò để hiển thị."""
+    if request is None:
+        return None
+    try:
+        env_user = request.session.get("user")
+        if env_user:
+            return {"name": env_user, "email": "", "role": "admin",
+                    "initial": env_user[:2].upper()}
+        sid = request.session.get("sid")
+        if not sid:
+            return None
+        from platform_core.db import get_session
+        from platform_core.users import lay_user_tu_phien
+        gen = get_session(); db = next(gen)
+        try:
+            u = lay_user_tu_phien(db, sid)
+            if u is None:
+                return None
+            return {"name": u.display_name or u.email, "email": u.email,
+                    "role": u.role, "initial": (u.email or "?")[:2].upper()}
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    except Exception:
+        return None
+
+
+def _app_tabs(request=None):
+    """Nav NỘI BỘ của app đang mở (nếu app có >1 trang) — thay sub-nav sidebar cũ.
+    Trả list NavEntry, hoặc [] nếu không ở trong app / app một trang."""
+    if request is None:
+        return []
+    try:
+        from platform_core.app_access import app_cho_path
+        from platform_core.registry import discover
+        loaded = discover()
+        slug = app_cho_path(request.url.path, loaded)
+        if not slug:
+            return []
+        for a in loaded:
+            if a.manifest.slug == slug:
+                entries = a.manifest.nav_entries()
+                return entries if len(entries) > 1 else []
+    except Exception:
+        return []
+    return []
+
+
+templates.env.globals["nav_groups"] = _nav_groups
+templates.env.globals["tai_khoan"] = _tai_khoan
+templates.env.globals["app_tabs"] = _app_tabs
+templates.env.globals["da_dang_nhap"] = _da_dang_nhap

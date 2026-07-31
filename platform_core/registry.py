@@ -93,6 +93,13 @@ class AppManifest:
     # Ghi chú nội bộ, hiện trên trang chủ cho admin.
     notes: str = ""
 
+    # Bố cục (UX Pha 2): nhóm hiển thị ở HEADER (dropdown theo nhóm) — vd "Ảnh",
+    # "Video", "Đăng bài". App tự khai; nền tảng gom app theo `group`. Rỗng =
+    # "Ứng dụng". Chỉ ảnh hưởng ĐIỀU HƯỚNG/hiển thị, không đụng logic app.
+    group: str = "Ứng dụng"
+    # Nhãn nhỏ trên thẻ catalog (vd "MỚI", "HOT", "PRO"). Rỗng = không hiện.
+    badge: str = ""
+
     def nav_entries(self) -> list:
         """Sidebar của app. Không khai gì thì tạo mặc định 1 dòng."""
         if self.nav:

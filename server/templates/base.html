@@ -142,74 +142,32 @@
   </style>
 </head>
 <body>
-<div class="shell">
-  <aside class="sidebar">
-    <div class="brand">LTT AI Studio<small>{{ app_version or '' }}</small></div>
-    <!-- Sidebar sinh từ apps/*/manifest.py, KHÔNG viết cứng ở đây.
-         Đây là điểm mấu chốt của khả năng mở rộng: thêm một app là thêm một
-         folder, sidebar tự có mục mới. Viết cứng thì mỗi app mới phải sửa file
-         này, và sớm muộn sẽ quên một chỗ. -->
-    <nav class="nav">
-      <a href="/" class="{{ 'active' if nav=='home' else '' }}">
-        <span class="ico">🏠</span> Trang chủ</a>
+{# Vỏ khách ĐÃ ĐĂNG NHẬP (UX Pha 2): điều hướng bằng HEADER ngang, KHÔNG sidebar.
+   Tài khoản gom trong avatar (xem _header.html). Nội dung FULL-WIDTH. #}
+{% include "_header.html" %}
 
-      {# Vỏ HAI TẦNG (H6.6): mỗi app MỘT dòng (launcher). Trang con của app chỉ
-         bung ra khi đang Ở TRONG app đó (active_app). Nhờ vậy một app nhiều
-         trang (vd socialbot 8 trang) không còn tràn kín sidebar. #}
-      {% set _apps = nav_apps(request) %}
-      {% set _active = active_app(request) %}
-      {% if _apps %}<div class="nav-group">Ứng dụng</div>{% endif %}
-      {% for item in _apps %}
-        {% set m = item.manifest %}
-        {% set entries = m.nav_entries() %}
-        <a href="{{ m.route_prefix }}" class="app {{ 'active' if _active==m.slug else '' }}">
-          <span class="ico">{{ m.icon }}</span> {{ m.display_name }}</a>
-        {% if _active==m.slug and entries|length > 1 %}
-          {% for entry in entries %}
-            <a href="{{ entry.path }}" class="sub {{ 'active' if nav==entry.nav_key else '' }}">
-              <span class="ico">{{ entry.icon or m.icon }}</span> {{ entry.label }}
-              {%- if not entry.built %}<span class="badge badge-warn" style="margin-left:auto;">đang xây</span>{% endif %}</a>
-          {% endfor %}
-        {% endif %}
-      {% endfor %}
+{# Nav NỘI BỘ của app đang mở (app nhiều trang, vd socialbot) — thay sub-nav
+   sidebar cũ; app một trang thì không có thanh này. #}
+{% set _tabs = app_tabs(request) %}
+{% if _tabs %}
+<nav class="apptabs">
+  {% for entry in _tabs %}
+    <a href="{{ entry.path }}" class="{{ 'on' if nav==entry.nav_key else '' }}">
+      <span>{{ entry.icon }}</span> {{ entry.label }}
+      {%- if not entry.built %}<span class="badge b-warn" style="margin-left:6px"><span class="dot"></span>đang xây</span>{% endif %}</a>
+  {% endfor %}
+</nav>
+{% endif %}
 
-      <div class="nav-group">Hệ thống</div>
-      <a href="/jobs" class="{{ 'active' if nav=='jobs' else '' }}">
-        <span class="ico">📋</span> Việc của tôi</a>
-      <a href="/settings" class="{{ 'active' if nav=='settings' else '' }}">
-        <span class="ico">🔧</span> Cài đặt</a>
-      <a href="/status"   class="{{ 'active' if nav=='status' else '' }}">
-        <span class="ico">🩺</span> Tình trạng</a>
-      {% if is_admin(request) %}
-      <a href="/admin/" class="{{ 'active' if nav=='admin' else '' }}">
-        <span class="ico">🛡️</span> Quản trị</a>
-      {% endif %}
-    </nav>
-    <div class="sidebar-foot">
-      <form method="post" action="/logout" style="margin:0;">
-        <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">
-        <button type="submit" class="btn-ghost btn-sm" style="width:100%;">Đăng xuất ({{ user }})</button>
-      </form>
-    </div>
-  </aside>
-
-  <div class="main">
-    <div class="topbar">
-      <div>{% block topbar_title %}{% endblock %}</div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        {% block topbar_right %}{% endblock %}
-        {# Số dư credit — luôn hiện (ngoài block để trang con không nuốt), H6. #}
-        {% set _bal = so_du_credit(request) %}
-        {% if _bal is not none %}
-          <a href="/settings" class="badge badge-ok" style="text-decoration:none;"
-             title="Số dư credit">💳 {{ _bal }} credit</a>
-        {% endif %}
-      </div>
-    </div>
-    <div class="content">
-      {% block content %}{% endblock %}
-    </div>
-  </div>
-</div>
+<main class="page">
+  {# Giữ block tiêu đề cho trang con (settings/workers…) — gom vào dải mảnh, chỉ
+     hiện khi trang có đặt. #}
+  {% set _tt %}{% block topbar_title %}{% endblock %}{% endset %}
+  {% set _tr %}{% block topbar_right %}{% endblock %}{% endset %}
+  {% if _tt|trim or _tr|trim %}
+    <div class="pagebar"><div>{{ _tt|safe }}</div><div style="display:flex;align-items:center;gap:12px">{{ _tr|safe }}</div></div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
 </body>
 </html>

@@ -1,9 +1,5 @@
 {% extends "base.html" if authed else "base_public.html" %}
 {% block title %}LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Ứng dụng</strong>{% endblock %}
-{% block topbar_right %}
-  {% if authed %}<span class="dim" style="font-size:12px;">{{ apps|length }} app</span>{% endif %}
-{% endblock %}
 {% block content %}
 
   {% if not authed %}
@@ -25,17 +21,31 @@
     </div>
   {% endif %}
 
+  {# Thanh tìm/lọc catalog (UX Pha 2). Lọc theo NHÓM + tìm theo tên (client-side). #}
+  {% set groups = apps|map(attribute='manifest.group')|select|unique|list %}
+  {% if apps %}
+  <div class="catbar">
+    <input id="catsearch" class="inp search" type="search" placeholder="Tìm công cụ…" autocomplete="off">
+    <div class="catfilters" id="catfilters">
+      <button class="on" data-c="all">Tất cả</button>
+      {% for g in groups %}<button data-c="{{ g }}">{{ g }}</button>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="grid">
     {% for item in apps %}
       {% set m = item.manifest %}
-      <div class="appcard">
+      <div class="appcard" data-group="{{ m.group }}" data-name="{{ m.display_name|lower }} {{ m.summary|lower }}">
         <div class="accent" style="background:{{ m.accent }};"></div>
+        <div class="cover" style="background:linear-gradient(135deg,{{ m.accent }}33,{{ m.accent }}0d);">
+          <span class="big">{{ m.icon }}</span>
+          {% if m.badge %}<span class="cbadge badge b-ok"><span class="dot"></span>{{ m.badge }}</span>
+          {% elif not m.enabled %}<span class="cbadge badge b-warn"><span class="dot"></span>đang xây</span>
+          {% elif authed and app_setup.get(m.slug) %}<span class="cbadge badge b-warn"><span class="dot"></span>cần thiết lập</span>{% endif %}
+        </div>
         <div class="in">
-          <div class="ico" style="background:{{ m.accent }}22;">{{ m.icon }}</div>
-          <h2>{{ m.display_name }}
-            {% if not m.enabled %}<span class="badge b-warn"><span class="dot"></span>đang xây</span>{% endif %}
-            {% if authed and app_setup.get(m.slug) %}<span class="badge b-warn"><span class="dot"></span>cần thiết lập</span>{% endif %}
-          </h2>
+          <h2>{{ m.display_name }}</h2>
           <p class="sum">{{ m.summary }}</p>
           {% if authed and app_setup.get(m.slug) %}
             <div class="alert alert-warn" style="padding:8px 12px; margin:0 0 12px;">
@@ -51,14 +61,13 @@
           </div>
           {% if m.enabled %}
             {% if authed %}
-              <a href="{{ m.route_prefix }}" class="btn ghost">Mở &nbsp;→</a>
+              <a href="{{ m.route_prefix }}" class="btn">Mở &nbsp;→</a>
             {% else %}
               <a href="/login?next={{ m.route_prefix }}" class="btn">Đăng nhập để dùng</a>
             {% endif %}
           {% else %}
             <button class="btn" disabled>Chưa dùng được</button>
           {% endif %}
-          {% if authed and m.notes %}<p class="dim" style="font-size:11px; margin:10px 0 0;">{{ m.notes }}</p>{% endif %}
         </div>
       </div>
     {% endfor %}
@@ -69,4 +78,17 @@
       <p class="dim" style="margin:0;">Chưa có công cụ nào khả dụng.</p>
     </div>
   {% endif %}
+
+  <script>
+  (function(){
+    var q=document.getElementById('catsearch'),tabs=document.getElementById('catfilters');
+    var cards=[].slice.call(document.querySelectorAll('.appcard[data-name]')),cur='all';
+    function apply(){var t=(q&&q.value||'').toLowerCase();
+      cards.forEach(function(c){var okg=cur==='all'||c.dataset.group===cur;
+        var okq=!t||c.dataset.name.indexOf(t)>=0;c.style.display=(okg&&okq)?'':'none';});}
+    if(q)q.addEventListener('input',apply);
+    if(tabs)tabs.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+      cur=b.dataset.c;[].forEach.call(tabs.children,function(x){x.classList.toggle('on',x===b);});apply();});
+  })();
+  </script>
 {% endblock %}

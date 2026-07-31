@@ -1,0 +1,63 @@
+<header class="hdr">
+  <a class="hdr-logo" href="/"><span class="mark">LTT</span> LTT AI Studio</a>
+
+  {% set _groups = nav_groups(request) %}
+  <nav class="hdr-nav">
+    {% for group, apps in _groups.items() %}
+      <details class="menu">
+        <summary>{{ group }} <span class="caret">▾</span></summary>
+        <div class="dropdown">
+          {% for a in apps %}
+            <a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ a.manifest.icon }}</span> {{ a.manifest.display_name }}</a>
+          {% endfor %}
+        </div>
+      </details>
+    {% endfor %}
+  </nav>
+
+  {# Mobile: gộp mọi nhóm vào ☰ #}
+  <details class="menu hdr-burger">
+    <summary>☰</summary>
+    <div class="dropdown">
+      {% for group, apps in _groups.items() %}
+        <div class="acc-head" style="padding:8px 11px 3px"><small style="margin:0">{{ group }}</small></div>
+        {% for a in apps %}<a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ a.manifest.icon }}</span> {{ a.manifest.display_name }}</a>{% endfor %}
+      {% endfor %}
+    </div>
+  </details>
+
+  <div class="hdr-right">
+    <a class="hdr-link pricing" href="/settings">Bảng giá</a>
+    {% set _bal = so_du_credit(request) %}
+    {% if _bal is not none %}<a class="pill" href="/settings" title="Số dư credit">💎 {{ _bal }} credit</a>{% endif %}
+    {% set _acc = tai_khoan(request) %}
+    {% if _acc %}
+      <details class="menu avatar">
+        <summary><span class="ava">{{ _acc.initial }}</span></summary>
+        <div class="dropdown right">
+          <div class="acc-head"><b>{{ _acc.name }}</b><small>{{ _acc.email }}</small>
+            <span class="badge b-grey"><span class="dot"></span>{{ _acc.role }}</span></div>
+          <a href="/jobs"><span class="ic">📋</span> Việc của tôi</a>
+          <a href="/settings"><span class="ic">🔧</span> Cài đặt</a>
+          <a href="/status"><span class="ic">🩺</span> Tình trạng</a>
+          {% if is_admin(request) %}<a href="/admin/apikeys"><span class="ic">🛡️</span> Quản trị</a>{% endif %}
+          {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal }} credit <a href="/settings">Nạp thêm</a></div>{% endif %}
+          <div class="sep"></div>
+          <form method="post" action="/logout" style="margin:0">
+            <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">
+            <button type="submit" class="logout-btn"><span class="ic">⟵</span> Đăng xuất</button>
+          </form>
+        </div>
+      </details>
+    {% else %}
+      <a class="btn ghost" href="/login">Đăng nhập</a>
+      <a class="btn" href="/register">Đăng ký</a>
+    {% endif %}
+  </div>
+</header>
+<script>
+/* Đóng dropdown <details> khi bấm ra ngoài (CSP cho phép inline-script). */
+(function(){document.addEventListener('click',function(e){
+  document.querySelectorAll('header.hdr details.menu[open]').forEach(function(d){
+    if(!d.contains(e.target)) d.removeAttribute('open');});});})();
+</script>

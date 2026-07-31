@@ -47,5 +47,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
 
     enabled=True,
+    group="Ảnh",
+    badge="MỚI",
     notes="Cần GEMINI_API_KEY trong secrets/app.env. Tool tính phí đầu tiên (H5).",
 )

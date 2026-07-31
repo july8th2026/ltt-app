@@ -337,9 +337,15 @@ class TestMainWindowAuditWiring(unittest.TestCase):
         """
         from platform_core.registry import discover
 
-        src = _read(os.path.join("server", "templates", "base.html"))
-        self.assertIn("nav_apps(", src,
-                      "base.html khong con sinh sidebar tu registry")
+        # UX Pha 2: dieu huong chuyen tu sidebar (base.html) sang HEADER ngang
+        # (_header.html), sinh tu registry qua nav_groups(); base.html include
+        # _header.html. Bat bien VAN la: nav sinh tu registry, khong hardcode.
+        base_src = _read(os.path.join("server", "templates", "base.html"))
+        self.assertIn("_header.html", base_src,
+                      "base.html khong con include header dieu huong")
+        header_src = _read(os.path.join("server", "templates", "_header.html"))
+        self.assertIn("nav_groups(", header_src,
+                      "_header.html khong con sinh nav tu registry")
 
         for item in discover():
             if not item.manifest.enabled or item.error:

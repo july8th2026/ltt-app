@@ -150,3 +150,71 @@
 .lcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:0 20px 50px #0007}
 .lcard .btn{width:100%;justify-content:center;padding:11px}
 .lhint{text-align:center;color:var(--muted);font-size:12.5px;margin:14px 0 0}
+
+/* ============================================================================
+   HEADER ngang toàn cục (UX Pha 2) — thay sidebar. Nav app theo NHÓM (dropdown),
+   tài khoản gom trong avatar. Dùng <details> làm dropdown (không cần JS nhiều).
+   ============================================================================ */
+.hdr{display:flex;align-items:center;gap:6px;padding:10px 20px;background:var(--panel);
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+.hdr-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;color:var(--fg);
+  text-decoration:none;margin-right:8px;white-space:nowrap}
+.hdr-nav{display:flex;align-items:center;gap:2px}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.hdr-link{color:var(--muted);font-size:13px;text-decoration:none;padding:8px 10px;border-radius:6px;white-space:nowrap}
+.hdr-link:hover{color:var(--fg);background:var(--panel2)}
+
+.menu{position:relative}
+.menu>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  padding:8px 12px;border-radius:7px;color:var(--fg);font-size:13.5px;user-select:none;white-space:nowrap}
+.menu>summary::-webkit-details-marker{display:none}
+.menu>summary::marker{content:""}
+.menu>summary:hover,.menu[open]>summary{background:var(--panel2)}
+.menu .caret{color:var(--dim);font-size:10px}
+.dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:214px;background:var(--panel);
+  border:1px solid var(--line2);border-radius:10px;padding:6px;box-shadow:0 14px 40px #0008;z-index:50}
+.dropdown.right{right:0;left:auto;min-width:252px}
+.dropdown a,.dropdown button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:7px;
+  color:var(--fg);text-decoration:none;font-size:13.5px;background:transparent;border:0;font:inherit;cursor:pointer;text-align:left}
+.dropdown a:hover,.dropdown button:hover{background:var(--panel2)}
+.dropdown .ic{width:18px;text-align:center}
+
+.avatar>summary{padding:4px 4px 4px 6px;gap:8px}
+.ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a5cf6);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;flex:0 0 auto}
+.acc-head{padding:6px 11px 11px} .acc-head b{display:block;font-size:13.5px}
+.acc-head small{color:var(--dim);font-size:11.5px;display:block;word-break:break-all;margin:2px 0 6px}
+.acc-credit{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;margin-top:4px;
+  border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.dropdown .sep{height:1px;background:var(--line);margin:5px 0}
+.logout-btn{color:var(--err)}
+
+/* Nav NỘI BỘ của app (thay sub-nav sidebar) */
+.apptabs{display:flex;gap:2px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto}
+.apptabs a{padding:11px 14px;color:var(--muted);text-decoration:none;font-size:13px;
+  border-bottom:2px solid transparent;white-space:nowrap;display:inline-flex;gap:7px;align-items:center}
+.apptabs a:hover{color:var(--fg)} .apptabs a.on{color:#fff;border-bottom-color:var(--accent)}
+
+/* Vùng nội dung FULL-WIDTH dưới header */
+.page{max-width:1180px;margin:0 auto;padding:22px 24px 60px;width:100%}
+.pagebar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+
+/* Burger mobile */
+.hdr-burger{display:none}
+@media(max-width:860px){
+  .hdr-nav{display:none}
+  .hdr-burger{display:block}
+  .hdr-link.pricing{display:none}
+}
+
+/* Thẻ catalog: cover gradient + badge (UX Pha 2) */
+.appcard .cover{height:120px;display:grid;place-items:center;position:relative}
+.appcard .cover .big{font-size:44px;filter:drop-shadow(0 4px 10px #0007)}
+.appcard .cover .cbadge{position:absolute;top:10px;right:10px}
+.catbar{display:flex;gap:12px;align-items:center;margin:2px 0 16px;flex-wrap:wrap}
+.catbar .search{flex:1;min-width:200px;max-width:340px}
+.catfilters{display:flex;gap:4px;flex-wrap:wrap}
+.catfilters button{border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font:inherit;
+  font-size:12.5px;padding:6px 12px;border-radius:20px;cursor:pointer}
+.catfilters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.catsection{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:20px 0 10px;font-weight:600}

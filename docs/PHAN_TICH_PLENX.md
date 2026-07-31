@@ -160,7 +160,15 @@ sidebar/topbar hiện tại; gom hết vào đây.
 ## 7. Ghi chú
 - Chỉ mượn **cơ chế điều hướng + bố cục**, KHÔNG lấy app/nội dung PLENX.
 
-## 8. PLAN TRIỂN KHAI — UX Pha 2: bố cục HEADER (bỏ sidebar) 📋 (chờ duyệt)
+## 8. PLAN TRIỂN KHAI — UX Pha 2: bố cục HEADER (bỏ sidebar) ✅ XONG 2026-08-01
+
+> **Đã build + audit trực quan sạch (Chrome loopback).** Header ngang thay sidebar;
+> nav app dropdown theo NHÓM (Ảnh/Đăng bài/Khác); tài khoản gom trong avatar-menu;
+> vào app FULL-WIDTH; app nhiều trang (socialbot) có TAB nội bộ; app 1 trang không
+> tab; /admin giữ vỏ riêng. Catalog thẻ cover+badge+search+filter. Full suite 1586
+> pass, scan 0. Chụp đối chiếu: catalog/login/home/avatar/app-socialbot/app-thumbnail/
+> admin — tất cả khớp tiêu chí + cơ chế PLENX, không lỗi bố cục.
+
 
 **Chốt người dùng 2026-08-01:** header ngang thay sidebar; nav app = **dropdown
 theo NHÓM**; tài khoản gom vào avatar; vào app **full-width**. Chỉ đổi BỐ CỤC mặt
