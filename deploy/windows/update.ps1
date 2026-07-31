@@ -19,6 +19,7 @@ param(
     [Parameter(Mandatory = $true)][string]$SourceZip,
     [string]$Root = 'C:\LTTPlatform',
     [string]$ServiceName = 'LTTStudioWeb',
+    [string]$WorkerServiceName = 'LTTStudioWorker',
     [int]$Port = 8100
 )
 
@@ -39,6 +40,7 @@ Write-Ok 'Data backup complete'
 
 Write-Step 'Stopping service'
 if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+    Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
     Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
     # Give the worker a moment to release its SessionLocks cleanly.
     Start-Sleep -Seconds 5
@@ -81,6 +83,7 @@ Write-Ok 'Dependencies updated'
 
 Write-Step 'Starting service'
 Start-Service $ServiceName
+Start-Service $WorkerServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 8
 
 Write-Step 'Verifying health'

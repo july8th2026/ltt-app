@@ -24,6 +24,7 @@ param(
     [string]$Root = 'C:\LTTPlatform',
     [int]$Port = 8100,
     [string]$ServiceName = 'LTTStudioWeb',
+    [string]$WorkerServiceName = 'LTTStudioWorker',
     [string]$AdminUser = 'admin'
 )
 
@@ -299,16 +300,47 @@ foreach ($line in (Get-Content $envFile)) {
 & $nssmExe set $ServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
 Ok 'Da nap bi mat vao moi truong dich vu'
 
+Head 'Dich vu Worker (hang doi job)'
+# Worker chay TIEN TRINH RIENG voi web (Q6): job nang khong lam cham web, va
+# cap nhat web khong giet job dang chay. Cung AppDirectory, cung bi mat.
+$existingW = Get-Service $WorkerServiceName -ErrorAction SilentlyContinue
+if ($existingW) {
+    if ($existingW.Status -eq 'Running') { Stop-Service $WorkerServiceName -Force; Start-Sleep -Seconds 2 }
+    Ok "Dich vu $WorkerServiceName da co - cap nhat cau hinh"
+} else {
+    & $nssmExe install $WorkerServiceName $venvPy 'job_worker.py' | Out-Null
+    Ok "Da tao dich vu $WorkerServiceName"
+}
+& $nssmExe set $WorkerServiceName AppDirectory   $appDir | Out-Null
+& $nssmExe set $WorkerServiceName AppStdout      (Join-Path $logs 'worker-out.log') | Out-Null
+& $nssmExe set $WorkerServiceName AppStderr      (Join-Path $logs 'worker-err.log') | Out-Null
+& $nssmExe set $WorkerServiceName AppRotateFiles 1 | Out-Null
+& $nssmExe set $WorkerServiceName Start          SERVICE_AUTO_START | Out-Null
+& $nssmExe set $WorkerServiceName AppExit Default Restart | Out-Null
+& $nssmExe set $WorkerServiceName AppRestartDelay 10000 | Out-Null
+& $nssmExe set $WorkerServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
+Ok 'Da nap bi mat vao moi truong worker'
+
 Head 'Khoi dong'
 Start-Service $ServiceName
 Start-Sleep -Seconds 6
 $svc = Get-Service $ServiceName
 if ($svc.Status -ne 'Running') {
-    Write-Host "  [LOI] Dich vu khong chay. Xem log:" -ForegroundColor Red
+    Write-Host "  [LOI] Dich vu web khong chay. Xem log:" -ForegroundColor Red
     Get-Content (Join-Path $logs 'service-err.log') -Tail 25 -ErrorAction SilentlyContinue
-    throw 'Dich vu khoi dong that bai'
+    throw 'Dich vu web khoi dong that bai'
 }
 Ok "Dich vu $ServiceName dang chay"
+
+Start-Service $WorkerServiceName
+Start-Sleep -Seconds 3
+$svcW = Get-Service $WorkerServiceName
+if ($svcW.Status -ne 'Running') {
+    Write-Host "  [LOI] Dich vu worker khong chay. Xem log:" -ForegroundColor Red
+    Get-Content (Join-Path $logs 'worker-err.log') -Tail 25 -ErrorAction SilentlyContinue
+    throw 'Dich vu worker khoi dong that bai'
+}
+Ok "Dich vu $WorkerServiceName dang chay"
 
 Head 'Kiem tra suc khoe'
 $okHealth = $false

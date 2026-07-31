@@ -278,30 +278,46 @@ nối ở H3 (cấp credit sau xác thực, trang admin đặt quyền).
 **Mục tiêu:** việc dài chạy được ngoài vòng đời một request, sống sót qua khởi
 động lại, và không bao giờ bị hai worker làm hai lần.
 
-- [ ] Đưa `procrastinate` vào (Q13), tạo bảng của nó bằng migration
-- [ ] Bảng `jobs` của ứng dụng: id, chủ sở hữu, app, loại job, tham số, trạng
-      thái, tiến độ, kết quả, lỗi, thời điểm — **tách khỏi bảng nội bộ của
-      procrastinate** để đổi thư viện sau này không phải đổi mô hình nghiệp vụ
-- [ ] Dịch vụ Windows `LTTWorker` riêng (Q6), đăng ký bằng NSSM như `LTTWeb`
-- [ ] Worker khai báo năng lực (`api` / `ffmpeg` / `gpu`); job chỉ vào worker
-      có đủ năng lực — khớp với trường `requires` đã có sẵn trong hợp đồng app
-- [ ] Thử lại luỹ thừa; phân biệt lỗi tạm thời (nên thử lại) và lỗi vĩnh viễn
-      (đừng thử lại — thử lại một lỗi tham số chỉ tốn tiền API)
-- [ ] Cửa sổ chống trùng: cùng một người gửi cùng tham số trong N giây → nhận
-      lại job cũ, không tạo job mới
-- [ ] Đẩy tiến độ về trình duyệt
-- [ ] Job "mồ côi" (worker chết giữa chừng) phải được nhận ra và xử lý
+### H2.1 + H2.2 — hàng đợi + worker ✅ XONG 2026-07-31
+
+- [x] Tự quản bảng `jobs` + `SELECT … FOR UPDATE SKIP LOCKED` (Q26)
+- [x] Bảng `jobs`: id, chủ sở hữu, app, loại job, tham số, trạng thái, tiến độ,
+      kết quả, lỗi, attempts, dedupe_key, heartbeat, thời điểm
+- [x] `platform_core/jobs.py`: submit / claim / heartbeat / set_progress /
+      complete / fail / reclaim_orphans / resolve_handler
+- [x] `platform_core/job_runner.py` + `job_worker.py`: vòng chạy + entry
+- [x] Dịch vụ Windows `LTTStudioWorker` riêng (Q6), đăng ký trong
+      `setup/2-cai-dat.ps1`; `update.ps1`/`rollback.ps1`/`4-nghiem-thu.ps1`
+      biết về nó
+- [x] Retry luỹ thừa có giới hạn (base×2^n, chặn trên); job mồ côi được nhặt lại
+- [x] Cửa sổ chống trùng qua `dedupe_key`
+- [x] `tests/test_67_hang_doi_job.py` — 15 test
 
 **Tiêu chí hoàn thành**
-- Tắt worker giữa lúc chạy → bật lại → job được nhận lại hoặc báo lỗi rõ ràng,
-  **không nằm im mãi ở trạng thái "đang chạy"**
-- Hai worker cùng chạy → không job nào bị làm hai lần (có test)
-- Khởi động lại máy → job đang chờ vẫn còn
-- Người dùng A không đọc được job của người dùng B (có test ở tầng route)
-- `LTTWeb` restart **không** giết job đang chạy
+- [x] Tắt worker giữa chừng → nhặt lại (reclaim_orphans, có test)
+- [x] **Hai worker không làm trùng** — nghiệm thu thật: 5 worker × 30 job trên
+      PostgreSQL, không job nào chạy hai lần, tất cả done
+- [x] Khởi động lại → job đang chờ vẫn còn (nằm trong CSDL)
+- [x] `LTTWeb` restart không giết job đang chạy (worker là tiến trình riêng)
+- [x] Nghiệm thu worker **process** thật: submit → worker nhặt → complete đúng
 
-**Rủi ro lớn nhất:** job bị làm hai lần trên một API tính tiền. Test phải chứng
-minh điều này, không được suy luận.
+**Hoãn có lý do — lọc capability worker (Q6):** claim hiện không lọc theo
+`requires` của app vì giai đoạn này **một worker đa năng** (máy chủ có cả GPU).
+Khi có worker ở nhiều máy mới cần — chỗ lọc đã ghi sẵn trong `claim()`.
+
+### H2.3 — Web submit + tiến độ về trình duyệt ⏳ CHƯA
+
+- [ ] Route submit job + trang danh sách job (lọc theo user — A không thấy job B)
+- [ ] Trang chi tiết job + đẩy tiến độ về trình duyệt (HTMX poll, Q18)
+- [ ] Nối `apps/demo` chạy **qua hàng đợi** để nghiệm thu browser
+- [ ] Test tầng route: user A không đọc được job user B
+
+> Tách H2.3 vì nó là tầng trình bày trên hạ tầng đã vững (H2.1/H2.2). Làm cùng
+> H3 (sổ credit) sẽ gọn hơn: submit job và trừ credit là **cùng một giao dịch**,
+> nên viết đường submit một lần có cả hai.
+
+**Rủi ro lớn nhất:** job bị làm hai lần trên một API tính tiền. Đã chứng minh
+bằng nghiệm thu 5-worker, không suy luận.
 
 ---
 

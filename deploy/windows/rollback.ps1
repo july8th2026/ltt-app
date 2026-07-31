@@ -12,6 +12,7 @@
 param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$ServiceName = 'LTTStudioWeb',
+    [string]$WorkerServiceName = 'LTTStudioWorker',
     [int]$Port = 8100
 )
 
@@ -28,6 +29,7 @@ if (-not (Test-Path $previous)) {
 Write-Host "`n=== Rolling back ===" -ForegroundColor Cyan
 
 if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+    Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
     Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 5
 }
@@ -39,6 +41,7 @@ Move-Item $previous $release
 Write-Host "  [OK] Previous release restored (bad release kept at $failed)" -ForegroundColor Green
 
 Start-Service $ServiceName
+Start-Service $WorkerServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 8
 
 try {

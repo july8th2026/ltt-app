@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (Q1–Q25; Q14 đã thay bởi Q24)
+## 1. Quyết định đã chốt (Q1–Q26; Q13→Q26, Q14→Q24 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -43,7 +43,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q10 | App socialbot (FB/TikTok) | **Đóng băng** | Giữ chạy trong danh sách app, không sửa, không tối ưu. Giữ luôn `core/` (15.489 dòng) vì ~700 test đang dựa vào các phần dùng chung. |
 | Q11 | Tool thật đầu tiên | **`thumbnail_api`** | API thuần, ~5-15 giây, kết quả ảnh vài MB. Không đụng trần 100 MB, không đụng trần 100 giây → chứng minh được đủ chuỗi user → job → credit → tải về mà **chưa cần object storage**. |
 | Q12 | Tên gọi hai hệ thống | **Không đổi tên** — phân biệt bằng đường dẫn | Quy ước bắt buộc để bù lại: trong mọi tài liệu **luôn viết đủ đường dẫn** (`D:\BOT GEMINI` hoặc `D:\LTTSTUDIOSAPP`), không bao giờ chỉ viết "LTT AI Studio" trống không. |
-| Q13 | Hàng đợi job | **procrastinate** — hàng đợi chạy trên chính PostgreSQL | Không cần Redis, không thêm dịch vụ nào. Job và dữ liệu nghiệp vụ nằm trong **cùng một giao dịch** → trừ credit và tạo job không bao giờ lệch nhau. Celery bị loại vì cần broker riêng *và* chạy kém trên Windows (prefork không hoạt động). Đổi lại: cộng đồng nhỏ hơn Celery nhiều. |
+| ~~Q13~~ | ~~Hàng đợi job~~ | ~~**procrastinate**~~ **ĐÃ THAY bởi Q26 (2026-07-31)** | ~~Hàng đợi trên chính Postgres, job+credit cùng giao dịch.~~ Lý do thay: khi thiết kế H2 mới thấy procrastinate giữ hàng đợi trong **bảng riêng của nó**, tách khỏi bảng `jobs` nghiệp vụ → **hai kho phải đồng bộ**; và để job+credit atomic phải cho `defer` chung transaction với SQLAlchemy (chia sẻ connection, tài liệu mỏng). Chính cái lý do chọn nó (atomic) lại **dễ hơn** khi tự quản một bảng. Xem Q26. |
 | ~~Q14~~ | ~~Đăng nhập / đăng ký~~ | ~~**fastapi-users**~~ **ĐÃ THAY bởi Q24 (2026-07-31)** | ~~Token xác thực email/reset dùng thư viện đã soi kỹ.~~ Lý do thay: khi bắt tay H1.2 mới thấy `fastapi-users` (DB adapter) **bắt buộc `sqlalchemy[asyncio]`** — async-only từ v10 — trong khi nền H1.1 vừa xây là đồng bộ và phần auth đang chạy production cũng đồng bộ. Nó còn thay luôn cơ chế session hiện có. Cái giá lớn hơn nhiều so với ước tính lúc chốt, còn lợi ích (logic token) thì `itsdangerous` đã có sẵn làm được. Xem Q24. |
 | Q15 | Trang quản trị | **sqladmin** | Sinh trang xem/lọc/sửa trực tiếp từ model SQLAlchemy. Trang quản trị không phải thứ khách nhìn thấy, không đáng viết tay. Bắt buộc: chỉ vai trò admin vào được, có test chốt. |
 | Q16 | ORM + di trú CSDL | **SQLAlchemy 2.0 + Alembic** | Với Postgres sẽ đổi schema hàng chục lần. Tự viết script di trú là tự tạo sự cố mất dữ liệu. Không phải tuỳ chọn. |
@@ -56,6 +56,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q23 | Tài khoản CSDL của ứng dụng | **Role riêng `ltt_app`, không bao giờ dùng superuser `postgres`** | Một lỗ hổng SQL injection với quyền superuser đọc được **mọi** database trên máy và ghi được cả file hệ thống; với role riêng thì thiệt hại giới hạn trong đúng database của ứng dụng. Mật khẩu superuser chỉ dùng lúc cài, lưu ở `secrets/postgres-superuser.txt` để còn vào bảo trì CSDL sau này. Có test chốt. |
 | Q24 | Đăng nhập / đăng ký (thay Q14) | **Tự viết trên nền đồng bộ, mượn `itsdangerous` cho token** | Giữ `server/auth/` đồng bộ đã test và đang chạy; thêm bảng `users` + đăng ký; token xác thực email/reset dùng `URLSafeTimedSerializer` (đã có sẵn, là mẫu chuẩn dùng-một-lần-có-hạn). **Vì sao không fastapi-users:** nó async-only từ v10, kéo async engine vào nền đồng bộ vừa xây ở H1.1, và thay luôn cơ chế session đang chạy production — cái giá lớn, lợi ích trùng với thứ `itsdangerous` đã làm được. Đổi lại: tự viết logic đăng ký (đều là mẫu chuẩn, viết test kỹ). |
 | Q25 | Mặc định phân quyền app | **Mặc định MỞ (enabled) — admin khoá/ẩn khi cần** | Chỉ lưu bản ghi khi KHÁC mặc định; không có bản ghi = mở. Rào chắn tiền đã là credit (không credit thì không chạy job, dù thấy app), nên "mặc định mở" không gây rủi ro mất tiền. Phân quyền app dùng để **ẩn app đang xây** hoặc **app riêng cho nhóm khách**, không phải để chặn tiền. Đổi lại: thêm một app mới thì mọi user thấy ngay — đúng ý ở giai đoạn này; nếu sau cần "mặc định ẩn cho app cụ thể" thì thêm cờ trong manifest, không đổi mặc định toàn cục. Admin luôn thấy hết (ngoài bảng phân quyền). |
+| Q26 | Hàng đợi job (thay Q13) | **Tự quản một bảng `jobs` + `SELECT … FOR UPDATE SKIP LOCKED`** | Một nguồn chân lý duy nhất; job+credit cùng session cùng transaction (đúng thứ Q13 muốn, mà lại hiển nhiên). Postgres lo phần nhiều-worker-không-nhặt-trùng bằng `SKIP LOCKED`. Không thêm phụ thuộc, một hệ migration. **Đổi lại:** tự viết vòng poll của worker + retry/backoff (mẫu chuẩn ~50 dòng, có test) và tự lo job mồ côi khi worker chết giữa chừng (nhịp tim + nhặt lại). Khi nào job nền đủ nhiều loại/phức tạp để cần scheduling/lock nâng cao thì cân nhắc lại procrastinate — giao diện `JobQueue` giữ đủ hẹp để đổi được. |
 
 ---
 

@@ -31,7 +31,7 @@ $logs    = Join-Path $Root 'logs'
 $venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
 
 Head 'Dich vu'
-foreach ($s in @('LTTStudioWeb', 'cloudflared')) {
+foreach ($s in @('LTTStudioWeb', 'LTTStudioWorker', 'cloudflared')) {
     $svc = Get-Service $s -ErrorAction SilentlyContinue
     if (-not $svc) { Bad "Khong co dich vu $s" }
     elseif ($svc.Status -ne 'Running') { Bad "$s dang $($svc.Status)" }

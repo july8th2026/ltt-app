@@ -14,7 +14,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint
+from sqlalchemy import (Boolean, DateTime, Integer, JSON, String, Text,
+                        UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
@@ -156,3 +157,66 @@ class AppAccess(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<AppAccess user={self.user_id} {self.app_slug}={self.level}>"
+
+
+# ── Trạng thái job ────────────────────────────────────────────────────────────
+# queued  : đang chờ worker nhặt
+# running : một worker đang chạy
+# done    : xong, có result
+# error   : thất bại sau khi hết lượt thử
+JOB_QUEUED = "queued"
+JOB_RUNNING = "running"
+JOB_DONE = "done"
+JOB_ERROR = "error"
+
+
+class Job(Base):
+    """Một công việc trong hàng đợi (H2, Q26).
+
+    Bảng này là **nguồn chân lý duy nhất** cho hàng đợi — không có kho thứ hai.
+    Web tạo dòng job (và trừ credit) trong **cùng một transaction**; worker nhặt
+    bằng `SELECT … FOR UPDATE SKIP LOCKED` nên nhiều worker không bao giờ nhặt
+    trùng. Xem `platform_core/jobs.py`.
+
+    Vì sao các cột này có mặt:
+    - `params`/`result` là JSON — mỗi loại job một hình dạng riêng, không nhồi
+      vào cột cứng.
+    - `heartbeat_at` + `worker_id`: để nhận ra job **mồ côi** (worker chết giữa
+      chừng) — job `running` mà lâu không đập nhịp sẽ được nhặt lại.
+    - `attempts`/`max_attempts` + `next_run_at`: retry có giới hạn và có giãn
+      cách; thử lại một lỗi tham số vô hạn chỉ tốn tiền API.
+    - `dedupe_key`: cùng người gửi cùng thứ trong khi job cũ còn chạy → nhận lại
+      job cũ, không tạo job mới (chống double-submit, F5, bấm "Tạo lại").
+    """
+
+    __tablename__ = "jobs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    app_slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    job_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    params: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    status: Mapped[str] = mapped_column(String(16), default=JOB_QUEUED,
+                                        nullable=False, index=True)
+    progress: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    progress_msg: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    dedupe_key: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+
+    worker_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+    next_run_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"

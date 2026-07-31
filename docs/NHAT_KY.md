@@ -14,6 +14,82 @@
 
 ---
 
+## 2026-07-31 — H2.1+H2.2: hàng đợi job + worker (bỏ procrastinate)
+
+- **Mục tiêu:** việc dài chạy ngoài vòng đời request, sống sót restart, không
+  bao giờ hai worker làm trùng.
+- **Hạng mục:** H2.1 (hàng đợi) + H2.2 (worker) — **hoàn thành**. H2.3 (web UI +
+  tiến độ) tách ra, làm cùng H3.
+- **Trạng thái:** xong phần lõi, nghiệm thu trên PostgreSQL thật.
+
+### Quyết định đổi hướng: bỏ procrastinate (Q13 → Q26)
+
+Khi thiết kế H2 mới thấy procrastinate giữ hàng đợi trong **bảng riêng của
+nó**, tách khỏi bảng `jobs` nghiệp vụ → hai kho phải đồng bộ. Và để job+credit
+atomic (chính lý do chọn nó) phải cho `defer` chung transaction với SQLAlchemy —
+chia sẻ connection, tài liệu mỏng. Nghịch lý: cái lý do chọn nó lại **dễ hơn**
+khi tự quản một bảng. Đưa lựa chọn cho chủ dự án → chọn tự viết. Dọn Q13 đúng
+giao thức (đánh dấu ĐÃ THAY, thêm Q26, gỡ procrastinate khỏi venv, sửa kế hoạch).
+
+### Đã làm
+
+- Bảng `jobs` (nguồn chân lý duy nhất) + `platform_core/jobs.py`:
+  - `submit` không commit (caller commit cùng credit — atomic hiển nhiên);
+  - `claim` dùng `FOR UPDATE SKIP LOCKED` (nhiều worker không nhặt trùng);
+  - `fail` retry luỹ thừa có giới hạn rồi mới thành `error`;
+  - `reclaim_orphans` nhặt lại job của worker chết (tính một lượt đã tiêu);
+  - `dedupe_key` chống double-submit/F5;
+  - `resolve_handler` qua registry, không hardcode slug.
+- `platform_core/job_runner.py` + `job_worker.py`: vòng chạy + entry. Mỗi bước
+  (claim/tiến độ/complete) là transaction ngắn RIÊNG — không giữ khoá dòng suốt
+  thời gian chạy handler.
+- Dịch vụ `LTTStudioWorker` riêng (Q6) trong `setup/2-cai-dat.ps1`;
+  `update.ps1`/`rollback.ps1`/`4-nghiem-thu.ps1` biết về nó.
+
+### Nghiệm thu trên PostgreSQL thật (không phải suy luận)
+
+- **SKIP LOCKED:** 5 worker (thread) × 30 job → mỗi job chạy ĐÚNG MỘT LẦN,
+  không trùng, tất cả done. Đây là rủi ro lớn nhất (job làm hai lần trên API
+  tính tiền) — chứng minh, không giả định.
+- **Worker process thật:** chạy `job_worker.py`, submit job demo → worker nhặt →
+  complete với kết quả đúng (`"worker process that"` → đảo ngược).
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` | **1.495 passed**, 1 skipped, 23 subtests |
+| `tests/test_67_hang_doi_job.py` (SQLite) | 15 passed |
+| SKIP LOCKED 5 worker × 30 job trên PostgreSQL | không trùng, tất cả done |
+| Worker process thật end-to-end | job nhặt → complete đúng |
+| `python tools/scan_source_secrets.py` | 0 finding |
+
+### Quyết định mới
+
+Q26 — hàng đợi tự quản bảng jobs + SKIP LOCKED (thay Q13 procrastinate).
+
+### Hoãn có lý do
+
+- Lọc capability worker (Q6): claim chưa lọc theo `requires` vì một worker đa
+  năng. Chỗ lọc đã ghi sẵn trong `claim()`, thêm khi có nhiều máy.
+- H2.3 (web submit + tiến độ + trang jobs): tách ra làm cùng H3, vì đường
+  submit job và trừ credit là cùng một giao dịch — viết một lần có cả hai.
+
+### Cách lùi lại
+
+Xoá `platform_core/{jobs,job_runner}.py`, `job_worker.py`,
+`tests/test_67_hang_doi_job.py`, migration `..._them_bang_jobs.py`; hoàn
+`platform_core/models.py`, `setup/2-cai-dat.ps1`, `deploy/windows/*.ps1`,
+`setup/4-nghiem-thu.ps1`.
+
+### Việc tiếp theo
+
+1. H3 — sổ credit (append-only, giữ chỗ → quyết toán → hoàn) + H2.3 (web submit
+   + tiến độ) cùng lúc: submit job và trừ credit là một giao dịch.
+2. (người dùng, độc lập) H0.1 Cloudflare + khoá Resend/Turnstile.
+
+---
+
 ## 2026-07-31 — H1.4: phân quyền app + KHÉP H1 (Người dùng)
 
 - **Mục tiêu:** mỗi (user × app) mở/khoá/ẩn; chặn ở tầng route, không chỉ ẩn nút.
