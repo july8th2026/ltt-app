@@ -168,7 +168,11 @@ def test_login_success_then_dashboard_then_logout(tmp_path):
     assert dash.status_code == 200
     assert "admin" in dash.text
 
-    logout_resp = client.post("/logout")
+    # Logout can CSRF (W1.4): lay token tu form logout trong base.html.
+    _m = 'name="csrf_token" value="'
+    _s = dash.text.index(_m) + len(_m)
+    logout_tok = dash.text[_s:dash.text.index('"', _s)]
+    logout_resp = client.post("/logout", data={"csrf_token": logout_tok})
     assert logout_resp.status_code == 303
     assert logout_resp.headers["location"] == "/login"
 

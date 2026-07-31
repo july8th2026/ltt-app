@@ -117,8 +117,10 @@ class RegistryError(Exception):
     pass
 
 
-def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set) -> None:
+def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
+              seen_job_types: Optional[set] = None) -> None:
     """Chặn sớm những sai sót âm thầm gây khó hiểu về sau."""
+    seen_job_types = seen_job_types if seen_job_types is not None else set()
     if not manifest.slug or not manifest.slug.replace("_", "").isalnum():
         raise RegistryError(
             f"slug không hợp lệ: {manifest.slug!r} — chỉ chữ, số và gạch dưới")
@@ -133,10 +135,18 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set) -> Non
         # FastAPI không báo gì cả — rất khó truy.
         raise RegistryError(
             f"[{manifest.slug}] route_prefix trùng: {manifest.route_prefix!r}")
+    # Fail SỚM ngay lúc discover (W1.6): app sinh job mà KHÔNG khai credit_cost
+    # thì job không tra được giá — trước đây chỉ vỡ lúc submit (app đã hiện trên
+    # catalog, khách bấm rồi mới lỗi). Đánh dấu app lỗi ngay để không lên catalog.
     if manifest.job_types and manifest.credit_cost is None:
-        # Không phải lỗi chặn, nhưng app sinh job mà không tính tiền thì
-        # thường là quên, và với giá API thật thì quên là mất tiền.
-        pass
+        raise RegistryError(
+            f"[{manifest.slug}] khai job_types nhưng thiếu credit_cost — "
+            f"job sẽ không tra được giá, từ chối nạp")
+    # job_type trùng giữa hai app: worker phân job theo job_type, trùng thì nhập
+    # nhằng nguy hiểm (một app quyết toán theo giá app kia). Chặn ngay.
+    for jt in manifest.job_types:
+        if jt in seen_job_types:
+            raise RegistryError(f"[{manifest.slug}] job_type trùng: {jt!r}")
 
 
 def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
@@ -152,6 +162,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
     loaded: list = []
     seen_slugs: set = set()
     seen_prefixes: set = set()
+    seen_job_types: set = set()
 
     for entry in sorted(apps_dir.iterdir()):
         if not entry.is_dir() or entry.name.startswith(("_", ".")):
@@ -164,7 +175,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
             manifest = getattr(mod, "MANIFEST")
             if not isinstance(manifest, AppManifest):
                 raise RegistryError("MANIFEST không phải AppManifest")
-            _validate(manifest, seen_slugs, seen_prefixes)
+            _validate(manifest, seen_slugs, seen_prefixes, seen_job_types)
         except Exception as exc:
             loaded.append(LoadedApp(
                 manifest=AppManifest(
@@ -177,6 +188,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
 
         seen_slugs.add(manifest.slug)
         seen_prefixes.add(manifest.route_prefix.rstrip("/"))
+        seen_job_types.update(manifest.job_types)
 
         router = None
         router_error = ""

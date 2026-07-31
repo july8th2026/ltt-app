@@ -56,6 +56,15 @@ def test_update_runs_migrations_before_start():
     assert text.index("alembic upgrade head") < text.index("Start-Service $ServiceName")
 
 
+def test_scheduled_backup_tightens_acl():
+    """W1.5: ban backup off-drive CHUA secrets (app.env + dump) -> thu muc phai
+    bi siet ACL (icacls SID) de Users/Everyone khong doc duoc."""
+    text = _read("5-lich-backup.ps1")
+    assert "icacls" in text
+    assert "/inheritance:r" in text
+    assert "S-1-5-18" in text and "S-1-5-32-544" in text   # SID, locale-safe
+
+
 def test_all_expected_scripts_exist():
     present = set(_scripts())
     missing = [s for s in EXPECTED_SCRIPTS if s not in present]

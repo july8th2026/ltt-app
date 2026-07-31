@@ -177,3 +177,21 @@ def _is_admin(request=None):
 
 templates.env.globals["active_app"] = _active_app
 templates.env.globals["is_admin"] = _is_admin
+
+
+def _csrf_token(request=None):
+    """Token CSRF của phiên cho các form nhỏ dựng thẳng trong base (vd nút Đăng
+    xuất). `issue_csrf_token` idempotent nên nhiều form trên cùng trang dùng
+    chung một token — không ghi đè nhau."""
+    if request is None:
+        return ""
+    try:
+        from server.auth.csrf import issue_csrf_token
+        return issue_csrf_token(request)
+    except Exception:
+        return ""
+
+
+# Tên KHÁC `csrf_token` vì nhiều route truyền biến context tên `csrf_token` (một
+# CHUỖI) — trùng tên sẽ che global và `{{ csrf_token(request) }}` gọi chuỗi → lỗi.
+templates.env.globals["phien_csrf"] = _csrf_token

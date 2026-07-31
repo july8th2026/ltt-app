@@ -156,8 +156,10 @@ def test_sidebar_bung_trang_con_khi_trong_app(client):
 def test_link_quan_tri_chi_hien_cho_admin(client):
     """Link '/admin/' chỉ hiện cho admin CSDL, ẩn với user thường."""
     _tao_va_dang_nhap(client, "normal@example.com")           # user thường
-    assert "/admin/" not in client.get("/").text
-    client.post("/logout")
+    home = client.get("/").text
+    assert "/admin/" not in home
+    _lt = re.search(r'name="csrf_token" value="([^"]+)"', home).group(1)
+    client.post("/logout", data={"csrf_token": _lt})
     _tao_va_dang_nhap(client, "boss@example.com", role="admin")  # admin
     assert "/admin/" in client.get("/").text
 
@@ -280,22 +282,89 @@ def test_client_ip_uu_tien_cf_connecting_ip():
     assert client_ip(_Req({}, "127.0.0.1")) == "127.0.0.1"     # fallback khi khong co header
 
 
+# ── W1.4: auth hardening ─────────────────────────────────────────────────────────
+
+def test_login_chua_xac_thuc_bi_chan(client):
+    """Mật khẩu đúng nhưng chưa xác thực email → 403, KHÔNG tạo phiên."""
+    import platform_core.db as dbmod
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="unv@example.com", password="matkhau-tot-12",
+                       is_verified=False); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    tok = _csrf(client, "/login")
+    r = client.post("/login", data={"username": "unv@example.com",
+                                    "password": "matkhau-tot-12", "csrf_token": tok})
+    assert r.status_code == 403
+    assert "chưa xác thực" in r.text
+    assert "Việc của tôi" not in client.get("/").text     # không vào được
+
+
+def test_khoa_theo_tai_khoan_du_khac_ip(client):
+    """Khoá theo TÀI KHOẢN: 5 lần sai cùng email từ 5 IP khác nhau → lần 6 vẫn
+    429 (credential-stuffing từ nhiều IP mà per-IP không chặn được)."""
+    for i in range(5):
+        tok = _csrf(client, "/login")
+        r = client.post("/login", data={"username": "target@x.com",
+                                        "password": "sai", "csrf_token": tok},
+                        headers={"CF-Connecting-IP": f"10.0.0.{i}"})
+        assert r.status_code == 401
+    tok = _csrf(client, "/login")
+    r = client.post("/login", data={"username": "target@x.com",
+                                    "password": "sai", "csrf_token": tok},
+                    headers={"CF-Connecting-IP": "10.0.0.250"})   # IP hoàn toàn mới
+    assert r.status_code == 429                          # vẫn khoá vì theo tài khoản
+
+
+def test_logout_can_csrf(client):
+    """Logout không token → KHÔNG đăng xuất (giữ phiên); có token → đăng xuất."""
+    _tao_va_dang_nhap(client, "lo@example.com")
+    r = client.post("/logout", follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"] == "/"
+    assert "Việc của tôi" in client.get("/").text        # vẫn đăng nhập
+
+    tok = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/").text).group(1)
+    r2 = client.post("/logout", data={"csrf_token": tok}, follow_redirects=False)
+    assert r2.status_code == 303 and r2.headers["location"] == "/login"
+    assert "Việc của tôi" not in client.get("/").text     # đã đăng xuất
+
+
+def test_forgot_password_rate_limit(client):
+    """forgot-password bị rate-limit (chống bơm mail + đốt hạn ngạch Resend)."""
+    for _ in range(5):
+        tok = _csrf(client, "/forgot-password")
+        r = client.post("/forgot-password",
+                        data={"email": "nobody@x.com", "csrf_token": tok},
+                        headers={"CF-Connecting-IP": "7.7.7.7"})
+        assert r.status_code == 200
+    tok = _csrf(client, "/forgot-password")
+    r = client.post("/forgot-password",
+                    data={"email": "nobody@x.com", "csrf_token": tok},
+                    headers={"CF-Connecting-IP": "7.7.7.7"})
+    assert r.status_code == 429
+
+
 def test_rate_limit_theo_cf_ip_khong_khoa_lien(client):
     """P0-3: rate-limit key theo CF-Connecting-IP, không phải 127.0.0.1 chung.
-    5 lần sai từ IP A khoá IP A; IP B KHÔNG bị vạ lây."""
+    5 lần sai từ IP A khoá IP A; IP B KHÔNG bị vạ lây. (Dùng username KHÁC nhau
+    cho A và B để cô lập per-IP, không lẫn với khoá-theo-tài-khoản của W1.4.)"""
     for _ in range(5):
         tok = _csrf(client, "/login")
-        r = client.post("/login", data={"username": "x@x.com", "password": "sai",
+        r = client.post("/login", data={"username": "a@x.com", "password": "sai",
                                         "csrf_token": tok},
                         headers={"CF-Connecting-IP": "1.1.1.1"})
         assert r.status_code == 401
     tokA = _csrf(client, "/login")
-    ra = client.post("/login", data={"username": "x@x.com", "password": "sai",
+    ra = client.post("/login", data={"username": "a@x.com", "password": "sai",
                                      "csrf_token": tokA},
                      headers={"CF-Connecting-IP": "1.1.1.1"})
-    assert ra.status_code == 429                       # IP A đã bị khoá
+    assert ra.status_code == 429                       # IP A đã bị khoá (per-IP)
     tokB = _csrf(client, "/login")
-    rb = client.post("/login", data={"username": "x@x.com", "password": "sai",
+    rb = client.post("/login", data={"username": "b@x.com", "password": "sai",
                                      "csrf_token": tokB},
                      headers={"CF-Connecting-IP": "2.2.2.2"})
-    assert rb.status_code == 401                       # IP B KHÔNG bị vạ lây
+    assert rb.status_code == 401                       # IP B + tài khoản khác: KHÔNG vạ lây

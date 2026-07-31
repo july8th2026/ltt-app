@@ -234,7 +234,9 @@ def test_dang_xuat_thu_hoi_phien(client_db):
     r1 = client_db.get("/", follow_redirects=False)
     assert r1.status_code == 200 and "Việc của tôi" in r1.text
 
-    client_db.post("/logout", follow_redirects=False)
+    import re as _re
+    _lt = _re.search(r'name="csrf_token" value="([^"]+)"', r1.text).group(1)
+    client_db.post("/logout", data={"csrf_token": _lt}, follow_redirects=False)
     # Sau dang xuat: phien bi thu hoi -> trang chu ve dang KHACH (catalog cong
     # khai, khong con sidebar noi bo). Trang chu nay CONG KHAI (H6) nen van 200.
     r2 = client_db.get("/", follow_redirects=False)

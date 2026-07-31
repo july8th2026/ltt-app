@@ -67,7 +67,18 @@ def login_submit(
             status_code=400,
         )
 
-    if not _limiter(request).allow(_client_key(request)):
+    # Rate-limit HAI CHIỀU (W1.4): theo IP (chống một máy dò nhiều tài khoản) VÀ
+    # theo TÀI KHOẢN (chống credential-stuffing dò một tài khoản từ nhiều IP —
+    # per-IP một mình không chặn được). Khoá tài khoản theo email chuẩn hoá.
+    lim = _limiter(request)
+    ip_key = _client_key(request)
+    acct_key = "acct:" + (username or "").strip().lower()
+
+    def _reset_limits() -> None:
+        lim.reset(ip_key)
+        lim.reset(acct_key)
+
+    if not lim.allow(ip_key) or not lim.allow(acct_key):
         return templates.TemplateResponse(
             request, "login.html",
             {"csrf_token": issue_csrf_token(request), "error": "Quá nhiều lần thử — vui lòng đợi 1 phút.", "next": next},
@@ -81,12 +92,24 @@ def login_submit(
             from platform_core.users import tao_phien, xac_thuc
             user = xac_thuc(db, email=username, password=password)
             if user is not None:
+                # Chưa xác thực email → KHÔNG cho vào (W1.4). Mật khẩu đúng nên
+                # không phải brute-force → reset limiter, chỉ chặn vì chưa verify.
+                if not user.is_verified:
+                    _reset_limits()
+                    return templates.TemplateResponse(
+                        request, "login.html",
+                        {"csrf_token": issue_csrf_token(request),
+                         "error": "Tài khoản chưa xác thực email. Kiểm tra hộp thư "
+                                  "(hoặc mục spam) và bấm liên kết xác thực.",
+                         "next": next},
+                        status_code=403,
+                    )
                 sid = tao_phien(
                     db, user,
                     user_agent=request.headers.get("user-agent", ""),
-                    ip=_client_key(request),
+                    ip=ip_key,
                 )
-                _limiter(request).reset(_client_key(request))
+                _reset_limits()
                 log_in_db(request, sid)
                 return RedirectResponse(safe_next(next), status_code=303)
 
@@ -103,12 +126,16 @@ def login_submit(
             status_code=401,
         )
 
-    _limiter(request).reset(_client_key(request))
+    _reset_limits()
     log_in(request, username)
     return RedirectResponse(safe_next(next), status_code=303)
 
 
 @router.post("/logout")
-def logout(request: Request):
+def logout(request: Request, csrf_token: str = Form("")):
+    # CSRF cho logout (W1.4): không cho request giả (từ site khác) ép đăng xuất.
+    # Token sai/thiếu → KHÔNG đăng xuất, giữ nguyên phiên (kết quả an toàn).
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/", status_code=303)
     log_out(request)
     return RedirectResponse("/login", status_code=303)

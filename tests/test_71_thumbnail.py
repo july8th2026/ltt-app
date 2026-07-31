@@ -81,6 +81,65 @@ def test_tao_anh_thanh_cong_luu_storage(storage, monkeypatch):
         assert storage.exists(k)                     # ảnh đã lưu thật
 
 
+class _Ctx:
+    def __init__(self, job_id): self.job_id = job_id
+    def progress(self, *a, **k): pass
+
+
+def test_loi_mot_anh_khong_hong_ca_job(storage, monkeypatch):
+    """W1.1: một ảnh lỗi KHÔNG làm hỏng cả job — tạo được bao nhiêu tính tiền
+    bấy nhiêu (credit_cost theo số ảnh THÀNH CÔNG)."""
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    import httpx
+    calls = {"n": 0}
+
+    def fake_post(*a, **k):
+        calls["n"] += 1
+        if calls["n"] == 2:                       # ảnh thứ 2 lỗi
+            return _FakeResp(500, {}, text="server error")
+        return _FakeResp(200, _payload_one_image())
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    from apps.thumbnail import jobs
+    out = jobs.handle({"topic": "x", "count": 3, "owner_id": "u1"}, _Ctx("jobP"))
+    assert out["count"] == 2                       # 2 thành công, 1 lỗi
+    assert out["credit_cost"] == 2 * 5             # chỉ tính tiền 2 ảnh
+    assert len(out["image_keys"]) == 2
+
+
+def test_resume_khong_goi_lai_anh_da_co(storage, monkeypatch):
+    """W1.1: ảnh đã lưu (worker crash rồi job bị reclaim) được DÙNG LẠI, không
+    gọi Gemini lần nữa → không trả tiền API hai lần."""
+    import io
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    storage.put("thumbnail/u1/jobR/0.png", io.BytesIO(b"old"),
+                content_type="image/png")          # ảnh 0 đã có sẵn
+    import httpx
+    calls = {"n": 0}
+
+    def fake_post(*a, **k):
+        calls["n"] += 1
+        return _FakeResp(200, _payload_one_image())
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    from apps.thumbnail import jobs
+    out = jobs.handle({"topic": "x", "count": 2, "owner_id": "u1"}, _Ctx("jobR"))
+    assert out["count"] == 2
+    assert calls["n"] == 1                          # chỉ gọi Gemini cho ảnh CHƯA có
+    assert out["credit_cost"] == 2 * 5
+
+
+def test_khong_tao_duoc_anh_nao_thi_nem(storage, monkeypatch):
+    """W1.1: KHÔNG tạo được ảnh nào → ném để nền tảng hoàn toàn bộ credit + retry."""
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    import httpx
+    monkeypatch.setattr(httpx, "post",
+                        lambda *a, **k: _FakeResp(500, {}, text="down"))
+    from apps.thumbnail import jobs
+    with pytest.raises(RuntimeError):
+        jobs.handle({"topic": "x", "count": 2, "owner_id": "u1"}, _Ctx("jobF"))
+
+
 def test_gemini_loi_thi_nem_va_che_khoa(storage, monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "sieu-bi-mat-key-123")
     import httpx

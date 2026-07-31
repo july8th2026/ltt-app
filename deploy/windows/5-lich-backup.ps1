@@ -57,6 +57,18 @@ if ($backupDrive -eq $rootDrive) {
 if (-not (Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null }
 Ok "Backup se ghi vao $BackupDir"
 
+# Siet ACL: ban backup CHUA secrets (app.env co LTT_TOKEN_ENCRYPTION_KEY) + dump
+# toan bo CSDL. Chi SYSTEM va Administrators duoc doc. Dung SID (khong dung ten
+# nhom) de dung tren ca Windows tieng Viet: *S-1-5-18 = SYSTEM,
+# *S-1-5-32-544 = Administrators. /inheritance:r bo thua ke tu o cha (vd D:\ mo
+# cho Users), roi cap lai dung 2 nhom nay -> Users/Everyone het quyen.
+& icacls $BackupDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+if ($LASTEXITCODE -eq 0) {
+    Ok 'Da siet ACL thu muc backup (chi SYSTEM + Administrators doc duoc)'
+} else {
+    Note 'Khong siet duoc ACL thu muc backup - kiem quyen thu cong (icacls).'
+}
+
 Head 'Dang ky Scheduled Task'
 $argLine = "-NonInteractive -ExecutionPolicy Bypass -File `"$BackupScript`" " +
            "-Root `"$Root`" -IncludeSecrets -BackupDir `"$BackupDir`""

@@ -123,6 +123,13 @@ class AppAccessAdmin(ModelView, model=AppAccess):
     # CRUD đầy đủ: chỉ lưu NGOẠI LỆ so với mặc định "mở" (Q25). Xoá dòng = về
     # mặc định mở. level hợp lệ: enabled / locked / hidden.
     form_columns = [AppAccess.user_id, AppAccess.app_slug, AppAccess.level]
+    # level chỉ nhận enabled/locked/hidden — dropdown thay vì free-text để không
+    # ghi giá trị rác (vd "superuser") làm phân quyền cư xử sai âm thầm (W1.3).
+    form_choices = {
+        "level": [("enabled", "enabled — mở"),
+                  ("locked", "locked — khoá"),
+                  ("hidden", "hidden — ẩn")],
+    }
 
 
 class JobAdmin(ModelView, model=Job):
@@ -179,36 +186,49 @@ class GrantCreditView(BaseView):
 
     @expose("/grant-credit", methods=["GET", "POST"])
     async def grant(self, request: Request):
+        from server.auth.csrf import issue_csrf_token, verify_csrf_token
+
         msg_html = ""
         user_id = ""
+        status = 200
         if request.method == "POST":
             form = await request.form()
-            user_id = (form.get("user_id") or "").strip()
-            amount_raw = (form.get("amount") or "").strip()
-            note = (form.get("note") or "").strip()
-            try:
-                amount = int(amount_raw)
-                if amount == 0:
-                    raise ValueError("Số credit phải khác 0.")
-                from platform_core.credit import cap_tay, so_du
-                gen = get_session()
-                db = next(gen)
+            # CSRF: mutation ghi sổ credit PHẢI có token hợp lệ. Trước đây chỉ dựa
+            # SameSite=Lax; thêm synchronizer token cho đồng nhất với route nền
+            # tảng (W1.3) — chống bị lừa POST cấp credit.
+            if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+                msg_html = ('<p style="color:#b91c1c;">Phiên hết hạn hoặc CSRF '
+                            'không hợp lệ — tải lại trang rồi thử lại.</p>')
+                status = 400
+            else:
+                user_id = (form.get("user_id") or "").strip()
+                amount_raw = (form.get("amount") or "").strip()
+                note = (form.get("note") or "").strip()
                 try:
-                    cap_tay(db, user_id, amount, by="admin", note=note)
-                    db.commit()
-                    bal = so_du(db, user_id)
-                    msg_html = (f'<p style="color:#1a7f37;">Đã cấp '
-                                f'<b>{amount:+d}</b> credit cho '
-                                f'<code>{escape(user_id)}</code>. '
-                                f'Số dư mới: <b>{bal}</b>.</p>')
-                finally:
+                    amount = int(amount_raw)
+                    if amount == 0:
+                        raise ValueError("Số credit phải khác 0.")
+                    from platform_core.credit import cap_tay, so_du
+                    gen = get_session()
+                    db = next(gen)
                     try:
-                        next(gen)
-                    except StopIteration:
-                        pass
-            except Exception as e:
-                msg_html = f'<p style="color:#b91c1c;">Lỗi: {escape(str(e))}</p>'
+                        cap_tay(db, user_id, amount, by="admin", note=note)
+                        db.commit()
+                        bal = so_du(db, user_id)
+                        msg_html = (f'<p style="color:#1a7f37;">Đã cấp '
+                                    f'<b>{amount:+d}</b> credit cho '
+                                    f'<code>{escape(user_id)}</code>. '
+                                    f'Số dư mới: <b>{bal}</b>.</p>')
+                    finally:
+                        try:
+                            next(gen)
+                        except StopIteration:
+                            pass
+                except Exception as e:
+                    msg_html = f'<p style="color:#b91c1c;">Lỗi: {escape(str(e))}</p>'
+                    status = 400
 
+        csrf_token = issue_csrf_token(request)
         body = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
 <title>Cấp credit — Quản trị</title>
 <style>body{{font-family:system-ui,sans-serif;max-width:560px;margin:40px auto;padding:0 16px;}}
@@ -222,6 +242,7 @@ a{{color:#3b6ef2;}}</style></head><body>
 Sổ credit là append-only — không sửa/xoá bút toán cũ.</p>
 {msg_html}
 <form method="post">
+  <input type="hidden" name="csrf_token" value="{escape(csrf_token)}">
   <label>User ID (UUID — lấy ở mục Người dùng)</label>
   <input name="user_id" value="{escape(user_id)}" required placeholder="vd 3f2a...">
   <label>Số credit (dương = cộng, âm = trừ)</label>
@@ -230,7 +251,7 @@ Sổ credit là append-only — không sửa/xoá bút toán cũ.</p>
   <textarea name="note" rows="2" placeholder="vd khuyến mãi / bồi thường"></textarea>
   <button type="submit">Cấp credit</button>
 </form></body></html>"""
-        return HTMLResponse(body)
+        return HTMLResponse(body, status_code=status)
 
 
 def setup_admin(app, *, session_secret: str) -> bool:

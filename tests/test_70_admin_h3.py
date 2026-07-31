@@ -124,7 +124,8 @@ def test_admin_chi_cho_role_admin(client):
     assert _login("thuong@example.com").status_code == 303
     r = client.get("/admin/", follow_redirects=False)
     assert "/login" in r.headers.get("location", ""), "user thuong khong duoc vao /admin"
-    client.post("/logout", follow_redirects=False)
+    _lt = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/").text).group(1)
+    client.post("/logout", data={"csrf_token": _lt}, follow_redirects=False)
 
     # Admin: vào /admin được (200).
     assert _login("sep@example.com").status_code == 303
@@ -158,3 +159,41 @@ def test_admin_session_khong_lo_token(client):
     r = client.get("/admin/session/list")
     assert r.status_code == 200
     assert sid not in r.text, "token phien bi render tren trang admin (P0-5)!"
+
+
+def test_grant_credit_can_csrf(client):
+    """W1.3: cấp credit tay (mutation sổ tiền) PHẢI có CSRF token hợp lệ."""
+    import re as _re
+    import platform_core.db as dbmod
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="boss4@example.com", password="matkhau-tot-12",
+                       role="admin", is_verified=True)
+        victim = tao_nguoi_dung(db, email="kh4@example.com",
+                                password="matkhau-tot-12", is_verified=True)
+        db.commit(); uid = victim.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    tok = _csrf(client, "/login")
+    client.post("/login", data={"username": "boss4@example.com",
+                                "password": "matkhau-tot-12", "csrf_token": tok},
+                follow_redirects=False)
+
+    # POST KHÔNG csrf → 400, KHÔNG cấp credit.
+    r = client.post("/admin/grant-credit",
+                    data={"user_id": uid, "amount": "100"}, follow_redirects=False)
+    assert r.status_code == 400
+    assert _so_du_email("kh4@example.com") == 0
+
+    # GET lấy csrf hợp lệ → POST cấp được.
+    page = client.get("/admin/grant-credit").text
+    ctok = _re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
+    r2 = client.post("/admin/grant-credit",
+                     data={"user_id": uid, "amount": "100", "csrf_token": ctok},
+                     follow_redirects=False)
+    assert r2.status_code == 200
+    assert _so_du_email("kh4@example.com") == 100

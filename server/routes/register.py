@@ -184,6 +184,17 @@ def forgot_submit(request: Request, email: str = Form(""), csrf_token: str = For
              "error": "Phiên đã hết hạn — thử lại."}, status_code=400)
 
     email = chuan_hoa_email(email)
+    # Rate-limit (W1.4): không có giới hạn thì đây là vòi gửi mail — kẻ xấu bơm
+    # reset về một email (quấy rối) và đốt hạn ngạch Resend. Khoá theo IP THẬT +
+    # theo email, dùng chung limiter với login.
+    lim = request.app.state.login_rate_limiter
+    if not lim.allow("forgot-ip:" + _client_ip(request)) or not lim.allow("forgot-email:" + email):
+        return templates.TemplateResponse(
+            request, "forgot_password.html",
+            {"csrf_token": issue_csrf_token(request), "sent": False,
+             "error": "Bạn yêu cầu quá nhiều lần — vui lòng đợi 1 phút rồi thử lại."},
+            status_code=429)
+
     with mo_db_optional() as db:
         if db is not None:
             user = tim_theo_email(db, email)

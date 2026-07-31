@@ -50,6 +50,21 @@ def test_known_provider_token_rule_reports_without_value():
     assert all(not hasattr(item, "value") for item in findings)
 
 
+def test_session_secret_hardcode_bi_bat():
+    """W1.7: khoá phiên hardcode trong source bị bắt (trước đây lọt vì tên khoá
+    không nằm trong danh sách keyword và giá trị là base64url, không phải 32-hex)."""
+    line = 'session_secret = "' + ("a1B2c3D4e5F6" * 3) + '"'
+    findings = _scan_line(Path("cfg.py"), 5, line)
+    assert any(item.rule == "generic_secret_assignment" for item in findings)
+
+
+def test_token_encryption_key_hardcode_bi_bat():
+    """W1.7: khoá mã hoá token hardcode trong source bị bắt."""
+    line = 'token_encryption_key = "' + ("Zx9Yw8Vu7Ts6" * 3) + '"'
+    findings = _scan_line(Path("cfg.py"), 5, line)
+    assert any(item.rule == "generic_secret_assignment" for item in findings)
+
+
 def test_runtime_config_is_excluded(tmp_path):
     root = tmp_path
     path = root / "data" / "config.backup.before_release.json"

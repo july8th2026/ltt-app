@@ -235,4 +235,30 @@ def create_app(*, env: dict | None = None) -> FastAPI:
             status_code=exc.status_code,
         )
 
+    @app.exception_handler(Exception)
+    async def unhandled_error(request: Request, exc: Exception):
+        # W1.2: lỗi CHƯA BẮT (RuntimeError, KeyError...) trước đây rơi vào
+        # ServerErrorMiddleware của Starlette → trả 500 TRẦN, không style, không
+        # correlation id, và MẤT các header bảo mật/`no-store` (middleware headers
+        # chỉ chạy khi call_next thành công, không chạy khi exception xuyên lên).
+        # Đó là lỗ: một trang 500 bị Cloudflare cache có thể lộ chéo. Handler này
+        # tự dựng trang lỗi + tự đặt lại no-store + header bảo mật.
+        cid = getattr(request.state, "correlation_id", "")
+        logging.getLogger(__name__).exception(
+            "Loi chua bat [%s] %s %s", cid, request.method, request.url.path)
+        if request.url.path.startswith("/health"):
+            return JSONResponse({"detail": "internal error"}, status_code=500,
+                                headers={"Cache-Control": "no-store"})
+        resp = templates.TemplateResponse(
+            request, "error.html",
+            {"code": 500, "message": _ERROR_MESSAGES[500], "correlation_id": cid},
+            status_code=500,
+        )
+        resp.headers["Cache-Control"] = "no-store"
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["X-Frame-Options"] = "DENY"
+        if cid:
+            resp.headers["X-Correlation-ID"] = cid
+        return resp
+
     return app

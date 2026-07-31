@@ -137,6 +137,7 @@ RULES = (
             ["']?
             (?:app_secret|client_secret|access_token|refresh_token|
                relay_secret|api_key|private_key|telegram_bot_token|
+               session_secret|token_encryption_key|encryption_key|
                password|passwd)
             ["']?
             \s*[:=]\s*

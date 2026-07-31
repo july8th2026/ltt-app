@@ -39,6 +39,64 @@ def _client(tmp_path, environment: str = "local-server-test") -> TestClient:
                       follow_redirects=False)
 
 
+# ─── W1.2: handler 500 tổng ─────────────────────────────────────────────────────
+
+def test_loi_chua_bat_tra_500_co_style_va_no_store(tmp_path):
+    """Route raise Exception (không phải HTTPException) phải trả 500 CÓ style,
+    no-store và correlation id — không phải 500 trần mất header (có thể bị cache)."""
+    cfg = tmp_path / "config.json"
+    cfg.write_text(json.dumps({
+        "job_delay_seconds": 30, "max_retries": 3, "tiktok_poll_interval_s": 5,
+        "tiktok_upload_timeout_s": 60, "tiktok_request_timeout_s": 10,
+        "sheet_id": "abc",
+    }), encoding="utf-8")
+    app = create_app(env={
+        "LTT_ENV": "local-server-test", "LTT_CONFIG_PATH": str(cfg),
+        "LTT_SESSION_SECRET": "test-session-secret-not-a-real-secret",
+        "LTT_ADMIN_USERNAME": "admin",
+        "LTT_ADMIN_PASSWORD_HASH": hash_password(ADMIN_PASSWORD),
+    })
+
+    @app.get("/_noi_gian_test")
+    def _boom():
+        raise RuntimeError("no vo co chu dich de test handler 500")
+
+    client = TestClient(app, base_url="https://testserver",
+                        follow_redirects=False, raise_server_exceptions=False)
+    r = client.get("/_noi_gian_test")
+    assert r.status_code == 500
+    assert "text/html" in r.headers["content-type"]          # trang có style
+    assert r.headers.get("cache-control") == "no-store"      # không bị cache
+    assert r.headers.get("X-Correlation-ID")                 # có mã tra cứu
+    assert "LTT AI Studio" in r.text                         # base template áp dụng
+
+
+def test_loi_chua_bat_o_health_van_tra_json(tmp_path):
+    """Lỗi ở /health phải giữ JSON cho probe máy, không trả HTML."""
+    cfg = tmp_path / "config.json"
+    cfg.write_text(json.dumps({
+        "job_delay_seconds": 30, "max_retries": 3, "tiktok_poll_interval_s": 5,
+        "tiktok_upload_timeout_s": 60, "tiktok_request_timeout_s": 10,
+        "sheet_id": "abc",
+    }), encoding="utf-8")
+    app = create_app(env={
+        "LTT_ENV": "local-server-test", "LTT_CONFIG_PATH": str(cfg),
+        "LTT_SESSION_SECRET": "test-session-secret-not-a-real-secret",
+        "LTT_ADMIN_USERNAME": "admin",
+        "LTT_ADMIN_PASSWORD_HASH": hash_password(ADMIN_PASSWORD),
+    })
+
+    @app.get("/health/_boom_test")
+    def _boom():
+        raise RuntimeError("boom")
+
+    client = TestClient(app, base_url="https://testserver",
+                        raise_server_exceptions=False)
+    r = client.get("/health/_boom_test")
+    assert r.status_code == 500
+    assert "application/json" in r.headers["content-type"]
+
+
 # ─── API docs exposure ─────────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("path", ["/docs", "/redoc", "/openapi.json"])

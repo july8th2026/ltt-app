@@ -107,23 +107,45 @@ def handle(params: dict, ctx=None) -> dict:
         # Ném để nền tảng hoàn credit — không âm thầm nuốt.
         raise RuntimeError("Chưa cấu hình GEMINI_API_KEY trên máy chủ.")
 
+    from apps.thumbnail.manifest import CREDIT_PER_IMAGE
     from platform_core.storage import get_storage
     storage = get_storage()
     prompt = build_prompt(topic, title, aspect_ratio)
     job_id = getattr(ctx, "job_id", "") or "adhoc"
 
-    keys = []
+    # Tính tiền theo ảnh THÀNH CÔNG + resume-safe (W1.1):
+    #  - Ảnh đã lưu ở lần chạy trước (worker crash rồi job bị reclaim) thì DÙNG
+    #    LẠI, không gọi Gemini lần nữa → không trả tiền API hai lần.
+    #  - Một ảnh lỗi KHÔNG làm hỏng cả job: tạo được bao nhiêu tính tiền bấy nhiêu
+    #    (quyết toán theo `credit_cost` bên dưới, worker hoàn phần chênh). Chỉ khi
+    #    KHÔNG tạo được ảnh nào mới ném để hoàn toàn bộ + cho retry.
+    keys: list[str] = []
+    errors: list[str] = []
     for i in range(count):
+        key = f"thumbnail/{owner_id}/{job_id}/{i}.png"
+        if storage.exists(key):
+            keys.append(key)                     # resume: đã tạo trước đó
+            continue
         if ctx is not None:
             ctx.progress(int(i * 100 / count), f"đang tạo ảnh {i + 1}/{count}")
-        img = _goi_gemini(prompt, aspect_ratio, api_key)
-        # Khoá theo job_id → chạy lại ghi đè đúng chỗ (idempotent), không nhân bản.
-        key = f"thumbnail/{owner_id}/{job_id}/{i}.png"
+        try:
+            img = _goi_gemini(prompt, aspect_ratio, api_key)
+        except Exception as e:                   # noqa: BLE001 — gom lỗi từng ảnh
+            errors.append(str(e))
+            continue
         storage.put(key, io.BytesIO(img), content_type="image/png")
         keys.append(key)
+
+    if not keys:
+        # Không tạo được ảnh nào → ném để nền tảng HOÀN toàn bộ credit + retry.
+        raise RuntimeError(errors[-1] if errors else "Không tạo được ảnh nào.")
 
     if ctx is not None:
         ctx.progress(100, "xong")
 
+    # `credit_cost` = số ảnh thật × giá mỗi ảnh → worker quyết toán đúng phần
+    # dùng, hoàn lại phần giữ dư (giữ count ảnh nhưng chỉ tạo được len(keys)).
     return {"image_keys": keys, "count": len(keys), "prompt": prompt,
-            "aspect_ratio": aspect_ratio}
+            "aspect_ratio": aspect_ratio,
+            "credit_cost": len(keys) * CREDIT_PER_IMAGE,
+            "errors": errors[:3]}

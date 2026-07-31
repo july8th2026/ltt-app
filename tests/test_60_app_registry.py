@@ -86,6 +86,27 @@ def test_registry_rejects_relative_prefix():
         _validate(m, seen_slugs=set(), seen_prefixes=set())
 
 
+def test_validate_tu_choi_job_types_thieu_credit_cost():
+    """W1.6: app sinh job mà thiếu credit_cost bị chặn NGAY lúc discover (fail
+    som), không đợi tới lúc submit mới vỡ."""
+    from platform_core.registry import _validate
+    m = AppManifest(slug="x", display_name="X", route_prefix="/x",
+                    job_types=("x.do",), credit_cost=None)
+    with pytest.raises(RegistryError, match="credit_cost"):
+        _validate(m, seen_slugs=set(), seen_prefixes=set(), seen_job_types=set())
+
+
+def test_validate_tu_choi_job_type_trung():
+    """W1.6: job_type trùng giữa hai app bị chặn ngay (worker phân job theo
+    job_type — trùng thì quyết toán nhầm giá)."""
+    from platform_core.registry import _validate
+    m = AppManifest(slug="x", display_name="X", route_prefix="/x",
+                    job_types=("dup.jt",), credit_cost=lambda p: 1)
+    with pytest.raises(RegistryError, match="job_type trùng"):
+        _validate(m, seen_slugs=set(), seen_prefixes=set(),
+                  seen_job_types={"dup.jt"})
+
+
 # ── credit: chỗ mất tiền ───────────────────────────────────────────────────
 
 def test_credit_is_computed_from_params_not_fixed():

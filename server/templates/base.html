@@ -186,6 +186,7 @@
     </nav>
     <div class="sidebar-foot">
       <form method="post" action="/logout" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">
         <button type="submit" class="btn-ghost btn-sm" style="width:100%;">Đăng xuất ({{ user }})</button>
       </form>
     </div>
