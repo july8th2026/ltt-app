@@ -83,6 +83,153 @@ class AdminAuth(AuthenticationBackend):
         return RedirectResponse("/login", status_code=303)
 
 
+# ── Vỏ quản trị DARK dùng chung (UX-1) — thay các trang trắng tự viết ─────────
+_ADM_NAV = [
+    ("/", "🏠", "Trang chủ", "home"),
+    ("__grp__", "", "Quản trị", ""),
+    ("/admin/user/list", "👤", "Người dùng", "user"),
+    ("/admin/credit-entry/list", "💳", "Sổ credit", "credit"),
+    ("/admin/grant-credit", "➕", "Cấp credit", "grant"),
+    ("/admin/apikeys", "🔑", "APIKEYS", "apikeys"),
+    ("/admin/job/list", "📋", "Job", "job"),
+    ("/admin/session/list", "🔐", "Phiên", "session"),
+    ("__grp__", "", "Hệ thống", ""),
+    ("/status", "🩺", "Tình trạng", "status"),
+]
+
+_PROVCOL = {"gemini": ("#4285F4", "G"), "apiai": ("#16a34a", "AI"),
+            "cheapkeyai": ("#0ea5e9", "CK"), "byteplus": ("#7c3aed", "BP"),
+            "plenx": ("#db2777", "PX")}
+_CAT_ICON = {"model_control": ("🧭", "m"), "chat": ("💬", ""),
+             "image": ("🖼️", "i"), "video": ("🎬", "v")}
+_STATUS = {"active": ("b-ok", "hoạt động"), "cooldown": ("b-warn", "nghỉ (cooldown)"),
+           "exhausted": ("b-warn", "hết quota"), "error": ("b-err", "lỗi"),
+           "disabled": ("b-err", "vô hiệu")}
+
+
+def _admin_shell(title: str, active: str, body: str) -> str:
+    nav = ""
+    for href, ic, label, key in _ADM_NAV:
+        if href == "__grp__":
+            nav += f'<div class="grp">{escape(label)}</div>'
+        else:
+            cls = "on" if key == active else ""
+            nav += (f'<a class="{cls}" href="{href}"><span class="ic">{ic}</span> '
+                    f'{escape(label)}</a>')
+    return (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
+            f'<meta name="viewport" content="width=device-width, initial-scale=1">'
+            f'<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">'
+            f'<link rel="stylesheet" href="/static/ltt.css">'
+            f'<title>{escape(title)} — Quản trị</title></head><body><div class="adm">'
+            f'<aside class="adm-side"><div class="adm-brand"><div class="mark">LTT</div>'
+            f'<div><b>LTT AI Studio</b><small>quản trị</small></div></div>'
+            f'<nav class="adm-nav">{nav}</nav></aside>'
+            f'<div class="adm-main">{body}</div></div></body></html>')
+
+
+def _prov_dot(provider: str) -> str:
+    col, ab = _PROVCOL.get(provider, ("#555a66", (provider or "?")[:2].upper()))
+    return f'<span class="provdot" style="background:{col}">{escape(ab)}</span>'
+
+
+def _cat_chips(cats) -> str:
+    out = []
+    for c in (cats or []):
+        ic, cls = _CAT_ICON.get(c, ("•", ""))
+        out.append(f'<span class="chip {cls}">{ic}</span>')
+    return " ".join(out)
+
+
+def _status_badge(key) -> str:
+    if not key.enabled:
+        return '<span class="badge b-grey"><span class="dot"></span>đã tắt</span>'
+    cls, lbl = _STATUS.get(key.status, ("b-grey", key.status))
+    return f'<span class="badge {cls}"><span class="dot"></span>{escape(lbl)}</span>'
+
+
+def _health_bar(h: int) -> str:
+    col = "var(--ok)" if h >= 80 else "var(--warn)" if h >= 50 else "var(--err)"
+    w = max(0, min(100, int(h)))
+    return (f'<span class="health"><span style="width:{w}%;background:{col}"></span></span> '
+            f'<span class="tnum muted" style="font-size:11px">{h}</span>')
+
+
+class ApiKeysConsole(BaseView):
+    """Console APIKEYS custom dark (UX-1) — bề mặt chính quản khoá API."""
+
+    name = "APIKEYS"
+    icon = "fa-solid fa-key"
+
+    @expose("/apikeys", methods=["GET"])
+    async def console(self, request: Request):
+        from platform_core import api_keys
+        from server.auth.csrf import issue_csrf_token
+
+        cat = request.query_params.get("cat", "all")
+        gen = get_session(); db = next(gen)
+        try:
+            keys = api_keys.liet_ke(db)
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        token = issue_csrf_token(request)
+
+        cnt = {"all": len(keys)}
+        for c in ("model_control", "chat", "image", "video"):
+            cnt[c] = sum(1 for k in keys if c in (k.categories or []))
+        shown = keys if cat == "all" else [k for k in keys if cat in (k.categories or [])]
+
+        def tab(c, label):
+            on = "on" if cat == c else ""
+            return (f'<a class="{on}" href="/admin/apikeys?cat={c}">{label} '
+                    f'<span class="n">{cnt.get(c, 0)}</span></a>')
+        tabs = (tab("all", "Tất cả") + tab("model_control", "🧭 Điều khiển model")
+                + tab("chat", "💬 Chat") + tab("image", "🖼️ Ảnh")
+                + tab("video", "🎬 Video"))
+
+        def act_form(k, op, label):
+            return (f'<form method="post" action="/admin/api-key-action" style="display:inline">'
+                    f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+                    f'<input type="hidden" name="id" value="{escape(k.id)}">'
+                    f'<input type="hidden" name="op" value="{op}">'
+                    f'<button class="btn ghost sm">{label}</button></form>')
+
+        rows = ""
+        for k in shown:
+            toggle = act_form(k, "enable", "Bật") if not k.enabled else act_form(k, "disable", "Tắt")
+            rows += (
+                f'<tr><td><span class="prov">{_prov_dot(k.provider)}{escape(k.provider)}</span></td>'
+                f'<td>{escape(k.name or "")}</td>'
+                f'<td class="mono muted">{escape(k.key_preview or "")}</td>'
+                f'<td>{_cat_chips(k.categories)}</td>'
+                f'<td>{_status_badge(k)}</td>'
+                f'<td>{_health_bar(k.health_score)}</td>'
+                f'<td class="tnum">{k.priority}</td>'
+                f'<td><div class="rowactions">'
+                f'<a class="btn ghost sm" href="/admin/api-key-test?id={escape(k.id)}">Test</a>'
+                f'{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
+        if not shown:
+            rows = ('<tr><td colspan="8" class="muted" style="padding:26px;text-align:center">'
+                    'Chưa có key nào ở mục này. Bấm “＋ Thêm key”.</td></tr>')
+
+        active_cnt = sum(1 for k in keys if k.enabled and k.status == "active")
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">Nguồn API của nền tảng</span>'
+            f'<span class="pill"><span class="dot" style="background:var(--ok);width:7px;'
+            f'height:7px;border-radius:50%"></span> {active_cnt}/{len(keys)} key hoạt động</span></div>'
+            f'<div class="adm-content"><div class="pagehead"><div><h1>APIKEYS</h1>'
+            f'<p>Kho khoá API tập trung — app xin khoá theo provider &amp; loại. '
+            f'Credential luôn mã hoá; chỉ hiện 4 số cuối.</p></div>'
+            f'<div class="actions"><a class="btn ghost" href="/admin/api-models">🧩 Models</a>'
+            f'<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>'
+            f'<div class="tabs">{tabs}</div>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
+            f'<th>Health</th><th>Ưu tiên</th><th style="text-align:right">Thao tác</th>'
+            f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
+        return HTMLResponse(_admin_shell("APIKEYS", "apikeys", body))
+
+
 class UserAdmin(ModelView, model=User):
     name = "Người dùng"
     name_plural = "Người dùng"
@@ -229,29 +376,21 @@ class GrantCreditView(BaseView):
                     status = 400
 
         csrf_token = issue_csrf_token(request)
-        body = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
-<title>Cấp credit — Quản trị</title>
-<style>body{{font-family:system-ui,sans-serif;max-width:560px;margin:40px auto;padding:0 16px;}}
-label{{display:block;margin:12px 0 4px;font-size:14px;}}
-input,textarea{{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}}
-button{{margin-top:16px;padding:9px 16px;border:0;border-radius:6px;background:#3b6ef2;color:#fff;cursor:pointer;}}
-a{{color:#3b6ef2;}}</style></head><body>
-<p><a href="/admin">&larr; Về trang quản trị</a></p>
-<h2>Cấp / điều chỉnh credit</h2>
-<p style="color:#555;font-size:13px;">Ghi một bút toán <code>grant</code> mới (số âm để trừ).
-Sổ credit là append-only — không sửa/xoá bút toán cũ.</p>
+        body = f"""<div class="adm-content" style="max-width:600px">
+<div class="pagehead"><div><h1>Cấp / điều chỉnh credit</h1>
+<p>Ghi một bút toán <code>grant</code> mới (số âm để trừ). Sổ credit append-only.</p></div></div>
 {msg_html}
-<form method="post">
+<div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(csrf_token)}">
-  <label>User ID (UUID — lấy ở mục Người dùng)</label>
-  <input name="user_id" value="{escape(user_id)}" required placeholder="vd 3f2a...">
-  <label>Số credit (dương = cộng, âm = trừ)</label>
-  <input name="amount" type="number" required placeholder="vd 100">
-  <label>Ghi chú</label>
-  <textarea name="note" rows="2" placeholder="vd khuyến mãi / bồi thường"></textarea>
-  <button type="submit">Cấp credit</button>
-</form></body></html>"""
-        return HTMLResponse(body, status_code=status)
+  <div class="field"><label>User ID (UUID — lấy ở mục Người dùng)</label>
+    <input class="inp mono" name="user_id" value="{escape(user_id)}" required placeholder="3f2a..."></div>
+  <div class="field"><label>Số credit (dương = cộng, âm = trừ)</label>
+    <input class="inp tnum" name="amount" type="number" required placeholder="100"></div>
+  <div class="field"><label>Ghi chú</label>
+    <input class="inp" name="note" placeholder="khuyến mãi / bồi thường"></div>
+  <button class="btn" type="submit">Cấp credit</button>
+</form></div></div>"""
+        return HTMLResponse(_admin_shell("Cấp credit", "grant", body), status_code=status)
 
 
 class ApiKeyAdmin(ModelView, model=ApiKey):
@@ -331,34 +470,36 @@ class AddApiKeyView(BaseView):
         opts = "".join(
             f'<option value="{escape(p.id)}">{escape(p.display_name)} '
             f'[{escape(p.auth_style)}]</option>' for p in providers.list_all())
+        _catlbl = {APIKEY_CAT_MODEL: "🧭 Điều khiển model", APIKEY_CAT_CHAT: "💬 Chat",
+                   APIKEY_CAT_IMAGE: "🖼️ Ảnh", APIKEY_CAT_VIDEO: "🎬 Video"}
         cat_boxes = "".join(
-            f'<label style="font-weight:400"><input type="checkbox" name="categories" '
-            f'value="{c}"> {c}</label> '
+            f'<label><input type="checkbox" name="categories" value="{c}"> {_catlbl[c]}</label>'
             for c in (APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE, APIKEY_CAT_VIDEO))
-        body = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
-<title>Thêm API key</title>
-<style>body{{font-family:system-ui,sans-serif;max-width:620px;margin:40px auto;padding:0 16px;}}
-label{{display:block;margin:12px 0 4px;font-size:14px;}}
-input,select,textarea{{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}}
-button{{margin-top:16px;padding:9px 16px;border:0;border-radius:6px;background:#3b6ef2;color:#fff;cursor:pointer;}}
-a{{color:#3b6ef2;}}</style></head><body>
-<p><a href="/admin">&larr; Về quản trị</a> &nbsp;|&nbsp; <a href="/admin/api-models">Xem Models</a></p>
-<h2>Thêm API key</h2>{msg}
-<form method="post">
+        body = f"""<div class="adm-content" style="max-width:640px">
+<div class="pagehead"><div><h1>Thêm API key</h1>
+<p>Credential nhập vào sẽ được <b>mã hoá</b> trước khi lưu; chỉ 4 số cuối hiện lại.</p></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
+<a class="btn ghost" href="/admin/api-models">🧩 Models</a></div></div>
+{msg}
+<div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(token)}">
-  <label>Provider</label><select name="provider" required>{opts}</select>
-  <label>Tên gợi nhớ</label><input name="name" placeholder="vd gemini-chinh">
-  <label>Credential (khoá THÔ — sẽ mã hoá)</label>
-  <input name="credential" type="password" required autocomplete="off">
-  <label>Category (năng lực)</label><div>{cat_boxes}</div>
-  <label>base_url (để trống = mặc định provider)</label><input name="base_url">
-  <label>supported_models (phân cách dấu phẩy, để trống = mọi model)</label>
-  <input name="supported_models" placeholder="gemini-2.5-flash-image, ...">
-  <label>default_model</label><input name="default_model">
-  <label>priority (cao = ưu tiên)</label><input name="priority" type="number" value="100">
-  <button type="submit">Lưu API key</button>
-</form></body></html>"""
-        return HTMLResponse(body, status_code=status)
+  <div class="field"><label>Provider</label><select class="inp" name="provider" required>{opts}</select></div>
+  <div class="field"><label>Tên gợi nhớ</label><input class="inp" name="name" placeholder="gemini-chinh"></div>
+  <div class="field"><label>Credential (khoá THÔ — sẽ mã hoá)</label>
+    <input class="inp" name="credential" type="password" required autocomplete="off" placeholder="AIza••••••"></div>
+  <div class="field"><label>Loại (năng lực)</label>
+    <div class="catpick">{cat_boxes}</div></div>
+  <div class="field"><label>base_url (để trống = mặc định provider)</label><input class="inp" name="base_url"></div>
+  <div class="field"><label>supported_models (phẩy phân cách, trống = mọi model)</label>
+    <input class="inp mono" name="supported_models" placeholder="gemini-2.5-flash-image, ..."></div>
+  <div class="field"><label>default_model</label><input class="inp mono" name="default_model"></div>
+  <div class="field"><label>priority (cao = ưu tiên)</label><input class="inp tnum" name="priority" type="number" value="100"></div>
+  <button class="btn" type="submit">Lưu API key</button>
+</form></div></div>
+<style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;align-items:center;
+padding:7px 11px;border:1px solid var(--line2);border-radius:8px;font-size:12.5px;cursor:pointer;color:var(--muted)}}
+.catpick input{{accent-color:var(--accent)}}</style>"""
+        return HTMLResponse(_admin_shell("Thêm API key", "apikeys", body), status_code=status)
 
 
 class ApiKeyActionView(BaseView):
@@ -385,11 +526,16 @@ class ApiKeyActionView(BaseView):
         finally:
             try: next(gen)
             except StopIteration: pass
-        color = "#1a7f37" if code == 200 else "#b91c1c"
-        return HTMLResponse(
-            f'<p><a href="/admin/api-key/list">&larr; APIKEYS</a></p>'
-            f'<h3>Test key {escape(key.key_preview)} ({escape(key.provider)})</h3>'
-            f'<p style="color:{color};">HTTP {code} — {escape(str(detail))}</p>')
+        ok = code == 200
+        badge = (f'<span class="badge {"b-ok" if ok else "b-err"}"><span class="dot"></span>'
+                 f'HTTP {code}</span>')
+        body = f"""<div class="adm-content" style="max-width:640px">
+<div class="pagehead"><div><h1>Test key</h1>
+<p>{_prov_dot(key.provider)} {escape(key.provider)} · <span class="mono">{escape(key.key_preview)}</span></p></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
+<div class="ui-card"><p style="margin:0 0 8px">{badge}</p>
+<p class="muted mono" style="margin:0;font-size:12.5px;word-break:break-word">{escape(str(detail))}</p></div></div>"""
+        return HTMLResponse(_admin_shell("Test key", "apikeys", body))
 
     @expose("/api-key-action", methods=["POST"])
     async def action(self, request: Request):
@@ -416,7 +562,7 @@ class ApiKeyActionView(BaseView):
         finally:
             try: next(gen)
             except StopIteration: pass
-        return RedirectResponse("/admin/api-key/list", status_code=303)
+        return RedirectResponse("/admin/apikeys", status_code=303)
 
 
 class ModelsView(BaseView):
@@ -430,25 +576,25 @@ class ModelsView(BaseView):
         from platform_core import providers
         rows = ""
         for p in providers.list_all():
-            ms = ", ".join(
-                f'{escape(m.id)}{"" if m.is_active else " (Soon)"}' for m in p.models
-            ) or "<i>chưa khai model — key nhận mọi model provider</i>"
-            rows += (f"<tr><td><b>{escape(p.id)}</b></td>"
-                     f"<td>{escape(p.auth_style)}</td>"
-                     f"<td>{escape(', '.join(p.categories))}</td>"
-                     f"<td>{ms}</td>"
-                     f"<td>{'async' if p.async_poll else 'sync'}</td></tr>")
-        body = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
-<title>Models</title><style>body{{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 16px;}}
-table{{border-collapse:collapse;width:100%;font-size:13px;}}td,th{{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top;}}
-a{{color:#3b6ef2;}}</style></head><body>
-<p><a href="/admin">&larr; Về quản trị</a> &nbsp;|&nbsp; <a href="/admin/api-key-them">+ Thêm API key</a></p>
-<h2>Provider &amp; Models (registry)</h2>
-<p style="color:#555;font-size:13px;">Nguồn: <code>platform_core/providers.py</code>.
-Thêm provider/model = sửa file này (Pha 1). Làm-mới-model tự động: Pha 2.</p>
-<table><tr><th>Provider</th><th>Auth</th><th>Category</th><th>Models</th><th>Kiểu</th></tr>
-{rows}</table></body></html>"""
-        return HTMLResponse(body)
+            ms = " ".join(
+                f'<span class="chip {"" if m.is_active else "m"}">{escape(m.id)}'
+                f'{"" if m.is_active else " · Soon"}</span>' for m in p.models
+            ) or '<span class="muted" style="font-size:12px">chưa khai model — key nhận mọi model</span>'
+            kind = ('<span class="badge b-grey"><span class="dot"></span>async</span>'
+                    if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>sync</span>')
+            rows += (f'<tr><td><span class="prov">{_prov_dot(p.id)}{escape(p.id)}</span></td>'
+                     f'<td class="mono muted" style="font-size:12px">{escape(p.auth_style)}</td>'
+                     f'<td>{escape(", ".join(p.categories))}</td>'
+                     f'<td style="line-height:2">{ms}</td><td>{kind}</td></tr>')
+        body = f"""<div class="adm-content">
+<div class="pagehead"><div><h1>Provider &amp; Models</h1>
+<p>Registry: <code>platform_core/providers.py</code>. Thêm provider/model = sửa file này. Làm-mới-model tự động: Pha 2.</p></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
+<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>
+<div class="tablewrap"><table class="ui-table"><thead><tr>
+<th>Provider</th><th>Auth</th><th>Category</th><th>Models</th><th>Kiểu</th></tr></thead>
+<tbody>{rows}</tbody></table></div></div>"""
+        return HTMLResponse(_admin_shell("Models", "apikeys", body))
 
 
 def _probe_key(prov, credential: str):
@@ -491,15 +637,19 @@ def setup_admin(app, *, session_secret: str) -> bool:
         _log.info("Bỏ qua trang quản trị (chưa có CSDL): %s", type(exc).__name__)
         return False
 
+    import os as _os
+    _adm_tpl = _os.path.join(_os.path.dirname(__file__), "admin_templates")
     admin = Admin(
         app,
         engine,
         title="LTT AI Studio — Quản trị",
         authentication_backend=AdminAuth(secret_key=session_secret),
+        templates_dir=_adm_tpl,   # override sqladmin/base.html -> theme dark (UX-1)
     )
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
+    admin.add_view(ApiKeysConsole)
     admin.add_view(ApiKeyAdmin)
     admin.add_view(AddApiKeyView)
     admin.add_view(ApiKeyActionView)

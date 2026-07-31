@@ -222,6 +222,31 @@ def test_them_api_key_qua_view_ma_hoa(client):
         except StopIteration: pass
 
 
+def test_apikeys_console_render(client):
+    """UX-1: console APIKEYS dark render đúng — không lộ secret, dùng ltt.css,
+    lọc theo category."""
+    import platform_core.db as dbmod
+    from platform_core import api_keys
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        api_keys.tao_key(db, provider="gemini", credential="AIzaCONSOLE4321",
+                         name="g-console", categories=["image", "chat"]); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    _login_admin(client, "boss7@example.com")
+
+    r = client.get("/admin/apikeys")
+    assert r.status_code == 200
+    assert "AIzaCONSOLE4321" not in r.text          # KHÔNG lộ secret thô
+    assert "...4321" in r.text                       # preview
+    assert "/static/ltt.css" in r.text               # dùng design system
+    assert "APIKEYS" in r.text and "g-console" in r.text
+    # Lọc category video → key (image,chat) không hiện.
+    rv = client.get("/admin/apikeys?cat=video")
+    assert rv.status_code == 200 and "...4321" not in rv.text
+
+
 def test_grant_credit_can_csrf(client):
     """W1.3: cấp credit tay (mutation sổ tiền) PHẢI có CSRF token hợp lệ."""
     import re as _re

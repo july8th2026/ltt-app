@@ -14,6 +14,33 @@
 
 ---
 
+## 2026-08-01 — UX Pha 1: nâng tầm giao diện (catalog/login/admin/APIKEYS) — XONG
+
+Từ đánh giá `docs/UX_DANH_GIA_VA_PHUONG_AN.md` (phương án D, có mockup artifact
+duyệt trước). Vấn đề gốc: BA ngôn ngữ thị giác rời rạc (dark nền tảng / sáng
+sqladmin / trắng-trơn view tự viết).
+
+- **`server/static/ltt.css`** — design system dùng chung (token + component:
+  btn/badge/chip/health/card/table/form/hero/appcard/admin-shell). Hết lặp CSS.
+- **Console APIKEYS custom dark** (`/admin/apikeys`, `ApiKeysConsole`): tab lọc 4
+  loại + số đếm; bảng badge trạng thái màu + thanh health + chips loại + provider
+  dot; nút **Test/Bật‑Tắt/Reset ngay tại dòng** (form CSRF). Bề mặt quản trị
+  chính giờ đồng bộ theme.
+- **4 view trắng → vỏ dark** (`_admin_shell`): Cấp credit, Thêm key, Models, Test.
+- **Khoác dark sqladmin**: override `sqladmin/base.html` qua `templates_dir`
+  (bản trung thành + `data-bs-theme="dark"` + accent nền tảng + thanh LTT). Bảng
+  User/Credit/Job/Session giờ dark.
+- **Polish**: catalog hero + thẻ app icon/accent hover nhấc; login logo mark +
+  gradient nhẹ. base.html/base_public/base_plain link ltt.css.
+- **Cam kết một-theme dark** (sản phẩm dark, chọn có chủ đích); font hệ thống +
+  type-scale + tabular-nums (đúng ràng buộc tự-host, CSP chặn webfont).
+
+**Test:** thêm `test_apikeys_console_render` + `test_admin_session/grant` vẫn xanh.
+Full suite **1585 passed, 4 skipped**; scan 0. Deploy production + verify edge:
+console 200 (đủ 6 preview, 0 secret, tabs/badges), sqladmin `data-bs-theme=dark`,
+catalog/login link ltt.css + hero + mark. (Trình duyệt máy chủ chập IPv6 nên
+verify bằng curl edge — authoritative cho HTML/CSS.)
+
 ## 2026-07-31 — H8 Pha 1: bộ máy APIKEYS (quản trị nguồn API) — XONG
 
 Từ khảo sát `docs/KHAO_SAT_APIKEYS.md` (4 luồng đọc D:\BOT GEMINI). Phương án D

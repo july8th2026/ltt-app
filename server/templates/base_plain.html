@@ -4,18 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/ltt.css">
   <title>{% block title %}LTT AI Studio{% endblock %}</title>
   <style>
-    :root {
-      --bg:#0f1115; --panel:#171a21; --panel2:#1b1f27; --line:#2a2e37;
-      --fg:#e6e8eb; --muted:#9aa4b2; --dim:#6B7280; --accent:#3b6ef2; --err:#f26161;
-    }
     * { box-sizing:border-box; }
     body {
-      font-family:system-ui,"Segoe UI",sans-serif; margin:0; background:var(--bg);
-      color:var(--fg); font-size:14px;
+      font-family:var(--font); margin:0; color:var(--fg); font-size:14px;
       min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+      background:radial-gradient(720px 380px at 50% -12%, #16223f, transparent 60%), var(--bg);
     }
+    .logo .mark{width:46px; height:46px; border-radius:13px; font-size:17px; margin:0 auto 10px;}
     .box { width:100%; max-width:360px; }
     .logo { text-align:center; margin-bottom:22px; }
     .logo h1 { font-size:22px; margin:0; }

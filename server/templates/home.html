@@ -7,12 +7,16 @@
 {% block content %}
 
   {% if not authed %}
-    <h1>Công cụ AI theo credit</h1>
-    <p class="page-sub">Chọn một công cụ để bắt đầu. Đăng nhập một lần — dùng mọi công cụ.</p>
+    <div class="hero">
+      <span class="eyebrow">Nền tảng công cụ AI</span>
+      <h1>Công cụ AI theo credit, gọn trong một tài khoản</h1>
+      <p>Đăng nhập một lần — dùng mọi công cụ. Chọn một công cụ để bắt đầu; mỗi
+         tác vụ trừ credit minh bạch.</p>
+    </div>
   {% endif %}
 
   {% if authed and broken %}
-    <div class="alert alert-err">
+    <div class="alert alert-err" style="margin-bottom:16px;">
       <strong style="color:var(--err);">{{ broken|length }} app nạp lỗi</strong>
       {% for item in broken %}
         <div class="mono" style="margin-top:8px; font-size:12px;">
@@ -21,45 +25,47 @@
     </div>
   {% endif %}
 
-  <div style="display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(320px,1fr));">
+  <div class="grid">
     {% for item in apps %}
       {% set m = item.manifest %}
-      <div class="card" style="margin:0;">
-        <div class="card-accent" style="background:{{ m.accent }};"></div>
-        <h2 style="margin-bottom:6px;">
-          {{ m.icon }}&nbsp; {{ m.display_name }}
-          {% if not m.enabled %}<span class="badge badge-warn" style="margin-left:6px;">đang xây</span>{% endif %}
-          {% if authed and app_setup.get(m.slug) %}<span class="badge badge-warn" style="margin-left:6px;">⚙ cần thiết lập</span>{% endif %}
-        </h2>
-        <p class="muted" style="margin:0 0 12px;">{{ m.summary }}</p>
-        {% if authed and app_setup.get(m.slug) %}
-          <div class="alert alert-warn" style="padding:8px 12px; margin:0 0 12px;">
-            <span class="dim" style="font-size:12px;">Cần thiết lập:
-              {{ app_setup[m.slug]|map(attribute='check')|join(', ') }} —
-              <a href="/status">chi tiết</a>.</span>
-          </div>
-        {% endif %}
-        <div class="dim mono" style="font-size:11px; margin-bottom:10px;">
-          {{ m.route_prefix }}
-          {%- if m.requires %} · cần: {{ m.requires|join(', ') }}{% endif %}
-          {%- if m.credit_cost %} · có tính credit{% endif %}
-        </div>
-        {% if m.enabled %}
-          {% if authed %}
-            <a href="{{ m.route_prefix }}" class="btn btn-ghost" style="text-decoration:none;">Mở &nbsp;→</a>
-          {% else %}
-            <a href="/login?next={{ m.route_prefix }}" class="btn" style="text-decoration:none;">Đăng nhập để dùng</a>
+      <div class="appcard">
+        <div class="accent" style="background:{{ m.accent }};"></div>
+        <div class="in">
+          <div class="ico" style="background:{{ m.accent }}22;">{{ m.icon }}</div>
+          <h2>{{ m.display_name }}
+            {% if not m.enabled %}<span class="badge b-warn"><span class="dot"></span>đang xây</span>{% endif %}
+            {% if authed and app_setup.get(m.slug) %}<span class="badge b-warn"><span class="dot"></span>cần thiết lập</span>{% endif %}
+          </h2>
+          <p class="sum">{{ m.summary }}</p>
+          {% if authed and app_setup.get(m.slug) %}
+            <div class="alert alert-warn" style="padding:8px 12px; margin:0 0 12px;">
+              <span class="dim" style="font-size:12px;">Cần thiết lập:
+                {{ app_setup[m.slug]|map(attribute='check')|join(', ') }} —
+                <a href="/status">chi tiết</a>.</span>
+            </div>
           {% endif %}
-        {% else %}
-          <button disabled>Chưa dùng được</button>
-        {% endif %}
-        {% if authed and m.notes %}<p class="dim" style="font-size:11px; margin:10px 0 0;">{{ m.notes }}</p>{% endif %}
+          <div class="meta">
+            {{ m.route_prefix }}
+            {%- if m.requires %} · cần: {{ m.requires|join(', ') }}{% endif %}
+            {%- if m.credit_cost %} · có tính credit{% endif %}
+          </div>
+          {% if m.enabled %}
+            {% if authed %}
+              <a href="{{ m.route_prefix }}" class="btn ghost">Mở &nbsp;→</a>
+            {% else %}
+              <a href="/login?next={{ m.route_prefix }}" class="btn">Đăng nhập để dùng</a>
+            {% endif %}
+          {% else %}
+            <button class="btn" disabled>Chưa dùng được</button>
+          {% endif %}
+          {% if authed and m.notes %}<p class="dim" style="font-size:11px; margin:10px 0 0;">{{ m.notes }}</p>{% endif %}
+        </div>
       </div>
     {% endfor %}
   </div>
 
   {% if not apps %}
-    <div class="card" style="margin-top:14px;">
+    <div class="ui-card" style="margin-top:14px;">
       <p class="dim" style="margin:0;">Chưa có công cụ nào khả dụng.</p>
     </div>
   {% endif %}

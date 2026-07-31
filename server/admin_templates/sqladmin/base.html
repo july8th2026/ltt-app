@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!-- Override base.html của sqladmin (UX-1): bản trung thành với gói + bật theme
+     DARK (Tabler) để trang quản trị hoà vào theme dark của nền tảng, thay vì
+     nền sáng Bootstrap chỏi hẳn. Giữ ĐỦ mọi block/asset của gói để template con
+     (list/create/edit/details) vẫn chạy. Nếu nâng cấp sqladmin, đối chiếu lại
+     file gói base.html. -->
+<html lang="vi" data-bs-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler-icons.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/fontawesome.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
+  {% if admin.favicon_url %}
+  <link rel="icon" href="{{ admin.favicon_url }}">
+  {% endif %}
+  <style>
+    /* Đồng bộ accent Tabler với nền tảng + nền dark khớp tông. */
+    :root{ --tblr-primary:#3b6ef2; --tblr-primary-rgb:59,110,242;
+           --tblr-body-bg:#0f1115; --tblr-bg-surface:#171a21; }
+    body{ background:#0f1115; }
+    .btn-primary{ --tblr-btn-bg:#3b6ef2; --tblr-btn-border-color:#3b6ef2; }
+    a{ color:#7aa2f7; }
+    /* Liên kết nhanh về vỏ nền tảng + console APIKEYS. */
+    .ltt-adminbar{ position:sticky; top:0; z-index:1030; display:flex; gap:10px; align-items:center;
+      padding:8px 16px; background:#12141b; border-bottom:1px solid #2a2e37; font-size:13px; }
+    .ltt-adminbar a{ color:#9aa4b2; text-decoration:none } .ltt-adminbar a:hover{ color:#e6e8eb }
+    .ltt-adminbar .brand{ font-weight:700; color:#e6e8eb; margin-right:8px }
+  </style>
+  {% block head %}
+  {% endblock %}
+  <title>{{ admin.title }}</title>
+</head>
+
+<body class="theme-dark">
+  <div class="ltt-adminbar">
+    <span class="brand">LTT · Quản trị</span>
+    <a href="/admin/apikeys">🔑 APIKEYS</a>
+    <a href="/admin/user/list">👤 Người dùng</a>
+    <a href="/admin/credit-entry/list">💳 Credit</a>
+    <a href="/" style="margin-left:auto">← Về nền tảng</a>
+  </div>
+  {% block body %}
+  <main>
+    {% block main %}
+    {% endblock %}
+  </main>
+  {% endblock %}
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/bootstrap.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}"></script>
+  {% block tail %}
+  {% endblock %}
+</body>
+
+</html>
