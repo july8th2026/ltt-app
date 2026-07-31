@@ -23,11 +23,64 @@ _BASE = "https://generativelanguage.googleapis.com"
 _TIMEOUT_S = 110          # < trần 100s Cloudflare không áp cho worker, nhưng giữ gọn
 
 
+class GeminiError(RuntimeError):
+    """Lỗi gọi Gemini kèm mã HTTP (để bộ máy key phân loại: 429 cooldown...)."""
+
+    def __init__(self, message: str, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
+
+
 def _sanitize(msg: str, key: str) -> str:
     """Bỏ khoá API khỏi thông báo lỗi trước khi ném ra."""
     if key and len(key) > 8:
         msg = msg.replace(key, "***")
     return msg[:400]
+
+
+def _lay_key(model: str) -> tuple[str, str | None]:
+    """Lấy credential Gemini từ bộ máy APIKEYS (H8). Fallback env `GEMINI_API_KEY`
+    khi chưa có CSDL/khoá (dev/test). Trả (credential, key_id|None)."""
+    try:
+        from platform_core import api_keys, api_pool
+        from platform_core.db import get_session
+        from platform_core.models import APIKEY_CAT_IMAGE
+        gen = get_session(); db = next(gen)
+        try:
+            key = api_pool.lay_key(db, "gemini", category=APIKEY_CAT_IMAGE, model=model)
+            cred = api_keys.lay_credential(db, key)
+            db.commit()
+            return cred, key.id
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    except Exception:
+        return (os.environ.get("GEMINI_API_KEY") or "").strip(), None
+
+
+def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
+                 last_status: int | None = None) -> None:
+    """Đánh dấu kết quả lên key ở bộ máy APIKEYS (bỏ qua nếu dùng key env)."""
+    if not key_id:
+        return
+    try:
+        from platform_core import api_keys, api_pool
+        from platform_core.db import get_session
+        gen = get_session(); db = next(gen)
+        try:
+            key = api_keys.lay_key_theo_id(db, key_id)
+            if key is None:
+                return
+            if thanh_cong:
+                api_pool.danh_dau_thanh_cong(db, key)
+            elif last_status is not None:
+                api_pool.danh_dau_loi(db, key, http_status=last_status)
+            db.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    except Exception:
+        pass
 
 
 def build_prompt(topic: str, title: str = "", aspect_ratio: str = "16:9") -> str:
@@ -67,11 +120,12 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str) -> bytes:
     try:
         resp = httpx.post(url, json=body, headers=headers, timeout=_TIMEOUT_S)
     except httpx.HTTPError as e:
-        raise RuntimeError(_sanitize(f"Lỗi kết nối Gemini: {e}", api_key))
+        raise GeminiError(_sanitize(f"Lỗi kết nối Gemini: {e}", api_key), status_code=None)
 
     if resp.status_code != 200:
-        raise RuntimeError(_sanitize(
-            f"Gemini HTTP {resp.status_code}: {resp.text}", api_key))
+        raise GeminiError(_sanitize(
+            f"Gemini HTTP {resp.status_code}: {resp.text}", api_key),
+            status_code=resp.status_code)
 
     data = resp.json()
     pf = data.get("promptFeedback", {}) or {}
@@ -106,10 +160,13 @@ def handle(params: dict, ctx=None) -> dict:
     except (TypeError, ValueError):
         count = 1
 
-    api_key = (os.environ.get("GEMINI_API_KEY") or "").strip()
+    model = str(params.get("model") or "gemini-2.5-flash-image")
+    # Lấy key từ BỘ MÁY APIKEYS (H8) — app không giữ key nữa. Fallback env cho dev.
+    api_key, key_id = _lay_key(model)
     if not api_key:
         # Ném để nền tảng hoàn credit — không âm thầm nuốt.
-        raise RuntimeError("Chưa cấu hình GEMINI_API_KEY trên máy chủ.")
+        raise RuntimeError("Chưa có API key Gemini (thêm ở /admin → APIKEYS, "
+                           "hoặc đặt GEMINI_API_KEY cho dev).")
 
     from apps.thumbnail.manifest import CREDIT_PER_IMAGE
     from platform_core.storage import get_storage
@@ -125,6 +182,7 @@ def handle(params: dict, ctx=None) -> dict:
     #    KHÔNG tạo được ảnh nào mới ném để hoàn toàn bộ + cho retry.
     keys: list[str] = []
     errors: list[str] = []
+    last_status: int | None = None
     for i in range(count):
         key = f"thumbnail/{owner_id}/{job_id}/{i}.png"
         if storage.exists(key):
@@ -134,15 +192,23 @@ def handle(params: dict, ctx=None) -> dict:
             ctx.progress(int(i * 100 / count), f"đang tạo ảnh {i + 1}/{count}")
         try:
             img = _goi_gemini(prompt, aspect_ratio, api_key)
-        except Exception as e:                   # noqa: BLE001 — gom lỗi từng ảnh
+        except GeminiError as e:                 # lỗi HTTP → nhớ status để chấm key
+            errors.append(str(e))
+            last_status = e.status_code
+            continue
+        except Exception as e:                   # noqa: BLE001 — lỗi khác (nội dung...)
             errors.append(str(e))
             continue
         storage.put(key, io.BytesIO(img), content_type="image/png")
         keys.append(key)
 
     if not keys:
-        # Không tạo được ảnh nào → ném để nền tảng HOÀN toàn bộ credit + retry.
+        # Không tạo được ảnh nào → chấm lỗi key (nếu do key), ném để nền tảng
+        # HOÀN toàn bộ credit + retry.
+        _ket_qua_key(key_id, thanh_cong=False, last_status=last_status)
         raise RuntimeError(errors[-1] if errors else "Không tạo được ảnh nào.")
+
+    _ket_qua_key(key_id, thanh_cong=True)
 
     if ctx is not None:
         ctx.progress(100, "xong")

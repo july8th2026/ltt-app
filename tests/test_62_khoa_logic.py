@@ -115,12 +115,19 @@ def test_khong_import_cheo_tu_bot_gemini():
     phục vụ 13 người dùng thật thành phụ thuộc lúc chạy của dự án này — sửa bên
     này hỏng bên kia, và bên kia không có ai canh.
     """
+    # Miễn trừ: script DI TRÚ MỘT LẦN (H8.5) CỐ Ý trỏ sang BOT GEMINI để nhập key
+    # sang, chạy tay đúng một lần — web/worker KHÔNG bao giờ import nó, nên không
+    # phải phụ thuộc lúc chạy (đúng tinh thần ràng buộc này).
+    MIEN_TRU = {"tools/import_api_keys_from_botgemini.py"}
     mau = re.compile(r"BOT[ _]GEMINI", re.IGNORECASE)
     vi_pham = []
     for path in _source_files():
+        rel = path.relative_to(ROOT).as_posix()
+        if rel in MIEN_TRU:
+            continue
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             if mau.search(line) and ("import" in line or "path" in line.lower()):
-                vi_pham.append(f"{path.relative_to(ROOT).as_posix()}:{i}")
+                vi_pham.append(f"{rel}:{i}")
     assert vi_pham == [], f"Không được trỏ sang BOT GEMINI lúc chạy: {vi_pham}"
 
 

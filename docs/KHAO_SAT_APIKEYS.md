@@ -1,5 +1,11 @@
 # Khảo sát APIKEYS (từ D:\BOT GEMINI) + phương án bộ máy APIKEYS — 2026-07-31
 
+> **✅ Pha 1 ĐÃ XÂY XONG 2026-07-31** (H8 trong KE_HOACH). Phương án D đã duyệt +
+> triển khai: bảng ApiKey mã hoá + Provider Registry + allocator + menu
+> `/admin/api-key` + import 6 key + đấu thumbnail. Full suite 1583 pass. Phần
+> dưới là khảo sát/phương án gốc, giữ để tra cứu.
+
+
 > Khảo sát sâu 4 luồng trên `D:\BOT GEMINI` (chỉ đọc) để dựng **bộ máy quản lý
 > API key** cho nền tảng LTTSTUDIOSAPP, kèm menu quản trị **APIKEYS**. File này
 > là ảnh chụp nghiên cứu + phương án; plan triển khai chi tiết viết SAU khi

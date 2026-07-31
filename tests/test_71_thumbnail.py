@@ -140,6 +140,49 @@ def test_khong_tao_duoc_anh_nao_thi_nem(storage, monkeypatch):
         jobs.handle({"topic": "x", "count": 2, "owner_id": "u1"}, _Ctx("jobF"))
 
 
+def test_handle_dung_key_tu_engine(tmp_path, monkeypatch):
+    """H8.6: thumbnail lấy key từ bộ máy APIKEYS (không còn env) + đánh dấu
+    thành công lên key."""
+    import io as _io  # noqa: F401
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("LTT_DATABASE_URL", f"sqlite:///{(tmp_path / 'e.db').as_posix()}")
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "mat-khoa-engine-1")
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    set_storage(LocalStorage(str(tmp_path / "st")))
+    from platform_core import api_keys
+    from platform_core.models import APIKEY_CAT_IMAGE
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        api_keys.tao_key(db, provider="gemini", credential="AIzaENGINEKEY9999",
+                         categories=[APIKEY_CAT_IMAGE]); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    import httpx
+    monkeypatch.setattr(httpx, "post",
+                        lambda *a, **k: _FakeResp(200, _payload_one_image()))
+    from apps.thumbnail import jobs
+    try:
+        out = jobs.handle({"topic": "x", "count": 1, "owner_id": "u1"}, _Ctx("jE"))
+        assert out["count"] == 1
+        from sqlalchemy import select
+        from platform_core.models import ApiKey
+        gen = dbmod.get_session(); db = next(gen)
+        try:
+            k = db.execute(select(ApiKey)).scalars().first()
+            assert k.total_requests >= 1 and k.total_success >= 1
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    finally:
+        set_storage(None); dbmod.reset_engine()
+
+
 def test_image_route_chan_cross_user(tmp_path, monkeypatch):
     """W2.6: gõ thẳng URL ảnh của người khác → 404 (kiểm sở hữu ở tầng HTTP),
     ảnh của chính mình → 200."""

@@ -14,6 +14,46 @@
 
 ---
 
+## 2026-07-31 — H8 Pha 1: bộ máy APIKEYS (quản trị nguồn API) — XONG
+
+Từ khảo sát `docs/KHAO_SAT_APIKEYS.md` (4 luồng đọc D:\BOT GEMINI). Phương án D
+(nền tảng theo pha), model **provider + tập category**.
+
+- **H8.1** bảng `ApiKey` (SQLAlchemy) + `platform_core/api_keys.py` (CRUD) +
+  `platform_core/secretbox.py` (Fernet, salt riêng, khoá từ `LTT_TOKEN_ENCRYPTION_KEY`)
+  + migration `d8e9f0a1b2c3`. Chỉ lộ `key_preview` (4 số cuối), không bao giờ trả
+  credential thô.
+- **H8.2** `platform_core/providers.py` — Provider Registry MỘT chỗ: gemini
+  (query_key), apiai/cheapkeyai (bearer OpenAI-compat), byteplus (bearer, video
+  async), plenx (x_api_key, video async). Tách 3 ID model.
+- **H8.3** `platform_core/api_pool.py` — `lay_key(provider,category,model)` chọn
+  theo priority, bỏ cooldown/disabled; `danh_dau_thanh_cong/loi` (401→disable sau
+  5, 429→cooldown, 4xx→không phạt). Key chia sẻ được → không cần khoá độc quyền.
+- **H8.4** menu **APIKEYS** ở `/admin` (`/admin/api-key/...`, slug sqladmin =
+  "api-key"): list (chỉ preview), Thêm key (mã hoá), **Test key** (probe sống),
+  bật/tắt/reset, view Models (registry).
+- **H8.5** import **6 key** từ BOT GEMINI: `tools/import_api_keys_from_botgemini.py`
+  giải mã bằng module security của BOT GEMINI (nạp riêng lẻ, khoá từ BG/.env) →
+  mã hoá lại → INSERT. categories suy từ Provider Registry. Idempotent theo
+  (provider, preview). Đã chạy: 6/6 OK.
+- **H8.6** thumbnail `jobs.py` lấy key qua `api_pool.lay_key("gemini", image)` +
+  đánh dấu thành công/lỗi (GeminiError mang status). Fallback env cho dev.
+- **Phát hiện lúc verify:** key gemini `...B3sk` import từ BOT GEMINI CHÍNH LÀ
+  GEMINI_API_KEY đang chạy (cùng 4 số cuối), nhưng BOT GEMINI để enabled=False →
+  đã bật lại để thumbnail dùng qua engine.
+
+**Test:** `test_75_api_keys.py` (secretbox, CRUD, registry, allocator — 401/429/
+4xx) + test_70 (admin APIKEYS không lộ credential, Add view mã hoá) + test_71
+(thumbnail dùng key engine). Full suite **1583 passed, 4 skipped**; scan 0.
+**Sửa 2 test khoá logic:** bỏ từ "socialbot" trong comment secretbox (test_60);
+miễn trừ script di-trú-một-lần khỏi test_62 (cố ý trỏ BOT GEMINI, không phải
+phụ thuộc runtime).
+
+**Nghiệm thu production:** migration `d8e9f0a1b2c3` áp dụng; import 6/6 key;
+`/admin/api-key/list` hiện 6 preview, **0 secret thô**; **Test key gemini → HTTP
+200 OK** (giải mã + probe Gemini live). Pha 2 (sau): telemetry rpm/tpm/token,
+cascade đa-provider, làm mới model tự động.
+
 ## 2026-07-31 — H7 Wave 1 + Wave 2: hoàn tất củng cố MVP
 
 **Wave 1 (P1) — commit 5f00302, full suite 1562 pass:**

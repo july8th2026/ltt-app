@@ -29,8 +29,8 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
 from platform_core.db import get_engine, get_session
-from platform_core.models import (AppAccess, CreditEntry, Job, PlatformInfo,
-                                  Session as DbSession, User)
+from platform_core.models import (ApiKey, AppAccess, CreditEntry, Job,
+                                  PlatformInfo, Session as DbSession, User)
 
 _log = logging.getLogger(__name__)
 
@@ -254,6 +254,230 @@ Sổ credit là append-only — không sửa/xoá bút toán cũ.</p>
         return HTMLResponse(body, status_code=status)
 
 
+class ApiKeyAdmin(ModelView, model=ApiKey):
+    name = "API key"
+    name_plural = "APIKEYS"
+    # sqladmin tự đặt identity = slugify(ApiKey) = "api-key" → URL /admin/api-key/...
+    icon = "fa-solid fa-key"
+    # TUYỆT ĐỐI không hiện credential_enc (secret). Chỉ preview 4 số cuối (H8).
+    column_list = [ApiKey.provider, ApiKey.name, ApiKey.key_preview,
+                   ApiKey.categories, ApiKey.status, ApiKey.enabled,
+                   ApiKey.priority, ApiKey.health_score, ApiKey.last_used_at]
+    column_details_list = [ApiKey.id, ApiKey.provider, ApiKey.name,
+                           ApiKey.key_preview, ApiKey.categories, ApiKey.base_url,
+                           ApiKey.supported_models, ApiKey.default_model,
+                           ApiKey.status, ApiKey.enabled, ApiKey.priority,
+                           ApiKey.health_score, ApiKey.error_count,
+                           ApiKey.auth_error_count, ApiKey.cooldown_until,
+                           ApiKey.last_used_at, ApiKey.last_error,
+                           ApiKey.total_requests, ApiKey.total_success,
+                           ApiKey.total_failed, ApiKey.created_at]
+    column_searchable_list = [ApiKey.provider, ApiKey.name]
+    column_default_sort = [(ApiKey.provider, False)]
+    # Tạo key qua view riêng (mã hoá credential). Sửa: chỉ field an toàn, KHÔNG
+    # cho sửa credential_enc thô (sẽ ghi plaintext vào cột mã hoá). Đổi credential
+    # = tạo key mới rồi xoá key cũ.
+    can_create = False
+    form_columns = [ApiKey.name, ApiKey.base_url, ApiKey.default_model,
+                    ApiKey.priority, ApiKey.enabled]
+    can_delete = True
+
+
+class AddApiKeyView(BaseView):
+    """Thêm API key — nhập credential THÔ, view mã hoá trước khi lưu (H8)."""
+
+    name = "Thêm API key"
+    icon = "fa-solid fa-plus"
+
+    @expose("/api-key-them", methods=["GET", "POST"])
+    async def them(self, request: Request):
+        from platform_core import api_keys, providers
+        from platform_core.models import (APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE,
+                                          APIKEY_CAT_MODEL, APIKEY_CAT_VIDEO)
+        from server.auth.csrf import issue_csrf_token, verify_csrf_token
+
+        msg = ""
+        status = 200
+        if request.method == "POST":
+            form = await request.form()
+            if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+                msg = '<p style="color:#b91c1c;">CSRF không hợp lệ — tải lại trang.</p>'
+                status = 400
+            else:
+                cats = [c for c in form.getlist("categories")]
+                sup = [m.strip() for m in (form.get("supported_models") or "").split(",") if m.strip()]
+                gen = get_session(); db = next(gen)
+                try:
+                    api_keys.tao_key(
+                        db, provider=(form.get("provider") or ""),
+                        credential=(form.get("credential") or ""),
+                        name=(form.get("name") or ""), categories=cats,
+                        base_url=(form.get("base_url") or ""),
+                        supported_models=sup,
+                        default_model=(form.get("default_model") or ""),
+                        priority=int(form.get("priority") or 100),
+                    )
+                    db.commit()
+                    msg = '<p style="color:#1a7f37;">Đã thêm API key.</p>'
+                except Exception as e:
+                    db.rollback()
+                    msg = f'<p style="color:#b91c1c;">Lỗi: {escape(str(e))}</p>'
+                    status = 400
+                finally:
+                    try: next(gen)
+                    except StopIteration: pass
+
+        token = issue_csrf_token(request)
+        opts = "".join(
+            f'<option value="{escape(p.id)}">{escape(p.display_name)} '
+            f'[{escape(p.auth_style)}]</option>' for p in providers.list_all())
+        cat_boxes = "".join(
+            f'<label style="font-weight:400"><input type="checkbox" name="categories" '
+            f'value="{c}"> {c}</label> '
+            for c in (APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE, APIKEY_CAT_VIDEO))
+        body = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Thêm API key</title>
+<style>body{{font-family:system-ui,sans-serif;max-width:620px;margin:40px auto;padding:0 16px;}}
+label{{display:block;margin:12px 0 4px;font-size:14px;}}
+input,select,textarea{{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:14px;}}
+button{{margin-top:16px;padding:9px 16px;border:0;border-radius:6px;background:#3b6ef2;color:#fff;cursor:pointer;}}
+a{{color:#3b6ef2;}}</style></head><body>
+<p><a href="/admin">&larr; Về quản trị</a> &nbsp;|&nbsp; <a href="/admin/api-models">Xem Models</a></p>
+<h2>Thêm API key</h2>{msg}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{escape(token)}">
+  <label>Provider</label><select name="provider" required>{opts}</select>
+  <label>Tên gợi nhớ</label><input name="name" placeholder="vd gemini-chinh">
+  <label>Credential (khoá THÔ — sẽ mã hoá)</label>
+  <input name="credential" type="password" required autocomplete="off">
+  <label>Category (năng lực)</label><div>{cat_boxes}</div>
+  <label>base_url (để trống = mặc định provider)</label><input name="base_url">
+  <label>supported_models (phân cách dấu phẩy, để trống = mọi model)</label>
+  <input name="supported_models" placeholder="gemini-2.5-flash-image, ...">
+  <label>default_model</label><input name="default_model">
+  <label>priority (cao = ưu tiên)</label><input name="priority" type="number" value="100">
+  <button type="submit">Lưu API key</button>
+</form></body></html>"""
+        return HTMLResponse(body, status_code=status)
+
+
+class ApiKeyActionView(BaseView):
+    """Hành động trên một key: test (probe sống) / bật / tắt / reset cooldown."""
+
+    name = "Tác vụ key"
+    icon = "fa-solid fa-bolt"
+    # Ẩn khỏi menu trái (gọi qua nút/URL), tránh trùng lặp điều hướng.
+    def is_visible(self, request: Request) -> bool:  # noqa: D401
+        return False
+
+    @expose("/api-key-test", methods=["GET"])
+    async def test(self, request: Request):
+        from platform_core import api_keys, providers
+        key_id = request.query_params.get("id", "")
+        gen = get_session(); db = next(gen)
+        try:
+            key = api_keys.lay_key_theo_id(db, key_id)
+            if key is None:
+                return HTMLResponse("Không thấy key.", status_code=404)
+            prov = providers.get(key.provider)
+            cred = api_keys.lay_credential(db, key)
+            code, detail = _probe_key(prov, cred)
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        color = "#1a7f37" if code == 200 else "#b91c1c"
+        return HTMLResponse(
+            f'<p><a href="/admin/api-key/list">&larr; APIKEYS</a></p>'
+            f'<h3>Test key {escape(key.key_preview)} ({escape(key.provider)})</h3>'
+            f'<p style="color:{color};">HTTP {code} — {escape(str(detail))}</p>')
+
+    @expose("/api-key-action", methods=["POST"])
+    async def action(self, request: Request):
+        from platform_core import api_keys
+        from platform_core.models import APIKEY_ACTIVE
+        from server.auth.csrf import verify_csrf_token
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+        key_id = form.get("id", ""); op = form.get("op", "")
+        gen = get_session(); db = next(gen)
+        try:
+            key = api_keys.lay_key_theo_id(db, key_id)
+            if key is None:
+                return HTMLResponse("Không thấy key.", status_code=404)
+            if op == "enable":
+                key.enabled = True
+            elif op == "disable":
+                key.enabled = False
+            elif op == "reset":
+                key.status = APIKEY_ACTIVE; key.cooldown_until = None
+                key.error_count = 0; key.auth_error_count = 0
+            db.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        return RedirectResponse("/admin/api-key/list", status_code=303)
+
+
+class ModelsView(BaseView):
+    """Danh sách Provider + Model (registry, chỉ đọc) — H8."""
+
+    name = "Models"
+    icon = "fa-solid fa-cubes"
+
+    @expose("/api-models", methods=["GET"])
+    async def models(self, request: Request):
+        from platform_core import providers
+        rows = ""
+        for p in providers.list_all():
+            ms = ", ".join(
+                f'{escape(m.id)}{"" if m.is_active else " (Soon)"}' for m in p.models
+            ) or "<i>chưa khai model — key nhận mọi model provider</i>"
+            rows += (f"<tr><td><b>{escape(p.id)}</b></td>"
+                     f"<td>{escape(p.auth_style)}</td>"
+                     f"<td>{escape(', '.join(p.categories))}</td>"
+                     f"<td>{ms}</td>"
+                     f"<td>{'async' if p.async_poll else 'sync'}</td></tr>")
+        body = f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Models</title><style>body{{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 16px;}}
+table{{border-collapse:collapse;width:100%;font-size:13px;}}td,th{{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top;}}
+a{{color:#3b6ef2;}}</style></head><body>
+<p><a href="/admin">&larr; Về quản trị</a> &nbsp;|&nbsp; <a href="/admin/api-key-them">+ Thêm API key</a></p>
+<h2>Provider &amp; Models (registry)</h2>
+<p style="color:#555;font-size:13px;">Nguồn: <code>platform_core/providers.py</code>.
+Thêm provider/model = sửa file này (Pha 1). Làm-mới-model tự động: Pha 2.</p>
+<table><tr><th>Provider</th><th>Auth</th><th>Category</th><th>Models</th><th>Kiểu</th></tr>
+{rows}</table></body></html>"""
+        return HTMLResponse(body)
+
+
+def _probe_key(prov, credential: str):
+    """Gọi thử endpoint liệt kê model để kiểm key còn sống. Trả (http_code, detail).
+    Che credential khỏi thông báo lỗi."""
+    from platform_core import providers as P
+    if prov is None or not prov.list_models_path:
+        return None, "provider không có endpoint để test (video async)"
+    import httpx
+    url = prov.base_url + prov.list_models_path
+    try:
+        if prov.auth_style == P.AUTH_QUERY_KEY:
+            r = httpx.get(url, params={"key": credential}, timeout=10)
+        elif prov.auth_style == P.AUTH_BEARER:
+            r = httpx.get(url, headers={"Authorization": f"Bearer {credential}"}, timeout=10)
+        else:
+            r = httpx.get(url, headers={"X-API-Key": credential}, timeout=10)
+        detail = "OK" if r.status_code == 200 else r.text[:200]
+    except Exception as e:  # noqa: BLE001
+        return 0, _che(str(e), credential)
+    return r.status_code, _che(detail, credential)
+
+
+def _che(msg: str, secret: str) -> str:
+    if secret and len(secret) > 6:
+        msg = msg.replace(secret, "***")
+    return msg[:200]
+
+
 def setup_admin(app, *, session_secret: str) -> bool:
     """Gắn trang quản trị vào app. Trả True nếu gắn được.
 
@@ -276,6 +500,10 @@ def setup_admin(app, *, session_secret: str) -> bool:
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
+    admin.add_view(ApiKeyAdmin)
+    admin.add_view(AddApiKeyView)
+    admin.add_view(ApiKeyActionView)
+    admin.add_view(ModelsView)
     admin.add_view(AppAccessAdmin)
     admin.add_view(JobAdmin)
     admin.add_view(SessionAdmin)

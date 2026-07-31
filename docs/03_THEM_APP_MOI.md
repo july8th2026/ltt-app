@@ -146,6 +146,32 @@ Ba quy tắc, đều xuất phát từ chuyện tiền:
 
 ---
 
+## 2b. Lấy API key (H8) — KHÔNG đọc biến môi trường
+
+App **không giữ khoá API**. Xin khoá từ bộ máy APIKEYS theo (provider, category,
+model); admin quản khoá ở `/admin` → APIKEYS.
+
+```python
+from platform_core import api_keys, api_pool
+from platform_core.db import get_session
+from platform_core.models import APIKEY_CAT_IMAGE
+
+gen = get_session(); db = next(gen)
+try:
+    key = api_pool.lay_key(db, "gemini", category=APIKEY_CAT_IMAGE, model=model)
+    credential = api_keys.lay_credential(db, key)   # chỉ nơi gọi API mới giải mã
+    db.commit()
+finally:
+    ...
+# ... gọi API bằng credential ...
+api_pool.danh_dau_thanh_cong(db, key)               # hoặc danh_dau_loi(db, key, http_status=...)
+```
+
+`lay_key` raise `ThieuKeyError` nếu không có khoá khả dụng → app báo lỗi rõ, KHÔNG
+gọi API chùa. Provider mới (auth_style, base_url, model) khai ở
+`platform_core/providers.py` — thêm một dòng, không sửa app. Khoá cookie/browser
+(Veo, ChatGPT web) là loại KHÁC, chưa thuộc bộ máy này.
+
 ## 3. `routes.py`
 
 ```python

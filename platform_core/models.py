@@ -270,3 +270,73 @@ class CreditEntry(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<CreditEntry user={self.user_id} {self.kind} {self.delta:+d}>"
+
+
+# ── Trạng thái API key (H8) ────────────────────────────────────────────────────
+# active    : dùng được
+# cooldown  : tạm nghỉ (429 / lỗi tạm) tới cooldown_until, tự hồi
+# exhausted : hết quota (reset theo ngày/quota provider)
+# error     : lỗi lặp nhiều lần
+# disabled  : admin tắt HOẶC 401/403 liên tiếp >= ngưỡng
+APIKEY_ACTIVE = "active"
+APIKEY_COOLDOWN = "cooldown"
+APIKEY_EXHAUSTED = "exhausted"
+APIKEY_ERROR = "error"
+APIKEY_DISABLED = "disabled"
+
+# Category (năng lực) một key có thể phục vụ — "4 loại" người dùng nêu (Q/APIKEYS).
+APIKEY_CAT_MODEL = "model_control"
+APIKEY_CAT_CHAT = "chat"
+APIKEY_CAT_IMAGE = "image"
+APIKEY_CAT_VIDEO = "video"
+
+
+class ApiKey(Base):
+    """Một API key của nền tảng (H8) — nguồn API mà nền tảng cung cấp cho app.
+
+    App KHÔNG giữ key: app xin key từ `platform_core.api_pool` theo (provider,
+    category, model). Nhờ vậy đổi/xoay/thêm key là việc của admin ở một chỗ, và
+    thêm loại API mới = thêm một dòng Provider Registry, không sửa app.
+
+    **`credential_enc` là secret ĐÃ MÃ HOÁ** (Fernet, khoá dẫn xuất từ
+    `LTT_TOKEN_ENCRYPTION_KEY` — xem `platform_core/secretbox.py`). KHÔNG BAO GIỜ
+    lộ credential thô ra API/UI; chỉ hiện `key_preview` (4 số cuối).
+
+    `provider` xác định cách kết nối (auth_style, base_url, endpoint) qua Provider
+    Registry — KHÔNG lưu auth_style ở đây để không lệch với registry.
+    `categories`/`supported_models` lọc key khi cấp phát (rỗng supported_models =
+    mọi model của provider).
+    """
+
+    __tablename__ = "api_keys"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_user_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    categories: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+
+    credential_enc: Mapped[str] = mapped_column(Text, nullable=False)  # Fernet token
+    key_preview: Mapped[str] = mapped_column(String(16), default="", nullable=False)  # 4 số cuối, hiện an toàn
+    base_url: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    supported_models: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    default_model: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+
+    status: Mapped[str] = mapped_column(String(16), default=APIKEY_ACTIVE, nullable=False, index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    health_score: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    error_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    auth_error_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cooldown_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+
+    total_requests: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_success: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_failed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<ApiKey {self.provider} {self.name!r} {self.status}>"

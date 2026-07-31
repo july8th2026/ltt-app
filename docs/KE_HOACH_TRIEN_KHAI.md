@@ -643,7 +643,18 @@ mỗi mục có cổng test riêng. Kết mỗi wave: `pytest -q` xanh + `scan_s
 
 ---
 
-## H8 — Bộ máy APIKEYS (quản trị nguồn API) — Pha 1 📋 KẾ HOẠCH (chờ build)
+## H8 — Bộ máy APIKEYS (quản trị nguồn API) — Pha 1 ✅ XONG 2026-07-31
+
+**✅ Hoàn thành:** H8.1–H8.7 (bảng ApiKey + secretbox + Provider Registry +
+allocator + menu `/admin/api-key` + import 6 key + đấu thumbnail). Full suite
+**1583 pass**, scan 0. Production: migration `d8e9f0a1b2c3`; 6/6 key import;
+`/admin/api-key/list` 0 secret thô; Test key gemini HTTP 200. Chi tiết ở
+`NHAT_KY.md`. **Pha 2 (sau):** telemetry rpm/tpm/token, cascade đa-provider,
+làm mới model tự động.
+
+---
+
+## H8 — Bộ máy APIKEYS (quản trị nguồn API) — Pha 1 📋 (kế hoạch gốc)
 
 **Nguồn:** khảo sát `docs/KHAO_SAT_APIKEYS.md` (từ D:\BOT GEMINI). **Quyết định
 duyệt 2026-07-31:** Phương án **D** (nền tảng theo pha); model **provider + tập

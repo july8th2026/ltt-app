@@ -161,6 +161,67 @@ def test_admin_session_khong_lo_token(client):
     assert sid not in r.text, "token phien bi render tren trang admin (P0-5)!"
 
 
+def _login_admin(client, email):
+    import platform_core.db as dbmod
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        tao_nguoi_dung(db, email=email, password="matkhau-tot-12",
+                       role="admin", is_verified=True); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    tok = _csrf(client, "/login")
+    client.post("/login", data={"username": email, "password": "matkhau-tot-12",
+                                "csrf_token": tok}, follow_redirects=False)
+
+
+def test_apikey_admin_khong_lo_credential(client):
+    """H8.4: trang APIKEYS liệt kê key KHÔNG được lộ credential thô — chỉ preview."""
+    import platform_core.db as dbmod
+    from platform_core import api_keys
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        api_keys.tao_key(db, provider="gemini", credential="AIzaSECRETXYZ7777",
+                         name="g", categories=["image"]); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    _login_admin(client, "boss5@example.com")
+    r = client.get("/admin/api-key/list")
+    assert r.status_code == 200
+    assert "AIzaSECRETXYZ7777" not in r.text      # KHÔNG lộ secret thô
+    assert "...7777" in r.text                     # chỉ preview
+
+
+def test_them_api_key_qua_view_ma_hoa(client):
+    """H8.4: Add view tạo key với credential ĐÃ mã hoá (không lưu thô)."""
+    import re as _re
+    _login_admin(client, "boss6@example.com")
+    page = client.get("/admin/api-key-them")
+    assert page.status_code == 200
+    ctok = _re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+    r = client.post("/admin/api-key-them", data={
+        "csrf_token": ctok, "provider": "gemini", "name": "test",
+        "credential": "AIzaNEWSECRET8888", "categories": "image",
+        "priority": "100"}, follow_redirects=False)
+    assert r.status_code == 200 and "Đã thêm" in r.text
+
+    import platform_core.db as dbmod
+    from platform_core import api_keys
+    from platform_core.models import ApiKey
+    from sqlalchemy import select
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        k = db.execute(select(ApiKey).where(ApiKey.name == "test")).scalars().first()
+        assert k is not None
+        assert "AIzaNEWSECRET8888" not in k.credential_enc      # đã mã hoá
+        assert api_keys.lay_credential(db, k) == "AIzaNEWSECRET8888"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
 def test_grant_credit_can_csrf(client):
     """W1.3: cấp credit tay (mutation sổ tiền) PHẢI có CSRF token hợp lệ."""
     import re as _re
