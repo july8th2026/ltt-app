@@ -105,3 +105,6 @@ data/translations/desktop.ini
 
 # Playwright MCP temp snapshots/logs (dieu khien trinh duyet)
 .playwright-mcp/
+
+# Anh chup phan tich PLENX (tu lieu, khong commit)
+/plenx-*.png
