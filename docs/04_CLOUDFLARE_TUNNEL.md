@@ -44,6 +44,43 @@ USD/GB-tháng lưu trữ, **egress miễn phí**, và hạn mức miễn phí 10
 
 ---
 
+## ⚠️ Điều kiện tiên quyết — uỷ quyền subdomain (quyết định Q22)
+
+DNS của `lttstudios.com` đang ở **inet.vn**, không phải Cloudflare. Cloudflare
+Tunnel cần một bản ghi trong **zone Cloudflare**, nên trước khi chạy script phải
+đưa riêng subdomain `app` sang Cloudflare — **không đụng** trang giới thiệu ở
+`lttstudios.com`.
+
+Làm **một lần**, theo thứ tự:
+
+1. **Kiểm tra trước tiên:** trên bảng điều khiển Cloudflare, thử **Add a site**
+   với `app.lttstudios.com`. Gói miễn phí *có thể* không cho tạo zone cấp
+   subdomain — đây là điều **chưa xác minh**. Nếu Cloudflare từ chối, xem "Nếu
+   không tạo được zone subdomain" bên dưới.
+2. Nếu được: Cloudflare cấp **2 nameserver** (dạng `x.ns.cloudflare.com`).
+3. Vào DNS của `lttstudios.com` ở **inet.vn**, thêm hai bản ghi `NS`:
+   - `app  NS  <ns1>.ns.cloudflare.com`
+   - `app  NS  <ns2>.ns.cloudflare.com`
+4. Đợi lan truyền (vài phút đến vài giờ). Zone ở Cloudflare chuyển **Active**.
+
+Chỉ khi zone `app.lttstudios.com` **Active** ở Cloudflare mới chạy script được —
+nếu không, bước trỏ DNS sẽ báo "không tìm thấy zone".
+
+### Nếu không tạo được zone subdomain (gói miễn phí từ chối)
+
+Hai đường thay thế, **phải ghi lại thành quyết định thay Q22** (giao thức trong
+`AGENTS.md` mục 6) trước khi làm:
+
+- **Chuyển cả `lttstudios.com` sang nameserver Cloudflare.** Mạnh nhất, thêm
+  CDN + chống DDoS miễn phí cho cả trang giới thiệu. Nhưng phải **chép đủ và
+  đúng mọi bản ghi DNS hiện có** (web, email...) sang Cloudflare *trước* khi đổi
+  nameserver — sót một bản ghi là trang giới thiệu hoặc email công ty chết.
+- **Bỏ Tunnel, mở cổng 80/443 + Caddy.** Không phụ thuộc Cloudflare, không đụng
+  trần 100 MB / 100 giây. Nhưng IP nhà là IP động (cần DDNS) và mở cổng vào
+  máy đang chứa token + khoá.
+
+---
+
 ## Dựng lần đầu — dùng script, đừng làm tay
 
 ```powershell
@@ -55,7 +92,8 @@ Script tự làm 6 việc: tải `cloudflared`, đăng nhập, tạo tunnel, ghi
 
 **Chỉ một bước cần bạn:** ở phần đăng nhập, `cloudflared tunnel login` in ra
 một đường link rồi **đợi**. Mở link trên trình duyệt máy nào cũng được, đăng
-nhập Cloudflare, chọn `lttstudios.com`. Script tự chạy tiếp.
+nhập Cloudflare, chọn zone **`app.lttstudios.com`** (zone subdomain vừa uỷ
+quyền ở trên, **không** phải `lttstudios.com` gốc). Script tự chạy tiếp.
 
 Đừng ngắt lệnh vì tưởng nó treo — nó đang đợi bạn.
 

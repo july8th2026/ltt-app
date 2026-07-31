@@ -14,6 +14,48 @@
 
 ---
 
+## 2026-07-31 — H0.1: kiện toàn script Cloudflare cho Q22 (phần chuẩn bị)
+
+- **Mục tiêu:** chuẩn bị dựng Tunnel; người dùng chọn "đưa lên mạng trước H5".
+- **Hạng mục:** H0.1 — phần code/tài liệu xong; phần thao tác chờ người dùng.
+- **Trạng thái:** dở — chặn ở thao tác người dùng (Cloudflare + inet.vn + Admin).
+
+### Đã làm (phía tôi)
+
+- `setup/3-cloudflare.ps1`: sửa khớp Q22 (uỷ quyền subdomain). Bước đăng nhập
+  nay hướng dẫn chọn zone `app.lttstudios.com` (không phải `lttstudios.com`
+  gốc); bước trỏ DNS bắt lỗi "không tìm thấy zone" và giải thích điều kiện tiên
+  quyết thay vì để một lỗi mờ mịt.
+- `docs/04_CLOUDFLARE_TUNNEL.md`: thêm phần "Điều kiện tiên quyết — uỷ quyền
+  subdomain (Q22)" với các bước cụ thể + hai đường lui nếu gói miễn phí không
+  cho tạo zone subdomain.
+- Kiểm cú pháp + ASCII + không-BOM cho script; test khoá `test_61` xanh.
+
+### Chặn — cần người dùng (không code nào thay được)
+
+1. **Kiểm Cloudflare zone subdomain (Q22 điều kiện chưa xác minh):** thử Add
+   site `app.lttstudios.com` — gói miễn phí có thể từ chối.
+2. Nếu được: uỷ quyền NS `app` ở inet.vn.
+3. Cài hệ thống lên `C:\LTTPlatform` (setup/2, cần Administrator) — máy này
+   CHƯA cài (`C:\LTTPlatform` chưa tồn tại).
+4. Chạy `setup/3-cloudflare.ps1` (cần đăng nhập Cloudflare bằng trình duyệt).
+
+### Lưu ý vận hành: máy phát triển == máy chủ
+
+Máy này đang là máy phát triển và sắp thành máy chủ. Database `lttplatform`
+hiện dev dùng (chỉ có schema, data nghiệm thu đã dọn). Khi `setup/2` cài
+production, nó dùng lại chính PostgreSQL + database đó; schema đã sẵn. `setup/2`
+sẽ đặt lại mật khẩu `ltt_app` → `secrets/app.env` của dev (ở `D:`) lệch, nhưng
+không sao vì sau khi thành máy chủ chỉ chạy bản `C:\LTTPlatform`.
+
+### Việc tiếp theo
+
+1. **Người dùng:** kiểm Cloudflare zone subdomain (bước 1 ở trên) — báo kết quả.
+2. Tuỳ kết quả: uỷ quyền NS rồi cài, hoặc đổi Q22 theo giao thức.
+3. Sau khi lên mạng: H5 (thumbnail_api).
+
+---
+
 ## 2026-07-31 — H3 (sổ credit) + H2.3 (web submit) + H4 (nghiệm thu): KHÉP HẠ TẦNG
 
 - **Mục tiêu:** sổ credit không bao giờ sai; submit job qua web + tiến độ; nghiệm
