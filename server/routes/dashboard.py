@@ -27,10 +27,47 @@ def home(request: Request, user: str = Depends(require_login)):
     loaded = discover()
     report = doctor.run(check_sheet_flag=False)
 
+    # Lọc app theo quyền của người dùng (H1.4): bỏ app `hidden`. App `locked`
+    # vẫn hiện, template gắn nhãn. Bọc an toàn: khi chưa có CSDL hoặc là
+    # admin-env (đường lui), hiện đủ như trước — không được để phân quyền làm
+    # trang chủ trắng khi DB trục trặc.
+    visible = [a for a in loaded if not a.error]
+    try:
+        u = _user_hien_tai(request)
+        if u is not None:
+            from platform_core.app_access import loc_app_hien_thi
+            from platform_core.db import get_session
+            gen = get_session(); db = next(gen)
+            try:
+                visible = loc_app_hien_thi(db, u, visible)
+            finally:
+                try: next(gen)
+                except StopIteration: pass
+    except Exception:
+        pass
+
     return templates.TemplateResponse(request, "home.html", {
         "user": user,
         "nav": "home",
-        "apps": [a for a in loaded if not a.error],
+        "apps": visible,
         "broken": [a for a in loaded if a.error],
         "blockers": [s for s in report.sections if s["status"] == doctor.BLOCK],
     })
+
+
+def _user_hien_tai(request: Request):
+    """User CSDL từ phiên, hoặc None (admin-env / ẩn danh / chưa có DB)."""
+    try:
+        sid = request.session.get("sid")
+        if not sid:
+            return None
+        from platform_core.db import get_session
+        from platform_core.users import lay_user_tu_phien
+        gen = get_session(); db = next(gen)
+        try:
+            return lay_user_tu_phien(db, sid)
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    except Exception:
+        return None

@@ -145,7 +145,7 @@
       <a href="/" class="{{ 'active' if nav=='home' else '' }}">
         <span class="ico">🏠</span> Trang chủ</a>
 
-      {% for item in nav_apps() %}
+      {% for item in nav_apps(request) %}
         <div class="nav-group">{{ item.manifest.display_name }}</div>
         {% for entry in item.manifest.nav_entries() %}
           <a href="{{ entry.path }}" class="{{ 'active' if nav==entry.nav_key else '' }}">

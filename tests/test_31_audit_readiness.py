@@ -329,11 +329,16 @@ class TestMainWindowAuditWiring(unittest.TestCase):
         Truoc day sidebar viet cung nen test grep base.html. Gio sidebar sinh
         tu apps/*/manifest.py, nen kiem tra o dung nguon: moi app dang bat phai
         khai it nhat mot muc nav, va base.html phai render tu nav_apps().
+
+        Khop "nav_apps(" (khong phai "nav_apps()"): bat bien la sidebar sinh tu
+        registry, khong phai so tham so cua ham. H1.4 them tham so `request` de
+        loc app theo quyen (nav_apps(request)) — mot thay doi hop le lam
+        assertion khoa cung "()" hong ma bat bien van dung.
         """
         from platform_core.registry import discover
 
         src = _read(os.path.join("server", "templates", "base.html"))
-        self.assertIn("nav_apps()", src,
+        self.assertIn("nav_apps(", src,
                       "base.html khong con sinh sidebar tu registry")
 
         for item in discover():

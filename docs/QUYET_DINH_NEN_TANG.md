@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (Q1–Q24; Q14 đã thay bởi Q24)
+## 1. Quyết định đã chốt (Q1–Q25; Q14 đã thay bởi Q24)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -55,6 +55,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q22 | DNS cho `app.lttstudios.com` | **Giữ DNS ở inet.vn, uỷ quyền riêng subdomain `app` sang Cloudflare** | Trang giới thiệu đang chạy ở `lttstudios.com` không bị đụng tới — rủi ro thấp nhất cho thứ đang hoạt động. **⚠️ ĐIỀU KIỆN CHƯA XÁC MINH:** Cloudflare theo truyền thống chỉ cho quản lý cả zone ở gói miễn phí; zone cấp subdomain là tính năng gói trả phí. **Phải kiểm chứng trước khi làm bất cứ việc gì khác** — xem H0.1 trong kế hoạch. Nếu gói miễn phí không hỗ trợ: quay lại chọn giữa "chuyển cả zone sang Cloudflare" và "bỏ Tunnel, mở cổng + Caddy", và ghi quyết định thay thế theo đúng giao thức đổi quyết định. |
 | Q23 | Tài khoản CSDL của ứng dụng | **Role riêng `ltt_app`, không bao giờ dùng superuser `postgres`** | Một lỗ hổng SQL injection với quyền superuser đọc được **mọi** database trên máy và ghi được cả file hệ thống; với role riêng thì thiệt hại giới hạn trong đúng database của ứng dụng. Mật khẩu superuser chỉ dùng lúc cài, lưu ở `secrets/postgres-superuser.txt` để còn vào bảo trì CSDL sau này. Có test chốt. |
 | Q24 | Đăng nhập / đăng ký (thay Q14) | **Tự viết trên nền đồng bộ, mượn `itsdangerous` cho token** | Giữ `server/auth/` đồng bộ đã test và đang chạy; thêm bảng `users` + đăng ký; token xác thực email/reset dùng `URLSafeTimedSerializer` (đã có sẵn, là mẫu chuẩn dùng-một-lần-có-hạn). **Vì sao không fastapi-users:** nó async-only từ v10, kéo async engine vào nền đồng bộ vừa xây ở H1.1, và thay luôn cơ chế session đang chạy production — cái giá lớn, lợi ích trùng với thứ `itsdangerous` đã làm được. Đổi lại: tự viết logic đăng ký (đều là mẫu chuẩn, viết test kỹ). |
+| Q25 | Mặc định phân quyền app | **Mặc định MỞ (enabled) — admin khoá/ẩn khi cần** | Chỉ lưu bản ghi khi KHÁC mặc định; không có bản ghi = mở. Rào chắn tiền đã là credit (không credit thì không chạy job, dù thấy app), nên "mặc định mở" không gây rủi ro mất tiền. Phân quyền app dùng để **ẩn app đang xây** hoặc **app riêng cho nhóm khách**, không phải để chặn tiền. Đổi lại: thêm một app mới thì mọi user thấy ngay — đúng ý ở giai đoạn này; nếu sau cần "mặc định ẩn cho app cụ thể" thì thêm cờ trong manifest, không đổi mặc định toàn cục. Admin luôn thấy hết (ngoài bảng phân quyền). |
 
 ---
 

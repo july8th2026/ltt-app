@@ -47,16 +47,39 @@ except Exception:
 templates.env.globals["built"] = BUILT_PAGES
 
 
-def _nav_apps():
+def _nav_apps(request=None):
     """Danh sách app cho sidebar. Quét mỗi lần render là đủ nhanh (chỉ đọc
     module đã cache trong sys.modules), và nhờ vậy thêm app không cần restart
-    lúc phát triển."""
+    lúc phát triển.
+
+    Nhận `request` để lọc app `hidden` theo người dùng (H1.4) — sidebar phải
+    khớp với trang chủ, nếu không app bị ẩn vẫn hiện ở thanh bên. Bọc an toàn:
+    lỗi lọc (chưa có CSDL, admin-env) thì hiện đủ, không làm sập trang."""
     try:
         from platform_core.registry import discover
-        return [a for a in discover() if a.manifest.enabled and not a.error]
+        loaded = [a for a in discover() if a.manifest.enabled and not a.error]
     except Exception:
         # Sidebar lỗi không được làm sập trang. Trả rỗng còn hơn 500.
         return []
+
+    if request is None:
+        return loaded
+    try:
+        sid = request.session.get("sid")
+        if not sid:
+            return loaded      # admin-env / ẩn danh → không lọc ở đây
+        from platform_core.app_access import loc_app_hien_thi
+        from platform_core.db import get_session
+        from platform_core.users import lay_user_tu_phien
+        gen = get_session(); db = next(gen)
+        try:
+            user = lay_user_tu_phien(db, sid)
+            return loc_app_hien_thi(db, user, loaded) if user else loaded
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    except Exception:
+        return loaded
 
 
 templates.env.globals["nav_apps"] = _nav_apps

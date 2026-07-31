@@ -14,6 +14,78 @@
 
 ---
 
+## 2026-07-31 — H1.4: phân quyền app + KHÉP H1 (Người dùng)
+
+- **Mục tiêu:** mỗi (user × app) mở/khoá/ẩn; chặn ở tầng route, không chỉ ẩn nút.
+- **Hạng mục:** H1.4 — **hoàn thành**. Cùng đó **khép toàn bộ H1**.
+- **Trạng thái:** xong.
+
+### Đã làm
+
+- Bảng `app_access` + `platform_core/app_access.py`: mức `enabled`/`locked`/
+  `hidden`, mặc định mở (Q25), chỉ lưu ngoại lệ (đặt về mặc định thì XOÁ dòng).
+- `server/access_middleware.py`: chặn ở tầng route qua middleware đọc registry
+  → ánh xạ path → app → kiểm quyền. Phủ **mọi** đường vào kể cả gõ thẳng URL,
+  và không phải sửa từng app (giữ hợp đồng: nền tảng không biết trước app nào).
+  - `hidden` → 404 (không xác nhận app tồn tại), `locked` → 403.
+  - Fail-open có chủ ý: chưa có DB / admin-env / lỗi → cho qua (mặc định mở,
+    chốt chặn tiền vẫn là credit).
+  - Add TRƯỚC SessionMiddleware để chạy SAU nó (đọc được session).
+- Trang chủ **và** sidebar cùng lọc app `hidden` theo user (`nav_apps(request)`).
+- `tests/test_66_phan_quyen_app.py` — 10 test.
+
+### Nghiệm thu chặn route trên PostgreSQL thật
+
+Tạo user tạm → đăng nhập → `/demo` mặc định 200 → admin đặt `hidden` → `/demo`
+404 → đặt `locked` → 403 → dọn. Đúng cả ba mức.
+
+### Lỗi tiềm ẩn sửa kèm: CSP sẽ chặn Turnstile
+
+CSP cũ chỉ cho script `'self'`. Turnstile (H1.3) nạp script + iframe từ
+`challenges.cloudflare.com` → sẽ bị CSP chặn ngay khi bật, một lỗi chỉ lộ lúc
+production bật chống-bot. Đã thêm domain đó vào `script-src` + `frame-src`.
+
+### Test đã sửa (không làm yếu)
+
+`test_31::test_g2_navigation_links_every_page` grep chuỗi cứng `nav_apps()`.
+H1.4 đổi thành `nav_apps(request)` (thêm lọc theo user). Bất biến — "sidebar
+sinh từ registry" — vẫn đúng; đổi assertion sang khớp `nav_apps(`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` | **1.480 passed**, 1 skipped, 23 subtests |
+| `tests/test_66_phan_quyen_app.py` | 10 passed |
+| Nghiệm thu chặn route trên PostgreSQL thật | 200 / 404 / 403 đúng |
+| `python tools/scan_source_secrets.py` | 0 finding |
+
+### Quyết định mới
+
+Q25 — mặc định phân quyền app là MỞ; chỉ lưu ngoại lệ; admin luôn thấy hết.
+
+### Cách lùi lại
+
+Xoá `platform_core/app_access.py`, `server/access_middleware.py`,
+`tests/test_66_phan_quyen_app.py`, migration `..._them_bang_app_access.py`;
+hoàn `platform_core/models.py`, `server/app.py`, `server/routes/dashboard.py`,
+`server/templating.py`, `server/templates/base.html`, `tests/test_31...`.
+
+### KHÉP H1 — còn tồn đọng chuyển sang H2/H3
+
+- Chờ khoá người dùng (H1.3): Resend (`RESEND_API_KEY`, `LTT_MAIL_FROM`, 3 DNS)
+  và Turnstile (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`).
+- Nối ở H3: cấp credit dùng thử sau xác thực; trang admin đặt quyền + tạo admin
+  trong DB (qua sqladmin) — đó cũng là lúc gỡ đường admin-env (H1.2).
+
+### Việc tiếp theo
+
+1. **H2 — hàng đợi job** (procrastinate trên Postgres, Q13): bảng jobs, worker
+   tiến trình riêng, giữ chỗ job, retry, tiến độ.
+2. (người dùng, độc lập) H0.1 Cloudflare + các khoá Resend/Turnstile.
+
+---
+
 ## 2026-07-31 — H1.3: đăng ký, xác thực email, chống lạm dụng
 
 - **Mục tiêu:** cho tự đăng ký an toàn (Q7) — không để credit dùng thử bị hút

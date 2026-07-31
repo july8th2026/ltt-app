@@ -109,6 +109,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # process able to start instead of crashing on an invalid config).
         app.state.core_settings = None
 
+    # Phân quyền app (H1.4). Add TRƯỚC SessionMiddleware — trong Starlette,
+    # middleware add trước là lớp trong, chạy SAU, nên nó đọc được
+    # request.session mà SessionMiddleware đã dựng.
+    from server.access_middleware import AccessControlMiddleware
+    app.add_middleware(AccessControlMiddleware)
+
     app.add_middleware(
         SessionMiddleware,
         secret_key=server_settings.session_secret,
@@ -127,11 +133,17 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # 'unsafe-inline' is required because the templates carry inline
         # <style> and one inline polling <script>; everything external is
         # still blocked, so an injected <script src=...> cannot load.
+        # 'unsafe-inline' cần cho <style> nội tuyến và một <script> polling.
+        # challenges.cloudflare.com được phép cho Turnstile (Q20): widget của
+        # nó nạp một script và mở một iframe từ đó. Không có hai dòng
+        # cloudflare này thì CSP chặn Turnstile ngay khi bật — một lỗi chỉ lộ
+        # ra lúc production bật chống-bot, đúng lúc không muốn gỡ rối nhất.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data:; "
+            "frame-src https://challenges.cloudflare.com; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
             "form-action 'self'"

@@ -237,16 +237,39 @@ này thì credit dùng thử **sẽ** bị hút cạn bằng tài khoản ảo.
 - [x] Không phản hồi nào tiết lộ email đã đăng ký — đăng ký trùng và quên-mật-
       khẩu email-không-tồn-tại đều cho phản hồi giống hệt (có test)
 
-### H1.4 — Phân quyền app cho từng người dùng
+### H1.4 — Phân quyền app cho từng người dùng ✅ XONG 2026-07-31
 
-- [ ] Bảng phân quyền: mỗi (user × app) → `mở` / `khoá` / `ẩn`
-- [ ] Trang chủ chỉ hiện app mà người đó được phép thấy
-- [ ] Chặn ở tầng route, **không chỉ ẩn trên giao diện** — ẩn nút không phải là
-      phân quyền
+- [x] Bảng `app_access`: mỗi (user × app) → `enabled`/`locked`/`hidden`, chỉ
+      lưu ngoại lệ (Q25 — mặc định mở)
+- [x] `platform_core/app_access.py`: `muc_quyen`, `dat_quyen` (về mặc định thì
+      xoá dòng), `app_cho_path` (khớp prefix dài nhất), `loc_app_hien_thi`
+- [x] Chặn ở tầng route bằng `server/access_middleware.py` — phủ mọi đường vào,
+      **kể cả gõ thẳng URL**, không sửa từng app (giữ hợp đồng)
+- [x] Trang chủ **và** sidebar đều lọc app `hidden` theo user
+- [x] `tests/test_66_phan_quyen_app.py` — 10 test
 
 **Tiêu chí hoàn thành**
-- Người dùng gọi thẳng URL của app bị khoá → bị từ chối, có test
-- Admin thấy hết
+- [x] Gõ thẳng URL app bị ẩn → 404; bị khoá → 403 (có test + nghiệm thu Postgres)
+- [x] Admin thấy hết, kể cả khi có dòng khoá (có test)
+- [x] Ẩn danh vào app-path vẫn được `require_login` đưa về /login (middleware
+      không nuốt redirect)
+
+**Sửa kèm — lỗi CSP sẽ chặn Turnstile:** CSP cũ chỉ cho script `'self'`, nên
+khi bật Turnstile (H1.3) script của Cloudflare sẽ bị chặn — một lỗi chỉ lộ lúc
+production bật chống-bot. Đã thêm `challenges.cloudflare.com` vào `script-src`
+và `frame-src`.
+
+**Nối ở H3:** trang admin đặt quyền (qua sqladmin). Hiện đặt quyền bằng hàm
+`dat_quyen` (đã test); UI quản trị là việc của H3.
+
+---
+
+## ✅ H1 (Người dùng) HOÀN TẤT 2026-07-31
+
+Toàn bộ H1.1→H1.4 xong. Nền tảng giờ biết "ai đang dùng", tách được dữ liệu
+người này người kia, cho tự đăng ký an toàn, và phân quyền được từng app.
+Còn hai việc chờ khoá của người dùng (Resend, Turnstile — H1.3) và một việc
+nối ở H3 (cấp credit sau xác thực, trang admin đặt quyền).
 
 ---
 

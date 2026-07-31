@@ -14,7 +14,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
@@ -127,3 +127,32 @@ class Session(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<Session {self.id[:8]}... user={self.user_id}>"
+
+
+class AppAccess(Base):
+    """Quyền của MỘT người dùng với MỘT app — chỉ lưu khi KHÁC mặc định.
+
+    Mặc định là "mở" (Q25), nên bảng này chỉ chứa các ngoại lệ: app bị khoá
+    hoặc ẩn với một user cụ thể. Không có dòng nào = mở. Cách này giữ bảng nhỏ
+    (không sinh N_user × M_app dòng) và làm "thêm app mới thì mọi user thấy
+    ngay" trở thành hành vi mặc định, không cần cấp quyền hàng loạt.
+
+    `level`:
+    - `enabled` — thấy và dùng được (cũng là mặc định khi không có dòng);
+    - `locked`  — thấy trên trang chủ nhưng vào bị chặn (dùng cho "sắp mở");
+    - `hidden`  — không thấy, vào thẳng URL cũng bị chặn.
+    """
+
+    __tablename__ = "app_access"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    app_slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    level: Mapped[str] = mapped_column(String(16), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "app_slug", name="uq_app_access_user_app"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<AppAccess user={self.user_id} {self.app_slug}={self.level}>"
