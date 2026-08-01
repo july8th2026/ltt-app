@@ -60,9 +60,9 @@ sau khi đăng nhập + phân quyền.
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Thanh toán / nạp credit (cổng chưa chốt) | ❌ chưa (H7) |
-| Lưu file lớn qua R2 (khi chạm trần Cloudflare) | ❌ chưa (H8) |
-| Thêm tool mới | ⏭️ mở (H9) |
+| Thanh toán / nạp credit (cổng chưa chốt) | ❌ chưa (H9) |
+| Lưu file lớn qua R2 (khi chạm trần Cloudflare) | ❌ chưa (H10) |
+| Thêm tool mới | ⏭️ mở (H11) |
 
 Chi tiết từng bước: `KE_HOACH_TRIEN_KHAI.md`.
 

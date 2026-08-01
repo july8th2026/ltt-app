@@ -34,11 +34,11 @@ H3  Sổ credit                 ─┘         │
                               H6  Cốt lõi vận hành nền tảng          ✅
                                   (catalog công khai + SSO UX + login return-to)
                                          │
-                              H7  Củng cố MVP (Hardening)  ◄─ đang làm (Wave 0 ✅)
+                              H7  Củng cố MVP (Hardening)  ✅ (Wave 0+1+2)
                                          │
                        ┌─────────────────┼─────────────────┐
                        ▼                 ▼                 ▼
-              H8 APIKEYS (quản trị nguồn API) ◄─ kế tiếp
+              H8 APIKEYS (quản trị nguồn API)  ✅ Pha 1 ◄─ kế tiếp: Pha 2
                        │
        ┌───────────────┼───────────────┐
        ▼               ▼               ▼
@@ -50,7 +50,7 @@ H3  Sổ credit                 ─┘         │
 >
 > **Chèn H7 (2026-07-31):** audit toàn diện (`docs/AUDIT_MVP_2026-07-31.md`) tìm ra
 > các lỗ hổng P0 tiền/bảo mật/khôi phục → **Củng cố MVP** phải xong TRƯỚC khi mở
-> khách trả tiền. Dời tiếp: Thanh toán→**H8**, R2→**H9**, Thêm tool→**H10**.
+> khách trả tiền. Dời tiếp: Thanh toán→**H9**, R2→**H10**, Thêm tool→**H11**.
 
 H1 → H2 → H3 làm theo thứ tự (job cần chủ sở hữu; credit cần job). Cả ba phải
 xong mới nghiệm thu được ở H4.
@@ -403,7 +403,7 @@ còn `LTT_SESSION_SECRET`). Nghiệm thu qua Cloudflare edge: admin-env `admin/.
 1518 pass. Bật lại break-glass = đặt lại env hash khi cứu hộ.
 
 **Tham khảo:** `app/modules/seedance_video/cost.py` bên `D:\BOT GEMINI` có mô
-hình giá token thật + markup + VND — đọc khi port `seedance_video` (H8), không
+hình giá token thật + markup + VND — đọc khi port `seedance_video` (H11), không
 cần cho demo.
 
 **Lỗi đã có tiền lệ (đã tránh):** BOT GEMINI từng để nút "Tạo lại" đi vòng cổng

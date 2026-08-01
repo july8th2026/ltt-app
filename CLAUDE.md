@@ -135,8 +135,10 @@ nào**.
 | App socialbot (FB+TikTok) | ⏸️ đóng băng — không phát triển thêm |
 | App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
 | **Củng cố MVP (Hardening)** — Wave 0+1+2 | ✅ xong 2026-07-31 (H7) |
-| Thanh toán / nạp credit | ❌ chưa (H8) |
-| Lưu file lớn qua R2 + `Storage.url_for()` | ❌ chưa (H9) |
+| Bộ máy APIKEYS (provider + 4 category, mã hoá, allocator) — Pha 1 | ✅ xong 2026-07-31 (H8) |
+| Giao diện: hệ thống thiết kế + header/avatar + catalog | ✅ xong 2026-07-31 (UX Pha 1+2) |
+| Thanh toán / nạp credit | ❌ chưa (H9) |
+| Lưu file lớn qua R2 + `Storage.url_for()` | ❌ chưa (H10) |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -146,8 +148,8 @@ bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở pro
 sau Tunnel, restore DB, băm token phiên, migration trong update) và P1/P2
 (billing thumbnail theo ảnh, handler 500, CSRF admin/logout, khoá theo tài khoản,
 ACL backup, validate hợp đồng sớm, log rotation, smoke test). Việc **cố ý hoãn**
-sang H8/H9 ghi trong file audit + KE_HOACH (url_for/R2, FK constraints).
-Cửa mở khách trả tiền giờ phụ thuộc **H8 (Thanh toán)**.
+sang H9/H10 ghi trong file audit + KE_HOACH (url_for/R2, FK constraints).
+Cửa mở khách trả tiền giờ phụ thuộc **H9 (Thanh toán)**.
 
 ## Không bao giờ commit hay copy đi
 
