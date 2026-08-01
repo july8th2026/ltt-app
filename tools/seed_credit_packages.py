@@ -6,7 +6,7 @@ Idempotent: chỉ seed khi bảng `credit_packages` đang RỖNG — chạy lạ
 
 Tỉ giá (Q31): 1 credit = 100đ. Bonus theo % (thang khuyến khích nạp nhiều).
 
-    python tools\seed_credit_packages.py
+    python tools/seed_credit_packages.py     (chay tu thu muc app da trien khai)
 """
 from __future__ import annotations
 

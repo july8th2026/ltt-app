@@ -14,6 +14,43 @@
 
 ---
 
+## 2026-08-01 — H9: Thanh toán / nạp credit (PayOS agnostic) — XONG
+
+Quyết định Q31 (`QUYET_DINH_NEN_TANG.md`): cổng **PayOS** (VietQR + webhook chữ
+ký), kiến trúc **agnostic**, tỉ giá **1 credit = 100đ**, gói **bonus %**, admin
+sửa được, **mọi tiền qua `credit.nap` (sổ H3)**, đơn **idempotent**.
+
+- **H9.1** `CreditPackage` + `PaymentOrder` (cờ `credited` = chống cộng đôi);
+  `billing_math` (base/bonus/tổng, tỉ giá 100đ) — một chỗ. Migration `f0a1b2c3d4e5`.
+- **H9.2** `platform_core/payments` (registry cổng) + adapter `payos.py`: tạo
+  payment link + verify webhook HMAC-SHA256 checksumKey; **tắt mềm** khi thiếu
+  `LTT_PAYOS_*` (dev/test chạy).
+- **H9.3** `billing.py`: `tao_don` + `ghi_nhan_tra` **idempotent** (khoá dòng đơn
+  + cờ credited → webhook lặp/mark-paid lại KHÔNG cộng đôi) + `het_han` + `doanh_thu`.
+- **H9.4** `/nap` (gói + bonus + tổng) → `/nap/don/{id}` (nút PayOS + HTMX poll
+  trạng thái); wire header **Bảng giá/Nạp thêm → /nap**.
+- **H9.5** `POST /webhooks/payment/payos` — miễn CSRF (API) nhưng **bắt buộc chữ
+  ký**; đơn không tồn tại vẫn ack 200 (ping xác minh của PayOS).
+- **H9.6** Admin sâu: **Doanh thu** (VND/credit/đơn) + **Gói nạp** (CRUD + bật/tắt)
+  + **Đơn hàng** (lọc trạng thái + **Đã trả** tay dự phòng, vẫn idempotent).
+- `tools/seed_credit_packages.py` seed 5 gói (50K→1tr, bonus 0→20%).
+
+**Nghiệm thu (production):** deploy `setup\2`; migration `f0a1b2c3d4e5`;
+`/health/ready` 200; seed 5 gói; **kiểm trình duyệt**: `/nap` hiện 5 gói đúng
+bonus (1tr→12.000cr), tạo đơn ra trang đơn (báo "cổng chưa cấu hình" đúng vì chưa
+nhập `LTT_PAYOS_*`), admin **Gói/Đơn/Doanh thu** hoạt động, bấm **Đã trả** cộng
+credit + doanh thu lên đúng (50.000đ/500cr/1 đơn), 0 lỗi console. Full suite
+**1615 pass / 4 skip**, scan 0. Test H9: 17. Dữ liệu nghiệm thu đã **dọn sạch**
+(bù -500 credit + xoá đơn test → sổ về 0).
+
+**Bật PayOS thật (khi có tài khoản):** thêm vào `secrets\app.env`:
+`LTT_PAYOS_CLIENT_ID`, `LTT_PAYOS_API_KEY`, `LTT_PAYOS_CHECKSUM_KEY` rồi
+`Restart-Service LTTStudioWeb`. Khai webhook ở dashboard PayOS trỏ về
+`https://app.lttstudios.com/webhooks/payment/payos`. Trước đó cổng **tắt mềm**:
+khách vẫn tạo được đơn, admin cộng credit tay ở **Đơn hàng → Đã trả**.
+
+---
+
 ## 2026-08-01 — H8 Pha 2: telemetry · cascade · làm mới model — XONG
 
 Nối tiếp H8 Pha 1 (bộ máy APIKEYS). Ba năng lực theo kế hoạch, mỗi bước có test.
