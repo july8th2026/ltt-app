@@ -14,7 +14,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, DateTime, Index, Integer, JSON, String, Text,
+from sqlalchemy import (BigInteger, Boolean, DateTime, Index, Integer, JSON, String, Text,
                         UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -335,6 +335,17 @@ class ApiKey(Base):
     total_requests: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_success: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     total_failed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Telemetry rpm/tpm/token (H8 Pha 2). Giới hạn 0 = không giới hạn. Cửa sổ cố
+    # định 60s ngay trong hàng (không cần bảng time-series cho quy mô này):
+    # allocator bỏ qua key đã chạm rpm/tpm trong cửa sổ, tự reset khi quá hạn.
+    rpm_limit: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tpm_limit: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_tokens: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    window_requests: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    window_tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
 

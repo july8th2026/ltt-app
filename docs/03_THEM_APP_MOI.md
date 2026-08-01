@@ -172,6 +172,20 @@ gọi API chùa. Provider mới (auth_style, base_url, model) khai ở
 `platform_core/providers.py` — thêm một dòng, không sửa app. Khoá cookie/browser
 (Veo, ChatGPT web) là loại KHÁC, chưa thuộc bộ máy này.
 
+**Pha 2 — cascade + telemetry (khi cần bền hơn):** muốn một loại API tự rớt sang
+provider khác khi provider chính cạn key, xin theo *category* thay vì cố định
+provider:
+
+```python
+key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                        thu_tu_provider=["gemini", "apiai", "cheapkeyai"])
+```
+
+`chon_key` gom key mọi provider phục vụ category, tôn trọng thứ tự ưu tiên, bỏ key
+cooldown/tắt/đã chạm `rpm_limit`/`tpm_limit`. Khi biết số token đã tiêu, báo lại để
+kế toán tải: `api_pool.danh_dau_thanh_cong(db, key, tokens=<so_token>)`. Admin đặt
+`rpm_limit`/`tpm_limit` cho từng key ở `/admin` → APIKEYS.
+
 ## 3. `routes.py`
 
 ```python

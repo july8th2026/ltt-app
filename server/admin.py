@@ -162,8 +162,9 @@ class ApiKeysConsole(BaseView):
 
     @expose("/apikeys", methods=["GET"])
     async def console(self, request: Request):
-        from platform_core import api_keys
+        from platform_core import api_keys, api_pool, providers
         from server.auth.csrf import issue_csrf_token
+        _co_refresh = {p.id for p in providers.list_all() if p.list_models_path}
 
         cat = request.query_params.get("cat", "all")
         gen = get_session(); db = next(gen)
@@ -197,6 +198,9 @@ class ApiKeysConsole(BaseView):
         rows = ""
         for k in shown:
             toggle = act_form(k, "enable", "Bật") if not k.enabled else act_form(k, "disable", "Tắt")
+            refresh = act_form(k, "refresh", "Làm mới") if k.provider in _co_refresh else ""
+            _rpm = api_pool.rpm(k)
+            cap = f'/{k.rpm_limit}' if k.rpm_limit else ''
             rows += (
                 f'<tr><td><span class="prov">{_prov_dot(k.provider)}{escape(k.provider)}</span></td>'
                 f'<td>{escape(k.name or "")}</td>'
@@ -205,11 +209,12 @@ class ApiKeysConsole(BaseView):
                 f'<td>{_status_badge(k)}</td>'
                 f'<td>{_health_bar(k.health_score)}</td>'
                 f'<td class="tnum">{k.priority}</td>'
+                f'<td class="tnum muted" style="font-size:12px">{_rpm}{cap}/min<br>{k.total_tokens} tok</td>'
                 f'<td><div class="rowactions">'
                 f'<a class="btn ghost sm" href="/admin/api-key-test?id={escape(k.id)}">Test</a>'
-                f'{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
+                f'{refresh}{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
         if not shown:
-            rows = ('<tr><td colspan="8" class="muted" style="padding:26px;text-align:center">'
+            rows = ('<tr><td colspan="9" class="muted" style="padding:26px;text-align:center">'
                     'Chưa có key nào ở mục này. Bấm “＋ Thêm key”.</td></tr>')
 
         active_cnt = sum(1 for k in keys if k.enabled and k.status == "active")
@@ -225,7 +230,7 @@ class ApiKeysConsole(BaseView):
             f'<div class="tabs">{tabs}</div>'
             f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
-            f'<th>Health</th><th>Ưu tiên</th><th style="text-align:right">Thao tác</th>'
+            f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th style="text-align:right">Thao tác</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
         return HTMLResponse(_admin_shell("APIKEYS", "apikeys", body))
 
@@ -558,6 +563,15 @@ class ApiKeyActionView(BaseView):
             elif op == "reset":
                 key.status = APIKEY_ACTIVE; key.cooldown_until = None
                 key.error_count = 0; key.auth_error_count = 0
+            elif op == "refresh":
+                # Làm mới model sống từ provider -> ghi supported_models (H8 Pha 2).
+                from platform_core import providers, providers_live
+                prov = providers.get(key.provider)
+                try:
+                    models = providers_live.lay_models_song(prov, api_keys.lay_credential(db, key))
+                    api_keys.cap_nhat_supported_models(db, key, models)
+                except providers_live.ProviderLiveError:
+                    pass      # không làm mới được thì giữ nguyên, không làm sập trang
             db.commit()
         finally:
             try: next(gen)
@@ -582,19 +596,56 @@ class ModelsView(BaseView):
             ) or '<span class="muted" style="font-size:12px">chưa khai model — key nhận mọi model</span>'
             kind = ('<span class="badge b-grey"><span class="dot"></span>async</span>'
                     if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>sync</span>')
+            refresh = (f'<a class="btn ghost sm" href="/admin/api-models-refresh?provider={escape(p.id)}">Làm mới</a>'
+                       if p.list_models_path else '<span class="muted" style="font-size:12px">—</span>')
             rows += (f'<tr><td><span class="prov">{_prov_dot(p.id)}{escape(p.id)}</span></td>'
                      f'<td class="mono muted" style="font-size:12px">{escape(p.auth_style)}</td>'
                      f'<td>{escape(", ".join(p.categories))}</td>'
-                     f'<td style="line-height:2">{ms}</td><td>{kind}</td></tr>')
+                     f'<td style="line-height:2">{ms}</td><td>{kind}</td><td>{refresh}</td></tr>')
         body = f"""<div class="adm-content">
 <div class="pagehead"><div><h1>Provider &amp; Models</h1>
-<p>Registry: <code>platform_core/providers.py</code>. Thêm provider/model = sửa file này. Làm-mới-model tự động: Pha 2.</p></div>
+<p>Registry: <code>platform_core/providers.py</code>. Thêm provider/model = sửa file này.
+“Làm mới” gọi endpoint sống của provider (dùng key ưu tiên nhất) để lấy model thật.</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
 <a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>
 <div class="tablewrap"><table class="ui-table"><thead><tr>
-<th>Provider</th><th>Auth</th><th>Category</th><th>Models</th><th>Kiểu</th></tr></thead>
+<th>Provider</th><th>Auth</th><th>Category</th><th>Models (registry)</th><th>Kiểu</th><th>Sống</th></tr></thead>
 <tbody>{rows}</tbody></table></div></div>"""
         return HTMLResponse(_admin_shell("Models", "apikeys", body))
+
+    @expose("/api-models-refresh", methods=["GET"])
+    async def refresh(self, request: Request):
+        """Lấy danh sách model SỐNG từ provider (dùng key active ưu tiên nhất) và
+        hiện ra — chỉ đọc. Ghi vào key thì bấm “Làm mới” ở từng key (POST)."""
+        from platform_core import api_keys, providers, providers_live
+        from platform_core.models import APIKEY_ACTIVE
+        prov_id = request.query_params.get("provider", "")
+        prov = providers.get(prov_id)
+        gen = get_session(); db = next(gen)
+        try:
+            candidates = [k for k in api_keys.liet_ke(db, provider=prov_id)
+                          if k.enabled and k.status == APIKEY_ACTIVE]
+            if prov is None:
+                note, models = "Provider không tồn tại.", []
+            elif not candidates:
+                note, models = "Chưa có key active cho provider này.", []
+            else:
+                try:
+                    models = providers_live.lay_models_song(
+                        prov, api_keys.lay_credential(db, candidates[0]))
+                    note = f"{len(models)} model sống (qua key {escape(candidates[0].key_preview)})."
+                except providers_live.ProviderLiveError as e:
+                    note, models = f"Lỗi làm mới: {escape(str(e))}", []
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        chips = " ".join(f'<span class="chip">{escape(m)}</span>' for m in models) \
+            or '<span class="muted" style="font-size:12px">—</span>'
+        body = f"""<div class="adm-content" style="max-width:760px">
+<div class="pagehead"><div><h1>Model sống — {escape(prov_id)}</h1><p>{note}</p></div>
+<div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Models</a></div></div>
+<div class="ui-card" style="line-height:2.2">{chips}</div></div>"""
+        return HTMLResponse(_admin_shell("Model sống", "apikeys", body))
 
 
 def _probe_key(prov, credential: str):

@@ -654,6 +654,54 @@ làm mới model tự động.
 
 ---
 
+## H8 — Bộ máy APIKEYS — Pha 2 📋 (telemetry · cascade · làm mới model)
+
+**Mục tiêu:** một key hỏng/nghẽn KHÔNG làm chết cả loại API; admin thấy tải thực;
+model không còn hardcode. Giữ nguyên bất biến Pha 1 (không lộ credential thô; app
+xin key qua engine; thêm provider = sửa `providers.py`).
+
+### H8.8 — Telemetry rpm/tpm/token (cửa sổ trượt trong-hàng)
+- `models.py` thêm cột vào `ApiKey`: `rpm_limit`, `tpm_limit` (Integer, 0 = không
+  giới hạn), `total_tokens` (BigInteger), và cửa sổ cố định 60s ngay trong hàng:
+  `window_start` (DateTime), `window_requests`, `window_tokens` (Integer). KHÔNG
+  lập bảng time-series (thừa cho quy mô này) — cửa sổ cố định đủ để chặn tải + hiện số.
+- `api_pool.py`: `_cuon_cua_so(key, now)` reset cửa sổ khi quá 60s; `lay_key`/
+  `chon_key` **bỏ qua** key đã chạm `rpm_limit`/`tpm_limit` trong cửa sổ hiện tại
+  (coi như tạm hết), tăng `window_requests` khi chọn. `danh_dau_thanh_cong(...,
+  tokens=0)` cộng token vào `window_tokens` + `total_tokens`. Hàm `rpm(key)`/`tpm(key)`.
+- Migration thêm cột (chain từ `d8e9f0a1b2c3`).
+- **Test:** cửa sổ reset sau 60s; `rpm_limit` chặn chọn key; kế toán token cộng đúng.
+
+### H8.9 — Cascade đa-provider (theo category)
+- `api_pool.py`: `chon_key(db, *, category, model=None, thu_tu_provider=None)` gom
+  key **mọi provider** phục vụ `category` (tự hồi cooldown, bỏ disabled/rate-cap,
+  lọc `model`), xếp theo (thứ tự provider ưu tiên nếu có) → `priority desc` →
+  `health desc` → tải thấp. `lay_key(db, provider, ...)` giữ nguyên chữ ký, gọi
+  `chon_key` với `thu_tu_provider=[provider]` (tương thích ngược). `ThieuKeyError`
+  khi cạn mọi provider.
+- **Test:** gemini cạn (cooldown hết) → rớt sang apiai; tôn trọng thứ tự provider;
+  lọc model xuyên provider; hết sạch → `ThieuKeyError`.
+
+### H8.10 — Làm mới model tự động
+- `platform_core/providers_live.py`: `lay_models_song(prov, credential) -> list[str]`
+  gọi `list_models_path`, parse cả hai dạng: OpenAI `{"data":[{"id":...}]}` (bearer)
+  và Gemini `{"models":[{"name":"models/..."}]}` (query_key). Che credential khi lỗi.
+- `api_keys.py`: `cap_nhat_supported_models(db, key, models)` ghi `supported_models`
+  từ danh sách sống (thay hardcode). Provider video (không có `list_models_path`)
+  bỏ qua.
+- `admin.py`: nút **"Làm mới model"** ở ModelsView (dùng key active ưu tiên nhất của
+  provider để lấy danh sách sống, hiện ra) + trên từng key (ghi vào `supported_models`).
+- **Test:** parse OpenAI; parse Gemini; cập nhật `supported_models` (mock httpx);
+  provider không có endpoint → không đổi gì.
+
+### Thứ tự & tiêu chí xong H8 (Pha 2)
+H8.8 → H8.9 → H8.10; mỗi bước xanh test mới sang bước sau. **Xong Pha 2 khi:**
+allocator tôn trọng rpm/tpm + kế toán token; cascade rớt provider khi cạn key;
+admin làm mới được model sống; migration chạy trên production; full suite xanh +
+scan 0 + kiểm trình duyệt `/admin/apikeys`.
+
+---
+
 ## H8 — Bộ máy APIKEYS (quản trị nguồn API) — Pha 1 📋 (kế hoạch gốc)
 
 **Nguồn:** khảo sát `docs/KHAO_SAT_APIKEYS.md` (từ D:\BOT GEMINI). **Quyết định

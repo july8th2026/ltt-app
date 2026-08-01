@@ -173,3 +173,116 @@ def test_thanh_cong_reset_loi(db):
     api_pool.danh_dau_loi(db, k, http_status=500)      # 5xx -> error_count++
     api_pool.danh_dau_thanh_cong(db, k); db.commit()
     assert k.error_count == 0 and k.total_success == 1 and k.status == APIKEY_ACTIVE
+
+
+# ── H8.8 Telemetry rpm/tpm/token ──────────────────────────────────────────────
+def test_cua_so_reset_sau_60s(db):
+    from datetime import timedelta, timezone, datetime
+    from platform_core import api_keys, api_pool
+    k = api_keys.tao_key(db, provider="gemini", credential="k"); db.commit()
+    api_pool.lay_key(db, "gemini")            # window_requests = 1
+    assert k.window_requests == 1
+    # Giả lập cửa sổ đã cũ >60s -> lần chọn sau phải reset rồi đếm lại từ 1.
+    k.window_start = datetime.now(timezone.utc) - timedelta(seconds=61); db.commit()
+    api_pool.lay_key(db, "gemini")
+    assert k.window_requests == 1 and k.total_requests == 2
+
+
+def test_rpm_limit_chan_chon_key(db):
+    from platform_core import api_keys, api_pool
+    k = api_keys.tao_key(db, provider="gemini", credential="k"); db.commit()
+    k.rpm_limit = 2; db.commit()
+    api_pool.lay_key(db, "gemini")            # 1
+    api_pool.lay_key(db, "gemini")            # 2 -> chạm trần
+    with pytest.raises(api_pool.ThieuKeyError):
+        api_pool.lay_key(db, "gemini")        # bị rate-cap trong cửa sổ
+
+
+def test_ke_toan_token_va_tpm(db):
+    from platform_core import api_keys, api_pool
+    k = api_keys.tao_key(db, provider="gemini", credential="k"); db.commit()
+    api_pool.lay_key(db, "gemini")
+    api_pool.danh_dau_thanh_cong(db, k, tokens=100); db.commit()
+    assert k.total_tokens == 100 and k.window_tokens == 100
+    api_pool.danh_dau_thanh_cong(db, k, tokens=50); db.commit()
+    assert k.total_tokens == 150 and api_pool.tpm(k) == 150
+    # tpm_limit chặn: đặt trần 150, đã dùng 150 -> hết quota token
+    k.tpm_limit = 150; db.commit()
+    with pytest.raises(api_pool.ThieuKeyError):
+        api_pool.lay_key(db, "gemini")
+
+
+# ── H8.9 Cascade đa-provider ──────────────────────────────────────────────────
+def test_cascade_rot_sang_provider_khac(db):
+    from platform_core import api_keys, api_pool
+    from platform_core.models import APIKEY_CAT_CHAT
+    g = api_keys.tao_key(db, provider="gemini", credential="g",
+                         categories=[APIKEY_CAT_CHAT])
+    a = api_keys.tao_key(db, provider="apiai", credential="a",
+                         categories=[APIKEY_CAT_CHAT]); db.commit()
+    # Đẩy gemini vào cooldown -> cascade phải rớt sang apiai.
+    api_pool.danh_dau_loi(db, g, http_status=429, retry_after_s=300); db.commit()
+    chon = api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                             thu_tu_provider=["gemini", "apiai"])
+    assert chon.id == a.id
+
+
+def test_cascade_ton_trong_thu_tu_provider(db):
+    from platform_core import api_keys, api_pool
+    from platform_core.models import APIKEY_CAT_CHAT
+    g = api_keys.tao_key(db, provider="gemini", credential="g",
+                         categories=[APIKEY_CAT_CHAT], priority=100)
+    a = api_keys.tao_key(db, provider="apiai", credential="a",
+                         categories=[APIKEY_CAT_CHAT], priority=100); db.commit()
+    assert api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                             thu_tu_provider=["apiai", "gemini"]).id == a.id
+    assert api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                             thu_tu_provider=["gemini", "apiai"]).id == g.id
+
+
+def test_cascade_loc_model_xuyen_provider(db):
+    from platform_core import api_keys, api_pool
+    from platform_core.models import APIKEY_CAT_CHAT
+    g = api_keys.tao_key(db, provider="gemini", credential="g",
+                         categories=[APIKEY_CAT_CHAT], supported_models=["m1"])
+    a = api_keys.tao_key(db, provider="apiai", credential="a",
+                         categories=[APIKEY_CAT_CHAT], supported_models=["m2"]); db.commit()
+    assert api_pool.chon_key(db, category=APIKEY_CAT_CHAT, model="m2").id == a.id
+    assert api_pool.chon_key(db, category=APIKEY_CAT_CHAT, model="m1").id == g.id
+
+
+def test_cascade_can_het_raise(db):
+    from platform_core import api_pool
+    from platform_core.models import APIKEY_CAT_VIDEO
+    with pytest.raises(api_pool.ThieuKeyError):
+        api_pool.chon_key(db, category=APIKEY_CAT_VIDEO)
+
+
+# ── H8.10 Làm mới model tự động ───────────────────────────────────────────────
+def test_parse_models_openai():
+    from platform_core import providers_live
+    from platform_core.providers import AUTH_BEARER
+    data = {"data": [{"id": "gpt-4o"}, {"id": "gpt-4o-mini"}, {"id": "gpt-4o"}]}
+    assert providers_live.parse_models(data, AUTH_BEARER) == ["gpt-4o", "gpt-4o-mini"]
+
+
+def test_parse_models_gemini():
+    from platform_core import providers_live
+    from platform_core.providers import AUTH_QUERY_KEY
+    data = {"models": [{"name": "models/gemini-2.5-flash"},
+                       {"name": "models/gemini-2.5-flash-image"}]}
+    assert providers_live.parse_models(data, AUTH_QUERY_KEY) == [
+        "gemini-2.5-flash", "gemini-2.5-flash-image"]
+
+
+def test_lay_models_song_khong_endpoint_nem():
+    from platform_core import providers, providers_live
+    with pytest.raises(providers_live.ProviderLiveError):
+        providers_live.lay_models_song(providers.get("plenx"), "pk_x")  # video, không có endpoint
+
+
+def test_cap_nhat_supported_models_khu_trung(db):
+    from platform_core import api_keys
+    k = api_keys.tao_key(db, provider="gemini", credential="k"); db.commit()
+    api_keys.cap_nhat_supported_models(db, k, ["x", "x", "y", "", " z "]); db.commit()
+    assert k.supported_models == ["x", "y", "z"]

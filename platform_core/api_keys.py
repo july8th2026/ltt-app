@@ -77,6 +77,21 @@ def lay_credential(db: DbSession, key: ApiKey) -> str:
     return secretbox.giai_ma(key.credential_enc)
 
 
+def cap_nhat_supported_models(db: DbSession, key: ApiKey, models) -> None:
+    """Ghi `supported_models` từ danh sách model SỐNG (H8 Pha 2, làm mới model).
+
+    Chuẩn hoá: bỏ rỗng, khử trùng, giữ thứ tự. Không đụng credential."""
+    seen = set()
+    out = []
+    for m in (models or []):
+        m = str(m).strip()
+        if m and m not in seen:
+            seen.add(m)
+            out.append(m)
+    key.supported_models = out
+    db.flush()
+
+
 def lay_key_theo_id(db: DbSession, key_id: str) -> Optional[ApiKey]:
     return db.get(ApiKey, key_id)
 
