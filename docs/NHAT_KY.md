@@ -46,6 +46,16 @@ trend + style chữ + directive tiếng Việt), 0 lỗi console.
 `prompt_fragments.py` lỡ ghi chữ "thumbnail" → đã đổi thành mô tả chung. Test này
 giữ đúng bất biến "nền tảng không biết tên app cụ thể".
 
+**Bug web thật (sau deploy, người dùng báo) + FIX:** trên `app.lttstudios.com` các
+nhóm lựa chọn hiện thành **radio thô** thay vì chip. Nguyên nhân: **Cloudflare cache
+`ltt.css` CŨ** (TTL 4h, `cf-cache-status: HIT`, thiếu `.chip-opt`) — origin/loopback
+đã đúng nên kiểm loopback KHÔNG thấy. Fix: **cache-bust** `ltt.css?v=<md5 nội dung>`
+(`templating.py:ASSET_VER`, dùng ở base*/admin) → đổi CSS = đổi URL = tải mới ngay
+(HTML đã `no-store` nên link version tới user tức thì). Đã kiểm **trên URL công khai
+thật**: chip hiển thị đúng, versioned CSS qua CF có `.chip-opt`. Bổ sung **quy tắc
+5b + 6** vào CLAUDE.md (kiểm URL công khai, không chỉ loopback; đổi static phải
+cache-bust).
+
 ---
 
 ## 2026-08-01 — H9: Thanh toán / nạp credit (PayOS agnostic) — XONG
