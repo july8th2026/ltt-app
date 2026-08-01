@@ -14,6 +14,40 @@
 
 ---
 
+## 2026-08-01 — Đợt R: nâng thumbnail đạt PARITY + "nhà máy di trú" — XONG
+
+Khởi động chương trình di trú module BOT GEMINI (PA3, xem `KE_HOACH_DI_TRU_MODULE.md`).
+Đợt R = app tham chiếu + scaffolding dùng chung, khoá công thức cho mọi app sau.
+
+**Bối cảnh:** audit `DOI_CHIEU_THUMBNAIL.md` phát hiện bản thumbnail H5 chỉ đạt ~30%
+tính năng người dùng của bản gốc (dựng lại tối giản, prompt hardcode). Nguyên nhân
+gốc = quy trình thiếu chuẩn "di trú trung thành" (`CONG_THUC_DI_TRU_APP.md`).
+
+- **Nhà máy** `platform_core/prompt_fragments.py`: ghép prompt từ FRAGMENT
+  (`.txt` + `_labels.json`), an toàn path-traversal — năng lực nền tảng tái dùng;
+  **cấm hardcode prompt** trong `jobs.py`.
+- **Registry** `providers.py`: 3 model ảnh gemini active + `display_name` → UI chọn
+  model từ registry.
+- **thumbnail parity**: copy nguyên catalog gốc `apps/thumbnail/prompts/` (6 style
+  chữ + 11 phong cách + 9 kiểu trend + 5 ngôn ngữ); `build_prompt` ghép fragment;
+  chọn model; UI mới (chip group + phụ đề + ngôn ngữ + tỉ lệ 5 + **xem-trước-prompt
+  HTMX** + result grid); CSS kit tái dùng trong `ltt.css`. Parity ~30% → **~93%**.
+- **Tạm bỏ (ghi lý do):** ảnh tham chiếu + Imagen (gốc chưa hoàn thiện) + Batch
+  (fast-follow).
+- **Quy tắc chốt:** `03_THEM_APP_MOI.md` + `KHAO_SAT_BOT_GEMINI.md` phân biệt
+  viết-mới vs di-trú, cổng **parity ≥ 90%**, quy ước `apps/<slug>/prompts/`.
+
+**Nghiệm thu:** `test_77` parity gate; full suite **1625 pass / 4 skip**; scan 0;
+deploy `setup\2` (598 file); `/health/ready` 200; **kiểm trình duyệt**: UI đủ 4 nhóm
+lựa chọn + chọn model + xem-trước-prompt ghép ĐÚNG từ fragment (base + phong cách +
+trend + style chữ + directive tiếng Việt), 0 lỗi console.
+
+**Bẫy bắt được:** `test_60` chặn hardcode slug app trong platform — docstring
+`prompt_fragments.py` lỡ ghi chữ "thumbnail" → đã đổi thành mô tả chung. Test này
+giữ đúng bất biến "nền tảng không biết tên app cụ thể".
+
+---
+
 ## 2026-08-01 — H9: Thanh toán / nạp credit (PayOS agnostic) — XONG
 
 Quyết định Q31 (`QUYET_DINH_NEN_TANG.md`): cổng **PayOS** (VietQR + webhook chữ
