@@ -14,6 +14,33 @@
 
 ---
 
+## 2026-08-01 — H10: R2 object storage — XONG (nút cổ chai đã mở)
+
+Mở nút cổ chai chặn Đợt B/C + serve file lớn. Người dùng cho phép **lấy creds R2 +
+ModelArk AK/SK từ BOT GEMINI**.
+
+- `platform_core/storage.py`: **R2Storage** (S3-compat, boto3 nạp lười) +
+  `Storage.url_for()` (presigned GET). `get_storage()` chọn R2 khi `LTT_STORAGE=r2`
+  + đủ `LTT_R2_*`; lỗi → fallback Local (có log).
+- Serve: taovideo/thumbnail/taoanh **ưu tiên `url_for` → RedirectResponse** (tải
+  thẳng R2 CDN, né trần 100MB); Local vẫn serve như cũ.
+- `tools/import_r2_modelark_from_botgemini.py`: đọc `data/r2_storage.json` +
+  `data/modelark_asset.json` của BOT GEMINI, **giải mã Fernet** (khoá của BOT
+  GEMINI) → ghi `secrets\app.env` (`LTT_R2_*`, `LTT_MODELARK_*`, `LTT_STORAGE=r2`)
+  — KHÔNG BOM, KHÔNG in giá trị, idempotent. Đã sao lưu app.env trước khi ghi.
+- `boto3` thêm vào requirements-server; `setup\2` đọc CẢ app.env → NSSM env mỗi lần
+  chạy nên biến mới tự vào dịch vụ.
+
+**Nghiệm thu THẬT trên production**: `setup\2` (boto3 1.43.62 cài xong, health 200);
+script kiểm R2: backend=R2Storage, **put→url_for presigned→HTTP GET 200 khớp→delete**
+trên bucket `fb-video-storage` thật. Full suite **1649 pass**, scan 0.
+
+**Hệ quả mở khoá:** Đợt B (ffmpeg file lớn) + serve video 4K/dài + (sau) agent-video.
+ModelArk AK/SK giờ đã có → **asset:// của seedance Pha 2 hết chặn** (còn face-moderation
+cần insightface).
+
+---
+
 ## 2026-08-01 — Đợt A2 Pha 1: `taovideo` (seedance_video) — video async + cost thật — XONG
 
 App VIDEO đầu tiên. Người dùng chốt: **làm full seedance, BỎ plenx + gemini_video**

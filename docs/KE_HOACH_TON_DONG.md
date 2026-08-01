@@ -31,7 +31,7 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 ### Nhóm 4 — Mở nhóm tool mới (cần hạ tầng) — **P2**
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
-| 4.1 | **H10 — R2**: `Storage.url_for` + presigned + upload thẳng browser→R2 | L | tài khoản R2 | Mở Đợt B/C + serve file lớn bền + agent-video |
+| 4.1 | **H10 — R2** | — | — | ✅ **XONG 2026-08-01**: R2Storage + url_for presigned + serve thẳng CDN; creds R2 + ModelArk AK/SK import từ BOT GEMINI; kiểm THẬT trên bucket fb-video-storage. Còn **upload thẳng browser→R2** (presigned PUT) làm khi Đợt B cần. |
 | 4.2 | **Định tuyến job GPU** (worker theo `requires=gpu`) | M | — | Mở Đợt C |
 | 4.3 | Đợt B (ffmpeg): video_chain → auto_sub_video → concat_pro | L | 4.1 | |
 | 4.4 | Đợt C (gpu): video_upscale → cut_clip_short | L | 4.1 + 4.2 | |
