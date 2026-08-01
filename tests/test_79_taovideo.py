@@ -116,3 +116,36 @@ def test_refs_build_content():
     assert content[0]["type"] == "text"
     assert content[1]["type"] == "image_url" and content[1]["role"] == "first_frame"
     assert content[1]["image_url"]["url"].startswith("data:image/png")
+
+
+# ── Pha 2b: asset:// + face (assets.py) ───────────────────────────────────────
+def test_assets_creds_thieu_nem(monkeypatch):
+    from apps.taovideo import assets
+    for k in ("LTT_MODELARK_ACCESS_KEY", "LTT_MODELARK_SECRET_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    with pytest.raises(assets.AssetError):
+        assets._creds()
+
+
+def test_assets_creds_co(monkeypatch):
+    from apps.taovideo import assets
+    monkeypatch.setenv("LTT_MODELARK_ACCESS_KEY", "ak")
+    monkeypatch.setenv("LTT_MODELARK_SECRET_KEY", "sk")
+    monkeypatch.setenv("LTT_MODELARK_REGION", "ap-southeast-1")
+    assert assets._creds() == ("ak", "sk", "ap-southeast-1")
+
+
+def test_assets_has_face_anh_khong_mat():
+    from apps.taovideo import assets
+    import io
+    from PIL import Image
+    buf = io.BytesIO(); Image.new("RGB", (200, 200), (20, 90, 200)).save(buf, format="PNG")
+    assert assets.has_face(buf.getvalue()) is False   # ảnh trơn → không mặt
+
+
+def test_jobs_privacy_output_detect():
+    from apps.taovideo import jobs
+    assert jobs._looks_privacy("InputImage may contain real person") is True
+    assert jobs._looks_privacy("portrait detected") is True
+    assert jobs._looks_output_mod("output_video_moderation failed") is True
+    assert jobs._looks_privacy("timeout") is False

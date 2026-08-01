@@ -15,12 +15,25 @@ import time
 
 import random
 
-from apps.taovideo import cost, modelark, models, refs
+from apps.taovideo import assets, cost, modelark, models, refs
 
 POLL_INTERVAL_S = 5
 POLL_MAX_MINUTES = 15          # đủ cho hầu hết job; worker giữ job suốt thời gian này
 _POLL_MAX = POLL_MAX_MINUTES * 60 // POLL_INTERVAL_S
 MOD_RETRY_MAX = 5              # kiểm duyệt đầu ra → đổi seed render lại (block bill 0 token)
+HEAL_MAX = 2                  # bị chặn INPUT người-thật → chuyển ref sang asset:// (≤2 pass)
+
+_PRIVACY_KW = ("real person", "may contain real", "portrait", "face", "privacy",
+               "sensitive", "inputimage", "inputvideo")
+_MOD_KW = ("moderat", "risk control", "output_video")
+
+
+def _looks_privacy(msg: str) -> bool:
+    return any(k in msg for k in _PRIVACY_KW)
+
+
+def _looks_output_mod(msg: str) -> bool:
+    return any(k in msg for k in _MOD_KW)
 
 
 def _lay_key():
@@ -90,29 +103,51 @@ def handle(params: dict, ctx=None) -> dict:
         return {"video_key": vkey, "credit_cost": cost.uoc_luong_credit(
             model, resolution, duration, False)}
 
-    # Refs (Pha 2): ảnh tham chiếu inline ≤8MB (chuẩn hoá Pillow). Ảnh lớn/video/
-    # audio + heal người-thật cần asset:// (Pha 2b, đang bổ sung).
-    ref_dicts = []
+    # Refs (Pha 2): ảnh ≤8MB → inline (Pillow); ảnh >8MB / video / audio → asset://
+    # (R2 temp presigned → ModelArk CreateAsset). Giữ `data` để heal người-thật sau.
+    ref_items = []
     has_video_input = False
     for rs in (params.get("refs") or []):
         kind = (rs.get("kind") or "image").strip()
         skey = (rs.get("storage_key") or "").strip()
         if not skey:
             continue
+        data = storage.open(skey).read()
+        role = rs.get("role") or "reference_image"
+        handle = rs.get("handle") or ""
         if kind == "image":
-            data = storage.open(skey).read()
             try:
                 url = refs.image_to_inline(data)
             except refs.RefError:
-                raise RuntimeError("Ảnh tham chiếu > 8MB — bản này hỗ trợ ảnh ≤8MB "
-                                   "(ảnh lớn/video ref: Pha 2b asset://).")
-            ref_dicts.append({"kind": "image", "url": url,
-                              "role": rs.get("role") or "reference_image",
-                              "handle": rs.get("handle") or ""})
-        else:
-            has_video_input = True   # video/audio ref -> Pha 2b
-    content = refs.build_content(prompt, ref_dicts)
+                url = assets.to_asset("image", data)       # >8MB → asset://
+        else:                                              # video/audio → asset://
+            ext = ".mp4" if kind == "video" else ".m4a"
+            url = assets.to_asset(kind, data, ext)
+            if kind == "video":
+                has_video_input = True
+        ref_items.append({"kind": kind, "url": url, "role": role,
+                          "handle": handle, "data": data})
 
+    def _content():
+        return refs.build_content(prompt, [{"kind": it["kind"], "url": it["url"],
+                                            "role": it["role"], "handle": it["handle"]}
+                                           for it in ref_items])
+
+    def _heal(faces_only: bool) -> int:
+        n = 0
+        for it in ref_items:
+            if it["kind"] != "image" or it["url"].startswith("asset://"):
+                continue
+            if faces_only and not assets.has_face(it["data"]):
+                continue
+            try:
+                it["url"] = assets.to_asset("image", it["data"])
+                n += 1
+            except Exception as e:  # noqa: BLE001
+                pass
+        return n
+
+    content = _content()
     api_key, key_id = _lay_key()
     if not api_key:
         raise RuntimeError("Chưa có API key BytePlus (thêm ở /admin → APIKEYS).")
@@ -120,42 +155,60 @@ def handle(params: dict, ctx=None) -> dict:
     endpoint = models.provider_model(model)
     seed = None
     result = None
-    for mod_try in range(MOD_RETRY_MAX + 1):
+    mod_try = heal_stage = 0
+    while True:
         if ctx is not None:
-            ctx.progress(5, "gửi yêu cầu tạo video" + (f" (thử lại {mod_try})" if mod_try else ""))
+            ctx.progress(5, "gửi yêu cầu tạo video")
+        err = None
+        task_id = None
         try:
             task_id = modelark.submit(
                 api_key, model_endpoint=endpoint, content=content,
                 resolution=resolution, duration=duration, aspect_ratio=aspect,
                 generate_audio=audio, seed=seed)
         except modelark.ModelArkError as e:
-            _ket_qua_key(key_id, thanh_cong=False, last_status=e.status_code)
-            raise
+            err = str(e).lower()
+            if not (e.status_code == 400 and _looks_privacy(err)):
+                _ket_qua_key(key_id, thanh_cong=False, last_status=e.status_code)
+                raise
 
-        st_final = None
-        for i in range(_POLL_MAX):
-            if ctx is not None:
-                ctx.progress(min(90, 10 + int(i * 80 / _POLL_MAX)), "đang dựng video…")
-            time.sleep(POLL_INTERVAL_S)
-            try:
-                st = modelark.poll(api_key, task_id)
-            except modelark.ModelArkError:
-                continue
-            if st["status"] in ("succeeded", "failed", "expired", "cancelled"):
-                st_final = st
+        if task_id is not None:
+            st_final = None
+            for i in range(_POLL_MAX):
+                if ctx is not None:
+                    ctx.progress(min(90, 10 + int(i * 80 / _POLL_MAX)), "đang dựng video…")
+                time.sleep(POLL_INTERVAL_S)
+                try:
+                    st = modelark.poll(api_key, task_id)
+                except modelark.ModelArkError:
+                    continue
+                if st["status"] in ("succeeded", "failed", "expired", "cancelled"):
+                    st_final = st
+                    break
+            if st_final is None:
+                raise RuntimeError(f"Quá thời gian chờ ({POLL_MAX_MINUTES} phút) — thử lại sau.")
+            if st_final["status"] == "succeeded":
+                result = st_final
                 break
-        if st_final is None:
-            raise RuntimeError(f"Quá thời gian chờ ({POLL_MAX_MINUTES} phút) — thử lại sau.")
-        if st_final["status"] == "succeeded":
-            result = st_final
-            break
-        # Thất bại: nếu do KIỂM DUYỆT đầu ra → đổi seed render lại (block bill 0 token).
-        err = (st_final.get("error") or "").lower()
-        if mod_try < MOD_RETRY_MAX and ("moderat" in err or "sensitive" in err or "risk control" in err):
+            err = (st_final.get("error") or "").lower()
+
+        # Bị chặn INPUT người-thật → chuyển ref sang asset:// rồi gửi lại (≤2 pass).
+        if err and _looks_privacy(err) and heal_stage < HEAL_MAX and \
+                any(it["kind"] == "image" and not it["url"].startswith("asset://") for it in ref_items):
+            if ctx is not None:
+                ctx.progress(6, "bảo vệ ảnh người thật (asset://)…")
+            n = _heal(faces_only=(heal_stage == 0))
+            heal_stage += 1
+            if n > 0:
+                content = _content()
+                continue
+        # Kiểm duyệt ĐẦU RA → đổi seed render lại (block bill 0 token).
+        if err and _looks_output_mod(err) and mod_try < MOD_RETRY_MAX:
+            mod_try += 1
             seed = random.randint(1, 2_147_483_647)
             continue
         _ket_qua_key(key_id, thanh_cong=False)
-        raise RuntimeError(f"Tạo video thất bại: {st_final.get('error') or st_final['status']}")
+        raise RuntimeError(f"Tạo video thất bại: {err or 'không rõ'}")
 
     if ctx is not None:
         ctx.progress(92, "tải video về")
@@ -172,4 +225,4 @@ def handle(params: dict, ctx=None) -> dict:
         ctx.progress(100, "xong")
     return {"video_key": vkey, "credit_cost": credit_cost, "tokens": tokens,
             "resolution": resolution, "duration": duration, "model": model,
-            "refs": len(ref_dicts)}
+            "refs": len(ref_items)}

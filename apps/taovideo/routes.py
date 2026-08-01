@@ -108,22 +108,28 @@ async def translate(request: Request, prompt: str = Form(""), target: str = Form
         f'Sửa nếu cần rồi bấm Tạo video.</div>')
 
 
+_CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024, "audio": 20 * 1024 * 1024}
+
+
 async def _luu_refs(u_id: str, files, roles) -> list:
-    """Lưu ảnh tham chiếu vào storage → danh sách spec {kind,storage_key,role}. ≤3 ảnh, ≤8MB."""
+    """Lưu ref (ảnh/video/audio) → spec {kind,storage_key,role}. ≤4 tệp. Ảnh ≤8MB đi
+    inline; ảnh lớn/video/audio đi asset:// (worker lo). Cap: ảnh 20MB, video 60MB, audio 20MB."""
     from platform_core.storage import get_storage
     import io as _io
     storage = get_storage()
     specs = []
-    for i, f in enumerate((files or [])[:3]):
+    for i, f in enumerate((files or [])[:4]):
         if not f or not getattr(f, "filename", ""):
             continue
+        ct = (f.content_type or "").lower()
+        kind = "video" if ct.startswith("video") else "audio" if ct.startswith("audio") else "image"
         data = await f.read()
-        if not data or len(data) > 8 * 1024 * 1024:
+        if not data or len(data) > _CAP[kind]:
             continue
-        skey = f"taovideo/{u_id}/refs/{uuid.uuid4().hex}.img"
-        storage.put(skey, _io.BytesIO(data), content_type=f.content_type or "image/png")
+        skey = f"taovideo/{u_id}/refs/{uuid.uuid4().hex}"
+        storage.put(skey, _io.BytesIO(data), content_type=ct or "image/png")
         role = roles[i] if roles and i < len(roles) else "reference_image"
-        specs.append({"kind": "image", "storage_key": skey,
+        specs.append({"kind": kind, "storage_key": skey,
                       "role": role or "reference_image", "handle": ""})
     return specs
 
