@@ -1,0 +1,4 @@
+{
+
+"visual_style": "Phong cách tranh thủy mặc truyền thống châu Á (Sumi-e / Shuimohua), thẩm mỹ đơn sắc đen trắng. Vẻ ngoài vẽ tay với kết cấu cọ rõ nét, từ những vệt mực ướt đến những nét cọ khô thô ráp trên nền giấy gạo có vân. Chuyển động năng động, uyển chuyển giống như mực lan và thư pháp. Các tác động và vụ nổ được thể hiện dưới dạng những vệt mực đen hỗn loạn và những giọt mực thay vì ngọn lửa chân thực. Mang đậm không khí, u ám và nghệ thuật với độ tương phản cao. Bố cục điện ảnh. Tham khảo phong cách: Tranh phong cảnh cổ điển Trung Quốc, nghệ thuật thư pháp Nhật Bản, 'Truyện cổ tích về nàng công chúa Kaguya' (kết cấu hình ảnh). KHÔNG nhiều màu sắc, KHÔNG 3D, KHÔNG chân thực như ảnh chụp, KHÔNG có đường nét kỹ thuật số sắc nét. Tỷ lệ khung hình 16:9 toàn màn hình.không có lời thoại nhân vật"
+}

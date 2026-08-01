@@ -28,12 +28,12 @@
 
 | Hạng mục | Nội dung |
 |---|---|
-| Tên tự đặt | **LTT AI Studio v5.1** (trùng tên với dự án này — cần đặt lại tên để khỏi nhầm) |
+| Tên tự đặt | **LTT AI Studio v5.1** (trùng tênới dự án này — cần đặt lại tên để khỏi nhầm) |
 | Kiểu | Công cụ nội bộ, chạy trên máy cá nhân, nhiều nhân viên dùng chung |
 | Nền | FastAPI + Uvicorn + Jinja2 + Alpine.js (không build, không framework JS) |
 | Lưu trữ | **File JSON trong `data/`, không dùng database** — ghi nguyên tử (temp → rename) |
 | Đăng nhập | bcrypt 12 vòng + JWT trong RAM, vai trò `admin`/`user`, trạng thái `pending`/`approved`/`rejected` |
-| Chạy job | Hàng đợi asyncio trong tiến trình, worker pool, SSE đẩy tiến độ về trình duyệt |
+| Chạy job | Hàng đợi asyncio trong tiến trình, worker pool, SSE đẩy tiến độ về trình duyệt | v
 | Điểm mạnh | **Đã có sẵn nhiều người dùng, hạn mức, hàng đợi, phân quyền theo module, kho artifact** |
 | Điểm yếu với mục tiêu thương mại | Phụ thuộc Chrome/cookie, chạy trên máy để bàn có GPU, không thiết kế để mở ra Internet |
 
@@ -142,6 +142,13 @@ app/modules/<module_id>/
 5. tài liệu riêng trong `docs/` nếu có (ví dụ `D:\BOT GEMINI\docs\seedance_video/`,
    `D:\BOT GEMINI\docs\CODEX_MODULE_PLAN.md`);
 6. binary/vendor đi kèm (ví dụ `vendor/upscale` 48 MB cho `video_upscale`).
+
+> **Cách port CHUẨN (bắt buộc đọc):** `CONG_THUC_DI_TRU_APP.md` — bản đồ 7 lớp,
+> 4 rổ (COPY lõi+tài nguyên / VIẾT LẠI vỏ / THAY hạ tầng / BỎ desktop), công thức
+> 8 bước, và **cổng parity ≥ 90%**. Kế hoạch tổng theo đợt (module nào trước, hạ
+> tầng nào chặn): `KE_HOACH_DI_TRU_MODULE.md`. Ví dụ đối chiếu: `DOI_CHIEU_THUMBNAIL.md`.
+> **Nguyên tắc:** di trú = giữ trọn workflow + tài nguyên + UI, chỉ đổi vỏ và hạ
+> tầng — KHÔNG tự tối giản.
 
 ---
 

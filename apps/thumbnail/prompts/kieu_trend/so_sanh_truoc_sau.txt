@@ -1,0 +1,1 @@
+Before/After comparison layout: split-screen design with clear dividing line or arrow in the middle, left side showing "before" state (negative/old/broken), right side showing "after" state (positive/new/improved), dramatic contrast between two halves, transformation visual.

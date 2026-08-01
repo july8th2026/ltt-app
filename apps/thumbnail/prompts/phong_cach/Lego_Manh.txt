@@ -1,0 +1,3 @@
+{
+    "visual_style": "High-end 3D CGI animation, stylized proportions, The Lego Movie visual style, smooth simplified textures, vibrant saturated colors, toon shading, playful character design,photorealistic plastic textures, depth of field, bright colors, cinematic lighting, 8k resolution, stop-motion aesthetic. warm morning sunlight, soft shadows, no text overlays."
+}

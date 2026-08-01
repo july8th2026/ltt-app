@@ -1,48 +1,87 @@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+
+{% macro chipgroup(name, items, default) %}
+  <div class="chips">
+    {% for id, label in items %}
+      <label class="chip-opt">
+        <input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
 {% block content %}
+  <script src="/static/htmx.min.js"></script>
 
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
 
-  <div class="card">
-    <h2>Tạo thumbnail mới</h2>
-    <p class="muted" style="margin:0 0 12px;">
-      Nhập chủ đề, chọn tỉ lệ và số lượng. Mỗi ảnh tốn
+  <div class="ui-card">
+    <h2 style="margin:0 0 4px;">Tạo thumbnail mới</h2>
+    <p class="dim" style="margin:0 0 14px;">
+      Chọn phong cách, kiểu trend, style chữ, model rồi tạo. Mỗi ảnh tốn
       {{ app.credit_cost({'count': 1}) }} credit. Job chạy nền — xem tiến độ ở
-      <a href="/jobs">Việc của tôi</a>, ảnh xong sẽ hiện bên dưới.
+      <a href="/jobs">Việc của tôi</a>.
     </p>
+
     <form method="post" action="{{ app.route_prefix }}/queue">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <div class="row">
-        <div class="field" style="flex:1 1 100%;">
-          <label>Chủ đề / mô tả (bắt buộc)</label>
-          <input type="text" name="topic" required
-                 placeholder="vd: Hướng dẫn đầu tư chứng khoán cho người mới">
-        </div>
+
+      <div class="field">
+        <label>Ý tưởng / chủ đề (bắt buộc)</label>
+        <textarea name="topic" rows="2" required
+                  placeholder="vd: Hướng dẫn đầu tư chứng khoán cho người mới"></textarea>
       </div>
+
       <div class="row">
-        <div class="field">
-          <label>Tiêu đề trên ảnh (tuỳ chọn)</label>
-          <input type="text" name="title" placeholder="vd: KIẾM TIỀN 2026">
-        </div>
-        <div class="field">
-          <label>Tỉ lệ</label>
+        <div class="field"><label>Tiêu đề trên ảnh (tuỳ chọn)</label>
+          <input type="text" name="title" placeholder="vd: KIẾM TIỀN 2026"></div>
+        <div class="field"><label>Phụ đề (tuỳ chọn)</label>
+          <input type="text" name="subtitle" placeholder="vd: Từ số 0"></div>
+      </div>
+
+      <div class="ctrl"><label class="ctrl-lbl">Style chữ</label>
+        {{ chipgroup('text_style', catalog['text_style'], defaults['text_style']) }}</div>
+      <div class="ctrl"><label class="ctrl-lbl">Phong cách ảnh</label>
+        {{ chipgroup('phong_cach', catalog['phong_cach'], defaults['phong_cach']) }}</div>
+      <div class="ctrl"><label class="ctrl-lbl">Kiểu Thumbnail Trend</label>
+        {{ chipgroup('kieu_trend', catalog['kieu_trend'], defaults['kieu_trend']) }}</div>
+      <div class="ctrl"><label class="ctrl-lbl">Model AI</label>
+        {{ chipgroup('model', models, models[0][0] if models else '') }}</div>
+
+      <div class="row" style="margin-top:6px;">
+        <div class="field"><label>Tỉ lệ khung hình</label>
           <select name="aspect_ratio">
             {% for a in aspects %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
-          </select>
-        </div>
-        <div class="field">
-          <label>Số ảnh (1–4)</label>
-          <input type="number" name="count" value="1" min="1" max="4">
-        </div>
+          </select></div>
+        <div class="field"><label>Ngôn ngữ trong ảnh</label>
+          <select name="ngon_ngu">
+            {% for id, label in catalog['ngon_ngu'] %}
+              <option value="{{ id }}" {% if id == defaults['ngon_ngu'] %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        <div class="field"><label>Số ảnh (1–4)</label>
+          <input type="number" name="count" value="1" min="1" max="4"></div>
       </div>
-      <button type="submit">🖼️ Tạo thumbnail</button>
+
+      <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+        <button type="submit" class="btn">🖼️ Tạo thumbnail</button>
+        <button type="button" class="btn ghost"
+                hx-post="{{ app.route_prefix }}/preview"
+                hx-include="closest form" hx-target="#prompt-preview">Xem trước prompt</button>
+      </div>
     </form>
+
+    <div style="margin-top:14px;">
+      <label class="ctrl-lbl">Prompt gửi đi</label>
+      <div id="prompt-preview"><span class="dim">Bấm “Xem trước prompt” để xem prompt sẽ gửi.</span></div>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Ảnh của tôi</h2>
+  <div class="ui-card">
+    <h2 style="margin:0 0 10px;">Ảnh của tôi</h2>
     {% if not jobs %}
       <p class="dim" style="margin:0;">Chưa có ảnh nào. Tạo cái đầu tiên ở trên.</p>
     {% else %}
@@ -50,19 +89,16 @@
         <div style="border-top:1px solid var(--line); padding:12px 0;">
           <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
             {{ j.id[:8] }} ·
-            {% if j.status == 'done' %}<span class="badge badge-ok">xong</span>
-            {% elif j.status == 'error' %}<span class="badge badge-err">lỗi</span>
-            {% else %}<span class="badge badge-warn">{{ j.status }} {{ j.progress }}%</span>{% endif %}
+            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
+            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
+            {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.status }} {{ j.progress }}%</span>{% endif %}
           </div>
-          {% if j.status == 'error' and j.error %}
-            <p class="dim" style="font-size:12px;">{{ j.error }}</p>
-          {% endif %}
+          {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
           {% if j.image_keys %}
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div class="result-grid">
               {% for k in j.image_keys %}
                 <a href="{{ app.route_prefix }}/image/{{ k }}" target="_blank">
-                  <img src="{{ app.route_prefix }}/image/{{ k }}" alt="thumbnail"
-                       style="max-width:260px; border-radius:8px; border:1px solid var(--line);">
+                  <img src="{{ app.route_prefix }}/image/{{ k }}" alt="thumbnail" loading="lazy">
                 </a>
               {% endfor %}
             </div>
@@ -71,5 +107,4 @@
       {% endfor %}
     {% endif %}
   </div>
-
 {% endblock %}

@@ -33,9 +33,13 @@ class ModelInfo:
     endpoint: str = ""              # override đường endpoint nếu khác chuẩn provider
     endpoint_id: str = ""           # account endpoint (ModelArk), gửi làm field "model"
     is_active: bool = True
+    display_name: str = ""          # nhãn hiển thị UI (rỗng = dùng id)
 
     def real_model_id(self) -> str:
         return self.provider_model_id or self.id
+
+    def label(self) -> str:
+        return self.display_name or self.id
 
 
 @dataclass(frozen=True)
@@ -59,10 +63,14 @@ REGISTRY: dict[str, Provider] = {
         base_url="https://generativelanguage.googleapis.com/v1beta",
         categories=(APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
         models=(
-            ModelInfo("gemini-2.5-flash-image", (APIKEY_CAT_IMAGE,)),
-            ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,), is_active=False),
-            ModelInfo("gemini-3-pro-image-preview", (APIKEY_CAT_IMAGE,), is_active=False),
-            ModelInfo("gemini-2.5-flash", (APIKEY_CAT_CHAT,)),
+            ModelInfo("gemini-2.5-flash-image", (APIKEY_CAT_IMAGE,),
+                      display_name="Gemini 2.5 Flash"),
+            ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,),
+                      display_name="Gemini 3.1 Flash"),
+            ModelInfo("gemini-3-pro-image-preview", (APIKEY_CAT_IMAGE,),
+                      display_name="Gemini 3 Pro"),
+            ModelInfo("gemini-2.5-flash", (APIKEY_CAT_CHAT,),
+                      display_name="Gemini 2.5 Flash (chat)"),
         ),
         list_models_path="/models",   # kèm ?key= khi gọi
         notes="Key dạng AIza...; ảnh generateContent đồng bộ; ảnh: responseModalities+imageConfig.",

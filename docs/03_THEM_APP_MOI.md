@@ -36,6 +36,27 @@ luôn chạy được.
 
 ---
 
+## App VIẾT MỚI vs App DI TRÚ từ BOT GEMINI (bắt buộc phân biệt)
+
+- **Viết mới** (ta tự nghĩ ra): theo hợp đồng tối thiểu bên dưới.
+- **Di trú** (đưa một module BOT GEMINI sang): PHẢI theo **`CONG_THUC_DI_TRU_APP.md`**
+  (công thức 8 bước) và đạt **parity ≥ 90%** tính năng người dùng của bản gốc — KHÔNG
+  được tự tối giản. Bài học `thumbnail` (xem `DOI_CHIEU_THUMBNAIL.md`): dựng lại tối
+  giản = mất hệ lựa chọn của bản gốc.
+
+**Quy ước tài nguyên prompt (`apps/<slug>/prompts/`):** app có nhiều lựa chọn
+(style/phong cách/trend/ngôn ngữ…) để nguyên dạng **thư mục fragment** copy từ gốc:
+```
+apps/<slug>/prompts/
+├── base_prompt.txt           # template {placeholder}
+└── <nhóm>/_labels.json + <id>.txt
+```
+Ghép prompt bằng `platform_core.prompt_fragments` — **CẤM hardcode chuỗi prompt trong
+`jobs.py`**. UI render lựa chọn ĐỘNG từ `_labels.json` (thêm/bớt = sửa tài nguyên,
+không sửa code). Model chọn được khai ở `platform_core/providers.py` (registry).
+
+---
+
 ## 1. `manifest.py`
 
 ```python

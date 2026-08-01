@@ -17,9 +17,11 @@ from __future__ import annotations
 import base64
 import io
 import os
+import pathlib
 
-_MODEL = "gemini-2.5-flash-image"
+_MODEL = "gemini-2.5-flash-image"          # mặc định khi không chọn model
 _BASE = "https://generativelanguage.googleapis.com"
+_PROMPTS_DIR = pathlib.Path(__file__).resolve().parent / "prompts"
 _TIMEOUT_S = 110          # < trần 100s Cloudflare không áp cho worker, nhưng giữ gọn
 
 
@@ -83,32 +85,44 @@ def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
         pass
 
 
-def build_prompt(topic: str, title: str = "", aspect_ratio: str = "16:9") -> str:
-    """Ghép prompt thumbnail từ chủ đề + tiêu đề (inline, không phụ thuộc file ngoài)."""
-    parts = [
-        f"Professional YouTube thumbnail, aspect ratio {aspect_ratio}.",
-        f"Topic: {topic.strip()}.",
-    ]
-    if title.strip():
-        parts.append(
-            f'Large bold title text "{title.strip()}" with thick outline stroke '
-            f"and drop shadow for maximum readability."
-        )
-    parts.append(
-        "Eye-catching, high-contrast, vivid saturated colors, dramatic lighting, "
-        "clear focal subject, click-worthy composition, high resolution, sharp details."
-    )
-    return " ".join(parts)
+def build_prompt(topic: str, *, title: str = "", subtitle: str = "",
+                 phong_cach: str = "", kieu_trend: str = "", text_style: str = "",
+                 ngon_ngu: str = "", aspect_ratio: str = "16:9") -> str:
+    """Ghép prompt thumbnail TỪ FRAGMENT (di trú trung thành từ BOT GEMINI
+    `service.py`): base_prompt.txt + phong_cách + kiểu trend + style chữ + ngôn
+    ngữ + tiêu đề/phụ đề. KHÔNG hardcode chuỗi prompt (dùng `apps/thumbnail/prompts/`).
+
+    Lựa chọn rỗng/không hợp lệ → lấy mặc định (mục đầu trong `_labels.json`)."""
+    from platform_core import prompt_fragments as pf
+    d = _PROMPTS_DIR
+    phong_cach = phong_cach or pf.default_option(d, "phong_cach")
+    kieu_trend = kieu_trend or pf.default_option(d, "kieu_trend")
+    text_style = text_style or pf.default_option(d, "text_style")
+    ngon_ngu = ngon_ngu or pf.default_option(d, "ngon_ngu")
+    title, subtitle = title.strip(), subtitle.strip()
+    mapping = {
+        "aspect_ratio": aspect_ratio,
+        "user_input": topic.strip(),
+        "phong_cach_style": pf.read_fragment(d, "phong_cach", phong_cach),
+        "kieu_trend_layout": pf.read_fragment(d, "kieu_trend", kieu_trend),
+        "text_style_directive": pf.read_fragment(d, "text_style", text_style),
+        "ngon_ngu_directive": pf.read_fragment(d, "ngon_ngu", ngon_ngu),
+        "title_text": (f'Large prominent text "{title}" with outline stroke and drop shadow.'
+                       if title else ""),
+        "subtitle_text": (f'Smaller subtitle text: "{subtitle}".' if subtitle else ""),
+    }
+    return pf.build(d, mapping)
 
 
-def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str) -> bytes:
+def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
+                model: str = _MODEL) -> bytes:
     """Gọi Gemini Image API một lần, trả về bytes ảnh PNG. Ném lỗi nếu thất bại."""
     import httpx
 
     # Khoá ĐI QUA HEADER `x-goog-api-key`, KHÔNG nhét vào query `?key=` (W2.6):
     # URL hay bị ghi lại (log proxy, access log, lịch sử) → khoá trong query là
     # bề mặt rò khoá. Header không bị log mặc định.
-    url = f"{_BASE}/v1beta/models/{_MODEL}:generateContent"
+    url = f"{_BASE}/v1beta/models/{model or _MODEL}:generateContent"
     headers = {"x-goog-api-key": api_key}
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -153,6 +167,11 @@ def handle(params: dict, ctx=None) -> dict:
     if not topic:
         raise ValueError("Chưa nhập chủ đề thumbnail.")
     title = str(params.get("title", ""))
+    subtitle = str(params.get("subtitle", ""))
+    phong_cach = str(params.get("phong_cach", ""))
+    kieu_trend = str(params.get("kieu_trend", ""))
+    text_style = str(params.get("text_style", ""))
+    ngon_ngu = str(params.get("ngon_ngu", ""))
     aspect_ratio = str(params.get("aspect_ratio", "16:9")) or "16:9"
     owner_id = str(params.get("owner_id", "")) or "unknown"
     try:
@@ -171,7 +190,9 @@ def handle(params: dict, ctx=None) -> dict:
     from apps.thumbnail.manifest import CREDIT_PER_IMAGE
     from platform_core.storage import get_storage
     storage = get_storage()
-    prompt = build_prompt(topic, title, aspect_ratio)
+    prompt = build_prompt(topic, title=title, subtitle=subtitle, phong_cach=phong_cach,
+                          kieu_trend=kieu_trend, text_style=text_style, ngon_ngu=ngon_ngu,
+                          aspect_ratio=aspect_ratio)
     job_id = getattr(ctx, "job_id", "") or "adhoc"
 
     # Tính tiền theo ảnh THÀNH CÔNG + resume-safe (W1.1):
@@ -191,7 +212,7 @@ def handle(params: dict, ctx=None) -> dict:
         if ctx is not None:
             ctx.progress(int(i * 100 / count), f"đang tạo ảnh {i + 1}/{count}")
         try:
-            img = _goi_gemini(prompt, aspect_ratio, api_key)
+            img = _goi_gemini(prompt, aspect_ratio, api_key, model)
         except GeminiError as e:                 # lỗi HTTP → nhớ status để chấm key
             errors.append(str(e))
             last_status = e.status_code

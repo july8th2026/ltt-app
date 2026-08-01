@@ -1,0 +1,1 @@
+Listicle/Numbered layout: large bold number prominently displayed (top-left or center), numbered list visual, grid of small preview items, multiple elements arranged in sequence, countdown style, "Top N" or "N things" composition, organized grid layout.

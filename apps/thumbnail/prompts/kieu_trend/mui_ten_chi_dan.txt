@@ -1,0 +1,1 @@
+Arrow/Pointer layout: bold red or yellow arrows pointing to key element, circle highlighting important detail, visual guide directing viewer attention, annotation-style markers, "look here" composition, drawn circles and arrows overlaid on image, emphasis indicators.
