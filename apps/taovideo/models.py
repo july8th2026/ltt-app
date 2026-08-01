@@ -3,7 +3,7 @@ models.py — registry model seedance (di trú từ `app/models/video_model_regi
 
 Mỗi model: nhãn hiển thị, `endpoint` (ep-... của tài khoản ModelArk — field `model`
 gửi lên body), `provider_model_id` (dự phòng), độ phân giải / thời lượng / tỉ lệ
-hỗ trợ. Endpoint ep-... đi kèm KEY byteplus (cùng tài khoản đã import từ BOT GEMINI).
+hỗ trợ. Endpoint ep-... đi kèm KEY byteplus (cùng tài khoản đã nhập sang, khoá pool).
 """
 from __future__ import annotations
 
