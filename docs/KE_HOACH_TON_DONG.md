@@ -11,19 +11,19 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 ### Nhóm 1 — Bug + Mở dòng tiền (nhanh, ảnh hưởng rộng) — **P0**
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
-| 1.1 | **Bug phiên hết hạn → 404** ở mọi app path (phải redirect `/login`) | S | — | Phát hiện ở A2; ảnh hưởng MỌI khách; access-middleware trả 404 thay vì đưa về đăng nhập |
+| 1.1 | ~~Bug phiên hết hạn → 404~~ **KHÔNG PHẢI BUG** (2026-08-01) | — | — | Kiểm lại: `require_login` trả **303→/login** đúng, access-middleware fail-open. Curl + trình duyệt đã xác nhận `/taovideo`→`/login`. 404 trước đó là **transient khi deploy restart + cache trình duyệt**, không phải lỗi code. Bỏ khỏi backlog. |
 | 1.2 | **Kích hoạt PayOS (H9 go-live)**: thêm `LTT_PAYOS_*` vào `secrets\app.env` + khai webhook | S | user cấp key PayOS | H9 code đã xong; đang tắt mềm → chưa thu tiền tự động được |
 
 ### Nhóm 2 — Nợ nền tảng (đòn bẩy cao, dừng nợ càng sớm càng rẻ) — **P0/P1**
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
 | 2.1 | **T0 — ToolSpec vào hợp đồng app** (AGENT_LTT) | M | — | Mỗi app port KHÔNG có T0 = 1 món nợ T0b. Đã 3 app (A1+A2) → nợ đang lớn. Làm sớm thì nợ dừng + mọi app tương lai tự agent-ready |
-| 2.2 | **Worker chạy song song job video dài** | M | — | Phát hiện ở A2: 1 worker poll video 1–5' sẽ CHẶN mọi job khác. Cần nhiều worker / tách submit-poll |
+| 2.2 | **Worker chạy song song job video dài** | M | — | Xác minh: `run_forever` **đơn luồng, 1 tiến trình** → video poll 1–5' CHẶN mọi job khác. `claim()` đã `SKIP LOCKED` nên chạy N worker AN TOÀN. Fix = NSSM chạy 2–3 worker. Không gấp (tiền-ra-mắt) nhưng cần trước khi có tải thật |
 
 ### Nhóm 3 — Hoàn thiện app đang có (parity + doanh thu) — **P1**
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
-| 3.1 | **seedance Pha 2**: asset:// + refs (ảnh/video/audio) + face-moderation + ×2 + dịch + upscale → parity ~90% | L | **ModelArk AK/SK** + thư viện nhận diện mặt (phải xác minh có không) | Tool video doanh thu cao nhất |
+| 3.1 | **seedance Pha 2**: asset:// + refs + face-moderation + ×2 + dịch + upscale → parity ~90% | L | ⛔ **BỊ CHẶN** (xác minh 2026-08-01): (a) `face_detect` cần **insightface + onnxruntime** — venv CHƯA có, là dep nặng (~100s MB + model); (b) `asset://` cần **ModelArk AK/SK** (khác Bearer key đã import) — CHƯA có. Cần user cấp AK/SK + duyệt cài insightface | Tool video doanh thu cao nhất |
 | 3.2 | thumbnail fast-follow: ảnh tham chiếu + Batch (+Imagen khi gốc có) | S–M | — | Đã ~93%; đây là phần đã ghi hoãn |
 | 3.3 | taoanh: Batch (`---` nhiều prompt) + ảnh tham chiếu | S | — | |
 | 3.4 | kichban: preset mẫu + lịch sử + copy từng phần | S | — | |
@@ -60,16 +60,20 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 | 7.2 | e2e đa tiến trình (worker+web) | M | test coverage |
 | 7.3 | WAF / rate-limit ở edge Cloudflare | S | chống lạm dụng |
 
-## Thứ tự đề xuất (near-term)
+## QUYẾT ĐỊNH 2026-08-01 (người dùng)
 
-Cân bằng "nhanh + ảnh hưởng rộng" với "đòn bẩy + mở tiền":
+**Nhóm 5 (AI Agent) + 2.1 (T0 ToolSpec) HOÃN sang dự án RIÊNG** — làm SAU khi đã
+đưa hết app vào; người dùng sẽ gọi riêng khi cần. KHÔNG đưa vào quy trình hiện tại
+(T0 chỉ có giá trị cho agent). "Triển khai các hạng mục CÒN LẠI".
 
-1. **1.1 Bug 404 phiên hết hạn** — nhỏ, sửa cho MỌI khách. Làm trước.
-2. **2.1 T0 ToolSpec** — dừng nợ T0b (đang lớn), nền cho agent + mọi app sau. Đòn bẩy cao nhất.
-3. **1.2 PayOS go-live** — mở dòng tiền thật (cần bạn cấp key PayOS).
-4. **3.1 seedance Pha 2** — hoàn thiện tool doanh thu cao nhất (sau khi xác minh AK/SK + face lib).
-5. **4.1 H10 R2** — mở Đợt B + serve file lớn bền + điều kiện agent-video.
-6. → Đợt B, GPU-route, Đợt C, chặng D agent, vệ sinh, hardening.
+## Thứ tự đề xuất (near-term) — đã bỏ agent/T0
+
+1. **1.1 Bug 404 phiên hết hạn** — nhỏ, sửa cho MỌI khách. Làm trước. ◄ đang làm
+2. **3.1 seedance Pha 2** — hoàn thiện tool doanh thu cao nhất (xác minh AK/SK + face lib trước).
+3. **2.2 Worker song song job video dài** — hạ tầng thật (không phải agent).
+4. **3.2–3.4 fast-follow** thumbnail/taoanh/kichban (nhỏ).
+5. **4.1 H10 R2** — nút cổ chai → **4.2 GPU-route** → **Đợt B** → **Đợt C**.
+6. Nhóm 6 vệ sinh + 1.2 PayOS go-live (cần bạn thao tác, chạy song song) + Nhóm 7 hardening.
 
 **Xen kẽ user-action (làm song song, không chặn code):** 6.1 huỷ Vultr, 6.2 beacon,
 6.3 GitHub off-site, 1.2 cấp key PayOS.
