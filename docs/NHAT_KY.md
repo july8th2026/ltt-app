@@ -14,6 +14,44 @@
 
 ---
 
+## 2026-08-01 — Đợt A2 Pha 1: `taovideo` (seedance_video) — video async + cost thật — XONG
+
+App VIDEO đầu tiên. Người dùng chốt: **làm full seedance, BỎ plenx + gemini_video**
+(gemini_video UI đã trôi sang Veo3 cookie = nhóm D). Dùng hạ tầng nền tảng (job
+queue/credit/storage/APIKEYS) thay runner/worker/store riêng của BOT GEMINI.
+
+- **cost.py** (port): token=(w×h×fps×dur)×hệ-số-hiệu-chỉnh, rate USD/1M theo model,
+  →VND→credit (1cr=100đ). **Reserve = ước tính** (manifest.credit_cost) → **Settle =
+  token thật** provider trả (handler trả credit_cost) → worker hoàn phần dư. Khớp
+  hoàn hảo sổ credit H3.
+- **models.py**: registry 3 model (endpoint ep-... + độ phân giải/thời lượng/tỉ lệ).
+- **modelark.py**: adapter BytePlus (submit `POST /contents/generations/tasks` Bearer,
+  poll `GET .../{id}`, download stream cap 200MB). Che key trong lỗi.
+- **jobs.py**: ASYNC submit→poll; **mỗi nhịp gọi `ctx.progress` = heartbeat** <
+  ORPHAN_TIMEOUT(5') nên job dài 1–5' KHÔNG bị nhặt lại. Resume-safe.
+- **routes.py**: form + ước tính giá (HTMX) + gallery `<video>` + **serve video theo
+  HTTP Range** (`/v/{key}`) → player tải từng đoạn <100MB → né trần Cloudflare, KHÔNG
+  cần R2 cho clip ngắn.
+- **Slug `taovideo`** (không "seedance": brand model có trong providers.py → test_60).
+
+**Nghiệm thu:** test_79 parity (cost math, estimate=settle, registry); full suite
+**1643 pass**; scan 0; deploy `setup\2`. **Kiểm CHUỖI ASYNC THẬT trên production**
+(gọi thẳng handler, key byteplus thật): submit→poll(heartbeat 13%→92%→100%)→tải→
+lưu, **104 giây**, video **1,64MB**, **40.594 token → 37 credit** (reserve 38 →
+settle 37 đúng). Đã dọn video test.
+
+**Pha 2 (còn lại, để đạt parity ~90%):** asset:// (ảnh/video lớn + người thật, cần
+ModelArk AK/SK), face-moderation auto-retry, refs (ảnh/video/audio), ×2, dịch prompt,
+upscale. Ghi rõ hoãn có lý do.
+
+**2 phát hiện phụ (không thuộc A2, đề xuất fix sau):**
+1. **Phiên hết hạn → app path trả 404** (trang 404 của ta) thay vì chuyển về
+   `/login`. Access-middleware nên redirect thay vì 404 — khách sẽ tưởng app biến mất.
+2. Trình duyệt tự-điền "admin" (admin-env) đè username khi đăng nhập lại — phiền khi
+   test; không ảnh hưởng người dùng thật.
+
+---
+
 ## 2026-08-01 — Đợt A1: di trú `taoanh` + `kichban` (kiểm chứng nhà máy) — XONG
 
 Áp công thức di trú (`CONG_THUC_DI_TRU_APP.md`) cho 2 app nhỏ — 1 ảnh, 1 văn bản —

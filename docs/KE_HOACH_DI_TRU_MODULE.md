@@ -65,7 +65,11 @@ Thang 1–10 (Rủi ro: cao điểm = ít rủi ro). Trọng số: Chất lượ
 dùng chung (`prompt_fragments.build` giữ literal braces). Slug đặc trưng (không
 dùng từ phổ biến). Full suite 1634, kiểm URL công khai + kichban chạy thật.
 
-**Đợt A2 — API doanh thu:** seedance_video + plenx (sinh đôi, kèm cost model) + gemini_video. *Mở nhóm tool tính phí thật.*
+**Đợt A2 — API doanh thu:** ✅ **Pha 1 XONG 2026-08-01** — `taovideo` (seedance_video):
+text→video async + cost token→credit (reserve→settle), serve video theo Range. Kiểm
+chuỗi async THẬT trên production (104s, 40.594 token→37 credit). Người dùng **BỎ plenx
++ gemini_video** (gemini UI đã trôi sang cookie=nhóm D). **Pha 2 (còn):** asset:// +
+face-moderation + refs → đạt parity ~90%.
 
 **Cửa H10 — R2 + file lớn** (xen giữa): `Storage.url_for` + presigned + upload thẳng browser→R2 (vượt trần 100MB). Bắt buộc trước B/C.
 
