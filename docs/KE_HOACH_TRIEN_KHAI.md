@@ -902,6 +902,38 @@ nhóm D.
 
 ---
 
+## H12 — LTT Agent AI + Canvas + full tool ảnh/text/video/GPU 📋
+
+**Đã chốt phạm vi Q38–Q39 (2026-08-02):** xây hoàn chỉnh Agent + Canvas, không
+hoãn Canvas và không cắt video/GPU khỏi sản phẩm cuối. Kiến trúc giao diện hybrid:
+Jinja/HTMX giữ cho trang thường; Canvas dùng React + TypeScript + `@xyflow/react`,
+Vite build static asset do FastAPI phục vụ; không có Node runtime production.
+
+Kế hoạch triển khai duy nhất: `docs/AGENT_LTT/02_LO_TRINH.md` — P0→P13, mỗi phase
+có entry gate, PASS gate, test, browser/PostgreSQL check và rollback. Đặc tả:
+`docs/AGENT_LTT/01_DAC_TA_AGENT.md`; thiết kế thi công:
+`docs/AGENT_LTT/06_XAY_DUNG_APP_AGENT.md`.
+
+- [x] P0 Quyết định còn lại + baseline — 2026-08-02: 1710 pass, scan 0, lint 0/0
+- [x] P1 ToolSpec core — 2026-08-02: 34 test hẹp; full 1721 pass, scan 0, lint 0/0
+- [ ] P2 ToolSpec cho 7 app job-based
+- [ ] P3 AgentRun/checkpoint/fan-out
+- [ ] P4 Planner/normalizer/validator
+- [ ] P5 Budget/approval/credit atomic
+- [ ] P6 Executor/resume/fan-out
+- [ ] P7 Verifier/bounded retry
+- [ ] P8 App/UX nghiệp vụ
+- [ ] P9 React/Vite build foundation
+- [ ] P10 Canvas data model/API
+- [ ] P11 Node editor đầy đủ
+- [ ] P12 Agent↔Canvas↔Run + video/GPU E2E
+- [ ] P13 Hardening/rollout production
+
+Không đánh dấu phase ở file này độc lập: chỉ đồng bộ từ bảng bằng chứng trong
+`AGENT_LTT/02_LO_TRINH.md` sau khi test thật PASS.
+
+---
+
 ## Việc phải làm ngay ở phiên tiếp theo
 
 1. **Người dùng — H0.1:** kiểm tra trên bảng điều khiển Cloudflare xem gói miễn

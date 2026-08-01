@@ -34,6 +34,9 @@ class ModelInfo:
     endpoint_id: str = ""           # account endpoint (ModelArk), gửi làm field "model"
     is_active: bool = True
     display_name: str = ""          # nhãn hiển thị UI (rỗng = dùng id)
+    # Schema nghiệp vụ theo model, vd resolutions/durations/aspects. Additive;
+    # provider/app chưa khai vẫn hoạt động như trước.
+    capabilities: dict = field(default_factory=dict)
 
     def real_model_id(self) -> str:
         return self.provider_model_id or self.id
@@ -137,3 +140,12 @@ def models_for(provider_id: str, category: Optional[str] = None) -> list:
     if category:
         out = [m for m in out if not m.categories or category in m.categories]
     return out
+
+
+def model_capabilities(model_id: str) -> dict:
+    """Trả capability tĩnh của model, không gọi mạng và không lộ credential."""
+    for provider in REGISTRY.values():
+        for model in provider.models:
+            if model.id == model_id:
+                return dict(model.capabilities)
+    return {}

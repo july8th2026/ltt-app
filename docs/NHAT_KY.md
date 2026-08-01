@@ -14,6 +14,242 @@
 
 ---
 
+## 2026-08-02 — H12 P0–P1: quyết định Agent + ToolSpec core
+
+Người dùng cấp toàn quyền bắt đầu xây dựng. Đã đóng P0 bằng Q40–Q43: PA-1+
+(planner hữu hạn, executor lặp có trần), ToolSpec additive, tiền/cổng duyệt và
+ranh giới internal-first. Q42 làm rõ chưa duyệt không có bút toán credit/tool job;
+chi phí provider để lập plan xem trước do nền tảng hấp thụ và phải rate-limit.
+
+P1 thêm `ToolSpec` immutable + `AppManifest.tools=()` vào hợp đồng registry. Validation
+fail-fast chặn tên tool trùng/sai dạng, job type không thuộc app, schema rỗng/kiểu
+lạ, prompt source path traversal, dependency không trỏ `model_ref`, output type sai.
+Thêm `platform_core/agent/tools.py` để discover tool qua registry và resolve enum
+từ `_labels.json`/capability model mà không import hoặc hardcode app. `ModelInfo`
+được mở rộng additive bằng `capabilities`; app cũ tiếp tục chạy nguyên. Không thêm
+queue/runtime, migration, UI hoặc thay đổi job/credit/storage.
+
+**Lệnh đã chạy và kết quả thật:**
+- Baseline `python -m pytest -q` → **1710 passed, 4 skipped, 23 subtests passed**,
+  1 warning deprecation, 368.09s.
+- `python -m pytest -q tests/test_60_app_registry.py tests/test_85_app_contract_lint.py`
+  → **23 passed**.
+- P1 `python -m pytest -q tests/test_87_agent_toolspec.py tests/test_60_app_registry.py tests/test_85_app_contract_lint.py`
+  → **34 passed**.
+- Sau P1 `python -m pytest -q` → **1721 passed, 4 skipped, 23 subtests passed**,
+  1 warning deprecation, 420.66s.
+- `python tools\scan_source_secrets.py` → **691 file, 109.645 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- `git diff --check` → **FAIL do trailing whitespace có sẵn trong `server/app.py`**;
+  P0–P1 không sửa file này, nên không trộn sửa ngoài phạm vi.
+- Browser/PostgreSQL: **N/A** — P0 docs và P1 metadata thuần, không UI/migration.
+
+**Rollback P1:** revert `ToolSpec`, field `tools`, capability field, module
+`platform_core/agent/` và test mới; không có dữ liệu cần phục hồi.
+
+## 2026-08-02 — Chốt Q38–Q39: full LTT Agent AI + Canvas + video/GPU
+
+Người dùng quyết định xây hoàn chỉnh, **không hoãn Canvas** và không cắt phạm vi
+Agent còn ảnh/text. Đã nghiên cứu tài liệu chính thức React Flow/Vite và đổi hướng
+giao diện từ Q18 sang **Q38 hybrid**: Jinja/HTMX giữ cho trang thường; riêng Canvas
+dùng React + TypeScript + `@xyflow/react`, Vite build asset tĩnh do FastAPI phục vụ;
+Node.js chỉ dùng dev/build, không có Node runtime/SSR/Next.js production.
+
+**Q39** chốt sản phẩm cuối gồm Agent + Canvas + cả 7 tool job-based ảnh/text/video/
+GPU. Canvas chỉ soạn/hiển thị cùng Plan JSON; validator/giá/credit/executor vẫn ở
+server và vẫn chỉ có một runtime job PostgreSQL.
+
+Đã cập nhật:
+- `QUYET_DINH_NEN_TANG.md`: Q18 mang nhãn ĐÃ THAY, thêm Q38–Q39.
+- `KE_HOACH_TRIEN_KHAI.md`: thêm H12 P0→P13.
+- `AGENT_LTT/02_LO_TRINH.md`: kế hoạch chi tiết P0–P13; thêm P9 build React/Vite,
+  P10 model/API/versioning Canvas, P11 node editor, P12 Agent↔Canvas↔Run + video/GPU,
+  P13 hardening/rollout; mỗi phase có PASS gate/test/rollback.
+- Đồng bộ `AGENT_LTT/00/01/04/06`; gắn nhãn lịch sử cho `PHUONG_AN_AGENT.md` và
+  `KIEM_KE_VA_LO_TRINH_AGENT.md` để không ai làm theo kết luận “hoãn Canvas” cũ.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q` → **1710 passed, 4 skipped, 23 subtests passed**, 1 warning
+  deprecation, 366.87s.
+- `python tools\scan_source_secrets.py` → **688 file, 109.352 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+
+---
+
+## 2026-08-02 — App TẠO CLIP NGẮN (`taoclipngan`) — di trú engine CUT CLIP SHORT
+
+App thứ 4 (quy trình mới). Nguồn **NGOÀI BOT GEMINI**: `D:\FULL AUTO VIDEO\CUT CLIP
+SHORT` (desktop PySide6 ~50k LOC, coi là kho CHỈ ĐỌC). Chỉ lấy **làm-file-trực-tiếp**
+(bỏ tự-động-từ-sheet, GUI, license). Người dùng chốt **PA-A: vendor FULL engine
+tier-gated** + tier mặc định **high_quality** + cài torch cu128 + đơn giá gợi ý.
+
+Video dài → 6 engine phân tích (whisper+YOLO+scene+audio+motion+content) → editorial
+brain (hook/payoff, chấm điểm — KHÔNG cần LLM) → render (crop bám người + phụ đề ASS +
+NVENC) → nhiều clip ngắn dọc.
+
+- **K0 (hạ tầng, rủi ro nhất)**: cài **torch 2.11+cu128** (Blackwell RTX 5060 Ti) —
+  `torch.cuda.is_available()=True` ✓; faster-whisper + ultralytics(YOLO) + scenedetect
+  + demucs. requirements-server.txt thêm ML dep (pin `<`); setup/2 thêm bước torch
+  cu128 **có điều kiện** (chỉ cài khi CUDA chưa sẵn — tránh tải lại 2.5GB mỗi deploy).
+- **K1 (vendor)**: copy `cutclipshort/` (chỉ core/analysis/editorial/render/adapters/
+  presets/storage/types — BỎ gui/license/tests) vào **gốc repo** (import tuyệt đối
+  `cutclipshort.*`). ~1.1MB code. Import OK trong venv nền tảng.
+- **K2 (app)**: `apps/taoclipngan/` — jobs.py bọc **3 hàm lõi** (blueprint
+  `test_local_run.py`): run_full_analysis → run_editorial → render_segment; +
+  ctx.progress + credit (giữ chỗ→đo phút thật→quyết toán) + upload N clip R2. cost.py
+  (~phút×tier + clip). manifest requires=gpu+ffmpeg. routes (upload→job) + template
+  (tuỳ chọn tier/tỉ lệ/thể loại/ngôn ngữ/số clip; lưới clip).
+- **K2b smoke headless GPU**: video TTS 47s → engine chạy 39s → **2 clip** (whisper
+  base + YOLO auto-download) → R2. Xác nhận engine chạy trên GPU nền tảng.
+- **K3 nghiệm thu THẬT browser**: upload → job → **worker GPU chạy engine** → 1 clip
+  (19.4s) → **phát 206 thẳng từ R2** → credit 9. Full E2E production OK.
+
+**Bug thật bắt được**: engine tự dò ffmpeg qua PATH (nhiều `FFmpegAdapter()` không
+truyền path) → worker LocalSystem KHÔNG có ffmpeg trên PATH → job lỗi. Sửa: jobs.handle
+**prepend thư mục ffmpeg (LTT_FFMPEG) vào PATH tiến trình** trước khi gọi engine (phủ
+mọi adapter). (Smoke qua vì shell có ffmpeg PATH; worker thì không — đúng bài học
+"test trên worker/URL thật".) Secret scan: loại trừ dir `cutclipshort` (ví dụ sha256
+rút gọn trong tài liệu làm trip).
+
+**Còn (chưa gấp)**: tiêu đề/điểm clip trống (map candidate↔clip_spec theo clip_id lệch
+— cosmetic); **P3 worker đa tiến trình** (job GPU dài — nối tiếp backlog); CORS R2 cho
+upload file lớn; stage whisper large-v3 sẵn cho tier high (lần đầu tải ~3GB).
+
+## 2026-08-02 — App CHAT AI STUDIO (`chataistudio`) — di trú AI Creative Studio (Codex)
+
+App thứ 3 theo quy trình mới. Di trú từ **module `codex`** BOT GEMINI (AI Creative
+Studio). Người dùng chốt PA-3 (**giữ Codex CLI** + **đăng nhập ChatGPT OAuth**, đã
+xác nhận hiểu rủi ro ToS) + ảnh tự động (image-tool của agent) + đa model + project→
+thread + **sidecar riêng**. Bỏ tính năng code/files/MCP.
+
+**Kiến trúc: sidecar `LTTStudioCodex`** (dịch vụ NSSM mới, loopback :8110, bearer
+token) bọc `AsyncCodex` (SDK `openai-codex` + binary bundled `codex_cli_bin`, KHÔNG
+phụ thuộc npm/BOT GEMINI). CODEX_HOME riêng `data/codex-home`. Web app `chataistudio`
+gọi sidecar qua HTTP, stream SSE về trình duyệt.
+
+- **C0**: cài `openai-codex` (pin <0.145) vào venv; `codex_sidecar/` (runtime chat-only
+  read-only + server FastAPI) + `codex_sidecar_main.py`; NSSM service trong setup/2 +
+  token/port/CODEX_HOME vào app.env. Kiểm: /models trả **7 model GPT-5.x**, 401 guard.
+- **C1**: `apps/chataistudio/sidecar_client.py` + trang admin đăng nhập **device-code**
+  ChatGPT + xem model/quota. Kiểm: sinh mã thật + web↔sidecar thông.
+- **Đăng nhập THẬT**: người dùng authorize từ máy khác → tài khoản Plus
+  (`aka.thanhtrungcomputer@gmail.com`), `auth.json` ghi vào CODEX_HOME.
+- **C2**: bảng Postgres `chat_conversations` + `chat_messages` (per-user, migration
+  a1b2c3d4e5f6); route chat + **/send SSE** proxy streaming; credit **giá phẳng**
+  (3 credit/lượt) — vì Plus login KHÔNG có chi phí USD/token, credit = GIÁ BÁN + điều
+  tiết quota. Template chat streaming (sidebar hội thoại, chọn model, xoá).
+- **C3**: ảnh agent sinh → sidecar lưu file → web copy **R2** → hiện **inline** trong
+  transcript; credit +20/ảnh. Multi-model chọn khi tạo hội thoại.
+- **Nghiệm thu THẬT trên app.lttstudios.com**: tạo hội thoại → chat streaming trả lời
+  → **yêu cầu vẽ → ảnh mèo phi hành gia hiện inline** → reload giữ nguyên (persist
+  Postgres) → credit 100→71. test_83 (7).
+
+**Bug thật bắt được khi nghiệm thu (đều CSP — nối tiếp bài học app video):**
+- 500 do biến context `is_admin` che hàm global Jinja `is_admin()` → đổi tên `user_is_admin`.
+- setup/2 Move-Item khóa `app\` vì service `LTTStudioCodex` giữ thư mục → **dừng
+  LTTStudioCodex trước khi swap** (nối tiếp fix Web/Worker).
+- **CSP `img-src 'self' data:` chặn ảnh R2** (route /img redirect presigned) → thêm
+  `https://*.r2.cloudflarestorage.com` vào img-src (song song media-src/connect-src).
+
+**Rủi ro đã ghi (người dùng chấp nhận):** 1 tài khoản ChatGPT Plus dùng chung mọi
+khách = ToS-risk + trần quota tuần dùng-chung (không scale). Khuyến nghị: tài khoản
+RIÊNG (đã tách khỏi BOT GEMINI qua CODEX_HOME riêng) + pool nhiều tài khoản sau.
+
+## 2026-08-01 — App UPSCALE VIDEO (`upscalevideo`) — di trú Đợt C (GPU) + verified live
+
+App thứ 2 theo quy trình mới (user chỉ định). Nâng video ×4 bằng Real-ESRGAN NCNN
+(Vulkan) — di trú từ BOT GEMINI `video_upscale`. **Ta chạy Windows nên copy THẲNG
+vendor engine** (`realesrgan-ncnn-vulkan.exe` + 3 model ~47.5MB) vào
+`apps/upscalevideo/vendor/engine/` (gitignored qua `apps/*/vendor/`).
+
+- **Port đồng bộ**: `engine.py` (NCNN subprocess + STALL watchdog 5' + fallback tile),
+  `ff.py` (probe/extract/encode/segment/concat — dùng `platform_core.media` định vị
+  ffmpeg, **fallback CPU libx264** nếu không có NVENC), `autotune.py` (chọn tile/thread
+  theo VRAM qua nvidia-smi), `schemas.py` (Preset fast/quality, Codec).
+- `jobs.py`: probe → **đảm bảo giữ chỗ theo duration thật** → guard đĩa → tách frame →
+  autotune → NCNN upscale (**chunk 360 frame** nếu dài) → encode → R2. Idempotent.
+- `cost.py`: ~30 credit/phút @1080p Fast (×1.8@1440, ×4@4K, ×2.5 Quality); preview 8s.
+- `service.py`: **`submit_upscale_job()`** — điểm DÙNG LẠI cho taovideo/seedance ("Nâng
+  cấp 4K" gọi thẳng, không nhân đôi code) theo yêu cầu người dùng.
+- `requires=("gpu","ffmpeg")`; test_82 (14 test).
+
+**Bug thật bắt được (ảnh hưởng CẢ 2 app video):** `media._test_encoder` dùng nullsrc
+**64×64** → NVENC từ chối ("Frame Dimension less than the minimum") → báo nhầm "không
+có GPU" → encode 4K lùi về CPU **rất chậm**. Sửa: test bằng `testsrc 256×256 yuv420p`.
+Sau sửa `detect_gpu_encoder()` trả **h264_nvenc**.
+
+**Nghiệm thu THẬT app.lttstudios.com:** catalog card 🔍 · form đúng (Fast/Quality +
+1080/2K/4K chips) · smoke GPU (Real-ESRGAN chạy, VRAM 16311MiB) · E2E trình duyệt:
+480×270 → **1920×1080, encoder h264_nvenc** (NVENC fix xác nhận LIVE trên worker) ·
+credit giữ-chỗ→quyết-toán · **phát video 206 thẳng từ R2**. Scan 0.
+
+**Chặn trước tải thật (ghi backlog, chưa gấp):** **P3 — worker đa tiến trình + định
+tuyến GPU**. Worker hiện 1 tiến trình → 1 job upscale (hàng chục phút GPU) CHẶN mọi
+job khác (kể cả thumbnail/taoanh nhanh). `claim()` đã `SKIP LOCKED` nên chạy N worker
+AN TOÀN — chỉ cần NSSM chạy 2-3 worker. Làm trước khi có tải thật.
+
+## 2026-08-01 — App AUTO SUB VIDEO (`autosubvideo`) + hạ tầng Chặng 0 (P1/P4/P5)
+
+Quy trình mới (user chỉ định app←module, Claude phân tích+lập kế hoạch): user yêu
+cầu 2 app từ BOT GEMINI — **UPSCALE VIDEO** (`video_upscale`) + **AUTO SUB VIDEO**
+(`auto_sub_video`). Lập kế hoạch `docs/KE_HOACH_2APP_UPSCALE_AUTOSUB.md`, user duyệt:
+AUTO SUB trước · giữ nguyên (transcript nạp sẵn, KHÔNG Whisper) · làm P1 ngay · đơn
+giá gợi ý (~5 credit/phút sub).
+
+**Chặng 0 (hạ tầng chung cho mọi app video):**
+- **P1 — presigned PUT**: `Storage.put_url()` + `UploadTarget` (R2 trả presigned PUT,
+  ràng buộc Content-Type; Local trả None → app nhận multipart). Browser tải video
+  LỚN thẳng R2, né trần 100MB Cloudflare. Test trong test_80.
+- **P4/P5 — `platform_core/media.py`**: định vị ffmpeg/ffprobe (env `LTT_FFMPEG`/
+  `LTT_FFPROBE` → PATH → thư mục phổ biến), `probe()`/`duration_seconds()` (đo thời
+  lượng để giữ chỗ credit), `detect_gpu_encoder()` (nvenc>qsv>amf, fallback CPU),
+  `run_with_progress()` (chạy ffmpeg đồng bộ, đọc `-progress pipe:1`). **Đồng bộ** —
+  đúng mô hình worker 1-tiến-trình-1-job (song song = nhiều worker, P3 sau).
+
+**App `autosubvideo` (Đợt B, nhóm ffmpeg):**
+- L1/L2 copy trung thành từ BOT GEMINI (schemas, style_registry 8 preset,
+  transcript_normalizer, segmenter, ass_builder, font_checker, subtitle_adapter,
+  parsers) — chỉ đổi `app.core.logger`→`logging` và prefix import. IMPORT OK.
+- `cost.py`: ~5 credit/phút (draft ×0.6/standard ×1.0/high ×1.5), sàn 1 credit.
+- `burn.py`: khắc ASS bằng ffmpeg `-vf ass=` (bản đồng bộ, dùng `media`), fallback CPU.
+- `jobs.py`: **luồng tiền an toàn** — giữ chỗ theo duration client khai (ước tính) →
+  worker ĐO duration THẬT → **nâng giữ chỗ nếu thiếu TRƯỚC khi encode** (chặn khai
+  gian, không tốn GPU cho job không trả nổi) → quyết toán đúng giá thật.
+- `routes.py`: `/upload-url` (mint presigned PUT), `/queue` (nhận video_key hoặc
+  multipart Local fallback + transcript, parse, submit), `/v` `/f` serve output.
+- Template: upload thẳng R2 qua XHR (báo %), transcript nạp kèm, 8 preset chips.
+- **Bản chất**: KHÔNG nghe-chép — người dùng nạp transcript. UI ghi rõ.
+- test_81 (12 test): cost, registry, parse SRT/JSON, media locate/probe/progress.
+- **Còn hoãn**: bake font .ttf preset (Montserrat… thiếu → fallback Arial + cảnh báo);
+  Whisper tự tạo phụ đề (fast-follow); tuỳ biến style sâu (WYSIWYG) — MVP dùng preset.
+- Cấu hình máy chủ: thêm `LTT_FFMPEG`/`LTT_FFPROBE` (Gyan full-build có libass+NVENC)
+  vào `secrets\app.env` — dịch vụ LocalSystem không thấy WinGet của user nếu không khai.
+
+**3 bug THẬT bắt được khi nghiệm thu (không test nào thấy trước):**
+1. **Escape đường dẫn ASS trên Windows** — `ass=C:\...` làm vỡ bộ phân tích filter
+   (ổ đĩa `:` bị coi là dấu tách option). Sửa: chạy ffmpeg với `cwd`=thư mục chứa
+   .ass rồi truyền TÊN FILE TRẦN (`ass=sub.ass`). Bản gốc BOT GEMINI cũng dính lỗi
+   escape này (chưa lộ vì luồng khác).
+2. **Deadlock ống stderr** — `run_with_progress` chỉ đọc stdout, để stderr đầy 64KB
+   → ffmpeg treo với video dài. Sửa: thread rút stderr song song (giữ 12 dòng cuối).
+3. **CSP chặn app video** — `default-src 'self'` (thiếu media-src/connect-src) chặn:
+   (a) `blob:` đọc thời lượng client, (b) phát video R2 presigned, (c) XHR PUT thẳng
+   R2. Đây là **hợp đồng chung nhóm app video** (taovideo cũng cần — phát R2 chưa
+   từng kiểm trên trình duyệt). Sửa `server/app.py`: thêm
+   `media-src 'self' blob: https://*.r2.cloudflarestorage.com` +
+   `connect-src 'self' https://*.r2.cloudflarestorage.com`. Chốt bằng test_43.
+
+**Nghiệm thu THẬT trên app.lttstudios.com (Playwright, tài khoản user test):**
+catalog hiện card 💬 · form render đúng (8 preset chips) · đọc thời lượng client
+(blob:) → ước tính 1 credit · nộp job · **worker LocalSystem (LTT_FFMPEG) burn xong
+5s** · kết quả video+srt+ass trên R2 · **billing 100→99** (giữ chỗ→quyết toán 1) ·
+**phát video 206 THẲNG từ R2 presigned** (né trần 100MB). Full suite 1675 pass, scan 0.
+
+**Chặn còn lại (user thao tác):** upload THẲNG browser→R2 (presigned PUT) cần **bật
+CORS bucket R2** (token nhập từ BOT GEMINI là object-scoped, `PutBucketCors` bị
+AccessDenied → phải bật ở Cloudflare dashboard hoặc token admin). Hiện app **tự lùi
+về multipart qua máy chủ** (hợp file ≤90MB do trần 100MB CF); file lớn cần CORS.
+
 ## 2026-08-01 — seedance Pha 2 (refs + asset:// + moderation) — XONG (~90% parity)
 
 Nâng `taovideo` lên đầy đủ. Người dùng chọn "làm đầy đủ, cài insightface" — cài

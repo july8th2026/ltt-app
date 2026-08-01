@@ -19,10 +19,39 @@ from __future__ import annotations
 
 import importlib
 import pathlib
+import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 APPS_DIR = pathlib.Path(__file__).resolve().parent.parent / "apps"
+
+TOOL_PARAM_TYPES = frozenset({
+    "string", "int", "number", "bool", "enum", "model_ref",
+    "text", "image", "image[]", "video", "video[]", "audio", "json",
+})
+TOOL_PORT_TYPES = frozenset({
+    "text", "image", "image[]", "video", "video[]", "audio", "json",
+    "model_ref",
+})
+_TOOL_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
+_PROMPT_SOURCE_RE = re.compile(r"^prompts/[a-zA-Z0-9_-]+$")
+
+
+@dataclass(frozen=True)
+class ToolSpec:
+    """Metadata tất định để Agent/Canvas gọi một job đã tồn tại.
+
+    ToolSpec không chứa handler và không tạo runtime mới. ``params_schema`` và
+    ``returns`` được sao chép/resolve trước khi đưa ra API; manifest chỉ giữ bản
+    khai immutable ở cấp đối tượng.
+    """
+
+    name: str
+    job_type: str
+    description: str
+    params_schema: dict
+    returns: dict
+    verifiable: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -100,6 +129,9 @@ class AppManifest:
     # Nhãn nhỏ trên thẻ catalog (vd "MỚI", "HOT", "PRO"). Rỗng = không hiện.
     badge: str = ""
 
+    # Năng lực cho Agent/Canvas. Additive: app cũ không khai vẫn chạy nguyên.
+    tools: tuple = ()
+
     def nav_entries(self) -> list:
         """Sidebar của app. Không khai gì thì tạo mặc định 1 dòng."""
         if self.nav:
@@ -124,10 +156,66 @@ class RegistryError(Exception):
     pass
 
 
+def _validate_tool(manifest: AppManifest, tool: ToolSpec,
+                   seen_tool_names: set) -> None:
+    if not isinstance(tool, ToolSpec):
+        raise RegistryError(f"[{manifest.slug}] tools phải chứa ToolSpec")
+    if not _TOOL_NAME_RE.fullmatch(tool.name or ""):
+        raise RegistryError(
+            f"[{manifest.slug}] tool name không hợp lệ: {tool.name!r}")
+    if tool.name in seen_tool_names:
+        raise RegistryError(f"[{manifest.slug}] tool name trùng: {tool.name!r}")
+    if tool.job_type not in manifest.job_types:
+        raise RegistryError(
+            f"[{manifest.slug}] tool {tool.name!r} dùng job_type không thuộc app: "
+            f"{tool.job_type!r}")
+    if not (tool.description or "").strip():
+        raise RegistryError(f"[{manifest.slug}] tool {tool.name!r} thiếu description")
+    if not isinstance(tool.params_schema, dict) or not tool.params_schema:
+        raise RegistryError(f"[{manifest.slug}] tool {tool.name!r} params_schema rỗng")
+    if not isinstance(tool.returns, dict) or not tool.returns:
+        raise RegistryError(f"[{manifest.slug}] tool {tool.name!r} returns rỗng")
+
+    for param, schema in tool.params_schema.items():
+        if not isinstance(param, str) or not param or not isinstance(schema, dict):
+            raise RegistryError(
+                f"[{manifest.slug}] tool {tool.name!r} schema tham số không hợp lệ")
+        kind = schema.get("type")
+        if kind not in TOOL_PARAM_TYPES:
+            raise RegistryError(
+                f"[{manifest.slug}] tool {tool.name!r} kiểu tham số lạ: {kind!r}")
+        source = schema.get("source")
+        if source is not None and not _PROMPT_SOURCE_RE.fullmatch(str(source)):
+            raise RegistryError(
+                f"[{manifest.slug}] tool {tool.name!r} source không hợp lệ: {source!r}")
+        depends_on = schema.get("depends_on")
+        if depends_on is not None:
+            dependency = tool.params_schema.get(depends_on)
+            if not isinstance(dependency, dict) or dependency.get("type") != "model_ref":
+                raise RegistryError(
+                    f"[{manifest.slug}] tool {tool.name!r} depends_on phải trỏ "
+                    "tới tham số model_ref")
+            if not schema.get("field"):
+                raise RegistryError(
+                    f"[{manifest.slug}] tool {tool.name!r} depends_on thiếu field")
+        if kind == "enum" and not any(
+                key in schema for key in ("values", "source", "depends_on")):
+            raise RegistryError(
+                f"[{manifest.slug}] tool {tool.name!r} enum thiếu nguồn giá trị")
+
+    for output, port_type in tool.returns.items():
+        if not isinstance(output, str) or not output or port_type not in TOOL_PORT_TYPES:
+            raise RegistryError(
+                f"[{manifest.slug}] tool {tool.name!r} kiểu output không hợp lệ: "
+                f"{output!r}={port_type!r}")
+
+
 def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
-              seen_job_types: Optional[set] = None) -> None:
+              seen_job_types: Optional[set] = None,
+              seen_tool_names: Optional[set] = None) -> None:
     """Chặn sớm những sai sót âm thầm gây khó hiểu về sau."""
     seen_job_types = seen_job_types if seen_job_types is not None else set()
+    seen_tool_names = seen_tool_names if seen_tool_names is not None else set()
     if not manifest.slug or not manifest.slug.replace("_", "").isalnum():
         raise RegistryError(
             f"slug không hợp lệ: {manifest.slug!r} — chỉ chữ, số và gạch dưới")
@@ -154,6 +242,10 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
     for jt in manifest.job_types:
         if jt in seen_job_types:
             raise RegistryError(f"[{manifest.slug}] job_type trùng: {jt!r}")
+    local_tool_names: set = set()
+    for tool in manifest.tools:
+        _validate_tool(manifest, tool, seen_tool_names | local_tool_names)
+        local_tool_names.add(tool.name)
 
 
 def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
@@ -170,6 +262,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
     seen_slugs: set = set()
     seen_prefixes: set = set()
     seen_job_types: set = set()
+    seen_tool_names: set = set()
 
     for entry in sorted(apps_dir.iterdir()):
         if not entry.is_dir() or entry.name.startswith(("_", ".")):
@@ -182,7 +275,8 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
             manifest = getattr(mod, "MANIFEST")
             if not isinstance(manifest, AppManifest):
                 raise RegistryError("MANIFEST không phải AppManifest")
-            _validate(manifest, seen_slugs, seen_prefixes, seen_job_types)
+            _validate(manifest, seen_slugs, seen_prefixes, seen_job_types,
+                      seen_tool_names)
         except Exception as exc:
             loaded.append(LoadedApp(
                 manifest=AppManifest(
@@ -196,6 +290,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
         seen_slugs.add(manifest.slug)
         seen_prefixes.add(manifest.route_prefix.rstrip("/"))
         seen_job_types.update(manifest.job_types)
+        seen_tool_names.update(tool.name for tool in manifest.tools)
 
         router = None
         router_error = ""
