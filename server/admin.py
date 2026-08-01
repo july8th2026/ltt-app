@@ -111,6 +111,15 @@ _STATUS = {"active": ("b-ok", "hoạt động"), "cooldown": ("b-warn", "nghỉ 
            "disabled": ("b-err", "vô hiệu")}
 
 
+def _asset_ver() -> str:
+    """Hash nội dung ltt.css để cache-bust (Đợt R). Lazy import tránh vòng import."""
+    try:
+        from server.templating import ASSET_VER
+        return ASSET_VER
+    except Exception:
+        return "0"
+
+
 def _admin_shell(title: str, active: str, body: str) -> str:
     nav = ""
     for href, ic, label, key in _ADM_NAV:
@@ -123,7 +132,7 @@ def _admin_shell(title: str, active: str, body: str) -> str:
     return (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
             f'<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">'
-            f'<link rel="stylesheet" href="/static/ltt.css">'
+            f'<link rel="stylesheet" href="/static/ltt.css?v={_asset_ver()}">'
             f'<title>{escape(title)} — Quản trị</title></head><body><div class="adm">'
             f'<aside class="adm-side"><div class="adm-brand"><div class="mark">LTT</div>'
             f'<div><b>LTT AI Studio</b><small>quản trị</small></div></div>'

@@ -23,6 +23,24 @@ _TEMPLATE_DIR = pathlib.Path(__file__).resolve().parent / "templates"
 
 templates = Jinja2Templates(directory=str(_TEMPLATE_DIR))
 
+# ── Cache-busting cho static (Đợt R — bài học: Cloudflare cache ltt.css cũ 4h,
+# chip-opt không tới người dùng dù origin đã đúng). Đính hash NỘI DUNG ltt.css vào
+# URL `?v=` → đổi CSS = đổi URL = CF/browser buộc tải mới ngay, không chờ TTL.
+# Tính MỘT lần lúc import (mỗi lần deploy restart service → hash mới nếu CSS đổi).
+_STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
+
+
+def _tinh_asset_ver() -> str:
+    import hashlib
+    try:
+        return hashlib.md5((_STATIC_DIR / "ltt.css").read_bytes()).hexdigest()[:8]
+    except Exception:
+        return "0"
+
+
+ASSET_VER = _tinh_asset_ver()
+templates.env.globals["asset_ver"] = ASSET_VER
+
 # Hợp đồng app (H5): app được mang template RIÊNG trong `apps/<slug>/templates/`
 # để tự dựng UI (extends base.html) MÀ KHÔNG phải bỏ file vào server/templates/.
 # Không có phần này thì "thêm app = thêm thư mục" chỉ đúng với phần xử lý, còn

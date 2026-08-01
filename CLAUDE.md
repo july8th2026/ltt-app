@@ -95,6 +95,20 @@ python tools\scan_source_secrets.py    # phải 0 finding
 không chứng minh trang hiển thị đúng. Việc này đã hai lần bắt được lỗi mà test
 không thấy.
 
+**5b. Kiểm trên URL CÔNG KHAI thật (`https://app.lttstudios.com`), KHÔNG chỉ
+loopback `127.0.0.1:8100`.** Loopback **bỏ qua Cloudflare** (cache, CSP biên, minify)
+nên trang có thể đẹp ở loopback mà VỠ với người dùng thật. Đã dính: sau khi sửa
+`ltt.css`, CF phục vụ bản CSS **cũ** (TTL 4h) → chip hiện thành radio thô, dù
+origin đã đúng. Quy trình: loopback để soi nhanh → **URL công khai để chốt**.
+
+**6. Đổi static (CSS/JS) PHẢI cache-bust.** Static đi qua Cloudflare có TTL; đổi
+file mà URL không đổi thì người dùng nhận bản cũ tới khi hết TTL. Link `ltt.css`
+đính `?v={{ asset_ver }}` (hash nội dung, `server/templating.py:ASSET_VER`) — đổi
+CSS = đổi hash = đổi URL = tải mới ngay. Thêm asset tĩnh MỚI hay dùng ở nơi build
+HTML bằng chuỗi (vd `server/admin.py`) thì cũng phải đính version. Trang HTML đã
+`Cache-Control: no-store` (CF không cache) nên link version tới người dùng ngay
+sau deploy.
+
 ## Thêm app mới
 
 Thêm **một thư mục** vào `apps/`. **Không sửa** `platform_core/` hay `server/`.
