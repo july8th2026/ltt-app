@@ -32,3 +32,10 @@ wtforms>=3.1.2,<4.0
 # R2 object storage (H10). R2 = S3-compatible → dùng boto3. Chỉ cần khi
 # LTT_STORAGE=r2; import lười trong storage.py nên không bắt buộc lúc dev.
 boto3>=1.35,<2.0
+
+# seedance Pha 2: chuan hoa anh ref (Pillow), nhan dien mat Haar (opencv), ky
+# ModelArk asset API (volcengine SDK). insightface (SCRFD chinh xac hon) can MSVC
+# C++ build tools -> tam dung Haar fallback; cai insightface sau neu can.
+pillow>=10,<12
+opencv-python-headless>=4.9,<5.0
+volcengine>=1.0.140,<2.0

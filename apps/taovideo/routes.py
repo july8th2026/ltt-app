@@ -6,7 +6,9 @@ KHÔNG dính trần 100MB của Cloudflare (không cần R2 cho clip ngắn).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Form, Request
+import uuid
+
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 
 from apps.taovideo import cost, models
@@ -86,11 +88,54 @@ def estimate(request: Request, model: str = Form(""), resolution: str = Form("48
         f'<span class="dim">(~{e["vnd"]:,}đ · {e["tokens"]:,} token ước tính)</span>')
 
 
+@router.post("/translate", response_class=HTMLResponse)
+async def translate(request: Request, prompt: str = Form(""), target: str = Form("en"),
+                    user: str = Depends(require_login)):
+    """Dịch prompt qua Gemini chat (HTMX trả <textarea> mới). Không tốn credit."""
+    from markupsafe import escape
+    from apps.taovideo import translate as tr
+    p = prompt.strip()
+    if not p:
+        return HTMLResponse('<span class="dim">Nhập mô tả rồi bấm dịch.</span>')
+    try:
+        out = tr.dich(p, target if target in ("en", "zh", "vi") else "en")
+    except Exception:  # noqa: BLE001
+        return HTMLResponse('<span class="dim">Dịch lỗi — thử lại sau.</span>')
+    return HTMLResponse(
+        f'<textarea name="prompt" rows="4" form="sdform" '
+        f'style="width:100%">{escape(out)}</textarea>'
+        f'<div class="dim" style="font-size:12px;margin-top:4px">Đã dịch → {escape(target)}. '
+        f'Sửa nếu cần rồi bấm Tạo video.</div>')
+
+
+async def _luu_refs(u_id: str, files, roles) -> list:
+    """Lưu ảnh tham chiếu vào storage → danh sách spec {kind,storage_key,role}. ≤3 ảnh, ≤8MB."""
+    from platform_core.storage import get_storage
+    import io as _io
+    storage = get_storage()
+    specs = []
+    for i, f in enumerate((files or [])[:3]):
+        if not f or not getattr(f, "filename", ""):
+            continue
+        data = await f.read()
+        if not data or len(data) > 8 * 1024 * 1024:
+            continue
+        skey = f"taovideo/{u_id}/refs/{uuid.uuid4().hex}.img"
+        storage.put(skey, _io.BytesIO(data), content_type=f.content_type or "image/png")
+        role = roles[i] if roles and i < len(roles) else "reference_image"
+        specs.append({"kind": "image", "storage_key": skey,
+                      "role": role or "reference_image", "handle": ""})
+    return specs
+
+
 @router.post("/queue", response_class=HTMLResponse)
-def queue(request: Request, csrf_token: str = Form(...), prompt: str = Form(""),
-          model: str = Form(""), resolution: str = Form("480p"),
-          duration: str = Form("5"), aspect_ratio: str = Form("16:9"),
-          generate_audio: str = Form(""), user: str = Depends(require_login)):
+async def queue(request: Request, csrf_token: str = Form(...), prompt: str = Form(""),
+                model: str = Form(""), resolution: str = Form("480p"),
+                duration: str = Form("5"), aspect_ratio: str = Form("16:9"),
+                generate_audio: str = Form(""), count: str = Form("1"),
+                ref_images: list[UploadFile] = File(default=[]),
+                ref_roles: list[str] = Form(default=[]),
+                user: str = Depends(require_login)):
     from platform_core import credit
     from platform_core.db import get_session
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
@@ -103,22 +148,32 @@ def queue(request: Request, csrf_token: str = Form(...), prompt: str = Form(""),
         return _render(request, user, error="Chưa nhập mô tả video.",
                        jobs=_jobs_cua_toi(request), status_code=400)
     mid, res, dur, asp = _clean(model, resolution, duration, aspect_ratio)
+    try:
+        n = max(1, min(int(count or 1), 2))
+    except (TypeError, ValueError):
+        n = 1
     u = user_hien_tai(request)
     if u is None:
         return _render(request, user, error="Cần đăng nhập bằng tài khoản người dùng.",
                        jobs=_jobs_cua_toi(request), status_code=400)
 
-    params = {"prompt": prompt.strip()[:10000], "model": mid, "resolution": res,
-              "duration": dur, "aspect_ratio": asp,
-              "generate_audio": bool(generate_audio), "owner_id": u.id}
+    ref_specs = await _luu_refs(u.id, ref_images, ref_roles)
+    base_params = {"prompt": prompt.strip()[:10000], "model": mid, "resolution": res,
+                   "duration": dur, "aspect_ratio": asp,
+                   "generate_audio": bool(generate_audio), "owner_id": u.id,
+                   "refs": ref_specs}
     gen = get_session(); db = next(gen)
+    last_id = None
     try:
         try:
-            job = submit_with_credit(
-                db, user_id=u.id, app_slug=MANIFEST.slug,
-                job_type="taovideo.generate", params=params,
-                dedupe_key=dedupe_key_for("taovideo.generate", params))
-            db.commit(); job_id = job.id
+            for k in range(n):                      # ×N video (dedupe khác nhau theo idx)
+                p = dict(base_params, _n=k)
+                job = submit_with_credit(
+                    db, user_id=u.id, app_slug=MANIFEST.slug,
+                    job_type="taovideo.generate", params=p,
+                    dedupe_key=dedupe_key_for("taovideo.generate", p))
+                last_id = job.id
+            db.commit()
         except (credit.ThieuCreditError, RegistryError) as exc:
             db.rollback()
             return _render(request, user, error=str(exc),
@@ -126,7 +181,7 @@ def queue(request: Request, csrf_token: str = Form(...), prompt: str = Form(""),
     finally:
         try: next(gen)
         except StopIteration: pass
-    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+    return RedirectResponse("/taovideo" if n > 1 else f"/jobs/{last_id}", status_code=303)
 
 
 @router.get("/v/{key:path}")

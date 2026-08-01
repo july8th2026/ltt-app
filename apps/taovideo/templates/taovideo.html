@@ -25,7 +25,8 @@
       <a href="/jobs">Việc của tôi</a>.
     </p>
 
-    <form method="post" action="{{ app.route_prefix }}/queue" id="sdform">
+    <form method="post" action="{{ app.route_prefix }}/queue" id="sdform"
+          enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <div class="ctrl"><label class="ctrl-lbl">Model</label>
@@ -33,8 +34,26 @@
 
       <div class="field">
         <label>Mô tả video (prompt, bắt buộc)</label>
-        <textarea name="prompt" rows="4" required maxlength="10000"
-                  placeholder="vd: Một phi hành gia lướt ván trên vành đai sao Thổ, ánh sáng điện ảnh, 4K"></textarea>
+        <div id="promptbox">
+          <textarea name="prompt" rows="4" required maxlength="10000"
+                    placeholder="vd: Một phi hành gia lướt ván trên vành đai sao Thổ, ánh sáng điện ảnh, 4K"></textarea>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:6px; align-items:center;">
+          <span class="dim" style="font-size:12px;">Dịch prompt:</span>
+          {% for t, lbl in [('en','EN'), ('zh','中'), ('vi','VI')] %}
+            <button type="button" class="btn ghost sm"
+                    hx-post="{{ app.route_prefix }}/translate"
+                    hx-include="[name='prompt']" hx-vals='{"target": "{{ t }}"}'
+                    hx-target="#promptbox" hx-swap="innerHTML">{{ lbl }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label class="ctrl-lbl">Ảnh tham chiếu (tuỳ chọn · ≤3 ảnh · ≤8MB mỗi ảnh)</label>
+        <input type="file" name="ref_images" accept="image/*" multiple>
+        <div class="dim" style="font-size:12px;margin-top:4px;">Nhân vật/bối cảnh làm mẫu.
+          Ảnh lớn/video tham chiếu + người thật (asset://): bản kế tiếp.</div>
       </div>
 
       <div class="row">
@@ -46,9 +65,15 @@
           <select name="aspect_ratio" id="sd-asp"></select></div>
       </div>
 
-      <label style="display:inline-flex; gap:8px; align-items:center; margin:4px 0 12px;">
-        <input type="checkbox" name="generate_audio" checked> <span class="dim">Tạo âm thanh</span>
-      </label>
+      <div class="row">
+        <div class="field"><label>Số lượng</label>
+          <select name="count"><option value="1">×1</option><option value="2">×2 (2 video khác nhau)</option></select></div>
+        <div class="field" style="display:flex; align-items:flex-end;">
+          <label style="display:inline-flex; gap:8px; align-items:center; margin:0 0 8px;">
+            <input type="checkbox" name="generate_audio" checked> <span class="dim">Tạo âm thanh</span>
+          </label>
+        </div>
+      </div>
 
       <div style="display:flex; gap:12px; align-items:center;">
         <button type="submit" class="btn">🎬 Tạo video</button>

@@ -23,16 +23,12 @@ def _che(msg: str, key: str) -> str:
     return msg[:500]
 
 
-def submit(api_key: str, *, model_endpoint: str, prompt: str, resolution: str,
+def submit(api_key: str, *, model_endpoint: str, content: list, resolution: str,
            duration: int, aspect_ratio: str, generate_audio: bool = True,
-           images_data_url: list | None = None, seed: int | None = None,
-           timeout: int = 30) -> str:
-    """Tạo task video → trả task_id. `images_data_url`: danh sách data: URL (inline, ≤8MB)."""
+           seed: int | None = None, timeout: int = 30) -> str:
+    """Tạo task video → trả task_id. `content` = list part đã dựng sẵn (text + refs)
+    theo `apps/taovideo/refs.build_content`."""
     import httpx
-    content = [{"type": "text", "text": prompt}]
-    for url in (images_data_url or []):
-        content.append({"type": "image_url", "image_url": {"url": url},
-                        "role": "reference_image"})
     body = {
         "model": model_endpoint, "content": content,
         "ratio": aspect_ratio, "resolution": resolution,

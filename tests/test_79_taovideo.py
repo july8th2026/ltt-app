@@ -6,6 +6,8 @@ registry model đúng, manifest hợp đồng. (Async submit/poll cần mạng �
 """
 from __future__ import annotations
 
+import pytest
+
 
 def test_cost_token_formula():
     from apps.taovideo import cost
@@ -66,3 +68,51 @@ def test_discover_khong_loi():
     from platform_core.registry import discover
     apps = {a.manifest.slug: a for a in discover()}
     assert "taovideo" in apps and not apps["taovideo"].error
+
+
+# ── Pha 2: refs (build_content / roles / inline / @tags) ──────────────────────
+def test_refs_role_hop_le_va_remap():
+    from apps.taovideo import refs
+    assert refs.image_role("reference_image") == "reference_image"
+    assert refs.image_role("start_frame") == "first_frame"      # remap legacy
+    assert refs.image_role("character") == "reference_image"
+    assert refs.image_role("bay-ba") == "reference_image"       # lạ → mặc định
+    assert refs.image_role("mask") == "mask"
+
+
+def test_refs_normalize_image_jpeg_png_passthrough():
+    from apps.taovideo import refs
+    jpeg = b"\xff\xd8\xff" + b"x" * 50
+    png = b"\x89PNG\r\n\x1a\n" + b"y" * 50
+    assert refs.normalize_image(jpeg) == (jpeg, "image/jpeg")
+    assert refs.normalize_image(png) == (png, "image/png")
+
+
+def test_refs_inline_data_url():
+    from apps.taovideo import refs
+    png = b"\x89PNG\r\n\x1a\n" + b"z" * 100
+    url = refs.image_to_inline(png)
+    assert url.startswith("data:image/png;base64,")
+
+
+def test_refs_inline_qua_lon_nem():
+    from apps.taovideo import refs
+    big = b"\x89PNG\r\n\x1a\n" + b"0" * (9 * 1024 * 1024)   # >8MiB
+    with pytest.raises(refs.RefError):
+        refs.image_to_inline(big)
+
+
+def test_refs_normalize_tags_handle():
+    from apps.taovideo import refs
+    r = [{"kind": "image", "handle": "swat"}, {"kind": "image", "handle": "boss"}]
+    out = refs.normalize_tags("canh @swat gap @boss", r)
+    assert "@IMG_1" in out and "@IMG_2" in out and "@swat" not in out
+
+
+def test_refs_build_content():
+    from apps.taovideo import refs
+    r = [{"kind": "image", "url": "data:image/png;base64,AAA", "role": "first_frame"}]
+    content = refs.build_content("chu de", r)
+    assert content[0]["type"] == "text"
+    assert content[1]["type"] == "image_url" and content[1]["role"] == "first_frame"
+    assert content[1]["image_url"]["url"].startswith("data:image/png")
