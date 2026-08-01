@@ -118,7 +118,8 @@ def test_khong_import_cheo_tu_bot_gemini():
     # Miễn trừ: script DI TRÚ MỘT LẦN (H8.5) CỐ Ý trỏ sang BOT GEMINI để nhập key
     # sang, chạy tay đúng một lần — web/worker KHÔNG bao giờ import nó, nên không
     # phải phụ thuộc lúc chạy (đúng tinh thần ràng buộc này).
-    MIEN_TRU = {"tools/import_api_keys_from_botgemini.py"}
+    MIEN_TRU = {"tools/import_api_keys_from_botgemini.py",
+                "tools/import_r2_modelark_from_botgemini.py"}
     mau = re.compile(r"BOT[ _]GEMINI", re.IGNORECASE)
     vi_pham = []
     for path in _source_files():

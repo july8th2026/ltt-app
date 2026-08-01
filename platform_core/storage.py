@@ -70,6 +70,12 @@ class Storage:
         """token -> key, hoặc None nếu sai/hết hạn."""
         raise NotImplementedError
 
+    def url_for(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> Optional[str]:
+        """URL tải TRỰC TIẾP file (H10). Backend đối tượng (R2) trả **presigned URL**
+        để trình duyệt tải thẳng từ CDN — KHÔNG proxy qua tunnel (né trần 100MB).
+        Backend cục bộ trả None → app tự serve qua route riêng như hiện tại."""
+        return None
+
 
 def _safe_key(key: str) -> str:
     """Chặn path traversal.
@@ -174,13 +180,105 @@ class LocalStorage(Storage):
 _storage: Optional[Storage] = None
 
 
+class R2Storage(Storage):
+    """Cloudflare R2 (S3-compatible) — H10. File lớn serve qua **presigned URL**
+    (`url_for`): trình duyệt tải THẲNG từ R2, không proxy qua tunnel → né trần
+    100MB. `boto3` nạp lười (không cài thì import storage.py vẫn chạy)."""
+
+    def __init__(self, *, bucket: str, endpoint_url: str, access_key_id: str,
+                 secret_access_key: str, region: str = "auto"):
+        self.bucket = bucket
+        self._endpoint = endpoint_url
+        self._akid = access_key_id
+        self._sk = secret_access_key
+        self._region = region
+        self._client = None
+
+    def _c(self):
+        if self._client is None:
+            import boto3
+            from botocore.config import Config
+            self._client = boto3.client(
+                "s3", endpoint_url=self._endpoint,
+                aws_access_key_id=self._akid, aws_secret_access_key=self._sk,
+                region_name=self._region, config=Config(signature_version="s3v4"))
+        return self._client
+
+    def put(self, key: str, stream: BinaryIO,
+            content_type: str = "application/octet-stream") -> StoredFile:
+        k = _safe_key(key)
+        self._c().upload_fileobj(stream, self.bucket, k,
+                                 ExtraArgs={"ContentType": content_type})
+        return StoredFile(key=k, size=self.size(k), content_type=content_type)
+
+    def open(self, key: str) -> BinaryIO:
+        try:
+            obj = self._c().get_object(Bucket=self.bucket, Key=_safe_key(key))
+        except Exception as e:  # noqa: BLE001
+            raise StorageError(f"R2 không đọc được: {key}") from e
+        return obj["Body"]
+
+    def delete(self, key: str) -> None:
+        self._c().delete_object(Bucket=self.bucket, Key=_safe_key(key))
+
+    def exists(self, key: str) -> bool:
+        from botocore.exceptions import ClientError
+        try:
+            self._c().head_object(Bucket=self.bucket, Key=_safe_key(key))
+            return True
+        except ClientError:
+            return False
+
+    def size(self, key: str) -> int:
+        return int(self._c().head_object(Bucket=self.bucket,
+                                         Key=_safe_key(key))["ContentLength"])
+
+    def url_for(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> Optional[str]:
+        return self._c().generate_presigned_url(
+            "get_object", Params={"Bucket": self.bucket, "Key": _safe_key(key)},
+            ExpiresIn=int(ttl_s))
+
+    def download_token(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> str:
+        raise StorageError("R2 dùng url_for(), không dùng download_token")
+
+    def resolve_token(self, token: str) -> Optional[str]:
+        return None
+
+
+def _r2_from_env() -> "R2Storage":
+    acc = os.environ.get("LTT_R2_ACCOUNT_ID", "").strip()
+    endpoint = (os.environ.get("LTT_R2_ENDPOINT", "").strip()
+                or (f"https://{acc}.r2.cloudflarestorage.com" if acc else ""))
+    akid = os.environ.get("LTT_R2_ACCESS_KEY_ID", "").strip()
+    sk = os.environ.get("LTT_R2_SECRET_ACCESS_KEY", "").strip()
+    bucket = os.environ.get("LTT_R2_BUCKET", "").strip()
+    if not (endpoint and akid and sk and bucket):
+        raise StorageError("R2 thiếu cấu hình LTT_R2_* (endpoint/key/bucket)")
+    return R2Storage(bucket=bucket, endpoint_url=endpoint,
+                     access_key_id=akid, secret_access_key=sk)
+
+
+def _local() -> "LocalStorage":
+    from core.runtime_paths import resolve_runtime_paths
+    paths = resolve_runtime_paths()
+    return LocalStorage(os.path.join(paths.data_dir, "files"))
+
+
 def get_storage() -> Storage:
-    """Storage dùng chung. Đổi backend ở đúng đây, không đổi ở app."""
+    """Storage dùng chung. `LTT_STORAGE=r2` + đủ `LTT_R2_*` → R2; ngược lại Local.
+    R2 lỗi cấu hình → fallback Local (không làm sập app), có log."""
     global _storage
     if _storage is None:
-        from core.runtime_paths import resolve_runtime_paths
-        paths = resolve_runtime_paths()
-        _storage = LocalStorage(os.path.join(paths.data_dir, "files"))
+        if os.environ.get("LTT_STORAGE", "").strip().lower() == "r2":
+            try:
+                _storage = _r2_from_env()
+            except Exception as e:  # noqa: BLE001
+                import logging
+                logging.getLogger(__name__).error(
+                    "R2 chưa cấu hình được, dùng LocalStorage: %s", e)
+                _storage = _local()
+        else:
+            _storage = _local()
     return _storage
 
 

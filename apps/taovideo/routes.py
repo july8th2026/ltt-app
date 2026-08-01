@@ -140,6 +140,13 @@ def video(request: Request, key: str, user: str = Depends(require_login)):
     if len(segs) < 2 or segs[0] != "taovideo" or u is None or segs[1] != u.id:
         raise HTTPException(status_code=404, detail="Không tìm thấy video.")
     storage = get_storage()
+    # R2 (H10): trả presigned URL → trình duyệt tải THẲNG từ R2, né trần 100MB.
+    try:
+        direct = storage.url_for(key)
+    except Exception:  # noqa: BLE001
+        direct = None
+    if direct:
+        return RedirectResponse(direct, status_code=302)
     try:
         total = storage.size(key)
     except (StorageError, FileNotFoundError):

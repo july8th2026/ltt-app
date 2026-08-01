@@ -28,3 +28,7 @@ psycopg[binary]>=3.3.4,<4.0
 # SQLAlchemy; keo theo WTForms cho form. Ban 0.20.x tuong thich Starlette 1.3.
 sqladmin>=0.20.1,<0.21
 wtforms>=3.1.2,<4.0
+
+# R2 object storage (H10). R2 = S3-compatible → dùng boto3. Chỉ cần khi
+# LTT_STORAGE=r2; import lười trong storage.py nên không bắt buộc lúc dev.
+boto3>=1.35,<2.0
