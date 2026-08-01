@@ -14,6 +14,35 @@
 
 ---
 
+## 2026-08-01 — seedance Pha 2 (refs + asset:// + moderation) — XONG (~90% parity)
+
+Nâng `taovideo` lên đầy đủ. Người dùng chọn "làm đầy đủ, cài insightface" — cài
+được opencv/Pillow/volcengine; **insightface bị chặn MSVC C++ Build Tools** → dùng
+**Haar (opencv)** làm bộ nhận diện mặt (chính là fallback của bản gốc). Creds R2 +
+ModelArk AK/SK đã import từ BOT GEMINI (H10).
+
+- **P2a**: `refs.py` (build_content + role reference_image/first_frame/last_frame/
+  mask + remap; ảnh ≤8MB inline chuẩn hoá Pillow; @handle→@IMG_n) · ×2 (submit N job)
+  · `translate.py` (dịch EN/中/VI qua Gemini chat) · **output-moderation retry** (đổi
+  seed, block bill 0 token, ≤5).
+- **P2b**: `assets.py` — pipeline **asset://** trung thành (volcengine SignerV4:
+  CreateAssetGroup/CreateAsset/GetAsset poll Active/DeleteAsset; shared group; host
+  tạm R2 presigned 1h → xoá sau) + `has_face` (Haar). jobs: ảnh>8MB/video/audio →
+  asset://; **heal người-thật** (privacy block → chuyển ref có mặt sang asset://,
+  ≤2 pass, pass1 faces-only). routes: nhận ref ảnh/video/audio (mime-detect).
+
+**Nghiệm thu THẬT trên production** (deploy `setup\2`, full suite **1659 pass**, scan 0):
+- P2a: **video có ảnh tham chiếu** — 73s, refs:1, 40.594 token→37 credit (ModelArk
+  chấp nhận content có image_url).
+- P2b: **asset:// live** — `asset://asset-20260801194151-…` tạo trong 9s (R2 temp →
+  volcengine CreateAsset → GetAsset Active → xoá), ký AK/SK đúng.
+
+**Còn (không chặn):** insightface (cần MSVC) để nhận mặt chính xác hơn Haar; **upscale
+1080p là MODULE RIÊNG** (Real-ESRGAN NCNN Vulkan, local GPU) → thuộc Đợt C, không phải
+ModelArk. Coi seedance ~90% parity (đủ dùng thương mại).
+
+---
+
 ## 2026-08-01 — H10: R2 object storage — XONG (nút cổ chai đã mở)
 
 Mở nút cổ chai chặn Đợt B/C + serve file lớn. Người dùng cho phép **lấy creds R2 +

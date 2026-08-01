@@ -23,7 +23,7 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 ### Nhóm 3 — Hoàn thiện app đang có (parity + doanh thu) — **P1**
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
-| 3.1 | **seedance Pha 2**: asset:// + refs + face-moderation + ×2 + dịch + upscale → parity ~90% | L | ⛔ **BỊ CHẶN** (xác minh 2026-08-01): (a) `face_detect` cần **insightface + onnxruntime** — venv CHƯA có, là dep nặng (~100s MB + model); (b) `asset://` cần **ModelArk AK/SK** (khác Bearer key đã import) — CHƯA có. Cần user cấp AK/SK + duyệt cài insightface | Tool video doanh thu cao nhất |
+| 3.1 | **seedance Pha 2** | — | — | ✅ **XONG 2026-08-01 (~90%)**: refs (ảnh inline + asset:// cho ảnh lớn/video/audio) + heal người-thật + ×2 + dịch + output-moderation retry. Kiểm THẬT: video-có-ref + asset:// live. AK/SK + R2 import từ BOT GEMINI. **Còn:** insightface (cần MSVC) cho face chính xác hơn Haar; **upscale = module riêng** (Real-ESRGAN, thuộc Đợt C). |
 | 3.2 | thumbnail fast-follow: ảnh tham chiếu + Batch (+Imagen khi gốc có) | S–M | — | Đã ~93%; đây là phần đã ghi hoãn |
 | 3.3 | taoanh: Batch (`---` nhiều prompt) + ảnh tham chiếu | S | — | |
 | 3.4 | kichban: preset mẫu + lịch sử + copy từng phần | S | — | |
