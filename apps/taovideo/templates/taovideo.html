@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+
+{% macro chipgroup(name, items, default) %}
+  <div class="chips">
+    {% for id, label in items %}
+      <label class="chip-opt">
+        <input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+  <script src="/static/htmx.min.js"></script>
+  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 4px;">Tạo video mới</h2>
+    <p class="dim" style="margin:0 0 14px;">
+      Mô tả video, chọn model + độ phân giải + thời lượng. Tính phí theo token thật —
+      giữ chỗ khi tạo, hoàn phần dư khi xong. Job chạy nền (video mất 1–5 phút) — xem ở
+      <a href="/jobs">Việc của tôi</a>.
+    </p>
+
+    <form method="post" action="{{ app.route_prefix }}/queue" id="sdform">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="ctrl"><label class="ctrl-lbl">Model</label>
+        {{ chipgroup('model', models, default_model) }}</div>
+
+      <div class="field">
+        <label>Mô tả video (prompt, bắt buộc)</label>
+        <textarea name="prompt" rows="4" required maxlength="10000"
+                  placeholder="vd: Một phi hành gia lướt ván trên vành đai sao Thổ, ánh sáng điện ảnh, 4K"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Độ phân giải</label>
+          <select name="resolution" id="sd-res"></select></div>
+        <div class="field"><label>Thời lượng (giây)</label>
+          <select name="duration" id="sd-dur"></select></div>
+        <div class="field"><label>Tỉ lệ</label>
+          <select name="aspect_ratio" id="sd-asp"></select></div>
+      </div>
+
+      <label style="display:inline-flex; gap:8px; align-items:center; margin:4px 0 12px;">
+        <input type="checkbox" name="generate_audio" checked> <span class="dim">Tạo âm thanh</span>
+      </label>
+
+      <div style="display:flex; gap:12px; align-items:center;">
+        <button type="submit" class="btn">🎬 Tạo video</button>
+        <span class="dim">Chi phí: <span id="est">…</span></span>
+      </div>
+      <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate" hx-include="#sdform"
+           hx-target="#est" hx-trigger="load, change from:#sdform" style="display:none"></div>
+    </form>
+  </div>
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 10px;">Video của tôi</h2>
+    {% if not jobs %}
+      <p class="dim" style="margin:0;">Chưa có video nào. Tạo cái đầu tiên ở trên.</p>
+    {% else %}
+      <div class="result-grid">
+        {% for j in jobs %}
+          <div style="border:1px solid var(--line); border-radius:10px; padding:10px;">
+            <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
+              {{ j.id[:8] }} ·
+              {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
+              {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
+              {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.progress_msg or j.status }} {{ j.progress }}%</span>{% endif %}
+            </div>
+            {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
+            {% if j.video_key %}
+              <video controls preload="metadata" style="width:100%; border-radius:8px;"
+                     src="{{ app.route_prefix }}/v/{{ j.video_key }}"></video>
+              <div style="margin-top:6px;"><a class="btn ghost sm"
+                   href="{{ app.route_prefix }}/v/{{ j.video_key }}" download>⬇ Tải video</a></div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+  (function(){
+    var REG = {{ reg_ui|tojson }};
+    function fill(sel, vals, cur){ sel.innerHTML='';
+      vals.forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;
+        if(String(v)===String(cur))o.selected=true;sel.appendChild(o);}); }
+    function repop(){
+      var m=document.querySelector('input[name=model]:checked'); if(!m)return;
+      var r=REG[m.value]; if(!r)return;
+      fill(document.getElementById('sd-res'), r.resolutions, '480p');
+      fill(document.getElementById('sd-dur'), r.durations, 5);
+      fill(document.getElementById('sd-asp'), r.aspects, '16:9');
+    }
+    document.querySelectorAll('input[name=model]').forEach(function(el){
+      el.addEventListener('change', function(){ repop();
+        if(window.htmx) htmx.trigger('#est-wrap','change'); });
+    });
+    repop();
+  })();
+  </script>
+{% endblock %}
