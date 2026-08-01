@@ -110,3 +110,6 @@ data/translations/desktop.ini
 # Anh chup phan tich PLENX (tu lieu, khong commit)
 /plenx-*.png
 /ltt-*.png
+
+# Playwright CLI temp
+.playwright-cli/
