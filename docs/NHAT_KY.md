@@ -14,6 +14,34 @@
 
 ---
 
+## 2026-08-01 — Đợt A1: di trú `taoanh` + `kichban` (kiểm chứng nhà máy) — XONG
+
+Áp công thức di trú (`CONG_THUC_DI_TRU_APP.md`) cho 2 app nhỏ — 1 ảnh, 1 văn bản —
+để kiểm chứng "nhà máy" dựng ở Đợt R rẻ/đúng tới đâu.
+
+- **`taoanh`** (từ `gemini_image`): sinh ảnh từ prompt tự do (không catalog) + chọn
+  model (3) + tỉ lệ (5) + số ảnh; tái dùng pattern thumbnail. **`kichban`** (từ
+  `youtube_script`): app **văn bản** đầu tiên — prompt ghép từ fragment (copy
+  `prompts/youtube_script`: 5 độ dài + 6 giọng văn + 6 đối tượng + 2 ngôn ngữ), gọi
+  Gemini TEXT (category chat), parse JSON, render hook/sections/outro/description/
+  tags + copy/tải; luồng form → `/r/{job}` HTMX poll.
+- **Nhà máy sinh lời ngay:** thêm app = thêm thư mục, KHÔNG sửa platform/server.
+  Chỉ **1 sửa nhà máy dùng chung** (đáng giá): `prompt_fragments.build()` chuyển từ
+  `str.format` sang **thay từng placeholder** — vì base_prompt kịch bản chứa **khối
+  JSON mẫu `{ }`** làm `.format` vỡ. Lỗi này chỉ lộ ở app thứ 2 → đúng giá trị của
+  việc kiểm chứng nhà máy trên nhiều app.
+- **Bài học slug:** đặt `image`/`script` làm slug khiến `test_60` (chống hardcode
+  slug) báo nhầm vì đó là **từ phổ biến** trong code nền tảng (`image/png`,
+  `script-src`). Đổi thành **slug đặc trưng** `taoanh`/`kichban`. Ghi vào manifest.
+
+**Nghiệm thu:** `test_78` parity A1; full suite **1634 pass / 4 skip**; scan 0;
+deploy `setup\2`; **kiểm URL công khai thật** (rule 5b): cả 2 app render đúng
+(chip/select/design), header hiện nhóm mới "Kịch bản"; **kichban chạy THẬT
+end-to-end** — sinh kịch bản có cấu trúc, credit trừ đúng 45→42 (3cr/kịch bản),
+0 lỗi console (trừ beacon CF).
+
+---
+
 ## 2026-08-01 — Đợt R: nâng thumbnail đạt PARITY + "nhà máy di trú" — XONG
 
 Khởi động chương trình di trú module BOT GEMINI (PA3, xem `KE_HOACH_DI_TRU_MODULE.md`).

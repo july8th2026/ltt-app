@@ -60,7 +60,10 @@ Thang 1–10 (Rủi ro: cao điểm = ít rủi ro). Trọng số: Chất lượ
 - Dựng scaffolding dùng lại: quy ước `apps/<slug>/prompts/`, helper prompt-builder ghép-fragment, "UI kit" trang tool (form nhóm điều khiển + xem-trước-prompt + lưới kết quả) trong `ltt.css`/macro Jinja, mapping model registry → `providers.py`, **test parity tự động**.
 - *Xong đợt = có khuôn; app sau chỉ điền tài nguyên + lõi.*
 
-**Đợt A1 — API quick wins:** gemini_image, youtube_script (kiểm chứng nhà máy trên 2 app nhỏ).
+**Đợt A1 — API quick wins:** ✅ **XONG 2026-08-01** — `taoanh` (gemini_image) +
+`kichban` (youtube_script, app văn bản đầu tiên). Nhà máy chạy tốt; chỉ cần 1 sửa
+dùng chung (`prompt_fragments.build` giữ literal braces). Slug đặc trưng (không
+dùng từ phổ biến). Full suite 1634, kiểm URL công khai + kichban chạy thật.
 
 **Đợt A2 — API doanh thu:** seedance_video + plenx (sinh đôi, kèm cost model) + gemini_video. *Mở nhóm tool tính phí thật.*
 
