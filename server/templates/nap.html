@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Nạp credit — LTT AI Studio{% endblock %}
+{% block content %}
+
+  <div class="pagehead">
+    <div>
+      <h1 style="margin:0 0 4px">Nạp credit</h1>
+      <p class="dim" style="margin:0">Chọn gói — thanh toán qua VietQR/PayOS, credit cộng tự động sau khi chuyển khoản.</p>
+    </div>
+    {% if so_du is not none %}
+      <div class="actions"><span class="pill">💎 {{ '{:,}'.format(so_du) }} credit</span></div>
+    {% endif %}
+  </div>
+
+  {% if not co_user_csdl %}
+    <div class="alert alert-warn" style="margin:12px 0;">Tài khoản này không nạp được credit (đăng nhập bằng đường cứu hộ).</div>
+  {% endif %}
+
+  {% if goi %}
+  <div class="grid">
+    {% for g in goi %}
+      {% set bonus = g.credits_base * g.bonus_percent // 100 %}
+      {% set total = g.credits_base + bonus %}
+      <div class="appcard">
+        <div class="cover" style="background:linear-gradient(135deg,var(--accent)22,transparent);">
+          <span class="big">💎</span>
+          {% if g.bonus_percent %}<span class="cbadge badge b-ok"><span class="dot"></span>+{{ g.bonus_percent }}%</span>{% endif %}
+        </div>
+        <div class="in">
+          <h2 style="margin:0 0 2px">{{ g.name }}</h2>
+          <p class="sum" style="font-size:22px;font-weight:700;color:var(--fg);margin:6px 0">
+            {{ '{:,}'.format(g.price_vnd) }}đ</p>
+          <div class="meta" style="margin-bottom:12px">
+            {{ '{:,}'.format(g.credits_base) }} credit
+            {%- if bonus %} <span style="color:var(--ok)">+ {{ '{:,}'.format(bonus) }} bonus</span>{% endif %}
+            <br><strong style="color:var(--fg)">= {{ '{:,}'.format(total) }} credit</strong>
+          </div>
+          <form method="post" action="/nap/tao">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="package_id" value="{{ g.id }}">
+            <button class="btn" {% if not co_user_csdl %}disabled{% endif %}>Nạp gói này &nbsp;→</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <div class="ui-card" style="margin-top:14px;">
+      <p class="dim" style="margin:0;">Chưa có gói nạp nào. Admin thêm gói ở trang quản trị.</p>
+    </div>
+  {% endif %}
+
+{% endblock %}

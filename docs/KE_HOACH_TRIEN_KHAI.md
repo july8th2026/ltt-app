@@ -800,13 +800,72 @@ model tự động.
 
 ---
 
-## H9 — Thanh toán *(chưa chốt cách làm)*
+## H9 — Thanh toán *(chốt 2026-08-01: PayOS + agnostic — xem Q31)*
 
-Chỉ bắt đầu khi H5 đã có người dùng thật. Cần chốt trước: cổng thanh toán nào
-(VNPAY / MoMo / chuyển khoản có webhook), hoá đơn, hoàn tiền.
+**Quyết định (Q31):** cổng **PayOS** (VietQR + webhook chữ ký), kiến trúc
+**agnostic** (đăng ký cổng như Provider Registry). Tỉ giá **1 credit = 100đ**
+(100.000đ = 1.000 credit). Gói nạp có **bonus theo %**, admin sửa được. **Mọi tiền
+đi qua `credit.nap` (sổ H3)** — không đường tắt. Đơn hàng **idempotent** (webhook
+lặp không cộng đôi). Credential ở `secrets\app.env` (`LTT_PAYOS_*`), vắng → adapter
+tắt mềm (dev/test vẫn chạy).
 
-Nguyên tắc bắt buộc từ bây giờ: **mọi thứ liên quan tiền đi qua sổ credit ở
-H3**, không bao giờ có đường tắt riêng cho thanh toán.
+### H9.1 — Model + toán tiền
+- `models.py`: `CreditPackage` (name, price_vnd, credits_base, bonus_percent,
+  sort_order, active) + `PaymentOrder` (order_code UNIQUE int cho PayOS, user_id,
+  package_id, price_vnd, credits (tổng đã gồm bonus), bonus_percent snapshot,
+  status pending/paid/expired/cancelled/failed, gateway, gateway_ref, checkout_url,
+  paid_at, credited flag, created_at, expires_at, note). Hằng `ORDER_*`.
+- `platform_core/billing_math.py`: `credits_base_tu_vnd(vnd)` = vnd//100;
+  `bonus_credits(base, pct)` = base*pct//100; `tong_credits(base, pct)`.
+- Migration (chain từ `e9f0a1b2c3d4`). Seed vài gói mặc định (admin sửa sau).
+- **Test:** toán base/bonus/tổng; ràng buộc gói; order_code duy nhất.
+
+### H9.2 — Cổng agnostic + adapter PayOS
+- `platform_core/payments/__init__.py`: giao diện `Gateway` {`id`, `tao_thanh_toan
+  (order) -> {checkout_url, qr, ref}`, `xac_thuc_webhook(headers, raw_body) ->
+  {order_code, paid, ref}`} + registry `GATEWAYS`.
+- `payments/payos.py`: tạo payment link (POST PayOS, ký HMAC-SHA256 checksumKey);
+  verify webhook (ký lại data sắp theo khoá, so `signature`). Đọc `LTT_PAYOS_CLIENT_ID
+  /API_KEY/CHECKSUM_KEY` từ env; vắng → `GatewayChuaCauHinh` (tắt mềm).
+- **Test:** ký + verify round-trip (khoá test); chữ ký sai bị từ chối; thiếu env → tắt mềm.
+
+### H9.3 — Nghiệp vụ đơn (billing service)
+- `platform_core/billing.py`: `tao_don(db, user, package, gateway)` → PaymentOrder
+  pending + gọi gateway → checkout_url; `ghi_nhan_tra(db, order_code, ref)`
+  **idempotent** (đã credited thì bỏ qua) → `credit.nap(user, credits)` + paid;
+  `het_han_don`; `liet_ke_don`. Khoá theo order để không cộng đôi.
+- **Test:** vòng đời đơn; idempotent (gọi 2 lần chỉ cộng 1); hết hạn; số dư khớp.
+
+### H9.4 — Trang /nap (người dùng)
+- `server/routes/billing.py`: `/nap` (gói + base+bonus+tổng + nút Nạp) → tạo đơn →
+  hiện **VietQR + thông tin CK + mã đơn** ở `/nap/don/<id>`, HTMX poll trạng thái →
+  khi paid hiện thành công + số dư mới. Wire header **Bảng giá**→`/nap`, **Nạp thêm**→`/nap`.
+- **Test:** trang cần đăng nhập; tạo đơn ra QR; poll trả trạng thái.
+
+### H9.5 — Webhook
+- `server/routes/webhooks.py`: `POST /webhooks/payment/payos` — verify chữ ký,
+  tìm đơn theo order_code, `ghi_nhan_tra` idempotent, trả 200. **Miễn CSRF** (API,
+  không phải form) nhưng **bắt buộc chữ ký**. Log gọn, không ghi secret.
+- **Test:** chữ ký hợp lệ → cộng credit; sai → 400 không cộng; lặp → không cộng đôi.
+
+### H9.6 — Admin sâu (quản trị thanh toán)
+- Console **Gói nạp** (CRUD: giá/credit/bonus%/bật/thứ tự) — dark như APIKEYS.
+- Console **Đơn hàng** (lọc theo trạng thái, xem chi tiết, **Đánh dấu đã trả** tay
+  = dự phòng khi webhook lỗi, đi qua `ghi_nhan_tra` nên vẫn idempotent).
+- **Doanh thu** (tổng VND đã thu, tổng credit đã bán, theo ngày).
+- **Test:** chỉ admin; CRUD gói; mark-paid cộng credit đúng + không đôi.
+
+### H9.7 — Nghiệm thu
+- Full `pytest -q` + scan 0 + deploy `setup\2` + migration + **kiểm trình duyệt**
+  `/nap` (ra QR) + `/admin` Gói/Đơn. Cập nhật NHAT_KY + tài liệu.
+
+### Thứ tự & tiêu chí xong H9
+H9.1→…→H9.7; mỗi bước xanh test mới sang bước sau. **Xong khi:** user nạp được
+(gói+bonus), PayOS webhook cộng credit idempotent qua sổ H3, admin quản gói+đơn+
+doanh thu, migration production, full suite xanh + scan 0 + kiểm trình duyệt.
+
+> **Ghi chú lịch sử (trước khi chốt):** cần cổng nào (VNPAY/MoMo/CK webhook), hoá
+> đơn, hoàn tiền — nay chốt PayOS + agnostic (Q31). Hoá đơn VAT: hoãn tới khi cần.
 
 ---
 

@@ -1,0 +1,21 @@
+{# Fragment HTMX: trạng thái đơn. Tự thay chính mình (outerHTML). Khi đã trả thì
+   BỎ hx-trigger -> ngừng poll. #}
+{% if order.status == 'paid' %}
+<div id="tt" style="margin-top:16px">
+  <div class="alert alert-ok" style="margin:0">
+    <strong style="color:var(--ok)">✓ Đã thanh toán</strong> — đã cộng
+    {{ '{:,}'.format(order.credits) }} credit.
+    {% if so_du is not none %}Số dư mới: <strong>{{ '{:,}'.format(so_du) }} credit</strong>.{% endif %}
+  </div>
+</div>
+{% elif order.status in ('expired', 'cancelled', 'failed') %}
+<div id="tt" style="margin-top:16px">
+  <div class="alert alert-err" style="margin:0">Đơn {{ order.status }} — vui lòng tạo đơn mới.</div>
+</div>
+{% else %}
+<div id="tt" style="margin-top:16px"
+     hx-get="/nap/don/{{ order.id }}/trangthai" hx-trigger="every 4s" hx-swap="outerHTML">
+  <span class="badge b-warn"><span class="dot"></span>Đang chờ thanh toán…</span>
+  <span class="dim" style="font-size:12px;margin-left:8px">Tự kiểm tra mỗi 4 giây.</span>
+</div>
+{% endif %}

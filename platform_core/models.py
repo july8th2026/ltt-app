@@ -351,3 +351,79 @@ class ApiKey(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<ApiKey {self.provider} {self.name!r} {self.status}>"
+
+
+# ── Thanh toán / nạp credit (H9) ───────────────────────────────────────────────
+# Trạng thái đơn nạp:
+# pending   : đã tạo, chờ khách chuyển tiền
+# paid      : đã nhận tiền + đã cộng credit (idempotent qua cờ credited)
+# expired   : quá hạn chưa trả
+# cancelled : khách/admin huỷ
+# failed    : cổng báo lỗi
+ORDER_PENDING = "pending"
+ORDER_PAID = "paid"
+ORDER_EXPIRED = "expired"
+ORDER_CANCELLED = "cancelled"
+ORDER_FAILED = "failed"
+
+
+class CreditPackage(Base):
+    """Một gói nạp credit (H9). Admin sửa giá/credit/bonus — không hardcode.
+
+    `credits_base` = số credit gốc (theo tỉ giá 1 credit = 100đ → thường
+    price_vnd//100), `bonus_percent` = % tặng thêm. Tổng credit khách nhận tính
+    ở `platform_core/billing_math.py` (một chỗ) để trang bán + đơn hàng luôn khớp.
+    """
+
+    __tablename__ = "credit_packages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    price_vnd: Mapped[int] = mapped_column(Integer, nullable=False)
+    credits_base: Mapped[int] = mapped_column(Integer, nullable=False)
+    bonus_percent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<CreditPackage {self.name!r} {self.price_vnd}d +{self.bonus_percent}%>"
+
+
+class PaymentOrder(Base):
+    """Một đơn nạp credit (H9). Cầu nối giữa cổng thanh toán và sổ credit H3.
+
+    **Idempotent:** `credited` chỉ True MỘT lần — webhook lặp hay admin mark-paid
+    lại đều KHÔNG cộng credit hai lần (guard ở `platform_core/billing.py`).
+
+    `order_code` là số nguyên duy nhất PayOS yêu cầu để khớp giao dịch. `credits`
+    là TỔNG credit sẽ cộng (đã gồm bonus) — chốt tại thời điểm tạo đơn để đổi giá
+    gói sau này không ảnh hưởng đơn cũ.
+    """
+
+    __tablename__ = "payment_orders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    order_code: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    package_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+
+    price_vnd: Mapped[int] = mapped_column(Integer, nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False)          # tổng (gồm bonus)
+    bonus_percent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # snapshot
+
+    status: Mapped[str] = mapped_column(String(16), default=ORDER_PENDING, nullable=False, index=True)
+    credited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    gateway: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    gateway_ref: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    checkout_url: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    note: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<PaymentOrder {self.order_code} {self.status} {self.credits}cr>"

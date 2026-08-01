@@ -93,6 +93,10 @@ _ADM_NAV = [
     ("/admin/apikeys", "🔑", "APIKEYS", "apikeys"),
     ("/admin/job/list", "📋", "Job", "job"),
     ("/admin/session/list", "🔐", "Phiên", "session"),
+    ("__grp__", "", "Thanh toán", ""),
+    ("/admin/doanh-thu", "📈", "Doanh thu", "revenue"),
+    ("/admin/goi", "💠", "Gói nạp", "goi"),
+    ("/admin/don", "🧾", "Đơn hàng", "don"),
     ("__grp__", "", "Hệ thống", ""),
     ("/status", "🩺", "Tình trạng", "status"),
 ]
@@ -675,6 +679,245 @@ def _che(msg: str, secret: str) -> str:
     return msg[:200]
 
 
+# ── H9: quản trị thanh toán (gói nạp + đơn hàng + doanh thu) ──────────────────
+_ORDER_ST = {"pending": ("b-warn", "chờ trả"), "paid": ("b-ok", "đã trả"),
+             "expired": ("b-grey", "hết hạn"), "cancelled": ("b-grey", "huỷ"),
+             "failed": ("b-err", "lỗi")}
+
+
+def _vnd(n) -> str:
+    return f"{int(n):,}đ"
+
+
+def _order_badge(status: str) -> str:
+    cls, lbl = _ORDER_ST.get(status, ("b-grey", status))
+    return f'<span class="badge {cls}"><span class="dot"></span>{escape(lbl)}</span>'
+
+
+class RevenueView(BaseView):
+    """Bảng doanh thu (H9) — tổng VND đã thu, credit đã bán, số đơn."""
+
+    name = "Doanh thu"
+    icon = "fa-solid fa-chart-line"
+
+    @expose("/doanh-thu", methods=["GET"])
+    async def revenue(self, request: Request):
+        from platform_core import billing
+        gen = get_session(); db = next(gen)
+        try:
+            dt = billing.doanh_thu(db)
+            gan_day = billing.liet_ke_don(db, status="paid", limit=10)
+            rows = ""
+            for o in gan_day:
+                rows += (f'<tr><td class="mono">{o.order_code}</td>'
+                         f'<td class="mono muted">{escape(o.user_id[:8])}</td>'
+                         f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
+                         f'<td class="tnum">{o.credits:,}</td>'
+                         f'<td class="muted" style="font-size:12px">{o.paid_at:%Y-%m-%d %H:%M}</td></tr>'
+                         if o.paid_at else "")
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        cards = (
+            f'<div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px">'
+            f'<div class="ui-card"><div class="dim">Tổng đã thu</div>'
+            f'<div style="font-size:26px;font-weight:700">{_vnd(dt["vnd"])}</div></div>'
+            f'<div class="ui-card"><div class="dim">Credit đã bán</div>'
+            f'<div style="font-size:26px;font-weight:700">{dt["credits"]:,}</div></div>'
+            f'<div class="ui-card"><div class="dim">Đơn đã trả</div>'
+            f'<div style="font-size:26px;font-weight:700">{dt["orders"]:,}</div></div></div>')
+        body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Doanh thu</h1>'
+                f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3).</p></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/goi">💠 Gói nạp</a>'
+                f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>'
+                f'{cards}<h2 style="margin:22px 0 10px">Đơn đã trả gần đây</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trả lúc</th>'
+                f'</tr></thead><tbody>{rows or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Chưa có đơn nào.</td></tr>"}'
+                f'</tbody></table></div></div>')
+        return HTMLResponse(_admin_shell("Doanh thu", "revenue", body))
+
+
+class PackagesView(BaseView):
+    """Quản lý gói nạp (H9): thêm/sửa/bật-tắt/xoá. Giá/credit/bonus admin tự đặt."""
+
+    name = "Gói nạp"
+    icon = "fa-solid fa-box"
+
+    @expose("/goi", methods=["GET", "POST"])
+    async def packages(self, request: Request):
+        from platform_core import billing_math
+        from platform_core.models import CreditPackage
+        from server.auth.csrf import issue_csrf_token, verify_csrf_token
+        msg = ""; status = 200
+        gen = get_session(); db = next(gen)
+        try:
+            if request.method == "POST":
+                form = await request.form()
+                if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+                    return HTMLResponse("CSRF", status_code=400)
+                try:
+                    name = (form.get("name") or "").strip()
+                    price = int(form.get("price_vnd") or 0)
+                    bonus = int(form.get("bonus_percent") or 0)
+                    order = int(form.get("sort_order") or 100)
+                    if price <= 0:
+                        raise ValueError("Giá phải dương.")
+                    if bonus < 0:
+                        raise ValueError("Bonus không âm.")
+                    base = billing_math.credits_base_tu_vnd(price)
+                    pkg = CreditPackage(name=name or f"Gói {price:,}đ", price_vnd=price,
+                                        credits_base=base, bonus_percent=bonus, sort_order=order)
+                    db.add(pkg); db.commit()
+                    msg = f'<div class="alert alert-ok">Đã thêm gói {escape(pkg.name)}.</div>'
+                except Exception as e:  # noqa: BLE001
+                    db.rollback()
+                    msg = f'<div class="alert alert-err">Lỗi: {escape(str(e))}</div>'; status = 400
+            token = issue_csrf_token(request)
+            pkgs = db.execute(
+                __import__("sqlalchemy").select(CreditPackage)
+                .order_by(CreditPackage.sort_order, CreditPackage.price_vnd)
+            ).scalars().all()
+            rows = ""
+            for p in pkgs:
+                total = billing_math.tong_credits(p.credits_base, p.bonus_percent)
+                on = ('<span class="badge b-ok"><span class="dot"></span>bật</span>' if p.active
+                      else '<span class="badge b-grey"><span class="dot"></span>tắt</span>')
+                def act(op, label):
+                    return (f'<form method="post" action="/admin/goi/action" style="display:inline">'
+                            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+                            f'<input type="hidden" name="id" value="{escape(p.id)}">'
+                            f'<input type="hidden" name="op" value="{op}">'
+                            f'<button class="btn ghost sm">{label}</button></form>')
+                rows += (f'<tr><td class="tnum">{p.sort_order}</td><td>{escape(p.name)}</td>'
+                         f'<td class="tnum">{_vnd(p.price_vnd)}</td>'
+                         f'<td class="tnum">{p.credits_base:,}</td>'
+                         f'<td class="tnum">+{p.bonus_percent}%</td>'
+                         f'<td class="tnum"><strong>{total:,}</strong></td><td>{on}</td>'
+                         f'<td><div class="rowactions">'
+                         f'{act("toggle", "Bật/Tắt")}{act("delete", "Xoá")}</div></td></tr>')
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        form_html = (
+            f'<div class="ui-card" style="max-width:640px;margin-bottom:18px"><form method="post">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<div class="field"><label>Tên gói</label><input class="inp" name="name" placeholder="Gói 100k"></div>'
+            f'<div class="field"><label>Giá (VNĐ)</label><input class="inp tnum" name="price_vnd" type="number" required placeholder="100000"></div>'
+            f'<div class="field"><label>Bonus (%)</label><input class="inp tnum" name="bonus_percent" type="number" value="0"></div>'
+            f'<div class="field"><label>Thứ tự hiện</label><input class="inp tnum" name="sort_order" type="number" value="100"></div>'
+            f'<p class="dim" style="font-size:12px;margin:0 0 10px">Tỉ giá 1 credit = 100đ → credit gốc = giá // 100. Tổng = gốc + bonus%.</p>'
+            f'<button class="btn">＋ Thêm gói</button></form></div>')
+        body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Gói nạp</h1>'
+                f'<p>Khách thấy gói bật ở trang <code>/nap</code>. Đổi giá không ảnh hưởng đơn cũ.</p></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
+                f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>{msg}{form_html}'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>#</th><th>Tên</th><th>Giá</th><th>Gốc</th><th>Bonus</th><th>Tổng</th>'
+                f'<th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead>'
+                f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có gói. Thêm ở trên.</td></tr>"}'
+                f'</tbody></table></div></div>')
+        return HTMLResponse(_admin_shell("Gói nạp", "goi", body), status_code=status)
+
+    @expose("/goi/action", methods=["POST"])
+    async def package_action(self, request: Request):
+        from platform_core.models import CreditPackage
+        from server.auth.csrf import verify_csrf_token
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+        pid = form.get("id", ""); op = form.get("op", "")
+        gen = get_session(); db = next(gen)
+        try:
+            p = db.get(CreditPackage, pid)
+            if p is not None:
+                if op == "toggle":
+                    p.active = not p.active
+                elif op == "delete":
+                    db.delete(p)
+                db.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        return RedirectResponse("/admin/goi", status_code=303)
+
+
+class OrdersView(BaseView):
+    """Đơn hàng nạp (H9): lọc theo trạng thái + xác nhận trả tay (dự phòng)."""
+
+    name = "Đơn hàng"
+    icon = "fa-solid fa-receipt"
+
+    @expose("/don", methods=["GET"])
+    async def orders(self, request: Request):
+        from platform_core import billing
+        from server.auth.csrf import issue_csrf_token
+        st = request.query_params.get("st", "all")
+        gen = get_session(); db = next(gen)
+        try:
+            allrows = billing.liet_ke_don(db, limit=300)
+            token = issue_csrf_token(request)
+            cnt = {"all": len(allrows)}
+            for s in ("pending", "paid", "expired", "cancelled", "failed"):
+                cnt[s] = sum(1 for o in allrows if o.status == s)
+            shown = allrows if st == "all" else [o for o in allrows if o.status == st]
+            rows = ""
+            for o in shown:
+                markpaid = ""
+                if o.status == "pending":
+                    markpaid = (f'<form method="post" action="/admin/don/action" style="display:inline">'
+                                f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+                                f'<input type="hidden" name="order_code" value="{o.order_code}">'
+                                f'<button class="btn ghost sm">Đã trả</button></form>')
+                rows += (f'<tr><td class="mono">{o.order_code}</td>'
+                         f'<td class="mono muted">{escape(o.user_id[:8])}</td>'
+                         f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
+                         f'<td class="tnum">{o.credits:,}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
+                         f'<td>{_order_badge(o.status)}</td>'
+                         f'<td class="muted" style="font-size:12px">{escape(o.gateway or "-")}</td>'
+                         f'<td class="muted" style="font-size:12px">{o.created_at:%m-%d %H:%M}</td>'
+                         f'<td><div class="rowactions">{markpaid}</div></td></tr>')
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        def tab(s, label):
+            cls = "on" if st == s else ""
+            return f'<a class="{cls}" href="/admin/don?st={s}">{label} <span class="n">{cnt.get(s,0)}</span></a>'
+        tabs = (tab("all", "Tất cả") + tab("pending", "Chờ trả") + tab("paid", "Đã trả")
+                + tab("expired", "Hết hạn") + tab("cancelled", "Huỷ") + tab("failed", "Lỗi"))
+        body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Đơn hàng</h1>'
+                f'<p>“Đã trả” = xác nhận tay khi webhook lỗi (vẫn idempotent, cộng credit đúng một lần).</p></div>'
+                f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
+                f'<a class="btn ghost" href="/admin/goi">💠 Gói nạp</a></div></div>'
+                f'<div class="tabs">{tabs}</div>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
+                f'<th>Cổng</th><th>Tạo lúc</th><th style="text-align:right">Thao tác</th></tr></thead>'
+                f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có đơn.</td></tr>"}'
+                f'</tbody></table></div></div>')
+        return HTMLResponse(_admin_shell("Đơn hàng", "don", body))
+
+    @expose("/don/action", methods=["POST"])
+    async def order_action(self, request: Request):
+        from platform_core import billing
+        from server.auth.csrf import verify_csrf_token
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+        try:
+            code = int(form.get("order_code") or 0)
+        except ValueError:
+            return RedirectResponse("/admin/don", status_code=303)
+        gen = get_session(); db = next(gen)
+        try:
+            billing.ghi_nhan_tra(db, code, by="admin")   # idempotent
+            db.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        return RedirectResponse("/admin/don", status_code=303)
+
+
 def setup_admin(app, *, session_secret: str) -> bool:
     """Gắn trang quản trị vào app. Trả True nếu gắn được.
 
@@ -709,4 +952,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
     admin.add_view(JobAdmin)
     admin.add_view(SessionAdmin)
     admin.add_view(PlatformInfoAdmin)
+    admin.add_view(RevenueView)
+    admin.add_view(PackagesView)
+    admin.add_view(OrdersView)
     return True

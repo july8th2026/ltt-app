@@ -27,9 +27,9 @@
   </details>
 
   <div class="hdr-right">
-    <a class="hdr-link pricing" href="/settings">Bảng giá</a>
+    <a class="hdr-link pricing" href="/nap">Bảng giá</a>
     {% set _bal = so_du_credit(request) %}
-    {% if _bal is not none %}<a class="pill" href="/settings" title="Số dư credit">💎 {{ _bal }} credit</a>{% endif %}
+    {% if _bal is not none %}<a class="pill" href="/nap" title="Số dư credit">💎 {{ _bal }} credit</a>{% endif %}
     {% set _acc = tai_khoan(request) %}
     {% if _acc %}
       <details class="menu avatar">
@@ -41,7 +41,7 @@
           <a href="/settings"><span class="ic">🔧</span> Cài đặt</a>
           <a href="/status"><span class="ic">🩺</span> Tình trạng</a>
           {% if is_admin(request) %}<a href="/admin/apikeys"><span class="ic">🛡️</span> Quản trị</a>{% endif %}
-          {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal }} credit <a href="/settings">Nạp thêm</a></div>{% endif %}
+          {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal }} credit <a href="/nap">Nạp thêm</a></div>{% endif %}
           <div class="sep"></div>
           <form method="post" action="/logout" style="margin:0">
             <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">

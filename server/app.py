@@ -187,6 +187,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(monitor_routes.router)
     app.include_router(oauth_routes.router)
 
+    # Thanh toán / nạp credit (H9)
+    from server.routes import billing as billing_routes
+    from server.routes import webhooks as webhooks_routes
+    app.include_router(billing_routes.router)
+    app.include_router(webhooks_routes.router)
+
     # File tĩnh (HTMX self-host — Q18). Self-host chứ không CDN: CSP chặn
     # script ngoài, và không phụ thuộc mạng để trang chạy.
     import os as _os
