@@ -14,6 +14,42 @@
 
 ---
 
+## 2026-08-01 — H8 Pha 2: telemetry · cascade · làm mới model — XONG
+
+Nối tiếp H8 Pha 1 (bộ máy APIKEYS). Ba năng lực theo kế hoạch, mỗi bước có test.
+
+- **H8.8 Telemetry rpm/tpm/token.** `ApiKey` thêm `rpm_limit`/`tpm_limit`
+  (0 = không giới hạn), `total_tokens`, và cửa sổ cố định 60s ngay trong hàng
+  (`window_start`/`window_requests`/`window_tokens`) — không lập bảng time-series.
+  `api_pool._cuon_cua_so` reset cửa sổ khi quá hạn; allocator **bỏ qua** key đã
+  chạm rpm/tpm; `danh_dau_thanh_cong(tokens=)` kế toán token. Migration
+  `e9f0a1b2c3d4` (additive, có server_default).
+- **H8.9 Cascade đa-provider.** `chon_key(category=, model=, thu_tu_provider=)` gom
+  key MỌI provider phục vụ category, xếp theo (thứ tự provider → priority → health →
+  tải). `lay_key(provider, ...)` giữ nguyên chữ ký (gọi `chon_key` với 1 provider) —
+  tương thích ngược, thumbnail không phải sửa. Một provider cạn key không còn làm
+  chết cả loại API.
+- **H8.10 Làm mới model tự động.** `providers_live.lay_models_song` gọi
+  `list_models_path` sống, parse cả OpenAI `{data:[id]}` lẫn Gemini
+  `{models:[name]}` (bỏ tiền tố `models/`); `api_keys.cap_nhat_supported_models`
+  ghi vào key. Admin: cột **Tải** (rpm·token) + nút **Làm mới** per-key (ghi
+  supported_models) + ModelsView hiện model sống per-provider.
+
+**Nghiệm thu (production):** deploy qua `setup\2` (đã vá: dừng dịch vụ TRƯỚC khi
+đụng `app\`, xem dưới); migration `e9f0a1b2c3d4` chạy; `/health/ready` 200
+(database ok); **kiểm trình duyệt** `/admin/apikeys` hiện cột Tải + nút Làm mới
+đúng (video byteplus/plenx không có nút — đúng vì không có `list_models_path`);
+`/admin/api-models-refresh?provider=gemini` gọi Gemini thật → **50 model sống**,
+0 lỗi console. Full suite **1598 pass / 4 skip**, scan 0. Test H8: 26.
+
+**Bẫy đã vá — `setup\2` khi CHẠY LẠI trên máy đang phục vụ:** script `Move-Item
+app -> app.previous` TRƯỚC khi dừng dịch vụ → `python.exe` của service khoá file
+trong `app\` → lỗi "being used by another process". Đã thêm `Stop-Service` (web +
+worker) ngay đầu bước copy (script vẫn khởi động lại ở cuối). Lần đầu cài không
+ảnh hưởng (chưa có service).
+
+---
+
 ## 2026-08-01 — UX Pha 2: bố cục HEADER (bỏ sidebar) theo PLENX — XONG
 
 Từ phân tích `docs/PHAN_TICH_PLENX.md` (quan sát PLENX qua trình duyệt). Người

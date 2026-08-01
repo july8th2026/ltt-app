@@ -62,6 +62,12 @@ foreach ($d in @($Root, $dataDir, $secrets, $logs, $backups, $tools)) {
 Ok "Da tao $Root"
 
 Head 'Copy ma nguon'
+# Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,
+# python.exe cua service khoa file trong app\ -> Move-Item/robocopy that bai
+# (loi "being used by another process"). Script se cai lai + khoi dong o cuoi.
+Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
+Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
 # Giu ban truoc de rollback duoc.
 if (Test-Path $appDir) {
     $prev = Join-Path $Root 'app.previous'

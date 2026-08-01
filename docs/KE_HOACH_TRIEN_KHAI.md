@@ -654,7 +654,16 @@ làm mới model tự động.
 
 ---
 
-## H8 — Bộ máy APIKEYS — Pha 2 📋 (telemetry · cascade · làm mới model)
+## H8 — Bộ máy APIKEYS — Pha 2 ✅ XONG 2026-08-01 (telemetry · cascade · làm mới model)
+
+**✅ Hoàn thành:** H8.8–H8.10. Migration `e9f0a1b2c3d4` chạy trên production;
+`/admin/apikeys` có cột Tải + nút Làm mới; `api-models-refresh` lấy 50 model sống
+từ Gemini thật; full suite **1598 pass / 4 skip**, scan 0. Chi tiết ở `NHAT_KY.md`.
+Kế hoạch chi tiết ban đầu giữ nguyên bên dưới để đối chiếu.
+
+---
+
+## H8 — Bộ máy APIKEYS — Pha 2 📋 (kế hoạch gốc: telemetry · cascade · làm mới model)
 
 **Mục tiêu:** một key hỏng/nghẽn KHÔNG làm chết cả loại API; admin thấy tải thực;
 model không còn hardcode. Giữ nguyên bất biến Pha 1 (không lộ credential thô; app

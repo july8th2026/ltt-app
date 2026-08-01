@@ -136,6 +136,7 @@ nào**.
 | App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
 | **Củng cố MVP (Hardening)** — Wave 0+1+2 | ✅ xong 2026-07-31 (H7) |
 | Bộ máy APIKEYS (provider + 4 category, mã hoá, allocator) — Pha 1 | ✅ xong 2026-07-31 (H8) |
+| APIKEYS Pha 2: telemetry rpm/tpm/token + cascade đa-provider + làm mới model | ✅ xong 2026-08-01 (H8) |
 | Giao diện: hệ thống thiết kế + header/avatar + catalog | ✅ xong 2026-07-31 (UX Pha 1+2) |
 | Thanh toán / nạp credit | ❌ chưa (H9) |
 | Lưu file lớn qua R2 + `Storage.url_for()` | ❌ chưa (H10) |
