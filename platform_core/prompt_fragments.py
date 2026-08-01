@@ -22,7 +22,6 @@ from __future__ import annotations
 import json
 import pathlib
 import re
-from collections import defaultdict
 from typing import Optional
 
 
@@ -64,11 +63,13 @@ def read_fragment(prompts_dir, group: str, option_id: str) -> str:
 
 
 def build(prompts_dir, mapping: dict, *, base: str = "base_prompt.txt") -> str:
-    """Ghép prompt cuối: đọc `base`, `.format` bằng `mapping` (placeholder thiếu →
-    rỗng, không ném KeyError), rồi gom dòng trống thừa. Trả prompt đã strip."""
+    """Ghép prompt cuối: đọc `base` rồi thay TỪNG placeholder `{key}` bằng giá trị.
+
+    KHÔNG dùng `str.format` — vì `base` có thể chứa dấu `{ }` VĂN BẢN THẬT (vd khối
+    JSON mẫu trong prompt youtube_script) mà `.format` sẽ hiểu nhầm là field và vỡ.
+    Thay có mục tiêu thì giữ nguyên mọi dấu ngoặc nhọn không phải placeholder."""
     text = (_dir(prompts_dir) / base).read_text(encoding="utf-8")
-    text = text.format_map(defaultdict(str, {k: ("" if v is None else v) for k, v in mapping.items()}))
+    for k, v in mapping.items():
+        text = text.replace("{" + k + "}", "" if v is None else str(v))
     text = re.sub(r"\n{3,}", "\n\n", text)
-    # bỏ dòng chỉ có khoảng trắng
-    text = "\n".join(ln for ln in text.split("\n") if ln.strip() != "" or True)
     return text.strip()

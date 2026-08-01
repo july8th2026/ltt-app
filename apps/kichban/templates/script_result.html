@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Kịch bản — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block content %}
+  <script src="/static/htmx.min.js"></script>
+
+  <div class="pagehead">
+    <div><h1 style="margin:0 0 4px">Kịch bản của bạn</h1>
+      <p class="dim" style="margin:0">Job chạy nền — trang tự cập nhật khi xong.</p></div>
+    <div class="actions"><a class="btn ghost" href="{{ app.route_prefix }}">&larr; Tạo mới</a></div>
+  </div>
+
+  <div id="sv" hx-get="{{ app.route_prefix }}/r/{{ job.id }}/status"
+       hx-trigger="load" hx-swap="outerHTML"></div>
+
+  <script>
+  function _scriptMd(){var t=document.getElementById('script-md');return t?t.value:'';}
+  function copyScript(){var v=_scriptMd();if(v)navigator.clipboard.writeText(v);}
+  function downloadScript(){var v=_scriptMd();if(!v)return;
+    var b=new Blob([v],{type:'text/plain;charset=utf-8'});var a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download='kich-ban.txt';a.click();}
+  </script>
+{% endblock %}

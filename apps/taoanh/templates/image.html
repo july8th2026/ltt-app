@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+
+{% macro chipgroup(name, items, default) %}
+  <div class="chips">
+    {% for id, label in items %}
+      <label class="chip-opt">
+        <input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 4px;">Tạo ảnh mới</h2>
+    <p class="dim" style="margin:0 0 14px;">
+      Mô tả ảnh bạn muốn, chọn model + tỉ lệ + số ảnh. Mỗi ảnh tốn
+      {{ app.credit_cost({'count': 1}) }} credit. Job chạy nền — xem tiến độ ở
+      <a href="/jobs">Việc của tôi</a>.
+    </p>
+
+    <form method="post" action="{{ app.route_prefix }}/queue">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="field">
+        <label>Mô tả ảnh (prompt, bắt buộc)</label>
+        <textarea name="prompt" rows="4" required
+                  placeholder="vd: Một chú mèo phi hành gia đứng trên sao Hoả, ánh sáng điện ảnh, siêu chi tiết"></textarea>
+      </div>
+
+      <div class="ctrl"><label class="ctrl-lbl">Model AI</label>
+        {{ chipgroup('model', models, models[0][0] if models else '') }}</div>
+
+      <div class="row" style="margin-top:6px;">
+        <div class="field"><label>Tỉ lệ khung hình</label>
+          <select name="aspect_ratio">
+            {% for a in aspects %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label>Số ảnh (1–4)</label>
+          <input type="number" name="count" value="1" min="1" max="4"></div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <button type="submit" class="btn">🎨 Tạo ảnh</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 10px;">Ảnh của tôi</h2>
+    {% if not jobs %}
+      <p class="dim" style="margin:0;">Chưa có ảnh nào. Tạo cái đầu tiên ở trên.</p>
+    {% else %}
+      {% for j in jobs %}
+        <div style="border-top:1px solid var(--line); padding:12px 0;">
+          <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
+            {{ j.id[:8] }} ·
+            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
+            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
+            {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.status }} {{ j.progress }}%</span>{% endif %}
+          </div>
+          {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
+          {% if j.image_keys %}
+            <div class="result-grid">
+              {% for k in j.image_keys %}
+                <a href="{{ app.route_prefix }}/f/{{ k }}" target="_blank">
+                  <img src="{{ app.route_prefix }}/f/{{ k }}" alt="ảnh" loading="lazy">
+                </a>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+{% endblock %}

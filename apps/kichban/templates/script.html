@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block content %}
+  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 4px;">Tạo kịch bản mới</h2>
+    <p class="dim" style="margin:0 0 14px;">
+      AI viết kịch bản đầy đủ: hook, nội dung, outro, description, tags. Mỗi kịch bản tốn
+      {{ app.credit_cost({}) }} credit. Job chạy nền — xem tiến độ ở <a href="/jobs">Việc của tôi</a>.
+    </p>
+
+    <form method="post" action="{{ app.route_prefix }}/queue">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="field">
+        <label>Chủ đề video (bắt buộc)</label>
+        <textarea name="topic" rows="3" required maxlength="500"
+                  placeholder="vd: Cách học tiếng Anh hiệu quả trong 30 ngày"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Độ dài</label>
+          <select name="duration">
+            {% for id, label in catalog['do_dai_video'] %}
+              <option value="{{ id }}" {% if id == defaults['do_dai_video'] %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        <div class="field"><label>Phong cách / giọng văn</label>
+          <select name="tone">
+            {% for id, label in catalog['giong_van'] %}
+              <option value="{{ id }}" {% if id == defaults['giong_van'] %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Đối tượng</label>
+          <select name="audience">
+            {% for id, label in catalog['doi_tuong'] %}
+              <option value="{{ id }}" {% if id == defaults['doi_tuong'] %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        <div class="field"><label>Ngôn ngữ</label>
+          <select name="language">
+            {% for id, label in catalog['ngon_ngu'] %}
+              <option value="{{ id }}" {% if id == defaults['ngon_ngu'] %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <button type="submit" class="btn">📝 Tạo kịch bản</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

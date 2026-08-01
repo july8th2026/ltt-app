@@ -1,0 +1,61 @@
+{# Fragment HTMX: tự thay chính mình. Xong → render kịch bản (bỏ trigger, ngừng poll). #}
+{% if job.status == 'done' and job.script %}
+{% set s = job.script %}
+<div id="sv">
+  {% if s.parse_error %}<div class="alert alert-warn">AI trả về không đúng JSON — hiển thị nội dung thô.</div>{% endif %}
+
+  <div style="display:flex; gap:10px; margin-bottom:14px;">
+    <button class="btn ghost sm" onclick="copyScript()">📋 Copy toàn bộ</button>
+    <button class="btn ghost sm" onclick="downloadScript()">⬇ Tải .txt</button>
+  </div>
+
+  <div class="ui-card"><h2 style="margin:0 0 6px">{{ s.title }}</h2></div>
+
+  <div class="ui-card" style="border-left:3px solid var(--accent);">
+    <div class="ctrl-lbl">Hook (15-30s đầu)</div>
+    <p style="margin:0; white-space:pre-line;">{{ s.hook }}</p></div>
+
+  <div class="ui-card">
+    <div class="ctrl-lbl">Nội dung</div>
+    {% for sec in s.sections %}
+      <details {% if loop.first %}open{% endif %} style="border-top:1px solid var(--line); padding:8px 0;">
+        <summary style="cursor:pointer; font-weight:600;">{{ loop.index }}. {{ sec.title }}</summary>
+        <p style="margin:8px 0 0; white-space:pre-line;">{{ sec.content }}</p>
+      </details>
+    {% endfor %}
+  </div>
+
+  {% if s.outro %}<div class="ui-card" style="border-left:3px solid var(--ok);">
+    <div class="ctrl-lbl">Outro + CTA</div>
+    <p style="margin:0; white-space:pre-line;">{{ s.outro }}</p></div>{% endif %}
+
+  <div class="row">
+    {% if s.description %}<div class="field"><label class="ctrl-lbl">Description</label>
+      <p class="dim" style="margin:0; white-space:pre-line;">{{ s.description }}</p></div>{% endif %}
+    {% if s.tags %}<div class="field"><label class="ctrl-lbl">Tags</label>
+      <div class="chips">{% for t in s.tags %}<span class="chip-opt"><span>#{{ t }}</span></span>{% endfor %}</div></div>{% endif %}
+  </div>
+
+  <textarea id="script-md" hidden># {{ s.title }}
+
+**HOOK:** {{ s.hook }}
+{% for sec in s.sections %}
+## {{ loop.index }}. {{ sec.title }}
+{{ sec.content }}
+{% endfor %}
+**OUTRO:** {{ s.outro }}
+
+**Description:** {{ s.description }}
+
+**Tags:** {{ s.tags|join(', ') }}
+</textarea>
+</div>
+{% elif job.status == 'error' %}
+<div id="sv"><div class="alert alert-err">Lỗi: {{ job.error or 'không rõ' }}</div></div>
+{% else %}
+<div id="sv" hx-get="{{ app.route_prefix }}/r/{{ job.id }}/status"
+     hx-trigger="every 3s" hx-swap="outerHTML">
+  <span class="badge b-warn"><span class="dot"></span>Đang viết kịch bản… {{ job.progress }}%</span>
+  <span class="dim" style="font-size:12px;margin-left:8px">Tự cập nhật mỗi 3 giây.</span>
+</div>
+{% endif %}
