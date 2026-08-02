@@ -26,6 +26,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw 'update.ps1 must run in an elevated Administrator PowerShell.'
+}
+
 function Write-Step($m) { Write-Host "`n=== $m ===" -ForegroundColor Cyan }
 function Write-Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 
@@ -41,9 +46,17 @@ Write-Ok 'Data backup complete'
 
 Write-Step 'Stopping service'
 if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-    Stop-Service $CodexServiceName -Force -ErrorAction SilentlyContinue
-    Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
-    Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
+    foreach ($name in @($CodexServiceName, $WorkerServiceName, $ServiceName)) {
+        $service = Get-Service -Name $name -ErrorAction SilentlyContinue
+        if ($service -and $service.Status -ne 'Stopped') {
+            Stop-Service $name -Force -ErrorAction Stop
+            $service.WaitForStatus('Stopped', [TimeSpan]::FromSeconds(30))
+        }
+        $after = Get-Service -Name $name -ErrorAction SilentlyContinue
+        if ($after -and $after.Status -ne 'Stopped') {
+            throw "Service $name did not stop; refusing to rotate the release."
+        }
+    }
     # Give the worker a moment to release its SessionLocks cleanly.
     Start-Sleep -Seconds 5
     Write-Ok "$ServiceName stopped"
