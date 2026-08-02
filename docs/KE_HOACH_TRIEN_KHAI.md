@@ -974,6 +974,13 @@ Quy trình duy nhất: `docs/QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` (Q45).
 Mỗi app sau dùng nhánh H13.`<slug>` riêng. Chỉ PASS khi có hồ sơ bằng chứng,
 test thật và browser thật theo UI-RD.
 
+### H13.taovideo — UI-RD Seedance / Tạo video AI
+
+- [x] R0–R3.5 Audit và Decision Gate chuẩn bị — 2026-08-02: xác nhận ảnh tham
+  khảo thuộc app `/taovideo`; hồ sơ `docs/UI_REDESIGN/taovideo/` đã map code,
+  dữ liệu thật và feature chưa có. Chờ Dev khóa lựa chọn trước BUILD.
+- [ ] R4–R10 Thiết kế, build, test, release — chỉ mở sau Decision Gate.
+
 ---
 
 ## Việc phải làm ngay ở phiên tiếp theo

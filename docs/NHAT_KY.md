@@ -14,6 +14,26 @@
 
 ---
 
+## 2026-08-02 — H13.taovideo: audit UI-RD Seedance, chờ khóa logic
+
+Đã phân tích ảnh `seedance.png` và code app hiện hành. Ảnh là mục tiêu cho
+`/taovideo` (tên hiển thị Tạo video AI), không phải căn cứ tạo app/slug `seedance`
+mới. Hồ sơ `UI_REDESIGN/taovideo/` đã ghi layout 3 vùng, map control, ma trận feature
+và ranh giới dữ liệu thật. Engine sẵn có gồm model capability, refs image/video/audio,
+asset://, translate, estimate/reserve/settle credit, polling/resume và output
+owner-scoped; UI hiện chỉ là form + 12 job gần nhất.
+
+Không đổi code, không tạo asset, không gọi ImageGen. Không dùng hình video trong ảnh
+tham khảo làm thumbnail giả cho output của user. Các thao tác delete/bulk/retry,
+prompt history và asset/template library bị để DEFER vì hiện chưa có lifecycle,
+retention, audit hay route thật. Đã đưa Decision Gate cho Dev khóa trước BUILD.
+
+**Bằng chứng thật:** Playwright Cloudflare `GET /taovideo` chuyển đúng tới
+`/login?next=/taovideo`; console 0 error/0 warning, request động RUM 204. Đã đối
+chiếu `apps/taovideo/routes.py`, template, jobs, models, cost và regression hiện có.
+
+**Rollback:** docs-only, revert commit audit; không ảnh hưởng production/code/data.
+
 ## 2026-08-02 — H13 Home: marketplace workspace từ ảnh tham khảo
 
 Đã chốt Q46 theo tám lựa chọn của Dev và hoàn thành lại trang chủ theo UI-RD.
