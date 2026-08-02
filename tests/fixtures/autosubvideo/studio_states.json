@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "states": [
+    "empty",
+    "imported",
+    "transcribing",
+    "editing",
+    "queued",
+    "running",
+    "done",
+    "error",
+    "cancelled",
+    "quota_exhausted",
+    "revision_conflict"
+  ],
+  "viewports": [
+    [1440, 900],
+    [1280, 800],
+    [390, 844],
+    [360, 800]
+  ],
+  "sample_project": {
+    "name": "Auto Sub fixture",
+    "schema_version": 1,
+    "active_step": "style",
+    "source": {
+      "key": "autosubvideo/test-user/uploads/sample.mp4",
+      "filename": "sample.mp4",
+      "duration_s": 20.0,
+      "width": 1280,
+      "height": 720
+    },
+    "tracks": [
+      {
+        "id": "track-source",
+        "kind": "source",
+        "language": "vi",
+        "name": "Tiếng Việt",
+        "visible": true,
+        "z_index": 0,
+        "style_id": "default",
+        "cues": [
+          {
+            "id": "cue-1",
+            "start": 0.0,
+            "end": 4.0,
+            "text": "Hôm nay chúng ta bắt đầu.",
+            "speaker": "SPEAKER_00",
+            "words": []
+          }
+        ]
+      }
+    ],
+    "speakers": {"SPEAKER_00": "Người nói 1"},
+    "style": {"preset": "default"},
+    "output": {"resolution": "source", "format": "mp4"}
+  }
+}

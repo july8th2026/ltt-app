@@ -1036,7 +1036,10 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
   8B/9A/10C/11C/12B thành Q49–Q50: Quick + Full Editor, React island,
   `AppProject`, WhisperX/pyannote/Gemini, multi-track/full mobile, chỉ render tính
   credit và mở thẳng public sau toàn bộ gate.
-- [ ] AS0–AS8 contract, engine, editor, timeline/style, render và hardening.
+- [x] AS0 baseline/contract/rollback — 2026-08-02: khóa container `AppProject`
+  generic, payload Auto Sub v1, multi-track/job/credit/flag contract, 11 state fixture
+  và 4 viewport; chưa sửa runtime/migration.
+- [ ] AS1–AS8 contract runtime, engine, editor, timeline/style, render và hardening.
 - [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
 
 ---

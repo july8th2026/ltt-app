@@ -14,6 +14,33 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS0: contract và rollback PASS
+
+- **Mục tiêu:** khóa ranh giới generic/app, fixture và rollback trước khi sửa runtime.
+- **Hạng mục:** AS0 hoàn thành; AS1 chưa bắt đầu.
+- **Trạng thái:** docs/fixture only, chưa migration, chưa deploy.
+
+### Đã làm
+
+Tạo `05_CONTRACT.md`: `AppProject` chỉ là container owner/app/version/revision;
+Auto Sub tự validate payload v1. Khóa multi-track, auxiliary job 0-credit có quota,
+render có credit, rollout off/public và rollback. Tạo fixture 11 state × 4 viewport.
+
+### Test đã chạy
+
+- `python -m pytest tests\test_62_khoa_logic.py tests\test_85_app_contract_lint.py -q`
+  → **25 passed**.
+- `python tools\scan_source_secrets.py` → **1009 file, 144995 dòng, 0 finding**.
+- `git diff --check` → PASS.
+
+### Cách lùi lại
+
+Revert commit AS0; không có state runtime/CSDL/production.
+
+### Việc tiếp theo
+
+AS1: model/migration/service/API `AppProject` và schema Auto Sub v1.
+
 ## 2026-08-02 — H13.autosubvideo: khóa Decision Gate Q49–Q50
 
 - **Mục tiêu:** ghi nhận 12 lựa chọn của Dev, dọn xung đột quyết định kiến trúc
