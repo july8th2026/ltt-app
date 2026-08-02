@@ -948,17 +948,28 @@ Không đánh dấu phase ở file này độc lập: chỉ đồng bộ từ b�
 
 ---
 
+## H13 — Chương trình thiết kế lại giao diện app từ ảnh tham khảo
+
+Quy trình duy nhất: `docs/QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` (Q45).
+
+- [x] H13.0 Chuẩn hóa UI-RD v1.0 — 2026-08-02: pipeline R0–R10, ma trận
+  giữ/bỏ/xây, gate G0–G7, chế độ ANALYZE/BUILD/FULL và cơ chế cập nhật quy tắc.
+  Playwright catalog production desktop/mobile: console 0, failed request 0;
+  phát hiện baseline mobile overflow ở 390 px. Đây là nghiên cứu/tài liệu, chưa
+  sửa giao diện app. Full suite 1851 pass, 8 skip, 23 subtest; secret scan 0.
+- [ ] H13.1 Nhận app đầu tiên + ảnh tham khảo; tạo hồ sơ UI-RD.
+- [ ] H13.2 Audit authenticated và chốt ma trận tính năng.
+- [ ] H13.3 Prototype desktop/mobile và visual target.
+- [ ] H13.4 Xây lát cắt dọc, test nghiệp vụ + visual regression.
+- [ ] H13.5 Nghiệm thu G0–G7 và rollout đúng phạm vi yêu cầu.
+
+Mỗi app sau dùng nhánh H13.`<slug>` riêng. Chỉ PASS khi có hồ sơ bằng chứng,
+test thật và browser thật theo UI-RD.
+
+---
+
 ## Việc phải làm ngay ở phiên tiếp theo
 
-H12 đã hoàn tất và đang public. Việc tiếp theo phải lấy từ backlog sản phẩm mới;
-không còn phase Agent/Canvas nào đang mở trong lộ trình P0–P13.
-
-1. **Người dùng — H0.1:** kiểm tra trên bảng điều khiển Cloudflare xem gói miễn
-   phí có cho tạo zone cấp subdomain `app.lttstudios.com` không. Việc 5 phút,
-   nhưng nó quyết định cả nhánh đường ra Internet. **Chưa biết kết quả thì chưa
-   chạy `setup/3-cloudflare.ps1`.**
-2. **H1.1** — dựng PostgreSQL + SQLAlchemy + Alembic, migration đầu tiên. Việc
-   này **không phụ thuộc** H0.1, làm song song được.
-3. Bổ sung bước cài Postgres vào `setup/2-cai-dat.ps1` và bước `pg_dump` vào
-   `backup.ps1` **trong cùng lần đó** — thêm CSDL mà quên sao lưu là một sự cố
-   đang chờ xảy ra.
+Nhận **tên/slug app + ảnh tham khảo** và chạy H13.1 theo UI-RD. Chỉ gửi hai đầu
+vào thì mặc định ANALYZE; ghi BUILD/FULL thì thực hiện tới gate tương ứng.
+Production chỉ deploy khi được nêu rõ.

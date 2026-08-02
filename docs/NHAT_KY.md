@@ -14,6 +14,31 @@
 
 ---
 
+## 2026-08-02 — H13.0: chuẩn hóa redesign app từ ảnh
+
+Đã nghiên cứu UI hiện hành và chốt Q45: ảnh tham khảo là mục tiêu thị giác cùng
+nguồn giả thuyết, không phải contract nghiệp vụ. Tạo quy trình UI-RD v1.0 với
+R0–R10, hồ sơ bằng chứng, ma trận KEEP/RESTYLE/EXTEND/BUILD/REJECT/DECORATIVE/
+DEFER, gate G0–G7 và ba chế độ ANALYZE/BUILD/FULL. Quy trình ưu tiên tái dùng
+registry/jobs/credit/provider/storage/media/Canvas hiện có, bắt buộc logic thật
+trước khi bật control mới và đưa phát hiện lặp lại vào test/token/quy tắc.
+
+Playwright production catalog desktop 1440×1000 và mobile 390×844: desktop có
+header 56 px, grid ba cột; console 0, failed request 0. Mobile đổi nav thành
+burger nhưng page rộng 438 px trong viewport 390 px, card rộng 390 px tại x=24:
+có overflow ngang baseline. Chưa sửa vì phiên này chỉ nghiên cứu/quy trình.
+Canary authenticated dừng trước khi tạo user do credential PostgreSQL workspace
+không khớp dịch vụ; không sửa secret/DB và không tạo session. H13.2 phải baseline
+lại trang authenticated bằng môi trường test/canary hợp lệ.
+
+**Lệnh/kết quả thật:** đọc source truth/plan/log và map manifest/routes/templates/
+jobs của ba họ UI; Playwright desktop/mobile console 0, network 0 lỗi;
+`prepare_agent_canary.py` FAIL an toàn trước tạo user do PostgreSQL auth.
+`python -m pytest -q` → **1851 passed, 8 skipped, 23 subtests passed**, 1 warning
+deprecation, 493,84s. `python tools\scan_source_secrets.py` → **0 finding**.
+
+**Rollback:** docs-only; revert commit H13.0. Không đổi production/code/DB.
+
 ## 2026-08-02 — Audit sau rollout và redeploy production
 
 Đã audit lại source sạch tại commit `baf06e9` và production đang chạy. Dependency
