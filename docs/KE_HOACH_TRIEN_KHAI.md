@@ -1090,3 +1090,14 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 tiếp là theo dõi telemetry/job thực tế và chỉ bật browser R2 direct sau khi bucket
 CORS vượt browser gate Q48. Hạ tầng
 độc lập còn việc cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.
+
+---
+
+## H14 — Chuẩn audit chất lượng app
+
+- [x] H14.0 LTT-AQA v1.0 — 2026-08-03: khóa Q51; tạo
+  `docs/quy_tac_audit.md` với score Q/M/E, gate G0–G8, control registry,
+  benchmark thế giới, pipeline A0–A10 và ưu tiên roadmap; tạo bộ 8 template tại
+  `docs/APP_AUDIT/_MAU/`; liên kết một chiều audit → UI-RD. Đây là thay đổi tài
+  liệu/quy trình, không sửa runtime hoặc deploy. Test khóa tài liệu 94 pass;
+  full suite 1.896 pass, 8 skip, 23 subtest; secret scan 0 finding.

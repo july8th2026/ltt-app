@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-03 — H14.0: chuẩn hóa LTT-AQA v1.0
+
+- **Mục tiêu:** lưu lâu dài bộ quy tắc audit toàn diện app và hồ sơ dùng lại.
+- **Hạng mục:** H14.0 — hoàn thành.
+- **Trạng thái:** tài liệu/quy trình xong; không sửa runtime, không deploy.
+
+### Đã làm
+
+Tạo `docs/quy_tac_audit.md` làm nguồn chuẩn cho audit nội tại, tính năng, mọi
+control, UX/UI, accessibility, hiệu năng, security/credit, AI/provider, vận hành
+và benchmark sản phẩm thế giới. Chuẩn tách Quality Score, Market Score, Evidence
+Confidence và Release Gate để điểm cao không che blocker tiền/bảo mật/dữ liệu.
+
+Tạo bộ hồ sơ `docs/APP_AUDIT/_MAU/` gồm charter, current truth, journey/control,
+competitor benchmark, scorecard, findings, decision gate và roadmap. Liên kết
+LTT-AQA đứng trước UI-RD, bổ sung tài liệu vào trang bắt đầu, khóa quyết định Q51
+và đồng bộ kế hoạch H14.0.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_61_setup_scripts.py tests\test_62_khoa_logic.py -q` | **94 passed** trong 0,62 giây |
+| `python -m pytest -q` | **1.896 passed**, 8 skipped, 23 subtests, 1 warning trong 567,74 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+
+Hai lượt full suite trực tiếp qua kênh lệnh trước đó bị timeout 120/300 giây;
+lượt thứ hai còn làm stdout pytest báo `OSError 22`. Đây là lỗi giới hạn kênh
+thu output, không phải test fail. Lượt cuối chạy cùng lệnh trong tiến trình ẩn,
+redirect log vào `tmp/h14-pytest.*.log`, theo dõi đến exit và có summary PASS ở
+trên; log thuộc `tmp/` không đưa vào commit.
+
+### Quyết định mới
+
+Q51 đã thêm vào `docs/QUYET_DINH_NEN_TANG.md`: mọi audit app toàn diện dùng
+LTT-AQA; gate critical không được bù bằng điểm.
+
+### Cách lùi lại
+
+Revert commit H14.0; không có migration, dữ liệu hoặc production state cần lùi.
+
+### Còn tồn đọng
+
+Chưa áp dụng LTT-AQA cho một app cụ thể trong hạng mục chuẩn hóa này.
+
+### Việc tiếp theo
+
+1. Khi nhận lệnh `AUDIT <MODE> -- app: <slug>`, sao chép mẫu và chạy A0–A10.
+2. Chỉ gọi UI-RD nếu finding/Decision Gate kết luận cần redesign.
+
+---
+
 ## 2026-08-03 — H13.autosubvideo AS9: production public PASS
 
 - **Mục tiêu:** khóa toàn bộ release gate, deploy có backup/rollback và chứng minh

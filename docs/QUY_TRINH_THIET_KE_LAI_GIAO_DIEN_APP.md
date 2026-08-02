@@ -7,6 +7,10 @@ tả nghiệp vụ. Mọi nút nhìn thấy trong ảnh phải được phân lo
 code đang chạy. Không dựng nút giả; không suy từ ảnh tĩnh rằng backend, quyền,
 credit, trạng thái lỗi hay dữ liệu đã tồn tại.
 
+Nếu yêu cầu là chấm chất lượng toàn app, so sánh đối thủ hoặc xác định thiếu/thừa
+tính năng, phải chạy LTT-AQA trong `docs/quy_tac_audit.md` trước. UI-RD nhận các
+finding/quyết định đã khóa để thiết kế; không tự tạo một scorecard audit thứ hai.
+
 Ưu tiên khi có xung đột: (1) an toàn/ownership/credit/contract; (2) giá trị thật
 cho app; (3) bố cục và hành vi giống ảnh; (4) trang trí/pixel. Giữ nhận diện LTT
 và trạng thái vận hành thật. Asset do người dùng/ChatGPT tạo có thể dùng; asset
@@ -228,3 +232,4 @@ chiếu bằng routes/templates/tests. App đầu tiên phải baseline authenti
 |---|---|---|---|
 | 1.0 | 2026-08-02 | Pipeline R0–R10, matrix và G0–G7 | Chuẩn hóa thiết kế từ ảnh; Playwright bắt mobile overflow mà đọc CSS không đủ |
 | 1.1 | 2026-08-02 | Thêm R3.5 Decision Gate | Dev yêu cầu khóa lựa chọn sau phân tích, trước khi triển khai |
+| 1.2 | 2026-08-03 | Liên kết LTT-AQA làm lớp audit trước UI-RD | Tách đánh giá sản phẩm/thị trường khỏi triển khai thiết kế, giữ một nguồn scorecard |

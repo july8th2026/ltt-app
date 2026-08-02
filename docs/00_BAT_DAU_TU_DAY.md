@@ -21,6 +21,8 @@ Thư mục này vừa là **mã nguồn** vừa là **bộ cài**.
 | 8 | `04_CLOUDFLARE_TUNNEL.md` | Dựng Tunnel, xử lý sự cố mạng |
 | 9 | **`AGENT_LTT/00_AGENT_BAT_DAU.md`** | **AI Agent LTT** — mở phiên làm việc về agent thì đọc file đó trước, nó chỉ đường tiếp. Kèm giao thức **đo trạng thái code thật** trước khi tin tài liệu. |
 | 10 | `CONG_THUC_DI_TRU_APP.md` + `KE_HOACH_DI_TRU_MODULE.md` | Di trú module BOT GEMINI → app: công thức 8 bước + backlog theo đợt |
+| 11 | **`quy_tac_audit.md`** | Audit toàn diện app: điểm Q/M/E, gate phát hành, control, benchmark thế giới và roadmap |
+| 12 | `QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` | Thiết kế lại UI từ ảnh sau khi audit/logic đã khóa |
 | — | `_luutru/` | Tài liệu đã ngừng dùng. **Đừng làm theo.** Chỉ để tra lý do lịch sử. |
 
 ---
