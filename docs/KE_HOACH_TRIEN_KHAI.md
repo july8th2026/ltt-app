@@ -995,10 +995,18 @@ batch tối đa 3, Watch Folder, compare thật, cancel/refund, telemetry admin 
 cầu Seedance; Pause/delete và AI Detail chưa có engine được quản lý bằng DEFER.
 
 - [x] UP0a Audit lại hội thoại, ảnh và code; khóa Q47 + hồ sơ UI-RD — 2026-08-02.
-- [ ] UP0b Baseline browser đa viewport/state + phân loại toàn bộ WIP/rollback.
-- [ ] UP1 Contract lifecycle cancel/refund + Seedance quote/confirm dùng chung.
-- [ ] UP2 Studio shell + upload R2/local + quote + option FPS/audio thật.
-- [ ] UP3 Compare nguồn/kết quả owner-scoped.
+- [x] UP0b Baseline browser/state + phân loại WIP/rollback — 2026-08-02: fixture
+  cô lập có Seedance done và Upscale running/done/error; source/output Range 206,
+  console 0, request ứng dụng không lỗi. Mobile đầy đủ tiếp tục gate UP2/UP8.
+- [x] UP1 Contract lifecycle cancel/refund + Seedance quote/confirm dùng chung —
+  2026-08-02: cooperative cancel xuống NCNN/FFmpeg; race cancel-vs-error không
+  retry; owner/CSRF/refund-idempotent; 50 test web/core và 67 regression nhóm pass;
+  Playwright quote 3 credit → job queued → cancel → credit phục hồi PASS.
+- [x] UP2 Studio shell + upload R2/local + quote + option FPS/audio thật —
+  2026-08-02: desktop/mobile không overflow; video Downloads được probe, preview
+  và quote thật; 53 test lát cắt PASS, console 0.
+- [x] UP3 Compare nguồn/kết quả owner-scoped — 2026-08-02: source Seedance và
+  upload trực tiếp, Range 206, owner khác/missing artifact 404; browser PASS.
 - [ ] UP4 Batch tối đa 3, preflight và transaction job/credit.
 - [ ] UP5 Watch Folder qua Watch Agent Windows có token scope/dedupe/quarantine.
 - [ ] UP6 Telemetry admin + progress/ETA dựa số đo thật.

@@ -69,7 +69,8 @@ def _resolve_encoder(codec: Codec) -> str:
     return "libx264"                      # Intel/AMD/CPU → x264 (chậm nhưng không chết)
 
 
-def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog):
+def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog,
+                     cancel_check):
     """Video dài: chunk _BATCH_SIZE frame → upscale → encode segment → concat."""
     seg_dir = os.path.join(tmp, "seg"); os.makedirs(seg_dir, exist_ok=True)
     frame_files = sorted(f for f in os.listdir(in_dir) if f.endswith(".png"))
@@ -87,13 +88,17 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
                          f"nâng nét đoạn {bi + 1}/{n_batches}…")
         base = done_total
         status = engine.run_upscale(b_in, b_up, tune, len(batch),
-                                    progress_cb=lambda d, _b=base: on_prog(_b + d))
+                                    progress_cb=lambda d, _b=base: on_prog(_b + d),
+                                    cancel_check=cancel_check)
+        if status == "cancelled":
+            raise ff.ProcessingCancelled("Job đã được hủy.")
         if status == "timeout":
             raise RuntimeError(f"Engine treo ở đoạn {bi + 1} (>5' không tiến triển).")
         if status != "done":
             raise RuntimeError(f"Engine upscale đoạn {bi + 1} thất bại.")
         seg = os.path.join(seg_dir, f"seg_{bi:04d}.mp4")
-        ff.encode_segment(b_up, seg, info["fps_str"], target_h, encoder)
+        ff.encode_segment(b_up, seg, info["fps_str"], target_h, encoder,
+                          cancel_check=cancel_check)
         segs.append(seg)
         done_total += len(batch)
         shutil.rmtree(b_in, ignore_errors=True)
@@ -119,8 +124,11 @@ def handle(params: dict, ctx=None) -> dict:
     except ValueError:
         codec = Codec.h264
     preview = bool(params.get("preview"))
+    preserve_fps = bool(params.get("preserve_fps", True))
+    preserve_audio = bool(params.get("preserve_audio", True))
     owner_id = str(params.get("owner_id", "")) or "unknown"
     job_id = getattr(ctx, "job_id", "") or "adhoc"
+    cancel_check = getattr(ctx, "is_cancelled", None)
 
     if not engine.check_engine():
         raise RuntimeError("Engine upscale chưa sẵn sàng (thiếu vendor/engine).")
@@ -136,9 +144,15 @@ def handle(params: dict, ctx=None) -> dict:
         if ctx is not None:
             ctx.progress(2, "tải video")
         with storage.open(video_key) as src, open(tmp_video, "wb") as dst:
-            shutil.copyfileobj(src, dst, length=1024 * 1024)
+            while True:
+                if cancel_check and cancel_check():
+                    raise ff.ProcessingCancelled("Job đã được hủy.")
+                block = src.read(1024 * 1024)
+                if not block:
+                    break
+                dst.write(block)
 
-        info = ff.probe_video(tmp_video)
+        info = ff.probe_video(tmp_video, cancel_check=cancel_check)
         if info["w"] == 0:
             raise RuntimeError("Không đọc được luồng video.")
         eff_dur = min(info["duration"], _PREVIEW_SECONDS) if preview else info["duration"]
@@ -156,9 +170,12 @@ def handle(params: dict, ctx=None) -> dict:
 
         if ctx is not None:
             ctx.progress(4, "tách frame")
-        cfr = info["fps_str"] if info.get("is_vfr") else None
+        output_fps = info["fps_str"] if preserve_fps else "30"
+        cfr = info["fps_str"] if preserve_fps and info.get("is_vfr") else (
+            "30" if not preserve_fps else None)
         max_sec = _PREVIEW_SECONDS if preview else None
-        n = ff.extract_frames(tmp_video, in_dir, cfr_fps=cfr, max_seconds=max_sec)
+        n = ff.extract_frames(tmp_video, in_dir, cfr_fps=cfr, max_seconds=max_sec,
+                              cancel_check=cancel_check)
 
         tune = autotune.pick(preset, info["w"], info["h"])
         warning = tune.warning or ""
@@ -173,7 +190,10 @@ def handle(params: dict, ctx=None) -> dict:
 
         encoder = _resolve_encoder(codec)
         if n <= _BATCH_SIZE:
-            status = engine.run_upscale(in_dir, up_dir, tune, n, progress_cb=on_prog)
+            status = engine.run_upscale(in_dir, up_dir, tune, n, progress_cb=on_prog,
+                                        cancel_check=cancel_check)
+            if status == "cancelled":
+                raise ff.ProcessingCancelled("Job đã được hủy.")
             if status == "timeout":
                 raise RuntimeError("Engine treo (>5' không có frame mới). Thử lại.")
             if status != "done":
@@ -181,14 +201,21 @@ def handle(params: dict, ctx=None) -> dict:
             if ctx is not None:
                 ctx.progress(90, f"ghép video {target_h}p…")
             ow, oh = ff.encode_full(up_dir, tmp_video, os.path.join(tmp, "out.mp4"),
-                                    info["fps_str"], target_h, info["has_audio"], encoder)
+                                    output_fps, target_h,
+                                    info["has_audio"] and preserve_audio, encoder,
+                                    cancel_check=cancel_check)
             out_local = os.path.join(tmp, "out.mp4")
         else:
-            segs = _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog)
+            batch_info = dict(info, fps_str=output_fps,
+                              has_audio=info["has_audio"] and preserve_audio)
+            segs = _upscale_batched(tmp, in_dir, tune, n, batch_info, target_h, encoder,
+                                    ctx, on_prog, cancel_check)
             if ctx is not None:
                 ctx.progress(92, f"nối {len(segs)} đoạn + audio…")
             out_local = os.path.join(tmp, "out.mp4")
-            ow, oh = ff.concat_and_mux(segs, tmp_video, out_local, info["has_audio"])
+            ow, oh = ff.concat_and_mux(segs, tmp_video, out_local,
+                                       info["has_audio"] and preserve_audio,
+                                       cancel_check=cancel_check)
 
         if ctx is not None:
             ctx.progress(96, "lưu kết quả")
@@ -200,7 +227,11 @@ def handle(params: dict, ctx=None) -> dict:
         res = {"video_key": out_key, "credit_cost": true_cost,
                "duration_s": round(eff_dur, 1), "preset": preset.value,
                "target_height": target_h, "out_w": ow, "out_h": oh,
-               "codec": codec.value, "encoder": encoder}
+               "codec": codec.value, "encoder": encoder,
+               "fps": float(output_fps.split("/")[0]) / float(output_fps.split("/")[1])
+                      if "/" in output_fps else float(output_fps),
+               "has_audio": bool(info["has_audio"] and preserve_audio),
+               "preserve_fps": preserve_fps, "preserve_audio": preserve_audio}
         if warning:
             res["warning"] = warning
         return res

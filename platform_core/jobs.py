@@ -27,7 +27,7 @@ from typing import Callable, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
-from platform_core.models import (JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
+from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
                                   Job)
 
 # Job running quá lâu không đập nhịp bị coi là mồ côi (worker chết).
@@ -147,6 +147,21 @@ def complete(db: DbSession, job: Job, result: dict) -> None:
     job.progress = 100
     job.finished_at = _bay_gio()
     db.flush()
+
+
+def cancel(db: DbSession, job: Job) -> bool:
+    """Hủy job queued/running. Caller hoàn credit trong cùng transaction.
+
+    Worker kiểm tra trạng thái trước complete và trong mỗi progress tick, nên job
+    đang chạy sẽ dừng hợp tác ở điểm an toàn kế tiếp; không có kill-process mù.
+    """
+    if job.status not in (JOB_QUEUED, JOB_RUNNING):
+        return False
+    job.status = JOB_CANCELLED
+    job.progress_msg = "đã hủy"
+    job.finished_at = _bay_gio()
+    db.flush()
+    return True
 
 
 def fail(db: DbSession, job: Job, error: str) -> None:

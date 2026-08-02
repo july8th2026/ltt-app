@@ -14,6 +14,98 @@
 
 ---
 
+## 2026-08-02 — H13.upscalevideo UP2–UP3: Studio và compare thật PASS
+
+- **Mục tiêu:** thay UI thử nghiệm bằng Upscale Studio theo ảnh tham khảo, nhưng
+  mọi control phải nối vào hành vi thật và compare không được lộ storage key.
+- **Hạng mục:** H13.upscalevideo — UP2, UP3 hoàn thành.
+- **Trạng thái:** xong local; chưa deploy production.
+
+### Đã làm
+
+Xây Studio shell responsive gồm settings, dropzone, compare và queue. Fast/
+Quality, target, codec, preserve FPS/audio và preview đều truyền đến handler;
+AI Detail ghi rõ đang nghiên cứu, batch và Watch Folder giữ đúng phase. Upload
+R2/local, probe metadata và quote server-side tiếp tục dùng contract hiện có.
+
+Compare lấy source theo `job_id` đã kiểm owner/app, hỗ trợ cả video upload trực
+tiếp và nguồn Seedance, LocalStorage Range 206 hoặc redirect presigned của R2;
+output/download giữ owner scope. File thiếu và job người khác trả 404.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_67_hang_doi_job.py tests\test_72_vanhanh.py tests\test_82_upscalevideo.py tests\test_85_app_contract_lint.py -q` | **53 passed**, 1 warning |
+| Playwright 1440×900 và 390×844 với video Downloads | PASS; không overflow; console 0; upload/estimate 200; source/output 206 |
+| `python -m pytest -q` | chưa chạy; bắt buộc tại UP8 trước deploy |
+
+### Quyết định mới
+
+Không có quyết định mới; triển khai Q47. Không tạo ảnh mới.
+
+### Cách lùi lại
+
+Tắt compare và template Studio; giữ UP1/backend tương thích và download output.
+
+### Còn tồn đọng
+
+UP4–UP8: batch tối đa 3, Watch Agent, telemetry/ETA, benchmark AI Detail và
+nghiệm thu/deploy.
+
+### Việc tiếp theo
+
+1. UP4 batch tối đa 3 với preflight/transaction/dedupe.
+2. UP5 Watch Agent dùng cùng batch contract.
+
+## 2026-08-02 — H13.upscalevideo UP0b–UP1: lifecycle và cầu Seedance PASS
+
+- **Mục tiêu:** đóng contract Cancel/refund và dùng chung workflow Upscale từ
+  Seedance trước khi thiết kế thêm Studio UI.
+- **Hạng mục:** H13.upscalevideo — UP0b, UP1 hoàn thành.
+- **Trạng thái:** xong local; chưa deploy production.
+
+### Đã làm
+
+Giữ trạng thái `cancelled` additive trong bảng job hiện có. `jobs.cancel()` chỉ
+nhận queued/running. Worker có `is_cancelled()` bền vững; exception của subprocess
+sau cancel không còn đi qua `fail()` để retry job đã hủy. NCNN nhận `cancel_check`;
+FFmpeg probe/extract/encode/concat dùng subprocess polling và kill khi hủy; copy
+input cũng có checkpoint. Refund được gọi ở web và worker nhưng ledger idempotent.
+
+Seedance quote/confirm chỉ nhận job done của đúng owner, giá do server tính và nộp
+qua `submit_upscale_job()`. Duration dùng result rồi fallback params. Thêm fixture
+browser cô lập sử dụng video Downloads qua biến `LTT_UPSCALE_BROWSER_VIDEO`; không
+đọc/sửa dữ liệu production.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_67_hang_doi_job.py tests\test_72_vanhanh.py tests\test_79_taovideo.py tests\test_82_upscalevideo.py -q` | **67 passed**, 1 warning |
+| `python -m pytest tests\test_67_hang_doi_job.py tests\test_72_vanhanh.py tests\test_82_upscalevideo.py -q` | **50 passed**, 1 warning |
+| Playwright isolated Seedance quote/confirm + Upscale cancel | PASS; console 0; app requests 200/206 |
+| `python -m pytest -q` | chưa chạy; bắt buộc tại UP8 trước deploy |
+
+### Quyết định mới
+
+Không có quyết định mới; triển khai Q47.
+
+### Cách lùi lại
+
+Ẩn nút/route nhận Upscale mới, để job active drain hoặc cancel/settle; revert commit
+UP1 sau khi không còn job active. Không xóa ledger, job hoặc artifact audit.
+
+### Còn tồn đọng
+
+UP2–UP8: Studio UI, compare gate đầy đủ, batch 3, Watch Agent, telemetry, benchmark
+AI Detail và release production.
+
+### Việc tiếp theo
+
+1. UP2 Studio shell + upload/quote/options thật.
+2. UP3 compare owner-scoped và browser đa nguồn.
+
 ## 2026-08-02 — Recovery UI-RD Upscale: audit lại hội thoại và khóa Q47/UP0–UP8
 
 - **Mục tiêu:** sửa sai lệch quy trình, khẳng định full phạm vi Upscale và lập

@@ -21,7 +21,7 @@ from typing import Optional
 
 from platform_core import jobs as jobq
 from platform_core.db import get_session
-from platform_core.models import JOB_ERROR, Job
+from platform_core.models import JOB_CANCELLED, JOB_ERROR, Job
 
 log = logging.getLogger(__name__)
 
@@ -45,8 +45,21 @@ class JobContext:
         for db in _one_session():
             job = db.get(Job, self.job_id)
             if job is not None:
+                if job.status == JOB_CANCELLED:
+                    raise JobCancelled()
                 jobq.set_progress(db, job, percent, message)
                 db.commit()
+
+    def is_cancelled(self) -> bool:
+        """Read the durable job state; safe for subprocess polling callbacks."""
+        for db in _one_session():
+            job = db.get(Job, self.job_id)
+            return job is not None and job.status == JOB_CANCELLED
+        return False
+
+
+class JobCancelled(Exception):
+    """Cooperative cancellation requested by the job owner."""
 
 
 def _one_session():
@@ -88,6 +101,12 @@ def _chay_mot_job(worker_id: str) -> bool:
         result = handler(params, ctx)
         if not isinstance(result, dict):
             result = {"result": result}
+    except JobCancelled:
+        for db in _one_session():
+            job = db.get(Job, job_id)
+            if job is not None:
+                _hoan_credit(db, job); db.commit()
+        return True
     except Exception as exc:
         # 3a. Thất bại → fail(). Chỉ HOÀN credit khi job hết lượt (thành error);
         # nếu còn lượt (quay lại queued) thì giữ nguyên phần đã giữ để lần chạy
@@ -95,6 +114,14 @@ def _chay_mot_job(worker_id: str) -> bool:
         for db in _one_session():
             job = db.get(Job, job_id)
             if job is not None:
+                # A subprocess can notice cancellation by callback and unwind with
+                # its own exception type. Never turn that cancelled job back into
+                # queued/error through fail().
+                if job.status == JOB_CANCELLED:
+                    _hoan_credit(db, job)
+                    db.commit()
+                    log.info("job %s da huy cooperative", job_id[:8])
+                    return True
                 jobq.fail(db, job, f"{type(exc).__name__}: {exc}")
                 if job.status == JOB_ERROR:
                     _hoan_credit(db, job)
@@ -106,6 +133,8 @@ def _chay_mot_job(worker_id: str) -> bool:
     for db in _one_session():
         job = db.get(Job, job_id)
         if job is not None:
+            if job.status == JOB_CANCELLED:
+                _hoan_credit(db, job); db.commit(); return True
             jobq.complete(db, job, result)
             _quyet_toan_credit(db, job, result)
             db.commit()

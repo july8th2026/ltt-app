@@ -97,6 +97,58 @@ def test_claim_khong_nhat_job_hen_tuong_lai(db):
     assert claim(db, worker_id="w1") is None, "job hen tuong lai chua duoc nhat"
 
 
+def test_cancel_chi_huy_job_chua_ket_thuc_va_khong_the_claim_lai(db):
+    """Job bị hủy không được worker nhặt lại; lời gọi lặp là idempotent."""
+    from platform_core.jobs import cancel, claim
+    from platform_core.models import JOB_CANCELLED
+    j = _submit(db)
+    assert cancel(db, j) is True
+    db.commit()
+    assert j.status == JOB_CANCELLED and j.finished_at is not None
+    assert cancel(db, j) is False
+    assert claim(db, worker_id="w1") is None
+
+
+def test_worker_khong_fail_hoac_retry_job_da_cancel(db, monkeypatch):
+    """Race cancel-vs-handler exception must preserve cancelled permanently."""
+    import platform_core.db as dbmod
+    from platform_core import jobs as jobq
+    from platform_core.job_runner import _chay_mot_job
+    from platform_core.models import JOB_CANCELLED, Job
+
+    queued = _submit(db, max_attempts=3)
+    job_id = queued.id
+
+    def handler(_params, _ctx):
+        gen = dbmod.get_session(); other = next(gen)
+        try:
+            running = other.get(Job, job_id)
+            assert jobq.cancel(other, running)
+            other.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        raise RuntimeError("subprocess stopped after cancel")
+
+    monkeypatch.setattr(jobq, "resolve_handler", lambda _job_type: handler)
+    assert _chay_mot_job("w-cancel-race") is True
+    db.expire_all()
+    result = db.get(Job, job_id)
+    assert result.status == JOB_CANCELLED
+    assert result.attempts == 0 and result.next_run_at is not None
+
+
+def test_job_context_bao_cancel_o_checkpoint(db):
+    from platform_core import jobs as jobq
+    from platform_core.job_runner import JobCancelled, JobContext
+    j = _submit(db)
+    assert jobq.cancel(db, j); db.commit()
+    ctx = JobContext(j.id)
+    assert ctx.is_cancelled() is True
+    with pytest.raises(JobCancelled):
+        ctx.progress(50, "khong duoc ghi de trang thai cancel")
+
+
 # ── Fail / retry ──────────────────────────────────────────────────────────────
 
 def test_fail_con_luot_thi_hen_chay_lai(db):

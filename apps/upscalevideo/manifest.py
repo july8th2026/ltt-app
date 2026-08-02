@@ -53,6 +53,8 @@ MANIFEST = AppManifest(
             "target_height": {"type": "enum", "values": [1080, 1440, 2160], "default": 1080},
             "codec": {"type": "enum", "values": ["h264", "hevc"], "default": "h264"},
             "preview": {"type": "bool", "default": False},
+            "preserve_fps": {"type": "bool", "default": True},
+            "preserve_audio": {"type": "bool", "default": True},
             "duration_s": {"type": "number", "min": 0},
         },
         returns={"video_key": "video"},

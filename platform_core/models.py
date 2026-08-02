@@ -168,6 +168,7 @@ JOB_QUEUED = "queued"
 JOB_RUNNING = "running"
 JOB_DONE = "done"
 JOB_ERROR = "error"
+JOB_CANCELLED = "cancelled"
 
 AGENT_PLANNING = "planning"
 AGENT_AWAITING_APPROVAL = "awaiting_approval"

@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session as DbSession
 
 def build_params(*, video_key: str, owner_id: str, preset: str = "fast",
                  target_height: int = 1080, codec: str = "h264",
-                 preview: bool = False, duration_s: float = 0.0) -> dict:
+                 preview: bool = False, duration_s: float = 0.0,
+                 preserve_fps: bool = True, preserve_audio: bool = True) -> dict:
     """Chuẩn hoá params cho job upscalevideo.render (dùng chung route + seedance)."""
     if target_height not in (1080, 1440, 2160):
         target_height = 1080
@@ -23,20 +24,24 @@ def build_params(*, video_key: str, owner_id: str, preset: str = "fast",
         codec = "h264"
     return {"video_key": video_key, "owner_id": owner_id, "preset": preset,
             "target_height": int(target_height), "codec": codec,
-            "preview": bool(preview), "duration_s": float(duration_s or 0)}
+            "preview": bool(preview), "duration_s": float(duration_s or 0),
+            "preserve_fps": bool(preserve_fps),
+            "preserve_audio": bool(preserve_audio)}
 
 
 def submit_upscale_job(db: DbSession, *, user_id: str, video_key: str,
                        preset: str = "fast", target_height: int = 1080,
                        codec: str = "h264", preview: bool = False,
-                       duration_s: float = 0.0):
+                       duration_s: float = 0.0, preserve_fps: bool = True,
+                       preserve_audio: bool = True):
     """Nộp job nâng cấp cho một video ĐÃ có trong storage (giữ chỗ credit trong
     cùng transaction). Trả Job. Caller commit. Dùng bởi route /queue VÀ bởi
     taovideo (nút 'Nâng cấp 4K' video Seedance) — KHÔNG nhân đôi code engine."""
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
     params = build_params(video_key=video_key, owner_id=user_id, preset=preset,
                           target_height=target_height, codec=codec,
-                          preview=preview, duration_s=duration_s)
+                          preview=preview, duration_s=duration_s,
+                          preserve_fps=preserve_fps, preserve_audio=preserve_audio)
     return submit_with_credit(
         db, user_id=user_id, app_slug="upscalevideo",
         job_type="upscalevideo.render", params=params,

@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 
 from apps.taovideo import cost, models
 from apps.taovideo.manifest import MANIFEST
@@ -21,36 +21,54 @@ from server.templating import templates
 router = APIRouter(tags=["seedance"])
 
 
-def _render(request: Request, user: str, *, error: str = "", jobs=None, status_code: int = 200):
+def _render(request: Request, user: str, *, error: str = "", jobs=None, status_code: int = 200, **extra):
     reg_ui = {k: {"resolutions": v["resolutions"], "durations": v["durations"],
                   "aspects": v["aspects"]}
               for k, v in models.MODELS.items() if v.get("active")}
-    return templates.TemplateResponse(request, "taovideo.html", {
+    context = {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "models": models.options(), "reg_ui": reg_ui,
         "default_model": models.DEFAULT_MODEL, "error": error, "jobs": jobs or [],
-    }, status_code=status_code)
+    }
+    context.update(extra)
+    return templates.TemplateResponse(request, "taovideo.html", context, status_code=status_code)
 
 
-def _jobs_cua_toi(request: Request):
+def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
     u = user_hien_tai(request)
     if u is None:
         return []
     from platform_core.db import get_session
-    from platform_core.models import Job
+    from platform_core.models import JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING, Job
     from sqlalchemy import select
     gen = get_session(); db = next(gen)
     try:
         rows = db.execute(
             select(Job).where(Job.user_id == u.id, Job.app_slug == MANIFEST.slug)
-            .order_by(Job.created_at.desc()).limit(12)
+            .order_by(Job.created_at.asc() if sort == "oldest" else Job.created_at.desc()).limit(60)
         ).scalars().all()
-        return [{"id": j.id, "status": j.status, "progress": j.progress,
+        counts = {"all": len(rows), "running": 0, "done": 0, "error": 0}
+        for j in rows:
+            if j.status in (JOB_QUEUED, JOB_RUNNING): counts["running"] += 1
+            elif j.status == JOB_DONE: counts["done"] += 1
+            elif j.status == JOB_ERROR: counts["error"] += 1
+        filtered = rows if status == "all" else [j for j in rows if (
+            j.status in (JOB_QUEUED, JOB_RUNNING) if status == "running" else j.status == status)]
+        history=[]; seen=set()
+        for j in rows:
+            prompt=str((j.params or {}).get("prompt", "")).strip()
+            if prompt and prompt not in seen: history.append(prompt); seen.add(prompt)
+            if len(history) == 10: break
+        return {"items": [{"id": j.id, "status": j.status, "progress": j.progress,
                  "progress_msg": j.progress_msg, "error": j.error,
                  "video_key": (j.result or {}).get("video_key") if j.result else None,
-                 "model": (j.result or {}).get("model") if j.result else None}
-                for j in rows]
+                 "model": (j.result or {}).get("model") or (j.params or {}).get("model"),
+                 "prompt": str((j.params or {}).get("prompt", ""))[:180],
+                 "resolution": (j.params or {}).get("resolution", ""),
+                 "duration": (j.params or {}).get("duration", ""),
+                 "aspect_ratio": (j.params or {}).get("aspect_ratio", "")}
+                for j in filtered], "counts": counts, "history": history}
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -73,8 +91,12 @@ def _clean(model, resolution, duration, aspect):
 
 
 @router.get("", response_class=HTMLResponse)
-def page(request: Request, user: str = Depends(require_login)):
-    return _render(request, user, jobs=_jobs_cua_toi(request))
+def page(request: Request, status: str = "all", sort: str = "newest", user: str = Depends(require_login)):
+    status = status if status in {"all", "running", "done", "error"} else "all"
+    sort = sort if sort in {"newest", "oldest"} else "newest"
+    data = _jobs_cua_toi(request, status, sort)
+    return _render(request, user, jobs=data["items"], job_counts=data["counts"],
+                   prompt_history=data["history"], active_status=status, active_sort=sort)
 
 
 @router.post("/estimate", response_class=HTMLResponse)
@@ -115,7 +137,7 @@ async def translate(request: Request, prompt: str = Form(""), target: str = Form
 _CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024, "audio": 20 * 1024 * 1024}
 
 
-async def _luu_refs(u_id: str, files, roles) -> list:
+async def _luu_refs(u_id: str, files, roles, handles=None) -> list:
     """Lưu ref (ảnh/video/audio) → spec {kind,storage_key,role}. ≤4 tệp. Ảnh ≤8MB đi
     inline; ảnh lớn/video/audio đi asset:// (worker lo). Cap: ảnh 20MB, video 60MB, audio 20MB."""
     from platform_core.storage import get_storage
@@ -134,7 +156,7 @@ async def _luu_refs(u_id: str, files, roles) -> list:
         storage.put(skey, _io.BytesIO(data), content_type=ct or "image/png")
         role = roles[i] if roles and i < len(roles) else "reference_image"
         specs.append({"kind": kind, "storage_key": skey,
-                      "role": role or "reference_image", "handle": ""})
+                      "role": role or "reference_image", "handle": (handles[i] if handles and i < len(handles) else "")[:32]})
     return specs
 
 
@@ -144,7 +166,7 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                 duration: str = Form("5"), aspect_ratio: str = Form("16:9"),
                 generate_audio: str = Form(""), count: str = Form("1"),
                 ref_images: list[UploadFile] = File(default=[]),
-                ref_roles: list[str] = Form(default=[]),
+                ref_roles: list[str] = Form(default=[]), ref_handles: list[str] = Form(default=[]),
                 user: str = Depends(require_login)):
     from platform_core import credit
     from platform_core.db import get_session
@@ -167,7 +189,7 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         return _render(request, user, error="Cần đăng nhập bằng tài khoản người dùng.",
                        jobs=_jobs_cua_toi(request), status_code=400)
 
-    ref_specs = await _luu_refs(u.id, ref_images, ref_roles)
+    ref_specs = await _luu_refs(u.id, ref_images, ref_roles, ref_handles)
     base_params = {"prompt": prompt.strip()[:10000], "model": mid, "resolution": res,
                    "duration": dur, "aspect_ratio": asp,
                    "generate_audio": bool(generate_audio), "owner_id": u.id,
@@ -193,6 +215,75 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         except StopIteration: pass
     # Luôn về /taovideo (có player "Video của tôi") thay vì /jobs/{id} (chỉ JSON thô).
     return RedirectResponse("/taovideo", status_code=303)
+
+
+def _owned_video_job(db, user_id: str, job_id: str):
+    from platform_core.models import JOB_DONE, Job
+    job = db.get(Job, job_id)
+    if job is None or job.user_id != user_id or job.app_slug != MANIFEST.slug or job.status != JOB_DONE:
+        return None
+    if not (job.result or {}).get("video_key"):
+        return None
+    return job
+
+
+@router.post("/upscale-quote")
+def upscale_quote(request: Request, job_id: str = Form(""), target_height: str = Form("1080"),
+                  preset: str = Form("fast"), user: str = Depends(require_login)):
+    """Server-side quote for a completed, owned Seedance video; never trust browser price."""
+    u = user_hien_tai(request)
+    from platform_core.db import get_session
+    from apps.upscalevideo import cost as upscale_cost
+    gen = get_session(); db = next(gen)
+    try:
+        job = _owned_video_job(db, u.id if u else "", job_id)
+        if job is None:
+            return JSONResponse({"ok": False, "error": "Video không hợp lệ."}, status_code=404)
+        try: height = int(target_height)
+        except ValueError: height = 1080
+        height = height if height in (1080, 1440, 2160) else 1080
+        preset = preset if preset in ("fast", "quality") else "fast"
+        duration = float((job.result or {}).get("duration") or (job.params or {}).get("duration") or 0)
+        return {"ok": True, "job_id": job.id, "credit": upscale_cost.uoc_luong_credit(duration, height, preset),
+                "duration_s": duration, "target_height": height, "preset": preset}
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.post("/upscale-confirm")
+def upscale_confirm(request: Request, csrf_token: str = Form(...), job_id: str = Form(""),
+                    target_height: str = Form("1080"), preset: str = Form("fast"),
+                    codec: str = Form("h264"), user: str = Depends(require_login)):
+    """Confirm the quoted action: submit exactly one shared Upscale job + credit hold."""
+    if not verify_csrf_token(request, csrf_token):
+        return JSONResponse({"ok": False, "error": "Phiên đã hết hạn."}, status_code=400)
+    u = user_hien_tai(request)
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.registry import RegistryError
+    from apps.upscalevideo.service import submit_upscale_job
+    gen = get_session(); db = next(gen)
+    try:
+        source = _owned_video_job(db, u.id if u else "", job_id)
+        if source is None:
+            return JSONResponse({"ok": False, "error": "Video không hợp lệ."}, status_code=404)
+        try: height = int(target_height)
+        except ValueError: height = 1080
+        duration = float((source.result or {}).get("duration") or
+                         (source.params or {}).get("duration") or 0)
+        output = submit_upscale_job(db, user_id=u.id,
+                                    video_key=(source.result or {})["video_key"],
+                                    preset=preset, target_height=height, codec=codec,
+                                    duration_s=duration)
+        db.commit()
+        return {"ok": True, "upscale_job_id": output.id, "redirect": f"/jobs/{output.id}"}
+    except (credit.ThieuCreditError, RegistryError) as exc:
+        db.rollback()
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
 
 
 @router.get("/v/{key:path}")

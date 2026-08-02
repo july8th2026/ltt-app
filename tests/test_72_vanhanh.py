@@ -12,6 +12,7 @@ Khoá hành vi (Q30):
 from __future__ import annotations
 
 import re
+import io
 
 import pytest
 
@@ -198,6 +199,200 @@ def test_home_workspace_chi_hien_activity_va_running_job_cua_chu_so_huu(client):
     assert "OTHER_PRIVATE_ACTIVITY" not in body
     assert 'data-popular=' in body
 
+
+def test_taovideo_studio_history_filter_va_owner_scope(client):
+    """H13.taovideo: gallery/history chỉ đọc job của chủ sở hữu."""
+    import platform_core.db as dbmod
+    from platform_core.models import JOB_DONE, JOB_ERROR, Job
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        mine = tao_nguoi_dung(db, email="tv-mine@example.com", password="matkhau-tot-12", is_verified=True)
+        other = tao_nguoi_dung(db, email="tv-other@example.com", password="matkhau-tot-12", is_verified=True)
+        db.add(Job(user_id=mine.id, app_slug="taovideo", job_type="taovideo.generate", status=JOB_DONE,
+                   params={"prompt":"PROMPT_CUA_TOI", "resolution":"720p", "duration":5, "aspect_ratio":"16:9"}))
+        db.add(Job(user_id=other.id, app_slug="taovideo", job_type="taovideo.generate", status=JOB_ERROR,
+                   params={"prompt":"PROMPT_NGUOI_KHAC"}))
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    _tao_va_dang_nhap(client, "tv-view@example.com")
+    token = _csrf(client, "/")
+    client.post("/logout", data={"csrf_token": token})
+    token = _csrf(client, "/login")
+    client.post("/login", data={"username":"tv-mine@example.com", "password":"matkhau-tot-12", "csrf_token":token})
+    body = client.get("/taovideo?status=done").text
+    assert "PROMPT_CUA_TOI" in body and "PROMPT_NGUOI_KHAC" not in body
+    assert "Lịch sử prompt" in body and "Tất cả" in body
+
+
+def test_seedance_upscale_quote_va_confirm_chi_cho_video_cua_chu_so_huu(client):
+    """H13.upscale: Seedance chỉ tạo Upscale job qua quote/confirm server-side.
+
+    Giá, source key và ownership đều do server quyết định; browser không thể gửi
+    một storage key của người khác hoặc tự hạ giá.
+    """
+    import platform_core.db as dbmod
+    from platform_core import credit
+    from platform_core.models import JOB_DONE, Job
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        mine = tao_nguoi_dung(db, email="seed-up@example.com",
+                              password="matkhau-tot-12", is_verified=True)
+        other = tao_nguoi_dung(db, email="seed-other@example.com",
+                               password="matkhau-tot-12", is_verified=True)
+        credit.cap_tay(db, mine.id, 100, by="test")
+        source = Job(user_id=mine.id, app_slug="taovideo", job_type="taovideo.generate",
+                     status=JOB_DONE, params={"duration": 5},
+                     result={"video_key": f"taovideo/{mine.id}/out.mp4", "duration": 5})
+        foreign = Job(user_id=other.id, app_slug="taovideo", job_type="taovideo.generate",
+                      status=JOB_DONE,
+                      result={"video_key": f"taovideo/{other.id}/out.mp4", "duration": 5})
+        db.add_all([source, foreign]); db.commit(); source_id, foreign_id = source.id, foreign.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    token = _csrf(client, "/login")
+    logged = client.post("/login", data={"username": "seed-up@example.com",
+                                         "password": "matkhau-tot-12", "csrf_token": token})
+    assert logged.status_code == 303
+    quote = client.post("/taovideo/upscale-quote",
+                        data={"job_id": source_id, "target_height": "2160"})
+    assert quote.status_code == 200 and quote.json()["ok"] is True
+    assert quote.json()["target_height"] == 2160 and quote.json()["credit"] > 0
+    assert client.post("/taovideo/upscale-quote", data={"job_id": foreign_id}).status_code == 404
+
+    page_token = _csrf(client, "/taovideo")
+    confirmed = client.post("/taovideo/upscale-confirm", data={
+        "csrf_token": page_token, "job_id": source_id, "target_height": "2160",
+        "preset": "quality", "codec": "hevc",
+    })
+    assert confirmed.status_code == 200 and confirmed.json()["ok"] is True
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        child = db.get(Job, confirmed.json()["upscale_job_id"])
+        assert child.user_id == mine.id and child.app_slug == "upscalevideo"
+        assert child.params["video_key"] == f"taovideo/{mine.id}/out.mp4"
+        assert child.params["target_height"] == 2160 and child.params["preset"] == "quality"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_upscale_cancel_owner_only_hoan_credit_dung_mot_lan(client):
+    import platform_core.db as dbmod
+    from platform_core import credit
+    from platform_core.models import CREDIT_REFUND, JOB_CANCELLED, CreditEntry, Job
+    from platform_core.users import tao_nguoi_dung
+    from apps.upscalevideo.service import submit_upscale_job
+    from sqlalchemy import func, select
+
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        mine = tao_nguoi_dung(db, email="up-cancel@example.com",
+                              password="matkhau-tot-12", is_verified=True)
+        other = tao_nguoi_dung(db, email="up-cancel-other@example.com",
+                               password="matkhau-tot-12", is_verified=True)
+        credit.cap_tay(db, mine.id, 100, by="test")
+        credit.cap_tay(db, other.id, 100, by="test")
+        own_job = submit_upscale_job(
+            db, user_id=mine.id, video_key=f"upscalevideo/{mine.id}/in.mp4",
+            duration_s=60, target_height=1080)
+        foreign_job = submit_upscale_job(
+            db, user_id=other.id, video_key=f"upscalevideo/{other.id}/in.mp4",
+            duration_s=60, target_height=1080)
+        db.commit(); own_id, foreign_id, mine_id = own_job.id, foreign_job.id, mine.id
+        assert credit.so_du(db, mine_id) == 70
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    token = _csrf(client, "/login")
+    assert client.post("/login", data={"username": "up-cancel@example.com",
+                                        "password": "matkhau-tot-12",
+                                        "csrf_token": token}).status_code == 303
+    token = _csrf(client, "/upscalevideo")
+    denied = client.post(f"/upscalevideo/jobs/{foreign_id}/cancel",
+                         data={"csrf_token": token})
+    assert denied.status_code == 404
+
+    first = client.post(f"/upscalevideo/jobs/{own_id}/cancel",
+                        data={"csrf_token": token})
+    assert first.status_code == 303
+    second = client.post(f"/upscalevideo/jobs/{own_id}/cancel",
+                         data={"csrf_token": token})
+    assert second.status_code == 303
+
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        job = db.get(Job, own_id)
+        refunds = db.execute(select(func.count()).select_from(CreditEntry).where(
+            CreditEntry.job_id == own_id, CreditEntry.kind == CREDIT_REFUND)).scalar_one()
+        assert job.status == JOB_CANCELLED
+        assert credit.so_du(db, mine_id) == 100 and refunds == 1
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_upscale_compare_source_owner_range_va_missing(client, tmp_path):
+    """UP3: source được chọn từ job đã kiểm owner, không nhận key từ URL."""
+    import platform_core.db as dbmod
+    from platform_core.models import JOB_DONE, Job
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+
+    storage = LocalStorage(str(tmp_path / "upscale-source-store"))
+    set_storage(storage)
+    try:
+        gen = dbmod.get_session(); db = next(gen)
+        try:
+            mine = tao_nguoi_dung(db, email="up-source@example.com",
+                                  password="matkhau-tot-12", is_verified=True)
+            other = tao_nguoi_dung(db, email="up-source-other@example.com",
+                                   password="matkhau-tot-12", is_verified=True)
+            direct_key = f"upscalevideo/{mine.id}/direct/input.mp4"
+            seedance_key = f"taovideo/{mine.id}/seedance/output.mp4"
+            storage.put(direct_key, io.BytesIO(b"DIRECT-VIDEO"), content_type="video/mp4")
+            storage.put(seedance_key, io.BytesIO(b"SEEDANCE-VIDEO"), content_type="video/mp4")
+            direct = Job(user_id=mine.id, app_slug="upscalevideo",
+                         job_type="upscalevideo.upscale", status=JOB_DONE,
+                         params={"video_key": direct_key})
+            seedance = Job(user_id=mine.id, app_slug="upscalevideo",
+                           job_type="upscalevideo.upscale", status=JOB_DONE,
+                           params={"video_key": seedance_key})
+            missing = Job(user_id=mine.id, app_slug="upscalevideo",
+                          job_type="upscalevideo.upscale", status=JOB_DONE,
+                          params={"video_key": f"taovideo/{mine.id}/missing.mp4"})
+            foreign = Job(user_id=other.id, app_slug="upscalevideo",
+                          job_type="upscalevideo.upscale", status=JOB_DONE,
+                          params={"video_key": f"upscalevideo/{other.id}/private.mp4"})
+            db.add_all([direct, seedance, missing, foreign]); db.commit()
+            ids = direct.id, seedance.id, missing.id, foreign.id
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+
+        token = _csrf(client, "/login")
+        assert client.post("/login", data={"username": "up-source@example.com",
+                                            "password": "matkhau-tot-12",
+                                            "csrf_token": token}).status_code == 303
+        direct_id, seedance_id, missing_id, foreign_id = ids
+        ranged = client.get(f"/upscalevideo/jobs/{direct_id}/source",
+                            headers={"Range": "bytes=0-5"})
+        assert ranged.status_code == 206 and ranged.content == b"DIRECT"
+        assert ranged.headers["content-range"] == "bytes 0-5/12"
+        seedance_response = client.get(f"/upscalevideo/jobs/{seedance_id}/source")
+        assert seedance_response.status_code == 200
+        assert seedance_response.content == b"SEEDANCE-VIDEO"
+        assert client.get(f"/upscalevideo/jobs/{foreign_id}/source").status_code == 404
+        assert client.get(f"/upscalevideo/jobs/{missing_id}/source").status_code == 404
+    finally:
+        set_storage(None)
 
 def test_phien_thu_hoi_khong_gay_vong_lap_redirect(client):
     """Phiên có sid nhưng đã bị THU HỒI (đổi mật khẩu/hết hạn) không được gây

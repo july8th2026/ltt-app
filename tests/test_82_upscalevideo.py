@@ -89,3 +89,35 @@ def test_service_build_params_chuan_hoa():
                      preset="xx", target_height=9999, codec="zz", duration_s=12.3)
     assert p["preset"] == "fast" and p["target_height"] == 1080 and p["codec"] == "h264"
     assert p["video_key"] == "taovideo/u/j/video.mp4" and p["duration_s"] == 12.3
+    assert p["preserve_fps"] is True and p["preserve_audio"] is True
+    changed = build_params(video_key="x", owner_id="u", preserve_fps=False,
+                           preserve_audio=False)
+    assert changed["preserve_fps"] is False and changed["preserve_audio"] is False
+
+
+def test_ffmpeg_subprocess_bi_kill_khi_job_cancel(monkeypatch):
+    """FFmpeg stage dài phải dừng trong vòng poll, không chạy tiếp sau refund."""
+    import subprocess
+    from apps.upscalevideo import ff
+
+    class FakeProcess:
+        returncode = None
+        killed = False
+        calls = 0
+
+        def communicate(self, timeout=None):
+            self.calls += 1
+            if self.killed:
+                self.returncode = -9
+                return b"", b""
+            raise subprocess.TimeoutExpired(["ffmpeg"], timeout or 0)
+
+        def kill(self):
+            self.killed = True
+
+    proc = FakeProcess()
+    monkeypatch.setattr(ff.subprocess, "Popen", lambda *a, **k: proc)
+    checks = iter((False, True))
+    with pytest.raises(ff.ProcessingCancelled):
+        ff._run(["ffmpeg"], timeout=10, cancel_check=lambda: next(checks))
+    assert proc.killed is True

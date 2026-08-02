@@ -5,6 +5,7 @@ P1), lùi về multipart nếu R2 chưa mở CORS. Router KHÔNG tự viết pre
 from __future__ import annotations
 
 import uuid
+from pathlib import PurePosixPath
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
@@ -26,11 +27,13 @@ _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
 
 
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
+    own_jobs = _jobs_cua_toi(request)
     return templates.TemplateResponse(request, "upscalevideo.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "presets": _PRESETS, "heights": _HEIGHTS, "codecs": _CODECS,
-        "jobs": _jobs_cua_toi(request), "error": error,
+        "jobs": own_jobs, "latest_done": next((j for j in own_jobs if j["status"] == "done"), None),
+        "error": error,
     }, status_code=status_code)
 
 
@@ -50,10 +53,18 @@ def _jobs_cua_toi(request: Request):
         out = []
         for j in rows:
             r = j.result or {}
+            p = j.params or {}
+            source_key = str(p.get("video_key") or "")
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
                         "progress_msg": j.progress_msg, "error": j.error,
                         "video_key": r.get("video_key"), "duration_s": r.get("duration_s"),
-                        "target_height": r.get("target_height"), "warning": r.get("warning")})
+                        "target_height": r.get("target_height") or p.get("target_height"),
+                        "source_key": source_key,
+                        "source_name": PurePosixPath(source_key).name or "video.mp4",
+                        "preset": p.get("preset", "fast"), "codec": p.get("codec", "h264"),
+                        "preserve_fps": p.get("preserve_fps", True),
+                        "preserve_audio": p.get("preserve_audio", True),
+                        "warning": r.get("warning")})
         return out
     finally:
         try: next(gen)
@@ -114,6 +125,7 @@ async def queue(request: Request, csrf_token: str = Form(...),
                 video_key: str = Form(""), duration_s: str = Form("0"),
                 preset: str = Form("fast"), target_height: str = Form("1080"),
                 codec: str = Form("h264"), preview: str = Form(""), ajax: str = Form(""),
+                preserve_fps: str = Form("1"), preserve_audio: str = Form("1"),
                 video: UploadFile = File(default=None),
                 user: str = Depends(require_login)):
     from platform_core import credit
@@ -174,7 +186,9 @@ async def queue(request: Request, csrf_token: str = Form(...),
         try:
             job = submit_upscale_job(db, user_id=u.id, video_key=vkey, preset=preset,
                                      target_height=th, codec=codec,
-                                     preview=bool(preview), duration_s=dur)
+                                     preview=bool(preview), duration_s=dur,
+                                     preserve_fps=preserve_fps != "0",
+                                     preserve_audio=preserve_audio != "0")
             last_id = job.id
             db.commit()
         except (credit.ThieuCreditError, RegistryError) as exc:
@@ -189,13 +203,32 @@ async def queue(request: Request, csrf_token: str = Form(...),
     return RedirectResponse(f"/jobs/{last_id}", status_code=303)
 
 
-@router.get("/v/{key:path}")
-def video_out(request: Request, key: str, user: str = Depends(require_login)):
-    from platform_core.storage import StorageError, get_storage
+@router.post("/jobs/{job_id}/cancel")
+def cancel_job(request: Request, job_id: str, csrf_token: str = Form(...),
+               user: str = Depends(require_login)):
+    """Owner-only cooperative cancel; refund is atomic and idempotent."""
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
     u = user_hien_tai(request)
-    segs = key.split("/")
-    if len(segs) < 2 or segs[0] != "upscalevideo" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+    from platform_core import credit, jobs
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        if job is None or u is None or job.user_id != u.id or job.app_slug != MANIFEST.slug:
+            raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        if jobs.cancel(db, job):
+            credit.hoan(db, u.id, job.id)
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return RedirectResponse("/upscalevideo", status_code=303)
+
+
+def _serve_owned_video(request: Request, key: str):
+    from platform_core.storage import StorageError, get_storage
     storage = get_storage()
     try:
         direct = storage.url_for(key)
@@ -229,3 +262,34 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
                                  "Accept-Ranges": "bytes", "Content-Length": str(len(chunk))})
     return StreamingResponse(storage.open(key), media_type="video/mp4",
                              headers={"Accept-Ranges": "bytes", "Content-Length": str(total)})
+
+
+@router.get("/v/{key:path}")
+def video_out(request: Request, key: str, user: str = Depends(require_login)):
+    u = user_hien_tai(request)
+    segs = key.split("/")
+    if len(segs) < 2 or segs[0] != "upscalevideo" or u is None or segs[1] != u.id:
+        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+    return _serve_owned_video(request, key)
+
+
+@router.get("/jobs/{job_id}/source")
+def source_video(request: Request, job_id: str, user: str = Depends(require_login)):
+    """Nguồn của đúng job Upscale, kể cả khi video đến từ Seedance.
+
+    Không nhận storage key từ URL, do đó không biến endpoint này thành đường đọc
+    tệp chéo người dùng.
+    """
+    u = user_hien_tai(request)
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        key = (job.params or {}).get("video_key") if job and u and job.user_id == u.id and job.app_slug == MANIFEST.slug else ""
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    if not key:
+        raise HTTPException(status_code=404, detail="Không tìm thấy video nguồn.")
+    return _serve_owned_video(request, key)
