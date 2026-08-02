@@ -144,3 +144,32 @@ def test_media_progress_loi_thi_nem(monkeypatch):
     monkeypatch.setattr(media.subprocess, "Popen", lambda *a, **k: _FakeProc())
     with pytest.raises(media.MediaError):
         media.run_with_progress(["ffmpeg"], total_duration=0)
+
+
+def test_autosub_burn_kills_ffmpeg_when_progress_callback_cancels(monkeypatch):
+    from apps.autosubvideo import burn
+
+    class _FakeProc:
+        def __init__(self):
+            self.stdout = iter(["out_time_us=1000000\n"])
+            self.stderr = iter([])
+            self.returncode = None
+            self.killed = False
+        def poll(self):
+            return None if not self.killed else -9
+        def kill(self):
+            self.killed = True; self.returncode = -9
+        def wait(self, timeout=None):
+            self.returncode = self.returncode or 0
+            return self.returncode
+
+    process = _FakeProc()
+    monkeypatch.setattr(burn.subprocess, "Popen", lambda *_a, **_k: process)
+    class _Cancelled(Exception):
+        pass
+    def cancel(_percent):
+        raise _Cancelled()
+    with pytest.raises(_Cancelled):
+        burn._run_with_cleanup(["ffmpeg"], total_duration=10,
+            on_progress=cancel, timeout=30, cwd=".")
+    assert process.killed

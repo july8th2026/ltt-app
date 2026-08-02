@@ -1065,7 +1065,12 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
   JSON chunk translation, project revision/artifact, quota/dedupe/cancel/job status
   và honest capability UI. 102 regression + 7 frontend PASS; token/key local thiếu
   nên browser xác minh soft-disable, không gọi giả dịch/phân vai.
-- [ ] AS7 render snapshot/quote/credit/output/job control.
+- [x] AS7 render snapshot/quote/credit/output/job control — 2026-08-03:
+  immutable revision snapshot + SHA-256, server quote/confirm/hold, multi-track
+  ASS và SRT/VTT/JSON/ZIP, source/720p/1080p/4K, MP4/MKV/WebM, measured ETA,
+  cancel kill FFmpeg + refund, retry snapshot, owner artifact; 29 backend +
+  8 frontend PASS; Playwright desktop/mobile popup/submit/cancel, overflow 0,
+  console/network sạch.
 - [ ] AS8 hardening/performance/corpus/GPU/end-to-end.
 - [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
 
@@ -1074,5 +1079,5 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 ## Việc phải làm ngay ở phiên tiếp theo
 
 `H13.autosubvideo` đang triển khai liên tục theo ủy quyền của Dev. Việc kế tiếp là
-AS7: render snapshot/quote/credit/output/job control. Hạ tầng
+AS8: hardening/performance/corpus/GPU/end-to-end. Hạ tầng
 độc lập còn việc cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.

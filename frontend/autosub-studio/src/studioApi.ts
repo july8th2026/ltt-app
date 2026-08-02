@@ -19,13 +19,15 @@ export type StudioPayload = { schema_version: 1;
   active_step: 'upload' | 'transcript' | 'style' | 'render';
   source: { key: string; filename: string; duration_s: number; width: number; height: number };
   tracks: StudioTrack[]; speakers: Record<string, string>; style: StudioStyle;
-  output: { resolution: 'source' | '720p' | '1080p' | '4k'; format: 'mp4' | 'mkv' | 'webm' } }
+  output: { resolution: 'source' | '720p' | '1080p' | '4k'; format: 'mp4' | 'mkv' | 'webm';
+    quality:'draft'|'standard'|'high'; track_ids:string[]; export_srt:boolean;
+    export_vtt:boolean;export_json:boolean;export_ass:boolean; bundle_zip:boolean } }
 export type StudioProject = { id: string; name: string; revision: number;
   status: 'active' | 'archived'; payload: StudioPayload }
 export type StudioCapabilities={whisperx:boolean;diarization:boolean;translation:boolean;
   credit:{transcribe:number;diarize:number;translate:number}}
 export type StudioJob={id:string;type:string;status:string;progress:number;message:string;
-  error:string;result:Record<string,unknown>}
+  error:string;result:Record<string,unknown>;elapsed_s?:number;eta_s?:number|null}
 
 export class ProjectConflictError extends Error {}
 
@@ -129,6 +131,25 @@ export async function loadStudioJob(id:string):Promise<StudioJob>{
 }
 export async function cancelStudioJob(id:string,csrf:string){
   return decode(await fetch(`/autosubvideo/api/jobs/${id}/cancel`,{method:'POST',
+    credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:'{}'}))
+}
+export type RenderQuote={credit:number;vnd:number;minutes:number;quality:string;
+  resolution:string;format:string;track_ids:string[];project_revision:number}
+export async function quoteRender(project:StudioProject,csrf:string){
+  const body=await decode(await fetch(`/autosubvideo/api/projects/${project.id}/quote`,{
+    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',
+      'X-CSRF-Token':csrf,'If-Match':`"${project.revision}"`},
+    body:JSON.stringify({output:project.payload.output})}))
+  return body.quote as RenderQuote
+}
+export async function startRender(project:StudioProject,csrf:string){
+  return decode(await fetch(`/autosubvideo/api/projects/${project.id}/render`,{
+    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',
+      'X-CSRF-Token':csrf,'If-Match':`"${project.revision}"`},
+    body:JSON.stringify({output:project.payload.output})}))
+}
+export async function retryStudioJob(id:string,csrf:string){
+  return decode(await fetch(`/autosubvideo/api/jobs/${id}/retry`,{method:'POST',
     credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:'{}'}))
 }
 

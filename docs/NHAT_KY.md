@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-03 — H13.autosubvideo AS7: render/export/job control PASS
+
+- **Mục tiêu:** xuất project Studio bằng snapshot bất biến, báo đúng chi phí
+  trước khi giữ credit và đóng đủ vòng đời job/artifact.
+- **Hạng mục:** AS7 hoàn thành; AS8 bắt đầu tiếp theo.
+- **Trạng thái:** backend/UI/browser PASS trên fixture cô lập.
+
+### Đã làm
+
+Thêm quote và submit render owner-scoped theo ETag/revision. Server chuẩn hóa output,
+chụp toàn payload, ký SHA-256 và đặt snapshot vào job; sửa project sau submit không
+đổi nội dung worker. Chỉ sau popup xác nhận mới giữ credit. Hủy queued/running hoàn
+credit idempotent; retry chỉ nhận render terminal có snapshot/source còn toàn vẹn.
+
+Worker render đúng track visible/được chọn, layer theo z-index, đặt track phụ lên trên,
+giữ aspect và hỗ trợ source/720p/1080p/4K cùng MP4/MKV/WebM. Artifact gồm video,
+ASS kết hợp, SRT/WebVTT/JSON từng track và ZIP manifest; route tải owner-scoped.
+Job status có elapsed/ETA từ tiến độ đo. Đã sửa lỗi cleanup: exception cancel từ
+progress callback nay kill FFmpeg trước khi thoát, tránh job đã hoàn tiền nhưng GPU
+vẫn chạy. UI có render panel, output/track/export controls, popup credit, progress,
+cancel/retry/download; payload cũ được normalize additive khi đọc.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_81_autosubvideo.py tests\test_103_autosub_projects.py -q` | **29 passed**, 1 warning |
+| `npm test -- --run` (`frontend/autosub-studio`) | **8 passed** |
+| `npm run build` (`frontend/autosub-studio`) | typecheck + Vite **PASS**, JS 224,29 kB, CSS 15,27 kB |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+| Playwright 1440 và 390 px, video `video (10).mp4` + SRT fixture | quote 200, popup/submit 202/cancel 200, overflow 0, console 0, request ứng dụng không lỗi |
+
+### Quyết định mới
+
+Không có. Triển khai theo Q49–Q50 và contract AS7 đã khóa.
+
+### Cách lùi lại
+
+Tắt `LTT_AUTOSUB_STUDIO_ROLLOUT` để về form legacy; revert commit AS7; giữ nguyên
+project, ledger và artifact đã tạo. Khi drain, hủy job đang chạy để hoàn hold.
+
+### Còn tồn đọng
+
+AS8 phải chạy corpus render/ASR, fuzz, long/load, GPU thật, accessibility và parity.
+
+### Việc tiếp theo
+
+1. AS8 hardening/security/performance/GPU end-to-end.
+2. AS9 full release gate; chỉ deploy production vì người dùng đã yêu cầu rõ.
+
+---
+
 ## 2026-08-02 — H13.autosubvideo AS6: auxiliary AI workflow PASS
 
 - **Mục tiêu:** nối phân vai Pyannote và dịch Gemini thành job 0-credit có kiểm

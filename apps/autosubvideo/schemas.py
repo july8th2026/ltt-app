@@ -235,6 +235,13 @@ class StudioSource(BaseModel):
 class StudioOutput(BaseModel):
     resolution: Literal["source", "720p", "1080p", "4k"] = "source"
     format: Literal["mp4", "mkv", "webm"] = "mp4"
+    quality: Literal["draft", "standard", "high"] = "standard"
+    track_ids: list[str] = Field(default_factory=list, max_length=32)
+    export_srt: bool = True
+    export_vtt: bool = True
+    export_json: bool = True
+    export_ass: bool = True
+    bundle_zip: bool = True
 
 
 class StudioStyle(SubtitleStyleConfig):

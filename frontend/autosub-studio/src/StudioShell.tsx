@@ -6,6 +6,7 @@ import { attachSource, createAutosave, importTranscript, loadOrCreateProject,
   startTranscription, startTranslation, cancelStudioJob, type StudioCapabilities,
   type StudioCue, type StudioJob, type StudioProject, type StudioTrack, type StylePreset } from './studioApi'
 import { StyleInspector, SubtitlePreview } from './StyleInspector'
+import { RenderPanel } from './RenderPanel'
 import { useProjectHistory } from './useProjectHistory'
 import './studio.css'
 
@@ -40,8 +41,9 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   useEffect(()=>{if(!auxJob||!['queued','running'].includes(auxJob.status))return
     const timer=window.setInterval(()=>{void loadStudioJob(auxJob.id).then(async job=>{setAuxJob(job)
       setMessage(`${job.message||job.status} · ${job.progress}%`)
-      if(job.status==='done'&&projectRef.current){const fresh=await loadProject(projectRef.current.id);projectRef.current=fresh;setProject(fresh);setSelectedTrackId(fresh.payload.tracks.at(-1)?.id||'');setMessage('AI auxiliary hoàn tất · 0 credit')}
-      if(job.status==='error')setMessage(job.error||'AI auxiliary lỗi')})},1200)
+      if(job.status==='done'&&projectRef.current&&job.type!=='autosubvideo.render'){const fresh=await loadProject(projectRef.current.id);projectRef.current=fresh;setProject(fresh);setSelectedTrackId(fresh.payload.tracks.at(-1)?.id||'');setMessage('AI auxiliary hoàn tất · 0 credit')}
+      if(job.status==='done'&&job.type==='autosubvideo.render')setMessage('Render hoàn tất · sẵn sàng tải xuống')
+      if(job.status==='error')setMessage(job.error||'Job lỗi')})},1200)
     return()=>window.clearInterval(timer)},[auxJob?.id,auxJob?.status])
 
   const autosave = useMemo(() => createAutosave<StudioProject>(async (draft) => {
@@ -142,10 +144,10 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         <EditorTimeline tracks={project.payload.tracks} duration={source.duration_s} currentTime={currentTime} sourceUrl={sourceUrl} selectedCueId={selectedCueId} onSelect={setSelectedCueId} onSeek={seek} onCueChange={cueChange}/>
         <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div></>:<p>Chọn một cue trên timeline hoặc thêm cue mới.</p>}</div>
       </section>
-      <aside className="studio-right"><StyleInspector tab={styleTab} setTab={setStyleTab}
+      <aside className="studio-right">{project.payload.active_step==='render'?<RenderPanel project={project} csrf={csrfToken} job={auxJob} onJob={setAuxJob} onMessage={setMessage} onChange={fn=>mutate(fn)}/>:<StyleInspector tab={styleTab} setTab={setStyleTab}
         style={normalizeStyle(project.payload.style)} presets={presets}
         onPreset={preset=>mutate(d=>{d.payload.style=normalizeStyle({preset:preset.id,...preset.config,highlight_mode:preset.highlight_mode,highlight_color:preset.highlight_color});d.payload.active_step='style'})}
-        onStyle={patch=>mutate(d=>{d.payload.style=normalizeStyle({...d.payload.style,...patch,preset:'custom'});d.payload.active_step='style'})}/></aside>
+        onStyle={patch=>mutate(d=>{d.payload.style=normalizeStyle({...d.payload.style,...patch,preset:'custom'});d.payload.active_step='style'})}/>}</aside>
     </section>
   </main>
 }

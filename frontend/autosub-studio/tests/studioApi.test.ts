@@ -5,7 +5,8 @@ import { createAutosave, DEFAULT_STYLE, loadOrCreateProject, ProjectConflictErro
 const payload = { schema_version: 1 as const, active_step: 'upload' as const,
   source: { key:'', filename:'', duration_s:0, width:0, height:0 }, tracks: [],
   speakers: {}, style: DEFAULT_STYLE, output: { resolution:'source' as const,
-    format:'mp4' as const } }
+    format:'mp4' as const,quality:'standard' as const,track_ids:[],export_srt:true,
+    export_vtt:true,export_json:true,export_ass:true,bundle_zip:true } }
 const project: StudioProject = { id:'p1', name:'P', revision:1, status:'active', payload }
 
 afterEach(() => vi.restoreAllMocks())

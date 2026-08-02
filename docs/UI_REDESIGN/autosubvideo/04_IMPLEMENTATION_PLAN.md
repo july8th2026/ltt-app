@@ -82,7 +82,7 @@ portrait/landscape/4K, reduced motion. **Rollback:** giữ 8 preset, ẩn custom
 đủ/mất/thừa cue bị từ chối, quota/dedupe/provider retry không tạo job trùng. **Rollback:** feature
 flag off; transcript gốc không đổi.
 
-## AS7 — Render/export/jobs
+## AS7 — Render/export/jobs — PASS 2026-08-03
 
 - Chỉ render quote/confirm/hold/settle/refund credit; output preserve aspect,
   source/720/1080/4K, MP4/MKV/WebM; video + từng track SRT/VTT/ASS/JSON/ZIP.
@@ -91,6 +91,12 @@ flag off; transcript gốc không đổi.
 
 **PASS:** probe FPS/audio/resolution, artifact owner/Range/R2, no disk leak, cancel/
 refund/race/retry/resume. **Rollback:** dừng nhận render mới, drain/cancel, giữ artifacts.
+
+Kết quả thật: snapshot revision + SHA-256 bất biến; quote/confirm/hold server-side;
+render multi-track đúng z-order và xuất video/ASS/SRT/VTT/JSON/ZIP; target giữ aspect;
+job JSON có elapsed/ETA, cancel giết FFmpeg rồi hoàn credit, retry dùng snapshot cũ.
+29 backend và 8 frontend test PASS; Playwright desktop/mobile dùng video thật,
+popup 1 credit, submit/cancel, overflow 0, console 0, request ứng dụng không lỗi.
 
 ## AS8 — Hardening và benchmark
 

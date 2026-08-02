@@ -12,6 +12,10 @@ from __future__ import annotations
 
 import logging
 import os
+import collections
+import re
+import subprocess
+import threading
 from typing import Callable, Optional
 
 from platform_core import media
@@ -27,6 +31,50 @@ _QSV = {"draft": ("veryfast", "30"), "standard": ("medium", "23"),
         "high": ("veryslow", "18")}
 # VP9 (webm) CRF (thang riêng, thấp = đẹp).
 _WEBM_CRF = {"draft": "40", "standard": "30", "high": "20"}
+_OUT_TIME_US = re.compile(r"^out_time_(?:ms|us)=(\d+)")
+_OUT_TIME = re.compile(r"^out_time=(\d+):(\d+):([\d.]+)")
+
+
+def _run_with_cleanup(cmd: list[str], *, total_duration: float,
+                      on_progress: Optional[Callable[[float], None]], timeout: int,
+                      cwd: str) -> None:
+    """Run FFmpeg and always kill it if a progress callback cancels the job."""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, cwd=cwd)
+    tail: collections.deque[str] = collections.deque(maxlen=12)
+    def drain():
+        try:
+            assert proc.stderr is not None
+            for line in proc.stderr:
+                if line.strip(): tail.append(line.strip())
+        except Exception:  # pragma: no cover - best effort stderr drain
+            pass
+    thread = threading.Thread(target=drain, daemon=True); thread.start()
+    try:
+        assert proc.stdout is not None
+        for raw in proc.stdout:
+            line = raw.strip(); current = None
+            match = _OUT_TIME_US.match(line)
+            if match: current = int(match.group(1)) / 1_000_000
+            else:
+                match = _OUT_TIME.match(line)
+                if match: current = int(match.group(1))*3600+int(match.group(2))*60+float(match.group(3))
+            if current is not None and total_duration > 0 and on_progress:
+                on_progress(min(99.0, round(current / total_duration * 100, 1)))
+            if line == "progress=end" and on_progress: on_progress(100.0)
+        proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        if proc.poll() is None:
+            proc.kill(); proc.wait()
+        raise media.MediaError(f"ffmpeg quá thời gian ({timeout}s).") from exc
+    except BaseException:
+        if proc.poll() is None:
+            proc.kill(); proc.wait()
+        raise
+    finally:
+        thread.join(timeout=5)
+    if proc.returncode != 0:
+        raise media.MediaError(f"ffmpeg lỗi (code {proc.returncode}): " + " | ".join(tail))
 
 
 def _ass_filter_arg(ass_path: str) -> tuple:
@@ -56,6 +104,7 @@ def burn(*, video_path: str, ass_path: str, output_path: str,
          output_format: str = "mp4", quality: str = "standard",
          bitrate_mode: str = "auto", source_bitrate_kbps: int = 0,
          total_duration: float = 0.0,
+         target_height: int = 0,
          on_progress: Optional[Callable[[float], None]] = None,
          timeout: int = 1800) -> str:
     """Khắc phụ đề, trả đường dẫn output. Ném media.MediaError khi ffmpeg lỗi."""
@@ -72,14 +121,18 @@ def burn(*, video_path: str, ass_path: str, output_path: str,
     video_path = os.path.abspath(video_path)
     output_path = os.path.abspath(output_path)
 
+    video_filter = f"ass={ass}"
+    if target_height > 0:
+        video_filter = f"scale=-2:{int(target_height)},{video_filter}"
+
     if output_format == "webm":
         crf = _WEBM_CRF.get(quality, _WEBM_CRF["standard"])
-        cmd = [ff, "-y", "-i", video_path, "-vf", f"ass={ass}", "-c:v", "libvpx-vp9"]
+        cmd = [ff, "-y", "-i", video_path, "-vf", video_filter, "-c:v", "libvpx-vp9"]
         cmd += (["-b:v", tb, "-maxrate", maxb] if use_tb else ["-crf", crf, "-b:v", "0"])
         cmd += ["-c:a", "libopus"]
     else:
         gpu = media.detect_gpu_encoder()
-        cmd = [ff, "-y", "-i", video_path, "-vf", f"ass={ass}"]
+        cmd = [ff, "-y", "-i", video_path, "-vf", video_filter]
         if gpu == "h264_nvenc":
             preset, cq = _NVENC.get(quality, _NVENC["standard"])
             cmd += ["-c:v", "h264_nvenc", "-preset", preset]
@@ -101,8 +154,8 @@ def burn(*, video_path: str, ass_path: str, output_path: str,
 
     cmd += ["-progress", "pipe:1", "-nostats", output_path]
     log.info("[burn] %s", " ".join(cmd))
-    media.run_with_progress(cmd, total_duration=total_duration,
-                            on_progress=on_progress, timeout=timeout, cwd=ass_cwd)
+    _run_with_cleanup(cmd, total_duration=total_duration,
+                      on_progress=on_progress, timeout=timeout, cwd=ass_cwd)
 
     if not os.path.isfile(output_path) or os.path.getsize(output_path) == 0:
         raise media.MediaError("ffmpeg xong nhưng output rỗng/không tồn tại.")

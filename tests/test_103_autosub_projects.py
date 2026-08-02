@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 import io
+import hashlib
 
 import pytest
 from fastapi.testclient import TestClient
@@ -236,6 +237,94 @@ def test_auxiliary_cost_is_zero_but_render_never_defaults_free():
     assert MANIFEST.credit_cost({"operation": "translate"}) == 0
     assert MANIFEST.credit_cost({"operation": "unknown", "duration_s": 60}) == 5
     assert MANIFEST.credit_cost({"duration_s": 60}) == 5
+
+
+def test_studio_render_quote_snapshot_hold_cancel_refund_and_retry(studio_api):
+    a, token, b, _token_b = studio_api
+    import platform_core.db as dbmod
+    from platform_core import credit
+    from platform_core.models import Job, User
+    from platform_core.storage import get_storage
+    db = next(dbmod.get_session())
+    user = db.query(User).filter_by(email="studio-a@example.com").one()
+    credit.nap(db, user.id, 100, "render-test")
+    key = f"autosubvideo/{user.id}/uploads/render.mp4"
+    get_storage().put(key, io.BytesIO(b"fake-video"), "video/mp4")
+    user_id = user.id; db.commit(); db.close()
+    payload = _payload(); payload["source"]["key"] = key
+    payload["source"]["duration_s"] = 61
+    payload["output"].update({"quality": "high", "resolution": "1080p",
+        "track_ids": ["source"], "export_srt": True, "export_ass": True,
+        "export_vtt": True, "export_json": True, "bundle_zip": True})
+    made = a.post("/autosubvideo/api/projects", headers={"X-CSRF-Token": token},
+                  json={"name": "Render", "payload": payload}).json()
+    endpoint = f"/autosubvideo/api/projects/{made['id']}"
+    quote = a.post(endpoint + "/quote", headers={"X-CSRF-Token": token,
+        "If-Match": '"1"'}, json={"output": made["payload"]["output"]})
+    assert quote.status_code == 200
+    assert quote.json()["quote"] == {"credit": 8, "vnd": 800, "minutes": 1.02,
+        "quality": "high", "resolution": "1080p", "format": "mp4",
+        "track_ids": ["source"], "project_revision": 1}
+    submitted = a.post(endpoint + "/render", headers={"X-CSRF-Token": token,
+        "If-Match": '"1"'}, json={"output": made["payload"]["output"]})
+    assert submitted.status_code == 202
+    job_id = submitted.json()["job_id"]
+    assert b.get(f"/autosubvideo/api/jobs/{job_id}").status_code == 404
+    db = next(dbmod.get_session()); job = db.get(Job, job_id)
+    assert job.params["operation"] == "render_project"
+    assert job.params["project_snapshot"]["tracks"][0]["cues"][0]["text"] == "Xin chào"
+    assert credit.so_da_giu(db, job_id) == 8 and credit.so_du(db, user_id) == 92
+    db.close()
+    changed = made["payload"]; changed["tracks"][0]["cues"][0]["text"] = "Đã sửa"
+    assert a.put(endpoint, headers={"X-CSRF-Token": token, "If-Match": '"1"'},
+                 json={"name": "Render", "payload": changed}).status_code == 200
+    db = next(dbmod.get_session()); assert db.get(Job, job_id).params[
+        "project_snapshot"]["tracks"][0]["cues"][0]["text"] == "Xin chào"; db.close()
+    cancelled = a.post(f"/autosubvideo/api/jobs/{job_id}/cancel",
+        headers={"X-CSRF-Token": token}, json={})
+    assert cancelled.json() == {"ok": True, "status": "cancelled"}
+    db = next(dbmod.get_session()); assert credit.so_du(db, user_id) == 100; db.close()
+    retried = a.post(f"/autosubvideo/api/jobs/{job_id}/retry",
+        headers={"X-CSRF-Token": token}, json={})
+    assert retried.status_code == 202 and retried.json()["job_id"] != job_id
+    db = next(dbmod.get_session()); assert credit.so_du(db, user_id) == 92; db.close()
+
+
+def test_project_render_worker_uses_snapshot_multitrack_resolution_and_bundle(tmp_path, monkeypatch):
+    import platform_core.storage as storage_mod
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    storage_mod.get_storage().put("autosubvideo/u/uploads/a.mp4", io.BytesIO(b"video"))
+    payload = _payload(); payload["source"]["key"] = "autosubvideo/u/uploads/a.mp4"
+    payload["tracks"].append({"id":"translated","kind":"translation","language":"en",
+        "name":"English","visible":True,"z_index":1,"style_id":"default","cues":[
+        {"id":"cue-2","start":0,"end":4,"text":"Hello","speaker":"","words":[]}]})
+    payload["output"].update({"resolution":"1080p","format":"mp4","quality":"standard",
+        "track_ids":["source","translated"],"export_srt":True,"export_vtt":True,
+        "export_json":True,"export_ass":True,"bundle_zip":True})
+    from apps.autosubvideo.schemas import StudioProjectV1
+    payload = StudioProjectV1.model_validate(payload).model_dump(mode="json")
+    canonical=json.dumps(payload,sort_keys=True,ensure_ascii=False,separators=(",",":"),allow_nan=False).encode()
+    monkeypatch.setattr("platform_core.media.probe",lambda _p:{"duration":4,"width":1280,
+        "height":720,"bitrate_kbps":900})
+    calls={}
+    def fake_burn(**kwargs):
+        calls.update(kwargs); open(kwargs["output_path"],"wb").write(b"rendered"); return kwargs["output_path"]
+    monkeypatch.setattr("apps.autosubvideo.burn.burn",fake_burn)
+    monkeypatch.setattr("apps.autosubvideo.jobs._dam_bao_giu_cho",lambda *_a:None)
+    class Ctx:
+        job_id="render-job"
+        def progress(self,*_args): pass
+    from apps.autosubvideo.jobs import handle
+    result=handle({"operation":"render_project","owner_id":"u","video_key":payload["source"]["key"],
+        "project_revision":3,"project_snapshot":payload,
+        "snapshot_sha256":hashlib.sha256(canonical).hexdigest()},Ctx())
+    assert calls["target_height"]==1080 and result["track_ids"]==["source","translated"]
+    assert set(result["srt_keys"])=={"source","translated"} and result["bundle_key"].endswith(".zip")
+    assert set(result["vtt_keys"])=={"source","translated"}
+    assert set(result["json_keys"])=={"source","translated"}
+    ass=storage_mod.get_storage().open(result["ass_key"]).read().decode("utf-8-sig")
+    assert "Dialogue: 0," in ass and "Dialogue: 1," in ass and "{\\an8}" in ass
+    storage_mod._storage=None
 
 
 def test_autosub_studio_bundle_is_hashed_fresh_and_in_release():

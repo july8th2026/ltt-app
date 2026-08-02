@@ -18,6 +18,7 @@ import tempfile
 import copy
 import io
 import json
+import hashlib
 
 from apps.autosubvideo import burn, cost
 
@@ -163,9 +164,98 @@ def handle(params: dict, ctx=None) -> dict:
         return _handle_diarize(params, ctx)
     if operation == "translate":
         return _handle_translate(params, ctx)
+    if operation == "render_project":
+        return _handle_project_render(params, ctx)
     if operation != "render":
         raise ValueError(f"Operation Auto Sub không hỗ trợ: {operation}")
     return _handle_render(params, ctx)
+
+
+def _handle_project_render(params: dict, ctx=None) -> dict:
+    from platform_core import media
+    from platform_core.storage import get_storage
+    from apps.autosubvideo.schemas import StudioProjectV1
+    from apps.autosubvideo.project_render import build_project_artifacts
+
+    owner_id = str(params.get("owner_id", "")); video_key = str(params.get("video_key", ""))
+    snapshot = params.get("project_snapshot") or {}
+    canonical = json.dumps(snapshot, sort_keys=True, ensure_ascii=False,
+                           separators=(",", ":"), allow_nan=False).encode("utf-8")
+    digest = hashlib.sha256(canonical).hexdigest()
+    if digest != str(params.get("snapshot_sha256", "")):
+        raise ValueError("Snapshot project không còn toàn vẹn.")
+    project = StudioProjectV1.model_validate(snapshot)
+    if not owner_id or not video_key.startswith(f"autosubvideo/{owner_id}/"):
+        raise ValueError("Source video không thuộc project owner.")
+    storage = get_storage(); job_id = getattr(ctx, "job_id", "") or "adhoc"
+    ext = _EXT[project.output.format]
+    prefix = f"autosubvideo/{owner_id}/{job_id}"
+    out_key = f"{prefix}/output{ext}"
+    tmpdir = tempfile.mkdtemp(prefix="ltt_autosub_project_")
+    local = os.path.join(tmpdir, "source" + (os.path.splitext(video_key)[1] or ".mp4"))
+    try:
+        if ctx: ctx.progress(4, "tải snapshot và source")
+        with storage.open(video_key) as src, open(local, "wb") as dst:
+            import shutil; shutil.copyfileobj(src, dst, length=1024 * 1024)
+        meta = media.probe(local); duration = float(meta.get("duration") or 0)
+        if duration <= 0: raise ValueError("Video không có thời lượng hợp lệ.")
+        true_cost = cost.uoc_luong_credit(duration, project.output.quality)
+        _dam_bao_giu_cho(job_id, owner_id, true_cost)
+        target_height = {"720p": 720, "1080p": 1080, "4k": 2160}.get(project.output.resolution, 0)
+        source_w = int(meta.get("width") or project.source.width or 1920)
+        source_h = int(meta.get("height") or project.source.height or 1080)
+        render_h = target_height or source_h
+        render_w = max(2, int(round(source_w * render_h / max(1, source_h) / 2) * 2))
+        artifacts = build_project_artifacts(snapshot, tmpdir, width=render_w, height=render_h)
+        if not storage.exists(out_key):
+            def progress(value):
+                if ctx: ctx.progress(min(95, 22 + int(value * .72)), "render video")
+            local_out = os.path.join(tmpdir, "output" + ext)
+            burn.burn(video_path=local, ass_path=artifacts["ass_path"], output_path=local_out,
+                output_format=project.output.format, quality=project.output.quality,
+                source_bitrate_kbps=int(meta.get("bitrate_kbps") or 0),
+                total_duration=duration, target_height=target_height, on_progress=progress)
+            with open(local_out, "rb") as stream:
+                storage.put(out_key, stream, f"video/{project.output.format}")
+        result = {"video_key": out_key, "credit_cost": true_cost,
+            "duration_s": round(duration, 2), "quality": project.output.quality,
+            "resolution": project.output.resolution, "output_format": project.output.format,
+            "snapshot_sha256": digest, "project_revision": params.get("project_revision"),
+            "track_ids": artifacts["track_ids"], "mode": "full",
+            "source": {"width": source_w, "height": source_h,
+                       "fps": meta.get("fps", 0),
+                       "has_audio": bool(meta.get("has_audio", True))},
+            "output": {"width": render_w, "height": render_h}}
+        if project.output.export_ass:
+            key=f"{prefix}/sub-combined.ass"
+            with open(artifacts["ass_path"],"rb") as stream: storage.put(key,stream,"text/plain; charset=utf-8")
+            result["ass_key"]=key
+        if project.output.export_srt:
+            result["srt_keys"]={}
+            for track_id,path in artifacts["srt_paths"].items():
+                key=f"{prefix}/{os.path.basename(path)}"
+                with open(path,"rb") as stream: storage.put(key,stream,"application/x-subrip")
+                result["srt_keys"][track_id]=key
+        if project.output.export_vtt:
+            result["vtt_keys"]={}
+            for track_id,path in artifacts["vtt_paths"].items():
+                key=f"{prefix}/{os.path.basename(path)}"
+                with open(path,"rb") as stream: storage.put(key,stream,"text/vtt")
+                result["vtt_keys"][track_id]=key
+        if project.output.export_json:
+            result["json_keys"]={}
+            for track_id,path in artifacts["json_paths"].items():
+                key=f"{prefix}/{os.path.basename(path)}"
+                with open(path,"rb") as stream: storage.put(key,stream,"application/json")
+                result["json_keys"][track_id]=key
+        if artifacts["bundle_path"]:
+            key=f"{prefix}/subtitle-bundle.zip"
+            with open(artifacts["bundle_path"],"rb") as stream: storage.put(key,stream,"application/zip")
+            result["bundle_key"]=key
+        if ctx: ctx.progress(100,"render hoàn tất")
+        return result
+    finally:
+        import shutil; shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def _handle_diarize(params: dict, ctx=None) -> dict:

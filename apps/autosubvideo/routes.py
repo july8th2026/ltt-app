@@ -8,6 +8,8 @@ from __future__ import annotations
 import uuid
 import json
 import os
+import copy
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -143,7 +145,10 @@ def _project_json(row, *, include_payload: bool = True) -> dict:
            "status": row.status, "created_at": row.created_at.isoformat(),
            "updated_at": row.updated_at.isoformat()}
     if include_payload:
-        out["payload"] = row.payload
+        # Normalize additive schema defaults on read so projects created by an
+        # older Studio bundle immediately receive new output options.
+        from apps.autosubvideo.schemas import StudioProjectV1
+        out["payload"] = StudioProjectV1.model_validate(row.payload).model_dump(mode="json")
     return out
 
 
@@ -407,6 +412,86 @@ def _submit_auxiliary(db: Session, *, current, row, operation: str,
         "credit": 0, "quota_remaining": max(0, daily_limit - used - 1)}, status_code=202)
 
 
+def _render_snapshot(row, current, body: dict, request: Request) -> tuple[dict, dict]:
+    """Validate revision/output and return an immutable render snapshot + quote."""
+    from apps.autosubvideo.schemas import StudioProjectV1, StudioOutput
+    from platform_core.storage import get_storage
+    try:
+        revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+    if row.revision != revision:
+        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+    payload = copy.deepcopy(row.payload or {})
+    try:
+        current_output = dict(payload.get("output") or {})
+        current_output.update(body.get("output") or {})
+        payload["output"] = StudioOutput.model_validate(current_output).model_dump(mode="json")
+        project = StudioProjectV1.model_validate(payload)
+    except Exception as exc:  # Pydantic reports exact validation at the API edge.
+        raise HTTPException(status_code=422, detail=f"Tùy chọn render không hợp lệ: {exc}") from None
+    key = project.source.key
+    if not key.startswith(f"autosubvideo/{current.id}/") or not get_storage().exists(key):
+        raise HTTPException(status_code=422, detail="Source video chưa sẵn sàng hoặc không thuộc user.")
+    selected = set(project.output.track_ids)
+    available = [track for track in project.tracks
+                 if track.visible and (not selected or track.id in selected) and track.cues]
+    if not available:
+        raise HTTPException(status_code=422, detail="Chọn ít nhất một track đang hiện và có cue.")
+    unknown = selected.difference(track.id for track in project.tracks)
+    if unknown:
+        raise HTTPException(status_code=422, detail="Track render không tồn tại.")
+    quote = cost.uoc_luong(project.source.duration_s, project.output.quality)
+    quote.update({"resolution": project.output.resolution, "format": project.output.format,
+                  "track_ids": [track.id for track in available],
+                  "project_revision": row.revision})
+    return project.model_dump(mode="json"), quote
+
+
+@router.post("/api/projects/{project_id}/quote")
+async def project_render_quote(request: Request, project_id: str,
+                               _identity: str = Depends(require_login),
+                               db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
+    try: row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    _snapshot, quote = _render_snapshot(row, current, body, request)
+    return {"ok": True, "quote": quote}
+
+
+@router.post("/api/projects/{project_id}/render")
+async def project_render_submit(request: Request, project_id: str,
+                                _identity: str = Depends(require_login),
+                                db: Session = Depends(get_db)):
+    from platform_core import app_projects, credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.registry import RegistryError
+    body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
+    try: row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    snapshot, quote = _render_snapshot(row, current, body, request)
+    canonical = json.dumps(snapshot, sort_keys=True, ensure_ascii=False,
+                           separators=(",", ":"), allow_nan=False).encode("utf-8")
+    params = {"operation": "render_project", "owner_id": current.id,
+              "project_id": row.id, "project_revision": row.revision,
+              "project_snapshot": snapshot,
+              "snapshot_sha256": hashlib.sha256(canonical).hexdigest(),
+              "video_key": snapshot["source"]["key"],
+              "duration_s": snapshot["source"]["duration_s"],
+              "quality": snapshot["output"]["quality"]}
+    try:
+        job = submit_with_credit(db, user_id=current.id, app_slug=MANIFEST.slug,
+            job_type="autosubvideo.render", params=params,
+            dedupe_key=dedupe_key_for("autosubvideo.render", params), max_attempts=2)
+    except (credit.ThieuCreditError, RegistryError) as exc:
+        raise HTTPException(status_code=402, detail=str(exc)) from None
+    return JSONResponse({"ok": True, "job_id": job.id, "status": job.status,
+        "quote": quote, "snapshot_sha256": params["snapshot_sha256"]}, status_code=202)
+
+
 @router.post("/api/projects/{project_id}/diarize")
 async def project_diarize(request: Request, project_id: str,
                           _identity: str = Depends(require_login),
@@ -481,8 +566,16 @@ def studio_job_status(request: Request, job_id: str,
     current = _api_user(request); job = db.get(Job, job_id)
     if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
         raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+    now = datetime.now(timezone.utc)
+    started = job.started_at
+    if started is not None and started.tzinfo is None:
+        started = started.replace(tzinfo=timezone.utc)
+    elapsed = max(0.0, (now - started).total_seconds()) if started else 0.0
+    eta = round(elapsed * (100 - job.progress) / job.progress, 1) if (
+        job.status == "running" and job.progress >= 3 and elapsed > 0) else None
     return {"id": job.id, "type": job.job_type, "status": job.status,
             "progress": job.progress, "message": job.progress_msg,
+            "elapsed_s": round(elapsed, 1), "eta_s": eta,
             "error": job.error if job.status == "error" else "",
             "result": job.result if job.status == "done" else {}}
 
@@ -491,13 +584,48 @@ def studio_job_status(request: Request, job_id: str,
 async def studio_job_cancel(request: Request, job_id: str,
                             _identity: str = Depends(require_login),
                             db: Session = Depends(get_db)):
-    from platform_core import jobs
+    from platform_core import jobs, credit
     from platform_core.models import Job
     body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
     job = db.get(Job, job_id)
     if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
         raise HTTPException(status_code=404, detail="Không tìm thấy job.")
-    return {"ok": jobs.cancel(db, job), "status": job.status}
+    cancelled = jobs.cancel(db, job)
+    if cancelled:
+        credit.hoan(db, job.user_id, job.id)
+    return {"ok": cancelled, "status": job.status}
+
+
+@router.post("/api/jobs/{job_id}/retry")
+async def studio_job_retry(request: Request, job_id: str,
+                           _identity: str = Depends(require_login),
+                           db: Session = Depends(get_db)):
+    from platform_core import credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.models import Job
+    body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
+    old = db.get(Job, job_id)
+    if old is None or old.user_id != current.id or old.app_slug != MANIFEST.slug:
+        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+    if old.status not in {"error", "cancelled"} or old.params.get("operation") != "render_project":
+        raise HTTPException(status_code=409, detail="Chỉ retry render đã lỗi hoặc đã hủy.")
+    params = copy.deepcopy(old.params)
+    canonical = json.dumps(params.get("project_snapshot") or {}, sort_keys=True,
+                           ensure_ascii=False, separators=(",", ":"),
+                           allow_nan=False).encode("utf-8")
+    key = str(params.get("video_key", ""))
+    from platform_core.storage import get_storage
+    if (hashlib.sha256(canonical).hexdigest() != params.get("snapshot_sha256") or
+            not key.startswith(f"autosubvideo/{current.id}/") or
+            not get_storage().exists(key)):
+        raise HTTPException(status_code=409, detail="Snapshot/source của job cũ không còn hợp lệ.")
+    try:
+        job = submit_with_credit(db, user_id=current.id, app_slug=MANIFEST.slug,
+            job_type=old.job_type, params=params,
+            dedupe_key=dedupe_key_for(old.job_type, params), max_attempts=2)
+    except credit.ThieuCreditError as exc:
+        raise HTTPException(status_code=402, detail=str(exc)) from None
+    return JSONResponse({"ok": True, "job_id": job.id, "status": job.status}, status_code=202)
 
 
 @router.post("/estimate", response_class=HTMLResponse)
@@ -707,6 +835,9 @@ def file_out(request: Request, key: str, user: str = Depends(require_login)):
     except (StorageError, FileNotFoundError):
         raise HTTPException(status_code=404, detail="Không tìm thấy file.")
     name = key.rsplit("/", 1)[-1]
-    ct = "application/x-subrip" if name.endswith(".srt") else "text/plain; charset=utf-8"
+    if name.endswith(".srt"): ct = "application/x-subrip"
+    elif name.endswith(".zip"): ct = "application/zip"
+    elif name.endswith(".json"): ct = "application/json"
+    else: ct = "text/plain; charset=utf-8"
     return StreamingResponse(storage.open(key), media_type=ct,
                              headers={"Content-Disposition": f'attachment; filename="{name}"'})

@@ -8,7 +8,8 @@ it('renders real empty project state without fake media or jobs', async () => {
   const project = { id:'p1', name:'Dự án test', revision:1, status:'active', payload:{
     schema_version:1, active_step:'upload', source:{ key:'', filename:'', duration_s:0,
       width:0, height:0 }, tracks:[], speakers:{}, style:{preset:'default'},
-      output:{resolution:'source', format:'mp4'} } }
+      output:{resolution:'source', format:'mp4',quality:'standard',track_ids:[],
+        export_srt:true,export_vtt:true,export_json:true,export_ass:true,bundle_zip:true} } }
   vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
     const url=String(input); if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
     if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p1',status:'active'}]}),{status:200})
@@ -30,7 +31,8 @@ it('opens a real cue from a multi-track timeline and edits its content', async (
           text:'Xin chào LTT',speaker:'SPEAKER_00',words:[]}]
       }, { id:'track-en', kind:'translation', language:'en', name:'English', visible:true,
         z_index:1, style_id:'default', cues:[] }], speakers:{}, style:{preset:'default'},
-      output:{resolution:'source',format:'mp4'} } }
+      output:{resolution:'source',format:'mp4',quality:'standard',track_ids:[],
+        export_srt:true,export_vtt:true,export_json:true,export_ass:true,bundle_zip:true} } }
   vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
     const url=String(input);if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
     if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p2',status:'active'}]}),{status:200})
@@ -48,4 +50,33 @@ it('opens a real cue from a multi-track timeline and edits its content', async (
   expect(screen.getByRole('slider',{name:'Cỡ chữ'})).toHaveValue('48')
   fireEvent.change(screen.getByRole('slider',{name:'Cỡ chữ'}),{target:{value:'64'}})
   expect(screen.getByRole('slider',{name:'Cỡ chữ'})).toHaveValue('64')
+})
+
+it('shows the server quote before any render submission', async () => {
+  const project = { id:'p3', name:'Render test', revision:4, status:'active', payload:{
+    schema_version:1, active_step:'render', source:{key:'autosubvideo/u/uploads/a.mp4',
+      filename:'a.mp4',duration_s:61,width:1280,height:720}, tracks:[{id:'source',
+      kind:'source',language:'vi',name:'Tiếng Việt',visible:true,z_index:0,
+      style_id:'default',cues:[{id:'cue-1',start:0,end:2,text:'Xin chào',speaker:'',words:[]}]}],
+    speakers:{},style:{preset:'default'},output:{resolution:'1080p',format:'mp4',
+      quality:'high',track_ids:['source'],export_srt:true,export_vtt:true,export_json:true,
+      export_ass:true,bundle_zip:true}}}
+  const fetch=vi.spyOn(globalThis,'fetch').mockImplementation(async input=>{
+    const url=String(input)
+    if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
+    if(url.endsWith('/api/capabilities'))return new Response(JSON.stringify({whisperx:false,
+      diarization:false,translation:false,credit:{transcribe:0,diarize:0,translate:0}}),{status:200})
+    if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p3',status:'active'}]}),{status:200})
+    if(url.endsWith('/quote'))return new Response(JSON.stringify({quote:{credit:8,vnd:800,
+      minutes:1.02,quality:'high',resolution:'1080p',format:'mp4',track_ids:['source'],
+      project_revision:4}}),{status:200})
+    return new Response(JSON.stringify(project),{status:200})
+  })
+  render(<StudioShell csrfToken="csrf"/>)
+  fireEvent.click(await screen.findByRole('button',{name:'Báo giá & xuất video'}))
+  const dialog=await screen.findByRole('dialog',{name:'Xác nhận chi phí'})
+  expect(dialog).toHaveTextContent('8 credit')
+  expect(fetch.mock.calls.some(([url])=>String(url).endsWith('/render'))).toBe(false)
+  fireEvent.click(screen.getByRole('button',{name:'Hủy'}))
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
