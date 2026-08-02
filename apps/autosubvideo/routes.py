@@ -10,12 +10,14 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
+from sqlalchemy.orm import Session
 
 from apps.autosubvideo import cost
 from apps.autosubvideo.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
+from server.deps import get_db
 from server.templating import templates
 
 router = APIRouter(tags=["autosubvideo"])
@@ -75,6 +77,117 @@ def _jobs_cua_toi(request: Request):
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, user: str = Depends(require_login)):
     return _render(request, user)
+
+
+def _api_user(request: Request):
+    current = user_hien_tai(request)
+    if current is None:
+        raise HTTPException(status_code=403, detail="Cần tài khoản người dùng.")
+    return current
+
+
+def _verify_json_csrf(request: Request, body: dict) -> None:
+    token = request.headers.get("X-CSRF-Token", "") or str(body.get("csrf_token", ""))
+    if not verify_csrf_token(request, token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+
+
+def _validated_project_payload(value) -> dict:
+    from pydantic import ValidationError
+    from apps.autosubvideo.schemas import StudioProjectV1
+    try:
+        return StudioProjectV1.model_validate(value).model_dump(mode="json")
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors(include_url=False)) from None
+
+
+def _project_json(row, *, include_payload: bool = True) -> dict:
+    out = {"id": row.id, "name": row.name, "app_slug": row.app_slug,
+           "schema_version": row.schema_version, "revision": row.revision,
+           "status": row.status, "created_at": row.created_at.isoformat(),
+           "updated_at": row.updated_at.isoformat()}
+    if include_payload:
+        out["payload"] = row.payload
+    return out
+
+
+def _project_response(row, *, status_code: int = 200):
+    return JSONResponse(_project_json(row), status_code=status_code,
+                        headers={"ETag": f'"{row.revision}"'})
+
+
+@router.get("/api/projects")
+def project_list(request: Request, _identity: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    from platform_core.models import AppProject
+    current = _api_user(request)
+    rows = db.query(AppProject).filter_by(user_id=current.id, app_slug=MANIFEST.slug).order_by(
+        AppProject.updated_at.desc()).limit(100).all()
+    return {"items": [_project_json(row, include_payload=False) for row in rows]}
+
+
+@router.post("/api/projects")
+async def project_create(request: Request, _identity: str = Depends(require_login),
+                         db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    from apps.autosubvideo.schemas import empty_studio_project
+    body = await request.json(); _verify_json_csrf(request, body)
+    current = _api_user(request)
+    payload = _validated_project_payload(body.get("payload", empty_studio_project()))
+    try:
+        row = app_projects.create(db, user_id=current.id, app_slug=MANIFEST.slug,
+                                  name=str(body.get("name", "")), schema_version=1,
+                                  payload=payload)
+    except app_projects.ProjectError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return _project_response(row, status_code=201)
+
+
+@router.get("/api/projects/{project_id}")
+def project_get(request: Request, project_id: str,
+                _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    current = _api_user(request)
+    try:
+        return _project_response(app_projects.get_owned(
+            db, project_id, current.id, MANIFEST.slug))
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+
+
+@router.put("/api/projects/{project_id}")
+async def project_save(request: Request, project_id: str,
+                       _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    body = await request.json(); _verify_json_csrf(request, body)
+    current = _api_user(request)
+    try:
+        revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
+        payload = _validated_project_payload(body.get("payload"))
+        row = app_projects.save(db, project_id=project_id, user_id=current.id,
+                                app_slug=MANIFEST.slug, revision=revision,
+                                name=str(body.get("name", "")), schema_version=1,
+                                payload=payload)
+    except app_projects.ProjectConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    except (KeyError, TypeError, ValueError, app_projects.ProjectError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return _project_response(row)
+
+
+@router.post("/api/projects/{project_id}/archive")
+async def project_archive(request: Request, project_id: str,
+                          _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    body = await request.json(); _verify_json_csrf(request, body)
+    current = _api_user(request)
+    try:
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    return _project_response(app_projects.archive(db, row))
 
 
 @router.post("/estimate", response_class=HTMLResponse)

@@ -1039,7 +1039,10 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 - [x] AS0 baseline/contract/rollback — 2026-08-02: khóa container `AppProject`
   generic, payload Auto Sub v1, multi-track/job/credit/flag contract, 11 state fixture
   và 4 viewport; chưa sửa runtime/migration.
-- [ ] AS1–AS8 contract runtime, engine, editor, timeline/style, render và hardening.
+- [x] AS1 `AppProject` runtime — 2026-08-02: additive model/migration/service/API,
+  owner 404, CSRF, ETag/revision conflict, archive mềm, payload limit/secret guard,
+  Auto Sub schema v1/multi-track; 127 targeted regression PASS, scan 0.
+- [ ] AS2–AS8 engine, editor, timeline/style, render và hardening.
 - [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
 
 ---

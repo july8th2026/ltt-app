@@ -159,6 +159,39 @@ class AppAccess(Base):
         return f"<AppAccess user={self.user_id} {self.app_slug}={self.level}>"
 
 
+APP_PROJECT_ACTIVE = "active"
+APP_PROJECT_ARCHIVED = "archived"
+
+
+class AppProject(Base):
+    """Generic, owner-scoped persistence for stateful app editors (Q49).
+
+    The platform owns identity, optimistic revision and lifecycle only. The
+    app owns and validates the versioned JSON payload; app-specific columns do
+    not belong in this table.
+    """
+
+    __tablename__ = "app_projects"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    app_slug: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(160), default="Project mới", nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default=APP_PROJECT_ACTIVE,
+                                        nullable=False, index=True)
+    payload: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_app_projects_owner_app_updated", "user_id", "app_slug", "updated_at"),
+    )
+
+
 # ── Trạng thái job ────────────────────────────────────────────────────────────
 # queued  : đang chờ worker nhặt
 # running : một worker đang chạy

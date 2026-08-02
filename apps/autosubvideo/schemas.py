@@ -3,8 +3,8 @@ Pydantic request / response schemas for auto_sub_video.
 """
 from __future__ import annotations
 
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Literal, Optional
+from pydantic import BaseModel, Field, model_validator
 
 
 # ── Transcript segment ───────────────────────────────────────────────────────
@@ -168,3 +168,92 @@ class JobStatusResponse(BaseModel):
     output_srt_url: Optional[str] = None
     output_ass_url: Optional[str] = None
     error: Optional[str] = None
+
+
+# ── Studio project schema v1 (Q49/Q50) ──────────────────────────────────────
+
+class StudioWord(BaseModel):
+    start: float = Field(ge=0)
+    end: float = Field(gt=0)
+    text: str = Field(min_length=1, max_length=200)
+
+    @model_validator(mode="after")
+    def timing(self):
+        if self.end <= self.start:
+            raise ValueError("word end phải lớn hơn start")
+        return self
+
+
+class StudioCue(BaseModel):
+    id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    start: float = Field(ge=0)
+    end: float = Field(gt=0)
+    text: str = Field(max_length=4000)
+    speaker: str = Field(default="", max_length=80)
+    words: list[StudioWord] = Field(default_factory=list, max_length=1000)
+
+    @model_validator(mode="after")
+    def timing(self):
+        if self.end <= self.start:
+            raise ValueError("cue end phải lớn hơn start")
+        if any(word.start < self.start or word.end > self.end for word in self.words):
+            raise ValueError("word timing phải nằm trong cue")
+        return self
+
+
+class StudioTrack(BaseModel):
+    id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    kind: Literal["source", "translation", "custom"] = "source"
+    language: str = Field(default="vi", min_length=2, max_length=24)
+    name: str = Field(default="Phụ đề", min_length=1, max_length=120)
+    visible: bool = True
+    z_index: int = Field(default=0, ge=0, le=99)
+    style_id: str = Field(default="default", min_length=1, max_length=64)
+    cues: list[StudioCue] = Field(default_factory=list, max_length=10000)
+
+    @model_validator(mode="after")
+    def unique_cues(self):
+        ids = [cue.id for cue in self.cues]
+        if len(ids) != len(set(ids)):
+            raise ValueError("cue id bị trùng trong track")
+        return self
+
+
+class StudioSource(BaseModel):
+    key: str = Field(default="", max_length=1000)
+    filename: str = Field(default="", max_length=255)
+    duration_s: float = Field(default=0, ge=0, le=86400)
+    width: int = Field(default=0, ge=0, le=16384)
+    height: int = Field(default=0, ge=0, le=16384)
+
+
+class StudioOutput(BaseModel):
+    resolution: Literal["source", "720p", "1080p", "4k"] = "source"
+    format: Literal["mp4", "mkv", "webm"] = "mp4"
+
+
+class StudioProjectV1(BaseModel):
+    schema_version: Literal[1] = 1
+    active_step: Literal["upload", "transcript", "style", "render"] = "upload"
+    source: StudioSource = Field(default_factory=StudioSource)
+    tracks: list[StudioTrack] = Field(default_factory=list, max_length=32)
+    speakers: dict[str, str] = Field(default_factory=dict)
+    style: dict = Field(default_factory=lambda: {"preset": "default"})
+    output: StudioOutput = Field(default_factory=StudioOutput)
+
+    @model_validator(mode="after")
+    def track_invariants(self):
+        ids = [track.id for track in self.tracks]
+        if len(ids) != len(set(ids)):
+            raise ValueError("track id bị trùng")
+        visible_z = [track.z_index for track in self.tracks if track.visible]
+        if len(visible_z) != len(set(visible_z)):
+            raise ValueError("z_index của track đang hiện bị trùng")
+        cue_ids = [cue.id for track in self.tracks for cue in track.cues]
+        if len(cue_ids) != len(set(cue_ids)):
+            raise ValueError("cue id phải duy nhất toàn project")
+        return self
+
+
+def empty_studio_project() -> dict:
+    return StudioProjectV1().model_dump(mode="json")

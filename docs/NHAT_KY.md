@@ -14,6 +14,37 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS1: AppProject runtime PASS
+
+- **Mục tiêu:** xây persistence generic và API owner-scoped cho Auto Sub Studio.
+- **Hạng mục:** AS1 hoàn thành; AS2 chưa bắt đầu.
+- **Trạng thái:** code/migration local đã có, production chưa deploy.
+
+### Đã làm
+
+Thêm model/migration `app_projects`, service generic giới hạn 1 MiB/độ sâu/bí mật,
+optimistic revision và archive mềm. Thêm schema Auto Sub v1 với source, track/cue/
+word timing, speaker/style/output; API create/list/get/save/archive có CSRF, ETag,
+owner khác 404 và conflict 409. Logic app không nằm trong core.
+
+### Test đã chạy
+
+- `python -m pytest tests\test_103_autosub_projects.py tests\test_81_autosubvideo.py tests\test_62_khoa_logic.py tests\test_63_lop_csdl.py -q`
+  → **56 passed**, 1 warning; gồm upgrade→downgrade base→upgrade migration.
+- `python -m pytest tests\test_85_app_contract_lint.py tests\test_61_setup_scripts.py -q`
+  → **71 passed**.
+- `python tools\scan_source_secrets.py` → **1012 file, 145510 dòng, 0 finding**.
+- `git diff --check` → PASS.
+
+### Cách lùi lại
+
+Giữ Studio off; backup rồi downgrade `d4e5f6a7b8c9` khi không còn writer. Form/render
+cũ không phụ thuộc `AppProject`, nên vẫn hoạt động.
+
+### Việc tiếp theo
+
+AS2: upload/import vào project và auxiliary transcription job 0-credit có quota.
+
 ## 2026-08-02 — H13.autosubvideo AS0: contract và rollback PASS
 
 - **Mục tiêu:** khóa ranh giới generic/app, fixture và rollback trước khi sửa runtime.
