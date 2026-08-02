@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-02 — Audit sau rollout và redeploy production
+
+Đã audit lại source sạch tại commit `baf06e9` và production đang chạy. Dependency
+Python `pip check` không vỡ; npm production audit 0 vulnerability; 10 app strict
+lint 0/0; secret scan 0. Script nghiệm thu xác nhận web/worker/tunnel chạy, cổng
+8100 chỉ nghe loopback, health local + Cloudflare `ready`, `/docs` 404, 11 app
+nạp `ok`, config không BOM và admin-env bị vô hiệu đúng Q29.
+
+Log web còn một traceback lịch sử ở Chat AI Studio: route từng truyền boolean
+`is_admin` vào context, che mất Jinja global `is_admin(request)` của header và gây
+`TypeError: 'bool' object is not callable`. Source/release hiện tại đã dùng tên
+`user_is_admin` nên production không còn lỗi; Playwright tái hiện trang
+`/chataistudio` trả 200, console/network sạch. Đã bổ sung regression test render
+trọn trang bằng admin DB thật để lỗi shadow global không quay lại. Lượt full suite
+đầu fail 2 test release vì placeholder session trong test mới bị secret scanner
+chặn; đổi sang placeholder test chuẩn, chạy lại release gate và full suite xanh.
+
+Playwright production trước deploy còn chạy một Canvas `text.script` thật tới
+`done`, actual 7, toàn API 2xx. Sau deploy kiểm lại Chat AI Studio và Canvas qua
+Cloudflare: console 0 error/0 warning, không failed request. Canary đã bị vô hiệu,
+session thu hồi và file browser state ngoài repo đã xóa; audit data được giữ.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pip check` → không có broken requirement.
+- `npm audit --omit=dev` → 0 vulnerability; typecheck + 13 frontend test PASS.
+- `python -m pytest tests\test_44_release_build.py tests\test_83_chataistudio.py -q`
+  → 39 passed.
+- Full suite lượt đầu → **2 fail, 1848 pass** do scanner chặn placeholder test;
+  không deploy ở trạng thái đỏ.
+- Full suite cuối `python -m pytest -q` → **1850 passed, 8 skipped,
+  23 subtests passed**, 1 warning deprecation, 467,18s.
+- `python tools\scan_source_secrets.py` → 909 file, 133.850 dòng, 0 finding.
+- `python tools\lint_app_contract.py --strict` → 10 app, 0 ERROR, 0 WARN.
+- Backup đầy đủ `D:\LTTBackups\ltt_data_20260802_161249.zip` → archive đọc được,
+  `pg_dump` production PASS.
+- Release 1.0.0 → 1.138 file, 75,5 MB, secret scan 0; deploy update + Alembic
+  + health PASS; `app.previous` được giữ.
+- Playwright production trước/sau deploy → Chat AI + Agent Canvas PASS,
+  console 0/0, network 0 lỗi không mong đợi.
+
+**Cảnh báo không chặn:** `sheet_id` và `google_credentials_path` trong config
+chung chưa điền; đây là cấu hình app Google/social cũ, không ảnh hưởng các app
+Agent/Canvas vừa audit.
+
+**Rollback:** `deploy\windows\rollback.ps1`; với Agent có run active thì đặt
+rollout `off`, drain/cancel/settle trước khi đổi binary.
+
 ## 2026-08-02 — H12 P13 hoàn tất production, rollout public
 
 Người dùng đã cấp quyền production rõ ràng. Đã backup đầy đủ sang

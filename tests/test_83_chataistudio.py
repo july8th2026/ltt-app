@@ -5,7 +5,11 @@ client parse env + base url, an toàn key ảnh. Nghiệm thu chat thật = trì
 """
 from __future__ import annotations
 
+import json
+import re
+
 import pytest
+from fastapi.testclient import TestClient
 
 
 def test_cost_gia_phang():
@@ -64,3 +68,41 @@ def test_migration_head_co_chat():
     txt = p.read_text(encoding="utf-8")
     assert "a1b2c3d4e5f6" in txt and "f0a1b2c3d4e5" in txt
     assert "chat_conversations" in txt and "chat_messages" in txt
+
+
+def test_trang_chat_admin_render_khong_che_jinja_global(tmp_path, monkeypatch):
+    """Regression production: bool `is_admin` từng che global cùng tên."""
+    db_url = f"sqlite:///{(tmp_path / 'chat-render.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", db_url)
+    import platform_core.db as dbmod
+    import platform_core.models  # noqa: F401
+    dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
+    db = next(dbmod.get_session())
+    from platform_core.users import tao_nguoi_dung
+    tao_nguoi_dung(db, email="chat-admin@example.com", password="Strong-pass-123",
+                   role="admin", is_verified=True)
+    db.commit(); db.close(); dbmod.reset_engine()
+
+    cfg = tmp_path / "config.json"
+    cfg.write_text(json.dumps({"job_delay_seconds": 1, "max_retries": 1,
+                               "sheet_id": "test"}), encoding="utf-8")
+    from apps.chataistudio import routes
+    monkeypatch.setattr(routes.sc, "account", lambda: {"account": None})
+    monkeypatch.setattr(routes, "_models_cached", lambda: [])
+    from server.app import create_app
+    client = TestClient(create_app(env={
+        "LTT_ENV": "local-server-test", "LTT_CONFIG_PATH": str(cfg),
+        "LTT_SESSION_SECRET": "agent-test-session-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+    }), base_url="https://testserver", follow_redirects=False)
+    login = client.get("/login?next=/chataistudio")
+    csrf = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert csrf
+    response = client.post("/login", data={"username": "chat-admin@example.com",
+        "password": "Strong-pass-123", "csrf_token": csrf.group(1),
+        "next": "/chataistudio"})
+    assert response.status_code == 303
+    page = client.get("/chataistudio")
+    assert page.status_code == 200
+    assert "Cấu hình ngay" in page.text and "/admin/" in page.text
+    client.close(); dbmod.reset_engine()
