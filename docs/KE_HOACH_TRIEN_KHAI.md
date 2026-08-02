@@ -1023,11 +1023,26 @@ cầu Seedance; Pause/delete và AI Detail chưa có engine được quản lý 
   console sạch; health loopback/Cloudflare ready. Browser R2 direct giữ off theo
   Q48 đến khi bucket CORS được cấp quyền cấu hình.
 
+### H13.autosubvideo — UI-RD Auto Sub Video Studio
+
+Nguồn hồ sơ: `docs/UI_REDESIGN/autosubvideo/`. Ảnh tham khảo 1680×935 mô tả
+subtitle editor đầy đủ, trong khi app hiện tại mới là form burn transcript có sẵn.
+
+- [x] R0–R4 ANALYZE — 2026-08-02: audit ảnh, browser desktop/mobile, code app,
+  engine/job/credit/storage, `D:\BOT GEMINI` chỉ-đọc và nguồn công nghệ chính thức;
+  tạo brief/current-state/reference-map/feature-matrix/plan AS0–AS9. Baseline
+  1440×900 + 390×844 không overflow, console 0, `/estimate` 200.
+- [ ] R3.5 Decision Gate — chờ Dev khóa 12 lựa chọn về product mode, React island,
+  ASR/diarization/translate, project contract, style/timeline/output/credit/mobile/
+  rollout. **Không BUILD trước khi khóa.**
+- [ ] AS0–AS8 contract, engine, editor, timeline/style, render và hardening.
+- [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
+
 ---
 
 ## Việc phải làm ngay ở phiên tiếp theo
 
-`H13.upscalevideo` UP0–UP8 đã đóng và deploy. Lần tiếp theo chỉ mở app redesign
-mới khi có ảnh/tên app; tiếp tục dùng pipeline UI-RD, không sửa lại Upscale nếu
-không có bug hoặc quyết định sản phẩm mới. Hạ tầng còn việc vận hành độc lập:
-cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.
+`H13.autosubvideo` đã xong ANALYZE và đang ở Decision Gate. Sau khi Dev trả lời
+12 lựa chọn trong `UI_REDESIGN/autosubvideo/00_BRIEF.md`, khóa quyết định nền
+tảng nếu cần rồi mới bắt đầu AS0/BUILD. Hạ tầng độc lập còn việc cấu hình bucket
+CORS rồi mới bật cờ Q48 cho browser upload >90MB.

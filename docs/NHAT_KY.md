@@ -14,6 +14,62 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo: ANALYZE và kế hoạch AS0–AS9
+
+- **Mục tiêu:** audit ảnh Auto Sub 1680×935, app đang chạy và năng lực nội tại;
+  lập ma trận/phase nâng cấp sâu trước Decision Gate, không sửa code sản phẩm.
+- **Hạng mục:** H13.autosubvideo — R0–R4 ANALYZE hoàn thành; R3.5 chờ Dev.
+- **Trạng thái:** nghiên cứu xong; chưa BUILD, chưa deploy.
+
+### Đã làm
+
+Tạo `docs/UI_REDESIGN/autosubvideo/` đủ brief, current state, reference map,
+feature matrix, plan AS0–AS9 và evidence. Browser fixture cô lập xác minh UI form
+hiện tại ở 1440×900 và 390×844 không overflow, console 0, `/estimate` 200.
+
+Audit cho thấy backend đáng tái sử dụng: parser/normalizer/segmenter, 8 preset,
+custom style schema, ASS/SRT builder, preview function, FFmpeg/libass/NVENC,
+job/credit/R2/ownership. Khoảng trống là ASR/project/editor/timeline/autosave/
+speaker/translation/style UI/cancel cooperative. `D:\BOT GEMINI` được đọc-only:
+Auto Sub v3 đã có phần lớn editor/template/preview/cancel/retry; không import chéo.
+
+Nghiên cứu nguồn gốc xác nhận faster-whisper hiện có hỗ trợ word timestamp/VAD;
+WhisperX phù hợp benchmark alignment; pyannote Community-1 chạy local nhưng model
+gated/token và không đồng nghĩa nhận dạng tên; wavesurfer.js có Regions/Timeline.
+Máy có RTX 5060 Ti 16GB, faster-whisper/CTranslate2 và model cache. Video test
+user chỉ được ffprobe đọc metadata, không sửa. Decision Gate gồm 12 lựa chọn;
+project persistence và React editor có thể tạo quyết định nền tảng mới nên chưa BUILD.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Playwright fixture 1440×900 + 390×844 | PASS; overflow 0, console 0, estimate 200 |
+| `python -m pytest tests\test_61_setup_scripts.py tests\test_62_khoa_logic.py tests\test_81_autosubvideo.py tests\test_85_app_contract_lint.py -q` | **106 passed** |
+| `python tools\scan_source_secrets.py` | **1007 file, 144737 dòng, 0 finding — PASS** |
+| `python -m pytest -q` lượt đầu | wrapper timeout 5 giây; tiến trình bị dừng, không phải test fail |
+| `python -m pytest -q` chạy lại | **1869 passed, 8 skipped, 23 subtests, 1 warning**, 491,32 giây |
+
+### Quyết định mới
+
+Chưa có. Chờ Dev trả lời Decision Gate; nếu chọn React island/generic AppProject
+thì phải ghi quyết định mới và contract gap trước code.
+
+### Cách lùi lại
+
+Revert commit tài liệu của lượt này; không có code/migration/service/production để lùi.
+
+### Còn tồn đọng
+
+- Chưa có corpus multi-speaker/long-form/noise để benchmark AS0.
+- Q48 CORS vẫn giới hạn browser upload >90MB, không riêng Auto Sub.
+- R3.5 chưa khóa, toàn bộ AS0–AS9 chưa triển khai.
+
+### Việc tiếp theo
+
+Dev trả lời 12 lựa chọn trong `UI_REDESIGN/autosubvideo/00_BRIEF.md`; cập nhật
+quyết định/ma trận rồi mới bắt đầu AS0.
+
 ## 2026-08-02 — H13.upscalevideo UP8: release và production PASS
 
 - **Mục tiêu:** nghiệm thu đầy đủ, deploy có backup/rollback và xác minh GPU thật
