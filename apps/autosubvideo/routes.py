@@ -6,6 +6,7 @@ KHÔNG tự viết prefix (nền tảng gắn theo manifest).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
@@ -188,6 +189,107 @@ async def project_archive(request: Request, project_id: str,
     except app_projects.ProjectNotFound:
         raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
     return _project_response(app_projects.archive(db, row))
+
+
+@router.post("/api/projects/{project_id}/import")
+async def project_import_transcript(
+        request: Request, project_id: str, transcript: UploadFile = File(...),
+        language: str = Form("vi"), track_name: str = Form("Transcript"),
+        revision: int = Form(...), csrf_token: str = Form(""),
+        _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    from apps.autosubvideo.parsers import parse_transcript
+    if not verify_csrf_token(request, request.headers.get("X-CSRF-Token", "") or csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    current = _api_user(request)
+    raw = await transcript.read()
+    if not raw or len(raw) > _TRANSCRIPT_MAX:
+        raise HTTPException(status_code=422, detail="Transcript rỗng hoặc quá lớn (>8MB).")
+    try:
+        segments = parse_transcript(transcript.filename or "", raw)
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+        payload = dict(row.payload)
+        track = {"id": "track-source", "kind": "source", "language": language[:24],
+                 "name": track_name[:120] or "Transcript", "visible": True,
+                 "z_index": 0, "style_id": "default", "cues": [{
+                     "id": f"cue-{index:06d}", "start": float(item["start"]),
+                     "end": float(item["end"]), "text": str(item["text"]),
+                     "speaker": str(item.get("speaker", "")), "words": []}
+                     for index, item in enumerate(segments, 1)]}
+        payload["tracks"] = [track, *[item for item in payload.get("tracks", [])
+                                             if item.get("id") != "track-source"]]
+        payload["active_step"] = "transcript"
+        validated = _validated_project_payload(payload)
+        saved = app_projects.save(db, project_id=project_id, user_id=current.id,
+                                  app_slug=MANIFEST.slug, revision=revision,
+                                  name=row.name, schema_version=1, payload=validated)
+    except app_projects.ProjectConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    except (ValueError, app_projects.ProjectError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return _project_response(saved)
+
+
+_TRANSCRIBE_DAILY_LIMIT = 12
+
+
+@router.post("/api/projects/{project_id}/transcribe")
+async def project_transcribe(request: Request, project_id: str,
+                             _identity: str = Depends(require_login),
+                             db: Session = Depends(get_db)):
+    from sqlalchemy import func, select
+    from platform_core import app_projects
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.models import Job, User
+    from platform_core.storage import get_storage
+
+    body = await request.json(); _verify_json_csrf(request, body)
+    current = _api_user(request)
+    try:
+        revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+    if row.revision != revision:
+        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+    source = (row.payload or {}).get("source") or {}
+    key = str(source.get("key", ""))
+    if not key.startswith(f"autosubvideo/{current.id}/") or not get_storage().exists(key):
+        raise HTTPException(status_code=422, detail="Source video chưa upload hoặc không thuộc user.")
+    duration = float(source.get("duration_s", 0) or 0)
+    if duration > 7200:
+        raise HTTPException(status_code=422, detail="Mỗi lượt chép lời tối đa 120 phút.")
+
+    # Lock user while checking quota and creating the job; concurrent submits
+    # cannot all observe the same pre-limit count on PostgreSQL.
+    db.execute(select(User).where(User.id == current.id).with_for_update()).scalar_one()
+    day_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    used = db.execute(select(func.count(Job.id)).where(
+        Job.user_id == current.id, Job.job_type == "autosubvideo.transcribe",
+        Job.created_at >= day_start)).scalar_one()
+    if int(used or 0) >= _TRANSCRIBE_DAILY_LIMIT:
+        raise HTTPException(status_code=429, detail="Đã dùng hết 12 lượt chép lời miễn phí hôm nay.")
+
+    params = {"operation": "transcribe", "owner_id": current.id,
+              "project_id": row.id, "project_revision": row.revision,
+              "video_key": key, "duration_s": duration,
+              "language": str(body.get("language", ""))[:24],
+              "model": str(body.get("model", "large-v3"))[:64] or "large-v3"}
+    job = submit_with_credit(
+        db, user_id=current.id, app_slug=MANIFEST.slug,
+        job_type="autosubvideo.transcribe", params=params,
+        dedupe_key=dedupe_key_for("autosubvideo.transcribe", params), max_attempts=2)
+    current_used = db.execute(select(func.count(Job.id)).where(
+        Job.user_id == current.id, Job.job_type == "autosubvideo.transcribe",
+        Job.created_at >= day_start)).scalar_one()
+    return JSONResponse({"ok": True, "job_id": job.id, "status": job.status,
+                         "credit": 0, "quota_remaining": max(
+                             0, _TRANSCRIBE_DAILY_LIMIT - int(current_used or 0))},
+                        status_code=202)
 
 
 @router.post("/estimate", response_class=HTMLResponse)

@@ -14,6 +14,54 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS2: WhisperX/import/quota PASS
+
+- **Mục tiêu:** tạo transcript từ import hoặc ASR mặc định mà không thu credit/
+  phá môi trường GPU chung.
+- **Hạng mục:** AS2 hoàn thành; AS3 chưa bắt đầu.
+- **Trạng thái:** code + sidecar dev đã chạy; production chưa deploy.
+
+### Đã làm
+
+Manifest nhận `autosubvideo.transcribe`; callback chỉ miễn phí bốn operation
+server allowlist, render không có default-free. API import ghi track vào đúng revision.
+API transcribe kiểm owner/source/revision, khóa user khi check quota, giới hạn 12
+lượt/ngày và 120 phút/job, dedupe, tạo job 0-credit. Worker WhisperX-first lưu
+artifact transcript, chỉ apply khi revision khớp; conflict không làm mất kết quả.
+
+WhisperX 3.8.6 buộc Torch 2.8 nên được cài ở `D:\LTTWhisperX`, không downgrade
+Torch 2.11 của app khác. Installer idempotent tạo sidecar production riêng và ghi
+chỉ tên biến/path `LTT_WHISPERX_PYTHON` vào app.env. Main Python `pip check` sạch.
+
+### Test đã chạy
+
+- `python -m pytest tests\test_103_autosub_projects.py tests\test_81_autosubvideo.py tests\test_61_setup_scripts.py tests\test_85_app_contract_lint.py tests\test_86_usage_rate_limit.py -q`
+  → **96 passed**, 1 warning.
+- Sidecar: Torch **2.8.0+cu128**, CUDA=True, RTX 5060 Ti, WhisperX import PASS,
+  `pip check` → no broken requirements.
+- WhisperX tiny smoke 30s VI → aligned, 10 segment/64 word.
+- WhisperX `large-v3` smoke 30s VI → aligned, 1 segment/15 word, 19,36 giây,
+  RTF **0,645**. Không ghi transcript người dùng vào log/tài liệu.
+- `python -m pip check` main env → no broken requirements.
+- `python tools\scan_source_secrets.py` lượt gate → **1016 file, 146132 dòng**;
+  lượt cuối sau nhật ký → **1016 file, 146184 dòng**; đều **0 finding**.
+- `git diff --check` → PASS.
+
+### Cách lùi lại
+
+Tắt Studio; auxiliary job đang chạy được cancel; import cũ vẫn dùng. Xóa cấu hình
+`LTT_WHISPERX_PYTHON` để fallback faster-whisper; sidecar độc lập không chạm main venv.
+
+### Còn tồn đọng
+
+- TorchCodec phát cảnh báo tương thích nhưng runner nạp audio qua WhisperX/FFmpeg và
+  cả hai smoke vẫn aligned; tiếp tục theo dõi ở AS8.
+- Corpus WER/DER đầy đủ chạy ở AS8 sau khi editor/render đã nối end-to-end.
+
+### Việc tiếp theo
+
+AS3: production React island, Studio shell và project/autosave/preview states.
+
 ## 2026-08-02 — H13.autosubvideo AS1: AppProject runtime PASS
 
 - **Mục tiêu:** xây persistence generic và API owner-scoped cho Auto Sub Studio.

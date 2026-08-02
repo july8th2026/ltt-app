@@ -138,6 +138,13 @@ if ($cudaOk) {
     else { Note 'CANH BAO: torch chua thay CUDA - Tao Clip ngan se chay CPU rat cham (kiem tra driver NVIDIA / dung card Blackwell can cu128)' }
 }
 
+Head 'WhisperX sidecar rieng'
+$whisperOut = @(& (Join-Path $appDir 'deploy\windows\install-whisperx-sidecar.ps1') `
+    -Root $Root -ReleaseDir $appDir -PythonExe 'python')
+$whisperPy = $whisperOut[-1]
+if (-not $whisperPy) { throw 'Khong cai duoc WhisperX sidecar' }
+Ok 'WhisperX CUDA sidecar da san sang'
+
 Head 'Cau hinh van hanh'
 $cfg = Join-Path $dataDir 'config.json'
 if (Test-Path $cfg) {
@@ -191,6 +198,14 @@ if ($envTxt -notmatch 'LTT_CODEX_SIDECAR_TOKEN=') {
     Ok 'Da them LTT_CODEX_SIDECAR_TOKEN + port + CODEX_SERVER_HOME vao app.env'
 } else {
     Ok 'LTT_CODEX_SIDECAR_TOKEN da co - GIU NGUYEN'
+}
+
+$envTxt = Get-Content $envFile -Raw
+if ($envTxt -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
+    [IO.File]::AppendAllText($envFile, "`r`nLTT_WHISPERX_PYTHON=$whisperPy`r`n", (New-Object Text.UTF8Encoding($false)))
+    Ok 'Da them LTT_WHISPERX_PYTHON vao app.env'
+} else {
+    Ok 'LTT_WHISPERX_PYTHON da co - GIU NGUYEN'
 }
 
 Head 'PostgreSQL'

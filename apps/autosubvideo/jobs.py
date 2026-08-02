@@ -15,6 +15,9 @@ from __future__ import annotations
 import logging
 import os
 import tempfile
+import copy
+import io
+import json
 
 from apps.autosubvideo import burn, cost
 
@@ -48,7 +51,120 @@ def _dam_bao_giu_cho(job_id: str, user_id: str, need: int) -> None:
         except StopIteration: pass
 
 
+def _handle_transcribe(params: dict, ctx=None) -> dict:
+    from platform_core import media
+    from platform_core.storage import get_storage
+    from apps.autosubvideo.schemas import StudioProjectV1
+    from apps.autosubvideo.transcription import transcribe_file
+
+    owner_id = str(params.get("owner_id", ""))
+    project_id = str(params.get("project_id", ""))
+    video_key = str(params.get("video_key", ""))
+    expected_revision = int(params.get("project_revision", 0) or 0)
+    if not owner_id or not project_id or not video_key or expected_revision < 1:
+        raise ValueError("Thiếu project/source/revision cho transcription.")
+    if not video_key.startswith(f"autosubvideo/{owner_id}/"):
+        raise ValueError("Video source không thuộc project owner.")
+    storage = get_storage()
+    tmpdir = tempfile.mkdtemp(prefix="ltt_autosub_asr_")
+    local = os.path.join(tmpdir, "source" + (os.path.splitext(video_key)[1] or ".mp4"))
+    job_id = getattr(ctx, "job_id", "") or "adhoc"
+    try:
+        if ctx is not None:
+            ctx.progress(3, "tải source")
+        with storage.open(video_key) as src, open(local, "wb") as dst:
+            import shutil
+            shutil.copyfileobj(src, dst, length=1024 * 1024)
+        duration = media.duration_seconds(local)
+        if duration <= 0:
+            raise ValueError("Video không có audio/thời lượng hợp lệ.")
+        if duration > 7200:
+            raise ValueError("Mỗi lượt chép lời tối đa 120 phút.")
+
+        def progress(percent, message):
+            if ctx is not None:
+                ctx.progress(max(5, min(90, int(percent))), message)
+
+        result = transcribe_file(
+            local, language=str(params.get("language", "")),
+            model_name=str(params.get("model", "large-v3")), on_progress=progress,
+            is_cancelled=(ctx.is_cancelled if ctx is not None else None))
+        cues = []
+        for index, segment in enumerate(result.get("segments") or [], 1):
+            start = max(0.0, float(segment.get("start", 0)))
+            end = float(segment.get("end", 0))
+            text = str(segment.get("text", "")).strip()
+            if end <= start or not text:
+                continue
+            words = []
+            for word in segment.get("words") or []:
+                try:
+                    ws, we = float(word.get("start")), float(word.get("end"))
+                except (TypeError, ValueError):
+                    continue
+                wt = str(word.get("word", word.get("text", ""))).strip()
+                if wt and start <= ws < we <= end:
+                    words.append({"start": ws, "end": we, "text": wt})
+            cues.append({"id": f"cue-{index:06d}", "start": start, "end": end,
+                         "text": text, "speaker": "", "words": words})
+        if not cues:
+            raise ValueError("Không nhận được lời nói trong video.")
+        language = str(result.get("language") or params.get("language") or "und")[:24]
+        track = {"id": "track-source", "kind": "source", "language": language,
+                 "name": "Bản chép lời", "visible": True, "z_index": 0,
+                 "style_id": "default", "cues": cues}
+        artifact_key = f"autosubvideo/{owner_id}/{job_id}/transcript.json"
+        storage.put(artifact_key, io.BytesIO(json.dumps(
+            {"schema_version": 1, "track": track}, ensure_ascii=False,
+            allow_nan=False).encode("utf-8")), content_type="application/json")
+
+        applied_revision = 0
+        conflict = False
+        from platform_core.db import get_session
+        from platform_core import app_projects
+        gen = get_session(); db = next(gen)
+        try:
+            row = app_projects.get_owned(db, project_id, owner_id, "autosubvideo")
+            payload = copy.deepcopy(row.payload)
+            tracks = [item for item in payload.get("tracks", [])
+                      if item.get("id") != "track-source"]
+            payload["tracks"] = [track, *tracks]
+            payload["active_step"] = "transcript"
+            validated = StudioProjectV1.model_validate(payload).model_dump(mode="json")
+            try:
+                saved = app_projects.save(
+                    db, project_id=project_id, user_id=owner_id,
+                    app_slug="autosubvideo", revision=expected_revision,
+                    name=row.name, schema_version=1, payload=validated)
+                db.commit(); applied_revision = saved.revision
+            except app_projects.ProjectConflict:
+                db.rollback(); conflict = True
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        if ctx is not None:
+            ctx.progress(100, "chép lời hoàn tất")
+        return {"project_id": project_id, "project_revision": applied_revision,
+                "project_conflict": conflict, "transcript_key": artifact_key,
+                "cue_count": len(cues), "language": language,
+                "engine": result.get("engine", ""),
+                "alignment_status": result.get("alignment_status", ""),
+                "fallback_reason": result.get("fallback_reason", "")}
+    finally:
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
 def handle(params: dict, ctx=None) -> dict:
+    operation = str(params.get("operation", "render"))
+    if operation == "transcribe":
+        return _handle_transcribe(params, ctx)
+    if operation != "render":
+        raise ValueError(f"Operation Auto Sub không hỗ trợ: {operation}")
+    return _handle_render(params, ctx)
+
+
+def _handle_render(params: dict, ctx=None) -> dict:
     from platform_core import media
     from platform_core.storage import get_storage
 

@@ -17,7 +17,8 @@ from server.auth.rate_limit import RateLimiter
 
 # Đuôi path "miễn phí / đốt quota ngoài" — siết chặt hơn (dễ bị script lạm dụng nhất).
 _EXPENSIVE_SUFFIXES = ("/translate", "/preview", "/estimate", "/upload-url",
-                       "/plan", "/approve", "/runs", "/again")
+                       "/transcribe", "/diarize", "/plan", "/approve",
+                       "/runs", "/again")
 
 # Path KHÔNG áp (có limiter riêng theo IP, hoặc là auth flow) — tránh double-limit.
 _EXEMPT_PREFIXES = ("/login", "/register", "/logout", "/forgot-password",

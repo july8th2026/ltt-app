@@ -1042,7 +1042,12 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 - [x] AS1 `AppProject` runtime — 2026-08-02: additive model/migration/service/API,
   owner 404, CSRF, ETag/revision conflict, archive mềm, payload limit/secret guard,
   Auto Sub schema v1/multi-track; 127 targeted regression PASS, scan 0.
-- [ ] AS2–AS8 engine, editor, timeline/style, render và hardening.
+- [x] AS2 upload/import + WhisperX — 2026-08-02: import vào revision; transcription
+  job 0-credit có owner/CSRF/dedupe, 12 lượt/ngày, user-row lock, 120 phút/job,
+  cooperative cancel và conflict artifact. Sidecar cô lập Torch 2.8 cu128 khỏi
+  Torch 2.11 nền tảng; RTX 5060 Ti CUDA PASS; smoke VI 30s `large-v3` aligned,
+  19,36s/RTF 0,645; 96 regression PASS, scan 0.
+- [ ] AS3–AS8 editor, timeline/style, render và hardening.
 - [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
 
 ---

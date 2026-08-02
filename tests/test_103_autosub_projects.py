@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import io
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,6 +12,10 @@ from fastapi.testclient import TestClient
 @pytest.fixture()
 def studio_api(tmp_path, monkeypatch):
     monkeypatch.setenv("LTT_DATABASE_URL", f"sqlite:///{(tmp_path / 'studio.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.delenv("LTT_STORAGE", raising=False)
+    import platform_core.storage as storage_mod
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
     import platform_core.db as dbmod
     import platform_core.models  # noqa: F401
     dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
@@ -40,7 +45,7 @@ def studio_api(tmp_path, monkeypatch):
     a, token_a = login("studio-a@example.com")
     b, token_b = login("studio-b@example.com")
     yield a, token_a, b, token_b
-    a.close(); b.close(); dbmod.reset_engine()
+    a.close(); b.close(); dbmod.reset_engine(); storage_mod._storage = None
 
 
 def _payload():
@@ -124,3 +129,110 @@ def test_app_project_migration_is_single_head():
     from alembic.script import ScriptDirectory
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
     assert scripts.get_current_head() == "d4e5f6a7b8c9"
+
+
+def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):
+    a, token, *_ = studio_api
+    made = a.post("/autosubvideo/api/projects", headers={"X-CSRF-Token": token},
+                  json={"name": "ASR"}).json()
+    imported = a.post(f"/autosubvideo/api/projects/{made['id']}/import",
+        headers={"X-CSRF-Token": token}, data={"revision": 1, "language": "vi"},
+        files={"transcript": ("sample.srt",
+            b"1\n00:00:00,000 --> 00:00:02,000\nXin chao\n", "text/plain")})
+    assert imported.status_code == 200 and imported.json()["payload"]["tracks"][0]["cues"]
+
+    ticket = a.post("/autosubvideo/upload-url", data={"filename": "sample.mp4",
+                    "content_type": "video/mp4"}).json()
+    from platform_core.storage import get_storage
+    get_storage().put(ticket["key"], io.BytesIO(b"fake-video"), "video/mp4")
+    row = imported.json(); row["payload"]["source"] = {
+        "key": ticket["key"], "filename": "sample.mp4", "duration_s": 4,
+        "width": 1280, "height": 720}
+    saved = a.put(f"/autosubvideo/api/projects/{made['id']}", headers={
+        "X-CSRF-Token": token, "If-Match": '"2"'},
+        json={"name": "ASR", "payload": row["payload"]}).json()
+    queued = a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe", headers={
+        "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'},
+        json={"language": "vi"})
+    assert queued.status_code == 202 and queued.json()["credit"] == 0
+    again = a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe", headers={
+        "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'},
+        json={"language": "vi"})
+    assert again.status_code == 202 and again.json()["job_id"] == queued.json()["job_id"]
+    import platform_core.db as dbmod
+    from platform_core import credit
+    from platform_core.models import Job, User
+    db = next(dbmod.get_session())
+    job = db.get(Job, queued.json()["job_id"])
+    assert job.params["operation"] == "transcribe" and credit.so_da_giu(db, job.id) == 0
+    user = db.query(User).filter_by(email="studio-a@example.com").one()
+    for index in range(11):
+        db.add(Job(user_id=user.id, app_slug="autosubvideo",
+                   job_type="autosubvideo.transcribe", params={"n": index}))
+    db.commit(); db.close()
+    blocked = a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe", headers={
+        "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'}, json={})
+    assert blocked.status_code == 429
+
+
+def test_transcribe_handler_updates_matching_revision(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL", f"sqlite:///{(tmp_path / 'worker.db').as_posix()}")
+    import platform_core.db as dbmod
+    import platform_core.models  # noqa: F401
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    storage_mod.get_storage().put("autosubvideo/u/uploads/a.mp4", io.BytesIO(b"video"))
+    from platform_core import app_projects
+    from apps.autosubvideo.schemas import empty_studio_project
+    db = next(dbmod.get_session())
+    payload = empty_studio_project(); payload["source"] = {
+        "key": "autosubvideo/u/uploads/a.mp4", "filename": "a.mp4",
+        "duration_s": 4, "width": 1280, "height": 720}
+    project = app_projects.create(db, user_id="u", app_slug="autosubvideo",
+                                  name="p", schema_version=1, payload=payload)
+    db.commit(); project_id = project.id; db.close()
+    monkeypatch.setattr("platform_core.media.duration_seconds", lambda _path: 4.0)
+    monkeypatch.setattr("apps.autosubvideo.transcription.transcribe_file",
+        lambda *_args, **_kwargs: {"segments": [{"start": 0, "end": 2,
+            "text": "Xin chào", "words": [{"start": 0, "end": 0.5,
+            "word": "Xin"}]}], "language": "vi", "engine": "whisperx",
+            "alignment_status": "aligned", "fallback_reason": ""})
+
+    class Ctx:
+        job_id = "job-asr"
+        def progress(self, *_args): pass
+        def is_cancelled(self): return False
+
+    from apps.autosubvideo.jobs import handle
+    result = handle({"operation": "transcribe", "owner_id": "u",
+        "project_id": project_id, "project_revision": 1,
+        "video_key": "autosubvideo/u/uploads/a.mp4", "language": "vi"}, Ctx())
+    assert result["engine"] == "whisperx" and result["project_revision"] == 2
+    db = next(dbmod.get_session()); updated = db.get(platform_core.models.AppProject, project_id)
+    assert updated.payload["tracks"][0]["cues"][0]["text"] == "Xin chào"
+    db.close(); dbmod.reset_engine(); storage_mod._storage = None
+
+
+def test_whisperx_sidecar_is_isolated_pinned_and_wired_to_installers():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    requirement = (root / "requirements-whisperx.txt").read_text("ascii")
+    assert "whisperx==3.8.6" in requirement
+    sidecar = root / "deploy/windows/install-whisperx-sidecar.ps1"
+    raw = sidecar.read_bytes(); raw.decode("ascii")
+    text = raw.decode("ascii")
+    assert "torch==2.8.0" in text and "cu128" in text
+    for relative in ("setup/2-cai-dat.ps1", "deploy/windows/install.ps1",
+                     "deploy/windows/update.ps1"):
+        body = (root / relative).read_text("ascii")
+        assert "install-whisperx-sidecar.ps1" in body
+        assert "LTT_WHISPERX_PYTHON" in body
+
+
+def test_auxiliary_cost_is_zero_but_render_never_defaults_free():
+    from apps.autosubvideo.manifest import MANIFEST
+    assert MANIFEST.credit_cost({"operation": "transcribe"}) == 0
+    assert MANIFEST.credit_cost({"operation": "translate"}) == 0
+    assert MANIFEST.credit_cost({"operation": "unknown", "duration_s": 60}) == 5
+    assert MANIFEST.credit_cost({"duration_s": 60}) == 5

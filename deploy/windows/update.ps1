@@ -96,6 +96,18 @@ Write-Step 'Updating dependencies'
 & $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet
 Write-Ok 'Dependencies updated'
 
+Write-Step 'Updating isolated WhisperX CUDA sidecar'
+$whisperOut = @(& (Join-Path $release 'deploy\windows\install-whisperx-sidecar.ps1') `
+    -Root $Root -ReleaseDir $release -PythonExe 'python')
+$whisperPy = $whisperOut[-1]
+if (-not $whisperPy) { throw 'WhisperX sidecar update failed' }
+$envFileWhisper = Join-Path $Root 'secrets\app.env'
+$envTextWhisper = Get-Content $envFileWhisper -Raw
+if ($envTextWhisper -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
+    [IO.File]::AppendAllText($envFileWhisper, "`r`nLTT_WHISPERX_PYTHON=$whisperPy`r`n", (New-Object Text.UTF8Encoding($false)))
+}
+Write-Ok 'WhisperX CUDA sidecar ready'
+
 Write-Step 'Applying database migrations'
 # Bat buoc: ban phat hanh doi schema ma khong nang cap thi service boot tren
 # schema cu -> loi runtime kho truy hoac hong du lieu. Chay alembic tren ban MOI

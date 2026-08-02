@@ -61,6 +61,13 @@ $venvPy = Join-Path $venv 'Scripts\python.exe'
 & $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet
 Write-Ok 'Dependencies installed'
 
+Write-Step 'Installing isolated WhisperX CUDA sidecar'
+$whisperOut = @(& (Join-Path $release 'deploy\windows\install-whisperx-sidecar.ps1') `
+    -Root $Root -ReleaseDir $release -PythonExe $PythonExe)
+$whisperPy = $whisperOut[-1]
+if (-not $whisperPy) { throw 'WhisperX sidecar installation failed' }
+Write-Ok 'WhisperX CUDA sidecar ready'
+
 Write-Step 'Provisioning runtime configuration'
 # Without this the app starts but /health/ready reports 503 forever,
 # because load_settings() cannot find data\config.json. An existing
@@ -113,6 +120,12 @@ if (-not (Test-Path $envFile)) {
     Write-Host "    LTT_ADMIN_PASSWORD_HASH : run  python tools\hash_admin_password.py" -ForegroundColor Yellow
 } else {
     Write-Ok "Existing $envFile kept untouched"
+}
+
+$envText = Get-Content $envFile -Raw
+if ($envText -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
+    [IO.File]::AppendAllText($envFile, "`r`nLTT_WHISPERX_PYTHON=$whisperPy`r`n", (New-Object Text.UTF8Encoding($false)))
+    Write-Ok 'WhisperX sidecar path added to app.env'
 }
 
 Write-Step 'Registering the Windows service'

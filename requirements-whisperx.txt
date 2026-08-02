@@ -1,0 +1,3 @@
+# Install into an ISOLATED venv only. WhisperX 3.8.6 pins torch 2.8.x and must
+# never downgrade the platform's Blackwell/CUDA torch environment in-place.
+whisperx==3.8.6
