@@ -39,3 +39,12 @@ it('autosave coalesces edits and flushes the latest value', async () => {
   autosave.schedule(1); autosave.schedule(2); await vi.advanceTimersByTimeAsync(51)
   expect(saved).toEqual([2]); autosave.cancel(); vi.useRealTimers()
 })
+
+it('autosave serializes an edit arriving while a save is running', async () => {
+  let release: (()=>void)|undefined; const saved:number[]=[]
+  const autosave=createAutosave<number>(async value=>{saved.push(value)
+    if(value===1)await new Promise<void>(resolve=>{release=resolve})},0)
+  autosave.schedule(1); await new Promise(resolve=>setTimeout(resolve,5))
+  autosave.schedule(2); release?.(); await new Promise(resolve=>setTimeout(resolve,5))
+  expect(saved).toEqual([1,2]); autosave.cancel()
+})

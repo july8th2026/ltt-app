@@ -1,7 +1,9 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { EditorTimeline } from './EditorTimeline'
 import { attachSource, createAutosave, importTranscript, loadOrCreateProject,
   ProjectConflictError, readVideoMetadata, saveProject, startTranscription,
-  type StudioProject } from './studioApi'
+  type StudioCue, type StudioProject, type StudioTrack } from './studioApi'
+import { useProjectHistory } from './useProjectHistory'
 import './studio.css'
 
 const steps = [
@@ -12,31 +14,51 @@ const steps = [
 export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const [project, setProject] = useState<StudioProject | null>(null)
   const projectRef = useRef<StudioProject | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const [state, setState] = useState<'loading'|'ready'|'saving'|'saved'|'conflict'|'error'>('loading')
   const [message, setMessage] = useState('Đang tải project…')
   const [upload, setUpload] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [selectedTrackId, setSelectedTrackId] = useState('')
+  const [selectedCueId, setSelectedCueId] = useState('')
+  const [query, setQuery] = useState('')
+
   useEffect(() => { loadOrCreateProject(csrfToken).then(row => {
-    projectRef.current = row; setProject(row); setState('ready'); setMessage('Sẵn sàng')
+    projectRef.current = row; setProject(row); setSelectedTrackId(row.payload.tracks[0]?.id||'')
+    setState('ready'); setMessage('Sẵn sàng')
   }).catch(error => { setState('error'); setMessage(String(error.message || error)) }) }, [csrfToken])
 
-  const autosave = useMemo(() => createAutosave<StudioProject>(async (draft, signal) => {
+  const autosave = useMemo(() => createAutosave<StudioProject>(async (draft) => {
     setState('saving'); setMessage('Đang lưu…')
     try {
-      const saved = await saveProject(draft, csrfToken, signal)
-      projectRef.current = saved; setProject(saved); setState('saved'); setMessage('Đã lưu')
+      const revision = projectRef.current?.revision ?? draft.revision
+      const saved = await saveProject({...draft, revision}, csrfToken)
+      const current = projectRef.current
+      const merged = current?.id === saved.id ? {...current, revision:saved.revision} : saved
+      projectRef.current = merged; setProject(merged); setState('saved'); setMessage('Đã lưu')
     } catch (error) {
-      if (signal.aborted) return
       if (error instanceof ProjectConflictError) { setState('conflict'); setMessage(error.message) }
       else { setState('error'); setMessage(String((error as Error).message || error)) }
     }
   }), [csrfToken])
   useEffect(() => () => autosave.cancel(), [autosave])
 
-  const mutate = (fn: (draft: StudioProject) => void) => {
+  const applyHistory = useCallback((value:StudioProject) => {
+    const next={...structuredClone(value),revision:projectRef.current?.revision??value.revision}
+    projectRef.current=next;setProject(next);autosave.schedule(next)
+  },[autosave])
+  const history=useProjectHistory(project,applyHistory)
+  const mutate = useCallback((fn: (draft: StudioProject) => void, record=true) => {
     if (!projectRef.current) return
-    const draft = structuredClone(projectRef.current); fn(draft)
+    const before=projectRef.current; const draft=structuredClone(before); fn(draft)
+    if(record)history.record(before)
     projectRef.current = draft; setProject(draft); autosave.schedule(draft)
-  }
+  },[autosave,history])
+
+  useEffect(()=>{const handler=(event:KeyboardEvent)=>{if(!(event.ctrlKey||event.metaKey))return
+    if(event.key.toLowerCase()==='z'){event.preventDefault();event.shiftKey?history.redo(projectRef.current):history.undo(projectRef.current)}
+    if(event.key.toLowerCase()==='y'){event.preventDefault();history.redo(projectRef.current)}}
+    window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler)},[history])
 
   const onVideo = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; if (!file || !projectRef.current) return
@@ -51,58 +73,54 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
     const file = event.target.files?.[0]; if (!file || !projectRef.current) return
     setMessage('Đang nhập transcript…')
     try { const saved = await importTranscript(projectRef.current, csrfToken, file)
-      projectRef.current = saved; setProject(saved); setState('saved'); setMessage('Đã nhập transcript')
+      projectRef.current = saved; setProject(saved); setSelectedTrackId(saved.payload.tracks[0]?.id||'')
+      setState('saved'); setMessage('Đã nhập transcript')
     } catch (error) { setState('error'); setMessage(String((error as Error).message || error)) }
   }
   const transcribe = async () => {
-    if (!projectRef.current) return
-    setMessage('Đang tạo job WhisperX…')
+    if (!projectRef.current) return; setMessage('Đang tạo job WhisperX…')
     try { const job = await startTranscription(projectRef.current, csrfToken)
-      setMessage(`WhisperX đang chạy · job ${job.job_id.slice(0, 8)} · 0 credit`)
+      setMessage(`WhisperX đang chạy · job ${job.job_id.slice(0,8)} · 0 credit`)
     } catch (error) { setState('error'); setMessage(String((error as Error).message || error)) }
   }
 
   if (!project) return <div className={`studio-state ${state}`}>{message}</div>
-  const source = project.payload.source; const cues = project.payload.tracks.reduce(
-    (total, track) => total + track.cues.length, 0)
+  const source=project.payload.source; const sourceUrl=source.key?`/autosubvideo/v/${source.key}`:''
+  const selectedTrack=project.payload.tracks.find(track=>track.id===selectedTrackId)||project.payload.tracks[0]
+  const selectedCue=selectedTrack?.cues.find(cue=>cue.id===selectedCueId)
+  const cues=project.payload.tracks.reduce((total,track)=>total+track.cues.length,0)
+  const filtered=selectedTrack?.cues.filter(cue=>cue.text.toLowerCase().includes(query.toLowerCase()))||[]
+
+  const cueChange=(trackId:string,cueId:string,patch:Partial<StudioCue>)=>mutate(d=>{const cue=findCue(d,trackId,cueId);if(cue)Object.assign(cue,patch)})
+  const addTrack=()=>mutate(d=>{const index=d.payload.tracks.length+1;const track:StudioTrack={id:`track-${crypto.randomUUID()}`,kind:'custom',language:'vi',name:`Phụ đề ${index}`,visible:true,z_index:Math.max(-1,...d.payload.tracks.map(t=>t.z_index))+1,style_id:'default',cues:[]};d.payload.tracks.push(track);setSelectedTrackId(track.id);d.payload.active_step='transcript'})
+  const addCue=()=>{if(!selectedTrack)return;const start=Math.min(currentTime,Math.max(0,source.duration_s-.1));const end=Math.max(start+.05,Math.min(source.duration_s||start+2,start+2));const id=`cue-${crypto.randomUUID()}`;mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);track?.cues.push({id,start,end,text:'Phụ đề mới',speaker:'',words:[]});track?.cues.sort((a,b)=>a.start-b.start)});setSelectedCueId(id)}
+  const removeCue=()=>{if(!selectedTrack||!selectedCue)return;mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);if(track)track.cues=track.cues.filter(c=>c.id!==selectedCue.id)});setSelectedCueId('')}
+  const splitCue=()=>{if(!selectedTrack||!selectedCue)return;const at=currentTime>selectedCue.start+.05&&currentTime<selectedCue.end-.05?currentTime:(selectedCue.start+selectedCue.end)/2;const id=`cue-${crypto.randomUUID()}`;mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);const cue=track?.cues.find(c=>c.id===selectedCue.id);if(!track||!cue)return;const words=cue.text.trim().split(/\s+/);const cut=Math.max(1,Math.ceil(words.length/2));const second={...cue,id,start:at,text:words.slice(cut).join(' ')||cue.text,words:[]};cue.end=at;cue.text=words.slice(0,cut).join(' ');cue.words=[];track.cues.push(second);track.cues.sort((a,b)=>a.start-b.start)});setSelectedCueId(id)}
+  const mergeNext=()=>{if(!selectedTrack||!selectedCue)return;const index=selectedTrack.cues.findIndex(c=>c.id===selectedCue.id);const next=selectedTrack.cues[index+1];if(!next)return;mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);const cue=track?.cues.find(c=>c.id===selectedCue.id);if(!track||!cue)return;cue.end=next.end;cue.text=`${cue.text} ${next.text}`.trim();cue.words=[];track.cues=track.cues.filter(c=>c.id!==next.id)})}
+  const seek=(time:number)=>{setCurrentTime(time);if(videoRef.current)videoRef.current.currentTime=time}
+
   return <main className="studio-shell" data-save-state={state}>
-    <header className="studio-topbar">
-      <div className="studio-brand"><span className="studio-mark">LTT</span><strong>AUTO SUB VIDEO</strong></div>
-      <ol className="studio-steps">{steps.map(([id, n, label]) => <li key={id}
-        className={project.payload.active_step === id ? 'active' : ''}><button type="button"
-        onClick={() => mutate(d => { d.payload.active_step = id })}><span>{n}</span>{label}</button></li>)}</ol>
-      <div className={`studio-save ${state}`}>{message}</div>
-    </header>
+    <header className="studio-topbar"><div className="studio-brand"><span className="studio-mark">LTT</span><strong>AUTO SUB VIDEO</strong></div>
+      <ol className="studio-steps">{steps.map(([id,n,label])=><li key={id} className={project.payload.active_step===id?'active':''}><button type="button" onClick={()=>mutate(d=>{d.payload.active_step=id})}><span>{n}</span>{label}</button></li>)}</ol>
+      <div className="history-tools"><button aria-label="Hoàn tác" disabled={!history.canUndo} onClick={()=>history.undo(projectRef.current)}>↶</button><button aria-label="Làm lại" disabled={!history.canRedo} onClick={()=>history.redo(projectRef.current)}>↷</button><span className={`studio-save ${state}`}>{message}</span></div></header>
     <section className="studio-grid">
-      <aside className="studio-left">
-        <label className="project-label">PROJECT<input aria-label="Tên project" value={project.name}
-          onChange={event => mutate(d => { d.name = event.target.value })}/></label>
-        <section><h2>FILES</h2><label className="drop-zone"><input type="file" accept="video/*"
-          onChange={onVideo}/><span>＋</span><strong>Kéo thả hoặc chọn video</strong><small>MP4, MOV, MKV · tối đa 120 phút</small></label>
-          {upload > 0 && upload < 100 && <progress value={upload} max="100"/>}
-          {source.key && <article className="source-file"><strong>{source.filename}</strong><small>{Math.round(source.duration_s)}s · {source.width}×{source.height}</small></article>}
-        </section>
-        <section><h2>TRANSCRIPT</h2><div className="quick-actions"><label className="subtle-button">Nhập SRT/VTT/ASS<input type="file" accept=".srt,.vtt,.ass,.ssa,.json" onChange={onTranscript}/></label>
-          <button type="button" onClick={transcribe} disabled={!source.key}>WhisperX · 0 credit</button></div>
-          <p className="count-line">{project.payload.tracks.length} track · {cues} cue</p></section>
+      <aside className="studio-left"><label className="project-label">PROJECT<input aria-label="Tên project" value={project.name} onChange={event=>mutate(d=>{d.name=event.target.value})}/></label>
+        <section><h2>FILES</h2><label className="drop-zone"><input type="file" accept="video/*" onChange={onVideo}/><span>＋</span><strong>Kéo thả hoặc chọn video</strong><small>MP4, MOV, MKV · tối đa 120 phút</small></label>{upload>0&&upload<100&&<progress value={upload} max="100"/>}{source.key&&<article className="source-file"><strong>{source.filename}</strong><small>{Math.round(source.duration_s)}s · {source.width}×{source.height}</small></article>}</section>
+        <section className="transcript-panel"><h2>TRANSCRIPT</h2><div className="quick-actions"><label className="subtle-button">Nhập SRT/VTT/ASS<input type="file" accept=".srt,.vtt,.ass,.ssa,.json" onChange={onTranscript}/></label><button type="button" onClick={transcribe} disabled={!source.key}>WhisperX · 0 credit</button></div>
+          <div className="track-tools"><select aria-label="Track phụ đề" value={selectedTrack?.id||''} onChange={e=>{setSelectedTrackId(e.target.value);setSelectedCueId('')}}>{project.payload.tracks.map(track=><option key={track.id} value={track.id}>{track.name} · {track.language}</option>)}</select><button onClick={addTrack} aria-label="Thêm track">＋ Track</button>{selectedTrack&&<button aria-label="Ẩn hiện track" onClick={()=>mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);if(track)track.visible=!track.visible})}>{selectedTrack.visible?'◉':'○'}</button>}</div>
+          <input className="cue-search" aria-label="Tìm transcript" placeholder="Tìm transcript…" value={query} onChange={e=>setQuery(e.target.value)}/>
+          <div className="cue-list">{filtered.map(cue=><button type="button" key={cue.id} className={cue.id===selectedCueId?'active':''} onClick={()=>{setSelectedCueId(cue.id);seek(cue.start)}}><time>{formatTime(cue.start)}</time><span>{cue.speaker&&<b>{cue.speaker}</b>}{cue.text||'(trống)'}</span></button>)}</div><p className="count-line">{project.payload.tracks.length} track · {cues} cue</p></section>
       </aside>
-      <section className="studio-stage">
-        <div className="preview-toolbar"><span>Fit (100%)</span><span>{source.width && source.height ? `${source.width}:${source.height}` : '16:9'}</span></div>
-        <div className="video-canvas">{source.key ? <video controls preload="metadata"
-          src={`/autosubvideo/v/${source.key}`} /> : <div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
-        <div className="transport"><button aria-label="Về đầu">|◀</button><button aria-label="Phát">▶</button><button aria-label="Tới cuối">▶|</button><span>00:00:00 / {formatTime(source.duration_s)}</span></div>
-        <div className="timeline-placeholder"><div className="ruler">00:00 <span>00:05</span><span>00:10</span><span>00:15</span></div><div className="track-row"><strong>CC</strong><span>{cues ? `${cues} cue đã sẵn sàng` : 'Timeline sẽ xuất hiện khi có transcript'}</span></div></div>
+      <section className="studio-stage"><div className="preview-toolbar"><span>Fit (100%)</span><span>{source.width&&source.height?`${source.width}:${source.height}`:'16:9'}</span></div>
+        <div className="video-canvas">{source.key?<><video ref={videoRef} controls preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<div className="subtitle-overlay">{selectedCue.text}</div>}</>:<div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
+        <div className="transport"><button aria-label="Về đầu" onClick={()=>seek(0)}>|◀</button><button aria-label="Phát hoặc dừng" onClick={()=>videoRef.current?.paused?void videoRef.current.play():videoRef.current?.pause()}>▶</button><button aria-label="Tới cuối" onClick={()=>seek(source.duration_s)}>▶|</button><span>{formatTime(currentTime)} / {formatTime(source.duration_s)}</span></div>
+        <EditorTimeline tracks={project.payload.tracks} duration={source.duration_s} currentTime={currentTime} sourceUrl={sourceUrl} selectedCueId={selectedCueId} onSelect={setSelectedCueId} onSeek={seek} onCueChange={cueChange}/>
+        <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div></>:<p>Chọn một cue trên timeline hoặc thêm cue mới.</p>}</div>
       </section>
-      <aside className="studio-right"><nav><button className="active">TEMPLATES</button><button>STYLE</button><button>ANIMATION</button></nav>
-        <div className="template-grid">{['LTT Bold','Cinematic','Neon Punch','Kids Color','Word Emphasis','Minimal'].map(name => <button key={name} type="button" onClick={() => mutate(d => { d.payload.style = { preset: name.toLowerCase().replace(' ','_') } })}><strong>THE QUICK<br/>BROWN FOX</strong><small>{name}</small></button>)}</div>
-        <section className="inspector-empty"><strong>Style inspector</strong><p>Chọn tab Style để chỉnh font, màu, stroke, shadow và karaoke.</p></section>
-      </aside>
+      <aside className="studio-right"><nav><button className="active">TEMPLATES</button><button>STYLE</button><button>ANIMATION</button></nav><div className="template-grid">{['LTT Bold','Cinematic','Neon Punch','Kids Color','Word Emphasis','Minimal'].map(name=><button key={name} type="button" onClick={()=>mutate(d=>{d.payload.style={preset:name.toLowerCase().replace(' ','_')}})}><strong>THE QUICK<br/>BROWN FOX</strong><small>{name}</small></button>)}</div><section className="inspector-empty"><strong>Style inspector</strong><p>Chọn tab Style để chỉnh font, màu, stroke, shadow và karaoke.</p></section></aside>
     </section>
   </main>
 }
 
-function formatTime(seconds: number) {
-  const safe = Number.isFinite(seconds) ? Math.max(0, seconds) : 0
-  const h = Math.floor(safe / 3600), m = Math.floor((safe % 3600) / 60), s = Math.floor(safe % 60)
-  return [h, m, s].map(value => String(value).padStart(2, '0')).join(':')
-}
+function findCue(project:StudioProject,trackId:string,cueId:string){return project.payload.tracks.find(track=>track.id===trackId)?.cues.find(cue=>cue.id===cueId)}
+function formatTime(seconds:number){const safe=Number.isFinite(seconds)?Math.max(0,seconds):0;const h=Math.floor(safe/3600),m=Math.floor((safe%3600)/60),s=Math.floor(safe%60);return [h,m,s].map(value=>String(value).padStart(2,'0')).join(':')}

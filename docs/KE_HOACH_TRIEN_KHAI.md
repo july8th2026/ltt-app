@@ -1052,7 +1052,10 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
   source upload/import/transcribe action và legacy rollback. 128 regression +
   5 frontend test PASS; Playwright file thật desktop/mobile, overflow 0,
   console 0, mọi request 2xx/206.
-- [ ] AS4 editor cue + multi-track timeline/waveform/undo-redo/full mobile drag.
+- [x] AS4 editor cue + multi-track timeline/waveform/undo-redo/full mobile drag —
+  2026-08-02: import fixture 3 cue, sửa/tách/undo/redo/autosave và pointer drag
+  desktop/mobile PASS; WebAudio waveform thật, fallback an toàn; 7 frontend test
+  PASS, document overflow 0, console/network sạch.
 - [ ] AS5 style/template/animation có preview-render parity.
 - [ ] AS6 diarization/translation và workflow auxiliary 0-credit.
 - [ ] AS7 render snapshot/quote/credit/output/job control.
@@ -1064,5 +1067,5 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 ## Việc phải làm ngay ở phiên tiếp theo
 
 `H13.autosubvideo` đang triển khai liên tục theo ủy quyền của Dev. Việc kế tiếp là
-AS4: editor cue/multi-track timeline/waveform/undo-redo/full mobile drag. Hạ tầng
+AS5: style/template/animation có preview-render parity. Hạ tầng
 độc lập còn việc cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.

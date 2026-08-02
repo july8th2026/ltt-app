@@ -91,16 +91,23 @@ export function createAutosave<T>(save: (value: T, signal: AbortSignal) => Promi
   let timer: ReturnType<typeof setTimeout> | undefined
   let controller: AbortController | undefined
   let latest: T | undefined
+  let running = false
+  let cancelled = false
   const flush = async () => {
     if (timer) clearTimeout(timer); timer = undefined
-    if (latest === undefined) return
-    const value = latest; latest = undefined
-    controller?.abort(); controller = new AbortController()
-    await save(value, controller.signal)
+    if (running || latest === undefined || cancelled) return
+    running = true
+    try {
+      while (latest !== undefined && !cancelled) {
+        const value = latest; latest = undefined
+        controller = new AbortController()
+        await save(value, controller.signal)
+      }
+    } finally { running = false }
   }
-  return { schedule(value: T) { latest = value; if (timer) clearTimeout(timer)
+  return { schedule(value: T) { if (cancelled) return; latest = value; if (timer) clearTimeout(timer)
       timer = setTimeout(() => { void flush() }, delayMs) }, flush,
-    cancel() { if (timer) clearTimeout(timer); controller?.abort(); latest = undefined } }
+    cancel() { cancelled = true; if (timer) clearTimeout(timer); controller?.abort(); latest = undefined } }
 }
 
 export function readVideoMetadata(file: File): Promise<{ duration: number; width: number; height: number }> {

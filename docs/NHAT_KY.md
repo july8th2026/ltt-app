@@ -14,6 +14,47 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS4: cue editor và timeline PASS
+
+- **Mục tiêu:** biến shell thành editor transcript thực, dùng được trên desktop
+  và mobile với nhiều track, không mất revision khi autosave dồn.
+- **Hạng mục:** AS4 hoàn thành; AS5 chưa bắt đầu.
+- **Trạng thái:** local browser PASS; production chưa deploy.
+
+### Đã làm
+
+Thêm cue list/search/editor, chỉnh text/timing/speaker, add/delete/split/merge,
+multi-track/visibility, preview overlay, seek/playhead và timeline cue blocks. Pointer
+drag/resize dùng cùng một logic cho mouse/touch; mobile giữ timeline cuộn nội bộ,
+không làm tràn document. Waveform decode audio thật bằng WebAudio; codec browser
+không hỗ trợ thì hiện fallback trung tính và editor vẫn hoạt động.
+
+Undo/redo giữ 80 snapshot và có Ctrl/Cmd+Z/Y. Autosave được sửa thành hàng đợi
+tuần tự/coalesced: edit tới trong khi PUT đang chạy không abort request đã có thể
+commit ở server, nhờ đó không tự tạo revision conflict.
+
+### Test đã chạy
+
+- `npm test` → **7 passed**.
+- `npm run build` (gồm typecheck) → **PASS**; JS 208,50 kB/gzip 65,83;
+  CSS 10,91 kB/gzip 3,13.
+- Playwright với video user 10s + `browser_sample.srt`: import 3 cue, sửa nội dung,
+  tách thành 4 cue, undo/redo, autosave revision và desktop pointer drag → PASS.
+- Playwright 390×844: reload persistence + pointer drag → PASS; document overflow
+  0 (timeline cuộn nội bộ 580px); console 0; mọi API/media request 2xx/206.
+
+### Cách lùi lại
+
+Revert commit AS4; AS3 shell/project/upload vẫn hoạt động. Production flag vẫn off.
+
+### Còn tồn đọng
+
+AS5–AS9: style/animation parity, auxiliary AI, render/job, hardening và release.
+
+### Việc tiếp theo
+
+AS5: schema style có kiểu, preset inspector và animation/karaoke preview-render parity.
+
 ## 2026-08-02 — H13.autosubvideo AS3: React Studio shell PASS
 
 - **Mục tiêu:** thay form đơn bằng production React island nhưng giữ đường lùi
