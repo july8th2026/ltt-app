@@ -145,12 +145,12 @@ def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):
                     "content_type": "video/mp4"}).json()
     from platform_core.storage import get_storage
     get_storage().put(ticket["key"], io.BytesIO(b"fake-video"), "video/mp4")
-    row = imported.json(); row["payload"]["source"] = {
-        "key": ticket["key"], "filename": "sample.mp4", "duration_s": 4,
-        "width": 1280, "height": 720}
-    saved = a.put(f"/autosubvideo/api/projects/{made['id']}", headers={
-        "X-CSRF-Token": token, "If-Match": '"2"'},
-        json={"name": "ASR", "payload": row["payload"]}).json()
+    attached = a.post(f"/autosubvideo/api/projects/{made['id']}/source", headers={
+        "X-CSRF-Token": token}, data={"revision": 2, "csrf_token": token,
+        "video_key": ticket["key"], "filename": "sample.mp4", "duration_s": 4,
+        "width": 1280, "height": 720})
+    assert attached.status_code == 200
+    saved = attached.json()
     queued = a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe", headers={
         "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'},
         json={"language": "vi"})
@@ -236,3 +236,19 @@ def test_auxiliary_cost_is_zero_but_render_never_defaults_free():
     assert MANIFEST.credit_cost({"operation": "translate"}) == 0
     assert MANIFEST.credit_cost({"operation": "unknown", "duration_s": 60}) == 5
     assert MANIFEST.credit_cost({"duration_s": 60}) == 5
+
+
+def test_autosub_studio_bundle_is_hashed_fresh_and_in_release():
+    import json
+    from pathlib import Path
+    from tools.build_release import collect_files, verify_frontend_bundle
+    root = Path(__file__).resolve().parents[1]
+    verify_frontend_bundle(str(root))
+    manifest = json.loads((root / "server/static/autosub-studio/.vite/manifest.json")
+                          .read_text("utf-8"))
+    assets = [manifest["src/main.tsx"]["file"],
+              *manifest["src/main.tsx"].get("css", [])]
+    assert all(asset.startswith("assets/") and ".map" not in asset for asset in assets)
+    files = {rel for _full, rel in collect_files(str(root))}
+    assert "frontend/autosub-studio/package-lock.json" in files
+    assert "server/static/autosub-studio/build-meta.json" in files

@@ -14,6 +14,51 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS3: React Studio shell PASS
+
+- **Mục tiêu:** thay form đơn bằng production React island nhưng giữ đường lùi
+  legacy và nối project/upload thật, không dựng trạng thái giả.
+- **Hạng mục:** AS3 hoàn thành; AS4 chưa bắt đầu.
+- **Trạng thái:** code/local browser đã chạy; production chưa deploy.
+
+### Đã làm
+
+Thêm frontend Vite/React/TypeScript pin phiên bản, hashed bundle và build-meta được
+release/setup gate kiểm tra. Studio shell bám ảnh tham khảo: stepper, ba cột,
+preview/transport/timeline state và responsive mobile. Project load/create/name/
+autosave dùng revision/ETag; upload file thật nối storage/project source, import
+transcript và tạo WhisperX job thật. Production flag thiếu bundle tự lùi form cũ.
+
+Cache static chỉ immutable cho file hash. Fixture browser có hai guard và database/
+storage riêng; không đọc/ghi production. Video test do Dev chỉ định được đọc từ
+`G:\My Drive\AI\Tool AI\Video seedacne\video (10).mp4`, bản upload nằm trong
+storage fixture cô lập.
+
+### Test đã chạy
+
+- `npm test` trong `frontend/autosub-studio` → **5 passed**.
+- `npm run typecheck && npm run build` → **PASS**; JS 198,75 kB (gzip 62,74),
+  CSS 7,95 kB (gzip 2,38), manifest/build-meta hợp lệ.
+- `python -m pytest tests\test_103_autosub_projects.py tests\test_81_autosubvideo.py tests\test_95_agent_canvas_build.py tests\test_44_release_build.py tests\test_61_setup_scripts.py -q`
+  → **128 passed**, 1 warning.
+- Playwright fixture thật 1440×1000 và 390×844 → upload 3,0 MB PASS; metadata
+  10s/864×496; reload persistence PASS; overflow ngang 0; console 0; request
+  API/media đều 2xx/206.
+
+### Cách lùi lại
+
+Đặt `LTT_AUTOSUB_STUDIO_ROLLOUT=off`; router tự render form legacy. Dữ liệu project
+additive không ảnh hưởng render cũ.
+
+### Còn tồn đọng
+
+AS4–AS9: cue editor/timeline, style parity, AI auxiliary, render/job UI, hardening
+và deploy production.
+
+### Việc tiếp theo
+
+AS4: editor cue + multi-track timeline/waveform + undo/redo + mobile drag.
+
 ## 2026-08-02 — H13.autosubvideo AS2: WhisperX/import/quota PASS
 
 - **Mục tiêu:** tạo transcript từ import hoặc ASR mặc định mà không thu credit/

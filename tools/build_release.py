@@ -59,19 +59,25 @@ REQUIRED_ENTRIES = (
     "frontend/agent-canvas/package-lock.json",
     "server/static/agent-canvas/.vite/manifest.json",
     "server/static/agent-canvas/build-meta.json",
+    "frontend/autosub-studio/package.json",
+    "frontend/autosub-studio/package-lock.json",
+    "server/static/autosub-studio/.vite/manifest.json",
+    "server/static/autosub-studio/build-meta.json",
 )
 
 CANVAS_SOURCE = "frontend/agent-canvas"
 CANVAS_OUTPUT = "server/static/agent-canvas"
+AUTOSUB_SOURCE = "frontend/autosub-studio"
+AUTOSUB_OUTPUT = "server/static/autosub-studio"
 CANVAS_IGNORED_FILES = {
     "tsconfig.app.tsbuildinfo", "tsconfig.node.tsbuildinfo",
     "vite.config.d.ts", "vite.config.js",
 }
 
 
-def canvas_source_sha256(root: str) -> str:
+def _frontend_source_sha256(root: str, relative_source: str) -> str:
     """Hash the exact frontend inputs used by write-build-meta.mjs."""
-    source = os.path.join(root, CANVAS_SOURCE)
+    source = os.path.join(root, relative_source)
     digest = hashlib.sha256()
     inputs = []
     for dirpath, dirnames, filenames in os.walk(source):
@@ -90,41 +96,49 @@ def canvas_source_sha256(root: str) -> str:
     return digest.hexdigest()
 
 
-def verify_frontend_bundle(root: str) -> None:
-    """Reject stale, incomplete, or development-only Canvas bundles."""
-    output = os.path.join(root, CANVAS_OUTPUT)
-    meta_path = os.path.join(output, "build-meta.json")
-    manifest_path = os.path.join(output, ".vite", "manifest.json")
+def canvas_source_sha256(root: str) -> str:
+    return _frontend_source_sha256(root, CANVAS_SOURCE)
+
+
+def autosub_source_sha256(root: str) -> str:
+    return _frontend_source_sha256(root, AUTOSUB_SOURCE)
+
+
+def _verify_one_frontend(root: str, *, source: str, output: str,
+                         node: str, digest: str) -> None:
+    meta_path = os.path.join(root, output, "build-meta.json")
+    manifest_path = os.path.join(root, output, ".vite", "manifest.json")
     try:
         with open(meta_path, encoding="utf-8") as handle:
             meta = json.load(handle)
         with open(manifest_path, encoding="utf-8") as handle:
             manifest = json.load(handle)
     except (OSError, ValueError) as exc:
-        raise SystemExit(f"Canvas bundle metadata is invalid: {exc}") from exc
-
-    expected = canvas_source_sha256(root)
-    if meta != {
-        "schema": 1,
-        "source_sha256": expected,
-        "node": "22.12.0",
-        "sourcemap": False,
-    }:
-        raise SystemExit("Canvas bundle is stale or was not built with Node 22.12.0")
-
+        raise SystemExit(f"{source} bundle metadata is invalid: {exc}") from exc
+    if meta != {"schema": 1, "source_sha256": digest,
+                "node": node, "sourcemap": False}:
+        raise SystemExit(f"{source} bundle is stale or built with the wrong Node")
     entry = manifest.get("src/main.tsx")
     if not isinstance(entry, dict) or not entry.get("isEntry"):
-        raise SystemExit("Canvas manifest has no src/main.tsx entry")
+        raise SystemExit(f"{source} manifest has no src/main.tsx entry")
     assets = [entry.get("file"), *entry.get("css", [])]
     hashed = re.compile(r"^assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)$")
     for asset in assets:
         if not isinstance(asset, str) or not hashed.fullmatch(asset):
-            raise SystemExit(f"Canvas manifest contains an unhashed asset: {asset!r}")
-        if not os.path.isfile(os.path.join(output, *asset.split("/"))):
-            raise SystemExit(f"Canvas manifest asset is missing: {asset}")
-    for dirpath, _dirs, filenames in os.walk(output):
+            raise SystemExit(f"{source} manifest contains an unhashed asset: {asset!r}")
+        if not os.path.isfile(os.path.join(root, output, *asset.split("/"))):
+            raise SystemExit(f"{source} bundle asset is missing: {asset}")
+    for dirpath, _dirs, filenames in os.walk(os.path.join(root, output)):
         if any(name.endswith(".map") for name in filenames):
-            raise SystemExit(f"Canvas source map found in release bundle: {dirpath}")
+            raise SystemExit(f"{source} source map found in release bundle: {dirpath}")
+
+
+def verify_frontend_bundle(root: str) -> None:
+    """Reject stale, incomplete, or development-only frontend bundles."""
+    _verify_one_frontend(root, source=CANVAS_SOURCE, output=CANVAS_OUTPUT,
+                         node="22.12.0", digest=canvas_source_sha256(root))
+    _verify_one_frontend(root, source=AUTOSUB_SOURCE, output=AUTOSUB_OUTPUT,
+                         node="24.17.0", digest=autosub_source_sha256(root))
 
 
 def _version() -> str:

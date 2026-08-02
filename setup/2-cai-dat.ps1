@@ -97,6 +97,12 @@ if (-not (Test-Path $canvasManifest) -or -not (Test-Path $canvasMeta)) {
     throw 'Release thieu Agent Canvas production bundle'
 }
 Ok 'Agent Canvas production bundle da co (khong can Node tren server)'
+$autosubManifest = Join-Path $appDir 'server\static\autosub-studio\.vite\manifest.json'
+$autosubMeta = Join-Path $appDir 'server\static\autosub-studio\build-meta.json'
+if (-not (Test-Path $autosubManifest) -or -not (Test-Path $autosubMeta)) {
+    throw 'Release thieu Auto Sub Studio production bundle'
+}
+Ok 'Auto Sub Studio production bundle da co (khong can Node tren server)'
 
 Head 'Tai nguyen nguon di kem code'
 # data\translations va data\assets la TAI NGUYEN NGUON (ban dich giao dien,

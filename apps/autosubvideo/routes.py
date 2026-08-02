@@ -6,7 +6,10 @@ KHÔNG tự viết prefix (nền tảng gắn theo manifest).
 from __future__ import annotations
 
 import uuid
+import json
+import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
@@ -37,14 +40,40 @@ _QUALITY = [("draft", "Nháp"), ("standard", "Chuẩn"), ("high", "Cao")]
 _FORMATS = ["mp4", "mkv", "webm"]
 _TRANSCRIPT_MAX = 8 * 1024 * 1024      # 8MB transcript là quá đủ
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024    # fallback Local: dưới trần 100MB CF
+_STUDIO_MANIFEST = (Path(__file__).resolve().parents[2] / "server" / "static" /
+                    "autosub-studio" / ".vite" / "manifest.json")
+
+
+def _studio_enabled() -> bool:
+    configured = os.environ.get("LTT_AUTOSUB_STUDIO_ROLLOUT")
+    if configured is not None:
+        return configured.strip().lower() == "public"
+    return os.environ.get("LTT_ENV", "").strip().lower() not in {"production", "prod"}
+
+
+def _studio_assets() -> tuple[list[str], list[str]]:
+    try:
+        manifest = json.loads(_STUDIO_MANIFEST.read_text(encoding="utf-8"))
+        entry = manifest["src/main.tsx"]
+        scripts = [f"/static/autosub-studio/{entry['file']}"]
+        styles = [f"/static/autosub-studio/{item}" for item in entry.get("css", [])]
+        return scripts, styles
+    except (OSError, KeyError, ValueError):
+        return [], []
 
 
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
+    enabled = _studio_enabled()
+    studio_js, studio_css = _studio_assets() if enabled else ([], [])
+    # A missing production bundle is not silently replaced with a half-built
+    # editor. Roll back to the proven legacy form until the release is complete.
+    enabled = enabled and bool(studio_js)
     return templates.TemplateResponse(request, "autosubvideo.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "presets": _PRESETS, "segments": _SEGMENTS, "qualities": _QUALITY,
         "formats": _FORMATS, "jobs": _jobs_cua_toi(request), "error": error,
+        "studio_enabled": enabled, "studio_js": studio_js, "studio_css": studio_css,
     }, status_code=status_code)
 
 
@@ -233,6 +262,52 @@ async def project_import_transcript(
 
 
 _TRANSCRIBE_DAILY_LIMIT = 12
+
+
+@router.post("/api/projects/{project_id}/source")
+async def project_attach_source(
+        request: Request, project_id: str, revision: int = Form(...),
+        csrf_token: str = Form(""), video_key: str = Form(""),
+        filename: str = Form(""), duration_s: float = Form(0),
+        width: int = Form(0), height: int = Form(0),
+        video: UploadFile = File(default=None),
+        _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    import io
+    from platform_core import app_projects
+    from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
+    if not verify_csrf_token(request, request.headers.get("X-CSRF-Token", "") or csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    current = _api_user(request); storage = get_storage(); key = video_key.strip()
+    try:
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+        if key:
+            if not key.startswith(f"autosubvideo/{current.id}/") or not storage.exists(key):
+                raise HTTPException(status_code=422, detail="Video upload không hợp lệ.")
+        else:
+            if video is None or not getattr(video, "filename", ""):
+                raise HTTPException(status_code=422, detail="Chưa chọn video.")
+            raw = await video.read()
+            if not raw or len(raw) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
+                raise HTTPException(status_code=422, detail="Video local rỗng hoặc quá 90MB.")
+            ext = "." + video.filename.rsplit(".", 1)[-1].lower()[:5] if "." in video.filename else ".mp4"
+            key = f"autosubvideo/{current.id}/uploads/{uuid.uuid4().hex}{ext}"
+            storage.put(key, io.BytesIO(raw), video.content_type or "video/mp4")
+        payload = dict(row.payload)
+        payload["source"] = {"key": key, "filename": (filename or
+            getattr(video, "filename", "video.mp4"))[:255],
+            "duration_s": max(0, min(float(duration_s), 86400)),
+            "width": max(0, min(int(width), 16384)),
+            "height": max(0, min(int(height), 16384))}
+        payload["active_step"] = "transcript"
+        validated = _validated_project_payload(payload)
+        saved = app_projects.save(db, project_id=project_id, user_id=current.id,
+                                  app_slug=MANIFEST.slug, revision=revision,
+                                  name=row.name, schema_version=1, payload=validated)
+    except app_projects.ProjectConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    return _project_response(saved)
 
 
 @router.post("/api/projects/{project_id}/transcribe")

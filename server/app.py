@@ -45,8 +45,8 @@ _ERROR_MESSAGES = {
 }
 
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60  # 8h idle expiry
-_HASHED_CANVAS_ASSET = re.compile(
-    r"^/static/agent-canvas/assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)$"
+_HASHED_FRONTEND_ASSET = re.compile(
+    r"^/static/(?:agent-canvas|autosub-studio)/assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)$"
 )
 
 
@@ -190,9 +190,10 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # rộng (max-age mặc định) rồi TRẢ CHO NGƯỜI KHÔNG ĐĂNG NHẬP — origin đã
         # chặn (303) nhưng edge phục vụ bản cache, bỏ qua auth. Mặc định no-store
         # cho mọi thứ ngoài /static/ chặn cả lớp lỗi này.
-        if _HASHED_CANVAS_ASSET.fullmatch(request.url.path):
+        if _HASHED_FRONTEND_ASSET.fullmatch(request.url.path):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        elif request.url.path.startswith("/static/agent-canvas/"):
+        elif request.url.path.startswith(("/static/agent-canvas/",
+                                          "/static/autosub-studio/")):
             response.headers["Cache-Control"] = "no-store"
         elif not request.url.path.startswith("/static/"):
             response.headers["Cache-Control"] = "no-store"

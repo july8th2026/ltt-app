@@ -14,6 +14,13 @@
 {% endmacro %}
 
 {% block content %}
+  {% if studio_enabled %}
+  <div id="autosub-studio-root" aria-busy="true" data-csrf-token="{{ csrf_token }}">
+    <p class="dim">Đang tải Auto Sub Studio…</p>
+  </div>
+  {% for href in studio_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+  {% for src in studio_js %}<script type="module" src="{{ src }}"></script>{% endfor %}
+  {% else %}
   <script src="/static/htmx.min.js"></script>
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
 
@@ -199,4 +206,5 @@
     });
   })();
   </script>
+  {% endif %}
 {% endblock %}
