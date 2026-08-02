@@ -1,7 +1,7 @@
 # UI-RD Auto Sub Video — ma trận tính năng
 
 Điểm: Fit/Value/Reuse/Feasible/Quality 0–3, trừ Risk 0–3. `Net` tối đa 15.
-Decision Gate có quyền thay quyết định sơ bộ trước BUILD.
+Decision Gate đã khóa theo Q49–Q50; các quyết định dưới đây là scope BUILD.
 
 | ID | Feature | Hiện trạng | Quyết định | F/V/R/Fe/Q−Risk | Net | Acceptance cốt lõi |
 |---|---|---|---|---:|---:|---|
@@ -10,9 +10,9 @@ Decision Gate có quyền thay quyết định sơ bộ trước BUILD.
 | AS-03 | Upload/probe/R2 | có | EXTEND | 3/3/3/3/2−1 | 13 | progress, cancel, cap thật, fallback sạch |
 | AS-04 | Import SRT/VTT/ASS/JSON | có | KEEP/RESTYLE | 3/3/3/3/2−0 | 14 | round-trip và validation |
 | AS-05 | ASR word timestamp/VAD | dependency + adapter nội tại | BUILD | 3/3/3/3/3−1 | 14 | benchmark VI/EN, confidence, cancel, fallback |
-| AS-06 | WhisperX alignment | chưa | DEFER | 2/2/1/1/3−2 | 7 | chỉ bật nếu timing thắng benchmark đáng kể |
+| AS-06 | WhisperX alignment | chưa | BUILD/default | 2/3/1/2/3−2 | 9 | alignment mặc định; fallback word timestamp rõ khi model/language thiếu |
 | AS-07 | Speaker diarization | chưa | BUILD optional | 2/2/1/2/2−2 | 7 | anonymous speaker, rename, overlap warning |
-| AS-08 | Translate | provider nền có, service chưa | BUILD | 2/2/2/2/2−2 | 8 | preserve cue IDs/timing, quote, schema validation |
+| AS-08 | Translate | provider nền có, service chưa | BUILD/free-to-user | 2/3/2/2/2−2 | 9 | preserve cue IDs/timing, schema validation, quota/dedupe; 0 credit |
 | AS-09 | Cue editor/search | BOT có logic tham chiếu | BUILD | 3/3/3/3/3−1 | 14 | edit/add/delete/split/merge/search/undo/redo |
 | AS-10 | Timing editor | BOT có logic | BUILD | 3/3/3/2/3−1 | 13 | no overlap/negative, keyboard, server validate |
 | AS-11 | Waveform/timeline | chưa; wavesurfer phù hợp | BUILD | 3/3/1/2/3−1 | 11 | seek/drag/resize sync, large-file peaks fallback |
@@ -30,21 +30,21 @@ Decision Gate có quyền thay quyết định sơ bộ trước BUILD.
 | AS-23 | Cancel/refund/retry | core một phần, app UI thiếu | BUILD | 3/3/2/2/3−1 | 12 | cooperative FFmpeg/ASR, race/idempotent refund |
 | AS-24 | Output resolution/aspect | source-only | EXTEND | 2/2/2/3/2−1 | 10 | preserve aspect; no silent crop/stretch |
 | AS-25 | Jobs/history | 12 card | EXTEND | 3/2/3/3/2−1 | 12 | queued/running/done/error/cancelled/retry |
-| AS-26 | Multi-track captions | không | DEFER | 1/1/0/1/2−2 | 3 | cần track/language/export contract riêng |
+| AS-26 | Multi-track captions | không | BUILD | 3/3/0/1/3−3 | 7 | track schema/version, z-order, visibility, export/render selected tracks |
 | AS-27 | Named speaker recognition | không | REJECT | 1/1/0/0/1−3 | 0 | privacy/accuracy; chỉ user tự đặt tên |
-| AS-28 | Mobile full precision drag | không | REJECT | 1/1/0/1/1−2 | 2 | mobile dùng editor giản lược, không giả desktop |
+| AS-28 | Mobile full precision drag | không | BUILD | 3/3/0/1/3−3 | 7 | pinch/zoom, 44px target, snapping, numeric fallback, 360/390px E2E |
 
 ## Kết luận công nghệ sơ bộ
 
-- **Mặc định:** `faster-whisper` local, `large-v3`/turbo benchmark trên RTX 5060 Ti,
-  word timestamps + Silero VAD; không tải lại model mỗi job.
+- **Mặc định:** WhisperX với `faster-whisper` backend, `large-v3`/turbo benchmark
+  trên RTX 5060 Ti, alignment + word timestamps + VAD; model cache, không tải lại
+  mỗi job và có fallback được quan sát khi alignment model không sẵn sàng.
 - **Diarization tùy chọn:** pyannote Community-1 local, token/model gated, telemetry
   off mặc định; benchmark VRAM/DER tương đối trước rollout.
-- **WhisperX:** ứng viên alignment Pro, không dependency mặc định ban đầu.
 - **Timeline:** wavesurfer.js v7 Regions + Timeline, self-host/pin; predecoded peaks
-  cho video dài. Project/server vẫn là source of truth.
-- **Translation:** Gemini structured JSON theo cue ID qua API pool, job/quote riêng;
-  không thay timing và không gửi storage key.
+  cho video dài; multi-track có z-order/visibility/export tất định. Project/server
+  vẫn là source of truth.
+- **Translation:** Gemini structured JSON theo cue ID qua API pool, job 0-credit có
+  quota/rate-limit/dedupe; không thay timing và không gửi storage key.
 - **Render:** ASS/libass + FFmpeg hiện có; CSS preview không được coi là bằng chứng
   nếu output ASS khác.
-

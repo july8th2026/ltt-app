@@ -73,7 +73,7 @@ app.lttstudios.com/agent
 theo dõi trực tiếp trên node → kết quả. Canvas là editor/visualizer của cùng Plan
 JSON; không phải runtime thứ hai.
 
-### Stack Canvas đã chốt (Q38)
+### Stack Canvas đã chốt (Q49, thay Q38)
 
 - React + TypeScript + [`@xyflow/react`](https://reactflow.dev/learn) cho node editor.
 - Vite build static bundle; tài liệu chính thức xác nhận `vite build` tạo `dist`

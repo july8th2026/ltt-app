@@ -171,7 +171,7 @@ chưa*, không ghi tiến độ code.
 | **Ranh giới port** internal-first, BOT GEMINI chỉ đọc | ✅ 2026-08-02 | **Q43** |
 | **PA-1+** — mô hình agent (kế hoạch có kiểm chứng) | ✅ 2026-08-02 | **Q40** |
 | **Ngân sách trần + cổng duyệt** cho agent | ✅ 2026-08-02 | **Q42** |
-| **Canvas bắt buộc**, kiến trúc hybrid React/Vite + HTMX | ✅ 2026-08-02 | **Q38** |
+| **Canvas bắt buộc**, kiến trúc hybrid React/Vite + HTMX | ✅ 2026-08-02 | **Q49** (thay Q38) |
 | Phạm vi full 7 tool ảnh/text/video/GPU + Canvas | ✅ 2026-08-02 | **Q39** |
 | **H12** — full Agent + Canvas + video/GPU | ✅ 2026-08-02 | `KE_HOACH_TRIEN_KHAI.md`, Q39 |
 | Sửa `platform_core/` đúng H12 (N1–N7) | ✅ 2026-08-02 | người dùng cấp toàn quyền triển khai; Q40–Q43 |

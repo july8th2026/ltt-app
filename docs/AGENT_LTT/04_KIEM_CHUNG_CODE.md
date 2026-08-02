@@ -109,7 +109,7 @@ Không được ghi “xây mới” nếu chưa điền cột “Implementation
 6. Đủ tool nhưng chưa có checkpoint/fan-out → D1.
 7. Có D1 nhưng chưa planner/validator/cổng duyệt → D2.
 8. Có planner nhưng chưa verifier → D3.
-9. Agent backend xong → triển khai các phase Canvas bắt buộc theo Q38–Q39.
+9. Agent backend xong → triển khai các phase Canvas bắt buộc theo Q49/Q39.
 
 ## C. Câu hỏi bắt buộc trước dòng code đầu tiên
 

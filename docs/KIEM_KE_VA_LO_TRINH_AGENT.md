@@ -1,7 +1,7 @@
 # Kiểm kê tài sản thật + lộ trình xây agent như PLENX/FLORA — 2026-08-01
 
 > **TÀI LIỆU NGHIÊN CỨU LỊCH SỬ.** Mọi đoạn nói Canvas “để sau/hoãn” đã bị
-> Q38–Q39 (2026-08-02) thay thế. Lộ trình đang hiệu lực là
+> Q49/Q39 (Q49 thay Q38, 2026-08-02) thay thế. Lộ trình đang hiệu lực là
 > `docs/AGENT_LTT/02_LO_TRINH.md`: full Agent + Canvas + 7 tool ảnh/text/video/GPU.
 
 > Đọc `D:\BOT GEMINI` (**CHỈ ĐỌC**, không sửa gì) và đối chiếu với `D:\LTTSTUDIOSAPP`.

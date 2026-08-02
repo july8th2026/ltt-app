@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo: khóa Decision Gate Q49–Q50
+
+- **Mục tiêu:** ghi nhận 12 lựa chọn của Dev, dọn xung đột quyết định kiến trúc
+  và cập nhật scope/phase trước khi bắt đầu BUILD.
+- **Hạng mục:** H13.autosubvideo — R3.5 Decision Gate hoàn thành; AS0–AS9 chưa làm.
+- **Trạng thái:** logic đã khóa; chỉ thay tài liệu, chưa sửa code/chưa deploy.
+
+### Đã làm
+
+Dev chọn 1C/2A/3B/4A/5A/6A/7A/8B/9A/10C/11C/12B. Q38 được đánh dấu
+ĐÃ THAY và Q49 mở React/TypeScript island cho editor nhiều state, đồng thời chốt
+hợp đồng PostgreSQL generic `AppProject`. Q50 khóa Quick + Full Editor, WhisperX
+mặc định, pyannote tùy chọn, Gemini translation, multi-track, full mobile drag,
+style/animation có render parity, output source/720p/1080p/4K và chỉ render thu credit.
+
+Lựa chọn public được diễn giải thành: feature giữ off trong lúc build, operator
+canary bằng test data, rồi chuyển thẳng public sau AS0–AS9 và G0–G7 PASS; không
+có rollout sản phẩm qua admin/allowlist. ASR/diarization/translation là job 0-credit
+do nền tảng tài trợ nhưng bắt buộc quota, rate-limit, dedupe và admission control.
+Các tài liệu Agent đang dẫn Q38 đã được truy ngược sang Q49; nhật ký lịch sử cũ
+giữ nguyên để không viết lại sự thật tại thời điểm trước.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_62_khoa_logic.py tests\test_85_app_contract_lint.py -q` | **25 passed** |
+| `python tools\scan_source_secrets.py` | lượt đầu **1007 file, 144814 dòng**; lượt cuối sau nhật ký **1007 file, 144866 dòng**; cả hai **0 finding — PASS** |
+| `python -m pytest -q` | **1869 passed, 8 skipped, 23 subtests, 1 warning**, 489,47 giây |
+
+### Quyết định mới
+
+- Q49 thay Q38: hybrid theo độ phức tạp, React island cho Canvas/Auto Sub và
+  `AppProject` generic; server vẫn là nguồn chân lý.
+- Q50: khóa toàn bộ scope, mô hình chi phí và release của Auto Sub Studio.
+
+### Cách lùi lại
+
+Revert commit tài liệu của lượt này. Không có migration, code, service hay production
+state để lùi; Q38 chỉ được phục hồi bằng một quyết định mới theo giao thức.
+
+### Còn tồn đọng
+
+- AS0–AS9 chưa triển khai; chưa có migration/API/React island/WhisperX mới.
+- Cần benchmark corpus VI/EN, 1/2 speaker, noise/music/long-form tại AS0–AS2.
+- Q48 CORS vẫn giới hạn browser upload >90MB.
+
+### Việc tiếp theo
+
+Bắt đầu AS0: thiết kế `AppProject` contract/migration/API/version/revision, React
+island boundary, fixture/corpus/baseline và rollback; chỉ sang AS1 khi gate PASS.
+
 ## 2026-08-02 — H13.autosubvideo: ANALYZE và kế hoạch AS0–AS9
 
 - **Mục tiêu:** audit ảnh Auto Sub 1680×935, app đang chạy và năng lực nội tại;

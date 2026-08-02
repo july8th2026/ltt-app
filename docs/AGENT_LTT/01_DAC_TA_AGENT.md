@@ -248,7 +248,7 @@ Tất cả **additive**; migration có `server_default`; app cũ chạy nguyên.
 | N7 | job type `agent.plan` để tính tiền lượt suy luận | PLENX thu **4 credit/lượt**, gấp đôi một lần sinh ảnh. Không tính là lỗ ngầm |
 
 **KHÔNG sửa:** `credit.py`, `db.py`, `billing.py`, `secretbox.py`, phiên/CSRF/phân quyền.
-**Theo Q38:** Jinja/HTMX giữ cho phần server-rendered; Canvas dùng React/TypeScript
+**Theo Q49 (thay Q38):** Jinja/HTMX giữ cho phần server-rendered; Canvas dùng React/TypeScript
 + React Flow, build Vite thành static assets. **Không đổi Q26** (hàng đợi Postgres)
 và không đưa logic validation/giá/credit/execution xuống trình duyệt.
 
@@ -314,7 +314,7 @@ cắt đúng khối**, `JSON.parse`, áp dụng.
 
 | Không làm | Vì sao | Xem lại khi nào |
 |---|---|---|
-| Canvas runtime thứ hai trong browser | Q38 chỉ cho Canvas làm editor/visualizer; executor vẫn ở server | không bao giờ |
+| Canvas runtime thứ hai trong browser | Q49 chỉ cho React island làm editor/visualizer; executor vẫn ở server | không bao giờ |
 | Agent tự do vòng lặp | phá bất biến báo giá | có lẽ không bao giờ |
 | Nhiều agent phối hợp | chưa có việc cho một agent làm hết | sau |
 | Agent tự chạy không cần duyệt (Auto mode) | rủi ro tiền | khi cổng duyệt đã chạy ổn định và khách xin |

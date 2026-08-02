@@ -23,7 +23,7 @@ Sản phẩm hoàn chỉnh có bốn trạng thái nghiệp vụ:
 3. Duyệt rồi theo dõi trạng thái trực tiếp trên node.
 4. Xem kết quả, tiền thật, phần hoàn và decision log.
 
-Theo Q38–Q39, Canvas và cả 7 tool ảnh/text/video/GPU nằm trong cùng lộ trình,
+Theo Q49 và Q39, Canvas và cả 7 tool ảnh/text/video/GPU nằm trong cùng lộ trình,
 không hoãn. V1 vẫn không có auto-run không duyệt, multi-agent hoặc RAG workflow.
 Plan chỉ được sửa trước approval; sửa sau approval tạo version mới và báo giá lại.
 
@@ -118,15 +118,15 @@ Biến các phương án nghiên cứu thành quyết định chính thức trư
    - PA-1+: planner một lần, executor lặp hữu hạn;
    - chưa duyệt thì không giữ/tiêu credit;
    - trần credit tính được trước;
-   - Q38: hybrid HTMX + React/Vite Canvas, Node chỉ dùng build;
+   - Q49 (thay Q38): hybrid HTMX + React/Vite island, Node chỉ dùng build;
    - `chataistudio` không thuộc tool job-based v1;
    - Q39: full 7 app job-based ảnh/text/video/GPU, không cắt còn ảnh/text.
-4. Ghi quyết định Q40–Q43 theo giao thức quyết định (Q38–Q39 đã chốt Canvas/phạm vi).
+4. Ghi quyết định Q40–Q43 theo giao thức quyết định (Q49/Q39 chốt Canvas/phạm vi).
 5. Thêm H12 vào `KE_HOACH_TRIEN_KHAI.md` và ghi rollback cấp kiến trúc.
 
 ### PASS gate
 
-- [x] Q38–Q43 có trạng thái duyệt thật và không mâu thuẫn quyết định cũ.
+- [x] Q39–Q43 và Q49 có trạng thái duyệt thật, không mâu thuẫn quyết định cũ.
 - [x] H12 tồn tại trong kế hoạch nền tảng.
 - [x] Baseline full suite xanh, scan 0, linter 0 ERROR/WARN.
 - [x] Không có secret trong tài liệu hoặc output lưu lại.
@@ -534,7 +534,7 @@ Sau mỗi flow kiểm console error và failed network request.
 
 ### Entry gate
 
-P8 PASS; Q38 đã ghi trong nguồn chân lý.
+P8 PASS; kiến trúc nay được Q49 (thay Q38) ghi trong nguồn chân lý.
 
 ### Kiến trúc build
 

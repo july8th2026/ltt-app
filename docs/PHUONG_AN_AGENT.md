@@ -1,7 +1,7 @@
 # Phương án xây AI Agent cho LTTSTUDIOSAPP — chấm điểm & đề xuất — 2026-08-01
 
 > **TÀI LIỆU NGHIÊN CỨU LỊCH SỬ.** Kết luận “hoãn/không Canvas ở v1” bên dưới đã
-> bị thay bởi Q38–Q39 ngày 2026-08-02: xây full Agent + Canvas + video/GPU, kiến
+> bị thay bởi Q49/Q39 ngày 2026-08-02: xây full Agent + Canvas + video/GPU, kiến
 > trúc hybrid React/TypeScript/React Flow/Vite cho Canvas và HTMX cho phần còn lại.
 > Giữ nội dung cũ để bảo toàn lý do/trade-off, không làm theo kết luận cũ.
 
