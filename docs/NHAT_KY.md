@@ -42,6 +42,17 @@ nhận user không thấy activity/running job của người khác.
 **Rollback:** `deploy\windows\rollback.ps1`; vì không có migration, chỉ phục hồi
 release trước đó, không đụng dữ liệu runtime.
 
+**Deploy/production:** backup độc lập `D:\LTTBackups\ltt_data_20260802_174125.zip`
+đã đọc được và có `pg_dump` PASS. Release `ltt-release-1.0.0.zip` (1.169 file,
+79,4 MB, SHA-256 `8f2cac…c75da44e`) đã được giải nén vào `C:\LTTPlatform\app`;
+`app.previous` vẫn được giữ. Phiên update bị ngắt sau khi dừng service nhưng trước
+bước khởi động; không chạy lại nguyên script để tránh thay bản rollback. Đã khởi
+động lại web/worker/Codex sidecar, chạy `alembic upgrade head` trên release mới
+(no-op) và health production `ready`, database `ok` PASS. Playwright qua
+Cloudflare với catalog public: 200, console 0 error/0 warning, request động RUM
+204; phiên browser chưa dùng tài khoản production nên kiểm authenticated workspace
+ở local test environment, không tạo/đọc dữ liệu người dùng production.
+
 ## 2026-08-02 — H13.0: chuẩn hóa redesign app từ ảnh
 
 Đã nghiên cứu UI hiện hành và chốt Q45: ảnh tham khảo là mục tiêu thị giác cùng

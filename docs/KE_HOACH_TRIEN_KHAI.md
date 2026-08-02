@@ -968,8 +968,8 @@ Quy trình duy nhất: `docs/QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` (Q45).
   test isolation activity/running job; browser desktop/mobile, Ctrl+K, filter/sort
   PASS; không phát sinh migration.
 - [x] H13.5 Nghiệm thu G0–G7 và rollout đúng phạm vi yêu cầu — 2026-08-02:
-  local release gate PASS (1852 pass, scan 0, lint 0/0); deployment evidence
-  được ghi tại nhật ký sau khi update production hoàn tất.
+  local release gate PASS (1852 pass, scan 0, lint 0/0); production backup,
+  release update, migration no-op, health và Cloudflare browser PASS.
 
 Mỗi app sau dùng nhánh H13.`<slug>` riêng. Chỉ PASS khi có hồ sơ bằng chứng,
 test thật và browser thật theo UI-RD.
