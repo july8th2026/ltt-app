@@ -978,13 +978,37 @@ test thật và browser thật theo UI-RD.
 
 - [x] R0–R3.5 Audit và Decision Gate chuẩn bị — 2026-08-02: xác nhận ảnh tham
   khảo thuộc app `/taovideo`; hồ sơ `docs/UI_REDESIGN/taovideo/` đã map code,
-  dữ liệu thật và feature chưa có. Chờ Dev khóa lựa chọn trước BUILD.
-- [ ] R4–R10 Thiết kế, build, test, release — chỉ mở sau Decision Gate.
+  dữ liệu thật và feature chưa có.
+- [x] Decision Gate đã khóa — 2026-08-02: Dev trả lời 9 lựa chọn; Seedance giữ
+  app/route hiện hành, xây studio trên dữ liệu/job thật và tích hợp Upscale qua
+  popup quote/confirm credit dùng chung `submit_upscale_job()`.
+- [ ] R4–R7 Contract, design và lát cắt dọc — **WIP, chưa commit/deploy**: studio,
+  filter/history từ job owner-scoped và cầu Seedance→Upscale đang có code dở;
+  phải đóng theo UP1/UP3 trước khi coi hoàn thành.
+- [ ] R8–R10 Nghiệm thu đa state/viewport, full gate, memory và release.
+
+### H13.upscalevideo — UI-RD Upscale Video Studio
+
+Nguồn kế hoạch chi tiết: `docs/UI_REDESIGN/upscalevideo/04_IMPLEMENTATION_PLAN.md`.
+Decision Gate đã khóa theo Q47; **không đóng băng tính năng mới**. Full scope gồm
+batch tối đa 3, Watch Folder, compare thật, cancel/refund, telemetry admin và
+cầu Seedance; Pause/delete và AI Detail chưa có engine được quản lý bằng DEFER.
+
+- [x] UP0a Audit lại hội thoại, ảnh và code; khóa Q47 + hồ sơ UI-RD — 2026-08-02.
+- [ ] UP0b Baseline browser đa viewport/state + phân loại toàn bộ WIP/rollback.
+- [ ] UP1 Contract lifecycle cancel/refund + Seedance quote/confirm dùng chung.
+- [ ] UP2 Studio shell + upload R2/local + quote + option FPS/audio thật.
+- [ ] UP3 Compare nguồn/kết quả owner-scoped.
+- [ ] UP4 Batch tối đa 3, preflight và transaction job/credit.
+- [ ] UP5 Watch Folder qua Watch Agent Windows có token scope/dedupe/quarantine.
+- [ ] UP6 Telemetry admin + progress/ETA dựa số đo thật.
+- [ ] UP7 Benchmark AI Detail; Pause/delete tiếp tục DEFER nếu chưa đủ contract.
+- [ ] UP8 GPU smoke + full test/scan/lint/Playwright + backup/release/deploy.
 
 ---
 
 ## Việc phải làm ngay ở phiên tiếp theo
 
-Nhận **tên/slug app + ảnh tham khảo** và chạy H13.1 theo UI-RD. Chỉ gửi hai đầu
-vào thì mặc định ANALYZE; ghi BUILD/FULL thì thực hiện tới gate tương ứng.
-Production chỉ deploy khi được nêu rõ.
+Tiếp tục `H13.upscalevideo` UP0b → UP8 theo thứ tự. Không mở app redesign khác
+trước khi worktree Seedance/Upscale được chia lát cắt, test, ghi memory và commit.
+Production Upscale chỉ deploy sau UP8; các app production hiện hành không bị dừng.

@@ -1,6 +1,6 @@
 # UI-RD — Tạo video AI (Seedance)
 
-**Trạng thái:** ANALYZE — chờ Decision Gate  
+**Trạng thái:** FULL — Decision Gate đã khóa; BUILD đang WIP, chưa deploy
 **App/route thật:** `taovideo` / `/taovideo`  
 **Ảnh tham khảo:** `g:\My Drive\AI\A\New folder\seedance.png` (1600×990)  
 **Nguồn sự thật:** `apps/taovideo/`, `platform_core.jobs`, `jobs` và credit ledger
@@ -30,7 +30,10 @@ Seedance trong ảnh, nhưng giữ một nguồn sự thật: app/job/credit/sto
 - Mọi history, filter, retry, delete phải owner-scoped, CSRF-protected và có chính
   sách retention/rollback trước khi bật.
 
-## Decision Gate đang chờ
+## Decision Gate đã khóa
 
-Các lựa chọn giao diện/dữ liệu/retention/rollout tại cuối phản hồi phiên này phải
-được Dev khóa trước R4 BUILD.
+Dev đã trả lời 9 lựa chọn ngày 2026-08-02. Seedance giữ route/job hiện tại, dùng
+dữ liệu owner-scoped thật, không giả asset/output và nối Upscale bằng popup báo
+giá credit rồi gọi service dùng chung. Phần lifecycle/compare/cancel theo Q47 và
+kế hoạch `UI_REDESIGN/upscalevideo/04_IMPLEMENTATION_PLAN.md`; retry/delete vẫn
+DEFER đến khi có audit/retention/idempotency đầy đủ.

@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-02 — Recovery UI-RD Upscale: audit lại hội thoại và khóa Q47/UP0–UP8
+
+- **Mục tiêu:** sửa sai lệch quy trình, khẳng định full phạm vi Upscale và lập
+  phase triển khai có PASS gate/rollback trước khi viết tiếp.
+- **Hạng mục:** H13.upscalevideo — UP0a hoàn thành; UP0b–UP8 chưa hoàn thành.
+- **Trạng thái:** kế hoạch xong; code hiện tại vẫn WIP, chưa deploy.
+
+### Đã làm
+
+Audit lại ảnh `UPSCALE.png`, lịch sử quyết định Dev, app `upscalevideo`, engine,
+FFmpeg, storage/R2, jobs/credit và diff chưa commit. Đính chính: không đóng băng
+tính năng mới. Dev đã khóa full scope gồm compare thật, batch tối đa 3, Cancel
+(Pause hoãn), Watch Folder làm ngay, telemetry chi tiết admin-only, delete/retention
+hoãn, AI Detail chỉ bật khi có engine thật, rollout sau gate; Seedance dùng chung
+`submit_upscale_job()` với popup quote/confirm credit.
+
+Thêm Q47 và hồ sơ `UI_REDESIGN/upscalevideo/` gồm brief, current state, reference
+map, feature matrix và kế hoạch UP0–UP8. Đồng bộ H13.taovideo: Decision Gate đã
+khóa và cầu Seedance→Upscale nằm chung contract UP1/UP3. Kế hoạch hiện phản ánh
+đúng sự thật: code cancel/compare/studio đang WIP, không đánh dấu hoàn thành.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Đối chiếu source/diff + ảnh tham khảo | PASS, phát hiện plan cũ còn ghi “chờ Decision Gate” |
+| `python -m pytest tests\test_61_setup_scripts.py tests\test_62_khoa_logic.py -q` | **92 passed** |
+| `python tools\scan_source_secrets.py` | **947 file, 137.274 dòng, 0 finding — PASS** |
+| `python -m pytest -q` | chưa chạy; dành cho gate code/release UP8 |
+
+### Quyết định mới
+
+Q47 đã thêm vào `QUYET_DINH_NEN_TANG.md`. Không thay quyết định cũ; Q47 cụ thể
+hóa UI-RD và mở rộng sản phẩm Upscale đã được Dev chọn.
+
+### Cách lùi lại
+
+Revert riêng các thay đổi docs Q47/H13/upscalevideo của lượt này. Không rollback
+code WIP bằng lệnh phá hủy; code đó phải được phân lát và audit ở UP0b.
+
+### Còn tồn đọng
+
+- Worktree code Seedance/Upscale/core vẫn bẩn và chưa commit.
+- UP0b chưa có baseline đa viewport/state; UP1 lifecycle chưa đủ race/subprocess
+  cancellation tests; batch/Watch Agent/telemetry chưa được xây.
+
+### Việc tiếp theo
+
+1. UP0b: baseline browser + phân loại WIP/rollback.
+2. UP1: đóng contract cancel/refund và Seedance bridge bằng test failure/ownership.
+3. Chỉ khi UP1 PASS mới triển khai UP2 studio shell.
+
 ## 2026-08-02 — H13.taovideo: audit UI-RD Seedance, chờ khóa logic
 
 Đã phân tích ảnh `seedance.png` và code app hiện hành. Ảnh là mục tiêu cho

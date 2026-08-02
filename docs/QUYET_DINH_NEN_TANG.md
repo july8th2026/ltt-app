@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q46; Q13→Q26, Q14→Q24, Q18→Q38, Q22→Q27 đã thay)
+## 1. Quyết định đã chốt (đến Q47; Q13→Q26, Q14→Q24, Q18→Q38, Q22→Q27 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -71,6 +71,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q44 | Rollout tạo run LTT Agent | **Một cờ bốn mức** `LTT_AGENT_CANVAS_RUN_ROLLOUT=off/admin/allowlist/public`; production mặc định `off`, giá trị sai cũng về `off`. `allowlist` dùng ID tài khoản trong `LTT_AGENT_CANVAS_RUN_USER_IDS`; admin luôn qua ở mức `admin`/`allowlist`. Cờ boolean cũ chỉ giữ tương thích. | Cờ bật/tắt cũ không thể thực hiện P13 theo nấc và có nguy cơ mở cho mọi user ngay sau deploy. Bốn mức cho phép migration feature-off, canary admin, nhóm nội bộ rồi public mà không đổi binary; rollback tức thời về `off`. |
 | Q45 | Thiết kế lại app từ ảnh tham khảo | **Dùng pipeline UI-RD R0–R10 và gate G0–G7 trong `docs/QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md`. Ảnh là đích thị giác + nguồn giả thuyết, không thay contract nghiệp vụ. Tính năng trong ảnh chỉ được đưa vào sau ma trận KEEP/RESTYLE/EXTEND/BUILD/REJECT/DECORATIVE/DEFER và phải có logic/test thật.** | Ảnh tĩnh không thể hiện ownership, credit, failure hay backend. Quy trình cho phép bám sát bố cục mà không tạo nút giả, xây trùng năng lực sẵn có hoặc phá ranh giới nền tảng; phát hiện mới được chuyển thành regression/quy tắc có bằng chứng. |
 | Q46 | Trang chủ marketplace/workspace | **`/` giữ catalog công khai cho khách (Q30); khi đã đăng nhập, nó thành marketplace workspace theo UI-RD Home: sidebar desktop, search Ctrl+K, category/sort, card artwork crop từ ảnh tham khảo do user cung cấp, Recent Activity/Running Jobs owner-scoped. Popular chỉ là aggregate để sort, không hiển thị số giả. Pro membership và Community chưa có backend nên không được giả lập.** | Dev chọn 1B/2C/3B/4B/5A/6A/7B/8B ngày 2026-08-02; sau đó yêu cầu dừng ImageGen để không đốt quota và dùng crop từ ảnh tham khảo. Tách trải nghiệm trả khách khỏi dashboard giúp vừa giữ acquisition công khai vừa đưa user quay lại vào công việc. Tái dùng bảng `jobs` tránh thêm kho dữ liệu; các liên kết chưa có sản phẩm thật bị hoãn/disabled thay vì thành dead navigation. |
+| Q47 | UI-RD và mở rộng sản phẩm Upscale Video | **Xây full phạm vi đã khóa trước deploy: studio theo ảnh tham khảo; compare nguồn/kết quả thật; batch tối đa 3; cancel + hoàn credit (pause hoãn); Watch Folder triển khai ngay bằng Watch Agent có xác thực; telemetry GPU/storage chi tiết chỉ admin; delete/retention hoãn; AI Detail chỉ bật khi có engine thật. Seedance gọi chung `submit_upscale_job()` và phải quote/confirm credit trước khi nộp job.** | Dev chọn 1B/2A/3A/4A/5A/6B/7A/8A/9A rồi xác nhận tích hợp Seedance→Upscale ngày 2026-08-02. Dùng chung job/credit/storage/engine tránh runtime thứ hai. Watch Folder không thể là đường dẫn local do browser gửi lên server; phải là agent cục bộ với token phạm vi hẹp, stable-file detection và idempotency. Không giả AI Detail, ETA, GPU hay dung lượng. Rollout tự động chỉ sau G0–G7, GPU smoke và release gate xanh. |
 
 ---
 
