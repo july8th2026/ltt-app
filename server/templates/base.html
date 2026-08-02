@@ -142,8 +142,8 @@
   </style>
 </head>
 <body>
-{# Vỏ khách ĐÃ ĐĂNG NHẬP (UX Pha 2): điều hướng bằng HEADER ngang, KHÔNG sidebar.
-   Tài khoản gom trong avatar (xem _header.html). Nội dung FULL-WIDTH. #}
+{# Trang home đã đăng nhập có shell marketplace riêng; trang khác giữ header chung. #}
+{% if not home_workspace|default(false) %}
 {% include "_header.html" %}
 
 {# Nav NỘI BỘ của app đang mở (app nhiều trang, vd socialbot) — thay sub-nav
@@ -158,8 +158,9 @@
   {% endfor %}
 </nav>
 {% endif %}
+{% endif %}
 
-<main class="page">
+<main class="{{ 'home-page' if home_workspace|default(false) else 'page' }}">
   {# Giữ block tiêu đề cho trang con (settings/workers…) — gom vào dải mảnh, chỉ
      hiện khi trang có đặt. #}
   {% set _tt %}{% block topbar_title %}{% endblock %}{% endset %}

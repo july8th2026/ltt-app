@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q45; Q13→Q26, Q14→Q24, Q18→Q38, Q22→Q27 đã thay)
+## 1. Quyết định đã chốt (đến Q46; Q13→Q26, Q14→Q24, Q18→Q38, Q22→Q27 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -70,6 +70,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q43 | Ranh giới tái sử dụng cho Agent | **Internal-first:** dùng LTTSTUDIOSAPP L1/L2/L3 trước; chỉ tham chiếu/copy L1/L2 còn thiếu từ nguồn ngoài vào repo, không import chéo và không copy runtime/GUI/bí mật. `D:\BOT GEMINI` vẫn chỉ đọc. | Kho hiện tại đã có registry, jobs, credit, provider, prompt fragments, storage/R2, media/GPU và app handlers. Xây lại các phần này sẽ tạo hai nguồn chân lý và tăng rủi ro vận hành. |
 | Q44 | Rollout tạo run LTT Agent | **Một cờ bốn mức** `LTT_AGENT_CANVAS_RUN_ROLLOUT=off/admin/allowlist/public`; production mặc định `off`, giá trị sai cũng về `off`. `allowlist` dùng ID tài khoản trong `LTT_AGENT_CANVAS_RUN_USER_IDS`; admin luôn qua ở mức `admin`/`allowlist`. Cờ boolean cũ chỉ giữ tương thích. | Cờ bật/tắt cũ không thể thực hiện P13 theo nấc và có nguy cơ mở cho mọi user ngay sau deploy. Bốn mức cho phép migration feature-off, canary admin, nhóm nội bộ rồi public mà không đổi binary; rollback tức thời về `off`. |
 | Q45 | Thiết kế lại app từ ảnh tham khảo | **Dùng pipeline UI-RD R0–R10 và gate G0–G7 trong `docs/QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md`. Ảnh là đích thị giác + nguồn giả thuyết, không thay contract nghiệp vụ. Tính năng trong ảnh chỉ được đưa vào sau ma trận KEEP/RESTYLE/EXTEND/BUILD/REJECT/DECORATIVE/DEFER và phải có logic/test thật.** | Ảnh tĩnh không thể hiện ownership, credit, failure hay backend. Quy trình cho phép bám sát bố cục mà không tạo nút giả, xây trùng năng lực sẵn có hoặc phá ranh giới nền tảng; phát hiện mới được chuyển thành regression/quy tắc có bằng chứng. |
+| Q46 | Trang chủ marketplace/workspace | **`/` giữ catalog công khai cho khách (Q30); khi đã đăng nhập, nó thành marketplace workspace theo UI-RD Home: sidebar desktop, search Ctrl+K, category/sort, card artwork crop từ ảnh tham khảo do user cung cấp, Recent Activity/Running Jobs owner-scoped. Popular chỉ là aggregate để sort, không hiển thị số giả. Pro membership và Community chưa có backend nên không được giả lập.** | Dev chọn 1B/2C/3B/4B/5A/6A/7B/8B ngày 2026-08-02; sau đó yêu cầu dừng ImageGen để không đốt quota và dùng crop từ ảnh tham khảo. Tách trải nghiệm trả khách khỏi dashboard giúp vừa giữ acquisition công khai vừa đưa user quay lại vào công việc. Tái dùng bảng `jobs` tránh thêm kho dữ liệu; các liên kết chưa có sản phẩm thật bị hoãn/disabled thay vì thành dead navigation. |
 
 ---
 

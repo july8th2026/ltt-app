@@ -18,6 +18,53 @@ from server.templating import templates
 
 router = APIRouter(tags=["home"])
 
+_CATEGORY_BY_GROUP = {
+    "Ảnh": "AI Image", "Video": "AI Video", "Chat": "Chat & Prompt",
+    "Kịch bản": "Chat & Prompt", "AI Studio": "Automation",
+}
+
+
+def _home_category(group: str) -> str:
+    """Taxonomy launcher; không thay đổi hợp đồng manifest của từng app."""
+    return _CATEGORY_BY_GROUP.get(group or "", "Utilities")
+
+
+def _workspace_data(visible: list, db_user) -> dict:
+    """Dữ liệu dashboard owner-scoped, trừ aggregate Popular chỉ dùng để sort."""
+    from platform_core.db import get_session
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
+    from sqlalchemy import func, select
+
+    result = {"popularity": {}, "recent": [], "running": [], "used_slugs": set()}
+    if db_user is None:
+        return result
+    manifest_by_slug = {item.manifest.slug: item.manifest for item in visible}
+    gen = get_session(); db = next(gen)
+    try:
+        rows = db.execute(select(Job.app_slug, func.count(Job.id)).group_by(Job.app_slug))
+        result["popularity"] = {slug: int(count) for slug, count in rows
+                                if slug in manifest_by_slug}
+        result["recent"] = db.execute(
+            select(Job).where(Job.user_id == db_user.id)
+            .order_by(Job.created_at.desc()).limit(5)).scalars().all()
+        result["running"] = db.execute(
+            select(Job).where(Job.user_id == db_user.id,
+                              Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
+            .order_by(Job.created_at.desc()).limit(5)).scalars().all()
+        result["used_slugs"] = {job.app_slug for job in result["recent"]}
+        detached: set[str] = set()
+        for job in [*result["recent"], *result["running"]]:
+            manifest = manifest_by_slug.get(job.app_slug)
+            job.app_name = manifest.display_name if manifest else job.app_slug
+            job.app_icon = manifest.icon if manifest else "✦"
+            if job.id not in detached:
+                db.expunge(job)
+                detached.add(job.id)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return result
+
 
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request):
@@ -49,14 +96,15 @@ def home(request: Request):
     from tools import doctor
     report = doctor.run(check_sheet_flag=False)
     visible = ok_apps
+    db_user = None
     try:
-        u = _user_hien_tai(request)
-        if u is not None:
+        db_user = _user_hien_tai(request)
+        if db_user is not None:
             from platform_core.app_access import loc_app_hien_thi
             from platform_core.db import get_session
             gen = get_session(); db = next(gen)
             try:
-                visible = loc_app_hien_thi(db, u, visible)
+                visible = loc_app_hien_thi(db, db_user, visible)
             finally:
                 try: next(gen)
                 except StopIteration: pass
@@ -74,6 +122,12 @@ def home(request: Request):
         if hits:
             app_setup[item.manifest.slug] = hits
 
+    workspace = _workspace_data(visible, db_user)
+    for item in visible:
+        item.home_category = _home_category(item.manifest.group)
+        item.home_popularity = workspace["popularity"].get(item.manifest.slug, 0)
+        item.home_used = item.manifest.slug in workspace["used_slugs"]
+
     return templates.TemplateResponse(request, "home.html", {
         "user": user,
         "authed": True,
@@ -81,6 +135,8 @@ def home(request: Request):
         "apps": visible,
         "broken": [a for a in loaded if a.error],
         "app_setup": app_setup,
+        "home_workspace": True,
+        "workspace": workspace,
     })
 
 

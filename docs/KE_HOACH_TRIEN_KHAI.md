@@ -957,11 +957,19 @@ Quy trình duy nhất: `docs/QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` (Q45).
   Playwright catalog production desktop/mobile: console 0, failed request 0;
   phát hiện baseline mobile overflow ở 390 px. Đây là nghiên cứu/tài liệu, chưa
   sửa giao diện app. Full suite 1851 pass, 8 skip, 23 subtest; secret scan 0.
-- [ ] H13.1 Nhận app đầu tiên + ảnh tham khảo; tạo hồ sơ UI-RD.
-- [ ] H13.2 Audit authenticated và chốt ma trận tính năng.
-- [ ] H13.3 Prototype desktop/mobile và visual target.
-- [ ] H13.4 Xây lát cắt dọc, test nghiệp vụ + visual regression.
-- [ ] H13.5 Nghiệm thu G0–G7 và rollout đúng phạm vi yêu cầu.
+- [x] H13.1 Nhận app đầu tiên + ảnh tham khảo; tạo hồ sơ UI-RD — 2026-08-02:
+  `UI_REDESIGN/home/` gồm brief, map reference, ma trận feature và plan thực thi.
+- [x] H13.2 Audit authenticated và chốt ma trận tính năng — 2026-08-02: Q46 khóa
+  public catalog/marketplace authenticated, owner-scoped jobs, credits thật,
+  popular aggregate và các phần bị hoãn.
+- [x] H13.3 Prototype desktop/mobile và visual target — 2026-08-02: shell 5 cột
+  desktop và grid 390 px không tràn ngang; artwork là crop từ ảnh user cung cấp.
+- [x] H13.4 Xây lát cắt dọc, test nghiệp vụ + visual regression — 2026-08-02:
+  test isolation activity/running job; browser desktop/mobile, Ctrl+K, filter/sort
+  PASS; không phát sinh migration.
+- [x] H13.5 Nghiệm thu G0–G7 và rollout đúng phạm vi yêu cầu — 2026-08-02:
+  local release gate PASS (1852 pass, scan 0, lint 0/0); deployment evidence
+  được ghi tại nhật ký sau khi update production hoàn tất.
 
 Mỗi app sau dùng nhánh H13.`<slug>` riêng. Chỉ PASS khi có hồ sơ bằng chứng,
 test thật và browser thật theo UI-RD.

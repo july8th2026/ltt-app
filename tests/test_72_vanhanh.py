@@ -164,6 +164,41 @@ def test_link_quan_tri_chi_hien_cho_admin(client):
     assert "/admin/" in client.get("/").text
 
 
+def test_home_workspace_chi_hien_activity_va_running_job_cua_chu_so_huu(client):
+    """H13: rail trang chu không được lộ hoạt động/job của người dùng khác."""
+    import platform_core.db as dbmod
+    from platform_core.models import JOB_QUEUED, Job
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        mine = tao_nguoi_dung(db, email="mine-home@example.com",
+                              password="matkhau-tot-12", is_verified=True)
+        other = tao_nguoi_dung(db, email="other-home@example.com",
+                               password="matkhau-tot-12", is_verified=True)
+        db.add(Job(user_id=mine.id, app_slug="thumbnail", job_type="thumbnail.generate",
+                   status=JOB_QUEUED, progress=42, progress_msg="MINE_HOME_ACTIVITY"))
+        db.add(Job(user_id=other.id, app_slug="thumbnail", job_type="thumbnail.generate",
+                   status=JOB_QUEUED, progress=77, progress_msg="OTHER_PRIVATE_ACTIVITY"))
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    _tao_va_dang_nhap(client, "workspace-view@example.com")
+    # Đổi sang user có job trong phiên mới để kiểm owner-scope đúng người xem.
+    _lt = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/").text).group(1)
+    client.post("/logout", data={"csrf_token": _lt})
+    tok = _csrf(client, "/login")
+    client.post("/login", data={"username": "mine-home@example.com",
+                                 "password": "matkhau-tot-12", "csrf_token": tok})
+    body = client.get("/").text
+    assert "Marketplace" in body and "My Apps" in body
+    assert "MINE_HOME_ACTIVITY" in body
+    assert "OTHER_PRIVATE_ACTIVITY" not in body
+    assert 'data-popular=' in body
+
+
 def test_phien_thu_hoi_khong_gay_vong_lap_redirect(client):
     """Phiên có sid nhưng đã bị THU HỒI (đổi mật khẩu/hết hạn) không được gây
     vòng lặp /login ⇄ route: login_form phải xác thực sid ĐỒNG NHẤT với

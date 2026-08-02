@@ -102,6 +102,21 @@ ranh giới nền tảng. REJECT tính năng trùng, gây hiểu sai, để secr
 ownership/CSRF/credit, phụ thuộc cookie/browser automation bị cấm. Giữ chức năng
 an toàn/chi phí/artifact/error hiện có dù ảnh không vẽ.
 
+### R3.5 — Decision Gate: Dev khóa logic trước BUILD
+
+Sau mỗi lượt thu thập, phân tích và lập ma trận, Codex phải đưa ra **bảng câu hỏi
+có phương án, khuyến nghị và hệ quả** cho Dev chọn. Các câu hỏi phải bao phủ ít
+nhất: đối tượng/trạng thái màn hình, phạm vi tính năng, dữ liệu thật hay không,
+nhóm feature BUILD/DEFER/REJECT, asset/nhận diện, responsive, quyền/credit và
+rollout. Không được chuyển sang R4/R5/R7 chỉ vì ảnh trông rõ.
+
+Mỗi lựa chọn được ghi vào `00_BRIEF.md` hoặc `04_IMPLEMENTATION_PLAN.md` với mã
+quyết định, ngày, lý do và acceptance criteria. Quyết định làm thay đổi kiến trúc,
+sản phẩm hoặc quy tắc nền tảng phải theo giao thức quyết định trong `AGENTS.md`.
+Sau khi Dev trả lời, Codex tóm tắt logic đã khóa, cập nhật ma trận và mới bắt đầu
+BUILD. Nếu Dev chọn phương án có dữ liệu/tính năng chưa tồn tại, R4 phải hoàn tất
+contract và đường failure trước khi UI hiển thị control đó.
+
 ### R4 — Nghiên cứu EXTEND/BUILD
 
 1. Viết Job Story và acceptance quan sát được.
@@ -123,8 +138,10 @@ Chuyển ảnh thành token/layout spec, không rải magic number. Chốt từn
 responsive: giữ, co, wrap, collapse, drawer, hide hoặc read-only; chốt focus order,
 label, hit target, contrast và reduced motion.
 
-Asset theo thứ tự: asset LTT → CSS/SVG/icon system → raster gốc bằng ImageGen khi
-thật sự cần minh họa/texture/cover. Prompt asset phải ghi size, nền, palette, safe
+Asset theo thứ tự: asset LTT → crop/biến thể từ ảnh tham khảo do user cấp quyền dùng
+→ CSS/SVG/icon system → raster gốc bằng ImageGen khi thật sự cần minh họa/texture/cover.
+Crop phải ghi nguồn, vùng cắt và mục đích trong hồ sơ; không được suy diễn quyền dùng
+ảnh bên ngoài. Prompt asset (nếu đến bước ImageGen) phải ghi size, nền, palette, safe
 area, mục đích; kiểm ở kích thước render. Không dùng ImageGen thay icon/SVG đơn giản.
 
 ### R6 — Prototype và visual target
@@ -210,3 +227,4 @@ chiếu bằng routes/templates/tests. App đầu tiên phải baseline authenti
 | Phiên bản | Ngày | Thay đổi | Bằng chứng/lý do |
 |---|---|---|---|
 | 1.0 | 2026-08-02 | Pipeline R0–R10, matrix và G0–G7 | Chuẩn hóa thiết kế từ ảnh; Playwright bắt mobile overflow mà đọc CSS không đủ |
+| 1.1 | 2026-08-02 | Thêm R3.5 Decision Gate | Dev yêu cầu khóa lựa chọn sau phân tích, trước khi triển khai |

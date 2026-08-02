@@ -14,6 +14,34 @@
 
 ---
 
+## 2026-08-02 — H13 Home: marketplace workspace từ ảnh tham khảo
+
+Đã chốt Q46 theo tám lựa chọn của Dev và hoàn thành lại trang chủ theo UI-RD.
+Khách chưa đăng nhập vẫn thấy catalog công khai; user đã đăng nhập thấy workspace
+marketplace với sidebar desktop, search Ctrl+K, category/sort, card app, recent
+activity/running jobs owner-scoped và credit thật. `Popular` chỉ xếp bằng aggregate
+job theo slug, không hiển thị số giả. Community vẫn disabled và Pro membership không
+được giả lập vì chưa có backend/entitlement thật.
+
+Theo yêu cầu mới, đã dừng ImageGen: năm cover giao diện được crop trực tiếp từ
+`TRANGCHU.png` do Dev cung cấp; quy trình UI-RD cũng được bổ sung thứ tự ưu tiên
+asset LTT → crop ảnh user cho phép → CSS/SVG → ImageGen khi thật sự cần. Không có
+migration, không đổi dữ liệu production trong hạng mục này. Regression bổ sung xác
+nhận user không thấy activity/running job của người khác.
+
+**Lệnh/kết quả thật trước deploy:**
+
+- `python -m pytest -q` → **1852 passed, 8 skipped, 23 subtests passed**, 1 warning,
+  474,54s.
+- `python tools\scan_source_secrets.py` → 929 file, 135.777 dòng, **0 finding**.
+- `python tools\lint_app_contract.py --strict` → 10 app, **0 ERROR, 0 WARN**.
+- Playwright local desktop/mobile: artwork tải từ `server/static/home-covers/`,
+  grid mobile `scrollWidth=390` tại viewport 390, Ctrl+K/search/category/sort PASS;
+  console 0 lỗi và không có request ứng dụng thất bại.
+
+**Rollback:** `deploy\windows\rollback.ps1`; vì không có migration, chỉ phục hồi
+release trước đó, không đụng dữ liệu runtime.
+
 ## 2026-08-02 — H13.0: chuẩn hóa redesign app từ ảnh
 
 Đã nghiên cứu UI hiện hành và chốt Q45: ảnh tham khảo là mục tiêu thị giác cùng

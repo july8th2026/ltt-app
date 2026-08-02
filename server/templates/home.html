@@ -1,94 +1,18 @@
 {% extends "base.html" if authed else "base_public.html" %}
 {% block title %}LTT AI Studio{% endblock %}
 {% block content %}
-
-  {% if not authed %}
-    <div class="hero">
-      <span class="eyebrow">Nền tảng công cụ AI</span>
-      <h1>Công cụ AI theo credit, gọn trong một tài khoản</h1>
-      <p>Đăng nhập một lần — dùng mọi công cụ. Chọn một công cụ để bắt đầu; mỗi
-         tác vụ trừ credit minh bạch.</p>
-    </div>
-  {% endif %}
-
-  {% if authed and broken %}
-    <div class="alert alert-err" style="margin-bottom:16px;">
-      <strong style="color:var(--err);">{{ broken|length }} app nạp lỗi</strong>
-      {% for item in broken %}
-        <div class="mono" style="margin-top:8px; font-size:12px;">
-          <span style="color:var(--err);">{{ item.slug }}</span> — {{ item.error }}</div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {# Thanh tìm/lọc catalog (UX Pha 2). Lọc theo NHÓM + tìm theo tên (client-side). #}
-  {% set groups = apps|map(attribute='manifest.group')|select|unique|list %}
-  {% if apps %}
-  <div class="catbar">
-    <input id="catsearch" class="inp search" type="search" placeholder="Tìm công cụ…" autocomplete="off">
-    <div class="catfilters" id="catfilters">
-      <button class="on" data-c="all">Tất cả</button>
-      {% for g in groups %}<button data-c="{{ g }}">{{ g }}</button>{% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="grid">
-    {% for item in apps %}
-      {% set m = item.manifest %}
-      <div class="appcard" data-group="{{ m.group }}" data-name="{{ m.display_name|lower }} {{ m.summary|lower }}">
-        <div class="accent" style="background:{{ m.accent }};"></div>
-        <div class="cover" style="background:linear-gradient(135deg,{{ m.accent }}33,{{ m.accent }}0d);">
-          <span class="big">{{ m.icon }}</span>
-          {% if m.badge %}<span class="cbadge badge b-ok"><span class="dot"></span>{{ m.badge }}</span>
-          {% elif not m.enabled %}<span class="cbadge badge b-warn"><span class="dot"></span>đang xây</span>
-          {% elif authed and app_setup.get(m.slug) %}<span class="cbadge badge b-warn"><span class="dot"></span>cần thiết lập</span>{% endif %}
-        </div>
-        <div class="in">
-          <h2>{{ m.display_name }}</h2>
-          <p class="sum">{{ m.summary }}</p>
-          {% if authed and app_setup.get(m.slug) %}
-            <div class="alert alert-warn" style="padding:8px 12px; margin:0 0 12px;">
-              <span class="dim" style="font-size:12px;">Cần thiết lập:
-                {{ app_setup[m.slug]|map(attribute='check')|join(', ') }} —
-                <a href="/status">chi tiết</a>.</span>
-            </div>
-          {% endif %}
-          <div class="meta">
-            {{ m.route_prefix }}
-            {%- if m.requires %} · cần: {{ m.requires|join(', ') }}{% endif %}
-            {%- if m.credit_cost %} · có tính credit{% endif %}
-          </div>
-          {% if m.enabled %}
-            {% if authed %}
-              <a href="{{ m.route_prefix }}" class="btn">Mở &nbsp;→</a>
-            {% else %}
-              <a href="/login?next={{ m.route_prefix }}" class="btn">Đăng nhập để dùng</a>
-            {% endif %}
-          {% else %}
-            <button class="btn" disabled>Chưa dùng được</button>
-          {% endif %}
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-
-  {% if not apps %}
-    <div class="ui-card" style="margin-top:14px;">
-      <p class="dim" style="margin:0;">Chưa có công cụ nào khả dụng.</p>
-    </div>
-  {% endif %}
-
-  <script>
-  (function(){
-    var q=document.getElementById('catsearch'),tabs=document.getElementById('catfilters');
-    var cards=[].slice.call(document.querySelectorAll('.appcard[data-name]')),cur='all';
-    function apply(){var t=(q&&q.value||'').toLowerCase();
-      cards.forEach(function(c){var okg=cur==='all'||c.dataset.group===cur;
-        var okq=!t||c.dataset.name.indexOf(t)>=0;c.style.display=(okg&&okq)?'':'none';});}
-    if(q)q.addEventListener('input',apply);
-    if(tabs)tabs.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
-      cur=b.dataset.c;[].forEach.call(tabs.children,function(x){x.classList.toggle('on',x===b);});apply();});
-  })();
-  </script>
+{% if not authed %}
+<div class="hero"><span class="eyebrow">Nền tảng công cụ AI</span><h1>Công cụ AI theo credit, gọn trong một tài khoản</h1><p>Đăng nhập một lần — dùng mọi công cụ. Chọn một công cụ để bắt đầu; mỗi tác vụ trừ credit minh bạch.</p></div>
+<div class="catbar"><input id="catsearch" class="inp search" type="search" placeholder="Tìm công cụ…" autocomplete="off"><div class="catfilters" id="catfilters"><button class="on" data-c="all">Tất cả</button>{% for group in apps|map(attribute='manifest.group')|select|unique|list %}<button data-c="{{ group }}">{{ group }}</button>{% endfor %}</div></div>
+<div class="grid" id="catalog-grid">{% for item in apps %}{% set m = item.manifest %}<article class="appcard" data-group="{{ m.group }}" data-name="{{ m.display_name|lower }} {{ m.summary|lower }}"><div class="accent" style="background:{{ m.accent }}"></div><div class="cover" style="background:linear-gradient(135deg,{{ m.accent }}33,{{ m.accent }}0d)"><span class="big">{{ m.icon }}</span>{% if m.badge %}<span class="cbadge badge b-ok"><span class="dot"></span>{{ m.badge }}</span>{% endif %}</div><div class="in"><h2>{{ m.display_name }}</h2><p class="sum">{{ m.summary }}</p><div class="meta">{{ m.route_prefix }}{% if m.requires %} · cần: {{ m.requires|join(', ') }}{% endif %}</div><a href="/login?next={{ m.route_prefix }}" class="btn">Đăng nhập để dùng</a></div></article>{% endfor %}</div>
+<script>(function(){var q=document.getElementById('catsearch'),tabs=document.getElementById('catfilters'),cards=[].slice.call(document.querySelectorAll('.appcard[data-name]')),cur='all';function apply(){var t=(q&&q.value||'').toLowerCase();cards.forEach(function(c){c.hidden=!(cur==='all'||c.dataset.group===cur)||!!t&&c.dataset.name.indexOf(t)<0})}if(q)q.addEventListener('input',apply);if(tabs)tabs.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;cur=b.dataset.c;[].forEach.call(tabs.children,function(x){x.classList.toggle('on',x===b)});apply()})})();</script>
+{% else %}
+<section class="market-shell" aria-label="LTT AI Studio marketplace">
+  <aside class="market-side" aria-label="Điều hướng marketplace"><a class="market-brand" href="/"><span class="market-mark">LTT</span><span>LTT<br><small>STUDIOS</small></span></a><nav class="market-nav"><button class="on" data-home-view="market"><span>⌘</span> Marketplace</button><button data-home-view="mine"><span>◈</span> My Apps</button><a href="/agent/canvas"><span>◎</span> Workspace</a><a href="/agent/canvas"><span>▱</span> Templates</a><a href="/status"><span>◫</span> Resources</a><button disabled title="Cộng đồng sẽ mở khi có không gian thảo luận thật"><span>♧</span> Community</button><a href="/settings"><span>⚙</span> Settings</a></nav></aside>
+  <div class="market-work"><header class="market-top"><button class="market-menu" aria-label="Mở điều hướng">☰</button><label class="market-search"><span>⌕</span><input id="market-search" type="search" placeholder="Tìm ứng dụng, công cụ AI, tính năng…" autocomplete="off"><kbd>Ctrl K</kbd></label><label class="market-sort">⇅ <span>Sắp xếp:</span><select id="market-sort"><option value="popular">Phổ biến</option><option value="new">Mới nhất</option><option value="name">Tên A–Z</option></select></label>{% set balance = so_du_credit(request) %}<a class="market-credit" href="/nap" title="{{ balance if balance is not none else 0 }} credit">✦ <span>Credits</span><b>{{ balance if balance is not none else 0 }}</b><small class="sr-only">{{ balance if balance is not none else 0 }} credit</small><i>+</i></a>{% set account = tai_khoan(request) %}<details class="market-account"><summary><span class="ava">{{ account.initial if account else 'L' }}</span><span><b>{{ account.name if account else 'LTT Studio' }}</b><small>Thành viên</small></span><em>⌄</em></summary><div class="market-account-menu"><a href="/jobs">Việc của tôi</a><a href="/settings">Cài đặt</a>{% if is_admin(request) %}<a href="/admin/">Quản trị</a>{% endif %}<a href="/nap">Nạp credit</a><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}"><button>Đăng xuất</button></form></div></details></header>
+    <main class="market-main">{% if broken %}<div class="alert alert-err"><strong>{{ broken|length }} app nạp lỗi</strong></div>{% endif %}<div class="market-categories" id="market-categories"><button class="on" data-category="all">✦ Tất cả</button><button data-category="AI Video">▹ AI Video</button><button data-category="AI Image">◉ AI Image</button><button data-category="Chat &amp; Prompt">◌ Chat &amp; Prompt</button><button data-category="Automation">⌘ Automation</button><button data-category="Utilities">⊞ Utilities</button></div><div class="market-heading"><div><span class="eyebrow">Khám phá</span><h1 id="market-title">Marketplace</h1></div><p id="market-count">{{ apps|length }} công cụ sẵn sàng</p></div><div class="market-grid" id="market-grid">{% for item in apps %}{% set m = item.manifest %}<article class="market-card" data-name="{{ m.display_name|lower }} {{ m.summary|lower }}" data-category="{{ item.home_category }}" data-popular="{{ item.home_popularity }}" data-new="{{ 1 if m.badge else 0 }}" data-mine="{{ 1 if item.home_used else 0 }}"><div class="market-cover cover-{{ item.home_category|lower|replace(' ', '-')|replace('&', 'and') }}"><span>{{ m.icon }}</span>{% if app_setup.get(m.slug) %}<b class="market-badge warn">cần thiết lập</b>{% elif m.badge %}<b class="market-badge">{{ m.badge }}</b>{% elif not m.enabled %}<b class="market-badge warn">Đang xây</b>{% endif %}</div><div class="market-card-body"><div class="market-card-title"><i>{{ m.icon }}</i><h2>{{ m.display_name }}</h2></div><p>{{ m.summary }}</p>{% if app_setup.get(m.slug) %}<small class="market-setup">Cần thiết lập: {{ app_setup[m.slug]|map(attribute='check')|join(', ') }}</small>{% endif %}<div class="market-card-foot"><span>{{ item.home_category }}</span>{% if m.enabled %}<a href="{{ m.route_prefix }}">▷ Mở app</a>{% else %}<span>Chưa dùng được</span>{% endif %}</div></div></article>{% endfor %}</div><div id="market-empty" class="market-empty" hidden><strong>Chưa có app phù hợp.</strong><span>Hãy đổi từ khóa, nhóm hoặc quay lại Marketplace.</span></div></main></div>
+  <aside class="market-rail" aria-label="Hoạt động của bạn"><section><header><h2>Hoạt động gần đây</h2><a href="/jobs">Xem tất cả</a></header>{% if workspace.recent %}<ol class="activity-list">{% for job in workspace.recent %}<li><span>{{ job.app_icon }}</span><a href="/jobs/{{ job.id }}"><b>{{ job.app_name }}</b><small>{{ job.progress_msg or job.status }}</small></a></li>{% endfor %}</ol>{% else %}<p class="rail-empty">Chưa có hoạt động. Mở một công cụ để bắt đầu.</p>{% endif %}</section><section><header><h2>Jobs đang chạy</h2><a href="/jobs">Xem tất cả</a></header>{% if workspace.running %}<ol class="running-list">{% for job in workspace.running %}<li><div><span>{{ job.app_icon }}</span><b>{{ job.app_name }}</b><strong>{{ job.progress }}%</strong></div><div class="progress"><i style="width:{{ job.progress }}%"></i></div><small>{{ job.progress_msg or job.status }}</small></li>{% endfor %}</ol>{% else %}<p class="rail-empty">Không có job nào đang chạy.</p>{% endif %}</section><section class="rail-credit"><h2>Credit của bạn</h2><p>Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy.</p><a href="/nap">▷ Nạp credit</a></section></aside>
+</section>
+<script>(function(){var grid=document.getElementById('market-grid');if(!grid)return;var search=document.getElementById('market-search'),sort=document.getElementById('market-sort'),empty=document.getElementById('market-empty'),count=document.getElementById('market-count'),title=document.getElementById('market-title'),category='all',view='market',cards=[].slice.call(grid.children);function apply(){var q=(search.value||'').toLowerCase(),shown=0;cards.forEach(function(card){var ok=(category==='all'||card.dataset.category===category)&&(view!=='mine'||card.dataset.mine==='1')&&(!q||card.dataset.name.indexOf(q)>=0);card.hidden=!ok;if(ok)shown++});var key=sort.value;cards.sort(function(a,b){if(key==='name')return a.dataset.name.localeCompare(b.dataset.name);if(key==='new')return Number(b.dataset.new)-Number(a.dataset.new)||a.dataset.name.localeCompare(b.dataset.name);return Number(b.dataset.popular)-Number(a.dataset.popular)||Number(b.dataset.new)-Number(a.dataset.new)||a.dataset.name.localeCompare(b.dataset.name)}).forEach(function(card){grid.appendChild(card)});empty.hidden=shown!==0;count.textContent=shown+' công cụ sẵn sàng';title.textContent=view==='mine'?'My Apps':'Marketplace'}search.addEventListener('input',apply);sort.addEventListener('change',apply);document.querySelectorAll('[data-category]').forEach(function(b){b.addEventListener('click',function(){category=b.dataset.category;document.querySelectorAll('[data-category]').forEach(function(x){x.classList.toggle('on',x===b)});apply()})});document.querySelectorAll('[data-home-view]').forEach(function(b){b.addEventListener('click',function(){view=b.dataset.homeView;document.querySelectorAll('[data-home-view]').forEach(function(x){x.classList.toggle('on',x===b)});apply()})});document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();search.focus()}});apply()})();</script>
+{% endif %}
 {% endblock %}
