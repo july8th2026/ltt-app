@@ -1,0 +1,18 @@
+<section class="card" aria-live="polite"
+  {% if run.status == 'running' %}hx-post="/agent/runs/{{ run.id }}/tick" hx-trigger="load delay:1s" hx-target="#agent-progress" hx-swap="innerHTML" hx-vals='{"csrf_token":"{{ csrf_token }}"}'{% endif %}>
+  <h2>Tiến độ</h2>
+  {% for step in steps %}{% set state = checkpoints.get(step.id, {}) %}
+    <div class="row"><span class="mono">{{ step.id }}</span><span>{{ step.tool }}</span>
+      <span class="badge {% if state.status == 'done' %}badge-ok{% elif state.status == 'error' %}badge-err{% else %}badge-warn{% endif %}">{{ state.status|default('waiting') }}</span>
+      {% if state.attempt is defined %}<span class="muted">attempt {{ state.attempt + 1 }}/{{ step.max_retry|default(0) + 1 }}</span>{% endif %}
+      {% if state.job_ids %}<span class="muted">fan-out {{ state.job_ids|length }}</span>{% endif %}</div>
+      {% if state.status == 'done' and state.outputs %}<details><summary>Xem kết quả {{ step.id }}</summary><pre>{{ state.outputs|tojson(indent=2) }}</pre></details>{% endif %}
+  {% endfor %}
+  {% if run.status == 'running' %}<form method="post" action="/agent/runs/{{ run.id }}/cancel">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn-danger" type="submit">Hủy lượt chạy</button></form>{% endif %}
+  {% if run.status in ['done','error','cancelled'] %}<p><strong>Kết thúc:</strong> {{ run.status }} · thực tế {{ run.actual }} credit.</p>{% endif %}
+</section>
+<section class="card"><h2>Nhật ký quyết định</h2>
+  {% if decisions %}<ol>{% for item in decisions %}<li>{{ item.event|default('sự kiện') }}{% if item.step_id %} · {{ item.step_id }}{% endif %}{% if item.action %} · {{ item.action }}{% endif %}{% if item.credit is defined %} · {{ item.credit }} credit{% endif %}{% if item.actual is defined %} · dùng {{ item.actual }}{% endif %}{% if item.refunded is defined %} · hoàn {{ item.refunded }}{% endif %}</li>{% endfor %}</ol>
+  {% else %}<p class="muted">Chưa có quyết định thực thi.</p>{% endif %}
+</section>

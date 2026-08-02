@@ -13,7 +13,7 @@ Pha 2 (sau): asset:// (ảnh/video lớn + người thật) + kiểm duyệt m�
 """
 from __future__ import annotations
 
-from platform_core.registry import AppManifest, NavEntry
+from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 
 def _cost(params: dict) -> int:
@@ -27,8 +27,13 @@ def _cost(params: dict) -> int:
         duration = int(params.get("duration", 5))
     except (TypeError, ValueError):
         duration = 5
-    return uoc_luong_credit(model, resolution, duration,
-                            bool(params.get("has_video_input")))
+    # GIỮ CHỖ bảo thủ ×1.25: ước tính token calib 1 điểm; token THẬT có thể vượt →
+    # nếu giữ chỗ sát quá, quyết toán (token thật) đẩy số dư ÂM. Đệm 25% để held ≥ thật
+    # trong hầu hết trường hợp; quyết toán vẫn theo token thật (hoàn phần dư).
+    import math
+    est = uoc_luong_credit(model, resolution, duration,
+                           bool(params.get("has_video_input")))
+    return max(1, math.ceil(est * 1.25))
 
 
 MANIFEST = AppManifest(
@@ -44,6 +49,21 @@ MANIFEST = AppManifest(
     job_types=("taovideo.generate",),
     requires=("api",),
     credit_cost=_cost,
+    tools=(ToolSpec(
+        name="video.generate", job_type="taovideo.generate",
+        description="Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn.",
+        params_schema={
+            "prompt": {"type": "string", "required": True, "max_length": 10000},
+            "model": {"type": "model_ref", "category": "video", "providers": ["byteplus"]},
+            "resolution": {"type": "enum", "depends_on": "model", "field": "resolutions"},
+            "duration": {"type": "enum", "depends_on": "model", "field": "durations"},
+            "aspect_ratio": {"type": "enum", "depends_on": "model", "field": "aspects"},
+            "generate_audio": {"type": "bool", "default": True},
+            "refs": {"type": "json"},
+        },
+        returns={"video_key": "video"},
+        verifiable=("technical", "vlm_judge"),
+    ),),
 
     enabled=True,
     group="Video",

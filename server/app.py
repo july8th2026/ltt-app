@@ -9,6 +9,7 @@ worker_main.py.
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from contextlib import asynccontextmanager
 
@@ -44,6 +45,9 @@ _ERROR_MESSAGES = {
 }
 
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60  # 8h idle expiry
+_HASHED_CANVAS_ASSET = re.compile(
+    r"^/static/agent-canvas/assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)$"
+)
 
 
 # ── Maintenance daemon ─────────────────────────────────────────────────────────
@@ -78,6 +82,8 @@ async def _lifespan(app: FastAPI):
 
 def create_app(*, env: dict | None = None) -> FastAPI:
     server_settings = load_server_settings(env)
+    from server.telemetry import init_sentry
+    init_sentry(env)
 
     # FastAPI's interactive docs enumerate every route and parameter. On a
     # public dashboard that is free reconnaissance for an attacker, so they
@@ -115,6 +121,14 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     from server.access_middleware import AccessControlMiddleware
     app.add_middleware(AccessControlMiddleware)
 
+    # Rate-limit per-user cho endpoint app (chống script/lạm dụng) — thêm TRƯỚC
+    # SessionMiddleware để đọc được request.session (giống AccessControl).
+    from server.usage_rate_limit import UsageRateLimitMiddleware
+    app.add_middleware(UsageRateLimitMiddleware)
+
+    from server.request_body_limit import AgentBodyLimitMiddleware
+    app.add_middleware(AgentBodyLimitMiddleware)
+
     app.add_middleware(
         SessionMiddleware,
         secret_key=server_settings.session_secret,
@@ -140,9 +154,25 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # ra lúc production bật chống-bot, đúng lúc không muốn gỡ rối nhất.
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com "
+            "https://static.cloudflareinsights.com; "
             "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; "
+            # img-src thêm R2: app ảnh (chat AI, và app khác) phục vụ ảnh output qua
+            # presigned URL (redirect 302 sang R2) → 'self' chặn cross-origin. Cho phép
+            # host R2 để ảnh hiện được (song song media-src/connect-src của app video).
+            "img-src 'self' data: https://*.r2.cloudflarestorage.com; "
+            # media-src cho app VIDEO (taovideo/autosubvideo/upscale sau này):
+            #   blob:  — đọc metadata video client-side (thời lượng → ước tính credit)
+            #   *.r2…  — phát video output do R2 phục vụ qua presigned URL (redirect
+            #            302 từ /v/{key}); không có dòng này thì default-src 'self'
+            #            chặn cả blob lẫn video R2. Đây là hợp đồng chung của nhóm
+            #            app ffmpeg/gpu, không phải vá riêng một app.
+            "media-src 'self' blob: https://*.r2.cloudflarestorage.com; "
+            # connect-src cho upload THẲNG browser→R2 (presigned PUT, P1): XHR/fetch
+            # tới R2 là connect-src; thiếu thì default-src 'self' chặn. 'self' cho
+            # các fetch nội bộ (/upload-url, /queue, HTMX).
+            "connect-src 'self' https://*.r2.cloudflarestorage.com "
+            "https://cloudflareinsights.com; "
             "frame-src https://challenges.cloudflare.com; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
@@ -160,7 +190,11 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # rộng (max-age mặc định) rồi TRẢ CHO NGƯỜI KHÔNG ĐĂNG NHẬP — origin đã
         # chặn (303) nhưng edge phục vụ bản cache, bỏ qua auth. Mặc định no-store
         # cho mọi thứ ngoài /static/ chặn cả lớp lỗi này.
-        if not request.url.path.startswith("/static/"):
+        if _HASHED_CANVAS_ASSET.fullmatch(request.url.path):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif request.url.path.startswith("/static/agent-canvas/"):
+            response.headers["Cache-Control"] = "no-store"
+        elif not request.url.path.startswith("/static/"):
             response.headers["Cache-Control"] = "no-store"
         # HSTS only outside development — development runs plain HTTP, and
         # a browser that caches HSTS for localhost is painful to undo.
@@ -200,6 +234,10 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     _static = _os.path.join(_os.path.dirname(__file__), "static")
     if _os.path.isdir(_static):
         app.mount("/static", StaticFiles(directory=_static), name="static")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        return RedirectResponse("/static/favicon.svg", status_code=307)
 
     # Mount mọi app trong apps/. Nền tảng không biết trước app nào tồn tại —
     # nó đọc apps/*/manifest.py. Thêm app = thêm folder, không sửa file này.

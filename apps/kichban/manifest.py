@@ -10,7 +10,7 @@ nền tảng (script-src của CSP…) làm test chống hardcode-slug báo nh�
 """
 from __future__ import annotations
 
-from platform_core.registry import AppManifest, NavEntry
+from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 CREDIT_PER_SCRIPT = 3
 
@@ -33,6 +33,18 @@ MANIFEST = AppManifest(
     job_types=("kichban.generate",),
     requires=("api",),
     credit_cost=_cost,
+    tools=(ToolSpec(
+        name="text.script", job_type="kichban.generate",
+        description="Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề.",
+        params_schema={
+            "topic": {"type": "string", "required": True, "max_length": 4000},
+            "duration": {"type": "enum", "source": "prompts/do_dai_video"},
+            "tone": {"type": "enum", "source": "prompts/giong_van"},
+            "audience": {"type": "enum", "source": "prompts/doi_tuong"},
+            "language": {"type": "enum", "source": "prompts/ngon_ngu"},
+        },
+        returns={"script": "json"},
+    ),),
 
     enabled=True,
     group="Kịch bản",

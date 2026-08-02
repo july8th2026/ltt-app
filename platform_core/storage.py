@@ -39,6 +39,17 @@ class StoredFile:
     content_type: str = "application/octet-stream"
 
 
+@dataclass(frozen=True)
+class UploadTarget:
+    """Vé upload TRỰC TIẾP browser→storage (H10/P1). Backend R2 trả presigned
+    PUT: trình duyệt tải file THẲNG lên R2, KHÔNG đi qua tunnel → né trần 100MB
+    của Cloudflare. Backend cục bộ trả None → app tự nhận multipart qua route."""
+    url: str
+    key: str
+    method: str = "PUT"
+    headers: Optional[dict] = None
+
+
 class StorageError(Exception):
     pass
 
@@ -74,6 +85,13 @@ class Storage:
         """URL tải TRỰC TIẾP file (H10). Backend đối tượng (R2) trả **presigned URL**
         để trình duyệt tải thẳng từ CDN — KHÔNG proxy qua tunnel (né trần 100MB).
         Backend cục bộ trả None → app tự serve qua route riêng như hiện tại."""
+        return None
+
+    def put_url(self, key: str, ttl_s: int = DEFAULT_TTL_S,
+                content_type: str = "application/octet-stream") -> Optional[UploadTarget]:
+        """Vé upload TRỰC TIẾP browser→storage (H10/P1). Backend R2 trả presigned
+        PUT (trình duyệt PUT thẳng lên R2, né trần 100MB). Backend cục bộ trả
+        None → app nhận multipart qua route như cũ (chỉ hợp file nhỏ)."""
         return None
 
 
@@ -237,6 +255,18 @@ class R2Storage(Storage):
         return self._c().generate_presigned_url(
             "get_object", Params={"Bucket": self.bucket, "Key": _safe_key(key)},
             ExpiresIn=int(ttl_s))
+
+    def put_url(self, key: str, ttl_s: int = DEFAULT_TTL_S,
+                content_type: str = "application/octet-stream") -> Optional[UploadTarget]:
+        # ContentType đưa vào Params -> presigned URL RÀNG BUỘC client phải gửi
+        # đúng header Content-Type khi PUT, nếu không R2 trả 403 (chống lạm dụng vé).
+        k = _safe_key(key)
+        url = self._c().generate_presigned_url(
+            "put_object",
+            Params={"Bucket": self.bucket, "Key": k, "ContentType": content_type},
+            ExpiresIn=int(ttl_s))
+        return UploadTarget(url=url, key=k, method="PUT",
+                            headers={"Content-Type": content_type})
 
     def download_token(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> str:
         raise StorageError("R2 dùng url_for(), không dùng download_token")

@@ -13,7 +13,7 @@ xuống trình duyệt.
 """
 from __future__ import annotations
 
-from platform_core.registry import AppManifest, NavEntry
+from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 # Số credit cho MỖI ảnh. Tạm cố định; khi cần chính xác theo token thật thì đọc
 # `usageMetadata` Gemini trả về rồi quyết toán ở worker (mẫu: cost.py bên BOT
@@ -45,6 +45,24 @@ MANIFEST = AppManifest(
     job_types=("thumbnail.generate",),
     requires=("api",),          # chỉ gọi API Gemini → chạy được ở cloud
     credit_cost=_cost,
+    tools=(ToolSpec(
+        name="image.thumbnail", job_type="thumbnail.generate",
+        description="Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ.",
+        params_schema={
+            "topic": {"type": "string", "required": True, "max_length": 2000},
+            "title": {"type": "string", "max_length": 200},
+            "subtitle": {"type": "string", "max_length": 200},
+            "text_style": {"type": "enum", "source": "prompts/text_style"},
+            "phong_cach": {"type": "enum", "source": "prompts/phong_cach"},
+            "kieu_trend": {"type": "enum", "source": "prompts/kieu_trend"},
+            "ngon_ngu": {"type": "enum", "source": "prompts/ngon_ngu"},
+            "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
+            "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
+            "count": {"type": "int", "min": 1, "max": 4, "default": 1},
+        },
+        returns={"image_keys": "image[]", "prompt": "text"},
+        verifiable=("vlm_judge",),
+    ),),
 
     enabled=True,
     group="Ảnh",

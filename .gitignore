@@ -42,6 +42,8 @@ temp_videos_test/
 # ─── Build / dist ─────────────────────────────────────────────────────────────
 build/
 dist/
+node_modules/
+*.tsbuildinfo
 *.spec
 *.exe
 
@@ -113,3 +115,11 @@ data/translations/desktop.ini
 
 # Playwright CLI temp
 .playwright-cli/
+
+# App vendor binaries (Real-ESRGAN engine + models) — copy tu BOT GEMINI, khong commit
+apps/*/vendor/
+
+# TAO CLIP NGAN: model cache + weight (tai runtime, khong commit)
+/models/
+*.pt
+cutclipshort/**/*.onnx

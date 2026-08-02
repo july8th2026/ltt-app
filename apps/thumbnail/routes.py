@@ -110,19 +110,35 @@ def preview(
     aspect_ratio: str = Form("16:9"),
     user: str = Depends(require_login),
 ):
-    """Xem trước prompt sẽ gửi (HTMX) — không sinh ảnh, không tốn credit."""
-    from apps.thumbnail.jobs import build_prompt
+    """Xem trước LỰA CHỌN sẽ dùng (HTMX) — không sinh ảnh, không tốn credit.
+
+    KHÔNG trả về prompt đã ghép (đó là IP prompt-engineering của nền tảng — dev sẽ
+    copy). Chỉ hiện tóm tắt các lựa chọn người dùng cho dễ đối chiếu (anti-reverse V1).
+    """
     from markupsafe import escape
+    from platform_core import prompt_fragments as pf
+    from apps.thumbnail.jobs import _PROMPTS_DIR
     if not topic.strip():
         return HTMLResponse('<span class="dim">Nhập chủ đề rồi bấm “Xem trước”.</span>')
-    prompt = build_prompt(
-        topic, title=title, subtitle=subtitle,
-        text_style=_clean_choice("text_style", text_style),
-        phong_cach=_clean_choice("phong_cach", phong_cach),
-        kieu_trend=_clean_choice("kieu_trend", kieu_trend),
-        ngon_ngu=_clean_choice("ngon_ngu", ngon_ngu),
-        aspect_ratio=aspect_ratio if aspect_ratio in _ASPECTS else "16:9")
-    return HTMLResponse(f'<pre class="prompt-preview">{escape(prompt)}</pre>')
+
+    def _lbl(group, val):
+        v = _clean_choice(group, val)
+        try:
+            return pf.load_labels(_PROMPTS_DIR, group).get(v, v)
+        except Exception:  # noqa: BLE001
+            return v
+
+    rows = [("Chủ đề", topic.strip()[:2000]), ("Tiêu đề", title.strip()[:200]),
+            ("Phụ đề", subtitle.strip()[:200]),
+            ("Kiểu chữ", _lbl("text_style", text_style)),
+            ("Phong cách", _lbl("phong_cach", phong_cach)),
+            ("Kiểu trend", _lbl("kieu_trend", kieu_trend)),
+            ("Ngôn ngữ", _lbl("ngon_ngu", ngon_ngu)),
+            ("Tỉ lệ", aspect_ratio if aspect_ratio in _ASPECTS else "16:9")]
+    html = "".join(
+        f'<div><span class="dim">{escape(k)}:</span> {escape(str(v))}</div>'
+        for k, v in rows if v)
+    return HTMLResponse(f'<div class="preview-summary">{html}</div>')
 
 
 @router.post("/queue", response_class=HTMLResponse)
@@ -165,8 +181,10 @@ def queue(
                        "dùng (không phải quản trị nội bộ) để chạy job.",
                        jobs=_jobs_cua_toi(request), status_code=400)
 
+    # Cap do dai input (nguon cap user_input 2000) — chong phi token tren gia phang.
     params = {
-        "topic": topic.strip(), "title": title.strip(), "subtitle": subtitle.strip(),
+        "topic": topic.strip()[:2000], "title": title.strip()[:200],
+        "subtitle": subtitle.strip()[:200],
         "text_style": _clean_choice("text_style", text_style),
         "phong_cach": _clean_choice("phong_cach", phong_cach),
         "kieu_trend": _clean_choice("kieu_trend", kieu_trend),
@@ -196,7 +214,8 @@ def queue(
         try: next(gen)
         except StopIteration: pass
 
-    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+    # Ve trang app (luoi ket qua) thay vi /jobs/{id} (chi hien JSON tho).
+    return RedirectResponse(MANIFEST.route_prefix, status_code=303)
 
 
 @router.get("/image/{key:path}", response_class=StreamingResponse)

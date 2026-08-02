@@ -19,11 +19,13 @@ Thư mục này vừa là **mã nguồn** vừa là **bộ cài**.
 | 6 | `02_LENH_CHO_CLAUDE.md` | Câu lệnh mẫu để giao việc cho Claude |
 | 7 | `03_THEM_APP_MOI.md` | Thêm một app |
 | 8 | `04_CLOUDFLARE_TUNNEL.md` | Dựng Tunnel, xử lý sự cố mạng |
+| 9 | **`AGENT_LTT/00_AGENT_BAT_DAU.md`** | **AI Agent LTT** — mở phiên làm việc về agent thì đọc file đó trước, nó chỉ đường tiếp. Kèm giao thức **đo trạng thái code thật** trước khi tin tài liệu. |
+| 10 | `CONG_THUC_DI_TRU_APP.md` + `KE_HOACH_DI_TRU_MODULE.md` | Di trú module BOT GEMINI → app: công thức 8 bước + backlog theo đợt |
 | — | `_luutru/` | Tài liệu đã ngừng dùng. **Đừng làm theo.** Chỉ để tra lý do lịch sử. |
 
 ---
 
-## Trạng thái thật — cập nhật 2026-07-31
+## Trạng thái thật — cập nhật 2026-08-02
 
 Bảng này phải đúng. Nếu bạn thấy nó sai, sửa ngay chứ đừng để đó — một bảng
 trạng thái sai còn tệ hơn không có bảng nào.
@@ -40,12 +42,13 @@ trạng thái sai còn tệ hơn không có bảng nào.
 | Trang admin (sqladmin) | ✅ xong (H3-admin) |
 | Cloudflare Tunnel LIVE `app.lttstudios.com` + Turnstile | ✅ xong (H0.1) |
 | **Cốt lõi vận hành: catalog công khai + SSO + login return-to** | ✅ xong (H6) |
+| **LTT Agent AI + React Canvas + 7 tool ảnh/text/video/GPU** | ✅ xong, production public (H12 P0–P13) |
 | Tool thật đầu tiên — `thumbnail` (Gemini Image, tính credit) | ✅ xong (H5) |
 | App socialbot (Facebook + TikTok) | ⏸️ **đóng băng** — giữ chạy, không phát triển thêm |
 | App demo (nghiệm thu hạ tầng, tốn 0 đồng) | ✅ xong |
 | Bộ cài 4 script + cập nhật + rollback + lịch backup | ✅ xong |
 | Kho mã nguồn trong git | ✅ từ 2026-07-31 |
-| Bộ test | ✅ 1.530 pass, 1 skip |
+| Bộ test | ✅ 1.849 pass, 8 skip, 23 subtest |
 
 ### Mô hình vận hành (Q30 / H6)
 

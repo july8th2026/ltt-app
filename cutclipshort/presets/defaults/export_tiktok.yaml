@@ -1,0 +1,15 @@
+# Export Profile: TikTok
+
+name: tiktok
+display_name: TikTok
+aspect_ratio: "9:16"
+width: 1080
+height: 1920
+max_duration_sec: 60.0
+
+render:
+  crf: "18"
+  pixel_format: yuv420p
+  audio_bitrate: 192k
+  audio_sample_rate: 44100
+  audio_channels: 2

@@ -52,6 +52,7 @@ EXCLUDED_DIR_NAMES = {
     "build",
     "dist",
     "logs",
+    "node_modules",
     "profiles",
     "secrets",
     "temp_videos",
@@ -60,6 +61,10 @@ EXCLUDED_DIR_NAMES = {
     # source; chua nhieu chuoi hex 32 ky tu tu dashboard lam trip may quet.
     ".playwright-mcp",
     ".claude",
+    # Engine vendored tu D:/FULL AUTO VIDEO (Tao Clip ngan). Ma van hanh cua ben thu
+    # ba (khong chua secret cua ta — luong lam-file-truc-tiep khong can key); co chuoi
+    # hex 32 ky tu trong VI DU tai lieu (sha256 rut gon) lam trip may quet.
+    "cutclipshort",
 }
 
 EXCLUDED_DIR_PREFIXES = (".backup_",)

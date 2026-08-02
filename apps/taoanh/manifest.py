@@ -11,7 +11,7 @@ UI/tính năng, chỉ đổi vỏ + hạ tầng (key qua APIKEYS, lưu qua stora
 """
 from __future__ import annotations
 
-from platform_core.registry import AppManifest, NavEntry
+from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 CREDIT_PER_IMAGE = 5
 
@@ -38,6 +38,18 @@ MANIFEST = AppManifest(
     job_types=("taoanh.generate",),
     requires=("api",),
     credit_cost=_cost,
+    tools=(ToolSpec(
+        name="image.generate", job_type="taoanh.generate",
+        description="Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do.",
+        params_schema={
+            "prompt": {"type": "string", "required": True, "max_length": 4000},
+            "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
+            "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
+            "count": {"type": "int", "min": 1, "max": 4, "default": 1},
+        },
+        returns={"image_keys": "image[]", "prompt": "text"},
+        verifiable=("vlm_judge",),
+    ),),
 
     enabled=True,
     group="Ảnh",

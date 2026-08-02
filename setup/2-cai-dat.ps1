@@ -67,6 +67,9 @@ Head 'Copy ma nguon'
 # (loi "being used by another process"). Script se cai lai + khoi dong o cuoi.
 Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
 Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
+# Sidecar Codex cung co AppDirectory = app\ -> phai dung truoc khi Move-Item, neu khong
+# python.exe cua no khoa thu muc app\ va bo cai that bai (loi Move-Item IOException).
+Stop-Service 'LTTStudioCodex' -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 # Giu ban truoc de rollback duoc.
 if (Test-Path $appDir) {
@@ -85,6 +88,15 @@ if ($LASTEXITCODE -ge 8) { throw "robocopy loi (ma $LASTEXITCODE)" }
 $global:LASTEXITCODE = 0
 $n = (Get-ChildItem $appDir -Recurse -File).Count
 Ok "Da copy $n file vao $appDir"
+
+# Canvas is prebuilt in the release with pinned Node 22.12.0. Production does
+# not run Node/Vite and must never depend on a development server.
+$canvasManifest = Join-Path $appDir 'server\static\agent-canvas\.vite\manifest.json'
+$canvasMeta = Join-Path $appDir 'server\static\agent-canvas\build-meta.json'
+if (-not (Test-Path $canvasManifest) -or -not (Test-Path $canvasMeta)) {
+    throw 'Release thieu Agent Canvas production bundle'
+}
+Ok 'Agent Canvas production bundle da co (khong can Node tren server)'
 
 Head 'Tai nguyen nguon di kem code'
 # data\translations va data\assets la TAI NGUYEN NGUON (ban dich giao dien,
@@ -109,6 +121,22 @@ if (-not (Test-Path $venvPy)) {
 & $venvPy -m pip install -r (Join-Path $appDir 'requirements.txt') --quiet
 & $venvPy -m pip install -r (Join-Path $appDir 'requirements-server.txt') --quiet
 Ok 'Da cai thu vien'
+
+# TAO CLIP NGAN (engine cutclipshort) can torch GPU. KHONG de trong requirements vi
+# pip keo ban CPU tu PyPI; card Blackwell (RTX 50xx) BAT BUOC torch cu128. Chi cai khi
+# torch chua co / chua thay CUDA (tranh tai lai ~2.5GB moi lan deploy).
+& $venvPy -c "import importlib.util,sys; sys.exit(0) if importlib.util.find_spec('torch') else sys.exit(1)" 2>$null | Out-Null; $hasTorch = ($LASTEXITCODE -eq 0)
+$cudaOk = $false
+if ($hasTorch) { & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null; $cudaOk = ($LASTEXITCODE -eq 0) }
+if ($cudaOk) {
+    Ok 'torch CUDA da san sang - GIU NGUYEN'
+} else {
+    Note 'Cai torch cu128 (Blackwell) - lan dau ~2.5GB, cho chut'
+    & $venvPy -m pip install "torch>=2.7" "torchaudio>=2.7" "torchvision>=0.22" --index-url https://download.pytorch.org/whl/cu128 --quiet
+    & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null
+    if ($LASTEXITCODE -eq 0) { Ok 'Da cai torch cu128 (CUDA OK)' }
+    else { Note 'CANH BAO: torch chua thay CUDA - Tao Clip ngan se chay CPU rat cham (kiem tra driver NVIDIA / dung card Blackwell can cu128)' }
+}
 
 Head 'Cau hinh van hanh'
 $cfg = Join-Path $dataDir 'config.json'
@@ -151,6 +179,18 @@ if (Test-Path $envFile) {
     )
     Write-NoBom $envFile ($lines -join "`r`n")
     Ok 'Da sinh app.env voi bi mat ngau nhien'
+}
+
+# Bao dam co token cho SIDECAR Codex (CHAT AI STUDIO). Idempotent: chi them neu thieu.
+# Token bao ve dich vu loopback LTTStudioCodex (chi web/worker cung may goi duoc).
+$envTxt = Get-Content $envFile -Raw
+if ($envTxt -notmatch 'LTT_CODEX_SIDECAR_TOKEN=') {
+    $codexTok = & $venvPy -c "import secrets;print(secrets.token_urlsafe(32))"
+    $add = "LTT_CODEX_SIDECAR_TOKEN=$codexTok`r`nLTT_CODEX_SIDECAR_PORT=8110`r`nCODEX_SERVER_HOME=$dataDir\codex-home"
+    [IO.File]::AppendAllText($envFile, "`r`n" + $add + "`r`n", (New-Object Text.UTF8Encoding($false)))
+    Ok 'Da them LTT_CODEX_SIDECAR_TOKEN + port + CODEX_SERVER_HOME vao app.env'
+} else {
+    Ok 'LTT_CODEX_SIDECAR_TOKEN da co - GIU NGUYEN'
 }
 
 Head 'PostgreSQL'
@@ -334,8 +374,33 @@ if ($existingW) {
 & $nssmExe set $WorkerServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
 Ok 'Da nap bi mat vao moi truong worker'
 
+Head 'Dich vu Sidecar Codex (CHAT AI STUDIO)'
+# SIDECAR giu Codex app-server song (stateful) tach khoi web/worker. Chi nghe loopback,
+# bao ve bang LTT_CODEX_SIDECAR_TOKEN. Chi CHAT + anh (sandbox read-only).
+$CodexServiceName = 'LTTStudioCodex'
+$existingC = Get-Service $CodexServiceName -ErrorAction SilentlyContinue
+if ($existingC) {
+    if ($existingC.Status -eq 'Running') { Stop-Service $CodexServiceName -Force; Start-Sleep -Seconds 2 }
+    Ok "Dich vu $CodexServiceName da co - cap nhat cau hinh"
+} else {
+    & $nssmExe install $CodexServiceName $venvPy 'codex_sidecar_main.py' | Out-Null
+    Ok "Da tao dich vu $CodexServiceName"
+}
+& $nssmExe set $CodexServiceName AppDirectory   $appDir | Out-Null
+& $nssmExe set $CodexServiceName AppStdout      (Join-Path $logs 'codex-out.log') | Out-Null
+& $nssmExe set $CodexServiceName AppStderr      (Join-Path $logs 'codex-err.log') | Out-Null
+& $nssmExe set $CodexServiceName AppRotateFiles 1 | Out-Null
+& $nssmExe set $CodexServiceName AppRotateOnline 1 | Out-Null
+& $nssmExe set $CodexServiceName AppRotateBytes 10485760 | Out-Null
+& $nssmExe set $CodexServiceName Start          SERVICE_AUTO_START | Out-Null
+& $nssmExe set $CodexServiceName AppExit Default Restart | Out-Null
+& $nssmExe set $CodexServiceName AppRestartDelay 10000 | Out-Null
+& $nssmExe set $CodexServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
+Ok 'Da nap bi mat vao moi truong sidecar codex'
+
 Head 'Khoi dong'
 Start-Service $ServiceName
+Start-Service $CodexServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 6
 $svc = Get-Service $ServiceName
 if ($svc.Status -ne 'Running') {

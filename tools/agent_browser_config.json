@@ -1,0 +1,8 @@
+{
+  "job_delay_seconds": 1,
+  "max_retries": 1,
+  "tiktok_poll_interval_s": 5,
+  "tiktok_upload_timeout_s": 60,
+  "tiktok_request_timeout_s": 10,
+  "sheet_id": "agent-browser-test"
+}

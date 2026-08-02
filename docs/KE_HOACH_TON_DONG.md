@@ -18,7 +18,7 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
 | 2.1 | **T0 — ToolSpec vào hợp đồng app** (AGENT_LTT) | M | — | Mỗi app port KHÔNG có T0 = 1 món nợ T0b. Đã 3 app (A1+A2) → nợ đang lớn. Làm sớm thì nợ dừng + mọi app tương lai tự agent-ready |
-| 2.2 | **Worker chạy song song job video dài** | M | — | Xác minh: `run_forever` **đơn luồng, 1 tiến trình** → video poll 1–5' CHẶN mọi job khác. `claim()` đã `SKIP LOCKED` nên chạy N worker AN TOÀN. Fix = NSSM chạy 2–3 worker. Không gấp (tiền-ra-mắt) nhưng cần trước khi có tải thật |
+| 2.2 | **Worker chạy song song job video dài (= P3)** ◄ NÂNG ƯU TIÊN sau khi có UPSCALE | M | — | Xác minh: `run_forever` **đơn luồng, 1 tiến trình** → job upscale (hàng chục phút GPU) CHẶN mọi job khác (cả thumbnail/taoanh nhanh). `claim()` đã `SKIP LOCKED` nên chạy N worker AN TOÀN. Fix = NSSM chạy 2–3 worker (+ tuỳ chọn định tuyến theo `requires`). **Cần trước khi có tải thật** — giờ đã có 3 app video (taovideo/autosub/upscale). |
 
 ### Nhóm 3 — Hoàn thiện app đang có (parity + doanh thu) — **P1**
 | # | Việc | Effort | Chặn | Ghi chú |
@@ -31,10 +31,11 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 ### Nhóm 4 — Mở nhóm tool mới (cần hạ tầng) — **P2**
 | # | Việc | Effort | Chặn | Ghi chú |
 |---|---|---|---|---|
-| 4.1 | **H10 — R2** | — | — | ✅ **XONG 2026-08-01**: R2Storage + url_for presigned + serve thẳng CDN; creds R2 + ModelArk AK/SK import từ BOT GEMINI; kiểm THẬT trên bucket fb-video-storage. Còn **upload thẳng browser→R2** (presigned PUT) làm khi Đợt B cần. |
+| 4.1 | **H10 — R2** | — | — | ✅ **XONG 2026-08-01**: R2Storage + url_for presigned + serve thẳng CDN; creds R2 + ModelArk AK/SK import từ BOT GEMINI; kiểm THẬT trên bucket fb-video-storage. **Upload thẳng browser→R2 (presigned PUT) = XONG code (P1, 2026-08-01)** — dùng cho autosubvideo. |
+| 4.1b | **Bật CORS bucket R2** (user thao tác) | S (user) | — | Upload THẲNG browser→R2 cần bucket cho phép PUT/GET từ `https://app.lttstudios.com`. Token nhập từ BOT GEMINI là object-scoped → `PutBucketCors` AccessDenied. **Bật ở Cloudflare dashboard** (R2 → bucket `fb-video-storage` → Settings → CORS) hoặc cấp token có quyền admin bucket. Chưa bật: app tự lùi về upload multipart qua máy chủ (chỉ hợp ≤90MB do trần 100MB CF). CORS rule: AllowedOrigins=[app origin], Methods=[GET,PUT,HEAD], Headers=[*], ExposeHeaders=[ETag]. |
 | 4.2 | **Định tuyến job GPU** (worker theo `requires=gpu`) | M | — | Mở Đợt C |
-| 4.3 | Đợt B (ffmpeg): video_chain → auto_sub_video → concat_pro | L | 4.1 | |
-| 4.4 | Đợt C (gpu): video_upscale → cut_clip_short | L | 4.1 + 4.2 | |
+| 4.3 | Đợt B (ffmpeg): ~~auto_sub_video~~ ✅ (autosubvideo XONG 2026-08-01) · còn video_chain, concat_pro | L | 4.1 | auto_sub XONG + nghiệm thu thật; hạ tầng P1/P4/P5 dùng lại được |
+| 4.4 | Đợt C (gpu): ~~video_upscale~~ ✅ · ~~cut_clip_short~~ ✅ (taoclipngan XONG 2026-08-02, nguồn D:/FULL AUTO VIDEO) | L | 4.1 | Cả 2 app GPU xong + nghiệm thu thật. torch cu128 + whisper/YOLO chạy RTX 5060 Ti. **P3 (2.2) CÀNG cấp** — giờ có 4 app video + 2 app GPU dài chặn worker đơn |
 | 4.5 | gemini_api_chat (giá trị thấp) · Prompt Studio 28k (dự án riêng) | XL | — | Cân nhắc sau |
 
 ### Nhóm 5 — AI Agent (track lớn riêng — Q37 chờ duyệt) — **P2/P3**
@@ -58,7 +59,17 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 |---|---|---|---|
 | 7.1 | FK constraints (hoãn từ H7) | M | toàn vẹn dữ liệu |
 | 7.2 | e2e đa tiến trình (worker+web) | M | test coverage |
-| 7.3 | WAF / rate-limit ở edge Cloudflare | S | chống lạm dụng |
+| 7.3 | WAF / rate-limit ở edge Cloudflare (BẠN bật ở dashboard) | S (user) | **App rate-limit per-user ĐÃ làm** (server/usage_rate_limit.py 2026-08-02); còn edge WAF+Bot-Fight+rate-rule per-IP — xem AUDIT_BAO_MAT_CHONG_DICH_NGUOC §WAF |
+| 7.4 | **Anti-reverse PA-4** (khi có doanh thu): watermark ẩn output + phát hiện hành vi script + ToS cấm scrape/bán lại | M | từ AUDIT_BAO_MAT_CHONG_DICH_NGUOC |
+
+### Nhóm 8 — Rà soát app 2026-08-02: P2 hoãn (từ `docs/AUDIT_APPS_2026-08-02.md`)
+| # | Việc | App | Ghi chú |
+|---|---|---|---|
+| 8.1 | CSRF `/upload-url` | autosub/upscale/taoclip | low-impact (cross-origin không đọc được URL); thêm cho đồng bộ |
+| 8.2 | Cap cửa sổ range `bytes=0-` (RAM) | các app serve video | prod R2 né qua 302; chỉ ảnh hưởng deploy Local |
+| 8.3 | Cap thời lượng/size nguồn (chống chiếm worker GPU) | upscale/taoclip/autosub | bản chất là **P3 worker đa tiến trình** (2.2) |
+| 8.4 | Parity fast-follow | nhiều | batch `---` (taoanh/taoanh); thumbnail per-model aspect + ref/Imagen; autosub /preview + bitrate_mode + validators/templates/custom-style/zip; kichban cascade + htmx cache-bust; taovideo seed/role/@handle/key-rotation/sanitize; upscale thermal/VRAM guard; taoclip health_check + score 0..100 + 3 genre; chatai markdown + custom-instr UI + friendly quota |
+| 8.5 | Giữ form khi lỗi (UX) | taoanh | repopulate context |
 
 ## QUYẾT ĐỊNH 2026-08-01 (người dùng)
 

@@ -14,6 +14,512 @@
 
 ---
 
+## 2026-08-02 — H12 P13 hoàn tất production, rollout public
+
+Người dùng đã cấp quyền production rõ ràng. Đã backup đầy đủ sang
+`D:\LTTBackups` gồm `pg_dump` và secret archive được bảo vệ, build release 1.0.0
+qua secret gate rồi cập nhật `C:\LTTPlatform`. Migration AgentRun + workflow
+Canvas chạy thành công trên PostgreSQL production; web/worker/Codex sidecar và
+Cloudflare Tunnel đều chạy, cổng 8100 chỉ nghe loopback, health loopback và edge
+đều `ready`. Script update được sửa để dừng/khởi động cả `LTTStudioCodex`, vì
+sidecar từng giữ khóa thư mục release làm lượt deploy đầu dừng an toàn trước khi
+đổi binary. Script nghiệm thu được đồng bộ Q29/Q30: production phải vô hiệu
+admin-env và trang `/` là catalog công khai.
+
+Đã thêm rollout bốn mức theo Q44 và thực thi đủ `off → admin → allowlist →
+public`. Feature-off trả 503 đúng mong đợi. Admin canary production qua Cloudflare
+tạo Canvas `text.script`, validate, quote 7, approve, executor chạy `done`, actual
+7. Một user thường trong allowlist và một user thường không allowlist ở mức public
+đều tạo run thành công; hai run kiểm quyền được cancel, settlement/refund giữ đúng.
+Metrics production cuối: 3 run (1 done, 2 cancelled), estimated 21, actual 15,
+refund 6. Không dùng dữ liệu người dùng thật.
+
+Playwright phát hiện CSP chặn Cloudflare Web Analytics; đã chỉ mở đúng
+`static.cloudflareinsights.com` cho script và `cloudflareinsights.com` cho
+connect, có regression test. Endpoint metrics trực tiếp còn làm browser gọi
+`/favicon.ico` 404; đã redirect về asset SVG có sẵn và thêm test. Lượt browser
+cuối trên Canvas public và metrics admin: console 0 error/0 warning, network 0
+failed request không mong đợi. Các file storage state chứa cookie nằm ngoài repo
+và được xóa sau nghiệm thu.
+
+**Lệnh đã chạy và kết quả thật:**
+- `powershell ... backup.ps1 -IncludeSecrets -BackupDir D:\LTTBackups` → PASS,
+  archive đọc được, `pg_dump` production PASS.
+- `python tools\build_release.py` → release 1.0.0, 1.127 file, 75,5 MB,
+  secret scan trong archive 0.
+- `deploy\windows\update.ps1 ...` → migration production PASS, health production
+  `ready`; previous release được giữ tại `C:\LTTPlatform\app.previous`.
+- `setup\4-nghiem-thu.ps1` → 0 lỗi; 1 cảnh báo cấu hình Google cũ không chặn
+  Agent; 11 app nạp `ok`, `/docs` 404, tunnel/loopback PASS.
+- Playwright CLI production edge → rollout và Canvas E2E như trên; lượt cuối
+  console **0/0**, network **0 failed request**.
+- Frontend: typecheck/build PASS, 13 test PASS; strict app lint 10 app 0/0.
+- `python -m pytest -q` → **1849 passed, 8 skipped, 23 subtests passed**,
+  1 warning deprecation, 474,97s.
+- `python tools\scan_source_secrets.py` → **0 finding, PASS**.
+
+**Rollback:** đặt `LTT_AGENT_CANVAS_RUN_ROLLOUT=off`, nạp lại env và restart web;
+drain/cancel/settle run active trước khi dùng `app.previous`. Schema và audit giữ
+nguyên để forward-fix.
+
+## 2026-08-02 — H12 P13: hardening dev/staging PASS, production còn khóa
+
+Đã harden phần được phép triển khai: plan/approve/create-run dùng limiter chặt;
+giới hạn 3 run active/user được serialize bằng row lock; caps sẵn có giữ 32 step,
+fanout 4, retry 2, JSON 64 KiB/depth 20. Validator chặn URL/protocol, path và
+command/shell do plan cấp. Production mặc định không cho tạo run Canvas nếu chưa
+bật rõ `LTT_AGENT_CANVAS_RUN_ENABLED`; tick/cancel vẫn hoạt động để drain an toàn.
+Request POST/PUT/PATCH dưới `/agent/` còn bị chặn sớm ở 128 KiB trước endpoint;
+cap kiểm cả `Content-Length` lẫn số byte body thực, không phụ thuộc client khai đúng.
+
+Correlation ID của request được ghi vào workflow-source decision rồi nối tự nhiên
+qua run/step/child job. Admin audit chỉ trả user hash, status, cost, step count và
+tên event; không trả goal/plan/params/PII. Metrics tổng hợp status, verify/retry,
+estimated/actual ratio và refund. Admin cancel cần login admin + CSRF và dùng chính
+budget settlement. Sentry boundary deny-by-default lọc request/body, prompt/goal,
+email, token, cookie, credential và giới hạn chuỗi trước khi gửi; app factory đã
+nối SDK khi có `LTT_SENTRY_DSN`, luôn đặt `send_default_pii=False`. Metrics live
+bổ sung planning latency/error và approval rate; metrics bền bổ sung run success
+và worker wait theo capability.
+
+Failure/load drill cô lập: 10 run của 10 user tick đồng thời tạo đúng 10 dedupe key;
+không submit trùng. PostgreSQL thật migration head→down→up, 6 concurrency test và
+dump/restore AgentRun + workflow PASS. Các gate R2/provider/retry/GPU starvation
+được chạy lại trong bộ P13 hẹp. Feature-off drill trả 503 cho run mới nhưng workflow
+vẫn đọc được; đường cancel/settle được test.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q <18 file gate P13>` → **212 passed, 6 skipped**.
+- `powershell -ExecutionPolicy Bypass -File tools\test_agent_p3_postgres.ps1`
+  → **PASS**, migration up/down/up, 6 concurrency test, workflow/run restore.
+- Playwright CLI canary cô lập sau middleware/telemetry: prompt→Canvas→approve→done,
+  node `Hoàn tất`, console **0 error/0 warning**, API toàn 2xx; fixture đã dừng.
+- `python -m pytest -q` → **1847 passed, 8 skipped, 23 subtests passed**,
+  1 warning deprecation, 465.22s.
+- `python tools\scan_source_secrets.py` → **869 file, 129.362 dòng,
+  0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **10 app, 0 ERROR, 0 WARN, PASS**.
+- Frontend P13: typecheck/build PASS, **13 test**, npm audit 0; bundle
+  386,48 KiB raw / 122,53 KiB gzip.
+
+**Chưa chạy / không được tuyên bố PASS production:** migration production,
+health ready production, browser qua Cloudflare edge, canary/internal/public rollout
+và DNS. Đây là hành động production bị quy tắc dự án khóa khi chưa có yêu cầu rõ
+ràng; vì vậy P13 vẫn 🟡 và H12 chưa được tuyên bố hoàn tất/public.
+
+**Rollback đang sẵn sàng:** để `LTT_AGENT_CANVAS_RUN_ENABLED=0`, chặn run mới,
+drain/cancel/settle run active, giữ schema/workflow/run audit; chỉ rollback binary
+sau khi không còn run active.
+
+**Việc tiếp theo:** khi có lệnh production rõ ràng, chạy canary theo thứ tự migration
+→ ready health → admin-only account → browser Cloudflare → metrics → internal → public.
+
+## 2026-08-02 — H12 P12: Canvas nối executor, đủ video/GPU
+
+Đã nối prompt tiếng Việt → Canvas draft → sửa/validate/requote → snapshot đúng
+revision thành AgentRun bất biến → phê duyệt đúng version + SHA-256 quote hash →
+hold credit → tick executor → trạng thái node/artifact/actual/refund. Stale revision
+hoặc quote trả 409; ownership chéo 404; thiếu credit 402. “Chạy lại” luôn tạo run
+mới từ Plan snapshot của run cũ, không đọc draft đã sửa. Cancel quyết toán phần đã
+dùng. Output storage key không đưa thành URL tuỳ ý: API artifact kiểm ownership,
+R2 redirect sang presigned GET ngắn hạn, local stream private/no-store.
+
+Test production-like dựng một Canvas duy nhất có đủ 7 ToolSpec đang chạy:
+`text.script`, hai tool ảnh, `video.generate`, `video.subtitle`, `video.upscale`,
+`video.short_clips`; có fan-out và ba nhánh video/GPU. Lặp tick như worker restart
+không tạo child trùng, đủ bảy tool hoàn tất, actual không vượt quote và refund khớp.
+Gate hẹp còn chạy R2 presigned PUT/GET, GPU capability routing và verifier retry.
+
+Playwright fixture cô lập tại `127.0.0.1:8118`: prompt → AI dựng Canvas → quote
+→ approve 7 credit → run done, node hiện “Hoàn tất”, actual 7; Chạy lại tạo run
+mới; cancel giữa run trả `cancelled`, actual 4. User 3 credit bị chặn đúng 402.
+Browser đã phát hiện và sửa hai lỗi thật: nút approve bị Palette che do toolbar
+tràn; frontend mới làm trắng Canvas khi backend rolling cũ chưa có `artifacts`.
+Luồng hợp lệ cuối console **0 error/0 warning**, network toàn 2xx; 402 chỉ xuất
+hiện trong ca thiếu credit cố tình. Fixture/browser đã dừng; không production/DNS.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_80_r2_storage.py tests/test_88_agent_toolspec_apps.py tests/test_92_agent_executor.py tests/test_93_agent_verifier.py tests/test_97_agent_workflow_api.py tests/test_98_agent_canvas_run.py`
+  → **64 passed**.
+- `npm run typecheck`, `npm test -- --run`, `npm run build` → PASS; **4 file,
+  13 test PASS**; bundle 386,48 KiB raw / 122,53 KiB gzip.
+- `npm audit --omit=dev` → **0 vulnerability**.
+- `python -m pytest -q` → **1835 passed, 8 skipped, 23 subtests passed**,
+  1 warning deprecation, 453.42s.
+- `python tools\scan_source_secrets.py` → **855 file, 128.052 dòng,
+  0 finding, PASS**.
+- `python tools\lint_app_contract.py` → **10 app, 0 ERROR, 0 WARN, PASS**.
+
+**Rollback:** tắt nút/API tạo run từ Canvas; drain/cancel/settle run active; giữ
+workflow xem/export và các run audit. Chưa commit riêng vì worktree liên phase
+đang bẩn, tránh gom nhầm thay đổi ngoài phạm vi.
+
+**Việc tiếp theo:** P13 hardening, failure/load/restore drills và rollout gate.
+Không triển khai production/DNS nếu chưa có yêu cầu rõ ràng.
+
+## 2026-08-02 — H12 P11: node editor Canvas đầy đủ
+
+Đã hoàn thiện editor React Flow dùng palette động từ ToolSpec: drag/drop, node
+tuỳ biến, typed handles, Inspector sinh từ schema và biến thể phụ thuộc model,
+pan/zoom/minimap, đa chọn, copy/paste/duplicate/delete, connect/disconnect,
+undo/redo giới hạn 50, auto-layout, autosave optimistic revision, conflict,
+offline retry và lưu viewport. Mobile <=640px là viewer read-only có chủ đích.
+Giá và trạng thái validation lấy từ server; browser không chạy tool hay giữ
+provider/storage secret. Bundle cuối 383,64 KiB raw / 121,83 KiB gzip, dưới
+ngưỡng 500/150 KiB.
+
+Playwright fixture cô lập trên `127.0.0.1:8118` đã kiểm tra desktop/mobile dark,
+keyboard-only tạo và nối graph, add/config/connect/move/delete/undo/redo,
+save/reload giữ đúng viewport, hai tab stale revision trả 409, offline tự lưu lại,
+và graph 100 node/150 edge vẫn tương tác trong 100 ms đo tại client. Drag palette
+tạo node thật. Browser gate cuối phát hiện lựa chọn cạnh còn giữ node selection;
+đã sửa ưu tiên cạnh và tái hiện đúng 3 node/1 cạnh → xóa thành 3/0 → undo 3/1.
+Lượt hợp lệ cuối console **0 error/0 warning**, network API đều 2xx. Fixture và
+mọi browser session đã dừng; không dùng production, provider thật hoặc DNS.
+
+**Lệnh đã chạy và kết quả thật:**
+- `npm run typecheck`, `npm test -- --run`, `npm run build` → PASS; **4 file,
+  12 test PASS**; production build PASS.
+- `npm audit --omit=dev` → **0 vulnerability**.
+- `python -m pytest -q tests/test_95_agent_canvas_build.py tests/test_96_agent_workflows.py tests/test_97_agent_workflow_api.py`
+  → **16 passed**.
+- `python -m pytest -q` → **1832 passed, 8 skipped, 23 subtests passed**,
+  1 warning deprecation, 444.25s.
+- `python tools\scan_source_secrets.py` → **824 file, 124.308 dòng,
+  0 finding, PASS**.
+- `python tools\lint_app_contract.py` → **10 app, 0 ERROR, 0 WARN, PASS**.
+
+**Rollback:** tắt điều hướng/feature Canvas về viewer P8; giữ nguyên workflow
+JSON và API P10. Chưa commit riêng vì worktree liên phase đang bẩn, tránh gom
+nhầm thay đổi ngoài phạm vi.
+
+**Việc tiếp theo:** P12 Agent↔Canvas↔Executor và E2E đủ video/GPU; chỉ mở vì
+toàn bộ gate P11 đã PASS.
+
+## 2026-08-02 — H12 P10: Canvas model, versioning và API
+
+Đã thêm migration additive `agent_workflows` với owner, tên/goal, Plan schema
+version, nodes/edges/viewport, draft/validated/approved/archived, budget/quote,
+revision, nguồn clone và timestamp. Canvas chỉ lưu layout + config ToolSpec;
+server dựng lại Plan v1 rồi chạy chính validator P4. Chuyển Plan↔Canvas giữ đủ
+linear/fan-out/join/video/GPU semantics. JSON trên 64 KiB, sâu quá 20 tầng,
+NaN, node/edge sai, tool/cycle/type sai, credential/storage/owner/giá do client
+khai đều bị schema hoặc validator server từ chối.
+
+API `/agent/api` có palette động từ AppManifest/ToolSpec và quyền user; list,
+create/get/save, validate/requote, clone/version, archive, import/export. Không có
+hard-delete endpoint. Mọi write bắt CSRF; ownership chéo trả 404. Save dùng
+`revision` + `If-Match` và một câu UPDATE có điều kiện; stale trả 409, không ghi
+đè. Sửa workflow approved/validated luôn về draft và xóa quote cũ. Frontend có
+typed API client, conflict riêng và autosave debounce; không gửi estimated/price.
+
+**PostgreSQL thật cô lập:** migration head → downgrade đúng về P9 head → upgrade;
+6 concurrency test PASS, gồm hai editor cùng revision chỉ đúng một save thành
+công và một conflict. Dump/restore xác minh cả AgentRun và `agent_workflows` probe;
+database tạm đã cleanup, không dùng production.
+
+**Browser thật qua Playwright CLI:** bundle production trên `127.0.0.1:8118`,
+session user test lấy CSRF từ Canvas rồi gọi palette (7 tool, 200), create (201),
+validate (200, valid, estimated=3, revision=2). Console **0 error/0 warning**;
+không có failed request. Fixture/server đã dừng.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_96_agent_workflows.py tests/test_97_agent_workflow_api.py tests/test_90_agent_planner_validator.py tests/test_61_setup_scripts.py`
+  → **99 passed**.
+- Node 22.12.0: typecheck/build PASS; Vitest **4 passed**.
+- `tools\test_agent_p3_postgres.ps1` (đã mở rộng gate tới P10) → migration
+  up/down/up, **6 passed**, dump/restore workflow PASS.
+- `python -m pytest -q` → **1831 passed, 8 skipped, 23 subtests passed**,
+  1 warning deprecation, 449.63s.
+- `python tools\scan_source_secrets.py` → **778 file, 119.310 dòng,
+  0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **10 app, 0 ERROR, 0 WARN**.
+- Freshness gate từng bắt `.pytest_cache` làm input hash trôi sau một lệnh chạy
+  sai CWD; đã đồng bộ loại tool cache ở Node/Python và thêm regression test.
+
+**Rollback:** tắt write API/Canvas flag, giữ JSON đã lưu. Migration downgrade đã
+PASS trước dữ liệu thật; sau dữ liệu thật chỉ forward-fix. Chưa commit riêng vì
+worktree liên phase/app đang bẩn, tránh gom nhầm thay đổi ngoài phạm vi.
+
+**Việc tiếp theo:** P11 node editor đầy đủ; chỉ mở vì tất cả gate P10 đã PASS.
+
+## 2026-08-02 — H12 P9: nền build production cho Agent Canvas
+
+Đã tạo `frontend/agent-canvas/` bằng React 19, TypeScript, Vite và
+`@xyflow/react`; mọi dependency pin exact trong lockfile, Node build pin đúng
+22.12.0. Vite xuất JS/CSS hash vào `server/static/agent-canvas`, không source map,
+không CDN/runtime Node production. Route đăng nhập `/agent/canvas` chỉ đọc
+manifest production. Asset hash cache một năm immutable; HTML và metadata
+`no-store`; CSP không mở `unsafe-eval`.
+
+Build ghi SHA-256 của toàn bộ input frontend. `build_release.py` tính lại độc lập
+và từ chối bundle stale, sai Node, thiếu/hash sai asset hoặc có source map; source,
+lockfile, manifest và build metadata đều bắt buộc có trong archive. `setup/2` chỉ
+kiểm bundle đã đóng gói, không cài/chạy Node trên server. Hai build sạch liên tiếp
+cho cùng bốn file và SHA-256 giống hệt. Release thử ở thư mục tạm PASS, không triển
+khai production/DNS.
+
+**Browser thật qua Playwright CLI:** đăng nhập fixture cô lập rồi mở bundle do
+FastAPI phục vụ tại `127.0.0.1:8118`. React Flow render, 3 control, trạng thái tải
+chuyển `aria-busy=false`; HTML/CSS/JS/favicon đều 200; script duy nhất là asset
+hash production; console **0 error, 0 warning**. Không có Vite dev server/client.
+
+**Lệnh đã chạy và kết quả thật:**
+- Node 22.12.0: `npm ci`, `npm run typecheck`, `npm test`, `npm run build`,
+  `npm audit --audit-level=high` → PASS; **1 unit test**, **0 vulnerability**.
+- `python -m pytest -q tests/test_95_agent_canvas_build.py tests/test_94_agent_app.py tests/test_61_setup_scripts.py tests/test_43_web_hardening.py`
+  → **98 passed**.
+- `python -m pytest -q` lượt cuối sau regression scanner → **1821 passed,
+  7 skipped, 23 subtests passed**, 1 warning deprecation, 419.69s.
+- Secret scan lượt đầu sau `npm ci` → **FAIL 16 false positive** vì scanner đi
+  vào dependency vendored. Đã loại `node_modules`, thêm regression test; lượt cuối
+  → **772 file, 118.411 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py` → **10 app, 0 ERROR, 0 WARN, PASS**.
+- `python tools\build_release.py --output <thu-muc-tam>` → **998 file, 75,3 MB,
+  secret scan 0, PASS**.
+
+**Rollback:** tắt nav/route Canvas và dùng archive release trước đó; không có
+migration/dữ liệu P9. Browser fixture đã dừng. Chưa commit riêng vì worktree liên
+phase/app đang bẩn; không gom nhầm thay đổi ngoài phạm vi.
+
+**Việc tiếp theo:** P10 Canvas data model, versioning, API, round-trip Plan và
+optimistic locking; chỉ bắt đầu vì toàn bộ gate P9 đã có bằng chứng PASS.
+
+## 2026-08-02 — H12 P8: app LTT Agent AI và UX nghiệp vụ
+
+Đã thêm độc lập `apps/agent/` theo hợp đồng app: manifest public `/agent`, routes,
+jobs seam và template form/plan/run/progress. Người dùng nhập goal 10–8.000 ký tự
+và budget; planner/validator tạo Plan, trang duyệt ghi rõ “tối đa N credit”. Các
+POST plan/approve/tick/cancel đều CSRF; run/API khóa ownership và trả 404 chéo.
+Progress HTMX self-host hiển thị waiting/submitted/done/error, attempt/fan-out,
+result, actual/refund và decision log. Approval thiếu tiền dùng PRG về URL run,
+không để refresh gửi lại POST. Mobile 390px không tràn ngang, focus keyboard đúng.
+
+Executor được nối qua POST tick có CSRF, nên không cần runtime/queue thứ hai và
+reopen trang tiếp tục từ checkpoint. Worker hiện hữu xử lý child. Settlement thêm
+decision event append-only để UI giải thích actual/reserved/refunded. Slug `agent`
+trùng thuật ngữ kiến trúc Q39/Q40 nên test substring chống hardcode loại riêng
+`agent` khỏi heuristic; manifest/mount/ownership tests vẫn bảo vệ wiring app.
+
+**Browser thật qua Playwright CLI:** server `127.0.0.1:8118`, SQLite có tên
+`agent-browser-test`, planner/provider giả và worker thật; không dùng production,
+DNS hay quota. Đã PASS 9 flow: anonymous→login return-to; plan/giá/0 hold;
+approve→progress→result→settle; invalid; thiếu credit; cancel; verifier fail→
+regenerate→pass (attempt 2/2); user B nhận 404 run/API của A; reload giữ `done`.
+Các flow hợp lệ console 0 error/warning và POST tick 200. Hai GET chéo 404 sinh
+console failed-resource đúng dự kiến của flow bảo mật. CSP không chặn HTMX.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_94_agent_app.py tests/test_93_agent_verifier.py tests/test_92_agent_executor.py tests/test_91_agent_budget.py tests/test_60_app_registry.py tests/test_85_app_contract_lint.py`
+  → **57 passed**.
+- Lượt full đầu → **1813 pass, 2 fail** vì fixture browser tên `_test.py` bị
+  collect/release scanner bắt chuỗi session giả. Đã đổi tên và nạp secret test từ env.
+- `python -m pytest -q tests/test_44_release_build.py tests/test_94_agent_app.py`
+  → **39 passed**.
+- `python -m pytest -q` lần cuối → **1815 passed, 7 skipped, 23 subtests passed**,
+  1 warning deprecation, 416.43s.
+- `python tools\scan_source_secrets.py` → **751 file, 114.988 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **10 app, 0 ERROR, 0 WARN, PASS**.
+
+**Rollback:** đặt `apps/agent/manifest.py enabled=False`; không xóa AgentRun/
+decision log/credit entries. Browser fixture và server đã dừng. Chưa commit riêng
+vì worktree liên phase/app đang bẩn.
+
+## 2026-08-02 — H12 P7: verifier và bounded retry
+
+Đã thêm `platform_core.agent.verifier` với một kết quả chung gồm pass/score/
+fault/reason/check/model/key_ref/credit. Pipeline luôn chạy `technical` →
+`face_identity` → `vlm_judge`, dừng ngay ở lỗi rẻ. Technical kiểm tồn tại, MIME,
+kích thước và metadata ffprobe. VLM ép schema JSON/fault hợp lệ. Lỗi provider,
+timeout, JSON rác hoặc thiếu adapter thành `inconclusive`, không tự coi là đạt.
+
+Đã kiểm kê bản nội tại `D:\BOT GEMINI\app\modules\seedance_video\face_detect.py`
+ở chế độ chỉ đọc: có insightface `buffalo_sc` detection và Haar fallback nhưng
+không có recognition embedding. Vì vậy `face_identity` dùng adapter recognition;
+chưa cấu hình thì inconclusive, không đánh tráo detection thành identity.
+
+Executor ghi từng lần verify/retry vào decision log đã redact email/token/secret,
+policy dừng ngay, structural/inconclusive retry tối đa `max_retry`; refine và
+switch_model thiếu adapter thì dừng có lý do. Validator cộng verifier credit vào
+trần từng fan-out/attempt. Trước submit attempt kế tiếp, executor dự báo tool +
+verifier cost và dừng trước provider nếu vượt hold. Test E2E mock: hai generation
+tool (2 credit/lần) + hai VLM (1/lần) + planning 4 = actual 10.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_93_agent_verifier.py tests/test_92_agent_executor.py tests/test_91_agent_budget.py tests/test_90_agent_planner_validator.py tests/test_89_agent_runs.py`
+  → **55 passed**.
+- `python -m pytest -q` → **1807 passed, 7 skipped, 23 subtests passed**,
+  1 warning deprecation, 404.27s.
+- `python tools\scan_source_secrets.py` → **707 file, 112.387 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- VLM/provider thật: **chưa chạy**, test mặc định mock không tiêu quota; smoke thật
+  là opt-in. Browser/PostgreSQL: **N/A** — P7 không thêm route/migration.
+
+**Rollback:** với plan mới bỏ trường verify/tắt verifier; run đang chạy drain hoặc
+cancel/settle, không xóa decision log đã ghi. P7 không có migration. Chưa commit
+riêng vì worktree liên phase/app đang bẩn.
+
+## 2026-08-02 — H12 P6: executor DAG, resume, fan-out và capability
+
+Đã thêm `platform_core.agent.executor`: khóa AgentRun, đồng bộ child hiện hữu vào
+checkpoint, chỉ submit step có đủ dependency, resolve `$input/$step` server-side,
+fan-out theo dedupe key ổn định và join chỉ mở khi toàn bộ upstream done. Tick lặp
+sau restart không tạo lại step submitted/done; child terminal được dùng để phục
+hồi checkpoint nếu worker chết sau complete nhưng trước khi orchestration ghi.
+
+Executor không giữ credit ở child. Actual được tính bằng planning cost cộng giá
+tool theo đúng số attempt terminal (test P6: 4 + 1×2 = 6), luôn qua chốt
+`actual <= estimated` trước settlement. Child error ghi decision event rồi settle phần đã dùng. `jobs.claim`
+nhận thêm capability filter dựa trên `manifest.requires`; `None` giữ tương thích
+worker đa năng hiện tại.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_92_agent_executor.py tests/test_91_agent_budget.py tests/test_89_agent_runs.py tests/test_67_hang_doi_job.py`
+  → **36 passed** (riêng P6: 6 passed).
+- `tools\test_agent_p3_postgres.ps1` → **PASS**: Alembic up/down/up, **5 test
+  concurrency passed** (gồm hai scheduler = một child), dump/restore PASS.
+- `python -m pytest -q` → **1795 passed, 7 skipped, 23 subtests passed**,
+  1 warning deprecation, 410.79s.
+- `python tools\scan_source_secrets.py` → **705 file, 111.924 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- Browser: **N/A** — executor chưa có UI/route.
+
+**Rollback:** tắt nơi nhận run mới; để run active drain hoặc cancel/settle bằng
+service hiện tại, sau đó gỡ executor và capability argument additive. Không có
+migration P6. Chưa commit riêng vì worktree liên phase/app đang bẩn.
+
+## 2026-08-02 — H12 P5: báo giá, approval và credit nguyên tử
+
+Đã thêm `platform_core.agent.budget`: báo giá trần tách riêng 4 credit planning
+và tổng execution theo fan-out/retry; plan sửa trước chạy tăng version và vô hiệu
+approval cũ. Trước approval không có bút toán. `approve()` khóa AgentRun theo
+owner/version, kiểm ngân sách/số dư, giữ toàn bộ trần đúng một lần rồi mới chuyển
+`running`. State machine công khai không còn cho chuyển thẳng sang `running`.
+
+Chốt chi phí kiểm tra `actual <= estimated` trước lần gọi trả phí; done/cancel/
+error quyết toán đúng phần đã dùng và hoàn phần dư qua sổ append-only. Approval,
+cancel và settlement lặp lại idempotent; owner khác không thao tác được. P5 chưa
+có HTTP route nên CSRF route là N/A; P8 bắt buộc thêm test CSRF cùng endpoint.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_89_agent_runs.py tests/test_91_agent_budget.py tests/test_90_agent_planner_validator.py`
+  → **37 passed** (riêng P5: 8 passed).
+- `tools\test_agent_p3_postgres.ps1` → **PASS**: Alembic up/down/up, **4 test
+  concurrency passed** (gồm 2 approve đồng thời = 1 hold), dump/restore schema và
+  probe data PASS; database tạm đã cleanup.
+- `python -m pytest -q` → **1789 passed, 6 skipped, 23 subtests passed**,
+  1 warning deprecation, 394.19s.
+- `python tools\scan_source_secrets.py` → **703 file, 111.505 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- Browser: **N/A** — P5 chưa có UI/route; kiểm GUI bắt buộc từ P8.
+
+**Rollback:** chặn nơi gọi approval mới; mọi run đã hold phải được `settle()`/
+`cancel()` bằng service hiện tại trước, sau đó mới gỡ export và `budget.py`.
+Chưa commit riêng vì worktree chứa chuỗi phase/app untracked có sẵn, tránh gom
+nhầm thay đổi ngoài phạm vi.
+
+## 2026-08-02 — H12 P4: planner, normalizer và validator tất định
+
+Đã thêm `normalizer.py` bóc Plan từ plain/fenced/tool arguments, chuẩn hoá alias
+phẳng và chặn output >64 KiB, JSON lồng >20 tầng, rác/truncated. `planner.py`
+dựng prompt có nhãn từ ToolSpec/schema/input/budget; mặc định lấy Gemini credential
+qua `api_pool`/`api_keys`, không đọc env key. P4 test dùng `llm_call` mock nên không
+tiêu quota và không tạo job/credit.
+
+`validator.py` thực hiện tất định: Plan v1, 1–32 step, tool/quyền app, params,
+reference `$input/$step`, kiểu cổng, dependency/cycle, cap fan-out=4/retry=2,
+on_fail, giá và budget/số dư. Cấm planner đặt owner/storage key/credential/CSRF/
+callback/webhook URL; artifact phải là tham chiếu, không nhận path literal. Kết quả
+lỗi có `code/message/step_id/field`; báo giá cùng fixture cho kết quả giống nhau.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_90_agent_planner_validator.py tests/test_88_agent_toolspec_apps.py tests/test_89_agent_runs.py tests/test_60_app_registry.py`
+  → **81 passed**.
+- `python -m pytest -q` → **1781 passed, 5 skipped, 23 subtests passed**,
+  1 warning deprecation, 393.93s.
+- `python tools\scan_source_secrets.py` → **701 file, 111.148 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- Provider thật/browser/PostgreSQL: **N/A** — mock đủ cho P4; không route/migration.
+
+**Rollback:** gỡ `planner.py`, `normalizer.py`, `validator.py` và export tương ứng;
+P4 không có migration/dữ liệu. Chưa commit riêng vì worktree chứa chuỗi phase/app
+untracked có sẵn, không gom thay đổi ngoài phạm vi.
+
+## 2026-08-02 — H12 P3: AgentRun, checkpoint, fan-out và migration PostgreSQL
+
+Đã thêm additive ba cột `jobs.parent_id/plan_id/step_id` (default chuỗi rỗng,
+job cũ giữ nguyên) và bảng `agent_runs`: owner, goal, Plan, checkpoint JSON,
+state, ngân sách/ước tính/thực tế, approval audit, decision log, version và
+timestamps. Migration `b2c3d4e5f6a7` chain sau migration Chat AI Studio hiện có.
+
+Thêm `platform_core.agent.runs`: create/get-owned có cô lập user, state machine
+không cho chuyển lùi, checkpoint không làm mất step cũ, append decision log,
+submit child chỉ khi run=`running`, truy vấn/tổng hợp fan-out. `jobs.submit()` mở
+rộng additive để ghi liên kết plan/step/parent; queue Q26 và worker cũ không đổi.
+Chưa có route production nào tạo AgentRun.
+
+**Restore/migration thật trên PostgreSQL tạm, không dùng dữ liệu production:**
+- `tools\restore_drill_agent.ps1` → **PASS**: `pg_dump -Fc` database probe cô lập,
+  `pg_restore` sang database tạm thứ hai, xác minh 1 dòng rồi cleanup.
+- Lượt P3 đầu với role `ltt_app` → **FAIL xác thực**; database tạm đã cleanup.
+  Chỉ cho thấy `secrets\app.env` trong workspace không khớp role cục bộ hiện tại;
+  không thay credential và không kết luận credential bản cài production bị lỗi.
+- `tools\test_agent_p3_postgres.ps1` → **PASS** bằng database test cô lập:
+  Alembic upgrade head → downgrade về `a1b2c3d4e5f6` → upgrade head; 3 concurrency
+  test PASS; dump/restore toàn schema P3 và hàng AgentRun probe PASS; cleanup đủ.
+- Rehearsal bắt được fixture concurrency chủ động `drop_all()` sau test khiến
+  Alembic version còn nhưng bảng mất; script đã sửa để tái tạo DB sạch và migrate
+  lại trước restore, tránh bằng chứng giả.
+
+**Lệnh/test và kết quả thật:**
+- `python -m pytest -q tests/test_89_agent_runs.py tests/test_67_hang_doi_job.py tests/test_88_agent_toolspec_apps.py tests/test_60_app_registry.py`
+  → **74 passed**.
+- PostgreSQL `python -m pytest -q tests/test_73_dong_thoi_pg.py` trong rehearsal
+  → **3 passed** (credit race, queue race, 4 child Agent không claim trùng).
+- `python -m pytest -q` → **1759 passed, 5 skipped, 23 subtests passed**,
+  1 warning deprecation, 388.14s.
+- `python tools\scan_source_secrets.py` → **697 file, 110.555 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- Browser: **N/A** — chưa có route/UI production.
+
+**Rollback:** migration downgrade P3 đã PASS trên PostgreSQL test. Production chỉ
+downgrade trước khi có AgentRun thật; sau đó forward-fix. Chưa áp migration lên
+production. Commit riêng chưa tạo vì migration head trước và các app liên quan
+đang nằm trong worktree untracked có sẵn; không gom thay đổi ngoài phase.
+
+## 2026-08-02 — H12 P2: ToolSpec cho đủ 7 app job-based
+
+Đã khai ToolSpec bám code vận hành thật cho `kichban`, `taoanh`, `thumbnail`,
+`taovideo`, `autosubvideo`, `upscalevideo`, `taoclipngan`. Không ép `demo`,
+`socialbot` hoặc `chataistudio` SSE/sidecar vào mô hình job tool.
+
+Mở rộng resolver model theo category/provider và capability theo model; Seedance
+mini/fast không nhận 4K, bản đầy đủ nhận 4K. Thêm `validate_tool_params()` fail-fast
+cho required/type/enum/range/model/unknown params trước submit. Schema không cho
+Agent đặt `owner_id`, CSRF, credential hoặc field runtime nội bộ. Các input video
+được mô tả bằng cổng `video`; executor P6 sẽ phân giải tham chiếu artifact thành
+storage key thuộc đúng user.
+
+Đã đối chiếu params Form → handler, giá giữ chỗ `credit_cost`, và result fixture →
+returns. `taoclipngan.clips` khai `json` vì handler thật trả danh sách object chứa
+`video_key`, title, score, duration — không khai sai thành danh sách chuỗi video.
+
+**Lệnh đã chạy và kết quả thật:**
+- `python -m pytest -q tests/test_88_agent_toolspec_apps.py tests/test_87_agent_toolspec.py tests/test_60_app_registry.py tests/test_81_autosubvideo.py tests/test_82_upscalevideo.py tests/test_84_taoclipngan.py`
+  → **92 passed**.
+- Nhóm test trực tiếp 7 app + ToolSpec (`test_71`, `77`, `78`, `79`, `81`, `82`,
+  `84`, `87`, `88`) → **113 passed**, 1 warning deprecation, 5.69s.
+- `python -m pytest -q` → **1752 passed, 4 skipped, 23 subtests passed**,
+  1 warning deprecation, 377.69s.
+- `python tools\scan_source_secrets.py` → **692 file, 110.005 dòng, 0 finding, PASS**.
+- `python tools\lint_app_contract.py --strict` → **9 app, 0 ERROR, 0 WARN, PASS**.
+- Browser/PostgreSQL: **N/A** — P2 chỉ metadata/validation, không UI/migration.
+
+**Commit:** chưa tạo riêng P2 vì bốn app video đang là các cây untracked lớn có
+sẵn từ phiên trước. Commit chúng lúc này sẽ gom cả thay đổi ngoài P2; giữ nguyên để
+không vi phạm kỷ luật worktree. Rollback P2: gỡ `tools=` từng manifest và helper
+validation/capability; handler/dữ liệu không đổi.
+
 ## 2026-08-02 — H12 P0–P1: quyết định Agent + ToolSpec core
 
 Người dùng cấp toàn quyền bắt đầu xây dựng. Đã đóng P0 bằng Q40–Q43: PA-1+

@@ -56,7 +56,8 @@ def _aware(dt: Optional[datetime]) -> Optional[datetime]:
 # ── Nộp job ───────────────────────────────────────────────────────────────────
 
 def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
-           params: dict, dedupe_key: str = "", max_attempts: int = 3) -> Job:
+           params: dict, dedupe_key: str = "", max_attempts: int = 3,
+           parent_id: str = "", plan_id: str = "", step_id: str = "") -> Job:
     """Tạo một job ở trạng thái `queued`. KHÔNG commit — caller commit cùng credit.
 
     Nếu `dedupe_key` khác rỗng và đã có một job **chưa kết thúc** (queued/running)
@@ -79,6 +80,7 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         user_id=user_id, app_slug=app_slug, job_type=job_type,
         params=params or {}, dedupe_key=dedupe_key,
         max_attempts=max_attempts, status=JOB_QUEUED,
+        parent_id=parent_id, plan_id=plan_id, step_id=step_id,
     )
     db.add(job)
     db.flush()
@@ -87,21 +89,29 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
 
 # ── Worker nhặt job ───────────────────────────────────────────────────────────
 
-def claim(db: DbSession, *, worker_id: str) -> Optional[Job]:
+def claim(db: DbSession, *, worker_id: str,
+          capabilities: Optional[set[str]] = None) -> Optional[Job]:
     """Nhặt một job đến hạn chạy. Trả None nếu hàng đợi trống.
 
     `FOR UPDATE SKIP LOCKED`: nếu một worker khác đã khoá dòng này, ta bỏ qua
     nó thay vì chờ — nên nhiều worker chạy song song không giẫm chân nhau và
     không job nào bị nhặt hai lần.
 
-    **Lưu ý capability (Q6):** giai đoạn này một worker đa năng (máy chủ có cả
-    GPU), nên chưa lọc theo `requires` của app. Khi có worker ở nhiều máy, thêm
-    điều kiện lọc năng lực vào đúng câu WHERE này — cấu trúc đã sẵn.
+    Khi truyền ``capabilities``, chỉ app có toàn bộ ``manifest.requires`` nằm
+    trong tập năng lực worker mới được claim. ``None`` giữ tương thích worker
+    đa năng hiện hữu.
     """
     now = _bay_gio()
+    stmt = select(Job).where(Job.status == JOB_QUEUED, Job.next_run_at <= now)
+    if capabilities is not None:
+        from platform_core.registry import discover
+        eligible = [item.slug for item in discover() if not item.error and
+                    set(item.manifest.requires).issubset(capabilities)]
+        if not eligible:
+            return None
+        stmt = stmt.where(Job.app_slug.in_(eligible))
     row = db.execute(
-        select(Job)
-        .where(Job.status == JOB_QUEUED, Job.next_run_at <= now)
+        stmt
         .order_by(Job.created_at)
         .limit(1)
         .with_for_update(skip_locked=True)

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+
+{% macro chipgroup(name, items, default) %}
+  <div class="chips">
+    {% for id, label in items %}
+      <label class="chip-opt">
+        <input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}>
+        <span>{{ label }}</span>
+      </label>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% block content %}
+  <script src="/static/htmx.min.js"></script>
+  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 4px;">Nâng cấp video (AI ×4)</h2>
+    <p class="dim" style="margin:0 0 14px;">
+      Nạp video, chọn độ phân giải đích + chất lượng. AI (Real-ESRGAN) nâng nét từng khung
+      hình rồi ghép lại — giữ đúng tỉ lệ, FPS và âm thanh. Video lớn tải thẳng lên kho (né
+      giới hạn 100MB). Tính phí theo phút × độ phân giải × preset. Job GPU chạy nền (có thể lâu)
+      — xem ở <a href="/jobs">Việc của tôi</a>.
+    </p>
+
+    <form id="upform" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="video_key" id="video_key" value="">
+      <input type="hidden" name="duration_s" id="duration_s" value="0">
+
+      <div class="field"><label>Video (.mp4, .mov, .mkv…)</label>
+        <input type="file" id="vfile" name="video" accept="video/*" required></div>
+
+      <div class="ctrl"><label class="ctrl-lbl">Chất lượng</label>
+        {{ chipgroup('preset', presets, 'fast') }}</div>
+
+      <div class="ctrl"><label class="ctrl-lbl">Độ phân giải đích</label>
+        {{ chipgroup('target_height', heights, 1080) }}</div>
+
+      <div class="row">
+        <div class="field"><label>Codec</label>
+          <select name="codec">
+            {% for id, label in codecs %}<option value="{{ id }}">{{ label }}</option>{% endfor %}
+          </select></div>
+        <div class="field" style="display:flex; align-items:flex-end;">
+          <label style="display:inline-flex; gap:8px; align-items:center; margin:0 0 8px;">
+            <input type="checkbox" name="preview" value="1">
+            <span class="dim">Chỉ xem thử ~8s đầu (nhanh, kiểm chất lượng)</span></label></div>
+      </div>
+
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <button type="submit" class="btn" id="submitbtn">🔍 Nâng cấp</button>
+        <span class="dim">Chi phí: <span id="est">…</span></span>
+        <span class="dim" id="upstatus"></span>
+      </div>
+      <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate"
+           hx-include="#duration_s,input[name=target_height]:checked,input[name=preset]:checked,input[name=preview]"
+           hx-target="#est" hx-trigger="load, change from:#upform" style="display:none"></div>
+    </form>
+  </div>
+
+  <div class="ui-card">
+    <h2 style="margin:0 0 10px;">Video của tôi</h2>
+    {% if not jobs %}
+      <p class="dim" style="margin:0;">Chưa có video nào. Tạo cái đầu tiên ở trên.</p>
+    {% else %}
+      <div class="result-grid">
+        {% for j in jobs %}
+          <div style="border:1px solid var(--line); border-radius:10px; padding:10px;">
+            <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
+              {{ j.id[:8] }} ·
+              {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
+              {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
+              {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.progress_msg or j.status }} {{ j.progress }}%</span>{% endif %}
+              {% if j.target_height %} · {{ j.target_height }}p{% endif %}{% if j.duration_s %} · {{ j.duration_s }}s{% endif %}
+            </div>
+            {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
+            {% if j.warning %}<p class="dim" style="font-size:11px;">⚠ {{ j.warning }}</p>{% endif %}
+            {% if j.video_key %}
+              <video controls preload="metadata" style="width:100%; border-radius:8px;"
+                     src="{{ app.route_prefix }}/v/{{ j.video_key }}"></video>
+              <div style="margin-top:6px;"><a class="btn ghost sm"
+                   href="{{ app.route_prefix }}/v/{{ j.video_key }}" download>⬇ Tải video</a></div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+  (function(){
+    var form = document.getElementById('upform');
+    var vfile = document.getElementById('vfile');
+    var vkeyEl = document.getElementById('video_key');
+    var durEl = document.getElementById('duration_s');
+    var status = document.getElementById('upstatus');
+    var btn = document.getElementById('submitbtn');
+    var PREFIX = "{{ app.route_prefix }}";
+
+    vfile.addEventListener('change', function(){
+      vkeyEl.value = ''; status.textContent = '';
+      var f = vfile.files[0];
+      if(!f){ durEl.value = 0; return; }
+      var v = document.createElement('video'); v.preload = 'metadata';
+      v.onloadedmetadata = function(){
+        window.URL.revokeObjectURL(v.src);
+        durEl.value = Math.round(v.duration || 0);
+        if(window.htmx) htmx.trigger('#est-wrap','change');
+      };
+      v.src = window.URL.createObjectURL(f);
+    });
+
+    function putToR2(url, headers, file){
+      return new Promise(function(resolve, reject){
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', url, true);
+        Object.keys(headers||{}).forEach(function(k){ xhr.setRequestHeader(k, headers[k]); });
+        xhr.upload.onprogress = function(e){
+          if(e.lengthComputable) status.textContent = 'Đang tải video: ' + Math.round(e.loaded/e.total*100) + '%';
+        };
+        xhr.onload = function(){ (xhr.status>=200 && xhr.status<300) ? resolve() : reject(new Error('R2 '+xhr.status)); };
+        xhr.onerror = function(){ reject(new Error('Lỗi mạng khi tải video')); };
+        xhr.send(file);
+      });
+    }
+
+    form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      var f = vfile.files[0];
+      if(!f){ status.textContent = 'Chưa chọn video.'; return; }
+      btn.disabled = true;
+      var localFile = null;
+      try {
+        if(!vkeyEl.value){
+          var uf = new FormData();
+          uf.append('filename', f.name); uf.append('content_type', f.type || 'video/mp4');
+          var ur = await fetch(PREFIX + '/upload-url', {method:'POST', body:uf});
+          var uj = await ur.json();
+          if(uj.mode === 'direct'){
+            status.textContent = 'Đang tải video…';
+            try {
+              await putToR2(uj.url, uj.headers, f);
+              vkeyEl.value = uj.key; status.textContent = 'Đã tải video ✓';
+            } catch(putErr){
+              if(f.size > 90*1024*1024){
+                throw new Error('Video >90MB cần bật CORS bucket R2 để tải thẳng. ' + putErr.message);
+              }
+              status.textContent = 'Tải thẳng lỗi, gửi qua máy chủ…'; localFile = f;
+            }
+          } else { localFile = f; }
+        }
+        var fd = new FormData();
+        fd.append('csrf_token', form.csrf_token.value);
+        fd.append('ajax', '1');
+        fd.append('video_key', vkeyEl.value || '');
+        fd.append('duration_s', durEl.value || '0');
+        fd.append('preset', (form.querySelector('input[name=preset]:checked')||{}).value || 'fast');
+        fd.append('target_height', (form.querySelector('input[name=target_height]:checked')||{}).value || '1080');
+        fd.append('codec', form.codec.value);
+        if(form.preview.checked) fd.append('preview', '1');
+        if(localFile) fd.append('video', localFile);
+        status.textContent = 'Đang nộp job…';
+        var qr = await fetch(PREFIX + '/queue', {method:'POST', body:fd});
+        var qj = await qr.json();
+        if(qj.ok){ window.location = qj.redirect; }
+        else { status.textContent = 'Lỗi: ' + (qj.error||'không rõ'); btn.disabled = false; }
+      } catch(err){
+        status.textContent = 'Lỗi: ' + err.message; btn.disabled = false;
+      }
+    });
+  })();
+  </script>
+{% endblock %}

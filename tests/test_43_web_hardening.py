@@ -124,6 +124,15 @@ def test_security_headers_present_on_pages(tmp_path):
     assert "frame-ancestors 'none'" in csp
     assert "default-src 'self'" in csp
     assert "form-action 'self'" in csp
+    # App video cần media-src (blob: đọc metadata client + R2 phát video presigned).
+    assert "media-src 'self' blob:" in csp
+    assert "r2.cloudflarestorage.com" in csp
+    # connect-src cho upload thẳng browser→R2 (presigned PUT).
+    assert "connect-src 'self' https://*.r2.cloudflarestorage.com" in csp
+    assert "https://cloudflareinsights.com" in csp
+    assert "https://static.cloudflareinsights.com" in csp
+    # img-src cho ảnh output phục vụ qua R2 presigned (app chat AI, ảnh…).
+    assert "img-src 'self' data: https://*.r2.cloudflarestorage.com" in csp
 
 
 def test_dynamic_responses_are_not_cacheable(tmp_path):
@@ -139,6 +148,12 @@ def test_dynamic_responses_are_not_cacheable(tmp_path):
     st = c.get("/static/htmx.min.js")
     if st.status_code == 200:
         assert st.headers.get("Cache-Control") != "no-store"
+
+
+def test_favicon_ico_redirects_to_existing_static_asset(tmp_path):
+    response = _client(tmp_path).get("/favicon.ico", follow_redirects=False)
+    assert response.status_code == 307
+    assert response.headers["location"] == "/static/favicon.svg"
 
 
 def test_hsts_sent_outside_development(tmp_path):

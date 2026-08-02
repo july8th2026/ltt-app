@@ -1,0 +1,20 @@
+# Genre: Podcast
+# Long-form conversation, multiple speakers
+
+strategy: podcast
+
+analysis:
+  scene_threshold: 35.0
+  min_scene_len_sec: 3.0
+
+editorial:
+  min_clip_duration_sec: 20.0
+  max_clip_duration_sec: 60.0
+  target_clip_count: 8
+  hook_priority: topic_start
+  cut_on: topic_boundary
+
+render:
+  default_color: original
+  speed_factor: 1.0
+  caption_default: true

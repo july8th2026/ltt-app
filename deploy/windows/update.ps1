@@ -20,6 +20,7 @@ param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$ServiceName = 'LTTStudioWeb',
     [string]$WorkerServiceName = 'LTTStudioWorker',
+    [string]$CodexServiceName = 'LTTStudioCodex',
     [int]$Port = 8100
 )
 
@@ -40,6 +41,7 @@ Write-Ok 'Data backup complete'
 
 Write-Step 'Stopping service'
 if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
+    Stop-Service $CodexServiceName -Force -ErrorAction SilentlyContinue
     Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
     Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
     # Give the worker a moment to release its SessionLocks cleanly.
@@ -103,6 +105,7 @@ if ((Test-Path $envFileForMig) -and ((Get-Content $envFileForMig -Raw) -match '(
 Write-Step 'Starting service'
 Start-Service $ServiceName
 Start-Service $WorkerServiceName -ErrorAction SilentlyContinue
+Start-Service $CodexServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 8
 
 Write-Step 'Verifying health'

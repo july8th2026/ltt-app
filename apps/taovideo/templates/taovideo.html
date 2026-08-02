@@ -43,7 +43,7 @@
           {% for t, lbl in [('en','EN'), ('zh','中'), ('vi','VI')] %}
             <button type="button" class="btn ghost sm"
                     hx-post="{{ app.route_prefix }}/translate"
-                    hx-include="[name='prompt']" hx-vals='{"target": "{{ t }}"}'
+                    hx-include="[name='prompt'],[name='csrf_token']" hx-vals='{"target": "{{ t }}"}'
                     hx-target="#promptbox" hx-swap="innerHTML">{{ lbl }}</button>
           {% endfor %}
         </div>

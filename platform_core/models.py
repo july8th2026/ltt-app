@@ -169,6 +169,13 @@ JOB_RUNNING = "running"
 JOB_DONE = "done"
 JOB_ERROR = "error"
 
+AGENT_PLANNING = "planning"
+AGENT_AWAITING_APPROVAL = "awaiting_approval"
+AGENT_RUNNING = "running"
+AGENT_DONE = "done"
+AGENT_ERROR = "error"
+AGENT_CANCELLED = "cancelled"
+
 
 class Job(Base):
     """Một công việc trong hàng đợi (H2, Q26).
@@ -209,6 +216,13 @@ class Job(Base):
     max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
     dedupe_key: Mapped[str] = mapped_column(String(128), default="", nullable=False)
 
+    # Quan hệ execution Agent. Chuỗi rỗng giữ tương thích toàn bộ job cũ.
+    parent_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
+                                            index=True)
+    plan_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
+                                         index=True)
+    step_id: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+
     worker_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
@@ -227,6 +241,70 @@ class Job(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"
+
+
+class AgentRun(Base):
+    """Plan đã chuẩn hoá cùng checkpoint để resume executor sau khi worker chết."""
+
+    __tablename__ = "agent_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    app_slug: Mapped[str] = mapped_column(String(64), default="agent", nullable=False)
+    goal: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    plan: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    checkpoint: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default=AGENT_PLANNING,
+                                        nullable=False, index=True)
+    budget_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    estimated: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    actual: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_by: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    decision_log: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_agent_runs_user_created", "user_id", "created_at"),
+    )
+
+
+WORKFLOW_DRAFT = "draft"
+WORKFLOW_VALIDATED = "validated"
+WORKFLOW_APPROVED = "approved"
+WORKFLOW_ARCHIVED = "archived"
+
+
+class AgentWorkflow(Base):
+    """Canvas lưu layout/config; Plan thực thi luôn được dựng lại ở server."""
+
+    __tablename__ = "agent_workflows"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(160), default="Workflow mới", nullable=False)
+    goal: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    plan_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    nodes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    edges: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    viewport: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default=WORKFLOW_DRAFT,
+                                        nullable=False, index=True)
+    budget_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    estimated: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    source_workflow_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_agent_workflows_user_updated", "user_id", "updated_at"),
+    )
 
 
 # ── Loại bút toán credit ──────────────────────────────────────────────────────
@@ -427,3 +505,49 @@ class PaymentOrder(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<PaymentOrder {self.order_code} {self.status} {self.credits}cr>"
+
+
+# ── Hội thoại chat AI (dùng bởi app chat) ─────────────────────────────────────
+# Hội thoại + tin nhắn lưu bền theo user (cá nhân hóa). Ngữ cảnh model giữ ở
+# thread phía trợ lý (codex_thread_id) để resume; nội dung hiển thị lưu ở Postgres
+# để KHÔNG phụ thuộc vòng đời rollout của trợ lý + để đính ảnh (R2) vào transcript.
+
+class ChatConversation(Base):
+    """Một hội thoại của một user. Cô lập theo user_id (bất biến A-không-đọc-B)."""
+
+    __tablename__ = "chat_conversations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    model: Mapped[str] = mapped_column(String(64), default="gpt-5.6-sol", nullable=False)
+    custom_instructions: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    codex_thread_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<ChatConversation {self.id[:8]} u={self.user_id[:8]} {self.title!r}>"
+
+
+class ChatMessage(Base):
+    """Một tin nhắn trong hội thoại. `image_key` != '' → tin là ẢNH (R2)."""
+
+    __tablename__ = "chat_messages"
+    __table_args__ = (Index("ix_chat_messages_conv_created", "conversation_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    conversation_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(16), default="user", nullable=False)
+    content: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    image_key: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    image_prompt: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    tokens_total: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<ChatMessage {self.id[:8]} {self.role} img={bool(self.image_key)}>"

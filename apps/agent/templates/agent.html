@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}LTT Agent AI{% endblock %}
+{% block content %}
+<h1>✦ LTT Agent AI</h1>
+<p class="page-sub">Mô tả kết quả bạn muốn. Agent lập kế hoạch và báo giá trước; chưa duyệt sẽ không giữ credit hay chạy công cụ.</p>
+{% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
+<form method="post" action="/agent/plan" class="card" aria-label="Lập kế hoạch Agent">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="field">
+    <label for="goal">Mục tiêu</label>
+    <textarea id="goal" name="goal" minlength="10" maxlength="8000" required autofocus
+      placeholder="Ví dụ: Viết kịch bản 60 giây, tạo ảnh minh họa và dựng video dọc…"></textarea>
+    <span class="hint">Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư.</span>
+  </div>
+  <div class="field" style="max-width:260px;margin-top:12px">
+    <label for="budget_max">Ngân sách tối đa (credit)</label>
+    <input id="budget_max" name="budget_max" type="number" min="5" max="100000" value="100" required>
+  </div>
+  <button type="submit" style="margin-top:14px">Lập kế hoạch và xem giá</button>
+</form>
+{% endblock %}

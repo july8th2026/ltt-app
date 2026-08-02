@@ -1,0 +1,20 @@
+# Genre: Talking Head
+# Single speaker, face-to-camera content
+
+strategy: talking_head
+
+analysis:
+  scene_threshold: 30.0
+  min_scene_len_sec: 2.0
+
+editorial:
+  min_clip_duration_sec: 15.0
+  max_clip_duration_sec: 60.0
+  target_clip_count: 5
+  hook_priority: speech_energy
+  cut_on: sentence_boundary
+
+render:
+  default_color: original
+  speed_factor: 1.0
+  caption_default: true

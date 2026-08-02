@@ -90,15 +90,19 @@ def estimate(request: Request, model: str = Form(""), resolution: str = Form("48
 
 @router.post("/translate", response_class=HTMLResponse)
 async def translate(request: Request, prompt: str = Form(""), target: str = Form("en"),
-                    user: str = Depends(require_login)):
+                    csrf_token: str = Form(""), user: str = Depends(require_login)):
     """Dịch prompt qua Gemini chat (HTMX trả <textarea> mới). Không tốn credit."""
     from markupsafe import escape
+    from starlette.concurrency import run_in_threadpool
     from apps.taovideo import translate as tr
-    p = prompt.strip()
+    if not verify_csrf_token(request, csrf_token):   # chống lạm dụng quota dịch cross-site
+        return HTMLResponse('<span class="dim">Phiên hết hạn — tải lại trang.</span>')
+    p = prompt.strip()[:10000]
     if not p:
         return HTMLResponse('<span class="dim">Nhập mô tả rồi bấm dịch.</span>')
     try:
-        out = tr.dich(p, target if target in ("en", "zh", "vi") else "en")
+        # dich() gọi httpx đồng bộ + DB → đẩy khỏi event loop để không chặn web.
+        out = await run_in_threadpool(tr.dich, p, target if target in ("en", "zh", "vi") else "en")
     except Exception:  # noqa: BLE001
         return HTMLResponse('<span class="dim">Dịch lỗi — thử lại sau.</span>')
     return HTMLResponse(
@@ -187,7 +191,8 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
     finally:
         try: next(gen)
         except StopIteration: pass
-    return RedirectResponse("/taovideo" if n > 1 else f"/jobs/{last_id}", status_code=303)
+    # Luôn về /taovideo (có player "Video của tôi") thay vì /jobs/{id} (chỉ JSON thô).
+    return RedirectResponse("/taovideo", status_code=303)
 
 
 @router.get("/v/{key:path}")

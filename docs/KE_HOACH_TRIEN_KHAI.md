@@ -902,7 +902,7 @@ nhóm D.
 
 ---
 
-## H12 — LTT Agent AI + Canvas + full tool ảnh/text/video/GPU 📋
+## H12 — LTT Agent AI + Canvas + full tool ảnh/text/video/GPU ✅
 
 **Đã chốt phạm vi Q38–Q39 (2026-08-02):** xây hoàn chỉnh Agent + Canvas, không
 hoãn Canvas và không cắt video/GPU khỏi sản phẩm cuối. Kiến trúc giao diện hybrid:
@@ -916,18 +916,32 @@ có entry gate, PASS gate, test, browser/PostgreSQL check và rollback. Đặc t
 
 - [x] P0 Quyết định còn lại + baseline — 2026-08-02: 1710 pass, scan 0, lint 0/0
 - [x] P1 ToolSpec core — 2026-08-02: 34 test hẹp; full 1721 pass, scan 0, lint 0/0
-- [ ] P2 ToolSpec cho 7 app job-based
-- [ ] P3 AgentRun/checkpoint/fan-out
-- [ ] P4 Planner/normalizer/validator
-- [ ] P5 Budget/approval/credit atomic
-- [ ] P6 Executor/resume/fan-out
-- [ ] P7 Verifier/bounded retry
-- [ ] P8 App/UX nghiệp vụ
-- [ ] P9 React/Vite build foundation
-- [ ] P10 Canvas data model/API
-- [ ] P11 Node editor đầy đủ
-- [ ] P12 Agent↔Canvas↔Run + video/GPU E2E
-- [ ] P13 Hardening/rollout production
+- [x] P2 ToolSpec cho 7 app job-based — 2026-08-02: 113 test app; full 1752 pass, scan 0, lint 0/0
+- [x] P3 AgentRun/checkpoint/fan-out — 2026-08-02: PG up/down/up + concurrency + restore; full 1759 pass
+- [x] P4 Planner/normalizer/validator — 2026-08-02: 81 test hẹp; full 1781 pass, scan 0, lint 0/0
+- [x] P5 Budget/approval/credit atomic — 2026-08-02: SQLite 8 pass; PG 4 concurrency + migration/restore; full 1789 pass, scan 0, lint 0/0
+- [x] P6 Executor/resume/fan-out — 2026-08-02: headless 6 pass; PG 5 concurrency + migration/restore; full 1795 pass, scan 0, lint 0/0
+- [x] P7 Verifier/bounded retry — 2026-08-02: 55 test hẹp; full 1807 pass, scan 0, lint 0/0
+- [x] P8 App/UX nghiệp vụ — 2026-08-02: 9 Playwright flow + 57 test hẹp; full 1815 pass, scan 0, lint 0/0
+- [x] P9 React/Vite build foundation — 2026-08-02: Node 22.12.0, deterministic
+  production bundle; Playwright console/network sạch; full 1821 pass, scan 0,
+  10 app lint 0/0; release archive PASS
+- [x] P10 Canvas data model/API — 2026-08-02: migration up/down/up + 6 PG
+  concurrency/restore; 99 test hẹp; frontend 4 pass; Playwright API 200/201;
+  full 1831 pass, scan 0, lint 0/0
+- [x] P11 Node editor đầy đủ — 2026-08-02: frontend 12 pass; 16 test Python
+  hẹp; Playwright desktop/mobile/keyboard/conflict/offline/100-node + drag/drop
+  và disconnect PASS; full 1832 pass, scan 0, lint 0/0, npm audit 0
+- [x] P12 Agent↔Canvas↔Run + video/GPU E2E — 2026-08-02: 64 test hẹp,
+  frontend 13 pass; 7 ToolSpec production-like + R2/resume/verifier PASS;
+  Playwright prompt→done/run-again/cancel/insufficient-credit PASS; full 1835
+  pass, scan 0, lint 0/0, npm audit 0
+- [x] P13 Hardening/rollout production — 2026-08-02: backup đầy đủ + `pg_dump`
+  sang ổ D; migration production và health loopback/Cloudflare PASS; rollout
+  `off → admin → allowlist → public`; admin canary chạy Canvas thật `done`
+  (estimated/actual 7/7), hai user thường tạo run rồi cancel; metrics production
+  estimated/actual/refund 21/15/6. Playwright cuối console 0/network 0 lỗi;
+  full 1849 pass, 8 skip, 23 subtest; scan 0; strict lint 0/0; frontend 13 pass.
 
 Không đánh dấu phase ở file này độc lập: chỉ đồng bộ từ bảng bằng chứng trong
 `AGENT_LTT/02_LO_TRINH.md` sau khi test thật PASS.
@@ -935,6 +949,9 @@ Không đánh dấu phase ở file này độc lập: chỉ đồng bộ từ b�
 ---
 
 ## Việc phải làm ngay ở phiên tiếp theo
+
+H12 đã hoàn tất và đang public. Việc tiếp theo phải lấy từ backlog sản phẩm mới;
+không còn phase Agent/Canvas nào đang mở trong lộ trình P0–P13.
 
 1. **Người dùng — H0.1:** kiểm tra trên bảng điều khiển Cloudflare xem gói miễn
    phí có cho tạo zone cấp subdomain `app.lttstudios.com` không. Việc 5 phút,

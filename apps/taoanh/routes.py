@@ -81,7 +81,8 @@ def queue(
     if not verify_csrf_token(request, csrf_token):
         return _render(request, user, error="Phiên đã hết hạn — tải lại trang.",
                        jobs=_jobs_cua_toi(request), status_code=400)
-    if not prompt.strip():
+    prompt = prompt.strip()[:4000]      # cap do dai (nguon gemini_image cap 4000) — chong phi credit + 400 upstream
+    if not prompt:
         return _render(request, user, error="Chưa nhập mô tả ảnh.",
                        jobs=_jobs_cua_toi(request), status_code=400)
     if aspect_ratio not in _ASPECTS:
@@ -96,7 +97,7 @@ def queue(
         return _render(request, user, error="Cần đăng nhập bằng tài khoản người dùng.",
                        jobs=_jobs_cua_toi(request), status_code=400)
 
-    params = {"prompt": prompt.strip(), "model": model,
+    params = {"prompt": prompt, "model": model,
               "aspect_ratio": aspect_ratio, "count": count, "owner_id": u.id}
     gen = get_session(); db = next(gen)
     try:
@@ -113,7 +114,8 @@ def queue(
     finally:
         try: next(gen)
         except StopIteration: pass
-    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+    # Ve trang app (co luoi "Anh cua toi") thay vi /jobs/{id} (chi hien JSON tho).
+    return RedirectResponse(MANIFEST.route_prefix, status_code=303)
 
 
 @router.get("/f/{key:path}", response_class=StreamingResponse)

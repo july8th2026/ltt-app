@@ -61,11 +61,12 @@ try {
     Ok "https://$Hostname -> status=$($r.status)"
 } catch { Bad "Khong vao duoc https://$Hostname : $($_.Exception.Message)" }
 
-Head 'Trang dang nhap'
+Head 'Catalog cong khai'
 try {
     $r = Invoke-WebRequest "https://$Hostname/" -TimeoutSec 15 -UseBasicParsing -MaximumRedirection 5
-    if ($r.Content -match 'name="username"') { Ok 'Trang dang nhap hien ra' }
-    else { Warn 'Vao duoc nhung khong thay o dang nhap' }
+    if ($r.Content -match 'id="catsearch"' -and $r.Content -match 'class="appcard"') {
+        Ok 'Catalog cong khai hien ra'
+    } else { Bad 'Vao duoc nhung khong thay catalog app' }
 } catch { Bad "Khong tai duoc trang chu: $($_.Exception.Message)" }
 
 Head 'Tai lieu API bi chan o production'
@@ -82,12 +83,18 @@ try {
 Head 'Bi mat'
 if (Test-Path (Join-Path $secrets 'app.env')) {
     Ok 'co secrets\app.env'
-    $missing = @()
     $txt = Get-Content (Join-Path $secrets 'app.env') -Raw
-    foreach ($k in @('LTT_ADMIN_PASSWORD_HASH', 'LTT_SESSION_SECRET', 'LTT_TOKEN_ENCRYPTION_KEY')) {
-        if ($txt -notmatch "$k=\S") { $missing += $k }
+    $missing = @()
+    foreach ($k in @('LTT_SESSION_SECRET', 'LTT_TOKEN_ENCRYPTION_KEY')) {
+        if ($txt -notmatch "(?m)^$k=\S") { $missing += $k }
     }
-    if ($missing.Count -gt 0) { Bad "Chua dien: $($missing -join ', ')" } else { Ok 'Da co du 3 bi mat bat buoc' }
+    if ($missing.Count -gt 0) { Bad "Chua dien: $($missing -join ', ')" }
+    else { Ok 'Da co du bi mat runtime bat buoc' }
+    if ($txt -match '(?m)^LTT_ENV=(production|prod)\s*$') {
+        if ($txt -match '(?m)^LTT_ADMIN_PASSWORD_HASH=\S') {
+            Bad 'Production con bat admin-env; Q29 yeu cau vo hieu duong nay'
+        } else { Ok 'Admin-env da vo hieu o production (Q29)' }
+    }
     $acl = (Get-Acl $secrets).Access | Where-Object { $_.IdentityReference -match 'Users|Everyone' }
     if ($acl) { Warn 'secrets\ con cho Users/Everyone truy cap' } else { Ok 'Quyen secrets\ da siet' }
 } else { Bad 'THIEU secrets\app.env' }

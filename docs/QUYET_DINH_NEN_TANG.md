@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q43; Q13→Q26, Q14→Q24, Q18→Q38, Q22→Q27 đã thay)
+## 1. Quyết định đã chốt (đến Q44; Q13→Q26, Q14→Q24, Q18→Q38, Q22→Q27 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -68,6 +68,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q41 | Hợp đồng công cụ cho Agent | **Mở rộng additive `AppManifest.tools: tuple = ()` bằng `ToolSpec` immutable.** Nền tảng discover metadata động, không hardcode slug; app cũ không khai tool tiếp tục chạy nguyên. | Agent cần schema vào/ra và khả năng kiểm chứng, nhưng không được phá hợp đồng app hiện hành. ToolSpec chỉ mô tả job đã có, không thay handler hay tạo runtime mới. |
 | Q42 | Tiền và cổng duyệt Agent | **Plan phải có báo giá trần; chưa duyệt không giữ chỗ/ghi bút toán credit và tuyệt đối không chạy tool. Khi duyệt, giữ chỗ toàn bộ trần trong cùng transaction với run; quyết toán theo chi phí thật, hoàn phần dư.** Chi phí provider của lượt lập plan trước duyệt do nền tảng hấp thụ; chỉ được tính vào giá sau khi người dùng duyệt, kèm rate-limit để chống lạm dụng. | Không thể vừa cho khách xem Plan/báo giá trước duyệt vừa tránh hoàn toàn chi phí provider ở phía nền tảng. Quy tắc này giữ lời hứa “không trừ credit trước duyệt”, đồng thời làm rõ ai chịu chi phí plan bị bỏ. |
 | Q43 | Ranh giới tái sử dụng cho Agent | **Internal-first:** dùng LTTSTUDIOSAPP L1/L2/L3 trước; chỉ tham chiếu/copy L1/L2 còn thiếu từ nguồn ngoài vào repo, không import chéo và không copy runtime/GUI/bí mật. `D:\BOT GEMINI` vẫn chỉ đọc. | Kho hiện tại đã có registry, jobs, credit, provider, prompt fragments, storage/R2, media/GPU và app handlers. Xây lại các phần này sẽ tạo hai nguồn chân lý và tăng rủi ro vận hành. |
+| Q44 | Rollout tạo run LTT Agent | **Một cờ bốn mức** `LTT_AGENT_CANVAS_RUN_ROLLOUT=off/admin/allowlist/public`; production mặc định `off`, giá trị sai cũng về `off`. `allowlist` dùng ID tài khoản trong `LTT_AGENT_CANVAS_RUN_USER_IDS`; admin luôn qua ở mức `admin`/`allowlist`. Cờ boolean cũ chỉ giữ tương thích. | Cờ bật/tắt cũ không thể thực hiện P13 theo nấc và có nguy cơ mở cho mọi user ngay sau deploy. Bốn mức cho phép migration feature-off, canary admin, nhóm nội bộ rồi public mà không đổi binary; rollback tức thời về `off`. |
 
 ---
 

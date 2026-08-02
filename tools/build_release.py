@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
+import re
 import sys
 import zipfile
 
@@ -42,7 +44,7 @@ EXCLUDED_FILES = {
 
 EXCLUDED_SUFFIXES = (
     ".enc", ".db", ".sqlite", ".sqlite3", ".jsonl", ".log", ".pyc",
-    ".zip", ".token.json",
+    ".zip", ".token.json", ".tsbuildinfo",
 )
 
 # Directories that MUST be present in the archive for it to be usable.
@@ -53,7 +55,76 @@ REQUIRED_ENTRIES = (
     "requirements-server.txt",
     "deploy/windows/install.ps1",
     "tools/doctor.py",
+    "frontend/agent-canvas/package.json",
+    "frontend/agent-canvas/package-lock.json",
+    "server/static/agent-canvas/.vite/manifest.json",
+    "server/static/agent-canvas/build-meta.json",
 )
+
+CANVAS_SOURCE = "frontend/agent-canvas"
+CANVAS_OUTPUT = "server/static/agent-canvas"
+CANVAS_IGNORED_FILES = {
+    "tsconfig.app.tsbuildinfo", "tsconfig.node.tsbuildinfo",
+    "vite.config.d.ts", "vite.config.js",
+}
+
+
+def canvas_source_sha256(root: str) -> str:
+    """Hash the exact frontend inputs used by write-build-meta.mjs."""
+    source = os.path.join(root, CANVAS_SOURCE)
+    digest = hashlib.sha256()
+    inputs = []
+    for dirpath, dirnames, filenames in os.walk(source):
+        dirnames[:] = sorted(d for d in dirnames if d not in {"node_modules", ".pytest_cache"})
+        for name in filenames:
+            if name not in CANVAS_IGNORED_FILES:
+                full = os.path.join(dirpath, name)
+                rel = os.path.relpath(full, source).replace("\\", "/")
+                inputs.append((rel, full))
+    for rel, full in sorted(inputs):
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        with open(full, "rb") as handle:
+            digest.update(handle.read())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def verify_frontend_bundle(root: str) -> None:
+    """Reject stale, incomplete, or development-only Canvas bundles."""
+    output = os.path.join(root, CANVAS_OUTPUT)
+    meta_path = os.path.join(output, "build-meta.json")
+    manifest_path = os.path.join(output, ".vite", "manifest.json")
+    try:
+        with open(meta_path, encoding="utf-8") as handle:
+            meta = json.load(handle)
+        with open(manifest_path, encoding="utf-8") as handle:
+            manifest = json.load(handle)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"Canvas bundle metadata is invalid: {exc}") from exc
+
+    expected = canvas_source_sha256(root)
+    if meta != {
+        "schema": 1,
+        "source_sha256": expected,
+        "node": "22.12.0",
+        "sourcemap": False,
+    }:
+        raise SystemExit("Canvas bundle is stale or was not built with Node 22.12.0")
+
+    entry = manifest.get("src/main.tsx")
+    if not isinstance(entry, dict) or not entry.get("isEntry"):
+        raise SystemExit("Canvas manifest has no src/main.tsx entry")
+    assets = [entry.get("file"), *entry.get("css", [])]
+    hashed = re.compile(r"^assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)$")
+    for asset in assets:
+        if not isinstance(asset, str) or not hashed.fullmatch(asset):
+            raise SystemExit(f"Canvas manifest contains an unhashed asset: {asset!r}")
+        if not os.path.isfile(os.path.join(output, *asset.split("/"))):
+            raise SystemExit(f"Canvas manifest asset is missing: {asset}")
+    for dirpath, _dirs, filenames in os.walk(output):
+        if any(name.endswith(".map") for name in filenames):
+            raise SystemExit(f"Canvas source map found in release bundle: {dirpath}")
 
 
 def _version() -> str:
@@ -88,11 +159,17 @@ def scan_for_secrets(files: list) -> list:
     """Run the repo's own scanner rules over exactly what will ship."""
     from pathlib import Path
 
-    from tools.scan_source_secrets import TEXT_EXTENSIONS, _scan_line
+    from tools.scan_source_secrets import (TEXT_EXTENSIONS, _is_excluded_dir,
+                                           _scan_line)
 
     findings = []
     for full, rel in files:
         if os.path.splitext(rel)[1].lower() not in TEXT_EXTENSIONS:
+            continue
+        # Ton trong cung danh sach loai tru dir cua scan_source_secrets (vd engine
+        # vendored `cutclipshort` — ma ben thu ba, co vi du sha256 rut gon lam trip).
+        # File van SHIP trong archive; chi khong quet secret.
+        if any(_is_excluded_dir(p) for p in Path(rel).parts):
             continue
         try:
             with open(full, "r", encoding="utf-8", errors="replace") as f:
@@ -104,6 +181,7 @@ def scan_for_secrets(files: list) -> list:
 
 
 def build(root: str, output_dir: str) -> str:
+    verify_frontend_bundle(root)
     files = collect_files(root)
 
     missing = [

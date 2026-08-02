@@ -16,6 +16,7 @@ itsdangerous>=2.2.0,<3.0
 jinja2>=3.1.6,<4.0
 python-multipart>=0.0.29,<1.0
 httpx>=0.28.1,<1.0
+sentry-sdk>=2.22,<3.0
 
 # CSDL (H1.1). psycopg 3 ban "binary" mang theo thu vien libpq da bien dich
 # san — tren Windows dieu do tranh phai cai PostgreSQL client rieng chi de
@@ -39,3 +40,10 @@ boto3>=1.35,<2.0
 pillow>=10,<12
 opencv-python-headless>=4.9,<5.0
 volcengine>=1.0.140,<2.0
+openai-codex>=0.144.4,<0.145   # CHAT AI STUDIO: dieu khien Codex app-server (keo theo codex_cli_bin ~140MB); pin sat vi khop version binary
+# TAO CLIP NGAN (engine cutclipshort) — ML nang. torch cu128 cai RIENG trong setup/2
+# (khong de o day vi -r keo ban CPU tu PyPI; Blackwell can cu128).
+faster-whisper>=1.0,<2.0     # chep loi (CTranslate2), GPU float16 / CPU int8
+scenedetect>=0.6.4,<0.7      # phat hien canh
+ultralytics>=8.1,<9.0        # YOLOv8 bam nguoi de reframe doc
+demucs>=4.0,<5.0             # tach nhac/loi (tier high_quality)

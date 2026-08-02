@@ -110,8 +110,13 @@ def _goi_gemini_text(prompt: str, api_key: str) -> str:
     except httpx.HTTPError as e:
         raise GeminiError(_sanitize(f"Lỗi kết nối Gemini: {e}", api_key), status_code=None)
     if resp.status_code != 200:
-        raise GeminiError(_sanitize(
-            f"Gemini HTTP {resp.status_code}: {resp.text}", api_key),
+        # KHONG lo nguyen van body/loi provider ra UI nguoi dung. Chi tiet -> log.
+        import logging
+        logging.getLogger(__name__).warning(
+            "kichban Gemini HTTP %s: %s", resp.status_code,
+            _sanitize(resp.text, api_key))
+        raise GeminiError(
+            f"Dịch vụ AI tạm lỗi (mã {resp.status_code}). Vui lòng thử lại sau.",
             status_code=resp.status_code)
     data = resp.json()
     for part in (data.get("candidates") or [{}])[0].get("content", {}).get("parts", []) or []:

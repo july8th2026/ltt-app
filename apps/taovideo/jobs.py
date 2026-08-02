@@ -78,6 +78,27 @@ def _ket_qua_key(key_id, *, thanh_cong, last_status=None):
         pass
 
 
+def _luu_task_id(job_id: str, task_id: str) -> None:
+    """Lưu remote task_id vào job.params NGAY sau khi submit ModelArk — để lần chạy lại
+    (worker chết/orphan) POLL lại task cũ thay vì submit MỚI (chống double-bill provider)."""
+    if not job_id or job_id == "adhoc" or not task_id:
+        return
+    try:
+        from platform_core.db import get_session
+        from platform_core.models import Job
+        gen = get_session(); db = next(gen)
+        try:
+            j = db.get(Job, job_id)
+            if j is not None:
+                p = dict(j.params or {}); p["_remote_task_id"] = task_id
+                j.params = p; db.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def handle(params: dict, ctx=None) -> dict:
     prompt = str(params.get("prompt", "")).strip()
     if not prompt:
@@ -108,6 +129,8 @@ def handle(params: dict, ctx=None) -> dict:
     ref_items = []
     has_video_input = False
     for rs in (params.get("refs") or []):
+        if ctx is not None:                 # heartbeat: to_asset có thể mất ~200s/ref
+            ctx.progress(3, "chuẩn bị tài nguyên tham chiếu…")
         kind = (rs.get("kind") or "image").strip()
         skey = (rs.get("storage_key") or "").strip()
         if not skey:
@@ -140,6 +163,8 @@ def handle(params: dict, ctx=None) -> dict:
                 continue
             if faces_only and not assets.has_face(it["data"]):
                 continue
+            if ctx is not None:             # heartbeat: to_asset chậm, tránh false-orphan
+                ctx.progress(6, "bảo vệ ảnh người thật…")
             try:
                 it["url"] = assets.to_asset("image", it["data"])
                 n += 1
@@ -156,7 +181,28 @@ def handle(params: dict, ctx=None) -> dict:
     seed = None
     result = None
     mod_try = heal_stage = 0
-    while True:
+
+    # Chống DOUBLE-BILL: lần chạy trước (crash/orphan) có thể đã submit task rồi. Poll
+    # lại task đó tới khi xong thay vì submit MỚI. Chỉ submit mới nếu task cũ hỏng/hết hạn.
+    resumed = (params.get("_remote_task_id") or "").strip()
+    if resumed:
+        try:
+            for i in range(_POLL_MAX):
+                if ctx is not None:
+                    ctx.progress(min(90, 10 + int(i * 80 / _POLL_MAX)), "tiếp tục dựng video…")
+                time.sleep(POLL_INTERVAL_S)
+                try:
+                    st = modelark.poll(api_key, resumed)
+                except modelark.ModelArkError:
+                    break
+                if st["status"] == "succeeded":
+                    result = st; break
+                if st["status"] in ("failed", "expired", "cancelled"):
+                    break
+        except Exception:  # noqa: BLE001
+            pass
+
+    while result is None:
         if ctx is not None:
             ctx.progress(5, "gửi yêu cầu tạo video")
         err = None
@@ -166,6 +212,7 @@ def handle(params: dict, ctx=None) -> dict:
                 api_key, model_endpoint=endpoint, content=content,
                 resolution=resolution, duration=duration, aspect_ratio=aspect,
                 generate_audio=audio, seed=seed)
+            _luu_task_id(job_id, task_id)   # persist NGAY để retry poll lại, không submit mới
         except modelark.ModelArkError as e:
             err = str(e).lower()
             if not (e.status_code == 400 and _looks_privacy(err)):

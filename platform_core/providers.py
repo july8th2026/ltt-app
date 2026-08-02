@@ -98,9 +98,21 @@ REGISTRY: dict[str, Provider] = {
         base_url="https://ark.ap-southeast.bytepluses.com/api/v3",
         categories=(APIKEY_CAT_VIDEO,), async_poll=True,
         models=(
-            ModelInfo("seedance-2.0", (APIKEY_CAT_VIDEO,)),
-            ModelInfo("seedance-2.0-fast", (APIKEY_CAT_VIDEO,)),
-            ModelInfo("seedance-2.0-mini", (APIKEY_CAT_VIDEO,)),
+            ModelInfo("seedance-2.0", (APIKEY_CAT_VIDEO,), capabilities={
+                "resolutions": ["480p", "720p", "1080p", "4k"],
+                "durations": [4, 5, 6, 8, 10, 12, 15],
+                "aspects": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+            }),
+            ModelInfo("seedance-2.0-fast", (APIKEY_CAT_VIDEO,), capabilities={
+                "resolutions": ["480p", "720p"],
+                "durations": [4, 5, 6, 8, 10, 12, 15],
+                "aspects": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+            }),
+            ModelInfo("seedance-2.0-mini", (APIKEY_CAT_VIDEO,), capabilities={
+                "resolutions": ["480p", "720p"],
+                "durations": [4, 5, 6, 8, 10, 12, 15],
+                "aspects": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+            }),
         ),
         notes="Video async: POST /contents/generations/tasks -> poll GET .../{id}. endpoint_id theo tài khoản.",
     ),
@@ -149,3 +161,19 @@ def model_capabilities(model_id: str) -> dict:
             if model.id == model_id:
                 return dict(model.capabilities)
     return {}
+
+
+def model_options(category: str, provider_ids_filter: Optional[tuple] = None) -> list:
+    """Danh sách model active theo category/provider, khử trùng nhưng giữ thứ tự."""
+    allowed = set(provider_ids_filter or ())
+    out: list = []
+    seen: set = set()
+    for provider in REGISTRY.values():
+        if allowed and provider.id not in allowed:
+            continue
+        for model in provider.models:
+            if (model.is_active and category in model.categories
+                    and model.id not in seen):
+                out.append({"value": model.id, "label": model.label()})
+                seen.add(model.id)
+    return out

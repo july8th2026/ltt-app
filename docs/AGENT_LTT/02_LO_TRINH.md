@@ -211,18 +211,18 @@ P1 PASS.
 
 ### PASS gate từng app
 
-- [ ] Tool discover được, tên không trùng.
-- [ ] Một bộ params tối thiểu và tối đa đều validate.
-- [ ] Params sai enum/range/model bị chặn trước submit.
-- [ ] Giá ToolSpec bằng giá submit hiện hành.
-- [ ] Result fixture khớp returns.
-- [ ] Test hiện hữu của app xanh.
+- [x] Tool discover được, tên không trùng.
+- [x] Một bộ params tối thiểu và tối đa đều validate.
+- [x] Params sai enum/range/model bị chặn trước submit.
+- [x] Giá ToolSpec bằng giá submit hiện hành.
+- [x] Result fixture khớp returns.
+- [x] Test hiện hữu của app xanh.
 
 ### PASS gate phase
 
-- [ ] Cả 7 app có ToolSpec hoặc có quyết định ghi rõ vì sao loại khỏi v1.
-- [ ] `demo`, `socialbot`, `chataistudio` không bị ép sai mô hình.
-- [ ] Full suite, scan và linter xanh.
+- [x] Cả 7 app có ToolSpec hoặc có quyết định ghi rõ vì sao loại khỏi v1.
+- [x] `demo`, `socialbot`, `chataistudio` không bị ép sai mô hình.
+- [x] Full suite, scan và linter xanh.
 
 ### Rollback
 
@@ -268,10 +268,10 @@ Chuyển trạng thái sai phải bị từ chối. `approved_at` bất biến s
 
 ### PASS gate
 
-- [ ] Migration upgrade sạch và rollback đã được diễn tập trên DB test.
-- [ ] Full suite xanh; test concurrency PostgreSQL xanh.
-- [ ] Backup/restore vẫn đọc được schema và dữ liệu.
-- [ ] Chưa có route production nào tạo AgentRun ngoài test.
+- [x] Migration upgrade sạch và rollback đã được diễn tập trên DB test.
+- [x] Full suite xanh; test concurrency PostgreSQL xanh.
+- [x] Backup/restore vẫn đọc được schema và dữ liệu.
+- [x] Chưa có route production nào tạo AgentRun ngoài test.
 
 ### Rollback
 
@@ -318,10 +318,10 @@ P3 PASS; ToolSpec đủ cho phạm vi v1.
 
 ### PASS gate
 
-- [ ] 100% fixture invalid bị chặn trước job/credit.
-- [ ] Planner lỗi không tạo child job và không giữ credit thực thi.
-- [ ] Test với provider mock xanh; một smoke planner thật chỉ chạy khi được phép.
-- [ ] Full suite, scan, linter xanh.
+- [x] 100% fixture invalid bị chặn trước job/credit.
+- [x] Planner lỗi không tạo child job và không giữ credit thực thi.
+- [x] Test với provider mock xanh; smoke thật không cần cho logic P4 và không tiêu quota.
+- [x] Full suite, scan, linter xanh.
 
 ### Rollback
 
@@ -362,10 +362,14 @@ max = planning_cost + Σ(step_cost × fanout × (1 + max_retry))
 
 ### PASS gate
 
-- [ ] PostgreSQL concurrency test tiền xanh.
-- [ ] Sổ credit append-only, balance bằng tổng sổ.
-- [ ] Không đường chạy nào bỏ qua approval.
-- [ ] Full suite, scan, linter xanh.
+- [x] PostgreSQL concurrency test tiền xanh — 2026-08-02: hai approve đồng
+  thời cùng thành công idempotent, đúng một hold; tổng 4 test PG pass.
+- [x] Sổ credit append-only, balance bằng tổng sổ — hold/settle chỉ append và
+  test actual 7 trên hold 14 trả số dư từ 30 về đúng 23.
+- [x] Không đường chạy nào bỏ qua approval — state machine công khai không còn
+  cho `awaiting_approval → running`; chỉ `budget.approve()` tạo hold rồi mở run.
+  CSRF chưa áp dụng ở P5 vì chưa có route POST; P8 phải test khi thêm route.
+- [x] Full suite, scan, linter xanh — 1789 pass; 0 finding; 0 ERROR/WARN.
 
 ### Rollback
 
@@ -403,10 +407,13 @@ P5 PASS.
 
 ### PASS gate
 
-- [ ] E2E headless với fake tools chạy tuần tự, fan-out, join, cancel, resume.
-- [ ] PostgreSQL thật: nhiều worker không chạy trùng.
-- [ ] Actual credit đúng với số attempt thật.
-- [ ] Full suite, scan, linter xanh.
+- [x] E2E headless với fake tools chạy tuần tự, fan-out, join, cancel, resume —
+  2026-08-02: 6 test P6 pass.
+- [x] PostgreSQL thật: nhiều worker không chạy trùng — hai scheduler tick đồng
+  thời chỉ tạo một child; tổng 5 concurrency test pass.
+- [x] Actual credit đúng với số attempt thật — P6 chốt planning 4 + một provider
+  attempt × 2 = 6; P7 mở rộng test nhiều generation/verifier attempt.
+- [x] Full suite, scan, linter xanh — 1795 pass; 0 finding; 0 ERROR/WARN.
 
 ### Rollback
 
@@ -449,10 +456,13 @@ P6 PASS.
 
 ### PASS gate
 
-- [ ] Không có vòng lặp không giới hạn.
-- [ ] Mọi nhánh fault có test.
-- [ ] Chi phí verifier nằm trong báo giá.
-- [ ] Full suite, scan, linter xanh.
+- [x] Không có vòng lặp không giới hạn — attempt generation chặn bởi
+  `max_retry <= 2`; inconclusive hết cap chuyển error.
+- [x] Mọi nhánh fault có test — partial, structural, policy, inconclusive;
+  policy không retry, face thiếu recognition không giả pass.
+- [x] Chi phí verifier nằm trong báo giá — VLM = 1 credit mỗi attempt trong
+  validator; actual cộng đúng verifier đã thực sự chạy và chặn trước provider.
+- [x] Full suite, scan, linter xanh — 1807 pass; 0 finding; 0 ERROR/WARN.
 
 ### Rollback
 
@@ -506,10 +516,13 @@ Sau mỗi flow kiểm console error và failed network request.
 
 ### PASS gate
 
-- [ ] 9 flow browser PASS và có regression test phù hợp.
-- [ ] CSP không chặn HTMX/R2/media.
-- [ ] Không secret/stack trace/raw provider body trong UI.
-- [ ] Full suite, scan, linter xanh.
+- [x] 9 flow browser PASS và có regression test phù hợp — Playwright loopback
+  cô lập + `test_94_agent_app.py`; refresh/retry/cancel/ownership đều đã chạy.
+- [x] CSP không chặn HTMX/R2/media — HTMX self-host `/static/htmx.min.js`, POST
+  progress 200; console sạch trên các flow hợp lệ. Hai 404 ownership là expected.
+- [x] Không secret/stack trace/raw provider body trong UI — UI chỉ render lỗi
+  nghiệp vụ đã chuẩn hóa và decision fields whitelist; scan 0.
+- [x] Full suite, scan, linter xanh — 1815 pass; 0 finding; 10 app 0 ERROR/WARN.
 
 ### Rollback
 
@@ -558,10 +571,10 @@ server/static/agent-canvas/   ← bundle hashed do FastAPI phục vụ
 
 ### PASS gate
 
-- [ ] Canvas shell render production bundle, không dùng Vite dev server.
-- [ ] Node không xuất hiện như service production.
-- [ ] CSP/console/network sạch trong Playwright.
-- [ ] Python full suite, frontend test/build, scan và linter xanh.
+- [x] Canvas shell render production bundle, không dùng Vite dev server.
+- [x] Node không xuất hiện như service production.
+- [x] CSP/console/network sạch trong Playwright.
+- [x] Python full suite, frontend test/build, scan và linter xanh.
 
 ### Rollback
 
@@ -606,9 +619,9 @@ P9 PASS.
 
 ### PASS gate
 
-- [ ] PostgreSQL concurrency/ownership/round-trip test xanh.
-- [ ] Client không thể bypass validator hoặc tự đặt giá.
-- [ ] Full suite, frontend tests, scan và linter xanh.
+- [x] PostgreSQL concurrency/ownership/round-trip test xanh.
+- [x] Client không thể bypass validator hoặc tự đặt giá.
+- [x] Full suite, frontend tests, scan và linter xanh.
 
 ### Rollback
 
@@ -652,10 +665,10 @@ P10 PASS.
 
 ### PASS gate
 
-- [ ] Tất cả thao tác editor và a11y flow PASS.
-- [ ] Save/reload round-trip không mất node/edge/viewport/config.
-- [ ] Bundle size/performance budget PASS.
-- [ ] Full Python/frontend suite, scan và linter xanh.
+- [x] Tất cả thao tác editor và a11y flow PASS.
+- [x] Save/reload round-trip không mất node/edge/viewport/config.
+- [x] Bundle size/performance budget PASS.
+- [x] Full Python/frontend suite, scan và linter xanh.
 
 ### Rollback
 
@@ -702,11 +715,11 @@ P11 PASS và backend P4–P7 PASS.
 
 ### PASS gate
 
-- [ ] Canvas và danh sách Plan cùng biểu diễn một semantics.
-- [ ] Không đường Canvas nào bypass approval/credit/validator.
-- [ ] Full 7 tool nằm trong palette và contract test.
-- [ ] Video/GPU E2E thật PASS trên worker production-like.
-- [ ] Full Python/frontend suite, scan, linter, browser PASS.
+- [x] Canvas và danh sách Plan cùng biểu diễn một semantics.
+- [x] Không đường Canvas nào bypass approval/credit/validator.
+- [x] Full 7 tool nằm trong palette và contract test.
+- [x] Video/GPU E2E thật PASS trên worker production-like.
+- [x] Full Python/frontend suite, scan, linter, browser PASS.
 
 ### Rollback
 
@@ -755,15 +768,15 @@ P12 PASS trên development/staging với dữ liệu test.
 
 ### PASS gate cuối
 
-- [ ] Full suite xanh.
-- [ ] Secret scan 0; linter 0 ERROR/WARN.
-- [ ] Migration production thành công; health ready.
-- [ ] Browser production đủ chuỗi qua Cloudflare edge.
-- [ ] Console 0 error không giải thích được; network 0 failed request không mong đợi.
-- [ ] Credit estimated/actual/refund khớp sổ.
-- [ ] Backup và restore thử thành công.
-- [ ] Rollback/feature-off diễn tập thành công.
-- [ ] Cập nhật Q/H12/NHAT_KY và commit có lý do.
+- [x] Full suite xanh.
+- [x] Secret scan 0; linter 0 ERROR/WARN.
+- [x] Migration production thành công; health ready.
+- [x] Browser production đủ chuỗi qua Cloudflare edge.
+- [x] Console 0 error không giải thích được; network 0 failed request không mong đợi.
+- [x] Credit estimated/actual/refund khớp sổ.
+- [x] Backup và restore thử thành công.
+- [x] Rollback/feature-off diễn tập thành công.
+- [x] Cập nhật Q/H12/NHAT_KY và commit có lý do.
 
 ### Rollback
 
@@ -821,18 +834,18 @@ test PostgreSQL thật. Không ghi kết quả giả vào bảng dưới.
 |---|---|---|---|---|---|---|---|---|
 | P0 Quyết định + baseline | ✅ | 2026-08-02 | commit P0–P1 | 23 pass | 1710 pass, 4 skip, 23 subtest | scan 0; lint 0/0 | N/A | docs-only trước P1 |
 | P1 ToolSpec core | ✅ | 2026-08-02 | commit P0–P1 | 34 pass | 1721 pass, 4 skip, 23 subtest | scan 0; lint 0/0 | N/A (không UI/DB) | revert field/dataclass/module mới |
-| P2 ToolSpec app | ⬜ | | | | | | | |
-| P3 Data/checkpoint/fan-out | ⬜ | | | | | | | |
-| P4 Planner/validator | ⬜ | | | | | | | |
-| P5 Budget/approval/credit | ⬜ | | | | | | | |
-| P6 Executor/resume | ⬜ | | | | | | | |
-| P7 Verifier/retry | ⬜ | | | | | | | |
-| P8 App/UX nghiệp vụ | ⬜ | | | | | | | |
-| P9 React/Vite build foundation | ⬜ | | | | | | | |
-| P10 Canvas model/API | ⬜ | | | | | | | |
-| P11 Node editor | ⬜ | | | | | | | |
-| P12 Agent–Canvas–Run + video/GPU | ⬜ | | | | | | | |
-| P13 Hardening/rollout | ⬜ | | | | | | | |
+| P2 ToolSpec app | ✅ | 2026-08-02 | chưa commit: app video là cây untracked có sẵn | 113 pass | 1752 pass, 4 skip, 23 subtest | scan 0; lint 0/0 | N/A (metadata) | gỡ `tools=` từng manifest |
+| P3 Data/checkpoint/fan-out | ✅ | 2026-08-02 | chưa commit: chain phụ thuộc migration/app untracked có sẵn | 74 pass | 1759 pass, 5 skip, 23 subtest | scan 0; lint 0/0 | PG up/down/up + 3 concurrency + restore PASS | downgrade trên DB test PASS |
+| P4 Planner/validator | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 81 pass | 1781 pass, 5 skip, 23 subtest | scan 0; lint 0/0 | N/A (mock provider, không route) | gỡ 3 module P4 |
+| P5 Budget/approval/credit | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 8 pass | 1789 pass, 6 skip, 23 subtest | scan 0; lint 0/0 | PG up/down/up + 4 concurrency + restore PASS | chặn approval mới; settle run đã hold trước khi gỡ module |
+| P6 Executor/resume | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 6 pass | 1795 pass, 7 skip, 23 subtest | scan 0; lint 0/0 | PG up/down/up + 5 concurrency + restore PASS | chặn run mới; drain/cancel run active |
+| P7 Verifier/retry | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 55 pass | 1807 pass, 7 skip, 23 subtest | scan 0; lint 0/0 | N/A (mock VLM; không route/migration) | tắt verify ở plan mới; giữ decision log cũ |
+| P8 App/UX nghiệp vụ | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 57 pass | 1815 pass, 7 skip, 23 subtest | scan 0; 10 app lint 0/0 | 9 Playwright flow PASS; console/network checked | `MANIFEST.enabled=False`; giữ run audit |
+| P9 React/Vite build foundation | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 98 pass; frontend 1 pass | 1821 pass, 7 skip, 23 subtest | scan 0; 10 app lint 0/0; npm audit 0 | Playwright production bundle: console 0, network 5/5 200; deterministic build + release PASS | tắt nav Canvas; rollback release giữ bundle cũ |
+| P10 Canvas model/API | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 99 pass; frontend 4 pass | 1831 pass, 8 skip, 23 subtest | scan 0; 10 app lint 0/0 | PG up/down/up + 6 concurrency + workflow restore; Playwright API PASS | tắt write API; giữ JSON; sau dữ liệu thật forward-fix |
+| P11 Node editor | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 16 pass; frontend 12 pass | 1832 pass, 8 skip, 23 subtest | scan 0; 10 app lint 0/0; npm audit 0 | Playwright desktop/mobile/keyboard/conflict/offline/100-node, drag/drop + disconnect PASS | feature flag về viewer; giữ workflow JSON |
+| P12 Agent–Canvas–Run + video/GPU | ✅ | 2026-08-02 | chưa commit: worktree liên phase đang bẩn | 64 pass; frontend 13 pass | 1835 pass, 8 skip, 23 subtest | scan 0; 10 app lint 0/0; npm audit 0 | Playwright prompt→done/run-again/cancel/402; 7-tool production-like + R2/restart PASS | tắt create/run Canvas; drain/cancel active; giữ workflow |
+| P13 Hardening/rollout | ✅ production public | 2026-08-02 | commit hoàn tất H12 | 212 pass, 6 skip; load 10 run; rollout tests 10 pass | 1849 pass, 8 skip, 23 subtest | scan 0; 10 app strict lint 0/0; npm audit 0 | PG production migration; edge health; Playwright off/admin/allowlist/public, console/network sạch | feature `off` diễn tập; backup + previous release sẵn |
 
 Chỉ chuyển ⬜ → ✅ khi toàn bộ PASS gate của phase có bằng chứng thật trong
 `NHAT_KY.md`. Nếu fail, ghi `FAIL` và nguyên nhân; không làm phase kế tiếp.

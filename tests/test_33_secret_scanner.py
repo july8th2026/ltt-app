@@ -79,3 +79,11 @@ def test_source_file_is_not_excluded(tmp_path):
     path.parent.mkdir()
     path.write_text("# safe", encoding="utf-8")
     assert not _is_excluded_file(root, path)
+
+
+def test_node_dependency_tree_is_excluded(tmp_path):
+    root = tmp_path
+    path = root / "frontend" / "agent-canvas" / "node_modules" / "vendor.js"
+    path.parent.mkdir(parents=True)
+    path.write_text("// third-party package", encoding="utf-8")
+    assert _is_excluded_file(root, path)

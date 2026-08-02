@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Canvas · LTT Agent AI{% endblock %}
+{% block content %}
+<div id="agent-canvas-root" aria-busy="true" data-csrf-token="{{ csrf_token }}"><p class="muted">Đang tải Canvas…</p></div>
+{% for href in canvas_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+{% for src in canvas_js %}<script type="module" src="{{ src }}"></script>{% endfor %}
+{% endblock %}

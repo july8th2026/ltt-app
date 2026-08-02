@@ -1,0 +1,15 @@
+# Export Profile: YouTube Shorts
+
+name: youtube_shorts
+display_name: YouTube Shorts
+aspect_ratio: "9:16"
+width: 1080
+height: 1920
+max_duration_sec: 60.0
+
+render:
+  crf: "17"
+  pixel_format: yuv420p
+  audio_bitrate: 256k
+  audio_sample_rate: 48000
+  audio_channels: 2
