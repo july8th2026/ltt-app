@@ -192,3 +192,11 @@ def test_admin_gpu_telemetry_parse_du_lieu_khong_chua_ten_file():
                     "util_percent": 42, "temp_c": 67,
                     "vram_total_mb": 16384, "vram_used_mb": 4096}
     assert "filename" not in data and "video_key" not in data
+
+
+def test_browser_r2_direct_upload_mac_dinh_tat_den_khi_cors_duoc_gate(monkeypatch):
+    from apps.upscalevideo.routes import _browser_direct_upload_enabled
+    monkeypatch.delenv("LTT_R2_BROWSER_UPLOAD_ENABLED", raising=False)
+    assert _browser_direct_upload_enabled() is False
+    monkeypatch.setenv("LTT_R2_BROWSER_UPLOAD_ENABLED", "1")
+    assert _browser_direct_upload_enabled() is True

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import uuid
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from statistics import median
@@ -27,6 +28,15 @@ _PRESETS = [("fast", "⚡ Fast (khuyến nghị)"), ("quality", "💎 Quality (n
 _HEIGHTS = [(1080, "1080p"), (1440, "1440p (2K)"), (2160, "2160p (4K)")]
 _CODECS = [("h264", "H.264"), ("hevc", "H.265 (nhỏ hơn)")]
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
+
+
+def _browser_direct_upload_enabled() -> bool:
+    """R2 presigned PUT only works after the bucket CORS rule is verified.
+
+    Default-off avoids a guaranteed browser CORS error followed by multipart
+    fallback. Watch Agent is not a browser and keeps using direct R2 uploads.
+    """
+    return os.environ.get("LTT_R2_BROWSER_UPLOAD_ENABLED", "").strip() == "1"
 
 
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
@@ -161,10 +171,12 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
         ext = "." + filename.rsplit(".", 1)[1].lower()[:5]
     key = f"upscalevideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
     ct = (content_type or "video/mp4").split(";")[0].strip() or "video/mp4"
-    try:
-        target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
-    except Exception:  # noqa: BLE001
-        target = None
+    target = None
+    if _browser_direct_upload_enabled():
+        try:
+            target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
+        except Exception:  # noqa: BLE001
+            target = None
     if target is None:
         return JSONResponse({"mode": "local", "key": key})
     return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
