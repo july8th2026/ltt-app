@@ -56,6 +56,13 @@ def test_update_runs_migrations_before_start():
     assert text.index("alembic upgrade head") < text.index("Start-Service $ServiceName")
 
 
+def test_service_env_loader_allows_empty_optional_integration_placeholders():
+    text = _read("set-service-env.ps1")
+    assert "skip empty" in text
+    assert "These variables are still empty" not in text
+    assert "tools\\nssm.exe" in text
+
+
 def test_scheduled_backup_tightens_acl():
     """W1.5: ban backup off-drive CHUA secrets (app.env + dump) -> thu muc phai
     bi siet ACL (icacls SID) de Users/Everyone khong doc duoc."""

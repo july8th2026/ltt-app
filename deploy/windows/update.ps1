@@ -97,12 +97,28 @@ Write-Step 'Updating dependencies'
 Write-Ok 'Dependencies updated'
 
 Write-Step 'Updating isolated WhisperX CUDA sidecar'
-$whisperOut = @(& (Join-Path $release 'deploy\windows\install-whisperx-sidecar.ps1') `
-    -Root $Root -ReleaseDir $release -PythonExe 'python')
-$whisperPy = $whisperOut[-1]
-if (-not $whisperPy) { throw 'WhisperX sidecar update failed' }
 $envFileWhisper = Join-Path $Root 'secrets\app.env'
 $envTextWhisper = Get-Content $envFileWhisper -Raw
+$whisperPy = $null
+# Reuse a configured healthy sidecar. Rebuilding a multi-GB CUDA environment
+# during every release lengthens downtime and can stop an otherwise valid
+# deployment when the package index is temporarily unavailable.
+if ($envTextWhisper -match '(?m)^LTT_WHISPERX_PYTHON=(.+)$') {
+    $candidateWhisperPy = $Matches[1].Trim()
+    if (Test-Path $candidateWhisperPy) {
+        & $candidateWhisperPy -c "import torch,whisperx,sys; sys.exit(0 if torch.cuda.is_available() else 1)" 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            $whisperPy = $candidateWhisperPy
+            Write-Ok 'Existing WhisperX CUDA sidecar kept'
+        }
+    }
+}
+if (-not $whisperPy) {
+    $whisperOut = @(& (Join-Path $release 'deploy\windows\install-whisperx-sidecar.ps1') `
+        -Root $Root -ReleaseDir $release -PythonExe 'python')
+    $whisperPy = $whisperOut[-1]
+    if (-not $whisperPy) { throw 'WhisperX sidecar update failed' }
+}
 if ($envTextWhisper -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
     [IO.File]::AppendAllText($envFileWhisper, "`r`nLTT_WHISPERX_PYTHON=$whisperPy`r`n", (New-Object Text.UTF8Encoding($false)))
 }

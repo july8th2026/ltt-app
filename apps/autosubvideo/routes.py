@@ -53,6 +53,10 @@ def _studio_enabled() -> bool:
     return os.environ.get("LTT_ENV", "").strip().lower() not in {"production", "prod"}
 
 
+def _browser_direct_upload_enabled() -> bool:
+    return os.environ.get("LTT_R2_BROWSER_UPLOAD_ENABLED", "").strip() == "1"
+
+
 def _studio_assets() -> tuple[list[str], list[str]]:
     try:
         manifest = json.loads(_STUDIO_MANIFEST.read_text(encoding="utf-8"))
@@ -658,6 +662,8 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
     key = f"autosubvideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
     ct = (content_type or "video/mp4").split(";")[0].strip() or "video/mp4"
     storage = get_storage()
+    if not _browser_direct_upload_enabled():
+        return JSONResponse({"mode": "local", "key": key})
     try:
         target = storage.put_url(key, ttl_s=3600, content_type=ct)
     except Exception:  # noqa: BLE001
@@ -776,6 +782,29 @@ def _guard_key(request: Request, key: str) -> None:
         raise HTTPException(status_code=404, detail="Không tìm thấy.")
 
 
+def _iter_storage_range(stream, start: int, length: int):
+    """Yield a byte range from local files or non-seekable R2 StreamingBody."""
+    try:
+        try:
+            stream.seek(start)
+        except (AttributeError, OSError):
+            skipped = 0
+            while skipped < start:
+                chunk = stream.read(min(1024 * 1024, start - skipped))
+                if not chunk:
+                    return
+                skipped += len(chunk)
+        remaining = length
+        while remaining > 0:
+            chunk = stream.read(min(1024 * 1024, remaining))
+            if not chunk:
+                return
+            remaining -= len(chunk)
+            yield chunk
+    finally:
+        stream.close()
+
+
 @router.get("/v/{key:path}")
 def video_out(request: Request, key: str, user: str = Depends(require_login)):
     """Serve video output theo HTTP Range; R2 → redirect presigned (né 100MB)."""
@@ -786,7 +815,7 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
         direct = storage.url_for(key)
     except Exception:  # noqa: BLE001
         direct = None
-    if direct:
+    if direct and _browser_direct_upload_enabled():
         return RedirectResponse(direct, status_code=302)
     try:
         total = storage.size(key)
@@ -804,15 +833,11 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
         if start > end:
             start = 0
         length = end - start + 1
-        f = storage.open(key)
-        try:
-            f.seek(start); chunk = f.read(length)
-        finally:
-            f.close()
-        return Response(content=chunk, status_code=206, media_type="video/mp4",
+        return StreamingResponse(_iter_storage_range(storage.open(key), start, length),
+                        status_code=206, media_type="video/mp4",
                         headers={"Content-Range": f"bytes {start}-{end}/{total}",
                                  "Accept-Ranges": "bytes",
-                                 "Content-Length": str(len(chunk))})
+                                 "Content-Length": str(length)})
     return StreamingResponse(storage.open(key), media_type="video/mp4",
                              headers={"Accept-Ranges": "bytes",
                                       "Content-Length": str(total)})

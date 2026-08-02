@@ -1076,13 +1076,17 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
   720p/1080p/4K NVENC + credit/artifact PASS; A/B tiny/large-v3 aligned; 3.000 cue
   xuất đủ artifact trong 0,438s/8,98 MB; 170 backend + 9 frontend PASS, scan 0;
   Playwright 4 viewport, offline recovery, accessibility, console/network sạch.
-- [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
+- [x] AS9 full gate/release/deploy — 2026-08-03: final full suite 1.894 PASS,
+  8 skip/23 subtest, scan 0, pip/npm audit/lint/build/migration/backup-restore
+  PASS; PostgreSQL lên `d4e5f6a7b8c9`; rollout public. Production canary video
+  thật upload/import/quote 1 credit/render GPU/artifact PASS; 4 viewport overflow
+  0, console/network sạch. Canary còn bắt và khóa 4 lỗi deploy/R2 bằng regression.
 
 ---
 
 ## Việc phải làm ngay ở phiên tiếp theo
 
-`H13.autosubvideo` đang triển khai liên tục theo ủy quyền của Dev. Việc kế tiếp là
-AS9: full gate, release, backup/migration rehearsal, deploy và production canary.
-Hạ tầng
+`H13.autosubvideo` AS0–AS9 đã hoàn thành và đang public trên production. Việc kế
+tiếp là theo dõi telemetry/job thực tế và chỉ bật browser R2 direct sau khi bucket
+CORS vượt browser gate Q48. Hạ tầng
 độc lập còn việc cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.

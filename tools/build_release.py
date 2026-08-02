@@ -32,7 +32,7 @@ EXCLUDED_DIRS = {
     "_recovery", "node_modules", ".claude",
     # Snapshot/log tam cua Playwright MCP - khong bao gio thuoc release, va chua
     # nhieu chuoi hex lam trip may quet secret. Chi la rac dieu khien trinh duyet.
-    ".playwright-mcp",
+    ".playwright-mcp", ".playwright-cli",
 }
 
 EXCLUDED_DIR_PREFIXES = (".backup_",)

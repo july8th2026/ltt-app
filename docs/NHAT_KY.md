@@ -14,6 +14,86 @@
 
 ---
 
+## 2026-08-03 — H13.autosubvideo AS9: production public PASS
+
+- **Mục tiêu:** khóa toàn bộ release gate, deploy có backup/rollback và chứng minh
+  workflow Studio thật qua Cloudflare bằng dữ liệu canary.
+- **Hạng mục:** AS9 hoàn thành; Auto Sub AS0–AS9 đóng.
+- **Trạng thái:** production public, health/worker/GPU/browser PASS.
+
+### Đã làm
+
+Full suite đầu 1.890 test xanh. Dependency Python, npm của Auto Sub/Canvas, strict
+app contract, secret scan, frontend typecheck/test/build đều sạch. Migration rehearsal
+SQLite `upgrade -> downgrade base -> upgrade head` PASS. Tạo backup off-drive có
+secrets + `pg_dump`, mở archive, bung restore cô lập và `pg_restore --list` PASS.
+
+Lượt update đầu dừng sau khi stop service vì luôn tạo lại sidecar WhisperX nhiều GB
+ở ổ C dù sidecar CUDA hợp lệ đã cấu hình ở ổ D. Dữ liệu và release trước vẫn nguyên;
+release mới đã extract. Chạy migration PostgreSQL tới `d4e5f6a7b8c9`, dùng sidecar
+đã kiểm CUDA, khởi động web/worker/Codex và health phục hồi. Sửa `update.ps1` để ưu
+tiên sidecar cấu hình khỏe; sửa env loader tìm NSSM dưới Root và bỏ qua placeholder
+optional rỗng thay vì chặn rollout.
+
+Operator canary khi Studio còn off: project create/list/update revision/archive đều
+PASS. Sau chuyển public, Playwright bắt thêm hai lỗi Q48: `/upload-url` vẫn trả vé R2
+khi cờ direct unset, và preview redirect R2 bị CORS; khi proxy thì R2 StreamingBody
+không seek được gây 500. Nay upload mặc định multipart <=90 MB, preview proxy Range
+theo iterator hỗ trợ stream không seek; chỉ redirect/direct khi flag Q48 bằng 1.
+
+Canary cuối dùng video 10,054 giây do Dev cho phép + SRT 3 cue: upload/import/preview
+206, quote 1 credit, submit 202, worker GPU done 100%, balance 100 -> 99, tạo sáu
+nhóm key video/ASS/SRT/VTT/JSON/ZIP. Video Range trả 206/1.024 byte, ZIP trả 200
+`application/zip`. 1440/1280/390/360 đều overflow 0; browser cuối console 0 và
+network sạch. Canary user/session đã vô hiệu, cookie state cục bộ đã xóa; project/
+job/artifact audit được giữ. Rollout `public` đang hiệu lực.
+
+Phát hiện release builder từng đóng gói `.playwright-cli` (301 file evidence vào
+release đã deploy). Đã xóa thư mục đó khỏi production, thêm exclusion + regression,
+rebuild archive cuối còn 1.040 file; không còn browser evidence trong release.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` trước canary | **1.890 passed**, 8 skipped, 23 subtests, 1 warning |
+| `python -m pytest -q` sau toàn bộ hotfix | **1.894 passed**, 8 skipped, 23 subtests, 1 warning |
+| `npm test -- --run && npm run build` (`frontend/autosub-studio`) | **9 passed**, typecheck/Vite PASS |
+| `npm audit --audit-level=high` (Auto Sub + Canvas) | **0 vulnerability** cả hai |
+| `python -m pip check` | không có dependency vỡ |
+| `python tools\\lint_app_contract.py --strict` | 10 app, **0 ERROR/0 WARN** |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS |
+| migration rehearsal SQLite | upgrade/downgrade/upgrade **PASS** |
+| backup + restore rehearsal + `pg_restore --list` | **PASS** |
+| `python tools\\build_release.py --output D:\\LTTReleases` | 1.040 file, 125,9 MB, secret gate PASS |
+| `setup\\4-nghiem-thu.ps1` | PASS; 1 cảnh báo Google/social cũ không liên quan |
+| Playwright production + canary GPU | full workflow PASS; 4 viewport overflow 0; console/network cuối sạch |
+
+### Quyết định mới
+
+Không có. Các sửa đổi thực thi đúng Q48–Q50; browser R2 direct vẫn off cho tới khi
+bucket CORS được cấu hình và kiểm thật.
+
+### Cách lùi lại
+
+Đặt `LTT_AUTOSUB_STUDIO_ROLLOUT=off`, nạp lại env và restart web để về form legacy.
+Nếu cần lùi binary: drain/cancel/settle job rồi chạy `deploy\\windows\\rollback.ps1`;
+`C:\\LTTPlatform\\app.previous` còn release trước AS9. Không xóa project/job/ledger/audit.
+
+### Còn tồn đọng
+
+- Q48: bucket R2 chưa có CORS browser; direct upload >90 MB vẫn bị khóa đúng thiết kế.
+- Pyannote soft-disabled vì production chưa có `LTT_HF_TOKEN`; editor/import/render
+  và WhisperX vẫn hoạt động.
+- Cảnh báo `sheet_id`/`google_credentials_path` thuộc app Google/social cũ.
+
+### Việc tiếp theo
+
+1. Theo dõi error rate, queue/GPU và credit settlement Auto Sub sau public rollout.
+2. Khi có quyền cấu hình R2 CORS, chạy browser gate rồi mới bật Q48.
+
+---
+
 ## 2026-08-03 — H13.autosubvideo AS8: hardening/GPU/corpus PASS
 
 - **Mục tiêu:** phá lỗi ở biên bảo mật, tiến trình AI, tải lớn, GPU thật, offline

@@ -6,6 +6,7 @@ run_with_progress phân tích tiến độ ffmpeg. Không cần ffmpeg thật ch
 from __future__ import annotations
 
 import json
+import io
 
 import pytest
 
@@ -45,6 +46,26 @@ def test_manifest_cost_dung_client_duration():
     # 180s high = 3 phút × 5 × 1.5 = 22.5 → 23
     assert MANIFEST.credit_cost({"duration_s": 180, "quality": "high"}) == 23
     assert MANIFEST.credit_cost({"duration_s": 0, "quality": "standard"}) == 1
+
+
+def test_browser_r2_direct_upload_mac_dinh_tat_den_khi_cors_duoc_gate(monkeypatch):
+    from apps.autosubvideo.routes import _browser_direct_upload_enabled
+    monkeypatch.delenv("LTT_R2_BROWSER_UPLOAD_ENABLED", raising=False)
+    assert _browser_direct_upload_enabled() is False
+    monkeypatch.setenv("LTT_R2_BROWSER_UPLOAD_ENABLED", "1")
+    assert _browser_direct_upload_enabled() is True
+
+
+def test_video_range_stream_supports_non_seekable_r2_body():
+    from apps.autosubvideo.routes import _iter_storage_range
+    class Body:
+        def __init__(self): self.data=io.BytesIO(b"0123456789");self.closed=False
+        def read(self,size=-1): return self.data.read(size)
+        def seek(self,_position): raise io.UnsupportedOperation("seek")
+        def close(self): self.closed=True
+    body=Body()
+    assert b"".join(_iter_storage_range(body,2,4))==b"2345"
+    assert body.closed is True
 
 
 # ── Parse transcript đa định dạng ─────────────────────────────────────────────

@@ -5,6 +5,7 @@ import json
 import re
 import io
 import hashlib
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -231,6 +232,16 @@ def test_whisperx_sidecar_is_isolated_pinned_and_wired_to_installers():
         assert "LTT_WHISPERX_PYTHON" in body
 
 
+def test_update_reuses_a_configured_healthy_whisperx_sidecar_before_installing():
+    root = Path(__file__).resolve().parents[1]
+    update = (root / "deploy/windows/update.ps1").read_text("ascii")
+    configured = update.index("^LTT_WHISPERX_PYTHON=(.+)$")
+    health = update.index("import torch,whisperx,sys")
+    installer = update.index("install-whisperx-sidecar.ps1")
+    assert configured < health < installer
+    assert "Existing WhisperX CUDA sidecar kept" in update
+
+
 def test_whisperx_timeout_stops_process_tree_without_stderr_pipe(tmp_path, monkeypatch):
     from apps.autosubvideo import transcription
     source=tmp_path/"audio.wav";source.write_bytes(b"wav")
@@ -347,7 +358,8 @@ def test_project_render_worker_uses_snapshot_multitrack_resolution_and_bundle(tm
     storage_mod._storage=None
 
 
-def test_studio_artifacts_are_owner_scoped_range_capable_and_injection_safe(studio_api, tmp_path):
+def test_studio_artifacts_are_owner_scoped_range_capable_and_injection_safe(
+        studio_api, tmp_path, monkeypatch):
     a, token, b, _ = studio_api
     import platform_core.db as dbmod
     from platform_core.models import User
@@ -356,10 +368,18 @@ def test_studio_artifacts_are_owner_scoped_range_capable_and_injection_safe(stud
         email="studio-a@example.com").one().id;db.close()
     video_key=f"autosubvideo/{owner}/job/output.mp4"
     zip_key=f"autosubvideo/{owner}/job/subtitle-bundle.zip"
-    get_storage().put(video_key,io.BytesIO(b"0123456789"),"video/mp4")
-    get_storage().put(zip_key,io.BytesIO(b"PK-safe"),"application/zip")
+    storage=get_storage()
+    storage.put(video_key,io.BytesIO(b"0123456789"),"video/mp4")
+    storage.put(zip_key,io.BytesIO(b"PK-safe"),"application/zip")
+    original_url_for=storage.url_for
+    monkeypatch.setattr(storage,"url_for",lambda _key:"https://r2.invalid/signed")
+    monkeypatch.delenv("LTT_R2_BROWSER_UPLOAD_ENABLED",raising=False)
     assert a.get(f"/autosubvideo/v/{video_key}",headers={"Range":"bytes=2-5"}).status_code==206
     assert a.get(f"/autosubvideo/v/{video_key}",headers={"Range":"bytes=2-5"}).content==b"2345"
+    monkeypatch.setenv("LTT_R2_BROWSER_UPLOAD_ENABLED","1")
+    assert a.get(f"/autosubvideo/v/{video_key}",follow_redirects=False).status_code==302
+    monkeypatch.delenv("LTT_R2_BROWSER_UPLOAD_ENABLED")
+    monkeypatch.setattr(storage,"url_for",original_url_for)
     assert b.get(f"/autosubvideo/v/{video_key}").status_code==404
     downloaded=a.get(f"/autosubvideo/f/{zip_key}")
     assert downloaded.status_code==200 and downloaded.headers["content-type"].startswith("application/zip")

@@ -21,9 +21,9 @@ $ErrorActionPreference = 'Stop'
 
 $envFile = Join-Path $Root 'secrets\app.env'
 if (-not (Test-Path $envFile)) { throw "Secrets file not found: $envFile" }
-if (-not (Get-Command nssm.exe -ErrorAction SilentlyContinue)) {
-    throw 'nssm.exe not found on PATH.'
-}
+$nssmCommand = Get-Command nssm.exe -ErrorAction SilentlyContinue
+$nssmExe = if ($nssmCommand) { $nssmCommand.Source } else { Join-Path $Root 'tools\nssm.exe' }
+if (-not (Test-Path $nssmExe)) { throw 'nssm.exe not found on PATH or under Root\tools.' }
 
 $pairs   = @()
 $missing = @()
@@ -41,11 +41,14 @@ foreach ($line in Get-Content $envFile) {
 }
 
 if ($missing.Count -gt 0) {
-    throw "These variables are still empty in ${envFile}: $($missing -join ', ')"
+    # Optional integrations intentionally use empty placeholders. Do not make
+    # an unrelated rollout impossible; setup/4-nghiem-thu.ps1 separately
+    # enforces the runtime secrets that are genuinely required.
+    Write-Host "  skip empty: $($missing -join ', ')" -ForegroundColor Yellow
 }
 
 # NSSM expects the whole block as one multi-line AppEnvironmentExtra value.
-nssm set $ServiceName AppEnvironmentExtra ($pairs -join "`n")
+& $nssmExe set $ServiceName AppEnvironmentExtra ($pairs -join "`n")
 if ($LASTEXITCODE -ne 0) { throw 'nssm set AppEnvironmentExtra failed' }
 
 Write-Host "`nApplied $($pairs.Count) variables to service $ServiceName." -ForegroundColor Cyan
