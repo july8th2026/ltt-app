@@ -2,7 +2,6 @@
 {% block title %}Upscale Studio — LTT Studios{% endblock %}
 {% block topbar_title %}<strong>Upscale Studio</strong><span class="up-pro">PRO</span>{% endblock %}
 {% block content %}
-<script src="/static/htmx.min.js"></script>
 <div class="up-studio">
   <form id="upform" class="up-settings" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -39,32 +38,33 @@
       <label class="up-switch"><span><strong>Giữ nguyên FPS gốc</strong><small>Tắt để chuẩn hóa 30 FPS.</small></span><input id="preserve_fps" type="checkbox" checked></label>
       <label class="up-switch"><span><strong>Giữ nguyên âm thanh</strong><small>Tắt để xuất video không audio.</small></span><input id="preserve_audio" type="checkbox" checked></label>
       <label class="up-switch"><span><strong>Xem thử 8 giây</strong><small>Kiểm chất lượng với chi phí thấp.</small></span><input id="preview" name="preview" type="checkbox"></label>
-      <label class="up-switch disabled"><span><strong>Xử lý hàng loạt</strong><small>Mở tại UP4 · tối đa 3 video.</small></span><input type="checkbox" disabled></label>
+      <label class="up-switch"><span><strong>Xử lý hàng loạt</strong><small>Chọn tối đa 3 video; submit nguyên tử.</small></span><input id="batch_mode" type="checkbox"></label>
     </section>
 
-    <section class="up-step up-watch-disabled">
+    <section class="up-step up-watch">
       <h2><b>5</b> Watch Folder</h2>
-      <p>UP5 sẽ kết nối Watch Agent cục bộ; browser không gửi đường dẫn máy khách cho server.</p>
+      <p>Agent chạy trên máy chứa folder; web không nhận đường dẫn local.</p>
+      <div class="up-watch-actions"><button type="button" id="watch-connect">Tạo token kết nối</button><button type="button" id="watch-revoke">Thu hồi</button></div>
+      <code id="watch-token" hidden></code><small id="watch-note">Token chỉ có quyền Watch Upscale và chỉ hiển thị một lần.</small>
     </section>
 
     <div class="up-cost"><span>Chi phí ước tính</span><strong id="est">Chọn video</strong></div>
     <button class="up-start" type="submit" id="submitbtn">✦ Bắt đầu xử lý</button>
     <div id="upstatus" class="up-status" role="status" aria-live="polite"></div>
-    <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate"
-         hx-include="#duration_s,input[name=target_height]:checked,input[name=preset]:checked,#preview"
-         hx-target="#est" hx-trigger="load, change from:#upform"></div>
   </form>
 
   <div class="up-workspace">
     {% if error %}<div class="alert alert-err">{{error}}</div>{% endif %}
+    {% if is_admin(request) %}<section class="up-telemetry" id="up-telemetry"><strong>Telemetry quản trị</strong><span>Đang đọc dữ liệu thật…</span></section>{% endif %}
     <section class="up-stage">
       <div class="up-drop" id="up-drop">
-        <input type="file" id="vfile" name="video" accept="video/mp4,video/quicktime,video/x-matroska,video/*">
+        <input type="file" id="vfile" name="video" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*">
         <div class="up-upload-icon">⇧</div>
         <h1>Kéo &amp; thả video vào đây</h1>
         <p>MP4, MOV, MKV, AVI · giới hạn thực theo storage</p>
         <button type="button" id="choosebtn">Chọn tệp từ máy</button>
         <small id="filemeta">Chưa chọn video</small>
+        <div id="batch-files" class="up-batch-files"></div>
       </div>
 
       <div class="up-compare-panel">
@@ -91,7 +91,7 @@
           <div class="up-job-progress">
             <strong>{% if j.status=='done' %}Hoàn tất{% elif j.status=='error' %}Lỗi{% elif j.status=='cancelled' %}Đã hủy{% else %}{{j.progress}}%{% endif %}</strong>
             <div><i style="width:{{j.progress}}%"></i></div>
-            <small>{{j.progress_msg or j.status}}</small>
+            <small>{{j.progress_msg or j.status}}{% if j.eta_text %} · {{j.eta_text}}{% endif %}</small>
           </div>
           <div class="up-job-actions">
             {% if j.video_key %}<a href="{{app.route_prefix}}/v/{{j.video_key}}" download>Tải xuống</a><a href="#compare-{{j.id}}">So sánh</a>{% endif %}
@@ -111,20 +111,42 @@
   const key=document.getElementById('video_key'), dur=document.getElementById('duration_s');
   const status=document.getElementById('upstatus'), button=document.getElementById('submitbtn');
   const preview=document.getElementById('source-preview'), drop=document.getElementById('up-drop');
-  const prefix='{{app.route_prefix}}';
+  const prefix='{{app.route_prefix}}', batchToggle=document.getElementById('batch_mode');
+  const fileMeta=document.getElementById('filemeta'), batchFiles=document.getElementById('batch-files');
+  let selected=[], batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
 
   document.getElementById('choosebtn').onclick=()=>input.click();
+  batchToggle.onchange=()=>{input.multiple=batchToggle.checked;if(!batchToggle.checked&&selected.length>1){selected=selected.slice(0,1);renderFiles()}else renderFiles()};
   ['dragenter','dragover'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add('drag')}));
   ['dragleave','drop'].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove('drag')}));
-  drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length){input.files=e.dataTransfer.files;input.dispatchEvent(new Event('change'))}});
+  drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length){selectFiles([...e.dataTransfer.files])}});
 
-  input.addEventListener('change',()=>{
-    key.value=''; status.textContent=''; const file=input.files[0];
-    if(!file){dur.value='0';document.getElementById('filemeta').textContent='Chưa chọn video';return}
-    document.getElementById('filemeta').textContent=`${file.name} · ${(file.size/1048576).toFixed(1)} MB`;
-    const url=URL.createObjectURL(file); preview.src=url; preview.load();
-    preview.onloadedmetadata=()=>{dur.value=Math.round(preview.duration||0);if(window.htmx)htmx.trigger('#est-wrap','change')};
-  });
+  input.addEventListener('change',()=>selectFiles([...input.files]));
+
+  function probe(file){return new Promise(resolve=>{const video=document.createElement('video'),url=URL.createObjectURL(file);video.preload='metadata';video.onloadedmetadata=()=>{const value=Math.max(0,Math.round(video.duration||0));URL.revokeObjectURL(url);resolve(value)};video.onerror=()=>{URL.revokeObjectURL(url);resolve(0)};video.src=url})}
+  async function selectFiles(files){
+    const limit=batchToggle.checked?3:1;
+    if(files.length>limit){status.textContent=`Chỉ nhận tối đa ${limit} video.`;files=files.slice(0,limit)}else status.textContent='';
+    const allowed=/\.(mp4|mov|mkv|avi|webm)$/i;
+    if(files.some(file=>!allowed.test(file.name))){status.textContent='Có file không đúng định dạng video hỗ trợ.';return}
+    batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
+    selected=await Promise.all(files.map(async(file,index)=>({file,duration:await probe(file),request_id:`${batchId}-${index}`})));
+    renderFiles();if(selected[0]){preview.src=URL.createObjectURL(selected[0].file);preview.load()}await updateQuote();
+  }
+  function renderFiles(){
+    key.value='';dur.value=selected[0]?.duration||0;fileMeta.textContent=selected.length?`${selected.length} video · ${(selected.reduce((n,x)=>n+x.file.size,0)/1048576).toFixed(1)} MB`:'Chưa chọn video';
+    batchFiles.innerHTML=selected.map((x,i)=>`<span><b>${i+1}</b>${x.file.name}<small>${x.duration}s · ${(x.file.size/1048576).toFixed(1)} MB</small></span>`).join('');
+  }
+  async function updateQuote(){
+    if(!selected.length){document.getElementById('est').textContent='Chọn video';return}
+    const body={durations:selected.map(x=>x.duration),target_height:+form.querySelector('[name=target_height]:checked').value,preset:form.querySelector('[name=preset]:checked').value,preview:document.getElementById('preview').checked};
+    try{const r=await fetch(prefix+'/batch-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json();document.getElementById('est').textContent=d.ok?`${d.total_credit} credit · ${selected.length} video`:d.error}catch(_){document.getElementById('est').textContent='Không thể báo giá'}
+  }
+  form.querySelectorAll('[name=preset],[name=target_height],#preview').forEach(x=>x.addEventListener('change',updateQuote));
+  async function watchAction(path){const data=new FormData();data.append('csrf_token',form.csrf_token.value);const response=await fetch(prefix+path,{method:'POST',body:data}),result=await response.json();if(!response.ok)throw new Error(result.detail||result.error||'Không thể cập nhật Watch Agent');return result}
+  document.getElementById('watch-connect').onclick=async()=>{try{const result=await watchAction('/watch/token'),box=document.getElementById('watch-token');box.hidden=false;box.textContent=result.token;document.getElementById('watch-note').textContent='Sao chép token vào LTT_UPSCALE_WATCH_TOKEN; giá trị này sẽ không hiện lại.'}catch(err){status.textContent='Lỗi: '+err.message}};
+  document.getElementById('watch-revoke').onclick=async()=>{try{await watchAction('/watch/revoke');document.getElementById('watch-token').hidden=true;document.getElementById('watch-note').textContent='Token Watch Agent đã được thu hồi.'}catch(err){status.textContent='Lỗi: '+err.message}};
+  const telemetry=document.getElementById('up-telemetry');if(telemetry)fetch(prefix+'/admin-telemetry').then(r=>r.json()).then(d=>{const g=d.gpu||{},q=d.queue||{},s=d.storage||{};telemetry.innerHTML=`<strong>Telemetry quản trị</strong><span>GPU: ${g.available?`${g.model} · ${g.util_percent}% · ${g.temp_c}°C · ${g.vram_used_mb}/${g.vram_total_mb} MB`:'không khả dụng'}</span><span>Queue: ${q.running||0} chạy · ${q.queued||0} chờ</span><span>Storage: ${s.available?`${(s.disk_used_bytes/1073741824).toFixed(1)}/${(s.disk_total_bytes/1073741824).toFixed(1)} GB`:'backend không cung cấp quota'}</span>`}).catch(()=>{telemetry.querySelector('span').textContent='Telemetry không khả dụng'});
 
   function uploadDirect(url,headers,file){return new Promise((resolve,reject)=>{
     const xhr=new XMLHttpRequest();xhr.open('PUT',url,true);
@@ -135,25 +157,27 @@
   })}
 
   form.addEventListener('submit',async e=>{
-    e.preventDefault();const file=input.files[0];if(!file){status.textContent='Chưa chọn video.';return}
-    button.disabled=true;let localFile=null;
+    e.preventDefault();if(!selected.length){status.textContent='Chưa chọn video.';return}
+    button.disabled=true;const manifest=[],localFiles=[];
     try{
-      if(!key.value){
-        const init=new FormData();init.append('filename',file.name);init.append('content_type',file.type||'video/mp4');
+      for(let i=0;i<selected.length;i++){
+        const entry=selected[i],file=entry.file,init=new FormData();init.append('filename',file.name);init.append('content_type',file.type||'video/mp4');
         const ticket=await (await fetch(prefix+'/upload-url',{method:'POST',body:init})).json();
+        let uploadedKey='';status.textContent=`Chuẩn bị video ${i+1}/${selected.length}…`;
         if(ticket.mode==='direct'){
-          try{await uploadDirect(ticket.url,ticket.headers,file);key.value=ticket.key}
-          catch(err){if(file.size>90*1024*1024)throw err;localFile=file}
-        }else localFile=file;
+          try{await uploadDirect(ticket.url,ticket.headers,file);uploadedKey=ticket.key}
+          catch(err){if(file.size>90*1024*1024)throw err;localFiles.push(file)}
+        }else localFiles.push(file);
+        manifest.push({video_key:uploadedKey,duration_s:entry.duration,request_id:entry.request_id,filename:file.name});
       }
       const data=new FormData();data.append('csrf_token',form.csrf_token.value);data.append('ajax','1');
-      data.append('video_key',key.value);data.append('duration_s',dur.value||'0');
+      data.append('manifest',JSON.stringify(manifest));localFiles.forEach(file=>data.append('videos',file));
       data.append('preset',form.querySelector('[name=preset]:checked').value);
       data.append('target_height',form.querySelector('[name=target_height]:checked').value);
       data.append('codec',form.codec.value);data.append('preserve_fps',document.getElementById('preserve_fps').checked?'1':'0');
       data.append('preserve_audio',document.getElementById('preserve_audio').checked?'1':'0');
-      if(document.getElementById('preview').checked)data.append('preview','1');if(localFile)data.append('video',localFile);
-      status.textContent='Đang nộp job…';const response=await fetch(prefix+'/queue',{method:'POST',body:data});
+      if(document.getElementById('preview').checked)data.append('preview','1');
+      status.textContent=`Đang nộp ${selected.length} job…`;const response=await fetch(prefix+'/batch',{method:'POST',body:data});
       const result=await response.json();if(result.ok)location.href=prefix;else throw new Error(result.error||'Không thể tạo job');
     }catch(err){status.textContent='Lỗi: '+err.message;button.disabled=false}
   });

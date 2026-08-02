@@ -1007,10 +1007,16 @@ cầu Seedance; Pause/delete và AI Detail chưa có engine được quản lý 
   và quote thật; 53 test lát cắt PASS, console 0.
 - [x] UP3 Compare nguồn/kết quả owner-scoped — 2026-08-02: source Seedance và
   upload trực tiếp, Range 206, owner khác/missing artifact 404; browser PASS.
-- [ ] UP4 Batch tối đa 3, preflight và transaction job/credit.
-- [ ] UP5 Watch Folder qua Watch Agent Windows có token scope/dedupe/quarantine.
-- [ ] UP6 Telemetry admin + progress/ETA dựa số đo thật.
-- [ ] UP7 Benchmark AI Detail; Pause/delete tiếp tục DEFER nếu chưa đủ contract.
+- [x] UP4 Batch tối đa 3, preflight và transaction job/credit — 2026-08-02:
+  1–3 file, file thứ 4, owner, thiếu credit rollback và double-submit PASS.
+- [x] UP5 Watch Folder qua Watch Agent Windows có token scope/dedupe/quarantine
+  — 2026-08-02: stable polling, R2/local, restart dedupe, revoke/pause,
+  archive/quarantine và install/uninstall PowerShell ASCII PASS.
+- [x] UP6 Telemetry admin + progress/ETA dựa số đo thật — 2026-08-02: role gate
+  PASS; GPU/VRAM/temp/queue/storage thật; ETA chỉ hiện sau ít nhất 3 mẫu.
+- [x] UP7 Benchmark AI Detail; Pause/delete tiếp tục DEFER nếu chưa đủ contract
+  — 2026-08-02: benchmark RTX 5060 Ti hoàn tất, AI Detail **DEFER** đúng Q47 vì
+  chưa có engine temporal riêng đạt acceptance; không giả lập bằng Quality.
 - [ ] UP8 GPU smoke + full test/scan/lint/Playwright + backup/release/deploy.
 
 ---

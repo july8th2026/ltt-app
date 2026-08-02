@@ -25,6 +25,10 @@ gen = get_session(); db = next(gen)
 user = tao_nguoi_dung(db, email="upscale-ui@example.com",
                       password="Browser-test-123", is_verified=True)
 credit.cap_tay(db, user.id, 1000, by="browser-test")
+admin_user = tao_nguoi_dung(db, email="upscale-admin@example.com",
+                            password="Browser-test-123", is_verified=True)
+admin_user.role = "admin"
+credit.cap_tay(db, admin_user.id, 1000, by="browser-test")
 
 source_path = os.environ.get("LTT_UPSCALE_BROWSER_VIDEO", "").strip()
 source_key = f"taovideo/{user.id}/browser/source.mp4"

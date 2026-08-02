@@ -5,7 +5,10 @@ P1), lùi về multipart nếu R2 chưa mở CORS. Router KHÔNG tự viết pre
 from __future__ import annotations
 
 import uuid
+import json
+from datetime import datetime, timezone
 from pathlib import PurePosixPath
+from statistics import median
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
@@ -48,23 +51,50 @@ def _jobs_cua_toi(request: Request):
     try:
         rows = db.execute(
             select(Job).where(Job.user_id == u.id, Job.app_slug == MANIFEST.slug)
-            .order_by(Job.created_at.desc()).limit(12)
+            .order_by(Job.created_at.desc()).limit(50)
         ).scalars().all()
+        queued_ids = [value for (value,) in db.execute(select(Job.id).where(
+            Job.app_slug == MANIFEST.slug, Job.status == "queued")
+            .order_by(Job.created_at)).all()]
+        queue_positions = {value: index + 1 for index, value in enumerate(queued_ids)}
+        samples = []
+        for sample in rows:
+            result = sample.result or {}; params = sample.params or {}
+            seconds = float(result.get("processing_seconds") or 0)
+            duration = float(result.get("duration_s") or params.get("duration_s") or 0)
+            if sample.status == "done" and seconds > 0 and duration > 0:
+                samples.append((params.get("preset", "fast"),
+                                int(params.get("target_height", 1080)), seconds / duration))
         out = []
-        for j in rows:
+        now = datetime.now(timezone.utc)
+        for j in rows[:12]:
             r = j.result or {}
             p = j.params or {}
             source_key = str(p.get("video_key") or "")
+            eta_text = ""
+            if j.status == "queued":
+                eta_text = f"Vị trí {queue_positions.get(j.id, '?')} trong hàng đợi"
+            elif j.status == "running":
+                rates = [value for preset, height, value in samples
+                         if preset == p.get("preset", "fast") and
+                         height == int(p.get("target_height", 1080))]
+                duration = float(p.get("duration_s") or 0)
+                if len(rates) >= 3 and duration > 0 and j.started_at:
+                    started = j.started_at if j.started_at.tzinfo else j.started_at.replace(tzinfo=timezone.utc)
+                    remaining = max(0, median(rates) * duration - (now - started).total_seconds())
+                    eta_text = f"Còn khoảng {max(1, round(remaining / 60))} phút"
+                else:
+                    eta_text = "Đang ước tính ETA"
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
                         "progress_msg": j.progress_msg, "error": j.error,
                         "video_key": r.get("video_key"), "duration_s": r.get("duration_s"),
                         "target_height": r.get("target_height") or p.get("target_height"),
                         "source_key": source_key,
-                        "source_name": PurePosixPath(source_key).name or "video.mp4",
+                        "source_name": p.get("source_name") or PurePosixPath(source_key).name or "video.mp4",
                         "preset": p.get("preset", "fast"), "codec": p.get("codec", "h264"),
                         "preserve_fps": p.get("preserve_fps", True),
                         "preserve_audio": p.get("preserve_audio", True),
-                        "warning": r.get("warning")})
+                        "warning": r.get("warning"), "eta_text": eta_text})
         return out
     finally:
         try: next(gen)
@@ -98,6 +128,27 @@ def estimate(request: Request, duration_s: str = Form("0"), target_height: str =
         f'{" · xem thử" if e["preview"] else ""})</span>')
 
 
+@router.post("/batch-quote")
+async def batch_quote(request: Request, user: str = Depends(require_login)):
+    """Quote server-side cho 1–3 video; đây chưa phải thao tác giữ credit."""
+    try:
+        body = await request.json()
+        durations = body.get("durations") if isinstance(body, dict) else None
+        if not isinstance(durations, list) or not 1 <= len(durations) <= 3:
+            raise ValueError
+        target = int(body.get("target_height", 1080))
+        target = target if target in (1080, 1440, 2160) else 1080
+        preset = body.get("preset") if body.get("preset") in ("fast", "quality") else "fast"
+        preview = bool(body.get("preview"))
+        entries = [cost.uoc_luong(float(value or 0), target, preset, preview)
+                   for value in durations]
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JSONResponse({"ok": False, "error": "Danh sách video không hợp lệ."},
+                            status_code=400)
+    return JSONResponse({"ok": True, "items": entries,
+                         "total_credit": sum(x["credit"] for x in entries)})
+
+
 @router.post("/upload-url")
 def upload_url(request: Request, filename: str = Form(""), content_type: str = Form(""),
                user: str = Depends(require_login)):
@@ -120,6 +171,199 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
                          "method": target.method, "headers": target.headers or {}})
 
 
+def _watch_user_id(request: Request) -> str:
+    from apps.upscalevideo.watch_auth import authenticate
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        user = authenticate(db, request.headers.get("authorization", ""))
+        if user is None:
+            raise HTTPException(status_code=401, detail="Watch Agent token không hợp lệ.")
+        return user.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.post("/watch/token")
+def watch_token(request: Request, csrf_token: str = Form(...),
+                user: str = Depends(require_login)):
+    """Rotate token; raw value is returned exactly once and never logged."""
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    u = user_hien_tai(request)
+    from apps.upscalevideo.watch_auth import issue
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        raw = issue(db, u.id); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"ok": True, "token": raw,
+                         "note": "Token chỉ hiển thị một lần."})
+
+
+@router.post("/watch/revoke")
+def watch_revoke(request: Request, csrf_token: str = Form(...),
+                 user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    u = user_hien_tai(request)
+    from apps.upscalevideo.watch_auth import revoke
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        count = revoke(db, u.id); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"ok": True, "revoked": count})
+
+
+@router.get("/watch/status")
+def watch_status(request: Request):
+    user_id = _watch_user_id(request)
+    from platform_core import credit
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        balance = credit.so_du(db, user_id)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"ok": True, "credit": balance, "max_batch": 3,
+                         "accepting": balance > 0})
+
+
+@router.get("/admin-telemetry")
+def admin_telemetry(request: Request, user: str = Depends(require_login)):
+    from apps.upscalevideo.telemetry import gpu_snapshot, queue_snapshot, storage_snapshot
+    from platform_core.db import get_session
+    from platform_core.storage import get_storage
+    from server.admin import _is_admin
+    if not _is_admin(request):
+        raise HTTPException(status_code=403, detail="Chỉ quản trị viên được xem telemetry.")
+    gen = get_session(); db = next(gen)
+    try:
+        queue_data = queue_snapshot(db)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"ok": True, "gpu": gpu_snapshot(),
+                         "queue": queue_data, "storage": storage_snapshot(get_storage())})
+
+
+@router.post("/watch/upload-url")
+def watch_upload_url(request: Request, filename: str = Form(""),
+                     content_type: str = Form("")):
+    user_id = _watch_user_id(request)
+    from platform_core.storage import get_storage
+    ext = PurePosixPath(filename).suffix.lower()[:6]
+    key = f"upscalevideo/{user_id}/watch/{uuid.uuid4().hex}{ext}"
+    ct = (content_type or "video/mp4").split(";")[0].strip()
+    try:
+        target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
+    except Exception:  # noqa: BLE001
+        target = None
+    if target is None:
+        return JSONResponse({"mode": "local", "key": key})
+    return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
+                         "method": target.method, "headers": target.headers or {}})
+
+
+@router.post("/watch/batch")
+async def watch_batch(request: Request, manifest: str = Form("[]"),
+                      videos: list[UploadFile] = File(default=[])):
+    """Bearer-scoped submit for Watch Agent; no browser cookie is accepted."""
+    user_id = _watch_user_id(request)
+    from apps.upscalevideo.service import submit_upscale_batch
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.registry import RegistryError
+    from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
+    try:
+        items = json.loads(manifest)
+    except (TypeError, json.JSONDecodeError):
+        raise HTTPException(status_code=400, detail="Batch manifest không hợp lệ.")
+    if not isinstance(items, list) or not 1 <= len(items) <= 3:
+        raise HTTPException(status_code=400, detail="Watch batch chỉ nhận 1–3 video.")
+    request_ids = [str(item.get("request_id") or "") for item in items
+                   if isinstance(item, dict)]
+    if len(request_ids) != len(items) or any(not value or len(value) > 96
+                                             for value in request_ids):
+        raise HTTPException(status_code=400, detail="Watch batch thiếu request id.")
+    # Retry sau khi client mất response phải trả đúng job cũ trước khi ghi lại
+    # artifact local. Atomic batch nghĩa là chỉ có trạng thái all/none; subset là
+    # xung đột idempotency và phải dừng để operator kiểm tra.
+    from platform_core.db import get_session
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
+    from sqlalchemy import select
+    pre_gen = get_session(); pre_db = next(pre_gen)
+    try:
+        active = pre_db.execute(select(Job).where(
+            Job.user_id == user_id, Job.app_slug == MANIFEST.slug,
+            Job.status.in_((JOB_QUEUED, JOB_RUNNING)))).scalars().all()
+        by_request = {(row.params or {}).get("request_id"): row for row in active}
+        existing = [by_request[value] for value in request_ids if value in by_request]
+    finally:
+        try: next(pre_gen)
+        except StopIteration: pass
+    if len(existing) == len(items):
+        return JSONResponse({"ok": True, "deduplicated": True, "jobs": [
+            {"job_id": by_request[value].id, "status": by_request[value].status}
+            for value in request_ids]})
+    if existing:
+        raise HTTPException(status_code=409, detail="Batch retry chỉ khớp một phần.")
+    local_count = sum(1 for item in items if not str(item.get("video_key") or ""))
+    if local_count != len(videos):
+        raise HTTPException(status_code=400, detail="Số file không khớp manifest.")
+    storage = get_storage(); cursor = 0; total = 0; prepared = []
+    for index, raw in enumerate(items):
+        if not isinstance(raw, dict):
+            raise HTTPException(status_code=400, detail=f"Video {index + 1} không hợp lệ.")
+        item = dict(raw); key = str(item.get("video_key") or "").strip()
+        if key:
+            if not key.startswith(f"upscalevideo/{user_id}/watch/") or not storage.exists(key):
+                raise HTTPException(status_code=400, detail=f"Video {index + 1} chưa upload xong.")
+        else:
+            upload = videos[cursor]; cursor += 1
+            ext = PurePosixPath(upload.filename or "").suffix.lower()
+            if ext not in {".mp4", ".mov", ".mkv", ".avi", ".webm"}:
+                raise HTTPException(status_code=400, detail=f"Video {index + 1} sai định dạng.")
+            data = await upload.read(); total += len(data)
+            if not data or total > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
+                raise HTTPException(status_code=400, detail="File local rỗng hoặc tổng >90MB.")
+            key = f"upscalevideo/{user_id}/watch/{uuid.uuid4().hex}{ext}"
+            item["_data"] = data
+        request_id = str(item.get("request_id") or "")
+        if not request_id or len(request_id) > 96:
+            raise HTTPException(status_code=400, detail=f"Video {index + 1} thiếu request id.")
+        item["video_key"] = key; prepared.append(item)
+    import io as _io
+    for item in prepared:
+        if "_data" in item:
+            storage.put(item["video_key"], _io.BytesIO(item.pop("_data")),
+                        content_type="video/mp4")
+    gen = get_session(); db = next(gen)
+    try:
+        try:
+            rows = submit_upscale_batch(db, user_id=user_id, items=prepared)
+            db.commit()
+        except credit.ThieuCreditError as exc:
+            db.rollback()
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=402)
+        except (RegistryError, ValueError) as exc:
+            db.rollback()
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=400)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"ok": True, "jobs": [{"job_id": row.id,
+                                                  "status": row.status}
+                                                 for row in rows]})
+
+
 @router.post("/queue")
 async def queue(request: Request, csrf_token: str = Form(...),
                 video_key: str = Form(""), duration_s: str = Form("0"),
@@ -129,7 +373,6 @@ async def queue(request: Request, csrf_token: str = Form(...),
                 video: UploadFile = File(default=None),
                 user: str = Depends(require_login)):
     from platform_core import credit
-    from platform_core.db import get_session
     from platform_core.registry import RegistryError
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
     from apps.upscalevideo.service import submit_upscale_job
@@ -188,7 +431,8 @@ async def queue(request: Request, csrf_token: str = Form(...),
                                      target_height=th, codec=codec,
                                      preview=bool(preview), duration_s=dur,
                                      preserve_fps=preserve_fps != "0",
-                                     preserve_audio=preserve_audio != "0")
+                                     preserve_audio=preserve_audio != "0",
+                                     source_name=(getattr(video, "filename", "") or ""))
             last_id = job.id
             db.commit()
         except (credit.ThieuCreditError, RegistryError) as exc:
@@ -201,6 +445,112 @@ async def queue(request: Request, csrf_token: str = Form(...),
     if ajax:
         return JSONResponse({"ok": True, "redirect": f"/jobs/{last_id}"})
     return RedirectResponse(f"/jobs/{last_id}", status_code=303)
+
+
+@router.post("/batch")
+async def batch_queue(request: Request, csrf_token: str = Form(...),
+                      manifest: str = Form("[]"), preset: str = Form("fast"),
+                      target_height: str = Form("1080"), codec: str = Form("h264"),
+                      preview: str = Form(""), preserve_fps: str = Form("1"),
+                      preserve_audio: str = Form("1"),
+                      videos: list[UploadFile] = File(default=[]),
+                      user: str = Depends(require_login)):
+    """Nộp batch tối đa 3; job + credit là một transaction duy nhất."""
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.registry import RegistryError
+    from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
+    from apps.upscalevideo.service import submit_upscale_batch
+
+    def fail(message, code=400, items=None):
+        return JSONResponse({"ok": False, "error": message, "items": items or []},
+                            status_code=code)
+
+    if not verify_csrf_token(request, csrf_token):
+        return fail("Phiên đã hết hạn — tải lại trang.")
+    u = user_hien_tai(request)
+    if u is None:
+        return fail("Cần đăng nhập bằng tài khoản người dùng.")
+    try:
+        items = json.loads(manifest)
+    except (TypeError, json.JSONDecodeError):
+        return fail("Batch manifest không hợp lệ.")
+    if not isinstance(items, list) or not 1 <= len(items) <= 3:
+        return fail("Chỉ được xử lý từ 1 đến 3 video mỗi batch.")
+    if len(videos) != sum(1 for item in items if not str(item.get("video_key") or "")):
+        return fail("Số file local không khớp batch manifest.")
+
+    storage = get_storage()
+    local_total = 0
+    local_cursor = 0
+    prepared = []
+    allowed_ext = {".mp4", ".mov", ".mkv", ".avi", ".webm"}
+    for index, raw in enumerate(items):
+        if not isinstance(raw, dict):
+            return fail(f"Video {index + 1} không hợp lệ.")
+        item = dict(raw)
+        key = str(item.get("video_key") or "").strip()
+        if key:
+            if not key.startswith(f"upscalevideo/{u.id}/") or not storage.exists(key):
+                return fail(f"Video {index + 1} chưa upload xong hoặc không thuộc tài khoản.")
+        else:
+            upload = videos[local_cursor]; local_cursor += 1
+            filename = str(getattr(upload, "filename", "") or "")
+            ext = PurePosixPath(filename).suffix.lower()
+            if ext not in allowed_ext:
+                return fail(f"Video {index + 1} có định dạng không hỗ trợ.")
+            data = await upload.read()
+            if not data:
+                return fail(f"Video {index + 1} là file rỗng.")
+            local_total += len(data)
+            if local_total > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
+                return fail("Tổng file local >90MB; cần upload thẳng qua R2.")
+            key = f"upscalevideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
+            item["_data"] = data
+            item["_content_type"] = upload.content_type or "video/mp4"
+        try:
+            item["duration_s"] = max(0.0, float(item.get("duration_s") or 0))
+        except (TypeError, ValueError):
+            return fail(f"Thời lượng video {index + 1} không hợp lệ.")
+        request_id = str(item.get("request_id") or "")
+        if not request_id or len(request_id) > 96:
+            return fail(f"Video {index + 1} thiếu request id.")
+        item["video_key"] = key
+        prepared.append(item)
+
+    # Chỉ ghi local artifact sau khi toàn bộ manifest đã qua preflight.
+    import io as _io
+    for item in prepared:
+        if "_data" in item:
+            storage.put(item["video_key"], _io.BytesIO(item.pop("_data")),
+                        content_type=item.pop("_content_type"))
+    try:
+        th = int(target_height)
+    except (TypeError, ValueError):
+        th = 1080
+    th = th if th in (1080, 1440, 2160) else 1080
+    preset = preset if preset in ("fast", "quality") else "fast"
+    codec = codec if codec in ("h264", "hevc") else "h264"
+
+    gen = get_session(); db = next(gen)
+    try:
+        try:
+            batch_jobs = submit_upscale_batch(
+                db, user_id=u.id, items=prepared, preset=preset,
+                target_height=th, codec=codec, preview=bool(preview),
+                preserve_fps=preserve_fps != "0",
+                preserve_audio=preserve_audio != "0")
+            db.commit()
+        except (credit.ThieuCreditError, RegistryError, ValueError) as exc:
+            db.rollback()
+            return fail(str(exc), items=[{"request_id": x["request_id"],
+                                         "status": "not_submitted"} for x in prepared])
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"ok": True, "jobs": [
+        {"request_id": item["request_id"], "job_id": job.id, "status": job.status}
+        for item, job in zip(prepared, batch_jobs)]})
 
 
 @router.post("/jobs/{job_id}/cancel")

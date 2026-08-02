@@ -121,3 +121,74 @@ def test_ffmpeg_subprocess_bi_kill_khi_job_cancel(monkeypatch):
     with pytest.raises(ff.ProcessingCancelled):
         ff._run(["ffmpeg"], timeout=10, cancel_check=lambda: next(checks))
     assert proc.killed is True
+
+
+def test_watch_agent_chi_nhan_file_on_dinh_va_toi_da_ba(tmp_path):
+    from apps.upscalevideo.watch_agent import stable_candidates
+
+    folder = tmp_path / "watch"; folder.mkdir()
+    for i in range(4):
+        (folder / f"{i}.mp4").write_bytes(b"video")
+    (folder / "ignore.txt").write_text("x", encoding="ascii")
+    state = {}
+    assert stable_candidates(folder, state) == []
+    ready = stable_candidates(folder, state)
+    assert len(ready) == 3 and all(path.suffix == ".mp4" for path in ready)
+    (folder / "0.mp4").write_bytes(b"partial-write-changed")
+    assert folder / "0.mp4" not in stable_candidates(folder, state)
+
+
+def test_watch_agent_offline_khong_di_chuyen_source(tmp_path, monkeypatch):
+    import httpx
+    from apps.upscalevideo import watch_agent
+
+    folder = tmp_path / "watch"; folder.mkdir()
+    source = folder / "clip.mp4"; source.write_bytes(b"video")
+    state_dir = tmp_path / "state"
+    # Scan đầu chỉ quan sát; scan hai mới được coi là stable.
+    assert watch_agent.run_once(folder, state_dir, "https://invalid", "token") == 0
+    monkeypatch.setattr(watch_agent, "submit_batch", lambda *a, **k: (_ for _ in ()).throw(
+        httpx.ConnectError("offline")))
+    assert watch_agent.run_once(folder, state_dir, "https://invalid", "token") == 2
+    assert source.exists() and not (state_dir / "archive").exists()
+
+
+def test_watch_agent_archive_success_va_pause_khong_quarantine(tmp_path, monkeypatch):
+    from apps.upscalevideo import watch_agent
+
+    folder = tmp_path / "watch"; folder.mkdir()
+    source = folder / "done.mp4"; source.write_bytes(b"video")
+    state_dir = tmp_path / "state"
+    watch_agent.run_once(folder, state_dir, "https://server", "token")
+    monkeypatch.setattr(watch_agent, "submit_batch", lambda *a, **k: {
+        "ok": True, "http_status": 200})
+    assert watch_agent.run_once(folder, state_dir, "https://server", "token") == 0
+    assert not source.exists() and (state_dir / "archive" / "done.mp4").exists()
+
+    paused = folder / "paused.mp4"; paused.write_bytes(b"video")
+    watch_agent.run_once(folder, state_dir, "https://server", "token")
+    monkeypatch.setattr(watch_agent, "submit_batch", lambda *a, **k: {
+        "ok": False, "http_status": 402})
+    assert watch_agent.run_once(folder, state_dir, "https://server", "token") == 3
+    assert paused.exists() and not (state_dir / "quarantine" / "paused.mp4").exists()
+
+
+def test_watch_agent_powershell_thuan_ascii():
+    from pathlib import Path
+    data = Path("apps/upscalevideo/install_watch_agent.ps1").read_bytes()
+    data.decode("ascii")
+    assert b"Unregister-ScheduledTask" in data and b"Register-ScheduledTask" in data
+
+
+def test_admin_gpu_telemetry_parse_du_lieu_khong_chua_ten_file():
+    from apps.upscalevideo.telemetry import gpu_snapshot
+
+    class Result:
+        returncode = 0
+        stdout = "NVIDIA RTX Test, 42, 67, 16384, 4096\n"
+
+    data = gpu_snapshot(run=lambda *a, **k: Result())
+    assert data == {"available": True, "model": "NVIDIA RTX Test",
+                    "util_percent": 42, "temp_c": 67,
+                    "vram_total_mb": 16384, "vram_used_mb": 4096}
+    assert "filename" not in data and "video_key" not in data

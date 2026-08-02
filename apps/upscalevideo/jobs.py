@@ -14,6 +14,7 @@ import logging
 import os
 import shutil
 import tempfile
+import time
 
 from apps.upscalevideo import autotune, cost, engine, ff
 from apps.upscalevideo.schemas import ENCODER, Codec, Preset
@@ -109,6 +110,7 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
 def handle(params: dict, ctx=None) -> dict:
     from platform_core.storage import get_storage
 
+    started_clock = time.monotonic()
     video_key = str(params.get("video_key", "")).strip()
     if not video_key:
         raise ValueError("Thiếu video (video_key).")
@@ -231,7 +233,8 @@ def handle(params: dict, ctx=None) -> dict:
                "fps": float(output_fps.split("/")[0]) / float(output_fps.split("/")[1])
                       if "/" in output_fps else float(output_fps),
                "has_audio": bool(info["has_audio"] and preserve_audio),
-               "preserve_fps": preserve_fps, "preserve_audio": preserve_audio}
+               "preserve_fps": preserve_fps, "preserve_audio": preserve_audio,
+               "frames": n, "processing_seconds": round(time.monotonic() - started_clock, 2)}
         if warning:
             res["warning"] = warning
         return res

@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-02 — H13.upscalevideo UP4–UP7: batch, Watch, telemetry và benchmark PASS
+
+- **Mục tiêu:** triển khai toàn bộ tính năng mới đã khóa ở Q47 trước release,
+  không biến control trong ảnh thành mock.
+- **Hạng mục:** H13.upscalevideo — UP4, UP5, UP6, UP7 hoàn thành.
+- **Trạng thái:** xong local; chưa deploy production.
+
+### Đã làm
+
+Batch nhận tối đa ba video, quote tổng server-side, preflight toàn bộ và tạo
+job/hold credit trong một transaction; request id chống double-submit. Watch
+Agent chạy local, chờ size+mtime ổn định, xử lý tối đa ba, dùng token bearer
+tách miền có rotate/revoke, R2 direct hoặc local fallback, archive success,
+quarantine lỗi vĩnh viễn và giữ nguyên source khi offline/thiếu credit/token lỗi.
+
+Telemetry admin đọc GPU model/util/temp/VRAM, queue/heartbeat và storage khi
+backend cung cấp; payload không có filename/storage key. User chỉ thấy progress,
+vị trí và ETA sau tối thiểu ba mẫu lịch sử; nếu thiếu ghi “Đang ước tính”.
+
+Benchmark Fast/Quality trên video Downloads bằng RTX 5060 Ti hoàn tất. Quality
+chỉ hơn Fast 0,0954 dB trong bộ degraded, chậm khoảng 4,8 lần và không phải model
+temporal riêng. AI Detail tiếp tục DEFER; Pause/Delete/retention không bị ghép lén.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_72_vanhanh.py tests\test_82_upscalevideo.py tests\test_85_app_contract_lint.py -q` | **43 passed**, 1 warning |
+| `python tools\benchmark_upscale_ai_detail.py ... --samples 12` | PASS; 10 frame; JSON evidence đã lưu |
+| Playwright user Watch token rotate/revoke | PASS; raw token không in vào log/evidence |
+| Playwright admin desktop/mobile | PASS; telemetry thật; console 0; overflow 0 |
+| `python -m pytest -q` | chưa chạy; bắt buộc tại UP8 |
+
+### Quyết định mới
+
+Không đổi Q47. Bộ cài Watch dùng Scheduled Task tại logon vì Python agent không
+phải Windows Service native; token nằm trong user environment, không nằm repo/log.
+
+### Cách lùi lại
+
+Thu hồi Watch token và uninstall task trước; ẩn batch/telemetry controls. Job đã
+nộp vẫn drain/cancel/settle theo UP1. AI Detail vốn đang tắt.
+
+### Còn tồn đọng
+
+UP8 full regression, GPU smoke end-to-end, backup/release/deploy production.
+
+### Việc tiếp theo
+
+1. GPU smoke nguồn video Downloads trên derivative hợp lý.
+2. Full pytest/secret scan/browser gates và deploy có rollback.
+
 ## 2026-08-02 — H13.upscalevideo UP2–UP3: Studio và compare thật PASS
 
 - **Mục tiêu:** thay UI thử nghiệm bằng Upscale Studio theo ảnh tham khảo, nhưng
