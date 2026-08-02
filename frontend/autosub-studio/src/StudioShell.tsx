@@ -1,8 +1,10 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { EditorTimeline } from './EditorTimeline'
 import { attachSource, createAutosave, importTranscript, loadOrCreateProject,
-  ProjectConflictError, readVideoMetadata, saveProject, startTranscription,
-  type StudioCue, type StudioProject, type StudioTrack } from './studioApi'
+  loadStyles, normalizeStyle, ProjectConflictError, readVideoMetadata, saveProject,
+  startTranscription, type StudioCue, type StudioProject, type StudioTrack,
+  type StylePreset } from './studioApi'
+import { StyleInspector, SubtitlePreview } from './StyleInspector'
 import { useProjectHistory } from './useProjectHistory'
 import './studio.css'
 
@@ -22,11 +24,14 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const [selectedTrackId, setSelectedTrackId] = useState('')
   const [selectedCueId, setSelectedCueId] = useState('')
   const [query, setQuery] = useState('')
+  const [styleTab,setStyleTab]=useState<'templates'|'style'|'animation'>('templates')
+  const [presets,setPresets]=useState<StylePreset[]>([])
 
   useEffect(() => { loadOrCreateProject(csrfToken).then(row => {
     projectRef.current = row; setProject(row); setSelectedTrackId(row.payload.tracks[0]?.id||'')
     setState('ready'); setMessage('Sẵn sàng')
   }).catch(error => { setState('error'); setMessage(String(error.message || error)) }) }, [csrfToken])
+  useEffect(()=>{loadStyles().then(setPresets).catch(()=>setMessage('Không tải được preset'))},[])
 
   const autosave = useMemo(() => createAutosave<StudioProject>(async (draft) => {
     setState('saving'); setMessage('Đang lưu…')
@@ -112,12 +117,15 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
           <div className="cue-list">{filtered.map(cue=><button type="button" key={cue.id} className={cue.id===selectedCueId?'active':''} onClick={()=>{setSelectedCueId(cue.id);seek(cue.start)}}><time>{formatTime(cue.start)}</time><span>{cue.speaker&&<b>{cue.speaker}</b>}{cue.text||'(trống)'}</span></button>)}</div><p className="count-line">{project.payload.tracks.length} track · {cues} cue</p></section>
       </aside>
       <section className="studio-stage"><div className="preview-toolbar"><span>Fit (100%)</span><span>{source.width&&source.height?`${source.width}:${source.height}`:'16:9'}</span></div>
-        <div className="video-canvas">{source.key?<><video ref={videoRef} controls preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<div className="subtitle-overlay">{selectedCue.text}</div>}</>:<div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
+        <div className="video-canvas">{source.key?<><video ref={videoRef} controls preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<SubtitlePreview cue={selectedCue} currentTime={currentTime} rawStyle={project.payload.style}/>}</>:<div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
         <div className="transport"><button aria-label="Về đầu" onClick={()=>seek(0)}>|◀</button><button aria-label="Phát hoặc dừng" onClick={()=>videoRef.current?.paused?void videoRef.current.play():videoRef.current?.pause()}>▶</button><button aria-label="Tới cuối" onClick={()=>seek(source.duration_s)}>▶|</button><span>{formatTime(currentTime)} / {formatTime(source.duration_s)}</span></div>
         <EditorTimeline tracks={project.payload.tracks} duration={source.duration_s} currentTime={currentTime} sourceUrl={sourceUrl} selectedCueId={selectedCueId} onSelect={setSelectedCueId} onSeek={seek} onCueChange={cueChange}/>
         <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div></>:<p>Chọn một cue trên timeline hoặc thêm cue mới.</p>}</div>
       </section>
-      <aside className="studio-right"><nav><button className="active">TEMPLATES</button><button>STYLE</button><button>ANIMATION</button></nav><div className="template-grid">{['LTT Bold','Cinematic','Neon Punch','Kids Color','Word Emphasis','Minimal'].map(name=><button key={name} type="button" onClick={()=>mutate(d=>{d.payload.style={preset:name.toLowerCase().replace(' ','_')}})}><strong>THE QUICK<br/>BROWN FOX</strong><small>{name}</small></button>)}</div><section className="inspector-empty"><strong>Style inspector</strong><p>Chọn tab Style để chỉnh font, màu, stroke, shadow và karaoke.</p></section></aside>
+      <aside className="studio-right"><StyleInspector tab={styleTab} setTab={setStyleTab}
+        style={normalizeStyle(project.payload.style)} presets={presets}
+        onPreset={preset=>mutate(d=>{d.payload.style=normalizeStyle({preset:preset.id,...preset.config,highlight_mode:preset.highlight_mode,highlight_color:preset.highlight_color});d.payload.active_step='style'})}
+        onStyle={patch=>mutate(d=>{d.payload.style=normalizeStyle({...d.payload.style,...patch,preset:'custom'});d.payload.active_step='style'})}/></aside>
     </section>
   </main>
 }

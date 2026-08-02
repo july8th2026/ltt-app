@@ -109,6 +109,12 @@ def page(request: Request, user: str = Depends(require_login)):
     return _render(request, user)
 
 
+@router.get("/api/styles")
+def studio_styles(_identity: str = Depends(require_login)):
+    from apps.autosubvideo.style_registry import list_presets
+    return {"items": [item.model_dump(mode="json") for item in list_presets()]}
+
+
 def _api_user(request: Request):
     current = user_hien_tai(request)
     if current is None:

@@ -9,9 +9,11 @@ it('renders real empty project state without fake media or jobs', async () => {
     schema_version:1, active_step:'upload', source:{ key:'', filename:'', duration_s:0,
       width:0, height:0 }, tracks:[], speakers:{}, style:{preset:'default'},
       output:{resolution:'source', format:'mp4'} } }
-  vi.spyOn(globalThis, 'fetch')
-    .mockResolvedValueOnce(new Response(JSON.stringify({items:[{id:'p1',status:'active'}]}), {status:200}))
-    .mockResolvedValueOnce(new Response(JSON.stringify(project), {status:200}))
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+    const url=String(input); if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
+    if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p1',status:'active'}]}),{status:200})
+    return new Response(JSON.stringify(project),{status:200})
+  })
   render(<StudioShell csrfToken="csrf"/>)
   await waitFor(() => expect(screen.getByDisplayValue('Dự án test')).toBeInTheDocument())
   expect(screen.getByText('Upload video để bắt đầu')).toBeInTheDocument()
@@ -29,9 +31,11 @@ it('opens a real cue from a multi-track timeline and edits its content', async (
       }, { id:'track-en', kind:'translation', language:'en', name:'English', visible:true,
         z_index:1, style_id:'default', cues:[] }], speakers:{}, style:{preset:'default'},
       output:{resolution:'source',format:'mp4'} } }
-  vi.spyOn(globalThis, 'fetch')
-    .mockResolvedValueOnce(new Response(JSON.stringify({items:[{id:'p2',status:'active'}]}),{status:200}))
-    .mockResolvedValueOnce(new Response(JSON.stringify(project),{status:200}))
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+    const url=String(input);if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
+    if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p2',status:'active'}]}),{status:200})
+    return new Response(JSON.stringify(project),{status:200})
+  })
   render(<StudioShell csrfToken="csrf"/>)
   const cue=await screen.findAllByRole('button',{name:/Xin chào LTT/})
   fireEvent.click(cue[cue.length-1])
@@ -40,4 +44,8 @@ it('opens a real cue from a multi-track timeline and edits its content', async (
   fireEvent.change(editor,{target:{value:'Nội dung đã sửa'}})
   expect(editor).toHaveValue('Nội dung đã sửa')
   expect(screen.getByRole('combobox',{name:'Track phụ đề'})).toHaveValue('track-source')
+  fireEvent.click(screen.getByRole('button',{name:'STYLE'}))
+  expect(screen.getByRole('slider',{name:'Cỡ chữ'})).toHaveValue('48')
+  fireEvent.change(screen.getByRole('slider',{name:'Cỡ chữ'}),{target:{value:'64'}})
+  expect(screen.getByRole('slider',{name:'Cỡ chữ'})).toHaveValue('64')
 })

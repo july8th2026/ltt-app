@@ -3,10 +3,22 @@ export type StudioCue = { id: string; start: number; end: number; text: string;
 export type StudioTrack = { id: string; kind: 'source' | 'translation' | 'custom';
   language: string; name: string; visible: boolean; z_index: number;
   style_id: string; cues: StudioCue[] }
+export type StudioStyle = { preset:string; font_family:string; font_size:number;
+  font_color:string; bold:boolean; italic:boolean; font_fallback:string;
+  outline_color:string; outline_width:number; shadow_color:string; shadow_offset:number;
+  alignment:number; margin_v:number; margin_h:number; line_spacing:number;
+  bg_box:boolean; bg_color:string; bg_opacity:number; bg_padding:number;
+  safe_area_percent:number; max_chars_per_line:number; max_lines:number;
+  highlight_mode:'none'|'word'|'bg_flash'|'underline'|'all_text'|'keyword';
+  highlight_color:string; keyword_highlights:string[]; keyword_highlight_color:string;
+  animation:'none'|'fade'|'pop'|'slide_up'; animation_ms:number }
+export type StylePreset = { id:string; label:string; description:string;
+  config:Omit<StudioStyle,'preset'>; highlight_mode:StudioStyle['highlight_mode'];
+  highlight_color:string }
 export type StudioPayload = { schema_version: 1;
   active_step: 'upload' | 'transcript' | 'style' | 'render';
   source: { key: string; filename: string; duration_s: number; width: number; height: number };
-  tracks: StudioTrack[]; speakers: Record<string, string>; style: Record<string, unknown>;
+  tracks: StudioTrack[]; speakers: Record<string, string>; style: StudioStyle;
   output: { resolution: 'source' | '720p' | '1080p' | '4k'; format: 'mp4' | 'mkv' | 'webm' } }
 export type StudioProject = { id: string; name: string; revision: number;
   status: 'active' | 'archived'; payload: StudioPayload }
@@ -84,6 +96,23 @@ export async function startTranscription(project: StudioProject, csrf: string) {
       'X-CSRF-Token': csrf, 'If-Match': `"${project.revision}"` },
     body: JSON.stringify({ language: '', model: 'large-v3' }),
   }))
+}
+
+export async function loadStyles():Promise<StylePreset[]> {
+  const body=await decode(await fetch('/autosubvideo/api/styles',{credentials:'same-origin'}))
+  return body.items
+}
+
+export const DEFAULT_STYLE:StudioStyle={preset:'default',font_family:'Arial',font_size:48,
+  font_color:'#FFFFFF',bold:true,italic:false,font_fallback:'Arial,Helvetica,sans-serif',
+  outline_color:'#000000',outline_width:2,shadow_color:'#000000',shadow_offset:1,
+  alignment:2,margin_v:30,margin_h:20,line_spacing:0,bg_box:false,bg_color:'#000000',
+  bg_opacity:.5,bg_padding:10,safe_area_percent:0,max_chars_per_line:42,max_lines:2,
+  highlight_mode:'none',highlight_color:'#FFD700',keyword_highlights:[],
+  keyword_highlight_color:'#FF4444',animation:'none',animation_ms:180}
+
+export function normalizeStyle(value:Partial<StudioStyle>|undefined):StudioStyle {
+  return {...DEFAULT_STYLE,...value,keyword_highlights:value?.keyword_highlights||[]}
 }
 
 export function createAutosave<T>(save: (value: T, signal: AbortSignal) => Promise<void>,

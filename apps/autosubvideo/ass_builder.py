@@ -45,6 +45,7 @@ def build_ass(
     styles = _build_styles_section(style, video_width, video_height, highlight_color=highlight_color)
     dialogue = _build_events_section(
         events, style, highlight_mode, highlight_color,
+        video_width=video_width, video_height=video_height,
         keyword_highlights=keyword_highlights or [],
         keyword_highlight_color=keyword_highlight_color,
     )
@@ -191,6 +192,8 @@ def _build_events_section(
     highlight_color: str,
     keyword_highlights: list[str] | None = None,
     keyword_highlight_color: str = "#FF4444",
+    video_width: int = 1920,
+    video_height: int = 1080,
 ) -> str:
     """Build [Events] section with Dialogue lines."""
     lines = [
@@ -206,11 +209,29 @@ def _build_events_section(
             keyword_highlights=keyword_highlights or [],
             keyword_highlight_color=keyword_highlight_color,
         )
+        text = _apply_animation(text, style, video_width, video_height)
 
         line = f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{text}"
         lines.append(line)
 
     return "\n".join(lines)
+
+
+def _apply_animation(text: str, style: SubtitleStyleConfig,
+                     video_width: int, video_height: int) -> str:
+    """ASS/libass-compatible entry animation shared with Studio preview."""
+    mode = getattr(style, "animation", "none")
+    duration = max(0, min(int(getattr(style, "animation_ms", 180)), 1000))
+    if mode == "fade" and duration:
+        return f"{{\\fad({duration},0)}}{text}"
+    if mode == "pop" and duration:
+        return (f"{{\\fscx70\\fscy70\\t(0,{duration},"
+                f"\\fscx100\\fscy100)}}{text}")
+    if mode == "slide_up" and duration:
+        x = video_width // 2
+        target_y = max(0, video_height - style.margin_v)
+        return f"{{\\move({x},{target_y + 80},{x},{target_y},0,{duration})}}{text}"
+    return text
 
 
 # ── Highlight modes ──────────────────────────────────────────────────────────

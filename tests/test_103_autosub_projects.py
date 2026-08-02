@@ -252,3 +252,30 @@ def test_autosub_studio_bundle_is_hashed_fresh_and_in_release():
     files = {rel for _full, rel in collect_files(str(root))}
     assert "frontend/autosub-studio/package-lock.json" in files
     assert "server/static/autosub-studio/build-meta.json" in files
+
+
+def test_studio_style_contract_and_ass_animation(tmp_path):
+    from apps.autosubvideo.ass_builder import build_ass
+    from apps.autosubvideo.schemas import StudioProjectV1, SubtitleStyleConfig
+    from apps.autosubvideo.segmenter import SubtitleEvent
+    project = StudioProjectV1.model_validate({"style": {
+        "preset": "custom", "font_color": "#12AB34", "animation": "pop",
+        "animation_ms": 240, "highlight_mode": "word"}})
+    assert project.style.animation == "pop"
+    path = tmp_path / "animated.ass"
+    event = SubtitleEvent(start=0, end=2, text="Xin chao", display_text="Xin chao")
+    build_ass([event], SubtitleStyleConfig(animation="pop", animation_ms=240),
+              str(path), highlight_mode="word")
+    text = path.read_text(encoding="utf-8-sig")
+    assert r"\fscx70\fscy70\t(0,240,\fscx100\fscy100)" in text
+    with pytest.raises(Exception):
+        StudioProjectV1.model_validate({"style": {"font_color": "red;url(x)"}})
+
+
+def test_studio_style_api_returns_typed_presets(studio_api):
+    client, _token, *_ = studio_api
+    response = client.get("/autosubvideo/api/styles")
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) == 8
+    assert all(item["config"]["font_color"].startswith("#") for item in items)

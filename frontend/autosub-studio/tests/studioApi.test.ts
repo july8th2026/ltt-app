@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createAutosave, loadOrCreateProject, ProjectConflictError, saveProject,
+import { createAutosave, DEFAULT_STYLE, loadOrCreateProject, ProjectConflictError, saveProject,
   type StudioProject } from '../src/studioApi'
 
 const payload = { schema_version: 1 as const, active_step: 'upload' as const,
   source: { key:'', filename:'', duration_s:0, width:0, height:0 }, tracks: [],
-  speakers: {}, style: { preset:'default' }, output: { resolution:'source' as const,
+  speakers: {}, style: DEFAULT_STYLE, output: { resolution:'source' as const,
     format:'mp4' as const } }
 const project: StudioProject = { id:'p1', name:'P', revision:1, status:'active', payload }
 

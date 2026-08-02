@@ -4,7 +4,7 @@ Pydantic request / response schemas for auto_sub_video.
 from __future__ import annotations
 
 from typing import Literal, Optional
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 # ── Transcript segment ───────────────────────────────────────────────────────
@@ -23,10 +23,11 @@ class TranscriptSegment(BaseModel):
 
 class SubtitleStyleConfig(BaseModel):
     """Subtitle styling options for burn-in render."""
+    model_config = ConfigDict(extra="forbid")
     # Font
     font_family: str = Field("Arial", description="Font name")
     font_size: int = Field(48, ge=12, le=120, description="Font size in px")
-    font_color: str = Field("#FFFFFF", description="Primary text color (hex)")
+    font_color: str = Field("#FFFFFF", pattern=r"^#[0-9A-Fa-f]{6}$", description="Primary text color (hex)")
     bold: bool = True
     italic: bool = False
     font_fallback: str = Field(
@@ -35,9 +36,9 @@ class SubtitleStyleConfig(BaseModel):
     )
 
     # Outline & shadow
-    outline_color: str = Field("#000000", description="Outline/border color")
+    outline_color: str = Field("#000000", pattern=r"^#[0-9A-Fa-f]{6}$", description="Outline/border color")
     outline_width: int = Field(2, ge=0, le=10)
-    shadow_color: str = Field("#000000", description="Shadow color")
+    shadow_color: str = Field("#000000", pattern=r"^#[0-9A-Fa-f]{6}$", description="Shadow color")
     shadow_offset: int = Field(1, ge=0, le=10)
 
     # Position & spacing
@@ -48,7 +49,7 @@ class SubtitleStyleConfig(BaseModel):
 
     # Background box
     bg_box: bool = Field(False, description="Enable background box behind text")
-    bg_color: str = Field("#000000", description="Background box color")
+    bg_color: str = Field("#000000", pattern=r"^#[0-9A-Fa-f]{6}$", description="Background box color")
     bg_opacity: float = Field(0.5, ge=0, le=1, description="Background box opacity")
     bg_padding: int = Field(10, ge=0, le=50, description="Background box padding (px)")
 
@@ -70,6 +71,7 @@ class SubtitleStyleConfig(BaseModel):
     )
     highlight_color: str = Field(
         "#FFD700",
+        pattern=r"^#[0-9A-Fa-f]{6}$",
         description="Highlight accent color (hex)",
     )
     keyword_highlights: list[str] = Field(
@@ -78,8 +80,11 @@ class SubtitleStyleConfig(BaseModel):
     )
     keyword_highlight_color: str = Field(
         "#FF4444",
+        pattern=r"^#[0-9A-Fa-f]{6}$",
         description="Color for keyword highlights (hex)",
     )
+    animation: Literal["none", "fade", "pop", "slide_up"] = "none"
+    animation_ms: int = Field(default=180, ge=0, le=1000)
 
 
 # ── Request models ───────────────────────────────────────────────────────────
@@ -232,13 +237,17 @@ class StudioOutput(BaseModel):
     format: Literal["mp4", "mkv", "webm"] = "mp4"
 
 
+class StudioStyle(SubtitleStyleConfig):
+    preset: str = Field(default="default", min_length=1, max_length=64)
+
+
 class StudioProjectV1(BaseModel):
     schema_version: Literal[1] = 1
     active_step: Literal["upload", "transcript", "style", "render"] = "upload"
     source: StudioSource = Field(default_factory=StudioSource)
     tracks: list[StudioTrack] = Field(default_factory=list, max_length=32)
     speakers: dict[str, str] = Field(default_factory=dict)
-    style: dict = Field(default_factory=lambda: {"preset": "default"})
+    style: StudioStyle = Field(default_factory=StudioStyle)
     output: StudioOutput = Field(default_factory=StudioOutput)
 
     @model_validator(mode="after")

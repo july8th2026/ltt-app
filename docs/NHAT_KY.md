@@ -14,6 +14,49 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS5: style/animation parity PASS
+
+- **Mục tiêu:** cho Dev chỉnh toàn bộ hình thức phụ đề và bảo đảm preview/render
+  đọc cùng một contract.
+- **Hạng mục:** AS5 hoàn thành; AS6 chưa bắt đầu.
+- **Trạng thái:** local browser/backend PASS; production chưa deploy.
+
+### Đã làm
+
+Đổi `style` project từ dict mở sang model có kiểu/forbid extra, kiểm hex và giới
+hạn mọi field. API trả đúng 8 preset nội tại. React có tabs template/style/animation,
+font/size/colors/outline/shadow/background/position/bold/italic/karaoke/keyword và
+duration. Preview hiển thị word highlight theo playhead.
+
+Animation chỉ gồm none/fade/pop/slide-up vì đây là tập React CSS và ASS/libass đều
+render xác định được. ASS builder sinh `fad`, scale+t hoặc move tương ứng; không có
+hiệu ứng UI-only. Mobile không còn giấu inspector mà đặt nó dưới editor.
+
+### Test đã chạy
+
+- `python -m pytest tests\test_103_autosub_projects.py tests\test_81_autosubvideo.py -q`
+  → **23 passed**, 1 warning; gồm style injection reject, preset API và ASS pop tag.
+- `npm test` → **7 passed**; `npm run build`/typecheck → **PASS**; JS 215,07 kB
+  (gzip 67,60), CSS 12,84 kB (gzip 3,58).
+- Playwright desktop: TikTok Bold → size 70 → karaoke word → pop; autosave PASS,
+  overlay có đúng animation + một word active; overflow 0, console 0, requests sạch.
+- Playwright 390×844: inspector Style truy cập được, size 60 autosave PASS,
+  document overflow 0, console/network sạch.
+
+### Cách lùi lại
+
+Revert commit AS5; project payload cũ `{preset}` vẫn đọc được nhờ defaults. Flag
+production vẫn off.
+
+### Còn tồn đọng
+
+AS6–AS9: diarization/translation, render/job control, hardening và release.
+
+### Việc tiếp theo
+
+AS6: pyannote diarization tùy token, Gemini translation theo track, quota/dedupe/
+cancel và UI trạng thái auxiliary 0-credit.
+
 ## 2026-08-02 — H13.autosubvideo AS4: cue editor và timeline PASS
 
 - **Mục tiêu:** biến shell thành editor transcript thực, dùng được trên desktop
