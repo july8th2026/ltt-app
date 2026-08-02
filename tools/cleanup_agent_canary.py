@@ -20,14 +20,17 @@ def load_env(path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", required=True)
+    parser.add_argument("--email", action="append",
+                        help="Deactivate only the named canary account; repeatable.")
     args = parser.parse_args()
     load_env(Path(args.env))
 
     from platform_core.db import get_session
     from platform_core.models import Session as UserSession, User
 
-    emails = {"agent-canary@lttstudios.com", "agent-internal@lttstudios.com",
-              "agent-public@lttstudios.com"}
+    emails = set(args.email or {"agent-canary@lttstudios.com",
+                                "agent-internal@lttstudios.com",
+                                "agent-public@lttstudios.com"})
     db = next(get_session())
     try:
         users = db.query(User).filter(User.email.in_(emails)).all()

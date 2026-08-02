@@ -1017,12 +1017,17 @@ cầu Seedance; Pause/delete và AI Detail chưa có engine được quản lý 
 - [x] UP7 Benchmark AI Detail; Pause/delete tiếp tục DEFER nếu chưa đủ contract
   — 2026-08-02: benchmark RTX 5060 Ti hoàn tất, AI Detail **DEFER** đúng Q47 vì
   chưa có engine temporal riêng đạt acceptance; không giả lập bằng Quality.
-- [ ] UP8 GPU smoke + full test/scan/lint/Playwright + backup/release/deploy.
+- [x] UP8 GPU smoke + full test/scan/lint/Playwright + backup/release/deploy —
+  2026-08-02: local GPU smoke PASS; 1869 test + 23 subtest PASS, scan 0;
+  backup/restore catalog PASS; production canary 2 job done, desktop/mobile và
+  console sạch; health loopback/Cloudflare ready. Browser R2 direct giữ off theo
+  Q48 đến khi bucket CORS được cấp quyền cấu hình.
 
 ---
 
 ## Việc phải làm ngay ở phiên tiếp theo
 
-Tiếp tục `H13.upscalevideo` UP0b → UP8 theo thứ tự. Không mở app redesign khác
-trước khi worktree Seedance/Upscale được chia lát cắt, test, ghi memory và commit.
-Production Upscale chỉ deploy sau UP8; các app production hiện hành không bị dừng.
+`H13.upscalevideo` UP0–UP8 đã đóng và deploy. Lần tiếp theo chỉ mở app redesign
+mới khi có ảnh/tên app; tiếp tục dùng pipeline UI-RD, không sửa lại Upscale nếu
+không có bug hoặc quyết định sản phẩm mới. Hạ tầng còn việc vận hành độc lập:
+cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.

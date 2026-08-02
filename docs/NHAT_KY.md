@@ -14,6 +14,69 @@
 
 ---
 
+## 2026-08-02 — H13.upscalevideo UP8: release và production PASS
+
+- **Mục tiêu:** nghiệm thu đầy đủ, deploy có backup/rollback và xác minh GPU thật
+  trên production thay vì dừng ở test local.
+- **Hạng mục:** H13.upscalevideo — UP8 hoàn thành; UP0–UP8 đóng.
+- **Trạng thái:** đã deploy production.
+
+### Đã làm
+
+GPU smoke local dùng nội dung video Downloads dẫn xuất tạm 480p: output thật
+1882×1080, 24 fps, audio state giữ đúng, hoàn tất 11,756 giây trên RTX 5060 Ti;
+mọi frame/artifact tạm được dọn. Benchmark AI Detail và GPU smoke chỉ lưu JSON
+tổng hợp, không tạo artwork mới.
+
+Trước deploy tạo backup off-drive có secrets + `pg_dump`; mở archive và chạy
+`pg_restore --list` PASS. Production Alembic đã ở head. Lần update đầu bị dừng
+trước rotate vì shell không elevated và script cũ nuốt lỗi stop service; production
+vẫn chạy bản cũ. Sửa `update.ps1` bắt buộc admin, đợi từng service dừng thật rồi
+mới rotate; 82 test deploy PASS. Hai lượt update elevated sau đó đều exit 0,
+`app.previous` được giữ và các service trở lại Automatic/Running.
+
+Canary production admin nộp hai video 480p qua UI, cả hai job GPU `done`, credit
+giảm đúng 3/job, compare source/output thật hoạt động. Lượt đầu phát hiện R2 CORS
+thiếu; multipart fallback vẫn hoàn tất nhưng console đỏ. Thêm Q48: browser direct
+R2 chỉ bật sau CORS gate, deploy hotfix; lượt hai không còn PUT CORS lỗi, console
+0, desktop/mobile không overflow. Canary đã bị vô hiệu, session thu hồi; cookie,
+video và restore extract tạm đã xóa, audit job được giữ.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q` trước release | **1868 passed**, 8 skipped, 23 subtests, 1 warning |
+| `python -m pytest -q` sau hotfix Q48 | **1869 passed**, 8 skipped, 23 subtests, 1 warning |
+| `python tools\scan_source_secrets.py` | **0 finding** |
+| `python -m pip check` | **No broken requirements** |
+| backup off-drive + archive open + `pg_restore --list` | **PASS** |
+| `setup\4-nghiem-thu.ps1` | PASS, 1 cảnh báo cấu hình cũ: `sheet_id`/`google_credentials_path` chưa điền |
+| Production Playwright 1440×900 + 360×800 | PASS; console 0; overflow 0; 2 GPU job done |
+| Health loopback + Cloudflare | `ready`, `production`, database `ok` |
+
+### Quyết định mới
+
+Q48: cờ browser R2 direct mặc định off đến khi CORS bucket được kiểm thật. Watch
+Agent direct R2 không đổi vì client ngoài browser không bị CORS.
+
+### Cách lùi lại
+
+`C:\LTTPlatform\app.previous` chứa release ngay trước hotfix. Nếu có regression:
+thu hồi Watch token/disable task, dừng nhận job mới, drain/cancel + settle/refund,
+rồi chạy `deploy\windows\rollback.ps1`; không xóa ledger/job/artifact audit.
+
+### Còn tồn đọng
+
+- Bucket R2 chưa có CORS browser. Cấu hình rule đã ghi ở Q48/kế hoạch tồn đọng,
+  browser kiểm PASS rồi mới bật `LTT_R2_BROWSER_UPLOAD_ENABLED=1`.
+- Cảnh báo nghiệm thu cũ `sheet_id` và `google_credentials_path` không thuộc
+  Upscale, không chặn release này.
+
+### Việc tiếp theo
+
+Chờ ảnh/tên app tiếp theo để bắt đầu pipeline UI-RD mới.
+
 ## 2026-08-02 — H13.upscalevideo UP4–UP7: batch, Watch, telemetry và benchmark PASS
 
 - **Mục tiêu:** triển khai toàn bộ tính năng mới đã khóa ở Q47 trước release,
