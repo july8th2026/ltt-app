@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 
 _MODELS: dict[tuple[str, str, str], object] = {}
@@ -15,6 +16,22 @@ _MODEL_LOCK = threading.Lock()
 
 class TranscriptionError(RuntimeError):
     pass
+
+
+def _stop_process_tree(proc: subprocess.Popen) -> None:
+    """Stop the sidecar and its model-loader children, best effort."""
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=False, timeout=15)
+    else:  # pragma: no cover - deployment is Windows, kept portable for dev.
+        proc.terminate()
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        proc.kill(); proc.wait()
 
 
 def _sidecar_python() -> str:
@@ -33,6 +50,8 @@ def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
         raise TranscriptionError("WhisperX sidecar chưa được cấu hình.")
     output = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
     output.close()
+    error_log = tempfile.NamedTemporaryFile(delete=False, suffix=".log")
+    error_log.close()
     runner = str(Path(__file__).with_name("whisperx_runner.py"))
     args = [python, runner, "--input", media_path, "--output", output.name,
             "--model", model_name]
@@ -41,20 +60,32 @@ def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
     try:
         if on_progress:
             on_progress(8, "WhisperX đang chép lời")
-        proc = subprocess.Popen(args, stdout=subprocess.DEVNULL,
-                                stderr=subprocess.PIPE, text=True, encoding="utf-8",
-                                errors="replace", creationflags=(
-                                    subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0))
+        log_handle = open(error_log.name, "w", encoding="utf-8", errors="replace")
+        try:
+            proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=log_handle,
+                text=True, encoding="utf-8", errors="replace", creationflags=(
+                    subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0))
+        finally:
+            log_handle.close()
+        timeout_s = max(60, int(os.environ.get("LTT_WHISPERX_TIMEOUT_SECONDS", "10800")))
+        deadline = time.monotonic() + timeout_s
         while proc.poll() is None:
             if is_cancelled and is_cancelled():
-                proc.terminate()
+                _stop_process_tree(proc)
                 raise TranscriptionError("Tác vụ đã bị hủy.")
+            if time.monotonic() >= deadline:
+                _stop_process_tree(proc)
+                raise TranscriptionError(f"WhisperX quá thời gian ({timeout_s}s).")
             try:
                 proc.wait(timeout=0.5)
             except subprocess.TimeoutExpired:
                 continue
         if proc.returncode != 0:
-            message = (proc.stderr.read() if proc.stderr else "")[-1000:]
+            try:
+                message = Path(error_log.name).read_text(
+                    encoding="utf-8", errors="replace")[-1000:]
+            except OSError:
+                message = ""
             raise TranscriptionError(f"WhisperX lỗi: {message or 'không rõ nguyên nhân'}")
         with open(output.name, encoding="utf-8") as handle:
             result = json.load(handle)
@@ -64,6 +95,10 @@ def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
     finally:
         try:
             os.unlink(output.name)
+        except OSError:
+            pass
+        try:
+            os.unlink(error_log.name)
         except OSError:
             pass
 

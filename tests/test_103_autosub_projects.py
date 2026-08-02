@@ -231,6 +231,26 @@ def test_whisperx_sidecar_is_isolated_pinned_and_wired_to_installers():
         assert "LTT_WHISPERX_PYTHON" in body
 
 
+def test_whisperx_timeout_stops_process_tree_without_stderr_pipe(tmp_path, monkeypatch):
+    from apps.autosubvideo import transcription
+    source=tmp_path/"audio.wav";source.write_bytes(b"wav")
+    monkeypatch.setenv("LTT_WHISPERX_PYTHON", __import__("sys").executable)
+    monkeypatch.setenv("LTT_WHISPERX_TIMEOUT_SECONDS", "60")
+    class Process:
+        pid=123;returncode=None
+        def poll(self):return None
+        def wait(self,timeout=None):raise __import__("subprocess").TimeoutExpired("x",timeout)
+    process=Process();calls={}
+    def popen(*_args,**kwargs):calls.update(kwargs);return process
+    monkeypatch.setattr(transcription.subprocess,"Popen",popen)
+    ticks=iter((0,1000));monkeypatch.setattr(transcription.time,"monotonic",lambda:next(ticks))
+    monkeypatch.setattr(transcription,"_stop_process_tree",lambda value:calls.update(stopped=value))
+    with pytest.raises(transcription.TranscriptionError,match="quá thời gian"):
+        transcription._transcribe_whisperx(str(source),language="en",model_name="tiny")
+    assert calls["stderr"] is not transcription.subprocess.PIPE
+    assert calls["stopped"] is process
+
+
 def test_auxiliary_cost_is_zero_but_render_never_defaults_free():
     from apps.autosubvideo.manifest import MANIFEST
     assert MANIFEST.credit_cost({"operation": "transcribe"}) == 0
@@ -325,6 +345,54 @@ def test_project_render_worker_uses_snapshot_multitrack_resolution_and_bundle(tm
     ass=storage_mod.get_storage().open(result["ass_key"]).read().decode("utf-8-sig")
     assert "Dialogue: 0," in ass and "Dialogue: 1," in ass and "{\\an8}" in ass
     storage_mod._storage=None
+
+
+def test_studio_artifacts_are_owner_scoped_range_capable_and_injection_safe(studio_api, tmp_path):
+    a, token, b, _ = studio_api
+    import platform_core.db as dbmod
+    from platform_core.models import User
+    from platform_core.storage import get_storage
+    db=next(dbmod.get_session());owner=db.query(User).filter_by(
+        email="studio-a@example.com").one().id;db.close()
+    video_key=f"autosubvideo/{owner}/job/output.mp4"
+    zip_key=f"autosubvideo/{owner}/job/subtitle-bundle.zip"
+    get_storage().put(video_key,io.BytesIO(b"0123456789"),"video/mp4")
+    get_storage().put(zip_key,io.BytesIO(b"PK-safe"),"application/zip")
+    assert a.get(f"/autosubvideo/v/{video_key}",headers={"Range":"bytes=2-5"}).status_code==206
+    assert a.get(f"/autosubvideo/v/{video_key}",headers={"Range":"bytes=2-5"}).content==b"2345"
+    assert b.get(f"/autosubvideo/v/{video_key}").status_code==404
+    downloaded=a.get(f"/autosubvideo/f/{zip_key}")
+    assert downloaded.status_code==200 and downloaded.headers["content-type"].startswith("application/zip")
+    assert a.get("/autosubvideo/f/../../secrets/app.env").status_code in {404,405}
+
+    from apps.autosubvideo.ass_builder import build_ass
+    from apps.autosubvideo.schemas import SubtitleStyleConfig
+    from apps.autosubvideo.segmenter import SubtitleEvent
+    path=tmp_path/"injection.ass"
+    build_ass([SubtitleEvent(0,1,r"{\p1}m 0 0 l 9 9",r"{\p1}m 0 0 l 9 9")],
+              SubtitleStyleConfig(),str(path))
+    ass=path.read_text("utf-8-sig")
+    assert r"{\p1}" not in ass and r"（\p1）" in ass
+
+
+def test_render_quote_rejects_unknown_track_and_long_asr_source(studio_api):
+    a,token,*_=studio_api
+    import platform_core.db as dbmod
+    from platform_core.models import User
+    from platform_core.storage import get_storage
+    db=next(dbmod.get_session());owner=db.query(User).filter_by(
+        email="studio-a@example.com").one().id;db.close()
+    payload=_payload();payload["source"]["key"]=f"autosubvideo/{owner}/uploads/long.mp4"
+    payload["source"]["duration_s"]=7201
+    get_storage().put(payload["source"]["key"],io.BytesIO(b"video"),"video/mp4")
+    made=a.post("/autosubvideo/api/projects",headers={"X-CSRF-Token":token},
+        json={"name":"limits","payload":payload}).json()
+    quote=a.post(f"/autosubvideo/api/projects/{made['id']}/quote",headers={
+        "X-CSRF-Token":token,"If-Match":'"1"'},json={"output":{"track_ids":["missing"]}})
+    assert quote.status_code==422
+    transcribe=a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe",headers={
+        "X-CSRF-Token":token,"If-Match":'"1"'},json={})
+    assert transcribe.status_code==422
 
 
 def test_autosub_studio_bundle_is_hashed_fresh_and_in_release():

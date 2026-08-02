@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-03 — H13.autosubvideo AS8: hardening/GPU/corpus PASS
+
+- **Mục tiêu:** phá lỗi ở biên bảo mật, tiến trình AI, tải lớn, GPU thật, offline
+  và responsive trước full release gate.
+- **Hạng mục:** AS8 hoàn thành; AS9 bắt đầu tiếp theo.
+- **Trạng thái:** code/backend/frontend/browser/GPU PASS trên dữ liệu cô lập.
+
+### Đã làm
+
+Benchmark A/B WhisperX phát hiện sidecar có thể deadlock vì `stderr=PIPE` không
+được drain. Đổi sang log tạm, thêm timeout cấu hình và dừng cả process tree khi
+hủy/timeout. Security fuzz phát hiện cue `{\\p1}` được giữ như ASS override; đổi
+sanitizer để toàn bộ brace người dùng thành fullwidth trước khi thêm tag nội bộ.
+
+Thêm tool benchmark tái lập cho GPU end-to-end, ASR metrics-only và project lớn.
+Ba video Dev chỉ định đã render qua job/credit thật ở 720p, 1080p, 4K bằng NVENC;
+giữ FPS/audio, đủ video/ASS/SRT/VTT/JSON/ZIP. A/B tiếng Anh tiny/large-v3 aligned,
+WER 0 trên mẫu tổng hợp; giữ rõ giới hạn đây không phải field accuracy. 3.000 cue
+xuất artifact trong 0,438s, peak 8,98 MB. Thêm owner/range/traversal/limit fuzz.
+
+UI autosave offline nay báo tiếng Việt và không nói sai đã lưu. Playwright xác
+minh bốn viewport không overflow, accessible name đầy đủ; offline tạo đúng failed
+PUT dự kiến, phục hồi/reload xong console và network sạch.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\\test_81_autosubvideo.py tests\\test_103_autosub_projects.py tests\\test_61_setup_scripts.py tests\\test_62_khoa_logic.py tests\\test_85_app_contract_lint.py tests\\test_86_usage_rate_limit.py tests\\test_95_agent_canvas_build.py tests\\test_44_release_build.py -q` | **170 passed**, 1 warning |
+| `npm test -- --run` (`frontend/autosub-studio`) | **9 passed** |
+| `npm run build` (`frontend/autosub-studio`) | typecheck + Vite **PASS**, JS 224,35 kB, CSS 15,27 kB |
+| GPU smoke 720p/1080p/4K bằng `tools/autosub_gpu_smoke.py` | **3/3 PASS**, NVENC, credit/artifact/probe đúng |
+| A/B bằng `tools/autosub_asr_benchmark.py` | tiny + large-v3 **PASS**, aligned, timing monotonic |
+| `python tools/autosub_load_benchmark.py --cues 3000 ...` | **PASS**, 0,438s, 8,98 MB |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS |
+| Playwright fixture 1440/1280/390/360 + offline/recovery | overflow 0; accessibility PASS; sau reload console 0, network sạch |
+
+### Quyết định mới
+
+Không có. AS8 thực thi Q49–Q50; không đổi contract sản phẩm.
+
+### Cách lùi lại
+
+Revert commit AS8. Có thể đặt `LTT_AUTOSUB_STUDIO_ROLLOUT=off` để quay về legacy;
+timeout sidecar và sanitizer chỉ harden, không đổi schema/database.
+
+### Còn tồn đọng
+
+AS9 full suite, dependency/release/migration/backup rehearsal và production canary.
+
+### Việc tiếp theo
+
+1. Chạy toàn bộ release gate AS9.
+2. Backup, deploy theo quy trình hiện hành, smoke/canary rồi mới bật public.
+
+---
+
 ## 2026-08-03 — H13.autosubvideo AS7: render/export/job control PASS
 
 - **Mục tiêu:** xuất project Studio bằng snapshot bất biến, báo đúng chi phí

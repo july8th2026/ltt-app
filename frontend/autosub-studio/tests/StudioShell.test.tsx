@@ -1,8 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
-import { StudioShell } from '../src/StudioShell'
+import { friendlyStudioError, StudioShell } from '../src/StudioShell'
 
 afterEach(() => vi.restoreAllMocks())
+
+it('localizes an offline autosave failure without claiming the draft was saved', () => {
+  expect(friendlyStudioError(new TypeError('Failed to fetch')))
+    .toBe('Mất kết nối — thay đổi chưa được lưu.')
+  expect(friendlyStudioError(new Error('Máy chủ từ chối'))).toBe('Máy chủ từ chối')
+})
 
 it('renders real empty project state without fake media or jobs', async () => {
   const project = { id:'p1', name:'Dự án test', revision:1, status:'active', payload:{

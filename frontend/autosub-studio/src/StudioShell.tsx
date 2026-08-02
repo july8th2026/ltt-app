@@ -15,6 +15,13 @@ const steps = [
   ['style', '3', 'Style'], ['render', '4', 'Render'],
 ] as const
 
+export function friendlyStudioError(error: unknown) {
+  const message = String((error as Error)?.message || error)
+  return message === 'Failed to fetch'
+    ? 'Mất kết nối — thay đổi chưa được lưu.'
+    : message
+}
+
 export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const [project, setProject] = useState<StudioProject | null>(null)
   const projectRef = useRef<StudioProject | null>(null)
@@ -35,7 +42,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   useEffect(() => { loadOrCreateProject(csrfToken).then(row => {
     projectRef.current = row; setProject(row); setSelectedTrackId(row.payload.tracks[0]?.id||'')
     setState('ready'); setMessage('Sẵn sàng')
-  }).catch(error => { setState('error'); setMessage(String(error.message || error)) }) }, [csrfToken])
+  }).catch(error => { setState('error'); setMessage(friendlyStudioError(error)) }) }, [csrfToken])
   useEffect(()=>{loadStyles().then(setPresets).catch(()=>setMessage('Không tải được preset'))},[])
   useEffect(()=>{loadCapabilities().then(setCapabilities).catch(()=>setCapabilities(null))},[])
   useEffect(()=>{if(!auxJob||!['queued','running'].includes(auxJob.status))return
@@ -56,7 +63,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
       projectRef.current = merged; setProject(merged); setState('saved'); setMessage('Đã lưu')
     } catch (error) {
       if (error instanceof ProjectConflictError) { setState('conflict'); setMessage(error.message) }
-      else { setState('error'); setMessage(String((error as Error).message || error)) }
+      else { setState('error'); setMessage(friendlyStudioError(error)) }
     }
   }), [csrfToken])
   useEffect(() => () => autosave.cancel(), [autosave])
@@ -85,7 +92,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
       const metadata = await readVideoMetadata(file)
       const saved = await attachSource(projectRef.current, csrfToken, file, metadata, setUpload)
       projectRef.current = saved; setProject(saved); setUpload(100); setState('saved'); setMessage('Đã tải video')
-    } catch (error) { setState('error'); setMessage(String((error as Error).message || error)); setUpload(0) }
+    } catch (error) { setState('error'); setMessage(friendlyStudioError(error)); setUpload(0) }
   }
   const onTranscript = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; if (!file || !projectRef.current) return
@@ -93,13 +100,13 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
     try { const saved = await importTranscript(projectRef.current, csrfToken, file)
       projectRef.current = saved; setProject(saved); setSelectedTrackId(saved.payload.tracks[0]?.id||'')
       setState('saved'); setMessage('Đã nhập transcript')
-    } catch (error) { setState('error'); setMessage(String((error as Error).message || error)) }
+    } catch (error) { setState('error'); setMessage(friendlyStudioError(error)) }
   }
   const transcribe = async () => {
     if (!projectRef.current) return; setMessage('Đang tạo job WhisperX…')
     try { const job = await startTranscription(projectRef.current, csrfToken)
       setMessage(`WhisperX đang chạy · job ${job.job_id.slice(0,8)} · 0 credit`)
-    } catch (error) { setState('error'); setMessage(String((error as Error).message || error)) }
+    } catch (error) { setState('error'); setMessage(friendlyStudioError(error)) }
   }
   const runAux=async(operation:'diarize'|'translate')=>{if(!projectRef.current)return
     setMessage(operation==='diarize'?'Đang tạo job Pyannote…':'Đang tạo job Gemini…')
@@ -108,7 +115,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
       await startTranslation(projectRef.current,csrfToken,trackId,targetLanguage)
       setAuxJob({id:response.job_id,type:`autosubvideo.${operation}`,status:response.status,
         progress:0,message:'đang xếp hàng',error:'',result:{}});setMessage(`${operation} đang xếp hàng · 0 credit`)
-    }catch(error){setState('error');setMessage(String((error as Error).message||error))}}
+    }catch(error){setState('error');setMessage(friendlyStudioError(error))}}
 
   if (!project) return <div className={`studio-state ${state}`}>{message}</div>
   const source=project.payload.source; const sourceUrl=source.key?`/autosubvideo/v/${source.key}`:''

@@ -1071,7 +1071,11 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
   cancel kill FFmpeg + refund, retry snapshot, owner artifact; 29 backend +
   8 frontend PASS; Playwright desktop/mobile popup/submit/cancel, overflow 0,
   console/network sạch.
-- [ ] AS8 hardening/performance/corpus/GPU/end-to-end.
+- [x] AS8 hardening/performance/corpus/GPU/end-to-end — 2026-08-03: sửa deadlock/
+  timeout process tree WhisperX và ASS override injection; 3 GPU render thật
+  720p/1080p/4K NVENC + credit/artifact PASS; A/B tiny/large-v3 aligned; 3.000 cue
+  xuất đủ artifact trong 0,438s/8,98 MB; 170 backend + 9 frontend PASS, scan 0;
+  Playwright 4 viewport, offline recovery, accessibility, console/network sạch.
 - [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
 
 ---
@@ -1079,5 +1083,6 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 ## Việc phải làm ngay ở phiên tiếp theo
 
 `H13.autosubvideo` đang triển khai liên tục theo ủy quyền của Dev. Việc kế tiếp là
-AS8: hardening/performance/corpus/GPU/end-to-end. Hạ tầng
+AS9: full gate, release, backup/migration rehearsal, deploy và production canary.
+Hạ tầng
 độc lập còn việc cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.

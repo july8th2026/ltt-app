@@ -238,10 +238,10 @@ def _apply_animation(text: str, style: SubtitleStyleConfig,
 
 def _sanitize_ass_text(text: str) -> str:
     """Remove stray curly braces that ASS would interpret as override tags."""
-    # Only strip { } that are NOT valid ASS overrides (our own tags start with \)
-    import re
-    # Remove {content} blocks that don't start with a backslash (user text, not ASS tags)
-    return re.sub(r"\{(?!\\)", "（", text).replace("}", "）")
+    # Every brace here came from user-controlled cue text. Internal override
+    # tags are added only after this function, so preserving ``{\...}`` would
+    # allow drawing/font/file directives to be injected into libass.
+    return text.replace("{", "（").replace("}", "）")
 
 
 def _apply_highlight(
