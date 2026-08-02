@@ -106,6 +106,10 @@ $envTextWhisper = Get-Content $envFileWhisper -Raw
 if ($envTextWhisper -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
     [IO.File]::AppendAllText($envFileWhisper, "`r`nLTT_WHISPERX_PYTHON=$whisperPy`r`n", (New-Object Text.UTF8Encoding($false)))
 }
+$envTextWhisper = [IO.File]::ReadAllText($envFileWhisper)
+if ($envTextWhisper -notmatch '(?m)^LTT_HF_TOKEN=') {
+    [IO.File]::AppendAllText($envFileWhisper, "`r`nLTT_HF_TOKEN=`r`n", (New-Object Text.UTF8Encoding($false)))
+}
 Write-Ok 'WhisperX CUDA sidecar ready'
 
 Write-Step 'Applying database migrations'

@@ -159,9 +159,112 @@ def handle(params: dict, ctx=None) -> dict:
     operation = str(params.get("operation", "render"))
     if operation == "transcribe":
         return _handle_transcribe(params, ctx)
+    if operation == "diarize":
+        return _handle_diarize(params, ctx)
+    if operation == "translate":
+        return _handle_translate(params, ctx)
     if operation != "render":
         raise ValueError(f"Operation Auto Sub không hỗ trợ: {operation}")
     return _handle_render(params, ctx)
+
+
+def _handle_diarize(params: dict, ctx=None) -> dict:
+    from platform_core import app_projects
+    from platform_core.db import get_session
+    from platform_core.storage import get_storage
+    from apps.autosubvideo.ai_workflows import assign_speakers, diarize_file
+    from apps.autosubvideo.schemas import StudioProjectV1
+    owner_id=str(params.get("owner_id",""));project_id=str(params.get("project_id",""))
+    revision=int(params.get("project_revision",0) or 0);video_key=str(params.get("video_key",""))
+    if not owner_id or not project_id or revision<1 or not video_key.startswith(f"autosubvideo/{owner_id}/"):
+        raise ValueError("Thiếu project/source/revision cho diarization.")
+    tmpdir=tempfile.mkdtemp(prefix="ltt_autosub_diarize_")
+    local=os.path.join(tmpdir,"source"+(os.path.splitext(video_key)[1] or ".mp4"))
+    try:
+        if ctx:ctx.progress(3,"tải source")
+        with get_storage().open(video_key) as src,open(local,"wb") as dst:
+            import shutil;shutil.copyfileobj(src,dst,length=1024*1024)
+        turns=diarize_file(local,min_speakers=int(params.get("min_speakers",0) or 0),
+            max_speakers=int(params.get("max_speakers",0) or 0),
+            on_progress=(lambda p,m:ctx.progress(p,m)) if ctx else None,
+            is_cancelled=ctx.is_cancelled if ctx else None)
+        gen=get_session();db=next(gen)
+        try:
+            row=app_projects.get_owned(db,project_id,owner_id,"autosubvideo")
+            payload=copy.deepcopy(row.payload);cue_count=0
+            speakers=dict(payload.get("speakers") or {})
+            for track in payload.get("tracks") or []:
+                if track.get("kind")!="source":continue
+                updated,names=assign_speakers(track.get("cues") or [],turns)
+                track["cues"]=updated;cue_count+=sum(bool(cue.get("speaker")) for cue in updated)
+                for key,value in names.items():speakers.setdefault(key,value)
+            payload["speakers"]=speakers
+            validated=StudioProjectV1.model_validate(payload).model_dump(mode="json")
+            conflict=False;applied=0
+            try:
+                saved=app_projects.save(db,project_id=project_id,user_id=owner_id,
+                    app_slug="autosubvideo",revision=revision,name=row.name,schema_version=1,payload=validated)
+                db.commit();applied=saved.revision
+            except app_projects.ProjectConflict:db.rollback();conflict=True
+        finally:
+            try:next(gen)
+            except StopIteration:pass
+        artifact_key=f"autosubvideo/{owner_id}/{getattr(ctx,'job_id','adhoc')}/diarization.json"
+        get_storage().put(artifact_key,io.BytesIO(json.dumps({"schema_version":1,"turns":turns},
+            ensure_ascii=False,allow_nan=False).encode("utf-8")),"application/json")
+        if ctx:ctx.progress(100,"phân vai hoàn tất")
+        return {"project_id":project_id,"project_revision":applied,"project_conflict":conflict,
+                "diarization_key":artifact_key,"speaker_count":len({t['speaker'] for t in turns}),
+                "assigned_cues":cue_count}
+    finally:
+        import shutil;shutil.rmtree(tmpdir,ignore_errors=True)
+
+
+def _handle_translate(params: dict, ctx=None) -> dict:
+    from platform_core import app_projects
+    from platform_core.db import get_session
+    from platform_core.storage import get_storage
+    from apps.autosubvideo.ai_workflows import translate_cues
+    from apps.autosubvideo.schemas import StudioProjectV1
+    owner_id=str(params.get("owner_id",""));project_id=str(params.get("project_id",""))
+    revision=int(params.get("project_revision",0) or 0);track_id=str(params.get("track_id",""))
+    language=str(params.get("target_language",""))[:24]
+    if not owner_id or not project_id or revision<1 or not track_id or not language:
+        raise ValueError("Thiếu project/track/ngôn ngữ cho translation.")
+    gen=get_session();db=next(gen)
+    try:
+        row=app_projects.get_owned(db,project_id,owner_id,"autosubvideo")
+        payload=copy.deepcopy(row.payload);source=next((t for t in payload.get("tracks",[]) if t.get("id")==track_id),None)
+        if not source or not source.get("cues"):raise ValueError("Track nguồn không có cue để dịch.")
+        translated=translate_cues(db,source["cues"],language,
+            on_progress=(lambda p,m:ctx.progress(p,m)) if ctx else None,
+            is_cancelled=ctx.is_cancelled if ctx else None)
+        target_id=f"track-{language}";existing=next((t for t in payload.get("tracks",[]) if t.get("id")==target_id),None)
+        z=max([-1,*[int(t.get("z_index",0)) for t in payload.get("tracks",[])]])+1
+        track={"id":target_id,"kind":"translation","language":language,
+               "name":f"Bản dịch {language}","visible":False,"z_index":z,
+               "style_id":source.get("style_id","default"),"cues":translated}
+        if existing:
+            track["visible"]=bool(existing.get("visible",False));track["z_index"]=int(existing.get("z_index",z))
+            payload["tracks"]=[track if t.get("id")==target_id else t for t in payload["tracks"]]
+        else:payload["tracks"].append(track)
+        validated=StudioProjectV1.model_validate(payload).model_dump(mode="json")
+        conflict=False;applied=0
+        artifact_key=f"autosubvideo/{owner_id}/{getattr(ctx,'job_id','adhoc')}/translation-{language}.json"
+        get_storage().put(artifact_key,io.BytesIO(json.dumps({"schema_version":1,"track":track},
+            ensure_ascii=False,allow_nan=False).encode("utf-8")),"application/json")
+        try:
+            saved=app_projects.save(db,project_id=project_id,user_id=owner_id,
+                app_slug="autosubvideo",revision=revision,name=row.name,schema_version=1,payload=validated)
+            db.commit();applied=saved.revision
+        except app_projects.ProjectConflict:db.rollback();conflict=True
+        if ctx:ctx.progress(100,"dịch hoàn tất")
+        return {"project_id":project_id,"project_revision":applied,"project_conflict":conflict,
+                "translation_key":artifact_key,"track_id":target_id,"cue_count":len(translated),
+                "target_language":language}
+    finally:
+        try:next(gen)
+        except StopIteration:pass
 
 
 def _handle_render(params: dict, ctx=None) -> dict:

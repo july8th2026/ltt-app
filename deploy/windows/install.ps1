@@ -127,6 +127,10 @@ if ($envText -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
     [IO.File]::AppendAllText($envFile, "`r`nLTT_WHISPERX_PYTHON=$whisperPy`r`n", (New-Object Text.UTF8Encoding($false)))
     Write-Ok 'WhisperX sidecar path added to app.env'
 }
+$envText = [IO.File]::ReadAllText($envFile)
+if ($envText -notmatch '(?m)^LTT_HF_TOKEN=') {
+    [IO.File]::AppendAllText($envFile, "`r`nLTT_HF_TOKEN=`r`n", (New-Object Text.UTF8Encoding($false)))
+}
 
 Write-Step 'Registering the Windows service'
 $nssm = Get-Command nssm.exe -ErrorAction SilentlyContinue

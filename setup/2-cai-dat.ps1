@@ -213,6 +213,11 @@ if ($envTxt -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
 } else {
     Ok 'LTT_WHISPERX_PYTHON da co - GIU NGUYEN'
 }
+$envTxt = [IO.File]::ReadAllText($envFile)
+if ($envTxt -notmatch '(?m)^LTT_HF_TOKEN=') {
+    [IO.File]::AppendAllText($envFile, "`r`nLTT_HF_TOKEN=`r`n", (New-Object Text.UTF8Encoding($false)))
+    Ok 'Da them placeholder LTT_HF_TOKEN (Pyannote chi bat khi operator dien token)'
+}
 
 Head 'PostgreSQL'
 # CSDL cua nen tang (quyet dinh Q2). Cai dat va tao database + role rieng.

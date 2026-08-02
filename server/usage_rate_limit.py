@@ -16,7 +16,7 @@ from starlette.responses import JSONResponse
 from server.auth.rate_limit import RateLimiter
 
 # Đuôi path "miễn phí / đốt quota ngoài" — siết chặt hơn (dễ bị script lạm dụng nhất).
-_EXPENSIVE_SUFFIXES = ("/translate", "/preview", "/estimate", "/upload-url",
+_EXPENSIVE_SUFFIXES = ("/translate", "/diarize", "/preview", "/estimate", "/upload-url",
                        "/transcribe", "/diarize", "/plan", "/approve",
                        "/runs", "/again")
 

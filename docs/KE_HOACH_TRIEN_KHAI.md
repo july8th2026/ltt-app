@@ -1060,7 +1060,11 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
   typed style schema/hex guard, 8 preset từ server, full inspector, karaoke và
   none/fade/pop/slide-up dùng chung contract React/ASS. 23 backend + 7 frontend
   test PASS; Playwright desktop/mobile style autosave, console/network sạch.
-- [ ] AS6 diarization/translation và workflow auxiliary 0-credit.
+- [x] AS6 diarization/translation và workflow auxiliary 0-credit — 2026-08-02:
+  Pyannote Community-1 sidecar/in-memory audio + speaker overlap, Gemini structured
+  JSON chunk translation, project revision/artifact, quota/dedupe/cancel/job status
+  và honest capability UI. 102 regression + 7 frontend PASS; token/key local thiếu
+  nên browser xác minh soft-disable, không gọi giả dịch/phân vai.
 - [ ] AS7 render snapshot/quote/credit/output/job control.
 - [ ] AS8 hardening/performance/corpus/GPU/end-to-end.
 - [ ] AS9 full gate/release; production chỉ khi được yêu cầu deploy rõ.
@@ -1070,5 +1074,5 @@ subtitle editor đầy đủ, trong khi app hiện tại mới là form burn tra
 ## Việc phải làm ngay ở phiên tiếp theo
 
 `H13.autosubvideo` đang triển khai liên tục theo ủy quyền của Dev. Việc kế tiếp là
-AS6: diarization/translation và workflow auxiliary 0-credit. Hạ tầng
+AS7: render snapshot/quote/credit/output/job control. Hạ tầng
 độc lập còn việc cấu hình bucket CORS rồi mới bật cờ Q48 cho browser upload >90MB.

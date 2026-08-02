@@ -41,7 +41,8 @@ MANIFEST = AppManifest(
 
     nav=(NavEntry("Khắc phụ đề video", "/autosubvideo", "💬", "autosubvideo"),),
 
-    job_types=("autosubvideo.render", "autosubvideo.transcribe"),
+    job_types=("autosubvideo.render", "autosubvideo.transcribe",
+               "autosubvideo.diarize", "autosubvideo.translate"),
     requires=("ffmpeg",),
     credit_cost=_cost,
     tools=(ToolSpec(

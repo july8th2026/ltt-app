@@ -268,6 +268,8 @@ async def project_import_transcript(
 
 
 _TRANSCRIBE_DAILY_LIMIT = 12
+_DIARIZE_DAILY_LIMIT = 6
+_TRANSLATE_DAILY_LIMIT = 20
 
 
 @router.post("/api/projects/{project_id}/source")
@@ -371,6 +373,131 @@ async def project_transcribe(request: Request, project_id: str,
                          "credit": 0, "quota_remaining": max(
                              0, _TRANSCRIBE_DAILY_LIMIT - int(current_used or 0))},
                         status_code=202)
+
+
+@router.get("/api/capabilities")
+def studio_capabilities(_identity: str = Depends(require_login),
+                        db: Session = Depends(get_db)):
+    from apps.autosubvideo.ai_workflows import diarization_available, gemini_available
+    return {"whisperx": bool(os.environ.get("LTT_WHISPERX_PYTHON", "").strip()),
+            "diarization": diarization_available(), "translation": gemini_available(db),
+            "credit": {"transcribe": 0, "diarize": 0, "translate": 0}}
+
+
+def _submit_auxiliary(db: Session, *, current, row, operation: str,
+                      params: dict, daily_limit: int):
+    from sqlalchemy import func, select
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.models import Job, User
+    job_type = f"autosubvideo.{operation}"
+    db.execute(select(User).where(User.id == current.id).with_for_update()).scalar_one()
+    day_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    used = int(db.execute(select(func.count(Job.id)).where(
+        Job.user_id == current.id, Job.job_type == job_type,
+        Job.created_at >= day_start)).scalar_one() or 0)
+    if used >= daily_limit:
+        raise HTTPException(status_code=429,
+                            detail=f"Đã dùng hết {daily_limit} lượt {operation} miễn phí hôm nay.")
+    payload = {"operation": operation, "owner_id": current.id,
+               "project_id": row.id, "project_revision": row.revision, **params}
+    job = submit_with_credit(db, user_id=current.id, app_slug=MANIFEST.slug,
+        job_type=job_type, params=payload, dedupe_key=dedupe_key_for(job_type, payload),
+        max_attempts=2)
+    return JSONResponse({"ok": True, "job_id": job.id, "status": job.status,
+        "credit": 0, "quota_remaining": max(0, daily_limit - used - 1)}, status_code=202)
+
+
+@router.post("/api/projects/{project_id}/diarize")
+async def project_diarize(request: Request, project_id: str,
+                          _identity: str = Depends(require_login),
+                          db: Session = Depends(get_db)):
+    from platform_core import app_projects
+    from platform_core.storage import get_storage
+    from apps.autosubvideo.ai_workflows import diarization_available
+    body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
+    try:
+        revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+    if row.revision != revision:
+        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+    if not diarization_available():
+        raise HTTPException(status_code=503, detail="Pyannote chưa cấu hình token/model.")
+    source = (row.payload or {}).get("source") or {}; key = str(source.get("key", ""))
+    tracks = (row.payload or {}).get("tracks") or []
+    if not key.startswith(f"autosubvideo/{current.id}/") or not get_storage().exists(key):
+        raise HTTPException(status_code=422, detail="Source video chưa sẵn sàng.")
+    if not any(t.get("kind") == "source" and t.get("cues") for t in tracks):
+        raise HTTPException(status_code=422, detail="Cần transcript nguồn trước khi phân vai.")
+    minimum = max(0, min(int(body.get("min_speakers", 0) or 0), 20))
+    maximum = max(0, min(int(body.get("max_speakers", 0) or 0), 20))
+    if minimum and maximum and minimum > maximum:
+        raise HTTPException(status_code=422, detail="Khoảng số speaker không hợp lệ.")
+    return _submit_auxiliary(db, current=current, row=row, operation="diarize",
+        params={"video_key": key, "duration_s": float(source.get("duration_s", 0) or 0),
+                "min_speakers": minimum, "max_speakers": maximum},
+        daily_limit=_DIARIZE_DAILY_LIMIT)
+
+
+@router.post("/api/projects/{project_id}/translate")
+async def project_translate(request: Request, project_id: str,
+                            _identity: str = Depends(require_login),
+                            db: Session = Depends(get_db)):
+    import re
+    from platform_core import app_projects
+    from apps.autosubvideo.ai_workflows import gemini_available
+    body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
+    try:
+        revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+    except app_projects.ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+    if row.revision != revision:
+        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+    if not gemini_available(db):
+        raise HTTPException(status_code=503, detail="Gemini translation chưa cấu hình API key.")
+    track_id = str(body.get("track_id", "")); language = str(body.get("target_language", "")).lower()
+    if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2,4})?", language):
+        raise HTTPException(status_code=422, detail="Mã ngôn ngữ đích không hợp lệ.")
+    track = next((t for t in (row.payload or {}).get("tracks", [])
+                  if t.get("id") == track_id), None)
+    if not track or not track.get("cues"):
+        raise HTTPException(status_code=422, detail="Track nguồn không có cue.")
+    return _submit_auxiliary(db, current=current, row=row, operation="translate",
+        params={"track_id": track_id, "target_language": language,
+                "cue_count": len(track["cues"])}, daily_limit=_TRANSLATE_DAILY_LIMIT)
+
+
+@router.get("/api/jobs/{job_id}")
+def studio_job_status(request: Request, job_id: str,
+                      _identity: str = Depends(require_login),
+                      db: Session = Depends(get_db)):
+    from platform_core.models import Job
+    current = _api_user(request); job = db.get(Job, job_id)
+    if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
+        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+    return {"id": job.id, "type": job.job_type, "status": job.status,
+            "progress": job.progress, "message": job.progress_msg,
+            "error": job.error if job.status == "error" else "",
+            "result": job.result if job.status == "done" else {}}
+
+
+@router.post("/api/jobs/{job_id}/cancel")
+async def studio_job_cancel(request: Request, job_id: str,
+                            _identity: str = Depends(require_login),
+                            db: Session = Depends(get_db)):
+    from platform_core import jobs
+    from platform_core.models import Job
+    body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
+    job = db.get(Job, job_id)
+    if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
+        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+    return {"ok": jobs.cancel(db, job), "status": job.status}
 
 
 @router.post("/estimate", response_class=HTMLResponse)

@@ -279,3 +279,78 @@ def test_studio_style_api_returns_typed_presets(studio_api):
     items = response.json()["items"]
     assert len(items) == 8
     assert all(item["config"]["font_color"].startswith("#") for item in items)
+
+
+def test_auxiliary_assignment_and_translation_are_bounded():
+    from apps.autosubvideo.ai_workflows import (AuxiliaryAIError, assign_speakers,
+                                                 translate_cues)
+    cues = [{"id": "a", "start": 0, "end": 2, "text": "Xin", "words": []},
+            {"id": "b", "start": 2, "end": 5, "text": "chào", "words": []}]
+    updated, names = assign_speakers(cues, [
+        {"start": 0, "end": 1.8, "speaker": "SPEAKER_00"},
+        {"start": 2.1, "end": 5, "speaker": "SPEAKER_01"}])
+    assert [item["speaker"] for item in updated] == ["SPEAKER_00", "SPEAKER_01"]
+    assert names == {"SPEAKER_00": "Người nói 1", "SPEAKER_01": "Người nói 2"}
+    translated = translate_cues(None, cues, "English", call=lambda batch: [
+        {"id": item["id"], "text": "EN-" + item["text"]} for item in batch])
+    assert translated[0]["text"] == "EN-Xin" and translated[0]["words"] == []
+    with pytest.raises(AuxiliaryAIError):
+        translate_cues(None, cues, "English", call=lambda _batch: [{"id": "wrong", "text": "x"}])
+
+
+def test_auxiliary_routes_quota_owner_cancel_and_soft_disable(studio_api, monkeypatch):
+    a, token_a, b, _token_b = studio_api
+    import platform_core.db as dbmod
+    from platform_core.models import User
+    from platform_core.storage import get_storage
+    db = next(dbmod.get_session())
+    user = db.query(User).filter_by(email="studio-a@example.com").one(); owner = user.id
+    db.close()
+    payload = _payload(); payload["source"]["key"] = f"autosubvideo/{owner}/uploads/ai.mp4"
+    get_storage().put(payload["source"]["key"], io.BytesIO(b"video"), "video/mp4")
+    made = a.post("/autosubvideo/api/projects", headers={"X-CSRF-Token": token_a},
+                  json={"name": "AI workflows", "payload": payload}).json()
+    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarization_available", lambda: False)
+    assert a.post(f"/autosubvideo/api/projects/{made['id']}/diarize", headers={
+        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={}).status_code == 503
+    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarization_available", lambda: True)
+    diarize = a.post(f"/autosubvideo/api/projects/{made['id']}/diarize", headers={
+        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={})
+    assert diarize.status_code == 202 and diarize.json()["credit"] == 0
+    job_id = diarize.json()["job_id"]
+    assert b.get(f"/autosubvideo/api/jobs/{job_id}").status_code == 404
+    cancelled = a.post(f"/autosubvideo/api/jobs/{job_id}/cancel",
+                       headers={"X-CSRF-Token": token_a}, json={})
+    assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
+    monkeypatch.setattr("apps.autosubvideo.ai_workflows.gemini_available", lambda _db: True)
+    translated = a.post(f"/autosubvideo/api/projects/{made['id']}/translate", headers={
+        "X-CSRF-Token": token_a, "If-Match": '"1"'},
+        json={"track_id": "source", "target_language": "en"})
+    assert translated.status_code == 202 and translated.json()["credit"] == 0
+
+
+def test_diarize_handler_applies_speakers_to_matching_revision(studio_api, monkeypatch):
+    a, token, *_ = studio_api
+    import platform_core.db as dbmod
+    from platform_core.models import AppProject, User
+    from platform_core.storage import get_storage
+    db = next(dbmod.get_session()); user = db.query(User).filter_by(
+        email="studio-a@example.com").one(); owner = user.id; db.close()
+    payload = _payload(); payload["source"]["key"] = f"autosubvideo/{owner}/uploads/d.mp4"
+    get_storage().put(payload["source"]["key"], io.BytesIO(b"video"), "video/mp4")
+    made = a.post("/autosubvideo/api/projects", headers={"X-CSRF-Token": token},
+                  json={"name": "Diarize", "payload": payload}).json()
+    monkeypatch.setattr("apps.autosubvideo.ai_workflows.diarize_file", lambda *_a, **_k: [
+        {"start": 0, "end": 4, "speaker": "SPEAKER_00"}])
+    class Ctx:
+        job_id = "job-diarize"
+        def progress(self, *_args): pass
+        def is_cancelled(self): return False
+    from apps.autosubvideo.jobs import handle
+    result = handle({"operation": "diarize", "owner_id": owner,
+        "project_id": made["id"], "project_revision": 1,
+        "video_key": payload["source"]["key"]}, Ctx())
+    assert result["assigned_cues"] == 1 and result["speaker_count"] == 1
+    db = next(dbmod.get_session()); row = db.get(AppProject, made["id"])
+    assert row.payload["tracks"][0]["cues"][0]["speaker"] == "SPEAKER_00"
+    db.close()

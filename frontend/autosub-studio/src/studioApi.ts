@@ -22,6 +22,10 @@ export type StudioPayload = { schema_version: 1;
   output: { resolution: 'source' | '720p' | '1080p' | '4k'; format: 'mp4' | 'mkv' | 'webm' } }
 export type StudioProject = { id: string; name: string; revision: number;
   status: 'active' | 'archived'; payload: StudioPayload }
+export type StudioCapabilities={whisperx:boolean;diarization:boolean;translation:boolean;
+  credit:{transcribe:number;diarize:number;translate:number}}
+export type StudioJob={id:string;type:string;status:string;progress:number;message:string;
+  error:string;result:Record<string,unknown>}
 
 export class ProjectConflictError extends Error {}
 
@@ -41,12 +45,14 @@ export async function loadOrCreateProject(csrf: string): Promise<StudioProject> 
     credentials: 'same-origin',
   }))
   const active = listing.items.find((item: { status: string }) => item.status === 'active')
-  if (active) return decode(await fetch(`/autosubvideo/api/projects/${active.id}`, {
-    credentials: 'same-origin',
-  }))
+  if (active) return loadProject(active.id)
   return decode(await fetch('/autosubvideo/api/projects', { method: 'POST',
     credentials: 'same-origin', headers: { 'Content-Type': 'application/json',
       'X-CSRF-Token': csrf }, body: JSON.stringify({ name: 'Dự án chưa đặt tên' }) }))
+}
+
+export async function loadProject(id:string):Promise<StudioProject>{
+  return decode(await fetch(`/autosubvideo/api/projects/${id}`,{credentials:'same-origin'}))
 }
 
 export async function saveProject(project: StudioProject, csrf: string,
@@ -101,6 +107,29 @@ export async function startTranscription(project: StudioProject, csrf: string) {
 export async function loadStyles():Promise<StylePreset[]> {
   const body=await decode(await fetch('/autosubvideo/api/styles',{credentials:'same-origin'}))
   return body.items
+}
+
+export async function loadCapabilities():Promise<StudioCapabilities>{
+  return decode(await fetch('/autosubvideo/api/capabilities',{credentials:'same-origin'}))
+}
+
+async function startAux(project:StudioProject,csrf:string,operation:'diarize'|'translate',body:Record<string,unknown>){
+  return decode(await fetch(`/autosubvideo/api/projects/${project.id}/${operation}`,{
+    method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',
+      'X-CSRF-Token':csrf,'If-Match':`"${project.revision}"`},body:JSON.stringify(body)}))
+}
+export function startDiarization(project:StudioProject,csrf:string,min=0,max=0){
+  return startAux(project,csrf,'diarize',{min_speakers:min,max_speakers:max})
+}
+export function startTranslation(project:StudioProject,csrf:string,trackId:string,targetLanguage:string){
+  return startAux(project,csrf,'translate',{track_id:trackId,target_language:targetLanguage})
+}
+export async function loadStudioJob(id:string):Promise<StudioJob>{
+  return decode(await fetch(`/autosubvideo/api/jobs/${id}`,{credentials:'same-origin'}))
+}
+export async function cancelStudioJob(id:string,csrf:string){
+  return decode(await fetch(`/autosubvideo/api/jobs/${id}/cancel`,{method:'POST',
+    credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:'{}'}))
 }
 
 export const DEFAULT_STYLE:StudioStyle={preset:'default',font_family:'Arial',font_size:48,

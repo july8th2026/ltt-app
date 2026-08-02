@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-02 — H13.autosubvideo AS6: auxiliary AI workflow PASS
+
+- **Mục tiêu:** nối phân vai Pyannote và dịch Gemini thành job 0-credit có kiểm
+  soát, không tạo kết quả giả khi môi trường thiếu credential/model.
+- **Hạng mục:** AS6 hoàn thành; AS7 chưa bắt đầu.
+- **Trạng thái:** contract/backend/UI PASS; local soft-disabled do thiếu token/key.
+
+### Đã làm
+
+Thêm job types diarize/translate, quota lần lượt 6/20 mỗi ngày, user row lock,
+dedupe, owner 404, revision snapshot, cooperative cancel, JSON status và artifact
+riêng. Pyannote Community-1 chạy trong sidecar; audio preload bằng WhisperX/FFmpeg
+thành tensor 16 kHz để né TorchCodec DLL không tương thích, rồi gán speaker theo
+overlap thời gian lớn nhất. Telemetry Pyannote tắt trong runner.
+
+Gemini dùng APIKEYS pool/category chat, structured JSON, chunk 60 cue/12.000 ký tự,
+kiểm đúng ID/thứ tự/không rỗng trước khi tạo translation track; lỗi không apply
+partial. UI đọc capability thật, có language picker/progress/cancel; thiếu cấu hình
+thì disable và nói rõ lý do.
+
+### Test đã chạy
+
+- `python -m pytest tests\test_103_autosub_projects.py tests\test_81_autosubvideo.py tests\test_61_setup_scripts.py tests\test_85_app_contract_lint.py tests\test_86_usage_rate_limit.py -q`
+  → **102 passed**, 1 warning.
+- `npm test` → **7 passed**; `npm run build`/typecheck → **PASS**; JS 218,42 kB,
+  CSS 13,55 kB.
+- Sidecar `import pyannote.audio` → PASS; `LTT_HF_TOKEN` local không có,
+  `GEMINI_API_KEY` env local không có. Không gọi mạng/model bằng credential giả.
+- Playwright fixture video+3 cue: capability endpoint 200, hai action disabled,
+  hiện đúng hai lý do thiếu cấu hình; overflow 0, console 0, network sạch.
+
+### Cách lùi lại
+
+Revert commit AS6; job đang chạy cancel hợp tác. Không đặt `LTT_HF_TOKEN` hoặc
+không có Gemini key thì capability tự off, editor/import/render khác vẫn dùng được.
+
+### Còn tồn đọng
+
+Không thể smoke model gated Pyannote tại máy dev khi operator chưa cấp token đã
+accept Community-1. Translation sẽ dùng key pool production nếu có; local không
+có key nên chỉ test adapter bằng mock có validate schema.
+
+### Việc tiếp theo
+
+AS7: render từ immutable project snapshot, quote/credit popup, multi-track output,
+resolution source/720p/1080p/4K, job progress/cancel/retry/download bundle.
+
 ## 2026-08-02 — H13.autosubvideo AS5: style/animation parity PASS
 
 - **Mục tiêu:** cho Dev chỉnh toàn bộ hình thức phụ đề và bảo đảm preview/render
