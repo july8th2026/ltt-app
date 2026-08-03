@@ -14,6 +14,72 @@
 
 ---
 
+## 2026-08-04 — H17 Agent Canvas launch UX, audit độc lập và deploy
+
+- **Mục tiêu:** sửa triệt để Canvas bị co/bí, đưa interaction hierarchy gần
+  chuẩn PlenX nhưng giữ safety LTT; sau nghiệm thu chạy DEEP audit riêng để xác
+  định khả năng trình làng.
+- **Hạng mục:** H17.0–H17.7 — hoàn thành/deploy; authenticated production
+  browser là handoff còn mở vì session hết hạn.
+- **Trạng thái:** code, audit, full gate, release, deploy và health xong.
+
+### Đã làm
+
+- Q63 khóa shell riêng toàn viewport: topbar 48 px, rail icon 48 px, drawer theo
+  ngữ cảnh, palette search, node visual-first, composer dưới và Inspector nâng
+  cao. Không đổi quote/approve/credit/provider của Q62.
+- Connector typed có hit-zone 44×44, hover `+`, picker chỉ liệt kê input tương
+  thích; edge interaction 18 px. Node không còn form nhồi trong card.
+- Playwright local desktop đo document 1720×940, stage 1720×892, rail 48 px,
+  không page overflow; mobile 390×844 không overflow; palette/composer/picker
+  hoạt động, console 0, request lượt reload mới 200.
+- Audit độc lập theo LTT-AQA tại `docs/APP_AUDIT/agent/2026-08-04-launch/`:
+  Q 92,3, M 89, E 97; P0 = 0. Khuyến nghị controlled launch, chưa gọi GA khi
+  chưa có external usability metric và authenticated production smoke H17.
+- Commit `b3a0df4`; release đã backup, xoay `app.previous`, migrate và deploy.
+  Manifest production khớp source; giữ tab PlenX và LTT fixture để đối soát.
+
+### Test/deploy đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `npm test` Agent Canvas | **20 passed** |
+| `npm run typecheck && npm run build` | PASS; bundle hash production |
+| `npm audit --audit-level=high` | 0 vulnerability |
+| `python -m pytest tests/test_95_agent_canvas_build.py -q` | **8 passed** |
+| `python -m pytest -q` | **2.050 passed, 8 skipped, 23 subtests**, 1 warning, 647,87 giây |
+| `python tools/scan_source_secrets.py` | 0 finding |
+| `python tools/lint_app_contract.py` | 11 app, ERROR 0/WARN 0 |
+| `tools/build_release.py` | 1.203 file, 174,6 MB, archive scan 0 |
+| `update.ps1` | pg_dump/data backup, migration, services, health PASS |
+| `setup/4-nghiem-thu.ps1` | loopback/Cloudflare/catalog/security/12 app/log PASS; 1 cảnh báo legacy config |
+| Playwright production login desktop/mobile | redirect auth đúng, overflow 0, console 0 |
+
+### Quyết định mới
+
+Q63: Agent Canvas dùng workspace full viewport với contextual UI và typed
+connector 44 px; lý do và ranh giới ghi trong nguồn chân lý.
+
+### Cách lùi lại
+
+Run: đặt `LTT_AGENT_CANVAS_RUN_ROLLOUT=off`. Release: chạy
+`C:\LTTPlatform\app\deploy\windows\rollback.ps1`; bản trước còn ở
+`app.previous`, backup mới ở `C:\LTTPlatform\backups`.
+
+### Còn tồn đọng
+
+- Authenticated production Canvas H17 chưa browser-smoke vì phiên hết hạn; tab
+  production đang ở login với `next=/agent/canvas`.
+- External 5-user task study và telemetry không chứa prompt/media là backlog
+  measurement trước GA; không phải bằng chứng được suy ra từ unit test.
+- Cảnh báo legacy `sheet_id`/`google_credentials_path` không chặn Agent.
+
+### Việc tiếp theo
+
+1. Chủ sản phẩm đăng nhập tab production để đóng AG-LAUNCH-001.
+2. Chạy controlled launch; đo time-to-first-valid-graph/rage-click/task success.
+3. Chỉ mở VLM/realtime collaboration sau dữ liệu launch, không thêm nút giả.
+
 ## 2026-08-04 — Hoàn tất và deploy Agent Canvas parity H16
 
 - **Mục tiêu:** triển khai tuần tự P14.1–P14.10 theo Q62, đối soát PlenX định

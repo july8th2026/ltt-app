@@ -1387,6 +1387,8 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
 - [x] H17.6 DEEP audit độc lập theo `quy_tac_audit.md` — 2026-08-04: hồ sơ
   `APP_AUDIT/agent/2026-08-04-launch`; Q 92,3/M 89/E 97; full regression
   2.050 pass, 8 skip, 23 subtests; controlled launch còn gate production.
-- [ ] H17.7 Release/deploy/canary — full pytest, frontend, secret scan, archive,
-  backup/update, health và browser production; không tuyên bố authenticated
-  production PASS nếu phiên đăng nhập chưa được khôi phục.
+- [x] H17.7 Release/deploy/canary handoff — 2026-08-04: commit `b3a0df4`;
+  archive 1.203 file/174,6 MB, scan 0; backup PostgreSQL/data, update/migration,
+  health loopback/Cloudflare/12 app/log PASS. Production login desktop/mobile
+  overflow 0, console 0; deployed manifest khớp source SHA-256. Phiên auth hết
+  hạn nên authenticated production Canvas được ghi đúng là manual gate còn mở.

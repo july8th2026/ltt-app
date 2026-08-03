@@ -8,7 +8,7 @@
 | UX-C3 | visual nodes/context composer | no form inside node | PASS tests/browser |
 | UX-C4 | typed port/picker/edge interaction | invalid edge 0 | PASS contract/browser |
 | UX-C5 | run/history/assistant spatial grouping | credit/runtime unchanged | PASS regression hẹp |
-| UX-C6 | full suite/release/deploy/canary | G0–G8 | full suite PASS; deploy PENDING |
+| UX-C6 | full suite/release/deploy/canary | G0–G8 | DEPLOYED; auth production handoff |
 | AUD-L | independent LTT-AQA audit | Q≥90/M≥85/E≥95 | PASS local 92,3/89/97 |
 
 Sau deploy: mở PlenX và LTT cạnh nhau chỉ để đối soát interaction/hierarchy;
