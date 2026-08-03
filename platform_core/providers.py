@@ -68,10 +68,18 @@ REGISTRY: dict[str, Provider] = {
         models=(
             ModelInfo("gemini-2.5-flash-image", (APIKEY_CAT_IMAGE,),
                       display_name="Gemini 2.5 Flash"),
-            ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,),
+            ModelInfo("gemini-3.1-flash-lite-image", (APIKEY_CAT_IMAGE,),
+                      display_name="Gemini 3.1 Flash Lite"),
+            ModelInfo("gemini-3.1-flash-image", (APIKEY_CAT_IMAGE,),
                       display_name="Gemini 3.1 Flash"),
-            ModelInfo("gemini-3-pro-image-preview", (APIKEY_CAT_IMAGE,),
+            ModelInfo("gemini-3-pro-image", (APIKEY_CAT_IMAGE,),
                       display_name="Gemini 3 Pro"),
+            # Alias bất hoạt: job/draft cũ vẫn gọi đúng model ổn định, nhưng UI
+            # không tiếp tục tạo dữ liệu mới với tên preview đã lỗi thời.
+            ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,),
+                      provider_model_id="gemini-3.1-flash-image", is_active=False),
+            ModelInfo("gemini-3-pro-image-preview", (APIKEY_CAT_IMAGE,),
+                      provider_model_id="gemini-3-pro-image", is_active=False),
             ModelInfo("gemini-2.5-flash", (APIKEY_CAT_CHAT,),
                       display_name="Gemini 2.5 Flash (chat)"),
         ),
@@ -161,6 +169,16 @@ def model_capabilities(model_id: str) -> dict:
             if model.id == model_id:
                 return dict(model.capabilities)
     return {}
+
+
+def resolve_model_id(model_id: str) -> str:
+    """Catalog/legacy id -> id thật gửi provider; id lạ được giữ nguyên."""
+    value = (model_id or "").strip()
+    for provider in REGISTRY.values():
+        for model in provider.models:
+            if model.id == value:
+                return model.real_model_id()
+    return value
 
 
 def model_options(category: str, provider_ids_filter: Optional[tuple] = None) -> list:

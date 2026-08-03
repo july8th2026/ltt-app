@@ -14,6 +14,57 @@
 
 ---
 
+## 2026-08-03 — H15.S9.2: Tạo ảnh IMG-FEAT-001
+
+- **Mục tiêu:** mở reference/edit thật cho Image Studio sau khi khóa provider,
+  giá, privacy, ownership và rollback; không dựng precision editor giả.
+- **Hạng mục:** IMG-FEAT-001 và H15.S9 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Provider Registry dùng ID Gemini Image ổn định và giữ hai ID preview cũ làm
+alias bất hoạt. Worker resolve alias trước khi gọi provider. Quote/hold/settlement
+dùng một bảng đơn giá model: 5/5/8/16 credit mỗi ảnh.
+
+Image Studio nhận source/style PNG, JPEG hoặc WebP tối đa 8 MB, kiểm MIME thật,
+kích thước tối thiểu và trần 24 triệu pixel trước khi ghi Storage owner-scoped.
+Worker chỉ đọc key đúng owner, gửi tối đa hai ảnh bằng Gemini `inlineData`, kèm
+vai trò rõ. Đã mở edit, semantic replace theo mô tả, outpaint và style transfer;
+UI công khai việc gửi ảnh tới Gemini và nói rõ semantic replace không phải mask
+chính xác từng pixel. Output DONE có handoff owner-only trở lại Studio; file upload
+mới được dọn nếu validation/submit thất bại.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression provider/migration/Image UI+feature | **41 passed**, 1 warning trong 25,45 giây |
+| `python -m pytest -q` | **1.965 passed**, 8 skipped, 23 subtests, 1 warning trong 556,84 giây |
+| Playwright fixture 8109 desktop | Gemini 3.1 Flash ×2 báo 16 credit; upload source+style; job DONE tạo 2 output và 2 edit handoff; trang edit nạp đúng prompt/source |
+| Playwright fixture 8109 mobile 390×844 | controls rộng 342 px; overflow 0; action/control của app có vùng tương tác ≥44 px (radio ẩn dùng label 44 px) |
+| Console/network phiên 8109 | **0 error, 0 warning**; login/app/queue/edit/image/CSS đều 200/303/304, không request lỗi |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.140 file / 161.899 dòng) |
+
+Fixture dùng SQLite/user/data cô lập và worker giả chỉ tạo output nội bộ; không
+gọi provider hay dữ liệu production. Full suite và scan chạy song song, đều exit 0.
+
+### Quyết định mới
+
+Q55 khóa model ID/legacy alias, đơn giá theo model, giới hạn reference, privacy
+disclosure và ranh giới semantic edit so với precision mask.
+
+### Cách lùi lại
+
+Revert commit IMG-FEAT-001. Không migration DB; xóa control edit/reference khỏi
+UI, worker trở về text-only và bảng model/alias cũ. Job/output cũ vẫn là JSON/Storage
+owner-scoped nên không cần chuyển đổi dữ liệu.
+
+### Việc tiếp theo
+
+H15.S10.1 CHAT-UI-001 — audit code/runtime Chat AI Studio rồi đồng nhất shell,
+composer, message, attachment và accessibility trước khi mở CHAT-FEAT-001.
+
 ## 2026-08-03 — H15.S9.1: Tạo ảnh IMG-UI-001
 
 - **Mục tiêu:** đưa app Tạo ảnh về cùng Carbon Red contract, dùng lịch sử và

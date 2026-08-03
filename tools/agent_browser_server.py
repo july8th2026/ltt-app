@@ -70,6 +70,7 @@ def _script_handle(params, ctx=None):
 
 
 def _image_handle(params, ctx=None):
+    from apps.taoanh.manifest import unit_credit
     from platform_core.storage import get_storage
     count = max(1, min(4, int(params.get("count", 1))))
     owner_id = str(params.get("owner_id") or "browser")
@@ -83,7 +84,9 @@ def _image_handle(params, ctx=None):
             get_storage().put(key, stream, content_type="image/png")
         keys.append(key)
     if ctx: ctx.progress(100, "xong")
-    return {"image_keys": keys, "count": count, "credit_cost": count * 5,
+    return {"image_keys": keys, "count": count,
+            "credit_cost": count * unit_credit(str(params.get("model") or "")),
+            "edit_mode": str(params.get("edit_mode") or "generate"),
             "prompt": str(params.get("prompt") or "")}
 
 

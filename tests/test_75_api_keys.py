@@ -109,6 +109,19 @@ def test_models_for_loc_category():
     assert any(m.id == "gemini-2.5-flash-image" for m in imgs)
 
 
+def test_gemini_image_registry_uses_stable_ids_and_resolves_legacy_aliases():
+    from platform_core import providers
+    from platform_core.models import APIKEY_CAT_IMAGE
+    active = {m.id for m in providers.models_for("gemini", APIKEY_CAT_IMAGE)
+              if m.is_active}
+    assert {"gemini-3.1-flash-lite-image", "gemini-3.1-flash-image",
+            "gemini-3-pro-image"} <= active
+    assert "gemini-3.1-flash-image-preview" not in active
+    assert providers.resolve_model_id("gemini-3.1-flash-image-preview") == \
+        "gemini-3.1-flash-image"
+    assert providers.resolve_model_id("unknown-model") == "unknown-model"
+
+
 # ── Allocator ────────────────────────────────────────────────────────────────
 
 def test_lay_key_chon_theo_priority(db):

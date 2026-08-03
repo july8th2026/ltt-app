@@ -19,6 +19,8 @@ def test_taoanh_manifest():
     assert MANIFEST.job_types == ("taoanh.generate",)
     assert MANIFEST.credit_cost({"count": 3}) == 15
     assert MANIFEST.credit_cost({"count": 99}) == 20   # kẹp 4 ảnh
+    assert MANIFEST.credit_cost({"model": "gemini-3.1-flash-image", "count": 2}) == 16
+    assert MANIFEST.credit_cost({"model": "gemini-3-pro-image", "count": 1}) == 16
 
 
 # ── kichban (kịch bản văn bản) ─────────────────────────────────────────────────

@@ -75,13 +75,22 @@ def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
 
 
 def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
-                model: str = _MODEL) -> bytes:
+                model: str = _MODEL, references: list[dict] | None = None) -> bytes:
     """Gọi Gemini Image API một lần → bytes PNG. Ném lỗi nếu thất bại."""
     import httpx
-    url = f"{_BASE}/v1beta/models/{model or _MODEL}:generateContent"
+    from platform_core.providers import resolve_model_id
+    provider_model = resolve_model_id(model or _MODEL)
+    url = f"{_BASE}/v1beta/models/{provider_model}:generateContent"
     headers = {"x-goog-api-key": api_key}
+    parts: list[dict] = [{"text": prompt}]
+    for ref in references or []:
+        parts.append({"text": f"The next image has role {ref['role']}."})
+        parts.append({"inlineData": {
+            "mimeType": ref["mime"],
+            "data": base64.b64encode(ref["data"]).decode("ascii"),
+        }})
     body = {
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"parts": parts}],
         "generationConfig": {
             "responseModalities": ["IMAGE", "TEXT"],
             "imageConfig": {"aspectRatio": aspect_ratio},
@@ -120,6 +129,8 @@ def handle(params: dict, ctx=None) -> dict:
     aspect_ratio = str(params.get("aspect_ratio", "16:9")) or "16:9"
     owner_id = str(params.get("owner_id", "")) or "unknown"
     model = str(params.get("model") or _MODEL)
+    from apps.taoanh.features import clean_mode, edit_directive
+    edit_mode = clean_mode(str(params.get("edit_mode") or "generate"))
     try:
         count = max(1, min(int(params.get("count", 1)), 4))
     except (TypeError, ValueError):
@@ -130,10 +141,23 @@ def handle(params: dict, ctx=None) -> dict:
         raise RuntimeError("Chưa có API key Gemini (thêm ở /admin → APIKEYS, "
                            "hoặc đặt GEMINI_API_KEY cho dev).")
 
-    from apps.taoanh.manifest import CREDIT_PER_IMAGE
+    from apps.taoanh.manifest import unit_credit
     from platform_core.storage import get_storage
     storage = get_storage()
     job_id = getattr(ctx, "job_id", "") or "adhoc"
+
+    references: list[dict] = []
+    for spec in list(params.get("references") or [])[:2]:
+        key = str(spec.get("key") or "")
+        if not key.startswith(f"taoanh/{owner_id}/") or not storage.exists(key):
+            raise ValueError("Ảnh tham chiếu không hợp lệ hoặc không thuộc người dùng.")
+        with storage.open(key) as stream:
+            references.append({"data": stream.read(),
+                               "mime": str(spec.get("mime") or "image/png"),
+                               "role": str(spec.get("role") or "reference")})
+    if edit_mode != "generate" and not any(r["role"] == "source" for r in references):
+        raise ValueError("Chế độ chỉnh sửa cần ảnh nguồn.")
+    final_prompt = edit_directive(edit_mode, prompt, references)
 
     keys: list[str] = []
     errors: list[str] = []
@@ -146,7 +170,7 @@ def handle(params: dict, ctx=None) -> dict:
         if ctx is not None:
             ctx.progress(int(i * 100 / count), f"đang tạo ảnh {i + 1}/{count}")
         try:
-            img = _goi_gemini(prompt, aspect_ratio, api_key, model)
+            img = _goi_gemini(final_prompt, aspect_ratio, api_key, model, references)
         except GeminiError as e:
             errors.append(str(e)); last_status = e.status_code; continue
         except Exception as e:  # noqa: BLE001
@@ -162,4 +186,5 @@ def handle(params: dict, ctx=None) -> dict:
         ctx.progress(100, "xong")
     return {"image_keys": keys, "count": len(keys), "prompt": prompt,
             "aspect_ratio": aspect_ratio,
-            "credit_cost": len(keys) * CREDIT_PER_IMAGE, "errors": errors[:3]}
+            "edit_mode": edit_mode,
+            "credit_cost": len(keys) * unit_credit(model), "errors": errors[:3]}

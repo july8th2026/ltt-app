@@ -13,7 +13,19 @@ from __future__ import annotations
 
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-CREDIT_PER_IMAGE = 5
+MODEL_CREDIT_PER_IMAGE = {
+    "gemini-2.5-flash-image": 5,
+    "gemini-3.1-flash-lite-image": 5,
+    "gemini-3.1-flash-image": 8,
+    "gemini-3.1-flash-image-preview": 8,
+    "gemini-3-pro-image": 16,
+    "gemini-3-pro-image-preview": 16,
+}
+CREDIT_PER_IMAGE = 5  # tương thích code/test cũ: đơn giá model mặc định
+
+
+def unit_credit(model: str) -> int:
+    return MODEL_CREDIT_PER_IMAGE.get(str(model or ""), CREDIT_PER_IMAGE)
 
 
 def _cost(params: dict) -> int:
@@ -22,7 +34,7 @@ def _cost(params: dict) -> int:
     except (TypeError, ValueError):
         count = 1
     count = max(1, min(count, 4))
-    return count * CREDIT_PER_IMAGE
+    return count * unit_credit(str(params.get("model") or ""))
 
 
 MANIFEST = AppManifest(

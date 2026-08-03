@@ -1110,8 +1110,8 @@ Nguồn audit/roadmap/vé:
 `docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
 system-first, không làm nhiều app song song.
 
-Tiến độ H15 hiện tại: **26/38 vé (68,4%)**; **9/16 stage hoàn tất**. H15.S9
-đang thực hiện tuần tự: IMG-UI đã PASS, IMG-FEAT chưa bắt đầu.
+Tiến độ H15 hiện tại: **27/38 vé (71,1%)**; **10/16 stage hoàn tất**. H15.S9
+đã PASS đầy đủ; tiếp theo tuần tự là H15.S10 Chat AI Studio.
 
 - [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
   kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
@@ -1224,16 +1224,31 @@ Tiến độ H15 hiện tại: **26/38 vé (68,4%)**; **9/16 stage hoàn tất**
     ownership guard. Pixel editor DEFER theo Q54, không mở giả. Browser desktop/
     mobile PASS; regression 75 passed; full suite 1.957 passed, 8 skipped,
     23 subtests; secret scan 0.
-- [ ] H15.S9 Tạo ảnh — Studio/history/compare → reference/edit engine gate.
+- [x] H15.S9 Tạo ảnh — Studio/history/compare → reference/edit engine gate;
+  1.965 passed, 8 skipped, 23 subtests; secret scan 0.
   - [x] H15.S9.1 IMG-UI-001 — 2026-08-03: Image Studio Carbon Red thay toàn
     bộ inline layout cũ; prompt counter/config preview/cost theo manifest;
     history owner-scoped có metadata/progress/error và compare tối đa hai output
     thật. Browser desktop/mobile tạo 2 ảnh 1024 px, overflow 0, target ≥44 px,
     console/network sạch; regression 65 passed; full suite 1.959 passed,
     8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S9.2 IMG-FEAT-001 — style/structure reference và edit/inpaint/
-    outpaint chỉ mở sau provider/cost/privacy/rollback spike.
-- [ ] H15.S10–S12 Từng app còn lại theo roadmap; không song song.
+  - [x] H15.S9.2 IMG-FEAT-001 — 2026-08-03: spike provider/cost/privacy chốt
+    tại Q55; model ổn định + legacy alias, đơn giá model-specific, reference
+    source/style owner-scoped có MIME/size/pixel validation; multimodal edit,
+    semantic inpaint, outpaint, style transfer và output→edit handoff chạy thật.
+    Precision mask DEFER minh bạch. Browser desktop/mobile PASS: quote 16 credit
+    cho 2 ảnh Gemini 3.1 Flash, 2 output/edit link, overflow 0, console/network
+    sạch; regression 41 passed; full suite 1.965 passed, 8 skipped, 23 subtests;
+    secret scan 0.
+- [ ] H15.S10 Chat AI Studio — tuần tự CHAT-UI-001 → CHAT-FEAT-001.
+  - [ ] H15.S10.1 CHAT-UI-001 — shell/composer/message/attachment/a11y.
+  - [ ] H15.S10.2 CHAT-FEAT-001 — project/file/search/export/branch.
+- [ ] H15.S11 Kịch bản — tuần tự SCRIPT-UI-001 → SCRIPT-FEAT-001.
+  - [ ] H15.S11.1 SCRIPT-UI-001 — workspace/outline/section editor/export.
+  - [ ] H15.S11.2 SCRIPT-FEAT-001 — source/research/version/shot-list.
+- [ ] H15.S12 Clip ngắn — tuần tự CLIP-UI-001 → CLIP-FEAT-001.
+  - [ ] H15.S12.1 CLIP-UI-001 — library/transcript selection/editor/compare.
+  - [ ] H15.S12.2 CLIP-FEAT-001 — score rationale/brand/multi-platform package.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.
