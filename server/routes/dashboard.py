@@ -51,7 +51,12 @@ def _workspace_data(visible: list, db_user) -> dict:
             select(Job).where(Job.user_id == db_user.id,
                               Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
             .order_by(Job.created_at.desc()).limit(5)).scalars().all()
-        result["used_slugs"] = {job.app_slug for job in result["recent"]}
+        # "My Apps" là toàn bộ app user từng chạy, không phải chỉ app xuất hiện
+        # trong 5 hoạt động gần nhất. Query riêng giữ recent rail nhỏ mà filter
+        # launcher vẫn đúng theo toàn bộ lịch sử owner.
+        result["used_slugs"] = set(db.execute(
+            select(Job.app_slug).where(Job.user_id == db_user.id).distinct()
+        ).scalars().all())
         detached: set[str] = set()
         for job in [*result["recent"], *result["running"]]:
             manifest = manifest_by_slug.get(job.app_slug)

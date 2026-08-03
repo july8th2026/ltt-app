@@ -1137,12 +1137,16 @@ system-first, không làm nhiều app song song.
   - [x] H15.S2.3 SET-001 — 2026-08-03: Settings/Status operator-only dùng
     chung một nguồn quyền; IA thu gọn theo nhóm, a11y/mobile/browser PASS;
     1.919 passed, 8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S3 Home authenticated — HOME-001..002.
+- [x] H15.S3 Home authenticated — HOME-001..002 — 2026-08-03: cả hai gate
+  tuần tự PASS; 1.925 passed, 8 skipped, 23 subtests; secret scan 0.
   - [x] H15.S3.1 HOME-001 — 2026-08-03: marketplace shell dùng semantic
     Carbon Red; mobile drawer/account, filter state, progress a11y và keyboard
     Escape hoạt động; browser 390/1280 PASS; 1.922 passed, 8 skipped,
     23 subtests; secret scan 0.
-  - [ ] H15.S3.2 HOME-002 — khóa My Apps/Workspace/Templates/Resources.
+  - [x] H15.S3.2 HOME-002 — 2026-08-03: My Apps dùng toàn bộ lịch sử owner;
+    Agent Canvas trỏ năng lực thật; Mẫu/Tài nguyên/Cộng đồng DEFER rõ, không
+    link giả; browser 390/1280 PASS; 1.925 passed, 8 skipped, 23 subtests;
+    secret scan 0.
 - [ ] H15.S4–S12 Từng app theo đúng roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.

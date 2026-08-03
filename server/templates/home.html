@@ -13,10 +13,11 @@
     <nav class="market-nav">
       <button type="button" class="on" data-home-view="market" aria-pressed="true"><span aria-hidden="true">⌘</span> Marketplace</button>
       <button type="button" data-home-view="mine" aria-pressed="false"><span aria-hidden="true">◈</span> My Apps</button>
-      <a href="/agent/canvas"><span aria-hidden="true">◎</span> Workspace</a>
-      <a href="/agent/canvas"><span aria-hidden="true">▱</span> Templates</a>
+      <a href="/agent/canvas"><span aria-hidden="true">◎</span> Agent Canvas</a>
+      <button type="button" class="market-deferred" disabled aria-disabled="true" title="Thư viện mẫu toàn nền tảng chưa được phát hành"><span aria-hidden="true">▱</span> Mẫu <small>Chưa có</small></button>
+      <button type="button" class="market-deferred" disabled aria-disabled="true" title="Kho tài nguyên cá nhân chưa được phát hành"><span aria-hidden="true">◇</span> Tài nguyên <small>Chưa có</small></button>
       {% if is_admin(request) %}<a href="/status"><span aria-hidden="true">◫</span> Tình trạng</a>{% endif %}
-      <button type="button" disabled aria-disabled="true" title="Cộng đồng sẽ mở khi có không gian thảo luận thật"><span aria-hidden="true">♧</span> Community</button>
+      <button type="button" class="market-deferred" disabled aria-disabled="true" title="Cộng đồng sẽ mở khi có không gian thảo luận thật"><span aria-hidden="true">♧</span> Cộng đồng <small>Chưa có</small></button>
       {% if is_admin(request) %}<a href="/settings"><span aria-hidden="true">⚙</span> Cấu hình</a>{% endif %}
     </nav>
   </aside>
@@ -36,7 +37,7 @@
       </div>
       <div class="market-heading"><div><span class="eyebrow">Khám phá</span><h1 id="market-title">Marketplace</h1></div><p id="market-count" aria-live="polite">{{ apps|length }} công cụ sẵn sàng</p></div>
       <div class="market-grid" id="market-grid">{% for item in apps %}{% set m = item.manifest %}<article class="market-card" data-name="{{ m.display_name|lower }} {{ m.summary|lower }}" data-category="{{ item.home_category }}" data-popular="{{ item.home_popularity }}" data-new="{{ 1 if m.badge else 0 }}" data-mine="{{ 1 if item.home_used else 0 }}"><div class="market-cover cover-{{ item.home_category|lower|replace(' ', '-')|replace('&', 'and') }}"><span aria-hidden="true">{{ m.icon }}</span>{% if app_setup.get(m.slug) %}<b class="market-badge warn">cần thiết lập</b>{% elif m.badge %}<b class="market-badge">{{ m.badge }}</b>{% elif not m.enabled %}<b class="market-badge warn">Đang xây</b>{% endif %}</div><div class="market-card-body"><div class="market-card-title"><i aria-hidden="true">{{ m.icon }}</i><h2>{{ m.display_name }}</h2></div><p>{{ m.summary }}</p>{% if app_setup.get(m.slug) %}<small class="market-setup">Cần thiết lập: {{ app_setup[m.slug]|map(attribute='check')|join(', ') }}</small>{% endif %}<div class="market-card-foot"><span>{{ item.home_category }}</span>{% if m.enabled %}<a href="{{ m.route_prefix }}">Mở app</a>{% else %}<span>Chưa dùng được</span>{% endif %}</div></div></article>{% endfor %}</div>
-      <div id="market-empty" class="market-empty" hidden role="status"><strong>Chưa có app phù hợp.</strong><span>Hãy đổi từ khóa, nhóm hoặc quay lại Marketplace.</span></div>
+      <div id="market-empty" class="market-empty" hidden role="status"><strong id="market-empty-title">Chưa có app phù hợp.</strong><span id="market-empty-help">Hãy đổi từ khóa, nhóm hoặc quay lại Marketplace.</span></div>
     </main>
   </div>
   <aside class="market-rail" aria-label="Hoạt động của bạn">
@@ -47,11 +48,11 @@
 </section>
 <script>(function(){
   var grid=document.getElementById('market-grid');if(!grid)return;
-  var search=document.getElementById('market-search'),sort=document.getElementById('market-sort'),empty=document.getElementById('market-empty'),count=document.getElementById('market-count'),title=document.getElementById('market-title'),menu=document.querySelector('.market-menu'),side=document.getElementById('market-side'),scrim=document.querySelector('.market-scrim'),category='all',view='market',cards=[].slice.call(grid.children);
+  var search=document.getElementById('market-search'),sort=document.getElementById('market-sort'),empty=document.getElementById('market-empty'),emptyTitle=document.getElementById('market-empty-title'),emptyHelp=document.getElementById('market-empty-help'),count=document.getElementById('market-count'),title=document.getElementById('market-title'),menu=document.querySelector('.market-menu'),side=document.getElementById('market-side'),scrim=document.querySelector('.market-scrim'),category='all',view='market',cards=[].slice.call(grid.children);
   function pressed(nodes,active){nodes.forEach(function(node){var on=node===active;node.classList.toggle('on',on);node.setAttribute('aria-pressed',String(on))})}
   function closeNav(){document.body.classList.remove('market-nav-open');menu.setAttribute('aria-expanded','false')}
   function openNav(){document.body.classList.add('market-nav-open');menu.setAttribute('aria-expanded','true');var first=side.querySelector('button:not([disabled]),a');if(first)first.focus()}
-  function apply(){var q=(search.value||'').trim().toLowerCase(),shown=0;cards.forEach(function(card){var ok=(category==='all'||card.dataset.category===category)&&(view!=='mine'||card.dataset.mine==='1')&&(!q||card.dataset.name.indexOf(q)>=0);card.hidden=!ok;if(ok)shown++});var key=sort.value;cards.sort(function(a,b){if(key==='name')return a.dataset.name.localeCompare(b.dataset.name);if(key==='new')return Number(b.dataset.new)-Number(a.dataset.new)||a.dataset.name.localeCompare(b.dataset.name);return Number(b.dataset.popular)-Number(a.dataset.popular)||Number(b.dataset.new)-Number(a.dataset.new)||a.dataset.name.localeCompare(b.dataset.name)}).forEach(function(card){grid.appendChild(card)});empty.hidden=shown!==0;count.textContent=shown+' công cụ sẵn sàng';title.textContent=view==='mine'?'My Apps':'Marketplace'}
+  function apply(){var q=(search.value||'').trim().toLowerCase(),shown=0;cards.forEach(function(card){var ok=(category==='all'||card.dataset.category===category)&&(view!=='mine'||card.dataset.mine==='1')&&(!q||card.dataset.name.indexOf(q)>=0);card.hidden=!ok;if(ok)shown++});var key=sort.value;cards.sort(function(a,b){if(key==='name')return a.dataset.name.localeCompare(b.dataset.name);if(key==='new')return Number(b.dataset.new)-Number(a.dataset.new)||a.dataset.name.localeCompare(b.dataset.name);return Number(b.dataset.popular)-Number(a.dataset.popular)||Number(b.dataset.new)-Number(a.dataset.new)||a.dataset.name.localeCompare(b.dataset.name)}).forEach(function(card){grid.appendChild(card)});empty.hidden=shown!==0;count.textContent=shown+' công cụ sẵn sàng';title.textContent=view==='mine'?'My Apps':'Marketplace';emptyTitle.textContent=view==='mine'?'Bạn chưa dùng app nào.':'Chưa có app phù hợp.';emptyHelp.textContent=view==='mine'?'Quay lại Marketplace và mở app đầu tiên.':'Hãy đổi từ khóa, nhóm hoặc quay lại Marketplace.'}
   search.addEventListener('input',apply);sort.addEventListener('change',apply);
   document.querySelectorAll('[data-category]').forEach(function(b){b.addEventListener('click',function(){category=b.dataset.category;pressed([].slice.call(document.querySelectorAll('[data-category]')),b);apply()})});
   document.querySelectorAll('[data-home-view]').forEach(function(b){b.addEventListener('click',function(){view=b.dataset.homeView;pressed([].slice.call(document.querySelectorAll('[data-home-view]')),b);apply();closeNav()})});

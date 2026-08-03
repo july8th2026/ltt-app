@@ -295,6 +295,7 @@ html{background:var(--surface-canvas)}
 .market-brand small,.market-account small,.market-heading p,.activity-list small,.running-list small,.rail-empty{color:var(--text-muted)}
 .market-nav a,.market-nav button{color:var(--text-secondary);transition:background var(--motion-normal),border-color var(--motion-normal),color var(--motion-normal)}
 .market-nav a:hover,.market-nav button:not(:disabled):hover,.market-nav .on{background:var(--brand-soft);border-color:var(--brand-border);box-shadow:inset 3px 0 var(--brand-primary)}
+.market-nav .market-deferred{position:relative}.market-nav .market-deferred small{padding:2px 5px;border:1px solid var(--border-subtle);border-radius:999px;color:var(--text-muted);font-size:8px;line-height:1}
 .market-search,.market-sort,.market-credit{background:var(--surface-raised);border-color:var(--border-strong)}
 .market-search{color:var(--brand-hover)}.market-search input{color:var(--text-primary)}.market-search input::placeholder{color:var(--text-muted)}
 .market-account-menu{background:var(--surface-overlay);border-color:var(--border-strong)}

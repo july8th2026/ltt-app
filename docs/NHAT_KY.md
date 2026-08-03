@@ -14,6 +14,51 @@
 
 ---
 
+## 2026-08-03 — H15.S3.2: Khóa IA trang chủ HOME-002
+
+- **Mục tiêu:** mọi mục điều hướng Home phải dẫn tới năng lực thật hoặc thể hiện
+  DEFER rõ; My Apps phải phản ánh đúng lịch sử owner.
+- **Hạng mục:** HOME-002 hoàn thành; H15.S3 hoàn thành đủ HOME-001/002.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Sửa `used_slugs` bằng truy vấn distinct trên toàn bộ job của user, không còn suy
+ra từ 5 hoạt động gần nhất. Rail recent vẫn giới hạn 5 nên không tăng tải/render.
+Lối “Workspace” được đặt đúng tên năng lực đang có là Agent Canvas và giữ route
+`/agent/canvas`. Mẫu, Tài nguyên và Cộng đồng chưa có backend global được chuyển
+thành control disabled có `aria-disabled`, nhãn “Chưa có” và lý do; không còn
+Templates giả trỏ chung vào Canvas. My Apps có empty state riêng.
+
+Thêm `tests/test_110_home_information_architecture.py`, gồm regression 6 job để
+chứng minh app cũ ngoài recent-5 vẫn nằm trong My Apps.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted home/IA | **31 passed**, 1 warning trong 46,93 giây |
+| `python -m pytest -q` | **1.925 passed**, 8 skipped, 23 subtests, 1 warning trong 845,97 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.126 file / 158.656 dòng) |
+| Playwright canary local 390/1280 px | My Apps PASS; Agent Canvas route thật; 3 mục defer disabled/no href/có lý do; overflow 0; console/network lỗi 0 |
+
+Browser dùng DB/canary cô lập trong `tmp/`, không dùng production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Đây là thực thi HOME-002 theo Q46: chưa có
+backend thì DEFER rõ, không tạo UI giả hoặc kho dữ liệu thứ hai.
+
+### Cách lùi lại
+
+Revert commit HOME-002. Không có migration hay dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S4 Tạo video AI, bắt đầu TV-UI-001 rồi đi tuần tự các vé còn lại của stage.
+
+---
+
 ## 2026-08-03 — H15.S3.1: Marketplace shell HOME-001
 
 - **Mục tiêu:** hợp nhất Home authenticated với Carbon Red và sửa các control
