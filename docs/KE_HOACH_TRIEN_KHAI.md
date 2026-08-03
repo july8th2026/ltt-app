@@ -1255,14 +1255,20 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     mới. Hosted File Search DEFER có bằng chứng. Browser file thật/search/export/
     branch/mobile PASS, console/network sạch; regression 13 passed; full suite
     1.970 passed, 8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S11 Kịch bản — tuần tự SCRIPT-UI-001 → SCRIPT-FEAT-001.
+- [x] H15.S11 Kịch bản — tuần tự SCRIPT-UI-001 → SCRIPT-FEAT-001 hoàn thành;
+  1.976 passed, 8 skipped, 23 subtests; secret scan 0.
   - [x] H15.S11.1 SCRIPT-UI-001 — 2026-08-03: Carbon Red composer với output
     outline, counter/cost; history 12 job owner-scoped; result workspace chia
     title/hook/sections/outro/metadata thành field chỉnh sửa trong phiên và
     copy/download Markdown. Persistence/version ghi rõ phase sau. Browser job/
     credit/history/editor/download/mobile PASS, console/network sạch; regression
     14 passed; full suite 1.972 passed, 8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S11.2 SCRIPT-FEAT-001 — source/research/version/shot-list.
+  - [x] H15.S11.2 SCRIPT-FEAT-001 — 2026-08-03: source/research giới hạn
+    và prompt chống bịa nguồn; version AppProject owner-scoped với optimistic
+    revision; shot list tất định từ script snapshot. Browser tạo job/lưu hai
+    revision/reload/mobile PASS, credit 100→97, overflow 0, console/network sạch;
+    regression 13 passed; full suite 1.976 passed, 8 skipped, 23 subtests;
+    secret scan 0.
 - [ ] H15.S12 Clip ngắn — tuần tự CLIP-UI-001 → CLIP-FEAT-001.
   - [ ] H15.S12.1 CLIP-UI-001 — library/transcript selection/editor/compare.
   - [ ] H15.S12.2 CLIP-FEAT-001 — score rationale/brand/multi-platform package.

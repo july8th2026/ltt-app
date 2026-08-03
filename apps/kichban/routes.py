@@ -5,7 +5,8 @@ poll trạng thái, render kịch bản khi xong). Router KHÔNG tự viết pre
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from sqlalchemy import select
 
 from apps.kichban.jobs import _PROMPTS_DIR
 from apps.kichban.manifest import MANIFEST
@@ -50,7 +51,6 @@ def _jobs_cua_toi(request: Request):
         return []
     from platform_core.db import get_session
     from platform_core.models import Job
-    from sqlalchemy import select
     gen = get_session(); db = next(gen)
     try:
         rows = db.execute(select(Job).where(
@@ -77,9 +77,28 @@ def _lay_job(request: Request, job_id: str):
         j = db.get(Job, job_id)
         if j is None or j.user_id != u.id or j.app_slug != MANIFEST.slug:
             return None
+        project = None
+        from platform_core.models import APP_PROJECT_ACTIVE, AppProject
+        projects = db.execute(select(AppProject).where(
+            AppProject.user_id == u.id, AppProject.app_slug == MANIFEST.slug,
+            AppProject.status == APP_PROJECT_ACTIVE
+        ).order_by(AppProject.updated_at.desc()).limit(60)).scalars().all()
+        row = next((x for x in projects
+                    if (x.payload or {}).get("source_job_id") == j.id), None)
+        if row:
+            project = {"id": row.id, "revision": row.revision,
+                       "payload": row.payload or {}}
         return {"id": j.id, "status": j.status, "progress": j.progress,
                 "error": j.error,
-                "script": (j.result or {}).get("script") if j.result else None}
+                "script": ((project or {}).get("payload") or {}).get("script") or
+                          ((j.result or {}).get("script") if j.result else None),
+                "shot_list": ((project or {}).get("payload") or {}).get("shot_list") or
+                             ((j.result or {}).get("shot_list") if j.result else []),
+                "sources": ((project or {}).get("payload") or {}).get("sources") or
+                           str((j.params or {}).get("sources") or ""),
+                "research": ((project or {}).get("payload") or {}).get("research") or
+                            str((j.params or {}).get("research") or ""),
+                "project": project}
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -99,6 +118,8 @@ def queue(
     tone: str = Form(""),
     audience: str = Form(""),
     language: str = Form(""),
+    sources: str = Form(""),
+    research: str = Form(""),
     user: str = Depends(require_login),
 ):
     from platform_core import credit
@@ -119,7 +140,8 @@ def queue(
               "duration": _clean("do_dai_video", duration),
               "tone": _clean("giong_van", tone),
               "audience": _clean("doi_tuong", audience),
-              "language": _clean("ngon_ngu", language), "owner_id": u.id}
+              "language": _clean("ngon_ngu", language), "owner_id": u.id,
+              "sources": sources.strip()[:8000], "research": research.strip()[:8000]}
     gen = get_session(); db = next(gen)
     try:
         try:
@@ -144,6 +166,7 @@ def result(request: Request, job_id: str, user: str = Depends(require_login)):
         return HTMLResponse("Không thấy kịch bản.", status_code=404)
     return templates.TemplateResponse(request, "script_result.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST, "job": job,
+        "csrf_token": issue_csrf_token(request),
     })
 
 
@@ -153,5 +176,53 @@ def result_status(request: Request, job_id: str, user: str = Depends(require_log
     if job is None:
         return HTMLResponse("", status_code=404)
     return templates.TemplateResponse(request, "_script_view.html", {
-        "app": MANIFEST, "job": job,
+        "app": MANIFEST, "job": job, "csrf_token": issue_csrf_token(request),
     })
+
+
+@router.post("/r/{job_id}/save")
+def save_version(request: Request, job_id: str, csrf_token: str = Form(...),
+                 script_json: str = Form("{}"), project_id: str = Form(""),
+                 revision: int = Form(0), sources: str = Form(""),
+                 research: str = Form(""), user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        return JSONResponse({"ok": False, "error": "Phiên hết hạn."}, status_code=400)
+    job = _lay_job(request, job_id)
+    if job is None or job["status"] != "done":
+        return JSONResponse({"ok": False, "error": "Không tìm thấy kịch bản."}, status_code=404)
+    import json
+    try:
+        script = json.loads(script_json)
+        if not isinstance(script, dict):
+            raise ValueError
+    except (ValueError, TypeError):
+        return JSONResponse({"ok": False, "error": "Dữ liệu editor không hợp lệ."},
+                            status_code=400)
+    from apps.kichban.features import project_payload
+    from platform_core import app_projects
+    from platform_core.db import get_session
+    u = user_hien_tai(request); gen = get_session(); db = next(gen)
+    try:
+        payload = project_payload(job_id=job_id, script=script,
+                                  sources=sources, research=research)
+        if project_id:
+            current = app_projects.get_owned(db, project_id, u.id, MANIFEST.slug)
+            if (current.payload or {}).get("source_job_id") != job_id:
+                raise app_projects.ProjectNotFound("Không tìm thấy project.")
+            row = app_projects.save(db, project_id=project_id, user_id=u.id,
+                                    app_slug=MANIFEST.slug, revision=revision,
+                                    name=str(script.get("title") or "Kịch bản"),
+                                    schema_version=1, payload=payload)
+        else:
+            row = app_projects.create(db, user_id=u.id, app_slug=MANIFEST.slug,
+                                      name=str(script.get("title") or "Kịch bản"),
+                                      schema_version=1, payload=payload)
+        db.commit(); result = {"ok": True, "project_id": row.id,
+                               "revision": row.revision,
+                               "shot_list": (row.payload or {}).get("shot_list", [])}
+    except app_projects.ProjectError as exc:
+        db.rollback(); return JSONResponse({"ok": False, "error": str(exc)}, status_code=409)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse(result)

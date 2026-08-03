@@ -155,6 +155,11 @@ def handle(params: dict, ctx=None) -> dict:
                           tone=str(params.get("tone", "")),
                           audience=str(params.get("audience", "")),
                           language=str(params.get("language", "")))
+    from apps.kichban.features import context_directive, derive_shot_list
+    extra = context_directive(str(params.get("sources") or ""),
+                              str(params.get("research") or ""))
+    if extra:
+        prompt += "\n\n" + extra
     api_key, key_id = _lay_key()
     if not api_key:
         raise RuntimeError("Chưa có API key Gemini (thêm ở /admin → APIKEYS, "
@@ -170,4 +175,5 @@ def handle(params: dict, ctx=None) -> dict:
     script = _parse_script(raw, topic)
     if ctx is not None:
         ctx.progress(100, "xong")
-    return {"script": script, "credit_cost": CREDIT_PER_SCRIPT}
+    return {"script": script, "shot_list": derive_shot_list(script),
+            "credit_cost": CREDIT_PER_SCRIPT}

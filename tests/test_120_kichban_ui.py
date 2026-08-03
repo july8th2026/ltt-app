@@ -9,6 +9,8 @@ def test_script_templates_have_scoped_editor_and_accessibility():
     assert 'class="script-layout"' in page and 'id="script-count"' in page
     assert "script-job-list" in page and "innerHTML" not in page
     assert "data-script-field" in result and "Tải .md" in result
+    assert "Lưu phiên bản" in result and "script-shot-list" in result
+    assert "script-sources" in result and "script-research" in result
     assert 'role="progressbar"' in result and 'aria-valuenow="{{job.progress}}"' in result
     assert page.count('style="') == 0
     assert result.count('style="') == 1 and 'style="width:{{job.progress}}%"' in result

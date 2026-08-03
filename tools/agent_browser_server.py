@@ -66,7 +66,12 @@ import apps.thumbnail.jobs as thumbnail_jobs
 
 def _script_handle(params, ctx=None):
     if ctx: ctx.progress(100, "xong")
-    return {"script": {"title": params.get("topic"), "body": "Kết quả kiểm thử"}}
+    script = {"title": params.get("topic"), "hook": "Hook kiểm thử",
+              "sections": [{"title": "Phần một", "content": "Nội dung kiểm thử"}],
+              "outro": "CTA kiểm thử", "description": "Mô tả kiểm thử",
+              "tags": ["ltt", "test"]}
+    from apps.kichban.features import derive_shot_list
+    return {"script": script, "shot_list": derive_shot_list(script), "credit_cost": 3}
 
 
 def _image_handle(params, ctx=None):

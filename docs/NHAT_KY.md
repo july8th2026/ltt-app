@@ -14,6 +14,52 @@
 
 ---
 
+## 2026-08-03 — H15.S11.2: Kịch bản SCRIPT-FEAT-001
+
+- **Mục tiêu:** hoàn thiện source/research, lưu phiên bản và shot list trên
+  contract nội tại, không tạo runtime hay chi phí ẩn.
+- **Hạng mục:** SCRIPT-FEAT-001 và H15.S11 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Form nhận source và research, giới hạn 8.000 ký tự/trường. Worker ghép context
+với chỉ thị không bịa citation hay tự nhận đã kiểm chứng ngoài nguồn người dùng
+cung cấp. Kết quả có shot list tất định từ hook, sections và outro.
+
+Job gốc giữ bất biến. Editor lưu snapshot vào AppProject owner-scoped, nối bằng
+`source_job_id`; mỗi lần lưu dùng optimistic revision để ngăn ghi đè giữa hai
+tab. Result ưu tiên revision mới nhất đúng owner và vẫn fallback về Job gốc.
+
+Trong browser đã phát hiện HTTP 500 ở result do route thiếu import `select`;
+đã sửa và chạy lại toàn bộ flow tới khi console/network sạch. Bổ sung regression
+cho create/update, stale revision 409 và owner khác 404.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression migration/Script UI/feature/ownership | **13 passed**, 1 warning trong 4,07 giây |
+| `python -m pytest -q` | **1.976 passed**, 8 skipped, 23 subtests, 1 warning trong 559,10 giây |
+| Playwright fixture 8114 | job DONE; source/research/3 shot; lưu revision 1→2; reload giữ title/source; credit 100→97 |
+| Playwright mobile 390×844 | viewport/scroll 390 px, overflow 0 |
+| Console/network phiên sạch sau sửa | **0 error, 0 warning**; status/save đều 200 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.161 file / 163.065 dòng) |
+
+### Quyết định mới
+
+Q57 khóa Job bất biến, AppProject owner-scoped/optimistic revision, giới hạn
+source/research và shot list tất định không có phí ẩn.
+
+### Cách lùi lại
+
+Revert commit SCRIPT-FEAT-001. Không migration; AppProject chung và Job gốc
+không bị thay schema.
+
+### Việc tiếp theo
+
+H15.S12.1 CLIP-UI-001 — library/transcript selection/editor/compare.
+
 ## 2026-08-03 — H15.S11.1: Kịch bản SCRIPT-UI-001
 
 - **Mục tiêu:** biến form Kịch bản cũ thành workspace Carbon Red có outline,
