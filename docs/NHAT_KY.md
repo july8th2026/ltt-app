@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-03 — H15.S7.3: Agent Canvas AG-FEAT-002
+
+- **Mục tiêu:** cho Agent chạy nền theo lịch và khôi phục version bằng contract
+  nội tại, vẫn giữ snapshot/approval/credit/server execution.
+- **Hạng mục:** AG-FEAT-002 và H15.S7 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Đăng ký job app-owned `agent.advance` giá 0 credit cho chính orchestration; chi phí
+tool vẫn do quote/hold/settle của AgentRun. Approval HTML cũ và Canvas API đều
+enqueue job bền vững; chạy ngay dùng thời điểm hiện tại, lịch một lần dùng
+`Job.next_run_at` tối đa 30 ngày. Handler advance một tick, rồi tạo follow-up
+idempotent khi DAG còn chạy, nên browser có thể đóng và worker restart/reclaim vẫn
+tiếp tục. Cancel hủy các orchestration job liên quan; cả endpoint tick HTML/API
+đều khóa server-side, không cho client ép chạy trước lịch.
+
+Run Inspector thêm thời điểm/trạng thái đã lên lịch. Approval cho chọn local
+datetime rồi gửi ISO có timezone; polling xa lịch giảm còn tối đa một lần/phút.
+Snapshot run bất biến có action khôi phục thành workflow mới, giữ nguyên goal,
+Plan và Canvas nhưng không ghi đè workflow đang sửa. Đồng thời sửa converter để
+`after_error` chỉ nằm ở edge condition, không bị nhân đôi trong node data.
+
+Không mở webhook public/recurring trong v1: hai đường này cần token scope,
+rate-limit, replay protection và consent/cap tự động riêng trước khi được quyền
+tiêu credit. Manual trigger và one-time scheduled trigger đã vận hành thật.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `npm test` (Agent Canvas, cuối) | **17 passed** |
+| `npm run build` | typecheck + Vite production build **PASS** |
+| Regression Agent mở rộng | **111 passed**, 1 warning trong 76,52 giây |
+| `python -m pytest -q` | **1.955 passed**, 8 skipped, 23 subtests, 1 warning trong 547,42 giây |
+| Playwright fixture 8105 desktop | plan→quote→schedule; sau 4 giây vẫn Đã lên lịch/step Đang chờ; recovery tạo workflow mới đúng goal; console 0 lỗi; request ứng dụng đều 200/201 |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.886 dòng) |
+
+Browser lần đầu bắt hai lỗi thật: toolbar fixed-height bị Canvas chặn click khi có
+datetime control; và API tick cũ cho chạy sớm dù queue đã hẹn đúng. Đã sửa toolbar
+thành một hàng cuộn ngang và khóa lịch tại cả hai server endpoint, rồi chạy lại
+browser mới ghi PASS. Fixture dùng DB/user cô lập, không dùng production.
+
+### Quyết định mới
+
+Q53 đã thêm vào `QUYET_DINH_NEN_TANG.md`: schedule v1 một lần, duyệt/hold trước;
+recovery tạo bản mới; webhook/recurring phải qua security + consent gate riêng.
+
+### Cách lùi lại
+
+Revert commit AG-FEAT-002. Không migration; job orchestration là additive và run/
+workflow cũ không có decision `scheduled` vẫn chạy ngay như trước.
+
+### Việc tiếp theo
+
+H15.S8: audit app kế tiếp đúng backlog rồi làm UI trước, feature sau; không song song.
+
 ## 2026-08-03 — H15.S7.2: Agent Canvas AG-FEAT-001
 
 - **Mục tiêu:** hoàn thiện replay/debug/template và nhánh xử lý lỗi trên contract

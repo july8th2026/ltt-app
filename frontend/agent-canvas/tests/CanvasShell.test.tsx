@@ -68,15 +68,17 @@ it('renders server run checkpoints, costs, decisions and artifacts',()=>{
 })
 
 it('shows run failure context, history selection and snapshot replay',()=>{
-  const onSelect=vi.fn();const onReplay=vi.fn()
+  const onSelect=vi.fn();const onReplay=vi.fn();const onRestore=vi.fn()
   const run={id:'run-current',version:2,status:'error',estimated:8,actual:3,
     quote_hash:'hash',plan:{steps:[{id:'step-1'}]},checkpoint:{'step-1':{status:'error',error:'provider timeout'}},
     decisions:[],artifacts:[]}
-  render(<RunInspector run={run} history={[{id:'run-old',version:1,status:'done',estimated:5,actual:4,
-    created_at:'2026-08-03',finished_at:'2026-08-03'}]} onSelect={onSelect} onReplay={onReplay}/>)
+  render(<RunInspector run={{...run,scheduled_at:'2026-08-04T02:00:00.000Z'}} history={[{id:'run-old',version:1,status:'done',estimated:5,actual:4,
+    created_at:'2026-08-03',finished_at:'2026-08-03'}]} onSelect={onSelect} onReplay={onReplay} onRestore={onRestore}/>)
   expect(screen.getByLabelText('Run inspector')).toHaveTextContent('provider timeout')
   fireEvent.click(screen.getByRole('button',{name:/Replay từ snapshot này/}))
-  expect(onReplay).toHaveBeenCalledWith(run)
+  expect(onReplay).toHaveBeenCalledWith(expect.objectContaining({id:'run-current'}))
+  fireEvent.click(screen.getByRole('button',{name:/Khôi phục thành workflow mới/}))
+  expect(onRestore).toHaveBeenCalledWith(expect.objectContaining({id:'run-current'}))
   fireEvent.click(screen.getByRole('button',{name:/run-old/}))
   expect(onSelect).toHaveBeenCalledWith('run-old')
 })

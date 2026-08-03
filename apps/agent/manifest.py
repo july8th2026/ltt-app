@@ -1,6 +1,10 @@
 """Manifest for the orchestration UI; execution uses existing app ToolSpecs."""
 from platform_core.registry import AppManifest, NavEntry
 
+
+def _orchestration_cost(_params: dict) -> int:
+    return 0
+
 MANIFEST = AppManifest(
     slug="agent",
     display_name="LTT Agent AI",
@@ -10,6 +14,9 @@ MANIFEST = AppManifest(
     accent="#8B5CF6",
     nav=(NavEntry("LTT Agent AI", "/agent", "✦", "agent"),
          NavEntry("Canvas", "/agent/canvas", "◇", "agent_canvas")),
+    job_types=("agent.advance",),
+    requires=("api",),
+    credit_cost=_orchestration_cost,
     enabled=True,
     public=True,
     group="AI Studio",

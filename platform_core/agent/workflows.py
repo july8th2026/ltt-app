@@ -64,7 +64,7 @@ def plan_to_canvas(plan: dict) -> dict:
             raise WorkflowError("Step không hợp lệ.")
         sid = str(step.get("id", ""))
         execution = {key: copy.deepcopy(value) for key, value in step.items()
-                     if key not in {"id", "after"}}
+                     if key not in {"id", "after", "after_error"}}
         nodes.append({"id": sid, "type": "tool", "position": {"x": index * 280, "y": 0},
                       "data": execution})
         for source in step.get("after", []) or []:
@@ -116,7 +116,8 @@ def canvas_to_plan(canvas: dict) -> dict:
     for node in nodes:
         sid = str(node.get("id", ""))
         data = copy.deepcopy(node["data"])
-        if {"id", "after"}.intersection(str(key).lower() for key in data) or _has_forbidden(data):
+        if {"id", "after", "after_error"}.intersection(
+                str(key).lower() for key in data) or _has_forbidden(data):
             raise WorkflowError("Node chứa trường chỉ server được đặt.")
         step = {"id": sid, **data, "after": deps.get(sid, [])}
         if error_deps.get(sid):

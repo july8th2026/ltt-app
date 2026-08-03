@@ -38,6 +38,7 @@ export type AgentRun = {
   quote_hash: string
   decisions: Record<string, unknown>[]
   artifacts?: { step_id: string; name: string; url: string }[]
+  scheduled_at?: string
 }
 export type AgentRunSummary=Pick<AgentRun,'id'|'version'|'status'|'estimated'|'actual'>&{
   created_at:string;finished_at:string}
@@ -104,10 +105,12 @@ export async function createRun(workflow: Workflow, csrfToken: string): Promise<
       'If-Match': `"${workflow.revision}"` }, body: '{}' })
 }
 
-export async function approveRun(run: AgentRun, csrfToken: string): Promise<AgentRun> {
+export async function approveRun(run: AgentRun, csrfToken: string,
+                                 scheduledAt = ''): Promise<AgentRun> {
   return request(`/agent/api/runs/${run.id}/approve`, { method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-    body: JSON.stringify({ version: run.version, quote_hash: run.quote_hash }) })
+    body: JSON.stringify({ version: run.version, quote_hash: run.quote_hash,
+      scheduled_at: scheduledAt || undefined }) })
 }
 
 export async function tickRun(run: AgentRun, csrfToken: string): Promise<AgentRun> {
@@ -123,6 +126,11 @@ export async function cancelRun(run: AgentRun, csrfToken: string): Promise<Agent
 export async function runAgain(run: AgentRun, csrfToken: string): Promise<AgentRun> {
   return request(`/agent/api/runs/${run.id}/again`, { method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' })
+}
+
+export async function restoreRunAsWorkflow(run:AgentRun,csrfToken:string):Promise<Workflow>{
+  return request(`/agent/api/runs/${run.id}/restore-workflow`,{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:'{}'})
 }
 
 export async function loadRunHistory():Promise<AgentRunSummary[]>{

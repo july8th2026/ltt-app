@@ -5,6 +5,7 @@ import json
 import hashlib
 import mimetypes
 import os
+from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from apps.agent import jobs
 from apps.agent.manifest import MANIFEST
-from platform_core import credit
+from platform_core import credit, jobs as job_queue
 from platform_core.agent import budget, executor, metrics, runs, workflows
 from platform_core.agent.tools import discover_tools, resolve_params_schema
 from platform_core.registry import discover
@@ -140,11 +141,62 @@ def _run_json(run: AgentRun) -> dict:
         artifacts.extend({"step_id": step_id, "name": name,
                           "url": f"/agent/api/runs/{run.id}/artifacts/{step_id}/{index}"}
                          for index, (name, _key) in enumerate(values))
+    scheduled = next((item.get("scheduled_at") for item in reversed(run.decision_log or [])
+                      if item.get("event") == "scheduled"), "")
     return {"id": run.id, "version": run.version, "status": run.status,
             "goal": run.goal, "plan": run.plan, "checkpoint": run.checkpoint,
             "budget_max": run.budget_max, "estimated": run.estimated,
             "actual": run.actual, "quote_hash": quote_hash,
-            "decisions": run.decision_log, "artifacts": artifacts}
+            "decisions": run.decision_log, "artifacts": artifacts,
+            "scheduled_at": scheduled}
+
+
+def _scheduled_datetime(run: AgentRun) -> datetime | None:
+    value = next((item.get("scheduled_at") for item in reversed(run.decision_log or [])
+                  if item.get("event") == "scheduled"), "")
+    if not value:
+        return None
+    return datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(timezone.utc)
+
+
+def _schedule_at(value) -> datetime:
+    if value in (None, ""):
+        return datetime.now(timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("Thời gian lên lịch không hợp lệ.") from exc
+    if parsed.tzinfo is None:
+        raise ValueError("Thời gian lên lịch phải kèm múi giờ.")
+    parsed = parsed.astimezone(timezone.utc)
+    if parsed > datetime.now(timezone.utc) + timedelta(days=30):
+        raise ValueError("Chỉ được lên lịch tối đa 30 ngày.")
+    return parsed
+
+
+def _enqueue_advance(db: Session, run: AgentRun, scheduled_at: datetime) -> Job:
+    existing = next((item.get("scheduled_at") for item in reversed(run.decision_log or [])
+                     if item.get("event") == "scheduled"), "")
+    effective = _schedule_at(existing) if existing else scheduled_at
+    job = job_queue.submit(
+        db, user_id=run.user_id, app_slug="agent", job_type="agent.advance",
+        params={"run_id": run.id, "user_id": run.user_id},
+        dedupe_key=f"agent:advance:{run.id}:initial", max_attempts=3,
+    )
+    job.next_run_at = max(effective, datetime.now(timezone.utc))
+    if not existing:
+        runs.append_decision(db, run, {"event": "scheduled",
+                                       "scheduled_at": scheduled_at.isoformat()})
+    return job
+
+
+def _cancel_advance_jobs(db: Session, run: AgentRun) -> None:
+    queued = db.query(Job).filter(
+        Job.user_id == run.user_id, Job.app_slug == "agent",
+        Job.dedupe_key.like(f"agent:advance:{run.id}:%"),
+    ).all()
+    for job in queued:
+        job_queue.cancel(db, job)
 
 
 def _run_summary(run: AgentRun) -> dict:
@@ -270,8 +322,9 @@ def approve_run(request: Request, run_id: str, version: int = Form(...),
     user, run = _owned(db, request, run_id)
     approval_success = False
     try:
-        budget.approve(db, run_id=run.id, user_id=user.id, approved_by=user.id,
-                       expected_version=version)
+        run = budget.approve(db, run_id=run.id, user_id=user.id, approved_by=user.id,
+                             expected_version=version)
+        _enqueue_advance(db, run, datetime.now(timezone.utc))
         approval_success = True
     except credit.ThieuCreditError:
         return RedirectResponse(
@@ -290,7 +343,9 @@ def tick_run(request: Request, run_id: str, csrf_token: str = Form(""),
     if not verify_csrf_token(request, csrf_token):
         raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
     user, run = _owned(db, request, run_id)
-    if run.status == AGENT_RUNNING:
+    scheduled = _scheduled_datetime(run)
+    if run.status == AGENT_RUNNING and (scheduled is None or
+                                        scheduled <= datetime.now(timezone.utc)):
         run = jobs.advance(db, run_id=run.id, user_id=user.id)
     return templates.TemplateResponse(
         request, "_agent_progress.html", _run_context(request, run))
@@ -304,7 +359,8 @@ def cancel_run(request: Request, run_id: str, csrf_token: str = Form(""),
     user, run = _owned(db, request, run_id)
     if run.status in (AGENT_AWAITING_APPROVAL, AGENT_RUNNING):
         actual = executor.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0
-        budget.cancel(db, run_id=run.id, user_id=user.id, actual=actual)
+        run = budget.cancel(db, run_id=run.id, user_id=user.id, actual=actual)
+        _cancel_advance_jobs(db, run)
     return RedirectResponse(f"{MANIFEST.route_prefix}/runs/{run.id}", status_code=303)
 
 
@@ -405,8 +461,10 @@ async def workflow_approve_run(request: Request, run_id: str,
         raise HTTPException(status_code=409, detail="Báo giá đã thay đổi.")
     approval_success = False
     try:
+        scheduled_at = _schedule_at(body.get("scheduled_at"))
         run = budget.approve(db, run_id=run.id, user_id=user.id, approved_by=user.id,
                              expected_version=int(body.get("version", 0)))
+        _enqueue_advance(db, run, scheduled_at)
         approval_success = True
     except credit.ThieuCreditError:
         raise HTTPException(status_code=402, detail="Không đủ credit.") from None
@@ -415,6 +473,22 @@ async def workflow_approve_run(request: Request, run_id: str,
     finally:
         metrics.record_approval(success=approval_success)
     return JSONResponse(_run_json(run))
+
+
+@router.post("/api/runs/{run_id}/restore-workflow")
+async def workflow_restore_run(request: Request, run_id: str,
+                               _identity: str = Depends(require_login),
+                               db: Session = Depends(get_db)):
+    body = await request.json(); _verify_json_csrf(request, body)
+    user, source = _owned(db, request, run_id)
+    try:
+        canvas = workflows.plan_to_canvas(dict(source.plan))
+        row = workflows.create(db, user_id=user.id,
+                               name=str(body.get("name") or f"Khôi phục {source.goal[:80]}"),
+                               canvas=canvas)
+    except workflows.WorkflowError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return _workflow_response(row, status_code=201)
 
 
 @router.get("/api/runs")
@@ -456,7 +530,9 @@ async def workflow_tick_run(request: Request, run_id: str,
                             db: Session = Depends(get_db)):
     body = await request.json(); _verify_json_csrf(request, body)
     user, run = _owned(db, request, run_id)
-    if run.status == AGENT_RUNNING:
+    scheduled = _scheduled_datetime(run)
+    if run.status == AGENT_RUNNING and (scheduled is None or
+                                        scheduled <= datetime.now(timezone.utc)):
         run = jobs.advance(db, run_id=run.id, user_id=user.id)
     return JSONResponse(_run_json(run))
 
@@ -470,6 +546,7 @@ async def workflow_cancel_run(request: Request, run_id: str,
     if run.status in (AGENT_AWAITING_APPROVAL, AGENT_RUNNING):
         actual = executor.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0
         run = budget.cancel(db, run_id=run.id, user_id=user.id, actual=actual)
+        _cancel_advance_jobs(db, run)
     return JSONResponse(_run_json(run))
 
 

@@ -10,7 +10,7 @@ import { Inspector } from './Inspector'
 import { ToolNode } from './ToolNode'
 import { approveRun, cancelRun, cloneWorkflow, createRun, exportWorkflow, importWorkflow,
   loadOrCreateWorkflow, loadPalette, loadRun, loadRunHistory, planWorkflow, saveWorkflow,
-  runAgain, tickRun, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type CanvasDocument,
+  restoreRunAsWorkflow, runAgain, tickRun, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type Workflow } from './workflowApi'
 
 const nodeTypes = { tool: ToolNode }
@@ -31,6 +31,7 @@ function Editor() {
   const [run, setRun] = useState<AgentRun>()
   const [runHistory,setRunHistory]=useState<AgentRunSummary[]>([])
   const [runError, setRunError] = useState('')
+  const [scheduledAt,setScheduledAt]=useState('')
   const copied = useRef<CanvasNode[]>([])
   const autosaveTimer = useRef<number | undefined>(undefined)
   const dragBefore = useRef<CanvasDocument | undefined>(undefined)
@@ -60,8 +61,10 @@ function Editor() {
 
   useEffect(() => {
     if (!run || run.status !== 'running') return
+    const scheduledDelay=run.scheduled_at?new Date(run.scheduled_at).getTime()-Date.now():0
+    const delay=scheduledDelay>0?Math.min(60_000,Math.max(1200,scheduledDelay)):1200
     const timer = window.setTimeout(() => { void tickRun(run, csrf).then(next=>{setRun(next);void refreshRunHistory()})
-      .catch(() => setPhase('error')) }, 1200)
+      .catch(() => setPhase('error')) }, delay)
     return () => window.clearTimeout(timer)
   }, [run, csrf])
 
@@ -186,8 +189,9 @@ function Editor() {
         <button disabled={readOnly || !workflow || !Object.keys(costs).length || !!run}
           onClick={async () => { if (!workflow) return; try { setRun(await createRun(workflow, csrf));void refreshRunHistory() }
             catch (error) { setPhase(error instanceof WorkflowConflictError ? 'conflict' : 'error') } }}>Tạo bản chạy</button>
+        {run?.status === 'awaiting_approval' && <label className="schedule-control">Chạy lúc<input type="datetime-local" value={scheduledAt} min={new Date().toISOString().slice(0,16)} onChange={event=>setScheduledAt(event.target.value)}/></label>}
         {run?.status === 'awaiting_approval' && <button onClick={async () => {
-          try { setRunError(''); setRun(await approveRun(run, csrf));void refreshRunHistory() }
+          try { setRunError(''); const when=scheduledAt?new Date(scheduledAt).toISOString():'';setRun(await approveRun(run, csrf,when));void refreshRunHistory() }
           catch (error) { setRunError(error instanceof Error ? error.message : 'Không thể phê duyệt.') }
         }}>Phê duyệt {run.estimated} credit</button>}
         {run?.status === 'running' && <button onClick={async () => {setRun(await cancelRun(run, csrf));void refreshRunHistory()}}>Hủy chạy</button>}
@@ -238,6 +242,7 @@ function Editor() {
       <Inspector node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run}
         runHistory={runHistory} onSelectRun={id=>void loadRun(id).then(setRun).catch(()=>setRunError('Không tải được run.'))}
         onReplay={source=>void runAgain(source,csrf).then(next=>{setRun(next);void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể replay.'))}
+        onRestore={source=>void restoreRunAsWorkflow(source,csrf).then(activateWorkflow).catch(error=>setRunError(error instanceof Error?error.message:'Không thể khôi phục workflow.'))}
         readOnly={readOnly} connections={connectionOptions}
         onConnect={(field, value) => { if (!selectedNode) return; const [source, sourceHandle] = value.split('|')
           onConnect({ source, sourceHandle, target: selectedNode.id, targetHandle: field }) }}

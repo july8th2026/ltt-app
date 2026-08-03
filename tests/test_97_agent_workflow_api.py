@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -172,6 +174,61 @@ def test_workflow_snapshot_quote_approve_and_run_again_are_revision_bound(api):
         "X-CSRF-Token": token_a}, json={})
     assert again.status_code == 201 and again.json()["id"] != run["id"]
     assert again.json()["plan"] == run["plan"]
+
+
+def test_schedule_uses_durable_queue_and_run_snapshot_restores_workflow(api, monkeypatch):
+    a, token_a, b, token_b = api
+    workflow = _create(a, token_a).json()
+    validated = a.post(f"/agent/api/workflows/{workflow['id']}/validate", headers={
+        "X-CSRF-Token": token_a, "If-Match": '"1"'}, json={}).json()
+    run = a.post(f"/agent/api/workflows/{workflow['id']}/runs", headers={
+        "X-CSRF-Token": token_a, "If-Match": f'"{validated["revision"]}"'}, json={}).json()
+
+    import platform_core.db as dbmod
+    from platform_core import credit
+    from platform_core.models import Job, User
+    db = next(dbmod.get_session())
+    user = db.query(User).filter_by(email="canvas-a@example.com").one()
+    credit.cap_tay(db, user.id, 100, by="test"); db.commit(); db.close()
+    scheduled = datetime.now(timezone.utc) + timedelta(minutes=20)
+    approved = a.post(f"/agent/api/runs/{run['id']}/approve", headers={
+        "X-CSRF-Token": token_a}, json={"version": run["version"],
+        "quote_hash": run["quote_hash"], "scheduled_at": scheduled.isoformat()})
+    assert approved.status_code == 200
+    assert approved.json()["scheduled_at"] == scheduled.isoformat()
+
+    called = []
+    monkeypatch.setattr("apps.agent.routes.jobs.advance",
+                        lambda *_args, **_kwargs: called.append(True))
+    early = a.post(f"/agent/api/runs/{run['id']}/tick",
+                   headers={"X-CSRF-Token": token_a}, json={})
+    assert early.status_code == 200 and early.json()["status"] == "running"
+    assert called == []
+
+    db = next(dbmod.get_session())
+    queued = db.query(Job).filter_by(job_type="agent.advance").one()
+    queued_at = queued.next_run_at.replace(tzinfo=queued.next_run_at.tzinfo or timezone.utc)
+    assert queued.status == "queued" and queued_at >= scheduled - timedelta(seconds=1)
+    db.close()
+
+    assert b.post(f"/agent/api/runs/{run['id']}/restore-workflow",
+                  headers={"X-CSRF-Token": token_b}, json={}).status_code == 404
+    restored = a.post(f"/agent/api/runs/{run['id']}/restore-workflow",
+                      headers={"X-CSRF-Token": token_a}, json={})
+    assert restored.status_code == 201
+    assert restored.json()["canvas"] == workflow["canvas"]
+
+    from apps.agent import jobs as agent_jobs
+    from platform_core.agent import runs as agent_runs
+    monkeypatch.setattr(agent_jobs, "advance", lambda session, *, run_id, user_id:
+                        agent_runs.get_owned(session, run_id, user_id))
+    result = agent_jobs.handle({"run_id": run["id"], "user_id": user.id},
+                               SimpleNamespace(job_id=queued.id))
+    assert result["status"] == "running"
+    db = next(dbmod.get_session())
+    assert db.query(Job).filter(Job.dedupe_key ==
+        f"agent:advance:{run['id']}:after:{queued.id}").count() == 1
+    db.close()
 
 
 def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):

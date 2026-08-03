@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, importWorkflow,
-  loadRun, loadRunHistory, saveWorkflow, WorkflowConflictError,
+  loadRun, loadRunHistory, restoreRunAsWorkflow, saveWorkflow, WorkflowConflictError,
   type AgentRun, type Workflow } from '../src/workflowApi'
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
@@ -35,6 +35,8 @@ describe('workflow API', () => {
     expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('If-Match')).toBe('"3"')
     await approveRun(run, 'csrf-test')
     expect(fetchMock.mock.calls[1][1]?.body).toBe(JSON.stringify({ version: 1, quote_hash: 'abc' }))
+    await approveRun(run, 'csrf-test', '2026-08-04T02:00:00.000Z')
+    expect(fetchMock.mock.calls[2][1]?.body).toContain('2026-08-04T02:00:00.000Z')
   })
 
   it('loads owner run history/detail and reuses workflow template contracts', async () => {
@@ -50,11 +52,14 @@ describe('workflow API', () => {
     await cloneWorkflow(workflow, 'csrf-test')
     await exportWorkflow(workflow)
     await importWorkflow({ schema: 'ltt.agent.workflow' }, 'csrf-test')
+    await restoreRunAsWorkflow({id:'r1'} as AgentRun,'csrf-test')
     expect(fetchMock.mock.calls.map(call => String(call[0]))).toEqual([
       '/agent/api/runs', '/agent/api/runs/r1', '/agent/api/workflows/w1/clone',
-      '/agent/api/workflows/w1/export', '/agent/api/workflows/import'])
+      '/agent/api/workflows/w1/export', '/agent/api/workflows/import',
+      '/agent/api/runs/r1/restore-workflow'])
     expect(new Headers(fetchMock.mock.calls[2][1]?.headers).get('X-CSRF-Token')).toBe('csrf-test')
     expect(fetchMock.mock.calls[4][1]?.body).toBe(JSON.stringify({ schema: 'ltt.agent.workflow' }))
+    expect(new Headers(fetchMock.mock.calls[5][1]?.headers).get('X-CSRF-Token')).toBe('csrf-test')
   })
 
   it('debounces autosave and persists only latest value', async () => {
