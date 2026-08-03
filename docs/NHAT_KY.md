@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-03 — H15.S0: LTT Carbon Red design contract
+
+- **Mục tiêu:** tạo một nguồn style và gate dùng chung trước khi sửa từng trang/app.
+- **Hạng mục:** DS-001..005 hoàn thành; H15.S1 là bước kế tiếp.
+- **Trạng thái:** code/docs/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Tạo `docs/DESIGN_SYSTEM_LTT.md`, khóa semantic token, shell, component,
+accessibility, icon/type/content vocabulary và gate phase. Chuyển token runtime
+trong `server/static/ltt.css` sang LTT Carbon Red, giữ alias tương thích để các
+app được migrate lần lượt. Gỡ palette xanh lặp trong base template và đổi nền
+public/auth sang Carbon Red.
+
+Bổ sung focus-visible 2 px, reduced-motion, touch target 44 px trên coarse
+pointer. Menu header đóng bằng Escape và trả focus. Thêm
+`tests/test_104_design_system_contract.py` để chặn palette xanh/token hai nguồn
+quay lại.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest tests\test_104_design_system_contract.py tests\test_31_audit_readiness.py tests\test_37_p3_web_foundation.py tests\test_70_admin_h3.py -q` | **70 passed**, 1 warning |
+| `python -m pytest -q` | **1.901 passed**, 8 skipped, 23 subtests, 1 warning trong 566,49 giây |
+| `python -m pytest tests\test_104_design_system_contract.py -q` sau chỉnh cuối | **4 passed** |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+| Playwright local desktop 1280 + mobile 390: public/login | token `#ef3731`; login overflow 0; focus 2 px; Escape/focus-return PASS; console error 0; failed app request 0 |
+
+Catalog public ở 390 px còn overflow 13 px trên local. Đây là finding đã định
+danh PLAT-001 của H15.S1, không coi là PASS giả trong H15.S0.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền mới; thực thi Q52 bằng compatibility alias để
+rollback/migrate tuần tự, không big-bang.
+
+### Cách lùi lại
+
+Revert commit H15.S0. Không có migration, dữ liệu hay thay đổi provider. Alias
+cũ nằm cùng token source nên rollback CSS không yêu cầu đổi template/app state.
+
+### Việc tiếp theo
+
+1. H15.S1/PLAT-001: sửa catalog public mobile overflow và thêm regression.
+2. H15.S1/AUTH-001: đồng nhất toàn bộ auth state theo contract, đủ label/focus.
+
+---
+
 ## 2026-08-03 — H15.AUDIT: baseline toàn nền tảng
 
 - **Mục tiêu:** kiểm kê/audit full app, trang và website; khóa style/roadmap tuần tự.

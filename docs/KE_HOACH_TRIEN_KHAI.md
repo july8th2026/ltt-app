@@ -1116,7 +1116,11 @@ system-first, không làm nhiều app song song.
   48 px, a11y target/label debt, bốn style layer và website source/live mismatch.
   Score baseline Q70/M50/E86; backlog 38 vé và roadmap Stage 0–15 đã tạo.
   Gate tài liệu: 1.896 passed, 8 skipped, 23 subtests; secret scan 0 finding.
-- [ ] H15.S0 Design contract/harness — DS-001..005.
+- [x] H15.S0 Design contract/harness — DS-001..005 — 2026-08-03:
+  semantic token Carbon Red có compatibility alias; shell/component/a11y/icon/
+  content contract được lưu tại `docs/DESIGN_SYSTEM_LTT.md`; focus, coarse touch
+  target, reduced motion và Escape menu có regression guard. Browser local
+  desktop/mobile PASS; full suite 1.901 pass, 8 skip, 23 subtest; secret scan 0.
 - [ ] H15.S1 Public catalog/Auth — PLAT-001, AUTH-001.
 - [ ] H15.S2 Billing/Jobs/Settings — BILL-001, JOBS-001, SET-001.
 - [ ] H15.S3 Home authenticated — HOME-001..002.
