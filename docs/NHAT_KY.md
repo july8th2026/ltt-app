@@ -14,6 +14,59 @@
 
 ---
 
+## 2026-08-03 — H15.S8.1: Thumbnail TH-UI-001
+
+- **Mục tiêu:** đồng nhất giao diện Thumbnail theo Carbon Red và chỉ hiển thị
+  lịch sử/so sánh dựa trên output vận hành thật.
+- **Hạng mục:** TH-UI-001 hoàn thành; TH-FEAT-001 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Thay bố cục một cột bằng Thumbnail Studio hai vùng: nhóm điều khiển semantic,
+workspace xem cấu hình, lịch sử output và compare. Giá trên nút tạo lấy trực tiếp
+từ manifest rồi cập nhật theo số lượng, tránh hardcode lệch contract. Các chip,
+field và action responsive; vùng chạm visible đạt tối thiểu 44 px và page không
+tràn ngang ở 390 px.
+
+Lịch sử lấy tối đa 12 job đúng owner, chuẩn hóa an toàn dữ liệu legacy, hiện
+title/topic, tỉ lệ, số ảnh, thời điểm, tiến độ/thông báo/lỗi và output thật. Người
+dùng chọn/bỏ chọn tối đa hai ảnh để so sánh; nhãn dựng bằng DOM `textContent`,
+không đưa dữ liệu người dùng qua HTML động. Không tạo ảnh demo và không gọi
+ImageGen. Browser fixture chỉ sao chép asset nội bộ vào storage owner-scoped để
+kiểm thử đường vận hành thật của route/job/image.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression Thumbnail/operation/parity/Agent tool spec | **73 passed**, 1 warning trong 65,47 giây |
+| `python -m pytest -q` | **1.955 passed**, 8 skipped, 23 subtests, 1 warning trong 582,38 giây |
+| Playwright fixture 8106 desktop | preview đúng topic/title/style/tỉ lệ; tạo 2 ảnh, cost 10 credit; history metadata và hai ảnh 1024 px tải thành công; compare/aria-pressed PASS |
+| Playwright fixture 8106 mobile 390×844 | overflow 0; controls/history/compare vừa viewport; mọi target visible ≥44 px |
+| Console/network phiên 8106 | console hiện tại 0 lỗi; mọi request ứng dụng và hai image request đều 200 |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.974 dòng) |
+
+Browser lần đầu bắt fieldset/chip làm panel tràn sang workspace và hai nút phụ
+chỉ cao 35 px trên mobile. Đã khóa `min-width: 0`, scroll nội bộ chip và target
+44 px, sau đó reload và kiểm tra lại mới ghi PASS. Fixture dùng DB/user/data cô
+lập trong `tmp`, không dùng production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Tiếp tục Q52: UI app dùng Carbon Red, UI trước
+feature và không mở control dựa trên năng lực giả.
+
+### Cách lùi lại
+
+Revert commit TH-UI-001. Không migration; dữ liệu Job/storage cũ không đổi và
+route tạo/preview/image giữ nguyên contract.
+
+### Việc tiếp theo
+
+H15.S8.2 TH-FEAT-001 — audit contract hiện có rồi triển khai reference/brand kit,
+variant scoring và editor handoff theo provider/cost/privacy gate; không song song.
+
 ## 2026-08-03 — H15.S7.3: Agent Canvas AG-FEAT-002
 
 - **Mục tiêu:** cho Agent chạy nền theo lịch và khôi phục version bằng contract

@@ -201,11 +201,18 @@ def test_image_route_chan_cross_user(tmp_path, monkeypatch):
 
     from platform_core.storage import LocalStorage, set_storage
     st = LocalStorage(str(tmp_path / "store")); set_storage(st)
+    from platform_core.models import JOB_DONE, Job
     from platform_core.users import tao_nguoi_dung
     gen = dbmod.get_session(); db = next(gen)
     try:
         a = tao_nguoi_dung(db, email="a@img.com", password="matkhau-tot-12", is_verified=True)
         b = tao_nguoi_dung(db, email="b@img.com", password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        db.add(Job(user_id=a.id, app_slug="thumbnail", job_type="thumbnail.generate",
+                   status=JOB_DONE, progress=100,
+                   params={"topic": "NOI_DUNG_CUA_A", "title": "TIEU_DE_CUA_A",
+                           "aspect_ratio": "16:9", "count": 1},
+                   result={"image_keys": [f"thumbnail/{a.id}/job2/0.png"]}))
         db.commit(); a_id, b_id = a.id, b.id
     finally:
         try: next(gen)
@@ -227,6 +234,10 @@ def test_image_route_chan_cross_user(tmp_path, monkeypatch):
         # A đọc ảnh của CHÍNH MÌNH → 200
         r2 = c.get(f"/thumbnail/image/thumbnail/{a_id}/job2/0.png")
         assert r2.status_code == 200
+        studio = c.get("/thumbnail")
+        assert studio.status_code == 200
+        assert "Thumbnail Studio" in studio.text and "TIEU_DE_CUA_A" in studio.text
+        assert "th-compare-pick" in studio.text and "NOI_DUNG_CUA_A" not in studio.text
     finally:
         set_storage(None); dbmod.reset_engine()
 

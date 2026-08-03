@@ -61,6 +61,7 @@ agent_routes.plan_once = _fake_plan
 
 import apps.kichban.jobs as script_jobs
 import apps.taoanh.jobs as image_jobs
+import apps.thumbnail.jobs as thumbnail_jobs
 
 
 def _script_handle(params, ctx=None):
@@ -75,6 +76,26 @@ def _image_handle(_params, ctx=None):
 
 script_jobs.handle = _script_handle
 image_jobs.handle = _image_handle
+
+
+def _thumbnail_handle(params, ctx=None):
+    from platform_core.storage import get_storage
+    count = max(1, min(4, int(params.get("count", 1))))
+    prefix = f"thumbnail/{params['owner_id']}/{getattr(ctx, 'job_id', 'browser')}"
+    source = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                          "server", "static", "home-covers", "image.png")
+    keys = []
+    for index in range(count):
+        key = f"{prefix}/{index}.png"
+        with open(source, "rb") as stream:
+            get_storage().put(key, stream, content_type="image/png")
+        keys.append(key)
+    if ctx: ctx.progress(100, "xong")
+    return {"image_keys": keys, "count": count, "credit_cost": count * 5,
+            "prompt": str(params.get("topic", ""))}
+
+
+thumbnail_jobs.handle = _thumbnail_handle
 
 _judge_counts: dict[str, int] = {}
 
