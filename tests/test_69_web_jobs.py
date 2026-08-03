@@ -168,3 +168,10 @@ def test_user_khac_khong_huy_duoc_job(env):
     denied = client.post(job_path + "/cancel", data={"csrf_token": csrf},
                          follow_redirects=False)
     assert denied.status_code == 404
+
+
+def test_normal_user_khong_vao_duoc_cau_hinh_va_status_operator(env):
+    client, _ = env
+    _login(client, "a@x.com")
+    assert client.get("/settings", follow_redirects=False).status_code == 403
+    assert client.get("/status", follow_redirects=False).status_code == 403

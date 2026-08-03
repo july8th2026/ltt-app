@@ -14,6 +14,57 @@
 
 ---
 
+## 2026-08-03 — H15.S2.3: Ranh giới operator và Settings/Status
+
+- **Mục tiêu:** khóa quyền vận hành và làm rõ kiến trúc thông tin trước khi
+  chuyển sang Home authenticated.
+- **Hạng mục:** SET-001 hoàn thành; H15.S2 hoàn thành đủ BILL/JOBS/SET.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Thêm một nguồn kiểm tra quyền operator dùng chung cho dependency route và
+template: tài khoản admin cấu hình hoặc user có role `admin`. Toàn bộ route
+`/settings`, thao tác cấu hình và `/status` trả 403 cho user thường; các liên kết
+operator cũng không xuất hiện trong header, marketplace side nav hoặc account
+menu của user thường.
+
+Settings được chia thành nhóm `details` có điều hướng nhanh, chỉ mở một nhóm ban
+đầu; bổ sung mô tả operator, nhãn upload CSV, announced state và semantic status.
+Status dùng token Carbon Red chung. Cả hai trang có target cảm ứng/mobile ổn định;
+form Content Vault không còn gây tràn ngang ở 390 px. Thêm
+`tests/test_108_settings_boundary_ui.py` và test hành vi 403 trong
+`tests/test_69_web_jobs.py`.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted foundation/settings/content/jobs/UI | **78 passed**, 1 warning trong 41,29 giây |
+| `python -m pytest -q` | **1.919 passed**, 8 skipped, 23 subtests, 1 warning trong 543,39 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.124 file / 158.317 dòng) |
+| Playwright SQLite/canary local `/settings` + `/status`, 390/1280 px | operator 200; user thường 403; overflow 0; trường thiếu nhãn 0; console error/request fail 0 |
+
+Lượt targeted đầu có 14 lỗi 422 do dependency mới thiếu annotation `Request`;
+đã sửa annotation và chạy lại xanh 78/78. Browser dùng DB/canary cô lập ở
+`tmp/`; không đọc hoặc ghi dữ liệu production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Phân quyền giao diện và route cùng gọi helper
+`is_operator`, tránh hai định nghĩa admin lệch nhau.
+
+### Cách lùi lại
+
+Revert commit SET-001. Không có migration hay dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S3 Home authenticated — xử lý HOME-001 rồi HOME-002 theo thứ tự, không song
+song; chỉ mở H15.S4 sau khi toàn bộ gate Home PASS.
+
+---
+
 ## 2026-08-03 — H15.S2.2: Job Center
 
 - **Mục tiêu:** biến trang Việc thành trung tâm theo dõi/hành động an toàn.

@@ -9,7 +9,9 @@ from __future__ import annotations
 import contextlib
 from typing import Iterator, Optional
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from starlette.requests import Request
 
 
 def get_db() -> Iterator[Session]:
@@ -63,6 +65,30 @@ def user_hien_tai(request) -> Optional["object"]:
                 pass
     except Exception:
         return None
+
+
+def is_operator(request: Request) -> bool:
+    """Admin-env or active database admin; never grants operator access to users."""
+    try:
+        session = request.session
+        settings = getattr(request.app.state, "server_settings", None)
+        admin_name = getattr(settings, "admin_username", "admin") if settings else "admin"
+        if session.get("user") == admin_name:
+            return True
+        user = user_hien_tai(request)
+        return bool(user and user.role == "admin")
+    except Exception:
+        return False
+
+
+def require_operator(request: Request) -> str:
+    """Require login and then enforce the user/operator boundary."""
+    from server.auth.session import require_login
+
+    identity = require_login(request)
+    if not is_operator(request):
+        raise HTTPException(status_code=403, detail="Trang này chỉ dành cho quản trị viên.")
+    return identity
 
 
 @contextlib.contextmanager

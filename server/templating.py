@@ -168,27 +168,12 @@ def _active_app(request=None):
 
 
 def _is_admin(request=None):
-    """True nếu phiên hiện tại là admin CSDL (H6.6) → hiện link Quản trị.
-
-    Chỉ True cho user CSDL role=admin. admin-env/ẩn danh/lỗi → False (không lộ
-    link quản trị nhầm). Bọc an toàn: lỗi không được làm sập vỏ."""
+    """True cho operator (admin-env hoặc admin CSDL); một nguồn với route guard."""
     if request is None:
         return False
     try:
-        sid = request.session.get("sid")
-        if not sid:
-            return False
-        from platform_core.db import get_session
-        from platform_core.users import lay_user_tu_phien
-        gen = get_session(); db = next(gen)
-        try:
-            u = lay_user_tu_phien(db, sid)
-            return bool(u and u.role == "admin")
-        finally:
-            try:
-                next(gen)
-            except StopIteration:
-                pass
+        from server.deps import is_operator
+        return is_operator(request)
     except Exception:
         return False
 

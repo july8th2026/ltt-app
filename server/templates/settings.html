@@ -1,41 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Cài đặt — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Cài đặt</strong>{% endblock %}
+{% block topbar_title %}<strong>Cấu hình hệ thống</strong>{% endblock %}
 {% block topbar_right %}
   <span class="dim mono" style="font-size:12px;">{{ config_path }}</span>
 {% endblock %}
 {% block content %}
 
   {% if saved %}
-    <div class="alert alert-ok"><strong style="color:var(--ok);">Đã lưu cấu hình.</strong>
+    <div class="alert alert-ok" role="status"><strong style="color:var(--ok);">Đã lưu cấu hình.</strong>
       {% if restart_needed %}<span class="muted"> Khởi động lại worker để áp dụng.</span>{% endif %}
     </div>
   {% endif %}
   {% if errors %}
-    <div class="alert alert-err">
+    <div class="alert alert-err" role="alert">
       <strong style="color:var(--err);">Không lưu được — cấu hình cũ giữ nguyên</strong>
       <ul style="margin:8px 0 0;">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
     </div>
   {% endif %}
   {% if warnings %}
-    <div class="alert alert-warn">
+    <div class="alert alert-warn" role="status">
       <strong style="color:var(--warn);">Cảnh báo</strong>
       <ul style="margin:8px 0 0;">{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
     </div>
   {% endif %}
 
-  <p class="page-sub">
-    {{ total_fields }} tuỳ chọn, {{ groups|length }} nhóm. Mỗi lần lưu đều tạo bản
-    sao lưu tự động ({{ backup_count }} bản đang giữ).
-  </p>
+  <section class="settings-intro"><span class="badge b-warn"><span class="dot"></span>Chỉ quản trị viên</span>
+    <p class="page-sub">{{ total_fields }} tùy chọn trong {{ groups|length }} nhóm. Mỗi lần lưu tạo backup tự động; hiện giữ {{ backup_count }} bản.</p>
+    <nav class="settings-jump" aria-label="Mục cấu hình"><a href="#g-credentials">Tích hợp Google</a>
+      <a href="#system-groups">Cấu hình nâng cao</a><a href="#content-vault">Dữ liệu nội dung</a></nav></section>
 
   <!-- ── Google credentials: bắt buộc để Sheet Runner chạy được ───── -->
   <div class="card" id="g-credentials">
     <div class="card-accent" style="background:#1B5E20;"></div>
     <h2>🔑  Google Service Account
-      {% if creds.exists and creds.valid %}<span class="badge badge-ok">đã có</span>
-      {% elif creds.exists %}<span class="badge badge-err">sai loại</span>
-      {% else %}<span class="badge badge-err">chưa có</span>{% endif %}
+      {% if creds.exists and creds.valid %}<span class="badge b-ok"><span class="dot"></span>đã có</span>
+      {% elif creds.exists %}<span class="badge b-err"><span class="dot"></span>sai loại</span>
+      {% else %}<span class="badge b-err"><span class="dot"></span>chưa có</span>{% endif %}
     </h2>
 
     {% if creds.exists and creds.valid %}
@@ -86,20 +86,20 @@
   </div>
 
   <!-- Nhảy nhanh tới nhóm -->
-  <div class="card" style="padding:12px 14px;">
+  <nav class="card settings-group-links" id="system-groups" aria-label="Nhảy tới nhóm cấu hình">
     <a class="btn btn-ghost btn-sm" style="margin:2px;" href="#g-credentials">🔑 Credentials</a>
     {% for g in groups %}
       <a class="btn btn-ghost btn-sm" style="margin:2px;" href="#g-{{ g.id }}">{{ g.title }}</a>
     {% endfor %}
-  </div>
+  </nav>
 
   <form method="post" action="/settings">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
     {% for g in groups %}
-      <div class="card" id="g-{{ g.id }}">
-        <div class="card-accent" style="background:{{ g.colour }};"></div>
-        <h2>{{ g.title }}</h2>
+      <details class="card settings-group" id="g-{{ g.id }}" {% if loop.first %}open{% endif %}>
+        <summary style="border-top:3px solid {{ g.colour }}"><h2>{{ g.title }}</h2><span aria-hidden="true">⌄</span></summary>
+        <div class="settings-group-body">
         {% if g.note %}<p class="muted" style="margin-top:-4px;">{{ g.note }}</p>{% endif %}
 
         <div class="row">
@@ -154,7 +154,8 @@
             {% endif %}
           {% endfor %}
         </div>
-      </div>
+        </div>
+      </details>
     {% endfor %}
 
     <div class="sticky-save">
@@ -165,27 +166,28 @@
   </form>
 
   <!-- ── 📦 Kho nội dung (gui/settings_tab.py) ─────────────────────────── -->
-  <div class="card">
+  <div class="card" id="content-vault">
     <div class="card-accent" style="background:#4A148C;"></div>
     <h2>📦  Kho nội dung</h2>
 
     <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start;">
       <form method="post" action="/settings/export-history" style="max-width:none; margin:0;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" style="background:#4A148C;">📦  Tải Content History (CSV)</button>
+        <button class="btn ghost" type="submit">Tải Content History (CSV)</button>
       </form>
 
       <form method="post" action="/settings/duplicates" style="max-width:none; margin:0;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" style="background:#1565C0;">🔍  Video trùng nhiều target</button>
+        <button class="btn ghost" type="submit">Tìm video trùng target</button>
       </form>
 
       <form method="post" action="/settings/import-calendar" enctype="multipart/form-data"
             style="max-width:none; margin:0; display:flex; gap:8px; align-items:center;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <input type="file" name="csv_file" accept=".csv" required
+        <label class="sr-only" for="content-calendar-file">Chọn file lịch nội dung CSV</label>
+        <input id="content-calendar-file" type="file" name="csv_file" accept=".csv" required
                style="max-width:230px;">
-        <button type="submit" style="background:#00695C;">📅  Đọc lịch content (CSV)</button>
+        <button class="btn ghost" type="submit">Đọc lịch content (CSV)</button>
       </form>
     </div>
 

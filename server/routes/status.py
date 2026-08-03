@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
-from server.auth.session import require_login
+from server.deps import require_operator
 from server.templating import templates
 
 router = APIRouter(tags=["status"])
@@ -19,7 +19,7 @@ router = APIRouter(tags=["status"])
 def status_page(
     request: Request,
     check_sheet: str = "",
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     from tools import doctor
 

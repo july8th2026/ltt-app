@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
-from server.auth.session import require_login
+from server.deps import require_operator
 from server.services.credentials_service import (
     describe_stored,
     store_credentials,
@@ -50,14 +50,14 @@ def _context(request: Request, user: str, config: dict, **extra) -> dict:
 
 
 @router.get("/settings", response_class=HTMLResponse)
-def settings_page(request: Request, user: str = Depends(require_login)):
+def settings_page(request: Request, user: str = Depends(require_operator)):
     return templates.TemplateResponse(
         request, "settings.html", _context(request, user, load_config()),
     )
 
 
 @router.post("/settings", response_class=HTMLResponse)
-async def settings_save(request: Request, user: str = Depends(require_login)):
+async def settings_save(request: Request, user: str = Depends(require_operator)):
     form = await request.form()
 
     if not verify_csrf_token(request, str(form.get("csrf_token", ""))):
@@ -106,7 +106,7 @@ async def upload_credentials(
     request: Request,
     csrf_token: str = Form(...),
     file: UploadFile = File(...),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     """Upload the Google service-account JSON.
 
@@ -147,7 +147,7 @@ async def upload_credentials(
 def test_sheet(
     request: Request,
     csrf_token: str = Form(...),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     if not verify_csrf_token(request, csrf_token):
         return templates.TemplateResponse(
@@ -171,7 +171,7 @@ def test_sheet(
 def export_history(
     request: Request,
     csrf_token: str = Form(...),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     """Stream content_history as a CSV download.
 
@@ -206,7 +206,7 @@ def export_history(
 def show_duplicates(
     request: Request,
     csrf_token: str = Form(...),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     if not verify_csrf_token(request, csrf_token):
         return templates.TemplateResponse(
@@ -223,7 +223,7 @@ async def import_calendar(
     request: Request,
     csrf_token: str = Form(...),
     csv_file: UploadFile = File(None),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     if not verify_csrf_token(request, csrf_token):
         return templates.TemplateResponse(

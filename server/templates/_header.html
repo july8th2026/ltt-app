@@ -38,9 +38,9 @@
           <div class="acc-head"><b>{{ _acc.name }}</b><small>{{ _acc.email }}</small>
             <span class="badge b-grey"><span class="dot"></span>{{ _acc.role }}</span></div>
           <a href="/jobs"><span class="ic">📋</span> Việc của tôi</a>
-          <a href="/settings"><span class="ic">🔧</span> Cài đặt</a>
-          <a href="/status"><span class="ic">🩺</span> Tình trạng</a>
-          {% if is_admin(request) %}<a href="/admin/apikeys"><span class="ic">🛡️</span> Quản trị</a>{% endif %}
+          {% if is_admin(request) %}<a href="/settings"><span class="ic">🔧</span> Cấu hình hệ thống</a>
+          <a href="/status"><span class="ic">🩺</span> Tình trạng hệ thống</a>
+          <a href="/admin/apikeys"><span class="ic">🛡️</span> Quản trị</a>{% endif %}
           {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal }} credit <a href="/nap">Nạp thêm</a></div>{% endif %}
           <div class="sep"></div>
           <form method="post" action="/logout" style="margin:0">

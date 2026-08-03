@@ -4,32 +4,29 @@
 {% block content %}
   
   {% if blockers %}
-    <div class="card" style="border-color:#7f1d1d; background:#2a1416;">
-      <strong style="color:#f26161;">❌ Bot KHÔNG chạy được — {{ blockers|length }} lỗi chặn</strong>
+    <div class="alert alert-err" role="alert">
+      <strong>Hệ thống có {{ blockers|length }} lỗi chặn</strong>
       <ul style="margin-bottom:0;">
         {% for b in blockers %}<li>{{ b.check }}</li>{% endfor %}
       </ul>
     </div>
   {% else %}
-    <div class="card" style="border-color:#14532d; background:#0f2417;">
-      <strong style="color:#5bd67d;">✅ Không có lỗi chặn</strong>
+    <div class="alert alert-ok" role="status">
+      <strong>Không có lỗi chặn</strong>
     </div>
   {% endif %}
 
   {% for s in sections %}
-    <div class="card">
-      <strong>
-        {% if s.status == 'blocker' %}❌{% elif s.status == 'warning' %}⚠️{% else %}✅{% endif %}
-        {{ s.check }}
-      </strong>
-      {% if s.detail %}<pre style="white-space:pre-wrap; margin:8px 0 0; color:#c3c9d4; font-size:13px;">{{ s.detail }}</pre>{% endif %}
-      {% if s.fix %}<p style="margin:8px 0 0; color:#f0b429;">→ Cách sửa: {{ s.fix }}</p>{% endif %}
+    <div class="card status-check status-{{ s.status }}">
+      <strong><span aria-hidden="true">{% if s.status == 'blocker' %}×{% elif s.status == 'warning' %}!{% else %}✓{% endif %}</span> {{ s.check }}</strong>
+      {% if s.detail %}<pre>{{ s.detail }}</pre>{% endif %}
+      {% if s.fix %}<p class="status-fix">Cách sửa: {{ s.fix }}</p>{% endif %}
     </div>
   {% endfor %}
 
   <form method="get" action="/status" style="max-width:none; flex-direction:row; gap:10px; align-items:center;">
-    <button type="submit">Kiểm tra lại</button>
-    <label style="color:#9aa4b2; font-size:13px;">
+    <button class="btn" type="submit">Kiểm tra lại</button>
+    <label class="check muted">
       <input type="checkbox" name="check_sheet" value="1" {% if checked_sheet %}checked{% endif %}
              style="width:auto;"> Kiểm tra cả Google Sheet (chậm hơn)
     </label>
