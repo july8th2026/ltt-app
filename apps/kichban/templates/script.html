@@ -1,57 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block title %}{{app.display_name}} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>Script Studio</strong>{% endblock %}
 {% block content %}
-  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
-
-  <div class="ui-card">
-    <h2 style="margin:0 0 4px;">Tạo kịch bản mới</h2>
-    <p class="dim" style="margin:0 0 14px;">
-      AI viết kịch bản đầy đủ: hook, nội dung, outro, description, tags. Mỗi kịch bản tốn
-      {{ app.credit_cost({}) }} credit. Job chạy nền — xem tiến độ ở <a href="/jobs">Việc của tôi</a>.
-    </p>
-
-    <form method="post" action="{{ app.route_prefix }}/queue">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-      <div class="field">
-        <label>Chủ đề video (bắt buộc)</label>
-        <textarea name="topic" rows="3" required maxlength="500"
-                  placeholder="vd: Cách học tiếng Anh hiệu quả trong 30 ngày"></textarea>
-      </div>
-
-      <div class="row">
-        <div class="field"><label>Độ dài</label>
-          <select name="duration">
-            {% for id, label in catalog['do_dai_video'] %}
-              <option value="{{ id }}" {% if id == defaults['do_dai_video'] %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select></div>
-        <div class="field"><label>Phong cách / giọng văn</label>
-          <select name="tone">
-            {% for id, label in catalog['giong_van'] %}
-              <option value="{{ id }}" {% if id == defaults['giong_van'] %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select></div>
-      </div>
-      <div class="row">
-        <div class="field"><label>Đối tượng</label>
-          <select name="audience">
-            {% for id, label in catalog['doi_tuong'] %}
-              <option value="{{ id }}" {% if id == defaults['doi_tuong'] %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select></div>
-        <div class="field"><label>Ngôn ngữ</label>
-          <select name="language">
-            {% for id, label in catalog['ngon_ngu'] %}
-              <option value="{{ id }}" {% if id == defaults['ngon_ngu'] %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select></div>
-      </div>
-
-      <div style="margin-top:8px;">
-        <button type="submit" class="btn">📝 Tạo kịch bản</button>
-      </div>
-    </form>
+<section class="script-studio" aria-labelledby="script-title">
+  <header class="script-heading"><div><span class="script-kicker">YOUTUBE WRITING</span><h1 id="script-title">Kịch bản YouTube</h1><p>Từ ý tưởng đến hook, outline, nội dung và metadata trong một workspace.</p></div><a class="btn ghost" href="/jobs">Việc của tôi</a></header>
+  {% if error %}<div class="alert alert-err" role="alert">{{error}}</div>{% endif %}
+  <div class="script-layout">
+    <form class="script-compose" method="post" action="{{app.route_prefix}}/queue"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><div class="script-panel-head"><span>01</span><div><h2>Định hướng nội dung</h2><small>3 credit mỗi kịch bản</small></div></div><label>Chủ đề video <strong>*</strong><textarea id="script-topic" name="topic" rows="7" required maxlength="500" placeholder="Ví dụ: Cách học tiếng Anh hiệu quả trong 30 ngày"></textarea><small><span id="script-count">0</span>/500</small></label><div class="script-grid"><label>Độ dài<select name="duration">{% for id,label in catalog.do_dai_video %}<option value="{{id}}" {% if id==defaults.do_dai_video %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label>Giọng văn<select name="tone">{% for id,label in catalog.giong_van %}<option value="{{id}}" {% if id==defaults.giong_van %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label>Đối tượng<select name="audience">{% for id,label in catalog.doi_tuong %}<option value="{{id}}" {% if id==defaults.doi_tuong %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label>Ngôn ngữ<select name="language">{% for id,label in catalog.ngon_ngu %}<option value="{{id}}" {% if id==defaults.ngon_ngu %}selected{% endif %}>{{label}}</option>{% endfor %}</select></label></div><div class="script-outline"><h3>Output có cấu trúc</h3><ol><li>Tiêu đề &amp; Hook</li><li>Các phần nội dung</li><li>Outro &amp; CTA</li><li>Description &amp; Tags</li></ol></div><button type="submit" class="btn">Tạo kịch bản · {{app.credit_cost({})}} credit</button></form>
+    <section class="script-history" aria-labelledby="script-history-title"><header><div><span class="script-kicker">RECENT PROJECTS</span><h2 id="script-history-title">Kịch bản gần đây</h2></div><span>{{jobs|length}} job</span></header>{% if not jobs %}<div class="script-empty"><strong>Chưa có dự án</strong><span>Kịch bản hoàn thành sẽ xuất hiện tại đây.</span></div>{% else %}<div class="script-job-list">{% for j in jobs %}<a href="{{app.route_prefix}}/r/{{j.id}}"><div><strong>{{j.title or j.topic or 'Kịch bản chưa có tên'}}</strong><small>{{j.created_at.strftime('%d/%m %H:%M')}} · {{j.id[:8]}}</small></div><span class="script-status {{j.status}}">{{'Hoàn tất' if j.status=='done' else ('Lỗi' if j.status=='error' else j.progress|string~'%')}}</span></a>{% endfor %}</div>{% endif %}</section>
   </div>
+</section>
+<script>(()=>{const t=document.getElementById('script-topic'),c=document.getElementById('script-count');t.addEventListener('input',()=>c.textContent=String(t.value.length))})();</script>
 {% endblock %}

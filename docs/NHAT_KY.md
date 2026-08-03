@@ -14,6 +14,50 @@
 
 ---
 
+## 2026-08-03 — H15.S11.1: Kịch bản SCRIPT-UI-001
+
+- **Mục tiêu:** biến form Kịch bản cũ thành workspace Carbon Red có outline,
+  section editor, export và history thật mà chưa giả lưu phiên bản.
+- **Hạng mục:** SCRIPT-UI-001 hoàn thành; SCRIPT-FEAT-001 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Composer mới có topic counter, bốn lựa chọn từ prompt fragment hiện hữu, output
+outline và quote 3 credit từ manifest. History lấy 12 Job đúng owner, hiện title/
+topic/time/status và mở result thật.
+
+Result dùng workspace editable theo title, hook, từng section, outro, description,
+tags. Copy và download Markdown dựng từ giá trị đang chỉnh; pending có progressbar
+semantics, error được announce. UI nói rõ chỉnh sửa hiện chỉ trong phiên và lưu
+version thuộc SCRIPT-FEAT, tránh tạo cảm giác đã persist khi backend chưa có.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression migration/Script UI/design contract | **14 passed** trong 0,92 giây |
+| `python -m pytest -q` | **1.972 passed**, 8 skipped, 23 subtests, 1 warning trong 552,36 giây |
+| Playwright fixture 8113 | counter 36; job DONE; editor thật; sửa title; tải `kich-ban.md`; history 1; credit 100→97 |
+| Playwright mobile 390×844 | layout 342 px, overflow 0 |
+| Console/network phiên 8113 | **0 error, 0 warning**; queue/result/status/history/CSS đều 200/303/304 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.152 file / 162.311 dòng) |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. UI local editor không được gọi là version đã lưu;
+AppProject/source/research/shot-list chỉ mở ở SCRIPT-FEAT sau contract gate.
+
+### Cách lùi lại
+
+Revert commit SCRIPT-UI-001. Không migration; worker/prompt/result JSON/credit giữ
+nguyên, chỉ template/CSS/history view và fixture regression thay đổi.
+
+### Việc tiếp theo
+
+H15.S11.2 SCRIPT-FEAT-001 — source/research/version/shot-list dùng AppProject
+owner-scoped, có schema/optimistic revision và export gate.
+
 ## 2026-08-03 — H15.S10.2: Chat AI Studio CHAT-FEAT-001
 
 - **Mục tiêu:** hoàn thiện project/file/search/export/branch theo capability thật

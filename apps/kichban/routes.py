@@ -40,7 +40,30 @@ def _render(request: Request, user: str, *, error: str = "", status_code: int = 
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "catalog": _catalog(), "defaults": _defaults(), "error": error,
+        "jobs": _jobs_cua_toi(request),
     }, status_code=status_code)
+
+
+def _jobs_cua_toi(request: Request):
+    u = user_hien_tai(request)
+    if u is None:
+        return []
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    from sqlalchemy import select
+    gen = get_session(); db = next(gen)
+    try:
+        rows = db.execute(select(Job).where(
+            Job.user_id == u.id, Job.app_slug == MANIFEST.slug
+        ).order_by(Job.created_at.desc()).limit(12)).scalars().all()
+        return [{"id": j.id, "status": j.status, "progress": j.progress,
+                 "topic": str((j.params or {}).get("topic") or "")[:120],
+                 "created_at": j.created_at,
+                 "title": str(((j.result or {}).get("script") or {}).get("title") or "")[:160]}
+                for j in rows]
+    finally:
+        try: next(gen)
+        except StopIteration: pass
 
 
 def _lay_job(request: Request, job_id: str):

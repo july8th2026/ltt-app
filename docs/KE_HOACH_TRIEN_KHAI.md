@@ -1110,8 +1110,8 @@ Nguồn audit/roadmap/vé:
 `docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
 system-first, không làm nhiều app song song.
 
-Tiến độ H15 hiện tại: **29/38 vé (76,3%)**; **11/16 stage hoàn tất**. H15.S10
-đã PASS đầy đủ; tiếp theo tuần tự là H15.S11 Kịch bản.
+Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất**. H15.S11
+đang thực hiện tuần tự: SCRIPT-UI đã PASS, tiếp theo SCRIPT-FEAT.
 
 - [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
   kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
@@ -1256,7 +1256,12 @@ Tiến độ H15 hiện tại: **29/38 vé (76,3%)**; **11/16 stage hoàn tất*
     branch/mobile PASS, console/network sạch; regression 13 passed; full suite
     1.970 passed, 8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S11 Kịch bản — tuần tự SCRIPT-UI-001 → SCRIPT-FEAT-001.
-  - [ ] H15.S11.1 SCRIPT-UI-001 — workspace/outline/section editor/export.
+  - [x] H15.S11.1 SCRIPT-UI-001 — 2026-08-03: Carbon Red composer với output
+    outline, counter/cost; history 12 job owner-scoped; result workspace chia
+    title/hook/sections/outro/metadata thành field chỉnh sửa trong phiên và
+    copy/download Markdown. Persistence/version ghi rõ phase sau. Browser job/
+    credit/history/editor/download/mobile PASS, console/network sạch; regression
+    14 passed; full suite 1.972 passed, 8 skipped, 23 subtests; secret scan 0.
   - [ ] H15.S11.2 SCRIPT-FEAT-001 — source/research/version/shot-list.
 - [ ] H15.S12 Clip ngắn — tuần tự CLIP-UI-001 → CLIP-FEAT-001.
   - [ ] H15.S12.1 CLIP-UI-001 — library/transcript selection/editor/compare.

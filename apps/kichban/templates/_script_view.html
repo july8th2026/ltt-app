@@ -1,61 +1,13 @@
-{# Fragment HTMX: tự thay chính mình. Xong → render kịch bản (bỏ trigger, ngừng poll). #}
-{% if job.status == 'done' and job.script %}
-{% set s = job.script %}
-<div id="sv">
-  {% if s.parse_error %}<div class="alert alert-warn">AI trả về không đúng JSON — hiển thị nội dung thô.</div>{% endif %}
-
-  <div style="display:flex; gap:10px; margin-bottom:14px;">
-    <button class="btn ghost sm" onclick="copyScript()">📋 Copy toàn bộ</button>
-    <button class="btn ghost sm" onclick="downloadScript()">⬇ Tải .txt</button>
-  </div>
-
-  <div class="ui-card"><h2 style="margin:0 0 6px">{{ s.title }}</h2></div>
-
-  <div class="ui-card" style="border-left:3px solid var(--accent);">
-    <div class="ctrl-lbl">Hook (15-30s đầu)</div>
-    <p style="margin:0; white-space:pre-line;">{{ s.hook }}</p></div>
-
-  <div class="ui-card">
-    <div class="ctrl-lbl">Nội dung</div>
-    {% for sec in s.sections %}
-      <details {% if loop.first %}open{% endif %} style="border-top:1px solid var(--line); padding:8px 0;">
-        <summary style="cursor:pointer; font-weight:600;">{{ loop.index }}. {{ sec.title }}</summary>
-        <p style="margin:8px 0 0; white-space:pre-line;">{{ sec.content }}</p>
-      </details>
-    {% endfor %}
-  </div>
-
-  {% if s.outro %}<div class="ui-card" style="border-left:3px solid var(--ok);">
-    <div class="ctrl-lbl">Outro + CTA</div>
-    <p style="margin:0; white-space:pre-line;">{{ s.outro }}</p></div>{% endif %}
-
-  <div class="row">
-    {% if s.description %}<div class="field"><label class="ctrl-lbl">Description</label>
-      <p class="dim" style="margin:0; white-space:pre-line;">{{ s.description }}</p></div>{% endif %}
-    {% if s.tags %}<div class="field"><label class="ctrl-lbl">Tags</label>
-      <div class="chips">{% for t in s.tags %}<span class="chip-opt"><span>#{{ t }}</span></span>{% endfor %}</div></div>{% endif %}
-  </div>
-
-  <textarea id="script-md" hidden># {{ s.title }}
-
-**HOOK:** {{ s.hook }}
-{% for sec in s.sections %}
-## {{ loop.index }}. {{ sec.title }}
-{{ sec.content }}
-{% endfor %}
-**OUTRO:** {{ s.outro }}
-
-**Description:** {{ s.description }}
-
-**Tags:** {{ s.tags|join(', ') }}
-</textarea>
-</div>
-{% elif job.status == 'error' %}
-<div id="sv"><div class="alert alert-err">Lỗi: {{ job.error or 'không rõ' }}</div></div>
-{% else %}
-<div id="sv" hx-get="{{ app.route_prefix }}/r/{{ job.id }}/status"
-     hx-trigger="every 3s" hx-swap="outerHTML">
-  <span class="badge b-warn"><span class="dot"></span>Đang viết kịch bản… {{ job.progress }}%</span>
-  <span class="dim" style="font-size:12px;margin-left:8px">Tự cập nhật mỗi 3 giây.</span>
-</div>
-{% endif %}
+{% if job.status == 'done' and job.script %}{% set s=job.script %}
+<section id="sv" class="script-workspace">
+  {% if s.parse_error %}<div class="alert alert-warn" role="alert">AI trả về không đúng JSON — đang hiển thị nội dung đã khôi phục.</div>{% endif %}
+  <header><div><h2>Outline &amp; Section Editor</h2><small>Chỉnh sửa trong phiên này rồi copy hoặc tải Markdown. Lưu phiên bản sẽ mở ở phase tiếp theo.</small></div><div><button id="script-copy" type="button" class="btn ghost">Copy</button><button id="script-download" type="button" class="btn ghost">Tải .md</button></div></header>
+  <label class="script-edit title">Tiêu đề<input data-script-field value="{{s.title}}"></label>
+  <label class="script-edit hook">Hook (15–30 giây đầu)<textarea data-script-field rows="4">{{s.hook}}</textarea></label>
+  <section class="script-sections" aria-label="Các phần nội dung">{% for sec in s.sections %}<article><span>{{'%02d'|format(loop.index)}}</span><label>Tiêu đề phần<input data-script-field value="{{sec.title}}"></label><label>Nội dung<textarea data-script-field rows="8">{{sec.content}}</textarea></label></article>{% endfor %}</section>
+  {% if s.outro %}<label class="script-edit outro">Outro &amp; CTA<textarea data-script-field rows="4">{{s.outro}}</textarea></label>{% endif %}
+  <div class="script-meta">{% if s.description %}<label class="script-edit">Description<textarea data-script-field rows="5">{{s.description}}</textarea></label>{% endif %}{% if s.tags %}<label class="script-edit">Tags<input data-script-field value="{{s.tags|join(', ')}}"></label>{% endif %}</div>
+  <script>document.getElementById('script-copy').addEventListener('click',copyScript);document.getElementById('script-download').addEventListener('click',downloadScript)</script>
+</section>
+{% elif job.status == 'error' %}<div id="sv"><div class="alert alert-err" role="alert">Lỗi: {{job.error or 'không rõ'}}</div></div>
+{% else %}<div id="sv" class="script-pending" hx-get="{{app.route_prefix}}/r/{{job.id}}/status" hx-trigger="every 3s" hx-swap="outerHTML"><div role="progressbar" aria-label="Tiến độ viết kịch bản" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{job.progress}}"><i style="width:{{job.progress}}%"></i></div><span>Đang viết kịch bản… {{job.progress}}% · tự cập nhật mỗi 3 giây.</span></div>{% endif %}
