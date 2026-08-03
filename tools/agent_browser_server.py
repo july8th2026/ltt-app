@@ -69,9 +69,22 @@ def _script_handle(params, ctx=None):
     return {"script": {"title": params.get("topic"), "body": "Kết quả kiểm thử"}}
 
 
-def _image_handle(_params, ctx=None):
+def _image_handle(params, ctx=None):
+    from platform_core.storage import get_storage
+    count = max(1, min(4, int(params.get("count", 1))))
+    owner_id = str(params.get("owner_id") or "browser")
+    job_id = getattr(ctx, "job_id", "browser")
+    source = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                          "server", "static", "home-covers", "image.png")
+    keys = []
+    for index in range(count):
+        key = f"taoanh/{owner_id}/{job_id}/{index}.png"
+        with open(source, "rb") as stream:
+            get_storage().put(key, stream, content_type="image/png")
+        keys.append(key)
     if ctx: ctx.progress(100, "xong")
-    return {"image_keys": ["taoanh/browser-test/fake.png"], "prompt": "fake"}
+    return {"image_keys": keys, "count": count, "credit_cost": count * 5,
+            "prompt": str(params.get("prompt") or "")}
 
 
 script_jobs.handle = _script_handle

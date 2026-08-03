@@ -45,12 +45,22 @@ def _jobs_cua_toi(request: Request):
     from sqlalchemy import select
     gen = get_session(); db = next(gen)
     try:
+        def safe_count(value) -> int:
+            try:
+                return max(1, min(4, int(value or 1)))
+            except (TypeError, ValueError):
+                return 1
         rows = db.execute(
             select(Job).where(Job.user_id == u.id, Job.app_slug == MANIFEST.slug)
             .order_by(Job.created_at.desc()).limit(12)
         ).scalars().all()
         return [{"id": j.id, "status": j.status, "progress": j.progress,
-                 "error": j.error,
+                 "progress_msg": j.progress_msg, "error": j.error,
+                 "created_at": j.created_at, "finished_at": j.finished_at,
+                 "prompt": str((j.params or {}).get("prompt", ""))[:240],
+                 "aspect_ratio": str((j.params or {}).get("aspect_ratio", "16:9")),
+                 "requested_count": safe_count((j.params or {}).get("count", 1)),
+                 "model": str((j.params or {}).get("model", ""))[:100],
                  "image_keys": (j.result or {}).get("image_keys", []) if j.result else []}
                 for j in rows]
     finally:

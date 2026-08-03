@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-03 — H15.S9.1: Tạo ảnh IMG-UI-001
+
+- **Mục tiêu:** đưa app Tạo ảnh về cùng Carbon Red contract, dùng lịch sử và
+  compare từ output thật mà không trộn feature reference/edit của phase sau.
+- **Hạng mục:** IMG-UI-001 hoàn thành; IMG-FEAT-001 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Giữ nguyên Gemini worker, quote/credit, Storage và owner image route. Thay UI
+inline cũ bằng Image Studio hai vùng: prompt composer, model/tỉ lệ/số lượng,
+counter 4.000 ký tự, cost lấy từ manifest, cấu hình preview dựng bằng DOM an
+toàn; workspace chứa compare tối đa hai output thật.
+
+History lấy 12 job đúng owner, chuẩn hóa count legacy và hiện prompt, aspect,
+requested count, thời điểm, status/progress live semantics, progress message,
+error và output. Image card có alt mô tả, nút compare `aria-pressed` và mở ảnh;
+không có ảnh demo hoặc năng lực edit giả. CSS `.im-*` scoped, responsive và
+giữ target tối thiểu 44 px.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression migration/UI/operation/Agent tool spec | **65 passed**, 1 warning trong 152,60 giây |
+| `python -m pytest -q` | **1.959 passed**, 8 skipped, 23 subtests, 1 warning trong 585,04 giây |
+| Playwright fixture 8108 desktop | prompt counter 56; preview đúng prompt/16:9/2 ảnh; cost 10 credit; tạo 2 output 1024 px; compare và aria-pressed PASS |
+| Playwright fixture 8108 mobile 390×844 | controls/history/compare rộng 327 px; overflow 0; không target visible nào dưới 44×44 px |
+| Console/network phiên 8108 | console hiện tại 0 lỗi; trang/CSS và hai image request đều 200/304 |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.136 file / 161.462 dòng) |
+
+Regression đầu tiên có 64 pass và một assertion test đỏ vì cấm mọi inline style,
+trong khi progress width động là trường hợp an toàn cần thiết. Guard đã được sửa
+để chỉ cho phép đúng style width tiến độ; regression cuối xanh. Full suite đầu bị
+ngắt khi sandbox đổi lượt, nên không dùng làm bằng chứng; đã chạy lại từ đầu và
+ghi kết quả PASS ở trên. Fixture dùng DB/user/data cô lập, không gọi production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Tiếp tục Q52 và Q54: UI trước feature; compare
+output thật, không gọi score/edit khi engine chưa qua gate.
+
+### Cách lùi lại
+
+Revert commit IMG-UI-001. Không migration; job/result/storage và đường tạo ảnh
+cũ giữ nguyên contract, chỉ metadata view và template/CSS thay đổi.
+
+### Việc tiếp theo
+
+H15.S9.2 IMG-FEAT-001 — audit/spike provider cho style/structure reference và
+edit/inpaint/outpaint, khóa cost/privacy/rollback trước khi hiện control.
+
 ## 2026-08-03 — H15.S8.2: Thumbnail TH-FEAT-001
 
 - **Mục tiêu:** khép vòng sáng tạo Thumbnail bằng reference, Brand Kit, score

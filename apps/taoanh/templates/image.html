@@ -1,81 +1,33 @@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block topbar_title %}<strong>Image Studio</strong>{% endblock %}
 
-{% macro chipgroup(name, items, default) %}
-  <div class="chips">
-    {% for id, label in items %}
-      <label class="chip-opt">
-        <input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}>
-        <span>{{ label }}</span>
-      </label>
-    {% endfor %}
-  </div>
-{% endmacro %}
+{% macro modelchips(items, default) %}<div class="im-chips">{% for id,label in items %}<label><input type="radio" name="model" value="{{ id }}" {% if id==default %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div>{% endmacro %}
 
 {% block content %}
-  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
-
-  <div class="ui-card">
-    <h2 style="margin:0 0 4px;">Tạo ảnh mới</h2>
-    <p class="dim" style="margin:0 0 14px;">
-      Mô tả ảnh bạn muốn, chọn model + tỉ lệ + số ảnh. Mỗi ảnh tốn
-      {{ app.credit_cost({'count': 1}) }} credit. Job chạy nền — xem tiến độ ở
-      <a href="/jobs">Việc của tôi</a>.
-    </p>
-
-    <form method="post" action="{{ app.route_prefix }}/queue">
+<section class="im-studio" aria-labelledby="im-title">
+  <header class="im-heading"><div><span class="im-kicker">GENERATIVE IMAGE</span><h1 id="im-title">Tạo ảnh AI</h1><p>Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật.</p></div><a class="btn ghost" href="/jobs">Việc của tôi</a></header>
+  {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
+  <div class="im-layout">
+    <form class="im-controls" method="post" action="{{ app.route_prefix }}/queue" data-unit-cost="{{ app.credit_cost({'count':1}) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-      <div class="field">
-        <label>Mô tả ảnh (prompt, bắt buộc)</label>
-        <textarea name="prompt" rows="4" required
-                  placeholder="vd: Một chú mèo phi hành gia đứng trên sao Hoả, ánh sáng điện ảnh, siêu chi tiết"></textarea>
-      </div>
-
-      <div class="ctrl"><label class="ctrl-lbl">Model AI</label>
-        {{ chipgroup('model', models, models[0][0] if models else '') }}</div>
-
-      <div class="row" style="margin-top:6px;">
-        <div class="field"><label>Tỉ lệ khung hình</label>
-          <select name="aspect_ratio">
-            {% for a in aspects %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
-          </select></div>
-        <div class="field"><label>Số ảnh (1–4)</label>
-          <input type="number" name="count" value="1" min="1" max="4"></div>
-      </div>
-
-      <div style="margin-top:8px;">
-        <button type="submit" class="btn">🎨 Tạo ảnh</button>
-      </div>
+      <div class="im-panel-head"><span>01</span><div><h2>Mô tả sáng tạo</h2><small>Prompt tối đa 4.000 ký tự</small></div></div>
+      <label class="im-field">Mô tả ảnh <strong>*</strong><textarea id="im-prompt" name="prompt" rows="8" maxlength="4000" required placeholder="Một phi hành gia khám phá thành phố tương lai, ánh sáng điện ảnh, chi tiết cao"></textarea><small><span id="im-char">0</span>/4000</small></label>
+      <fieldset class="im-group"><legend><b>02</b> Model AI</legend>{{ modelchips(models, models[0][0] if models else '') }}</fieldset>
+      <div class="im-two"><label class="im-field">Tỉ lệ<select id="im-aspect" name="aspect_ratio">{% for a in aspects %}<option value="{{a}}">{{a}}</option>{% endfor %}</select></label><label class="im-field">Số ảnh<input id="im-count" type="number" name="count" min="1" max="4" value="1"></label></div>
+      <div class="im-actions"><button id="im-preview-btn" type="button" class="btn ghost">Xem cấu hình</button><button type="submit" class="btn">Tạo ảnh · <span id="im-cost">{{ app.credit_cost({'count':1}) }}</span> credit</button></div>
     </form>
+    <div class="im-workspace">
+      <section class="im-preview" aria-labelledby="im-preview-title"><div class="im-panel-head"><span>03</span><div><h2 id="im-preview-title">Cấu hình gửi đi</h2><small>Chỉ hiển thị dữ liệu bạn đã nhập</small></div></div><div id="im-preview-copy" class="im-empty" aria-live="polite">Nhập prompt rồi chọn “Xem cấu hình”.</div></section>
+      <section id="im-compare" class="im-compare" aria-labelledby="im-compare-title" hidden><div class="im-panel-head"><span>04</span><div><h2 id="im-compare-title">So sánh output</h2><small>Chọn tối đa hai ảnh thật</small></div></div><div class="im-compare-grid"><div data-slot="0">Chọn ảnh thứ nhất</div><div data-slot="1">Chọn ảnh thứ hai</div></div><button id="im-clear" type="button" class="btn ghost">Bỏ chọn</button></section>
+    </div>
   </div>
-
-  <div class="ui-card">
-    <h2 style="margin:0 0 10px;">Ảnh của tôi</h2>
-    {% if not jobs %}
-      <p class="dim" style="margin:0;">Chưa có ảnh nào. Tạo cái đầu tiên ở trên.</p>
-    {% else %}
-      {% for j in jobs %}
-        <div style="border-top:1px solid var(--line); padding:12px 0;">
-          <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
-            {{ j.id[:8] }} ·
-            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
-            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
-            {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.status }} {{ j.progress }}%</span>{% endif %}
-          </div>
-          {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
-          {% if j.image_keys %}
-            <div class="result-grid">
-              {% for k in j.image_keys %}
-                <a href="{{ app.route_prefix }}/f/{{ k }}" target="_blank">
-                  <img src="{{ app.route_prefix }}/f/{{ k }}" alt="ảnh" loading="lazy">
-                </a>
-              {% endfor %}
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    {% endif %}
-  </div>
+  <section class="im-history" aria-labelledby="im-history-title"><header><div><span class="im-kicker">OUTPUT HISTORY</span><h2 id="im-history-title">Ảnh của tôi</h2></div><span>{{jobs|length}} job gần nhất</span></header>
+    {% if not jobs %}<div class="im-empty"><strong>Chưa có ảnh</strong><span>Output thật sẽ xuất hiện ở đây sau job đầu tiên.</span></div>{% else %}<div class="im-job-grid">{% for j in jobs %}<article class="im-job"><header><div><strong>{{j.prompt or 'Ảnh không có mô tả'}}</strong><small>{{j.id[:8]}} · {{j.aspect_ratio}} · {{j.requested_count}} ảnh · <time datetime="{{j.created_at.isoformat()}}">{{j.created_at.strftime('%d/%m %H:%M')}}</time></small></div>{% if j.status=='done' %}<span class="im-status done">Hoàn tất</span>{% elif j.status=='error' %}<span class="im-status error">Lỗi</span>{% else %}<span class="im-status running">{{j.status}} · {{j.progress}}%</span>{% endif %}</header>
+      {% if j.status not in ['done','error','cancelled'] %}<div class="im-progress" role="progressbar" aria-label="Tiến độ job {{j.id[:8]}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{j.progress}}"><i style="width:{{j.progress}}%"></i></div>{% endif %}{% if j.progress_msg %}<p>{{j.progress_msg}}</p>{% endif %}{% if j.status=='error' and j.error %}<p class="im-error">{{j.error}}</p>{% endif %}
+      {% if j.image_keys %}<div class="im-results">{% for k in j.image_keys %}{% set url=app.route_prefix~'/f/'~k %}<figure><a href="{{url}}" target="_blank" rel="noreferrer"><img src="{{url}}" alt="Ảnh {{loop.index}} của {{j.prompt or j.id[:8]}}" loading="lazy"></a><figcaption><button type="button" class="im-pick" data-src="{{url}}" data-label="{{j.prompt or j.id[:8]}} · ảnh {{loop.index}}" aria-pressed="false">So sánh</button><a href="{{url}}" target="_blank" rel="noreferrer">Mở ảnh</a></figcaption></figure>{% endfor %}</div>{% endif %}
+    </article>{% endfor %}</div>{% endif %}
+  </section>
+</section>
+<script>(()=>{const form=document.querySelector('.im-controls'),prompt=document.getElementById('im-prompt'),count=document.getElementById('im-count'),cost=document.getElementById('im-cost'),char=document.getElementById('im-char'),unit=Number(form?.dataset.unitCost)||0;const sync=()=>{char.textContent=String(prompt.value.length);cost.textContent=String(Math.max(1,Math.min(4,Number(count.value)||1))*unit)};prompt.addEventListener('input',sync);count.addEventListener('input',sync);document.getElementById('im-preview-btn').addEventListener('click',()=>{const box=document.getElementById('im-preview-copy');box.replaceChildren();const rows=[['Prompt',prompt.value.trim()||'Chưa nhập'],['Tỉ lệ',document.getElementById('im-aspect').value],['Số ảnh',String(Math.max(1,Math.min(4,Number(count.value)||1)))]];rows.forEach(([k,v])=>{const row=document.createElement('div'),b=document.createElement('b'),span=document.createElement('span');b.textContent=k;span.textContent=v;row.append(b,span);box.append(row)})});const selected=[],panel=document.getElementById('im-compare'),slots=panel.querySelectorAll('[data-slot]');const render=()=>{panel.hidden=!selected.length;slots.forEach((slot,i)=>{slot.replaceChildren();const item=selected[i];if(item){const img=document.createElement('img'),label=document.createElement('strong');img.src=item.src;img.alt=item.label;label.textContent=item.label;slot.append(img,label)}else slot.textContent=`Chọn ảnh thứ ${i+1}`});document.querySelectorAll('.im-pick').forEach(b=>b.setAttribute('aria-pressed',String(selected.some(x=>x.src===b.dataset.src))))};document.querySelectorAll('.im-pick').forEach(b=>b.addEventListener('click',()=>{const at=selected.findIndex(x=>x.src===b.dataset.src);if(at>=0)selected.splice(at,1);else{if(selected.length===2)selected.shift();selected.push({src:b.dataset.src,label:b.dataset.label})}render();panel.scrollIntoView({behavior:'smooth',block:'nearest'})}));document.getElementById('im-clear').addEventListener('click',()=>{selected.splice(0);render()});sync()})();</script>
 {% endblock %}

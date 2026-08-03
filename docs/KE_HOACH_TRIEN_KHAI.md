@@ -1110,8 +1110,8 @@ Nguồn audit/roadmap/vé:
 `docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
 system-first, không làm nhiều app song song.
 
-Tiến độ H15 hiện tại: **25/38 vé (65,8%)**; **9/16 stage hoàn tất**. H15.S8
-đã PASS đủ UI/feature; stage kế tiếp là H15.S9 Tạo ảnh.
+Tiến độ H15 hiện tại: **26/38 vé (68,4%)**; **9/16 stage hoàn tất**. H15.S9
+đang thực hiện tuần tự: IMG-UI đã PASS, IMG-FEAT chưa bắt đầu.
 
 - [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
   kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
@@ -1224,7 +1224,16 @@ Tiến độ H15 hiện tại: **25/38 vé (65,8%)**; **9/16 stage hoàn tất**
     ownership guard. Pixel editor DEFER theo Q54, không mở giả. Browser desktop/
     mobile PASS; regression 75 passed; full suite 1.957 passed, 8 skipped,
     23 subtests; secret scan 0.
-- [ ] H15.S9–S12 Từng app còn lại theo roadmap; không song song.
+- [ ] H15.S9 Tạo ảnh — Studio/history/compare → reference/edit engine gate.
+  - [x] H15.S9.1 IMG-UI-001 — 2026-08-03: Image Studio Carbon Red thay toàn
+    bộ inline layout cũ; prompt counter/config preview/cost theo manifest;
+    history owner-scoped có metadata/progress/error và compare tối đa hai output
+    thật. Browser desktop/mobile tạo 2 ảnh 1024 px, overflow 0, target ≥44 px,
+    console/network sạch; regression 65 passed; full suite 1.959 passed,
+    8 skipped, 23 subtests; secret scan 0.
+  - [ ] H15.S9.2 IMG-FEAT-001 — style/structure reference và edit/inpaint/
+    outpaint chỉ mở sau provider/cost/privacy/rollback spike.
+- [ ] H15.S10–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.
