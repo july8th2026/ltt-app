@@ -7,6 +7,7 @@ KHÔNG dính trần 100MB của Cloudflare (không cần R2 cho clip ngắn).
 from __future__ import annotations
 
 import uuid
+from pathlib import PurePath
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
@@ -30,6 +31,7 @@ def _render(request: Request, user: str, *, error: str = "", jobs=None, status_c
         # đây truyền nguyên dict vào template khiến grid lặp qua key thay vì job.
         extra.setdefault("job_counts", jobs.get("counts", {}))
         extra.setdefault("prompt_history", jobs.get("history", []))
+        extra.setdefault("saved_assets", jobs.get("assets", []))
         jobs = jobs.get("items", [])
     context = {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
@@ -61,11 +63,23 @@ def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
             elif j.status == JOB_ERROR: counts["error"] += 1
         filtered = rows if status == "all" else [j for j in rows if (
             j.status in (JOB_QUEUED, JOB_RUNNING) if status == "running" else j.status == status)]
-        history=[]; seen=set()
+        history=[]; seen=set(); assets=[]; seen_keys=set()
         for j in rows:
             prompt=str((j.params or {}).get("prompt", "")).strip()
             if prompt and prompt not in seen: history.append(prompt); seen.add(prompt)
-            if len(history) == 10: break
+            for ref in ((j.params or {}).get("refs") or []):
+                key = str(ref.get("storage_key") or "")
+                if (not key.startswith(f"taovideo/{u.id}/refs/") or
+                        key in seen_keys or len(assets) >= 40):
+                    continue
+                seen_keys.add(key)
+                assets.append({
+                    "storage_key": key, "kind": ref.get("kind", "image"),
+                    "role": ref.get("role", "reference_image"),
+                    "handle": ref.get("handle", ""),
+                    "name": ref.get("name") or f"Tài sản {len(assets) + 1}",
+                    "size": int(ref.get("size") or 0),
+                })
         return {"items": [{"id": j.id, "status": j.status, "progress": j.progress,
                  "progress_msg": j.progress_msg, "error": j.error,
                  "video_key": (j.result or {}).get("video_key") if j.result else None,
@@ -74,7 +88,8 @@ def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
                  "resolution": (j.params or {}).get("resolution", ""),
                  "duration": (j.params or {}).get("duration", ""),
                  "aspect_ratio": (j.params or {}).get("aspect_ratio", "")}
-                for j in filtered], "counts": counts, "history": history}
+                for j in filtered], "counts": counts, "history": history[:10],
+                "assets": assets}
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -102,7 +117,8 @@ def page(request: Request, status: str = "all", sort: str = "newest", user: str 
     sort = sort if sort in {"newest", "oldest"} else "newest"
     data = _jobs_cua_toi(request, status, sort)
     return _render(request, user, jobs=data["items"], job_counts=data["counts"],
-                   prompt_history=data["history"], active_status=status, active_sort=sort)
+                   prompt_history=data["history"], saved_assets=data["assets"],
+                   active_status=status, active_sort=sort)
 
 
 @router.post("/estimate", response_class=HTMLResponse)
@@ -150,21 +166,92 @@ async def _luu_refs(u_id: str, files, roles, handles=None) -> list:
     from platform_core.storage import get_storage
     import io as _io
     storage = get_storage()
-    specs = []
-    for i, f in enumerate((files or [])[:4]):
+    specs = []; prepared = []
+    actual = [f for f in (files or []) if f and getattr(f, "filename", "")]
+    if len(actual) > 4:
+        raise ValueError("Tối đa 4 file tham chiếu.")
+    for i, f in enumerate(actual):
         if not f or not getattr(f, "filename", ""):
             continue
         ct = (f.content_type or "").lower()
-        kind = "video" if ct.startswith("video") else "audio" if ct.startswith("audio") else "image"
+        if ct.startswith("image/"):
+            kind = "image"
+        elif ct in {"video/mp4", "video/quicktime", "video/webm"}:
+            kind = "video"
+        elif ct.startswith("audio/"):
+            kind = "audio"
+        else:
+            raise ValueError(f"Định dạng tham chiếu không hỗ trợ: {f.filename}")
         data = await f.read()
-        if not data or len(data) > _CAP[kind]:
-            continue
+        if not data:
+            raise ValueError(f"File tham chiếu rỗng: {f.filename}")
+        if len(data) > _CAP[kind]:
+            raise ValueError(f"File tham chiếu vượt giới hạn: {f.filename}")
+        role = roles[i] if roles and i < len(roles) else "reference_image"
+        role = (role if kind == "image" and role in
+                {"reference_image", "first_frame", "last_frame", "mask"}
+                else f"reference_{kind}")
+        name = PurePath(str(f.filename).replace("\\", "/")).name[:120]
+        prepared.append((kind, ct, data, role, name,
+                         (handles[i] if handles and i < len(handles) else "")[:32]))
+    # Chỉ ghi sau khi TOÀN BỘ batch đã qua MIME/size/empty validation.
+    for kind, ct, data, role, name, handle in prepared:
         skey = f"taovideo/{u_id}/refs/{uuid.uuid4().hex}"
         storage.put(skey, _io.BytesIO(data), content_type=ct or "image/png")
-        role = roles[i] if roles and i < len(roles) else "reference_image"
         specs.append({"kind": kind, "storage_key": skey,
-                      "role": role or "reference_image", "handle": (handles[i] if handles and i < len(handles) else "")[:32]})
+                      "role": role, "handle": handle,
+                      "name": name, "content_type": ct, "size": len(data)})
     return specs
+
+
+def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
+    """Resolve key từ lịch sử job owner; browser không được tự khai storage key."""
+    requested = list(dict.fromkeys(str(k) for k in (keys or [])))
+    if not requested:
+        return []
+    if len(requested) > 4:
+        raise ValueError("Tối đa 4 tài sản đã lưu.")
+    data = _jobs_cua_toi_for_user(user_id)
+    allowed = {a["storage_key"]: a for a in data}
+    from platform_core.storage import get_storage
+    storage = get_storage(); out = []
+    for key in requested:
+        asset = allowed.get(key)
+        if asset is None or not storage.exists(key):
+            raise ValueError("Tài sản đã lưu không hợp lệ hoặc không còn tồn tại.")
+        clean = dict(asset)
+        kind = str(clean.get("kind") or "image")
+        if kind not in {"image", "video", "audio"}:
+            raise ValueError("Loại tài sản đã lưu không hợp lệ.")
+        role = str(clean.get("role") or "")
+        clean["role"] = (role if kind == "image" and role in
+                         {"reference_image", "first_frame", "last_frame", "mask"}
+                         else f"reference_{kind}")
+        clean["handle"] = str(clean.get("handle") or "")[:32]
+        out.append(clean)
+    return out
+
+
+def _jobs_cua_toi_for_user(user_id: str) -> list[dict]:
+    """Danh sách asset lịch sử tối thiểu cho submit; owner-scoped tại DB."""
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    from sqlalchemy import select
+    gen = get_session(); db = next(gen)
+    try:
+        rows = db.execute(select(Job).where(
+            Job.user_id == user_id, Job.app_slug == MANIFEST.slug
+        ).order_by(Job.created_at.desc()).limit(60)).scalars().all()
+        out=[]; seen=set()
+        for job in rows:
+            for ref in ((job.params or {}).get("refs") or []):
+                key=str(ref.get("storage_key") or "")
+                if key.startswith(f"taovideo/{user_id}/refs/") and key not in seen:
+                    seen.add(key); out.append(dict(ref))
+        return out
+    finally:
+        try: next(gen)
+        except StopIteration: pass
 
 
 @router.post("/queue", response_class=HTMLResponse)
@@ -174,6 +261,7 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                 generate_audio: str = Form(""), count: str = Form("1"),
                 ref_images: list[UploadFile] = File(default=[]),
                 ref_roles: list[str] = Form(default=[]), ref_handles: list[str] = Form(default=[]),
+                saved_ref_keys: list[str] = Form(default=[]),
                 user: str = Depends(require_login)):
     from platform_core import credit
     from platform_core.db import get_session
@@ -196,7 +284,15 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         return _render(request, user, error="Cần đăng nhập bằng tài khoản người dùng.",
                        jobs=_jobs_cua_toi(request), status_code=400)
 
-    ref_specs = await _luu_refs(u.id, ref_images, ref_roles, ref_handles)
+    try:
+        saved_refs = _saved_refs_for_user(u.id, saved_ref_keys)
+        new_count = sum(1 for f in (ref_images or [])
+                        if f and getattr(f, "filename", ""))
+        if len(saved_refs) + new_count > 4:
+            raise ValueError("Tổng tài sản đã lưu và file mới không được vượt quá 4.")
+        ref_specs = saved_refs + await _luu_refs(u.id, ref_images, ref_roles, ref_handles)
+    except ValueError as exc:
+        return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request), status_code=400)
     base_params = {"prompt": prompt.strip()[:10000], "model": mid, "resolution": res,
                    "duration": dur, "aspect_ratio": asp,
                    "generate_audio": bool(generate_audio), "owner_id": u.id,

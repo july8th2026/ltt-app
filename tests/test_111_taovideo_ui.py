@@ -44,7 +44,8 @@ def test_nav_khong_day_user_thuong_vao_settings_va_khong_co_link_gia():
 
     assert '{% if is_admin(request) %}<a href="/settings">' in page
     assert 'href="/jobs?app=taovideo"' in page
-    assert page.count('disabled aria-disabled="true"') == 2
+    assert page.count('disabled aria-disabled="true"') == 1
+    assert 'href="#tv-assets"' in page
 
 
 def test_file_name_duoc_tao_bang_dom_khong_chich_html():
@@ -63,4 +64,3 @@ def test_render_error_workspace_va_translate_giu_form_contract():
     assert "extra.setdefault(\"job_counts\"" in routes
     assert "extra.setdefault(\"prompt_history\"" in routes
     assert 'id="tv-prompt" name="prompt"' in routes
-

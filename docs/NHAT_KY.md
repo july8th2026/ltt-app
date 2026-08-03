@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-03 — H15.S4.2: Asset library TV-FEAT-001
+
+- **Mục tiêu:** cho phép tái sử dụng reference đã tải mà không tạo kho asset hay
+  nguồn quyền thứ hai.
+- **Hạng mục:** TV-FEAT-001 hoàn thành; H15.S4 còn TV-FEAT-002.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Asset library được suy ra từ tối đa 60 job Tạo video gần nhất của đúng owner;
+dedupe theo `storage_key`, hiển thị tối đa 40 asset. Upload mới lưu metadata tên,
+MIME, size, kind, role và handle trong params job hiện có. User chọn lại asset qua
+`saved_ref_keys`; server chỉ resolve key đã xuất hiện trong lịch sử job của đúng
+user, kiểm object còn tồn tại và chuẩn hóa kind/role/handle.
+
+Tổng asset cũ+mới bị giới hạn 4 ở cả browser và server. MIME/empty/size được
+validate cho toàn batch trước khi ghi storage, nên file sau lỗi không để file
+trước thành orphan. Nav Tài sản nay dẫn tới library thật; empty state giải thích
+asset xuất hiện sau job đầu tiên. Thêm `tests/test_112_taovideo_saved_assets.py`.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted vận hành/taovideo/UI/assets | **53 passed**, 1 warning trong 74,43 giây |
+| `python -m pytest -q` | **1.935 passed**, 8 skipped, 23 subtests, 1 warning trong 597,98 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.128 file / 159.140 dòng) |
+| Playwright file thật desktop | upload `video (10).mp4` → job local → asset 2,9 MB/reference_video → chọn lại → job thứ hai giữ cùng key |
+| Playwright 390/1280 px | asset list render; overflow 0; field thiếu nhãn 0; console/network sạch |
+| Browser abuse/limit | key không thuộc owner trả 400; 1 asset cũ + 4 file mới bị browser chặn tổng-4 |
+
+Browser dùng SQLite, data dir và credit canary cô lập trong `tmp/`; không gọi
+provider/worker, không dùng dữ liệu hoặc tiền production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Storage và params job hiện có là nguồn dữ liệu;
+owner scope từ DB là nguồn quyền. Không tạo bảng asset hoặc filesystem index mới.
+
+### Cách lùi lại
+
+Revert commit TV-FEAT-001. Không có migration/dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S4.3 TV-FEAT-002 — prompt assist/variation/camera theo capability provider.
+
+---
+
 ## 2026-08-03 — H15.S4.1: Tạo video TV-UI-001
 
 - **Mục tiêu:** chuẩn hóa shell/control/a11y/empty/job card của Seedance trước

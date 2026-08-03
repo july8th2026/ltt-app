@@ -1151,7 +1151,10 @@ system-first, không làm nhiều app song song.
   - [x] H15.S4.1 TV-UI-001 — 2026-08-03: shell/control/form/job card/empty
     state thống nhất; drawer/Escape/a11y và file-reference browser PASS;
     1.930 passed, 8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S4.2 TV-FEAT-001 — asset library + saved reference.
+  - [x] H15.S4.2 TV-FEAT-001 — 2026-08-03: asset library suy ra từ storage +
+    job history owner-scoped; chọn lại asset, MIME/role/size/tổng-4 validation,
+    batch atomic-before-write; browser file thật PASS; 1.935 passed, 8 skipped,
+    23 subtests; secret scan 0.
   - [ ] H15.S4.3 TV-FEAT-002 — prompt assist/variation/camera capability.
 - [ ] H15.S5–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
