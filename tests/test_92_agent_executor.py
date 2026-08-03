@@ -135,6 +135,27 @@ def test_actual_theo_attempt_va_child_error_co_decision_log(db, fake_tools):
     assert credit.so_du(db, "u1") == 194
 
 
+def test_error_branch_runs_handler_skips_success_path_and_settles_done(db, fake_tools):
+    from platform_core import jobs
+    from platform_core.agent import executor, runs
+    run = _approved(db, _plan([
+        {"id": "source", "tool": "text", "after": [], "params": {}},
+        {"id": "success", "tool": "image", "after": ["source"], "params": {}},
+        {"id": "fallback", "tool": "text", "after": [],
+         "after_error": ["source"], "params": {}},
+    ]))
+    executor.tick(db, run_id=run.id, user_id="u1"); db.commit()
+    jobs.fail(db, runs.children(db, run, step_id="source")[0], "provider error"); db.commit()
+    executor.tick(db, run_id=run.id, user_id="u1"); db.commit()
+    assert run.checkpoint["source"]["status"] == "error"
+    assert run.checkpoint["success"]["status"] == "skipped"
+    fallback = runs.children(db, run, step_id="fallback")[0]
+    jobs.complete(db, fallback, {"output": "recovered"}); db.commit()
+    executor.tick(db, run_id=run.id, user_id="u1"); db.commit()
+    assert run.status == "done"
+    assert {item["event"] for item in run.decision_log} >= {"branch_skipped", "error_handled"}
+
+
 def test_cancel_ngan_submit_moi(db, fake_tools):
     from platform_core.agent import budget, executor, runs
     run = _approved(db, _plan([

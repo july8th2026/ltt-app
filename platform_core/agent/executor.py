@@ -143,6 +143,49 @@ def actual_cost(run: AgentRun, rows: list[Job]) -> int:
     return total
 
 
+def _advance_branch_states(db: DbSession, run: AgentRun) -> None:
+    """Mark branches that can no longer match without executing or spending."""
+    checkpoint = dict(run.checkpoint or {})
+    changed = True
+    while changed:
+        changed = False
+        for step in _steps(run):
+            sid = step["id"]
+            if checkpoint.get(sid):
+                continue
+            success_states = [str((checkpoint.get(dep) or {}).get("status", ""))
+                              for dep in step.get("after", []) or []]
+            error_states = [str((checkpoint.get(dep) or {}).get("status", ""))
+                            for dep in step.get("after_error", []) or []]
+            reason = ""
+            if any(status in {"error", "skipped"} for status in success_states):
+                reason = "success dependency không hoàn tất"
+            elif any(status in {"done", "skipped"} for status in error_states):
+                reason = "error dependency không phát sinh lỗi"
+            if reason:
+                checkpoint[sid] = {"status": "skipped", "reason": reason}
+                runs.append_decision(db, run, {
+                    "event": "branch_skipped", "step_id": sid, "reason": reason,
+                })
+                changed = True
+    run.checkpoint = checkpoint
+
+
+def _terminal_status(run: AgentRun) -> str | None:
+    steps = _steps(run); checkpoint = run.checkpoint or {}
+    terminal = {"done", "error", "skipped"}
+    if not steps or any(str((checkpoint.get(step["id"]) or {}).get("status", ""))
+                        not in terminal for step in steps):
+        return None
+    errored = {sid for sid,state in checkpoint.items() if state.get("status") == "error"}
+    unhandled = []
+    for sid in errored:
+        handlers = [step["id"] for step in steps if sid in (step.get("after_error") or [])]
+        if not any((checkpoint.get(target) or {}).get("status") == "done" for target in handlers):
+            unhandled.append(sid)
+    return AGENT_ERROR if unhandled else AGENT_DONE
+
+
 def tick(db: DbSession, *, run_id: str, user_id: str,
          max_parallel: int = 4, probe=None, judge=None, face_compare=None,
          retry_adapter=None) -> AgentRun:
@@ -155,21 +198,24 @@ def tick(db: DbSession, *, run_id: str, user_id: str,
     _sync_children(db, run, verify_kwargs={
         "probe": probe, "judge": judge, "face_compare": face_compare,
     })
+    _advance_branch_states(db, run)
     all_children = runs.children(db, run)
-    if any(state.get("status") == "error"
-           for state in (run.checkpoint or {}).values()):
-        cost = actual_cost(run, all_children)
-        runs.append_decision(db, run, {"event": "child_error", "actual": cost})
-        return budget.settle(db, run_id=run.id, user_id=run.user_id, actual=cost,
-                             final_status=AGENT_ERROR)
-
     steps = _steps(run)
     done = {sid for sid, state in (run.checkpoint or {}).items()
             if state.get("status") == "done"}
-    if len(done) == len(steps):
+    errored = {sid for sid, state in (run.checkpoint or {}).items()
+               if state.get("status") == "error"}
+    terminal_status = _terminal_status(run)
+    if terminal_status:
+        if terminal_status == AGENT_ERROR:
+            runs.append_decision(db, run, {"event": "child_error",
+                                           "steps": sorted(errored)})
+        elif errored:
+            runs.append_decision(db, run, {"event": "error_handled",
+                                           "steps": sorted(errored)})
         return budget.settle(
             db, run_id=run.id, user_id=run.user_id,
-            actual=actual_cost(run, all_children), final_status=AGENT_DONE)
+            actual=actual_cost(run, all_children), final_status=terminal_status)
 
     active = sum(state.get("status") == "submitted"
                  for state in (run.checkpoint or {}).values())
@@ -187,6 +233,8 @@ def tick(db: DbSession, *, run_id: str, user_id: str,
         if state and state.get("status") != "retry_needed":
             continue
         if not set(step.get("after") or []).issubset(done):
+            continue
+        if not set(step.get("after_error") or []).issubset(errored):
             continue
         spec = tools.get(step.get("tool"))
         if spec is None:
@@ -241,10 +289,4 @@ def tick(db: DbSession, *, run_id: str, user_id: str,
         active += 1
     run.checkpoint = checkpoint
     db.flush()
-    if any(state.get("status") == "error" for state in checkpoint.values()):
-        all_children = runs.children(db, run)
-        cost = actual_cost(run, all_children)
-        budget.ensure_can_spend(run, cost)
-        return budget.settle(db, run_id=run.id, user_id=run.user_id, actual=cost,
-                             final_status=AGENT_ERROR)
     return run

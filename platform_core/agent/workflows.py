@@ -68,7 +68,11 @@ def plan_to_canvas(plan: dict) -> dict:
         nodes.append({"id": sid, "type": "tool", "position": {"x": index * 280, "y": 0},
                       "data": execution})
         for source in step.get("after", []) or []:
-            edges.append({"id": f"{source}--{sid}", "source": source, "target": sid})
+            edges.append({"id": f"{source}--{sid}", "source": source, "target": sid,
+                          "data": {"condition": "success"}})
+        for source in step.get("after_error", []) or []:
+            edges.append({"id": f"{source}--error--{sid}", "source": source, "target": sid,
+                          "data": {"condition": "error"}})
     canvas = {"version": 1, "goal": str(plan.get("goal", "")),
               "budget_max_credit": int(plan.get("budget_max_credit", 0)),
               "nodes": nodes, "edges": edges,
@@ -93,6 +97,7 @@ def canvas_to_plan(canvas: dict) -> dict:
             raise WorkflowError("Node id/type thiếu hoặc trùng.")
         ids.add(sid)
     deps: dict[str, list[str]] = {}
+    error_deps: dict[str, list[str]] = {}
     for edge in edges:
         if not isinstance(edge, dict):
             raise WorkflowError("Edge không hợp lệ.")
@@ -101,15 +106,22 @@ def canvas_to_plan(canvas: dict) -> dict:
             raise WorkflowError("Edge thiếu source/target.")
         if source not in ids or target not in ids:
             raise WorkflowError("Edge tham chiếu node không tồn tại.")
-        if source not in deps.setdefault(target, []):
-            deps[target].append(source)
+        condition = str((edge.get("data") or {}).get("condition", "success"))
+        if condition not in {"success", "error"}:
+            raise WorkflowError("Edge condition không hợp lệ.")
+        bucket = error_deps if condition == "error" else deps
+        if source not in bucket.setdefault(target, []):
+            bucket[target].append(source)
     steps = []
     for node in nodes:
         sid = str(node.get("id", ""))
         data = copy.deepcopy(node["data"])
         if {"id", "after"}.intersection(str(key).lower() for key in data) or _has_forbidden(data):
             raise WorkflowError("Node chứa trường chỉ server được đặt.")
-        steps.append({"id": sid, **data, "after": deps.get(sid, [])})
+        step = {"id": sid, **data, "after": deps.get(sid, [])}
+        if error_deps.get(sid):
+            step["after_error"] = error_deps[sid]
+        steps.append(step)
     return {"version": 1, "goal": str(canvas.get("goal", "")),
             "budget_max_credit": int(canvas.get("budget_max_credit", 0)),
             "steps": steps}

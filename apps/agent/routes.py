@@ -147,6 +147,13 @@ def _run_json(run: AgentRun) -> dict:
             "decisions": run.decision_log, "artifacts": artifacts}
 
 
+def _run_summary(run: AgentRun) -> dict:
+    return {"id": run.id, "version": run.version, "status": run.status,
+            "estimated": run.estimated, "actual": run.actual,
+            "created_at": run.created_at.isoformat() if run.created_at else "",
+            "finished_at": run.finished_at.isoformat() if run.finished_at else ""}
+
+
 def _artifact_key(run: AgentRun, step_id: str, index: int) -> str:
     state = (run.checkpoint or {}).get(step_id) or {}
     found = []
@@ -407,6 +414,23 @@ async def workflow_approve_run(request: Request, run_id: str,
         raise HTTPException(status_code=409, detail=str(exc)) from None
     finally:
         metrics.record_approval(success=approval_success)
+    return JSONResponse(_run_json(run))
+
+
+@router.get("/api/runs")
+def workflow_run_list(request: Request, _identity: str = Depends(require_login),
+                      db: Session = Depends(get_db)):
+    user = _user(request)
+    rows = db.query(AgentRun).filter_by(user_id=user.id).order_by(
+        AgentRun.created_at.desc()).limit(20).all()
+    return JSONResponse({"items": [_run_summary(row) for row in rows]})
+
+
+@router.get("/api/runs/{run_id}")
+def workflow_run_get(request: Request, run_id: str,
+                     _identity: str = Depends(require_login),
+                     db: Session = Depends(get_db)):
+    _user_row, run = _owned(db, request, run_id)
     return JSONResponse(_run_json(run))
 
 

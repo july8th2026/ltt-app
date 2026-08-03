@@ -121,6 +121,7 @@ def validate_plan(plan: dict, *, input_types: Optional[dict[str, str]] = None,
     ids: set[str] = set()
     by_id: dict[str, dict] = {}
     deps: dict[str, set[str]] = {}
+    error_deps: dict[str, set[str]] = {}
     input_types = input_types or {}
     step_costs: list[dict] = []
     total = 0
@@ -136,12 +137,24 @@ def validate_plan(plan: dict, *, input_types: Optional[dict[str, str]] = None,
             issues.append(ValidationIssue("after", "after phải là danh sách step id.", sid))
             after = []
         deps[sid] = set(after)
+        after_error = step.get("after_error", [])
+        if not isinstance(after_error, list) or any(not isinstance(x, str) for x in after_error):
+            issues.append(ValidationIssue("after_error", "after_error phải là danh sách step id.", sid))
+            after_error = []
+        error_deps[sid] = set(after_error)
+        if deps[sid].intersection(error_deps[sid]):
+            issues.append(ValidationIssue("branch", "Một dependency không thể vừa success vừa error.", sid))
 
     for sid, after in deps.items():
         for dep in after:
             if dep not in ids:
                 issues.append(ValidationIssue("dependency", f"Không có step phụ thuộc {dep}.", sid))
-    if _has_cycle(deps):
+    for sid, after in error_deps.items():
+        for dep in after:
+            if dep not in ids:
+                issues.append(ValidationIssue("dependency", f"Không có step lỗi phụ thuộc {dep}.", sid))
+    combined = {sid: deps.get(sid,set()) | error_deps.get(sid,set()) for sid in ids}
+    if _has_cycle(combined):
         issues.append(ValidationIssue("cycle", "Plan có chu trình."))
 
     for sid, step in by_id.items():

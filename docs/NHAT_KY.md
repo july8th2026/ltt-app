@@ -14,6 +14,62 @@
 
 ---
 
+## 2026-08-03 — H15.S7.2: Agent Canvas AG-FEAT-001
+
+- **Mục tiêu:** hoàn thiện replay/debug/template và nhánh xử lý lỗi trên contract
+  Agent hiện có, không tạo runtime client-side hay bỏ qua quote/approval/credit.
+- **Hạng mục:** AG-FEAT-001 hoàn thành; AG-FEAT-002 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Mở API owner-scoped cho 20 run mới nhất và chi tiết run; summary không phát lộ
+Plan. Run Inspector hiển thị checkpoint error/reason, lịch sử, lựa chọn run cũ và
+replay từ snapshot bất biến qua contract `/again` đã có. Canvas tái sử dụng clone,
+export và import workflow làm template thay vì xây kho template song song.
+
+Plan v1 bổ sung `after_error` và Canvas edge `condition=error`. Bộ chuyển đổi hai
+chiều, validator và cycle guard hiểu cả nhánh success/error. Executor chỉ chạy
+nhánh khi điều kiện dependency tương ứng đạt, đánh dấu nhánh không thể tới là
+`skipped`, ghi decision `branch_skipped`/`error_handled`, và chỉ kết thúc `done`
+khi lỗi nguồn đã được một nhánh lỗi hoàn tất. Lỗi không được xử lý vẫn giữ hành vi
+`error`; mọi step, kể cả error branch, vẫn nằm trong báo giá server-side ban đầu.
+
+UI phân biệt cạnh lỗi bằng nhãn/màu/nét đứt, cho đổi điều kiện khi chọn cạnh; thêm
+template controls và lịch sử/replay vào responsive Inspector. Không thêm scheduler
+hay trigger trong vé này.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `npm test` (Agent Canvas) | **17 passed** |
+| `npm run build` | typecheck + Vite production build **PASS** |
+| Lệnh Agent hẹp đầu tiên | **FAIL thao tác:** gọi nhầm hai tên file không tồn tại; 0 test chạy |
+| Lệnh Agent hẹp đúng 9 module | **54 passed**, 1 warning trong 62,78 giây |
+| `python -m pytest -q` | **1.954 passed**, 8 skipped, 23 subtests, 1 warning trong 580,70 giây |
+| Playwright fixture 8105 desktop + mobile | plan→quote→run→approve→done→replay PASS; lịch sử có run gốc/replay; template controls và mobile tabs hiện đúng; request 8105 đều 200/201; console phiên hiện tại 0 lỗi |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.638 dòng) |
+
+Fixture dùng user/DB cô lập trong `tmp`, không dùng production. Console `all=true`
+có một lỗi lịch sử từ host 8102 của phiên browser trước; phép kiểm tra phiên 8105
+`all=false` trả 0 lỗi và network filter 8105 không có request thất bại.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Triển khai tiếp tục Q39/Q49: Canvas là authoring,
+runtime/quote/credit ở server; reuse snapshot và workflow contract nội tại.
+
+### Cách lùi lại
+
+Revert commit AG-FEAT-001. Thay đổi schema Plan/Canvas là additive, không migration;
+workflow/run cũ không có `after_error` vẫn chạy theo nhánh success như trước.
+
+### Việc tiếp theo
+
+H15.S7.3 AG-FEAT-002 — audit gate rồi triển khai trigger/schedule/version recovery
+tuần tự, không mở năng lực giả khi chưa có contract vận hành.
+
 ## 2026-08-03 — H15.S7.1: Agent Canvas AG-UI-001
 
 - **Mục tiêu:** đồng nhất Canvas với shared shell, mở run inspector và responsive

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { approveRun, createAutosave, createRun, saveWorkflow, WorkflowConflictError,
+import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, importWorkflow,
+  loadRun, loadRunHistory, saveWorkflow, WorkflowConflictError,
   type AgentRun, type Workflow } from '../src/workflowApi'
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
@@ -34,6 +35,26 @@ describe('workflow API', () => {
     expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('If-Match')).toBe('"3"')
     await approveRun(run, 'csrf-test')
     expect(fetchMock.mock.calls[1][1]?.body).toBe(JSON.stringify({ version: 1, quote_hash: 'abc' }))
+  })
+
+  it('loads owner run history/detail and reuses workflow template contracts', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      const url = String(input)
+      const body = url.endsWith('/runs') ? { items: [{ id: 'r1' }] }
+        : url.endsWith('/runs/r1') ? { id: 'r1' }
+        : url.endsWith('/export') ? { schema: 'ltt.agent.workflow' } : workflow
+      return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    await expect(loadRunHistory()).resolves.toEqual([{ id: 'r1' }])
+    await expect(loadRun('r1')).resolves.toMatchObject({ id: 'r1' })
+    await cloneWorkflow(workflow, 'csrf-test')
+    await exportWorkflow(workflow)
+    await importWorkflow({ schema: 'ltt.agent.workflow' }, 'csrf-test')
+    expect(fetchMock.mock.calls.map(call => String(call[0]))).toEqual([
+      '/agent/api/runs', '/agent/api/runs/r1', '/agent/api/workflows/w1/clone',
+      '/agent/api/workflows/w1/export', '/agent/api/workflows/import'])
+    expect(new Headers(fetchMock.mock.calls[2][1]?.headers).get('X-CSRF-Token')).toBe('csrf-test')
+    expect(fetchMock.mock.calls[4][1]?.body).toBe(JSON.stringify({ schema: 'ltt.agent.workflow' }))
   })
 
   it('debounces autosave and persists only latest value', async () => {

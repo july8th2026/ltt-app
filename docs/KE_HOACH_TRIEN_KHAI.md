@@ -1194,7 +1194,12 @@ system-first, không làm nhiều app song song.
     checkpoint/cost/decision/artifact server-driven. Browser desktop/mobile
     overflow 0, console/network sạch; frontend 15 và backend 34 test PASS;
     full suite 1.952 passed, 8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S7.2 AG-FEAT-001 — execution replay/debug/error branch/template.
+  - [x] H15.S7.2 AG-FEAT-001 — 2026-08-03: owner run history/detail và
+    replay snapshot; clone/export/import template dùng contract sẵn có; cạnh
+    error đi xuyên Canvas→Plan→validator→executor, nhánh không đạt điều kiện
+    được skip tất định và lỗi đã xử lý có audit decision. Browser plan→quote→
+    approve→done→replay PASS, console/network sạch; frontend 17 và backend 54
+    test PASS; full suite 1.954 passed, 8 skipped, 23 subtests; secret scan 0.
   - [ ] H15.S7.3 AG-FEAT-002 — trigger/schedule/version recovery sau gate.
 - [ ] H15.S8–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.

@@ -146,6 +146,11 @@ def test_workflow_snapshot_quote_approve_and_run_again_are_revision_bound(api):
     assert created.status_code == 201
     run = created.json()
     assert run["status"] == "awaiting_approval" and len(run["quote_hash"]) == 64
+    listing = a.get("/agent/api/runs").json()["items"]
+    assert listing[0]["id"] == run["id"] and "plan" not in listing[0]
+    assert a.get(f"/agent/api/runs/{run['id']}").json()["plan"] == run["plan"]
+    assert b.get("/agent/api/runs").json()["items"] == []
+    assert b.get(f"/agent/api/runs/{run['id']}").status_code == 404
     assert b.post(f"/agent/api/runs/{run['id']}/approve", headers={
         "X-CSRF-Token": token_b}, json={"version": run["version"],
         "quote_hash": run["quote_hash"]}).status_code == 404

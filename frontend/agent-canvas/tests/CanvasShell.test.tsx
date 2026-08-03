@@ -66,3 +66,17 @@ it('renders server run checkpoints, costs, decisions and artifacts',()=>{
   expect(inspector).toHaveTextContent('6 credit')
   expect(screen.getByRole('link',{name:'video.mp4'})).toHaveAttribute('href','/artifact')
 })
+
+it('shows run failure context, history selection and snapshot replay',()=>{
+  const onSelect=vi.fn();const onReplay=vi.fn()
+  const run={id:'run-current',version:2,status:'error',estimated:8,actual:3,
+    quote_hash:'hash',plan:{steps:[{id:'step-1'}]},checkpoint:{'step-1':{status:'error',error:'provider timeout'}},
+    decisions:[],artifacts:[]}
+  render(<RunInspector run={run} history={[{id:'run-old',version:1,status:'done',estimated:5,actual:4,
+    created_at:'2026-08-03',finished_at:'2026-08-03'}]} onSelect={onSelect} onReplay={onReplay}/>)
+  expect(screen.getByLabelText('Run inspector')).toHaveTextContent('provider timeout')
+  fireEvent.click(screen.getByRole('button',{name:/Replay từ snapshot này/}))
+  expect(onReplay).toHaveBeenCalledWith(run)
+  fireEvent.click(screen.getByRole('button',{name:/run-old/}))
+  expect(onSelect).toHaveBeenCalledWith('run-old')
+})

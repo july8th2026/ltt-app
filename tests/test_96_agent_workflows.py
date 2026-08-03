@@ -45,6 +45,20 @@ def test_plan_canvas_round_trip_preserves_fanout_join_video_gpu_semantics():
     assert restored == plan
 
 
+def test_error_branch_round_trip_and_invalid_condition_are_guarded():
+    plan = _plan()
+    plan["steps"][2]["after"] = []
+    plan["steps"][2]["after_error"] = ["source"]
+    canvas = workflows.plan_to_canvas(plan)
+    error_edge = next(edge for edge in canvas["edges"]
+                      if (edge.get("data") or {}).get("condition") == "error")
+    assert error_edge["source"] == "source" and error_edge["target"] == "subtitle"
+    assert workflows.canvas_to_plan(canvas) == plan
+    error_edge["data"]["condition"] = "maybe"
+    with pytest.raises(workflows.WorkflowError, match="condition"):
+        workflows.canvas_to_plan(canvas)
+
+
 def test_canvas_rejects_server_fields_size_depth_and_bad_edge():
     canvas = workflows.plan_to_canvas(_plan())
     canvas["nodes"][0]["data"]["price"] = 0

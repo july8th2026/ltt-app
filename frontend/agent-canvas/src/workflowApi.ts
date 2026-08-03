@@ -6,7 +6,8 @@ export type CanvasNode = {
 }
 
 export type CanvasEdge = { id: string; source: string; target: string;
-  sourceHandle?: string | null; targetHandle?: string | null }
+  sourceHandle?: string | null; targetHandle?: string | null;
+  data?: { condition?: 'success'|'error' } }
 
 export type CanvasDocument = {
   version: 1
@@ -38,6 +39,8 @@ export type AgentRun = {
   decisions: Record<string, unknown>[]
   artifacts?: { step_id: string; name: string; url: string }[]
 }
+export type AgentRunSummary=Pick<AgentRun,'id'|'version'|'status'|'estimated'|'actual'>&{
+  created_at:string;finished_at:string}
 
 export class WorkflowConflictError extends Error {}
 
@@ -120,6 +123,28 @@ export async function cancelRun(run: AgentRun, csrfToken: string): Promise<Agent
 export async function runAgain(run: AgentRun, csrfToken: string): Promise<AgentRun> {
   return request(`/agent/api/runs/${run.id}/again`, { method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken }, body: '{}' })
+}
+
+export async function loadRunHistory():Promise<AgentRunSummary[]>{
+  return (await request('/agent/api/runs')).items
+}
+
+export async function loadRun(id:string):Promise<AgentRun>{
+  return request(`/agent/api/runs/${id}`)
+}
+
+export async function cloneWorkflow(workflow:Workflow,csrfToken:string):Promise<Workflow>{
+  return request(`/agent/api/workflows/${workflow.id}/clone`,{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:'{}'})
+}
+
+export async function exportWorkflow(workflow:Workflow){
+  return request(`/agent/api/workflows/${workflow.id}/export`)
+}
+
+export async function importWorkflow(payload:unknown,csrfToken:string):Promise<Workflow>{
+  return request('/agent/api/workflows/import',{method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRF-Token':csrfToken},body:JSON.stringify(payload)})
 }
 
 export function createAutosave<T>(

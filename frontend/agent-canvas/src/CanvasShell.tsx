@@ -8,8 +8,9 @@ import { connectionAllowed, editorReducer, emptyDocument, nextNode,
   type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
 import { ToolNode } from './ToolNode'
-import { approveRun, cancelRun, createRun, loadOrCreateWorkflow, loadPalette, planWorkflow, saveWorkflow,
-  runAgain, tickRun, WorkflowConflictError, validateWorkflow, type AgentRun, type CanvasDocument,
+import { approveRun, cancelRun, cloneWorkflow, createRun, exportWorkflow, importWorkflow,
+  loadOrCreateWorkflow, loadPalette, loadRun, loadRunHistory, planWorkflow, saveWorkflow,
+  runAgain, tickRun, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type Workflow } from './workflowApi'
 
 const nodeTypes = { tool: ToolNode }
@@ -28,6 +29,7 @@ function Editor() {
   const [retryNonce, setRetryNonce] = useState(0)
   const [validationIssues, setValidationIssues] = useState<{ step_id: string; message: string }[]>([])
   const [run, setRun] = useState<AgentRun>()
+  const [runHistory,setRunHistory]=useState<AgentRunSummary[]>([])
   const [runError, setRunError] = useState('')
   const copied = useRef<CanvasNode[]>([])
   const autosaveTimer = useRef<number | undefined>(undefined)
@@ -36,6 +38,8 @@ function Editor() {
   const reactFlow = useReactFlow()
   const byName = useMemo(() => new Map(palette.map(tool => [tool.name, tool])), [palette])
   const selectedNode = state.document.nodes.find(node => node.id === state.selectedId)
+  const selectedEdge = state.document.edges.find(edge=>selectedEdges.includes(edge.id))
+  const refreshRunHistory=useCallback(()=>loadRunHistory().then(setRunHistory).catch(()=>setRunHistory([])),[])
 
   useEffect(() => {
     let active = true
@@ -45,6 +49,7 @@ function Editor() {
     }).catch(() => active && setPhase('error'))
     return () => { active = false }
   }, [csrf])
+  useEffect(()=>{void refreshRunHistory()},[refreshRunHistory])
 
   useEffect(() => {
     const online = () => setOffline(false); const offlineNow = () => setOffline(true)
@@ -55,7 +60,7 @@ function Editor() {
 
   useEffect(() => {
     if (!run || run.status !== 'running') return
-    const timer = window.setTimeout(() => { void tickRun(run, csrf).then(setRun)
+    const timer = window.setTimeout(() => { void tickRun(run, csrf).then(next=>{setRun(next);void refreshRunHistory()})
       .catch(() => setPhase('error')) }, 1200)
     return () => window.clearTimeout(timer)
   }, [run, csrf])
@@ -101,6 +106,11 @@ function Editor() {
       position: { x: node.position.x + 32, y: node.position.y + 32 } }))
     if (clones.length) dispatch({ type: 'graph', nodes: [...state.document.nodes, ...clones], edges: state.document.edges })
   }, [readOnly, selected, state.document])
+  const toggleErrorBranch=()=>{if(!selectedEdge||readOnly)return;const condition=selectedEdge.data?.condition==='error'?'success':'error';dispatch({type:'graph',nodes:state.document.nodes,edges:state.document.edges.map(edge=>edge.id===selectedEdge.id?{...edge,data:{...edge.data,condition}}:edge)})}
+  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(undefined);setCosts({});setValidationIssues([]);setPhase('ready')}
+  const cloneCurrent=async()=>{if(!workflow)return;try{activateWorkflow(await cloneWorkflow(workflow,csrf))}catch{setPhase('error')}}
+  const downloadTemplate=async()=>{if(!workflow)return;try{const payload=await exportWorkflow(workflow);const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`workflow-${workflow.id}.json`;link.click();URL.revokeObjectURL(url)}catch{setPhase('error')}}
+  const importTemplate=async(event:React.ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;try{activateWorkflow(await importWorkflow(JSON.parse(await file.text()),csrf))}catch{setPhase('error')}finally{event.target.value=''}}
   const onSelectionChange = useCallback(({ nodes, edges }: { nodes: { id: string }[]; edges: { id: string }[] }) => {
     const next = nodes.map(node => node.id).sort()
     const nextEdges = edges.map(edge => edge.id).sort()
@@ -132,8 +142,11 @@ function Editor() {
         : costs[node.id] === undefined ? 'draft' : 'validated')),
       __artifacts: (run?.artifacts ?? []).filter(item => item.step_id === node.id) } })),
   [state.document.nodes, state.selectedId, selected, byName, costs, validationIssues, run])
-  const displayEdges = useMemo(() => state.document.edges.map(edge => ({ ...edge,
-    selected: selectedEdges.includes(edge.id) })), [state.document.edges, selectedEdges])
+  const displayEdges = useMemo(() => state.document.edges.map(edge => {
+    const isError = edge.data?.condition === 'error'
+    return { ...edge, selected: selectedEdges.includes(edge.id), label: isError ? 'Lỗi' : undefined,
+      animated: isError, className: isError ? 'error-branch' : undefined }
+  }), [state.document.edges, selectedEdges])
   if (phase === 'loading') return <section className="canvas-state" aria-live="polite">Đang tải workflow…</section>
   if (phase === 'error' && !workflow) return <section className="canvas-state error" role="alert">Không tải được Canvas. <button onClick={() => location.reload()}>Thử lại</button></section>
   const groups = palette.reduce<Record<string, PaletteTool[]>>((result, tool) => {
@@ -158,6 +171,7 @@ function Editor() {
         <button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
         <button disabled={(!selected.length && !selectedEdges.length) || readOnly}
           onClick={() => dispatch(selectedEdges.length ? { type: 'deleteEdges', ids: selectedEdges } : { type: 'delete', ids: selected })}>Xóa</button>
+        {selectedEdges.length===1&&<button disabled={readOnly} onClick={toggleErrorBranch}>Nhánh: {selectedEdge?.data?.condition==='error'?'Lỗi':'Thành công'}</button>}
         <button disabled={readOnly} onClick={() => dispatch({ type: 'layout' })}>Tự xếp</button>
         <button disabled={readOnly || phase === 'saving'} onClick={async () => {
           if (!workflow) return
@@ -170,15 +184,13 @@ function Editor() {
           } catch (error) { setPhase(error instanceof WorkflowConflictError ? 'conflict' : 'error') }
         }}>Kiểm tra & báo giá</button>
         <button disabled={readOnly || !workflow || !Object.keys(costs).length || !!run}
-          onClick={async () => { if (!workflow) return; try { setRun(await createRun(workflow, csrf)) }
+          onClick={async () => { if (!workflow) return; try { setRun(await createRun(workflow, csrf));void refreshRunHistory() }
             catch (error) { setPhase(error instanceof WorkflowConflictError ? 'conflict' : 'error') } }}>Tạo bản chạy</button>
         {run?.status === 'awaiting_approval' && <button onClick={async () => {
-          try { setRunError(''); setRun(await approveRun(run, csrf)) }
+          try { setRunError(''); setRun(await approveRun(run, csrf));void refreshRunHistory() }
           catch (error) { setRunError(error instanceof Error ? error.message : 'Không thể phê duyệt.') }
         }}>Phê duyệt {run.estimated} credit</button>}
-        {run?.status === 'running' && <button onClick={async () => setRun(await cancelRun(run, csrf))}>Hủy chạy</button>}
-        {run && ['done', 'error', 'cancelled'].includes(run.status) && <button onClick={async () =>
-          setRun(await runAgain(run, csrf))}>Chạy lại</button>}
+        {run?.status === 'running' && <button onClick={async () => {setRun(await cancelRun(run, csrf));void refreshRunHistory()}}>Hủy chạy</button>}
         {run && <span className={`run-state ${run.status}`} aria-live="polite">Run: {run.status} · thực tế {run.actual}</span>}
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
       <div className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
@@ -196,7 +208,7 @@ function Editor() {
               state.document.budget_max_credit, csrf); setWorkflow(planned)
               dispatch({ type: 'replace', document: planned.canvas }); setRun(undefined); setCosts({}); setPhase('ready')
             } catch { setPhase('error') }
-          }}>AI dựng Canvas</button></div>
+          }}>AI dựng Canvas</button><div className="template-actions"><button disabled={readOnly||!workflow} onClick={cloneCurrent}>Nhân workflow</button><button disabled={!workflow} onClick={downloadTemplate}>Xuất mẫu</button><label>Nhập mẫu<input type="file" accept="application/json,.json" onChange={importTemplate}/></label></div></div>
         {Object.entries(groups).map(([group, tools]) => <section key={group}><h3>{group}</h3>
         {tools?.map(tool => <button key={tool.name} draggable={!readOnly} disabled={readOnly}
           onDragStart={event => event.dataTransfer.setData('application/ltt-tool', tool.name)} onClick={() => addTool(tool)}
@@ -224,6 +236,8 @@ function Editor() {
           <span>{validationIssues.slice(0, 3).map(issue => issue.message).join(' · ')}</span></div>}
       </main>
       <Inspector node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run}
+        runHistory={runHistory} onSelectRun={id=>void loadRun(id).then(setRun).catch(()=>setRunError('Không tải được run.'))}
+        onReplay={source=>void runAgain(source,csrf).then(next=>{setRun(next);void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể replay.'))}
         readOnly={readOnly} connections={connectionOptions}
         onConnect={(field, value) => { if (!selectedNode) return; const [source, sourceHandle] = value.split('|')
           onConnect({ source, sourceHandle, target: selectedNode.id, targetHandle: field }) }}
