@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-03 — H15.S2.1: Billing UI và lịch sử đơn
+
+- **Mục tiêu:** hoàn thiện money state trước Job Center và Settings.
+- **Hạng mục:** BILL-001 hoàn thành; H15.S2 còn JOBS-001 và SET-001.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+`/nap` hiển thị báo giá trọn gói, credit base/bonus/tổng và CTA có số tiền.
+Route tải tối đa 10 đơn mới nhất theo đúng `user_id`; trang có lịch sử mã đơn,
+thời gian, tiền, credit và trạng thái Việt hóa. Chi tiết đơn có tóm tắt/hạn đơn,
+PayOS external-link rõ và HTMX status dùng live region. Enum nội bộ không còn
+hiện thẳng cho khách.
+
+Thêm `tests/test_106_billing_ui.py`. Không đổi ledger, idempotency, webhook,
+package snapshot hay transaction boundary.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest tests\test_76_billing.py tests\test_106_billing_ui.py -q` | **20 passed**, 1 warning |
+| Full suite lượt đầu | **2 fail**, 1.908 pass: release scanner bắt đúng fixture local tạm; không phải lỗi billing |
+| Hai release gate sau khi xóa fixture tạm | **2 passed** |
+| `python -m pytest -q` lượt xác nhận | **1.910 passed**, 8 skipped, 23 subtests, 1 warning trong 545,59 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+| Playwright SQLite/canary local `/nap` + tạo/xem đơn tại 390/1280 | 200; overflow 0; tạo đơn/history/pending poll PASS; console error 0 |
+
+Browser dùng DB SQLite cô lập và cổng 8102. PayOS không cấu hình, không gọi cổng
+thật và không đọc/ghi credit hoặc đơn production. Fixture script chứa mật khẩu
+local giả đã bị xóa ngay sau kiểm thử; DB/log tạm nằm trong `tmp/`, không commit.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Lịch sử đơn dùng hàm nội tại `liet_ke_don` đã có,
+không xây kho dữ liệu hay API mới.
+
+### Cách lùi lại
+
+Revert commit BILL-001. Không có migration/dữ liệu/provider state cần rollback.
+
+### Việc tiếp theo
+
+H15.S2.2 JOBS-001; chỉ sau khi ticket đó PASS mới mở SET-001.
+
+---
+
 ## 2026-08-03 — H15.S1: Public catalog và Auth
 
 - **Mục tiêu:** hoàn thiện bề mặt vào hệ thống trước khi sửa trang có dữ liệu/tiền.

@@ -12,24 +12,27 @@
     <div class="actions"><a class="btn ghost" href="/nap">&larr; Gói nạp</a></div>
   </div>
 
-  <div class="ui-card" style="max-width:560px;margin-top:14px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+  <div class="ui-card billing-order" style="max-width:620px;margin-top:14px">
+    <p class="eyebrow" style="margin-top:0">Tóm tắt thanh toán</p>
+    <div class="billing-line">
       <span class="dim">Số tiền</span><strong>{{ '{:,}'.format(order.price_vnd) }}đ</strong></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+    <div class="billing-line">
       <span class="dim">Credit nhận</span><strong>{{ '{:,}'.format(order.credits) }} credit
       {%- if order.bonus_percent %} <span style="color:var(--ok);font-weight:400">(+{{ order.bonus_percent }}%)</span>{% endif %}</strong></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+    <div class="billing-line">
       <span class="dim">Mã đơn</span><span class="mono">{{ order.order_code }}</span></div>
+    <div class="billing-line">
+      <span class="dim">Hết hạn</span><span>{{ order.expires_at.strftime('%d/%m/%Y %H:%M') if order.expires_at else '—' }}</span></div>
 
     {% if order.checkout_url %}
       <a class="btn" href="{{ order.checkout_url }}" target="_blank" rel="noopener"
-         style="width:100%;text-align:center">Mở trang thanh toán PayOS (VietQR) &nbsp;→</a>
+         style="width:100%;justify-content:center">Mở PayOS / VietQR <span aria-hidden="true">↗</span></a>
     {% else %}
       <div class="alert alert-warn" style="margin:0">Cổng thanh toán chưa cấu hình — vui lòng
         liên hệ quản trị để được cộng credit thủ công sau khi chuyển khoản.</div>
     {% endif %}
 
-    <div style="margin-top:16px" id="tt"
+    <div style="margin-top:16px" id="tt" role="status" aria-live="polite"
          hx-get="/nap/don/{{ order.id }}/trangthai" hx-trigger="load" hx-swap="outerHTML"></div>
   </div>
 

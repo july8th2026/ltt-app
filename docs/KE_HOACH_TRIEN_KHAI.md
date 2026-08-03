@@ -1127,6 +1127,11 @@ system-first, không làm nhiều app song song.
   announced error/success states. Browser desktop/mobile PASS; 1.907 passed,
   8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S2 Billing/Jobs/Settings — BILL-001, JOBS-001, SET-001.
+  - [x] H15.S2.1 BILL-001 — 2026-08-03: báo giá, đơn, trạng thái và lịch sử 10
+    đơn theo user; browser isolated desktop/mobile PASS; 1.910 passed, 8 skip,
+    23 subtests; secret scan 0.
+  - [ ] H15.S2.2 JOBS-001.
+  - [ ] H15.S2.3 SET-001.
 - [ ] H15.S3 Home authenticated — HOME-001..002.
 - [ ] H15.S4–S12 Từng app theo đúng roadmap; không song song.
 - [ ] H15.S13 Admin/operator.

@@ -25,7 +25,7 @@ def trang_nap(request: Request, user: str = Depends(require_login)):
     from platform_core import billing, credit
     from platform_core.db import get_session
     u = user_hien_tai(request)
-    goi, so_du = [], None
+    goi, so_du, don_gan_day = [], None, []
     gen = get_session(); db = next(gen)
     try:
         goi = billing.goi_active(db)
@@ -33,12 +33,16 @@ def trang_nap(request: Request, user: str = Depends(require_login)):
             db.expunge(g)
         if u is not None:
             so_du = credit.so_du(db, u.id)
+            don_gan_day = billing.liet_ke_don(db, user_id=u.id, limit=10)
+            for order in don_gan_day:
+                db.expunge(order)
     finally:
         try: next(gen)
         except StopIteration: pass
     return templates.TemplateResponse(request, "nap.html", {
         "user": user, "nav": "nap", "goi": goi, "so_du": so_du,
-        "co_user_csdl": u is not None, "csrf_token": issue_csrf_token(request),
+        "don_gan_day": don_gan_day, "co_user_csdl": u is not None,
+        "csrf_token": issue_csrf_token(request),
     })
 
 
