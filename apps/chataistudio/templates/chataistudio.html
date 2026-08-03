@@ -1,134 +1,25 @@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block topbar_title %}<strong>Chat AI Studio</strong>{% endblock %}
 {% block content %}
-  {% if not logged_in %}
-    <div class="alert alert-warn">Trợ lý AI chưa sẵn sàng — quản trị viên cần đăng nhập tài khoản AI.
-      {% if user_is_admin %}<a href="{{ app.route_prefix }}/admin">Cấu hình ngay →</a>{% endif %}</div>
-  {% endif %}
-
-  <div style="display:flex; gap:14px; align-items:flex-start;">
-    <!-- Sidebar hội thoại -->
-    <div class="ui-card" style="width:250px; flex:none; max-height:78vh; overflow:auto;">
-      <form method="post" action="{{ app.route_prefix }}/new" style="margin:0 0 10px;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <select name="model" style="width:100%; margin-bottom:6px;">
-          {% for m in models %}<option value="{{ m.id }}">{{ m.display_name }}</option>{% endfor %}
-          {% if not models %}<option value="gpt-5.6-sol">gpt-5.6-sol</option>{% endif %}
-        </select>
-        <button type="submit" class="btn" style="width:100%;">+ Hội thoại mới</button>
-      </form>
-      {% for c in convs %}
-        <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
-          <a href="{{ app.route_prefix }}?c={{ c.id }}"
-             style="flex:1; padding:6px 8px; border-radius:6px; font-size:13px; text-decoration:none;
-             {% if active and active.id == c.id %}background:var(--accent); color:#fff;{% else %}color:var(--fg);{% endif %}"
-             >{{ c.title }}</a>
-          <form method="post" action="{{ app.route_prefix }}/delete/{{ c.id }}" onsubmit="return confirm('Xoá hội thoại này?')" style="margin:0;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn ghost sm" title="Xoá">✕</button>
-          </form>
-        </div>
-      {% endfor %}
-      {% if not convs %}<p class="dim" style="font-size:12px;">Chưa có hội thoại.</p>{% endif %}
-    </div>
-
-    <!-- Khung chat -->
-    <div class="ui-card" style="flex:1; display:flex; flex-direction:column; min-height:60vh; max-height:78vh;">
-      {% if not active %}
-        <div class="dim" style="margin:auto; text-align:center;">
-          <p>Chọn một hội thoại bên trái, hoặc tạo mới để bắt đầu.</p>
-          <p style="font-size:12px;">Gõ để trò chuyện. Muốn ảnh: yêu cầu "vẽ / tạo ảnh …" ngay trong chat.</p>
-        </div>
-      {% else %}
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <strong>{{ active.title or 'Hội thoại' }}</strong>
-          <span class="dim mono" style="font-size:11px;">{{ active.model }}</span>
-        </div>
-        <div id="transcript" style="flex:1; overflow:auto; padding:4px; display:flex; flex-direction:column; gap:10px;">
-          {% for m in messages %}
-            <div class="msg {{ m.role }}" style="max-width:80%; {% if m.role=='user' %}align-self:flex-end;{% endif %}">
-              <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">{{ 'Bạn' if m.role=='user' else 'AI' }}</div>
-              {% if m.image_key %}
-                <img src="{{ app.route_prefix }}/img/{{ m.image_key }}" style="max-width:100%; border-radius:8px;">
-                {% if m.image_prompt %}<div class="dim" style="font-size:11px;">{{ m.image_prompt }}</div>{% endif %}
-              {% else %}
-                <div class="bubble" style="white-space:pre-wrap; background:var(--panel2); padding:8px 11px; border-radius:10px;">{{ m.content }}</div>
-              {% endif %}
-            </div>
-          {% endfor %}
-        </div>
-        <form id="chatform" style="display:flex; gap:8px; margin-top:10px;">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input type="hidden" name="conv_id" value="{{ active.id }}">
-          <textarea name="message" id="msgbox" rows="2" required placeholder="Nhắn cho AI… (Enter để gửi, Shift+Enter xuống dòng)"
-                    style="flex:1; resize:vertical;"></textarea>
-          <button type="submit" class="btn" id="sendbtn" {% if not logged_in %}disabled{% endif %}>Gửi</button>
-        </form>
-        <div class="dim" id="chatstatus" style="font-size:12px; margin-top:4px;"></div>
+<section class="chat-studio" aria-labelledby="chat-title">
+  <header class="chat-heading"><div><span class="chat-kicker">CREATIVE COPILOT</span><h1 id="chat-title">Chat AI Studio</h1><p>Trò chuyện, phát triển ý tưởng và tạo ảnh trong một phiên riêng tư.</p></div><span class="chat-ready {{'on' if logged_in else 'off'}}">{{'AI sẵn sàng' if logged_in else 'AI chưa kết nối'}}</span></header>
+  {% if not logged_in %}<div class="alert alert-warn" role="alert">Trợ lý AI chưa sẵn sàng — quản trị viên cần đăng nhập tài khoản AI. {% if user_is_admin %}<a href="{{app.route_prefix}}/admin">Cấu hình ngay</a>{% endif %}</div>{% endif %}
+  <div class="chat-layout">
+    <aside class="chat-sidebar" aria-label="Hội thoại">
+      <form class="chat-new" method="post" action="{{app.route_prefix}}/new"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><label>Model<select name="model">{% for m in models %}<option value="{{m.id}}">{{m.display_name}}</option>{% endfor %}{% if not models %}<option value="gpt-5.6-sol">gpt-5.6-sol</option>{% endif %}</select></label><button type="submit" class="btn">＋ Hội thoại mới</button></form>
+      <label class="chat-search">Tìm hội thoại<input id="chat-search" type="search" placeholder="Tên hội thoại…"></label>
+      <nav id="chat-convs" class="chat-convs">{% for c in convs %}<div data-title="{{c.title|lower}}" class="chat-conv {{'active' if active and active.id==c.id}}"><a href="{{app.route_prefix}}?c={{c.id}}"><strong>{{c.title}}</strong><small>{{c.model}}</small></a><form method="post" action="{{app.route_prefix}}/delete/{{c.id}}" data-confirm="Xoá hội thoại này?"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><button type="submit" aria-label="Xoá hội thoại {{c.title}}">×</button></form></div>{% endfor %}{% if not convs %}<p class="chat-empty">Chưa có hội thoại.</p>{% endif %}</nav>
+    </aside>
+    <main class="chat-main">
+      {% if not active %}<div class="chat-welcome"><span aria-hidden="true">✦</span><h2>Bắt đầu một ý tưởng mới</h2><p>Tạo hội thoại, chọn model rồi nhắn cho AI. Yêu cầu “tạo ảnh…” ngay trong chat khi cần hình minh hoạ.</p></div>{% else %}
+      <header class="chat-thread-head"><div><h2>{{active.title or 'Hội thoại'}}</h2><small>{{active.model}}</small></div><span>3 credit/lượt chữ</span></header>
+      <div id="transcript" class="chat-transcript" aria-live="polite" aria-label="Nội dung hội thoại">{% for m in messages %}<article class="chat-msg {{m.role}}"><span>{{'Bạn' if m.role=='user' else 'AI'}}</span>{% if m.image_key %}<figure><img src="{{app.route_prefix}}/img/{{m.image_key}}" alt="Ảnh do AI tạo" loading="lazy">{% if m.image_prompt %}<figcaption>{{m.image_prompt}}</figcaption>{% endif %}</figure>{% else %}<div class="chat-bubble">{{m.content}}</div>{% endif %}</article>{% endfor %}</div>
+      <form id="chatform" class="chat-composer"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><input type="hidden" name="conv_id" value="{{active.id}}"><button type="button" class="chat-attach" disabled aria-label="Đính kèm ảnh chưa khả dụng" title="Đính kèm ảnh sẽ mở ở CHAT-FEAT-001">＋</button><label><span class="sr-only">Tin nhắn</span><textarea name="message" id="msgbox" rows="2" maxlength="20000" required placeholder="Nhắn cho AI… (Enter gửi, Shift+Enter xuống dòng)"></textarea><small><span id="chat-count">0</span>/20.000</small></label><button type="submit" class="btn" id="sendbtn" {% if not logged_in %}disabled{% endif %}>Gửi</button></form><div id="chatstatus" class="chat-status" role="status" aria-live="assertive"></div>
       {% endif %}
-    </div>
+    </main>
   </div>
-
-  {% if active %}
-  <script>
-  (function(){
-    var PREFIX = "{{ app.route_prefix }}";
-    var form = document.getElementById('chatform');
-    var box = document.getElementById('msgbox');
-    var tr = document.getElementById('transcript');
-    var btn = document.getElementById('sendbtn');
-    var status = document.getElementById('chatstatus');
-
-    function esc(s){ var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-    function bubble(role, text){
-      var w=document.createElement('div'); w.className='msg '+role;
-      w.style.maxWidth='80%'; if(role==='user') w.style.alignSelf='flex-end';
-      w.innerHTML='<div style="font-size:11px;color:var(--muted);margin-bottom:2px;">'+(role==='user'?'Bạn':'AI')+'</div>'+
-        '<div class="bubble" style="white-space:pre-wrap;background:var(--panel2);padding:8px 11px;border-radius:10px;">'+esc(text||'')+'</div>';
-      tr.appendChild(w); tr.scrollTop=tr.scrollHeight; return w.querySelector('.bubble');
-    }
-    function imageMsg(url, prompt){
-      var w=document.createElement('div'); w.className='msg assistant'; w.style.maxWidth='80%';
-      w.innerHTML='<div style="font-size:11px;color:var(--muted);margin-bottom:2px;">AI</div>'+
-        '<img src="'+url+'" style="max-width:100%;border-radius:8px;">'+
-        (prompt?'<div class="dim" style="font-size:11px;">'+esc(prompt)+'</div>':'');
-      tr.appendChild(w); tr.scrollTop=tr.scrollHeight;
-    }
-
-    box.addEventListener('keydown', function(e){
-      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); form.requestSubmit(); }
-    });
-
-    form.addEventListener('submit', async function(e){
-      e.preventDefault();
-      var text = box.value.trim(); if(!text) return;
-      btn.disabled=true; status.textContent='Đang gửi…';
-      bubble('user', text); box.value='';
-      var aiBubble = bubble('assistant', ''); var acc='';
-      try {
-        var fd = new FormData(form); fd.set('message', text);
-        var resp = await fetch(PREFIX+'/send', {method:'POST', body:fd});
-        var reader = resp.body.getReader(); var dec=new TextDecoder(); var buf='';
-        while(true){
-          var r = await reader.read(); if(r.done) break;
-          buf += dec.decode(r.value, {stream:true});
-          var parts = buf.split('\n\n'); buf = parts.pop();
-          for(var i=0;i<parts.length;i++){
-            var line = parts[i]; if(!line.startsWith('data: ')) continue;
-            var ev; try{ ev=JSON.parse(line.slice(6)); }catch(_){ continue; }
-            if(ev.type==='delta'){ acc+=ev.text; aiBubble.textContent=acc; tr.scrollTop=tr.scrollHeight; }
-            else if(ev.type==='image'){ imageMsg(ev.url, ev.prompt); }
-            else if(ev.type==='error'){ status.textContent='Lỗi: '+ev.message; }
-            else if(ev.type==='done'){ status.textContent=''; }
-            else if(ev.type==='conv'){ form.conv_id.value = ev.id; }
-          }
-        }
-        if(!acc && !document.querySelector('#transcript img:last-child')) { /* no-op */ }
-      } catch(err){ status.textContent='Lỗi: '+err.message; }
-      btn.disabled=false; box.focus();
-    });
-  })();
-  </script>
-  {% endif %}
+</section>
+{% if active %}<script>(()=>{const P='{{app.route_prefix}}',form=document.getElementById('chatform'),box=document.getElementById('msgbox'),tr=document.getElementById('transcript'),btn=document.getElementById('sendbtn'),status=document.getElementById('chatstatus'),count=document.getElementById('chat-count');const node=(role,text)=>{const a=document.createElement('article'),who=document.createElement('span'),bubble=document.createElement('div');a.className='chat-msg '+role;who.textContent=role==='user'?'Bạn':'AI';bubble.className='chat-bubble';bubble.textContent=text||'';a.append(who,bubble);tr.append(a);tr.scrollTop=tr.scrollHeight;return bubble};const image=(url,prompt)=>{const a=document.createElement('article'),who=document.createElement('span'),fig=document.createElement('figure'),img=document.createElement('img');a.className='chat-msg assistant';who.textContent='AI';img.src=url;img.alt='Ảnh do AI tạo';fig.append(img);if(prompt){const cap=document.createElement('figcaption');cap.textContent=prompt;fig.append(cap)}a.append(who,fig);tr.append(a);tr.scrollTop=tr.scrollHeight};box.addEventListener('input',()=>count.textContent=String(box.value.length));box.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});form.addEventListener('submit',async e=>{e.preventDefault();const text=box.value.trim();if(!text)return;btn.disabled=true;status.textContent='Đang gửi…';node('user',text);box.value='';count.textContent='0';const ai=node('assistant','');let acc='';try{const fd=new FormData(form);fd.set('message',text);const resp=await fetch(P+'/send',{method:'POST',body:fd});if(!resp.ok||!resp.body)throw new Error('HTTP '+resp.status);const reader=resp.body.getReader(),dec=new TextDecoder();let buf='';for(;;){const r=await reader.read();if(r.done)break;buf+=dec.decode(r.value,{stream:true});const parts=buf.split('\n\n');buf=parts.pop();for(const part of parts){if(!part.startsWith('data: '))continue;let ev;try{ev=JSON.parse(part.slice(6))}catch(_){continue}if(ev.type==='delta'){acc+=ev.text;ai.textContent=acc;tr.scrollTop=tr.scrollHeight}else if(ev.type==='image')image(ev.url,ev.prompt);else if(ev.type==='error')status.textContent='Lỗi: '+ev.message;else if(ev.type==='done')status.textContent='';else if(ev.type==='conv')form.conv_id.value=ev.id}}}catch(err){status.textContent='Lỗi: '+err.message}finally{btn.disabled=false;box.focus()}})})();</script>{% endif %}
+<script>(()=>{const q=document.getElementById('chat-search');q?.addEventListener('input',()=>document.querySelectorAll('.chat-conv').forEach(x=>x.hidden=!x.dataset.title.includes(q.value.trim().toLowerCase())));document.querySelectorAll('[data-confirm]').forEach(f=>f.addEventListener('submit',e=>{if(!confirm(f.dataset.confirm))e.preventDefault()}))})();</script>
 {% endblock %}

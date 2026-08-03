@@ -1110,8 +1110,8 @@ Nguồn audit/roadmap/vé:
 `docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
 system-first, không làm nhiều app song song.
 
-Tiến độ H15 hiện tại: **27/38 vé (71,1%)**; **10/16 stage hoàn tất**. H15.S9
-đã PASS đầy đủ; tiếp theo tuần tự là H15.S10 Chat AI Studio.
+Tiến độ H15 hiện tại: **28/38 vé (73,7%)**; **10/16 stage hoàn tất**. H15.S10
+đang thực hiện tuần tự: CHAT-UI đã PASS, tiếp theo CHAT-FEAT.
 
 - [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
   kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
@@ -1241,7 +1241,13 @@ Tiến độ H15 hiện tại: **27/38 vé (71,1%)**; **10/16 stage hoàn tất*
     sạch; regression 41 passed; full suite 1.965 passed, 8 skipped, 23 subtests;
     secret scan 0.
 - [ ] H15.S10 Chat AI Studio — tuần tự CHAT-UI-001 → CHAT-FEAT-001.
-  - [ ] H15.S10.1 CHAT-UI-001 — shell/composer/message/attachment/a11y.
+  - [x] H15.S10.1 CHAT-UI-001 — 2026-08-03: Carbon Red shell/sidebar/search,
+    empty/thread/message/image states và composer responsive; counter 20.000,
+    Enter/Shift+Enter, status live và DOM SSE an toàn. Attachment hiện disabled
+    với capability note, không giả backend. Browser SSE/credit/DB fixture PASS:
+    100→97 credit, message còn sau reload, mobile overflow 0, console/network
+    sạch; regression 15 passed; full suite 1.967 passed, 8 skipped, 23 subtests;
+    secret scan 0.
   - [ ] H15.S10.2 CHAT-FEAT-001 — project/file/search/export/branch.
 - [ ] H15.S11 Kịch bản — tuần tự SCRIPT-UI-001 → SCRIPT-FEAT-001.
   - [ ] H15.S11.1 SCRIPT-UI-001 — workspace/outline/section editor/export.

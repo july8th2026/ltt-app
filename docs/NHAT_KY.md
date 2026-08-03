@@ -14,6 +14,52 @@
 
 ---
 
+## 2026-08-03 — H15.S10.1: Chat AI Studio CHAT-UI-001
+
+- **Mục tiêu:** đồng nhất Chat với Carbon Red và sửa shell/composer/message/a11y
+  mà không giả attachment hoặc thay runtime sidecar/credit đang hoạt động.
+- **Hạng mục:** CHAT-UI-001 hoàn thành; CHAT-FEAT-001 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Thay template inline cũ bằng layout Chat Studio scoped: header capability thật,
+sidebar tạo/tìm/chọn/xóa hội thoại, empty state và thread header. Message text/ảnh,
+composer, counter 20.000 ký tự, Enter/Shift+Enter, status/error live và mobile
+stack có semantics đầy đủ. Luồng SSE phía client dựng node bằng `textContent`,
+không còn `innerHTML`; transcript mới vẫn đi qua route hold/settle và DB cũ.
+
+Nút đính kèm hiện ở trạng thái disabled có accessible name + giải thích sẽ mở ở
+CHAT-FEAT-001 vì route hiện chưa nhận/persist file. Fixture browser thay riêng
+sidecar ngoài tiến trình nhưng giữ thật web route, SSE, credit và PostgreSQL/SQLite
+contract; không gọi production.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest -q tests\\test_83_chataistudio.py tests\\test_118_chataistudio_ui.py tests\\test_104_design_system_contract.py` | **15 passed**, 1 warning trong 3,17 giây |
+| `python -m pytest -q` | **1.967 passed**, 8 skipped, 23 subtests, 1 warning trong 547,82 giây |
+| Playwright fixture 8111 desktop | AI ready; tạo conversation; counter 26; SSE trả “Xin chào từ LTT Studio.”; 2 message; attachment disabled; reload còn dữ liệu; credit 100→97 |
+| Playwright fixture 8111 mobile 390×844 | layout 342 px, composer 320 px, overflow 0 |
+| Console/network phiên 8111 | **0 error, 0 warning**; login/new/send/reload/CSS đều 200/303/304 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.143 file / 161.935 dòng) |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Tiếp tục Q49/Q52: Jinja + JS cho luồng chat
+thường; capability chưa có phải disabled/DEFER thay vì nút giả.
+
+### Cách lùi lại
+
+Revert commit CHAT-UI-001. Không migration; route/SSE/DB/credit/sidecar không đổi,
+chỉ template, CSS scoped, regression và browser fixture thay đổi.
+
+### Việc tiếp theo
+
+H15.S10.2 CHAT-FEAT-001 — audit capability rồi xây project/file/search/export/
+branch có ownership, privacy, cost và rollback gate.
+
 ## 2026-08-03 — H15.S9.2: Tạo ảnh IMG-FEAT-001
 
 - **Mục tiêu:** mở reference/edit thật cho Image Studio sau khi khóa provider,

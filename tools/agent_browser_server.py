@@ -117,6 +117,25 @@ def _thumbnail_handle(params, ctx=None):
 
 thumbnail_jobs.handle = _thumbnail_handle
 
+# Chat fixture: SSE thật qua route/credit/DB, chỉ thay sidecar ngoài tiến trình.
+from apps.chataistudio import routes as chat_routes
+
+chat_routes.sc.account = lambda: {"account": {"email": "browser@test"}}
+chat_routes._models_cached = lambda: [
+    {"id": "gpt-5.6-sol", "display_name": "GPT-5.6 Codex"},
+    {"id": "gpt-5.6-terra", "display_name": "GPT-5.6 Terra"},
+]
+chat_routes.sc.thread_start = lambda *_args, **_kwargs: "browser-chat-thread"
+
+
+async def _chat_turn(*_args, **_kwargs):
+    yield {"method": "item/agentMessage/delta", "payload": {"delta": "Xin chào "}}
+    yield {"method": "item/agentMessage/delta", "payload": {"delta": "từ LTT Studio."}}
+    yield {"method": "tokens", "payload": {"total": 12}}
+
+
+chat_routes.sc.turn_stream = _chat_turn
+
 _judge_counts: dict[str, int] = {}
 
 
