@@ -14,6 +14,49 @@
 
 ---
 
+## 2026-08-03 — H15.S2.2: Job Center
+
+- **Mục tiêu:** biến trang Việc thành trung tâm theo dõi/hành động an toàn.
+- **Hạng mục:** JOBS-001 hoàn thành; H15.S2 còn SET-001.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Thêm filter trạng thái/app, nhãn trạng thái Việt hóa, progressbar/live region và
+mobile table. Detail có cancel owner-only + refund nguyên tử; job lỗi/đã hủy có
+retry tạo job mới và giữ credit lại theo contract. Kết quả lưu trữ được suy ra
+chỉ từ `result` field hậu tố `_key/_keys`, tải qua index mờ owner-only; raw result
+JSON/storage key không còn render cho khách. Filename download được sanitize.
+
+Thêm `tests/test_107_jobs_ui.py` và test hành vi trong `test_69_web_jobs.py` cho
+cancel/refund/retry và chặn user khác hủy job.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted jobs/queue/UI | **28 passed**, 1 warning |
+| `python -m pytest -q` | **1.915 passed**, 8 skipped, 23 subtests, 1 warning trong 546,55 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+| Playwright SQLite/canary local 390 px | queued → cancel → retry ID mới; filter `queued/demo` đúng; overflow 0; label đủ; console/network sạch |
+
+Không dùng dữ liệu production. DB/log browser nằm trong `tmp/`, không commit.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Generic Job Center tái dùng `jobs.cancel`,
+`credit.hoan` và `submit_with_credit`; không tạo hàng đợi/ledger thứ hai.
+
+### Cách lùi lại
+
+Revert commit JOBS-001. Không có migration hoặc dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S2.3 SET-001; sau khi PASS mới đóng H15.S2 và mở Home authenticated.
+
+---
+
 ## 2026-08-03 — H15.S2.1: Billing UI và lịch sử đơn
 
 - **Mục tiêu:** hoàn thiện money state trước Job Center và Settings.

@@ -11,14 +11,47 @@ biến "A không đọc được job của B", có test.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+import copy
+import mimetypes
+import os
 
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
 
 router = APIRouter(tags=["jobs"])
+
+_STATUSES = {"queued", "running", "done", "error", "cancelled"}
+
+
+def _artifacts(result: dict | None) -> list[dict]:
+    """Turn owned result keys into opaque, indexed downloads; never expose params."""
+    found: list[dict] = []
+
+    def visit(value, label="result"):
+        if len(found) >= 20:
+            return
+        if isinstance(value, dict):
+            for name, child in value.items():
+                if isinstance(child, str) and name.endswith("_key") and child:
+                    found.append({"label": name.removesuffix("_key").replace("_", " "), "key": child})
+                elif name.endswith("_keys") and isinstance(child, list):
+                    for index, key in enumerate(child):
+                        if isinstance(key, str) and key and len(found) < 20:
+                            found.append({"label": f"{name.removesuffix('_keys').replace('_', ' ')} {index + 1}", "key": key})
+                elif isinstance(child, (dict, list)):
+                    visit(child, name)
+        elif isinstance(value, list):
+            for child in value:
+                if isinstance(child, (dict, list)):
+                    visit(child, label)
+
+    visit(result or {})
+    return found
 
 
 def _job_cua_user(request: Request, job_id: str):
@@ -42,7 +75,8 @@ def _job_cua_user(request: Request, job_id: str):
 
 
 @router.get("/jobs", response_class=HTMLResponse)
-def danh_sach(request: Request, user: str = Depends(require_login)):
+def danh_sach(request: Request, status: str = Query(""), app: str = Query(""),
+               user: str = Depends(require_login)):
     u = user_hien_tai(request)
     jobs_list = []
     so_du = 0
@@ -53,10 +87,12 @@ def danh_sach(request: Request, user: str = Depends(require_login)):
         from sqlalchemy import select
         gen = get_session(); db = next(gen)
         try:
-            jobs_list = db.execute(
-                select(Job).where(Job.user_id == u.id)
-                .order_by(Job.created_at.desc()).limit(50)
-            ).scalars().all()
+            stmt = select(Job).where(Job.user_id == u.id)
+            if status in _STATUSES:
+                stmt = stmt.where(Job.status == status)
+            if app:
+                stmt = stmt.where(Job.app_slug == app[:64])
+            jobs_list = db.execute(stmt.order_by(Job.created_at.desc()).limit(50)).scalars().all()
             so_du = credit.so_du(db, u.id)
             for j in jobs_list:
                 db.expunge(j)
@@ -67,6 +103,7 @@ def danh_sach(request: Request, user: str = Depends(require_login)):
     return templates.TemplateResponse(request, "jobs.html", {
         "user": user, "nav": "jobs", "jobs": jobs_list,
         "so_du": so_du, "co_user_csdl": u is not None,
+        "status_filter": status if status in _STATUSES else "", "app_filter": app[:64],
     })
 
 
@@ -77,7 +114,8 @@ def chi_tiet(request: Request, job_id: str, user: str = Depends(require_login)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Không tìm thấy job.")
     return templates.TemplateResponse(request, "job_detail.html", {
-        "user": user, "nav": "jobs", "job": job,
+        "user": user, "nav": "jobs", "job": job, "artifacts": _artifacts(job.result),
+        "csrf_token": issue_csrf_token(request),
     })
 
 
@@ -89,3 +127,97 @@ def tien_do(request: Request, job_id: str, user: str = Depends(require_login)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Không tìm thấy job.")
     return templates.TemplateResponse(request, "_job_progress.html", {"job": job})
+
+
+@router.post("/jobs/{job_id}/cancel")
+def huy_job(request: Request, job_id: str, csrf_token: str = Form(""),
+            user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    u = user_hien_tai(request)
+    from platform_core import credit, jobs
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        if job is None or u is None or job.user_id != u.id:
+            raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        if jobs.cancel(db, job):
+            credit.hoan(db, u.id, job.id)
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return RedirectResponse(f"/jobs/{job_id}", status_code=303)
+
+
+@router.post("/jobs/{job_id}/retry")
+def thu_lai_job(request: Request, job_id: str, csrf_token: str = Form(""),
+                user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    u = user_hien_tai(request)
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.models import Job
+    from platform_core.registry import RegistryError
+    gen = get_session(); db = next(gen)
+    try:
+        old = db.get(Job, job_id)
+        if old is None or u is None or old.user_id != u.id:
+            raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        if old.status not in {"error", "cancelled"}:
+            raise HTTPException(status_code=409, detail="Chỉ thử lại job đã lỗi hoặc đã hủy.")
+        params = copy.deepcopy(old.params or {})
+        try:
+            new_job = submit_with_credit(
+                db, user_id=u.id, app_slug=old.app_slug, job_type=old.job_type,
+                params=params, dedupe_key=dedupe_key_for(old.job_type, params),
+                max_attempts=old.max_attempts)
+            db.commit()
+        except (credit.ThieuCreditError, RegistryError, ValueError) as exc:
+            db.rollback()
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        new_id = new_job.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return RedirectResponse(f"/jobs/{new_id}", status_code=303)
+
+
+@router.get("/jobs/{job_id}/artifacts/{index}")
+def tai_artifact(request: Request, job_id: str, index: int,
+                 user: str = Depends(require_login)):
+    _u, job = _job_cua_user(request, job_id)
+    artifacts = _artifacts(job.result if job else None)
+    if job is None or index < 0 or index >= len(artifacts):
+        raise HTTPException(status_code=404, detail="Không tìm thấy tệp kết quả.")
+    key = artifacts[index]["key"]
+    from platform_core.storage import StorageError, get_storage
+    storage = get_storage()
+    try:
+        direct = storage.url_for(key)
+    except Exception:  # noqa: BLE001 - local storage has no direct URL
+        direct = None
+    if direct:
+        return RedirectResponse(direct, status_code=302)
+    try:
+        stream = storage.open(key)
+    except (StorageError, FileNotFoundError):
+        raise HTTPException(status_code=404, detail="Tệp kết quả không còn tồn tại.")
+
+    def chunks():
+        try:
+            while data := stream.read(1024 * 1024):
+                yield data
+        finally:
+            stream.close()
+
+    raw_name = os.path.basename(key)
+    filename = "".join(ch for ch in raw_name if ch.isalnum() or ch in "._-")[:180]
+    filename = filename or f"artifact-{index + 1}"
+    media_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return StreamingResponse(chunks(), media_type=media_type,
+                             headers={"Content-Disposition": f'attachment; filename="{filename}"'})

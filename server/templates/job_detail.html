@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Job {{ job.id[:8] }} — LTT AI Studio{% endblock %}
 {% block content %}
-  <h1>Job {{ job.id[:8] }}</h1>
-  <p class="page-sub">{{ job.job_type }} · tạo lúc {{ job.created_at.strftime('%H:%M %d/%m/%Y') }}</p>
+  <div class="pagehead"><div><h1>Job {{ job.id[:8] }}</h1><p class="page-sub">{{ job.app_slug }} · {{ job.job_type }} · tạo lúc {{ job.created_at.strftime('%H:%M %d/%m/%Y') }}</p></div>
+    <div class="actions">{% if job.status in ('queued','running') %}<form method="post" action="/jobs/{{ job.id }}/cancel"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn danger" type="submit">Hủy việc</button></form>{% elif job.status in ('error','cancelled') %}<form method="post" action="/jobs/{{ job.id }}/retry"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn" type="submit">Thử lại</button></form>{% endif %}</div></div>
   <div class="card">
     {% include "_job_progress.html" %}
   </div>
+  {% if artifacts %}<section class="ui-card job-artifacts"><h2>Tệp kết quả</h2><div class="actions">{% for artifact in artifacts %}<a class="btn ghost" href="/jobs/{{ job.id }}/artifacts/{{ loop.index0 }}">Tải {{ artifact.label }}</a>{% endfor %}</div></section>{% endif %}
   <p class="hint"><a href="/jobs">← Về danh sách việc</a></p>
   <script src="/static/htmx.min.js"></script>
 {% endblock %}
