@@ -1,4 +1,10 @@
-# LTTStudios Website — Production Bundle (Bilingual EN/VI)
+# LTTStudios Website — Legacy Reference Bundle (Bilingual EN/VI)
+
+> **Trạng thái 2026-08-03:** thư mục này là gói static tham chiếu/legacy, không
+> phải source của website production hiện tại. `https://lttstudios.com` đang do
+> WordPress phục vụ bằng pretty URL. Không upload đè gói này lên `public_html`.
+> Hợp đồng ánh xạ đầy đủ nằm ở `route-map.json`; hai callback OAuth `.html` là
+> ngoại lệ phải giữ nguyên URL chính xác.
 
 > Toàn bộ website cho `lttstudios.com` — **song ngữ Anh-Việt full**, mỗi
 > ngôn ngữ là 1 folder riêng biệt với URL riêng (SEO-friendly + zero JS bug).

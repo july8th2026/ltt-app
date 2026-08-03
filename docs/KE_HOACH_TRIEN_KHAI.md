@@ -1288,5 +1288,12 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
   mobile menu và scroll containment. Browser desktop/mobile PASS, overflow 0,
   console/network sạch; regression 10 passed; full suite 1.985 passed,
   8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S14 Website marketing route/deploy.
+- [ ] H15.S14 Website marketing route/deploy — WEB-001 hoàn thành 2026-08-03.
+  - [x] H15.S14.1 WEB-001 — khóa route map đủ 40/40 trang static ↔ WordPress
+    pretty URL; giữ chính xác hai OAuth callback `.html`; `/vi/` fallback về
+    `/` thay vì route sản phẩm sai. Production browser/REST inventory xác nhận;
+    contract 3 passed, static reference 761 passed; full suite 1.988 passed,
+    8 skipped, 23 subtests; secret scan 0.
+  - [ ] H15.S14.2 WEB-002 — đồng nhất brand/content/link App/Support/Legal/Commerce.
+  - [ ] H15.S14.3 WEB-003 — deploy website, crawl/redirect/SEO/a11y production.
 - [ ] H15.S15 DEEP re-audit + full release gate.

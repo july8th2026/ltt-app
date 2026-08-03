@@ -14,6 +14,50 @@
 
 ---
 
+## 2026-08-03 — H15.S14.1: Website WEB-001
+
+- **Mục tiêu:** chốt một route contract giữa gói static trong repo và website
+  WordPress đang chạy trước khi sửa link hoặc deploy.
+- **Hạng mục:** WEB-001 hoàn thành; WEB-002 chưa bắt đầu.
+- **Trạng thái:** contract/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Browser production và WordPress REST API xác nhận `lttstudios.com` là website
+động với pretty URL, không phải gói static trong repo. Tạo `route-map.json` phủ
+đủ 40/40 HTML legacy: canonical/redirect, locale fallback, server error page và
+OAuth callback. Chỉ `/auth/fb-callback.html` và `/legal/callback.html` tiếp tục
+giữ `.html`; cả hai đang trả 200. Ba legal URL legacy đang redirect 301 đúng.
+
+Phát hiện `/vi/` production đang redirect nhầm sang Video Auto Publisher; map
+khóa fallback đúng về `/` cho đến khi có locale WordPress thật. README được gắn
+nhãn legacy rõ ràng để ngăn upload đè `public_html`. Q59 khóa WordPress là nguồn
+chân lý production và route map là hợp đồng tích hợp.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_125_website_route_contract.py` | **3 passed** trong 0,07 giây |
+| `python -X utf8 docs\\lttstudios-website\\tests\\run_tests.py` | **761 passed**, local reference bundle |
+| `python -m pytest -q` | **1.988 passed**, 8 skipped, 23 subtests, 1 warning trong 601,79 giây |
+| Playwright `https://lttstudios.com/` | 200; WordPress ecosystem/pretty URLs render thật |
+| WordPress REST page inventory | 15 published pages; canonical Legal/About/Product/FAQ/Contact xác nhận |
+| Live route probe | canonical pages 200; 2 callback 200; 3 legal legacy 301; `/vi/` sai đích được ghi nhận |
+
+### Quyết định mới
+
+Q59: WordPress là nguồn chân lý website production; static bundle chỉ là legacy
+reference và không được deploy đè; route-map là contract duy nhất.
+
+### Cách lùi lại
+
+Revert commit WEB-001. Không thay WordPress hay production data.
+
+### Việc tiếp theo
+
+H15.S14.2 WEB-002 — đồng nhất brand/content/link App/Support/Legal/Commerce.
+
 ## 2026-08-03 — H15.S13: Admin/operator ADM-001
 
 - **Mục tiêu:** đồng nhất toàn bộ bề mặt vận hành với Carbon Red và làm cho
