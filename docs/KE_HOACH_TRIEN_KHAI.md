@@ -1110,8 +1110,9 @@ Nguồn audit/roadmap/vé:
 `docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
 system-first, không làm nhiều app song song.
 
-Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất**. H15.S11
-đang thực hiện tuần tự: SCRIPT-UI đã PASS, tiếp theo SCRIPT-FEAT.
+Tiến độ H15 hiện tại: **37/38 vé (97,4%)**; **15/16 stage hoàn tất**. Phần
+WordPress production đã tách sang backlog không chặn `DEFERRED-WP-001` theo
+Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release gate.
 
 - [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
   kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
@@ -1288,7 +1289,8 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
   mobile menu và scroll containment. Browser desktop/mobile PASS, overflow 0,
   console/network sạch; regression 10 passed; full suite 1.985 passed,
   8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S14 Website marketing route/deploy — WEB-001 hoàn thành 2026-08-03.
+- [x] H15.S14 Website marketing route/deploy — phần control plane hoàn thành;
+  phần WordPress được chủ sản phẩm chủ động hoãn sang `DEFERRED-WP-001` theo Q60.
   - [x] H15.S14.1 WEB-001 — khóa route map đủ 40/40 trang static ↔ WordPress
     pretty URL; giữ chính xác hai OAuth callback `.html`; `/vi/` fallback về
     `/` thay vì route sản phẩm sai. Production browser/REST inventory xác nhận;
@@ -1300,15 +1302,18 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     cho deploy. Browser desktop/mobile overflow 0, console/network sạch;
     regression 36 passed; full suite 1.991 passed, 8 skipped, 23 subtests;
     secret scan 0.
-  - [ ] H15.S14.3 WEB-003 — control plane đã deploy 2026-08-03; WordPress chưa
-    có quyền ghi nên chưa nghiệm thu.
+  - [x] H15.S14.3 WEB-003 — 2026-08-04: nghiệm thu phạm vi control plane và
+    bàn giao gói WordPress; activation production tách sang backlog Q60.
     - [x] Build release 1.149 file/173,2 MB, secret 0; backup PostgreSQL; deploy
       `C:\LTTPlatform`; migration/health/services/Cloudflare PASS; production
       catalog/login desktop-mobile overflow 0, console/network sạch.
     - [x] Plugin WordPress redirect/CTA data-free + rollback và crawler gate;
       contract 3 passed; full suite 1.994 passed, 8 skipped, 23 subtests.
-    - [ ] Upload/activate plugin trên WordPress rồi chạy crawler về **0 failure**.
-      Hiện crawler: 29 alias fail; homepage còn WP login và thiếu app CTA. Máy
-      không có browser session, WordPress credential/API token hay Cloudflare
-      zone token; không được tuyên bố deploy website xong.
+    - [x] Ghi rõ trạng thái chưa deploy WordPress, rollback và điều kiện mở lại;
+      không coi phần bị hoãn là đã hoàn tất production.
+- [ ] `DEFERRED-WP-001` (Q60, không chặn H15.S15) — khi có quyền ghi WordPress:
+  backup; build/upload/activate plugin; chạy `python tools\audit_public_web.py`
+  về **0 failure**; kiểm Playwright desktop/mobile, console, network, overflow,
+  CTA và hai OAuth callback. Hiện baseline còn 29 alias fail; homepage còn
+  WordPress login và thiếu app CTA.
 - [ ] H15.S15 DEEP re-audit + full release gate.

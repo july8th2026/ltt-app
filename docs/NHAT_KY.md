@@ -14,6 +14,33 @@
 
 ---
 
+## 2026-08-04 — Hoãn WordPress plugin thành backlog không chặn
+
+- **Mục tiêu:** lưu chính xác phần plugin để hoàn thiện sau theo yêu cầu chủ
+  sản phẩm, không làm mất đầu việc và không báo nhầm đã deploy.
+- **Hạng mục:** Q60 / `DEFERRED-WP-001`.
+- **Trạng thái:** source và hướng dẫn bàn giao đã sẵn; production WordPress
+  **chưa upload/kích hoạt**; H15.S15 được phép tiếp tục.
+
+### Đã làm
+
+Ghi Q60, tách activation WordPress khỏi WEB-003 và lưu checklist mở lại trong
+`deploy/wordpress/README.md`. Checklist khóa đủ backup, quyền truy cập ngoài
+repo, crawler 0 failure, Playwright desktop/mobile và bảo toàn OAuth callback.
+Không thay đổi code runtime, dữ liệu hoặc production trong hạng mục này.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_127_wordpress_deploy_contract.py` | **3 passed** trong 0,06 giây |
+| `python -m pytest -q` | **1.994 passed**, 8 skipped, 23 subtests, 1 warning trong 578,89 giây |
+| `python tools\scan_source_secrets.py` | **0 finding — PASS** |
+
+### Quyết định mới
+
+Q60: hoãn WordPress plugin thành backlog không chặn release control plane.
+
 ## 2026-08-03 — H15.S14.3: WEB-003 deploy một phần, WordPress bị chặn quyền
 
 - **Mục tiêu:** deploy control plane và website marketing, sau đó crawl toàn bộ
