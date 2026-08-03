@@ -42,6 +42,24 @@ def _register(preset: FullStylePreset) -> FullStylePreset:
     return preset
 
 
+# LTT Studios brand template — reusable, deterministic and render-parity safe.
+_register(FullStylePreset(
+    id="ltt_brand",
+    label="LTT Brand",
+    description="Trắng đậm, nhấn đỏ Carbon Red — đồng nhất nhận diện LTT Studios",
+    config=SubtitleStyleConfig(
+        font_family="Montserrat", font_size=58, font_color="#FFFFFF",
+        font_fallback="Montserrat,Arial,sans-serif", outline_color="#08090A",
+        outline_width=3, shadow_color="#08090A", shadow_offset=2, bold=True,
+        italic=False, alignment=2, margin_v=54, margin_h=34, line_spacing=2,
+        bg_box=True, bg_color="#08090A", bg_opacity=0.72, bg_padding=12,
+        safe_area_percent=5, max_chars_per_line=34, max_lines=2,
+    ),
+    highlight_mode="word",
+    highlight_color="#EF3731",
+))
+
+
 # ── 1. TikTok Bold ───────────────────────────────────────────────────────────
 _register(FullStylePreset(
     id="tiktok_bold",

@@ -454,8 +454,14 @@ def test_studio_style_api_returns_typed_presets(studio_api):
     response = client.get("/autosubvideo/api/styles")
     assert response.status_code == 200
     items = response.json()["items"]
-    assert len(items) == 8
+    assert len(items) == 9
     assert all(item["config"]["font_color"].startswith("#") for item in items)
+    brand = next(item for item in items if item["id"] == "ltt_brand")
+    assert brand["highlight_color"] == "#EF3731"
+    assert brand["config"]["max_chars_per_line"] == 34
+    from apps.autosubvideo.schemas import StudioProjectV1
+    with pytest.raises(Exception, match="speaker"):
+        StudioProjectV1.model_validate({"speakers": {"S1": "x" * 81}})
 
 
 def test_auxiliary_assignment_and_translation_are_bounded():

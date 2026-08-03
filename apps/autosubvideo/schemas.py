@@ -253,7 +253,7 @@ class StudioProjectV1(BaseModel):
     active_step: Literal["upload", "transcript", "style", "render"] = "upload"
     source: StudioSource = Field(default_factory=StudioSource)
     tracks: list[StudioTrack] = Field(default_factory=list, max_length=32)
-    speakers: dict[str, str] = Field(default_factory=dict)
+    speakers: dict[str, str] = Field(default_factory=dict, max_length=100)
     style: StudioStyle = Field(default_factory=StudioStyle)
     output: StudioOutput = Field(default_factory=StudioOutput)
 
@@ -268,6 +268,9 @@ class StudioProjectV1(BaseModel):
         cue_ids = [cue.id for track in self.tracks for cue in track.cues]
         if len(cue_ids) != len(set(cue_ids)):
             raise ValueError("cue id phải duy nhất toàn project")
+        if any(not key or len(key) > 80 or len(value.strip()) > 80
+               for key, value in self.speakers.items()):
+            raise ValueError("speaker id/tên hiển thị không hợp lệ")
         return self
 
 

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { friendlyStudioError, StudioShell } from '../src/StudioShell'
+import { auditTranscript } from '../src/TranscriptQuality'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -8,6 +9,16 @@ it('localizes an offline autosave failure without claiming the draft was saved',
   expect(friendlyStudioError(new TypeError('Failed to fetch')))
     .toBe('Mất kết nối — thay đổi chưa được lưu.')
   expect(friendlyStudioError(new Error('Máy chủ từ chối'))).toBe('Máy chủ từ chối')
+})
+
+it('audits transcript timing, reading speed and line budget deterministically', () => {
+  const track={id:'t',kind:'source' as const,language:'vi',name:'VI',visible:true,
+    z_index:0,style_id:'default',cues:[
+      {id:'a',start:0,end:.2,text:'',speaker:'',words:[]},
+      {id:'b',start:.1,end:1,text:'Một nội dung rất dài để vượt tốc độ đọc',speaker:'S1',words:[]}]}
+  const report=auditTranscript(track,10,2)
+  expect(report.score).toBe(55)
+  expect(report.issues.map(item=>item.code)).toEqual(['empty','short','overlap','speed','length'])
 })
 
 it('renders real empty project state without fake media or jobs', async () => {

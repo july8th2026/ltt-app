@@ -14,6 +14,60 @@
 
 ---
 
+## 2026-08-03 — H15.S6.2: Auto Sub AS-FEAT-001
+
+- **Mục tiêu:** bổ sung brand template, transcript QA và speaker workflow bằng
+  contract nội tại, không tạo provider/job mới và không phá render parity.
+- **Hạng mục:** AS-FEAT-001 và H15.S6 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Thêm preset server-driven `ltt_brand`: Montserrat trắng, Carbon Red word highlight,
+nền/safe area/line budget xác định đầy đủ bằng `SubtitleStyleConfig`, nên dùng cùng
+renderer ASS hiện có thay vì CSS preview-only. API style nay có 9 preset typed.
+
+Thêm transcript QA tất định trên selected track: phát hiện cue trống, cue chồng
+timing, dưới 0,5 giây, tốc độ đọc trên 20 ký tự/giây và vượt line budget đang chọn;
+điểm trừ phân biệt error/warning, từng issue dẫn tới đúng cue để Dev sửa. QA không
+tự sửa/xóa transcript và không gửi nội dung sang provider.
+
+Speaker workflow lấy ID ẩn danh đã có từ Pyannote/cue, cho đặt alias tối đa 80 ký
+tự trong `payload.speakers`, autosave theo revision và hiển thị alias trên cue list.
+Schema giới hạn tối đa 100 speaker và từ chối key/tên sai; không suy đoán danh tính.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `npm test` (Auto Sub) | **11 passed** |
+| `npm run build` | typecheck + Vite production build **PASS** |
+| `python -m pytest -q tests\\test_103_autosub_projects.py tests\\test_81_autosubvideo.py` | **35 passed**, 1 warning |
+| `python -m pytest -q` | **1.952 passed**, 8 skipped, 23 subtests, 1 warning trong 572,85 giây |
+| Playwright canary 8103 desktop/mobile | QA 60/100 từ corpus lỗi; alias Host/Khách mời autosave và còn sau reload; overflow 0; control dưới 44 px = 0; console/request fail 0 |
+| Style API contract từ process mới | 9 preset; `ltt_brand` màu `#EF3731`, line budget 34 — PASS |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.328 dòng) |
+
+Canary 8103 đang chạy module registry cũ nên danh sách template của process đó chưa
+hot-reload; không dùng danh sách 8 preset cũ làm PASS. Contract API/TestClient từ
+source mới và frontend production build là bằng chứng cho preset mới; rollout cần
+process restart theo release gate bình thường. Dữ liệu browser chỉ nằm ở DB cô lập.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Speaker alias là metadata project, không phải nhận
+dạng danh tính; tiếp tục đúng Q50. Brand template dùng renderer hiện có nên không có
+provider/cost/privacy mới.
+
+### Cách lùi lại
+
+Revert preset/component/schema additive và asset build. Project cũ không có alias
+vẫn hợp lệ; project đã có alias vẫn là payload v1 hợp lệ trước khi revert UI.
+
+### Việc tiếp theo
+
+H15.S7 Agent/Canvas: AG-UI-001 trước, rồi AG-FEAT-001/002 tuần tự.
+
 ## 2026-08-03 — H15.S6.1: Auto Sub AS-UI-001
 
 - **Mục tiêu:** đồng nhất Auto Sub với Carbon Red và sửa accessibility/capability
