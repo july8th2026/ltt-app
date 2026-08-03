@@ -50,6 +50,8 @@ MANIFEST = AppManifest(
             "min_clip_duration_sec": {"type": "number", "min": 5, "max": 180, "default": 15},
             "max_clip_duration_sec": {"type": "number", "min": 5, "max": 300, "default": 60},
             "duration_s": {"type": "number", "min": 0},
+            "brand_preset": {"type": "enum", "values": ["auto", "ltt_red", "creator_clean", "cinematic"], "default": "auto"},
+            "platforms": {"type": "json", "default": ["tiktok", "youtube_shorts", "instagram_reels"]},
         },
         # Handler trả metadata từng clip ({video_key,title,score,duration_s}).
         returns={"clips": "json"},

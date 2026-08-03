@@ -9,6 +9,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
+from starlette.background import BackgroundTask
 
 from apps.taoclipngan import cost
 from apps.taoclipngan.manifest import MANIFEST
@@ -33,11 +34,14 @@ _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
 
 
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
+    from apps.taoclipngan.features import BRAND_PRESETS, PLATFORMS
     return templates.TemplateResponse(request, "taoclipngan.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "tiers": _TIERS, "aspects": _ASPECTS, "genres": _GENRES, "langs": _LANGS,
         "jobs": _jobs_cua_toi(request), "library": _source_library(request),
+        "brand_presets": [(key, value["label"]) for key, value in BRAND_PRESETS.items()],
+        "platforms": PLATFORMS,
         "error": error,
     }, status_code=status_code)
 
@@ -47,7 +51,7 @@ def _jobs_cua_toi(request: Request):
     if u is None:
         return []
     from platform_core.db import get_session
-    from platform_core.models import Job
+    from platform_core.models import APP_PROJECT_ACTIVE, AppProject, Job
     from sqlalchemy import select
     gen = get_session(); db = next(gen)
     try:
@@ -55,16 +59,31 @@ def _jobs_cua_toi(request: Request):
             select(Job).where(Job.user_id == u.id, Job.app_slug == MANIFEST.slug)
             .order_by(Job.created_at.desc()).limit(8)
         ).scalars().all()
+        projects = db.execute(select(AppProject).where(
+            AppProject.user_id == u.id, AppProject.app_slug == MANIFEST.slug,
+            AppProject.status == APP_PROJECT_ACTIVE
+        ).order_by(AppProject.updated_at.desc()).limit(100)).scalars().all()
+        project_by_job = {}
+        for project in projects:
+            source_job_id = str((project.payload or {}).get("source_job_id") or "")
+            if source_job_id and source_job_id not in project_by_job:
+                project_by_job[source_job_id] = project
         out = []
         for j in rows:
             r = j.result or {}
+            project = project_by_job.get(j.id)
+            payload = (project.payload or {}) if project else {}
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
                         "progress_msg": j.progress_msg, "error": j.error,
-                        "clips": r.get("clips") or [],
+                        "clips": payload.get("clips") or r.get("clips") or [],
                         "source_name": str((j.params or {}).get("source_filename") or
                                            (j.params or {}).get("video_key") or "Video")[:160],
                         "tier": str((j.params or {}).get("tier") or ""),
-                        "aspect_ratio": str((j.params or {}).get("aspect_ratio") or "")})
+                        "aspect_ratio": str((j.params or {}).get("aspect_ratio") or ""),
+                        "brand_preset": str((j.params or {}).get("brand_preset") or "auto"),
+                        "platforms": payload.get("platforms") or r.get("platforms") or [],
+                        "project": ({"id": project.id, "revision": project.revision}
+                                    if project else None)})
         return out
     finally:
         try: next(gen)
@@ -164,6 +183,7 @@ async def queue(request: Request, csrf_token: str = Form(...),
                 target_clip_count: str = Form("3"),
                 min_clip_duration_sec: str = Form("15"),
                 max_clip_duration_sec: str = Form("60"), ajax: str = Form(""),
+                brand_preset: str = Form("auto"), platforms: list[str] = Form([]),
                 video: UploadFile = File(default=None),
                 user: str = Depends(require_login)):
     from platform_core import credit
@@ -217,13 +237,16 @@ async def queue(request: Request, csrf_token: str = Form(...),
     except (TypeError, ValueError):
         dur, n, mn, mx = 0.0, 3, 15.0, 60.0
 
+    from apps.taoclipngan.features import clean_brand, clean_platforms
     params = {"video_key": vkey, "duration_s": dur, "tier": tier, "genre": genre,
               "aspect_ratio": aspect_ratio, "language": language,
               "target_clip_count": n, "min_clip_duration_sec": mn,
               "max_clip_duration_sec": mx, "owner_id": u.id,
               "source_filename": (source_filename or
                                   getattr(video, "filename", "") or
-                                  vkey.rsplit("/", 1)[-1])[:160]}
+                                  vkey.rsplit("/", 1)[-1])[:160],
+              "brand_preset": clean_brand(brand_preset),
+              "platforms": clean_platforms(platforms)}
     gen = get_session(); db = next(gen)
     last_id = None
     try:
@@ -243,6 +266,115 @@ async def queue(request: Request, csrf_token: str = Form(...),
     if ajax:
         return JSONResponse({"ok": True, "redirect": f"/jobs/{last_id}"})
     return RedirectResponse(f"/jobs/{last_id}", status_code=303)
+
+
+def _owned_done_job(db, user_id: str, job_id: str):
+    from platform_core.models import Job
+    row = db.get(Job, job_id)
+    if (row is None or row.user_id != user_id or row.app_slug != MANIFEST.slug or
+            row.status != "done"):
+        return None
+    return row
+
+
+@router.post("/package/{job_id}/save")
+def save_package(request: Request, job_id: str, csrf_token: str = Form(...),
+                 package_json: str = Form("{}"), project_id: str = Form(""),
+                 revision: int = Form(0), user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        return JSONResponse({"ok": False, "error": "Phiên hết hạn."}, status_code=400)
+    import json
+    try:
+        draft = json.loads(package_json)
+        if not isinstance(draft, dict):
+            raise ValueError
+    except (TypeError, ValueError):
+        return JSONResponse({"ok": False, "error": "Package không hợp lệ."}, status_code=400)
+    from apps.taoclipngan.features import package_payload
+    from platform_core import app_projects
+    from platform_core.db import get_session
+    u = user_hien_tai(request); gen = get_session(); db = next(gen)
+    try:
+        job = _owned_done_job(db, u.id, job_id) if u else None
+        if job is None:
+            return JSONResponse({"ok": False, "error": "Không tìm thấy job."}, status_code=404)
+        payload = package_payload(job_id=job_id,
+            original_clips=list((job.result or {}).get("clips") or []),
+            drafts=list(draft.get("clips") or []), platforms=draft.get("platforms") or [],
+            brand_preset=str((job.params or {}).get("brand_preset") or "auto"))
+        try:
+            if project_id:
+                current = app_projects.get_owned(db, project_id, u.id, MANIFEST.slug)
+                if (current.payload or {}).get("source_job_id") != job_id:
+                    raise app_projects.ProjectNotFound("Không tìm thấy package.")
+                row = app_projects.save(db, project_id=project_id, user_id=u.id,
+                    app_slug=MANIFEST.slug, revision=revision,
+                    name=f"Package {str((job.params or {}).get('source_filename') or job.id)[:120]}",
+                    schema_version=1, payload=payload)
+            else:
+                row = app_projects.create(db, user_id=u.id, app_slug=MANIFEST.slug,
+                    name=f"Package {str((job.params or {}).get('source_filename') or job.id)[:120]}",
+                    schema_version=1, payload=payload)
+            db.commit()
+        except app_projects.ProjectError as exc:
+            db.rollback()
+            return JSONResponse({"ok": False, "error": str(exc)}, status_code=409)
+        return JSONResponse({"ok": True, "project_id": row.id,
+                             "revision": row.revision})
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.get("/package/{job_id}.zip")
+def download_package(request: Request, job_id: str, user: str = Depends(require_login)):
+    import json
+    import shutil
+    import tempfile
+    import zipfile
+    from apps.taoclipngan.features import package_payload, srt_text
+    from platform_core.db import get_session
+    from platform_core.models import APP_PROJECT_ACTIVE, AppProject
+    from platform_core.storage import get_storage
+    from sqlalchemy import select
+    u = user_hien_tai(request); gen = get_session(); db = next(gen)
+    try:
+        job = _owned_done_job(db, u.id, job_id) if u else None
+        if job is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy package.")
+        project = db.execute(select(AppProject).where(
+            AppProject.user_id == u.id, AppProject.app_slug == MANIFEST.slug,
+            AppProject.status == APP_PROJECT_ACTIVE
+        ).order_by(AppProject.updated_at.desc()).limit(100)).scalars().all()
+        saved = next((row for row in project
+                      if (row.payload or {}).get("source_job_id") == job_id), None)
+        payload = (saved.payload or {}) if saved else package_payload(
+            job_id=job_id, original_clips=list((job.result or {}).get("clips") or []),
+            drafts=[], platforms=(job.result or {}).get("platforms") or [],
+            brand_preset=str((job.params or {}).get("brand_preset") or "auto"))
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    spool = tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024)
+    storage = get_storage()
+    with zipfile.ZipFile(spool, "w") as archive:
+        for index, clip in enumerate(payload.get("clips") or [], 1):
+            key = str(clip.get("video_key") or "")
+            if not key.startswith(f"taoclipngan/{u.id}/"):
+                continue
+            info = zipfile.ZipInfo(f"clips/clip_{index:02d}.mp4")
+            info.compress_type = zipfile.ZIP_STORED
+            with storage.open(key) as source, archive.open(info, "w", force_zip64=True) as target:
+                shutil.copyfileobj(source, target, length=1024 * 1024)
+            archive.writestr(f"captions/clip_{index:02d}.srt",
+                             srt_text(list(clip.get("transcript") or [])))
+        archive.writestr("package.json", json.dumps(payload, ensure_ascii=False, indent=2))
+        archive.writestr("README.txt", "LTT Clip social package\nVideo dùng chung cho TikTok, YouTube Shorts và Instagram Reels; metadata theo package.json.\n")
+    spool.seek(0)
+    headers = {"Content-Disposition": f'attachment; filename="ltt-clips-{job_id[:8]}.zip"',
+               "X-Content-Type-Options": "nosniff"}
+    return StreamingResponse(spool, media_type="application/zip", headers=headers,
+                             background=BackgroundTask(spool.close))
 
 
 @router.get("/v/{key:path}")

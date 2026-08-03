@@ -1269,14 +1269,20 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     revision/reload/mobile PASS, credit 100→97, overflow 0, console/network sạch;
     regression 13 passed; full suite 1.976 passed, 8 skipped, 23 subtests;
     secret scan 0.
-- [ ] H15.S12 Clip ngắn — tuần tự CLIP-UI-001 → CLIP-FEAT-001.
+- [x] H15.S12 Clip ngắn — tuần tự CLIP-UI-001 → CLIP-FEAT-001 hoàn thành;
+  1.983 passed, 8 skipped, 23 subtests; secret scan 0.
   - [x] H15.S12.1 CLIP-UI-001 — 2026-08-03: source library owner-scoped từ
     Storage/Job, timed transcript và local range editor trung thực, compare tối
     đa hai output thật; Carbon Red responsive/status/a11y. Browser file MP4 thật
     tạo 2 clip, quote/settle 12 credit, mobile overflow 0, console/network sạch;
     regression 11 passed; full suite 1.980 passed, 8 skipped, 23 subtests;
     secret scan 0.
-  - [ ] H15.S12.2 CLIP-FEAT-001 — score rationale/brand/multi-platform package.
+  - [x] H15.S12.2 CLIP-FEAT-001 — 2026-08-03: score rationale/breakdown
+    từ engine có disclaimer; bốn brand preset nối render thật; AppProject lưu
+    package/revision owner-scoped và ZIP video+SRT+metadata cho TikTok/Shorts/
+    Reels không render/phí lặp. Browser file MP4 thật, revision 1→2, reload và
+    download ZIP PASS; mobile overflow 0, console/network sạch; regression
+    14 passed; full suite 1.983 passed, 8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.

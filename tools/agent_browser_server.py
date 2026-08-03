@@ -126,6 +126,7 @@ thumbnail_jobs.handle = _thumbnail_handle
 
 def _clip_handle(params, ctx=None):
     from apps.taoclipngan.cost import uoc_luong_credit
+    from apps.taoclipngan.features import clean_platforms, platform_copy
     from platform_core.storage import get_storage
     storage = get_storage(); source_key = str(params["video_key"])
     owner_id = str(params.get("owner_id") or "browser")
@@ -137,15 +138,29 @@ def _clip_handle(params, ctx=None):
         with storage.open(source_key) as stream:
             storage.put(key, stream, content_type="video/mp4")
         start = index * 4.0; end = start + 4.0
-        clips.append({"video_key": key, "title": f"Highlight {index + 1}",
+        title = f"Highlight {index + 1}"
+        clips.append({"video_key": key, "title": title,
                       "score": round(.91 - index * .07, 2), "duration_s": 4,
                       "source_start": start, "source_end": end,
                       "transcript": [{"start": start, "end": end,
                                       "text": f"Transcript highlight {index + 1}",
-                                      "speaker": "Speaker 1"}]})
+                                      "speaker": "Speaker 1"}],
+                      "score_rationale": {"overall": round(.91 - index * .07, 2),
+                          "why_selected": "Hook rõ và nội dung trọn ý.",
+                          "intent": "insight", "risk_level": "low", "risk_flags": [],
+                          "dimensions": {"hook_strength": .9, "pacing": .82,
+                                         "completeness": .86, "visual_quality": .8,
+                                         "audio_quality": .84}},
+                      "seo_description": "Highlight kiểm thử từ LTT Clip Studio.",
+                      "hashtags": ["LTT", "Shorts"],
+                      "platform_copy": platform_copy(title,
+                          "Highlight kiểm thử từ LTT Clip Studio.", ["LTT", "Shorts"],
+                          params.get("platforms") or [])})
     if ctx: ctx.progress(100, "xong")
     return {"clips": clips, "credit_cost": uoc_luong_credit(
-        float(params.get("duration_s") or 0), str(params.get("tier") or "high_quality"), count)}
+        float(params.get("duration_s") or 0), str(params.get("tier") or "high_quality"), count),
+        "brand_preset": str(params.get("brand_preset") or "auto"),
+        "platforms": clean_platforms(params.get("platforms") or [])}
 
 
 clip_jobs.handle = _clip_handle

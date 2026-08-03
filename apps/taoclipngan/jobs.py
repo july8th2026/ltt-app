@@ -86,6 +86,11 @@ def handle(params: dict, ctx=None) -> dict:
     except (TypeError, ValueError):
         min_dur, max_dur, target_n = 15.0, 60.0, 3
     target_n = max(1, min(target_n, 10))
+    from apps.taoclipngan.features import (brand_overrides, clean_brand,
+                                           clean_platforms, platform_copy,
+                                           score_rationale)
+    brand_preset = clean_brand(str(params.get("brand_preset") or "auto"))
+    platforms = clean_platforms(params.get("platforms") or [])
     owner_id = str(params.get("owner_id", "")) or "unknown"
     job_id = getattr(ctx, "job_id", "") or "adhoc"
 
@@ -113,7 +118,9 @@ def handle(params: dict, ctx=None) -> dict:
         if storage.exists(manifest_key):
             data = json.loads(storage.open(manifest_key).read().decode("utf-8"))
             return {"clips": data.get("clips", []), "credit_cost": data.get("credit_cost")
-                    or cost.uoc_luong_credit(true_dur, tier, len(data.get("clips", [])))}
+                    or cost.uoc_luong_credit(true_dur, tier, len(data.get("clips", []))),
+                    "brand_preset": data.get("brand_preset", brand_preset),
+                    "platforms": data.get("platforms", platforms)}
 
         # ── 1. PHÂN TÍCH (whisper + scene + yolo + audio…) ────────────────────
         from cutclipshort.core.analysis_runner import run_full_analysis
@@ -143,8 +150,9 @@ def handle(params: dict, ctx=None) -> dict:
             min_clip_duration_sec=min_dur, max_clip_duration_sec=max_dur,
             target_clip_count=max(target_n, 5), platform="tiktok",
             aspect_ratio=AspectRatio[aspect_enum], target_width=tw, target_height=th)
-        candidates, edit_plan = run_editorial(analysis=analysis, constraints=constraints,
-                                              genre=genre, tier_name=tier)
+        candidates, edit_plan = run_editorial(
+            analysis=analysis, constraints=constraints, genre=genre,
+            user_overrides=brand_overrides(brand_preset), tier_name=tier)
 
         # ── 3. RENDER N clip ──────────────────────────────────────────────────
         from cutclipshort.render.segment_renderer import render_segment
@@ -181,11 +189,18 @@ def handle(params: dict, ctx=None) -> dict:
                          "text": str(getattr(seg, "text", ""))[:1000],
                          "speaker": str(getattr(seg, "speaker", "") or "")[:80]}
                         for seg in (getattr(clip_spec, "caption_segments", None) or [])]
+            description = (getattr(cand, "seo_description", "") or "") if cand else ""
+            hashtags = list(getattr(cand, "suggested_hashtags", []) or []) if cand else []
             clips_out.append({"video_key": ckey, "title": title[:120], "score": score,
                               "duration_s": dur,
                               "source_start": round(float(getattr(rng, "start", 0)), 3) if rng else 0,
                               "source_end": round(float(getattr(rng, "end", 0)), 3) if rng else 0,
-                              "transcript": captions})
+                              "transcript": captions,
+                              "score_rationale": score_rationale(cand) if cand else {},
+                              "seo_description": str(description)[:2000],
+                              "hashtags": [str(x)[:60] for x in hashtags[:12]],
+                              "platform_copy": platform_copy(title, description,
+                                                               hashtags, platforms)})
 
         if not clips_out:
             raise RuntimeError("Không dựng được clip nào từ video (thử video khác/tier khác).")
@@ -194,12 +209,15 @@ def handle(params: dict, ctx=None) -> dict:
         # Lưu manifest kết quả (idempotent resume).
         import io as _io
         storage.put(manifest_key,
-                    _io.BytesIO(json.dumps({"clips": clips_out, "credit_cost": credit_cost},
+                    _io.BytesIO(json.dumps({"clips": clips_out, "credit_cost": credit_cost,
+                                           "brand_preset": brand_preset,
+                                           "platforms": platforms},
                                            ensure_ascii=False).encode("utf-8")),
                     content_type="application/json")
         if ctx is not None:
             ctx.progress(100, f"xong — {len(clips_out)} clip")
         return {"clips": clips_out, "credit_cost": credit_cost, "tier": tier,
-                "genre": genre, "aspect_ratio": aspect, "n_clips": len(clips_out)}
+                "genre": genre, "aspect_ratio": aspect, "n_clips": len(clips_out),
+                "brand_preset": brand_preset, "platforms": platforms}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

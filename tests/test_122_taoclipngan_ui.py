@@ -12,7 +12,7 @@ def test_clip_template_has_library_transcript_compare_and_accessibility():
                 "templates" / "taoclipngan.html").read_text("utf-8")
     assert 'class="clip-studio"' in template
     assert "Thư viện nguồn gần đây" in template and "clip-source" in template
-    assert "Transcript & lựa chọn đoạn" in template and "data-transcript" in template
+    assert "Transcript & biên tập package" in template and "data-transcript" in template
     assert 'id="clip-compare"' in template and "clip-pick" in template
     assert 'role="progressbar"' in template and 'role="status"' in template
     assert "innerHTML" not in template and "onclick=" not in template

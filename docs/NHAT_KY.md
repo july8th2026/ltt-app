@@ -14,6 +14,52 @@
 
 ---
 
+## 2026-08-03 — H15.S12.2: Tạo Clip ngắn CLIP-FEAT-001
+
+- **Mục tiêu:** mở score rationale, brand render và social package bằng năng
+  lực engine/Storage/AppProject đang có, không tạo phí GPU lặp.
+- **Hạng mục:** CLIP-FEAT-001 và H15.S12 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Worker serialize CandidateScore, lý do chọn, intent và risk từ engine cho từng
+clip. UI hiện breakdown và nói rõ đây là xếp hạng nội bộ, không dự đoán lượt xem.
+
+Bốn preset auto/LTT Red/Creator Clean/Cinematic được map vào color/caption
+`user_overrides` của `run_editorial`, nên preset ảnh hưởng render thật. TikTok,
+YouTube Shorts và Instagram Reels dùng chung video 9:16; mỗi nền tảng có title,
+description và hashtag riêng trong package.
+
+Title/transcript package được lưu AppProject owner-scoped với optimistic
+revision. ZIP được stream qua file spool, không giữ toàn bộ video trong RAM;
+gồm video, SRT, package JSON và README. Chỉnh SRT không được mô tả là thay caption
+đã cháy sẵn trong video. Download/package không tạo job và không trừ credit.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression Clip UI/feature/package/ownership | **14 passed**, 1 warning trong 6,13 giây |
+| `python -m pytest -q` | **1.983 passed**, 8 skipped, 23 subtests, 1 warning trong 565,36 giây |
+| Playwright fixture 8116 + `video (10).mp4` | LTT Red; 2 clip; score breakdown; sửa title/SRT; revision 1→2; reload giữ dữ liệu; ZIP tải thành công |
+| Playwright mobile 390×844 | viewport/scroll 390 px, overflow 0 |
+| Console/network phiên 8116 | **0 error, 0 warning**; save/ZIP 200; video Range 206 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.171 file / 164.231 dòng) |
+
+### Quyết định mới
+
+Q58 khóa ý nghĩa score, brand preset nối render thật, package dùng chung video
+không thêm phí và persistence AppProject/optimistic revision.
+
+### Cách lùi lại
+
+Revert commit CLIP-FEAT-001. Không migration; Job và video gốc không đổi.
+
+### Việc tiếp theo
+
+H15.S13 ADM-001 — Admin/operator shell và dense components Carbon Red.
+
 ## 2026-08-03 — H15.S12.1: Tạo Clip ngắn CLIP-UI-001
 
 - **Mục tiêu:** thay form Clip cũ bằng workspace Carbon Red có library nguồn,
