@@ -25,6 +25,12 @@ def _render(request: Request, user: str, *, error: str = "", jobs=None, status_c
     reg_ui = {k: {"resolutions": v["resolutions"], "durations": v["durations"],
                   "aspects": v["aspects"]}
               for k, v in models.MODELS.items() if v.get("active")}
+    if isinstance(jobs, dict):
+        # Các nhánh validation/credit dùng cùng payload workspace với GET. Trước
+        # đây truyền nguyên dict vào template khiến grid lặp qua key thay vì job.
+        extra.setdefault("job_counts", jobs.get("counts", {}))
+        extra.setdefault("prompt_history", jobs.get("history", []))
+        jobs = jobs.get("items", [])
     context = {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
@@ -128,7 +134,8 @@ async def translate(request: Request, prompt: str = Form(""), target: str = Form
     except Exception:  # noqa: BLE001
         return HTMLResponse('<span class="dim">Dịch lỗi — thử lại sau.</span>')
     return HTMLResponse(
-        f'<textarea name="prompt" rows="4" form="sdform" '
+        f'<textarea id="tv-prompt" name="prompt" rows="4" form="sdform" '
+        f'aria-describedby="tv-prompt-hint" maxlength="10000" required '
         f'style="width:100%">{escape(out)}</textarea>'
         f'<div class="dim" style="font-size:12px;margin-top:4px">Đã dịch → {escape(target)}. '
         f'Sửa nếu cần rồi bấm Tạo video.</div>')

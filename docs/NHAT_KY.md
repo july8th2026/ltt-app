@@ -14,6 +14,54 @@
 
 ---
 
+## 2026-08-03 — H15.S4.1: Tạo video TV-UI-001
+
+- **Mục tiêu:** chuẩn hóa shell/control/a11y/empty/job card của Seedance trước
+  khi mở rộng asset và prompt workflow.
+- **Hạng mục:** TV-UI-001 hoàn thành; H15.S4 còn TV-FEAT-001/002.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Composer được cấu trúc lại bằng fieldset/legend/label; drawer có scrim,
+`aria-expanded`, Escape và focus vào control đầu. User thường không còn thấy link
+Cấu hình operator-only; Mẫu prompt/Tài sản chưa có backend là button disabled có
+lý do. Filter, error, empty state, job progress và dialog upscale có semantics.
+
+File tham chiếu tạo DOM bằng `textContent`, không chèn filename qua HTML; role và
+handle sinh động đều có label. Sửa `_render` để nhánh validation/credit nhận dict
+workspace đúng cách thay vì lặp qua key; textarea sau dịch giữ id/required/hint.
+Thêm `tests/test_111_taovideo_ui.py`.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted vận hành/taovideo/UI | **48 passed**, 1 warning trong 63,95 giây |
+| `python -m pytest -q` | **1.930 passed**, 8 skipped, 23 subtests, 1 warning trong 645,75 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.127 file / 158.863 dòng) |
+| Playwright 390/1280 px | 200; overflow 0; field thiếu nhãn 0; drawer/Escape/empty PASS; console/network lỗi 0 |
+| Playwright file thật `video (10).mp4` | 1 reference row; filename an toàn; role/handle/label PASS; không submit/provider call |
+
+File test chỉ được đọc từ thư mục người dùng đã chỉ định. Browser dùng canary/DB
+cô lập; không dùng dữ liệu production và không tạo job tính credit.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. TV-UI-001 thực thi Q46/Q52; asset library và
+prompt capability giữ đúng phạm vi hai vé tiếp theo.
+
+### Cách lùi lại
+
+Revert commit TV-UI-001. Không có migration hay dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S4.2 TV-FEAT-001 — tái dùng storage/job/owner contract, không tạo kho asset
+thứ hai nếu năng lực nội tại đã đủ.
+
+---
+
 ## 2026-08-03 — H15.S3.2: Khóa IA trang chủ HOME-002
 
 - **Mục tiêu:** mọi mục điều hướng Home phải dẫn tới năng lực thật hoặc thể hiện
