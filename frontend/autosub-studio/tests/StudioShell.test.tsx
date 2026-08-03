@@ -86,3 +86,25 @@ it('shows the server quote before any render submission', async () => {
   fireEvent.click(screen.getByRole('button',{name:'Hủy'}))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
+
+it('reports optional AI capabilities honestly and exposes the active workflow step', async () => {
+  const project = { id:'p4', name:'Capability test', revision:1, status:'active', payload:{
+    schema_version:1, active_step:'transcript', source:{key:'',filename:'',duration_s:0,width:0,height:0},
+    tracks:[],speakers:{},style:{preset:'default'},output:{resolution:'source',format:'mp4',
+      quality:'standard',track_ids:[],export_srt:true,export_vtt:true,export_json:true,
+      export_ass:true,bundle_zip:true}}}
+  vi.spyOn(globalThis,'fetch').mockImplementation(async input=>{
+    const url=String(input)
+    if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
+    if(url.endsWith('/api/capabilities'))return new Response(JSON.stringify({whisperx:true,
+      diarization:false,translation:true,credit:{transcribe:0,diarize:0,translate:0}}),{status:200})
+    if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p4',status:'active'}]}),{status:200})
+    return new Response(JSON.stringify(project),{status:200})
+  })
+  render(<StudioShell csrfToken="csrf"/>)
+  const capabilities=await screen.findByLabelText('Trạng thái công cụ AI')
+  expect(capabilities).toHaveTextContent('WhisperXTranscript và word timingSẵn sàng')
+  expect(capabilities).toHaveTextContent('PyannotePhân vai ẩn danhChưa cấu hình')
+  expect(capabilities).toHaveTextContent('GeminiDịch transcript theo cueSẵn sàng')
+  expect(screen.getByRole('button',{name:/Transcript/})).toHaveAttribute('aria-current','step')
+})

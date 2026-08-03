@@ -27,6 +27,7 @@ export function EditorTimeline(props: Props) {
         <span className="lane-label" title={track.name}>{track.kind==='translation'?'TR':'CC'}</span>
         <div className="lane-content">{track.cues.map(cue=><button type="button" key={cue.id}
           className={`cue-block ${selectedCueId===cue.id?'selected':''}`} style={{left:`${cue.start/safeDuration*100}%`,width:`${Math.max(.5,(cue.end-cue.start)/safeDuration*100)}%`}}
+          aria-pressed={selectedCueId===cue.id} aria-label={`${cue.text||'Cue trống'}, ${formatShort(cue.start)} đến ${formatShort(cue.end)}`}
           onClick={()=>{onSelect(cue.id);onSeek(cue.start)}} onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);setDrag({track:track.id,cue:cue.id,mode:'move',x:event.clientX,start:cue.start,end:cue.end})}}>
           <i className="cue-handle start" onPointerDown={event=>{event.stopPropagation();setDrag({track:track.id,cue:cue.id,mode:'start',x:event.clientX,start:cue.start,end:cue.end})}}/>
           <span>{cue.text||'(trống)'}</span><i className="cue-handle end" onPointerDown={event=>{event.stopPropagation();setDrag({track:track.id,cue:cue.id,mode:'end',x:event.clientX,start:cue.start,end:cue.end})}}/>

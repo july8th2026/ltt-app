@@ -1175,7 +1175,14 @@ system-first, không làm nhiều app song song.
     minterpolate 2× nối quote/job/worker/result, cost 1,2×/2,2×; HDR DEFER vì
     không có SDR→HDR pipeline trung thực; browser/pipeline smoke PASS;
     1.952 passed, 8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S6–S12 Từng app còn lại theo roadmap; không song song.
+- [ ] H15.S6 Auto Sub — UI polish → brand/transcript/speaker workflow tuần tự.
+  - [x] H15.S6.1 AS-UI-001 — 2026-08-03: React island dùng semantic Carbon
+    Red chung; workflow step/status live có semantics; WhisperX/Pyannote/Gemini
+    hiển thị capability trung thực; mọi control visible desktop/mobile đạt 44 px,
+    overflow 0, console/network sạch; frontend 10 test và backend 35 test PASS;
+    full suite 1.952 passed, 8 skipped, 23 subtests; secret scan 0.
+  - [ ] H15.S6.2 AS-FEAT-001 — brand template, transcript QA và speaker workflow.
+- [ ] H15.S7–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.

@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-03 — H15.S6.1: Auto Sub AS-UI-001
+
+- **Mục tiêu:** đồng nhất Auto Sub với Carbon Red và sửa accessibility/capability
+  mà không phá editor/render parity AS0–AS9.
+- **Hạng mục:** AS-UI-001 hoàn thành; AS-FEAT-001 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+React island chuyển token màu/surface/font sang semantic token dùng chung, giữ
+fallback để asset độc lập vẫn render đúng. Workflow step có `aria-current`, trạng
+thái autosave/job là live status, cue timeline có tên và pressed state. Mọi control
+visible được nâng interaction target 44 px, có focus ring thống nhất và reduced
+motion cũ được giữ nguyên.
+
+Thay hai cảnh báo cấu hình rời bằng capability list server-driven cho WhisperX,
+Pyannote và Gemini: mỗi công cụ nói rõ chức năng và trạng thái Sẵn sàng/Chưa cấu
+hình/Đang kiểm tra. Control provider thiếu vẫn disabled và giải thích thật; không
+tạo dữ liệu minh họa hay bật năng lực giả.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `npm test` (Auto Sub) | **10 passed** |
+| `npm run build` | typecheck + Vite production build **PASS** |
+| `python -m pytest -q tests\\test_81_autosubvideo.py tests\\test_103_autosub_projects.py` | **35 passed**, 1 warning |
+| `python -m pytest -q` | **1.952 passed**, 8 skipped, 23 subtests, 1 warning trong 707,91 giây |
+| Playwright canary 8103 desktop + 390×844 | overflow 0; mobile 39/39 control visible đạt ≥44×44; capability đúng; console warning/error 0; request ứng dụng fail 0 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.243 dòng) |
+
+Canary dùng DB/storage/process cô lập; không dùng dữ liệu production. Hai input
+file ẩn 1 px được loại khỏi phép đo vì label tương tác tương ứng đều ≥44 px.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Tiếp tục Q49/Q52 và giữ nguyên contract/job/render.
+
+### Cách lùi lại
+
+Revert asset/source AS-UI-001; không migration, không đổi API hay dữ liệu project.
+
+### Việc tiếp theo
+
+H15.S6.2 AS-FEAT-001 — audit rồi triển khai brand template, transcript QA và
+speaker workflow theo năng lực nội tại hiện có.
+
 ## 2026-08-03 — H15.S5.3: motion/HDR UP-FEAT-002
 
 - **Mục tiêu:** chỉ mở stabilization/interpolation/HDR khi engine và cost gate
