@@ -14,6 +14,54 @@
 
 ---
 
+## 2026-08-03 — H15.S7.1: Agent Canvas AG-UI-001
+
+- **Mục tiêu:** đồng nhất Canvas với shared shell, mở run inspector và responsive
+  controls mà không đổi executor/Plan/ToolSpec/credit.
+- **Hạng mục:** AG-UI-001 hoàn thành; hai vé feature chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+React island chuyển surface/border/accent/focus sang semantic Carbon Red và nâng
+toàn bộ control, React Flow controls cùng attribution target lên 44 px. Giữ server
+validation, autosave, read-only mobile và reduced motion như cũ.
+
+Mobile không còn mất palette/inspector: ba tab Canvas/Công cụ/Inspector chuyển
+panel responsive, vẫn giữ mobile chỉ xem theo contract hiện tại. Run Inspector
+đọc trực tiếp `AgentRun` đã có, hiển thị trạng thái, estimated/actual credit,
+version, checkpoint từng step, artifact owner URL và decision log; empty state
+không dựng run giả. Không thêm replay/debug/schedule dưới vé UI.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `npm test` (Agent Canvas) | **15 passed** |
+| `npm run build` | typecheck + Vite production build **PASS** |
+| Lệnh Agent hẹp đầu tiên | **FAIL thao tác:** sai tên `tests\\test_102_agent_workflows.py`; 0 test chạy |
+| Lệnh Agent hẹp chạy lại đúng 7 module | **34 passed**, 1 warning trong 61,20 giây |
+| `python -m pytest -q` | **1.952 passed**, 8 skipped, 23 subtests, 1 warning trong 564,70 giây |
+| Playwright canary 8103 desktop + 390×844 | Carbon Red; Canvas/Công cụ/Inspector mở được; Run Inspector thật; overflow 0; control dưới 44 px = 0; console/request fail 0 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.401 dòng) |
+
+Canary dùng user/DB cô lập, không dùng production. Lỗi tên test được sửa bằng cách
+liệt kê file thật qua `rg --files tests | rg agent` rồi chạy đúng module.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Responsive panel không thay Q39/Q49 và không biến
+Canvas thành runtime; execution vẫn chỉ server-side.
+
+### Cách lùi lại
+
+Revert React source/CSS/bundle AG-UI-001. Không migration, API hay dữ liệu mới.
+
+### Việc tiếp theo
+
+H15.S7.2 AG-FEAT-001 — execution replay/debug/error branch/template, chỉ mở phần
+đạt contract/credit/rollback gate.
+
 ## 2026-08-03 — H15.S6.2: Auto Sub AS-FEAT-001
 
 - **Mục tiêu:** bổ sung brand template, transcript QA và speaker workflow bằng

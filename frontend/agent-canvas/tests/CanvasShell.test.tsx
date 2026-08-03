@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CanvasShell } from '../src/CanvasShell'
+import { RunInspector } from '../src/RunInspector'
 
 const palette = { version: 1, tools: [{ name: 'text.script', description: 'Viết kịch bản',
   app_slug: 'kichban', app_name: 'Kịch bản', requires: ['api'], verifiable: [],
@@ -45,4 +46,23 @@ describe('CanvasShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
     expect(screen.getByLabelText('Node text.script')).toBeInTheDocument()
   })
+
+  it('exposes responsive panel controls without hiding inspector semantics', async () => {
+    render(<CanvasShell />)
+    await screen.findByRole('button',{name:'Thêm text.script'})
+    expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Inspector'}))
+    expect(screen.getByRole('button',{name:'Inspector'})).toHaveAttribute('aria-pressed','true')
+    expect(screen.getByLabelText('Run inspector')).toHaveTextContent('Kiểm tra workflow')
+  })
+})
+
+it('renders server run checkpoints, costs, decisions and artifacts',()=>{
+  render(<RunInspector run={{id:'r1',version:2,status:'done',estimated:8,actual:6,
+    quote_hash:'hash',plan:{steps:[{id:'step-1'}]},checkpoint:{'step-1':{status:'done'}},
+    decisions:[{event:'approved'}],artifacts:[{step_id:'step-1',name:'video.mp4',url:'/artifact'}]}}/>)
+  const inspector=screen.getByLabelText('Run inspector')
+  expect(inspector).toHaveTextContent('Hoàn tất')
+  expect(inspector).toHaveTextContent('6 credit')
+  expect(screen.getByRole('link',{name:'video.mp4'})).toHaveAttribute('href','/artifact')
 })

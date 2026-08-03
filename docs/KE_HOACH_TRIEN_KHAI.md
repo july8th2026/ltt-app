@@ -1187,7 +1187,16 @@ system-first, không làm nhiều app song song.
     speaker alias owner-project autosave và hiện xuyên cue list. Browser desktop/
     mobile PASS, alias còn sau reload; frontend 11 test, backend 35 test PASS;
     full suite 1.952 passed, 8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S7–S12 Từng app còn lại theo roadmap; không song song.
+- [ ] H15.S7 Agent/Canvas — UI/run inspector → replay/debug/template → trigger/
+  schedule/version recovery tuần tự.
+  - [x] H15.S7.1 AG-UI-001 — 2026-08-03: Canvas dùng semantic Carbon Red,
+    target ≥44 px; mobile tabs mở Canvas/Công cụ/Inspector; Run Inspector đọc
+    checkpoint/cost/decision/artifact server-driven. Browser desktop/mobile
+    overflow 0, console/network sạch; frontend 15 và backend 34 test PASS;
+    full suite 1.952 passed, 8 skipped, 23 subtests; secret scan 0.
+  - [ ] H15.S7.2 AG-FEAT-001 — execution replay/debug/error branch/template.
+  - [ ] H15.S7.3 AG-FEAT-002 — trigger/schedule/version recovery sau gate.
+- [ ] H15.S8–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.

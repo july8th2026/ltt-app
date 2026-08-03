@@ -23,6 +23,7 @@ function Editor() {
   const [selected, setSelected] = useState<string[]>([])
   const [selectedEdges, setSelectedEdges] = useState<string[]>([])
   const [readOnly, setReadOnly] = useState(window.innerWidth <= 640)
+  const [mobilePanel,setMobilePanel]=useState<'canvas'|'palette'|'inspector'>('canvas')
   const [costs, setCosts] = useState<Record<string, number>>({})
   const [retryNonce, setRetryNonce] = useState(0)
   const [validationIssues, setValidationIssues] = useState<{ step_id: string; message: string }[]>([])
@@ -183,7 +184,8 @@ function Editor() {
       <div className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
         : phase === 'error' ? <>Lưu lỗi <button onClick={() => setRetryNonce(value => value + 1)}>Thử lại</button></> : 'Đã lưu'}</div></header>
-    <div className="canvas-body">
+    <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Inspector'}</button>)}</nav>
+    <div className={`canvas-body panel-${mobilePanel}`}>
       <aside className="canvas-palette" aria-label="Palette công cụ"><h2>Công cụ</h2>
         <div className="workflow-settings"><label>Mục tiêu workflow<textarea disabled={readOnly}
           value={state.document.goal} onChange={event => dispatch({ type: 'document', goal: event.target.value })} /></label>
@@ -221,7 +223,7 @@ function Editor() {
         {!!validationIssues.length && <div className="validation-banner" role="alert"><strong>Workflow chưa hợp lệ</strong>
           <span>{validationIssues.slice(0, 3).map(issue => issue.message).join(' · ')}</span></div>}
       </main>
-      <Inspector node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined}
+      <Inspector node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run}
         readOnly={readOnly} connections={connectionOptions}
         onConnect={(field, value) => { if (!selectedNode) return; const [source, sourceHandle] = value.split('|')
           onConnect({ source, sourceHandle, target: selectedNode.id, targetHandle: field }) }}
