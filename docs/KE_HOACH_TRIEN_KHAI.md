@@ -1101,3 +1101,26 @@ CORS vượt browser gate Q48. Hạ tầng
   `docs/APP_AUDIT/_MAU/`; liên kết một chiều audit → UI-RD. Đây là thay đổi tài
   liệu/quy trình, không sửa runtime hoặc deploy. Test khóa tài liệu 94 pass;
   full suite 1.896 pass, 8 skip, 23 subtest; secret scan 0 finding.
+
+---
+
+## H15 — Đồng nhất giao diện và nâng cấp sản phẩm toàn nền tảng
+
+Nguồn audit/roadmap/vé:
+`docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
+system-first, không làm nhiều app song song.
+
+- [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
+  kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
+  mặt production authenticated/public render 200; phát hiện public mobile overflow
+  48 px, a11y target/label debt, bốn style layer và website source/live mismatch.
+  Score baseline Q70/M50/E86; backlog 38 vé và roadmap Stage 0–15 đã tạo.
+  Gate tài liệu: 1.896 passed, 8 skipped, 23 subtests; secret scan 0 finding.
+- [ ] H15.S0 Design contract/harness — DS-001..005.
+- [ ] H15.S1 Public catalog/Auth — PLAT-001, AUTH-001.
+- [ ] H15.S2 Billing/Jobs/Settings — BILL-001, JOBS-001, SET-001.
+- [ ] H15.S3 Home authenticated — HOME-001..002.
+- [ ] H15.S4–S12 Từng app theo đúng roadmap; không song song.
+- [ ] H15.S13 Admin/operator.
+- [ ] H15.S14 Website marketing route/deploy.
+- [ ] H15.S15 DEEP re-audit + full release gate.

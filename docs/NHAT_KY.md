@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-03 — H15.AUDIT: baseline toàn nền tảng
+
+- **Mục tiêu:** kiểm kê/audit full app, trang và website; khóa style/roadmap tuần tự.
+- **Hạng mục:** H15.AUDIT hoàn thành; H15.S0 là bước kế tiếp.
+- **Trạng thái:** audit/source/browser/benchmark/plan xong; chưa sửa UI/runtime/deploy.
+
+### Đã làm
+
+Chạy LTT-AQA DEEP cho 11 module, control plane và gói website. Dùng Playwright
+production anonymous và canary admin tạm; canary đã deactivate/revoke sau audit.
+Mọi bề mặt authenticated/app đã kiểm render 200, desktop không overflow và không
+có console/app request failure. Phát hiện public catalog mobile tràn 48 px; touch
+target nhỏ và field thiếu accessible name xuất hiện rộng.
+
+Xác nhận bốn style layer: base public/auth/shared xanh, Marketplace/Studio đỏ local,
+React/Admin riêng. Domain `lttstudios.com` không phục vụ gói website trong repo;
+nhiều URL source trả 404. Đối chiếu official docs theo họ sản phẩm, chấm baseline
+Q70/M50/E86 và khóa Q52: LTT Carbon Red, system-first, triển khai tuần tự.
+
+Tạo hồ sơ `docs/APP_AUDIT/platform/2026-08-03/` gồm inventory, truth, journey/
+control, benchmark, scorecard, findings, quyết định, roadmap, 38 vé và evidence.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Playwright anonymous/authenticated production desktop/mobile | PASS render; findings F-001..F-014 được ghi |
+| `python -m pytest tests\test_61_setup_scripts.py tests\test_62_khoa_logic.py -q` | **94 passed** trong 0,64 giây |
+| `python -m pytest -q` | **1.896 passed**, 8 skipped, 23 subtests, 1 warning trong 588,17 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+
+Full suite được chạy trong tiến trình redirect log vào `tmp/h15-audit-pytest.*.log`
+để tránh giới hạn thời gian/đầu ra của kênh lệnh; đã theo dõi tới trạng thái
+`FINISHED` và exit code 0. Log tạm không đưa vào commit.
+
+### Quyết định mới
+
+Q52 đã thêm: LTT Carbon Red, system-first, mỗi app PASS rồi mới sang app kế;
+Socialbot giữ đóng băng Q10.
+
+### Cách lùi lại
+
+Revert commit H15.AUDIT; không có migration/runtime/production UI cần lùi. Canary
+audit đã bị vô hiệu hóa, session revoke; audit rows được giữ theo runbook.
+
+### Còn tồn đọng
+
+Stage 0–15 chưa triển khai. Field Core Web Vitals và competitor hands-on trial
+chưa có; Market Score là baseline official-docs.
+
+### Việc tiếp theo
+
+1. H15.S0 DS-001..005: design contract + regression harness.
+2. H15.S1 sửa public mobile overflow và Auth theo contract mới.
+
+---
+
 ## 2026-08-03 — H14.0: chuẩn hóa LTT-AQA v1.0
 
 - **Mục tiêu:** lưu lâu dài bộ quy tắc audit toàn diện app và hồ sơ dùng lại.
