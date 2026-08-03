@@ -14,6 +14,60 @@
 
 ---
 
+## 2026-08-03 — H15.S5.2: mở rộng benchmark enhancement (đang làm)
+
+- **Mục tiêu:** đánh giá AI Detail/denoise/deblur bằng capability và số đo thật,
+  không suy diễn từ tên model.
+- **Hạng mục:** UP-FEAT-001 đang làm; chưa đạt gate benchmark GPU mới.
+- **Trạng thái:** harness/test xong; lượt đo schema v2 đang chờ GPU production rảnh.
+
+### Đã làm
+
+Audit thấy engine có ba cặp model gồm `general`, `general-wdn` và `x4plus`, trong
+khi báo cáo cũ mới đo hai model. Binary NCNN thực tế không có tham số `-dn`;
+theo upstream, DNI điều chỉnh denoise-strength thuộc pipeline Python. Vì vậy
+không được biến model WDN đơn lẻ thành control denoise giả.
+
+Nâng `tools/benchmark_upscale_ai_detail.py` lên schema 2: kiểm kê model theo đủ
+`.param`/`.bin`, hash engine/model, lưu driver GPU, tạo deterministic matrix
+bicubic/noise/blur, đo PSNR/SSIM/temporal error/runtime cho từng model và xuất
+feature gate riêng cho AI Detail, denoise, deblur. Frame nguồn/output vẫn bị dọn
+trong `finally`; JSON không ghi đường dẫn nguồn.
+
+Nghiên cứu primary source xác nhận BasicVSR++/RealBasicVSR là ứng viên temporal
+Apache-2.0 đáng spike; MMagic hỗ trợ Windows nhưng cần PyTorch/MMCV/MMEngine tách
+khỏi runtime NCNN hiện tại. Chưa cài dependency/model mới khi chưa có benchmark
+window và cost/rollback gate.
+
+### Test đã chạy
+
+| Lệnh/kiểm tra | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_115_upscale_feature_benchmark.py tests/test_82_upscalevideo.py` | **20 passed** trong 1,79 giây |
+| `python -m py_compile tools\benchmark_upscale_ai_detail.py` | PASS |
+| GPU/process preflight | BOT GEMINI có `realesrgan-ncnn-vulkan.exe` đang chạy, GPU 99–100%; không chạy benchmark cạnh tranh |
+| `python -m pytest -q` sau thay đổi harness | **chưa chạy**; vé chưa đóng |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Tuân thủ ranh giới BOT GEMINI chỉ đọc và Q47:
+không tác động process production, không mở feature trước benchmark/cost gate.
+
+### Cách lùi lại
+
+Revert commit benchmark matrix; runtime Upscale không thay đổi.
+
+### Còn tồn đọng
+
+- Chạy schema v2 trên file test người dùng chỉ định khi process GPU production
+  kết thúc; cập nhật JSON/báo cáo bằng kết quả thật.
+- Nếu mọi gate vẫn DEFER, chốt UP-FEAT-001 bằng bằng chứng rồi giữ UI disabled.
+
+### Việc tiếp theo
+
+Theo dõi GPU read-only; khi rảnh chạy ma trận 3 model × 3 degradation, sau đó
+full test/secret scan và đóng hoặc mở gate theo số đo.
+
 ## 2026-08-03 — H15.S5.1: Upscale UP-UI-001
 
 - **Mục tiêu:** thống nhất shell responsive, compare, queue/status và a11y của
