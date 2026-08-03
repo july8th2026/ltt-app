@@ -1138,6 +1138,11 @@ system-first, không làm nhiều app song song.
     chung một nguồn quyền; IA thu gọn theo nhóm, a11y/mobile/browser PASS;
     1.919 passed, 8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S3 Home authenticated — HOME-001..002.
+  - [x] H15.S3.1 HOME-001 — 2026-08-03: marketplace shell dùng semantic
+    Carbon Red; mobile drawer/account, filter state, progress a11y và keyboard
+    Escape hoạt động; browser 390/1280 PASS; 1.922 passed, 8 skipped,
+    23 subtests; secret scan 0.
+  - [ ] H15.S3.2 HOME-002 — khóa My Apps/Workspace/Templates/Resources.
 - [ ] H15.S4–S12 Từng app theo đúng roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.

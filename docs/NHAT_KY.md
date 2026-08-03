@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-03 — H15.S3.1: Marketplace shell HOME-001
+
+- **Mục tiêu:** hợp nhất Home authenticated với Carbon Red và sửa các control
+  shell đang hiển thị nhưng chưa vận hành đầy đủ trên mobile.
+- **Hạng mục:** HOME-001 hoàn thành; H15.S3 còn HOME-002.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Marketplace authenticated dùng semantic token chung cho surface/border/text/
+brand/status/motion. Mobile menu giờ là drawer thật có scrim, trạng thái
+`aria-expanded`, trả lời Escape và tự đóng sau khi chọn view. Menu tài khoản
+không còn biến mất trên mobile. Search/sort/filter có accessible name, filter và
+My Apps đồng bộ `aria-pressed`, số kết quả dùng live region; running job dùng
+progressbar được clamp 0–100. Thuật ngữ “Jobs đang chạy” đổi thành “Việc đang
+chạy”; trạng thái empty/error và nút/form được bổ sung semantics.
+
+Thêm `tests/test_109_home_shell_ui.py` để khóa drawer, filter/progress và token.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted foundation/jobs/home/design/UI | **68 passed**, 1 warning trong 76,12 giây |
+| Full suite lượt đầu | **1 fail**, 1.921 pass: đổi chữ đầu badge blocker thành hoa làm vỡ contract hiển thị cũ |
+| Test blocker + HOME-001 sau sửa | **4 passed**, 1 warning trong 2,40 giây |
+| `python -m pytest -q` lượt xác nhận | **1.922 passed**, 8 skipped, 23 subtests, 1 warning trong 539,05 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.125 file / 158.511 dòng) |
+| Playwright canary local 390 px | drawer mở/đóng/Escape/My Apps PASS; account hiện; overflow 0; field thiếu nhãn 0; console/network lỗi 0 |
+| Playwright canary local 1280 px | search empty + sort PASS; overflow 0; console/network lỗi 0 |
+
+Regression badge được sửa bằng cách giữ nguyên chuỗi chữ thường đã có; không đổi
+logic blocker. Browser dùng DB/canary cô lập trong `tmp/`, không dùng production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. HOME-001 chỉ thực thi Q46/Q52; chưa thay contract
+My Apps/Workspace/Templates/Resources của HOME-002.
+
+### Cách lùi lại
+
+Revert commit HOME-001. Không có migration hay dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S3.2 HOME-002; chỉ đóng H15.S3 và mở app Tạo video sau khi gate này PASS.
+
+---
+
 ## 2026-08-03 — H15.S2.3: Ranh giới operator và Settings/Status
 
 - **Mục tiêu:** khóa quyền vận hành và làm rõ kiến trúc thông tin trước khi

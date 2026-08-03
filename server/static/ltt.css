@@ -287,6 +287,45 @@ html{background:var(--surface-canvas)}
 @media(max-width:760px){.market-shell{display:block}.market-side{display:none}.market-top{height:62px;padding:0 12px;gap:7px}.market-menu{display:block;border:0;background:transparent;color:#e7c9c2;font-size:20px}.market-search{min-width:0;height:40px;padding:0 9px}.market-search kbd,.market-sort{display:none}.market-credit{height:40px;min-width:60px}.market-main{padding:12px}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.market-cover{height:112px}.market-card-body{padding:9px}.market-heading h1{font-size:20px}.market-categories{width:100%}.market-account{display:none}}
 @media(max-width:390px){.market-grid{grid-template-columns:minmax(0,1fr)}.market-main{padding:10px}.market-card-body>p{height:auto;min-height:30px}.market-cover{height:130px}}
 
+/* H15.S3 HOME-001: marketplace dùng chung semantic Carbon Red contract. */
+.home-page{background:var(--surface-base);color:var(--text-primary)}
+.market-shell{background:radial-gradient(900px 600px at 52% 0,var(--brand-soft),transparent 65%),var(--surface-base)}
+.market-side,.market-top,.market-rail{background:var(--surface-base);border-color:var(--border-subtle)}
+.market-brand{border-color:var(--border-subtle);color:var(--text-primary)}
+.market-brand small,.market-account small,.market-heading p,.activity-list small,.running-list small,.rail-empty{color:var(--text-muted)}
+.market-nav a,.market-nav button{color:var(--text-secondary);transition:background var(--motion-normal),border-color var(--motion-normal),color var(--motion-normal)}
+.market-nav a:hover,.market-nav button:not(:disabled):hover,.market-nav .on{background:var(--brand-soft);border-color:var(--brand-border);box-shadow:inset 3px 0 var(--brand-primary)}
+.market-search,.market-sort,.market-credit{background:var(--surface-raised);border-color:var(--border-strong)}
+.market-search{color:var(--brand-hover)}.market-search input{color:var(--text-primary)}.market-search input::placeholder{color:var(--text-muted)}
+.market-account-menu{background:var(--surface-overlay);border-color:var(--border-strong)}
+.market-account-menu a,.market-account-menu button{color:var(--text-primary)}
+.market-account-menu a:hover,.market-account-menu button:hover{background:var(--surface-interactive)}
+.market-categories button{background:var(--surface-raised);border-color:var(--border-subtle);color:var(--text-secondary);transition:background var(--motion-normal),border-color var(--motion-normal)}
+.market-categories button:hover,.market-categories button.on{background:var(--brand-soft);border-color:var(--brand-primary)}
+.market-card,.market-rail section{background:var(--surface-raised);border-color:var(--border-subtle)}
+.market-card{transition:transform var(--motion-normal),border-color var(--motion-normal),box-shadow var(--motion-normal)}
+.market-card:hover{border-color:var(--brand-primary)}
+.market-card-body>p{color:var(--text-secondary)}.market-card-foot{color:var(--text-muted)}
+.market-card-foot a,.rail-credit a{background:var(--brand-strong);border-color:var(--brand-border);color:var(--text-primary)}
+.market-badge{background:var(--brand-strong)}.market-badge.warn{background:var(--status-warning-soft);border:1px solid var(--status-warning-border);color:var(--status-warning)}
+.market-setup{color:var(--status-warning)}.market-empty{border-color:var(--border-strong);color:var(--text-secondary)}
+.activity-list li,.running-list li{border-color:var(--border-subtle)}
+.progress{background:var(--surface-interactive)}.progress i{background:linear-gradient(90deg,var(--brand-strong),var(--brand-hover))}
+.market-scrim{display:none}
+
+@media(max-width:760px){
+  .market-side{display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;width:min(82vw,300px);height:100dvh;z-index:20;transform:translateX(-105%);transition:transform var(--motion-normal);box-shadow:18px 0 50px #000b}
+  .market-brand{flex:0 0 72px}.market-nav{overflow-y:auto}
+  .market-nav a,.market-nav button{min-height:52px;flex-direction:row;justify-content:flex-start;padding:9px 16px;font-size:13px}
+  .market-nav a span,.market-nav button span{width:24px;font-size:18px;text-align:center}
+  .market-nav-open .market-side{transform:translateX(0)}
+  .market-scrim{position:fixed;inset:0;z-index:19;width:100%;height:100%;border:0;border-radius:0;background:#0009;cursor:pointer}
+  .market-nav-open .market-scrim{display:block}
+  .market-menu{display:grid;place-items:center;width:40px;height:40px;padding:0;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised)}
+  .market-account{display:block;margin-left:0}.market-account summary{min-width:40px;justify-content:center}.market-account summary>span:nth-child(2),.market-account summary>em{display:none}
+  .market-account-menu{position:fixed;right:10px;top:58px;width:min(240px,calc(100vw - 20px));z-index:22}
+}
+
 /* ── Tool page kit (Đợt R — dùng chung cho app di trú) ───────────────────────── */
 .ctrl{margin:12px 0}
 .ctrl-lbl{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
