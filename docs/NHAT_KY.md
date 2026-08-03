@@ -14,6 +14,61 @@
 
 ---
 
+## 2026-08-03 — H15.S14.3: WEB-003 deploy một phần, WordPress bị chặn quyền
+
+- **Mục tiêu:** deploy control plane và website marketing, sau đó crawl toàn bộ
+  redirect/SEO/a11y production.
+- **Hạng mục:** WEB-003 dở; phần control plane hoàn thành, WordPress chưa deploy.
+- **Trạng thái:** bị chặn tại quyền ghi WordPress, không phải lỗi code.
+
+### Đã làm
+
+Build release 1.0.0 gồm 1.149 file/173,2 MB, secret scan trong archive 0. Script
+update production đã backup PostgreSQL, giữ `app.previous`, cập nhật dependency,
+giữ WhisperX CUDA sidecar, chạy Alembic và khởi động lại ba dịch vụ. Health local
+và Cloudflare đều ready. Ba public URL trong config production được đổi bằng
+script giới hạn key, không in config/bí mật và xác minh UTF-8 không BOM.
+
+Production browser ẩn danh xác nhận footer/link contract đã live trên catalog và
+login; desktop/mobile overflow 0, console và request failure 0. Web/Worker/Codex/
+cloudflared đều Running Automatic.
+
+Đã tạo plugin WordPress data-free cho 33 alias redirect, `/vi/`, login/register/
+Open Tool/Pricing và giữ nguyên hai OAuth callback. Gói cài sẵn ở
+`C:\Temp\lttstudios-integration-1.0.0.zip`; rollback chỉ deactivate/remove plugin.
+Crawler đọc-only kiểm canonical target, alias, callback, robots, sitemap, 404,
+SEO shell và control-plane CTA.
+
+### Test/deploy đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_127_wordpress_deploy_contract.py` | **3 passed** |
+| `python -m pytest -q` | **1.994 passed**, 8 skipped, 23 subtests, 1 warning trong 574,14 giây |
+| `tools/build_release.py` | 1.149 file; 173,2 MB; archive secret scan **PASS** |
+| `deploy/windows/update.ps1` | backup/migration/restart/ready **PASS** |
+| Playwright production catalog/login | 200; footer live; desktop/mobile overflow 0; console/network sạch |
+| `python tools\\audit_public_web.py` | **FAIL đúng thực tế:** 29 alias sai/404; homepage thiếu app CTA và còn WP login |
+
+### Quyết định mới
+
+Không phát sinh; tuân thủ Q59, không upload đè WordPress bằng gói static.
+
+### Cách lùi lại
+
+Control plane: chạy `C:\LTTPlatform\app\deploy\windows\rollback.ps1`.
+WordPress plugin chưa cài nên chưa có gì cần rollback trên marketing site.
+
+### Còn tồn đọng
+
+Không có browser quản trị đang mở và không có WordPress credential/API token hay
+Cloudflare zone token trong môi trường. Cần một phiên `wp-admin` đã đăng nhập để
+upload/activate ZIP; sau đó chạy crawler tới 0 failure và browser QA production.
+
+### Việc tiếp theo
+
+Mở khóa quyền WordPress → hoàn tất WEB-003 → H15.S15 DEEP release gate.
+
 ## 2026-08-03 — H15.S14.2: Website WEB-002
 
 - **Mục tiêu:** đồng nhất liên kết Brand/App/Support/Legal/Commerce giữa

@@ -1300,5 +1300,15 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     cho deploy. Browser desktop/mobile overflow 0, console/network sạch;
     regression 36 passed; full suite 1.991 passed, 8 skipped, 23 subtests;
     secret scan 0.
-  - [ ] H15.S14.3 WEB-003 — deploy website, crawl/redirect/SEO/a11y production.
+  - [ ] H15.S14.3 WEB-003 — control plane đã deploy 2026-08-03; WordPress chưa
+    có quyền ghi nên chưa nghiệm thu.
+    - [x] Build release 1.149 file/173,2 MB, secret 0; backup PostgreSQL; deploy
+      `C:\LTTPlatform`; migration/health/services/Cloudflare PASS; production
+      catalog/login desktop-mobile overflow 0, console/network sạch.
+    - [x] Plugin WordPress redirect/CTA data-free + rollback và crawler gate;
+      contract 3 passed; full suite 1.994 passed, 8 skipped, 23 subtests.
+    - [ ] Upload/activate plugin trên WordPress rồi chạy crawler về **0 failure**.
+      Hiện crawler: 29 alias fail; homepage còn WP login và thiếu app CTA. Máy
+      không có browser session, WordPress credential/API token hay Cloudflare
+      zone token; không được tuyên bố deploy website xong.
 - [ ] H15.S15 DEEP re-audit + full release gate.
