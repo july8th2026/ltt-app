@@ -74,7 +74,10 @@ def _jobs_cua_toi(request: Request):
             duration = float(result.get("duration_s") or params.get("duration_s") or 0)
             if sample.status == "done" and seconds > 0 and duration > 0:
                 samples.append((params.get("preset", "fast"),
-                                int(params.get("target_height", 1080)), seconds / duration))
+                                int(params.get("target_height", 1080)),
+                                bool(params.get("stabilize")),
+                                bool(params.get("smooth_motion")),
+                                seconds / duration))
         out = []
         now = datetime.now(timezone.utc)
         for j in rows[:12]:
@@ -85,9 +88,11 @@ def _jobs_cua_toi(request: Request):
             if j.status == "queued":
                 eta_text = f"Vị trí {queue_positions.get(j.id, '?')} trong hàng đợi"
             elif j.status == "running":
-                rates = [value for preset, height, value in samples
+                rates = [value for preset, height, stabilize, smooth_motion, value in samples
                          if preset == p.get("preset", "fast") and
-                         height == int(p.get("target_height", 1080))]
+                         height == int(p.get("target_height", 1080)) and
+                         stabilize == bool(p.get("stabilize")) and
+                         smooth_motion == bool(p.get("smooth_motion"))]
                 duration = float(p.get("duration_s") or 0)
                 if len(rates) >= 3 and duration > 0 and j.started_at:
                     started = j.started_at if j.started_at.tzinfo else j.started_at.replace(tzinfo=timezone.utc)
@@ -104,6 +109,8 @@ def _jobs_cua_toi(request: Request):
                         "preset": p.get("preset", "fast"), "codec": p.get("codec", "h264"),
                         "preserve_fps": p.get("preserve_fps", True),
                         "preserve_audio": p.get("preserve_audio", True),
+                        "stabilize": p.get("stabilize", False),
+                        "smooth_motion": p.get("smooth_motion", False),
                         "warning": r.get("warning"), "eta_text": eta_text})
         return out
     finally:
@@ -119,6 +126,7 @@ def page(request: Request, user: str = Depends(require_login)):
 @router.post("/estimate", response_class=HTMLResponse)
 def estimate(request: Request, duration_s: str = Form("0"), target_height: str = Form("1080"),
              preset: str = Form("fast"), preview: str = Form(""),
+             stabilize: str = Form(""), smooth_motion: str = Form(""),
              user: str = Depends(require_login)):
     try:
         dur = float(duration_s or 0)
@@ -129,7 +137,7 @@ def estimate(request: Request, duration_s: str = Form("0"), target_height: str =
     except (TypeError, ValueError):
         th = 1080
     e = cost.uoc_luong(dur, th, preset if preset in ("fast", "quality") else "fast",
-                       bool(preview))
+                       bool(preview), stabilize == "1", smooth_motion == "1")
     if dur <= 0:
         return HTMLResponse('<span class="dim">Chọn video để tính chi phí.</span>')
     return HTMLResponse(
@@ -150,7 +158,10 @@ async def batch_quote(request: Request, user: str = Depends(require_login)):
         target = target if target in (1080, 1440, 2160) else 1080
         preset = body.get("preset") if body.get("preset") in ("fast", "quality") else "fast"
         preview = bool(body.get("preview"))
-        entries = [cost.uoc_luong(float(value or 0), target, preset, preview)
+        stabilize = body.get("stabilize") is True
+        smooth_motion = body.get("smooth_motion") is True
+        entries = [cost.uoc_luong(float(value or 0), target, preset, preview,
+                                  stabilize, smooth_motion)
                    for value in durations]
     except (TypeError, ValueError, json.JSONDecodeError):
         return JSONResponse({"ok": False, "error": "Danh sách video không hợp lệ."},
@@ -382,6 +393,7 @@ async def queue(request: Request, csrf_token: str = Form(...),
                 preset: str = Form("fast"), target_height: str = Form("1080"),
                 codec: str = Form("h264"), preview: str = Form(""), ajax: str = Form(""),
                 preserve_fps: str = Form("1"), preserve_audio: str = Form("1"),
+                stabilize: str = Form(""), smooth_motion: str = Form(""),
                 video: UploadFile = File(default=None),
                 user: str = Depends(require_login)):
     from platform_core import credit
@@ -444,6 +456,8 @@ async def queue(request: Request, csrf_token: str = Form(...),
                                      preview=bool(preview), duration_s=dur,
                                      preserve_fps=preserve_fps != "0",
                                      preserve_audio=preserve_audio != "0",
+                                     stabilize=stabilize == "1",
+                                     smooth_motion=smooth_motion == "1",
                                      source_name=(getattr(video, "filename", "") or ""))
             last_id = job.id
             db.commit()
@@ -465,6 +479,7 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
                       target_height: str = Form("1080"), codec: str = Form("h264"),
                       preview: str = Form(""), preserve_fps: str = Form("1"),
                       preserve_audio: str = Form("1"),
+                      stabilize: str = Form(""), smooth_motion: str = Form(""),
                       videos: list[UploadFile] = File(default=[]),
                       user: str = Depends(require_login)):
     """Nộp batch tối đa 3; job + credit là một transaction duy nhất."""
@@ -551,7 +566,8 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
                 db, user_id=u.id, items=prepared, preset=preset,
                 target_height=th, codec=codec, preview=bool(preview),
                 preserve_fps=preserve_fps != "0",
-                preserve_audio=preserve_audio != "0")
+                preserve_audio=preserve_audio != "0",
+                stabilize=stabilize == "1", smooth_motion=smooth_motion == "1")
             db.commit()
         except (credit.ThieuCreditError, RegistryError, ValueError) as exc:
             db.rollback()

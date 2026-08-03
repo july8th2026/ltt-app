@@ -39,6 +39,9 @@
       <label class="up-switch"><span><strong>Giữ nguyên FPS gốc</strong><small>Tắt để chuẩn hóa 30 FPS.</small></span><input id="preserve_fps" type="checkbox" checked></label>
       <label class="up-switch"><span><strong>Giữ nguyên âm thanh</strong><small>Tắt để xuất video không audio.</small></span><input id="preserve_audio" type="checkbox" checked></label>
       <label class="up-switch"><span><strong>Xem thử 8 giây</strong><small>Kiểm chất lượng với chi phí thấp.</small></span><input id="preview" name="preview" type="checkbox"></label>
+      <label class="up-switch"><span><strong>Chống rung</strong><small>Ổn định hai pass bằng libvidstab · +20%.</small></span><input id="stabilize" name="stabilize" type="checkbox"></label>
+      <label class="up-switch"><span><strong>Mượt chuyển động 2×</strong><small>Nội suy 48/60 FPS rồi upscale · +120%.</small></span><input id="smooth_motion" name="smooth_motion" type="checkbox"></label>
+      <div class="up-mode disabled" aria-disabled="true" title="Chưa có pipeline HDR giữ đúng màu và metadata"><span><strong>HDR <em>NGHIÊN CỨU</em></strong><small>Chưa mở — không nâng SDR giả thành HDR.</small></span></div>
       <label class="up-switch"><span><strong>Xử lý hàng loạt</strong><small>Chọn tối đa 3 video; submit nguyên tử.</small></span><input id="batch_mode" type="checkbox"></label>
     </section>
 
@@ -88,7 +91,7 @@
           <div class="up-job-thumb">▶</div>
           <div class="up-job-info">
             <strong id="up-job-title-{{j.id}}">{{j.source_name}}</strong>
-            <div class="up-job-tags"><span>{{j.preset}}</span><span>{{j.codec|upper}}</span><span>{{j.target_height or 1080}}p</span>{% if j.duration_s %}<span>{{j.duration_s}}s</span>{% endif %}</div>
+            <div class="up-job-tags"><span>{{j.preset}}</span><span>{{j.codec|upper}}</span><span>{{j.target_height or 1080}}p</span>{% if j.stabilize %}<span>Chống rung</span>{% endif %}{% if j.smooth_motion %}<span>FPS 2×</span>{% endif %}{% if j.duration_s %}<span>{{j.duration_s}}s</span>{% endif %}</div>
             {% if j.error %}<small class="up-error">{{j.error}}</small>{% elif j.warning %}<small>{{j.warning}}</small>{% endif %}
           </div>
           <div class="up-job-progress" aria-live="polite">
@@ -155,10 +158,10 @@
   }
   async function updateQuote(){
     if(!selected.length){document.getElementById('est').textContent='Chọn video';return}
-    const body={durations:selected.map(x=>x.duration),target_height:+form.querySelector('[name=target_height]:checked').value,preset:form.querySelector('[name=preset]:checked').value,preview:document.getElementById('preview').checked};
+    const body={durations:selected.map(x=>x.duration),target_height:+form.querySelector('[name=target_height]:checked').value,preset:form.querySelector('[name=preset]:checked').value,preview:document.getElementById('preview').checked,stabilize:document.getElementById('stabilize').checked,smooth_motion:document.getElementById('smooth_motion').checked};
     try{const r=await fetch(prefix+'/batch-quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),d=await r.json();document.getElementById('est').textContent=d.ok?`${d.total_credit} credit · ${selected.length} video`:d.error}catch(_){document.getElementById('est').textContent='Không thể báo giá'}
   }
-  form.querySelectorAll('[name=preset],[name=target_height],#preview').forEach(x=>x.addEventListener('change',updateQuote));
+  form.querySelectorAll('[name=preset],[name=target_height],#preview,#stabilize,#smooth_motion').forEach(x=>x.addEventListener('change',updateQuote));
   async function watchAction(path){const data=new FormData();data.append('csrf_token',form.csrf_token.value);const response=await fetch(prefix+path,{method:'POST',body:data}),result=await response.json();if(!response.ok)throw new Error(result.detail||result.error||'Không thể cập nhật Watch Agent');return result}
   document.getElementById('watch-connect').onclick=async()=>{try{const result=await watchAction('/watch/token'),box=document.getElementById('watch-token');box.hidden=false;box.textContent=result.token;document.getElementById('watch-note').textContent='Sao chép token vào LTT_UPSCALE_WATCH_TOKEN; giá trị này sẽ không hiện lại.'}catch(err){status.textContent='Lỗi: '+err.message}};
   document.getElementById('watch-revoke').onclick=async()=>{try{await watchAction('/watch/revoke');document.getElementById('watch-token').hidden=true;document.getElementById('watch-note').textContent='Token Watch Agent đã được thu hồi.'}catch(err){status.textContent='Lỗi: '+err.message}};
@@ -193,6 +196,8 @@
       data.append('codec',form.codec.value);data.append('preserve_fps',document.getElementById('preserve_fps').checked?'1':'0');
       data.append('preserve_audio',document.getElementById('preserve_audio').checked?'1':'0');
       if(document.getElementById('preview').checked)data.append('preview','1');
+      if(document.getElementById('stabilize').checked)data.append('stabilize','1');
+      if(document.getElementById('smooth_motion').checked)data.append('smooth_motion','1');
       status.textContent=`Đang nộp ${selected.length} job…`;const response=await fetch(prefix+'/batch',{method:'POST',body:data});
       const result=await response.json();if(result.ok)location.href=prefix;else throw new Error(result.error||'Không thể tạo job');
     }catch(err){status.textContent='Lỗi: '+err.message;button.disabled=false}

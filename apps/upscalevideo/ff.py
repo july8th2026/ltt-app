@@ -33,10 +33,12 @@ def _fp() -> str:
     return media.ffprobe_bin()
 
 
-def _run(cmd: list, timeout: int = 3600, cancel_check=None) -> subprocess.CompletedProcess:
+def _run(cmd: list, timeout: int = 3600, cancel_check=None,
+         cwd: str | None = None) -> subprocess.CompletedProcess:
     if cancel_check is None:
-        return subprocess.run(cmd, capture_output=True, timeout=timeout)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.run(cmd, capture_output=True, timeout=timeout, cwd=cwd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            cwd=cwd)
     deadline = time.monotonic() + timeout
     while True:
         if cancel_check():
@@ -117,20 +119,69 @@ def probe_video(path: str, cancel_check=None) -> dict:
 
 
 def extract_frames(src: str, out_dir: str, cfr_fps=None, max_seconds=None,
-                   cancel_check=None) -> int:
+                   interpolate_fps=None, cancel_check=None) -> int:
     """Tách frame → out_dir/f%05d.png. Trả số frame."""
     os.makedirs(out_dir, exist_ok=True)
     cmd = [_ff(), "-y", "-i", src]
     if max_seconds:
         cmd += ["-t", f"{max_seconds:.2f}"]
+    filters = []
     if cfr_fps:
-        cmd += ["-vf", f"fps={cfr_fps}"]
+        filters.append(f"fps={cfr_fps}")
+    if interpolate_fps:
+        filters.append("minterpolate=" +
+                       f"fps={interpolate_fps}:mi_mode=mci:mc_mode=aobmc:"
+                       "me_mode=bidir:vsbmc=1")
+    if filters:
+        cmd += ["-vf", ",".join(filters)]
     cmd += [os.path.join(out_dir, "f%05d.png")]
     r = _run(cmd, cancel_check=cancel_check)
     n = sum(1 for f in os.scandir(out_dir) if f.name.endswith(".png"))
     if r.returncode != 0 or n == 0:
         raise RuntimeError(f"Tách frame thất bại (rc={r.returncode}, n={n})")
     return n
+
+
+def multiply_rate(rate: str, factor: int = 2) -> str:
+    """Nhân rational FPS mà không đổi sang float thiếu ổn định."""
+    try:
+        if "/" in str(rate):
+            numerator, denominator = str(rate).split("/", 1)
+            return f"{int(numerator) * int(factor)}/{int(denominator)}"
+        return f"{float(rate) * factor:.5f}".rstrip("0").rstrip(".")
+    except (TypeError, ValueError, ZeroDivisionError):
+        return str(60 if factor == 2 else 30 * factor)
+
+
+def stabilize_video(src: str, out_path: str, max_seconds=None,
+                    cancel_check=None) -> None:
+    """Ổn định video hai pass bằng libvidstab; audio được mux từ source ở cuối."""
+    workdir = os.path.dirname(out_path) or "."
+    os.makedirs(workdir, exist_ok=True)
+    transform_name = "motion.trf"
+    common = [_ff(), "-y", "-i", src]
+    if max_seconds:
+        common += ["-t", f"{max_seconds:.2f}"]
+    detect = common + ["-vf", "vidstabdetect=shakiness=5:accuracy=9:result=" +
+                       transform_name, "-f", "null", "-"]
+    first = _run(detect, cancel_check=cancel_check, cwd=workdir)
+    if first.returncode != 0:
+        raise RuntimeError("Phân tích chống rung thất bại: " +
+                           first.stderr.decode(errors="replace")[-300:])
+    transform = common + ["-vf", "vidstabtransform=input=" + transform_name +
+                          ":smoothing=10:optzoom=1", "-an", "-c:v", "libx264",
+                          "-preset", "veryfast", "-crf", "18", "-pix_fmt",
+                          "yuv420p", out_path]
+    try:
+        second = _run(transform, cancel_check=cancel_check, cwd=workdir)
+    finally:
+        try:
+            os.remove(os.path.join(workdir, transform_name))
+        except OSError:
+            pass
+    if second.returncode != 0 or not os.path.isfile(out_path):
+        raise RuntimeError("Chống rung thất bại: " +
+                           second.stderr.decode(errors="replace")[-300:])
 
 
 def _venc_args(encoder: str) -> list:

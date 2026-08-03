@@ -19,4 +19,6 @@
 | UP-15 | Delete/bulk delete | chưa lifecycle | DEFER | soft delete, retention, audit, undo, storage GC |
 | UP-16 | Seedance→Upscale | service có; UI/API WIP | BUILD | quote/confirm/ownership/credit/dedupe E2E |
 | UP-17 | Preview 8s | có | KEEP/RESTYLE | chi phí và artifact phân biệt rõ |
-
+| UP-18 | Chống rung | libvidstab có thật | BUILD | two-pass/cancel/quote/output probe/browser |
+| UP-19 | Mượt chuyển động 2× | minterpolate có thật | BUILD | FPS ×2, frame count, quote/cancel/output probe |
+| UP-20 | HDR | chỉ có HDR→SDR tonemap | DEFER | không nâng SDR giả; cần color/metadata/engine/cost gate riêng |

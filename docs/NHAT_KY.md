@@ -14,6 +14,60 @@
 
 ---
 
+## 2026-08-03 — H15.S5.3: motion/HDR UP-FEAT-002
+
+- **Mục tiêu:** chỉ mở stabilization/interpolation/HDR khi engine và cost gate
+  tương ứng đạt; không buộc cả ba dùng chung kết luận AI Detail.
+- **Hạng mục:** UP-FEAT-002 và H15.S5 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+FFmpeg production build có libvidstab two-pass và minterpolate. Benchmark 8 giây
+file `video (10).mp4`: chống rung 1,34 giây, giữ 24 FPS/192 frame; interpolation
+25,29 giây, xuất 48 FPS/381 frame. Chốt multiplier server-side 1,2× và 2,2×.
+
+Hai flag additive đi xuyên quote, hold, service dùng chung Seedance, batch,
+ToolSpec, worker, output result và card. Worker chống rung trong temp dir bằng
+`motion.trf` tương đối để không vỡ filter parser trên Windows; smooth nội suy
+trước Real-ESRGAN, nhân rational FPS, nhân disk guard và tách ETA sample theo
+đúng tổ hợp flag. Output key mang suffix để resume không nhầm artifact thường.
+
+HDR giữ DEFER: filter hiện có giải HDR→SDR, không chứng minh được SDR→HDR đúng
+color primaries/transfer/mastering metadata. UI nói rõ không nâng SDR giả HDR.
+Thêm `tests/test_116_upscale_motion_features.py` và báo cáo
+`docs/UI_REDESIGN/upscalevideo/06_MOTION_HDR_GATE.md`.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted final docs/vận hành/Upscale/UI/motion | **125 passed**, 1 warning trong 45,57 giây |
+| `python -m pytest -q` | **1.952 passed**, 8 skipped, 23 subtests, 1 warning trong 546,26 giây |
+| Motion benchmark thật | libvidstab 1,34s; minterpolate 25,29s; probe 24→48 FPS PASS |
+| CPU pipeline smoke 0,625s | actual libvidstab/minterpolate/probe/scale/encode + stub riêng Real-ESRGAN để không tranh GPU production; 1882×1080, 48 FPS, 27 frame PASS |
+| Playwright canary 8103 desktop | quote 5→6→14; submit giữ 14 credit; card queued có Chống rung/FPS 2×; overflow 0 |
+| Playwright canary 375 px | workspace-first; drawer/control mới visible; overflow 0; console warning/error 0; dynamic request fail 0 |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.134 file / 160.227 dòng) |
+
+Canary dùng DB/storage/process riêng trong `tmp/`. Lượt browser đầu tại 8102
+dùng route process cũ nên quote không đổi; không coi đó là PASS. Đã dựng fixture
+8103 từ source mới rồi mới ghi kết quả. Không đụng DB/credit production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Thực thi Q47/Q52: feature đạt engine/cost gate
+được BUILD; phần chưa đạt tiếp tục DEFER có lý do, không bị gọi là “đóng băng”.
+
+### Cách lùi lại
+
+Ẩn hai checkbox/ngừng nhận flag mới rồi revert commit UP-FEAT-002. Params additive
+cũ được worker trước bỏ qua; không migration hay core change.
+
+### Việc tiếp theo
+
+H15.S6 Auto Sub — audit vé UI/feature hiện có rồi triển khai tuần tự theo roadmap.
+
 ## 2026-08-03 — H15.S5.2: benchmark enhancement UP-FEAT-001
 
 - **Mục tiêu:** đánh giá AI Detail/denoise/deblur bằng capability và số đo thật,

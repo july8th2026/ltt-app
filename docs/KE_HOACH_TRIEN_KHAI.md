@@ -1159,8 +1159,10 @@ system-first, không làm nhiều app song song.
   - [x] H15.S4.3 TV-FEAT-002 — 2026-08-03: prompt preview server-side,
     camera/motion/style guidance trung thực, provider seed, 2 variation và remix;
     browser desktop/mobile PASS; 1.940 passed, 8 skipped, 23 subtests; scan 0.
-- [ ] H15.S5 Upscale Video — đi tuần tự UI → benchmark engine → cost gate;
-  không mở control giả.
+- [x] H15.S5 Upscale Video — 2026-08-03: UI → benchmark engine → motion/cost
+  gate hoàn thành tuần tự; BUILD chống rung + smooth 2×, DEFER AI Detail/
+  denoise/deblur/HDR có bằng chứng; 1.952 passed, 8 skipped, 23 subtests;
+  secret scan 0.
   - [x] H15.S5.1 UP-UI-001 — 2026-08-03: mobile progressive settings,
     compare slider đồng bộ, queue status/progress semantics và telemetry live
     region; browser desktop/mobile + file thật PASS; 1.943 passed, 8 skipped,
@@ -1169,8 +1171,10 @@ system-first, không làm nhiều app song song.
     3 model × bicubic/noise/blur; hash binary/model và preflight dependency;
     cả AI Detail/denoise/deblur **DEFER có bằng chứng**, UI không mở giả;
     1.946 passed, 8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S5.3 UP-FEAT-002 — stabilization/interpolation/HDR chỉ sau engine
-    và cost gate của H15.S5.2.
+  - [x] H15.S5.3 UP-FEAT-002 — 2026-08-03: libvidstab two-pass và
+    minterpolate 2× nối quote/job/worker/result, cost 1,2×/2,2×; HDR DEFER vì
+    không có SDR→HDR pipeline trung thực; browser/pipeline smoke PASS;
+    1.952 passed, 8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S6–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.

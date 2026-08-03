@@ -17,6 +17,7 @@ def build_params(*, video_key: str, owner_id: str, preset: str = "fast",
                  target_height: int = 1080, codec: str = "h264",
                  preview: bool = False, duration_s: float = 0.0,
                  preserve_fps: bool = True, preserve_audio: bool = True,
+                 stabilize: bool = False, smooth_motion: bool = False,
                  request_id: str = "", source_name: str = "") -> dict:
     """Chuẩn hoá params cho job upscalevideo.render (dùng chung route + seedance)."""
     if target_height not in (1080, 1440, 2160):
@@ -30,6 +31,7 @@ def build_params(*, video_key: str, owner_id: str, preset: str = "fast",
             "preview": bool(preview), "duration_s": float(duration_s or 0),
             "preserve_fps": bool(preserve_fps),
             "preserve_audio": bool(preserve_audio),
+            "stabilize": bool(stabilize), "smooth_motion": bool(smooth_motion),
             "request_id": str(request_id or "")[:96],
             "source_name": PurePosixPath(str(source_name or video_key)).name[:255]}
 
@@ -38,7 +40,8 @@ def submit_upscale_job(db: DbSession, *, user_id: str, video_key: str,
                        preset: str = "fast", target_height: int = 1080,
                        codec: str = "h264", preview: bool = False,
                        duration_s: float = 0.0, preserve_fps: bool = True,
-                       preserve_audio: bool = True, request_id: str = "",
+                       preserve_audio: bool = True, stabilize: bool = False,
+                       smooth_motion: bool = False, request_id: str = "",
                        source_name: str = ""):
     """Nộp job nâng cấp cho một video ĐÃ có trong storage (giữ chỗ credit trong
     cùng transaction). Trả Job. Caller commit. Dùng bởi route /queue VÀ bởi
@@ -48,6 +51,7 @@ def submit_upscale_job(db: DbSession, *, user_id: str, video_key: str,
                           target_height=target_height, codec=codec,
                           preview=preview, duration_s=duration_s,
                           preserve_fps=preserve_fps, preserve_audio=preserve_audio,
+                          stabilize=stabilize, smooth_motion=smooth_motion,
                           request_id=request_id, source_name=source_name)
     dedupe_params = ({"owner_id": user_id, "request_id": request_id}
                      if request_id else params)
@@ -61,7 +65,8 @@ def submit_upscale_batch(db: DbSession, *, user_id: str, items: list[dict],
                          preset: str = "fast", target_height: int = 1080,
                          codec: str = "h264", preview: bool = False,
                          preserve_fps: bool = True,
-                         preserve_audio: bool = True) -> list:
+                         preserve_audio: bool = True, stabilize: bool = False,
+                         smooth_motion: bool = False) -> list:
     """Nộp 1–3 job trong transaction do caller quản lý.
 
     Nếu bất kỳ item nào thiếu credit/không hợp lệ, exception làm caller rollback
@@ -82,5 +87,6 @@ def submit_upscale_batch(db: DbSession, *, user_id: str, items: list[dict],
             target_height=target_height, codec=codec, preview=preview,
             duration_s=float(item.get("duration_s") or 0),
             preserve_fps=preserve_fps, preserve_audio=preserve_audio,
+            stabilize=stabilize, smooth_motion=smooth_motion,
             request_id=request_id, source_name=str(item.get("filename") or "")))
     return jobs

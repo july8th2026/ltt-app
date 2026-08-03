@@ -46,8 +46,8 @@ def _dam_bao_giu_cho(job_id: str, user_id: str, need: int) -> None:
         except StopIteration: pass
 
 
-def _guard_disk(info: dict) -> None:
-    frames = max(info.get("nb_frames", 0), 1)
+def _guard_disk(info: dict, frame_multiplier: int = 1) -> None:
+    frames = max(info.get("nb_frames", 0) * max(1, frame_multiplier), 1)
     up_area = (info["w"] * 4) * (info["h"] * 4)
     src_area = max(info["w"] * info["h"], 1)
     batch = min(frames, _BATCH_SIZE)
@@ -128,6 +128,8 @@ def handle(params: dict, ctx=None) -> dict:
     preview = bool(params.get("preview"))
     preserve_fps = bool(params.get("preserve_fps", True))
     preserve_audio = bool(params.get("preserve_audio", True))
+    stabilize = bool(params.get("stabilize", False))
+    smooth_motion = bool(params.get("smooth_motion", False))
     owner_id = str(params.get("owner_id", "")) or "unknown"
     job_id = getattr(ctx, "job_id", "") or "adhoc"
     cancel_check = getattr(ctx, "is_cancelled", None)
@@ -137,6 +139,10 @@ def handle(params: dict, ctx=None) -> dict:
 
     storage = get_storage()
     tag = "preview" if preview else f"{target_h}p"
+    if stabilize:
+        tag += "-stabilized"
+    if smooth_motion:
+        tag += "-smooth2x"
     out_key = f"upscalevideo/{owner_id}/{job_id}/output_{tag}.mp4"
 
     tmp = tempfile.mkdtemp(prefix="ltt_upscale_")
@@ -158,7 +164,8 @@ def handle(params: dict, ctx=None) -> dict:
         if info["w"] == 0:
             raise RuntimeError("Không đọc được luồng video.")
         eff_dur = min(info["duration"], _PREVIEW_SECONDS) if preview else info["duration"]
-        true_cost = cost.uoc_luong_credit(info["duration"], target_h, preset.value, preview)
+        true_cost = cost.uoc_luong_credit(info["duration"], target_h, preset.value,
+                                          preview, stabilize, smooth_motion)
         _dam_bao_giu_cho(job_id, params.get("owner_id", ""), true_cost)
 
         if storage.exists(out_key):                 # resume
@@ -168,15 +175,28 @@ def handle(params: dict, ctx=None) -> dict:
                     "duration_s": round(eff_dur, 1), "preset": preset.value,
                     "target_height": target_h}
 
-        _guard_disk(info)
+        _guard_disk(info, frame_multiplier=2 if smooth_motion else 1)
+
+        working_video = tmp_video
+        if stabilize:
+            if ctx is not None:
+                ctx.progress(3, "phân tích và ổn định chuyển động…")
+            working_video = os.path.join(tmp, "stabilized.mp4")
+            ff.stabilize_video(tmp_video, working_video,
+                               max_seconds=_PREVIEW_SECONDS if preview else None,
+                               cancel_check=cancel_check)
 
         if ctx is not None:
             ctx.progress(4, "tách frame")
-        output_fps = info["fps_str"] if preserve_fps else "30"
-        cfr = info["fps_str"] if preserve_fps and info.get("is_vfr") else (
+        base_fps = info["fps_str"] if preserve_fps else "30"
+        output_fps = ff.multiply_rate(base_fps) if smooth_motion else base_fps
+        cfr = None if smooth_motion else (info["fps_str"] if preserve_fps and info.get("is_vfr") else (
             "30" if not preserve_fps else None)
+        )
         max_sec = _PREVIEW_SECONDS if preview else None
-        n = ff.extract_frames(tmp_video, in_dir, cfr_fps=cfr, max_seconds=max_sec,
+        n = ff.extract_frames(working_video, in_dir, cfr_fps=cfr,
+                              interpolate_fps=output_fps if smooth_motion else None,
+                              max_seconds=max_sec,
                               cancel_check=cancel_check)
 
         tune = autotune.pick(preset, info["w"], info["h"])
@@ -234,6 +254,7 @@ def handle(params: dict, ctx=None) -> dict:
                       if "/" in output_fps else float(output_fps),
                "has_audio": bool(info["has_audio"] and preserve_audio),
                "preserve_fps": preserve_fps, "preserve_audio": preserve_audio,
+               "stabilize": stabilize, "smooth_motion": smooth_motion,
                "frames": n, "processing_seconds": round(time.monotonic() - started_clock, 2)}
         if warning:
             res["warning"] = warning

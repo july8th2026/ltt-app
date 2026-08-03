@@ -28,14 +28,16 @@ def _cost(params: dict) -> int:
         dur = 0.0
     return uoc_luong_credit(dur, int(params.get("target_height", 1080) or 1080),
                             str(params.get("preset", "fast")),
-                            bool(params.get("preview")))
+                            bool(params.get("preview")),
+                            bool(params.get("stabilize")),
+                            bool(params.get("smooth_motion")))
 
 
 MANIFEST = AppManifest(
     slug="upscalevideo",
     display_name="Nâng cấp video",
     route_prefix="/upscalevideo",
-    summary="Nâng nét video lên 1080p/2K/4K bằng AI (Real-ESRGAN). Giữ tỉ lệ, FPS, âm thanh.",
+    summary="Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh.",
     icon="🔍",
     accent="#B4530A",
 
@@ -55,6 +57,8 @@ MANIFEST = AppManifest(
             "preview": {"type": "bool", "default": False},
             "preserve_fps": {"type": "bool", "default": True},
             "preserve_audio": {"type": "bool", "default": True},
+            "stabilize": {"type": "bool", "default": False},
+            "smooth_motion": {"type": "bool", "default": False},
             "duration_s": {"type": "number", "min": 0},
         },
         returns={"video_key": "video"},
