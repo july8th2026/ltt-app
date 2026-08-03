@@ -14,6 +14,64 @@
 
 ---
 
+## 2026-08-03 — H15.S8.2: Thumbnail TH-FEAT-001
+
+- **Mục tiêu:** khép vòng sáng tạo Thumbnail bằng reference, Brand Kit, score
+  minh bạch và remix mà không tạo kho/runtime/editor giả.
+- **Hạng mục:** TH-FEAT-001 và H15.S8 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Ảnh reference nhận PNG/JPEG/WebP tối đa 8 MB, kiểm cả MIME khai báo, nội dung
+decode, kích thước tối thiểu và trần 24 triệu pixel trước khi ghi Storage. Key
+luôn owner-scoped; file upload mới được dọn khi submit thiếu credit/registry lỗi.
+Worker đọc reference từ Storage và gửi inline Gemini cùng prompt; không đưa key
+hoặc dữ liệu người khác qua client.
+
+Brand Kit chuẩn hóa tên, hai màu hex, font và tone; lưu owner-scoped bằng generic
+AppProject có optimistic revision, rồi tự nạp lại ở phiên sau. Worker ghép brand
+directive vào prompt nội bộ. Mỗi output hợp lệ được chấm `technical-v1` từ chính
+pixel ảnh: contrast, entropy, detail và exposure; UI ghi rõ “Kỹ thuật”, không gọi
+là CTR/AI score. Payload legacy/không decode được vẫn hoàn job nhưng score mang
+`unavailable`, không bịa điểm.
+
+Mỗi output có “Tạo biến thể”: server xác minh job DONE + owner + index, khôi phục
+snapshot params và đưa output thật về Studio làm saved reference. Queue kiểm key
+nằm trong lịch sử output của đúng owner trước khi worker đọc. Đây là handoff remix
+thật; pixel editor/inpaint DEFER tới IMG-FEAT-001 theo Q54.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression Thumbnail/operation/parity/Agent tool spec | **75 passed**, 1 warning trong 88,93 giây |
+| `python -m pytest -q` (lần cuối sau fix cleanup) | **1.957 passed**, 8 skipped, 23 subtests, 1 warning trong 551,03 giây |
+| Playwright fixture 8107 desktop | upload reference nội bộ thật; tạo 2 output; Brand Kit còn sau reload; mỗi ảnh score 44/100, 1024×576; remix khôi phục đúng topic/title/reference |
+| Playwright fixture 8107 mobile 390×844 | overflow 0; feature/control vừa viewport; mọi action output đạt 44×44 px |
+| Console/network phiên 8107 | console hiện tại 0 lỗi; request trang/CSS/HTMX đều 200; ảnh output/remix tải thành công |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS trước cập nhật tài liệu (1.135 file / 161.336 dòng) |
+
+Browser bắt link “Mở” cao 44 nhưng chỉ rộng khoảng 37 px trên mobile; đã thêm
+min-width 44 px và reload kiểm lại. Fixture dùng DB/user/data cô lập trong `tmp`,
+không gọi Gemini/ImageGen và không dùng production. Diff review sau gate còn bắt
+cleanup thiếu credit có thể xóa saved output dùng để remix; đã tách key upload mới,
+thêm regression “submit fail không xóa output gốc”, rồi chạy lại full suite xanh.
+
+### Quyết định mới
+
+Q54: score v1 là kỹ thuật tất định, không dự đoán CTR; handoff v1 là remix qua
+reference owner-scoped; pixel editor phải chờ IMG-FEAT-001 đủ engine/cost gate.
+
+### Cách lùi lại
+
+Revert commit TH-FEAT-001. Không migration: Brand Kit dùng AppProject và reference
+dùng Storage hiện có; job cũ không có brand/reference/scores vẫn render bình thường.
+
+### Việc tiếp theo
+
+H15.S9.1 IMG-UI-001 — audit app Tạo ảnh rồi làm Studio/history/compare tuần tự.
+
 ## 2026-08-03 — H15.S8.1: Thumbnail TH-UI-001
 
 - **Mục tiêu:** đồng nhất giao diện Thumbnail theo Carbon Red và chỉ hiển thị

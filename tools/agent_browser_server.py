@@ -79,19 +79,23 @@ image_jobs.handle = _image_handle
 
 
 def _thumbnail_handle(params, ctx=None):
+    from apps.thumbnail.features import technical_score
     from platform_core.storage import get_storage
     count = max(1, min(4, int(params.get("count", 1))))
     prefix = f"thumbnail/{params['owner_id']}/{getattr(ctx, 'job_id', 'browser')}"
     source = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                           "server", "static", "home-covers", "image.png")
-    keys = []
+    keys = []; scores = []
     for index in range(count):
         key = f"{prefix}/{index}.png"
         with open(source, "rb") as stream:
             get_storage().put(key, stream, content_type="image/png")
+        with open(source, "rb") as stream:
+            scores.append(technical_score(stream.read()))
         keys.append(key)
     if ctx: ctx.progress(100, "xong")
-    return {"image_keys": keys, "count": count, "credit_cost": count * 5,
+    return {"image_keys": keys, "scores": scores, "count": count,
+            "credit_cost": count * 5,
             "prompt": str(params.get("topic", ""))}
 
 

@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q50; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27 đã thay)
+## 1. Quyết định đã chốt (đến Q54; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -78,6 +78,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q51 | Chuẩn audit chất lượng app | **Mọi audit app toàn diện dùng LTT-AQA trong `docs/quy_tac_audit.md`: tách Quality/Market/Evidence và Release Gate; gate tiền, bảo mật, dữ liệu, core outcome không được bù bằng điểm. Hồ sơ dùng mẫu `docs/APP_AUDIT/_MAU/`; UI-RD chỉ bắt đầu sau audit/Decision Gate khi yêu cầu có redesign.** | Một điểm tổng có thể che lỗi critical; audit nguồn hoặc so ảnh riêng lẻ không cho biết vị thế sản phẩm. Chuẩn chung buộc mọi nhận định có evidence, kiểm toàn bộ control, benchmark theo JTBD và chuyển finding thành quyết định/roadmap kiểm thử được. |
 | Q52 | Hệ giao diện chung toàn nền tảng | **LTT Carbon Red là style chuẩn, chiết từ Marketplace authenticated + Upscale + Auto Sub thành token/shell/component dùng chung. Triển khai system-first và tuần tự: platform/auth/billing trước, rồi từng app; một app phải PASS browser/regression trước khi mở app kế. Socialbot vẫn đóng băng Q10.** | Production hiện có ít nhất bốn ngôn ngữ thị giác; base còn token/CSS inline xanh trong khi app mới hardcode đỏ riêng. Chỉ đổi màu không giải quyết shell/control/a11y; redesign song song tạo regression chồng chéo. System-first cho một contract ổn định nhưng vẫn giữ backend/job/credit/provider hiện có. |
 | Q53 | Trigger và lịch chạy LTT Agent | **Schedule v1 là một lần chạy, ghim snapshot/revision và báo giá bất biến; người dùng duyệt + giữ toàn bộ credit trước khi hẹn, tối đa 30 ngày. `agent.advance` dùng hàng đợi PostgreSQL/`next_run_at` hiện có, server không cho client tick trước lịch. Khôi phục version luôn tạo workflow mới từ snapshot run, không ghi đè bản hiện tại. Webhook công khai và recurring auto-charge chỉ mở sau token scope, rate-limit, replay protection và consent/cap riêng.** | Tái dùng Job tránh nguồn lịch thứ hai và giữ reclaim/idempotency. Duyệt trước lịch bảo toàn Q42 và cho phép chạy không cần mở browser; recovery dạng copy tránh mất revision đang làm. Webhook/recurring thiếu security/consent sẽ biến một URL hoặc lịch cũ thành quyền tự động tiêu credit nên chưa được phép đi đường tắt. |
+| Q54 | Score và editor handoff cho Thumbnail | **Variant score v1 chỉ là điểm kỹ thuật tất định từ pixel thật (contrast/detail/exposure/entropy), phải ghi rõ không dự đoán CTR hay chất lượng ngữ nghĩa. Handoff v1 đưa output owner-scoped trở lại Thumbnail Studio làm reference để remix. Không hiện pixel editor/inpaint giả; năng lực đó chỉ mở sau engine/provider/cost gate của IMG-FEAT-001. Brand Kit lưu bằng AppProject chung, reference bằng Storage chung.** | VLM/CTR scoring cần provider, rubric, dữ liệu hiệu chuẩn và chi phí riêng; gắn nhãn “AI score” khi chưa có các điều kiện đó là gây hiểu lầm. Remix khép vòng sáng tạo ngay bằng contract đang có, trong khi AppProject/Storage tránh tạo kho dữ liệu thứ hai và giữ ownership nhất quán. |
 
 ---
 

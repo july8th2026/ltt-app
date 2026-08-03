@@ -1110,8 +1110,8 @@ Nguồn audit/roadmap/vé:
 `docs/APP_AUDIT/platform/2026-08-03/`. Q52 khóa LTT Carbon Red và thứ tự
 system-first, không làm nhiều app song song.
 
-Tiến độ H15 hiện tại: **24/38 vé (63,2%)**; **8/16 stage hoàn tất**, H15.S8
-đang thực hiện tuần tự (UI đã PASS, feature chưa bắt đầu).
+Tiến độ H15 hiện tại: **25/38 vé (65,8%)**; **9/16 stage hoàn tất**. H15.S8
+đã PASS đủ UI/feature; stage kế tiếp là H15.S9 Tạo ảnh.
 
 - [x] H15.AUDIT Inventory + production browser + market baseline — 2026-08-03:
   kiểm kê 11 module, toàn bộ route/trang control plane và website source; 25 bề
@@ -1210,15 +1210,20 @@ Tiến độ H15 hiện tại: **24/38 vé (63,2%)**; **8/16 stage hoàn tất**
     thành workflow mới. Browser phát hiện và đã sửa toolbar overlay + early tick;
     schedule/recovery/console/network PASS; frontend 17 và Agent 111 test PASS;
     full suite 1.955 passed, 8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S8 Thumbnail — UI → reference/brand/score/editor handoff; không song song.
+- [x] H15.S8 Thumbnail — UI → reference/brand/score/remix handoff hoàn thành
+  tuần tự; 1.957 passed, 8 skipped, 23 subtests; secret scan 0.
   - [x] H15.S8.1 TH-UI-001 — 2026-08-03: Thumbnail Studio dùng Carbon Red,
     form/control responsive, báo giá theo manifest; lịch sử owner-scoped có
     trạng thái/metadata/output thật và chọn so sánh tối đa hai ảnh. Browser
     desktop/mobile tạo 2 ảnh thật qua fixture cô lập, cost 10 credit, overflow 0,
     target visible ≥44 px, console/network sạch; regression 73 passed; full suite
     1.955 passed, 8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S8.2 TH-FEAT-001 — reference/brand kit/variant scoring và editor
-    handoff; phải qua provider/cost/privacy/rollback gate trước khi mở control.
+  - [x] H15.S8.2 TH-FEAT-001 — 2026-08-03: reference ảnh owner-scoped có
+    MIME/size/pixel validation và Gemini inline; Brand Kit lưu bằng AppProject;
+    score kỹ thuật v1 từ output pixel thật; output remix trở lại Studio với
+    ownership guard. Pixel editor DEFER theo Q54, không mở giả. Browser desktop/
+    mobile PASS; regression 75 passed; full suite 1.957 passed, 8 skipped,
+    23 subtests; secret scan 0.
 - [ ] H15.S9–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.

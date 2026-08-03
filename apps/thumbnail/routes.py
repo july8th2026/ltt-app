@@ -15,7 +15,7 @@ không sửa code (di trú trung thành từ BOT GEMINI).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
 from apps.thumbnail.jobs import _PROMPTS_DIR
@@ -52,13 +52,34 @@ def _models() -> list:
             if m.is_active]
 
 
+def _brand_for_user(user_id: str) -> dict:
+    from apps.thumbnail.features import clean_brand
+    from platform_core.db import get_session
+    from platform_core.models import APP_PROJECT_ACTIVE, AppProject
+    from sqlalchemy import select
+    gen = get_session(); db = next(gen)
+    try:
+        row = db.execute(select(AppProject).where(
+            AppProject.user_id == user_id, AppProject.app_slug == MANIFEST.slug,
+            AppProject.status == APP_PROJECT_ACTIVE
+        ).order_by(AppProject.updated_at.desc()).limit(1)).scalar_one_or_none()
+        return clean_brand((row.payload or {}).get("brand") if row else {})
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
 def _render(request: Request, user: str, *, error: str = "", jobs=None,
+            form_values=None,
             status_code: int = 200) -> HTMLResponse:
+    current = user_hien_tai(request)
     return templates.TemplateResponse(request, "thumbnail.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "aspects": _ASPECTS, "catalog": _catalog(), "defaults": _defaults(),
         "models": _models(), "error": error, "jobs": jobs or [],
+        "brand": _brand_for_user(current.id) if current else {},
+        "form_values": form_values or {},
     }, status_code=status_code)
 
 
@@ -88,8 +109,30 @@ def _jobs_cua_toi(request: Request):
                  "title": str((j.params or {}).get("title", ""))[:200],
                  "aspect_ratio": str((j.params or {}).get("aspect_ratio", "16:9")),
                  "requested_count": safe_count((j.params or {}).get("count", 1)),
-                 "image_keys": (j.result or {}).get("image_keys", []) if j.result else []}
+                 "image_keys": (j.result or {}).get("image_keys", []) if j.result else [],
+                 "scores": (j.result or {}).get("scores", []) if j.result else []}
                 for j in rows]
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _owned_output_reference(user_id: str, key: str) -> bool:
+    if not key or not key.startswith(f"thumbnail/{user_id}/"):
+        return False
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    from sqlalchemy import select
+    gen = get_session(); db = next(gen)
+    try:
+        rows = db.execute(select(Job.result).where(
+            Job.user_id == user_id, Job.app_slug == MANIFEST.slug
+        ).order_by(Job.created_at.desc()).limit(60)).scalars().all()
+        owned = any(key in ((result or {}).get("image_keys") or []) for result in rows)
+        if not owned:
+            return False
+        from platform_core.storage import get_storage
+        return get_storage().exists(key)
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -105,6 +148,30 @@ def _clean_choice(group: str, value: str) -> str:
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, user: str = Depends(require_login)):
     return _render(request, user, jobs=_jobs_cua_toi(request))
+
+
+@router.get("/remix/{job_id}/{image_index}", response_class=HTMLResponse)
+def remix(request: Request, job_id: str, image_index: int,
+          user: str = Depends(require_login)):
+    """Handoff output thật về Studio; không tạo pixel editor giả."""
+    from platform_core.db import get_session
+    from platform_core.models import JOB_DONE, Job
+    current = user_hien_tai(request)
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        keys = ((job.result or {}).get("image_keys") or []) if job else []
+        if (current is None or job is None or job.user_id != current.id or
+                job.app_slug != MANIFEST.slug or job.status != JOB_DONE or
+                image_index < 0 or image_index >= len(keys)):
+            return _render(request, user, error="Không tìm thấy output để tạo biến thể.",
+                           jobs=_jobs_cua_toi(request), status_code=404)
+        values = dict(job.params or {})
+        values["reference_key"] = keys[image_index]
+        return _render(request, user, jobs=_jobs_cua_toi(request), form_values=values)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
 
 
 @router.post("/preview", response_class=HTMLResponse)
@@ -152,7 +219,7 @@ def preview(
 
 
 @router.post("/queue", response_class=HTMLResponse)
-def queue(
+async def queue(
     request: Request,
     csrf_token: str = Form(...),
     topic: str = Form(""),
@@ -165,6 +232,14 @@ def queue(
     model: str = Form(""),
     aspect_ratio: str = Form("16:9"),
     count: int = Form(1),
+    reference_image: UploadFile | None = File(None),
+    saved_reference_key: str = Form(""),
+    brand_name: str = Form(""),
+    brand_primary: str = Form("#E53935"),
+    brand_secondary: str = Form("#111111"),
+    brand_font: str = Form(""),
+    brand_tone: str = Form(""),
+    save_brand: str = Form(""),
     user: str = Depends(require_login),
 ):
     from platform_core import credit
@@ -191,6 +266,30 @@ def queue(
                        "dùng (không phải quản trị nội bộ) để chạy job.",
                        jobs=_jobs_cua_toi(request), status_code=400)
 
+    from apps.thumbnail.features import clean_brand, validate_reference
+    brand = clean_brand({"name": brand_name, "primary_color": brand_primary,
+                         "secondary_color": brand_secondary, "font": brand_font,
+                         "tone": brand_tone})
+    reference_key = ""; reference_mime = ""; uploaded_reference_key = ""
+    if saved_reference_key:
+        if not _owned_output_reference(u.id, saved_reference_key):
+            return _render(request, user, error="Output tham chiếu không hợp lệ.",
+                           jobs=_jobs_cua_toi(request), status_code=400)
+        reference_key, reference_mime = saved_reference_key, "image/png"
+    if reference_image and reference_image.filename:
+        data = await reference_image.read()
+        try:
+            reference_mime, _dimensions = validate_reference(
+                data, reference_image.content_type or "")
+        except ValueError as exc:
+            return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request),
+                           status_code=400)
+        import io, uuid
+        from platform_core.storage import get_storage
+        reference_key = f"thumbnail/{u.id}/refs/{uuid.uuid4().hex}"
+        get_storage().put(reference_key, io.BytesIO(data), content_type=reference_mime)
+        uploaded_reference_key = reference_key
+
     # Cap do dai input (nguon cap user_input 2000) — chong phi token tren gia phang.
     params = {
         "topic": topic.strip()[:2000], "title": title.strip()[:200],
@@ -200,6 +299,7 @@ def queue(
         "kieu_trend": _clean_choice("kieu_trend", kieu_trend),
         "ngon_ngu": _clean_choice("ngon_ngu", ngon_ngu),
         "model": model, "aspect_ratio": aspect_ratio, "count": count, "owner_id": u.id,
+        "brand": brand, "reference_key": reference_key, "reference_mime": reference_mime,
     }
 
     gen = get_session(); db = next(gen)
@@ -210,14 +310,38 @@ def queue(
                 job_type="thumbnail.generate", params=params,
                 dedupe_key=dedupe_key_for("thumbnail.generate", params),
             )
+            if save_brand:
+                from platform_core import app_projects
+                from platform_core.models import APP_PROJECT_ACTIVE, AppProject
+                from sqlalchemy import select
+                row = db.execute(select(AppProject).where(
+                    AppProject.user_id == u.id, AppProject.app_slug == MANIFEST.slug,
+                    AppProject.status == APP_PROJECT_ACTIVE
+                ).order_by(AppProject.updated_at.desc()).limit(1)).scalar_one_or_none()
+                payload = {"kind": "brand_kit", "brand": brand}
+                if row:
+                    app_projects.save(db, project_id=row.id, user_id=u.id,
+                                      app_slug=MANIFEST.slug, revision=row.revision,
+                                      name=brand["name"] or "Thumbnail Brand Kit",
+                                      schema_version=1, payload=payload)
+                else:
+                    app_projects.create(db, user_id=u.id, app_slug=MANIFEST.slug,
+                                        name=brand["name"] or "Thumbnail Brand Kit",
+                                        schema_version=1, payload=payload)
             db.commit()
             job_id = job.id
         except credit.ThieuCreditError as exc:
             db.rollback()
+            if uploaded_reference_key:
+                from platform_core.storage import get_storage
+                get_storage().delete(uploaded_reference_key)
             return _render(request, user, error=str(exc),
                            jobs=_jobs_cua_toi(request), status_code=400)
         except RegistryError as exc:
             db.rollback()
+            if uploaded_reference_key:
+                from platform_core.storage import get_storage
+                get_storage().delete(uploaded_reference_key)
             return _render(request, user, error=str(exc),
                            jobs=_jobs_cua_toi(request), status_code=400)
     finally:

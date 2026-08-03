@@ -87,7 +87,8 @@ def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
 
 def build_prompt(topic: str, *, title: str = "", subtitle: str = "",
                  phong_cach: str = "", kieu_trend: str = "", text_style: str = "",
-                 ngon_ngu: str = "", aspect_ratio: str = "16:9") -> str:
+                 ngon_ngu: str = "", aspect_ratio: str = "16:9",
+                 brand: dict | None = None) -> str:
     """Ghép prompt thumbnail TỪ FRAGMENT (di trú trung thành từ BOT GEMINI
     `service.py`): base_prompt.txt + phong_cách + kiểu trend + style chữ + ngôn
     ngữ + tiêu đề/phụ đề. KHÔNG hardcode chuỗi prompt (dùng `apps/thumbnail/prompts/`).
@@ -111,11 +112,14 @@ def build_prompt(topic: str, *, title: str = "", subtitle: str = "",
                        if title else ""),
         "subtitle_text": (f'Smaller subtitle text: "{subtitle}".' if subtitle else ""),
     }
-    return pf.build(d, mapping)
+    from apps.thumbnail.features import brand_directive
+    prompt = pf.build(d, mapping)
+    directive = brand_directive(brand)
+    return f"{prompt}\n\n{directive}" if directive else prompt
 
 
 def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
-                model: str = _MODEL) -> bytes:
+                model: str = _MODEL, reference: tuple[bytes, str] | None = None) -> bytes:
     """Gọi Gemini Image API một lần, trả về bytes ảnh PNG. Ném lỗi nếu thất bại."""
     import httpx
 
@@ -124,8 +128,14 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
     # bề mặt rò khoá. Header không bị log mặc định.
     url = f"{_BASE}/v1beta/models/{model or _MODEL}:generateContent"
     headers = {"x-goog-api-key": api_key}
+    parts = [{"text": prompt}]
+    if reference:
+        data, mime = reference
+        parts.append({"inlineData": {"mimeType": mime,
+                                     "data": base64.b64encode(data).decode("ascii")}})
+        parts.append({"text": "Use the attached image as visual composition/style reference; do not copy protected logos or text unless requested."})
     body = {
-        "contents": [{"parts": [{"text": prompt}]}],
+        "contents": [{"parts": parts}],
         "generationConfig": {
             "responseModalities": ["IMAGE", "TEXT"],
             "imageConfig": {"aspectRatio": aspect_ratio},
@@ -172,6 +182,7 @@ def handle(params: dict, ctx=None) -> dict:
     kieu_trend = str(params.get("kieu_trend", ""))
     text_style = str(params.get("text_style", ""))
     ngon_ngu = str(params.get("ngon_ngu", ""))
+    brand = params.get("brand") if isinstance(params.get("brand"), dict) else {}
     aspect_ratio = str(params.get("aspect_ratio", "16:9")) or "16:9"
     owner_id = str(params.get("owner_id", "")) or "unknown"
     try:
@@ -192,8 +203,16 @@ def handle(params: dict, ctx=None) -> dict:
     storage = get_storage()
     prompt = build_prompt(topic, title=title, subtitle=subtitle, phong_cach=phong_cach,
                           kieu_trend=kieu_trend, text_style=text_style, ngon_ngu=ngon_ngu,
-                          aspect_ratio=aspect_ratio)
+                          aspect_ratio=aspect_ratio, brand=brand)
     job_id = getattr(ctx, "job_id", "") or "adhoc"
+    reference = None
+    reference_key = str(params.get("reference_key") or "")
+    reference_mime = str(params.get("reference_mime") or "")
+    if reference_key:
+        if not reference_key.startswith(f"thumbnail/{owner_id}/"):
+            raise ValueError("Ảnh tham chiếu không thuộc người dùng hiện tại.")
+        with storage.open(reference_key) as stream:
+            reference = (stream.read(), reference_mime)
 
     # Tính tiền theo ảnh THÀNH CÔNG + resume-safe (W1.1):
     #  - Ảnh đã lưu ở lần chạy trước (worker crash rồi job bị reclaim) thì DÙNG
@@ -201,18 +220,28 @@ def handle(params: dict, ctx=None) -> dict:
     #  - Một ảnh lỗi KHÔNG làm hỏng cả job: tạo được bao nhiêu tính tiền bấy nhiêu
     #    (quyết toán theo `credit_cost` bên dưới, worker hoàn phần chênh). Chỉ khi
     #    KHÔNG tạo được ảnh nào mới ném để hoàn toàn bộ + cho retry.
+    def score_image(data: bytes) -> dict:
+        from apps.thumbnail.features import technical_score
+        try:
+            return technical_score(data)
+        except Exception:  # legacy/provider payload invalid: generation must still settle normally
+            return {"score": None, "method": "unavailable"}
+
     keys: list[str] = []
+    scores: list[dict] = []
     errors: list[str] = []
     last_status: int | None = None
     for i in range(count):
         key = f"thumbnail/{owner_id}/{job_id}/{i}.png"
         if storage.exists(key):
             keys.append(key)                     # resume: đã tạo trước đó
+            with storage.open(key) as stream:
+                scores.append(score_image(stream.read()))
             continue
         if ctx is not None:
             ctx.progress(int(i * 100 / count), f"đang tạo ảnh {i + 1}/{count}")
         try:
-            img = _goi_gemini(prompt, aspect_ratio, api_key, model)
+            img = _goi_gemini(prompt, aspect_ratio, api_key, model, reference)
         except GeminiError as e:                 # lỗi HTTP → nhớ status để chấm key
             errors.append(str(e))
             last_status = e.status_code
@@ -222,6 +251,7 @@ def handle(params: dict, ctx=None) -> dict:
             continue
         storage.put(key, io.BytesIO(img), content_type="image/png")
         keys.append(key)
+        scores.append(score_image(img))
 
     if not keys:
         # Không tạo được ảnh nào → chấm lỗi key (nếu do key), ném để nền tảng
@@ -236,7 +266,7 @@ def handle(params: dict, ctx=None) -> dict:
 
     # `credit_cost` = số ảnh thật × giá mỗi ảnh → worker quyết toán đúng phần
     # dùng, hoàn lại phần giữ dư (giữ count ảnh nhưng chỉ tạo được len(keys)).
-    return {"image_keys": keys, "count": len(keys), "prompt": prompt,
+    return {"image_keys": keys, "scores": scores, "count": len(keys), "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "credit_cost": len(keys) * CREDIT_PER_IMAGE,
             "errors": errors[:3]}
