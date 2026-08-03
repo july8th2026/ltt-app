@@ -120,9 +120,9 @@
   "tiktok_require_user_confirm": true,
   "app_name": "LTTStudio VideoBot",
   "app_support_email": "support@lttstudios.com",
-  "app_privacy_policy_url": "https://lttstudios.com/legal/privacy.html",
-  "app_terms_url": "https://lttstudios.com/legal/terms.html",
+  "app_privacy_policy_url": "https://lttstudios.com/privacy-policy/",
+  "app_terms_url": "https://lttstudios.com/terms/",
   "tiktok_redirect_uri": "REPLACE_ME_tiktok_redirect_uri",
   "tiktok_audit_log_path": "data/audit_log.jsonl",
-  "privacy_policy_url": "https://lttstudios.com/legal/privacy.html"
+  "privacy_policy_url": "https://lttstudios.com/privacy-policy/"
 }

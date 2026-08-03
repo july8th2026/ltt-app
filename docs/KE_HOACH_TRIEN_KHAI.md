@@ -1294,6 +1294,11 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     `/` thay vì route sản phẩm sai. Production browser/REST inventory xác nhận;
     contract 3 passed, static reference 761 passed; full suite 1.988 passed,
     8 skipped, 23 subtests; secret scan 0.
-  - [ ] H15.S14.2 WEB-002 — đồng nhất brand/content/link App/Support/Legal/Commerce.
+  - [x] H15.S14.2 WEB-002 — 2026-08-03: runtime dùng một PUBLIC_LINKS pretty
+    URL; footer chung App/Support/Legal/Commerce trên public/auth/app; config
+    Privacy/Terms bỏ URL `.html`; contract CTA WordPress ↔ control plane sẵn
+    cho deploy. Browser desktop/mobile overflow 0, console/network sạch;
+    regression 36 passed; full suite 1.991 passed, 8 skipped, 23 subtests;
+    secret scan 0.
   - [ ] H15.S14.3 WEB-003 — deploy website, crawl/redirect/SEO/a11y production.
 - [ ] H15.S15 DEEP re-audit + full release gate.

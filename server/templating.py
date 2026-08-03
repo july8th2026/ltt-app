@@ -41,6 +41,21 @@ def _tinh_asset_ver() -> str:
 ASSET_VER = _tinh_asset_ver()
 templates.env.globals["asset_ver"] = ASSET_VER
 
+# Q59 — public website is WordPress and owns these pretty URLs. Keep the
+# integration surface centralized so auth, apps and commerce never drift back
+# to legacy .html pages. OAuth callback URLs are intentionally not included:
+# providers require their exact legacy paths.
+PUBLIC_LINKS = {
+    "website": "https://lttstudios.com/",
+    "applications": "https://lttstudios.com/applications/",
+    "support": "https://lttstudios.com/faq/",
+    "contact": "https://lttstudios.com/contact/",
+    "privacy": "https://lttstudios.com/privacy-policy/",
+    "terms": "https://lttstudios.com/terms/",
+    "data_deletion": "https://lttstudios.com/data-deletion/",
+}
+templates.env.globals["public_links"] = PUBLIC_LINKS
+
 # Hợp đồng app (H5): app được mang template RIÊNG trong `apps/<slug>/templates/`
 # để tự dựng UI (extends base.html) MÀ KHÔNG phải bỏ file vào server/templates/.
 # Không có phần này thì "thêm app = thêm thư mục" chỉ đúng với phần xử lý, còn

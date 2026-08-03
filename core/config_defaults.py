@@ -143,6 +143,6 @@ DEFAULTS = {
     # App identity (for TikTok audit submission)
     "app_name":                      "LTTStudio VideoBot",
     "app_support_email":             "support@lttstudios.com",
-    "app_privacy_policy_url":        "https://lttstudios.com/legal/privacy.html",
-    "app_terms_url":                 "https://lttstudios.com/legal/terms.html",
+    "app_privacy_policy_url":        "https://lttstudios.com/privacy-policy/",
+    "app_terms_url":                 "https://lttstudios.com/terms/",
 }

@@ -14,6 +14,46 @@
 
 ---
 
+## 2026-08-03 — H15.S14.2: Website WEB-002
+
+- **Mục tiêu:** đồng nhất liên kết Brand/App/Support/Legal/Commerce giữa
+  control plane và website trước khi deploy WordPress.
+- **Hạng mục:** WEB-002 hoàn thành; WEB-003 chưa bắt đầu.
+- **Trạng thái:** code/contract/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Thêm `PUBLIC_LINKS` làm nguồn URL runtime duy nhất và footer dùng chung trên ba
+shell public, authenticated app và auth. Footer nối Hệ sinh thái, Ứng dụng, FAQ,
+Liên hệ, Credit/thanh toán, Privacy, Terms và Xóa dữ liệu với semantic nav.
+
+Config default/example/current chuyển Privacy và Terms sang pretty URL đang
+sống. Hai OAuth callback không bị đổi vì provider phụ thuộc exact URL. Contract
+WordPress khóa catalog/login/register/commerce của control plane cùng bốn nhóm
+CTA cần thay khi deploy; production WordPress chưa bị sửa ở vé này.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression link contract + public/auth/home | **36 passed**, 1 warning trong 45,95 giây |
+| `python -m pytest -q` | **1.991 passed**, 8 skipped, 23 subtests, 1 warning trong 573,38 giây |
+| Playwright fixture 8118 desktop 1440×1000 | catalog + footer đủ 8 link; overflow 0 |
+| Playwright fixture 8118 mobile 390×844 | login/footer legal render đúng; overflow 0 |
+| Console/network phiên 8118 | **0 error, 0 warning, 0 request failed** |
+
+### Quyết định mới
+
+Không phát sinh; áp dụng Q59 và giữ ngoại lệ callback OAuth đã khóa.
+
+### Cách lùi lại
+
+Revert commit WEB-002. Không migration và chưa thay WordPress.
+
+### Việc tiếp theo
+
+H15.S14.3 WEB-003 — deploy, crawl redirect/SEO/a11y production.
+
 ## 2026-08-03 — H15.S14.1: Website WEB-001
 
 - **Mục tiêu:** chốt một route contract giữa gói static trong repo và website

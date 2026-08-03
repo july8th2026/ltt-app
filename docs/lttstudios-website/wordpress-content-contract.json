@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "verified_at": "2026-08-03",
+  "brand": "LTT Studios",
+  "control_plane": {
+    "catalog": "https://app.lttstudios.com/",
+    "login": "https://app.lttstudios.com/login",
+    "register": "https://app.lttstudios.com/register",
+    "commerce": "https://app.lttstudios.com/nap"
+  },
+  "marketing": {
+    "website": "https://lttstudios.com/",
+    "applications": "https://lttstudios.com/applications/",
+    "support": "https://lttstudios.com/faq/",
+    "contact": "https://lttstudios.com/contact/",
+    "privacy": "https://lttstudios.com/privacy-policy/",
+    "terms": "https://lttstudios.com/terms/",
+    "data_deletion": "https://lttstudios.com/data-deletion/"
+  },
+  "wordpress_replacements": [
+    {"surface": "global_login", "current_contains": "/wp-login.php", "target": "https://app.lttstudios.com/login"},
+    {"surface": "primary_open_tool", "current_contains": "/ltt-tools-ai/", "target": "https://app.lttstudios.com/"},
+    {"surface": "account_register", "current_contains": "/wp-login.php?action=register", "target": "https://app.lttstudios.com/register"},
+    {"surface": "pricing_or_buy_credits", "current_contains": null, "target": "https://app.lttstudios.com/nap"}
+  ]
+}
