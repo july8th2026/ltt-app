@@ -133,7 +133,7 @@
     }
   </style>
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 {# Trang home đã đăng nhập có shell marketplace riêng; trang khác giữ header chung. #}
 {% if not home_workspace|default(false) %}
 {% include "_header.html" %}

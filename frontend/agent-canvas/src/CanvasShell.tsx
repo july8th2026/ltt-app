@@ -26,6 +26,9 @@ function Editor() {
   const [selectedEdges, setSelectedEdges] = useState<string[]>([])
   const [readOnly, setReadOnly] = useState(window.innerWidth <= 640)
   const [mobilePanel,setMobilePanel]=useState<'canvas'|'palette'|'inspector'>('canvas')
+  const [desktopPanel,setDesktopPanel]=useState<'tools'|'workspace'|'run'|'inspector'|null>(null)
+  const [paletteQuery,setPaletteQuery]=useState('')
+  const [quickConnect,setQuickConnect]=useState<{sourceId:string;sourceHandle:string}|null>(null)
   const [showLayers,setShowLayers]=useState(false)
   const [commandOpen,setCommandOpen]=useState(false)
   const [commandQuery,setCommandQuery]=useState('')
@@ -84,7 +87,7 @@ function Editor() {
     const shortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault(); setCommandOpen(true)
-      } else if (event.key === 'Escape') { setCommandOpen(false); setShowLayers(false) }
+      } else if (event.key === 'Escape') { setCommandOpen(false); setShowLayers(false); setDesktopPanel(null) }
     }
     window.addEventListener('keydown', shortcut)
     return () => window.removeEventListener('keydown', shortcut)
@@ -170,7 +173,7 @@ function Editor() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault(); setCommandOpen(true); return
     }
-    if (event.key === 'Escape') { setCommandOpen(false); setShowLayers(false); return }
+    if (event.key === 'Escape') { setCommandOpen(false); setShowLayers(false); setDesktopPanel(null); return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); dispatch({ type: event.shiftKey ? 'redo' : 'undo' }); return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); dispatch({ type: 'redo' }); return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicate(); return }
@@ -189,6 +192,7 @@ function Editor() {
       __readOnly: readOnly,
       __onParamChange: (name:string,value:unknown) => dispatch({type:'update',id:node.id,data:{
         params:{...((node.data.params??{}) as Record<string,unknown>),[name]:value}}}),
+      __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
       __status: String(run?.checkpoint[node.id]?.status ??
         (validationIssues.some(issue => issue.step_id === node.id) ? 'invalid'
         : costs[node.id] === undefined ? 'draft' : 'validated')),
@@ -221,7 +225,8 @@ function Editor() {
   }), [page.edges, selectedEdges, showConnections])
   if (phase === 'loading') return <section className="canvas-state" aria-live="polite">Đang tải workflow…</section>
   if (phase === 'error' && !workflow) return <section className="canvas-state error" role="alert">Không tải được Canvas. <button onClick={() => location.reload()}>Thử lại</button></section>
-  const groups = palette.reduce<Record<string, PaletteTool[]>>((result, tool) => {
+  const groups = palette.filter(tool=>`${tool.name} ${tool.app_name} ${tool.description}`.toLocaleLowerCase('vi')
+    .includes(paletteQuery.trim().toLocaleLowerCase('vi'))).reduce<Record<string, PaletteTool[]>>((result, tool) => {
     const group = tool.requires.includes('gpu') ? 'GPU' : tool.name.startsWith('video.')
       ? 'Video' : tool.name.startsWith('image.') ? 'Ảnh' : 'Text'
     ;(result[group] ??= []).push(tool)
@@ -236,14 +241,24 @@ function Editor() {
           connectionAllowed(sourceTool, output, byName.get(String(selectedNode.data.tool)), field))
           .map(output => ({ value: `${source.id}|${output}`, label: `${source.id} · ${output}` }))
       })])) : {}
+  const quickOptions=quickConnect?page.nodes.flatMap(target=>{
+    if(target.id===quickConnect.sourceId)return []
+    const source=page.nodes.find(node=>node.id===quickConnect.sourceId)
+    const sourceTool=byName.get(String(source?.data.tool));const targetTool=byName.get(String(target.data.tool))
+    return Object.keys(targetTool?.params_schema??{}).filter(field=>connectionAllowed(sourceTool,quickConnect.sourceHandle,targetTool,field))
+      .map(field=>({targetId:target.id,targetHandle:field,label:`${String(target.data.tool)} · ${field}`}))
+  }):[]
   return <section className="canvas-shell" aria-label="LTT Agent Canvas" tabIndex={0} onKeyDown={onKeyDown}>
-    <header className="canvas-toolbar"><div className="workflow-identity"><input aria-label="Tên workflow"
+    <header className="canvas-toolbar"><a className="canvas-home" href="/agent" aria-label="Về Agent AI">LTT</a><div className="workflow-identity"><input aria-label="Tên workflow"
       value={workflow?.name ?? ''} disabled={!workflow || readOnly} onChange={event=>workflow&&setWorkflow({...workflow,name:event.target.value})}
       onBlur={()=>workflow&&saveWorkflow({...workflow,canvas:state.document},csrf).then(setWorkflow).catch(()=>setPhase('error'))}/>
       <span>{readOnly ? 'Mobile · chỉ xem' : `Canvas v2 · ${page.name} · server validated`}</span></div>
-      <nav aria-label="Lệnh Canvas"><button disabled={!state.past.length || readOnly} onClick={() => dispatch({ type: 'undo' })}>Hoàn tác</button>
-        <button disabled={!state.future.length || readOnly} onClick={() => dispatch({ type: 'redo' })}>Làm lại</button>
-        <button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
+      <div className="canvas-top-actions"><span className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict' ? 'Xung đột' : phase === 'error' ? 'Lỗi lưu' : 'Đã lưu'}</span>
+        <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘</button>
+        <button title="Assistant" aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>AI</button>
+        <button title="Phiên bản và chia sẻ" aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>↗</button>
+        <button className="run-primary" aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
+      <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Lệnh Canvas"><header><strong>Kiểm tra & chạy</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
         <button disabled={(!selected.length && !selectedEdges.length) || readOnly}
           onClick={() => dispatch(selectedEdges.length ? { type: 'deleteEdges', ids: selectedEdges } : { type: 'delete', ids: selected })}>Xóa</button>
         {selectedEdges.length===1&&<button disabled={readOnly} onClick={toggleErrorBranch}>Nhánh: {selectedEdge?.data?.condition==='error'?'Lỗi':'Thành công'}</button>}
@@ -252,9 +267,6 @@ function Editor() {
         <button aria-pressed={showGrid} onClick={()=>dispatch({type:'pageView',grid:!showGrid})}>Lưới</button>
         <button aria-pressed={showConnections} onClick={()=>dispatch({type:'pageView',connections:!showConnections})}>Đường nối</button>
         <button aria-pressed={showMinimap} onClick={()=>dispatch({type:'pageView',minimap:!showMinimap})}>Bản đồ</button>
-        <button aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘ K</button>
-        <button aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>Assistant</button>
-        <button aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>Phiên bản & share</button>
         <button disabled={readOnly || phase === 'saving'} onClick={async () => {
           if (!workflow) return
           if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current)
@@ -287,12 +299,24 @@ function Editor() {
         {run?.status === 'running' && <button onClick={async () => {setRun(await cancelRun(run, csrf));void refreshRunHistory()}}>Hủy chạy</button>}
         {run && <span className={`run-state ${run.status}`} aria-live="polite">Run: {run.status} · thực tế {run.actual}</span>}
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
-      <div className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
+      <div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
         : phase === 'error' ? <>Lưu lỗi <button onClick={() => setRetryNonce(value => value + 1)}>Thử lại</button></> : 'Đã lưu'}</div></header>
     <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Inspector'}</button>)}</nav>
     <div className={`canvas-body panel-${mobilePanel}`}>
-      <aside className="canvas-palette" aria-label="Palette công cụ"><h2>Workspace</h2>
+      <nav className="canvas-rail" aria-label="Công cụ Canvas">
+        <button title="Chọn" aria-label="Công cụ chọn" aria-pressed={!desktopPanel}>↖</button>
+        <button title="Thêm node" aria-label="Mở công cụ" aria-pressed={desktopPanel==='tools'} onClick={()=>setDesktopPanel(value=>value==='tools'?null:'tools')}>＋</button>
+        <button title="Workspace" aria-label="Mở Workspace" aria-pressed={desktopPanel==='workspace'} onClick={()=>setDesktopPanel(value=>value==='workspace'?null:'workspace')}>▦</button>
+        <button title="Lớp" aria-label="Mở danh sách lớp" aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>☷</button>
+        <button title="Sticky note" aria-label="Tạo sticky note" disabled={readOnly} onClick={()=>dispatch({type:'noteAdd',text:'Ghi chú mới'})}>□</button>
+        <button title="Bình luận" aria-label="Tạo comment" disabled={readOnly} onClick={()=>dispatch({type:'commentAdd',text:'Bình luận mới'})}>◌</button>
+        <span />
+        <button title="Hoàn tác" aria-label="Hoàn tác" disabled={!state.past.length||readOnly} onClick={()=>dispatch({type:'undo'})}>↶</button>
+        <button title="Làm lại" aria-label="Làm lại" disabled={!state.future.length||readOnly} onClick={()=>dispatch({type:'redo'})}>↷</button>
+      </nav>
+      <aside className={`canvas-palette${desktopPanel==='tools'||desktopPanel==='workspace'?' is-open':''}${desktopPanel==='workspace'?' workspace-only':' tools-only'}`} aria-label="Palette công cụ"><header className="drawer-heading"><h2>{desktopPanel==='workspace'?'Workspace':'Thêm node'}</h2><button aria-label="Đóng Palette" onClick={()=>setDesktopPanel(null)}>×</button></header>
+        {desktopPanel==='tools'&&<input className="palette-search" aria-label="Tìm công cụ" value={paletteQuery} onChange={event=>setPaletteQuery(event.target.value)} placeholder="Tìm model hoặc công cụ…"/>}
         <section className="page-panel" aria-label="Pages"><header><h3>Pages</h3><button disabled={readOnly||state.document.pages.length>=20}
           onClick={()=>{dispatch({type:'pageAdd'});setSelected([]);setSelectedEdges([])}}>+ Page</button></header>
           {state.document.pages.map(item=><div className={`page-row${item.id===page.id?' active':''}`} key={item.id}>
@@ -339,7 +363,7 @@ function Editor() {
             if (persisted.length) dispatch({ type: persisted.every(change => change.type === 'position') ? 'sync' : 'graph', nodes: applyNodeChanges(persisted, page.nodes) as CanvasNode[], edges: page.edges }) }}
           onEdgesChange={(changes: EdgeChange[]) => { const persisted = changes.filter(change => ['add', 'remove', 'replace'].includes(change.type));
             if (persisted.length) dispatch({ type: 'graph', nodes: page.nodes, edges: applyEdgeChanges(persisted, page.edges) as CanvasEdge[] }) }}
-          onConnect={onConnect} onNodeClick={(_event, node) => { setSelectedEdges([]); dispatch({ type: 'select', id: node.id }) }}
+          onConnect={onConnect} onNodeClick={(_event, node) => { setSelectedEdges([]); setDesktopPanel(null); dispatch({ type: 'select', id: node.id }) }}
           onEdgeClick={(_event, edge) => { setSelected([]); setSelectedEdges([edge.id]); dispatch({ type: 'select' }) }}
           onNodeDragStart={() => { dragBefore.current = structuredClone(state.document) }}
           onNodeDragStop={() => { if (dragBefore.current) dispatch({ type: 'commit', before: dragBefore.current }); dragBefore.current = undefined }}
@@ -362,14 +386,20 @@ function Editor() {
       </main>
       <nav className="page-dock" aria-label="Chuyển page">{state.document.pages.map(item=><button
         key={item.id} aria-pressed={item.id===page.id} onClick={()=>dispatch({type:'pageSelect',id:item.id})}>{item.name}</button>)}</nav>
-      <Inspector node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run} csrfToken={csrf}
+      {quickConnect&&<aside className="quick-connect-picker" aria-label="Chọn đích kết nối"><header><div><small>OUTPUT</small><strong>{quickConnect.sourceHandle}</strong></div><button aria-label="Đóng chọn kết nối" onClick={()=>setQuickConnect(null)}>×</button></header>
+        {quickOptions.length?<div>{quickOptions.map(option=><button key={`${option.targetId}-${option.targetHandle}`} onClick={()=>{onConnect({source:quickConnect.sourceId,sourceHandle:quickConnect.sourceHandle,target:option.targetId,targetHandle:option.targetHandle});setQuickConnect(null)}}>{option.label}</button>)}</div>
+          :<p>Chưa có input tương thích. Thêm một node đích rồi thử lại.</p>}</aside>}
+      {selectedNode&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly}
+        onClose={()=>{setSelected([]);dispatch({type:'select'})}} onAdvanced={()=>setDesktopPanel('inspector')}
+        onChange={data=>dispatch({type:'update',id:selectedNode.id,data})}/>}
+      {(desktopPanel==='inspector'||mobilePanel==='inspector')&&<Inspector className={desktopPanel==='inspector'?'is-open':''} node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run} csrfToken={csrf}
         runHistory={runHistory} onSelectRun={id=>void loadRun(id).then(setRun).catch(()=>setRunError('Không tải được run.'))}
         onReplay={source=>void runAgain(source,csrf).then(next=>{setRun(next);void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể replay.'))}
         onRestore={source=>void restoreRunAsWorkflow(source,csrf).then(activateWorkflow).catch(error=>setRunError(error instanceof Error?error.message:'Không thể khôi phục workflow.'))}
         readOnly={readOnly} connections={connectionOptions}
         onConnect={(field, value) => { if (!selectedNode) return; const [source, sourceHandle] = value.split('|')
           onConnect({ source, sourceHandle, target: selectedNode.id, targetHandle: field }) }}
-        onChange={data => selectedNode && dispatch({ type: 'update', id: selectedNode.id, data })} />
+        onChange={data => selectedNode && dispatch({ type: 'update', id: selectedNode.id, data })} />}
     </div>
     {assistantOpen&&<aside className="assistant-drawer" aria-label="Workflow Assistant"><header><strong>Workflow Assistant</strong><button aria-label="Đóng Assistant" onClick={()=>setAssistantOpen(false)}>×</button></header>
       <div className="assistant-modes"><button aria-pressed={assistantMode==='analyze'} onClick={()=>setAssistantMode('analyze')}>Phân tích</button><button aria-pressed={assistantMode==='improve'} onClick={()=>setAssistantMode('improve')}>Đề xuất cải tiến</button></div>
@@ -397,6 +427,27 @@ function Editor() {
         ].filter(item=>item.name.toLocaleLowerCase('vi').includes(commandQuery.toLocaleLowerCase('vi')))
           .map(item=><button key={item.name} onClick={()=>{item.run();setCommandOpen(false);setCommandQuery('')}}>{item.name}</button>)}</div>
       </section></div>}
+  </section>
+}
+
+function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;
+  onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void}) {
+  if(!tool)return null
+  const params=(node.data.params??{}) as Record<string,unknown>
+  const schema=Object.entries(tool.schema_variants??{}).reduce((current,[field,variants])=>
+    variants[String(params[field])]??current,tool.params_schema)
+  const fields=Object.entries(schema).filter(([,rule])=>rule.type==='model_ref'||rule.required||rule.values?.length).slice(0,3)
+  const setParam=(name:string,value:unknown)=>onChange({params:{...params,[name]:value}})
+  return <section className="context-composer" aria-label={`Cấu hình nhanh ${tool.name}`}>
+    <header><div><small>{tool.app_name}</small><strong>{tool.name}</strong></div><nav><button onClick={onAdvanced}>Nâng cao</button><button aria-label="Đóng cấu hình nhanh" onClick={onClose}>×</button></nav></header>
+    <div className="context-fields">{fields.map(([name,rule])=>{
+      const value=params[name]??rule.default??''
+      if(rule.values?.length)return <label key={name}><span>{name}{rule.required?' *':''}</span><select disabled={readOnly} value={String(value)} onChange={event=>setParam(name,event.target.value)}>
+        <option value="">— chọn —</option>{(rule.options??rule.values.map(item=>({value:item,label:String(item)}))).map(option=><option key={String(option.value)} value={String(option.value)}>{option.label}</option>)}</select></label>
+      if(rule.type==='bool')return <label key={name} className="composer-check"><input type="checkbox" disabled={readOnly} checked={Boolean(value)} onChange={event=>setParam(name,event.target.checked)}/><span>{name}</span></label>
+      return <label key={name}><span>{name}{rule.required?' *':''}</span><input disabled={readOnly} value={String(value)} type={rule.type==='int'||rule.type==='number'?'number':'text'}
+        onChange={event=>setParam(name,rule.type==='int'?Number.parseInt(event.target.value):rule.type==='number'?Number(event.target.value):event.target.value)}/></label>
+    })}</div>
   </section>
 }
 

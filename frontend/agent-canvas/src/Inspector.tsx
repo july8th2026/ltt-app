@@ -6,21 +6,21 @@ import { RunInspector } from './RunInspector'
 import { useState } from 'react'
 import { uploadAsset } from './workflowApi'
 
-export function Inspector({ node, tool, readOnly, csrfToken, run,runHistory,onSelectRun,onReplay,onRestore, onChange, connections = {}, onConnect }:
+export function Inspector({ node, tool, readOnly, csrfToken, run,runHistory,onSelectRun,onReplay,onRestore, onChange, connections = {}, onConnect, className = '' }:
   { node?: CanvasNode; tool?: PaletteTool; readOnly: boolean;
     csrfToken: string;
     run?: AgentRun;
     runHistory?:AgentRunSummary[];onSelectRun?:(id:string)=>void;onReplay?:(run:AgentRun)=>void;onRestore?:(run:AgentRun)=>void;
     onChange: (data: Record<string, unknown>) => void;
     connections?: Record<string, { value: string; label: string }[]>;
-    onConnect?: (field: string, value: string) => void }) {
-  if (!node || !tool) return <aside className="canvas-inspector" aria-label="Inspector">
+    onConnect?: (field: string, value: string) => void; className?: string }) {
+  if (!node || !tool) return <aside className={`canvas-inspector ${className}`} aria-label="Inspector">
     <RunInspector run={run} history={runHistory} onSelect={onSelectRun} onReplay={onReplay} onRestore={onRestore}/><div className="node-inspector"><h2>Inspector</h2><p>Chọn một node để cấu hình.</p></div></aside>
   const params = (node.data.params ?? {}) as Record<string, unknown>
   const schema = Object.entries(tool.schema_variants ?? {}).reduce((current, [field, variants]) =>
     variants[String(params[field])] ?? current, tool.params_schema)
   const setParam = (name: string, value: unknown) => onChange({ params: { ...params, [name]: value } })
-  return <aside className="canvas-inspector" aria-label="Inspector">
+  return <aside className={`canvas-inspector ${className}`} aria-label="Inspector">
     <RunInspector run={run} history={runHistory} onSelect={onSelectRun} onReplay={onReplay} onRestore={onRestore}/><div className="node-inspector"><h2>{tool.name}</h2><p>{tool.description}</p>
     {Object.entries(schema).map(([name, rule]) => {
       const value = params[name] ?? rule.default ?? ''

@@ -67,6 +67,16 @@ def test_canvas_uses_hashed_production_assets_and_cache_policy(canvas_client):
     assert "'unsafe-eval'" not in page.headers["content-security-policy"]
 
 
+def test_canvas_route_uses_dedicated_immersive_shell(canvas_client):
+    page = canvas_client.get("/agent/canvas")
+    assert 'class="agent-canvas-immersive"' in page.text
+    assert '{% block body_class %}' not in page.text
+    source = (ROOT / "frontend/agent-canvas/src/canvas.css").read_text("utf-8")
+    assert "height:100dvh" in source
+    assert ".canvas-rail" in source
+    assert ".typed-port { width:44px" in source
+
+
 def test_canvas_bundle_is_fresh_hashed_and_has_no_source_maps():
     from tools.build_release import verify_frontend_bundle
     verify_frontend_bundle(str(ROOT))

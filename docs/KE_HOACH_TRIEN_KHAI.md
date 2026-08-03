@@ -1372,3 +1372,21 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
     hạn nên browser tự chuyển đúng về login. Authenticated Canvas đã browser
     E2E trên fixture cùng bundle (desktop/mobile, API 200/201, console 0).
     Hai tab PlenX và LTT được giữ mở để chủ sản phẩm đăng nhập/nghiệm thu.
+
+### H17 — Agent Canvas launch UX + audit độc lập
+
+- [x] H17.0 Khóa UX contract Q63 — 2026-08-04: audit render thật LTT/PlenX,
+  chọn full immersive Canvas; không đổi runtime/credit/provider.
+- [x] H17.1–H17.3 Shell/rail/drawer/node/composer — route toàn viewport, rail
+  48 px, palette/Inspector đóng mặc định, tìm tool, node visual-first và composer
+  dưới theo ngữ cảnh.
+- [x] H17.4 Connector — typed port 44×44, hover `+`, picker chỉ liệt kê input
+  tương thích; invalid edge vẫn bị server/client contract từ chối.
+- [x] H17.5 Browser acceptance local — 1720×940 và 390×844 không page overflow;
+  Canvas desktop 1720×892; console 0; request của lượt reload mới 200.
+- [x] H17.6 DEEP audit độc lập theo `quy_tac_audit.md` — 2026-08-04: hồ sơ
+  `APP_AUDIT/agent/2026-08-04-launch`; Q 92,3/M 89/E 97; full regression
+  2.050 pass, 8 skip, 23 subtests; controlled launch còn gate production.
+- [ ] H17.7 Release/deploy/canary — full pytest, frontend, secret scan, archive,
+  backup/update, health và browser production; không tuyên bố authenticated
+  production PASS nếu phiên đăng nhập chưa được khôi phục.

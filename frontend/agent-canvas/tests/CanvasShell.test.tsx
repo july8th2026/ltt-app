@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CanvasShell } from '../src/CanvasShell'
 import { RunInspector } from '../src/RunInspector'
@@ -25,10 +25,17 @@ afterEach(() => vi.restoreAllMocks())
 describe('CanvasShell', () => {
   it('loads dynamic palette and adds/configures a tool node', async () => {
     render(<CanvasShell />)
+    const palettePanel = await screen.findByLabelText('Palette công cụ')
+    expect(palettePanel).not.toHaveClass('is-open')
+    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
+    expect(palettePanel).toHaveClass('is-open')
+    expect(screen.getByRole('textbox',{name:'Tìm công cụ'})).toBeInTheDocument()
     const add = await screen.findByRole('button', { name: 'Thêm text.script' })
     fireEvent.click(add)
-    expect(await screen.findByLabelText('Node text.script')).toBeInTheDocument()
-    fireEvent.click(screen.getByLabelText('Node text.script'))
+    const node=await screen.findByLabelText('Node text.script')
+    expect(node).toBeInTheDocument()
+    expect(within(node).queryByRole('textbox')).not.toBeInTheDocument()
+    fireEvent.click(node)
     const topic = screen.getByRole('textbox', { name: /topic/ })
     fireEvent.change(topic, { target: { value: 'Chủ đề mới' } })
     expect(topic).toHaveValue('Chủ đề mới')
@@ -36,6 +43,7 @@ describe('CanvasShell', () => {
 
   it('provides undo/redo and accessible regions', async () => {
     render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
     const add = await screen.findByRole('button', { name: 'Thêm text.script' })
     expect(screen.getByRole('region', { name: 'LTT Agent Canvas' })).toBeInTheDocument()
     fireEvent.click(add)
