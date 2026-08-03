@@ -14,12 +14,12 @@
 
 ---
 
-## 2026-08-03 — H15.S5.2: mở rộng benchmark enhancement (đang làm)
+## 2026-08-03 — H15.S5.2: benchmark enhancement UP-FEAT-001
 
 - **Mục tiêu:** đánh giá AI Detail/denoise/deblur bằng capability và số đo thật,
   không suy diễn từ tên model.
-- **Hạng mục:** UP-FEAT-001 đang làm; chưa đạt gate benchmark GPU mới.
-- **Trạng thái:** harness/test xong; lượt đo schema v2 đang chờ GPU production rảnh.
+- **Hạng mục:** UP-FEAT-001 hoàn thành với kết luận DEFER có bằng chứng.
+- **Trạng thái:** benchmark/test/document xong; không đổi runtime, chưa deploy.
 
 ### Đã làm
 
@@ -39,6 +39,17 @@ Apache-2.0 đáng spike; MMagic hỗ trợ Windows nhưng cần PyTorch/MMCV/MME
 khỏi runtime NCNN hiện tại. Chưa cài dependency/model mới khi chưa có benchmark
 window và cost/rollback gate.
 
+Sau khi process GPU production kết thúc, đã chạy schema 2 trên 12 frame file
+`video (10).mp4`: 3 model × bicubic/noise/blur, tổng 9 inference trong 134,8 giây.
+WDN thắng bicubic (31,5096 dB; temporal 4,732) nhưng thua noise rõ (28,7073 dB;
+temporal 9,4589), nên không thể đổi nhãn thành AI Detail/denoise. General-x4v3
+tốt nhất ở noise và blur của tập này nhưng vẫn là spatial upscale x4.
+
+Preflight temporal sidecar: Python 3.11 có torch 2.5.1+cu121 nhưng wheel không
+hỗ trợ `sm_120`; Python 3.13 chỉ có torch CPU. Spike BasicVSR++ cần venv cô lập
+với CUDA 13.0/12.8 hỗ trợ Blackwell và compatibility gate MMCV/MMagic; không
+nâng đè môi trường worker. Báo cáo và evidence schema 2 đã cập nhật.
+
 ### Test đã chạy
 
 | Lệnh/kiểm tra | Kết quả |
@@ -46,7 +57,10 @@ window và cost/rollback gate.
 | `python -m pytest -q tests/test_115_upscale_feature_benchmark.py tests/test_82_upscalevideo.py` | **20 passed** trong 1,79 giây |
 | `python -m py_compile tools\benchmark_upscale_ai_detail.py` | PASS |
 | GPU/process preflight | BOT GEMINI có `realesrgan-ncnn-vulkan.exe` đang chạy, GPU 99–100%; không chạy benchmark cạnh tranh |
-| `python -m pytest -q` sau thay đổi harness | **chưa chạy**; vé chưa đóng |
+| Benchmark schema 2 | PASS; 12 frame, 9 inference, 134,8 giây; JSON evidence đã lưu |
+| PyTorch GPU preflight | 3.11: 2.5.1+cu121 thiếu `sm_120`; 3.13: CPU-only |
+| `python -m pytest -q` sau thay đổi harness/evidence | **1.946 passed**, 8 skipped, 23 subtests, 1 warning trong 583,17 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.131 file / 159.874 dòng) |
 
 ### Quyết định mới
 
@@ -57,16 +71,10 @@ không tác động process production, không mở feature trước benchmark/c
 
 Revert commit benchmark matrix; runtime Upscale không thay đổi.
 
-### Còn tồn đọng
-
-- Chạy schema v2 trên file test người dùng chỉ định khi process GPU production
-  kết thúc; cập nhật JSON/báo cáo bằng kết quả thật.
-- Nếu mọi gate vẫn DEFER, chốt UP-FEAT-001 bằng bằng chứng rồi giữ UI disabled.
-
 ### Việc tiếp theo
 
-Theo dõi GPU read-only; khi rảnh chạy ma trận 3 model × 3 degradation, sau đó
-full test/secret scan và đóng hoặc mở gate theo số đo.
+Chạy full gate rồi chuyển UP-FEAT-002; stabilization/interpolation/HDR phải có
+engine/cost gate riêng, không được suy từ kết quả AI Detail.
 
 ## 2026-08-03 — H15.S5.1: Upscale UP-UI-001
 

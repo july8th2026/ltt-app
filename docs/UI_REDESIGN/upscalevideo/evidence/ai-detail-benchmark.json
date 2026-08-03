@@ -1,25 +1,118 @@
 {
-  "source_name": "eeae72a7_seedance_f56d2de3_1080p.mp4",
-  "sample_frames": 10,
-  "gpu": "NVIDIA GeForce RTX 5060 Ti",
+  "schema_version": 2,
+  "source_name": "video (10).mp4",
+  "sample_frames": 12,
+  "degradations": [
+    "bicubic",
+    "noise",
+    "blur"
+  ],
+  "gpu": {
+    "name": "NVIDIA GeForce RTX 5060 Ti",
+    "driver": "596.21"
+  },
+  "engine_sha256": "07e49f7cbb4ede01ae4dd4c399d3a7e5846e3d2085c3128eff881e55cb7b1a0c",
+  "model_sha256": {
+    "realesr-general-x4v3.bin": "bfdfaebf0b26be9442faa30b8cec617fe04a808ae2aa3616ece85b92d81ae0ce",
+    "realesr-general-x4v3.param": "33950f36822fd37786502db9bd6a3638f677c13b23814c8e5a6e8fd9bcea2163",
+    "realesr-general-wdn-x4v3.bin": "26a607eb84bd114cde27ea9728de9fdeef4e1c33f4f92d88c5a7822b183857c9",
+    "realesr-general-wdn-x4v3.param": "33950f36822fd37786502db9bd6a3638f677c13b23814c8e5a6e8fd9bcea2163",
+    "realesrgan-x4plus.bin": "713ee713b0353afaa27976f0563a64a5043bd70b9bd8936c2e26e25ebcdbcddf",
+    "realesrgan-x4plus.param": "35330ececcea33b6c397a72548e788d5d53becee4734c50b7fada36e89f10a86"
+  },
   "models": {
     "realesr-general-x4v3": {
-      "frames": 10,
-      "runtime_seconds": 1.3,
-      "fps": 7.692,
-      "psnr_db": 36.3057,
-      "ssim_global": 0.997079,
-      "temporal_error": 2.4388
+      "bicubic": {
+        "frames": 12,
+        "psnr_db": 29.8962,
+        "ssim_global": 0.98169,
+        "temporal_error": 5.3842,
+        "runtime_seconds": 10.313,
+        "fps": 1.164
+      },
+      "noise": {
+        "frames": 12,
+        "psnr_db": 30.9587,
+        "ssim_global": 0.986573,
+        "temporal_error": 5.6477,
+        "runtime_seconds": 12.388,
+        "fps": 0.969
+      },
+      "blur": {
+        "frames": 12,
+        "psnr_db": 30.1207,
+        "ssim_global": 0.982857,
+        "temporal_error": 5.8798,
+        "runtime_seconds": 10.999,
+        "fps": 1.091
+      }
+    },
+    "realesr-general-wdn-x4v3": {
+      "bicubic": {
+        "frames": 12,
+        "psnr_db": 31.5096,
+        "ssim_global": 0.987164,
+        "temporal_error": 4.732,
+        "runtime_seconds": 11.622,
+        "fps": 1.033
+      },
+      "noise": {
+        "frames": 12,
+        "psnr_db": 28.7073,
+        "ssim_global": 0.977182,
+        "temporal_error": 9.4589,
+        "runtime_seconds": 10.408,
+        "fps": 1.153
+      },
+      "blur": {
+        "frames": 12,
+        "psnr_db": 29.7551,
+        "ssim_global": 0.980031,
+        "temporal_error": 6.3061,
+        "runtime_seconds": 11.4,
+        "fps": 1.053
+      }
     },
     "realesrgan-x4plus": {
-      "frames": 10,
-      "runtime_seconds": 6.244,
-      "fps": 1.602,
-      "psnr_db": 36.4011,
-      "ssim_global": 0.997182,
-      "temporal_error": 2.5518
+      "bicubic": {
+        "frames": 12,
+        "psnr_db": 30.9552,
+        "ssim_global": 0.986062,
+        "temporal_error": 5.11,
+        "runtime_seconds": 18.036,
+        "fps": 0.665
+      },
+      "noise": {
+        "frames": 12,
+        "psnr_db": 30.2635,
+        "ssim_global": 0.983868,
+        "temporal_error": 5.9689,
+        "runtime_seconds": 18.113,
+        "fps": 0.663
+      },
+      "blur": {
+        "frames": 12,
+        "psnr_db": 27.5247,
+        "ssim_global": 0.966449,
+        "temporal_error": 7.6527,
+        "runtime_seconds": 16.581,
+        "fps": 0.724
+      }
     }
   },
-  "ai_detail_enabled": false,
-  "decision": "DEFER: no distinct AI Detail temporal model is installed."
+  "feature_gates": {
+    "ai_detail": {
+      "status": "DEFER",
+      "reason": "No distinct temporal restoration model is installed."
+    },
+    "denoise": {
+      "status": "DEFER",
+      "reason": "The installed NCNN binary has no adjustable -dn/DNI control; the WDN endpoint alone is not a complete denoise-strength feature."
+    },
+    "deblur": {
+      "status": "DEFER",
+      "reason": "No installed model declares a dedicated deblur capability."
+    }
+  },
+  "decision": "DEFER: installed engine does not satisfy any new feature gate."
 }

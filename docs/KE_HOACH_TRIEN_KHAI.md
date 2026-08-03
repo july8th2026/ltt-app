@@ -1165,7 +1165,10 @@ system-first, không làm nhiều app song song.
     compare slider đồng bộ, queue status/progress semantics và telemetry live
     region; browser desktop/mobile + file thật PASS; 1.943 passed, 8 skipped,
     23 subtests; secret scan 0.
-  - [ ] H15.S5.2 UP-FEAT-001 — benchmark engine AI Detail/denoise/deblur thật.
+  - [x] H15.S5.2 UP-FEAT-001 — 2026-08-03: benchmark schema 2 chạy thật
+    3 model × bicubic/noise/blur; hash binary/model và preflight dependency;
+    cả AI Detail/denoise/deblur **DEFER có bằng chứng**, UI không mở giả;
+    1.946 passed, 8 skipped, 23 subtests; secret scan 0.
   - [ ] H15.S5.3 UP-FEAT-002 — stabilization/interpolation/HDR chỉ sau engine
     và cost gate của H15.S5.2.
 - [ ] H15.S6–S12 Từng app còn lại theo roadmap; không song song.
