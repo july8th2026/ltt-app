@@ -37,7 +37,8 @@ def _render(request: Request, user: str, *, error: str = "", status_code: int = 
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "tiers": _TIERS, "aspects": _ASPECTS, "genres": _GENRES, "langs": _LANGS,
-        "jobs": _jobs_cua_toi(request), "error": error,
+        "jobs": _jobs_cua_toi(request), "library": _source_library(request),
+        "error": error,
     }, status_code=status_code)
 
 
@@ -59,7 +60,49 @@ def _jobs_cua_toi(request: Request):
             r = j.result or {}
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
                         "progress_msg": j.progress_msg, "error": j.error,
-                        "clips": r.get("clips") or []})
+                        "clips": r.get("clips") or [],
+                        "source_name": str((j.params or {}).get("source_filename") or
+                                           (j.params or {}).get("video_key") or "Video")[:160],
+                        "tier": str((j.params or {}).get("tier") or ""),
+                        "aspect_ratio": str((j.params or {}).get("aspect_ratio") or "")})
+        return out
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _source_library(request: Request):
+    """Recent owner source assets backed by Storage, never cross-user."""
+    u = user_hien_tai(request)
+    if u is None:
+        return []
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    from platform_core.storage import get_storage
+    from sqlalchemy import select
+    gen = get_session(); db = next(gen)
+    try:
+        rows = db.execute(select(Job).where(
+            Job.user_id == u.id, Job.app_slug == MANIFEST.slug
+        ).order_by(Job.created_at.desc()).limit(60)).scalars().all()
+        storage = get_storage(); seen = set(); out = []
+        for row in rows:
+            params = row.params or {}; key = str(params.get("video_key") or "")
+            if not key.startswith(f"taoclipngan/{u.id}/") or key in seen:
+                continue
+            try:
+                exists = storage.exists(key)
+            except Exception:  # noqa: BLE001
+                exists = False
+            if not exists:
+                continue
+            seen.add(key)
+            out.append({"key": key,
+                        "name": str(params.get("source_filename") or key.rsplit("/", 1)[-1])[:160],
+                        "duration_s": float(params.get("duration_s") or 0),
+                        "created_at": row.created_at})
+            if len(out) >= 8:
+                break
         return out
     finally:
         try: next(gen)
@@ -115,6 +158,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
 @router.post("/queue")
 async def queue(request: Request, csrf_token: str = Form(...),
                 video_key: str = Form(""), duration_s: str = Form("0"),
+                source_filename: str = Form(""),
                 tier: str = Form("high_quality"), genre: str = Form("talking_head"),
                 aspect_ratio: str = Form("9:16"), language: str = Form(""),
                 target_clip_count: str = Form("3"),
@@ -176,7 +220,10 @@ async def queue(request: Request, csrf_token: str = Form(...),
     params = {"video_key": vkey, "duration_s": dur, "tier": tier, "genre": genre,
               "aspect_ratio": aspect_ratio, "language": language,
               "target_clip_count": n, "min_clip_duration_sec": mn,
-              "max_clip_duration_sec": mx, "owner_id": u.id}
+              "max_clip_duration_sec": mx, "owner_id": u.id,
+              "source_filename": (source_filename or
+                                  getattr(video, "filename", "") or
+                                  vkey.rsplit("/", 1)[-1])[:160]}
     gen = get_session(); db = next(gen)
     last_id = None
     try:

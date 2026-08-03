@@ -1270,7 +1270,12 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     regression 13 passed; full suite 1.976 passed, 8 skipped, 23 subtests;
     secret scan 0.
 - [ ] H15.S12 Clip ngắn — tuần tự CLIP-UI-001 → CLIP-FEAT-001.
-  - [ ] H15.S12.1 CLIP-UI-001 — library/transcript selection/editor/compare.
+  - [x] H15.S12.1 CLIP-UI-001 — 2026-08-03: source library owner-scoped từ
+    Storage/Job, timed transcript và local range editor trung thực, compare tối
+    đa hai output thật; Carbon Red responsive/status/a11y. Browser file MP4 thật
+    tạo 2 clip, quote/settle 12 credit, mobile overflow 0, console/network sạch;
+    regression 11 passed; full suite 1.980 passed, 8 skipped, 23 subtests;
+    secret scan 0.
   - [ ] H15.S12.2 CLIP-FEAT-001 — score rationale/brand/multi-platform package.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.

@@ -1,156 +1,84 @@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block topbar_title %}<strong>Clip Studio</strong>{% endblock %}
 
 {% macro chipgroup(name, items, default) %}
-  <div class="chips">
-    {% for id, label in items %}
-      <label class="chip-opt">
-        <input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}>
-        <span>{{ label }}</span>
-      </label>
-    {% endfor %}
+  <div class="clip-chips">
+    {% for id, label in items %}<label><input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
   </div>
 {% endmacro %}
 
 {% block content %}
-  <script src="/static/htmx.min.js"></script>
-  {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
+<script src="/static/htmx.min.js"></script>
+<div class="clip-studio">
+  <header class="clip-heading">
+    <div><span class="clip-kicker">AI SHORT-FORM WORKSPACE</span><h1>Tạo Clip ngắn</h1><p>Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.</p></div>
+    <a class="btn ghost" href="/jobs">Việc của tôi</a>
+  </header>
+  {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 
-  <div class="ui-card">
-    <h2 style="margin:0 0 4px;">Tạo Clip ngắn từ video dài</h2>
-    <p class="dim" style="margin:0 0 14px;">
-      Nạp video dài → AI chép lời, chọn đoạn hay (hook/payoff), reframe bám người, khắc phụ đề →
-      trả về nhiều clip ngắn dọc cho TikTok/Shorts/Reels. Video lớn tải thẳng lên kho. Tính phí
-      theo phút nguồn + số clip. Job GPU chạy nền (có thể lâu) — xem ở <a href="/jobs">Việc của tôi</a>.
-    </p>
-
-    <form id="clipform" enctype="multipart/form-data">
+  <div class="clip-layout">
+    <form id="clipform" class="clip-controls" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="video_key" id="video_key" value="">
       <input type="hidden" name="duration_s" id="duration_s" value="0">
+      <input type="hidden" name="source_filename" id="source_filename" value="">
+      <div class="clip-panel-head"><span>01</span><div><h2>Nguồn video</h2><small>Upload mới hoặc dùng lại asset của bạn</small></div></div>
+      <label class="clip-drop" for="vfile"><strong>Chọn video từ máy</strong><span>MP4, MOV, MKV… · video lớn upload thẳng Storage</span><input type="file" id="vfile" name="video" accept="video/*"></label>
+      <section class="clip-library" aria-labelledby="clip-library-title">
+        <header><h3 id="clip-library-title">Thư viện nguồn gần đây</h3><span>{{ library|length }} asset</span></header>
+        {% if library %}<div class="clip-source-list">
+          {% for item in library %}<button type="button" class="clip-source" data-key="{{ item.key }}" data-duration="{{ item.duration_s }}" data-name="{{ item.name }}" aria-pressed="false"><span>▶</span><span><strong>{{ item.name }}</strong><small>{% if item.duration_s %}{{ (item.duration_s / 60)|round(1) }} phút{% else %}Chưa rõ thời lượng{% endif %}</small></span></button>{% endfor %}
+        </div>{% else %}<p class="clip-empty-small">Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên.</p>{% endif %}
+      </section>
 
-      <div class="field"><label>Video (.mp4, .mov, .mkv…)</label>
-        <input type="file" id="vfile" name="video" accept="video/*" required></div>
-
-      <div class="ctrl"><label class="ctrl-lbl">Chất lượng (tier)</label>
-        {{ chipgroup('tier', tiers, 'high_quality') }}</div>
-
-      <div class="ctrl"><label class="ctrl-lbl">Tỉ lệ khung</label>
-        {{ chipgroup('aspect_ratio', aspects, '9:16') }}</div>
-
-      <div class="row">
-        <div class="field"><label>Thể loại</label>
-          <select name="genre">{% for id, l in genres %}<option value="{{ id }}">{{ l }}</option>{% endfor %}</select></div>
-        <div class="field"><label>Ngôn ngữ</label>
-          <select name="language">{% for id, l in langs %}<option value="{{ id }}">{{ l }}</option>{% endfor %}</select></div>
-        <div class="field"><label>Số clip</label>
-          <select name="target_clip_count">
-            {% for n in [1,2,3,5,8,10] %}<option value="{{ n }}" {% if n==3 %}selected{% endif %}>{{ n }}</option>{% endfor %}
-          </select></div>
+      <div class="clip-panel-head"><span>02</span><div><h2>Cấu hình tuyển chọn</h2><small>Chi phí theo phút nguồn + số output</small></div></div>
+      <fieldset class="clip-group"><legend>Chất lượng</legend>{{ chipgroup('tier', tiers, 'high_quality') }}</fieldset>
+      <fieldset class="clip-group"><legend>Tỉ lệ khung</legend>{{ chipgroup('aspect_ratio', aspects, '9:16') }}</fieldset>
+      <div class="clip-three">
+        <label>Thể loại<select name="genre">{% for id, label in genres %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
+        <label>Ngôn ngữ<select name="language">{% for id, label in langs %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
+        <label>Số clip<select name="target_clip_count" id="clip-count">{% for n in [1,2,3,5,8,10] %}<option value="{{ n }}" {% if n==3 %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
       </div>
-      <div class="row">
-        <div class="field"><label>Độ dài clip tối thiểu (giây)</label>
-          <input type="number" name="min_clip_duration_sec" value="15" min="5" max="120"></div>
-        <div class="field"><label>Độ dài clip tối đa (giây)</label>
-          <input type="number" name="max_clip_duration_sec" value="60" min="10" max="180"></div>
-      </div>
-
-      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <button type="submit" class="btn" id="submitbtn">✂️ Tạo clip</button>
-        <span class="dim">Chi phí: <span id="est">…</span></span>
-        <span class="dim" id="upstatus"></span>
-      </div>
-      <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate"
-           hx-include="#duration_s,input[name=tier]:checked,select[name=target_clip_count]"
-           hx-target="#est" hx-trigger="load, change from:#clipform" style="display:none"></div>
+      <div class="clip-two"><label>Tối thiểu (giây)<input type="number" name="min_clip_duration_sec" value="15" min="5" max="120"></label><label>Tối đa (giây)<input type="number" name="max_clip_duration_sec" value="60" min="10" max="180"></label></div>
+      <div class="clip-actions"><div><span>CHI PHÍ ƯỚC TÍNH</span><strong id="est">Chọn video</strong></div><button type="submit" class="btn" id="submitbtn">Tạo clip</button></div>
+      <p id="upstatus" class="clip-live" role="status" aria-live="polite"></p>
+      <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate" hx-include="#duration_s,input[name=tier]:checked,select[name=target_clip_count]" hx-target="#est" hx-trigger="load, change from:#clipform" hidden></div>
     </form>
+
+    <div class="clip-workspace">
+      <section id="clip-compare" class="clip-compare" aria-labelledby="clip-compare-title" hidden>
+        <div class="clip-panel-head"><span>03</span><div><h2 id="clip-compare-title">So sánh output</h2><small>Chọn tối đa hai clip đã render</small></div></div>
+        <div class="clip-compare-grid"><div data-slot="0">Chọn clip thứ nhất</div><div data-slot="1">Chọn clip thứ hai</div></div>
+        <button type="button" class="btn ghost" id="clip-clear">Bỏ chọn</button>
+      </section>
+
+      <section class="clip-history" aria-labelledby="clip-history-title">
+        <header><div><span class="clip-kicker">OUTPUT LIBRARY</span><h2 id="clip-history-title">Clip của tôi</h2></div><span>{{ jobs|length }} job gần đây</span></header>
+        {% if not jobs %}<div class="clip-empty"><strong>Chưa có clip</strong><span>Chọn video ở Studio để bắt đầu.</span></div>{% else %}<div class="clip-job-list">
+          {% for job in jobs %}<article class="clip-job">
+            <header><div><strong>{{ job.source_name }}</strong><small>{{ job.id[:8] }} · {{ job.tier }} · {{ job.aspect_ratio }}</small></div><span class="clip-status {{ job.status }}">{% if job.status == 'done' %}Hoàn tất{% elif job.status == 'error' %}Lỗi{% else %}{{ job.status }}{% endif %}</span></header>
+            {% if job.status not in ['done','error','cancelled'] %}<div class="clip-progress" role="progressbar" aria-label="Tiến độ {{ job.source_name }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ job.progress }}"><i style="width:{{ job.progress }}%"></i></div><p>{{ job.progress_msg or 'Đang chờ worker' }} · {{ job.progress }}%</p>{% endif %}
+            {% if job.status == 'error' %}<p class="clip-error">{{ job.error or 'Không thể xử lý video.' }}</p>{% endif %}
+            {% if job.clips %}<div class="clip-results">{% for clip in job.clips %}{% set clip_url = app.route_prefix ~ '/v/' ~ clip.video_key %}<figure>
+              <video controls preload="metadata" src="{{ clip_url }}"></video>
+              <figcaption><div><strong>{{ clip.title or ('Clip ' ~ loop.index) }}</strong><small>{% if clip.source_end %}{{ clip.source_start }}–{{ clip.source_end }}s{% elif clip.duration_s %}{{ clip.duration_s }}s{% endif %}{% if clip.score %} · score {{ clip.score }}{% endif %}</small></div><div><button type="button" class="clip-pick" data-src="{{ clip_url }}" data-label="{{ clip.title or ('Clip ' ~ loop.index) }}" aria-pressed="false">So sánh</button><a href="{{ clip_url }}" download>Tải</a></div></figcaption>
+              <details class="clip-transcript"><summary>Transcript & lựa chọn đoạn</summary><label>Nội dung caption<textarea data-transcript>{% for seg in clip.transcript or [] %}{{ seg.text }}{% if not loop.last %} {% endif %}{% endfor %}</textarea></label><div class="clip-range"><label>Bắt đầu<input value="{{ clip.source_start or 0 }}" inputmode="decimal"></label><label>Kết thúc<input value="{{ clip.source_end or clip.duration_s or 0 }}" inputmode="decimal"></label></div><small>Bản chỉnh sửa hiện ở local workspace; lưu preset/package mở ở CLIP-FEAT-001.</small></details>
+            </figure>{% endfor %}</div>{% endif %}
+          </article>{% endfor %}
+        </div>{% endif %}
+      </section>
+    </div>
   </div>
+</div>
 
-  <div class="ui-card">
-    <h2 style="margin:0 0 10px;">Clip của tôi</h2>
-    {% if not jobs %}
-      <p class="dim" style="margin:0;">Chưa có clip nào. Tạo từ video ở trên.</p>
-    {% else %}
-      {% for j in jobs %}
-        <div style="border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:10px;">
-          <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
-            {{ j.id[:8] }} ·
-            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong ({{ j.clips|length }} clip)</span>
-            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
-            {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.progress_msg or j.status }} {{ j.progress }}%</span>{% endif %}
-          </div>
-          {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
-          {% if j.clips %}
-            <div class="result-grid">
-              {% for c in j.clips %}
-                <div style="border:1px solid var(--line); border-radius:8px; padding:8px;">
-                  <video controls preload="metadata" style="width:100%; border-radius:6px;"
-                         src="{{ app.route_prefix }}/v/{{ c.video_key }}"></video>
-                  <div style="font-size:12px; margin-top:4px;">{{ c.title or 'Clip' }}</div>
-                  <div class="dim" style="font-size:11px;">{% if c.duration_s %}{{ c.duration_s }}s{% endif %}{% if c.score %} · điểm {{ c.score }}{% endif %}</div>
-                  <a class="btn ghost sm" href="{{ app.route_prefix }}/v/{{ c.video_key }}" download style="margin-top:4px;">⬇ Tải</a>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    {% endif %}
-  </div>
-
-  <script>
-  (function(){
-    var form = document.getElementById('clipform');
-    var vfile = document.getElementById('vfile');
-    var vkeyEl = document.getElementById('video_key');
-    var durEl = document.getElementById('duration_s');
-    var status = document.getElementById('upstatus');
-    var btn = document.getElementById('submitbtn');
-    var PREFIX = "{{ app.route_prefix }}";
-
-    vfile.addEventListener('change', function(){
-      vkeyEl.value=''; status.textContent='';
-      var f=vfile.files[0]; if(!f){ durEl.value=0; return; }
-      var v=document.createElement('video'); v.preload='metadata';
-      v.onloadedmetadata=function(){ window.URL.revokeObjectURL(v.src); durEl.value=Math.round(v.duration||0);
-        if(window.htmx) htmx.trigger('#est-wrap','change'); };
-      v.src=window.URL.createObjectURL(f);
-    });
-
-    function putToR2(url, headers, file){
-      return new Promise(function(resolve, reject){
-        var xhr=new XMLHttpRequest(); xhr.open('PUT', url, true);
-        Object.keys(headers||{}).forEach(function(k){ xhr.setRequestHeader(k, headers[k]); });
-        xhr.upload.onprogress=function(e){ if(e.lengthComputable) status.textContent='Đang tải video: '+Math.round(e.loaded/e.total*100)+'%'; };
-        xhr.onload=function(){ (xhr.status>=200&&xhr.status<300)?resolve():reject(new Error('R2 '+xhr.status)); };
-        xhr.onerror=function(){ reject(new Error('Lỗi mạng khi tải video')); };
-        xhr.send(file);
-      });
-    }
-
-    form.addEventListener('submit', async function(e){
-      e.preventDefault();
-      var f=vfile.files[0]; if(!f){ status.textContent='Chưa chọn video.'; return; }
-      btn.disabled=true; var localFile=null;
-      try {
-        if(!vkeyEl.value){
-          var uf=new FormData(); uf.append('filename', f.name); uf.append('content_type', f.type||'video/mp4');
-          var ur=await fetch(PREFIX+'/upload-url', {method:'POST', body:uf}); var uj=await ur.json();
-          if(uj.mode==='direct'){
-            status.textContent='Đang tải video…';
-            try { await putToR2(uj.url, uj.headers, f); vkeyEl.value=uj.key; status.textContent='Đã tải video ✓'; }
-            catch(pe){ if(f.size>90*1024*1024){ throw new Error('Video >90MB cần bật CORS bucket R2. '+pe.message); }
-              status.textContent='Tải thẳng lỗi, gửi qua máy chủ…'; localFile=f; }
-          } else { localFile=f; }
-        }
-        var fd=new FormData(form); fd.set('ajax','1');
-        if(!localFile) fd.delete('video');
-        status.textContent='Đang nộp job…';
-        var qr=await fetch(PREFIX+'/queue', {method:'POST', body:fd}); var qj=await qr.json();
-        if(qj.ok){ window.location=qj.redirect; } else { status.textContent='Lỗi: '+(qj.error||'?'); btn.disabled=false; }
-      } catch(err){ status.textContent='Lỗi: '+err.message; btn.disabled=false; }
-    });
-  })();
-  </script>
+<script>
+(()=>{const form=document.getElementById('clipform'),file=document.getElementById('vfile'),key=document.getElementById('video_key'),dur=document.getElementById('duration_s'),name=document.getElementById('source_filename'),status=document.getElementById('upstatus'),button=document.getElementById('submitbtn'),prefix="{{ app.route_prefix }}";
+const estimate=()=>window.htmx&&htmx.trigger('#est-wrap','change');
+document.querySelectorAll('.clip-source').forEach(source=>source.addEventListener('click',()=>{key.value=source.dataset.key||'';dur.value=source.dataset.duration||'0';name.value=source.dataset.name||'';file.value='';document.querySelectorAll('.clip-source').forEach(x=>x.setAttribute('aria-pressed',String(x===source)));status.textContent=`Đã chọn ${name.value}`;estimate()}));
+file.addEventListener('change',()=>{key.value='';document.querySelectorAll('.clip-source').forEach(x=>x.setAttribute('aria-pressed','false'));const selected=file.files[0];if(!selected){dur.value='0';name.value='';return}name.value=selected.name;const video=document.createElement('video');video.preload='metadata';video.onloadedmetadata=()=>{URL.revokeObjectURL(video.src);dur.value=String(Math.round(video.duration||0));estimate()};video.src=URL.createObjectURL(selected)});
+const directUpload=(url,headers,blob)=>new Promise((resolve,reject)=>{const xhr=new XMLHttpRequest();xhr.open('PUT',url,true);Object.keys(headers||{}).forEach(k=>xhr.setRequestHeader(k,headers[k]));xhr.upload.onprogress=e=>{if(e.lengthComputable)status.textContent=`Đang tải video: ${Math.round(e.loaded/e.total*100)}%`};xhr.onload=()=>xhr.status>=200&&xhr.status<300?resolve():reject(new Error(`Storage ${xhr.status}`));xhr.onerror=()=>reject(new Error('Lỗi mạng khi tải video'));xhr.send(blob)});
+form.addEventListener('submit',async event=>{event.preventDefault();const selected=file.files[0];if(!selected&&!key.value){status.textContent='Chưa chọn video.';return}button.disabled=true;let local=null;try{if(selected&&!key.value){const ticketData=new FormData();ticketData.append('filename',selected.name);ticketData.append('content_type',selected.type||'video/mp4');const ticket=await (await fetch(prefix+'/upload-url',{method:'POST',body:ticketData})).json();if(ticket.mode==='direct'){try{await directUpload(ticket.url,ticket.headers,selected);key.value=ticket.key}catch(error){if(selected.size>90*1024*1024)throw new Error('Video >90MB cần CORS Storage. '+error.message);local=selected}}else local=selected}const payload=new FormData(form);payload.set('ajax','1');if(!local)payload.delete('video');status.textContent='Đang nộp job…';const response=await fetch(prefix+'/queue',{method:'POST',body:payload});const data=await response.json();if(data.ok)location.assign(data.redirect);else{status.textContent='Lỗi: '+(data.error||'Không thể tạo job');button.disabled=false}}catch(error){status.textContent='Lỗi: '+error.message;button.disabled=false}});
+const selected=[],panel=document.getElementById('clip-compare'),slots=panel.querySelectorAll('[data-slot]');const render=()=>{panel.hidden=!selected.length;slots.forEach((slot,index)=>{slot.replaceChildren();const item=selected[index];if(!item){slot.textContent=`Chọn clip thứ ${index+1}`;return}const video=document.createElement('video'),label=document.createElement('strong');video.controls=true;video.preload='metadata';video.src=item.src;label.textContent=item.label;slot.append(video,label)});document.querySelectorAll('.clip-pick').forEach(x=>x.setAttribute('aria-pressed',String(selected.some(item=>item.src===x.dataset.src))))};document.querySelectorAll('.clip-pick').forEach(pick=>pick.addEventListener('click',()=>{const at=selected.findIndex(item=>item.src===pick.dataset.src);if(at>=0)selected.splice(at,1);else{if(selected.length===2)selected.shift();selected.push({src:pick.dataset.src,label:pick.dataset.label})}render();panel.scrollIntoView({behavior:'smooth',block:'nearest'})}));document.getElementById('clip-clear').addEventListener('click',()=>{selected.splice(0);render()});})();
+</script>
 {% endblock %}

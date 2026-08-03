@@ -176,8 +176,16 @@ def handle(params: dict, ctx=None) -> dict:
             score = round(float(getattr(getattr(cand, "score", None), "overall", 0) or 0), 3) if cand else 0
             rng = getattr(clip_spec, "source_range", None)
             dur = round(float(getattr(rng, "end", 0) - getattr(rng, "start", 0)), 1) if rng else 0
+            captions = [{"start": round(float(getattr(seg, "start", 0)), 3),
+                         "end": round(float(getattr(seg, "end", 0)), 3),
+                         "text": str(getattr(seg, "text", ""))[:1000],
+                         "speaker": str(getattr(seg, "speaker", "") or "")[:80]}
+                        for seg in (getattr(clip_spec, "caption_segments", None) or [])]
             clips_out.append({"video_key": ckey, "title": title[:120], "score": score,
-                              "duration_s": dur})
+                              "duration_s": dur,
+                              "source_start": round(float(getattr(rng, "start", 0)), 3) if rng else 0,
+                              "source_end": round(float(getattr(rng, "end", 0)), 3) if rng else 0,
+                              "transcript": captions})
 
         if not clips_out:
             raise RuntimeError("Không dựng được clip nào từ video (thử video khác/tier khác).")

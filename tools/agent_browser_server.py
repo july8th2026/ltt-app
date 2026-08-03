@@ -62,6 +62,7 @@ agent_routes.plan_once = _fake_plan
 import apps.kichban.jobs as script_jobs
 import apps.taoanh.jobs as image_jobs
 import apps.thumbnail.jobs as thumbnail_jobs
+import apps.taoclipngan.jobs as clip_jobs
 
 
 def _script_handle(params, ctx=None):
@@ -121,6 +122,33 @@ def _thumbnail_handle(params, ctx=None):
 
 
 thumbnail_jobs.handle = _thumbnail_handle
+
+
+def _clip_handle(params, ctx=None):
+    from apps.taoclipngan.cost import uoc_luong_credit
+    from platform_core.storage import get_storage
+    storage = get_storage(); source_key = str(params["video_key"])
+    owner_id = str(params.get("owner_id") or "browser")
+    job_id = getattr(ctx, "job_id", "browser")
+    count = max(1, min(2, int(params.get("target_clip_count") or 2)))
+    clips = []
+    for index in range(count):
+        key = f"taoclipngan/{owner_id}/{job_id}/clip_{index + 1:02d}.mp4"
+        with storage.open(source_key) as stream:
+            storage.put(key, stream, content_type="video/mp4")
+        start = index * 4.0; end = start + 4.0
+        clips.append({"video_key": key, "title": f"Highlight {index + 1}",
+                      "score": round(.91 - index * .07, 2), "duration_s": 4,
+                      "source_start": start, "source_end": end,
+                      "transcript": [{"start": start, "end": end,
+                                      "text": f"Transcript highlight {index + 1}",
+                                      "speaker": "Speaker 1"}]})
+    if ctx: ctx.progress(100, "xong")
+    return {"clips": clips, "credit_cost": uoc_luong_credit(
+        float(params.get("duration_s") or 0), str(params.get("tier") or "high_quality"), count)}
+
+
+clip_jobs.handle = _clip_handle
 
 # Chat fixture: SSE thật qua route/credit/DB, chỉ thay sidecar ngoài tiến trình.
 from apps.chataistudio import routes as chat_routes

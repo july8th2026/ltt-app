@@ -14,6 +14,48 @@
 
 ---
 
+## 2026-08-03 — H15.S12.1: Tạo Clip ngắn CLIP-UI-001
+
+- **Mục tiêu:** thay form Clip cũ bằng workspace Carbon Red có library nguồn,
+  transcript/range editor và compare output thật.
+- **Hạng mục:** CLIP-UI-001 hoàn thành; CLIP-FEAT-001 chưa bắt đầu.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Studio mới cho upload hoặc chọn lại tối đa 8 nguồn gần đây, suy từ Job đúng
+owner và chỉ hiện object còn tồn tại trong Storage. Tên nguồn được lưu cùng Job;
+backend vẫn kiểm prefix owner + tồn tại trước khi nhận source tái sử dụng.
+
+Worker đưa timestamp và caption segments thật của mỗi output vào result. Output
+library hiện source range, score hiện có, transcript và range editor. Bản chỉnh
+sửa được ghi rõ chỉ sống trong local workspace; persistence/package thuộc phase
+feature kế tiếp. Compare chọn tối đa hai video đã render, không dùng demo asset.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression Clip engine/UI/library ownership | **11 passed**, 1 warning trong 3,80 giây |
+| `python -m pytest -q` | **1.980 passed**, 8 skipped, 23 subtests, 1 warning trong 578,87 giây |
+| Playwright fixture 8115 + `video (10).mp4` | duration 10s; quote/settle 12 credit; 2 output; credit 100→88; library reuse/transcript edit/compare PASS |
+| Playwright mobile 390×844 | viewport/scroll 390 px, overflow 0 |
+| Console/network phiên 8115 | **0 error, 0 warning**; upload/queue/estimate 200, hai video Range 206 |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.167 file / 163.748 dòng) |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. UI chỉ mở editor local và nói rõ ranh giới;
+persistence/brand/package chờ CLIP-FEAT-001.
+
+### Cách lùi lại
+
+Revert commit CLIP-UI-001. Không migration; Job/Storage/credit contract giữ nguyên.
+
+### Việc tiếp theo
+
+H15.S12.2 CLIP-FEAT-001 — score rationale, brand preset và package đa nền tảng.
+
 ## 2026-08-03 — H15.S11.2: Kịch bản SCRIPT-FEAT-001
 
 - **Mục tiêu:** hoàn thiện source/research, lưu phiên bản và shot list trên
