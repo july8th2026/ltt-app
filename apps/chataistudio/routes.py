@@ -14,7 +14,7 @@ import io
 import json
 import uuid
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
 from sqlalchemy import select
@@ -42,10 +42,17 @@ def _conv_of_user(db, user_id: str, conv_id: str):
     return c if (c is not None and c.user_id == user_id) else None
 
 
-def _list_convs(db, user_id: str):
-    from platform_core.models import ChatConversation
+def _list_convs(db, user_id: str, query: str = ""):
+    from platform_core.models import ChatConversation, ChatMessage
+    stmt = select(ChatConversation).where(ChatConversation.user_id == user_id)
+    q = (query or "").strip()[:100]
+    if q:
+        matched = select(ChatMessage.conversation_id).where(
+            ChatMessage.user_id == user_id, ChatMessage.content.ilike(f"%{q}%"))
+        stmt = stmt.where((ChatConversation.title.ilike(f"%{q}%")) |
+                          (ChatConversation.id.in_(matched)))
     return db.execute(
-        select(ChatConversation).where(ChatConversation.user_id == user_id)
+        stmt
         .order_by(ChatConversation.updated_at.desc()).limit(100)
     ).scalars().all()
 
@@ -67,7 +74,7 @@ def _models_cached():
 
 # ── Trang chat ────────────────────────────────────────────────────────────────
 @router.get("", response_class=HTMLResponse)
-def page(request: Request, c: str = "", user: str = Depends(require_login)):
+def page(request: Request, c: str = "", q: str = "", user: str = Depends(require_login)):
     u = user_hien_tai(request)
     if u is None:
         return RedirectResponse("/login?next=/chataistudio", status_code=303)
@@ -81,7 +88,7 @@ def page(request: Request, c: str = "", user: str = Depends(require_login)):
     messages = []
     gen = _sess(); db = next(gen)
     try:
-        convs = _list_convs(db, u.id)
+        convs = _list_convs(db, u.id, q)
         active = _conv_of_user(db, u.id, c) if c else None
         if active is not None:
             messages = [{"role": m.role, "content": m.content, "image_key": m.image_key,
@@ -96,7 +103,7 @@ def page(request: Request, c: str = "", user: str = Depends(require_login)):
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request), "user_is_admin": user_is_admin,
         "logged_in": logged_in, "convs": convs, "active": active,
-        "messages": messages, "models": _models_cached(),
+        "messages": messages, "models": _models_cached(), "query": q[:100],
     })
 
 
@@ -144,7 +151,8 @@ def delete_conv(request: Request, conv_id: str, csrf_token: str = Form(...),
 # ── Gửi tin (SSE streaming) ───────────────────────────────────────────────────
 @router.post("/send")
 async def send(request: Request, csrf_token: str = Form(...), conv_id: str = Form(""),
-               message: str = Form(""), user: str = Depends(require_login)):
+               message: str = Form(""), attachments: list[UploadFile] = File(default=[]),
+               user: str = Depends(require_login)):
     from platform_core import credit
     from platform_core.models import ChatConversation, ChatMessage
     from platform_core.storage import get_storage
@@ -163,8 +171,21 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
     if u is None:
         return _err_stream("Cần đăng nhập bằng tài khoản người dùng.")
     msg = (message or "").strip()
-    if not msg:
+    if not msg and not any(x.filename for x in attachments):
         return _err_stream("Tin nhắn trống.")
+    from apps.chataistudio.features import MAX_FILES, context_message, parse_attachment
+    parsed = []
+    try:
+        uploads = [x for x in attachments if x.filename]
+        if len(uploads) > MAX_FILES:
+            raise ValueError("Mỗi lượt chỉ nhận tối đa 3 tệp.")
+        for upload in uploads:
+            parsed.append(parse_attachment(await upload.read(), upload.content_type or "",
+                                           upload.filename or "tệp"))
+    except ValueError as exc:
+        return _err_stream(str(exc))
+    model_message = context_message(msg or "Hãy phân tích tệp đính kèm.", parsed)
+    image_inputs = [item["data_url"] for item in parsed if item["kind"] == "image"]
 
     # Pre-flight ĐỒNG BỘ: load/tạo hội thoại, giữ chỗ credit, lưu tin user, bảo đảm thread.
     reserve = cost.reserve_credit()
@@ -181,8 +202,18 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
         except credit.ThieuCreditError as e:
             db.rollback()
             return _err_stream(str(e))
+        visible = context_message(msg or "Hãy phân tích tệp đính kèm.",
+                                  [x for x in parsed if x["kind"] == "text"])
         db.add(ChatMessage(id=umsg_id, conversation_id=conv.id, user_id=u.id,
-                           role="user", content=msg[:20000]))
+                           role="user", content=visible[:20000]))
+        storage = get_storage()
+        for item in parsed:
+            if item["kind"] != "image":
+                continue
+            ikey = f"chataistudio/{u.id}/{conv.id}/uploads/{uuid.uuid4().hex}.png"
+            storage.put(ikey, io.BytesIO(item["data"]), content_type=item["mime"])
+            db.add(ChatMessage(conversation_id=conv.id, user_id=u.id, role="user",
+                               content="", image_key=ikey, image_prompt=item["name"]))
         if not conv.title:
             conv.title = msg[:48]
         conv_id2 = conv.id
@@ -236,7 +267,8 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             _refund(owner, umsg_id)
 
         try:
-            async for ev in sc.turn_stream(tid, owner, conv_id2, msg, conv_settings):
+            async for ev in sc.turn_stream(tid, owner, conv_id2, model_message,
+                                           conv_settings, image_inputs):
                 m = ev.get("method", "")
                 if m == "item/agentMessage/delta":
                     d = (ev.get("payload") or {}).get("delta") \
@@ -289,6 +321,54 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
 
     return StreamingResponse(gen_stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@router.post("/branch/{conv_id}")
+def branch_conv(request: Request, conv_id: str, csrf_token: str = Form(...),
+                user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(400, "CSRF")
+    from platform_core.models import ChatConversation, ChatMessage
+    u = user_hien_tai(request); gen = _sess(); db = next(gen)
+    try:
+        source = _conv_of_user(db, u.id, conv_id) if u else None
+        if source is None:
+            raise HTTPException(404, "Không tìm thấy.")
+        clone = ChatConversation(user_id=u.id, title=("Nhánh · " + source.title)[:200],
+                                 model=source.model,
+                                 custom_instructions=source.custom_instructions)
+        db.add(clone); db.flush()
+        for m in _messages(db, source.id):
+            db.add(ChatMessage(conversation_id=clone.id, user_id=u.id, role=m.role,
+                               content=m.content, image_key=m.image_key,
+                               image_prompt=m.image_prompt, tokens_total=m.tokens_total))
+        db.commit(); target = clone.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return RedirectResponse(f"{MANIFEST.route_prefix}?c={target}", status_code=303)
+
+
+@router.get("/export/{conv_id}.{fmt}")
+def export_conv(request: Request, conv_id: str, fmt: str,
+                user: str = Depends(require_login)):
+    from apps.chataistudio.features import export_json, export_markdown
+    u = user_hien_tai(request); gen = _sess(); db = next(gen)
+    try:
+        conv = _conv_of_user(db, u.id, conv_id) if u else None
+        if conv is None or fmt not in {"md", "json"}:
+            raise HTTPException(404, "Không tìm thấy.")
+        messages = _messages(db, conv.id)
+        if fmt == "json":
+            data, media = export_json(conv.title, conv.model, messages), "application/json"
+        else:
+            data, media = export_markdown(conv.title, messages).encode("utf-8"), "text/markdown"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return Response(data, media_type=media, headers={
+        "Content-Disposition": f'attachment; filename="chat-{conv_id[:8]}.{fmt}"',
+        "X-Content-Type-Options": "nosniff"})
 
 
 def _save_msg(user_id, conv_id, role, content, image_key="", image_prompt="", tokens=0):

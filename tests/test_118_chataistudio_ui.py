@@ -8,7 +8,9 @@ def test_chat_template_uses_scoped_accessible_ui_and_safe_dom():
     assert 'class="chat-layout"' in src and 'aria-label="Hội thoại"' in src
     assert 'aria-live="polite"' in src and 'role="status"' in src
     assert 'maxlength="20000"' in src and 'id="chat-count"' in src
-    assert 'aria-label="Đính kèm ảnh chưa khả dụng"' in src and "disabled" in src
+    assert 'name="attachments"' in src and "multiple" in src
+    assert "Ảnh được gửi tới OpenAI" in src
+    assert "/export/{{active.id}}.md" in src and "/branch/{{active.id}}" in src
     assert "innerHTML" not in src and "textContent" in src
     assert 'style="' not in src and "onsubmit=" not in src
 

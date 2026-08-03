@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-03 — H15.S10.2: Chat AI Studio CHAT-FEAT-001
+
+- **Mục tiêu:** hoàn thiện project/file/search/export/branch theo capability thật
+  của sidecar, có ownership/privacy/cost/rollback và không dựng File Search giả.
+- **Hạng mục:** CHAT-FEAT-001 và H15.S10 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Conversation bền vững được dùng làm project Chat. Composer nhận tối đa 3 tệp,
+8 MB/tệp: ảnh PNG/JPEG/WebP được decode, chuẩn hóa PNG, gửi sidecar vision và
+lưu Storage owner-scoped; TXT/MD/CSV/JSON/PDF được kiểm loại, decode/trích chữ,
+cap 12.000 ký tự/tệp rồi ghép vào context và transcript. UI công khai data flow.
+
+Search server-side lọc title hoặc nội dung message nhưng luôn theo owner. Export
+Markdown/JSON versioned có Content-Disposition/nosniff. Branch clone toàn bộ
+message/ảnh trong cùng owner nhưng không copy `codex_thread_id`, nên lượt tiếp
+theo tạo thread sidecar độc lập. Hosted File Search/vector store DEFER vì sidecar
+chưa có contract/cost/retention tương ứng.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Regression Chat UI/feature/ownership | **13 passed**, 1 warning trong 5,27 giây |
+| `python -m pytest -q` | **1.970 passed**, 8 skipped, 23 subtests, 1 warning trong 585,30 giây |
+| Playwright fixture 8112 | TXT + ảnh cùng lượt; note 2 tệp; transcript/ảnh còn sau reload; MD export 200; branch giữ 3 message; search nội dung thấy 2 nhánh; mobile overflow 0 |
+| Console/network phiên 8112 | **0 error, 0 warning**; send/image/export/branch/search đều 200/303/304, không request ứng dụng lỗi |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.148 file / 162.269 dòng) |
+
+Đã thêm OpenAI Developer Docs MCP vào cấu hình Codex toàn cục; phiên hiện tại
+chưa hot-load nên capability spike dùng fallback web chỉ trên domain tài liệu
+OpenAI chính thức. Fixture cô lập, không gọi OpenAI/production.
+
+### Quyết định mới
+
+Q56 khóa conversation-as-project, attachment limits/data flow, search/export/
+branch ownership và DEFER hosted File Search.
+
+### Cách lùi lại
+
+Revert commit CHAT-FEAT-001. Không migration; message/conversation cũ giữ nguyên.
+Ẩn attachment/search/export/branch, route chat text/SSE cũ tiếp tục chạy.
+
+### Việc tiếp theo
+
+H15.S11.1 SCRIPT-UI-001 — audit Kịch bản rồi xây workspace/outline/section editor/
+export trên Carbon Red trước khi mở source/research/version/shot-list.
+
 ## 2026-08-03 — H15.S10.1: Chat AI Studio CHAT-UI-001
 
 - **Mục tiêu:** đồng nhất Chat với Carbon Red và sửa shell/composer/message/a11y
