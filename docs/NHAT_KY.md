@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-03 — H15.S4.3: Prompt/variation TV-FEAT-002
+
+- **Mục tiêu:** thêm prompt assist, variation/remix và camera control theo đúng
+  capability provider; không giả camera native.
+- **Hạng mục:** TV-FEAT-002 hoàn thành; H15.S4 hoàn thành đủ ba vé.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Model registry khai rõ `supports_seed` và ba prompt control. Camera/motion/style
+được ghép thành prompt guidance tất định ở server; UI nói rõ đây không phải cơ
+khí camera native. `/prompt-assist` preview bằng chính helper queue dùng, không
+gọi provider và không tốn credit. Seed được validate 0..2147483647, truyền qua
+adapter ModelArk; hai biến thể dùng seed N/N+1. ToolSpec Agent được mở rộng additive.
+
+Mỗi job lưu raw prompt, prompt final và control đã chuẩn hóa. Nút Biến thể trên
+card phục hồi model/prompt/thời lượng/tỉ lệ/độ phân giải, đặt count=2 và mở
+composer; mobile dùng chung luồng. Thêm `tests/test_113_taovideo_prompt_controls.py`.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted taovideo/ToolSpec/UI/prompt | **89 passed**, 1 warning trong 58,54 giây |
+| Targeted lượt đầu | **1 fail**, 88 pass: test cũ khóa nhãn “Số lượng”; cập nhật theo “Số lượng/biến thể” |
+| `python -m pytest -q` | **1.940 passed**, 8 skipped, 23 subtests, 1 warning trong 563,75 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.129 file / 159.370 dòng) |
+| Playwright desktop | preview đủ tracking/dynamic/cinematic; submit +2 job; remix phục hồi prompt/count; console/network sạch |
+| DB canary | hai job có seed 100/101, control chuẩn hóa và prompt final chứa Direction |
+| Playwright 390 px | remix mở drawer/expanded; count=2; field thiếu nhãn 0; overflow 0; console/network sạch |
+
+Browser/DB/credit đều cô lập trong `tmp/`; không có worker/provider call và không
+dùng dữ liệu hay tiền production.
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. Camera là prompt guidance vì adapter hiện chỉ có
+native seed; capability UI lấy từ model registry thay vì hardcode phỏng đoán.
+
+### Cách lùi lại
+
+Revert commit TV-FEAT-002. Không có migration/dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S5 Upscale Video — bắt đầu UP-UI-001; không mở engine feature trước UI gate.
+
+---
+
 ## 2026-08-03 — H15.S4.2: Asset library TV-FEAT-001
 
 - **Mục tiêu:** cho phép tái sử dụng reference đã tải mà không tạo kho asset hay

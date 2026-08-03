@@ -178,7 +178,12 @@ def handle(params: dict, ctx=None) -> dict:
         raise RuntimeError("Chưa có API key BytePlus (thêm ở /admin → APIKEYS).")
 
     endpoint = models.provider_model(model)
-    seed = None
+    try:
+        seed = int(params["seed"]) if params.get("seed") is not None else None
+    except (TypeError, ValueError):
+        seed = None
+    if seed is not None and not 0 <= seed <= 2_147_483_647:
+        seed = None
     result = None
     mod_try = heal_stage = 0
 
@@ -272,4 +277,4 @@ def handle(params: dict, ctx=None) -> dict:
         ctx.progress(100, "xong")
     return {"video_key": vkey, "credit_cost": credit_cost, "tokens": tokens,
             "resolution": resolution, "duration": duration, "model": model,
-            "refs": len(ref_items)}
+            "refs": len(ref_items), "seed": seed}

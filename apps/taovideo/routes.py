@@ -24,7 +24,9 @@ router = APIRouter(tags=["seedance"])
 
 def _render(request: Request, user: str, *, error: str = "", jobs=None, status_code: int = 200, **extra):
     reg_ui = {k: {"resolutions": v["resolutions"], "durations": v["durations"],
-                  "aspects": v["aspects"]}
+                  "aspects": v["aspects"],
+                  "supports_seed": bool(v.get("supports_seed")),
+                  "prompt_controls": v.get("prompt_controls", [])}
               for k, v in models.MODELS.items() if v.get("active")}
     if isinstance(jobs, dict):
         # Các nhánh validation/credit dùng cùng payload workspace với GET. Trước
@@ -85,6 +87,8 @@ def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
                  "video_key": (j.result or {}).get("video_key") if j.result else None,
                  "model": (j.result or {}).get("model") or (j.params or {}).get("model"),
                  "prompt": str((j.params or {}).get("prompt", ""))[:180],
+                 "raw_prompt": str((j.params or {}).get("raw_prompt") or
+                                   (j.params or {}).get("prompt", ""))[:10000],
                  "resolution": (j.params or {}).get("resolution", ""),
                  "duration": (j.params or {}).get("duration", ""),
                  "aspect_ratio": (j.params or {}).get("aspect_ratio", "")}
@@ -109,6 +113,49 @@ def _clean(model, resolution, duration, aspect):
     if duration not in m["durations"]:
         duration = 5 if 5 in m["durations"] else m["durations"][0]
     return mid, resolution, duration, aspect
+
+
+_CAMERA = {
+    "static": "locked-off static camera",
+    "dolly_in": "slow cinematic dolly-in",
+    "tracking": "smooth subject tracking shot",
+    "orbit": "controlled orbit shot around the subject",
+    "aerial": "wide aerial establishing shot",
+    "handheld": "subtle handheld documentary movement",
+}
+_MOTION = {
+    "subtle": "subtle natural motion",
+    "dynamic": "dynamic energetic motion",
+    "cinematic": "cinematic paced motion with smooth acceleration",
+}
+_VISUAL_STYLE = {
+    "realistic": "photorealistic, natural detail",
+    "cinematic": "cinematic lighting and filmic color grading",
+    "anime": "polished anime visual style",
+    "product": "premium commercial product photography",
+}
+
+
+def _compose_prompt(prompt: str, camera: str = "", motion: str = "",
+                    visual_style: str = "") -> str:
+    """Prompt guidance tất định; không giả đây là tham số camera native."""
+    base = str(prompt or "").strip()
+    guidance = [mapping[value] for mapping, value in (
+        (_CAMERA, camera), (_MOTION, motion), (_VISUAL_STYLE, visual_style)
+    ) if value in mapping]
+    return (base + ("\n\nDirection: " + "; ".join(guidance) + "." if guidance else ""))[:10000]
+
+
+def _clean_seed(value: str) -> int | None:
+    if str(value or "").strip() == "":
+        return None
+    try:
+        seed = int(value)
+    except (TypeError, ValueError):
+        raise ValueError("Seed phải là số nguyên từ 0 đến 2147483647.")
+    if not 0 <= seed <= 2_147_483_647:
+        raise ValueError("Seed phải là số nguyên từ 0 đến 2147483647.")
+    return seed
 
 
 @router.get("", response_class=HTMLResponse)
@@ -155,6 +202,20 @@ async def translate(request: Request, prompt: str = Form(""), target: str = Form
         f'style="width:100%">{escape(out)}</textarea>'
         f'<div class="dim" style="font-size:12px;margin-top:4px">Đã dịch → {escape(target)}. '
         f'Sửa nếu cần rồi bấm Tạo video.</div>')
+
+
+@router.post("/prompt-assist", response_class=HTMLResponse)
+def prompt_assist(request: Request, prompt: str = Form(""), camera: str = Form(""),
+                  motion: str = Form(""), visual_style: str = Form(""),
+                  csrf_token: str = Form(""), user: str = Depends(require_login)):
+    """Preview prompt final bằng cùng helper mà queue dùng; không gọi provider."""
+    from markupsafe import escape
+    if not verify_csrf_token(request, csrf_token):
+        return HTMLResponse('<span class="tv-assist-error">Phiên hết hạn — tải lại trang.</span>', 400)
+    final = _compose_prompt(prompt, camera, motion, visual_style)
+    if not final:
+        return HTMLResponse('<span class="tv-assist-error">Nhập prompt để xem gợi ý.</span>', 400)
+    return HTMLResponse(f'<pre class="tv-assist-preview">{escape(final)}</pre>')
 
 
 _CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024, "audio": 20 * 1024 * 1024}
@@ -259,6 +320,8 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                 model: str = Form(""), resolution: str = Form("480p"),
                 duration: str = Form("5"), aspect_ratio: str = Form("16:9"),
                 generate_audio: str = Form(""), count: str = Form("1"),
+                camera: str = Form(""), motion: str = Form(""),
+                visual_style: str = Form(""), seed: str = Form(""),
                 ref_images: list[UploadFile] = File(default=[]),
                 ref_roles: list[str] = Form(default=[]), ref_handles: list[str] = Form(default=[]),
                 saved_ref_keys: list[str] = Form(default=[]),
@@ -275,6 +338,10 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         return _render(request, user, error="Chưa nhập mô tả video.",
                        jobs=_jobs_cua_toi(request), status_code=400)
     mid, res, dur, asp = _clean(model, resolution, duration, aspect_ratio)
+    try:
+        fixed_seed = _clean_seed(seed)
+    except ValueError as exc:
+        return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request), status_code=400)
     try:
         n = max(1, min(int(count or 1), 2))
     except (TypeError, ValueError):
@@ -293,7 +360,12 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         ref_specs = saved_refs + await _luu_refs(u.id, ref_images, ref_roles, ref_handles)
     except ValueError as exc:
         return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request), status_code=400)
-    base_params = {"prompt": prompt.strip()[:10000], "model": mid, "resolution": res,
+    final_prompt = _compose_prompt(prompt, camera, motion, visual_style)
+    base_params = {"prompt": final_prompt, "raw_prompt": prompt.strip()[:10000],
+                   "camera": camera if camera in _CAMERA else "",
+                   "motion": motion if motion in _MOTION else "",
+                   "visual_style": visual_style if visual_style in _VISUAL_STYLE else "",
+                   "model": mid, "resolution": res,
                    "duration": dur, "aspect_ratio": asp,
                    "generate_audio": bool(generate_audio), "owner_id": u.id,
                    "refs": ref_specs}
@@ -303,6 +375,8 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         try:
             for k in range(n):                      # ×N video (dedupe khác nhau theo idx)
                 p = dict(base_params, _n=k)
+                if fixed_seed is not None:
+                    p["seed"] = (fixed_seed + k) % 2_147_483_648
                 job = submit_with_credit(
                     db, user_id=u.id, app_slug=MANIFEST.slug,
                     job_type="taovideo.generate", params=p,

@@ -24,7 +24,7 @@ def test_composer_co_label_drawer_va_keyboard_contract():
     assert "Thời lượng<select" in page
     assert "Tỉ lệ<select" in page
     assert "Độ phân giải<select" in page
-    assert "Số lượng<select" in page
+    assert "Số lượng/biến thể<select" in page
 
 
 def test_job_card_error_empty_progress_co_semantics():
@@ -44,8 +44,9 @@ def test_nav_khong_day_user_thuong_vao_settings_va_khong_co_link_gia():
 
     assert '{% if is_admin(request) %}<a href="/settings">' in page
     assert 'href="/jobs?app=taovideo"' in page
-    assert page.count('disabled aria-disabled="true"') == 1
+    assert page.count('disabled aria-disabled="true"') == 0
     assert 'href="#tv-assets"' in page
+    assert 'href="#tv-assist"' in page
 
 
 def test_file_name_duoc_tao_bang_dom_khong_chich_html():

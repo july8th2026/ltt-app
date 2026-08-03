@@ -17,6 +17,8 @@ MODELS = {
         "resolutions": ["480p", "720p"],
         "durations": [4, 5, 6, 8, 10, 12, 15],
         "aspects": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "supports_seed": True,
+        "prompt_controls": ["camera", "motion", "visual_style"],
         "active": True,
     },
     "seedance-2.0": {
@@ -26,6 +28,8 @@ MODELS = {
         "resolutions": ["480p", "720p", "1080p", "4k"],
         "durations": [4, 5, 6, 8, 10, 12, 15],
         "aspects": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "supports_seed": True,
+        "prompt_controls": ["camera", "motion", "visual_style"],
         "active": True,
     },
     "seedance-2.0-fast": {
@@ -35,6 +39,8 @@ MODELS = {
         "resolutions": ["480p", "720p"],
         "durations": [4, 5, 6, 8, 10, 12, 15],
         "aspects": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+        "supports_seed": True,
+        "prompt_controls": ["camera", "motion", "visual_style"],
         "active": True,
     },
 }
