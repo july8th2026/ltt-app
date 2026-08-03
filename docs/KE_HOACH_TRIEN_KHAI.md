@@ -1283,6 +1283,10 @@ Tiến độ H15 hiện tại: **30/38 vé (78,9%)**; **11/16 stage hoàn tất*
     Reels không render/phí lặp. Browser file MP4 thật, revision 1→2, reload và
     download ZIP PASS; mobile overflow 0, console/network sạch; regression
     14 passed; full suite 1.983 passed, 8 skipped, 23 subtests; secret scan 0.
-- [ ] H15.S13 Admin/operator.
+- [x] H15.S13 Admin/operator — 2026-08-03: ADM-001 hợp nhất custom console và
+  SQLAdmin theo Carbon Red; dense table, skip link, semantic nav, active state,
+  mobile menu và scroll containment. Browser desktop/mobile PASS, overflow 0,
+  console/network sạch; regression 10 passed; full suite 1.985 passed,
+  8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.

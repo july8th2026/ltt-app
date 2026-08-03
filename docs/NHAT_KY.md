@@ -14,6 +14,50 @@
 
 ---
 
+## 2026-08-03 — H15.S13: Admin/operator ADM-001
+
+- **Mục tiêu:** đồng nhất toàn bộ bề mặt vận hành với Carbon Red và làm cho
+  điều hướng/bảng quản trị dùng được trên mobile mà không đổi nghiệp vụ.
+- **Hạng mục:** ADM-001 và H15.S13 hoàn thành.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Custom console có semantic sidebar, skip link, trạng thái hệ thống, active state
+và menu mobile chứa đủ 11 đích quản trị. Emoji điều hướng được thay bằng ký hiệu
+operator gọn, nhất quán và không phụ thuộc font màu.
+
+SQLAdmin nạp design token chung, đổi toàn bộ primary từ xanh Tabler sang Carbon
+Red, đưa nội dung vào `main`, thêm quick navigation có accessible name và giữ
+bảng dày trong scroll container. Sau visual QA đã sửa tiếp nền navy do
+`.theme-dark` ghi đè biến root, về đúng surface đen/đỏ của nền tảng.
+
+Không thay route, model, phân quyền, mutation credit hay credential contract.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_124_admin_ui.py tests/test_70_admin_h3.py` | **10 passed**, 1 warning trong 19,40 giây |
+| `python -m pytest -q` | **1.985 passed**, 8 skipped, 23 subtests, 1 warning trong 566,58 giây |
+| Playwright fixture 8117 desktop 1440×1000 | custom APIKEYS + SQLAdmin user list render đúng Carbon Red; overflow 0 |
+| Playwright fixture 8117 mobile 390×844 | menu 11 link mở được; bảng cuộn trong container; page overflow 0 |
+| Console/network phiên 8117 | **0 error, 0 warning, 0 request failed** |
+| `python tools\\scan_source_secrets.py` | **0 finding**, PASS (1.181 file / 165.401 dòng) |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền; đây là áp dụng design system và accessibility
+contract đã khóa.
+
+### Cách lùi lại
+
+Revert commit ADM-001. Không migration và không thay dữ liệu vận hành.
+
+### Việc tiếp theo
+
+H15.S14.1 WEB-001 — chốt route map source website ↔ production pretty URL.
+
 ## 2026-08-03 — H15.S12.2: Tạo Clip ngắn CLIP-FEAT-001
 
 - **Mục tiêu:** mở score rationale, brand render và social package bằng năng

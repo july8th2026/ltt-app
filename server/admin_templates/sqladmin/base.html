@@ -15,21 +15,33 @@
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
+  <link rel="stylesheet" href="/static/ltt.css">
   {% if admin.favicon_url %}
   <link rel="icon" href="{{ admin.favicon_url }}">
   {% endif %}
   <style>
-    /* Đồng bộ accent Tabler với nền tảng + nền dark khớp tông. */
-    :root{ --tblr-primary:#3b6ef2; --tblr-primary-rgb:59,110,242;
-           --tblr-body-bg:#0f1115; --tblr-bg-surface:#171a21; }
-    body{ background:#0f1115; }
-    .btn-primary{ --tblr-btn-bg:#3b6ef2; --tblr-btn-border-color:#3b6ef2; }
-    a{ color:#7aa2f7; }
-    /* Liên kết nhanh về vỏ nền tảng + console APIKEYS. */
-    .ltt-adminbar{ position:sticky; top:0; z-index:1030; display:flex; gap:10px; align-items:center;
-      padding:8px 16px; background:#12141b; border-bottom:1px solid #2a2e37; font-size:13px; }
-    .ltt-adminbar a{ color:#9aa4b2; text-decoration:none } .ltt-adminbar a:hover{ color:#e6e8eb }
-    .ltt-adminbar .brand{ font-weight:700; color:#e6e8eb; margin-right:8px }
+    :root{--tblr-primary:#ef3731;--tblr-primary-rgb:239,55,49;--tblr-body-bg:#08090a;
+      --tblr-bg-surface:#151111;--tblr-border-color:#382422;--tblr-link-color:#ff746d}
+    body.theme-dark{--tblr-body-bg:#08090a;--tblr-bg-surface:#151111;
+      --tblr-bg-surface-secondary:#0d0a0a;background:var(--surface-canvas);color:var(--text-primary)}
+    a{color:var(--brand-hover)}
+    .btn-primary{--tblr-btn-bg:#ef3731;--tblr-btn-border-color:#ef3731;
+      --tblr-btn-hover-bg:#ff514a;--tblr-btn-hover-border-color:#ff514a}
+    .card,.dropdown-menu,.form-control,.form-select{border-color:var(--border-subtle);background-color:var(--surface-raised)}
+    .table-responsive{border:1px solid var(--border-subtle);border-radius:var(--radius-md)}
+    .table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+    .table td,.table th{padding:.58rem .75rem;vertical-align:middle}
+    .ltt-adminbar{position:sticky;top:0;z-index:1030;display:flex;gap:6px;align-items:center;
+      min-height:52px;padding:7px 16px;background:#151111f2;border-bottom:1px solid var(--border-subtle);
+      font-size:13px;backdrop-filter:blur(12px);overflow-x:auto}
+    .ltt-adminbar a{display:inline-flex;align-items:center;min-height:36px;padding:7px 10px;border-radius:6px;
+      color:var(--text-secondary);text-decoration:none;white-space:nowrap}
+    .ltt-adminbar a:hover{color:var(--text-primary);background:var(--surface-overlay)}
+    .ltt-adminbar .brand{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--text-primary);
+      margin-right:8px;white-space:nowrap}.ltt-adminbar .mark{width:28px;height:28px;font-size:10px}
+    .ltt-back{margin-left:auto}
+    @media(max-width:700px){.ltt-adminbar{padding-inline:10px}.ltt-adminbar .brand span:last-child{display:none}
+      .ltt-back{margin-left:0}.container-xl{padding-left:12px;padding-right:12px}.table{min-width:680px}}
   </style>
   {% block head %}
   {% endblock %}
@@ -37,19 +49,21 @@
 </head>
 
 <body class="theme-dark">
-  <div class="ltt-adminbar">
-    <span class="brand">LTT · Quản trị</span>
-    <a href="/admin/apikeys">🔑 APIKEYS</a>
-    <a href="/admin/user/list">👤 Người dùng</a>
-    <a href="/admin/credit-entry/list">💳 Credit</a>
-    <a href="/" style="margin-left:auto">← Về nền tảng</a>
-  </div>
+  <a class="skip-link" href="#sqladmin-content">Bỏ qua điều hướng</a>
+  <nav class="ltt-adminbar" aria-label="Điều hướng quản trị nhanh">
+    <span class="brand"><span class="mark">LTT</span><span>LTT · Quản trị</span></span>
+    <a href="/admin/apikeys">APIKEYS</a>
+    <a href="/admin/user/list">Người dùng</a>
+    <a href="/admin/credit-entry/list">Sổ credit</a>
+    <a href="/admin/job/list">Job</a>
+    <a class="ltt-back" href="/">Về nền tảng</a>
+  </nav>
+  <main id="sqladmin-content">
   {% block body %}
-  <main>
     {% block main %}
     {% endblock %}
-  </main>
   {% endblock %}
+  </main>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}"></script>

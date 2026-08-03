@@ -85,20 +85,20 @@ class AdminAuth(AuthenticationBackend):
 
 # ── Vỏ quản trị DARK dùng chung (UX-1) — thay các trang trắng tự viết ─────────
 _ADM_NAV = [
-    ("/", "🏠", "Trang chủ", "home"),
+    ("/", "LT", "Trang chủ", "home"),
     ("__grp__", "", "Quản trị", ""),
-    ("/admin/user/list", "👤", "Người dùng", "user"),
-    ("/admin/credit-entry/list", "💳", "Sổ credit", "credit"),
-    ("/admin/grant-credit", "➕", "Cấp credit", "grant"),
-    ("/admin/apikeys", "🔑", "APIKEYS", "apikeys"),
-    ("/admin/job/list", "📋", "Job", "job"),
-    ("/admin/session/list", "🔐", "Phiên", "session"),
+    ("/admin/user/list", "ND", "Người dùng", "user"),
+    ("/admin/credit-entry/list", "CR", "Sổ credit", "credit"),
+    ("/admin/grant-credit", "+C", "Cấp credit", "grant"),
+    ("/admin/apikeys", "AK", "APIKEYS", "apikeys"),
+    ("/admin/job/list", "JB", "Job", "job"),
+    ("/admin/session/list", "SS", "Phiên", "session"),
     ("__grp__", "", "Thanh toán", ""),
-    ("/admin/doanh-thu", "📈", "Doanh thu", "revenue"),
-    ("/admin/goi", "💠", "Gói nạp", "goi"),
-    ("/admin/don", "🧾", "Đơn hàng", "don"),
+    ("/admin/doanh-thu", "DT", "Doanh thu", "revenue"),
+    ("/admin/goi", "GN", "Gói nạp", "goi"),
+    ("/admin/don", "DH", "Đơn hàng", "don"),
     ("__grp__", "", "Hệ thống", ""),
-    ("/status", "🩺", "Tình trạng", "status"),
+    ("/status", "HT", "Tình trạng", "status"),
 ]
 
 _PROVCOL = {"gemini": ("#4285F4", "G"), "apiai": ("#16a34a", "AI"),
@@ -122,22 +122,34 @@ def _asset_ver() -> str:
 
 def _admin_shell(title: str, active: str, body: str) -> str:
     nav = ""
+    mobile_nav = ""
     for href, ic, label, key in _ADM_NAV:
         if href == "__grp__":
             nav += f'<div class="grp">{escape(label)}</div>'
         else:
             cls = "on" if key == active else ""
-            nav += (f'<a class="{cls}" href="{href}"><span class="ic">{ic}</span> '
+            current = ' aria-current="page"' if key == active else ""
+            nav += (f'<a class="{cls}" href="{href}"{current}><span class="ic">{ic}</span> '
                     f'{escape(label)}</a>')
+            mobile_nav += (f'<a class="{cls}" href="{href}"{current}>'
+                           f'{escape(label)}</a>')
     return (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
             f'<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">'
             f'<link rel="stylesheet" href="/static/ltt.css?v={_asset_ver()}">'
-            f'<title>{escape(title)} — Quản trị</title></head><body><div class="adm">'
-            f'<aside class="adm-side"><div class="adm-brand"><div class="mark">LTT</div>'
+            f'<title>{escape(title)} — Quản trị</title></head><body>'
+            f'<a class="skip-link" href="#admin-content">Bỏ qua điều hướng</a>'
+            f'<div class="adm"><aside class="adm-side" aria-label="Điều hướng quản trị">'
+            f'<div class="adm-brand"><div class="mark">LTT</div>'
             f'<div><b>LTT AI Studio</b><small>quản trị</small></div></div>'
-            f'<nav class="adm-nav">{nav}</nav></aside>'
-            f'<div class="adm-main">{body}</div></div></body></html>')
+            f'<nav class="adm-nav" aria-label="Các khu vực quản trị">{nav}</nav>'
+            f'<div class="adm-sidefoot"><span class="status-live"></span>Hệ thống vận hành</div></aside>'
+            f'<main class="adm-main" id="admin-content">'
+            f'<header class="adm-mobilebar"><a class="adm-mobilebrand" href="/admin/">'
+            f'<span class="mark">LTT</span><span>Quản trị</span></a>'
+            f'<details class="adm-mobilemenu"><summary aria-label="Mở điều hướng">Menu</summary>'
+            f'<nav aria-label="Điều hướng mobile">{mobile_nav}</nav></details></header>'
+            f'{body}</main></div></body></html>')
 
 
 def _prov_dot(provider: str) -> str:
