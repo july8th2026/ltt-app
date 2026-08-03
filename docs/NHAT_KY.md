@@ -14,6 +14,54 @@
 
 ---
 
+## 2026-08-03 — H15.S5.1: Upscale UP-UI-001
+
+- **Mục tiêu:** thống nhất shell responsive, compare, queue/status và a11y của
+  Upscale trước khi đánh giá thêm engine enhancement.
+- **Hạng mục:** UP-UI-001 hoàn thành; H15.S5 còn UP-FEAT-001/002.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Mobile mở thẳng workspace và dùng nút disclosure có `aria-expanded` để bung
+bảng thiết lập, thay vì buộc người dùng cuộn qua toàn bộ control trước. Desktop
+giữ bố cục studio hai cột hiện có.
+
+Compare được gom thành một surface trước/sau: video nguồn điều khiển playback,
+video kết quả đồng bộ play/pause/seek/rate; range có label điều khiển đường chia.
+Nút So sánh của job tải đúng source/output vào surface chung, bỏ cặp video ẩn
+trùng cho từng card. Queue có nhãn trạng thái theo state, progressbar đầy đủ
+min/max/current và article gắn accessible title. AI Detail tiếp tục disabled,
+ghi rõ chỉ mở sau benchmark engine thật; không dùng Quality để giả lập.
+
+Thêm `tests/test_114_upscale_ui.py`. File video người dùng chỉ định được browser
+đọc metadata và quote trên canary cô lập; không submit job, không trừ credit.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Targeted vận hành/Upscale/UI | **45 passed**, 1 warning trong 48,68 giây |
+| `python -m pytest -q` | **1.943 passed**, 8 skipped, 23 subtests, 1 warning trong 746,61 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS (1.130 file / 159.476 dòng) |
+| Playwright 1440 px | upload `video (10).mp4` → metadata 2,9 MB, quote 5 credit; overflow 0; telemetry 200 |
+| Playwright 375 px | settings mặc định đóng, workspace ở đầu; mở/đóng + `aria-expanded` PASS; overflow 0 |
+| Console/network Upscale | warning/error mới 0; request động hỏng 0 |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. UP-UI-001 giữ nguyên năng lực đã xây; AI Detail
+và nhóm enhancement vẫn chịu engine/cost gate đã khóa trong Q47/Q52.
+
+### Cách lùi lại
+
+Revert commit UP-UI-001. Không có migration hoặc dữ liệu production cần rollback.
+
+### Việc tiếp theo
+
+H15.S5.2 UP-FEAT-001 — audit lại benchmark hiện có và chỉ mở feature nào có
+engine thật đạt acceptance/cost gate; nếu chưa đạt phải giữ DEFER có bằng chứng.
+
 ## 2026-08-03 — H15.S4.3: Prompt/variation TV-FEAT-002
 
 - **Mục tiêu:** thêm prompt assist, variation/remix và camera control theo đúng

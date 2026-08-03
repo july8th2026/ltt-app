@@ -1159,7 +1159,16 @@ system-first, không làm nhiều app song song.
   - [x] H15.S4.3 TV-FEAT-002 — 2026-08-03: prompt preview server-side,
     camera/motion/style guidance trung thực, provider seed, 2 variation và remix;
     browser desktop/mobile PASS; 1.940 passed, 8 skipped, 23 subtests; scan 0.
-- [ ] H15.S5–S12 Từng app còn lại theo roadmap; không song song.
+- [ ] H15.S5 Upscale Video — đi tuần tự UI → benchmark engine → cost gate;
+  không mở control giả.
+  - [x] H15.S5.1 UP-UI-001 — 2026-08-03: mobile progressive settings,
+    compare slider đồng bộ, queue status/progress semantics và telemetry live
+    region; browser desktop/mobile + file thật PASS; 1.943 passed, 8 skipped,
+    23 subtests; secret scan 0.
+  - [ ] H15.S5.2 UP-FEAT-001 — benchmark engine AI Detail/denoise/deblur thật.
+  - [ ] H15.S5.3 UP-FEAT-002 — stabilization/interpolation/HDR chỉ sau engine
+    và cost gate của H15.S5.2.
+- [ ] H15.S6–S12 Từng app còn lại theo roadmap; không song song.
 - [ ] H15.S13 Admin/operator.
 - [ ] H15.S14 Website marketing route/deploy.
 - [ ] H15.S15 DEEP re-audit + full release gate.

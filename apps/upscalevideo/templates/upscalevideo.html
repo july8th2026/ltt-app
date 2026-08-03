@@ -3,7 +3,8 @@
 {% block topbar_title %}<strong>Upscale Studio</strong><span class="up-pro">PRO</span>{% endblock %}
 {% block content %}
 <div class="up-studio">
-  <form id="upform" class="up-settings" enctype="multipart/form-data">
+  <button class="up-settings-toggle" id="up-settings-toggle" type="button" aria-controls="upform" aria-expanded="false">Thiết lập nâng cấp <span aria-hidden="true">⌄</span></button>
+  <form id="upform" class="up-settings" enctype="multipart/form-data" aria-label="Thiết lập nâng cấp video">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="video_key" id="video_key" value="">
     <input type="hidden" name="duration_s" id="duration_s" value="0">
@@ -14,7 +15,7 @@
         <span><strong>⚡ Fast</strong><small>Xử lý nhanh, phù hợp video thường.</small></span></label>
       <label class="up-mode"><input type="radio" name="preset" value="quality">
         <span><strong>◇ Quality</strong><small>Cân bằng tốc độ và chất lượng.</small></span></label>
-      <div class="up-mode disabled" title="Chỉ mở sau benchmark engine thật">
+      <div class="up-mode disabled" aria-disabled="true" title="Chỉ mở sau benchmark engine thật">
         <span><strong>✦ AI Detail <em>NGHIÊN CỨU</em></strong><small>Chưa mở — không dùng Quality để giả lập.</small></span>
       </div>
     </section>
@@ -55,7 +56,7 @@
 
   <div class="up-workspace">
     {% if error %}<div class="alert alert-err">{{error}}</div>{% endif %}
-    {% if is_admin(request) %}<section class="up-telemetry" id="up-telemetry"><strong>Telemetry quản trị</strong><span>Đang đọc dữ liệu thật…</span></section>{% endif %}
+    {% if is_admin(request) %}<section class="up-telemetry" id="up-telemetry" aria-live="polite"><strong>Telemetry quản trị</strong><span>Đang đọc dữ liệu thật…</span></section>{% endif %}
     <section class="up-stage">
       <div class="up-drop" id="up-drop">
         <input type="file" id="vfile" name="video" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*">
@@ -67,13 +68,15 @@
         <div id="batch-files" class="up-batch-files"></div>
       </div>
 
-      <div class="up-compare-panel">
+      <div class="up-compare-panel" id="up-compare">
         <header><strong>Xem trước so sánh</strong><span>Dữ liệu thật</span></header>
         <div class="up-compare-view">
-          <video id="source-preview" controls preload="metadata" {% if latest_done %}src="{{app.route_prefix}}/jobs/{{latest_done.id}}/source"{% endif %}></video>
-          {% if latest_done %}<video id="output-preview" controls preload="metadata" src="{{app.route_prefix}}/v/{{latest_done.video_key}}"></video>{% else %}<div class="up-no-output">Kết quả sẽ xuất hiện tại đây</div>{% endif %}
+          <video id="source-preview" controls playsinline preload="metadata" {% if latest_done %}src="{{app.route_prefix}}/jobs/{{latest_done.id}}/source"{% endif %}></video>
+          {% if latest_done %}<video id="output-preview" muted playsinline aria-hidden="true" preload="metadata" src="{{app.route_prefix}}/v/{{latest_done.video_key}}"></video>{% else %}<div class="up-no-output" id="output-preview-placeholder">Kết quả sẽ xuất hiện tại đây</div>{% endif %}
+          <i class="up-compare-divider" id="up-compare-divider" aria-hidden="true"></i>
           <span class="up-before">Trước</span><span class="up-after">Sau</span>
         </div>
+        <label class="up-compare-control" for="up-compare-range"><span>Vị trí đường so sánh</span><input id="up-compare-range" type="range" min="0" max="100" value="50" {% if not latest_done %}disabled{% endif %}></label>
       </div>
     </section>
 
@@ -81,23 +84,22 @@
       <header><h2>Hàng đợi xử lý <b>{{jobs|length}}</b></h2><span>Pause và Delete đang hoãn theo Q47</span></header>
       <div class="up-job-list">
         {% for j in jobs %}
-        <article class="up-job" data-state="{{j.status}}">
+        <article class="up-job" data-state="{{j.status}}" aria-labelledby="up-job-title-{{j.id}}">
           <div class="up-job-thumb">▶</div>
           <div class="up-job-info">
-            <strong>{{j.source_name}}</strong>
+            <strong id="up-job-title-{{j.id}}">{{j.source_name}}</strong>
             <div class="up-job-tags"><span>{{j.preset}}</span><span>{{j.codec|upper}}</span><span>{{j.target_height or 1080}}p</span>{% if j.duration_s %}<span>{{j.duration_s}}s</span>{% endif %}</div>
             {% if j.error %}<small class="up-error">{{j.error}}</small>{% elif j.warning %}<small>{{j.warning}}</small>{% endif %}
           </div>
-          <div class="up-job-progress">
-            <strong>{% if j.status=='done' %}Hoàn tất{% elif j.status=='error' %}Lỗi{% elif j.status=='cancelled' %}Đã hủy{% else %}{{j.progress}}%{% endif %}</strong>
-            <div><i style="width:{{j.progress}}%"></i></div>
+          <div class="up-job-progress" aria-live="polite">
+            <strong class="up-state up-state-{{j.status}}">{% if j.status=='done' %}Hoàn tất{% elif j.status=='error' %}Lỗi{% elif j.status=='cancelled' %}Đã hủy{% elif j.status=='running' %}Đang xử lý · {{j.progress}}%{% else %}Đang chờ{% endif %}</strong>
+            <div role="progressbar" aria-label="Tiến độ {{j.source_name}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{j.progress}}"><i style="width:{{j.progress}}%"></i></div>
             <small>{{j.progress_msg or j.status}}{% if j.eta_text %} · {{j.eta_text}}{% endif %}</small>
           </div>
           <div class="up-job-actions">
-            {% if j.video_key %}<a href="{{app.route_prefix}}/v/{{j.video_key}}" download>Tải xuống</a><a href="#compare-{{j.id}}">So sánh</a>{% endif %}
+            {% if j.video_key %}<a href="{{app.route_prefix}}/v/{{j.video_key}}" download>Tải xuống</a><a class="up-use-compare" href="#up-compare" data-source="{{app.route_prefix}}/jobs/{{j.id}}/source" data-output="{{app.route_prefix}}/v/{{j.video_key}}">So sánh</a>{% endif %}
             {% if j.status in ('queued','running') %}<form method="post" action="{{app.route_prefix}}/jobs/{{j.id}}/cancel"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><button type="submit">Hủy job</button></form>{% endif %}
           </div>
-          {% if j.video_key %}<div id="compare-{{j.id}}" class="up-inline-compare"><video controls preload="metadata" src="{{app.route_prefix}}/jobs/{{j.id}}/source"></video><video controls preload="metadata" src="{{app.route_prefix}}/v/{{j.video_key}}"></video></div>{% endif %}
         </article>
         {% else %}<div class="up-empty">Chưa có job. Chọn video để bắt đầu.</div>{% endfor %}
       </div>
@@ -113,7 +115,21 @@
   const preview=document.getElementById('source-preview'), drop=document.getElementById('up-drop');
   const prefix='{{app.route_prefix}}', batchToggle=document.getElementById('batch_mode');
   const fileMeta=document.getElementById('filemeta'), batchFiles=document.getElementById('batch-files');
+  const settingsToggle=document.getElementById('up-settings-toggle'), compareRange=document.getElementById('up-compare-range');
+  const outputPreview=document.getElementById('output-preview'), compareDivider=document.getElementById('up-compare-divider');
   let selected=[], batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
+
+  settingsToggle.onclick=()=>{const open=form.classList.toggle('mobile-open');settingsToggle.setAttribute('aria-expanded',String(open));settingsToggle.querySelector('span').textContent=open?'⌃':'⌄'};
+  function setComparePosition(value){const n=Math.max(0,Math.min(100,+value||0));if(outputPreview?.tagName==='VIDEO')outputPreview.style.clipPath=`inset(0 0 0 ${n}%)`;compareDivider.style.left=`${n}%`}
+  compareRange.addEventListener('input',()=>setComparePosition(compareRange.value));setComparePosition(compareRange.value);
+  function syncOutput(){if(outputPreview?.tagName!=='VIDEO')return;outputPreview.currentTime=preview.currentTime;outputPreview.playbackRate=preview.playbackRate}
+  if(outputPreview?.tagName==='VIDEO'){
+    preview.addEventListener('play',()=>{syncOutput();outputPreview.play().catch(()=>{})});preview.addEventListener('pause',()=>outputPreview.pause());
+    preview.addEventListener('seeking',syncOutput);preview.addEventListener('ratechange',syncOutput);
+  }
+  document.querySelectorAll('.up-use-compare').forEach(link=>link.addEventListener('click',()=>{
+    preview.src=link.dataset.source;preview.load();if(outputPreview?.tagName==='VIDEO'){outputPreview.src=link.dataset.output;outputPreview.load();compareRange.disabled=false;setComparePosition(compareRange.value)}
+  }));
 
   document.getElementById('choosebtn').onclick=()=>input.click();
   batchToggle.onchange=()=>{input.multiple=batchToggle.checked;if(!batchToggle.checked&&selected.length>1){selected=selected.slice(0,1);renderFiles()}else renderFiles()};
