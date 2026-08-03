@@ -13,33 +13,44 @@
       min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
       background:radial-gradient(720px 380px at 50% -12%, #4b1512, transparent 60%), var(--bg);
     }
-    .logo .mark{width:46px; height:46px; border-radius:13px; font-size:17px; margin:0 auto 10px;}
-    .box { width:100%; max-width:360px; }
-    .logo { text-align:center; margin-bottom:22px; }
-    .logo h1 { font-size:22px; margin:0; }
-    .logo p  { color:var(--dim); margin:4px 0 0; font-size:12px; }
+    .box { width:100%; max-width:420px; }
+    .auth-home{display:grid;width:52px;height:52px;margin:0 auto 14px;place-items:center;
+      border-radius:15px;text-decoration:none}
+    .auth-home .mark{width:48px;height:48px;border-radius:14px;font-size:16px}
+    .auth-brand{text-align:center;margin-bottom:20px}
+    .auth-brand h1{font-size:24px;letter-spacing:-.35px;margin:5px 0 0}
+    .auth-brand p{max-width:34ch;margin:7px auto 0;color:var(--muted);font-size:13px;line-height:1.5}
     .card {
       background:var(--panel); border:1px solid var(--line);
-      border-radius:10px; padding:22px;
+      border-radius:var(--radius); padding:24px;box-shadow:0 22px 60px #0009;
     }
     form { display:flex; flex-direction:column; gap:12px; }
-    input {
-      padding:10px; border-radius:6px; border:1px solid var(--line);
-      background:var(--panel2); color:var(--fg); font-size:14px; width:100%;
-    }
+    .auth-field{display:grid;gap:6px}
+    .auth-field label{color:var(--text-secondary);font-size:12px;font-weight:600}
+    .auth-field small{color:var(--dim);font-size:11px;line-height:1.45}
+    input {min-height:44px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--line2);
+      background:var(--panel2);color:var(--fg);font-size:14px;width:100%;font-family:inherit}
+    input::placeholder{color:var(--dim)}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow)}
     button {
-      padding:10px; border-radius:6px; border:none; background:var(--accent);
-      color:#fff; cursor:pointer; font-size:14px;
+      min-height:44px;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--brand-hover);
+      background:linear-gradient(180deg,var(--accent),var(--brand-strong));
+      color:#fff;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;
     }
     button:hover { filter:brightness(1.12); }
-    .error { color:var(--err); font-size:13px; margin:0; }
-    .hint { font-size:13px; margin:4px 0 0; text-align:center; }
+    .error,.auth-state{padding:10px 12px;border:1px solid var(--err-line);border-radius:var(--radius-sm);
+      background:var(--err-bg);color:var(--err);font-size:13px;line-height:1.5;margin:0 0 12px}
+    .auth-state.success{border-color:var(--ok-line);background:var(--ok-bg);color:var(--ok)}
+    .auth-copy{color:var(--text-secondary);font-size:13px;line-height:1.6;margin:0}
+    .hint{font-size:13px;line-height:1.6;margin:16px 0 0;text-align:center;color:var(--muted)}
+    .auth-sep{padding:0 5px;color:var(--dim)}
     a { color:var(--accent2); }
+    @media(max-width:480px){body{padding:16px}.card{padding:20px}.auth-brand h1{font-size:22px}}
   </style>
 </head>
 <body>
-  <div class="box">
+  <main class="box">
     {% block content %}{% endblock %}
-  </div>
+  </main>
 </body>
 </html>

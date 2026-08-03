@@ -1,0 +1,8 @@
+<a class="auth-home" href="/" aria-label="Về trang chủ LTT AI Studio">
+  <span class="mark" aria-hidden="true">LTT</span>
+</a>
+<div class="auth-brand">
+  <span class="eyebrow">{{ auth_eyebrow|default('LTT Studios') }}</span>
+  <h1>{{ auth_title }}</h1>
+  {% if auth_subtitle %}<p>{{ auth_subtitle }}</p>{% endif %}
+</div>

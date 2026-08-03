@@ -1121,7 +1121,11 @@ system-first, không làm nhiều app song song.
   content contract được lưu tại `docs/DESIGN_SYSTEM_LTT.md`; focus, coarse touch
   target, reduced motion và Escape menu có regression guard. Browser local
   desktop/mobile PASS; full suite 1.901 pass, 8 skip, 23 subtest; secret scan 0.
-- [ ] H15.S1 Public catalog/Auth — PLAT-001, AUTH-001.
+- [x] H15.S1 Public catalog/Auth — PLAT-001, AUTH-001 — 2026-08-03:
+  catalog 390 px overflow 13→0; public search/mobile menu có accessible name;
+  login/register/forgot/reset/verify dùng chung Carbon Red auth shell, label và
+  announced error/success states. Browser desktop/mobile PASS; 1.907 passed,
+  8 skipped, 23 subtests; secret scan 0.
 - [ ] H15.S2 Billing/Jobs/Settings — BILL-001, JOBS-001, SET-001.
 - [ ] H15.S3 Home authenticated — HOME-001..002.
 - [ ] H15.S4–S12 Từng app theo đúng roadmap; không song song.

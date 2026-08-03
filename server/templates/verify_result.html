@@ -1,13 +1,15 @@
 {% extends "base_plain.html" %}
 {% block title %}Xác thực email — LTT AI Studio{% endblock %}
 {% block content %}
-  <div class="logo"><h1>LTT AI Studio</h1></div>
+  {% set auth_title = 'Xác thực email' %}
+  {% set auth_subtitle = 'Trạng thái kích hoạt tài khoản LTT AI Studio.' %}
+  {% include "_auth_brand.html" %}
   <div class="card">
     {% if ok %}
-      <p>Xác thực email thành công. Tài khoản của bạn đã kích hoạt.</p>
+      <p class="auth-state success" role="status">Xác thực email thành công. Tài khoản của bạn đã kích hoạt.</p>
       <p class="hint"><a href="/login">Đăng nhập ngay</a></p>
     {% else %}
-      <p class="error">Liên kết xác thực không hợp lệ hoặc đã hết hạn.</p>
+      <p class="error" role="alert">Liên kết xác thực không hợp lệ hoặc đã hết hạn.</p>
       <p class="hint"><a href="/register">Đăng ký lại</a></p>
     {% endif %}
   </div>

@@ -1,18 +1,20 @@
 {% extends "base_plain.html" %}
 {% block title %}Đăng ký — LTT AI Studio{% endblock %}
 {% block content %}
-  <div class="logo">
-    <h1>LTT AI Studio</h1>
-    <p>Tạo tài khoản</p>
-  </div>
+  {% set auth_title = 'Tạo tài khoản' %}
+  {% set auth_subtitle = 'Bắt đầu bảo mật; chi phí luôn được báo trước mỗi tác vụ.' %}
+  {% include "_auth_brand.html" %}
   <div class="card">
-    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
     <form method="post" action="/register">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <input type="email" name="email" placeholder="Email" required autofocus
-             autocomplete="email" value="{{ email }}">
-      <input type="password" name="password" placeholder="Mật khẩu (tối thiểu 8 ký tự)"
-             required minlength="8" autocomplete="new-password">
+      <div class="auth-field"><label for="register-email">Email</label>
+        <input id="register-email" type="email" name="email" placeholder="ten@congty.com" required autofocus
+               autocomplete="email" value="{{ email }}"></div>
+      <div class="auth-field"><label for="register-password">Mật khẩu</label>
+        <input id="register-password" type="password" name="password" placeholder="Tối thiểu 8 ký tự"
+               required minlength="8" autocomplete="new-password">
+        <small>Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác.</small></div>
       {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

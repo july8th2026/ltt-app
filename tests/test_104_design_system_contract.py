@@ -60,3 +60,8 @@ def test_retired_blue_palette_is_not_a_shared_shell_primary():
     shared = (CSS + shared_templates).lower()
     for retired_colour in ("#3b6ef2", "#7aa2f7", "#8a5cf6"):
         assert retired_colour not in shared
+
+
+def test_mobile_header_can_shrink_without_forcing_catalog_overflow():
+    assert ".hdr-logo{margin-right:0;font-size:0}" in CSS
+    assert ".hdr-right{gap:5px;min-width:0}" in CSS

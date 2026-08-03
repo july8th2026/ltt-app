@@ -14,6 +14,51 @@
 
 ---
 
+## 2026-08-03 — H15.S1: Public catalog và Auth
+
+- **Mục tiêu:** hoàn thiện bề mặt vào hệ thống trước khi sửa trang có dữ liệu/tiền.
+- **Hạng mục:** PLAT-001 và AUTH-001 hoàn thành; H15.S2 là bước kế tiếp.
+- **Trạng thái:** code/test/browser xong; chưa deploy production.
+
+### Đã làm
+
+Sửa shared mobile header để co đúng tại 390 px; catalog public từ overflow 13 px
+về 0 và search/menu có accessible name. Tạo `_auth_brand.html`, đồng nhất
+login/register/forgot/reset/verify theo LTT Carbon Red. Mọi input nhìn thấy có
+label liên kết; error dùng `role=alert`, success dùng `role=status`; control cao
+tối thiểu 44 px và focus state giữ nguyên design contract.
+
+Thêm `tests/test_105_public_auth_ui.py` và mở rộng design regression cho mobile
+header. Không đổi contract auth, CSRF, rate limit, token hoặc dữ liệu tài khoản.
+
+### Test/browser đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest tests\test_104_design_system_contract.py tests\test_105_public_auth_ui.py tests\test_65_dang_ky.py tests\test_72_vanhanh.py -q` | **43 passed**, 1 warning |
+| `python -m pytest -q` | **1.907 passed**, 8 skipped, 23 subtests, 1 warning trong 552,41 giây |
+| `python tools\scan_source_secrets.py` | **0 finding**, PASS |
+| Playwright local `/`, `/login`, `/register`, `/forgot-password` tại 390/1280 | 200; overflow 0; label đủ; console error 0; failed request 0 |
+| Playwright local reset/verify token giả | error state đúng, HTTP 400 chủ ý |
+| Playwright local đăng nhập sai | alert “Sai tên đăng nhập hoặc mật khẩu”, HTTP 401 chủ ý, không ghi dữ liệu production |
+
+### Quyết định mới
+
+Không phát sinh quyết định nền. PLAT-001 hoàn tất riêng trước AUTH-001; không mở
+Stage 2 khi Stage 1 chưa qua full gate.
+
+### Cách lùi lại
+
+Revert commit H15.S1. Thay đổi chỉ là template/CSS/test, không có migration,
+provider, credit ledger hay dữ liệu người dùng.
+
+### Việc tiếp theo
+
+H15.S2 theo đúng thứ tự: BILL-001 → JOBS-001 → SET-001, mỗi ticket được browser
+check trước khi chuyển ticket kế.
+
+---
+
 ## 2026-08-03 — H15.S0: LTT Carbon Red design contract
 
 - **Mục tiêu:** tạo một nguồn style và gate dùng chung trước khi sửa từng trang/app.

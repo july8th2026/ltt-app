@@ -233,9 +233,13 @@ html{background:var(--surface-canvas)}
 /* Burger mobile */
 .hdr-burger{display:none}
 @media(max-width:860px){
+  .hdr{padding:8px 10px;gap:4px}
   .hdr-nav{display:none}
   .hdr-burger{display:block}
   .hdr-link.pricing{display:none}
+  .hdr-logo{margin-right:0;font-size:0}
+  .hdr-logo .mark{font-size:12px}
+  .hdr-right{gap:5px;min-width:0}
 }
 
 /* Thẻ catalog: cover gradient + badge (UX Pha 2) */
