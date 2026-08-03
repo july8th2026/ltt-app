@@ -12,6 +12,10 @@ from platform_core.registry import credit_for, discover
 EXPECTED = {
     "text.script", "image.generate", "image.thumbnail", "video.generate",
     "video.subtitle", "video.upscale", "video.short_clips",
+    "text.generate", "image.batch_generate",
+    "asset.image", "asset.video", "asset.audio", "video.extract_frames",
+    "media.merge_image", "media.merge_video",
+    "audio.generate", "video.social_import", "image.upscale",
 }
 
 
@@ -32,10 +36,27 @@ VALID_CASES = {
         "duration": "3-5_phut", "tone": "educational",
         "audience": "general", "language": "vi",
     },
+    "text.generate": {"prompt": "Viết một đoạn giới thiệu", "model": "gemini-2.5-flash",
+                      "format": "markdown"},
     "image.generate": {
         "prompt": "Một thành phố tương lai", "model": "gemini-2.5-flash-image",
         "aspect_ratio": "16:9", "count": 4,
     },
+    "image.batch_generate": {
+        "prompt": "Bốn góc máy của một sản phẩm", "model": "gemini-2.5-flash-image",
+        "aspect_ratio": "1:1", "count": 4,
+    },
+    "asset.image": {"image_key": "$input.image"},
+    "asset.video": {"video_key": "$input.video"},
+    "asset.audio": {"audio_key": "$input.audio"},
+    "video.extract_frames": {"video_key": "$input.video", "interval_sec": 2,
+                             "max_frames": 12},
+    "media.merge_image": {"images": ["$s1.image_key", "$s2.image_key"], "layout": "grid"},
+    "media.merge_video": {"videos": ["$s1.video_key", "$s2.video_key"], "transition": "cut"},
+    "audio.generate": {"text": "Xin chào", "model": "gemini-2.5-flash-preview-tts",
+                       "voice": "Kore", "style": "Natural"},
+    "video.social_import": {"url": "https://cdn.example.com/owned.mp4", "confirm_rights": True},
+    "image.upscale": {"image_key": "$s1.image_key", "preset": "fast"},
     "image.thumbnail": {
         "topic": "Du lịch Việt Nam", "model": "gemini-2.5-flash-image",
         "aspect_ratio": "16:9", "count": 1,
@@ -95,7 +116,18 @@ def test_gia_toolspec_dung_nguon_credit_hien_hanh(tool_name):
 
 RESULT_FIXTURES = {
     "text.script": {"script": {"title": "T", "hook": "H"}},
+    "text.generate": {"text": "Nội dung"},
     "image.generate": {"image_keys": ["image/u/1.png"], "prompt": "p"},
+    "image.batch_generate": {"image_keys": ["image/u/1.png", "image/u/2.png"], "prompt": "p"},
+    "asset.image": {"image_key": "agent-assets/u/1.png"},
+    "asset.video": {"video_key": "agent-assets/u/1.mp4"},
+    "asset.audio": {"audio_key": "agent-assets/u/1.wav"},
+    "video.extract_frames": {"image_keys": ["mediatools/u/1/1.jpg"]},
+    "media.merge_image": {"image_key": "mediatools/u/1/merged.jpg"},
+    "media.merge_video": {"video_key": "mediatools/u/1/merged.mp4"},
+    "audio.generate": {"audio_key": "mediatools/u/1/speech.wav"},
+    "video.social_import": {"video_key": "mediatools/u/1/imported.mp4"},
+    "image.upscale": {"image_key": "upscalevideo/u/1/image-x4.png"},
     "image.thumbnail": {"image_keys": ["thumbnail/u/1.png"], "prompt": "p"},
     "video.generate": {"video_key": "taovideo/u/1.mp4"},
     "video.subtitle": {"video_key": "autosubvideo/u/1.mp4", "srt_key": "s", "ass_key": "a"},

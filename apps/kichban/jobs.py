@@ -54,14 +54,14 @@ def build_prompt(topic: str, *, duration: str = "", tone: str = "",
     return pf.build(d, mapping)
 
 
-def _lay_key() -> tuple[str, str | None]:
+def _lay_key(model: str = _MODEL) -> tuple[str, str | None]:
     try:
         from platform_core import api_keys, api_pool
         from platform_core.db import get_session
         from platform_core.models import APIKEY_CAT_CHAT
         gen = get_session(); db = next(gen)
         try:
-            key = api_pool.lay_key(db, "gemini", category=APIKEY_CAT_CHAT, model=_MODEL)
+            key = api_pool.lay_key(db, "gemini", category=APIKEY_CAT_CHAT, model=model)
             cred = api_keys.lay_credential(db, key)
             db.commit()
             return cred, key.id
@@ -96,14 +96,16 @@ def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
         pass
 
 
-def _goi_gemini_text(prompt: str, api_key: str) -> str:
+def _goi_gemini_text(prompt: str, api_key: str, model: str = _MODEL,
+                     system: str = _SYSTEM) -> str:
     """Gọi Gemini text (generateContent) → chuỗi văn bản. Ném lỗi nếu thất bại."""
     import httpx
-    url = f"{_BASE}/v1beta/models/{_MODEL}:generateContent"
+    from platform_core.providers import resolve_model_id
+    url = f"{_BASE}/v1beta/models/{resolve_model_id(model)}:generateContent"
     headers = {"x-goog-api-key": api_key}
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{"text": _SYSTEM}]},
+        "systemInstruction": {"parts": [{"text": system}]},
     }
     try:
         resp = httpx.post(url, json=body, headers=headers, timeout=_TIMEOUT_S)
@@ -148,6 +150,27 @@ def _parse_script(raw: str, topic: str) -> dict:
 def handle(params: dict, ctx=None) -> dict:
     """Sinh một kịch bản YouTube có cấu trúc, trả về dict `script`."""
     from apps.kichban.manifest import CREDIT_PER_SCRIPT
+    generic_prompt = str(params.get("prompt", "")).strip()
+    if generic_prompt:
+        model = str(params.get("model") or _MODEL)
+        output_format = str(params.get("format") or "markdown")
+        system = ("You are a careful writing assistant. Follow the requested output "
+                  f"format: {output_format}. Do not wrap JSON in markdown fences.")
+        api_key, key_id = _lay_key(model)
+        if not api_key:
+            raise RuntimeError("Chưa có API key Gemini cho nhóm chat.")
+        if ctx is not None:
+            ctx.progress(40, "đang sinh văn bản")
+        try:
+            text = _goi_gemini_text(generic_prompt, api_key, model, system)
+        except GeminiError as e:
+            _ket_qua_key(key_id, thanh_cong=False, last_status=e.status_code)
+            raise
+        _ket_qua_key(key_id, thanh_cong=True)
+        if ctx is not None:
+            ctx.progress(100, "xong")
+        return {"text": text, "format": output_format,
+                "credit_cost": CREDIT_PER_SCRIPT}
     topic = str(params.get("topic", "")).strip()
     if not topic:
         raise ValueError("Chưa nhập chủ đề video.")

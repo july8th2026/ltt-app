@@ -11,7 +11,7 @@ from platform_core.agent.tools import (ToolParamsError, discover_tools,
 from platform_core.registry import credit_for, discover
 from platform_core.agent.verifier import VERIFIER_CREDIT, verifier_cost
 
-MAX_STEPS = 32
+MAX_STEPS = 100
 MAX_FANOUT = 4
 MAX_RETRY = 2
 _REF = re.compile(r"^\$(input|[a-z][a-z0-9_-]{0,31})\.([a-z][a-z0-9_]*)$")
@@ -101,7 +101,8 @@ def validate_plan(plan: dict, *, input_types: Optional[dict[str, str]] = None,
         return ValidationResult(False, (ValidationIssue("version", "Chỉ hỗ trợ Plan version 1."),))
     steps = plan.get("steps")
     if not isinstance(steps, list) or not steps or len(steps) > MAX_STEPS:
-        return ValidationResult(False, (ValidationIssue("steps", "Plan cần 1–32 steps."),))
+        return ValidationResult(False, (ValidationIssue(
+            "steps", f"Plan cần 1–{MAX_STEPS} steps."),))
     try:
         budget = int(plan.get("budget_max_credit", 0))
     except (TypeError, ValueError):

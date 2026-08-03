@@ -83,7 +83,7 @@ def test_canvas_to_immutable_run_all_seven_tools_resume_and_settle(db_user):
         "video.upscale": {"video_key": "upscalevideo/test/1.mp4"},
         "video.short_clips": {"clips": [{"video_key": "taoclipngan/test/1.mp4"}]},
     }
-    job_to_tool = {spec.job_type: name for name, spec in discover_tools().items()}
+    tool_by_step = {step["id"]: step["tool"] for step in plan["steps"]}
     seen = set()
     for _ in range(12):
         executor.tick(db, run_id=run.id, user_id=user.id); db.commit()
@@ -93,7 +93,7 @@ def test_canvas_to_immutable_run_all_seven_tools_resume_and_settle(db_user):
         assert len(runs.children(db, run)) == before
         for child in runs.children(db, run):
             if child.status == "queued":
-                tool = job_to_tool[child.job_type]; seen.add(tool)
+                tool = tool_by_step[child.step_id]; seen.add(tool)
                 jobs.complete(db, child, results[tool])
         db.commit()
         if run.status == "done":
@@ -101,7 +101,7 @@ def test_canvas_to_immutable_run_all_seven_tools_resume_and_settle(db_user):
     if run.status != "done":
         executor.tick(db, run_id=run.id, user_id=user.id); db.commit()
     assert run.status == "done"
-    assert seen == set(discover_tools())
+    assert seen == set(tool_by_step.values())
     assert run.actual <= run.estimated
     settle = next(item for item in reversed(run.decision_log) if item["event"] == "settle")
     assert settle["refunded"] == run.estimated - run.actual

@@ -44,7 +44,16 @@ MANIFEST = AppManifest(
             "language": {"type": "enum", "source": "prompts/ngon_ngu"},
         },
         returns={"script": "json"},
-    ),),
+    ), ToolSpec(
+        name="text.generate", job_type="kichban.generate",
+        description="Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra.",
+        params_schema={
+            "prompt": {"type": "string", "required": True, "max_length": 12000},
+            "model": {"type": "model_ref", "category": "chat", "providers": ["gemini"]},
+            "format": {"type": "enum", "values": ["plain", "markdown", "json"], "default": "markdown"},
+        },
+        returns={"text": "text"},
+    )),
 
     enabled=True,
     group="Kịch bản",

@@ -120,6 +120,22 @@ def test_restart_va_tick_lap_khong_submit_lai_step(db, fake_tools):
     assert run.status == "done"
 
 
+def test_cache_cung_user_khong_tao_child_va_khong_tinh_lai_credit(db, fake_tools):
+    from platform_core import jobs
+    from platform_core.agent import executor, runs
+    cached = jobs.submit(db, user_id="u1", app_slug="fake", job_type="fake.text",
+                         params={"value": "same", "owner_id": "u1"}, plan_id="old-run")
+    jobs.complete(db, cached, {"output": "cached text"}); db.commit()
+    run = _approved(db, _plan([{"id": "s1", "tool": "text", "after": [],
+                               "params": {"value": "same"}}]))
+    executor.tick(db, run_id=run.id, user_id="u1"); db.commit()
+    assert not runs.children(db, run)
+    assert run.checkpoint["s1"]["cached"] is True
+    executor.tick(db, run_id=run.id, user_id="u1"); db.commit()
+    assert run.status == "done" and run.actual == 4
+    assert any(item.get("event") == "cache_hit" for item in run.decision_log)
+
+
 def test_actual_theo_attempt_va_child_error_co_decision_log(db, fake_tools):
     from platform_core import credit, jobs
     from platform_core.agent import executor, runs

@@ -325,6 +325,9 @@ class AgentWorkflow(Base):
     nodes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     edges: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     viewport: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    # Q62: document v2 is the lossless editor source. Legacy columns remain as
+    # an execution projection so rollback can still read every v1 workflow.
+    document: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     status: Mapped[str] = mapped_column(String(16), default=WORKFLOW_DRAFT,
                                         nullable=False, index=True)
     budget_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -339,6 +342,39 @@ class AgentWorkflow(Base):
     __table_args__ = (
         Index("ix_agent_workflows_user_updated", "user_id", "updated_at"),
     )
+
+
+class AgentWorkflowSnapshot(Base):
+    """Immutable editor revision used for diff/restore and activity audit."""
+
+    __tablename__ = "agent_workflow_snapshots"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    workflow_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    document: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    reason: Mapped[str] = mapped_column(String(32), default="save", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    __table_args__ = (
+        Index("ux_agent_snapshot_workflow_revision", "workflow_id", "revision", unique=True),
+    )
+
+
+class AgentWorkflowShare(Base):
+    """Revocable private share. Only a SHA-256 token digest is persisted."""
+
+    __tablename__ = "agent_workflow_shares"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    workflow_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    permission: Mapped[str] = mapped_column(String(16), default="view", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 # ── Loại bút toán credit ──────────────────────────────────────────────────────

@@ -14,6 +14,141 @@
 
 ---
 
+## 2026-08-04 — Hoàn tất và deploy Agent Canvas parity H16
+
+- **Mục tiêu:** triển khai tuần tự P14.1–P14.10 theo Q62, đối soát PlenX định
+  kỳ, release một lần sau full gate và giữ hai giao diện mở để nghiệm thu.
+- **Hạng mục:** H16.2–H16.10 — hoàn thành/deploy.
+- **Trạng thái:** code, migration, test, deploy và health xong; production
+  authenticated browser chờ chủ sản phẩm đăng nhập lại do session hết hạn.
+
+### Đã làm
+
+- Canvas document v2 lossless với page/frame/note/comment/view, migration v1,
+  optimistic revision, snapshot/restore; immersive editor, layers, shortcuts,
+  inline composer và catalog/quote server-authoritative.
+- Ánh xạ thật 11/11 nhóm node đã quan sát ở PlenX: asset/text/image/batch/video/
+  video upscale/audio/extract frames/merge video/merge image/image upscale;
+  thêm upload owner-scoped, SSRF/privacy/file validation và GPU smoke thật.
+- Run node/selection/frame/full với upstream closure, cache same-owner/exact
+  params, frame export/ZIP bundle; vẫn quote→approve→hold→settle.
+- Assistant SSE analyze/improve dùng proposal ký + preview diff + validator;
+  private share/clone/revoke, activity và snapshot. Không mô tả sai thành VLM
+  video hoặc realtime multi-user.
+- Canvas tăng có kiểm soát lên 512 KiB/100 bước; planner vẫn 64 KiB, fan-out 4,
+  retry 2. Thêm metrics, rollout/kill switch và runbook.
+- Đối soát PlenX nhiều checkpoint; snapshot cuối vẫn đủ 11 node, Page/Frame/
+  Layers/History/Share/Assistant. Không đọc/lưu cookie, token hay request secret.
+
+### Test và release đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| Agent/workflow/scale targeted | 19 passed |
+| `npm test -- --run` (Agent Canvas) | 20 passed |
+| `npm audit --audit-level=high` | 0 vulnerability |
+| `python tools/lint_app_contract.py` | 12 app runtime sau deploy; source lint trước release 11 app, ERROR 0/WARN 0 |
+| `python -m pytest -q` | **2.049 passed, 8 skipped, 23 subtests**, 1 warning, 621,08 giây |
+| `python tools/scan_source_secrets.py` | 0 finding; snapshot Playwright tạm gây 2 finding đã chuyển khỏi workspace rồi scan lại PASS |
+| `python tools/build_release.py --output C:\Temp\ltt-release` | 1.187 file, 174,2 MB, release scan 0 |
+| `update.ps1` | pg_dump/data backup PASS; migrations `e5f6…` và `f6a7…`; services healthy production |
+| `setup/4-nghiem-thu.ps1` | services/loopback/Cloudflare/catalog/docs/security/12 app PASS; 1 cảnh báo legacy config |
+| Playwright production login 1440×900 | redirect auth đúng, overflow 0, console 0, requests quan sát thành công |
+| Playwright authenticated Canvas 1440×900 + 390×844 | overflow 0, console 0; palette/workflow/run/API mới 200/201 |
+
+### Quyết định mới
+
+Không có quyết định kiến trúc mới; thực thi Q62. Giữ công khai các khoảng trống:
+VLM video, realtime multi-user/comment lifecycle, music generation và paid TTS
+production smoke là backlog, không phải tính năng đã hoàn tất.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_RUN_ROLLOUT=off`, restart web; nếu cần chạy
+`C:\LTTPlatform\app\deploy\windows\rollback.ps1`. Release cũ còn tại
+`C:\LTTPlatform\app.previous`; backup trước deploy nằm trong
+`C:\LTTPlatform\backups`. Migration additive, chỉ downgrade sau backup.
+
+### Còn tồn đọng
+
+- `sheet_id` và `google_credentials_path` chưa điền trong config production;
+  đây là cảnh báo legacy, không chặn Agent.
+- Phiên production browser đã hết hạn; tab LTT được để ở login→Canvas để chủ
+  sản phẩm đăng nhập, tab PlenX và Canvas fixture vẫn giữ mở.
+
+### Việc tiếp theo
+
+1. Chủ sản phẩm đăng nhập tab LTT và nghiệm thu trực quan cùng tab PlenX.
+2. Mở backlog nâng cao chỉ sau khi nghiệm thu: VLM video, realtime collaboration,
+   music generation và provider paid canary.
+
+## 2026-08-04 — Audit sâu Agent AI so với PlenX Workflow
+
+- **Mục tiêu:** kiểm kê hands-on Workflow PlenX và đối soát code/tài nguyên
+  Agent LTT để lập lộ trình functional parity; phiên này không build/deploy.
+- **Đã làm:** tạo workflow audit riêng; thêm 11 node active; kiểm tra typed/
+  invalid edge, model composer ảnh/video/text/audio, autosave, page, frame,
+  sticky, comment, history, share, logs và shortcut. Share audit đã được tắt
+  lại sau khi kiểm tra. Mở Canvas local 1720×940, kiểm tra palette 7 ToolSpec,
+  layout và các request app chính.
+- **Kết luận:** PlenX mạnh hơn về breadth/direct-manipulation; LTT mạnh hơn về
+  typed validation, cycle guard, quote/approval/atomic credit, bounded retry,
+  ownership/conflict và restore. Đích đúng là ghép UX parity lên runtime LTT,
+  không thay runtime theo PlenX.
+- **Hồ sơ:** `docs/APP_AUDIT/agent/2026-08-04/` gồm charter, current truth,
+  control registry, benchmark, scorecard, findings, options/decisions, roadmap
+  P14.0–P14.10 và 37 vé tuần tự.
+- **Điểm audit:** `Q 67 · M 52 · E 76 · INTERNAL` cho bản parity mới.
+- **Browser:** PlenX và local console 0 error/warning tại flow quan sát; local
+  palette/workflows/runs/detail HTTP 200. Không lưu cookie, header hay token vào
+  repo/tài liệu. Một URL notification bên thứ ba có credential phiên tạm thời
+  xuất hiện trong output terminal khi kiểm tra request; giá trị không được chép
+  vào file nào.
+- **Đã chạy:** `python -m pytest tests/test_61_setup_scripts.py -q` — 71 passed;
+  `python tools/scan_source_secrets.py` — 0 finding; `git diff --check` cho hồ
+  sơ/kế hoạch/nhật ký — PASS.
+- **Chưa chạy:** full pytest, frontend suite, provider/GPU trả phí,
+  load/CWV/a11y scanner và production canary; đây là audit-only và giữ checkpoint
+  release chung đã ghi ở H15.S15.1.
+
+## 2026-08-04 — Checkpoint LAYOUT-001, hoãn full gate để tiếp tục debug
+
+- **Mục tiêu:** bỏ container 1180 px dùng chung khiến workspace nhiều cột bị
+  co hẹp; chuẩn bị tiếp tục trao đổi/debug trước khi gom release gate.
+- **Hạng mục:** H15.S15.1 / Q61.
+- **Trạng thái:** code và browser validation cục bộ hoàn tất; **chưa commit,
+  chưa deploy, chưa full regression**.
+
+### Đã làm
+
+Thêm bốn page mode `standard/catalog/wide/immersive` ở base template và CSS.
+Seedance, Upscale, Auto Sub và Agent Canvas dùng `immersive`; Thumbnail, Image,
+Chat, Kịch bản và Clip ngắn dùng `wide`. Bỏ margin âm của Upscale/Auto Sub và
+build lại bundle Auto Sub. Không thay logic job, provider hoặc credit.
+
+Playwright fixture cô lập trên 8118 xác minh 9 app tại 1920, 1720, 1440, 1280,
+1024, 768 và 390 px: không overflow toàn trang. Ở 1720 px, vùng root immersive
+đạt 1.657 px và wide đạt 1.552 px; desktop/mobile render đúng; console 0 lỗi,
+0 cảnh báo và không request 4xx/5xx. Phiên Chrome PlenX được giữ để dùng cho
+lượt debug kế tiếp.
+
+### Kiểm tra đã chạy
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_129_adaptive_page_layouts.py` | **3 passed** |
+| `npm test` tại `frontend/autosub-studio` | **11 passed** |
+| `npm run build` tại `frontend/autosub-studio` | typecheck + Vite build **PASS** |
+| Playwright 9 app × 7 viewport | overflow 0; console/network sạch |
+| `python -m pytest -q` | **ĐÃ DỪNG chủ động, chưa có kết quả** |
+| `python tools\scan_source_secrets.py` | **Chưa chạy** |
+
+### Gate còn lại trước deploy
+
+Hoàn tất chuỗi debug/UI tiếp theo rồi chạy đúng một lần: full pytest, secret
+scan, cập nhật checkpoint, commit, build release, deploy và smoke production.
+Không chạy lại gần 2.000 test sau từng chỉnh sửa nhỏ.
+
 ## 2026-08-04 — Hoãn WordPress plugin thành backlog không chặn
 
 - **Mục tiêu:** lưu chính xác phần plugin để hoàn thiện sau theo yêu cầu chủ

@@ -15,6 +15,7 @@ import os
 import shutil
 import tempfile
 import time
+from pathlib import Path
 
 from apps.upscalevideo import autotune, cost, engine, ff
 from apps.upscalevideo.schemas import ENCODER, Codec, Preset
@@ -23,6 +24,55 @@ log = logging.getLogger(__name__)
 
 _BATCH_SIZE = 360          # >ngưỡng → chunk (giới hạn đỉnh đĩa PNG ×4)
 _PREVIEW_SECONDS = 8.0
+
+
+def _handle_image(params: dict, ctx=None) -> dict:
+    from PIL import Image
+    from platform_core.storage import get_storage
+    image_key = str(params.get("image_key") or "").replace("\\", "/").strip("/")
+    owner_id = str(params.get("owner_id") or "")
+    parts = image_key.split("/")
+    if not owner_id or len(parts) < 3 or parts[1] != owner_id:
+        raise ValueError("Ảnh không thuộc tài khoản đang chạy workflow.")
+    try:
+        preset = Preset(str(params.get("preset") or "fast"))
+    except ValueError:
+        preset = Preset.fast
+    if not engine.check_engine():
+        raise RuntimeError("Engine Real-ESRGAN chưa sẵn sàng.")
+    storage = get_storage(); job_id = getattr(ctx, "job_id", "adhoc")
+    out_key = f"upscalevideo/{owner_id}/{job_id}/image-x4.png"
+    if storage.exists(out_key):
+        return {"image_key": out_key, "scale": 4,
+                "credit_cost": 4 if preset == Preset.quality else 2}
+    tmp = tempfile.mkdtemp(prefix="ltt_upscale_image_")
+    try:
+        input_dir = os.path.join(tmp, "input"); output_dir = os.path.join(tmp, "output")
+        os.makedirs(input_dir, exist_ok=True)
+        source = os.path.join(tmp, "source" + (os.path.splitext(image_key)[1] or ".png"))
+        with storage.open(image_key) as src, open(source, "wb") as dst:
+            shutil.copyfileobj(src, dst, length=1024 * 1024)
+        with Image.open(source) as image:
+            width, height = image.size
+            image.convert("RGB").save(os.path.join(input_dir, "frame00001.png"), "PNG")
+        tune = autotune.pick(preset, width, height)
+        if ctx is not None: ctx.progress(10, f"nâng ảnh bằng {tune.model}")
+        status = engine.run_upscale(input_dir, output_dir, tune, 1,
+                                    progress_cb=(lambda done: ctx.progress(min(90, 10 + done * 80), "nâng chi tiết") if ctx else None),
+                                    cancel_check=getattr(ctx, "is_cancelled", None))
+        if status != "done":
+            raise RuntimeError(f"Engine upscale ảnh thất bại ({status}).")
+        result_path = next(Path(output_dir).glob("*.png"), None)
+        if result_path is None:
+            raise RuntimeError("Engine không tạo output ảnh.")
+        with open(result_path, "rb") as stream:
+            storage.put(out_key, stream, content_type="image/png")
+        if ctx is not None: ctx.progress(100, "xong")
+        return {"image_key": out_key, "scale": 4, "width": width * 4,
+                "height": height * 4, "preset": preset.value,
+                "credit_cost": 4 if preset == Preset.quality else 2}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def _dam_bao_giu_cho(job_id: str, user_id: str, need: int) -> None:
@@ -109,6 +159,9 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
 
 def handle(params: dict, ctx=None) -> dict:
     from platform_core.storage import get_storage
+
+    if params.get("image_key"):
+        return _handle_image(params, ctx)
 
     started_clock = time.monotonic()
     video_key = str(params.get("video_key", "")).strip()

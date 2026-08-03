@@ -126,11 +126,11 @@ def test_generic_container_limits_size_depth_and_app_scope(tmp_path, monkeypatch
     db.close(); dbmod.reset_engine()
 
 
-def test_app_project_migration_is_single_head():
+def test_platform_migrations_have_canvas_v2_as_single_head():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_current_head() == "d4e5f6a7b8c9"
+    assert scripts.get_current_head() == "f6a7b8c9d0e1"
 
 
 def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):

@@ -122,6 +122,15 @@ def test_gemini_image_registry_uses_stable_ids_and_resolves_legacy_aliases():
     assert providers.resolve_model_id("unknown-model") == "unknown-model"
 
 
+def test_public_model_catalog_aggregates_routing_without_secrets():
+    from platform_core import providers
+    catalog = providers.model_catalog()
+    seedance = next(item for item in catalog if item["id"] == "seedance-2.0")
+    assert {item["id"] for item in seedance["providers"]} == {"byteplus", "plenx"}
+    assert seedance["capabilities"]["durations"]
+    assert "base_url" not in seedance and "credential" not in str(catalog).lower()
+
+
 # ── Allocator ────────────────────────────────────────────────────────────────
 
 def test_lay_key_chon_theo_priority(db):

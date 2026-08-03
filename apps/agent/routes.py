@@ -5,21 +5,28 @@ import json
 import hashlib
 import mimetypes
 import os
+import io
+import tempfile
+import uuid
+import zipfile
+import secrets
 from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.orm import Session
 
 from apps.agent import jobs
 from apps.agent.manifest import MANIFEST
 from platform_core import credit, jobs as job_queue
 from platform_core.agent import budget, executor, metrics, runs, workflows
-from platform_core.agent.tools import discover_tools, resolve_params_schema
-from platform_core.registry import discover
-from platform_core.models import AgentWorkflow, WORKFLOW_ARCHIVED
+from platform_core.agent.tools import (ToolParamsError, discover_tools,
+                                       resolve_params_schema, validate_tool_params)
+from platform_core.registry import RegistryError, credit_for, discover
+from platform_core.models import AgentWorkflow, AgentWorkflowShare, WORKFLOW_ARCHIVED
 from platform_core.agent.planner import PlannerError, plan_once
 from platform_core.agent.validator import validate_plan
 from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING, AgentRun, Job
@@ -29,6 +36,16 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 router = APIRouter(tags=["agent"])
+_ASSET_LIMIT = 90 * 1024 * 1024
+_ASSET_MIME_PREFIXES = ("image/", "video/", "audio/")
+_ASSISTANT_SALT = "ltt-agent-assistant-proposal-v1"
+
+
+def _assistant_serializer() -> URLSafeTimedSerializer:
+    secret = (os.environ.get("LTT_SESSION_SECRET") or "").strip()
+    if not secret:
+        raise RuntimeError("Assistant proposal signer chưa được cấu hình.")
+    return URLSafeTimedSerializer(secret)
 _CANVAS_MANIFEST = (Path(__file__).resolve().parents[2] / "server" / "static" /
                     "agent-canvas" / ".vite" / "manifest.json")
 
@@ -374,9 +391,85 @@ def workflow_palette(request: Request, _identity: str = Depends(require_login),
                if app_access.muc_quyen(db, user, item.slug) == app_access.ENABLED}
     tools = discover_tools(apps=loaded, allowed_slugs=allowed)
     owners = {tool.name: item for item in loaded for tool in item.manifest.tools}
-    return JSONResponse({"version": 1, "tools": [
+    from platform_core import providers
+    return JSONResponse({"version": 2,
+        "routing": {"mode": "platform_auto", "server_choice": "managed",
+                    "description": "Nền tảng chọn provider khả dụng; không lộ API key."},
+        "models": providers.model_catalog(), "tools": [
         _palette_tool(name, spec, owners[name], loaded)
         for name, spec in sorted(tools.items())]})
+
+
+@router.post("/api/assets")
+async def workflow_asset_upload(request: Request, file: UploadFile = File(...),
+                                _identity: str = Depends(require_login)):
+    """Upload an owned Canvas asset; output is a server-generated storage key."""
+    token = request.headers.get("X-CSRF-Token", "")
+    if not verify_csrf_token(request, token):
+        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+    user = _user(request)
+    content_type = str(file.content_type or "").lower()
+    if not any(content_type.startswith(prefix) for prefix in _ASSET_MIME_PREFIXES):
+        raise HTTPException(status_code=415, detail="Chỉ nhận ảnh, video hoặc audio.")
+    data = await file.read(_ASSET_LIMIT + 1)
+    if not data or len(data) > _ASSET_LIMIT:
+        raise HTTPException(status_code=413, detail="Asset phải từ 1 byte đến 90 MB.")
+    suffix = Path(file.filename or "asset").suffix.lower()[:10]
+    if content_type.startswith("image/"):
+        try:
+            from PIL import Image
+            with Image.open(io.BytesIO(data)) as image:
+                image.verify()
+        except Exception:
+            raise HTTPException(status_code=422, detail="File ảnh không hợp lệ.") from None
+    else:
+        from platform_core import media
+        temp_path = ""
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
+                temp.write(data); temp_path = temp.name
+            if media.duration_seconds(temp_path) <= 0:
+                raise HTTPException(status_code=422, detail="File media không có thời lượng hợp lệ.")
+        finally:
+            if temp_path:
+                try: os.unlink(temp_path)
+                except OSError: pass
+    from platform_core.storage import get_storage
+    key = f"agent-assets/{user.id}/{uuid.uuid4().hex}{suffix}"
+    stored = get_storage().put(key, io.BytesIO(data), content_type=content_type)
+    kind = content_type.split("/", 1)[0]
+    return {"key": stored.key, "kind": kind, "name": Path(file.filename or "asset").name,
+            "size": stored.size, "content_type": content_type,
+            "provenance": {"source": "user_upload", "owner": "current_user"}}
+
+
+@router.post("/api/tools/{tool_name}/quote")
+async def workflow_tool_quote(request: Request, tool_name: str,
+                              _identity: str = Depends(require_login),
+                              db: Session = Depends(get_db)):
+    """Authoritative non-mutating node quote for the inline composer."""
+    body = await request.json(); _verify_json_csrf(request, body)
+    user = _user(request)
+    from platform_core import app_access
+    loaded = discover()
+    allowed = {item.slug for item in loaded
+               if app_access.muc_quyen(db, user, item.slug) == app_access.ENABLED}
+    tools = discover_tools(apps=loaded, allowed_slugs=allowed)
+    spec = tools.get(tool_name)
+    if spec is None:
+        raise HTTPException(status_code=404, detail="Tool không tồn tại/không có quyền.")
+    try:
+        params = validate_tool_params(tool_name, body.get("params", {}), apps=loaded)
+        fanout = int(body.get("fanout", 1)); retry = int(body.get("max_retry", 0))
+        if not 1 <= fanout <= 4 or not 0 <= retry <= 2:
+            raise ToolParamsError("fanout/max_retry không hợp lệ")
+        unit = credit_for(spec.job_type, params, apps=loaded)
+    except (ToolParamsError, RegistryError, ValueError, TypeError) as exc:
+        return {"tool": tool_name, "valid": False, "detail": str(exc),
+                "maximum": None, "authoritative": True}
+    return {"tool": tool_name, "valid": True, "unit": unit, "fanout": fanout,
+            "max_retry": retry, "maximum": unit * fanout * (1 + retry),
+            "authoritative": True}
 
 
 @router.post("/api/workflows/plan")
@@ -411,6 +504,110 @@ async def workflow_plan(request: Request, _identity: str = Depends(require_login
     return _workflow_response(row, status_code=201)
 
 
+@router.post("/api/workflows/{workflow_id}/assistant/preview")
+async def workflow_assistant_preview(request: Request, workflow_id: str,
+                                     _identity: str = Depends(require_login),
+                                     db: Session = Depends(get_db)):
+    """SSE analysis/proposal stream. It never mutates the workflow."""
+    body = await request.json(); _verify_json_csrf(request, body)
+    user = _user(request)
+    try:
+        row = workflows.get_owned(db, workflow_id, user.id)
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+    expected = int(request.headers.get("If-Match", "").strip('"') or body.get("revision", 0))
+    if row.revision != expected:
+        raise HTTPException(status_code=409, detail="Workflow đã thay đổi; hãy phân tích lại.")
+    mode = str(body.get("mode") or "analyze")
+    prompt = str(body.get("prompt") or "").strip()[:4000]
+    if mode not in {"analyze", "improve"} or (mode == "improve" and len(prompt) < 3):
+        raise HTTPException(status_code=422, detail="Yêu cầu Assistant không hợp lệ.")
+    canvas = workflows.as_canvas(row); current_plan = workflows.canvas_to_plan(canvas)
+    current_validation = validate_plan(current_plan, db=db, user=user)
+    steps = list(current_plan.get("steps") or [])
+    patterns = db.query(AgentWorkflow).filter(
+        AgentWorkflow.user_id == user.id, AgentWorkflow.id != row.id).order_by(
+        AgentWorkflow.updated_at.desc()).limit(5).all()
+    pattern_context = []
+    for item in patterns:
+        try:
+            pattern_plan = workflows.canvas_to_plan(workflows.as_canvas(item))
+        except workflows.WorkflowError:
+            continue
+        pattern_context.append({"name": item.name, "goal": item.goal,
+                                "tools": [str(step.get("tool"))
+                                          for step in pattern_plan.get("steps", [])]})
+    analysis = {"nodes": len(steps), "valid": current_validation.valid,
+                "issues": [issue.message for issue in current_validation.issues[:8]],
+                "roots": sum(not step.get("after") and not step.get("after_error") for step in steps),
+                "patterns_considered": len(pattern_context)}
+
+    async def stream():
+        yield "event: analysis\ndata: " + json.dumps(analysis, ensure_ascii=False) + "\n\n"
+        if mode == "analyze":
+            yield "event: done\ndata: {\"mutated\":false}\n\n"; return
+        try:
+            context = json.dumps({"current_plan": current_plan,
+                                  "private_patterns": pattern_context}, ensure_ascii=False,
+                                 separators=(",", ":"))
+            goal = ("Improve the CURRENT workflow according to the user request. Preserve useful "
+                    "steps and return a complete replacement Plan. Current context: " + context +
+                    "\nUser request: " + prompt)
+            proposed_plan = plan_once(db, goal=goal,
+                                      budget_max_credit=current_plan.get("budget_max_credit", 0))
+            validation = validate_plan(proposed_plan, db=db, user=user)
+            if not validation.valid:
+                detail = "; ".join(issue.message for issue in validation.issues[:5])
+                yield "event: error\ndata: " + json.dumps({"detail": detail}, ensure_ascii=False) + "\n\n"; return
+            proposed_canvas = workflows.plan_to_canvas(proposed_plan)
+            token = _assistant_serializer().dumps({"workflow_id": row.id,
+                "user_id": user.id, "revision": row.revision,
+                "name": row.name, "canvas": proposed_canvas}, salt=_ASSISTANT_SALT)
+            proposal = {"token": token, "canvas": proposed_canvas,
+                        "diff": {"before_nodes": len(steps),
+                                 "after_nodes": len(proposed_plan.get("steps") or []),
+                                 "estimated_max_credit": validation.estimated_max_credit}}
+            yield "event: proposal\ndata: " + json.dumps(proposal, ensure_ascii=False) + "\n\n"
+            yield "event: done\ndata: {\"mutated\":false}\n\n"
+        except Exception as exc:
+            yield "event: error\ndata: " + json.dumps({
+                "detail": f"Assistant tạm thời không tạo được đề xuất ({type(exc).__name__})."}) + "\n\n"
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+@router.post("/api/workflows/{workflow_id}/assistant/apply")
+async def workflow_assistant_apply(request: Request, workflow_id: str,
+                                   _identity: str = Depends(require_login),
+                                   db: Session = Depends(get_db)):
+    """Apply only a short-lived server-signed preview after full validation."""
+    body = await request.json(); _verify_json_csrf(request, body)
+    user = _user(request)
+    try:
+        payload = _assistant_serializer().loads(str(body.get("token") or ""),
+                                                salt=_ASSISTANT_SALT, max_age=1800)
+    except (BadSignature, SignatureExpired):
+        raise HTTPException(status_code=409, detail="Đề xuất đã hết hạn hoặc không hợp lệ.") from None
+    if payload.get("workflow_id") != workflow_id or payload.get("user_id") != user.id:
+        raise HTTPException(status_code=404, detail="Không tìm thấy đề xuất.")
+    try:
+        row = workflows.get_owned(db, workflow_id, user.id)
+        if row.revision != int(payload.get("revision", 0)):
+            raise workflows.WorkflowConflict("Workflow đã thay đổi; không thể áp dụng đề xuất cũ.")
+        plan = workflows.canvas_to_plan(payload.get("canvas"))
+        validation = validate_plan(plan, db=db, user=user)
+        if not validation.valid:
+            raise workflows.WorkflowError("Đề xuất không còn hợp lệ với catalog/quyền hiện tại.")
+        row = workflows.save(db, workflow_id=row.id, user_id=user.id,
+                             revision=row.revision, name=str(payload.get("name") or row.name),
+                             canvas=payload["canvas"])
+    except workflows.WorkflowConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    except workflows.WorkflowError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return _workflow_response(row)
+
+
 def _prepare_run(db: Session, *, user, plan: dict, source: dict) -> AgentRun:
     _require_new_runs_enabled(user)
     validation = validate_plan(plan, db=db, user=user)
@@ -436,9 +633,14 @@ async def workflow_create_run(request: Request, workflow_id: str,
         expected = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
         if row.revision != expected:
             raise workflows.WorkflowConflict("Workflow đã được sửa; cần báo giá lại.")
-        plan = workflows.canvas_to_plan(workflows.as_canvas(row))
-        run = _prepare_run(db, user=user, plan=plan,
+        canvas = workflows.as_canvas(row)
+        plan = workflows.canvas_to_plan(canvas)
+        targets, scope = workflows.scope_targets(canvas, body.get("scope") or {"mode": "full"})
+        scoped_plan = workflows.scope_plan(plan, targets)
+        run = _prepare_run(db, user=user, plan=scoped_plan,
                            source={"workflow_id": row.id, "workflow_revision": row.revision,
+                                   "scope": scope,
+                                   "use_cache": bool(body.get("use_cache", True)),
                                    "correlation_id": getattr(request.state, "correlation_id", "")})
     except workflows.WorkflowConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
@@ -571,6 +773,48 @@ def workflow_artifact(request: Request, run_id: str, step_id: str, index: int,
                              headers={"Cache-Control": "private, no-store"})
 
 
+@router.get("/api/runs/{run_id}/bundle")
+def workflow_run_bundle(request: Request, run_id: str,
+                        _identity: str = Depends(require_login),
+                        db: Session = Depends(get_db)):
+    """Owned ZIP containing the immutable scoped plan and available artifacts."""
+    _user_row, run = _owned(db, request, run_id)
+    from platform_core.storage import StorageError, get_storage
+    storage = get_storage(); artifact_rows = list(_run_json(run).get("artifacts") or [])
+    keys = []
+    for item in artifact_rows:
+        try:
+            key = _artifact_key(run, str(item["step_id"]),
+                                sum(1 for prior in keys if prior[0] == item["step_id"]))
+            keys.append((str(item["step_id"]), key))
+        except HTTPException:
+            continue
+    total = sum(storage.size(key) for _step, key in keys if storage.exists(key))
+    if total > 200 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Bundle vượt 200 MB; tải từng artifact.")
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        source = next((item for item in reversed(run.decision_log or [])
+                       if item.get("event") == "workflow_source"), {})
+        archive.writestr("manifest.json", json.dumps({
+            "format": "ltt-agent-run-bundle", "version": 1, "run_id": run.id,
+            "status": run.status, "scope": source.get("scope", {"mode": "full"}),
+            "plan": run.plan, "artifacts": artifact_rows,
+        }, ensure_ascii=False, indent=2))
+        for index, (step_id, key) in enumerate(keys, 1):
+            if not storage.exists(key):
+                continue
+            try:
+                with storage.open(key) as stream:
+                    archive.writestr(f"artifacts/{step_id}/{index:03d}-{Path(key).name}", stream.read())
+            except (OSError, StorageError):
+                continue
+    output.seek(0)
+    return StreamingResponse(output, media_type="application/zip", headers={
+        "Content-Disposition": f'attachment; filename="ltt-run-{run.id[:8]}.zip"',
+        "Cache-Control": "private, no-store"})
+
+
 @router.get("/api/workflows")
 def workflow_list(request: Request, _identity: str = Depends(require_login),
                   db: Session = Depends(get_db)):
@@ -621,6 +865,136 @@ async def workflow_save(request: Request, workflow_id: str,
     except (KeyError, TypeError, ValueError, workflows.WorkflowError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return _workflow_response(row)
+
+
+@router.get("/api/workflows/{workflow_id}/snapshots")
+def workflow_snapshots(request: Request, workflow_id: str,
+                       _identity: str = Depends(require_login),
+                       db: Session = Depends(get_db)):
+    user = _user(request)
+    try:
+        items = workflows.snapshots(db, workflow_id, user.id)
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+    return {"items": [{"revision": item.revision, "name": item.name,
+                        "reason": item.reason, "created_at": item.created_at.isoformat()}
+                       for item in items]}
+
+
+@router.post("/api/workflows/{workflow_id}/snapshots/{revision}/restore")
+async def workflow_snapshot_restore(request: Request, workflow_id: str, revision: int,
+                                    _identity: str = Depends(require_login),
+                                    db: Session = Depends(get_db)):
+    body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
+    try:
+        row = workflows.restore_snapshot(db, workflow_id=workflow_id, user_id=user.id,
+                                         revision=revision,
+                                         expected_revision=int(body.get("revision", 0)))
+    except workflows.WorkflowConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy snapshot.") from None
+    return _workflow_response(row)
+
+
+@router.get("/api/workflows/{workflow_id}/shares")
+def workflow_shares(request: Request, workflow_id: str,
+                    _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    user = _user(request)
+    try: workflows.get_owned(db, workflow_id, user.id)
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+    rows = db.query(AgentWorkflowShare).filter_by(workflow_id=workflow_id, owner_id=user.id).order_by(
+        AgentWorkflowShare.created_at.desc()).all()
+    return {"items": [{"id": row.id, "permission": row.permission,
+                        "expires_at": row.expires_at.isoformat(),
+                        "revoked": row.revoked_at is not None} for row in rows]}
+
+
+@router.post("/api/workflows/{workflow_id}/shares")
+async def workflow_share_create(request: Request, workflow_id: str,
+                                _identity: str = Depends(require_login),
+                                db: Session = Depends(get_db)):
+    body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
+    try: workflows.get_owned(db, workflow_id, user.id)
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+    permission = str(body.get("permission") or "view")
+    if permission not in {"view", "clone"}:
+        raise HTTPException(status_code=422, detail="Quyền share không hợp lệ.")
+    hours = max(1, min(int(body.get("expires_hours", 24)), 168))
+    token = secrets.token_urlsafe(32)
+    row = AgentWorkflowShare(workflow_id=workflow_id, owner_id=user.id,
+                             token_hash=hashlib.sha256(token.encode()).hexdigest(),
+                             permission=permission,
+                             expires_at=datetime.now(timezone.utc) + timedelta(hours=hours))
+    db.add(row); db.flush()
+    return JSONResponse({"id": row.id, "permission": permission,
+                         "path": f"/agent/shared/{token}", "expires_at": row.expires_at.isoformat()},
+                        status_code=201)
+
+
+def _active_share(db: Session, token: str) -> AgentWorkflowShare:
+    digest = hashlib.sha256(token.encode()).hexdigest()
+    row = db.query(AgentWorkflowShare).filter_by(token_hash=digest).first()
+    now = datetime.now(timezone.utc)
+    expires = row.expires_at if row and row.expires_at.tzinfo else (
+        row.expires_at.replace(tzinfo=timezone.utc) if row else now)
+    if row is None or row.revoked_at is not None or expires <= now:
+        raise HTTPException(status_code=404, detail="Share không tồn tại hoặc đã hết hạn.")
+    return row
+
+
+@router.get("/shared/{token}")
+def workflow_shared_view(request: Request, token: str,
+                         _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    share = _active_share(db, token); row = db.get(AgentWorkflow, share.workflow_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Workflow không còn tồn tại.")
+    return {"permission": share.permission, "workflow": _workflow_json(row)}
+
+
+@router.post("/shared/{token}/clone")
+async def workflow_shared_clone(request: Request, token: str,
+                                _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
+    share = _active_share(db, token)
+    if share.permission != "clone":
+        raise HTTPException(status_code=403, detail="Share chỉ có quyền xem.")
+    source = db.get(AgentWorkflow, share.workflow_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Workflow không còn tồn tại.")
+    row = workflows.create(db, user_id=user.id, name=f"{source.name} — shared clone",
+                           canvas=workflows.as_canvas(source), source_workflow_id=source.id)
+    return _workflow_response(row, status_code=201)
+
+
+@router.post("/api/workflows/{workflow_id}/shares/{share_id}/revoke")
+async def workflow_share_revoke(request: Request, workflow_id: str, share_id: str,
+                                _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
+    row = db.query(AgentWorkflowShare).filter_by(id=share_id, workflow_id=workflow_id,
+                                                owner_id=user.id).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy share.")
+    row.revoked_at = datetime.now(timezone.utc)
+    return {"id": row.id, "revoked": True}
+
+
+@router.get("/api/workflows/{workflow_id}/activity")
+def workflow_activity(request: Request, workflow_id: str,
+                      _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    user = _user(request)
+    try: snapshots = workflows.snapshots(db, workflow_id, user.id)
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+    events = [{"event": "snapshot", "revision": item.revision, "reason": item.reason,
+               "at": item.created_at.isoformat()} for item in snapshots]
+    shares = db.query(AgentWorkflowShare).filter_by(workflow_id=workflow_id, owner_id=user.id).all()
+    events.extend({"event": "share_revoked" if item.revoked_at else "share_created",
+                   "permission": item.permission,
+                   "at": (item.revoked_at or item.created_at).isoformat()} for item in shares)
+    return {"items": sorted(events, key=lambda item: item["at"], reverse=True)[:100]}
 
 
 @router.post("/api/workflows/{workflow_id}/validate")
@@ -688,6 +1062,25 @@ def workflow_export(request: Request, workflow_id: str,
                          "name": row.name, "canvas": workflows.as_canvas(row)},
                         headers={"Content-Disposition":
                                  f'attachment; filename="workflow-{row.id}.json"'})
+
+
+@router.get("/api/workflows/{workflow_id}/frames/{frame_id}/export")
+def workflow_frame_export(request: Request, workflow_id: str, frame_id: str,
+                          _identity: str = Depends(require_login),
+                          db: Session = Depends(get_db)):
+    user = _user(request)
+    try:
+        row = workflows.get_owned(db, workflow_id, user.id)
+        canvas = workflows.as_canvas(row)
+        targets, scope = workflows.scope_targets(canvas, {"mode": "frame", "frame_id": frame_id})
+        plan = workflows.scope_plan(workflows.canvas_to_plan(canvas), targets)
+    except workflows.WorkflowNotFound:
+        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+    except workflows.WorkflowError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return JSONResponse({"format": "ltt-agent-workflow", "version": 1,
+                         "name": f"{row.name} · {scope['frame_name']}",
+                         "canvas": workflows.plan_to_canvas(plan), "scope": scope})
 
 
 @router.post("/api/workflows/import")

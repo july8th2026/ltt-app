@@ -86,6 +86,15 @@ def test_chi_running_moi_tao_child(db):
                           job_type="demo.reverse", params={"text": "a"})
 
 
+def test_child_job_nhan_owner_tu_run_va_khong_tin_client(db):
+    from platform_core.agent import runs
+    run = _running(db, user_id="owner-a")
+    child = runs.submit_child(
+        db, run, step_id="s1", app_slug="demo", job_type="demo.reverse",
+        params={"text": "a", "owner_id": "attacker"})
+    assert child.params["owner_id"] == "owner-a"
+
+
 def test_bon_child_cung_parent_va_mot_loi_duoc_dem_dung(db):
     from platform_core import jobs
     from platform_core.agent import runs

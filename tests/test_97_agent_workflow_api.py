@@ -114,8 +114,21 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert result.status_code == 200 and result.json()["validation"]["valid"]
     assert result.json()["estimated"] > 0 and result.json()["status"] == "validated"
     palette = a.get("/agent/api/palette").json()
-    assert palette["version"] == 1 and len(palette["tools"]) == 7
+    assert palette["version"] == 2 and len(palette["tools"]) == 18
+    assert palette["routing"]["mode"] == "platform_auto"
+    assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
+               for model in palette["models"])
     assert all("price" not in tool and "params_schema" in tool for tool in palette["tools"])
+    quote = a.post("/agent/api/tools/text.script/quote",
+        headers={"X-CSRF-Token": token}, json={"params": {"topic": "Chủ đề hợp lệ"},
+        "fanout": 2, "max_retry": 1})
+    assert quote.status_code == 200
+    assert quote.json()["maximum"] == quote.json()["unit"] * 4
+    assert quote.json()["authoritative"] is True
+    bad = a.post("/agent/api/tools/text.script/quote",
+        headers={"X-CSRF-Token": token}, json={"params": {}})
+    assert bad.status_code == 200 and bad.json()["valid"] is False
+    assert bad.json()["maximum"] is None and bad.json()["authoritative"] is True
 
 
 def test_import_pathological_and_client_price_are_rejected(api):
@@ -242,6 +255,27 @@ def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):
     assert response.json()["canvas"]["nodes"][0]["data"]["tool"] == "text.script"
 
 
+def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):
+    a, token, *_ = api
+    legacy = plan_to_canvas(_plan())
+    canvas = {"version": 2, "goal": legacy["goal"],
+              "budget_max_credit": legacy["budget_max_credit"],
+              "active_page_id": "p1", "pages": [{"id": "p1", "name": "Trang chính",
+                  "nodes": legacy["nodes"], "edges": legacy["edges"],
+                  "viewport": legacy["viewport"],
+                  "frames": [{"id": "f1", "name": "Nhóm 1", "node_ids": ["s1"]}],
+                  "notes": [{"id": "n1", "text": "Ghi chú"}], "comments": []}]}
+    created = a.post("/agent/api/workflows", headers={"X-CSRF-Token": token},
+                     json={"name": "Workflow v2", "canvas": canvas})
+    assert created.status_code == 201 and created.json()["canvas"] == canvas
+    wid = created.json()["id"]
+    validated = a.post(f"/agent/api/workflows/{wid}/validate", headers={
+        "X-CSRF-Token": token, "If-Match": '"1"'}, json={})
+    assert validated.status_code == 200 and validated.json()["validation"]["valid"]
+    exported = a.get(f"/agent/api/workflows/{wid}/export").json()
+    assert exported["canvas"] == canvas
+
+
 def test_production_feature_off_blocks_new_run_but_keeps_workflow(api, monkeypatch):
     a, token, *_ = api
     workflow = _create(a, token).json()
@@ -252,6 +286,51 @@ def test_production_feature_off_blocks_new_run_but_keeps_workflow(api, monkeypat
         "X-CSRF-Token": token, "If-Match": f'"{validated["revision"]}"'}, json={})
     assert blocked.status_code == 503
     assert a.get(f"/agent/api/workflows/{workflow['id']}").status_code == 200
+
+
+def test_assistant_preview_khong_mutate_va_apply_can_token_da_ky(api, monkeypatch):
+    a, token, *_ = api
+    workflow = _create(a, token).json(); wid = workflow["id"]
+    monkeypatch.setenv("LTT_SESSION_SECRET", "assistant-test-secret")
+    import apps.agent.routes as routes
+    proposal = _plan(); proposal["goal"] = "Workflow đã cải tiến"
+    monkeypatch.setattr(routes, "plan_once", lambda *_args, **_kwargs: proposal)
+    preview = a.post(f"/agent/api/workflows/{wid}/assistant/preview", headers={
+        "X-CSRF-Token": token, "If-Match": '"1"'},
+        json={"mode": "improve", "prompt": "Cải thiện workflow"})
+    assert preview.status_code == 200 and "event: analysis" in preview.text
+    packet = next(part for part in preview.text.split("\n\n") if part.startswith("event: proposal"))
+    payload = json.loads(next(line[6:] for line in packet.splitlines() if line.startswith("data: ")))
+    assert a.get(f"/agent/api/workflows/{wid}").json()["revision"] == 1
+    applied = a.post(f"/agent/api/workflows/{wid}/assistant/apply",
+                     headers={"X-CSRF-Token": token}, json={"token": payload["token"]})
+    assert applied.status_code == 200 and applied.json()["revision"] == 2
+    assert applied.json()["canvas"]["goal"] == "Workflow đã cải tiến"
+    tampered = payload["token"][:-1] + ("a" if payload["token"][-1] != "a" else "b")
+    assert a.post(f"/agent/api/workflows/{wid}/assistant/apply",
+                  headers={"X-CSRF-Token": token}, json={"token": tampered}).status_code == 409
+
+
+def test_snapshot_share_view_clone_revoke_va_activity(api):
+    a, token_a, b, token_b = api
+    workflow = _create(a, token_a).json(); wid = workflow["id"]
+    snapshots = a.get(f"/agent/api/workflows/{wid}/snapshots").json()["items"]
+    assert snapshots[0]["revision"] == 1
+    view = a.post(f"/agent/api/workflows/{wid}/shares", headers={"X-CSRF-Token": token_a},
+                  json={"permission": "view", "expires_hours": 1})
+    assert view.status_code == 201 and "token" not in view.json()
+    view_path = view.json()["path"]
+    assert b.get(view_path).json()["workflow"]["id"] == wid
+    assert b.post(view_path + "/clone", headers={"X-CSRF-Token": token_b}, json={}).status_code == 403
+    clone = a.post(f"/agent/api/workflows/{wid}/shares", headers={"X-CSRF-Token": token_a},
+                   json={"permission": "clone", "expires_hours": 1}).json()
+    copied = b.post(clone["path"] + "/clone", headers={"X-CSRF-Token": token_b}, json={})
+    assert copied.status_code == 201 and copied.json()["source_workflow_id"] == wid
+    revoked = a.post(f"/agent/api/workflows/{wid}/shares/{view.json()['id']}/revoke",
+                     headers={"X-CSRF-Token": token_a}, json={})
+    assert revoked.json()["revoked"] is True and b.get(view_path).status_code == 404
+    events = a.get(f"/agent/api/workflows/{wid}/activity").json()["items"]
+    assert {item["event"] for item in events} >= {"snapshot", "share_created", "share_revoked"}
 
 
 def test_production_rollout_admin_then_allowlist(api, monkeypatch):

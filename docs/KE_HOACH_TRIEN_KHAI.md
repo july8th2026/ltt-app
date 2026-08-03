@@ -1317,3 +1317,58 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   CTA và hai OAuth callback. Hiện baseline còn 29 alias fail; homepage còn
   WordPress login và thiếu app CTA.
 - [ ] H15.S15 DEEP re-audit + full release gate.
+  - [ ] H15.S15.1 `LAYOUT-001` — checkpoint 2026-08-04, **đã code nhưng chưa
+    nghiệm thu/deploy**: thêm hợp đồng `standard/catalog/wide/immersive`; mở
+    rộng Seedance, Upscale, Auto Sub, Agent Canvas và năm workspace `wide`;
+    bỏ margin âm ở Upscale/Auto Sub; rebuild bundle Auto Sub.
+    - [x] Targeted gate: `tests/test_129_adaptive_page_layouts.py` 3 passed;
+      Auto Sub frontend 11 passed + typecheck/build pass.
+    - [x] Browser fixture 8118: 9 app × 7 viewport 1920→390, overflow toàn
+      trang 0; desktop/mobile đã xem; console 0 error/0 warning; không request
+      4xx/5xx. Tại 1720 px immersive root 1.657 px, wide root 1.552 px.
+    - [ ] Full `python -m pytest -q`: đã chủ động dừng theo quyết định gom
+      release gate sau khi còn nhiều hạng mục; **không được ghi PASS**.
+    - [ ] Secret scan, commit, build release, deploy và smoke production: chưa
+      chạy; thực hiện một lần sau khi kết thúc chuỗi debug/UI tiếp theo.
+
+- [x] H16 Agent Canvas parity với PlenX — triển khai tuần tự sau Decision Gate;
+  không thay runtime/credit/queue hiện có và không sao chép lỗi PlenX.
+  - [x] H16.0 DEEP discovery/audit — 2026-08-04: tạo workflow hands-on trên
+    PlenX, kiểm kê 11 node active, model composer, page/frame/version/share/log/
+    annotation/assistant; đối soát browser local, 7 ToolSpec, provider và code
+    Agent hiện hành. Baseline `Q 67 · M 52 · E 76 · INTERNAL`; hồ sơ tại
+    `docs/APP_AUDIT/agent/2026-08-04/`. Không tiêu credit, không sửa code,
+    không deploy và chưa chạy full suite.
+  - [x] H16.1 Khóa D1–D12 và acceptance matrix functional parity — 2026-08-04:
+    Dev duyệt triển khai phương án B; ghi Q62 làm nguồn chân lý. Đích là parity
+    capability + LTT brand/safety, Canvas v2, scoped run có quote/approval,
+    provider qua gate và feature-flag/canary; không sao chép bug/IP PlenX.
+  - [x] H16.2 Canvas v2 — 2026-08-04: pages/frames/annotations/view state,
+    importer v1 lossless, revision/snapshot và migration additive PASS.
+  - [x] H16.3 Immersive shell — 2026-08-04: Carbon Red full-height, rail/topbar/
+    drawers, layers/shortcuts, desktop/mobile và browser console/network PASS.
+  - [x] H16.4 Composer/catalog — 2026-08-04: capability động, model/provider/
+    mode/ratio/quality/duration và quote server-authoritative PASS.
+  - [x] H16.5 Media nodes — 2026-08-04: ánh xạ đủ 11/11 nhóm PlenX; upload
+    owner-scoped, Text/Image/Batch/Video/Upscale/TTS/Extract/Merge/Social;
+    SSRF/ACL và GPU image upscale smoke thật PASS.
+  - [x] H16.6 Scoped execution — 2026-08-04: node/selection/frame/full +
+    upstream closure, cache same-owner/exact params, frame export và ZIP bundle;
+    quote/approval/credit vẫn bắt buộc.
+  - [x] H16.7 Assistant — 2026-08-04: SSE analyze/improve, private pattern
+    context, signed preview diff và validator trước apply. VLM video độc lập
+    chưa có và được ghi backlog minh bạch.
+  - [x] H16.8 Version/share/collab — 2026-08-04: snapshot/restore, private
+    view/clone/revoke, annotation persistence và activity; không tuyên bố
+    realtime multi-user.
+  - [x] H16.9 Scale/ops local gate — 2026-08-04: Canvas 512 KiB/Plan 100 bước,
+    frontend/backend 100-node PASS; metrics, rollout/kill switch/runbook; full
+    `2.049 passed, 8 skipped, 23 subtests`, frontend 20 pass, npm audit 0,
+    app lint 0/0, secret scan 0.
+  - [x] H16.10 Production deploy/canary handoff — 2026-08-04: archive 1.187
+    file/174,2 MB, release secret scan 0; PostgreSQL/data backup; migration lên
+    `f6a7b8c9d0e1`; services/loopback/Cloudflare/catalog/docs/security/app load
+    PASS. Production login desktop không overflow, console 0; phiên auth hết
+    hạn nên browser tự chuyển đúng về login. Authenticated Canvas đã browser
+    E2E trên fixture cùng bundle (desktop/mobile, API 200/201, console 0).
+    Hai tab PlenX và LTT được giữ mở để chủ sản phẩm đăng nhập/nghiệm thu.

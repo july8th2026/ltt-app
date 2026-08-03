@@ -61,7 +61,18 @@ MANIFEST = AppManifest(
         },
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
-    ),),
+    ), ToolSpec(
+        name="image.batch_generate", job_type="taoanh.generate",
+        description="Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model.",
+        params_schema={
+            "prompt": {"type": "string", "required": True, "max_length": 4000},
+            "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
+            "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
+            "count": {"type": "int", "min": 2, "max": 4, "default": 4},
+        },
+        returns={"image_keys": "image[]", "prompt": "text"},
+        verifiable=("vlm_judge",),
+    )),
 
     enabled=True,
     group="Ảnh",

@@ -5,6 +5,7 @@ import copy
 import re
 
 from sqlalchemy.orm import Session as DbSession
+from sqlalchemy import select
 
 from platform_core import registry
 from platform_core.agent import budget, runs
@@ -143,6 +144,39 @@ def actual_cost(run: AgentRun, rows: list[Job]) -> int:
     return total
 
 
+def _cache_enabled(run: AgentRun) -> bool:
+    source = next((item for item in reversed(run.decision_log or [])
+                   if item.get("event") == "workflow_source"), {})
+    return bool(source.get("use_cache", True))
+
+
+def _result_available(result: dict) -> bool:
+    from platform_core.storage import get_storage
+    storage = get_storage()
+    suffixes = (".png", ".jpg", ".jpeg", ".webp", ".mp4", ".mov", ".wav", ".mp3", ".srt", ".ass")
+    values = []
+    def walk(value):
+        if isinstance(value, dict):
+            for item in value.values(): walk(item)
+        elif isinstance(value, list):
+            for item in value: walk(item)
+        elif isinstance(value, str) and "/" in value and value.lower().endswith(suffixes):
+            values.append(value)
+    walk(result)
+    return all(storage.exists(value) for value in values)
+
+
+def _cached_result(db: DbSession, run: AgentRun, job_type: str, params: dict) -> dict | None:
+    expected = dict(params); expected["owner_id"] = run.user_id
+    rows = db.execute(select(Job).where(
+        Job.user_id == run.user_id, Job.job_type == job_type, Job.status == JOB_DONE,
+        Job.plan_id != run.id).order_by(Job.finished_at.desc()).limit(50)).scalars().all()
+    for row in rows:
+        if dict(row.params or {}) == expected and _result_available(dict(row.result or {})):
+            return copy.deepcopy(dict(row.result or {}))
+    return None
+
+
 def _advance_branch_states(db: DbSession, run: AgentRun) -> None:
     """Mark branches that can no longer match without executing or spending."""
     checkpoint = dict(run.checkpoint or {})
@@ -259,6 +293,14 @@ def tick(db: DbSession, *, run_id: str, user_id: str,
                 "action": action, "fault": state.get("fault", ""),
             })
         fanout = int(step.get("fanout", 1))
+        if fanout == 1 and _cache_enabled(run):
+            cached = _cached_result(db, run, spec.job_type, params)
+            if cached is not None:
+                checkpoint[sid] = {"status": "done", "outputs": cached,
+                                   "attempt": attempt, "cached": True}
+                runs.append_decision(db, run, {"event": "cache_hit", "step_id": sid,
+                                               "cost": 0})
+                continue
         current_cost = actual_cost(run, runs.children(db, run))
         next_cost = (registry.credit_for(spec.job_type, params) +
                      verifier.verifier_cost(step.get("verify"))) * fanout

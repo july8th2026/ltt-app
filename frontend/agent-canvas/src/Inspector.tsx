@@ -3,9 +3,12 @@ import type { AgentRun } from './workflowApi'
 import type { AgentRunSummary } from './workflowApi'
 import type { PaletteTool } from './editorState'
 import { RunInspector } from './RunInspector'
+import { useState } from 'react'
+import { uploadAsset } from './workflowApi'
 
-export function Inspector({ node, tool, readOnly, run,runHistory,onSelectRun,onReplay,onRestore, onChange, connections = {}, onConnect }:
+export function Inspector({ node, tool, readOnly, csrfToken, run,runHistory,onSelectRun,onReplay,onRestore, onChange, connections = {}, onConnect }:
   { node?: CanvasNode; tool?: PaletteTool; readOnly: boolean;
+    csrfToken: string;
     run?: AgentRun;
     runHistory?:AgentRunSummary[];onSelectRun?:(id:string)=>void;onReplay?:(run:AgentRun)=>void;onRestore?:(run:AgentRun)=>void;
     onChange: (data: Record<string, unknown>) => void;
@@ -36,10 +39,23 @@ export function Inspector({ node, tool, readOnly, run,runHistory,onSelectRun,onR
       if (rule.type === 'int' || rule.type === 'number') return <label key={name}>{label}<input
         type="number" disabled={readOnly} min={rule.min} max={rule.max} value={String(value)}
         onChange={event => setParam(name, rule.type === 'int' ? Number.parseInt(event.target.value) : Number(event.target.value))} /></label>
+      if (['image','video','audio'].includes(rule.type)) return <div key={name}><AssetField
+        name={name} kind={rule.type} value={String(value)} disabled={readOnly} csrfToken={csrfToken}
+        onValue={next=>setParam(name,next)}/>{connector}</div>
       return <div key={name}><label>{label}<textarea disabled={readOnly} value={String(value)}
         onChange={event => setParam(name, event.target.value)} /></label>{connector}</div>
     })}
     <label>Fan-out<input type="number" min="1" max="4" disabled={readOnly}
       value={Number(node.data.fanout ?? 1)} onChange={event => onChange({ fanout: Number(event.target.value) })} /></label>
   </div></aside>
+}
+
+function AssetField({name,kind,value,disabled,csrfToken,onValue}:{name:string;kind:string;value:string;
+  disabled:boolean;csrfToken:string;onValue:(value:string)=>void}){
+  const [busy,setBusy]=useState(false);const [error,setError]=useState('')
+  return <label className="asset-field"><span>{name} *</span><input aria-label={`Tải ${kind}`} type="file"
+    accept={`${kind}/*`} disabled={disabled||busy} onChange={async event=>{const file=event.target.files?.[0]
+      if(!file)return;setBusy(true);setError('');try{const result=await uploadAsset(file,csrfToken);onValue(result.key)}
+      catch(reason){setError(reason instanceof Error?reason.message:'Tải asset thất bại')}finally{setBusy(false)}}}/>
+    <small>{busy?'Đang tải…':value||'Chưa có asset'}</small>{error&&<em>{error}</em>}</label>
 }

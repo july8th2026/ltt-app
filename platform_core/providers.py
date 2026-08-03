@@ -82,6 +82,12 @@ REGISTRY: dict[str, Provider] = {
                       provider_model_id="gemini-3-pro-image", is_active=False),
             ModelInfo("gemini-2.5-flash", (APIKEY_CAT_CHAT,),
                       display_name="Gemini 2.5 Flash (chat)"),
+            ModelInfo("gemini-2.5-flash-preview-tts", ("audio",),
+                      display_name="Gemini 2.5 Flash TTS (Preview)", capabilities={
+                          "voices": ["Kore", "Puck", "Charon", "Zephyr", "Fenrir",
+                                     "Leda", "Orus", "Aoede"],
+                          "sample_rate": 24000, "preview": True,
+                      }),
         ),
         list_models_path="/models",   # kèm ?key= khi gọi
         notes="Key dạng AIza...; ảnh generateContent đồng bộ; ảnh: responseModalities+imageConfig.",
@@ -195,3 +201,21 @@ def model_options(category: str, provider_ids_filter: Optional[tuple] = None) ->
                 out.append({"value": model.id, "label": model.label()})
                 seen.add(model.id)
     return out
+
+
+def model_catalog() -> list[dict]:
+    """Public capability catalog for schema-driven UIs; never exposes keys/endpoints."""
+    indexed: dict[str, dict] = {}
+    for provider in REGISTRY.values():
+        for model in provider.models:
+            if not model.is_active:
+                continue
+            item = indexed.setdefault(model.id, {
+                "id": model.id, "label": model.label(), "categories": [],
+                "providers": [], "capabilities": {},
+            })
+            item["providers"].append({"id": provider.id, "label": provider.display_name})
+            item["categories"] = sorted(set(item["categories"]) | set(model.categories))
+            if model.capabilities:
+                item["capabilities"].update(model.capabilities)
+    return sorted(indexed.values(), key=lambda item: (item["categories"], item["label"]))

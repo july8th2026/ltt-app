@@ -152,7 +152,8 @@
 {% endif %}
 {% endif %}
 
-<main class="{{ 'home-page' if home_workspace|default(false) else 'page' }}">
+{% set _page_mode %}{% block page_mode %}standard{% endblock %}{% endset %}
+<main class="{{ 'home-page' if home_workspace|default(false) else 'page page--' ~ (_page_mode|trim) }}">
   {# Giữ block tiêu đề cho trang con (settings/workers…) — gom vào dải mảnh, chỉ
      hiện khi trang có đặt. #}
   {% set _tt %}{% block topbar_title %}{% endblock %}{% endset %}

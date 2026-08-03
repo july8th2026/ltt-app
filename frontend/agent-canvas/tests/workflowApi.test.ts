@@ -4,8 +4,9 @@ import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, i
   type AgentRun, type Workflow } from '../src/workflowApi'
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
-  canvas: { version: 1, goal: 'g', budget_max_credit: 10, nodes: [], edges: [],
-    viewport: { x: 0, y: 0, zoom: 1 } } } satisfies Workflow
+  canvas: { version: 2, goal: 'g', budget_max_credit: 10, active_page_id: 'page-1',
+    pages: [{ id: 'page-1', name: 'Page 1', nodes: [], edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] } } satisfies Workflow
 
 afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers() })
 
@@ -31,8 +32,9 @@ describe('workflow API', () => {
       checkpoint: {}, estimated: 5, actual: 0, quote_hash: 'abc', decisions: [], artifacts: [] } satisfies AgentRun
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(
       JSON.stringify(run), { status: 200, headers: { 'Content-Type': 'application/json' } }))
-    await createRun(workflow, 'csrf-test')
+    await createRun(workflow, 'csrf-test', { mode: 'selection', node_ids: ['n1'] })
     expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('If-Match')).toBe('"3"')
+    expect(fetchMock.mock.calls[0][1]?.body).toBe(JSON.stringify({ scope: { mode: 'selection', node_ids: ['n1'] }, use_cache: true }))
     await approveRun(run, 'csrf-test')
     expect(fetchMock.mock.calls[1][1]?.body).toBe(JSON.stringify({ version: 1, quote_hash: 'abc' }))
     await approveRun(run, 'csrf-test', '2026-08-04T02:00:00.000Z')

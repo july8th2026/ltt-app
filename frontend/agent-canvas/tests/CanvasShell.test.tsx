@@ -47,6 +47,18 @@ describe('CanvasShell', () => {
     expect(screen.getByLabelText('Node text.script')).toBeInTheDocument()
   })
 
+  it('opens layers and keyboard command palette with working display toggles', async () => {
+    render(<CanvasShell />)
+    await screen.findByRole('button',{name:'Thêm text.script'})
+    fireEvent.click(screen.getByRole('button',{name:'Lớp'}))
+    expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
+    fireEvent.keyDown(window,{key:'k',ctrlKey:true})
+    expect(screen.getByRole('dialog',{name:'Bảng lệnh Canvas'})).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('textbox',{name:'Tìm lệnh'}),{target:{value:'lưới'}})
+    fireEvent.click(screen.getByRole('button',{name:'Ẩn lưới'}))
+    expect(screen.getByRole('button',{name:'Lưới'})).toHaveAttribute('aria-pressed','false')
+  })
+
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
     render(<CanvasShell />)
     await screen.findByRole('button',{name:'Thêm text.script'})
@@ -54,6 +66,22 @@ describe('CanvasShell', () => {
     fireEvent.click(screen.getByRole('button',{name:'Inspector'}))
     expect(screen.getByRole('button',{name:'Inspector'})).toHaveAttribute('aria-pressed','true')
     expect(screen.getByLabelText('Run inspector')).toHaveTextContent('Kiểm tra workflow')
+  })
+
+  it('upgrades legacy canvas and manages pages and annotations', async () => {
+    render(<CanvasShell />)
+    await screen.findByRole('button',{name:'Thêm text.script'})
+    expect(screen.getByText(/Canvas v2/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'+ Page'}))
+    expect(screen.getByRole('textbox',{name:/Đổi tên Page 2/})).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'+ Sticky note'}))
+    fireEvent.click(screen.getByRole('button',{name:'+ Comment'}))
+    expect(screen.getByLabelText('Sticky note Ghi chú mới')).toBeInTheDocument()
+    expect(screen.getByLabelText('Comment Bình luận mới')).toBeInTheDocument()
+    fireEvent.change(screen.getByRole('textbox',{name:'Nội dung sticky note'}),{target:{value:'Duyệt màu'}})
+    expect(screen.getByLabelText('Sticky note Duyệt màu')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Xóa comment'}))
+    expect(screen.queryByLabelText(/Comment Bình luận mới/)).not.toBeInTheDocument()
   })
 })
 

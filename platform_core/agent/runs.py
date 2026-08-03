@@ -108,9 +108,15 @@ def submit_child(db: DbSession, run: AgentRun, *, step_id: str, app_slug: str,
                  dedupe_key: str = "", max_attempts: int = 3) -> Job:
     if run.status != AGENT_RUNNING:
         raise AgentRunError("Chỉ AgentRun running mới được tạo child job.")
+    # Identity is a server-owned execution field. Canvas validation rejects it
+    # from client documents; inject it only after the owned run has been locked.
+    # Besides naming output keys, media handlers use this value to enforce that
+    # source artifacts belong to the same account.
+    owned_params = dict(params or {})
+    owned_params["owner_id"] = run.user_id
     return jobs.submit(
         db, user_id=run.user_id, app_slug=app_slug, job_type=job_type,
-        params=params, dedupe_key=dedupe_key, max_attempts=max_attempts,
+        params=owned_params, dedupe_key=dedupe_key, max_attempts=max_attempts,
         parent_id=parent_id, plan_id=run.id, step_id=step_id,
     )
 

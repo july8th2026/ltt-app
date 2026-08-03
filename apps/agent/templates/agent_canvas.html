@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block page_mode %}immersive{% endblock %}
 {% block title %}Canvas · LTT Agent AI{% endblock %}
 {% block content %}
 <div id="agent-canvas-root" aria-busy="true" data-csrf-token="{{ csrf_token }}"><p class="muted">Đang tải Canvas…</p></div>

@@ -21,7 +21,7 @@ afterEach(cleanup)
 function Harness({ connect = vi.fn() }: { connect?: (field: string, value: string) => void }) {
   const [node, setNode] = useState<CanvasNode>({ id: 'n1', type: 'tool', position: { x: 0, y: 0 },
     data: { tool: 'video.generate', params: { model: 'mini' }, fanout: 1 } })
-  return <Inspector node={node} tool={tool} readOnly={false}
+  return <Inspector node={node} tool={tool} readOnly={false} csrfToken="test-csrf"
     connections={{ resolution: [{ value: 'n0|size', label: 'n0 · size' }] }} onConnect={connect}
     onChange={data => setNode(current => ({ ...current, data: { ...current.data, ...data } }))} />
 }

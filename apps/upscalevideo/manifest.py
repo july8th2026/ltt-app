@@ -21,6 +21,8 @@ from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 def _cost(params: dict) -> int:
     """Giá GIỮ CHỖ theo thời lượng client khai; worker đo lại thật + nâng giữ chỗ."""
+    if params.get("image_key"):
+        return 4 if str(params.get("preset", "fast")) == "quality" else 2
     from apps.upscalevideo.cost import uoc_luong_credit
     try:
         dur = float(params.get("duration_s", 0) or 0)
@@ -63,7 +65,14 @@ MANIFEST = AppManifest(
         },
         returns={"video_key": "video"},
         verifiable=("technical",),
-    ),),
+    ), ToolSpec(
+        name="image.upscale", job_type="upscalevideo.render",
+        description="Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ.",
+        params_schema={
+            "image_key": {"type": "image", "required": True},
+            "preset": {"type": "enum", "values": ["fast", "quality"], "default": "fast"},
+        }, returns={"image_key": "image"}, verifiable=("technical", "vlm_judge"),
+    )),
 
     enabled=True,
     group="Video",
