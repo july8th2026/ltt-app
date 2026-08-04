@@ -67,6 +67,8 @@ function runStatusLabel(status:string){
     cancelled:'Đã hủy',scheduled:'Đã lên lịch'} as Record<string,string>)[status]??status
 }
 
+type StarterFlowKind='text-image'|'image-text'|'image-video'
+
 function Editor() {
   const [state, dispatch] = useReducer(editorReducer, { document: emptyDocument(), past: [], future: [] })
   const [workflow, setWorkflow] = useState<Workflow>()
@@ -122,6 +124,7 @@ function Editor() {
   const showConnections=page.view?.connections??true
   const showMinimap=page.view?.minimap??true
   const byName = useMemo(() => new Map(palette.map(tool => [tool.name, tool])), [palette])
+  const hasAnyNodes=state.document.pages.some(item=>item.nodes.length>0)
   const selectedNode = page.nodes.find(node => node.id === state.selectedId)
   const selectedEdge = page.edges.find(edge=>selectedEdges.includes(edge.id))
   const referenceOptions=useMemo(()=>{
@@ -274,6 +277,27 @@ function Editor() {
     dispatch({type:'graph',nodes:[...page.nodes,node],edges:[...page.edges,edge]})
     dispatch({type:'select',id:node.id});setSelected([node.id]);setQuickCreate(null)
   },[readOnly,page,byName])
+
+  const applyStarterFlow=useCallback((kind:StarterFlowKind)=>{
+    if(readOnly||page.nodes.length)return
+    const [sourceKind,targetKind]=kind.split('-') as ['text'|'image','image'|'text'|'video']
+    const tools=customerPaletteTools(palette,true)
+    const sourceTool=tools.find(tool=>tool.primary&&nodeModality(tool)===sourceKind)
+      ??tools.find(tool=>nodeModality(tool)===sourceKind)
+    const targetTool=tools.find(tool=>tool.primary&&nodeModality(tool)===targetKind)
+      ??tools.find(tool=>nodeModality(tool)===targetKind)
+    if(!sourceTool||!targetTool){setRunError('Chưa có block phù hợp cho mẫu này.');return}
+    const source=nextNode(sourceTool,0);const target=nextNode(targetTool,1)
+    source.position={x:140,y:180};target.position={x:540,y:180}
+    const sourceHandle=primaryOutputHandle(sourceTool)
+    const targetHandle=sourceHandle&&Object.keys(targetTool.params_schema).find(field=>
+      connectionAllowed(sourceTool,sourceHandle,targetTool,field))
+    const connected=sourceHandle&&targetHandle?connectGraph([source,target],[],{
+      source:source.id,sourceHandle,target:target.id,targetHandle},byName):undefined
+    if(!connected){setRunError('Hai block của mẫu chưa có cổng kết nối tương thích.');return}
+    dispatch({type:'graph',...connected});dispatch({type:'select',id:source.id})
+    setSelected([source.id]);setSelectedEdges([]);setDesktopPanel(null);setRunError('')
+  },[readOnly,page.nodes.length,palette,byName])
 
   const uploadToNode=useCallback(async(nodeId:string,files:File[])=>{
     const node=page.nodes.find(item=>item.id===nodeId);if(!node)return
@@ -554,9 +578,9 @@ function Editor() {
       <div className="canvas-top-actions"><span className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict' ? 'Xung đột' : phase === 'error' ? 'Lỗi lưu' : 'Đã lưu'}</span>
         <button title="Đổi giao diện" aria-label={theme==='light'?'Chuyển sang nền tối':'Chuyển sang nền sáng'} onClick={()=>persistPreferences(theme==='light'?'dark':'light',catalogMode)}>{theme==='light'?'☾':'☀'}</button>
         <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘</button>
-        <button title="Assistant" aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>AI</button>
-        <button title="Phiên bản và chia sẻ" aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>↗</button>
-        <button className="run-primary" aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
+        {hasAnyNodes&&<button title="Assistant" aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>AI</button>}
+        {hasAnyNodes&&<button title="Phiên bản và chia sẻ" aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>↗</button>}
+        <button className="run-primary" disabled={!page.nodes.length} aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
       <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header>
         {presentationMode==='legacy'&&<div className="legacy-run-tools"><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
           <button disabled={(!selected.length && !selectedEdges.length) || readOnly}
@@ -598,15 +622,15 @@ function Editor() {
       <nav className="canvas-rail" aria-label="Công cụ Canvas">
         <button title="Chọn" aria-label="Công cụ chọn" aria-pressed={!desktopPanel}>↖</button>
         <button title="Thêm node" aria-label="Mở công cụ" aria-pressed={desktopPanel==='tools'} onClick={()=>{const open=desktopPanel!=='tools';setDesktopPanel(open?'tools':null);if(open&&presentationMode==='creative'){setSelected([]);setSelectedEdges([]);dispatch({type:'select'})}}}>＋</button>
-        <button title="Workspace" aria-label="Mở Workspace" aria-pressed={desktopPanel==='workspace'} onClick={()=>setDesktopPanel(value=>value==='workspace'?null:'workspace')}>▦</button>
-        <button title="Lớp" aria-label="Mở danh sách lớp" aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>☷</button>
-        <button title="Sticky note" aria-label="Tạo sticky note" disabled={readOnly} onClick={()=>dispatch({type:'noteAdd',text:'Ghi chú mới'})}>□</button>
-        <button title="Bình luận" aria-label="Tạo comment" disabled={readOnly} onClick={()=>dispatch({type:'commentAdd',text:'Bình luận mới'})}>◌</button>
+        <button title="Mẫu & thiết lập" aria-label="Mở mẫu và thiết lập" aria-pressed={desktopPanel==='workspace'} onClick={()=>setDesktopPanel(value=>value==='workspace'?null:'workspace')}>▦</button>
+        {hasAnyNodes&&<><button title="Lớp" aria-label="Mở danh sách lớp" aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>☷</button>
+          <button title="Sticky note" aria-label="Tạo sticky note" disabled={readOnly} onClick={()=>dispatch({type:'noteAdd',text:'Ghi chú mới'})}>□</button>
+          <button title="Bình luận" aria-label="Tạo comment" disabled={readOnly} onClick={()=>dispatch({type:'commentAdd',text:'Bình luận mới'})}>◌</button></>}
         <span />
         <button title="Hoàn tác" aria-label="Hoàn tác" disabled={!state.past.length||readOnly} onClick={()=>dispatch({type:'undo'})}>↶</button>
         <button title="Làm lại" aria-label="Làm lại" disabled={!state.future.length||readOnly} onClick={()=>dispatch({type:'redo'})}>↷</button>
       </nav>
-      <aside className={`canvas-palette${desktopPanel==='tools'||desktopPanel==='workspace'?' is-open':''}${desktopPanel==='workspace'?' workspace-only':' tools-only'}`} aria-label="Palette công cụ"><header className="drawer-heading"><h2>{desktopPanel==='workspace'?'Workspace':'Thêm node'}</h2><button aria-label="Đóng Palette" onClick={()=>setDesktopPanel(null)}>×</button></header>
+      <aside className={`canvas-palette${desktopPanel==='tools'||desktopPanel==='workspace'?' is-open':''}${desktopPanel==='workspace'?' workspace-only':' tools-only'}`} aria-label="Palette công cụ"><header className="drawer-heading"><h2>{desktopPanel==='workspace'?'Mẫu & thiết lập':'Thêm block'}</h2><button aria-label="Đóng Palette" onClick={()=>setDesktopPanel(null)}>×</button></header>
         {desktopPanel==='tools'&&<><input className="palette-search" aria-label="Tìm công cụ" value={paletteQuery} onChange={event=>setPaletteQuery(event.target.value)} placeholder="Tìm công cụ…"/><button className="catalog-toggle" aria-pressed={catalogMode==='advanced'} onClick={()=>persistPreferences(theme,catalogMode==='simple'?'advanced':'simple')}>{catalogMode==='simple'?'Hiện công cụ nâng cao':'Chỉ hiện công cụ chính'}</button></>}
         <section className="page-panel" aria-label="Pages"><header><h3>Pages</h3><button disabled={readOnly||state.document.pages.length>=20}
           onClick={()=>{dispatch({type:'pageAdd'});setSelected([]);setSelectedEdges([])}}>+ Page</button></header>
@@ -683,7 +707,11 @@ function Editor() {
           <FlowStatus />
           {showGrid&&<Background color={theme==='light'?'#d8dde5':'#5b2c29'} gap={20} />}{showMinimap&&<MiniMap pannable zoomable />}<Controls showInteractive={!readOnly} />
         </ReactFlow>
-        {!page.nodes.length && <div className="canvas-empty"><strong>Bắt đầu {page.name}</strong><span>Chọn công cụ ở Palette hoặc tạo page mới để tách quy trình.</span></div>}
+        {!page.nodes.length && <section className="canvas-empty first-run" aria-label="Bắt đầu workflow"><small>3 BƯỚC ĐẦU TIÊN</small><h2>Tạo kết quả đầu tiên</h2><ol><li>Chọn một mẫu</li><li>Nhập hoặc tải nội dung</li><li>Kiểm tra chi phí trước khi chạy</li></ol><div className="starter-flows">
+          <button onClick={()=>applyStarterFlow('text-image')}><strong>Prompt thành hình ảnh</strong><span>Viết một lần, tạo ảnh từ nội dung đó</span></button>
+          <button onClick={()=>applyStarterFlow('image-text')}><strong>Hiểu nội dung hình ảnh</strong><span>Tải hoặc tạo ảnh, rồi yêu cầu AI phân tích</span></button>
+          <button onClick={()=>applyStarterFlow('image-video')}><strong>Ảnh thành video</strong><span>Dùng ảnh làm khung đầu cho video</span></button>
+          <button className="blank-flow" onClick={()=>setDesktopPanel('tools')}>Bắt đầu với Canvas trống</button></div></section>}
         {!!validationIssues.length && <div className="validation-banner" role="alert"><strong>Workflow chưa hợp lệ</strong>
           <span>{validationIssues.slice(0, 3).map(issue => issue.message).join(' · ')}</span></div>}
         {showLayers&&<aside className="layers-drawer" aria-label="Danh sách lớp"><header><strong>Lớp · {page.name}</strong>

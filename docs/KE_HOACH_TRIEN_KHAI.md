@@ -1541,7 +1541,11 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   tổ chức node bị loại khỏi bảng này. Scope khóa sau quote, hiển thị đúng block
   và số bước; confirm chỉ mở khi actual=0. Browser local tạo quote 5 credit cho
   1 block, actual 0, không gọi approve/provider, hủy trước duyệt giữ actual 0.
-- [ ] H21.6 P5 First-run/templates/assets-history/Assistant progressive.
+- [x] H21.6 P5 First-run/templates/assets-history/Assistant progressive —
+  2026-08-04: blank page có hướng dẫn ba bước và mẫu theo kết quả
+  Text→Image, Image→Text, Image→Video; mẫu dựng 2 block/1 dây, chọn upstream để
+  nhập/upload ngay, không cần Inspector. Fresh workflow ẩn Assistant, History,
+  Layers/Note/Comment và khóa Run đến khi có block. Mobile 390: overflow 0.
 - [ ] H21.7 P6 Browser/regression/a11y/performance/recovery gate.
 - [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E.
 - [ ] H21.9 Deploy canary/production chỉ sau H21.8 PASS.

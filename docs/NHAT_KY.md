@@ -14,6 +14,57 @@
 
 ---
 
+## 2026-08-04 — H21.6 First-run và progressive disclosure
+
+- **Mục tiêu:** giúp người mới tạo chuỗi hợp lệ đầu tiên mà không phải hiểu
+  ToolSpec/Inspector, đồng thời giấu công cụ nâng cao cho tới khi thực sự cần.
+- **Hạng mục:** H21.6 hoàn thành; H21.7 là bước kế tiếp.
+- **Trạng thái:** source/build/local browser PASS; chưa deploy production.
+
+### Đã làm
+
+- Blank page hiển thị ba bước: chọn mẫu → nhập/tải nội dung → kiểm tra chi phí.
+  Ba mẫu được đặt theo kết quả: Prompt thành hình ảnh, Hiểu nội dung hình ảnh,
+  Ảnh thành video; vẫn có đường bắt đầu Canvas trống.
+- Mẫu dựng trực tiếp 2 block + 1 dây tương thích, cập nhật reference đúng contract
+  và chọn block upstream để mở composer. Text→Image và Image→Text không cần mở
+  Inspector.
+- Fresh workflow ẩn Assistant, phiên bản/chia sẻ, Layers/Note/Comment và vô hiệu
+  Run khi page chưa có block. Sau khi bắt đầu, các vùng này xuất hiện lại; upload
+  vẫn nằm trong chính block media, History vẫn ở drawer riêng.
+- Workspace được đổi tên thành `Mẫu & thiết lập`; palette dùng thuật ngữ `block`
+  nhất quán với trình bày creative.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` | 46 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 142,25 kB |
+| Playwright desktop Image→Text | 2 block; 1 edge; composer Hình ảnh mở; Inspector không cần |
+| Playwright mobile 390×844 blank page | 1 first-run region; 4 CTA; Run disabled; overflow 0 |
+| Playwright console/network | console error 0; request 4xx/5xx bất ngờ 0 |
+
+### Quyết định mới
+
+Không có; thực thi Q67 và blueprint P5 đã khóa.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` và restart Web; document/runtime
+không thay schema.
+
+### Còn tồn đọng
+
+- H21.7 cần full browser/regression/a11y/performance/recovery gate.
+- H21.8 cần beta thật với 5 người; agent không được tự giả lập để tuyên bố PASS.
+- H21.9 chưa deploy production.
+
+### Việc tiếp theo
+
+1. H21.7 chạy browser matrix, keyboard/a11y, 1/10/50 node và recovery.
+2. Chỉ chạy full pytest một lần ở gate cuối, tránh lặp gần 2.000 test giữa phase.
+
 ## 2026-08-04 — H21.5 Luồng chạy và credit thống nhất
 
 - **Mục tiêu:** bỏ bảng chạy lẫn thao tác biên tập và khóa một hành trình an

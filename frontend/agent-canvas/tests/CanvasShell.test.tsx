@@ -5,7 +5,7 @@ import { RunInspector } from '../src/RunInspector'
 
 const palette = { version: 1, tools: [
   { name: 'text.generate', label:'Tạo văn bản',category:'content',primary:true,description:'Tạo nội dung từ yêu cầu',
-    app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{text:'text'} },
+    app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{prompt:{type:'text',required:true},image_key:{type:'image'}},returns:{text:'text'} },
   { name: 'image.generate', label:'Tạo hình ảnh',category:'content',primary:true,description:'Tạo ảnh từ mô tả',
     app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{image:'image'} },
   { name: 'asset.image', label:'Ảnh đầu vào',category:'input',primary:false,description:'Ảnh tải lên',
@@ -98,7 +98,7 @@ describe('CanvasShell', () => {
 
   it('opens layers and keyboard command palette with working display toggles', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm Văn bản'})
+    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
     fireEvent.click(screen.getByRole('button',{name:'Mở danh sách lớp'}))
     expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
@@ -168,7 +168,7 @@ describe('CanvasShell', () => {
 
   it('keeps quote, approval, cancel and retry in one spend-safe run flow',async()=>{
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Mở công cụ'})
+    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
     fireEvent.click(screen.getByRole('button',{name:'Chạy'}))
     const drawer=screen.getByRole('navigation',{name:'Chạy workflow'})
     expect(drawer).toHaveTextContent('Toàn workflow')
@@ -183,6 +183,23 @@ describe('CanvasShell', () => {
     expect(await within(drawer).findByText(/Đã hủy · đã dùng 0\/7 credit · 2 bước/)).toBeInTheDocument()
     fireEvent.click(within(drawer).getByRole('button',{name:'Chạy lại theo cấu hình này'}))
     expect(await within(drawer).findByRole('button',{name:'Xác nhận và chạy · 7 credit'})).toBeInTheDocument()
+  })
+
+  it('guides first-run users through both canonical chains before exposing advanced chrome',async()=>{
+    render(<CanvasShell />)
+    const firstRun=await screen.findByRole('region',{name:'Bắt đầu workflow'})
+    expect(firstRun).toHaveTextContent('Chọn một mẫu')
+    expect(screen.queryByTitle('Assistant')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button',{name:'Mở danh sách lớp'})).not.toBeInTheDocument()
+    fireEvent.click(within(firstRun).getByRole('button',{name:/Prompt thành hình ảnh/}))
+    expect(await screen.findByRole('region',{name:'Thiết lập Văn bản'})).toBeInTheDocument()
+    expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
+    expect(screen.getByTitle('Assistant')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Hoàn tác'}))
+    const reset=await screen.findByRole('region',{name:'Bắt đầu workflow'})
+    fireEvent.click(within(reset).getByRole('button',{name:/Hiểu nội dung hình ảnh/}))
+    expect(await screen.findByRole('region',{name:'Thiết lập Hình ảnh'})).toBeInTheDocument()
+    expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
   })
 
   it('connects a compatible node through the contextual @ reference picker',async()=>{
