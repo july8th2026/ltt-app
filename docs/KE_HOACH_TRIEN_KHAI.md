@@ -1536,7 +1536,11 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   chặn cycle trước khi ghi graph, reconnect nguyên tử, dây có mũi tên/màu theo
   modality và midpoint `+` chèn block tương thích. Browser 1366/1720/1920:
   5 node/2 edge, 2 midpoint CTA, overflow 0, console 0, API 200/201.
-- [ ] H21.5 P4 Run/quote/approval/cancel/retry thống nhất.
+- [x] H21.5 P4 Run/quote/approval/cancel/retry thống nhất — 2026-08-04: bảng
+  Chạy creative chỉ còn scope/cache/preflight/quote/confirm/progress; thao tác
+  tổ chức node bị loại khỏi bảng này. Scope khóa sau quote, hiển thị đúng block
+  và số bước; confirm chỉ mở khi actual=0. Browser local tạo quote 5 credit cho
+  1 block, actual 0, không gọi approve/provider, hủy trước duyệt giữ actual 0.
 - [ ] H21.6 P5 First-run/templates/assets-history/Assistant progressive.
 - [ ] H21.7 P6 Browser/regression/a11y/performance/recovery gate.
 - [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E.

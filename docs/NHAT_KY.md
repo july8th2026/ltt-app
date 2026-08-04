@@ -14,6 +14,57 @@
 
 ---
 
+## 2026-08-04 — H21.5 Luồng chạy và credit thống nhất
+
+- **Mục tiêu:** bỏ bảng chạy lẫn thao tác biên tập và khóa một hành trình an
+  toàn từ kiểm tra phạm vi đến xác nhận, hủy hoặc chạy lại.
+- **Hạng mục:** H21.5 hoàn thành; H21.6 là bước kế tiếp.
+- **Trạng thái:** source/build/local browser PASS; chưa deploy production.
+
+### Đã làm
+
+- Bảng Chạy creative chỉ còn phạm vi, cache, preview số block, lỗi validation,
+  quote, xác nhận, trạng thái, hủy và chạy lại. Nhân bản/xóa/layout/lưới/lớp
+  không còn chen vào hành trình chi phí; mode legacy vẫn giữ đường rollback.
+- CTA tại composer và menu node cùng đi qua một `prepareScope`: lưu → validate
+  → quote server → tạo run chờ xác nhận. Scope được khóa sau quote và hiển thị
+  đúng nhãn duy nhất như `Hình ảnh 2`, không bị quay về “Toàn workflow”.
+- Nút xác nhận bị khóa nếu `actual != 0`; UI luôn nêu rõ số credit đã dùng trước
+  xác nhận. Có thể hủy cả run đang chờ duyệt và retry run kết thúc.
+- Browser local đã tạo quote 5 credit/1 bước với actual 0, không bấm approve,
+  rồi hủy qua UI; network chỉ có create-run 201 và cancel 200.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` | 45 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 141,77 kB |
+| Targeted budget pytest | 3 passed: quote chưa giữ credit; cancel trước duyệt 0 credit; provider guard |
+| Playwright validation lỗi | 4 lỗi hiển thị theo block; không tạo run |
+| Playwright quote/cancel | scope `Hình ảnh 2`; 1 bước; max 5; actual 0; cancel 200; không approve |
+| Playwright console/network | console error 0; không có request 4xx/5xx liên quan |
+
+### Quyết định mới
+
+Không có; thực thi Q67 trên contract credit/runtime Q62 hiện hữu.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` và restart Web; run API, credit và
+document không đổi.
+
+### Còn tồn đọng
+
+- H21.6 cần first-run, template và progressive disclosure cho assets/history/
+  Assistant; chưa mở rộng model breadth.
+- H21.7–H21.9 chưa hoàn tất; chưa deploy production.
+
+### Việc tiếp theo
+
+1. H21.6 đưa người mới từ blank canvas đến workflow đầu tiên bằng template.
+2. H21.7 chạy browser matrix, a11y, recovery và full regression một lần cuối.
+
 ## 2026-08-04 — H21.4 Connection grammar theo intent
 
 - **Mục tiêu:** biến đường nối từ chi tiết kỹ thuật khó hiểu thành hành vi theo

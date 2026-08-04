@@ -15,7 +15,7 @@ import { CANVAS_PRESENTATION_VERSION, customerPaletteTools, customerToolLabel,
 import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, createShare, exportWorkflow, importWorkflow,
   loadOrCreateWorkflow, loadPalette, loadPreferences, loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot, savePreferences, saveWorkflow,
   previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, uploadAsset, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
-  type CanvasEdge, type CanvasNode, type Workflow, type WorkflowSnapshot } from './workflowApi'
+  type CanvasEdge, type CanvasNode, type RunScope, type Workflow, type WorkflowSnapshot } from './workflowApi'
 
 const nodeTypes = { tool: ToolNode, creativeTool: CreativeToolNode, frame: FrameNode, annotation: AnnotationNode }
 const edgeTypes = { creative: CanvasEdgeView }
@@ -62,6 +62,11 @@ function uniqueNodeLabel(node:CanvasNode,nodes:CanvasNode[],byName:Map<string,Pa
   return peers.length>1?`${base} ${peers.findIndex(item=>item.id===node.id)+1}`:base
 }
 
+function runStatusLabel(status:string){
+  return ({awaiting_approval:'Chờ xác nhận',running:'Đang chạy',done:'Hoàn tất',error:'Có lỗi',
+    cancelled:'Đã hủy',scheduled:'Đã lên lịch'} as Record<string,string>)[status]??status
+}
+
 function Editor() {
   const [state, dispatch] = useReducer(editorReducer, { document: emptyDocument(), past: [], future: [] })
   const [workflow, setWorkflow] = useState<Workflow>()
@@ -93,6 +98,7 @@ function Editor() {
   const [runError, setRunError] = useState('')
   const [scheduledAt,setScheduledAt]=useState('')
   const [runScope,setRunScope]=useState('full')
+  const [preparedScope,setPreparedScope]=useState<RunScope>()
   const [useCache,setUseCache]=useState(true)
   const [assistantOpen,setAssistantOpen]=useState(false)
   const [assistantMode,setAssistantMode]=useState<'analyze'|'improve'>('analyze')
@@ -300,22 +306,25 @@ function Editor() {
     dispatch({type:'select',id:nodeId});setSelected([nodeId]);setSelectedEdges([]);setDesktopPanel('inspector')
   },[page.nodes,byName,palette])
 
-  const prepareScope=useCallback(async(scope:{mode:'node'|'selection';node_id?:string;node_ids?:string[]})=>{
+  const prepareScope=useCallback(async(scope:RunScope)=>{
     if(!workflow||readOnly||run)return
     if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
+    setPreparedScope(scope);setRunScope(scope.mode==='frame'?`frame:${scope.frame_id}`:scope.mode)
     setDesktopPanel('run');setPhase('saving');setRunError('')
     try{
       const saved=await saveWorkflow({...workflow,canvas:state.document},csrf)
       const checked=await validateWorkflow(saved,csrf)
       setWorkflow(checked);setCosts(Object.fromEntries(checked.validation.step_costs.map((item:{step_id:string;maximum:number})=>[item.step_id,item.maximum])))
-      const requested=(scope.node_ids??[scope.node_id??'']).filter(Boolean)
+      const requested=scope.mode==='full'?page.nodes.map(node=>node.id):scope.mode==='frame'
+        ?page.frames.find(frame=>frame.id===scope.frame_id)?.node_ids??[]
+        :(scope.node_ids??[scope.node_id??'']).filter(Boolean)
       const relevantIds=new Set(scopeNodeIds(page.nodes,page.edges,requested))
       const relevantIssues=checked.validation.issues.filter((issue:{step_id:string;message:string})=>relevantIds.has(issue.step_id))
       setValidationIssues(relevantIssues);setPhase('saved')
       if(relevantIssues.length)return
       setRun(await createRun(checked,csrf,scope,useCache));void refreshRunHistory()
     }catch(error){setPhase(error instanceof WorkflowConflictError?'conflict':'error');setRunError(error instanceof Error?error.message:'Không chuẩn bị được bản chạy.')}
-  },[workflow,readOnly,run,state.document,csrf,useCache,refreshRunHistory,page.nodes,page.edges])
+  },[workflow,readOnly,run,state.document,csrf,useCache,refreshRunHistory,page.nodes,page.edges,page.frames])
 
   const downstreamIds=useCallback((nodeId:string)=>{
     const found=new Set([nodeId]);let changed=true
@@ -361,7 +370,7 @@ function Editor() {
     dispatch({type:'graph',nodes,edges:page.edges.filter(item=>item.id!==edgeId)})
   },[readOnly,page])
   const toggleErrorBranch=()=>{if(!selectedEdge||readOnly)return;const condition=selectedEdge.data?.condition==='error'?'success':'error';dispatch({type:'graph',nodes:page.nodes,edges:page.edges.map(edge=>edge.id===selectedEdge.id?{...edge,data:{...edge.data,condition}}:edge)})}
-  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(undefined);setCosts({});setValidationIssues([]);setPhase('ready')}
+  const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(undefined);setPreparedScope(undefined);setCosts({});setValidationIssues([]);setPhase('ready')}
   const cloneCurrent=async()=>{if(!workflow)return;try{activateWorkflow(await cloneWorkflow(workflow,csrf))}catch{setPhase('error')}}
   const downloadTemplate=async()=>{if(!workflow)return;try{const payload=await exportWorkflow(workflow);const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=`workflow-${workflow.id}.json`;link.click();URL.revokeObjectURL(url)}catch{setPhase('error')}}
   const importTemplate=async(event:React.ChangeEvent<HTMLInputElement>)=>{const file=event.target.files?.[0];if(!file)return;try{activateWorkflow(await importWorkflow(JSON.parse(await file.text()),csrf))}catch{setPhase('error')}finally{event.target.value=''}}
@@ -517,6 +526,20 @@ function Editor() {
     return Object.keys(tool.params_schema).some(field=>connectionAllowed(sourceTool,insertEdge.sourceHandle!,tool,field))&&
       Boolean(primaryOutputHandle(tool)&&connectionAllowed(tool,primaryOutputHandle(tool)!,targetTool,insertEdge.targetHandle!))
   }):[]
+  const selectedRunScope:RunScope=runScope.startsWith('frame:')
+    ?{mode:'frame',frame_id:runScope.slice(6)}:runScope==='selection'
+    ?{mode:'selection',node_ids:selected}:runScope==='node'&&selectedNode
+    ?{mode:'node',node_id:selectedNode.id}:{mode:'full'}
+  const shownRunScope=run&&preparedScope?preparedScope:selectedRunScope
+  const shownSelection=shownRunScope.mode==='selection'?shownRunScope.node_ids??[]:[]
+  const scopeNodeCount=shownRunScope.mode==='full'?page.nodes.length:shownRunScope.mode==='frame'
+    ?page.frames.find(frame=>frame.id===shownRunScope.frame_id)?.node_ids.length??0
+    :shownRunScope.mode==='selection'?shownSelection.length:shownRunScope.node_id?1:0
+  const scopedNode=shownRunScope.mode==='node'?page.nodes.find(node=>node.id===shownRunScope.node_id):undefined
+  const scopeLabel=shownRunScope.mode==='full'?'Toàn workflow':shownRunScope.mode==='selection'
+    ?`${shownSelection.length} block đã chọn`:shownRunScope.mode==='node'&&scopedNode
+    ?uniqueNodeLabel(scopedNode,page.nodes,byName):`Frame · ${page.frames.find(frame=>frame.id===shownRunScope.frame_id)?.name??''}`
+  const terminalRun=Boolean(run&&['done','error','cancelled'].includes(run.status))
   const persistPreferences=(nextTheme:'light'|'dark',nextCatalog:'simple'|'advanced')=>{
     setTheme(nextTheme);setCatalogMode(nextCatalog)
     void savePreferences({theme:nextTheme,catalog_mode:nextCatalog,
@@ -534,46 +557,38 @@ function Editor() {
         <button title="Assistant" aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>AI</button>
         <button title="Phiên bản và chia sẻ" aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>↗</button>
         <button className="run-primary" aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
-      <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Lệnh Canvas"><header><strong>Kiểm tra & chạy</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
-        <button disabled={(!selected.length && !selectedEdges.length) || readOnly}
-          onClick={() => dispatch(selectedEdges.length ? { type: 'deleteEdges', ids: selectedEdges } : { type: 'delete', ids: selected })}>Xóa</button>
-        {selectedEdges.length===1&&<button disabled={readOnly} onClick={toggleErrorBranch}>Nhánh: {selectedEdge?.data?.condition==='error'?'Lỗi':'Thành công'}</button>}
-        <button disabled={readOnly} onClick={() => dispatch({ type: 'layout' })}>Tự xếp</button>
-        <button aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>Lớp</button>
-        <button aria-pressed={showGrid} onClick={()=>dispatch({type:'pageView',grid:!showGrid})}>Lưới</button>
-        <button aria-pressed={showConnections} onClick={()=>dispatch({type:'pageView',connections:!showConnections})}>Đường nối</button>
-        <button aria-pressed={showMinimap} onClick={()=>dispatch({type:'pageView',minimap:!showMinimap})}>Bản đồ</button>
-        <button disabled={readOnly || phase === 'saving'} onClick={async () => {
-          if (!workflow) return
-          if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current)
-          setPhase('saving')
-          try { const saved = await saveWorkflow({ ...workflow, canvas: state.document }, csrf)
-            const result = await validateWorkflow(saved, csrf)
-            setWorkflow(result); setCosts(Object.fromEntries(result.validation.step_costs.map((item: { step_id: string; maximum: number }) => [item.step_id, item.maximum])))
-            setValidationIssues(result.validation.issues); setPhase('saved')
-          } catch (error) { setPhase(error instanceof WorkflowConflictError ? 'conflict' : 'error') }
-        }}>Kiểm tra & báo giá</button>
-        <select aria-label="Phạm vi chạy" value={runScope} onChange={event=>setRunScope(event.target.value)}>
+      <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header>
+        {presentationMode==='legacy'&&<div className="legacy-run-tools"><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
+          <button disabled={(!selected.length && !selectedEdges.length) || readOnly}
+            onClick={() => dispatch(selectedEdges.length ? { type: 'deleteEdges', ids: selectedEdges } : { type: 'delete', ids: selected })}>Xóa</button>
+          {selectedEdges.length===1&&<button disabled={readOnly} onClick={toggleErrorBranch}>Nhánh: {selectedEdge?.data?.condition==='error'?'Lỗi':'Thành công'}</button>}
+          <button disabled={readOnly} onClick={() => dispatch({ type: 'layout' })}>Tự xếp</button>
+          <button aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>Lớp</button>
+          <button aria-pressed={showGrid} onClick={()=>dispatch({type:'pageView',grid:!showGrid})}>Lưới</button>
+          <button aria-pressed={showConnections} onClick={()=>dispatch({type:'pageView',connections:!showConnections})}>Đường nối</button>
+          <button aria-pressed={showMinimap} onClick={()=>dispatch({type:'pageView',minimap:!showMinimap})}>Bản đồ</button></div>}
+        <select aria-label="Phạm vi chạy" value={runScope} disabled={!!run} onChange={event=>{setPreparedScope(undefined);setRunScope(event.target.value)}}>
           <option value="full">Toàn workflow</option>
           <option value="selection" disabled={!selected.length}>Lựa chọn ({selected.length})</option>
           {selectedNode&&<option value="node">Node đang chọn</option>}
           {page.frames.map(frame=><option key={frame.id} value={`frame:${frame.id}`}>Frame · {frame.name}</option>)}
         </select>
-        <label className="cache-control"><input type="checkbox" checked={useCache} onChange={event=>setUseCache(event.target.checked)}/>Dùng cache</label>
-        <button disabled={readOnly || !workflow || !Object.keys(costs).length || !!run || (runScope==='selection'&&!selected.length)}
-          onClick={async () => { if (!workflow) return; const scope=runScope.startsWith('frame:')
-            ? {mode:'frame' as const,frame_id:runScope.slice(6)} : runScope==='selection'
-            ? {mode:'selection' as const,node_ids:selected} : runScope==='node'&&selectedNode
-            ? {mode:'node' as const,node_id:selectedNode.id} : {mode:'full' as const}
-            try { setRun(await createRun(workflow, csrf,scope,useCache));void refreshRunHistory() }
-            catch (error) { setPhase(error instanceof WorkflowConflictError ? 'conflict' : 'error') } }}>Tạo bản chạy</button>
+        <label className="cache-control"><input type="checkbox" disabled={!!run} checked={useCache} onChange={event=>setUseCache(event.target.checked)}/>Dùng cache</label>
+        <section className="run-scope-preview" aria-label="Phạm vi và chi phí"><small>PHẠM VI</small><strong>{scopeLabel}</strong><span>{scopeNodeCount} block · server sẽ chốt chi phí tối đa trước khi chạy</span></section>
+        {!run&&<button className="run-confirm" disabled={readOnly||!workflow||phase==='saving'||(selectedRunScope.mode==='selection'&&!selected.length)}
+          onClick={()=>void prepareScope(selectedRunScope)}>Kiểm tra chi phí</button>}
+        {!!validationIssues.length&&<section className="run-validation" role="alert"><strong>Cần sửa {validationIssues.length} mục</strong>{validationIssues.slice(0,4).map(issue=><span key={`${issue.step_id}-${issue.message}`}>{issue.message}</span>)}</section>}
         {run?.status === 'awaiting_approval' && <label className="schedule-control">Chạy lúc<input type="datetime-local" value={scheduledAt} min={new Date().toISOString().slice(0,16)} onChange={event=>setScheduledAt(event.target.value)}/></label>}
-        {run?.status === 'awaiting_approval' && <button onClick={async () => {
+        {run?.status === 'awaiting_approval' && <section className="run-quote" aria-label="Xác nhận chi phí"><span>Tối đa</span><strong>{run.estimated} credit</strong><small>Đã dùng trước xác nhận: {run.actual} credit</small></section>}
+        {run?.status === 'awaiting_approval' && <button className="run-confirm" disabled={run.actual!==0} onClick={async () => {
           try { setRunError(''); const when=scheduledAt?new Date(scheduledAt).toISOString():'';setRun(await approveRun(run, csrf,when));void refreshRunHistory() }
           catch (error) { setRunError(error instanceof Error ? error.message : 'Không thể phê duyệt.') }
-        }}>Phê duyệt {run.estimated} credit</button>}
+        }}>Xác nhận và chạy · {run.estimated} credit</button>}
+        {run?.status === 'awaiting_approval'&&<button onClick={async()=>{setRun(await cancelRun(run,csrf));void refreshRunHistory()}}>Hủy bản chạy</button>}
+        {run?.status === 'awaiting_approval'&&run.actual!==0&&<span className="run-error" role="alert">Bản chạy không an toàn: credit phải bằng 0 trước xác nhận.</span>}
         {run?.status === 'running' && <button onClick={async () => {setRun(await cancelRun(run, csrf));void refreshRunHistory()}}>Hủy chạy</button>}
-        {run && <span className={`run-state ${run.status}`} aria-live="polite">Run: {run.status} · thực tế {run.actual}</span>}
+        {terminalRun&&run&&<button onClick={()=>void runAgain(run,csrf).then(next=>{setRun(next);setRunError('');void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể chạy lại.'))}>Chạy lại theo cấu hình này</button>}
+        {run && <span className={`run-state ${run.status}`} aria-live="polite">{runStatusLabel(run.status)} · đã dùng {run.actual}/{run.estimated} credit · {run.plan.steps.length} bước</span>}
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
       <div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
@@ -700,8 +715,8 @@ function Editor() {
         {contextMenu.kind==='pane'?<><div className="context-tool-list">{customerPaletteTools(palette,catalogMode==='advanced').map(tool=><button key={tool.name} onClick={()=>{addTool(tool,contextMenu.flow);setContextMenu(null)}}><strong>{customerToolLabel(tool)}</strong><small>{categoryLabels[tool.category??'advanced']}</small></button>)}</div>
           <hr/><button onClick={()=>{dispatch({type:'pageView',connections:!showConnections});setContextMenu(null)}}>{showConnections?'Ẩn đường nối':'Hiện đường nối'}</button>
           <button onClick={()=>{dispatch({type:'layout'});setContextMenu(null)}}>Tự động sắp xếp node</button></>:
-          <>{contextMenu.nodeId&&<><button disabled={readOnly||!!run} onClick={()=>{void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Báo giá & chạy node</button>
-            <button disabled={readOnly||!!run} onClick={()=>{void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Chạy từ đây</button>
+          <>{contextMenu.nodeId&&<><button disabled={readOnly||!!run} onClick={()=>{setRunScope('node');void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Kiểm tra chi phí block này</button>
+            <button disabled={readOnly||!!run} onClick={()=>{setRunScope('selection');void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Kiểm tra từ block này</button>
             <button disabled={readOnly} onClick={()=>{duplicateNode(contextMenu.nodeId!);setContextMenu(null)}}>Sao chép node</button>
             {state.document.pages.filter(item=>item.id!==page.id).map(item=><button key={item.id} disabled={readOnly}
               onClick={()=>{dispatch({type:'nodeMovePage',id:contextMenu.nodeId!,pageId:item.id});setContextMenu(null)}}>Chuyển sang {item.name}</button>)}
@@ -788,7 +803,7 @@ function ContextComposer({node,tool,readOnly,presentationMode,onChange,onAdvance
         placeholder={name==='url'&&tool.name==='video.social_import'?'Dán link TikTok, YouTube Shorts hoặc Reels…':undefined}
         onChange={event=>setParam(name,rule.type==='int'?Number.parseInt(event.target.value):rule.type==='number'?Number(event.target.value):event.target.value)} /></label>
     })}</div>
-    <footer><span>{cost===undefined?'Báo giá được tính bởi server':`Tối đa ${cost} credit`}</span><button className="composer-run" disabled={readOnly} onClick={onRun}>✦ {cost===undefined?'Báo giá & chạy':`${cost} · Tiếp tục`}</button></footer>
+    <footer><span>{cost===undefined?'Chi phí do server xác nhận':`Tối đa ${cost} credit`}</span><button className="composer-run" disabled={readOnly} onClick={onRun}>✦ Kiểm tra chi phí</button></footer>
   </section>
 }
 

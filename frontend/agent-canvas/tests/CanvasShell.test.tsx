@@ -30,6 +30,9 @@ const palette = { version: 1, tools: [
 const workflow = { id: 'w1', name: 'Workflow mới', status: 'draft', revision: 1, estimated: 0,
   canvas: { version: 1, goal: '', budget_max_credit: 50, nodes: [], edges: [],
     viewport: { x: 0, y: 0, zoom: 1 } } }
+const validatedWorkflow={...workflow,revision:3,validation:{issues:[],step_costs:[],estimated_max_credit:7}}
+const awaitingRun={id:'r1',version:1,status:'awaiting_approval',plan:{steps:[{id:'n1'},{id:'n2'}]},
+  checkpoint:{},estimated:7,actual:0,quote_hash:'quote-test',decisions:[]}
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="agent-canvas-root" data-csrf-token="test-csrf"></div>'
@@ -40,6 +43,12 @@ beforeEach(() => {
     if (url.endsWith('/assets')) {const file=init?.body instanceof FormData?init.body.get('file') as File:null
       const name=file?.name||'owned.png';return new Response(JSON.stringify({key:`agent-assets/u/${name}`,kind:'image',
         name,size:123,content_type:'image/png',url:`/agent/api/assets/${name}`}),{status:200})}
+    if (url.endsWith('/agent/api/runs') && !init?.method) return new Response(JSON.stringify({items:[]}),{status:200})
+    if (url.endsWith('/validate')) return new Response(JSON.stringify(validatedWorkflow),{status:200})
+    if (url.endsWith('/workflows/w1/runs')&&init?.method==='POST') return new Response(JSON.stringify(awaitingRun),{status:201})
+    if (url.endsWith('/runs/r1/approve')) return new Response(JSON.stringify({...awaitingRun,version:2,status:'running'}),{status:200})
+    if (url.endsWith('/runs/r1/cancel')) return new Response(JSON.stringify({...awaitingRun,version:3,status:'cancelled'}),{status:200})
+    if (url.endsWith('/runs/r1/again')) return new Response(JSON.stringify({...awaitingRun,version:4}),{status:201})
     if (url.endsWith('/workflows') && !init?.method) return new Response(JSON.stringify({ items: [] }), { status: 200 })
     if (url.includes('/workflows/w1')) return new Response(JSON.stringify({ ...workflow, revision: 2 }), { status: 200 })
     return new Response(JSON.stringify(workflow), { status: 201 })
@@ -90,13 +99,15 @@ describe('CanvasShell', () => {
   it('opens layers and keyboard command palette with working display toggles', async () => {
     render(<CanvasShell />)
     await screen.findByRole('button',{name:'Thêm Văn bản'})
-    fireEvent.click(screen.getByRole('button',{name:'Lớp'}))
+    fireEvent.click(screen.getByRole('button',{name:'Mở danh sách lớp'}))
     expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
     expect(screen.getByRole('dialog',{name:'Bảng lệnh Canvas'})).toBeInTheDocument()
     fireEvent.change(screen.getByRole('textbox',{name:'Tìm lệnh'}),{target:{value:'lưới'}})
     fireEvent.click(screen.getByRole('button',{name:'Ẩn lưới'}))
-    expect(screen.getByRole('button',{name:'Lưới'})).toHaveAttribute('aria-pressed','false')
+    fireEvent.keyDown(window,{key:'k',ctrlKey:true})
+    fireEvent.change(screen.getByRole('textbox',{name:'Tìm lệnh'}),{target:{value:'lưới'}})
+    expect(screen.getByRole('button',{name:'Hiện lưới'})).toBeInTheDocument()
   })
 
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
@@ -149,10 +160,29 @@ describe('CanvasShell', () => {
     expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
     expect(screen.queryByText('app_slug')).not.toBeInTheDocument()
     fireEvent.contextMenu(node,{clientX:400,clientY:300})
-    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Chạy từ đây')
+    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Kiểm tra từ block này')
     fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
     fireEvent.contextMenu(document.querySelector('.react-flow__pane')!,{clientX:600,clientY:250})
     expect(screen.getByRole('complementary',{name:'Menu khoảng trống Canvas'})).toHaveTextContent('Tự động sắp xếp node')
+  })
+
+  it('keeps quote, approval, cancel and retry in one spend-safe run flow',async()=>{
+    render(<CanvasShell />)
+    await screen.findByRole('button',{name:'Mở công cụ'})
+    fireEvent.click(screen.getByRole('button',{name:'Chạy'}))
+    const drawer=screen.getByRole('navigation',{name:'Chạy workflow'})
+    expect(drawer).toHaveTextContent('Toàn workflow')
+    expect(within(drawer).queryByRole('button',{name:'Nhân bản'})).not.toBeInTheDocument()
+    fireEvent.click(within(drawer).getByRole('button',{name:'Kiểm tra chi phí'}))
+    const confirm=await within(drawer).findByRole('button',{name:'Xác nhận và chạy · 7 credit'})
+    expect(within(drawer).getByLabelText('Xác nhận chi phí')).toHaveTextContent('Đã dùng trước xác nhận: 0 credit')
+    expect(vi.mocked(globalThis.fetch).mock.calls.some(([url])=>String(url).endsWith('/approve'))).toBe(false)
+    fireEvent.click(confirm)
+    expect(await within(drawer).findByText(/Đang chạy · đã dùng 0\/7 credit · 2 bước/)).toBeInTheDocument()
+    fireEvent.click(within(drawer).getByRole('button',{name:'Hủy chạy'}))
+    expect(await within(drawer).findByText(/Đã hủy · đã dùng 0\/7 credit · 2 bước/)).toBeInTheDocument()
+    fireEvent.click(within(drawer).getByRole('button',{name:'Chạy lại theo cấu hình này'}))
+    expect(await within(drawer).findByRole('button',{name:'Xác nhận và chạy · 7 credit'})).toBeInTheDocument()
   })
 
   it('connects a compatible node through the contextual @ reference picker',async()=>{
