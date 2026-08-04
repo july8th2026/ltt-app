@@ -71,3 +71,16 @@ bằng chứng capability.
   đều 200; không có failed request mới.
 
 Full repository gate và secret scan được ghi ở `NHAT_KY.md` sau khi chạy thật.
+
+## 4. Production release
+
+H20.8 đã phát hành ngày 2026-08-04 từ commit `b02e2eb`:
+
+- Release archive 1.042 file, 7,1 MB; archive secret scan 0.
+- Backup PostgreSQL/data hoàn tất trước khi dừng dịch vụ; release trước được giữ
+  tại `C:\LTTPlatform\app.previous` để rollback.
+- Migration, loopback ready, Cloudflare ready, registry 13 app và log gate PASS.
+- Browser production có đăng nhập: desktop 1720×940 và mobile 390×844 tải đúng
+  title editor H20.8; console 0, fresh failed request 0; không chạy node/credit.
+- Một cảnh báo vận hành không chặn Agent: Google Sheet legacy chưa cấu hình
+  `sheet_id`/`google_credentials_path`.

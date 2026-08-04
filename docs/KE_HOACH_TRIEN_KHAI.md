@@ -1483,9 +1483,10 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
 - [x] H20.7a LTT-AQA/release candidate — 2026-08-04: audit DEEP mới chấm
   `Q83 · M80 · E82 · BETA`; frontend 27 pass, targeted 22 pass, full pytest
   2.063 pass/8 skip/23 subtest, npm audit 0, contract 12/12, secret scan 0.
-- [ ] H20.7b Production release — backup/update/health/authenticated browser smoke,
-  canary và rollback evidence. Chưa chạy vì phiên này chưa có lệnh deploy
-  production rõ ràng; bundle local không được gọi là đã deploy.
+- [x] H20.7b Production release — 2026-08-04: phát hành commit `b02e2eb` bằng
+  `update.ps1`; backup PostgreSQL/data xác minh được, giữ `app.previous`, migration
+  PASS, Web/Worker/Codex/Cloudflare running, loopback/edge ready. Authenticated
+  browser desktop/mobile tải bundle H20.8; console 0, fresh failed request 0.
 - [x] H20.8 Re-audit PlenX vòng 2 và interaction polish — 2026-08-04: thao tác sâu
   title/Text/source/input chip/output/shortcut; triển khai display label ngoài
   Plan, inline Text, chip tháo edge+param, direct shortcut, drag/drop và artifact
@@ -1493,5 +1494,4 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
   PUT 200. Asset Catalog/URL/batch/output lineage được tách thành vé có gate tại
   `docs/APP_AUDIT/agent/2026-08-04-deep-ux/08_REAUDIT_PLENX_GAPS.md`.
 
-Không đánh dấu deploy chỉ vì bundle local đã build; production phải có backup,
-update, health và authenticated browser evidence thật.
+Production H20.8 đã có đủ backup, update, health và authenticated browser evidence.

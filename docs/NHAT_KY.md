@@ -14,6 +14,51 @@
 
 ---
 
+## 2026-08-04 — Deploy production H20.8 Agent Canvas
+
+- **Mục tiêu:** đưa bản re-audit/interaction polish lên `app.lttstudios.com` để
+  người dùng trải nghiệm, có backup và rollback trước khi nghiệm thu.
+- **Hạng mục:** H20.7b hoàn thành.
+- **Trạng thái:** production deployed và healthy.
+
+### Đã làm
+
+- Đóng gói từ đúng commit `b02e2eb`, không lấy untracked `tmp/`/`test-results/`:
+  1.042 file, 7,1 MB, archive secret scan 0.
+- Chạy `deploy/windows/update.ps1`: `pg_dump` + archive data 3 entry thành công,
+  giữ release trước ở `C:\LTTPlatform\app.previous`, cập nhật dependency, giữ
+  WhisperX CUDA sidecar khỏe, Alembic upgrade head và restart dịch vụ.
+- `setup/4-nghiem-thu.ps1`: Web/Worker/cloudflared running; chỉ listen
+  `127.0.0.1:8100`; loopback/edge ready; `/docs` 404; secret ACL/config không BOM;
+  13 app registry OK; recent service log không có error.
+- Browser production bằng session đã đăng nhập, tab mới sạch: desktop 1720×940
+  và mobile 390×844 đều tải Canvas/bundle H20.8; API liên quan 200, console 0,
+  request 4xx/5xx mới 0. Không tạo/chạy node, không tiêu credit.
+
+### Kết quả thật
+
+| Gate | Kết quả |
+|---|---|
+| Backup | `ltt_data_20260804_151228.zip`, 3 entry, PASS |
+| Update/migration | PASS; health environment `production` |
+| Services | LTTStudioWeb/Worker/Codex + cloudflared running |
+| Loopback/Cloudflare | `ready` / `ready` |
+| Browser authenticated desktop/mobile | PASS; console 0; fresh failed request 0 |
+| Rollback target | `C:\LTTPlatform\app.previous` tồn tại |
+
+### Cảnh báo không chặn
+
+Google Sheet legacy chưa điền `sheet_id` và `google_credentials_path`; Agent
+Canvas không phụ thuộc hai cấu hình này. Không có rollback.
+
+### Cách lùi lại
+
+Chạy `C:\LTTPlatform\app\deploy\windows\rollback.ps1`; dữ liệu runtime không
+rollback tự động. Nếu phát hiện lỗi credit/provider thì đặt rollout Agent về
+`off` trước khi đổi release.
+
+---
+
 ## 2026-08-04 — H20.8 re-audit PlenX vòng 2 và Canvas interaction polish
 
 - **Mục tiêu:** thao tác sâu thêm trên PlenX, tìm control còn thiếu và chỉ đưa
