@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { activePage, cloneGraphSelection, connectionAllowed, editorReducer, emptyDocument, replaceNodeTool, scopeNodeIds, type EditorState, type PaletteTool } from '../src/editorState'
+import { activePage, cloneGraphSelection, connectionAllowed, connectionCreatesCycle, editorReducer, emptyDocument, replaceNodeTool, scopeNodeIds, type EditorState, type PaletteTool } from '../src/editorState'
 
 const tool = (name: string, input: string, output: string): PaletteTool => ({ name,
   description: '', app_slug: 'x', app_name: 'X', requires: [], verifiable: [],
   params_schema: { input: { type: input } }, returns: { output } })
 
 describe('editor reducer', () => {
+  it('rejects self-links and links that would close a graph cycle',()=>{
+    const edges=[{id:'a-b',source:'a',target:'b'},{id:'b-c',source:'b',target:'c'}]
+    expect(connectionCreatesCycle(edges,'c','a')).toBe(true)
+    expect(connectionCreatesCycle(edges,'b','b')).toBe(true)
+    expect(connectionCreatesCycle(edges,'a','c')).toBe(false)
+  })
   it('undoes, redoes and deletes nodes with their edges', () => {
     const document = emptyDocument()
     activePage(document).nodes = [

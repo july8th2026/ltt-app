@@ -1531,7 +1531,11 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   `CreativeToolNode` tách khỏi H20 legacy, node 300 px/một cổng `+`, bỏ CTA chạy
   trùng; composer tối đa bốn field và chiếm safe-area riêng. Browser
   1366/1720/1920: 4 node, overlap 0, overflow 0, console 0.
-- [ ] H21.4 P3 Connection grammar theo intent, unique destination, edge insert.
+- [x] H21.4 P3 Connection grammar theo intent, unique destination, edge insert
+  — 2026-08-04: destination dùng nhãn block duy nhất (`Văn bản 2` khi trùng),
+  chặn cycle trước khi ghi graph, reconnect nguyên tử, dây có mũi tên/màu theo
+  modality và midpoint `+` chèn block tương thích. Browser 1366/1720/1920:
+  5 node/2 edge, 2 midpoint CTA, overflow 0, console 0, API 200/201.
 - [ ] H21.5 P4 Run/quote/approval/cancel/retry thống nhất.
 - [ ] H21.6 P5 First-run/templates/assets-history/Assistant progressive.
 - [ ] H21.7 P6 Browser/regression/a11y/performance/recovery gate.

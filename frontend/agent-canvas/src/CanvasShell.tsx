@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Controls, MiniMap, Position,
+import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Controls, MarkerType, MiniMap, Position,
   ReactFlow, ReactFlowProvider, useReactFlow, type Connection, type EdgeChange,
   useStore, useUpdateNodeInternals, type NodeChange } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import './canvas.css'
-import { activePage, cloneGraphSelection, connectionAllowed, editorReducer, emptyDocument, nextNode,
+import { activePage, cloneGraphSelection, connectionAllowed, connectionCreatesCycle, editorReducer, emptyDocument, nextNode,
   scopeNodeIds, type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
 import { AnnotationNode, CreativeToolNode, FrameNode, ToolNode } from './ToolNode'
+import { CanvasEdgeView } from './CanvasEdgeView'
 import { fieldLabel, mediaKind, nodeModality, outputLabel, primaryFields } from './nodePresentation'
 import { CANVAS_PRESENTATION_VERSION, customerPaletteTools, customerToolLabel,
   destinationLabel, primaryOutputHandle } from './presentationAdapter'
@@ -17,6 +18,49 @@ import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, create
   type CanvasEdge, type CanvasNode, type Workflow, type WorkflowSnapshot } from './workflowApi'
 
 const nodeTypes = { tool: ToolNode, creativeTool: CreativeToolNode, frame: FrameNode, annotation: AnnotationNode }
+const edgeTypes = { creative: CanvasEdgeView }
+
+function removeEdgeFromGraph(nodes:CanvasNode[],edges:CanvasEdge[],edgeId:string){
+  const edge=edges.find(item=>item.id===edgeId);if(!edge)return {nodes,edges}
+  const cleaned=nodes.map(node=>{if(node.id!==edge.target||!edge.targetHandle)return node
+    const params={...((node.data.params??{}) as Record<string,unknown>)};const reference=`$${edge.source}.${edge.sourceHandle}`
+    if(params[edge.targetHandle]===reference)delete params[edge.targetHandle]
+    else if(Array.isArray(params[edge.targetHandle])){
+      const values=(params[edge.targetHandle] as unknown[]).filter(value=>value!==reference)
+      if(values.length)params[edge.targetHandle]=values;else delete params[edge.targetHandle]
+    }
+    return {...node,data:{...node.data,params}}
+  })
+  return {nodes:cleaned,edges:edges.filter(item=>item.id!==edgeId)}
+}
+
+function connectGraph(nodes:CanvasNode[],edges:CanvasEdge[],connection:Connection,
+                      byName:Map<string,PaletteTool>){
+  const sourceNode=nodes.find(node=>node.id===connection.source);const targetNode=nodes.find(node=>node.id===connection.target)
+  const sourceTool=byName.get(String(sourceNode?.data.tool));const targetTool=byName.get(String(targetNode?.data.tool))
+  if(!connectionAllowed(sourceTool,connection.sourceHandle,targetTool,connection.targetHandle)||
+      connectionCreatesCycle(edges,connection.source!,connection.target!))return undefined
+  const sourceHandle=connection.sourceHandle!;const targetHandle=connection.targetHandle!
+  const output=sourceTool!.returns[sourceHandle];const input=targetTool!.params_schema[targetHandle]
+  const variadic=Boolean(input.type.endsWith('[]')&&output===input.type.slice(0,-2))
+  const sameInput=edges.filter(edge=>edge.target===connection.target&&edge.targetHandle===targetHandle)
+  const retained=variadic?sameInput.filter(edge=>{
+    const tool=byName.get(String(nodes.find(node=>node.id===edge.source)?.data.tool))
+    return tool?.returns[edge.sourceHandle??'']===output&&!(edge.source===connection.source&&edge.sourceHandle===sourceHandle)
+  }):[]
+  const available=edges.filter(edge=>!(edge.target===connection.target&&edge.targetHandle===targetHandle)).concat(retained)
+  const nextEdges=addEdge({...connection,id:`${connection.source}-${sourceHandle}-${connection.target}-${targetHandle}`},available) as CanvasEdge[]
+  const references=[...retained.map(edge=>`$${edge.source}.${edge.sourceHandle}`),`$${connection.source}.${sourceHandle}`]
+  const nextNodes=nodes.map(node=>node.id===connection.target?{...node,data:{...node.data,params:{...(node.data.params as object??{}),
+    [targetHandle]:variadic?[...new Set(references)]:`$${connection.source}.${sourceHandle}`}}}:node)
+  return {nodes:nextNodes,edges:nextEdges}
+}
+
+function uniqueNodeLabel(node:CanvasNode,nodes:CanvasNode[],byName:Map<string,PaletteTool>){
+  const base=node.label?.trim()||customerToolLabel(byName.get(String(node.data.tool)))
+  const peers=nodes.filter(item=>(item.label?.trim()||customerToolLabel(byName.get(String(item.data.tool))))===base)
+  return peers.length>1?`${base} ${peers.findIndex(item=>item.id===node.id)+1}`:base
+}
 
 function Editor() {
   const [state, dispatch] = useReducer(editorReducer, { document: emptyDocument(), past: [], future: [] })
@@ -35,6 +79,7 @@ function Editor() {
   const [catalogMode,setCatalogMode]=useState<'simple'|'advanced'>('advanced')
   const [quickConnect,setQuickConnect]=useState<{sourceId:string;sourceHandle:string}|null>(null)
   const [quickCreate,setQuickCreate]=useState<{sourceId:string;sourceHandle:string;x:number;y:number;flow:{x:number;y:number}}|null>(null)
+  const [edgeInsert,setEdgeInsert]=useState<{edgeId:string;x:number;y:number;flow:{x:number;y:number}}|null>(null)
   const [contextMenu,setContextMenu]=useState<{kind:'pane'|'node';x:number;y:number;flow:{x:number;y:number};nodeId?:string}|null>(null)
   const [showLayers,setShowLayers]=useState(false)
   const [commandOpen,setCommandOpen]=useState(false)
@@ -81,14 +126,14 @@ function Editor() {
       if(!sourceTool||!targetTool)return []
       for(const sourceHandle of Object.keys(sourceTool.returns))for(const targetHandle of Object.keys(targetTool.params_schema)){
         if(connectionAllowed(sourceTool,sourceHandle,targetTool,targetHandle))return [{source:node.id,sourceHandle,targetHandle,
-          label:sourceTool.label??sourceTool.name,detail:`${outputLabel(sourceHandle,sourceTool.returns[sourceHandle])} → ${fieldLabel(targetHandle)}`}]
+          label:uniqueNodeLabel(node,page.nodes,byName),detail:`${outputLabel(sourceHandle,sourceTool.returns[sourceHandle])} → ${fieldLabel(targetHandle)}`}]
       }
       return []
     })
   },[selectedNode,page.nodes,byName])
   const connectedInputs=useMemo(()=>selectedNode?page.edges.filter(edge=>edge.target===selectedNode.id).map(edge=>{
     const source=page.nodes.find(node=>node.id===edge.source);const sourceTool=byName.get(String(source?.data.tool))
-    return {edgeId:edge.id,label:String(source?.label||sourceTool?.label||sourceTool?.name||edge.source),
+    return {edgeId:edge.id,label:source?uniqueNodeLabel(source,page.nodes,byName):edge.source,
       detail:`${outputLabel(edge.sourceHandle??'',String(sourceTool?.returns[edge.sourceHandle??'']??''))} → ${fieldLabel(edge.targetHandle??'đầu vào')}`}
   }):[],[selectedNode,page.edges,page.nodes,byName])
   const refreshRunHistory=useCallback(()=>loadRunHistory().then(setRunHistory).catch(()=>setRunHistory([])),[])
@@ -174,28 +219,40 @@ function Editor() {
   }, [readOnly, page,presentationMode])
 
   const onConnect = useCallback((connection: Connection) => {
-    const sourceNode = page.nodes.find(node => node.id === connection.source)
-    const targetNode = page.nodes.find(node => node.id === connection.target)
-    const sourceTool = byName.get(String(sourceNode?.data.tool)); const targetTool = byName.get(String(targetNode?.data.tool))
-    if (!connectionAllowed(sourceTool, connection.sourceHandle, targetTool, connection.targetHandle)) return
-    const sourceHandle=connection.sourceHandle!;const targetHandle=connection.targetHandle!
-    const output=sourceTool!.returns[sourceHandle];const input=targetTool!.params_schema[targetHandle]
-    const variadic=Boolean(input.type.endsWith('[]')&&output===input.type.slice(0,-2))
-    const sameInput=page.edges.filter(edge=>edge.target===connection.target&&edge.targetHandle===targetHandle)
-    const retained=variadic?sameInput.filter(edge=>{
-      const tool=byName.get(String(page.nodes.find(node=>node.id===edge.source)?.data.tool))
-      return tool?.returns[edge.sourceHandle??'']===output&&
-        !(edge.source===connection.source&&edge.sourceHandle===sourceHandle)
-    }):[]
-    const available=page.edges.filter(edge=>!(edge.target===connection.target&&edge.targetHandle===targetHandle))
-      .concat(retained)
-    const edges = addEdge({ ...connection, id: `${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}` }, available) as CanvasEdge[]
-    const references=[...retained.map(edge=>`$${edge.source}.${edge.sourceHandle}`),`$${connection.source}.${sourceHandle}`]
-    const nodes = page.nodes.map(node => node.id === connection.target
-      ? { ...node, data: { ...node.data, params: { ...(node.data.params as object ?? {}),
-        [targetHandle]: variadic?[...new Set(references)]:`$${connection.source}.${sourceHandle}` } } } : node)
-    dispatch({ type: 'graph', nodes, edges })
+    const next=connectGraph(page.nodes,page.edges,connection,byName);if(next)dispatch({type:'graph',...next})
   }, [byName, page])
+
+  const onReconnectEdge=useCallback((oldEdge:CanvasEdge,connection:Connection)=>{
+    if(readOnly)return
+    const base=removeEdgeFromGraph(page.nodes,page.edges,oldEdge.id)
+    const next=connectGraph(base.nodes,base.edges,connection,byName);if(next)dispatch({type:'graph',...next})
+  },[readOnly,page,byName])
+
+  const insertToolOnEdge=useCallback((tool:PaletteTool,edgeId:string,position:{x:number;y:number})=>{
+    if(readOnly)return
+    const old=page.edges.find(edge=>edge.id===edgeId);if(!old||!old.sourceHandle||!old.targetHandle)return
+    const sourceNode=page.nodes.find(node=>node.id===old.source);const targetNode=page.nodes.find(node=>node.id===old.target)
+    const sourceTool=byName.get(String(sourceNode?.data.tool));const targetTool=byName.get(String(targetNode?.data.tool))
+    const inputHandle=Object.keys(tool.params_schema).find(field=>connectionAllowed(sourceTool,old.sourceHandle!,tool,field))
+    const candidateOutput=primaryOutputHandle(tool)
+    const outputHandle=candidateOutput&&connectionAllowed(tool,candidateOutput,targetTool,old.targetHandle!)?candidateOutput:undefined
+    if(!inputHandle||!outputHandle)return
+    const node=nextNode(tool,page.nodes.length);node.position=position
+    const inputRule=tool.params_schema[inputHandle];const sourceKind=sourceTool?.returns[old.sourceHandle]
+    node.data.params={...((node.data.params??{}) as Record<string,unknown>),[inputHandle]:
+      inputRule.type.endsWith('[]')&&sourceKind===inputRule.type.slice(0,-2)?[`$${old.source}.${old.sourceHandle}`]:`$${old.source}.${old.sourceHandle}`}
+    const nodes=page.nodes.map(item=>{if(item.id!==old.target)return item
+      const params={...((item.data.params??{}) as Record<string,unknown>)};const before=`$${old.source}.${old.sourceHandle}`;const after=`$${node.id}.${outputHandle}`
+      if(params[old.targetHandle!]===before)params[old.targetHandle!]=after
+      else if(Array.isArray(params[old.targetHandle!]))params[old.targetHandle!]=(params[old.targetHandle!] as unknown[]).map(value=>value===before?after:value)
+      return {...item,data:{...item.data,params}}
+    })
+    const edges=page.edges.filter(edge=>edge.id!==old.id).concat([
+      {id:`${old.source}-${old.sourceHandle}-${node.id}-${inputHandle}`,source:old.source,sourceHandle:old.sourceHandle,target:node.id,targetHandle:inputHandle},
+      {id:`${node.id}-${outputHandle}-${old.target}-${old.targetHandle}`,source:node.id,sourceHandle:outputHandle,target:old.target,targetHandle:old.targetHandle},
+    ])
+    dispatch({type:'graph',nodes:[...nodes,node],edges});dispatch({type:'select',id:node.id});setSelected([node.id]);setEdgeInsert(null)
+  },[readOnly,page,byName])
 
   const addConnectedTool=useCallback((tool:PaletteTool,sourceId:string,sourceHandle:string,position:{x:number;y:number})=>{
     if(readOnly)return
@@ -406,9 +463,16 @@ function Editor() {
   }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,presentationMode,prepareScope,uploadToNode,generateInNode,duplicateNode])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
-    return { ...edge, selected: selectedEdges.includes(edge.id), label: isError ? 'Lỗi' : undefined,
-      animated: isError, className: isError ? 'error-branch' : undefined }
-  }), [page.edges, selectedEdges, showConnections])
+    const sourceTool=byName.get(String(page.nodes.find(node=>node.id===edge.source)?.data.tool))
+    const kind=String(sourceTool?.returns[edge.sourceHandle??'']??'data').replace('[]','')
+    const running=run?.status==='running'&&run.checkpoint[edge.source]?.status==='done'&&run.checkpoint[edge.target]?.status!=='done'
+    return { ...edge,type:presentationMode==='creative'?'creative':undefined,
+      selected:selectedEdges.includes(edge.id),label:isError?'Lỗi':undefined,
+      markerEnd:{type:MarkerType.ArrowClosed,width:16,height:16},animated:isError||running,
+      className:`edge-${kind}${isError?' error-branch':''}${running?' is-running':''}`,
+      data:{...edge.data,modality:kind,running,onInsert:({x,y}:{x:number;y:number})=>setEdgeInsert({edgeId:edge.id,x,y,
+        flow:reactFlow.screenToFlowPosition({x,y})})} }
+  }), [page.edges,page.nodes,selectedEdges,showConnections,byName,run,presentationMode,reactFlow])
   if (phase === 'loading') return <section className="canvas-state" aria-live="polite">Đang tải workflow…</section>
   if (phase === 'error' && !workflow) return <section className="canvas-state error" role="alert">Không tải được Canvas. <button onClick={() => location.reload()}>Thử lại</button></section>
   const query=paletteQuery.trim().toLocaleLowerCase('vi')
@@ -436,14 +500,22 @@ function Editor() {
     if(target.id===quickConnect.sourceId)return []
     const source=page.nodes.find(node=>node.id===quickConnect.sourceId)
     const sourceTool=byName.get(String(source?.data.tool));const targetTool=byName.get(String(target.data.tool))
+    if(connectionCreatesCycle(page.edges,quickConnect.sourceId,target.id))return []
     const targetHandle=Object.keys(targetTool?.params_schema??{}).find(field=>
       connectionAllowed(sourceTool,quickConnect.sourceHandle,targetTool,field))
     return targetHandle?[{targetId:target.id,targetHandle,
-      label:destinationLabel(sourceTool,quickConnect.sourceHandle,targetTool,target.label)}]:[]
+      label:destinationLabel(sourceTool,quickConnect.sourceHandle,targetTool,uniqueNodeLabel(target,page.nodes,byName))}]:[]
   }):[]
   const quickCreateOptions=quickCreate?customerPaletteTools(palette,true).filter(tool=>{
     const source=page.nodes.find(node=>node.id===quickCreate.sourceId);const sourceTool=byName.get(String(source?.data.tool))
     return Object.keys(tool.params_schema).some(field=>connectionAllowed(sourceTool,quickCreate.sourceHandle,tool,field))
+  }):[]
+  const insertEdge=edgeInsert?page.edges.find(edge=>edge.id===edgeInsert.edgeId):undefined
+  const insertOptions=insertEdge&&insertEdge.sourceHandle&&insertEdge.targetHandle?customerPaletteTools(palette,true).filter(tool=>{
+    const sourceTool=byName.get(String(page.nodes.find(node=>node.id===insertEdge.source)?.data.tool))
+    const targetTool=byName.get(String(page.nodes.find(node=>node.id===insertEdge.target)?.data.tool))
+    return Object.keys(tool.params_schema).some(field=>connectionAllowed(sourceTool,insertEdge.sourceHandle!,tool,field))&&
+      Boolean(primaryOutputHandle(tool)&&connectionAllowed(tool,primaryOutputHandle(tool)!,targetTool,insertEdge.targetHandle!))
   }):[]
   const persistPreferences=(nextTheme:'light'|'dark',nextCatalog:'simple'|'advanced')=>{
     setTheme(nextTheme);setCatalogMode(nextCatalog)
@@ -565,12 +637,12 @@ function Editor() {
           event.preventDefault();setQuickCreate(null);const screen={x:event.clientX,y:event.clientY}
           setContextMenu({kind:'pane',x:screen.x,y:screen.y,flow:reactFlow.screenToFlowPosition(screen)})}}
         onDrop={event => { const tool = byName.get(event.dataTransfer.getData('application/ltt-tool')); if (tool) addTool(tool, reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })) }}>
-        <ReactFlow key={page.id} nodes={displayNodes as CanvasNode[]} edges={displayEdges} nodeTypes={nodeTypes}
+        <ReactFlow key={page.id} nodes={displayNodes as CanvasNode[]} edges={displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
           onNodesChange={(changes: NodeChange[]) => { const persisted = changes.filter(change => ['position', 'add', 'remove', 'replace'].includes(change.type));
             if (persisted.length) dispatch({ type: persisted.every(change => change.type === 'position') ? 'sync' : 'graph', nodes: applyNodeChanges(persisted, page.nodes) as CanvasNode[], edges: page.edges }) }}
           onEdgesChange={(changes: EdgeChange[]) => { const persisted = changes.filter(change => ['add', 'remove', 'replace'].includes(change.type));
             if (persisted.length) dispatch({ type: 'graph', nodes: page.nodes, edges: applyEdgeChanges(persisted, page.edges) as CanvasEdge[] }) }}
-          onConnect={onConnect} onConnectEnd={(event,connectionState)=>{
+          onConnect={onConnect} onReconnect={onReconnectEdge} edgesReconnectable={!readOnly} onConnectEnd={(event,connectionState)=>{
             if(connectionState.isValid||connectionState.toNode||!connectionState.fromNode||connectionState.fromHandle?.type!=='source')return
             const point='changedTouches' in event&&event.changedTouches.length?event.changedTouches[0]:event as MouseEvent
             const screen={x:point.clientX,y:point.clientY};setContextMenu(null)
@@ -602,7 +674,7 @@ function Editor() {
         {showLayers&&<aside className="layers-drawer" aria-label="Danh sách lớp"><header><strong>Lớp · {page.name}</strong>
           <button aria-label="Đóng danh sách lớp" onClick={()=>setShowLayers(false)}>×</button></header>
           <ul>{page.frames.map(frame=><li key={frame.id}><span>FRAME</span>{frame.name}</li>)}
-            {page.nodes.map(node=>{const tool=byName.get(String(node.data.tool));return <li key={node.id}><button onClick={()=>dispatch({type:'select',id:node.id})}><span>KHỐI</span>{node.label||customerToolLabel(tool)}</button></li>})}
+            {page.nodes.map(node=><li key={node.id}><button onClick={()=>dispatch({type:'select',id:node.id})}><span>KHỐI</span>{uniqueNodeLabel(node,page.nodes,byName)}</button></li>)}
             {page.notes.map(note=><li key={note.id}><span>NOTE</span>{note.text}</li>)}
             {page.comments.map(comment=><li key={comment.id}><span>COMMENT</span>{comment.text}</li>)}</ul></aside>}
       </main>
@@ -614,6 +686,13 @@ function Editor() {
       {quickCreate&&<aside className="quick-create-picker" aria-label="Tạo node đích tương thích" style={{left:Math.min(quickCreate.x,window.innerWidth-320),top:Math.min(quickCreate.y,window.innerHeight-420)}}>
         <header><div><small>KẾT NỐI NHANH</small><strong>Chọn node đích</strong></div><button aria-label="Đóng tạo node nhanh" onClick={()=>setQuickCreate(null)}>×</button></header>
         {quickCreateOptions.length?<div>{quickCreateOptions.map(tool=>{const source=page.nodes.find(node=>node.id===quickCreate.sourceId);const sourceTool=byName.get(String(source?.data.tool));return <button key={tool.name} onClick={()=>addConnectedTool(tool,quickCreate.sourceId,quickCreate.sourceHandle,quickCreate.flow)}><strong>{destinationLabel(sourceTool,quickCreate.sourceHandle,tool)}</strong><small>{tool.description}</small></button>})}</div>:<p>Không có node tương thích với đầu ra này.</p>}
+      </aside>}
+      {edgeInsert&&<aside className="quick-create-picker edge-insert-picker" aria-label="Chèn bước vào kết nối"
+        style={{left:Math.min(edgeInsert.x,window.innerWidth-320),top:Math.min(edgeInsert.y,window.innerHeight-420)}}>
+        <header><div><small>CHÈN BƯỚC</small><strong>Chọn hành động tương thích</strong></div><button aria-label="Đóng chèn bước" onClick={()=>setEdgeInsert(null)}>×</button></header>
+        {insertOptions.length?<div>{insertOptions.map(tool=><button key={tool.name}
+          onClick={()=>insertToolOnEdge(tool,edgeInsert.edgeId,edgeInsert.flow)}><strong>{customerToolLabel(tool)}</strong><small>{tool.description}</small></button>)}</div>:
+          <p>Không có bước trung gian tương thích với kết nối này.</p>}
       </aside>}
       {contextMenu&&<aside className={`canvas-context-menu ${contextMenu.kind}`} aria-label={contextMenu.kind==='pane'?'Menu khoảng trống Canvas':'Menu thao tác node'}
         style={{left:Math.min(contextMenu.x,window.innerWidth-310),top:Math.min(contextMenu.y,window.innerHeight-520)}}>

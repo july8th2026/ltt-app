@@ -166,11 +166,14 @@ describe('CanvasShell', () => {
     fireEvent.click(transform)
     expect(within(transform).queryByLabelText('Tải lên')).not.toBeInTheDocument()
     const picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'})
-    expect(picker).toHaveTextContent('@Tạo hình ảnh · Hình ảnh → Ảnh đầu vào')
-    const option=screen.getByRole('option',{name:/@Tạo hình ảnh/}) as HTMLOptionElement
+    expect(picker).toHaveTextContent('@Hình ảnh · Hình ảnh → Ảnh đầu vào')
+    const option=screen.getByRole('option',{name:/@Hình ảnh/}) as HTMLOptionElement
     fireEvent.change(picker,{target:{value:option.value}})
-    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('@Tạo hình ảnh')
-    fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Tạo hình ảnh'}))
+    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('@Hình ảnh')
+    fireEvent.click(screen.getByRole('button',{name:'Chèn bước vào kết nối'}))
+    expect(screen.getByRole('complementary',{name:'Chèn bước vào kết nối'})).toHaveTextContent('Chọn hành động tương thích')
+    fireEvent.click(screen.getByRole('button',{name:'Đóng chèn bước'}))
+    fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Hình ảnh'}))
     expect(screen.queryByLabelText('Đầu vào đã kết nối')).not.toBeInTheDocument()
     await waitFor(()=>expect(vi.mocked(globalThis.fetch).mock.calls.some(([,init])=>{
       if(init?.method!=='PUT'||typeof init.body!=='string')return false
@@ -194,10 +197,11 @@ describe('CanvasShell', () => {
     const second=[...picker.options].find(option=>option.value&&option.value!==first.value)!
     fireEvent.change(picker,{target:{value:second.value}})
     expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('Video → Video đầu vào')
-    expect(screen.getAllByRole('button',{name:'Tháo kết nối Tạo video'})).toHaveLength(2)
+    expect(screen.getByRole('button',{name:'Tháo kết nối Video 1'})).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:'Tháo kết nối Video 2'})).toBeInTheDocument()
     expect(screen.getAllByText(/3 node · 2 kết nối/).length).toBeGreaterThan(0)
-    fireEvent.click(screen.getAllByRole('button',{name:'Tháo kết nối Tạo video'})[0])
-    expect(screen.getAllByRole('button',{name:'Tháo kết nối Tạo video'})).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Video 1'}))
+    expect(screen.queryByRole('button',{name:'Tháo kết nối Video 1'})).not.toBeInTheDocument()
     expect(screen.getAllByText(/3 node · 1 kết nối/).length).toBeGreaterThan(0)
   })
 

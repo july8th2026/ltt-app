@@ -8,7 +8,8 @@ export type CanvasNode = {
 
 export type CanvasEdge = { id: string; source: string; target: string;
   sourceHandle?: string | null; targetHandle?: string | null;
-  data?: { condition?: 'success'|'error' } }
+  data?: { condition?: 'success'|'error'; modality?:string; running?:boolean;
+    onInsert?:(client:{x:number;y:number})=>void } }
 
 export type CanvasFrame = { id: string; name: string; node_ids: string[]; color?: string }
 export type CanvasAnnotation = { id: string; text: string; x?: number; y?: number }

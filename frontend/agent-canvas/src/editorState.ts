@@ -300,6 +300,15 @@ export function connectionAllowed(source: PaletteTool | undefined, sourceHandle:
     (expected.endsWith('[]') && output === expected.slice(0, -2))))
 }
 
+export function connectionCreatesCycle(edges:CanvasEdge[],sourceId:string,targetId:string){
+  if(sourceId===targetId)return true
+  const reachable=new Set([targetId]);let changed=true
+  while(changed){changed=false;for(const edge of edges)if(reachable.has(edge.source)&&!reachable.has(edge.target)){
+    reachable.add(edge.target);changed=true
+  }}
+  return reachable.has(sourceId)
+}
+
 export function scopeNodeIds(nodes:CanvasNode[],edges:CanvasEdge[],targets:string[]){
   const available=new Set(nodes.map(node=>node.id))
   const included=new Set(targets.filter(id=>available.has(id)))

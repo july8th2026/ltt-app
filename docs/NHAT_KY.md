@@ -14,6 +14,54 @@
 
 ---
 
+## 2026-08-04 — H21.4 Connection grammar theo intent
+
+- **Mục tiêu:** biến đường nối từ chi tiết kỹ thuật khó hiểu thành hành vi theo
+  ý định, đồng thời ngăn graph sai và cho phép chèn bước ngay trên dây.
+- **Hạng mục:** H21.4 hoàn thành; H21.5 là bước kế tiếp.
+- **Trạng thái:** source/build/local browser PASS; chưa deploy production.
+
+### Đã làm
+
+- Đích nối nhanh hiển thị intent + nhãn block duy nhất; block trùng loại được
+  đánh số ổn định như `Văn bản 2`, không lộ tên field/backend.
+- Chặn self-loop/cycle trước khi thay document; reconnect xóa tham chiếu cũ và
+  tạo tham chiếu mới trong cùng một lần cập nhật graph.
+- Dây có mũi tên và màu theo text/image/video/audio; trạng thái chạy dùng nét
+  đứt. Midpoint `+` chỉ liệt kê block có primary output tương thích và chèn node
+  giữa source/target bằng một cập nhật nguyên tử.
+- Browser thực tế đã chèn Văn bản giữa một dây: 4→5 node và 1→2 dây; reload giữ
+  đúng document. Không approve run và không gọi provider tốn credit.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` | 44 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 141,22 kB |
+| Playwright 1366/1720/1920 | 5 node; 2 edge; 2 midpoint CTA; overflow 0 |
+| Playwright connection menu | đích `Văn bản 2` duy nhất; edge có arrowclosed + `edge-text` |
+| Playwright console/network | console error 0; API liên quan 200/201 |
+
+### Quyết định mới
+
+Không có; thực thi Q67 và contract H21 đã khóa.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` và restart Web; document/runtime
+không đổi schema.
+
+### Còn tồn đọng
+
+- H21.5 cần hợp nhất preflight → quote → approve → cancel/retry trong một luồng.
+- H21.6–H21.9 chưa triển khai; chưa deploy production.
+
+### Việc tiếp theo
+
+1. H21.5 rút gọn run drawer và thống nhất CTA theo phạm vi chạy.
+2. Xác minh actual credit bằng 0 trước confirm và không gọi provider trước approve.
+
 ## 2026-08-04 — H21.3 Creative node shell và composer safe-area
 
 - **Mục tiêu:** bỏ box H20 quá lớn/CTA trùng và chặn palette/composer/node đè

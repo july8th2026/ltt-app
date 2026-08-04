@@ -212,6 +212,14 @@ body.agent-canvas-immersive .theme-light .canvas-toolbar { background:#ffffffee;
 .canvas-shell[data-presentation=creative] .context-fields textarea { min-height:54px; max-height:70px; }
 .canvas-shell[data-presentation=creative] .context-composer .composer-reference { margin-top:6px; }
 .canvas-shell[data-presentation=creative] .composer-input-chips { max-height:34px; overflow:auto; }
+.canvas-shell[data-presentation=creative] .react-flow__edge.edge-text .react-flow__edge-path { stroke:#a78bfa; }
+.canvas-shell[data-presentation=creative] .react-flow__edge.edge-image .react-flow__edge-path { stroke:#4fd1c5; }
+.canvas-shell[data-presentation=creative] .react-flow__edge.edge-video .react-flow__edge-path { stroke:#60a5fa; }
+.canvas-shell[data-presentation=creative] .react-flow__edge.edge-audio .react-flow__edge-path { stroke:#f59e0b; }
+.canvas-shell[data-presentation=creative] .react-flow__edge.is-running .react-flow__edge-path { stroke-width:3; stroke-dasharray:8 5; }
+.edge-insert { position:absolute; z-index:4; width:25px; min-width:25px!important; height:25px; min-height:25px!important; display:grid; place-items:center; padding:0; border:1px solid var(--border-strong); border-radius:50%; background:var(--surface-raised); color:var(--text-secondary); font-size:15px; opacity:.35; pointer-events:all; transition:.15s ease; }
+.edge-insert:hover,.edge-insert:focus-visible,.edge-insert.selected { border-color:var(--brand-primary); color:#fff; opacity:1; transform-origin:center; }
+.edge-insert-picker { z-index:75; }
 body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-body.has-composer .canvas-stage { bottom:219px; }
 .canvas-shell[data-presentation=creative] .canvas-body.has-composer .page-dock { bottom:226px; }
 @media (max-width:640px) { .canvas-shell[data-presentation=creative] .creative-node { width:260px; min-width:260px; }
