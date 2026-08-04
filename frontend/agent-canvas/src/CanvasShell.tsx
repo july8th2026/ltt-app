@@ -8,7 +8,7 @@ import { activePage, connectionAllowed, editorReducer, emptyDocument, nextNode,
   scopeNodeIds, type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
 import { AnnotationNode, FrameNode, ToolNode } from './ToolNode'
-import { fieldLabel, mediaKind, outputLabel, primaryFields } from './nodePresentation'
+import { fieldLabel, mediaKind, nodeModality, outputLabel, primaryFields } from './nodePresentation'
 import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, createShare, exportWorkflow, importWorkflow,
   loadOrCreateWorkflow, loadPalette, loadPreferences, loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot, savePreferences, saveWorkflow,
   previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, uploadAsset, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
@@ -82,6 +82,11 @@ function Editor() {
       return []
     })
   },[selectedNode,page.nodes,byName])
+  const connectedInputs=useMemo(()=>selectedNode?page.edges.filter(edge=>edge.target===selectedNode.id).map(edge=>{
+    const source=page.nodes.find(node=>node.id===edge.source);const sourceTool=byName.get(String(source?.data.tool))
+    return {edgeId:edge.id,label:String(source?.label||sourceTool?.label||sourceTool?.name||edge.source),
+      detail:`${outputLabel(edge.sourceHandle??'',String(sourceTool?.returns[edge.sourceHandle??'']??''))} → ${fieldLabel(edge.targetHandle??'đầu vào')}`}
+  }):[],[selectedNode,page.edges,page.nodes,byName])
   const refreshRunHistory=useCallback(()=>loadRunHistory().then(setRunHistory).catch(()=>setRunHistory([])),[])
 
   useEffect(()=>{
@@ -235,6 +240,16 @@ function Editor() {
       position: { x: node.position.x + 32, y: node.position.y + 32 } }))
     if (clones.length) dispatch({ type: 'graph', nodes: [...page.nodes, ...clones], edges: page.edges })
   }, [readOnly, selected, page])
+  const disconnectInput=useCallback((edgeId:string)=>{
+    if(readOnly)return
+    const edge=page.edges.find(item=>item.id===edgeId);if(!edge)return
+    const nodes=page.nodes.map(node=>{if(node.id!==edge.target||!edge.targetHandle)return node
+      const params={...((node.data.params??{}) as Record<string,unknown>)}
+      if(params[edge.targetHandle]===`$${edge.source}.${edge.sourceHandle}`)delete params[edge.targetHandle]
+      return {...node,data:{...node.data,params}}
+    })
+    dispatch({type:'graph',nodes,edges:page.edges.filter(item=>item.id!==edgeId)})
+  },[readOnly,page])
   const toggleErrorBranch=()=>{if(!selectedEdge||readOnly)return;const condition=selectedEdge.data?.condition==='error'?'success':'error';dispatch({type:'graph',nodes:page.nodes,edges:page.edges.map(edge=>edge.id===selectedEdge.id?{...edge,data:{...edge.data,condition}}:edge)})}
   const activateWorkflow=(next:Workflow)=>{setWorkflow(next);dispatch({type:'replace',document:next.canvas});setRun(undefined);setCosts({});setValidationIssues([]);setPhase('ready')}
   const cloneCurrent=async()=>{if(!workflow)return;try{activateWorkflow(await cloneWorkflow(workflow,csrf))}catch{setPhase('error')}}
@@ -252,6 +267,8 @@ function Editor() {
   }, [])
 
   const onKeyDown = (event: React.KeyboardEvent) => {
+    const target=event.target as HTMLElement
+    if(target.closest('input,textarea,select,[contenteditable="true"]'))return
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault(); setCommandOpen(true); return
     }
@@ -261,6 +278,23 @@ function Editor() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicate(); return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') copied.current = page.nodes.filter(node => selected.includes(node.id)).map(node => structuredClone(node))
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') { event.preventDefault(); duplicate() }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault();setSelected(page.nodes.map(node=>node.id));setSelectedEdges([]);dispatch({type:'select'});return
+    }
+    if(!event.ctrlKey&&!event.metaKey&&!event.altKey){
+      const key=event.key.toLowerCase();const mode=({i:'image',v:'video',t:'text',a:'audio'} as Record<string,string>)[key]
+      const tool=mode&&palette.find(item=>nodeModality(item)===mode&&item.primary)
+        ||mode&&palette.find(item=>nodeModality(item)===mode)
+      if(tool){event.preventDefault();addTool(tool);return}
+      if(key==='n'){event.preventDefault();dispatch({type:'noteAdd',text:'Ghi chú mới'});return}
+      if(key==='f'&&selected.length){event.preventDefault();dispatch({type:'frameAdd',nodeIds:selected});return}
+      if(key==='d'){event.preventDefault();setDesktopPanel('workspace');return}
+      if(['arrowup','arrowdown','arrowleft','arrowright'].includes(key)&&selected.length&&!readOnly){
+        event.preventDefault();const amount=event.shiftKey?10:1
+        const movement={arrowup:{x:0,y:-amount},arrowdown:{x:0,y:amount},arrowleft:{x:-amount,y:0},arrowright:{x:amount,y:0}}[key]!
+        dispatch({type:'graph',nodes:page.nodes.map(node=>selected.includes(node.id)?{...node,position:{x:node.position.x+movement.x,y:node.position.y+movement.y}}:node),edges:page.edges});return
+      }
+    }
     if (!readOnly && ['Delete', 'Backspace'].includes(event.key) && (selected.length || selectedEdges.length)) {
       event.preventDefault()
       dispatch(selectedEdges.length ? { type: 'deleteEdges', ids: selectedEdges } : { type: 'delete', ids: selected })
@@ -276,9 +310,11 @@ function Editor() {
       ...Object.keys(tool?.returns??{}).map((id,index)=>({id,type:'source' as const,position:Position.Right,x:width-22,y:46+index*42,width:44,height:44}))],
     selected: node.id === state.selectedId || selected.includes(node.id),
     data: { ...node.data, __tool: tool, __cost: liveQuotes[node.id]??costs[node.id],
-      __readOnly: readOnly,__inputFields:inputFields,
+      __readOnly: readOnly,__inputFields:inputFields,__label:node.label,
       __onParamChange: (name:string,value:unknown) => dispatch({type:'update',id:node.id,data:{
         params:{...((node.data.params??{}) as Record<string,unknown>),[name]:value}}}),
+      __onRename:(label:string)=>dispatch({type:'nodeLabel',id:node.id,label}),
+      __onDuplicate:()=>duplicateNode(node.id),
       __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
       __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id})},
       __onRun:()=>{setSelected([node.id]);dispatch({type:'select',id:node.id});void prepareScope({mode:'node',node_id:node.id})},
@@ -307,7 +343,7 @@ function Editor() {
       draggable: false, selectable: false, connectable: false, zIndex: 3,
       data: { kind: 'comment', text: comment.text } }))
     return [...frames, ...tools, ...notes, ...comments]
-  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,prepareScope,uploadToNode])
+  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,prepareScope,uploadToNode,duplicateNode])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
     return { ...edge, selected: selectedEdges.includes(edge.id), label: isError ? 'Lỗi' : undefined,
@@ -522,7 +558,7 @@ function Editor() {
       {selectedNode&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly}
         onClose={()=>{setSelected([]);dispatch({type:'select'})}} onAdvanced={()=>setDesktopPanel('inspector')}
         onRun={()=>void prepareScope({mode:'node',node_id:selectedNode.id})} cost={liveQuotes[selectedNode.id]??costs[selectedNode.id]}
-        references={referenceOptions} onReference={reference=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
+        references={referenceOptions} connectedInputs={connectedInputs} onDisconnect={disconnectInput} onReference={reference=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
           target:selectedNode.id,targetHandle:reference.targetHandle})}
         onChange={data=>dispatch({type:'update',id:selectedNode.id,data})}/>}
       {(desktopPanel==='inspector'||mobilePanel==='inspector')&&<Inspector className={desktopPanel==='inspector'?'is-open':''} node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run} csrfToken={csrf}
@@ -571,16 +607,18 @@ function FlowStatus(){
 }
 
 type ReferenceOption={source:string;sourceHandle:string;targetHandle:string;label:string;detail:string}
+type ConnectedInput={edgeId:string;label:string;detail:string}
 
-function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose,onRun,cost,references,onReference}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;
+function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose,onRun,cost,references,connectedInputs,onReference,onDisconnect}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;
   onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void;onRun:()=>void;cost?:number;
-  references:ReferenceOption[];onReference:(reference:ReferenceOption)=>void}) {
+  references:ReferenceOption[];connectedInputs:ConnectedInput[];onReference:(reference:ReferenceOption)=>void;onDisconnect:(edgeId:string)=>void}) {
   if(!tool)return null
   const params=(node.data.params??{}) as Record<string,unknown>
   const fields=primaryFields(tool,params)
   const setParam=(name:string,value:unknown)=>onChange({params:{...params,[name]:value}})
   return <section className="context-composer" aria-label={`Cấu hình nhanh ${tool.name}`}>
     <header><div><small>Đang làm việc với</small><strong>{tool.label??tool.name}</strong></div><nav><button onClick={onAdvanced}>Nâng cao</button><button aria-label="Đóng cấu hình nhanh" onClick={onClose}>×</button></nav></header>
+    {!!connectedInputs.length&&<div className="composer-input-chips" aria-label="Đầu vào đã kết nối">{connectedInputs.map(input=><span key={input.edgeId}><b>@{input.label}</b><small>{input.detail}</small><button disabled={readOnly} aria-label={`Tháo kết nối ${input.label}`} onClick={()=>onDisconnect(input.edgeId)}>×</button></span>)}</div>}
     {!!references.length&&<label className="composer-reference"><span>Tham chiếu đầu vào</span><select disabled={readOnly} value="" onChange={event=>{
       const reference=references.find(item=>`${item.source}|${item.sourceHandle}|${item.targetHandle}`===event.target.value)
       if(reference)onReference(reference)

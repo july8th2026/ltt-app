@@ -14,6 +14,7 @@ export type EditorAction =
   | { type: 'commit'; before: CanvasDocument }
   | { type: 'select'; id?: string }
   | { type: 'update'; id: string; data: Record<string, unknown> }
+  | { type: 'nodeLabel'; id: string; label: string }
   | { type: 'viewport'; viewport: CanvasPage['viewport'] }
   | { type: 'pageView'; grid?: boolean; connections?: boolean; minimap?: boolean }
   | { type: 'document'; goal?: string; budget_max_credit?: number }
@@ -69,6 +70,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'update': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map(node => node.id === action.id
         ? { ...node, data: { ...node.data, ...action.data } } : node) })))
+    case 'nodeLabel': return changed(state, updateActive(state.document, page => ({ ...page,
+      nodes: page.nodes.map(node => node.id === action.id
+        ? { ...node, label: action.label.trim().slice(0, 80) || undefined } : node) })))
     case 'viewport': return { ...state, document: updateActive(state.document, page =>
       ({ ...page, viewport: action.viewport })) }
     case 'pageView': return changed(state, updateActive(state.document, page => ({ ...page,

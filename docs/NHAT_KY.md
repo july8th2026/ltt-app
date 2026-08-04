@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-04 — H20.8 re-audit PlenX vòng 2 và Canvas interaction polish
+
+- **Mục tiêu:** thao tác sâu thêm trên PlenX, tìm control còn thiếu và chỉ đưa
+  capability có vận hành thật vào LTT Agent Canvas.
+- **Hạng mục:** H20.8 hoàn thành local; H20.7b production release chưa chạy.
+- **Trạng thái:** code/audit/regression/browser/secret gate xanh; đã tạo bundle,
+  chưa deploy production.
+
+### Đã làm
+
+- Kiểm trực tiếp 11 node active, toolbar, shortcut, node context, title edit,
+  manual Text, source chooser, connected input, output actions, pages và conflict
+  trên workflow audit PlenX; không chạy generation và không tiêu credit.
+- Node LTT sửa tên trực tiếp nhưng label nằm ngoài executable `data`; Text soạn
+  trực tiếp trong node; Image/Video/Audio nhận drop file qua upload hiện có.
+- Composer hiện input chip theo edge thật; tháo chip xóa đồng thời edge và tham
+  số `$source.handle`. Thêm direct shortcut I/V/T/A/N/F/D, Ctrl+A và arrow nudge,
+  có guard không chiếm bàn phím khi người dùng đang nhập.
+- Artifact output có mở, chép URL, tải xuống, nhân bản node. Asset Catalog, URL
+  ingest, batch reorder và lineage được tách thành vé có security/owner/credit
+  gate; không dựng UI giả.
+- Báo cáo delta: `docs/APP_AUDIT/agent/2026-08-04-deep-ux/08_REAUDIT_PLENX_GAPS.md`.
+  Scorecard vòng mới: `Q85 · M82 · E84 · BETA`.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `npm test -- --run` | **29 passed** |
+| `npm run build` | typecheck + Vite build **PASS** |
+| `python -m pytest -q tests/test_95_agent_canvas_build.py tests/test_97_agent_workflow_api.py` | **22 passed**, 1 deprecation warning |
+| `python -m pytest -q` | **2.063 passed, 8 skipped, 23 subtests**, 630,75 giây |
+| `python tools/lint_app_contract.py` | 12 app, **0 ERROR, 0 WARN** |
+| `python tools/scan_source_secrets.py` | 1.563 file/206.052 dòng, **0 finding** |
+| `npm audit --audit-level=high` | **0 vulnerability** |
+| Browser local desktop 1720×940 | rename/text autosave PUT 200; shortcut I 5→6 node; input chip đúng edge; console 0 |
+| Browser local mobile 390×844 | render PASS; console 0 error/warning |
+
+### Quyết định mới
+
+Không có. H20.8 triển khai tiếp Q66, không thay runtime, ToolSpec, provider,
+ownership, credit hoặc nguyên tắc production release.
+
+### Cách lùi lại
+
+Revert commit H20.8. Label node là metadata tùy chọn nên workflow cũ/mới không
+cần migration; executable data và run snapshot không đổi.
+
+### Còn tồn đọng
+
+- H20.7b production backup/update/health/canary/rollback chưa chạy.
+- AG-AST-01, AG-URL-02, AG-BAT-03, AG-OUT-04, AG-MDL-05 và AG-E4-06 mở theo
+  acceptance trong báo cáo re-audit; không mở control trước contract.
+- Starlette/httpx TestClient còn một cảnh báo deprecation đã biết.
+
+---
+
 ## 2026-08-04 — H20 Agent Canvas node-native deep UX
 
 - **Mục tiêu:** đưa Canvas từ vỏ ToolSpec kỹ thuật thành trải nghiệm node-native,

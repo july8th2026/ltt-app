@@ -1486,6 +1486,12 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
 - [ ] H20.7b Production release — backup/update/health/authenticated browser smoke,
   canary và rollback evidence. Chưa chạy vì phiên này chưa có lệnh deploy
   production rõ ràng; bundle local không được gọi là đã deploy.
+- [x] H20.8 Re-audit PlenX vòng 2 và interaction polish — 2026-08-04: thao tác sâu
+  title/Text/source/input chip/output/shortcut; triển khai display label ngoài
+  Plan, inline Text, chip tháo edge+param, direct shortcut, drag/drop và artifact
+  actions. Frontend 29 pass, build PASS; desktop/mobile browser console 0, save
+  PUT 200. Asset Catalog/URL/batch/output lineage được tách thành vé có gate tại
+  `docs/APP_AUDIT/agent/2026-08-04-deep-ux/08_REAUDIT_PLENX_GAPS.md`.
 
 Không đánh dấu deploy chỉ vì bundle local đã build; production phải có backup,
 update, health và authenticated browser evidence thật.

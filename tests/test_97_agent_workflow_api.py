@@ -284,6 +284,7 @@ def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):
                   "viewport": legacy["viewport"],
                   "frames": [{"id": "f1", "name": "Nhóm 1", "node_ids": ["s1"]}],
                   "notes": [{"id": "n1", "text": "Ghi chú"}], "comments": []}]}
+    canvas["pages"][0]["nodes"][0]["label"] = "Lời dẫn mở đầu"
     created = a.post("/agent/api/workflows", headers={"X-CSRF-Token": token},
                      json={"name": "Workflow v2", "canvas": canvas})
     assert created.status_code == 201 and created.json()["canvas"] == canvas

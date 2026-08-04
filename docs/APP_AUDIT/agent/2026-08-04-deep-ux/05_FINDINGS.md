@@ -11,6 +11,12 @@
 4. P2 — Schema kỹ thuật quyết định UX. Đã có node presentation layer và
    contextual composer; Inspector giữ advanced fields.
 5. P2 — Canvas thiếu right-click/quick-create. Đã triển khai và regression test.
+6. P2 — Node chưa đổi tên trực tiếp và Text chỉ là vỏ. H20.8 lưu display label
+   ngoài executable data, thêm inline editor và regression/browser evidence.
+7. P2 — Người dùng không thấy hoặc tháo được từng input đã nối. H20.8 thêm chip
+   theo edge thật; remove đồng bộ edge + param và hỗ trợ undo.
+8. P2 — Thiếu direct shortcut và output actions thường dùng. H20.8 thêm shortcut
+   không chiếm focus nhập liệu, drag/drop input, open/copy/download/duplicate.
 
 ## Còn mở sau code gate
 
@@ -22,3 +28,8 @@
    dữ liệu nhu cầu, không đưa vào table stake hiện tại.
 4. P3 — Cảnh báo Starlette/httpx deprecation trong test harness. Không ảnh hưởng
    runtime; lên ticket dependency maintenance, không nâng nóng trong H20.
+5. P1 — Chưa có Asset Catalog/history/system resources và URL ingest an toàn.
+   Không dựng picker giả; tách AG-AST-01/AG-URL-02 với owner index, retention,
+   SSRF, MIME, provenance và signed delivery gate.
+6. P2 — Batch multi-upload/reorder và output replace/variation cần lineage,
+   cleanup và partial-failure contract; theo AG-BAT-03/AG-OUT-04.

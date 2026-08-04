@@ -75,3 +75,9 @@ copy/delete/undo/redo, keyboard và reload persistence.
 - Delta giữ/bỏ/xây và ranh giới safety: PASS.
 - Generation benchmark có mất credit: chưa chạy và không phải điều kiện H20.1;
   chỉ mở khi có test budget riêng.
+
+## 7. Re-audit vòng 2
+
+Control title edit, inline Text, source chooser, connected-input chips, output
+actions và keyboard được thao tác thêm trên PlenX rồi đối soát lại LTT. Kết quả,
+phạm vi triển khai và vé còn mở nằm tại `08_REAUDIT_PLENX_GAPS.md`.

@@ -2,6 +2,7 @@ export type CanvasNode = {
   id: string
   type: 'tool'
   position: { x: number; y: number }
+  label?: string
   data: Record<string, unknown>
 }
 

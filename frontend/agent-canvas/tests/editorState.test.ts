@@ -28,6 +28,14 @@ describe('editor reducer', () => {
     expect(activePage(state.document).nodes[0].position).toEqual({ x: 90, y: 90 })
   })
 
+  it('stores a display label outside executable node data',()=>{
+    const document=emptyDocument()
+    activePage(document).nodes=[{id:'a',type:'tool',position:{x:0,y:0},data:{tool:'text.generate'}}]
+    const state=editorReducer({document,past:[],future:[]},{type:'nodeLabel',id:'a',label:'Lời dẫn mở đầu'})
+    expect(activePage(state.document).nodes[0].label).toBe('Lời dẫn mở đầu')
+    expect(activePage(state.document).nodes[0].data).toEqual({tool:'text.generate'})
+  })
+
   it('disconnects selected edges without deleting their nodes and can undo', () => {
     const document = emptyDocument()
     activePage(document).nodes = [

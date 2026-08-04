@@ -44,7 +44,12 @@ describe('CanvasShell', () => {
     fireEvent.click(add)
     const node=await screen.findByLabelText('Node text.generate')
     expect(node).toBeInTheDocument()
-    expect(within(node).queryByRole('textbox')).not.toBeInTheDocument()
+    const inline=within(node).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
+    fireEvent.change(inline,{target:{value:'Viết ngay trong node'}})
+    expect(inline).toHaveValue('Viết ngay trong node')
+    const title=within(node).getByRole('textbox',{name:'Tên hiển thị node'})
+    fireEvent.change(title,{target:{value:'Lời dẫn mở đầu'}})
+    expect(title).toHaveValue('Lời dẫn mở đầu')
     fireEvent.click(node)
     const prompt = screen.getByRole('textbox', { name: /Mô tả/ })
     fireEvent.change(prompt, { target: { value: 'Chủ đề mới' } })
@@ -140,10 +145,30 @@ describe('CanvasShell', () => {
     expect(picker).toHaveTextContent('@Tạo hình ảnh · Hình ảnh → Ảnh đầu vào')
     const option=screen.getByRole('option',{name:/@Tạo hình ảnh/}) as HTMLOptionElement
     fireEvent.change(picker,{target:{value:option.value}})
+    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('@Tạo hình ảnh')
+    fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Tạo hình ảnh'}))
+    expect(screen.queryByLabelText('Đầu vào đã kết nối')).not.toBeInTheDocument()
     await waitFor(()=>expect(vi.mocked(globalThis.fetch).mock.calls.some(([,init])=>{
       if(init?.method!=='PUT'||typeof init.body!=='string')return false
-      return JSON.parse(init.body).canvas?.pages?.[0]?.edges?.length===1
+      return JSON.parse(init.body).canvas?.pages?.[0]?.edges?.length===0
     })).toBe(true),{timeout:1800})
+  })
+
+  it('supports direct creation and workspace shortcuts without hijacking text input',async()=>{
+    render(<CanvasShell />)
+    const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
+    fireEvent.keyDown(canvas,{key:'i'})
+    expect(await screen.findByLabelText('Node image.generate')).toBeInTheDocument()
+    fireEvent.keyDown(canvas,{key:'t'})
+    const text=await screen.findByLabelText('Node text.generate')
+    expect(text).toBeInTheDocument()
+    fireEvent.keyDown(canvas,{key:'n'})
+    expect(screen.getByLabelText('Sticky note Ghi chú mới')).toBeInTheDocument()
+    fireEvent.keyDown(canvas,{key:'d'})
+    expect(screen.getByLabelText('Palette công cụ')).toHaveClass('workspace-only')
+    const inline=within(text).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
+    fireEvent.keyDown(inline,{key:'i'})
+    expect(screen.getAllByLabelText('Node image.generate')).toHaveLength(1)
   })
 })
 

@@ -12,3 +12,8 @@
   bắt buộc health, login, Canvas smoke, console/network và rollback evidence.
 - Phase 8 closed loop: beta task completion, time-to-first-run, validation error,
   approval abandonment, run success và credit dispute; finding mới đi qua LTT-AQA.
+- Phase 9 re-audit controls: PASS local — title metadata, inline Text, connected
+  input chips/removal, direct shortcut, input drop và artifact actions; xem
+  `08_REAUDIT_PLENX_GAPS.md`.
+- Phase 10 capability contracts: AG-AST-01 → AG-URL-02 → AG-BAT-03 → AG-OUT-04
+  theo thứ tự, không mở UI trước owner/security/credit/output gate.
