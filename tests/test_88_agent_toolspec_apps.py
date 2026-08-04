@@ -1,4 +1,4 @@
-"""P2: ToolSpec của 7 app phải bám handler, giá và output đang chạy."""
+"""P2: ToolSpec public phải bám handler, giá và output đang chạy."""
 from __future__ import annotations
 
 import pytest
@@ -16,10 +16,11 @@ EXPECTED = {
     "asset.image", "asset.video", "asset.audio", "video.extract_frames",
     "media.merge_image", "media.merge_video",
     "audio.generate", "video.social_import", "image.upscale",
+    "text.prompt_package", "story.storyboard",
 }
 
 
-def test_dung_7_tool_job_based_duoc_discover():
+def test_dung_toan_bo_tool_job_based_duoc_discover():
     assert set(discover_tools()) == EXPECTED
 
 
@@ -60,6 +61,18 @@ VALID_CASES = {
     "image.thumbnail": {
         "topic": "Du lịch Việt Nam", "model": "gemini-2.5-flash-image",
         "aspect_ratio": "16:9", "count": 1,
+    },
+    "text.prompt_package": {
+        "operation": "director", "title": "Chiến dịch", "story": "Một câu chuyện đủ dài",
+        "scene_count": 6, "duration_seconds": 30, "aspect_ratio": "16:9",
+        "style": "cinematic", "audience": "general", "language": "vi",
+        "resources": [], "model": "gemini-2.5-flash",
+    },
+    "story.storyboard": {
+        "operation": "storyboard", "title": "Chiến dịch",
+        "story": "Một câu chuyện đủ dài", "scene_count": 6,
+        "aspect_ratio": "16:9", "style": "cinematic", "resources": [],
+        "model": "gemini-2.5-flash",
     },
     "video.generate": {
         "prompt": "Máy quay tiến qua khu rừng", "model": "seedance-2.0-mini",
@@ -133,6 +146,8 @@ RESULT_FIXTURES = {
     "video.subtitle": {"video_key": "autosubvideo/u/1.mp4", "srt_key": "s", "ass_key": "a"},
     "video.upscale": {"video_key": "upscalevideo/u/1.mp4"},
     "video.short_clips": {"clips": [{"video_key": "taoclipngan/u/1.mp4"}]},
+    "text.prompt_package": {"prompt_package": {"scenes": []}, "master_prompt": "p"},
+    "story.storyboard": {"storyboard": {"scenes": []}, "master_prompt": "p"},
 }
 
 

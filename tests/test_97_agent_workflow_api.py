@@ -114,7 +114,7 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert result.status_code == 200 and result.json()["validation"]["valid"]
     assert result.json()["estimated"] > 0 and result.json()["status"] == "validated"
     palette = a.get("/agent/api/palette").json()
-    assert palette["version"] == 2 and len(palette["tools"]) == 18
+    assert palette["version"] == 2 and len(palette["tools"]) == 20
     assert palette["routing"]["mode"] == "platform_auto"
     assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
                for model in palette["models"])

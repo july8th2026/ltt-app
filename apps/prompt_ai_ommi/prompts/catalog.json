@@ -1,0 +1,12 @@
+{
+  "styles": [
+    {"id": "cinematic", "label": "Cinematic", "prompt": "cinematic realism, controlled contrast, motivated lighting, filmic color science"},
+    {"id": "commercial", "label": "Quảng cáo cao cấp", "prompt": "premium commercial art direction, clean product hierarchy, polished studio lighting"},
+    {"id": "documentary", "label": "Tài liệu", "prompt": "observational documentary realism, natural available light, authentic imperfect motion"},
+    {"id": "anime", "label": "Anime", "prompt": "high-end anime production, expressive silhouettes, coherent cel shading, cinematic composition"},
+    {"id": "social", "label": "Social dọc", "prompt": "fast social storytelling, readable focal point, mobile-first vertical composition, energetic pacing"}
+  ],
+  "cameras": ["static", "dolly in", "tracking", "orbit", "crane", "aerial", "handheld"],
+  "layouts": ["2x2", "3x2", "3x3", "4x3"]
+}
+

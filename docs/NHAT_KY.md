@@ -14,6 +14,68 @@
 
 ---
 
+## 2026-08-04 — H19 xây core PROMPT AI OMMI và nghiệm thu browser
+
+- **Mục tiêu:** replatform Prompt Seedance Studio thành app tenant-safe dùng
+  toàn bộ Job/Credit/Storage/APIKEYS/ToolSpec nội tại LTT.
+- **Hạng mục:** H19.2–H19.4 và H19.7 hoàn thành; H19.5/H19.6/H19.8/H19.9 dở;
+  H19.10 chưa release/deploy.
+- **Trạng thái:** core app chạy và full regression xanh; chưa deploy.
+
+### Đã làm
+
+- Tạo `apps/prompt_ai_ommi/`: manifest, 2 ToolSpec public, schema project v1,
+  prompt resource/composer, Gemini adapter qua APIKEYS, durable Director worker,
+  owner-scoped API và Carbon Red immersive UI mặc định nền sáng.
+- Project có CRUD/revision/clone/archive/unarchive/snapshot/restore; asset đi qua
+  Storage owner key; preference theme lưu server theo user.
+- Preflight không gọi provider; quote server; submit giữ credit nguyên tử. Handoff
+  ảnh/video dùng ToolSpec public, chuẩn hóa capability và popup xác nhận chi phí;
+  batch frame bounded 20 item trong cùng transaction.
+- Export/import JSON/Markdown/ZIP, xóa storage key khi import; catalog publish chỉ
+  admin; health chỉ trả aggregate không PII/secret; production rollout mặc định
+  `off`, hỗ trợ admin/allowlist/public.
+- Browser fixture thật phát hiện và sửa hai lỗi: empty state ghi đè `hidden` làm
+  workspace bị đẩy xuống; inspector vẫn hiện ở mobile. Đồng thời thay fixed wait
+  khi save bằng `await saveCurrent()` để không chạy AI trước khi project lưu xong.
+- Thêm parity ledger, threat model và runbook. `D:\BOT GEMINI` chỉ được đọc,
+  không sửa/copy runtime/data/secret.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `python -m pytest -q tests/test_60_app_registry.py tests/test_130_prompt_ai_ommi.py` | **27 passed** |
+| Release/ToolSpec/API/OMMI targeted + secret scan | **122 passed**; secret **0 finding** |
+| Browser desktop 1280×781: create→brief→Director→preflight→theme reload | PASS; console 0; failed network 0 |
+| Browser mobile 390×844 | overflow 0; inspector hidden khi đóng; console 0 |
+| `python -m pytest -q` sau sửa cuối | **2.063 passed, 8 skipped, 23 subtests**, 690,84 giây |
+| `python tools/scan_source_secrets.py` | 1.447 file/194.014 dòng, **0 finding**, PASS |
+
+### Quyết định mới
+
+Không thêm quyết định kiến trúc; triển khai theo Q65. Rollout production `off`
+mặc định là chốt vận hành của roadmap Q65, không thay quyết định cũ.
+
+### Cách lùi lại
+
+Revert commit H19 PROMPT AI OMMI. Trước deploy có thể đặt
+`LTT_PROMPT_AI_OMMI_ROLLOUT=off`; dữ liệu project vẫn đọc/export được.
+
+### Còn tồn đọng
+
+- Iteration feedback/compare/reorder, catalog version/deprecate/clone UI.
+- Retry/cancel UX, metrics P95/cost, retention operator dry-run, backup drill.
+- Keyboard/axe/visual regression; canary và production deploy chưa thực hiện.
+
+### Việc tiếp theo
+
+1. Hoàn tất tuần tự H19.5, H19.6, H19.8, H19.9.
+2. Chạy post-build LTT-AQA và parity gate H19.10.
+3. Chỉ deploy khi có lệnh production rõ, backup/health/rollback sẵn sàng.
+
+---
+
 ## 2026-08-04 — H19 khảo sát PROMPT AI OMMI từ Prompt Seedance Studio
 
 - **Mục tiêu:** kiểm kê sâu module nguồn chỉ đọc, tách Admin/User và thiết kế

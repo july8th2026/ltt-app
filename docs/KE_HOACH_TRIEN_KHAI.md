@@ -1425,14 +1425,29 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
 - [x] H19.1 Khóa kiến trúc Q65 — capability-preserving replatform, folder
   `apps/prompt_ai_ommi`, URL `/prompt-ai-ommi`, private-by-default, catalog do
   admin publish/user clone; dùng toàn bộ contract LTT, không copy runtime nguồn.
-- [ ] H19.2 P0 contract/parity ledger/threat model/ToolSpec handoff spike.
-- [ ] H19.3 P1 app shell + tenant-safe AppProject/Storage/preferences.
-- [ ] H19.4 P2 core Studio + Director Job + quote/credit + scene editor.
-- [ ] H19.5 P3 consistency/iteration/storyboard/version.
-- [ ] H19.6 P4 private library + published Admin catalog + operations split.
-- [ ] H19.7 P5 export/import + Tạo ảnh/Tạo video/Agent handoff.
-- [ ] H19.8 P6 batch/recovery/metrics/retention/runbook.
-- [ ] H19.9 P7 Carbon Red immersive UI + browser accessibility/responsive gate.
+- [x] H19.2 P0 contract/parity ledger/threat model/ToolSpec handoff spike —
+  2026-08-04: phủ 22/22 router nguồn, threat model; public ToolSpec handoff không
+  sửa platform tại `07_PARITY_LEDGER.md`/`08_THREAT_MODEL.md`.
+- [x] H19.3 P1 app shell + tenant-safe AppProject/Storage/preferences —
+  owner-scoped CRUD/revision/archive/unarchive/snapshot/restore/upload; theme
+  server-side; two-user/stale revision tests PASS.
+- [x] H19.4 P2 core Studio + Director Job + quote/credit + scene editor —
+  preflight miễn phí, durable job, APIKEYS Gemini, quote/hold, scene editor.
+- [ ] H19.5 P3 consistency/iteration/storyboard/version — anchors, scene
+  versions, snapshot và storyboard/frame job đã có; còn regenerate-with-feedback,
+  compare và reorder controls trước khi đóng phase.
+- [ ] H19.6 P4 private library + published Admin catalog + operations split —
+  private resource/project, admin publish và health đã có; còn catalog
+  version/deprecate/clone UI và retention operator job.
+- [x] H19.7 P5 export/import + Tạo ảnh/Tạo video/Agent handoff — JSON/MD/ZIP
+  round-trip, ToolSpec ảnh/video quote-confirm, ToolSpec OMMI hiện trong Agent;
+  PDF native là backlog không chặn v1.
+- [ ] H19.8 P6 batch/recovery/metrics/retention/runbook — bounded atomic image
+  batch, job status, health, rollout/runbook đã có; còn retry/cancel UX, P95/cost
+  metric, retention dry-run và backup drill.
+- [ ] H19.9 P7 Carbon Red immersive UI + browser accessibility/responsive gate —
+  desktop + 390x844 render, overflow 0, console 0, failed network 0; còn
+  keyboard/focus/axe/visual regression trước khi đóng phase.
 - [ ] H19.10 P8 parity ≥90% + LTT-AQA G0–G8 + full release/canary/deploy.
 
 Phải làm tuần tự H19.2→H19.10. Deployment chỉ được đánh dấu khi có lệnh deploy

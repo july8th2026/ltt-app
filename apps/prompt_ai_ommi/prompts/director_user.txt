@@ -1,0 +1,34 @@
+TASK: {operation}
+TITLE: {title}
+STORY: {story}
+GOAL: {goal}
+AUDIENCE: {audience}
+TARGET: {scenes} scenes, total {duration} seconds, aspect ratio {aspect}
+STYLE: {style}
+OUTPUT LANGUAGE: {language}
+
+REFERENCES:
+{resources}
+
+EXISTING SCENES (preserve useful work when present):
+{existing}
+
+Return this exact JSON shape:
+{{
+  "summary": "one production summary",
+  "anchors": {{"characters": [], "locations": [], "style": "", "continuity": []}},
+  "scenes": [
+    {{
+      "title": "",
+      "duration_seconds": 5,
+      "summary": "",
+      "prompt": "complete visual/video prompt",
+      "negative_prompt": "artifacts and inconsistencies to avoid",
+      "camera": "shot size, lens, angle, movement",
+      "lighting": "",
+      "mood": "",
+      "continuity": "what must match adjacent scenes"
+    }}
+  ]
+}}
+Return exactly {scenes} scenes. Total duration should approximate {duration} seconds.
