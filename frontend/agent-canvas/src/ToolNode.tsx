@@ -1,6 +1,7 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { PaletteTool } from './editorState'
 import { emptyMessage, fieldLabel, hasMeaningfulInput, mediaKind, nodeModality, nodeTitle, outputLabel } from './nodePresentation'
+import { customerToolLabel } from './presentationAdapter'
 
 type ToolData = Record<string, unknown> & { __tool?: PaletteTool; __cost?: number; __status?: string;
   __artifacts?: { name: string; url: string }[]; __readOnly?: boolean;
@@ -32,7 +33,7 @@ export function ToolNode({ data, selected }: NodeProps) {
   const upload=(files?:FileList|File[])=>{const selected=files?Array.from(files):[]
     if(selected.length&&!typed.__readOnly)typed.__onUpload?.(selected.slice(0,modality==='batch'?12:1))}
   return <article className={`tool-node modality-${modality}${selected ? ' is-selected' : ''}`}
-    aria-label={`Node ${tool?.name ?? 'không xác định'}`}
+    aria-label={`Khối ${customerToolLabel(tool)}`}
     onDragOver={event=>{if(accept&&!typed.__readOnly){event.preventDefault();event.dataTransfer.dropEffect='copy'}}}
     onDrop={event=>{if(!accept||typed.__readOnly)return;event.preventDefault();event.stopPropagation();upload(event.dataTransfer.files)}}>
     <header><span aria-hidden="true">{icon[modality]}</span><input className="node-title nodrag" aria-label="Tên hiển thị node"

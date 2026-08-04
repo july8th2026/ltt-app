@@ -42,7 +42,14 @@ _ASSET_LIMIT = 90 * 1024 * 1024
 _ASSET_MIME_PREFIXES = ("image/", "video/", "audio/")
 _ASSISTANT_SALT = "ltt-agent-assistant-proposal-v1"
 _PREFERENCES_SLUG = "agent.preferences"
-_DEFAULT_PREFERENCES = {"theme": "dark", "catalog_mode": "advanced"}
+_DEFAULT_PREFERENCES = {"theme": "dark", "catalog_mode": "simple",
+                        "presentation_version": "creative-v1"}
+
+
+def _canvas_presentation_mode() -> str:
+    """Creative is the default; legacy keeps the H20 renderer as rollback."""
+    configured = os.environ.get("LTT_AGENT_CANVAS_PRESENTATION", "creative")
+    return "legacy" if configured.strip().lower() == "legacy" else "creative"
 
 
 def _assistant_serializer() -> URLSafeTimedSerializer:
@@ -257,7 +264,7 @@ def _palette_tool(name, spec, owner, loaded) -> dict:
         "text.script": ("Viết kịch bản", "specialized", False),
         "image.thumbnail": ("Tạo thumbnail", "specialized", False),
         "image.batch_generate": ("Tạo nhiều ảnh", "specialized", False),
-        "audio.generate": ("Tạo âm thanh", "content", False),
+        "audio.generate": ("Tạo âm thanh", "content", True),
         "asset.image": ("Ảnh đầu vào", "input", False),
         "asset.images": ("Bộ ảnh", "input", False),
         "asset.video": ("Video đầu vào", "input", False),
@@ -291,7 +298,11 @@ def _preferences_json(row: AppProject | None) -> dict:
         saved = row.payload or {}
         if saved.get("theme") in {"light", "dark"}:
             payload["theme"] = saved["theme"]
-        if saved.get("catalog_mode") in {"simple", "advanced"}:
+        # H20 stored "advanced" as its default. An unversioned row is not an
+        # explicit customer opt-in, so H21 migrates its presentation to simple
+        # without changing the workflow document or ToolSpec runtime.
+        if (saved.get("presentation_version") == "creative-v1" and
+                saved.get("catalog_mode") in {"simple", "advanced"}):
             payload["catalog_mode"] = saved["catalog_mode"]
     return {**payload, "revision": row.revision if row else 0}
 
@@ -311,7 +322,8 @@ def canvas_page(request: Request, _identity: str = Depends(require_login)):
     except (OSError, KeyError, ValueError):
         raise HTTPException(status_code=503, detail="Canvas bundle chưa được build.") from None
     context = _page_context(request)
-    context.update({"canvas_js": canvas_js, "canvas_css": canvas_css})
+    context.update({"canvas_js": canvas_js, "canvas_css": canvas_css,
+                    "canvas_presentation": _canvas_presentation_mode()})
     return templates.TemplateResponse(request, "agent_canvas.html", context)
 
 
@@ -438,12 +450,16 @@ async def save_preferences(request: Request, _identity: str = Depends(require_lo
     _verify_json_csrf(request, body)
     theme = str(body.get("theme", ""))
     catalog_mode = str(body.get("catalog_mode", ""))
+    presentation_version = str(body.get("presentation_version", "creative-v1"))
     if theme not in {"light", "dark"} or catalog_mode not in {"simple", "advanced"}:
         raise HTTPException(status_code=422, detail="Tùy chọn giao diện không hợp lệ.")
+    if presentation_version != "creative-v1":
+        raise HTTPException(status_code=422, detail="Phiên bản trình bày không hợp lệ.")
     user = _user(request)
     from platform_core import app_projects
     row = _preferences_row(db, user.id)
-    payload = {"theme": theme, "catalog_mode": catalog_mode}
+    payload = {"theme": theme, "catalog_mode": catalog_mode,
+               "presentation_version": presentation_version}
     try:
         if row:
             row = app_projects.save(

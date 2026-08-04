@@ -80,7 +80,8 @@ function normalizeWorkflow(workflow: Workflow): Workflow {
 
 export const loadPalette = () => request('/agent/api/palette')
 
-export type AgentPreferences = { theme: 'light'|'dark'; catalog_mode: 'simple'|'advanced'; revision: number }
+export type AgentPreferences = { theme: 'light'|'dark'; catalog_mode: 'simple'|'advanced';
+  presentation_version: 'creative-v1'; revision: number }
 export const loadPreferences = (): Promise<AgentPreferences> => request('/agent/api/preferences')
 export const savePreferences = (preferences: Omit<AgentPreferences,'revision'>, csrfToken: string): Promise<AgentPreferences> =>
   request('/agent/api/preferences', { method: 'PUT', headers: {

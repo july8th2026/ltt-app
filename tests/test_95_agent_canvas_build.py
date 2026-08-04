@@ -70,6 +70,7 @@ def test_canvas_uses_hashed_production_assets_and_cache_policy(canvas_client):
 def test_canvas_route_uses_dedicated_immersive_shell(canvas_client):
     page = canvas_client.get("/agent/canvas")
     assert 'class="agent-canvas-immersive"' in page.text
+    assert 'data-presentation="creative"' in page.text
     assert '{% block body_class %}' not in page.text
     source = (ROOT / "frontend/agent-canvas/src/canvas.css").read_text("utf-8")
     assert "height:100dvh" in source
@@ -77,6 +78,11 @@ def test_canvas_route_uses_dedicated_immersive_shell(canvas_client):
     assert ".typed-port { width:44px" in source
     assert ".canvas-shell.theme-light" in source
     assert "flex-direction:row!important" in source
+
+
+def test_canvas_presentation_has_env_rollback(canvas_client, monkeypatch):
+    monkeypatch.setenv("LTT_AGENT_CANVAS_PRESENTATION", "legacy")
+    assert 'data-presentation="legacy"' in canvas_client.get("/agent/canvas").text
 
 
 def test_canvas_bundle_is_fresh_hashed_and_has_no_source_maps():

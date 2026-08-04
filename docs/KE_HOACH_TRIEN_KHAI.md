@@ -1521,9 +1521,12 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   FLORA/React Flow/ComfyUI/Langflow/n8n. Baseline `Q58 · M42 · E93 · BLOCKED`,
   UX/UI 2,8/10; chọn Presentation Adapter bốn modality. Hồ sơ tại
   `docs/APP_AUDIT/agent/2026-08-04-ux-reset/`.
-- [ ] H21.1 P0 Contract/migration/feature flag/rollback theo
-  `05_IMPLEMENTATION_PHASES.md`.
-- [ ] H21.2 P1 Canonical Text/Image/Video/Audio block; asset là state nội bộ.
+- [x] H21.1 P0 Contract/migration/feature flag/rollback — 2026-08-04:
+  `creative-v1`, H20 v1/v2 mở nguyên, preference cũ migrate presentation-only,
+  env rollback `legacy`; contract tại `06_PRESENTATION_CONTRACT.md`.
+- [x] H21.2 P1 Canonical Text/Image/Video/Audio block — 2026-08-04: fresh user
+  chỉ thấy bốn block; Audio primary; `asset.*` ẩn khỏi palette/context nhưng
+  node cũ/upload state vẫn render và giữ ownership/provenance.
 - [ ] H21.3 P2 Node shell + composer tối giản, không overlap.
 - [ ] H21.4 P3 Connection grammar theo intent, unique destination, edge insert.
 - [ ] H21.5 P4 Run/quote/approval/cancel/retry thống nhất.

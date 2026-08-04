@@ -122,7 +122,7 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert all("price" not in tool and "params_schema" in tool for tool in palette["tools"])
     assert {tool["name"]: tool["label"] for tool in palette["tools"] if tool["primary"]} == {
         "text.generate": "Tạo văn bản", "image.generate": "Tạo hình ảnh",
-        "video.generate": "Tạo video"}
+        "video.generate": "Tạo video", "audio.generate": "Tạo âm thanh"}
     quote = a.post("/agent/api/tools/text.script/quote",
         headers={"X-CSRF-Token": token}, json={"params": {"topic": "Chủ đề hợp lệ"},
         "fanout": 2, "max_retry": 1})
@@ -138,13 +138,15 @@ def test_validate_server_price_and_palette_are_authoritative(api):
 def test_canvas_preferences_are_validated_and_owned_per_user(api):
     a, token_a, b, _ = api
     assert a.get("/agent/api/preferences").json() == {
-        "theme": "dark", "catalog_mode": "advanced", "revision": 0}
+        "theme": "dark", "catalog_mode": "simple",
+        "presentation_version": "creative-v1", "revision": 0}
     assert a.put("/agent/api/preferences", json={
         "theme": "dark", "catalog_mode": "advanced"}).status_code == 400
     saved = a.put("/agent/api/preferences", headers={"X-CSRF-Token": token_a}, json={
         "theme": "dark", "catalog_mode": "advanced"})
     assert saved.status_code == 200
-    assert saved.json() == {"theme": "dark", "catalog_mode": "advanced", "revision": 1}
+    assert saved.json() == {"theme": "dark", "catalog_mode": "advanced",
+                            "presentation_version": "creative-v1", "revision": 1}
     assert a.get("/agent/api/preferences").json()["theme"] == "dark"
     assert b.get("/agent/api/preferences").json()["theme"] == "dark"
     assert a.put("/agent/api/preferences", headers={"X-CSRF-Token": token_a}, json={

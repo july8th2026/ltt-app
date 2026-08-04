@@ -18,6 +18,8 @@ const palette = { version: 1, tools: [
     app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{image_keys:{type:'json',required:true}},returns:{image_keys:'image[]'} },
   { name: 'video.generate', label:'Tạo video',category:'content',primary:true,description:'Tạo video từ mô tả',
     app_slug:'seedance',app_name:'Seedance',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{video:'video'} },
+  { name: 'audio.generate', label:'Tạo âm thanh',category:'content',primary:true,description:'Tạo âm thanh từ văn bản',
+    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{text:{type:'text',required:true}},returns:{audio_key:'audio'} },
   { name: 'image.upscale', label:'Nâng cấp ảnh',category:'transform',primary:false,description:'Tăng độ nét ảnh',
     app_slug:'upscale',app_name:'Upscale',requires:['gpu'],verifiable:[],params_schema:{image_key:{type:'image',required:true}},returns:{image:'image'} },
   { name: 'media.merge_video', label:'Ghép video',category:'transform',primary:false,description:'Ghép nhiều video',
@@ -34,7 +36,7 @@ beforeEach(() => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const url = String(input)
     if (url.endsWith('/palette')) return new Response(JSON.stringify(palette), { status: 200 })
-    if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'dark',catalog_mode:'advanced',revision:init?.method?1:0}), { status: 200 })
+    if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'dark',catalog_mode:'simple',presentation_version:'creative-v1',revision:init?.method?1:0}), { status: 200 })
     if (url.endsWith('/assets')) {const file=init?.body instanceof FormData?init.body.get('file') as File:null
       const name=file?.name||'owned.png';return new Response(JSON.stringify({key:`agent-assets/u/${name}`,kind:'image',
         name,size:123,content_type:'image/png',url:`/agent/api/assets/${name}`}),{status:200})}
@@ -53,9 +55,9 @@ describe('CanvasShell', () => {
     fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
     expect(palettePanel).toHaveClass('is-open')
     expect(screen.getByRole('textbox',{name:'Tìm công cụ'})).toBeInTheDocument()
-    const add = await screen.findByRole('button', { name: 'Thêm text.generate' })
+    const add = await screen.findByRole('button', { name: 'Thêm Văn bản' })
     fireEvent.click(add)
-    const node=await screen.findByLabelText('Node text.generate')
+    const node=await screen.findByLabelText('Khối Văn bản')
     expect(node).toBeInTheDocument()
     const inline=within(node).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
     fireEvent.change(inline,{target:{value:'Viết ngay trong node'}})
@@ -68,26 +70,26 @@ describe('CanvasShell', () => {
     fireEvent.change(prompt, { target: { value: 'Chủ đề mới' } })
     expect(prompt).toHaveValue('Chủ đề mới')
     fireEvent.keyDown(window,{key:'Escape'})
-    expect(screen.queryByRole('region',{name:'Cấu hình nhanh text.generate'})).not.toBeInTheDocument()
+    expect(screen.queryByRole('region',{name:'Thiết lập Văn bản'})).not.toBeInTheDocument()
   })
 
   it('provides undo/redo and accessible regions', async () => {
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    const add = await screen.findByRole('button', { name: 'Thêm text.generate' })
+    const add = await screen.findByRole('button', { name: 'Thêm Văn bản' })
     expect(screen.getByRole('region', { name: 'LTT Agent Canvas' })).toBeInTheDocument()
     fireEvent.click(add)
     const undo = screen.getByRole('button', { name: 'Hoàn tác' })
     await waitFor(() => expect(undo).toBeEnabled())
     fireEvent.click(undo)
-    expect(screen.queryByLabelText('Node text.generate')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Khối Văn bản')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
-    expect(screen.getByLabelText('Node text.generate')).toBeInTheDocument()
+    expect(screen.getByLabelText('Khối Văn bản')).toBeInTheDocument()
   })
 
   it('opens layers and keyboard command palette with working display toggles', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm text.generate'})
+    await screen.findByRole('button',{name:'Thêm Văn bản'})
     fireEvent.click(screen.getByRole('button',{name:'Lớp'}))
     expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
@@ -99,7 +101,7 @@ describe('CanvasShell', () => {
 
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm text.generate'})
+    await screen.findByRole('button',{name:'Thêm Văn bản'})
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Inspector'}))
     expect(screen.getByRole('button',{name:'Inspector'})).toHaveAttribute('aria-pressed','true')
@@ -108,7 +110,7 @@ describe('CanvasShell', () => {
 
   it('upgrades legacy canvas and manages pages and annotations', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm text.generate'})
+    await screen.findByRole('button',{name:'Thêm Văn bản'})
     expect(screen.getByText(/Canvas v2/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'+ Page'}))
     expect(screen.getByRole('textbox',{name:/Đổi tên Page 2/})).toBeInTheDocument()
@@ -127,10 +129,13 @@ describe('CanvasShell', () => {
     const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
     expect(canvas).toHaveClass('theme-dark')
     fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
-    expect(screen.getByRole('button',{name:'Thêm text.generate'})).toHaveTextContent('Tạo văn bản')
-    expect(screen.getByRole('button',{name:'Thêm text.script'})).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button',{name:'Chỉ hiện công cụ chính'}))
-    expect(screen.queryByRole('button',{name:'Thêm text.script'})).not.toBeInTheDocument()
+    expect(screen.getByRole('button',{name:'Thêm Văn bản'})).toHaveTextContent('Văn bản')
+    expect(screen.getByRole('button',{name:'Thêm Hình ảnh'})).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:'Thêm Video'})).toBeInTheDocument()
+    expect(screen.getByRole('button',{name:'Thêm Âm thanh'})).toBeInTheDocument()
+    expect(screen.queryByRole('button',{name:'Thêm Viết kịch bản'})).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
+    expect(screen.getByRole('button',{name:'Thêm Viết kịch bản'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Chuyển sang nền sáng'}))
     expect(canvas).toHaveClass('theme-light')
     await waitFor(()=>expect(globalThis.fetch).toHaveBeenCalledWith('/agent/api/preferences',expect.objectContaining({method:'PUT'})))
@@ -139,8 +144,8 @@ describe('CanvasShell', () => {
   it('provides pane and node context menus without exposing raw tool fields',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
-    const node=await screen.findByLabelText('Node image.generate')
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
+    const node=await screen.findByLabelText('Khối Hình ảnh')
     expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
     expect(screen.queryByText('app_slug')).not.toBeInTheDocument()
     fireEvent.contextMenu(node,{clientX:400,clientY:300})
@@ -153,9 +158,10 @@ describe('CanvasShell', () => {
   it('connects a compatible node through the contextual @ reference picker',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm image.upscale'}))
-    const transform=await screen.findByLabelText('Node image.upscale')
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
+    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Nâng cấp ảnh'}))
+    const transform=await screen.findByLabelText('Khối Nâng cấp ảnh')
     fireEvent.click(transform)
     expect(within(transform).queryByLabelText('Tải lên')).not.toBeInTheDocument()
     const picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'})
@@ -174,10 +180,11 @@ describe('CanvasShell', () => {
   it('keeps multiple scalar sources connected to one collection input',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm video.generate'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm video.generate'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm media.merge_video'}))
-    fireEvent.click(await screen.findByLabelText('Node media.merge_video'))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Video'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Video'}))
+    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Ghép video'}))
+    fireEvent.click(await screen.findByLabelText('Khối Ghép video'))
     let picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'}) as HTMLSelectElement
     const first=[...picker.options].find(option=>option.value)!
     fireEvent.change(picker,{target:{value:first.value}})
@@ -196,9 +203,9 @@ describe('CanvasShell', () => {
     render(<CanvasShell />)
     const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
     fireEvent.keyDown(canvas,{key:'i'})
-    expect(await screen.findByLabelText('Node image.generate')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Khối Hình ảnh')).toBeInTheDocument()
     fireEvent.keyDown(canvas,{key:'t'})
-    const text=await screen.findByLabelText('Node text.generate')
+    const text=await screen.findByLabelText('Khối Văn bản')
     expect(text).toBeInTheDocument()
     fireEvent.keyDown(canvas,{key:'n'})
     expect(screen.getByLabelText('Sticky note Ghi chú mới')).toBeInTheDocument()
@@ -206,29 +213,30 @@ describe('CanvasShell', () => {
     expect(screen.getByLabelText('Palette công cụ')).toHaveClass('workspace-only')
     const inline=within(text).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
     fireEvent.keyDown(inline,{key:'i'})
-    expect(screen.getAllByLabelText('Node image.generate')).toHaveLength(1)
+    expect(screen.getAllByLabelText('Khối Hình ảnh')).toHaveLength(1)
   })
 
   it('keeps Upload and Generate as two modes of the same user-facing Image node',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
-    const generated=await screen.findByLabelText('Node image.generate')
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
+    const generated=await screen.findByLabelText('Khối Hình ảnh')
     fireEvent.change(within(generated).getByLabelText('Tải lên'),{target:{files:[new File(['png'],'owned.png',{type:'image/png'})]}})
-    const uploaded=await screen.findByLabelText('Node asset.image')
+    const uploaded=await screen.findByLabelText('Khối Hình ảnh')
     expect(within(uploaded).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Hình ảnh')
     expect(within(uploaded).getByRole('img',{name:'Ảnh đã tải lên'})).toHaveAttribute('src','/agent/api/assets/owned.png')
     expect(within(uploaded).getByRole('button',{name:'Tạo bằng AI'})).toBeInTheDocument()
     fireEvent.click(within(uploaded).getByRole('button',{name:'Tạo bằng AI'}))
-    expect(await screen.findByLabelText('Node image.generate')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Khối Hình ảnh')).toBeInTheDocument()
     expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
   })
 
   it('presents Social Video as a URL action and never as a local upload node',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm video.social_import'}))
-    const node=await screen.findByLabelText('Node video.social_import')
+    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Nhập video từ liên kết'}))
+    const node=await screen.findByLabelText('Khối Nhập video từ liên kết')
     expect(within(node).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Social Video')
     expect(within(node).getByText('Thêm Social Video')).toBeInTheDocument()
     expect(within(node).queryByLabelText('Tải lên')).not.toBeInTheDocument()
@@ -240,16 +248,17 @@ describe('CanvasShell', () => {
   it('keeps multiple uploads inside one Batch Images node and can switch back to generation',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    fireEvent.click(screen.getByRole('button',{name:'Thêm image.batch_generate'}))
-    const generated=await screen.findByLabelText('Node image.batch_generate')
+    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Tạo bộ ảnh'}))
+    const generated=await screen.findByLabelText('Khối Tạo bộ ảnh')
     const files=[new File(['a'],'a.png',{type:'image/png'}),new File(['b'],'b.png',{type:'image/png'})]
     fireEvent.change(within(generated).getByLabelText('Tải lên'),{target:{files}})
-    const uploaded=await screen.findByLabelText('Node asset.images')
+    const uploaded=await screen.findByLabelText('Khối Hình ảnh')
     expect(within(uploaded).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Bộ ảnh')
     expect(within(uploaded).getAllByRole('img')).toHaveLength(2)
     expect(within(uploaded).getByRole('img',{name:'Ảnh 1 trong bộ ảnh'})).toHaveAttribute('src','/agent/api/assets/a.png')
     fireEvent.click(within(uploaded).getByRole('button',{name:'Tạo bằng AI'}))
-    expect(await screen.findByLabelText('Node image.batch_generate')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Khối Tạo bộ ảnh')).toBeInTheDocument()
   })
 })
 

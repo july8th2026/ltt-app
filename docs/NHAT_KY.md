@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-04 — H21.1–H21.2 Presentation Adapter và bốn block chuẩn
+
+- **Mục tiêu:** bắt đầu UX Reset tuần tự, khóa đường migration/rollback trước
+  khi thay node shell và đưa fresh user về đúng bốn block sáng tạo.
+- **Hạng mục:** H21.1 và H21.2 hoàn thành; H21.3 là bước kế tiếp.
+- **Trạng thái:** source/build/local browser PASS; chưa deploy production.
+
+### Đã làm
+
+- Thêm `presentationAdapter.ts` phiên bản `creative-v1`, phủ 21 ToolSpec và
+  chuyển chúng thành Text/Image/Video/Audio + core/secondary/internal.
+- Thêm env `LTT_AGENT_CANVAS_PRESENTATION=legacy` làm đường lùi H20; template
+  phát mode cho frontend, không đổi Canvas document, executor hay credit.
+- Preference H20 chưa version được đọc về catalog simple; lựa chọn nâng cao mới
+  được lưu cùng presentation version. `audio.generate` trở thành core thứ tư.
+- Palette fresh user và pane context menu không còn tạo `asset.*`; upload vẫn
+  chuyển block media sang asset state nội bộ và ownership test giữ nguyên.
+- Loại tên ToolSpec/field khỏi accessible name chính, palette và Layers; menu
+  nối nhanh dùng intent + tên block đích, mỗi node đích một lựa chọn.
+- Browser fixture 8118 từng giữ backend cũ trong RAM; restart đúng PID fixture
+  rồi kiểm lại fresh user: đúng bốn block, creative mode, overflow 0.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run tests/presentationAdapter.test.ts tests/nodePresentation.test.ts tests/CanvasShell.test.tsx` | 20 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 139,19 kB |
+| Targeted pytest palette/preferences/flag | 4 passed, 1 warning test harness |
+| Targeted pytest asset ownership | 1 passed, 1 warning test harness |
+| Playwright local 8118 | creative; chỉ 4 core block; console 0; API 200/201; overflow 0 |
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới; đây là thực thi Q67. Contract triển khai ở
+`docs/APP_AUDIT/agent/2026-08-04-ux-reset/06_PRESENTATION_CONTRACT.md`.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` và restart Web. Document/schema/runtime
+không đổi nên không có migration dữ liệu phải lùi.
+
+### Còn tồn đọng
+
+- H21.3 node shell/composer vẫn là H20, còn lớn và có CTA chạy trùng.
+- H21.4–H21.9 chưa triển khai; chưa deploy production.
+
+### Việc tiếp theo
+
+1. H21.3 tạo CreativeToolNode riêng, giữ LegacyToolNode cho rollback.
+2. Cap node/composer và browser gate 1366/1720/1920 trước H21.4.
+
 ## 2026-08-04 — Agent Canvas UX Reset sau production task 3/10
 
 - **Mục tiêu:** audit lại trải nghiệm Agent Canvas bằng user-role production,
