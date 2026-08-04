@@ -30,7 +30,7 @@ cùng rule CSS ép top action thành cột làm toolbar che drawer.
 | H18-03 | P1 | Node chồng nhau do spacing 260 < width 300 | RESOLVED; lưới 360×440, lề 80 |
 | H18-04 | P1 | Toolbar bị ép dọc, che drawer | RESOLVED; khóa flex row, browser xác minh close |
 | H18-05 | P2 | Port nâng cao của node video vẫn nhiều khi node được chọn | ACCEPT; mặc định ẩn label, Inspector dành cho advanced |
-| H18-06 | P1 | Authenticated production smoke bản H18 | OPEN tới sau deploy |
+| H18-06 | P1 | Authenticated production smoke bản H18 | OPEN manual handoff; production login/health đã PASS |
 
 ## Điểm delta và gate
 
@@ -44,5 +44,7 @@ cùng rule CSS ép top action thành cột làm toolbar che drawer.
 Browser local 1720×940 và 390×844: theme/catalog persistence qua reload, ba
 node chính, advanced toggle, auto-layout, palette close; page overflow 0;
 console 0. Frontend 21/21, targeted Python 22/22 và full suite **2.051 passed,
-8 skipped, 23 subtests**; secret scan 0, npm audit 0. Release/production phải
-được cập nhật bằng kết quả chạy thật, không suy diễn.
+8 skipped, 23 subtests**; secret scan 0, npm audit 0. Production release 1.206
+file/174,8 MB đã backup/migrate/deploy/health PASS; bundle hash khớp source.
+Browser production login desktop/mobile overflow 0, console 0; authenticated
+Canvas chưa chạy vì không có credential production.

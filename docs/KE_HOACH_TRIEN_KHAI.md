@@ -1407,6 +1407,9 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   node 300 px nhưng spacing 260 px gây chồng; rule toolbar cũ ép action thành
   cột và che nút drawer. Desktop 1720×940 + mobile 390×844 overflow 0,
   theme/catalog giữ qua reload, palette đóng được, console 0.
-- [ ] H18.4 Full release gate + deploy/canary — frontend 21 pass; backend/build
-  22 pass; full 2.051 pass, 8 skip, 23 subtests; npm audit 0, app lint 0/0,
-  secret scan 0. Chờ commit, release/deploy và authenticated production smoke.
+- [x] H18.4 Full release gate + deploy/canary handoff — commit `6c5c066`;
+  frontend 21 pass; backend/build 22 pass; full 2.051 pass, 8 skip, 23
+  subtests; npm audit 0, app lint 0/0, secret scan 0. Release 1.206 file/174,8
+  MB; backup/migration/update/health/Cloudflare/12 app/log PASS; bundle deploy
+  khớp source. Production login desktop/mobile overflow 0, console 0;
+  authenticated production Canvas còn là manual handoff vì không có credential.

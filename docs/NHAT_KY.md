@@ -18,9 +18,9 @@
 
 - **Mục tiêu:** biến Canvas từ “đủ capability” thành giao diện người mới hiểu
   được; mặc định sáng, ba hành động chính, nhưng không làm mất tool nâng cao.
-- **Hạng mục:** H18.0–H18.3 xong; H18.4 release/deploy đang chạy.
-- **Trạng thái:** code và local browser gate xong; chưa ghi deploy trước khi có
-  full gate thật.
+- **Hạng mục:** H18.0–H18.4 hoàn thành/deploy; authenticated production browser
+  là manual handoff còn mở vì phiên đăng nhập production đã hết hạn.
+- **Trạng thái:** code, full gate, commit, release, deploy và health xong.
 
 ### Đã làm
 
@@ -42,6 +42,10 @@
 | Playwright local 1720×940/390×844 | theme/catalog reload PASS; node/layout/palette PASS; overflow 0; console 0 |
 | `python -m pytest -q` | **2.051 passed, 8 skipped, 23 subtests**, 1 warning, 652,23 giây |
 | `python tools/scan_source_secrets.py` | 1.410 file, 189.941 dòng, **0 finding**, PASS trước full gate; chạy lại trước commit |
+| `tools/build_release.py` | 1.206 file, 174,8 MB, archive secret scan 0 |
+| `deploy/windows/update.ps1` | pg_dump/data backup, migration, services và production ready PASS |
+| `setup/4-nghiem-thu.ps1` | services/loopback/Cloudflare/security/12 app/log PASS; 1 cảnh báo Google legacy |
+| Playwright production login 1720×940/390×844 | redirect auth đúng; overflow 0; console 0 |
 
 ### Quyết định mới
 
@@ -54,13 +58,14 @@ Revert commit H18; preferences dùng AppProject riêng nên có thể bỏ đọ
 
 ### Còn tồn đọng
 
-- Commit, build release, deploy và production canary.
+- Authenticated production Canvas chưa browser-smoke do không có credential;
+  tab production giữ ở `/login?next=/agent/canvas`.
 - External 5-user task study vẫn chặn tuyên bố GA.
 
 ### Việc tiếp theo
 
-1. Chạy full gate một lần, cập nhật đúng kết quả.
-2. Commit, release/deploy; browser authenticated production và health canary.
+1. Chủ sản phẩm đăng nhập tab production nếu muốn đóng manual auth handoff.
+2. Chạy controlled launch và đo task success với người dùng ngoài nhóm dev.
 
 ---
 
