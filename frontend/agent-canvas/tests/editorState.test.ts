@@ -25,7 +25,7 @@ describe('editor reducer', () => {
     activePage(document).nodes = [{ id: 'a', type: 'tool', position: { x: 99, y: 99 }, data: { tool: 'x' } }]
     const state = editorReducer({ document, past: [], future: [] }, { type: 'layout' })
     expect(activePage(state.document).nodes[0].data).toEqual({ tool: 'x' })
-    expect(activePage(state.document).nodes[0].position).toEqual({ x: 0, y: 0 })
+    expect(activePage(state.document).nodes[0].position).toEqual({ x: 80, y: 80 })
   })
 
   it('disconnects selected edges without deleting their nodes and can undo', () => {

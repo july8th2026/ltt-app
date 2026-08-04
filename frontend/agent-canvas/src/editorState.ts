@@ -130,7 +130,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
     case 'layout': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map((node, index) => ({ ...node,
-        position: { x: (index % 4) * 280, y: Math.floor(index / 4) * 190 } })) })))
+        position: { x: 80 + (index % 4) * 360, y: 80 + Math.floor(index / 4) * 440 } })) })))
     case 'undo': {
       const previous = state.past.at(-1)
       if (!previous) return state
@@ -148,6 +148,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 
 export type PaletteTool = {
   name: string
+  label?: string
+  category?: 'content'|'input'|'transform'|'specialized'|'advanced'
+  primary?: boolean
   description: string
   app_slug: string
   app_name: string
@@ -176,7 +179,7 @@ export function nextNode(tool: PaletteTool, count: number): CanvasNode {
     .filter(([, rule]) => rule.default !== undefined)
     .map(([name, rule]) => [name, structuredClone(rule.default)]))
   return { id: `n${Date.now().toString(36)}-${count}`, type: 'tool',
-    position: { x: 80 + (count % 3) * 260, y: 80 + Math.floor(count / 3) * 180 },
+    position: { x: 80 + (count % 3) * 360, y: 80 + Math.floor(count / 3) * 440 },
     data: { tool: tool.name, params, fanout: 1, max_retry: 0,
       on_fail: 'retry_same', verify: null } }
 }

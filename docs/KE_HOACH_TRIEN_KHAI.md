@@ -1392,3 +1392,21 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   health loopback/Cloudflare/12 app/log PASS. Production login desktop/mobile
   overflow 0, console 0; deployed manifest khớp source SHA-256. Phiên auth hết
   hạn nên authenticated production Canvas được ghi đúng là manual gate còn mở.
+
+### H18 — Agent Canvas presentation reset theo nghiệm thu thực tế
+
+- [x] H18.0 Q64 + re-audit PlenX/LTT — 2026-08-04: khóa progressive
+  disclosure; ba node chính Text/Image/Video; nền sáng mặc định, không đổi
+  runtime/credit/provider.
+- [x] H18.1 Catalog và node semantics — palette mặc định chỉ ba hành động chính;
+  tìm kiếm/bật nâng cao mới hiện toàn bộ ToolSpec; nhãn, mô tả và chip thông số
+  thay metadata kỹ thuật trên node.
+- [x] H18.2 Theme per-user — GET/PUT preferences có CSRF, ownership, validation;
+  lưu `light/dark` và `simple/advanced` trong AppProject riêng của user.
+- [x] H18.3 Browser debug loop — Playwright bắt và sửa hai lỗi render thật:
+  node 300 px nhưng spacing 260 px gây chồng; rule toolbar cũ ép action thành
+  cột và che nút drawer. Desktop 1720×940 + mobile 390×844 overflow 0,
+  theme/catalog giữ qua reload, palette đóng được, console 0.
+- [ ] H18.4 Full release gate + deploy/canary — frontend 21 pass; backend/build
+  22 pass; full 2.051 pass, 8 skip, 23 subtests; npm audit 0, app lint 0/0,
+  secret scan 0. Chờ commit, release/deploy và authenticated production smoke.

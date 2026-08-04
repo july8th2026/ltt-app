@@ -26,7 +26,9 @@ from platform_core.agent import budget, executor, metrics, runs, workflows
 from platform_core.agent.tools import (ToolParamsError, discover_tools,
                                        resolve_params_schema, validate_tool_params)
 from platform_core.registry import RegistryError, credit_for, discover
-from platform_core.models import AgentWorkflow, AgentWorkflowShare, WORKFLOW_ARCHIVED
+from platform_core.models import (APP_PROJECT_ACTIVE, AgentWorkflow,
+                                  AgentWorkflowShare, AppProject,
+                                  WORKFLOW_ARCHIVED)
 from platform_core.agent.planner import PlannerError, plan_once
 from platform_core.agent.validator import validate_plan
 from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING, AgentRun, Job
@@ -39,6 +41,8 @@ router = APIRouter(tags=["agent"])
 _ASSET_LIMIT = 90 * 1024 * 1024
 _ASSET_MIME_PREFIXES = ("image/", "video/", "audio/")
 _ASSISTANT_SALT = "ltt-agent-assistant-proposal-v1"
+_PREFERENCES_SLUG = "agent.preferences"
+_DEFAULT_PREFERENCES = {"theme": "light", "catalog_mode": "simple"}
 
 
 def _assistant_serializer() -> URLSafeTimedSerializer:
@@ -246,11 +250,49 @@ def _palette_tool(name, spec, owner, loaded) -> dict:
         if rule.get("type") == "model_ref":
             variants[field] = {str(value): resolve_params_schema(
                 name, {field: value}, apps=loaded) for value in rule.get("values", [])}
-    return {"name": spec.name, "description": spec.description,
+    presentation = {
+        "text.generate": ("Tạo văn bản", "content", True),
+        "image.generate": ("Tạo hình ảnh", "content", True),
+        "video.generate": ("Tạo video", "content", True),
+        "text.script": ("Viết kịch bản", "specialized", False),
+        "image.thumbnail": ("Tạo thumbnail", "specialized", False),
+        "image.batch_generate": ("Tạo nhiều ảnh", "specialized", False),
+        "audio.generate": ("Tạo âm thanh", "content", False),
+        "asset.image": ("Ảnh đầu vào", "input", False),
+        "asset.video": ("Video đầu vào", "input", False),
+        "asset.audio": ("Âm thanh đầu vào", "input", False),
+        "image.upscale": ("Nâng cấp ảnh", "transform", False),
+        "video.upscale": ("Nâng cấp video", "transform", False),
+        "video.extract_frames": ("Tách khung hình", "transform", False),
+        "media.merge_image": ("Ghép ảnh", "transform", False),
+        "media.merge_video": ("Ghép video", "transform", False),
+        "video.social_import": ("Video từ liên kết", "input", False),
+    }
+    label, category, primary = presentation.get(
+        spec.name, (spec.name.replace(".", " ").title(), "advanced", False))
+    return {"name": spec.name, "label": label, "category": category,
+            "primary": primary, "description": spec.description,
             "app_slug": owner.slug, "app_name": owner.manifest.display_name,
             "requires": list(owner.manifest.requires), "params_schema": schema,
             "schema_variants": variants, "returns": spec.returns,
             "verifiable": list(spec.verifiable)}
+
+
+def _preferences_row(db: Session, user_id: str) -> AppProject | None:
+    return db.query(AppProject).filter_by(
+        user_id=user_id, app_slug=_PREFERENCES_SLUG,
+        status=APP_PROJECT_ACTIVE).order_by(AppProject.updated_at.desc()).first()
+
+
+def _preferences_json(row: AppProject | None) -> dict:
+    payload = dict(_DEFAULT_PREFERENCES)
+    if row:
+        saved = row.payload or {}
+        if saved.get("theme") in {"light", "dark"}:
+            payload["theme"] = saved["theme"]
+        if saved.get("catalog_mode") in {"simple", "advanced"}:
+            payload["catalog_mode"] = saved["catalog_mode"]
+    return {**payload, "revision": row.revision if row else 0}
 
 
 @router.get("", response_class=HTMLResponse)
@@ -379,6 +421,42 @@ def cancel_run(request: Request, run_id: str, csrf_token: str = Form(""),
         run = budget.cancel(db, run_id=run.id, user_id=user.id, actual=actual)
         _cancel_advance_jobs(db, run)
     return RedirectResponse(f"{MANIFEST.route_prefix}/runs/{run.id}", status_code=303)
+
+
+@router.get("/api/preferences")
+def get_preferences(request: Request, _identity: str = Depends(require_login),
+                    db: Session = Depends(get_db)):
+    user = _user(request)
+    return JSONResponse(_preferences_json(_preferences_row(db, user.id)))
+
+
+@router.put("/api/preferences")
+async def save_preferences(request: Request, _identity: str = Depends(require_login),
+                           db: Session = Depends(get_db)):
+    body = await request.json()
+    _verify_json_csrf(request, body)
+    theme = str(body.get("theme", ""))
+    catalog_mode = str(body.get("catalog_mode", ""))
+    if theme not in {"light", "dark"} or catalog_mode not in {"simple", "advanced"}:
+        raise HTTPException(status_code=422, detail="Tùy chọn giao diện không hợp lệ.")
+    user = _user(request)
+    from platform_core import app_projects
+    row = _preferences_row(db, user.id)
+    payload = {"theme": theme, "catalog_mode": catalog_mode}
+    try:
+        if row:
+            row = app_projects.save(
+                db, project_id=row.id, user_id=user.id, app_slug=_PREFERENCES_SLUG,
+                revision=row.revision, name="Agent UI preferences",
+                schema_version=1, payload=payload)
+        else:
+            row = app_projects.create(
+                db, user_id=user.id, app_slug=_PREFERENCES_SLUG,
+                name="Agent UI preferences", schema_version=1, payload=payload)
+    except app_projects.ProjectError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    db.flush()
+    return JSONResponse(_preferences_json(row))
 
 
 @router.get("/api/palette")

@@ -75,6 +75,8 @@ def test_canvas_route_uses_dedicated_immersive_shell(canvas_client):
     assert "height:100dvh" in source
     assert ".canvas-rail" in source
     assert ".typed-port { width:44px" in source
+    assert ".canvas-shell.theme-light" in source
+    assert "flex-direction:row!important" in source
 
 
 def test_canvas_bundle_is_fresh_hashed_and_has_no_source_maps():

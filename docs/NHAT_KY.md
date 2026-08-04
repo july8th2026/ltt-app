@@ -14,6 +14,56 @@
 
 ---
 
+## 2026-08-04 — H18 sửa presentation Agent Canvas theo nghiệm thu thực tế
+
+- **Mục tiêu:** biến Canvas từ “đủ capability” thành giao diện người mới hiểu
+  được; mặc định sáng, ba hành động chính, nhưng không làm mất tool nâng cao.
+- **Hạng mục:** H18.0–H18.3 xong; H18.4 release/deploy đang chạy.
+- **Trạng thái:** code và local browser gate xong; chưa ghi deploy trước khi có
+  full gate thật.
+
+### Đã làm
+
+- Thêm Q64: catalog simple/advanced và light/dark lưu server theo user; palette
+  ưu tiên Tạo văn bản/Ảnh/Video, node bỏ app_slug/requires khỏi nội dung chính.
+- API preferences dùng AppProject owner-scoped, CSRF và allowlist giá trị.
+- Playwright so PlenX/LTT và bắt thêm hai lỗi: node chồng do spacing 260 px;
+  toolbar bị CSS cũ ép dọc làm che nút drawer. Đã sửa spacing/lề và flex row.
+- Lưu preflight reset phiên vào `AGENTS.md`; ghi rõ repo không thể tự tắt lớp
+  approval của host hoặc giả vờ đã có full quyền.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `npm test -- --run` | **21 passed** (lượt cuối) |
+| `npm run build` | typecheck + production bundle PASS |
+| `python -m pytest -q tests/test_97_agent_workflow_api.py tests/test_95_agent_canvas_build.py` | **22 passed**, 1 warning |
+| Playwright local 1720×940/390×844 | theme/catalog reload PASS; node/layout/palette PASS; overflow 0; console 0 |
+| `python -m pytest -q` | **2.051 passed, 8 skipped, 23 subtests**, 1 warning, 652,23 giây |
+| `python tools/scan_source_secrets.py` | 1.410 file, 189.941 dòng, **0 finding**, PASS trước full gate; chạy lại trước commit |
+
+### Quyết định mới
+
+Q64 đã thêm vào nguồn chân lý; tinh chỉnh presentation Q63, không thay Q62.
+
+### Cách lùi lại
+
+Revert commit H18; preferences dùng AppProject riêng nên có thể bỏ đọc mà không
+ảnh hưởng workflow/run/credit. Bundle H17 vẫn có trong lịch sử release.
+
+### Còn tồn đọng
+
+- Commit, build release, deploy và production canary.
+- External 5-user task study vẫn chặn tuyên bố GA.
+
+### Việc tiếp theo
+
+1. Chạy full gate một lần, cập nhật đúng kết quả.
+2. Commit, release/deploy; browser authenticated production và health canary.
+
+---
+
 ## 2026-08-04 — H17 Agent Canvas launch UX, audit độc lập và deploy
 
 - **Mục tiêu:** sửa triệt để Canvas bị co/bí, đưa interaction hierarchy gần

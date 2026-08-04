@@ -1,5 +1,15 @@
 # 10 — Final scorecard
 
+> **ĐÃ ĐƯỢC TINH CHỈNH BỞI Q64/H18 ngày 2026-08-04.** Điểm dưới đây là kết quả
+> kỹ thuật của H17 trước nghiệm thu chủ sản phẩm; không còn được dùng để kết
+> luận UX đã trình làng. Hồ sơ delta có hiệu lực ở
+> `../2026-08-04-launch-v2/00_DELTA_AUDIT.md`.
+
+> **ĐÃ ĐƯỢC TINH CHỈNH BỞI Q64/H18 ngày 2026-08-04.** Điểm dưới đây là kết quả
+> kỹ thuật của H17 trước nghiệm thu chủ sản phẩm; không còn được dùng để kết
+> luận UX đã trình làng. Hồ sơ delta có hiệu lực ở
+> `../2026-08-04-launch-v2/00_DELTA_AUDIT.md`.
+
 ## Trạng thái hiện tại
 
 - **Q 92,3 · M 89 · E 97**.

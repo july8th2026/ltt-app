@@ -4,6 +4,35 @@
 
 ---
 
+## 0. Preflight bắt buộc khi mở hoặc khôi phục phiên
+
+Mỗi phiên mới, và mỗi lần VS Code/máy vừa reset, phải tự kiểm tra trước khi tiếp
+tục hạng mục đang dở:
+
+1. Đọc mục mới nhất của `docs/NHAT_KY.md` và hạng mục mở trong
+   `docs/KE_HOACH_TRIEN_KHAI.md`; **không khởi động lại từ đầu**.
+2. Chạy `git status --short`; không đụng `test-results/`, `tmp/` hoặc thay đổi
+   không thuộc hạng mục hiện tại.
+3. Kiểm tra công cụ/browser session cần cho hạng mục và các cổng/dịch vụ liên
+   quan. Dịch vụ bị tắt do reset thì khởi động lại trong đúng phạm vi đã được
+   người dùng giao; không tự mở rộng sang hệ thống khác.
+4. Kiểm tra permission profile thực tế. **Không được tuyên bố đã có full quyền
+   chỉ vì VS Code chạy Administrator.** Sandbox/approval do host của Codex cấp,
+   repo không thể tự sửa hoặc tự bấm hộp thoại `Allow once/always`.
+5. Ưu tiên lệnh trong workspace và quyền hiện có. Nếu host bắt escalation, gom
+   thành yêu cầu nhỏ, đúng mục tiêu và dùng auto-review/prefix hẹp khi được phép;
+   không hỏi lặp cho từng file/lệnh và không tìm cách lách sandbox.
+6. Gửi một cập nhật ngắn: checkpoint khôi phục, thứ đang chạy và blocker thật
+   (nếu có), rồi tiếp tục tự động. Chỉ dừng hỏi người dùng khi thiếu một lựa chọn
+   sản phẩm hoặc quyền ngoài repo mà agent thực sự không thể tự cấp.
+
+**Cấu hình phía người dùng nếu muốn không hiện hộp thoại:** chọn permission
+profile không cần approval cho workspace tin cậy hoặc `Allow always` cho prefix
+hẹp trong UI Codex. Đây là cấu hình host, không phải file repo và agent không
+được giả vờ đã bật nó.
+
+---
+
 ## 1. Bắt buộc đọc trước khi thay đổi bất cứ thứ gì
 
 Theo đúng thứ tự, không bỏ bước:

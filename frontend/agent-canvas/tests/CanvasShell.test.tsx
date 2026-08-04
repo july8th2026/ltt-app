@@ -3,9 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CanvasShell } from '../src/CanvasShell'
 import { RunInspector } from '../src/RunInspector'
 
-const palette = { version: 1, tools: [{ name: 'text.script', description: 'Viết kịch bản',
-  app_slug: 'kichban', app_name: 'Kịch bản', requires: ['api'], verifiable: [],
-  params_schema: { topic: { type: 'text', required: true } }, returns: { script: 'text' } }] }
+const palette = { version: 1, tools: [
+  { name: 'text.generate', label:'Tạo văn bản',category:'content',primary:true,description:'Tạo nội dung từ yêu cầu',
+    app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{text:'text'} },
+  { name: 'image.generate', label:'Tạo hình ảnh',category:'content',primary:true,description:'Tạo ảnh từ mô tả',
+    app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{image:'image'} },
+  { name: 'video.generate', label:'Tạo video',category:'content',primary:true,description:'Tạo video từ mô tả',
+    app_slug:'seedance',app_name:'Seedance',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{video:'video'} },
+  { name: 'text.script', label:'Viết kịch bản',category:'specialized',primary:false,description:'Viết kịch bản',
+    app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{topic:{type:'text',required:true}},returns:{script:'text'} }
+] }
 const workflow = { id: 'w1', name: 'Workflow mới', status: 'draft', revision: 1, estimated: 0,
   canvas: { version: 1, goal: '', budget_max_credit: 50, nodes: [], edges: [],
     viewport: { x: 0, y: 0, zoom: 1 } } }
@@ -15,6 +22,7 @@ beforeEach(() => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const url = String(input)
     if (url.endsWith('/palette')) return new Response(JSON.stringify(palette), { status: 200 })
+    if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'light',catalog_mode:'simple',revision:init?.method?1:0}), { status: 200 })
     if (url.endsWith('/workflows') && !init?.method) return new Response(JSON.stringify({ items: [] }), { status: 200 })
     if (url.includes('/workflows/w1')) return new Response(JSON.stringify({ ...workflow, revision: 2 }), { status: 200 })
     return new Response(JSON.stringify(workflow), { status: 201 })
@@ -30,34 +38,34 @@ describe('CanvasShell', () => {
     fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
     expect(palettePanel).toHaveClass('is-open')
     expect(screen.getByRole('textbox',{name:'Tìm công cụ'})).toBeInTheDocument()
-    const add = await screen.findByRole('button', { name: 'Thêm text.script' })
+    const add = await screen.findByRole('button', { name: 'Thêm text.generate' })
     fireEvent.click(add)
-    const node=await screen.findByLabelText('Node text.script')
+    const node=await screen.findByLabelText('Node text.generate')
     expect(node).toBeInTheDocument()
     expect(within(node).queryByRole('textbox')).not.toBeInTheDocument()
     fireEvent.click(node)
-    const topic = screen.getByRole('textbox', { name: /topic/ })
-    fireEvent.change(topic, { target: { value: 'Chủ đề mới' } })
-    expect(topic).toHaveValue('Chủ đề mới')
+    const prompt = screen.getByRole('textbox', { name: /prompt/ })
+    fireEvent.change(prompt, { target: { value: 'Chủ đề mới' } })
+    expect(prompt).toHaveValue('Chủ đề mới')
   })
 
   it('provides undo/redo and accessible regions', async () => {
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
-    const add = await screen.findByRole('button', { name: 'Thêm text.script' })
+    const add = await screen.findByRole('button', { name: 'Thêm text.generate' })
     expect(screen.getByRole('region', { name: 'LTT Agent Canvas' })).toBeInTheDocument()
     fireEvent.click(add)
     const undo = screen.getByRole('button', { name: 'Hoàn tác' })
     await waitFor(() => expect(undo).toBeEnabled())
     fireEvent.click(undo)
-    expect(screen.queryByLabelText('Node text.script')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Node text.generate')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Làm lại' }))
-    expect(screen.getByLabelText('Node text.script')).toBeInTheDocument()
+    expect(screen.getByLabelText('Node text.generate')).toBeInTheDocument()
   })
 
   it('opens layers and keyboard command palette with working display toggles', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm text.script'})
+    await screen.findByRole('button',{name:'Thêm text.generate'})
     fireEvent.click(screen.getByRole('button',{name:'Lớp'}))
     expect(screen.getByRole('complementary',{name:'Danh sách lớp'})).toBeInTheDocument()
     fireEvent.keyDown(window,{key:'k',ctrlKey:true})
@@ -69,7 +77,7 @@ describe('CanvasShell', () => {
 
   it('exposes responsive panel controls without hiding inspector semantics', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm text.script'})
+    await screen.findByRole('button',{name:'Thêm text.generate'})
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Inspector'}))
     expect(screen.getByRole('button',{name:'Inspector'})).toHaveAttribute('aria-pressed','true')
@@ -78,7 +86,7 @@ describe('CanvasShell', () => {
 
   it('upgrades legacy canvas and manages pages and annotations', async () => {
     render(<CanvasShell />)
-    await screen.findByRole('button',{name:'Thêm text.script'})
+    await screen.findByRole('button',{name:'Thêm text.generate'})
     expect(screen.getByText(/Canvas v2/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'+ Page'}))
     expect(screen.getByRole('textbox',{name:/Đổi tên Page 2/})).toBeInTheDocument()
@@ -90,6 +98,20 @@ describe('CanvasShell', () => {
     expect(screen.getByLabelText('Sticky note Duyệt màu')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:'Xóa comment'}))
     expect(screen.queryByLabelText(/Comment Bình luận mới/)).not.toBeInTheDocument()
+  })
+
+  it('defaults to a light, simple catalog and persists explicit choices', async () => {
+    render(<CanvasShell />)
+    const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
+    expect(canvas).toHaveClass('theme-light')
+    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
+    expect(screen.getByRole('button',{name:'Thêm text.generate'})).toHaveTextContent('Tạo văn bản')
+    expect(screen.queryByRole('button',{name:'Thêm text.script'})).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
+    expect(await screen.findByRole('button',{name:'Thêm text.script'})).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Chuyển sang nền tối'}))
+    expect(canvas).toHaveClass('theme-dark')
+    await waitFor(()=>expect(globalThis.fetch).toHaveBeenCalledWith('/agent/api/preferences',expect.objectContaining({method:'PUT'})))
   })
 })
 
