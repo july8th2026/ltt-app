@@ -1527,7 +1527,10 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
 - [x] H21.2 P1 Canonical Text/Image/Video/Audio block — 2026-08-04: fresh user
   chỉ thấy bốn block; Audio primary; `asset.*` ẩn khỏi palette/context nhưng
   node cũ/upload state vẫn render và giữ ownership/provenance.
-- [ ] H21.3 P2 Node shell + composer tối giản, không overlap.
+- [x] H21.3 P2 Node shell + composer tối giản — 2026-08-04: renderer
+  `CreativeToolNode` tách khỏi H20 legacy, node 300 px/một cổng `+`, bỏ CTA chạy
+  trùng; composer tối đa bốn field và chiếm safe-area riêng. Browser
+  1366/1720/1920: 4 node, overlap 0, overflow 0, console 0.
 - [ ] H21.4 P3 Connection grammar theo intent, unique destination, edge insert.
 - [ ] H21.5 P4 Run/quote/approval/cancel/retry thống nhất.
 - [ ] H21.6 P5 First-run/templates/assets-history/Assistant progressive.

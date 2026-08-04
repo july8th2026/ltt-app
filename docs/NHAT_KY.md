@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-04 — H21.3 Creative node shell và composer safe-area
+
+- **Mục tiêu:** bỏ box H20 quá lớn/CTA trùng và chặn palette/composer/node đè
+  lên nhau trước khi sửa grammar đường nối.
+- **Hạng mục:** H21.3 hoàn thành; H21.4 là bước kế tiếp.
+- **Trạng thái:** source/build/local browser PASS; chưa deploy production.
+
+### Đã làm
+
+- Giữ `ToolNode` H20 cho mode `legacy`; thêm `CreativeToolNode` riêng cho mode
+  `creative`, không rewrite document đã lưu.
+- Creative node rộng 300 px, preview 170 px, status gọn trong header, footer chỉ
+  báo chi phí/kết quả; bỏ nút Báo giá/Chạy lặp trong từng node.
+- Chỉ render một output `+` chính; input port ẩn mặc định và hiện khi hover/chọn.
+- Composer chỉ hiện tối đa bốn field nghiệp vụ. Khi chọn node, Canvas dành vùng
+  219 px cho composer nên Fit View không đặt node phía sau panel.
+- Mở palette sẽ đóng selection/composer; thêm block sẽ đóng palette. Browser đã
+  bắt overlap cũ và xác minh lại ba desktop viewport không còn overlap.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` | 43 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 139,97 kB |
+| Playwright 1366×768 | 4 node; composer 680×205; overlap 0; overflow 0 |
+| Playwright 1720×940 | 4 node; overlap 0; overflow 0 |
+| Playwright 1920×1080 | 4 node; overlap 0; overflow 0 |
+| Playwright console/network | console error 0; API liên quan 200/201 |
+
+### Quyết định mới
+
+Không có; thực thi Q67. Cờ `legacy` giữ renderer H20 để rollback.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` và restart Web; document/runtime giữ
+nguyên nên không lùi schema.
+
+### Còn tồn đọng
+
+- H21.4 còn edge arrow/type/midpoint insert/reconnect và matrix intent đầy đủ.
+- H21.5–H21.9 chưa triển khai; chưa deploy production.
+
+### Việc tiếp theo
+
+1. H21.4 thay destination bằng intent duy nhất và thêm edge insert.
+2. Chạy matrix Text/Image/Video/Audio và cycle validation trên browser.
+
 ## 2026-08-04 — H21.1–H21.2 Presentation Adapter và bốn block chuẩn
 
 - **Mục tiêu:** bắt đầu UX Reset tuần tự, khóa đường migration/rollback trước

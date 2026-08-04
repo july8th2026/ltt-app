@@ -189,3 +189,34 @@ body.agent-canvas-immersive .theme-light .canvas-toolbar { background:#ffffffee;
 .node-artifacts { display:grid; gap:5px; margin-top:7px; }.node-artifacts>div { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; padding:5px 7px; border:1px solid var(--border-subtle); border-radius:8px; }.node-artifacts>div>span { overflow:hidden; color:var(--text-secondary); font-size:9px; text-overflow:ellipsis; white-space:nowrap; }.node-artifacts nav { display:flex; gap:3px; }.node-artifacts :is(a,button),.node-duplicate { min-height:28px; padding:4px 7px; border:1px solid var(--border-strong); border-radius:6px; background:var(--surface-overlay); color:var(--text-secondary); font-size:8px; text-decoration:none; }.node-duplicate { justify-self:end; }
 .theme-light .node-inline-text textarea { background:#fff; color:#17191d; }
 .sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+
+/* H21 creative-v1. Scoped so LTT_AGENT_CANVAS_PRESENTATION=legacy keeps H20. */
+.canvas-shell[data-presentation=creative] .creative-node { width:300px; min-width:300px; padding:8px; border-radius:14px; }
+.canvas-shell[data-presentation=creative] .creative-node header { min-height:34px; gap:6px; padding:0 2px 6px; }
+.canvas-shell[data-presentation=creative] .creative-node header>span { width:25px; height:25px; font-size:12px; }
+.canvas-shell[data-presentation=creative] .creative-node .node-title { font-size:14px; }
+.canvas-shell[data-presentation=creative] .creative-node header .node-status { max-width:72px; margin:0; overflow:hidden; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
+.canvas-shell[data-presentation=creative] .creative-node .node-preview { height:170px; padding:8px; }
+.canvas-shell[data-presentation=creative] .creative-node .node-empty { gap:6px; }
+.canvas-shell[data-presentation=creative] .creative-node .node-empty>span { max-width:230px; }
+.canvas-shell[data-presentation=creative] .creative-node .node-inline-text textarea { padding:9px; font-size:12px; }
+.canvas-shell[data-presentation=creative] .creative-node>footer { min-height:30px; padding:6px 3px 0; color:var(--text-muted); font-size:8px; }
+.canvas-shell[data-presentation=creative] .creative-node>footer strong { color:var(--text-secondary); }
+.canvas-shell[data-presentation=creative] .creative-node .input-port { opacity:0; transition:opacity .15s ease; }
+.canvas-shell[data-presentation=creative] .creative-node:hover .input-port,.canvas-shell[data-presentation=creative] .creative-node.is-selected .input-port { opacity:1; }
+.canvas-shell[data-presentation=creative] .creative-node .primary-output { top:50%!important; }
+.canvas-shell[data-presentation=creative] .creative-node .primary-output::after { display:none; }
+.canvas-shell[data-presentation=creative] .creative-node .primary-output b { opacity:1; transform:scale(.88); }
+.canvas-shell[data-presentation=creative] .context-composer { width:min(680px,calc(100% - 180px)); max-height:205px; padding:9px 11px; }
+.canvas-shell[data-presentation=creative] .context-fields { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:6px; }
+.canvas-shell[data-presentation=creative] .context-fields textarea { min-height:54px; max-height:70px; }
+.canvas-shell[data-presentation=creative] .context-composer .composer-reference { margin-top:6px; }
+.canvas-shell[data-presentation=creative] .composer-input-chips { max-height:34px; overflow:auto; }
+body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-body.has-composer .canvas-stage { bottom:219px; }
+.canvas-shell[data-presentation=creative] .canvas-body.has-composer .page-dock { bottom:226px; }
+@media (max-width:640px) { .canvas-shell[data-presentation=creative] .creative-node { width:260px; min-width:260px; }
+  .canvas-shell[data-presentation=creative] .creative-node .node-preview { height:150px; }
+  .canvas-shell[data-presentation=creative] .context-composer { left:8px; right:8px; width:auto; max-height:42dvh; }
+  body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-body.has-composer .canvas-stage { bottom:42dvh; }
+  .canvas-shell[data-presentation=creative] .canvas-body.has-composer .page-dock { display:none; }
+}

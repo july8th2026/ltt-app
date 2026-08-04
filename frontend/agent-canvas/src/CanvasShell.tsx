@@ -7,16 +7,16 @@ import './canvas.css'
 import { activePage, cloneGraphSelection, connectionAllowed, editorReducer, emptyDocument, nextNode,
   scopeNodeIds, type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
-import { AnnotationNode, FrameNode, ToolNode } from './ToolNode'
+import { AnnotationNode, CreativeToolNode, FrameNode, ToolNode } from './ToolNode'
 import { fieldLabel, mediaKind, nodeModality, outputLabel, primaryFields } from './nodePresentation'
 import { CANVAS_PRESENTATION_VERSION, customerPaletteTools, customerToolLabel,
-  destinationLabel } from './presentationAdapter'
+  destinationLabel, primaryOutputHandle } from './presentationAdapter'
 import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, createShare, exportWorkflow, importWorkflow,
   loadOrCreateWorkflow, loadPalette, loadPreferences, loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot, savePreferences, saveWorkflow,
   previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, uploadAsset, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type Workflow, type WorkflowSnapshot } from './workflowApi'
 
-const nodeTypes = { tool: ToolNode, frame: FrameNode, annotation: AnnotationNode }
+const nodeTypes = { tool: ToolNode, creativeTool: CreativeToolNode, frame: FrameNode, annotation: AnnotationNode }
 
 function Editor() {
   const [state, dispatch] = useReducer(editorReducer, { document: emptyDocument(), past: [], future: [] })
@@ -170,7 +170,8 @@ function Editor() {
     if (position) node.position = position
     dispatch({ type: 'graph', nodes: [...page.nodes, node], edges: page.edges })
     dispatch({ type: 'select', id: node.id })
-  }, [readOnly, page])
+    if(presentationMode==='creative'){setDesktopPanel(null);setQuickConnect(null);setQuickCreate(null)}
+  }, [readOnly, page,presentationMode])
 
   const onConnect = useCallback((connection: Connection) => {
     const sourceNode = page.nodes.find(node => node.id === connection.source)
@@ -358,12 +359,14 @@ function Editor() {
   }
 
   const displayNodes = useMemo(() => {
-    const tools = page.nodes.map(node => {const tool=byName.get(String(node.data.tool));const width=readOnly?280:360
+    const tools = page.nodes.map(node => {const tool=byName.get(String(node.data.tool));
+    const creative=presentationMode==='creative';const width=readOnly?280:creative?300:360
     const inputFields=tool?.name.startsWith('asset.')?[]:Object.keys(tool?.params_schema??{}).filter(field=>palette.some(source=>Object.keys(source.returns).some(handle=>connectionAllowed(source,handle,tool,field))))
-    return ({ ...node,
-    measured:{width,height:readOnly?284:334},handles:[
+    const outputHandles=creative?[primaryOutputHandle(tool)].filter(Boolean) as string[]:Object.keys(tool?.returns??{})
+    return ({ ...node,type:creative?'creativeTool':'tool',
+    measured:{width,height:readOnly?244:creative?258:334},handles:[
       ...inputFields.map((id,index)=>({id,type:'target' as const,position:Position.Left,x:-22,y:34+index*34,width:44,height:44})),
-      ...Object.keys(tool?.returns??{}).map((id,index)=>({id,type:'source' as const,position:Position.Right,x:width-22,y:46+index*42,width:44,height:44}))],
+      ...outputHandles.map((id,index)=>({id,type:'source' as const,position:Position.Right,x:width-22,y:46+index*42,width:44,height:44}))],
     selected: node.id === state.selectedId || selected.includes(node.id),
     data: { ...node.data, __tool: tool, __cost: liveQuotes[node.id]??costs[node.id],
       __readOnly: readOnly,__inputFields:inputFields,__label:node.label,
@@ -400,7 +403,7 @@ function Editor() {
       draggable: false, selectable: false, connectable: false, zIndex: 3,
       data: { kind: 'comment', text: comment.text } }))
     return [...frames, ...tools, ...notes, ...comments]
-  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,prepareScope,uploadToNode,generateInNode,duplicateNode])
+  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,presentationMode,prepareScope,uploadToNode,generateInNode,duplicateNode])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
     return { ...edge, selected: selectedEdges.includes(edge.id), label: isError ? 'Lỗi' : undefined,
@@ -504,10 +507,10 @@ function Editor() {
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
         : phase === 'error' ? <>Lưu lỗi <button onClick={() => setRetryNonce(value => value + 1)}>Thử lại</button></> : 'Đã lưu'}</div></header>
     <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Inspector'}</button>)}</nav>
-    <div className={`canvas-body panel-${mobilePanel}`}>
+    <div className={`canvas-body panel-${mobilePanel}${selectedNode&&presentationMode==='creative'?' has-composer':''}`}>
       <nav className="canvas-rail" aria-label="Công cụ Canvas">
         <button title="Chọn" aria-label="Công cụ chọn" aria-pressed={!desktopPanel}>↖</button>
-        <button title="Thêm node" aria-label="Mở công cụ" aria-pressed={desktopPanel==='tools'} onClick={()=>setDesktopPanel(value=>value==='tools'?null:'tools')}>＋</button>
+        <button title="Thêm node" aria-label="Mở công cụ" aria-pressed={desktopPanel==='tools'} onClick={()=>{const open=desktopPanel!=='tools';setDesktopPanel(open?'tools':null);if(open&&presentationMode==='creative'){setSelected([]);setSelectedEdges([]);dispatch({type:'select'})}}}>＋</button>
         <button title="Workspace" aria-label="Mở Workspace" aria-pressed={desktopPanel==='workspace'} onClick={()=>setDesktopPanel(value=>value==='workspace'?null:'workspace')}>▦</button>
         <button title="Lớp" aria-label="Mở danh sách lớp" aria-pressed={showLayers} onClick={()=>setShowLayers(value=>!value)}>☷</button>
         <button title="Sticky note" aria-label="Tạo sticky note" disabled={readOnly} onClick={()=>dispatch({type:'noteAdd',text:'Ghi chú mới'})}>□</button>
@@ -625,7 +628,7 @@ function Editor() {
               onClick={()=>{dispatch({type:'nodeMovePage',id:contextMenu.nodeId!,pageId:item.id});setContextMenu(null)}}>Chuyển sang {item.name}</button>)}
             <button className="danger" disabled={readOnly} onClick={()=>{dispatch({type:'delete',ids:[contextMenu.nodeId!]});setSelected([]);setContextMenu(null)}}>Xóa node</button></>}</>}
       </aside>}
-      {selectedNode&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly}
+      {selectedNode&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly} presentationMode={presentationMode}
         onClose={()=>{setSelected([]);dispatch({type:'select'})}} onAdvanced={()=>setDesktopPanel('inspector')}
         onRun={()=>void prepareScope({mode:'node',node_id:selectedNode.id})} cost={liveQuotes[selectedNode.id]??costs[selectedNode.id]}
         references={referenceOptions} connectedInputs={connectedInputs} onDisconnect={disconnectInput} onReference={reference=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
@@ -679,12 +682,12 @@ function FlowStatus(){
 type ReferenceOption={source:string;sourceHandle:string;targetHandle:string;label:string;detail:string}
 type ConnectedInput={edgeId:string;label:string;detail:string}
 
-function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose,onRun,cost,references,connectedInputs,onReference,onDisconnect}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;
+function ContextComposer({node,tool,readOnly,presentationMode,onChange,onAdvanced,onClose,onRun,cost,references,connectedInputs,onReference,onDisconnect}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;presentationMode:'creative'|'legacy';
   onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void;onRun:()=>void;cost?:number;
   references:ReferenceOption[];connectedInputs:ConnectedInput[];onReference:(reference:ReferenceOption)=>void;onDisconnect:(edgeId:string)=>void}) {
   if(!tool)return null
   const params=(node.data.params??{}) as Record<string,unknown>
-  const fields=primaryFields(tool,params)
+  const fields=presentationMode==='creative'?primaryFields(tool,params).slice(0,4):primaryFields(tool,params)
   const setParam=(name:string,value:unknown)=>onChange({params:{...params,[name]:value}})
   return <section className="context-composer" aria-label={`Thiết lập ${customerToolLabel(tool)}`}>
     <header><div><small>Đang làm việc với</small><strong>{customerToolLabel(tool)}</strong></div><nav><button onClick={onAdvanced}>Nâng cao</button><button aria-label="Đóng thiết lập" onClick={onClose}>×</button></nav></header>
