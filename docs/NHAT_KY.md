@@ -14,6 +14,39 @@
 
 ---
 
+## 2026-08-04 — Chuẩn bị H21.8 controlled beta (chưa nghiệm thu)
+
+- **Mục tiêu:** biến gate “5 người dùng thật” thành kịch bản đo có thể lặp lại,
+  không để moderator dẫn dắt hoặc agent tự giả lập kết quả.
+- **Hạng mục:** chỉ hoàn tất bộ công cụ đo; H21.8 vẫn OPEN.
+- **Trạng thái:** READY TO RUN; chưa có E4, chưa deploy production.
+
+### Đã làm
+
+- Tạo `07_CONTROLLED_BETA_PROTOCOL.md`: cohort, 5 task, luật moderator, công thức
+  success/time/help/clarity, credit guard, điều kiện dừng P0/P1 và vòng rework.
+- Tạo `08_CONTROLLED_BETA_RESULTS.csv` chỉ có schema dữ liệu; không chèn participant
+  hoặc kết quả giả.
+- Khóa ngưỡng: 25 task, success ≥80%, median valid chain ≤120 giây, help trung
+  bình ≤1/task, UX/UI ≥75, Q≥80 và không P0/P1 mở.
+
+### Test đã chạy
+
+Không chạy lại pytest vì đây là thay đổi tài liệu sau full gate H21.7.
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\\scan_source_secrets.py` | 930 file; 142.311 dòng; 0 finding; PASS |
+
+### Quyết định mới
+
+Không có; cụ thể hóa blueprint P7 đã khóa.
+
+### Còn tồn đọng
+
+- Cần môi trường beta an toàn và 5 người dùng thật để tạo E4.
+- H21.8/H21.9 chưa PASS; không deploy production.
+
 ## 2026-08-04 — H21.7 Browser/regression/a11y/performance/recovery gate
 
 - **Mục tiêu:** nghiệm thu UX Reset trên browser render thật, tải graph lớn,

@@ -1551,7 +1551,9 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   50 block đều full-width/overflow 0, mobile 390 tự fit graph và chỉ-xem,
   console 0, request bất ngờ 4xx/5xx 0. Keyboard/screen-reader label pass;
   conflict có CTA tải bản mới, offline xếp hàng và tự lưu khi online lại.
-- [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E.
+- [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E — protocol và CSV
+  đo đã sẵn sàng tại `07_CONTROLLED_BETA_PROTOCOL.md` / `08_CONTROLLED_BETA_RESULTS.csv`;
+  còn thiếu E4 từ đúng 5 người dùng thật nên chưa được đánh dấu PASS.
 - [ ] H21.9 Deploy canary/production chỉ sau H21.8 PASS.
 
 Thứ tự bắt buộc H21.1→H21.9; không làm Assistant/model breadth trước core block

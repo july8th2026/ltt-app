@@ -1,0 +1,1 @@
+participant_id,task_id,task_order,build_commit,browser,viewport,started_at,success,first_valid_chain_seconds,misclicks,help_requests,abandoned,clarity_1_5,provider_executed,credit_before,credit_after,observed_issue,evidence_ref
