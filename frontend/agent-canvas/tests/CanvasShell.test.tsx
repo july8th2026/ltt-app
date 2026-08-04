@@ -10,6 +10,8 @@ const palette = { version: 1, tools: [
     app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{image:'image'} },
   { name: 'video.generate', label:'Tạo video',category:'content',primary:true,description:'Tạo video từ mô tả',
     app_slug:'seedance',app_name:'Seedance',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{video:'video'} },
+  { name: 'image.upscale', label:'Nâng cấp ảnh',category:'transform',primary:false,description:'Tăng độ nét ảnh',
+    app_slug:'upscale',app_name:'Upscale',requires:['gpu'],verifiable:[],params_schema:{image_key:{type:'image',required:true}},returns:{image:'image'} },
   { name: 'text.script', label:'Viết kịch bản',category:'specialized',primary:false,description:'Viết kịch bản',
     app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{topic:{type:'text',required:true}},returns:{script:'text'} }
 ] }
@@ -22,7 +24,7 @@ beforeEach(() => {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const url = String(input)
     if (url.endsWith('/palette')) return new Response(JSON.stringify(palette), { status: 200 })
-    if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'light',catalog_mode:'simple',revision:init?.method?1:0}), { status: 200 })
+    if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'dark',catalog_mode:'advanced',revision:init?.method?1:0}), { status: 200 })
     if (url.endsWith('/workflows') && !init?.method) return new Response(JSON.stringify({ items: [] }), { status: 200 })
     if (url.includes('/workflows/w1')) return new Response(JSON.stringify({ ...workflow, revision: 2 }), { status: 200 })
     return new Response(JSON.stringify(workflow), { status: 201 })
@@ -44,7 +46,7 @@ describe('CanvasShell', () => {
     expect(node).toBeInTheDocument()
     expect(within(node).queryByRole('textbox')).not.toBeInTheDocument()
     fireEvent.click(node)
-    const prompt = screen.getByRole('textbox', { name: /prompt/ })
+    const prompt = screen.getByRole('textbox', { name: /Mô tả/ })
     fireEvent.change(prompt, { target: { value: 'Chủ đề mới' } })
     expect(prompt).toHaveValue('Chủ đề mới')
   })
@@ -100,18 +102,48 @@ describe('CanvasShell', () => {
     expect(screen.queryByLabelText(/Comment Bình luận mới/)).not.toBeInTheDocument()
   })
 
-  it('defaults to a light, simple catalog and persists explicit choices', async () => {
+  it('defaults to a dark, complete catalog and persists explicit choices', async () => {
     render(<CanvasShell />)
     const canvas=await screen.findByRole('region',{name:'LTT Agent Canvas'})
-    expect(canvas).toHaveClass('theme-light')
+    expect(canvas).toHaveClass('theme-dark')
     fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
     expect(screen.getByRole('button',{name:'Thêm text.generate'})).toHaveTextContent('Tạo văn bản')
+    expect(screen.getByRole('button',{name:'Thêm text.script'})).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button',{name:'Chỉ hiện công cụ chính'}))
     expect(screen.queryByRole('button',{name:'Thêm text.script'})).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
-    expect(await screen.findByRole('button',{name:'Thêm text.script'})).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button',{name:'Chuyển sang nền tối'}))
-    expect(canvas).toHaveClass('theme-dark')
+    fireEvent.click(screen.getByRole('button',{name:'Chuyển sang nền sáng'}))
+    expect(canvas).toHaveClass('theme-light')
     await waitFor(()=>expect(globalThis.fetch).toHaveBeenCalledWith('/agent/api/preferences',expect.objectContaining({method:'PUT'})))
+  })
+
+  it('provides pane and node context menus without exposing raw tool fields',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
+    const node=await screen.findByLabelText('Node image.generate')
+    expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
+    expect(screen.queryByText('app_slug')).not.toBeInTheDocument()
+    fireEvent.contextMenu(node,{clientX:400,clientY:300})
+    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Chạy từ đây')
+    fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
+    fireEvent.contextMenu(document.querySelector('.react-flow__pane')!,{clientX:600,clientY:250})
+    expect(screen.getByRole('complementary',{name:'Menu khoảng trống Canvas'})).toHaveTextContent('Tự động sắp xếp node')
+  })
+
+  it('connects a compatible node through the contextual @ reference picker',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm image.upscale'}))
+    fireEvent.click(await screen.findByLabelText('Node image.upscale'))
+    const picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'})
+    expect(picker).toHaveTextContent('@Tạo hình ảnh · Hình ảnh → Ảnh đầu vào')
+    const option=screen.getByRole('option',{name:/@Tạo hình ảnh/}) as HTMLOptionElement
+    fireEvent.change(picker,{target:{value:option.value}})
+    await waitFor(()=>expect(vi.mocked(globalThis.fetch).mock.calls.some(([,init])=>{
+      if(init?.method!=='PUT'||typeof init.body!=='string')return false
+      return JSON.parse(init.body).canvas?.pages?.[0]?.edges?.length===1
+    })).toBe(true),{timeout:1800})
   })
 })
 

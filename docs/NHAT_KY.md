@@ -14,6 +14,67 @@
 
 ---
 
+## 2026-08-04 — H20 Agent Canvas node-native deep UX
+
+- **Mục tiêu:** đưa Canvas từ vỏ ToolSpec kỹ thuật thành trải nghiệm node-native,
+  học capability/interaction từ PlenX nhưng giữ runtime, ownership và credit LTT.
+- **Hạng mục:** H20.0–H20.7a hoàn thành; H20.7b production release chưa chạy.
+- **Trạng thái:** release candidate local xanh; chưa deploy production.
+
+### Đã làm
+
+- Q64 đã được đánh dấu ĐÃ THAY bởi Q66; dark/advanced trở thành mặc định nhưng
+  lựa chọn user đã lưu vẫn được tôn trọng.
+- Thêm presentation layer theo modality cho Text/Image/Video/Audio/Batch/Input/
+  Transform, empty/configured/output state, upload/generate/manual và contextual
+  composer; thông số kỹ thuật giữ trong Inspector.
+- Thêm context menu pane/node, copy/delete/move page, run node/run-from-here,
+  quick-create compatible khi kéo connection ra khoảng trống và `@node` typed
+  reference. Một input chỉ giữ một source đang hiệu lực.
+- Browser bắt và đóng ba lỗi ngoài phạm vi unit test: node/edge chưa initialized
+  làm graph vô hình; edge cùng input bị nhân đôi; scoped run bị validation của
+  node không liên quan chặn. Viewport change cũng không còn làm bẩn undo history.
+- Chạy audit DEEP mới tại `docs/APP_AUDIT/agent/2026-08-04-deep-ux/`, kết quả
+  `Q83 · M80 · E82 · BETA`. Không tái dùng điểm H17/H18.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `npm test -- --run` | **27 passed** |
+| `npm run build` | typecheck + Vite build **PASS** |
+| `python -m pytest -q tests\test_95_agent_canvas_build.py tests\test_97_agent_workflow_api.py` | **22 passed**, 1 deprecation warning |
+| `python -m pytest -q` (bundle cuối) | **2.063 passed, 8 skipped, 23 subtests**, 649,97 giây |
+| `npm audit --audit-level=high` | **0 vulnerability** |
+| `python tools\lint_app_contract.py` | 12 app, **0 ERROR, 0 WARN** |
+| `python tools\scan_source_secrets.py` (sau cập nhật docs) | 1.493 file/196.292 dòng, **0 finding** |
+| Browser 1366/1720/1920 + mobile 390 | overflow 0; edge state/renderer khớp; console 0; fresh failed request 0 |
+| Scoped node run local | `awaiting_approval`, quote 10 credit, actual 0; **không approve** |
+
+### Quyết định mới
+
+Q66 đã thêm và Q64 đã được dọn theo giao thức thay quyết định. Không thay runtime
+Agent, ToolSpec contract, provider, ownership hoặc credit.
+
+### Cách lùi lại
+
+Revert commit H20. Dữ liệu workflow v2 và run hiện có không cần migration; đặt
+preference user về theme/catalog cũ nếu cần presentation fallback.
+
+### Còn tồn đọng
+
+- H20.7b production backup/update/health/canary/authenticated smoke chưa chạy.
+- Chưa có E4 beta user task/telemetry; mobile authoring vẫn deliberate omission.
+- Test harness còn cảnh báo deprecation Starlette/httpx, không ảnh hưởng runtime.
+
+### Việc tiếp theo
+
+1. Chỉ deploy H20 khi có lệnh production rõ ràng; chạy backup/health/smoke/rollback.
+2. Thu beta task completion, time-to-first-run, validation error và approval drop.
+3. Dùng closed loop LTT-AQA trước khi mở thêm capability mới.
+
+---
+
 ## 2026-08-04 — H19 xây core PROMPT AI OMMI và nghiệm thu browser
 
 - **Mục tiêu:** replatform Prompt Seedance Studio thành app tenant-safe dùng

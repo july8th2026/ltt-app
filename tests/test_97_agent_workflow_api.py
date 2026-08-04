@@ -137,7 +137,7 @@ def test_validate_server_price_and_palette_are_authoritative(api):
 def test_canvas_preferences_are_validated_and_owned_per_user(api):
     a, token_a, b, _ = api
     assert a.get("/agent/api/preferences").json() == {
-        "theme": "light", "catalog_mode": "simple", "revision": 0}
+        "theme": "dark", "catalog_mode": "advanced", "revision": 0}
     assert a.put("/agent/api/preferences", json={
         "theme": "dark", "catalog_mode": "advanced"}).status_code == 400
     saved = a.put("/agent/api/preferences", headers={"X-CSRF-Token": token_a}, json={
@@ -145,7 +145,7 @@ def test_canvas_preferences_are_validated_and_owned_per_user(api):
     assert saved.status_code == 200
     assert saved.json() == {"theme": "dark", "catalog_mode": "advanced", "revision": 1}
     assert a.get("/agent/api/preferences").json()["theme"] == "dark"
-    assert b.get("/agent/api/preferences").json()["theme"] == "light"
+    assert b.get("/agent/api/preferences").json()["theme"] == "dark"
     assert a.put("/agent/api/preferences", headers={"X-CSRF-Token": token_a}, json={
         "theme": "blue", "catalog_mode": "simple"}).status_code == 422
 

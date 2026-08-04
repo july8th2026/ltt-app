@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activePage, connectionAllowed, editorReducer, emptyDocument, type EditorState, type PaletteTool } from '../src/editorState'
+import { activePage, connectionAllowed, editorReducer, emptyDocument, scopeNodeIds, type EditorState, type PaletteTool } from '../src/editorState'
 
 const tool = (name: string, input: string, output: string): PaletteTool => ({ name,
   description: '', app_slug: 'x', app_name: 'X', requires: [], verifiable: [],
@@ -25,7 +25,7 @@ describe('editor reducer', () => {
     activePage(document).nodes = [{ id: 'a', type: 'tool', position: { x: 99, y: 99 }, data: { tool: 'x' } }]
     const state = editorReducer({ document, past: [], future: [] }, { type: 'layout' })
     expect(activePage(state.document).nodes[0].data).toEqual({ tool: 'x' })
-    expect(activePage(state.document).nodes[0].position).toEqual({ x: 80, y: 80 })
+    expect(activePage(state.document).nodes[0].position).toEqual({ x: 90, y: 90 })
   })
 
   it('disconnects selected edges without deleting their nodes and can undo', () => {
@@ -90,11 +90,31 @@ describe('editor reducer', () => {
     expect(state.document.pages).toHaveLength(1)
     expect(activePage(state.document).nodes[0].id).toBe('a')
   })
+
+  it('moves a node to another page and removes invalid cross-page edges',()=>{
+    const document=emptyDocument();const first=activePage(document)
+    first.nodes=[{id:'a',type:'tool',position:{x:0,y:0},data:{}},{id:'b',type:'tool',position:{x:1,y:1},data:{}}]
+    first.edges=[{id:'a-b',source:'a',target:'b'}]
+    let state:EditorState={document,past:[],future:[]};state=editorReducer(state,{type:'pageAdd'})
+    const target=state.document.active_page_id;state=editorReducer(state,{type:'pageSelect',id:'page-1'})
+    state=editorReducer(state,{type:'nodeMovePage',id:'a',pageId:target})
+    expect(activePage(state.document).nodes.map(node=>node.id)).toEqual(['b'])
+    expect(activePage(state.document).edges).toHaveLength(0)
+    expect(state.document.pages.find(page=>page.id===target)?.nodes[0].id).toBe('a')
+  })
 })
 
 describe('typed connection guard', () => {
   it('accepts matching ports and rejects mismatches', () => {
     expect(connectionAllowed(tool('a', 'text', 'video'), 'output', tool('b', 'video', 'text'), 'input')).toBe(true)
     expect(connectionAllowed(tool('a', 'text', 'video'), 'output', tool('b', 'image', 'text'), 'input')).toBe(false)
+    expect(connectionAllowed(tool('a', 'text', 'text'), 'output', tool('b', 'enum', 'text'), 'input')).toBe(false)
+  })
+
+  it('limits a node run to that node and all transitive prerequisites',()=>{
+    const nodes=['a','b','c','unrelated'].map((id,index)=>({id,type:'tool' as const,position:{x:index,y:0},data:{}}))
+    const edges=[{id:'a-b',source:'a',target:'b'},{id:'b-c',source:'b',target:'c'}]
+    expect(new Set(scopeNodeIds(nodes,edges,['c']))).toEqual(new Set(['a','b','c']))
+    expect(scopeNodeIds(nodes,edges,['missing'])).toEqual([])
   })
 })

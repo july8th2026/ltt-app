@@ -42,7 +42,7 @@ _ASSET_LIMIT = 90 * 1024 * 1024
 _ASSET_MIME_PREFIXES = ("image/", "video/", "audio/")
 _ASSISTANT_SALT = "ltt-agent-assistant-proposal-v1"
 _PREFERENCES_SLUG = "agent.preferences"
-_DEFAULT_PREFERENCES = {"theme": "light", "catalog_mode": "simple"}
+_DEFAULT_PREFERENCES = {"theme": "dark", "catalog_mode": "advanced"}
 
 
 def _assistant_serializer() -> URLSafeTimedSerializer:

@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Controls, MiniMap,
+import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Controls, MiniMap, Position,
   ReactFlow, ReactFlowProvider, useReactFlow, type Connection, type EdgeChange,
-  type NodeChange } from '@xyflow/react'
+  useStore, useUpdateNodeInternals, type NodeChange } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import './canvas.css'
 import { activePage, connectionAllowed, editorReducer, emptyDocument, nextNode,
-  type PaletteTool } from './editorState'
+  scopeNodeIds, type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
 import { AnnotationNode, FrameNode, ToolNode } from './ToolNode'
+import { fieldLabel, mediaKind, outputLabel, primaryFields } from './nodePresentation'
 import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, createShare, exportWorkflow, importWorkflow,
   loadOrCreateWorkflow, loadPalette, loadPreferences, loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot, savePreferences, saveWorkflow,
-  previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
+  previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, uploadAsset, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type Workflow, type WorkflowSnapshot } from './workflowApi'
 
 const nodeTypes = { tool: ToolNode, frame: FrameNode, annotation: AnnotationNode }
@@ -28,9 +29,11 @@ function Editor() {
   const [mobilePanel,setMobilePanel]=useState<'canvas'|'palette'|'inspector'>('canvas')
   const [desktopPanel,setDesktopPanel]=useState<'tools'|'workspace'|'run'|'inspector'|null>(null)
   const [paletteQuery,setPaletteQuery]=useState('')
-  const [theme,setTheme]=useState<'light'|'dark'>('light')
-  const [catalogMode,setCatalogMode]=useState<'simple'|'advanced'>('simple')
+  const [theme,setTheme]=useState<'light'|'dark'>('dark')
+  const [catalogMode,setCatalogMode]=useState<'simple'|'advanced'>('advanced')
   const [quickConnect,setQuickConnect]=useState<{sourceId:string;sourceHandle:string}|null>(null)
+  const [quickCreate,setQuickCreate]=useState<{sourceId:string;sourceHandle:string;x:number;y:number;flow:{x:number;y:number}}|null>(null)
+  const [contextMenu,setContextMenu]=useState<{kind:'pane'|'node';x:number;y:number;flow:{x:number;y:number};nodeId?:string}|null>(null)
   const [showLayers,setShowLayers]=useState(false)
   const [commandOpen,setCommandOpen]=useState(false)
   const [commandQuery,setCommandQuery]=useState('')
@@ -58,6 +61,7 @@ function Editor() {
   const dragBefore = useRef<CanvasDocument | undefined>(undefined)
   const csrf = document.querySelector<HTMLElement>('#agent-canvas-root')?.dataset.csrfToken ?? ''
   const reactFlow = useReactFlow()
+  const updateNodeInternals=useUpdateNodeInternals()
   const page = activePage(state.document)
   const showGrid=page.view?.grid??true
   const showConnections=page.view?.connections??true
@@ -65,7 +69,26 @@ function Editor() {
   const byName = useMemo(() => new Map(palette.map(tool => [tool.name, tool])), [palette])
   const selectedNode = page.nodes.find(node => node.id === state.selectedId)
   const selectedEdge = page.edges.find(edge=>selectedEdges.includes(edge.id))
+  const referenceOptions=useMemo(()=>{
+    if(!selectedNode)return []
+    const targetTool=byName.get(String(selectedNode.data.tool))
+    return page.nodes.filter(node=>node.id!==selectedNode.id).flatMap(node=>{
+      const sourceTool=byName.get(String(node.data.tool))
+      if(!sourceTool||!targetTool)return []
+      for(const sourceHandle of Object.keys(sourceTool.returns))for(const targetHandle of Object.keys(targetTool.params_schema)){
+        if(connectionAllowed(sourceTool,sourceHandle,targetTool,targetHandle))return [{source:node.id,sourceHandle,targetHandle,
+          label:sourceTool.label??sourceTool.name,detail:`${outputLabel(sourceHandle,sourceTool.returns[sourceHandle])} → ${fieldLabel(targetHandle)}`}]
+      }
+      return []
+    })
+  },[selectedNode,page.nodes,byName])
   const refreshRunHistory=useCallback(()=>loadRunHistory().then(setRunHistory).catch(()=>setRunHistory([])),[])
+
+  useEffect(()=>{
+    if(!palette.length||!page.nodes.length)return
+    const frame=requestAnimationFrame(()=>updateNodeInternals(page.nodes.map(node=>node.id)))
+    return()=>cancelAnimationFrame(frame)
+  },[updateNodeInternals,palette.length,page.nodes.length])
 
   useEffect(() => {
     let active = true
@@ -142,12 +165,68 @@ function Editor() {
     const targetNode = page.nodes.find(node => node.id === connection.target)
     const sourceTool = byName.get(String(sourceNode?.data.tool)); const targetTool = byName.get(String(targetNode?.data.tool))
     if (!connectionAllowed(sourceTool, connection.sourceHandle, targetTool, connection.targetHandle)) return
-    const edges = addEdge({ ...connection, id: `${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}` }, page.edges) as CanvasEdge[]
+    const available=page.edges.filter(edge=>!(edge.target===connection.target&&edge.targetHandle===connection.targetHandle))
+    const edges = addEdge({ ...connection, id: `${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}` }, available) as CanvasEdge[]
     const nodes = page.nodes.map(node => node.id === connection.target
       ? { ...node, data: { ...node.data, params: { ...(node.data.params as object ?? {}),
         [connection.targetHandle!]: `$${connection.source}.${connection.sourceHandle}` } } } : node)
     dispatch({ type: 'graph', nodes, edges })
   }, [byName, page])
+
+  const addConnectedTool=useCallback((tool:PaletteTool,sourceId:string,sourceHandle:string,position:{x:number;y:number})=>{
+    if(readOnly)return
+    const source=page.nodes.find(node=>node.id===sourceId);const sourceTool=byName.get(String(source?.data.tool))
+    const targetHandle=Object.keys(tool.params_schema).find(field=>connectionAllowed(sourceTool,sourceHandle,tool,field))
+    if(!targetHandle)return
+    const node=nextNode(tool,page.nodes.length);node.position=position
+    node.data.params={...((node.data.params??{}) as Record<string,unknown>),[targetHandle]:`$${sourceId}.${sourceHandle}`}
+    const edge={id:`${sourceId}-${sourceHandle}-${node.id}-${targetHandle}`,source:sourceId,sourceHandle,target:node.id,targetHandle}
+    dispatch({type:'graph',nodes:[...page.nodes,node],edges:[...page.edges,edge]})
+    dispatch({type:'select',id:node.id});setSelected([node.id]);setQuickCreate(null)
+  },[readOnly,page,byName])
+
+  const uploadToNode=useCallback(async(nodeId:string,file:File)=>{
+    const node=page.nodes.find(item=>item.id===nodeId);if(!node)return
+    try{
+      const uploaded=await uploadAsset(file,csrf);const assetTool=byName.get(`asset.${uploaded.kind}`)
+      if(!assetTool){setRunError(`Canvas chưa có node đầu vào ${uploaded.kind}.`);return}
+      const keyField=Object.entries(assetTool.params_schema).find(([,rule])=>rule.type===uploaded.kind)?.[0]
+        ??`${uploaded.kind}_key`
+      dispatch({type:'update',id:nodeId,data:{tool:assetTool.name,params:{[keyField]:uploaded.key},
+        asset_name:uploaded.name,asset_size:uploaded.size}})
+      dispatch({type:'select',id:nodeId});setSelected([nodeId]);setRunError('')
+    }catch(error){setRunError(error instanceof Error?error.message:'Không tải được tệp.')}
+  },[page,csrf,byName])
+
+  const prepareScope=useCallback(async(scope:{mode:'node'|'selection';node_id?:string;node_ids?:string[]})=>{
+    if(!workflow||readOnly||run)return
+    if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
+    setDesktopPanel('run');setPhase('saving');setRunError('')
+    try{
+      const saved=await saveWorkflow({...workflow,canvas:state.document},csrf)
+      const checked=await validateWorkflow(saved,csrf)
+      setWorkflow(checked);setCosts(Object.fromEntries(checked.validation.step_costs.map((item:{step_id:string;maximum:number})=>[item.step_id,item.maximum])))
+      const requested=(scope.node_ids??[scope.node_id??'']).filter(Boolean)
+      const relevantIds=new Set(scopeNodeIds(page.nodes,page.edges,requested))
+      const relevantIssues=checked.validation.issues.filter((issue:{step_id:string;message:string})=>relevantIds.has(issue.step_id))
+      setValidationIssues(relevantIssues);setPhase('saved')
+      if(relevantIssues.length)return
+      setRun(await createRun(checked,csrf,scope,useCache));void refreshRunHistory()
+    }catch(error){setPhase(error instanceof WorkflowConflictError?'conflict':'error');setRunError(error instanceof Error?error.message:'Không chuẩn bị được bản chạy.')}
+  },[workflow,readOnly,run,state.document,csrf,useCache,refreshRunHistory,page.nodes,page.edges])
+
+  const downstreamIds=useCallback((nodeId:string)=>{
+    const found=new Set([nodeId]);let changed=true
+    while(changed){changed=false;for(const edge of page.edges)if(found.has(edge.source)&&!found.has(edge.target)){found.add(edge.target);changed=true}}
+    return [...found]
+  },[page.edges])
+
+  const duplicateNode=useCallback((nodeId:string)=>{
+    if(readOnly)return;const source=page.nodes.find(node=>node.id===nodeId);if(!source)return
+    const clone={...structuredClone(source),id:`${source.id}-copy-${Date.now()}`,
+      position:{x:source.position.x+32,y:source.position.y+32}}
+    dispatch({type:'graph',nodes:[...page.nodes,clone],edges:page.edges});dispatch({type:'select',id:clone.id});setSelected([clone.id])
+  },[readOnly,page])
 
   const duplicate = useCallback(() => {
     if (readOnly) return
@@ -189,17 +268,25 @@ function Editor() {
   }
 
   const displayNodes = useMemo(() => {
-    const tools = page.nodes.map(node => ({ ...node,
+    const tools = page.nodes.map(node => {const tool=byName.get(String(node.data.tool));const width=readOnly?280:360
+    const inputFields=Object.keys(tool?.params_schema??{}).filter(field=>palette.some(source=>Object.keys(source.returns).some(handle=>connectionAllowed(source,handle,tool,field))))
+    return ({ ...node,
+    measured:{width,height:readOnly?284:334},handles:[
+      ...inputFields.map((id,index)=>({id,type:'target' as const,position:Position.Left,x:-22,y:34+index*34,width:44,height:44})),
+      ...Object.keys(tool?.returns??{}).map((id,index)=>({id,type:'source' as const,position:Position.Right,x:width-22,y:46+index*42,width:44,height:44}))],
     selected: node.id === state.selectedId || selected.includes(node.id),
-    data: { ...node.data, __tool: byName.get(String(node.data.tool)), __cost: liveQuotes[node.id]??costs[node.id],
-      __readOnly: readOnly,
+    data: { ...node.data, __tool: tool, __cost: liveQuotes[node.id]??costs[node.id],
+      __readOnly: readOnly,__inputFields:inputFields,
       __onParamChange: (name:string,value:unknown) => dispatch({type:'update',id:node.id,data:{
         params:{...((node.data.params??{}) as Record<string,unknown>),[name]:value}}}),
       __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
+      __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id})},
+      __onRun:()=>{setSelected([node.id]);dispatch({type:'select',id:node.id});void prepareScope({mode:'node',node_id:node.id})},
+      __onUpload:(file:File)=>void uploadToNode(node.id,file),
       __status: String(run?.checkpoint[node.id]?.status ??
         (validationIssues.some(issue => issue.step_id === node.id) ? 'invalid'
         : costs[node.id] === undefined ? 'draft' : 'validated')),
-      __artifacts: (run?.artifacts ?? []).filter(item => item.step_id === node.id) } }))
+      __artifacts: (run?.artifacts ?? []).filter(item => item.step_id === node.id) } })})
     const frames = page.frames.map(frame => {
       const members = page.nodes.filter(node => frame.node_ids.includes(node.id))
       const minX = Math.min(...members.map(node => node.position.x), 80)
@@ -220,7 +307,7 @@ function Editor() {
       draggable: false, selectable: false, connectable: false, zIndex: 3,
       data: { kind: 'comment', text: comment.text } }))
     return [...frames, ...tools, ...notes, ...comments]
-  }, [page, state.selectedId, selected, byName, costs, liveQuotes, validationIssues, run, readOnly])
+  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,prepareScope,uploadToNode])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
     return { ...edge, selected: selectedEdges.includes(edge.id), label: isError ? 'Lỗi' : undefined,
@@ -254,6 +341,10 @@ function Editor() {
     return Object.keys(targetTool?.params_schema??{}).filter(field=>connectionAllowed(sourceTool,quickConnect.sourceHandle,targetTool,field))
       .map(field=>({targetId:target.id,targetHandle:field,label:`${String(target.data.tool)} · ${field}`}))
   }):[]
+  const quickCreateOptions=quickCreate?palette.filter(tool=>{
+    const source=page.nodes.find(node=>node.id===quickCreate.sourceId);const sourceTool=byName.get(String(source?.data.tool))
+    return Object.keys(tool.params_schema).some(field=>connectionAllowed(sourceTool,quickCreate.sourceHandle,tool,field))
+  }):[]
   const persistPreferences=(nextTheme:'light'|'dark',nextCatalog:'simple'|'advanced')=>{
     setTheme(nextTheme);setCatalogMode(nextCatalog)
     void savePreferences({theme:nextTheme,catalog_mode:nextCatalog},csrf).catch(()=>setPhase('error'))
@@ -262,7 +353,7 @@ function Editor() {
     <header className="canvas-toolbar"><a className="canvas-home" href="/agent" aria-label="Về Agent AI">LTT</a><div className="workflow-identity"><input aria-label="Tên workflow"
       value={workflow?.name ?? ''} disabled={!workflow || readOnly} onChange={event=>workflow&&setWorkflow({...workflow,name:event.target.value})}
       onBlur={()=>workflow&&saveWorkflow({...workflow,canvas:state.document},csrf).then(setWorkflow).catch(()=>setPhase('error'))}/>
-      <span>{readOnly ? 'Mobile · chỉ xem' : `Canvas v2 · ${page.name} · server validated`}</span></div>
+      <span>{readOnly ? 'Mobile · chỉ xem' : `Canvas v2 · ${page.name} · ${page.nodes.length} node · ${page.edges.length} kết nối`}</span></div>
       <div className="canvas-top-actions"><span className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict' ? 'Xung đột' : phase === 'error' ? 'Lỗi lưu' : 'Đã lưu'}</span>
         <button title="Đổi giao diện" aria-label={theme==='light'?'Chuyển sang nền tối':'Chuyển sang nền sáng'} onClick={()=>persistPreferences(theme==='light'?'dark':'light',catalogMode)}>{theme==='light'?'☾':'☀'}</button>
         <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘</button>
@@ -367,22 +458,33 @@ function Editor() {
         {tools?.map(tool => <button key={tool.name} draggable={!readOnly} disabled={readOnly}
           onDragStart={event => event.dataTransfer.setData('application/ltt-tool', tool.name)} onClick={() => addTool(tool)}
           aria-label={`Thêm ${tool.name}`}><strong>{tool.label??tool.name}</strong><small>{tool.description}</small></button>)}</section>)}</aside>
-      <main className="canvas-stage" data-testid="canvas-stage" onDragOver={event => event.preventDefault()}
+      <main className="canvas-stage" data-testid="canvas-stage" data-edge-count={page.edges.length} data-display-edge-count={displayEdges.length} onDragOver={event => event.preventDefault()}
         onDrop={event => { const tool = byName.get(event.dataTransfer.getData('application/ltt-tool')); if (tool) addTool(tool, reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })) }}>
         <ReactFlow key={page.id} nodes={displayNodes as CanvasNode[]} edges={displayEdges} nodeTypes={nodeTypes}
           onNodesChange={(changes: NodeChange[]) => { const persisted = changes.filter(change => ['position', 'add', 'remove', 'replace'].includes(change.type));
             if (persisted.length) dispatch({ type: persisted.every(change => change.type === 'position') ? 'sync' : 'graph', nodes: applyNodeChanges(persisted, page.nodes) as CanvasNode[], edges: page.edges }) }}
           onEdgesChange={(changes: EdgeChange[]) => { const persisted = changes.filter(change => ['add', 'remove', 'replace'].includes(change.type));
             if (persisted.length) dispatch({ type: 'graph', nodes: page.nodes, edges: applyEdgeChanges(persisted, page.edges) as CanvasEdge[] }) }}
-          onConnect={onConnect} onNodeClick={(_event, node) => { setSelectedEdges([]); setDesktopPanel(null); dispatch({ type: 'select', id: node.id }) }}
+          onConnect={onConnect} onConnectEnd={(event,connectionState)=>{
+            if(connectionState.isValid||connectionState.toNode||!connectionState.fromNode||connectionState.fromHandle?.type!=='source')return
+            const point='changedTouches' in event&&event.changedTouches.length?event.changedTouches[0]:event as MouseEvent
+            const screen={x:point.clientX,y:point.clientY};setContextMenu(null)
+            setQuickCreate({sourceId:connectionState.fromNode.id,sourceHandle:connectionState.fromHandle.id??'',x:screen.x,y:screen.y,
+              flow:reactFlow.screenToFlowPosition(screen)})
+          }} onNodeClick={(_event, node) => { setContextMenu(null);setQuickCreate(null);setSelectedEdges([]); setDesktopPanel(null); dispatch({ type: 'select', id: node.id }) }}
+          onNodeContextMenu={(event,node)=>{event.preventDefault();setQuickCreate(null);setSelected([node.id]);dispatch({type:'select',id:node.id});
+            setContextMenu({kind:'node',nodeId:node.id,x:event.clientX,y:event.clientY,flow:node.position})}}
+          onPaneContextMenu={event=>{event.preventDefault();setQuickCreate(null);const screen={x:event.clientX,y:event.clientY};
+            setContextMenu({kind:'pane',x:screen.x,y:screen.y,flow:reactFlow.screenToFlowPosition(screen)})}}
           onEdgeClick={(_event, edge) => { setSelected([]); setSelectedEdges([edge.id]); dispatch({ type: 'select' }) }}
           onNodeDragStart={() => { dragBefore.current = structuredClone(state.document) }}
           onNodeDragStop={() => { if (dragBefore.current) dispatch({ type: 'commit', before: dragBefore.current }); dragBefore.current = undefined }}
-          onPaneClick={() => { setSelected([]); setSelectedEdges([]); dispatch({ type: 'select' }) }} onSelectionChange={onSelectionChange}
+          onPaneClick={() => { setContextMenu(null);setQuickCreate(null);setSelected([]); setSelectedEdges([]); dispatch({ type: 'select' }) }} onSelectionChange={onSelectionChange}
           onMoveEnd={(_event, viewport) => dispatch({ type: 'viewport', viewport })}
           nodesDraggable={!readOnly} nodesConnectable={!readOnly} elementsSelectable
           defaultViewport={page.viewport} minZoom={0.1} maxZoom={2}
           fitView={!page.nodes.length} deleteKeyCode={null}>
+          <FlowStatus />
           {showGrid&&<Background color={theme==='light'?'#d8dde5':'#5b2c29'} gap={20} />}{showMinimap&&<MiniMap pannable zoomable />}<Controls showInteractive={!readOnly} />
         </ReactFlow>
         {!page.nodes.length && <div className="canvas-empty"><strong>Bắt đầu {page.name}</strong><span>Chọn công cụ ở Palette hoặc tạo page mới để tách quy trình.</span></div>}
@@ -400,8 +502,28 @@ function Editor() {
       {quickConnect&&<aside className="quick-connect-picker" aria-label="Chọn đích kết nối"><header><div><small>OUTPUT</small><strong>{quickConnect.sourceHandle}</strong></div><button aria-label="Đóng chọn kết nối" onClick={()=>setQuickConnect(null)}>×</button></header>
         {quickOptions.length?<div>{quickOptions.map(option=><button key={`${option.targetId}-${option.targetHandle}`} onClick={()=>{onConnect({source:quickConnect.sourceId,sourceHandle:quickConnect.sourceHandle,target:option.targetId,targetHandle:option.targetHandle});setQuickConnect(null)}}>{option.label}</button>)}</div>
           :<p>Chưa có input tương thích. Thêm một node đích rồi thử lại.</p>}</aside>}
+      {quickCreate&&<aside className="quick-create-picker" aria-label="Tạo node đích tương thích" style={{left:Math.min(quickCreate.x,window.innerWidth-320),top:Math.min(quickCreate.y,window.innerHeight-420)}}>
+        <header><div><small>KẾT NỐI NHANH</small><strong>Chọn node đích</strong></div><button aria-label="Đóng tạo node nhanh" onClick={()=>setQuickCreate(null)}>×</button></header>
+        {quickCreateOptions.length?<div>{quickCreateOptions.map(tool=><button key={tool.name} onClick={()=>addConnectedTool(tool,quickCreate.sourceId,quickCreate.sourceHandle,quickCreate.flow)}><strong>{tool.label??tool.name}</strong><small>{tool.description}</small></button>)}</div>:<p>Không có node tương thích với đầu ra này.</p>}
+      </aside>}
+      {contextMenu&&<aside className={`canvas-context-menu ${contextMenu.kind}`} aria-label={contextMenu.kind==='pane'?'Menu khoảng trống Canvas':'Menu thao tác node'}
+        style={{left:Math.min(contextMenu.x,window.innerWidth-310),top:Math.min(contextMenu.y,window.innerHeight-520)}}>
+        <header><strong>{contextMenu.kind==='pane'?'Thêm vào Canvas':'Thao tác node'}</strong><button aria-label="Đóng menu ngữ cảnh" onClick={()=>setContextMenu(null)}>×</button></header>
+        {contextMenu.kind==='pane'?<><div className="context-tool-list">{palette.map(tool=><button key={tool.name} onClick={()=>{addTool(tool,contextMenu.flow);setContextMenu(null)}}><strong>{tool.label??tool.name}</strong><small>{categoryLabels[tool.category??'advanced']}</small></button>)}</div>
+          <hr/><button onClick={()=>{dispatch({type:'pageView',connections:!showConnections});setContextMenu(null)}}>{showConnections?'Ẩn đường nối':'Hiện đường nối'}</button>
+          <button onClick={()=>{dispatch({type:'layout'});setContextMenu(null)}}>Tự động sắp xếp node</button></>:
+          <>{contextMenu.nodeId&&<><button disabled={readOnly||!!run} onClick={()=>{void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Báo giá & chạy node</button>
+            <button disabled={readOnly||!!run} onClick={()=>{void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Chạy từ đây</button>
+            <button disabled={readOnly} onClick={()=>{duplicateNode(contextMenu.nodeId!);setContextMenu(null)}}>Sao chép node</button>
+            {state.document.pages.filter(item=>item.id!==page.id).map(item=><button key={item.id} disabled={readOnly}
+              onClick={()=>{dispatch({type:'nodeMovePage',id:contextMenu.nodeId!,pageId:item.id});setContextMenu(null)}}>Chuyển sang {item.name}</button>)}
+            <button className="danger" disabled={readOnly} onClick={()=>{dispatch({type:'delete',ids:[contextMenu.nodeId!]});setSelected([]);setContextMenu(null)}}>Xóa node</button></>}</>}
+      </aside>}
       {selectedNode&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly}
         onClose={()=>{setSelected([]);dispatch({type:'select'})}} onAdvanced={()=>setDesktopPanel('inspector')}
+        onRun={()=>void prepareScope({mode:'node',node_id:selectedNode.id})} cost={liveQuotes[selectedNode.id]??costs[selectedNode.id]}
+        references={referenceOptions} onReference={reference=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
+          target:selectedNode.id,targetHandle:reference.targetHandle})}
         onChange={data=>dispatch({type:'update',id:selectedNode.id,data})}/>}
       {(desktopPanel==='inspector'||mobilePanel==='inspector')&&<Inspector className={desktopPanel==='inspector'?'is-open':''} node={selectedNode} tool={selectedNode ? byName.get(String(selectedNode.data.tool)) : undefined} run={run} csrfToken={csrf}
         runHistory={runHistory} onSelectRun={id=>void loadRun(id).then(setRun).catch(()=>setRunError('Không tải được run.'))}
@@ -414,8 +536,9 @@ function Editor() {
     </div>
     {assistantOpen&&<aside className="assistant-drawer" aria-label="Workflow Assistant"><header><strong>Workflow Assistant</strong><button aria-label="Đóng Assistant" onClick={()=>setAssistantOpen(false)}>×</button></header>
       <div className="assistant-modes"><button aria-pressed={assistantMode==='analyze'} onClick={()=>setAssistantMode('analyze')}>Phân tích</button><button aria-pressed={assistantMode==='improve'} onClick={()=>setAssistantMode('improve')}>Đề xuất cải tiến</button></div>
+      {!!selected.length&&<p className="assistant-context">Ngữ cảnh: {selected.map(id=>byName.get(String(page.nodes.find(node=>node.id===id)?.data.tool))?.label??id).join(', ')}</p>}
       <textarea aria-label="Yêu cầu Assistant" value={assistantPrompt} onChange={event=>setAssistantPrompt(event.target.value)} placeholder="Ví dụ: thêm nhánh tạo giọng đọc và ghép video…"/>
-      <button disabled={!workflow||assistantBusy||(assistantMode==='improve'&&assistantPrompt.trim().length<3)} onClick={async()=>{if(!workflow)return;setAssistantBusy(true);setAssistantResult({});try{setAssistantResult(await previewAssistant(workflow,assistantMode,assistantPrompt,csrf))}catch(error){setAssistantResult({error:error instanceof Error?error.message:'Assistant lỗi'})}finally{setAssistantBusy(false)}}}>{assistantBusy?'Đang phân tích…':'Tạo bản xem trước'}</button>
+      <button disabled={!workflow||assistantBusy||(assistantMode==='improve'&&assistantPrompt.trim().length<3)} onClick={async()=>{if(!workflow)return;setAssistantBusy(true);setAssistantResult({});try{const context=selected.length?`${assistantPrompt}\n\nNgữ cảnh node đã chọn: ${selected.join(', ')}`:assistantPrompt;setAssistantResult(await previewAssistant(workflow,assistantMode,context,csrf))}catch(error){setAssistantResult({error:error instanceof Error?error.message:'Assistant lỗi'})}finally{setAssistantBusy(false)}}}>{assistantBusy?'Đang phân tích…':'Tạo bản xem trước'}</button>
       {assistantResult.analysis&&<section><h3>Phân tích</h3><p>{assistantResult.analysis.nodes} node · {assistantResult.analysis.roots} đầu vào · {assistantResult.analysis.valid?'Hợp lệ':'Cần sửa'}</p>{assistantResult.analysis.issues.map(issue=><small key={issue}>{issue}</small>)}</section>}
       {assistantResult.proposal&&<section className="assistant-diff"><h3>Bản diff</h3><p>{assistantResult.proposal.diff.before_nodes} → {assistantResult.proposal.diff.after_nodes} node · tối đa {assistantResult.proposal.diff.estimated_max_credit} credit</p><button onClick={async()=>{if(!workflow||!assistantResult.proposal)return;try{activateWorkflow(await applyAssistant(workflow,assistantResult.proposal.token,csrf));setAssistantOpen(false)}catch(error){setAssistantResult(current=>({...current,error:error instanceof Error?error.message:'Không áp dụng được'}))}}}>Áp dụng bản đã xem trước</button></section>}
       {assistantResult.error&&<p className="assistant-error" role="alert">{assistantResult.error}</p>}</aside>}
@@ -441,24 +564,40 @@ function Editor() {
   </section>
 }
 
-function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;
-  onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void}) {
+function FlowStatus(){
+  const edges=useStore(state=>state.edges.length)
+  const nodes=useStore(state=>state.nodes.length)
+  return <span className="sr-only" data-testid="flow-store-status">{nodes} node · {edges} kết nối trong renderer</span>
+}
+
+type ReferenceOption={source:string;sourceHandle:string;targetHandle:string;label:string;detail:string}
+
+function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose,onRun,cost,references,onReference}:{node:CanvasNode;tool?:PaletteTool;readOnly:boolean;
+  onChange:(data:Record<string,unknown>)=>void;onAdvanced:()=>void;onClose:()=>void;onRun:()=>void;cost?:number;
+  references:ReferenceOption[];onReference:(reference:ReferenceOption)=>void}) {
   if(!tool)return null
   const params=(node.data.params??{}) as Record<string,unknown>
-  const schema=Object.entries(tool.schema_variants??{}).reduce((current,[field,variants])=>
-    variants[String(params[field])]??current,tool.params_schema)
-  const fields=Object.entries(schema).filter(([,rule])=>rule.type==='model_ref'||rule.required||rule.values?.length).slice(0,3)
+  const fields=primaryFields(tool,params)
   const setParam=(name:string,value:unknown)=>onChange({params:{...params,[name]:value}})
   return <section className="context-composer" aria-label={`Cấu hình nhanh ${tool.name}`}>
-    <header><div><small>Thiết lập node</small><strong>{tool.label??tool.name}</strong></div><nav><button onClick={onAdvanced}>Nâng cao</button><button aria-label="Đóng cấu hình nhanh" onClick={onClose}>×</button></nav></header>
+    <header><div><small>Đang làm việc với</small><strong>{tool.label??tool.name}</strong></div><nav><button onClick={onAdvanced}>Nâng cao</button><button aria-label="Đóng cấu hình nhanh" onClick={onClose}>×</button></nav></header>
+    {!!references.length&&<label className="composer-reference"><span>Tham chiếu đầu vào</span><select disabled={readOnly} value="" onChange={event=>{
+      const reference=references.find(item=>`${item.source}|${item.sourceHandle}|${item.targetHandle}`===event.target.value)
+      if(reference)onReference(reference)
+    }}><option value="">@ Chọn node liên quan…</option>{references.map(reference=><option
+      key={`${reference.source}-${reference.sourceHandle}-${reference.targetHandle}`}
+      value={`${reference.source}|${reference.sourceHandle}|${reference.targetHandle}`}>@{reference.label} · {reference.detail}</option>)}</select></label>}
     <div className="context-fields">{fields.map(([name,rule])=>{
       const value=params[name]??rule.default??''
-      if(rule.values?.length)return <label key={name}><span>{name}{rule.required?' *':''}</span><select disabled={readOnly} value={String(value)} onChange={event=>setParam(name,event.target.value)}>
+      const label=fieldLabel(name)
+      if(rule.values?.length)return <label key={name}><span>{label}{rule.required?' *':''}</span><select disabled={readOnly} value={String(value)} onChange={event=>setParam(name,event.target.value)}>
         <option value="">— chọn —</option>{(rule.options??rule.values.map(item=>({value:item,label:String(item)}))).map(option=><option key={String(option.value)} value={String(option.value)}>{option.label}</option>)}</select></label>
-      if(rule.type==='bool')return <label key={name} className="composer-check"><input type="checkbox" disabled={readOnly} checked={Boolean(value)} onChange={event=>setParam(name,event.target.checked)}/><span>{name}</span></label>
-      return <label key={name}><span>{name}{rule.required?' *':''}</span><input disabled={readOnly} value={String(value)} type={rule.type==='int'||rule.type==='number'?'number':'text'}
-        onChange={event=>setParam(name,rule.type==='int'?Number.parseInt(event.target.value):rule.type==='number'?Number(event.target.value):event.target.value)}/></label>
+      if(rule.type==='bool')return <label key={name} className="composer-check"><input type="checkbox" disabled={readOnly} checked={Boolean(value)} onChange={event=>setParam(name,event.target.checked)}/><span>{label}</span></label>
+      if(['prompt','topic','text'].includes(name))return <label key={name} className="composer-prompt"><span>{label}{rule.required?' *':''}</span><textarea disabled={readOnly} value={String(value)} placeholder="Mô tả điều bạn muốn tạo; dùng @ để nhắc tới node liên quan…" onChange={event=>setParam(name,event.target.value)}/></label>
+      return <label key={name}><span>{label}{rule.required?' *':''}</span><input disabled={readOnly} value={String(value)} type={rule.type==='int'||rule.type==='number'?'number':'text'}
+        onChange={event=>setParam(name,rule.type==='int'?Number.parseInt(event.target.value):rule.type==='number'?Number(event.target.value):event.target.value)} /></label>
     })}</div>
+    <footer><span>{cost===undefined?'Báo giá được tính bởi server':`Tối đa ${cost} credit`}</span><button className="composer-run" disabled={readOnly} onClick={onRun}>✦ {cost===undefined?'Báo giá & chạy':`${cost} · Tiếp tục`}</button></footer>
   </section>
 }
 

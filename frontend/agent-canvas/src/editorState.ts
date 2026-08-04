@@ -29,6 +29,7 @@ export type EditorAction =
   | { type: 'annotationUpdate'; kind: 'notes' | 'comments'; id: string; text: string }
   | { type: 'annotationDelete'; kind: 'notes' | 'comments'; id: string }
   | { type: 'delete'; ids: string[] }
+  | { type: 'nodeMovePage'; id: string; pageId: string }
   | { type: 'deleteEdges'; ids: string[] }
   | { type: 'undo' | 'redo' | 'layout' }
 
@@ -68,8 +69,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'update': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map(node => node.id === action.id
         ? { ...node, data: { ...node.data, ...action.data } } : node) })))
-    case 'viewport': return changed(state, updateActive(state.document, page =>
-      ({ ...page, viewport: action.viewport })))
+    case 'viewport': return { ...state, document: updateActive(state.document, page =>
+      ({ ...page, viewport: action.viewport })) }
     case 'pageView': return changed(state, updateActive(state.document, page => ({ ...page,
       view: { grid: action.grid ?? page.view?.grid ?? true,
         connections: action.connections ?? page.view?.connections ?? true,
@@ -123,6 +124,25 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
           frames: page.frames.map(frame => ({ ...frame,
             node_ids: frame.node_ids.filter(id => !ids.has(id)) })) })))
     }
+    case 'nodeMovePage': {
+      if (action.pageId === state.document.active_page_id ||
+          !state.document.pages.some(page => page.id === action.pageId)) return state
+      const source = activePage(state.document)
+      const node = source.nodes.find(item => item.id === action.id)
+      if (!node) return state
+      const document = { ...state.document, pages: state.document.pages.map(page => {
+        if (page.id === source.id) return { ...page,
+          nodes: page.nodes.filter(item => item.id !== action.id),
+          edges: page.edges.filter(edge => edge.source !== action.id && edge.target !== action.id),
+          frames: page.frames.map(frame => ({ ...frame,
+            node_ids: frame.node_ids.filter(id => id !== action.id) })) }
+        if (page.id === action.pageId) return { ...page, nodes: [...page.nodes, {
+          ...node, position: { x: 90 + (page.nodes.length % 3) * 430,
+            y: 90 + Math.floor(page.nodes.length / 3) * 430 } }] }
+        return page
+      }) }
+      return changed({ ...state, selectedId: undefined }, document)
+    }
     case 'deleteEdges': {
       const ids = new Set(action.ids)
       return changed(state, updateActive(state.document, page => ({ ...page,
@@ -130,7 +150,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
     case 'layout': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map((node, index) => ({ ...node,
-        position: { x: 80 + (index % 4) * 360, y: 80 + Math.floor(index / 4) * 440 } })) })))
+        position: { x: 90 + (index % 4) * 430, y: 90 + Math.floor(index / 4) * 430 } })) })))
     case 'undo': {
       const previous = state.past.at(-1)
       if (!previous) return state
@@ -163,7 +183,7 @@ export type PaletteTool = {
   verifiable: string[]
 }
 
-const inputPort = (type: string) => ['string', 'text', 'enum'].includes(type) ? 'text'
+const inputPort = (type: string) => ['string', 'text'].includes(type) ? 'text'
   : ['int', 'number', 'bool'].includes(type) ? 'json' : type
 
 export function connectionAllowed(source: PaletteTool | undefined, sourceHandle: string | null,
@@ -174,12 +194,25 @@ export function connectionAllowed(source: PaletteTool | undefined, sourceHandle:
   return Boolean(output && input && output === inputPort(input.type))
 }
 
+export function scopeNodeIds(nodes:CanvasNode[],edges:CanvasEdge[],targets:string[]){
+  const available=new Set(nodes.map(node=>node.id))
+  const included=new Set(targets.filter(id=>available.has(id)))
+  let expanded=true
+  while(expanded){
+    expanded=false
+    for(const edge of edges)if(included.has(edge.target)&&available.has(edge.source)&&!included.has(edge.source)){
+      included.add(edge.source);expanded=true
+    }
+  }
+  return [...included]
+}
+
 export function nextNode(tool: PaletteTool, count: number): CanvasNode {
   const params = Object.fromEntries(Object.entries(tool.params_schema)
     .filter(([, rule]) => rule.default !== undefined)
     .map(([name, rule]) => [name, structuredClone(rule.default)]))
   return { id: `n${Date.now().toString(36)}-${count}`, type: 'tool',
-    position: { x: 80 + (count % 3) * 360, y: 80 + Math.floor(count / 3) * 440 },
+    position: { x: 90 + (count % 3) * 430, y: 90 + Math.floor(count / 3) * 430 },
     data: { tool: tool.name, params, fanout: 1, max_retry: 0,
       on_fail: 'retry_same', verify: null } }
 }

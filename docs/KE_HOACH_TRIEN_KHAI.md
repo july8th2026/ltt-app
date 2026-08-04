@@ -1452,3 +1452,40 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
 
 Phải làm tuần tự H19.2→H19.10. Deployment chỉ được đánh dấu khi có lệnh deploy
 rõ và kết quả production thật; kế hoạch hoặc source audit không phải release.
+
+### H20 — Agent Canvas Deep UX / node-native reset
+
+Triển khai theo Q66, tuần tự; không thay runtime Agent, hàng đợi, credit, provider
+hay ownership. Mỗi phase UI phải được kiểm trên browser render thật trước khi đóng.
+
+- [x] H20.0 Decision Gate — 2026-08-04: Q64 được thay đúng giao thức bởi Q66;
+  chọn nền gần đen mặc định, node-native renderer, contextual composer, run theo
+  node và quick-create khi kéo connection ra khoảng trống.
+- [x] H20.1 Research baseline — 2026-08-04: Control Registry đầy đủ cho
+  toolbar/context menu, 11 node PlenX và State × Action Matrix tại
+  `docs/APP_AUDIT/agent/2026-08-04-deep-ux/00_CONTROL_MATRIX.md`; không tiêu
+  credit benchmark.
+- [x] H20.2 Interaction kernel — 2026-08-04: context menu pane/node, copy/delete/move page,
+  run node/run-from-here, quick-create node tương thích, auto-layout và toggle
+  connection đã chạy; viewport không còn làm bẩn undo history; regression PASS.
+- [x] H20.3 Core node-native UX — 2026-08-04: Text/Image/Video/Audio có empty/configured/
+  running/success/error state; upload/manual/generate đúng capability; contextual
+  composer chỉ hiện thông số nghiệp vụ, kỹ thuật nằm trong Inspector.
+- [x] H20.4 Input/transform UX — 2026-08-04: Batch Images, Social Video, asset input,
+  Upscale/Video Upscale/Extract Frames/Merge Image/Merge Video có hành động,
+  preview/input typed; palette chỉ lấy ToolSpec server có executor thật.
+- [x] H20.5 Agent context — 2026-08-04: `@node` tạo typed edge thật và thay source
+  cũ trên cùng input; Assistant nhận selection context; run node chỉ xét lỗi của
+  target + prerequisite; E3 tạo awaiting approval 10 credit, actual 0.
+- [x] H20.6 Browser/regression gate — 2026-08-04: desktop 1366/1720/1920 và mobile 390;
+  console 0 error, failed request mới 0, overflow 0, keyboard/focus PASS; node/
+  selection scope giữ contract quote→approval; edge state/renderer đồng bộ.
+- [x] H20.7a LTT-AQA/release candidate — 2026-08-04: audit DEEP mới chấm
+  `Q83 · M80 · E82 · BETA`; frontend 27 pass, targeted 22 pass, full pytest
+  2.063 pass/8 skip/23 subtest, npm audit 0, contract 12/12, secret scan 0.
+- [ ] H20.7b Production release — backup/update/health/authenticated browser smoke,
+  canary và rollback evidence. Chưa chạy vì phiên này chưa có lệnh deploy
+  production rõ ràng; bundle local không được gọi là đã deploy.
+
+Không đánh dấu deploy chỉ vì bundle local đã build; production phải có backup,
+update, health và authenticated browser evidence thật.
