@@ -54,7 +54,11 @@ beforeEach(() => {
     return new Response(JSON.stringify(workflow), { status: 201 })
   })
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  Object.defineProperty(window,'innerWidth',{configurable:true,value:1024})
+  Object.defineProperty(navigator,'onLine',{configurable:true,value:true})
+})
 
 describe('CanvasShell', () => {
   it('loads dynamic palette and adds/configures a tool node', async () => {
@@ -200,6 +204,38 @@ describe('CanvasShell', () => {
     fireEvent.click(within(reset).getByRole('button',{name:/Hiểu nội dung hình ảnh/}))
     expect(await screen.findByRole('region',{name:'Thiết lập Hình ảnh'})).toBeInTheDocument()
     expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
+  })
+
+  it('exposes save-conflict recovery in the active toolbar',async()=>{
+    const fetchMock=vi.mocked(globalThis.fetch)
+    const base=fetchMock.getMockImplementation()!
+    fetchMock.mockImplementation(async(input,init)=>{
+      if(String(input).includes('/workflows/w1')&&init?.method==='PUT')return new Response('{}',{status:409})
+      return base(input,init)
+    })
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
+    expect(await screen.findByRole('button',{name:'Tải bản mới'},{timeout:1900})).toBeInTheDocument()
+    expect(screen.getAllByText('Xung đột').length).toBeGreaterThan(0)
+  })
+
+  it('queues offline edits, retries after reconnect and keeps mobile read-only',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
+    fireEvent(window,new Event('offline'))
+    expect(await screen.findAllByText(/Ngoại tuyến/)).not.toHaveLength(0)
+    const putCount=()=>vi.mocked(globalThis.fetch).mock.calls.filter(([url,init])=>
+      String(url).includes('/workflows/w1')&&init?.method==='PUT').length
+    const before=putCount()
+    fireEvent.change(screen.getByRole('textbox',{name:'Nội dung trực tiếp trong node'}),{target:{value:'Sửa khi mất mạng'}})
+    await new Promise(resolve=>setTimeout(resolve,900))
+    expect(putCount()).toBe(before)
+    Object.defineProperty(navigator,'onLine',{configurable:true,value:true})
+    fireEvent(window,new Event('online'))
+    await waitFor(()=>expect(putCount()).toBeGreaterThan(before),{timeout:1900})
+    Object.defineProperty(window,'innerWidth',{configurable:true,value:390})
+    fireEvent(window,new Event('resize'))
+    expect(screen.getByRole('button',{name:'Chạy'})).toBeDisabled()
   })
 
   it('connects a compatible node through the contextual @ reference picker',async()=>{

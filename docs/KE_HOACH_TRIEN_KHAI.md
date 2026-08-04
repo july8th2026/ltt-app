@@ -1546,7 +1546,11 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   Text→Image, Image→Text, Image→Video; mẫu dựng 2 block/1 dây, chọn upstream để
   nhập/upload ngay, không cần Inspector. Fresh workflow ẩn Assistant, History,
   Layers/Note/Comment và khóa Run đến khi có block. Mobile 390: overflow 0.
-- [ ] H21.7 P6 Browser/regression/a11y/performance/recovery gate.
+- [x] H21.7 P6 Browser/regression/a11y/performance/recovery gate — 2026-08-04:
+  48 frontend test và 2.092 backend test pass; Playwright 1366/1720/1920 với
+  50 block đều full-width/overflow 0, mobile 390 tự fit graph và chỉ-xem,
+  console 0, request bất ngờ 4xx/5xx 0. Keyboard/screen-reader label pass;
+  conflict có CTA tải bản mới, offline xếp hàng và tự lưu khi online lại.
 - [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E.
 - [ ] H21.9 Deploy canary/production chỉ sau H21.8 PASS.
 

@@ -153,6 +153,12 @@ function Editor() {
     return()=>cancelAnimationFrame(frame)
   },[updateNodeInternals,palette.length,page.nodes.length])
 
+  useEffect(()=>{
+    if(!readOnly||!page.nodes.length)return
+    const frame=requestAnimationFrame(()=>reactFlow.fitView({padding:.12,maxZoom:.9,duration:0}))
+    return()=>cancelAnimationFrame(frame)
+  },[readOnly,page.id,page.nodes.length,reactFlow])
+
   useEffect(() => {
     let active = true
     Promise.all([loadPalette(), loadOrCreateWorkflow(csrf), loadPreferences()]).then(([result, loaded, preferences]) => {
@@ -576,11 +582,13 @@ function Editor() {
       onBlur={()=>workflow&&saveWorkflow({...workflow,canvas:state.document},csrf).then(setWorkflow).catch(()=>setPhase('error'))}/>
       <span>{readOnly ? 'Mobile · chỉ xem' : `Canvas v2 · ${page.name} · ${page.nodes.length} node · ${page.edges.length} kết nối`}</span></div>
       <div className="canvas-top-actions"><span className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict' ? 'Xung đột' : phase === 'error' ? 'Lỗi lưu' : 'Đã lưu'}</span>
+        {phase==='conflict'&&<button className="save-recovery" onClick={()=>location.reload()}>Tải bản mới</button>}
+        {phase==='error'&&<button className="save-recovery" onClick={()=>setRetryNonce(value=>value+1)}>Thử lưu lại</button>}
         <button title="Đổi giao diện" aria-label={theme==='light'?'Chuyển sang nền tối':'Chuyển sang nền sáng'} onClick={()=>persistPreferences(theme==='light'?'dark':'light',catalogMode)}>{theme==='light'?'☾':'☀'}</button>
         <button title="Bảng lệnh" aria-label="Mở bảng lệnh" onClick={()=>setCommandOpen(true)}>⌘</button>
         {hasAnyNodes&&<button title="Assistant" aria-pressed={assistantOpen} onClick={()=>setAssistantOpen(value=>!value)}>AI</button>}
         {hasAnyNodes&&<button title="Phiên bản và chia sẻ" aria-pressed={historyOpen} onClick={()=>{const open=!historyOpen;setHistoryOpen(open);if(open&&workflow)void loadSnapshots(workflow).then(setSnapshots)}}>↗</button>}
-        <button className="run-primary" disabled={!page.nodes.length} aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
+        <button className="run-primary" disabled={readOnly||!page.nodes.length} aria-pressed={desktopPanel==='run'} onClick={()=>setDesktopPanel(value=>value==='run'?null:'run')}>Chạy</button></div>
       <nav className={`operation-drawer${desktopPanel==='run'?' is-open':''}`} aria-label="Chạy workflow"><header><strong>Chạy workflow</strong><button aria-label="Đóng bảng chạy" onClick={()=>setDesktopPanel(null)}>×</button></header>
         {presentationMode==='legacy'&&<div className="legacy-run-tools"><button disabled={!selected.length || readOnly} onClick={duplicate}>Nhân bản</button>
           <button disabled={(!selected.length && !selectedEdges.length) || readOnly}
@@ -614,9 +622,9 @@ function Editor() {
         {terminalRun&&run&&<button onClick={()=>void runAgain(run,csrf).then(next=>{setRun(next);setRunError('');void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể chạy lại.'))}>Chạy lại theo cấu hình này</button>}
         {run && <span className={`run-state ${run.status}`} aria-live="polite">{runStatusLabel(run.status)} · đã dùng {run.actual}/{run.estimated} credit · {run.plan.steps.length} bước</span>}
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
-      <div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
+      {presentationMode==='legacy'&&<div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
-        : phase === 'error' ? <>Lưu lỗi <button onClick={() => setRetryNonce(value => value + 1)}>Thử lại</button></> : 'Đã lưu'}</div></header>
+        : phase === 'error' ? <>Lưu lỗi <button onClick={() => setRetryNonce(value => value + 1)}>Thử lại</button></> : 'Đã lưu'}</div>}</header>
     <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Inspector'}</button>)}</nav>
     <div className={`canvas-body panel-${mobilePanel}${selectedNode&&presentationMode==='creative'?' has-composer':''}`}>
       <nav className="canvas-rail" aria-label="Công cụ Canvas">

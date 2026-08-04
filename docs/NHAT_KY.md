@@ -14,6 +14,67 @@
 
 ---
 
+## 2026-08-04 — H21.7 Browser/regression/a11y/performance/recovery gate
+
+- **Mục tiêu:** nghiệm thu UX Reset trên browser render thật, tải graph lớn,
+  keyboard/accessibility, mất mạng/xung đột và toàn bộ regression nền tảng trước
+  khi cho người dùng beta thật.
+- **Hạng mục:** H21.7 hoàn thành; H21.8 là bước kế tiếp.
+- **Trạng thái:** source/build/local browser/full regression PASS; chưa deploy
+  production.
+
+### Đã làm
+
+- Đưa CTA phục hồi `Tải bản mới`/`Thử lưu lại` vào toolbar creative đang hiển
+  thị; bỏ cây accessibility trùng từ save-state legacy. Revision conflict không
+  còn là trạng thái cụt không có đường thoát.
+- Khóa `Chạy` ở mobile đúng contract viewer read-only. Khi mở workflow desktop
+  trên mobile, Canvas tự fit toàn graph và ẩn minimap để không còn màn hình trống
+  hoặc lớp overview che nội dung.
+- Thêm regression test cho conflict 409, chỉnh sửa khi offline, tự lưu sau khi
+  online lại và mobile read-only.
+- Stress local Page 2 bằng 1/10/50 block, không approve run, không gọi provider,
+  không tiêu credit; sau test đã xóa toàn bộ 50 block và trả Page 2 về blank.
+
+### Test đã chạy
+
+| Lệnh/kiểm tra | Kết quả |
+|---|---|
+| `npm test -- --run` | 48 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 142,34 kB |
+| `npm audit --omit=dev` | 0 vulnerability |
+| Playwright tải 1/10/50 block | 1 block 129 ms; thêm 9 block 219 ms; thêm 40 block 1.028 ms; save PASS |
+| Playwright 1366/1720/1920 | 50 block; shell/stage full-width; overflow 0 ở cả ba viewport |
+| Playwright mobile 390×844 | auto-fit 50 block; minimap ẩn; Run disabled; overflow 0 |
+| Playwright keyboard/a11y | Ctrl+K/Escape PASS; 0 button hiển thị thiếu accessible name |
+| Playwright recovery/network | offline→online PASS; console 0; request bất ngờ 4xx/5xx 0 |
+| Visual QA desktop/mobile | PASS sau khi sửa mobile viewport/minimap |
+| `python -m pytest -q` | 2.092 passed, 8 skipped, 23 subtests passed; 1 warning; 649,43 s |
+| `python tools\\scan_source_secrets.py` | 928 file; 142.116 dòng; 0 finding; PASS |
+
+### Quyết định mới
+
+Không có; thực thi Q67 và blueprint P6 đã khóa.
+
+### Cách lùi lại
+
+Đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` và restart Web; document/runtime
+không đổi schema. Riêng mobile fit/minimap có thể lùi bằng commit H21.7 mà không
+đụng dữ liệu workflow.
+
+### Còn tồn đọng
+
+- H21.8 bắt buộc beta có kiểm soát với 5 người dùng thật; không được dùng test
+  tự động hay agent đóng vai để giả lập tiêu chí task success.
+- H21.9 chưa được phép deploy production trước khi H21.8 PASS và có yêu cầu
+  deploy rõ ràng.
+
+### Việc tiếp theo
+
+1. Chuẩn bị kịch bản/phiếu đo H21.8 cho 5 người chưa biết kiến trúc.
+2. Thu task success/time/misclick/help/abandon/clarity và re-audit Q/M/E.
+3. Chỉ mở H21.9 nếu H21.8 đạt toàn bộ ngưỡng đã khóa.
+
 ## 2026-08-04 — H21.6 First-run và progressive disclosure
 
 - **Mục tiêu:** giúp người mới tạo chuỗi hợp lệ đầu tiên mà không phải hiểu
