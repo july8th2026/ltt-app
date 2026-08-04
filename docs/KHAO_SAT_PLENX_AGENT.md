@@ -527,3 +527,20 @@ biến regex thành đường dẫn.
 
 **Cảnh báo chi phí:** lượt chat agent **4 credit**, sinh ảnh 1K **2 credit**, video
 Veo3 1080p **30 credit**. Đừng gọi thử lung tung.
+
+---
+
+## 14. Bổ sung 2026-08-04 — workflow mua sẵn và trạng thái LTT hiện tại
+
+Khảo sát vòng 3 mở workflow Lookbook đã mua, export cấu trúc nhưng không chạy
+generation. Workflow có 13 node/13 connection/1 frame: ba ảnh đầu vào được phối
+thành ảnh lookbook, tạo ảnh cận cảnh, phân tích thành text rồi rẽ nhiều video.
+Đây là bằng chứng rằng collection reference và chuỗi hai chiều Image↔Text,
+Video→Text là table stake, không phải chi tiết trình bày.
+
+LTT H20.9 đã đóng các gap lịch sử ở bảng mục 10: có canvas nhiều page/frame,
+fan-out/scoped run, Agent preview, typed edge, quote→approve→hold→settle, verifier,
+Image nhận nhiều reference, Text phân tích ảnh/video và Video nhận text/asset.
+Bảng mục 10 được giữ nguyên như snapshot lịch sử 2026-08-01; không dùng các dòng
+“ta thiếu” trong đó để đánh giá code hiện tại. Bằng chứng mới và acceptance nằm
+ở `APP_AUDIT/agent/2026-08-04-deep-ux/09_PURCHASED_WORKFLOW_PARITY.md`.

@@ -78,6 +78,40 @@ def _ket_qua_key(key_id, *, thanh_cong, last_status=None):
         pass
 
 
+def _reference_specs(params: dict, owner_id: str, storage) -> list[dict]:
+    """Normalize legacy form refs and typed Canvas inputs behind one owner gate."""
+    raw = [dict(item) for item in (params.get("refs") or []) if isinstance(item, dict)]
+    typed = (("image_key", "image"), ("video_key", "video"),
+             ("audio_key", "audio"))
+    for field, kind in typed:
+        if params.get(field):
+            raw.append({"storage_key": params[field], "kind": kind})
+    for key in params.get("image_keys") or []:
+        raw.append({"storage_key": key, "kind": "image"})
+    clean: list[dict] = []
+    seen: set[str] = set()
+    for item in raw:
+        key = str(item.get("storage_key") or "").strip()
+        kind = str(item.get("kind") or "image").strip()
+        parts = key.split("/")
+        if kind not in {"image", "video", "audio"}:
+            raise ValueError("Loại tài nguyên tham chiếu không hợp lệ.")
+        if len(parts) < 3 or parts[1] != owner_id:
+            raise ValueError("Tài nguyên tham chiếu không thuộc người dùng.")
+        if not storage.exists(key):
+            raise ValueError("Tài nguyên tham chiếu không còn tồn tại.")
+        if key in seen:
+            continue
+        seen.add(key)
+        clean.append({"storage_key": key, "kind": kind,
+                      "role": str(item.get("role") or
+                                  ("reference_image" if kind == "image" else f"reference_{kind}")),
+                      "handle": str(item.get("handle") or "")})
+    if len(clean) > 4:
+        raise ValueError("Một video chỉ nhận tối đa 4 tài nguyên tham chiếu.")
+    return clean
+
+
 def _luu_task_id(job_id: str, task_id: str) -> None:
     """Lưu remote task_id vào job.params NGAY sau khi submit ModelArk — để lần chạy lại
     (worker chết/orphan) POLL lại task cũ thay vì submit MỚI (chống double-bill provider)."""
@@ -128,7 +162,7 @@ def handle(params: dict, ctx=None) -> dict:
     # (R2 temp presigned → ModelArk CreateAsset). Giữ `data` để heal người-thật sau.
     ref_items = []
     has_video_input = False
-    for rs in (params.get("refs") or []):
+    for rs in _reference_specs(params, owner_id, storage):
         if ctx is not None:                 # heartbeat: to_asset có thể mất ~200s/ref
             ctx.progress(3, "chuẩn bị tài nguyên tham chiếu…")
         kind = (rs.get("kind") or "image").strip()

@@ -22,8 +22,10 @@ export function Inspector({ node, tool, readOnly, csrfToken, run,runHistory,onSe
   const setParam = (name: string, value: unknown) => onChange({ params: { ...params, [name]: value } })
   return <aside className={`canvas-inspector ${className}`} aria-label="Inspector">
     <RunInspector run={run} history={runHistory} onSelect={onSelectRun} onReplay={onReplay} onRestore={onRestore}/><div className="node-inspector"><h2>{tool.name}</h2><p>{tool.description}</p>
-    {Object.entries(schema).map(([name, rule]) => {
+    {Object.entries(schema).filter(([name])=>name!=='refs'&&!name.startsWith('_')).map(([name, rule]) => {
       const value = params[name] ?? rule.default ?? ''
+      const assetKind = tool.name.startsWith('asset.') && name === `${tool.name.slice(6)}_key`
+        ? tool.name.slice(6) : ''
       const label = <span>{name}{rule.required ? ' *' : ''}</span>
       const connector = connections[name]?.length ? <label className="connection-field">Nối dữ liệu từ<select
         disabled={readOnly} value="" onChange={event => onConnect?.(name, event.target.value)}>
@@ -39,8 +41,8 @@ export function Inspector({ node, tool, readOnly, csrfToken, run,runHistory,onSe
       if (rule.type === 'int' || rule.type === 'number') return <label key={name}>{label}<input
         type="number" disabled={readOnly} min={rule.min} max={rule.max} value={String(value)}
         onChange={event => setParam(name, rule.type === 'int' ? Number.parseInt(event.target.value) : Number(event.target.value))} /></label>
-      if (['image','video','audio'].includes(rule.type)) return <div key={name}><AssetField
-        name={name} kind={rule.type} value={String(value)} disabled={readOnly} csrfToken={csrfToken}
+      if (assetKind || ['image','video','audio'].includes(rule.type)) return <div key={name}><AssetField
+        name={name} kind={assetKind || rule.type} value={String(value)} disabled={readOnly} csrfToken={csrfToken}
         onValue={next=>setParam(name,next)}/>{connector}</div>
       return <div key={name}><label>{label}<textarea disabled={readOnly} value={String(value)}
         onChange={event => setParam(name, event.target.value)} /></label>{connector}</div>

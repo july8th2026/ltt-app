@@ -17,3 +17,10 @@
   `08_REAUDIT_PLENX_GAPS.md`.
 - Phase 10 capability contracts: AG-AST-01 → AG-URL-02 → AG-BAT-03 → AG-OUT-04
   theo thứ tự, không mở UI trước owner/security/credit/output gate.
+- Phase 11 purchased-workflow parity: PASS local — khảo sát Lookbook 13 node/13
+  edge; thêm Image references, multimodal Text/Video, variadic collections,
+  interaction clipboard/selection và Social/transform contract; E3 dựng nhánh
+  8 node/9 edge, validate báo tối đa 132 credit, actual 0, console 0, request lỗi 0.
+- Phase 12 release boundary: PASS targeted — `tmp/`, `test-results/` và profile
+  Playwright bị loại khỏi source scan/archive; 46 test release/scanner pass,
+  secret scan 0. Full repository gate và production deploy ghi ở nhật ký.

@@ -55,6 +55,8 @@ MANIFEST = AppManifest(
         description="Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do.",
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
+            "image_key": {"type": "image", "required": False},
+            "image_keys": {"type": "image[]", "required": False},
             "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
             "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
             "count": {"type": "int", "min": 1, "max": 4, "default": 1},
@@ -66,6 +68,8 @@ MANIFEST = AppManifest(
         description="Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model.",
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
+            "image_key": {"type": "image", "required": False},
+            "image_keys": {"type": "image[]", "required": False},
             "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
             "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
             "count": {"type": "int", "min": 2, "max": 4, "default": 4},

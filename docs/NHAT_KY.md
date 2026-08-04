@@ -14,6 +14,66 @@
 
 ---
 
+## 2026-08-04 — H20.9 purchased-workflow parity và multimodal Canvas
+
+- **Mục tiêu:** đối chiếu workflow PlenX mua sẵn theo thao tác người dùng thật,
+  đóng các khoảng trống node đa phương thức và interaction trước khi phát hành.
+- **Hạng mục:** H20.9 — hoàn thành local release candidate.
+- **Trạng thái:** xong code/audit/test; H20.10 production deploy là bước kế tiếp.
+
+### Đã làm
+
+- Khảo sát Lookbook PlenX 13 node/13 edge/1 frame, không chạy generation và
+  không tiêu credit. Dựng lại nhánh đại diện LTT 8 node/9 edge với ba ảnh thật:
+  Asset Image → Image tổng hợp → Image cận cảnh → Text phân tích → hai Video.
+- Mở typed input Image/Video/Text hai chiều; collection nhận nhiều scalar theo
+  thứ tự; disconnect/copy/remap không để reference mồ côi. Image worker verify
+  owner, JPEG/PNG/WebP, 8 ảnh, 8 MB/ảnh và 20 MB/node trước Gemini inlineData.
+- Bổ sung Social Video bounded, transform media thật, run-node quote đúng,
+  clipboard graph/multi-select/context-menu/quick-create và cleanup edge params.
+- Browser local 1920×1080 validate graph và báo tối đa 132 credit; budget fixture
+  50 chặn đúng trước run, actual 0. Console error 0, request API liên quan 200/201.
+- Audit vòng 3 chấm `Q87 · M85 · E89 · BETA`; output provider trả phí và E4 user
+  task vẫn không được tuyên bố là đã xác minh.
+- Bắt và sửa release boundary: `tmp/`, `test-results/` và profile Playwright bị
+  loại khỏi release/source scan. Profile Chromium đang đăng nhập vẫn giữ nguyên.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` | **40 passed** |
+| `npm run typecheck && npm run build` | PASS; bundle hashed, sourcemap off |
+| Targeted media/multimodal/validator/API | **92 passed**, 1 warning |
+| `python -m pytest -q tests\\test_33_secret_scanner.py tests\\test_44_release_build.py` | **46 passed** |
+| `python -m pytest -q` | **2.091 passed, 8 skipped, 23 subtests**, 1 test-harness deprecation warning, 632,80 s |
+| `python tools\\lint_app_contract.py` | 12 app, 0 error, 0 warning |
+| `npm audit --omit=dev` | 0 vulnerability |
+| `python tools\\scan_source_secrets.py` | 919 file, **0 finding** |
+| Playwright local | 8 node/9 edge; validate 200; console 0; failed request 0 |
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới. H20.9 thực thi Q62/Q66; release exclusion cho
+runtime temp là invariant bảo mật đã có, nay được khóa thêm bằng test.
+
+### Cách lùi lại
+
+Revert commit H20.9; bundle cũ vẫn được git giữ. Không cần migration dữ liệu.
+Social import có dependency `yt-dlp` mới nhưng không thay schema hay provider key.
+
+### Còn tồn đọng
+
+- Chưa có E4 beta task/telemetry; chưa tuyên bố output parity provider trả phí.
+- AG-AST-01/AG-URL-02/AG-BAT-03/AG-OUT-04 vẫn là vé riêng có security/lineage gate.
+- H20.10 chưa deploy tại thời điểm ghi mục này.
+
+### Việc tiếp theo
+
+1. Commit release candidate H20.9.
+2. Build archive, backup/update production, chạy health/canary.
+3. Mở PlenX và production LTT cạnh nhau để người dùng nghiệm thu.
+
 ## 2026-08-04 — Deploy production H20.8 Agent Canvas
 
 - **Mục tiêu:** đưa bản re-audit/interaction polish lên `app.lttstudios.com` để

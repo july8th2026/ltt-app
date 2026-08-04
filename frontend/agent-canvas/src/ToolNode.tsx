@@ -1,12 +1,12 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { PaletteTool } from './editorState'
-import { emptyMessage, fieldLabel, hasMeaningfulInput, mediaKind, nodeModality, outputLabel } from './nodePresentation'
+import { emptyMessage, fieldLabel, hasMeaningfulInput, mediaKind, nodeModality, nodeTitle, outputLabel } from './nodePresentation'
 
 type ToolData = Record<string, unknown> & { __tool?: PaletteTool; __cost?: number; __status?: string;
   __artifacts?: { name: string; url: string }[]; __readOnly?: boolean;
   __inputFields?:string[]; __label?:string;
   __onQuickConnect?: (output:string)=>void; __onOpen?:()=>void; __onRun?:()=>void;
-  __onUpload?:(file:File)=>void; __onRename?:(label:string)=>void;
+  __onUpload?:(files:File[])=>void; __onGenerate?:()=>void; __onRename?:(label:string)=>void;
   __onDuplicate?:()=>void; __onParamChange?:(name:string,value:unknown)=>void }
 
 const icon:Record<string,string>={text:'≡',image:'▧',video:'▶',audio:'♪',batch:'▦',transform:'↗',input:'⇧',tool:'✦'}
@@ -21,22 +21,30 @@ export function ToolNode({ data, selected }: NodeProps) {
     invalid: 'Cần bổ sung', submitted: 'Đang chạy', retry_needed: 'Đang thử lại',
     done: 'Hoàn tất', error: 'Có lỗi', queued: 'Đang chờ', running:'Đang xử lý' }
   const firstArtifact=typed.__artifacts?.[0]
+  const assetUrls=Array.isArray(typed.asset_urls)?typed.asset_urls.map(String):[]
+  const previewUrls=typed.__artifacts?.length?typed.__artifacts.map(item=>item.url)
+    :assetUrls.length?assetUrls:String(typed.asset_url??'')?[String(typed.asset_url)]:[]
+  const previewUrl=previewUrls[0]??''
   const summary=String(params.prompt??params.topic??params.text??params.url??params.source_url??params.asset_name??'').trim()
-  const accept=media==='image'?'image/png,image/jpeg,image/webp':media==='video'?'video/*':media==='audio'?'audio/*':undefined
+  const accept=tool?.name==='video.social_import'||modality==='transform'?undefined:
+    media==='image'?'image/png,image/jpeg,image/webp':media==='video'?'video/*':media==='audio'?'audio/*':undefined
   const textField=tool&&Object.keys(tool.params_schema).find(name=>['text','topic','prompt'].includes(name))
-  const upload=(file?:File)=>{if(file&&!typed.__readOnly)typed.__onUpload?.(file)}
+  const upload=(files?:FileList|File[])=>{const selected=files?Array.from(files):[]
+    if(selected.length&&!typed.__readOnly)typed.__onUpload?.(selected.slice(0,modality==='batch'?12:1))}
   return <article className={`tool-node modality-${modality}${selected ? ' is-selected' : ''}`}
     aria-label={`Node ${tool?.name ?? 'không xác định'}`}
     onDragOver={event=>{if(accept&&!typed.__readOnly){event.preventDefault();event.dataTransfer.dropEffect='copy'}}}
-    onDrop={event=>{if(!accept||typed.__readOnly)return;event.preventDefault();event.stopPropagation();upload(event.dataTransfer.files?.[0])}}>
+    onDrop={event=>{if(!accept||typed.__readOnly)return;event.preventDefault();event.stopPropagation();upload(event.dataTransfer.files)}}>
     <header><span aria-hidden="true">{icon[modality]}</span><input className="node-title nodrag" aria-label="Tên hiển thị node"
-      value={typed.__label||tool?.label||tool?.name||'Công cụ không tồn tại'} disabled={typed.__readOnly}
+      value={typed.__label||nodeTitle(tool)} disabled={typed.__readOnly}
       onClick={event=>event.stopPropagation()} onChange={event=>typed.__onRename?.(event.target.value)}/>
       <button className="node-more nodrag" aria-label="Mở thao tác node" onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>•••</button></header>
-    <div className={`node-preview${firstArtifact?' has-output':''}`}>
-      {firstArtifact&&media==='image'?<img src={firstArtifact.url} alt="Kết quả hình ảnh"/>:
-       firstArtifact&&media==='video'?<video src={firstArtifact.url} controls preload="metadata"/>:
-       firstArtifact&&media==='audio'?<audio src={firstArtifact.url} controls preload="metadata"/>:
+    <div className={`node-preview${previewUrls.length?' has-output':''}`}>
+      {previewUrls.length>1&&media==='image'?<div className="node-image-grid">{previewUrls.map((url,index)=><img
+        key={`${url}-${index}`} src={url} alt={`Ảnh ${index+1} trong bộ ảnh`}/>)}</div>:
+       previewUrl&&media==='image'?<img src={previewUrl} alt={firstArtifact?'Kết quả hình ảnh':'Ảnh đã tải lên'}/>:
+       previewUrl&&media==='video'?<video src={previewUrl} controls preload="metadata"/>:
+       previewUrl&&media==='audio'?<audio src={previewUrl} controls preload="metadata"/>:
        modality==='text'&&textField?<div className="node-inline-text nodrag"><textarea aria-label="Nội dung trực tiếp trong node"
          disabled={typed.__readOnly} value={String(params[textField]??'')} placeholder="Viết trực tiếp hoặc dùng Tạo bằng AI…"
          onClick={event=>event.stopPropagation()} onChange={event=>typed.__onParamChange?.(textField,event.target.value)}/>
@@ -44,12 +52,18 @@ export function ToolNode({ data, selected }: NodeProps) {
        <div className="node-empty"><i aria-hidden="true">{icon[modality]}</i><strong>{configured?'Đã có nội dung':empty.title}</strong>
          <span>{configured?(summary||'Sẵn sàng thiết lập và chạy.'):empty.hint}</span>
          <div className="node-primary-actions nodrag">
-           {accept&&<label className="node-upload">Tải lên<input type="file" accept={accept} disabled={typed.__readOnly}
-             onChange={event=>{upload(event.target.files?.[0]);event.target.value=''}}/></label>}
+           {accept&&<label className="node-upload">Tải lên<input type="file" accept={accept} multiple={modality==='batch'} disabled={typed.__readOnly}
+             onChange={event=>{upload(event.target.files??undefined);event.target.value=''}}/></label>}
            {!['input','transform'].includes(modality)&&<button className="accent" disabled={typed.__readOnly}
-             onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>Tạo bằng AI</button>}
+             onClick={event=>{event.stopPropagation();(typed.__onGenerate??typed.__onOpen)?.()}}>Tạo bằng AI</button>}
            {modality==='transform'&&<button disabled={typed.__readOnly} onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>Chọn đầu vào</button>}
          </div></div>}
+      {!!previewUrls.length&&media&&<div className="node-preview-actions nodrag">
+        <label className="node-upload">Thay tệp<input type="file" accept={accept} multiple={modality==='batch'} disabled={typed.__readOnly}
+          onChange={event=>{upload(event.target.files??undefined);event.target.value=''}}/></label>
+        <button className="accent" disabled={typed.__readOnly}
+          onClick={event=>{event.stopPropagation();(typed.__onGenerate??typed.__onOpen)?.()}}>Tạo bằng AI</button>
+      </div>}
     </div>
     <footer><span className={`node-status ${typed.__status}`}>{labels[String(typed.__status)] ?? 'Đang chờ'}</span>
       <button className="node-run nodrag" disabled={typed.__readOnly||typed.__status==='running'} onClick={event=>{event.stopPropagation();typed.__onRun?.()}}>

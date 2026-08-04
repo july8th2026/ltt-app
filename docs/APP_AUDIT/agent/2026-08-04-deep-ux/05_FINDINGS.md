@@ -17,13 +17,25 @@
    theo edge thật; remove đồng bộ edge + param và hỗ trợ undo.
 8. P2 — Thiếu direct shortcut và output actions thường dùng. H20.8 thêm shortcut
    không chiếm focus nhập liệu, drag/drop input, open/copy/download/duplicate.
+9. P1 — Image node chỉ có vỏ generate, không nhận ảnh tham chiếu nên không thể
+   tái tạo workflow Lookbook thật. H20.9 thêm cổng typed `image`/`image[]`, owner
+   scope, dedupe, giới hạn 8 MB/ảnh và 20 MB/node; worker gửi inlineData đã verify.
+10. P1 — Collection input trước đây chỉ giữ một scalar edge. H20.9 hỗ trợ append
+    nhiều scalar vào collection, disconnect/remap không để lại `$node.output`
+    mồ côi; browser xác minh 3 ảnh vào một node Image.
+11. P1 — Text/Video/Image chưa tạo thành chuỗi đa phương thức hai chiều. H20.9
+    nối được Image→Text phân tích, Text→Image/Video tạo nội dung, Video→Text phân
+    tích; typed validator chặn sai kiểu và ownership vẫn ở server.
+12. P1 — Release builder vô tình duyệt `tmp/` và `test-results/`, có nguy cơ đưa
+    profile Chromium/runtime fixture vào archive. Đã loại ở builder, source secret
+    scanner và regression; không xóa profile đang đăng nhập.
 
 ## Còn mở sau code gate
 
 1. P2 — Chưa có E4 user task/telemetry cho time-to-first-workflow và tỷ lệ lỗi.
    Acceptance: beta cohort hoàn thành ba JTBD, có task success/time/error metrics.
-2. P2 — Chưa smoke bundle H20 trên production vì audit không cấp quyền deploy.
-   Acceptance: deploy riêng, health + desktop/mobile + console/network sạch.
+2. P2 — Bundle H20.9 chưa smoke trên production tại thời điểm chấm scorecard.
+   Acceptance: deploy, health + authenticated Canvas + console/network sạch.
 3. P3 — Mobile chỉ xem. Đây là omission minh bạch; xem xét authoring sau khi có
    dữ liệu nhu cầu, không đưa vào table stake hiện tại.
 4. P3 — Cảnh báo Starlette/httpx deprecation trong test harness. Không ảnh hưởng

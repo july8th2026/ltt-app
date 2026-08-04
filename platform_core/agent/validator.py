@@ -179,31 +179,40 @@ def validate_plan(plan: dict, *, input_types: Optional[dict[str, str]] = None,
         checked = dict(params)
         for field, rule in schema.items():
             value = params.get(field)
-            if (rule.get("type") in ("image", "video", "audio", "image[]", "video[]")
-                    and value is not None
-                    and not (isinstance(value, str) and value.startswith("$"))):
+            kind = rule.get("type")
+            is_ref = isinstance(value, str) and value.startswith("$")
+            is_ref_list = (kind in ("image[]", "video[]") and isinstance(value, list)
+                           and bool(value) and all(isinstance(item, str) and item.startswith("$")
+                                                   for item in value))
+            if (kind in ("image", "video", "audio", "image[]", "video[]")
+                    and value is not None and not (is_ref or is_ref_list)):
                 issues.append(ValidationIssue(
                     "artifact_ref", "Artifact phải là tham chiếu $input/$step.", sid, field))
         for field, value in params.items():
-            if not isinstance(value, str) or not value.startswith("$"):
+            kind = schema.get(field, {}).get("type", "")
+            references = [(value, _port_for_param(kind))] if isinstance(value, str) and value.startswith("$") else []
+            if kind in ("image[]", "video[]") and isinstance(value, list):
+                references = [(item, kind[:-2]) for item in value
+                              if isinstance(item, str) and item.startswith("$")]
+            if not references:
                 continue
-            match = _REF.fullmatch(value)
-            if not match:
-                issues.append(ValidationIssue("reference", "Tham chiếu không hợp lệ.", sid, field)); continue
-            source, output = match.groups()
-            expected = _port_for_param(schema.get(field, {}).get("type", ""))
-            if source == "input":
-                actual = input_types.get(output)
-            else:
-                upstream = by_id.get(source)
-                upstream_spec = tools.get(upstream.get("tool")) if upstream else None
-                actual = upstream_spec.returns.get(output) if upstream_spec else None
-                if source not in deps.get(sid, set()):
-                    issues.append(ValidationIssue("reference_order", f"{source} phải có trong after.", sid, field))
-            if actual is None:
-                issues.append(ValidationIssue("reference", f"Không có output {value}.", sid, field))
-            elif actual != expected:
-                issues.append(ValidationIssue("port_type", f"{value} là {actual}, cần {expected}.", sid, field))
+            for reference, expected in references:
+                match = _REF.fullmatch(reference)
+                if not match:
+                    issues.append(ValidationIssue("reference", "Tham chiếu không hợp lệ.", sid, field)); continue
+                source, output = match.groups()
+                if source == "input":
+                    actual = input_types.get(output)
+                else:
+                    upstream = by_id.get(source)
+                    upstream_spec = tools.get(upstream.get("tool")) if upstream else None
+                    actual = upstream_spec.returns.get(output) if upstream_spec else None
+                    if source not in deps.get(sid, set()):
+                        issues.append(ValidationIssue("reference_order", f"{source} phải có trong after.", sid, field))
+                if actual is None:
+                    issues.append(ValidationIssue("reference", f"Không có output {reference}.", sid, field))
+                elif actual != expected:
+                    issues.append(ValidationIssue("port_type", f"{reference} là {actual}, cần {expected}.", sid, field))
             if field in schema:
                 checked[field] = _placeholder(schema[field])
         try:

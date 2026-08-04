@@ -87,3 +87,12 @@ def test_node_dependency_tree_is_excluded(tmp_path):
     path.parent.mkdir(parents=True)
     path.write_text("// third-party package", encoding="utf-8")
     assert _is_excluded_file(root, path)
+
+
+def test_runtime_browser_and_test_artifacts_are_excluded(tmp_path):
+    root = tmp_path
+    for directory in ("tmp", "test-results", ".playwright-cli"):
+        path = root / directory / "profile.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("{}", encoding="utf-8")
+        assert _is_excluded_file(root, path)

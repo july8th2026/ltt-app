@@ -8,10 +8,20 @@ const palette = { version: 1, tools: [
     app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{text:'text'} },
   { name: 'image.generate', label:'Tạo hình ảnh',category:'content',primary:true,description:'Tạo ảnh từ mô tả',
     app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{image:'image'} },
+  { name: 'asset.image', label:'Ảnh đầu vào',category:'input',primary:false,description:'Ảnh tải lên',
+    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{image_key:{type:'string',required:true}},returns:{image_key:'image'} },
+  { name: 'video.social_import', label:'Social Video',category:'input',primary:false,description:'Video từ liên kết',
+    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{url:{type:'string',required:true},confirm_rights:{type:'bool',required:true}},returns:{video_key:'video'} },
+  { name: 'image.batch_generate', label:'Tạo nhiều ảnh',category:'specialized',primary:false,description:'Tạo bộ ảnh',
+    app_slug:'taoanh',app_name:'Tạo ảnh',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true},count:{type:'int',default:4}},returns:{image_keys:'image[]'} },
+  { name: 'asset.images', label:'Bộ ảnh',category:'input',primary:false,description:'Bộ ảnh tải lên',
+    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{image_keys:{type:'json',required:true}},returns:{image_keys:'image[]'} },
   { name: 'video.generate', label:'Tạo video',category:'content',primary:true,description:'Tạo video từ mô tả',
     app_slug:'seedance',app_name:'Seedance',requires:['gpu'],verifiable:[],params_schema:{prompt:{type:'text',required:true}},returns:{video:'video'} },
   { name: 'image.upscale', label:'Nâng cấp ảnh',category:'transform',primary:false,description:'Tăng độ nét ảnh',
     app_slug:'upscale',app_name:'Upscale',requires:['gpu'],verifiable:[],params_schema:{image_key:{type:'image',required:true}},returns:{image:'image'} },
+  { name: 'media.merge_video', label:'Ghép video',category:'transform',primary:false,description:'Ghép nhiều video',
+    app_slug:'mediatools',app_name:'Media',requires:[],verifiable:[],params_schema:{videos:{type:'video[]',required:true},transition:{type:'enum',default:'cut',values:['cut']}},returns:{video_key:'video'} },
   { name: 'text.script', label:'Viết kịch bản',category:'specialized',primary:false,description:'Viết kịch bản',
     app_slug:'kichban',app_name:'Kịch bản',requires:['api'],verifiable:[],params_schema:{topic:{type:'text',required:true}},returns:{script:'text'} }
 ] }
@@ -25,6 +35,9 @@ beforeEach(() => {
     const url = String(input)
     if (url.endsWith('/palette')) return new Response(JSON.stringify(palette), { status: 200 })
     if (url.endsWith('/preferences')) return new Response(JSON.stringify({theme:'dark',catalog_mode:'advanced',revision:init?.method?1:0}), { status: 200 })
+    if (url.endsWith('/assets')) {const file=init?.body instanceof FormData?init.body.get('file') as File:null
+      const name=file?.name||'owned.png';return new Response(JSON.stringify({key:`agent-assets/u/${name}`,kind:'image',
+        name,size:123,content_type:'image/png',url:`/agent/api/assets/${name}`}),{status:200})}
     if (url.endsWith('/workflows') && !init?.method) return new Response(JSON.stringify({ items: [] }), { status: 200 })
     if (url.includes('/workflows/w1')) return new Response(JSON.stringify({ ...workflow, revision: 2 }), { status: 200 })
     return new Response(JSON.stringify(workflow), { status: 201 })
@@ -54,6 +67,8 @@ describe('CanvasShell', () => {
     const prompt = screen.getByRole('textbox', { name: /Mô tả/ })
     fireEvent.change(prompt, { target: { value: 'Chủ đề mới' } })
     expect(prompt).toHaveValue('Chủ đề mới')
+    fireEvent.keyDown(window,{key:'Escape'})
+    expect(screen.queryByRole('region',{name:'Cấu hình nhanh text.generate'})).not.toBeInTheDocument()
   })
 
   it('provides undo/redo and accessible regions', async () => {
@@ -140,7 +155,9 @@ describe('CanvasShell', () => {
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
     fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
     fireEvent.click(screen.getByRole('button',{name:'Thêm image.upscale'}))
-    fireEvent.click(await screen.findByLabelText('Node image.upscale'))
+    const transform=await screen.findByLabelText('Node image.upscale')
+    fireEvent.click(transform)
+    expect(within(transform).queryByLabelText('Tải lên')).not.toBeInTheDocument()
     const picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'})
     expect(picker).toHaveTextContent('@Tạo hình ảnh · Hình ảnh → Ảnh đầu vào')
     const option=screen.getByRole('option',{name:/@Tạo hình ảnh/}) as HTMLOptionElement
@@ -152,6 +169,27 @@ describe('CanvasShell', () => {
       if(init?.method!=='PUT'||typeof init.body!=='string')return false
       return JSON.parse(init.body).canvas?.pages?.[0]?.edges?.length===0
     })).toBe(true),{timeout:1800})
+  })
+
+  it('keeps multiple scalar sources connected to one collection input',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm video.generate'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm video.generate'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm media.merge_video'}))
+    fireEvent.click(await screen.findByLabelText('Node media.merge_video'))
+    let picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'}) as HTMLSelectElement
+    const first=[...picker.options].find(option=>option.value)!
+    fireEvent.change(picker,{target:{value:first.value}})
+    picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'}) as HTMLSelectElement
+    const second=[...picker.options].find(option=>option.value&&option.value!==first.value)!
+    fireEvent.change(picker,{target:{value:second.value}})
+    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('Video → Video đầu vào')
+    expect(screen.getAllByRole('button',{name:'Tháo kết nối Tạo video'})).toHaveLength(2)
+    expect(screen.getAllByText(/3 node · 2 kết nối/).length).toBeGreaterThan(0)
+    fireEvent.click(screen.getAllByRole('button',{name:'Tháo kết nối Tạo video'})[0])
+    expect(screen.getAllByRole('button',{name:'Tháo kết nối Tạo video'})).toHaveLength(1)
+    expect(screen.getAllByText(/3 node · 1 kết nối/).length).toBeGreaterThan(0)
   })
 
   it('supports direct creation and workspace shortcuts without hijacking text input',async()=>{
@@ -169,6 +207,49 @@ describe('CanvasShell', () => {
     const inline=within(text).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
     fireEvent.keyDown(inline,{key:'i'})
     expect(screen.getAllByLabelText('Node image.generate')).toHaveLength(1)
+  })
+
+  it('keeps Upload and Generate as two modes of the same user-facing Image node',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm image.generate'}))
+    const generated=await screen.findByLabelText('Node image.generate')
+    fireEvent.change(within(generated).getByLabelText('Tải lên'),{target:{files:[new File(['png'],'owned.png',{type:'image/png'})]}})
+    const uploaded=await screen.findByLabelText('Node asset.image')
+    expect(within(uploaded).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Hình ảnh')
+    expect(within(uploaded).getByRole('img',{name:'Ảnh đã tải lên'})).toHaveAttribute('src','/agent/api/assets/owned.png')
+    expect(within(uploaded).getByRole('button',{name:'Tạo bằng AI'})).toBeInTheDocument()
+    fireEvent.click(within(uploaded).getByRole('button',{name:'Tạo bằng AI'}))
+    expect(await screen.findByLabelText('Node image.generate')).toBeInTheDocument()
+    expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
+  })
+
+  it('presents Social Video as a URL action and never as a local upload node',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm video.social_import'}))
+    const node=await screen.findByLabelText('Node video.social_import')
+    expect(within(node).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Social Video')
+    expect(within(node).getByText('Thêm Social Video')).toBeInTheDocument()
+    expect(within(node).queryByLabelText('Tải lên')).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox',{name:/Liên kết/})).toHaveAttribute('placeholder',
+      'Dán link TikTok, YouTube Shorts hoặc Reels…')
+    expect(screen.getByRole('checkbox',{name:'Tôi xác nhận có quyền sử dụng video'})).toBeInTheDocument()
+  })
+
+  it('keeps multiple uploads inside one Batch Images node and can switch back to generation',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm image.batch_generate'}))
+    const generated=await screen.findByLabelText('Node image.batch_generate')
+    const files=[new File(['a'],'a.png',{type:'image/png'}),new File(['b'],'b.png',{type:'image/png'})]
+    fireEvent.change(within(generated).getByLabelText('Tải lên'),{target:{files}})
+    const uploaded=await screen.findByLabelText('Node asset.images')
+    expect(within(uploaded).getByRole('textbox',{name:'Tên hiển thị node'})).toHaveValue('Bộ ảnh')
+    expect(within(uploaded).getAllByRole('img')).toHaveLength(2)
+    expect(within(uploaded).getByRole('img',{name:'Ảnh 1 trong bộ ảnh'})).toHaveAttribute('src','/agent/api/assets/a.png')
+    fireEvent.click(within(uploaded).getByRole('button',{name:'Tạo bằng AI'}))
+    expect(await screen.findByLabelText('Node image.batch_generate')).toBeInTheDocument()
   })
 })
 

@@ -134,7 +134,7 @@ export async function createShare(workflow: Workflow, permission: 'view'|'clone'
 }
 
 export async function uploadAsset(file: File, csrfToken: string): Promise<{
-  key: string; kind: string; name: string; size: number; content_type: string
+  key: string; kind: string; name: string; size: number; content_type: string; url: string
 }> {
   const body = new FormData(); body.append('file', file)
   return decode(await fetch('/agent/api/assets', { method: 'POST', credentials: 'same-origin',

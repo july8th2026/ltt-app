@@ -74,6 +74,53 @@ def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
         pass
 
 
+def _canvas_reference_keys(params: dict, owner_id: str) -> list[str]:
+    """Normalise typed Canvas image inputs and enforce workflow ownership."""
+    raw: list[object] = []
+    if params.get("image_key"):
+        raw.append(params["image_key"])
+    raw.extend(list(params.get("image_keys") or []))
+    keys: list[str] = []
+    for value in raw:
+        key = str(value or "").replace("\\", "/").strip("/")
+        parts = key.split("/")
+        if not owner_id or len(parts) < 3 or parts[1] != owner_id:
+            raise ValueError("Ảnh đầu vào không thuộc tài khoản đang chạy workflow.")
+        if key not in keys:
+            keys.append(key)
+    if len(keys) > 8:
+        raise ValueError("Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.")
+    return keys
+
+
+def _load_canvas_references(params: dict, owner_id: str, storage) -> list[dict]:
+    """Load and verify typed Canvas references before sending them to Gemini."""
+    from PIL import Image, UnidentifiedImageError
+
+    mime_by_format = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
+    result: list[dict] = []
+    total_size = 0
+    for key in _canvas_reference_keys(params, owner_id):
+        if not storage.exists(key):
+            raise ValueError("Ảnh đầu vào không còn tồn tại.")
+        size = storage.size(key)
+        total_size += size
+        if size <= 0 or size > 8 * 1024 * 1024 or total_size > 20 * 1024 * 1024:
+            raise ValueError("Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node.")
+        with storage.open(key) as stream:
+            data = stream.read()
+        try:
+            with Image.open(io.BytesIO(data)) as image:
+                mime = mime_by_format.get(str(image.format or "").upper())
+                image.verify()
+        except (UnidentifiedImageError, OSError) as exc:
+            raise ValueError("Ảnh đầu vào bị hỏng hoặc không đúng định dạng.") from exc
+        if not mime:
+            raise ValueError("Node Image chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.")
+        result.append({"data": data, "mime": mime, "role": "reference"})
+    return result
+
+
 def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
                 model: str = _MODEL, references: list[dict] | None = None) -> bytes:
     """Gọi Gemini Image API một lần → bytes PNG. Ném lỗi nếu thất bại."""
@@ -146,7 +193,7 @@ def handle(params: dict, ctx=None) -> dict:
     storage = get_storage()
     job_id = getattr(ctx, "job_id", "") or "adhoc"
 
-    references: list[dict] = []
+    references: list[dict] = _load_canvas_references(params, owner_id, storage)
     for spec in list(params.get("references") or [])[:2]:
         key = str(spec.get("key") or "")
         if not key.startswith(f"taoanh/{owner_id}/") or not storage.exists(key):
@@ -155,6 +202,8 @@ def handle(params: dict, ctx=None) -> dict:
             references.append({"data": stream.read(),
                                "mime": str(spec.get("mime") or "image/png"),
                                "role": str(spec.get("role") or "reference")})
+    if len(references) > 8:
+        raise ValueError("Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.")
     if edit_mode != "generate" and not any(r["role"] == "source" for r in references):
         raise ValueError("Chế độ chỉnh sửa cần ảnh nguồn.")
     final_prompt = edit_directive(edit_mode, prompt, references)

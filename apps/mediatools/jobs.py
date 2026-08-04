@@ -28,6 +28,14 @@ def _copy_local(storage, key: str, target: str) -> None:
 
 
 def _asset(params: dict, owner_id: str, storage) -> dict | None:
+    if "image_keys" in params:
+        keys = [_owned(str(key), owner_id) for key in list(params.get("image_keys") or [])]
+        if not 1 <= len(keys) <= 12:
+            raise ValueError("Cần 1–12 ảnh cho bộ ảnh đầu vào.")
+        if len(set(keys)) != len(keys) or any(not storage.exists(key) for key in keys):
+            raise ValueError("Bộ ảnh có asset trùng hoặc không còn tồn tại.")
+        return {"image_keys": keys, "provenance": {"kind": "owned_uploads",
+                                                     "owner": owner_id}}
     for field in ("image_key", "video_key", "audio_key"):
         if field in params:
             key = _owned(str(params[field]), owner_id)
@@ -208,11 +216,87 @@ def _safe_remote_url(value: str) -> str:
     return value
 
 
+_SOCIAL_DOMAINS = ("youtube.com", "youtu.be", "tiktok.com", "instagram.com",
+                   "facebook.com", "fb.watch")
+
+
+def _social_host(value: str) -> str:
+    parsed = urlparse(value)
+    host = str(parsed.hostname or "").lower().removeprefix("www.")
+    if parsed.scheme != "https" or parsed.username or parsed.password:
+        return ""
+    return host if any(host == domain or host.endswith(f".{domain}")
+                       for domain in _SOCIAL_DOMAINS) else ""
+
+
+def _download_social(url: str, owner_id: str, storage, ctx) -> dict:
+    try:
+        import yt_dlp
+    except ImportError:
+        raise RuntimeError("Máy chủ chưa cài bộ nhập video mạng xã hội.") from None
+    maximum = 250 * 1024 * 1024
+    temp_dir = tempfile.mkdtemp(prefix="ltt_social_")
+
+    def match_filter(info, *, incomplete=False):
+        if info.get("is_live"):
+            return "Không hỗ trợ livestream."
+        duration = float(info.get("duration") or 0)
+        if duration > 15 * 60:
+            return "Video mạng xã hội không được dài quá 15 phút."
+        return None
+
+    def progress(event: dict) -> None:
+        if ctx is None or event.get("status") != "downloading":
+            return
+        total = int(event.get("total_bytes") or event.get("total_bytes_estimate") or maximum)
+        done = int(event.get("downloaded_bytes") or 0)
+        ctx.progress(min(85, max(2, int(done * 85 / max(total, 1)))),
+                     "đang nhập video mạng xã hội")
+
+    try:
+        options = {
+            "format": "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
+            "merge_output_format": "mp4", "outtmpl": os.path.join(temp_dir, "source.%(ext)s"),
+            "noplaylist": True, "max_downloads": 1, "max_filesize": maximum,
+            "match_filter": match_filter, "progress_hooks": [progress],
+            "quiet": True, "no_warnings": True, "cachedir": False,
+            "socket_timeout": 20, "retries": 2, "fragment_retries": 2,
+        }
+        try:
+            with yt_dlp.YoutubeDL(options) as ydl:
+                ydl.extract_info(url, download=True)
+        except Exception:
+            raise RuntimeError("Không tải được video công khai; hãy kiểm tra liên kết và quyền truy cập.") from None
+        files = sorted((path for path in Path(temp_dir).iterdir() if path.is_file()),
+                       key=lambda path: path.stat().st_mtime, reverse=True)
+        if not files:
+            raise RuntimeError("Không tìm thấy video sau khi tải.")
+        source = files[0]
+        if source.stat().st_size <= 0 or source.stat().st_size > maximum:
+            raise ValueError("Video mạng xã hội vượt giới hạn 250 MB.")
+        from platform_core.media import duration_seconds
+        duration = duration_seconds(str(source))
+        if duration <= 0 or duration > 15 * 60:
+            raise ValueError("Video mạng xã hội không hợp lệ hoặc dài quá 15 phút.")
+        key = f"mediatools/{owner_id}/{getattr(ctx, 'job_id', 'adhoc')}/social.mp4"
+        with open(source, "rb") as stream:
+            storage.put(key, stream, content_type="video/mp4")
+        if ctx is not None:
+            ctx.progress(100, "xong")
+        return {"video_key": key, "source": "social_platform",
+                "source_host": _social_host(url), "duration_s": duration, "credit_cost": 2}
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 def _social_import(params: dict, owner_id: str, storage, ctx) -> dict:
     import httpx
     if params.get("confirm_rights") is not True:
         raise ValueError("Bạn phải xác nhận có quyền sử dụng video.")
-    current = _safe_remote_url(str(params.get("url") or "").strip())
+    requested = str(params.get("url") or "").strip()
+    if _social_host(requested):
+        return _download_social(requested, owner_id, storage, ctx)
+    current = _safe_remote_url(requested)
     maximum = 90 * 1024 * 1024
     temp_path = ""
     try:
@@ -250,7 +334,7 @@ def _social_import(params: dict, owner_id: str, storage, ctx) -> dict:
         key = f"mediatools/{owner_id}/{getattr(ctx, 'job_id', 'adhoc')}/imported.mp4"
         with open(temp_path, "rb") as stream:
             storage.put(key, stream, content_type="video/mp4")
-        return {"video_key": key, "source": "owned_https_url", "credit_cost": 1}
+        return {"video_key": key, "source": "owned_https_url", "credit_cost": 2}
     finally:
         if temp_path:
             try: os.unlink(temp_path)
@@ -261,9 +345,6 @@ def handle(params: dict, ctx=None) -> dict:
     from platform_core.storage import get_storage
     owner_id = str(params.get("owner_id", ""))
     storage = get_storage()
-    passthrough = _asset(params, owner_id, storage)
-    if passthrough is not None:
-        return passthrough
     if "text" in params:
         return _tts(params, owner_id, storage, ctx)
     if "url" in params:
@@ -274,4 +355,7 @@ def handle(params: dict, ctx=None) -> dict:
         return _merge_images(params, owner_id, storage, ctx)
     if "videos" in params:
         return _merge_videos(params, owner_id, storage, ctx)
+    passthrough = _asset(params, owner_id, storage)
+    if passthrough is not None:
+        return passthrough
     raise ValueError("Tác vụ media không hợp lệ.")

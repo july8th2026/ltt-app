@@ -115,6 +115,8 @@ data/translations/desktop.ini
 
 # Playwright CLI temp
 .playwright-cli/
+/tmp/
+/test-results/
 
 # App vendor binaries (Real-ESRGAN engine + models) — copy tu BOT GEMINI, khong commit
 apps/*/vendor/

@@ -4,7 +4,7 @@ import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Controls, Mini
   useStore, useUpdateNodeInternals, type NodeChange } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import './canvas.css'
-import { activePage, connectionAllowed, editorReducer, emptyDocument, nextNode,
+import { activePage, cloneGraphSelection, connectionAllowed, editorReducer, emptyDocument, nextNode,
   scopeNodeIds, type PaletteTool } from './editorState'
 import { Inspector } from './Inspector'
 import { AnnotationNode, FrameNode, ToolNode } from './ToolNode'
@@ -56,7 +56,7 @@ function Editor() {
   const [snapshots,setSnapshots]=useState<WorkflowSnapshot[]>([])
   const [sharePermission,setSharePermission]=useState<'view'|'clone'>('view')
   const [sharePath,setSharePath]=useState('')
-  const copied = useRef<CanvasNode[]>([])
+  const copied = useRef<{nodes:CanvasNode[];edges:CanvasEdge[]}>({nodes:[],edges:[]})
   const autosaveTimer = useRef<number | undefined>(undefined)
   const dragBefore = useRef<CanvasDocument | undefined>(undefined)
   const csrf = document.querySelector<HTMLElement>('#agent-canvas-root')?.dataset.csrfToken ?? ''
@@ -118,7 +118,10 @@ function Editor() {
     const shortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault(); setCommandOpen(true)
-      } else if (event.key === 'Escape') { setCommandOpen(false); setShowLayers(false); setDesktopPanel(null) }
+      } else if (event.key === 'Escape') {
+        setCommandOpen(false);setShowLayers(false);setDesktopPanel(null);setContextMenu(null);setQuickCreate(null);setQuickConnect(null)
+        setSelected([]);setSelectedEdges([]);dispatch({type:'select'})
+      }
     }
     window.addEventListener('keydown', shortcut)
     return () => window.removeEventListener('keydown', shortcut)
@@ -170,11 +173,22 @@ function Editor() {
     const targetNode = page.nodes.find(node => node.id === connection.target)
     const sourceTool = byName.get(String(sourceNode?.data.tool)); const targetTool = byName.get(String(targetNode?.data.tool))
     if (!connectionAllowed(sourceTool, connection.sourceHandle, targetTool, connection.targetHandle)) return
-    const available=page.edges.filter(edge=>!(edge.target===connection.target&&edge.targetHandle===connection.targetHandle))
+    const sourceHandle=connection.sourceHandle!;const targetHandle=connection.targetHandle!
+    const output=sourceTool!.returns[sourceHandle];const input=targetTool!.params_schema[targetHandle]
+    const variadic=Boolean(input.type.endsWith('[]')&&output===input.type.slice(0,-2))
+    const sameInput=page.edges.filter(edge=>edge.target===connection.target&&edge.targetHandle===targetHandle)
+    const retained=variadic?sameInput.filter(edge=>{
+      const tool=byName.get(String(page.nodes.find(node=>node.id===edge.source)?.data.tool))
+      return tool?.returns[edge.sourceHandle??'']===output&&
+        !(edge.source===connection.source&&edge.sourceHandle===sourceHandle)
+    }):[]
+    const available=page.edges.filter(edge=>!(edge.target===connection.target&&edge.targetHandle===targetHandle))
+      .concat(retained)
     const edges = addEdge({ ...connection, id: `${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}` }, available) as CanvasEdge[]
+    const references=[...retained.map(edge=>`$${edge.source}.${edge.sourceHandle}`),`$${connection.source}.${sourceHandle}`]
     const nodes = page.nodes.map(node => node.id === connection.target
       ? { ...node, data: { ...node.data, params: { ...(node.data.params as object ?? {}),
-        [connection.targetHandle!]: `$${connection.source}.${connection.sourceHandle}` } } } : node)
+        [targetHandle]: variadic?[...new Set(references)]:`$${connection.source}.${sourceHandle}` } } } : node)
     dispatch({ type: 'graph', nodes, edges })
   }, [byName, page])
 
@@ -184,24 +198,45 @@ function Editor() {
     const targetHandle=Object.keys(tool.params_schema).find(field=>connectionAllowed(sourceTool,sourceHandle,tool,field))
     if(!targetHandle)return
     const node=nextNode(tool,page.nodes.length);node.position=position
-    node.data.params={...((node.data.params??{}) as Record<string,unknown>),[targetHandle]:`$${sourceId}.${sourceHandle}`}
+    const targetRule=tool.params_schema[targetHandle];const output=sourceTool?.returns[sourceHandle]
+    const value=targetRule.type.endsWith('[]')&&output===targetRule.type.slice(0,-2)
+      ?[`$${sourceId}.${sourceHandle}`]:`$${sourceId}.${sourceHandle}`
+    node.data.params={...((node.data.params??{}) as Record<string,unknown>),[targetHandle]:value}
     const edge={id:`${sourceId}-${sourceHandle}-${node.id}-${targetHandle}`,source:sourceId,sourceHandle,target:node.id,targetHandle}
     dispatch({type:'graph',nodes:[...page.nodes,node],edges:[...page.edges,edge]})
     dispatch({type:'select',id:node.id});setSelected([node.id]);setQuickCreate(null)
   },[readOnly,page,byName])
 
-  const uploadToNode=useCallback(async(nodeId:string,file:File)=>{
+  const uploadToNode=useCallback(async(nodeId:string,files:File[])=>{
     const node=page.nodes.find(item=>item.id===nodeId);if(!node)return
     try{
-      const uploaded=await uploadAsset(file,csrf);const assetTool=byName.get(`asset.${uploaded.kind}`)
+      const current=byName.get(String(node.data.tool));const batch=nodeModality(current)==='batch'
+      const selected=files.slice(0,batch?12:1);if(!selected.length)return
+      const uploadedRows=await Promise.all(selected.map(file=>uploadAsset(file,csrf)))
+      if(batch&&uploadedRows.some(item=>item.kind!=='image')){setRunError('Bộ ảnh chỉ nhận file hình ảnh.');return}
+      const uploaded=uploadedRows[0]
+      const assetTool=byName.get(batch?'asset.images':`asset.${uploaded.kind}`)
       if(!assetTool){setRunError(`Canvas chưa có node đầu vào ${uploaded.kind}.`);return}
-      const keyField=Object.entries(assetTool.params_schema).find(([,rule])=>rule.type===uploaded.kind)?.[0]
-        ??`${uploaded.kind}_key`
-      dispatch({type:'update',id:nodeId,data:{tool:assetTool.name,params:{[keyField]:uploaded.key},
-        asset_name:uploaded.name,asset_size:uploaded.size}})
+      const keyField=batch?'image_keys':Object.entries(assetTool.params_schema).find(([,rule])=>rule.type===uploaded.kind)?.[0]
+        ??`${uploaded.kind}_key`;const params=batch?{[keyField]:uploadedRows.map(item=>item.key)}:{[keyField]:uploaded.key}
+      dispatch({type:'toolReplace',id:nodeId,tool:assetTool,tools:palette,data:{
+        params,...(batch?{asset_names:uploadedRows.map(item=>item.name),asset_sizes:uploadedRows.map(item=>item.size),
+          asset_urls:uploadedRows.map(item=>item.url)}:{asset_name:uploaded.name,asset_size:uploaded.size,
+          asset_url:uploaded.url})}})
       dispatch({type:'select',id:nodeId});setSelected([nodeId]);setRunError('')
     }catch(error){setRunError(error instanceof Error?error.message:'Không tải được tệp.')}
-  },[page,csrf,byName])
+  },[page,csrf,byName,palette])
+
+  const generateInNode=useCallback((nodeId:string)=>{
+    const node=page.nodes.find(item=>item.id===nodeId);const current=byName.get(String(node?.data.tool))
+    const kind=mediaKind(current)
+    if(!node||!kind)return
+    const generator=current?.name==='asset.images'?byName.get('image.batch_generate'):
+      palette.find(tool=>tool.primary&&tool.category==='content'&&nodeModality(tool)===kind)
+      ??palette.find(tool=>tool.category==='content'&&nodeModality(tool)===kind)
+    if(generator&&generator.name!==current?.name)dispatch({type:'toolReplace',id:nodeId,tool:generator,tools:palette})
+    dispatch({type:'select',id:nodeId});setSelected([nodeId]);setSelectedEdges([]);setDesktopPanel('inspector')
+  },[page.nodes,byName,palette])
 
   const prepareScope=useCallback(async(scope:{mode:'node'|'selection';node_id?:string;node_ids?:string[]})=>{
     if(!workflow||readOnly||run)return
@@ -235,17 +270,30 @@ function Editor() {
 
   const duplicate = useCallback(() => {
     if (readOnly) return
-    const source = selected.length ? page.nodes.filter(node => selected.includes(node.id)) : copied.current
-    const clones = source.map((node, index) => ({ ...structuredClone(node), id: `${node.id}-copy-${Date.now()}-${index}`,
-      position: { x: node.position.x + 32, y: node.position.y + 32 } }))
-    if (clones.length) dispatch({ type: 'graph', nodes: [...page.nodes, ...clones], edges: page.edges })
+    const source=page.nodes.filter(node=>selected.includes(node.id))
+    if(!source.length)return
+    const cloned=cloneGraphSelection(source,page.edges)
+    dispatch({type:'graph',nodes:[...page.nodes,...cloned.nodes],edges:[...page.edges,...cloned.edges]})
+    setSelected(cloned.nodeIds);setSelectedEdges([])
   }, [readOnly, selected, page])
+  const paste=useCallback(()=>{
+    if(readOnly||!copied.current.nodes.length)return
+    const cloned=cloneGraphSelection(copied.current.nodes,copied.current.edges)
+    dispatch({type:'graph',nodes:[...page.nodes,...cloned.nodes],edges:[...page.edges,...cloned.edges]})
+    setSelected(cloned.nodeIds);setSelectedEdges([])
+  },[readOnly,page])
   const disconnectInput=useCallback((edgeId:string)=>{
     if(readOnly)return
     const edge=page.edges.find(item=>item.id===edgeId);if(!edge)return
     const nodes=page.nodes.map(node=>{if(node.id!==edge.target||!edge.targetHandle)return node
       const params={...((node.data.params??{}) as Record<string,unknown>)}
-      if(params[edge.targetHandle]===`$${edge.source}.${edge.sourceHandle}`)delete params[edge.targetHandle]
+      const reference=`$${edge.source}.${edge.sourceHandle}`
+      if(params[edge.targetHandle]===reference)delete params[edge.targetHandle]
+      else if(Array.isArray(params[edge.targetHandle])){
+        const remaining=(params[edge.targetHandle] as unknown[]).filter(value=>value!==reference)
+        if(remaining.length)params[edge.targetHandle]=remaining
+        else delete params[edge.targetHandle]
+      }
       return {...node,data:{...node.data,params}}
     })
     dispatch({type:'graph',nodes,edges:page.edges.filter(item=>item.id!==edgeId)})
@@ -272,12 +320,16 @@ function Editor() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault(); setCommandOpen(true); return
     }
-    if (event.key === 'Escape') { setCommandOpen(false); setShowLayers(false); setDesktopPanel(null); return }
+    if (event.key === 'Escape') { setCommandOpen(false);setShowLayers(false);setDesktopPanel(null);setContextMenu(null);setQuickCreate(null);setQuickConnect(null);
+      setSelected([]);setSelectedEdges([]);dispatch({type:'select'});return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); dispatch({ type: event.shiftKey ? 'redo' : 'undo' }); return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'y') { event.preventDefault(); dispatch({ type: 'redo' }); return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') { event.preventDefault(); duplicate(); return }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') copied.current = page.nodes.filter(node => selected.includes(node.id)).map(node => structuredClone(node))
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') { event.preventDefault(); duplicate() }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
+      const ids=new Set(selected);copied.current={nodes:page.nodes.filter(node=>ids.has(node.id)).map(node=>structuredClone(node)),
+        edges:page.edges.filter(edge=>ids.has(edge.source)&&ids.has(edge.target)).map(edge=>structuredClone(edge))};return
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'v') { event.preventDefault(); paste();return }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();setSelected(page.nodes.map(node=>node.id));setSelectedEdges([]);dispatch({type:'select'});return
     }
@@ -303,7 +355,7 @@ function Editor() {
 
   const displayNodes = useMemo(() => {
     const tools = page.nodes.map(node => {const tool=byName.get(String(node.data.tool));const width=readOnly?280:360
-    const inputFields=Object.keys(tool?.params_schema??{}).filter(field=>palette.some(source=>Object.keys(source.returns).some(handle=>connectionAllowed(source,handle,tool,field))))
+    const inputFields=tool?.name.startsWith('asset.')?[]:Object.keys(tool?.params_schema??{}).filter(field=>palette.some(source=>Object.keys(source.returns).some(handle=>connectionAllowed(source,handle,tool,field))))
     return ({ ...node,
     measured:{width,height:readOnly?284:334},handles:[
       ...inputFields.map((id,index)=>({id,type:'target' as const,position:Position.Left,x:-22,y:34+index*34,width:44,height:44})),
@@ -318,7 +370,8 @@ function Editor() {
       __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
       __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id})},
       __onRun:()=>{setSelected([node.id]);dispatch({type:'select',id:node.id});void prepareScope({mode:'node',node_id:node.id})},
-      __onUpload:(file:File)=>void uploadToNode(node.id,file),
+      __onUpload:(files:File[])=>void uploadToNode(node.id,files),
+      __onGenerate:()=>generateInNode(node.id),
       __status: String(run?.checkpoint[node.id]?.status ??
         (validationIssues.some(issue => issue.step_id === node.id) ? 'invalid'
         : costs[node.id] === undefined ? 'draft' : 'validated')),
@@ -343,7 +396,7 @@ function Editor() {
       draggable: false, selectable: false, connectable: false, zIndex: 3,
       data: { kind: 'comment', text: comment.text } }))
     return [...frames, ...tools, ...notes, ...comments]
-  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,prepareScope,uploadToNode,duplicateNode])
+  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,prepareScope,uploadToNode,generateInNode,duplicateNode])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
     return { ...edge, selected: selectedEdges.includes(edge.id), label: isError ? 'Lỗi' : undefined,
@@ -495,6 +548,9 @@ function Editor() {
           onDragStart={event => event.dataTransfer.setData('application/ltt-tool', tool.name)} onClick={() => addTool(tool)}
           aria-label={`Thêm ${tool.name}`}><strong>{tool.label??tool.name}</strong><small>{tool.description}</small></button>)}</section>)}</aside>
       <main className="canvas-stage" data-testid="canvas-stage" data-edge-count={page.edges.length} data-display-edge-count={displayEdges.length} onDragOver={event => event.preventDefault()}
+        onContextMenu={event=>{if((event.target as HTMLElement).closest('.react-flow__node,.canvas-context-menu'))return
+          event.preventDefault();setQuickCreate(null);const screen={x:event.clientX,y:event.clientY}
+          setContextMenu({kind:'pane',x:screen.x,y:screen.y,flow:reactFlow.screenToFlowPosition(screen)})}}
         onDrop={event => { const tool = byName.get(event.dataTransfer.getData('application/ltt-tool')); if (tool) addTool(tool, reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })) }}>
         <ReactFlow key={page.id} nodes={displayNodes as CanvasNode[]} edges={displayEdges} nodeTypes={nodeTypes}
           onNodesChange={(changes: NodeChange[]) => { const persisted = changes.filter(change => ['position', 'add', 'remove', 'replace'].includes(change.type));
@@ -507,7 +563,10 @@ function Editor() {
             const screen={x:point.clientX,y:point.clientY};setContextMenu(null)
             setQuickCreate({sourceId:connectionState.fromNode.id,sourceHandle:connectionState.fromHandle.id??'',x:screen.x,y:screen.y,
               flow:reactFlow.screenToFlowPosition(screen)})
-          }} onNodeClick={(_event, node) => { setContextMenu(null);setQuickCreate(null);setSelectedEdges([]); setDesktopPanel(null); dispatch({ type: 'select', id: node.id }) }}
+          }} onNodeClick={(event, node) => {const additive=event.ctrlKey||event.metaKey||event.shiftKey
+            setContextMenu(null);setQuickCreate(null);setSelectedEdges([]);setDesktopPanel(null)
+            setSelected(previous=>additive?(previous.includes(node.id)?previous.filter(id=>id!==node.id):[...previous,node.id]):[node.id])
+            dispatch({ type: 'select', id: node.id }) }}
           onNodeContextMenu={(event,node)=>{event.preventDefault();setQuickCreate(null);setSelected([node.id]);dispatch({type:'select',id:node.id});
             setContextMenu({kind:'node',nodeId:node.id,x:event.clientX,y:event.clientY,flow:node.position})}}
           onPaneContextMenu={event=>{event.preventDefault();setQuickCreate(null);const screen={x:event.clientX,y:event.clientY};
@@ -518,6 +577,7 @@ function Editor() {
           onPaneClick={() => { setContextMenu(null);setQuickCreate(null);setSelected([]); setSelectedEdges([]); dispatch({ type: 'select' }) }} onSelectionChange={onSelectionChange}
           onMoveEnd={(_event, viewport) => dispatch({ type: 'viewport', viewport })}
           nodesDraggable={!readOnly} nodesConnectable={!readOnly} elementsSelectable
+          multiSelectionKeyCode={['Control','Meta']} selectionOnDrag panOnDrag={[1,2]}
           defaultViewport={page.viewport} minZoom={0.1} maxZoom={2}
           fitView={!page.nodes.length} deleteKeyCode={null}>
           <FlowStatus />
@@ -633,6 +693,7 @@ function ContextComposer({node,tool,readOnly,onChange,onAdvanced,onClose,onRun,c
       if(rule.type==='bool')return <label key={name} className="composer-check"><input type="checkbox" disabled={readOnly} checked={Boolean(value)} onChange={event=>setParam(name,event.target.checked)}/><span>{label}</span></label>
       if(['prompt','topic','text'].includes(name))return <label key={name} className="composer-prompt"><span>{label}{rule.required?' *':''}</span><textarea disabled={readOnly} value={String(value)} placeholder="Mô tả điều bạn muốn tạo; dùng @ để nhắc tới node liên quan…" onChange={event=>setParam(name,event.target.value)}/></label>
       return <label key={name}><span>{label}{rule.required?' *':''}</span><input disabled={readOnly} value={String(value)} type={rule.type==='int'||rule.type==='number'?'number':'text'}
+        placeholder={name==='url'&&tool.name==='video.social_import'?'Dán link TikTok, YouTube Shorts hoặc Reels…':undefined}
         onChange={event=>setParam(name,rule.type==='int'?Number.parseInt(event.target.value):rule.type==='number'?Number(event.target.value):event.target.value)} /></label>
     })}</div>
     <footer><span>{cost===undefined?'Báo giá được tính bởi server':`Tối đa ${cost} credit`}</span><button className="composer-run" disabled={readOnly} onClick={onRun}>✦ {cost===undefined?'Báo giá & chạy':`${cost} · Tiếp tục`}</button></footer>

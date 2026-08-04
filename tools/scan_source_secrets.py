@@ -60,6 +60,11 @@ EXCLUDED_DIR_NAMES = {
     # Snapshot/log tam cua Playwright MCP (dieu khien trinh duyet). Khong phai
     # source; chua nhieu chuoi hex 32 ky tu tu dashboard lam trip may quet.
     ".playwright-mcp",
+    ".playwright-cli",
+    # Runtime-only browser/test fixtures. These directories are never source
+    # and may contain authenticated Chromium profile material.
+    "tmp",
+    "test-results",
     ".claude",
     # Engine vendored tu D:/FULL AUTO VIDEO (Tao Clip ngan). Ma van hanh cua ben thu
     # ba (khong chua secret cua ta — luong lam-file-truc-tiep khong can key); co chuoi

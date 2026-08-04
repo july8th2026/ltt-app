@@ -31,8 +31,10 @@ def _cost(params: dict) -> int:
     # nếu giữ chỗ sát quá, quyết toán (token thật) đẩy số dư ÂM. Đệm 25% để held ≥ thật
     # trong hầu hết trường hợp; quyết toán vẫn theo token thật (hoàn phần dư).
     import math
-    est = uoc_luong_credit(model, resolution, duration,
-                           bool(params.get("has_video_input")))
+    legacy_refs = params.get("refs") if isinstance(params.get("refs"), list) else []
+    has_video_input = bool(params.get("video_key")) or any(
+        isinstance(item, dict) and item.get("kind") == "video" for item in legacy_refs)
+    est = uoc_luong_credit(model, resolution, duration, has_video_input)
     return max(1, math.ceil(est * 1.25))
 
 
@@ -63,6 +65,10 @@ MANIFEST = AppManifest(
             "motion": {"type": "enum", "values": ["", "subtle", "dynamic", "cinematic"], "default": ""},
             "visual_style": {"type": "enum", "values": ["", "realistic", "cinematic", "anime", "product"], "default": ""},
             "seed": {"type": "number", "min": 0, "max": 2147483647},
+            "image_key": {"type": "image"},
+            "image_keys": {"type": "image[]"},
+            "video_key": {"type": "video"},
+            "audio_key": {"type": "audio"},
             "refs": {"type": "json"},
         },
         returns={"video_key": "video"},

@@ -13,10 +13,16 @@ from __future__ import annotations
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 CREDIT_PER_SCRIPT = 3
+CREDIT_PER_VISION_TEXT = 4
+CREDIT_PER_VIDEO_TEXT = 6
 
 
 def _cost(params: dict) -> int:
-    """Giá cố định mỗi kịch bản (text rẻ). LÀ HÀM theo hợp đồng."""
+    """Giá theo modality đầu vào; server là nguồn báo giá duy nhất."""
+    if params.get("video_key"):
+        return CREDIT_PER_VIDEO_TEXT
+    if params.get("image_key") or params.get("image_keys"):
+        return CREDIT_PER_VISION_TEXT
     return CREDIT_PER_SCRIPT
 
 
@@ -49,6 +55,10 @@ MANIFEST = AppManifest(
         description="Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra.",
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 12000},
+            "source_text": {"type": "text", "max_length": 32000},
+            "image_key": {"type": "image"},
+            "image_keys": {"type": "image[]"},
+            "video_key": {"type": "video"},
             "model": {"type": "model_ref", "category": "chat", "providers": ["gemini"]},
             "format": {"type": "enum", "values": ["plain", "markdown", "json"], "default": "markdown"},
         },

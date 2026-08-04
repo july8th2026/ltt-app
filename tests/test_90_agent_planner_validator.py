@@ -109,6 +109,22 @@ def test_input_reference_hop_le_va_sai_kieu():
     assert "port_type" in _codes(validate_plan(plan, input_types={"video": "image"}))
 
 
+def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_port():
+    base = {"fanout": 1, "max_retry": 0, "on_fail": "retry_same", "verify": None}
+    plan = {"version": 1, "goal": "Nối hai video", "budget_max_credit": 1000,
+            "steps": [
+        {"id": "v1", "tool": "video.generate", "after": [], **base,
+         "params": {"prompt": "Video thứ nhất"}},
+        {"id": "v2", "tool": "video.generate", "after": [], **base,
+         "params": {"prompt": "Video thứ hai"}},
+        {"id": "merge", "tool": "media.merge_video", "after": ["v1", "v2"], **base,
+         "params": {"videos": ["$v1.video_key", "$v2.video_key"], "transition": "cut"}},
+    ]}
+    assert validate_plan(plan).valid
+    plan["steps"][2]["params"]["videos"][1] = "$input.image"
+    assert "port_type" in _codes(validate_plan(plan, input_types={"image": "image"}))
+
+
 def test_quyen_app_va_so_du_duoc_chan():
     plan = _valid_plan()
     assert "tool" in _codes(validate_plan(plan, allowed_slugs=set()))

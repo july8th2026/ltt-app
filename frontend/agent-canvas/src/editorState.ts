@@ -14,6 +14,8 @@ export type EditorAction =
   | { type: 'commit'; before: CanvasDocument }
   | { type: 'select'; id?: string }
   | { type: 'update'; id: string; data: Record<string, unknown> }
+  | { type: 'toolReplace'; id: string; tool: PaletteTool; tools: PaletteTool[];
+      data?: Record<string, unknown> }
   | { type: 'nodeLabel'; id: string; label: string }
   | { type: 'viewport'; viewport: CanvasPage['viewport'] }
   | { type: 'pageView'; grid?: boolean; connections?: boolean; minimap?: boolean }
@@ -58,6 +60,25 @@ function changed(state: EditorState, document: CanvasDocument): EditorState {
   return { ...state, document, past: [...state.past.slice(-49), clone(state.document)], future: [] }
 }
 
+function clearEdgeReferences(nodes:CanvasNode[],removed:CanvasEdge[]){
+  const byTarget=new Map<string,CanvasEdge[]>()
+  for(const edge of removed){const list=byTarget.get(edge.target)??[];list.push(edge);byTarget.set(edge.target,list)}
+  return nodes.map(node=>{
+    const affected=byTarget.get(node.id);if(!affected?.length)return node
+    const params={...((node.data.params??{}) as Record<string,unknown>)}
+    for(const edge of affected){if(!edge.targetHandle)continue
+      const reference=`$${edge.source}.${edge.sourceHandle}`;const current=params[edge.targetHandle]
+      if(current===reference)delete params[edge.targetHandle]
+      else if(Array.isArray(current)){
+        const remaining=current.filter(value=>value!==reference)
+        if(remaining.length)params[edge.targetHandle]=remaining
+        else delete params[edge.targetHandle]
+      }
+    }
+    return {...node,data:{...node.data,params}}
+  })
+}
+
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case 'replace': return { document: clone(action.document), past: [], future: [] }
@@ -70,6 +91,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'update': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map(node => node.id === action.id
         ? { ...node, data: { ...node.data, ...action.data } } : node) })))
+    case 'toolReplace': return changed(state, updateActive(state.document, page =>
+      replaceNodeTool(page, action.id, action.tool, action.tools, action.data)))
     case 'nodeLabel': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map(node => node.id === action.id
         ? { ...node, label: action.label.trim().slice(0, 80) || undefined } : node) })))
@@ -122,11 +145,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'delete': {
       const ids = new Set(action.ids)
       return changed({ ...state, selectedId: ids.has(state.selectedId ?? '') ? undefined : state.selectedId },
-        updateActive(state.document, page => ({ ...page,
-          nodes: page.nodes.filter(node => !ids.has(node.id)),
+        updateActive(state.document, page => {const removed=page.edges.filter(edge=>ids.has(edge.source)||ids.has(edge.target));return { ...page,
+          nodes: clearEdgeReferences(page.nodes.filter(node => !ids.has(node.id)),removed),
           edges: page.edges.filter(edge => !ids.has(edge.source) && !ids.has(edge.target)),
           frames: page.frames.map(frame => ({ ...frame,
-            node_ids: frame.node_ids.filter(id => !ids.has(id)) })) })))
+            node_ids: frame.node_ids.filter(id => !ids.has(id)) })) }}))
     }
     case 'nodeMovePage': {
       if (action.pageId === state.document.active_page_id ||
@@ -135,11 +158,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const node = source.nodes.find(item => item.id === action.id)
       if (!node) return state
       const document = { ...state.document, pages: state.document.pages.map(page => {
-        if (page.id === source.id) return { ...page,
-          nodes: page.nodes.filter(item => item.id !== action.id),
+        if (page.id === source.id) {const removed=page.edges.filter(edge=>edge.source===action.id||edge.target===action.id);return { ...page,
+          nodes: clearEdgeReferences(page.nodes.filter(item => item.id !== action.id),removed),
           edges: page.edges.filter(edge => edge.source !== action.id && edge.target !== action.id),
           frames: page.frames.map(frame => ({ ...frame,
-            node_ids: frame.node_ids.filter(id => id !== action.id) })) }
+            node_ids: frame.node_ids.filter(id => id !== action.id) })) }}
         if (page.id === action.pageId) return { ...page, nodes: [...page.nodes, {
           ...node, position: { x: 90 + (page.nodes.length % 3) * 430,
             y: 90 + Math.floor(page.nodes.length / 3) * 430 } }] }
@@ -149,8 +172,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
     case 'deleteEdges': {
       const ids = new Set(action.ids)
-      return changed(state, updateActive(state.document, page => ({ ...page,
-        edges: page.edges.filter(edge => !ids.has(edge.id)) })))
+      return changed(state, updateActive(state.document, page => {const removed=page.edges.filter(edge=>ids.has(edge.id));return { ...page,
+        nodes:clearEdgeReferences(page.nodes,removed),edges: page.edges.filter(edge => !ids.has(edge.id)) }}))
     }
     case 'layout': return changed(state, updateActive(state.document, page => ({ ...page,
       nodes: page.nodes.map((node, index) => ({ ...node,
@@ -168,6 +191,80 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         future: state.future.slice(1) }
     }
   }
+}
+
+export function replaceNodeTool(page: CanvasPage, nodeId: string, nextTool: PaletteTool,
+                                tools: PaletteTool[], data: Record<string, unknown> = {}): CanvasPage {
+  const current = page.nodes.find(node => node.id === nodeId)
+  if (!current) return page
+  const byName = new Map(tools.map(tool => [tool.name, tool]))
+  const defaults = Object.fromEntries(Object.entries(nextTool.params_schema)
+    .filter(([, rule]) => rule.default !== undefined)
+    .map(([name, rule]) => [name, structuredClone(rule.default)]))
+  const { asset_name: _name, asset_names: _names, asset_size: _size,
+    asset_sizes: _sizes, asset_url: _url, asset_urls: _urls, ...stable } = current.data
+  const nodes = new Map(page.nodes.map(node => [node.id, node]))
+  nodes.set(nodeId, { ...current, data: { ...stable, tool: nextTool.name,
+    params: defaults, ...data } })
+  const occupied = new Set(page.edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId)
+    .map(edge => `${edge.target}|${edge.targetHandle}`))
+  const edges: CanvasEdge[] = []
+
+  const clearTargetParam = (edge: CanvasEdge) => {
+    if (!edge.targetHandle) return
+    const target = nodes.get(edge.target); if (!target) return
+    const params = { ...((target.data.params ?? {}) as Record<string, unknown>) }
+    const reference = `$${edge.source}.${edge.sourceHandle}`
+    if (params[edge.targetHandle] === reference) delete params[edge.targetHandle]
+    else if (Array.isArray(params[edge.targetHandle])) {
+      const remaining = (params[edge.targetHandle] as unknown[]).filter(value => value !== reference)
+      if (remaining.length) params[edge.targetHandle] = remaining
+      else delete params[edge.targetHandle]
+    }
+    nodes.set(target.id, { ...target, data: { ...target.data, params } })
+  }
+
+  for (const edge of page.edges) {
+    if (edge.target === nodeId) continue
+    if (edge.source !== nodeId) { edges.push(edge); continue }
+    const target = nodes.get(edge.target)
+    const targetTool = byName.get(String(target?.data.tool))
+    const candidates = Object.keys(nextTool.returns).flatMap(sourceHandle =>
+      Object.keys(targetTool?.params_schema ?? {}).filter(targetHandle => {
+        const rule = targetTool?.params_schema[targetHandle]
+        const variadic = Boolean(rule?.type.endsWith('[]') &&
+          nextTool.returns[sourceHandle] === rule.type.slice(0, -2))
+        return (!occupied.has(`${edge.target}|${targetHandle}`) || variadic) &&
+          connectionAllowed(nextTool, sourceHandle, targetTool, targetHandle)
+      })
+        .map(targetHandle => ({ sourceHandle, targetHandle })))
+    const exact = candidates.find(item => nextTool.returns[item.sourceHandle] ===
+      inputPort(targetTool!.params_schema[item.targetHandle].type))
+    const replacement = candidates.find(item => item.sourceHandle === edge.sourceHandle && item.targetHandle === edge.targetHandle &&
+      nextTool.returns[item.sourceHandle] === inputPort(targetTool!.params_schema[item.targetHandle].type))
+      ?? exact
+      ?? candidates.find(item => item.targetHandle === edge.targetHandle)
+      ?? candidates.find(item => item.sourceHandle === edge.sourceHandle)
+      ?? candidates[0]
+    clearTargetParam(edge)
+    if (!replacement || !target) continue
+    const rule = targetTool?.params_schema[replacement.targetHandle]
+    const reference = `$${nodeId}.${replacement.sourceHandle}`
+    const currentParams = (nodes.get(target.id)?.data.params ?? {}) as Record<string, unknown>
+    const variadic = Boolean(rule?.type.endsWith('[]') &&
+      nextTool.returns[replacement.sourceHandle] === rule.type.slice(0, -2))
+    const previous = currentParams[replacement.targetHandle]
+    const value = variadic
+      ? [...new Set([...(Array.isArray(previous) ? previous : []), reference])]
+      : reference
+    occupied.add(`${edge.target}|${replacement.targetHandle}`)
+    const params = { ...currentParams, [replacement.targetHandle]: value }
+    nodes.set(target.id, { ...nodes.get(target.id)!, data: { ...nodes.get(target.id)!.data, params } })
+    edges.push({ ...edge,
+      id: `${nodeId}-${replacement.sourceHandle}-${edge.target}-${replacement.targetHandle}`,
+      sourceHandle: replacement.sourceHandle, targetHandle: replacement.targetHandle })
+  }
+  return { ...page, nodes: page.nodes.map(node => nodes.get(node.id)!), edges }
 }
 
 export type PaletteTool = {
@@ -193,9 +290,14 @@ const inputPort = (type: string) => ['string', 'text'].includes(type) ? 'text'
 export function connectionAllowed(source: PaletteTool | undefined, sourceHandle: string | null,
                                   target: PaletteTool | undefined, targetHandle: string | null) {
   if (!source || !target || !sourceHandle || !targetHandle) return false
+  if (target.name.startsWith('asset.')) return false
+  if (targetHandle === 'refs' || targetHandle.startsWith('_')) return false
   const output = source.returns[sourceHandle]
   const input = target.params_schema[targetHandle]
-  return Boolean(output && input && output === inputPort(input.type))
+  if (targetHandle === 'prompt' && output === 'text' && target.params_schema.source_text) return false
+  const expected = input && inputPort(input.type)
+  return Boolean(output && expected && (output === expected ||
+    (expected.endsWith('[]') && output === expected.slice(0, -2))))
 }
 
 export function scopeNodeIds(nodes:CanvasNode[],edges:CanvasEdge[],targets:string[]){
@@ -209,6 +311,32 @@ export function scopeNodeIds(nodes:CanvasNode[],edges:CanvasEdge[],targets:strin
     }
   }
   return [...included]
+}
+
+export function cloneGraphSelection(nodes:CanvasNode[],edges:CanvasEdge[],suffix=Date.now().toString()){
+  const selected=new Set(nodes.map(node=>node.id))
+  const ids=new Map(nodes.map((node,index)=>[node.id,`${node.id}-copy-${suffix}-${index}`]))
+  const remap=(value:unknown):unknown=>{
+    if(typeof value==='string'&&value.startsWith('$')){
+      const dot=value.indexOf('.')
+      const source=dot>1?value.slice(1,dot):'';const replacement=ids.get(source)
+      return replacement?`$${replacement}${value.slice(dot)}`:value
+    }
+    if(Array.isArray(value))return value.map(remap)
+    if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,remap(item)]))
+    return value
+  }
+  const clonedNodes=nodes.map(node=>{
+    const clone=structuredClone(node);clone.id=ids.get(node.id)!
+    clone.position={x:node.position.x+32,y:node.position.y+32}
+    clone.data=remap(clone.data) as CanvasNode['data']
+    return clone
+  })
+  const clonedEdges=edges.filter(edge=>selected.has(edge.source)&&selected.has(edge.target)).map(edge=>({
+    ...structuredClone(edge),id:`${ids.get(edge.source)}-${edge.sourceHandle}-${ids.get(edge.target)}-${edge.targetHandle}`,
+    source:ids.get(edge.source)!,target:ids.get(edge.target)!,
+  }))
+  return {nodes:clonedNodes,edges:clonedEdges,nodeIds:clonedNodes.map(node=>node.id)}
 }
 
 export function nextNode(tool: PaletteTool, count: number): CanvasNode {

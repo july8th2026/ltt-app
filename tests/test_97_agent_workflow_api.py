@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import io
 import re
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -114,7 +115,7 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert result.status_code == 200 and result.json()["validation"]["valid"]
     assert result.json()["estimated"] > 0 and result.json()["status"] == "validated"
     palette = a.get("/agent/api/palette").json()
-    assert palette["version"] == 2 and len(palette["tools"]) == 20
+    assert palette["version"] == 2 and len(palette["tools"]) == 21
     assert palette["routing"]["mode"] == "platform_auto"
     assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
                for model in palette["models"])
@@ -150,6 +151,26 @@ def test_canvas_preferences_are_validated_and_owned_per_user(api):
         "theme": "blue", "catalog_mode": "simple"}).status_code == 422
 
 
+def test_canvas_uploaded_asset_has_owner_scoped_browser_preview(api):
+    from PIL import Image
+    a, token_a, b, _ = api
+    output = io.BytesIO(); Image.new("RGB", (4, 3), "red").save(output, format="PNG")
+    uploaded = a.post("/agent/api/assets", headers={"X-CSRF-Token": token_a},
+        files={"file": ("owned.png", output.getvalue(), "image/png")})
+    assert uploaded.status_code == 200
+    payload = uploaded.json()
+    assert payload["url"].startswith("/agent/api/assets/")
+    preview = a.get(payload["url"])
+    assert preview.status_code == 200
+    assert preview.headers["content-type"].startswith("image/png")
+    assert "no-store" in preview.headers["cache-control"]
+    assert preview.headers["accept-ranges"] == "bytes"
+    partial = a.get(payload["url"], headers={"Range": "bytes=0-9"})
+    assert partial.status_code == 206 and len(partial.content) == 10
+    assert partial.headers["content-range"].startswith("bytes 0-9/")
+    assert b.get(payload["url"]).status_code == 404
+
+
 def test_import_pathological_and_client_price_are_rejected(api):
     a, token, *_ = api
     body = {"format": "ltt-agent-workflow", "version": 1, "name": "độc",
@@ -180,6 +201,9 @@ def test_workflow_snapshot_quote_approve_and_run_again_are_revision_bound(api):
     assert created.status_code == 201
     run = created.json()
     assert run["status"] == "awaiting_approval" and len(run["quote_hash"]) == 64
+    quote = next(item for item in run["decisions"] if item["event"] == "quote")
+    assert quote["planning_cost"] == 0
+    assert run["estimated"] == quote["execution_max"]
     listing = a.get("/agent/api/runs").json()["items"]
     assert listing[0]["id"] == run["id"] and "plan" not in listing[0]
     assert a.get(f"/agent/api/runs/{run['id']}").json()["plan"] == run["plan"]

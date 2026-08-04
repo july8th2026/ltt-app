@@ -33,6 +33,7 @@ def _project_root() -> str:
 @pytest.mark.parametrize("name", [
     "data", "secrets", "logs", "temp_videos", ".git", "__pycache__",
     ".venv", "venv", "dist", "build", "_recovery", ".playwright-cli",
+    "tmp", "test-results",
 ])
 def test_sensitive_and_build_dirs_are_excluded(name):
     assert _is_excluded_dir(name) is True
@@ -104,7 +105,8 @@ def test_build_produces_a_usable_archive(tmp_path):
 
     for name in names:
         low = name.lower()
-        assert not low.startswith(("data/", "secrets/", "logs/", ".playwright-cli/"))
+        assert not low.startswith(("data/", "secrets/", "logs/", ".playwright-cli/",
+                                   "tmp/", "test-results/"))
         assert not low.endswith((".enc", ".db", ".sqlite3"))
 
 

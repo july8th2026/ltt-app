@@ -15,7 +15,7 @@ from time import perf_counter
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.orm import Session
 
@@ -259,6 +259,7 @@ def _palette_tool(name, spec, owner, loaded) -> dict:
         "image.batch_generate": ("Tạo nhiều ảnh", "specialized", False),
         "audio.generate": ("Tạo âm thanh", "content", False),
         "asset.image": ("Ảnh đầu vào", "input", False),
+        "asset.images": ("Bộ ảnh", "input", False),
         "asset.video": ("Video đầu vào", "input", False),
         "asset.audio": ("Âm thanh đầu vào", "input", False),
         "image.upscale": ("Nâng cấp ảnh", "transform", False),
@@ -266,7 +267,7 @@ def _palette_tool(name, spec, owner, loaded) -> dict:
         "video.extract_frames": ("Tách khung hình", "transform", False),
         "media.merge_image": ("Ghép ảnh", "transform", False),
         "media.merge_video": ("Ghép video", "transform", False),
-        "video.social_import": ("Video từ liên kết", "input", False),
+        "video.social_import": ("Social Video", "input", False),
     }
     label, category, primary = presentation.get(
         spec.name, (spec.name.replace(".", " ").title(), "advanced", False))
@@ -518,7 +519,50 @@ async def workflow_asset_upload(request: Request, file: UploadFile = File(...),
     kind = content_type.split("/", 1)[0]
     return {"key": stored.key, "kind": kind, "name": Path(file.filename or "asset").name,
             "size": stored.size, "content_type": content_type,
+            "url": f"/agent/api/assets/{Path(stored.key).name}",
             "provenance": {"source": "user_upload", "owner": "current_user"}}
+
+
+@router.get("/api/assets/{asset_name}")
+def workflow_asset_preview(request: Request, asset_name: str,
+                           _identity: str = Depends(require_login)):
+    """Stream only an asset owned by the current Canvas user."""
+    if Path(asset_name).name != asset_name or len(asset_name) > 80:
+        raise HTTPException(status_code=404, detail="Không tìm thấy asset.")
+    user = _user(request)
+    key = f"agent-assets/{user.id}/{asset_name}"
+    from platform_core.storage import StorageError, get_storage
+    storage = get_storage()
+    try:
+        direct = storage.url_for(key)
+        if direct:
+            return RedirectResponse(direct, status_code=307)
+        total = storage.size(key)
+    except (OSError, StorageError):
+        raise HTTPException(status_code=404, detail="Không tìm thấy asset.") from None
+    media_type = mimetypes.guess_type(key)[0] or "application/octet-stream"
+    range_header = request.headers.get("range", "")
+    if range_header.startswith("bytes="):
+        try:
+            start_text, _, end_text = range_header[6:].partition("-")
+            start = int(start_text) if start_text else 0
+            end = int(end_text) if end_text else total - 1
+        except ValueError:
+            start, end = 0, total - 1
+        start = max(0, start); end = min(end, total - 1)
+        if start > end:
+            start, end = 0, total - 1
+        stream = storage.open(key)
+        try:
+            stream.seek(start); chunk = stream.read(end - start + 1)
+        finally:
+            stream.close()
+        return Response(chunk, status_code=206, media_type=media_type, headers={
+            "Content-Range": f"bytes {start}-{end}/{total}", "Accept-Ranges": "bytes",
+            "Content-Length": str(len(chunk)), "Cache-Control": "private, no-store"})
+    return StreamingResponse(storage.open(key), media_type=media_type, headers={
+        "Accept-Ranges": "bytes", "Content-Length": str(total),
+        "Cache-Control": "private, no-store"})
 
 
 @router.post("/api/tools/{tool_name}/quote")
@@ -693,7 +737,10 @@ def _prepare_run(db: Session, *, user, plan: dict, source: dict) -> AgentRun:
         raise workflows.WorkflowError("Workflow không còn hợp lệ.")
     run = runs.create_run_capped(db, user_id=user.id, goal=str(plan.get("goal", "")),
                                  plan=plan, budget_max=int(plan.get("budget_max_credit", 0)))
-    budget.set_quote(db, run, plan=plan, validation=validation)
+    # Canvas đã được người dùng dựng và validate; không có lần gọi AI planner nào
+    # ở luồng này nên chỉ báo/giữ chi phí thực thi. Luồng form goal→AI plan ở trên
+    # vẫn dùng planning_cost mặc định.
+    budget.set_quote(db, run, plan=plan, validation=validation, planning_cost=0)
     event = {"event": "workflow_source", **source, "quote_hash": _quote_hash(run)}
     runs.append_decision(db, run, event)
     return run

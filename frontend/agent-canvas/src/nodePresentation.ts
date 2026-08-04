@@ -11,13 +11,19 @@ export const fieldLabels: Record<string,string> = {
   direction:'Hướng ghép', generate_audio:'Tạo âm thanh', preserve_audio:'Giữ âm thanh',
   preserve_fps:'Giữ tốc độ khung hình', images:'Ảnh đầu vào', videos:'Video đầu vào',
   image_key:'Ảnh đầu vào', video_key:'Video đầu vào', audio_key:'Âm thanh đầu vào',
-  image_keys:'Ảnh đầu vào', video_keys:'Video đầu vào', text:'Nội dung',
+  image_keys:'Bộ ảnh đầu vào', video_keys:'Bộ video đầu vào', source_text:'Văn bản tham chiếu',
+  text:'Nội dung',
+  confirm_rights:'Tôi xác nhận có quyền sử dụng video',
 }
 
 export function nodeModality(tool?: PaletteTool): NodeModality {
   const name=tool?.name??''
+  if(name==='asset.images')return 'batch'
   if(name.includes('batch'))return 'batch'
   if(tool?.category==='transform'||/upscale|extract|merge/.test(name))return 'transform'
+  if(name==='asset.image')return 'image'
+  if(name==='asset.video')return 'video'
+  if(name==='asset.audio')return 'audio'
   if(name.startsWith('asset.')||name.includes('social_import'))return 'input'
   if(name.startsWith('text.'))return 'text'
   if(name.startsWith('image.'))return 'image'
@@ -26,9 +32,17 @@ export function nodeModality(tool?: PaletteTool): NodeModality {
   return 'tool'
 }
 
+export function nodeTitle(tool?:PaletteTool){
+  if(tool?.name==='asset.image')return 'Hình ảnh'
+  if(tool?.name==='asset.images')return 'Bộ ảnh'
+  if(tool?.name==='asset.video')return 'Video'
+  if(tool?.name==='asset.audio')return 'Âm thanh'
+  return tool?.label||tool?.name||'Công cụ không tồn tại'
+}
+
 export function mediaKind(tool?:PaletteTool):'image'|'video'|'audio'|undefined {
   const name=tool?.name??''
-  if(name.startsWith('image.')||name==='asset.image')return 'image'
+  if(name.startsWith('image.')||name==='asset.image'||name==='asset.images')return 'image'
   if(name.startsWith('video.')||name==='asset.video'||name.includes('video'))return 'video'
   if(name.startsWith('audio.')||name==='asset.audio')return 'audio'
   return undefined
@@ -52,6 +66,7 @@ const priorities=['prompt','topic','text','url','source_url','model','aspect_rat
   'layout','direction','generate_audio','preserve_audio','preserve_fps']
 
 export function primaryFields(tool:PaletteTool,params:Record<string,unknown>){
+  if(tool.name.startsWith('asset.'))return []
   const schema=Object.entries(tool.schema_variants??{}).reduce((current,[field,variants])=>
     variants[String(params[field])]??current,tool.params_schema)
   return Object.entries(schema).filter(([name,rule])=>
@@ -62,6 +77,8 @@ export function primaryFields(tool:PaletteTool,params:Record<string,unknown>){
 }
 
 export function emptyMessage(tool?:PaletteTool){
+  if(tool?.name==='video.social_import')return {title:'Thêm Social Video',
+    hint:'Dán liên kết TikTok, YouTube Shorts hoặc Reels mà bạn có quyền sử dụng.'}
   const mode=nodeModality(tool)
   if(mode==='image')return {title:'Thêm một hình ảnh',hint:'Kéo thả, tải lên hoặc tạo bằng AI.'}
   if(mode==='video')return {title:'Thêm một video',hint:'Tải video hoặc tạo từ mô tả và nội dung đã nối.'}

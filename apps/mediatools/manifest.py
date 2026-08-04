@@ -5,7 +5,7 @@ from platform_core.registry import AppManifest, ToolSpec
 
 def _cost(params: dict) -> int:
     if "url" in params:
-        return 1
+        return 2
     if "text" in params:
         return max(1, (len(str(params.get("text") or "")) + 999) // 1000 * 2)
     if "interval_sec" in params:
@@ -22,15 +22,22 @@ MANIFEST = AppManifest(
     tools=(
         ToolSpec(name="asset.image", job_type="mediatools.process",
                  description="Đưa một ảnh đã tải lên vào workflow với provenance thuộc tài khoản.",
-                 params_schema={"image_key": {"type": "image", "required": True}},
+                 params_schema={"image_key": {"type": "string", "required": True,
+                                               "max_length": 1024}},
                  returns={"image_key": "image"}),
+        ToolSpec(name="asset.images", job_type="mediatools.process",
+                 description="Đưa một bộ ảnh đã tải lên vào workflow với provenance thuộc tài khoản.",
+                 params_schema={"image_keys": {"type": "json", "required": True}},
+                 returns={"image_keys": "image[]"}),
         ToolSpec(name="asset.video", job_type="mediatools.process",
                  description="Đưa một video đã tải lên vào workflow với provenance thuộc tài khoản.",
-                 params_schema={"video_key": {"type": "video", "required": True}},
+                 params_schema={"video_key": {"type": "string", "required": True,
+                                               "max_length": 1024}},
                  returns={"video_key": "video"}),
         ToolSpec(name="asset.audio", job_type="mediatools.process",
                  description="Đưa một audio đã tải lên vào workflow với provenance thuộc tài khoản.",
-                 params_schema={"audio_key": {"type": "audio", "required": True}},
+                 params_schema={"audio_key": {"type": "string", "required": True,
+                                               "max_length": 1024}},
                  returns={"audio_key": "audio"}),
         ToolSpec(name="audio.generate", job_type="mediatools.process",
                  description="Sinh giọng đọc có điều khiển phong cách bằng Gemini TTS.",
@@ -60,7 +67,7 @@ MANIFEST = AppManifest(
                      "transition": {"type": "enum", "values": ["cut"], "default": "cut"},
                  }, returns={"video_key": "video"}, verifiable=("technical",)),
         ToolSpec(name="video.social_import", job_type="mediatools.process",
-                 description="Nhập URL HTTPS trực tiếp tới video mà bạn sở hữu; chặn trang nền tảng và mạng nội bộ.",
+                 description="Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube Shorts, Instagram/Facebook Reels hoặc URL HTTPS trực tiếp.",
                  params_schema={
                      "url": {"type": "string", "required": True, "max_length": 2048},
                      "confirm_rights": {"type": "bool", "required": True},

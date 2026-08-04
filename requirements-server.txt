@@ -17,6 +17,7 @@ jinja2>=3.1.6,<4.0
 python-multipart>=0.0.29,<1.0
 httpx>=0.28.1,<1.0
 sentry-sdk>=2.22,<3.0
+yt-dlp>=2026.3.17,<2027.0  # Agent Social Video: Python API only; no shell/netrc/exec options
 
 # CSDL (H1.1). psycopg 3 ban "binary" mang theo thu vien libpq da bien dich
 # san — tren Windows dieu do tranh phai cai PostgreSQL client rieng chi de

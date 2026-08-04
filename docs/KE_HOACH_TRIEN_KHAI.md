@@ -1493,5 +1493,13 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
   actions. Frontend 29 pass, build PASS; desktop/mobile browser console 0, save
   PUT 200. Asset Catalog/URL/batch/output lineage được tách thành vé có gate tại
   `docs/APP_AUDIT/agent/2026-08-04-deep-ux/08_REAUDIT_PLENX_GAPS.md`.
+- [x] H20.9 Purchased workflow parity + multimodal execution — 2026-08-04:
+  đối chiếu Lookbook mua sẵn 13 node/13 edge; bổ sung Image nhận nhiều ảnh,
+  Image/Video→Text, Text→Image/Video, Social Video, transform thật, variadic edge
+  và clipboard/selection. Browser dựng nhánh 8 node/9 edge, validate/báo giá
+  132 credit, actual 0, console 0, request lỗi 0. Hồ sơ ở `09_PURCHASED_WORKFLOW_PARITY.md`.
+- [ ] H20.10 Full release gate + production deploy — chạy exact full pytest,
+  secret scan, commit, build archive, backup/update/health và authenticated
+  production browser; chỉ đánh dấu sau bằng chứng thật.
 
 Production H20.8 đã có đủ backup, update, health và authenticated browser evidence.
