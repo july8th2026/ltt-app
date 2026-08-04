@@ -159,6 +159,20 @@ function Editor() {
     return()=>cancelAnimationFrame(frame)
   },[readOnly,page.id,page.nodes.length,reactFlow])
 
+  useEffect(()=>{
+    if(!selectedNode||readOnly||presentationMode!=='creative')return
+    const frame=requestAnimationFrame(()=>{
+      const nodeElement=[...document.querySelectorAll<HTMLElement>('.react-flow__node')]
+        .find(element=>element.dataset.id===selectedNode.id)
+      const stageElement=document.querySelector<HTMLElement>('.canvas-stage')
+      if(!nodeElement||!stageElement)return
+      const nodeBox=nodeElement.getBoundingClientRect();const stageBox=stageElement.getBoundingClientRect()
+      const obscured=nodeBox.bottom>stageBox.bottom-8||nodeBox.top<stageBox.top+8||nodeBox.left<stageBox.left+64||nodeBox.right>stageBox.right-16
+      if(obscured)void reactFlow.fitView({nodes:page.nodes,padding:.12,maxZoom:.9,duration:180})
+    })
+    return()=>cancelAnimationFrame(frame)
+  },[selectedNode?.id,readOnly,presentationMode,page.id,page.nodes,reactFlow])
+
   useEffect(() => {
     let active = true
     Promise.all([loadPalette(), loadOrCreateWorkflow(csrf), loadPreferences()]).then(([result, loaded, preferences]) => {
@@ -337,23 +351,37 @@ function Editor() {
   },[page.nodes,byName,palette])
 
   const prepareScope=useCallback(async(scope:RunScope)=>{
-    if(!workflow||readOnly||run)return
+    const activeRun=run&&!['done','error','cancelled'].includes(run.status)
+    if(!workflow||readOnly||activeRun)return
     if(autosaveTimer.current)window.clearTimeout(autosaveTimer.current)
+    setRun(undefined)
     setPreparedScope(scope);setRunScope(scope.mode==='frame'?`frame:${scope.frame_id}`:scope.mode)
     setDesktopPanel('run');setPhase('saving');setRunError('')
+    let saved:Workflow
     try{
-      const saved=await saveWorkflow({...workflow,canvas:state.document},csrf)
+      saved=await saveWorkflow({...workflow,canvas:state.document},csrf)
+      setPhase('saved')
+    }catch(error){
+      setPhase(error instanceof WorkflowConflictError?'conflict':'error')
+      setRunError(error instanceof Error?error.message:'Không lưu được workflow.')
+      return
+    }
+    try{
       const checked=await validateWorkflow(saved,csrf)
       setWorkflow(checked);setCosts(Object.fromEntries(checked.validation.step_costs.map((item:{step_id:string;maximum:number})=>[item.step_id,item.maximum])))
       const requested=scope.mode==='full'?page.nodes.map(node=>node.id):scope.mode==='frame'
         ?page.frames.find(frame=>frame.id===scope.frame_id)?.node_ids??[]
         :(scope.node_ids??[scope.node_id??'']).filter(Boolean)
       const relevantIds=new Set(scopeNodeIds(page.nodes,page.edges,requested))
-      const relevantIssues=checked.validation.issues.filter((issue:{step_id:string;message:string})=>relevantIds.has(issue.step_id))
-      setValidationIssues(relevantIssues);setPhase('saved')
+      const relevantIssues=checked.validation.issues.filter((issue:{step_id:string;message:string})=>
+        !issue.step_id||relevantIds.has(issue.step_id))
+      setValidationIssues(relevantIssues)
       if(relevantIssues.length)return
       setRun(await createRun(checked,csrf,scope,useCache));void refreshRunHistory()
-    }catch(error){setPhase(error instanceof WorkflowConflictError?'conflict':'error');setRunError(error instanceof Error?error.message:'Không chuẩn bị được bản chạy.')}
+    }catch(error){
+      if(error instanceof WorkflowConflictError)setPhase('conflict')
+      setRunError(error instanceof Error?error.message:'Không chuẩn bị được bản chạy.')
+    }
   },[workflow,readOnly,run,state.document,csrf,useCache,refreshRunHistory,page.nodes,page.edges,page.frames])
 
   const downstreamIds=useCallback((nodeId:string)=>{
@@ -470,6 +498,8 @@ function Editor() {
         params:{...((node.data.params??{}) as Record<string,unknown>),[name]:value}}}),
       __onRename:(label:string)=>dispatch({type:'nodeLabel',id:node.id,label}),
       __onDuplicate:()=>duplicateNode(node.id),
+      __onMenu:(x:number,y:number)=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id});
+        setDesktopPanel(null);setQuickCreate(null);setContextMenu({kind:'node',nodeId:node.id,x,y,flow:node.position})},
       __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
       __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id})},
       __onRun:()=>{setSelected([node.id]);dispatch({type:'select',id:node.id});void prepareScope({mode:'node',node_id:node.id})},
@@ -599,17 +629,18 @@ function Editor() {
           <button aria-pressed={showGrid} onClick={()=>dispatch({type:'pageView',grid:!showGrid})}>Lưới</button>
           <button aria-pressed={showConnections} onClick={()=>dispatch({type:'pageView',connections:!showConnections})}>Đường nối</button>
           <button aria-pressed={showMinimap} onClick={()=>dispatch({type:'pageView',minimap:!showMinimap})}>Bản đồ</button></div>}
-        <select aria-label="Phạm vi chạy" value={runScope} disabled={!!run} onChange={event=>{setPreparedScope(undefined);setRunScope(event.target.value)}}>
+        <select aria-label="Phạm vi chạy" value={runScope} disabled={!!run&&!terminalRun} onChange={event=>{setPreparedScope(undefined);setRunScope(event.target.value)}}>
           <option value="full">Toàn workflow</option>
           <option value="selection" disabled={!selected.length}>Lựa chọn ({selected.length})</option>
           {selectedNode&&<option value="node">Node đang chọn</option>}
           {page.frames.map(frame=><option key={frame.id} value={`frame:${frame.id}`}>Frame · {frame.name}</option>)}
         </select>
-        <label className="cache-control"><input type="checkbox" disabled={!!run} checked={useCache} onChange={event=>setUseCache(event.target.checked)}/>Dùng cache</label>
-        <section className="run-scope-preview" aria-label="Phạm vi và chi phí"><small>PHẠM VI</small><strong>{scopeLabel}</strong><span>{scopeNodeCount} block · server sẽ chốt chi phí tối đa trước khi chạy</span></section>
+        <label className="cache-control"><input type="checkbox" disabled={!!run&&!terminalRun} checked={useCache} onChange={event=>setUseCache(event.target.checked)}/>Dùng cache</label>
+        <section className="run-scope-preview" aria-label="Phạm vi và chi phí"><small>PHẠM VI</small><strong>{scopeLabel}</strong><span>{scopeNodeCount} block đích{run?` · ${run.plan.steps.length} bước gồm đầu vào liên quan`:' · server sẽ chốt chi phí tối đa trước khi chạy'}</span></section>
         {!run&&<button className="run-confirm" disabled={readOnly||!workflow||phase==='saving'||(selectedRunScope.mode==='selection'&&!selected.length)}
           onClick={()=>void prepareScope(selectedRunScope)}>Kiểm tra chi phí</button>}
-        {!!validationIssues.length&&<section className="run-validation" role="alert"><strong>Cần sửa {validationIssues.length} mục</strong>{validationIssues.slice(0,4).map(issue=><span key={`${issue.step_id}-${issue.message}`}>{issue.message}</span>)}</section>}
+        {!!validationIssues.length&&<section className="run-validation" role="alert"><strong>Cần sửa {validationIssues.length} mục</strong>{validationIssues.slice(0,4).map(issue=><span key={`${issue.step_id}-${issue.message}`}>{issue.message}</span>)}
+          {validationIssues.some(issue=>issue.message.toLocaleLowerCase('vi').includes('ngân sách'))&&<button onClick={()=>setDesktopPanel('workspace')}>Điều chỉnh ngân sách</button>}</section>}
         {run?.status === 'awaiting_approval' && <label className="schedule-control">Chạy lúc<input type="datetime-local" value={scheduledAt} min={new Date().toISOString().slice(0,16)} onChange={event=>setScheduledAt(event.target.value)}/></label>}
         {run?.status === 'awaiting_approval' && <section className="run-quote" aria-label="Xác nhận chi phí"><span>Tối đa</span><strong>{run.estimated} credit</strong><small>Đã dùng trước xác nhận: {run.actual} credit</small></section>}
         {run?.status === 'awaiting_approval' && <button className="run-confirm" disabled={run.actual!==0} onClick={async () => {
@@ -620,6 +651,7 @@ function Editor() {
         {run?.status === 'awaiting_approval'&&run.actual!==0&&<span className="run-error" role="alert">Bản chạy không an toàn: credit phải bằng 0 trước xác nhận.</span>}
         {run?.status === 'running' && <button onClick={async () => {setRun(await cancelRun(run, csrf));void refreshRunHistory()}}>Hủy chạy</button>}
         {terminalRun&&run&&<button onClick={()=>void runAgain(run,csrf).then(next=>{setRun(next);setRunError('');void refreshRunHistory()}).catch(error=>setRunError(error instanceof Error?error.message:'Không thể chạy lại.'))}>Chạy lại theo cấu hình này</button>}
+        {terminalRun&&<button onClick={()=>{setRun(undefined);setPreparedScope(undefined);setRunError('')}}>Tạo bản chạy mới</button>}
         {run && <span className={`run-state ${run.status}`} aria-live="polite">{runStatusLabel(run.status)} · đã dùng {run.actual}/{run.estimated} credit · {run.plan.steps.length} bước</span>}
         {runError && <span className="run-error" role="alert">{runError}</span>}</nav>
       {presentationMode==='legacy'&&<div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
@@ -751,8 +783,8 @@ function Editor() {
         {contextMenu.kind==='pane'?<><div className="context-tool-list">{customerPaletteTools(palette,catalogMode==='advanced').map(tool=><button key={tool.name} onClick={()=>{addTool(tool,contextMenu.flow);setContextMenu(null)}}><strong>{customerToolLabel(tool)}</strong><small>{categoryLabels[tool.category??'advanced']}</small></button>)}</div>
           <hr/><button onClick={()=>{dispatch({type:'pageView',connections:!showConnections});setContextMenu(null)}}>{showConnections?'Ẩn đường nối':'Hiện đường nối'}</button>
           <button onClick={()=>{dispatch({type:'layout'});setContextMenu(null)}}>Tự động sắp xếp node</button></>:
-          <>{contextMenu.nodeId&&<><button disabled={readOnly||!!run} onClick={()=>{setRunScope('node');void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Kiểm tra chi phí block này</button>
-            <button disabled={readOnly||!!run} onClick={()=>{setRunScope('selection');void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Kiểm tra từ block này</button>
+          <>{contextMenu.nodeId&&<><button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('node');void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Kiểm tra chi phí block này</button>
+            <button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('selection');void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Kiểm tra từ block này</button>
             <button disabled={readOnly} onClick={()=>{duplicateNode(contextMenu.nodeId!);setContextMenu(null)}}>Sao chép node</button>
             {state.document.pages.filter(item=>item.id!==page.id).map(item=><button key={item.id} disabled={readOnly}
               onClick={()=>{dispatch({type:'nodeMovePage',id:contextMenu.nodeId!,pageId:item.id});setContextMenu(null)}}>Chuyển sang {item.name}</button>)}

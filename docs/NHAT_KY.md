@@ -14,6 +14,73 @@
 
 ---
 
+## 2026-08-05 — H21.7a hardening bằng thao tác Chrome như người dùng
+
+- **Mục tiêu:** tái hiện các luồng Canvas vừa triển khai trên browser render
+  thật, sửa triệt để lỗi hành vi trước controlled beta; không giả lập E4 và
+  không deploy production.
+- **Hạng mục:** H21.7a hoàn thành; H21.8 vẫn OPEN vì chưa có 5 người dùng thật.
+- **Trạng thái:** source/build/local browser/full regression PASS.
+
+### Đã làm
+
+- Sửa nút `•••` của node để mở đúng menu thao tác thay vì chỉ chọn node; menu
+  block có quote node/run-from-here/duplicate/move/delete và dùng được sau run
+  terminal.
+- Cho phép tạo báo giá mới sau run `done/error/cancelled`, mở lại scope/cache và
+  thêm CTA `Tạo bản chạy mới`; không còn mắc kẹt ở run cũ.
+- Tăng safe-area composer, sticky CTA nhưng không che Model; auto-fit node khi
+  composer mở; ảnh/video preview giữ trong node; ẩn input port kỹ thuật ở trạng
+  thái nghỉ và chỉ hiện khi đang kéo dây.
+- Sửa validate scope giữ cả issue toàn cục (`step_id` rỗng). Image→Video tối đa
+  59 credit với budget 50 nay dừng đúng ở preflight, hiển thị “vượt ngân sách”
+  và CTA mở thiết lập; không gọi `/runs`, không gắn nhầm thành `Lỗi lưu`.
+- Qua giao diện quản trị append-only, cấp 200 credit cho tài khoản fixture
+  `h21-browser-audit`; chạy duy nhất node asset nội bộ 0 credit để kiểm tra
+  quote→approve→tick→done→artifact. Không chạy provider ảnh/video.
+
+### Browser evidence
+
+- T1 Text→Image và T2 Image→Text tạo quote rồi hủy trước approve; actual 0.
+- T3 Image→Video: budget 50 bị chặn đúng; nâng 60 tạo quote 59/actual 0 rồi hủy.
+- Tháo dây làm sạch tham chiếu; kéo chuột output ảnh→input ảnh nối lại đúng chip;
+  kéo output Video ra khoảng trống mở quick-create và tạo đúng Text downstream
+  với `Video đầu vào`; edge insert Upscale tạo 3 node/2 edge rồi undo sạch.
+- Offline đổi tên node không gửi save; online tự lưu; reload giữ dữ liệu; sau đó
+  đã trả tên về `Video`. Theme light/dark giữ qua reload và kết thúc ở dark.
+- Mobile 390×844 chỉ-xem, Canvas/Công cụ/Inspector PASS, không crop node; desktop
+  1366×900 full-width. Console cuối 0 error/0 warning; request mới đều 2xx.
+- Trace: `.playwright-cli/traces/trace-1785857879039.trace`; video:
+  `.playwright-cli/videos/h21-user-audit.webm`; ảnh cuối desktop/mobile trong
+  `.playwright-cli/`.
+
+### Test đã chạy
+
+| Lệnh/kiểm tra | Kết quả |
+|---|---|
+| `npm test -- --run` | 49 passed |
+| `npm run build` | typecheck + Vite build PASS; gzip JS 142,64 kB |
+| `npm audit --omit=dev` | 0 vulnerability |
+| Playwright Chrome local | T1/T2/T3, edge/quick-create/insert, offline/reload/theme/mobile/run asset PASS |
+| `python -m pytest -q` | 2.092 passed, 8 skipped, 23 subtests passed; 1 warning; 635,02 s |
+| `python tools\scan_source_secrets.py` | 930 file; 142.388 dòng; 0 finding; PASS |
+
+### Quyết định mới
+
+Không có. Giữ nguyên credit guard, provider/runtime/ownership và Q67; lỗi 59/50
+được xử lý bằng hướng dẫn tăng budget có chủ đích, không tự nâng giới hạn ngầm.
+
+### Cách lùi lại
+
+Revert commit H21.7a hoặc đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy`; dữ liệu
+workflow/run/credit không đổi schema. Bút toán test credit là append-only và chỉ
+thuộc fixture cục bộ.
+
+### Còn tồn đọng
+
+- H21.8 vẫn cần đúng 5 người dùng thật theo protocol; browser agent không thay E4.
+- H21.9 chưa được phép deploy trước H21.8 PASS và yêu cầu deploy rõ ràng.
+
 ## 2026-08-04 — Chuẩn bị H21.8 controlled beta (chưa nghiệm thu)
 
 - **Mục tiêu:** biến gate “5 người dùng thật” thành kịch bản đo có thể lặp lại,

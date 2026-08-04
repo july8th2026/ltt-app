@@ -7,6 +7,7 @@ type ToolData = Record<string, unknown> & { __tool?: PaletteTool; __cost?: numbe
   __artifacts?: { name: string; url: string }[]; __readOnly?: boolean;
   __inputFields?:string[]; __label?:string;
   __onQuickConnect?: (output:string)=>void; __onOpen?:()=>void; __onRun?:()=>void;
+  __onMenu?:(x:number,y:number)=>void;
   __onUpload?:(files:File[])=>void; __onGenerate?:()=>void; __onRename?:(label:string)=>void;
   __onDuplicate?:()=>void; __onParamChange?:(name:string,value:unknown)=>void }
 
@@ -39,7 +40,7 @@ export function ToolNode({ data, selected }: NodeProps) {
     <header><span aria-hidden="true">{icon[modality]}</span><input className="node-title nodrag" aria-label="Tên hiển thị node"
       value={typed.__label||nodeTitle(tool)} disabled={typed.__readOnly}
       onClick={event=>event.stopPropagation()} onChange={event=>typed.__onRename?.(event.target.value)}/>
-      <button className="node-more nodrag" aria-label="Mở thao tác node" onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>•••</button></header>
+      <button className="node-more nodrag" aria-label="Mở thao tác node" onClick={event=>{event.stopPropagation();typed.__onMenu?.(event.clientX,event.clientY)}}>•••</button></header>
     <div className={`node-preview${previewUrls.length?' has-output':''}`}>
       {previewUrls.length>1&&media==='image'?<div className="node-image-grid">{previewUrls.map((url,index)=><img
         key={`${url}-${index}`} src={url} alt={`Ảnh ${index+1} trong bộ ảnh`}/>)}</div>:
@@ -113,7 +114,7 @@ export function CreativeToolNode({data,selected}:NodeProps){
         disabled={typed.__readOnly} onClick={event=>event.stopPropagation()}
         onChange={event=>typed.__onRename?.(event.target.value)}/>
       <small className={`node-status ${typed.__status}`}>{labels[String(typed.__status)]??'Bản nháp'}</small>
-      <button className="node-more nodrag" aria-label="Mở thao tác node" onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>•••</button>
+      <button className="node-more nodrag" aria-label="Mở thao tác node" onClick={event=>{event.stopPropagation();typed.__onMenu?.(event.clientX,event.clientY)}}>•••</button>
     </header>
     <div className={`node-preview${previewUrls.length?' has-output':''}`}>
       {previewUrls.length>1&&media==='image'?<div className="node-image-grid">{previewUrls.slice(0,4).map((url,index)=><img

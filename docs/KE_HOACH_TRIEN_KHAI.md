@@ -1551,6 +1551,14 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   50 block đều full-width/overflow 0, mobile 390 tự fit graph và chỉ-xem,
   console 0, request bất ngờ 4xx/5xx 0. Keyboard/screen-reader label pass;
   conflict có CTA tải bản mới, offline xếp hàng và tự lưu khi online lại.
+- [x] H21.7a Chrome user-journey hardening — 2026-08-05: thao tác người dùng
+  thật trên Text→Image, Image→Text, Image→Video; sửa menu `•••`, terminal run
+  bị khóa, composer/node bị che, preview ảnh tràn khung, input port kỹ thuật và
+  lỗi ngân sách toàn cục bị lọc mất rồi gắn nhầm thành “Lỗi lưu”. Kéo nối/tháo
+  dây, quick-create Video→Text, chèn transform, undo/redo, offline→online,
+  reload, theme per-user và mobile 390 đều PASS. Node asset chạy xuyên suốt
+  quote→approve→artifact với actual 0; không gọi provider. Frontend 49 pass,
+  full 2.092 pass/8 skip/23 subtest, npm audit 0, console 0, fresh request 2xx.
 - [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E — protocol và CSV
   đo đã sẵn sàng tại `07_CONTROLLED_BETA_PROTOCOL.md` / `08_CONTROLLED_BETA_RESULTS.csv`;
   còn thiếu E4 từ đúng 5 người dùng thật nên chưa được đánh dấu PASS.

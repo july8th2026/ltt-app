@@ -165,6 +165,7 @@ body.agent-canvas-immersive .theme-light .canvas-toolbar { background:#ffffffee;
 .node-more { width:36px!important; min-width:36px!important; min-height:32px!important; padding:0!important; border:0; background:transparent; color:var(--text-muted); }
 .node-preview { position:relative; height:230px; padding:10px; border-color:#2d3440; border-radius:12px; background:#1a1f29; }
 .node-preview.has-output { padding:0; }.node-preview :is(img,video) { width:100%; height:100%; display:block; object-fit:contain; background:#090d15; }.node-preview audio { width:calc(100% - 24px); }
+.node-preview.has-output>img,.node-preview.has-output>video { position:absolute; inset:0; min-width:0; min-height:0; max-width:100%; max-height:100%; }
 .node-image-grid { width:100%; height:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px; padding:3px; background:#090d15; }.node-image-grid img { min-width:0; min-height:0; object-fit:cover!important; }
 .node-empty { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--text-muted); text-align:center; }
 .node-empty i { width:38px; height:38px; display:grid; place-items:center; border-radius:10px; background:#252b36; color:#aeb7c3; font-size:18px; font-style:normal; }
@@ -181,6 +182,7 @@ body.agent-canvas-immersive .theme-light .canvas-toolbar { background:#ffffffee;
 .context-composer .composer-reference { display:grid; grid-template-columns:150px minmax(0,1fr); align-items:center; gap:12px; margin-top:8px; }.context-composer .composer-reference>span { color:var(--text-muted); font-size:9px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }.context-composer .composer-reference select { min-width:0; min-height:38px; padding:6px 8px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface-canvas); color:var(--text-primary); }
 .context-fields textarea { min-height:68px; resize:vertical; padding:9px 10px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface-canvas); color:var(--text-primary); }
 .context-composer>footer { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:8px; color:var(--text-muted); font-size:10px; }.context-composer .composer-run { min-width:138px; border-color:#e72c83; background:#df1976; }
+.context-composer>footer { position:sticky; z-index:2; bottom:-10px; padding:8px 0 1px; background:var(--surface-raised,#151111); }
 .quick-create-picker,.canvas-context-menu { position:fixed; z-index:70; width:300px; max-height:min(520px,calc(100dvh - 24px)); overflow:auto; padding:10px; border:1px solid var(--border-strong); border-radius:12px; background:#171c25f7; color:var(--text-primary); box-shadow:0 20px 60px #000d; }
 .quick-create-picker header,.canvas-context-menu header { position:sticky; top:-10px; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 2px 9px; background:#171c25; }
 .quick-create-picker header>div { display:grid; }.quick-create-picker header small { color:#ed3b8e; font-size:8px; }
@@ -214,11 +216,11 @@ body.agent-canvas-immersive .theme-light .canvas-toolbar { background:#ffffffee;
 .canvas-shell[data-presentation=creative] .creative-node>footer { min-height:30px; padding:6px 3px 0; color:var(--text-muted); font-size:8px; }
 .canvas-shell[data-presentation=creative] .creative-node>footer strong { color:var(--text-secondary); }
 .canvas-shell[data-presentation=creative] .creative-node .input-port { opacity:0; transition:opacity .15s ease; }
-.canvas-shell[data-presentation=creative] .creative-node:hover .input-port,.canvas-shell[data-presentation=creative] .creative-node.is-selected .input-port { opacity:1; }
+.canvas-shell[data-presentation=creative] .creative-node .input-port.connectingto,.canvas-shell[data-presentation=creative] .creative-node .input-port.valid { opacity:1; }
 .canvas-shell[data-presentation=creative] .creative-node .primary-output { top:50%!important; }
 .canvas-shell[data-presentation=creative] .creative-node .primary-output::after { display:none; }
 .canvas-shell[data-presentation=creative] .creative-node .primary-output b { opacity:1; transform:scale(.88); }
-.canvas-shell[data-presentation=creative] .context-composer { width:min(680px,calc(100% - 180px)); max-height:205px; padding:9px 11px; }
+.canvas-shell[data-presentation=creative] .context-composer { width:min(680px,calc(100% - 180px)); max-height:min(330px,42dvh); padding:9px 11px; }
 .canvas-shell[data-presentation=creative] .context-fields { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:6px; }
 .canvas-shell[data-presentation=creative] .context-fields textarea { min-height:54px; max-height:70px; }
 .canvas-shell[data-presentation=creative] .context-composer .composer-reference { margin-top:6px; }
@@ -231,8 +233,8 @@ body.agent-canvas-immersive .theme-light .canvas-toolbar { background:#ffffffee;
 .edge-insert { position:absolute; z-index:4; width:25px; min-width:25px!important; height:25px; min-height:25px!important; display:grid; place-items:center; padding:0; border:1px solid var(--border-strong); border-radius:50%; background:var(--surface-raised); color:var(--text-secondary); font-size:15px; opacity:.35; pointer-events:all; transition:.15s ease; }
 .edge-insert:hover,.edge-insert:focus-visible,.edge-insert.selected { border-color:var(--brand-primary); color:#fff; opacity:1; transform-origin:center; }
 .edge-insert-picker { z-index:75; }
-body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-body.has-composer .canvas-stage { bottom:219px; }
-.canvas-shell[data-presentation=creative] .canvas-body.has-composer .page-dock { bottom:226px; }
+body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-body.has-composer .canvas-stage { bottom:min(344px,calc(42dvh + 14px)); }
+.canvas-shell[data-presentation=creative] .canvas-body.has-composer .page-dock { bottom:min(351px,calc(42dvh + 21px)); }
 @media (max-width:640px) { .canvas-shell[data-presentation=creative] .creative-node { width:260px; min-width:260px; }
   .canvas-shell[data-presentation=creative] .creative-node .node-preview { height:150px; }
   .canvas-shell[data-presentation=creative] .context-composer { left:8px; right:8px; width:auto; max-height:42dvh; }
