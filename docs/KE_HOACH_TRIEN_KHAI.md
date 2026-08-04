@@ -1503,8 +1503,34 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
   file/78,0 MB; backup PostgreSQL+data, migration, update, loopback/edge/13 app/
   log PASS. Manifest và build-meta production khớp source; login desktop console
   0, failed request 0.
-- [ ] H20.10b Authenticated production Canvas handoff — tab production đang ở
-  `/login?next=/agent/canvas` để chủ sản phẩm đăng nhập. Chỉ đóng sau khi session
-  thật tải Canvas, console/network sạch; không tự tạo dữ liệu production.
+- [x] H20.10b Authenticated production Canvas handoff — 2026-08-04: theo quyền
+  mới của chủ sản phẩm, đã bảo đảm canary role `user`, tải production Canvas,
+  tạo graph audit không chạy provider; console 0, request API 200/201, actual
+  credit 0. Runtime smoke PASS nhưng product UX bị owner reject và chuyển H21.
 
 Production H20.8 đã có đủ backup, update, health và authenticated browser evidence.
+
+### H21 — Agent Canvas UX Reset theo Q67
+
+H20 là lịch sử triển khai renderer theo ToolSpec; không mở lại hay vá chồng chéo.
+H21 thay presentation model sau bằng chứng E3 production và phản hồi 3/10 của
+chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
+
+- [x] H21.0 Audit reset + benchmark chính thức — 2026-08-04: production canary
+  user-role, PlenX 13 node/13 connection, source LTT và tài liệu chính thức
+  FLORA/React Flow/ComfyUI/Langflow/n8n. Baseline `Q58 · M42 · E93 · BLOCKED`,
+  UX/UI 2,8/10; chọn Presentation Adapter bốn modality. Hồ sơ tại
+  `docs/APP_AUDIT/agent/2026-08-04-ux-reset/`.
+- [ ] H21.1 P0 Contract/migration/feature flag/rollback theo
+  `05_IMPLEMENTATION_PHASES.md`.
+- [ ] H21.2 P1 Canonical Text/Image/Video/Audio block; asset là state nội bộ.
+- [ ] H21.3 P2 Node shell + composer tối giản, không overlap.
+- [ ] H21.4 P3 Connection grammar theo intent, unique destination, edge insert.
+- [ ] H21.5 P4 Run/quote/approval/cancel/retry thống nhất.
+- [ ] H21.6 P5 First-run/templates/assets-history/Assistant progressive.
+- [ ] H21.7 P6 Browser/regression/a11y/performance/recovery gate.
+- [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E.
+- [ ] H21.9 Deploy canary/production chỉ sau H21.8 PASS.
+
+Thứ tự bắt buộc H21.1→H21.9; không làm Assistant/model breadth trước core block
+và connection grammar. Không deploy UX Reset từ hồ sơ audit này.

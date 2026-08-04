@@ -1,5 +1,8 @@
 # Options & Decision
 
+> Hồ sơ lịch sử H20/Q66. Q66 đã được Q67 thay ngày 2026-08-04; không dùng tài
+> liệu này làm target UX mới.
+
 | Phương án | Value | Coverage | Risk | TTV | Reuse | Điểm/5 |
 |---|---:|---:|---:|---:|---:|---:|
 | Repair-only | 3 | 3 | 5 | 5 | 5 | 4.1 |

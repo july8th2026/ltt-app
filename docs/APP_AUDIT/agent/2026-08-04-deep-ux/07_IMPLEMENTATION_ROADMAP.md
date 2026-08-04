@@ -1,5 +1,8 @@
 # H20 Closed-loop Roadmap
 
+> Roadmap lịch sử H20/Q66. Target đang hiệu lực là H21/Q67 tại
+> `../2026-08-04-ux-reset/05_IMPLEMENTATION_PHASES.md`.
+
 - Phase 0 decision/research: PASS — Q66 + control matrix.
 - Phase 1 interaction kernel: PASS — context menu, copy/delete/move, quick-create.
 - Phase 2 node-native core: PASS — Text/Image/Video/Audio states và composer.

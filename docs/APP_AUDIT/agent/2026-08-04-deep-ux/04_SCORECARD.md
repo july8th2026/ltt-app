@@ -1,5 +1,9 @@
 # LTT-AQA Scorecard — H20 Candidate
 
+> **ĐÃ HẾT HIỆU LỰC CHO RELEASE.** Score này thiếu E4 owner task và đã đánh giá
+> quá cao learnability. Baseline thay thế: `../2026-08-04-ux-reset/04_SCORECARD.md`
+> (`Q58 · M42 · E93 · BLOCKED`, UX/UI 2,8/10).
+
 ## Dashboard
 
 `Q 87 · M 85 · E 89 · BETA`

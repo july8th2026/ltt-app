@@ -1,5 +1,8 @@
 # Agent Canvas — delta audit sau nghiệm thu chủ sản phẩm
 
+> **HỒ SƠ LỊCH SỬ H18.** Nghiệm thu production sâu hơn đã thay baseline này
+> bằng `../2026-08-04-ux-reset/`; không dùng điểm 87/93 bên dưới để mở release.
+
 Ngày: 2026-08-04 · Quyết định hiệu lực: Q62, Q63, Q64.
 
 ## Vì sao phải mở lại audit H17

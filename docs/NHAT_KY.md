@@ -14,6 +14,64 @@
 
 ---
 
+## 2026-08-04 — Agent Canvas UX Reset sau production task 3/10
+
+- **Mục tiêu:** audit lại trải nghiệm Agent Canvas bằng user-role production,
+  đối soát PlenX và tài liệu chính thức, rồi khóa logic/phase mới trước khi sửa.
+- **Hạng mục:** H20.10b hoàn thành runtime smoke; H21.0 hoàn thành UX reset audit.
+- **Trạng thái:** audit/decision/roadmap xong; implementation H21.1 chưa bắt đầu.
+
+### Đã làm
+
+- Dùng canary role `user` vào production Canvas; không hiển thị credential,
+  không approve job và actual credit 0. Tạo Text→Image rồi kiểm Image→Text,
+  quick-connect, composer, palette và Run hierarchy ở 1280×720/1920×1080.
+- Production API/save/quote đều 200/201, console 0, failed request bất ngờ 0;
+  runtime smoke PASS nhưng UX có bằng chứng cụ thể: node/composer quá lớn, nhiều
+  surface đồng thời, destination trùng nhãn và field/type nội bộ lộ ra khách.
+- Thao tác PlenX: add menu, Image empty Upload/Generate, contextual composer,
+  blank/node context menu. Node audit đã xóa, workflow hoàn nguyên `Saved` đúng
+  13 node/13 connection; không tiêu credit benchmark.
+- Nghiên cứu tài liệu chính thức FLORA, React Flow, ComfyUI, Langflow và n8n.
+  Lập hồ sơ `docs/APP_AUDIT/agent/2026-08-04-ux-reset/`: current truth,
+  benchmark, blueprint, scorecard và P0–P7.
+- Score hiệu lực mới `Q58 · M42 · E93 · BLOCKED`; UX/UI 2,8/10. Gắn nhãn
+  score Q87/Q93 cũ hết hiệu lực cho release vì thiếu E4 owner task.
+- Q66 đã đánh dấu ĐÃ THAY bởi Q67. Q67 chọn Presentation Adapter bốn creative
+  block Text/Image/Video/Audio trên runtime typed hiện có; H21.1→H21.9 được thêm
+  tuần tự, không deploy từ hồ sơ audit.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\\test_61_setup_scripts.py tests\\test_62_khoa_logic.py` | 95 passed |
+| `python -m pytest -q` | 2.091 passed, 8 skipped, 1 warning, 23 subtests; 635,86 s |
+| `python tools\\scan_source_secrets.py` | 925 file, 141.493 dòng, 0 finding |
+| Playwright production LTT | Auth Canvas PASS; console 0; API 200/201; credit 0 |
+| Playwright PlenX | 13 node/13 connection restored; Saved; credit 0 |
+
+### Quyết định mới
+
+Q67 đã thêm; Q66 đã đánh dấu ĐÃ THAY và các hồ sơ H20 hiện hành đã gắn nhãn
+lịch sử. H20/Q66 trong nhật ký cũ không sửa vì là bằng chứng thời điểm đã xảy ra.
+
+### Cách lùi lại
+
+Revert commit audit UX Reset. Không có code/schema/deploy để rollback; canary
+workflow chỉ thuộc tài khoản test production và không có run trả phí.
+
+### Còn tồn đọng
+
+- H21.1–H21.9 chưa triển khai.
+- Chưa có controlled beta 5 người; chưa được mở public launch gate.
+
+### Việc tiếp theo
+
+1. H21.1 khóa Presentation Adapter/migration/feature flag/rollback contract.
+2. H21.2 xây bốn canonical block trước mọi Assistant/template/model breadth.
+3. Đi tuần tự đến H21.8 beta task; chỉ deploy H21.9 khi pass.
+
 ## 2026-08-04 — Deploy production H20.9 Agent Canvas multimodal
 
 - **Mục tiêu:** phát hành release candidate H20.9 đã qua full gate và để sẵn

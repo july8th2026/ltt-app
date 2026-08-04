@@ -1,5 +1,8 @@
 # H20 Agent Canvas Deep UX — research baseline
 
+> Hồ sơ lịch sử H20/Q66. Q66 đã được Q67 thay ngày 2026-08-04 sau production
+> user task; baseline hiệu lực nằm ở `../2026-08-04-ux-reset/`.
+
 Ngày: 2026-08-04. Phạm vi: PlenX authenticated workflow, LTT production/local,
 source LTT và tài liệu FLORA công khai. Không chạy generation và không tiêu credit
 benchmark. Đây là baseline hành vi, không phải bằng chứng LTT đã triển khai parity.
