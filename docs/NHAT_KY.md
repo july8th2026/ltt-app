@@ -14,6 +14,61 @@
 
 ---
 
+## 2026-08-04 — H19 khảo sát PROMPT AI OMMI từ Prompt Seedance Studio
+
+- **Mục tiêu:** kiểm kê sâu module nguồn chỉ đọc, tách Admin/User và thiết kế
+  lộ trình di trú năng lực thành app SaaS độc lập trên hạ tầng LTT.
+- **Hạng mục:** H19.0–H19.1 hoàn thành; H19.2–H19.10 chưa triển khai.
+- **Trạng thái:** hồ sơ audit/kế hoạch xong; chưa sửa code app, chưa deploy.
+
+### Đã làm
+
+- Đọc nguồn chân lý, kế hoạch, nhật ký, `KHAO_SAT_BOT_GEMINI.md`, LTT-AQA và
+  code module/contract liên quan; `D:\BOT GEMINI` giữ read-only.
+- Đo snapshot 194 file/47.665 dòng, 112 Python module, 22 router/261 endpoint,
+  40 service, 14 JS, 16 HTML, 31 test và 49 bảng.
+- Phát hiện blocker single-tenant: shared master namespace, ownership/admin
+  guard bị vô hiệu ở nhiều đường; thêm API key/budget/job/data runtime riêng.
+- Đối chiếu AppProject, Job, credit, Storage, APIKEYS/provider và ToolSpec LTT;
+  chốt Q65 “giữ năng lực, thay hạ tầng”.
+- Tạo hồ sơ `docs/APP_AUDIT/prompt-ai-ommi/2026-08-04/` gồm charter, inventory,
+  role/capability matrix, target architecture, score/options, roadmap và
+  Decision Gate.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| Read-only inventory/`rg` source và LTT contract | PASS; không ghi BOT GEMINI |
+| Benchmark tài liệu chính thức web | PASS; LTX/Google/Runway/Freepik |
+| `python -m pytest -q tests/test_61_setup_scripts.py tests/test_62_khoa_logic.py` | **95 passed**, 0,67 giây |
+| `python -m pytest -q` | Chưa chạy; phiên này chỉ thay tài liệu, không runtime |
+| `python tools/scan_source_secrets.py` | 1.419 file, 190.714 dòng, **0 finding**, PASS |
+
+### Quyết định mới
+
+Q65 đã thêm vào nguồn chân lý. Không thay quyết định cũ; cụ thể hóa Q3/Q43 cho
+PROMPT AI OMMI.
+
+### Cách lùi lại
+
+Revert commit tài liệu H19; không có code/schema/data/runtime cần rollback.
+
+### Còn tồn đọng
+
+- Chưa có browser E2/E3 cho module nguồn hoặc app đích.
+- P0 phải xác minh public contract submit ToolSpec từ app; thiếu thì dừng và
+  mở contract gap, không import private handler app khác.
+- Chưa copy tài nguyên; provenance/license/secret/data scan là gate bắt buộc.
+
+### Việc tiếp theo
+
+1. Khóa Decision Gate mặc định A hoặc nhận lựa chọn dev.
+2. Thực hiện H19.2 tuần tự; chưa viết feature trước khi parity ledger/threat
+   model/handoff spike PASS.
+
+---
+
 ## 2026-08-04 — H18 sửa presentation Agent Canvas theo nghiệm thu thực tế
 
 - **Mục tiêu:** biến Canvas từ “đủ capability” thành giao diện người mới hiểu

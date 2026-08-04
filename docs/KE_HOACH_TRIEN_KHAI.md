@@ -1413,3 +1413,27 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   MB; backup/migration/update/health/Cloudflare/12 app/log PASS; bundle deploy
   khớp source. Production login desktop/mobile overflow 0, console 0;
   authenticated production Canvas còn là manual handoff vì không có credential.
+
+### H19 — PROMPT AI OMMI từ Prompt Seedance Studio
+
+- [x] H19.0 DEEP source/product audit — 2026-08-04: khảo sát read-only
+  `D:\BOT GEMINI\app\modules\seedance` theo `KHAO_SAT_BOT_GEMINI.md` và
+  LTT-AQA; đo 194 file/47.665 dòng, 261 endpoint, 49 bảng; lập capability/admin-
+  user/data/job/credit/provider matrix, benchmark và roadmap P0–P8 tại
+  `docs/APP_AUDIT/prompt-ai-ommi/2026-08-04/`. Baseline nguồn Q 59,8 · M 84 ·
+  E 68 · BLOCKED; không sửa BOT GEMINI, không build/deploy, chưa có browser E2.
+- [x] H19.1 Khóa kiến trúc Q65 — capability-preserving replatform, folder
+  `apps/prompt_ai_ommi`, URL `/prompt-ai-ommi`, private-by-default, catalog do
+  admin publish/user clone; dùng toàn bộ contract LTT, không copy runtime nguồn.
+- [ ] H19.2 P0 contract/parity ledger/threat model/ToolSpec handoff spike.
+- [ ] H19.3 P1 app shell + tenant-safe AppProject/Storage/preferences.
+- [ ] H19.4 P2 core Studio + Director Job + quote/credit + scene editor.
+- [ ] H19.5 P3 consistency/iteration/storyboard/version.
+- [ ] H19.6 P4 private library + published Admin catalog + operations split.
+- [ ] H19.7 P5 export/import + Tạo ảnh/Tạo video/Agent handoff.
+- [ ] H19.8 P6 batch/recovery/metrics/retention/runbook.
+- [ ] H19.9 P7 Carbon Red immersive UI + browser accessibility/responsive gate.
+- [ ] H19.10 P8 parity ≥90% + LTT-AQA G0–G8 + full release/canary/deploy.
+
+Phải làm tuần tự H19.2→H19.10. Deployment chỉ được đánh dấu khi có lệnh deploy
+rõ và kết quả production thật; kế hoạch hoặc source audit không phải release.
