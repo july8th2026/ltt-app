@@ -34,8 +34,10 @@
 
 1. P2 — Chưa có E4 user task/telemetry cho time-to-first-workflow và tỷ lệ lỗi.
    Acceptance: beta cohort hoàn thành ba JTBD, có task success/time/error metrics.
-2. P2 — Bundle H20.9 chưa smoke trên production tại thời điểm chấm scorecard.
-   Acceptance: deploy, health + authenticated Canvas + console/network sạch.
+2. P3 — Bundle H20.9 đã deploy, health/manifest/login console-network sạch;
+   authenticated Canvas còn manual handoff vì browser không có production
+   session. Acceptance: chủ sản phẩm đăng nhập tab đã mở, reload Canvas và kiểm
+   console/network; agent không tự tạo tài khoản/dữ liệu production.
 3. P3 — Mobile chỉ xem. Đây là omission minh bạch; xem xét authoring sau khi có
    dữ liệu nhu cầu, không đưa vào table stake hiện tại.
 4. P3 — Cảnh báo Starlette/httpx deprecation trong test harness. Không ảnh hưởng

@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-04 — Deploy production H20.9 Agent Canvas multimodal
+
+- **Mục tiêu:** phát hành release candidate H20.9 đã qua full gate và để sẵn
+  PlenX/production LTT cho chủ sản phẩm nghiệm thu.
+- **Hạng mục:** H20.10a hoàn thành; H20.10b chờ session người dùng.
+- **Trạng thái:** production deployed và healthy; authenticated Canvas chưa ký PASS.
+
+### Đã làm
+
+- Commit phát hành `6dbc347`; archive 1.165 file, 78,0 MB, secret scan 0. Release
+  builder đã chứng minh không mang `tmp/`, `test-results/` hoặc browser profile.
+- `update.ps1` backup PostgreSQL + data (3 entry/3 file), giữ `app.previous`,
+  cập nhật dependency, giữ WhisperX CUDA sidecar, chạy migration và restart.
+- `4-nghiem-thu.ps1`: Web/Worker/cloudflared running, loopback/edge ready, chỉ
+  listen 127.0.0.1:8100, `/docs` 404, secrets ACL/config không BOM, 13 app OK,
+  service log không có error. LTTStudioCodex cũng running.
+- Manifest và build-meta Canvas trong `C:\LTTPlatform\app` khớp source SHA-256.
+- Browser production 1720×940 vào `/agent/canvas` chuyển đúng tới login; console
+  0, failed request 0. Không tự đăng nhập/tạo canary production. Tab PlenX,
+  production login và Canvas fixture authenticated vẫn được giữ mở.
+
+### Test/health đã chạy
+
+| Gate | Kết quả |
+|---|---|
+| `python -m pytest -q` | 2.091 pass, 8 skip, 23 subtests |
+| `python tools\\scan_source_secrets.py` | 0 finding |
+| `python tools\\build_release.py` | 1.165 file, 78,0 MB, archive scan 0 |
+| `deploy/windows/update.ps1` | backup/update/migration/ready PASS |
+| `setup/4-nghiem-thu.ps1` | 0 lỗi, 1 cảnh báo legacy Google Sheet |
+| Production file parity | manifest + build-meta MATCH |
+| Playwright production login | console 0, failed request 0 |
+
+### Quyết định mới
+
+Không có. Không dùng production data khi chưa có session/quyền dữ liệu cụ thể.
+
+### Cách lùi lại
+
+Chạy `deploy/windows/rollback.ps1`; release trước còn ở
+`C:\LTTPlatform\app.previous`, backup mới ở thư mục backup production.
+
+### Còn tồn đọng
+
+- `sheet_id`/`google_credentials_path` legacy chưa cấu hình; không chặn Agent.
+- H20.10b cần chủ sản phẩm đăng nhập tab production đang mở để smoke Canvas auth.
+
+### Việc tiếp theo
+
+1. Chủ sản phẩm đăng nhập production trong tab đã mở.
+2. Reload `/agent/canvas`, kiểm bundle/console/network và đóng H20.10b.
+
 ## 2026-08-04 — H20.9 purchased-workflow parity và multimodal Canvas
 
 - **Mục tiêu:** đối chiếu workflow PlenX mua sẵn theo thao tác người dùng thật,

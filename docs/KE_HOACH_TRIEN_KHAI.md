@@ -1498,8 +1498,13 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
   Image/Video→Text, Text→Image/Video, Social Video, transform thật, variadic edge
   và clipboard/selection. Browser dựng nhánh 8 node/9 edge, validate/báo giá
   132 credit, actual 0, console 0, request lỗi 0. Hồ sơ ở `09_PURCHASED_WORKFLOW_PARITY.md`.
-- [ ] H20.10 Full release gate + production deploy — chạy exact full pytest,
-  secret scan, commit, build archive, backup/update/health và authenticated
-  production browser; chỉ đánh dấu sau bằng chứng thật.
+- [x] H20.10a Full release gate + production deploy — 2026-08-04: commit
+  `6dbc347`; full 2.091 pass/8 skip/23 subtest, secret scan 0; archive 1.165
+  file/78,0 MB; backup PostgreSQL+data, migration, update, loopback/edge/13 app/
+  log PASS. Manifest và build-meta production khớp source; login desktop console
+  0, failed request 0.
+- [ ] H20.10b Authenticated production Canvas handoff — tab production đang ở
+  `/login?next=/agent/canvas` để chủ sản phẩm đăng nhập. Chỉ đóng sau khi session
+  thật tải Canvas, console/network sạch; không tự tạo dữ liệu production.
 
 Production H20.8 đã có đủ backup, update, health và authenticated browser evidence.
