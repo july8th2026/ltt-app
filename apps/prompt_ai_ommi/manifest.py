@@ -93,6 +93,9 @@ MANIFEST = AppManifest(
             verifiable=("structural",),
         ),
     ),
+    # Kho tài nguyên và thư viện prompt dùng chung giữa nhiều project nên không
+    # vừa trong `AppProject` JSON — app sở hữu bảng riêng, xem `tables.py`.
+    table_prefix="ommi",
     enabled=True,
     public=True,
     group="AI Studio",

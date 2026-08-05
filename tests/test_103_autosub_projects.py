@@ -126,11 +126,22 @@ def test_generic_container_limits_size_depth_and_app_scope(tmp_path, monkeypatch
     db.close(); dbmod.reset_engine()
 
 
-def test_platform_migrations_have_canvas_v2_as_single_head():
+def test_platform_migrations_have_a_single_head():
+    """Đồ thị migration không được phân nhánh.
+
+    Hai head nghĩa là hai người cùng đặt `down_revision` vào một revision; lúc
+    đó `alembic upgrade head` báo lỗi và bản cài dừng giữa chừng — đúng chỗ khó
+    xử lý nhất, trên máy chủ đang chạy.
+
+    Trước đây test này so head với một mã revision viết cứng, nên **mọi
+    migration hợp lệ mới đều làm nó đỏ** và người thêm migration phải sửa test
+    dù không có gì sai. Kiểm số lượng head mới đúng bất biến cần giữ.
+    """
     from alembic.config import Config
     from alembic.script import ScriptDirectory
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
-    assert scripts.get_current_head() == "f6a7b8c9d0e1"
+    heads = scripts.get_heads()
+    assert len(heads) == 1, f"migration bị phân nhánh, có {len(heads)} head: {heads}"
 
 
 def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):
