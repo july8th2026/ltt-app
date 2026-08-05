@@ -14,6 +14,112 @@
 
 ---
 
+## 2026-08-05 — PROMPT AI OMMI: audit lại rồi xây Kho tài nguyên, Thư viện, Storyboard
+
+- **Mục tiêu:** chủ sản phẩm báo bản codex "triển khai sai hoàn toàn"; audit lại
+  bằng số đo, rồi xây phần còn thiếu với yêu cầu **mỗi người một kho riêng, một
+  bộ prompt meta riêng**.
+- **Hạng mục:** H19.5 và H19.6 làm lại trên bảng thật; H19.7 giữ nguyên.
+- **Trạng thái:** backend + giao diện chạy thật trên browser. Chưa deploy.
+
+### Đo được, không phải cảm tính
+
+| | Module nguồn | Bản codex |
+|---|---:|---:|
+| Dòng code | 29.541 | 1.428 |
+| Router · endpoint | 22 · 261 | 1 · ~20 |
+| Bảng dữ liệu | 49 | **0** |
+
+Nhưng codex **không làm sai, nó làm thiếu**: phần đã làm chạy sạch và khớp đúng
+H19.3–H19.4. Chỗ chứa Kho tài nguyên/Thư viện là **H19.6, vẫn đang `[ ]`**.
+
+### Phát hiện quan trọng nhất
+
+`D:\BOT GEMINI\app\modules\seedance\service\scoping.py:32` nhận tham số `user`
+rồi **bỏ qua nó**, luôn lọc theo một `master_user_id` dùng chung. Tầng
+"PERSONAL" ghi trong docstring là giả. Nghĩa là yêu cầu "kho riêng, meta riêng"
+**không phải port một tính năng có sẵn** — chép nguyên module sang là bê thẳng
+một lỗ rò rỉ dữ liệu giữa các khách hàng trả tiền.
+
+### Hai thay đổi nền tảng
+
+**1. Hợp đồng app cho phép app sở hữu bảng CSDL.** `AppManifest` không có chỗ
+khai bảng, nên app trước cần bảng thật đã nhét model vào `platform_core/models.py`
+— đi vòng, đúng thứ `AGENTS.md` mục 60 cấm. Nay app khai `table_prefix` và đặt
+model ở `apps/<slug>/tables.py`; registry từ chối bảng sai tiền tố hoặc hai app
+trùng tiền tố (hai lỗi này nếu lọt chỉ lộ khi Alembic sinh migration **xoá nhầm
+bảng app khác**). Tên file là `tables.py` chứ không phải `models.py` vì trong
+thư mục app, `models.py` đã mang nghĩa "registry model AI".
+
+**2. Q65 KHÔNG cần thay.** Chủ sản phẩm chọn "OMMI tự sinh ảnh riêng". Nhưng hai
+lựa chọn tôi đưa ra là một nhị phân sai: 3.269 dòng `image_gen` của nguồn thực
+chất là **điều phối** (batch theo cảnh, ảnh tham chiếu giữ nhất quán, phiên bản),
+không phải engine. Nên OMMI sở hữu điều phối + giao diện + dữ liệu, còn lời gọi
+provider dùng lại `taoanh.generate`. Kiểm được: worker phân việc theo `job_type`
+chứ không theo `app_slug`, giá tra theo `job_type`. Người dùng không rời OMMI,
+mà tích hợp Gemini/xoay khoá/retry/bảng giá vẫn ở đúng một chỗ.
+
+### Đã xây
+
+- **14 bảng `ommi_*`**, 2 migration, đều chạy `upgrade → downgrade → upgrade`.
+- **Kho tài nguyên**: 14 endpoint, upload 2 bước (presigned R2 hoặc multipart),
+  sinh ảnh qua `taoanh.generate`, giao diện React/Vite.
+- **Thư viện**: một service + một màn cho meta/snippet/style, tầng catalog admin,
+  clone-thành-bản-riêng, version.
+- **Storyboard**: cảnh, thứ tự, phiên bản theo cảnh, chạy lại từng cảnh có báo
+  giá riêng.
+- Giao diện nền carbon + đỏ LTT theo `DESIGN_SYSTEM_LTT.md`; màn chưa xây bị
+  **vô hiệu và gắn nhãn "đang xây"**, không phải nút chết.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest` OMMI (135→143) | 138 test riêng của app |
+| `npm test` (prompt-ai-ommi) | 10 passed |
+| `npm run build` + `verify_frontend_bundle` | PASS |
+| `python -m pytest -q` | 2.212 passed/8 skip/23 subtest (mốc R2) |
+| `scan_source_secrets.py` | 0 finding |
+| `lint_app_contract.py` | 12 app, 0 ERROR |
+
+### Sáu lỗi chỉ browser tìm ra
+
+Không lỗi nào test bắt được:
+
+1. Fixture gọi `create_all` mà không nạp bảng app → mọi truy vấn trúng bảng
+   không tồn tại. **Chỗ nào `create_all` thì phải `load_app_tables()`.**
+2. `_resource_error` map mọi exception thành 400 → lỗi máy chủ bị báo là "yêu
+   cầu không hợp lệ", người dùng đi sửa thứ họ gõ còn log không ghi gì.
+3. Khoá lưu trữ ~145 ký tự **vượt giới hạn 260 của Windows**, báo
+   `FileNotFoundError` chứ không nói là quá dài. Production gốc ngắn nên chưa vỡ
+   — đó là may, không phải thiết kế.
+4. URL ảnh dùng `download_token`, mà token sống trong RAM **một tiến trình**,
+   web và worker là hai — mọi ảnh 404.
+5. Ô tìm kiếm `flex:1` đẩy chip lọc sang mép phải, đúng chỗ panel chi tiết phủ
+   lên → chip không bấm được khi panel mở.
+6. `/api/projects` trả `{items: [...]}` chứ không phải mảng trần → màn Storyboard
+   báo "chưa có dự án" ngay sau khi vừa tạo. **Test không bắt được vì mock của
+   tôi mã hoá đúng cái giả định sai đó.**
+
+### Quyết định mới
+
+Không có Q mới. Q65 giữ nguyên (xem lý do ở trên). Hợp đồng app được **mở rộng**
+chứ không đổi quyết định nào.
+
+### Cách lùi lại
+
+Revert từ `f1246f5` tới `4a0c9fd`. Migration có `downgrade` đã kiểm. Production
+hiện có **0 project OMMI** nên không có dữ liệu người dùng nào bị ảnh hưởng.
+
+### Còn tồn đọng
+
+- Chưa xây: Tổng quan, Dự án, Brief & Director, Xuất prompt, Chi phí, Cài đặt.
+- Workspace mới ở `/prompt-ai-ommi/workspace`; trang chính vẫn là wizard cũ.
+  Chuyển mặc định sẽ lấy mất Brief/Director/Export đang chạy được.
+- Chưa deploy. Chưa kiểm trên URL công khai.
+
+---
+
 ## 2026-08-05 — H21.9 deploy production + SỰ CỐ ngưng dịch vụ 2 lần
 
 - **Mục tiêu:** đưa H21.7a + H21.7b lên production theo yêu cầu của chủ sản phẩm.

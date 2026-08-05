@@ -1433,12 +1433,17 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   server-side; two-user/stale revision tests PASS.
 - [x] H19.4 P2 core Studio + Director Job + quote/credit + scene editor —
   preflight miễn phí, durable job, APIKEYS Gemini, quote/hold, scene editor.
-- [ ] H19.5 P3 consistency/iteration/storyboard/version — anchors, scene
-  versions, snapshot và storyboard/frame job đã có; còn regenerate-with-feedback,
-  compare và reorder controls trước khi đóng phase.
-- [ ] H19.6 P4 private library + published Admin catalog + operations split —
-  private resource/project, admin publish và health đã có; còn catalog
-  version/deprecate/clone UI và retention operator job.
+- [ ] H19.5 P3 consistency/iteration/storyboard/version — **2026-08-05 làm lại
+  trên bảng thật** (`ommi_storyboard`/`ommi_scene`/`ommi_scene_version`): chạy
+  lại TỪNG cảnh có báo giá riêng, phiên bản theo cảnh, khôi phục bản cũ, reorder
+  và xoá dồn vị trí; ghép prompt lấy phong cách + tài nguyên của chính chủ.
+  26 test, có kiểm chứng đỏ khi gỡ từng guard. Còn regenerate-with-feedback và
+  màn so sánh hai bản cạnh nhau trước khi đóng phase.
+- [ ] H19.6 P4 private library + published Admin catalog — **2026-08-05 đã xong
+  phần lõi**: Kho tài nguyên (14 endpoint, upload + sinh ảnh) và ba thư viện
+  meta/snippet/style với tầng catalog admin, clone-thành-bản-riêng, version.
+  Mọi truy vấn lọc `owner_id`; không còn namespace dùng chung như module nguồn.
+  Còn catalog deprecate và retention operator job.
 - [x] H19.7 P5 export/import + Tạo ảnh/Tạo video/Agent handoff — JSON/MD/ZIP
   round-trip, ToolSpec ảnh/video quote-confirm, ToolSpec OMMI hiện trong Agent;
   PDF native là backlog không chặn v1.
