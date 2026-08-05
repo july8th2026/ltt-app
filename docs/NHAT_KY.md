@@ -198,10 +198,12 @@ phẩm. Hệ quả: controlled beta nếu chạy sẽ đo trên production thậ
 
 ### Còn tồn đọng
 
-- `C:\LTTPlatform\app.partial-808081872` — 9.733 file / 464 MB rác của lần
-  copy treo. Cần Administrator để xoá.
-- `frontend/agent-canvas/.pytest_cache` có ACL hỏng: `Get-Acl` cũng không đọc
-  được. Chưa rõ có phải thủ phạm của lần treo hay không, nhưng nên xoá.
+- ~~`C:\LTTPlatform\app.partial-808081872` — 464 MB rác của lần copy treo.~~
+  ~~`frontend/agent-canvas/.pytest_cache` ACL hỏng.~~ **Đã dọn cùng ngày**: xoá
+  bản copy dở (464 MB trên ổ C), giành lại quyền sở hữu rồi xoá `.pytest_cache`
+  (`Get-Acl` cũng không đọc nổi — nghi phạm của lần robocopy treo), và 22 file
+  DB fixture. `git status` hết cảnh báo `Permission denied`. Kiểm sau khi dọn:
+  public `/health/ready` 200, ba dịch vụ Running.
 - Gate Node vẫn là gate giả (xem mục H21.7b).
 - H21.8 controlled beta vẫn chưa có E4.
 
