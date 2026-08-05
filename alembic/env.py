@@ -23,6 +23,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from platform_core.db import Base, che_mat_khau, database_url  # noqa: E402
 import platform_core.models  # noqa: E402,F401  — nap model de Base.metadata day du
+from platform_core.registry import load_app_tables  # noqa: E402
+
+# App co bang rieng khai model o apps/<slug>/tables.py. Khong nap o day thi
+# autogenerate coi chung la bang la va sinh migration XOA chung.
+load_app_tables()
 
 config = context.config
 

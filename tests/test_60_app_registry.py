@@ -14,6 +14,7 @@ from platform_core.registry import (
     AppManifest,
     NavEntry,
     RegistryError,
+    _validate,
     credit_for,
     discover,
     job_type_owners,
@@ -182,6 +183,91 @@ def test_a_broken_app_does_not_break_discovery(tmp_path):
     assert len(result) == 1
     assert result[0].error
     assert result[0].manifest.enabled is False
+
+
+# ── app sở hữu bảng CSDL riêng (hợp đồng R0) ───────────────────────────────
+
+def _app_with_tables(root, slug, *, prefix, table):
+    """Dựng một app tạm có tables.py để thử hợp đồng."""
+    apps = root / "apps"
+    (apps / slug).mkdir(parents=True)
+    (apps / slug / "__init__.py").write_text("", encoding="utf-8")
+    (apps / slug / "manifest.py").write_text(
+        "from platform_core.registry import AppManifest\n"
+        f"MANIFEST = AppManifest(slug={slug!r}, display_name='X',\n"
+        f"    route_prefix='/{slug}', table_prefix={prefix!r})\n",
+        encoding="utf-8")
+    (apps / slug / "tables.py").write_text(
+        "from sqlalchemy import String\n"
+        "from sqlalchemy.orm import Mapped, mapped_column\n"
+        "from platform_core.db import Base\n"
+        f"class _T(Base):\n"
+        f"    __tablename__ = {table!r}\n"
+        "    id: Mapped[str] = mapped_column(String(36), primary_key=True)\n",
+        encoding="utf-8")
+    return apps
+
+
+def _load_isolated(root, apps, slug):
+    """Nạp tables của app tạm rồi dọn sạch metadata để không rò sang test khác.
+
+    Gói `apps` đã được import từ repo thật nên `apps.<slug>` tạm không phân giải
+    được qua sys.path. Nối thêm thư mục tạm vào `apps.__path__` là cách chuẩn để
+    một gói tìm module con ở nhiều nơi.
+    """
+    import sys
+
+    import apps as apps_pkg
+    from platform_core.db import Base
+    from platform_core.registry import load_app_tables
+
+    before = set(Base.metadata.tables)
+    apps_pkg.__path__.append(str(apps))
+    try:
+        return load_app_tables(apps_dir=apps)
+    finally:
+        apps_pkg.__path__.remove(str(apps))
+        for name in set(Base.metadata.tables) - before:
+            Base.metadata.remove(Base.metadata.tables[name])
+        sys.modules.pop(f"apps.{slug}.manifest", None)
+        sys.modules.pop(f"apps.{slug}.tables", None)
+        sys.modules.pop(f"apps.{slug}", None)
+
+
+def test_app_can_own_tables_when_it_declares_a_prefix(tmp_path):
+    """App cần bảng thật phải khai được ngay trong app, không phải đem model
+    bỏ vào platform_core (AGENTS.md mục 60: bổ sung hợp đồng, không đi vòng)."""
+    apps = _app_with_tables(tmp_path, "withtables", prefix="wt", table="wt_thing")
+    assert _load_isolated(tmp_path, apps, "withtables") == ["withtables"]
+
+
+def test_app_tables_must_use_the_declared_prefix(tmp_path):
+    """Bảng lạc tiền tố chỉ lộ ra khi Alembic sinh migration xoá nhầm bảng của
+    app khác — lúc đó đã quá muộn."""
+    apps = _app_with_tables(tmp_path, "strayname", prefix="sn", table="other_thing")
+    with pytest.raises(RegistryError, match="other_thing"):
+        _load_isolated(tmp_path, apps, "strayname")
+
+
+def test_app_tables_require_a_declared_prefix(tmp_path):
+    apps = _app_with_tables(tmp_path, "noprefix", prefix="", table="np_thing")
+    with pytest.raises(RegistryError, match="table_prefix"):
+        _load_isolated(tmp_path, apps, "noprefix")
+
+
+def test_table_prefix_must_be_unique_across_apps():
+    """Hai app cùng tiền tố thì ghi đè bảng của nhau, Alembic chỉ thấy một cái."""
+    seen_slugs, seen_prefixes, seen_tables = set(), set(), {"dup"}
+    m = AppManifest(slug="second", display_name="S", route_prefix="/second",
+                    table_prefix="dup")
+    with pytest.raises(RegistryError, match="table_prefix"):
+        _validate(m, seen_slugs, seen_prefixes, set(), set(), seen_tables)
+
+
+def test_alembic_env_loads_app_tables():
+    """Quên nạp thì autogenerate coi bảng của app là bảng lạ và sinh lệnh XOÁ."""
+    text = (ROOT / "alembic" / "env.py").read_text(encoding="utf-8")
+    assert "load_app_tables()" in text
 
 
 # ── nền tảng không được biết app nào tồn tại ───────────────────────────────

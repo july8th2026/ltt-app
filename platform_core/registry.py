@@ -132,6 +132,20 @@ class AppManifest:
     # Năng lực cho Agent/Canvas. Additive: app cũ không khai vẫn chạy nguyên.
     tools: tuple = ()
 
+    # Tiền tố bảng CSDL của app. App nào cần bảng thật — không vừa trong
+    # `AppProject` JSON — thì đặt model ở `apps/<slug>/tables.py` và khai tiền
+    # tố ở đây; mọi `__tablename__` của app phải bắt đầu bằng `<table_prefix>_`.
+    # Rỗng = app không sở hữu bảng nào (phần lớn app).
+    #
+    # Tên file là `tables.py`, KHÔNG phải `models.py`: `models.py` trong thư mục
+    # app đã mang nghĩa "registry model AI của provider", không liên quan CSDL.
+    #
+    # Vì sao cần: không có đường này thì app cần bảng thật buộc phải đem model
+    # bỏ vào `platform_core/` — đi vòng qua hợp đồng, đúng thứ AGENTS.md mục 60
+    # cấm. Tiền tố cho phép app tự giữ model của mình mà hai app không bao giờ
+    # đụng tên bảng nhau.
+    table_prefix: str = ""
+
     def nav_entries(self) -> list:
         """Sidebar của app. Không khai gì thì tạo mặc định 1 dòng."""
         if self.nav:
@@ -212,10 +226,13 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
 
 def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
               seen_job_types: Optional[set] = None,
-              seen_tool_names: Optional[set] = None) -> None:
+              seen_tool_names: Optional[set] = None,
+              seen_table_prefixes: Optional[set] = None) -> None:
     """Chặn sớm những sai sót âm thầm gây khó hiểu về sau."""
     seen_job_types = seen_job_types if seen_job_types is not None else set()
     seen_tool_names = seen_tool_names if seen_tool_names is not None else set()
+    seen_table_prefixes = (seen_table_prefixes
+                           if seen_table_prefixes is not None else set())
     if not manifest.slug or not manifest.slug.replace("_", "").isalnum():
         raise RegistryError(
             f"slug không hợp lệ: {manifest.slug!r} — chỉ chữ, số và gạch dưới")
@@ -242,6 +259,16 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
     for jt in manifest.job_types:
         if jt in seen_job_types:
             raise RegistryError(f"[{manifest.slug}] job_type trùng: {jt!r}")
+    # Tiền tố bảng trùng nhau thì hai app ghi đè bảng của nhau và Alembic chỉ
+    # thấy một cái — mất dữ liệu âm thầm. Chặn ngay lúc discover.
+    if manifest.table_prefix:
+        if not manifest.table_prefix.replace("_", "").isalnum():
+            raise RegistryError(
+                f"[{manifest.slug}] table_prefix không hợp lệ: "
+                f"{manifest.table_prefix!r} — chỉ chữ, số và gạch dưới")
+        if manifest.table_prefix in seen_table_prefixes:
+            raise RegistryError(
+                f"[{manifest.slug}] table_prefix trùng: {manifest.table_prefix!r}")
     local_tool_names: set = set()
     for tool in manifest.tools:
         _validate_tool(manifest, tool, seen_tool_names | local_tool_names)
@@ -263,6 +290,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
     seen_prefixes: set = set()
     seen_job_types: set = set()
     seen_tool_names: set = set()
+    seen_table_prefixes: set = set()
 
     for entry in sorted(apps_dir.iterdir()):
         if not entry.is_dir() or entry.name.startswith(("_", ".")):
@@ -276,7 +304,7 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
             if not isinstance(manifest, AppManifest):
                 raise RegistryError("MANIFEST không phải AppManifest")
             _validate(manifest, seen_slugs, seen_prefixes, seen_job_types,
-                      seen_tool_names)
+                      seen_tool_names, seen_table_prefixes)
         except Exception as exc:
             loaded.append(LoadedApp(
                 manifest=AppManifest(
@@ -291,6 +319,8 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
         seen_prefixes.add(manifest.route_prefix.rstrip("/"))
         seen_job_types.update(manifest.job_types)
         seen_tool_names.update(tool.name for tool in manifest.tools)
+        if manifest.table_prefix:
+            seen_table_prefixes.add(manifest.table_prefix)
 
         router = None
         router_error = ""
@@ -308,6 +338,53 @@ def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:
         loaded.append(LoadedApp(manifest=manifest, router=router,
                                 error=router_error))
 
+    return loaded
+
+
+def load_app_tables(apps_dir: pathlib.Path = APPS_DIR) -> list[str]:
+    """Nạp `apps/<slug>/tables.py` để `Base.metadata` đầy đủ. Trả về slug đã nạp.
+
+    Alembic gọi hàm này trong `env.py`, còn server gọi khi khởi động. Không đi
+    qua `discover()` vì Alembic không cần router và không nên chạm tới chúng.
+
+    Tên file là `tables.py` chứ KHÔNG phải `models.py`: trong thư mục app,
+    `models.py` đã mang nghĩa "registry model AI của provider" và không liên
+    quan CSDL. Dùng chung tên sẽ khiến Alembic import nhầm file cấu hình đó.
+
+    App KHÔNG có `tables.py` là hợp lệ — phần lớn app chỉ cần `AppProject`.
+    Nhưng app có `tables.py` mà thiếu `table_prefix`, hoặc đặt tên bảng sai tiền
+    tố, thì bị từ chối NGAY: bảng lạc chỗ chỉ lộ ra khi Alembic sinh migration
+    xoá nhầm bảng của app khác — quá muộn.
+    """
+    if not apps_dir.exists():
+        return []
+
+    # Import tại chỗ: `platform_core.db` kéo theo SQLAlchemy engine, còn
+    # registry được import từ nhiều nơi nhẹ hơn (kể cả lúc chưa có CSDL).
+    from platform_core.db import Base
+
+    loaded: list[str] = []
+    for entry in sorted(apps_dir.iterdir()):
+        if not entry.is_dir() or entry.name.startswith(("_", ".")):
+            continue
+        if not (entry / "tables.py").exists():
+            continue
+
+        mod = importlib.import_module(f"apps.{entry.name}.manifest")
+        manifest = getattr(mod, "MANIFEST")
+        prefix = (manifest.table_prefix or "").strip()
+        if not prefix:
+            raise RegistryError(
+                f"[{entry.name}] có tables.py nhưng manifest thiếu table_prefix")
+
+        before = set(Base.metadata.tables)
+        importlib.import_module(f"apps.{entry.name}.tables")
+        for name in set(Base.metadata.tables) - before:
+            if not name.startswith(f"{prefix}_"):
+                raise RegistryError(
+                    f"[{entry.name}] bảng {name!r} không bắt đầu bằng "
+                    f"{prefix + '_'!r} — đổi tên hoặc đổi table_prefix")
+        loaded.append(entry.name)
     return loaded
 
 
