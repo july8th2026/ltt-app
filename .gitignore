@@ -125,3 +125,4 @@ apps/*/vendor/
 /models/
 *.pt
 cutclipshort/**/*.onnx
+frontend/prompt-ai-ommi/node_modules/

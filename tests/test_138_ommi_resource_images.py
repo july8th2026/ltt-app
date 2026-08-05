@@ -124,7 +124,10 @@ def test_ticket_falls_back_to_local_when_direct_upload_is_off(api):
                   json={"content_type": "image/png"}).json()
     assert body["mode"] == "local"
     # Khoá luôn nằm trong thư mục của chính người gọi.
-    assert body["key"].startswith(f"prompt_ai_ommi/{id_a}/resources/{rid}/")
+    assert body["key"].startswith(f"ommi/{id_a}/{rid}/")
+    # Khoá phải NGẮN: Windows chặn ở 260 ký tự và LocalStorage còn thêm hậu tố
+    # `.part<pid>` khi ghi. Khoá dài đã thật sự làm upload vỡ trên fixture.
+    assert len(body["key"]) < 120, f"khoá quá dài: {len(body['key'])}"
 
 
 def test_confirm_rejects_a_key_outside_the_callers_own_folder(api):
@@ -150,7 +153,7 @@ def test_confirm_rejects_a_key_outside_the_callers_own_folder(api):
 def test_confirm_rejects_a_key_with_no_file_behind_it(api):
     a, token_a, id_a, *_ = api
     rid = _resource(a, token_a)
-    ghost = f"prompt_ai_ommi/{id_a}/resources/{rid}/khong-co-that.png"
+    ghost = f"ommi/{id_a}/{rid}/khong-co-that.png"
     response = a.post(f"/prompt-ai-ommi/api/resources/{rid}/images/confirm",
                       headers={"X-CSRF-Token": token_a}, json={"key": ghost})
     assert response.status_code == 400
@@ -215,3 +218,27 @@ def test_image_url_is_not_readable_by_another_user(api):
     path = f"/prompt-ai-ommi/api/resources/{rid}/images/{variant['id']}/url"
     assert a.get(path).status_code == 200
     assert b.get(path).status_code == 404
+
+
+def test_image_url_points_at_a_route_that_actually_serves_the_file(api):
+    """Bản đầu trả `download_token` của storage và ảnh 404 trên browser: token
+    nằm trong RAM của TỪNG tiến trình, mà web và worker là hai tiến trình khác
+    nhau. Test phải đi hết đường — lấy URL RỒI tải thật."""
+    a, token_a, *_ = api
+    rid = _resource(a, token_a)
+    variant = _upload(a, token_a, rid).json()
+
+    body = a.get(f"/prompt-ai-ommi/api/resources/{rid}/images/{variant['id']}/url").json()
+    assert "token" not in body, "token của storage không dùng được xuyên tiến trình"
+    served = a.get(body["url"])
+    assert served.status_code == 200, served.text
+    assert served.content == PNG
+
+
+def test_serving_route_refuses_a_key_owned_by_someone_else(api):
+    a, token_a, _id_a, b, _token_b, id_b, _sm = api
+    rid_a = _resource(a, token_a)
+    _upload(a, token_a, rid_a)
+    # B đoán đúng dạng khoá của A vẫn không đọc được.
+    stolen = a.get(f"/prompt-ai-ommi/api/resources/{rid_a}").json()["variants"][0]["storage_key"]
+    assert b.get(f"/prompt-ai-ommi/f/{stolen}").status_code == 404

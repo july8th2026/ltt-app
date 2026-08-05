@@ -1,0 +1,469 @@
+/*
+ * ommi.css — vỏ workspace của PROMPT AI OMMI.
+ *
+ * Nền carbon gần đen, điểm nhấn đỏ LTT, chữ trung tính: đây là hệ thống thiết
+ * kế đã chốt ở `docs/DESIGN_SYSTEM_LTT.md` mục 1, không phải style mới. Bản
+ * OMMI trước dùng nền sáng, tức lệch chuẩn.
+ *
+ * Token khai một chỗ; component KHÔNG viết mã màu trực tiếp.
+ */
+
+.ommi {
+  --surface-canvas: #0a0b0c;
+  --surface-base: #111315;
+  --surface-raised: #171a1d;
+  --surface-overlay: #1e2225;
+  --surface-interactive: #23282c;
+
+  --border-subtle: #242a30;
+  --border-strong: #333b43;
+
+  --text-primary: #f2f4f6;
+  --text-secondary: #c3c9d0;
+  --text-muted: #838c96;
+
+  --brand-primary: #ef3731;
+  --brand-hover: #ff514a;
+  --brand-strong: #b92520;
+  --brand-soft: #2a1616;
+
+  --ok: #3fb27f;
+  --warn: #d9a441;
+
+  --radius: 10px;
+  --gap: 14px;
+
+  position: relative; /* mốc cho panel chi tiết, xem .ommi-detail */
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100dvh;
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ── sidebar ─────────────────────────────────────────────────────────────── */
+
+.ommi-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+  overflow-y: auto;
+}
+
+.ommi-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 0 6px;
+}
+.ommi-brand b {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--brand-primary);
+  color: #fff;
+  font-size: 14px;
+}
+.ommi-brand span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ommi-brand small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+
+.ommi-group {
+  margin: 14px 6px 6px;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.ommi-rail button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ommi-rail button:hover:not(:disabled) {
+  background: var(--surface-interactive);
+  color: var(--text-primary);
+}
+.ommi-rail button[aria-current='page'] {
+  background: var(--brand-soft);
+  color: var(--text-primary);
+  box-shadow: inset 2px 0 0 var(--brand-primary);
+}
+.ommi-rail button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+.ommi-rail button em {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  color: var(--text-muted);
+  font-size: 8px;
+  font-style: normal;
+  letter-spacing: 0.06em;
+}
+
+/* ── vùng nội dung ───────────────────────────────────────────────────────── */
+
+.ommi-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ommi-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ommi-head h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.ommi-head p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.ommi-head .ommi-spacer {
+  flex: 1;
+}
+
+.ommi-body {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 22px 28px;
+  overflow-y: auto;
+}
+
+/* ── nút ─────────────────────────────────────────────────────────────────── */
+
+.ommi button.primary,
+.ommi button.ghost {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ommi button.primary {
+  border: 1px solid var(--brand-primary);
+  background: var(--brand-strong);
+  color: #fff;
+}
+.ommi button.primary:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+.ommi button.ghost {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-overlay);
+  color: var(--text-secondary);
+}
+.ommi button.ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+.ommi button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── bộ lọc ──────────────────────────────────────────────────────────────── */
+
+.ommi-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.ommi-filters input[type='search'] {
+  flex: 1;
+  min-width: 180px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+.ommi-chip {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ommi-chip[aria-pressed='true'] {
+  border-color: var(--brand-primary);
+  background: var(--brand-soft);
+  color: var(--text-primary);
+}
+.ommi-chip b {
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── lưới tài nguyên ─────────────────────────────────────────────────────── */
+
+.ommi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--gap);
+}
+
+.ommi-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+.ommi-card:hover,
+.ommi-card:focus-visible {
+  border-color: var(--border-strong);
+}
+.ommi-card[aria-selected='true'] {
+  border-color: var(--brand-primary);
+}
+.ommi-thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background: var(--surface-overlay);
+  color: var(--text-muted);
+  font-size: 22px;
+}
+.ommi-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ommi-card-body {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px 12px;
+}
+.ommi-card-body strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ommi-card-body span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* ── trạng thái rỗng / lỗi ───────────────────────────────────────────────── */
+
+.ommi-empty {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  max-width: 520px;
+  padding: 26px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+.ommi-empty h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.ommi-empty p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.ommi-error {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--brand-primary);
+  border-radius: 8px;
+  background: var(--brand-soft);
+  color: var(--text-primary);
+}
+
+.ommi-loading {
+  color: var(--text-muted);
+}
+
+/* ── panel chi tiết ──────────────────────────────────────────────────────── */
+
+.ommi-detail {
+  /* Neo vào vỏ app, KHÔNG neo vào viewport: `fixed` đẩy panel lên sát mép trên
+     màn hình và header nền tảng che mất tiêu đề lẫn nút đóng của nó. */
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 100vw);
+  border-left: 1px solid var(--border-strong);
+  background: var(--surface-base);
+  box-shadow: -18px 0 48px #0009;
+}
+.ommi-detail header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ommi-detail header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.ommi-detail-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 16px 18px 22px;
+  overflow-y: auto;
+}
+.ommi-detail label {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.ommi-detail :is(input[type='text'], textarea, select) {
+  width: 100%;
+  min-height: 34px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font: inherit;
+}
+.ommi-detail textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+.ommi-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ommi-variants {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+.ommi-variant {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-overlay);
+}
+.ommi-variant img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ommi-variant button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #000a;
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ── responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .ommi {
+    grid-template-columns: 1fr;
+  }
+  .ommi-rail {
+    flex-direction: row;
+    gap: 6px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+  }
+  .ommi-brand,
+  .ommi-group {
+    display: none;
+  }
+  .ommi-rail button {
+    width: auto;
+    white-space: nowrap;
+  }
+  .ommi-detail {
+    width: 100vw;
+  }
+}
+
+/* Nền sáng chỉ khi hệ điều hành yêu cầu; mặc định sản phẩm là nền tối. */
+@media (prefers-color-scheme: light) {
+  .ommi.theme-auto {
+    --surface-canvas: #f6f7f9;
+    --surface-base: #fff;
+    --surface-raised: #fff;
+    --surface-overlay: #f1f3f5;
+    --surface-interactive: #e9ecef;
+    --border-subtle: #e3e6ea;
+    --border-strong: #cdd3d9;
+    --text-primary: #16181b;
+    --text-secondary: #414952;
+    --text-muted: #6b747d;
+    --brand-soft: #fdeceb;
+  }
+}

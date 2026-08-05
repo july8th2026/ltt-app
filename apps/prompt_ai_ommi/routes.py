@@ -131,6 +131,37 @@ def _jobs(db: Session, user_id: str) -> list[dict]:
              "created_at": row.created_at.isoformat()} for row in rows]
 
 
+_WORKSPACE_MANIFEST = (Path(__file__).resolve().parents[2] / "server" / "static" /
+                       "prompt-ai-ommi" / ".vite" / "manifest.json")
+
+
+def _workspace_assets():
+    """Đường dẫn bundle React đã build. Thiếu manifest thì trả rỗng.
+
+    Không tự dựng một giao diện tạm khi thiếu bundle: template sẽ nói rõ và trỏ
+    người dùng về trang đang chạy được, thay vì hiện một vỏ trống trông như hỏng.
+    """
+    try:
+        manifest = json.loads(_WORKSPACE_MANIFEST.read_text(encoding="utf-8"))
+        entry = manifest["src/main.tsx"]
+        return ([f"/static/prompt-ai-ommi/{entry['file']}"],
+                [f"/static/prompt-ai-ommi/{item}" for item in entry.get("css", [])])
+    except (OSError, KeyError, ValueError):
+        return [], []
+
+
+@router.get("/workspace", response_class=HTMLResponse)
+def workspace(request: Request, _identity: str = Depends(require_login)):
+    """Workspace mới (Kho tài nguyên). Trang chính vẫn giữ nguyên cho tới khi
+    đủ màn — chuyển sớm sẽ lấy mất Brief/Director/Export đang dùng được."""
+    scripts, styles = _workspace_assets()
+    return templates.TemplateResponse(request, "prompt_ai_ommi_workspace.html", {
+        "user": _user(request).email, "nav": MANIFEST.slug, "app": MANIFEST,
+        "csrf_token": issue_csrf_token(request),
+        "workspace_js": scripts, "workspace_css": styles,
+    })
+
+
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, _identity: str = Depends(require_login),
          db: Session = Depends(get_db)):
@@ -721,10 +752,19 @@ def _variant_json(row) -> dict:
 
 
 def _resource_error(exc: Exception) -> HTTPException:
+    """Chỉ dịch lỗi CỦA NGƯỜI DÙNG. Mọi thứ khác để nguyên cho 500.
+
+    Bản đầu bắt `Exception` rồi trả 400 cho tất cả. Hậu quả thấy ngay trên
+    browser: bảng CSDL chưa tồn tại — lỗi máy chủ — lại báo "yêu cầu không hợp
+    lệ", nên người dùng đi sửa thứ họ gõ trong khi hỏng nằm ở máy chủ, và log
+    không ghi gì vì 400 được coi là bình thường.
+    """
     from apps.prompt_ai_ommi.services import resources as rsvc
     if isinstance(exc, rsvc.ResourceNotFound):
         return HTTPException(status_code=404, detail=str(exc))
-    return HTTPException(status_code=400, detail=str(exc))
+    if isinstance(exc, rsvc.ResourceError):
+        return HTTPException(status_code=400, detail=str(exc))
+    raise exc
 
 
 @router.get("/api/resources")
@@ -876,12 +916,24 @@ def _browser_direct_upload_enabled() -> bool:
 
 
 def _image_key(user_id: str, resource_id: str, content_type: str):
+    """Khoá lưu trữ, giữ NGẮN có chủ đích.
+
+    Windows giới hạn đường dẫn 260 ký tự và `LocalStorage` còn thêm hậu tố
+    `.part<pid>` khi ghi. Bản đầu dùng
+    `prompt_ai_ommi/{uuid}/resources/{uuid}/{32 hex}` ≈ 145 ký tự và đã vỡ thật
+    khi thư mục gốc dài — `FileNotFoundError` chứ không phải lỗi nói rõ là quá
+    dài, nên rất khó đoán. Production hiện có gốc ngắn nên chưa vỡ; đó là may,
+    không phải thiết kế.
+
+    Vẫn giữ ĐỦ `user_id` và `resource_id` vì `confirm` dựa vào tiền tố này để
+    buộc khoá thuộc đúng người gọi và đúng tài nguyên.
+    """
     ct = (content_type or "").split(";")[0].strip().lower()
     ext = _RESOURCE_IMAGE_TYPES.get(ct)
     if ext is None:
         raise HTTPException(status_code=400,
                             detail="Chỉ nhận ảnh PNG, JPEG hoặc WebP.")
-    return f"prompt_ai_ommi/{user_id}/resources/{resource_id}/{uuid.uuid4().hex}{ext}", ct
+    return f"ommi/{user_id}/{resource_id}/{uuid.uuid4().hex[:16]}{ext}", ct
 
 
 @router.post("/api/resources/{resource_id}/images/ticket")
@@ -964,7 +1016,7 @@ async def confirm_resource_image(request: Request, resource_id: str,
         raise _resource_error(exc) from exc
 
     key = str(body.get("key") or "").strip()
-    prefix = f"prompt_ai_ommi/{user.id}/resources/{resource_id}/"
+    prefix = f"ommi/{user.id}/{resource_id}/"
     if not key.startswith(prefix):
         raise HTTPException(status_code=400, detail="Khoá lưu trữ không hợp lệ.")
     storage = get_storage()
@@ -1003,9 +1055,15 @@ async def delete_resource_image(request: Request, resource_id: str,
 def resource_image_url(request: Request, resource_id: str, variant_id: str,
                        _identity: str = Depends(require_login),
                        db: Session = Depends(get_db)):
-    """URL xem ảnh, có hạn. Không bao giờ lưu URL đã ký vào CSDL vì nó hết hạn."""
+    """URL xem ảnh.
+
+    KHÔNG dùng `storage.download_token`: token nằm trong RAM của TỪNG tiến
+    trình, mà worker (tạo ảnh) và web (phục vụ ảnh) là hai tiến trình khác nhau
+    — token cấp ở đây tiến trình kia không biết. Bản đầu trả token và ảnh 404
+    trên browser đúng vì lý do đó. App tự phục vụ file qua `/f/{key}` và kiểm
+    sở hữu theo khoá, giống các app ảnh khác.
+    """
     from apps.prompt_ai_ommi.services import resources as rsvc
-    from platform_core.storage import get_storage
     user = _user(request)
     try:
         found = [v for v in rsvc.variants(db, resource_id, user.id)
@@ -1014,11 +1072,39 @@ def resource_image_url(request: Request, resource_id: str, variant_id: str,
         raise _resource_error(exc) from exc
     if not found:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+    return {"url": f"{MANIFEST.route_prefix}/f/{found[0].storage_key}"}
+
+
+@router.get("/f/{key:path}")
+def resource_image_file(request: Request, key: str,
+                        _identity: str = Depends(require_login)):
+    """Phục vụ ảnh tài nguyên, kiểm sở hữu NGAY TRÊN KHOÁ.
+
+    Khoá có dạng `ommi/{owner_id}/{resource_id}/...`, nên chỉ cần so đoạn thứ
+    hai với người đang đăng nhập là đủ chặn đọc chéo — không phải tra CSDL.
+    Ảnh do `taoanh.generate` sinh nằm ngoài tiền tố này và được phục vụ bởi
+    chính app Tạo ảnh.
+    """
+    from fastapi.responses import RedirectResponse, StreamingResponse
+    from platform_core.storage import StorageError, get_storage
+    user = _user(request)
+    segments = key.split("/")
+    if len(segments) < 3 or segments[0] != "ommi" or segments[1] != user.id:
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
     storage = get_storage()
-    direct = storage.url_for(found[0].storage_key)
+    try:
+        direct = storage.url_for(key)
+    except Exception:  # noqa: BLE001
+        direct = None
     if direct:
-        return {"url": direct}
-    return {"token": storage.download_token(found[0].storage_key)}
+        return RedirectResponse(direct, status_code=302)
+    try:
+        stream = storage.open(key)
+    except (StorageError, FileNotFoundError):
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.") from None
+    kind = "image/png" if key.endswith(".png") else (
+        "image/webp" if key.endswith(".webp") else "image/jpeg")
+    return StreamingResponse(stream, media_type=kind)
 
 
 # ── Sinh ảnh cho tài nguyên (R1.5) ─────────────────────────────────────────

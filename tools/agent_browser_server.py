@@ -12,7 +12,13 @@ if "agent-browser-test" not in os.environ.get("LTT_DATABASE_URL", ""):
 from platform_core import credit
 from platform_core.db import Base, get_engine, get_session
 import platform_core.models  # noqa: F401
+from platform_core.registry import load_app_tables
 from platform_core.users import tao_nguoi_dung
+
+# App co bang rieng (apps/<slug>/tables.py) phai duoc nap TRUOC create_all,
+# neu khong fixture chay voi CSDL thieu bang va moi truy van cua app do hong.
+# Production khong dinh vi dung alembic, nhung fixture browser thi dinh.
+load_app_tables()
 
 Base.metadata.drop_all(get_engine())
 Base.metadata.create_all(get_engine())
