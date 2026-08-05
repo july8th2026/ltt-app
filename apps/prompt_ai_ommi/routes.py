@@ -150,10 +150,7 @@ def _workspace_assets():
         return [], []
 
 
-@router.get("/workspace", response_class=HTMLResponse)
-def workspace(request: Request, _identity: str = Depends(require_login)):
-    """Workspace mới (Kho tài nguyên). Trang chính vẫn giữ nguyên cho tới khi
-    đủ màn — chuyển sớm sẽ lấy mất Brief/Director/Export đang dùng được."""
+def _render_workspace(request: Request):
     scripts, styles = _workspace_assets()
     return templates.TemplateResponse(request, "prompt_ai_ommi_workspace.html", {
         "user": _user(request).email, "nav": MANIFEST.slug, "app": MANIFEST,
@@ -163,8 +160,27 @@ def workspace(request: Request, _identity: str = Depends(require_login)):
 
 
 @router.get("", response_class=HTMLResponse)
-def page(request: Request, _identity: str = Depends(require_login),
-         db: Session = Depends(get_db)):
+def page(request: Request, _identity: str = Depends(require_login)):
+    """Cửa vào của app là workspace (2026-08-05).
+
+    Trước đó là wizard 5 bước; giữ nó làm cửa vào cho tới khi workspace có đủ
+    màn, vì chuyển sớm sẽ lấy mất Brief/Director/Export đang dùng được. Nay cả
+    mười màn đã chạy nên đổi. Bản cũ còn ở `/classic` để lùi lại được mà không
+    cần sửa mã; production có 0 project OMMI nên không ai mất dữ liệu.
+    """
+    return _render_workspace(request)
+
+
+@router.get("/workspace", response_class=HTMLResponse)
+def workspace(request: Request, _identity: str = Depends(require_login)):
+    """Bí danh của cửa vào — giữ để link cũ không gãy."""
+    return _render_workspace(request)
+
+
+@router.get("/classic", response_class=HTMLResponse)
+def classic_page(request: Request, _identity: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    """Wizard 5 bước cũ. Giữ để lùi lại được nếu workspace lộ ra thiếu sót."""
     user = _user(request)
     projects = [_row(row) for row in _production_rows(db, user.id)]
     preference_row = _preference_row(db, user.id)

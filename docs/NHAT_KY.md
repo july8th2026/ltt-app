@@ -113,9 +113,14 @@ hiện có **0 project OMMI** nên không có dữ liệu người dùng nào b�
 
 ### Còn tồn đọng
 
-- Chưa xây: Tổng quan, Dự án, Brief & Director, Xuất prompt, Chi phí, Cài đặt.
-- Workspace mới ở `/prompt-ai-ommi/workspace`; trang chính vẫn là wizard cũ.
-  Chuyển mặc định sẽ lấy mất Brief/Director/Export đang chạy được.
+- ~~Chưa xây: Tổng quan, Dự án, Brief & Director, Xuất prompt, Chi phí, Cài đặt.~~
+  **Đã xong cùng ngày** — 10/10 mục sidebar đều dẫn tới màn chạy được, không còn
+  mục nào `đang xây`. "Xuất prompt" cố ý KHÔNG làm màn riêng: nút tải .json/.md/
+  .zip nằm ngay trong Dự án, một màn chỉ để có tên trong menu là màn rỗng.
+- **Cửa vào đã đổi**: `/prompt-ai-ommi` render workspace; wizard 5 bước cũ giữ ở
+  `/classic` để lùi lại được mà không phải sửa mã; `/workspace` là bí danh.
+  Chủ sản phẩm xác nhận app chưa công khai nên đổi được an toàn; production có
+  0 project OMMI. Kiểm browser: cả ba đường đúng, console 0 lỗi.
 - Chưa deploy. Chưa kiểm trên URL công khai.
 
 ---

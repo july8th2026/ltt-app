@@ -119,3 +119,27 @@ def test_overview_needs_a_login(api):
     anon = TestClient(a.app, base_url="https://testserver", follow_redirects=False)
     response = anon.get("/prompt-ai-ommi/api/overview")
     assert response.status_code in (302, 303, 401, 403)
+
+
+def test_the_app_root_serves_the_workspace(api):
+    """Cửa vào đổi sang workspace 2026-08-05. Trước đó là wizard 5 bước."""
+    a, *_ = api
+    page = a.get("/prompt-ai-ommi")
+    assert page.status_code == 200
+    assert 'id="prompt-ai-ommi-root"' in page.text
+    # Wizard cũ không còn ở cửa vào.
+    assert 'data-step="brief"' not in page.text
+
+
+def test_the_old_wizard_is_still_reachable_for_rollback(api):
+    """Giữ bản cũ ở `/classic` để lùi lại được mà không phải sửa mã."""
+    a, *_ = api
+    page = a.get("/prompt-ai-ommi/classic")
+    assert page.status_code == 200
+    assert 'data-step="brief"' in page.text
+
+
+def test_the_workspace_alias_still_answers(api):
+    """Link `/workspace` đã dùng trong lúc xây; đừng để nó gãy."""
+    a, *_ = api
+    assert a.get("/prompt-ai-ommi/workspace").status_code == 200
