@@ -80,9 +80,15 @@ if (Test-Path $appDir) {
 }
 New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 # /XD: khong copy du lieu van hanh, bi mat, cache. Chung song o ngoai app\
-# (ADR-009) de cap nhat code khong dong vao du lieu.
-$rc = robocopy $src $appDir /E /NFL /NDL /NJH /NJS /NP `
+# (ADR-009) de cap nhat code khong dong vao du lieu. Them ca thu muc chi
+# phuc vu phat trien: production khong chay Node/Vite/Playwright/pytest, va
+# node_modules + .playwright-cli + tmp la ~700 MB rac keo dai cua so downtime.
+# /R:2 /W:2 la BAT BUOC. Mac dinh robocopy la /R:1000000 /W:30 - mot file bi
+# khoa hay ACL hong se treo VO HAN, trong khi dich vu DA bi dung o tren. Loi
+# do da that su lam production ngung 20 phut ngay 2026-08-05.
+$rc = robocopy $src $appDir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2 `
       /XD data secrets logs .venv venv __pycache__ .pytest_cache .git dist build temp_videos `
+         node_modules .playwright-cli .playwright-mcp .claude test-results tmp `
       /XF *.pyc *.log
 if ($LASTEXITCODE -ge 8) { throw "robocopy loi (ma $LASTEXITCODE)" }
 $global:LASTEXITCODE = 0

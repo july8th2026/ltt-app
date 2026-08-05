@@ -112,6 +112,26 @@ def test_install_never_overwrites_real_config_or_secrets():
     assert "if (Test-Path $envFile)" in text
 
 
+def test_install_copy_fails_fast_instead_of_hanging():
+    """Robocopy mặc định là `/R:1000000 /W:30`. Script dừng dịch vụ TRƯỚC khi
+    copy, nên một file bị khoá hoặc ACL hỏng sẽ treo vô hạn với production đang
+    tắt. Đã thật sự xảy ra ngày 2026-08-05: deploy treo giữa `node_modules`,
+    site ngưng 20 phút cho tới khi khôi phục tay từ `app.previous`."""
+    code = _code_only("2-cai-dat.ps1")
+    assert "robocopy" in code
+    assert "/R:2" in code, "thiếu giới hạn retry — treo là mất production vô hạn"
+    assert "/W:2" in code, "thiếu giới hạn thời gian chờ giữa các lần retry"
+
+
+def test_install_does_not_copy_developer_artifacts():
+    """Production không chạy Node/Vite/Playwright/pytest. Copy thêm chúng chỉ
+    kéo dài cửa sổ downtime (~700 MB) và tăng số file có thể bị khoá."""
+    code = _code_only("2-cai-dat.ps1")
+    for folder in ("node_modules", ".playwright-cli", ".playwright-mcp",
+                   "test-results", "tmp"):
+        assert folder in code, f"{folder} phải nằm trong /XD"
+
+
 def test_install_binds_loopback_only():
     """Nghe 0.0.0.0 là ai cũng gọi thẳng vào app được, bỏ qua Cloudflare."""
     code = _code_only("2-cai-dat.ps1")
