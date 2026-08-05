@@ -34,5 +34,5 @@ for (const file of files) {
   digest.update('\0')
 }
 writeFileSync(join(output, 'build-meta.json'), JSON.stringify({
-  schema: 1, source_sha256: digest.digest('hex'), node: '22.12.0', sourcemap: false,
+  schema: 1, source_sha256: digest.digest('hex'), node: process.versions.node, sourcemap: false,
 }) + '\n')

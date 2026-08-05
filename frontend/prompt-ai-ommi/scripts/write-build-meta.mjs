@@ -23,5 +23,5 @@ for (const full of inputs.sort()) {
   hash.update(await readFile(full)); hash.update('\0')
 }
 await writeFile(resolve(output, 'build-meta.json'), JSON.stringify({
-  schema: 1, source_sha256: hash.digest('hex'), node: '24.17.0', sourcemap: false,
+  schema: 1, source_sha256: hash.digest('hex'), node: process.versions.node, sourcemap: false,
 }, null, 2) + '\n', 'utf8')

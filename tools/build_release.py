@@ -63,12 +63,22 @@ REQUIRED_ENTRIES = (
     "frontend/autosub-studio/package-lock.json",
     "server/static/autosub-studio/.vite/manifest.json",
     "server/static/autosub-studio/build-meta.json",
+    "frontend/prompt-ai-ommi/package.json",
+    "frontend/prompt-ai-ommi/package-lock.json",
+    "server/static/prompt-ai-ommi/.vite/manifest.json",
+    "server/static/prompt-ai-ommi/build-meta.json",
 )
 
 CANVAS_SOURCE = "frontend/agent-canvas"
 CANVAS_OUTPUT = "server/static/agent-canvas"
 AUTOSUB_SOURCE = "frontend/autosub-studio"
 AUTOSUB_OUTPUT = "server/static/autosub-studio"
+OMMI_SOURCE = "frontend/prompt-ai-ommi"
+OMMI_OUTPUT = "server/static/prompt-ai-ommi"
+
+#: Node pin cho MOI bundle. Doi o day thi doi luon .nvmrc va package.json cua
+#: tung frontend — ba cho phai khop, va test_95 chot dieu do.
+PINNED_NODE = "24.17.0"
 CANVAS_IGNORED_FILES = {
     "tsconfig.app.tsbuildinfo", "tsconfig.node.tsbuildinfo",
     "vite.config.d.ts", "vite.config.js",
@@ -98,6 +108,10 @@ def _frontend_source_sha256(root: str, relative_source: str) -> str:
 
 def canvas_source_sha256(root: str) -> str:
     return _frontend_source_sha256(root, CANVAS_SOURCE)
+
+
+def ommi_source_sha256(root: str) -> str:
+    return _frontend_source_sha256(root, OMMI_SOURCE)
 
 
 def autosub_source_sha256(root: str) -> str:
@@ -136,9 +150,11 @@ def _verify_one_frontend(root: str, *, source: str, output: str,
 def verify_frontend_bundle(root: str) -> None:
     """Reject stale, incomplete, or development-only frontend bundles."""
     _verify_one_frontend(root, source=CANVAS_SOURCE, output=CANVAS_OUTPUT,
-                         node="22.12.0", digest=canvas_source_sha256(root))
+                         node=PINNED_NODE, digest=canvas_source_sha256(root))
     _verify_one_frontend(root, source=AUTOSUB_SOURCE, output=AUTOSUB_OUTPUT,
-                         node="24.17.0", digest=autosub_source_sha256(root))
+                         node=PINNED_NODE, digest=autosub_source_sha256(root))
+    _verify_one_frontend(root, source=OMMI_SOURCE, output=OMMI_OUTPUT,
+                         node=PINNED_NODE, digest=ommi_source_sha256(root))
 
 
 def _version() -> str:

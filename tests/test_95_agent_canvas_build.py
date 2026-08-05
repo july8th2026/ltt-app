@@ -119,11 +119,39 @@ def test_release_carries_canvas_inputs_and_output_but_not_node_modules():
 
 
 def test_frontend_toolchain_is_exactly_pinned():
-    package = json.loads((ROOT / "frontend/agent-canvas/package.json").read_text("utf-8"))
-    assert package["engines"]["node"] == "22.12.0"
-    assert (ROOT / "frontend/agent-canvas/.nvmrc").read_text("ascii").strip() == "22.12.0"
-    for version in [*package["dependencies"].values(), *package["devDependencies"].values()]:
-        assert version[0].isdigit(), version
+    """Ba chỗ khai Node phải khớp nhau, cho MỌI bundle.
+
+    Trước đây mỗi frontend tự khai một số và `build_release` so với một chuỗi
+    cứng khác nữa — canvas ghim 22.12.0 trong khi thực tế build bằng 24.17.0 mà
+    không ai biết. Giờ `PINNED_NODE` là nguồn duy nhất.
+    """
+    from tools.build_release import PINNED_NODE
+
+    for name in ("agent-canvas", "autosub-studio", "prompt-ai-ommi"):
+        package = json.loads(
+            (ROOT / f"frontend/{name}/package.json").read_text("utf-8"))
+        assert package["engines"]["node"] == PINNED_NODE, name
+        assert (ROOT / f"frontend/{name}/.nvmrc").read_text("ascii").strip() ==             PINNED_NODE, name
+        for version in [*package["dependencies"].values(),
+                        *package["devDependencies"].values()]:
+            assert version[0].isdigit(), (name, version)
+
+
+def test_build_meta_records_the_node_that_actually_ran():
+    """`write-build-meta.mjs` phải ghi `process.versions.node`, KHÔNG phải một
+    chuỗi cứng.
+
+    Ghi cứng thì câu báo "built with the wrong Node" của `build_release` không
+    bao giờ kích hoạt được: bản build bằng Node khác vẫn tự khai đúng số đã ghim
+    và qua kiểm. Gate đó rỗng suốt từ khi có tới 2026-08-05.
+    """
+    import re
+
+    for name in ("agent-canvas", "autosub-studio", "prompt-ai-ommi"):
+        text = (ROOT / f"frontend/{name}/scripts/write-build-meta.mjs").read_text("utf-8")
+        assert "process.versions.node" in text, name
+        # Không còn số phiên bản viết tay nào trong giá trị `node:`.
+        assert not re.search(r"node:\s*['\"]\d", text), name
 
 
 def test_canvas_bundle_stays_within_p11_size_budget():
