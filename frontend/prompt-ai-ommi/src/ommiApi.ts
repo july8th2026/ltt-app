@@ -296,3 +296,128 @@ export function cloneLibraryItem(kind: LibraryKind, id: string): Promise<Library
     body: JSON.stringify({}),
   })
 }
+
+
+// ── Storyboard ──────────────────────────────────────────────────────────────
+
+export type Scene = {
+  id: string
+  storyboard_id: string
+  position: number
+  title: string
+  prompt: string
+  camera: string
+  continuity: string
+  resource_ids: string[]
+  image_key: string
+  version: number
+}
+
+export type Storyboard = {
+  id: string
+  project_id: string
+  name: string
+  meta_prompt_id: string
+  style_id: string
+  aspect_ratio: string
+  archived: boolean
+  updated_at: string
+  scenes?: Scene[]
+}
+
+export type Project = { id: string; name: string; revision: number }
+
+/**
+ * Danh sách dự án. Endpoint trả `{items: [...]}` chứ KHÔNG phải mảng trần —
+ * khai sai kiểu ở đây làm `projects.length` thành `undefined`, và màn Storyboard
+ * báo "chưa có dự án" dù vừa tạo xong. Trình duyệt bắt được; test không, vì mock
+ * của test lúc đó mã hoá đúng cái giả định sai này.
+ */
+export async function listProjects(): Promise<Project[]> {
+  return (await request<{ items: Project[] }>('/projects')).items
+}
+
+export function listStoryboards(projectId = ''): Promise<{ items: Storyboard[] }> {
+  const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
+  return request(`/storyboards${query}`)
+}
+
+export function createStoryboard(body: {
+  project_id: string
+  name: string
+}): Promise<Storyboard> {
+  return request<Storyboard>('/storyboards', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function getStoryboard(id: string): Promise<Storyboard> {
+  return request<Storyboard>(`/storyboards/${id}`)
+}
+
+export function addScene(
+  boardId: string,
+  body: { title?: string; prompt?: string; camera?: string; resource_ids?: string[] },
+): Promise<Scene> {
+  return request<Scene>(`/storyboards/${boardId}/scenes`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function updateScene(
+  sceneId: string,
+  body: Partial<Pick<Scene, 'title' | 'prompt' | 'camera' | 'continuity'>> & {
+    resource_ids?: string[]
+  },
+): Promise<Scene> {
+  return request<Scene>(`/scenes/${sceneId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
+export function deleteScene(sceneId: string): Promise<{ ok: boolean }> {
+  return request(`/scenes/${sceneId}`, { method: 'DELETE' })
+}
+
+export type SceneQuote = {
+  credit: number
+  scene_id: string
+  reference_count: number
+  prompt_preview: string
+  confirmed: false
+}
+export type SceneJob = { id: string; status: string; credit: number; scene_id: string }
+
+/** Báo giá khi `confirmed` false, chạy khi true — cùng một endpoint, một công thức. */
+export function renderScene(
+  sceneId: string,
+  body: { confirmed?: boolean } = {},
+): Promise<SceneQuote | SceneJob> {
+  return request(`/scenes/${sceneId}/render`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function attachSceneRender(sceneId: string, jobId: string): Promise<Scene> {
+  return request<Scene>(`/scenes/${sceneId}/attach/${jobId}`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export function sceneVersions(
+  sceneId: string,
+): Promise<{ items: Array<{ version: number; image_key: string; created_at: string }> }> {
+  return request(`/scenes/${sceneId}/versions`)
+}
+
+export function restoreSceneVersion(sceneId: string, version: number): Promise<Scene> {
+  return request<Scene>(`/scenes/${sceneId}/restore/${version}`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}

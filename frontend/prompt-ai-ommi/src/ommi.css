@@ -504,3 +504,33 @@
 .ommi-history span {
   color: var(--text-muted);
 }
+
+/* ── thẻ cảnh ────────────────────────────────────────────────────────────── */
+
+.ommi-scene {
+  cursor: default;
+}
+.ommi-scene .ommi-card-body {
+  gap: 6px;
+}
+.ommi-scene :is(input[type='text'], textarea) {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11px;
+}
+.ommi-scene textarea {
+  min-height: 54px;
+  resize: vertical;
+}
+.ommi-scene .ommi-detail-actions button {
+  padding: 0 8px;
+  font-size: 10px;
+}
+.ommi-history li .ommi-spacer {
+  flex: 1;
+}

@@ -49,7 +49,7 @@ describe('Kho tài nguyên', () => {
     expect(within(rail).getByRole('button', { name: /Kho tài nguyên/ })
       .hasAttribute('disabled')).toBe(false)
     // Màn chưa xây phải vô hiệu và nói rõ, không được là nút chết.
-    const notBuilt = within(rail).getByRole('button', { name: /Storyboard/ })
+    const notBuilt = within(rail).getByRole('button', { name: /Tổng quan/ })
     expect(notBuilt.hasAttribute('disabled')).toBe(true)
     expect(notBuilt.textContent).toContain('đang xây')
   })
@@ -161,5 +161,57 @@ describe('Thư viện', () => {
     const box = screen.getByLabelText(/Nội dung chỉ dẫn/) as HTMLTextAreaElement
     expect(box.readOnly).toBe(true)
     expect(screen.queryByRole('button', { name: /Lưu trữ/ })).toBeNull()
+  })
+})
+
+describe('Storyboard', () => {
+  const board = { id: 'b1', project_id: 'p1', name: 'Bảng', meta_prompt_id: '',
+    style_id: '', aspect_ratio: '16:9', archived: false,
+    updated_at: '2026-08-05T00:00:00+00:00' }
+  const scene = { id: 's1', storyboard_id: 'b1', position: 0, title: 'Cảnh 1',
+    prompt: 'noi dung canh', camera: '', continuity: '', resource_ids: [],
+    image_key: '', version: 1 }
+
+  function openStoryboard() {
+    routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
+    // Đúng hình dạng máy chủ trả: {items: [...]}, không phải mảng trần.
+    routes.push([/\/projects$/, 'GET',
+      () => reply({ items: [{ id: 'p1', name: 'Dự án', revision: 1 }] })])
+    routes.push([/\/storyboards$/, 'GET', () => reply({ items: [board] })])
+    routes.push([/\/storyboards\/b1$/, 'GET',
+      () => reply({ ...board, scenes: [scene] })])
+  }
+
+  it('nói rõ chạy lại một cảnh chỉ tính tiền cảnh đó', async () => {
+    openStoryboard()
+    routes.push([/\/scenes\/s1\/render$/, 'POST', () => reply({
+      credit: 5, scene_id: 's1', reference_count: 0,
+      prompt_preview: 'noi dung canh', confirmed: false })])
+
+    render(<OmmiShell csrfToken="t"/>)
+    const rail = await screen.findByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
+    fireEvent.click(within(rail).getByRole('button', { name: /Storyboard/ }))
+    await waitFor(() => expect(screen.getByText('Bảng')).toBeTruthy())
+    fireEvent.click(screen.getByText('Bảng'))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Sinh ảnh' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Sinh ảnh' }))
+
+    const box = await screen.findByLabelText('Xác nhận chi phí cảnh')
+    expect(box.textContent).toContain('5 credit')
+    expect(box.textContent).toContain('một cảnh')
+    expect(box.textContent).toContain('Các cảnh khác không bị đụng tới')
+  })
+
+  it('hiện trạng thái rỗng có ích khi chưa có dự án', async () => {
+    routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
+    routes.push([/\/projects$/, 'GET', () => reply({ items: [] })])
+    routes.push([/\/storyboards$/, 'GET', () => reply({ items: [] })])
+
+    render(<OmmiShell csrfToken="t"/>)
+    const rail = await screen.findByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
+    fireEvent.click(within(rail).getByRole('button', { name: /Storyboard/ }))
+    await waitFor(() => expect(screen.getByText('Chưa có storyboard nào')).toBeTruthy())
+    // Không có dự án thì không mời tạo storyboard — bấm vào sẽ chỉ ra lỗi.
+    expect(screen.getByText(/Tạo một dự án ở trang PROMPT AI OMMI trước/)).toBeTruthy()
   })
 })

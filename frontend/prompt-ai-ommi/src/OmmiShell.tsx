@@ -13,6 +13,7 @@ import './ommi.css'
 import { setCsrfToken } from './ommiApi'
 import { LibraryScreen } from './LibraryScreen'
 import { ResourceLibrary } from './ResourceLibrary'
+import { StoryboardScreen } from './StoryboardScreen'
 
 type Screen = { key: string; label: string; icon: string; built: boolean }
 type Group = { title: string; items: Screen[] }
@@ -30,7 +31,7 @@ const GROUPS: Group[] = [
     items: [
       { key: 'resources', label: 'Kho tài nguyên', icon: '◈', built: true },
       { key: 'brief', label: 'Brief & Director', icon: '✎', built: false },
-      { key: 'storyboard', label: 'Storyboard', icon: '▩', built: false },
+      { key: 'storyboard', label: 'Storyboard', icon: '▩', built: true },
       { key: 'export', label: 'Xuất prompt', icon: '⇩', built: false },
     ],
   },
@@ -87,6 +88,7 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
 
       <main className="ommi-main">
         {screen === 'resources' ? <ResourceLibrary /> : null}
+        {screen === 'storyboard' ? <StoryboardScreen /> : null}
         {screen === 'snippet' || screen === 'style' || screen === 'meta' ? (
           <LibraryScreen key={screen} kind={screen} />
         ) : null}
