@@ -151,11 +151,31 @@ if ($cudaOk) {
 }
 
 Head 'WhisperX sidecar rieng'
-$whisperOut = @(& (Join-Path $appDir 'deploy\windows\install-whisperx-sidecar.ps1') `
-    -Root $Root -ReleaseDir $appDir -PythonExe 'python')
-$whisperPy = $whisperOut[-1]
-if (-not $whisperPy) { throw 'Khong cai duoc WhisperX sidecar' }
-Ok 'WhisperX CUDA sidecar da san sang'
+# Sidecar nay chi phuc vu autosubvideo. No KHONG duoc phep lam sap ca ban cai:
+# script da dung dich vu o tren, nen mot loi o day de production nam im.
+# Ngay 2026-08-05 buoc nay nem loi (torch trong venv sidecar hong) va bo qua
+# ca alembic lan dang ky dich vu -> site ngung cho toi khi khoi phuc tay.
+# Khi may DA co LTT_WHISPERX_PYTHON thi bo qua duoc: chi autosubvideo giam
+# chuc nang. Khi CHUA co (cai moi) thi van phai dung, neu khong auto-sub hong
+# am tham.
+$whisperPy = $null
+try {
+    $whisperOut = @(& (Join-Path $appDir 'deploy\windows\install-whisperx-sidecar.ps1') `
+        -Root $Root -ReleaseDir $appDir -PythonExe 'python')
+    $whisperPy = $whisperOut[-1]
+} catch {
+    Note "WhisperX sidecar loi: $($_.Exception.Message)"
+}
+if (-not $whisperPy) {
+    $envProbe = Join-Path $secrets 'app.env'
+    $hasWhisper = (Test-Path $envProbe) -and
+        ((Get-Content $envProbe -Raw) -match '(?m)^LTT_WHISPERX_PYTHON=')
+    if (-not $hasWhisper) { throw 'Khong cai duoc WhisperX sidecar va app.env chua co LTT_WHISPERX_PYTHON' }
+    Note 'BO QUA WhisperX sidecar - app.env da co LTT_WHISPERX_PYTHON cu.'
+    Note 'autosubvideo co the giam chuc nang. Chay lai sidecar rieng khi ranh.'
+} else {
+    Ok 'WhisperX CUDA sidecar da san sang'
+}
 
 Head 'Cau hinh van hanh'
 $cfg = Join-Path $dataDir 'config.json'

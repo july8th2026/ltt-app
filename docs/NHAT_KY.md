@@ -14,6 +14,93 @@
 
 ---
 
+## 2026-08-05 — H21.9 deploy production + SỰ CỐ ngưng dịch vụ 2 lần
+
+- **Mục tiêu:** đưa H21.7a + H21.7b lên production theo yêu cầu của chủ sản phẩm.
+- **Hạng mục:** H21.9 deploy xong. **H21.8 vẫn OPEN** — chủ sản phẩm chủ động
+  cho deploy trước controlled beta, khác điều kiện ghi trong kế hoạch.
+- **Trạng thái:** deploy PASS sau 4 lần chạy. Production đã ngưng **2 lần**.
+
+### Sự cố — ghi lại đầy đủ vì đây là ngưng dịch vụ thật
+
+`setup/2-cai-dat.ps1` dừng cả ba dịch vụ ở đầu script rồi mới copy. Nghĩa là
+**mọi lỗi từ đó trở đi đều xảy ra khi production đang tắt.** Hai nguyên nhân
+độc lập cùng lộ ra hôm nay:
+
+**1. robocopy treo vô hạn (lỗi thật của installer).** Lệnh chạy không có `/R`
+`/W`, tức mặc định **retry 1.000.000 lần, chờ 30 giây mỗi lần**. Copy đứng
+giữa `frontend/agent-canvas/node_modules` (3.180/4.762 file), CPU đóng băng ở
+3,80 giây suốt nhiều phút. Đo được: mỗi lần deploy đang copy ~723 MB rác chỉ
+phục vụ phát triển — `tmp/` 427 MB, `.playwright-cli/` 188 MB,
+`node_modules/` 108 MB — trong khi chính script ghi chú *"production does not
+run Node/Vite"*. Càng nhiều file càng nhiều cơ hội dính khoá.
+**Ngưng lần 1: 18:38 → 19:02, khoảng 24 phút.** Khôi phục tay bằng cách
+chuyển `app.previous` về `app` rồi khởi động lại dịch vụ.
+
+**2. Wrapper ghi log của tôi làm hỏng deploy (lỗi của tôi, không phải sản
+phẩm).** Tôi chạy installer qua `*>&1 | Tee-Object` để bắt output. Với
+`$ErrorActionPreference = 'Stop'`, PowerShell biến **mọi dòng stderr của lệnh
+native** thành lỗi kết thúc. Hai bước chết vì lý do này chứ không phải vì
+chúng hỏng: bước WhisperX sidecar, rồi bước `alembic upgrade head` — bằng
+chứng là `deploy.err.log` chỉ chứa đúng hai dòng
+`INFO [alembic.runtime.migration]`. Lần abort ở alembic bỏ qua luôn khâu đăng
+ký và khởi động dịch vụ. **Ngưng lần 2: khoảng 13 phút.** Sửa bằng cách cho
+tiến trình con ghi thẳng ra file ở mức OS (`Start-Process
+-RedirectStandardOutput/-RedirectStandardError`), không đụng tới stream của
+PowerShell. Lần chạy sau đó qua sạch, alembic báo *"Luoc do CSDL da o ban moi
+nhat"* — xác nhận không hề có migration nào chờ.
+
+### Đã làm
+
+- `setup/2-cai-dat.ps1`: thêm `/R:2 /W:2`; thêm `node_modules
+  .playwright-cli .playwright-mcp .claude test-results tmp` vào `/XD`. Copy
+  giảm từ **9.733 file / 464 MB (còn chưa xong)** xuống **1.129 file / 97 MB
+  trong vài giây**.
+- Bọc bước WhisperX trong `try/catch`: sidecar tuỳ chọn chỉ phục vụ
+  autosubvideo, không được phép làm sập cả bản cài khi dịch vụ đã tắt. Vẫn
+  `throw` nếu `app.env` chưa có `LTT_WHISPERX_PYTHON` (máy cài mới), để
+  auto-sub không hỏng âm thầm.
+- Hai test chốt mới trong `test_61_setup_scripts.py`, đã **kiểm chứng fail khi
+  gỡ fix**. Trước đó không có test nào bảo vệ khâu copy.
+
+### Nghiệm thu sau deploy
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Loopback `127.0.0.1:8100/health/ready` | 200 `ready / production / database ok` |
+| **Public `https://app.lttstudios.com/health/ready`** | 200 `ready / production / database ok` |
+| Dịch vụ Web / Worker / Codex | Running |
+| `alembic upgrade head` | đã ở bản mới nhất |
+| Asset mới `main-DbE16SG4.js`, `main-D_pcwDG7.css` | 200 công khai |
+| Asset cũ `main-D3g0feTj.js` | **404** — bản cũ đã bị thay hẳn |
+| Trang chủ công khai trên Chrome | render đúng, console **0 error / 0 warning**, không request nào hỏng |
+
+Asset đặt tên theo hash nội dung và HTML để `Cache-Control: no-store`, nên
+Cloudflare không thể phục vụ bản cũ — không cần chờ hết TTL.
+
+### Quyết định mới
+
+Không có quyết định nền tảng. Nhưng ghi rõ: **H21.9 đã chạy trước khi H21.8
+PASS**, trái điều kiện ghi trong kế hoạch, theo chỉ đạo trực tiếp của chủ sản
+phẩm. Hệ quả: controlled beta nếu chạy sẽ đo trên production thật.
+
+### Cách lùi lại
+
+`C:\LTTPlatform\app.previous` là bản trước deploy. Đổi tên `app` → `app.bad`,
+`app.previous` → `app`, rồi khởi động lại ba dịch vụ (đúng cách đã làm lúc
+19:02 hôm nay).
+
+### Còn tồn đọng
+
+- `C:\LTTPlatform\app.partial-808081872` — 9.733 file / 464 MB rác của lần
+  copy treo. Cần Administrator để xoá.
+- `frontend/agent-canvas/.pytest_cache` có ACL hỏng: `Get-Acl` cũng không đọc
+  được. Chưa rõ có phải thủ phạm của lần treo hay không, nhưng nên xoá.
+- Gate Node vẫn là gate giả (xem mục H21.7b).
+- H21.8 controlled beta vẫn chưa có E4.
+
+---
+
 ## 2026-08-05 — H21.7b customer-first hardening theo Q68
 
 - **Mục tiêu:** hoàn tất phần triển khai Q68 đang dở trong cây làm việc, chạy đủ

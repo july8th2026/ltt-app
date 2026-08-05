@@ -1573,7 +1573,12 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
 - [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E — protocol và CSV
   đo đã sẵn sàng tại `07_CONTROLLED_BETA_PROTOCOL.md` / `08_CONTROLLED_BETA_RESULTS.csv`;
   còn thiếu E4 từ đúng 5 người dùng thật nên chưa được đánh dấu PASS.
-- [ ] H21.9 Deploy canary/production chỉ sau H21.8 PASS.
+- [x] H21.9 Deploy production — 2026-08-05: chủ sản phẩm yêu cầu deploy **trước**
+  khi H21.8 PASS, khác điều kiện "chỉ sau H21.8 PASS" ghi ban đầu; ghi lại để
+  không hiểu nhầm là beta đã đạt. Bundle `main-DbE16SG4.js` đã lên, asset cũ trả
+  404, public `/health/ready` 200, ba dịch vụ Running, trang chủ console 0 error.
+  **Deploy làm production ngưng 2 lần (~24 phút và ~13 phút)** — nguyên nhân và
+  cách sửa ghi đầy đủ trong nhật ký; `setup/2-cai-dat.ps1` đã được vá kèm test.
 
 Thứ tự bắt buộc H21.1→H21.9; không làm Assistant/model breadth trước core block
 và connection grammar. Không deploy UX Reset từ hồ sơ audit này.
