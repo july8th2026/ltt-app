@@ -849,3 +849,173 @@ def resource_usage(request: Request, resource_id: str,
         raise _resource_error(exc) from exc
     return {"items": [{"project_id": r.project_id, "scene_ref": r.scene_ref}
                       for r in rows], "total": len(rows)}
+
+
+# ── Ảnh của tài nguyên (R1.3) ──────────────────────────────────────────────
+#
+# Hai đường, cùng một kết quả:
+#   1. Có R2 và CORS đã bật  -> trả vé presigned, trình duyệt PUT THẲNG lên R2.
+#      Ảnh không đi qua tunnel nên không đụng trần 100 MB của Cloudflare.
+#   2. Chưa có               -> nhận multipart qua route, giới hạn nhỏ hơn.
+#
+# Dù đi đường nào, `confirm` mới là chỗ ghi vào CSDL, và nó luôn kiểm quyền sở
+# hữu tài nguyên trước. Không có đường nào ghi ảnh vào tài nguyên người khác.
+
+_RESOURCE_IMAGE_TYPES = {"image/png": ".png", "image/jpeg": ".jpg",
+                         "image/webp": ".webp"}
+_RESOURCE_IMAGE_CAP = 20 * 1024 * 1024
+
+
+def _browser_direct_upload_enabled() -> bool:
+    """Presigned PUT chỉ chạy sau khi luật CORS của bucket đã được kiểm.
+
+    Mặc định tắt để không tạo ra một lỗi CORS chắc chắn rồi mới rơi về
+    multipart — người dùng thấy lỗi đỏ trước khi thấy nó tự chữa.
+    """
+    return os.environ.get("LTT_R2_BROWSER_UPLOAD_ENABLED", "").strip() == "1"
+
+
+def _image_key(user_id: str, resource_id: str, content_type: str):
+    ct = (content_type or "").split(";")[0].strip().lower()
+    ext = _RESOURCE_IMAGE_TYPES.get(ct)
+    if ext is None:
+        raise HTTPException(status_code=400,
+                            detail="Chỉ nhận ảnh PNG, JPEG hoặc WebP.")
+    return f"prompt_ai_ommi/{user_id}/resources/{resource_id}/{uuid.uuid4().hex}{ext}", ct
+
+
+@router.post("/api/resources/{resource_id}/images/ticket")
+async def resource_image_ticket(request: Request, resource_id: str,
+                                _identity: str = Depends(require_login),
+                                db: Session = Depends(get_db)):
+    """Xin chỗ để tải ảnh lên. Kiểm quyền TRƯỚC khi cấp vé."""
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.storage import get_storage
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        rsvc.get_owned(db, resource_id, user.id)
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+
+    key, ct = _image_key(user.id, resource_id, body.get("content_type", ""))
+    target = None
+    if _browser_direct_upload_enabled():
+        try:
+            target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
+        except Exception:  # noqa: BLE001
+            target = None
+    if target is None:
+        return {"mode": "local", "key": key, "max_bytes": _RESOURCE_IMAGE_CAP}
+    return {"mode": "direct", "key": target.key, "url": target.url,
+            "method": target.method, "headers": target.headers or {}}
+
+
+@router.post("/api/resources/{resource_id}/images", status_code=201)
+async def upload_resource_image(request: Request, resource_id: str,
+                                file: UploadFile = File(...),
+                                csrf_token: str = Form(""),
+                                label: str = Form(""),
+                                _identity: str = Depends(require_login),
+                                db: Session = Depends(get_db)):
+    """Đường dự phòng: nhận multipart khi chưa bật upload thẳng lên R2."""
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.storage import get_storage
+    _csrf(request, {"csrf_token": csrf_token}); user = _user(request)
+    try:
+        rsvc.get_owned(db, resource_id, user.id)
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+
+    key, ct = _image_key(user.id, resource_id, file.content_type or "")
+    data = await file.read(_RESOURCE_IMAGE_CAP + 1)
+    if len(data) > _RESOURCE_IMAGE_CAP:
+        raise HTTPException(status_code=413, detail="Ảnh vượt 20 MB.")
+    if not data:
+        raise HTTPException(status_code=400, detail="File rỗng.")
+    get_storage().put(key, io.BytesIO(data), content_type=ct)
+    try:
+        row = rsvc.add_variant(db, resource_id=resource_id, owner_id=user.id,
+                               storage_key=key, label=label,
+                               bytes_size=len(data))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _variant_json(row)
+
+
+@router.post("/api/resources/{resource_id}/images/confirm", status_code=201)
+async def confirm_resource_image(request: Request, resource_id: str,
+                                 _identity: str = Depends(require_login),
+                                 db: Session = Depends(get_db)):
+    """Ghi nhận ảnh đã PUT thẳng lên storage.
+
+    Kiểm ba việc trước khi ghi: tài nguyên là của người gọi, khoá nằm ĐÚNG
+    trong thư mục của người gọi, và file có thật trên storage. Thiếu kiểm thứ
+    hai thì client gửi khoá của người khác là gắn được ảnh người ta vào tài
+    nguyên của mình.
+    """
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.storage import get_storage
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        rsvc.get_owned(db, resource_id, user.id)
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+
+    key = str(body.get("key") or "").strip()
+    prefix = f"prompt_ai_ommi/{user.id}/resources/{resource_id}/"
+    if not key.startswith(prefix):
+        raise HTTPException(status_code=400, detail="Khoá lưu trữ không hợp lệ.")
+    storage = get_storage()
+    if not storage.exists(key):
+        raise HTTPException(status_code=400, detail="Chưa thấy file trên kho lưu trữ.")
+    try:
+        row = rsvc.add_variant(db, resource_id=resource_id, owner_id=user.id,
+                               storage_key=key, label=str(body.get("label") or ""),
+                               width=_as_int(body.get("width"), 0, 0, 20000),
+                               height=_as_int(body.get("height"), 0, 0, 20000),
+                               bytes_size=storage.size(key))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _variant_json(row)
+
+
+@router.delete("/api/resources/{resource_id}/images/{variant_id}")
+async def delete_resource_image(request: Request, resource_id: str,
+                                variant_id: str,
+                                _identity: str = Depends(require_login),
+                                db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    _csrf(request); user = _user(request)
+    try:
+        rsvc.remove_variant(db, variant_id=variant_id, owner_id=user.id)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return {"ok": True}
+
+
+@router.get("/api/resources/{resource_id}/images/{variant_id}/url")
+def resource_image_url(request: Request, resource_id: str, variant_id: str,
+                       _identity: str = Depends(require_login),
+                       db: Session = Depends(get_db)):
+    """URL xem ảnh, có hạn. Không bao giờ lưu URL đã ký vào CSDL vì nó hết hạn."""
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.storage import get_storage
+    user = _user(request)
+    try:
+        found = [v for v in rsvc.variants(db, resource_id, user.id)
+                 if v.id == variant_id]
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+    if not found:
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+    storage = get_storage()
+    direct = storage.url_for(found[0].storage_key)
+    if direct:
+        return {"url": direct}
+    return {"token": storage.download_token(found[0].storage_key)}
