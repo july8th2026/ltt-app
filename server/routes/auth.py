@@ -5,7 +5,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
-from server.auth.password_hashing import verify_password
+from platform_core.password_hashing import verify_password
 from server.auth.rate_limit import RateLimiter
 from server.auth.session import (client_ip, current_identity_optional, log_in,
                                  log_in_db, log_out, safe_next)

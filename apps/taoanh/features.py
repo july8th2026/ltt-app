@@ -1,7 +1,7 @@
 """Validation và prompt contract cho Image Studio generate/edit."""
 from __future__ import annotations
 
-from apps.thumbnail.features import validate_reference
+from platform_core.image_input import validate_reference
 
 EDIT_MODES = ("generate", "edit", "semantic_inpaint", "outpaint", "style_transfer")
 

@@ -264,8 +264,8 @@ def admin_telemetry(request: Request, user: str = Depends(require_login)):
     from apps.upscalevideo.telemetry import gpu_snapshot, queue_snapshot, storage_snapshot
     from platform_core.db import get_session
     from platform_core.storage import get_storage
-    from server.admin import _is_admin
-    if not _is_admin(request):
+    from server.deps import is_operator
+    if not is_operator(request):
         raise HTTPException(status_code=403, detail="Chỉ quản trị viên được xem telemetry.")
     gen = get_session(); db = next(gen)
     try:

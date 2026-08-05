@@ -69,7 +69,7 @@ class User(Base):
       thường tuỳ hứng; chuẩn hoá về thường lúc ghi để `Bob@x.com` và
       `bob@x.com` không thành hai tài khoản.
     - **`password_hash` không bao giờ chứa mật khẩu thô**, chỉ chứa kết quả
-      PBKDF2 của `server/auth/password_hashing.py` (tái dùng đúng hàm đang chạy
+      PBKDF2 của `platform_core/password_hashing.py` (tái dùng đúng hàm đang chạy
       production, không phát minh cách băm thứ hai).
     - **`is_verified` tách khỏi `is_active`.** Chưa xác thực email (Q9) thì
       chưa được cấp credit dùng thử và chưa tạo được job — nhưng vẫn đăng nhập

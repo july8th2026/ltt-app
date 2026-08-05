@@ -36,34 +36,16 @@ _log = logging.getLogger(__name__)
 
 
 def _is_admin(request: Request) -> bool:
-    """True nếu phiên hiện tại là admin (admin-env HOẶC user CSDL role=admin)."""
-    try:
-        session = request.session
-    except Exception:
-        return False
+    """True nếu phiên hiện tại là admin (admin-env HOẶC user CSDL role=admin).
 
-    ss = getattr(request.app.state, "server_settings", None)
-    admin_username = getattr(ss, "admin_username", "admin") if ss else "admin"
-    if session.get("user") and session.get("user") == admin_username:
-        return True
+    Uỷ quyền cho `server.deps.is_operator` thay vì tự kiểm lại. Trước
+    2026-08-06 đây là bản sao thứ hai của cùng một luật; hai bản của một luật
+    quyền là hai chỗ có thể trôi dạt, và lúc đó "admin" nghĩa là hai thứ khác
+    nhau tuỳ đường vào.
+    """
+    from server.deps import is_operator
 
-    sid = session.get("sid")
-    if not sid:
-        return False
-    try:
-        from platform_core.users import lay_user_tu_phien
-        gen = get_session()
-        db = next(gen)
-        try:
-            u = lay_user_tu_phien(db, sid)
-            return bool(u and u.role == "admin")
-        finally:
-            try:
-                next(gen)
-            except StopIteration:
-                pass
-    except Exception:
-        return False
+    return is_operator(request)
 
 
 class AdminAuth(AuthenticationBackend):

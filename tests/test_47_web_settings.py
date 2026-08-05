@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 
 from core.config_defaults import DEFAULTS
 from server.app import create_app
-from server.auth.password_hashing import hash_password
+from platform_core.password_hashing import hash_password
 from server.services.settings_schema import (
     GROUPS,
     all_field_keys,

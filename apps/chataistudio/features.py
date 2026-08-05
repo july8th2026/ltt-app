@@ -19,7 +19,7 @@ def parse_attachment(data: bytes, mime: str, filename: str) -> dict:
     mime = (mime or "").lower().split(";", 1)[0]
     name = Path(filename or "tep").name[:160]
     if mime in IMAGE_MIMES:
-        from apps.thumbnail.features import validate_reference
+        from platform_core.image_input import validate_reference
         validate_reference(data, mime)
         from PIL import Image
         source = Image.open(io.BytesIO(data))

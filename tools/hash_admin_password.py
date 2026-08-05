@@ -14,7 +14,7 @@ from __future__ import annotations
 import getpass
 import sys
 
-from server.auth.password_hashing import hash_password
+from platform_core.password_hashing import hash_password
 
 
 def main() -> int:

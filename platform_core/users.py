@@ -5,7 +5,7 @@ Tách khỏi route: route lo HTTP (form, cookie, redirect), file này lo quy t�
 (băm mật khẩu, chuẩn hoá email, tạo/thu hồi phiên). Nhờ vậy test được logic mà
 không cần dựng cả một request giả.
 
-Băm mật khẩu **tái dùng** `server/auth/password_hashing.py` — đúng hàm PBKDF2
+Băm mật khẩu **tái dùng** `platform_core/password_hashing.py` — đúng hàm PBKDF2
 đang chạy production. Không phát minh cách băm thứ hai: hai cách băm trong một
 hệ thống là hai chỗ có thể sai, và tài khoản tạo bằng cách này phải đăng nhập
 được bằng đường kia trong suốt giai đoạn chạy song song.
@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from platform_core.models import Session as SessionRow
 from platform_core.models import User
-from server.auth.password_hashing import hash_password, verify_password
+from platform_core.password_hashing import hash_password, verify_password
 
 # Phiên sống 8 giờ không hoạt động — khớp với SESSION_MAX_AGE_SECONDS cũ của
 # cookie Starlette, nên hành vi hết hạn không đổi dưới mắt người dùng.

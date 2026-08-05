@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from server.app import create_app
-from server.auth.password_hashing import hash_password
+from platform_core.password_hashing import hash_password
 from server.services.accounts import list_facebook_accounts, list_tiktok_accounts
 from server.services.worker_control import (
     NoWorkersConfiguredError,
