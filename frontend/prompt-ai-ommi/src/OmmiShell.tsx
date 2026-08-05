@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import './ommi.css'
 import { setCsrfToken } from './ommiApi'
+import { LibraryScreen } from './LibraryScreen'
 import { ResourceLibrary } from './ResourceLibrary'
 
 type Screen = { key: string; label: string; icon: string; built: boolean }
@@ -36,9 +37,9 @@ const GROUPS: Group[] = [
   {
     title: 'THƯ VIỆN',
     items: [
-      { key: 'prompts', label: 'Prompt Library', icon: '❐', built: false },
-      { key: 'styles', label: 'Phong cách', icon: '◐', built: false },
-      { key: 'meta', label: 'Meta Director', icon: '✦', built: false },
+      { key: 'snippet', label: 'Prompt Library', icon: '❐', built: true },
+      { key: 'style', label: 'Phong cách', icon: '◐', built: true },
+      { key: 'meta', label: 'Meta Director', icon: '✦', built: true },
     ],
   },
   {
@@ -86,6 +87,9 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
 
       <main className="ommi-main">
         {screen === 'resources' ? <ResourceLibrary /> : null}
+        {screen === 'snippet' || screen === 'style' || screen === 'meta' ? (
+          <LibraryScreen key={screen} kind={screen} />
+        ) : null}
       </main>
     </div>
   )

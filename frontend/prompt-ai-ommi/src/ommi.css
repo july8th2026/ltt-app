@@ -334,6 +334,14 @@
 
 /* ── panel chi tiết ──────────────────────────────────────────────────────── */
 
+/* Panel phủ lên mép phải, mà bộ lọc lại bị ô tìm kiếm `flex:1` đẩy sang phải —
+   nên khi panel mở, các chip nằm DƯỚI nó và không bấm được. Trình duyệt phát
+   hiện: Playwright treo ở "waiting 500ms" vì click bị chặn. Chừa chỗ cho panel
+   thay vì để nó che mất điều khiển. */
+.ommi:has(.ommi-detail) .ommi-main {
+  padding-right: min(420px, 100vw);
+}
+
 .ommi-detail {
   /* Neo vào vỏ app, KHÔNG neo vào viewport: `fixed` đẩy panel lên sát mép trên
      màn hình và header nền tảng che mất tiêu đề lẫn nút đóng của nó. */
@@ -449,6 +457,10 @@
   .ommi-detail {
     width: 100vw;
   }
+  /* Mobile: panel chiếm hết chiều ngang nên chừa chỗ là vô nghĩa. */
+  .ommi:has(.ommi-detail) .ommi-main {
+    padding-right: 0;
+  }
 }
 
 /* Nền sáng chỉ khi hệ điều hành yêu cầu; mặc định sản phẩm là nền tối. */
@@ -466,4 +478,29 @@
     --text-muted: #6b747d;
     --brand-soft: #fdeceb;
   }
+}
+
+/* ── lịch sử phiên bản ───────────────────────────────────────────────────── */
+
+.ommi-history {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ommi-history li {
+  display: flex;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-overlay);
+  font-size: 11px;
+}
+.ommi-history b {
+  color: var(--brand-hover);
+}
+.ommi-history span {
+  color: var(--text-muted);
 }

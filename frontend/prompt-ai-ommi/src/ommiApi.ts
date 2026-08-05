@@ -215,3 +215,84 @@ export type JobStatus = {
 export function jobStatus(jobId: string): Promise<JobStatus> {
   return request<JobStatus>(`/jobs/${jobId}`)
 }
+
+// ── Thư viện: meta prompt / đoạn prompt / phong cách ────────────────────────
+
+export type LibraryKind = 'meta' | 'snippet' | 'style'
+
+export type LibraryItem = {
+  id: string
+  kind: LibraryKind
+  name: string
+  body: string
+  is_catalog: boolean
+  cloned_from_id: string
+  archived: boolean
+  updated_at: string
+  purpose?: string
+  category?: string
+  negative?: string
+  version?: number
+  versions?: Array<{ version: number; note: string; created_at: string }>
+}
+
+export type LibraryPage = {
+  items: LibraryItem[]
+  total: number
+  catalog: boolean
+  counts: Record<string, number>
+}
+
+export function listLibrary(
+  kind: LibraryKind,
+  params: { q?: string; catalog?: boolean } = {},
+): Promise<LibraryPage> {
+  const query = new URLSearchParams()
+  if (params.q) query.set('q', params.q)
+  if (params.catalog) query.set('catalog', 'true')
+  return request<LibraryPage>(`/library/${kind}?${query.toString()}`)
+}
+
+export function getLibraryItem(kind: LibraryKind, id: string): Promise<LibraryItem> {
+  return request<LibraryItem>(`/library/${kind}/${id}`)
+}
+
+export function createLibraryItem(
+  kind: LibraryKind,
+  body: { name: string; body?: string },
+): Promise<LibraryItem> {
+  return request<LibraryItem>(`/library/${kind}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function updateLibraryItem(
+  kind: LibraryKind,
+  id: string,
+  body: { name?: string; body?: string; note?: string },
+): Promise<LibraryItem> {
+  return request<LibraryItem>(`/library/${kind}/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
+export function archiveLibraryItem(
+  kind: LibraryKind,
+  id: string,
+  archived: boolean,
+): Promise<LibraryItem> {
+  return request<LibraryItem>(`/library/${kind}/${id}/archive`, {
+    method: 'POST',
+    body: JSON.stringify({ archived }),
+  })
+}
+
+/** "Dùng mẫu này" — tạo bản sao riêng của người dùng từ một mẫu catalog. */
+export function cloneLibraryItem(kind: LibraryKind, id: string): Promise<LibraryItem> {
+  return request<LibraryItem>(`/library/${kind}/${id}/clone`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}

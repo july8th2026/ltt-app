@@ -120,3 +120,46 @@ describe('Kho tài nguyên', () => {
     expect(seenUrls.at(-1)).toContain('offset=0')
   })
 })
+
+describe('Thư viện', () => {
+  it('mở được ba màn thư viện và tải đúng loại', async () => {
+    const empty = { items: [], total: 0, catalog: false, counts: {} }
+    routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
+    routes.push([/\/library\/\w+\?/, 'GET', () => reply(empty)])
+    render(<OmmiShell csrfToken="t"/>)
+    await waitFor(() => expect(screen.getByText('Kho còn trống')).toBeTruthy())
+
+    const rail = screen.getByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
+    fireEvent.click(within(rail).getByRole('button', { name: /Meta Director/ }))
+    await waitFor(() => expect(screen.getByText('Chưa có meta prompt nào')).toBeTruthy())
+    expect(seenUrls.some((u) => u.includes('/library/meta'))).toBe(true)
+
+    fireEvent.click(within(rail).getByRole('button', { name: /Phong cách/ }))
+    await waitFor(() => expect(screen.getByText('Chưa có phong cách riêng')).toBeTruthy())
+    expect(seenUrls.some((u) => u.includes('/library/style'))).toBe(true)
+  })
+
+  it('mẫu có sẵn là chỉ đọc và mời clone thay vì cho sửa', async () => {
+    const item = { id: 'm1', kind: 'meta', name: 'Mẫu chung', body: 'noi dung mau',
+      is_catalog: true, cloned_from_id: '', archived: false,
+      updated_at: '2026-08-05T00:00:00+00:00' }
+    routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
+    routes.push([/\/library\/meta\?/, 'GET',
+      () => reply({ items: [item], total: 1, catalog: true, counts: {} })])
+    routes.push([/\/library\/meta\/m1$/, 'GET', () => reply(item)])
+
+    render(<OmmiShell csrfToken="t"/>)
+    const rail = await screen.findByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
+    fireEvent.click(within(rail).getByRole('button', { name: /Meta Director/ }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Mẫu có sẵn' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Mẫu có sẵn' }))
+    await waitFor(() => expect(screen.getByText('Mẫu chung')).toBeTruthy())
+    fireEvent.click(screen.getByText('Mẫu chung'))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Dùng mẫu này' })).toBeTruthy())
+    // Không được hiện ô sửa rồi mới từ chối lưu — người dùng gõ xong mới biết.
+    const box = screen.getByLabelText(/Nội dung chỉ dẫn/) as HTMLTextAreaElement
+    expect(box.readOnly).toBe(true)
+    expect(screen.queryByRole('button', { name: /Lưu trữ/ })).toBeNull()
+  })
+})
