@@ -45,13 +45,15 @@ def web(tmp_path, monkeypatch):
         "password": "Strong-pass-123", "csrf_token": _csrf(login.text), "next": "/agent"})
     assert response.status_code == 303 and response.headers["location"] == "/agent"
 
-    from apps.agent import routes
+    # Va vao module CHUA route, khong phai package: `plan_once` duoc import
+    # theo gia tri nen va o `apps.agent.routes` khong doi duoc cai handler goi.
+    from apps.agent.routes import legacy_runs
     good_plan = {"version": 1, "budget_max_credit": 50, "steps": [{
         "id": "s1", "tool": "text.script", "after": [], "fanout": 1,
         "max_retry": 0, "on_fail": "retry_same", "verify": None,
         "params": {"topic": "A useful test topic"},
     }]}
-    monkeypatch.setattr(routes, "plan_once", lambda *_a, **_k: dict(good_plan))
+    monkeypatch.setattr(legacy_runs, "plan_once", lambda *_a, **_k: dict(good_plan))
     yield client, uid, other_id, db_url
     client.close(); dbmod.reset_engine()
 
@@ -110,8 +112,8 @@ def test_approve_csrf_idempotent_va_api_du_plan(web):
 
 def test_plan_invalid_huu_ich_khong_tao_run(web, monkeypatch):
     client, uid, _other, _url = web
-    from apps.agent import routes
-    monkeypatch.setattr(routes, "plan_once", lambda *_a, **_k: {
+    from apps.agent.routes import legacy_runs
+    monkeypatch.setattr(legacy_runs, "plan_once", lambda *_a, **_k: {
         "version": 1, "budget_max_credit": 50,
         "steps": [{"id": "s1", "tool": "missing.tool", "params": {}}]})
     response = _make_plan(client)
@@ -169,10 +171,13 @@ def test_tick_va_ui_khong_lo_stack_or_secret(web, monkeypatch):
     location = _make_plan(client).headers["location"]
     page = client.get(location)
     client.post(location + "/approve", data={"csrf_token": _csrf(page.text), "version": 1})
-    from apps.agent import routes
+    # Va vao module that (`apps.agent.jobs`) chu khong vao mot module route:
+    # moi module route deu tro toi cung mot doi tuong module nay.
+    from apps.agent import jobs as agent_jobs
+    from platform_core.agent import runs as agent_runs
     called = []
-    monkeypatch.setattr(routes.jobs, "advance", lambda db, **kw: called.append(kw) or
-                        routes.runs.get_owned(db, kw["run_id"], kw["user_id"]))
+    monkeypatch.setattr(agent_jobs, "advance", lambda db, **kw: called.append(kw) or
+                        agent_runs.get_owned(db, kw["run_id"], kw["user_id"]))
     page = client.get(location)
     response = client.post(location + "/tick", data={"csrf_token": _csrf(page.text)})
     assert response.status_code == 200 and called

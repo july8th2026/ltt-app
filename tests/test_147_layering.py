@@ -104,3 +104,34 @@ def test_apps_do_not_import_private_server_helpers():
             if hidden:
                 offenders[str(path.relative_to(ROOT)).replace("\\", "/")] = hidden
     assert offenders == {}, f"app import hàm private của server: {offenders}"
+
+
+def test_moi_module_mien_deu_duoc_import_trong_routes_init():
+    """Tách `routes.py` thành package tạo một cách hỏng mới: thêm module miền
+    mà quên import vào `__init__` thì handler KHÔNG đăng ký, route biến mất
+    lặng lẽ — server vẫn khởi động, chỉ là app thiếu tính năng.
+
+    Không kiểm bằng cách đếm route (số sẽ đổi mỗi lần thêm tính năng), mà kiểm
+    đúng điều dễ quên: mọi file `.py` trong package đều được `__init__` nhắc tới.
+    """
+    packages = [p for p in (ROOT / "apps").glob("*/routes") if p.is_dir()]
+    assert packages, "chưa app nào tách routes thành package — test này thành vô nghĩa"
+    for pkg in packages:
+        init = (pkg / "__init__.py").read_text(encoding="utf-8")
+        app = pkg.parent.name
+        for module in sorted(pkg.glob("*.py")):
+            if module.name == "__init__.py":
+                continue
+            assert re.search(rf"\b{re.escape(module.stem)}\b", init), (
+                f"{app}: {module.name} không được import trong routes/__init__.py — "
+                f"handler trong đó sẽ không đăng ký và route sẽ biến mất lặng lẽ")
+
+
+def test_routes_package_van_xuat_ra_router():
+    """Nền tảng chỉ biết một thứ: biến `router`. Tách file không được đổi điều đó."""
+    import importlib
+    for pkg in [p for p in (ROOT / "apps").glob("*/routes") if p.is_dir()]:
+        app = pkg.parent.name
+        module = importlib.import_module(f"apps.{app}.routes")
+        assert hasattr(module, "router"), f"apps/{app}/routes/ không xuất ra `router`"
+        assert module.router.routes, f"apps/{app}/routes/ có router nhưng rỗng route"

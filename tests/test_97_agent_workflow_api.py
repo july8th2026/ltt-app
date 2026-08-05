@@ -256,7 +256,7 @@ def test_schedule_uses_durable_queue_and_run_snapshot_restores_workflow(api, mon
     assert approved.json()["scheduled_at"] == scheduled.isoformat()
 
     called = []
-    monkeypatch.setattr("apps.agent.routes.jobs.advance",
+    monkeypatch.setattr("apps.agent.jobs.advance",
                         lambda *_args, **_kwargs: called.append(True))
     early = a.post(f"/agent/api/runs/{run['id']}/tick",
                    headers={"X-CSRF-Token": token_a}, json={})
@@ -291,7 +291,7 @@ def test_schedule_uses_durable_queue_and_run_snapshot_restores_workflow(api, mon
 
 def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):
     a, token, *_ = api
-    monkeypatch.setattr("apps.agent.routes.plan_once", lambda *_args, **_kwargs: _plan())
+    monkeypatch.setattr("apps.agent.routes.assistant.plan_once", lambda *_args, **_kwargs: _plan())
     response = a.post("/agent/api/workflows/plan", headers={"X-CSRF-Token": token},
                       json={"goal": "Tạo nội dung kiểm thử bằng tiếng Việt",
                             "budget_max_credit": 50})
@@ -338,7 +338,7 @@ def test_assistant_preview_khong_mutate_va_apply_can_token_da_ky(api, monkeypatc
     a, token, *_ = api
     workflow = _create(a, token).json(); wid = workflow["id"]
     monkeypatch.setenv("LTT_SESSION_SECRET", "assistant-test-secret")
-    import apps.agent.routes as routes
+    from apps.agent.routes import assistant as routes
     proposal = _plan(); proposal["goal"] = "Workflow đã cải tiến"
     monkeypatch.setattr(routes, "plan_once", lambda *_args, **_kwargs: proposal)
     preview = a.post(f"/agent/api/workflows/{wid}/assistant/preview", headers={

@@ -106,7 +106,7 @@ def test_canvas_to_immutable_run_all_seven_tools_resume_and_settle(db_user):
     settle = next(item for item in reversed(run.decision_log) if item["event"] == "settle")
     assert settle["refunded"] == run.estimated - run.actual
     assert snapshot == run.plan  # immutable even if the workflow draft changes later
-    from apps.agent.routes import _run_json
+    from apps.agent.routes._shared import _run_json
     artifacts = _run_json(run)["artifacts"]
     assert {item["step_id"] for item in artifacts} == {
         "image", "thumb", "video", "subtitle", "upscale", "clips"}
