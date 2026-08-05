@@ -85,11 +85,13 @@ bảng mã ANSI; một dấu tiếng Việt làm hỏng cả câu lệnh và bá
 **3. Đừng viết Python inline qua PowerShell.** PowerShell nuốt dấu ngoặc kép
 khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 
-**4. Chạy test trước khi báo xong.**
+**4. Chạy test trước khi báo xong.** Một lệnh, chạy hết:
 ```powershell
-python -m pytest -q                    # phải xanh hết
-python tools\scan_source_secrets.py    # phải 0 finding
+python tools\gate.py            # pytest + 3 bộ test frontend + 2 scanner
+python tools\gate.py --quick    # bỏ full pytest, dùng cho vòng lặp ngắn
 ```
+Đừng chỉ chạy `python -m pytest -q` rồi báo xong: nó **không** chạy 77 test
+frontend ở `frontend/*`, nên "full regression xanh" sẽ là một câu nói sai.
 
 **5. Kiểm tra thật bằng trình duyệt sau mỗi thay đổi giao diện.** Test xanh
 không chứng minh trang hiển thị đúng. Việc này đã hai lần bắt được lỗi mà test

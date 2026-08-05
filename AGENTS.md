@@ -83,11 +83,15 @@ theo hướng dẫn trong đó**.
 - Làm **thay đổi nhỏ nhất còn trọn nghĩa** cho hạng mục đang mở.
 - Mỗi thay đổi hành vi phải có test đi kèm.
 - Không xoá test đang xanh, trừ khi có quyết định sản phẩm được ghi lại.
-- Trước khi báo xong, bắt buộc chạy:
+- Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**:
   ```powershell
-  python -m pytest -q                    # phải xanh hết
-  python tools\scan_source_secrets.py    # phải 0 finding
+  python tools\gate.py            # pytest + test 3 frontend + 2 scanner
+  python tools\gate.py --quick    # bỏ full pytest, cho vòng lặp ngắn
   ```
+  `python -m pytest -q` KHÔNG chạy test frontend. Chạy mỗi nó rồi báo "full
+  regression xanh" là bỏ sót 77 test vitest — `tools/gate.py` sinh ra để không
+  ai phải nhớ điều đó. Thêm frontend mới thì khai vào `FRONTENDS`;
+  `test_145` sẽ đỏ nếu quên.
 - Ghi **đúng lệnh đã chạy và kết quả thật** vào nhật ký. Phân biệt rõ
   `đã chạy` / `chưa chạy` / `pass` / `fail`.
 - **Không bao giờ tuyên bố hoàn thành dựa trên kế hoạch hay số test thu thập
