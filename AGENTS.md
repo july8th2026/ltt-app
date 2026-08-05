@@ -82,6 +82,9 @@ theo hướng dẫn trong đó**.
 
 - Làm **thay đổi nhỏ nhất còn trọn nghĩa** cho hạng mục đang mở.
 - Mỗi thay đổi hành vi phải có test đi kèm.
+- Viết code mới thì đặt đúng chỗ ngay từ đầu — xem **mục 8 (Bố cục mã nguồn)**.
+  Đó là nơi ghi logic nghiệp vụ nằm ở đâu, ngưỡng phình của `routes.py`, và
+  những việc dùng chung phải gọi `platform_core` chứ không chép lại.
 - Không xoá test đang xanh, trừ khi có quyết định sản phẩm được ghi lại.
 - Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**:
   ```powershell
@@ -185,3 +188,78 @@ trả lời đang hiệu lực**. Câu trả lời cũ được phép tồn tạ
 Nói thẳng là không chắc, kèm cách kiểm chứng. Không đoán rồi trình bày như sự
 thật. Nếu phát hiện người dùng hiểu sai điều gì, hoặc cách làm đang có vấn đề,
 **nói trước khi làm** chứ đừng lặng lẽ làm theo.
+
+---
+
+## 8. Bố cục mã nguồn — nơi từng thứ phải nằm
+
+Chốt 2026-08-06 sau khi rà soát hệ điều hành. **Lý do có mục này:** hợp đồng app
+quy định `manifest.py` / `routes.py` / `jobs.py` nhưng chưa từng nói **logic
+nghiệp vụ nằm ở đâu**. Không có chỗ mặc định thì route thành chỗ để mọi thứ rơi
+vào — kết quả đo được: hai file route vượt 1.300 dòng, một file 1.799 dòng
+(lớn nhất repo). Debug một lỗi nhỏ phải cuộn qua sáu miền không liên quan.
+
+### 8.1 Trong một app
+
+```
+apps/<slug>/
+  manifest.py   bản khai. Nền tảng CHỈ đọc file này.
+  routes.py     CHỈ lo HTTP: đọc request, kiểm quyền/CSRF, gọi service, dựng
+                phản hồi. KHÔNG chứa quy tắc nghiệp vụ.
+  jobs.py       handler chạy trong worker.
+  services/     quy tắc nghiệp vụ khi app có NHIỀU miền (mỗi miền một file).
+  features.py   quy tắc nghiệp vụ khi app chỉ có MỘT miền.
+  cost.py       quy tắc tính giá, nếu tách riêng được.
+  tables.py     bảng CSDL riêng của app (kèm `table_prefix` trong manifest).
+```
+
+`tables.py` chứ không phải `models.py`: `apps/taovideo/models.py` đã tồn tại và
+là **sổ đăng ký model AI**, không phải bảng CSDL. Trùng tên gây hiểu nhầm ngay.
+
+### 8.2 Ngưỡng máy kiểm — `tools/lint_app_contract.py`
+
+| Ngưỡng | Giá trị | Vượt thì |
+|---|---|---|
+| `routes.py` số dòng | 900 | WARN — tách theo miền ra `services/` |
+| `routes.py` số handler | 30 | WARN — như trên |
+| ≥12 handler mà không có tầng nghiệp vụ | — | WARN — logic đang nằm sai chỗ |
+
+Ngưỡng chọn theo phân bố thật: file route lớn nhất **còn đọc được** trong repo là
+~870 dòng / 23 handler. Không phải con số cảm tính.
+
+Tách `routes.py` thành package thì giữ nguyên bề mặt: `routes/__init__.py` chỉ
+export `router` và import các module miền để handler kịp đăng ký.
+
+### 8.3 Việc dùng chung thì ở `platform_core`, không ở app
+
+App gọi vào ruột app khác = gỡ hay đổi tên app đó làm gãy app không liên quan.
+Đã dính hai lần, nay có test chặn.
+
+| Việc | Dùng | Đừng tự viết lại |
+|---|---|---|
+| Kiểm ảnh người dùng tải lên | `platform_core.image_input.validate_reference` | |
+| Đường dẫn bundle React đã build | `platform_core.frontend_bundle.bundle_assets` | |
+
+**Không neo đường dẫn bằng `Path(__file__).parents[n]`.** Đếm cấp thư mục sai
+ngay khi file đổi chỗ, và hỏng **lặng lẽ**: tách `routes.py` thành package làm
+file sâu thêm một cấp, `parents[2]` trỏ nhầm, manifest không đọc được, trang
+**vẫn trả 200** với vỏ trống. Neo bằng tên thư mục (`platform_core/frontend_bundle.py`
+làm mẫu). `test_148` chặn cả lớp lỗi này.
+
+### 8.4 `platform_core` không được biết tên app nào
+
+Kể cả trong chú thích và docstring. Đã vi phạm hai lần, cả hai đều do
+`test_no_app_slug_is_hardcoded_in_the_platform` bắt.
+
+### 8.5 Trước khi báo xong
+
+```powershell
+python tools\gate.py
+```
+
+Gate gồm: quét bí mật → lint hợp đồng app → **quét tên chưa định nghĩa** → test
+3 frontend → pytest. Bước "tên chưa định nghĩa" thêm 2026-08-06 sau khi phát
+hiện `POST /upscalevideo/queue` — đường nộp việc **chính** của app đó — gọi
+`get_session()` mà không import: mọi lần nộp đều 500, lỗi nằm trong repo từ
+2026-08-02, và không test nào chạm route đó. Test không phủ hết mọi nhánh
+route; một cái tên chưa định nghĩa thì đọc tĩnh là thấy.

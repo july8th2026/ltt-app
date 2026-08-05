@@ -13,6 +13,21 @@ Thêm app mới cần đúng 3 việc:
     2. tạo `apps/<slug>/routes.py` có biến `router` (APIRouter)
     3. xong. Không sửa file nào của nền tảng.
 
+Bố cục bên trong một app (chuẩn từ 2026-08-06):
+
+    manifest.py   bản khai — nền tảng chỉ đọc file này
+    routes.py     CHỈ lo HTTP: đọc request, kiểm quyền/CSRF, gọi service, dựng
+                  phản hồi. Không chứa quy tắc nghiệp vụ.
+    jobs.py       handler chạy trong worker
+    services/     quy tắc nghiệp vụ khi app có nhiều miền
+    features.py   quy tắc nghiệp vụ khi app chỉ có một miền
+    tables.py     bảng CSDL riêng (kèm `table_prefix` trong manifest)
+
+Vì sao ghi rõ: trước đây hợp đồng không nói logic nghiệp vụ nằm ở đâu, nên
+route thành chỗ mọi thứ rơi vào — hai file route đã vượt 1.300 dòng. Không có
+chỗ mặc định thì mỗi người chọn một kiểu, và đó là điều đã xảy ra.
+`tools/lint_app_contract.py` cảnh báo khi `routes.py` vượt ngưỡng.
+
 Xem `apps/demo/` làm mẫu tối thiểu và `docs/03_THEM_APP_MOI.md` để làm theo.
 """
 from __future__ import annotations

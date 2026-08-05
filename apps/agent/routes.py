@@ -32,6 +32,7 @@ from platform_core.models import (APP_PROJECT_ACTIVE, AgentWorkflow,
 from platform_core.agent.planner import PlannerError, plan_once
 from platform_core.agent.validator import validate_plan
 from platform_core.models import AGENT_AWAITING_APPROVAL, AGENT_RUNNING, AgentRun, Job
+from platform_core.frontend_bundle import bundle_assets
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
@@ -57,8 +58,6 @@ def _assistant_serializer() -> URLSafeTimedSerializer:
     if not secret:
         raise RuntimeError("Assistant proposal signer chưa được cấu hình.")
     return URLSafeTimedSerializer(secret)
-_CANVAS_MANIFEST = (Path(__file__).resolve().parents[2] / "server" / "static" /
-                    "agent-canvas" / ".vite" / "manifest.json")
 
 
 def _run_rollout_mode() -> str:
@@ -314,13 +313,9 @@ def page(request: Request, _identity: str = Depends(require_login)):
 
 @router.get("/canvas", response_class=HTMLResponse)
 def canvas_page(request: Request, _identity: str = Depends(require_login)):
-    try:
-        manifest = json.loads(_CANVAS_MANIFEST.read_text(encoding="utf-8"))
-        entry = manifest["src/main.tsx"]
-        canvas_js = [f"/static/agent-canvas/{entry['file']}"]
-        canvas_css = [f"/static/agent-canvas/{item}" for item in entry.get("css", [])]
-    except (OSError, KeyError, ValueError):
-        raise HTTPException(status_code=503, detail="Canvas bundle chưa được build.") from None
+    canvas_js, canvas_css = bundle_assets("agent-canvas")
+    if not canvas_js:
+        raise HTTPException(status_code=503, detail="Canvas bundle chưa được build.")
     context = _page_context(request)
     context.update({"canvas_js": canvas_js, "canvas_css": canvas_css,
                     "canvas_presentation": _canvas_presentation_mode()})

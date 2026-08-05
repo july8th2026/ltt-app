@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from apps.autosubvideo import cost
 from apps.autosubvideo.manifest import MANIFEST
+from platform_core.frontend_bundle import bundle_assets
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
@@ -42,8 +43,6 @@ _QUALITY = [("draft", "Nháp"), ("standard", "Chuẩn"), ("high", "Cao")]
 _FORMATS = ["mp4", "mkv", "webm"]
 _TRANSCRIPT_MAX = 8 * 1024 * 1024      # 8MB transcript là quá đủ
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024    # fallback Local: dưới trần 100MB CF
-_STUDIO_MANIFEST = (Path(__file__).resolve().parents[2] / "server" / "static" /
-                    "autosub-studio" / ".vite" / "manifest.json")
 
 
 def _studio_enabled() -> bool:
@@ -57,20 +56,9 @@ def _browser_direct_upload_enabled() -> bool:
     return os.environ.get("LTT_R2_BROWSER_UPLOAD_ENABLED", "").strip() == "1"
 
 
-def _studio_assets() -> tuple[list[str], list[str]]:
-    try:
-        manifest = json.loads(_STUDIO_MANIFEST.read_text(encoding="utf-8"))
-        entry = manifest["src/main.tsx"]
-        scripts = [f"/static/autosub-studio/{entry['file']}"]
-        styles = [f"/static/autosub-studio/{item}" for item in entry.get("css", [])]
-        return scripts, styles
-    except (OSError, KeyError, ValueError):
-        return [], []
-
-
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
     enabled = _studio_enabled()
-    studio_js, studio_css = _studio_assets() if enabled else ([], [])
+    studio_js, studio_css = bundle_assets("autosub-studio") if enabled else ([], [])
     # A missing production bundle is not silently replaced with a half-built
     # editor. Roll back to the proven legacy form until the release is complete.
     enabled = enabled and bool(studio_js)

@@ -87,7 +87,7 @@ khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 
 **4. Chạy test trước khi báo xong.** Một lệnh, chạy hết:
 ```powershell
-python tools\gate.py            # pytest + 3 bộ test frontend + 2 scanner
+python tools\gate.py            # pytest + 3 bộ test frontend + 3 scanner
 python tools\gate.py --quick    # bỏ full pytest, dùng cho vòng lặp ngắn
 ```
 Đừng chỉ chạy `python -m pytest -q` rồi báo xong: nó **không** chạy 77 test
@@ -119,6 +119,33 @@ Nếu thấy buộc phải sửa nền tảng thì **dừng lại và nói rõ v
 hiệu hợp đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không đi vòng.
 
 Xem `docs/03_THEM_APP_MOI.md`. Copy `apps/demo/` làm khuôn.
+
+### Đặt file đúng chỗ ngay từ đầu
+
+Đây là phần **hay bị làm sai nhất** khi phiên khác vào xây tiếp. Quy tắc đầy đủ
+ở `AGENTS.md` mục 8; bản rút gọn:
+
+```
+apps/<slug>/
+  manifest.py   bản khai — nền tảng CHỈ đọc file này
+  routes.py     CHỈ lo HTTP (đọc request, quyền/CSRF, gọi service, dựng phản hồi)
+  jobs.py       handler chạy trong worker
+  services/     quy tắc nghiệp vụ khi app nhiều miền
+  features.py   quy tắc nghiệp vụ khi app một miền
+  tables.py     bảng CSDL riêng (kèm `table_prefix` trong manifest)
+```
+
+**`routes.py` không phải chỗ chứa nghiệp vụ.** Trần cứng: 900 dòng / 30 handler,
+`tools/lint_app_contract.py` cảnh báo khi vượt. Hợp đồng trước đây không nói
+logic nghiệp vụ nằm ở đâu, nên route thành chỗ để mọi thứ rơi vào — đã có file
+route 1.799 dòng vì vậy.
+
+**Việc dùng chung thì gọi `platform_core`, đừng chép lại:**
+`image_input.validate_reference` (kiểm ảnh tải lên),
+`frontend_bundle.bundle_assets` (đường dẫn bundle React).
+
+**Đừng neo đường dẫn bằng `Path(__file__).parents[n]`** — đếm cấp thư mục sai
+ngay khi file đổi chỗ, và hỏng lặng lẽ (trang vẫn trả 200, chỉ là vỏ trống).
 
 ## Giới hạn Cloudflare quyết định cách viết app
 

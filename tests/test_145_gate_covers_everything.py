@@ -38,6 +38,9 @@ def test_gate_runs_the_scanners_and_pytest():
     names = {step.name for step in _steps(quick=False)}
     assert "secret scan" in names
     assert "app contract lint" in names
+    # Buoc nay bat loai loi test khong bat duoc: route khong co test ma thieu
+    # import. Da tim thay mot cai that o POST /upscalevideo/queue (2026-08-06).
+    assert "ten chua dinh nghia" in names
     assert "pytest" in names
     for frontend in _frontends_on_disk():
         assert f"frontend {frontend}" in names

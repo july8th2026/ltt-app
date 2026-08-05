@@ -397,6 +397,7 @@ async def queue(request: Request, csrf_token: str = Form(...),
                 video: UploadFile = File(default=None),
                 user: str = Depends(require_login)):
     from platform_core import credit
+    from platform_core.db import get_session
     from platform_core.registry import RegistryError
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
     from apps.upscalevideo.service import submit_upscale_job

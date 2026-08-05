@@ -27,7 +27,7 @@ def test_manifest_and_schema_are_public_versioned_and_defensive():
 
 
 def test_production_rollout_defaults_off(monkeypatch):
-    from apps.prompt_ai_ommi.routes import _run_mode
+    from apps.prompt_ai_ommi.routes._shared import _run_mode
     monkeypatch.delenv("LTT_PROMPT_AI_OMMI_ROLLOUT", raising=False)
     monkeypatch.setenv("LTT_ENV", "production")
     assert _run_mode() == "off"

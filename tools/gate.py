@@ -46,6 +46,9 @@ def _steps(quick: bool) -> list[Step]:
     steps: list[Step] = [
         Step("secret scan", [sys.executable, "tools/scan_source_secrets.py"], ROOT),
         Step("app contract lint", [sys.executable, "tools/lint_app_contract.py"], ROOT),
+        # Re nhung bat duoc thu test khong bat: mot route khong co test ma thieu
+        # import thi chi vo khi nguoi dung bam. Xem tools/check_undefined_names.py.
+        Step("ten chua dinh nghia", [sys.executable, "tools/check_undefined_names.py"], ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

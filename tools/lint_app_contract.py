@@ -1,17 +1,18 @@
 """
-lint_app_contract.py — kiem CO HOC hop dong app (audit tai dung).
+lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
 
 Quet moi apps/<slug>/ va bao cac vi pham hop dong pho bien (theo rubric rà soát):
 - manifest.py co MANIFEST, slug == ten thu muc;
 - khai job_types thi PHAI co jobs.py::handle + credit_cost != None;
 - routes.py co @router.post thi nen dung verify_csrf_token + require_login (CSRF/auth);
-- route serve file ({key:path}) nen guard theo user_id (co-lap A-khong-doc-B).
+- route serve file ({key:path}) nen guard theo user_id (co-lap A-khong-doc-B);
+- routes.py khong duoc phinh thanh noi chua logic nghiep vu (xem NGUONG duoi).
 
 ERROR = vi pham chac chan (chan). WARN = dau hieu can nguoi soi. Chay:
     python tools/lint_app_contract.py            # bao cao
     python tools/lint_app_contract.py --strict    # WARN cung tinh la loi (exit 1)
 
-Khong thay the review cua nguoi/agent — chi bat cac loi co hoc re tien, som.
+Khong thay the review cua nguoi/agent - chi bat cac loi co hoc re tien, som.
 """
 from __future__ import annotations
 
@@ -26,6 +27,23 @@ APPS = ROOT / "apps"
 #   demo: app test hop dong toi thieu.
 #   socialbot: dong bang, khong phat trien.
 SKIP_APPS = {"socialbot"}
+
+# ── Nguong tang nghiep vu (audit control-plane 2026-08-06) ──────────────────
+#
+# Hop dong app quy dinh manifest/routes/jobs nhung KHONG noi logic nghiep vu
+# nam o dau. Ket qua do duoc: 5 app dung features.py, 5 app dung cost.py, 1 app
+# dung services/, con lai nhet thang vao route. Khong co cho mac dinh thi route
+# la cho de moi thu roi vao - hai file route da vuot 1.300 dong vi vay.
+#
+# Chuan tu 2026-08-06: logic nghiep vu nam o `services/` (nhieu miền) hoac mot
+# module rieng nhu `features.py` / `cost.py` (mot miền). Route chi lo HTTP.
+#
+# Nguong chon theo phan bo thuc te chu khong theo cam tinh: file route lon nhat
+# ma van de doc trong repo la ~870 dong / 23 handler (autosubvideo), nen dat
+# tran o 900 dong va 30 handler - vua du de khong bao dong gia, vua chan duoc
+# hai file 1.300-1.800 dong hien tai.
+MAX_ROUTES_LINES = 900
+MAX_ROUTES_HANDLERS = 30
 
 
 class Finding:
@@ -84,6 +102,24 @@ def lint() -> list:
             if "{key:path}" in rtext and not re.search(r"u\.id|user_id|segs\[1\]", rtext):
                 findings.append(Finding(app, "WARN",
                                         "route serve {key:path} khong thay guard user_id (co-lap?)"))
+
+            # Tang nghiep vu: route phinh to = logic dang nam sai cho.
+            lines = len(rtext.splitlines())
+            handlers = len(re.findall(r"^@router\.", rtext, re.M))
+            has_layer = (d / "services").is_dir() or any(
+                (d / f"{name}.py").is_file()
+                for name in ("features", "cost", "service", "domain"))
+            if lines > MAX_ROUTES_LINES or handlers > MAX_ROUTES_HANDLERS:
+                findings.append(Finding(
+                    app, "WARN",
+                    f"routes.py {lines} dong / {handlers} handler vuot nguong "
+                    f"{MAX_ROUTES_LINES}/{MAX_ROUTES_HANDLERS} - tach theo mien "
+                    f"ra services/ (debug theo hang muc se de hon nhieu)"))
+            elif handlers >= 12 and not has_layer:
+                findings.append(Finding(
+                    app, "WARN",
+                    f"{handlers} handler nhung khong co services/ hay "
+                    f"features.py - logic nghiep vu dang nam trong route?"))
     return findings
 
 
