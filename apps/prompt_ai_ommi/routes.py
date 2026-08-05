@@ -691,3 +691,161 @@ async def admin_catalog(request: Request, _identity: str = Depends(require_login
                               name=payload["item"]["label"], schema_version=1,
                               payload=payload)
     return _row(row)
+
+
+# ── Kho tài nguyên (R1) ─────────────────────────────────────────────────────
+#
+# Mọi handler dưới đây nhận `owner_id` từ PHIÊN ĐĂNG NHẬP, không bao giờ từ
+# body hay query. Cho client gửi owner_id lên là trao luôn chìa khoá đọc dữ
+# liệu người khác.
+#
+# Service ném `ResourceNotFound` cho cả "không có" lẫn "không phải của bạn";
+# ở đây cả hai thành 404 giống hệt nhau.
+
+def _resource_json(row, *, cover_key: str = "") -> dict:
+    return {"id": row.id, "kind": row.kind, "name": row.name,
+            "description": row.description, "prompt_text": row.prompt_text,
+            "attributes": row.attributes or {},
+            "cover_variant_id": row.cover_variant_id or "",
+            "cover_key": cover_key,
+            "is_catalog": row.owner_id is None,
+            "archived": row.archived_at is not None,
+            "updated_at": row.updated_at.isoformat()}
+
+
+def _variant_json(row) -> dict:
+    return {"id": row.id, "label": row.label, "storage_key": row.storage_key,
+            "thumb_key": row.thumb_key, "width": row.width,
+            "height": row.height, "bytes_size": row.bytes_size,
+            "position": row.position}
+
+
+def _resource_error(exc: Exception) -> HTTPException:
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    if isinstance(exc, rsvc.ResourceNotFound):
+        return HTTPException(status_code=404, detail=str(exc))
+    return HTTPException(status_code=400, detail=str(exc))
+
+
+@router.get("/api/resources")
+def list_resources(request: Request, kind: str = "", q: str = "",
+                   catalog: bool = False, archived: bool = False,
+                   limit: int = 40, offset: int = 0,
+                   _identity: str = Depends(require_login),
+                   db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    user = _user(request)
+    try:
+        rows, total = rsvc.list_resources(
+            db, user.id, kind=kind, query=q, include_catalog=bool(catalog),
+            include_archived=bool(archived),
+            limit=_as_int(limit, 40, 1, rsvc.PAGE_MAX),
+            offset=_as_int(offset, 0, 0, 1_000_000))
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+    return {"items": [_resource_json(row) for row in rows], "total": total,
+            "limit": _as_int(limit, 40, 1, rsvc.PAGE_MAX),
+            "offset": _as_int(offset, 0, 0, 1_000_000),
+            "counts": rsvc.count_by_kind(db, user.id),
+            "kinds": list(rsvc.RESOURCE_KINDS)}
+
+
+@router.post("/api/resources", status_code=201)
+async def create_resource(request: Request, _identity: str = Depends(require_login),
+                          db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        row = rsvc.create(db, owner_id=user.id, kind=body.get("kind", ""),
+                          name=body.get("name", ""),
+                          description=body.get("description", ""),
+                          prompt_text=body.get("prompt_text", ""),
+                          attributes=body.get("attributes"))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _resource_json(row)
+
+
+@router.get("/api/resources/{resource_id}")
+def get_resource(request: Request, resource_id: str,
+                 _identity: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    user = _user(request)
+    try:
+        row = rsvc.get_visible(db, resource_id, user.id)
+        payload = _resource_json(row)
+        payload["variants"] = [_variant_json(v)
+                               for v in rsvc.variants(db, resource_id, user.id)]
+        payload["tags"] = [t.name for t in rsvc.tags_of(db, resource_id, user.id)]
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+    return payload
+
+
+@router.put("/api/resources/{resource_id}")
+async def update_resource(request: Request, resource_id: str,
+                          _identity: str = Depends(require_login),
+                          db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    fields = {key: body[key] for key in
+              ("name", "kind", "description", "prompt_text", "attributes")
+              if key in body}
+    try:
+        row = rsvc.update(db, resource_id=resource_id, owner_id=user.id, **fields)
+        if isinstance(body.get("tags"), list):
+            rsvc.set_tags(db, resource_id=resource_id, owner_id=user.id,
+                          names=body["tags"])
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _resource_json(row)
+
+
+@router.post("/api/resources/{resource_id}/archive")
+async def archive_resource(request: Request, resource_id: str,
+                           _identity: str = Depends(require_login),
+                           db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        row = rsvc.archive(db, resource_id=resource_id, owner_id=user.id,
+                           archived=bool(body.get("archived", True)))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _resource_json(row)
+
+
+@router.post("/api/resources/{resource_id}/clone", status_code=201)
+async def clone_resource(request: Request, resource_id: str,
+                         _identity: str = Depends(require_login),
+                         db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        row = rsvc.clone_from_catalog(db, resource_id=resource_id, owner_id=user.id)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return _resource_json(row)
+
+
+@router.get("/api/resources/{resource_id}/usage")
+def resource_usage(request: Request, resource_id: str,
+                   _identity: str = Depends(require_login),
+                   db: Session = Depends(get_db)):
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    user = _user(request)
+    try:
+        rows = rsvc.usage(db, resource_id, user.id)
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+    return {"items": [{"project_id": r.project_id, "scene_ref": r.scene_ref}
+                      for r in rows], "total": len(rows)}
