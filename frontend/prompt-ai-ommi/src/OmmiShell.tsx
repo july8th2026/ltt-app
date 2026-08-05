@@ -11,7 +11,10 @@
 import { useState } from 'react'
 import './ommi.css'
 import { setCsrfToken } from './ommiApi'
+import { CreditScreen, SettingsScreen } from './AccountScreens'
 import { LibraryScreen } from './LibraryScreen'
+import { OverviewScreen } from './OverviewScreen'
+import { ProjectScreen } from './ProjectScreen'
 import { ResourceLibrary } from './ResourceLibrary'
 import { StoryboardScreen } from './StoryboardScreen'
 
@@ -22,17 +25,16 @@ const GROUPS: Group[] = [
   {
     title: 'WORKSPACE',
     items: [
-      { key: 'overview', label: 'Tổng quan', icon: '▦', built: false },
-      { key: 'projects', label: 'Dự án', icon: '▤', built: false },
+      { key: 'overview', label: 'Tổng quan', icon: '▦', built: true },
+      { key: 'projects', label: 'Dự án', icon: '▤', built: true },
     ],
   },
   {
     title: 'LÀM VIỆC',
     items: [
       { key: 'resources', label: 'Kho tài nguyên', icon: '◈', built: true },
-      { key: 'brief', label: 'Brief & Director', icon: '✎', built: false },
+      { key: 'brief', label: 'Brief & Director', icon: '✎', built: true },
       { key: 'storyboard', label: 'Storyboard', icon: '▩', built: true },
-      { key: 'export', label: 'Xuất prompt', icon: '⇩', built: false },
     ],
   },
   {
@@ -46,15 +48,15 @@ const GROUPS: Group[] = [
   {
     title: 'TÀI KHOẢN',
     items: [
-      { key: 'credit', label: 'Chi phí & credit', icon: '◇', built: false },
-      { key: 'settings', label: 'Cài đặt', icon: '⚙', built: false },
+      { key: 'credit', label: 'Chi phí & credit', icon: '◇', built: true },
+      { key: 'settings', label: 'Cài đặt', icon: '⚙', built: true },
     ],
   },
 ]
 
 export function OmmiShell({ csrfToken }: { csrfToken: string }) {
   setCsrfToken(csrfToken)
-  const [screen, setScreen] = useState('resources')
+  const [screen, setScreen] = useState('overview')
 
   return (
     <div className="ommi">
@@ -87,6 +89,12 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
       </nav>
 
       <main className="ommi-main">
+        {screen === 'overview' ? <OverviewScreen onGo={setScreen} /> : null}
+        {screen === 'projects' || screen === 'brief' ? (
+          <ProjectScreen key={screen} mode={screen} />
+        ) : null}
+        {screen === 'credit' ? <CreditScreen /> : null}
+        {screen === 'settings' ? <SettingsScreen /> : null}
         {screen === 'resources' ? <ResourceLibrary /> : null}
         {screen === 'storyboard' ? <StoryboardScreen /> : null}
         {screen === 'snippet' || screen === 'style' || screen === 'meta' ? (

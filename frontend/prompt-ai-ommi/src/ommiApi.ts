@@ -421,3 +421,143 @@ export function restoreSceneVersion(sceneId: string, version: number): Promise<S
     body: JSON.stringify({}),
   })
 }
+
+
+// ── Tổng quan, Dự án, Chi phí, Cài đặt ──────────────────────────────────────
+
+export type Overview = {
+  counts: {
+    projects: number
+    resources: number
+    storyboards: number
+    scenes: number
+    meta_prompts: number
+    styles: number
+    snippets: number
+  }
+  resource_kinds: Record<string, number>
+  credit_balance: number
+  recent_projects: Array<{ id: string; name: string; revision: number; updated_at: string }>
+  recent_jobs: Array<{
+    id: string
+    status: string
+    operation: string
+    created_at: string
+    error: string
+  }>
+}
+
+export function getOverview(): Promise<Overview> {
+  return request<Overview>('/overview')
+}
+
+export type CreditSummary = {
+  balance: number
+  days: number
+  spent: number
+  added: number
+  entries: Array<{ delta: number; kind: string; note: string; created_at: string }>
+}
+
+export function getCredit(days = 30): Promise<CreditSummary> {
+  return request<CreditSummary>(`/credit?days=${days}`)
+}
+
+export type ProjectDetail = {
+  id: string
+  name: string
+  revision: number
+  status: string
+  payload: Record<string, unknown>
+  updated_at: string
+}
+
+export function getProject(id: string): Promise<ProjectDetail> {
+  return request<ProjectDetail>(`/projects/${id}`)
+}
+
+export function createProject(name: string): Promise<ProjectDetail> {
+  return request<ProjectDetail>('/projects', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function saveProject(
+  id: string,
+  body: { revision: number; payload: Record<string, unknown>; name?: string },
+): Promise<ProjectDetail> {
+  return request<ProjectDetail>(`/projects/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
+export function archiveProject(id: string): Promise<unknown> {
+  return request(`/projects/${id}/archive`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export function cloneProject(id: string): Promise<ProjectDetail> {
+  return request<ProjectDetail>(`/projects/${id}/clone`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+export type DirectorQuote = {
+  operation: string
+  credit: number
+  scene_count: number
+  model: string
+}
+
+export function quoteProject(
+  id: string,
+  body: { payload?: Record<string, unknown>; operation?: string; model?: string },
+): Promise<DirectorQuote> {
+  return request<DirectorQuote>(`/projects/${id}/quote`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function generateProject(
+  id: string,
+  body: { payload?: Record<string, unknown>; operation?: string; model?: string },
+): Promise<{ id: string; status: string }> {
+  return request(`/projects/${id}/generate`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export function applyJob(projectId: string, jobId: string): Promise<ProjectDetail> {
+  return request<ProjectDetail>(`/projects/${projectId}/apply/${jobId}`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  })
+}
+
+/** Đường tải file xuất — trình duyệt mở thẳng, không đi qua fetch. */
+export function exportUrl(projectId: string, format: 'json' | 'md' | 'zip'): string {
+  return `${BASE}/projects/${projectId}/export/${format}`
+}
+
+export type Preferences = { theme: string; revision: number }
+
+export function getPreferences(): Promise<Preferences> {
+  return request<Preferences>('/preferences')
+}
+
+export function savePreferences(body: {
+  theme: string
+  revision: number
+}): Promise<Preferences> {
+  return request<Preferences>('/preferences', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}

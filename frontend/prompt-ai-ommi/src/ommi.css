@@ -534,3 +534,90 @@
 .ommi-history li .ommi-spacer {
   flex: 1;
 }
+
+/* ── ô số và biểu mẫu ────────────────────────────────────────────────────── */
+
+.ommi-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--gap);
+  margin-bottom: 20px;
+}
+.ommi-tile {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+.ommi-tile b {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.ommi-tile span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.ommi-section {
+  margin: 22px 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ommi-balance {
+  padding: 5px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 99px;
+  background: var(--surface-raised);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ommi-form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+.ommi-form label {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.ommi-form :is(input, textarea, select) {
+  width: 100%;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+.ommi-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.ommi-download {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface-overlay);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.ommi-download:hover {
+  color: var(--text-primary);
+}

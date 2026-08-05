@@ -21,8 +21,22 @@ function reply(body: unknown, status = 200) {
   } as Response)
 }
 
+const emptyOverview = {
+  counts: { projects: 0, resources: 0, storyboards: 0, scenes: 0,
+    meta_prompts: 0, styles: 0, snippets: 0 },
+  resource_kinds: { character: 0, background: 0, prop: 0, vehicle: 0, misc: 0 },
+  credit_balance: 0, recent_projects: [], recent_jobs: [],
+}
+
 let routes: Array<[RegExp, string, () => Promise<Response>]>
 let seenUrls: string[]
+
+/** Vỏ mở ở Tổng quan; mọi test màn khác phải tự điều hướng tới. */
+async function goTo(name: RegExp) {
+  const rail = await screen.findByRole('navigation',
+    { name: 'Điều hướng PROMPT AI OMMI' })
+  fireEvent.click(within(rail).getByRole('button', { name }))
+}
 
 beforeEach(() => {
   routes = []
@@ -30,9 +44,12 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn((url: string, init?: RequestInit) => {
     seenUrls.push(String(url))
     const method = (init?.method ?? 'GET').toUpperCase()
+    // Route của test được ưu tiên; mặc định chỉ đỡ cho những test không quan
+    // tâm tới Tổng quan (vỏ luôn mở ở đó nên luôn có một lần gọi).
     for (const [pattern, wanted, handler] of routes) {
       if (pattern.test(String(url)) && wanted === method) return handler()
     }
+    if (String(url).includes('/overview')) return reply(emptyOverview)
     return reply({ detail: `khong co route ${method} ${url}` }, 404)
   }))
 })
@@ -40,18 +57,25 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals() })
 
 describe('Kho tài nguyên', () => {
-  it('bắt đầu ở Kho tài nguyên và chỉ cho bấm màn đã xây', async () => {
+  it('không có nút chết trong sidebar', async () => {
     routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Kho còn trống')).toBeTruthy())
 
+    // Quy tắc, không phải một màn cụ thể: mỗi mục HOẶC bấm được, HOẶC bị vô
+    // hiệu và nói rõ "đang xây". Một nút bấm được mà không làm gì làm G4
+    // "Honest UI" trượt. Viết theo quy tắc để test còn đúng khi thêm màn mới.
     const rail = screen.getByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
-    expect(within(rail).getByRole('button', { name: /Kho tài nguyên/ })
-      .hasAttribute('disabled')).toBe(false)
-    // Màn chưa xây phải vô hiệu và nói rõ, không được là nút chết.
-    const notBuilt = within(rail).getByRole('button', { name: /Tổng quan/ })
-    expect(notBuilt.hasAttribute('disabled')).toBe(true)
-    expect(notBuilt.textContent).toContain('đang xây')
+    const buttons = within(rail).getAllByRole('button')
+    expect(buttons.length).toBeGreaterThan(0)
+    for (const button of buttons) {
+      if (button.hasAttribute('disabled')) {
+        expect(button.textContent).toContain('đang xây')
+      } else {
+        expect(button.textContent).not.toContain('đang xây')
+      }
+    }
   })
 
   it('hiện lưới tài nguyên kèm số đếm theo nhóm', async () => {
@@ -60,6 +84,7 @@ describe('Kho tài nguyên', () => {
       counts: { ...emptyPage.counts, character: 1 },
     })])
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Nhân vật A')).toBeTruthy())
     expect(screen.getByRole('button', { name: /Nhân vật\s*1/ })).toBeTruthy()
   })
@@ -68,6 +93,7 @@ describe('Kho tài nguyên', () => {
     routes.push([/\/resources\?/, 'GET',
       () => reply({ detail: 'Phiên đã hết hạn — tải lại trang.' }, 400)])
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByRole('alert').textContent)
       .toContain('Phiên đã hết hạn'))
   })
@@ -78,6 +104,7 @@ describe('Kho tài nguyên', () => {
     routes.push([/\/resources\/r1$/, 'GET', () => reply({
       ...oneResource, variants: [], tags: [] })])
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Nhân vật A')).toBeTruthy())
     fireEvent.click(screen.getByText('Nhân vật A'))
     await waitFor(() => expect(
@@ -97,6 +124,7 @@ describe('Kho tài nguyên', () => {
     }])
 
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Nhân vật A')).toBeTruthy())
     fireEvent.click(screen.getByText('Nhân vật A'))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Sinh ảnh bằng AI' })).toBeTruthy())
@@ -112,6 +140,7 @@ describe('Kho tài nguyên', () => {
   it('lọc theo nhóm gọi lại API với đúng nhóm', async () => {
     routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Kho còn trống')).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: /Bối cảnh/ }))
     await waitFor(() => expect(seenUrls.some((u) => u.includes('kind=background'))).toBe(true))
@@ -127,6 +156,7 @@ describe('Thư viện', () => {
     routes.push([/\/resources\?/, 'GET', () => reply(emptyPage)])
     routes.push([/\/library\/\w+\?/, 'GET', () => reply(empty)])
     render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Kho còn trống')).toBeTruthy())
 
     const rail = screen.getByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
@@ -149,8 +179,7 @@ describe('Thư viện', () => {
     routes.push([/\/library\/meta\/m1$/, 'GET', () => reply(item)])
 
     render(<OmmiShell csrfToken="t"/>)
-    const rail = await screen.findByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
-    fireEvent.click(within(rail).getByRole('button', { name: /Meta Director/ }))
+    await goTo(/Meta Director/)
     await waitFor(() => expect(screen.getByRole('button', { name: 'Mẫu có sẵn' })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: 'Mẫu có sẵn' }))
     await waitFor(() => expect(screen.getByText('Mẫu chung')).toBeTruthy())
@@ -189,8 +218,7 @@ describe('Storyboard', () => {
       prompt_preview: 'noi dung canh', confirmed: false })])
 
     render(<OmmiShell csrfToken="t"/>)
-    const rail = await screen.findByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
-    fireEvent.click(within(rail).getByRole('button', { name: /Storyboard/ }))
+    await goTo(/Storyboard/)
     await waitFor(() => expect(screen.getByText('Bảng')).toBeTruthy())
     fireEvent.click(screen.getByText('Bảng'))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Sinh ảnh' })).toBeTruthy())
@@ -208,10 +236,64 @@ describe('Storyboard', () => {
     routes.push([/\/storyboards$/, 'GET', () => reply({ items: [] })])
 
     render(<OmmiShell csrfToken="t"/>)
-    const rail = await screen.findByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
-    fireEvent.click(within(rail).getByRole('button', { name: /Storyboard/ }))
+    await goTo(/Storyboard/)
     await waitFor(() => expect(screen.getByText('Chưa có storyboard nào')).toBeTruthy())
     // Không có dự án thì không mời tạo storyboard — bấm vào sẽ chỉ ra lỗi.
     expect(screen.getByText(/Tạo một dự án ở trang PROMPT AI OMMI trước/)).toBeTruthy()
+  })
+})
+
+describe('Tổng quan, Chi phí, Dự án', () => {
+  it('người mới thấy hướng dẫn ba bước chứ không phải sáu ô số 0', async () => {
+    render(<OmmiShell csrfToken="t"/>)
+    await waitFor(() => expect(screen.getByText('Bắt đầu từ ba bước')).toBeTruthy())
+    expect(screen.queryByText('Dự án')).not.toBeNull()  // sidebar vẫn có
+    // Không hiện dải ô số khi tất cả đều 0 — nó không nói được gì.
+    expect(document.querySelectorAll('.ommi-tile').length).toBe(0)
+  })
+
+  it('tổng quan hiện số liệu của chính người dùng khi đã có dữ liệu', async () => {
+    routes.push([/\/overview/, 'GET', () => reply({
+      counts: { projects: 2, resources: 7, storyboards: 1, scenes: 4,
+        meta_prompts: 3, styles: 1, snippets: 0 },
+      resource_kinds: { character: 5, background: 2, prop: 0, vehicle: 0, misc: 0 },
+      credit_balance: 120, recent_projects: [], recent_jobs: [],
+    })])
+    render(<OmmiShell csrfToken="t"/>)
+    await waitFor(() => expect(document.querySelectorAll('.ommi-tile').length)
+      .toBeGreaterThan(0))
+    expect(screen.getByText('💎 120 credit')).toBeTruthy()
+    expect(screen.getByText('7')).toBeTruthy()
+  })
+
+  it('chi phí hiển thị bằng credit, không bằng tiền tệ', async () => {
+    routes.push([/\/credit\?/, 'GET', () => reply({
+      balance: 120, days: 30, spent: 18, added: 140,
+      entries: [{ delta: -6, kind: 'hold', note: 'sinh ảnh',
+        created_at: '2026-08-05T00:00:00+00:00' }],
+    })])
+    render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Chi phí & credit/)
+    await waitFor(() => expect(screen.getByText('Bút toán gần đây')).toBeTruthy())
+    const body = document.querySelector('.ommi-body')!.textContent ?? ''
+    for (const banned of ['$', 'USD', 'VND']) {
+      expect(body).not.toContain(banned)
+    }
+    expect(screen.getByText('18')).toBeTruthy()
+  })
+
+  it('cài đặt nói rõ khoá API không khai trong app', async () => {
+    routes.push([/\/preferences$/, 'GET', () => reply({ theme: 'dark', revision: 1 })])
+    render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Cài đặt/)
+    await waitFor(() => expect(screen.getByText('Khoá API và model')).toBeTruthy())
+    expect(screen.getByText(/nền tảng quản lý tập trung/)).toBeTruthy()
+  })
+
+  it('dự án rỗng mời tạo thay vì để trang trắng', async () => {
+    routes.push([/\/projects$/, 'GET', () => reply({ items: [] })])
+    render(<OmmiShell csrfToken="t"/>)
+    await goTo(/Dự án/)
+    await waitFor(() => expect(screen.getByText('Chưa có dự án nào')).toBeTruthy())
   })
 })
