@@ -1510,7 +1510,7 @@ hay ownership. Mỗi phase UI phải được kiểm trên browser render thật
 
 Production H20.8 đã có đủ backup, update, health và authenticated browser evidence.
 
-### H21 — Agent Canvas UX Reset theo Q67
+### H21 — Agent Canvas UX Reset theo Q67 → Q68
 
 H20 là lịch sử triển khai renderer theo ToolSpec; không mở lại hay vá chồng chéo.
 H21 thay presentation model sau bằng chứng E3 production và phản hồi 3/10 của
@@ -1559,6 +1559,17 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
   reload, theme per-user và mobile 390 đều PASS. Node asset chạy xuyên suốt
   quote→approve→artifact với actual 0; không gọi provider. Frontend 49 pass,
   full 2.092 pass/8 skip/23 subtest, npm audit 0, console 0, fresh request 2xx.
+- [x] H21.7b Customer-first hardening theo Q68 — 2026-08-05: nền `rgb(0,0,0)`;
+  prompt và CTA `Chi tiết` / `N credit · Chạy` nằm trong block; `Chi tiết` chỉ
+  còn nhãn nghiệp vụ, không lộ ToolSpec/field/type/ID/provider/Fan-out. Sửa lỗi
+  picker `@` trong node chào mời kết nối tạo chu trình rồi im lặng không làm gì
+  (thiếu `connectionCreatesCycle` mà picker `+` đã có), kèm test chốt đã kiểm
+  chứng fail khi gỡ guard. Fixture browser được vá để phủ đúng chuỗi
+  `text.generate → image.generate`. Browser thật: desktop 1366 rail không đè
+  node, mobile 390 không tràn ngang, quote 8 → actual 0 trước duyệt → hoàn tất
+  8/8 credit, console 0 error/0 warning, request 2xx. Frontend 51 pass, full
+  2.092 pass/8 skip/23 subtest, secret scan 0 finding. Runtime/credit/provider
+  không đổi. Tồn đọng ghi ở nhật ký: gate Node hiện không kiểm được version thật.
 - [ ] H21.8 P7 Controlled beta 5 user task + re-audit Q/M/E — protocol và CSV
   đo đã sẵn sàng tại `07_CONTROLLED_BETA_PROTOCOL.md` / `08_CONTROLLED_BETA_RESULTS.csv`;
   còn thiếu E4 từ đúng 5 người dùng thật nên chưa được đánh dấu PASS.

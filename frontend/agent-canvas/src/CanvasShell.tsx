@@ -133,13 +133,16 @@ function Editor() {
     return page.nodes.filter(node=>node.id!==selectedNode.id).flatMap(node=>{
       const sourceTool=byName.get(String(node.data.tool))
       if(!sourceTool||!targetTool)return []
+      // Same cycle guard the output `+` picker uses: offering a reference that
+      // connectGraph then refuses looks to the customer like a dead control.
+      if(connectionCreatesCycle(page.edges,node.id,selectedNode.id))return []
       for(const sourceHandle of Object.keys(sourceTool.returns))for(const targetHandle of Object.keys(targetTool.params_schema)){
         if(connectionAllowed(sourceTool,sourceHandle,targetTool,targetHandle))return [{source:node.id,sourceHandle,targetHandle,
           label:uniqueNodeLabel(node,page.nodes,byName),detail:`${outputLabel(sourceHandle,sourceTool.returns[sourceHandle])} → ${fieldLabel(targetHandle)}`}]
       }
       return []
     })
-  },[selectedNode,page.nodes,byName])
+  },[selectedNode,page.nodes,page.edges,byName])
   const connectedInputs=useMemo(()=>selectedNode?page.edges.filter(edge=>edge.target===selectedNode.id).map(edge=>{
     const source=page.nodes.find(node=>node.id===edge.source);const sourceTool=byName.get(String(source?.data.tool))
     return {edgeId:edge.id,label:source?uniqueNodeLabel(source,page.nodes,byName):edge.source,
@@ -151,7 +154,7 @@ function Editor() {
     if(!palette.length||!page.nodes.length)return
     const frame=requestAnimationFrame(()=>updateNodeInternals(page.nodes.map(node=>node.id)))
     return()=>cancelAnimationFrame(frame)
-  },[updateNodeInternals,palette.length,page.nodes.length])
+  },[updateNodeInternals,palette.length,page.nodes.length,selectedNode?.id])
 
   useEffect(()=>{
     if(!readOnly||!page.nodes.length)return
@@ -488,7 +491,7 @@ function Editor() {
     const inputFields=tool?.name.startsWith('asset.')?[]:Object.keys(tool?.params_schema??{}).filter(field=>palette.some(source=>Object.keys(source.returns).some(handle=>connectionAllowed(source,handle,tool,field))))
     const outputHandles=creative?[primaryOutputHandle(tool)].filter(Boolean) as string[]:Object.keys(tool?.returns??{})
     return ({ ...node,type:creative?'creativeTool':'tool',
-    measured:{width,height:readOnly?244:creative?258:334},handles:[
+    measured:{width,height:readOnly?244:creative?(node.id===selectedNode?.id?370:258):334},handles:[
       ...inputFields.map((id,index)=>({id,type:'target' as const,position:Position.Left,x:-22,y:34+index*34,width:44,height:44})),
       ...outputHandles.map((id,index)=>({id,type:'source' as const,position:Position.Right,x:width-22,y:46+index*42,width:44,height:44}))],
     selected: node.id === state.selectedId || selected.includes(node.id),
@@ -501,10 +504,15 @@ function Editor() {
       __onMenu:(x:number,y:number)=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id});
         setDesktopPanel(null);setQuickCreate(null);setContextMenu({kind:'node',nodeId:node.id,x,y,flow:node.position})},
       __onQuickConnect: (sourceHandle:string)=>setQuickConnect({sourceId:node.id,sourceHandle}),
-      __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id})},
+      __onOpen:()=>{setSelected([node.id]);setSelectedEdges([]);dispatch({type:'select',id:node.id});setDesktopPanel('inspector')},
       __onRun:()=>{setSelected([node.id]);dispatch({type:'select',id:node.id});void prepareScope({mode:'node',node_id:node.id})},
       __onUpload:(files:File[])=>void uploadToNode(node.id,files),
       __onGenerate:()=>generateInNode(node.id),
+      __references:node.id===selectedNode?.id?referenceOptions:[],
+      __connectedInputs:node.id===selectedNode?.id?connectedInputs:[],
+      __onReference:(reference:ReferenceOption)=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,
+        target:node.id,targetHandle:reference.targetHandle}),
+      __onDisconnect:disconnectInput,
       __status: String(run?.checkpoint[node.id]?.status ??
         (validationIssues.some(issue => issue.step_id === node.id) ? 'invalid'
         : costs[node.id] === undefined ? 'draft' : 'validated')),
@@ -529,7 +537,8 @@ function Editor() {
       draggable: false, selectable: false, connectable: false, zIndex: 3,
       data: { kind: 'comment', text: comment.text } }))
     return [...frames, ...tools, ...notes, ...comments]
-  }, [page, state.selectedId, selected, byName, palette, costs, liveQuotes, validationIssues, run, readOnly,presentationMode,prepareScope,uploadToNode,generateInNode,duplicateNode])
+  }, [page, state.selectedId, selected, selectedNode, byName, palette, costs, liveQuotes, validationIssues, run,
+    readOnly,presentationMode,prepareScope,uploadToNode,generateInNode,duplicateNode,referenceOptions,connectedInputs,onConnect,disconnectInput])
   const displayEdges = useMemo(() => (showConnections ? page.edges : []).map(edge => {
     const isError = edge.data?.condition === 'error'
     const sourceTool=byName.get(String(page.nodes.find(node=>node.id===edge.source)?.data.tool))
@@ -574,6 +583,10 @@ function Editor() {
       connectionAllowed(sourceTool,quickConnect.sourceHandle,targetTool,field))
     return targetHandle?[{targetId:target.id,targetHandle,
       label:destinationLabel(sourceTool,quickConnect.sourceHandle,targetTool,uniqueNodeLabel(target,page.nodes,byName))}]:[]
+  }):[]
+  const quickNewOptions=quickConnect?customerPaletteTools(palette,catalogMode==='advanced').filter(tool=>{
+    const source=page.nodes.find(node=>node.id===quickConnect.sourceId);const sourceTool=byName.get(String(source?.data.tool))
+    return Object.keys(tool.params_schema).some(field=>connectionAllowed(sourceTool,quickConnect.sourceHandle,tool,field))
   }):[]
   const quickCreateOptions=quickCreate?customerPaletteTools(palette,true).filter(tool=>{
     const source=page.nodes.find(node=>node.id===quickCreate.sourceId);const sourceTool=byName.get(String(source?.data.tool))
@@ -657,8 +670,8 @@ function Editor() {
       {presentationMode==='legacy'&&<div className={`legacy-save-state save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến · chờ thử lại' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict'
         ? <>Xung đột <button onClick={() => location.reload()}>Tải bản mới</button></>
         : phase === 'error' ? <>Lưu lỗi <button onClick={() => setRetryNonce(value => value + 1)}>Thử lại</button></> : 'Đã lưu'}</div>}</header>
-    <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Inspector'}</button>)}</nav>
-    <div className={`canvas-body panel-${mobilePanel}${selectedNode&&presentationMode==='creative'?' has-composer':''}`}>
+    <nav className="canvas-mobile-tabs" aria-label="Khu vực Canvas">{(['canvas','palette','inspector'] as const).map(item=><button key={item} className={mobilePanel===item?'active':''} aria-pressed={mobilePanel===item} onClick={()=>setMobilePanel(item)}>{item==='canvas'?'Canvas':item==='palette'?'Công cụ':'Chi tiết'}</button>)}</nav>
+    <div className={`canvas-body panel-${mobilePanel}${selectedNode&&presentationMode==='legacy'?' has-composer':''}`}>
       <nav className="canvas-rail" aria-label="Công cụ Canvas">
         <button title="Chọn" aria-label="Công cụ chọn" aria-pressed={!desktopPanel}>↖</button>
         <button title="Thêm node" aria-label="Mở công cụ" aria-pressed={desktopPanel==='tools'} onClick={()=>{const open=desktopPanel!=='tools';setDesktopPanel(open?'tools':null);if(open&&presentationMode==='creative'){setSelected([]);setSelectedEdges([]);dispatch({type:'select'})}}}>＋</button>
@@ -745,7 +758,7 @@ function Editor() {
           defaultViewport={page.viewport} minZoom={0.1} maxZoom={2}
           fitView={!page.nodes.length} deleteKeyCode={null}>
           <FlowStatus />
-          {showGrid&&<Background color={theme==='light'?'#d8dde5':'#5b2c29'} gap={20} />}{showMinimap&&<MiniMap pannable zoomable />}<Controls showInteractive={!readOnly} />
+          {showGrid&&<Background color={theme==='light'?'#d8dde5':'#242a31'} gap={20} />}{showMinimap&&<MiniMap pannable zoomable />}<Controls showInteractive={!readOnly} />
         </ReactFlow>
         {!page.nodes.length && <section className="canvas-empty first-run" aria-label="Bắt đầu workflow"><small>3 BƯỚC ĐẦU TIÊN</small><h2>Tạo kết quả đầu tiên</h2><ol><li>Chọn một mẫu</li><li>Nhập hoặc tải nội dung</li><li>Kiểm tra chi phí trước khi chạy</li></ol><div className="starter-flows">
           <button onClick={()=>applyStarterFlow('text-image')}><strong>Prompt thành hình ảnh</strong><span>Viết một lần, tạo ảnh từ nội dung đó</span></button>
@@ -763,12 +776,13 @@ function Editor() {
       </main>
       <nav className="page-dock" aria-label="Chuyển page">{state.document.pages.map(item=><button
         key={item.id} aria-pressed={item.id===page.id} onClick={()=>dispatch({type:'pageSelect',id:item.id})}>{item.name}</button>)}</nav>
-      {quickConnect&&<aside className="quick-connect-picker" aria-label="Chọn đích kết nối"><header><div><small>OUTPUT</small><strong>{quickConnect.sourceHandle}</strong></div><button aria-label="Đóng chọn kết nối" onClick={()=>setQuickConnect(null)}>×</button></header>
-        {quickOptions.length?<div>{quickOptions.map(option=><button key={`${option.targetId}-${option.targetHandle}`} onClick={()=>{onConnect({source:quickConnect.sourceId,sourceHandle:quickConnect.sourceHandle,target:option.targetId,targetHandle:option.targetHandle});setQuickConnect(null)}}>{option.label}</button>)}</div>
-          :<p>Chưa có input tương thích. Thêm một node đích rồi thử lại.</p>}</aside>}
-      {quickCreate&&<aside className="quick-create-picker" aria-label="Tạo node đích tương thích" style={{left:Math.min(quickCreate.x,window.innerWidth-320),top:Math.min(quickCreate.y,window.innerHeight-420)}}>
-        <header><div><small>KẾT NỐI NHANH</small><strong>Chọn node đích</strong></div><button aria-label="Đóng tạo node nhanh" onClick={()=>setQuickCreate(null)}>×</button></header>
-        {quickCreateOptions.length?<div>{quickCreateOptions.map(tool=>{const source=page.nodes.find(node=>node.id===quickCreate.sourceId);const sourceTool=byName.get(String(source?.data.tool));return <button key={tool.name} onClick={()=>addConnectedTool(tool,quickCreate.sourceId,quickCreate.sourceHandle,quickCreate.flow)}><strong>{destinationLabel(sourceTool,quickCreate.sourceHandle,tool)}</strong><small>{tool.description}</small></button>})}</div>:<p>Không có node tương thích với đầu ra này.</p>}
+      {quickConnect&&<aside className="quick-connect-picker" aria-label="Chọn bước tiếp theo"><header><div><small>BƯỚC TIẾP THEO TỪ</small><strong>{(()=>{const source=page.nodes.find(node=>node.id===quickConnect.sourceId);const sourceTool=byName.get(String(source?.data.tool));return outputLabel(quickConnect.sourceHandle,String(sourceTool?.returns[quickConnect.sourceHandle]??''))})()}</strong></div><button aria-label="Đóng chọn bước tiếp theo" onClick={()=>setQuickConnect(null)}>×</button></header>
+        {!!quickOptions.length&&<section><small>NỐI VỚI BLOCK ĐÃ CÓ</small>{quickOptions.map(option=><button key={`${option.targetId}-${option.targetHandle}`} onClick={()=>{onConnect({source:quickConnect.sourceId,sourceHandle:quickConnect.sourceHandle,target:option.targetId,targetHandle:option.targetHandle});setQuickConnect(null)}}>{option.label}</button>)}</section>}
+        {!!quickNewOptions.length&&<section><small>TẠO BLOCK MỚI</small>{quickNewOptions.map(tool=>{const source=page.nodes.find(node=>node.id===quickConnect.sourceId);const sourceTool=byName.get(String(source?.data.tool));return <button key={tool.name} onClick={()=>{addConnectedTool(tool,quickConnect.sourceId,quickConnect.sourceHandle,{x:(source?.position.x??0)+420,y:source?.position.y??0});setQuickConnect(null)}}><strong>{destinationLabel(sourceTool,quickConnect.sourceHandle,tool)}</strong><span>{categoryLabels[tool.category??'advanced']}</span></button>})}</section>}
+        {!quickOptions.length&&!quickNewOptions.length&&<p>Không có bước tương thích với nội dung này.</p>}</aside>}
+      {quickCreate&&<aside className="quick-create-picker" aria-label="Tạo block đích tương thích" style={{left:Math.min(quickCreate.x,window.innerWidth-320),top:Math.min(quickCreate.y,window.innerHeight-420)}}>
+        <header><div><small>BƯỚC TIẾP THEO</small><strong>Chọn kết quả muốn tạo</strong></div><button aria-label="Đóng tạo block nhanh" onClick={()=>setQuickCreate(null)}>×</button></header>
+        {quickCreateOptions.length?<div>{quickCreateOptions.map(tool=>{const source=page.nodes.find(node=>node.id===quickCreate.sourceId);const sourceTool=byName.get(String(source?.data.tool));return <button key={tool.name} onClick={()=>addConnectedTool(tool,quickCreate.sourceId,quickCreate.sourceHandle,quickCreate.flow)}><strong>{destinationLabel(sourceTool,quickCreate.sourceHandle,tool)}</strong><small>{categoryLabels[tool.category??'advanced']}</small></button>})}</div>:<p>Không có bước tương thích với nội dung này.</p>}
       </aside>}
       {edgeInsert&&<aside className="quick-create-picker edge-insert-picker" aria-label="Chèn bước vào kết nối"
         style={{left:Math.min(edgeInsert.x,window.innerWidth-320),top:Math.min(edgeInsert.y,window.innerHeight-420)}}>
@@ -783,14 +797,14 @@ function Editor() {
         {contextMenu.kind==='pane'?<><div className="context-tool-list">{customerPaletteTools(palette,catalogMode==='advanced').map(tool=><button key={tool.name} onClick={()=>{addTool(tool,contextMenu.flow);setContextMenu(null)}}><strong>{customerToolLabel(tool)}</strong><small>{categoryLabels[tool.category??'advanced']}</small></button>)}</div>
           <hr/><button onClick={()=>{dispatch({type:'pageView',connections:!showConnections});setContextMenu(null)}}>{showConnections?'Ẩn đường nối':'Hiện đường nối'}</button>
           <button onClick={()=>{dispatch({type:'layout'});setContextMenu(null)}}>Tự động sắp xếp node</button></>:
-          <>{contextMenu.nodeId&&<><button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('node');void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Kiểm tra chi phí block này</button>
-            <button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('selection');void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Kiểm tra từ block này</button>
+          <>{contextMenu.nodeId&&<><button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('node');void prepareScope({mode:'node',node_id:contextMenu.nodeId});setContextMenu(null)}}>Báo giá & chạy block này</button>
+            <button disabled={readOnly||Boolean(run&&!terminalRun)} onClick={()=>{setRunScope('selection');void prepareScope({mode:'selection',node_ids:downstreamIds(contextMenu.nodeId!)});setContextMenu(null)}}>Báo giá & chạy từ đây</button>
             <button disabled={readOnly} onClick={()=>{duplicateNode(contextMenu.nodeId!);setContextMenu(null)}}>Sao chép node</button>
             {state.document.pages.filter(item=>item.id!==page.id).map(item=><button key={item.id} disabled={readOnly}
               onClick={()=>{dispatch({type:'nodeMovePage',id:contextMenu.nodeId!,pageId:item.id});setContextMenu(null)}}>Chuyển sang {item.name}</button>)}
             <button className="danger" disabled={readOnly} onClick={()=>{dispatch({type:'delete',ids:[contextMenu.nodeId!]});setSelected([]);setContextMenu(null)}}>Xóa node</button></>}</>}
       </aside>}
-      {selectedNode&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly} presentationMode={presentationMode}
+      {selectedNode&&presentationMode==='legacy'&&<ContextComposer node={selectedNode} tool={byName.get(String(selectedNode.data.tool))} readOnly={readOnly} presentationMode={presentationMode}
         onClose={()=>{setSelected([]);dispatch({type:'select'})}} onAdvanced={()=>setDesktopPanel('inspector')}
         onRun={()=>void prepareScope({mode:'node',node_id:selectedNode.id})} cost={liveQuotes[selectedNode.id]??costs[selectedNode.id]}
         references={referenceOptions} connectedInputs={connectedInputs} onDisconnect={disconnectInput} onReference={reference=>onConnect({source:reference.source,sourceHandle:reference.sourceHandle,

@@ -67,6 +67,11 @@ import apps.taoclipngan.jobs as clip_jobs
 
 def _script_handle(params, ctx=None):
     if ctx: ctx.progress(100, "xong")
+    # kichban serves both text.script (topic -> script) and text.generate
+    # (prompt -> text). Returning the script shape for both leaves
+    # `$node.text` unresolvable, which is the canvas starter chain.
+    if str(params.get("prompt") or "").strip():
+        return {"text": "Văn bản kiểm thử từ LTT Studio.", "credit_cost": 3}
     script = {"title": params.get("topic"), "hook": "Hook kiểm thử",
               "sections": [{"title": "Phần một", "content": "Nội dung kiểm thử"}],
               "outro": "CTA kiểm thử", "description": "Mô tả kiểm thử",

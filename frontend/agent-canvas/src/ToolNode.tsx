@@ -1,7 +1,10 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { PaletteTool } from './editorState'
-import { emptyMessage, fieldLabel, hasMeaningfulInput, mediaKind, nodeModality, nodeTitle, outputLabel } from './nodePresentation'
+import { emptyMessage, fieldLabel, hasMeaningfulInput, mediaKind, nodeModality, nodeTitle, outputLabel, primaryFields } from './nodePresentation'
 import { blockPresentation, customerToolLabel, primaryOutputHandle } from './presentationAdapter'
+
+type NodeReference={source:string;sourceHandle:string;targetHandle:string;label:string;detail:string}
+type ConnectedInput={edgeId:string;label:string;detail:string}
 
 type ToolData = Record<string, unknown> & { __tool?: PaletteTool; __cost?: number; __status?: string;
   __artifacts?: { name: string; url: string }[]; __readOnly?: boolean;
@@ -9,7 +12,9 @@ type ToolData = Record<string, unknown> & { __tool?: PaletteTool; __cost?: numbe
   __onQuickConnect?: (output:string)=>void; __onOpen?:()=>void; __onRun?:()=>void;
   __onMenu?:(x:number,y:number)=>void;
   __onUpload?:(files:File[])=>void; __onGenerate?:()=>void; __onRename?:(label:string)=>void;
-  __onDuplicate?:()=>void; __onParamChange?:(name:string,value:unknown)=>void }
+  __onDuplicate?:()=>void; __onParamChange?:(name:string,value:unknown)=>void;
+  __references?:NodeReference[];__connectedInputs?:ConnectedInput[];
+  __onReference?:(reference:NodeReference)=>void;__onDisconnect?:(edgeId:string)=>void }
 
 const icon:Record<string,string>={text:'≡',image:'▧',video:'▶',audio:'♪',batch:'▦',transform:'↗',input:'⇧',tool:'✦'}
 
@@ -101,6 +106,9 @@ export function CreativeToolNode({data,selected}:NodeProps){
   const accept=tool?.name==='video.social_import'||nodeModality(tool)==='transform'?undefined:
     media==='image'?'image/png,image/jpeg,image/webp':media==='video'?'video/*':media==='audio'?'audio/*':undefined
   const textField=tool&&Object.keys(tool.params_schema).find(name=>['text','topic','prompt'].includes(name))
+  const contentField=tool&&primaryFields(tool,params).find(([name])=>['prompt','topic','text','url','source_url'].includes(name))
+  const contentValue=contentField?String(params[contentField[0]]??''):''
+  const contentFromConnection=contentValue.startsWith('$')&&Boolean(typed.__connectedInputs?.length)
   const empty=tool?.name==='video.social_import'?emptyMessage(tool):undefined
   const upload=(files?:FileList|File[])=>{const selectedFiles=files?Array.from(files):[]
     if(selectedFiles.length&&!typed.__readOnly)typed.__onUpload?.(selectedFiles.slice(0,tool?.name.includes('batch')?12:1))}
@@ -145,8 +153,29 @@ export function CreativeToolNode({data,selected}:NodeProps){
           onClick={event=>{event.stopPropagation();(typed.__onGenerate??typed.__onOpen)?.()}}>Tạo lại</button>
       </div>}
     </div>
-    <footer><span>{typed.__cost===undefined?'Chi phí tính khi chạy':`Tối đa ${typed.__cost} credit`}</span>
-      {!!typed.__artifacts?.length&&<strong>{typed.__artifacts.length} kết quả</strong>}</footer>
+    {selected&&<section className="node-customer-composer nodrag" aria-label={`Thiết lập ${customerToolLabel(tool)}`}>
+      {contentField&&modality!=='text'&&<label><span>{fieldLabel(contentField[0])}</span>
+        {contentField[1].type==='string'&&['url','source_url'].includes(contentField[0])?<input
+          value={contentFromConnection?'':contentValue} disabled={typed.__readOnly||contentFromConnection}
+          placeholder={tool?.name==='video.social_import'?'Dán link TikTok, YouTube Shorts hoặc Reels…':'Dán liên kết nội dung…'}
+          onChange={event=>typed.__onParamChange?.(contentField[0],event.target.value)}/>:
+        <textarea value={contentFromConnection?'':contentValue} disabled={typed.__readOnly||contentFromConnection}
+          placeholder={contentFromConnection?'Dùng nội dung từ block đã kết nối':'Mô tả kết quả bạn muốn tạo…'}
+          onChange={event=>typed.__onParamChange?.(contentField[0],event.target.value)}/>}</label>}
+      {!!typed.__connectedInputs?.length&&<div className="node-input-chips" aria-label="Đầu vào đã kết nối">
+        {typed.__connectedInputs.map(input=><span key={input.edgeId}><b>@{input.label}</b><small>{input.detail}</small>
+          <button disabled={typed.__readOnly} aria-label={`Tháo kết nối ${input.label}`} onClick={()=>typed.__onDisconnect?.(input.edgeId)}>×</button></span>)}</div>}
+      {!!typed.__references?.length&&<label className="node-reference"><span>Thêm nội dung từ block khác</span><select
+        disabled={typed.__readOnly} value="" onChange={event=>{const reference=typed.__references?.find(item=>
+          `${item.source}|${item.sourceHandle}|${item.targetHandle}`===event.target.value);if(reference)typed.__onReference?.(reference)}}>
+        <option value="">@ Chọn nội dung liên quan…</option>{typed.__references.map(reference=><option
+          key={`${reference.source}-${reference.sourceHandle}-${reference.targetHandle}`}
+          value={`${reference.source}|${reference.sourceHandle}|${reference.targetHandle}`}>@{reference.label} · {reference.detail}</option>)}</select></label>}
+    </section>}
+    <footer><span>{typed.__cost===undefined?'Chi phí do server xác nhận':`Tối đa ${typed.__cost} credit`}</span>
+      <nav className="node-footer-actions nodrag"><button onClick={event=>{event.stopPropagation();typed.__onOpen?.()}}>Chi tiết</button>
+        <button className="node-run" disabled={typed.__readOnly||typed.__status==='running'}
+          onClick={event=>{event.stopPropagation();typed.__onRun?.()}}>{typed.__cost===undefined?'Báo giá':`${typed.__cost} credit · Chạy`}</button></nav></footer>
     {tool&&Object.entries(tool.params_schema).filter(([name])=>typed.__inputFields?.includes(name)).map(([name],index)=><Handle
       key={name} id={name} type="target" position={Position.Left} className="typed-port input-port"
       style={{top:58+index*28}} aria-label={`Đầu vào ${fieldLabel(name)}`}/>)}

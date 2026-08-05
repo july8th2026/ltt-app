@@ -14,6 +14,100 @@
 
 ---
 
+## 2026-08-05 — H21.7b customer-first hardening theo Q68
+
+- **Mục tiêu:** hoàn tất phần triển khai Q68 đang dở trong cây làm việc, chạy đủ
+  gate mà chính H21.7b tự đặt, và nghiệm thu bằng browser thật.
+- **Hạng mục:** H21.7b hoàn thành; H21.8 vẫn OPEN vì chưa có 5 người dùng thật.
+- **Trạng thái:** frontend/build/browser/full regression/secret scan đều PASS.
+  Không deploy production.
+
+### Đã làm
+
+- Tiếp nhận thay đổi Q68 đang dở (prompt và CTA báo giá/chạy nằm trong block,
+  panel `Chi tiết` chỉ còn nhãn nghiệp vụ, bỏ Fan-out và upload asset khỏi
+  Inspector, nền `#000`, tab mobile đổi `Inspector` → `Chi tiết`) và chạy nốt gate.
+- **Sửa một lỗi thật do chính H21.7b tạo ra:** picker `@ Thêm nội dung từ block
+  khác` trong node chỉ lọc theo kiểu, không lọc chu trình. Chọn một block đang
+  cấp dữ liệu cho block hiện tại thì `connectGraph` từ chối, **không có gì xảy
+  ra và không báo gì** — khách gặp một điều khiển chết. Picker `+` đầu ra
+  (`quickOptions`) đã lọc `connectionCreatesCycle` từ trước, nên đây là lệch
+  nhất quán trong cùng một sản phẩm. Đã thêm cùng guard vào `referenceOptions`
+  và bổ sung `page.edges` vào deps. Lỗi này rơi đúng tiêu chí P3 “Prevent cycle”
+  mà H21.4 đã tick — nếu lọt sang H21.8 nhiều khả năng ăn P1 và phải làm lại vòng.
+- Test chốt `hides reference options that would loop back into the current block`.
+  Đã **kiểm chứng test fail khi gỡ guard** rồi mới khôi phục; lần viết đầu dùng
+  cặp Hình ảnh→Nâng cấp ảnh thì pass cả khi không có guard (palette mock không
+  cho ảnh quay ngược), phải đổi sang cặp Văn bản↔Hình ảnh mới tái hiện đúng.
+- Vá `tools/agent_browser_server.py`: fake handler kichban trả shape của
+  `text.script` cho cả `text.generate`, làm `/tick` trả 500 và chuỗi mở đầu của
+  Q68 (`Prompt thành hình ảnh`) không chạy nổi trong fixture. Đây là thiếu sót
+  của fixture, không phải lỗi sản phẩm — handler thật có nhánh riêng trả `text`.
+- Sửa tiêu đề mục H21 trong kế hoạch từ `theo Q67` thành `theo Q67 → Q68` theo
+  giao thức đổi quyết định. Các chỗ nhắc Q67 trong nhật ký giữ nguyên vì đó là
+  ghi chép đúng tại thời điểm đó.
+
+### Browser evidence
+
+Fixture cô lập `127.0.0.1:8119`, SQLite `agent-browser-test` trong scratchpad,
+provider giả, không chạm production/Postgres/quota.
+
+- Desktop 1366×900: nền `rgb(0,0,0)`; sau Fit View rail phải 62px và node trái
+  62px — không đè. Prompt nằm trong block; footer có `Chi tiết` và
+  `5 credit · Chạy`; panel `Chi tiết` chỉ hiện Model/Tỷ lệ/Số lượng, không có
+  tên ToolSpec, không có Fan-out, lịch sử chạy thu trong `details`.
+- Picker `+` đầu ra hiện `BƯỚC TIẾP THEO TỪ Bộ ảnh` và chỉ gợi ý bước tương
+  thích; sau fix, block Văn bản không còn chào mời `@Hình ảnh` (`refs: []`).
+- Chuỗi chi tiêu: báo giá 8 credit → `Đã dùng trước xác nhận: 0 credit` →
+  xác nhận → **Hoàn tất, đã dùng 8/8 credit, 2 bước**, artifact ảnh và văn bản
+  hiện trong node. Reload giữ nền đen, node và nội dung đã nhập.
+- Mobile 390×844: tab `Canvas / Công cụ / Chi tiết`, panel `Chi tiết` mở đúng,
+  `scrollWidth == clientWidth == 390`, không tràn ngang.
+- Console cuối **0 error / 0 warning**; toàn bộ request 2xx.
+
+### Test đã chạy
+
+| Lệnh/kiểm tra | Kết quả |
+|---|---|
+| `npm test -- --run` | 51 passed (6 file) |
+| `npm run build` | typecheck + Vite PASS; `main-DbE16SG4.js` gzip 143,30 kB |
+| `verify_frontend_bundle` | PASS; không còn asset cũ trong thư mục build |
+| Playwright Chrome local | desktop 1366 + mobile 390, quote→approve→done 8/8, console 0 |
+| `python -m pytest -q` | **2.092 passed, 8 skipped, 23 subtests, 1 warning; 672,24 s** |
+| `python tools\scan_source_secrets.py` | 930 file; 142.430 dòng; 0 finding; PASS |
+
+### Quyết định mới
+
+Không có. Q68 đã chốt trước đó; phiên này chỉ thực thi. Runtime, credit,
+provider và ownership không đổi.
+
+### Cách lùi lại
+
+Revert commit H21.7b hoặc đặt `LTT_AGENT_CANVAS_PRESENTATION=legacy` để về
+renderer H20. Không đổi schema; dữ liệu workflow/run/credit giữ nguyên.
+
+### Còn tồn đọng
+
+- **Gate Node là gate giả.** `write-build-meta.mjs` ghi chuỗi cứng
+  `node: '22.12.0'` còn `build_release.py` so với đúng chuỗi đó, nên câu báo
+  `built with the wrong Node` không bao giờ kích hoạt được — bundle này thực tế
+  build bằng Node 24.17.0 vẫn PASS. `autosub-studio` đã khai 24.17.0, tức repo
+  đang giữ hai chuẩn Node mà không kiểm cái nào. Phương án đề xuất: ghi
+  `process.versions.node` thật và thống nhất canvas về 24.17.0 (sửa kèm
+  `.nvmrc`, `engines`, `build_release.py`, assert trong `test_95`). Chưa làm vì
+  nằm ngoài phạm vi H21.7b và chạm gate release.
+- 22 file DB fixture rác ở `data/` và `tmp/` từ các phiên trước.
+- H21.8 vẫn cần đúng 5 người dùng thật; browser agent không thay E4.
+- H21.9 chưa được phép deploy trước khi H21.8 PASS và có yêu cầu deploy rõ ràng.
+
+### Việc tiếp theo
+
+1. Chủ sản phẩm chạy H21.8 controlled beta theo `07_CONTROLLED_BETA_PROTOCOL.md`.
+2. Quyết định phương án Node rồi làm thành hạng mục riêng có full gate.
+3. H21.9 chỉ sau khi 1 PASS.
+
+---
+
 ## 2026-08-05 — H21.7a hardening bằng thao tác Chrome như người dùng
 
 - **Mục tiêu:** tái hiện các luồng Canvas vừa triển khai trên browser render

@@ -79,9 +79,9 @@ describe('CanvasShell', () => {
     fireEvent.change(title,{target:{value:'Lời dẫn mở đầu'}})
     expect(title).toHaveValue('Lời dẫn mở đầu')
     fireEvent.click(node)
-    const prompt = screen.getByRole('textbox', { name: /Mô tả/ })
-    fireEvent.change(prompt, { target: { value: 'Chủ đề mới' } })
-    expect(prompt).toHaveValue('Chủ đề mới')
+    expect(screen.getByRole('region',{name:'Thiết lập Văn bản'})).toBeInTheDocument()
+    fireEvent.change(inline, { target: { value: 'Chủ đề mới' } })
+    expect(inline).toHaveValue('Chủ đề mới')
     fireEvent.keyDown(window,{key:'Escape'})
     expect(screen.queryByRole('region',{name:'Thiết lập Văn bản'})).not.toBeInTheDocument()
   })
@@ -118,8 +118,8 @@ describe('CanvasShell', () => {
     render(<CanvasShell />)
     await screen.findByRole('button',{name:'Thêm Văn bản'})
     expect(screen.getByRole('navigation',{name:'Khu vực Canvas'})).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button',{name:'Inspector'}))
-    expect(screen.getByRole('button',{name:'Inspector'})).toHaveAttribute('aria-pressed','true')
+    fireEvent.click(screen.getByRole('button',{name:'Chi tiết'}))
+    expect(screen.getByRole('button',{name:'Chi tiết'})).toHaveAttribute('aria-pressed','true')
     expect(screen.getByLabelText('Run inspector')).toHaveTextContent('Kiểm tra workflow')
   })
 
@@ -164,10 +164,10 @@ describe('CanvasShell', () => {
     expect(screen.getByRole('textbox',{name:/Mô tả/})).toBeInTheDocument()
     expect(screen.queryByText('app_slug')).not.toBeInTheDocument()
     fireEvent.click(within(node).getByRole('button',{name:'Mở thao tác node'}))
-    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Kiểm tra chi phí block này')
+    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Báo giá & chạy block này')
     fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
     fireEvent.contextMenu(node,{clientX:400,clientY:300})
-    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Kiểm tra từ block này')
+    expect(screen.getByRole('complementary',{name:'Menu thao tác node'})).toHaveTextContent('Báo giá & chạy từ đây')
     fireEvent.click(screen.getByRole('button',{name:'Đóng menu ngữ cảnh'}))
     fireEvent.contextMenu(document.querySelector('.react-flow__pane')!,{clientX:600,clientY:250})
     expect(screen.getByRole('complementary',{name:'Menu khoảng trống Canvas'})).toHaveTextContent('Tự động sắp xếp node')
@@ -284,7 +284,7 @@ describe('CanvasShell', () => {
     const transform=await screen.findByLabelText('Khối Nâng cấp ảnh')
     fireEvent.click(transform)
     expect(within(transform).queryByLabelText('Tải lên')).not.toBeInTheDocument()
-    const picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'})
+    const picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'})
     expect(picker).toHaveTextContent('@Hình ảnh · Hình ảnh → Ảnh đầu vào')
     const option=screen.getByRole('option',{name:/@Hình ảnh/}) as HTMLOptionElement
     fireEvent.change(picker,{target:{value:option.value}})
@@ -300,6 +300,23 @@ describe('CanvasShell', () => {
     })).toBe(true),{timeout:1800})
   })
 
+  it('hides reference options that would loop back into the current block',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Văn bản'}))
+    fireEvent.click(screen.getByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Hình ảnh'}))
+    fireEvent.click(await screen.findByLabelText('Khối Hình ảnh'))
+    const picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'})
+    fireEvent.change(picker,{target:{value:(screen.getByRole('option',{name:/@Văn bản/}) as HTMLOptionElement).value}})
+    expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('@Văn bản')
+    fireEvent.click(screen.getByLabelText('Khối Văn bản'))
+    // Hình ảnh feeds this block already: connectGraph refuses the reverse edge
+    // as a cycle, so offering it would leave the customer with a dead control.
+    expect(screen.queryByRole('option',{name:/@Hình ảnh/})).not.toBeInTheDocument()
+    expect(screen.getAllByText(/2 node · 1 kết nối/).length).toBeGreaterThan(0)
+  })
+
   it('keeps multiple scalar sources connected to one collection input',async()=>{
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
@@ -309,10 +326,10 @@ describe('CanvasShell', () => {
     fireEvent.click(screen.getByRole('button',{name:'Hiện công cụ nâng cao'}))
     fireEvent.click(screen.getByRole('button',{name:'Thêm Ghép video'}))
     fireEvent.click(await screen.findByLabelText('Khối Ghép video'))
-    let picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'}) as HTMLSelectElement
+    let picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'}) as HTMLSelectElement
     const first=[...picker.options].find(option=>option.value)!
     fireEvent.change(picker,{target:{value:first.value}})
-    picker=screen.getByRole('combobox',{name:'Tham chiếu đầu vào'}) as HTMLSelectElement
+    picker=screen.getByRole('combobox',{name:'Thêm nội dung từ block khác'}) as HTMLSelectElement
     const second=[...picker.options].find(option=>option.value&&option.value!==first.value)!
     fireEvent.change(picker,{target:{value:second.value}})
     expect(await screen.findByLabelText('Đầu vào đã kết nối')).toHaveTextContent('Video → Video đầu vào')
@@ -339,6 +356,21 @@ describe('CanvasShell', () => {
     const inline=within(text).getByRole('textbox',{name:'Nội dung trực tiếp trong node'})
     fireEvent.keyDown(inline,{key:'i'})
     expect(screen.getAllByLabelText('Khối Hình ảnh')).toHaveLength(1)
+  })
+
+  it('opens a compatibility-filtered next-step picker from the single output plus',async()=>{
+    render(<CanvasShell />)
+    fireEvent.click(await screen.findByRole('button',{name:'Mở công cụ'}))
+    fireEvent.click(screen.getByRole('button',{name:'Thêm Văn bản'}))
+    fireEvent.click(screen.getByLabelText('Kết nối Nội dung'))
+    const picker=screen.getByRole('complementary',{name:'Chọn bước tiếp theo'})
+    expect(picker).toHaveTextContent('TẠO BLOCK MỚI')
+    expect(within(picker).getByRole('button',{name:/Tạo hình ảnh/})).toBeInTheDocument()
+    expect(picker).not.toHaveTextContent('asset.image')
+    fireEvent.click(within(picker).getByRole('button',{name:/Tạo hình ảnh/}))
+    const created=(await screen.findAllByLabelText('Khối Hình ảnh'))[0]
+    expect(within(created).getByRole('textbox',{name:'Mô tả'})).toHaveAttribute('placeholder','Dùng nội dung từ block đã kết nối')
+    expect((within(created).getByRole('textbox',{name:'Mô tả'}) as HTMLTextAreaElement).value).not.toContain('$')
   })
 
   it('keeps Upload and Generate as two modes of the same user-facing Image node',async()=>{
@@ -368,7 +400,8 @@ describe('CanvasShell', () => {
     expect(within(node).queryByLabelText('Tải lên')).not.toBeInTheDocument()
     expect(screen.getByRole('textbox',{name:/Liên kết/})).toHaveAttribute('placeholder',
       'Dán link TikTok, YouTube Shorts hoặc Reels…')
-    expect(screen.getByRole('checkbox',{name:'Tôi xác nhận có quyền sử dụng video'})).toBeInTheDocument()
+    fireEvent.click(within(node).getByRole('button',{name:'Chi tiết'}))
+    expect(screen.getByRole('checkbox',{name:/Tôi xác nhận có quyền sử dụng video/})).toBeInTheDocument()
   })
 
   it('keeps multiple uploads inside one Batch Images node and can switch back to generation',async()=>{

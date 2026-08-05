@@ -27,17 +27,19 @@ function Harness({ connect = vi.fn() }: { connect?: (field: string, value: strin
 }
 
 describe('schema inspector', () => {
-  it('switches depends_on enum variants when model changes', () => {
+  it('switches customer-facing dependent options when the model changes', () => {
     render(<Harness />)
     expect(screen.queryByRole('option', { name: '4k' })).not.toBeInTheDocument()
-    fireEvent.change(screen.getByRole('combobox', { name: 'model' }), { target: { value: 'full' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Model' }), { target: { value: 'full' } })
     expect(screen.getByRole('option', { name: '4k' })).toBeInTheDocument()
   })
 
-  it('offers a keyboard-compatible typed connection choice', () => {
-    const connect = vi.fn(); render(<Harness connect={connect} />)
-    fireEvent.change(screen.getByRole('combobox', { name: 'Nối dữ liệu từ' }),
-      { target: { value: 'n0|size' } })
-    expect(connect).toHaveBeenCalledWith('resolution', 'n0|size')
+  it('hides developer schema and connections from the customer details panel', () => {
+    render(<Harness />)
+    expect(screen.getByRole('complementary',{name:'Chi tiết block'})).toHaveTextContent('Video')
+    expect(screen.getByRole('combobox',{name:'Độ phân giải'})).toBeInTheDocument()
+    expect(screen.queryByText('video.generate')).not.toBeInTheDocument()
+    expect(screen.queryByText('Fan-out')).not.toBeInTheDocument()
+    expect(screen.queryByText('Nối dữ liệu từ')).not.toBeInTheDocument()
   })
 })
