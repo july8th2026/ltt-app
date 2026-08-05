@@ -254,8 +254,7 @@ thủ ranh giới nền tảng và quyết định hiện hành.
 ## 11. Hồ sơ bắt buộc
 
 Sao chép `docs/APP_AUDIT/_MAU/` thành
-`docs/APP_AUDIT/<slug>/<YYYY-MM-DD>/`:
-
+`docs/APP_AUDIT/<slug>/<YYYY-MM-DD>/`:\\
 1. `00_AUDIT_CHARTER.md`
 2. `01_CURRENT_TRUTH.md`
 3. `02_JOURNEY_CONTROL_REGISTRY.md`
