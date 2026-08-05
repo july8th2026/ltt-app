@@ -1019,3 +1019,159 @@ def resource_image_url(request: Request, resource_id: str, variant_id: str,
     if direct:
         return {"url": direct}
     return {"token": storage.download_token(found[0].storage_key)}
+
+
+# ── Sinh ảnh cho tài nguyên (R1.5) ─────────────────────────────────────────
+#
+# OMMI sở hữu ĐIỀU PHỐI và trải nghiệm; lời gọi provider dùng lại job
+# `taoanh.generate` của app Tạo ảnh. Người dùng không rời OMMI.
+#
+# Vì sao không dựng engine riêng: phần có giá trị trong `image_gen` của module
+# nguồn (3.269 dòng) là sinh hàng loạt theo cảnh, chèn ảnh tham chiếu để giữ
+# nhất quán nhân vật, và phiên bản theo cảnh — tất cả nằm TRÊN lời gọi provider,
+# không phải bên trong nó. `image.generate` đã nhận `image_keys`, tức cơ chế
+# nhất quán đã có sẵn. Dựng engine thứ hai chỉ nhân đôi tích hợp provider, xoay
+# khoá, retry và bảng giá.
+#
+# Cơ chế cho phép điều này, đã kiểm: worker phân việc theo `job_type` chứ không
+# theo `app_slug` (`platform_core/jobs.py`), và giá tra theo `job_type`
+# (`platform_core/job_submit.py`). Nên OMMI nộp `taoanh.generate` là hợp lệ và
+# tính đúng giá của Tạo ảnh.
+
+_IMAGE_JOB_TYPE = "taoanh.generate"
+
+
+def _reference_keys(db, *, resource_id: str, owner_id: str,
+                    variant_ids: list) -> list:
+    """Ảnh tham chiếu để giữ nhất quán nhân vật giữa các lần sinh.
+
+    Chỉ chọn trong ảnh CỦA CHÍNH tài nguyên này. Client gửi ID lạ — của người
+    khác hay của tài nguyên khác — thì ID đó rơi ra, không có đường nào ép
+    provider đọc ảnh riêng tư của người khác.
+
+    Phép so `owner_id` bên dưới là phòng thủ lớp hai chứ không phải lớp chính:
+    `variants()` đã lọc qua tài nguyên, và caller luôn gọi `get_owned` trước.
+    Nó chỉ có tác dụng nếu sau này có ai cho phép tham chiếu ảnh của mẫu
+    catalog (owner NULL) — giữ lại để lúc đó không phải nhớ ra.
+    """
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    wanted = {str(v) for v in (variant_ids or [])[:4] if v}
+    if not wanted:
+        return []
+    keys = []
+    for variant in rsvc.variants(db, resource_id, owner_id):
+        if variant.id in wanted and variant.owner_id == owner_id:
+            keys.append(variant.storage_key)
+    return keys
+
+
+def _image_params(request_body: dict, *, resource, owner_id: str,
+                  reference_keys: list) -> dict:
+    prompt = str(request_body.get("prompt") or resource.prompt_text
+                 or resource.description or resource.name).strip()
+    if len(prompt) < 8:
+        raise HTTPException(status_code=422,
+                            detail="Mô tả ảnh quá ngắn — tối thiểu 8 ký tự.")
+    params = {
+        "prompt": prompt[:4000],
+        "aspect_ratio": str(request_body.get("aspect_ratio") or "1:1"),
+        "count": _as_int(request_body.get("count"), 1, 1, 4),
+        "owner_id": owner_id,
+    }
+    model = str(request_body.get("model") or "").strip()
+    if model:
+        params["model"] = model
+    if reference_keys:
+        params["image_keys"] = reference_keys
+    return params
+
+
+@router.post("/api/resources/{resource_id}/images/generate")
+async def generate_resource_image(request: Request, resource_id: str,
+                                  _identity: str = Depends(require_login),
+                                  db: Session = Depends(get_db)):
+    """Báo giá, rồi chạy khi `confirmed` là true.
+
+    Một endpoint làm hai việc để giá người dùng thấy và giá bị trừ được tính
+    bằng ĐÚNG một đoạn mã. Tách đôi là mở đường cho hai công thức lệch nhau.
+    """
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.registry import credit_for
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        resource = rsvc.get_owned(db, resource_id, user.id)
+        refs = _reference_keys(db, resource_id=resource_id, owner_id=user.id,
+                               variant_ids=body.get("reference_variant_ids") or [])
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+
+    params = _image_params(body, resource=resource, owner_id=user.id,
+                           reference_keys=refs)
+    estimate = int(credit_for(_IMAGE_JOB_TYPE, params))
+    if not body.get("confirmed"):
+        return {"credit": estimate, "count": params["count"],
+                "reference_count": len(refs), "authoritative": True,
+                "confirmed": False}
+
+    _require_run_enabled(user)
+    from platform_core import credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
+    from platform_core.registry import RegistryError
+    try:
+        job = submit_with_credit(
+            db, user_id=user.id, app_slug=MANIFEST.slug,
+            job_type=_IMAGE_JOB_TYPE, params=params,
+            dedupe_key=dedupe_key_for(_IMAGE_JOB_TYPE, params))
+        db.commit()
+    except (credit.ThieuCreditError, RegistryError) as exc:
+        db.rollback()
+        raise HTTPException(status_code=402, detail=str(exc)) from exc
+    return {"id": job.id, "status": job.status, "credit": estimate,
+            "resource_id": resource_id, "job_url": f"/jobs/{job.id}"}
+
+
+@router.post("/api/resources/{resource_id}/images/from-job", status_code=201)
+async def attach_generated_images(request: Request, resource_id: str,
+                                  _identity: str = Depends(require_login),
+                                  db: Session = Depends(get_db)):
+    """Gắn ảnh một job đã sinh vào tài nguyên.
+
+    Quyền ở đây suy từ CHÍNH job (`job.user_id`), không suy từ tiền tố khoá như
+    `confirm`: ảnh do `taoanh.generate` sinh nằm trong namespace của app Tạo
+    ảnh, không nằm trong thư mục OMMI của người dùng. Hai đường kiểm khác nhau
+    vì nguồn tin cậy khác nhau — nới lỏng luật tiền tố của `confirm` để dùng
+    chung sẽ mở đúng lỗ hổng mà luật đó đang bịt.
+    """
+    from apps.prompt_ai_ommi.services import resources as rsvc
+    from platform_core.models import JOB_DONE, Job
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    try:
+        rsvc.get_owned(db, resource_id, user.id)
+    except Exception as exc:
+        raise _resource_error(exc) from exc
+
+    job = db.get(Job, str(body.get("job_id") or ""))
+    if job is None or job.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+    if job.status != JOB_DONE:
+        raise HTTPException(status_code=409, detail="Job chưa chạy xong.")
+    if job.job_type != _IMAGE_JOB_TYPE:
+        raise HTTPException(status_code=400, detail="Job này không sinh ảnh.")
+
+    keys = [k for k in ((job.result or {}).get("image_keys") or []) if k][:4]
+    if not keys:
+        raise HTTPException(status_code=400, detail="Job không trả về ảnh nào.")
+
+    made = []
+    try:
+        for index, key in enumerate(keys):
+            made.append(rsvc.add_variant(
+                db, resource_id=resource_id, owner_id=user.id, storage_key=key,
+                label=str(body.get("label") or f"AI {index + 1}")))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _resource_error(exc) from exc
+    return {"variants": [_variant_json(row) for row in made]}
