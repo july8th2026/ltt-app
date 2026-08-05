@@ -121,7 +121,29 @@ hiện có **0 project OMMI** nên không có dữ liệu người dùng nào b�
   `/classic` để lùi lại được mà không phải sửa mã; `/workspace` là bí danh.
   Chủ sản phẩm xác nhận app chưa công khai nên đổi được an toàn; production có
   0 project OMMI. Kiểm browser: cả ba đường đúng, console 0 lỗi.
-- Chưa deploy. Chưa kiểm trên URL công khai.
+- ~~Chưa deploy. Chưa kiểm trên URL công khai.~~ **Đã deploy 2026-08-05**, lần
+  này chạy thẳng không sự cố — installer đã vá sau lần treo trước đó. Hai
+  migration OMMI chạy trên Postgres production. Nghiệm thu trên **URL công
+  khai**: `/health/ready` 200; asset `main-BFGwVhzt.js` và `main-CBfD4L_n.css`
+  đều 200; `/prompt-ai-ommi` redirect đăng nhập đúng; catalog công khai có OMMI;
+  console 0 error; mọi request 2xx/3xx.
+
+### Gate Node: từ gate rỗng thành gate thật
+
+`write-build-meta.mjs` ghi một chuỗi phiên bản viết tay, còn `build_release.py`
+so với một chuỗi cứng khác — nên câu báo *"built with the wrong Node"* **không
+bao giờ kích hoạt được**. Canvas khai 22.12.0 trong khi mọi bản build trên máy
+này chạy 24.17.0, và không ai biết. Ngoài ra bundle `prompt-ai-ommi` **chưa hề
+được kiểm**: một bundle production không có kiểm cũ/mới, lỗ do chính tôi tạo ra
+khi thêm frontend thứ ba.
+
+Đã sửa: cả ba script ghi `process.versions.node` thật; `PINNED_NODE` trong
+`build_release.py` là nguồn duy nhất; canvas về 24.17.0 thay vì cài thêm một
+runtime nữa lên máy chủ chỉ để thoả một con số vốn chưa từng được kiểm; OMMI vào
+danh sách verify. Hai test chốt: ba chỗ khai Node của mỗi frontend phải khớp
+`PINNED_NODE`, và không script nào được ghi số phiên bản viết tay — cấy lại
+chuỗi cứng thì test đỏ. Làm lệch digest bundle OMMI thì `verify_frontend_bundle`
+từ chối; đã thử cả hai.
 
 ---
 
