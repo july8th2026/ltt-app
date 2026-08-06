@@ -200,6 +200,15 @@ class OmmiMetaPrompt(Base):
     # Bản clone nhớ nguồn để biết mẫu gốc đã đổi.
     cloned_from_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # Admin NGỪNG DÙNG một mẫu catalog (H19.6). Khác hẳn `archived_at`:
+    #   archived_at   = chủ sở hữu tự cất bản RIÊNG của mình đi;
+    #   deprecated_at = admin rút một mẫu CHUNG khỏi danh sách chào mời.
+    # Không tách hai cột thì "ngừng chào mẫu cũ" sẽ vô tình cất luôn bản riêng
+    # của người đã clone — họ mất công cụ đang dùng mà không hiểu vì sao.
+    deprecated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    deprecated_note: Mapped[str] = mapped_column(String(300), default="",
+                                                 nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -221,6 +230,15 @@ class OmmiPromptSnippet(Base):
     is_catalog: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     cloned_from_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # Admin NGỪNG DÙNG một mẫu catalog (H19.6). Khác hẳn `archived_at`:
+    #   archived_at   = chủ sở hữu tự cất bản RIÊNG của mình đi;
+    #   deprecated_at = admin rút một mẫu CHUNG khỏi danh sách chào mời.
+    # Không tách hai cột thì "ngừng chào mẫu cũ" sẽ vô tình cất luôn bản riêng
+    # của người đã clone — họ mất công cụ đang dùng mà không hiểu vì sao.
+    deprecated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    deprecated_note: Mapped[str] = mapped_column(String(300), default="",
+                                                 nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -263,6 +281,15 @@ class OmmiStyle(Base):
     attributes: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     is_catalog: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     cloned_from_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    # Admin NGỪNG DÙNG một mẫu catalog (H19.6). Khác hẳn `archived_at`:
+    #   archived_at   = chủ sở hữu tự cất bản RIÊNG của mình đi;
+    #   deprecated_at = admin rút một mẫu CHUNG khỏi danh sách chào mời.
+    # Không tách hai cột thì "ngừng chào mẫu cũ" sẽ vô tình cất luôn bản riêng
+    # của người đã clone — họ mất công cụ đang dùng mà không hiểu vì sao.
+    deprecated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    deprecated_note: Mapped[str] = mapped_column(String(300), default="",
+                                                 nullable=False)
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

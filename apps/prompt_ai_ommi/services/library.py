@@ -96,6 +96,7 @@ def get_visible(db: Session, kind: str, item_id: str, owner_id: str):
 
 def list_items(db: Session, kind: str, owner_id: str, *, catalog: bool = False,
                query: str = "", include_archived: bool = False,
+               include_deprecated: bool = False,
                limit: int = 40, offset: int = 0) -> tuple[list, int]:
     """Danh sách. `catalog=True` trả mẫu chung, ngược lại trả bản riêng.
 
@@ -110,6 +111,10 @@ def list_items(db: Session, kind: str, owner_id: str, *, catalog: bool = False,
                   else model.owner_id == owner_id]
     if not include_archived:
         conditions.append(model.archived_at.is_(None))
+    # Mẫu đã ngừng dùng biến khỏi danh sách CHÀO MỜI, nhưng bản riêng của người
+    # đã clone thì không đụng tới — họ vẫn đang dùng nó để làm việc (H19.6).
+    if catalog and not include_deprecated:
+        conditions.append(model.deprecated_at.is_(None))
     if query:
         like = f"%{query.strip()[:80]}%"
         conditions.append(or_(model.name.ilike(like), model.body.ilike(like)))
@@ -222,6 +227,11 @@ def clone_from_catalog(db: Session, kind: str, *, item_id: str, owner_id: str):
     source = db.get(model, item_id)
     if source is None or source.owner_id is not None:
         raise LibraryNotFound("Không tìm thấy mẫu.")
+    if source.deprecated_at is not None:
+        # Chặn ở service chứ không chỉ ẩn ở danh sách: ẩn khỏi giao diện mà vẫn
+        # clone được bằng ID là "ngừng dùng" chỉ trên danh nghĩa.
+        raise LibraryError(
+            f"Mẫu này đã ngừng dùng. {source.deprecated_note}".strip())
 
     copy = model(owner_id=owner_id, name=source.name, body=source.body,
                  cloned_from_id=source.id)
@@ -276,3 +286,46 @@ def counts(db: Session, owner_id: str) -> dict:
             .where(model.owner_id == owner_id, model.archived_at.is_(None))
         ).scalar_one())
     return out
+
+
+def deprecate(db: Session, kind: str, *, item_id: str, is_admin: bool,
+              note: str = "", deprecated: bool = True):
+    """Ngừng chào mời một mẫu catalog. CHỈ admin (H19.6).
+
+    KHÔNG xoá, KHÔNG chạm tới bản riêng của những người đã clone. Người đã dùng
+    mẫu này vẫn làm việc bình thường; chỉ là không ai clone mới được nữa.
+
+    `note` nên nói rõ dùng gì thay thế — "đã ngừng dùng" mà không nói thay bằng
+    gì thì người dùng chỉ biết mình đang cầm thứ lỗi thời.
+    """
+    if not is_admin:
+        raise LibraryError("Chỉ admin được ngừng dùng mẫu catalog.")
+    model = _model(kind)
+    row = db.get(model, item_id)
+    if row is None or row.owner_id is not None:
+        raise LibraryNotFound("Không tìm thấy mẫu.")
+    row.deprecated_at = _now() if deprecated else None
+    row.deprecated_note = (note or "").strip()[:300] if deprecated else ""
+    row.updated_at = _now()
+    db.flush()
+    return row
+
+
+def deprecated_sources(db: Session, kind: str, owner_id: str) -> list:
+    """Bản riêng của người này mà MẪU GỐC đã ngừng dùng.
+
+    Để giao diện nói được "mẫu gốc của bản này đã ngừng dùng, xem thay thế" —
+    không có phép tra này thì người dùng chỉ phát hiện ra khi kết quả tệ đi.
+    """
+    model = _model(kind)
+    cua_toi = db.execute(select(model).where(
+        model.owner_id == owner_id, model.archived_at.is_(None),
+        model.cloned_from_id.is_not(None))).scalars().all()
+    ra = []
+    for row in cua_toi:
+        goc = db.get(model, row.cloned_from_id)
+        if goc is not None and goc.deprecated_at is not None:
+            ra.append({"id": row.id, "name": row.name,
+                       "source_id": goc.id, "source_name": goc.name,
+                       "note": goc.deprecated_note or ""})
+    return ra

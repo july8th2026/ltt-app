@@ -167,3 +167,44 @@ async def publish_library_item(request: Request, kind: str, item_id: str,
         db.rollback()
         raise _library_error(exc) from exc
     return _library_json(kind, row)
+
+
+@router.post("/api/library/{kind}/{item_id}/deprecate")
+async def deprecate_library_item(request: Request, kind: str, item_id: str,
+                                 _identity: str = Depends(require_login),
+                                 db: Session = Depends(get_db)):
+    """Ngừng chào mời một mẫu catalog (H19.6). CHỈ admin.
+
+    KHÔNG chạm tới bản riêng của những người đã clone — họ vẫn đang dùng nó để
+    làm việc.
+    """
+    from apps.prompt_ai_ommi.services import library as lsvc
+    body = await request.json(); _csrf(request, body); user = _user(request)
+    if getattr(user, "role", "") != "admin":
+        raise HTTPException(status_code=403,
+                            detail="Chỉ admin được ngừng dùng mẫu catalog.")
+    try:
+        row = lsvc.deprecate(db, kind, item_id=item_id, is_admin=True,
+                             note=str(body.get("note") or ""),
+                             deprecated=bool(body.get("deprecated", True)))
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        raise _library_error(exc) from exc
+    return _library_json(kind, row)
+
+
+@router.get("/api/library/{kind}/deprecated-sources")
+def library_deprecated_sources(request: Request, kind: str,
+                               _identity: str = Depends(require_login),
+                               db: Session = Depends(get_db)):
+    """Bản riêng của tôi mà MẪU GỐC đã ngừng dùng.
+
+    Không có phép tra này thì người dùng chỉ phát hiện ra khi kết quả tệ đi.
+    """
+    from apps.prompt_ai_ommi.services import library as lsvc
+    user = _user(request)
+    try:
+        return {"items": lsvc.deprecated_sources(db, kind, user.id)}
+    except Exception as exc:
+        raise _library_error(exc) from exc
