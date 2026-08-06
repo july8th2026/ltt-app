@@ -58,6 +58,26 @@ def _u(path: str) -> str:
 templates.env.add_extension("jinja2.ext.i18n")   # phải nạp TRƯỚC install_*
 templates.env.install_gettext_callables(          # bật cú pháp {% trans %}
     gettext=_i18n._, ngettext=_i18n._n, newstyle=True)
+
+
+def _t(msg, **bien):
+    """`_()` cho template — KHÔNG áp định dạng `%` khi không có biến.
+
+    Bản `newstyle` của Jinja luôn chạy `rv % variables`, kể cả `variables` rỗng.
+    Nên mọi chuỗi chứa dấu `%` VĂN XUÔI đều nổ `ValueError: incomplete format` —
+    ví dụ thật: "Ổn định hai pass bằng libvidstab · +20%." làm trang Nâng cấp
+    video trả 500. Lỗi chỉ lộ khi trang đó được render, không lộ lúc dịch.
+
+    Trả `Markup` vì chuỗi dịch có thực thể HTML (`&larr;`, `&amp;`); để Jinja tự
+    escape thì chúng hiện ra thành `&amp;larr;` trên màn hình.
+    """
+    from markupsafe import Markup
+    s = _i18n._(msg)
+    return Markup(s % bien if bien else s)
+
+
+templates.env.globals["_"] = _t
+templates.env.globals["gettext"] = _t
 templates.env.globals["u"] = _u
 templates.env.globals["lang_hien_tai"] = _i18n.ngon_ngu_hien_tai
 templates.env.globals["NGON_NGU"] = _i18n.NGON_NGU
