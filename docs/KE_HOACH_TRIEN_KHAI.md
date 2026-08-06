@@ -1324,6 +1324,14 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   request hỏng 0; CTA tới `https://app.lttstudios.com/`, login form hiển thị;
   ba alias mẫu chuyển đúng. Hai OAuth callback giữ nguyên SHA-256 so với
   baseline. Bản 1.0.1 còn trên host ở thư mục rollback.
+  - **Kiểm chứng độc lập từ máy nguồn (2026-08-06):** chạy lại
+    `audit_public_web.py` từ máy này — `canonical targets: 13 | failures: 0`,
+    khớp con số máy làm web báo. Bốn alias mẫu trả 301 đúng đích; trang chủ
+    desktop 1366 + mobile 390 đều 0 tràn ngang / 0 lỗi console / có CTA; hai
+    OAuth callback trả **200 không chuyển hướng**.
+    Ghi lại một báo động giả của Claude: grep rộng báo "wp-login còn lộ ở trang
+    chủ", hoá ra chỉ là tên biến CSS `--wp-admin-theme-color`. Phép kiểm của
+    `audit_public_web.py` mới là cái có thẩm quyền, không phải grep tuỳ hứng.
 - [ ] H15.S15 DEEP re-audit + full release gate.
   - [ ] H15.S15.1 `LAYOUT-001` — checkpoint 2026-08-04, **đã code nhưng chưa
     nghiệm thu/deploy**: thêm hợp đồng `standard/catalog/wide/immersive`; mở
