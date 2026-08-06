@@ -7,12 +7,25 @@
   <div class="pagehead">
     <div>
       <h1 style="margin:0 0 4px">Đơn nạp #{{ order.order_code }}</h1>
-      <p class="dim" style="margin:0">Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được.</p>
+      <p class="dim" style="margin:0">
+        {%- if order.status == 'paid' -%}
+          Đơn đã hoàn tất — credit đã vào tài khoản của bạn.
+        {%- else -%}
+          Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được.
+        {%- endif -%}
+      </p>
     </div>
     <div class="actions"><a class="btn ghost" href="/nap">&larr; Gói nạp</a></div>
   </div>
 
   <div class="ui-card billing-order" style="max-width:620px;margin-top:14px">
+    {% if da_huy and order.status != 'paid' %}
+      <div class="alert alert-warn" style="margin:0 0 14px">
+        Bạn đã huỷ ở bước thanh toán — <strong>chưa trừ tiền</strong>. Đơn vẫn
+        còn hiệu lực, mở lại link bên dưới nếu muốn tiếp tục.
+      </div>
+    {% endif %}
+
     <p class="eyebrow" style="margin-top:0">Tóm tắt thanh toán</p>
     <div class="billing-line">
       <span class="dim">Số tiền</span><strong>{{ '{:,}'.format(order.price_vnd) }}đ</strong></div>
@@ -21,10 +34,16 @@
       {%- if order.bonus_percent %} <span style="color:var(--ok);font-weight:400">(+{{ order.bonus_percent }}%)</span>{% endif %}</strong></div>
     <div class="billing-line">
       <span class="dim">Mã đơn</span><span class="mono">{{ order.order_code }}</span></div>
-    <div class="billing-line">
-      <span class="dim">Hết hạn</span><span>{{ order.expires_at.strftime('%d/%m/%Y %H:%M') if order.expires_at else '—' }}</span></div>
+    {% if order.status != 'paid' %}
+      {# Đơn đã trả thì hạn thanh toán vô nghĩa — để lại chỉ làm khách tưởng
+         credit sẽ hết hạn theo. #}
+      <div class="billing-line">
+        <span class="dim">Hết hạn</span><span>{{ order.expires_at.strftime('%d/%m/%Y %H:%M') if order.expires_at else '—' }}</span></div>
+    {% endif %}
 
-    {% if order.checkout_url %}
+    {% if order.status == 'paid' %}
+      {# Đơn đã trả: giấu nút mở cổng, kẻo khách bấm lại rồi chuyển tiền lần hai. #}
+    {% elif order.checkout_url %}
       <a class="btn" href="{{ order.checkout_url }}" target="_blank" rel="noopener"
          style="width:100%;justify-content:center">Mở PayOS / VietQR <span aria-hidden="true">↗</span></a>
     {% else %}
@@ -33,7 +52,8 @@
     {% endif %}
 
     <div style="margin-top:16px" id="tt" role="status" aria-live="polite"
-         hx-get="/nap/don/{{ order.id }}/trangthai" hx-trigger="load" hx-swap="outerHTML"></div>
+         hx-get="/nap/don/{{ order.id }}/trangthai{% if vua_ve %}?ve=1{% endif %}"
+         hx-trigger="load" hx-swap="outerHTML"></div>
   </div>
 
 {% endblock %}

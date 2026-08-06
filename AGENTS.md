@@ -316,3 +316,25 @@ vì đoán. Không có bước này thì mọi chẩn đoán chỉ là phỏng �
 
 Ghi chú: PowerShell coi stderr của `git` là `NativeCommandError` — **không phải
 lỗi**. Chỉ tin `EXITCODE`.
+
+### 9.3 Chạy lệnh vừa cần quyền Administrator vừa cần đọc log
+
+`Start-Process` **không cho dùng `-Verb RunAs` cùng với `-RedirectStandardOutput`**.
+Hai tham số loại trừ nhau, và nó **hỏng im lặng**: không log, không thông báo
+lỗi, tiến trình thoát sau một giây như thể đã chạy xong.
+
+Đúng cách là tách hai lớp:
+
+```powershell
+# Lớp NGOÀI — nâng quyền, KHÔNG chuyển hướng
+Start-Process powershell -ArgumentList '-File','"<wrapper>.ps1"' -Verb RunAs
+
+# Lớp TRONG (trong wrapper, đã có quyền) — chuyển hướng, KHÔNG -Verb
+$p = Start-Process powershell -ArgumentList '-File','"<script>.ps1"' `
+       -RedirectStandardOutput $out -RedirectStandardError $err -Wait -PassThru
+"EXITCODE=$($p.ExitCode)" | Add-Content $sum
+```
+
+Wrapper phải ghi `EXITCODE` ra file. `EXITCODE` **rỗng** nghĩa là tiến trình
+không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai thứ đó thì sẽ báo
+"đã deploy xong" trong khi chưa có gì xảy ra.

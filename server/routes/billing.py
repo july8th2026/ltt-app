@@ -65,11 +65,9 @@ def tao_don(request: Request, package_id: str = Form(...),
             return RedirectResponse("/nap", status_code=303)
         order = billing.tao_don(
             db, user_id=u.id, package=pkg, gateway_id=GATEWAY_MAC_DINH,
-            return_url=f"{base}/nap/don/PLACEHOLDER",
-            cancel_url=f"{base}/nap")
+            return_url=f"{base}/nap/don/{{order_id}}",
+            cancel_url=f"{base}/nap/don/{{order_id}}")
         order_id = order.id
-        # return_url cần id đơn -> cập nhật lại sau khi có id (đơn giản: bỏ qua,
-        # PayOS vẫn về trang chủ; trang /nap/don tự poll trạng thái).
         db.commit()
     finally:
         try: next(gen)
@@ -77,22 +75,53 @@ def tao_don(request: Request, package_id: str = Form(...),
     return RedirectResponse(f"/nap/don/{order_id}", status_code=303)
 
 
+def _tim_don(db, order_id: str, request: Request):
+    """Tìm đơn theo id; nếu hụt thì thử `orderCode` trên query.
+
+    Cổng đính `?code=..&status=..&orderCode=..` vào return_url. Đường vòng theo
+    orderCode cứu được đơn có URL hỏng (như các đơn tạo trước bản vá
+    `PLACEHOLDER`) — người đã trả tiền không bị ném vào trang trống.
+    """
+    from platform_core import billing
+    order = billing.lay_don(db, order_id)
+    if order is not None:
+        return order
+    code = (request.query_params.get("orderCode") or "").strip()
+    if code.isdigit():
+        return billing.lay_don_theo_code(db, int(code))
+    return None
+
+
 @router.get("/nap/don/{order_id}", response_class=HTMLResponse)
 def chi_tiet_don(request: Request, order_id: str, user: str = Depends(require_login)):
-    from platform_core import billing
+    from platform_core import billing, credit
     from platform_core.db import get_session
     u = user_hien_tai(request)
     gen = get_session(); db = next(gen)
+    order = so_du = None
     try:
-        order = billing.lay_don(db, order_id)
-        if order is None or (u is not None and order.user_id != u.id):
-            return HTMLResponse("Không thấy đơn.", status_code=404)
-        db.expunge(order)
+        found = _tim_don(db, order_id, request)
+        # Chỉ chủ đơn được xem. Bản trước bỏ qua kiểm tra khi `u is None`, nghĩa
+        # là một phiên không có người dùng trong CSDL xem được đơn của bất kỳ ai.
+        if found is not None and u is not None and found.user_id == u.id:
+            order = found
+            so_du = credit.so_du(db, u.id)
+            db.expunge(order)
     finally:
         try: next(gen)
         except StopIteration: pass
+
+    if order is None:
+        return templates.TemplateResponse(request, "nap_khong_thay.html", {
+            "user": user, "nav": "nap", "ma_tra_ve": request.query_params.get("orderCode", ""),
+        }, status_code=404)
+
+    # Cổng trả về kèm `status=PAID` trong khi webhook có thể chưa tới — nói
+    # "đang xác nhận" thay vì "đang chờ thanh toán" để khỏi làm khách hoảng.
+    vua_ve = (request.query_params.get("status") or "").upper() == "PAID"
     return templates.TemplateResponse(request, "nap_don.html", {
-        "user": user, "nav": "nap", "order": order,
+        "user": user, "nav": "nap", "order": order, "so_du": so_du,
+        "vua_ve": vua_ve, "da_huy": (request.query_params.get("cancel") or "") == "true",
     })
 
 
@@ -106,14 +135,14 @@ def trang_thai_don(request: Request, order_id: str, user: str = Depends(require_
     order = so_du = None
     try:
         order = billing.lay_don(db, order_id)
-        if order is None or (u is not None and order.user_id != u.id):
+        if order is None or u is None or order.user_id != u.id:
             return HTMLResponse("", status_code=404)
-        if u is not None:
-            so_du = credit.so_du(db, u.id)
+        so_du = credit.so_du(db, u.id)
         db.expunge(order)
     finally:
         try: next(gen)
         except StopIteration: pass
     return templates.TemplateResponse(request, "_nap_trangthai.html", {
         "order": order, "so_du": so_du,
+        "vua_ve": (request.query_params.get("ve") or "") == "1",
     })

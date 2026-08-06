@@ -1,21 +1,75 @@
 {# Fragment HTMX: trạng thái đơn. Tự thay chính mình (outerHTML). Khi đã trả thì
-   BỎ hx-trigger -> ngừng poll. #}
+   BỎ hx-trigger -> ngừng poll.
+
+   `vua_ve` = người dùng vừa được cổng đưa về kèm status=PAID. Lúc đó webhook có
+   thể chưa tới (đo thật: 40 giây), nên chờ ở đây là BÌNH THƯỜNG — phải nói
+   "đang xác nhận" chứ không phải "đang chờ thanh toán", kẻo khách tưởng hỏng và
+   chuyển tiền lần nữa. #}
 {% if order.status == 'paid' %}
-<div id="tt" style="margin-top:16px" role="status" aria-live="polite">
-  <div class="alert alert-ok" style="margin:0">
-    <strong style="color:var(--ok)">✓ Đã thanh toán</strong> — đã cộng
-    {{ '{:,}'.format(order.credits) }} credit.
-    {% if so_du is not none %}Số dư mới: <strong>{{ '{:,}'.format(so_du) }} credit</strong>.{% endif %}
+<div id="tt" style="margin-top:18px" role="status" aria-live="polite">
+  <div style="border:1px solid var(--ok-line);background:var(--ok-bg);
+              border-radius:var(--radius);padding:16px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span aria-hidden="true"
+            style="width:26px;height:26px;border-radius:50%;flex:0 0 auto;
+                   background:var(--ok);color:#fff;display:flex;
+                   align-items:center;justify-content:center;font-size:15px">✓</span>
+      <strong style="color:var(--ok);font-size:16px">Thanh toán thành công</strong>
+    </div>
+
+    <div class="billing-line" style="margin-top:14px">
+      <span class="dim">Credit đã cộng</span>
+      <strong>+{{ '{:,}'.format(order.credits) }}</strong>
+    </div>
+    {% if so_du is not none %}
+    <div class="billing-line">
+      <span class="dim">Số dư hiện tại</span>
+      <strong class="tnum">{{ '{:,}'.format(so_du) }} credit</strong>
+    </div>
+    {% endif %}
+    <div class="billing-line">
+      <span class="dim">Thời điểm</span>
+      <span>{{ order.paid_at.strftime('%H:%M %d/%m/%Y') if order.paid_at else '—' }}</span>
+    </div>
+    {% if order.gateway_ref %}
+    <div class="billing-line">
+      <span class="dim">Mã giao dịch</span>
+      <span class="mono" style="font-size:12px">{{ order.gateway_ref }}</span>
+    </div>
+    {% endif %}
+
+    <div class="actions" style="margin-top:16px">
+      <a class="btn" href="/">Bắt đầu dùng công cụ</a>
+      <a class="btn ghost" href="/nap">Nạp thêm</a>
+    </div>
   </div>
 </div>
+
 {% elif order.status in ('expired', 'cancelled', 'failed') %}
-<div id="tt" style="margin-top:16px" role="alert">
-  <div class="alert alert-err" style="margin:0">Đơn không hoàn tất hoặc đã hết hạn — vui lòng tạo đơn mới.</div>
+<div id="tt" style="margin-top:18px" role="alert">
+  <div class="alert alert-err" style="margin:0">
+    <strong>Đơn không hoàn tất hoặc đã hết hạn.</strong>
+    Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao
+    dịch ngân hàng để được đối soát.
+    <div class="actions" style="margin-top:12px">
+      <a class="btn sm" href="/nap">Tạo đơn mới</a>
+    </div>
+  </div>
 </div>
+
 {% else %}
-<div id="tt" style="margin-top:16px" role="status" aria-live="polite"
-     hx-get="/nap/don/{{ order.id }}/trangthai" hx-trigger="every 4s" hx-swap="outerHTML">
-  <span class="badge b-warn"><span class="dot"></span>Đang chờ thanh toán…</span>
-  <span class="dim" style="font-size:12px;margin-left:8px">Tự kiểm tra mỗi 4 giây.</span>
+<div id="tt" style="margin-top:18px" role="status" aria-live="polite"
+     hx-get="/nap/don/{{ order.id }}/trangthai{% if vua_ve %}?ve=1{% endif %}"
+     hx-trigger="every 4s" hx-swap="outerHTML">
+  {% if vua_ve %}
+    <span class="badge b-warn"><span class="dot"></span>Đang xác nhận với ngân hàng…</span>
+    <p class="dim" style="font-size:12px;margin:8px 0 0">
+      Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở —
+      credit sẽ tự hiện, bạn <strong>không cần chuyển lại</strong>.
+    </p>
+  {% else %}
+    <span class="badge b-warn"><span class="dot"></span>Đang chờ thanh toán…</span>
+    <p class="dim" style="font-size:12px;margin:8px 0 0">Tự kiểm tra mỗi 4 giây.</p>
+  {% endif %}
 </div>
 {% endif %}

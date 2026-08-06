@@ -69,7 +69,16 @@ def _sinh_order_code(db: DbSession) -> int:
 def tao_don(db: DbSession, *, user_id: str, package: CreditPackage, gateway_id: str,
             return_url: str = "", cancel_url: str = "") -> PaymentOrder:
     """Tạo đơn nạp (pending) + gọi cổng lấy checkout_url. Nếu cổng chưa cấu hình
-    thì đơn vẫn được tạo (checkout_url rỗng) — admin có thể xác nhận tay."""
+    thì đơn vẫn được tạo (checkout_url rỗng) — admin có thể xác nhận tay.
+
+    `return_url`/`cancel_url` được phép chứa **`{order_id}`**; hàm này thay bằng
+    id thật sau khi flush. Cần vậy vì id chỉ có SAU khi tạo đơn, nhưng URL lại
+    phải gửi kèm ngay lúc gọi cổng. Chuỗi không chứa token thì giữ nguyên.
+
+    ⚠️ Đừng tự ghép một chuỗi giữ chỗ rồi định "sửa sau": cổng gửi người dùng về
+    ĐÚNG URL đã nhận. Bản trước gửi chữ `PLACEHOLDER` và khách trả tiền xong bị
+    ném vào trang 404 — lỗi chỉ lộ ra khi có giao dịch thật.
+    """
     credits = billing_math.tong_credits(package.credits_base, package.bonus_percent)
     order = PaymentOrder(
         order_code=_sinh_order_code(db), user_id=user_id, package_id=package.id,
@@ -79,6 +88,9 @@ def tao_don(db: DbSession, *, user_id: str, package: CreditPackage, gateway_id: 
     )
     db.add(order); db.flush()
 
+    ru = (return_url or "").replace("{order_id}", str(order.id))
+    cu = (cancel_url or "").replace("{order_id}", str(order.id))
+
     from platform_core import payments
     gw = payments.get(gateway_id)
     if gw is not None and gw.da_cau_hinh():
@@ -86,7 +98,7 @@ def tao_don(db: DbSession, *, user_id: str, package: CreditPackage, gateway_id: 
             res = gw.tao_thanh_toan(
                 order_code=order.order_code, amount_vnd=order.price_vnd,
                 description=f"LTTAI {order.order_code}",
-                return_url=return_url, cancel_url=cancel_url)
+                return_url=ru, cancel_url=cu)
             order.checkout_url = (res.get("checkout_url") or "")[:500]
             order.gateway_ref = (res.get("ref") or "")[:120]
         except Exception as e:  # noqa: BLE001 - cổng lỗi không được làm mất đơn

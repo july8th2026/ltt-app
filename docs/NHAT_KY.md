@@ -14,6 +14,107 @@
 
 ---
 
+## 2026-08-06 — Đồng tiền thật đầu tiên, và con bug nó lôi ra
+
+- **Mục tiêu:** deploy H19/H22/H23, đăng ký webhook PayOS, chạy một giao dịch thật.
+- **Hạng mục:** H9 — hoàn thành (lần đầu có tiền thật chạy hết vòng)
+- **Trạng thái:** xong
+
+### Đã làm
+
+**Deploy hai nhịp.** Nhịp 1a (`LTT_WORKER_PROCESSES=1`) để migration và mã mới
+lên trước mà worker vẫn một tiến trình như cũ — nếu hỏng thì biết chắc lỗi
+không đến từ đa tiến trình. Ba migration vào CSDL production (`gpu_leases` +
+`uq_gpu_lease_host_uuid`, `ommi_scene_version.feedback`,
+`ommi_meta_prompt.deprecated_at/note`), head `e5f6a4b5c6d7`. Nhịp 1b bỏ biến
+đó, worker tự chọn theo số GPU → log `chay 2 tien trinh worker song song`, cả
+hai PID sống.
+
+**Webhook PayOS.** Gọi `POST api-merchant.payos.vn/confirm-webhook`, trả
+`code: "00" success` — PayOS đã gọi thử vào `https://app.lttstudios.com/webhooks/payment/payos`
+và nhận phản hồi hợp lệ. Trước deploy endpoint trả 503 (`GatewayChuaCauHinh`),
+sau deploy trả 400 (`ChuKyKhongHopLe`) cho POST rỗng — đó là bằng chứng ba khoá
+đã thực sự nạp vào tiến trình dịch vụ, không chỉ nằm trong `app.env`. NSSM giữ
+**bản chụp** env nên chỉ chạy lại bộ cài mới đồng bộ.
+
+**Giao dịch thật 50.000đ** (gói rẻ nhất; không có gói 10.000đ như dự tính ban
+đầu). Đơn `#7565780319`: tạo 21:43:15 → `paid` + `credited=True` lúc 21:44:53.
+Webhook về sau ~40 giây. Sổ credit thêm đúng **một** bút toán `topup +500`,
+số dư 20 → 520. `gateway_ref` đổi từ mã link PayOS sang mã ngân hàng
+`FT26218577466709`.
+
+**Bug lộ ra ngay sau đó — và chỉ giao dịch thật mới lộ được.** Trả tiền xong,
+khách bị ném vào một trang trắng có đúng một dòng chữ *"Không thấy đơn."*
+Nguyên nhân ở `server/routes/billing.py`: `return_url` gửi cho PayOS là chuỗi
+`f"{base}/nap/don/PLACEHOLDER"`, kèm chú thích tự trấn an *"đơn giản: bỏ qua,
+PayOS vẫn về trang chủ"*. Giả định đó sai — cổng đưa người dùng về **đúng** URL
+nhận được, kể cả khi URL đó vô nghĩa. Không test nào bắt được vì không test nào
+đi qua cổng thật.
+
+Sửa ba lớp:
+1. `platform_core.billing.tao_don` thay `{order_id}` bằng id thật sau `flush()`
+   (id chỉ có sau khi tạo đơn, nhưng URL phải gửi ngay lúc gọi cổng);
+2. `/nap/don/{id}` hụt id thì tra tiếp bằng `?orderCode=` cổng đính kèm — cứu
+   được các đơn đã tạo bằng URL hỏng;
+3. trang hụt đơn thành trang thật (`nap_khong_thay.html`) mở đầu bằng câu người
+   vừa mất tiền cần đọc: **tiền không mất, credit cộng theo báo có của ngân
+   hàng chứ không theo trang này**.
+
+**Giao diện phản hồi.** Trạng thái `paid` thành biên lai đủ (credit đã cộng, số
+dư mới, thời điểm, mã giao dịch để đối soát) thay cho một dòng alert. Thêm
+trạng thái *"đang xác nhận với ngân hàng"* riêng cho lúc vừa từ cổng về mà
+webhook chưa tới — 40 giây im lặng là chỗ khách dễ tưởng hỏng rồi **chuyển tiền
+lần hai**. Đơn đã trả thì giấu nút mở cổng, cùng lý do.
+
+**Một lỗ quyền tiện tay bịt.** Cả hai handler đơn viết
+`if order is None or (u is not None and order.user_id != u.id)` — khi `u is
+None` thì vế kiểm chủ sở hữu bị bỏ qua, tức một phiên không có người dùng trong
+CSDL xem được đơn của bất kỳ ai. Đổi thành `u is None` → từ chối.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest tests/test_156_nap_trang_phan_hoi.py` | 11 pass |
+| `pytest tests/test_156 + test_76_billing.py` | 28 pass |
+| Trồng lại bug cũ rồi chạy test_156 | **2 fail** đúng chỗ — test có tính bác bỏ |
+| `python tools/gate.py` | (ghi kết quả khi xong) |
+
+Bánh cóc `test_ma_nguon_khong_con_chuoi_giu_cho` soi bằng **AST**, chỉ xét giá
+trị truyền vào `return_url`/`cancel_url`. Bản đầu tìm chuỗi cả file thì dính
+vào chính đoạn chú thích kể lại con bug này — báo động giả vĩnh viễn.
+
+### Quyết định mới
+
+Chưa có Q mới. **Đang chờ chủ sản phẩm quyết** việc Bot Fight Mode: bản Free
+không cho loại trừ theo đường dẫn, nên nó áp lên cả `POST /webhooks/payment/payos`
+— cú gọi server-tới-server không có dấu vết trình duyệt, đúng hình dạng bị chặn.
+Hỏng ở đó nghĩa là **khách trả tiền nhưng không nhận credit**, và chỉ lộ khi có
+người khiếu nại. Đổi lại nó bảo vệ gần như bằng không, vì endpoint đã tự kiểm
+chữ ký HMAC. Đề xuất thay bằng WAF custom rule (Free cho 5 luật) đặt Managed
+Challenge riêng cho `/login`, `/dang-ky`, `/quen-mat-khau`.
+
+### Cách lùi lại
+
+Mã: `git revert` commit của phiên này. Deploy: `C:\LTTPlatform\app.previous\`.
+CSDL: `C:\LTTPlatform\backups\ltt_data_20260806_204202.zip` (chụp trước deploy).
+Env: `C:\LTTPlatform\secrets\app.env.bak-1b`.
+
+### Còn tồn đọng
+
+- Bản vá trang phản hồi **chưa deploy** — production vẫn đang chạy bản có bug.
+- Bot Fight Mode chờ quyết.
+- Đơn `#5864454177` (02/08, pending, `checkout_url` rỗng) là rác từ thời chưa có
+  khoá; `het_han_don()` sẽ dọn.
+
+### Việc tiếp theo
+
+1. Gate xanh → deploy bản vá → kiểm trên URL công khai bằng trình duyệt thật.
+2. Chốt Bot Fight Mode hoặc WAF theo đường dẫn.
+3. H21.8 (cần 5 người dùng thật), H15.S15, H13.taovideo R8–R10, H19.10.
+
+---
+
 ## 2026-08-06 — Kích hoạt WordPress integration DEFERRED-WP-001
 
 - **Mục tiêu:** kích hoạt plugin từ nguồn chân lý trong repo, khép 29 alias
