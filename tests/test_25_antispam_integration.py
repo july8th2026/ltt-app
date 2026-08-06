@@ -51,13 +51,9 @@ class TestPageWarmupWiredIntoSheetRunner(unittest.TestCase):
 # GAP-2 — page_health.record_reach wired
 # =============================================================================
 
-class TestPageHealthWiredIntoInsightsFetcher(unittest.TestCase):
-
-    def test_gap2_insights_fetcher_records_reach(self):
-        with open(os.path.join("core", "insights_fetcher.py"), encoding="utf-8") as f:
-            src = f.read()
-        self.assertIn("page_health", src)
-        self.assertIn("record_reach", src)
+# TestPageHealthWiredIntoInsightsFetcher da xoa 2026-08-06 cung voi
+# core/insights_fetcher.py (H22.11). Test nay chi doc chuoi trong file
+# nguon do; file khong con thi phep kiem cung khong con nghia.
 
 
 # =============================================================================

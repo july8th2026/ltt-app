@@ -40,6 +40,11 @@ Nói cách khác: **99,4% của `core/` không phục vụ app nào đang bán.*
 | 1 | `core.tiktok` (chỉ là `__init__`) |
 | 0 | `core` (chỉ là `__init__`) |
 
+> **Đính chính khi thực hiện (2026-08-06):** ba file `__init__.py` là **dấu hiệu
+> package**, không phải code chết — xoá chúng là gãy `core.facebook.commenter`
+> và `core.tiktok.*` đang sống. Thực tế xoá được **2 module / 533 dòng**, không
+> phải 5/535.
+
 `core.tiktok.token_refresher` đáng chú ý: có `core.token_refresher` ở tầng trên
 vẫn sống, nên đây nhiều khả năng là bản trùng bị bỏ quên chứ không phải tính
 năng còn dở.
@@ -89,12 +94,12 @@ Xếp theo tỉ lệ lợi ích trên rủi ro:
 
 | # | Việc | Rủi ro | Lợi |
 |---|---|---|---|
-| C1 | Xoá 5 module không ai gọi (535 dòng) + test của riêng chúng | rất thấp | dọn sạch, đo được ngay |
+| C1 | ✅ **XONG 2026-08-06** — xoá 2 module (533 dòng) + 10 test chỉ phục vụ chúng | rất thấp | dọn sạch, đo được ngay |
 | C2 | Đưa 43 route legacy vào **một cờ bật/tắt** (`LTT_SOCIALBOT_ROUTES`), mặc định TẮT ở production | thấp | bề mặt công khai giảm 62% mà không xoá code |
 | C3 | Chuyển `core.runtime_paths` sang `platform_core/` rồi cắt phụ thuộc `core/` khỏi app | thấp | app không còn dính gì tới `core/` |
 | C4 | Sau C2 chạy ổn định một thời gian: tách hẳn `core/` + 43 route ra repo riêng | trung bình | repo còn đúng phần đang bán |
 
-**C1 và C3 làm được ngay.** C2 cần người dùng xác nhận, vì tắt route nghĩa là
+**C1 và C3 đã làm xong 2026-08-06.** C2 cần người dùng xác nhận, vì tắt route nghĩa là
 bảng điều khiển cũ biến mất khỏi web — cần biết có ai còn dùng không.
 
 ## Điều phép đo này KHÔNG chứng minh
