@@ -16,6 +16,7 @@ cầu người dùng: "upscale cho seedance lấy code từ app upscale").
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 
@@ -37,9 +38,9 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="upscalevideo",
-    display_name="Nâng cấp video",
+    display_name=N_('Nâng cấp video'),
     route_prefix="/upscalevideo",
-    summary="Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh.",
+    summary=N_('Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh.'),
     icon="🔍",
     accent="#B4530A",
 
@@ -54,7 +55,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.upscale", job_type="upscalevideo.render",
-        description="Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN.",
+        description=N_('Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN.'),
         params_schema={
             "video_key": {"type": "video", "required": True},
             "preset": {"type": "enum", "values": ["fast", "quality"], "default": "fast"},
@@ -71,7 +72,7 @@ MANIFEST = AppManifest(
         verifiable=("technical",),
     ), ToolSpec(
         name="image.upscale", job_type="upscalevideo.render",
-        description="Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ.",
+        description=N_('Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ.'),
         params_schema={
             "image_key": {"type": "image", "required": True},
             "preset": {"type": "enum", "values": ["fast", "quality"], "default": "fast"},

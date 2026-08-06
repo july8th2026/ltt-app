@@ -10,6 +10,7 @@ Upload video lớn đi thẳng browser→R2 (presigned PUT, P1) — né trần 1
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 
@@ -33,9 +34,9 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="autosubvideo",
-    display_name="Khắc phụ đề video",
+    display_name=N_('Khắc phụ đề video'),
     route_prefix="/autosubvideo",
-    summary="Nạp video + transcript (.srt/.json), chọn kiểu chữ, khắc phụ đề đẹp vào video.",
+    summary=N_('Nạp video + transcript (.srt/.json), chọn kiểu chữ, khắc phụ đề đẹp vào video.'),
     icon="💬",
     accent="#0E7C86",
 
@@ -51,7 +52,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.subtitle", job_type="autosubvideo.render",
-        description="Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg.",
+        description=N_('Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg.'),
         params_schema={
             "video_key": {"type": "video", "required": True},
             "transcript": {"type": "json", "required": True},

@@ -2,6 +2,18 @@
 msgid "&larr; Gói nạp"
 msgstr ""
 
+#: apps/kichban/manifest.py:34
+msgid "AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags."
+msgstr ""
+
+#: apps/agent/manifest.py:13
+msgid "Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát."
+msgstr ""
+
+#: apps/taoclipngan/manifest.py:32
+msgid "Biến video dài thành nhiều clip ngắn dọc (TikTok/Shorts/Reels) — AI chọn highlight, reframe, phụ đề."
+msgstr ""
+
 #: server/templates/nap.html:31
 msgid "Báo giá trọn gói"
 msgstr ""
@@ -95,6 +107,10 @@ msgstr ""
 msgid "Các gói credit"
 msgstr ""
 
+#: apps/mediatools/manifest.py:21
+msgid "Các primitive asset, tách frame và ghép media cho Agent Canvas."
+msgstr ""
+
 #: server/templates/home.html:5
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
 msgstr ""
@@ -119,12 +135,20 @@ msgstr ""
 msgid "Cộng đồng sẽ mở khi có không gian thảo luận thật"
 msgstr ""
 
+#: apps/demo/manifest.py:37
+msgid "Demo — kiểm tra hạ tầng"
+msgstr ""
+
 #: server/templates/home.html:46
 msgid "Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy."
 msgstr ""
 
 #: server/templates/register.html:17
 msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
+msgstr ""
+
+#: apps/mediatools/manifest.py:59
+msgid "Ghép 2–12 ảnh thành một contact sheet ngang, dọc hoặc dạng lưới."
 msgstr ""
 
 #: server/templates/demo.html:23
@@ -197,8 +221,20 @@ msgstr ""
 msgid "Không tìm thấy đơn nạp này"
 msgstr ""
 
+#: apps/autosubvideo/manifest.py:37
+msgid "Khắc phụ đề video"
+msgstr ""
+
+#: apps/autosubvideo/manifest.py:55
+msgid "Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg."
+msgstr ""
+
 #: server/templates/_job_progress.html:18
 msgid "Kết quả đã sẵn sàng."
+msgstr ""
+
+#: apps/kichban/manifest.py:32
+msgid "Kịch bản YouTube"
 msgstr ""
 
 #: server/templates/_platform_footer.html:6
@@ -312,8 +348,28 @@ msgstr ""
 msgid "Nhập tên đăng nhập"
 msgstr ""
 
+#: apps/mediatools/manifest.py:71
+msgid "Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube Shorts, Instagram/Facebook Reels hoặc URL HTTPS trực tiếp."
+msgstr ""
+
 #: server/templates/forgot_password.html:20
 msgid "Nhớ mật khẩu rồi? Đăng nhập"
+msgstr ""
+
+#: apps/upscalevideo/manifest.py:75
+msgid "Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ."
+msgstr ""
+
+#: apps/upscalevideo/manifest.py:41
+msgid "Nâng cấp video"
+msgstr ""
+
+#: apps/upscalevideo/manifest.py:43
+msgid "Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh."
+msgstr ""
+
+#: apps/upscalevideo/manifest.py:58
+msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN."
 msgstr ""
 
 #: server/templates/home.html:31 server/templates/home.html:46
@@ -323,6 +379,10 @@ msgstr ""
 
 #: server/templates/_header.html:44 server/templates/_nap_trangthai.html:43
 msgid "Nạp thêm"
+msgstr ""
+
+#: apps/autosubvideo/manifest.py:39
+msgid "Nạp video + transcript (.srt/.json), chọn kiểu chữ, khắc phụ đề đẹp vào video."
 msgstr ""
 
 #: server/templates/register_sent.html:8
@@ -341,8 +401,16 @@ msgstr ""
 msgid "Nền tảng công cụ AI"
 msgstr ""
 
+#: apps/mediatools/manifest.py:65
+msgid "Nối 2–12 video theo thứ tự thành một MP4 chuẩn H.264."
+msgstr ""
+
 #: server/templates/demo.html:20
 msgid "Nội dung"
+msgstr ""
+
+#: apps/taoclipngan/manifest.py:45
+msgid "Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề."
 msgstr ""
 
 #: server/templates/home.html:29
@@ -363,6 +431,38 @@ msgstr ""
 
 #: server/templates/_header.html:43 server/templates/home.html:31
 msgid "Quản trị"
+msgstr ""
+
+#: apps/mediatools/manifest.py:44
+msgid "Sinh giọng đọc có điều khiển phong cách bằng Gemini TTS."
+msgstr ""
+
+#: apps/taoanh/manifest.py:69
+msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model."
+msgstr ""
+
+#: apps/thumbnail/manifest.py:51
+msgid "Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ."
+msgstr ""
+
+#: apps/taoanh/manifest.py:56
+msgid "Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do."
+msgstr ""
+
+#: apps/taovideo/manifest.py:57
+msgid "Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn."
+msgstr ""
+
+#: apps/taovideo/manifest.py:46
+msgid "Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật."
+msgstr ""
+
+#: apps/kichban/manifest.py:56
+msgid "Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra."
+msgstr ""
+
+#: apps/taoanh/manifest.py:45
+msgid "Sinh ảnh từ mô tả tự do bằng Gemini Image. Chọn model, tỉ lệ, số ảnh."
 msgstr ""
 
 #: server/templates/home.html:29
@@ -425,6 +525,10 @@ msgstr ""
 msgid "Trang chủ"
 msgstr ""
 
+#: apps/chataistudio/manifest.py:18
+msgid "Trò chuyện với AI (GPT-5) và tạo ảnh trực tiếp trong phiên chat. Lưu hội thoại riêng theo tài khoản."
+msgstr ""
+
 #: server/templates/jobs.html:8 server/templates/jobs.html:23
 #: server/templates/nap.html:59
 msgid "Trạng thái"
@@ -444,6 +548,10 @@ msgstr ""
 
 #: server/templates/home.html:18
 msgid "Tài nguyên"
+msgstr ""
+
+#: apps/mediatools/manifest.py:52
+msgid "Tách frame đều theo thời gian từ video bằng FFmpeg."
 msgstr ""
 
 #: server/templates/home.html:29
@@ -482,12 +590,28 @@ msgstr ""
 msgid "Tóm tắt thanh toán"
 msgstr ""
 
+#: apps/taoclipngan/manifest.py:30
+msgid "Tạo Clip ngắn"
+msgstr ""
+
+#: apps/thumbnail/manifest.py:37
+msgid "Tạo Thumbnail YouTube"
+msgstr ""
+
 #: server/templates/login.html:25
 msgid "Tạo tài khoản"
 msgstr ""
 
+#: apps/taovideo/manifest.py:44
+msgid "Tạo video AI"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:54
 msgid "Tạo đơn mới"
+msgstr ""
+
+#: apps/taoanh/manifest.py:43
+msgid "Tạo ảnh AI"
 msgstr ""
 
 #: server/templates/home.html:6 server/templates/jobs.html:8
@@ -508,6 +632,10 @@ msgstr ""
 
 #: server/templates/_nap_trangthai.html:71
 msgid "Tự kiểm tra mỗi 4 giây."
+msgstr ""
+
+#: apps/kichban/manifest.py:45
+msgid "Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề."
 msgstr ""
 
 #: server/templates/_header.html:40 server/templates/home.html:31
@@ -647,6 +775,10 @@ msgstr ""
 msgid "Đóng điều hướng"
 msgstr ""
 
+#: apps/socialbot/manifest.py:25
+msgid "Đăng bài Facebook + TikTok"
+msgstr ""
+
 #: server/templates/_header.html:54 server/templates/register.html:22
 msgid "Đăng ký"
 msgstr ""
@@ -689,6 +821,22 @@ msgstr ""
 
 #: server/templates/nap_don.html:12
 msgid "Đơn đã hoàn tất — credit đã vào tài khoản của bạn."
+msgstr ""
+
+#: apps/mediatools/manifest.py:39
+msgid "Đưa một audio đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr ""
+
+#: apps/mediatools/manifest.py:30
+msgid "Đưa một bộ ảnh đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr ""
+
+#: apps/mediatools/manifest.py:34
+msgid "Đưa một video đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr ""
+
+#: apps/mediatools/manifest.py:25
+msgid "Đưa một ảnh đã tải lên vào workflow với provenance thuộc tài khoản."
 msgstr ""
 
 #: server/templates/nap_khong_thay.html:13

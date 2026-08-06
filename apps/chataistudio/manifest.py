@@ -7,6 +7,7 @@ worker) → credit giữ chỗ/quyết toán ngay trong route. Slug là chuỗi 
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
 
 
@@ -14,7 +15,7 @@ MANIFEST = AppManifest(
     slug="chataistudio",
     display_name="Chat AI Studio",
     route_prefix="/chataistudio",
-    summary="Trò chuyện với AI (GPT-5) và tạo ảnh trực tiếp trong phiên chat. Lưu hội thoại riêng theo tài khoản.",
+    summary=N_('Trò chuyện với AI (GPT-5) và tạo ảnh trực tiếp trong phiên chat. Lưu hội thoại riêng theo tài khoản.'),
     icon="💠",
     accent="#0A7E6B",
 

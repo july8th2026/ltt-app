@@ -8,6 +8,7 @@ copy nguyên `cutclipshort/` ở gốc repo; worker gọi 3 hàm lõi. Slug là 
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 
@@ -26,9 +27,9 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="taoclipngan",
-    display_name="Tạo Clip ngắn",
+    display_name=N_('Tạo Clip ngắn'),
     route_prefix="/taoclipngan",
-    summary="Biến video dài thành nhiều clip ngắn dọc (TikTok/Shorts/Reels) — AI chọn highlight, reframe, phụ đề.",
+    summary=N_('Biến video dài thành nhiều clip ngắn dọc (TikTok/Shorts/Reels) — AI chọn highlight, reframe, phụ đề.'),
     icon="✂️",
     accent="#C2185B",
 
@@ -41,7 +42,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.short_clips", job_type="taoclipngan.render",
-        description="Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề.",
+        description=N_('Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề.'),
         params_schema={
             "video_key": {"type": "video", "required": True},
             "tier": {"type": "enum", "values": ["fast", "balanced", "high_quality"], "default": "high_quality"},

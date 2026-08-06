@@ -1,6 +1,7 @@
 """Manifest for PROMPT AI OMMI (Q65/H19)."""
 from __future__ import annotations
 
+from platform_core.i18n import N_
 import math
 
 from platform_core.registry import AppManifest, NavEntry, ToolSpec

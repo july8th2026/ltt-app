@@ -224,6 +224,18 @@ def _(msg: str) -> str:
     return _tai(lang).gettext(msg)
 
 
+def N_(msg: str) -> str:
+    """Đánh dấu để TRÍCH, không dịch ngay. Trả về nguyên chuỗi.
+
+    Cần cho chỗ chuỗi được khai báo lúc **nạp module** — như `display_name` trong
+    `apps/*/manifest.py`. Gọi `_()` ở đó sẽ đóng băng ngôn ngữ theo lần nạp đầu
+    tiên, tức mọi người dùng đều thấy ngôn ngữ của người vào đầu tiên.
+
+    Cách dùng: `N_()` lúc khai báo, `_()` lúc hiển thị.
+    """
+    return msg
+
+
 def _n(it: str, nhieu: str, n: int) -> str:
     """Dạng số ít/số nhiều. Tiếng Việt không chia số nhiều nên gốc luôn trả `it`,
     nhưng tiếng Anh thì có — nếu không có hàm này thì mọi câu đếm được sẽ sai."""

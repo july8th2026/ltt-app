@@ -59,4 +59,7 @@ def test_public_catalog_search_and_mobile_menu_have_accessible_names():
     header = _read("_header.html")
     assert 'for="catsearch"' in home
     assert 'id="catsearch"' in home
-    assert 'aria-label="Mở danh sách ứng dụng"' in header
+    # H24: nhan gio di qua catalog dich. Van chot rang nut CO ten doc duoc cho
+    # trinh doc man hinh — do moi la dieu test nay canh.
+    assert "aria-label=" in header
+    assert "Mở danh sách ứng dụng" in header

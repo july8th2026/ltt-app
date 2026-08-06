@@ -17,11 +17,12 @@ riêng), thì đổi sang `/socialbot/...` và cập nhật Redirect URI cùng l
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
 
 MANIFEST = AppManifest(
     slug="socialbot",
-    display_name="Đăng bài Facebook + TikTok",
+    display_name=N_('Đăng bài Facebook + TikTok'),
     route_prefix="/facebook",          # đường vào chính; các trang khác xem nav
     summary="Chạy hàng đợi từ Google Sheet, đăng thủ công, theo dõi token và "
             "kiểm tra điều kiện audit TikTok.",

@@ -13,6 +13,7 @@ xuống trình duyệt.
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 # Số credit cho MỖI ảnh. Tạm cố định; khi cần chính xác theo token thật thì đọc
@@ -33,7 +34,7 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="thumbnail",
-    display_name="Tạo Thumbnail YouTube",
+    display_name=N_('Tạo Thumbnail YouTube'),
     route_prefix="/thumbnail",
     summary="Sinh ảnh thumbnail YouTube từ mô tả bằng Gemini Image. "
             "Nhập chủ đề + tiêu đề, chọn tỉ lệ, nhận ảnh tải về.",
@@ -47,7 +48,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="image.thumbnail", job_type="thumbnail.generate",
-        description="Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ.",
+        description=N_('Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ.'),
         params_schema={
             "topic": {"type": "string", "required": True, "max_length": 2000},
             "title": {"type": "string", "max_length": 200},

@@ -1,4 +1,5 @@
 """Manifest for the orchestration UI; execution uses existing app ToolSpecs."""
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
 
 
@@ -9,7 +10,7 @@ MANIFEST = AppManifest(
     slug="agent",
     display_name="LTT Agent AI",
     route_prefix="/agent",
-    summary="Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát.",
+    summary=N_('Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát.'),
     icon="✦",
     accent="#8B5CF6",
     nav=(NavEntry("LTT Agent AI", "/agent", "✦", "agent"),

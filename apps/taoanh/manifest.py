@@ -11,6 +11,7 @@ UI/tính năng, chỉ đổi vỏ + hạ tầng (key qua APIKEYS, lưu qua stora
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 MODEL_CREDIT_PER_IMAGE = {
@@ -39,9 +40,9 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="taoanh",
-    display_name="Tạo ảnh AI",
+    display_name=N_('Tạo ảnh AI'),
     route_prefix="/taoanh",
-    summary="Sinh ảnh từ mô tả tự do bằng Gemini Image. Chọn model, tỉ lệ, số ảnh.",
+    summary=N_('Sinh ảnh từ mô tả tự do bằng Gemini Image. Chọn model, tỉ lệ, số ảnh.'),
     icon="🎨",
     accent="#0EA5E9",
 
@@ -52,7 +53,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="image.generate", job_type="taoanh.generate",
-        description="Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do.",
+        description=N_('Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do.'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
             "image_key": {"type": "image", "required": False},
@@ -65,7 +66,7 @@ MANIFEST = AppManifest(
         verifiable=("vlm_judge",),
     ), ToolSpec(
         name="image.batch_generate", job_type="taoanh.generate",
-        description="Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model.",
+        description=N_('Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model.'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
             "image_key": {"type": "image", "required": False},

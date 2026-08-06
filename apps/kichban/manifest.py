@@ -10,6 +10,7 @@ nền tảng (script-src của CSP…) làm test chống hardcode-slug báo nh�
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 CREDIT_PER_SCRIPT = 3
@@ -28,9 +29,9 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="kichban",
-    display_name="Kịch bản YouTube",
+    display_name=N_('Kịch bản YouTube'),
     route_prefix="/kichban",
-    summary="AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags.",
+    summary=N_('AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags.'),
     icon="📝",
     accent="#7C3AED",
 
@@ -41,7 +42,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="text.script", job_type="kichban.generate",
-        description="Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề.",
+        description=N_('Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề.'),
         params_schema={
             "topic": {"type": "string", "required": True, "max_length": 4000},
             "duration": {"type": "enum", "source": "prompts/do_dai_video"},
@@ -52,7 +53,7 @@ MANIFEST = AppManifest(
         returns={"script": "json"},
     ), ToolSpec(
         name="text.generate", job_type="kichban.generate",
-        description="Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra.",
+        description=N_('Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra.'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 12000},
             "source_text": {"type": "text", "max_length": 32000},

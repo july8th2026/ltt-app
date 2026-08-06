@@ -13,6 +13,7 @@ Pha 2 (sau): asset:// (ảnh/video lớn + người thật) + kiểm duyệt m�
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 
@@ -40,9 +41,9 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="taovideo",
-    display_name="Tạo video AI",
+    display_name=N_('Tạo video AI'),
     route_prefix="/taovideo",
-    summary="Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật.",
+    summary=N_('Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật.'),
     icon="🎬",
     accent="#6A0DAD",
 
@@ -53,7 +54,7 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.generate", job_type="taovideo.generate",
-        description="Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn.",
+        description=N_('Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn.'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 10000},
             "model": {"type": "model_ref", "category": "video", "providers": ["byteplus"]},

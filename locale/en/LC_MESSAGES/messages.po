@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-07 00:54+0700\n"
+"POT-Creation-Date: 2026-08-07 01:15+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,18 @@ msgstr ""
 #: server/templates/nap_don.html:18
 msgid "&larr; Gói nạp"
 msgstr "&larr; Credit packages"
+
+#: apps/kichban/manifest.py:34
+msgid "AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags."
+msgstr "AI writes a complete YouTube script: hook, body, outro, description and tags."
+
+#: apps/agent/manifest.py:13
+msgid "Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát."
+msgstr "Turns a goal into a multi-step plan, quotes the cost up front, then runs it under your control."
+
+#: apps/taoclipngan/manifest.py:32
+msgid "Biến video dài thành nhiều clip ngắn dọc (TikTok/Shorts/Reels) — AI chọn highlight, reframe, phụ đề."
+msgstr "Turns a long video into several vertical short clips (TikTok/Shorts/Reels) — AI picks the highlights, reframes and adds subtitles."
 
 #: server/templates/nap.html:31
 msgid "Báo giá trọn gói"
@@ -113,6 +125,10 @@ msgstr "Credits are added when your bank confirms the transfer, not by this page
 msgid "Các gói credit"
 msgstr "Credit packages"
 
+#: apps/mediatools/manifest.py:21
+msgid "Các primitive asset, tách frame và ghép media cho Agent Canvas."
+msgstr "Asset primitives, frame extraction and media stitching for Agent Canvas."
+
 #: server/templates/home.html:5
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
 msgstr "Pay-as-you-go AI tools, all in one account"
@@ -137,6 +153,10 @@ msgstr "Community"
 msgid "Cộng đồng sẽ mở khi có không gian thảo luận thật"
 msgstr "Community opens once there is a real space for discussion"
 
+#: apps/demo/manifest.py:37
+msgid "Demo — kiểm tra hạ tầng"
+msgstr "Demo — infrastructure check"
+
 #: server/templates/home.html:46
 msgid "Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy."
 msgstr "Credits are charged transparently per task, and your balance is always shown before you run anything."
@@ -144,6 +164,10 @@ msgstr "Credits are charged transparently per task, and your balance is always s
 #: server/templates/register.html:17
 msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
 msgstr "Use at least 8 characters, and do not reuse a password from another service."
+
+#: apps/mediatools/manifest.py:59
+msgid "Ghép 2–12 ảnh thành một contact sheet ngang, dọc hoặc dạng lưới."
+msgstr "Combines 2–12 images into a horizontal, vertical or grid contact sheet."
 
 #: server/templates/demo.html:23
 msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
@@ -215,9 +239,21 @@ msgstr "Incomplete"
 msgid "Không tìm thấy đơn nạp này"
 msgstr "We couldn't find this order"
 
+#: apps/autosubvideo/manifest.py:37
+msgid "Khắc phụ đề video"
+msgstr "Burn video subtitles"
+
+#: apps/autosubvideo/manifest.py:55
+msgid "Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg."
+msgstr "Burns an existing transcript into your video using subtitle presets and FFmpeg."
+
 #: server/templates/_job_progress.html:18
 msgid "Kết quả đã sẵn sàng."
 msgstr "Your result is ready."
+
+#: apps/kichban/manifest.py:32
+msgid "Kịch bản YouTube"
+msgstr "YouTube scripts"
 
 #: server/templates/_platform_footer.html:6
 msgid "Liên hệ"
@@ -330,9 +366,29 @@ msgstr "Enter your password"
 msgid "Nhập tên đăng nhập"
 msgstr "Enter your username"
 
+#: apps/mediatools/manifest.py:71
+msgid "Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube Shorts, Instagram/Facebook Reels hoặc URL HTTPS trực tiếp."
+msgstr "Import a public video you have the rights to use, from TikTok, YouTube Shorts, Instagram/Facebook Reels or a direct HTTPS URL."
+
 #: server/templates/forgot_password.html:20
 msgid "Nhớ mật khẩu rồi? Đăng nhập"
 msgstr "Remembered your password? Sign in"
+
+#: apps/upscalevideo/manifest.py:75
+msgid "Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ."
+msgstr "Upscales image detail 4× with Real-ESRGAN on a local GPU."
+
+#: apps/upscalevideo/manifest.py:41
+msgid "Nâng cấp video"
+msgstr "Upscale video"
+
+#: apps/upscalevideo/manifest.py:43
+msgid "Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh."
+msgstr "Upscales to 1080p/2K/4K with stabilisation and frame interpolation. Aspect ratio, frame rate and audio are preserved."
+
+#: apps/upscalevideo/manifest.py:58
+msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN."
+msgstr "Upscales video to 1080p, 2K or 4K with Real-ESRGAN."
 
 #: server/templates/home.html:31 server/templates/home.html:46
 #: server/templates/nap.html:7
@@ -342,6 +398,10 @@ msgstr "Add credit"
 #: server/templates/_header.html:44 server/templates/_nap_trangthai.html:43
 msgid "Nạp thêm"
 msgstr "Add more"
+
+#: apps/autosubvideo/manifest.py:39
+msgid "Nạp video + transcript (.srt/.json), chọn kiểu chữ, khắc phụ đề đẹp vào video."
+msgstr "Load a video plus its transcript (.srt/.json), pick a type style, and burn clean subtitles into the video."
 
 #: server/templates/register_sent.html:8
 msgid "Nếu"
@@ -359,9 +419,17 @@ msgstr "If you already paid for this order, do not pay again — send an admin y
 msgid "Nền tảng công cụ AI"
 msgstr "AI tools platform"
 
+#: apps/mediatools/manifest.py:65
+msgid "Nối 2–12 video theo thứ tự thành một MP4 chuẩn H.264."
+msgstr "Joins 2–12 videos in order into a single standard H.264 MP4."
+
 #: server/templates/demo.html:20
 msgid "Nội dung"
 msgstr "Content"
+
+#: apps/taoclipngan/manifest.py:45
+msgid "Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề."
+msgstr "Analyses a long video and exports several short clips, reframed and subtitled."
 
 #: server/templates/home.html:29
 msgid "Phổ biến"
@@ -382,6 +450,38 @@ msgstr "Forgot your password?"
 #: server/templates/_header.html:43 server/templates/home.html:31
 msgid "Quản trị"
 msgstr "Admin"
+
+#: apps/mediatools/manifest.py:44
+msgid "Sinh giọng đọc có điều khiển phong cách bằng Gemini TTS."
+msgstr "Generates voice-over with style control using Gemini TTS."
+
+#: apps/taoanh/manifest.py:69
+msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model."
+msgstr "Generates a consistent batch of 2–4 images from the same prompt and model."
+
+#: apps/thumbnail/manifest.py:51
+msgid "Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ."
+msgstr "Generates YouTube thumbnails with a title, a style and type settings."
+
+#: apps/taoanh/manifest.py:56
+msgid "Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do."
+msgstr "Generates one to four images with Gemini Image from a free-form prompt."
+
+#: apps/taovideo/manifest.py:57
+msgid "Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn."
+msgstr "Generates Seedance video from a prompt and optional reference assets."
+
+#: apps/taovideo/manifest.py:46
+msgid "Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật."
+msgstr "Generates video from a prompt (plus reference images) with Seedance 2.0. Charged on actual token usage."
+
+#: apps/kichban/manifest.py:56
+msgid "Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra."
+msgstr "General-purpose text generation from an instruction, with a choice of output format."
+
+#: apps/taoanh/manifest.py:45
+msgid "Sinh ảnh từ mô tả tự do bằng Gemini Image. Chọn model, tỉ lệ, số ảnh."
+msgstr "Generates images from a free-form prompt with Gemini Image. Choose the model, aspect ratio and image count."
 
 #: server/templates/home.html:29
 msgid "Sắp xếp:"
@@ -443,6 +543,10 @@ msgstr "Progress"
 msgid "Trang chủ"
 msgstr "Home"
 
+#: apps/chataistudio/manifest.py:18
+msgid "Trò chuyện với AI (GPT-5) và tạo ảnh trực tiếp trong phiên chat. Lưu hội thoại riêng theo tài khoản."
+msgstr "Chat with AI (GPT-5) and generate images right inside the conversation. Chats are saved privately per account."
+
 #: server/templates/jobs.html:8 server/templates/jobs.html:23
 #: server/templates/nap.html:59
 msgid "Trạng thái"
@@ -463,6 +567,10 @@ msgstr "Accounts, pages and token status."
 #: server/templates/home.html:18
 msgid "Tài nguyên"
 msgstr "Assets"
+
+#: apps/mediatools/manifest.py:52
+msgid "Tách frame đều theo thời gian từ video bằng FFmpeg."
+msgstr "Extracts evenly spaced frames from a video with FFmpeg."
 
 #: server/templates/home.html:29
 msgid "Tên A–Z"
@@ -500,13 +608,29 @@ msgstr "System status"
 msgid "Tóm tắt thanh toán"
 msgstr "Payment summary"
 
+#: apps/taoclipngan/manifest.py:30
+msgid "Tạo Clip ngắn"
+msgstr "Make short clips"
+
+#: apps/thumbnail/manifest.py:37
+msgid "Tạo Thumbnail YouTube"
+msgstr "Make YouTube thumbnails"
+
 #: server/templates/login.html:25
 msgid "Tạo tài khoản"
 msgstr "Create an account"
 
+#: apps/taovideo/manifest.py:44
+msgid "Tạo video AI"
+msgstr "Make AI video"
+
 #: server/templates/_nap_trangthai.html:54
 msgid "Tạo đơn mới"
 msgstr "Create a new order"
+
+#: apps/taoanh/manifest.py:43
+msgid "Tạo ảnh AI"
+msgstr "Make AI images"
 
 #: server/templates/home.html:6 server/templates/jobs.html:8
 msgid "Tất cả"
@@ -527,6 +651,10 @@ msgstr "Up to the 10 most recent orders on this account."
 #: server/templates/_nap_trangthai.html:71
 msgid "Tự kiểm tra mỗi 4 giây."
 msgstr "Checking every 4 seconds."
+
+#: apps/kichban/manifest.py:45
+msgid "Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề."
+msgstr "Writes a YouTube script with a hook, body and metadata from a single topic."
 
 #: server/templates/_header.html:40 server/templates/home.html:31
 #: server/templates/jobs.html:4
@@ -665,6 +793,10 @@ msgstr "Paid"
 msgid "Đóng điều hướng"
 msgstr "Close navigation"
 
+#: apps/socialbot/manifest.py:25
+msgid "Đăng bài Facebook + TikTok"
+msgstr "Facebook + TikTok posting"
+
 #: server/templates/_header.html:54 server/templates/register.html:22
 msgid "Đăng ký"
 msgstr "Sign up"
@@ -708,6 +840,22 @@ msgstr "The order is still valid — reopen the link below to continue."
 #: server/templates/nap_don.html:12
 msgid "Đơn đã hoàn tất — credit đã vào tài khoản của bạn."
 msgstr "This order is complete — the credits are in your account."
+
+#: apps/mediatools/manifest.py:39
+msgid "Đưa một audio đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr "Brings an uploaded audio file into a workflow, with provenance tied to your account."
+
+#: apps/mediatools/manifest.py:30
+msgid "Đưa một bộ ảnh đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr "Brings an uploaded image set into a workflow, with provenance tied to your account."
+
+#: apps/mediatools/manifest.py:34
+msgid "Đưa một video đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr "Brings an uploaded video into a workflow, with provenance tied to your account."
+
+#: apps/mediatools/manifest.py:25
+msgid "Đưa một ảnh đã tải lên vào workflow với provenance thuộc tài khoản."
+msgstr "Brings an uploaded image into a workflow, with provenance tied to your account."
 
 #: server/templates/nap_khong_thay.html:13
 msgid "Đường dẫn không khớp đơn nào trong tài khoản của bạn."

@@ -17,6 +17,7 @@ cần API key. Khi chuỗi đã xanh thì cắm Seedance vào chỉ là thay hà
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
 
 
@@ -33,7 +34,7 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="demo",
-    display_name="Demo — kiểm tra hạ tầng",
+    display_name=N_('Demo — kiểm tra hạ tầng'),
     route_prefix="/demo",
     summary="App tối thiểu đi qua đủ chuỗi: tạo job → worker xử lý → trả kết "
             "quả → tải về. Dùng để nghiệm thu hạ tầng mà không tốn phí API.",
