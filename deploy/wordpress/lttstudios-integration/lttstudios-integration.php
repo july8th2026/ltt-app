@@ -2,7 +2,7 @@
 /**
  * Plugin Name: LTT Studios Platform Integration
  * Description: Keeps marketing, legal and LTT AI Studio routes consistent.
- * Version: 1.0.2
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  */
@@ -16,39 +16,39 @@ const LTT_APP_ORIGIN = 'https://app.lttstudios.com';
 /** Legacy static aliases. OAuth callback .html paths are intentionally absent. */
 function ltt_legacy_route_map(): array {
     return [
-        '/about.html' => '/about/',
-        '/products.html' => '/products/',
-        '/support.html' => '/faq/',
-        '/contact.html' => '/contact/',
-        '/download.html' => '/applications/',
-        '/changelog.html' => '/resources/',
-        '/architecture.html' => '/about/',
-        '/transparency.html' => '/about/',
-        '/compliance/meta.html' => '/privacy-policy/',
-        '/compliance/tiktok.html' => '/privacy-policy/',
-        '/legal/privacy.html' => '/privacy-policy/',
-        '/legal/terms.html' => '/terms/',
-        '/legal/data-deletion.html' => '/data-deletion/',
-        '/legal/cookies.html' => '/privacy-policy/',
-        '/legal/dpa.html' => '/privacy-policy/',
-        '/legal/security.html' => '/report-abuse/',
+        '/about.html' => '/en/about/',
+        '/products.html' => '/en/products/',
+        '/support.html' => '/en/faq/',
+        '/contact.html' => '/en/contact/',
+        '/download.html' => '/en/applications/',
+        '/changelog.html' => '/en/resources/',
+        '/architecture.html' => '/en/about/',
+        '/transparency.html' => '/en/about/',
+        '/compliance/meta.html' => '/en/privacy-policy/',
+        '/compliance/tiktok.html' => '/en/privacy-policy/',
+        '/legal/privacy.html' => '/en/privacy-policy/',
+        '/legal/terms.html' => '/en/terms/',
+        '/legal/data-deletion.html' => '/en/data-deletion/',
+        '/legal/cookies.html' => '/en/privacy-policy/',
+        '/legal/dpa.html' => '/en/privacy-policy/',
+        '/legal/security.html' => '/en/report-abuse/',
         '/vi/' => '/',
-        '/vi/about.html' => '/about/',
-        '/vi/products.html' => '/products/',
-        '/vi/support.html' => '/faq/',
-        '/vi/contact.html' => '/contact/',
-        '/vi/download.html' => '/applications/',
-        '/vi/changelog.html' => '/resources/',
-        '/vi/architecture.html' => '/about/',
-        '/vi/transparency.html' => '/about/',
-        '/vi/compliance/meta.html' => '/privacy-policy/',
-        '/vi/compliance/tiktok.html' => '/privacy-policy/',
-        '/vi/legal/privacy.html' => '/privacy-policy/',
-        '/vi/legal/terms.html' => '/terms/',
-        '/vi/legal/data-deletion.html' => '/data-deletion/',
-        '/vi/legal/cookies.html' => '/privacy-policy/',
-        '/vi/legal/dpa.html' => '/privacy-policy/',
-        '/vi/legal/security.html' => '/report-abuse/',
+        '/vi/about.html' => '/gioi-thieu/',
+        '/vi/products.html' => '/san-pham/',
+        '/vi/support.html' => '/cau-hoi-thuong-gap/',
+        '/vi/contact.html' => '/lien-he/',
+        '/vi/download.html' => '/ung-dung/',
+        '/vi/changelog.html' => '/tai-nguyen/',
+        '/vi/architecture.html' => '/gioi-thieu/',
+        '/vi/transparency.html' => '/gioi-thieu/',
+        '/vi/compliance/meta.html' => '/chinh-sach-quyen-rieng-tu/',
+        '/vi/compliance/tiktok.html' => '/chinh-sach-quyen-rieng-tu/',
+        '/vi/legal/privacy.html' => '/chinh-sach-quyen-rieng-tu/',
+        '/vi/legal/terms.html' => '/dieu-khoan-su-dung/',
+        '/vi/legal/data-deletion.html' => '/xoa-du-lieu/',
+        '/vi/legal/cookies.html' => '/chinh-sach-quyen-rieng-tu/',
+        '/vi/legal/dpa.html' => '/chinh-sach-quyen-rieng-tu/',
+        '/vi/legal/security.html' => '/bao-cao-lam-dung/',
     ];
 }
 
@@ -59,7 +59,7 @@ add_action('template_redirect', static function (): void {
         wp_safe_redirect(home_url($map[$path]), 301, 'LTT Route Contract');
         exit;
     }
-}, 0);
+}, -100);
 
 add_filter('login_url', static function (string $url): string {
     return LTT_APP_ORIGIN . '/login';
