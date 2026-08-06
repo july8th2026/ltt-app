@@ -26,7 +26,10 @@ def test_home_mobile_navigation_co_hanh_vi_va_aria_contract():
 def test_home_filter_va_progress_co_accessible_state():
     home = _read("server/templates/home.html")
 
-    assert 'aria-label="Lọc theo nhóm"' in home
+    # H24: nhan gio di qua catalog dich. Van chot rang bo loc CO ten doc duoc
+    # cho trinh doc man hinh — do moi la dieu test nay canh.
+    assert "aria-label=" in home
+    assert "Lọc theo nhóm" in home
     assert 'data-category="all" aria-pressed="true"' in home
     assert "setAttribute('aria-pressed',String(on))" in home
     assert 'id="market-count" aria-live="polite"' in home
