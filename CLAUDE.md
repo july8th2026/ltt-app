@@ -203,10 +203,12 @@ Cửa mở khách trả tiền giờ phụ thuộc **H9 (Thanh toán)**.
 chung về `platform_core`, và **cắt hết phụ thuộc của app vào `core/`**.
 
 Ba việc còn lại, **hai trong đó chờ chủ sản phẩm quyết**:
-- **H22.10** — 43/69 = 62% route công khai thuộc app socialbot đã đóng băng,
-  đang gắn vô điều kiện. Đưa vào cờ mặc định TẮT? *Cần biết có ai còn dùng.*
-- **H22.11** — xoá 5 module `core/` không ai gọi (535 dòng)? *socialbot đóng
-  băng chứ chưa khai tử.*
+- **H22.10** ✅ — 43 route bảng điều khiển FB/TikTok cũ nay nằm sau cờ
+  `LTT_SOCIALBOT_ROUTES`. **Mặc định BẬT** để không ai mất bảng điều khiển một
+  cách lặng lẽ. Đặt `LTT_SOCIALBOT_ROUTES=0` trong `secrets/app.env` khi đã xác
+  nhận không còn ai dùng → bề mặt route công khai giảm 62%.
+- **H22.11** ✅ — đã xoá 2 module `core/` không ai gọi (533 dòng). Ba file
+  `__init__.py` giữ lại vì là dấu hiệu package.
 - **H22.12** — 145 chỗ `except` rộng nuốt lỗi lặng lẽ (đã đo, chưa sửa).
 
 ## Không bao giờ commit hay copy đi

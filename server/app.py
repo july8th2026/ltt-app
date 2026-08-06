@@ -80,6 +80,20 @@ async def _lifespan(app: FastAPI):
             daemon.stop()
 
 
+def _socialbot_routes_enabled(env: dict | None = None) -> bool:
+    """Có gắn 43 route bảng điều khiển FB/TikTok cũ không (H22.10).
+
+    Mặc định BẬT. Chọn mặc định bật chứ không tắt vì tắt sẵn là để bảng điều
+    khiển cũ biến mất **lặng lẽ** với người còn đang dùng, ngay lần deploy tới —
+    một quyết định sản phẩm không nên nằm trong một lần refactor.
+    """
+    import os
+    raw = (env or os.environ).get("LTT_SOCIALBOT_ROUTES")
+    if raw is None:
+        return True
+    return str(raw).strip().lower() not in {"0", "false", "no", "off", ""}
+
+
 def create_app(*, env: dict | None = None) -> FastAPI:
     server_settings = load_server_settings(env)
     from server.telemetry import init_sentry
@@ -214,13 +228,33 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(jobs_routes.router)
     app.include_router(dashboard_routes.router)
     app.include_router(status_routes.router)
-    app.include_router(accounts_routes.router)
-    app.include_router(workers_routes.router)
-    app.include_router(settings_routes.router)
-    app.include_router(sheet_routes.router)
-    app.include_router(manual_routes.router)
-    app.include_router(monitor_routes.router)
-    app.include_router(oauth_routes.router)
+
+    # ── Bảng điều khiển FB/TikTok cũ (H22.10) ────────────────────────────────
+    #
+    # Bảy router này là bản port từ GUI desktop của sản phẩm socialbot — app đó
+    # đã **đóng băng, không phát triển thêm**. Chúng chiếm **43/69 = 62% route
+    # công khai** của nền tảng, trong khi nền tảng giờ bán công cụ AI theo
+    # credit. Mỗi route là một chỗ phải xét lại mỗi lần rà bảo mật, cho một
+    # nghiệp vụ không còn bán.
+    #
+    # Gắn sau một cờ để tắt được mà KHÔNG xoá code — socialbot đóng băng chứ
+    # chưa khai tử, nên xoá là quyết định sản phẩm, còn tắt thì bật lại được
+    # bằng một biến môi trường.
+    #
+    # Mặc định giữ BẬT: tắt sẵn nghĩa là nếu còn ai đang dùng bảng điều khiển
+    # cũ thì nó biến mất lặng lẽ sau lần deploy tới. Đổi `LTT_SOCIALBOT_ROUTES=0`
+    # khi đã xác nhận không còn ai dùng.
+    if _socialbot_routes_enabled(env):
+        app.include_router(accounts_routes.router)
+        app.include_router(workers_routes.router)
+        app.include_router(settings_routes.router)
+        app.include_router(sheet_routes.router)
+        app.include_router(manual_routes.router)
+        app.include_router(monitor_routes.router)
+        app.include_router(oauth_routes.router)
+    else:
+        logging.getLogger(__name__).info(
+            "LTT_SOCIALBOT_ROUTES=0 — khong gan 43 route bang dieu khien FB/TikTok cu")
 
     # Thanh toán / nạp credit (H9)
     from server.routes import billing as billing_routes
