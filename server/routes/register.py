@@ -16,6 +16,7 @@ import os
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from platform_core.i18n import _
 from platform_core.antifraud import la_email_dung_mot_lan, vuot_gioi_han_ip
 from platform_core.mailer import Email, get_mailer
 from platform_core.tokens import (doc_token_dat_lai_mk, doc_token_xac_thuc_email,
@@ -128,12 +129,12 @@ def register_submit(
 def _gui_mail_xac_thuc(email: str, link: str) -> None:
     get_mailer().send(Email(
         to=email,
-        subject="Xác thực tài khoản LTT AI Studio",
-        html=(f"<p>Chào bạn,</p><p>Bấm vào liên kết dưới đây để xác thực tài "
-              f"khoản (hết hạn sau 24 giờ):</p>"
+        subject=_("Xác thực tài khoản LTT AI Studio"),
+        html=(f"<p>{_('Chào bạn,')}</p>"
+              f"<p>{_('Bấm vào liên kết dưới đây để xác thực tài khoản (hết hạn sau 24 giờ):')}</p>"
               f'<p><a href="{link}">{link}</a></p>'
-              f"<p>Nếu bạn không đăng ký, bỏ qua email này.</p>"),
-        text=f"Xác thực tài khoản: {link}",
+              f"<p>{_('Nếu bạn không đăng ký, bỏ qua email này.')}</p>"),
+        text=f"{_('Xác thực tài khoản:')} {link}",
     ))
 
 
@@ -202,11 +203,11 @@ def forgot_submit(request: Request, email: str = Form(""), csrf_token: str = For
                 token = tao_token_dat_lai_mk(user.id)
                 link = f"{_base_url(request)}/reset-password?token={token}"
                 get_mailer().send(Email(
-                    to=email, subject="Đặt lại mật khẩu LTT AI Studio",
-                    html=(f"<p>Bấm để đặt lại mật khẩu (hết hạn sau 1 giờ):</p>"
+                    to=email, subject=_("Đặt lại mật khẩu LTT AI Studio"),
+                    html=(f"<p>{_('Bấm để đặt lại mật khẩu (hết hạn sau 1 giờ):')}</p>"
                           f'<p><a href="{link}">{link}</a></p>'
-                          f"<p>Nếu bạn không yêu cầu, bỏ qua email này.</p>"),
-                    text=f"Đặt lại mật khẩu: {link}",
+                          f"<p>{_('Nếu bạn không yêu cầu, bỏ qua email này.')}</p>"),
+                    text=f"{_('Đặt lại mật khẩu:')} {link}",
                 ))
     # LUÔN báo như nhau, dù email có tồn tại hay không — không lộ danh sách khách.
     return templates.TemplateResponse(

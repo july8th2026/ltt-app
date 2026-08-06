@@ -138,6 +138,14 @@ msgstr ""
 msgid "Bảng điều khiển"
 msgstr ""
 
+#: server/routes/register.py:134
+msgid "Bấm vào liên kết dưới đây để xác thực tài khoản (hết hạn sau 24 giờ):"
+msgstr ""
+
+#: server/routes/register.py:207
+msgid "Bấm để đặt lại mật khẩu (hết hạn sau 1 giờ):"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:70
 msgid "Bắt đầu"
 msgstr ""
@@ -194,6 +202,10 @@ msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:35
 msgid "Chuyển động"
+msgstr ""
+
+#: server/routes/register.py:133
+msgid "Chào bạn,"
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:35
@@ -1179,6 +1191,14 @@ msgstr ""
 msgid "Nếu"
 msgstr ""
 
+#: server/routes/register.py:209
+msgid "Nếu bạn không yêu cầu, bỏ qua email này."
+msgstr ""
+
+#: server/routes/register.py:136
+msgid "Nếu bạn không đăng ký, bỏ qua email này."
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:22
 msgid "Nếu bạn vừa chuyển tiền, tiền không mất."
 msgstr ""
@@ -2005,6 +2025,14 @@ msgstr ""
 msgid "Xác thực email thành công. Tài khoản của bạn đã kích hoạt."
 msgstr ""
 
+#: server/routes/register.py:132
+msgid "Xác thực tài khoản LTT AI Studio"
+msgstr ""
+
+#: server/routes/register.py:137
+msgid "Xác thực tài khoản:"
+msgstr ""
+
 #: server/templates/_platform_footer.html:12
 msgid "Xóa dữ liệu"
 msgstr ""
@@ -2270,6 +2298,14 @@ msgstr ""
 
 #: server/templates/demo.html:44
 msgid "Đầu ra"
+msgstr ""
+
+#: server/routes/register.py:206
+msgid "Đặt lại mật khẩu LTT AI Studio"
+msgstr ""
+
+#: server/routes/register.py:210
+msgid "Đặt lại mật khẩu:"
 msgstr ""
 
 #: server/templates/reset_password.html:16

@@ -126,7 +126,7 @@
     "server/routes/jobs.py": 9,
     "server/routes/manual.py": 14,
     "server/routes/oauth.py": 17,
-    "server/routes/register.py": 21,
+    "server/routes/register.py": 13,
     "server/routes/settings.py": 6,
     "server/routes/sheet.py": 9,
     "server/routes/workers.py": 2,
@@ -175,5 +175,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 1873
+  "tong": 1865
 }
