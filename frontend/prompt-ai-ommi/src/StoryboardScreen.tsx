@@ -24,6 +24,8 @@ import {
   renderScene,
   restoreSceneVersion,
   compareSceneVersions,
+  cancelJob,
+  retryJob,
   sceneVersions,
   updateScene,
 } from './ommiApi'
@@ -128,6 +130,11 @@ export function StoryboardScreen() {
   const [feedback, setFeedback] = useState('')
   const [compare, setCompare] = useState<SceneCompare | null>(null)
   const [pickLeft, setPickLeft] = useState<number | null>(null)
+  // Job đang chạy và job vừa hỏng. Không có hai state này thì người dùng chỉ
+  // biết ngồi nhìn thanh chờ: không dừng được một lần chạy nhầm (vẫn mất
+  // credit), và job hỏng thì phải dựng lại từ đầu.
+  const [dangChay, setDangChay] = useState<string>('')
+  const [jobHong, setJobHong] = useState<string>('')
 
   const askQuote = (scene: Scene) =>
     run(async () => {
@@ -140,26 +147,52 @@ export function StoryboardScreen() {
       const sceneId = quote.scene_id
       const started = (await renderScene(sceneId, { confirmed: true, feedback })) as SceneJob
       setQuote(null)
-      for (let attempt = 0; attempt < 60; attempt += 1) {
-        const status = await jobStatus(started.id)
-        if (status.status === 'done') {
-          await attachSceneRender(sceneId, started.id, feedback)
-          setFeedback('')
-          setBoard(await getStoryboard(board.id))
-          return
+      setJobHong('')
+      setDangChay(started.id)
+      try {
+        for (let attempt = 0; attempt < 60; attempt += 1) {
+          const status = await jobStatus(started.id)
+          if (status.status === 'done') {
+            await attachSceneRender(sceneId, started.id, feedback)
+            setFeedback('')
+            setBoard(await getStoryboard(board.id))
+            return
+          }
+          if (status.status === 'cancelled') {
+            // Người dùng tự huỷ: không phải lỗi, và credit đã được hoàn.
+            return
+          }
+          if (status.status === 'error') {
+            setJobHong(started.id)
+            throw new ApiError(500, status.error || 'Sinh ảnh thất bại.')
+          }
+          await new Promise((resolve) => setTimeout(resolve, 2000))
         }
-        if (status.status === 'error' || status.status === 'cancelled') {
-          throw new ApiError(500, status.error || 'Sinh ảnh thất bại.')
-        }
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+        throw new ApiError(504, 'Job chạy quá lâu — xem ở trang Việc của tôi.')
+      } finally {
+        setDangChay('')
       }
-      throw new ApiError(504, 'Job chạy quá lâu — xem ở trang Việc của tôi.')
     })
 
   const showHistory = (scene: Scene) =>
     run(async () => {
       setOpenScene(scene)
       setHistory((await sceneVersions(scene.id)).items)
+    })
+
+  const huyJob = () =>
+    run(async () => {
+      if (!dangChay) return
+      await cancelJob(dangChay)
+      setDangChay('')
+    })
+
+  const thuLai = () =>
+    run(async () => {
+      if (!jobHong) return
+      const lai = await retryJob(jobHong)
+      setJobHong('')
+      if (lai.job_id) setDangChay(lai.job_id)
     })
 
   const soSanh = (scene: Scene, right: number) =>
@@ -206,6 +239,22 @@ export function StoryboardScreen() {
         {error ? (
           <p className="ommi-error" role="alert">
             {error}
+            {jobHong ? (
+              <button type="button" className="ghost" disabled={busy}
+                onClick={() => void thuLai()}>
+                Thử lại
+              </button>
+            ) : null}
+          </p>
+        ) : null}
+
+        {dangChay ? (
+          <p className="ommi-running" role="status">
+            Đang sinh ảnh…
+            <button type="button" className="ghost" disabled={busy}
+              onClick={() => void huyJob()}>
+              Huỷ và hoàn credit
+            </button>
           </p>
         ) : null}
 

@@ -649,3 +649,13 @@
   .ommi-compare-grid { grid-template-columns: 1fr }
   .ommi-history-why { display: none }
 }
+
+/* Thanh trạng thái job đang chạy (H19.8). Có nút huỷ ngay tại đây chứ không
+   bắt người dùng sang trang khác: một lần chạy nhầm mà không dừng được là mất
+   credit thật. */
+.ommi-running {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+  padding: 8px 12px; border-radius: 8px; font-size: 13px;
+  background: rgba(255,255,255,.05); border: 1px solid var(--ommi-line);
+}
+.ommi-error button { margin-left: 10px }

@@ -216,6 +216,40 @@ export function jobStatus(jobId: string): Promise<JobStatus> {
   return request<JobStatus>(`/jobs/${jobId}`)
 }
 
+/**
+ * Huỷ và thử lại nằm ở NỀN TẢNG (`/jobs/...`), không phải trong app: hàng đợi
+ * job là của nền tảng, và mỗi app tự dựng lại hai đường này là ba bản sao của
+ * cùng một quy tắc hoàn credit.
+ */
+async function platformJobAction(jobId: string, action: 'cancel' | 'retry') {
+  const response = await fetch(`/jobs/${jobId}/${action}`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  if (!response.ok) {
+    let detail = `Lỗi ${response.status}`
+    try {
+      const body = await response.json()
+      if (typeof body?.detail === 'string') detail = body.detail
+    } catch {
+      /* phản hồi không phải JSON — giữ thông báo theo mã lỗi */
+    }
+    throw new ApiError(response.status, detail)
+  }
+  return (await response.json()) as { job_id?: string; status?: string }
+}
+
+/** Dừng một job đang chạy. Nền tảng hoàn lại phần credit đã giữ chỗ. */
+export function cancelJob(jobId: string) {
+  return platformJobAction(jobId, 'cancel')
+}
+
+/** Chạy lại một job đã lỗi/đã huỷ. Nền tảng tạo job MỚI và giữ chỗ credit mới. */
+export function retryJob(jobId: string) {
+  return platformJobAction(jobId, 'retry')
+}
+
 // ── Thư viện: meta prompt / đoạn prompt / phong cách ────────────────────────
 
 export type LibraryKind = 'meta' | 'snippet' | 'style'

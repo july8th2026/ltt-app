@@ -90,3 +90,18 @@ def credit_summary(request: Request, days: int = 30,
              "note": row.note, "created_at": row.created_at.isoformat()}
             for row in rows[:60]],
     }
+
+
+@router.get("/api/metrics")
+def job_metrics(request: Request, days: int = 30,
+                _identity: str = Depends(require_login),
+                db: Session = Depends(get_db)):
+    """Job chạy bao lâu, hỏng bao nhiêu, tốn bao nhiêu — của CHÍNH người gọi.
+
+    P95 chứ không phải trung bình: trung bình bị kéo xuống bởi số đông job
+    nhanh nên luôn nói "mọi thứ ổn", trong khi người dùng bỏ đi vì lần chờ
+    *tệ*. Xem `services/metrics.py`.
+    """
+    from apps.prompt_ai_ommi.services import metrics as msvc
+    user = _user(request)
+    return msvc.job_metrics(db, user.id, days=_as_int(days, 30, 1, 365))
