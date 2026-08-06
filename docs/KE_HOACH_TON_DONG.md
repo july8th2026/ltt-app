@@ -59,7 +59,7 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 |---|---|---|---|
 | 7.1 | FK constraints (hoãn từ H7) | M | toàn vẹn dữ liệu |
 | 7.2 | e2e đa tiến trình (worker+web) | M | test coverage |
-| 7.3 | WAF / rate-limit ở edge Cloudflare (BẠN bật ở dashboard) | S (user) | **App rate-limit per-user ĐÃ làm** (server/usage_rate_limit.py 2026-08-02); còn edge WAF+Bot-Fight+rate-rule per-IP — xem AUDIT_BAO_MAT_CHONG_DICH_NGUOC §WAF |
+| 7.3 | WAF / rate-limit ở edge Cloudflare — **HOÃN CÓ CHỦ Ý 2026-08-06 (phương án A)** | S | **Bot Fight Mode thách đố lưu lượng không-phải-trình-duyệt, mà webhook PayOS là máy chủ gọi máy chủ** → bật trước khi kiểm thanh toán = khách trả tiền xong không được cộng credit, và lúc hỏng có ba nghi phạm cùng lúc (PayOS / code / Cloudflare). Thứ tự đúng: chứng minh dòng tiền chạy → rồi mới siết bảo mật quanh nó. **Bật NGAY SAU khi chạy thử một giao dịch thật thành công.** Rate-limit theo người dùng trong app đã có (server/usage_rate_limit.py). Trạng thái hiện tại: Bot fight mode = TẮT. |
 | 7.4 | **Anti-reverse PA-4** (khi có doanh thu): watermark ẩn output + phát hiện hành vi script + ToS cấm scrape/bán lại | M | từ AUDIT_BAO_MAT_CHONG_DICH_NGUOC |
 
 ### Nhóm 8 — Rà soát app 2026-08-02: P2 hoãn (từ `docs/AUDIT_APPS_2026-08-02.md`)

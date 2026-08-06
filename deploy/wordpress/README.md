@@ -20,6 +20,10 @@ python tools\audit_public_web.py
 
 The command must report zero failures before WEB-003 can be accepted.
 
+> **Quy trình đầy đủ để giao cho máy làm web: `KICH_HOAT.md`** (cùng thư mục).
+> Có sẵn prompt dán được, kèm baseline đã đo 2026-08-06: **30 FAIL** trước khi
+> kích hoạt (29 alias 404 + WordPress login còn lộ ở trang chủ).
+
 ## Reopen checklist (`DEFERRED-WP-001`)
 
 1. Back up the WordPress files and database.
