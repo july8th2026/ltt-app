@@ -652,10 +652,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
     storage = get_storage()
     if not _browser_direct_upload_enabled():
         return JSONResponse({"mode": "local", "key": key})
-    try:
-        target = storage.put_url(key, ttl_s=3600, content_type=ct)
-    except Exception:  # noqa: BLE001
-        target = None
+    target = storage.try_put_url(key, ttl_s=3600, content_type=ct)
     if target is None:
         return JSONResponse({"mode": "local", "key": key})
     return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
@@ -799,10 +796,7 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
     from platform_core.storage import StorageError, get_storage
     _guard_key(request, key)
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct and _browser_direct_upload_enabled():
         return RedirectResponse(direct, status_code=302)
     try:
@@ -837,10 +831,7 @@ def file_out(request: Request, key: str, user: str = Depends(require_login)):
     from platform_core.storage import StorageError, get_storage
     _guard_key(request, key)
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

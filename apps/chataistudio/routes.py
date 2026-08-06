@@ -419,10 +419,7 @@ def chat_image(request: Request, key: str, user: str = Depends(require_login)):
     if len(segs) < 2 or segs[0] != "chataistudio" or u is None or segs[1] != u.id:
         raise HTTPException(404, "Không tìm thấy.")
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

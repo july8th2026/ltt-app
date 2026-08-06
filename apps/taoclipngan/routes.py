@@ -164,10 +164,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
         ext = "." + filename.rsplit(".", 1)[1].lower()[:5]
     key = f"taoclipngan/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
     ct = (content_type or "video/mp4").split(";")[0].strip() or "video/mp4"
-    try:
-        target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
-    except Exception:  # noqa: BLE001
-        target = None
+    target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
     if target is None:
         return JSONResponse({"mode": "local", "key": key})
     return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
@@ -385,10 +382,7 @@ def clip_out(request: Request, key: str, user: str = Depends(require_login)):
     if len(segs) < 2 or segs[0] != "taoclipngan" or u is None or segs[1] != u.id:
         raise HTTPException(status_code=404, detail="Không tìm thấy.")
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

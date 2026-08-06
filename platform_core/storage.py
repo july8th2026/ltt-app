@@ -17,6 +17,7 @@ Sau này: R2Storage (presigned URL, trình duyệt tải trực tiếp từ CDN)
 """
 from __future__ import annotations
 
+import logging
 import os
 import pathlib
 import secrets
@@ -24,6 +25,8 @@ import shutil
 import time
 from dataclasses import dataclass
 from typing import BinaryIO, Optional
+
+log = logging.getLogger(__name__)
 
 # Trần của Cloudflare Free/Pro cho request body. Kiểm ở tầng app để trả lỗi
 # nói rõ nguyên nhân, thay vì để Cloudflare trả 413 trống không.
@@ -93,6 +96,41 @@ class Storage:
         PUT (trình duyệt PUT thẳng lên R2, né trần 100MB). Backend cục bộ trả
         None → app nhận multipart qua route như cũ (chỉ hợp file nhỏ)."""
         return None
+
+    # ── Hai hàm dưới đây tồn tại để app KHÔNG phải tự bọc try/except ─────────
+    #
+    # Trước 2026-08-06, 14 chỗ gọi trong repo đều bọc `url_for`/`put_url` bằng
+    # `except Exception:  # noqa: BLE001`, kèm chú thích "local storage has no
+    # direct URL". Chú thích đó sai: backend cục bộ **trả None**, không ném.
+    # Nên khối except ấy không hề bảo vệ thứ nó tự nhận — nó chỉ nuốt lỗi THẬT
+    # của R2 (thiếu cấu hình, sai khoá, mất mạng) và lặng lẽ quay về phục vụ
+    # file qua tunnel. Đúng thứ H10 sinh ra để tránh: người dùng vẫn tải được
+    # cho tới khi gặp file lớn rồi đâm trần 100MB của Cloudflare, và không có
+    # log nào chỉ ra vì sao.
+    #
+    # Ở đây vẫn degrade để một sự cố R2 tạm thời không làm hỏng cả trang, NHƯNG
+    # ghi log ở mức exception để sự cố đó nhìn thấy được.
+    def try_url_for(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> Optional[str]:
+        """`url_for()` nhưng không bao giờ ném. Thất bại bất ngờ được ghi log."""
+        try:
+            return self.url_for(key, ttl_s=ttl_s)
+        except StorageError:
+            return None                     # thiếu cấu hình / key sai: đã biết trước
+        except Exception:                   # noqa: BLE001 - degrade nhưng phải thấy
+            log.exception("Không tạo được URL tải trực tiếp cho %s", key)
+            return None
+
+    def try_put_url(self, key: str, ttl_s: int = DEFAULT_TTL_S,
+                    content_type: str = "application/octet-stream"
+                    ) -> Optional[UploadTarget]:
+        """`put_url()` nhưng không bao giờ ném. Thất bại bất ngờ được ghi log."""
+        try:
+            return self.put_url(key, ttl_s=ttl_s, content_type=content_type)
+        except StorageError:
+            return None
+        except Exception:                   # noqa: BLE001 - degrade nhưng phải thấy
+            log.exception("Không tạo được vé upload trực tiếp cho %s", key)
+            return None
 
 
 def _safe_key(key: str) -> str:

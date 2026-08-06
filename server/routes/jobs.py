@@ -197,10 +197,7 @@ def tai_artifact(request: Request, job_id: str, index: int,
     key = artifacts[index]["key"]
     from platform_core.storage import StorageError, get_storage
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001 - local storage has no direct URL
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

@@ -475,10 +475,7 @@ def video(request: Request, key: str, user: str = Depends(require_login)):
         raise HTTPException(status_code=404, detail="Không tìm thấy video.")
     storage = get_storage()
     # R2 (H10): trả presigned URL → trình duyệt tải THẲNG từ R2, né trần 100MB.
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

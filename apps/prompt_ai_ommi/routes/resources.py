@@ -227,10 +227,7 @@ async def resource_image_ticket(request: Request, resource_id: str,
     key, ct = _image_key(user.id, resource_id, body.get("content_type", ""))
     target = None
     if _browser_direct_upload_enabled():
-        try:
-            target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
-        except Exception:  # noqa: BLE001
-            target = None
+        target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
     if target is None:
         return {"mode": "local", "key": key, "max_bytes": _RESOURCE_IMAGE_CAP}
     return {"mode": "direct", "key": target.key, "url": target.url,
@@ -367,10 +364,7 @@ def resource_image_file(request: Request, key: str,
     if len(segments) < 3 or segments[0] != "ommi" or segments[1] != user.id:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

@@ -184,10 +184,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
     ct = (content_type or "video/mp4").split(";")[0].strip() or "video/mp4"
     target = None
     if _browser_direct_upload_enabled():
-        try:
-            target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
-        except Exception:  # noqa: BLE001
-            target = None
+        target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
     if target is None:
         return JSONResponse({"mode": "local", "key": key})
     return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
@@ -285,10 +282,7 @@ def watch_upload_url(request: Request, filename: str = Form(""),
     ext = PurePosixPath(filename).suffix.lower()[:6]
     key = f"upscalevideo/{user_id}/watch/{uuid.uuid4().hex}{ext}"
     ct = (content_type or "video/mp4").split(";")[0].strip()
-    try:
-        target = get_storage().put_url(key, ttl_s=3600, content_type=ct)
-    except Exception:  # noqa: BLE001
-        target = None
+    target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
     if target is None:
         return JSONResponse({"mode": "local", "key": key})
     return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
@@ -609,10 +603,7 @@ def cancel_job(request: Request, job_id: str, csrf_token: str = Form(...),
 def _serve_owned_video(request: Request, key: str):
     from platform_core.storage import StorageError, get_storage
     storage = get_storage()
-    try:
-        direct = storage.url_for(key)
-    except Exception:  # noqa: BLE001
-        direct = None
+    direct = storage.try_url_for(key)
     if direct:
         return RedirectResponse(direct, status_code=302)
     try:

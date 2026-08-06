@@ -383,7 +383,11 @@ def test_studio_artifacts_are_owner_scoped_range_capable_and_injection_safe(
     storage.put(video_key,io.BytesIO(b"0123456789"),"video/mp4")
     storage.put(zip_key,io.BytesIO(b"PK-safe"),"application/zip")
     original_url_for=storage.url_for
-    monkeypatch.setattr(storage,"url_for",lambda _key:"https://r2.invalid/signed")
+    # Stub phải khớp chữ ký thật `url_for(key, ttl_s=...)`. Bản cũ chỉ nhận
+    # `_key` và vẫn xanh vì route gọi không truyền ttl_s — một stub sai hình
+    # nhưng không ai phát hiện.
+    monkeypatch.setattr(storage,"url_for",
+                        lambda _key,ttl_s=900:"https://r2.invalid/signed")
     monkeypatch.delenv("LTT_R2_BROWSER_UPLOAD_ENABLED",raising=False)
     assert a.get(f"/autosubvideo/v/{video_key}",headers={"Range":"bytes=2-5"}).status_code==206
     assert a.get(f"/autosubvideo/v/{video_key}",headers={"Range":"bytes=2-5"}).content==b"2345"
