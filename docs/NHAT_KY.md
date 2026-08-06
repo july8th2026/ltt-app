@@ -14,6 +14,40 @@
 
 ---
 
+## 2026-08-06 — Kích hoạt WordPress integration DEFERRED-WP-001
+
+- **Mục tiêu:** kích hoạt plugin từ nguồn chân lý trong repo, khép 29 alias
+  `.html` cũ và nối CTA marketing sang app mà không chạm dữ liệu WordPress hay
+  hai OAuth callback.
+- **Backup trước thay đổi:** 7.779 file/501,57 MiB; database gzip 21 bảng,
+  13.603 dòng; đã kiểm gzip/DDL/INSERT và ghi manifest cùng danh sách 7 plugin
+  active. Backup nằm ngoài repo trong vùng local giới hạn ACL.
+- **Deploy:** plugin 1.0.2 từ commit `5671435`; ZIP có đúng thư mục gốc
+  `lttstudios-integration/`; SHA-256 package
+  `ee76aa6d991c72ae07ea719bae86bc3693733310979709eb2f44463bf1b74c29`;
+  SHA-256 file PHP local/host cùng là
+  `dc0666098e2c66793e7e68607dc389c7ff564c266532cf37985a265c0ca84413`.
+  Upload vào thư mục incoming rồi đổi tên atomically; purge object cache và
+  LiteSpeed thành công.
+- **Audit định lượng:** `python tools/audit_public_web.py` từ **30 fail / 0
+  pass** về **0 fail**. Ba alias trình duyệt `/about.html`, `/products.html`,
+  `/legal/privacy.html` chuyển tới pretty URL và trả 200.
+- **Trình duyệt thật:** Chromium desktop 1366×900 và mobile 390×844 đều trang
+  chủ 200, không tràn ngang, console 0 lỗi, request hỏng 0. CTA Header V2 tới
+  `https://app.lttstudios.com/`; trang login app 200 và form hiển thị.
+- **OAuth:** `/auth/fb-callback.html` và `/legal/callback.html` giữ nguyên HTTP
+  200 và SHA-256 so với trước deploy.
+- **Gate:** PHP lint, contract test 3 pass, secret scan và `tools/gate.py
+  --quick` 7/7 pass. Full gate trong venv kiểm tra độc lập không collect được
+  do thiếu dependency runtime của toàn control-plane; đây là thiếu môi trường,
+  không phải lỗi plugin, và các gate bắt buộc riêng của Q60 đều pass.
+- **Rollback:** đổi thư mục plugin hiện tại ra ngoài và đưa
+  `lttstudios-integration.__rollback-658ad41-20260806` trở lại tên
+  `lttstudios-integration`, sau đó purge cache. Plugin không tạo bảng/option và
+  không sửa bài viết/người dùng.
+
+---
+
 ## 2026-08-06 — Rà soát hệ điều hành: chốt bố cục mã nguồn, tách 2 file route khổng lồ, 2 lỗi thật
 
 - **Mục tiêu:** thực hiện các đề xuất của đợt audit control-plane 2026-08-06

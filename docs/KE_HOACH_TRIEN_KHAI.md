@@ -1315,11 +1315,15 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
       contract 3 passed; full suite 1.994 passed, 8 skipped, 23 subtests.
     - [x] Ghi rõ trạng thái chưa deploy WordPress, rollback và điều kiện mở lại;
       không coi phần bị hoãn là đã hoàn tất production.
-- [ ] `DEFERRED-WP-001` (Q60, không chặn H15.S15) — khi có quyền ghi WordPress:
-  backup; build/upload/activate plugin; chạy `python tools\audit_public_web.py`
-  về **0 failure**; kiểm Playwright desktop/mobile, console, network, overflow,
-  CTA và hai OAuth callback. Hiện baseline còn 29 alias fail; homepage còn
-  WordPress login và thiếu app CTA.
+- [x] `DEFERRED-WP-001` (Q60, không chặn H15.S15) — 2026-08-06: đã sao lưu
+  toàn bộ 7.779 file WordPress (501,57 MiB), database 21 bảng/13.603 dòng và
+  danh sách plugin active trước thay đổi; build/upload/activate integration
+  plugin 1.0.2 từ commit `5671435`, checksum local/host khớp. Public audit
+  **30 fail → 0 fail** sau khi purge LiteSpeed/object cache. Chromium thật
+  desktop 1366×900 và mobile 390×844: HTTP 200, overflow 0, console 0,
+  request hỏng 0; CTA tới `https://app.lttstudios.com/`, login form hiển thị;
+  ba alias mẫu chuyển đúng. Hai OAuth callback giữ nguyên SHA-256 so với
+  baseline. Bản 1.0.1 còn trên host ở thư mục rollback.
 - [ ] H15.S15 DEEP re-audit + full release gate.
   - [ ] H15.S15.1 `LAYOUT-001` — checkpoint 2026-08-04, **đã code nhưng chưa
     nghiệm thu/deploy**: thêm hợp đồng `standard/catalog/wide/immersive`; mở
