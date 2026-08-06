@@ -41,10 +41,13 @@ def doi_ngon_ngu(request: Request, lang: str = Form(...),
     dich, _cu = i18n.tach_tien_to(safe_next(next))
     dich = i18n.them_tien_to(dich, moi)
 
-    try:
+    # Hỏi thẳng scope thay vì bắt ngoại lệ: `request.session` ném AssertionError
+    # khi chưa có SessionMiddleware, và bắt rồi `pass` là nuốt lỗi — nó sẽ giấu
+    # luôn lỗi phiên thật, mà triệu chứng chỉ là "đổi ngôn ngữ xong đăng nhập lại
+    # thì mất", rất khó lần.
+    if "session" in request.scope:
         request.session["lang"] = moi          # theo người
-    except Exception:                          # noqa: BLE001 - chưa có phiên
-        pass
+    # Chưa có phiên thì cookie là đủ.
 
     resp = RedirectResponse(dich, status_code=303)
     resp.set_cookie(

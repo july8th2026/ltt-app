@@ -52,6 +52,11 @@ def _steps(quick: bool) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # H24: banh coc chong THEM chuoi chua boc _(). Con ~2.310 chuoi chua dich;
+        # cam tuyet doi thi chan moi viec khac, nen chi cam TANG. Khong co buoc
+        # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh
+        # lot vao giua trang tieng Viet ma khong ai biet tu luc nao.
+        Step("chuoi chua dich", [sys.executable, "tools/check_i18n.py"], ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

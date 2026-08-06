@@ -33,10 +33,11 @@ from platform_core import i18n
 def _ho_so_ngon_ngu(request) -> str:
     """Ngôn ngữ lưu ở hồ sơ tài khoản. Đọc từ session để khỏi truy vấn CSDL mỗi
     request — phiên đã có sẵn trong cookie đã ký."""
-    try:
-        return request.session.get("lang") or ""
-    except Exception:      # session middleware chưa dựng (đường tĩnh, lỗi sớm)
+    # Hỏi thẳng scope thay vì bắt ngoại lệ — xem ghi chú cùng loại ở
+    # server/routes/ngon_ngu.py.
+    if "session" not in request.scope:
         return ""
+    return request.session.get("lang") or ""
 
 
 class I18nMiddleware(BaseHTTPMiddleware):
@@ -95,12 +96,10 @@ class I18nMiddleware(BaseHTTPMiddleware):
 
         # Bóc tiền tố → router thấy đường dẫn như chưa từng có ngôn ngữ.
         request.scope["path"] = duong
-        raw = request.scope.get("raw_path")
-        if raw:
-            try:
-                request.scope["raw_path"] = duong.encode("utf-8")
-            except Exception:
-                pass
+        # `raw_path` là bytes; đường dẫn đã qua urldecode nên luôn mã hoá được.
+        # Không cần try/except: nếu nó ném thì đó là lỗi thật, phải thấy.
+        if request.scope.get("raw_path"):
+            request.scope["raw_path"] = duong.encode("utf-8")
 
         i18n.dat_ngon_ngu(lang)
         request.state.lang = lang
