@@ -6,11 +6,11 @@
   {% include "_auth_brand.html" %}
   <div class="card">
     {% if ok %}
-      <p class="auth-state success" role="status">Xác thực email thành công. Tài khoản của bạn đã kích hoạt.</p>
-      <p class="hint"><a href="/login">Đăng nhập ngay</a></p>
+      <p class="auth-state success" role="status">{{ _("Xác thực email thành công. Tài khoản của bạn đã kích hoạt.") }}</p>
+      <p class="hint"><a href="/login">{{ _("Đăng nhập ngay") }}</a></p>
     {% else %}
-      <p class="error" role="alert">Liên kết xác thực không hợp lệ hoặc đã hết hạn.</p>
-      <p class="hint"><a href="/register">Đăng ký lại</a></p>
+      <p class="error" role="alert">{{ _("Liên kết xác thực không hợp lệ hoặc đã hết hạn.") }}</p>
+      <p class="hint"><a href="/register">{{ _("Đăng ký lại") }}</a></p>
     {% endif %}
   </div>
 {% endblock %}

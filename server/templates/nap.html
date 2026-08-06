@@ -4,8 +4,8 @@
 
   <div class="pagehead billing-head">
     <div>
-      <h1 style="margin:0 0 4px">Nạp credit</h1>
-      <p class="dim" style="margin:0">Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán.</p>
+      <h1 style="margin:0 0 4px">{{ _("Nạp credit") }}</h1>
+      <p class="dim" style="margin:0">{{ _("Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán.") }}</p>
     </div>
     {% if so_du is not none %}
       <div class="actions"><span class="pill">💎 {{ '{:,}'.format(so_du) }} credit</span></div>
@@ -13,11 +13,11 @@
   </div>
 
   {% if not co_user_csdl %}
-    <div class="alert alert-warn" style="margin:12px 0;">Tài khoản này không nạp được credit (đăng nhập bằng đường cứu hộ).</div>
+    <div class="alert alert-warn" style="margin:12px 0;">{{ _("Tài khoản này không nạp được credit (đăng nhập bằng đường cứu hộ).") }}</div>
   {% endif %}
 
   {% if goi %}
-  <div class="grid billing-grid" aria-label="Các gói credit">
+  <div class="grid billing-grid" aria-label="{{ _('Các gói credit') }}">
     {% for g in goi %}
       {% set bonus = g.credits_base * g.bonus_percent // 100 %}
       {% set total = g.credits_base + bonus %}
@@ -28,7 +28,7 @@
         </div>
         <div class="in">
           <h2 style="margin:0 0 2px">{{ g.name }}</h2>
-          <p class="eyebrow" style="margin:8px 0 0">Báo giá trọn gói</p>
+          <p class="eyebrow" style="margin:8px 0 0">{{ _("Báo giá trọn gói") }}</p>
           <p class="sum" style="font-size:22px;font-weight:700;color:var(--fg);margin:6px 0">
             {{ '{:,}'.format(g.price_vnd) }}đ</p>
           <div class="meta" style="margin-bottom:12px">
@@ -47,27 +47,27 @@
   </div>
   {% else %}
     <div class="ui-card" style="margin-top:14px;">
-      <p class="dim" style="margin:0;">Chưa có gói nạp nào. Admin thêm gói ở trang quản trị.</p>
+      <p class="dim" style="margin:0;">{{ _("Chưa có gói nạp nào. Admin thêm gói ở trang quản trị.") }}</p>
     </div>
   {% endif %}
 
   <section class="billing-history" aria-labelledby="billing-history-title">
-    <div class="pagehead billing-history-head"><div><h2 id="billing-history-title">Đơn nạp gần đây</h2>
-      <p class="dim">Tối đa 10 đơn mới nhất của tài khoản này.</p></div></div>
+    <div class="pagehead billing-history-head"><div><h2 id="billing-history-title">{{ _("Đơn nạp gần đây") }}</h2>
+      <p class="dim">{{ _("Tối đa 10 đơn mới nhất của tài khoản này.") }}</p></div></div>
     {% if don_gan_day %}
     <div class="tablewrap"><table class="ui-table">
-      <thead><tr><th>Mã đơn</th><th>Thời gian</th><th>Số tiền</th><th>Credit</th><th>Trạng thái</th><th></th></tr></thead>
+      <thead><tr><th>{{ _("Mã đơn") }}</th><th>{{ _("Thời gian") }}</th><th>{{ _("Số tiền") }}</th><th>Credit</th><th>{{ _("Trạng thái") }}</th><th></th></tr></thead>
       <tbody>{% for order in don_gan_day %}<tr>
         <td class="mono">{{ order.order_code }}</td>
         <td>{{ order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '—' }}</td>
         <td>{{ '{:,}'.format(order.price_vnd) }}đ</td><td>{{ '{:,}'.format(order.credits) }}</td>
-        <td>{% if order.status == 'paid' %}<span class="badge b-ok"><span class="dot"></span>Đã thanh toán</span>
-          {% elif order.status == 'pending' %}<span class="badge b-warn"><span class="dot"></span>Đang chờ</span>
-          {% else %}<span class="badge b-err"><span class="dot"></span>Không hoàn tất</span>{% endif %}</td>
-        <td><a class="btn ghost sm" href="/nap/don/{{ order.id }}">Xem đơn</a></td>
+        <td>{% if order.status == 'paid' %}<span class="badge b-ok"><span class="dot"></span>{{ _("Đã thanh toán") }}</span>
+          {% elif order.status == 'pending' %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ") }}</span>
+          {% else %}<span class="badge b-err"><span class="dot"></span>{{ _("Không hoàn tất") }}</span>{% endif %}</td>
+        <td><a class="btn ghost sm" href="/nap/don/{{ order.id }}">{{ _("Xem đơn") }}</a></td>
       </tr>{% endfor %}</tbody>
     </table></div>
-    {% else %}<div class="ui-card billing-empty"><strong>Chưa có đơn nạp.</strong><p class="dim">Chọn một gói phía trên để tạo đơn đầu tiên.</p></div>{% endif %}
+    {% else %}<div class="ui-card billing-empty"><strong>{{ _("Chưa có đơn nạp.") }}</strong><p class="dim">{{ _("Chọn một gói phía trên để tạo đơn đầu tiên.") }}</p></div>{% endif %}
   </section>
 
 {% endblock %}

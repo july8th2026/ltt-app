@@ -5,9 +5,9 @@
   {% set auth_subtitle = 'Hoàn tất xác thực để bảo vệ tài khoản trước khi đăng nhập.' %}
   {% include "_auth_brand.html" %}
   <div class="card">
-    <p class="auth-state success" role="status">Nếu <strong>{{ email }}</strong> chưa được đăng ký, chúng tôi vừa gửi một
+    <p class="auth-state success" role="status">{{ _("Nếu") }} <strong>{{ email }}</strong> chưa được đăng ký, chúng tôi vừa gửi một
        email xác thực tới đó. Mở email và bấm liên kết để kích hoạt tài khoản
        (liên kết hết hạn sau 24 giờ).</p>
-    <p class="hint"><a href="/login">Về trang đăng nhập</a></p>
+    <p class="hint"><a href="/login">{{ _("Về trang đăng nhập") }}</a></p>
   </div>
 {% endblock %}

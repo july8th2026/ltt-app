@@ -9,21 +9,21 @@
     <form method="post" action="/login">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="next" value="{{ next|default('')|e }}">
-      <div class="auth-field"><label for="login-username">Tên đăng nhập</label>
-        <input id="login-username" type="text" name="username" placeholder="Nhập tên đăng nhập" required autofocus autocomplete="username"></div>
-      <div class="auth-field"><label for="login-password">Mật khẩu</label>
-        <input id="login-password" type="password" name="password" placeholder="Nhập mật khẩu" required autocomplete="current-password"></div>
+      <div class="auth-field"><label for="login-username">{{ _("Tên đăng nhập") }}</label>
+        <input id="login-username" type="text" name="username" placeholder="{{ _('Nhập tên đăng nhập') }}" required autofocus autocomplete="username"></div>
+      <div class="auth-field"><label for="login-password">{{ _("Mật khẩu") }}</label>
+        <input id="login-password" type="password" name="password" placeholder="{{ _('Nhập mật khẩu') }}" required autocomplete="current-password"></div>
       {% if turnstile_site_key %}
       {# Chỉ hiện sau vài lần sai — không phải mọi lần đăng nhập. Thách đố mặc
          định là gánh nặng cho người thật, còn bot thì lần nào cũng gặp. #}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       {% endif %}
-      <button type="submit">Đăng nhập</button>
+      <button type="submit">{{ _("Đăng nhập") }}</button>
     </form>
     <p class="hint">
-      <a href="/register">Tạo tài khoản</a><span class="auth-sep">·</span>
-      <a href="/forgot-password">Quên mật khẩu?</a>
+      <a href="/register">{{ _("Tạo tài khoản") }}</a><span class="auth-sep">·</span>
+      <a href="/forgot-password">{{ _("Quên mật khẩu?") }}</a>
     </p>
   </div>
 {% endblock %}

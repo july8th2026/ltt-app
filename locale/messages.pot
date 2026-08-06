@@ -1,13 +1,81 @@
+#: server/templates/nap_don.html:18
+msgid "&larr; Gói nạp"
+msgstr ""
+
+#: server/templates/nap.html:31
+msgid "Báo giá trọn gói"
+msgstr ""
+
 #: server/templates/home.html:61
 msgid "Bạn chưa dùng app nào."
+msgstr ""
+
+#: server/templates/_header.html:30
+msgid "Bảng giá"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:42
+msgid "Bắt đầu dùng công cụ"
 msgstr ""
 
 #: server/templates/home.html:62
 msgid "Chưa có app phù hợp."
 msgstr ""
 
+#: server/templates/nap.html:50
+msgid "Chưa có gói nạp nào. Admin thêm gói ở trang quản trị."
+msgstr ""
+
+#: server/templates/nap.html:70
+msgid "Chưa có đơn nạp."
+msgstr ""
+
+#: server/templates/nap.html:70
+msgid "Chọn một gói phía trên để tạo đơn đầu tiên."
+msgstr ""
+
+#: server/templates/_platform_footer.html:7
+msgid "Credit &amp; thanh toán"
+msgstr ""
+
+#: server/templates/nap_don.html:33
+msgid "Credit nhận"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:21
+msgid "Credit đã cộng"
+msgstr ""
+
+#: server/templates/nap.html:20
+msgid "Các gói credit"
+msgstr ""
+
+#: server/templates/_header.html:41
+msgid "Cấu hình hệ thống"
+msgstr ""
+
+#: server/templates/register.html:17
+msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
+msgstr ""
+
+#: server/templates/forgot_password.html:18
+msgid "Gửi liên kết đặt lại"
+msgstr ""
+
 #: server/templates/home.html:60
 msgid "Hãy đổi từ khóa, nhóm hoặc quay lại kho ứng dụng."
+msgstr ""
+
+#: server/templates/nap_don.html:41
+msgid "Hết hạn"
+msgstr ""
+
+#: server/templates/_platform_footer.html:3
+msgid "Hệ sinh thái LTT"
+msgstr ""
+
+#: server/templates/_platform_footer.html:5
+msgid "Hỗ trợ"
 msgstr ""
 
 #: server/templates/home.html:14 server/templates/home.html:38
@@ -15,19 +83,292 @@ msgstr ""
 msgid "Kho ứng dụng"
 msgstr ""
 
+#: server/templates/nap.html:66
+msgid "Không hoàn tất"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:12
+msgid "Không tìm thấy đơn nạp này"
+msgstr ""
+
+#: server/templates/_platform_footer.html:6
+msgid "Liên hệ"
+msgstr ""
+
+#: server/templates/_platform_footer.html:9
+msgid "Liên kết pháp lý"
+msgstr ""
+
+#: server/templates/_platform_footer.html:2
+msgid "Liên kết sản phẩm và hỗ trợ"
+msgstr ""
+
+#: server/templates/verify_result.html:12
+msgid "Liên kết xác thực không hợp lệ hoặc đã hết hạn."
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:36
+msgid "Mã giao dịch"
+msgstr ""
+
+#: server/templates/nap.html:59 server/templates/nap_don.html:36
+msgid "Mã đơn"
+msgstr ""
+
+#: server/templates/login.html:14 server/templates/register.html:14
+msgid "Mật khẩu"
+msgstr ""
+
+#: server/templates/reset_password.html:13
+msgid "Mật khẩu mới"
+msgstr ""
+
+#: server/templates/nap_don.html:48
+msgid "Mở PayOS / VietQR"
+msgstr ""
+
+#: server/templates/_header.html:20
+msgid "Mở danh sách ứng dụng"
+msgstr ""
+
+#: server/templates/login.html:15
+msgid "Nhập mật khẩu"
+msgstr ""
+
+#: server/templates/login.html:13
+msgid "Nhập tên đăng nhập"
+msgstr ""
+
+#: server/templates/forgot_password.html:20
+msgid "Nhớ mật khẩu rồi? Đăng nhập"
+msgstr ""
+
+#: server/templates/nap.html:7
+msgid "Nạp credit"
+msgstr ""
+
+#: server/templates/_header.html:44 server/templates/_nap_trangthai.html:43
+msgid "Nạp thêm"
+msgstr ""
+
+#: server/templates/register_sent.html:8
+msgid "Nếu"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:24
+msgid "Nếu bạn vừa chuyển tiền, tiền không mất."
+msgstr ""
+
 #: server/templates/home.html:59
 msgid "Quay lại kho ứng dụng và mở app đầu tiên."
+msgstr ""
+
+#: server/templates/_platform_footer.html:10
+msgid "Quyền riêng tư"
+msgstr ""
+
+#: server/templates/login.html:26
+msgid "Quên mật khẩu?"
+msgstr ""
+
+#: server/templates/_header.html:43
+msgid "Quản trị"
+msgstr ""
+
+#: server/templates/_header.html:32
+msgid "Số dư credit"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:26
+msgid "Số dư hiện tại"
+msgstr ""
+
+#: server/templates/nap.html:59 server/templates/nap_don.html:31
+msgid "Số tiền"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:17
+msgid "Thanh toán thành công"
+msgstr ""
+
+#: server/templates/_platform_footer.html:1
+msgid "Thông tin LTT Studios"
+msgstr ""
+
+#: server/templates/nap.html:59
+msgid "Thời gian"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:31
+msgid "Thời điểm"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:32
+msgid "Trang chủ"
+msgstr ""
+
+#: server/templates/nap.html:59
+msgid "Trạng thái"
+msgstr ""
+
+#: server/templates/nap.html:16
+msgid "Tài khoản này không nạp được credit (đăng nhập bằng đường cứu hộ)."
+msgstr ""
+
+#: server/templates/login.html:12
+msgid "Tên đăng nhập"
+msgstr ""
+
+#: server/templates/_header.html:42
+msgid "Tình trạng hệ thống"
+msgstr ""
+
+#: server/templates/nap_don.html:29
+msgid "Tóm tắt thanh toán"
+msgstr ""
+
+#: server/templates/login.html:25
+msgid "Tạo tài khoản"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:55
+msgid "Tạo đơn mới"
+msgstr ""
+
+#: server/templates/register.html:15 server/templates/reset_password.html:14
+msgid "Tối thiểu 8 ký tự"
+msgstr ""
+
+#: server/templates/nap.html:56
+msgid "Tối đa 10 đơn mới nhất của tài khoản này."
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:72
+msgid "Tự kiểm tra mỗi 4 giây."
+msgstr ""
+
+#: server/templates/_header.html:40
+msgid "Việc của tôi"
+msgstr ""
+
+#: server/templates/_auth_brand.html:1
+msgid "Về trang chủ LTT AI Studio"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:31
+msgid "Về trang nạp credit"
+msgstr ""
+
+#: server/templates/forgot_password.html:11
+#: server/templates/register_sent.html:11
+msgid "Về trang đăng nhập"
+msgstr ""
+
+#: server/templates/nap.html:8
+msgid "Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán."
+msgstr ""
+
+#: server/templates/nap.html:67
+msgid "Xem đơn"
+msgstr ""
+
+#: server/templates/verify_result.html:9
+msgid "Xác thực email thành công. Tài khoản của bạn đã kích hoạt."
+msgstr ""
+
+#: server/templates/_platform_footer.html:12
+msgid "Xóa dữ liệu"
+msgstr ""
+
+#: server/templates/reset_password.html:20
+msgid "Yêu cầu liên kết mới"
+msgstr ""
+
+#: server/templates/nap_don.html:24
+msgid "chưa trừ tiền"
 msgstr ""
 
 #: server/templates/home.html:58
 msgid "công cụ sẵn sàng"
 msgstr ""
 
+#: server/templates/_nap_trangthai.html:68
+msgid "không cần chuyển lại"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:26
+msgid "trang nạp credit"
+msgstr ""
+
+#: server/templates/nap.html:65
+msgid "Đang chờ"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:71
+msgid "Đang chờ thanh toán…"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:65
+msgid "Đang xác nhận với ngân hàng…"
+msgstr ""
+
+#: server/templates/_platform_footer.html:11
+msgid "Điều khoản"
+msgstr ""
+
+#: server/templates/register.html:24
+msgid "Đã có tài khoản? Đăng nhập"
+msgstr ""
+
+#: server/templates/nap.html:64
+msgid "Đã thanh toán"
+msgstr ""
+
+#: server/templates/_header.html:54 server/templates/register.html:22
+msgid "Đăng ký"
+msgstr ""
+
+#: server/templates/verify_result.html:13
+msgid "Đăng ký lại"
+msgstr ""
+
+#: server/templates/_header.html:53 server/templates/login.html:22
+msgid "Đăng nhập"
+msgstr ""
+
+#: server/templates/verify_result.html:10
+msgid "Đăng nhập ngay"
+msgstr ""
+
+#: server/templates/_header.html:48
+msgid "Đăng xuất"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:51
+msgid "Đơn không hoàn tất hoặc đã hết hạn."
+msgstr ""
+
+#: server/templates/nap.html:55
+msgid "Đơn nạp gần đây"
+msgstr ""
+
+#: server/templates/reset_password.html:16
+msgid "Đặt mật khẩu mới"
+msgstr ""
+
 #: server/templates/_doi_ngon_ngu.html:10
 msgid "Đổi ngôn ngữ"
 msgstr ""
 
+#: server/templates/_platform_footer.html:4
+msgid "Ứng dụng"
+msgstr ""
+
 #: server/templates/home.html:15 server/templates/home.html:57
 msgid "Ứng dụng của tôi"
+msgstr ""
+
+#: server/templates/error.html:7
+msgid "← Về trang chính"
 msgstr ""
 

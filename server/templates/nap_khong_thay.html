@@ -9,7 +9,7 @@
                 background:var(--warn-bg);border:1px solid var(--warn-line);
                 font-size:26px;line-height:1">🔎</div>
 
-    <h1 style="margin:0 0 8px;font-size:20px">Không tìm thấy đơn nạp này</h1>
+    <h1 style="margin:0 0 8px;font-size:20px">{{ _("Không tìm thấy đơn nạp này") }}</h1>
     <p class="dim" style="margin:0 0 4px">
       Đường dẫn không khớp đơn nào trong tài khoản của bạn.
     </p>
@@ -21,15 +21,15 @@
     {% endif %}
 
     <div class="alert alert-warn" style="margin:18px 0 0;text-align:left">
-      <strong>Nếu bạn vừa chuyển tiền, tiền không mất.</strong>
+      <strong>{{ _("Nếu bạn vừa chuyển tiền, tiền không mất.") }}</strong>
       Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này. Mở
-      <a href="/nap">trang nạp credit</a> để xem lịch sử đơn và số dư mới nhất.
+      <a href="/nap">{{ _("trang nạp credit") }}</a> để xem lịch sử đơn và số dư mới nhất.
       Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng.
     </div>
 
     <div class="actions" style="justify-content:center;margin-top:18px">
-      <a class="btn" href="/nap">Về trang nạp credit</a>
-      <a class="btn ghost" href="/">Trang chủ</a>
+      <a class="btn" href="/nap">{{ _("Về trang nạp credit") }}</a>
+      <a class="btn ghost" href="/">{{ _("Trang chủ") }}</a>
     </div>
   </div>
 
