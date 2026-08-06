@@ -49,7 +49,7 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 ### Nhóm 6 — Vệ sinh hạ tầng (phần lớn user thao tác) — **P3**
 | # | Việc | Effort | Ghi chú |
 |---|---|---|---|
-| 6.1 | **Huỷ VPS Vultr `45.32.104.192`** (đốt tiền) | S (user) | ƯU TIÊN tiền — my.vultr.com |
+| 6.1 | ~~Huỷ VPS Vultr `45.32.104.192`~~ ✅ **XONG 2026-08-06** (chủ sản phẩm đã huỷ) | — | không còn đốt tiền |
 | 6.2 | Tắt CF Web Analytics beacon | S (user) | bỏ 1 lỗi console |
 | 6.3 | Remote GitHub Private + push off-site | S | mirror hiện chỉ trên D: |
 | 6.4 | IPv6 máy chủ | — | **hoãn** (giá trị thấp) |
@@ -86,7 +86,7 @@ Effort: S(<½ ngày) · M(1–2 ngày) · L(nhiều ngày) · XL(dự án riêng
 5. **4.1 H10 R2** — nút cổ chai → **4.2 GPU-route** → **Đợt B** → **Đợt C**.
 6. Nhóm 6 vệ sinh + 1.2 PayOS go-live (cần bạn thao tác, chạy song song) + Nhóm 7 hardening.
 
-**Xen kẽ user-action (làm song song, không chặn code):** 6.1 huỷ Vultr, 6.2 beacon,
+**Xen kẽ user-action (làm song song, không chặn code):** ~~6.1 huỷ Vultr~~ (xong), 6.2 beacon,
 6.3 GitHub off-site, 1.2 cấp key PayOS.
 
 ## Ghi chú phụ thuộc quan trọng
