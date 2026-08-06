@@ -22,6 +22,7 @@ thì phải lưu jti đã dùng — hiện chưa cần.
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Optional
 
@@ -74,5 +75,11 @@ def _doc(token: str, salt: str, max_age: int) -> Optional[str]:
         # Hết hạn và giả mạo đều trả None — nơi gọi không cần phân biệt, và
         # phân biệt ra cũng chỉ giúp kẻ dò biết token nào từng hợp lệ.
         return None
-    except Exception:
+    except Exception:                   # noqa: BLE001
+        # Không phải token hỏng mà là HỆ THỐNG hỏng (thiếu khoá ký, cấu hình
+        # sai). Trả None lặng lẽ khiến mọi token trông như giả mạo, và người
+        # gỡ rối đi tìm nhầm phía người dùng.
+        logging.getLogger(__name__).exception(
+            "Lỗi hệ thống khi mở token (salt=%s) — mọi token sẽ bị coi là không hợp lệ",
+            salt)
         return None

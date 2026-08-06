@@ -16,6 +16,7 @@ was launched from).
 """
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 
@@ -96,6 +97,10 @@ def data_path(*parts: str) -> str:
     """
     try:
         base = resolve_runtime_paths().data_dir
-    except Exception:
+    except Exception:                   # noqa: BLE001
+        # Rơi vào đây nghĩa là dữ liệu sẽ ghi vào một chỗ KHÁC nơi mong đợi.
+        # Vẫn không ném (sai chỗ lưu hơn là sập), nhưng phải để lại dấu vết.
+        logging.getLogger(__name__).exception(
+            "Không giải được thư mục dữ liệu — lùi về đường tương đối 'data'")
         base = "data"
     return os.path.join(base, *parts)

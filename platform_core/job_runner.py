@@ -183,6 +183,7 @@ def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
         try:
             het_gpu = bool(gl.gpu_mod.list_gpus())   # có GPU nhưng đều bận?
         except Exception:                   # noqa: BLE001
+            log.exception("Không đếm được GPU — coi như máy không có GPU")
             het_gpu = False
         try: next(gen)
         except StopIteration: pass

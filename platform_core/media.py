@@ -72,7 +72,7 @@ def ffprobe_bin() -> str:
 def has_ffmpeg() -> bool:
     try:
         return bool(_locate("ffmpeg", "LTT_FFMPEG"))
-    except Exception:  # noqa: BLE001
+    except OSError:
         return False
 
 
@@ -128,6 +128,10 @@ def duration_seconds(path: str) -> float:
     try:
         return float(probe(path).get("duration", 0.0))
     except Exception:  # noqa: BLE001
+        # PHẢI ghi log: con số này dùng để GIỮ CHỖ credit. Trả 0.0 lặng lẽ
+        # nghĩa là giữ chỗ 0 credit — khách được làm miễn phí, hoặc job bị
+        # định giá sai, và không dòng nào chỉ ra vì sao.
+        log.exception("Không đo được thời lượng %s — trả 0.0, credit sẽ sai", path)
         return 0.0
 
 
@@ -166,7 +170,7 @@ def _test_encoder(encoder: str) -> bool:
              "-c:v", encoder, "-frames:v", "1", "-f", "null", "-"],
             capture_output=True, timeout=15)
         return r.returncode == 0
-    except Exception:  # noqa: BLE001
+    except (OSError, subprocess.SubprocessError):
         return False
 
 
@@ -209,8 +213,8 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
                 s = ln.strip()
                 if s:
                     tail.append(s)
-        except Exception:  # noqa: BLE001
-            pass
+        except (OSError, ValueError):
+            pass          # ống đã đóng: bình thường khi tiến trình kết thúc
 
     t = threading.Thread(target=_drain_err, daemon=True)
     t.start()

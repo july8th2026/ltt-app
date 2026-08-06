@@ -87,7 +87,7 @@ khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 
 **4. Chạy test trước khi báo xong.** Một lệnh, chạy hết:
 ```powershell
-python tools\gate.py            # pytest + 3 bộ test frontend + 3 scanner
+python tools\gate.py            # pytest + 3 bộ test frontend + 4 scanner
 python tools\gate.py --quick    # bỏ full pytest, dùng cho vòng lặp ngắn
 ```
 Đừng chỉ chạy `python -m pytest -q` rồi báo xong: nó **không** chạy 77 test
@@ -209,7 +209,9 @@ Ba việc còn lại, **hai trong đó chờ chủ sản phẩm quyết**:
   nhận không còn ai dùng → bề mặt route công khai giảm 62%.
 - **H22.11** ✅ — đã xoá 2 module `core/` không ai gọi (533 dòng). Ba file
   `__init__.py` giữ lại vì là dấu hiệu package.
-- **H22.12** — 145 chỗ `except` rộng nuốt lỗi lặng lẽ (đã đo, chưa sửa).
+- **H22.12** ✅ — `platform_core` sạch hết chỗ nuốt lỗi; 90 chỗ còn lại trong mã
+  sống nằm sau **bánh cóc** `tools/check_silent_except.py` (trong gate): không
+  cho tăng thêm. `core/` (78 chỗ) loại khỏi phép đo vì đã đóng băng.
 
 ## Không bao giờ commit hay copy đi
 

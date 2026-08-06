@@ -49,6 +49,9 @@ def _steps(quick: bool) -> list[Step]:
         # Re nhung bat duoc thu test khong bat: mot route khong co test ma thieu
         # import thi chi vo khi nguoi dung bam. Xem tools/check_undefined_names.py.
         Step("ten chua dinh nghia", [sys.executable, "tools/check_undefined_names.py"], ROOT),
+        # Banh coc: khong cho THEM cho nuot loi lang le. Xem
+        # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
+        Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

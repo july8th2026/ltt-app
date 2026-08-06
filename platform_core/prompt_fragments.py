@@ -19,10 +19,13 @@ file thiếu → trả rỗng, không làm sập job.
 """
 from __future__ import annotations
 
+import logging
 import json
 import pathlib
 import re
 from typing import Optional
+
+log = logging.getLogger(__name__)
 
 
 def _dir(prompts_dir) -> pathlib.Path:
@@ -34,7 +37,12 @@ def load_labels(prompts_dir, group: str) -> dict:
     p = _dir(prompts_dir) / group / "_labels.json"
     try:
         return json.loads(p.read_text(encoding="utf-8"))
-    except Exception:
+    except FileNotFoundError:
+        return {}                      # nhóm chưa khai nhãn: hợp lệ
+    except (OSError, ValueError):
+        # File CÓ mà đọc/parse hỏng là chuyện khác hẳn: người dùng sẽ thấy một
+        # danh sách lựa chọn trống mà không biết vì sao.
+        log.exception("Hỏng %s — danh sách lựa chọn sẽ trống", p)
         return {}
 
 
@@ -58,7 +66,11 @@ def read_fragment(prompts_dir, group: str, option_id: str) -> str:
     p = _dir(prompts_dir) / group / f"{option_id}.txt"
     try:
         return p.read_text(encoding="utf-8").strip()
-    except Exception:
+    except FileNotFoundError:
+        log.warning("Thiếu đoạn prompt %s — prompt gửi đi sẽ nghèo hơn", p)
+        return ""
+    except OSError:
+        log.exception("Không đọc được đoạn prompt %s", p)
         return ""
 
 
