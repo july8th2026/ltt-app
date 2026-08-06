@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Việc của tôi — LTT AI Studio{% endblock %}
 {% block content %}
-  <div class="pagehead"><div><h1>Việc của tôi</h1><p class="page-sub">Theo dõi, lọc và mở kết quả từ mọi app.</p></div>
+  <div class="pagehead"><div><h1>{{ _("Việc của tôi") }}</h1><p class="page-sub">{{ _("Theo dõi, lọc và mở kết quả từ mọi app.") }}</p></div>
     {% if co_user_csdl %}<a class="pill" href="/nap">{{ so_du }} credit</a>{% endif %}</div>
   {% if co_user_csdl %}
-    <form class="job-filters" method="get" action="/jobs" aria-label="Lọc việc">
-      <label>Trạng thái<select name="status"><option value="">Tất cả</option>
-        <option value="queued" {% if status_filter=='queued' %}selected{% endif %}>Đang chờ</option>
-        <option value="running" {% if status_filter=='running' %}selected{% endif %}>Đang chạy</option>
-        <option value="done" {% if status_filter=='done' %}selected{% endif %}>Hoàn tất</option>
-        <option value="error" {% if status_filter=='error' %}selected{% endif %}>Lỗi</option>
-        <option value="cancelled" {% if status_filter=='cancelled' %}selected{% endif %}>Đã hủy</option></select></label>
-      <label>App<input name="app" value="{{ app_filter }}" placeholder="Ví dụ: upscalevideo"></label>
-      <button class="btn" type="submit">Áp dụng</button>{% if status_filter or app_filter %}<a class="btn ghost" href="/jobs">Xóa lọc</a>{% endif %}
+    <form class="job-filters" method="get" action="/jobs" aria-label="{{ _('Lọc việc') }}">
+      <label>{{ _("Trạng thái") }}<select name="status"><option value="">{{ _("Tất cả") }}</option>
+        <option value="queued" {% if status_filter=='queued' %}selected{% endif %}>{{ _("Đang chờ") }}</option>
+        <option value="running" {% if status_filter=='running' %}selected{% endif %}>{{ _("Đang chạy") }}</option>
+        <option value="done" {% if status_filter=='done' %}selected{% endif %}>{{ _("Hoàn tất") }}</option>
+        <option value="error" {% if status_filter=='error' %}selected{% endif %}>{{ _("Lỗi") }}</option>
+        <option value="cancelled" {% if status_filter=='cancelled' %}selected{% endif %}>{{ _("Đã hủy") }}</option></select></label>
+      <label>App<input name="app" value="{{ app_filter }}" placeholder="{{ _('Ví dụ: upscalevideo') }}"></label>
+      <button class="btn" type="submit">{{ _("Áp dụng") }}</button>{% if status_filter or app_filter %}<a class="btn ghost" href="/jobs">{{ _("Xóa lọc") }}</a>{% endif %}
     </form>
   {% else %}
     <div class="alert alert-warn">Tài khoản quản trị nội bộ không chạy job.
@@ -20,7 +20,7 @@
   {% endif %}
   {% if jobs %}
   <div class="tablewrap job-table"><table class="ui-table">
-      <thead><tr><th>Job</th><th>App</th><th>Loại</th><th>Trạng thái</th><th>Tiến độ</th><th>Lúc</th></tr></thead>
+      <thead><tr><th>Job</th><th>App</th><th>{{ _("Loại") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th><th>{{ _("Lúc") }}</th></tr></thead>
       <tbody>
       {% for j in jobs %}
         <tr>
@@ -28,11 +28,11 @@
           <td>{{ j.app_slug }}</td>
           <td class="mono">{{ j.job_type }}</td>
           <td>
-            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>Hoàn tất</span>
-            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>Lỗi</span>
-            {% elif j.status == 'cancelled' %}<span class="badge b-grey"><span class="dot"></span>Đã hủy</span>
-            {% elif j.status == 'running' %}<span class="badge b-warn"><span class="dot"></span>Đang chạy</span>
-            {% else %}<span class="badge b-warn"><span class="dot"></span>Đang chờ</span>{% endif %}
+            {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
+            {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
+            {% elif j.status == 'cancelled' %}<span class="badge b-grey"><span class="dot"></span>{{ _("Đã hủy") }}</span>
+            {% elif j.status == 'running' %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chạy") }}</span>
+            {% else %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ") }}</span>{% endif %}
           </td>
           <td>{{ j.progress }}%</td>
           <td class="dim">{{ j.created_at.strftime('%H:%M %d/%m') }}</td>
@@ -41,6 +41,6 @@
       </tbody>
     </table></div>
   {% else %}
-    <div class="card"><p class="muted">Chưa có việc nào.</p></div>
+    <div class="card"><p class="muted">{{ _("Chưa có việc nào.") }}</p></div>
   {% endif %}
 {% endblock %}

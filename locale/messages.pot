@@ -10,15 +10,36 @@ msgstr ""
 msgid "Bạn chưa dùng app nào."
 msgstr ""
 
+#: server/templates/nap_don.html:24
+msgid "Bạn đã huỷ ở bước thanh toán —"
+msgstr ""
+
 #: server/templates/_header.html:30
 msgid "Bảng giá"
+msgstr ""
+
+#: server/templates/dashboard.html:3
+msgid "Bảng điều khiển"
+msgstr ""
+
+#: server/templates/dashboard.html:23
+msgid "Bắt đầu / dừng phiên đăng bài. Worker chạy trên máy chủ nên đóng trình duyệt không làm nó dừng."
 msgstr ""
 
 #: server/templates/_nap_trangthai.html:42
 msgid "Bắt đầu dùng công cụ"
 msgstr ""
 
-#: server/templates/home.html:62
+#: server/templates/nap_don.html:14
+msgid "Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được."
+msgstr ""
+
+#: server/templates/home.html:17 server/templates/home.html:18
+#: server/templates/home.html:20
+msgid "Chưa có"
+msgstr ""
+
+#: server/templates/home.html:40 server/templates/home.html:62
 msgid "Chưa có app phù hợp."
 msgstr ""
 
@@ -26,8 +47,20 @@ msgstr ""
 msgid "Chưa có gói nạp nào. Admin thêm gói ở trang quản trị."
 msgstr ""
 
+#: server/templates/home.html:44
+msgid "Chưa có hoạt động. Mở một công cụ để bắt đầu."
+msgstr ""
+
+#: server/templates/jobs.html:44
+msgid "Chưa có việc nào."
+msgstr ""
+
 #: server/templates/nap.html:70
 msgid "Chưa có đơn nạp."
+msgstr ""
+
+#: server/templates/home.html:39
+msgid "Chưa dùng được"
 msgstr ""
 
 #: server/templates/nap.html:70
@@ -38,6 +71,10 @@ msgstr ""
 msgid "Credit &amp; thanh toán"
 msgstr ""
 
+#: server/templates/home.html:46
+msgid "Credit của bạn"
+msgstr ""
+
 #: server/templates/nap_don.html:33
 msgid "Credit nhận"
 msgstr ""
@@ -46,23 +83,76 @@ msgstr ""
 msgid "Credit đã cộng"
 msgstr ""
 
+#: server/templates/demo.html:43
+msgid "Credit đã tính"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:23
+msgid "Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này."
+msgstr ""
+
 #: server/templates/nap.html:20
 msgid "Các gói credit"
 msgstr ""
 
-#: server/templates/_header.html:41
+#: server/templates/home.html:5
+msgid "Công cụ AI theo credit, gọn trong một tài khoản"
+msgstr ""
+
+#: server/templates/home.html:21
+msgid "Cấu hình"
+msgstr ""
+
+#: server/templates/_header.html:41 server/templates/home.html:31
 msgid "Cấu hình hệ thống"
+msgstr ""
+
+#: server/templates/nap_don.html:50
+msgid "Cổng thanh toán chưa cấu hình — vui lòng liên hệ quản trị để được cộng credit thủ công sau khi chuyển khoản."
+msgstr ""
+
+#: server/templates/home.html:20
+msgid "Cộng đồng"
+msgstr ""
+
+#: server/templates/home.html:20
+msgid "Cộng đồng sẽ mở khi có không gian thảo luận thật"
+msgstr ""
+
+#: server/templates/home.html:46
+msgid "Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy."
 msgstr ""
 
 #: server/templates/register.html:17
 msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
 msgstr ""
 
+#: server/templates/demo.html:23
+msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
+msgstr ""
+
+#: server/templates/dashboard.html:28
+msgid "Google Sheets, tên cột, Meta App, TikTok, chống spam, thông báo."
+msgstr ""
+
 #: server/templates/forgot_password.html:18
 msgid "Gửi liên kết đặt lại"
 msgstr ""
 
-#: server/templates/home.html:60
+#: server/templates/_job_progress.html:9 server/templates/jobs.html:11
+#: server/templates/jobs.html:31
+msgid "Hoàn tất"
+msgstr ""
+
+#: server/templates/home.html:43
+msgid "Hoạt động của bạn"
+msgstr ""
+
+#: server/templates/home.html:44
+msgid "Hoạt động gần đây"
+msgstr ""
+
+#: server/templates/home.html:40 server/templates/home.html:60
 msgid "Hãy đổi từ khóa, nhóm hoặc quay lại kho ứng dụng."
 msgstr ""
 
@@ -78,9 +168,25 @@ msgstr ""
 msgid "Hỗ trợ"
 msgstr ""
 
+#: server/templates/job_detail.html:5
+msgid "Hủy việc"
+msgstr ""
+
+#: server/templates/home.html:18
+msgid "Kho tài nguyên cá nhân chưa được phát hành"
+msgstr ""
+
 #: server/templates/home.html:14 server/templates/home.html:38
 #: server/templates/home.html:57
 msgid "Kho ứng dụng"
+msgstr ""
+
+#: server/templates/dashboard.html:15
+msgid "Không có lỗi chặn"
+msgstr ""
+
+#: server/templates/home.html:45
+msgid "Không có việc nào đang chạy."
 msgstr ""
 
 #: server/templates/nap.html:66
@@ -89,6 +195,10 @@ msgstr ""
 
 #: server/templates/nap_khong_thay.html:12
 msgid "Không tìm thấy đơn nạp này"
+msgstr ""
+
+#: server/templates/_job_progress.html:18
+msgid "Kết quả đã sẵn sàng."
 msgstr ""
 
 #: server/templates/_platform_footer.html:6
@@ -107,12 +217,45 @@ msgstr ""
 msgid "Liên kết xác thực không hợp lệ hoặc đã hết hạn."
 msgstr ""
 
+#: server/templates/jobs.html:23
+msgid "Loại"
+msgstr ""
+
+#: server/templates/jobs.html:23
+msgid "Lúc"
+msgstr ""
+
+#: server/templates/home.html:35
+msgid "Lọc theo nhóm"
+msgstr ""
+
+#: server/templates/jobs.html:7
+msgid "Lọc việc"
+msgstr ""
+
+#: server/templates/_job_progress.html:11 server/templates/jobs.html:12
+#: server/templates/jobs.html:32
+msgid "Lỗi"
+msgstr ""
+
+#: server/templates/_job_progress.html:21
+msgid "Lỗi:"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:36
 msgid "Mã giao dịch"
 msgstr ""
 
 #: server/templates/nap.html:59 server/templates/nap_don.html:36
 msgid "Mã đơn"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:17
+msgid "Mã đơn cổng thanh toán gửi về:"
+msgstr ""
+
+#: server/templates/home.html:17
+msgid "Mẫu"
 msgstr ""
 
 #: server/templates/login.html:14 server/templates/register.html:14
@@ -123,12 +266,42 @@ msgstr ""
 msgid "Mật khẩu mới"
 msgstr ""
 
+#: server/templates/home.html:29
+msgid "Mới nhất"
+msgstr ""
+
+#: server/templates/dashboard.html:24 server/templates/dashboard.html:29
+#: server/templates/dashboard.html:37 server/templates/dashboard.html:42
+#: server/templates/nap_khong_thay.html:24
+msgid "Mở"
+msgstr ""
+
 #: server/templates/nap_don.html:48
 msgid "Mở PayOS / VietQR"
 msgstr ""
 
+#: server/templates/home.html:39
+msgid "Mở app"
+msgstr ""
+
 #: server/templates/_header.html:20
 msgid "Mở danh sách ứng dụng"
+msgstr ""
+
+#: server/templates/home.html:31
+msgid "Mở menu tài khoản"
+msgstr ""
+
+#: server/templates/home.html:27
+msgid "Mở điều hướng"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:66
+msgid "Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở — credit sẽ tự hiện, bạn"
+msgstr ""
+
+#: server/templates/demo.html:22
+msgid "Nhập gì cũng được — job sẽ đảo ngược chuỗi này"
 msgstr ""
 
 #: server/templates/login.html:15
@@ -143,6 +316,7 @@ msgstr ""
 msgid "Nhớ mật khẩu rồi? Đăng nhập"
 msgstr ""
 
+#: server/templates/home.html:31 server/templates/home.html:46
 #: server/templates/nap.html:7
 msgid "Nạp credit"
 msgstr ""
@@ -155,8 +329,24 @@ msgstr ""
 msgid "Nếu"
 msgstr ""
 
-#: server/templates/nap_khong_thay.html:24
+#: server/templates/nap_khong_thay.html:22
 msgid "Nếu bạn vừa chuyển tiền, tiền không mất."
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:52
+msgid "Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao dịch ngân hàng để được đối soát."
+msgstr ""
+
+#: server/templates/home.html:5
+msgid "Nền tảng công cụ AI"
+msgstr ""
+
+#: server/templates/demo.html:20
+msgid "Nội dung"
+msgstr ""
+
+#: server/templates/home.html:29
+msgid "Phổ biến"
 msgstr ""
 
 #: server/templates/home.html:59
@@ -171,8 +361,12 @@ msgstr ""
 msgid "Quên mật khẩu?"
 msgstr ""
 
-#: server/templates/_header.html:43
+#: server/templates/_header.html:43 server/templates/home.html:31
 msgid "Quản trị"
+msgstr ""
+
+#: server/templates/home.html:29
+msgid "Sắp xếp:"
 msgstr ""
 
 #: server/templates/_header.html:32
@@ -187,12 +381,28 @@ msgstr ""
 msgid "Số tiền"
 msgstr ""
 
+#: server/templates/demo.html:42
+msgid "Số từ"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:17
 msgid "Thanh toán thành công"
 msgstr ""
 
+#: server/templates/jobs.html:4
+msgid "Theo dõi, lọc và mở kết quả từ mọi app."
+msgstr ""
+
+#: server/templates/home.html:31
+msgid "Thành viên"
+msgstr ""
+
 #: server/templates/_platform_footer.html:1
 msgid "Thông tin LTT Studios"
+msgstr ""
+
+#: server/templates/home.html:17
+msgid "Thư viện mẫu toàn nền tảng chưa được phát hành"
 msgstr ""
 
 #: server/templates/nap.html:59
@@ -203,23 +413,68 @@ msgstr ""
 msgid "Thời điểm"
 msgstr ""
 
-#: server/templates/nap_khong_thay.html:32
+#: server/templates/job_detail.html:5
+msgid "Thử lại"
+msgstr ""
+
+#: server/templates/jobs.html:23
+msgid "Tiến độ"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:30
 msgid "Trang chủ"
 msgstr ""
 
+#: server/templates/jobs.html:8 server/templates/jobs.html:23
 #: server/templates/nap.html:59
 msgid "Trạng thái"
+msgstr ""
+
+#: server/templates/dashboard.html:41
+msgid "Tài khoản TikTok và tình trạng token."
 msgstr ""
 
 #: server/templates/nap.html:16
 msgid "Tài khoản này không nạp được credit (đăng nhập bằng đường cứu hộ)."
 msgstr ""
 
+#: server/templates/dashboard.html:36
+msgid "Tài khoản, page và tình trạng token."
+msgstr ""
+
+#: server/templates/home.html:18
+msgid "Tài nguyên"
+msgstr ""
+
+#: server/templates/home.html:29
+msgid "Tên A–Z"
+msgstr ""
+
 #: server/templates/login.html:12
 msgid "Tên đăng nhập"
 msgstr ""
 
-#: server/templates/_header.html:42
+#: server/templates/home.html:6
+msgid "Tìm công cụ"
+msgstr ""
+
+#: server/templates/home.html:6
+msgid "Tìm công cụ…"
+msgstr ""
+
+#: server/templates/home.html:28
+msgid "Tìm ứng dụng"
+msgstr ""
+
+#: server/templates/home.html:28
+msgid "Tìm ứng dụng, công cụ AI, tính năng…"
+msgstr ""
+
+#: server/templates/home.html:19
+msgid "Tình trạng"
+msgstr ""
+
+#: server/templates/_header.html:42 server/templates/home.html:31
 msgid "Tình trạng hệ thống"
 msgstr ""
 
@@ -231,8 +486,16 @@ msgstr ""
 msgid "Tạo tài khoản"
 msgstr ""
 
-#: server/templates/_nap_trangthai.html:55
+#: server/templates/_nap_trangthai.html:54
 msgid "Tạo đơn mới"
+msgstr ""
+
+#: server/templates/home.html:6 server/templates/jobs.html:8
+msgid "Tất cả"
+msgstr ""
+
+#: server/templates/job_detail.html:9
+msgid "Tệp kết quả"
 msgstr ""
 
 #: server/templates/register.html:15 server/templates/reset_password.html:14
@@ -243,19 +506,28 @@ msgstr ""
 msgid "Tối đa 10 đơn mới nhất của tài khoản này."
 msgstr ""
 
-#: server/templates/_nap_trangthai.html:72
+#: server/templates/_nap_trangthai.html:71
 msgid "Tự kiểm tra mỗi 4 giây."
 msgstr ""
 
-#: server/templates/_header.html:40
+#: server/templates/_header.html:40 server/templates/home.html:31
+#: server/templates/jobs.html:4
 msgid "Việc của tôi"
+msgstr ""
+
+#: server/templates/home.html:45
+msgid "Việc đang chạy"
+msgstr ""
+
+#: server/templates/jobs.html:14
+msgid "Ví dụ: upscalevideo"
 msgstr ""
 
 #: server/templates/_auth_brand.html:1
 msgid "Về trang chủ LTT AI Studio"
 msgstr ""
 
-#: server/templates/nap_khong_thay.html:31
+#: server/templates/nap_khong_thay.html:29
 msgid "Về trang nạp credit"
 msgstr ""
 
@@ -264,8 +536,16 @@ msgstr ""
 msgid "Về trang đăng nhập"
 msgstr ""
 
+#: server/templates/dashboard.html:11
+msgid "Xem chẩn đoán chi tiết →"
+msgstr ""
+
 #: server/templates/nap.html:8
 msgid "Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán."
+msgstr ""
+
+#: server/templates/home.html:44 server/templates/home.html:45
+msgid "Xem tất cả"
 msgstr ""
 
 #: server/templates/nap.html:67
@@ -280,6 +560,10 @@ msgstr ""
 msgid "Xóa dữ liệu"
 msgstr ""
 
+#: server/templates/jobs.html:15
+msgid "Xóa lọc"
+msgstr ""
+
 #: server/templates/reset_password.html:20
 msgid "Yêu cầu liên kết mới"
 msgstr ""
@@ -292,24 +576,54 @@ msgstr ""
 msgid "công cụ sẵn sàng"
 msgstr ""
 
-#: server/templates/_nap_trangthai.html:68
+#: server/templates/home.html:39
+msgid "cần thiết lập"
+msgstr ""
+
+#: server/templates/_nap_trangthai.html:67
 msgid "không cần chuyển lại"
 msgstr ""
 
-#: server/templates/nap_khong_thay.html:26
+#: server/templates/nap_khong_thay.html:24
 msgid "trang nạp credit"
 msgstr ""
 
-#: server/templates/nap.html:65
+#: server/templates/demo.html:47
+msgid "tính"
+msgstr ""
+
+#: server/templates/dashboard.html:16
+msgid "xem tình trạng"
+msgstr ""
+
+#: server/templates/jobs.html:15
+msgid "Áp dụng"
+msgstr ""
+
+#: server/templates/_job_progress.html:8 server/templates/jobs.html:10
+#: server/templates/jobs.html:34
+msgid "Đang chạy"
+msgstr ""
+
+#: server/templates/_job_progress.html:7 server/templates/jobs.html:9
+#: server/templates/jobs.html:35 server/templates/nap.html:65
 msgid "Đang chờ"
 msgstr ""
 
-#: server/templates/_nap_trangthai.html:71
+#: server/templates/_nap_trangthai.html:70
 msgid "Đang chờ thanh toán…"
 msgstr ""
 
-#: server/templates/_nap_trangthai.html:65
+#: server/templates/_nap_trangthai.html:64
 msgid "Đang xác nhận với ngân hàng…"
+msgstr ""
+
+#: server/templates/home.html:39
+msgid "Đang xây"
+msgstr ""
+
+#: server/templates/home.html:11
+msgid "Điều hướng marketplace"
 msgstr ""
 
 #: server/templates/_platform_footer.html:11
@@ -320,8 +634,17 @@ msgstr ""
 msgid "Đã có tài khoản? Đăng nhập"
 msgstr ""
 
+#: server/templates/_job_progress.html:10 server/templates/jobs.html:13
+#: server/templates/jobs.html:33
+msgid "Đã hủy"
+msgstr ""
+
 #: server/templates/nap.html:64
 msgid "Đã thanh toán"
+msgstr ""
+
+#: server/templates/home.html:24
+msgid "Đóng điều hướng"
 msgstr ""
 
 #: server/templates/_header.html:54 server/templates/register.html:22
@@ -336,11 +659,19 @@ msgstr ""
 msgid "Đăng nhập"
 msgstr ""
 
+#: server/templates/home.html:5
+msgid "Đăng nhập một lần — dùng mọi công cụ. Chọn một công cụ để bắt đầu; mỗi tác vụ trừ credit minh bạch."
+msgstr ""
+
 #: server/templates/verify_result.html:10
 msgid "Đăng nhập ngay"
 msgstr ""
 
-#: server/templates/_header.html:48
+#: server/templates/home.html:7
+msgid "Đăng nhập để dùng"
+msgstr ""
+
+#: server/templates/_header.html:48 server/templates/home.html:31
 msgid "Đăng xuất"
 msgstr ""
 
@@ -352,12 +683,36 @@ msgstr ""
 msgid "Đơn nạp gần đây"
 msgstr ""
 
+#: server/templates/nap_don.html:25
+msgid "Đơn vẫn còn hiệu lực, mở lại link bên dưới nếu muốn tiếp tục."
+msgstr ""
+
+#: server/templates/nap_don.html:12
+msgid "Đơn đã hoàn tất — credit đã vào tài khoản của bạn."
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:13
+msgid "Đường dẫn không khớp đơn nào trong tài khoản của bạn."
+msgstr ""
+
+#: server/templates/demo.html:44
+msgid "Đầu ra"
+msgstr ""
+
 #: server/templates/reset_password.html:16
 msgid "Đặt mật khẩu mới"
 msgstr ""
 
 #: server/templates/_doi_ngon_ngu.html:10
 msgid "Đổi ngôn ngữ"
+msgstr ""
+
+#: server/templates/demo.html:41
+msgid "Độ dài đầu vào"
+msgstr ""
+
+#: server/templates/nap_khong_thay.html:25
+msgid "để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng."
 msgstr ""
 
 #: server/templates/_platform_footer.html:4
@@ -368,7 +723,39 @@ msgstr ""
 msgid "Ứng dụng của tôi"
 msgstr ""
 
+#: server/templates/job_detail.html:10
+msgid "← Về danh sách việc"
+msgstr ""
+
 #: server/templates/error.html:7
 msgid "← Về trang chính"
+msgstr ""
+
+#: server/templates/demo.html:28
+msgid "⏱  Chạy qua hàng đợi"
+msgstr ""
+
+#: server/templates/demo.html:26
+msgid "▶  Chạy ngay"
+msgstr ""
+
+#: server/templates/dashboard.html:22
+msgid "▶️ Điều khiển worker"
+msgstr ""
+
+#: server/templates/demo.html:39
+msgid "✅ Kết quả"
+msgstr ""
+
+#: server/templates/home.html:36
+msgid "✦ Tất cả"
+msgstr ""
+
+#: server/templates/dashboard.html:27
+msgid "🔧 Cài đặt"
+msgstr ""
+
+#: server/templates/demo.html:8
+msgid "🧪 Chạy thử một job"
 msgstr ""
 

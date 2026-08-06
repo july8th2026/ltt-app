@@ -67,12 +67,15 @@ def test_global_navigation_khong_con_link_gia():
 
     assert "> Agent Canvas</a>" in home
     assert 'href="/agent/canvas"><span aria-hidden="true">▱</span> Templates' not in home
-    assert "Thư viện mẫu toàn nền tảng chưa được phát hành" in home
-    assert "Kho tài nguyên cá nhân chưa được phát hành" in home
+    # H24: chu gio di qua catalog dich nen khong chot mat chu tho nua. Van chot
+    # DIEU test nay sinh ra de chot: ba muc chua phat hanh phai bi vo hieu hoa
+    # va co giai thich, chu khong phai link song dan toi trang trong.
+    assert "_('Thư viện mẫu toàn nền tảng chưa được phát hành')" in home
+    assert "_('Kho tài nguyên cá nhân chưa được phát hành')" in home
     assert home.count('class="market-deferred" disabled aria-disabled="true"') == 3
-    assert "Mẫu <small>Chưa có</small>" in home
-    assert "Tài nguyên <small>Chưa có</small>" in home
-    assert "Cộng đồng <small>Chưa có</small>" in home
+    for nhan in ("Mẫu", "Tài nguyên", "Cộng đồng"):
+        assert f'_("{nhan}") }}}} <small>' in home, nhan
+    assert home.count('<small>{{ _("Chưa có") }}</small>') == 3
 
 
 def test_my_apps_co_empty_state_rieng():

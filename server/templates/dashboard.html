@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Bảng điều khiển — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Bảng điều khiển</strong>{% endblock %}
+{% block topbar_title %}<strong>{{ _("Bảng điều khiển") }}</strong>{% endblock %}
 {% block content %}
   {% if blockers %}
     <div class="alert alert-err">
@@ -8,38 +8,38 @@
       <ul style="margin:8px 0 6px;">
         {% for b in blockers %}<li>{{ b.check }}{% if b.fix %} <span class="dim">— {{ b.fix }}</span>{% endif %}</li>{% endfor %}
       </ul>
-      <a href="/status">Xem chẩn đoán chi tiết →</a>
+      <a href="/status">{{ _("Xem chẩn đoán chi tiết →") }}</a>
     </div>
   {% else %}
     <div class="alert alert-ok">
-      <strong style="color:var(--ok);">Không có lỗi chặn</strong>
-      <span class="dim"> — <a href="/status">xem tình trạng</a></span>
+      <strong style="color:var(--ok);">{{ _("Không có lỗi chặn") }}</strong>
+      <span class="dim"> — <a href="/status">{{ _("xem tình trạng") }}</a></span>
     </div>
   {% endif %}
 
   <div class="row">
     <div class="card" style="flex:1 1 300px;">
-      <h2>▶️ Điều khiển worker</h2>
-      <p class="muted">Bắt đầu / dừng phiên đăng bài. Worker chạy trên máy chủ nên đóng trình duyệt không làm nó dừng.</p>
-      <a class="btn btn-ghost btn-sm" href="/workers">Mở</a>
+      <h2>{{ _("▶️ Điều khiển worker") }}</h2>
+      <p class="muted">{{ _("Bắt đầu / dừng phiên đăng bài. Worker chạy trên máy chủ nên đóng trình duyệt không làm nó dừng.") }}</p>
+      <a class="btn btn-ghost btn-sm" href="/workers">{{ _("Mở") }}</a>
     </div>
     <div class="card" style="flex:1 1 300px;">
-      <h2>🔧 Cài đặt</h2>
-      <p class="muted">Google Sheets, tên cột, Meta App, TikTok, chống spam, thông báo.</p>
-      <a class="btn btn-ghost btn-sm" href="/settings">Mở</a>
+      <h2>{{ _("🔧 Cài đặt") }}</h2>
+      <p class="muted">{{ _("Google Sheets, tên cột, Meta App, TikTok, chống spam, thông báo.") }}</p>
+      <a class="btn btn-ghost btn-sm" href="/settings">{{ _("Mở") }}</a>
     </div>
   </div>
 
   <div class="row">
     <div class="card" style="flex:1 1 300px;">
       <h2>📘 Facebook</h2>
-      <p class="muted">Tài khoản, page và tình trạng token.</p>
-      <a class="btn btn-ghost btn-sm" href="/facebook">Mở</a>
+      <p class="muted">{{ _("Tài khoản, page và tình trạng token.") }}</p>
+      <a class="btn btn-ghost btn-sm" href="/facebook">{{ _("Mở") }}</a>
     </div>
     <div class="card" style="flex:1 1 300px;">
       <h2>🎵 TikTok</h2>
-      <p class="muted">Tài khoản TikTok và tình trạng token.</p>
-      <a class="btn btn-ghost btn-sm" href="/tiktok">Mở</a>
+      <p class="muted">{{ _("Tài khoản TikTok và tình trạng token.") }}</p>
+      <a class="btn btn-ghost btn-sm" href="/tiktok">{{ _("Mở") }}</a>
     </div>
   </div>
 {% endblock %}

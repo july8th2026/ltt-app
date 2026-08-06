@@ -49,8 +49,7 @@
 <div id="tt" style="margin-top:18px" role="alert">
   <div class="alert alert-err" style="margin:0">
     <strong>{{ _("Đơn không hoàn tất hoặc đã hết hạn.") }}</strong>
-    Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao
-    dịch ngân hàng để được đối soát.
+    {{ _("Nếu bạn đã chuyển tiền cho đơn này, đừng chuyển lại — gửi quản trị mã giao dịch ngân hàng để được đối soát.") }}
     <div class="actions" style="margin-top:12px">
       <a class="btn sm" href="/nap">{{ _("Tạo đơn mới") }}</a>
     </div>
@@ -64,8 +63,8 @@
   {% if vua_ve %}
     <span class="badge b-warn"><span class="dot"></span>{{ _("Đang xác nhận với ngân hàng…") }}</span>
     <p class="dim" style="font-size:12px;margin:8px 0 0">
-      Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở —
-      credit sẽ tự hiện, bạn <strong>{{ _("không cần chuyển lại") }}</strong>.
+      {{ _("Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở — credit sẽ tự hiện, bạn") }}
+      <strong>{{ _("không cần chuyển lại") }}</strong>.
     </p>
   {% else %}
     <span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ thanh toán…") }}</span>

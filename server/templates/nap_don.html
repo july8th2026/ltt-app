@@ -9,9 +9,9 @@
       <h1 style="margin:0 0 4px">Đơn nạp #{{ order.order_code }}</h1>
       <p class="dim" style="margin:0">
         {%- if order.status == 'paid' -%}
-          Đơn đã hoàn tất — credit đã vào tài khoản của bạn.
+          {{ _("Đơn đã hoàn tất — credit đã vào tài khoản của bạn.") }}
         {%- else -%}
-          Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được.
+          {{ _("Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được.") }}
         {%- endif -%}
       </p>
     </div>
@@ -21,8 +21,8 @@
   <div class="ui-card billing-order" style="max-width:620px;margin-top:14px">
     {% if da_huy and order.status != 'paid' %}
       <div class="alert alert-warn" style="margin:0 0 14px">
-        Bạn đã huỷ ở bước thanh toán — <strong>{{ _("chưa trừ tiền") }}</strong>. Đơn vẫn
-        còn hiệu lực, mở lại link bên dưới nếu muốn tiếp tục.
+        {{ _("Bạn đã huỷ ở bước thanh toán —") }} <strong>{{ _("chưa trừ tiền") }}</strong>.
+        {{ _("Đơn vẫn còn hiệu lực, mở lại link bên dưới nếu muốn tiếp tục.") }}
       </div>
     {% endif %}
 
@@ -47,8 +47,7 @@
       <a class="btn" href="{{ order.checkout_url }}" target="_blank" rel="noopener"
          style="width:100%;justify-content:center">{{ _("Mở PayOS / VietQR") }} <span aria-hidden="true">↗</span></a>
     {% else %}
-      <div class="alert alert-warn" style="margin:0">Cổng thanh toán chưa cấu hình — vui lòng
-        liên hệ quản trị để được cộng credit thủ công sau khi chuyển khoản.</div>
+      <div class="alert alert-warn" style="margin:0">{{ _("Cổng thanh toán chưa cấu hình — vui lòng liên hệ quản trị để được cộng credit thủ công sau khi chuyển khoản.") }}</div>
     {% endif %}
 
     <div style="margin-top:16px" id="tt" role="status" aria-live="polite"

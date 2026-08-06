@@ -5,7 +5,7 @@
 
   <div class="card">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
-    <h2>🧪 Chạy thử một job</h2>
+    <h2>{{ _("🧪 Chạy thử một job") }}</h2>
     <p class="muted" style="margin-top:0;">
       App này đi qua đủ chuỗi hạ tầng nhưng không gọi API nào, nên chạy bao
       nhiêu lần cũng miễn phí. Dùng nó để nghiệm thu sau mỗi lần sửa hạ tầng
@@ -17,15 +17,15 @@
     <form method="post" action="{{ app.route_prefix }}" style="max-width:none;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="field">
-        <label for="text">Nội dung</label>
+        <label for="text">{{ _("Nội dung") }}</label>
         <textarea id="text" name="text" rows="4"
-                  placeholder="Nhập gì cũng được — job sẽ đảo ngược chuỗi này">{% if result %}{% endif %}</textarea>
-        <span class="hint">Giá: 1 credit mỗi 100 ký tự (do manifest quyết định).</span>
+                  placeholder="{{ _('Nhập gì cũng được — job sẽ đảo ngược chuỗi này') }}">{% if result %}{% endif %}</textarea>
+        <span class="hint">{{ _("Giá: 1 credit mỗi 100 ký tự (do manifest quyết định).") }}</span>
       </div>
       <div class="row" style="gap:10px;">
-        <button type="submit" style="background:{{ app.accent }};">▶  Chạy ngay</button>
+        <button type="submit" style="background:{{ app.accent }};">{{ _("▶  Chạy ngay") }}</button>
         <button type="submit" formaction="{{ app.route_prefix }}/queue"
-                class="btn-ghost">⏱  Chạy qua hàng đợi</button>
+                class="btn-ghost">{{ _("⏱  Chạy qua hàng đợi") }}</button>
       </div>
       <span class="hint">"Chạy ngay" xử lý trong request (chỉ hợp với job vài
         mili-giây như demo). "Chạy qua hàng đợi" là khuôn cho app thật: tạo job,
@@ -36,15 +36,15 @@
   {% if result %}
     <div class="card">
       <div class="card-accent" style="background:#2E7D32;"></div>
-      <h2>✅ Kết quả</h2>
+      <h2>{{ _("✅ Kết quả") }}</h2>
       <table>
-        <tr><th style="width:190px;">Độ dài đầu vào</th><td>{{ result.input_length }} ký tự</td></tr>
-        <tr><th>Số từ</th><td>{{ result.words }}</td></tr>
-        <tr><th>Credit đã tính</th><td>{{ result.credit_cost }}</td></tr>
-        <tr><th>Đầu ra</th><td class="mono" style="word-break:break-all;">{{ result.output }}</td></tr>
+        <tr><th style="width:190px;">{{ _("Độ dài đầu vào") }}</th><td>{{ result.input_length }} ký tự</td></tr>
+        <tr><th>{{ _("Số từ") }}</th><td>{{ result.words }}</td></tr>
+        <tr><th>{{ _("Credit đã tính") }}</th><td>{{ result.credit_cost }}</td></tr>
+        <tr><th>{{ _("Đầu ra") }}</th><td class="mono" style="word-break:break-all;">{{ result.output }}</td></tr>
       </table>
       <p class="dim" style="font-size:11px; margin:12px 0 0;">
-        Credit ở đây chỉ được <em>tính</em>, chưa trừ vào sổ — sổ credit thuộc
+        Credit ở đây chỉ được <em>{{ _("tính") }}</em>, chưa trừ vào sổ — sổ credit thuộc
         giai đoạn sau. Con số này chứng minh <span class="mono">registry.credit_for()</span>
         đọc đúng hàm giá từ manifest của app.
       </p>

@@ -10,21 +10,19 @@
                 font-size:26px;line-height:1">🔎</div>
 
     <h1 style="margin:0 0 8px;font-size:20px">{{ _("Không tìm thấy đơn nạp này") }}</h1>
-    <p class="dim" style="margin:0 0 4px">
-      Đường dẫn không khớp đơn nào trong tài khoản của bạn.
-    </p>
+    <p class="dim" style="margin:0 0 4px">{{ _("Đường dẫn không khớp đơn nào trong tài khoản của bạn.") }}</p>
 
     {% if ma_tra_ve %}
       <p class="dim" style="margin:0 0 4px;font-size:13px">
-        Mã đơn cổng thanh toán gửi về: <span class="mono">{{ ma_tra_ve }}</span>
+        {{ _("Mã đơn cổng thanh toán gửi về:") }} <span class="mono">{{ ma_tra_ve }}</span>
       </p>
     {% endif %}
 
     <div class="alert alert-warn" style="margin:18px 0 0;text-align:left">
       <strong>{{ _("Nếu bạn vừa chuyển tiền, tiền không mất.") }}</strong>
-      Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này. Mở
-      <a href="/nap">{{ _("trang nạp credit") }}</a> để xem lịch sử đơn và số dư mới nhất.
-      Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng.
+      {{ _("Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này.") }}
+      {{ _("Mở") }} <a href="{{ u('/nap') }}">{{ _("trang nạp credit") }}</a>
+      {{ _("để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng.") }}
     </div>
 
     <div class="actions" style="justify-content:center;margin-top:18px">
