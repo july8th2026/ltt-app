@@ -48,7 +48,9 @@ def _source_files() -> list[pathlib.Path]:
 # chính hàm giải đường dẫn: khi runtime_paths không dùng được thì thà lưu sai
 # chỗ còn hơn làm sập ứng dụng.
 _DUOC_PHEP_DU_PHONG = {
-    "core/runtime_paths.py",
+    # Chuyển từ `core/` sang `platform_core/` ngày 2026-08-06 khi cắt phụ thuộc
+    # cuối cùng của nền tảng vào `core/` legacy.
+    "platform_core/runtime_paths.py",
     "core/session_lock.py",
     "core/token_store.py",
     "core/tiktok/token_store.py",

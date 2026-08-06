@@ -184,6 +184,7 @@ nào**.
 | Thanh toán / nạp credit (PayOS agnostic, gói bonus %, webhook idempotent) | ✅ xong 2026-08-01 (H9) |
 | Lưu file lớn qua R2 + `Storage.url_for()` (presigned, serve thẳng CDN) | ✅ xong 2026-08-01 (H10) |
 | Di trú app từ BOT GEMINI: thumbnail(parity)+taoanh+kichban+taovideo(video async) | ✅ đang (A1+A2 P1) |
+| **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -195,6 +196,18 @@ sau Tunnel, restore DB, băm token phiên, migration trong update) và P1/P2
 ACL backup, validate hợp đồng sớm, log rotation, smoke test). Việc **cố ý hoãn**
 sang H9/H10 ghi trong file audit + KE_HOACH (url_for/R2, FK constraints).
 Cửa mở khách trả tiền giờ phụ thuộc **H9 (Thanh toán)**.
+
+**H22 (Rà soát hệ điều hành) — 9/12 XONG 2026-08-06** theo audit
+`docs/APP_AUDIT/control-plane/2026-08-06/`: chốt nơi đặt logic nghiệp vụ
+(`AGENTS.md` mục 8), tách hai file route 1.799 và 1.308 dòng, gom việc dùng
+chung về `platform_core`, và **cắt hết phụ thuộc của app vào `core/`**.
+
+Ba việc còn lại, **hai trong đó chờ chủ sản phẩm quyết**:
+- **H22.10** — 43/69 = 62% route công khai thuộc app socialbot đã đóng băng,
+  đang gắn vô điều kiện. Đưa vào cờ mặc định TẮT? *Cần biết có ai còn dùng.*
+- **H22.11** — xoá 5 module `core/` không ai gọi (535 dòng)? *socialbot đóng
+  băng chứ chưa khai tử.*
+- **H22.12** — 145 chỗ `except` rộng nuốt lỗi lặng lẽ (đã đo, chưa sửa).
 
 ## Không bao giờ commit hay copy đi
 
