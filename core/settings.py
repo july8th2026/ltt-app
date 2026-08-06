@@ -6,7 +6,7 @@ Earlier builds loaded `data/config.json` inline with a bare
 still works and is left untouched here. This module adds the boundary a
 headless/server process needs on top of it: which environment profile is
 this process running as, where do its runtime files actually live
-(core.runtime_paths), and did the config it loaded pass startup
+(platform_core.runtime_paths), and did the config it loaded pass startup
 validation — all without ever logging or returning a secret value, since
 `core.config_validator.validate_config()` only ever reports rule/key names.
 """
@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from core.config_validator import ConfigValidationError, validate_config
-from core.runtime_paths import RuntimePaths, resolve_runtime_paths
+from platform_core.runtime_paths import RuntimePaths, resolve_runtime_paths
 
 # Bumped whenever config.json's expected shape changes in a way an older
 # build cannot safely interpret. Configs written before this field existed

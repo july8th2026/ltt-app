@@ -1587,3 +1587,58 @@ chủ sản phẩm. Runtime/credit/provider/ownership của Q62 giữ nguyên.
 
 Thứ tự bắt buộc H21.1→H21.9; không làm Assistant/model breadth trước core block
 và connection grammar. Không deploy UX Reset từ hồ sơ audit này.
+
+
+---
+
+## H22 — Rà soát hệ điều hành: bố cục mã nguồn và tầng nghiệp vụ
+
+Nguồn: `docs/APP_AUDIT/control-plane/2026-08-06/`. Phạm vi là **chất lượng nền
+tảng**, không phải một app: logic vận hành, bố cục/phân loại file, hiển thị
+mobile. Chín hạng mục ưu tiên ở `03_SCORECARD.md` §5.
+
+- [x] H22.1 Một lệnh gate duy nhất — 2026-08-06 (`139c2b2`): `tools/gate.py`
+  chạy quét bí mật · lint hợp đồng app · 3 bộ test frontend · pytest. Trước đó
+  `pytest -q` không chạy 77 test vitest nên "full regression xanh" là câu nói
+  sai. `test_145` đỏ nếu thêm frontend mà quên khai.
+- [x] H22.2 Vùng chạm 24px (WCAG 2.2 AA 2.5.8) — 2026-08-06 (`139c2b2`):
+  9 vi phạm thật (không phải 22–41 như lần đếm đầu — 31 cái là radio trong
+  label 44px, đã ghi bài học vào hồ sơ audit). `test_146` chốt.
+- [x] H22.3 Bỏ phụ thuộc ngược + hợp đồng quyền admin — 2026-08-06 (`cd34989`).
+- [x] H22.4 Chuẩn hoá **nơi đặt logic nghiệp vụ** trong hợp đồng app —
+  2026-08-06 (`67e3a3e`): `AGENTS.md` **mục 8** + bản rút gọn ở `CLAUDE.md`.
+  `routes.py` chỉ lo HTTP; nghiệp vụ ở `services/` (nhiều miền) hoặc
+  `features.py` (một miền); `tables.py` cho bảng CSDL. Trần 900 dòng /
+  30 handler do `tools/lint_app_contract.py` gác, **tính theo từng file** để
+  không phạt đúng thứ mình muốn khuyến khích.
+- [x] H22.5 Tách `apps/prompt_ai_ommi/routes.py` — 2026-08-06 (`67e3a3e`):
+  1.799 dòng / 64 handler → 9 module, lớn nhất 551. Router vẫn đủ 64 route.
+  Test bắt 4 lỗi do chính việc tách gây ra, đều đã sửa.
+- [x] H22.6 Tách `apps/agent/routes.py` — 2026-08-06 (`be5331b`): 1.308 dòng /
+  48 handler → 9 module, lớn nhất 237. So khớp `(path, method, tên handler)`
+  với bản HEAD: **giống hệt 48/48**.
+- [x] H22.7 Gom việc dùng chung về nền tảng — 2026-08-06: thêm
+  `platform_core/frontend_bundle.py` (ba app tự đọc manifest Vite và tự neo gốc
+  repo bằng `parents[2]`), và chuyển `core.runtime_paths` →
+  `platform_core/runtime_paths.py`. Sau bước hai, **`platform_core/` và toàn bộ
+  app không còn phụ thuộc `core/`** (`test_147` chốt).
+- [x] H22.8 Bản đồ `core/` còn sống / đã chết — 2026-08-06:
+  `04_BAN_DO_CORE.md`. Đo khả đạt bắc cầu từ điểm vào thật, cố ý loại `tests/`.
+  **99,4% của 15.668 dòng không phục vụ app nào đang bán**; 43/69 = 62% route
+  công khai thuộc sản phẩm đã đóng băng.
+- [x] H22.9 Presign R2 không nuốt lỗi thật — 2026-08-06 (`9f40b18`): thêm
+  `Storage.try_url_for()` / `try_put_url()`, chuyển 15 chỗ gọi. Vẫn degrade
+  nhưng **ghi log** để sự cố R2 nhìn thấy được.
+- [ ] H22.10 **Cần chủ sản phẩm quyết** — đưa 43 route FB/TikTok cũ vào cờ
+  bật/tắt (`LTT_SOCIALBOT_ROUTES`), mặc định TẮT ở production. Chưa làm vì tắt
+  nghĩa là bảng điều khiển cũ biến mất khỏi web; cần biết có ai còn dùng không.
+- [ ] H22.11 Xoá 5 module `core/` không ai gọi tới (535 dòng). Chưa làm vì xoá
+  code của sản phẩm **đóng băng chứ chưa khai tử** là quyết định sản phẩm.
+- [ ] H22.12 145 chỗ `except` rộng nuốt lỗi lặng lẽ toàn repo — đã đo, chưa sửa.
+  H22.9 chỉ xử lý nhóm presign vì nhóm đó hại rõ và sửa được cùng một chỗ.
+
+Hai lỗi **thật** tìm được trong lúc làm (không nằm trong danh sách audit):
+`POST /upscalevideo/queue` gọi `get_session()` mà không import (mọi lần nộp đều
+500, có từ 2026-08-02, không test nào chạm), và nhóm presign ở H22.9. Cả hai
+thuộc loại test-từng-route không bắt được; nay có `tools/check_undefined_names.py`
+trong gate.

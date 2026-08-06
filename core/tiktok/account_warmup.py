@@ -38,7 +38,7 @@ def _cache_path() -> str:
     if _CACHE_PATH:
         return _CACHE_PATH
     try:
-        from core.runtime_paths import data_path
+        from platform_core.runtime_paths import data_path
         return data_path("tiktok_account_age_cache.json")
     except Exception:
         return os.path.join("data", "tiktok_account_age_cache.json")

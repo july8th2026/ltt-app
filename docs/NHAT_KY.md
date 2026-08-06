@@ -14,6 +14,133 @@
 
 ---
 
+## 2026-08-06 — Rà soát hệ điều hành: chốt bố cục mã nguồn, tách 2 file route khổng lồ, 2 lỗi thật
+
+- **Mục tiêu:** thực hiện các đề xuất của đợt audit control-plane 2026-08-06
+  (`docs/APP_AUDIT/control-plane/2026-08-06/`).
+- **Trạng thái:** 4 commit. `tools/gate.py` xanh. Đã kiểm trình duyệt thật.
+  **Chưa deploy.**
+
+### Vấn đề gốc: hợp đồng app chưa từng nói logic nghiệp vụ nằm ở đâu
+
+`manifest.py` / `routes.py` / `jobs.py` đều có quy định. Nhưng không chỗ nào nói
+quy tắc nghiệp vụ đặt ở đâu. Đo được hậu quả: 5 app dùng `features.py`, 5 app
+dùng `cost.py`, 1 app dùng `services/`, còn lại nhét thẳng vào route. Không có
+chỗ mặc định thì route là chỗ để mọi thứ rơi vào.
+
+Chốt vào **`AGENTS.md` mục 8** (mới) + bản rút gọn trong `CLAUDE.md`:
+`routes.py` chỉ lo HTTP; nghiệp vụ ở `services/` (nhiều miền) hoặc `features.py`
+(một miền); trần **900 dòng / 30 handler** do `tools/lint_app_contract.py` gác.
+Ngưỡng chọn theo phân bố thật (file route lớn nhất còn đọc được là ~870 dòng),
+không theo cảm tính.
+
+Rồi tách hai file vi phạm:
+
+| File | Trước | Sau | Route |
+|---|---:|---|---:|
+| `apps/prompt_ai_ommi/routes.py` | 1.799 dòng / 64 handler | 9 module, lớn nhất 551 | 64 → 64 |
+| `apps/agent/routes.py` | 1.308 dòng / 48 handler | 9 module, lớn nhất 237 | 48 → 48 |
+
+Với agent, so khớp `(path, method, tên handler)` với bản HEAD: **giống hệt**.
+`lint_app_contract`: lần đầu ERROR 0, **WARN 0**.
+
+### Hai lỗi thật, cả hai đều loại "test không thể bắt"
+
+**1. `POST /upscalevideo/queue` gọi `get_session()` mà không import.** Đường nộp
+việc **chính** của app đó. Mọi lần nộp đều NameError → 500. Lỗi nằm trong repo
+từ 2026-08-02 (3ea1f2c) và **không test nào chạm route đó**.
+
+Sửa xong thì chặn cả lớp: `tools/check_undefined_names.py` vào gate. Test không
+phủ hết mọi nhánh route, nhưng một cái tên chưa định nghĩa thì đọc tĩnh là thấy.
+Đã chứng minh công cụ bắt được bằng cách trồng lại đúng lỗi đó.
+
+**2. Presign R2 nuốt lỗi thật.** 15 chỗ gọi `url_for`/`put_url` đều bọc
+`except Exception:  # noqa: BLE001`, kèm chú thích *"local storage has no direct
+URL"*. Chú thích **sai**: backend cục bộ **trả None**, không ném. Nên khối except
+ấy không bảo vệ thứ nó tự nhận — nó chỉ giấu lỗi thật của R2 (thiếu cấu hình,
+sai khoá, mất mạng) rồi lặng lẽ quay về phục vụ file qua tunnel. Đúng thứ H10
+sinh ra để tránh: mọi thứ vẫn "chạy" cho tới khi ai đó tải file lớn và đâm trần
+100 MB của Cloudflare, không log nào chỉ ra vì sao.
+
+Thêm `Storage.try_url_for()` / `try_put_url()`: vẫn degrade để sự cố tạm thời
+không làm vỡ trang, **nhưng ghi log mức exception**. Lợi ích thấy ngay trong
+cùng phiên: gate đỏ một test, và chính dòng log mới chỉ thẳng ra nguyên nhân —
+stub trong `test_103` là `lambda _key:` không nhận `ttl_s` trong khi chữ ký thật
+có. Stub sai hình đó vẫn xanh suốt vì route gọi không truyền `ttl_s`.
+
+### Gom việc dùng chung về nền tảng
+
+- **`platform_core/frontend_bundle.py`** — ba app đều tự đọc manifest của Vite
+  và tự neo gốc repo bằng `Path(__file__).parents[2]`. Đếm cấp thư mục sai ngay
+  khi file đổi chỗ: lúc tách package, file sâu thêm một cấp, `parents[2]` trỏ
+  vào `apps/`, manifest không đọc được, và trang **vẫn trả 200** với vỏ trống.
+  Nay neo bằng tên thư mục.
+- **`core.runtime_paths` → `platform_core/runtime_paths.py`.** Đây là sợi dây
+  **duy nhất** khiến mọi app dính `core/` (15.668 dòng legacy FB/TikTok). Cắt
+  xong: `platform_core/` và toàn bộ app **không còn dây nào** tới `core/`.
+  Production an toàn vì bộ cài đặt `LTT_DATA_DIR`/`LTT_SECRETS_DIR`/`LTT_LOGS_DIR`
+  ghi đè, và đường fallback mới vẫn cho đúng gốc cũ (đã kiểm cả hai nhánh).
+
+### Bản đồ `core/` — hạng mục #8
+
+`docs/APP_AUDIT/control-plane/2026-08-06/04_BAN_DO_CORE.md`. Đo khả đạt bắc cầu
+từ điểm vào thật, **cố ý loại `tests/`** (module chỉ test dùng là code chết được
+test của chính nó giữ cho ấm):
+
+| Nhóm | Module | Dòng |
+|---|---:|---:|
+| Mọi app đang bán dùng | 1 | 89 |
+| Chỉ qua `server.app`/`worker_main` (bảng điều khiển FB/TikTok cũ) | 64 | 15.044 |
+| Không ai gọi tới | 5 | 535 |
+
+**99,4% của `core/` không phục vụ app nào đang bán.** Và 43/69 = **62% route
+công khai** thuộc sản phẩm đã đóng băng, gắn vô điều kiện trong `server/app.py`.
+Đề xuất C1–C4 ghi trong hồ sơ; **C2 (đưa 43 route legacy vào cờ tắt/bật) cần
+chủ sản phẩm quyết** vì tắt là bảng điều khiển cũ biến mất khỏi web.
+
+### Kiểm thật
+
+- `python tools\gate.py` — quét bí mật · lint hợp đồng · tên chưa định nghĩa ·
+  3 bộ test frontend · pytest. **2.280 pass / 8 skip.**
+- Trình duyệt (Playwright, server cách ly cổng 8121, **không chạm production**):
+  `/agent/canvas`, `/prompt-ai-ommi`, `/autosubvideo` đều nạp đúng bundle,
+  **0 lỗi console**, không request hỏng. 10 route lấy mẫu từ các module vừa
+  tách đều 200. Mobile 390×844: **không tràn ngang** trên cả ba.
+
+### Test mới chốt các cách hỏng vừa gặp
+
+Mọi test dưới đây đã được **chứng minh là bắt được** bằng cách trồng lại đúng lỗi:
+
+- `test_148` — đường dẫn bundle (2 lỗi trồng thử, cả hai đỏ đúng).
+- `test_149` — presign không được bọc bằng `except` rỗng.
+- `test_147` — module miền phải được import trong `routes/__init__.py` (quên là
+  route **biến mất lặng lẽ**, server vẫn khởi động bình thường); và
+  nền tảng/app không được phụ thuộc `core/`.
+
+### Cách lùi lại
+
+Bốn commit độc lập, lùi được riêng: `67e3a3e` (tầng nghiệp vụ + tách OMMI +
+frontend_bundle + lỗi upscalevideo) · `be5331b` (tách agent) · `9f40b18`
+(presign) · commit C3 (runtime_paths).
+
+### Còn tồn đọng
+
+- **C2 chờ chủ sản phẩm quyết:** có ai còn dùng bảng điều khiển FB/TikTok cũ
+  trên web không? Nếu không, đưa 43 route đó vào cờ mặc định TẮT.
+- **C1:** xoá 5 module `core/` không ai gọi (535 dòng) — chưa làm vì xoá code
+  của một sản phẩm *đóng băng chứ chưa khai tử* là quyết định sản phẩm.
+- 145 chỗ `except` rộng nuốt lỗi lặng lẽ trên toàn repo (đã đo, chưa sửa). Phiên
+  này chỉ xử lý nhóm presign vì nhóm đó có hại rõ ràng và sửa được cùng một chỗ.
+- `tools/lint_app_contract.py` mới đo `routes.py`; chưa đo `routes/` dạng package.
+
+### Việc tiếp theo
+
+1. Hỏi chủ sản phẩm về C2, rồi làm C1 + C2.
+2. Cho linter hiểu `routes/` dạng package (hiện app đã tách thì linter không đo nữa).
+3. Deploy.
+
+---
+
 ## 2026-08-05 — PROMPT AI OMMI: audit lại rồi xây Kho tài nguyên, Thư viện, Storyboard
 
 - **Mục tiêu:** chủ sản phẩm báo bản codex "triển khai sai hoàn toàn"; audit lại

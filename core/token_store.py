@@ -49,7 +49,7 @@ def _default_token_file() -> str:
     if TOKEN_FILE:
         return TOKEN_FILE
     try:
-        from core.runtime_paths import data_path
+        from platform_core.runtime_paths import data_path
         return data_path("tokens.enc")
     except Exception:
         return os.path.join("data", "tokens.enc")

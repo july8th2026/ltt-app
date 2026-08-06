@@ -45,7 +45,7 @@ def _default_db_path() -> str:
     if _DEFAULT_DB_PATH:
         return _DEFAULT_DB_PATH
     try:
-        from core.runtime_paths import data_path
+        from platform_core.runtime_paths import data_path
         return data_path("page_health.db")
     except Exception:
         return os.path.join("data", "page_health.db")

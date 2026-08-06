@@ -21,8 +21,20 @@ from dataclasses import dataclass
 
 
 def _project_root() -> str:
-    # core/runtime_paths.py -> core/ -> project root
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    """Gốc dự án, neo bằng TÊN thư mục chứ không đếm cấp.
+
+    Bản trước tính `os.path.dirname` hai lần từ `core/runtime_paths.py`. Đếm
+    cấp thì đổi chỗ file là sai ngay — đúng lỗi đã xảy ra khi tách `routes.py`
+    thành package (xem `platform_core/frontend_bundle.py`), và file này vừa
+    chuyển từ `core/` sang `platform_core/`.
+    """
+    here = os.path.abspath(__file__)
+    while True:
+        here = os.path.dirname(here)
+        if os.path.isdir(os.path.join(here, "server", "static")):
+            return here
+        if os.path.dirname(here) == here:      # tới gốc ổ đĩa
+            return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 @dataclass(frozen=True)

@@ -18,7 +18,7 @@ import os
 import pytest
 
 from core.config_validator import ConfigValidationError
-from core.runtime_paths import resolve_runtime_paths
+from platform_core.runtime_paths import resolve_runtime_paths
 from core.settings import (
     CONFIG_SCHEMA_VERSION,
     Environment,

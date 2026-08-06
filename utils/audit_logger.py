@@ -42,7 +42,7 @@ def default_log_path() -> str:
     if _DEFAULT_PATH:
         return _DEFAULT_PATH
     try:
-        from core.runtime_paths import data_path
+        from platform_core.runtime_paths import data_path
         return data_path("audit_log.jsonl")
     except Exception:
         return os.path.join("data", "audit_log.jsonl")

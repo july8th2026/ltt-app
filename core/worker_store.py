@@ -18,7 +18,7 @@ import json
 import os
 from typing import Optional
 
-from core.runtime_paths import resolve_runtime_paths
+from platform_core.runtime_paths import resolve_runtime_paths
 from utils.atomic_io import atomic_write_json
 
 WORKERS_SCHEMA_VERSION = 1

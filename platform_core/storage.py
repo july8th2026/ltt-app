@@ -327,7 +327,7 @@ def _r2_from_env() -> "R2Storage":
 
 
 def _local() -> "LocalStorage":
-    from core.runtime_paths import resolve_runtime_paths
+    from platform_core.runtime_paths import resolve_runtime_paths
     paths = resolve_runtime_paths()
     return LocalStorage(os.path.join(paths.data_dir, "files"))
 

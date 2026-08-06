@@ -53,7 +53,7 @@ def _default_lock_dir() -> str:
     the desktop/server mutual exclusion would quietly stop working.
     """
     try:
-        from core.runtime_paths import resolve_runtime_paths
+        from platform_core.runtime_paths import resolve_runtime_paths
         return os.path.join(resolve_runtime_paths().data_dir, "session_locks")
     except Exception:
         # Never let path resolution break locking outright.

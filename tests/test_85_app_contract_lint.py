@@ -80,3 +80,56 @@ def test_the_contract_documents_where_business_logic_goes():
     assert "services/" in text
     assert "features.py" in text
     assert "CHỈ lo HTTP" in text
+
+
+def test_linter_kiem_ca_app_da_tach_routes_thanh_package(tmp_path, monkeypatch):
+    """Bỏ sót dạng `routes/` thì linter im lặng đúng với hai app LỚN NHẤT ngay
+    sau khi chúng được tách — mọi kiểm CSRF/auth/cô-lập biến mất mà không ai
+    biết. Đây là cách hỏng do chính việc tách sinh ra.
+
+    Ngưỡng kích thước tính theo TỪNG FILE: tách đúng thì tổng còn to hơn ban
+    đầu (mỗi module thêm docstring + import), nên đo tổng sẽ phạt đúng thứ
+    mình muốn khuyến khích.
+    """
+    import tools.lint_app_contract as lint
+
+    app = tmp_path / "apps" / "demo_pkg"
+    (app / "routes").mkdir(parents=True)
+    (app / "manifest.py").write_text(
+        'MANIFEST = App(slug="demo_pkg")\n', encoding="utf-8")
+    (app / "routes" / "__init__.py").write_text("from .a import router\n", encoding="utf-8")
+    # Một miền hợp lệ: có require_login + CSRF.
+    (app / "routes" / "a.py").write_text(
+        "from server.auth.session import require_login\n"
+        "from server.auth.csrf import verify_csrf_token\n"
+        "@router.post('/x')\ndef x(): ...\n", encoding="utf-8")
+    monkeypatch.setattr(lint, "APPS", tmp_path / "apps")
+    assert [f.msg for f in lint.lint()] == [], "app tách đúng không được báo lỗi"
+
+    # Giờ gỡ require_login khỏi module duy nhất -> linter PHẢI thấy.
+    (app / "routes" / "a.py").write_text(
+        "from server.auth.csrf import verify_csrf_token\n"
+        "@router.post('/x')\ndef x(): ...\n", encoding="utf-8")
+    msgs = [f.msg for f in lint.lint()]
+    assert any("require_login" in m for m in msgs), (
+        f"linter bỏ qua package `routes/` — kiểm an toàn không chạy: {msgs}")
+
+
+def test_nguong_kich_thuoc_tinh_theo_tung_file_khong_theo_tong(tmp_path, monkeypatch):
+    """Chốt riêng vì đây là chỗ dễ viết ngược nhất."""
+    import tools.lint_app_contract as lint
+
+    app = tmp_path / "apps" / "demo_pkg2"
+    (app / "routes").mkdir(parents=True)
+    (app / "manifest.py").write_text('MANIFEST = App(slug="demo_pkg2")\n', encoding="utf-8")
+    head = ("from server.auth.session import require_login\n"
+            "from server.auth.csrf import verify_csrf_token\n")
+    # 4 file × 400 dòng = 1.600 dòng tổng, vượt xa 900 — nhưng mỗi file đều nhỏ.
+    for name in "abcd":
+        (app / "routes" / f"{name}.py").write_text(
+            head + "@router.post('/x')\ndef x(): ...\n" + "# dòng\n" * 400,
+            encoding="utf-8")
+    monkeypatch.setattr(lint, "APPS", tmp_path / "apps")
+    msgs = [f.msg for f in lint.lint()]
+    assert not any("vuot nguong" in m for m in msgs), (
+        f"đo tổng thay vì đo từng file — phạt đúng thứ nên khuyến khích: {msgs}")

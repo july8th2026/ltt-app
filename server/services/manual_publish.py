@@ -283,7 +283,7 @@ def _friendly_tiktok_error(exc: Exception) -> str:
 # ── Uploaded video storage ────────────────────────────────────────────────────
 
 def temp_video_dir(config: dict) -> str:
-    from core.runtime_paths import resolve_runtime_paths
+    from platform_core.runtime_paths import resolve_runtime_paths
     configured = str(config.get("temp_video_dir", "") or "").strip()
     target = configured or os.path.join(resolve_runtime_paths().data_dir, "temp_videos")
     os.makedirs(target, exist_ok=True)

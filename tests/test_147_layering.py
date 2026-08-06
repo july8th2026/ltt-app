@@ -135,3 +135,30 @@ def test_routes_package_van_xuat_ra_router():
         module = importlib.import_module(f"apps.{app}.routes")
         assert hasattr(module, "router"), f"apps/{app}/routes/ không xuất ra `router`"
         assert module.router.routes, f"apps/{app}/routes/ có router nhưng rỗng route"
+
+
+def test_nen_tang_va_app_khong_phu_thuoc_core_legacy():
+    """`core/` là 15.668 dòng thừa kế từ thời sản phẩm còn là bot FB/TikTok.
+    App socialbot dùng nó đã **đóng băng**.
+
+    Trước 2026-08-06 mọi app đều dính `core/` — không phải vì chúng cần, mà vì
+    `platform_core/storage.py` gọi `core.runtime_paths`, kéo cả cây theo. Một
+    sợi dây duy nhất khiến bản đồ phụ thuộc nói dối: nhìn vào tưởng `core/` là
+    hạ tầng chung, thực ra 99,4% của nó không phục vụ app nào đang bán
+    (xem docs/APP_AUDIT/control-plane/2026-08-06/04_BAN_DO_CORE.md).
+
+    `runtime_paths` đã chuyển sang `platform_core/`. Đừng nối lại sợi dây đó:
+    thứ nhiều nơi cần là hạ tầng, và hạ tầng thuộc về `platform_core/`.
+    """
+    offenders = {}
+    for area in ("apps", "platform_core"):
+        for path in (ROOT / area).rglob("*.py"):
+            if "__pycache__" in path.parts or "socialbot" in path.parts:
+                continue          # socialbot là app CỦA core/, đóng băng cùng nó
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            hits = re.findall(r"^\s*(?:from|import)\s+(core(?:\.[\w.]+)?)", text, re.M)
+            if hits:
+                offenders[path.relative_to(ROOT).as_posix()] = sorted(set(hits))
+    assert offenders == {}, (
+        f"nền tảng/app đang phụ thuộc core/ legacy: {offenders} — "
+        f"thứ dùng chung thì đặt ở platform_core/")

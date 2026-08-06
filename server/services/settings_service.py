@@ -23,7 +23,7 @@ from datetime import datetime
 
 from core.config_defaults import DEFAULTS
 from core.config_validator import ConfigValidationError, validate_config
-from core.runtime_paths import resolve_runtime_paths
+from platform_core.runtime_paths import resolve_runtime_paths
 from server.services.settings_schema import BOOL, JSONLIST, NUMBER, GROUPS
 from utils.atomic_io import atomic_write_json
 

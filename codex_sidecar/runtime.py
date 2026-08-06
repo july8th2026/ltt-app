@@ -45,7 +45,7 @@ except Exception:  # noqa: BLE001
 def _data_dir() -> Path:
     """Thư mục data của nền tảng (dùng chung cách giải như storage.py)."""
     try:
-        from core.runtime_paths import resolve_runtime_paths
+        from platform_core.runtime_paths import resolve_runtime_paths
         return Path(resolve_runtime_paths().data_dir)
     except Exception:  # noqa: BLE001
         return Path(os.environ.get("LTT_DATA_DIR") or ".").resolve()

@@ -164,7 +164,7 @@ def _load_translations() -> None:
     # cũng không ai biết: t() lặng lẽ rơi về tiếng Anh rồi về chính khoá.
     candidates = []
     try:
-        from core.runtime_paths import resolve_runtime_paths
+        from platform_core.runtime_paths import resolve_runtime_paths
         candidates.append(Path(resolve_runtime_paths().data_dir) / "translations")
     except Exception:
         pass

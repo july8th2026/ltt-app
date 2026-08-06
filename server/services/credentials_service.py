@@ -24,7 +24,7 @@ import json
 import os
 import stat
 
-from core.runtime_paths import resolve_runtime_paths
+from platform_core.runtime_paths import resolve_runtime_paths
 
 CREDENTIALS_FILENAME = "google_service_account.json"
 

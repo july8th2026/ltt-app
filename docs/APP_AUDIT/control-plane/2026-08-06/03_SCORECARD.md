@@ -96,3 +96,55 @@ Lần đếm vùng chạm đầu tiên cho ra 22–41 lỗi mỗi trang. Nếu b
 Ghi lại vì nó là bài học chung: đo tự động cho ra con số nhanh, nhưng con số chưa
 kiểm lại là con số sai. Với accessibility, ngưỡng máy đọc được gần như luôn cần
 một vòng xác minh thủ công trước khi thành việc phải làm.
+
+---
+
+## 7. Đã thực hiện — cập nhật 2026-08-06 (cùng ngày)
+
+Chín hạng mục ở §5 **đã làm hết**. Xem `docs/NHAT_KY.md` mục 2026-08-06.
+
+| # | Hạng mục | Kết quả |
+|---|---|---|
+| 1 | Chuẩn hoá tầng nghiệp vụ | `AGENTS.md` mục 8 + `CLAUDE.md`; linter gác ngưỡng 900/30 |
+| 2 | Tách `prompt_ai_ommi/routes.py` | 1.799 dòng → 9 module, lớn nhất 551; 64/64 route |
+| 3 | Vùng chạm footer 24px | xong, `test_146` chốt |
+| 4 | Một lệnh gate | `tools/gate.py`, `test_145` chốt |
+| 5 | Tách `apps/agent/routes.py` | 1.308 dòng → 9 module, lớn nhất 237; 48/48 route, khớp từng `(path, method, handler)` |
+| 6 | Bỏ `platform_core` → `server` | xong |
+| 7 | Hỏi quyền admin trong hợp đồng app | xong |
+| 8 | Bản đồ `core/` | `04_BAN_DO_CORE.md`; **99,4% không phục vụ app nào đang bán** |
+| 9 | Thu hẹp `except Exception` | nhóm presign R2 (15 chỗ) — xem dưới |
+
+### Chấm lại nhóm "Bố cục / phân loại file"
+
+| | Trước | Sau |
+|---|---:|---:|
+| File route > 900 dòng | 2 | **0** |
+| File route lớn nhất | 1.799 | **551** |
+| Hợp đồng nói logic nghiệp vụ ở đâu | không | **có, kèm linter** |
+| App phụ thuộc `core/` legacy | 12/12 | **0/12** |
+
+Điểm nhóm này: **2,5 → 4,0** (đạt 8,0 → 12,8). Chưa lên 4,5 vì hai lý do thật:
+`core/` vẫn còn 15.668 dòng chưa có lối ra (mới có **bản đồ**, chưa có hành
+động), và 145 chỗ `except` rộng nuốt lỗi lặng lẽ trên toàn repo vẫn còn đó.
+
+**Q ước tính: 74 → 78.** Không chấm lại các nhóm khác vì phiên này không đo lại
+chúng — nói khác đi là bịa.
+
+### Hai lỗi thật tìm được trong lúc sửa (không nằm trong danh sách ban đầu)
+
+1. `POST /upscalevideo/queue` — đường nộp việc **chính** của app đó — gọi
+   `get_session()` mà không import. Mọi lần nộp đều 500. Trong repo từ
+   2026-08-02, **không test nào chạm route đó**. Gate nay có bước quét tên chưa
+   định nghĩa.
+2. 15 chỗ gọi presign R2 nuốt lỗi thật vì một chú thích sai (`"local storage has
+   no direct URL"` — backend cục bộ **trả None**, không ném). Hậu quả: R2 hỏng
+   cấu hình sẽ lặng lẽ degrade về proxy qua tunnel cho tới khi đâm trần 100 MB.
+
+Cả hai đều thuộc loại **test không thể bắt bằng cách viết thêm test cho từng
+route**. Cách chặn đúng là công cụ đọc tĩnh + đặt phép bọc lỗi vào đúng một chỗ.
+
+### G6 vẫn PARTIAL
+
+Vùng chạm đã sửa, nhưng **bàn phím và screen reader vẫn E0 — chưa đo**. Không
+nâng G6 lên PASS chỉ vì phần đo được đã xanh.

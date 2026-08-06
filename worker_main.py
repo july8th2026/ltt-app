@@ -112,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
 
     config_path = args.config
     if config_path is None:
-        from core.runtime_paths import resolve_runtime_paths
+        from platform_core.runtime_paths import resolve_runtime_paths
         config_path = resolve_runtime_paths().config_path
     config = load_config(config_path)
     try:

@@ -90,9 +90,16 @@ def lint() -> list:
                 findings.append(Finding(app, "ERROR",
                                         "khai job_types nhung credit_cost=None"))
 
-        routes = d / "routes.py"
-        if routes.is_file():
-            rtext = _read(routes)
+        # App co the khai route bang MOT file `routes.py` hoac mot package
+        # `routes/`. Bo qua dang package thi linter im lang dung voi hai app
+        # LON NHAT ngay sau khi chung duoc tach - moi kiem CSRF/auth/co-lap
+        # duoi day bien mat ma khong ai biet.
+        route_files = ([d / "routes.py"] if (d / "routes.py").is_file()
+                       else sorted((d / "routes").glob("*.py"))
+                       if (d / "routes").is_dir() else [])
+        if route_files:
+            # Kiem an toan la thuoc tinh cua CA app -> doc gop.
+            rtext = "\n".join(_read(f) for f in route_files)
             if "require_login" not in rtext:
                 findings.append(Finding(app, "WARN", "routes.py khong thay require_login"))
             if "@router.post" in rtext and "verify_csrf_token" not in rtext:
@@ -104,18 +111,28 @@ def lint() -> list:
                                         "route serve {key:path} khong thay guard user_id (co-lap?)"))
 
             # Tang nghiep vu: route phinh to = logic dang nam sai cho.
-            lines = len(rtext.splitlines())
+            #
+            # Nguong tinh theo TUNG FILE, khong theo tong. Tach dung thi tong
+            # con to hon ban dau (them docstring + import cho moi module) -
+            # do chinh la muc dich: moi file nho lai. Do tong se phat dung cai
+            # minh muon khuyen khich.
+            qua_to = [(f, len(_read(f).splitlines()),
+                       len(re.findall(r"^@router\.", _read(f), re.M)))
+                      for f in route_files]
+            qua_to = [(f, n, h) for f, n, h in qua_to
+                      if n > MAX_ROUTES_LINES or h > MAX_ROUTES_HANDLERS]
             handlers = len(re.findall(r"^@router\.", rtext, re.M))
             has_layer = (d / "services").is_dir() or any(
                 (d / f"{name}.py").is_file()
                 for name in ("features", "cost", "service", "domain"))
-            if lines > MAX_ROUTES_LINES or handlers > MAX_ROUTES_HANDLERS:
-                findings.append(Finding(
-                    app, "WARN",
-                    f"routes.py {lines} dong / {handlers} handler vuot nguong "
-                    f"{MAX_ROUTES_LINES}/{MAX_ROUTES_HANDLERS} - tach theo mien "
-                    f"ra services/ (debug theo hang muc se de hon nhieu)"))
-            elif handlers >= 12 and not has_layer:
+            if qua_to:
+                for f, n, h in qua_to:
+                    findings.append(Finding(
+                        app, "WARN",
+                        f"{f.name} {n} dong / {h} handler vuot nguong "
+                        f"{MAX_ROUTES_LINES}/{MAX_ROUTES_HANDLERS} - tach theo mien "
+                        f"ra services/ (debug theo hang muc se de hon nhieu)"))
+            elif handlers >= 12 and not has_layer and len(route_files) == 1:
                 findings.append(Finding(
                     app, "WARN",
                     f"{handlers} handler nhung khong co services/ hay "

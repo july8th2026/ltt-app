@@ -63,7 +63,7 @@ _DUONG_DAN_TUONG_DOI = re.compile(r"""os\.path\.join\(\s*["']data["']""")
 
 
 def test_khong_ai_tu_ghep_duong_dan_data_nua():
-    """Đường dẫn dữ liệu phải đi qua `core.runtime_paths.data_path()`.
+    """Đường dẫn dữ liệu phải đi qua `platform_core.runtime_paths.data_path()`.
 
     Bảo vệ điều gì: `os.path.join("data", ...)` là tương đối theo **thư mục làm
     việc của tiến trình**. Trên máy chủ, dịch vụ chạy tại `C:\\LTTPlatform\\app`
@@ -86,14 +86,14 @@ def test_khong_ai_tu_ghep_duong_dan_data_nua():
             if _DUONG_DAN_TUONG_DOI.search(line):
                 vi_pham.append(f"{rel}:{i}")
     assert vi_pham == [], (
-        "Dùng core.runtime_paths.data_path() thay vì tự ghép chuỗi. "
+        "Dùng platform_core.runtime_paths.data_path() thay vì tự ghép chuỗi. "
         f"Vi phạm: {vi_pham}"
     )
 
 
 def test_data_path_ton_trong_bien_moi_truong():
     """`data_path()` phải theo `LTT_DATA_DIR`, không theo thư mục làm việc."""
-    from core.runtime_paths import data_path, resolve_runtime_paths
+    from platform_core.runtime_paths import data_path, resolve_runtime_paths
 
     env = {"LTT_DATA_DIR": "/tmp/kho-du-lieu-gia-dinh"}
     assert resolve_runtime_paths(env).data_dir == "/tmp/kho-du-lieu-gia-dinh"

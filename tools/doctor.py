@@ -93,7 +93,7 @@ class Report:
 # ─── individual checks ────────────────────────────────────────────────────────
 
 def check_environment(report: Report, env: dict) -> None:
-    from core.runtime_paths import resolve_runtime_paths
+    from platform_core.runtime_paths import resolve_runtime_paths
     from core.settings import resolve_environment
 
     try:

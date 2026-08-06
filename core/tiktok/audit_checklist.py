@@ -249,7 +249,7 @@ def check_privacy_terms_urls(config: dict) -> CheckItem:
 
 
 def check_app_icon(config: dict) -> CheckItem:
-    from core.runtime_paths import data_path
+    from platform_core.runtime_paths import data_path
     candidates = [
         "docs/tiktok-submission/lttstudio-icon-1024.png",
         data_path("icon.png"),
@@ -396,7 +396,7 @@ def check_login_button_branding(config: dict) -> CheckItem:
     # lai tro vao C:\LTTPlatform\app\data\assets\ — mot thu muc bo cai KHONG
     # tao. Hau qua: nguoi dung tai logo ve dung cho tai lieu chi dan ma canh
     # bao nay van khong bao gio tat.
-    from core.runtime_paths import data_path
+    from platform_core.runtime_paths import data_path
     path = data_path("assets", "tiktok_logo.png")
     if os.path.exists(path) and os.path.getsize(path) > 0:
         return CheckItem(
