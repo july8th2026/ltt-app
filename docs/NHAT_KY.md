@@ -86,13 +86,31 @@ vào chính đoạn chú thích kể lại con bug này — báo động giả v
 
 ### Quyết định mới
 
-Chưa có Q mới. **Đang chờ chủ sản phẩm quyết** việc Bot Fight Mode: bản Free
-không cho loại trừ theo đường dẫn, nên nó áp lên cả `POST /webhooks/payment/payos`
-— cú gọi server-tới-server không có dấu vết trình duyệt, đúng hình dạng bị chặn.
-Hỏng ở đó nghĩa là **khách trả tiền nhưng không nhận credit**, và chỉ lộ khi có
-người khiếu nại. Đổi lại nó bảo vệ gần như bằng không, vì endpoint đã tự kiểm
-chữ ký HMAC. Đề xuất thay bằng WAF custom rule (Free cho 5 luật) đặt Managed
-Challenge riêng cho `/login`, `/dang-ky`, `/quen-mat-khau`.
+**KHÔNG bật Bot Fight Mode.** Bản Free không cho loại trừ theo đường dẫn, nên nó
+áp lên cả `POST /webhooks/payment/payos` — cú gọi server-tới-server không có dấu
+vết trình duyệt, đúng hình dạng bị chặn. Hỏng ở đó nghĩa là **khách trả tiền
+nhưng không nhận credit**, và chỉ lộ khi có người khiếu nại. Đổi lại nó bảo vệ
+gần như bằng không, vì endpoint đã tự kiểm chữ ký HMAC.
+
+Thay bằng **WAF custom rule** (chủ sản phẩm chốt 2026-08-06):
+
+```
+Ten       : Managed Challenge - trang xac thuc chua co Turnstile
+Bieu thuc : (http.request.uri.path in {"/login" "/forgot-password" "/reset-password"})
+Hanh dong : Managed Challenge          Trang thai: Active
+```
+
+Đường dẫn lấy từ mã nguồn chứ không đoán — `/register` và `/forgot-password`, KHÔNG
+phải `/dang-ky`, `/quen-mat-khau`. Và **`/register` cố ý nằm ngoài luật vì nó đã
+có Turnstile; `/login` thì KHÔNG có** — đó chính là chỗ hở, mà login mới là đích
+của tấn công dò mật khẩu. (Đáng cân nhắc bổ sung Turnstile cho `/login`.)
+
+Đo sau khi bật: `/login` và `/forgot-password` trả 403 (trang thách đố) cho
+client không phải trình duyệt — không đều, vì Managed Challenge có tính thích
+ứng. Trình duyệt thật vào `/login` bình thường, form nguyên vẹn, **không thấy
+trang thách đố**. `/`, `/register`, `/nap`, `/health/ready` không đổi. Quan
+trọng nhất: `POST /webhooks/payment/payos` vẫn trả **400** — tức qua được WAF và
+tới ứng dụng.
 
 ### Cách lùi lại
 
