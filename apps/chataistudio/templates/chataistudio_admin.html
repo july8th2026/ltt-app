@@ -5,29 +5,29 @@
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
 
   <div class="ui-card">
-    <h2 style="margin:0 0 8px;">Tài khoản Codex (sidecar)</h2>
+    <h2 style="margin:0 0 8px;">{{ _("Tài khoản Codex (sidecar)") }}</h2>
     {% if logged_in %}
-      <p><span class="badge b-ok"><span class="dot"></span>Đã đăng nhập</span></p>
+      <p><span class="badge b-ok"><span class="dot"></span>{{ _("Đã đăng nhập") }}</span></p>
       <pre style="white-space:pre-wrap;font-size:12px;">{{ acc | tojson(indent=2) }}</pre>
       <form id="logoutform"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button type="submit" class="btn ghost sm">Đăng xuất tài khoản</button></form>
+        <button type="submit" class="btn ghost sm">{{ _("Đăng xuất tài khoản") }}</button></form>
     {% else %}
-      <p><span class="badge b-warn"><span class="dot"></span>Chưa đăng nhập</span> — cần đăng nhập
-        <strong>một tài khoản ChatGPT riêng</strong> (khuyến nghị KHÔNG dùng chung với BOT GEMINI).</p>
+      <p><span class="badge b-warn"><span class="dot"></span>{{ _("Chưa đăng nhập") }}</span> — cần đăng nhập
+        <strong>{{ _("một tài khoản ChatGPT riêng") }}</strong> {{ _("(khuyến nghị KHÔNG dùng chung với BOT GEMINI).") }}</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-        <button id="btn-device" class="btn">🔐 Đăng nhập ChatGPT (device-code)</button>
+        <button id="btn-device" class="btn">{{ _("🔐 Đăng nhập ChatGPT (device-code)") }}</button>
       </div>
       <div id="device-box" style="display:none;margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:8px;">
-        <p style="margin:0 0 6px;">1. Mở: <a id="dev-url" target="_blank" rel="noopener"></a></p>
-        <p style="margin:0 0 6px;">2. Nhập mã: <strong id="dev-code" style="font-size:20px;letter-spacing:2px;"></strong></p>
-        <p class="dim" id="dev-status">Đang chờ bạn xác nhận trên ChatGPT…</p>
+        <p style="margin:0 0 6px;">{{ _("1. Mở:") }} <a id="dev-url" target="_blank" rel="noopener"></a></p>
+        <p style="margin:0 0 6px;">{{ _("2. Nhập mã:") }} <strong id="dev-code" style="font-size:20px;letter-spacing:2px;"></strong></p>
+        <p class="dim" id="dev-status">{{ _("Đang chờ bạn xác nhận trên ChatGPT…") }}</p>
       </div>
       <hr style="margin:14px 0;border:none;border-top:1px solid var(--line);">
-      <details><summary class="dim">Hoặc dùng API key OpenAI</summary>
+      <details><summary class="dim">{{ _("Hoặc dùng API key OpenAI") }}</summary>
         <form id="apikeyform" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="password" name="api_key" placeholder="sk-..." style="flex:1;min-width:260px;">
-          <button type="submit" class="btn ghost">Lưu API key</button>
+          <button type="submit" class="btn ghost">{{ _("Lưu API key") }}</button>
         </form>
       </details>
     {% endif %}
@@ -42,11 +42,11 @@
     <h2 style="margin:0 0 8px;">Model khả dụng ({{ models|length }})</h2>
     {% if models %}<ul>{% for m in models %}<li><strong>{{ m.display_name }}</strong>
       <span class="mono dim">{{ m.id }}</span>{% if m.vision %} · vision{% endif %}</li>{% endfor %}</ul>
-    {% else %}<p class="dim">Chưa lấy được model (sidecar chưa sẵn sàng?).</p>{% endif %}
-    <p class="dim">Tạo ảnh trong chat: <strong>{{ 'CÓ' if caps.image_generation else 'chưa rõ (cần đăng nhập)' }}</strong></p>
+    {% else %}<p class="dim">{{ _("Chưa lấy được model (sidecar chưa sẵn sàng?).") }}</p>{% endif %}
+    <p class="dim">{{ _("Tạo ảnh trong chat:") }} <strong>{{ 'CÓ' if caps.image_generation else 'chưa rõ (cần đăng nhập)' }}</strong></p>
   </div>
 
-  <p class="hint"><a href="{{ app.route_prefix }}">← Về Chat AI Studio</a></p>
+  <p class="hint"><a href="{{ app.route_prefix }}">{{ _("← Về Chat AI Studio") }}</a></p>
 
   <script>
   (function(){

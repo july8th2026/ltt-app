@@ -2,16 +2,16 @@
 {% block title %}Lượt Agent · LTT AI Studio{% endblock %}
 {% block content %}
 <script src="/static/htmx.min.js"></script>
-<a href="/agent" class="muted">← Mục tiêu mới</a>
-<h1 style="margin-top:10px">Kế hoạch Agent</h1>
+<a href="/agent" class="muted">{{ _("← Mục tiêu mới") }}</a>
+<h1 style="margin-top:10px">{{ _("Kế hoạch Agent") }}</h1>
 <p class="page-sub">{{ run.goal }}</p>
 {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 <div class="card">
-  <div class="row"><div><strong>Trạng thái</strong><br><span class="badge badge-warn">{{ run.status }}</span></div>
-    <div><strong>Tối đa</strong><br>{{ run.estimated }} credit</div>
-    <div><strong>Đã dùng</strong><br>{{ run.actual }} credit</div></div>
+  <div class="row"><div><strong>{{ _("Trạng thái") }}</strong><br><span class="badge badge-warn">{{ run.status }}</span></div>
+    <div><strong>{{ _("Tối đa") }}</strong><br>{{ run.estimated }} credit</div>
+    <div><strong>{{ _("Đã dùng") }}</strong><br>{{ run.actual }} credit</div></div>
 </div>
-<div class="card"><h2>Các bước</h2>
+<div class="card"><h2>{{ _("Các bước") }}</h2>
   <ol>{% for step in steps %}<li><strong>{{ step.id }}</strong> · {{ step.tool }}
     {% if step.after %}<span class="muted">sau {{ step.after|join(', ') }}</span>{% endif %}
     · fan-out {{ step.fanout|default(1) }} · retry tối đa {{ step.max_retry|default(0) }}
@@ -20,7 +20,7 @@
 {% if run.status == 'awaiting_approval' %}
 <form method="post" action="/agent/runs/{{ run.id }}/approve" class="card">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="version" value="{{ run.version }}">
-  <p>Duyệt sẽ giữ chỗ <strong>tối đa {{ run.estimated }} credit</strong>. Phần không dùng được tự động hoàn.</p>
+  <p>{{ _("Duyệt sẽ giữ chỗ") }} <strong>tối đa {{ run.estimated }} credit</strong>{{ _(". Phần không dùng được tự động hoàn.") }}</p>
   <button type="submit">Duyệt và chạy — tối đa {{ run.estimated }} credit</button>
 </form>
 {% endif %}

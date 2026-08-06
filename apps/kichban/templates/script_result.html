@@ -5,9 +5,9 @@
   <script src="/static/htmx.min.js"></script>
 
   <div class="script-result-head">
-    <div><span class="script-kicker">SCRIPT WORKSPACE</span><h1>Kịch bản của bạn</h1>
-      <p>Job chạy nền — trang tự cập nhật khi xong.</p></div>
-    <div class="actions"><a class="btn ghost" href="{{ app.route_prefix }}">&larr; Tạo mới</a></div>
+    <div><span class="script-kicker">SCRIPT WORKSPACE</span><h1>{{ _("Kịch bản của bạn") }}</h1>
+      <p>{{ _("Job chạy nền — trang tự cập nhật khi xong.") }}</p></div>
+    <div class="actions"><a class="btn ghost" href="{{ app.route_prefix }}">{{ _("&larr; Tạo mới") }}</a></div>
   </div>
 
   <div id="sv" hx-get="{{ app.route_prefix }}/r/{{ job.id }}/status"

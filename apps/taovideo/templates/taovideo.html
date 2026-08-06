@@ -4,19 +4,19 @@
 {% block content %}
 <script src="/static/htmx.min.js"></script>
 <div class="tv-studio">
-  <aside class="tv-nav" aria-label="Điều hướng Tạo video">
+  <aside class="tv-nav" aria-label="{{ _('Điều hướng Tạo video') }}">
     <b>◉ LTT</b>
-    <a class="on" href="/taovideo" aria-current="page">▶<small>Tạo video</small></a>
-    <a href="/jobs?app=taovideo">▣<small>Việc</small></a>
+    <a class="on" href="/taovideo" aria-current="page">▶<small>{{ _("Tạo video") }}</small></a>
+    <a href="/jobs?app=taovideo">▣<small>{{ _("Việc") }}</small></a>
     <a href="#tv-assist">▧<small>Prompt assist</small></a>
-    <a href="#tv-assets">▦<small>Tài sản</small></a>
-    {% if is_admin(request) %}<a href="/settings">⚙<small>Cấu hình</small></a>{% endif %}
+    <a href="#tv-assets">▦<small>{{ _("Tài sản") }}</small></a>
+    {% if is_admin(request) %}<a href="/settings">⚙<small>{{ _("Cấu hình") }}</small></a>{% endif %}
   </aside>
 
-  <button class="tv-drawer" type="button" aria-controls="tv-compose" aria-expanded="false" aria-label="Mở bảng tạo video">☰ Tạo video</button>
-  <button class="tv-compose-scrim" type="button" aria-label="Đóng bảng tạo video" tabindex="-1"></button>
+  <button class="tv-drawer" type="button" aria-controls="tv-compose" aria-expanded="false" aria-label="{{ _('Mở bảng tạo video') }}">{{ _("☰ Tạo video") }}</button>
+  <button class="tv-compose-scrim" type="button" aria-label="{{ _('Đóng bảng tạo video') }}" tabindex="-1"></button>
 
-  <section class="tv-compose" id="tv-compose" aria-label="Thiết lập tạo video">
+  <section class="tv-compose" id="tv-compose" aria-label="{{ _('Thiết lập tạo video') }}">
     <form method="post" action="{{ app.route_prefix }}/queue" id="sdform" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <fieldset class="tv-fieldset"><legend><strong>01</strong> Model</legend>
@@ -24,54 +24,54 @@
       </fieldset>
 
       <div class="tv-section"><h2><strong>02</strong> Prompt</h2>
-        <label class="sr-only" for="tv-prompt">Mô tả video</label>
-        <div id="promptbox"><textarea id="tv-prompt" name="prompt" required maxlength="10000" aria-describedby="tv-prompt-hint" placeholder="Mô tả video. Gõ @tên để dùng tham chiếu…"></textarea></div>
-        <p id="tv-prompt-hint" class="dim">Mô tả cảnh, chủ thể, chuyển động máy quay và ánh sáng.</p>
-        <div class="tv-tools">{% for t,l in [('en','EN'),('zh','中'),('vi','VI')] %}<button type="button" aria-label="Dịch prompt sang {{ l }}" hx-post="/taovideo/translate" hx-include="[name='prompt'],[name='csrf_token']" hx-vals='{"target":"{{t}}"}' hx-target="#promptbox">{{l}}</button>{% endfor %}<label class="sr-only" for="tv-history">Lịch sử prompt</label><select id="tv-history"><option value="">Lịch sử prompt</option>{% for p in prompt_history|default([]) %}<option value="{{p}}">{{p[:60]}}</option>{% endfor %}</select></div>
+        <label class="sr-only" for="tv-prompt">{{ _("Mô tả video") }}</label>
+        <div id="promptbox"><textarea id="tv-prompt" name="prompt" required maxlength="10000" aria-describedby="tv-prompt-hint" placeholder="{{ _('Mô tả video. Gõ @tên để dùng tham chiếu…') }}"></textarea></div>
+        <p id="tv-prompt-hint" class="dim">{{ _("Mô tả cảnh, chủ thể, chuyển động máy quay và ánh sáng.") }}</p>
+        <div class="tv-tools">{% for t,l in [('en','EN'),('zh','中'),('vi','VI')] %}<button type="button" aria-label="Dịch prompt sang {{ l }}" hx-post="/taovideo/translate" hx-include="[name='prompt'],[name='csrf_token']" hx-vals='{"target":"{{t}}"}' hx-target="#promptbox">{{l}}</button>{% endfor %}<label class="sr-only" for="tv-history">{{ _("Lịch sử prompt") }}</label><select id="tv-history"><option value="">{{ _("Lịch sử prompt") }}</option>{% for p in prompt_history|default([]) %}<option value="{{p}}">{{p[:60]}}</option>{% endfor %}</select></div>
       </div>
 
-      <fieldset class="tv-fieldset tv-assist" id="tv-assist"><legend><strong>02B</strong> Hỗ trợ prompt</legend>
-        <p class="dim">Camera là hướng dẫn bằng prompt, không phải điều khiển cơ học native. Seed là capability thật của provider.</p>
-        <div class="tv-selects"><label>Camera<select name="camera"><option value="">Tự động</option><option value="static">Máy tĩnh</option><option value="dolly_in">Dolly in</option><option value="tracking">Tracking</option><option value="orbit">Orbit</option><option value="aerial">Aerial</option><option value="handheld">Handheld</option></select></label><label>Chuyển động<select name="motion"><option value="">Tự động</option><option value="subtle">Tinh tế</option><option value="dynamic">Năng động</option><option value="cinematic">Điện ảnh</option></select></label><label>Phong cách<select name="visual_style"><option value="">Theo prompt</option><option value="realistic">Chân thực</option><option value="cinematic">Điện ảnh</option><option value="anime">Anime</option><option value="product">Quảng cáo sản phẩm</option></select></label><label>Seed tùy chọn<input type="number" name="seed" min="0" max="2147483647" inputmode="numeric" placeholder="Để trống = ngẫu nhiên"></label></div>
+      <fieldset class="tv-fieldset tv-assist" id="tv-assist"><legend><strong>02B</strong> {{ _("Hỗ trợ prompt") }}</legend>
+        <p class="dim">{{ _("Camera là hướng dẫn bằng prompt, không phải điều khiển cơ học native. Seed là capability thật của provider.") }}</p>
+        <div class="tv-selects"><label>Camera<select name="camera"><option value="">{{ _("Tự động") }}</option><option value="static">{{ _("Máy tĩnh") }}</option><option value="dolly_in">Dolly in</option><option value="tracking">Tracking</option><option value="orbit">Orbit</option><option value="aerial">Aerial</option><option value="handheld">Handheld</option></select></label><label>{{ _("Chuyển động") }}<select name="motion"><option value="">{{ _("Tự động") }}</option><option value="subtle">{{ _("Tinh tế") }}</option><option value="dynamic">{{ _("Năng động") }}</option><option value="cinematic">{{ _("Điện ảnh") }}</option></select></label><label>{{ _("Phong cách") }}<select name="visual_style"><option value="">Theo prompt</option><option value="realistic">{{ _("Chân thực") }}</option><option value="cinematic">{{ _("Điện ảnh") }}</option><option value="anime">Anime</option><option value="product">{{ _("Quảng cáo sản phẩm") }}</option></select></label><label>{{ _("Seed tùy chọn") }}<input type="number" name="seed" min="0" max="2147483647" inputmode="numeric" placeholder="{{ _('Để trống = ngẫu nhiên') }}"></label></div>
         <small id="tv-capability" class="dim" aria-live="polite"></small>
-        <button type="button" class="btn ghost" hx-post="/taovideo/prompt-assist" hx-include="[name='prompt'],[name='camera'],[name='motion'],[name='visual_style'],[name='csrf_token']" hx-target="#tv-assist-result">Xem prompt hoàn chỉnh</button>
+        <button type="button" class="btn ghost" hx-post="/taovideo/prompt-assist" hx-include="[name='prompt'],[name='camera'],[name='motion'],[name='visual_style'],[name='csrf_token']" hx-target="#tv-assist-result">{{ _("Xem prompt hoàn chỉnh") }}</button>
         <div id="tv-assist-result" aria-live="polite"></div>
       </fieldset>
 
-      <div class="tv-section"><h2><strong>03</strong> Tham chiếu</h2>
-        <label for="tv-files">Ảnh, video hoặc audio tham chiếu</label>
+      <div class="tv-section"><h2><strong>03</strong> {{ _("Tham chiếu") }}</h2>
+        <label for="tv-files">{{ _("Ảnh, video hoặc audio tham chiếu") }}</label>
         <input id="tv-files" type="file" name="ref_images" accept="image/*,video/mp4,audio/*" multiple aria-describedby="tv-files-hint">
         <div id="tv-refs" class="tv-refs" aria-live="polite"></div>
-        <p id="tv-files-hint" class="dim">Tối đa 4 file · ảnh ≤20MB · video ≤60MB. Vai trò và tên gợi nhớ được gửi vào job thật.</p>
+        <p id="tv-files-hint" class="dim">{{ _("Tối đa 4 file · ảnh ≤20MB · video ≤60MB. Vai trò và tên gợi nhớ được gửi vào job thật.") }}</p>
       </div>
 
-      <fieldset class="tv-fieldset tv-assets" id="tv-assets"><legend><strong>03B</strong> Tài sản đã lưu</legend>
-        <p class="dim">Chọn lại tài sản từ các job trước. Tổng tài sản cũ và file mới tối đa 4.</p>
-        {% if saved_assets|default([]) %}<div class="tv-asset-list">{% for asset in saved_assets %}<label class="tv-asset"><input type="checkbox" name="saved_ref_keys" value="{{asset.storage_key}}"><span aria-hidden="true">{% if asset.kind=='video' %}▶{% elif asset.kind=='audio' %}♫{% else %}▧{% endif %}</span><b>{{asset.name}}</b><small>{{asset.kind}} · {{asset.role}}{% if asset.size %} · {{(asset.size / 1048576)|round(1)}} MB{% endif %}</small></label>{% endfor %}</div>{% else %}<div class="tv-assets-empty" role="status">Chưa có tài sản đã lưu. File bạn dùng trong job đầu tiên sẽ xuất hiện tại đây.</div>{% endif %}
+      <fieldset class="tv-fieldset tv-assets" id="tv-assets"><legend><strong>03B</strong> {{ _("Tài sản đã lưu") }}</legend>
+        <p class="dim">{{ _("Chọn lại tài sản từ các job trước. Tổng tài sản cũ và file mới tối đa 4.") }}</p>
+        {% if saved_assets|default([]) %}<div class="tv-asset-list">{% for asset in saved_assets %}<label class="tv-asset"><input type="checkbox" name="saved_ref_keys" value="{{asset.storage_key}}"><span aria-hidden="true">{% if asset.kind=='video' %}▶{% elif asset.kind=='audio' %}♫{% else %}▧{% endif %}</span><b>{{asset.name}}</b><small>{{asset.kind}} · {{asset.role}}{% if asset.size %} · {{(asset.size / 1048576)|round(1)}} MB{% endif %}</small></label>{% endfor %}</div>{% else %}<div class="tv-assets-empty" role="status">{{ _("Chưa có tài sản đã lưu. File bạn dùng trong job đầu tiên sẽ xuất hiện tại đây.") }}</div>{% endif %}
       </fieldset>
 
-      <fieldset class="tv-fieldset"><legend><strong>04</strong> Thiết lập</legend>
-        <div class="tv-selects"><label>Thời lượng<select name="duration" id="sd-dur"></select></label><label>Tỉ lệ<select name="aspect_ratio" id="sd-asp"></select></label><label>Độ phân giải<select name="resolution" id="sd-res"></select></label><label>Số lượng/biến thể<select name="count"><option value="1">1 video</option><option value="2">2 biến thể</option></select></label></div>
-        <label class="tv-audio"><input type="checkbox" name="generate_audio" checked> Tạo âm thanh</label>
+      <fieldset class="tv-fieldset"><legend><strong>04</strong> {{ _("Thiết lập") }}</legend>
+        <div class="tv-selects"><label>{{ _("Thời lượng") }}<select name="duration" id="sd-dur"></select></label><label>{{ _("Tỉ lệ") }}<select name="aspect_ratio" id="sd-asp"></select></label><label>{{ _("Độ phân giải") }}<select name="resolution" id="sd-res"></select></label><label>{{ _("Số lượng/biến thể") }}<select name="count"><option value="1">1 video</option><option value="2">{{ _("2 biến thể") }}</option></select></label></div>
+        <label class="tv-audio"><input type="checkbox" name="generate_audio" checked> {{ _("Tạo âm thanh") }}</label>
       </fieldset>
-      <div class="tv-cost" aria-live="polite">Chi phí ước tính: <b id="est">…</b></div>
-      <button class="tv-create" type="submit">Tạo video</button>
+      <div class="tv-cost" aria-live="polite">{{ _("Chi phí ước tính:") }} <b id="est">…</b></div>
+      <button class="tv-create" type="submit">{{ _("Tạo video") }}</button>
       <div id="est-wrap" hx-post="/taovideo/estimate" hx-include="#sdform" hx-target="#est" hx-trigger="load, change from:#sdform"></div>
     </form>
   </section>
 
   <main class="tv-library">
-    <header><div><span class="eyebrow">Seedance Studio</span><h1>Video của tôi</h1></div><label class="tv-sort">Sắp xếp<select onchange="location.search='?status={{active_status|default('all')}}&sort='+this.value"><option value="newest" {% if active_sort|default('newest')=='newest' %}selected{% endif %}>Mới nhất</option><option value="oldest" {% if active_sort=='oldest' %}selected{% endif %}>Cũ nhất</option></select></label></header>
-    <nav class="tv-tabs" aria-label="Lọc video">{% for key,label in [('all','Tất cả'),('running','Đang tạo'),('done','Hoàn tất'),('error','Lỗi')] %}<a class="{{'on' if active_status|default('all')==key}}" {% if active_status|default('all')==key %}aria-current="page"{% endif %} href="?status={{key}}&sort={{active_sort|default('newest')}}">{{label}} <b>{{job_counts[key]|default(0)}}</b></a>{% endfor %}</nav>
+    <header><div><span class="eyebrow">Seedance Studio</span><h1>{{ _("Video của tôi") }}</h1></div><label class="tv-sort">{{ _("Sắp xếp") }}<select onchange="location.search='?status={{active_status|default('all')}}&sort='+this.value"><option value="newest" {% if active_sort|default('newest')=='newest' %}selected{% endif %}>{{ _("Mới nhất") }}</option><option value="oldest" {% if active_sort=='oldest' %}selected{% endif %}>{{ _("Cũ nhất") }}</option></select></label></header>
+    <nav class="tv-tabs" aria-label="{{ _('Lọc video') }}">{% for key,label in [('all','Tất cả'),('running','Đang tạo'),('done','Hoàn tất'),('error','Lỗi')] %}<a class="{{'on' if active_status|default('all')==key}}" {% if active_status|default('all')==key %}aria-current="page"{% endif %} href="?status={{key}}&sort={{active_sort|default('newest')}}">{{label}} <b>{{job_counts[key]|default(0)}}</b></a>{% endfor %}</nav>
     {% if error %}<p class="alert alert-err" role="alert">{{error}}</p>{% endif %}
     <div class="tv-grid">{% for j in jobs %}
       {% set progress = [[j.progress or 0, 0]|max, 100]|min %}
-      <article class="tv-card"><div class="tv-preview">{% if j.video_key %}<video controls preload="metadata" src="/taovideo/v/{{j.video_key}}"></video>{% else %}<span aria-hidden="true">▶</span>{% endif %}</div><div class="tv-card-head"><b class="{{j.status}}">{% if j.status=='done' %}✓ Hoàn tất{% elif j.status=='error' %}△ Lỗi{% elif j.status=='queued' %}● Đang chờ{% else %}● {{j.progress_msg or 'Đang tạo'}}{% endif %}</b><small>{{j.aspect_ratio}} · {{j.duration}}s · {{j.resolution}}</small></div>{% if j.status in ('queued','running') %}<div class="tv-job-progress progress" role="progressbar" aria-label="Tiến độ tạo video" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{progress}}"><i style="width:{{progress}}%"></i></div>{% endif %}<p>{{j.prompt or 'Video Seedance'}}</p>{% if j.error %}<small class="tv-card-error">{{j.error}}</small>{% endif %}<footer><button type="button" class="tv-remix" data-prompt="{{j.raw_prompt|e}}" data-model="{{j.model|e}}" data-aspect="{{j.aspect_ratio|e}}" data-duration="{{j.duration|e}}" data-resolution="{{j.resolution|e}}">Biến thể</button>{% if j.video_key %}<a href="/taovideo/v/{{j.video_key}}" download>Tải video</a><button type="button" class="tv-upscale" data-job="{{j.id}}">Nâng cấp AI</button>{% else %}<a href="/jobs/{{j.id}}">Xem chi tiết</a>{% endif %}</footer></article>
-    {% else %}<div class="tv-empty" role="status"><strong>Chưa có video phù hợp.</strong><span>Tạo video đầu tiên hoặc đổi bộ lọc.</span><button type="button" data-open-compose>Mở bảng tạo video</button></div>{% endfor %}</div>
+      <article class="tv-card"><div class="tv-preview">{% if j.video_key %}<video controls preload="metadata" src="/taovideo/v/{{j.video_key}}"></video>{% else %}<span aria-hidden="true">▶</span>{% endif %}</div><div class="tv-card-head"><b class="{{j.status}}">{% if j.status=='done' %}✓ Hoàn tất{% elif j.status=='error' %}△ Lỗi{% elif j.status=='queued' %}● Đang chờ{% else %}● {{j.progress_msg or 'Đang tạo'}}{% endif %}</b><small>{{j.aspect_ratio}} · {{j.duration}}s · {{j.resolution}}</small></div>{% if j.status in ('queued','running') %}<div class="tv-job-progress progress" role="progressbar" aria-label="{{ _('Tiến độ tạo video') }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{progress}}"><i style="width:{{progress}}%"></i></div>{% endif %}<p>{{j.prompt or 'Video Seedance'}}</p>{% if j.error %}<small class="tv-card-error">{{j.error}}</small>{% endif %}<footer><button type="button" class="tv-remix" data-prompt="{{j.raw_prompt|e}}" data-model="{{j.model|e}}" data-aspect="{{j.aspect_ratio|e}}" data-duration="{{j.duration|e}}" data-resolution="{{j.resolution|e}}">{{ _("Biến thể") }}</button>{% if j.video_key %}<a href="/taovideo/v/{{j.video_key}}" download>{{ _("Tải video") }}</a><button type="button" class="tv-upscale" data-job="{{j.id}}">{{ _("Nâng cấp AI") }}</button>{% else %}<a href="/jobs/{{j.id}}">{{ _("Xem chi tiết") }}</a>{% endif %}</footer></article>
+    {% else %}<div class="tv-empty" role="status"><strong>{{ _("Chưa có video phù hợp.") }}</strong><span>{{ _("Tạo video đầu tiên hoặc đổi bộ lọc.") }}</span><button type="button" data-open-compose>{{ _("Mở bảng tạo video") }}</button></div>{% endfor %}</div>
   </main>
 </div>
 
-<dialog id="tv-upscale-dialog" aria-labelledby="tv-upscale-title"><form method="dialog"><h3 id="tv-upscale-title">Nâng cấp video AI</h3><p id="tv-quote" aria-live="polite">Đang tính chi phí…</p><label for="tv-height">Độ phân giải đầu ra</label><select id="tv-height"><option value="1080">1080p</option><option value="1440">1440p</option><option value="2160">4K</option></select><div class="tv-dialog-actions"><button value="cancel" class="btn ghost">Hủy</button><button id="tv-confirm" value="default" class="btn">Xác nhận chi phí</button></div></form></dialog>
+<dialog id="tv-upscale-dialog" aria-labelledby="tv-upscale-title"><form method="dialog"><h3 id="tv-upscale-title">{{ _("Nâng cấp video AI") }}</h3><p id="tv-quote" aria-live="polite">{{ _("Đang tính chi phí…") }}</p><label for="tv-height">{{ _("Độ phân giải đầu ra") }}</label><select id="tv-height"><option value="1080">1080p</option><option value="1440">1440p</option><option value="2160">4K</option></select><div class="tv-dialog-actions"><button value="cancel" class="btn ghost">{{ _("Hủy") }}</button><button id="tv-confirm" value="default" class="btn">{{ _("Xác nhận chi phí") }}</button></div></form></dialog>
 
 <script>(function(){
   var R={{reg_ui|tojson}},q=function(s){return document.querySelector(s)},dlg=q('#tv-upscale-dialog'),compose=q('#tv-compose'),drawer=q('.tv-drawer'),scrim=q('.tv-compose-scrim'),active='';

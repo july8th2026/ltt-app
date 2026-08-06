@@ -17,7 +17,7 @@
 {% block content %}
   {% if studio_enabled %}
   <div id="autosub-studio-root" aria-busy="true" data-csrf-token="{{ csrf_token }}">
-    <p class="dim">Đang tải Auto Sub Studio…</p>
+    <p class="dim">{{ _("Đang tải Auto Sub Studio…") }}</p>
   </div>
   {% for href in studio_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
   {% for src in studio_js %}<script type="module" src="{{ src }}"></script>{% endfor %}
@@ -26,11 +26,11 @@
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
 
   <div class="ui-card">
-    <h2 style="margin:0 0 4px;">Khắc phụ đề vào video</h2>
+    <h2 style="margin:0 0 4px;">{{ _("Khắc phụ đề vào video") }}</h2>
     <p class="dim" style="margin:0 0 14px;">
       Nạp <strong>video</strong> + <strong>transcript</strong> có sẵn (.srt / .json / .vtt / .ass),
       chọn kiểu chữ rồi khắc phụ đề đẹp thẳng vào video. Video lớn tải thẳng lên kho (né giới hạn
-      100MB). Tính phí theo phút video. Job chạy nền — xem ở <a href="/jobs">Việc của tôi</a>.
+      100MB). Tính phí theo phút video. Job chạy nền — xem ở <a href="/jobs">{{ _("Việc của tôi") }}</a>.
       <br><span class="dim" style="font-size:12px;">Chưa có transcript? App này không tự nghe-chép —
       hãy tạo transcript trước (tính năng tự tạo phụ đề sẽ bổ sung sau).</span>
     </p>
@@ -43,34 +43,34 @@
       <div class="row">
         <div class="field"><label>Video (.mp4, .mov, .mkv…)</label>
           <input type="file" id="vfile" name="video" accept="video/*" required></div>
-        <div class="field"><label>Transcript (.srt, .json, .vtt, .ass — bắt buộc)</label>
+        <div class="field"><label>{{ _("Transcript (.srt, .json, .vtt, .ass — bắt buộc)") }}</label>
           <input type="file" id="tfile" name="transcript" accept=".srt,.json,.vtt,.ass,.ssa" required></div>
       </div>
 
-      <div class="ctrl"><label class="ctrl-lbl">Kiểu chữ (preset)</label>
+      <div class="ctrl"><label class="ctrl-lbl">{{ _("Kiểu chữ (preset)") }}</label>
         {{ chipgroup('style_id', presets, 'default') }}</div>
 
-      <div class="ctrl"><label class="ctrl-lbl">Chất lượng</label>
+      <div class="ctrl"><label class="ctrl-lbl">{{ _("Chất lượng") }}</label>
         {{ chipgroup('quality', qualities, 'standard') }}</div>
 
       <div class="row">
-        <div class="field"><label>Cách chia dòng</label>
+        <div class="field"><label>{{ _("Cách chia dòng") }}</label>
           <select name="segment_mode">
             {% for id, label in segments %}<option value="{{ id }}">{{ label }}</option>{% endfor %}
           </select></div>
-        <div class="field"><label>Định dạng ra</label>
+        <div class="field"><label>{{ _("Định dạng ra") }}</label>
           <select name="output_format">
             {% for f in formats %}<option value="{{ f }}">{{ f|upper }}</option>{% endfor %}
           </select></div>
         <div class="field" style="display:flex; align-items:flex-end;">
           <label style="display:inline-flex; gap:8px; align-items:center; margin:0 0 8px;">
             <input type="checkbox" name="export_srt" value="1" checked>
-            <span class="dim">Xuất kèm .srt</span></label></div>
+            <span class="dim">{{ _("Xuất kèm .srt") }}</span></label></div>
       </div>
 
       <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <button type="submit" class="btn" id="submitbtn">💬 Khắc phụ đề</button>
-        <span class="dim">Chi phí: <span id="est">…</span></span>
+        <button type="submit" class="btn" id="submitbtn">{{ _("💬 Khắc phụ đề") }}</button>
+        <span class="dim">{{ _("Chi phí:") }} <span id="est">…</span></span>
         <span class="dim" id="upstatus"></span>
       </div>
       <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate"
@@ -80,9 +80,9 @@
   </div>
 
   <div class="ui-card">
-    <h2 style="margin:0 0 10px;">Video của tôi</h2>
+    <h2 style="margin:0 0 10px;">{{ _("Video của tôi") }}</h2>
     {% if not jobs %}
-      <p class="dim" style="margin:0;">Chưa có video nào. Tạo cái đầu tiên ở trên.</p>
+      <p class="dim" style="margin:0;">{{ _("Chưa có video nào. Tạo cái đầu tiên ở trên.") }}</p>
     {% else %}
       <div class="result-grid">
         {% for j in jobs %}
@@ -90,7 +90,7 @@
             <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
               {{ j.id[:8] }} ·
               {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
-              {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>lỗi</span>
+              {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>{{ _("lỗi") }}</span>
               {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.progress_msg or j.status }} {{ j.progress }}%</span>{% endif %}
               {% if j.duration_s %} · {{ j.duration_s }}s{% endif %}
             </div>

@@ -13,8 +13,8 @@
 <script src="/static/htmx.min.js"></script>
 <div class="clip-studio">
   <header class="clip-heading">
-    <div><span class="clip-kicker">AI SHORT-FORM WORKSPACE</span><h1>Tạo Clip ngắn</h1><p>Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.</p></div>
-    <a class="btn ghost" href="/jobs">Việc của tôi</a>
+    <div><span class="clip-kicker">AI SHORT-FORM WORKSPACE</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.") }}</p></div>
+    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
   </header>
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 
@@ -24,52 +24,52 @@
       <input type="hidden" name="video_key" id="video_key" value="">
       <input type="hidden" name="duration_s" id="duration_s" value="0">
       <input type="hidden" name="source_filename" id="source_filename" value="">
-      <div class="clip-panel-head"><span>01</span><div><h2>Nguồn video</h2><small>Upload mới hoặc dùng lại asset của bạn</small></div></div>
-      <label class="clip-drop" for="vfile"><strong>Chọn video từ máy</strong><span>MP4, MOV, MKV… · video lớn upload thẳng Storage</span><input type="file" id="vfile" name="video" accept="video/*"></label>
+      <div class="clip-panel-head"><span>01</span><div><h2>{{ _("Nguồn video") }}</h2><small>{{ _("Upload mới hoặc dùng lại asset của bạn") }}</small></div></div>
+      <label class="clip-drop" for="vfile"><strong>{{ _("Chọn video từ máy") }}</strong><span>{{ _("MP4, MOV, MKV… · video lớn upload thẳng Storage") }}</span><input type="file" id="vfile" name="video" accept="video/*"></label>
       <section class="clip-library" aria-labelledby="clip-library-title">
-        <header><h3 id="clip-library-title">Thư viện nguồn gần đây</h3><span>{{ library|length }} asset</span></header>
+        <header><h3 id="clip-library-title">{{ _("Thư viện nguồn gần đây") }}</h3><span>{{ library|length }} asset</span></header>
         {% if library %}<div class="clip-source-list">
           {% for item in library %}<button type="button" class="clip-source" data-key="{{ item.key }}" data-duration="{{ item.duration_s }}" data-name="{{ item.name }}" aria-pressed="false"><span>▶</span><span><strong>{{ item.name }}</strong><small>{% if item.duration_s %}{{ (item.duration_s / 60)|round(1) }} phút{% else %}Chưa rõ thời lượng{% endif %}</small></span></button>{% endfor %}
-        </div>{% else %}<p class="clip-empty-small">Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên.</p>{% endif %}
+        </div>{% else %}<p class="clip-empty-small">{{ _("Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên.") }}</p>{% endif %}
       </section>
 
-      <div class="clip-panel-head"><span>02</span><div><h2>Cấu hình tuyển chọn</h2><small>Chi phí theo phút nguồn + số output</small></div></div>
-      <fieldset class="clip-group"><legend>Chất lượng</legend>{{ chipgroup('tier', tiers, 'high_quality') }}</fieldset>
-      <fieldset class="clip-group"><legend>Tỉ lệ khung</legend>{{ chipgroup('aspect_ratio', aspects, '9:16') }}</fieldset>
-      <label class="clip-brand">Brand preset<select name="brand_preset">{% for id, label in brand_presets %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select><small>Preset được đưa vào render thật; không thay bằng CSS preview.</small></label>
-      <fieldset class="clip-group"><legend>Package nền tảng</legend><div class="clip-platforms">{% for platform in platforms %}<label><input type="checkbox" name="platforms" value="{{ platform }}" checked><span>{{ platform|replace('_',' ')|title }}</span></label>{% endfor %}</div></fieldset>
+      <div class="clip-panel-head"><span>02</span><div><h2>{{ _("Cấu hình tuyển chọn") }}</h2><small>{{ _("Chi phí theo phút nguồn + số output") }}</small></div></div>
+      <fieldset class="clip-group"><legend>{{ _("Chất lượng") }}</legend>{{ chipgroup('tier', tiers, 'high_quality') }}</fieldset>
+      <fieldset class="clip-group"><legend>{{ _("Tỉ lệ khung") }}</legend>{{ chipgroup('aspect_ratio', aspects, '9:16') }}</fieldset>
+      <label class="clip-brand">Brand preset<select name="brand_preset">{% for id, label in brand_presets %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select><small>{{ _("Preset được đưa vào render thật; không thay bằng CSS preview.") }}</small></label>
+      <fieldset class="clip-group"><legend>{{ _("Package nền tảng") }}</legend><div class="clip-platforms">{% for platform in platforms %}<label><input type="checkbox" name="platforms" value="{{ platform }}" checked><span>{{ platform|replace('_',' ')|title }}</span></label>{% endfor %}</div></fieldset>
       <div class="clip-three">
-        <label>Thể loại<select name="genre">{% for id, label in genres %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
-        <label>Ngôn ngữ<select name="language">{% for id, label in langs %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
-        <label>Số clip<select name="target_clip_count" id="clip-count">{% for n in [1,2,3,5,8,10] %}<option value="{{ n }}" {% if n==3 %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+        <label>{{ _("Thể loại") }}<select name="genre">{% for id, label in genres %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
+        <label>{{ _("Ngôn ngữ") }}<select name="language">{% for id, label in langs %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
+        <label>{{ _("Số clip") }}<select name="target_clip_count" id="clip-count">{% for n in [1,2,3,5,8,10] %}<option value="{{ n }}" {% if n==3 %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
       </div>
-      <div class="clip-two"><label>Tối thiểu (giây)<input type="number" name="min_clip_duration_sec" value="15" min="5" max="120"></label><label>Tối đa (giây)<input type="number" name="max_clip_duration_sec" value="60" min="10" max="180"></label></div>
-      <div class="clip-actions"><div><span>CHI PHÍ ƯỚC TÍNH</span><strong id="est">Chọn video</strong></div><button type="submit" class="btn" id="submitbtn">Tạo clip</button></div>
+      <div class="clip-two"><label>{{ _("Tối thiểu (giây)") }}<input type="number" name="min_clip_duration_sec" value="15" min="5" max="120"></label><label>{{ _("Tối đa (giây)") }}<input type="number" name="max_clip_duration_sec" value="60" min="10" max="180"></label></div>
+      <div class="clip-actions"><div><span>{{ _("CHI PHÍ ƯỚC TÍNH") }}</span><strong id="est">{{ _("Chọn video") }}</strong></div><button type="submit" class="btn" id="submitbtn">{{ _("Tạo clip") }}</button></div>
       <p id="upstatus" class="clip-live" role="status" aria-live="polite"></p>
       <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate" hx-include="#duration_s,input[name=tier]:checked,select[name=target_clip_count]" hx-target="#est" hx-trigger="load, change from:#clipform" hidden></div>
     </form>
 
     <div class="clip-workspace">
       <section id="clip-compare" class="clip-compare" aria-labelledby="clip-compare-title" hidden>
-        <div class="clip-panel-head"><span>03</span><div><h2 id="clip-compare-title">So sánh output</h2><small>Chọn tối đa hai clip đã render</small></div></div>
-        <div class="clip-compare-grid"><div data-slot="0">Chọn clip thứ nhất</div><div data-slot="1">Chọn clip thứ hai</div></div>
-        <button type="button" class="btn ghost" id="clip-clear">Bỏ chọn</button>
+        <div class="clip-panel-head"><span>03</span><div><h2 id="clip-compare-title">{{ _("So sánh output") }}</h2><small>{{ _("Chọn tối đa hai clip đã render") }}</small></div></div>
+        <div class="clip-compare-grid"><div data-slot="0">{{ _("Chọn clip thứ nhất") }}</div><div data-slot="1">{{ _("Chọn clip thứ hai") }}</div></div>
+        <button type="button" class="btn ghost" id="clip-clear">{{ _("Bỏ chọn") }}</button>
       </section>
 
       <section class="clip-history" aria-labelledby="clip-history-title">
-        <header><div><span class="clip-kicker">OUTPUT LIBRARY</span><h2 id="clip-history-title">Clip của tôi</h2></div><span>{{ jobs|length }} job gần đây</span></header>
-        {% if not jobs %}<div class="clip-empty"><strong>Chưa có clip</strong><span>Chọn video ở Studio để bắt đầu.</span></div>{% else %}<div class="clip-job-list">
+        <header><div><span class="clip-kicker">OUTPUT LIBRARY</span><h2 id="clip-history-title">{{ _("Clip của tôi") }}</h2></div><span>{{ jobs|length }} job gần đây</span></header>
+        {% if not jobs %}<div class="clip-empty"><strong>{{ _("Chưa có clip") }}</strong><span>{{ _("Chọn video ở Studio để bắt đầu.") }}</span></div>{% else %}<div class="clip-job-list">
           {% for job in jobs %}<article class="clip-job" data-job-id="{{ job.id }}" data-project-id="{{ job.project.id if job.project else '' }}" data-revision="{{ job.project.revision if job.project else 0 }}">
             <header><div><strong>{{ job.source_name }}</strong><small>{{ job.id[:8] }} · {{ job.tier }} · {{ job.aspect_ratio }}</small></div><span class="clip-status {{ job.status }}">{% if job.status == 'done' %}Hoàn tất{% elif job.status == 'error' %}Lỗi{% else %}{{ job.status }}{% endif %}</span></header>
             {% if job.status not in ['done','error','cancelled'] %}<div class="clip-progress" role="progressbar" aria-label="Tiến độ {{ job.source_name }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ job.progress }}"><i style="width:{{ job.progress }}%"></i></div><p>{{ job.progress_msg or 'Đang chờ worker' }} · {{ job.progress }}%</p>{% endif %}
             {% if job.status == 'error' %}<p class="clip-error">{{ job.error or 'Không thể xử lý video.' }}</p>{% endif %}
             {% if job.clips %}<div class="clip-results">{% for clip in job.clips %}{% set clip_url = app.route_prefix ~ '/v/' ~ clip.video_key %}<figure data-clip-index="{{ loop.index0 }}">
               <video controls preload="metadata" src="{{ clip_url }}"></video>
-              <figcaption><div><label class="clip-title"><span class="sr-only">Tiêu đề clip {{ loop.index }}</span><input data-clip-title value="{{ clip.title or ('Clip ' ~ loop.index) }}" maxlength="120"></label><small>{% if clip.source_end %}{{ clip.source_start }}–{{ clip.source_end }}s{% elif clip.duration_s %}{{ clip.duration_s }}s{% endif %}{% if clip.score %} · score {{ clip.score }}{% endif %}</small></div><div><button type="button" class="clip-pick" data-src="{{ clip_url }}" data-label="{{ clip.title or ('Clip ' ~ loop.index) }}" aria-pressed="false">So sánh</button><a href="{{ clip_url }}" download>Tải</a></div></figcaption>
-              {% if clip.score_rationale %}<details class="clip-rationale"><summary>Vì sao AI chọn đoạn này?</summary><p>{{ clip.score_rationale.why_selected }}</p><dl>{% for name, value in clip.score_rationale.dimensions.items() %}<div><dt>{{ name|replace('_',' ') }}</dt><dd>{{ (value * 100)|round|int }}</dd></div>{% endfor %}</dl><small>Điểm xếp hạng nội bộ, không phải dự đoán lượt xem.</small></details>{% endif %}
-              <details class="clip-transcript"><summary>Transcript & biên tập package</summary><label>Nội dung caption<textarea data-transcript>{% for seg in clip.transcript or [] %}{{ seg.text }}{% if not loop.last %} {% endif %}{% endfor %}</textarea></label><div class="clip-range"><label>Bắt đầu<input value="{{ clip.source_start or 0 }}" inputmode="decimal" readonly></label><label>Kết thúc<input value="{{ clip.source_end or clip.duration_s or 0 }}" inputmode="decimal" readonly></label></div><small>Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn.</small></details>
+              <figcaption><div><label class="clip-title"><span class="sr-only">Tiêu đề clip {{ loop.index }}</span><input data-clip-title value="{{ clip.title or ('Clip ' ~ loop.index) }}" maxlength="120"></label><small>{% if clip.source_end %}{{ clip.source_start }}–{{ clip.source_end }}s{% elif clip.duration_s %}{{ clip.duration_s }}s{% endif %}{% if clip.score %} · score {{ clip.score }}{% endif %}</small></div><div><button type="button" class="clip-pick" data-src="{{ clip_url }}" data-label="{{ clip.title or ('Clip ' ~ loop.index) }}" aria-pressed="false">{{ _("So sánh") }}</button><a href="{{ clip_url }}" download>{{ _("Tải") }}</a></div></figcaption>
+              {% if clip.score_rationale %}<details class="clip-rationale"><summary>{{ _("Vì sao AI chọn đoạn này?") }}</summary><p>{{ clip.score_rationale.why_selected }}</p><dl>{% for name, value in clip.score_rationale.dimensions.items() %}<div><dt>{{ name|replace('_',' ') }}</dt><dd>{{ (value * 100)|round|int }}</dd></div>{% endfor %}</dl><small>{{ _("Điểm xếp hạng nội bộ, không phải dự đoán lượt xem.") }}</small></details>{% endif %}
+              <details class="clip-transcript"><summary>{{ _("Transcript & biên tập package") }}</summary><label>{{ _("Nội dung caption") }}<textarea data-transcript>{% for seg in clip.transcript or [] %}{{ seg.text }}{% if not loop.last %} {% endif %}{% endfor %}</textarea></label><div class="clip-range"><label>{{ _("Bắt đầu") }}<input value="{{ clip.source_start or 0 }}" inputmode="decimal" readonly></label><label>{{ _("Kết thúc") }}<input value="{{ clip.source_end or clip.duration_s or 0 }}" inputmode="decimal" readonly></label></div><small>{{ _("Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn.") }}</small></details>
             </figure>{% endfor %}</div>{% endif %}
-            {% if job.status == 'done' and job.clips %}<footer class="clip-package"><fieldset><legend>Xuất metadata cho</legend>{% for platform in platforms %}<label><input type="checkbox" class="clip-package-platform" value="{{ platform }}" {% if not job.platforms or platform in job.platforms %}checked{% endif %}><span>{{ platform|replace('_',' ')|title }}</span></label>{% endfor %}</fieldset><div><button type="button" class="btn ghost clip-save-package">Lưu package{% if job.project %} · r{{ job.project.revision }}{% endif %}</button><a class="btn" href="{{ app.route_prefix }}/package/{{ job.id }}.zip">Tải ZIP</a></div><p class="clip-package-status" role="status" aria-live="polite"></p></footer>{% endif %}
+            {% if job.status == 'done' and job.clips %}<footer class="clip-package"><fieldset><legend>{{ _("Xuất metadata cho") }}</legend>{% for platform in platforms %}<label><input type="checkbox" class="clip-package-platform" value="{{ platform }}" {% if not job.platforms or platform in job.platforms %}checked{% endif %}><span>{{ platform|replace('_',' ')|title }}</span></label>{% endfor %}</fieldset><div><button type="button" class="btn ghost clip-save-package">Lưu package{% if job.project %} · r{{ job.project.revision }}{% endif %}</button><a class="btn" href="{{ app.route_prefix }}/package/{{ job.id }}.zip">{{ _("Tải ZIP") }}</a></div><p class="clip-package-status" role="status" aria-live="polite"></p></footer>{% endif %}
           </article>{% endfor %}
         </div>{% endif %}
       </section>

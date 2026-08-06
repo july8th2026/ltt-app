@@ -5,7 +5,9 @@ from pathlib import Path
 def test_chat_template_uses_scoped_accessible_ui_and_safe_dom():
     src = (Path(__file__).parents[1] / "apps" / "chataistudio" / "templates" /
            "chataistudio.html").read_text("utf-8")
-    assert 'class="chat-layout"' in src and 'aria-label="Hội thoại"' in src
+    # H24: nhan gio di qua catalog dich. Van chot vung hoi thoai CO ten doc duoc.
+    assert 'class="chat-layout"' in src
+    assert "aria-label=" in src and "Hội thoại" in src
     assert 'aria-live="polite"' in src and 'role="status"' in src
     assert 'maxlength="20000"' in src and 'id="chat-count"' in src
     assert 'name="attachments"' in src and "multiple" in src

@@ -1,40 +1,128 @@
-# Translations template for PROJECT.
-# Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
-#
-msgid ""
-msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-07 01:15+0700\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
-
 #: server/templates/nap_don.html:18
 msgid "&larr; Gói nạp"
 msgstr "&larr; Credit packages"
+
+#: apps/kichban/templates/script_result.html:10
+msgid "&larr; Tạo mới"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio_admin.html:16
+msgid "(khuyến nghị KHÔNG dùng chung với BOT GEMINI)."
+msgstr ""
+
+#: apps/agent/templates/agent_run.html:23
+msgid ". Phần không dùng được tự động hoàn."
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:64
+msgid "/12.000 ký tự"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio_admin.html:21
+msgid "1. Mở:"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
+msgid "120 giây"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
+msgid "15 giây"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:54
+msgid "2 biến thể"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio_admin.html:22
+msgid "2. Nhập mã:"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+#, fuzzy
+msgid "3 credit mỗi kịch bản"
+msgstr "Your credits"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
+msgid "30 giây"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
+msgid "60 giây"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
+msgid "90 giây"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "AI chỉ được dùng các nguồn bạn cung cấp; không tự nhận đã kiểm chứng nguồn."
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:3
+msgid "AI trả về không đúng JSON — đang hiển thị nội dung đã khôi phục."
+msgstr ""
 
 #: apps/kichban/manifest.py:34
 msgid "AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags."
 msgstr "AI writes a complete YouTube script: hook, body, outro, description and tags."
 
+#: apps/upscalevideo/templates/upscalevideo.html:51
+msgid "Agent chạy trên máy chứa folder; web không nhận đường dẫn local."
+msgstr ""
+
+#: apps/taoanh/templates/image.html:10
+msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật."
+msgstr ""
+
 #: apps/agent/manifest.py:13
 msgid "Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát."
 msgstr "Turns a goal into a multi-step plan, quotes the cost up front, then runs it under your control."
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:109
+msgid "Biến prompt cảnh thành frame bằng job Tạo ảnh; không tạo ảnh giả trong giao diện."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:69
+msgid "Biến thể"
+msgstr ""
 
 #: apps/taoclipngan/manifest.py:32
 msgid "Biến video dài thành nhiều clip ngắn dọc (TikTok/Shorts/Reels) — AI chọn highlight, reframe, phụ đề."
 msgstr "Turns a long video into several vertical short clips (TikTok/Shorts/Reels) — AI picks the highlights, reframes and adds subtitles."
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:50
+msgid "Biến ý tưởng thành một hệ cảnh nhất quán."
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
+#, fuzzy
+msgid "Báo giá"
+msgstr "Pricing"
+
 #: server/templates/nap.html:31
 msgid "Báo giá trọn gói"
 msgstr "Custom quote"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:58
+msgid "BƯỚC 01"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:76
+msgid "BƯỚC 02"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:85
+msgid "BƯỚC 03"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:109
+msgid "BƯỚC 04"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:114
+msgid "BƯỚC 05"
+msgstr ""
 
 #: server/templates/home.html:61
 msgid "Bạn chưa dùng app nào."
@@ -52,6 +140,10 @@ msgstr "Pricing"
 msgid "Bảng điều khiển"
 msgstr "Dashboard"
 
+#: apps/taoclipngan/templates/taoclipngan.html:70
+msgid "Bắt đầu"
+msgstr ""
+
 #: server/templates/dashboard.html:23
 msgid "Bắt đầu / dừng phiên đăng bài. Worker chạy trên máy chủ nên đóng trình duyệt không làm nó dừng."
 msgstr "Start or stop a posting session. The worker runs on the server, so closing your browser will not stop it."
@@ -60,9 +152,68 @@ msgstr "Start or stop a posting session. The worker runs on the server, so closi
 msgid "Bắt đầu dùng công cụ"
 msgstr "Start using the tools"
 
+#: apps/chataistudio/templates/chataistudio.html:16
+msgid "Bắt đầu một ý tưởng mới"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:24
+#: apps/taoclipngan/templates/taoclipngan.html:56
+#: apps/thumbnail/templates/thumbnail.html:56
+msgid "Bỏ chọn"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:47
+msgid "CHI PHÍ ƯỚC TÍNH"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:34
+msgid "Camera là hướng dẫn bằng prompt, không phải điều khiển cơ học native. Seed là capability thật của provider."
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:36
+msgid "Chi phí theo phút nguồn + số output"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:56
+msgid "Chi phí ước tính"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:57
+msgid "Chi phí ước tính:"
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:73
+msgid "Chi phí:"
+msgstr ""
+
 #: server/templates/nap_don.html:14
 msgid "Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được."
 msgstr "Transfer the exact amount — credits are added automatically once we receive it."
+
+#: apps/taoanh/templates/image.html:18
+msgid "Chuyển phong cách"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Chuyển động"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Chân thực"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:92
+msgid "Chưa báo giá"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:37
+msgid "Chưa chọn dự án"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:71
+#, fuzzy
+msgid "Chưa chọn video"
+msgstr "No jobs yet."
 
 #: server/templates/home.html:17 server/templates/home.html:18
 #: server/templates/home.html:20
@@ -73,6 +224,21 @@ msgstr "Not yet"
 msgid "Chưa có app phù hợp."
 msgstr "No matching apps."
 
+#: apps/taoclipngan/templates/taoclipngan.html:61
+#, fuzzy
+msgid "Chưa có clip"
+msgstr "Not yet"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
+#, fuzzy
+msgid "Chưa có cảnh."
+msgstr "No jobs yet."
+
+#: apps/kichban/templates/script.html:11
+#, fuzzy
+msgid "Chưa có dự án"
+msgstr "Not yet"
+
 #: server/templates/nap.html:50
 msgid "Chưa có gói nạp nào. Admin thêm gói ở trang quản trị."
 msgstr "No credit packages yet. An admin can add them in the admin area."
@@ -80,6 +246,50 @@ msgstr "No credit packages yet. An admin can add them in the admin area."
 #: server/templates/home.html:44
 msgid "Chưa có hoạt động. Mở một công cụ để bắt đầu."
 msgstr "No activity yet. Open a tool to get started."
+
+#: apps/chataistudio/templates/chataistudio.html:13
+#, fuzzy
+msgid "Chưa có hội thoại."
+msgstr "No jobs yet."
+
+#: apps/upscalevideo/templates/upscalevideo.html:108
+#, fuzzy
+msgid "Chưa có job. Chọn video để bắt đầu."
+msgstr "No activity yet. Open a tool to get started."
+
+#: apps/taoclipngan/templates/taoclipngan.html:33
+msgid "Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:45
+msgid "Chưa có pipeline HDR giữ đúng màu và metadata"
+msgstr ""
+
+#: apps/agent/templates/_agent_progress.html:17
+msgid "Chưa có quyết định thực thi."
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:39
+#, fuzzy
+msgid "Chưa có thay đổi"
+msgstr "Not yet"
+
+#: apps/thumbnail/templates/thumbnail.html:61
+msgid "Chưa có thumbnail"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:50
+msgid "Chưa có tài sản đã lưu. File bạn dùng trong job đầu tiên sẽ xuất hiện tại đây."
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:85
+msgid "Chưa có video nào. Tạo cái đầu tiên ở trên."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:70
+#, fuzzy
+msgid "Chưa có video phù hợp."
+msgstr "No matching apps."
 
 #: server/templates/jobs.html:44
 msgid "Chưa có việc nào."
@@ -89,13 +299,162 @@ msgstr "No jobs yet."
 msgid "Chưa có đơn nạp."
 msgstr "No orders yet."
 
+#: apps/taoanh/templates/image.html:28
+#, fuzzy
+msgid "Chưa có ảnh"
+msgstr "Not yet"
+
 #: server/templates/home.html:39
 msgid "Chưa dùng được"
 msgstr "Not available yet"
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:96
+msgid "Chưa kiểm tra"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio_admin.html:45
+msgid "Chưa lấy được model (sidecar chưa sẵn sàng?)."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:20
+msgid "Chưa mở — không dùng Quality để giả lập."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:45
+msgid "Chưa mở — không nâng SDR giả thành HDR."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio_admin.html:15
+#, fuzzy
+msgid "Chưa đăng nhập"
+msgstr "Sign in"
+
+#: apps/autosubvideo/templates/autosubvideo.html:53
+#: apps/taoclipngan/templates/taoclipngan.html:37
+msgid "Chất lượng"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:89
+#: apps/taoanh/templates/image.html:18
+#, fuzzy
+msgid "Chế độ"
+msgstr "Progress"
+
+#: apps/upscalevideo/templates/upscalevideo.html:14
+msgid "Chế độ nâng cấp"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:23
+msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:19
+msgid "Chỉ mở sau benchmark engine thật"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:30
+msgid "Chỉnh sửa"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "Chỉnh sửa ảnh"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:55
+msgid "Chọn clip thứ hai"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:55
+msgid "Chọn clip thứ nhất"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:79
+msgid "Chọn file"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:49
+msgid "Chọn lại tài sản từ các job trước. Tổng tài sản cũ và file mới tối đa 4."
+msgstr ""
+
 #: server/templates/nap.html:70
 msgid "Chọn một gói phía trên để tạo đơn đầu tiên."
 msgstr "Pick a package above to create your first order."
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:128
+msgid "Chọn một scene để chỉnh prompt, negative prompt, camera và continuity."
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:16
+msgid "Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:70
+msgid "Chọn tệp từ máy"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:46
+msgid "Chọn tối đa 3 video; submit nguyên tử."
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:54
+msgid "Chọn tối đa hai clip đã render"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:54
+msgid "Chọn tối đa hai output thật trong lịch sử"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:24
+msgid "Chọn tối đa hai ảnh thật"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:47
+#: apps/upscalevideo/templates/upscalevideo.html:56
+msgid "Chọn video"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:28
+msgid "Chọn video từ máy"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:61
+msgid "Chọn video ở Studio để bắt đầu."
+msgstr ""
+
+#: apps/taoanh/templates/image.html:24
+#: apps/thumbnail/templates/thumbnail.html:55
+msgid "Chọn ảnh thứ hai"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:24
+#: apps/thumbnail/templates/thumbnail.html:55
+msgid "Chọn ảnh thứ nhất"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:43
+#: apps/upscalevideo/templates/upscalevideo.html:95
+#, fuzzy
+msgid "Chống rung"
+msgstr "Community"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:42
+msgid "Chụp phiên bản"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+#, fuzzy
+msgid "Chủ đề video"
+msgstr "Burn video subtitles"
+
+#: apps/taoclipngan/templates/taoclipngan.html:60
+#, fuzzy
+msgid "Clip của tôi"
+msgstr "My work"
+
+#: apps/upscalevideo/templates/upscalevideo.html:33
+#, fuzzy
+msgid "Codec đầu ra"
+msgstr "Output"
 
 #: server/templates/_platform_footer.html:7
 msgid "Credit &amp; thanh toán"
@@ -121,24 +480,63 @@ msgstr "Credits charged"
 msgid "Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này."
 msgstr "Credits are added when your bank confirms the transfer, not by this page."
 
+#: apps/agent/templates/agent_run.html:14
+msgid "Các bước"
+msgstr ""
+
 #: server/templates/nap.html:20
 msgid "Các gói credit"
 msgstr "Credit packages"
+
+#: apps/kichban/templates/_script_view.html:8
+#: apps/kichban/templates/script.html:10
+#, fuzzy
+msgid "Các phần nội dung"
+msgstr "Content"
 
 #: apps/mediatools/manifest.py:21
 msgid "Các primitive asset, tách frame và ghép media cho Agent Canvas."
 msgstr "Asset primitives, frame extraction and media stitching for Agent Canvas."
 
+#: apps/autosubvideo/templates/autosubvideo.html:57
+msgid "Cách chia dòng"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:18
+msgid "Cân bằng tốc độ và chất lượng."
+msgstr ""
+
 #: server/templates/home.html:5
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
 msgstr "Pay-as-you-go AI tools, all in one account"
 
-#: server/templates/home.html:21
+#: apps/taovideo/templates/taovideo.html:64
+#, fuzzy
+msgid "Cũ nhất"
+msgstr "Newest"
+
+#: apps/taovideo/templates/taovideo.html:13 server/templates/home.html:21
 msgid "Cấu hình"
+msgstr "Settings"
+
+#: apps/taoanh/templates/image.html:23
+#: apps/thumbnail/templates/thumbnail.html:52
+#, fuzzy
+msgid "Cấu hình gửi đi"
 msgstr "Settings"
 
 #: server/templates/_header.html:41 server/templates/home.html:31
 msgid "Cấu hình hệ thống"
+msgstr "System configuration"
+
+#: apps/chataistudio/templates/chataistudio.html:8
+#, fuzzy
+msgid "Cấu hình ngay"
+msgstr "Settings"
+
+#: apps/taoclipngan/templates/taoclipngan.html:36
+#, fuzzy
+msgid "Cấu hình tuyển chọn"
 msgstr "System configuration"
 
 #: server/templates/nap_don.html:50
@@ -153,9 +551,27 @@ msgstr "Community"
 msgid "Cộng đồng sẽ mở khi có không gian thảo luận thật"
 msgstr "Community opens once there is a real space for discussion"
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
+#, fuzzy
+msgid "Danh sách"
+msgstr "← Back to jobs"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:18
+#, fuzzy
+msgid "Danh sách dự án"
+msgstr "Open the app list"
+
 #: apps/demo/manifest.py:37
 msgid "Demo — kiểm tra hạ tầng"
 msgstr "Demo — infrastructure check"
+
+#: apps/agent/templates/agent_run.html:23
+msgid "Duyệt sẽ giữ chỗ"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "Dùng cho chuyển phong cách"
+msgstr ""
 
 #: server/templates/home.html:46
 msgid "Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy."
@@ -165,6 +581,32 @@ msgstr "Credits are charged transparently per task, and your balance is always s
 msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
 msgstr "Use at least 8 characters, and do not reuse a password from another service."
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:116
+msgid "Dễ đọc, chia theo từng cảnh."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:76
+#, fuzzy
+msgid "Dữ liệu thật"
+msgstr "Delete my data"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:24
+#, fuzzy
+msgid "Dự án mới"
+msgstr "Create a new order"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:78
+msgid "File được lưu owner-scoped. Ảnh 20 MB, video 60 MB, audio 20 MB."
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:33
+msgid "Font thương hiệu"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Ghi chú nghiên cứu"
+msgstr ""
+
 #: apps/mediatools/manifest.py:59
 msgid "Ghép 2–12 ảnh thành một contact sheet ngang, dọc hoặc dạng lưới."
 msgstr "Combines 2–12 images into a horizontal, vertical or grid contact sheet."
@@ -173,14 +615,40 @@ msgstr "Combines 2–12 images into a horizontal, vertical or grid contact sheet
 msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
 msgstr "Price: 1 credit per 100 characters (set by the app manifest)."
 
+#: apps/thumbnail/templates/thumbnail.html:35
+msgid "Giọng thương hiệu"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Giọng văn"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:40
+msgid "Giữ nguyên FPS gốc"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:41
+msgid "Giữ nguyên âm thanh"
+msgstr ""
+
 #: server/templates/dashboard.html:28
 msgid "Google Sheets, tên cột, Meta App, TikTok, chống spam, thông báo."
 msgstr "Google Sheets, column names, Meta App, TikTok, anti-spam, notifications."
+
+#: apps/chataistudio/templates/chataistudio.html:19
+msgid "Gửi"
+msgstr ""
 
 #: server/templates/forgot_password.html:18
 msgid "Gửi liên kết đặt lại"
 msgstr "Send reset link"
 
+#: apps/kichban/templates/_script_view.html:7
+msgid "Hook (15–30 giây đầu)"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:28
+#: apps/thumbnail/templates/thumbnail.html:65
 #: server/templates/_job_progress.html:9 server/templates/jobs.html:11
 #: server/templates/jobs.html:31
 msgid "Hoàn tất"
@@ -194,9 +662,29 @@ msgstr "Your activity"
 msgid "Hoạt động gần đây"
 msgstr "Recent activity"
 
+#: apps/chataistudio/templates/chataistudio_admin.html:26
+msgid "Hoặc dùng API key OpenAI"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:71
+msgid "Hoặc mô tả phong cách riêng..."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:88
+msgid "Hàng đợi xử lý"
+msgstr ""
+
 #: server/templates/home.html:40 server/templates/home.html:60
 msgid "Hãy đổi từ khóa, nhóm hoặc quay lại kho ứng dụng."
 msgstr "Try another keyword or category, or go back to the app store."
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:127
+msgid "Hướng dẫn"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:30
+msgid "Hạ tầng LTT"
+msgstr ""
 
 #: server/templates/nap_don.html:41
 msgid "Hết hạn"
@@ -210,9 +698,47 @@ msgstr "The LTT ecosystem"
 msgid "Hỗ trợ"
 msgstr "Support"
 
+#: apps/taovideo/templates/taovideo.html:33
+#, fuzzy
+msgid "Hỗ trợ prompt"
+msgstr "Support"
+
+#: apps/chataistudio/templates/chataistudio.html:10
+msgid "Hội thoại"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:74
+#, fuzzy
+msgid "Hủy"
+msgstr "Cancelled"
+
+#: apps/upscalevideo/templates/upscalevideo.html:105
+msgid "Hủy job"
+msgstr ""
+
+#: apps/agent/templates/_agent_progress.html:12
+msgid "Hủy lượt chạy"
+msgstr ""
+
 #: server/templates/job_detail.html:5
 msgid "Hủy việc"
 msgstr "Cancel job"
+
+#: apps/kichban/templates/script.html:10
+msgid "Insight, luận điểm, điều bắt buộc kiểm chứng"
+msgstr ""
+
+#: apps/kichban/templates/script_result.html:9
+msgid "Job chạy nền — trang tự cập nhật khi xong."
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:4
+msgid "Job gốc bất biến; mỗi lần lưu tạo revision mới có kiểm tra xung đột."
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:27
+msgid "KIẾM TIỀN 2026"
+msgstr ""
 
 #: server/templates/home.html:18
 msgid "Kho tài nguyên cá nhân chưa được phát hành"
@@ -223,13 +749,30 @@ msgstr "Your personal asset library has not shipped yet"
 msgid "Kho ứng dụng"
 msgstr "App store"
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:66
+msgid "Khách hàng mục tiêu"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:59
+msgid "Khóa câu chuyện và mục tiêu trước khi AI phân cảnh."
+msgstr ""
+
 #: server/templates/dashboard.html:15
 msgid "Không có lỗi chặn"
+msgstr "No blocking errors"
+
+#: apps/chataistudio/templates/chataistudio.html:19
+#, fuzzy
+msgid "Không có tệp ·"
 msgstr "No blocking errors"
 
 #: server/templates/home.html:45
 msgid "Không có việc nào đang chạy."
 msgstr "No jobs are running."
+
+#: apps/thumbnail/templates/thumbnail.html:52
+msgid "Không hiển thị prompt nội bộ của nền tảng"
+msgstr ""
 
 #: server/templates/nap.html:66
 msgid "Không hoàn tất"
@@ -243,17 +786,68 @@ msgstr "We couldn't find this order"
 msgid "Khắc phụ đề video"
 msgstr "Burn video subtitles"
 
+#: apps/autosubvideo/templates/autosubvideo.html:29
+#, fuzzy
+msgid "Khắc phụ đề vào video"
+msgstr "Burn video subtitles"
+
 #: apps/autosubvideo/manifest.py:55
 msgid "Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg."
 msgstr "Burns an existing transcript into your video using subtitle presets and FFmpeg."
+
+#: apps/upscalevideo/templates/upscalevideo.html:42
+msgid "Kiểm chất lượng với chi phí thấp."
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
+msgid "Kiểm tra & xem prompt"
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:50
+msgid "Kiểu chữ (preset)"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:68
+msgid "Kéo &amp; thả video vào đây"
+msgstr ""
+
+#: apps/agent/templates/agent_run.html:6
+msgid "Kế hoạch Agent"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:79
+msgid "Kết quả sẽ xuất hiện tại đây"
+msgstr ""
 
 #: server/templates/_job_progress.html:18
 msgid "Kết quả đã sẵn sàng."
 msgstr "Your result is ready."
 
-#: apps/kichban/manifest.py:32
+#: apps/taoclipngan/templates/taoclipngan.html:70
+msgid "Kết thúc"
+msgstr ""
+
+#: apps/agent/templates/_agent_progress.html:13
+msgid "Kết thúc:"
+msgstr ""
+
+#: apps/kichban/manifest.py:32 apps/kichban/templates/script.html:7
 msgid "Kịch bản YouTube"
 msgstr "YouTube scripts"
+
+#: apps/kichban/templates/script_result.html:8
+#, fuzzy
+msgid "Kịch bản của bạn"
+msgstr "Your activity"
+
+#: apps/kichban/templates/script.html:11
+#, fuzzy
+msgid "Kịch bản gần đây"
+msgstr "Recent activity"
+
+#: apps/kichban/templates/script.html:11
+msgid "Kịch bản hoàn thành sẽ xuất hiện tại đây."
+msgstr ""
 
 #: server/templates/_platform_footer.html:6
 msgid "Liên hệ"
@@ -279,14 +873,57 @@ msgstr "Type"
 msgid "Lúc"
 msgstr "At"
 
+#: apps/chataistudio/templates/chataistudio_admin.html:30
+msgid "Lưu API key"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:43
+msgid "Lưu dự án"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:36
+msgid "Lưu làm Brand Kit mặc định của tôi"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:4
+msgid "Lưu phiên bản"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:41
+msgid "Lưu trữ"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
+msgid "Lưới"
+msgstr ""
+
+#: apps/agent/templates/agent.html:7
+msgid "Lập kế hoạch Agent"
+msgstr ""
+
+#: apps/agent/templates/agent.html:19
+msgid "Lập kế hoạch và xem giá"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:30
+msgid "Lịch sử prompt"
+msgstr ""
+
 #: server/templates/home.html:35
 msgid "Lọc theo nhóm"
 msgstr "Filter by category"
+
+#: apps/taovideo/templates/taovideo.html:65
+#, fuzzy
+msgid "Lọc video"
+msgstr "Filter jobs"
 
 #: server/templates/jobs.html:7
 msgid "Lọc việc"
 msgstr "Filter jobs"
 
+#: apps/taoanh/templates/image.html:28
+#: apps/thumbnail/templates/thumbnail.html:65
 #: server/templates/_job_progress.html:11 server/templates/jobs.html:12
 #: server/templates/jobs.html:32
 msgid "Lỗi"
@@ -295,6 +932,30 @@ msgstr "Error"
 #: server/templates/_job_progress.html:21
 msgid "Lỗi:"
 msgstr "Error:"
+
+#: apps/upscalevideo/templates/upscalevideo.html:69
+msgid "MP4, MOV, MKV, AVI · browser tối đa 90MB khi R2 CORS chưa được bật"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:28
+msgid "MP4, MOV, MKV… · video lớn upload thẳng Storage"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:118
+msgid "Markdown + JSON trong một gói."
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:34
+msgid "Màu chính"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:34
+msgid "Màu phụ"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Máy tĩnh"
+msgstr ""
 
 #: server/templates/_nap_trangthai.html:36
 msgid "Mã giao dịch"
@@ -308,6 +969,43 @@ msgstr "Order number"
 msgid "Mã đơn cổng thanh toán gửi về:"
 msgstr "Order number returned by the payment gateway:"
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:64
+msgid "Mô tả bối cảnh, nhân vật, hành động và kết quả mong muốn..."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:29
+msgid "Mô tả cảnh, chủ thể, chuyển động máy quay và ánh sáng."
+msgstr ""
+
+#: apps/agent/templates/agent.html:5
+msgid "Mô tả kết quả bạn muốn. Agent lập kế hoạch và báo giá trước; chưa duyệt sẽ không giữ credit hay chạy công cụ."
+msgstr ""
+
+#: apps/taoanh/templates/image.html:15
+msgid "Mô tả sáng tạo"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:27
+#, fuzzy
+msgid "Mô tả video"
+msgstr "Make AI video"
+
+#: apps/taovideo/templates/taovideo.html:28
+msgid "Mô tả video. Gõ @tên để dùng tham chiếu…"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:16
+msgid "Mô tả ảnh"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:44
+msgid "Mượt chuyển động 2×"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:35
+msgid "Mạnh mẽ, công nghệ, rõ ràng"
+msgstr ""
+
 #: server/templates/home.html:17
 msgid "Mẫu"
 msgstr "Templates"
@@ -320,15 +1018,25 @@ msgstr "Password"
 msgid "Mật khẩu mới"
 msgstr "New password"
 
-#: server/templates/home.html:29
+#: apps/taoanh/templates/image.html:16
+msgid "Một phi hành gia khám phá thành phố tương lai, ánh sáng điện ảnh, chi tiết cao"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:64 server/templates/home.html:29
 msgid "Mới nhất"
 msgstr "Newest"
 
+#: apps/taoanh/templates/image.html:30
+#: apps/thumbnail/templates/thumbnail.html:71
 #: server/templates/dashboard.html:24 server/templates/dashboard.html:29
 #: server/templates/dashboard.html:37 server/templates/dashboard.html:42
 #: server/templates/nap_khong_thay.html:24
 msgid "Mở"
 msgstr "Open"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:119
+msgid "Mở Jobs"
+msgstr ""
 
 #: server/templates/nap_don.html:48
 msgid "Mở PayOS / VietQR"
@@ -338,6 +1046,12 @@ msgstr "Open PayOS / VietQR"
 msgid "Mở app"
 msgstr "Open app"
 
+#: apps/taovideo/templates/taovideo.html:16
+#: apps/taovideo/templates/taovideo.html:70
+#, fuzzy
+msgid "Mở bảng tạo video"
+msgstr "Make AI video"
+
 #: server/templates/_header.html:20
 msgid "Mở danh sách ứng dụng"
 msgstr "Open the app list"
@@ -346,13 +1060,76 @@ msgstr "Open the app list"
 msgid "Mở menu tài khoản"
 msgstr "Open account menu"
 
+#: apps/taoanh/templates/image.html:18
+msgid "Mở rộng khung hình"
+msgstr ""
+
 #: server/templates/home.html:27
 msgid "Mở điều hướng"
 msgstr "Open navigation"
 
+#: apps/agent/templates/agent.html:10
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:65
+msgid "Mục tiêu"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:20
+#: apps/upscalevideo/templates/upscalevideo.html:45
+msgid "NGHIÊN CỨU"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:11
+msgid "Nghiên cứu"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:11
+msgid "Nguồn"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Nguồn &amp; ghi chú nghiên cứu"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:11
+msgid "Nguồn &amp; nghiên cứu của phiên bản"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Nguồn tham khảo"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:27
+#, fuzzy
+msgid "Nguồn video"
+msgstr "Upscale video"
+
 #: server/templates/_nap_trangthai.html:66
 msgid "Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở — credit sẽ tự hiện, bạn"
 msgstr "Banks usually confirm within a minute. Leave this page open — your credits will appear on their own, and"
+
+#: apps/agent/templates/agent.html:16
+msgid "Ngân sách tối đa (credit)"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
+#: apps/taoclipngan/templates/taoclipngan.html:43
+#: apps/thumbnail/templates/thumbnail.html:44
+#, fuzzy
+msgid "Ngôn ngữ"
+msgstr "Change language"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:40
+msgid "Nhân bản"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:40
+msgid "Nhân bản project"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:97
+msgid "Nhập brief rồi bấm “Kiểm tra & xem prompt”."
+msgstr ""
 
 #: server/templates/demo.html:22
 msgid "Nhập gì cũng được — job sẽ đảo ngược chuỗi này"
@@ -362,6 +1139,18 @@ msgstr "Type anything — the job will reverse this text"
 msgid "Nhập mật khẩu"
 msgstr "Enter your password"
 
+#: apps/thumbnail/templates/thumbnail.html:53
+msgid "Nhập nội dung và chọn “Xem cấu hình” để kiểm tra trước khi tạo."
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:22
+msgid "Nhập project JSON"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:23
+msgid "Nhập prompt rồi chọn “Xem cấu hình”."
+msgstr ""
+
 #: server/templates/login.html:13
 msgid "Nhập tên đăng nhập"
 msgstr "Enter your username"
@@ -369,6 +1158,14 @@ msgstr "Enter your username"
 #: apps/mediatools/manifest.py:71
 msgid "Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube Shorts, Instagram/Facebook Reels hoặc URL HTTPS trực tiếp."
 msgstr "Import a public video you have the rights to use, from TikTok, YouTube Shorts, Instagram/Facebook Reels or a direct HTTPS URL."
+
+#: apps/agent/templates/_agent_progress.html:15
+msgid "Nhật ký quyết định"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:19
+msgid "Nhắn cho AI… (Enter gửi, Shift+Enter xuống dòng)"
+msgstr ""
 
 #: server/templates/forgot_password.html:20
 msgid "Nhớ mật khẩu rồi? Đăng nhập"
@@ -378,8 +1175,18 @@ msgstr "Remembered your password? Sign in"
 msgid "Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ."
 msgstr "Upscales image detail 4× with Real-ESRGAN on a local GPU."
 
+#: apps/taovideo/templates/taovideo.html:69
+#, fuzzy
+msgid "Nâng cấp AI"
+msgstr "Upscale video"
+
 #: apps/upscalevideo/manifest.py:41
 msgid "Nâng cấp video"
+msgstr "Upscale video"
+
+#: apps/taovideo/templates/taovideo.html:74
+#, fuzzy
+msgid "Nâng cấp video AI"
 msgstr "Upscale video"
 
 #: apps/upscalevideo/manifest.py:43
@@ -389,6 +1196,11 @@ msgstr "Upscales to 1080p/2K/4K with stabilisation and frame interpolation. Aspe
 #: apps/upscalevideo/manifest.py:58
 msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN."
 msgstr "Upscales video to 1080p, 2K or 4K with Real-ESRGAN."
+
+#: apps/taovideo/templates/taovideo.html:35
+#, fuzzy
+msgid "Năng động"
+msgstr "Community"
 
 #: server/templates/home.html:31 server/templates/home.html:46
 #: server/templates/nap.html:7
@@ -423,9 +1235,72 @@ msgstr "AI tools platform"
 msgid "Nối 2–12 video theo thứ tự thành một MP4 chuẩn H.264."
 msgstr "Joins 2–12 videos in order into a single standard H.264 MP4."
 
-#: server/templates/demo.html:20
+#: apps/kichban/templates/_script_view.html:8
+#: apps/thumbnail/templates/thumbnail.html:25 server/templates/demo.html:20
 msgid "Nội dung"
 msgstr "Content"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:64
+msgid "Nội dung / câu chuyện"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:70
+#, fuzzy
+msgid "Nội dung caption"
+msgstr "Content"
+
+#: apps/chataistudio/templates/chataistudio.html:18
+#, fuzzy
+msgid "Nội dung hội thoại"
+msgstr "Content"
+
+#: apps/upscalevideo/templates/upscalevideo.html:44
+msgid "Nội suy 48/60 FPS rồi upscale · +120%."
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Output có cấu trúc"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:30
+msgid "Output dùng làm tham chiếu"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:28
+msgid "Output thật sẽ xuất hiện ở đây sau job đầu tiên."
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "PNG/JPEG/WebP · tối đa 8 MB"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:31
+msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini để hướng dẫn tạo ảnh, không công khai"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:40
+msgid "Package nền tảng"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:88
+msgid "Pause và Delete đang hoãn theo Q47"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:121
+msgid "Phiên bản đã chụp"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Phong cách"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:71
+msgid "Phong cách hình ảnh"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:39
+msgid "Phong cách ảnh"
+msgstr ""
 
 #: apps/taoclipngan/manifest.py:45
 msgid "Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề."
@@ -434,6 +1309,22 @@ msgstr "Analyses a long video and exports several short clips, reframed and subt
 #: server/templates/home.html:29
 msgid "Phổ biến"
 msgstr "Popular"
+
+#: apps/thumbnail/templates/thumbnail.html:28
+msgid "Phụ đề"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:85
+msgid "Preflight miễn phí. Bạn luôn thấy chi phí trước khi gửi provider."
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:39
+msgid "Preset được đưa vào render thật; không thay bằng CSS preview."
+msgstr ""
+
+#: apps/taoanh/templates/image.html:15
+msgid "Prompt tối đa 4.000 ký tự"
+msgstr ""
 
 #: server/templates/home.html:59
 msgid "Quay lại kho ứng dụng và mở app đầu tiên."
@@ -450,6 +1341,22 @@ msgstr "Forgot your password?"
 #: server/templates/_header.html:43 server/templates/home.html:31
 msgid "Quản trị"
 msgstr "Admin"
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Quảng cáo sản phẩm"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:121
+msgid "Restore luôn tạo revision mới, không ghi đè âm thầm."
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:117
+msgid "Round-trip có schema; asset cần upload lại khi import."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Seed tùy chọn"
+msgstr ""
 
 #: apps/mediatools/manifest.py:44
 msgid "Sinh giọng đọc có điều khiển phong cách bằng Gemini TTS."
@@ -483,9 +1390,43 @@ msgstr "General-purpose text generation from an instruction, with a choice of ou
 msgid "Sinh ảnh từ mô tả tự do bằng Gemini Image. Chọn model, tỉ lệ, số ảnh."
 msgstr "Generates images from a free-form prompt with Gemini Image. Choose the model, aspect ratio and image count."
 
+#: apps/taoanh/templates/image.html:30
+#: apps/taoclipngan/templates/taoclipngan.html:68
+#: apps/thumbnail/templates/thumbnail.html:71
+#: apps/upscalevideo/templates/upscalevideo.html:104
+msgid "So sánh"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:54
+#, fuzzy
+msgid "So sánh kết quả"
+msgstr "✅ Result"
+
+#: apps/taoanh/templates/image.html:24
+#: apps/taoclipngan/templates/taoclipngan.html:54
+msgid "So sánh output"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:38
+msgid "Style chữ"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:64
+#, fuzzy
+msgid "Sắp xếp"
+msgstr "Sort by:"
+
 #: server/templates/home.html:29
 msgid "Sắp xếp:"
 msgstr "Sort by:"
+
+#: apps/taoclipngan/templates/taoclipngan.html:44
+msgid "Số clip"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:68
+msgid "Số cảnh"
+msgstr ""
 
 #: server/templates/_header.html:32
 msgid "Số dư credit"
@@ -495,6 +1436,10 @@ msgstr "Credit balance"
 msgid "Số dư hiện tại"
 msgstr "Current balance"
 
+#: apps/taovideo/templates/taovideo.html:54
+msgid "Số lượng/biến thể"
+msgstr ""
+
 #: server/templates/nap.html:59 server/templates/nap_don.html:31
 msgid "Số tiền"
 msgstr "Amount"
@@ -503,13 +1448,66 @@ msgstr "Amount"
 msgid "Số từ"
 msgstr "Word count"
 
+#: apps/taoanh/templates/image.html:19
+#: apps/thumbnail/templates/thumbnail.html:45
+#, fuzzy
+msgid "Số ảnh"
+msgstr "Amount"
+
+#: apps/upscalevideo/templates/upscalevideo.html:63
+#, fuzzy
+msgid "Telemetry quản trị"
+msgstr "Admin"
+
+#: apps/taovideo/templates/taovideo.html:41
+msgid "Tham chiếu"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:17
 msgid "Thanh toán thành công"
 msgstr "Payment successful"
 
+#: apps/taoanh/templates/image.html:18
+msgid "Thay vùng theo mô tả"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:119
+msgid "Theo dõi mọi job và credit ở nguồn chân lý chung."
+msgstr ""
+
 #: server/templates/jobs.html:4
 msgid "Theo dõi, lọc và mở kết quả từ mọi app."
 msgstr "Track, filter and open results from every app."
+
+#: apps/thumbnail/templates/thumbnail.html:18
+msgid "Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:53
+#, fuzzy
+msgid "Thiết lập"
+msgstr "needs setup"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:88
+msgid "Thiết lập lượt chạy"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:7
+msgid "Thiết lập nâng cấp"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:8
+#, fuzzy
+msgid "Thiết lập nâng cấp video"
+msgstr "Upscale video"
+
+#: apps/taovideo/templates/taovideo.html:19
+msgid "Thiết lập tạo video"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:52
+msgid "Thu hồi"
+msgstr ""
 
 #: server/templates/home.html:31
 msgid "Thành viên"
@@ -523,8 +1521,24 @@ msgstr "About LTT Studios"
 msgid "Thư viện mẫu toàn nền tảng chưa được phát hành"
 msgstr "The platform-wide template library has not shipped yet"
 
+#: apps/taoclipngan/templates/taoclipngan.html:30
+#, fuzzy
+msgid "Thư viện nguồn gần đây"
+msgstr "Recent activity"
+
+#: apps/taoclipngan/templates/taoclipngan.html:42
+#, fuzzy
+msgid "Thể loại"
+msgstr "Try again"
+
 #: server/templates/nap.html:59
 msgid "Thời gian"
+msgstr "Time"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
+#: apps/taovideo/templates/taovideo.html:54
+#, fuzzy
+msgid "Thời lượng"
 msgstr "Time"
 
 #: server/templates/_nap_trangthai.html:31
@@ -535,22 +1549,87 @@ msgstr "Time"
 msgid "Thử lại"
 msgstr "Try again"
 
-#: server/templates/jobs.html:23
+#: apps/chataistudio/templates/chataistudio.html:19
+msgid "Tin nhắn"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Tinh tế"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:6
+msgid "Tiêu đề"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Tiêu đề &amp; Hook"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:8
+msgid "Tiêu đề phần"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:27
+msgid "Tiêu đề trên ảnh"
+msgstr ""
+
+#: apps/agent/templates/_agent_progress.html:3 server/templates/jobs.html:23
 msgid "Tiến độ"
 msgstr "Progress"
+
+#: apps/taovideo/templates/taovideo.html:69
+#, fuzzy
+msgid "Tiến độ tạo video"
+msgstr "Make AI video"
+
+#: apps/kichban/templates/_script_view.html:17
+msgid "Tiến độ viết kịch bản"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
+msgid "Tiếng Việt"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:53
+msgid "Token chỉ có quyền Watch Upscale và chỉ hiển thị một lần."
+msgstr ""
 
 #: server/templates/nap_khong_thay.html:30
 msgid "Trang chủ"
 msgstr "Home"
 
+#: apps/taoclipngan/templates/taoclipngan.html:70
+msgid "Transcript & biên tập package"
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:46
+msgid "Transcript (.srt, .json, .vtt, .ass — bắt buộc)"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:70
+msgid "Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn."
+msgstr ""
+
 #: apps/chataistudio/manifest.py:18
 msgid "Trò chuyện với AI (GPT-5) và tạo ảnh trực tiếp trong phiên chat. Lưu hội thoại riêng theo tài khoản."
 msgstr "Chat with AI (GPT-5) and generate images right inside the conversation. Chats are saved privately per account."
 
-#: server/templates/jobs.html:8 server/templates/jobs.html:23
-#: server/templates/nap.html:59
+#: apps/chataistudio/templates/chataistudio.html:7
+msgid "Trò chuyện, phát triển ý tưởng và tạo ảnh trong một phiên riêng tư."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:81
+msgid "Trước"
+msgstr ""
+
+#: apps/agent/templates/agent_run.html:10 server/templates/jobs.html:8
+#: server/templates/jobs.html:23 server/templates/nap.html:59
 msgid "Trạng thái"
 msgstr "Status"
+
+#: apps/chataistudio/templates/chataistudio_admin.html:8
+msgid "Tài khoản Codex (sidecar)"
+msgstr ""
 
 #: server/templates/dashboard.html:41
 msgid "Tài khoản TikTok và tình trạng token."
@@ -564,9 +1643,19 @@ msgstr "This account cannot add credit (signed in through the recovery path)."
 msgid "Tài khoản, page và tình trạng token."
 msgstr "Accounts, pages and token status."
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:10
 #: server/templates/home.html:18
 msgid "Tài nguyên"
 msgstr "Assets"
+
+#: apps/taovideo/templates/taovideo.html:12
+#, fuzzy
+msgid "Tài sản"
+msgstr "Create an account"
+
+#: apps/taovideo/templates/taovideo.html:48
+msgid "Tài sản đã lưu"
+msgstr ""
 
 #: apps/mediatools/manifest.py:52
 msgid "Tách frame đều theo thời gian từ video bằng FFmpeg."
@@ -575,6 +1664,19 @@ msgstr "Extracts evenly spaced frames from a video with FFmpeg."
 #: server/templates/home.html:29
 msgid "Tên A–Z"
 msgstr "Name A–Z"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:63
+msgid "Tên dự án"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:12
+#, fuzzy
+msgid "Tên hoặc nội dung…"
+msgstr "Content"
+
+#: apps/thumbnail/templates/thumbnail.html:32
+msgid "Tên thương hiệu"
+msgstr ""
 
 #: server/templates/login.html:12
 msgid "Tên đăng nhập"
@@ -587,6 +1689,19 @@ msgstr "Search tools"
 #: server/templates/home.html:6
 msgid "Tìm công cụ…"
 msgstr "Search tools…"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:27
+msgid "Tìm dự án..."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:12
+msgid "Tìm hội thoại"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:12
+#, fuzzy
+msgid "Tìm trong dự án"
+msgstr "Search apps"
 
 #: server/templates/home.html:28
 msgid "Tìm ứng dụng"
@@ -608,62 +1723,271 @@ msgstr "System status"
 msgid "Tóm tắt thanh toán"
 msgstr "Payment summary"
 
+#: apps/upscalevideo/templates/upscalevideo.html:39
+msgid "Tùy chọn nâng cao"
+msgstr ""
+
 #: apps/taoclipngan/manifest.py:30
+#: apps/taoclipngan/templates/taoclipngan.html:16
 msgid "Tạo Clip ngắn"
 msgstr "Make short clips"
 
-#: apps/thumbnail/manifest.py:37
+#: apps/thumbnail/manifest.py:37 apps/thumbnail/templates/thumbnail.html:17
 msgid "Tạo Thumbnail YouTube"
 msgstr "Make YouTube thumbnails"
+
+#: apps/thumbnail/templates/thumbnail.html:71
+msgid "Tạo biến thể"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:47
+#, fuzzy
+msgid "Tạo clip"
+msgstr "Make short clips"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:52
+msgid "Tạo dự án đầu tiên"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:109
+msgid "Tạo frame còn thiếu"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:16
+msgid "Tạo hội thoại, chọn model rồi nhắn cho AI. Yêu cầu “tạo ảnh…” ngay trong chat khi cần hình minh hoạ."
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:61
+msgid "Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:17
+#, fuzzy
+msgid "Tạo nhánh"
+msgstr "Make AI images"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:51
+msgid "Tạo project để xây brief, tài nguyên tham chiếu, prompt từng cảnh và storyboard có phiên bản."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:52
+msgid "Tạo token kết nối"
+msgstr ""
 
 #: server/templates/login.html:25
 msgid "Tạo tài khoản"
 msgstr "Create an account"
 
+#: apps/taovideo/templates/taovideo.html:9
+#: apps/taovideo/templates/taovideo.html:58
+#, fuzzy
+msgid "Tạo video"
+msgstr "Make AI video"
+
 #: apps/taovideo/manifest.py:44
 msgid "Tạo video AI"
 msgstr "Make AI video"
+
+#: apps/taovideo/templates/taovideo.html:70
+msgid "Tạo video đầu tiên hoặc đổi bộ lọc."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:55
+msgid "Tạo âm thanh"
+msgstr ""
 
 #: server/templates/_nap_trangthai.html:54
 msgid "Tạo đơn mới"
 msgstr "Create a new order"
 
-#: apps/taoanh/manifest.py:43
+#: apps/taoanh/manifest.py:43 apps/taoanh/templates/image.html:10
 msgid "Tạo ảnh AI"
 msgstr "Make AI images"
+
+#: apps/taoanh/templates/image.html:18
+#, fuzzy
+msgid "Tạo ảnh mới"
+msgstr "Make AI images"
+
+#: apps/chataistudio/templates/chataistudio_admin.html:46
+#, fuzzy
+msgid "Tạo ảnh trong chat:"
+msgstr "Make AI images"
+
+#: apps/taoanh/templates/image.html:20
+#: apps/thumbnail/templates/thumbnail.html:48
+#, fuzzy
+msgid "Tạo ảnh ·"
+msgstr "Make AI images"
+
+#: apps/taoclipngan/templates/taoclipngan.html:68
+msgid "Tải"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:117
+msgid "Tải .json"
+msgstr ""
+
+#: apps/kichban/templates/_script_view.html:4
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:116
+msgid "Tải .md"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:118
+msgid "Tải .zip"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:72
+msgid "Tải ZIP"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:69
+#, fuzzy
+msgid "Tải video"
+msgstr "Make AI video"
+
+#: apps/upscalevideo/templates/upscalevideo.html:104
+msgid "Tải xuống"
+msgstr ""
 
 #: server/templates/home.html:6 server/templates/jobs.html:8
 msgid "Tất cả"
 msgstr "All"
 
+#: apps/upscalevideo/templates/upscalevideo.html:40
+msgid "Tắt để chuẩn hóa 30 FPS."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:41
+msgid "Tắt để xuất video không audio."
+msgstr ""
+
 #: server/templates/job_detail.html:9
 msgid "Tệp kết quả"
 msgstr "Result files"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:69
+#: apps/taoanh/templates/image.html:19 apps/taovideo/templates/taovideo.html:54
+#: apps/thumbnail/templates/thumbnail.html:43
+msgid "Tỉ lệ"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:38
+msgid "Tỉ lệ khung"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:46
+#, fuzzy
+msgid "Tối thiểu (giây)"
+msgstr "At least 8 characters"
 
 #: server/templates/register.html:15 server/templates/reset_password.html:14
 msgid "Tối thiểu 8 ký tự"
 msgstr "At least 8 characters"
 
+#: apps/agent/templates/agent_run.html:11
+#, fuzzy
+msgid "Tối đa"
+msgstr "Progress"
+
+#: apps/taoclipngan/templates/taoclipngan.html:46
+msgid "Tối đa (giây)"
+msgstr ""
+
 #: server/templates/nap.html:56
 msgid "Tối đa 10 đơn mới nhất của tài khoản này."
 msgstr "Up to the 10 most recent orders on this account."
+
+#: apps/chataistudio/templates/chataistudio.html:19
+msgid "Tối đa 3 tệp, mỗi tệp 8 MB"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:45
+msgid "Tối đa 4 file · ảnh ≤20MB · video ≤60MB. Vai trò và tên gợi nhớ được gửi vào job thật."
+msgstr ""
+
+#: apps/agent/templates/agent.html:13
+msgid "Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư."
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:28
+msgid "Từ số 0"
+msgstr ""
+
+#: apps/kichban/templates/script.html:7
+msgid "Từ ý tưởng đến hook, outline, nội dung và metadata trong một workspace."
+msgstr ""
 
 #: server/templates/_nap_trangthai.html:71
 msgid "Tự kiểm tra mỗi 4 giây."
 msgstr "Checking every 4 seconds."
 
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Tự động"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "URL, trích dẫn hoặc dữ kiện do bạn cung cấp"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:27
+msgid "Upload mới hoặc dùng lại asset của bạn"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:78
+msgid "Upload ảnh / video / audio"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:63
+msgid "VD: Chiến dịch ra mắt sản phẩm mùa hè"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:65
+msgid "Video cần khiến người xem nghĩ hoặc làm gì?"
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:83
+#: apps/taovideo/templates/taovideo.html:64
+#, fuzzy
+msgid "Video của tôi"
+msgstr "My work"
+
 #: apps/kichban/manifest.py:45
 msgid "Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề."
 msgstr "Writes a YouTube script with a hook, body and metadata from a single topic."
 
-#: server/templates/_header.html:40 server/templates/home.html:31
-#: server/templates/jobs.html:4
+#: apps/taovideo/templates/taovideo.html:10
+#, fuzzy
+msgid "Việc"
+msgstr "Filter jobs"
+
+#: apps/autosubvideo/templates/autosubvideo.html:33
+#: apps/kichban/templates/script.html:7 apps/taoanh/templates/image.html:10
+#: apps/taoclipngan/templates/taoclipngan.html:17
+#: apps/thumbnail/templates/thumbnail.html:19 server/templates/_header.html:40
+#: server/templates/home.html:31 server/templates/jobs.html:4
 msgid "Việc của tôi"
 msgstr "My work"
 
 #: server/templates/home.html:45
 msgid "Việc đang chạy"
 msgstr "Running jobs"
+
+#: apps/taoclipngan/templates/taoclipngan.html:69
+msgid "Vì sao AI chọn đoạn này?"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Ví dụ: Cách học tiếng Anh hiệu quả trong 30 ngày"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:26
+msgid "Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới"
+msgstr ""
+
+#: apps/agent/templates/agent.html:12
+msgid "Ví dụ: Viết kịch bản 60 giây, tạo ảnh minh họa và dựng video dọc…"
+msgstr ""
 
 #: server/templates/jobs.html:14
 msgid "Ví dụ: upscalevideo"
@@ -682,9 +2006,41 @@ msgstr "Back to add credit"
 msgid "Về trang đăng nhập"
 msgstr "Back to sign in"
 
+#: apps/upscalevideo/templates/upscalevideo.html:83
+msgid "Vị trí đường so sánh"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:15
+#, fuzzy
+msgid "Workspace chưa sẵn sàng"
+msgstr "tools ready"
+
+#: apps/taovideo/templates/taovideo.html:69
+#, fuzzy
+msgid "Xem chi tiết"
+msgstr "View full diagnostics →"
+
 #: server/templates/dashboard.html:11
 msgid "Xem chẩn đoán chi tiết →"
 msgstr "View full diagnostics →"
+
+#: apps/taoanh/templates/image.html:20
+#: apps/thumbnail/templates/thumbnail.html:47
+#, fuzzy
+msgid "Xem cấu hình"
+msgstr "Settings"
+
+#: apps/taovideo/templates/taovideo.html:37
+msgid "Xem prompt hoàn chỉnh"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:42
+msgid "Xem thử 8 giây"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:76
+msgid "Xem trước so sánh"
+msgstr ""
 
 #: server/templates/nap.html:8
 msgid "Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán."
@@ -698,6 +2054,23 @@ msgstr "View all"
 msgid "Xem đơn"
 msgstr "View order"
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:13
+#, fuzzy
+msgid "Xuất"
+msgstr "Sign out"
+
+#: apps/autosubvideo/templates/autosubvideo.html:68
+msgid "Xuất kèm .srt"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:72
+msgid "Xuất metadata cho"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:74
+msgid "Xác nhận chi phí"
+msgstr ""
+
 #: server/templates/verify_result.html:9
 msgid "Xác thực email thành công. Tài khoản của bạn đã kích hoạt."
 msgstr "Email verified. Your account is now active."
@@ -709,6 +2082,14 @@ msgstr "Delete my data"
 #: server/templates/jobs.html:15
 msgid "Xóa lọc"
 msgstr "Clear filters"
+
+#: apps/upscalevideo/templates/upscalevideo.html:46
+msgid "Xử lý hàng loạt"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:16
+msgid "Xử lý nhanh, phù hợp video thường."
+msgstr ""
 
 #: server/templates/reset_password.html:20
 msgid "Yêu cầu liên kết mới"
@@ -730,6 +2111,15 @@ msgstr "needs setup"
 msgid "không cần chuyển lại"
 msgstr "you do not need to pay again"
 
+#: apps/autosubvideo/templates/autosubvideo.html:93
+#, fuzzy
+msgid "lỗi"
+msgstr "Error"
+
+#: apps/chataistudio/templates/chataistudio_admin.html:16
+msgid "một tài khoản ChatGPT riêng"
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:24
 msgid "trang nạp credit"
 msgstr "the add-credit page"
@@ -746,6 +2136,10 @@ msgstr "view status"
 msgid "Áp dụng"
 msgstr "Apply"
 
+#: apps/thumbnail/templates/thumbnail.html:26
+msgid "Ý tưởng / chủ đề"
+msgstr ""
+
 #: server/templates/_job_progress.html:8 server/templates/jobs.html:10
 #: server/templates/jobs.html:34
 msgid "Đang chạy"
@@ -756,9 +2150,35 @@ msgstr "Running"
 msgid "Đang chờ"
 msgstr "Pending"
 
+#: apps/chataistudio/templates/chataistudio_admin.html:23
+#, fuzzy
+msgid "Đang chờ bạn xác nhận trên ChatGPT…"
+msgstr "Confirming with your bank…"
+
 #: server/templates/_nap_trangthai.html:70
 msgid "Đang chờ thanh toán…"
 msgstr "Waiting for payment…"
+
+#: apps/thumbnail/templates/thumbnail.html:30
+msgid "Đang remix từ output đã chọn"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:74
+msgid "Đang tính chi phí…"
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:20
+#, fuzzy
+msgid "Đang tải Auto Sub Studio…"
+msgstr "About LTT Studios"
+
+#: apps/agent/templates/agent_canvas.html:7
+msgid "Đang tải Canvas…"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:7
+msgid "Đang tải workspace…"
+msgstr ""
 
 #: server/templates/_nap_trangthai.html:64
 msgid "Đang xác nhận với ngân hàng…"
@@ -768,6 +2188,24 @@ msgstr "Confirming with your bank…"
 msgid "Đang xây"
 msgstr "In progress"
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:102
+#, fuzzy
+msgid "Đang xử lý"
+msgstr "In progress"
+
+#: apps/upscalevideo/templates/upscalevideo.html:63
+msgid "Đang đọc dữ liệu thật…"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:7
+msgid "Điều hướng PROMPT AI OMMI"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:7
+#, fuzzy
+msgid "Điều hướng Tạo video"
+msgstr "Open navigation"
+
 #: server/templates/home.html:11
 msgid "Điều hướng marketplace"
 msgstr "Marketplace navigation"
@@ -776,18 +2214,55 @@ msgstr "Marketplace navigation"
 msgid "Điều khoản"
 msgstr "Terms"
 
+#: apps/thumbnail/templates/thumbnail.html:70
+msgid "Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:69
+msgid "Điểm xếp hạng nội bộ, không phải dự đoán lượt xem."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Điện ảnh"
+msgstr ""
+
 #: server/templates/register.html:24
 msgid "Đã có tài khoản? Đăng nhập"
 msgstr "Already have an account? Sign in"
+
+#: apps/agent/templates/agent_run.html:12
+msgid "Đã dùng"
+msgstr ""
 
 #: server/templates/_job_progress.html:10 server/templates/jobs.html:13
 #: server/templates/jobs.html:33
 msgid "Đã hủy"
 msgstr "Cancelled"
 
+#: apps/taoanh/templates/image.html:18
+msgid "Đã nạp output làm ảnh nguồn"
+msgstr ""
+
 #: server/templates/nap.html:64
 msgid "Đã thanh toán"
 msgstr "Paid"
+
+#: apps/chataistudio/templates/chataistudio_admin.html:10
+#, fuzzy
+msgid "Đã đăng nhập"
+msgstr "Sign in"
+
+#: apps/chataistudio/templates/chataistudio.html:19
+msgid "Đính kèm tệp"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:17
+msgid "Đóng bảng tạo video"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:114
+msgid "Đóng gói prompt hoặc chuyển đúng cảnh sang các app LTT."
+msgstr ""
 
 #: server/templates/home.html:24
 msgid "Đóng điều hướng"
@@ -825,6 +2300,11 @@ msgstr "Sign in to use"
 msgid "Đăng xuất"
 msgstr "Sign out"
 
+#: apps/chataistudio/templates/chataistudio_admin.html:13
+#, fuzzy
+msgid "Đăng xuất tài khoản"
+msgstr "Create an account"
+
 #: server/templates/_nap_trangthai.html:51
 msgid "Đơn không hoàn tất hoặc đã hết hạn."
 msgstr "This order was not completed, or it has expired."
@@ -857,6 +2337,10 @@ msgstr "Brings an uploaded video into a workflow, with provenance tied to your a
 msgid "Đưa một ảnh đã tải lên vào workflow với provenance thuộc tài khoản."
 msgstr "Brings an uploaded image into a workflow, with provenance tied to your account."
 
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:41
+msgid "Đưa project vào lưu trữ"
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:13
 msgid "Đường dẫn không khớp đơn nào trong tài khoản của bạn."
 msgstr "This link does not match any order on your account."
@@ -869,17 +2353,103 @@ msgstr "Output"
 msgid "Đặt mật khẩu mới"
 msgstr "Set a new password"
 
+#: apps/taovideo/templates/taovideo.html:35
+msgid "Để trống = ngẫu nhiên"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:76
+msgid "Định danh nhân vật, địa điểm, đạo cụ và media tham chiếu."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:32
+msgid "Định dạng &amp; codec"
+msgstr ""
+
+#: apps/autosubvideo/templates/autosubvideo.html:61
+msgid "Định dạng ra"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+msgid "Định hướng nội dung"
+msgstr ""
+
+#: apps/kichban/templates/script.html:10
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:66
+msgid "Đối tượng"
+msgstr ""
+
 #: server/templates/_doi_ngon_ngu.html:10
 msgid "Đổi ngôn ngữ"
 msgstr "Change language"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:15
+#, fuzzy
+msgid "Đổi nền"
+msgstr "Change language"
+
+#: apps/kichban/templates/script.html:10
+#, fuzzy
+msgid "Độ dài"
+msgstr "Input length"
 
 #: server/templates/demo.html:41
 msgid "Độ dài đầu vào"
 msgstr "Input length"
 
+#: apps/taovideo/templates/taovideo.html:54
+msgid "Độ phân giải"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:74
+#: apps/upscalevideo/templates/upscalevideo.html:25
+msgid "Độ phân giải đầu ra"
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:25
 msgid "để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng."
 msgstr "to see your order history and current balance. If nothing appears after 5 minutes, send an admin your bank transaction ID."
+
+#: apps/taoanh/templates/image.html:27
+#: apps/thumbnail/templates/thumbnail.html:60
+#, fuzzy
+msgid "Ảnh của tôi"
+msgstr "My work"
+
+#: apps/chataistudio/templates/chataistudio.html:18
+msgid "Ảnh do AI tạo"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "Ảnh nguồn"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "Ảnh nguồn đã chọn"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "Ảnh phong cách"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail.html:31
+msgid "Ảnh tham chiếu mới"
+msgstr ""
+
+#: apps/taoanh/templates/image.html:18
+msgid "Ảnh tham chiếu được gửi tới Gemini để xử lý và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:19
+msgid "Ảnh được gửi tới OpenAI và lưu riêng theo tài khoản. Tệp văn bản/PDF chỉ gửi phần chữ đã trích xuất; tối đa 3 tệp mỗi lượt."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:42
+msgid "Ảnh, video hoặc audio tham chiếu"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:43
+msgid "Ổn định hai pass bằng libvidstab · +20%."
+msgstr ""
 
 #: server/templates/_platform_footer.html:4
 msgid "Ứng dụng"
@@ -888,6 +2458,19 @@ msgstr "Apps"
 #: server/templates/home.html:15 server/templates/home.html:57
 msgid "Ứng dụng của tôi"
 msgstr "My apps"
+
+#: apps/agent/templates/agent_run.html:5
+msgid "← Mục tiêu mới"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio_admin.html:49
+#, fuzzy
+msgid "← Về Chat AI Studio"
+msgstr "Back to the LTT AI Studio home page"
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:20
+msgid "← Về PROMPT AI OMMI"
+msgstr ""
 
 #: server/templates/job_detail.html:10
 msgid "← Về danh sách việc"
@@ -909,13 +2492,44 @@ msgstr "▶  Run now"
 msgid "▶️ Điều khiển worker"
 msgstr "▶️ Worker controls"
 
+#: apps/taovideo/templates/taovideo.html:16
+#, fuzzy
+msgid "☰ Tạo video"
+msgstr "Make AI video"
+
 #: server/templates/demo.html:39
 msgid "✅ Kết quả"
 msgstr "✅ Result"
 
+#: apps/upscalevideo/templates/upscalevideo.html:57
+msgid "✦ Bắt đầu xử lý"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:93
+msgid "✦ Chạy AI Director"
+msgstr ""
+
 #: server/templates/home.html:36
 msgid "✦ Tất cả"
 msgstr "✦ All"
+
+#: apps/chataistudio/templates/chataistudio.html:11
+msgid "＋ Hội thoại mới"
+msgstr ""
+
+#: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:76
+#, fuzzy
+msgid "＋ Tài nguyên mô tả"
+msgstr "Assets"
+
+#: apps/autosubvideo/templates/autosubvideo.html:72
+#, fuzzy
+msgid "💬 Khắc phụ đề"
+msgstr "Burn video subtitles"
+
+#: apps/chataistudio/templates/chataistudio_admin.html:18
+msgid "🔐 Đăng nhập ChatGPT (device-code)"
+msgstr ""
 
 #: server/templates/dashboard.html:27
 msgid "🔧 Cài đặt"
