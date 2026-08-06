@@ -78,7 +78,11 @@ def test_global_navigation_khong_con_link_gia():
 def test_my_apps_co_empty_state_rieng():
     home = _read("server/templates/home.html")
 
-    assert "Bạn chưa dùng app nào." in home
-    assert "Quay lại Marketplace và mở app đầu tiên." in home
+    # H24: chuoi nay gio di qua catalog dich, va "Marketplace" tieng Anh giua
+    # trang tieng Viet la LOI da sua. Van chot rang MY APPS co empty state RIENG
+    # — do moi la dieu test nay canh.
+    assert '_("Bạn chưa dùng app nào.")' in home
+    assert '_("Quay lại kho ứng dụng và mở app đầu tiên.")' in home
     assert "emptyTitle.textContent=view==='mine'" in home
+    assert "T_NO_MINE" in home and "T_NO_MATCH" in home
 
