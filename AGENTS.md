@@ -263,3 +263,56 @@ hiện `POST /upscalevideo/queue` — đường nộp việc **chính** của ap
 `get_session()` mà không import: mọi lần nộp đều 500, lỗi nằm trong repo từ
 2026-08-02, và không test nào chạm route đó. Test không phủ hết mọi nhánh
 route; một cái tên chưa định nghĩa thì đọc tĩnh là thấy.
+
+---
+
+## 9. Trình duyệt và lệnh cần tương tác
+
+Chốt 2026-08-06 sau khi mất mấy lượt dò.
+
+### 9.1 Mở trình duyệt
+
+Hồ sơ Chrome của dự án — **giữ đăng nhập giữa các phiên**:
+
+```bash
+playwright-cli -s=ltt open --browser=chrome --headed \
+  --profile="C:\LTTBrowserProfiles\PlenXResearch" <url>
+```
+
+Ba điều bắt buộc:
+
+- **`--headed`** — không có nó thì cửa sổ chạy **ẩn**, chủ sản phẩm không nhìn
+  thấy Claude đang làm gì. Mặc định là ẩn.
+- **`--profile=...`** — trỏ đúng hồ sơ đó. `--persistent` không kèm đường dẫn sẽ
+  tạo hồ sơ TRẮNG, phải đăng nhập lại mọi trang.
+- **`-s=ltt`** — phiên đặt tên, để không đụng phiên khác.
+
+Hồ sơ này đang đăng nhập sẵn: Google (`vicentetuber@gmail.com`), GitHub
+(`giaitritruyenthongltt-spec`).
+
+`attach --cdp=chrome` chỉ dùng khi chủ sản phẩm đã tự bật "Allow remote
+debugging" — không phải đường mặc định.
+
+### 9.2 Lệnh cần nhập mật khẩu / xác thực
+
+Shell của Claude **không tương tác được**. Mọi lệnh cần nhập (git push lần đầu,
+đăng nhập cloud) sẽ chết với:
+
+```
+fatal: Cannot prompt because user interactivity has been disabled.
+bash: line 1: /dev/tty: No such device or address
+```
+
+Mở cửa sổ mới **thôi chưa đủ** — nó kế thừa môi trường đã tắt tương tác. Phải
+kèm **`-UseNewEnvironment`**:
+
+```powershell
+Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass',
+  '-File','"<script>.ps1"' -UseNewEnvironment
+```
+
+Và cho script **ghi log ra file** (`Tee-Object`) để Claude đọc được lỗi thật thay
+vì đoán. Không có bước này thì mọi chẩn đoán chỉ là phỏng đoán.
+
+Ghi chú: PowerShell coi stderr của `git` là `NativeCommandError` — **không phải
+lỗi**. Chỉ tin `EXITCODE`.
