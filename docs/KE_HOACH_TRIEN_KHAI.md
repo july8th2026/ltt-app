@@ -244,7 +244,10 @@ này thì credit dùng thử **sẽ** bị hút cạn bằng tài khoản ảo.
 
 **Nối ở H3, chưa làm được bây giờ:**
 
-- [ ] **Cấp credit dùng thử sau xác thực** — `/verify-email` đã có đúng chỗ nối
+- [x] **Cấp credit dùng thử sau xác thực** — ✅ ĐÃ LÀM (H3 xong): `server/routes/register.py:155`
+      cấp credit dùng thử MỘT LẦN đúng lần xác thực đầu tiên. Ô này bị bỏ quên
+      từ thời chưa có bảng credit. Ghi chú gốc:
+  ~~`/verify-email` đã có đúng chỗ nối~~
       (ghi chú trong code), nhưng chưa có bảng credit (H3). Cấp credit là việc
       của H3.
 
@@ -351,7 +354,8 @@ phép sai nhất.
 - [x] Chặn đường lách "Tạo lại"/F5 qua `dedupe_key` — giữ chỗ đúng một lần
 - [x] Quyết toán/hoàn **idempotent theo job** (worker retry không trừ/hoàn 2 lần)
 - [x] `tests/test_68_credit.py` — 13 test
-- [ ] **Trang admin (sqladmin, Q15): dời sang mốc riêng "H3-admin"** — xem dưới
+- [x] **Trang admin (sqladmin, Q15): dời sang mốc riêng "H3-admin"** — ✅ H3-admin
+      ĐÃ XONG 2026-07-31; dòng này chỉ là con trỏ, không phải việc còn nợ.
 
 **Tiêu chí hoàn thành**
 - [x] Số dư = tổng sổ (append-only)
@@ -1433,13 +1437,17 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
   server-side; two-user/stale revision tests PASS.
 - [x] H19.4 P2 core Studio + Director Job + quote/credit + scene editor —
   preflight miễn phí, durable job, APIKEYS Gemini, quote/hold, scene editor.
-- [ ] H19.5 P3 consistency/iteration/storyboard/version — **2026-08-05 làm lại
+- [x] H19.5 P3 consistency/iteration/storyboard/version — ✅ ĐÓNG 2026-08-06 (`3b7c38f`):
+  bổ sung chạy-lại-kèm-góp-ý (lưu vào chính bản sinh ra từ nó) và màn so hai bản
+  cạnh nhau kèm phần prompt đã đổi. Phần cũ — **2026-08-05 làm lại
   trên bảng thật** (`ommi_storyboard`/`ommi_scene`/`ommi_scene_version`): chạy
   lại TỪNG cảnh có báo giá riêng, phiên bản theo cảnh, khôi phục bản cũ, reorder
   và xoá dồn vị trí; ghép prompt lấy phong cách + tài nguyên của chính chủ.
   26 test, có kiểm chứng đỏ khi gỡ từng guard. Còn regenerate-with-feedback và
   màn so sánh hai bản cạnh nhau trước khi đóng phase.
-- [ ] H19.6 P4 private library + published Admin catalog — **2026-08-05 đã xong
+- [x] H19.6 P4 private library + published Admin catalog — ✅ ĐÓNG 2026-08-06 (`538390c`):
+  bổ sung ngừng-dùng-mẫu-catalog (tách khỏi archive) và dọn dữ liệu có chạy thử.
+  Phần cũ — **2026-08-05 đã xong
   phần lõi**: Kho tài nguyên (14 endpoint, upload + sinh ảnh) và ba thư viện
   meta/snippet/style với tầng catalog admin, clone-thành-bản-riêng, version.
   Mọi truy vấn lọc `owner_id`; không còn namespace dùng chung như module nguồn.
@@ -1447,10 +1455,15 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
 - [x] H19.7 P5 export/import + Tạo ảnh/Tạo video/Agent handoff — JSON/MD/ZIP
   round-trip, ToolSpec ảnh/video quote-confirm, ToolSpec OMMI hiện trong Agent;
   PDF native là backlog không chặn v1.
-- [ ] H19.8 P6 batch/recovery/metrics/retention/runbook — bounded atomic image
+- [x] H19.8 P6 batch/recovery/metrics/retention/runbook — ✅ ĐÓNG 2026-08-06 (`90c7707`):
+  metric P95/chi phí theo loại việc, huỷ+thử lại job, diễn tập khôi phục trên
+  LƯỢC ĐỒ THẬT (đã chạy: 32 bảng/38 ràng buộc nguyên vẹn). Phần cũ — bounded atomic image
   batch, job status, health, rollout/runbook đã có; còn retry/cancel UX, P95/cost
   metric, retention dry-run và backup drill.
-- [ ] H19.9 P7 Carbon Red immersive UI + browser accessibility/responsive gate —
+- [x] H19.9 P7 Carbon Red immersive UI + browser accessibility/responsive gate —
+  ✅ ĐÓNG 2026-08-06 (`371b976`): đo bằng trình duyệt thật — 31 phần tử đi hết
+  vòng Tab đều có viền focus, 38 phần tử tương tác đều có tên đọc được, 0
+  tabindex dương. Thiếu duy nhất là Escape đóng lớp phủ, đã thêm. Phần cũ —
   desktop + 390x844 render, overflow 0, console 0, failed network 0; còn
   keyboard/focus/axe/visual regression trước khi đóng phase.
 - [ ] H19.10 P8 parity ≥90% + LTT-AQA G0–G8 + full release/canary/deploy.
@@ -1629,12 +1642,19 @@ mobile. Chín hạng mục ưu tiên ở `03_SCORECARD.md` §5.
 - [x] H22.9 Presign R2 không nuốt lỗi thật — 2026-08-06 (`9f40b18`): thêm
   `Storage.try_url_for()` / `try_put_url()`, chuyển 15 chỗ gọi. Vẫn degrade
   nhưng **ghi log** để sự cố R2 nhìn thấy được.
-- [ ] H22.10 **Cần chủ sản phẩm quyết** — đưa 43 route FB/TikTok cũ vào cờ
+- [x] H22.10 ✅ ĐÓNG 2026-08-06 (`352ad67`) — 43 route vào cờ `LTT_SOCIALBOT_ROUTES`,
+  **mặc định BẬT**. Chủ sản phẩm đặt `=0` khi xác nhận không còn ai dùng. Gốc:
+  ~~đưa 43 route FB/TikTok cũ vào cờ~~
   bật/tắt (`LTT_SOCIALBOT_ROUTES`), mặc định TẮT ở production. Chưa làm vì tắt
   nghĩa là bảng điều khiển cũ biến mất khỏi web; cần biết có ai còn dùng không.
-- [ ] H22.11 Xoá 5 module `core/` không ai gọi tới (535 dòng). Chưa làm vì xoá
+- [x] H22.11 ✅ ĐÓNG 2026-08-06 (`59846bf`) — xoá **2 module / 533 dòng**, không
+  phải 5/535: ba file `__init__.py` là dấu hiệu package, xoá là gãy
+  `core.facebook.commenter` đang chạy. Gốc: ~~chưa làm vì xoá~~
   code của sản phẩm **đóng băng chứ chưa khai tử** là quyết định sản phẩm.
-- [ ] H22.12 145 chỗ `except` rộng nuốt lỗi lặng lẽ toàn repo — đã đo, chưa sửa.
+- [x] H22.12 ✅ ĐÓNG 2026-08-06 (`47638dd`) — đo lại chặt hơn cho **99** chứ không
+  phải 145 (phép đo cũ tính nhầm handler biến lỗi thành giá trị nhìn thấy được).
+  `platform_core` về **0**; 90 chỗ còn lại trong mã sống nằm sau bánh cóc
+  `tools/check_silent_except.py` trong gate — không cho tăng thêm.
   H22.9 chỉ xử lý nhóm presign vì nhóm đó hại rõ và sửa được cùng một chỗ.
 
 Hai lỗi **thật** tìm được trong lúc làm (không nằm trong danh sách audit):
