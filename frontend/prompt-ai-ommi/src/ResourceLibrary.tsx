@@ -1,3 +1,4 @@
+import { useEscape } from './useEscape'
 /**
  * ResourceLibrary.tsx — Kho tài nguyên riêng của từng người dùng.
  *
@@ -54,6 +55,7 @@ function useImageSrc(resourceId: string, variantId: string): string {
 function Thumb({ resource }: { resource: Resource }) {
   const src = useImageSrc(resource.id, resource.cover_variant_id)
   if (!src) return <div className="ommi-thumb">▨</div>
+
   return (
     <div className="ommi-thumb">
       <img src={src} alt="" loading="lazy" />
@@ -92,6 +94,11 @@ export function ResourceLibrary() {
   const [selected, setSelected] = useState<Resource | null>(null)
   const [busy, setBusy] = useState(false)
   const [quote, setQuote] = useState<Quote | null>(null)
+
+  // Escape đóng lớp phủ — không có nó, người dùng bàn phím phải Tab qua
+  // toàn bộ nội dung mới tới được nút đóng.
+  useEscape(quote !== null, () => setQuote(null))
+  useEscape(selected !== null, () => setSelected(null))
   const fileInput = useRef<HTMLInputElement>(null)
 
   const reload = useCallback(async () => {

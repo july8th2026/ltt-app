@@ -30,11 +30,13 @@ import {
   updateScene,
 } from './ommiApi'
 import type { SceneCompare } from './ommiApi'
+import { useEscape } from './useEscape'
 
 function SceneImage({ imageKey }: { imageKey: string }) {
   // Ảnh cảnh do `taoanh.generate` sinh nên nằm trong namespace của app Tạo ảnh
   // và được chính app đó phục vụ, có kiểm sở hữu theo khoá.
   if (!imageKey) return <div className="ommi-thumb">▨</div>
+
   return (
     <div className="ommi-thumb">
       <img src={`/taoanh/f/${imageKey}`} alt="" loading="lazy" />
@@ -135,6 +137,12 @@ export function StoryboardScreen() {
   // credit), và job hỏng thì phải dựng lại từ đầu.
   const [dangChay, setDangChay] = useState<string>('')
   const [jobHong, setJobHong] = useState<string>('')
+
+  // Escape đóng lớp phủ — không có nó, người dùng bàn phím phải Tab qua
+  // toàn bộ nội dung mới tới được nút đóng.
+  useEscape(quote !== null, () => setQuote(null))
+  useEscape(openScene !== null, () => setOpenScene(null))
+  useEscape(compare !== null, () => setCompare(null))
 
   const askQuote = (scene: Scene) =>
     run(async () => {

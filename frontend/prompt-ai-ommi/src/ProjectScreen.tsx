@@ -1,3 +1,4 @@
+import { useEscape } from './useEscape'
 /**
  * ProjectScreen.tsx — Dự án và Brief & Director trong một luồng.
  *
@@ -36,6 +37,7 @@ type Brief = {
 
 function brief(project: ProjectDetail | null): Brief {
   const payload = (project?.payload ?? {}) as Record<string, unknown>
+
   return (payload.brief as Brief) ?? {}
 }
 
@@ -46,6 +48,10 @@ export function ProjectScreen({ mode }: { mode: 'projects' | 'brief' }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [quote, setQuote] = useState<DirectorQuote | null>(null)
+
+  // Escape đóng lớp phủ — không có nó, người dùng bàn phím phải Tab qua
+  // toàn bộ nội dung mới tới được nút đóng.
+  useEscape(quote !== null, () => setQuote(null))
   const [progress, setProgress] = useState('')
 
   const reload = useCallback(async () => {

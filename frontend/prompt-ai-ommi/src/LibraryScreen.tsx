@@ -1,3 +1,4 @@
+import { useEscape } from './useEscape'
 /**
  * LibraryScreen.tsx — một component cho cả ba màn thư viện.
  *
@@ -124,6 +125,11 @@ export function LibraryScreen({ kind }: { kind: LibraryKind }) {
       setCatalog(false)
       setSelected(await getLibraryItem(kind, copied.id))
     })
+
+
+  // Escape đóng lớp phủ — không có nó, người dùng bàn phím phải Tab qua
+  // toàn bộ nội dung mới tới được nút đóng.
+  useEscape(selected !== null, () => setSelected(null))
 
   return (
     <>
