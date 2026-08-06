@@ -161,6 +161,28 @@ class AppManifest:
     # đụng tên bảng nhau.
     table_prefix: str = ""
 
+    # VRAM tối thiểu (MB) cho MỘT job của app này, theo từng `job_type`:
+    #   gpu_vram_mb = {"autosub.transcribe": 6000, "autosub.render": 2000}
+    # Bỏ trống = job không cần GPU riêng.
+    #
+    # Vì sao khai ở manifest chứ không hardcode trong nền tảng: từ 2026-08-06
+    # máy chủ có hai GPU, và worker phải biết job sắp chạy cần bao nhiêu VRAM
+    # thì mới chọn được card còn đủ chỗ. Nền tảng KHÔNG được biết tên app nào
+    # (test_60 chốt), nên con số phải do chính app khai.
+    #
+    # Con số là **sàn để xếp chỗ**, không phải hạn mức cứng: nền tảng dùng nó
+    # để loại các card không đủ trống, rồi giữ chỗ nguyên tử qua
+    # `platform_core.gpu_lease`. Khai thiếu thì job vẫn chạy nhưng có thể bị
+    # xếp vào card chật; khai thừa thì job phải chờ lâu hơn cần thiết.
+    gpu_vram_mb: dict = field(default_factory=dict)
+
+    def vram_for(self, job_type: str) -> int:
+        """VRAM tối thiểu cho một `job_type`. 0 = không cần GPU riêng."""
+        return int((self.gpu_vram_mb or {}).get(job_type, 0))
+
+    def needs_gpu(self) -> bool:
+        return "gpu" in self.requires or bool(self.gpu_vram_mb)
+
     def nav_entries(self) -> list:
         """Sidebar của app. Không khai gì thì tạo mặc định 1 dòng."""
         if self.nav:

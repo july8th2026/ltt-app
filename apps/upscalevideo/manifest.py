@@ -47,6 +47,10 @@ MANIFEST = AppManifest(
 
     job_types=("upscalevideo.render",),
     requires=("gpu", "ffmpeg"),
+    # Sàn để xếp chỗ, không phải hạn mức: `autotune.pick()` vẫn hạ tile size
+    # theo VRAM thật lúc chạy. Preset quality (x4plus) muốn ~10 GB mới nhanh,
+    # nhưng chạy được từ ~4 GB — nên lấy 4 GB làm sàn để không chờ vô ích.
+    gpu_vram_mb={"upscalevideo.render": 4000},
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.upscale", job_type="upscalevideo.render",

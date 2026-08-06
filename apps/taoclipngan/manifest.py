@@ -36,6 +36,8 @@ MANIFEST = AppManifest(
 
     job_types=("taoclipngan.render",),
     requires=("gpu", "ffmpeg"),
+    # whisper + YOLO nạp cùng lúc trong một lượt render.
+    gpu_vram_mb={"taoclipngan.render": 6000},
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.short_clips", job_type="taoclipngan.render",

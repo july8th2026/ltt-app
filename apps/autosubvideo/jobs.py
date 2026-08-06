@@ -89,7 +89,8 @@ def _handle_transcribe(params: dict, ctx=None) -> dict:
         result = transcribe_file(
             local, language=str(params.get("language", "")),
             model_name=str(params.get("model", "large-v3")), on_progress=progress,
-            is_cancelled=(ctx.is_cancelled if ctx is not None else None))
+            is_cancelled=(ctx.is_cancelled if ctx is not None else None),
+            gpu_uuid=getattr(ctx, "gpu_uuid", ""))
         cues = []
         for index, segment in enumerate(result.get("segments") or [], 1):
             start = max(0.0, float(segment.get("start", 0)))

@@ -16,7 +16,9 @@ chạy handler — một handler chạy 3 phút mà giữ khoá dòng 3 phút s�
 from __future__ import annotations
 
 import logging
+import threading
 import time
+from contextlib import contextmanager
 from typing import Optional
 
 from platform_core import jobs as jobq
@@ -29,6 +31,15 @@ log = logging.getLogger(__name__)
 # gần như tức thì, đủ dài để không quay CPU khi rảnh.
 POLL_INTERVAL_S = 2.0
 
+# Nhịp báo "lease GPU còn sống". Phải NGẮN hơn nhiều so với
+# `gpu_lease.ORPHAN_TIMEOUT` (10 phút), nếu không một job nặng sẽ bị coi là chết
+# và mất card vào tay worker khác giữa chừng.
+GPU_HEARTBEAT_S = 60.0
+
+# Mọi GPU đều bận thì hoãn job bao lâu trước khi thử lại. Đủ dài để không quay
+# vòng đốt CPU, đủ ngắn để người dùng không thấy job đứng im.
+GPU_RETRY_DELAY_S = 20
+
 
 class JobContext:
     """Tiện ích worker cấp cho handler: báo tiến độ (kèm đập nhịp).
@@ -38,8 +49,32 @@ class JobContext:
     mồ côi.
     """
 
-    def __init__(self, job_id: str):
+    def __init__(self, job_id: str, gpu_uuid: str = ""):
         self.job_id = job_id
+        # GPU đã được nền tảng GIÀNH cho job này (H23). Rỗng = chạy CPU, hoặc
+        # máy không có GPU, hoặc job không khai `gpu_vram_mb`.
+        #
+        # Handler KHÔNG được tự chọn card. Tự chọn nghĩa là hai handler chạy
+        # song song cùng đọc "GPU 0 trống" rồi cùng nạp model lên đó và OOM —
+        # đó là lý do việc giành chỗ nằm ở nền tảng, không ở app.
+        self.gpu_uuid = gpu_uuid
+
+    @property
+    def has_gpu(self) -> bool:
+        return bool(self.gpu_uuid)
+
+    def gpu_env(self, base: dict | None = None) -> dict:
+        """Môi trường đã ghim tiến trình con vào ĐÚNG card được cấp.
+
+        Dùng cho mọi thứ chạy ngoài tiến trình worker (whisperx, ffmpeg, engine
+        vendor): `subprocess.run(cmd, env=ctx.gpu_env())`. Không có GPU thì trả
+        môi trường nguyên vẹn, nên gọi vô điều kiện cũng an toàn.
+        """
+        import os
+        if not self.gpu_uuid:
+            return dict(os.environ if base is None else base)
+        from platform_core import gpu as gpu_mod
+        return gpu_mod.env_for(self.gpu_uuid, base)
 
     def progress(self, percent: int, message: str = "") -> None:
         for db in _one_session():
@@ -94,8 +129,110 @@ def _chay_mot_job(worker_id: str) -> bool:
 
     log.info("worker %s nhat job %s (%s)", worker_id, job_id[:8], job_type)
 
-    # 2. Chạy handler NGOÀI transaction claim (không giữ khoá suốt thời gian chạy).
-    ctx = JobContext(job_id)
+    # 1b. Giành GPU nếu loại job này khai cần (H23). Giành TRƯỚC khi chạy
+    # handler, và bằng khoá nguyên tử — không phải "đọc nvidia-smi rồi chọn".
+    need_mb = _vram_can(job_type)
+    with _giu_gpu(worker_id, job_id, job_type, need_mb) as (lease, het_gpu):
+        if het_gpu:
+            # Mọi card đều bận. Trả job về hàng đợi thay vì chạy chung một card
+            # rồi OOM giữa chừng — người dùng chờ thêm một lượt vẫn hơn là mất
+            # cả job. Không tính là một lần thử thất bại.
+            _tra_ve_hang_doi(job_id, job_type)
+            return True
+
+        # 2. Chạy handler NGOÀI transaction claim (không giữ khoá suốt lúc chạy).
+        ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
+        return _chay_handler(worker_id, job_id, job_type, params, ctx)
+
+
+def _vram_can(job_type: str) -> int:
+    """VRAM tối thiểu app khai cho loại job này. 0 = không cần GPU riêng."""
+    try:
+        from platform_core.registry import discover
+        for item in discover():
+            if item.error:
+                continue
+            if job_type in item.manifest.job_types:
+                return item.manifest.vram_for(job_type)
+    except Exception:                       # noqa: BLE001
+        log.exception("Không đọc được nhu cầu VRAM của %s — coi như không cần GPU",
+                      job_type)
+    return 0
+
+
+@contextmanager
+def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
+    """Giữ một GPU suốt thời gian chạy job. Yields (lease, het_gpu).
+
+    Đập nhịp bằng **luồng riêng** chứ không dựa vào `ctx.progress()`: một job
+    nạp model 8 phút không gọi progress lần nào sẽ bị coi là mồ côi, lease bị
+    thu hồi, worker khác chiếm card — rồi cả hai OOM. Đúng cái ta đang tránh.
+    """
+    if need_mb <= 0:
+        yield None, False
+        return
+
+    from platform_core import gpu_lease as gl
+    gen = get_session(); db = next(gen)
+    lease = None
+    try:
+        lease = gl.acquire(db, worker_id=worker_id, job_id=job_id, need_mb=need_mb)
+    except Exception:                       # noqa: BLE001
+        log.exception("Không giành được GPU cho %s — chạy tiếp không GPU", job_type)
+    if lease is None:
+        try:
+            het_gpu = bool(gl.gpu_mod.list_gpus())   # có GPU nhưng đều bận?
+        except Exception:                   # noqa: BLE001
+            het_gpu = False
+        try: next(gen)
+        except StopIteration: pass
+        yield None, het_gpu
+        return
+
+    log.info("job %s chạy trên GPU %s (index %s), xin %s MB",
+             job_id[:8], lease.gpu_uuid[:20], lease.gpu_index, need_mb)
+    dung = threading.Event()
+
+    def _nhip():
+        while not dung.wait(GPU_HEARTBEAT_S):
+            try:
+                gl.heartbeat(db, lease)
+            except Exception:               # noqa: BLE001
+                log.exception("Đập nhịp lease GPU lỗi")
+
+    t = threading.Thread(target=_nhip, name=f"gpu-hb-{job_id[:8]}", daemon=True)
+    t.start()
+    try:
+        yield lease, False
+    finally:
+        dung.set()
+        t.join(timeout=5)
+        try:
+            gl.release(db, lease)
+        except Exception:                   # noqa: BLE001
+            log.exception("Không trả được lease GPU — sẽ hết hạn theo mồ côi")
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
+    """Đưa job về `queued` để chạy lượt sau, KHÔNG tính là một lần thử hỏng."""
+    from platform_core.models import JOB_QUEUED
+    from datetime import datetime, timedelta, timezone
+    for db in _one_session():
+        job = db.get(Job, job_id)
+        if job is not None and job.status not in (JOB_CANCELLED,):
+            job.status = JOB_QUEUED
+            job.worker_id = ""
+            job.next_run_at = datetime.now(timezone.utc) + timedelta(
+                seconds=GPU_RETRY_DELAY_S)
+            db.commit()
+    log.info("job %s (%s) hoãn %ss: mọi GPU đang bận",
+             job_id[:8], job_type, GPU_RETRY_DELAY_S)
+
+
+def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
+                  ctx: "JobContext") -> bool:
     try:
         handler = jobq.resolve_handler(job_type)
         result = handler(params, ctx)

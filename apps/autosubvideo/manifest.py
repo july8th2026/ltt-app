@@ -44,6 +44,10 @@ MANIFEST = AppManifest(
     job_types=("autosubvideo.render", "autosubvideo.transcribe",
                "autosubvideo.diarize", "autosubvideo.translate"),
     requires=("ffmpeg",),
+    # Chỉ hai loại job này chạm GPU. `render` là FFmpeg thuần nên để 0 —
+    # khai thừa sẽ bắt job khắc phụ đề chờ một card trống mà nó không cần.
+    # whisperx large-v3 float16 + model align ~6 GB; pyannote nhẹ hơn nhiều.
+    gpu_vram_mb={"autosubvideo.transcribe": 6000, "autosubvideo.diarize": 2000},
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.subtitle", job_type="autosubvideo.render",

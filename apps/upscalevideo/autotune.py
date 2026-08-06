@@ -19,31 +19,52 @@ logger = logging.getLogger(__name__)
 _TOTAL_MB_FALLBACK = 16311     # RTX 5060 Ti 16GB
 
 
-def query_vram() -> tuple:
-    """Trả (total_mb, free_mb). Fallback thận trọng nếu nvidia-smi lỗi."""
-    try:
-        out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=memory.total,memory.free",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=8,
-        ).stdout.strip().splitlines()[0]
-        total, free = [int(x.strip()) for x in out.split(",")]
-        return total, free
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("[autotune] nvidia-smi lỗi (%s) → fallback thận trọng", exc)
+def query_vram(gpu_uuid: str = "") -> tuple:
+    """Trả (total_mb, free_mb) của ĐÚNG card đang dùng.
+
+    `gpu_uuid` là card nền tảng đã cấp cho job (`ctx.gpu_uuid`). Bỏ trống thì
+    lấy card còn trống nhiều nhất — chỉ đúng cho việc dò thử, không dùng để
+    quyết định lúc chạy job.
+
+    Bản trước đọc `nvidia-smi ... .splitlines()[0]`, tức LUÔN đọc GPU 0. Đúng
+    khi máy có một card; từ 2026-08-06 máy có hai, và nó sẽ báo dung lượng của
+    card 0 trong khi job chạy trên card 1 — rồi chọn tile size sai và OOM.
+    """
+    from platform_core import gpu as gpu_mod
+    gpus = gpu_mod.list_gpus()
+    if not gpus:
+        logger.warning("[autotune] không đọc được GPU nào → fallback thận trọng")
         return _TOTAL_MB_FALLBACK, 4000
+    if gpu_uuid:
+        cho = next((g for g in gpus if g.uuid == gpu_uuid), None)
+        if cho is None:
+            logger.warning("[autotune] không thấy GPU %s → fallback thận trọng",
+                           gpu_uuid[:20])
+            return _TOTAL_MB_FALLBACK, 4000
+    else:
+        cho = max(gpus, key=lambda g: g.free_mb)
+    return cho.total_mb, cho.free_mb
 
 
-def gpu_temp() -> int:
-    """Nhiệt GPU (°C). 0 nếu không đọc được."""
+def gpu_temp(gpu_uuid: str = "") -> int:
+    """Nhiệt của ĐÚNG card đang dùng (°C). 0 nếu không đọc được.
+
+    Bản trước đọc dòng đầu nvidia-smi, tức luôn báo nhiệt GPU 0 kể cả khi job
+    chạy trên GPU 1 — dùng con số đó để giảm tải là giảm nhầm card.
+    """
+    from platform_core import gpu as gpu_mod
     try:
         out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=6,
-        ).stdout.strip().splitlines()[0]
-        return int(out)
-    except Exception:  # noqa: BLE001
-        return 0
+            ["nvidia-smi", "--query-gpu=uuid,temperature.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=6).stdout.strip()
+        for line in out.splitlines():
+            uuid, temp = [p.strip() for p in line.split(",")]
+            if not gpu_uuid or uuid == gpu_uuid:
+                return int(temp)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return 0
 
 
 def has_nvidia_smi() -> bool:
@@ -54,9 +75,14 @@ def has_nvidia_smi() -> bool:
         return False
 
 
-def pick(preset: Preset, frame_w: int, frame_h: int, reserve_mb: int = 3000) -> TuneResult:
-    """Chọn (tile, threads) tốt nhất vừa VRAM trống, chừa reserve_mb."""
-    total, free = query_vram()
+def pick(preset: Preset, frame_w: int, frame_h: int, reserve_mb: int = 3000,
+         gpu_uuid: str = "") -> TuneResult:
+    """Chọn (tile, threads) tốt nhất vừa VRAM trống, chừa reserve_mb.
+
+    Truyền `gpu_uuid` (từ `ctx.gpu_uuid`) để đo ĐÚNG card job đang chạy — đo
+    nhầm card khác là chọn tile size theo dung lượng không có thật.
+    """
+    total, free = query_vram(gpu_uuid)
     budget = max(0, free - reserve_mb)
     model = PRESET_MODEL[preset]
 

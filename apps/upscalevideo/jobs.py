@@ -55,7 +55,8 @@ def _handle_image(params: dict, ctx=None) -> dict:
         with Image.open(source) as image:
             width, height = image.size
             image.convert("RGB").save(os.path.join(input_dir, "frame00001.png"), "PNG")
-        tune = autotune.pick(preset, width, height)
+        tune = autotune.pick(preset, width, height,
+                             gpu_uuid=getattr(ctx, "gpu_uuid", ""))
         if ctx is not None: ctx.progress(10, f"nâng ảnh bằng {tune.model}")
         status = engine.run_upscale(input_dir, output_dir, tune, 1,
                                     progress_cb=(lambda done: ctx.progress(min(90, 10 + done * 80), "nâng chi tiết") if ctx else None),
@@ -252,7 +253,8 @@ def handle(params: dict, ctx=None) -> dict:
                               max_seconds=max_sec,
                               cancel_check=cancel_check)
 
-        tune = autotune.pick(preset, info["w"], info["h"])
+        tune = autotune.pick(preset, info["w"], info["h"],
+                             gpu_uuid=getattr(ctx, "gpu_uuid", ""))
         warning = tune.warning or ""
         if info.get("is_vfr"):
             warning = (f"Nguồn VFR — đã chuẩn hoá CFR {info['fps']:.3f}fps. " + warning).strip()

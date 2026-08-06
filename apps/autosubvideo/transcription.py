@@ -44,7 +44,8 @@ def whisperx_available() -> bool:
 
 
 def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
-                         on_progress=None, is_cancelled=None) -> dict:
+                         on_progress=None, is_cancelled=None,
+                         gpu_uuid: str = "") -> dict:
     python = _sidecar_python()
     if not python:
         raise TranscriptionError("WhisperX sidecar chưa được cấu hình.")
@@ -62,8 +63,13 @@ def _transcribe_whisperx(media_path: str, *, language: str, model_name: str,
             on_progress(8, "WhisperX đang chép lời")
         log_handle = open(error_log.name, "w", encoding="utf-8", errors="replace")
         try:
+            # Ghim tiến trình con vào ĐÚNG card nền tảng đã cấp. WhisperX bên
+            # trong chỉ gọi `torch.cuda.is_available()` rồi dùng `cuda` — tức là
+            # luôn `cuda:0`. Máy có hai card thì mọi job đều dồn vào card 0
+            # trong khi card 1 nằm không, và hai job song song thì OOM.
             proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=log_handle,
-                text=True, encoding="utf-8", errors="replace", creationflags=(
+                text=True, encoding="utf-8", errors="replace",
+                env=_env_ghim_gpu(gpu_uuid), creationflags=(
                     subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0))
         finally:
             log_handle.close()
@@ -145,14 +151,22 @@ def _transcribe_faster(media_path: str, *, language: str, model_name: str,
             "fallback_reason": "whisperx_sidecar_unavailable"}
 
 
+def _env_ghim_gpu(gpu_uuid: str) -> dict:
+    """Môi trường cho tiến trình con, đã ghim vào một card. Rỗng = giữ nguyên."""
+    if not gpu_uuid:
+        return dict(os.environ)
+    from platform_core import gpu as gpu_mod
+    return gpu_mod.env_for(gpu_uuid)
+
+
 def transcribe_file(media_path: str, *, language: str = "", model_name: str = "large-v3",
-                    on_progress=None, is_cancelled=None) -> dict:
+                    on_progress=None, is_cancelled=None, gpu_uuid: str = "") -> dict:
     """Use WhisperX by default; make fallback explicit in the returned contract."""
     if whisperx_available():
         try:
             return _transcribe_whisperx(media_path, language=language,
                                         model_name=model_name, on_progress=on_progress,
-                                        is_cancelled=is_cancelled)
+                                        is_cancelled=is_cancelled, gpu_uuid=gpu_uuid)
         except TranscriptionError as exc:
             fallback = _transcribe_faster(media_path, language=language,
                                           model_name=model_name, on_progress=on_progress,

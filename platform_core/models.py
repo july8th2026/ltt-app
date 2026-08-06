@@ -621,3 +621,53 @@ class ChatMessage(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<ChatMessage {self.id[:8]} {self.role} img={bool(self.image_key)}>"
+
+
+class GpuLease(Base):
+    """Chỗ đã giành trên MỘT GPU. Có dòng = GPU đang bận (H23).
+
+    Vì sao cần bảng này thay vì chỉ đọc VRAM còn trống: đọc rồi quyết định là
+    một cuộc đua kinh điển. Hai worker cùng thấy "GPU 0 trống 16 GB", cùng chọn
+    GPU 0, cùng nạp model, cùng OOM — và lỗi hiện ra ở giữa job của khách hàng
+    chứ không phải lúc xếp lịch. Ràng buộc UNIQUE dưới đây biến việc giành chỗ
+    thành **nguyên tử**: hai INSERT cùng lúc thì CSDL cho đúng một cái thắng.
+
+    `gpu_uuid` chứ không phải index mới là khoá thật: driver đánh index theo thứ
+    tự bus và **đổi khi cắm thêm/bớt card**. Một lease ghi "GPU 1" sẽ trỏ sang
+    card khác sau khi lắp thêm card; UUID thì không đổi. `gpu_index` giữ lại chỉ
+    để đọc log cho dễ.
+
+    `host` có mặt vì GPU là tài nguyên **của từng máy**: "GPU 0" trên máy A và
+    "GPU 0" trên máy B là hai thứ khác nhau, và sau này worker có thể chạy nhiều
+    máy.
+
+    Quy ước v1: **một job một GPU**, không chia sẻ. Cố ý chọn vậy — việc nặng
+    của nền tảng (whisper, YOLO, upscale) đều ngốn VRAM, và kế toán VRAM theo
+    hứa hẹn sẽ lệch so với thực tế rồi OOM. Muốn chia sẻ thì đổi UNIQUE thành
+    kế toán tổng `vram_mb`, nhưng đừng làm khi chưa đo được là cần.
+    """
+
+    __tablename__ = "gpu_leases"
+    __table_args__ = (
+        # Trái tim của cơ chế: một GPU trên một máy chỉ có tối đa một lease sống.
+        UniqueConstraint("host", "gpu_uuid", name="uq_gpu_lease_host_uuid"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    host: Mapped[str] = mapped_column(String(128), nullable=False)
+    gpu_uuid: Mapped[str] = mapped_column(String(64), nullable=False)
+    gpu_index: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    worker_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)
+    vram_mb: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    # Worker chết giữa chừng thì lease phải tự hết hạn, nếu không GPU khoá vĩnh
+    # viễn. Cùng cơ chế `heartbeat_at` mà hàng đợi job đã dùng cho job mồ côi.
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<GpuLease {self.host}:{self.gpu_index} job={self.job_id[:8]}>"

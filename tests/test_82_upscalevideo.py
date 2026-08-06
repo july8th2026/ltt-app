@@ -60,7 +60,7 @@ def test_manifest_cost():
 def test_autotune_fast_luon_co_cau_hinh(monkeypatch):
     from apps.upscalevideo import autotune
     from apps.upscalevideo.schemas import Preset
-    monkeypatch.setattr(autotune, "query_vram", lambda: (16311, 12000))
+    monkeypatch.setattr(autotune, "query_vram", lambda gpu_uuid="": (16311, 12000))
     t = autotune.pick(Preset.fast, 1920, 1080)
     assert t.model == "realesr-general-x4v3" and t.fast_path and t.tile in (256, 384)
 
@@ -68,7 +68,7 @@ def test_autotune_fast_luon_co_cau_hinh(monkeypatch):
 def test_autotune_quality_thieu_vram_canh_bao(monkeypatch):
     from apps.upscalevideo import autotune
     from apps.upscalevideo.schemas import Preset
-    monkeypatch.setattr(autotune, "query_vram", lambda: (16311, 5000))  # budget 2000
+    monkeypatch.setattr(autotune, "query_vram", lambda gpu_uuid="": (16311, 5000))  # budget 2000
     t = autotune.pick(Preset.quality, 1920, 1080)
     assert t.model == "realesrgan-x4plus" and not t.fast_path and t.warning
 
@@ -185,12 +185,19 @@ def test_admin_gpu_telemetry_parse_du_lieu_khong_chua_ten_file():
 
     class Result:
         returncode = 0
-        stdout = "NVIDIA RTX Test, 42, 67, 16384, 4096\n"
+        # HAI card: máy chủ có 2 GPU từ 2026-08-06. Bản cũ đọc dòng đầu nên
+        # bảng quản trị chỉ hiện một card — nói dối đúng lúc người vận hành
+        # cần biết card nào đang nóng hoặc đầy.
+        stdout = ("NVIDIA RTX Test, 42, 67, 16384, 4096\n"
+                  "NVIDIA RTX Hai, 7, 40, 16384, 128\n")
 
     data = gpu_snapshot(run=lambda *a, **k: Result())
-    assert data == {"available": True, "model": "NVIDIA RTX Test",
-                    "util_percent": 42, "temp_c": 67,
-                    "vram_total_mb": 16384, "vram_used_mb": 4096}
+    assert data["available"] is True and data["count"] == 2
+    assert [g["model"] for g in data["gpus"]] == ["NVIDIA RTX Test", "NVIDIA RTX Hai"]
+    assert data["gpus"][1] == {"index": 1, "model": "NVIDIA RTX Hai", "util_percent": 7,
+                               "temp_c": 40, "vram_total_mb": 16384, "vram_used_mb": 128}
+    # Khoá phẳng giữ lại cho giao diện cũ, trỏ vào card đầu.
+    assert data["model"] == "NVIDIA RTX Test" and data["util_percent"] == 42
     assert "filename" not in data and "video_key" not in data
 
 
