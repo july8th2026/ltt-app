@@ -2,7 +2,7 @@
 /**
  * Plugin Name: LTT Studios Platform Integration
  * Description: Keeps marketing, legal and LTT AI Studio routes consistent.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Requires at least: 6.0
  * Requires PHP: 7.4
  */
@@ -69,7 +69,7 @@ add_filter('register_url', static function (string $url): string {
     return LTT_APP_ORIGIN . '/register';
 }, 20);
 
-/* The custom LTT header/footer build root Tools links with home_url(), not a WP menu. */
+/* Standard WordPress links can be rewritten before the theme renders them. */
 add_filter('home_url', static function (string $url, string $path): string {
     $normalized_path = '/' . trim($path, '/') . '/';
     if ($normalized_path === '/ltt-tools-ai/') {
@@ -77,6 +77,40 @@ add_filter('home_url', static function (string $url, string $path): string {
     }
     return $url;
 }, 20, 2);
+
+/**
+ * Route the custom Header V2 CTA to the app.
+ *
+ * LTT Core deliberately builds multilingual URLs from the raw `home` option,
+ * bypassing WordPress' `home_url` filter. Limit the fallback rewrite to the
+ * header CTA class so normal marketing links and content remain untouched.
+ */
+function ltt_rewrite_header_cta(string $html): string {
+    $rewritten = preg_replace_callback(
+        '/(<a\b(?=[^>]*\bltt-v2-header__cta\b)[^>]*\bhref=)(["\'])(.*?)(\2)/i',
+        static function (array $matches): string {
+            return $matches[1] . $matches[2] . LTT_APP_ORIGIN . '/' . $matches[4];
+        },
+        $html
+    );
+
+    return is_string($rewritten) ? $rewritten : $html;
+}
+
+add_action('template_redirect', static function (): void {
+    if (
+        is_admin()
+        || wp_doing_ajax()
+        || (defined('REST_REQUEST') && REST_REQUEST)
+        || is_feed()
+        || is_robots()
+        || is_trackback()
+    ) {
+        return;
+    }
+
+    ob_start('ltt_rewrite_header_cta');
+}, 100);
 
 add_filter('wp_nav_menu_objects', static function (array $items): array {
     foreach ($items as $item) {

@@ -26,6 +26,9 @@ def test_wordpress_plugin_preserves_callbacks_and_connects_control_plane():
     assert "/login" in source and "/register" in source and "/nap" in source
     assert "add_filter('home_url'" in source
     assert "$normalized_path === '/ltt-tools-ai/'" in source
+    assert "function ltt_rewrite_header_cta" in source
+    assert "ltt-v2-header__cta" in source
+    assert "ob_start('ltt_rewrite_header_cta')" in source
     route_function = source.split("function ltt_legacy_route_map", 1)[1].split("add_action", 1)[0]
     assert "/auth/fb-callback.html" not in route_function
     assert "/legal/callback.html" not in route_function
