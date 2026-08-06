@@ -2,7 +2,7 @@
 /**
  * Plugin Name: LTT Studios Platform Integration
  * Description: Keeps marketing, legal and LTT AI Studio routes consistent.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Requires at least: 6.0
  * Requires PHP: 7.4
  */
@@ -68,6 +68,15 @@ add_filter('login_url', static function (string $url): string {
 add_filter('register_url', static function (string $url): string {
     return LTT_APP_ORIGIN . '/register';
 }, 20);
+
+/* The custom LTT header/footer build root Tools links with home_url(), not a WP menu. */
+add_filter('home_url', static function (string $url, string $path): string {
+    $normalized_path = '/' . trim($path, '/') . '/';
+    if ($normalized_path === '/ltt-tools-ai/') {
+        return LTT_APP_ORIGIN . '/';
+    }
+    return $url;
+}, 20, 2);
 
 add_filter('wp_nav_menu_objects', static function (array $items): array {
     foreach ($items as $item) {
