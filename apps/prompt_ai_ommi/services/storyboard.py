@@ -21,6 +21,9 @@ from apps.prompt_ai_ommi.tables import (OmmiResource, OmmiScene,
 
 MAX_NAME = 160
 MAX_PROMPT = 12000
+# Góp ý là một câu chỉnh sửa, không phải một prompt thứ hai. Chặn ở đây để một
+# ô nhập bị dán nguyên bài không đẩy phần prompt thật ra khỏi trần MAX_PROMPT.
+MAX_FEEDBACK = 600
 MAX_SCENES = 60
 
 
@@ -209,12 +212,18 @@ def reorder(db: Session, *, board_id: str, owner_id: str, scene_ids: list) -> li
 # ── phiên bản theo cảnh ────────────────────────────────────────────────────
 
 def record_version(db: Session, *, scene_id: str, owner_id: str,
-                   image_key: str, job_id: str = "") -> OmmiSceneVersion:
-    """Ghi kết quả một lần chạy vào lịch sử CỦA CẢNH ĐÓ, rồi đặt làm ảnh hiện tại."""
+                   image_key: str, job_id: str = "",
+                   feedback: str = "") -> OmmiSceneVersion:
+    """Ghi kết quả một lần chạy vào lịch sử CỦA CẢNH ĐÓ, rồi đặt làm ảnh hiện tại.
+
+    `feedback` là câu người dùng gõ khi bấm "Chạy lại". Lưu vào chính bản sinh
+    RA từ nó để lịch sử trả lời được "vì sao bản này khác bản trước".
+    """
     row = get_owned_scene(db, scene_id, owner_id)
     version = OmmiSceneVersion(owner_id=owner_id, scene_id=scene_id,
                                version=int(row.version or 1), prompt=row.prompt,
-                               image_key=image_key, job_id=job_id)
+                               image_key=image_key, job_id=job_id,
+                               feedback=(feedback or "").strip()[:MAX_FEEDBACK])
     db.add(version)
     row.image_key = image_key
     row.version = int(row.version or 1) + 1
@@ -252,12 +261,18 @@ def restore_version(db: Session, *, scene_id: str, owner_id: str,
 
 # ── ghép prompt ────────────────────────────────────────────────────────────
 
-def compose_prompt(db: Session, *, scene_id: str, owner_id: str) -> str:
+def compose_prompt(db: Session, *, scene_id: str, owner_id: str,
+                   feedback: str = "") -> str:
     """Prompt cuối cùng gửi provider cho MỘT cảnh.
 
     Ghép theo thứ tự: phong cách của storyboard → mô tả từng tài nguyên →
-    prompt của cảnh → góc máy → continuity. Đặt phong cách trước để cảnh có thể
-    ghi đè bằng mô tả cụ thể hơn, thay vì bị phong cách chung đè lại.
+    prompt của cảnh → góc máy → continuity → **góp ý chạy lại**. Đặt phong cách
+    trước để cảnh có thể ghi đè bằng mô tả cụ thể hơn, thay vì bị phong cách
+    chung đè lại.
+
+    Góp ý đặt CUỐI CÙNG và có nhãn rõ ràng: nó là chỉnh sửa cho lần chạy này,
+    phải thắng mọi thứ phía trên. Nhét vào giữa thì phần continuity phía sau
+    sẽ kéo ảnh về như cũ và người dùng tưởng góp ý bị bỏ qua.
     """
     scene = get_owned_scene(db, scene_id, owner_id)
     board = get_owned_board(db, scene.storyboard_id, owner_id)
@@ -280,6 +295,12 @@ def compose_prompt(db: Session, *, scene_id: str, owner_id: str) -> str:
         if (value or "").strip():
             parts.append(value.strip())
 
+    # CUỐI CÙNG, sau cả `continuity`. Continuity tồn tại để giữ cảnh giống bản
+    # trước; đặt góp ý trước nó thì nó kéo ảnh về như cũ và người dùng tưởng
+    # góp ý bị bỏ qua.
+    if (feedback or "").strip():
+        parts.append(f"Điều chỉnh so với bản trước: {feedback.strip()[:MAX_FEEDBACK]}")
+
     return "\n".join(parts)[:MAX_PROMPT]
 
 
@@ -298,3 +319,41 @@ def reference_keys(db: Session, *, scene_id: str, owner_id: str) -> list:
         if variant is not None and variant.owner_id == owner_id:
             keys.append(variant.storage_key)
     return keys
+
+
+# ── So sánh hai bản (H19.5) ─────────────────────────────────────────────────
+
+def compare_versions(db: Session, *, scene_id: str, owner_id: str,
+                     left: int, right: int) -> dict:
+    """Dữ liệu để đặt hai bản CẠNH NHAU trước khi chọn giữ bản nào.
+
+    Vì sao cần: sau vài lần chạy lại, người dùng có 5 ảnh na ná nhau và không
+    nhớ bản nào ứng với góp ý nào. Nhìn từng bản một rồi bấm khôi phục là đoán;
+    đặt cạnh nhau kèm prompt và góp ý mới là so.
+
+    Trả cả `prompt_khac_nhau` để giao diện tô đúng phần đã đổi thay vì bắt
+    người dùng tự dò hai đoạn văn dài.
+    """
+    import difflib
+
+    get_owned_scene(db, scene_id, owner_id)
+    ban = {v.version: v for v in versions(db, scene_id, owner_id)}
+    thieu = [n for n in (left, right) if int(n) not in ban]
+    if thieu:
+        raise StoryboardNotFound(f"Không tìm thấy phiên bản: {thieu}")
+
+    a, b = ban[int(left)], ban[int(right)]
+
+    def _mo_ta(v):
+        return {"version": v.version, "prompt": v.prompt or "",
+                "image_key": v.image_key or "", "feedback": v.feedback or "",
+                "job_id": v.job_id or "",
+                "created_at": v.created_at.isoformat() if v.created_at else ""}
+
+    khac = [d for d in difflib.unified_diff(
+        (a.prompt or "").splitlines(), (b.prompt or "").splitlines(),
+        lineterm="", n=0) if d.startswith(("+", "-")) and not d.startswith(("+++", "---"))]
+
+    return {"scene_id": scene_id, "left": _mo_ta(a), "right": _mo_ta(b),
+            "prompt_khac_nhau": khac[:200],
+            "cung_anh": bool(a.image_key) and a.image_key == b.image_key}

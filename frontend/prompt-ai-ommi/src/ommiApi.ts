@@ -394,7 +394,7 @@ export type SceneJob = { id: string; status: string; credit: number; scene_id: s
 /** Báo giá khi `confirmed` false, chạy khi true — cùng một endpoint, một công thức. */
 export function renderScene(
   sceneId: string,
-  body: { confirmed?: boolean } = {},
+  body: { confirmed?: boolean; feedback?: string } = {},
 ): Promise<SceneQuote | SceneJob> {
   return request(`/scenes/${sceneId}/render`, {
     method: 'POST',
@@ -402,17 +402,55 @@ export function renderScene(
   })
 }
 
-export function attachSceneRender(sceneId: string, jobId: string): Promise<Scene> {
+export function attachSceneRender(
+  sceneId: string,
+  jobId: string,
+  feedback = '',
+): Promise<Scene> {
   return request<Scene>(`/scenes/${sceneId}/attach/${jobId}`, {
     method: 'POST',
-    body: JSON.stringify({}),
+    // Góp ý đi kèm bản được tạo RA từ nó, nên lịch sử trả lời được "vì sao bản
+    // này khác bản trước" thay vì bày ra 5 ảnh na ná nhau.
+    body: JSON.stringify({ feedback }),
   })
 }
 
 export function sceneVersions(
   sceneId: string,
-): Promise<{ items: Array<{ version: number; image_key: string; created_at: string }> }> {
+): Promise<{
+  items: Array<{
+    version: number
+    image_key: string
+    created_at: string
+    feedback?: string
+  }>
+}> {
   return request(`/scenes/${sceneId}/versions`)
+}
+
+export type SceneVersionSide = {
+  version: number
+  prompt: string
+  image_key: string
+  feedback: string
+  job_id: string
+  created_at: string
+}
+export type SceneCompare = {
+  scene_id: string
+  left: SceneVersionSide
+  right: SceneVersionSide
+  prompt_khac_nhau: string[]
+  cung_anh: boolean
+}
+
+/** Hai bản cạnh nhau. Nhìn từng bản rồi bấm khôi phục là đoán; đây là so. */
+export function compareSceneVersions(
+  sceneId: string,
+  left: number,
+  right: number,
+): Promise<SceneCompare> {
+  return request(`/scenes/${sceneId}/compare?left=${left}&right=${right}`)
 }
 
 export function restoreSceneVersion(sceneId: string, version: number): Promise<Scene> {

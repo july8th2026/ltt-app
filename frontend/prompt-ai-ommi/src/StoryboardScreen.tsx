@@ -23,9 +23,11 @@ import {
   listStoryboards,
   renderScene,
   restoreSceneVersion,
+  compareSceneVersions,
   sceneVersions,
   updateScene,
 } from './ommiApi'
+import type { SceneCompare } from './ommiApi'
 
 function SceneImage({ imageKey }: { imageKey: string }) {
   // Ảnh cảnh do `taoanh.generate` sinh nên nằm trong namespace của app Tạo ảnh
@@ -47,7 +49,9 @@ export function StoryboardScreen() {
   const [busy, setBusy] = useState(false)
   const [quote, setQuote] = useState<SceneQuote | null>(null)
   const [openScene, setOpenScene] = useState<Scene | null>(null)
-  const [history, setHistory] = useState<Array<{ version: number; image_key: string }>>([])
+  const [history, setHistory] = useState<
+    Array<{ version: number; image_key: string; feedback?: string }>
+  >([])
 
   const reload = useCallback(async () => {
     setLoading(true)
@@ -119,21 +123,28 @@ export function StoryboardScreen() {
       setBoard(await getStoryboard(board.id))
     })
 
+  // Góp ý cho lần chạy lại. Giữ ở đây (không trong ô prompt) vì nó là chỉnh
+  // sửa MỘT LẦN, không phải sửa vĩnh viễn mô tả cảnh.
+  const [feedback, setFeedback] = useState('')
+  const [compare, setCompare] = useState<SceneCompare | null>(null)
+  const [pickLeft, setPickLeft] = useState<number | null>(null)
+
   const askQuote = (scene: Scene) =>
     run(async () => {
-      setQuote((await renderScene(scene.id)) as SceneQuote)
+      setQuote((await renderScene(scene.id, { feedback })) as SceneQuote)
     })
 
   const confirmRender = () =>
     run(async () => {
       if (!quote || !board) return
       const sceneId = quote.scene_id
-      const started = (await renderScene(sceneId, { confirmed: true })) as SceneJob
+      const started = (await renderScene(sceneId, { confirmed: true, feedback })) as SceneJob
       setQuote(null)
       for (let attempt = 0; attempt < 60; attempt += 1) {
         const status = await jobStatus(started.id)
         if (status.status === 'done') {
-          await attachSceneRender(sceneId, started.id)
+          await attachSceneRender(sceneId, started.id, feedback)
+          setFeedback('')
           setBoard(await getStoryboard(board.id))
           return
         }
@@ -149,6 +160,12 @@ export function StoryboardScreen() {
     run(async () => {
       setOpenScene(scene)
       setHistory((await sceneVersions(scene.id)).items)
+    })
+
+  const soSanh = (scene: Scene, right: number) =>
+    run(async () => {
+      if (pickLeft === null || pickLeft === right) return
+      setCompare(await compareSceneVersions(scene.id, pickLeft, right))
     })
 
   const restore = (scene: Scene, version: number) =>
@@ -322,7 +339,23 @@ export function StoryboardScreen() {
                 {history.map((entry) => (
                   <li key={entry.version}>
                     <b>v{entry.version}</b>
+                    {entry.feedback ? (
+                      <em className="ommi-history-why" title={entry.feedback}>
+                        {entry.feedback}
+                      </em>
+                    ) : null}
                     <span className="ommi-spacer" />
+                    <button type="button"
+                      className={pickLeft === entry.version ? 'chip on' : 'chip'}
+                      aria-pressed={pickLeft === entry.version}
+                      onClick={() =>
+                        setPickLeft(pickLeft === entry.version ? null : entry.version)}>
+                      {pickLeft === entry.version ? 'Đang chọn' : 'Chọn để so'}
+                    </button>
+                    <button type="button" className="ghost" disabled={busy || pickLeft === null || pickLeft === entry.version}
+                      onClick={() => void soSanh(openScene, entry.version)}>
+                      So với v{pickLeft ?? '…'}
+                    </button>
                     <button type="button" className="ghost" disabled={busy}
                       onClick={() => void restore(openScene, entry.version)}>
                       Dùng lại bản này
@@ -333,6 +366,51 @@ export function StoryboardScreen() {
             ) : (
               <p className="ommi-loading">Cảnh này chưa chạy lần nào.</p>
             )}
+
+            <label className="ommi-field">
+              <span>Muốn đổi gì so với bản hiện tại?</span>
+              <textarea rows={2} value={feedback} maxLength={600}
+                placeholder="vd: trời mưa, bỏ cái cây bên trái"
+                onChange={(e) => setFeedback(e.target.value)} />
+              <small>
+                Chỉ áp dụng cho lần chạy tới — mô tả gốc của cảnh không đổi.
+              </small>
+            </label>
+
+            {compare ? (
+              <section className="ommi-compare" aria-label="So hai bản">
+                <h3>v{compare.left.version} ↔ v{compare.right.version}</h3>
+                {compare.cung_anh ? (
+                  <p className="ommi-warn">
+                    Hai bản ra <b>cùng một ảnh</b> — lần chạy lại không đổi gì.
+                  </p>
+                ) : null}
+                <div className="ommi-compare-grid">
+                  {[compare.left, compare.right].map((ban) => (
+                    <figure key={ban.version}>
+                      <figcaption>v{ban.version}</figcaption>
+                      {ban.image_key ? (
+                        <img src={`/prompt-ai-ommi/f/${ban.image_key}`}
+                          alt={`Bản ${ban.version}`} loading="lazy" />
+                      ) : (
+                        <p className="ommi-loading">Bản này chưa có ảnh.</p>
+                      )}
+                      {ban.feedback ? <p><em>{ban.feedback}</em></p> : null}
+                    </figure>
+                  ))}
+                </div>
+                {compare.prompt_khac_nhau.length ? (
+                  <pre className="ommi-diff">
+                    {compare.prompt_khac_nhau.join('\n')}
+                  </pre>
+                ) : (
+                  <p className="ommi-loading">Prompt hai bản giống hệt nhau.</p>
+                )}
+                <button type="button" className="ghost" onClick={() => setCompare(null)}>
+                  Đóng so sánh
+                </button>
+              </section>
+            ) : null}
           </div>
         </aside>
       ) : null}

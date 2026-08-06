@@ -345,6 +345,11 @@ class OmmiSceneVersion(Base):
     prompt: Mapped[str] = mapped_column(Text, default="", nullable=False)
     image_key: Mapped[str] = mapped_column(String(512), default="", nullable=False)
     job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    # Câu góp ý người dùng gõ khi bấm "Chạy lại" (H19.5). Lưu vào chính bản
+    # được sinh RA từ nó, nên lịch sử trả lời được câu "vì sao bản này khác
+    # bản trước" — không có nó thì người dùng thấy 5 bản na ná nhau mà không
+    # nhớ mình đã yêu cầu gì.
+    feedback: Mapped[str] = mapped_column(Text, default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False)
 

@@ -212,10 +212,14 @@ async def render_scene(request: Request, scene_id: str,
     from apps.prompt_ai_ommi.services import storyboard as ssvc
     from platform_core.registry import credit_for
     body = await request.json(); _csrf(request, body); user = _user(request)
+    # Góp ý khi bấm "Chạy lại": người dùng nói cái gì cần đổi so với bản trước,
+    # thay vì phải sửa tay cả đoạn prompt rồi quên mình đã sửa gì (H19.5).
+    feedback = str(body.get("feedback") or "").strip()
     try:
         scene = ssvc.get_owned_scene(db, scene_id, user.id)
         board = ssvc.get_owned_board(db, scene.storyboard_id, user.id)
-        prompt = ssvc.compose_prompt(db, scene_id=scene_id, owner_id=user.id)
+        prompt = ssvc.compose_prompt(db, scene_id=scene_id, owner_id=user.id,
+                                     feedback=feedback)
         refs = ssvc.reference_keys(db, scene_id=scene_id, owner_id=user.id)
     except Exception as exc:
         raise _storyboard_error(exc) from exc
@@ -277,9 +281,28 @@ async def attach_scene_render(request: Request, scene_id: str, job_id: str,
         raise HTTPException(status_code=400, detail="Job không trả về ảnh nào.")
     try:
         ssvc.record_version(db, scene_id=scene_id, owner_id=user.id,
-                            image_key=keys[0], job_id=job_id)
+                            image_key=keys[0], job_id=job_id,
+                            feedback=str(body.get("feedback") or ""))
         db.commit()
     except Exception as exc:
         db.rollback()
         raise _storyboard_error(exc) from exc
     return _scene_json(ssvc.get_owned_scene(db, scene_id, user.id))
+
+
+@router.get("/api/scenes/{scene_id}/compare")
+def compare_scene_versions(request: Request, scene_id: str, left: int, right: int,
+                           _identity: str = Depends(require_login),
+                           db: Session = Depends(get_db)):
+    """Hai bản đặt cạnh nhau, kèm phần prompt đã đổi (H19.5).
+
+    Nhìn từng bản một rồi bấm khôi phục là đoán; đặt cạnh nhau kèm prompt và
+    góp ý mới là so.
+    """
+    from apps.prompt_ai_ommi.services import storyboard as ssvc
+    user = _user(request)
+    try:
+        return ssvc.compare_versions(db, scene_id=scene_id, owner_id=user.id,
+                                     left=int(left), right=int(right))
+    except Exception as exc:
+        raise _storyboard_error(exc) from exc
