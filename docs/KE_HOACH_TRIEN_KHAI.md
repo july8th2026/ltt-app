@@ -1674,3 +1674,73 @@ Hai lỗi **thật** tìm được trong lúc làm (không nằm trong danh sác
 500, có từ 2026-08-02, không test nào chạm), và nhóm presign ở H22.9. Cả hai
 thuộc loại test-từng-route không bắt được; nay có `tools/check_undefined_names.py`
 trong gate.
+
+---
+
+## H24 — Đa ngôn ngữ VI/EN *(chốt 2026-08-06, đang làm)*
+
+**Quyết định của chủ sản phẩm (2026-08-06):**
+
+| Câu hỏi | Chốt |
+|---|---|
+| Phạm vi | Đường khách đi trước; **trang admin giữ tiếng Việt** (chỉ một người đọc) |
+| Không xác định được quốc gia | **EN** (VI vẫn là ngôn ngữ gốc của mã nguồn) |
+| Địa chỉ trang | **Tiền tố `/en/`**, VI ở gốc — được SEO và link chia sẻ |
+| Tiến độ | **Chạy hết cả 4 pha**, vì app chưa mở ra thế giới, chưa có khách thật |
+
+**Thứ tự nhận diện ngôn ngữ** (dừng ở tầng đầu tiên có kết quả):
+1. Người dùng tự chọn (nút đổi) — **không bao giờ bị máy ghi đè**
+2. Hồ sơ tài khoản (đã đăng nhập)
+3. `CF-IPCountry` — `VN` → VI, khác → EN *(Cloudflare đã BẬT IP Geolocation,
+   header về sẵn máy chủ; không cần thư viện GeoIP, không tốn tiền)*
+4. `Accept-Language` — cứu khi CF trả `XX` (Tor/VPN)
+5. Mặc định EN
+
+**Đường TUYỆT ĐỐI không gắn tiền tố** — bên ngoài gọi vào URL cố định:
+
+| Đường | Ai gọi | Hỏng thì sao |
+|---|---|---|
+| `/webhooks/payment/payos` | PayOS | **khách trả tiền, không nhận credit** |
+| OAuth callback FB/TikTok | Facebook, TikTok | gãy đăng nhập mạng xã hội |
+| `/health/*` | giám sát, `4-nghiem-thu.ps1` | báo động giả |
+| `/static/*` | trình duyệt | mất CSS/JS |
+| API JSON của app React | chính trang đó | app trắng |
+
+Đây là rủi ro riêng của phương án tiền tố. Cùng loại với lỗi `return_url=PLACEHOLDER`
+ngày 2026-08-06: bên ngoài gọi đúng URL ta đưa, ta đổi URL thì họ gọi vào chỗ trống.
+**Khoá bằng test, không bằng trí nhớ.**
+
+**Đo được 2026-08-06:** 2.562 chuỗi hiện cho người dùng (đã loại chú thích và
+docstring bằng AST). Template nền tảng 426 · template app 396 · React/TS 366 ·
+`server/` 522 · `platform_core/` 273 · `apps/` 681. Trong đó 2.224 chuỗi ngắn,
+338 chuỗi dài. Chưa có một dòng hạ tầng i18n nào.
+
+**Chữ nằm NGOÀI mã nguồn** (dễ sót nhất): `display_name`/`description` của 14
+manifest app; tên gói credit trong CSDL (admin sửa được); nội dung email ở
+`platform_core/mailer.py`.
+
+**Pha 0** hạ tầng: Babel/gettext, middleware 5 tầng, helper sinh link có tiền tố,
+danh sách miễn trừ, và **bánh cóc trong `tools/gate.py`** — chuỗi hiện cho người
+dùng không bọc `_()` thì gate đỏ. Không có bánh cóc thì công dịch sẽ mục dần,
+đúng như hiện trạng "Marketplace"/"My Apps" lẫn giữa trang tiếng Việt.
+**Pha 1** đường khách đi (~700) · **Pha 2** từng app (~1.100) · **Pha 3** dữ liệu.
+
+---
+
+## H25 — Cổng thanh toán quốc tế 📋 *(chủ sản phẩm sẽ xử lý sau)*
+
+**Vấn đề:** PayOS chỉ làm VietQR và chuyển khoản ngân hàng Việt Nam (tài khoản
+nhận là MBBank). Khách ở Mỹ/Nhật/Đức **không có cách nào nạp credit**. Họ đọc
+được trang tiếng Anh, hiểu sản phẩm, bấm "Nạp credit" rồi gặp mã QR ngân hàng
+Việt Nam không dùng được.
+
+**Hệ quả:** H24 (đa ngôn ngữ) là điều kiện **cần nhưng không đủ** để bán ra thế
+giới. Làm xong H24 vẫn chưa mở được cửa bán cho khách nước ngoài.
+
+**Thuận lợi:** kiến trúc cổng đã **agnostic** từ H9 (Q31) — thêm Stripe/PayPal/
+Paddle chỉ là viết adapter trong `platform_core/payments/`, không đụng nghiệp vụ
+`billing.py` hay sổ credit. Đơn hàng đã idempotent sẵn.
+
+**Vướng nằm ngoài kỹ thuật:** Stripe/Paddle đòi pháp nhân, khai thuế, hoá đơn,
+và chính sách hoàn tiền. Đây là việc pháp lý/kế toán, không phải việc mã nguồn —
+**chủ sản phẩm nhận xử lý** (chốt 2026-08-06).

@@ -41,6 +41,27 @@ def _tinh_asset_ver() -> str:
 ASSET_VER = _tinh_asset_ver()
 templates.env.globals["asset_ver"] = ASSET_VER
 
+# ── Đa ngôn ngữ (H24) ────────────────────────────────────────────────────────
+# `_()` dịch, `u()` sinh link mang đúng tiền tố ngôn ngữ.
+#
+# Mọi link nội bộ trong template PHẢI đi qua `u()`. Viết thẳng href="/nap" thì
+# người đang ở bản tiếng Anh bấm vào sẽ rơi về bản tiếng Việt — và lỗi đó không
+# làm trang vỡ, chỉ âm thầm đổi ngôn ngữ giữa chừng. Có scanner trong gate chặn.
+from platform_core import i18n as _i18n  # noqa: E402
+
+
+def _u(path: str) -> str:
+    """Link nội bộ mang tiền tố ngôn ngữ hiện tại. Đường miễn trừ giữ nguyên."""
+    return _i18n.them_tien_to(path, _i18n.ngon_ngu_hien_tai())
+
+
+templates.env.add_extension("jinja2.ext.i18n")   # phải nạp TRƯỚC install_*
+templates.env.install_gettext_callables(          # bật cú pháp {% trans %}
+    gettext=_i18n._, ngettext=_i18n._n, newstyle=True)
+templates.env.globals["u"] = _u
+templates.env.globals["lang_hien_tai"] = _i18n.ngon_ngu_hien_tai
+templates.env.globals["NGON_NGU"] = _i18n.NGON_NGU
+
 # Q59 — public website is WordPress and owns these pretty URLs. Keep the
 # integration surface centralized so auth, apps and commerce never drift back
 # to legacy .html pages. OAuth callback URLs are intentionally not included:

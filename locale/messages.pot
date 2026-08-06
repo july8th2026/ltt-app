@@ -1,0 +1,33 @@
+#: server/templates/home.html:61
+msgid "Bạn chưa dùng app nào."
+msgstr ""
+
+#: server/templates/home.html:62
+msgid "Chưa có app phù hợp."
+msgstr ""
+
+#: server/templates/home.html:60
+msgid "Hãy đổi từ khóa, nhóm hoặc quay lại kho ứng dụng."
+msgstr ""
+
+#: server/templates/home.html:14 server/templates/home.html:38
+#: server/templates/home.html:57
+msgid "Kho ứng dụng"
+msgstr ""
+
+#: server/templates/home.html:59
+msgid "Quay lại kho ứng dụng và mở app đầu tiên."
+msgstr ""
+
+#: server/templates/home.html:58
+msgid "công cụ sẵn sàng"
+msgstr ""
+
+#: server/templates/_doi_ngon_ngu.html:10
+msgid "Đổi ngôn ngữ"
+msgstr ""
+
+#: server/templates/home.html:15 server/templates/home.html:57
+msgid "Ứng dụng của tôi"
+msgstr ""
+

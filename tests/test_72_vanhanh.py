@@ -195,7 +195,9 @@ def test_home_workspace_chi_hien_activity_va_running_job_cua_chu_so_huu(client):
     client.post("/login", data={"username": "mine-home@example.com",
                                  "password": "matkhau-tot-12", "csrf_token": tok})
     body = client.get("/").text
-    assert "Marketplace" in body and "My Apps" in body
+    # H24: nhan tieng Anh lan giua trang tieng Viet la LOI da sua, khong phai
+    # hop dong. Gio la chuoi tieng Viet, dich sang EN qua catalog.
+    assert "Kho ứng dụng" in body and "Ứng dụng của tôi" in body
     assert "MINE_HOME_ACTIVITY" in body
     assert "OTHER_PRIVATE_ACTIVITY" not in body
     assert 'data-popular=' in body

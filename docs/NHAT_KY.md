@@ -14,6 +14,107 @@
 
 ---
 
+## 2026-08-06 — Đăng nhập: bỏ khoá tài khoản, thay bằng leo thang thách đố
+
+- **Mục tiêu:** vá chỗ hở ở `/login` cho đúng, trước khi sang việc khác.
+- **Trạng thái:** xong
+
+### Bài toán thật, khác với bài toán tôi tưởng
+
+Ban đầu tôi đề xuất "thêm Turnstile cho `/login` vì `/register` có mà login
+không có". **Đề xuất đó sai chỗ.** Đọc mã thì `/login` đã có CSRF, đo hai chiều
+theo IP *và* theo tài khoản, IP thật sau Cloudflare, và bắt buộc xác thực email.
+Nó không hề trống.
+
+Lỗ thật nằm ở chỗ khác, và nặng hơn:
+
+**1. Khoá theo tài khoản chính là một lỗ từ chối dịch vụ.** `lim.allow(acct_key)`
+chạy **trước** khi kiểm mật khẩu, nên mọi lần thử mang email đó đều tiêu hạn mức
+của tài khoản đó. Ai biết email của khách chỉ cần bắn 5 lần thử rác mỗi phút là
+khách **không bao giờ đăng nhập được**, dù gõ đúng mật khẩu. Không cần biết mật
+khẩu, không cần botnet.
+
+**2. Trần 5/60 giây theo IP quá chặt với CGNAT.** Nhà mạng di động Việt Nam dùng
+CGNAT — rất nhiều người thật chung một IP công cộng. Vài người gõ nhầm là cả
+nhóm bị khoá.
+
+**3. Giả định thiết kế đã hết hạn.** Chú thích module ghi rõ nó dành cho "bảng
+điều khiển một người dùng, không phải dịch vụ nhiều người dùng công khai". Từ hôm
+nay đã có khách trả tiền.
+
+### Nghiên cứu
+
+OWASP Credential Stuffing Prevention + Authentication Cheat Sheet + Top 10:2025
+A07. Điểm chốt: lockout "có thể vô tình thành tấn công từ chối dịch vụ nhắm vào
+người dùng hợp lệ"; nên dùng **đường cong lùi dần** và **thách đố sau một ngưỡng
+thất bại** thay vì khoá; CAPTCHA nên "chỉ bật cho lần đăng nhập khả nghi"; và
+chặn theo IP "không bao giờ được là phòng thủ duy nhất" vì bộ công cụ stuffing đi
+qua mạng proxy.
+
+### Thiết kế đã chọn — leo thang, không khoá
+
+| Số lần sai | Trước | Sau |
+|---|---|---|
+| 1–2 | cho thử | cho thử |
+| ≥3 (IP **hoặc** tài khoản) | — | **hiện Turnstile** |
+| ≥5 theo tài khoản | **khoá cứng 429** | ~~bỏ~~ — chính là lỗ DoS |
+| ≥20 theo IP | — | 429 |
+
+Tính chất then chốt: người thật quên mật khẩu chỉ mất một cú click (Turnstile
+thường vô hình); bot không giải được. **Tài khoản không còn bị người khác khoá.**
+
+Giải hụt thách đố **cố ý không tính** là một lần thử — nếu tính, người thật giải
+hụt vài lần sẽ tự đẩy mình tới trần chặn cứng. Bot chẳng lợi gì vì không qua
+được thách đố thì không tới bước kiểm mật khẩu.
+
+**Đường lui khi thiếu Turnstile.** Bản đầu của tôi có lỗ: không cấu hình Turnstile
+thì không có gì để leo thang tới, nên trần tự nới từ 5 lên 20 — quên một biến môi
+trường = nới phòng thủ gấp bốn mà không ai hay. Một test cũ (`test_37`) đổ và chỉ
+đúng chỗ đó. Sửa: thiếu Turnstile thì lùi về trần 5 như cũ.
+
+Gate bắt tiếp một test nữa: `test_72::test_khoa_theo_tai_khoan_du_khac_ip` —
+khoá đúng cái hành vi vừa bỏ. Nó có lý riêng: dò một tài khoản từ **nhiều IP** là
+thứ đo-theo-IP không thấy được. Nên thiết kế cuối là **hai chế độ**:
+
+| | Có Turnstile (production) | Không Turnstile (dev/test) |
+|---|---|---|
+| Theo tài khoản | chỉ leo thang sang thách đố | khoá cứng ở 5 (như cũ) |
+| Theo IP | chặn cứng ở 20 | chặn cứng ở 5 |
+| Lỗ DoS khoá tài khoản | **không còn** | vẫn còn (chấp nhận) |
+
+Mất thách đố thì khoá tài khoản là đường phòng thủ **duy nhất** còn lại — thà
+giữ phòng thủ thô còn hơn không có gì. Nhờ vậy `test_37` và `test_72` **đều
+không phải sửa**: chúng chạy ở chế độ không-Turnstile và giữ nguyên kỳ vọng cũ.
+
+Tức Turnstile giờ là **cấu kiện chịu lực**, không còn là thứ trang trí cho trang
+đăng ký. Production bắt buộc phải có nó.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest test_157` (mới, 13) | 13 pass |
+| `pytest test_157 + test_37 + test_64 + test_86` | 57 pass, `test_37` **không phải sửa** |
+| Trồng lại hành vi khoá cũ | **3 fail** đúng chỗ |
+| `python tools/gate.py` | (ghi khi xong) |
+
+⚠️ Bài học về test: bản trồng bug **đầu tiên** của tôi vẫn để test DoS xanh — vì
+nó chưa tái hiện đúng mã cũ (mã cũ đếm *mọi* lần thử **trước** thách đố, bản
+trồng thì không). Suýt nữa nhận một test trông như canh lỗ DoS nhưng thực ra
+không canh gì. Trồng bug phải trung thực với mã cũ, không chỉ "na ná".
+
+### Còn tồn đọng
+
+- Bộ đếm vẫn trong bộ nhớ. Chỉ đúng khi web chạy **một** tiến trình; thêm
+  `--workers N` sẽ chia bộ đếm thành N phần và **nới trần lên N lần một cách
+  lặng lẽ**. Đã ghi cảnh báo trong `server/auth/rate_limit.py`. Khi cần nhiều
+  tiến trình web thì phải chuyển bộ đếm xuống PostgreSQL.
+- MFA là phòng thủ mạnh nhất theo OWASP (Microsoft: chặn 99,9% vụ chiếm tài
+  khoản) — **chưa làm**, phạm vi lớn (TOTP + mã khôi phục + giao diện).
+- Kiểm mật khẩu rò rỉ (Pwned Passwords, k-anonymity) lúc đăng ký — chưa làm.
+
+---
+
 ## 2026-08-06 — Đồng tiền thật đầu tiên, và con bug nó lôi ra
 
 - **Mục tiêu:** deploy H19/H22/H23, đăng ký webhook PayOS, chạy một giao dịch thật.

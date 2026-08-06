@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ lang_hien_tai() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,6 +12,11 @@
       radial-gradient(900px 460px at -6% 6%, #7c211a1a, transparent 55%), var(--bg);
       color:var(--fg); font-family:var(--font); font-size:14px}
   </style>
+  {# hreflang (H24) — xem base.html. #}
+  {%- set _p = request.scope.get('path', '/') %}
+  <link rel="alternate" hreflang="vi" href="{{ request.base_url|string|trim('/') }}{{ _p }}">
+  <link rel="alternate" hreflang="en" href="{{ request.base_url|string|trim('/') }}/en{{ '' if _p == '/' else _p }}">
+  <link rel="alternate" hreflang="x-default" href="{{ request.base_url|string|trim('/') }}{{ _p }}">
 </head>
 <body>
   {# Khách CHƯA đăng nhập: cùng HEADER (avatar → nút Đăng nhập/Đăng ký), KHÔNG sidebar. #}

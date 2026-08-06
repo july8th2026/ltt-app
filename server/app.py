@@ -143,6 +143,15 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     from server.request_body_limit import AgentBodyLimitMiddleware
     app.add_middleware(AgentBodyLimitMiddleware)
 
+    # Ngôn ngữ (H24). Vị trí quan trọng, thêm SAU ba cái trên và TRƯỚC
+    # SessionMiddleware, để nó nằm giữa hai lớp:
+    #   - NGOÀI phân quyền/rate-limit → chúng thấy đường dẫn ĐÃ bóc tiền tố,
+    #     nên luật của chúng khỏi phải biết `/en/` tồn tại;
+    #   - TRONG SessionMiddleware → đọc được `request.session` để lấy ngôn ngữ
+    #     đã lưu ở hồ sơ tài khoản.
+    from server.i18n_middleware import I18nMiddleware
+    app.add_middleware(I18nMiddleware)
+
     app.add_middleware(
         SessionMiddleware,
         secret_key=server_settings.session_secret,
@@ -223,6 +232,8 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     from server.routes import register as register_routes
 
     app.include_router(health_routes.router)
+    from server.routes import ngon_ngu as ngon_ngu_routes
+    app.include_router(ngon_ngu_routes.router)
     app.include_router(auth_routes.router)
     app.include_router(register_routes.router)
     app.include_router(jobs_routes.router)

@@ -1,0 +1,20 @@
+{# Nút đổi ngôn ngữ (H24).
+
+   LUÔN hiện, kể cả khi máy đã đoán đúng. Người Việt dùng VPN Singapore sẽ thấy
+   tiếng Anh; họ phải đổi lại được ngay bằng một cú click. Giấu nút này đi là
+   nhốt người dùng trong một suy đoán sai mà họ không có cách nào thoát.
+
+   Dùng form POST chứ không phải link: đây là thao tác đổi trạng thái (đặt cookie
+   + ghi hồ sơ), nên phải có CSRF. #}
+<form method="post" action="{{ u('/doi-ngon-ngu') }}" class="doi-ngon-ngu"
+      aria-label="{{ _('Đổi ngôn ngữ') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token|default('') }}">
+  <input type="hidden" name="next" value="{{ request.scope.get('path', '/') }}">
+  {% for ma in NGON_NGU %}
+    {% set dang_chon = (ma == lang_hien_tai()) %}
+    <button type="submit" name="lang" value="{{ ma }}"
+            class="dnn-nut{{ ' on' if dang_chon else '' }}"
+            {{ 'aria-current="true"' if dang_chon else '' }}
+            lang="{{ ma }}">{{ 'Tiếng Việt' if ma == 'vi' else 'English' }}</button>
+  {% endfor %}
+</form>

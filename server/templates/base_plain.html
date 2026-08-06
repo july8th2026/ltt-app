@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ lang_hien_tai() }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -47,6 +47,12 @@
     a { color:var(--accent2); }
     @media(max-width:480px){body{padding:16px}.card{padding:20px}.auth-brand h1{font-size:22px}}
   </style>
+  {# hreflang (H24): khong co no Google coi hai ban la noi dung trung lap va tu
+     chon mot ban — mat dung cai loi ich da danh doi khi chon tien to /en/. #}
+  {%- set _p = request.scope.get('path', '/') %}
+  <link rel="alternate" hreflang="vi" href="{{ request.base_url|string|trim('/') }}{{ _p }}">
+  <link rel="alternate" hreflang="en" href="{{ request.base_url|string|trim('/') }}/en{{ '' if _p == '/' else _p }}">
+  <link rel="alternate" hreflang="x-default" href="{{ request.base_url|string|trim('/') }}{{ _p }}">
 </head>
 <body>
   <main class="box">
