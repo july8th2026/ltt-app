@@ -21,7 +21,9 @@ def test_composer_co_label_drawer_va_keyboard_contract():
     assert "if(e.key==='Escape')closeCompose()" in page
     assert 'for="tv-prompt"' in page
     assert 'for="tv-files"' in page
-    assert "Thời lượng<select" in page
+    # H24: nhan gio di qua catalog dich. Van chot rang o chon thoi luong nam
+    # NGAY SAU nhan cua no — do moi la dieu test nay canh (nhan gan dung o input).
+    assert '_("Thời lượng") }}<select' in page
     assert "Tỉ lệ<select" in page
     assert "Độ phân giải<select" in page
     assert "Số lượng/biến thể<select" in page
