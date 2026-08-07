@@ -103,3 +103,34 @@ vô hiệu hoá tài khoản thì không lưu dấu vết ai làm, lúc nào.
 **Bằng chứng.** E1.
 **Severity P3.** Với một admin thì rủi ro thấp; ghi nhận để không quên khi thêm
 người quản trị thứ hai. **Phương án.** DEFER.
+
+
+---
+
+# Trạng thái thực hiện — cập nhật 2026-08-07
+
+| Finding | Trạng thái | Bằng chứng |
+|---|---|---|
+| F-01 P0 | ✅ đóng | `cap_tay()` kiểm tồn tại + migration `c1d2e3f4a5b6` (FK RESTRICT). E2 test 16 mục, có tính bác bỏ (bỏ kiểm tra → 5 đổ) |
+| F-02 P1 | ✅ đóng | Nhận email, giữ UUID dự phòng. E2 |
+| F-03 P1 | ✅ đóng | `cap_hang_loat()` nguyên tử, email lặp chỉ cấp một lần. E2 |
+| F-05 P2 | ✅ đóng | `test_163` 15 mục qua HTTP: quyền, CSRF, nguyên tử, nói thật. E2 |
+| F-04 P2 | ⚠️ **một phần** | xem dưới |
+| F-06 P3 | ⛔ chưa làm | |
+
+## F-04 — làm một phần, và phải nói rõ phần nào chưa chắc
+
+**Đã làm:** thêm `User.so_du_credit` và khai cột "Số dư" trong `UserAdmin.column_list`.
+
+**Chưa chắc:** test ban đầu `assert "777" in html` **đổ** — HTML trả về từ
+`/admin/user/list` chỉ có vỏ trang, sqladmin dựng bảng theo cách khác. Tôi **không
+nới lỏng test cho xanh rồi nói "đã xác minh"** — đó đúng là thứ mục 5 cấm.
+
+Test hiện chốt: cột **đã được khai**, nhãn đúng, trang **mở được** (200). Nó
+**không** chốt số dư hiện ra đúng.
+
+**Việc còn nợ:** kiểm trên browser thật (E3). Cho tới lúc đó, F-04 là `PARTIAL`,
+không phải `LIVE`.
+
+**Chưa làm:** trang chi tiết một người dùng (`/admin/user/<id>` gom số dư, job,
+đơn, phiên).

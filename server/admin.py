@@ -246,8 +246,13 @@ class UserAdmin(ModelView, model=User):
     name = "Người dùng"
     name_plural = "Người dùng"
     icon = "fa-solid fa-user"
-    column_list = [User.email, User.display_name, User.role, User.is_active,
-                   User.is_verified, User.created_at, User.last_login_at]
+    # F-04 (audit 2026-08-07): SO DU phai co o day. Truoc day danh sach nguoi
+    # dung khong hien so du — con so van hanh quan trong nhat ve mot nguoi lai
+    # khong nam o cho quan ly nguoi, phai sang trang So credit loc bang UUID.
+    column_list = [User.email, "so_du_credit", User.display_name, User.role,
+                   User.is_active, User.is_verified, User.created_at,
+                   User.last_login_at]
+    column_labels = {"so_du_credit": "Số dư"}
     column_searchable_list = [User.email, User.display_name]
     column_sortable_list = [User.email, User.created_at, User.last_login_at]
     column_default_sort = [(User.created_at, True)]

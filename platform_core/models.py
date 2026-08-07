@@ -100,6 +100,23 @@ class User(Base):
     def __repr__(self) -> str:      # pragma: no cover
         return f"<User {self.email} role={self.role} verified={self.is_verified}>"
 
+    @property
+    def so_du_credit(self) -> int:
+        """Số dư credit hiện tại. Dùng cho trang quản trị (F-04).
+
+        Truy vấn theo từng dòng (N+1). Chấp nhận được ở quy mô hiện tại — danh
+        sách người dùng là trang admin, không phải trang khách, và một truy vấn
+        đếm trên cột đã đánh chỉ mục thì rẻ. Khi số người dùng lớn lên thì đổi
+        sang một truy vấn gộp; ghi ra đây để lúc đó khỏi phải đi tìm nguyên nhân.
+        """
+        from sqlalchemy import func, select
+        from sqlalchemy.orm import object_session
+        s = object_session(self)
+        if s is None:
+            return 0
+        return int(s.execute(
+            select(func.coalesce(func.sum(CreditEntry.delta), 0))
+            .where(CreditEntry.user_id == self.id)).scalar() or 0)
 
 class Session(Base):
     """Phiên đăng nhập lưu **phía máy chủ**.

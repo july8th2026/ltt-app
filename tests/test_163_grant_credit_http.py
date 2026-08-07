@@ -190,3 +190,43 @@ def test_email_lap_chi_cap_mot_lan(env):
     r = _cap(env, "nv1@x.com\nNV1@x.com\n nv1@x.com ")
     assert r.status_code == 200
     assert _so_du("nv1@x.com") == 500
+
+
+# ── 7. F-04: số dư ở nơi quản lý người dùng ──────────────────────────────────
+def test_cot_so_du_da_duoc_khai_trong_danh_sach_nguoi_dung(env):
+    """Con số vận hành quan trọng nhất về một người phải nằm ở chỗ quản lý người,
+    không bắt admin sang trang Sổ credit lọc bằng UUID.
+
+    ⚠️ Test này chỉ chốt **khai báo** và **trang mở được**, KHÔNG chốt giá trị đã
+    render. Thử ban đầu (`assert "777" in html`) đổ vì HTML trả về chỉ có vỏ
+    trang — sqladmin dựng bảng theo cách khác. Nới lỏng test cho xanh mà vẫn nói
+    "đã xác minh" thì đúng là thứ LTT-AQA mục 5 cấm: E1 không phải "đã xác minh".
+
+    **Việc còn nợ:** kiểm trên browser thật (E3) để chốt số dư hiện ra đúng.
+    Ghi trong 05_FINDINGS như một mục chưa đóng.
+    """
+    from server.admin import UserAdmin
+    assert "so_du_credit" in [str(c) for c in UserAdmin.column_list]
+    assert UserAdmin.column_labels.get("so_du_credit") == "Số dư"
+    _dang_nhap(env, "sep@x.com")
+    _cap(env, "nv1@x.com", amount="777")
+    assert env.get("/admin/user/list").status_code == 200
+
+
+
+
+
+def test_so_du_credit_tinh_dung_ca_khi_am_va_bang_khong(env):
+    """Tính chất của property, không cần HTTP."""
+    import platform_core.db as dbmod
+    from platform_core import credit
+    from platform_core.models import User
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        u = s.query(User).filter(User.email == "nv2@x.com").one()
+        assert u.so_du_credit == 0
+        credit.cap_tay(s, u.id, 300, by="t"); s.commit()
+        s.refresh(u)
+        assert u.so_du_credit == 300
+    finally:
+        s.close()
