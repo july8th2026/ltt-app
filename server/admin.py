@@ -55,10 +55,12 @@ def _email_admin(request: Request) -> str:
     u = user_hien_tai(request)
     if u is not None:
         return u.email
-    try:
-        return str(request.session.get("user") or "")
-    except Exception:      # noqa: BLE001 - chua co phien
+    # Hoi thang scope thay vi bat ngoai le — cung ly do da ghi o
+    # server/routes/ngon_ngu.py: bat rong roi `return ""` se giau ca loi phien
+    # that, ma trieu chung chi la "nhat ky khong biet ai lam".
+    if "session" not in request.scope:
         return ""
+    return str(request.session.get("user") or "")
 
 
 def ghi_nhat_ky(db, request: Request, hanh_dong: str, doi_tuong: str = "",
