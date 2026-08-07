@@ -14,7 +14,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, Index, Integer, JSON, String, Text,
+from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Index, Integer,
+                        JSON, String, Text,
                         UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -408,7 +409,12 @@ class CreditEntry(Base):
     __tablename__ = "credit_entries"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    # F-01 (audit 2026-08-07): khoa ngoai la luoi an toan cuoi cho MOI duong ghi.
+    # RESTRICT — khong cho xoa nguoi dung con but toan: so credit la bang chung
+    # doi soat tien. Ngung mot tai khoan thi dung `is_active=False`.
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        index=True, nullable=False)
     delta: Mapped[int] = mapped_column(Integer, nullable=False)   # +nạp/hoàn, -trừ
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)

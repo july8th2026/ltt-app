@@ -74,12 +74,52 @@ def nap(db: DbSession, user_id: str, amount: int, note: str = "") -> CreditEntry
     return _ghi(db, user_id=user_id, delta=amount, kind=CREDIT_TOPUP, note=note)
 
 
+class NguoiDungKhongTonTai(ValueError):
+    """Cấp credit cho một user_id không có trong bảng `users`."""
+
+
 def cap_tay(db: DbSession, user_id: str, amount: int, *, by: str = "", note: str = "") -> CreditEntry:
-    """Admin cấp/thu credit tay. `amount` âm là thu về. Ghi rõ ai cấp."""
+    """Admin cấp/thu credit tay. `amount` âm là thu về. Ghi rõ ai cấp.
+
+    **Bắt buộc kiểm người dùng tồn tại** (F-01, audit 2026-08-07). Trước đây hàm
+    này gọi thẳng `_ghi()`, và `credit_entries` cũng không có khoá ngoại — nên gõ
+    nhầm một ký tự trong UUID là credit rơi vào hư không, trong khi màn hình admin
+    báo "Đã cấp +500 credit. Số dư mới: 500". Không lỗi nào ở đâu cả, và cách duy
+    nhất phát hiện là tự đi truy vấn CSDL.
+
+    Kiểm ở đây để có thông báo lỗi tử tế; khoá ngoại trong CSDL là lưới an toàn
+    cuối cho mọi đường ghi khác.
+    """
     if amount == 0:
         raise ValueError("so credit cap phai khac 0")
+    if not _ton_tai(db, user_id):
+        raise NguoiDungKhongTonTai(
+            f"khong co nguoi dung nao co id {user_id!r} — khong ghi but toan nao")
     ghi_chu = (f"admin={by}; " if by else "") + note
     return _ghi(db, user_id=user_id, delta=amount, kind=CREDIT_GRANT, note=ghi_chu)
+
+
+def _ton_tai(db: DbSession, user_id: str) -> bool:
+    from platform_core.models import User
+    if not (user_id or "").strip():
+        return False
+    return db.execute(
+        select(User.id).where(User.id == user_id)).first() is not None
+
+
+def tim_theo_email(db: DbSession, email: str):
+    """Tìm người dùng theo email (chuẩn hoá). Trả `None` nếu không có.
+
+    Có ở đây để đường cấp credit nhận **email** thay vì UUID (F-02): UUID là chuỗi
+    con người không kiểm được bằng mắt, nên nó vừa gây mệt vừa là điều kiện làm
+    F-01 nguy hiểm.
+    """
+    from platform_core.models import User
+    e = (email or "").strip().lower()
+    if not e:
+        return None
+    return db.execute(
+        select(User).where(func.lower(User.email) == e)).scalar_one_or_none()
 
 
 # ── Giữ chỗ / quyết toán / hoàn ───────────────────────────────────────────────

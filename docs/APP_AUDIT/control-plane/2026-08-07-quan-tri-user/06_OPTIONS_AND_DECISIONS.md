@@ -69,4 +69,25 @@ Xếp theo mục 10 (`Delivery Priority = Opportunity / (Effort × Dependency Ri
 | D5 | Trang chi tiết user (F-04) đợt này hay sau? | **Sau** — ưu tiên 0,6, không chặn onboarding | Làm ngay thì chậm việc tuần này |
 | D6 | Nhật ký thao tác admin (F-06)? | **DEFER** tới khi có admin thứ hai | |
 
-**Trạng thái:** ⏳ **CHỜ CHỦ SẢN PHẨM CHỐT.** Chưa viết dòng code nào.
+## Quyết định đã khoá — 2026-08-07
+
+| # | Chốt | Ghi chú |
+|---|---|---|
+| D1 | **Làm tất cả hạng mục** | Rộng hơn khuyến nghị `REPAIR → PARITY chọn lọc` của tôi |
+| D2 | **Có** — thêm FK ngay | |
+| D3 | **Email** thay UUID | |
+| D4 | **Từ chối toàn bộ** khi có một email sai | |
+| D5 | OK | Đọc cùng D1 = **làm trong đợt này**, nhưng xếp sau blocker |
+| D6 | **Triển khai luôn** nhật ký thao tác admin | Đảo `DEFER` ở A7 |
+
+**Cách hiểu D5 đã nêu rõ với chủ sản phẩm:** câu hỏi là "đợt này hay sau", trả
+lời "OK" một mình thì lưỡng nghĩa; đọc cùng D1 ("tất cả") và D6 ("triển khai
+luôn") thì kết luận là **làm trong đợt này**. Ghi lại đây để sau không ai phải
+đoán lại.
+
+**Hệ quả với A7:** phạm vi thành `REPAIR + PARITY + một phần DIFFERENTIATED`
+(F-06). Phần DIFFERENTIATED còn lại — thống kê theo thời gian, xếp hạng người
+tiêu nhiều, thống kê theo app — **vẫn DEFER**, vì với 10 người dùng nội bộ thì
+biểu đồ chưa nói lên điều gì, và chưa ai yêu cầu.
+
+**Trạng thái:** ✅ **ĐÃ KHOÁ.** Chuyển sang A9 Roadmap.
