@@ -130,3 +130,68 @@ def test_model_co_khoa_ngoai_tren_credit_entries():
     assert fks[0].ondelete == "RESTRICT", (
         "phai la RESTRICT: so credit la bang chung doi soat tien, "
         "xoa nguoi dung ma mat so cua ho thi khong doi soat duoc nua")
+
+
+# ── F-03: cấp hàng loạt, nguyên tử ───────────────────────────────────────────
+@pytest.fixture()
+def ba_nguoi(db):
+    from platform_core.users import tao_nguoi_dung
+    us = [tao_nguoi_dung(db, email=f"nv{i}@x.com", password="matkhau-tot",
+                         is_verified=True) for i in (1, 2, 3)]
+    db.commit()
+    return us
+
+
+def test_cap_hang_loat_cap_dung_tat_ca(db, ba_nguoi):
+    from platform_core import credit
+    kq = credit.cap_hang_loat(db, ["nv1@x.com", "nv2@x.com", "nv3@x.com"],
+                              500, by="admin", note="onboarding")
+    db.commit()
+    assert kq.thanh_cong and len(kq.da_cap) == 3
+    for u in ba_nguoi:
+        assert credit.so_du(db, u.id) == 500
+
+
+def test_MOT_email_sai_thi_KHONG_AI_duoc_cap(db, ba_nguoi):
+    """Chốt D4. Cấp một phần tạo trạng thái nửa vời: vài người có credit, vài
+    người không, và không ai biết ai — rồi phải đối soát tay lúc đang vội."""
+    from platform_core import credit
+    kq = credit.cap_hang_loat(
+        db, ["nv1@x.com", "GO-NHAM@x.com", "nv3@x.com"], 500, by="admin")
+    db.commit()
+    assert not kq.thanh_cong
+    assert kq.khong_thay == ["go-nham@x.com"]
+    assert kq.da_cap == []
+    for u in ba_nguoi:
+        assert credit.so_du(db, u.id) == 0, "co nguoi da duoc cap — KHONG nguyen tu"
+
+
+def test_bao_ro_email_nao_sai(db, ba_nguoi):
+    """Báo 'có email sai' mà không nói email nào thì admin phải tự dò tay."""
+    from platform_core import credit
+    kq = credit.cap_hang_loat(db, ["nv1@x.com", "a@x.com", "b@x.com"], 100)
+    assert set(kq.khong_thay) == {"a@x.com", "b@x.com"}
+
+
+def test_email_trung_chi_cap_MOT_lan(db, ba_nguoi):
+    """Dán danh sách thì rất dễ lặp email. Cấp hai lần là cấp gấp đôi."""
+    from platform_core import credit
+    kq = credit.cap_hang_loat(db, ["nv1@x.com", "NV1@x.com", " nv1@x.com "], 500)
+    db.commit()
+    assert len(kq.da_cap) == 1
+    assert kq.trung == ["nv1@x.com", "nv1@x.com"]
+    assert credit.so_du(db, ba_nguoi[0].id) == 500
+
+
+def test_bo_qua_dong_trong(db, ba_nguoi):
+    """Dán từ bảng tính thì hay lẫn dòng trống."""
+    from platform_core import credit
+    kq = credit.cap_hang_loat(db, ["nv1@x.com", "", "   ", "nv2@x.com"], 100)
+    db.commit()
+    assert kq.thanh_cong and len(kq.da_cap) == 2
+
+
+def test_cap_hang_loat_so_0_bi_tu_choi(db, ba_nguoi):
+    from platform_core import credit
+    with pytest.raises(ValueError):
+        credit.cap_hang_loat(db, ["nv1@x.com"], 0)

@@ -360,24 +360,51 @@ class GrantCreditView(BaseView):
                             'không hợp lệ — tải lại trang rồi thử lại.</p>')
                 status = 400
             else:
-                user_id = (form.get("user_id") or "").strip()
+                # `user_id` la ten o cu (UUID). Giu de script/test cu khong gay;
+                # `cap_hang_loat` nhan ca email lan UUID nen mot duong xu ly la du.
+                nguoi_raw = ((form.get("nguoi") or form.get("user_id") or "").strip())
                 amount_raw = (form.get("amount") or "").strip()
                 note = (form.get("note") or "").strip()
+                user_id = nguoi_raw
                 try:
                     amount = int(amount_raw)
                     if amount == 0:
                         raise ValueError("Số credit phải khác 0.")
-                    from platform_core.credit import cap_tay, so_du
+                    # Tách theo xuống dòng, dấu phẩy và chấm phẩy — admin dán từ
+                    # bảng tính hoặc từ chat, không ai gõ đúng một định dạng.
+                    tach = nguoi_raw.replace(",", "\n").replace(";", "\n")
+                    ds = [x for x in tach.splitlines() if x.strip()]
+                    from platform_core.credit import cap_hang_loat, so_du
                     gen = get_session()
                     db = next(gen)
                     try:
-                        cap_tay(db, user_id, amount, by="admin", note=note)
-                        db.commit()
-                        bal = so_du(db, user_id)
-                        msg_html = (f'<p style="color:#1a7f37;">Đã cấp '
-                                    f'<b>{amount:+d}</b> credit cho '
-                                    f'<code>{escape(user_id)}</code>. '
-                                    f'Số dư mới: <b>{bal}</b>.</p>')
+                        kq = cap_hang_loat(db, ds, amount, by="admin", note=note)
+                        if not kq.thanh_cong:
+                            # D4: mot email sai thi KHONG AI duoc cap. Rollback cho
+                            # chac, du cap_hang_loat chua ghi gi khi co email sai.
+                            db.rollback()
+                            ds_sai = ", ".join(escape(x) for x in kq.khong_thay)
+                            msg_html = (
+                                f'<p style="color:#b91c1c;">Không tìm thấy tài khoản: '
+                                f'<b>{ds_sai}</b>.<br>'
+                                f'<b>Chưa cấp cho ai cả</b> — sửa lại rồi gửi lần nữa.</p>')
+                            status = 400
+                        else:
+                            db.commit()
+                            dong = "".join(
+                                f"<li><code>{escape(e)}</code> — số dư mới "
+                                f"<b>{so_du(db, uid)}</b></li>"
+                                for e, uid in kq.da_cap)
+                            canh = ""
+                            if kq.trung:
+                                canh = (f'<p style="color:#92400e;">Bỏ qua '
+                                        f'{len(kq.trung)} email lặp — mỗi người chỉ '
+                                        f'cấp một lần.</p>')
+                            msg_html = (
+                                f'<p style="color:#1a7f37;">Đã cấp <b>{amount:+d}</b> '
+                                f'credit cho <b>{len(kq.da_cap)}</b> tài khoản.</p>'
+                                f'{canh}<ul>{dong}</ul>')
+                            user_id = ""
                     finally:
                         try:
                             next(gen)
@@ -390,12 +417,15 @@ class GrantCreditView(BaseView):
         csrf_token = issue_csrf_token(request)
         body = f"""<div class="adm-content" style="max-width:600px">
 <div class="pagehead"><div><h1>Cấp / điều chỉnh credit</h1>
-<p>Ghi một bút toán <code>grant</code> mới (số âm để trừ). Sổ credit append-only.</p></div></div>
+<p>Ghi một bút toán <code>grant</code> cho mỗi người (số âm để trừ). Sổ credit append-only. Cấp được cho nhiều người một lượt.</p></div></div>
 {msg_html}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(csrf_token)}">
-  <div class="field"><label>User ID (UUID — lấy ở mục Người dùng)</label>
-    <input class="inp mono" name="user_id" value="{escape(user_id)}" required placeholder="3f2a..."></div>
+  <div class="field"><label>Email tài khoản — mỗi dòng một người</label>
+    <textarea class="inp" name="nguoi" rows="6" required
+      placeholder="nhanvien1@congty.com&#10;nhanvien2@congty.com">{escape(user_id)}</textarea>
+    <small>Dán được cả danh sách. Ngăn bằng xuống dòng, dấu phẩy hoặc chấm phẩy.
+    <b>Một email sai thì không ai được cấp</b> — để bạn không phải đối soát tay.</small></div>
   <div class="field"><label>Số credit (dương = cộng, âm = trừ)</label>
     <input class="inp tnum" name="amount" type="number" required placeholder="100"></div>
   <div class="field"><label>Ghi chú</label>

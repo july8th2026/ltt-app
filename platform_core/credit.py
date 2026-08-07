@@ -99,6 +99,60 @@ def cap_tay(db: DbSession, user_id: str, amount: int, *, by: str = "", note: str
     return _ghi(db, user_id=user_id, delta=amount, kind=CREDIT_GRANT, note=ghi_chu)
 
 
+class KetQuaCapHangLoat:
+    """Kết quả một lượt cấp hàng loạt. `khong_thay` rỗng nghĩa là đã cấp hết."""
+
+    def __init__(self, da_cap: list, khong_thay: list, trung: list):
+        self.da_cap = da_cap            # [(email, user_id)]
+        self.khong_thay = khong_thay    # [email]
+        self.trung = trung              # [email] — xuất hiện nhiều lần trong danh sách
+
+    @property
+    def thanh_cong(self) -> bool:
+        return not self.khong_thay
+
+
+def cap_hang_loat(db: DbSession, emails, amount: int, *, by: str = "",
+                  note: str = "") -> KetQuaCapHangLoat:
+    """Cấp cùng một số credit cho nhiều người, theo email.
+
+    **Nguyên tử: một email sai thì KHÔNG AI được cấp** (chốt D4, audit 2026-08-07).
+    Cấp một phần tạo ra trạng thái nửa vời — vài người có credit, vài người không,
+    và không ai biết ai — rồi phải đối soát tay đúng lúc đang vội onboarding.
+
+    Hàm này KHÔNG commit. Nơi gọi quyết định ranh giới transaction, nên nếu nó
+    ném lỗi thì rollback bỏ sạch, đúng nghĩa nguyên tử.
+    """
+    if amount == 0:
+        raise ValueError("so credit cap phai khac 0")
+
+    da_thay, khong_thay, trung, thu_tu = {}, [], [], []
+    for e in emails:
+        khoa = (e or "").strip().lower()
+        if not khoa:
+            continue
+        if khoa in da_thay or khoa in khong_thay:
+            trung.append(khoa)
+            continue
+        # Nhan CA email LAN user id (chot D3: email la duong chinh, UUID giu lam
+        # duong du phong — vd khi doi soat tu log hoac tu CSDL).
+        u = tim_theo_email(db, khoa)
+        uid = u.id if u is not None else (khoa if _ton_tai(db, khoa) else None)
+        if uid is None:
+            khong_thay.append(khoa)
+        else:
+            da_thay[khoa] = uid
+            thu_tu.append(khoa)
+
+    # Kiểm HẾT rồi mới ghi — không ghi dở dang xong mới phát hiện email sai.
+    if khong_thay:
+        return KetQuaCapHangLoat([], khong_thay, trung)
+
+    for khoa in thu_tu:
+        cap_tay(db, da_thay[khoa], amount, by=by, note=note)
+    return KetQuaCapHangLoat([(k, da_thay[k]) for k in thu_tu], [], trung)
+
+
 def _ton_tai(db: DbSession, user_id: str) -> bool:
     from platform_core.models import User
     if not (user_id or "").strip():
