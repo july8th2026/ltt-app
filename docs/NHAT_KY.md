@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-07 — Nhân viên không tạo được tài khoản: trần 3/IP/ngày
+
+- **Trạng thái:** xong (đã deploy 17:59)
+
+### Hiện tượng
+
+Nhân viên vào tạo tài khoản để test, được vài người thì báo *"Đã đạt giới hạn tạo
+tài khoản hôm nay. Thử lại sau."*
+
+### Nguyên nhân
+
+`platform_core/antifraud.py:29` — `GIOI_HAN_IP_MOI_NGAY` mặc định **3**, và
+`app.env` chưa đặt `LTT_MAX_DANGKY_IP_NGAY` nên đang chạy mặc định.
+
+Đo trên CSDL production:
+
+```
+14.177.12.60     3 tai khoan   13:24 -> 17:43   <- cham tran
+27.79.167.173    1 tai khoan   21:39
+```
+
+Nhân viên ngồi **cùng mạng văn phòng** nên ra Internet bằng **một IP công cộng**.
+Người thứ 4 bị chặn.
+
+**Cơ chế chạy đúng, nhưng giả định sai.** Nó xây để chặn một người tạo hàng loạt
+tài khoản ăn credit dùng thử (mỗi tài khoản 20 credit sau xác thực email) — giả
+định "nhiều người lạ, mỗi người một IP". Giả định đó sai với một đội sau một NAT.
+
+### Đã làm
+
+`LTT_MAX_DANGKY_IP_NGAY=5` vào `app.env` (chủ sản phẩm chốt), chạy lại bộ cài.
+
+⚠️ **NSSM giữ bản chụp `app.env`** — sửa file thôi thì dịch vụ vẫn đọc giá trị cũ.
+Đã xác minh sau deploy: `nssm get AppEnvironmentExtra` có dòng đó, và ứng dụng
+đọc ra `GIOI_HAN_IP_MOI_NGAY = 5`.
+
+### Giới hạn của cách sửa này — đã nói rõ với chủ sản phẩm
+
+- IP văn phòng **đã dùng 3/5 slot**, nên hôm nay chỉ thêm được **2 tài khoản**.
+  Slot đầu mở lại 13:24 ngày mai (cửa sổ 24 giờ **trượt**, không phải theo ngày).
+- Quá 5 người trên cùng mạng thì vẫn chặn.
+- Trần này nới cho **cả Internet**, không riêng văn phòng.
+
+### Còn tồn đọng
+
+Phương án đúng hình dạng vấn đề là **miễn trừ theo IP văn phòng** (mọi IP khác
+giữ trần cũ), hoặc **admin tạo tài khoản thay** thay vì tự đăng ký. Chưa làm.
+
+---
+
+---
+
 ## 2026-08-06 — Đăng nhập: bỏ khoá tài khoản, thay bằng leo thang thách đố
 
 - **Mục tiêu:** vá chỗ hở ở `/login` cho đúng, trước khi sang việc khác.
