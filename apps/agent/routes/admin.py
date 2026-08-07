@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 import hashlib
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -75,7 +76,7 @@ async def agent_admin_cancel(request: Request, run_id: str,
     _require_admin_user(request)
     run = db.get(AgentRun, run_id)
     if run is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy run.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy run.'))
     if run.status in (AGENT_AWAITING_APPROVAL, AGENT_RUNNING):
         actual = executor.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0
         run = budget.cancel(db, run_id=run.id, user_id=run.user_id, actual=actual)

@@ -1,6 +1,7 @@
 """Tai san tai len, xuat/nhap du an, va catalog mau."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import io
 import json
 import uuid
@@ -22,7 +23,7 @@ def admin_health(request: Request, _identity: str = Depends(require_login),
                  db: Session = Depends(get_db)):
     user = _user(request)
     if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Chỉ admin được xem vận hành.")
+        raise HTTPException(status_code=403, detail=_t('Chỉ admin được xem vận hành.'))
     from sqlalchemy import func
     from platform_core.models import AppProject, Job
     projects = db.execute(select(func.count()).select_from(AppProject).where(
@@ -45,17 +46,17 @@ async def upload_asset(request: Request, file: UploadFile = File(...),
         "video" if content_type.startswith("video/") else (
             "audio" if content_type.startswith("audio/") else ""))
     if not detected:
-        raise HTTPException(status_code=415, detail="Chỉ nhận ảnh, video hoặc audio.")
+        raise HTTPException(status_code=415, detail=_t('Chỉ nhận ảnh, video hoặc audio.'))
     data = await file.read(_ASSET_CAP[detected] + 1)
     if not data or len(data) > _ASSET_CAP[detected]:
-        raise HTTPException(status_code=413, detail="File rỗng hoặc vượt giới hạn.")
+        raise HTTPException(status_code=413, detail=_t('File rỗng hoặc vượt giới hạn.'))
     if detected == "image":
         try:
             from PIL import Image
             with Image.open(io.BytesIO(data)) as image:
                 image.verify()
         except Exception:
-            raise HTTPException(status_code=422, detail="File ảnh không hợp lệ.") from None
+            raise HTTPException(status_code=422, detail=_t('File ảnh không hợp lệ.')) from None
     safe_name = PurePath(str(file.filename or "asset").replace("\\", "/")).name[:120]
     suffix = Path(safe_name).suffix.lower()[:10]
     key = f"prompt_ai_ommi/{user.id}/assets/{uuid.uuid4().hex}{suffix}"
@@ -97,7 +98,7 @@ def export_project(request: Request, project_id: str, fmt: str,
                  "project": payload}, ensure_ascii=False, indent=2))
         return Response(buf.getvalue(), media_type="application/zip",
                         headers={"Content-Disposition": f'attachment; filename="{safe}.zip"'})
-    raise HTTPException(status_code=404, detail="Định dạng export không hỗ trợ.")
+    raise HTTPException(status_code=404, detail=_t('Định dạng export không hỗ trợ.'))
 
 
 @router.post("/api/import", status_code=201)
@@ -106,9 +107,9 @@ async def import_project(request: Request, _identity: str = Depends(require_logi
     body = await request.json(); _csrf(request, body); user = _user(request)
     raw = json.dumps(body, ensure_ascii=False).encode("utf-8")
     if len(raw) > 900_000:
-        raise HTTPException(status_code=413, detail="Package vượt giới hạn 900 KiB.")
+        raise HTTPException(status_code=413, detail=_t('Package vượt giới hạn 900 KiB.'))
     if body.get("format") != "ltt-prompt-ai-ommi" or body.get("version") != 1:
-        raise HTTPException(status_code=422, detail="Package không đúng định dạng.")
+        raise HTTPException(status_code=422, detail=_t('Package không đúng định dạng.'))
     payload = clean_project(body.get("project") or {})
     # Không nhập storage key từ package khác: asset binary phải upload lại.
     for item in payload["resources"]:
@@ -139,7 +140,7 @@ async def admin_catalog(request: Request, _identity: str = Depends(require_login
                         db: Session = Depends(get_db)):
     body = await request.json(); _csrf(request, body); user = _user(request)
     if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Chỉ admin được publish catalog.")
+        raise HTTPException(status_code=403, detail=_t('Chỉ admin được publish catalog.'))
     item = body.get("item") if isinstance(body.get("item"), dict) else {}
     payload = {"kind": "published_catalog", "version": 1, "published": True,
                "item": {"type": str(item.get("type") or "template")[:40],

@@ -1,6 +1,7 @@
 """Kho tai nguyen rieng cua tung nguoi dung, ke ca anh va sinh anh."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import io
 import os
 import uuid
@@ -207,7 +208,7 @@ def _image_key(user_id: str, resource_id: str, content_type: str):
     ext = _RESOURCE_IMAGE_TYPES.get(ct)
     if ext is None:
         raise HTTPException(status_code=400,
-                            detail="Chỉ nhận ảnh PNG, JPEG hoặc WebP.")
+                            detail=_t('Chỉ nhận ảnh PNG, JPEG hoặc WebP.'))
     return f"ommi/{user_id}/{resource_id}/{uuid.uuid4().hex[:16]}{ext}", ct
 
 
@@ -253,9 +254,9 @@ async def upload_resource_image(request: Request, resource_id: str,
     key, ct = _image_key(user.id, resource_id, file.content_type or "")
     data = await file.read(_RESOURCE_IMAGE_CAP + 1)
     if len(data) > _RESOURCE_IMAGE_CAP:
-        raise HTTPException(status_code=413, detail="Ảnh vượt 20 MB.")
+        raise HTTPException(status_code=413, detail=_t('Ảnh vượt 20 MB.'))
     if not data:
-        raise HTTPException(status_code=400, detail="File rỗng.")
+        raise HTTPException(status_code=400, detail=_t('File rỗng.'))
     get_storage().put(key, io.BytesIO(data), content_type=ct)
     try:
         row = rsvc.add_variant(db, resource_id=resource_id, owner_id=user.id,
@@ -290,10 +291,10 @@ async def confirm_resource_image(request: Request, resource_id: str,
     key = str(body.get("key") or "").strip()
     prefix = f"ommi/{user.id}/{resource_id}/"
     if not key.startswith(prefix):
-        raise HTTPException(status_code=400, detail="Khoá lưu trữ không hợp lệ.")
+        raise HTTPException(status_code=400, detail=_t('Khoá lưu trữ không hợp lệ.'))
     storage = get_storage()
     if not storage.exists(key):
-        raise HTTPException(status_code=400, detail="Chưa thấy file trên kho lưu trữ.")
+        raise HTTPException(status_code=400, detail=_t('Chưa thấy file trên kho lưu trữ.'))
     try:
         row = rsvc.add_variant(db, resource_id=resource_id, owner_id=user.id,
                                storage_key=key, label=str(body.get("label") or ""),
@@ -343,7 +344,7 @@ def resource_image_url(request: Request, resource_id: str, variant_id: str,
     except Exception as exc:
         raise _resource_error(exc) from exc
     if not found:
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     return {"url": f"{MANIFEST.route_prefix}/f/{found[0].storage_key}"}
 
 
@@ -362,7 +363,7 @@ def resource_image_file(request: Request, key: str,
     user = _user(request)
     segments = key.split("/")
     if len(segments) < 3 or segments[0] != "ommi" or segments[1] != user.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     storage = get_storage()
     direct = storage.try_url_for(key)
     if direct:
@@ -370,7 +371,7 @@ def resource_image_file(request: Request, key: str,
     try:
         stream = storage.open(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.')) from None
     kind = "image/png" if key.endswith(".png") else (
         "image/webp" if key.endswith(".webp") else "image/jpeg")
     return StreamingResponse(stream, media_type=kind)
@@ -425,7 +426,7 @@ def _image_params(request_body: dict, *, resource, owner_id: str,
                  or resource.description or resource.name).strip()
     if len(prompt) < 8:
         raise HTTPException(status_code=422,
-                            detail="Mô tả ảnh quá ngắn — tối thiểu 8 ký tự.")
+                            detail=_t('Mô tả ảnh quá ngắn — tối thiểu 8 ký tự.'))
     params = {
         "prompt": prompt[:4000],
         "aspect_ratio": str(request_body.get("aspect_ratio") or "1:1"),
@@ -508,15 +509,15 @@ async def attach_generated_images(request: Request, resource_id: str,
 
     job = db.get(Job, str(body.get("job_id") or ""))
     if job is None or job.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     if job.status != JOB_DONE:
-        raise HTTPException(status_code=409, detail="Job chưa chạy xong.")
+        raise HTTPException(status_code=409, detail=_t('Job chưa chạy xong.'))
     if job.job_type != _IMAGE_JOB_TYPE:
-        raise HTTPException(status_code=400, detail="Job này không sinh ảnh.")
+        raise HTTPException(status_code=400, detail=_t('Job này không sinh ảnh.'))
 
     keys = [k for k in ((job.result or {}).get("image_keys") or []) if k][:4]
     if not keys:
-        raise HTTPException(status_code=400, detail="Job không trả về ảnh nào.")
+        raise HTTPException(status_code=400, detail=_t('Job không trả về ảnh nào.'))
 
     made = []
     try:

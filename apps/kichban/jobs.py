@@ -9,6 +9,7 @@ Hợp đồng: idempotent ở mức job (credit quyết toán một lần) · b�
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import base64
 import io
 import json
@@ -129,7 +130,7 @@ def _goi_gemini_text(prompt: str, api_key: str, model: str = _MODEL,
     for part in (data.get("candidates") or [{}])[0].get("content", {}).get("parts", []) or []:
         if part.get("text"):
             return part["text"]
-    raise RuntimeError("Gemini không trả văn bản.")
+    raise RuntimeError(_t('Gemini không trả văn bản.'))
 
 
 def _owned_image_keys(params: dict, owner_id: str) -> list[str]:
@@ -143,11 +144,11 @@ def _owned_image_keys(params: dict, owner_id: str) -> list[str]:
         key = str(value or "").replace("\\", "/").strip("/")
         parts = key.split("/")
         if not owner_id or len(parts) < 3 or parts[1] != owner_id:
-            raise ValueError("Ảnh đầu vào không thuộc tài khoản đang chạy workflow.")
+            raise ValueError(_t('Ảnh đầu vào không thuộc tài khoản đang chạy workflow.'))
         if key not in keys:
             keys.append(key)
     if len(keys) > 8:
-        raise ValueError("Một node Text chỉ nhận tối đa 8 ảnh.")
+        raise ValueError(_t('Một node Text chỉ nhận tối đa 8 ảnh.'))
     return keys
 
 
@@ -164,7 +165,7 @@ def _context_text_parts(params: dict) -> list[dict]:
     if not source_text:
         return []
     if len(source_text) > 32000:
-        raise ValueError("Văn bản tham chiếu vượt giới hạn 32.000 ký tự.")
+        raise ValueError(_t('Văn bản tham chiếu vượt giới hạn 32.000 ký tự.'))
     return [{"text": "Connected text context:\n" + source_text}]
 
 
@@ -179,11 +180,11 @@ def _load_image_parts(params: dict, owner_id: str) -> list[dict]:
     mime_by_format = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
     for key in _owned_image_keys(params, owner_id):
         if not storage.exists(key):
-            raise ValueError("Ảnh đầu vào không còn tồn tại.")
+            raise ValueError(_t('Ảnh đầu vào không còn tồn tại.'))
         size = storage.size(key)
         total_size += size
         if size > 8 * 1024 * 1024 or total_size > 20 * 1024 * 1024:
-            raise ValueError("Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node.")
+            raise ValueError(_t('Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node.'))
         with storage.open(key) as stream:
             data = stream.read()
         try:
@@ -191,9 +192,9 @@ def _load_image_parts(params: dict, owner_id: str) -> list[dict]:
                 mime = mime_by_format.get(str(image.format or "").upper())
                 image.verify()
         except (UnidentifiedImageError, OSError) as exc:
-            raise ValueError("Ảnh đầu vào bị hỏng hoặc không đúng định dạng.") from exc
+            raise ValueError(_t('Ảnh đầu vào bị hỏng hoặc không đúng định dạng.')) from exc
         if not mime:
-            raise ValueError("Node Text chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.")
+            raise ValueError(_t('Node Text chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.'))
         result.append({"inlineData": {
             "mimeType": mime,
             "data": base64.b64encode(data).decode("ascii"),
@@ -210,10 +211,10 @@ def _upload_video_part(params: dict, owner_id: str, api_key: str) -> tuple[dict 
     storage = get_storage()
     key = _owned_key(value, owner_id, "Video")
     if not storage.exists(key):
-        raise ValueError("Video đầu vào không còn tồn tại.")
+        raise ValueError(_t('Video đầu vào không còn tồn tại.'))
     size = storage.size(key)
     if size <= 0 or size > 90 * 1024 * 1024:
-        raise ValueError("Video đầu vào phải từ 1 byte đến 90 MB.")
+        raise ValueError(_t('Video đầu vào phải từ 1 byte đến 90 MB.'))
     suffix = pathlib.PurePosixPath(key).suffix.lower()
     mime_by_suffix = {
         ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm",
@@ -222,7 +223,7 @@ def _upload_video_part(params: dict, owner_id: str, api_key: str) -> tuple[dict 
     }
     mime = mime_by_suffix.get(suffix)
     if not mime:
-        raise ValueError("Node Text chưa hỗ trợ định dạng video này.")
+        raise ValueError(_t('Node Text chưa hỗ trợ định dạng video này.'))
     with storage.open(key) as stream:
         data = stream.read()
 
@@ -324,7 +325,7 @@ def handle(params: dict, ctx=None) -> dict:
                   f"output format: {output_format}. Do not wrap JSON in markdown fences.")
         api_key, key_id = _lay_key(model)
         if not api_key:
-            raise RuntimeError("Chưa có API key Gemini cho nhóm chat.")
+            raise RuntimeError(_t('Chưa có API key Gemini cho nhóm chat.'))
         video_part, remote_file = _upload_video_part(params, owner_id, api_key)
         if video_part:
             media_parts.append(video_part)
@@ -348,7 +349,7 @@ def handle(params: dict, ctx=None) -> dict:
                 "credit_cost": _cost(params)}
     topic = str(params.get("topic", "")).strip()
     if not topic:
-        raise ValueError("Chưa nhập chủ đề video.")
+        raise ValueError(_t('Chưa nhập chủ đề video.'))
     prompt = build_prompt(topic, duration=str(params.get("duration", "")),
                           tone=str(params.get("tone", "")),
                           audience=str(params.get("audience", "")),

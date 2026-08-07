@@ -3,6 +3,7 @@ Pydantic request / response schemas for auto_sub_video.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -185,7 +186,7 @@ class StudioWord(BaseModel):
     @model_validator(mode="after")
     def timing(self):
         if self.end <= self.start:
-            raise ValueError("word end phải lớn hơn start")
+            raise ValueError(_t('word end phải lớn hơn start'))
         return self
 
 
@@ -200,9 +201,9 @@ class StudioCue(BaseModel):
     @model_validator(mode="after")
     def timing(self):
         if self.end <= self.start:
-            raise ValueError("cue end phải lớn hơn start")
+            raise ValueError(_t('cue end phải lớn hơn start'))
         if any(word.start < self.start or word.end > self.end for word in self.words):
-            raise ValueError("word timing phải nằm trong cue")
+            raise ValueError(_t('word timing phải nằm trong cue'))
         return self
 
 
@@ -220,7 +221,7 @@ class StudioTrack(BaseModel):
     def unique_cues(self):
         ids = [cue.id for cue in self.cues]
         if len(ids) != len(set(ids)):
-            raise ValueError("cue id bị trùng trong track")
+            raise ValueError(_t('cue id bị trùng trong track'))
         return self
 
 
@@ -261,16 +262,16 @@ class StudioProjectV1(BaseModel):
     def track_invariants(self):
         ids = [track.id for track in self.tracks]
         if len(ids) != len(set(ids)):
-            raise ValueError("track id bị trùng")
+            raise ValueError(_t('track id bị trùng'))
         visible_z = [track.z_index for track in self.tracks if track.visible]
         if len(visible_z) != len(set(visible_z)):
-            raise ValueError("z_index của track đang hiện bị trùng")
+            raise ValueError(_t('z_index của track đang hiện bị trùng'))
         cue_ids = [cue.id for track in self.tracks for cue in track.cues]
         if len(cue_ids) != len(set(cue_ids)):
-            raise ValueError("cue id phải duy nhất toàn project")
+            raise ValueError(_t('cue id phải duy nhất toàn project'))
         if any(not key or len(key) > 80 or len(value.strip()) > 80
                for key, value in self.speakers.items()):
-            raise ValueError("speaker id/tên hiển thị không hợp lệ")
+            raise ValueError(_t('speaker id/tên hiển thị không hợp lệ'))
         return self
 
 

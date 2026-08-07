@@ -8,6 +8,7 @@ Nền tảng giữ chỗ credit + worker xử lý y hệt job upscale thường.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from pathlib import PurePosixPath
 
 from sqlalchemy.orm import Session as DbSession
@@ -73,7 +74,7 @@ def submit_upscale_batch(db: DbSession, *, user_id: str, items: list[dict],
     toàn bộ job và hold. ``request_id`` khóa double-submit cho từng item.
     """
     if not 1 <= len(items) <= 3:
-        raise ValueError("Batch chỉ nhận từ 1 đến 3 video.")
+        raise ValueError(_t('Batch chỉ nhận từ 1 đến 3 video.'))
     jobs = []
     seen = set()
     for index, item in enumerate(items):

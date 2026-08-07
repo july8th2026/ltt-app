@@ -10,6 +10,7 @@ VP9, chế độ bitrate auto/match/explicit, audio copy, movflags faststart.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import logging
 import os
 import collections
@@ -112,7 +113,7 @@ def burn(*, video_path: str, ass_path: str, output_path: str,
         if not os.path.isfile(p):
             raise FileNotFoundError(f"Không có file {label}: {p}")
     if os.path.getsize(video_path) == 0:
-        raise ValueError("File video rỗng (0 byte).")
+        raise ValueError(_t('File video rỗng (0 byte).'))
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
 
     ass, ass_cwd = _ass_filter_arg(ass_path)

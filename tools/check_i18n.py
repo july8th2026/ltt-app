@@ -62,7 +62,7 @@ def _da_boc(node: ast.AST, cha: dict) -> bool:
     p = cha.get(id(node))
     while p is not None:
         if isinstance(p, ast.Call) and isinstance(p.func, ast.Name) \
-                and p.func.id in ("_", "_n", "gettext", "ngettext"):
+                and p.func.id in ("_", "_t", "_n", "N_", "gettext", "ngettext"):
             return True
         p = cha.get(id(p))
     return False
@@ -98,7 +98,7 @@ def dem_python(f: pathlib.Path) -> int:
     return n_thieu
 
 
-_JINJA_DICH = re.compile(r"\{\{-?\s*_n?\(|\{%-?\s*trans")
+_JINJA_DICH = re.compile(r"\{\{-?\s*_[nt]?\(|\{%-?\s*trans")
 
 
 def dem_template(f: pathlib.Path) -> int:

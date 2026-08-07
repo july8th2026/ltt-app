@@ -4,6 +4,7 @@ translate.py — dịch prompt video qua Gemini chat (seedance Pha 2). Giữ tag
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import os
 
 _MODEL = "gemini-2.5-flash"
@@ -33,7 +34,7 @@ def dich(prompt: str, target: str = "en") -> str:
     import httpx
     api_key = _key()
     if not api_key:
-        raise RuntimeError("Chưa có API key Gemini.")
+        raise RuntimeError(_t('Chưa có API key Gemini.'))
     lang = _LANG.get(target, "English")
     sys = (f"Translate the following AI video prompt to {lang}. Return ONLY the "
            f"translation — no quotes, no notes. Keep unchanged: technical specs "
@@ -49,4 +50,4 @@ def dich(prompt: str, target: str = "en") -> str:
     for part in (r.json().get("candidates") or [{}])[0].get("content", {}).get("parts", []) or []:
         if part.get("text"):
             return part["text"].strip()
-    raise RuntimeError("Gemini không trả bản dịch.")
+    raise RuntimeError(_t('Gemini không trả bản dịch.'))

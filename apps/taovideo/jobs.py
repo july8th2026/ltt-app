@@ -9,6 +9,7 @@ lỗi (nền tảng hoàn credit đã giữ). Giá quyết toán theo token TH�
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import io
 import os
 import time
@@ -95,11 +96,11 @@ def _reference_specs(params: dict, owner_id: str, storage) -> list[dict]:
         kind = str(item.get("kind") or "image").strip()
         parts = key.split("/")
         if kind not in {"image", "video", "audio"}:
-            raise ValueError("Loại tài nguyên tham chiếu không hợp lệ.")
+            raise ValueError(_t('Loại tài nguyên tham chiếu không hợp lệ.'))
         if len(parts) < 3 or parts[1] != owner_id:
-            raise ValueError("Tài nguyên tham chiếu không thuộc người dùng.")
+            raise ValueError(_t('Tài nguyên tham chiếu không thuộc người dùng.'))
         if not storage.exists(key):
-            raise ValueError("Tài nguyên tham chiếu không còn tồn tại.")
+            raise ValueError(_t('Tài nguyên tham chiếu không còn tồn tại.'))
         if key in seen:
             continue
         seen.add(key)
@@ -108,7 +109,7 @@ def _reference_specs(params: dict, owner_id: str, storage) -> list[dict]:
                                   ("reference_image" if kind == "image" else f"reference_{kind}")),
                       "handle": str(item.get("handle") or "")})
     if len(clean) > 4:
-        raise ValueError("Một video chỉ nhận tối đa 4 tài nguyên tham chiếu.")
+        raise ValueError(_t('Một video chỉ nhận tối đa 4 tài nguyên tham chiếu.'))
     return clean
 
 
@@ -136,7 +137,7 @@ def _luu_task_id(job_id: str, task_id: str) -> None:
 def handle(params: dict, ctx=None) -> dict:
     prompt = str(params.get("prompt", "")).strip()
     if not prompt:
-        raise ValueError("Chưa nhập mô tả video.")
+        raise ValueError(_t('Chưa nhập mô tả video.'))
     model = str(params.get("model") or models.DEFAULT_MODEL)
     m = models.get(model)
     if m is None:
@@ -209,7 +210,7 @@ def handle(params: dict, ctx=None) -> dict:
     content = _content()
     api_key, key_id = _lay_key()
     if not api_key:
-        raise RuntimeError("Chưa có API key BytePlus (thêm ở /admin → APIKEYS).")
+        raise RuntimeError(_t('Chưa có API key BytePlus (thêm ở /admin → APIKEYS).'))
 
     endpoint = models.provider_model(model)
     try:
@@ -299,7 +300,7 @@ def handle(params: dict, ctx=None) -> dict:
     if ctx is not None:
         ctx.progress(92, "tải video về")
     if not result.get("video_url"):
-        raise RuntimeError("Provider không trả URL video.")
+        raise RuntimeError(_t('Provider không trả URL video.'))
     video = modelark.download(result["video_url"])
     storage.put(vkey, io.BytesIO(video), content_type="video/mp4")
     _ket_qua_key(key_id, thanh_cong=True)

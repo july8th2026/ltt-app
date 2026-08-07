@@ -9,6 +9,7 @@ THẬT + đếm clip THẬT → nâng giữ chỗ nếu thiếu → quyết toá
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import json
 import logging
 import os
@@ -70,7 +71,7 @@ def handle(params: dict, ctx=None) -> dict:
 
     video_key = str(params.get("video_key", "")).strip()
     if not video_key:
-        raise ValueError("Thiếu video (video_key).")
+        raise ValueError(_t('Thiếu video (video_key).'))
     tier = str(params.get("tier", "high_quality"))
     if tier not in _TIERS:
         tier = "high_quality"
@@ -203,7 +204,7 @@ def handle(params: dict, ctx=None) -> dict:
                                                                hashtags, platforms)})
 
         if not clips_out:
-            raise RuntimeError("Không dựng được clip nào từ video (thử video khác/tier khác).")
+            raise RuntimeError(_t('Không dựng được clip nào từ video (thử video khác/tier khác).'))
 
         credit_cost = cost.uoc_luong_credit(true_dur, tier, len(clips_out))
         # Lưu manifest kết quả (idempotent resume).

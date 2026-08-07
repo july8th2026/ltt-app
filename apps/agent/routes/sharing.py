@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -24,7 +25,7 @@ def workflow_shares(request: Request, workflow_id: str,
     user = _user(request)
     try: workflows.get_owned(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     rows = db.query(AgentWorkflowShare).filter_by(workflow_id=workflow_id, owner_id=user.id).order_by(
         AgentWorkflowShare.created_at.desc()).all()
     return {"items": [{"id": row.id, "permission": row.permission,
@@ -39,10 +40,10 @@ async def workflow_share_create(request: Request, workflow_id: str,
     body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
     try: workflows.get_owned(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     permission = str(body.get("permission") or "view")
     if permission not in {"view", "clone"}:
-        raise HTTPException(status_code=422, detail="Quyền share không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Quyền share không hợp lệ.'))
     hours = max(1, min(int(body.get("expires_hours", 24)), 168))
     token = secrets.token_urlsafe(32)
     row = AgentWorkflowShare(workflow_id=workflow_id, owner_id=user.id,
@@ -60,7 +61,7 @@ def workflow_shared_view(request: Request, token: str,
                          _identity: str = Depends(require_login), db: Session = Depends(get_db)):
     share = _active_share(db, token); row = db.get(AgentWorkflow, share.workflow_id)
     if row is None:
-        raise HTTPException(status_code=404, detail="Workflow không còn tồn tại.")
+        raise HTTPException(status_code=404, detail=_t('Workflow không còn tồn tại.'))
     return {"permission": share.permission, "workflow": _workflow_json(row)}
 
 
@@ -70,10 +71,10 @@ async def workflow_shared_clone(request: Request, token: str,
     body = await request.json(); _verify_json_csrf(request, body); user = _user(request)
     share = _active_share(db, token)
     if share.permission != "clone":
-        raise HTTPException(status_code=403, detail="Share chỉ có quyền xem.")
+        raise HTTPException(status_code=403, detail=_t('Share chỉ có quyền xem.'))
     source = db.get(AgentWorkflow, share.workflow_id)
     if source is None:
-        raise HTTPException(status_code=404, detail="Workflow không còn tồn tại.")
+        raise HTTPException(status_code=404, detail=_t('Workflow không còn tồn tại.'))
     row = workflows.create(db, user_id=user.id, name=f"{source.name} — shared clone",
                            canvas=workflows.as_canvas(source), source_workflow_id=source.id)
     return _workflow_response(row, status_code=201)
@@ -86,6 +87,6 @@ async def workflow_share_revoke(request: Request, workflow_id: str, share_id: st
     row = db.query(AgentWorkflowShare).filter_by(id=share_id, workflow_id=workflow_id,
                                                 owner_id=user.id).first()
     if row is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy share.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy share.'))
     row.revoked_at = datetime.now(timezone.utc)
     return {"id": row.id, "revoked": True}

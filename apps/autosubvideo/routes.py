@@ -5,6 +5,7 @@ KHÔNG tự viết prefix (nền tảng gắn theo manifest).
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import uuid
 import json
 import os
@@ -112,14 +113,14 @@ def studio_styles(_identity: str = Depends(require_login)):
 def _api_user(request: Request):
     current = user_hien_tai(request)
     if current is None:
-        raise HTTPException(status_code=403, detail="Cần tài khoản người dùng.")
+        raise HTTPException(status_code=403, detail=_t('Cần tài khoản người dùng.'))
     return current
 
 
 def _verify_json_csrf(request: Request, body: dict) -> None:
     token = request.headers.get("X-CSRF-Token", "") or str(body.get("csrf_token", ""))
     if not verify_csrf_token(request, token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
 
 
 def _validated_project_payload(value) -> dict:
@@ -185,7 +186,7 @@ def project_get(request: Request, project_id: str,
         return _project_response(app_projects.get_owned(
             db, project_id, current.id, MANIFEST.slug))
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
 
 
 @router.put("/api/projects/{project_id}")
@@ -204,7 +205,7 @@ async def project_save(request: Request, project_id: str,
     except app_projects.ProjectConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     except (KeyError, TypeError, ValueError, app_projects.ProjectError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return _project_response(row)
@@ -219,7 +220,7 @@ async def project_archive(request: Request, project_id: str,
     try:
         row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     return _project_response(app_projects.archive(db, row))
 
 
@@ -232,11 +233,11 @@ async def project_import_transcript(
     from platform_core import app_projects
     from apps.autosubvideo.parsers import parse_transcript
     if not verify_csrf_token(request, request.headers.get("X-CSRF-Token", "") or csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     current = _api_user(request)
     raw = await transcript.read()
     if not raw or len(raw) > _TRANSCRIPT_MAX:
-        raise HTTPException(status_code=422, detail="Transcript rỗng hoặc quá lớn (>8MB).")
+        raise HTTPException(status_code=422, detail=_t('Transcript rỗng hoặc quá lớn (>8MB).'))
     try:
         segments = parse_transcript(transcript.filename or "", raw)
         row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
@@ -258,7 +259,7 @@ async def project_import_transcript(
     except app_projects.ProjectConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     except (ValueError, app_projects.ProjectError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return _project_response(saved)
@@ -281,19 +282,19 @@ async def project_attach_source(
     from platform_core import app_projects
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
     if not verify_csrf_token(request, request.headers.get("X-CSRF-Token", "") or csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     current = _api_user(request); storage = get_storage(); key = video_key.strip()
     try:
         row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
         if key:
             if not key.startswith(f"autosubvideo/{current.id}/") or not storage.exists(key):
-                raise HTTPException(status_code=422, detail="Video upload không hợp lệ.")
+                raise HTTPException(status_code=422, detail=_t('Video upload không hợp lệ.'))
         else:
             if video is None or not getattr(video, "filename", ""):
-                raise HTTPException(status_code=422, detail="Chưa chọn video.")
+                raise HTTPException(status_code=422, detail=_t('Chưa chọn video.'))
             raw = await video.read()
             if not raw or len(raw) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
-                raise HTTPException(status_code=422, detail="Video local rỗng hoặc quá 90MB.")
+                raise HTTPException(status_code=422, detail=_t('Video local rỗng hoặc quá 90MB.'))
             ext = "." + video.filename.rsplit(".", 1)[-1].lower()[:5] if "." in video.filename else ".mp4"
             key = f"autosubvideo/{current.id}/uploads/{uuid.uuid4().hex}{ext}"
             storage.put(key, io.BytesIO(raw), video.content_type or "video/mp4")
@@ -311,7 +312,7 @@ async def project_attach_source(
     except app_projects.ProjectConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     return _project_response(saved)
 
 
@@ -331,18 +332,18 @@ async def project_transcribe(request: Request, project_id: str,
         revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
         row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     except (KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+        raise HTTPException(status_code=422, detail=_t('Thiếu revision hợp lệ.')) from None
     if row.revision != revision:
-        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+        raise HTTPException(status_code=409, detail=_t('Project đã được sửa ở phiên khác.'))
     source = (row.payload or {}).get("source") or {}
     key = str(source.get("key", ""))
     if not key.startswith(f"autosubvideo/{current.id}/") or not get_storage().exists(key):
-        raise HTTPException(status_code=422, detail="Source video chưa upload hoặc không thuộc user.")
+        raise HTTPException(status_code=422, detail=_t('Source video chưa upload hoặc không thuộc user.'))
     duration = float(source.get("duration_s", 0) or 0)
     if duration > 7200:
-        raise HTTPException(status_code=422, detail="Mỗi lượt chép lời tối đa 120 phút.")
+        raise HTTPException(status_code=422, detail=_t('Mỗi lượt chép lời tối đa 120 phút.'))
 
     # Lock user while checking quota and creating the job; concurrent submits
     # cannot all observe the same pre-limit count on PostgreSQL.
@@ -352,7 +353,7 @@ async def project_transcribe(request: Request, project_id: str,
         Job.user_id == current.id, Job.job_type == "autosubvideo.transcribe",
         Job.created_at >= day_start)).scalar_one()
     if int(used or 0) >= _TRANSCRIBE_DAILY_LIMIT:
-        raise HTTPException(status_code=429, detail="Đã dùng hết 12 lượt chép lời miễn phí hôm nay.")
+        raise HTTPException(status_code=429, detail=_t('Đã dùng hết 12 lượt chép lời miễn phí hôm nay.'))
 
     params = {"operation": "transcribe", "owner_id": current.id,
               "project_id": row.id, "project_revision": row.revision,
@@ -411,9 +412,9 @@ def _render_snapshot(row, current, body: dict, request: Request) -> tuple[dict, 
     try:
         revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
     except (KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+        raise HTTPException(status_code=422, detail=_t('Thiếu revision hợp lệ.')) from None
     if row.revision != revision:
-        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+        raise HTTPException(status_code=409, detail=_t('Project đã được sửa ở phiên khác.'))
     payload = copy.deepcopy(row.payload or {})
     try:
         current_output = dict(payload.get("output") or {})
@@ -424,15 +425,15 @@ def _render_snapshot(row, current, body: dict, request: Request) -> tuple[dict, 
         raise HTTPException(status_code=422, detail=f"Tùy chọn render không hợp lệ: {exc}") from None
     key = project.source.key
     if not key.startswith(f"autosubvideo/{current.id}/") or not get_storage().exists(key):
-        raise HTTPException(status_code=422, detail="Source video chưa sẵn sàng hoặc không thuộc user.")
+        raise HTTPException(status_code=422, detail=_t('Source video chưa sẵn sàng hoặc không thuộc user.'))
     selected = set(project.output.track_ids)
     available = [track for track in project.tracks
                  if track.visible and (not selected or track.id in selected) and track.cues]
     if not available:
-        raise HTTPException(status_code=422, detail="Chọn ít nhất một track đang hiện và có cue.")
+        raise HTTPException(status_code=422, detail=_t('Chọn ít nhất một track đang hiện và có cue.'))
     unknown = selected.difference(track.id for track in project.tracks)
     if unknown:
-        raise HTTPException(status_code=422, detail="Track render không tồn tại.")
+        raise HTTPException(status_code=422, detail=_t('Track render không tồn tại.'))
     quote = cost.uoc_luong(project.source.duration_s, project.output.quality)
     quote.update({"resolution": project.output.resolution, "format": project.output.format,
                   "track_ids": [track.id for track in available],
@@ -448,7 +449,7 @@ async def project_render_quote(request: Request, project_id: str,
     body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
     try: row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     _snapshot, quote = _render_snapshot(row, current, body, request)
     return {"ok": True, "quote": quote}
 
@@ -463,7 +464,7 @@ async def project_render_submit(request: Request, project_id: str,
     body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
     try: row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     snapshot, quote = _render_snapshot(row, current, body, request)
     canonical = json.dumps(snapshot, sort_keys=True, ensure_ascii=False,
                            separators=(",", ":"), allow_nan=False).encode("utf-8")
@@ -496,23 +497,23 @@ async def project_diarize(request: Request, project_id: str,
         revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
         row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     except (KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+        raise HTTPException(status_code=422, detail=_t('Thiếu revision hợp lệ.')) from None
     if row.revision != revision:
-        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+        raise HTTPException(status_code=409, detail=_t('Project đã được sửa ở phiên khác.'))
     if not diarization_available():
-        raise HTTPException(status_code=503, detail="Pyannote chưa cấu hình token/model.")
+        raise HTTPException(status_code=503, detail=_t('Pyannote chưa cấu hình token/model.'))
     source = (row.payload or {}).get("source") or {}; key = str(source.get("key", ""))
     tracks = (row.payload or {}).get("tracks") or []
     if not key.startswith(f"autosubvideo/{current.id}/") or not get_storage().exists(key):
-        raise HTTPException(status_code=422, detail="Source video chưa sẵn sàng.")
+        raise HTTPException(status_code=422, detail=_t('Source video chưa sẵn sàng.'))
     if not any(t.get("kind") == "source" and t.get("cues") for t in tracks):
-        raise HTTPException(status_code=422, detail="Cần transcript nguồn trước khi phân vai.")
+        raise HTTPException(status_code=422, detail=_t('Cần transcript nguồn trước khi phân vai.'))
     minimum = max(0, min(int(body.get("min_speakers", 0) or 0), 20))
     maximum = max(0, min(int(body.get("max_speakers", 0) or 0), 20))
     if minimum and maximum and minimum > maximum:
-        raise HTTPException(status_code=422, detail="Khoảng số speaker không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Khoảng số speaker không hợp lệ.'))
     return _submit_auxiliary(db, current=current, row=row, operation="diarize",
         params={"video_key": key, "duration_s": float(source.get("duration_s", 0) or 0),
                 "min_speakers": minimum, "max_speakers": maximum},
@@ -531,20 +532,20 @@ async def project_translate(request: Request, project_id: str,
         revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
         row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     except (KeyError, TypeError, ValueError):
-        raise HTTPException(status_code=422, detail="Thiếu revision hợp lệ.") from None
+        raise HTTPException(status_code=422, detail=_t('Thiếu revision hợp lệ.')) from None
     if row.revision != revision:
-        raise HTTPException(status_code=409, detail="Project đã được sửa ở phiên khác.")
+        raise HTTPException(status_code=409, detail=_t('Project đã được sửa ở phiên khác.'))
     if not gemini_available(db):
-        raise HTTPException(status_code=503, detail="Gemini translation chưa cấu hình API key.")
+        raise HTTPException(status_code=503, detail=_t('Gemini translation chưa cấu hình API key.'))
     track_id = str(body.get("track_id", "")); language = str(body.get("target_language", "")).lower()
     if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2,4})?", language):
-        raise HTTPException(status_code=422, detail="Mã ngôn ngữ đích không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Mã ngôn ngữ đích không hợp lệ.'))
     track = next((t for t in (row.payload or {}).get("tracks", [])
                   if t.get("id") == track_id), None)
     if not track or not track.get("cues"):
-        raise HTTPException(status_code=422, detail="Track nguồn không có cue.")
+        raise HTTPException(status_code=422, detail=_t('Track nguồn không có cue.'))
     return _submit_auxiliary(db, current=current, row=row, operation="translate",
         params={"track_id": track_id, "target_language": language,
                 "cue_count": len(track["cues"])}, daily_limit=_TRANSLATE_DAILY_LIMIT)
@@ -557,7 +558,7 @@ def studio_job_status(request: Request, job_id: str,
     from platform_core.models import Job
     current = _api_user(request); job = db.get(Job, job_id)
     if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     now = datetime.now(timezone.utc)
     started = job.started_at
     if started is not None and started.tzinfo is None:
@@ -581,7 +582,7 @@ async def studio_job_cancel(request: Request, job_id: str,
     body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
     job = db.get(Job, job_id)
     if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     cancelled = jobs.cancel(db, job)
     if cancelled:
         credit.hoan(db, job.user_id, job.id)
@@ -598,9 +599,9 @@ async def studio_job_retry(request: Request, job_id: str,
     body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
     old = db.get(Job, job_id)
     if old is None or old.user_id != current.id or old.app_slug != MANIFEST.slug:
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     if old.status not in {"error", "cancelled"} or old.params.get("operation") != "render_project":
-        raise HTTPException(status_code=409, detail="Chỉ retry render đã lỗi hoặc đã hủy.")
+        raise HTTPException(status_code=409, detail=_t('Chỉ retry render đã lỗi hoặc đã hủy.'))
     params = copy.deepcopy(old.params)
     canonical = json.dumps(params.get("project_snapshot") or {}, sort_keys=True,
                            ensure_ascii=False, separators=(",", ":"),
@@ -610,7 +611,7 @@ async def studio_job_retry(request: Request, job_id: str,
     if (hashlib.sha256(canonical).hexdigest() != params.get("snapshot_sha256") or
             not key.startswith(f"autosubvideo/{current.id}/") or
             not get_storage().exists(key)):
-        raise HTTPException(status_code=409, detail="Snapshot/source của job cũ không còn hợp lệ.")
+        raise HTTPException(status_code=409, detail=_t('Snapshot/source của job cũ không còn hợp lệ.'))
     try:
         job = submit_with_credit(db, user_id=current.id, app_slug=MANIFEST.slug,
             job_type=old.job_type, params=params,
@@ -642,7 +643,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
     Local → báo client gửi multipart qua /queue (chỉ hợp file nhỏ)."""
     u = user_hien_tai(request)
     if u is None:
-        raise HTTPException(status_code=400, detail="Cần tài khoản người dùng.")
+        raise HTTPException(status_code=400, detail=_t('Cần tài khoản người dùng.'))
     from platform_core.storage import get_storage
     ext = ""
     if "." in (filename or ""):
@@ -764,7 +765,7 @@ def _guard_key(request: Request, key: str) -> None:
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "autosubvideo" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy.'))
 
 
 def _iter_storage_range(stream, start: int, length: int):
@@ -802,7 +803,7 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
     try:
         total = storage.size(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
     rng = request.headers.get("range")
     if rng and rng.startswith("bytes="):
         try:
@@ -837,7 +838,7 @@ def file_out(request: Request, key: str, user: str = Depends(require_login)):
     try:
         storage.size(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy file.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy file.'))
     name = key.rsplit("/", 1)[-1]
     if name.endswith(".srt"): ct = "application/x-subrip"
     elif name.endswith(".zip"): ct = "application/zip"

@@ -4,6 +4,7 @@ lùi multipart nếu chưa CORS. Job GPU dài → hàng đợi worker. Router KH
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -157,7 +158,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
                user: str = Depends(require_login)):
     u = user_hien_tai(request)
     if u is None:
-        raise HTTPException(status_code=400, detail="Cần tài khoản người dùng.")
+        raise HTTPException(status_code=400, detail=_t('Cần tài khoản người dùng.'))
     from platform_core.storage import get_storage
     ext = ""
     if "." in (filename or ""):
@@ -338,7 +339,7 @@ def download_package(request: Request, job_id: str, user: str = Depends(require_
     try:
         job = _owned_done_job(db, u.id, job_id) if u else None
         if job is None:
-            raise HTTPException(status_code=404, detail="Không tìm thấy package.")
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy package.'))
         project = db.execute(select(AppProject).where(
             AppProject.user_id == u.id, AppProject.app_slug == MANIFEST.slug,
             AppProject.status == APP_PROJECT_ACTIVE
@@ -380,7 +381,7 @@ def clip_out(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "taoclipngan" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy.'))
     storage = get_storage()
     direct = storage.try_url_for(key)
     if direct:
@@ -388,7 +389,7 @@ def clip_out(request: Request, key: str, user: str = Depends(require_login)):
     try:
         total = storage.size(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy clip.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy clip.'))
     rng = request.headers.get("range")
     if rng and rng.startswith("bytes="):
         try:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -20,7 +21,7 @@ def workflow_activity(request: Request, workflow_id: str,
     user = _user(request)
     try: snapshots = workflows.snapshots(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     events = [{"event": "snapshot", "revision": item.revision, "reason": item.reason,
                "at": item.created_at.isoformat()} for item in snapshots]
     shares = db.query(AgentWorkflowShare).filter_by(workflow_id=workflow_id, owner_id=user.id).all()
@@ -45,7 +46,7 @@ async def workflow_validate(request: Request, workflow_id: str,
     except workflows.WorkflowConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     response = _workflow_json(row)
     response["validation"] = {"valid": result.valid,
                               "estimated_max_credit": result.estimated_max_credit,
@@ -65,7 +66,7 @@ async def workflow_clone(request: Request, workflow_id: str,
                                name=str(body.get("name") or f"{source.name} — bản sao"),
                                canvas=workflows.as_canvas(source), source_workflow_id=source.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     return _workflow_response(row, status_code=201)
 
 
@@ -77,7 +78,7 @@ async def workflow_archive(request: Request, workflow_id: str,
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     if row.status != WORKFLOW_ARCHIVED:
         row.status = WORKFLOW_ARCHIVED; row.revision += 1
     return _workflow_response(row)
@@ -90,7 +91,7 @@ def workflow_export(request: Request, workflow_id: str,
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     return JSONResponse({"format": "ltt-agent-workflow", "version": 1,
                          "name": row.name, "canvas": workflows.as_canvas(row)},
                         headers={"Content-Disposition":
@@ -108,7 +109,7 @@ def workflow_frame_export(request: Request, workflow_id: str, frame_id: str,
         targets, scope = workflows.scope_targets(canvas, {"mode": "frame", "frame_id": frame_id})
         plan = workflows.scope_plan(workflows.canvas_to_plan(canvas), targets)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     except workflows.WorkflowError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return JSONResponse({"format": "ltt-agent-workflow", "version": 1,
@@ -121,7 +122,7 @@ async def workflow_import(request: Request, _identity: str = Depends(require_log
                           db: Session = Depends(get_db)):
     body = await request.json(); _verify_json_csrf(request, body)
     if body.get("format") != "ltt-agent-workflow" or body.get("version") != 1:
-        raise HTTPException(status_code=422, detail="Định dạng workflow không hỗ trợ.")
+        raise HTTPException(status_code=422, detail=_t('Định dạng workflow không hỗ trợ.'))
     user = _user(request)
     try:
         row = workflows.create(db, user_id=user.id, name=str(body.get("name", "")),

@@ -1,6 +1,7 @@
 """Attachment/search/export helpers for Chat AI Studio."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import base64
 import io
 import json
@@ -15,7 +16,7 @@ IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
 
 def parse_attachment(data: bytes, mime: str, filename: str) -> dict:
     if not data or len(data) > MAX_FILE_BYTES:
-        raise ValueError("Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB.")
+        raise ValueError(_t('Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB.'))
     mime = (mime or "").lower().split(";", 1)[0]
     name = Path(filename or "tep").name[:160]
     if mime in IMAGE_MIMES:
@@ -31,18 +32,18 @@ def parse_attachment(data: bytes, mime: str, filename: str) -> dict:
         try:
             text = data.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
-            raise ValueError("Tệp văn bản phải dùng UTF-8.") from exc
+            raise ValueError(_t('Tệp văn bản phải dùng UTF-8.')) from exc
     elif mime == "application/pdf":
         try:
             from pypdf import PdfReader
             text = "\n".join((page.extract_text() or "") for page in PdfReader(io.BytesIO(data)).pages)
         except Exception as exc:  # noqa: BLE001
-            raise ValueError("Không đọc được nội dung PDF.") from exc
+            raise ValueError(_t('Không đọc được nội dung PDF.')) from exc
     else:
-        raise ValueError("Chỉ nhận PNG/JPEG/WebP, TXT/MD/CSV/JSON hoặc PDF.")
+        raise ValueError(_t('Chỉ nhận PNG/JPEG/WebP, TXT/MD/CSV/JSON hoặc PDF.'))
     text = text.strip()
     if not text:
-        raise ValueError("Tệp không có nội dung văn bản có thể đọc.")
+        raise ValueError(_t('Tệp không có nội dung văn bản có thể đọc.'))
     return {"kind": "text", "name": name, "mime": mime,
             "text": text[:MAX_CONTEXT_CHARS]}
 

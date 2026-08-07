@@ -1,6 +1,7 @@
 """Build immutable Studio project subtitle artifacts for a render job."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import json
 import os
 import zipfile
@@ -37,7 +38,7 @@ def build_project_artifacts(snapshot: dict, output_dir: str, *, width: int,
     tracks = [track for track in project.tracks
               if track.visible and (not selected or track.id in selected) and track.cues]
     if not tracks:
-        raise ValueError("Không có track phụ đề được chọn để render.")
+        raise ValueError(_t('Không có track phụ đề được chọn để render.'))
 
     root = Path(output_dir); root.mkdir(parents=True, exist_ok=True)
     style = project.style

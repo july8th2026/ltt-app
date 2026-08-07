@@ -5,6 +5,7 @@ UI app `image` (di trú A1). Prompt tự do → ảnh. Router KHÔNG tự viết
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
@@ -207,7 +208,7 @@ def edit_output(request: Request, job_id: str, image_index: int,
     from sqlalchemy import select
     u = user_hien_tai(request)
     if u is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     gen = get_session(); db = next(gen)
     try:
         job = db.execute(select(Job).where(
@@ -215,7 +216,7 @@ def edit_output(request: Request, job_id: str, image_index: int,
             Job.status == JOB_DONE)).scalar_one_or_none()
         keys = ((job.result or {}).get("image_keys") or []) if job else []
         if image_index < 0 or image_index >= len(keys) or not _owned_output(u.id, keys[image_index]):
-            raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
         values = {"prompt": str((job.params or {}).get("prompt") or ""),
                   "model": str((job.params or {}).get("model") or ""),
                   "aspect_ratio": str((job.params or {}).get("aspect_ratio") or "16:9"),
@@ -233,7 +234,7 @@ def image_file(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "taoanh" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     storage = get_storage()
     direct = storage.try_url_for(key)            # R2 (H10) → tải thẳng CDN
     if direct:
@@ -241,5 +242,5 @@ def image_file(request: Request, key: str, user: str = Depends(require_login)):
     try:
         stream = storage.open(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     return StreamingResponse(stream, media_type="image/png")

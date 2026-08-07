@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 import mimetypes
 import os
 import io
@@ -40,9 +41,9 @@ async def save_preferences(request: Request, _identity: str = Depends(require_lo
     catalog_mode = str(body.get("catalog_mode", ""))
     presentation_version = str(body.get("presentation_version", "creative-v1"))
     if theme not in {"light", "dark"} or catalog_mode not in {"simple", "advanced"}:
-        raise HTTPException(status_code=422, detail="Tùy chọn giao diện không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Tùy chọn giao diện không hợp lệ.'))
     if presentation_version != "creative-v1":
-        raise HTTPException(status_code=422, detail="Phiên bản trình bày không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Phiên bản trình bày không hợp lệ.'))
     user = _user(request)
     from platform_core import app_projects
     row = _preferences_row(db, user.id)
@@ -89,14 +90,14 @@ async def workflow_asset_upload(request: Request, file: UploadFile = File(...),
     """Upload an owned Canvas asset; output is a server-generated storage key."""
     token = request.headers.get("X-CSRF-Token", "")
     if not verify_csrf_token(request, token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     user = _user(request)
     content_type = str(file.content_type or "").lower()
     if not any(content_type.startswith(prefix) for prefix in _ASSET_MIME_PREFIXES):
-        raise HTTPException(status_code=415, detail="Chỉ nhận ảnh, video hoặc audio.")
+        raise HTTPException(status_code=415, detail=_t('Chỉ nhận ảnh, video hoặc audio.'))
     data = await file.read(_ASSET_LIMIT + 1)
     if not data or len(data) > _ASSET_LIMIT:
-        raise HTTPException(status_code=413, detail="Asset phải từ 1 byte đến 90 MB.")
+        raise HTTPException(status_code=413, detail=_t('Asset phải từ 1 byte đến 90 MB.'))
     suffix = Path(file.filename or "asset").suffix.lower()[:10]
     if content_type.startswith("image/"):
         try:
@@ -104,7 +105,7 @@ async def workflow_asset_upload(request: Request, file: UploadFile = File(...),
             with Image.open(io.BytesIO(data)) as image:
                 image.verify()
         except Exception:
-            raise HTTPException(status_code=422, detail="File ảnh không hợp lệ.") from None
+            raise HTTPException(status_code=422, detail=_t('File ảnh không hợp lệ.')) from None
     else:
         from platform_core import media
         temp_path = ""
@@ -112,7 +113,7 @@ async def workflow_asset_upload(request: Request, file: UploadFile = File(...),
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
                 temp.write(data); temp_path = temp.name
             if media.duration_seconds(temp_path) <= 0:
-                raise HTTPException(status_code=422, detail="File media không có thời lượng hợp lệ.")
+                raise HTTPException(status_code=422, detail=_t('File media không có thời lượng hợp lệ.'))
         finally:
             if temp_path:
                 try: os.unlink(temp_path)
@@ -132,7 +133,7 @@ def workflow_asset_preview(request: Request, asset_name: str,
                            _identity: str = Depends(require_login)):
     """Stream only an asset owned by the current Canvas user."""
     if Path(asset_name).name != asset_name or len(asset_name) > 80:
-        raise HTTPException(status_code=404, detail="Không tìm thấy asset.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy asset.'))
     user = _user(request)
     key = f"agent-assets/{user.id}/{asset_name}"
     from platform_core.storage import StorageError, get_storage
@@ -143,7 +144,7 @@ def workflow_asset_preview(request: Request, asset_name: str,
             return RedirectResponse(direct, status_code=307)
         total = storage.size(key)
     except (OSError, StorageError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy asset.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy asset.')) from None
     media_type = mimetypes.guess_type(key)[0] or "application/octet-stream"
     range_header = request.headers.get("range", "")
     if range_header.startswith("bytes="):
@@ -183,7 +184,7 @@ async def workflow_tool_quote(request: Request, tool_name: str,
     tools = discover_tools(apps=loaded, allowed_slugs=allowed)
     spec = tools.get(tool_name)
     if spec is None:
-        raise HTTPException(status_code=404, detail="Tool không tồn tại/không có quyền.")
+        raise HTTPException(status_code=404, detail=_t('Tool không tồn tại/không có quyền.'))
     try:
         params = validate_tool_params(tool_name, body.get("params", {}), apps=loaded)
         fanout = int(body.get("fanout", 1)); retry = int(body.get("max_retry", 0))

@@ -17,6 +17,7 @@ Sau này: R2Storage (presigned URL, trình duyệt tải trực tiếp từ CDN)
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import logging
 import os
 import pathlib
@@ -142,7 +143,7 @@ def _safe_key(key: str) -> str:
     """
     cleaned = key.replace("\\", "/").strip("/")
     if not cleaned:
-        raise StorageError("key rỗng")
+        raise StorageError(_t('key rỗng'))
     parts = []
     for part in cleaned.split("/"):
         if part in ("", "."):
@@ -307,7 +308,7 @@ class R2Storage(Storage):
                             headers={"Content-Type": content_type})
 
     def download_token(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> str:
-        raise StorageError("R2 dùng url_for(), không dùng download_token")
+        raise StorageError(_t('R2 dùng url_for(), không dùng download_token'))
 
     def resolve_token(self, token: str) -> Optional[str]:
         return None
@@ -321,7 +322,7 @@ def _r2_from_env() -> "R2Storage":
     sk = os.environ.get("LTT_R2_SECRET_ACCESS_KEY", "").strip()
     bucket = os.environ.get("LTT_R2_BUCKET", "").strip()
     if not (endpoint and akid and sk and bucket):
-        raise StorageError("R2 thiếu cấu hình LTT_R2_* (endpoint/key/bucket)")
+        raise StorageError(_t('R2 thiếu cấu hình LTT_R2_* (endpoint/key/bucket)'))
     return R2Storage(bucket=bucket, endpoint_url=endpoint,
                      access_key_id=akid, secret_access_key=sk)
 

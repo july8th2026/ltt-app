@@ -1,6 +1,7 @@
 """Dat hang anh/video sang app khac qua ToolSpec cua nen tang."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -14,10 +15,10 @@ def _tool(tool_name: str):
     from platform_core.registry import discover
     loaded = discover(); spec = discover_tools(apps=loaded).get(tool_name)
     if spec is None:
-        raise HTTPException(status_code=503, detail="Công cụ handoff chưa khả dụng.")
+        raise HTTPException(status_code=503, detail=_t('Công cụ handoff chưa khả dụng.'))
     owner = next((item for item in loaded if any(t.name == tool_name for t in item.manifest.tools)), None)
     if owner is None:
-        raise HTTPException(status_code=503, detail="Không xác định được app nhận handoff.")
+        raise HTTPException(status_code=503, detail=_t('Không xác định được app nhận handoff.'))
     return loaded, spec, owner
 
 
@@ -43,7 +44,7 @@ def _handoff_params(project, scene: dict, kind: str, body: dict) -> tuple[str, d
                   "camera": "", "motion": "cinematic", "visual_style": "cinematic",
                   "refs": []}
     else:
-        raise HTTPException(status_code=404, detail="Loại handoff không hỗ trợ.")
+        raise HTTPException(status_code=404, detail=_t('Loại handoff không hỗ trợ.'))
     from platform_core import providers
     capabilities = providers.model_capabilities(params["model"])
     if kind == "image":
@@ -72,7 +73,7 @@ async def handoff(request: Request, project_id: str, kind: str,
     scenes = list((project.payload or {}).get("scenes") or [])
     scene = next((item for item in scenes if item.get("id") == body.get("scene_id")), None)
     if scene is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy cảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy cảnh.'))
     tool_name, params = _handoff_params(project, scene, kind, body)
     loaded, spec, owner = _tool(tool_name)
     from platform_core.agent.tools import ToolParamsError, validate_tool_params
@@ -109,7 +110,7 @@ async def handoff_image_batch(request: Request, project_id: str,
     scenes = [scene for scene in list((project.payload or {}).get("scenes") or [])
               if scene.get("id") in requested]
     if not scenes:
-        raise HTTPException(status_code=422, detail="Chưa chọn cảnh hợp lệ để tạo frame.")
+        raise HTTPException(status_code=422, detail=_t('Chưa chọn cảnh hợp lệ để tạo frame.'))
     loaded, spec, owner = _tool("image.generate")
     from platform_core.agent.tools import ToolParamsError, validate_tool_params
     prepared = []

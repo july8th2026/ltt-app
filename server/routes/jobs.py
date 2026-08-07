@@ -11,6 +11,7 @@ biến "A không đọc được job của B", có test.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import copy
 import mimetypes
 import os
@@ -112,7 +113,7 @@ def chi_tiet(request: Request, job_id: str, user: str = Depends(require_login)):
     _u, job = _job_cua_user(request, job_id)
     if job is None:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     return templates.TemplateResponse(request, "job_detail.html", {
         "user": user, "nav": "jobs", "job": job, "artifacts": _artifacts(job.result),
         "csrf_token": issue_csrf_token(request),
@@ -125,7 +126,7 @@ def tien_do(request: Request, job_id: str, user: str = Depends(require_login)):
     _u, job = _job_cua_user(request, job_id)
     if job is None:
         from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     return templates.TemplateResponse(request, "_job_progress.html", {"job": job})
 
 
@@ -133,7 +134,7 @@ def tien_do(request: Request, job_id: str, user: str = Depends(require_login)):
 def huy_job(request: Request, job_id: str, csrf_token: str = Form(""),
             user: str = Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     u = user_hien_tai(request)
     from platform_core import credit, jobs
     from platform_core.db import get_session
@@ -142,7 +143,7 @@ def huy_job(request: Request, job_id: str, csrf_token: str = Form(""),
     try:
         job = db.get(Job, job_id)
         if job is None or u is None or job.user_id != u.id:
-            raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
         if jobs.cancel(db, job):
             credit.hoan(db, u.id, job.id)
         db.commit()
@@ -156,7 +157,7 @@ def huy_job(request: Request, job_id: str, csrf_token: str = Form(""),
 def thu_lai_job(request: Request, job_id: str, csrf_token: str = Form(""),
                 user: str = Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     u = user_hien_tai(request)
     from platform_core import credit
     from platform_core.db import get_session
@@ -167,9 +168,9 @@ def thu_lai_job(request: Request, job_id: str, csrf_token: str = Form(""),
     try:
         old = db.get(Job, job_id)
         if old is None or u is None or old.user_id != u.id:
-            raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
         if old.status not in {"error", "cancelled"}:
-            raise HTTPException(status_code=409, detail="Chỉ thử lại job đã lỗi hoặc đã hủy.")
+            raise HTTPException(status_code=409, detail=_t('Chỉ thử lại job đã lỗi hoặc đã hủy.'))
         params = copy.deepcopy(old.params or {})
         try:
             new_job = submit_with_credit(
@@ -193,7 +194,7 @@ def tai_artifact(request: Request, job_id: str, index: int,
     _u, job = _job_cua_user(request, job_id)
     artifacts = _artifacts(job.result if job else None)
     if job is None or index < 0 or index >= len(artifacts):
-        raise HTTPException(status_code=404, detail="Không tìm thấy tệp kết quả.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy tệp kết quả.'))
     key = artifacts[index]["key"]
     from platform_core.storage import StorageError, get_storage
     storage = get_storage()
@@ -203,7 +204,7 @@ def tai_artifact(request: Request, job_id: str, index: int,
     try:
         stream = storage.open(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Tệp kết quả không còn tồn tại.")
+        raise HTTPException(status_code=404, detail=_t('Tệp kết quả không còn tồn tại.'))
 
     def chunks():
         try:

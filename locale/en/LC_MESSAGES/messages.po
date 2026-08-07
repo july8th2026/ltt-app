@@ -1,21 +1,3 @@
-# Translations template for PROJECT.
-# Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
-#
-msgid ""
-msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-07 01:41+0700\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.18.0\n"
-
 #: server/templates/nap_don.html:18
 msgid "&larr; Gói nạp"
 msgstr "&larr; Credit packages"
@@ -76,6 +58,10 @@ msgstr "90 seconds"
 msgid "AI chỉ được dùng các nguồn bạn cung cấp; không tự nhận đã kiểm chứng nguồn."
 msgstr "The AI may only use the sources you provide, and will not claim to have verified them."
 
+#: apps/prompt_ai_ommi/jobs.py:17
+msgid "AI không trả cảnh nào."
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:3
 msgid "AI trả về không đúng JSON — đang hiển thị nội dung đã khôi phục."
 msgstr "The AI returned malformed JSON — showing the recovered content."
@@ -87,6 +73,38 @@ msgstr "AI writes a complete YouTube script: hook, body, outro, description and 
 #: apps/upscalevideo/templates/upscalevideo.html:51
 msgid "Agent chạy trên máy chứa folder; web không nhận đường dẫn local."
 msgstr "The agent runs on the machine holding the folder; the web app does not accept local paths."
+
+#: apps/agent/routes/runs.py:174
+msgid "Artifact không còn tồn tại."
+msgstr ""
+
+#: apps/mediatools/jobs.py:44
+msgid "Asset không còn tồn tại."
+msgstr ""
+
+#: apps/mediatools/jobs.py:22
+msgid "Asset không thuộc tài khoản đang chạy workflow."
+msgstr ""
+
+#: apps/agent/routes/workspace.py:100
+msgid "Asset phải từ 1 byte đến 90 MB."
+msgstr ""
+
+#: apps/agent/routes/_shared.py:56
+msgid "Assistant proposal signer chưa được cấu hình."
+msgstr ""
+
+#: apps/upscalevideo/service.py:77
+msgid "Batch chỉ nhận từ 1 đến 3 video."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:306
+msgid "Batch manifest không hợp lệ."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:335
+msgid "Batch retry chỉ khớp một phần."
+msgstr ""
 
 #: apps/taoanh/templates/image.html:10
 msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật."
@@ -112,12 +130,21 @@ msgstr "Turns a long video into several vertical short clips (TikTok/Shorts/Reel
 msgid "Biến ý tưởng thành một hệ cảnh nhất quán."
 msgstr "Turn an idea into a consistent set of scenes."
 
+#: apps/agent/routes/runs.py:198
+msgid "Bundle vượt 200 MB; tải từng artifact."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
 msgid "Báo giá"
 msgstr "Quote"
 
 #: server/templates/nap.html:31
 msgid "Báo giá trọn gói"
+msgstr "Custom quote"
+
+#: apps/agent/routes/runs.py:67
+#, fuzzy
+msgid "Báo giá đã thay đổi."
 msgstr "Custom quote"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:58
@@ -143,6 +170,10 @@ msgstr "STEP 05"
 #: server/templates/home.html:61
 msgid "Bạn chưa dùng app nào."
 msgstr "You haven't used any apps yet."
+
+#: apps/mediatools/jobs.py:296
+msgid "Bạn phải xác nhận có quyền sử dụng video."
+msgstr ""
 
 #: server/templates/nap_don.html:24
 msgid "Bạn đã huỷ ở bước thanh toán —"
@@ -180,11 +211,19 @@ msgstr "Start using the tools"
 msgid "Bắt đầu một ý tưởng mới"
 msgstr "Start a new idea"
 
+#: apps/taoanh/jobs.py:164 apps/thumbnail/jobs.py:165
+msgid "Bị chặn vì lý do an toàn nội dung."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:24
 #: apps/taoclipngan/templates/taoclipngan.html:56
 #: apps/thumbnail/templates/thumbnail.html:56
 msgid "Bỏ chọn"
 msgstr "Clear selection"
+
+#: apps/mediatools/jobs.py:37
+msgid "Bộ ảnh có asset trùng hoặc không còn tồn tại."
+msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:47
 msgid "CHI PHÍ ƯỚC TÍNH"
@@ -193,6 +232,10 @@ msgstr "ESTIMATED COST"
 #: apps/taovideo/templates/taovideo.html:34
 msgid "Camera là hướng dẫn bằng prompt, không phải điều khiển cơ học native. Seed là capability thật của provider."
 msgstr "Camera is guided by the prompt, not by native mechanical control. Seed is a real provider capability."
+
+#: apps/agent/routes/legacy_runs.py:39
+msgid "Canvas bundle chưa được build."
+msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:36
 msgid "Chi phí theo phút nguồn + số output"
@@ -234,6 +277,10 @@ msgstr "Photoreal"
 msgid "Chưa báo giá"
 msgstr "Not quoted yet"
 
+#: apps/prompt_ai_ommi/routes/handoff.py:113
+msgid "Chưa chọn cảnh hợp lệ để tạo frame."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:37
 msgid "Chưa chọn dự án"
 msgstr "No project selected"
@@ -242,10 +289,32 @@ msgstr "No project selected"
 msgid "Chưa chọn video"
 msgstr "No video selected"
 
+#: apps/autosubvideo/routes.py:294
+#, fuzzy
+msgid "Chưa chọn video."
+msgstr "No video selected"
+
 #: server/templates/home.html:17 server/templates/home.html:18
 #: server/templates/home.html:20
 msgid "Chưa có"
 msgstr "Not yet"
+
+#: apps/taovideo/jobs.py:213
+msgid "Chưa có API key BytePlus (thêm ở /admin → APIKEYS)."
+msgstr ""
+
+#: apps/mediatools/jobs.py:162
+msgid "Chưa có API key Gemini cho TTS."
+msgstr ""
+
+#: apps/kichban/jobs.py:328
+msgid "Chưa có API key Gemini cho nhóm chat."
+msgstr ""
+
+#: apps/taovideo/translate.py:37
+#, fuzzy
+msgid "Chưa có API key Gemini."
+msgstr "No changes yet"
 
 #: server/templates/home.html:40 server/templates/home.html:62
 msgid "Chưa có app phù hợp."
@@ -343,6 +412,29 @@ msgstr "Not available yet — we will not fake it with the Quality setting."
 msgid "Chưa mở — không nâng SDR giả thành HDR."
 msgstr "Not available yet — we will not pass upscaled SDR off as HDR."
 
+#: apps/thumbnail/jobs.py:179
+#, fuzzy
+msgid "Chưa nhập chủ đề thumbnail."
+msgstr "No thumbnails yet"
+
+#: apps/kichban/jobs.py:352
+#, fuzzy
+msgid "Chưa nhập chủ đề video."
+msgstr "Video topic"
+
+#: apps/taovideo/jobs.py:140
+#, fuzzy
+msgid "Chưa nhập mô tả video."
+msgstr "Video prompt"
+
+#: apps/taoanh/jobs.py:176
+msgid "Chưa nhập mô tả ảnh (prompt)."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/resources.py:297
+msgid "Chưa thấy file trên kho lưu trữ."
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio_admin.html:15
 msgid "Chưa đăng nhập"
 msgstr "Not signed in"
@@ -357,9 +449,29 @@ msgstr "Quality"
 msgid "Chế độ"
 msgstr "Mode"
 
+#: apps/taoanh/jobs.py:209
+msgid "Chế độ chỉnh sửa cần ảnh nguồn."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:14
 msgid "Chế độ nâng cấp"
 msgstr "Upscale mode"
+
+#: apps/prompt_ai_ommi/routes/library.py:186
+msgid "Chỉ admin được ngừng dùng mẫu catalog."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:143
+msgid "Chỉ admin được publish catalog."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/library.py:162
+msgid "Chỉ admin được publish mẫu vào catalog."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:26
+msgid "Chỉ admin được xem vận hành."
+msgstr ""
 
 #: apps/taoanh/templates/image.html:23
 msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
@@ -368,6 +480,40 @@ msgstr "Shows only the data you entered"
 #: apps/upscalevideo/templates/upscalevideo.html:19
 msgid "Chỉ mở sau benchmark engine thật"
 msgstr "Opens only after a real engine benchmark"
+
+#: apps/chataistudio/features.py:43
+msgid "Chỉ nhận PNG/JPEG/WebP, TXT/MD/CSV/JSON hoặc PDF."
+msgstr ""
+
+#: apps/mediatools/jobs.py:204
+msgid "Chỉ nhận URL HTTPS công khai, không chứa thông tin đăng nhập."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/resources.py:211
+msgid "Chỉ nhận ảnh PNG, JPEG hoặc WebP."
+msgstr ""
+
+#: apps/agent/routes/workspace.py:97
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:49
+#, fuzzy
+msgid "Chỉ nhận ảnh, video hoặc audio."
+msgstr "Reference image, video or audio"
+
+#: apps/upscalevideo/routes.py:267
+msgid "Chỉ quản trị viên được xem telemetry."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:604
+msgid "Chỉ retry render đã lỗi hoặc đã hủy."
+msgstr ""
+
+#: server/routes/jobs.py:173
+msgid "Chỉ thử lại job đã lỗi hoặc đã hủy."
+msgstr ""
+
+#: apps/agent/routes/_shared.py:197
+msgid "Chỉ được lên lịch tối đa 30 ngày."
+msgstr ""
 
 #: apps/taoanh/templates/image.html:30
 msgid "Chỉnh sửa"
@@ -437,6 +583,10 @@ msgstr "Choose a video from your computer"
 #: apps/taoclipngan/templates/taoclipngan.html:61
 msgid "Chọn video ở Studio để bắt đầu."
 msgstr "Pick a video in the Studio to get started."
+
+#: apps/autosubvideo/routes.py:433
+msgid "Chọn ít nhất một track đang hiện và có cue."
+msgstr ""
 
 #: apps/taoanh/templates/image.html:24
 #: apps/thumbnail/templates/thumbnail.html:55
@@ -522,9 +672,17 @@ msgstr "Balances speed and quality."
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
 msgstr "Pay-as-you-go AI tools, all in one account"
 
+#: apps/prompt_ai_ommi/routes/handoff.py:18
+msgid "Công cụ handoff chưa khả dụng."
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:64
 msgid "Cũ nhất"
 msgstr "Oldest"
+
+#: apps/prompt_ai_ommi/routes/storyboard.py:229
+msgid "Cảnh chưa đủ mô tả để sinh ảnh."
+msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:13 server/templates/home.html:21
 msgid "Cấu hình"
@@ -546,6 +704,38 @@ msgstr "Configure now"
 #: apps/taoclipngan/templates/taoclipngan.html:36
 msgid "Cấu hình tuyển chọn"
 msgstr "Curation settings"
+
+#: apps/mediatools/jobs.py:35
+msgid "Cần 1–12 ảnh cho bộ ảnh đầu vào."
+msgstr ""
+
+#: apps/mediatools/jobs.py:113
+msgid "Cần 2–12 video để nối."
+msgstr ""
+
+#: apps/mediatools/jobs.py:86
+msgid "Cần 2–12 ảnh để ghép."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:512
+msgid "Cần transcript nguồn trước khi phân vai."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/_shared.py:71
+msgid "Cần tài khoản người dùng trong CSDL để sử dụng app."
+msgstr ""
+
+#: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:116
+#: apps/autosubvideo/routes.py:646 apps/taoclipngan/routes.py:161
+#: apps/upscalevideo/routes.py:179
+#, fuzzy
+msgid "Cần tài khoản người dùng."
+msgstr "Already have an account? Sign in"
+
+#: apps/chataistudio/routes.py:118
+#, fuzzy
+msgid "Cần đăng nhập."
+msgstr "Username"
 
 #: server/templates/nap_don.html:50
 msgid "Cổng thanh toán chưa cấu hình — vui lòng liên hệ quản trị để được cộng credit thủ công sau khi chuyển khoản."
@@ -599,13 +789,95 @@ msgstr "Real data"
 msgid "Dự án mới"
 msgstr "New project"
 
+#: apps/upscalevideo/jobs.py:43
+#, fuzzy
+msgid "Engine Real-ESRGAN chưa sẵn sàng."
+msgstr "The workspace is not ready yet"
+
+#: apps/upscalevideo/jobs.py:69
+msgid "Engine không tạo output ảnh."
+msgstr ""
+
+#: apps/upscalevideo/jobs.py:276
+msgid "Engine treo (>5' không có frame mới). Thử lại."
+msgstr ""
+
+#: apps/upscalevideo/jobs.py:193
+msgid "Engine upscale chưa sẵn sàng (thiếu vendor/engine)."
+msgstr ""
+
+#: apps/upscalevideo/jobs.py:278
+msgid "Engine upscale thất bại (xem log)."
+msgstr ""
+
+#: apps/mediatools/jobs.py:130
+msgid "FFmpeg không nối được các video; hãy dùng nguồn cùng kích thước/FPS."
+msgstr ""
+
+#: apps/mediatools/jobs.py:65
+msgid "FFmpeg không tách được frame từ video."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:354
+msgid "File local rỗng hoặc tổng >90MB."
+msgstr ""
+
+#: apps/agent/routes/workspace.py:116
+msgid "File media không có thời lượng hợp lệ."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:52
+msgid "File rỗng hoặc vượt giới hạn."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/resources.py:259
+msgid "File rỗng."
+msgstr ""
+
+#: platform_core/image_input.py:44
+msgid "File tham chiếu không phải ảnh hợp lệ."
+msgstr ""
+
+#: apps/autosubvideo/burn.py:116
+msgid "File video rỗng (0 byte)."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:78
 msgid "File được lưu owner-scoped. Ảnh 20 MB, video 60 MB, audio 20 MB."
 msgstr "Files are stored scoped to their owner. Images 20 MB, video 60 MB, audio 20 MB."
 
+#: apps/agent/routes/workspace.py:108
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:59
+msgid "File ảnh không hợp lệ."
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:33
 msgid "Font thương hiệu"
 msgstr "Brand font"
+
+#: apps/mediatools/jobs.py:178
+msgid "Gemini TTS không trả audio."
+msgstr ""
+
+#: apps/taovideo/translate.py:53
+msgid "Gemini không trả bản dịch."
+msgstr ""
+
+#: apps/taoanh/jobs.py:161 apps/thumbnail/jobs.py:162
+msgid "Gemini không trả candidate nào."
+msgstr ""
+
+#: apps/kichban/jobs.py:133
+msgid "Gemini không trả văn bản."
+msgstr ""
+
+#: apps/taoanh/jobs.py:169 apps/thumbnail/jobs.py:172
+msgid "Gemini không trả ảnh nào (chỉ có văn bản)."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:541
+msgid "Gemini translation chưa cấu hình API key."
+msgstr ""
 
 #: apps/kichban/templates/script.html:10
 msgid "Ghi chú nghiên cứu"
@@ -730,6 +1002,11 @@ msgstr "Cancel job"
 msgid "Insight, luận điểm, điều bắt buộc kiểm chứng"
 msgstr "Insights, arguments, and claims that must be fact-checked"
 
+#: apps/prompt_ai_ommi/routes/resources.py:514
+#: apps/prompt_ai_ommi/routes/storyboard.py:279
+msgid "Job chưa chạy xong."
+msgstr ""
+
 #: apps/kichban/templates/script_result.html:9
 msgid "Job chạy nền — trang tự cập nhật khi xong."
 msgstr "The job runs in the background — this page updates itself when it finishes."
@@ -737,6 +1014,15 @@ msgstr "The job runs in the background — this page updates itself when it fini
 #: apps/kichban/templates/_script_view.html:4
 msgid "Job gốc bất biến; mỗi lần lưu tạo revision mới có kiểm tra xung đột."
 msgstr "The original job is immutable; each save creates a new revision with a conflict check."
+
+#: apps/prompt_ai_ommi/routes/resources.py:520
+#: apps/prompt_ai_ommi/routes/storyboard.py:282
+msgid "Job không trả về ảnh nào."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/resources.py:516
+msgid "Job này không sinh ảnh."
+msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:27
 msgid "KIẾM TIỀN 2026"
@@ -751,6 +1037,14 @@ msgstr "Your personal asset library has not shipped yet"
 msgid "Kho ứng dụng"
 msgstr "App store"
 
+#: apps/prompt_ai_ommi/routes/resources.py:294
+msgid "Khoá lưu trữ không hợp lệ."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:516
+msgid "Khoảng số speaker không hợp lệ."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:66
 msgid "Khách hàng mục tiêu"
 msgstr "Target audience"
@@ -763,6 +1057,10 @@ msgstr "Lock the story and the goal before the AI breaks it into scenes."
 msgid "Không có lỗi chặn"
 msgstr "No blocking errors"
 
+#: apps/autosubvideo/project_render.py:41
+msgid "Không có track phụ đề được chọn để render."
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:19
 msgid "Không có tệp ·"
 msgstr "No file ·"
@@ -770,6 +1068,14 @@ msgstr "No file ·"
 #: server/templates/home.html:45
 msgid "Không có việc nào đang chạy."
 msgstr "No jobs are running."
+
+#: apps/taoclipngan/jobs.py:207
+msgid "Không dựng được clip nào từ video (thử video khác/tier khác)."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:429
+msgid "Không dựng được file phụ đề ASS."
+msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:52
 msgid "Không hiển thị prompt nội bộ của nền tảng"
@@ -779,9 +1085,186 @@ msgstr "Platform-internal prompts are never shown"
 msgid "Không hoàn tất"
 msgstr "Incomplete"
 
+#: apps/autosubvideo/jobs.py:114
+msgid "Không nhận được lời nói trong video."
+msgstr ""
+
+#: apps/mediatools/jobs.py:209
+msgid "Không phân giải được máy chủ video."
+msgstr ""
+
+#: apps/autosubvideo/parsers.py:105
+msgid "Không tìm thấy Dialogue nào trong file ASS"
+msgstr ""
+
+#: apps/agent/routes/_shared.py:245
+#, fuzzy
+msgid "Không tìm thấy artifact."
+msgstr "We couldn't find this order"
+
+#: apps/agent/routes/workspace.py:136 apps/agent/routes/workspace.py:147
+#, fuzzy
+msgid "Không tìm thấy asset."
+msgstr "We couldn't find this order"
+
+#: apps/taoclipngan/routes.py:392
+#, fuzzy
+msgid "Không tìm thấy clip."
+msgstr "We couldn't find this order"
+
+#: apps/prompt_ai_ommi/routes/handoff.py:76
+#, fuzzy
+msgid "Không tìm thấy cảnh."
+msgstr "We couldn't find this order"
+
+#: apps/autosubvideo/routes.py:841
+#, fuzzy
+msgid "Không tìm thấy file."
+msgstr "We couldn't find this order"
+
+#: apps/autosubvideo/routes.py:561 apps/autosubvideo/routes.py:585
+#: apps/autosubvideo/routes.py:602 apps/prompt_ai_ommi/routes/projects.py:222
+#: apps/prompt_ai_ommi/routes/resources.py:512
+#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/upscalevideo/routes.py:594
+#: server/routes/jobs.py:116 server/routes/jobs.py:129
+#: server/routes/jobs.py:146 server/routes/jobs.py:171
+#, fuzzy
+msgid "Không tìm thấy job."
+msgstr "We couldn't find this order"
+
+#: apps/prompt_ai_ommi/routes/projects.py:238
+#, fuzzy
+msgid "Không tìm thấy kết quả job."
+msgstr "We couldn't find this order"
+
+#: apps/agent/routes/_shared.py:103
+#, fuzzy
+msgid "Không tìm thấy lượt Agent."
+msgstr "We couldn't find this order"
+
+#: apps/taoclipngan/routes.py:342
+#, fuzzy
+msgid "Không tìm thấy package."
+msgstr "We couldn't find this order"
+
+#: apps/autosubvideo/routes.py:189 apps/autosubvideo/routes.py:208
+#: apps/autosubvideo/routes.py:223 apps/autosubvideo/routes.py:262
+#: apps/autosubvideo/routes.py:315 apps/autosubvideo/routes.py:335
+#: apps/autosubvideo/routes.py:452 apps/autosubvideo/routes.py:467
+#: apps/autosubvideo/routes.py:500 apps/autosubvideo/routes.py:535
+#: apps/prompt_ai_ommi/routes/_shared.py:111
+#: apps/prompt_ai_ommi/routes/_shared.py:113
+#, fuzzy
+msgid "Không tìm thấy project."
+msgstr "We couldn't find this order"
+
+#: apps/agent/routes/admin.py:79
+#, fuzzy
+msgid "Không tìm thấy run."
+msgstr "We couldn't find this order"
+
+#: apps/autosubvideo/parsers.py:132
+msgid "Không tìm thấy segment nào trong file JSON"
+msgstr ""
+
+#: apps/autosubvideo/parsers.py:69
+msgid "Không tìm thấy segment nào trong file SRT"
+msgstr ""
+
+#: apps/autosubvideo/parsers.py:80
+msgid "Không tìm thấy segment nào trong file VTT"
+msgstr ""
+
+#: apps/agent/routes/sharing.py:90
+#, fuzzy
+msgid "Không tìm thấy share."
+msgstr "We couldn't find this order"
+
+#: apps/agent/routes/workflows.py:96 apps/prompt_ai_ommi/routes/projects.py:139
+#: apps/prompt_ai_ommi/routes/projects.py:142
+#, fuzzy
+msgid "Không tìm thấy snapshot."
+msgstr "We couldn't find this order"
+
+#: server/routes/jobs.py:197
+#, fuzzy
+msgid "Không tìm thấy tệp kết quả."
+msgstr "We couldn't find this order"
+
+#: apps/upscalevideo/routes.py:665
+#, fuzzy
+msgid "Không tìm thấy video nguồn."
+msgstr "We couldn't find this order"
+
+#: apps/mediatools/jobs.py:274
+msgid "Không tìm thấy video sau khi tải."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:806 apps/taovideo/routes.py:476
+#: apps/taovideo/routes.py:485 apps/upscalevideo/routes.py:613
+#: apps/upscalevideo/routes.py:643
+#, fuzzy
+msgid "Không tìm thấy video."
+msgstr "We couldn't find this order"
+
+#: apps/agent/routes/assistant.py:66 apps/agent/routes/library.py:24
+#: apps/agent/routes/library.py:49 apps/agent/routes/library.py:69
+#: apps/agent/routes/library.py:81 apps/agent/routes/library.py:94
+#: apps/agent/routes/library.py:112 apps/agent/routes/runs.py:52
+#: apps/agent/routes/sharing.py:28 apps/agent/routes/sharing.py:43
+#: apps/agent/routes/workflows.py:47 apps/agent/routes/workflows.py:64
+#: apps/agent/routes/workflows.py:78
+#, fuzzy
+msgid "Không tìm thấy workflow."
+msgstr "We couldn't find this order"
+
 #: server/templates/nap_khong_thay.html:12
 msgid "Không tìm thấy đơn nạp này"
 msgstr "We couldn't find this order"
+
+#: apps/agent/routes/assistant.py:141
+#, fuzzy
+msgid "Không tìm thấy đề xuất."
+msgstr "We couldn't find this order"
+
+#: apps/chataistudio/routes.py:429 apps/prompt_ai_ommi/routes/resources.py:347
+#: apps/prompt_ai_ommi/routes/resources.py:366
+#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:211
+#: apps/taoanh/routes.py:219 apps/taoanh/routes.py:237
+#: apps/taoanh/routes.py:245 apps/thumbnail/routes.py:366
+#: apps/thumbnail/routes.py:374
+#, fuzzy
+msgid "Không tìm thấy ảnh."
+msgstr "We couldn't find this order"
+
+#: apps/agent/routes/_shared.py:333 apps/autosubvideo/routes.py:768
+#: apps/chataistudio/routes.py:337 apps/chataistudio/routes.py:361
+#: apps/chataistudio/routes.py:421 apps/chataistudio/routes.py:436
+#: apps/taoclipngan/routes.py:384
+#, fuzzy
+msgid "Không tìm thấy."
+msgstr "We couldn't find this order"
+
+#: apps/mediatools/jobs.py:270
+msgid "Không tải được video công khai; hãy kiểm tra liên kết và quyền truy cập."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/handoff.py:21
+msgid "Không xác định được app nhận handoff."
+msgstr ""
+
+#: apps/upscalevideo/jobs.py:220
+msgid "Không đọc được luồng video."
+msgstr ""
+
+#: apps/chataistudio/features.py:41
+msgid "Không đọc được nội dung PDF."
+msgstr ""
+
+#: apps/agent/routes/runs.py:76
+#, fuzzy
+msgid "Không đủ credit."
+msgstr "the add-credit page"
 
 #: apps/autosubvideo/manifest.py:37
 msgid "Khắc phụ đề video"
@@ -810,6 +1293,10 @@ msgstr "Type style (preset)"
 #: apps/upscalevideo/templates/upscalevideo.html:68
 msgid "Kéo &amp; thả video vào đây"
 msgstr "Drag &amp; drop a video here"
+
+#: platform_core/image_input.py:48
+msgid "Kích thước ảnh tham chiếu không hợp lệ."
+msgstr ""
 
 #: apps/agent/templates/agent_run.html:6
 msgid "Kế hoạch Agent"
@@ -866,6 +1353,18 @@ msgstr "This verification link is invalid or has expired."
 #: server/templates/jobs.html:23
 msgid "Loại"
 msgstr "Type"
+
+#: apps/prompt_ai_ommi/routes/handoff.py:47
+msgid "Loại handoff không hỗ trợ."
+msgstr ""
+
+#: apps/taovideo/jobs.py:99
+msgid "Loại tài nguyên tham chiếu không hợp lệ."
+msgstr ""
+
+#: apps/taovideo/routes.py:287
+msgid "Loại tài sản đã lưu không hợp lệ."
+msgstr ""
 
 #: server/templates/jobs.html:23
 msgid "Lúc"
@@ -930,6 +1429,10 @@ msgstr "Error"
 msgid "Lỗi:"
 msgstr "Error:"
 
+#: platform_core/image_input.py:46
+msgid "MIME ảnh tham chiếu không khớp nội dung file."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:69
 msgid "MP4, MOV, MKV, AVI · browser tối đa 90MB khi R2 CORS chưa được bật"
 msgstr "MP4, MOV, MKV, AVI · up to 90 MB from the browser until R2 CORS is enabled"
@@ -950,6 +1453,14 @@ msgstr "Primary colour"
 msgid "Màu phụ"
 msgstr "Secondary colour"
 
+#: apps/mediatools/jobs.py:237
+msgid "Máy chủ chưa cài bộ nhập video mạng xã hội."
+msgstr ""
+
+#: apps/mediatools/jobs.py:211
+msgid "Máy chủ video không có địa chỉ hợp lệ."
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:35
 msgid "Máy tĩnh"
 msgstr "Static camera"
@@ -957,6 +1468,10 @@ msgstr "Static camera"
 #: server/templates/_nap_trangthai.html:36
 msgid "Mã giao dịch"
 msgstr "Transaction ID"
+
+#: apps/autosubvideo/routes.py:544
+msgid "Mã ngôn ngữ đích không hợp lệ."
+msgstr ""
 
 #: server/templates/nap.html:59 server/templates/nap_don.html:36
 msgid "Mã đơn"
@@ -994,6 +1509,11 @@ msgstr "Describe the video. Type @name to use a reference…"
 msgid "Mô tả ảnh"
 msgstr "Image prompt"
 
+#: apps/prompt_ai_ommi/routes/resources.py:429
+#, fuzzy
+msgid "Mô tả ảnh quá ngắn — tối thiểu 8 ký tự."
+msgstr "At least 8 characters"
+
 #: apps/upscalevideo/templates/upscalevideo.html:44
 msgid "Mượt chuyển động 2×"
 msgstr "Motion smoothing 2×"
@@ -1014,9 +1534,29 @@ msgstr "Password"
 msgid "Mật khẩu mới"
 msgstr "New password"
 
+#: apps/autosubvideo/jobs.py:84 apps/autosubvideo/routes.py:346
+msgid "Mỗi lượt chép lời tối đa 120 phút."
+msgstr ""
+
+#: apps/chataistudio/routes.py:182
+msgid "Mỗi lượt chỉ nhận tối đa 3 tệp."
+msgstr ""
+
+#: apps/taoanh/jobs.py:93 apps/taoanh/jobs.py:207
+msgid "Một node Image chỉ nhận tối đa 8 ảnh tham chiếu."
+msgstr ""
+
+#: apps/kichban/jobs.py:151
+msgid "Một node Text chỉ nhận tối đa 8 ảnh."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:16
 msgid "Một phi hành gia khám phá thành phố tương lai, ánh sáng điện ảnh, chi tiết cao"
 msgstr "An astronaut exploring a futuristic city, cinematic lighting, highly detailed"
+
+#: apps/taovideo/jobs.py:112
+msgid "Một video chỉ nhận tối đa 4 tài nguyên tham chiếu."
+msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:64 server/templates/home.html:29
 msgid "Mới nhất"
@@ -1067,6 +1607,10 @@ msgstr "Open navigation"
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:65
 msgid "Mục tiêu"
 msgstr "Goal"
+
+#: apps/agent/routes/assistant.py:36
+msgid "Mục tiêu/ngân sách không hợp lệ."
+msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:20
 #: apps/upscalevideo/templates/upscalevideo.html:45
@@ -1164,6 +1708,18 @@ msgstr "Message the AI… (Enter to send, Shift+Enter for a new line)"
 msgid "Nhớ mật khẩu rồi? Đăng nhập"
 msgstr "Remembered your password? Sign in"
 
+#: apps/taoanh/jobs.py:120
+msgid "Node Image chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP."
+msgstr ""
+
+#: apps/kichban/jobs.py:226
+msgid "Node Text chưa hỗ trợ định dạng video này."
+msgstr ""
+
+#: apps/kichban/jobs.py:197
+msgid "Node Text chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP."
+msgstr ""
+
 #: apps/upscalevideo/manifest.py:75
 msgid "Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ."
 msgstr "Upscales image detail 4× with Real-ESRGAN on a local GPU."
@@ -1242,6 +1798,11 @@ msgstr "Content"
 msgid "Nội dung / câu chuyện"
 msgstr "Content / story"
 
+#: apps/prompt_ai_ommi/jobs.py:54 apps/prompt_ai_ommi/routes/projects.py:199
+#, fuzzy
+msgid "Nội dung brief tối thiểu 20 ký tự."
+msgstr "At least 8 characters"
+
 #: apps/taoclipngan/templates/taoclipngan.html:70
 msgid "Nội dung caption"
 msgstr "Caption text"
@@ -1250,9 +1811,17 @@ msgstr "Caption text"
 msgid "Nội dung hội thoại"
 msgstr "Conversation"
 
+#: apps/mediatools/jobs.py:334
+msgid "Nội dung tải về không phải video hợp lệ."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:44
 msgid "Nội suy 48/60 FPS rồi upscale · +120%."
 msgstr "Interpolate to 48/60 fps, then upscale · +120%."
+
+#: apps/prompt_ai_ommi/jobs.py:57
+msgid "Operation không hợp lệ."
+msgstr ""
 
 #: apps/kichban/templates/script.html:10
 msgid "Output có cấu trúc"
@@ -1274,17 +1843,43 @@ msgstr "PNG/JPEG/WebP · up to 8 MB"
 msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini để hướng dẫn tạo ảnh, không công khai"
 msgstr "PNG/JPEG/WebP · up to 8 MB · sent to Gemini to guide generation, never made public"
 
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:112
+msgid "Package không đúng định dạng."
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:40
 msgid "Package nền tảng"
 msgstr "Platform package"
+
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:110
+msgid "Package vượt giới hạn 900 KiB."
+msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:88
 msgid "Pause và Delete đang hoãn theo Q47"
 msgstr "Pause and Delete are deferred under Q47"
 
+#: apps/agent/routes/workspace.py:46
+msgid "Phiên bản trình bày không hợp lệ."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:121
 msgid "Phiên bản đã chụp"
 msgstr "Saved versions"
+
+#: apps/prompt_ai_ommi/routes/_shared.py:78
+msgid "Phiên đã hết hạn — tải lại trang."
+msgstr ""
+
+#: apps/agent/routes/_shared.py:122 apps/agent/routes/legacy_runs.py:109
+#: apps/agent/routes/legacy_runs.py:132 apps/agent/routes/legacy_runs.py:146
+#: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:123
+#: apps/autosubvideo/routes.py:236 apps/autosubvideo/routes.py:285
+#: apps/upscalevideo/routes.py:214 apps/upscalevideo/routes.py:232
+#: apps/upscalevideo/routes.py:585 server/routes/jobs.py:137
+#: server/routes/jobs.py:160
+msgid "Phiên đã hết hạn."
+msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:35
 msgid "Phong cách"
@@ -1318,9 +1913,30 @@ msgstr "Preflight is free. You always see the cost before anything is sent to a 
 msgid "Preset được đưa vào render thật; không thay bằng CSS preview."
 msgstr "Presets go into the real render; they are not faked with a CSS preview."
 
+#: apps/prompt_ai_ommi/routes/projects.py:97
+msgid "Project không ở trạng thái lưu trữ."
+msgstr ""
+
+#: apps/prompt_ai_ommi/project_schema.py:100
+msgid "Project phải là object."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:339 apps/autosubvideo/routes.py:417
+#: apps/autosubvideo/routes.py:504 apps/autosubvideo/routes.py:539
+msgid "Project đã được sửa ở phiên khác."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:15
 msgid "Prompt tối đa 4.000 ký tự"
 msgstr "Prompts are limited to 4,000 characters"
+
+#: apps/taovideo/jobs.py:303
+msgid "Provider không trả URL video."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:506
+msgid "Pyannote chưa cấu hình token/model."
+msgstr ""
 
 #: server/templates/home.html:59
 msgid "Quay lại kho ứng dụng và mở app đầu tiên."
@@ -1329,6 +1945,10 @@ msgstr "Go back to the app store and open your first app."
 #: server/templates/_platform_footer.html:10
 msgid "Quyền riêng tư"
 msgstr "Privacy"
+
+#: apps/agent/routes/sharing.py:46
+msgid "Quyền share không hợp lệ."
+msgstr ""
 
 #: server/templates/login.html:26
 msgid "Quên mật khẩu?"
@@ -1342,6 +1962,18 @@ msgstr "Admin"
 msgid "Quảng cáo sản phẩm"
 msgstr "Product ad"
 
+#: platform_core/storage.py:311
+msgid "R2 dùng url_for(), không dùng download_token"
+msgstr ""
+
+#: platform_core/storage.py:325
+msgid "R2 thiếu cấu hình LTT_R2_* (endpoint/key/bucket)"
+msgstr ""
+
+#: apps/mediatools/jobs.py:312
+msgid "Redirect video thiếu Location."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:121
 msgid "Restore luôn tạo revision mới, không ghi đè âm thầm."
 msgstr "Restoring always creates a new revision — it never overwrites silently."
@@ -1350,9 +1982,27 @@ msgstr "Restoring always creates a new revision — it never overwrites silently
 msgid "Round-trip có schema; asset cần upload lại khi import."
 msgstr "Round-trips are schema-checked; assets must be re-uploaded on import."
 
+#: apps/prompt_ai_ommi/project_schema.py:102
+#, fuzzy
+msgid "Sai loại project PROMPT AI OMMI."
+msgstr "← Back to PROMPT AI OMMI"
+
+#: apps/taovideo/routes.py:156 apps/taovideo/routes.py:158
+msgid "Seed phải là số nguyên từ 0 đến 2147483647."
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:35
 msgid "Seed tùy chọn"
 msgstr "Seed (optional)"
+
+#: apps/agent/routes/sharing.py:74
+msgid "Share chỉ có quyền xem."
+msgstr ""
+
+#: apps/agent/routes/_shared.py:327
+#, fuzzy
+msgid "Share không tồn tại hoặc đã hết hạn."
+msgstr "This order was not completed, or it has expired."
 
 #: apps/mediatools/manifest.py:44
 msgid "Sinh giọng đọc có điều khiển phong cách bằng Gemini TTS."
@@ -1386,6 +2036,14 @@ msgstr "General-purpose text generation from an instruction, with a choice of ou
 msgid "Sinh ảnh từ mô tả tự do bằng Gemini Image. Chọn model, tỉ lệ, số ảnh."
 msgstr "Generates images from a free-form prompt with Gemini Image. Choose the model, aspect ratio and image count."
 
+#: apps/autosubvideo/jobs.py:188
+msgid "Snapshot project không còn toàn vẹn."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:614
+msgid "Snapshot/source của job cũ không còn hợp lệ."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:30
 #: apps/taoclipngan/templates/taoclipngan.html:68
 #: apps/thumbnail/templates/thumbnail.html:71
@@ -1401,6 +2059,23 @@ msgstr "Compare results"
 #: apps/taoclipngan/templates/taoclipngan.html:54
 msgid "So sánh output"
 msgstr "Compare outputs"
+
+#: apps/autosubvideo/routes.py:428
+msgid "Source video chưa sẵn sàng hoặc không thuộc user."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:510
+#, fuzzy
+msgid "Source video chưa sẵn sàng."
+msgstr "The workspace is not ready yet"
+
+#: apps/autosubvideo/routes.py:343
+msgid "Source video chưa upload hoặc không thuộc user."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:191
+msgid "Source video không thuộc project owner."
+msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:38
 msgid "Style chữ"
@@ -1429,6 +2104,10 @@ msgstr "Credit balance"
 #: server/templates/_nap_trangthai.html:26
 msgid "Số dư hiện tại"
 msgstr "Current balance"
+
+#: apps/upscalevideo/routes.py:338
+msgid "Số file không khớp manifest."
+msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:54
 msgid "Số lượng/biến thể"
@@ -1495,6 +2174,40 @@ msgstr "Video upscale setup"
 msgid "Thiết lập tạo video"
 msgstr "Video generation setup"
 
+#: apps/autosubvideo/jobs.py:272
+msgid "Thiếu project/source/revision cho diarization."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:67
+msgid "Thiếu project/source/revision cho transcription."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:325
+msgid "Thiếu project/track/ngôn ngữ cho translation."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:337 apps/autosubvideo/routes.py:415
+#: apps/autosubvideo/routes.py:502 apps/autosubvideo/routes.py:537
+msgid "Thiếu revision hợp lệ."
+msgstr ""
+
+#: apps/agent/jobs.py:23
+msgid "Thiếu run_id/user_id cho agent.advance."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:371
+msgid "Thiếu transcript (chưa nạp phụ đề)."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:368 apps/taoclipngan/jobs.py:74
+#: apps/upscalevideo/jobs.py:171
+msgid "Thiếu video (video_key)."
+msgstr ""
+
+#: apps/mediatools/jobs.py:144
+msgid "Thiếu văn bản cần đọc."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:52
 msgid "Thu hồi"
 msgstr "Revoke"
@@ -1522,6 +2235,14 @@ msgstr "Genre"
 #: server/templates/nap.html:59
 msgid "Thời gian"
 msgstr "Time"
+
+#: apps/agent/routes/_shared.py:192
+msgid "Thời gian lên lịch không hợp lệ."
+msgstr ""
+
+#: apps/agent/routes/_shared.py:194
+msgid "Thời gian lên lịch phải kèm múi giờ."
+msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
 #: apps/taovideo/templates/taovideo.html:54
@@ -1580,9 +2301,29 @@ msgstr "Vietnamese"
 msgid "Token chỉ có quyền Watch Upscale và chỉ hiển thị một lần."
 msgstr "The token only grants Watch Upscale access, and is shown only once."
 
+#: apps/agent/routes/workspace.py:187
+msgid "Tool không tồn tại/không có quyền."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:330
+msgid "Track nguồn không có cue để dịch."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:548
+msgid "Track nguồn không có cue."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:436
+msgid "Track render không tồn tại."
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:30
 msgid "Trang chủ"
 msgstr "Home"
+
+#: server/deps.py:91
+msgid "Trang này chỉ dành cho quản trị viên."
+msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:70
 msgid "Transcript & biên tập package"
@@ -1591,6 +2332,14 @@ msgstr "Transcript & package editing"
 #: apps/autosubvideo/templates/autosubvideo.html:46
 msgid "Transcript (.srt, .json, .vtt, .ass — bắt buộc)"
 msgstr "Transcript (.srt, .json, .vtt, .ass — required)"
+
+#: apps/autosubvideo/parsers.py:119
+msgid "Transcript JSON phải là array có ít nhất 1 segment"
+msgstr ""
+
+#: apps/autosubvideo/routes.py:240
+msgid "Transcript rỗng hoặc quá lớn (>8MB)."
+msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:70
 msgid "Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn."
@@ -1634,6 +2383,14 @@ msgstr "Accounts, pages and token status."
 msgid "Tài nguyên"
 msgstr "Assets"
 
+#: apps/taovideo/jobs.py:103
+msgid "Tài nguyên tham chiếu không còn tồn tại."
+msgstr ""
+
+#: apps/taovideo/jobs.py:101
+msgid "Tài nguyên tham chiếu không thuộc người dùng."
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:12
 msgid "Tài sản"
 msgstr "Assets"
@@ -1641,6 +2398,14 @@ msgstr "Assets"
 #: apps/taovideo/templates/taovideo.html:48
 msgid "Tài sản đã lưu"
 msgstr "Saved assets"
+
+#: apps/taovideo/routes.py:283
+msgid "Tài sản đã lưu không hợp lệ hoặc không còn tồn tại."
+msgstr ""
+
+#: apps/mediatools/jobs.py:362
+msgid "Tác vụ media không hợp lệ."
+msgstr ""
 
 #: apps/mediatools/manifest.py:52
 msgid "Tách frame đều theo thời gian từ video bằng FFmpeg."
@@ -1706,6 +2471,10 @@ msgstr "System status"
 msgid "Tóm tắt thanh toán"
 msgstr "Payment summary"
 
+#: apps/agent/routes/workspace.py:44
+msgid "Tùy chọn giao diện không hợp lệ."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:39
 msgid "Tùy chọn nâng cao"
 msgstr "Advanced options"
@@ -1739,6 +2508,10 @@ msgstr "Generate the missing frames"
 msgid "Tạo hội thoại, chọn model rồi nhắn cho AI. Yêu cầu “tạo ảnh…” ngay trong chat khi cần hình minh hoạ."
 msgstr "Start a conversation, pick a model and message the AI. Ask it to \"generate an image…\" right in the chat when you need an illustration."
 
+#: apps/prompt_ai_ommi/routes/_shared.py:64
+msgid "Tạo job PROMPT AI OMMI đang tạm khóa."
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:61
 msgid "Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh."
 msgstr "Generate for the first time; the real results will appear here to open and compare."
@@ -1750,6 +2523,10 @@ msgstr "Branch"
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:51
 msgid "Tạo project để xây brief, tài nguyên tham chiếu, prompt từng cảnh và storyboard có phiên bản."
 msgstr "Create a project to build a brief, reference assets, per-scene prompts and a versioned storyboard."
+
+#: apps/agent/routes/_shared.py:88
+msgid "Tạo run Canvas đang tạm khóa."
+msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:52
 msgid "Tạo token kết nối"
@@ -1838,9 +2615,25 @@ msgstr "Turn off to normalise to 30 fps."
 msgid "Tắt để xuất video không audio."
 msgstr "Turn off to export the video without audio."
 
+#: apps/chataistudio/features.py:46
+msgid "Tệp không có nội dung văn bản có thể đọc."
+msgstr ""
+
 #: server/templates/job_detail.html:9
 msgid "Tệp kết quả"
 msgstr "Result files"
+
+#: server/routes/jobs.py:207
+msgid "Tệp kết quả không còn tồn tại."
+msgstr ""
+
+#: apps/chataistudio/features.py:35
+msgid "Tệp văn bản phải dùng UTF-8."
+msgstr ""
+
+#: apps/chataistudio/features.py:19
+msgid "Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB."
+msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:69
 #: apps/taoanh/templates/image.html:19 apps/taovideo/templates/taovideo.html:54
@@ -1876,13 +2669,26 @@ msgstr "Up to the 10 most recent orders on this account."
 msgid "Tối đa 3 tệp, mỗi tệp 8 MB"
 msgstr "Up to 3 files, 8 MB each"
 
+#: apps/taovideo/routes.py:234
+msgid "Tối đa 4 file tham chiếu."
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:45
 msgid "Tối đa 4 file · ảnh ≤20MB · video ≤60MB. Vai trò và tên gợi nhớ được gửi vào job thật."
 msgstr "Up to 4 files · images ≤20 MB · video ≤60 MB. The role and label you give each file are passed to the real job."
 
+#: apps/taovideo/routes.py:275
+#, fuzzy
+msgid "Tối đa 4 tài sản đã lưu."
+msgstr "Saved assets"
+
 #: apps/agent/templates/agent.html:13
 msgid "Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư."
 msgstr "Up to 8,000 characters. Do not paste tokens, passwords or private data."
+
+#: apps/taovideo/routes.py:360
+msgid "Tổng tài sản đã lưu và file mới không được vượt quá 4."
+msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:28
 msgid "Từ số 0"
@@ -1900,6 +2706,18 @@ msgstr "Checking every 4 seconds."
 msgid "Tự động"
 msgstr "Automatic"
 
+#: apps/mediatools/jobs.py:331
+msgid "URL chuyển hướng quá nhiều lần."
+msgstr ""
+
+#: apps/mediatools/jobs.py:318
+msgid "URL phải trỏ trực tiếp tới file video, không phải trang web."
+msgstr ""
+
+#: apps/mediatools/jobs.py:216
+msgid "URL trỏ tới mạng nội bộ hoặc địa chỉ bị chặn."
+msgstr ""
+
 #: apps/kichban/templates/script.html:10
 msgid "URL, trích dẫn hoặc dữ kiện do bạn cung cấp"
 msgstr "URLs, quotes or facts you provide"
@@ -1916,6 +2734,10 @@ msgstr "Upload image / video / audio"
 msgid "VD: Chiến dịch ra mắt sản phẩm mùa hè"
 msgstr "For example: summer product launch campaign"
 
+#: apps/mediatools/jobs.py:321 apps/mediatools/jobs.py:326
+msgid "Video URL vượt giới hạn 90 MB."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:65
 msgid "Video cần khiến người xem nghĩ hoặc làm gì?"
 msgstr "What should the video make the viewer think or do?"
@@ -1924,6 +2746,46 @@ msgstr "What should the video make the viewer think or do?"
 #: apps/taovideo/templates/taovideo.html:64
 msgid "Video của tôi"
 msgstr "My videos"
+
+#: apps/autosubvideo/jobs.py:82
+msgid "Video không có audio/thời lượng hợp lệ."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:203
+msgid "Video không có thời lượng hợp lệ."
+msgstr ""
+
+#: apps/mediatools/jobs.py:69
+msgid "Video không tạo được frame hợp lệ."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:297
+msgid "Video local rỗng hoặc quá 90MB."
+msgstr ""
+
+#: apps/mediatools/jobs.py:281
+msgid "Video mạng xã hội không hợp lệ hoặc dài quá 15 phút."
+msgstr ""
+
+#: apps/mediatools/jobs.py:277
+msgid "Video mạng xã hội vượt giới hạn 250 MB."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:69
+msgid "Video source không thuộc project owner."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:291
+msgid "Video upload không hợp lệ."
+msgstr ""
+
+#: apps/kichban/jobs.py:214
+msgid "Video đầu vào không còn tồn tại."
+msgstr ""
+
+#: apps/kichban/jobs.py:217
+msgid "Video đầu vào phải từ 1 byte đến 90 MB."
+msgstr ""
 
 #: apps/kichban/manifest.py:45
 msgid "Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề."
@@ -1965,6 +2827,10 @@ msgstr "For example: write a 60-second script, generate illustrations and build 
 msgid "Ví dụ: upscalevideo"
 msgstr "For example: upscalevideo"
 
+#: apps/kichban/jobs.py:168
+msgid "Văn bản tham chiếu vượt giới hạn 32.000 ký tự."
+msgstr ""
+
 #: server/templates/_auth_brand.html:1
 msgid "Về trang chủ LTT AI Studio"
 msgstr "Back to the LTT AI Studio home page"
@@ -1981,6 +2847,26 @@ msgstr "Back to sign in"
 #: apps/upscalevideo/templates/upscalevideo.html:83
 msgid "Vị trí đường so sánh"
 msgstr "Compare slider position"
+
+#: apps/upscalevideo/routes.py:202
+msgid "Watch Agent token không hợp lệ."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:308
+msgid "Watch batch chỉ nhận 1–3 video."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:313
+msgid "Watch batch thiếu request id."
+msgstr ""
+
+#: apps/agent/routes/sharing.py:64 apps/agent/routes/sharing.py:77
+msgid "Workflow không còn tồn tại."
+msgstr ""
+
+#: apps/agent/routes/assistant.py:69
+msgid "Workflow đã thay đổi; hãy phân tích lại."
+msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:15
 msgid "Workspace chưa sẵn sàng"
@@ -2067,13 +2953,33 @@ msgstr "Batch processing"
 msgid "Xử lý nhanh, phù hợp video thường."
 msgstr "Fast processing, good for everyday video."
 
+#: apps/agent/routes/assistant.py:73
+msgid "Yêu cầu Assistant không hợp lệ."
+msgstr ""
+
 #: server/templates/reset_password.html:20
 msgid "Yêu cầu liên kết mới"
 msgstr "Request a new link"
 
+#: apps/prompt_ai_ommi/services/composer.py:15
+msgid "catalog prompt không hợp lệ"
+msgstr ""
+
 #: server/templates/nap_don.html:24
 msgid "chưa trừ tiền"
 msgstr "no money was taken"
+
+#: apps/autosubvideo/schemas.py:204
+msgid "cue end phải lớn hơn start"
+msgstr ""
+
+#: apps/autosubvideo/schemas.py:224
+msgid "cue id bị trùng trong track"
+msgstr ""
+
+#: apps/autosubvideo/schemas.py:271
+msgid "cue id phải duy nhất toàn project"
+msgstr ""
 
 #: server/templates/home.html:58
 msgid "công cụ sẵn sàng"
@@ -2082,6 +2988,10 @@ msgstr "tools ready"
 #: server/templates/home.html:39
 msgid "cần thiết lập"
 msgstr "needs setup"
+
+#: platform_core/storage.py:146
+msgid "key rỗng"
+msgstr ""
 
 #: server/templates/_nap_trangthai.html:67
 msgid "không cần chuyển lại"
@@ -2095,6 +3005,14 @@ msgstr "errors"
 msgid "một tài khoản ChatGPT riêng"
 msgstr "a separate ChatGPT account"
 
+#: apps/autosubvideo/schemas.py:274
+msgid "speaker id/tên hiển thị không hợp lệ"
+msgstr ""
+
+#: apps/autosubvideo/schemas.py:265
+msgid "track id bị trùng"
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:24
 msgid "trang nạp credit"
 msgstr "the add-credit page"
@@ -2103,9 +3021,21 @@ msgstr "the add-credit page"
 msgid "tính"
 msgstr "charged"
 
+#: apps/autosubvideo/schemas.py:189
+msgid "word end phải lớn hơn start"
+msgstr ""
+
+#: apps/autosubvideo/schemas.py:206
+msgid "word timing phải nằm trong cue"
+msgstr ""
+
 #: server/templates/dashboard.html:16
 msgid "xem tình trạng"
 msgstr "view status"
+
+#: apps/autosubvideo/schemas.py:268
+msgid "z_index của track đang hiện bị trùng"
+msgstr ""
 
 #: server/templates/jobs.html:15
 msgid "Áp dụng"
@@ -2204,6 +3134,10 @@ msgstr "Already have an account? Sign in"
 #: apps/agent/templates/agent_run.html:12
 msgid "Đã dùng"
 msgstr "Used"
+
+#: apps/autosubvideo/routes.py:356
+msgid "Đã dùng hết 12 lượt chép lời miễn phí hôm nay."
+msgstr ""
 
 #: server/templates/_job_progress.html:10 server/templates/jobs.html:13
 #: server/templates/jobs.html:33
@@ -2330,6 +3264,10 @@ msgstr "Reset your password:"
 msgid "Đặt mật khẩu mới"
 msgstr "Set a new password"
 
+#: apps/agent/routes/assistant.py:139
+msgid "Đề xuất đã hết hạn hoặc không hợp lệ."
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:35
 msgid "Để trống = ngẫu nhiên"
 msgstr "Leave empty for random"
@@ -2342,9 +3280,17 @@ msgstr "Identify characters, locations, props and reference media."
 msgid "Định dạng &amp; codec"
 msgstr "Format &amp; codec"
 
+#: apps/prompt_ai_ommi/routes/assets_catalog.py:101
+msgid "Định dạng export không hỗ trợ."
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:61
 msgid "Định dạng ra"
 msgstr "Output format"
+
+#: apps/agent/routes/library.py:125
+msgid "Định dạng workflow không hỗ trợ."
+msgstr ""
 
 #: apps/kichban/templates/script.html:10
 msgid "Định hướng nội dung"
@@ -2393,6 +3339,10 @@ msgstr "My images"
 msgid "Ảnh do AI tạo"
 msgstr "AI-generated images"
 
+#: apps/upscalevideo/jobs.py:37
+msgid "Ảnh không thuộc tài khoản đang chạy workflow."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:18
 msgid "Ảnh nguồn"
 msgstr "Source image"
@@ -2405,17 +3355,59 @@ msgstr "Selected source image"
 msgid "Ảnh phong cách"
 msgstr "Style image"
 
+#: platform_core/image_input.py:35
+msgid "Ảnh tham chiếu chỉ nhận PNG, JPEG hoặc WebP."
+msgstr ""
+
+#: apps/taoanh/jobs.py:201
+msgid "Ảnh tham chiếu không hợp lệ hoặc không thuộc người dùng."
+msgstr ""
+
+#: apps/thumbnail/jobs.py:214
+msgid "Ảnh tham chiếu không thuộc người dùng hiện tại."
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:31
 msgid "Ảnh tham chiếu mới"
+msgstr "New reference images"
+
+#: platform_core/image_input.py:30
+#, fuzzy
+msgid "Ảnh tham chiếu rỗng."
+msgstr "New reference images"
+
+#: platform_core/image_input.py:32
+#, fuzzy
+msgid "Ảnh tham chiếu vượt giới hạn 8 MB."
 msgstr "New reference images"
 
 #: apps/taoanh/templates/image.html:18
 msgid "Ảnh tham chiếu được gửi tới Gemini để xử lý và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
 msgstr "Reference images are sent to Gemini for processing and stored in your account private data area. \"Replace a region\" works from a natural-language description; it is not a pixel-accurate masking tool."
 
+#: apps/prompt_ai_ommi/routes/resources.py:257
+msgid "Ảnh vượt 20 MB."
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:19
 msgid "Ảnh được gửi tới OpenAI và lưu riêng theo tài khoản. Tệp văn bản/PDF chỉ gửi phần chữ đã trích xuất; tối đa 3 tệp mỗi lượt."
 msgstr "Images are sent to OpenAI and stored privately per account. For text and PDF files only the extracted text is sent; up to 3 files per turn."
+
+#: apps/kichban/jobs.py:195 apps/taoanh/jobs.py:118
+msgid "Ảnh đầu vào bị hỏng hoặc không đúng định dạng."
+msgstr ""
+
+#: apps/kichban/jobs.py:183 apps/taoanh/jobs.py:106
+msgid "Ảnh đầu vào không còn tồn tại."
+msgstr ""
+
+#: apps/kichban/jobs.py:147 apps/taoanh/jobs.py:89
+msgid "Ảnh đầu vào không thuộc tài khoản đang chạy workflow."
+msgstr ""
+
+#: apps/kichban/jobs.py:187 apps/taoanh/jobs.py:110
+msgid "Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node."
+msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:42
 msgid "Ảnh, video hoặc audio tham chiếu"

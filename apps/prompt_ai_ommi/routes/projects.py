@@ -1,6 +1,7 @@
 """Vong doi du an: CRUD, ban chup, bao gia va chay AI Director."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import copy
 
 from fastapi import Depends, HTTPException, Request
@@ -93,7 +94,7 @@ async def unarchive_project(request: Request, project_id: str,
     from datetime import datetime, timezone
     from platform_core.models import APP_PROJECT_ACTIVE, APP_PROJECT_ARCHIVED
     if row.status != APP_PROJECT_ARCHIVED:
-        raise HTTPException(status_code=409, detail="Project không ở trạng thái lưu trữ.")
+        raise HTTPException(status_code=409, detail=_t('Project không ở trạng thái lưu trữ.'))
     row.status = APP_PROJECT_ACTIVE; row.revision += 1
     row.updated_at = datetime.now(timezone.utc); db.flush()
     return _row(row)
@@ -135,10 +136,10 @@ async def restore_snapshot(request: Request, project_id: str, snapshot_id: str,
     try:
         snap = app_projects.get_owned(db, snapshot_id, user.id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy snapshot.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy snapshot.')) from None
     if ((snap.payload or {}).get("kind") != "snapshot" or
             (snap.payload or {}).get("source_project_id") != project_id):
-        raise HTTPException(status_code=404, detail="Không tìm thấy snapshot.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy snapshot.'))
     payload = clean_project((snap.payload or {}).get("project") or {})
     try:
         row = app_projects.save(db, project_id=project_id, user_id=user.id,
@@ -195,7 +196,7 @@ async def generate_project(request: Request, project_id: str,
     params = prompt_job_params(payload, operation=operation,
                                model=_chat_model(str(body.get("model") or "")))
     if len(params["story"].strip()) < 20:
-        raise HTTPException(status_code=422, detail="Nội dung brief tối thiểu 20 ký tự.")
+        raise HTTPException(status_code=422, detail=_t('Nội dung brief tối thiểu 20 ký tự.'))
     params["project_id"] = project_id; params["owner_id"] = user.id
     from platform_core import credit
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
@@ -218,7 +219,7 @@ def job_status(request: Request, job_id: str, _identity: str = Depends(require_l
     from platform_core.models import Job
     row = db.get(Job, job_id)
     if row is None or row.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     return {"id": row.id, "app_slug": row.app_slug, "job_type": row.job_type,
             "status": row.status, "progress": row.progress,
             "progress_msg": row.progress_msg, "error": row.error,
@@ -234,7 +235,7 @@ async def apply_job(request: Request, project_id: str, job_id: str,
     job = db.get(Job, job_id)
     if (job is None or job.user_id != user.id or job.app_slug != MANIFEST.slug or
             job.status != JOB_DONE or (job.params or {}).get("project_id") != project_id):
-        raise HTTPException(status_code=404, detail="Không tìm thấy kết quả job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy kết quả job.'))
     package = (job.result or {}).get("prompt_package") or {}
     payload = clean_project(copy.deepcopy(project.payload))
     payload["scenes"] = package.get("scenes") or []

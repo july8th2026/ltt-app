@@ -10,6 +10,7 @@ Hợp đồng handler: idempotent theo job (khoá lưu theo job_id) · báo ti�
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import base64
 import io
 import os
@@ -85,11 +86,11 @@ def _canvas_reference_keys(params: dict, owner_id: str) -> list[str]:
         key = str(value or "").replace("\\", "/").strip("/")
         parts = key.split("/")
         if not owner_id or len(parts) < 3 or parts[1] != owner_id:
-            raise ValueError("Ảnh đầu vào không thuộc tài khoản đang chạy workflow.")
+            raise ValueError(_t('Ảnh đầu vào không thuộc tài khoản đang chạy workflow.'))
         if key not in keys:
             keys.append(key)
     if len(keys) > 8:
-        raise ValueError("Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.")
+        raise ValueError(_t('Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.'))
     return keys
 
 
@@ -102,11 +103,11 @@ def _load_canvas_references(params: dict, owner_id: str, storage) -> list[dict]:
     total_size = 0
     for key in _canvas_reference_keys(params, owner_id):
         if not storage.exists(key):
-            raise ValueError("Ảnh đầu vào không còn tồn tại.")
+            raise ValueError(_t('Ảnh đầu vào không còn tồn tại.'))
         size = storage.size(key)
         total_size += size
         if size <= 0 or size > 8 * 1024 * 1024 or total_size > 20 * 1024 * 1024:
-            raise ValueError("Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node.")
+            raise ValueError(_t('Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node.'))
         with storage.open(key) as stream:
             data = stream.read()
         try:
@@ -114,9 +115,9 @@ def _load_canvas_references(params: dict, owner_id: str, storage) -> list[dict]:
                 mime = mime_by_format.get(str(image.format or "").upper())
                 image.verify()
         except (UnidentifiedImageError, OSError) as exc:
-            raise ValueError("Ảnh đầu vào bị hỏng hoặc không đúng định dạng.") from exc
+            raise ValueError(_t('Ảnh đầu vào bị hỏng hoặc không đúng định dạng.')) from exc
         if not mime:
-            raise ValueError("Node Image chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.")
+            raise ValueError(_t('Node Image chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.'))
         result.append({"data": data, "mime": mime, "role": "reference"})
     return result
 
@@ -157,22 +158,22 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
         raise RuntimeError(f"Nội dung bị chặn: {pf['blockReason']}")
     candidates = data.get("candidates", []) or []
     if not candidates:
-        raise RuntimeError("Gemini không trả candidate nào.")
+        raise RuntimeError(_t('Gemini không trả candidate nào.'))
     cand = candidates[0]
     if cand.get("finishReason") == "SAFETY":
-        raise RuntimeError("Bị chặn vì lý do an toàn nội dung.")
+        raise RuntimeError(_t('Bị chặn vì lý do an toàn nội dung.'))
     for part in cand.get("content", {}).get("parts", []) or []:
         inline = part.get("inlineData") or part.get("inline_data")
         if inline and inline.get("data"):
             return base64.b64decode(inline["data"])
-    raise RuntimeError("Gemini không trả ảnh nào (chỉ có văn bản).")
+    raise RuntimeError(_t('Gemini không trả ảnh nào (chỉ có văn bản).'))
 
 
 def handle(params: dict, ctx=None) -> dict:
     """Sinh 1-4 ảnh từ prompt tự do, lưu qua storage, trả danh sách khoá ảnh."""
     prompt = str(params.get("prompt", "")).strip()
     if not prompt:
-        raise ValueError("Chưa nhập mô tả ảnh (prompt).")
+        raise ValueError(_t('Chưa nhập mô tả ảnh (prompt).'))
     aspect_ratio = str(params.get("aspect_ratio", "16:9")) or "16:9"
     owner_id = str(params.get("owner_id", "")) or "unknown"
     model = str(params.get("model") or _MODEL)
@@ -197,15 +198,15 @@ def handle(params: dict, ctx=None) -> dict:
     for spec in list(params.get("references") or [])[:2]:
         key = str(spec.get("key") or "")
         if not key.startswith(f"taoanh/{owner_id}/") or not storage.exists(key):
-            raise ValueError("Ảnh tham chiếu không hợp lệ hoặc không thuộc người dùng.")
+            raise ValueError(_t('Ảnh tham chiếu không hợp lệ hoặc không thuộc người dùng.'))
         with storage.open(key) as stream:
             references.append({"data": stream.read(),
                                "mime": str(spec.get("mime") or "image/png"),
                                "role": str(spec.get("role") or "reference")})
     if len(references) > 8:
-        raise ValueError("Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.")
+        raise ValueError(_t('Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.'))
     if edit_mode != "generate" and not any(r["role"] == "source" for r in references):
-        raise ValueError("Chế độ chỉnh sửa cần ảnh nguồn.")
+        raise ValueError(_t('Chế độ chỉnh sửa cần ảnh nguồn.'))
     final_prompt = edit_directive(edit_mode, prompt, references)
 
     keys: list[str] = []

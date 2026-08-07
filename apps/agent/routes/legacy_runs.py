@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 from datetime import datetime, timezone
 from time import perf_counter
 from fastapi import Depends, Form, HTTPException, Request
@@ -35,7 +36,7 @@ def page(request: Request, _identity: str = Depends(require_login)):
 def canvas_page(request: Request, _identity: str = Depends(require_login)):
     canvas_js, canvas_css = bundle_assets("agent-canvas")
     if not canvas_js:
-        raise HTTPException(status_code=503, detail="Canvas bundle chưa được build.")
+        raise HTTPException(status_code=503, detail=_t('Canvas bundle chưa được build.'))
     context = _page_context(request)
     context.update({"canvas_js": canvas_js, "canvas_css": canvas_css,
                     "canvas_presentation": _canvas_presentation_mode()})
@@ -105,7 +106,7 @@ def approve_run(request: Request, run_id: str, version: int = Form(...),
                 csrf_token: str = Form(""), _identity: str = Depends(require_login),
                 db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     user, run = _owned(db, request, run_id)
     approval_success = False
     try:
@@ -128,7 +129,7 @@ def approve_run(request: Request, run_id: str, version: int = Form(...),
 def tick_run(request: Request, run_id: str, csrf_token: str = Form(""),
              _identity: str = Depends(require_login), db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     user, run = _owned(db, request, run_id)
     scheduled = _scheduled_datetime(run)
     if run.status == AGENT_RUNNING and (scheduled is None or
@@ -142,7 +143,7 @@ def tick_run(request: Request, run_id: str, csrf_token: str = Form(""),
 def cancel_run(request: Request, run_id: str, csrf_token: str = Form(""),
                _identity: str = Depends(require_login), db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     user, run = _owned(db, request, run_id)
     if run.status in (AGENT_AWAITING_APPROVAL, AGENT_RUNNING):
         actual = executor.actual_cost(run, runs.children(db, run)) if run.status == AGENT_RUNNING else 0

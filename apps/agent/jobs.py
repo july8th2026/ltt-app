@@ -1,6 +1,7 @@
 """App-owned orchestration jobs over the shared Agent executor."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -19,7 +20,7 @@ def handle(params: dict, ctx=None) -> dict:
     """Advance once, then durably enqueue the next tick while the run is active."""
     run_id, user_id = str(params.get("run_id", "")), str(params.get("user_id", ""))
     if not run_id or not user_id:
-        raise ValueError("Thiếu run_id/user_id cho agent.advance.")
+        raise ValueError(_t('Thiếu run_id/user_id cho agent.advance.'))
     gen = get_session(); db = next(gen)
     try:
         from platform_core import jobs as job_queue

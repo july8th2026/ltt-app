@@ -11,6 +11,7 @@ Dispatch by file extension via `parse_transcript(filename, raw_bytes)`.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import json
 import re
 
@@ -65,7 +66,7 @@ def _parse_srt(text: str) -> list[dict]:
         if seg_text and end > start:
             result.append({"start": start, "end": end, "text": seg_text, "type": "speech"})
     if not result:
-        raise ValueError("Không tìm thấy segment nào trong file SRT")
+        raise ValueError(_t('Không tìm thấy segment nào trong file SRT'))
     return result
 
 
@@ -76,7 +77,7 @@ def _parse_vtt(text: str) -> list[dict]:
     cleaned = re.sub(r"^NOTE[\s\S]*?\n\n", "", cleaned, flags=re.MULTILINE)
     result = _parse_srt(cleaned)
     if not result:
-        raise ValueError("Không tìm thấy segment nào trong file VTT")
+        raise ValueError(_t('Không tìm thấy segment nào trong file VTT'))
     return result
 
 
@@ -101,7 +102,7 @@ def _parse_ass(text: str) -> list[dict]:
         if seg_text and end > start:
             result.append({"start": start, "end": end, "text": seg_text, "type": "speech"})
     if not result:
-        raise ValueError("Không tìm thấy Dialogue nào trong file ASS")
+        raise ValueError(_t('Không tìm thấy Dialogue nào trong file ASS'))
     return result
 
 
@@ -115,7 +116,7 @@ def _parse_json(text: str) -> list[dict]:
     """
     data = json.loads(text)
     if not isinstance(data, list) or len(data) == 0:
-        raise ValueError("Transcript JSON phải là array có ít nhất 1 segment")
+        raise ValueError(_t('Transcript JSON phải là array có ít nhất 1 segment'))
 
     result: list[dict] = []
     for item in data:
@@ -128,7 +129,7 @@ def _parse_json(text: str) -> list[dict]:
             "type": str(item.get("type", "speech")),
         })
     if not result:
-        raise ValueError("Không tìm thấy segment nào trong file JSON")
+        raise ValueError(_t('Không tìm thấy segment nào trong file JSON'))
     return result
 
 

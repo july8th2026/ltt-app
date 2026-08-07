@@ -14,6 +14,7 @@ tao vong import.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import json
 import hashlib
 import os
@@ -52,7 +53,7 @@ def _canvas_presentation_mode() -> str:
 def _assistant_serializer() -> URLSafeTimedSerializer:
     secret = (os.environ.get("LTT_SESSION_SECRET") or "").strip()
     if not secret:
-        raise RuntimeError("Assistant proposal signer chưa được cấu hình.")
+        raise RuntimeError(_t('Assistant proposal signer chưa được cấu hình.'))
     return URLSafeTimedSerializer(secret)
 
 
@@ -84,13 +85,13 @@ def _new_runs_enabled(user) -> bool:
 
 def _require_new_runs_enabled(user) -> None:
     if not _new_runs_enabled(user):
-        raise HTTPException(status_code=503, detail="Tạo run Canvas đang tạm khóa.")
+        raise HTTPException(status_code=503, detail=_t('Tạo run Canvas đang tạm khóa.'))
 
 
 def _user(request: Request):
     user = user_hien_tai(request)
     if user is None:
-        raise HTTPException(status_code=403, detail="Cần tài khoản người dùng.")
+        raise HTTPException(status_code=403, detail=_t('Cần tài khoản người dùng.'))
     return user
 
 
@@ -99,7 +100,7 @@ def _owned(db: Session, request: Request, run_id: str) -> tuple[object, AgentRun
     try:
         return user, runs.get_owned(db, run_id, user.id)
     except runs.AgentRunError:
-        raise HTTPException(status_code=404, detail="Không tìm thấy lượt Agent.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy lượt Agent.')) from None
 
 
 def _page_context(request: Request, *, error: str = "") -> dict:
@@ -118,7 +119,7 @@ def _run_context(request: Request, run: AgentRun, *, error: str = "") -> dict:
 def _verify_json_csrf(request: Request, body: dict) -> None:
     token = request.headers.get("X-CSRF-Token", "") or str(body.get("csrf_token", ""))
     if not verify_csrf_token(request, token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
 
 
 def _workflow_json(row: AgentWorkflow, *, include_canvas: bool = True) -> dict:
@@ -188,12 +189,12 @@ def _schedule_at(value) -> datetime:
     try:
         parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except ValueError as exc:
-        raise ValueError("Thời gian lên lịch không hợp lệ.") from exc
+        raise ValueError(_t('Thời gian lên lịch không hợp lệ.')) from exc
     if parsed.tzinfo is None:
-        raise ValueError("Thời gian lên lịch phải kèm múi giờ.")
+        raise ValueError(_t('Thời gian lên lịch phải kèm múi giờ.'))
     parsed = parsed.astimezone(timezone.utc)
     if parsed > datetime.now(timezone.utc) + timedelta(days=30):
-        raise ValueError("Chỉ được lên lịch tối đa 30 ngày.")
+        raise ValueError(_t('Chỉ được lên lịch tối đa 30 ngày.'))
     return parsed
 
 
@@ -241,7 +242,7 @@ def _artifact_key(run: AgentRun, step_id: str, index: int) -> str:
             found.append(value)
     collect(state.get("outputs"))
     if index < 0 or index >= len(found):
-        raise HTTPException(status_code=404, detail="Không tìm thấy artifact.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy artifact.'))
     return found[index]
 
 
@@ -323,11 +324,11 @@ def _active_share(db: Session, token: str) -> AgentWorkflowShare:
     expires = row.expires_at if row and row.expires_at.tzinfo else (
         row.expires_at.replace(tzinfo=timezone.utc) if row else now)
     if row is None or row.revoked_at is not None or expires <= now:
-        raise HTTPException(status_code=404, detail="Share không tồn tại hoặc đã hết hạn.")
+        raise HTTPException(status_code=404, detail=_t('Share không tồn tại hoặc đã hết hạn.'))
     return row
 
 def _require_admin_user(request: Request):
     user = _user(request)
     if getattr(user, "role", "") != "admin":
-        raise HTTPException(status_code=404, detail="Không tìm thấy.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy.'))
     return user

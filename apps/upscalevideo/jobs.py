@@ -10,6 +10,7 @@ Hợp đồng: idempotent (resume) · báo tiến độ (ctx.progress đập nh�
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import logging
 import os
 import shutil
@@ -33,13 +34,13 @@ def _handle_image(params: dict, ctx=None) -> dict:
     owner_id = str(params.get("owner_id") or "")
     parts = image_key.split("/")
     if not owner_id or len(parts) < 3 or parts[1] != owner_id:
-        raise ValueError("Ảnh không thuộc tài khoản đang chạy workflow.")
+        raise ValueError(_t('Ảnh không thuộc tài khoản đang chạy workflow.'))
     try:
         preset = Preset(str(params.get("preset") or "fast"))
     except ValueError:
         preset = Preset.fast
     if not engine.check_engine():
-        raise RuntimeError("Engine Real-ESRGAN chưa sẵn sàng.")
+        raise RuntimeError(_t('Engine Real-ESRGAN chưa sẵn sàng.'))
     storage = get_storage(); job_id = getattr(ctx, "job_id", "adhoc")
     out_key = f"upscalevideo/{owner_id}/{job_id}/image-x4.png"
     if storage.exists(out_key):
@@ -65,7 +66,7 @@ def _handle_image(params: dict, ctx=None) -> dict:
             raise RuntimeError(f"Engine upscale ảnh thất bại ({status}).")
         result_path = next(Path(output_dir).glob("*.png"), None)
         if result_path is None:
-            raise RuntimeError("Engine không tạo output ảnh.")
+            raise RuntimeError(_t('Engine không tạo output ảnh.'))
         with open(result_path, "rb") as stream:
             storage.put(out_key, stream, content_type="image/png")
         if ctx is not None: ctx.progress(100, "xong")
@@ -167,7 +168,7 @@ def handle(params: dict, ctx=None) -> dict:
     started_clock = time.monotonic()
     video_key = str(params.get("video_key", "")).strip()
     if not video_key:
-        raise ValueError("Thiếu video (video_key).")
+        raise ValueError(_t('Thiếu video (video_key).'))
     try:
         preset = Preset(str(params.get("preset", "fast")))
     except ValueError:
@@ -189,7 +190,7 @@ def handle(params: dict, ctx=None) -> dict:
     cancel_check = getattr(ctx, "is_cancelled", None)
 
     if not engine.check_engine():
-        raise RuntimeError("Engine upscale chưa sẵn sàng (thiếu vendor/engine).")
+        raise RuntimeError(_t('Engine upscale chưa sẵn sàng (thiếu vendor/engine).'))
 
     storage = get_storage()
     tag = "preview" if preview else f"{target_h}p"
@@ -216,7 +217,7 @@ def handle(params: dict, ctx=None) -> dict:
 
         info = ff.probe_video(tmp_video, cancel_check=cancel_check)
         if info["w"] == 0:
-            raise RuntimeError("Không đọc được luồng video.")
+            raise RuntimeError(_t('Không đọc được luồng video.'))
         eff_dur = min(info["duration"], _PREVIEW_SECONDS) if preview else info["duration"]
         true_cost = cost.uoc_luong_credit(info["duration"], target_h, preset.value,
                                           preview, stabilize, smooth_motion)
@@ -272,9 +273,9 @@ def handle(params: dict, ctx=None) -> dict:
             if status == "cancelled":
                 raise ff.ProcessingCancelled("Job đã được hủy.")
             if status == "timeout":
-                raise RuntimeError("Engine treo (>5' không có frame mới). Thử lại.")
+                raise RuntimeError(_t("Engine treo (>5' không có frame mới). Thử lại."))
             if status != "done":
-                raise RuntimeError("Engine upscale thất bại (xem log).")
+                raise RuntimeError(_t('Engine upscale thất bại (xem log).'))
             if ctx is not None:
                 ctx.progress(90, f"ghép video {target_h}p…")
             ow, oh = ff.encode_full(up_dir, tmp_video, os.path.join(tmp, "out.mp4"),

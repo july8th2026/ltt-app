@@ -41,7 +41,7 @@ def _chay(*lenh: str) -> int:
 def trich() -> int:
     LOCALE.mkdir(parents=True, exist_ok=True)
     # `-k N_` : lay ca chuoi danh dau de trich ma khong dich ngay (manifest app).
-    rc = _chay("extract", "-F", "babel.cfg", "-k", "N_", "--no-wrap",
+    rc = _chay("extract", "-F", "babel.cfg", "-k", "N_", "-k", "_t", "--no-wrap",
                "--sort-output", "--omit-header",
                "-o", str(POT), ".")
     if rc:

@@ -15,6 +15,7 @@ không sửa code (di trú trung thành từ BOT GEMINI).
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
@@ -362,7 +363,7 @@ def image(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "thumbnail" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     storage = get_storage()
     direct = storage.try_url_for(key)            # R2 (H10) → tải thẳng CDN
     if direct:
@@ -370,5 +371,5 @@ def image(request: Request, key: str, user: str = Depends(require_login)):
     try:
         stream = storage.open(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy ảnh.'))
     return StreamingResponse(stream, media_type="image/png")

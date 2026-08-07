@@ -10,6 +10,7 @@ Router KHÔNG tự viết prefix.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import io
 import json
 import uuid
@@ -114,7 +115,7 @@ def new_conv(request: Request, csrf_token: str = Form(...), model: str = Form("g
         raise HTTPException(400, "CSRF")
     u = user_hien_tai(request)
     if u is None:
-        raise HTTPException(400, "Cần đăng nhập.")
+        raise HTTPException(400, _t('Cần đăng nhập.'))
     from platform_core.models import ChatConversation
     gen = _sess(); db = next(gen)
     try:
@@ -178,7 +179,7 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
     try:
         uploads = [x for x in attachments if x.filename]
         if len(uploads) > MAX_FILES:
-            raise ValueError("Mỗi lượt chỉ nhận tối đa 3 tệp.")
+            raise ValueError(_t('Mỗi lượt chỉ nhận tối đa 3 tệp.'))
         for upload in uploads:
             parsed.append(parse_attachment(await upload.read(), upload.content_type or "",
                                            upload.filename or "tệp"))
@@ -333,7 +334,7 @@ def branch_conv(request: Request, conv_id: str, csrf_token: str = Form(...),
     try:
         source = _conv_of_user(db, u.id, conv_id) if u else None
         if source is None:
-            raise HTTPException(404, "Không tìm thấy.")
+            raise HTTPException(404, _t('Không tìm thấy.'))
         clone = ChatConversation(user_id=u.id, title=("Nhánh · " + source.title)[:200],
                                  model=source.model,
                                  custom_instructions=source.custom_instructions)
@@ -357,7 +358,7 @@ def export_conv(request: Request, conv_id: str, fmt: str,
     try:
         conv = _conv_of_user(db, u.id, conv_id) if u else None
         if conv is None or fmt not in {"md", "json"}:
-            raise HTTPException(404, "Không tìm thấy.")
+            raise HTTPException(404, _t('Không tìm thấy.'))
         messages = _messages(db, conv.id)
         if fmt == "json":
             data, media = export_json(conv.title, conv.model, messages), "application/json"
@@ -417,7 +418,7 @@ def chat_image(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "chataistudio" or u is None or segs[1] != u.id:
-        raise HTTPException(404, "Không tìm thấy.")
+        raise HTTPException(404, _t('Không tìm thấy.'))
     storage = get_storage()
     direct = storage.try_url_for(key)
     if direct:
@@ -425,14 +426,14 @@ def chat_image(request: Request, key: str, user: str = Depends(require_login)):
     try:
         return StreamingResponse(storage.open(key), media_type="image/png")
     except (StorageError, FileNotFoundError):
-        raise HTTPException(404, "Không tìm thấy ảnh.")
+        raise HTTPException(404, _t('Không tìm thấy ảnh.'))
 
 
 # ── Admin: đăng nhập tài khoản ChatGPT cho sidecar (C1) ───────────────────────
 def _require_admin(request: Request):
     u = user_hien_tai(request)
     if u is None or getattr(u, "role", "") != "admin":
-        raise HTTPException(status_code=404, detail="Không tìm thấy.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy.'))
     return u
 
 

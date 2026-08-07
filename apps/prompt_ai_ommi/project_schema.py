@@ -1,6 +1,7 @@
 """Versioned, owner-neutral JSON schema for PROMPT AI OMMI projects."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import copy
 import re
 import uuid
@@ -96,9 +97,9 @@ def clean_scene(item: dict, order: int) -> dict:
 
 def clean_project(payload: dict) -> dict:
     if not isinstance(payload, dict):
-        raise ValueError("Project phải là object.")
+        raise ValueError(_t('Project phải là object.'))
     if payload.get("kind", "production") != "production":
-        raise ValueError("Sai loại project PROMPT AI OMMI.")
+        raise ValueError(_t('Sai loại project PROMPT AI OMMI.'))
     source = copy.deepcopy(empty_project())
     brief = payload.get("brief") if isinstance(payload.get("brief"), dict) else {}
     source["brief"] = {

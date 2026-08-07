@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import io
 import math
 import os
@@ -18,7 +19,7 @@ def _owned(key: str, owner_id: str) -> str:
     normalized = str(key or "").replace("\\", "/").strip("/")
     parts = normalized.split("/")
     if not owner_id or len(parts) < 3 or parts[1] != owner_id:
-        raise ValueError("Asset không thuộc tài khoản đang chạy workflow.")
+        raise ValueError(_t('Asset không thuộc tài khoản đang chạy workflow.'))
     return normalized
 
 
@@ -31,16 +32,16 @@ def _asset(params: dict, owner_id: str, storage) -> dict | None:
     if "image_keys" in params:
         keys = [_owned(str(key), owner_id) for key in list(params.get("image_keys") or [])]
         if not 1 <= len(keys) <= 12:
-            raise ValueError("Cần 1–12 ảnh cho bộ ảnh đầu vào.")
+            raise ValueError(_t('Cần 1–12 ảnh cho bộ ảnh đầu vào.'))
         if len(set(keys)) != len(keys) or any(not storage.exists(key) for key in keys):
-            raise ValueError("Bộ ảnh có asset trùng hoặc không còn tồn tại.")
+            raise ValueError(_t('Bộ ảnh có asset trùng hoặc không còn tồn tại.'))
         return {"image_keys": keys, "provenance": {"kind": "owned_uploads",
                                                      "owner": owner_id}}
     for field in ("image_key", "video_key", "audio_key"):
         if field in params:
             key = _owned(str(params[field]), owner_id)
             if not storage.exists(key):
-                raise ValueError("Asset không còn tồn tại.")
+                raise ValueError(_t('Asset không còn tồn tại.'))
             return {field: key, "provenance": {"kind": "owned_upload", "owner": owner_id}}
     return None
 
@@ -61,11 +62,11 @@ def _extract(params: dict, owner_id: str, storage, ctx) -> dict:
                "-frames:v", str(maximum), "-q:v", "2", pattern]
         result = subprocess.run(cmd, capture_output=True, timeout=600)
         if result.returncode != 0:
-            raise RuntimeError("FFmpeg không tách được frame từ video.")
+            raise RuntimeError(_t('FFmpeg không tách được frame từ video.'))
         keys = []
         files = sorted(Path(tmp).glob("frame_*.jpg"))
         if not files:
-            raise RuntimeError("Video không tạo được frame hợp lệ.")
+            raise RuntimeError(_t('Video không tạo được frame hợp lệ.'))
         for index, path in enumerate(files, 1):
             if ctx is not None:
                 ctx.progress(int(index * 90 / len(files)), "đang lưu frame")
@@ -82,7 +83,7 @@ def _merge_images(params: dict, owner_id: str, storage, ctx) -> dict:
     from PIL import Image, ImageOps
     keys = [_owned(str(key), owner_id) for key in list(params.get("images") or [])]
     if not 2 <= len(keys) <= 12:
-        raise ValueError("Cần 2–12 ảnh để ghép.")
+        raise ValueError(_t('Cần 2–12 ảnh để ghép.'))
     images = []
     for key in keys:
         with storage.open(key) as stream:
@@ -109,7 +110,7 @@ def _merge_videos(params: dict, owner_id: str, storage, ctx) -> dict:
     from platform_core.media import ffmpeg_bin
     keys = [_owned(str(key), owner_id) for key in list(params.get("videos") or [])]
     if not 2 <= len(keys) <= 12:
-        raise ValueError("Cần 2–12 video để nối.")
+        raise ValueError(_t('Cần 2–12 video để nối.'))
     tmp = tempfile.mkdtemp(prefix="ltt_merge_video_")
     try:
         local = []
@@ -126,7 +127,7 @@ def _merge_videos(params: dict, owner_id: str, storage, ctx) -> dict:
                "-movflags", "+faststart", output]
         result = subprocess.run(cmd, capture_output=True, timeout=1800)
         if result.returncode != 0:
-            raise RuntimeError("FFmpeg không nối được các video; hãy dùng nguồn cùng kích thước/FPS.")
+            raise RuntimeError(_t('FFmpeg không nối được các video; hãy dùng nguồn cùng kích thước/FPS.'))
         key = f"mediatools/{owner_id}/{getattr(ctx, 'job_id', 'adhoc')}/merged.mp4"
         with open(output, "rb") as stream:
             storage.put(key, stream, content_type="video/mp4")
@@ -140,7 +141,7 @@ def _tts(params: dict, owner_id: str, storage, ctx) -> dict:
     model = str(params.get("model") or "gemini-2.5-flash-preview-tts")
     text = str(params.get("text") or "").strip()
     if not text:
-        raise ValueError("Thiếu văn bản cần đọc.")
+        raise ValueError(_t('Thiếu văn bản cần đọc.'))
     voice = str(params.get("voice") or "Kore")
     style = str(params.get("style") or "Natural, clear studio narration")
     try:
@@ -158,7 +159,7 @@ def _tts(params: dict, owner_id: str, storage, ctx) -> dict:
     except Exception:
         credential = os.environ.get("GEMINI_API_KEY", "").strip(); key_id = ""
     if not credential:
-        raise RuntimeError("Chưa có API key Gemini cho TTS.")
+        raise RuntimeError(_t('Chưa có API key Gemini cho TTS.'))
     body = {
         "contents": [{"parts": [{"text": f"{style}\n\nRead exactly this transcript:\n{text}"}]}],
         "generationConfig": {"responseModalities": ["AUDIO"], "speechConfig": {
@@ -174,7 +175,7 @@ def _tts(params: dict, owner_id: str, storage, ctx) -> dict:
         inline = next((part.get("inlineData") or part.get("inline_data") for part in parts
                        if part.get("inlineData") or part.get("inline_data")), None)
         if not inline or not inline.get("data"):
-            raise RuntimeError("Gemini TTS không trả audio.")
+            raise RuntimeError(_t('Gemini TTS không trả audio.'))
         pcm = base64.b64decode(inline["data"])
         output = io.BytesIO()
         with wave.open(output, "wb") as wav:
@@ -200,19 +201,19 @@ def _tts(params: dict, owner_id: str, storage, ctx) -> dict:
 def _safe_remote_url(value: str) -> str:
     parsed = urlparse(value)
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise ValueError("Chỉ nhận URL HTTPS công khai, không chứa thông tin đăng nhập.")
+        raise ValueError(_t('Chỉ nhận URL HTTPS công khai, không chứa thông tin đăng nhập.'))
     try:
         addresses = {item[4][0] for item in socket.getaddrinfo(parsed.hostname, parsed.port or 443,
                                                                type=socket.SOCK_STREAM)}
     except OSError:
-        raise ValueError("Không phân giải được máy chủ video.") from None
+        raise ValueError(_t('Không phân giải được máy chủ video.')) from None
     if not addresses:
-        raise ValueError("Máy chủ video không có địa chỉ hợp lệ.")
+        raise ValueError(_t('Máy chủ video không có địa chỉ hợp lệ.'))
     for address in addresses:
         ip = ipaddress.ip_address(address)
         if (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
                 or ip.is_multicast or ip.is_unspecified):
-            raise ValueError("URL trỏ tới mạng nội bộ hoặc địa chỉ bị chặn.")
+            raise ValueError(_t('URL trỏ tới mạng nội bộ hoặc địa chỉ bị chặn.'))
     return value
 
 
@@ -233,7 +234,7 @@ def _download_social(url: str, owner_id: str, storage, ctx) -> dict:
     try:
         import yt_dlp
     except ImportError:
-        raise RuntimeError("Máy chủ chưa cài bộ nhập video mạng xã hội.") from None
+        raise RuntimeError(_t('Máy chủ chưa cài bộ nhập video mạng xã hội.')) from None
     maximum = 250 * 1024 * 1024
     temp_dir = tempfile.mkdtemp(prefix="ltt_social_")
 
@@ -266,18 +267,18 @@ def _download_social(url: str, owner_id: str, storage, ctx) -> dict:
             with yt_dlp.YoutubeDL(options) as ydl:
                 ydl.extract_info(url, download=True)
         except Exception:
-            raise RuntimeError("Không tải được video công khai; hãy kiểm tra liên kết và quyền truy cập.") from None
+            raise RuntimeError(_t('Không tải được video công khai; hãy kiểm tra liên kết và quyền truy cập.')) from None
         files = sorted((path for path in Path(temp_dir).iterdir() if path.is_file()),
                        key=lambda path: path.stat().st_mtime, reverse=True)
         if not files:
-            raise RuntimeError("Không tìm thấy video sau khi tải.")
+            raise RuntimeError(_t('Không tìm thấy video sau khi tải.'))
         source = files[0]
         if source.stat().st_size <= 0 or source.stat().st_size > maximum:
-            raise ValueError("Video mạng xã hội vượt giới hạn 250 MB.")
+            raise ValueError(_t('Video mạng xã hội vượt giới hạn 250 MB.'))
         from platform_core.media import duration_seconds
         duration = duration_seconds(str(source))
         if duration <= 0 or duration > 15 * 60:
-            raise ValueError("Video mạng xã hội không hợp lệ hoặc dài quá 15 phút.")
+            raise ValueError(_t('Video mạng xã hội không hợp lệ hoặc dài quá 15 phút.'))
         key = f"mediatools/{owner_id}/{getattr(ctx, 'job_id', 'adhoc')}/social.mp4"
         with open(source, "rb") as stream:
             storage.put(key, stream, content_type="video/mp4")
@@ -292,7 +293,7 @@ def _download_social(url: str, owner_id: str, storage, ctx) -> dict:
 def _social_import(params: dict, owner_id: str, storage, ctx) -> dict:
     import httpx
     if params.get("confirm_rights") is not True:
-        raise ValueError("Bạn phải xác nhận có quyền sử dụng video.")
+        raise ValueError(_t('Bạn phải xác nhận có quyền sử dụng video.'))
     requested = str(params.get("url") or "").strip()
     if _social_host(requested):
         return _download_social(requested, owner_id, storage, ctx)
@@ -308,29 +309,29 @@ def _social_import(params: dict, owner_id: str, storage, ctx) -> dict:
                         if response.status_code in (301, 302, 303, 307, 308):
                             location = response.headers.get("location", "")
                             if not location:
-                                raise RuntimeError("Redirect video thiếu Location.")
+                                raise RuntimeError(_t('Redirect video thiếu Location.'))
                             current = _safe_remote_url(urljoin(current, location)); continue
                         if response.status_code != 200:
                             raise RuntimeError(f"Máy chủ video trả mã {response.status_code}.")
                         content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
                         if not content_type.startswith("video/"):
-                            raise ValueError("URL phải trỏ trực tiếp tới file video, không phải trang web.")
+                            raise ValueError(_t('URL phải trỏ trực tiếp tới file video, không phải trang web.'))
                         declared = int(response.headers.get("content-length") or 0)
                         if declared > maximum:
-                            raise ValueError("Video URL vượt giới hạn 90 MB.")
+                            raise ValueError(_t('Video URL vượt giới hạn 90 MB.'))
                         total = 0
                         for block in response.iter_bytes(1024 * 1024):
                             total += len(block)
                             if total > maximum:
-                                raise ValueError("Video URL vượt giới hạn 90 MB.")
+                                raise ValueError(_t('Video URL vượt giới hạn 90 MB.'))
                             temp.write(block)
                             if ctx is not None: ctx.progress(min(80, int(total * 80 / max(declared, maximum))), "đang nhập video")
                         break
                 else:
-                    raise ValueError("URL chuyển hướng quá nhiều lần.")
+                    raise ValueError(_t('URL chuyển hướng quá nhiều lần.'))
         from platform_core.media import duration_seconds
         if duration_seconds(temp_path) <= 0:
-            raise ValueError("Nội dung tải về không phải video hợp lệ.")
+            raise ValueError(_t('Nội dung tải về không phải video hợp lệ.'))
         key = f"mediatools/{owner_id}/{getattr(ctx, 'job_id', 'adhoc')}/imported.mp4"
         with open(temp_path, "rb") as stream:
             storage.put(key, stream, content_type="video/mp4")
@@ -358,4 +359,4 @@ def handle(params: dict, ctx=None) -> dict:
     passthrough = _asset(params, owner_id, storage)
     if passthrough is not None:
         return passthrough
-    raise ValueError("Tác vụ media không hợp lệ.")
+    raise ValueError(_t('Tác vụ media không hợp lệ.'))

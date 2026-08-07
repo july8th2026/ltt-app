@@ -6,6 +6,7 @@ KHÔNG dính trần 100MB của Cloudflare (không cần R2 cho clip ngắn).
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import uuid
 from pathlib import PurePath
 
@@ -152,9 +153,9 @@ def _clean_seed(value: str) -> int | None:
     try:
         seed = int(value)
     except (TypeError, ValueError):
-        raise ValueError("Seed phải là số nguyên từ 0 đến 2147483647.")
+        raise ValueError(_t('Seed phải là số nguyên từ 0 đến 2147483647.'))
     if not 0 <= seed <= 2_147_483_647:
-        raise ValueError("Seed phải là số nguyên từ 0 đến 2147483647.")
+        raise ValueError(_t('Seed phải là số nguyên từ 0 đến 2147483647.'))
     return seed
 
 
@@ -230,7 +231,7 @@ async def _luu_refs(u_id: str, files, roles, handles=None) -> list:
     specs = []; prepared = []
     actual = [f for f in (files or []) if f and getattr(f, "filename", "")]
     if len(actual) > 4:
-        raise ValueError("Tối đa 4 file tham chiếu.")
+        raise ValueError(_t('Tối đa 4 file tham chiếu.'))
     for i, f in enumerate(actual):
         if not f or not getattr(f, "filename", ""):
             continue
@@ -271,7 +272,7 @@ def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
     if not requested:
         return []
     if len(requested) > 4:
-        raise ValueError("Tối đa 4 tài sản đã lưu.")
+        raise ValueError(_t('Tối đa 4 tài sản đã lưu.'))
     data = _jobs_cua_toi_for_user(user_id)
     allowed = {a["storage_key"]: a for a in data}
     from platform_core.storage import get_storage
@@ -279,11 +280,11 @@ def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
     for key in requested:
         asset = allowed.get(key)
         if asset is None or not storage.exists(key):
-            raise ValueError("Tài sản đã lưu không hợp lệ hoặc không còn tồn tại.")
+            raise ValueError(_t('Tài sản đã lưu không hợp lệ hoặc không còn tồn tại.'))
         clean = dict(asset)
         kind = str(clean.get("kind") or "image")
         if kind not in {"image", "video", "audio"}:
-            raise ValueError("Loại tài sản đã lưu không hợp lệ.")
+            raise ValueError(_t('Loại tài sản đã lưu không hợp lệ.'))
         role = str(clean.get("role") or "")
         clean["role"] = (role if kind == "image" and role in
                          {"reference_image", "first_frame", "last_frame", "mask"}
@@ -356,7 +357,7 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
         new_count = sum(1 for f in (ref_images or [])
                         if f and getattr(f, "filename", ""))
         if len(saved_refs) + new_count > 4:
-            raise ValueError("Tổng tài sản đã lưu và file mới không được vượt quá 4.")
+            raise ValueError(_t('Tổng tài sản đã lưu và file mới không được vượt quá 4.'))
         ref_specs = saved_refs + await _luu_refs(u.id, ref_images, ref_roles, ref_handles)
     except ValueError as exc:
         return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request), status_code=400)
@@ -472,7 +473,7 @@ def video(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "taovideo" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
     storage = get_storage()
     # R2 (H10): trả presigned URL → trình duyệt tải THẲNG từ R2, né trần 100MB.
     direct = storage.try_url_for(key)
@@ -481,7 +482,7 @@ def video(request: Request, key: str, user: str = Depends(require_login)):
     try:
         total = storage.size(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
 
     rng = request.headers.get("range")
     if rng and rng.startswith("bytes="):

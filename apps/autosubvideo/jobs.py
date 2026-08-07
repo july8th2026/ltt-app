@@ -12,6 +12,7 @@ thời lượng THẬT (không phải theo số client khai).
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import logging
 import os
 import tempfile
@@ -63,9 +64,9 @@ def _handle_transcribe(params: dict, ctx=None) -> dict:
     video_key = str(params.get("video_key", ""))
     expected_revision = int(params.get("project_revision", 0) or 0)
     if not owner_id or not project_id or not video_key or expected_revision < 1:
-        raise ValueError("Thiếu project/source/revision cho transcription.")
+        raise ValueError(_t('Thiếu project/source/revision cho transcription.'))
     if not video_key.startswith(f"autosubvideo/{owner_id}/"):
-        raise ValueError("Video source không thuộc project owner.")
+        raise ValueError(_t('Video source không thuộc project owner.'))
     storage = get_storage()
     tmpdir = tempfile.mkdtemp(prefix="ltt_autosub_asr_")
     local = os.path.join(tmpdir, "source" + (os.path.splitext(video_key)[1] or ".mp4"))
@@ -78,9 +79,9 @@ def _handle_transcribe(params: dict, ctx=None) -> dict:
             shutil.copyfileobj(src, dst, length=1024 * 1024)
         duration = media.duration_seconds(local)
         if duration <= 0:
-            raise ValueError("Video không có audio/thời lượng hợp lệ.")
+            raise ValueError(_t('Video không có audio/thời lượng hợp lệ.'))
         if duration > 7200:
-            raise ValueError("Mỗi lượt chép lời tối đa 120 phút.")
+            raise ValueError(_t('Mỗi lượt chép lời tối đa 120 phút.'))
 
         def progress(percent, message):
             if ctx is not None:
@@ -110,7 +111,7 @@ def _handle_transcribe(params: dict, ctx=None) -> dict:
             cues.append({"id": f"cue-{index:06d}", "start": start, "end": end,
                          "text": text, "speaker": "", "words": words})
         if not cues:
-            raise ValueError("Không nhận được lời nói trong video.")
+            raise ValueError(_t('Không nhận được lời nói trong video.'))
         language = str(result.get("language") or params.get("language") or "und")[:24]
         track = {"id": "track-source", "kind": "source", "language": language,
                  "name": "Bản chép lời", "visible": True, "z_index": 0,
@@ -184,10 +185,10 @@ def _handle_project_render(params: dict, ctx=None) -> dict:
                            separators=(",", ":"), allow_nan=False).encode("utf-8")
     digest = hashlib.sha256(canonical).hexdigest()
     if digest != str(params.get("snapshot_sha256", "")):
-        raise ValueError("Snapshot project không còn toàn vẹn.")
+        raise ValueError(_t('Snapshot project không còn toàn vẹn.'))
     project = StudioProjectV1.model_validate(snapshot)
     if not owner_id or not video_key.startswith(f"autosubvideo/{owner_id}/"):
-        raise ValueError("Source video không thuộc project owner.")
+        raise ValueError(_t('Source video không thuộc project owner.'))
     storage = get_storage(); job_id = getattr(ctx, "job_id", "") or "adhoc"
     ext = _EXT[project.output.format]
     prefix = f"autosubvideo/{owner_id}/{job_id}"
@@ -199,7 +200,7 @@ def _handle_project_render(params: dict, ctx=None) -> dict:
         with storage.open(video_key) as src, open(local, "wb") as dst:
             import shutil; shutil.copyfileobj(src, dst, length=1024 * 1024)
         meta = media.probe(local); duration = float(meta.get("duration") or 0)
-        if duration <= 0: raise ValueError("Video không có thời lượng hợp lệ.")
+        if duration <= 0: raise ValueError(_t('Video không có thời lượng hợp lệ.'))
         true_cost = cost.uoc_luong_credit(duration, project.output.quality)
         _dam_bao_giu_cho(job_id, owner_id, true_cost)
         target_height = {"720p": 720, "1080p": 1080, "4k": 2160}.get(project.output.resolution, 0)
@@ -268,7 +269,7 @@ def _handle_diarize(params: dict, ctx=None) -> dict:
     owner_id=str(params.get("owner_id",""));project_id=str(params.get("project_id",""))
     revision=int(params.get("project_revision",0) or 0);video_key=str(params.get("video_key",""))
     if not owner_id or not project_id or revision<1 or not video_key.startswith(f"autosubvideo/{owner_id}/"):
-        raise ValueError("Thiếu project/source/revision cho diarization.")
+        raise ValueError(_t('Thiếu project/source/revision cho diarization.'))
     tmpdir=tempfile.mkdtemp(prefix="ltt_autosub_diarize_")
     local=os.path.join(tmpdir,"source"+(os.path.splitext(video_key)[1] or ".mp4"))
     try:
@@ -321,12 +322,12 @@ def _handle_translate(params: dict, ctx=None) -> dict:
     revision=int(params.get("project_revision",0) or 0);track_id=str(params.get("track_id",""))
     language=str(params.get("target_language",""))[:24]
     if not owner_id or not project_id or revision<1 or not track_id or not language:
-        raise ValueError("Thiếu project/track/ngôn ngữ cho translation.")
+        raise ValueError(_t('Thiếu project/track/ngôn ngữ cho translation.'))
     gen=get_session();db=next(gen)
     try:
         row=app_projects.get_owned(db,project_id,owner_id,"autosubvideo")
         payload=copy.deepcopy(row.payload);source=next((t for t in payload.get("tracks",[]) if t.get("id")==track_id),None)
-        if not source or not source.get("cues"):raise ValueError("Track nguồn không có cue để dịch.")
+        if not source or not source.get("cues"):raise ValueError(_t('Track nguồn không có cue để dịch.'))
         translated=translate_cues(db,source["cues"],language,
             on_progress=(lambda p,m:ctx.progress(p,m)) if ctx else None,
             is_cancelled=ctx.is_cancelled if ctx else None)
@@ -364,10 +365,10 @@ def _handle_render(params: dict, ctx=None) -> dict:
 
     video_key = str(params.get("video_key", "")).strip()
     if not video_key:
-        raise ValueError("Thiếu video (video_key).")
+        raise ValueError(_t('Thiếu video (video_key).'))
     transcript = params.get("transcript") or []
     if not transcript:
-        raise ValueError("Thiếu transcript (chưa nạp phụ đề).")
+        raise ValueError(_t('Thiếu transcript (chưa nạp phụ đề).'))
     style_id = str(params.get("style_id") or "default")
     segment_mode = str(params.get("segment_mode") or "sentence")
     quality = str(params.get("quality") or "standard")
@@ -425,7 +426,7 @@ def _handle_render(params: dict, ctx=None) -> dict:
             export_ass=True, export_srt=export_srt)
         ass_path = subs.get("ass_path")
         if not ass_path or not os.path.isfile(ass_path):
-            raise RuntimeError("Không dựng được file phụ đề ASS.")
+            raise RuntimeError(_t('Không dựng được file phụ đề ASS.'))
 
         # 4. Burn ffmpeg (báo tiến độ 30..95).
         tmp_out = os.path.join(tmpdir, "out" + ext)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 import json
 from time import perf_counter
 from fastapi import Depends, HTTPException, Request
@@ -32,7 +33,7 @@ async def workflow_plan(request: Request, _identity: str = Depends(require_login
     except (TypeError, ValueError):
         budget_max = 0
     if len(goal) < 10 or len(goal) > 8000 or budget_max < 5:
-        raise HTTPException(status_code=422, detail="Mục tiêu/ngân sách không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Mục tiêu/ngân sách không hợp lệ.'))
     planning_started = perf_counter(); planning_success = False
     try:
         plan = plan_once(db, goal=goal, budget_max_credit=budget_max)
@@ -62,14 +63,14 @@ async def workflow_assistant_preview(request: Request, workflow_id: str,
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     expected = int(request.headers.get("If-Match", "").strip('"') or body.get("revision", 0))
     if row.revision != expected:
-        raise HTTPException(status_code=409, detail="Workflow đã thay đổi; hãy phân tích lại.")
+        raise HTTPException(status_code=409, detail=_t('Workflow đã thay đổi; hãy phân tích lại.'))
     mode = str(body.get("mode") or "analyze")
     prompt = str(body.get("prompt") or "").strip()[:4000]
     if mode not in {"analyze", "improve"} or (mode == "improve" and len(prompt) < 3):
-        raise HTTPException(status_code=422, detail="Yêu cầu Assistant không hợp lệ.")
+        raise HTTPException(status_code=422, detail=_t('Yêu cầu Assistant không hợp lệ.'))
     canvas = workflows.as_canvas(row); current_plan = workflows.canvas_to_plan(canvas)
     current_validation = validate_plan(current_plan, db=db, user=user)
     steps = list(current_plan.get("steps") or [])
@@ -135,9 +136,9 @@ async def workflow_assistant_apply(request: Request, workflow_id: str,
         payload = _assistant_serializer().loads(str(body.get("token") or ""),
                                                 salt=_ASSISTANT_SALT, max_age=1800)
     except (BadSignature, SignatureExpired):
-        raise HTTPException(status_code=409, detail="Đề xuất đã hết hạn hoặc không hợp lệ.") from None
+        raise HTTPException(status_code=409, detail=_t('Đề xuất đã hết hạn hoặc không hợp lệ.')) from None
     if payload.get("workflow_id") != workflow_id or payload.get("user_id") != user.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy đề xuất.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy đề xuất.'))
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
         if row.revision != int(payload.get("revision", 0)):

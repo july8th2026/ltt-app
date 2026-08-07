@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -43,7 +44,7 @@ def workflow_get(request: Request, workflow_id: str,
     try:
         row = workflows.get_owned(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     return _workflow_response(row)
 
 
@@ -60,7 +61,7 @@ async def workflow_save(request: Request, workflow_id: str,
     except workflows.WorkflowConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     except (KeyError, TypeError, ValueError, workflows.WorkflowError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
     return _workflow_response(row)
@@ -74,7 +75,7 @@ def workflow_snapshots(request: Request, workflow_id: str,
     try:
         items = workflows.snapshots(db, workflow_id, user.id)
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     return {"items": [{"revision": item.revision, "name": item.name,
                         "reason": item.reason, "created_at": item.created_at.isoformat()}
                        for item in items]}
@@ -92,5 +93,5 @@ async def workflow_snapshot_restore(request: Request, workflow_id: str, revision
     except workflows.WorkflowConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy snapshot.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy snapshot.')) from None
     return _workflow_response(row)

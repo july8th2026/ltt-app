@@ -4,6 +4,7 @@ P1), lùi về multipart nếu R2 chưa mở CORS. Router KHÔNG tự viết pre
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import uuid
 import json
 import os
@@ -175,7 +176,7 @@ def upload_url(request: Request, filename: str = Form(""), content_type: str = F
                user: str = Depends(require_login)):
     u = user_hien_tai(request)
     if u is None:
-        raise HTTPException(status_code=400, detail="Cần tài khoản người dùng.")
+        raise HTTPException(status_code=400, detail=_t('Cần tài khoản người dùng.'))
     from platform_core.storage import get_storage
     ext = ""
     if "." in (filename or ""):
@@ -198,7 +199,7 @@ def _watch_user_id(request: Request) -> str:
     try:
         user = authenticate(db, request.headers.get("authorization", ""))
         if user is None:
-            raise HTTPException(status_code=401, detail="Watch Agent token không hợp lệ.")
+            raise HTTPException(status_code=401, detail=_t('Watch Agent token không hợp lệ.'))
         return user.id
     finally:
         try: next(gen)
@@ -210,7 +211,7 @@ def watch_token(request: Request, csrf_token: str = Form(...),
                 user: str = Depends(require_login)):
     """Rotate token; raw value is returned exactly once and never logged."""
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     u = user_hien_tai(request)
     from apps.upscalevideo.watch_auth import issue
     from platform_core.db import get_session
@@ -228,7 +229,7 @@ def watch_token(request: Request, csrf_token: str = Form(...),
 def watch_revoke(request: Request, csrf_token: str = Form(...),
                  user: str = Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     u = user_hien_tai(request)
     from apps.upscalevideo.watch_auth import revoke
     from platform_core.db import get_session
@@ -263,7 +264,7 @@ def admin_telemetry(request: Request, user: str = Depends(require_login)):
     from platform_core.storage import get_storage
     from server.deps import is_operator
     if not is_operator(request):
-        raise HTTPException(status_code=403, detail="Chỉ quản trị viên được xem telemetry.")
+        raise HTTPException(status_code=403, detail=_t('Chỉ quản trị viên được xem telemetry.'))
     gen = get_session(); db = next(gen)
     try:
         queue_data = queue_snapshot(db)
@@ -302,14 +303,14 @@ async def watch_batch(request: Request, manifest: str = Form("[]"),
     try:
         items = json.loads(manifest)
     except (TypeError, json.JSONDecodeError):
-        raise HTTPException(status_code=400, detail="Batch manifest không hợp lệ.")
+        raise HTTPException(status_code=400, detail=_t('Batch manifest không hợp lệ.'))
     if not isinstance(items, list) or not 1 <= len(items) <= 3:
-        raise HTTPException(status_code=400, detail="Watch batch chỉ nhận 1–3 video.")
+        raise HTTPException(status_code=400, detail=_t('Watch batch chỉ nhận 1–3 video.'))
     request_ids = [str(item.get("request_id") or "") for item in items
                    if isinstance(item, dict)]
     if len(request_ids) != len(items) or any(not value or len(value) > 96
                                              for value in request_ids):
-        raise HTTPException(status_code=400, detail="Watch batch thiếu request id.")
+        raise HTTPException(status_code=400, detail=_t('Watch batch thiếu request id.'))
     # Retry sau khi client mất response phải trả đúng job cũ trước khi ghi lại
     # artifact local. Atomic batch nghĩa là chỉ có trạng thái all/none; subset là
     # xung đột idempotency và phải dừng để operator kiểm tra.
@@ -331,10 +332,10 @@ async def watch_batch(request: Request, manifest: str = Form("[]"),
             {"job_id": by_request[value].id, "status": by_request[value].status}
             for value in request_ids]})
     if existing:
-        raise HTTPException(status_code=409, detail="Batch retry chỉ khớp một phần.")
+        raise HTTPException(status_code=409, detail=_t('Batch retry chỉ khớp một phần.'))
     local_count = sum(1 for item in items if not str(item.get("video_key") or ""))
     if local_count != len(videos):
-        raise HTTPException(status_code=400, detail="Số file không khớp manifest.")
+        raise HTTPException(status_code=400, detail=_t('Số file không khớp manifest.'))
     storage = get_storage(); cursor = 0; total = 0; prepared = []
     for index, raw in enumerate(items):
         if not isinstance(raw, dict):
@@ -350,7 +351,7 @@ async def watch_batch(request: Request, manifest: str = Form("[]"),
                 raise HTTPException(status_code=400, detail=f"Video {index + 1} sai định dạng.")
             data = await upload.read(); total += len(data)
             if not data or total > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
-                raise HTTPException(status_code=400, detail="File local rỗng hoặc tổng >90MB.")
+                raise HTTPException(status_code=400, detail=_t('File local rỗng hoặc tổng >90MB.'))
             key = f"upscalevideo/{user_id}/watch/{uuid.uuid4().hex}{ext}"
             item["_data"] = data
         request_id = str(item.get("request_id") or "")
@@ -581,7 +582,7 @@ def cancel_job(request: Request, job_id: str, csrf_token: str = Form(...),
                user: str = Depends(require_login)):
     """Owner-only cooperative cancel; refund is atomic and idempotent."""
     if not verify_csrf_token(request, csrf_token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     u = user_hien_tai(request)
     from platform_core import credit, jobs
     from platform_core.db import get_session
@@ -590,7 +591,7 @@ def cancel_job(request: Request, job_id: str, csrf_token: str = Form(...),
     try:
         job = db.get(Job, job_id)
         if job is None or u is None or job.user_id != u.id or job.app_slug != MANIFEST.slug:
-            raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
         if jobs.cancel(db, job):
             credit.hoan(db, u.id, job.id)
         db.commit()
@@ -609,7 +610,7 @@ def _serve_owned_video(request: Request, key: str):
     try:
         total = storage.size(key)
     except (StorageError, FileNotFoundError):
-        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
     rng = request.headers.get("range")
     if rng and rng.startswith("bytes="):
         try:
@@ -639,7 +640,7 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
     segs = key.split("/")
     if len(segs) < 2 or segs[0] != "upscalevideo" or u is None or segs[1] != u.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy video.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
     return _serve_owned_video(request, key)
 
 
@@ -661,5 +662,5 @@ def source_video(request: Request, job_id: str, user: str = Depends(require_logi
         try: next(gen)
         except StopIteration: pass
     if not key:
-        raise HTTPException(status_code=404, detail="Không tìm thấy video nguồn.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video nguồn.'))
     return _serve_owned_video(request, key)

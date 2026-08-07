@@ -14,6 +14,7 @@ Khoá API chỉ ở phía máy chủ, KHÔNG BAO GIỜ xuống trình duyệt.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import base64
 import io
 import os
@@ -158,24 +159,24 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
 
     candidates = data.get("candidates", []) or []
     if not candidates:
-        raise RuntimeError("Gemini không trả candidate nào.")
+        raise RuntimeError(_t('Gemini không trả candidate nào.'))
     cand = candidates[0]
     if cand.get("finishReason") == "SAFETY":
-        raise RuntimeError("Bị chặn vì lý do an toàn nội dung.")
+        raise RuntimeError(_t('Bị chặn vì lý do an toàn nội dung.'))
 
     for part in cand.get("content", {}).get("parts", []) or []:
         inline = part.get("inlineData") or part.get("inline_data")
         if inline and inline.get("data"):
             return base64.b64decode(inline["data"])
 
-    raise RuntimeError("Gemini không trả ảnh nào (chỉ có văn bản).")
+    raise RuntimeError(_t('Gemini không trả ảnh nào (chỉ có văn bản).'))
 
 
 def handle(params: dict, ctx=None) -> dict:
     """Sinh 1-4 thumbnail, lưu qua storage, trả về danh sách khoá ảnh."""
     topic = str(params.get("topic", "")).strip()
     if not topic:
-        raise ValueError("Chưa nhập chủ đề thumbnail.")
+        raise ValueError(_t('Chưa nhập chủ đề thumbnail.'))
     title = str(params.get("title", ""))
     subtitle = str(params.get("subtitle", ""))
     phong_cach = str(params.get("phong_cach", ""))
@@ -210,7 +211,7 @@ def handle(params: dict, ctx=None) -> dict:
     reference_mime = str(params.get("reference_mime") or "")
     if reference_key:
         if not reference_key.startswith(f"thumbnail/{owner_id}/"):
-            raise ValueError("Ảnh tham chiếu không thuộc người dùng hiện tại.")
+            raise ValueError(_t('Ảnh tham chiếu không thuộc người dùng hiện tại.'))
         with storage.open(reference_key) as stream:
             reference = (stream.read(), reference_mime)
 

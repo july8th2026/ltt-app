@@ -1,6 +1,7 @@
 """Thu vien meta prompt, doan prompt va phong cach."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -158,7 +159,7 @@ async def publish_library_item(request: Request, kind: str, item_id: str,
     body = await request.json(); _csrf(request, body); user = _user(request)
     if getattr(user, "role", "") != "admin":
         raise HTTPException(status_code=403,
-                            detail="Chỉ admin được publish mẫu vào catalog.")
+                            detail=_t('Chỉ admin được publish mẫu vào catalog.'))
     try:
         row = lsvc.publish_to_catalog(db, kind, item_id=item_id,
                                       owner_id=user.id, is_admin=True)
@@ -182,7 +183,7 @@ async def deprecate_library_item(request: Request, kind: str, item_id: str,
     body = await request.json(); _csrf(request, body); user = _user(request)
     if getattr(user, "role", "") != "admin":
         raise HTTPException(status_code=403,
-                            detail="Chỉ admin được ngừng dùng mẫu catalog.")
+                            detail=_t('Chỉ admin được ngừng dùng mẫu catalog.'))
     try:
         row = lsvc.deprecate(db, kind, item_id=item_id, is_admin=True,
                              note=str(body.get("note") or ""),

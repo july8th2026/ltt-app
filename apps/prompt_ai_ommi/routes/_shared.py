@@ -10,6 +10,7 @@ tao vong import.
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import copy
 import io
 import json
@@ -60,21 +61,21 @@ def _require_run_enabled(user) -> None:
                mode == "allowlist" and (getattr(user, "role", "") == "admin" or
                                          str(getattr(user, "id", "")) in allowed))
     if not enabled:
-        raise HTTPException(status_code=503, detail="Tạo job PROMPT AI OMMI đang tạm khóa.")
+        raise HTTPException(status_code=503, detail=_t('Tạo job PROMPT AI OMMI đang tạm khóa.'))
 
 
 def _user(request: Request):
     user = user_hien_tai(request)
     if user is None:
         raise HTTPException(status_code=403,
-                            detail="Cần tài khoản người dùng trong CSDL để sử dụng app.")
+                            detail=_t('Cần tài khoản người dùng trong CSDL để sử dụng app.'))
     return user
 
 
 def _csrf(request: Request, body: dict | None = None) -> None:
     token = request.headers.get("X-CSRF-Token", "") or str((body or {}).get("csrf_token") or "")
     if not verify_csrf_token(request, token):
-        raise HTTPException(status_code=400, detail="Phiên đã hết hạn — tải lại trang.")
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn — tải lại trang.'))
 
 
 def _as_int(value, default: int, minimum: int, maximum: int) -> int:
@@ -107,9 +108,9 @@ def _owned_production(db: Session, project_id: str, user_id: str):
     try:
         row = app_projects.get_owned(db, project_id, user_id, MANIFEST.slug)
     except app_projects.ProjectNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
     if (row.payload or {}).get("kind") != "production":
-        raise HTTPException(status_code=404, detail="Không tìm thấy project.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.'))
     return row
 
 

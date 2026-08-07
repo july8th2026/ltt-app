@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from __future__ import annotations
+from platform_core.i18n import _ as _t
 import json
 import mimetypes
 import io
@@ -48,7 +49,7 @@ async def workflow_create_run(request: Request, workflow_id: str,
     except workflows.WorkflowConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except workflows.WorkflowNotFound:
-        raise HTTPException(status_code=404, detail="Không tìm thấy workflow.") from None
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy workflow.')) from None
     except (KeyError, TypeError, ValueError, workflows.WorkflowError,
             budget.BudgetError, runs.AgentRunError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
@@ -63,7 +64,7 @@ async def workflow_approve_run(request: Request, run_id: str,
     user, run = _owned(db, request, run_id)
     if str(body.get("quote_hash", "")) != _run_json(run)["quote_hash"]:
         metrics.record_approval(success=False)
-        raise HTTPException(status_code=409, detail="Báo giá đã thay đổi.")
+        raise HTTPException(status_code=409, detail=_t('Báo giá đã thay đổi.'))
     approval_success = False
     try:
         scheduled_at = _schedule_at(body.get("scheduled_at"))
@@ -72,7 +73,7 @@ async def workflow_approve_run(request: Request, run_id: str,
         _enqueue_advance(db, run, scheduled_at)
         approval_success = True
     except credit.ThieuCreditError:
-        raise HTTPException(status_code=402, detail="Không đủ credit.") from None
+        raise HTTPException(status_code=402, detail=_t('Không đủ credit.')) from None
     except (ValueError, budget.BudgetError) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     finally:
@@ -170,7 +171,7 @@ def workflow_artifact(request: Request, run_id: str, step_id: str, index: int,
             return RedirectResponse(direct, status_code=307)
         stream = storage.open(key)
     except (OSError, StorageError):
-        raise HTTPException(status_code=404, detail="Artifact không còn tồn tại.") from None
+        raise HTTPException(status_code=404, detail=_t('Artifact không còn tồn tại.')) from None
     media_type = mimetypes.guess_type(key)[0] or "application/octet-stream"
     return StreamingResponse(stream, media_type=media_type,
                              headers={"Cache-Control": "private, no-store"})
@@ -194,7 +195,7 @@ def workflow_run_bundle(request: Request, run_id: str,
             continue
     total = sum(storage.size(key) for _step, key in keys if storage.exists(key))
     if total > 200 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Bundle vượt 200 MB; tải từng artifact.")
+        raise HTTPException(status_code=413, detail=_t('Bundle vượt 200 MB; tải từng artifact.'))
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         source = next((item for item in reversed(run.decision_log or [])

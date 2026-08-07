@@ -1,6 +1,7 @@
 """Storyboard, canh va phien ban theo tung canh."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -225,7 +226,7 @@ async def render_scene(request: Request, scene_id: str,
         raise _storyboard_error(exc) from exc
     if len(prompt.strip()) < 8:
         raise HTTPException(status_code=422,
-                            detail="Cảnh chưa đủ mô tả để sinh ảnh.")
+                            detail=_t('Cảnh chưa đủ mô tả để sinh ảnh.'))
 
     params = {"prompt": prompt[:4000], "aspect_ratio": board.aspect_ratio,
               "count": 1, "owner_id": user.id}
@@ -273,12 +274,12 @@ async def attach_scene_render(request: Request, scene_id: str, job_id: str,
 
     job = db.get(Job, job_id)
     if job is None or job.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Không tìm thấy job.")
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
     if job.status != JOB_DONE:
-        raise HTTPException(status_code=409, detail="Job chưa chạy xong.")
+        raise HTTPException(status_code=409, detail=_t('Job chưa chạy xong.'))
     keys = [k for k in ((job.result or {}).get("image_keys") or []) if k]
     if not keys:
-        raise HTTPException(status_code=400, detail="Job không trả về ảnh nào.")
+        raise HTTPException(status_code=400, detail=_t('Job không trả về ảnh nào.'))
     try:
         ssvc.record_version(db, scene_id=scene_id, owner_id=user.id,
                             image_key=keys[0], job_id=job_id,

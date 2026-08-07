@@ -1,6 +1,7 @@
 """Durable PROMPT AI OMMI generation job."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import uuid
 from datetime import datetime, timezone
 
@@ -13,7 +14,7 @@ def _normalize_result(raw: dict, params: dict) -> dict:
     requested = max(1, min(MAX_SCENES, int(params.get("scene_count") or 6)))
     raw_scenes = list(raw.get("scenes") or [])[:requested]
     if not raw_scenes:
-        raise ValueError("AI không trả cảnh nào.")
+        raise ValueError(_t('AI không trả cảnh nào.'))
     scenes = []
     stamp = datetime.now(timezone.utc).isoformat()
     for index, item in enumerate(raw_scenes):
@@ -50,10 +51,10 @@ def _normalize_result(raw: dict, params: dict) -> dict:
 def handle(params: dict, ctx=None) -> dict:
     story = str(params.get("story") or "").strip()
     if len(story) < 20:
-        raise ValueError("Nội dung brief tối thiểu 20 ký tự.")
+        raise ValueError(_t('Nội dung brief tối thiểu 20 ký tự.'))
     operation = str(params.get("operation") or "director")
     if operation not in {"director", "storyboard"}:
-        raise ValueError("Operation không hợp lệ.")
+        raise ValueError(_t('Operation không hợp lệ.'))
     if ctx is not None:
         ctx.progress(10, "đang kiểm tra brief và consistency anchors")
     system, prompt = director_prompt(params)

@@ -6,6 +6,7 @@ theo đúng một khuôn. Gom về đây để không mỗi route tự xoay mộ
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import contextlib
 from typing import Iterator, Optional
 
@@ -87,7 +88,7 @@ def require_operator(request: Request) -> str:
 
     identity = require_login(request)
     if not is_operator(request):
-        raise HTTPException(status_code=403, detail="Trang này chỉ dành cho quản trị viên.")
+        raise HTTPException(status_code=403, detail=_t('Trang này chỉ dành cho quản trị viên.'))
     return identity
 
 

@@ -1,6 +1,7 @@
 """Deterministic prompt preview and normalization."""
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
 import json
 from pathlib import Path
 
@@ -11,7 +12,7 @@ PROMPTS = ROOT / "prompts"
 def load_catalog() -> dict:
     data = json.loads((PROMPTS / "catalog.json").read_text(encoding="utf-8"))
     if not isinstance(data, dict):
-        raise ValueError("catalog prompt không hợp lệ")
+        raise ValueError(_t('catalog prompt không hợp lệ'))
     return data
 
 
