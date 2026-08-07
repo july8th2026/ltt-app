@@ -279,3 +279,40 @@ def test_nguoi_dung_thuong_khong_xem_duoc_nhat_ky(env):
     _dang_nhap(env, "nv1@x.com")
     r = env.get("/admin/nhat-ky-admin/list", follow_redirects=False)
     assert r.status_code in (302, 303, 401, 403)
+
+
+# ── 9. F-04: trang chi tiết một người dùng ───────────────────────────────────
+def test_trang_chi_tiet_gom_du_bon_thu_ve_mot_nguoi(env):
+    """Trước đây phải mở 4 trang và tự nối bằng UUID copy tay."""
+    _dang_nhap(env, "sep@x.com")
+    _cap(env, "nv1@x.com", amount="777", note="onboarding")
+    html = env.get("/admin/nguoi-dung?q=nv1@x.com").text
+    assert "777" in html, "khong hien so du"
+    assert "nv1@x.com" in html
+    for muc in ("Số dư", "bút toán credit", "việc gần nhất", "đơn nạp gần nhất",
+                "Phiên đang mở"):
+        assert muc in html, f"thieu muc {muc!r}"
+
+
+def test_trang_chi_tiet_tim_duoc_bang_UUID(env):
+    import platform_core.db as dbmod
+    from platform_core.models import User
+    gen = dbmod.get_session(); s = next(gen)
+    uid = s.query(User).filter(User.email == "nv1@x.com").one().id
+    s.close()
+    _dang_nhap(env, "sep@x.com")
+    assert "nv1@x.com" in env.get(f"/admin/nguoi-dung?q={uid}").text
+
+
+def test_trang_chi_tiet_khong_thay_thi_noi_ro(env):
+    _dang_nhap(env, "sep@x.com")
+    r = env.get("/admin/nguoi-dung?q=khong-co@x.com")
+    assert r.status_code == 404
+    assert "Không tìm thấy" in r.text
+
+
+def test_nguoi_dung_thuong_khong_xem_duoc_chi_tiet_nguoi_khac(env):
+    """Đây là trang lộ số dư, việc và đơn nạp — chỉ admin."""
+    _dang_nhap(env, "nv1@x.com")
+    r = env.get("/admin/nguoi-dung?q=nv2@x.com", follow_redirects=False)
+    assert r.status_code in (302, 303, 401, 403)

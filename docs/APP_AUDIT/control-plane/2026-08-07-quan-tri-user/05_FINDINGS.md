@@ -115,8 +115,8 @@ người quản trị thứ hai. **Phương án.** DEFER.
 | F-02 P1 | ✅ đóng | Nhận email, giữ UUID dự phòng. E2 |
 | F-03 P1 | ✅ đóng | `cap_hang_loat()` nguyên tử, email lặp chỉ cấp một lần. E2 |
 | F-05 P2 | ✅ đóng | `test_163` 15 mục qua HTTP: quyền, CSRF, nguyên tử, nói thật. E2 |
-| F-04 P2 | ⚠️ **một phần** | xem dưới |
-| F-06 P3 | ⛔ chưa làm | |
+| F-04 P2 | ✅ đóng (trang chi tiết, E2) · cột danh sách còn nợ E3 | xem dưới |
+| F-06 P3 | ✅ đóng | bảng `nhat_ky_admin`, ghi tại 2 chỗ, view chỉ xem. E2 |
 
 ## F-04 — làm một phần, và phải nói rõ phần nào chưa chắc
 
@@ -134,3 +134,19 @@ không phải `LIVE`.
 
 **Chưa làm:** trang chi tiết một người dùng (`/admin/user/<id>` gom số dư, job,
 đơn, phiên).
+
+
+## F-04 — cập nhật sau khi làm trang chi tiết
+
+**Đã đóng phần quan trọng.** `/admin/nguoi-dung?q=<email hoặc id>` gom số dư, 15
+bút toán credit, 20 việc, 10 đơn nạp và số phiên đang mở về một chỗ. Đây chính là
+JTBD J2 — "biết một người dùng đang thế nào" — trước đây phải mở 4 trang và tự
+nối bằng một UUID copy tay.
+
+Test chứng minh **ở mức E2**: số dư `777` xuất hiện thật trong HTML trả về, cùng
+đủ năm mục. Khác hẳn cột trong danh sách, nơi test tương tự đã đổ.
+
+**Còn nợ:** cột "Số dư" trong `/admin/user/list` vẫn chưa chứng minh được là hiện
+đúng (sqladmin dựng bảng theo cách khác). Hạ mức độ quan trọng: giờ đã có trang
+chi tiết trả lời được câu hỏi, cột trong danh sách chỉ còn là tiện lợi. Vẫn cần
+kiểm browser (E3) để chốt.

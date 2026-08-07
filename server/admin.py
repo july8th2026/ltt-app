@@ -100,6 +100,7 @@ _ADM_NAV = [
     ("/", "LT", "Trang chủ", "home"),
     ("__grp__", "", "Quản trị", ""),
     ("/admin/user/list", "ND", "Người dùng", "user"),
+    ("/admin/nguoi-dung", "CT", "Chi tiết người dùng", "chitiet"),
     ("/admin/credit-entry/list", "CR", "Sổ credit", "credit"),
     ("/admin/grant-credit", "+C", "Cấp credit", "grant"),
     ("/admin/apikeys", "AK", "APIKEYS", "apikeys"),
@@ -190,6 +191,97 @@ def _health_bar(h: int) -> str:
     w = max(0, min(100, int(h)))
     return (f'<span class="health"><span style="width:{w}%;background:{col}"></span></span> '
             f'<span class="tnum muted" style="font-size:11px">{h}</span>')
+
+
+class ChiTietNguoiDungView(BaseView):
+    """Trang gom mọi thứ về MỘT người dùng (F-04, audit 2026-08-07).
+
+    Trước đây muốn biết một người đang thế nào phải mở 4 trang và tự nối chúng
+    bằng một UUID copy tay: số dư ở Sổ credit, job ở trang Job, đơn ở trang Đơn
+    hàng, phiên ở trang Phiên. Trang này trả lời câu đó ở một chỗ.
+    """
+
+    name = "Chi tiết người dùng"
+    icon = "fa-solid fa-id-card"
+
+    @expose("/nguoi-dung", methods=["GET"])
+    async def chi_tiet(self, request: Request):
+        from platform_core import credit
+        from platform_core.models import CreditEntry, Job, PaymentOrder
+        from platform_core.models import Session as PhienDb
+
+        khoa = (request.query_params.get("q") or "").strip()
+        body_tim = f"""<div class="ui-card" style="max-width:620px">
+<form method="get"><div class="field"><label>Email hoặc User ID</label>
+<input class="inp" name="q" value="{escape(khoa)}" placeholder="nhanvien@congty.com" autofocus></div>
+<button class="btn" type="submit">Xem</button></form></div>"""
+
+        if not khoa:
+            return HTMLResponse(_admin_shell(
+                "Chi tiết người dùng", "chitiet",
+                f'<div class="adm-content"><div class="pagehead"><div>'
+                f'<h1>Chi tiết người dùng</h1><p>Gõ email (hoặc User ID) để xem '
+                f'số dư, việc đã chạy, đơn nạp và phiên đang mở ở một chỗ.</p>'
+                f'</div></div>{body_tim}</div>'))
+
+        gen = get_session(); db = next(gen)
+        try:
+            u = credit.tim_theo_email(db, khoa) or db.get(User, khoa)
+            if u is None:
+                return HTMLResponse(_admin_shell(
+                    "Chi tiết người dùng", "chitiet",
+                    f'<div class="adm-content"><div class="pagehead"><div>'
+                    f'<h1>Chi tiết người dùng</h1></div></div>{body_tim}'
+                    f'<div class="alert alert-warn" style="max-width:620px">'
+                    f'Không tìm thấy tài khoản <code>{escape(khoa)}</code>.</div></div>'),
+                    status_code=404)
+
+            so_du = credit.so_du(db, u.id)
+            jobs = db.query(Job).filter(Job.user_id == u.id)                     .order_by(Job.created_at.desc()).limit(20).all()
+            dons = db.query(PaymentOrder).filter(PaymentOrder.user_id == u.id)                     .order_by(PaymentOrder.created_at.desc()).limit(10).all()
+            phien = db.query(PhienDb).filter(PhienDb.user_id == u.id).count()
+            but = db.query(CreditEntry).filter(CreditEntry.user_id == u.id)                    .order_by(CreditEntry.created_at.desc()).limit(15).all()
+
+            def _bang(tieu_de, dong_html, rong="Chưa có."):
+                return (f'<div class="ui-card"><p class="eyebrow">{tieu_de}</p>'
+                        f'{dong_html or f"<p class=dim>{rong}</p>"}</div>')
+
+            job_html = "".join(
+                f'<div class="billing-line"><span class="dim">'
+                f'{escape(j.app_slug or "")} · {escape(j.job_type or "")}</span>'
+                f'<span><span class="mono" style="font-size:12px">{escape(j.status)}</span>'
+                f'</span></div>' for j in jobs)
+            don_html = "".join(
+                f'<div class="billing-line"><span class="dim">#{d.order_code} · '
+                f'{d.price_vnd:,}đ</span><span>{escape(d.status)}</span></div>'
+                for d in dons)
+            but_html = "".join(
+                f'<div class="billing-line"><span class="dim">{escape(b.kind)} · '
+                f'{escape((b.note or "")[:60])}</span>'
+                f'<strong>{b.delta:+d}</strong></div>' for b in but)
+
+            body = f"""<div class="adm-content">
+<div class="pagehead"><div><h1>{escape(u.email)}</h1>
+<p><span class="mono">{escape(u.id)}</span></p></div>
+<div class="actions"><a class="btn" href="/admin/grant-credit">Cấp credit</a></div></div>
+{body_tim}
+<div class="ui-card"><p class="eyebrow">Tổng quan</p>
+<div class="billing-line"><span class="dim">Số dư</span><strong class="tnum">{so_du:,} credit</strong></div>
+<div class="billing-line"><span class="dim">Vai trò</span><span>{escape(u.role or "user")}</span></div>
+<div class="billing-line"><span class="dim">Đang hoạt động</span><span>{"có" if u.is_active else "KHÔNG"}</span></div>
+<div class="billing-line"><span class="dim">Đã xác thực email</span><span>{"có" if u.is_verified else "chưa"}</span></div>
+<div class="billing-line"><span class="dim">Phiên đang mở</span><span>{phien}</span></div>
+</div>
+{_bang("15 bút toán credit gần nhất", but_html)}
+{_bang("20 việc gần nhất", job_html, "Chưa chạy việc nào.")}
+{_bang("10 đơn nạp gần nhất", don_html, "Chưa có đơn nạp nào.")}
+</div>"""
+            return HTMLResponse(_admin_shell(f"Chi tiết {u.email}", "chitiet", body))
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
 
 
 class ApiKeysConsole(BaseView):
@@ -1066,6 +1158,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
     admin.add_view(ApiKeysConsole)
+    admin.add_view(ChiTietNguoiDungView)
     admin.add_view(NhatKyAdminView)
     admin.add_view(ApiKeyAdmin)
     admin.add_view(AddApiKeyView)
