@@ -1,6 +1,7 @@
 """P5: maximum quote, atomic approval and idempotent settlement."""
 from __future__ import annotations
 
+from tests.conftest import bao_dam_user
 import pytest
 
 
@@ -57,7 +58,7 @@ def test_quote_tu_choi_tong_chi_phi_vuot_budget(db):
 def test_approve_lap_lai_chi_mot_hold(db):
     from platform_core import credit
     from platform_core.agent import budget
-    credit.cap_tay(db, "u1", 30, by="test")
+    bao_dam_user(db, "u1"); credit.cap_tay(db, "u1", 30, by="test")
     run = _quoted(db)
     budget.approve(db, run_id=run.id, user_id="u1", approved_by="u1",
                    expected_version=run.version)
@@ -121,7 +122,7 @@ def test_chan_truoc_provider_va_quyet_toan_idempotent(db):
     from platform_core import credit
     from platform_core.agent import budget
     from platform_core.models import AGENT_CANCELLED
-    credit.cap_tay(db, "u1", 30, by="test")
+    bao_dam_user(db, "u1"); credit.cap_tay(db, "u1", 30, by="test")
     run = _quoted(db)
     budget.approve(db, run_id=run.id, user_id="u1", approved_by="u1",
                    expected_version=run.version)

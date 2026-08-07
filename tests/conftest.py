@@ -66,3 +66,22 @@ def _reset_circuit_breaker():
             cb._default.reset()
     except Exception:
         pass
+
+
+# ── Người dùng giả cho test (F-01, audit 2026-08-07) ─────────────────────────
+def bao_dam_user(db, user_id: str):
+    """Tạo người dùng thật mang đúng `user_id` nếu chưa có. Trả về id.
+
+    Từ khi `credit.cap_tay()` kiểm người dùng tồn tại (F-01), test nạp credit cho
+    một id bịa như `"u1"` sẽ bị từ chối — **đúng như thiết kế**. Trước đó chúng
+    chạy được chỉ vì đang dựa vào chính lỗ P0 mà finding này bịt.
+
+    Dùng hàm này thay vì nới lỏng `cap_tay`: nới lỏng là mở lại lỗ tiền chỉ để
+    test xanh.
+    """
+    from platform_core.models import User
+    if db.get(User, user_id) is None:
+        db.add(User(id=user_id, email=f"{user_id}@test.local",
+                    password_hash="x", is_verified=True))
+        db.flush()
+    return user_id

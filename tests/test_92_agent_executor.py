@@ -1,6 +1,7 @@
 """P6: resumable DAG scheduling, fan-out/join and capability routing."""
 from __future__ import annotations
 
+from tests.conftest import bao_dam_user
 from types import SimpleNamespace
 
 import pytest
@@ -45,7 +46,7 @@ def _approved(db, plan):
     from platform_core import credit
     from platform_core.agent import budget, runs
     from platform_core.agent.validator import ValidationResult
-    credit.cap_tay(db, "u1", 200, by="test")
+    bao_dam_user(db, "u1"); credit.cap_tay(db, "u1", 200, by="test")
     run = runs.create_run(db, user_id="u1", goal="workflow")
     validation = ValidationResult(True, (), 50, ())
     budget.set_quote(db, run, plan=plan, validation=validation)

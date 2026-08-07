@@ -12,6 +12,7 @@ test (test này DROP/CREATE mọi bảng). Không đặt → cả file tự bỏ
 """
 from __future__ import annotations
 
+from tests.conftest import bao_dam_user
 import os
 import threading
 
@@ -189,7 +190,7 @@ def test_agent_approve_dong_thoi_chi_mot_hold(Sess):
     from platform_core.agent.validator import ValidationResult
 
     s = Sess()
-    credit.cap_tay(s, "approval-user", 100, by="test")
+    bao_dam_user(s, "approval-user"); credit.cap_tay(s, "approval-user", 100, by="test")
     run = runs.create_run(s, user_id="approval-user", goal="approve race")
     plan = {"version": 1, "budget_max_credit": 30, "steps": [{"id": "s1"}]}
     validation = ValidationResult(True, (), 16, ({"step_id": "s1", "maximum": 16},))
@@ -234,7 +235,7 @@ def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
     from platform_core.agent.validator import ValidationResult
 
     s = Sess()
-    credit.cap_tay(s, "executor-user", 100, by="test")
+    bao_dam_user(s, "executor-user"); credit.cap_tay(s, "executor-user", 100, by="test")
     plan = {
         "version": 1, "budget_max_credit": 20,
         "steps": [{"id": "s1", "tool": "text.script", "after": [],

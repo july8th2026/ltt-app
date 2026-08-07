@@ -14,6 +14,7 @@ Trọng tâm:
 """
 from __future__ import annotations
 
+from tests.conftest import bao_dam_user
 import pytest
 
 
@@ -38,9 +39,9 @@ def test_so_du_la_tong_cua_so(db):
     from platform_core import credit
     assert credit.so_du(db, "u1") == 0
     credit.nap(db, "u1", 100); db.commit()
-    credit.cap_tay(db, "u1", 50, by="admin"); db.commit()
+    bao_dam_user(db, "u1"); credit.cap_tay(db, "u1", 50, by="admin"); db.commit()
     assert credit.so_du(db, "u1") == 150
-    credit.cap_tay(db, "u1", -30, by="admin"); db.commit()
+    bao_dam_user(db, "u1"); credit.cap_tay(db, "u1", -30, by="admin"); db.commit()
     assert credit.so_du(db, "u1") == 120
 
 

@@ -1,6 +1,7 @@
 """P7: verifier ordering, fault policy, bounded retry and credit."""
 from __future__ import annotations
 
+from tests.conftest import bao_dam_user
 import pytest
 
 
@@ -104,14 +105,7 @@ def _run(runtime, *, max_retry=1, on_fail="regenerate"):
         "verify": {"check": "vlm_judge", "rubric": "quality"},
         "max_retry": max_retry, "on_fail": on_fail,
     }]}
-    # `cap_tay` nay kiem nguoi dung ton tai (F-01, audit 2026-08-07) — truoc day
-    # nap duoc cho mot id gia. Tao nguoi dung that voi DUNG id ma test dung.
-    from platform_core.models import User
-    if runtime.get(User, "u1") is None:
-        runtime.add(User(id="u1", email="u1@test.local", password_hash="x",
-                         is_verified=True))
-        runtime.flush()
-    credit.cap_tay(runtime, "u1", 100, by="test")
+    bao_dam_user(runtime, "u1"); credit.cap_tay(runtime, "u1", 100, by="test")
     run = runs.create_run(runtime, user_id="u1", goal="verify")
     budget.set_quote(runtime, run, plan=plan,
                      validation=ValidationResult(True, (), 8, ()))
