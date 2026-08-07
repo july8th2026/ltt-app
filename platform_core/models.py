@@ -408,6 +408,31 @@ CREDIT_SETTLE = "settle"
 CREDIT_REFUND = "refund"
 
 
+class NhatKyAdmin(Base):
+    """Nhật ký thao tác của quản trị viên (F-06, audit 2026-08-07).
+
+    Vì sao cần dù chỉ có một admin: `cap_tay(by=)` đã ghi `admin=` vào ghi chú
+    bút toán, nên **tiền** thì truy được. Nhưng đổi vai trò và vô hiệu hoá tài
+    khoản thì không để lại dấu vết nào — không biết ai làm, lúc nào. Khi có admin
+    thứ hai thì đó là chỗ không trả lời được câu "ai đã tắt tài khoản này".
+
+    Chỉ ghi thêm, không sửa, không xoá — cùng nguyên tắc với sổ credit.
+    """
+
+    __tablename__ = "nhat_ky_admin"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+    admin_email: Mapped[str] = mapped_column(String(255), default="", nullable=False, index=True)
+    hanh_dong: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    doi_tuong: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    chi_tiet: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<NhatKyAdmin {self.admin_email} {self.hanh_dong} {self.doi_tuong}>"
+
+
 class CreditEntry(Base):
     """Một bút toán trong sổ credit (H3). **Chỉ ghi thêm, không bao giờ sửa/xoá.**
 

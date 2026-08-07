@@ -30,7 +30,8 @@ from starlette.responses import HTMLResponse, RedirectResponse
 
 from platform_core.db import get_engine, get_session
 from platform_core.models import (ApiKey, AppAccess, CreditEntry, Job,
-                                  PlatformInfo, Session as DbSession, User)
+                                  NhatKyAdmin, PlatformInfo,
+                                  Session as DbSession, User)
 
 _log = logging.getLogger(__name__)
 
@@ -46,6 +47,33 @@ def _is_admin(request: Request) -> bool:
     from server.deps import is_operator
 
     return is_operator(request)
+
+
+def _email_admin(request: Request) -> str:
+    """Email của admin đang thao tác. Rỗng nếu không xác định được."""
+    from server.deps import user_hien_tai
+    u = user_hien_tai(request)
+    if u is not None:
+        return u.email
+    try:
+        return str(request.session.get("user") or "")
+    except Exception:      # noqa: BLE001 - chua co phien
+        return ""
+
+
+def ghi_nhat_ky(db, request: Request, hanh_dong: str, doi_tuong: str = "",
+                chi_tiet: str = "") -> None:
+    """Ghi một dòng nhật ký thao tác quản trị (F-06). KHÔNG commit.
+
+    Cố ý **không** nuốt lỗi: nếu không ghi được nhật ký thì thao tác đó cũng
+    không nên coi là đã xảy ra một cách yên tâm. Với thao tác động tới tiền hay
+    quyền, mất dấu vết còn tệ hơn thất bại có báo.
+    """
+    from platform_core.models import NhatKyAdmin
+    db.add(NhatKyAdmin(admin_email=_email_admin(request)[:255],
+                       hanh_dong=hanh_dong[:64],
+                       doi_tuong=str(doi_tuong)[:255],
+                       chi_tiet=str(chi_tiet)))
 
 
 class AdminAuth(AuthenticationBackend):
@@ -75,6 +103,7 @@ _ADM_NAV = [
     ("/admin/apikeys", "AK", "APIKEYS", "apikeys"),
     ("/admin/job/list", "JB", "Job", "job"),
     ("/admin/session/list", "SS", "Phiên", "session"),
+    ("/admin/nhat-ky-admin/list", "NK", "Nhật ký admin", "nhatky"),
     ("__grp__", "", "Thanh toán", ""),
     ("/admin/doanh-thu", "DT", "Doanh thu", "revenue"),
     ("/admin/goi", "GN", "Gói nạp", "goi"),
@@ -253,6 +282,33 @@ class UserAdmin(ModelView, model=User):
                    User.is_active, User.is_verified, User.created_at,
                    User.last_login_at]
     column_labels = {"so_du_credit": "Số dư"}
+
+    async def on_model_change(self, data, model, is_created, request) -> None:
+        """F-06: doi vai tro / vo hieu hoa tai khoan phai de lai dau vet.
+
+        Truoc day chi co credit la truy duoc (`cap_tay(by=)`). Doi `role` hay
+        `is_active` thi khong ai biet ai lam, luc nao — va do la hai thao tac co
+        hau qua lon nhat trong trang nay.
+        """
+        from platform_core.db import get_session
+        cu_gia = {k: getattr(model, k, None)
+                  for k in ("role", "is_active", "is_verified", "display_name")}
+        thay = {k: (cu_gia[k], data.get(k)) for k in cu_gia
+                if k in data and data.get(k) != cu_gia[k]}
+        if not thay:
+            return
+        gen = get_session(); db = next(gen)
+        try:
+            ghi_nhat_ky(db, request, "sua_nguoi_dung",
+                        doi_tuong=getattr(model, "email", "") or str(model),
+                        chi_tiet="; ".join(f"{k}: {a!r} -> {b!r}"
+                                           for k, (a, b) in sorted(thay.items())))
+            db.commit()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
     column_searchable_list = [User.email, User.display_name]
     column_sortable_list = [User.email, User.created_at, User.last_login_at]
     column_default_sort = [(User.created_at, True)]
@@ -405,6 +461,12 @@ class GrantCreditView(BaseView):
                                 canh = (f'<p style="color:#92400e;">Bỏ qua '
                                         f'{len(kq.trung)} email lặp — mỗi người chỉ '
                                         f'cấp một lần.</p>')
+                            ghi_nhat_ky(
+                                db, request, "cap_credit",
+                                doi_tuong=", ".join(e for e, _ in kq.da_cap)[:255],
+                                chi_tiet=f"{amount:+d} credit cho {len(kq.da_cap)} "
+                                         f"tai khoan; ghi chu: {note}")
+                            db.commit()
                             msg_html = (
                                 f'<p style="color:#1a7f37;">Đã cấp <b>{amount:+d}</b> '
                                 f'credit cho <b>{len(kq.da_cap)}</b> tài khoản.</p>'
@@ -438,6 +500,26 @@ class GrantCreditView(BaseView):
   <button class="btn" type="submit">Cấp credit</button>
 </form></div></div>"""
         return HTMLResponse(_admin_shell("Cấp credit", "grant", body), status_code=status)
+
+
+class NhatKyAdminView(ModelView, model=NhatKyAdmin):
+    """Nhật ký thao tác quản trị — CHỈ XEM (F-06).
+
+    Khoá create/edit/delete cùng lý do với sổ credit: một nhật ký sửa được thì
+    không còn là nhật ký.
+    """
+
+    name = "Nhật ký admin"
+    name_plural = "Nhật ký admin"
+    icon = "fa-solid fa-clipboard-list"
+    column_list = [NhatKyAdmin.created_at, NhatKyAdmin.admin_email,
+                   NhatKyAdmin.hanh_dong, NhatKyAdmin.doi_tuong, NhatKyAdmin.chi_tiet]
+    column_searchable_list = [NhatKyAdmin.admin_email, NhatKyAdmin.doi_tuong]
+    column_sortable_list = [NhatKyAdmin.created_at, NhatKyAdmin.admin_email]
+    column_default_sort = [(NhatKyAdmin.created_at, True)]
+    can_create = False
+    can_edit = False
+    can_delete = False
 
 
 class ApiKeyAdmin(ModelView, model=ApiKey):
@@ -982,6 +1064,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
     admin.add_view(ApiKeysConsole)
+    admin.add_view(NhatKyAdminView)
     admin.add_view(ApiKeyAdmin)
     admin.add_view(AddApiKeyView)
     admin.add_view(ApiKeyActionView)

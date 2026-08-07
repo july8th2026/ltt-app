@@ -230,3 +230,52 @@ def test_so_du_credit_tinh_dung_ca_khi_am_va_bang_khong(env):
         assert u.so_du_credit == 300
     finally:
         s.close()
+
+
+# ── 8. F-06: nhật ký thao tác admin ──────────────────────────────────────────
+def _nhat_ky():
+    import platform_core.db as dbmod
+    from platform_core.models import NhatKyAdmin
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        return s.query(NhatKyAdmin).order_by(NhatKyAdmin.id.desc()).all()
+    finally:
+        s.close()
+
+
+def test_cap_credit_duoc_ghi_nhat_ky(env):
+    _dang_nhap(env, "sep@x.com")
+    _cap(env, "nv1@x.com\nnv2@x.com", amount="250", note="onboarding")
+    ds = _nhat_ky()
+    assert ds, "khong ghi nhat ky nao"
+    e = ds[0]
+    assert e.hanh_dong == "cap_credit"
+    assert e.admin_email == "sep@x.com", "khong biet AI da cap"
+    assert "nv1@x.com" in e.doi_tuong and "nv2@x.com" in e.doi_tuong
+    assert "+250" in e.chi_tiet and "onboarding" in e.chi_tiet
+
+
+def test_cap_that_bai_thi_KHONG_ghi_nhat_ky(env):
+    """Ghi nhật ký cho một thao tác không xảy ra là làm bẩn dấu vết."""
+    _dang_nhap(env, "sep@x.com")
+    _cap(env, "nv1@x.com\nsai@x.com")
+    assert not [e for e in _nhat_ky() if e.hanh_dong == "cap_credit"]
+
+
+def test_nhat_ky_CHI_XEM_khong_sua_khong_xoa():
+    """Một nhật ký sửa được thì không còn là nhật ký."""
+    from server.admin import NhatKyAdminView
+    assert NhatKyAdminView.can_create is False
+    assert NhatKyAdminView.can_edit is False
+    assert NhatKyAdminView.can_delete is False
+
+
+def test_trang_nhat_ky_mo_duoc(env):
+    _dang_nhap(env, "sep@x.com")
+    assert env.get("/admin/nhat-ky-admin/list").status_code == 200
+
+
+def test_nguoi_dung_thuong_khong_xem_duoc_nhat_ky(env):
+    _dang_nhap(env, "nv1@x.com")
+    r = env.get("/admin/nhat-ky-admin/list", follow_redirects=False)
+    assert r.status_code in (302, 303, 401, 403)
