@@ -173,3 +173,37 @@ def test_chuan_hoa_bo_ngon_ngu_la():
     assert i18n.chuan_hoa("en") == "en"
     for xau in ("fr", "zz", "", None, "vi-VN"):
         assert i18n.chuan_hoa(xau) is None
+
+
+# ── 7. Ngoài ngữ cảnh request ────────────────────────────────────────────────
+def test_ngoai_request_thi_tra_ngon_ngu_GOC_khong_phai_MAC_DINH():
+    """Hai thứ khác nhau, dễ lẫn:
+
+    - `MAC_DINH` (en) là kết luận cho MỘT REQUEST không có tín hiệu nào.
+    - Mặc định của ContextVar là ngôn ngữ khi **không ai đặt gì cả**: worker chạy
+      job nền, script, test. Ở đó không có "người dùng" nào để mà đoán.
+
+    Để `MAC_DINH` ở đây thì thông báo lỗi của job nền luôn ra tiếng Anh rồi được
+    lưu vào CSDL — kể cả với khách Việt, và kể cả trong log. Đã xảy ra thật: 12
+    test đổ vì service gọi trực tiếp trả ra tiếng Anh.
+    """
+    import contextvars
+    from platform_core import i18n as m
+
+    def _doc():
+        return m.ngon_ngu_hien_tai()
+
+    # Chạy trong context RỖNG — mô phỏng worker/script, không qua middleware.
+    ra = contextvars.Context().run(_doc)
+    assert ra == m.GOC, (
+        f"ngoai request phai tra ngon ngu goc {m.GOC!r}, dang tra {ra!r}")
+
+
+def test_thong_bao_loi_ngoai_request_giu_tieng_viet():
+    import contextvars
+    from platform_core import i18n as m
+
+    def _dich():
+        return m._("Không đủ credit.")
+
+    assert contextvars.Context().run(_dich) == "Không đủ credit."

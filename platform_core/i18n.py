@@ -178,7 +178,19 @@ _khoa = threading.Lock()
 # tu request TRUOC DO cua nguoi khac. Bug nay im lang va khong deu, rat kho lan.
 #
 # `contextvars` duoc anyio sao chep sang threadpool nen di dung theo request.
-_hien_tai: contextvars.ContextVar[str] = contextvars.ContextVar("ltt_lang", default=MAC_DINH)
+# Mac dinh la NGON NGU GOC, khong phai MAC_DINH.
+#
+# Hai thu khac nhau:
+#   MAC_DINH (en) = ket luan cho MOT REQUEST khong co tin hieu nao — chot cua
+#                   chu san pham, vi khach nuoc ngoai gap tieng Viet thi khong
+#                   doc noi ca nut doi ngon ngu.
+#   default duoi  = ngon ngu khi KHONG AI dat gi ca: worker chay job nen khong
+#                   co request, script, test. O do khong co "nguoi dung" nao de
+#                   ma doan, nen tra ve chuoi GOC la dung nhat.
+#
+# De MAC_DINH o day thi thong bao loi cua job nen se luon ra tieng Anh roi duoc
+# luu vao CSDL — ke ca voi khach Viet, va ke ca trong log.
+_hien_tai: contextvars.ContextVar[str] = contextvars.ContextVar("ltt_lang", default=GOC)
 
 
 def _tai(lang: str):
