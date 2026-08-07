@@ -34,7 +34,38 @@ class UserError(Exception):
 
 
 def chuan_hoa_email(email: str) -> str:
+    """Chuẩn hoá để LƯU và HIỂN THỊ. Chỉ bỏ khoảng trắng và hạ chữ thường."""
     return (email or "").strip().lower()
+
+
+# Nhà cung cấp coi dấu chấm và hậu tố `+…` là CÙNG một hộp thư.
+_MIEN_ALIAS = {"gmail.com", "googlemail.com"}
+
+
+def chuan_hoa_email_chong_trung(email: str) -> str:
+    """Chuẩn hoá để KIỂM TRÙNG — khác `chuan_hoa_email`.
+
+    Gmail giao `a@gmail.com`, `a+1@gmail.com`, `a.b@gmail.com` về **cùng một hộp
+    thư**. Trước đây hệ thống coi chúng là ba email khác nhau, nên một hộp Gmail
+    tạo được vô hạn tài khoản, mỗi cái 20 credit dùng thử. Xác thực email không
+    cản được: chính người đó nhận hết thư xác thực.
+
+    Hàm này CHỈ dùng cho cột `email_chuan` (chống trùng). Email gốc vẫn giữ
+    nguyên để hiển thị và gửi thư — người dùng nhập `a.b@gmail.com` thì phải
+    thấy đúng chuỗi đó, không phải chuỗi ta tự sửa.
+
+    Cố ý chỉ áp cho Gmail: mỗi nhà cung cấp một luật, đoán bừa cho miền khác sẽ
+    gộp nhầm hai người thành một.
+    """
+    e = chuan_hoa_email(email)
+    if "@" not in e:
+        return e
+    ten, mien = e.rsplit("@", 1)
+    if mien == "googlemail.com":
+        mien = "gmail.com"
+    if mien in _MIEN_ALIAS:
+        ten = ten.split("+", 1)[0].replace(".", "")
+    return f"{ten}@{mien}"
 
 
 # ── Tạo và xác thực người dùng ────────────────────────────────────────────────
@@ -55,12 +86,17 @@ def tao_nguoi_dung(
     if not password:
         raise UserError("Mật khẩu không được rỗng.")
 
-    trung = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
+    # Kiem trung theo email_chuan, KHONG theo email goc: gmail giao
+    # a@ / a+1@ / a.b@ ve cung mot hop thu (xem chuan_hoa_email_chong_trung).
+    chuan = chuan_hoa_email_chong_trung(email)
+    trung = db.execute(
+        select(User).where(User.email_chuan == chuan)).scalar_one_or_none()
     if trung is not None:
         raise UserError("Email này đã được đăng ký.")
 
     user = User(
         email=email,
+        email_chuan=chuan,
         display_name=display_name.strip() or email.split("@")[0],
         password_hash=hash_password(password),
         role=role,

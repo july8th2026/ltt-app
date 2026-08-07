@@ -28,6 +28,25 @@ from platform_core.models import User
 # Số tài khoản mới tối đa trên mỗi IP trong 24 giờ. Đổi qua env nếu cần.
 GIOI_HAN_IP_MOI_NGAY = int(os.environ.get("LTT_MAX_DANGKY_IP_NGAY", "3") or "3")
 
+# Tên miền email TIN CẬY — không bị đếm theo IP.
+#
+# Vì sao theo tên miền chứ không theo IP: IP văn phòng là IP **động**, dùng chung
+# sau NAT, và đổi được bằng một VPN trong năm giây. Nó vừa chặn nhầm người thật
+# (nhân viên ngồi cùng mạng, 2026-08-07) vừa không chặn được kẻ có chủ ý. Tên
+# miền email thì cố định, và chỉ ai có hộp thư trong miền đó mới qua được.
+#
+# Đây KHÔNG phải là nới lỏng cho Internet: người lạ không có `@lttstudios.com`.
+MIEN_TIN_CAY = frozenset(
+    m.strip().lower()
+    for m in (os.environ.get("LTT_DANGKY_MIEN_TIN_CAY") or "").split(",")
+    if m.strip())
+
+
+def la_mien_tin_cay(email: str) -> bool:
+    """True nếu email thuộc một tên miền đã khai là tin cậy."""
+    e = (email or "").strip().lower()
+    return "@" in e and e.rsplit("@", 1)[1] in MIEN_TIN_CAY
+
 # Danh sách tên miền mail dùng-một-lần phổ biến. Cố ý là danh sách tĩnh nhỏ,
 # không phải một gói phụ thuộc: gói dữ liệu này thay đổi hằng ngày và kéo theo
 # một phụ thuộc phải cập nhật. Danh sách cốt lõi này chặn phần lớn; mở rộng qua
@@ -64,13 +83,17 @@ def _bay_gio() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def vuot_gioi_han_ip(db: DbSession, ip: str) -> bool:
+def vuot_gioi_han_ip(db: DbSession, ip: str, email: str = "") -> bool:
     """True nếu IP này đã tạo đủ số tài khoản cho phép trong 24 giờ qua.
 
     Đếm theo cột `registration_ip` của bảng users. IP rỗng (không xác định được)
     không bị giới hạn ở đây — chặn theo IP rỗng sẽ chặn nhầm mọi người khi
     reverse proxy cấu hình sai; các lớp khác (email, Turnstile) vẫn còn.
     """
+    # Miền tin cậy: bỏ qua trần IP hoàn toàn. Nhân viên ngồi chung một mạng
+    # (một IP công cộng, lại còn động) không được coi là hành vi farm.
+    if email and la_mien_tin_cay(email):
+        return False
     ip = (ip or "").strip()
     if not ip:
         return False

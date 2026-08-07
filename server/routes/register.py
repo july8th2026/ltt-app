@@ -104,7 +104,7 @@ def register_submit(
             return _render_register(request, "Hệ thống chưa sẵn sàng nhận đăng ký "
                                     "(chưa cấu hình CSDL).", email, 503)
 
-        if vuot_gioi_han_ip(db, ip):
+        if vuot_gioi_han_ip(db, ip, email):
             # Không nói rõ "IP của bạn đã tạo quá nhiều" — chỉ báo chung.
             return _render_register(request, "Đã đạt giới hạn tạo tài khoản hôm nay. "
                                     "Thử lại sau.", email, 429)

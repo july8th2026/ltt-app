@@ -84,6 +84,12 @@ class User(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False,
                                        index=True)
+    # Email da chuan hoa theo nha cung cap, CHI de chong trung (xem
+    # users.chuan_hoa_email_chong_trung). Gmail giao a@ / a+1@ / a.b@ ve CUNG MOT
+    # hop thu; truoc day he thong coi la ba tai khoan khac nhau, moi cai 20 credit
+    # dung thu. `email` goc van giu nguyen de hien thi va gui thu.
+    email_chuan: Mapped[str] = mapped_column(
+        String(255), default="", nullable=False, index=True)
     display_name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(16), default="user", nullable=False)
