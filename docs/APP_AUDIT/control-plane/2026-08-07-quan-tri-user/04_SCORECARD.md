@@ -55,3 +55,52 @@ xác minh"**. Các finding dưới đây ghi rõ cấp bằng chứng của từ
 
 **Release Gate: `INTERNAL`.** Dùng nội bộ được — chính bạn đang dùng. Nhưng
 G3/G4/G8 FAIL nên **chưa đạt `COMMERCIAL`**, và ba gate này đều do F-01/F-05.
+
+
+---
+
+# Chấm lại sau khi thực hiện — 2026-08-07 15:38 (đã deploy)
+
+```
+Q 78 · M —  · E 68 · Release Gate: BETA
+```
+
+Gate cũ `INTERNAL`, bị chặn bởi G3. Ba gate đã chuyển:
+
+| Gate | Trước | Sau | Vì sao |
+|---|---|---|---|
+| G3 Money/Credit | **FAIL** | **PASS** | `cap_tay()` kiểm tồn tại + FK `RESTRICT` đã vào production (`alembic head d2e3f4a5b6c7`, `FK credit_entries -> users`) |
+| G4 Honest UI | **FAIL** | **PASS** | Không còn báo "Đã cấp" cho cấp phát vô hiệu; test hồi quy trực tiếp |
+| G8 Operations | **FAIL** | **PASS** | 24 test qua HTTP + nhật ký thao tác admin |
+| G6 Accessibility | UNKNOWN | **UNKNOWN** | vẫn chưa có E3 |
+
+## Q 61 → 78
+
+| Nhóm | Trọng số | Trước | Sau | Vì sao |
+|---|---:|---:|---:|---|
+| Tính năng và độ đầy đủ | 12 | 2 | 4 | cấp hàng loạt, trang chi tiết, nhật ký |
+| Đúng chức năng và control | 16 | 2 | 4 | 4 control `MISSING` và 1 `MISLEADING` đã đóng |
+| UX/workflow/IA | 12 | 2 | 4 | hết copy UUID giữa hai trang |
+| Security/privacy/tenant/credit | 14 | 3 | 4 | lỗ P0 đã bịt hai tầng |
+| Kiến trúc/vận hành/quan sát | 7 | 3 | 4 | 24 test phủ luồng tiền + nhật ký |
+
+Các nhóm khác giữ nguyên. Tổng: **78/100** — "cạnh tranh nhưng còn gap" (70–79).
+
+## E 55 → 68
+
+Lên nhờ phần lớn kết luận giờ ở **E2** (test đã chạy) thay vì E1 (đọc mã):
+`test_162` 22 mục, `test_163` 24 mục, và migration đã xác minh trên CSDL
+production thật.
+
+**Vẫn chưa tới 70 vì THIẾU E3.** Chưa render trang admin trên browser thật —
+phiên trình duyệt hết hạn sau deploy và trang admin bắt đăng nhập.
+
+## Vì sao `BETA` chứ không `COMMERCIAL`
+
+Ba gate chặn đã mở, nhưng:
+- **G6 Accessibility vẫn UNKNOWN.** Mục 4 nói gate không được bù bằng điểm.
+- **E 68 < 70.** Thiếu E3 nghĩa là chưa được gọi là "đã xác minh" theo mục 5.
+
+Nâng lên `COMMERCIAL` cần đúng một việc: **kiểm trên browser thật**. Cụ thể là
+mở `/admin/nguoi-dung?q=<email>` và `/admin/user/list` khi đã đăng nhập admin,
+ghi viewport, console error, failed request theo mục 5.
