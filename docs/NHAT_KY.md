@@ -14,6 +14,73 @@
 
 ---
 
+## 2026-08-09 — H26.7: Phase 3.3 Tạo Video Seedance PASS
+
+- **Mục tiêu:** áp dụng folder `TaoVideoAI`, đổi tên public và hoàn thiện UX
+  khách hàng mà không làm sai model/options/provider/job/credit hiện hữu.
+- **Hạng mục:** H26.7 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Đổi tên manifest/nav/title/CTA thành **Tạo Video Seedance**; giữ nguyên slug
+  `/taovideo`, ToolSpec và `taovideo.generate` để không phá deep link/job cũ.
+- Giữ camera/motion/style/seed nhưng chuyển vào vùng tùy chọn sáng tạo mặc định
+  đóng. Ba picker ảnh/video/audio dùng chung contract backend, có preview local,
+  role/handle và cap bốn tài sản thật.
+- Thư viện owner-scoped bổ sung filter status/model/aspect/sort, trạng thái
+  cancelled, grid/list lưu local, model/time, progress/error và link nhật ký cho
+  mọi job. Không thêm retry/delete/bulk/template khi chưa có contract retention.
+- Sửa lỗi tiền: estimate trước đây luôn hiện giá một video dù quantity=2. Nay
+  hiện tổng hold server tính và thông báo settle theo token thật.
+- Browser phát hiện preview ảnh blob bị CSP chặn. Sửa ảnh sang FileReader data
+  URL; video/audio vẫn dùng blob theo `media-src`, không nới CSP nền tảng.
+- Fixture cô lập 8112: Standard/Fast option đúng registry; quote ×2 = 94 credit;
+  submit thật hai queued job nhưng không chạy worker/provider, credit 1000→906,
+  asset history và ba link log; filter/cancelled empty; Upscale quote 3 credit.
+  Desktop 1920 và mobile 390 PASS, drawer 375,2 px, không overflow, console
+  0 error/0 warning, request app 200/206.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted Taovideo H26 | PASS 41 test |
+| Vận hành/adaptive/layering | PASS 35 test; 1 warning TestClient cũ |
+| `python tools/gate.py --quick` lượt đầu | FAIL 1 i18n mới; đã bọc `_t()` |
+| `python tools/gate.py --quick` sau sửa | PASS 8/8 trong 25,6 giây |
+| Playwright fixture 8112, 1920×1080 + 390×844 | PASS A-Z không provider; console/network sạch |
+| `python tools/gate.py` lượt sạch | PASS 9/9 trong 1.616,1 giây; pytest 1.590,7 giây |
+
+### Sự cố vận hành trong phiên
+
+Tin nhắn mới và timeout của shell làm hai gate trước mất kênh theo dõi nhưng
+không dừng pytest con, dẫn tới hai bộ regression tranh CPU. Đã kiểm command line
+và quan hệ parent/PID, dừng đúng hai gate/pytest do phiên này tạo, đóng browser/
+fixture 8112, xác nhận 0 gate process rồi chạy một lượt sạch duy nhất PASS.
+
+### Quyết định mới
+
+Không có. Thực thi Q79 và Decision Gate H13.taovideo; không đổi provider/cost
+formula/worker và không mở tính năng lifecycle chưa có contract.
+
+### Cách lùi lại
+
+Revert commit H26.7. Không có migration; job/ledger/artifact đã có vẫn giữ nguyên.
+Không xóa lịch sử hay output để rollback giao diện.
+
+### Còn tồn đọng
+
+- Chưa deploy; release vẫn khóa tới H26.12.
+- Retry/delete/bulk/template tiếp tục DEFER theo retention/idempotency gate.
+- Không chạy render BytePlus trong browser fixture; provider path đã được chốt
+  bằng test registry/modelark và code worker hiện hữu, tránh đốt credit ngoài.
+
+### Việc tiếp theo
+
+1. H26.8 Phase 3.4: đổi tên + UX Prompt AI theo khảo sát read-only đã có.
+2. Không chạy song song H26.9.
+
 ## 2026-08-08 — H26.6: Phase 3.2 Auto Sub Studio PASS
 
 - **Mục tiêu:** loại version drift làm khách hàng thấy form AutoSub cũ, audit

@@ -2,16 +2,16 @@
 
 | Vùng trong ảnh | Ý đồ UX | Tương ứng thật của LTT | Nhận định |
 |---|---|---|---|
-| Rail trái: Create/Library/Templates/Assets/Settings | chuyển nhanh giữa các không gian | `/taovideo`, `/jobs`, `/settings`; chưa có template/asset library | chỉ link tới route thật; template/asset library cần quyết định riêng |
+| Rail trái: Create/Library/Templates/Assets/Settings | chuyển nhanh giữa các không gian | `/taovideo`, `/jobs`, asset history anchor, `/settings` admin | PASS; không dựng Templates giả |
 | Composer trái | cấu hình luôn thấy khi xem thư viện | form tạo video hiện có | RESTYLE thành rail/sticky composer trên desktop |
 | Model tiles | so sánh Mini/Standard/Fast | `apps.taovideo.models.MODELS` | KEEP, data-driven, không hardcode capability |
-| Prompt, translate, prompt history | soạn/tái dùng prompt | textarea + `/translate`; chưa có history | translate KEEP; history phải BUILD với retention/privacy |
-| Reference slots image/video/audio, handles | điều khiển input multimodal | upload `ref_images`; worker đã hỗ trợ kind/role/handle nhưng UI chưa expose role/handle | EXTEND UI, không cần runtime mới |
+| Prompt, translate, prompt history | soạn/tái dùng prompt | textarea + `/translate` + 10 prompt owner-scoped | PASS; không có kho prompt thứ hai |
+| Reference slots image/video/audio, handles | điều khiển input multimodal | ba picker + preview local + role/handle; worker dùng cùng `ref_images` | PASS; giữ backend cap 4, không giả cap 12 từ ảnh |
 | Duration/aspect/resolution/audio/count/estimate | báo giá trước submit | all present; capability dependent và HTMX estimate | RESTYLE, giữ server estimate/credit truth |
-| Main library/status tabs/filter/sort | tìm và quản lý output | owner-scoped 12 jobs, status/progress/result; chưa có query/filter | BUILD additive read model/query |
-| Video cards | preview, status, metadata, prompt, actions | video player/download and status exist; params/result not supplied to template | EXTEND job view DTO; preview only output thật |
+| Main library/status tabs/filter/sort | tìm và quản lý output | owner-scoped 60 job; status/model/aspect/sort | PASS, gồm cancelled/empty |
+| Video cards | preview, status, metadata, prompt, actions | output thật, model/time, progress/error, download/remix/upscale/log | PASS |
 | Retry/delete/bulk delete | quản trị output | chưa có route/retention contract | DEFER until behavior/credit/storage retention lock |
-| Grid/list controls | density theo nhu cầu | no persisted preference | visual-only client preference possible after decision |
+| Grid/list controls | density theo nhu cầu | localStorage theo browser | PASS, không tạo profile setting giả |
 
 ## Layout extraction
 

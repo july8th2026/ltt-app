@@ -67,7 +67,7 @@ def test_ui_co_preview_capability_bien_the_va_remix():
     routes = (ROOT / "apps/taovideo/routes.py").read_text(encoding="utf-8")
     jobs = (ROOT / "apps/taovideo/jobs.py").read_text(encoding="utf-8")
 
-    assert 'href="#tv-assist"' in page
+    assert '<details class="tv-fieldset tv-assist" id="tv-assist">' in page
     assert 'hx-post="/taovideo/prompt-assist"' in page
     assert 'name="camera"' in page and 'name="motion"' in page
     assert 'name="visual_style"' in page and 'name="seed"' in page
@@ -75,4 +75,3 @@ def test_ui_co_preview_capability_bien_the_va_remix():
     assert "q('[name=count]').value='2'" in page
     assert '"seed"] = (fixed_seed + k)' in routes
     assert 'seed = int(params["seed"])' in jobs
-

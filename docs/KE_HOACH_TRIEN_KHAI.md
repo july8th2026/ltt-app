@@ -1786,7 +1786,13 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   A-Z dùng video thật: upload → import SRT → style → quote/hold 1 credit → worker
   FFmpeg/NVENC → download video/ASS/ZIP; ZIP đủ 5 artifact, desktop/mobile sạch,
   không overflow. Frontend 13 PASS; backend/bundle 44 PASS; full gate PASS 9/9.
-- [ ] H26.7 Phase 3.3: đổi tên + UX Tạo Video Seedance, giữ option/provider đúng.
+- [x] H26.7 Phase 3.3 — **PASS 2026-08-09, chưa deploy**: đổi tên public thành
+  Tạo Video Seedance nhưng giữ slug/job/provider; advanced mặc định đóng, ba
+  picker ref + preview/role/handle, status/model/aspect/sort, cancelled,
+  grid/list lưu local, metadata/log; sửa quote quantity=2 hiển thị đúng tổng
+  hold. Browser fixture tạo 2 queued job, 1000→906 credit, asset history/log,
+  Upscale quote 3 credit, desktop/mobile không overflow, console/network sạch.
+  Targeted 76 PASS; full gate 9/9 trong 1.616,1 giây.
 - [ ] H26.8 Phase 3.4: đổi tên + UX Prompt AI, khảo sát read-only Prompt Seedance
   và di trú tài nguyên không import chéo.
 - [ ] H26.9 Phase 3.5: shell Tạo ảnh AI hợp nhất Thumbnail, giữ history/job cũ.

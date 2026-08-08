@@ -46,7 +46,8 @@ def _render(request: Request, user: str, *, error: str = "", jobs=None, status_c
     return templates.TemplateResponse(request, "taovideo.html", context, status_code=status_code)
 
 
-def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
+def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest",
+                  model_filter: str = "", aspect_filter: str = ""):
     u = user_hien_tai(request)
     if u is None:
         return []
@@ -59,11 +60,22 @@ def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
             select(Job).where(Job.user_id == u.id, Job.app_slug == MANIFEST.slug)
             .order_by(Job.created_at.asc() if sort == "oldest" else Job.created_at.desc()).limit(60)
         ).scalars().all()
-        counts = {"all": len(rows), "running": 0, "done": 0, "error": 0}
+        if model_filter in models.MODELS:
+            rows = [j for j in rows if (j.params or {}).get("model") == model_filter]
+        else:
+            model_filter = ""
+        known_aspects = {aspect for item in models.MODELS.values()
+                         for aspect in item.get("aspects", [])}
+        if aspect_filter in known_aspects:
+            rows = [j for j in rows if (j.params or {}).get("aspect_ratio") == aspect_filter]
+        else:
+            aspect_filter = ""
+        counts = {"all": len(rows), "running": 0, "done": 0, "error": 0, "cancelled": 0}
         for j in rows:
             if j.status in (JOB_QUEUED, JOB_RUNNING): counts["running"] += 1
             elif j.status == JOB_DONE: counts["done"] += 1
             elif j.status == JOB_ERROR: counts["error"] += 1
+            elif j.status == "cancelled": counts["cancelled"] += 1
         filtered = rows if status == "all" else [j for j in rows if (
             j.status in (JOB_QUEUED, JOB_RUNNING) if status == "running" else j.status == status)]
         history=[]; seen=set(); assets=[]; seen_keys=set()
@@ -87,14 +99,18 @@ def _jobs_cua_toi(request: Request, status: str = "all", sort: str = "newest"):
                  "progress_msg": j.progress_msg, "error": j.error,
                  "video_key": (j.result or {}).get("video_key") if j.result else None,
                  "model": (j.result or {}).get("model") or (j.params or {}).get("model"),
+                 "model_label": (models.get((j.result or {}).get("model") or
+                                  (j.params or {}).get("model")) or {}).get("label", "Seedance"),
                  "prompt": str((j.params or {}).get("prompt", ""))[:180],
                  "raw_prompt": str((j.params or {}).get("raw_prompt") or
                                    (j.params or {}).get("prompt", ""))[:10000],
                  "resolution": (j.params or {}).get("resolution", ""),
                  "duration": (j.params or {}).get("duration", ""),
-                 "aspect_ratio": (j.params or {}).get("aspect_ratio", "")}
+                 "aspect_ratio": (j.params or {}).get("aspect_ratio", ""),
+                 "created_at": j.created_at.strftime("%d/%m/%Y %H:%M") if j.created_at else ""}
                 for j in filtered], "counts": counts, "history": history[:10],
-                "assets": assets}
+                "assets": assets, "model_filter": model_filter,
+                "aspect_filter": aspect_filter}
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -160,24 +176,36 @@ def _clean_seed(value: str) -> int | None:
 
 
 @router.get("", response_class=HTMLResponse)
-def page(request: Request, status: str = "all", sort: str = "newest", user: str = Depends(require_login)):
-    status = status if status in {"all", "running", "done", "error"} else "all"
+def page(request: Request, status: str = "all", sort: str = "newest",
+         model: str = "", aspect: str = "", user: str = Depends(require_login)):
+    status = status if status in {"all", "running", "done", "error", "cancelled"} else "all"
     sort = sort if sort in {"newest", "oldest"} else "newest"
-    data = _jobs_cua_toi(request, status, sort)
+    data = _jobs_cua_toi(request, status, sort, model, aspect)
     return _render(request, user, jobs=data["items"], job_counts=data["counts"],
                    prompt_history=data["history"], saved_assets=data["assets"],
-                   active_status=status, active_sort=sort)
+                   active_status=status, active_sort=sort,
+                   active_model=data["model_filter"], active_aspect=data["aspect_filter"])
 
 
 @router.post("/estimate", response_class=HTMLResponse)
 def estimate(request: Request, model: str = Form(""), resolution: str = Form("480p"),
              duration: str = Form("5"), aspect_ratio: str = Form("16:9"),
+             count: str = Form("1"),
              user: str = Depends(require_login)):
     mid, res, dur, _asp = _clean(model, resolution, duration, aspect_ratio)
     e = cost.uoc_luong(mid, res, dur, False)
+    try:
+        quantity = max(1, min(int(count or 1), 2))
+    except (TypeError, ValueError):
+        quantity = 1
+    held = MANIFEST.credit_cost({"model": mid, "resolution": res,
+                                 "duration": dur}) * quantity
+    estimated = e["credit"] * quantity
+    details = _t('{quantity} video · dự kiến {estimated} credit; quyết toán theo token thật').format(
+        quantity=quantity, estimated=estimated)
     return HTMLResponse(
-        f'<strong>{e["credit"]} credit</strong> '
-        f'<span class="dim">(~{e["vnd"]:,}đ · {e["tokens"]:,} token ước tính)</span>')
+        f'<strong>{held} {_t("credit tạm giữ")}</strong> '
+        f'<span class="dim">({details})</span>')
 
 
 @router.post("/translate", response_class=HTMLResponse)

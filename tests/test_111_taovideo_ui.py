@@ -20,7 +20,9 @@ def test_composer_co_label_drawer_va_keyboard_contract():
     assert "function openCompose()" in page
     assert "if(e.key==='Escape')closeCompose()" in page
     assert 'for="tv-prompt"' in page
-    assert 'for="tv-files"' in page
+    assert 'for="tv-images"' in page
+    assert 'for="tv-videos"' in page
+    assert 'for="tv-audios"' in page
     # H24: nhan gio di qua catalog dich. Van chot rang o chon thoi luong nam
     # NGAY SAU nhan cua no — do moi la dieu test nay canh (nhan gan dung o input).
     assert '_("Thời lượng") }}<select' in page
@@ -48,13 +50,14 @@ def test_nav_khong_day_user_thuong_vao_settings_va_khong_co_link_gia():
     assert 'href="/jobs?app=taovideo"' in page
     assert page.count('disabled aria-disabled="true"') == 0
     assert 'href="#tv-assets"' in page
-    assert 'href="#tv-assist"' in page
+    assert 'href="#tv-assist"' not in page
+    assert '<details class="tv-fieldset tv-assist" id="tv-assist">' in page
 
 
 def test_file_name_duoc_tao_bang_dom_khong_chich_html():
     page = _read("apps/taovideo/templates/taovideo.html")
 
-    assert "title.textContent=kind+': '+file.name" in page
+    assert "title.textContent=file.name" in page
     assert "insertAdjacentHTML" not in page
     assert "out.replaceChildren()" in page
 

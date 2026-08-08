@@ -14,7 +14,7 @@
 | `socialbot` | non-public, enabled, frozen | log/manual job riêng, route sau feature flag | trạng thái bảo trì; không mở feature mới |
 | `taoanh` | public, enabled | lưới lịch sử ảnh | giữ; nhận UI Thumbnail hợp nhất |
 | `taoclipngan` | public, enabled | clip history | giữ; yêu cầu folder hiện UNKNOWN |
-| `taovideo` | public, enabled | filter, prompt history, asset history, jobs | giữ; đổi tên và refactor UI |
+| `taovideo` | public, enabled | H26.7: Tạo Video Seedance; filter/history/assets/jobs + responsive Studio PASS | giữ slug/provider; chưa deploy |
 | `thumbnail` | public, enabled | history/compare | bỏ card riêng sau khi hợp nhất vào Tạo ảnh AI |
 | `upscalevideo` | public, enabled | 12 job, queue, compare, batch | giữ; ưu tiên sửa đầu tiên |
 

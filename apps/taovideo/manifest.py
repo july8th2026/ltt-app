@@ -41,13 +41,13 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="taovideo",
-    display_name=N_('Tạo video AI'),
+    display_name=N_('Tạo Video Seedance'),
     route_prefix="/taovideo",
-    summary=N_('Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật.'),
+    summary=N_('Tạo video Seedance từ mô tả và tài sản tham chiếu. Tính phí theo token thật.'),
     icon="🎬",
     accent="#6A0DAD",
 
-    nav=(NavEntry("Tạo video AI", "/taovideo", "🎬", "taovideo"),),
+    nav=(NavEntry("Tạo Video Seedance", "/taovideo", "🎬", "taovideo"),),
 
     job_types=("taovideo.generate",),
     requires=("api",),
