@@ -11,7 +11,7 @@
 **Khuyến nghị: B.** Đây là cách duy nhất xử lý gốc mà vẫn triển khai tuần tự,
 không chồng chéo và có rollback theo phase.
 
-## Câu hỏi cần chủ sản phẩm khóa
+## Câu hỏi đã được chủ sản phẩm khóa ngày 2026-08-08
 
 | # | Lựa chọn | Khuyến nghị | Hệ quả |
 |---:|---|---|---|
@@ -28,6 +28,5 @@ không chồng chéo và có rollback theo phase.
 | 11 | Thứ tự app | **Upscale -> AutoSub drift -> Marketplace/merge -> Tạo Video -> Prompt -> app thiếu mô tả** | đóng bug xác định trước, không build từ folder trống |
 | 12 | AutoSub rollout | **canary user -> public**, giữ legacy flag một release | sửa đúng nguyên nhân và có rollback tức thì |
 
-Không bắt đầu BUILD trước khi 12 mục trên được chốt. Nếu chủ sản phẩm không đổi,
-roadmap mặc định dùng toàn bộ phương án khuyến nghị in đậm.
-
+**Kết quả:** chủ sản phẩm chọn toàn bộ phương án khuyến nghị. Các lựa chọn đã
+được ghi thành Q69-Q80 trong `docs/QUYET_DINH_NEN_TANG.md`; BUILD H26 được mở.

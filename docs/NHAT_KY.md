@@ -14,6 +14,33 @@
 
 ---
 
+## 2026-08-08 — H26.1: khóa decision gate
+
+- **Mục tiêu:** chuyển 12 lựa chọn audit thành quyết định có hiệu lực trước BUILD.
+- **Hạng mục:** H26.1 — hoàn thành.
+- **Trạng thái:** xong; chưa sửa runtime ở checkpoint này.
+
+### Đã làm
+
+Chủ sản phẩm chọn toàn bộ phương án A. Đã ghi Q69-Q80: soft-retire, redirect 308,
+Demo admin-only, Media runtime-only, lifecycle trung thực, hai trục filter,
+retention/log theo role, Prompt single-user, Socialbot frozen, thứ tự H26 và
+AutoSub canary.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\scan_source_secrets.py` | PASS, 0 finding trên 1.053 file |
+
+### Cách lùi lại
+
+Revert commit H26.1 trước khi có runtime phụ thuộc Q69-Q80.
+
+### Việc tiếp theo
+
+H26.2 Phase 0 audience/lifecycle và soft-retire ba bề mặt.
+
 ## 2026-08-08 — H26.0: audit portfolio và lập roadmap update app
 
 - **Mục tiêu:** áp dụng `quy_tac_audit.md` cho kho ứng dụng, ba tool cần bỏ/ẩn,

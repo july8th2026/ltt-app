@@ -1756,7 +1756,8 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
 - [x] H26.0 Audit STANDARD + inventory + roadmap — 2026-08-08: đọc toàn bộ ảnh/
   `MoTa.txt`, kiểm source/browser/hardware, lập Q/M/E, G0-G8, findings, decision
   gate và Phase 0-5. Không sửa runtime, không deploy.
-- [ ] H26.1 Khóa 12 quyết định sản phẩm trong `06_OPTIONS_AND_DECISIONS.md`.
+- [x] H26.1 Khóa 12 quyết định sản phẩm — 2026-08-08: chủ sản phẩm chọn toàn bộ
+  phương án A; ghi thành Q69-Q80 trong nguồn chân lý.
 - [ ] H26.2 Phase 0: audience/lifecycle contract; soft-retire Kịch bản, ẩn Demo,
   runtime-only Media Tools mà không làm gãy Agent.
 - [ ] H26.3 Phase 1: `JobEvent`, timeline/log/redaction/retention, History dùng
