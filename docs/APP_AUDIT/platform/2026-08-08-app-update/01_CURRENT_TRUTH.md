@@ -69,8 +69,9 @@ bảng job riêng cho từng app.
   `public=False` không ẩn app khỏi user đã đăng nhập.
 - E1-02: card chỉ có CTA `Mở app`; toàn card chưa là link và cover/title dùng
   icon lặp.
-- E1-03: AutoSub production mặc định legacy nếu
-  `LTT_AUTOSUB_STUDIO_ROLLOUT` không bằng `public`.
+- E1-03 — **đã sửa tại H26.6 (2026-08-08):** AutoSub Studio là giao diện public
+  mặc định sau AS9; biến rollout thiếu/rỗng không còn làm production âm thầm
+  quay về legacy. `off` vẫn là rollback chủ ý và bundle thiếu vẫn fail-safe về
+  form cũ trong một release.
 - E1/E3-04: máy có 2 RTX 5060 Ti, mỗi card 16.311 MiB. Tổng khoảng 32 GB nhưng
   một job chỉ lease một GPU; không được tính thành một vùng VRAM 32 GB.
-

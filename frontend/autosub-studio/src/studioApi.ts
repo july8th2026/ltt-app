@@ -27,7 +27,11 @@ export type StudioProject = { id: string; name: string; revision: number;
 export type StudioCapabilities={whisperx:boolean;diarization:boolean;translation:boolean;
   credit:{transcribe:number;diarize:number;translate:number}}
 export type StudioJob={id:string;type:string;status:string;progress:number;message:string;
-  error:string;result:Record<string,unknown>;elapsed_s?:number;eta_s?:number|null}
+  error:string;result:Record<string,unknown>;elapsed_s?:number;eta_s?:number|null;
+  project_id?:string;created_at?:string}
+
+export function studioJobStatusLabel(status:string){return ({queued:'Đang chờ',
+  running:'Đang xử lý',done:'Hoàn tất',error:'Lỗi',cancelled:'Đã hủy'} as Record<string,string>)[status]||status}
 
 export class ProjectConflictError extends Error {}
 
@@ -128,6 +132,11 @@ export function startTranslation(project:StudioProject,csrf:string,trackId:strin
 }
 export async function loadStudioJob(id:string):Promise<StudioJob>{
   return decode(await fetch(`/autosubvideo/api/jobs/${id}`,{credentials:'same-origin'}))
+}
+export async function loadStudioJobs(projectId:string):Promise<StudioJob[]>{
+  const body=await decode(await fetch(`/autosubvideo/api/jobs?project_id=${encodeURIComponent(projectId)}&limit=20`,
+    {credentials:'same-origin'}))
+  return Array.isArray(body.items)?body.items:[]
 }
 export async function cancelStudioJob(id:string,csrf:string){
   return decode(await fetch(`/autosubvideo/api/jobs/${id}/cancel`,{method:'POST',

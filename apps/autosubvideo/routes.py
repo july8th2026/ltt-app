@@ -48,9 +48,13 @@ _LOCAL_VIDEO_MAX = 90 * 1024 * 1024    # fallback Local: dưới trần 100MB CF
 
 def _studio_enabled() -> bool:
     configured = os.environ.get("LTT_AUTOSUB_STUDIO_ROLLOUT")
-    if configured is not None:
-        return configured.strip().lower() == "public"
-    return os.environ.get("LTT_ENV", "").strip().lower() not in {"production", "prod"}
+    # AS9 da PASS va Studio da duoc chot la giao dien public mac dinh (Q50).
+    # Sau reset/update, bien optional co the bi mat hoac rong; khong duoc vi the
+    # am tham quay khach hang ve form legacy. Chi gia tri `off`/gia tri sai duoc
+    # xem la lenh rollback co chu y. Bundle thieu van duoc `_render()` fail-safe.
+    if configured is None or not configured.strip():
+        return True
+    return configured.strip().lower() == "public"
 
 
 def _browser_direct_upload_enabled() -> bool:
@@ -551,14 +555,7 @@ async def project_translate(request: Request, project_id: str,
                 "cue_count": len(track["cues"])}, daily_limit=_TRANSLATE_DAILY_LIMIT)
 
 
-@router.get("/api/jobs/{job_id}")
-def studio_job_status(request: Request, job_id: str,
-                      _identity: str = Depends(require_login),
-                      db: Session = Depends(get_db)):
-    from platform_core.models import Job
-    current = _api_user(request); job = db.get(Job, job_id)
-    if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
-        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+def _studio_job_payload(job) -> dict:
     now = datetime.now(timezone.utc)
     started = job.started_at
     if started is not None and started.tzinfo is None:
@@ -570,7 +567,38 @@ def studio_job_status(request: Request, job_id: str,
             "progress": job.progress, "message": job.progress_msg,
             "elapsed_s": round(elapsed, 1), "eta_s": eta,
             "error": job.error if job.status == "error" else "",
-            "result": job.result if job.status == "done" else {}}
+            "result": job.result if job.status == "done" else {},
+            "project_id": str((job.params or {}).get("project_id", "")),
+            "created_at": job.created_at.isoformat() if job.created_at else ""}
+
+
+@router.get("/api/jobs")
+def studio_jobs(request: Request, project_id: str = "", limit: int = 20,
+                _identity: str = Depends(require_login),
+                db: Session = Depends(get_db)):
+    """Lich su job trong tool, owner-scoped va co the loc theo project."""
+    from sqlalchemy import select
+    from platform_core.models import Job
+    current = _api_user(request)
+    rows = db.execute(select(Job).where(
+        Job.user_id == current.id, Job.app_slug == MANIFEST.slug,
+    ).order_by(Job.created_at.desc()).limit(100)).scalars().all()
+    if project_id:
+        rows = [row for row in rows
+                if str((row.params or {}).get("project_id", "")) == project_id]
+    safe_limit = max(1, min(int(limit or 20), 50))
+    return {"items": [_studio_job_payload(row) for row in rows[:safe_limit]]}
+
+
+@router.get("/api/jobs/{job_id}")
+def studio_job_status(request: Request, job_id: str,
+                      _identity: str = Depends(require_login),
+                      db: Session = Depends(get_db)):
+    from platform_core.models import Job
+    current = _api_user(request); job = db.get(Job, job_id)
+    if job is None or job.user_id != current.id or job.app_slug != MANIFEST.slug:
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+    return _studio_job_payload(job)
 
 
 @router.post("/api/jobs/{job_id}/cancel")

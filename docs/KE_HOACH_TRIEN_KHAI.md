@@ -1779,8 +1779,13 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   2 preset × 3 resolution × 2 GPU PASS, dual-worker 100% tải mỗi card, max 64°C,
   không thermal slowdown; browser customer/admin/mobile sạch; full
   `python tools\gate.py` PASS 9/9 trong 1.663,3 giây. Chưa deploy.
-- [ ] H26.6 Phase 3.2 — **đang làm tiếp**: AutoSub — sửa version drift, canary React Studio và giữ
-  legacy rollback một release.
+- [x] H26.6 Phase 3.2 — **PASS 2026-08-08, chưa deploy**: AutoSub — sửa root
+  cause version drift (rollout thiếu/rỗng nay giữ Studio public), tách lifecycle
+  render khỏi auxiliary AI, thêm lịch sử job theo user/project và khôi phục sau
+  reload; giữ `off` + bundle-missing làm legacy rollback một release. Browser
+  A-Z dùng video thật: upload → import SRT → style → quote/hold 1 credit → worker
+  FFmpeg/NVENC → download video/ASS/ZIP; ZIP đủ 5 artifact, desktop/mobile sạch,
+  không overflow. Frontend 13 PASS; backend/bundle 44 PASS; full gate PASS 9/9.
 - [ ] H26.7 Phase 3.3: đổi tên + UX Tạo Video Seedance, giữ option/provider đúng.
 - [ ] H26.8 Phase 3.4: đổi tên + UX Prompt AI, khảo sát read-only Prompt Seedance
   và di trú tài nguyên không import chéo.

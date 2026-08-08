@@ -1,10 +1,12 @@
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, type Dispatch, type SetStateAction, useCallback, useEffect,
+  useMemo, useRef, useState } from 'react'
 import { EditorTimeline } from './EditorTimeline'
 import { attachSource, createAutosave, importTranscript, loadOrCreateProject,
-  loadCapabilities, loadProject, loadStudioJob, loadStyles, normalizeStyle,
+  loadCapabilities, loadProject, loadStudioJob, loadStudioJobs, loadStyles, normalizeStyle,
   ProjectConflictError, readVideoMetadata, saveProject, startDiarization,
-  startTranscription, startTranslation, cancelStudioJob, type StudioCapabilities,
-  type StudioCue, type StudioJob, type StudioProject, type StudioTrack, type StylePreset } from './studioApi'
+  startTranscription, startTranslation, cancelStudioJob, studioJobStatusLabel,
+  type StudioCapabilities, type StudioCue, type StudioJob, type StudioProject,
+  type StudioTrack, type StylePreset } from './studioApi'
 import { StyleInspector, SubtitlePreview } from './StyleInspector'
 import { RenderPanel } from './RenderPanel'
 import { TranscriptQuality } from './TranscriptQuality'
@@ -38,21 +40,32 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const [presets,setPresets]=useState<StylePreset[]>([])
   const [capabilities,setCapabilities]=useState<StudioCapabilities|null>(null)
   const [auxJob,setAuxJob]=useState<StudioJob|null>(null)
+  const [renderJob,setRenderJob]=useState<StudioJob|null>(null)
+  const [jobHistory,setJobHistory]=useState<StudioJob[]>([])
   const [targetLanguage,setTargetLanguage]=useState('en')
 
   useEffect(() => { loadOrCreateProject(csrfToken).then(row => {
     projectRef.current = row; setProject(row); setSelectedTrackId(row.payload.tracks[0]?.id||'')
     setState('ready'); setMessage('Sẵn sàng')
+    void loadStudioJobs(row.id).then(items=>{setJobHistory(items)
+      setRenderJob(items.find(job=>job.type==='autosubvideo.render')||null)
+      setAuxJob(items.find(job=>job.type!=='autosubvideo.render'&&['queued','running'].includes(job.status))||null)
+    }).catch(()=>setMessage('Không tải được lịch sử job'))
   }).catch(error => { setState('error'); setMessage(friendlyStudioError(error)) }) }, [csrfToken])
   useEffect(()=>{loadStyles().then(setPresets).catch(()=>setMessage('Không tải được preset'))},[])
   useEffect(()=>{loadCapabilities().then(setCapabilities).catch(()=>setCapabilities(null))},[])
   useEffect(()=>{if(!auxJob||!['queued','running'].includes(auxJob.status))return
-    const timer=window.setInterval(()=>{void loadStudioJob(auxJob.id).then(async job=>{setAuxJob(job)
-      setMessage(`${job.message||job.status} · ${job.progress}%`)
-      if(job.status==='done'&&projectRef.current&&job.type!=='autosubvideo.render'){const fresh=await loadProject(projectRef.current.id);projectRef.current=fresh;setProject(fresh);setSelectedTrackId(fresh.payload.tracks.at(-1)?.id||'');setMessage('AI auxiliary hoàn tất · 0 credit')}
-      if(job.status==='done'&&job.type==='autosubvideo.render')setMessage('Render hoàn tất · sẵn sàng tải xuống')
+    const timer=window.setInterval(()=>{void loadStudioJob(auxJob.id).then(async job=>{setAuxJob(job);upsertJob(setJobHistory,job)
+      setMessage(`${job.message||studioJobStatusLabel(job.status)} · ${job.progress}%`)
+      if(job.status==='done'&&projectRef.current){const fresh=await loadProject(projectRef.current.id);projectRef.current=fresh;setProject(fresh);setSelectedTrackId(fresh.payload.tracks.at(-1)?.id||'');setMessage('AI auxiliary hoàn tất · 0 credit')}
       if(job.status==='error')setMessage(job.error||'Job lỗi')})},1200)
     return()=>window.clearInterval(timer)},[auxJob?.id,auxJob?.status])
+  useEffect(()=>{if(!renderJob||!['queued','running'].includes(renderJob.status))return
+    const timer=window.setInterval(()=>{void loadStudioJob(renderJob.id).then(job=>{setRenderJob(job);upsertJob(setJobHistory,job)
+      setMessage(`${job.message||studioJobStatusLabel(job.status)} · ${job.progress}%`)
+      if(job.status==='done')setMessage('Render hoàn tất · sẵn sàng tải xuống')
+      if(job.status==='error')setMessage(job.error||'Render lỗi')})},1200)
+    return()=>window.clearInterval(timer)},[renderJob?.id,renderJob?.status])
 
   const autosave = useMemo(() => createAutosave<StudioProject>(async (draft) => {
     setState('saving'); setMessage('Đang lưu…')
@@ -114,8 +127,9 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
     try{const trackId=selectedTrackId||projectRef.current.payload.tracks[0]?.id||''
       const response=operation==='diarize'?await startDiarization(projectRef.current,csrfToken):
       await startTranslation(projectRef.current,csrfToken,trackId,targetLanguage)
-      setAuxJob({id:response.job_id,type:`autosubvideo.${operation}`,status:response.status,
-        progress:0,message:'đang xếp hàng',error:'',result:{}});setMessage(`${operation} đang xếp hàng · 0 credit`)
+      const job={id:response.job_id,type:`autosubvideo.${operation}`,status:response.status,
+        progress:0,message:'đang xếp hàng',error:'',result:{}}
+      setAuxJob(job);upsertJob(setJobHistory,job);setMessage(`${operation} đang xếp hàng · 0 credit`)
     }catch(error){setState('error');setMessage(friendlyStudioError(error))}}
 
   if (!project) return <div className={`studio-state ${state}`}>{message}</div>
@@ -143,10 +157,11 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         <section className="transcript-panel"><h2>TRANSCRIPT</h2><div className="quick-actions"><label className="subtle-button">Nhập SRT/VTT/ASS<input type="file" accept=".srt,.vtt,.ass,.ssa,.json" onChange={onTranscript}/></label><button type="button" onClick={transcribe} disabled={!source.key}>WhisperX · 0 credit</button></div>
           <div className="track-tools"><select aria-label="Track phụ đề" value={selectedTrack?.id||''} onChange={e=>{setSelectedTrackId(e.target.value);setSelectedCueId('')}}>{project.payload.tracks.map(track=><option key={track.id} value={track.id}>{track.name} · {track.language}</option>)}</select><button onClick={addTrack} aria-label="Thêm track">＋ Track</button>{selectedTrack&&<button aria-label="Ẩn hiện track" onClick={()=>mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);if(track)track.visible=!track.visible})}>{selectedTrack.visible?'◉':'○'}</button>}</div>
           <div className="capability-list" aria-label="Trạng thái công cụ AI"><Capability name="WhisperX" ready={capabilities?.whisperx} detail="Transcript và word timing"/><Capability name="Pyannote" ready={capabilities?.diarization} detail="Phân vai ẩn danh"/><Capability name="Gemini" ready={capabilities?.translation} detail="Dịch transcript theo cue"/></div>
-          <div className="ai-actions"><button onClick={()=>void runAux('diarize')} disabled={!capabilities?.diarization||!selectedTrack?.cues.length||!!auxJob&&['queued','running'].includes(auxJob.status)} title={!capabilities?.diarization?'Pyannote chưa được cấu hình':''}>Phân vai · 0 credit</button><div><select aria-label="Ngôn ngữ dịch" value={targetLanguage} onChange={e=>setTargetLanguage(e.target.value)}><option value="en">English</option><option value="vi">Tiếng Việt</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option></select><button onClick={()=>void runAux('translate')} disabled={!capabilities?.translation||!selectedTrack?.cues.length||!!auxJob&&['queued','running'].includes(auxJob.status)} title={!capabilities?.translation?'Gemini chưa được cấu hình':''}>Dịch Gemini · 0 credit</button></div>{auxJob&&<div className="aux-progress"><progress aria-label="Tiến độ công cụ AI" value={auxJob.progress} max="100"/><span>{auxJob.message||auxJob.status}</span>{['queued','running'].includes(auxJob.status)&&<button onClick={()=>void cancelStudioJob(auxJob.id,csrfToken).then(()=>setAuxJob({...auxJob,status:'cancelled'}))}>Hủy</button>}</div>}</div>
+          <div className="ai-actions"><button onClick={()=>void runAux('diarize')} disabled={!capabilities?.diarization||!selectedTrack?.cues.length||!!auxJob&&['queued','running'].includes(auxJob.status)} title={!capabilities?.diarization?'Pyannote chưa được cấu hình':''}>Phân vai · 0 credit</button><div><select aria-label="Ngôn ngữ dịch" value={targetLanguage} onChange={e=>setTargetLanguage(e.target.value)}><option value="en">English</option><option value="vi">Tiếng Việt</option><option value="zh">中文</option><option value="ja">日本語</option><option value="ko">한국어</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="es">Español</option></select><button onClick={()=>void runAux('translate')} disabled={!capabilities?.translation||!selectedTrack?.cues.length||!!auxJob&&['queued','running'].includes(auxJob.status)} title={!capabilities?.translation?'Gemini chưa được cấu hình':''}>Dịch Gemini · 0 credit</button></div>{auxJob&&<div className="aux-progress"><progress aria-label="Tiến độ công cụ AI" value={auxJob.progress} max="100"/><span>{auxJob.message||studioJobStatusLabel(auxJob.status)}</span>{['queued','running'].includes(auxJob.status)&&<button onClick={()=>void cancelStudioJob(auxJob.id,csrfToken).then(()=>setAuxJob({...auxJob,status:'cancelled'}))}>Hủy</button>}</div>}</div>
           <input className="cue-search" aria-label="Tìm transcript" placeholder="Tìm transcript…" value={query} onChange={e=>setQuery(e.target.value)}/>
           <div className="cue-list">{filtered.map(cue=><button type="button" key={cue.id} className={cue.id===selectedCueId?'active':''} onClick={()=>{setSelectedCueId(cue.id);seek(cue.start)}}><time>{formatTime(cue.start)}</time><span>{cue.speaker&&<b>{project.payload.speakers[cue.speaker]||cue.speaker}</b>}{cue.text||'(trống)'}</span></button>)}</div><p className="count-line">{project.payload.tracks.length} track · {cues} cue</p></section>
         <TranscriptQuality track={selectedTrack} speakers={project.payload.speakers} maxCharsPerLine={normalizeStyle(project.payload.style).max_chars_per_line} maxLines={normalizeStyle(project.payload.style).max_lines} onCue={cue=>{setSelectedCueId(cue.id);seek(cue.start)}} onSpeaker={(id,name)=>mutate(d=>{if(name.trim())d.payload.speakers[id]=name.slice(0,80);else delete d.payload.speakers[id]})}/>
+        <JobHistory jobs={jobHistory} onSelect={job=>job.type==='autosubvideo.render'?setRenderJob(job):setAuxJob(job)}/>
       </aside>
       <section className="studio-stage"><div className="preview-toolbar"><span>Fit (100%)</span><span>{source.width&&source.height?`${source.width}:${source.height}`:'16:9'}</span></div>
         <div className="video-canvas">{source.key?<><video ref={videoRef} controls preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<SubtitlePreview cue={selectedCue} currentTime={currentTime} rawStyle={project.payload.style}/>}</>:<div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
@@ -154,7 +169,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         <EditorTimeline tracks={project.payload.tracks} duration={source.duration_s} currentTime={currentTime} sourceUrl={sourceUrl} selectedCueId={selectedCueId} onSelect={setSelectedCueId} onSeek={seek} onCueChange={cueChange}/>
         <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div></>:<p>Chọn một cue trên timeline hoặc thêm cue mới.</p>}</div>
       </section>
-      <aside className="studio-right">{project.payload.active_step==='render'?<RenderPanel project={project} csrf={csrfToken} job={auxJob} onJob={setAuxJob} onMessage={setMessage} onChange={fn=>mutate(fn)}/>:<StyleInspector tab={styleTab} setTab={setStyleTab}
+      <aside className="studio-right">{project.payload.active_step==='render'?<RenderPanel project={project} csrf={csrfToken} job={renderJob} onJob={job=>{setRenderJob(job);upsertJob(setJobHistory,job)}} onMessage={setMessage} onChange={fn=>mutate(fn)}/>:<StyleInspector tab={styleTab} setTab={setStyleTab}
         style={normalizeStyle(project.payload.style)} presets={presets}
         onPreset={preset=>mutate(d=>{d.payload.style=normalizeStyle({preset:preset.id,...preset.config,highlight_mode:preset.highlight_mode,highlight_color:preset.highlight_color});d.payload.active_step='style'})}
         onStyle={patch=>mutate(d=>{d.payload.style=normalizeStyle({...d.payload.style,...patch,preset:'custom'});d.payload.active_step='style'})}/>}</aside>
@@ -163,5 +178,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
 }
 
 function findCue(project:StudioProject,trackId:string,cueId:string){return project.payload.tracks.find(track=>track.id===trackId)?.cues.find(cue=>cue.id===cueId)}
+function upsertJob(setter:Dispatch<SetStateAction<StudioJob[]>>,job:StudioJob){setter(rows=>[job,...rows.filter(row=>row.id!==job.id)].slice(0,20))}
+function JobHistory({jobs,onSelect}:{jobs:StudioJob[];onSelect:(job:StudioJob)=>void}){return <section className="studio-job-history"><div className="job-history-head"><h2>LỊCH SỬ JOB</h2><a href="/jobs">Xem tất cả</a></div>{jobs.length?<div className="job-history-list">{jobs.slice(0,8).map(job=><article key={job.id}><button type="button" onClick={()=>onSelect(job)}><span className={`job-status ${job.status}`} aria-hidden="true"/><span><strong>{job.type.replace('autosubvideo.','')}</strong><small>{job.message||job.error||studioJobStatusLabel(job.status)}</small></span><b>{job.progress}%</b></button><a href={`/jobs/${job.id}`} aria-label={`Nhật ký job ${job.id.slice(0,8)}`}>↗</a></article>)}</div>:<p className="job-history-empty">Chưa có job trong project này.</p>}</section>}
 function Capability({name,ready,detail}:{name:string;ready:boolean|undefined;detail:string}){const state=ready===undefined?'Đang kiểm tra':ready?'Sẵn sàng':'Chưa cấu hình';return <div className={`capability ${ready===undefined?'checking':ready?'ready':'unavailable'}`}><span aria-hidden="true"/><div><strong>{name}</strong><small>{detail}</small></div><b>{state}</b></div>}
 function formatTime(seconds:number){const safe=Number.isFinite(seconds)?Math.max(0,seconds):0;const h=Math.floor(safe/3600),m=Math.floor((safe%3600)/60),s=Math.floor(safe%60);return [h,m,s].map(value=>String(value).padStart(2,'0')).join(':')}

@@ -14,6 +14,61 @@
 
 ---
 
+## 2026-08-08 — H26.6: Phase 3.2 Auto Sub Studio PASS
+
+- **Mục tiêu:** loại version drift làm khách hàng thấy form AutoSub cũ, audit
+  luồng A-Z và bổ sung lịch sử job/log phục vụ khôi phục, debug.
+- **Hạng mục:** H26.6 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Xác định root cause không nằm ở bundle: rollout thiếu/rỗng mặc định legacy dù
+  AS9/Q50 đã chốt Studio public. Đổi default sang public; `off` và bundle thiếu
+  vẫn rollback form cũ trong một release.
+- Tách `renderJob` khỏi `auxJob`; render không còn tạo tiến độ giả cho công cụ
+  diarize/translate. Trạng thái job hiển thị bằng tiếng Việt.
+- Thêm `GET /autosubvideo/api/jobs` owner-only, lọc project, giới hạn kết quả;
+  React Studio lưu danh sách, cập nhật khi poll và khôi phục render gần nhất sau
+  reload. Mỗi row dẫn tới trang nhật ký job chung.
+- Thêm thuộc tính download cho video/ASS/ZIP và test regression tương ứng.
+- Browser fixture cô lập dùng video 10 giây thật: upload, import SRT, style,
+  quote/hold 1 credit, reload recovery, worker FFmpeg/NVENC, download ZIP. ZIP
+  mở được và đủ năm artifact. Desktop/mobile sạch, không overflow; console
+  0 error/0 warning, không có request ứng dụng thất bại.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` | PASS 13 test |
+| `npm run build` | PASS typecheck + Vite + build-meta |
+| `python -m pytest tests/test_81_autosubvideo.py tests/test_103_autosub_projects.py tests/test_148_frontend_bundle.py -q` | PASS 44 test; 3 warning cũ |
+| Playwright 1920×1080 + 390×844, render/download/reload | PASS; console sạch, không overflow |
+| `python tools/gate.py --quick` | PASS 8/8 trong 28,7 giây |
+| `python tools/gate.py` | PASS 9/9 trong 1.644,9 giây; pytest 1.617,2 giây |
+
+### Quyết định mới
+
+Không có. Thực thi Q50: Studio đã public sau AS9; biến rollout chỉ còn phục vụ
+rollback có chủ ý, không phải điều kiện để khách hàng nhìn thấy bản đã phát hành.
+
+### Cách lùi lại
+
+Đặt `LTT_AUTOSUB_STUDIO_ROLLOUT=off` hoặc revert commit H26.6. Bundle thiếu tự
+fail-safe về legacy. Không có migration dữ liệu.
+
+### Còn tồn đọng
+
+- Chưa deploy; release vẫn bị khóa tới H26.12 Phase 5.
+- Hai warning thread giả trong test media và một deprecation TestClient là nợ
+  cũ, không phát sinh từ H26.6.
+
+### Việc tiếp theo
+
+1. H26.7 Phase 3.3: đổi tên + UX Tạo Video Seedance, giữ provider/options thật.
+2. Không chạy song song H26.8.
+
 ## 2026-08-08 — H26.5: Phase 3.1 Upscale Video PASS
 
 - **Mục tiêu:** hoàn thiện trải nghiệm Upscale theo ảnh/yêu cầu đã khóa, loại bỏ

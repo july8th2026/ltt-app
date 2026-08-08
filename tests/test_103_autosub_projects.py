@@ -312,6 +312,13 @@ def test_studio_render_quote_snapshot_hold_cancel_refund_and_retry(studio_api):
     assert submitted.status_code == 202
     job_id = submitted.json()["job_id"]
     assert b.get(f"/autosubvideo/api/jobs/{job_id}").status_code == 404
+    history = a.get(f"/autosubvideo/api/jobs?project_id={made['id']}&limit=8")
+    assert history.status_code == 200
+    assert [item["id"] for item in history.json()["items"]] == [job_id]
+    assert history.json()["items"][0]["project_id"] == made["id"]
+    assert history.json()["items"][0]["created_at"]
+    assert a.get("/autosubvideo/api/jobs?project_id=not-this-project").json()["items"] == []
+    assert b.get(f"/autosubvideo/api/jobs?project_id={made['id']}").json()["items"] == []
     db = next(dbmod.get_session()); job = db.get(Job, job_id)
     assert job.params["operation"] == "render_project"
     assert job.params["project_snapshot"]["tracks"][0]["cues"][0]["text"] == "Xin chào"

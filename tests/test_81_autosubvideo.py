@@ -56,6 +56,21 @@ def test_browser_r2_direct_upload_mac_dinh_tat_den_khi_cors_duoc_gate(monkeypatc
     assert _browser_direct_upload_enabled() is True
 
 
+def test_studio_la_public_default_sau_as9_va_off_van_rollback(monkeypatch):
+    from apps.autosubvideo.routes import _studio_enabled
+    monkeypatch.setenv("LTT_ENV", "production")
+    monkeypatch.delenv("LTT_AUTOSUB_STUDIO_ROLLOUT", raising=False)
+    assert _studio_enabled() is True
+    monkeypatch.setenv("LTT_AUTOSUB_STUDIO_ROLLOUT", "")
+    assert _studio_enabled() is True
+    monkeypatch.setenv("LTT_AUTOSUB_STUDIO_ROLLOUT", "public")
+    assert _studio_enabled() is True
+    monkeypatch.setenv("LTT_AUTOSUB_STUDIO_ROLLOUT", "off")
+    assert _studio_enabled() is False
+    monkeypatch.setenv("LTT_AUTOSUB_STUDIO_ROLLOUT", "typo")
+    assert _studio_enabled() is False
+
+
 def test_video_range_stream_supports_non_seekable_r2_body():
     from apps.autosubvideo.routes import _iter_storage_range
     class Body:

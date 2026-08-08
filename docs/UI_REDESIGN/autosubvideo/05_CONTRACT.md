@@ -30,10 +30,14 @@ end > start; z-index không trùng trong các track visible.
 
 ## Feature flag và rollback
 
-`LTT_AUTOSUB_STUDIO_ROLLOUT=off|public`; production mặc định `off`, giá trị sai về
-`off`. Form cũ tiếp tục là fallback trong AS1–AS8. Nếu migration/API lỗi: chuyển
-flag `off`, dừng nhận auxiliary/render mới, drain/cancel/settle job, giữ project
-để audit rồi downgrade một revision chỉ khi đã backup và xác nhận không còn writer.
+Trong AS1–AS8, `LTT_AUTOSUB_STUDIO_ROLLOUT=off|public` và production mặc
+định `off`. Sau AS9 production public PASS ngày 2026-08-03, Q50 yêu cầu
+Studio là bề mặt mặc định: biến thiếu/rỗng phải là `public`, `off` là lệnh
+rollback tường minh, và giá trị sai fail-safe về legacy. Bundle thiếu/hỏng vẫn
+về form cũ thay vì hiện vỏ trắng. Form cũ được giữ trong ít nhất một
+release H26 làm rollback. Nếu migration/API lỗi: chuyển flag `off`, dừng nhận
+auxiliary/render mới, drain/cancel/settle job, giữ project để audit rồi downgrade
+một revision chỉ khi đã backup và xác nhận không còn writer.
 
 ## Corpus/viewport gate
 

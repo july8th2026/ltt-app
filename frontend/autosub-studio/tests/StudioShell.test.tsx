@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { friendlyStudioError, StudioShell } from '../src/StudioShell'
+import { RenderPanel } from '../src/RenderPanel'
+import { normalizeStyle, type StudioProject } from '../src/studioApi'
 import { auditTranscript } from '../src/TranscriptQuality'
 
 afterEach(() => vi.restoreAllMocks())
@@ -96,6 +98,50 @@ it('shows the server quote before any render submission', async () => {
   expect(fetch.mock.calls.some(([url])=>String(url).endsWith('/render'))).toBe(false)
   fireEvent.click(screen.getByRole('button',{name:'Hủy'}))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+})
+
+it('keeps render progress separate from auxiliary AI progress', async () => {
+  const project = { id:'p-render', name:'Render lifecycle', revision:2, status:'active', payload:{
+    schema_version:1, active_step:'render', source:{key:'autosubvideo/u/uploads/a.mp4',
+      filename:'a.mp4',duration_s:10,width:1280,height:720}, tracks:[{id:'source',
+      kind:'source',language:'vi',name:'Tiếng Việt',visible:true,z_index:0,
+      style_id:'default',cues:[{id:'cue-1',start:0,end:2,text:'Xin chào',speaker:'',words:[]}]}],
+    speakers:{},style:{preset:'default'},output:{resolution:'source',format:'mp4',
+      quality:'standard',track_ids:['source'],export_srt:true,export_vtt:true,
+      export_json:true,export_ass:true,bundle_zip:true}}}
+  vi.spyOn(globalThis,'fetch').mockImplementation(async (input,init)=>{
+    const url=String(input)
+    if(url.endsWith('/api/styles'))return new Response(JSON.stringify({items:[]}),{status:200})
+    if(url.endsWith('/api/capabilities'))return new Response(JSON.stringify({whisperx:false,
+      diarization:false,translation:false,credit:{transcribe:0,diarize:0,translate:0}}),{status:200})
+    if(url.endsWith('/api/projects'))return new Response(JSON.stringify({items:[{id:'p-render',status:'active'}]}),{status:200})
+    if(url.endsWith('/quote'))return new Response(JSON.stringify({quote:{credit:1,vnd:100,
+      minutes:.17,quality:'standard',resolution:'source',format:'mp4',track_ids:['source'],
+      project_revision:2}}),{status:200})
+    if(url.endsWith('/render')&&init?.method==='POST')return new Response(JSON.stringify({
+      job_id:'render-job',status:'queued',quote:{credit:1}}),{status:202})
+    return new Response(JSON.stringify(project),{status:200})
+  })
+  render(<StudioShell csrfToken="csrf"/>)
+  fireEvent.click(await screen.findByRole('button',{name:'Báo giá & xuất video'}))
+  fireEvent.click(await screen.findByRole('button',{name:'Xác nhận & giữ credit'}))
+  expect(await screen.findByText('Đang chờ · 0%')).toBeInTheDocument()
+  expect(screen.queryByRole('progressbar',{name:'Tiến độ công cụ AI'})).not.toBeInTheDocument()
+})
+
+it('marks completed render artifacts as browser downloads', () => {
+  const project={id:'p-download',name:'Download',revision:1,status:'active',payload:{
+    schema_version:1,active_step:'render',source:{key:'source.mp4',filename:'source.mp4',
+      duration_s:10,width:1280,height:720},tracks:[],speakers:{},style:normalizeStyle({preset:'default'}),
+    output:{resolution:'source',format:'mp4',quality:'standard',track_ids:[],export_srt:true,
+      export_vtt:true,export_json:true,export_ass:true,bundle_zip:true}}} as StudioProject
+  render(<RenderPanel project={project} csrf="csrf" job={{id:'job-download',
+    type:'autosubvideo.render',status:'done',progress:100,message:'',error:'',result:{
+      video_key:'render.mp4',ass_key:'sub.ass',bundle_key:'subtitle-bundle.zip'}}}
+    onJob={()=>{}} onChange={()=>{}} onMessage={()=>{}}/>)
+  expect(screen.getByRole('link',{name:'Tải video'})).toHaveAttribute('download')
+  expect(screen.getByRole('link',{name:'Tải ASS'})).toHaveAttribute('download')
+  expect(screen.getByRole('link',{name:'Tải ZIP'})).toHaveAttribute('download')
 })
 
 it('reports optional AI capabilities honestly and exposes the active workflow step', async () => {
