@@ -1806,7 +1806,7 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   Desktop 1920×1080 + mobile 390×844 không overflow, submit/quote/history/
   compare/remix thật, console/network sạch. Targeted 32 PASS; quick gate 8/8;
   full gate 9/9 trong 1.673,8 giây.
-- [ ] H26.10 Phase 3.6: audit rồi mới build Clip ngắn, Chat, Agent và maintenance
+- [x] H26.10 Phase 3.6 — **PASS 2026-08-09, chưa deploy**: audit rồi mới build Clip ngắn, Chat, Agent và maintenance
   Socialbot; các folder mô tả trống giữ UNKNOWN.
   - [x] H26.10A — **PASS 2026-08-09, chưa deploy**: Clip Studio customer-first;
     source preview/summary/clear; số clip+tỉ lệ là control chính; tùy chọn nâng
@@ -1820,7 +1820,13 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     suggestions, Stop, live title/balance và per-turn trace. Browser SSE 100→97,
     reload bền, desktop/mobile/console/network PASS. Targeted 17; full gate 9/9
     trong 1.648,4 giây.
-  - [ ] H26.10C — LTT Agent AI và Socialbot maintenance.
+  - [x] H26.10C — **PASS 2026-08-09, chưa deploy**: Agent delta audit theo
+    Q68; browser desktop/mobile chạy flow Text→Image theo scope 2 bước, quote
+    và settle 8/8 credit, reload/theme bền, simple palette chỉ có bốn creative
+    block, console/network sạch. Frontend 52 PASS + typecheck; Python targeted
+    Agent/Socialbot/registry/access 98 PASS. Không phát hiện gap code mới nên
+    không tạo churn. Socialbot giữ frozen/maintenance theo Q10/Q78, không đụng
+    runtime/OAuth; `public=False` tiếp tục ẩn anonymous và phân quyền sau login.
 - [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
   failure recovery.
 - [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và

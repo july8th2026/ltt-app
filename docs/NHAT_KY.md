@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-09 — H26.10C: Agent delta audit + Socialbot maintenance PASS
+
+- **Mục tiêu:** nghiệm thu lại Agent theo Q68 bằng hành vi khách hàng thật và
+  khóa ranh giới Socialbot đóng băng trước khi chuyển sang ops/performance.
+- **Hạng mục:** H26.10C và parent H26.10 — hoàn thành.
+- **Trạng thái:** xong development; chưa deploy.
+
+### Đã làm
+
+- Xác minh folder desktop `LTTAgentAI` chỉ có mẫu `MoTa.txt` rỗng; không bịa
+  capability từ input không có dữ liệu.
+- Browser fixture cô lập: tạo starter Text→Image (2 node/1 edge), nhập prompt,
+  Run block Image; drawer báo đúng target, 2 bước dependency và tối đa 8 credit.
+  Confirm hoàn tất 2 bước, settle 8/8; reload giữ graph/kết quả.
+- Simple palette chỉ có Text/Image/Video/Audio; công cụ nâng cao opt-in. Theme
+  light lưu qua reload và chuyển lại dark được. Desktop 1920/mobile 390 không
+  overflow; run drawer 318 px nằm trong viewport; console 0 error/0 warning,
+  API 200/201 (locale redirect 302→200 hợp lệ).
+- Audit Socialbot QUICK: giữ frozen + lifecycle maintenance; không sửa
+  `apps/socialbot`, OAuth, runner hay route lịch sử. Xác nhận `public=False`
+  đúng contract hiện hành: anonymous không thấy, user đăng nhập vẫn theo
+  AppAccess; không tự đổi nghĩa cờ dùng chung.
+- Lưu hồ sơ Agent tại `docs/APP_AUDIT/agent/2026-08-09-h26/` và Socialbot tại
+  `docs/APP_AUDIT/socialbot/2026-08-09/`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm test -- --run` tại `frontend/agent-canvas` | PASS 6 file / 52 test |
+| `npm run typecheck` tại `frontend/agent-canvas` | PASS |
+| `python -m pytest -q tests\\test_97_agent_workflow_api.py tests\\test_152_socialbot_route_flag.py tests\\test_60_app_registry.py tests\\test_66_phan_quyen_app.py tests\\test_72_vanhanh.py` | PASS 98 test, 1 warning, 119,46 giây |
+| Python targeted gọi nhầm từ thư mục frontend | Không thu thập test do sai cwd; đã chạy lại đúng từ workspace và PASS 98 |
+| `python tools\\gate.py --quick` | PASS 8/8 trong 25,6 giây |
+
+### Quyết định mới
+
+Không có. Giữ Q68 cho Agent và Q10/Q78 cho Socialbot. Không thay contract
+`public=False` chỉ vì trang Marketplace sau đăng nhập cũng dùng catalog card.
+
+### Cách lùi lại
+
+Chỉ revert commit tài liệu H26.10C; không có migration hay thay đổi runtime.
+
+### Việc tiếp theo
+
+1. H26.11: retention/privacy/log redaction, SLO/load/soak và failure recovery.
+2. Không deploy trước H26.12.
+
 ## 2026-08-09 — H26.10B: Chat AI Studio customer-first PASS
 
 - **Mục tiêu:** audit/sửa Chat AI cho khách hàng, ưu tiên money/recovery trước
