@@ -34,13 +34,13 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="prompt_ai_ommi",
-    display_name="PROMPT AI OMMI",
+    display_name="Prompt AI",
     route_prefix="/prompt-ai-ommi",
     summary=("Studio AI biến brief và tài sản tham chiếu thành prompt nhiều cảnh, "
              "storyboard và gói sản xuất nhất quán."),
     icon="✦",
     accent="#E53935",
-    nav=(NavEntry("PROMPT AI OMMI", "/prompt-ai-ommi", "✦", "prompt_ai_ommi"),),
+    nav=(NavEntry("Prompt AI", "/prompt-ai-ommi", "✦", "prompt_ai_ommi"),),
     job_types=("prompt_ai_ommi.generate",),
     requires=("api",),
     credit_cost=_cost,

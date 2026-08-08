@@ -88,8 +88,12 @@ def test_overview_counts_only_the_callers_own_things(api):
 
 def test_overview_reports_the_callers_own_balance(api):
     a, _token_a, b, _token_b = api
-    assert a.get("/prompt-ai-ommi/api/overview").json()["credit_balance"] == 120
-    assert b.get("/prompt-ai-ommi/api/overview").json()["credit_balance"] == 40
+    own = a.get("/prompt-ai-ommi/api/overview").json()
+    other = b.get("/prompt-ai-ommi/api/overview").json()
+    assert own["credit_balance"] == 120
+    assert other["credit_balance"] == 40
+    assert own["credit_spent_today"] == own["credit_spent_month"] == 0
+    assert other["credit_spent_today"] == other["credit_spent_month"] == 0
 
 
 def test_credit_summary_is_in_credit_and_never_a_currency(api):
@@ -127,6 +131,7 @@ def test_the_app_root_serves_the_workspace(api):
     page = a.get("/prompt-ai-ommi")
     assert page.status_code == 200
     assert 'id="prompt-ai-ommi-root"' in page.text
+    assert "Prompt AI" in page.text
     # Wizard cũ không còn ở cửa vào.
     assert 'data-step="brief"' not in page.text
 

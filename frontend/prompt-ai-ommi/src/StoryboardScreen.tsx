@@ -349,7 +349,7 @@ export function StoryboardScreen() {
             <p>
               {projects.length
                 ? 'Storyboard gom các cảnh của một dự án và cho chạy lại từng cảnh riêng.'
-                : 'Tạo một dự án ở trang PROMPT AI OMMI trước, rồi quay lại đây dựng storyboard.'}
+                : 'Tạo một dự án ở trang Prompt AI trước, rồi quay lại đây dựng storyboard.'}
             </p>
             {projects.length ? (
               <button type="button" className="primary" onClick={makeBoard} disabled={busy}>

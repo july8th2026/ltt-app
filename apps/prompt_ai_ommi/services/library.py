@@ -22,8 +22,12 @@ from datetime import datetime, timezone
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from platform_core.i18n import _ as _t
+
 from apps.prompt_ai_ommi.tables import (OmmiMetaPrompt, OmmiPromptSnippet,
                                         OmmiPromptVersion, OmmiStyle)
+from apps.prompt_ai_ommi.services.builtin_catalog import (find_builtin,
+                                                          list_builtins)
 
 MAX_NAME = 160
 MAX_BODY = 24000
@@ -88,7 +92,11 @@ def get_owned(db: Session, kind: str, item_id: str, owner_id: str):
 
 def get_visible(db: Session, kind: str, item_id: str, owner_id: str):
     """Bản ghi người gọi ĐƯỢC XEM: của mình, hoặc mẫu catalog."""
-    row = db.get(_model(kind), item_id)
+    model = _model(kind)
+    built_in = find_builtin(kind, item_id)
+    if built_in is not None:
+        return built_in
+    row = db.get(model, item_id)
     if row is None or (row.owner_id is not None and row.owner_id != owner_id):
         raise LibraryNotFound("Không tìm thấy mục thư viện.")
     return row
@@ -119,13 +127,27 @@ def list_items(db: Session, kind: str, owner_id: str, *, catalog: bool = False,
         like = f"%{query.strip()[:80]}%"
         conditions.append(or_(model.name.ilike(like), model.body.ilike(like)))
 
-    total = db.execute(
+    total_db = db.execute(
         select(func.count()).select_from(model).where(*conditions)).scalar_one()
+    if catalog:
+        builtins = list_builtins(kind, query=query)
+        builtin_page = builtins[offset:offset + limit]
+        remaining = limit - len(builtin_page)
+        db_offset = max(0, offset - len(builtins))
+        rows = []
+        if remaining > 0:
+            rows = db.execute(
+                select(model).where(*conditions)
+                .order_by(model.updated_at.desc())
+                .limit(remaining).offset(db_offset)
+            ).scalars().all()
+        return [*builtin_page, *rows], len(builtins) + int(total_db)
+
     rows = db.execute(
         select(model).where(*conditions)
         .order_by(model.updated_at.desc()).limit(limit).offset(offset)
     ).scalars().all()
-    return list(rows), int(total)
+    return list(rows), int(total_db)
 
 
 def versions(db: Session, kind: str, item_id: str, owner_id: str) -> list:
@@ -224,7 +246,7 @@ def clone_from_catalog(db: Session, kind: str, *, item_id: str, owner_id: str):
     bản riêng của người khác, tức rò rỉ qua đường vòng.
     """
     model = _model(kind)
-    source = db.get(model, item_id)
+    source = find_builtin(kind, item_id) or db.get(model, item_id)
     if source is None or source.owner_id is not None:
         raise LibraryNotFound("Không tìm thấy mẫu.")
     if source.deprecated_at is not None:
@@ -301,6 +323,10 @@ def deprecate(db: Session, kind: str, *, item_id: str, is_admin: bool,
     if not is_admin:
         raise LibraryError("Chỉ admin được ngừng dùng mẫu catalog.")
     model = _model(kind)
+    if find_builtin(kind, item_id) is not None:
+        raise LibraryError(_t(
+            "Mẫu tích hợp đi cùng phiên bản ứng dụng và không thể ngừng dùng "
+            "trong quản trị. Hãy cập nhật catalog ở bản phát hành kế tiếp."))
     row = db.get(model, item_id)
     if row is None or row.owner_id is not None:
         raise LibraryNotFound("Không tìm thấy mẫu.")

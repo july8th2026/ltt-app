@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from fastapi import Depends, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from apps.prompt_ai_ommi.routes._shared import (
@@ -24,13 +24,33 @@ def overview(request: Request, _identity: str = Depends(require_login),
     from apps.prompt_ai_ommi.services import library as lsvc
     from apps.prompt_ai_ommi.services import resources as rsvc
     from apps.prompt_ai_ommi.services import storyboard as ssvc
+    from datetime import datetime, timezone
+
     from platform_core import credit
+    from platform_core.models import (CREDIT_HOLD, CREDIT_REFUND, CREDIT_SETTLE,
+                                      CreditEntry)
 
     user = _user(request)
     kinds = rsvc.count_by_kind(db, user.id)
     library = lsvc.counts(db, user.id)
     boards = ssvc.list_boards(db, user.id)
     projects = _production_rows(db, user.id)
+
+    now = datetime.now(timezone.utc)
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    def spent_since(since: datetime) -> int:
+        """Chi tiêu ròng trong kỳ, không tính nạp/cấp là chi tiêu giả."""
+        delta = db.execute(
+            select(func.coalesce(func.sum(CreditEntry.delta), 0)).where(
+                CreditEntry.user_id == user.id,
+                CreditEntry.created_at >= since,
+                CreditEntry.kind.in_((CREDIT_HOLD, CREDIT_SETTLE,
+                                      CREDIT_REFUND)),
+            )
+        ).scalar_one()
+        return max(0, -int(delta))
 
     scene_total = sum(len(ssvc.scenes(db, board.id, user.id)) for board in boards)
 
@@ -46,6 +66,8 @@ def overview(request: Request, _identity: str = Depends(require_login),
         },
         "resource_kinds": kinds,
         "credit_balance": credit.so_du(db, user.id),
+        "credit_spent_today": spent_since(today),
+        "credit_spent_month": spent_since(month),
         "recent_projects": [
             {"id": row.id, "name": row.name, "revision": row.revision,
              "updated_at": row.updated_at.isoformat()}

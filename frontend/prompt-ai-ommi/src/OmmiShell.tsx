@@ -60,12 +60,12 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
 
   return (
     <div className="ommi">
-      <nav className="ommi-rail" aria-label="Điều hướng PROMPT AI OMMI">
+      <nav className="ommi-rail" aria-label="Điều hướng Prompt AI">
         <div className="ommi-brand">
           <b>✦</b>
           <div>
-            <span>PROMPT AI OMMI</span>
-            <small>PROMPT PRODUCTION</small>
+            <span>Prompt AI</span>
+            <small>STORY & PROMPT STUDIO</small>
           </div>
         </div>
         {GROUPS.map((group) => (

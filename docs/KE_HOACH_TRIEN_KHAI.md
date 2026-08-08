@@ -1793,8 +1793,12 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   hold. Browser fixture tạo 2 queued job, 1000→906 credit, asset history/log,
   Upscale quote 3 credit, desktop/mobile không overflow, console/network sạch.
   Targeted 76 PASS; full gate 9/9 trong 1.616,1 giây.
-- [ ] H26.8 Phase 3.4: đổi tên + UX Prompt AI, khảo sát read-only Prompt Seedance
-  và di trú tài nguyên không import chéo.
+- [x] H26.8 Phase 3.4 — **PASS 2026-08-09, chưa deploy**: đổi tên public thành
+  Prompt AI nhưng giữ slug/job/provider/cost; catalog tích hợp read-only gồm
+  8 style + 4 meta + 4 snippet, clone thành bản user riêng; dashboard owner-only
+  có credit/resource/project/activity thật, responsive desktop/mobile. Không
+  import runtime hay dữ liệu user từ BOT GEMINI. Targeted backend 41 PASS,
+  frontend 22 PASS; browser console sạch; full gate PASS 9/9 trong 1.630,2 giây.
 - [ ] H26.9 Phase 3.5: shell Tạo ảnh AI hợp nhất Thumbnail, giữ history/job cũ.
 - [ ] H26.10 Phase 3.6: audit rồi mới build Clip ngắn, Chat, Agent và maintenance
   Socialbot; các folder mô tả trống giữ UNKNOWN.

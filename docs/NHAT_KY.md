@@ -14,6 +14,67 @@
 
 ---
 
+## 2026-08-09 — H26.8: Phase 3.4 Prompt AI PASS
+
+- **Mục tiêu:** áp dụng folder `PromptAIOmmi`, đổi public copy và hoàn thiện UX
+  khách hàng; chỉ khảo sát read-only tài nguyên Prompt Seedance, không import
+  chéo hoặc mang dữ liệu người dùng từ `D:\BOT GEMINI` sang.
+- **Hạng mục:** H26.8 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Đổi tên public thành **Prompt AI** nhưng giữ nguyên slug
+  `/prompt-ai-ommi`, job `prompt_ai_ommi.generate`, provider, bảng và công thức
+  credit để không phá deep link/dữ liệu/job cũ.
+- Thêm catalog tích hợp bất biến theo Q81: 8 style, 4 meta và 4 snippet. Catalog
+  phát hành cùng code, không đọc DB/file user/BOT lúc runtime; user phải clone
+  thành bản riêng trước khi sửa. Catalog do admin publish trong DB vẫn giữ.
+- Nâng tổng quan từ card rỗng thành dashboard dùng dữ liệu owner-scoped thật:
+  credit chi hôm nay/tháng, sáu nhóm tài nguyên, project gần đây và hoạt động
+  cá nhân; người mới nhận empty state ba bước thay vì số liệu giả.
+- Sửa fixture browser đăng ký bảng `ommi_*` trước `create_all`; lỗi overview 500
+  đầu phiên được tái hiện, truy traceback và đóng bằng regression test.
+- Nén app vừa viewport desktop; sửa mobile rail thành một hàng cuộn ngang 60px,
+  target 44px. Browser A-Z tạo resource thật, duyệt đủ catalog, clone Meta thành
+  bản private có lịch sử; desktop 1920×1080 và mobile 390×844 không overflow,
+  console cuối 0 error/0 warning, request mới 200/201.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted backend H26.8 | PASS 41 test; 1 warning TestClient cũ |
+| Frontend `npm test -- --run` | PASS 22 test |
+| Frontend `npm run build` | PASS typecheck + Vite + build-meta |
+| `python tools/gate.py --quick` lượt đầu | FAIL 5 chuỗi i18n mới; đã bọc `_t()` |
+| `python tools/gate.py --quick` sau sửa | PASS 8/8 trong 25,5 giây |
+| `python tools/gate.py` lượt đầu | FAIL 8/9: 3 kỳ vọng catalog cũ; 2.557 test khác pass |
+| Targeted test catalog sau sửa | PASS 3/3 |
+| `python tools/gate.py` lượt sạch cuối | PASS 9/9 trong 1.630,2 giây; pytest PASS trong 1.604,5 giây |
+
+### Quyết định mới
+
+- Q81: catalog tích hợp Prompt AI là dữ liệu code bất biến; catalog quản trị vẫn
+  ở DB; user chỉ sửa bản clone riêng. Lý do là cần tài nguyên dùng ngay nhưng
+  không được phụ thuộc runtime hay dữ liệu người dùng của BOT GEMINI.
+
+### Cách lùi lại
+
+Revert commit H26.8. Không có migration; không xóa project/resource/library/job/
+ledger. Bundle cũ quay lại cùng code và catalog tích hợp biến mất an toàn.
+
+### Còn tồn đọng
+
+- Chưa deploy; release vẫn khóa tới H26.12.
+- Không dựng team, USD, folder, video gần đây hoặc số liệu minh họa chưa có
+  contract backend.
+
+### Việc tiếp theo
+
+1. H26.9 Phase 3.5: audit rồi triển khai shell Tạo ảnh AI hợp nhất Thumbnail.
+2. Không chạy song song H26.10.
+
 ## 2026-08-09 — H26.7: Phase 3.3 Tạo Video Seedance PASS
 
 - **Mục tiêu:** áp dụng folder `TaoVideoAI`, đổi tên public và hoàn thiện UX

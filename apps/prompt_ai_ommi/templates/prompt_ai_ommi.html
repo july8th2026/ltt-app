@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}PROMPT AI OMMI — LTT Studios{% endblock %}
+{% block title %}Prompt AI — LTT Studios{% endblock %}
 {% block page_mode %}immersive{% endblock %}
 {% block body_class %}ommi-page{% endblock %}
 {% block content %}
 <div id="ommi-app" class="ommi" data-csrf-token="{{ csrf_token }}">
-  <aside class="ommi-rail" aria-label="{{ _('Điều hướng PROMPT AI OMMI') }}">
-    <div class="ommi-mark" title="PROMPT AI OMMI">✦</div>
+  <aside class="ommi-rail" aria-label="{{ _('Điều hướng Prompt AI') }}">
+    <div class="ommi-mark" title="Prompt AI">✦</div>
     <button class="rail-btn on" data-step="brief" title="Brief"><span>01</span><b>Brief</b></button>
     <button class="rail-btn" data-step="resources" title="{{ _('Tài nguyên') }}"><span>02</span><b>Assets</b></button>
     <button class="rail-btn" data-step="director" title="AI Director"><span>03</span><b>Director</b></button>
@@ -17,7 +17,7 @@
 
   <aside class="ommi-projects" aria-label="{{ _('Danh sách dự án') }}">
     <div class="project-head">
-      <div><small>WORKSPACE</small><strong>PROMPT AI OMMI</strong></div>
+      <div><small>WORKSPACE</small><strong>Prompt AI</strong></div>
       <div class="project-tools">
         <button id="import-project" class="icon-action" title="{{ _('Nhập project JSON') }}">⇧</button>
         <input id="import-file" type="file" accept="application/json,.json" hidden>
@@ -46,7 +46,7 @@
 
     <div id="empty-state" class="empty-state">
       <div class="empty-orbit"><span>✦</span></div>
-      <p class="eyebrow">PROMPT PRODUCTION SYSTEM</p>
+      <p class="eyebrow">STORY &amp; PROMPT STUDIO</p>
       <h1>{{ _("Biến ý tưởng thành một hệ cảnh nhất quán.") }}</h1>
       <p>{{ _("Tạo project để xây brief, tài nguyên tham chiếu, prompt từng cảnh và storyboard có phiên bản.") }}</p>
       <button id="empty-new" class="btn-primary">{{ _("Tạo dự án đầu tiên") }}</button>

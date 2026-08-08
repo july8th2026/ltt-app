@@ -119,7 +119,9 @@ def test_listing_separates_private_from_catalog(api, kind):
     private = a.get(f"/prompt-ai-ommi/api/library/{kind}").json()
     catalog = a.get(f"/prompt-ai-ommi/api/library/{kind}?catalog=true").json()
     assert [i["name"] for i in private["items"]] == ["Riêng của tôi"]
-    assert catalog["items"] == []
+    assert catalog["items"]
+    assert all(item["is_catalog"] for item in catalog["items"])
+    assert "Riêng của tôi" not in [item["name"] for item in catalog["items"]]
 
 
 @pytest.mark.parametrize("kind", KINDS)
@@ -128,13 +130,29 @@ def test_a_normal_user_cannot_publish_even_by_claiming_admin(api, kind):
     kỳ ai cũng đẩy được nội dung vào không gian mọi người đọc."""
     a, token_a, *_ = api
     made = _create(a, token_a, kind)
+    before = a.get(f"/prompt-ai-ommi/api/library/{kind}?catalog=true").json()
+    before_ids = {item["id"] for item in before["items"]}
     for payload in ({}, {"role": "admin"}, {"is_admin": True}):
         response = a.post(
             f"/prompt-ai-ommi/api/library/{kind}/{made['id']}/publish",
             headers={"X-CSRF-Token": token_a}, json=payload)
         assert response.status_code == 403, f"{payload!r} → {response.status_code}"
-    assert a.get(f"/prompt-ai-ommi/api/library/{kind}?catalog=true"
-                 ).json()["items"] == []
+    after = a.get(f"/prompt-ai-ommi/api/library/{kind}?catalog=true").json()
+    assert {item["id"] for item in after["items"]} == before_ids
+
+
+@pytest.mark.parametrize("kind", KINDS)
+def test_user_can_clone_a_builtin_template_into_private_library(api, kind):
+    a, token_a, *_ = api
+    catalog = a.get(f"/prompt-ai-ommi/api/library/{kind}?catalog=true").json()
+    source = catalog["items"][0]
+    made = a.post(f"/prompt-ai-ommi/api/library/{kind}/{source['id']}/clone",
+                  headers={"X-CSRF-Token": token_a}, json={})
+    assert made.status_code == 201, made.text
+    copied = made.json()
+    assert copied["is_catalog"] is False
+    assert copied["cloned_from_id"] == source["id"]
+    assert copied["body"] == source["body"]
 
 
 @pytest.mark.parametrize("kind", KINDS)

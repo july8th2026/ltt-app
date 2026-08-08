@@ -509,6 +509,8 @@ export type Overview = {
   }
   resource_kinds: Record<string, number>
   credit_balance: number
+  credit_spent_today: number
+  credit_spent_month: number
   recent_projects: Array<{ id: string; name: string; revision: number; updated_at: string }>
   recent_jobs: Array<{
     id: string

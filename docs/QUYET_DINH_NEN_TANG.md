@@ -105,6 +105,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q78 | Socialbot trong H26 | **Tiếp tục frozen và gắn trạng thái bảo trì; chỉ hưởng shell/observability chung.** | Giữ Q10; muốn phát triển lại phải có quyết định thay Q10 riêng. |
 | Q79 | Thứ tự H26 | **Upscale → AutoSub version drift → Marketplace/merge → Tạo Video Seedance → Prompt AI → app thiếu mô tả. Thực hiện tuần tự.** | Đóng lỗi có bằng chứng trước, không build từ folder trống và không chồng chéo regression. |
 | Q80 | Rollout AutoSub Studio | **Canary user rồi public; giữ legacy rollback đúng một release.** | Sửa version drift có quan sát, không big-bang và vẫn lùi ngay được nếu bundle/runtime lỗi. |
+| Q81 | Catalog tích hợp Prompt AI | **Preset chắt lọc đi cùng code dưới dạng catalog bất biến; catalog admin vẫn ở DB; user chỉ sửa bản clone riêng. Không đọc runtime/database/file user từ BOT GEMINI.** | Catalog có version và rollback theo release, không import chéo, không bê shared-owner hoặc dữ liệu thật sang app đa người dùng. |
 
 ---
 

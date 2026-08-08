@@ -108,7 +108,7 @@ def _login(app, email):
     assert client.post("/login", data={"username": email, "password": "Strong-pass-123",
         "csrf_token": token, "next": "/prompt-ai-ommi"}).status_code == 200
     studio = client.get("/prompt-ai-ommi")
-    assert studio.status_code == 200 and "PROMPT AI OMMI" in studio.text
+    assert studio.status_code == 200 and "Prompt AI" in studio.text
     csrf = re.search(r'data-csrf-token="([^"]+)"', studio.text).group(1)
     return client, csrf
 

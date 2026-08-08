@@ -19,6 +19,7 @@ config.write_text(json.dumps({"job_delay_seconds": 1, "max_retries": 1,
 
 import platform_core.db as dbmod
 import platform_core.models  # noqa: E402,F401
+import apps.prompt_ai_ommi.tables  # noqa: E402,F401
 from platform_core.credit import cap_tay  # noqa: E402
 from platform_core.models import User  # noqa: E402
 from platform_core.users import tao_nguoi_dung  # noqa: E402

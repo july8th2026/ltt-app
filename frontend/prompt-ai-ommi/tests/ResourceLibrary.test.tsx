@@ -25,7 +25,8 @@ const emptyOverview = {
   counts: { projects: 0, resources: 0, storyboards: 0, scenes: 0,
     meta_prompts: 0, styles: 0, snippets: 0 },
   resource_kinds: { character: 0, background: 0, prop: 0, vehicle: 0, misc: 0 },
-  credit_balance: 0, recent_projects: [], recent_jobs: [],
+  credit_balance: 0, credit_spent_today: 0, credit_spent_month: 0,
+  recent_projects: [], recent_jobs: [],
 }
 
 let routes: Array<[RegExp, string, () => Promise<Response>]>
@@ -34,7 +35,7 @@ let seenUrls: string[]
 /** Vỏ mở ở Tổng quan; mọi test màn khác phải tự điều hướng tới. */
 async function goTo(name: RegExp) {
   const rail = await screen.findByRole('navigation',
-    { name: 'Điều hướng PROMPT AI OMMI' })
+    { name: 'Điều hướng Prompt AI' })
   fireEvent.click(within(rail).getByRole('button', { name }))
 }
 
@@ -66,7 +67,7 @@ describe('Kho tài nguyên', () => {
     // Quy tắc, không phải một màn cụ thể: mỗi mục HOẶC bấm được, HOẶC bị vô
     // hiệu và nói rõ "đang xây". Một nút bấm được mà không làm gì làm G4
     // "Honest UI" trượt. Viết theo quy tắc để test còn đúng khi thêm màn mới.
-    const rail = screen.getByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
+    const rail = screen.getByRole('navigation', { name: 'Điều hướng Prompt AI' })
     const buttons = within(rail).getAllByRole('button')
     expect(buttons.length).toBeGreaterThan(0)
     for (const button of buttons) {
@@ -159,7 +160,7 @@ describe('Thư viện', () => {
     await goTo(/Kho tài nguyên/)
     await waitFor(() => expect(screen.getByText('Kho còn trống')).toBeTruthy())
 
-    const rail = screen.getByRole('navigation', { name: 'Điều hướng PROMPT AI OMMI' })
+    const rail = screen.getByRole('navigation', { name: 'Điều hướng Prompt AI' })
     fireEvent.click(within(rail).getByRole('button', { name: /Meta Director/ }))
     await waitFor(() => expect(screen.getByText('Chưa có meta prompt nào')).toBeTruthy())
     expect(seenUrls.some((u) => u.includes('/library/meta'))).toBe(true)
@@ -239,7 +240,7 @@ describe('Storyboard', () => {
     await goTo(/Storyboard/)
     await waitFor(() => expect(screen.getByText('Chưa có storyboard nào')).toBeTruthy())
     // Không có dự án thì không mời tạo storyboard — bấm vào sẽ chỉ ra lỗi.
-    expect(screen.getByText(/Tạo một dự án ở trang PROMPT AI OMMI trước/)).toBeTruthy()
+    expect(screen.getByText(/Tạo một dự án ở trang Prompt AI trước/)).toBeTruthy()
   })
 })
 
@@ -257,13 +258,16 @@ describe('Tổng quan, Chi phí, Dự án', () => {
       counts: { projects: 2, resources: 7, storyboards: 1, scenes: 4,
         meta_prompts: 3, styles: 1, snippets: 0 },
       resource_kinds: { character: 5, background: 2, prop: 0, vehicle: 0, misc: 0 },
-      credit_balance: 120, recent_projects: [], recent_jobs: [],
+      credit_balance: 120, credit_spent_today: 7, credit_spent_month: 28,
+      recent_projects: [], recent_jobs: [],
     })])
     render(<OmmiShell csrfToken="t"/>)
     await waitFor(() => expect(document.querySelectorAll('.ommi-tile').length)
       .toBeGreaterThan(0))
     expect(screen.getByText('💎 120 credit')).toBeTruthy()
     expect(screen.getByText('7')).toBeTruthy()
+    expect(screen.getByText('Chi tiêu hôm nay')).toBeTruthy()
+    expect(screen.getByText('28 credit trong tháng')).toBeTruthy()
   })
 
   it('chi phí hiển thị bằng credit, không bằng tiền tệ', async () => {

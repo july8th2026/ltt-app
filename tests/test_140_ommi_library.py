@@ -91,7 +91,13 @@ def test_catalog_is_separate_from_private(db, kind):
     private, private_total = svc.list_items(db, kind, A)
     shared, shared_total = svc.list_items(db, kind, A, catalog=True)
     assert [r.name for r in private] == ["Riêng"] and private_total == 1
-    assert [r.name for r in shared] == ["Mẫu chung"] and shared_total == 1
+    # Catalog chung gồm hai nguồn cùng chỉ-đọc đối với khách hàng: mẫu tích hợp
+    # phát hành theo code và mẫu do admin xuất bản trong DB. Cả hai vẫn phải
+    # tách tuyệt đối khỏi thư viện riêng của user.
+    shared_names = [r.name for r in shared]
+    assert "Mẫu chung" in shared_names
+    assert "Riêng" not in shared_names
+    assert shared_total == len(svc.list_builtins(kind)) + 1
 
 
 @pytest.mark.parametrize("kind", KINDS)

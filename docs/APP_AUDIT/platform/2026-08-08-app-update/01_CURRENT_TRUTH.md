@@ -10,7 +10,7 @@
 | `demo` | non-public, enabled | redirect sang job chung | giữ runtime kiểm thử, ẩn tuyệt đối với customer |
 | `kichban` | public, enabled | 12 job gần nhất | bỏ app customer; chưa được xóa runtime ngay |
 | `mediatools` | non-public, enabled | không có UI, redirect Agent Canvas | bỏ bề mặt customer; giữ capability nội bộ |
-| `prompt_ai_ommi` | public, enabled | project, revision, recent jobs | giữ; đổi tên và audit tài nguyên/UI |
+| `prompt_ai_ommi` | public, enabled | H26.8: Prompt AI; project/resource/library/storyboard/job/credit dashboard | giữ slug/job/provider; chưa deploy |
 | `socialbot` | non-public, enabled, frozen | log/manual job riêng, route sau feature flag | trạng thái bảo trì; không mở feature mới |
 | `taoanh` | public, enabled | lưới lịch sử ảnh | giữ; nhận UI Thumbnail hợp nhất |
 | `taoclipngan` | public, enabled | clip history | giữ; yêu cầu folder hiện UNKNOWN |
@@ -52,7 +52,7 @@ bảng job riêng cho từng app.
 | `Chung` | 3 yêu cầu, 2 ảnh | đủ để lập plan shell |
 | `UpscaleVideo` | 7 yêu cầu, 4 ảnh | đầy đủ nhất |
 | `TaoVideoAI` | 2 yêu cầu, 1 ảnh | đủ để lập audit UI phase |
-| `PromptAIOmmi` | 3 yêu cầu, 1 ảnh | đủ để lập discovery; chưa đủ khóa feature |
+| `PromptAIOmmi` | 3 yêu cầu, 1 ảnh | H26.8 đã khóa bằng H19/Q77/Q81 và browser audit |
 | `AutoSubVideo` | 1 yêu cầu, không ảnh | chỉ đủ điều tra version drift |
 | `ChatAIStudio` | không `MoTa.txt` | UNKNOWN |
 | `TaoAnhAI` | không `MoTa.txt` | UNKNOWN ngoài yêu cầu merge chung |

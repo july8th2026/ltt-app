@@ -36,7 +36,7 @@
   position: relative; /* mốc cho panel chi tiết, xem .ommi-detail */
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
-  min-height: 100dvh;
+  min-height: max(700px, calc(100dvh - 188px));
   background: var(--surface-canvas);
   color: var(--text-primary);
   font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -438,10 +438,14 @@
 @media (max-width: 900px) {
   .ommi {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
   }
   .ommi-rail {
     flex-direction: row;
+    align-items: center;
     gap: 6px;
+    height: 60px;
+    padding: 8px;
     border-right: 0;
     border-bottom: 1px solid var(--border-subtle);
     overflow-x: auto;
@@ -450,10 +454,17 @@
   .ommi-group {
     display: none;
   }
+  .ommi-rail > div:not(.ommi-brand) {
+    display: contents;
+  }
   .ommi-rail button {
+    flex: 0 0 auto;
     width: auto;
+    min-height: 44px;
     white-space: nowrap;
   }
+  .ommi-head { padding: 13px 14px }
+  .ommi-body { padding: 14px }
   .ommi-detail {
     width: 100vw;
   }
@@ -559,6 +570,82 @@
 .ommi-tile span {
   color: var(--text-muted);
   font-size: 10px;
+}
+
+/* Dashboard H26.8: tinh thần Carbon Red của ảnh tham chiếu, nhưng chỉ dùng
+   dữ liệu cá nhân và credit; không dựng USD/team giả. */
+.ommi-credit-strip {
+  display: grid;
+  grid-template-columns: minmax(210px, auto) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--brand-strong);
+  border-radius: var(--radius);
+  background: linear-gradient(105deg, var(--brand-soft), var(--surface-raised) 62%);
+}
+.ommi-credit-strip div:first-child { display: flex; align-items: baseline; gap: 10px }
+.ommi-credit-strip span, .ommi-credit-strip small { color: var(--text-secondary) }
+.ommi-credit-strip strong { color: var(--text-primary); font-size: 15px }
+.ommi-credit-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--surface-interactive);
+}
+.ommi-credit-track span {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-hover));
+}
+.ommi-start { max-width: 760px; margin-top: 18px }
+.ommi-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, .9fr) minmax(280px, 1.1fr) minmax(320px, 1.25fr);
+  gap: var(--gap);
+}
+.ommi-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+.ommi-panel h2 {
+  margin: 0 0 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
+.ommi-panel > .ghost { margin-top: 12px }
+.ommi-kind-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
+.ommi-kind {
+  display: grid;
+  gap: 2px;
+  min-height: 64px;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+}
+.ommi-kind:hover { border-color: var(--brand-primary) }
+.ommi-kind b { font-size: 18px }
+.ommi-kind span { color: var(--text-muted); font-size: 10px }
+
+@media (max-width: 900px) {
+  .ommi-dashboard-grid { grid-template-columns: 1fr }
+  .ommi-credit-strip { grid-template-columns: 1fr }
+}
+
+@media (min-width: 901px) and (max-width: 1280px) {
+  .ommi-dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .ommi-panel-activity { grid-column: 1 / -1 }
 }
 
 .ommi-section {

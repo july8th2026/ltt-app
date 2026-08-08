@@ -1,0 +1,128 @@
+{
+  "items": [
+    {
+      "id": "builtin-style-01",
+      "kind": "style",
+      "name": "Hành động điện ảnh",
+      "body": "Căng thẳng, nhịp hành động rõ; máy quay ổn định, low-angle hero shot và slow push-in; key-fill-rim, bóng đổ kịch tính; màu teal-orange, đen sâu; chuyển động mạnh nhưng có biên đạo.",
+      "negative": "Tránh rung kiểu điện thoại, ánh sáng phẳng, chuyển động vô lý và nhân vật mất nhất quán.",
+      "attributes": {"camera": "stabilized cinematic", "lighting": "key fill rim", "tags": ["cinematic", "action"]}
+    },
+    {
+      "id": "builtin-style-02",
+      "kind": "style",
+      "name": "Phim ngắn dọc",
+      "body": "Khung hình dọc 9:16, chủ thể đọc rõ trên màn hình nhỏ; slow push-in hoặc máy tĩnh; tương phản cân bằng, ánh viền nhẹ; nhịp kể cô đọng cho video ngắn.",
+      "negative": "Tránh chi tiết quan trọng sát mép, rung quá mức, màu quá bão hòa và bố cục ngang bị cắt.",
+      "attributes": {"aspect": "9:16", "tags": ["vertical", "short-film"]}
+    },
+    {
+      "id": "builtin-style-03",
+      "kind": "style",
+      "name": "Tài liệu quan sát",
+      "body": "Hiện thực đời thường, không dàn dựng; handheld vừa phải, ánh sáng sẵn có, màu tự nhiên; ưu tiên khoảnh khắc chân thật và chuyển động có trọng lượng.",
+      "negative": "Tránh tạo dáng kịch tính, ánh sáng studio lộ liễu, hậu kỳ quá tay và chuyển động giả.",
+      "attributes": {"camera": "observational handheld", "tags": ["documentary", "realistic"]}
+    },
+    {
+      "id": "builtin-style-04",
+      "kind": "style",
+      "name": "Mạng xã hội chân thực",
+      "body": "Cảm giác quay bằng điện thoại nhưng có chủ ý; ánh sáng môi trường, góc ngang tầm mắt, chuyển động tự nhiên; chủ thể rõ và bắt nhịp nhanh.",
+      "negative": "Tránh vẻ điện ảnh phô trương, da nhựa, rung gây khó chịu và bố cục quá cầu kỳ.",
+      "attributes": {"camera": "phone handheld", "tags": ["social", "authentic"]}
+    },
+    {
+      "id": "builtin-style-05",
+      "kind": "style",
+      "name": "Hài tình huống",
+      "body": "Nhịp hài nhanh, biểu cảm rõ nhưng đáng tin; ánh sáng trong nhà sáng, máy quay gần gũi; ưu tiên reaction shot và khoảng dừng đúng nhịp.",
+      "negative": "Tránh biểu cảm hoạt hình quá mức, cắt dựng hỗn loạn, ánh sáng tối và hành động thiếu nguyên nhân.",
+      "attributes": {"tags": ["comedy", "skit"]}
+    },
+    {
+      "id": "builtin-style-06",
+      "kind": "style",
+      "name": "Drama cảm xúc",
+      "body": "Không khí thân mật, cảm xúc tiết chế; cận cảnh và slow push-in, ánh sáng tán mềm, da ấm tự nhiên, bloom nhẹ; nhấn vi biểu cảm.",
+      "negative": "Tránh tương phản gắt, diễn xuất cường điệu, màu quá rực và thay đổi khuôn mặt giữa cảnh.",
+      "attributes": {"tags": ["drama", "emotional", "close-up"]}
+    },
+    {
+      "id": "builtin-style-07",
+      "kind": "style",
+      "name": "Anime kỳ ảo",
+      "body": "Anime cao cấp, silhouette rõ, cel-shading nhất quán; camera hành động năng động, ánh sáng phép thuật và hạt sáng; bảng màu rực nhưng có chủ đích.",
+      "negative": "Tránh pha ảnh chân thực, thiết kế nhân vật thay đổi, chi tiết nền lấn chủ thể và hiệu ứng che hành động.",
+      "attributes": {"tags": ["anime", "fantasy"]}
+    },
+    {
+      "id": "builtin-style-08",
+      "kind": "style",
+      "name": "Nông thôn Việt Nam",
+      "body": "Không gian nông thôn Việt Nam lúc golden hour; đất, cây xanh và nắng ấm; handheld có kiểm soát xen góc thấp điện ảnh, bụi và chuyển động chân thực.",
+      "negative": "Tránh skyline đô thị, neon cyberpunk, bối cảnh phi địa phương và màu giả tạo.",
+      "attributes": {"tags": ["vietnam", "rural", "golden-hour"]}
+    },
+    {
+      "id": "builtin-meta-01",
+      "kind": "meta",
+      "name": "Video liên tục có timecode",
+      "body": "Từ brief, hãy viết một prompt video liên tục bằng ngôn ngữ người dùng. Chia nhịp bằng timecode, nhưng giữ một không gian và dòng hành động xuyên suốt. Với mỗi nhịp nêu chủ thể, hành động, camera, ánh sáng và âm thanh. Cuối cùng ghi STYLE TAGS và NEGATIVE PROMPT. Không tự bịa tài nguyên ngoài danh sách tham chiếu.",
+      "purpose": "director",
+      "variables": {"required": ["TITLE", "DURATION", "ASSET_LIST", "STYLE_FULL"]}
+    },
+    {
+      "id": "builtin-meta-02",
+      "kind": "meta",
+      "name": "Storyboard lưới rõ cảnh",
+      "body": "Chuyển câu chuyện thành đúng số cảnh yêu cầu. Mỗi cảnh có tiêu đề ngắn, hành động, cỡ cảnh, camera, ánh sáng, mood và tài nguyên sử dụng. Giữ nhận dạng nhân vật, trang phục, địa lý, hướng nhìn và nguồn sáng nhất quán. Trả dữ liệu có cấu trúc, không thêm cảnh ngoài yêu cầu.",
+      "purpose": "storyboard",
+      "variables": {"required": ["SCENES", "STORY", "ASPECT"]}
+    },
+    {
+      "id": "builtin-meta-03",
+      "kind": "meta",
+      "name": "Storyboard điện ảnh chi tiết",
+      "body": "Bạn là đạo diễn hình ảnh. Phân rã câu chuyện theo nhịp kịch tính, chọn cỡ cảnh và chuyển động máy có lý do. Mỗi cảnh phải chỉ rõ foreground, subject, background, ánh sáng, continuity và điểm nối sang cảnh sau. Ưu tiên tính khả thi khi tạo ảnh/video AI.",
+      "purpose": "storyboard",
+      "variables": {"required": ["SCENES", "STORY", "STYLE_FULL"]}
+    },
+    {
+      "id": "builtin-meta-04",
+      "kind": "meta",
+      "name": "Bảng tham chiếu nhân vật",
+      "body": "Tạo chỉ dẫn cho một character reference sheet 4x2 trên nền trung tính: toàn thân trước/sau/trái/phải, chân dung chính diện, ba phần tư và hai biểu cảm. Giữ tuyệt đối khuôn mặt, tóc, tỉ lệ cơ thể, trang phục và phụ kiện. Không chữ, không watermark, không thêm người.",
+      "purpose": "reference",
+      "variables": {"required": ["ASSET_LIST", "STYLE_FULL"]}
+    },
+    {
+      "id": "builtin-snippet-01",
+      "kind": "snippet",
+      "name": "Khóa nhất quán nhân vật",
+      "body": "Giữ nguyên cấu trúc khuôn mặt, kiểu và màu tóc, tỉ lệ cơ thể, trang phục, phụ kiện và dấu hiệu nhận dạng của từng nhân vật qua mọi cảnh.",
+      "category": "continuity"
+    },
+    {
+      "id": "builtin-snippet-02",
+      "kind": "snippet",
+      "name": "Khóa hướng màn hình",
+      "body": "Bảo toàn trục 180 độ, hướng nhìn, vị trí tương đối và hướng di chuyển; chỉ đổi trục khi cảnh có một chuyển tiếp camera giải thích được.",
+      "category": "camera"
+    },
+    {
+      "id": "builtin-snippet-03",
+      "kind": "snippet",
+      "name": "Chuyển động có trọng lượng",
+      "body": "Chuyển động tuân theo quán tính và trọng lượng; tay chân không xuyên vật thể, bàn chân bám mặt đất, vải và tóc phản ứng trễ tự nhiên theo vận tốc.",
+      "category": "motion"
+    },
+    {
+      "id": "builtin-snippet-04",
+      "kind": "snippet",
+      "name": "Negative chất lượng nền",
+      "body": "Không watermark, logo ngẫu nhiên, chữ lỗi, khung hình lặp, nhấp nháy, méo tay, thừa ngón, vật thể xuyên nhau, khuôn mặt thay đổi hoặc camera giật vô cớ.",
+      "category": "negative"
+    }
+  ]
+}
