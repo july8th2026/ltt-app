@@ -99,14 +99,26 @@ def page(request: Request, user: str = Depends(require_login)):
     return _render(request, user, jobs=_jobs_cua_toi(request))
 
 
-@router.get("/thumbnail", response_class=RedirectResponse)
-def thumbnail_mode(user: str = Depends(require_login)):
-    """Entry canonical của mode Thumbnail; executor/route cũ vẫn sở hữu job.
+@router.get("/thumbnail", response_class=HTMLResponse)
+def thumbnail_mode(request: Request, remix_job_id: str = "", image_index: int = -1,
+                   user: str = Depends(require_login)):
+    """Shell canonical của mode Thumbnail, compose qua HTTP thay vì import app.
 
-    Redirect tách presentation khỏi runtime: không import chéo app, và mọi
-    deep link/output `/thumbnail/*` đã lưu vẫn tiếp tục hoạt động.
+    App con vẫn sở hữu form, preset, history, queue và file route. Trình duyệt
+    nạp fragment authenticated từ contract công khai của app con nên hai app
+    không gọi Python internals của nhau.
     """
-    return RedirectResponse("/thumbnail", status_code=308)
+    from urllib.parse import urlencode
+    query = {}
+    if remix_job_id:
+        query = {"remix_job_id": remix_job_id, "image_index": image_index}
+    fragment_url = "/thumbnail/studio-fragment"
+    if query:
+        fragment_url += "?" + urlencode(query)
+    return templates.TemplateResponse(request, "image_thumbnail_shell.html", {
+        "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
+        "fragment_url": fragment_url,
+    })
 
 
 @router.post("/queue", response_class=HTMLResponse)

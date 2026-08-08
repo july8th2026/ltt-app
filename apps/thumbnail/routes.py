@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from platform_core.i18n import _ as _t
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 
 from apps.thumbnail.jobs import _PROMPTS_DIR
 from apps.thumbnail.manifest import MANIFEST
@@ -72,9 +72,12 @@ def _brand_for_user(user_id: str) -> dict:
 
 def _render(request: Request, user: str, *, error: str = "", jobs=None,
             form_values=None,
-            status_code: int = 200) -> HTMLResponse:
+            status_code: int = 200, fragment: bool | None = None) -> HTMLResponse:
     current = user_hien_tai(request)
-    return templates.TemplateResponse(request, "thumbnail.html", {
+    if fragment is None:
+        fragment = request.headers.get("HX-Request", "").lower() == "true"
+    template = "thumbnail_fragment.html" if fragment else "thumbnail.html"
+    return templates.TemplateResponse(request, template, {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "aspects": _ASPECTS, "catalog": _catalog(), "defaults": _defaults(),
@@ -148,13 +151,12 @@ def _clean_choice(group: str, value: str) -> str:
 
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, user: str = Depends(require_login)):
-    return _render(request, user, jobs=_jobs_cua_toi(request))
+    """URL product cũ: giữ bookmark bằng redirect vĩnh viễn một release."""
+    return RedirectResponse("/taoanh/thumbnail", status_code=308)
 
 
-@router.get("/remix/{job_id}/{image_index}", response_class=HTMLResponse)
-def remix(request: Request, job_id: str, image_index: int,
-          user: str = Depends(require_login)):
-    """Handoff output thật về Studio; không tạo pixel editor giả."""
+def _remix_values(request: Request, job_id: str, image_index: int) -> dict | None:
+    """Đọc handoff owner-only mà không lộ existence qua canonical shell."""
     from platform_core.db import get_session
     from platform_core.models import JOB_DONE, Job
     current = user_hien_tai(request)
@@ -165,14 +167,41 @@ def remix(request: Request, job_id: str, image_index: int,
         if (current is None or job is None or job.user_id != current.id or
                 job.app_slug != MANIFEST.slug or job.status != JOB_DONE or
                 image_index < 0 or image_index >= len(keys)):
-            return _render(request, user, error="Không tìm thấy output để tạo biến thể.",
-                           jobs=_jobs_cua_toi(request), status_code=404)
+            return None
         values = dict(job.params or {})
         values["reference_key"] = keys[image_index]
-        return _render(request, user, jobs=_jobs_cua_toi(request), form_values=values)
+        return values
     finally:
         try: next(gen)
         except StopIteration: pass
+
+
+@router.get("/studio-fragment", response_class=HTMLResponse)
+def studio_fragment(request: Request, remix_job_id: str = "", image_index: int = -1,
+                    user: str = Depends(require_login)):
+    values = {}
+    if remix_job_id:
+        values = _remix_values(request, remix_job_id, image_index)
+        if values is None:
+            return _render(request, user,
+                           error="Không tìm thấy output để tạo biến thể.",
+                           jobs=_jobs_cua_toi(request), status_code=404,
+                           fragment=True)
+    return _render(request, user, jobs=_jobs_cua_toi(request), form_values=values,
+                   fragment=True)
+
+
+@router.get("/remix/{job_id}/{image_index}", response_class=HTMLResponse)
+def remix(request: Request, job_id: str, image_index: int,
+          user: str = Depends(require_login)):
+    """Handoff output thật về Studio; không tạo pixel editor giả."""
+    if _remix_values(request, job_id, image_index) is None:
+        return _render(request, user, error="Không tìm thấy output để tạo biến thể.",
+                       jobs=_jobs_cua_toi(request), status_code=404)
+    from urllib.parse import urlencode
+    target = "/taoanh/thumbnail?" + urlencode(
+        {"remix_job_id": job_id, "image_index": image_index})
+    return RedirectResponse(target, status_code=308)
 
 
 @router.post("/preview", response_class=HTMLResponse)
@@ -206,13 +235,14 @@ def preview(
         except Exception:  # noqa: BLE001
             return v
 
-    rows = [("Chủ đề", topic.strip()[:2000]), ("Tiêu đề", title.strip()[:200]),
-            ("Phụ đề", subtitle.strip()[:200]),
-            ("Kiểu chữ", _lbl("text_style", text_style)),
-            ("Phong cách", _lbl("phong_cach", phong_cach)),
-            ("Kiểu trend", _lbl("kieu_trend", kieu_trend)),
-            ("Ngôn ngữ", _lbl("ngon_ngu", ngon_ngu)),
-            ("Tỉ lệ", aspect_ratio if aspect_ratio in _ASPECTS else "16:9")]
+    rows = [(_t("Chủ đề"), topic.strip()[:2000]),
+            (_t("Tiêu đề"), title.strip()[:200]),
+            (_t("Phụ đề"), subtitle.strip()[:200]),
+            (_t("Kiểu chữ"), _lbl("text_style", text_style)),
+            (_t("Phong cách"), _lbl("phong_cach", phong_cach)),
+            (_t("Kiểu trend"), _lbl("kieu_trend", kieu_trend)),
+            (_t("Ngôn ngữ"), _lbl("ngon_ngu", ngon_ngu)),
+            (_t("Tỉ lệ"), aspect_ratio if aspect_ratio in _ASPECTS else "16:9")]
     html = "".join(
         f'<div><span class="dim">{escape(k)}:</span> {escape(str(v))}</div>'
         for k, v in rows if v)
@@ -349,8 +379,12 @@ async def queue(
         try: next(gen)
         except StopIteration: pass
 
-    # Ve trang app (luoi ket qua) thay vi /jobs/{id} (chi hien JSON tho).
-    return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+    # Quay về shell product canonical. HTMX cần HX-Redirect để không nhét cả
+    # document vào fragment; form fallback vẫn dùng redirect HTTP thường.
+    target = "/taoanh/thumbnail"
+    if request.headers.get("HX-Request", "").lower() == "true":
+        return Response(status_code=204, headers={"HX-Redirect": target})
+    return RedirectResponse(target, status_code=303)
 
 
 @router.get("/image/{key:path}", response_class=StreamingResponse)

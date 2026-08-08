@@ -282,14 +282,24 @@ def test_image_route_chan_cross_user(tmp_path, monkeypatch):
         r2 = c.get(f"/thumbnail/image/thumbnail/{a_id}/job2/0.png")
         assert r2.status_code == 200
         studio = c.get("/thumbnail")
-        assert studio.status_code == 200
-        assert "Tạo ảnh AI" in studio.text and "Thumbnail YouTube" in studio.text
-        assert "TIEU_DE_CUA_A" in studio.text
-        assert "th-compare-pick" in studio.text and "NOI_DUNG_CUA_A" not in studio.text
+        assert studio.status_code == 308
+        assert studio.headers["location"] == "/taoanh/thumbnail"
+        shell = c.get(studio.headers["location"])
+        assert shell.status_code == 200
+        assert "Tạo ảnh AI" in shell.text and "Thumbnail YouTube" in shell.text
+        fragment = c.get("/thumbnail/studio-fragment")
+        assert fragment.status_code == 200 and "TIEU_DE_CUA_A" in fragment.text
+        assert "th-compare-pick" in fragment.text and "NOI_DUNG_CUA_A" not in fragment.text
         remix = c.get(f"/thumbnail/remix/{seeded_id}/0")
-        assert remix.status_code == 200 and "Đang remix từ output đã chọn" in remix.text
-        assert "NOI_DUNG_CUA_A" in remix.text and "TIEU_DE_CUA_A" in remix.text
-        remix_csrf = _re.search(r'name="csrf_token" value="([^"]+)"', remix.text).group(1)
+        assert remix.status_code == 308
+        assert remix.headers["location"].startswith("/taoanh/thumbnail?")
+        remix_fragment = c.get(
+            f"/thumbnail/studio-fragment?remix_job_id={seeded_id}&image_index=0")
+        assert (remix_fragment.status_code == 200 and
+                "Đang remix từ output đã chọn" in remix_fragment.text)
+        assert "NOI_DUNG_CUA_A" in remix_fragment.text and "TIEU_DE_CUA_A" in remix_fragment.text
+        remix_csrf = _re.search(
+            r'name="csrf_token" value="([^"]+)"', remix_fragment.text).group(1)
         import platform_core.job_submit as job_submit
         from platform_core.credit import ThieuCreditError
         monkeypatch.setattr(job_submit, "submit_with_credit",

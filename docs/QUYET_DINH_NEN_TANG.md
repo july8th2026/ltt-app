@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q80; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68 đã thay)
+## 1. Quyết định đã chốt (đến Q82; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -106,6 +106,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q79 | Thứ tự H26 | **Upscale → AutoSub version drift → Marketplace/merge → Tạo Video Seedance → Prompt AI → app thiếu mô tả. Thực hiện tuần tự.** | Đóng lỗi có bằng chứng trước, không build từ folder trống và không chồng chéo regression. |
 | Q80 | Rollout AutoSub Studio | **Canary user rồi public; giữ legacy rollback đúng một release.** | Sửa version drift có quan sát, không big-bang và vẫn lùi ngay được nếu bundle/runtime lỗi. |
 | Q81 | Catalog tích hợp Prompt AI | **Preset chắt lọc đi cùng code dưới dạng catalog bất biến; catalog admin vẫn ở DB; user chỉ sửa bản clone riêng. Không đọc runtime/database/file user từ BOT GEMINI.** | Catalog có version và rollback theo release, không import chéo, không bê shared-owner hoặc dữ liệu thật sang app đa người dùng. |
+| Q82 | Hợp nhất Tạo ảnh AI và Thumbnail | **Một bề mặt khách hàng canonical tại `/taoanh`; mode Thumbnail ở `/taoanh/thumbnail` nạp fragment đã xác thực qua HTTP route công khai của app `thumbnail`. `/thumbnail` chỉ còn redirect 308 tương thích. Giữ hai manifest, executor, job type, bảng, credit và storage riêng; cấm import Python internals chéo app.** | Người dùng cần một product/IA nhưng hợp đồng app cấm app gọi ruột app khác. Composition qua HTTP fragment giữ ownership/CSRF/route contract, không tạo runtime thứ ba, không di trú hay làm mất history; có thể rollback presentation độc lập với dữ liệu và executor. |
 
 ---
 

@@ -94,12 +94,13 @@ def test_tao_anh_mot_entry_hai_mode_va_route_thumbnail_cu_con_hoat_dong(client):
     general = client.get("/taoanh")
     assert general.status_code == 200
     assert 'href="/taoanh" aria-current="page"' in general.text
-    alias = client.get("/taoanh/thumbnail", follow_redirects=False)
-    assert alias.status_code == 308 and alias.headers["location"] == "/thumbnail"
-    legacy = client.get("/thumbnail")
-    assert legacy.status_code == 200
-    assert 'href="/thumbnail" aria-current="page"' in legacy.text
-    assert "/thumbnail/queue" in legacy.text
+    canonical = client.get("/taoanh/thumbnail")
+    assert canonical.status_code == 200
+    assert 'href="/taoanh/thumbnail" aria-current="page"' in canonical.text
+    assert 'hx-get="/thumbnail/studio-fragment"' in canonical.text
+    legacy = client.get("/thumbnail", follow_redirects=False)
+    assert legacy.status_code == 308
+    assert legacy.headers["location"] == "/taoanh/thumbnail"
 
 
 def test_css_khoa_empty_state_responsive_va_touch_target():

@@ -30,7 +30,7 @@ msgstr ""
 msgid "15 giây"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:54
+#: apps/taovideo/templates/taovideo.html:56
 msgid "2 biến thể"
 msgstr ""
 
@@ -118,7 +118,7 @@ msgstr ""
 msgid "Biến prompt cảnh thành frame bằng job Tạo ảnh; không tạo ảnh giả trong giao diện."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:69
+#: apps/taovideo/templates/taovideo.html:72
 msgid "Biến thể"
 msgstr ""
 
@@ -136,6 +136,10 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
 msgid "Báo giá"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail_fragment.html:12
+msgid "Báo giá theo số ảnh trước khi tạo"
 msgstr ""
 
 #: server/templates/nap.html:31
@@ -225,6 +229,7 @@ msgstr ""
 #: apps/taoanh/templates/image.html:25
 #: apps/taoclipngan/templates/taoclipngan.html:56
 #: apps/thumbnail/templates/thumbnail.html:57
+#: apps/thumbnail/templates/thumbnail_fragment.html:32
 msgid "Bỏ chọn"
 msgstr ""
 
@@ -236,24 +241,24 @@ msgstr ""
 msgid "CHI PHÍ ƯỚC TÍNH"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
-msgid "Camera là hướng dẫn bằng prompt, không phải điều khiển cơ học native. Seed là capability thật của provider."
-msgstr ""
-
 #: apps/agent/routes/legacy_runs.py:39
 msgid "Canvas bundle chưa được build."
+msgstr ""
+
+#: apps/prompt_ai_ommi/services/builtin_catalog.py:50
+msgid "Catalog tích hợp Prompt AI không hợp lệ."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:36
 msgid "Chi phí theo phút nguồn + số output"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:54
-msgid "Chi phí ước tính"
+#: apps/taovideo/templates/taovideo.html:59
+msgid "Chi phí trước khi chạy"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:57
-msgid "Chi phí ước tính:"
+#: apps/upscalevideo/templates/upscalevideo.html:54
+msgid "Chi phí ước tính"
 msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:73
@@ -272,7 +277,7 @@ msgstr ""
 msgid "Chuyển phong cách"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Chuyển động"
 msgstr ""
 
@@ -280,7 +285,7 @@ msgstr ""
 msgid "Chào bạn,"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Chân thực"
 msgstr ""
 
@@ -300,7 +305,7 @@ msgstr ""
 msgid "Chưa chọn video"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:294
+#: apps/autosubvideo/routes.py:298
 msgid "Chưa chọn video."
 msgstr ""
 
@@ -370,10 +375,11 @@ msgid "Chưa có thay đổi"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:62
+#: apps/thumbnail/templates/thumbnail_fragment.html:36
 msgid "Chưa có thumbnail"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:50
+#: apps/taovideo/templates/taovideo.html:52
 msgid "Chưa có tài sản đã lưu. File bạn dùng trong job đầu tiên sẽ xuất hiện tại đây."
 msgstr ""
 
@@ -381,7 +387,7 @@ msgstr ""
 msgid "Chưa có video nào. Tạo cái đầu tiên ở trên."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:70
+#: apps/taovideo/templates/taovideo.html:73
 msgid "Chưa có video phù hợp."
 msgstr ""
 
@@ -443,7 +449,7 @@ msgstr ""
 msgid "Chế độ"
 msgstr ""
 
-#: apps/taoanh/templates/image.html:10
+#: apps/taoanh/templates/_image_mode_nav.html:1
 #: apps/thumbnail/templates/thumbnail.html:17
 msgid "Chế độ Tạo ảnh AI"
 msgstr ""
@@ -497,7 +503,7 @@ msgstr ""
 msgid "Chỉ quản trị viên được xem telemetry."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:604
+#: apps/autosubvideo/routes.py:632
 msgid "Chỉ retry render đã lỗi hoặc đã hủy."
 msgstr ""
 
@@ -529,7 +535,7 @@ msgstr ""
 msgid "Chọn file"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:49
+#: apps/taovideo/templates/taovideo.html:51
 msgid "Chọn lại tài sản từ các job trước. Tổng tài sản cũ và file mới tối đa 4."
 msgstr ""
 
@@ -558,6 +564,7 @@ msgid "Chọn tối đa hai clip đã render"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:55
+#: apps/thumbnail/templates/thumbnail_fragment.html:32
 msgid "Chọn tối đa hai output thật trong lịch sử"
 msgstr ""
 
@@ -578,17 +585,23 @@ msgstr ""
 msgid "Chọn video ở Studio để bắt đầu."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:433
+#: apps/autosubvideo/routes.py:437
 msgid "Chọn ít nhất một track đang hiện và có cue."
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail_fragment.html:47
+msgid "Chọn ảnh thứ"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:25
 #: apps/thumbnail/templates/thumbnail.html:56
+#: apps/thumbnail/templates/thumbnail_fragment.html:32
 msgid "Chọn ảnh thứ hai"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:25
 #: apps/thumbnail/templates/thumbnail.html:56
+#: apps/thumbnail/templates/thumbnail_fragment.html:32
 msgid "Chọn ảnh thứ nhất"
 msgstr ""
 
@@ -599,6 +612,10 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:42
 msgid "Chụp phiên bản"
+msgstr ""
+
+#: apps/thumbnail/routes.py:238
+msgid "Chủ đề"
 msgstr ""
 
 #: apps/kichban/templates/script.html:10
@@ -675,11 +692,15 @@ msgstr ""
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
 msgstr ""
 
+#: apps/thumbnail/templates/thumbnail_fragment.html:5
+msgid "Công cụ Thumbnail YouTube"
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/handoff.py:18
 msgid "Công cụ handoff chưa khả dụng."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:64
+#: apps/taovideo/templates/taovideo.html:68
 #: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Cũ nhất"
 msgstr ""
@@ -688,12 +709,13 @@ msgstr ""
 msgid "Cảnh chưa đủ mô tả để sinh ảnh."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:13 server/templates/home.html:21
+#: apps/taovideo/templates/taovideo.html:12 server/templates/home.html:21
 msgid "Cấu hình"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:24
 #: apps/thumbnail/templates/thumbnail.html:53
+#: apps/thumbnail/templates/thumbnail_fragment.html:31
 msgid "Cấu hình gửi đi"
 msgstr ""
 
@@ -725,7 +747,7 @@ msgstr ""
 msgid "Cần thiết lập:"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:512
+#: apps/autosubvideo/routes.py:516
 msgid "Cần transcript nguồn trước khi phân vai."
 msgstr ""
 
@@ -733,8 +755,8 @@ msgstr ""
 msgid "Cần tài khoản người dùng trong CSDL để sử dụng app."
 msgstr ""
 
-#: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:116
-#: apps/autosubvideo/routes.py:646 apps/taoclipngan/routes.py:161
+#: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:120
+#: apps/autosubvideo/routes.py:674 apps/taoclipngan/routes.py:161
 #: apps/upscalevideo/routes.py:184
 msgid "Cần tài khoản người dùng."
 msgstr ""
@@ -782,6 +804,14 @@ msgstr ""
 
 #: server/templates/register.html:17
 msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:66
+msgid "Dạng danh sách"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:66
+msgid "Dạng lưới"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:116
@@ -858,6 +888,7 @@ msgid "File ảnh không hợp lệ."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:34
+#: apps/thumbnail/templates/thumbnail_fragment.html:18
 msgid "Font thương hiệu"
 msgstr ""
 
@@ -885,7 +916,7 @@ msgstr ""
 msgid "Gemini không trả ảnh nào (chỉ có văn bản)."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:541
+#: apps/autosubvideo/routes.py:545
 msgid "Gemini translation chưa cấu hình API key."
 msgstr ""
 
@@ -902,6 +933,7 @@ msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:36
+#: apps/thumbnail/templates/thumbnail_fragment.html:20
 msgid "Giọng thương hiệu"
 msgstr ""
 
@@ -939,6 +971,7 @@ msgstr ""
 
 #: apps/taoanh/templates/image.html:29
 #: apps/thumbnail/templates/thumbnail.html:66
+#: apps/thumbnail/templates/thumbnail_fragment.html:36
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:9 server/templates/jobs.html:11
@@ -990,15 +1023,11 @@ msgstr ""
 msgid "Hỗ trợ"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:33
-msgid "Hỗ trợ prompt"
-msgstr ""
-
 #: apps/chataistudio/templates/chataistudio.html:10
 msgid "Hội thoại"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:74
+#: apps/taovideo/templates/taovideo.html:77
 msgid "Hủy"
 msgstr ""
 
@@ -1041,6 +1070,7 @@ msgid "Job này không sinh ảnh."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:28
+#: apps/thumbnail/templates/thumbnail_fragment.html:14
 msgid "KIẾM TIỀN 2026"
 msgstr ""
 
@@ -1057,7 +1087,7 @@ msgstr ""
 msgid "Khoá lưu trữ không hợp lệ."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:516
+#: apps/autosubvideo/routes.py:520
 msgid "Khoảng số speaker không hợp lệ."
 msgstr ""
 
@@ -1067,6 +1097,10 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:59
 msgid "Khóa câu chuyện và mục tiêu trước khi AI phân cảnh."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:32
+msgid "Không bắt buộc"
 msgstr ""
 
 #: server/templates/dashboard.html:15
@@ -1094,6 +1128,7 @@ msgid "Không dựng được file phụ đề ASS."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:53
+#: apps/thumbnail/templates/thumbnail_fragment.html:31
 msgid "Không hiển thị prompt nội bộ của nền tảng"
 msgstr ""
 
@@ -1137,12 +1172,12 @@ msgstr ""
 msgid "Không tìm thấy cảnh."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:841
+#: apps/autosubvideo/routes.py:869
 msgid "Không tìm thấy file."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:561 apps/autosubvideo/routes.py:585
-#: apps/autosubvideo/routes.py:602 apps/prompt_ai_ommi/routes/projects.py:222
+#: apps/autosubvideo/routes.py:600 apps/autosubvideo/routes.py:613
+#: apps/autosubvideo/routes.py:630 apps/prompt_ai_ommi/routes/projects.py:222
 #: apps/prompt_ai_ommi/routes/resources.py:512
 #: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/upscalevideo/routes.py:599
 #: server/routes/jobs.py:186 server/routes/jobs.py:202
@@ -1164,11 +1199,11 @@ msgstr ""
 msgid "Không tìm thấy package."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:189 apps/autosubvideo/routes.py:208
-#: apps/autosubvideo/routes.py:223 apps/autosubvideo/routes.py:262
-#: apps/autosubvideo/routes.py:315 apps/autosubvideo/routes.py:335
-#: apps/autosubvideo/routes.py:452 apps/autosubvideo/routes.py:467
-#: apps/autosubvideo/routes.py:500 apps/autosubvideo/routes.py:535
+#: apps/autosubvideo/routes.py:193 apps/autosubvideo/routes.py:212
+#: apps/autosubvideo/routes.py:227 apps/autosubvideo/routes.py:266
+#: apps/autosubvideo/routes.py:319 apps/autosubvideo/routes.py:339
+#: apps/autosubvideo/routes.py:456 apps/autosubvideo/routes.py:471
+#: apps/autosubvideo/routes.py:504 apps/autosubvideo/routes.py:539
 #: apps/prompt_ai_ommi/routes/_shared.py:111
 #: apps/prompt_ai_ommi/routes/_shared.py:113
 msgid "Không tìm thấy project."
@@ -1215,8 +1250,8 @@ msgstr ""
 msgid "Không tìm thấy video sau khi tải."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:806 apps/taovideo/routes.py:476
-#: apps/taovideo/routes.py:485 apps/upscalevideo/routes.py:618
+#: apps/autosubvideo/routes.py:834 apps/taovideo/routes.py:504
+#: apps/taovideo/routes.py:513 apps/upscalevideo/routes.py:618
 #: apps/upscalevideo/routes.py:655 apps/upscalevideo/routes.py:671
 #: apps/upscalevideo/routes.py:719
 msgid "Không tìm thấy video."
@@ -1242,18 +1277,22 @@ msgstr ""
 
 #: apps/chataistudio/routes.py:429 apps/prompt_ai_ommi/routes/resources.py:347
 #: apps/prompt_ai_ommi/routes/resources.py:366
-#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:221
-#: apps/taoanh/routes.py:229 apps/taoanh/routes.py:247
-#: apps/taoanh/routes.py:255 apps/thumbnail/routes.py:366
-#: apps/thumbnail/routes.py:374
+#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:233
+#: apps/taoanh/routes.py:241 apps/taoanh/routes.py:259
+#: apps/taoanh/routes.py:267 apps/thumbnail/routes.py:400
+#: apps/thumbnail/routes.py:408
 msgid "Không tìm thấy ảnh."
 msgstr ""
 
-#: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:768
+#: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:796
 #: apps/chataistudio/routes.py:337 apps/chataistudio/routes.py:361
 #: apps/chataistudio/routes.py:421 apps/chataistudio/routes.py:436
 #: apps/taoclipngan/routes.py:384
 msgid "Không tìm thấy."
+msgstr ""
+
+#: apps/taoanh/templates/image_thumbnail_shell.html:26
+msgid "Không tải được công cụ Thumbnail"
 msgstr ""
 
 #: apps/mediatools/jobs.py:270
@@ -1296,12 +1335,25 @@ msgstr ""
 msgid "Kiểm tra & xem prompt"
 msgstr ""
 
+#: apps/taoanh/templates/image_thumbnail_shell.html:27
+msgid "Kiểm tra kết nối rồi thử lại."
+msgstr ""
+
+#: apps/thumbnail/routes.py:241
+msgid "Kiểu chữ"
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:50
 msgid "Kiểu chữ (preset)"
 msgstr ""
 
+#: apps/taovideo/templates/taovideo.html:66
 #: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Kiểu hiển thị"
+msgstr ""
+
+#: apps/thumbnail/routes.py:243
+msgid "Kiểu trend"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:66
@@ -1322,6 +1374,10 @@ msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:77
 msgid "Kết quả sẽ xuất hiện tại đây"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail_fragment.html:36
+msgid "Kết quả thật sẽ xuất hiện ở đây sau job đầu tiên."
 msgstr ""
 
 #: server/templates/_job_progress.html:18
@@ -1352,6 +1408,11 @@ msgstr ""
 msgid "Kịch bản hoàn thành sẽ xuất hiện tại đây."
 msgstr ""
 
+#: apps/thumbnail/templates/thumbnail.html:71
+#: apps/thumbnail/templates/thumbnail_fragment.html:38
+msgid "Kỹ thuật"
+msgstr ""
+
 #: server/templates/_platform_footer.html:6
 msgid "Liên hệ"
 msgstr ""
@@ -1380,7 +1441,7 @@ msgstr ""
 msgid "Loại tài nguyên tham chiếu không hợp lệ."
 msgstr ""
 
-#: apps/taovideo/routes.py:287
+#: apps/taovideo/routes.py:315
 msgid "Loại tài sản đã lưu không hợp lệ."
 msgstr ""
 
@@ -1397,6 +1458,7 @@ msgid "Lưu dự án"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:37
+#: apps/thumbnail/templates/thumbnail_fragment.html:21
 msgid "Lưu làm Brand Kit mặc định của tôi"
 msgstr ""
 
@@ -1429,7 +1491,11 @@ msgstr ""
 msgid "Lập kế hoạch và xem giá"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:30
+#: apps/taovideo/templates/taovideo.html:10
+msgid "Lịch sử"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:29
 msgid "Lịch sử prompt"
 msgstr ""
 
@@ -1450,7 +1516,7 @@ msgstr ""
 msgid "Lọc theo trạng thái"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:65
+#: apps/taovideo/templates/taovideo.html:67
 msgid "Lọc video"
 msgstr ""
 
@@ -1460,6 +1526,7 @@ msgstr ""
 
 #: apps/taoanh/templates/image.html:29
 #: apps/thumbnail/templates/thumbnail.html:66
+#: apps/thumbnail/templates/thumbnail_fragment.html:36
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:11 server/templates/jobs.html:12
@@ -1483,11 +1550,17 @@ msgstr ""
 msgid "Markdown + JSON trong một gói."
 msgstr ""
 
+#: apps/taovideo/templates/taovideo.html:68
+msgid "Model"
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:35
+#: apps/thumbnail/templates/thumbnail_fragment.html:19
 msgid "Màu chính"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:35
+#: apps/thumbnail/templates/thumbnail_fragment.html:19
 msgid "Màu phụ"
 msgstr ""
 
@@ -1499,7 +1572,7 @@ msgstr ""
 msgid "Máy chủ video không có địa chỉ hợp lệ."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Máy tĩnh"
 msgstr ""
 
@@ -1511,7 +1584,7 @@ msgstr ""
 msgid "Mã hỗ trợ"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:544
+#: apps/autosubvideo/routes.py:548
 msgid "Mã ngôn ngữ đích không hợp lệ."
 msgstr ""
 
@@ -1527,7 +1600,7 @@ msgstr ""
 msgid "Mô tả bối cảnh, nhân vật, hành động và kết quả mong muốn..."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:29
+#: apps/taovideo/templates/taovideo.html:28
 msgid "Mô tả cảnh, chủ thể, chuyển động máy quay và ánh sáng."
 msgstr ""
 
@@ -1539,11 +1612,11 @@ msgstr ""
 msgid "Mô tả sáng tạo"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:27
+#: apps/taovideo/templates/taovideo.html:26
 msgid "Mô tả video"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:28
+#: apps/taovideo/templates/taovideo.html:27
 msgid "Mô tả video. Gõ @tên để dùng tham chiếu…"
 msgstr ""
 
@@ -1560,11 +1633,16 @@ msgid "Mượt chuyển động 2×"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:36
+#: apps/thumbnail/templates/thumbnail_fragment.html:20
 msgid "Mạnh mẽ, công nghệ, rõ ràng"
 msgstr ""
 
 #: server/templates/home.html:17
 msgid "Mẫu"
+msgstr ""
+
+#: apps/prompt_ai_ommi/services/library.py:328
+msgid "Mẫu tích hợp đi cùng phiên bản ứng dụng và không thể ngừng dùng trong quản trị. Hãy cập nhật catalog ở bản phát hành kế tiếp."
 msgstr ""
 
 #: server/templates/login.html:14 server/templates/register.html:14
@@ -1575,7 +1653,7 @@ msgstr ""
 msgid "Mật khẩu mới"
 msgstr ""
 
-#: apps/autosubvideo/jobs.py:84 apps/autosubvideo/routes.py:346
+#: apps/autosubvideo/jobs.py:84 apps/autosubvideo/routes.py:350
 msgid "Mỗi lượt chép lời tối đa 120 phút."
 msgstr ""
 
@@ -1599,7 +1677,7 @@ msgstr ""
 msgid "Một video chỉ nhận tối đa 4 tài nguyên tham chiếu."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:64
+#: apps/taovideo/templates/taovideo.html:68
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: server/templates/home.html:29
 msgid "Mới nhất"
@@ -1607,6 +1685,7 @@ msgstr ""
 
 #: apps/taoanh/templates/image.html:31
 #: apps/thumbnail/templates/thumbnail.html:72
+#: apps/thumbnail/templates/thumbnail_fragment.html:38
 #: server/templates/dashboard.html:24 server/templates/dashboard.html:29
 #: server/templates/dashboard.html:37 server/templates/dashboard.html:42
 #: server/templates/nap_khong_thay.html:24
@@ -1625,8 +1704,8 @@ msgstr ""
 msgid "Mở app"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:16
-#: apps/taovideo/templates/taovideo.html:70
+#: apps/taovideo/templates/taovideo.html:15
+#: apps/taovideo/templates/taovideo.html:73
 msgid "Mở bảng tạo video"
 msgstr ""
 
@@ -1648,6 +1727,14 @@ msgstr ""
 
 #: server/templates/home.html:27
 msgid "Mở điều hướng"
+msgstr ""
+
+#: apps/prompt_ai_ommi/services/builtin_catalog.py:55
+msgid "Mục catalog Prompt AI phải là object."
+msgstr ""
+
+#: apps/prompt_ai_ommi/services/builtin_catalog.py:61
+msgid "Mục catalog Prompt AI thiếu hoặc trùng định danh."
 msgstr ""
 
 #: apps/agent/templates/agent.html:10
@@ -1693,8 +1780,9 @@ msgstr ""
 
 #: apps/kichban/templates/script.html:10
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
-#: apps/taoclipngan/templates/taoclipngan.html:43
+#: apps/taoclipngan/templates/taoclipngan.html:43 apps/thumbnail/routes.py:244
 #: apps/thumbnail/templates/thumbnail.html:45
+#: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Ngôn ngữ"
 msgstr ""
 
@@ -1719,6 +1807,7 @@ msgid "Nhập mật khẩu"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:54
+#: apps/thumbnail/templates/thumbnail_fragment.html:31
 msgid "Nhập nội dung và chọn “Xem cấu hình” để kiểm tra trước khi tạo."
 msgstr ""
 
@@ -1736,6 +1825,10 @@ msgstr ""
 
 #: apps/mediatools/manifest.py:71
 msgid "Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube Shorts, Instagram/Facebook Reels hoặc URL HTTPS trực tiếp."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:72
+msgid "Nhật ký"
 msgstr ""
 
 #: apps/agent/templates/_agent_progress.html:15
@@ -1766,11 +1859,11 @@ msgstr ""
 msgid "Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:69
+#: apps/taovideo/templates/taovideo.html:72
 msgid "Nâng cấp AI"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:74
+#: apps/taovideo/templates/taovideo.html:77
 msgid "Nâng cấp video AI"
 msgstr ""
 
@@ -1782,7 +1875,7 @@ msgstr ""
 msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Năng động"
 msgstr ""
 
@@ -1832,7 +1925,9 @@ msgid "Nội bộ"
 msgstr ""
 
 #: apps/kichban/templates/_script_view.html:8
-#: apps/thumbnail/templates/thumbnail.html:26 server/templates/demo.html:20
+#: apps/thumbnail/templates/thumbnail.html:26
+#: apps/thumbnail/templates/thumbnail_fragment.html:12
+#: server/templates/demo.html:20
 msgid "Nội dung"
 msgstr ""
 
@@ -1869,6 +1964,7 @@ msgid "Output có cấu trúc"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:31
+#: apps/thumbnail/templates/thumbnail_fragment.html:16
 msgid "Output dùng làm tham chiếu"
 msgstr ""
 
@@ -1882,6 +1978,10 @@ msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:32
 msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini để hướng dẫn tạo ảnh, không công khai"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail_fragment.html:17
+msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini, không công khai"
 msgstr ""
 
 #: apps/prompt_ai_ommi/routes/assets_catalog.py:112
@@ -1910,15 +2010,15 @@ msgstr ""
 
 #: apps/agent/routes/_shared.py:122 apps/agent/routes/legacy_runs.py:109
 #: apps/agent/routes/legacy_runs.py:132 apps/agent/routes/legacy_runs.py:146
-#: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:123
-#: apps/autosubvideo/routes.py:236 apps/autosubvideo/routes.py:285
+#: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:127
+#: apps/autosubvideo/routes.py:240 apps/autosubvideo/routes.py:289
 #: apps/upscalevideo/routes.py:219 apps/upscalevideo/routes.py:237
 #: apps/upscalevideo/routes.py:590 server/routes/jobs.py:255
 #: server/routes/jobs.py:278
 msgid "Phiên đã hết hạn."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34 apps/thumbnail/routes.py:242
 msgid "Phong cách"
 msgstr ""
 
@@ -1927,6 +2027,7 @@ msgid "Phong cách hình ảnh"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:40
+#: apps/thumbnail/templates/thumbnail_fragment.html:24
 msgid "Phong cách ảnh"
 msgstr ""
 
@@ -1938,7 +2039,8 @@ msgstr ""
 msgid "Phổ biến"
 msgstr ""
 
-#: apps/thumbnail/templates/thumbnail.html:29
+#: apps/thumbnail/routes.py:240 apps/thumbnail/templates/thumbnail.html:29
+#: apps/thumbnail/templates/thumbnail_fragment.html:14
 msgid "Phụ đề"
 msgstr ""
 
@@ -1958,8 +2060,8 @@ msgstr ""
 msgid "Project phải là object."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:339 apps/autosubvideo/routes.py:417
-#: apps/autosubvideo/routes.py:504 apps/autosubvideo/routes.py:539
+#: apps/autosubvideo/routes.py:343 apps/autosubvideo/routes.py:421
+#: apps/autosubvideo/routes.py:508 apps/autosubvideo/routes.py:543
 msgid "Project đã được sửa ở phiên khác."
 msgstr ""
 
@@ -1971,7 +2073,7 @@ msgstr ""
 msgid "Provider không trả URL video."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:506
+#: apps/autosubvideo/routes.py:510
 msgid "Pyannote chưa cấu hình token/model."
 msgstr ""
 
@@ -1995,7 +2097,7 @@ msgstr ""
 msgid "Quản trị"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Quảng cáo sản phẩm"
 msgstr ""
 
@@ -2027,11 +2129,11 @@ msgstr ""
 msgid "Sau"
 msgstr ""
 
-#: apps/taovideo/routes.py:156 apps/taovideo/routes.py:158
+#: apps/taovideo/routes.py:172 apps/taovideo/routes.py:174
 msgid "Seed phải là số nguyên từ 0 đến 2147483647."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Seed tùy chọn"
 msgstr ""
 
@@ -2063,10 +2165,6 @@ msgstr ""
 msgid "Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn."
 msgstr ""
 
-#: apps/taovideo/manifest.py:46
-msgid "Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật."
-msgstr ""
-
 #: apps/kichban/manifest.py:57
 msgid "Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra."
 msgstr ""
@@ -2079,18 +2177,20 @@ msgstr ""
 msgid "Snapshot project không còn toàn vẹn."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:614
+#: apps/autosubvideo/routes.py:642
 msgid "Snapshot/source của job cũ không còn hợp lệ."
 msgstr ""
 
 #: apps/taoanh/templates/image.html:31
 #: apps/taoclipngan/templates/taoclipngan.html:68
 #: apps/thumbnail/templates/thumbnail.html:72
+#: apps/thumbnail/templates/thumbnail_fragment.html:38
 #: apps/upscalevideo/templates/upscalevideo.html:101
 msgid "So sánh"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:55
+#: apps/thumbnail/templates/thumbnail_fragment.html:32
 msgid "So sánh kết quả"
 msgstr ""
 
@@ -2099,15 +2199,15 @@ msgstr ""
 msgid "So sánh output"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:428
+#: apps/autosubvideo/routes.py:432
 msgid "Source video chưa sẵn sàng hoặc không thuộc user."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:510
+#: apps/autosubvideo/routes.py:514
 msgid "Source video chưa sẵn sàng."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:343
+#: apps/autosubvideo/routes.py:347
 msgid "Source video chưa upload hoặc không thuộc user."
 msgstr ""
 
@@ -2116,10 +2216,11 @@ msgid "Source video không thuộc project owner."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:39
+#: apps/thumbnail/templates/thumbnail_fragment.html:23
 msgid "Style chữ"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:64
+#: apps/taovideo/templates/taovideo.html:68
 msgid "Sắp xếp"
 msgstr ""
 
@@ -2151,7 +2252,7 @@ msgstr ""
 msgid "Số file không khớp manifest."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:54
+#: apps/taovideo/templates/taovideo.html:56
 msgid "Số lượng/biến thể"
 msgstr ""
 
@@ -2165,6 +2266,7 @@ msgstr ""
 
 #: apps/taoanh/templates/image.html:20
 #: apps/thumbnail/templates/thumbnail.html:46
+#: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Số ảnh"
 msgstr ""
 
@@ -2172,7 +2274,7 @@ msgstr ""
 msgid "Telemetry quản trị"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:41
+#: apps/taovideo/templates/taovideo.html:40
 msgid "Tham chiếu"
 msgstr ""
 
@@ -2196,7 +2298,7 @@ msgstr ""
 msgid "Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:53
+#: apps/taovideo/templates/taovideo.html:55
 msgid "Thiết lập"
 msgstr ""
 
@@ -2212,7 +2314,7 @@ msgstr ""
 msgid "Thiết lập nâng cấp video"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:19
+#: apps/taovideo/templates/taovideo.html:18
 msgid "Thiết lập tạo video"
 msgstr ""
 
@@ -2228,8 +2330,8 @@ msgstr ""
 msgid "Thiếu project/track/ngôn ngữ cho translation."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:337 apps/autosubvideo/routes.py:415
-#: apps/autosubvideo/routes.py:502 apps/autosubvideo/routes.py:537
+#: apps/autosubvideo/routes.py:341 apps/autosubvideo/routes.py:419
+#: apps/autosubvideo/routes.py:506 apps/autosubvideo/routes.py:541
 msgid "Thiếu revision hợp lệ."
 msgstr ""
 
@@ -2254,7 +2356,7 @@ msgstr ""
 msgid "Thu hồi"
 msgstr ""
 
-#: apps/taoanh/templates/image.html:10
+#: apps/taoanh/templates/_image_mode_nav.html:3
 #: apps/thumbnail/templates/thumbnail.html:17
 msgid "Thumbnail YouTube"
 msgstr ""
@@ -2292,7 +2394,7 @@ msgid "Thời gian lên lịch phải kèm múi giờ."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
-#: apps/taovideo/templates/taovideo.html:54
+#: apps/taovideo/templates/taovideo.html:56
 msgid "Thời lượng"
 msgstr ""
 
@@ -2300,6 +2402,7 @@ msgstr ""
 msgid "Thời điểm"
 msgstr ""
 
+#: apps/taoanh/templates/image_thumbnail_shell.html:28
 #: server/templates/job_detail.html:5
 msgid "Thử lại"
 msgstr ""
@@ -2308,11 +2411,15 @@ msgstr ""
 msgid "Tin nhắn"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:33
+msgid "Tinh chỉnh chuyển động, phong cách hoặc seed khi bạn cần kiểm soát sâu hơn."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Tinh tế"
 msgstr ""
 
-#: apps/kichban/templates/_script_view.html:6
+#: apps/kichban/templates/_script_view.html:6 apps/thumbnail/routes.py:239
 msgid "Tiêu đề"
 msgstr ""
 
@@ -2325,6 +2432,7 @@ msgid "Tiêu đề phần"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:28
+#: apps/thumbnail/templates/thumbnail_fragment.html:14
 msgid "Tiêu đề trên ảnh"
 msgstr ""
 
@@ -2334,7 +2442,11 @@ msgstr ""
 msgid "Tiến độ"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:69
+#: apps/thumbnail/templates/thumbnail_fragment.html:37
+msgid "Tiến độ job"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:72
 msgid "Tiến độ tạo video"
 msgstr ""
 
@@ -2358,11 +2470,11 @@ msgstr ""
 msgid "Track nguồn không có cue để dịch."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:548
+#: apps/autosubvideo/routes.py:552
 msgid "Track nguồn không có cue."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:436
+#: apps/autosubvideo/routes.py:440
 msgid "Track render không tồn tại."
 msgstr ""
 
@@ -2386,7 +2498,7 @@ msgstr ""
 msgid "Transcript JSON phải là array có ít nhất 1 segment"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:240
+#: apps/autosubvideo/routes.py:244
 msgid "Transcript rỗng hoặc quá lớn (>8MB)."
 msgstr ""
 
@@ -2441,15 +2553,15 @@ msgstr ""
 msgid "Tài nguyên tham chiếu không thuộc người dùng."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:12
+#: apps/taovideo/templates/taovideo.html:11
 msgid "Tài sản"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:48
+#: apps/taovideo/templates/taovideo.html:50
 msgid "Tài sản đã lưu"
 msgstr ""
 
-#: apps/taovideo/routes.py:283
+#: apps/taovideo/routes.py:311
 msgid "Tài sản đã lưu không hợp lệ hoặc không còn tồn tại."
 msgstr ""
 
@@ -2474,6 +2586,7 @@ msgid "Tên hoặc nội dung…"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:33
+#: apps/thumbnail/templates/thumbnail_fragment.html:18
 msgid "Tên thương hiệu"
 msgstr ""
 
@@ -2529,6 +2642,10 @@ msgstr ""
 msgid "Tùy chọn nâng cao"
 msgstr ""
 
+#: apps/taovideo/templates/taovideo.html:32
+msgid "Tùy chọn sáng tạo"
+msgstr ""
+
 #: apps/taoclipngan/manifest.py:30
 #: apps/taoclipngan/templates/taoclipngan.html:16
 msgid "Tạo Clip ngắn"
@@ -2538,7 +2655,12 @@ msgstr ""
 msgid "Tạo Thumbnail YouTube"
 msgstr ""
 
+#: apps/taovideo/manifest.py:44 apps/taovideo/templates/taovideo.html:60
+msgid "Tạo Video Seedance"
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:72
+#: apps/thumbnail/templates/thumbnail_fragment.html:38
 msgid "Tạo biến thể"
 msgstr ""
 
@@ -2586,20 +2708,15 @@ msgstr ""
 msgid "Tạo tài khoản"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:9
-#: apps/taovideo/templates/taovideo.html:58
-msgid "Tạo video"
+#: apps/taovideo/manifest.py:46
+msgid "Tạo video Seedance từ mô tả và tài sản tham chiếu. Tính phí theo token thật."
 msgstr ""
 
-#: apps/taovideo/manifest.py:44
-msgid "Tạo video AI"
-msgstr ""
-
-#: apps/taovideo/templates/taovideo.html:70
+#: apps/taovideo/templates/taovideo.html:73
 msgid "Tạo video đầu tiên hoặc đổi bộ lọc."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:55
+#: apps/taovideo/templates/taovideo.html:57
 msgid "Tạo âm thanh"
 msgstr ""
 
@@ -2608,6 +2725,9 @@ msgid "Tạo đơn mới"
 msgstr ""
 
 #: apps/taoanh/manifest.py:43 apps/taoanh/templates/image.html:11
+#: apps/taoanh/templates/image_thumbnail_shell.html:3
+#: apps/taoanh/templates/image_thumbnail_shell.html:4
+#: apps/taoanh/templates/image_thumbnail_shell.html:11
 #: apps/thumbnail/templates/thumbnail.html:3
 #: apps/thumbnail/templates/thumbnail.html:4
 #: apps/thumbnail/templates/thumbnail.html:18
@@ -2622,8 +2742,13 @@ msgstr ""
 msgid "Tạo ảnh trong chat:"
 msgstr ""
 
+#: apps/taoanh/templates/image_thumbnail_shell.html:12
+msgid "Tạo ảnh tổng quát hoặc Thumbnail trong cùng một không gian làm việc."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:21
 #: apps/thumbnail/templates/thumbnail.html:49
+#: apps/thumbnail/templates/thumbnail_fragment.html:28
 msgid "Tạo ảnh ·"
 msgstr ""
 
@@ -2649,7 +2774,7 @@ msgstr ""
 msgid "Tải ZIP"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:69
+#: apps/taovideo/templates/taovideo.html:72
 msgid "Tải video"
 msgstr ""
 
@@ -2662,6 +2787,14 @@ msgstr ""
 #: server/templates/home.html:40 server/templates/jobs.html:8
 #: server/templates/jobs.html:14
 msgid "Tất cả"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:68
+msgid "Tất cả model"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:68
+msgid "Tất cả tỉ lệ"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:37
@@ -2693,8 +2826,10 @@ msgid "Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:69
-#: apps/taoanh/templates/image.html:20 apps/taovideo/templates/taovideo.html:54
+#: apps/taoanh/templates/image.html:20 apps/taovideo/templates/taovideo.html:56
+#: apps/taovideo/templates/taovideo.html:68 apps/thumbnail/routes.py:245
 #: apps/thumbnail/templates/thumbnail.html:44
+#: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Tỉ lệ"
 msgstr ""
 
@@ -2726,15 +2861,15 @@ msgstr ""
 msgid "Tối đa 3 tệp, mỗi tệp 8 MB"
 msgstr ""
 
-#: apps/taovideo/routes.py:234
+#: apps/taovideo/routes.py:262
 msgid "Tối đa 4 file tham chiếu."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:45
-msgid "Tối đa 4 file · ảnh ≤20MB · video ≤60MB. Vai trò và tên gợi nhớ được gửi vào job thật."
+#: apps/taovideo/templates/taovideo.html:47
+msgid "Tối đa 4 tài sản · ảnh/audio ≤20MB · video ≤60MB."
 msgstr ""
 
-#: apps/taovideo/routes.py:275
+#: apps/taovideo/routes.py:303
 msgid "Tối đa 4 tài sản đã lưu."
 msgstr ""
 
@@ -2742,7 +2877,7 @@ msgstr ""
 msgid "Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư."
 msgstr ""
 
-#: apps/taovideo/routes.py:360
+#: apps/taovideo/routes.py:388
 msgid "Tổng tài sản đã lưu và file mới không được vượt quá 4."
 msgstr ""
 
@@ -2751,6 +2886,7 @@ msgid "Từ ngày"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:29
+#: apps/thumbnail/templates/thumbnail_fragment.html:14
 msgid "Từ số 0"
 msgstr ""
 
@@ -2762,7 +2898,7 @@ msgstr ""
 msgid "Tự kiểm tra mỗi 4 giây."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Tự động"
 msgstr ""
 
@@ -2807,7 +2943,7 @@ msgid "Video cần khiến người xem nghĩ hoặc làm gì?"
 msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:83
-#: apps/taovideo/templates/taovideo.html:64
+#: apps/taovideo/templates/taovideo.html:66
 msgid "Video của tôi"
 msgstr ""
 
@@ -2823,7 +2959,7 @@ msgstr ""
 msgid "Video không tạo được frame hợp lệ."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:297
+#: apps/autosubvideo/routes.py:301
 msgid "Video local rỗng hoặc quá 90MB."
 msgstr ""
 
@@ -2839,7 +2975,7 @@ msgstr ""
 msgid "Video source không thuộc project owner."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:291
+#: apps/autosubvideo/routes.py:295
 msgid "Video upload không hợp lệ."
 msgstr ""
 
@@ -2855,12 +2991,9 @@ msgstr ""
 msgid "Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:10
-msgid "Việc"
-msgstr ""
-
 #: apps/autosubvideo/templates/autosubvideo.html:33
 #: apps/kichban/templates/script.html:7 apps/taoanh/templates/image.html:11
+#: apps/taoanh/templates/image_thumbnail_shell.html:13
 #: apps/taoclipngan/templates/taoclipngan.html:17
 #: apps/thumbnail/templates/thumbnail.html:20 server/templates/_header.html:40
 #: server/templates/home.html:31 server/templates/jobs.html:4
@@ -2880,6 +3013,7 @@ msgid "Ví dụ: Cách học tiếng Anh hiệu quả trong 30 ngày"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:27
+#: apps/thumbnail/templates/thumbnail_fragment.html:13
 msgid "Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới"
 msgstr ""
 
@@ -2933,20 +3067,17 @@ msgstr ""
 msgid "Workspace chưa sẵn sàng"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:69
-msgid "Xem chi tiết"
-msgstr ""
-
 #: server/templates/dashboard.html:11
 msgid "Xem chẩn đoán chi tiết →"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:21
 #: apps/thumbnail/templates/thumbnail.html:48
+#: apps/thumbnail/templates/thumbnail_fragment.html:28
 msgid "Xem cấu hình"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:37
+#: apps/taovideo/templates/taovideo.html:36
 msgid "Xem prompt hoàn chỉnh"
 msgstr ""
 
@@ -2990,7 +3121,7 @@ msgstr ""
 msgid "Xuất metadata cho"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:74
+#: apps/taovideo/templates/taovideo.html:77
 msgid "Xác nhận chi phí"
 msgstr ""
 
@@ -3058,6 +3189,10 @@ msgstr ""
 msgid "chưa trừ tiền"
 msgstr ""
 
+#: apps/taovideo/routes.py:207
+msgid "credit tạm giữ"
+msgstr ""
+
 #: apps/autosubvideo/schemas.py:204
 msgid "cue end phải lớn hơn start"
 msgstr ""
@@ -3078,12 +3213,22 @@ msgstr ""
 msgid "cần thiết lập"
 msgstr ""
 
+#: apps/taoanh/templates/image.html:28
+#: apps/thumbnail/templates/thumbnail.html:61
+#: apps/thumbnail/templates/thumbnail_fragment.html:35
+msgid "job gần nhất"
+msgstr ""
+
 #: platform_core/storage.py:146
 msgid "key rỗng"
 msgstr ""
 
 #: server/templates/_nap_trangthai.html:67
 msgid "không cần chuyển lại"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:66
+msgid "kết quả phù hợp"
 msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:93
@@ -3130,11 +3275,17 @@ msgstr ""
 msgid "z_index của track đang hiện bị trùng"
 msgstr ""
 
-#: server/templates/jobs.html:17
+#: apps/taovideo/routes.py:204
+#, python-brace-format
+msgid "{quantity} video · dự kiến {estimated} credit; quyết toán theo token thật"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:68 server/templates/jobs.html:17
 msgid "Áp dụng"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:27
+#: apps/thumbnail/templates/thumbnail_fragment.html:13
 msgid "Ý tưởng / chủ đề"
 msgstr ""
 
@@ -3165,15 +3316,20 @@ msgstr ""
 msgid "Đang chờ tài nguyên xử lý."
 msgstr ""
 
+#: apps/taoanh/templates/image_thumbnail_shell.html:18
+msgid "Đang lấy preset, Brand Kit và lịch sử của tài khoản."
+msgstr ""
+
 #: server/routes/dashboard.py:24 server/templates/home.html:40
 msgid "Đang phát triển"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:31
+#: apps/thumbnail/templates/thumbnail_fragment.html:16
 msgid "Đang remix từ output đã chọn"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:74
+#: apps/taovideo/templates/taovideo.html:77
 msgid "Đang tính chi phí…"
 msgstr ""
 
@@ -3183,6 +3339,10 @@ msgstr ""
 
 #: apps/agent/templates/agent_canvas.html:7
 msgid "Đang tải Canvas…"
+msgstr ""
+
+#: apps/taoanh/templates/image_thumbnail_shell.html:17
+msgid "Đang tải công cụ Thumbnail…"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:7
@@ -3212,7 +3372,7 @@ msgid "Đang ước tính ETA"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:7
-msgid "Điều hướng PROMPT AI OMMI"
+msgid "Điều hướng Prompt AI"
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:7
@@ -3228,6 +3388,7 @@ msgid "Điều khoản"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:71
+#: apps/thumbnail/templates/thumbnail_fragment.html:38
 msgid "Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng"
 msgstr ""
 
@@ -3235,7 +3396,7 @@ msgstr ""
 msgid "Điểm xếp hạng nội bộ, không phải dự đoán lượt xem."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Điện ảnh"
 msgstr ""
 
@@ -3247,7 +3408,7 @@ msgstr ""
 msgid "Đã dùng"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:356
+#: apps/autosubvideo/routes.py:360
 msgid "Đã dùng hết 12 lượt chép lời miễn phí hôm nay."
 msgstr ""
 
@@ -3294,7 +3455,7 @@ msgstr ""
 msgid "Đính kèm tệp"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:17
+#: apps/taovideo/templates/taovideo.html:16
 msgid "Đóng bảng tạo video"
 msgstr ""
 
@@ -3406,8 +3567,12 @@ msgstr ""
 msgid "Đề xuất đã hết hạn hoặc không hợp lệ."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:35
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Để trống = ngẫu nhiên"
+msgstr ""
+
+#: apps/prompt_ai_ommi/services/builtin_catalog.py:63
+msgid "Định danh catalog Prompt AI vượt 36 ký tự."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:76
@@ -3455,17 +3620,25 @@ msgstr ""
 msgid "Độ dài đầu vào"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:54
+#: apps/taovideo/templates/taovideo.html:56
 msgid "Độ phân giải"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:74
+#: apps/taovideo/templates/taovideo.html:77
 #: apps/upscalevideo/templates/upscalevideo.html:22
 msgid "Độ phân giải đầu ra"
 msgstr ""
 
 #: server/templates/nap_khong_thay.html:25
 msgid "để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:42
+msgid "Ảnh"
+msgstr ""
+
+#: apps/thumbnail/templates/thumbnail_fragment.html:35
+msgid "Ảnh Thumbnail của tôi"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:28
@@ -3506,6 +3679,7 @@ msgid "Ảnh tham chiếu không thuộc người dùng hiện tại."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:32
+#: apps/thumbnail/templates/thumbnail_fragment.html:17
 msgid "Ảnh tham chiếu mới"
 msgstr ""
 
@@ -3521,7 +3695,7 @@ msgstr ""
 msgid "Ảnh tham chiếu được gửi tới Gemini để xử lý và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
 msgstr ""
 
-#: apps/taoanh/templates/image.html:10
+#: apps/taoanh/templates/_image_mode_nav.html:2
 #: apps/thumbnail/templates/thumbnail.html:17
 msgid "Ảnh tổng quát"
 msgstr ""
@@ -3550,8 +3724,10 @@ msgstr ""
 msgid "Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:42
-msgid "Ảnh, video hoặc audio tham chiếu"
+#: apps/taoanh/templates/image.html:29
+#: apps/thumbnail/templates/thumbnail_fragment.html:36
+#: apps/thumbnail/templates/thumbnail_fragment.html:38
+msgid "ảnh"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:40
@@ -3575,7 +3751,7 @@ msgid "← Về Chat AI Studio"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:20
-msgid "← Về PROMPT AI OMMI"
+msgid "← Về Prompt AI"
 msgstr ""
 
 #: server/templates/job_detail.html:14
@@ -3598,7 +3774,7 @@ msgstr ""
 msgid "▶️ Điều khiển worker"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:16
+#: apps/taovideo/templates/taovideo.html:15
 msgid "☰ Tạo video"
 msgstr ""
 

@@ -1799,7 +1799,13 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   có credit/resource/project/activity thật, responsive desktop/mobile. Không
   import runtime hay dữ liệu user từ BOT GEMINI. Targeted backend 41 PASS,
   frontend 22 PASS; browser console sạch; full gate PASS 9/9 trong 1.630,2 giây.
-- [ ] H26.9 Phase 3.5: shell Tạo ảnh AI hợp nhất Thumbnail, giữ history/job cũ.
+- [x] H26.9 Phase 3.5 — **PASS 2026-08-09, chưa deploy**: một catalog entry
+  và shell canonical `/taoanh`; General + Thumbnail chuyển mode trong cùng
+  product. `/thumbnail` redirect 308, Thumbnail nạp fragment owner-scoped qua
+  HTTP; giữ hai executor/job/credit/storage/history và không import chéo app.
+  Desktop 1920×1080 + mobile 390×844 không overflow, submit/quote/history/
+  compare/remix thật, console/network sạch. Targeted 32 PASS; quick gate 8/8;
+  full gate 9/9 trong 1.673,8 giây.
 - [ ] H26.10 Phase 3.6: audit rồi mới build Clip ngắn, Chat, Agent và maintenance
   Socialbot; các folder mô tả trống giữ UNKNOWN.
 - [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và

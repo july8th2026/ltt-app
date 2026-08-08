@@ -14,6 +14,67 @@
 
 ---
 
+## 2026-08-09 — H26.9: hợp nhất Tạo ảnh AI + Thumbnail PASS
+
+- **Mục tiêu:** biến hai full page cùng nhóm ảnh thành một product khách hàng,
+  giữ nguyên executor/job/credit/storage/history và mọi deep link cần tương thích.
+- **Hạng mục:** H26.9 — hoàn thành.
+- **Trạng thái:** xong development; chưa deploy.
+
+### Đã làm
+
+- Tạo shell canonical `/taoanh` với mode General và Thumbnail; `/thumbnail`
+  redirect 308 về `/taoanh/thumbnail`.
+- Tách Thumbnail thành fragment được bảo vệ bởi session/CSRF, nạp qua HTMX route
+  công khai. Không import Python internals giữa `taoanh` và `thumbnail`; hai
+  manifest/executor/job type/cost/storage/history vẫn độc lập.
+- Giữ form, 31 preset, Brand Kit, reference, preview cấu hình, technical score,
+  compare và remix. Queue HTMX tạo job thật rồi điều hướng toàn shell; lỗi input
+  trả fragment đúng scope.
+- Folder desktop `TaoAnhAI` chỉ có `desktop.ini`, không có `MoTa.txt` hay ảnh;
+  đã ghi UNKNOWN và không tự bịa thêm tính năng.
+- Browser fixture owner-scoped: desktop 1920×1080 và mobile 390×844 không
+  overflow; quote ×2, submit 500→490 credit, history/compare/remix/edit chạy;
+  console 0 error/0 warning, request app 200/204.
+- Dọn drift i18n phát hiện trong lượt extract: English 907 chuỗi, 0 thiếu,
+  0 fuzzy; cập nhật PO/MO và kiểm nhãn mới trên browser.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted image/thumbnail ban đầu | PASS 31 test |
+| Targeted sau cập nhật marketplace contract | PASS 32 test trong 20,17 giây |
+| `python tools\\gate.py --quick` lượt sạch | PASS 8/8 trong 27 giây |
+| Full gate lượt đầu có kết quả | FAIL 8/9: 2.564 pass, 1 test H26.4 còn kỳ vọng redirect ngược |
+| Targeted test H26.4 sau sửa | PASS |
+| `python tools\\gate.py` lượt cuối | PASS 9/9 trong 1.673,8 giây; pytest PASS trong 1.648,3 giây |
+
+Một lượt full gate trước đó bị lớp shell timeout 300 giây làm mất kênh output;
+đã xác minh và dừng đúng gate/pytest PID của lượt đó trước khi chạy lại, không
+để hai bộ regression tranh CPU.
+
+### Quyết định mới
+
+- Q82: một shell/IA canonical nhưng composition qua authenticated HTTP fragment;
+  không import ruột app và không gộp executor hay dữ liệu.
+
+### Cách lùi lại
+
+Revert commit H26.9. Không có migration/xóa dữ liệu; hai executor và history
+cũ còn nguyên nên presentation có thể quay lại hai trang độc lập.
+
+### Còn tồn đọng
+
+- Chưa deploy/canary; G8 khóa đến H26.12.
+- Không có đầu vào chi tiết từ folder desktop ngoài yêu cầu merge đã chốt.
+
+### Việc tiếp theo
+
+1. H26.10: audit tuần tự Clip ngắn, Chat, Agent và trạng thái maintenance
+   Socialbot; không build từ folder trống.
+2. Không deploy trước H26.12.
+
 ## 2026-08-09 — H26.8: Phase 3.4 Prompt AI PASS
 
 - **Mục tiêu:** áp dụng folder `PromptAIOmmi`, đổi public copy và hoàn thiện UX

@@ -14,7 +14,7 @@
 {% block content %}
 <script src="/static/htmx.min.js"></script>
 <section class="th-studio" aria-labelledby="th-title">
-  <nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}"><a href="/taoanh">{{ _("Ảnh tổng quát") }}</a><a href="/thumbnail" aria-current="page">{{ _("Thumbnail YouTube") }}</a></nav>
+  <nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}"><a href="/taoanh">{{ _("Ảnh tổng quát") }}</a><a href="/taoanh/thumbnail" aria-current="page">{{ _("Thumbnail YouTube") }}</a></nav>
   <header class="th-heading"><div><span class="th-kicker">AI CREATIVE STUDIO · THUMBNAIL MODE</span><h1 id="th-title">{{ _("Tạo ảnh AI") }}</h1>
     <p>{{ _("Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a></header>
@@ -58,7 +58,7 @@
     </div>
   </div>
 
-  <section class="th-history" aria-labelledby="history-title"><header><div><span class="th-kicker">OUTPUT HISTORY</span><h2 id="history-title">{{ _("Ảnh của tôi") }}</h2></div><span>{{ jobs|length }} job gần nhất</span></header>
+  <section class="th-history" aria-labelledby="history-title"><header><div><span class="th-kicker">OUTPUT HISTORY</span><h2 id="history-title">{{ _("Ảnh của tôi") }}</h2></div><span>{{ jobs|length }} {{ _("job gần nhất") }}</span></header>
     {% if not jobs %}<div class="th-history-empty"><strong>{{ _("Chưa có thumbnail") }}</strong><p>{{ _("Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh.") }}</p></div>
     {% else %}<div class="th-job-grid">{% for j in jobs %}
       <article class="th-job"><header><div><strong>{{ j.title or j.topic or 'Thumbnail không tiêu đề' }}</strong>
@@ -68,7 +68,7 @@
         {% if j.progress_msg %}<p class="th-job-msg">{{ j.progress_msg }}</p>{% endif %}{% if j.status == 'error' and j.error %}<p class="th-job-error">{{ j.error }}</p>{% endif %}
         {% if j.image_keys %}<div class="th-results">{% for k in j.image_keys %}{% set image_url = app.route_prefix ~ '/image/' ~ k %}
           <figure><a href="{{ image_url }}" target="_blank" rel="noreferrer"><img src="{{ image_url }}" alt="Thumbnail {{ loop.index }} của {{ j.title or j.topic or j.id[:8] }}" loading="lazy"></a>
-            {% if j.scores and loop.index0 < j.scores|length and j.scores[loop.index0].score is not none %}{% set score = j.scores[loop.index0] %}<div class="th-score" title="{{ _('Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng') }}"><b>{{ score.score }}/100</b><span>Kỹ thuật · {{ score.width }}×{{ score.height }}</span></div>{% endif %}
+            {% if j.scores and loop.index0 < j.scores|length and j.scores[loop.index0].score is not none %}{% set score = j.scores[loop.index0] %}<div class="th-score" title="{{ _('Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng') }}"><b>{{ score.score }}/100</b><span>{{ _("Kỹ thuật") }} · {{ score.width }}×{{ score.height }}</span></div>{% endif %}
             <figcaption><button type="button" class="th-compare-pick" data-compare-src="{{ image_url }}" data-compare-label="{{ j.title or j.topic or j.id[:8] }} · ảnh {{ loop.index }}" aria-pressed="false">{{ _("So sánh") }}</button><a href="{{ app.route_prefix }}/remix/{{ j.id }}/{{ loop.index0 }}">{{ _("Tạo biến thể") }}</a><a href="{{ image_url }}" target="_blank" rel="noreferrer">{{ _("Mở") }}</a></figcaption></figure>
         {% endfor %}</div>{% endif %}
       </article>{% endfor %}</div>{% endif %}

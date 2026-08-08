@@ -1,0 +1,4 @@
+<nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}">
+  <a href="/taoanh" {% if image_mode == 'general' %}aria-current="page"{% endif %}>{{ _("Ảnh tổng quát") }}</a>
+  <a href="/taoanh/thumbnail" {% if image_mode == 'thumbnail' %}aria-current="page"{% endif %}>{{ _("Thumbnail YouTube") }}</a>
+</nav>
