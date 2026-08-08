@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Job {{ job.id[:8] }} — LTT AI Studio{% endblock %}
 {% block content %}
-  <div class="pagehead"><div><h1>Job {{ job.id[:8] }}</h1><p class="page-sub">{{ job.app_slug }} · {{ job.job_type }} · tạo lúc {{ job.created_at.strftime('%H:%M %d/%m/%Y') }}</p></div>
+  <div class="pagehead"><div><h1>Job {{ job.id[:8] }}</h1><p class="page-sub">{{ job.app_slug }} · {{ job.job_type }} · {{ _("tạo lúc") }} {{ job.created_at.strftime('%H:%M %d/%m/%Y') }}</p></div>
     <div class="actions">{% if job.status in ('queued','running') %}<form method="post" action="/jobs/{{ job.id }}/cancel"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn danger" type="submit">{{ _("Hủy việc") }}</button></form>{% elif job.status in ('error','cancelled') %}<form method="post" action="/jobs/{{ job.id }}/retry"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn" type="submit">{{ _("Thử lại") }}</button></form>{% endif %}</div></div>
   <div class="card">
     {% include "_job_progress.html" %}
   </div>
-  {% if artifacts %}<section class="ui-card job-artifacts"><h2>{{ _("Tệp kết quả") }}</h2><div class="actions">{% for artifact in artifacts %}<a class="btn ghost" href="/jobs/{{ job.id }}/artifacts/{{ loop.index0 }}">Tải {{ artifact.label }}</a>{% endfor %}</div></section>{% endif %}
+  {% if retry_parent or retry_children %}<section class="ui-card job-lineage"><h2>{{ _("Các lần chạy liên quan") }}</h2>
+    <div class="actions">{% if retry_parent %}<a class="btn ghost" href="/jobs/{{ retry_parent.id }}">← {{ _("Lần trước") }} {{ retry_parent.id[:8] }}</a>{% endif %}{% for child in retry_children %}<a class="btn ghost" href="/jobs/{{ child.id }}">{{ _("Lần thử lại") }} {{ child.id[:8] }} →</a>{% endfor %}</div>
+  </section>{% endif %}
+  {% if artifacts %}<section class="ui-card job-artifacts"><h2>{{ _("Tệp kết quả") }}</h2><div class="actions">{% for artifact in artifacts %}<a class="btn ghost" href="/jobs/{{ job.id }}/artifacts/{{ loop.index0 }}">{{ _("Tải") }} {{ artifact.label }}</a>{% endfor %}</div></section>{% endif %}
+  <p class="job-correlation">{{ _("Mã hỗ trợ") }}: <code>{{ job.correlation_id }}</code></p>
   <p class="hint"><a href="/jobs">{{ _("← Về danh sách việc") }}</a></p>
   <script src="/static/htmx.min.js"></script>
 {% endblock %}

@@ -14,6 +14,74 @@
 
 ---
 
+## 2026-08-08 — H26.3: Phase 1 Job History/Support PASS
+
+- **Mục tiêu:** mọi tool tiếp tục dùng một nguồn job nhưng có lịch sử vòng đời,
+  log debug, quyền support và giao diện theo dõi an toàn cho khách hàng.
+- **Hạng mục:** H26.3 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Thêm migration `JobEvent` append-only và ba cột trace trên `Job`:
+  `correlation_id`, `retry_of_id`, `event_sequence`. Sequence cấp bằng update
+  nguyên tử; unique sequence/event-key chặn trùng và đã đưa vào PostgreSQL
+  restore drill.
+- Xây `platform_core.job_events`: event customer/internal, idempotency key,
+  allowlist metadata khách, redaction PII/secret đệ quy, size cap và purge
+  customer 365 ngày/internal 30 ngày. Worker tự purge mỗi 6 giờ.
+- Nối vòng đời dùng chung: submit, claim/start, progress, retry, orphan reclaim,
+  cancel, done/error, resource wait, credit settle/refund. Settle/refund đặt tại
+  `credit.py` nên mọi route tool hiện có đều ghi event, không chỉ global Jobs.
+- Tạo History read contract/API chỉ trả trường an toàn, không trả `params`,
+  `result`, `error` hoặc event nội bộ; hỗ trợ owner isolation và cursor.
+- Nâng Jobs toàn cục: filter app/status/date, cursor, timeline cập nhật HTMX,
+  retry lineage, artifact opaque download, cancel/retry và Support ID.
+- Thêm operator endpoints cho event kỹ thuật đã redacted và metrics: success
+  rate, queue wait/runtime P50/P95, retry, refund, stale job, event-write failure.
+- Bổ sung bản dịch English. Browser vòng đầu phát hiện message bị đóng băng theo
+  locale lúc ghi; đã đổi sang lưu msgid bằng `N_()` rồi dịch khi render.
+- Browser cũng dẫn tới việc dời event settle/refund vào tầng credit chung, nhờ
+  vậy cancel từ Upscale/AutoSub/global Jobs đều có lịch sử hoàn tiền nhất quán.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_68_credit.py tests/test_67_hang_doi_job.py tests/test_69_web_jobs.py tests/test_107_jobs_ui.py tests/test_151_job_events.py -q` | PASS, 50 test |
+| `python -m pytest tests/test_155_ommi_metrics.py::test_moi_rang_buoc_unique_song_con_deu_nam_trong_drill tests/test_151_job_events.py -q` | PASS, 8 test |
+| `python tools\gate.py --quick` | PASS 8/8 |
+| Alembic SQLite mới: `upgrade head -> downgrade e3f4a5b6c7d8 -> upgrade head` | PASS restore migration |
+| Playwright fixture `127.0.0.1:8111`, desktop 1366x900 + mobile 390x844 | PASS create image job, app/status/date filter, customer timeline/API, Support ID, artifact, operator event+metrics; user khác 404; mobile không overflow |
+| Playwright phiên sạch sau negative ownership flow | console 0 error/0 warning; không có failed application request |
+| `python tools\gate.py` lượt đầu | FAIL đúng 1 test restore drill: thiếu hai tên UNIQUE mới; 2531 pass |
+| `python tools\gate.py` sau sửa restore drill | PASS 9/9; pytest PASS trong 1.636,9 giây |
+
+### Quyết định mới
+
+Không có. Thực thi đúng Q75 (365/30 ngày) và Q76 (timeline khách đã sanitize,
+technical log chỉ operator/support). Artifact và credit ledger không bị purge
+theo policy event.
+
+### Cách lùi lại
+
+Revert commit H26.3 để UI/service quay lại đọc snapshot `Job`. Chỉ chạy Alembic
+downgrade khi bảng `job_events` chưa chứa dữ liệu cần giữ; nếu đã có production
+data thì giữ migration/table và tắt phần đọc mới, không xoá lịch sử support.
+
+### Còn tồn đọng
+
+- Chưa chạy PostgreSQL restore drill thật vì hạng mục này không có mật khẩu/
+  phiên PostgreSQL superuser; SQLite migration restore và contract test đã PASS.
+- Chưa deploy; production chưa đổi schema/runtime.
+- SLO/ngưỡng alert chính thức và load/soak nằm ở H26.11 Phase 4.
+
+### Việc tiếp theo
+
+1. H26.4 Phase 2: Marketplace card/taxonomy/lifecycle/design system.
+2. Hợp nhất bề mặt Thumbnail vào Tạo ảnh AI nhưng giữ job/history/redirect cũ.
+3. Chỉ chuyển Upscale Phase 3.1 sau browser matrix Phase 2 PASS.
+
 ## 2026-08-08 — H26.2: Phase 0 surface/lifecycle PASS
 
 - **Mục tiêu:** bỏ/ẩn ba tool theo quyết định A mà không phá runtime, workflow

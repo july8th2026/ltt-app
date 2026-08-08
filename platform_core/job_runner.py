@@ -22,7 +22,9 @@ from contextlib import contextmanager
 from typing import Optional
 
 from platform_core import jobs as jobq
+from platform_core import job_events
 from platform_core.db import get_session
+from platform_core.i18n import N_
 from platform_core.models import JOB_CANCELLED, JOB_ERROR, Job
 
 log = logging.getLogger(__name__)
@@ -39,6 +41,7 @@ GPU_HEARTBEAT_S = 60.0
 # Mọi GPU đều bận thì hoãn job bao lâu trước khi thử lại. Đủ dài để không quay
 # vòng đốt CPU, đủ ngắn để người dùng không thấy job đứng im.
 GPU_RETRY_DELAY_S = 20
+EVENT_PURGE_INTERVAL_S = 6 * 60 * 60
 
 
 class JobContext:
@@ -227,6 +230,11 @@ def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
             job.worker_id = ""
             job.next_run_at = datetime.now(timezone.utc) + timedelta(
                 seconds=GPU_RETRY_DELAY_S)
+            job_events.append(
+                db, job, "resource_wait", public_message=N_("Đang chờ tài nguyên xử lý."),
+                details={"delay_seconds": GPU_RETRY_DELAY_S,
+                         "status": JOB_QUEUED}, level="warning",
+            )
             db.commit()
     log.info("job %s (%s) hoãn %ss: mọi GPU đang bận",
              job_id[:8], job_type, GPU_RETRY_DELAY_S)
@@ -311,8 +319,17 @@ def run_forever(worker_id: str, *, stop=None) -> None:
     sẽ tự nhặt lại job mà worker chết để lại, không cần ai can thiệp.
     """
     log.info("worker %s bat dau", worker_id)
+    next_event_purge = 0.0
     while stop is None or not stop():
         try:
+            if time.monotonic() >= next_event_purge:
+                for db in _one_session():
+                    removed = job_events.purge_expired(db)
+                    db.commit()
+                    if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
+                        log.info("don job event het han: customer=%s internal=%s",
+                                 removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
+                next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()

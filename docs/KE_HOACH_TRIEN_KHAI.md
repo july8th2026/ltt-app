@@ -1762,8 +1762,11 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   `customer_visible`; Kịch bản + Media runtime-only, landing 308 sang Canvas;
   Demo admin-only/customer 404; build lại Canvas, browser anonymous/customer/
   operator PASS, console 0, full `python tools\gate.py` PASS 9/9.
-- [ ] H26.3 Phase 1: `JobEvent`, timeline/log/redaction/retention, History dùng
-  chung cho từng tool và Jobs toàn cục.
+- [x] H26.3 Phase 1 — 2026-08-08: `JobEvent` append-only + redaction/retention
+  365/30 ngày; lifecycle event và credit settle/refund dùng chung; History API,
+  Jobs filter/date/cursor/timeline/lineage/artifact/retry/cancel; metrics/operator
+  log; migration restore drill, browser customer/cross-tenant/operator/mobile và
+  full `python tools\gate.py` PASS 9/9.
 - [ ] H26.4 Phase 2: marketplace card/taxonomy/lifecycle/design system và hợp
   nhất Thumbnail vào Tạo ảnh AI.
 - [ ] H26.5 Phase 3.1: Upscale Video — controls, compare sync, queue/download,

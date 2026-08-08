@@ -237,6 +237,14 @@ def quyet_toan(db: DbSession, user_id: str, job_id: str, actual: int) -> None:
     dieu_chinh = held - actual
     _ghi(db, user_id=user_id, delta=dieu_chinh, kind=CREDIT_SETTLE, job_id=job_id,
          note=f"quyet toan job {job_id[:8]}: giu {held}, that {actual}")
+    from platform_core import job_events
+    from platform_core.models import Job
+    job = db.get(Job, job_id)
+    if job is not None:
+        job_events.append(
+            db, job, "credit_settled", visibility=job_events.INTERNAL,
+            details={"credit": int(actual)}, event_key="credit-settled",
+        )
 
 
 def hoan(db: DbSession, user_id: str, job_id: str) -> None:
@@ -252,3 +260,12 @@ def hoan(db: DbSession, user_id: str, job_id: str) -> None:
         return
     _ghi(db, user_id=user_id, delta=held, kind=CREDIT_REFUND, job_id=job_id,
          note=f"hoan job {job_id[:8]}: tra lai {held}")
+    from platform_core import job_events
+    from platform_core.i18n import N_
+    from platform_core.models import Job
+    job = db.get(Job, job_id)
+    if job is not None:
+        job_events.append(
+            db, job, "credit_refunded", public_message=N_("Credit đã được hoàn lại."),
+            details={"status": job.status}, event_key="credit-refunded",
+        )

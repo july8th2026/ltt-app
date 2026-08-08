@@ -1,0 +1,156 @@
+"""Timeline và nhật ký debug dùng chung cho mọi job của nền tảng.
+
+Hợp đồng này cố ý không biết tên app. App/worker chỉ phát event có mã ổn định;
+UI khách hàng chỉ đọc event ``customer``. Event ``internal`` dành cho operator
+và vẫn được lọc PII/bí mật trước khi ghi để log không trở thành kho secret thứ
+hai.
+"""
+from __future__ import annotations
+
+import re
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from sqlalchemy import delete, select, update
+from sqlalchemy.orm import Session as DbSession
+
+from platform_core.models import Job, JobEvent
+
+CUSTOMER = "customer"
+INTERNAL = "internal"
+_VISIBILITIES = {CUSTOMER, INTERNAL}
+_LEVELS = {"debug", "info", "warning", "error"}
+_DENY_KEYS = {
+    "authorization", "cookie", "set_cookie", "password", "password_hash",
+    "token", "secret", "api_key", "credential", "email", "goal", "prompt",
+    "params", "plan", "checkpoint", "request", "body", "provider_payload",
+}
+_CUSTOMER_KEYS = {
+    "percent", "attempt", "max_attempts", "delay_seconds", "artifact_count",
+    "related_job_id", "status",
+}
+_EMAIL = re.compile(r"(?i)\b[^\s@]+@[^\s@]+\.[^\s@]+\b")
+_SECRET_TEXT = re.compile(
+    r"(?i)(bearer\s+\S+|(?:api[_ -]?key|token|password|secret|credential)"
+    r"\s*[:=]\s*\S+)"
+)
+_event_write_failures = 0
+
+
+def _safe_text(value: Any, limit: int = 2000) -> str:
+    text = str(value or "")
+    text = _EMAIL.sub("[Filtered email]", text)
+    text = _SECRET_TEXT.sub("[Filtered]", text)
+    return text[:limit]
+
+
+def redact_details(value: Any) -> Any:
+    """Lọc đệ quy metadata kỹ thuật trước khi nó chạm CSDL."""
+    if isinstance(value, dict):
+        cleaned = {}
+        for key, item in value.items():
+            normalized = str(key).lower().replace("-", "_")
+            cleaned[str(key)[:80]] = (
+                "[Filtered]" if normalized in _DENY_KEYS else redact_details(item)
+            )
+        return cleaned
+    if isinstance(value, (list, tuple)):
+        return [redact_details(item) for item in value[:50]]
+    if isinstance(value, str):
+        return _safe_text(value)
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    return _safe_text(value)
+
+
+def _customer_details(details: dict | None) -> dict:
+    source = details or {}
+    return {key: redact_details(value) for key, value in source.items()
+            if key in _CUSTOMER_KEYS}
+
+
+def append(
+    db: DbSession, job: Job, event_code: str, *, public_message: str = "",
+    details: dict | None = None, level: str = "info", visibility: str = CUSTOMER,
+    event_key: str | None = None,
+) -> JobEvent:
+    """Thêm một event và cấp sequence tăng dần. Không commit.
+
+    ``event_key`` là khoá idempotency theo job. Khi cùng event được phát lại do
+    retry HTTP/worker, hàm trả event cũ và không tạo dòng thứ hai.
+    """
+    if visibility not in _VISIBILITIES:
+        raise ValueError("invalid job event visibility")
+    if level not in _LEVELS:
+        raise ValueError("invalid job event level")
+    code = str(event_code or "").strip().lower()
+    if not code or len(code) > 48:
+        raise ValueError("invalid job event code")
+    key = (str(event_key).strip()[:128] if event_key else None)
+    if key:
+        old = db.execute(select(JobEvent).where(
+            JobEvent.job_id == job.id, JobEvent.event_key == key,
+        )).scalars().first()
+        if old is not None:
+            return old
+
+    # Cấp số bằng UPDATE nguyên tử trên chính dòng job. Hai worker/request chạy
+    # đồng thời sẽ tuần tự hoá ở CSDL, không cùng đọc rồi cùng ghi một sequence.
+    next_sequence = db.execute(
+        update(Job).where(Job.id == job.id)
+        .values(event_sequence=Job.event_sequence + 1)
+        .returning(Job.event_sequence)
+    ).scalar_one()
+    job.event_sequence = int(next_sequence)
+    event = JobEvent(
+        job_id=job.id,
+        user_id=job.user_id,
+        app_slug=job.app_slug,
+        sequence=int(next_sequence),
+        event_code=code,
+        level=level,
+        visibility=visibility,
+        public_message=_safe_text(public_message, 255),
+        details=(_customer_details(details) if visibility == CUSTOMER
+                 else redact_details(details or {})),
+        correlation_id=str(job.correlation_id or "")[:36],
+        event_key=key,
+    )
+    db.add(event)
+    try:
+        db.flush()
+    except Exception:
+        global _event_write_failures
+        _event_write_failures += 1
+        raise
+    return event
+
+
+def event_write_failures() -> int:
+    return _event_write_failures
+
+
+def timeline(db: DbSession, job_id: str, *, include_internal: bool = False,
+             limit: int = 200) -> list[JobEvent]:
+    stmt = select(JobEvent).where(JobEvent.job_id == job_id)
+    if not include_internal:
+        stmt = stmt.where(JobEvent.visibility == CUSTOMER)
+    return list(db.execute(
+        stmt.order_by(JobEvent.sequence).limit(max(1, min(int(limit), 500)))
+    ).scalars().all())
+
+
+def purge_expired(db: DbSession, *, now: datetime | None = None,
+                  customer_days: int = 365, internal_days: int = 30) -> dict[str, int]:
+    """Xoá event hết hạn theo lớp dữ liệu; artifact có chính sách riêng."""
+    current = now or datetime.now(timezone.utc)
+    customer_cutoff = current - timedelta(days=max(1, customer_days))
+    internal_cutoff = current - timedelta(days=max(1, internal_days))
+    customer = db.execute(delete(JobEvent).where(
+        JobEvent.visibility == CUSTOMER, JobEvent.created_at < customer_cutoff,
+    )).rowcount or 0
+    internal = db.execute(delete(JobEvent).where(
+        JobEvent.visibility == INTERNAL, JobEvent.created_at < internal_cutoff,
+    )).rowcount or 0
+    db.flush()
+    return {CUSTOMER: int(customer), INTERNAL: int(internal)}

@@ -3480,3 +3480,90 @@ msgstr "🔧 Settings"
 msgid "🧪 Chạy thử một job"
 msgstr "🧪 Run a test job"
 
+#: server/templates/jobs.html
+msgid "Từ ngày"
+msgstr "From date"
+
+#: server/templates/jobs.html
+msgid "Đến ngày"
+msgstr "To date"
+
+#: server/templates/jobs.html
+msgid "Xem thêm"
+msgstr "View more"
+
+#: server/templates/job_detail.html
+msgid "Các lần chạy liên quan"
+msgstr "Related runs"
+
+#: server/templates/job_detail.html
+msgid "Lần trước"
+msgstr "Previous run"
+
+#: server/templates/job_detail.html
+msgid "Lần thử lại"
+msgstr "Retry"
+
+#: server/templates/job_detail.html
+msgid "Mã hỗ trợ"
+msgstr "Support ID"
+
+#: server/templates/_job_progress.html
+msgid "Không thể hoàn tất."
+msgstr "Unable to complete."
+
+#: server/templates/_job_progress.html
+msgid "Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành."
+msgstr "You can retry or send the support ID to the operations team."
+
+#: server/templates/_job_progress.html
+msgid "Lịch sử xử lý"
+msgstr "Processing history"
+
+#: platform_core/jobs.py
+msgid "Đã tiếp nhận yêu cầu."
+msgstr "Request received."
+
+#: platform_core/jobs.py
+msgid "Bắt đầu xử lý."
+msgstr "Processing started."
+
+#: platform_core/jobs.py
+msgid "Đang xử lý."
+msgstr "Processing."
+
+#: platform_core/jobs.py
+msgid "Đã hoàn tất."
+msgstr "Completed."
+
+#: platform_core/jobs.py
+msgid "Đã hủy theo yêu cầu."
+msgstr "Cancelled as requested."
+
+#: platform_core/jobs.py
+msgid "Gặp gián đoạn tạm thời, hệ thống sẽ tự thử lại."
+msgstr "A temporary interruption occurred. The system will retry automatically."
+
+#: platform_core/jobs.py
+msgid "Không thể hoàn tất yêu cầu. Bạn có thể thử lại."
+msgstr "The request could not be completed. You can retry."
+
+#: platform_core/job_runner.py
+msgid "Đang chờ tài nguyên xử lý."
+msgstr "Waiting for processing resources."
+
+#: platform_core/job_runner.py
+msgid "Credit đã được hoàn lại."
+msgstr "Credits have been refunded."
+
+#: server/templates/job_detail.html
+msgid "tạo lúc"
+msgstr "created at"
+
+#: server/templates/_job_progress.html
+msgid "xong"
+msgstr "done"
+
+#: server/templates/_job_progress.html
+msgid "Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất."
+msgstr "Open Result files below; reload the page if the job has just completed."

@@ -119,6 +119,8 @@ def main() -> int:
         # `test_155` doi chieu voi luoc do that, nen them mot UNIQUE moi ma
         # quen dua vao day se bao do ngay - khong doi toi luc khoi phuc that.
         for ten in ("uq_gpu_lease_host_uuid",
+                    "uq_job_events_job_sequence",
+                    "uq_job_events_job_event_key",
                     "uq_ommi_scene_version",
                     "uq_app_access_user_app",
                     "uq_ommi_prompt_version_target",

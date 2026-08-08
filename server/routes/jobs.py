@@ -15,13 +15,14 @@ from platform_core.i18n import _ as _t
 import copy
 import mimetypes
 import os
+from datetime import date, datetime, time, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
-from server.deps import user_hien_tai
+from server.deps import require_operator, user_hien_tai
 from server.templating import templates
 
 router = APIRouter(tags=["jobs"])
@@ -75,9 +76,58 @@ def _job_cua_user(request: Request, job_id: str):
         except StopIteration: pass
 
 
+def _events_cua_job(job_id: str, *, include_internal: bool = False):
+    from platform_core import job_events
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        rows = job_events.timeline(db, job_id, include_internal=include_internal)
+        for row in rows:
+            db.expunge(row)
+        return rows
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _lineage_cua_user(user_id: str, job):
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    from sqlalchemy import select
+    gen = get_session(); db = next(gen)
+    try:
+        ids = [job.retry_of_id] if job.retry_of_id else []
+        children = db.execute(select(Job).where(
+            Job.user_id == user_id, Job.retry_of_id == job.id,
+        ).order_by(Job.created_at)).scalars().all()
+        if ids:
+            parent = db.get(Job, ids[0])
+            parent = parent if parent is not None and parent.user_id == user_id else None
+        else:
+            parent = None
+        rows = ([parent] if parent else []) + list(children)
+        for row in rows:
+            db.expunge(row)
+        return parent, list(children)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _parse_date(value: str, *, end: bool = False):
+    if not value:
+        return None
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        return None
+    return datetime.combine(parsed, time.max if end else time.min, tzinfo=timezone.utc)
+
+
 @router.get("/jobs", response_class=HTMLResponse)
 def danh_sach(request: Request, status: str = Query(""), app: str = Query(""),
-               user: str = Depends(require_login)):
+               date_from: str = Query(""), date_to: str = Query(""),
+               cursor: str = Query(""), user: str = Depends(require_login)):
     u = user_hien_tai(request)
     jobs_list = []
     so_du = 0
@@ -85,7 +135,7 @@ def danh_sach(request: Request, status: str = Query(""), app: str = Query(""),
         from platform_core import credit
         from platform_core.db import get_session
         from platform_core.models import Job
-        from sqlalchemy import select
+        from sqlalchemy import distinct, select
         gen = get_session(); db = next(gen)
         try:
             stmt = select(Job).where(Job.user_id == u.id)
@@ -93,7 +143,23 @@ def danh_sach(request: Request, status: str = Query(""), app: str = Query(""),
                 stmt = stmt.where(Job.status == status)
             if app:
                 stmt = stmt.where(Job.app_slug == app[:64])
-            jobs_list = db.execute(stmt.order_by(Job.created_at.desc()).limit(50)).scalars().all()
+            start = _parse_date(date_from)
+            end = _parse_date(date_to, end=True)
+            if start:
+                stmt = stmt.where(Job.created_at >= start)
+            if end:
+                stmt = stmt.where(Job.created_at <= end)
+            if cursor:
+                anchor = db.get(Job, cursor[:36])
+                if anchor is not None and anchor.user_id == u.id:
+                    stmt = stmt.where(Job.created_at < anchor.created_at)
+            rows = db.execute(stmt.order_by(Job.created_at.desc()).limit(51)).scalars().all()
+            jobs_list = rows[:50]
+            next_cursor = jobs_list[-1].id if len(rows) > 50 and jobs_list else ""
+            app_options = list(db.execute(
+                select(distinct(Job.app_slug)).where(Job.user_id == u.id)
+                .order_by(Job.app_slug)
+            ).scalars().all())
             so_du = credit.so_du(db, u.id)
             for j in jobs_list:
                 db.expunge(j)
@@ -105,17 +171,24 @@ def danh_sach(request: Request, status: str = Query(""), app: str = Query(""),
         "user": user, "nav": "jobs", "jobs": jobs_list,
         "so_du": so_du, "co_user_csdl": u is not None,
         "status_filter": status if status in _STATUSES else "", "app_filter": app[:64],
+        "date_from": date_from if _parse_date(date_from) else "",
+        "date_to": date_to if _parse_date(date_to, end=True) else "",
+        "app_options": locals().get("app_options", []),
+        "next_cursor": locals().get("next_cursor", ""),
     })
 
 
 @router.get("/jobs/{job_id}", response_class=HTMLResponse)
 def chi_tiet(request: Request, job_id: str, user: str = Depends(require_login)):
-    _u, job = _job_cua_user(request, job_id)
+    current, job = _job_cua_user(request, job_id)
     if job is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+    retry_parent, retry_children = _lineage_cua_user(current.id, job)
     return templates.TemplateResponse(request, "job_detail.html", {
         "user": user, "nav": "jobs", "job": job, "artifacts": _artifacts(job.result),
+        "events": _events_cua_job(job.id),
+        "retry_parent": retry_parent, "retry_children": retry_children,
         "csrf_token": issue_csrf_token(request),
     })
 
@@ -127,7 +200,52 @@ def tien_do(request: Request, job_id: str, user: str = Depends(require_login)):
     if job is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
-    return templates.TemplateResponse(request, "_job_progress.html", {"job": job})
+    return templates.TemplateResponse(request, "_job_progress.html", {
+        "job": job, "events": _events_cua_job(job.id),
+    })
+
+
+@router.get("/api/jobs")
+def jobs_api(request: Request, status: str = Query(""), app: str = Query(""),
+             date_from: str = Query(""), date_to: str = Query(""),
+             cursor: str = Query(""), limit: int = Query(30, ge=1, le=100),
+             _user: str = Depends(require_login)):
+    """Contract History dùng chung cho các tool; không trả params/result/error."""
+    current = user_hien_tai(request)
+    if current is None:
+        return {"items": [], "next_cursor": ""}
+    from platform_core import job_history
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        rows, next_cursor = job_history.list_owned(
+            db, current.id, app_slug=app, status=status,
+            start=_parse_date(date_from), end=_parse_date(date_to, end=True),
+            cursor=cursor, limit=limit,
+        )
+        return {"items": [job_history.customer_payload(db, row) for row in rows],
+                "next_cursor": next_cursor}
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.get("/api/jobs/{job_id}")
+def job_api(request: Request, job_id: str, _user: str = Depends(require_login)):
+    current = user_hien_tai(request)
+    if current is None:
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+    from platform_core import job_history
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        job = job_history.get_owned(db, current.id, job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+        return job_history.customer_payload(db, job, with_events=True)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
 
 
 @router.post("/jobs/{job_id}/cancel")
@@ -176,7 +294,9 @@ def thu_lai_job(request: Request, job_id: str, csrf_token: str = Form(""),
             new_job = submit_with_credit(
                 db, user_id=u.id, app_slug=old.app_slug, job_type=old.job_type,
                 params=params, dedupe_key=dedupe_key_for(old.job_type, params),
-                max_attempts=old.max_attempts)
+                max_attempts=old.max_attempts,
+                correlation_id=getattr(request.state, "correlation_id", ""),
+                retry_of_id=old.id)
             db.commit()
         except (credit.ThieuCreditError, RegistryError, ValueError) as exc:
             db.rollback()
@@ -186,6 +306,46 @@ def thu_lai_job(request: Request, job_id: str, csrf_token: str = Form(""),
         try: next(gen)
         except StopIteration: pass
     return RedirectResponse(f"/jobs/{new_id}", status_code=303)
+
+
+@router.get("/ops/jobs/{job_id}/events")
+def debug_events(request: Request, job_id: str,
+                 _operator: str = Depends(require_operator)):
+    """Log kỹ thuật đã lọc bí mật; chỉ operator/support được đọc."""
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+        rows = _events_cua_job(job.id, include_internal=True)
+        return {
+            "job_id": job.id,
+            "correlation_id": job.correlation_id,
+            "events": [{
+                "sequence": row.sequence, "code": row.event_code,
+                "level": row.level, "visibility": row.visibility,
+                "message": row.public_message, "details": row.details,
+                "created_at": row.created_at,
+            } for row in rows],
+        }
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.get("/ops/jobs-metrics")
+def jobs_metrics(_request: Request, _operator: str = Depends(require_operator)):
+    from platform_core import job_metrics
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        metrics = job_metrics.snapshot(db)
+        return {"metrics": metrics, "alerts": job_metrics.alerts(metrics)}
+    finally:
+        try: next(gen)
+        except StopIteration: pass
 
 
 @router.get("/jobs/{job_id}/artifacts/{index}")

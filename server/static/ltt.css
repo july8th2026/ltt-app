@@ -310,6 +310,14 @@ html{background:var(--surface-canvas)}
 .job-filters{display:flex;align-items:end;gap:10px;padding:13px;margin:14px 0;border:1px solid var(--line);
   border-radius:var(--radius);background:var(--panel);flex-wrap:wrap}.job-filters label{display:grid;gap:5px;color:var(--muted);font-size:12px}
 .job-filters input,.job-filters select{min-width:170px}.job-table a{font-weight:700}.job-artifacts{margin-top:14px}
+.job-lineage{margin-top:14px}.job-pagination{display:flex;justify-content:center;margin:16px 0}
+.job-correlation{color:var(--muted);font-size:12px}.job-correlation code{user-select:all}
+.job-timeline{border-top:1px solid var(--line);margin-top:18px;padding-top:15px}.job-timeline h2{font-size:15px;margin:0 0 12px}
+.job-timeline ol{list-style:none;margin:0;padding:0;display:grid;gap:0}.job-timeline li{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:start;min-height:48px;position:relative}
+.job-timeline li:not(:last-child)::after{content:"";position:absolute;left:6px;top:14px;bottom:0;width:1px;background:var(--line)}
+.job-event-dot{width:11px;height:11px;border-radius:50%;margin-top:3px;background:var(--accent);box-shadow:0 0 0 3px var(--panel)}
+.job-timeline li.event-warning .job-event-dot{background:var(--warn)}.job-timeline li.event-error .job-event-dot{background:var(--err)}
+.job-timeline li div{display:grid;gap:3px}.job-timeline li strong{font-size:13px;font-weight:600}.job-timeline li small,.job-timeline time{color:var(--muted);font-size:11px}.job-timeline time{white-space:nowrap}
 @media(max-width:640px){.job-filters{align-items:stretch}.job-filters label,.job-filters input,.job-filters select,
   .job-filters .btn{width:100%}.job-table{margin-right:-8px}}
 .settings-intro{margin-bottom:14px}.settings-jump{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}

@@ -281,6 +281,15 @@ class Job(Base):
                                          index=True)
     step_id: Mapped[str] = mapped_column(String(32), default="", nullable=False)
 
+    # Dấu vết dùng chung cho toàn bộ vòng đời job. ``correlation_id`` theo job
+    # (không phụ thuộc một request HTTP ngắn); ``retry_of_id`` dựng lineage mà
+    # không phải đọc lại params; ``event_sequence`` cấp số tăng dần cho timeline.
+    correlation_id: Mapped[str] = mapped_column(
+        String(36), default=_uuid, nullable=False, index=True)
+    retry_of_id: Mapped[str] = mapped_column(
+        String(36), default="", nullable=False, index=True)
+    event_sequence: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     worker_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
@@ -299,6 +308,43 @@ class Job(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"
+
+
+class JobEvent(Base):
+    """Nhật ký append-only của một job, đã tách nội dung khách và nội bộ.
+
+    ``public_message`` là câu an toàn để hiện cho chủ job. Chi tiết kỹ thuật ở
+    ``details`` chỉ dành cho operator/support và luôn đi qua bộ lọc bí mật trước
+    khi ghi. Không lưu params/provider payload vào bảng này.
+    """
+
+    __tablename__ = "job_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    job_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    app_slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_code: Mapped[str] = mapped_column(String(48), nullable=False)
+    level: Mapped[str] = mapped_column(String(12), default="info", nullable=False)
+    visibility: Mapped[str] = mapped_column(
+        String(12), default="customer", nullable=False)
+    public_message: Mapped[str] = mapped_column(
+        String(255), default="", nullable=False)
+    details: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    correlation_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    event_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("job_id", "sequence", name="uq_job_events_job_sequence"),
+        UniqueConstraint("job_id", "event_key", name="uq_job_events_job_event_key"),
+        Index("ix_job_events_job_sequence", "job_id", "sequence"),
+        Index("ix_job_events_user_app_created", "user_id", "app_slug", "created_at"),
+        Index("ix_job_events_visibility_created", "visibility", "created_at"),
+    )
 
 
 class AgentRun(Base):

@@ -29,6 +29,8 @@ from sqlalchemy.orm import Session as DbSession
 
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
                                   Job)
+from platform_core import job_events
+from platform_core.i18n import N_
 
 # Job running quá lâu không đập nhịp bị coi là mồ côi (worker chết).
 ORPHAN_TIMEOUT = timedelta(minutes=5)
@@ -57,7 +59,8 @@ def _aware(dt: Optional[datetime]) -> Optional[datetime]:
 
 def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
            params: dict, dedupe_key: str = "", max_attempts: int = 3,
-           parent_id: str = "", plan_id: str = "", step_id: str = "") -> Job:
+           parent_id: str = "", plan_id: str = "", step_id: str = "",
+           correlation_id: str = "", retry_of_id: str = "") -> Job:
     """Tạo một job ở trạng thái `queued`. KHÔNG commit — caller commit cùng credit.
 
     Nếu `dedupe_key` khác rỗng và đã có một job **chưa kết thúc** (queued/running)
@@ -81,9 +84,16 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         params=params or {}, dedupe_key=dedupe_key,
         max_attempts=max_attempts, status=JOB_QUEUED,
         parent_id=parent_id, plan_id=plan_id, step_id=step_id,
+        retry_of_id=retry_of_id,
     )
+    if correlation_id:
+        job.correlation_id = correlation_id[:36]
     db.add(job)
     db.flush()
+    job_events.append(
+        db, job, "submitted", public_message=N_("Đã tiếp nhận yêu cầu."),
+        details={"status": JOB_QUEUED}, event_key="submitted",
+    )
     return job
 
 
@@ -123,6 +133,17 @@ def claim(db: DbSession, *, worker_id: str,
     row.worker_id = worker_id
     row.started_at = row.started_at or now
     row.heartbeat_at = now
+    attempt = int(row.attempts or 0) + 1
+    job_events.append(
+        db, row, "claimed", visibility=job_events.INTERNAL,
+        details={"worker_id": worker_id, "attempt": attempt},
+        event_key=f"claimed:{attempt}",
+    )
+    job_events.append(
+        db, row, "started", public_message=N_("Bắt đầu xử lý."),
+        details={"attempt": attempt, "max_attempts": row.max_attempts,
+                 "status": JOB_RUNNING}, event_key=f"started:{attempt}",
+    )
     db.flush()
     return row
 
@@ -138,6 +159,11 @@ def set_progress(db: DbSession, job: Job, percent: int, message: str = "") -> No
     if message:
         job.progress_msg = message[:255]
     job.heartbeat_at = _bay_gio()
+    job_events.append(
+        db, job, "progress", public_message=message or N_("Đang xử lý."),
+        details={"percent": job.progress, "status": job.status},
+        event_key=f"progress:{job.progress}:{(message or '')[:40]}",
+    )
     db.flush()
 
 
@@ -146,6 +172,10 @@ def complete(db: DbSession, job: Job, result: dict) -> None:
     job.result = result
     job.progress = 100
     job.finished_at = _bay_gio()
+    job_events.append(
+        db, job, "completed", public_message=N_("Đã hoàn tất."),
+        details={"status": JOB_DONE}, event_key="completed",
+    )
     db.flush()
 
 
@@ -160,6 +190,10 @@ def cancel(db: DbSession, job: Job) -> bool:
     job.status = JOB_CANCELLED
     job.progress_msg = "đã hủy"
     job.finished_at = _bay_gio()
+    job_events.append(
+        db, job, "cancelled", public_message=N_("Đã hủy theo yêu cầu."),
+        details={"status": JOB_CANCELLED}, level="warning", event_key="cancelled",
+    )
     db.flush()
     return True
 
@@ -177,9 +211,27 @@ def fail(db: DbSession, job: Job, error: str) -> None:
         job.status = JOB_QUEUED
         job.next_run_at = _bay_gio() + timedelta(seconds=cho)
         job.worker_id = ""
+        job_events.append(
+            db, job, "retry_scheduled",
+            public_message=N_("Gặp gián đoạn tạm thời, hệ thống sẽ tự thử lại."),
+            details={"attempt": job.attempts, "max_attempts": job.max_attempts,
+                     "delay_seconds": cho, "status": JOB_QUEUED},
+            level="warning", event_key=f"retry:{job.attempts}",
+        )
     else:
         job.status = JOB_ERROR
         job.finished_at = _bay_gio()
+        job_events.append(
+            db, job, "failed",
+            public_message=N_("Không thể hoàn tất yêu cầu. Bạn có thể thử lại."),
+            details={"attempt": job.attempts, "max_attempts": job.max_attempts,
+                     "status": JOB_ERROR}, level="error", event_key="failed",
+        )
+    job_events.append(
+        db, job, "attempt_error", visibility=job_events.INTERNAL, level="error",
+        details={"attempt": job.attempts, "error": error},
+        event_key=f"attempt-error:{job.attempts}",
+    )
     db.flush()
 
 
@@ -204,6 +256,11 @@ def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> in
         if hb is not None and hb > nguong:
             continue      # vẫn còn sống
         n += 1
+        job_events.append(
+            db, job, "orphan_reclaimed", visibility=job_events.INTERNAL,
+            level="warning", details={"worker_id": job.worker_id},
+            event_key=f"orphan:{int(job.attempts or 0) + 1}",
+        )
         fail(db, job, "Worker mất kết nối giữa chừng (job mồ côi, nhặt lại).")
     db.flush()
     return n

@@ -40,6 +40,7 @@ def dedupe_key_for(job_type: str, params: dict) -> str:
 def submit_with_credit(
     db: DbSession, *, user_id: str, app_slug: str, job_type: str,
     params: dict, dedupe_key: str = "", max_attempts: int = 3,
+    correlation_id: str = "", retry_of_id: str = "",
 ) -> Job:
     """Nộp job và giữ chỗ credit trong cùng transaction. KHÔNG commit — caller
     commit (nhờ vậy job + credit cùng thành hoặc cùng bại).
@@ -52,7 +53,8 @@ def submit_with_credit(
     estimate = int(credit_for(job_type, params))   # raise sớm nếu không có giá
 
     job = jobs.submit(db, user_id=user_id, app_slug=app_slug, job_type=job_type,
-                      params=params, dedupe_key=dedupe_key, max_attempts=max_attempts)
+                      params=params, dedupe_key=dedupe_key, max_attempts=max_attempts,
+                      correlation_id=correlation_id, retry_of_id=retry_of_id)
 
     # Chỉ giữ chỗ cho job MỚI. Dedupe trả job cũ → đã giữ rồi → bỏ qua.
     if credit.so_da_giu(db, job.id) == 0 and estimate > 0:

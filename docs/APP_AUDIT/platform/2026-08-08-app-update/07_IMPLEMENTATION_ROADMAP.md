@@ -3,7 +3,8 @@
 Thực hiện **tuần tự**, mỗi phase phải PASS mới sang phase sau. Không deploy trong
 audit dossier này.
 
-**Tiến độ 2026-08-08:** Phase 0 **PASS**; Phase 1 là hạng mục đang mở. Chưa deploy.
+**Tiến độ 2026-08-08:** Phase 0 và Phase 1 **PASS**; Phase 2 là hạng mục tiếp
+theo. Chưa deploy.
 
 ## Phase 0 - Scope, surface và rollback (P0)
 
@@ -27,6 +28,10 @@ Playwright customer/operator 0 console error/warning; full gate 9/9 PASS.
 **Rollback:** revert manifest/route audience commit; không migration dữ liệu.
 
 ## Phase 1 - Job history, event log và support (P1 core)
+
+**Kết quả:** PASS ngày 2026-08-08. Migration/restore SQLite PASS; event lifecycle,
+redaction, ownership, retention, refund và metrics có test; Playwright desktop/
+mobile customer + cross-tenant + operator PASS, console sạch; full gate 9/9 PASS.
 
 1. Migration `JobEvent` append-only: sequence, job/app/user, level, event code,
    public message, redacted metadata, correlation ID, timestamp; index theo

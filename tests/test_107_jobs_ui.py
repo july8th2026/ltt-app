@@ -23,6 +23,7 @@ def test_job_routes_have_owner_actions_and_opaque_artifact_index():
     assert '@router.post("/jobs/{job_id}/cancel")' in source
     assert '@router.post("/jobs/{job_id}/retry")' in source
     assert '@router.get("/jobs/{job_id}/artifacts/{index}")' in source
+    assert '@router.get("/ops/jobs/{job_id}/events")' in source
     assert "job.user_id != u.id" in source
     assert "old.user_id != u.id" in source
 
@@ -32,6 +33,9 @@ def test_job_templates_have_filters_actions_progress_and_artifacts():
     detail = (ROOT / "server" / "templates" / "job_detail.html").read_text(encoding="utf-8")
     progress = (ROOT / "server" / "templates" / "_job_progress.html").read_text(encoding="utf-8")
     assert 'name="status"' in jobs and 'name="app"' in jobs
+    assert 'name="date_from"' in jobs and 'name="date_to"' in jobs
     assert "/cancel" in detail and "/retry" in detail and "/artifacts/" in detail
     assert 'role="progressbar"' in progress and 'aria-live="polite"' in progress
+    assert "job-timeline" in progress and "job.correlation_id" in detail
     assert "job.result | tojson" not in progress
+    assert "job.error" not in progress

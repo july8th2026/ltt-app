@@ -76,6 +76,36 @@ def test_job_hien_o_trang_viec_cua_toi(env):
                 follow_redirects=False)
     html = client.get("/jobs").text
     assert "demo.reverse" in html
+    assert 'name="date_from"' in html and 'name="date_to"' in html
+
+
+def test_timeline_owner_va_debug_chi_operator(env):
+    client, _ = env
+    _login(client, "a@x.com")
+    submitted = client.post("/demo/queue", data={
+        "text": "timeline", "csrf_token": _demo_csrf(client),
+    }, follow_redirects=False)
+    job_path = submitted.headers["location"]
+    job_id = job_path.rsplit("/", 1)[-1]
+
+    detail = client.get(job_path)
+    assert detail.status_code == 200
+    assert "Lịch sử xử lý" in detail.text
+    assert "Đã tiếp nhận yêu cầu" in detail.text
+    history = client.get("/api/jobs?app=demo&status=queued")
+    assert history.status_code == 200
+    assert history.json()["items"][0]["id"] == job_id
+    assert "params" not in history.json()["items"][0]
+    api_detail = client.get(f"/api/jobs/{job_id}")
+    assert api_detail.status_code == 200
+    assert api_detail.json()["events"][0]["code"] == "submitted"
+    debug = client.get(f"/ops/jobs/{job_id}/events")
+    assert debug.status_code == 200
+    assert debug.json()["events"][0]["code"] == "submitted"
+
+    _login(client, "customer@x.com")
+    assert client.get(f"/ops/jobs/{job_id}/events").status_code == 403
+    assert client.get(f"/api/jobs/{job_id}").status_code == 404
 
 
 def test_A_khong_doc_duoc_job_cua_B(env):
@@ -142,11 +172,14 @@ def test_owner_huy_job_va_thu_lai_tao_job_moi(env):
 
     import platform_core.db as dbmod
     from platform_core import credit
-    from platform_core.models import JOB_CANCELLED, Job
+    from platform_core.models import JOB_CANCELLED, Job, JobEvent
     gen = dbmod.get_session(); db = next(gen)
     try:
         assert db.get(Job, old_id).status == JOB_CANCELLED
         assert credit.so_du(db, ua_id) == 100  # hold của job cũ đã hoàn
+        assert [event.event_code for event in db.query(JobEvent).filter_by(
+            job_id=old_id).order_by(JobEvent.sequence)] == [
+                "submitted", "cancelled", "credit_refunded"]
     finally:
         try: next(gen)
         except StopIteration: pass

@@ -9,15 +9,23 @@
     {% elif job.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
     {% elif job.status == 'cancelled' %}<span class="badge b-grey"><span class="dot"></span>{{ _("Đã hủy") }}</span>
     {% else %}<span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>{% endif %}
-    <span class="muted">{{ job.progress }}%{% if job.progress_msg %} — {{ job.progress_msg }}{% endif %}</span>
+    <span class="muted">{{ job.progress }}%{% if job.progress_msg %} — {{ _(job.progress_msg) }}{% endif %}</span>
   </div>
   <div style="height:8px;background:var(--panel2);border-radius:5px;margin:8px 0;overflow:hidden;">
     <div style="height:100%;width:{{ job.progress }}%;background:var(--accent);" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ job.progress }}"></div>
   </div>
   {% if job.status == 'done' and job.result %}
     <div class="alert alert-ok"><strong>{{ _("Kết quả đã sẵn sàng.") }}</strong>
-      Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất.</div>
+      {{ _("Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất.") }}</div>
   {% elif job.status == 'error' %}
-    <div class="alert alert-err"><strong>{{ _("Lỗi:") }}</strong> {{ job.error }}</div>
+    <div class="alert alert-err"><strong>{{ _("Không thể hoàn tất.") }}</strong> {{ _("Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành.") }}</div>
   {% endif %}
+  {% if events %}<section class="job-timeline" aria-label="{{ _('Lịch sử xử lý') }}">
+    <h2>{{ _("Lịch sử xử lý") }}</h2>
+    <ol>{% for event in events %}<li class="event-{{ event.level }}">
+      <span class="job-event-dot" aria-hidden="true"></span>
+      <div><strong>{{ _(event.public_message) }}</strong>{% if event.details.percent is defined %}<small>{{ event.details.percent }}%</small>{% endif %}</div>
+      <time datetime="{{ event.created_at.isoformat() }}">{{ event.created_at.strftime('%H:%M:%S %d/%m') }}</time>
+    </li>{% endfor %}</ol>
+  </section>{% endif %}
 </div>
