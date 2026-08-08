@@ -14,6 +14,16 @@ TEXT_MIMES = {"text/plain", "text/markdown", "text/csv", "application/json"}
 IMAGE_MIMES = {"image/png", "image/jpeg", "image/webp"}
 
 
+def public_model_label(model_id: str) -> str:
+    """Tên theo kết quả khách hàng; không lộ mã provider/engine trong UI."""
+    key = (model_id or "").strip().lower()
+    if key.endswith("-sol"):
+        return _t('Chất lượng cao')
+    if key.endswith("-terra"):
+        return _t('Nhanh')
+    return _t('Tiêu chuẩn')
+
+
 def parse_attachment(data: bytes, mime: str, filename: str) -> dict:
     if not data or len(data) > MAX_FILE_BYTES:
         raise ValueError(_t('Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB.'))

@@ -13,6 +13,7 @@ from __future__ import annotations
 from platform_core.i18n import _ as _t
 import io
 import json
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -29,6 +30,7 @@ from server.deps import user_hien_tai
 from server.templating import templates
 
 router = APIRouter(tags=["chataistudio"])
+logger = logging.getLogger(__name__)
 
 
 # ── DB helpers (per-user isolation) ───────────────────────────────────────────
@@ -73,9 +75,32 @@ def _models_cached():
         return []
 
 
+def _public_models(models: list) -> list[dict]:
+    from apps.chataistudio.features import public_model_label
+    rows = []
+    for model in models:
+        model_id = str(model.get("id") or "").strip()
+        if model_id:
+            rows.append({"id": model_id, "model_label": public_model_label(model_id)})
+    return rows
+
+
+def _message_view(message) -> dict:
+    created = getattr(message, "created_at", None)
+    return {
+        "role": message.role,
+        "content": message.content,
+        "image_key": message.image_key,
+        "image_prompt": message.image_prompt,
+        "tokens_total": int(getattr(message, "tokens_total", 0) or 0),
+        "created_at": created.strftime("%H:%M · %d/%m/%Y") if created else "",
+    }
+
+
 # ── Trang chat ────────────────────────────────────────────────────────────────
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, c: str = "", q: str = "", user: str = Depends(require_login)):
+    from apps.chataistudio.features import public_model_label
     u = user_hien_tai(request)
     if u is None:
         return RedirectResponse("/login?next=/chataistudio", status_code=303)
@@ -92,10 +117,11 @@ def page(request: Request, c: str = "", q: str = "", user: str = Depends(require
         convs = _list_convs(db, u.id, q)
         active = _conv_of_user(db, u.id, c) if c else None
         if active is not None:
-            messages = [{"role": m.role, "content": m.content, "image_key": m.image_key,
-                         "image_prompt": m.image_prompt} for m in _messages(db, active.id)]
-        convs = [{"id": x.id, "title": x.title or "(chưa đặt tên)", "model": x.model} for x in convs]
+            messages = [_message_view(m) for m in _messages(db, active.id)]
+        convs = [{"id": x.id, "title": x.title or _t('Hội thoại mới'),
+                  "model_label": public_model_label(x.model)} for x in convs]
         active = {"id": active.id, "title": active.title, "model": active.model,
+                  "model_label": public_model_label(active.model),
                   "custom_instructions": active.custom_instructions} if active else None
     finally:
         try: next(gen)
@@ -104,7 +130,7 @@ def page(request: Request, c: str = "", q: str = "", user: str = Depends(require
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request), "user_is_admin": user_is_admin,
         "logged_in": logged_in, "convs": convs, "active": active,
-        "messages": messages, "models": _models_cached(), "query": q[:100],
+        "messages": messages, "models": _public_models(_models_cached()), "query": q[:100],
     })
 
 
@@ -167,13 +193,13 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
         return StreamingResponse(g(), media_type="text/event-stream")
 
     if not verify_csrf_token(request, csrf_token):
-        return _err_stream("Phiên hết hạn — tải lại trang.")
+        return _err_stream(_t('Phiên hết hạn — tải lại trang.'))
     u = user_hien_tai(request)
     if u is None:
-        return _err_stream("Cần đăng nhập bằng tài khoản người dùng.")
+        return _err_stream(_t('Cần đăng nhập bằng tài khoản người dùng.'))
     msg = (message or "").strip()
     if not msg and not any(x.filename for x in attachments):
-        return _err_stream("Tin nhắn trống.")
+        return _err_stream(_t('Tin nhắn trống.'))
     from apps.chataistudio.features import MAX_FILES, context_message, parse_attachment
     parsed = []
     try:
@@ -216,7 +242,8 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             db.add(ChatMessage(conversation_id=conv.id, user_id=u.id, role="user",
                                content="", image_key=ikey, image_prompt=item["name"]))
         if not conv.title:
-            conv.title = msg[:48]
+            conv.title = (msg or (parsed[0]["name"] if parsed else _t('Hội thoại mới')))[:48]
+        public_title = conv.title
         conv_id2 = conv.id
         cthread = conv.codex_thread_id
         conv_settings = {"model": conv.model,
@@ -250,22 +277,34 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             return
 
         reply = ""
+        reply_saved = False
         n_images = 0
+        image_denied = False
         tokens_total = 0
         fin = {"done": False}   # đã settle/refund chưa (đảm bảo đúng MỘT lần)
 
         def _finalize_settle():
             # Quyết toán theo phần ĐÃ giao (text + số ảnh đã lưu). Idempotent theo hold.
             if fin["done"]:
-                return
+                return cost.settle_credit(n_images), None
             fin["done"] = True
-            _settle(owner, umsg_id, cost.settle_credit(n_images), conv_id2)
+            actual = cost.settle_credit(n_images)
+            balance = _settle(owner, umsg_id, actual, conv_id2)
+            logger.info(
+                "chat_turn_settled user=%s conv=%s turn=%s credit=%s balance=%s tokens=%s images=%s",
+                owner[:8], conv_id2[:8], umsg_id[:8], actual, balance,
+                tokens_total, n_images,
+            )
+            return actual, balance
 
         def _finalize_refund():
             if fin["done"]:
-                return
+                return 0, None
             fin["done"] = True
-            _refund(owner, umsg_id)
+            balance = _refund(owner, umsg_id)
+            logger.info("chat_turn_refunded user=%s conv=%s turn=%s balance=%s",
+                        owner[:8], conv_id2[:8], umsg_id[:8], balance)
+            return 0, balance
 
         try:
             async for ev in sc.turn_stream(tid, owner, conv_id2, model_message,
@@ -282,14 +321,20 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
                 elif m == "image":
                     pl = ev.get("payload") or {}
                     abspath = pl.get("abs_path")
-                    # Cap số ảnh/lượt (chống 1 lượt đẩy balance âm nhiều ảnh × 20cr).
+                    # Mỗi ảnh phải giữ thêm credit TRƯỚC khi giao. Chỉ giữ 3 credit
+                    # ban đầu rồi quyết toán 23+ sẽ làm số dư âm khi tài khoản ít tiền.
                     if abspath and n_images < cost.MAX_IMAGES_PER_TURN:
+                        if not _hold_more(owner, umsg_id, cost.CREDIT_PER_IMAGE):
+                            image_denied = True
+                            yield _sse({"type": "warning", "message": _t(
+                                'Không đủ credit để nhận thêm ảnh; phần chữ vẫn được giữ.')})
+                            continue
                         try:
                             with open(abspath, "rb") as f:
                                 data = f.read()
-                            n_images += 1
                             ikey = f"chataistudio/{owner}/{conv_id2}/{uuid.uuid4().hex}.png"
                             storage.put(ikey, io.BytesIO(data), content_type="image/png")
+                            n_images += 1
                             _save_msg(owner, conv_id2, "assistant", "", ikey,
                                       pl.get("prompt", ""))
                             yield _sse({"type": "image",
@@ -298,24 +343,49 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
                         except Exception:  # noqa: BLE001
                             pass
                 elif m == "error":
-                    _finalize_refund()
+                    if reply.strip():
+                        _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
+                        reply_saved = True
+                    if reply.strip() or n_images:
+                        _finalize_settle()
+                    else:
+                        _finalize_refund()
                     yield _sse({"type": "error",
-                                "message": (ev.get("payload") or {}).get("message") or "Lỗi"})
+                                "message": (ev.get("payload") or {}).get("message") or _t('Có lỗi xảy ra.')})
                     return
             # Xong: lưu tin assistant (text) + quyết toán credit + cập nhật hội thoại.
             if reply.strip():
                 _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
-            _finalize_settle()
-            yield _sse({"type": "done"})
+                reply_saved = True
+            if reply.strip() or n_images:
+                actual, balance = _finalize_settle()
+            else:
+                actual, balance = _finalize_refund()
+            yield _sse({"type": "done", "credit_cost": actual, "balance": balance,
+                        "tokens_total": tokens_total, "title": public_title,
+                        "warning": _t('Không đủ credit để nhận thêm ảnh; phần chữ vẫn được giữ.')
+                                   if image_denied else ""})
         except Exception as e:  # noqa: BLE001
-            _finalize_refund()
-            yield _sse({"type": "error", "message": str(e)})
+            if reply.strip() and not reply_saved:
+                _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
+                reply_saved = True
+            if reply.strip() or n_images:
+                _finalize_settle()
+            else:
+                _finalize_refund()
+            logger.warning("chat_turn_failed user=%s conv=%s turn=%s error_type=%s",
+                           owner[:8], conv_id2[:8], umsg_id[:8], type(e).__name__)
+            yield _sse({"type": "error", "message": _t(
+                'AI tạm thời không phản hồi. Nội dung đã nhận vẫn được lưu.')})
         finally:
             # Ngắt kết nối (GeneratorExit — BaseException, KHÔNG lọt except Exception)
             # vẫn phải kết sổ: đã giao ảnh/chữ → settle (chống ảnh miễn phí bằng cách
             # ngắt giữa chừng); chưa giao gì → refund.
             if not fin["done"]:
                 if reply.strip() or n_images:
+                    if reply.strip() and not reply_saved:
+                        _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
+                        reply_saved = True
                     _finalize_settle()
                 else:
                     _finalize_refund()
@@ -385,6 +455,23 @@ def _save_msg(user_id, conv_id, role, content, image_key="", image_prompt="", to
         except StopIteration: pass
 
 
+def _hold_more(user_id: str, hold_id: str, amount: int) -> bool:
+    """Giữ thêm credit trước khi giao output phát sinh; không bao giờ cho âm."""
+    from platform_core import credit
+    gen = _sess(); db = next(gen)
+    try:
+        try:
+            credit.giu_cho(db, user_id, int(amount), hold_id)
+            db.commit()
+            return True
+        except credit.ThieuCreditError:
+            db.rollback()
+            return False
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
 def _settle(user_id, hold_id, actual, conv_id):
     from platform_core import credit
     from platform_core.models import ChatConversation
@@ -396,6 +483,7 @@ def _settle(user_id, hold_id, actual, conv_id):
         if cc is not None:
             cc.updated_at = _bay_gio()
         db.commit()
+        return credit.so_du(db, user_id)
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -406,6 +494,7 @@ def _refund(user_id, hold_id):
     gen = _sess(); db = next(gen)
     try:
         credit.hoan(db, user_id, hold_id); db.commit()
+        return credit.so_du(db, user_id)
     finally:
         try: next(gen)
         except StopIteration: pass

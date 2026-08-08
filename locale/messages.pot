@@ -42,6 +42,10 @@ msgstr ""
 msgid "3 credit mỗi kịch bản"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:35
+msgid "3 credit/lượt văn bản · 20 credit/ảnh"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
 msgid "30 giây"
 msgstr ""
@@ -54,6 +58,10 @@ msgstr ""
 msgid "90 giây"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:9
+msgid "AI chưa kết nối"
+msgstr ""
+
 #: apps/kichban/templates/script.html:10
 msgid "AI chỉ được dùng các nguồn bạn cung cấp; không tự nhận đã kiểm chứng nguồn."
 msgstr ""
@@ -62,8 +70,16 @@ msgstr ""
 msgid "AI không trả cảnh nào."
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:9
+msgid "AI sẵn sàng"
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:3
 msgid "AI trả về không đúng JSON — đang hiển thị nội dung đã khôi phục."
+msgstr ""
+
+#: apps/chataistudio/routes.py:371
+msgid "AI tạm thời không phản hồi. Nội dung đã nhận vẫn được lưu."
 msgstr ""
 
 #: apps/kichban/manifest.py:34
@@ -174,12 +190,21 @@ msgstr ""
 msgid "BƯỚC 05"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:40
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "Bạn"
+msgstr ""
+
 #: server/templates/home.html:66
 msgid "Bạn chưa dùng app nào."
 msgstr ""
 
 #: server/templates/_job_progress.html:21
 msgid "Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Bạn muốn bắt đầu với việc gì?"
 msgstr ""
 
 #: apps/mediatools/jobs.py:296
@@ -218,7 +243,7 @@ msgstr ""
 msgid "Bắt đầu dùng công cụ"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:16
+#: apps/chataistudio/templates/chataistudio.html:32
 msgid "Bắt đầu một ý tưởng mới"
 msgstr ""
 
@@ -275,6 +300,11 @@ msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:18
 msgid "Chi tiết cao hơn, xử lý chậm hơn nhiều."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:40
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "Chi tiết lượt"
 msgstr ""
 
 #: server/templates/nap_don.html:14
@@ -363,7 +393,7 @@ msgstr ""
 msgid "Chưa có hoạt động. Mở một công cụ để bắt đầu."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:13
+#: apps/chataistudio/templates/chataistudio.html:27
 msgid "Chưa có hội thoại."
 msgstr ""
 
@@ -457,6 +487,11 @@ msgstr ""
 msgid "Chất lượng"
 msgstr ""
 
+#: apps/chataistudio/features.py:21
+#: apps/chataistudio/templates/chataistudio.html:17
+msgid "Chất lượng cao"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:49
 msgid "Chất lượng xử lý"
 msgstr ""
@@ -483,6 +518,10 @@ msgstr ""
 msgid "Chế độ nâng cấp"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:16
+msgid "Chế độ phản hồi"
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/library.py:186
 msgid "Chỉ admin được ngừng dùng mẫu catalog."
 msgstr ""
@@ -503,7 +542,7 @@ msgstr ""
 msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
 msgstr ""
 
-#: apps/chataistudio/features.py:43
+#: apps/chataistudio/features.py:53
 msgid "Chỉ nhận PNG/JPEG/WebP, TXT/MD/CSV/JSON hoặc PDF."
 msgstr ""
 
@@ -729,6 +768,11 @@ msgstr ""
 msgid "Còn khoảng {minutes} phút"
 msgstr ""
 
+#: apps/chataistudio/routes.py:351
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "Có lỗi xảy ra."
+msgstr ""
+
 #: server/templates/home.html:5
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
 msgstr ""
@@ -764,7 +808,7 @@ msgstr ""
 msgid "Cấu hình hệ thống"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:8
+#: apps/chataistudio/templates/chataistudio.html:11
 msgid "Cấu hình ngay"
 msgstr ""
 
@@ -802,11 +846,11 @@ msgstr ""
 msgid "Cần tài khoản người dùng."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:221
+#: apps/chataistudio/routes.py:199 apps/taoclipngan/routes.py:221
 msgid "Cần đăng nhập bằng tài khoản người dùng."
 msgstr ""
 
-#: apps/chataistudio/routes.py:118
+#: apps/chataistudio/routes.py:144
 msgid "Cần đăng nhập."
 msgstr ""
 
@@ -865,6 +909,10 @@ msgstr ""
 
 #: apps/taoclipngan/routes.py:26
 msgid "Dọc 9:16"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:46
+msgid "Dừng"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:74
@@ -1018,7 +1066,11 @@ msgstr ""
 msgid "Gặp gián đoạn tạm thời, hệ thống sẽ tự thử lại."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Gợi ý bắt đầu"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:46
 msgid "Gửi"
 msgstr ""
 
@@ -1030,6 +1082,7 @@ msgstr ""
 msgid "Hook (15–30 giây đầu)"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:56
 #: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:83
 #: apps/thumbnail/templates/thumbnail.html:66
 #: apps/thumbnail/templates/thumbnail_fragment.html:36
@@ -1088,8 +1141,13 @@ msgstr ""
 msgid "Hỗ trợ"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:10
+#: apps/chataistudio/templates/chataistudio.html:13
 msgid "Hội thoại"
+msgstr ""
+
+#: apps/chataistudio/routes.py:121 apps/chataistudio/routes.py:245
+#: apps/chataistudio/templates/chataistudio.html:35
+msgid "Hội thoại mới"
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:77
@@ -1176,7 +1234,8 @@ msgstr ""
 msgid "Không có track phụ đề được chọn để render."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:45
+#: apps/chataistudio/templates/chataistudio.html:56
 msgid "Không có tệp ·"
 msgstr ""
 
@@ -1352,7 +1411,7 @@ msgstr ""
 msgid "Không tìm thấy đề xuất."
 msgstr ""
 
-#: apps/chataistudio/routes.py:429 apps/prompt_ai_ommi/routes/resources.py:347
+#: apps/chataistudio/routes.py:509 apps/prompt_ai_ommi/routes/resources.py:347
 #: apps/prompt_ai_ommi/routes/resources.py:366
 #: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:233
 #: apps/taoanh/routes.py:241 apps/taoanh/routes.py:259
@@ -1362,8 +1421,8 @@ msgid "Không tìm thấy ảnh."
 msgstr ""
 
 #: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:796
-#: apps/chataistudio/routes.py:337 apps/chataistudio/routes.py:361
-#: apps/chataistudio/routes.py:421 apps/chataistudio/routes.py:436
+#: apps/chataistudio/routes.py:399 apps/chataistudio/routes.py:423
+#: apps/chataistudio/routes.py:501 apps/chataistudio/routes.py:516
 #: apps/taoclipngan/routes.py:403
 msgid "Không tìm thấy."
 msgstr ""
@@ -1384,8 +1443,12 @@ msgstr ""
 msgid "Không đọc được luồng video."
 msgstr ""
 
-#: apps/chataistudio/features.py:41
+#: apps/chataistudio/features.py:51
 msgid "Không đọc được nội dung PDF."
+msgstr ""
+
+#: apps/chataistudio/routes.py:327
+msgid "Không đủ credit để nhận thêm ảnh; phần chữ vẫn được giữ."
 msgstr ""
 
 #: apps/agent/routes/runs.py:76
@@ -1528,6 +1591,10 @@ msgstr ""
 
 #: apps/taovideo/routes.py:315
 msgid "Loại tài sản đã lưu không hợp lệ."
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Lên ý tưởng"
 msgstr ""
 
 #: server/templates/jobs.html:25
@@ -1753,7 +1820,7 @@ msgstr ""
 msgid "Mỗi lượt chép lời tối đa 120 phút."
 msgstr ""
 
-#: apps/chataistudio/routes.py:182
+#: apps/chataistudio/routes.py:208
 msgid "Mỗi lượt chỉ nhận tối đa 3 tệp."
 msgstr ""
 
@@ -1890,7 +1957,7 @@ msgstr ""
 msgid "Ngôn ngữ"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:25
+#: apps/chataistudio/features.py:23 apps/taoclipngan/routes.py:25
 msgid "Nhanh"
 msgstr ""
 
@@ -1948,7 +2015,7 @@ msgstr ""
 msgid "Nhật ký quyết định"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:45
 msgid "Nhắn cho AI… (Enter gửi, Shift+Enter xuống dòng)"
 msgstr ""
 
@@ -2060,7 +2127,7 @@ msgstr ""
 msgid "Nội dung caption"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:18
+#: apps/chataistudio/templates/chataistudio.html:38
 msgid "Nội dung hội thoại"
 msgstr ""
 
@@ -2125,6 +2192,10 @@ msgstr ""
 msgid "Phiên bản đã chụp"
 msgstr ""
 
+#: apps/chataistudio/routes.py:196
+msgid "Phiên hết hạn — tải lại trang."
+msgstr ""
+
 #: apps/taoclipngan/routes.py:302
 msgid "Phiên hết hạn."
 msgstr ""
@@ -2154,6 +2225,10 @@ msgstr ""
 #: apps/thumbnail/templates/thumbnail.html:40
 #: apps/thumbnail/templates/thumbnail_fragment.html:24
 msgid "Phong cách ảnh"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "Phân tích tệp đính kèm"
 msgstr ""
 
 #: apps/taoclipngan/manifest.py:45
@@ -2411,6 +2486,10 @@ msgstr ""
 msgid "Thanh toán thành công"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:36
+msgid "Thao tác hội thoại"
+msgstr ""
+
 #: apps/taoanh/templates/image.html:19
 msgid "Thay vùng theo mô tả"
 msgstr ""
@@ -2536,8 +2615,12 @@ msgstr ""
 msgid "Thử lại"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:45
 msgid "Tin nhắn"
+msgstr ""
+
+#: apps/chataistudio/routes.py:202
+msgid "Tin nhắn trống."
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:33
@@ -2546,6 +2629,10 @@ msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:34
 msgid "Tinh tế"
+msgstr ""
+
+#: apps/chataistudio/features.py:24
+msgid "Tiêu chuẩn"
 msgstr ""
 
 #: apps/kichban/templates/_script_view.html:6 apps/thumbnail/routes.py:239
@@ -2645,7 +2732,7 @@ msgstr ""
 msgid "Trò chuyện với AI (GPT-5) và tạo ảnh trực tiếp trong phiên chat. Lưu hội thoại riêng theo tài khoản."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:7
+#: apps/chataistudio/templates/chataistudio.html:8
 msgid "Trò chuyện, phát triển ý tưởng và tạo ảnh trong một phiên riêng tư."
 msgstr ""
 
@@ -2657,6 +2744,10 @@ msgstr ""
 #: server/templates/home.html:39 server/templates/jobs.html:8
 #: server/templates/jobs.html:25 server/templates/nap.html:59
 msgid "Trạng thái"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:11
+msgid "Trợ lý AI chưa sẵn sàng — quản trị viên cần đăng nhập tài khoản AI."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:47
@@ -2720,7 +2811,7 @@ msgstr ""
 msgid "Tên dự án"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:12
+#: apps/chataistudio/templates/chataistudio.html:22
 msgid "Tên hoặc nội dung…"
 msgstr ""
 
@@ -2745,12 +2836,9 @@ msgstr ""
 msgid "Tìm dự án..."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:12
+#: apps/chataistudio/templates/chataistudio.html:22
+#: apps/chataistudio/templates/chataistudio.html:23
 msgid "Tìm hội thoại"
-msgstr ""
-
-#: apps/chataistudio/templates/chataistudio.html:12
-msgid "Tìm trong dự án"
 msgstr ""
 
 #: server/templates/home.html:28
@@ -2815,8 +2903,8 @@ msgstr ""
 msgid "Tạo frame còn thiếu"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:16
-msgid "Tạo hội thoại, chọn model rồi nhắn cho AI. Yêu cầu “tạo ảnh…” ngay trong chat khi cần hình minh hoạ."
+#: apps/chataistudio/templates/chataistudio.html:32
+msgid "Tạo hội thoại rồi mô tả điều bạn muốn. Chat AI có thể viết, phân tích tệp và tạo ảnh ngay trong cuộc trò chuyện."
 msgstr ""
 
 #: apps/prompt_ai_ommi/routes/_shared.py:64
@@ -2827,7 +2915,11 @@ msgstr ""
 msgid "Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:17
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Tạo một ảnh minh hoạ theo mô tả sau:"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:36
 msgid "Tạo nhánh"
 msgstr ""
 
@@ -2861,6 +2953,10 @@ msgstr ""
 
 #: server/templates/_nap_trangthai.html:54
 msgid "Tạo đơn mới"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Tạo ảnh"
 msgstr ""
 
 #: apps/taoanh/manifest.py:43 apps/taoanh/templates/image.html:11
@@ -2909,6 +3005,14 @@ msgstr ""
 msgid "Tải .zip"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:36
+msgid "Tải JSON"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:36
+msgid "Tải MD"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:84
 msgid "Tải ZIP"
 msgstr ""
@@ -2944,7 +3048,7 @@ msgstr ""
 msgid "Tắt để xuất video không audio."
 msgstr ""
 
-#: apps/chataistudio/features.py:46
+#: apps/chataistudio/features.py:56
 msgid "Tệp không có nội dung văn bản có thể đọc."
 msgstr ""
 
@@ -2956,11 +3060,11 @@ msgstr ""
 msgid "Tệp kết quả không còn tồn tại."
 msgstr ""
 
-#: apps/chataistudio/features.py:35
+#: apps/chataistudio/features.py:45
 msgid "Tệp văn bản phải dùng UTF-8."
 msgstr ""
 
-#: apps/chataistudio/features.py:19
+#: apps/chataistudio/features.py:29
 msgid "Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB."
 msgstr ""
 
@@ -2996,7 +3100,7 @@ msgstr ""
 msgid "Tối đa 10 đơn mới nhất của tài khoản này."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:44
 msgid "Tối đa 3 tệp, mỗi tệp 8 MB"
 msgstr ""
 
@@ -3158,6 +3262,14 @@ msgstr ""
 msgid "Viết kịch bản YouTube có hook, nội dung và metadata từ một chủ đề."
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Viết lại"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Viết lại nội dung này rõ ràng và hấp dẫn hơn:"
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:33
 #: apps/kichban/templates/script.html:7 apps/taoanh/templates/image.html:11
 #: apps/taoanh/templates/image_thumbnail_shell.html:13
@@ -3280,6 +3392,14 @@ msgstr ""
 msgid "Xem đơn"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:26
+msgid "Xoá hội thoại"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:26
+msgid "Xoá hội thoại này?"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:13
 msgid "Xuất"
 msgstr ""
@@ -3368,6 +3488,10 @@ msgstr ""
 msgid "clip"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "credit"
+msgstr ""
+
 #: apps/taovideo/routes.py:207
 msgid "credit tạm giữ"
 msgstr ""
@@ -3382,6 +3506,10 @@ msgstr ""
 
 #: apps/autosubvideo/schemas.py:271
 msgid "cue id phải duy nhất toàn project"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "còn lại"
 msgstr ""
 
 #: server/templates/home.html:63
@@ -3458,6 +3586,10 @@ msgstr ""
 msgid "tạo lúc"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "tệp"
+msgstr ""
+
 #: apps/autosubvideo/schemas.py:189
 msgid "word end phải lớn hơn start"
 msgstr ""
@@ -3522,6 +3654,10 @@ msgstr ""
 
 #: apps/taoclipngan/routes.py:90
 msgid "Đang dựng clip"
+msgstr ""
+
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "Đang gửi…"
 msgstr ""
 
 #: apps/taoclipngan/routes.py:91
@@ -3645,6 +3781,10 @@ msgstr ""
 msgid "Đã dùng hết 12 lượt chép lời miễn phí hôm nay."
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "Đã dừng phản hồi. Nội dung đã nhận vẫn được lưu."
+msgstr ""
+
 #: platform_core/jobs.py:176
 msgid "Đã hoàn tất."
 msgstr ""
@@ -3692,7 +3832,7 @@ msgstr ""
 msgid "Đã đăng nhập"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:44
 msgid "Đính kèm tệp"
 msgstr ""
 
@@ -3804,6 +3944,10 @@ msgstr ""
 msgid "Đến ngày"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:39
+msgid "Đề xuất ba ý tưởng nội dung cho chủ đề của tôi."
+msgstr ""
+
 #: apps/agent/routes/assistant.py:139
 msgid "Đề xuất đã hết hạn hoặc không hợp lệ."
 msgstr ""
@@ -3878,6 +4022,11 @@ msgstr ""
 msgid "điểm"
 msgstr ""
 
+#: apps/chataistudio/templates/chataistudio.html:40
+#: apps/chataistudio/templates/chataistudio.html:56
+msgid "đã lưu trong lịch sử"
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:25
 msgid "để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng."
 msgstr ""
@@ -3895,7 +4044,8 @@ msgstr ""
 msgid "Ảnh của tôi"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:18
+#: apps/chataistudio/templates/chataistudio.html:40
+#: apps/chataistudio/templates/chataistudio.html:61
 msgid "Ảnh do AI tạo"
 msgstr ""
 
@@ -3953,7 +4103,7 @@ msgstr ""
 msgid "Ảnh vượt 20 MB."
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:19
+#: apps/chataistudio/templates/chataistudio.html:48
 msgid "Ảnh được gửi tới OpenAI và lưu riêng theo tài khoản. Tệp văn bản/PDF chỉ gửi phần chữ đã trích xuất; tối đa 3 tệp mỗi lượt."
 msgstr ""
 
@@ -4039,7 +4189,7 @@ msgstr ""
 msgid "✦ Chạy AI Director"
 msgstr ""
 
-#: apps/chataistudio/templates/chataistudio.html:11
+#: apps/chataistudio/templates/chataistudio.html:19
 msgid "＋ Hội thoại mới"
 msgstr ""
 

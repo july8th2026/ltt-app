@@ -14,6 +14,52 @@
 
 ---
 
+## 2026-08-09 — H26.10B: Chat AI Studio customer-first PASS
+
+- **Mục tiêu:** audit/sửa Chat AI cho khách hàng, ưu tiên money/recovery trước
+  polish; giữ sidecar, schema, pricing và lịch sử hiện hữu.
+- **Hạng mục:** H26.10B — hoàn thành; parent H26.10 còn Agent/Socialbot.
+- **Trạng thái:** xong development; chưa deploy.
+
+### Đã làm
+
+- Xác minh folder `ChatAIStudio` chỉ có `desktop.ini`; capability ngoài bằng
+  chứng giữ UNKNOWN. Benchmark tài liệu chính thức ChatGPT/Claude/Gemini.
+- Bịt G3: giữ thêm 20 credit trước từng ảnh; thiếu credit không giao ảnh và hoàn
+  base hold nếu không có output. Không còn đường settle làm số dư âm.
+- Bịt G5: partial reply đã giao được lưu và settle khi provider lỗi/ngắt; zero
+  output refund. Log lifecycle chỉ dùng ID rút gọn, không log prompt/file/secret.
+- Thay engine ID bằng High quality/Fast; thêm suggestions, file-name feedback,
+  Stop/AbortController, live title/balance/receipt và per-turn timestamp/token/
+  credit trace; export/branch được gom vào menu thao tác.
+- English catalog 1.002 chuỗi, 0 thiếu, 0 fuzzy. Browser fixture 8112: SSE 200,
+  100→97, 12 token, title/trace cập nhật và tồn tại sau reload; desktop 1920 và
+  mobile 390 không overflow; console 0 error/0 warning, failed request 0.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `tests/test_162_chat_customer_workflow_h26.py` trước sửa | FAIL 3/3 đúng gap |
+| Targeted Chat cuối | PASS 17/17 trong 10,04 giây |
+| `python tools\\gate.py --quick` | PASS 8/8 trong 26,9 giây |
+| `python tools\\gate.py` | PASS 9/9 trong 1.648,4 giây; pytest 1.620,9 giây |
+| `python tools\\scan_source_secrets.py` | PASS 1.123 file/174.694 dòng/0 finding |
+
+### Quyết định mới
+
+Không có quyết định kiến trúc mới: theo Q77/H26 option A; Chat vẫn là SSE
+sidecar với history/ledger riêng, không giả thành platform Job.
+
+### Cách lùi lại
+
+Revert commit H26.10B. Không migration, không xóa conversation/message/credit.
+
+### Việc tiếp theo
+
+1. H26.10C audit rồi xử lý LTT Agent AI và Socialbot maintenance.
+2. Không deploy trước H26.12.
+
 ## 2026-08-09 — H26.10A: Clip Studio customer-first PASS
 
 - **Mục tiêu:** audit và sửa UX Clip ngắn theo hành vi khách hàng; không viết

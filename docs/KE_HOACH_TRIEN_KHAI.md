@@ -1814,7 +1814,12 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     log. Browser file thật quote 20/settle 15 credit, compare/package revision,
     desktop/mobile/console/network PASS. Targeted 16; full gate 9/9 trong
     1.670,8 giây.
-  - [ ] H26.10B — Chat AI Studio.
+  - [x] H26.10B — **PASS 2026-08-09, chưa deploy**: Chat AI customer-first;
+    incremental hold 20 credit trước từng ảnh chặn số dư âm; partial output được
+    lưu và settle, zero output refund; public model label, i18n 0 missing/fuzzy,
+    suggestions, Stop, live title/balance và per-turn trace. Browser SSE 100→97,
+    reload bền, desktop/mobile/console/network PASS. Targeted 17; full gate 9/9
+    trong 1.648,4 giây.
   - [ ] H26.10C — LTT Agent AI và Socialbot maintenance.
 - [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
   failure recovery.
