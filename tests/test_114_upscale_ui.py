@@ -20,10 +20,14 @@ def test_upscale_mobile_settings_progressive_disclosure():
 
 def test_upscale_compare_is_one_accessible_synchronized_surface():
     page = _read("apps/upscalevideo/templates/upscalevideo.html")
-    assert 'id="up-compare-range" type="range"' in page
-    assert 'id="up-compare-divider"' in page
-    assert "function syncOutput()" in page
-    assert "preview.addEventListener('play'" in page
+    assert 'id="up-compare-divider" role="slider" tabindex="0"' in page
+    assert 'aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"' in page
+    assert "setPointerCapture" in page and "hasPointerCapture" in page
+    assert "event.key==='ArrowLeft'" in page and "event.key==='Home'" in page
+    assert 'id="up-compare-range"' not in page
+    assert "function syncOutput(force=false)" in page
+    assert "Math.abs(outputPreview.currentTime-preview.currentTime)>.12" in page
+    assert "setInterval(()=>syncOutput(false),100)" in page
     assert 'class="up-use-compare" href="#up-compare"' in page
     assert "up-inline-compare" not in page
 
@@ -35,3 +39,9 @@ def test_upscale_queue_exposes_status_and_progress_semantics():
     assert 'aria-valuenow="{{j.progress}}"' in page
     assert 'class="up-state up-state-{{j.status}}"' in page
     assert 'aria-disabled="true"' in page
+    assert 'data-job-filter="done"' in page
+    assert 'data-job-filter="processing"' in page
+    assert 'data-job-view="grid"' in page
+    assert 'id="up-job-sort"' in page
+    assert 'class="up-job-thumb"' in page and '/source#t=0.1' in page
+    assert '/jobs/{{j.id}}/download' in page

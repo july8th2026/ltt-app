@@ -1772,9 +1772,14 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   thành mode Tạo ảnh AI nhưng giữ route/job/history cũ; Playwright
   390/768/1366/1920 + keyboard/console/network PASS; full
   `python tools\gate.py` PASS 9/9 (pytest 2.540 pass, 8 skip, 23 subtest).
-- [ ] H26.5 Phase 3.1: Upscale Video — controls, compare sync, queue/download,
-  benchmark và concurrency 2×16 GB.
-- [ ] H26.6 Phase 3.2: AutoSub — sửa version drift, canary React Studio và giữ
+- [x] H26.5 Phase 3.1 — 2026-08-08: đổi tên Upscale Video; mutual exclusion FPS
+  ở UI/service; compare slider kéo/phím + đồng bộ player/drift; queue filter/
+  sort/grid-list/thumbnail thật; download attachment owner-only; Watch chỉ admin,
+  ẩn research. Sửa root cause two-GPU: UUID lease → NCNN `-g` + env FFmpeg;
+  2 preset × 3 resolution × 2 GPU PASS, dual-worker 100% tải mỗi card, max 64°C,
+  không thermal slowdown; browser customer/admin/mobile sạch; full
+  `python tools\gate.py` PASS 9/9 trong 1.663,3 giây. Chưa deploy.
+- [ ] H26.6 Phase 3.2 — **đang làm tiếp**: AutoSub — sửa version drift, canary React Studio và giữ
   legacy rollback một release.
 - [ ] H26.7 Phase 3.3: đổi tên + UX Tạo Video Seedance, giữ option/provider đúng.
 - [ ] H26.8 Phase 3.4: đổi tên + UX Prompt AI, khảo sát read-only Prompt Seedance

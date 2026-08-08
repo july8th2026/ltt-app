@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block page_mode %}immersive{% endblock %}
-{% block title %}Upscale Studio — LTT Studios{% endblock %}
-{% block topbar_title %}<strong>Upscale Studio</strong><span class="up-pro">PRO</span>{% endblock %}
+{% block title %}Upscale Video — LTT Studios{% endblock %}
+{% block topbar_title %}<strong>Upscale Video</strong><span class="up-pro">PRO</span>{% endblock %}
 {% block content %}
 <div class="up-studio">
   <button class="up-settings-toggle" id="up-settings-toggle" type="button" aria-controls="upform" aria-expanded="false">{{ _("Thiết lập nâng cấp") }} <span aria-hidden="true">⌄</span></button>
@@ -15,10 +15,7 @@
       <label class="up-mode"><input type="radio" name="preset" value="fast" checked>
         <span><strong>⚡ Fast</strong><small>{{ _("Xử lý nhanh, phù hợp video thường.") }}</small></span></label>
       <label class="up-mode"><input type="radio" name="preset" value="quality">
-        <span><strong>◇ Quality</strong><small>{{ _("Cân bằng tốc độ và chất lượng.") }}</small></span></label>
-      <div class="up-mode disabled" aria-disabled="true" title="{{ _('Chỉ mở sau benchmark engine thật') }}">
-        <span><strong>✦ AI Detail <em>{{ _("NGHIÊN CỨU") }}</em></strong><small>{{ _("Chưa mở — không dùng Quality để giả lập.") }}</small></span>
-      </div>
+        <span><strong>◇ Quality</strong><small>{{ _("Chi tiết cao hơn, xử lý chậm hơn nhiều.") }}</small></span></label>
     </section>
 
     <section class="up-step">
@@ -42,16 +39,17 @@
       <label class="up-switch"><span><strong>{{ _("Xem thử 8 giây") }}</strong><small>{{ _("Kiểm chất lượng với chi phí thấp.") }}</small></span><input id="preview" name="preview" type="checkbox"></label>
       <label class="up-switch"><span><strong>{{ _("Chống rung") }}</strong><small>{{ _("Ổn định hai pass bằng libvidstab · +20%.") }}</small></span><input id="stabilize" name="stabilize" type="checkbox"></label>
       <label class="up-switch"><span><strong>{{ _("Mượt chuyển động 2×") }}</strong><small>{{ _("Nội suy 48/60 FPS rồi upscale · +120%.") }}</small></span><input id="smooth_motion" name="smooth_motion" type="checkbox"></label>
-      <div class="up-mode disabled" aria-disabled="true" title="{{ _('Chưa có pipeline HDR giữ đúng màu và metadata') }}"><span><strong>HDR <em>{{ _("NGHIÊN CỨU") }}</em></strong><small>{{ _("Chưa mở — không nâng SDR giả thành HDR.") }}</small></span></div>
       <label class="up-switch"><span><strong>{{ _("Xử lý hàng loạt") }}</strong><small>{{ _("Chọn tối đa 3 video; submit nguyên tử.") }}</small></span><input id="batch_mode" type="checkbox"></label>
     </section>
 
+    {% if is_admin(request) %}
     <section class="up-step up-watch">
       <h2><b>5</b> Watch Folder</h2>
       <p>{{ _("Agent chạy trên máy chứa folder; web không nhận đường dẫn local.") }}</p>
       <div class="up-watch-actions"><button type="button" id="watch-connect">{{ _("Tạo token kết nối") }}</button><button type="button" id="watch-revoke">{{ _("Thu hồi") }}</button></div>
       <code id="watch-token" hidden></code><small id="watch-note">{{ _("Token chỉ có quyền Watch Upscale và chỉ hiển thị một lần.") }}</small>
     </section>
+    {% endif %}
 
     <div class="up-cost"><span>{{ _("Chi phí ước tính") }}</span><strong id="est">{{ _("Chọn video") }}</strong></div>
     <button class="up-start" type="submit" id="submitbtn">{{ _("✦ Bắt đầu xử lý") }}</button>
@@ -74,34 +72,33 @@
 
       <div class="up-compare-panel" id="up-compare">
         <header><strong>{{ _("Xem trước so sánh") }}</strong><span>{{ _("Dữ liệu thật") }}</span></header>
-        <div class="up-compare-view">
+        <div class="up-compare-view" id="up-compare-view">
           <video id="source-preview" controls playsinline preload="metadata" {% if latest_done %}src="{{app.route_prefix}}/jobs/{{latest_done.id}}/source"{% endif %}></video>
           {% if latest_done %}<video id="output-preview" muted playsinline aria-hidden="true" preload="metadata" src="{{app.route_prefix}}/v/{{latest_done.video_key}}"></video>{% else %}<div class="up-no-output" id="output-preview-placeholder">{{ _("Kết quả sẽ xuất hiện tại đây") }}</div>{% endif %}
-          <i class="up-compare-divider" id="up-compare-divider" aria-hidden="true"></i>
-          <span class="up-before">{{ _("Trước") }}</span><span class="up-after">Sau</span>
+          <i class="up-compare-divider" id="up-compare-divider" role="slider" tabindex="0" aria-label="{{ _('Kéo để so sánh trước và sau') }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" {% if not latest_done %}aria-disabled="true"{% endif %}></i>
+          <span class="up-before">{{ _("Trước") }}</span><span class="up-after">{{ _("Sau") }}</span>
         </div>
-        <label class="up-compare-control" for="up-compare-range"><span>{{ _("Vị trí đường so sánh") }}</span><input id="up-compare-range" type="range" min="0" max="100" value="50" {% if not latest_done %}disabled{% endif %}></label>
       </div>
     </section>
 
     <section class="up-queue">
-      <header><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><span>{{ _("Pause và Delete đang hoãn theo Q47") }}</span></header>
-      <div class="up-job-list">
+      <header><div><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><small id="up-queue-count" aria-live="polite"></small></div><div class="up-queue-controls"><div class="up-job-filters" role="group" aria-label="{{ _('Lọc hàng đợi') }}"><button type="button" class="on" data-job-filter="all" aria-pressed="true">{{ _("Tất cả") }}</button><button type="button" data-job-filter="done" aria-pressed="false">{{ _("Hoàn tất") }}</button><button type="button" data-job-filter="processing" aria-pressed="false">{{ _("Đang xử lý") }}</button><button type="button" data-job-filter="cancelled" aria-pressed="false">{{ _("Đã hủy") }}</button><button type="button" data-job-filter="error" aria-pressed="false">{{ _("Lỗi") }}</button></div><label class="up-job-sort"><span class="sr-only">{{ _("Sắp xếp hàng đợi") }}</span><select id="up-job-sort"><option value="newest">{{ _("Mới nhất") }}</option><option value="oldest">{{ _("Cũ nhất") }}</option></select></label><div class="up-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-job-view="list" aria-pressed="true" title="{{ _('Danh sách') }}">☷</button><button type="button" data-job-view="grid" aria-pressed="false" title="{{ _('Lưới') }}">▦</button></div></div></header>
+      <div class="up-job-list" id="up-job-list">
         {% for j in jobs %}
-        <article class="up-job" data-state="{{j.status}}" aria-labelledby="up-job-title-{{j.id}}">
-          <div class="up-job-thumb">▶</div>
+        <article class="up-job" data-state="{{j.status}}" data-state-group="{% if j.status in ('queued','running') %}processing{% else %}{{j.status}}{% endif %}" data-created="{{j.created_at}}" aria-labelledby="up-job-title-{{j.id}}">
+          <video class="up-job-thumb" muted playsinline preload="metadata" src="{{app.route_prefix}}/jobs/{{j.id}}/source#t=0.1" aria-label="{{ _('Xem trước') }} {{j.source_name}}"></video>
           <div class="up-job-info">
             <strong id="up-job-title-{{j.id}}">{{j.source_name}}</strong>
-            <div class="up-job-tags"><span>{{j.preset}}</span><span>{{j.codec|upper}}</span><span>{{j.target_height or 1080}}p</span>{% if j.stabilize %}<span>{{ _("Chống rung") }}</span>{% endif %}{% if j.smooth_motion %}<span>FPS 2×</span>{% endif %}{% if j.duration_s %}<span>{{j.duration_s}}s</span>{% endif %}</div>
+            <div class="up-job-tags"><span class="tag-preset">{{j.preset}}</span><span class="tag-codec">{{j.codec|upper}}</span><span class="tag-resolution">{{j.target_height or 1080}}p</span>{% if j.stabilize %}<span class="tag-stabilize">{{ _("Chống rung") }}</span>{% endif %}{% if j.smooth_motion %}<span class="tag-motion">FPS 2×</span>{% endif %}{% if j.duration_s %}<span class="tag-duration">{{j.duration_s}}s</span>{% endif %}</div>
             {% if j.error %}<small class="up-error">{{j.error}}</small>{% elif j.warning %}<small>{{j.warning}}</small>{% endif %}
           </div>
           <div class="up-job-progress" aria-live="polite">
-            <strong class="up-state up-state-{{j.status}}">{% if j.status=='done' %}Hoàn tất{% elif j.status=='error' %}Lỗi{% elif j.status=='cancelled' %}Đã hủy{% elif j.status=='running' %}Đang xử lý · {{j.progress}}%{% else %}Đang chờ{% endif %}</strong>
-            <div role="progressbar" aria-label="Tiến độ {{j.source_name}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{j.progress}}"><i style="width:{{j.progress}}%"></i></div>
+            <strong class="up-state up-state-{{j.status}}">{% if j.status=='done' %}{{ _("Hoàn tất") }}{% elif j.status=='error' %}{{ _("Lỗi") }}{% elif j.status=='cancelled' %}{{ _("Đã hủy") }}{% elif j.status=='running' %}{{ _("Đang xử lý") }} · {{j.progress}}%{% else %}{{ _("Đang chờ") }}{% endif %}</strong>
+            <div role="progressbar" aria-label="{{ _('Tiến độ') }} {{j.source_name}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{j.progress}}"><i style="width:{{j.progress}}%"></i></div>
             <small>{{j.progress_msg or j.status}}{% if j.eta_text %} · {{j.eta_text}}{% endif %}</small>
           </div>
           <div class="up-job-actions">
-            {% if j.video_key %}<a href="{{app.route_prefix}}/v/{{j.video_key}}" download>{{ _("Tải xuống") }}</a><a class="up-use-compare" href="#up-compare" data-source="{{app.route_prefix}}/jobs/{{j.id}}/source" data-output="{{app.route_prefix}}/v/{{j.video_key}}">{{ _("So sánh") }}</a>{% endif %}
+            {% if j.video_key %}<a href="{{app.route_prefix}}/jobs/{{j.id}}/download">{{ _("Tải xuống") }}</a><a class="up-use-compare" href="#up-compare" data-source="{{app.route_prefix}}/jobs/{{j.id}}/source" data-output="{{app.route_prefix}}/v/{{j.video_key}}">{{ _("So sánh") }}</a>{% endif %}
             {% if j.status in ('queued','running') %}<form method="post" action="{{app.route_prefix}}/jobs/{{j.id}}/cancel"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><button type="submit">{{ _("Hủy job") }}</button></form>{% endif %}
           </div>
         </article>
@@ -119,21 +116,33 @@
   const preview=document.getElementById('source-preview'), drop=document.getElementById('up-drop');
   const prefix='{{app.route_prefix}}', batchToggle=document.getElementById('batch_mode');
   const fileMeta=document.getElementById('filemeta'), batchFiles=document.getElementById('batch-files');
-  const settingsToggle=document.getElementById('up-settings-toggle'), compareRange=document.getElementById('up-compare-range');
+  const settingsToggle=document.getElementById('up-settings-toggle'), compareView=document.getElementById('up-compare-view');
   const outputPreview=document.getElementById('output-preview'), compareDivider=document.getElementById('up-compare-divider');
+  const preserveFps=document.getElementById('preserve_fps'), smoothMotion=document.getElementById('smooth_motion');
   let selected=[], batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
 
   settingsToggle.onclick=()=>{const open=form.classList.toggle('mobile-open');settingsToggle.setAttribute('aria-expanded',String(open));settingsToggle.querySelector('span').textContent=open?'⌃':'⌄'};
-  function setComparePosition(value){const n=Math.max(0,Math.min(100,+value||0));if(outputPreview?.tagName==='VIDEO')outputPreview.style.clipPath=`inset(0 0 0 ${n}%)`;compareDivider.style.left=`${n}%`}
-  compareRange.addEventListener('input',()=>setComparePosition(compareRange.value));setComparePosition(compareRange.value);
-  function syncOutput(){if(outputPreview?.tagName!=='VIDEO')return;outputPreview.currentTime=preview.currentTime;outputPreview.playbackRate=preview.playbackRate}
+  function setComparePosition(value){const n=Math.max(0,Math.min(100,+value||0));if(outputPreview?.tagName==='VIDEO')outputPreview.style.clipPath=`inset(0 0 0 ${n}%)`;compareDivider.style.left=`${n}%`;compareDivider.setAttribute('aria-valuenow',String(Math.round(n)))}
+  function compareFromPointer(event){const rect=compareView.getBoundingClientRect();setComparePosition((event.clientX-rect.left)/rect.width*100)}
+  compareDivider.addEventListener('pointerdown',event=>{if(compareDivider.getAttribute('aria-disabled')==='true')return;compareDivider.setPointerCapture(event.pointerId);compareFromPointer(event)});
+  compareDivider.addEventListener('pointermove',event=>{if(compareDivider.hasPointerCapture(event.pointerId))compareFromPointer(event)});
+  compareDivider.addEventListener('keydown',event=>{let value=+compareDivider.getAttribute('aria-valuenow')||50;if(event.key==='ArrowLeft'||event.key==='ArrowDown')value-=event.shiftKey?10:1;else if(event.key==='ArrowRight'||event.key==='ArrowUp')value+=event.shiftKey?10:1;else if(event.key==='Home')value=0;else if(event.key==='End')value=100;else return;event.preventDefault();setComparePosition(value)});setComparePosition(50);
+  function syncOutput(force=false){if(outputPreview?.tagName!=='VIDEO'||!Number.isFinite(preview.currentTime))return;outputPreview.playbackRate=preview.playbackRate;if(force||Math.abs(outputPreview.currentTime-preview.currentTime)>.12)outputPreview.currentTime=preview.currentTime}
   if(outputPreview?.tagName==='VIDEO'){
-    preview.addEventListener('play',()=>{syncOutput();outputPreview.play().catch(()=>{})});preview.addEventListener('pause',()=>outputPreview.pause());
-    preview.addEventListener('seeking',syncOutput);preview.addEventListener('ratechange',syncOutput);
+    let syncTimer=0;preview.addEventListener('play',()=>{syncOutput(true);outputPreview.play().catch(()=>{});clearInterval(syncTimer);syncTimer=setInterval(()=>syncOutput(false),100)});preview.addEventListener('pause',()=>{clearInterval(syncTimer);outputPreview.pause()});
+    preview.addEventListener('seeking',()=>syncOutput(true));preview.addEventListener('ratechange',()=>syncOutput(true));preview.addEventListener('ended',()=>{clearInterval(syncTimer);outputPreview.pause();syncOutput(true)});outputPreview.addEventListener('ended',()=>{if(!preview.ended){syncOutput(true);outputPreview.play().catch(()=>{})}});
   }
   document.querySelectorAll('.up-use-compare').forEach(link=>link.addEventListener('click',()=>{
-    preview.src=link.dataset.source;preview.load();if(outputPreview?.tagName==='VIDEO'){outputPreview.src=link.dataset.output;outputPreview.load();compareRange.disabled=false;setComparePosition(compareRange.value)}
+    preview.src=link.dataset.source;preview.load();if(outputPreview?.tagName==='VIDEO'){outputPreview.src=link.dataset.output;outputPreview.load();compareDivider.removeAttribute('aria-disabled');setComparePosition(50)}
   }));
+
+  preserveFps.addEventListener('change',()=>{if(preserveFps.checked)smoothMotion.checked=false;updateQuote()});
+  smoothMotion.addEventListener('change',()=>{if(smoothMotion.checked)preserveFps.checked=false;updateQuote()});
+
+  const jobList=document.getElementById('up-job-list'), jobCount=document.getElementById('up-queue-count'), jobs=[...jobList.querySelectorAll('.up-job')];let jobFilter='all';
+  function applyJobs(){const sort=document.getElementById('up-job-sort').value;jobs.sort((a,b)=>(sort==='oldest'?1:-1)*String(a.dataset.created).localeCompare(String(b.dataset.created))).forEach(job=>jobList.appendChild(job));let shown=0;jobs.forEach(job=>{const visible=jobFilter==='all'||job.dataset.stateGroup===jobFilter;job.hidden=!visible;if(visible)shown++});jobCount.textContent=`${shown}/${jobs.length} job`}
+  document.querySelectorAll('[data-job-filter]').forEach(button=>button.addEventListener('click',()=>{jobFilter=button.dataset.jobFilter;document.querySelectorAll('[data-job-filter]').forEach(item=>{const on=item===button;item.classList.toggle('on',on);item.setAttribute('aria-pressed',String(on))});applyJobs()}));document.getElementById('up-job-sort').addEventListener('change',applyJobs);
+  document.querySelectorAll('[data-job-view]').forEach(button=>button.addEventListener('click',()=>{const grid=button.dataset.jobView==='grid';jobList.classList.toggle('grid-view',grid);document.querySelectorAll('[data-job-view]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));localStorage.setItem('ltt-upscale-job-view',grid?'grid':'list')}));const savedView=localStorage.getItem('ltt-upscale-job-view');if(savedView==='grid')document.querySelector('[data-job-view="grid"]').click();applyJobs();
 
   document.getElementById('choosebtn').onclick=()=>input.click();
   batchToggle.onchange=()=>{input.multiple=batchToggle.checked;if(!batchToggle.checked&&selected.length>1){selected=selected.slice(0,1);renderFiles()}else renderFiles()};
@@ -164,8 +173,7 @@
   }
   form.querySelectorAll('[name=preset],[name=target_height],#preview,#stabilize,#smooth_motion').forEach(x=>x.addEventListener('change',updateQuote));
   async function watchAction(path){const data=new FormData();data.append('csrf_token',form.csrf_token.value);const response=await fetch(prefix+path,{method:'POST',body:data}),result=await response.json();if(!response.ok)throw new Error(result.detail||result.error||'Không thể cập nhật Watch Agent');return result}
-  document.getElementById('watch-connect').onclick=async()=>{try{const result=await watchAction('/watch/token'),box=document.getElementById('watch-token');box.hidden=false;box.textContent=result.token;document.getElementById('watch-note').textContent='Sao chép token vào LTT_UPSCALE_WATCH_TOKEN; giá trị này sẽ không hiện lại.'}catch(err){status.textContent='Lỗi: '+err.message}};
-  document.getElementById('watch-revoke').onclick=async()=>{try{await watchAction('/watch/revoke');document.getElementById('watch-token').hidden=true;document.getElementById('watch-note').textContent='Token Watch Agent đã được thu hồi.'}catch(err){status.textContent='Lỗi: '+err.message}};
+  const watchConnect=document.getElementById('watch-connect'),watchRevoke=document.getElementById('watch-revoke');if(watchConnect&&watchRevoke){watchConnect.onclick=async()=>{try{const result=await watchAction('/watch/token'),box=document.getElementById('watch-token');box.hidden=false;box.textContent=result.token;document.getElementById('watch-note').textContent='Sao chép token vào LTT_UPSCALE_WATCH_TOKEN; giá trị này sẽ không hiện lại.'}catch(err){status.textContent='Lỗi: '+err.message}};watchRevoke.onclick=async()=>{try{await watchAction('/watch/revoke');document.getElementById('watch-token').hidden=true;document.getElementById('watch-note').textContent='Token Watch Agent đã được thu hồi.'}catch(err){status.textContent='Lỗi: '+err.message}}}
   const telemetry=document.getElementById('up-telemetry');if(telemetry)fetch(prefix+'/admin-telemetry').then(r=>r.json()).then(d=>{const g=d.gpu||{},q=d.queue||{},s=d.storage||{};telemetry.innerHTML=`<strong>Telemetry quản trị</strong><span>GPU: ${g.available?(g.gpus||[]).map(x=>`#${x.index} ${x.model} · ${x.util_percent}% · ${x.temp_c}°C · ${x.vram_used_mb}/${x.vram_total_mb} MB`).join(' | '):'không khả dụng'}</span><span>Queue: ${q.running||0} chạy · ${q.queued||0} chờ</span><span>Storage: ${s.available?`${(s.disk_used_bytes/1073741824).toFixed(1)}/${(s.disk_total_bytes/1073741824).toFixed(1)} GB`:'backend không cung cấp quota'}</span>`}).catch(()=>{telemetry.querySelector('span').textContent='Telemetry không khả dụng'});
 
   function uploadDirect(url,headers,file){return new Promise((resolve,reject)=>{

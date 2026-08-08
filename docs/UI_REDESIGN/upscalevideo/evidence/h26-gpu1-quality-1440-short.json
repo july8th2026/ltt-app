@@ -1,0 +1,358 @@
+{
+  "passed": true,
+  "source_name": "video (10).mp4",
+  "requested_gpu": {
+    "index": 1,
+    "uuid": "GPU-6df3a5c5-5cee-2c0f-abbe-dc66aad68e02",
+    "name": "NVIDIA GeForce RTX 5060 Ti"
+  },
+  "preset": "quality",
+  "target_height": 1440,
+  "derived_input": {
+    "width": 836,
+    "height": 480,
+    "fps": 24.0,
+    "duration_s": 1.0,
+    "has_audio": true
+  },
+  "output": {
+    "width": 2508,
+    "height": 1440,
+    "fps": 24.0,
+    "duration_s": 1.0,
+    "has_audio": true,
+    "size_bytes": 2155668
+  },
+  "engine_result": {
+    "credit_cost": 3,
+    "duration_s": 1.0,
+    "preset": "quality",
+    "target_height": 1440,
+    "out_w": 2508,
+    "out_h": 1440,
+    "codec": "h264",
+    "encoder": "h264_nvenc",
+    "fps": 24.0,
+    "has_audio": true,
+    "preserve_fps": true,
+    "preserve_audio": true,
+    "stabilize": false,
+    "smooth_motion": false,
+    "frames": 24,
+    "processing_seconds": 34.16
+  },
+  "elapsed_seconds": 34.183,
+  "gpu": {
+    "available": true,
+    "gpus": [
+      {
+        "index": 0,
+        "model": "NVIDIA GeForce RTX 5060 Ti",
+        "util_percent": 15,
+        "temp_c": 46,
+        "vram_total_mb": 16311,
+        "vram_used_mb": 1292
+      },
+      {
+        "index": 1,
+        "model": "NVIDIA GeForce RTX 5060 Ti",
+        "util_percent": 55,
+        "temp_c": 54,
+        "vram_total_mb": 16311,
+        "vram_used_mb": 4
+      }
+    ],
+    "count": 2,
+    "model": "NVIDIA GeForce RTX 5060 Ti",
+    "util_percent": 15,
+    "temp_c": 46,
+    "vram_total_mb": 16311,
+    "vram_used_mb": 1292
+  },
+  "progress_stages": [
+    {
+      "percent": 2,
+      "message": "tải video"
+    },
+    {
+      "percent": 4,
+      "message": "tách frame"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét realesrgan-x4plus (tile 512)…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 11,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 11,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 11,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 11,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 18,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 18,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 18,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 18,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 18,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 25,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 25,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 25,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 25,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 25,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 32,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 32,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 32,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 32,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 32,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 39,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 39,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 39,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 39,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 39,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 46,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 46,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 46,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 46,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 49,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 53,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 53,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 53,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 53,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 56,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 60,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 60,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 60,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 60,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 60,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 67,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 67,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 67,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 67,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 67,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 74,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 74,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 74,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 74,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 74,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 81,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 81,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 81,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 81,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 81,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 88,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 88,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 90,
+      "message": "ghép video 1440p…"
+    },
+    {
+      "percent": 96,
+      "message": "lưu kết quả"
+    },
+    {
+      "percent": 100,
+      "message": "xong"
+    }
+  ]
+}

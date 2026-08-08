@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "source_name": "video (10).mp4",
+  "wall_seconds": 27.99,
+  "workers": [
+    {
+      "gpu_index": 0,
+      "returncode": 0,
+      "worker_passed": true,
+      "elapsed_seconds": 26.158,
+      "output": {
+        "width": 1882,
+        "height": 1080,
+        "fps": 24.0,
+        "duration_s": 10.053991,
+        "has_audio": true,
+        "size_bytes": 13354594
+      },
+      "error_tail": ""
+    },
+    {
+      "gpu_index": 1,
+      "returncode": 0,
+      "worker_passed": true,
+      "elapsed_seconds": 23.63,
+      "output": {
+        "width": 1882,
+        "height": 1080,
+        "fps": 24.0,
+        "duration_s": 10.053991,
+        "has_audio": true,
+        "size_bytes": 13354594
+      },
+      "error_tail": ""
+    }
+  ],
+  "telemetry": {
+    "0": {
+      "sample_count": 49,
+      "max_util_percent": 100,
+      "max_temp_c": 64,
+      "max_vram_used_mb": 2141,
+      "thermal_slowdown_observed": false
+    },
+    "1": {
+      "sample_count": 49,
+      "max_util_percent": 100,
+      "max_temp_c": 64,
+      "max_vram_used_mb": 852,
+      "thermal_slowdown_observed": false
+    }
+  }
+}

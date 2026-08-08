@@ -8,6 +8,7 @@ from platform_core.i18n import _ as _t
 import uuid
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
 from statistics import median
@@ -87,7 +88,8 @@ def _jobs_cua_toi(request: Request):
             source_key = str(p.get("video_key") or "")
             eta_text = ""
             if j.status == "queued":
-                eta_text = f"Vị trí {queue_positions.get(j.id, '?')} trong hàng đợi"
+                eta_text = _t("Vị trí {position} trong hàng đợi").format(
+                    position=queue_positions.get(j.id, "?"))
             elif j.status == "running":
                 rates = [value for preset, height, stabilize, smooth_motion, value in samples
                          if preset == p.get("preset", "fast") and
@@ -98,9 +100,10 @@ def _jobs_cua_toi(request: Request):
                 if len(rates) >= 3 and duration > 0 and j.started_at:
                     started = j.started_at if j.started_at.tzinfo else j.started_at.replace(tzinfo=timezone.utc)
                     remaining = max(0, median(rates) * duration - (now - started).total_seconds())
-                    eta_text = f"Còn khoảng {max(1, round(remaining / 60))} phút"
+                    eta_text = _t("Còn khoảng {minutes} phút").format(
+                        minutes=max(1, round(remaining / 60)))
                 else:
-                    eta_text = "Đang ước tính ETA"
+                    eta_text = _t("Đang ước tính ETA")
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
                         "progress_msg": j.progress_msg, "error": j.error,
                         "video_key": r.get("video_key"), "duration_s": r.get("duration_s"),
@@ -112,7 +115,9 @@ def _jobs_cua_toi(request: Request):
                         "preserve_audio": p.get("preserve_audio", True),
                         "stabilize": p.get("stabilize", False),
                         "smooth_motion": p.get("smooth_motion", False),
-                        "warning": r.get("warning"), "eta_text": eta_text})
+                        "warning": r.get("warning"), "eta_text": eta_text,
+                        "created_at": (j.created_at.isoformat()
+                                       if j.created_at else "")})
         return out
     finally:
         try: next(gen)
@@ -635,6 +640,29 @@ def _serve_owned_video(request: Request, key: str):
                              headers={"Accept-Ranges": "bytes", "Content-Length": str(total)})
 
 
+def _serve_download(key: str, filename: str):
+    """Proxy artifact với attachment contract thay vì mở video inline.
+
+    Không dùng presigned redirect vì response cuối có thể thiếu
+    ``Content-Disposition`` và browser sẽ mở player ở tab mới.
+    """
+    from platform_core.storage import StorageError, get_storage
+    storage = get_storage()
+    try:
+        total = storage.size(key)
+        stream = storage.open(key)
+    except (StorageError, FileNotFoundError):
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", filename).strip("-.")
+    if not safe.lower().endswith(".mp4"):
+        safe = (safe or "upscaled-video") + ".mp4"
+    return StreamingResponse(stream, media_type="video/mp4", headers={
+        "Content-Disposition": f'attachment; filename="{safe}"',
+        "Content-Length": str(total),
+        "X-Content-Type-Options": "nosniff",
+    })
+
+
 @router.get("/v/{key:path}")
 def video_out(request: Request, key: str, user: str = Depends(require_login)):
     u = user_hien_tai(request)
@@ -664,3 +692,30 @@ def source_video(request: Request, job_id: str, user: str = Depends(require_logi
     if not key:
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy video nguồn.'))
     return _serve_owned_video(request, key)
+
+
+@router.get("/jobs/{job_id}/download")
+def download_video(request: Request, job_id: str,
+                   user: str = Depends(require_login)):
+    """Tải output của đúng owner bằng attachment response."""
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    u = user_hien_tai(request)
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        result = job.result or {} if job else {}
+        key = str(result.get("video_key") or "")
+        allowed = bool(job and u and job.user_id == u.id and
+                       job.app_slug == MANIFEST.slug and
+                       key.startswith(f"upscalevideo/{u.id}/"))
+        source_name = str((job.params or {}).get("source_name") or "video.mp4") if job else "video.mp4"
+        height = str(result.get("target_height") or
+                     ((job.params or {}).get("target_height") if job else 1080) or 1080)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    if not allowed:
+        raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
+    stem = PurePosixPath(source_name).stem or "video"
+    return _serve_download(key, f"{stem}-upscaled-{height}p.mp4")

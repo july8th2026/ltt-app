@@ -23,6 +23,18 @@ def test_service_keeps_motion_flags_in_owner_scoped_job_params():
                            stabilize=True, smooth_motion=True)
     assert defaults["stabilize"] is False and defaults["smooth_motion"] is False
     assert enabled["stabilize"] is True and enabled["smooth_motion"] is True
+    assert enabled["preserve_fps"] is False
+
+
+def test_service_normalizes_conflicting_fps_intent_for_every_caller():
+    from apps.upscalevideo.service import build_params
+
+    motion = build_params(video_key="x", owner_id="u", preserve_fps=True,
+                          smooth_motion=True)
+    preserved = build_params(video_key="x", owner_id="u", preserve_fps=True,
+                             smooth_motion=False)
+    assert motion["smooth_motion"] is True and motion["preserve_fps"] is False
+    assert preserved["smooth_motion"] is False and preserved["preserve_fps"] is True
 
 
 def test_manifest_hold_cost_includes_motion_features():
@@ -62,11 +74,14 @@ def test_stabilization_is_two_pass_relative_transform_on_windows(tmp_path, monke
     assert calls[0][1]["cwd"] == str(tmp_path)
 
 
-def test_ui_exposes_real_motion_controls_and_honest_hdr_defer():
+def test_ui_exposes_real_motion_controls_and_hides_research_controls_from_customer():
     page = Path("apps/upscalevideo/templates/upscalevideo.html").read_text(
         encoding="utf-8")
     assert 'id="stabilize" name="stabilize"' in page
     assert 'id="smooth_motion" name="smooth_motion"' in page
     assert "data.append('stabilize','1')" in page
     assert "data.append('smooth_motion','1')" in page
-    assert "không nâng SDR giả thành HDR" in page
+    assert "if(smoothMotion.checked)preserveFps.checked=false" in page
+    assert "if(preserveFps.checked)smoothMotion.checked=false" in page
+    assert "AI Detail" not in page and "HDR" not in page
+    assert "{% if is_admin(request) %}" in page

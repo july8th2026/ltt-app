@@ -38,13 +38,13 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="upscalevideo",
-    display_name=N_('Nâng cấp video'),
+    display_name=N_('Upscale Video'),
     route_prefix="/upscalevideo",
     summary=N_('Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh.'),
     icon="🔍",
     accent="#B4530A",
 
-    nav=(NavEntry("Nâng cấp video", "/upscalevideo", "🔍", "upscalevideo"),),
+    nav=(NavEntry("Upscale Video", "/upscalevideo", "🔍", "upscalevideo"),),
 
     job_types=("upscalevideo.render",),
     requires=("gpu", "ffmpeg"),

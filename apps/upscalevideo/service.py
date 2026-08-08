@@ -27,12 +27,17 @@ def build_params(*, video_key: str, owner_id: str, preset: str = "fast",
         preset = "fast"
     if codec not in ("h264", "hevc"):
         codec = "h264"
+    # Hai ý định loại trừ nhau: nội suy 2x tạo FPS mới nên không thể đồng thời
+    # cam kết giữ nguyên FPS nguồn. Chuẩn hoá tại service để route, Seedance và
+    # caller nội bộ đều nhận cùng một contract, kể cả khi client JS bị bỏ qua.
+    smooth_motion = bool(smooth_motion)
+    preserve_fps = bool(preserve_fps) and not smooth_motion
     return {"video_key": video_key, "owner_id": owner_id, "preset": preset,
             "target_height": int(target_height), "codec": codec,
             "preview": bool(preview), "duration_s": float(duration_s or 0),
-            "preserve_fps": bool(preserve_fps),
+            "preserve_fps": preserve_fps,
             "preserve_audio": bool(preserve_audio),
-            "stabilize": bool(stabilize), "smooth_motion": bool(smooth_motion),
+            "stabilize": bool(stabilize), "smooth_motion": smooth_motion,
             "request_id": str(request_id or "")[:96],
             "source_name": PurePosixPath(str(source_name or video_key)).name[:255]}
 

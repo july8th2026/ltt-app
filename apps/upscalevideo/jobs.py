@@ -27,6 +27,26 @@ _BATCH_SIZE = 360          # >ngưỡng → chunk (giới hạn đỉnh đĩa PN
 _PREVIEW_SECONDS = 8.0
 
 
+def _gpu_runtime(ctx) -> tuple[int | None, dict | None]:
+    """Resolve the worker lease once and pin every child process to that GPU.
+
+    Real-ESRGAN NCNN is Vulkan-based, so it needs the physical ``-g`` index;
+    CUDA/NVENC subprocesses receive the UUID-scoped environment.  A vanished
+    leased GPU is an infrastructure error, never permission to fall back to a
+    different card and collide with another worker.
+    """
+    gpu_uuid = str(getattr(ctx, "gpu_uuid", "") or "")
+    env_factory = getattr(ctx, "gpu_env", None)
+    process_env = env_factory() if callable(env_factory) else None
+    if not gpu_uuid:
+        return None, process_env
+    from platform_core import gpu
+    selected = gpu.by_uuid(gpu_uuid)
+    if selected is None:
+        raise RuntimeError(_t("GPU đã được cấp không còn khả dụng; vui lòng thử lại."))
+    return selected.index, process_env
+
+
 def _handle_image(params: dict, ctx=None) -> dict:
     from PIL import Image
     from platform_core.storage import get_storage
@@ -59,9 +79,11 @@ def _handle_image(params: dict, ctx=None) -> dict:
         tune = autotune.pick(preset, width, height,
                              gpu_uuid=getattr(ctx, "gpu_uuid", ""))
         if ctx is not None: ctx.progress(10, f"nâng ảnh bằng {tune.model}")
+        gpu_index, process_env = _gpu_runtime(ctx)
         status = engine.run_upscale(input_dir, output_dir, tune, 1,
                                     progress_cb=(lambda done: ctx.progress(min(90, 10 + done * 80), "nâng chi tiết") if ctx else None),
-                                    cancel_check=getattr(ctx, "is_cancelled", None))
+                                    cancel_check=getattr(ctx, "is_cancelled", None),
+                                    gpu_index=gpu_index, env=process_env)
         if status != "done":
             raise RuntimeError(f"Engine upscale ảnh thất bại ({status}).")
         result_path = next(Path(output_dir).glob("*.png"), None)
@@ -123,7 +145,7 @@ def _resolve_encoder(codec: Codec) -> str:
 
 
 def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog,
-                     cancel_check):
+                     cancel_check, gpu_index=None, process_env=None):
     """Video dài: chunk _BATCH_SIZE frame → upscale → encode segment → concat."""
     seg_dir = os.path.join(tmp, "seg"); os.makedirs(seg_dir, exist_ok=True)
     frame_files = sorted(f for f in os.listdir(in_dir) if f.endswith(".png"))
@@ -142,7 +164,8 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
         base = done_total
         status = engine.run_upscale(b_in, b_up, tune, len(batch),
                                     progress_cb=lambda d, _b=base: on_prog(_b + d),
-                                    cancel_check=cancel_check)
+                                    cancel_check=cancel_check,
+                                    gpu_index=gpu_index, env=process_env)
         if status == "cancelled":
             raise ff.ProcessingCancelled("Job đã được hủy.")
         if status == "timeout":
@@ -151,7 +174,7 @@ def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog
             raise RuntimeError(f"Engine upscale đoạn {bi + 1} thất bại.")
         seg = os.path.join(seg_dir, f"seg_{bi:04d}.mp4")
         ff.encode_segment(b_up, seg, info["fps_str"], target_h, encoder,
-                          cancel_check=cancel_check)
+                          cancel_check=cancel_check, env=process_env)
         segs.append(seg)
         done_total += len(batch)
         shutil.rmtree(b_in, ignore_errors=True)
@@ -188,6 +211,7 @@ def handle(params: dict, ctx=None) -> dict:
     owner_id = str(params.get("owner_id", "")) or "unknown"
     job_id = getattr(ctx, "job_id", "") or "adhoc"
     cancel_check = getattr(ctx, "is_cancelled", None)
+    gpu_index, process_env = _gpu_runtime(ctx)
 
     if not engine.check_engine():
         raise RuntimeError(_t('Engine upscale chưa sẵn sàng (thiếu vendor/engine).'))
@@ -215,7 +239,7 @@ def handle(params: dict, ctx=None) -> dict:
                     break
                 dst.write(block)
 
-        info = ff.probe_video(tmp_video, cancel_check=cancel_check)
+        info = ff.probe_video(tmp_video, cancel_check=cancel_check, env=process_env)
         if info["w"] == 0:
             raise RuntimeError(_t('Không đọc được luồng video.'))
         eff_dur = min(info["duration"], _PREVIEW_SECONDS) if preview else info["duration"]
@@ -239,7 +263,7 @@ def handle(params: dict, ctx=None) -> dict:
             working_video = os.path.join(tmp, "stabilized.mp4")
             ff.stabilize_video(tmp_video, working_video,
                                max_seconds=_PREVIEW_SECONDS if preview else None,
-                               cancel_check=cancel_check)
+                               cancel_check=cancel_check, env=process_env)
 
         if ctx is not None:
             ctx.progress(4, "tách frame")
@@ -252,7 +276,7 @@ def handle(params: dict, ctx=None) -> dict:
         n = ff.extract_frames(working_video, in_dir, cfr_fps=cfr,
                               interpolate_fps=output_fps if smooth_motion else None,
                               max_seconds=max_sec,
-                              cancel_check=cancel_check)
+                              cancel_check=cancel_check, env=process_env)
 
         tune = autotune.pick(preset, info["w"], info["h"],
                              gpu_uuid=getattr(ctx, "gpu_uuid", ""))
@@ -269,7 +293,8 @@ def handle(params: dict, ctx=None) -> dict:
         encoder = _resolve_encoder(codec)
         if n <= _BATCH_SIZE:
             status = engine.run_upscale(in_dir, up_dir, tune, n, progress_cb=on_prog,
-                                        cancel_check=cancel_check)
+                                        cancel_check=cancel_check,
+                                        gpu_index=gpu_index, env=process_env)
             if status == "cancelled":
                 raise ff.ProcessingCancelled("Job đã được hủy.")
             if status == "timeout":
@@ -281,19 +306,19 @@ def handle(params: dict, ctx=None) -> dict:
             ow, oh = ff.encode_full(up_dir, tmp_video, os.path.join(tmp, "out.mp4"),
                                     output_fps, target_h,
                                     info["has_audio"] and preserve_audio, encoder,
-                                    cancel_check=cancel_check)
+                                    cancel_check=cancel_check, env=process_env)
             out_local = os.path.join(tmp, "out.mp4")
         else:
             batch_info = dict(info, fps_str=output_fps,
                               has_audio=info["has_audio"] and preserve_audio)
             segs = _upscale_batched(tmp, in_dir, tune, n, batch_info, target_h, encoder,
-                                    ctx, on_prog, cancel_check)
+                                    ctx, on_prog, cancel_check, gpu_index, process_env)
             if ctx is not None:
                 ctx.progress(92, f"nối {len(segs)} đoạn + audio…")
             out_local = os.path.join(tmp, "out.mp4")
             ow, oh = ff.concat_and_mux(segs, tmp_video, out_local,
                                        info["has_audio"] and preserve_audio,
-                                       cancel_check=cancel_check)
+                                       cancel_check=cancel_check, env=process_env)
 
         if ctx is not None:
             ctx.progress(96, "lưu kết quả")

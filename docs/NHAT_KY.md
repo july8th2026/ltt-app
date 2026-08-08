@@ -14,6 +14,78 @@
 
 ---
 
+## 2026-08-08 — H26.5: Phase 3.1 Upscale Video PASS
+
+- **Mục tiêu:** hoàn thiện trải nghiệm Upscale theo ảnh/yêu cầu đã khóa, loại bỏ
+  UI nghiên cứu khỏi khách hàng và chứng minh hai worker dùng đúng hai GPU 16 GB.
+- **Hạng mục:** H26.5 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Đổi tên public thành **Upscale Video**. Giữ Fast/Quality, 1080p/1440p/4K,
+  codec, FPS/audio, preview, chống rung, mượt chuyển động và batch là control có
+  contract thật; `smooth_motion` luôn loại `preserve_fps` cả UI lẫn service.
+- Rebuild compare bằng divider kéo được và semantic slider dùng chuột/pointer/
+  phím; nguồn là master player, output theo play/pause/seek/rate/end và tự sửa
+  drift trên 0,12 giây. Browser đo drift thật 0,014 giây.
+- Queue có filter 5 trạng thái, sort mới/cũ, list/grid lưu theo browser, thumbnail
+  video thật, chip trạng thái có chữ, download attachment owner-only. Watch Agent
+  và telemetry chỉ admin; AI Detail/HDR và jargon nội bộ không còn ở customer UI.
+- Sửa lỗi concurrency nghiêm trọng tìm được khi audit: worker đã lease GPU theo
+  UUID nhưng Real-ESRGAN NCNN không nhận GPU, nên hai worker có thể cùng dùng GPU
+  0. Nay UUID được map sang index vật lý cho `-g`; FFmpeg/NVENC nhận `gpu_env()`;
+  GPU đã lease biến mất thì fail rõ ràng, không tự chạy nhầm card.
+- Nâng tool smoke nhận GPU/preset/resolution/duration và thêm soak hai process có
+  telemetry. Lưu ma trận tái lập trong `docs/UI_REDESIGN/upscalevideo/evidence/`
+  và báo cáo `07_H26_GPU_BENCHMARK.md`; evidence không lưu đường dẫn cá nhân.
+- Full video 10,054 giây: Fast GPU0/GPU1 lần lượt 21,270/20,867 giây; Quality
+  327,454/309,938 giây. Mẫu ngắn 1440p/4K đều đúng resolution/FPS/audio. Soak
+  đồng thời: hai card cùng đạt 100%, max 64°C, không thermal slowdown, hai output
+  PASS. UI đổi mô tả Quality vì thực đo chậm khoảng 15 lần Fast trên clip này.
+- Browser cuối customer/admin và mobile 390 px: customer không có Watch/research,
+  admin có Watch/telemetry; touch target 44 px, không overflow; trạng thái VI/EN
+  dịch đúng tại render; console 0 error/0 warning và request app 200/206.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_82_upscalevideo.py tests/test_114_upscale_ui.py tests/test_115_upscale_feature_benchmark.py tests/test_116_upscale_motion_features.py tests/test_151_worker_gpu.py tests/test_157_upscale_h26.py -q` | PASS, 50 test; 1 warning deprecation TestClient |
+| `python tools/upscale_gpu_smoke.py ...` — 12 case tuần tự | PASS 2 GPU × Fast/Quality × 1080p/1440p/4K; full + short evidence |
+| `python tools/upscale_dual_gpu_soak.py ...` | PASS; 2 worker, max 64°C, không thermal slowdown |
+| Playwright fixture `127.0.0.1:8111` customer/admin, 1920×1080 và 390×844 | PASS compare/filter/grid/upload quote/download/admin boundary/i18n; không overflow |
+| Playwright console/network | 0 error, 0 warning; request ứng dụng 200/206 sau redirect locale |
+| `python tools/gate.py --quick` lượt đầu | FAIL đúng 1 chuỗi GPU chưa bọc `_()`; đã sửa và dịch |
+| `python tools/gate.py --quick` sau sửa | PASS 8/8 |
+| `python tools/gate.py` | PASS 9/9 trong 1.663,3 giây; pytest PASS trong 1.637,3 giây |
+
+### Quyết định mới
+
+Không có. Thực thi Q47 và roadmap H26.5. Không đổi đơn giá Quality trong vé UI;
+chênh lệch runtime/cost được đưa sang H26.11 để đo cost trên successful output.
+
+### Cách lùi lại
+
+Revert commit H26.5; không có migration dữ liệu. Khi lùi bản worker phải dừng
+nhận job mới và drain/cancel + settle/refund job active trước. Không được quay về
+bản không pin GPU trong lúc chạy hai worker.
+
+### Còn tồn đọng
+
+- Chưa deploy; release vẫn bị khóa tới H26.12 Phase 5.
+- Progress message đã lưu trong job lịch sử giữ nguyên ngôn ngữ lúc worker ghi;
+  nhãn trạng thái/ETA mới dịch tại render. Chuẩn hóa event msgid toàn bộ app nằm
+  trong H24/H26.11, không sửa ngược log cũ.
+- Price multiplier Quality hiện thấp hơn tỷ lệ runtime đo trên một clip; cần đo
+  nhiều loại video và cost/output ở Phase 4 trước khi đổi giá sản phẩm.
+
+### Việc tiếp theo
+
+1. H26.6 Phase 3.2 AutoSub: đối chiếu bundle/hash/build-meta và nguyên nhân legacy.
+2. Canary React Studio qua Upload → Transcribe → Style → Render → Download.
+3. Giữ legacy rollback một release; không chạy song song H26.7.
+
 ## 2026-08-08 — H26.4: Phase 2 Marketplace/design system PASS
 
 - **Mục tiêu:** chuẩn hóa marketplace theo lifecycle/capability và hợp nhất bề

@@ -53,15 +53,22 @@ def _count_png(d: str) -> int:
 def run_upscale(in_dir: str, out_dir: str, tune: TuneResult, n_frames: int,
                 progress_cb: Optional[Callable[[int], None]] = None,
                 cancel_check: Optional[Callable[[], bool]] = None,
+                gpu_index: int | None = None,
+                env: dict | None = None,
                 _allow_fallback: bool = True) -> str:
     """Upscale mọi PNG trong in_dir → out_dir. Trả "done"|"cancelled"|"timeout"|"error"."""
     os.makedirs(out_dir, exist_ok=True)
     args = [str(_EXE), "-i", in_dir, "-o", out_dir, "-n", tune.model, "-s", "4",
             "-m", "models", "-f", "png", "-t", str(tune.tile), "-j", tune.threads]
-    logger.info("[engine] %s tile=%d j=%s (%d frames)", tune.model, tune.tile,
-                tune.threads, n_frames)
+    if gpu_index is not None:
+        # NCNN dùng Vulkan nên CUDA_VISIBLE_DEVICES một mình không ghim được card.
+        # `-g` là GPU index vật lý lấy từ UUID lease của worker.
+        args += ["-g", str(gpu_index)]
+    logger.info("[engine] %s tile=%d j=%s gpu=%s (%d frames)", tune.model,
+                tune.tile, tune.threads, gpu_index, n_frames)
     proc = subprocess.Popen(args, cwd=str(_ENGINE_DIR),
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            env=env)
     last_done, last_t = -1, time.monotonic()
     try:
         while True:
@@ -100,6 +107,7 @@ def run_upscale(in_dir: str, out_dir: str, tune: TuneResult, n_frames: int,
                        proc.returncode, done, n_frames, tune.tile, smaller)
         tune2 = tune.model_copy(update={"tile": smaller})
         return run_upscale(in_dir, out_dir, tune2, n_frames, progress_cb,
-                           cancel_check, _allow_fallback=False)
+                           cancel_check, gpu_index=gpu_index, env=env,
+                           _allow_fallback=False)
     logger.error("[engine] thất bại rc=%s frames=%d/%d", proc.returncode, done, n_frames)
     return "error"

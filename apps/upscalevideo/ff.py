@@ -34,11 +34,12 @@ def _fp() -> str:
 
 
 def _run(cmd: list, timeout: int = 3600, cancel_check=None,
-         cwd: str | None = None) -> subprocess.CompletedProcess:
+         cwd: str | None = None, env: dict | None = None) -> subprocess.CompletedProcess:
     if cancel_check is None:
-        return subprocess.run(cmd, capture_output=True, timeout=timeout, cwd=cwd)
+        return subprocess.run(cmd, capture_output=True, timeout=timeout, cwd=cwd,
+                              env=env)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            cwd=cwd)
+                            cwd=cwd, env=env)
     deadline = time.monotonic() + timeout
     while True:
         if cancel_check():
@@ -57,11 +58,11 @@ def _run(cmd: list, timeout: int = 3600, cancel_check=None,
             continue
 
 
-def probe_video(path: str, cancel_check=None) -> dict:
+def probe_video(path: str, cancel_check=None, env: dict | None = None) -> dict:
     """Trả {w,h,fps,fps_str,duration,nb_frames,has_audio,vcodec,is_vfr,rotation}."""
     r = _run([_fp(), "-v", "error", "-print_format", "json",
               "-show_format", "-show_streams", path], timeout=60,
-             cancel_check=cancel_check)
+             cancel_check=cancel_check, env=env)
     if r.returncode != 0:
         raise RuntimeError(f"ffprobe lỗi: {r.stderr.decode(errors='replace')[:300]}")
     data = json.loads(r.stdout.decode(errors="replace"))
@@ -119,7 +120,8 @@ def probe_video(path: str, cancel_check=None) -> dict:
 
 
 def extract_frames(src: str, out_dir: str, cfr_fps=None, max_seconds=None,
-                   interpolate_fps=None, cancel_check=None) -> int:
+                   interpolate_fps=None, cancel_check=None,
+                   env: dict | None = None) -> int:
     """Tách frame → out_dir/f%05d.png. Trả số frame."""
     os.makedirs(out_dir, exist_ok=True)
     cmd = [_ff(), "-y", "-i", src]
@@ -135,7 +137,7 @@ def extract_frames(src: str, out_dir: str, cfr_fps=None, max_seconds=None,
     if filters:
         cmd += ["-vf", ",".join(filters)]
     cmd += [os.path.join(out_dir, "f%05d.png")]
-    r = _run(cmd, cancel_check=cancel_check)
+    r = _run(cmd, cancel_check=cancel_check, env=env)
     n = sum(1 for f in os.scandir(out_dir) if f.name.endswith(".png"))
     if r.returncode != 0 or n == 0:
         raise RuntimeError(f"Tách frame thất bại (rc={r.returncode}, n={n})")
@@ -154,7 +156,7 @@ def multiply_rate(rate: str, factor: int = 2) -> str:
 
 
 def stabilize_video(src: str, out_path: str, max_seconds=None,
-                    cancel_check=None) -> None:
+                    cancel_check=None, env: dict | None = None) -> None:
     """Ổn định video hai pass bằng libvidstab; audio được mux từ source ở cuối."""
     workdir = os.path.dirname(out_path) or "."
     os.makedirs(workdir, exist_ok=True)
@@ -164,7 +166,7 @@ def stabilize_video(src: str, out_path: str, max_seconds=None,
         common += ["-t", f"{max_seconds:.2f}"]
     detect = common + ["-vf", "vidstabdetect=shakiness=5:accuracy=9:result=" +
                        transform_name, "-f", "null", "-"]
-    first = _run(detect, cancel_check=cancel_check, cwd=workdir)
+    first = _run(detect, cancel_check=cancel_check, cwd=workdir, env=env)
     if first.returncode != 0:
         raise RuntimeError("Phân tích chống rung thất bại: " +
                            first.stderr.decode(errors="replace")[-300:])
@@ -173,7 +175,7 @@ def stabilize_video(src: str, out_path: str, max_seconds=None,
                           "-preset", "veryfast", "-crf", "18", "-pix_fmt",
                           "yuv420p", out_path]
     try:
-        second = _run(transform, cancel_check=cancel_check, cwd=workdir)
+        second = _run(transform, cancel_check=cancel_check, cwd=workdir, env=env)
     finally:
         try:
             os.remove(os.path.join(workdir, transform_name))
@@ -196,7 +198,7 @@ def _venc_args(encoder: str) -> list:
 
 def encode_full(frames_dir: str, src_for_audio: str, out_path: str, fps_str: str,
                 target_h: int, has_audio: bool, encoder: str,
-                cancel_check=None) -> tuple:
+                cancel_check=None, env: dict | None = None) -> tuple:
     """Ghép frame upscaled → MP4, giữ tỉ lệ + FPS + audio copy. Trả (out_w, out_h)."""
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     vf = f"scale=-2:{target_h}:flags=lanczos"
@@ -207,27 +209,29 @@ def encode_full(frames_dir: str, src_for_audio: str, out_path: str, fps_str: str
     if has_audio:
         cmd += ["-c:a", "copy"]
     cmd += [out_path]
-    r = _run(cmd, cancel_check=cancel_check)
+    r = _run(cmd, cancel_check=cancel_check, env=env)
     if r.returncode != 0 or not os.path.isfile(out_path):
         raise RuntimeError(f"Encode lỗi: {r.stderr.decode(errors='replace')[-400:]}")
-    info = probe_video(out_path, cancel_check=cancel_check)
+    info = probe_video(out_path, cancel_check=cancel_check, env=env)
     return info["w"], info["h"]
 
 
 def encode_segment(frames_dir: str, out_path: str, fps_str: str, target_h: int,
-                   encoder: str, cancel_check=None) -> None:
+                   encoder: str, cancel_check=None,
+                   env: dict | None = None) -> None:
     """Encode 1 batch frame → segment MP4 (video-only) để concat."""
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     cmd = ([_ff(), "-y", "-framerate", fps_str, "-i", os.path.join(frames_dir, "f%05d.png"),
             "-vf", f"scale=-2:{target_h}:flags=lanczos", "-r", fps_str]
            + _venc_args(encoder) + [out_path])
-    r = _run(cmd, cancel_check=cancel_check)
+    r = _run(cmd, cancel_check=cancel_check, env=env)
     if r.returncode != 0 or not os.path.isfile(out_path):
         raise RuntimeError(f"Encode segment lỗi: {r.stderr.decode(errors='replace')[-300:]}")
 
 
 def concat_and_mux(seg_paths: list, src_for_audio: str, out_path: str,
-                   has_audio: bool, cancel_check=None) -> tuple:
+                   has_audio: bool, cancel_check=None,
+                   env: dict | None = None) -> tuple:
     """Nối segment (copy) + mux audio gốc 1 lần (giữ sync)."""
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     list_file = out_path + ".concat.txt"
@@ -241,12 +245,12 @@ def concat_and_mux(seg_paths: list, src_for_audio: str, out_path: str,
     else:
         cmd += ["-c", "copy"]
     cmd += [out_path]
-    r = _run(cmd, cancel_check=cancel_check)
+    r = _run(cmd, cancel_check=cancel_check, env=env)
     try:
         os.remove(list_file)
     except OSError:
         pass
     if r.returncode != 0 or not os.path.isfile(out_path):
         raise RuntimeError(f"Concat/mux lỗi: {r.stderr.decode(errors='replace')[-300:]}")
-    info = probe_video(out_path, cancel_check=cancel_check)
+    info = probe_video(out_path, cancel_check=cancel_check, env=env)
     return info["w"], info["h"]

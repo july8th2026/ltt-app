@@ -3,8 +3,8 @@
 Thực hiện **tuần tự**, mỗi phase phải PASS mới sang phase sau. Không deploy trong
 audit dossier này.
 
-**Tiến độ 2026-08-08:** Phase 0, Phase 1 và Phase 2 **PASS**; Phase 3.1 Upscale
-Video là hạng mục tiếp theo. Chưa deploy.
+**Tiến độ 2026-08-08:** Phase 0, Phase 1, Phase 2 và Phase 3.1 Upscale Video
+**PASS**; Phase 3.2 AutoSub là hạng mục tiếp theo. Chưa deploy.
 
 ## Phase 0 - Scope, surface và rollback (P0)
 
@@ -81,6 +81,13 @@ xóa nên có thể trả catalog về hai card mà không chuyển dữ liệu.
 ## Phase 3 - Từng app, không song song
 
 ### 3.1 Upscale Video
+
+**Kết quả:** PASS ngày 2026-08-08. Mutual exclusion, compare, queue/download,
+admin boundary và copy customer đã được kiểm trên browser thật. Worker map UUID
+lease sang NCNN Vulkan `-g` và truyền env cho FFmpeg/NVENC; ma trận Fast/Quality,
+1080p/1440p/4K trên từng RTX 5060 Ti 16 GB PASS. Soak hai worker đạt 100% tải
+trên cả hai card, tối đa 64°C, không thermal slowdown; full gate 9/9 PASS.
+Evidence: `docs/UI_REDESIGN/upscalevideo/07_H26_GPU_BENCHMARK.md`. Chưa deploy.
 
 - Đổi tên; khóa mutual exclusion FPS trên UI/server/quote/result.
 - Rebuild compare: draggable divider + một slider semantics, master controls,

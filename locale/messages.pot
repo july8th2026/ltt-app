@@ -70,7 +70,7 @@ msgstr ""
 msgid "AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:51
+#: apps/upscalevideo/templates/upscalevideo.html:48
 msgid "Agent chạy trên máy chứa folder; web không nhận đường dẫn local."
 msgstr ""
 
@@ -94,15 +94,15 @@ msgstr ""
 msgid "Assistant proposal signer chưa được cấu hình."
 msgstr ""
 
-#: apps/upscalevideo/service.py:77
+#: apps/upscalevideo/service.py:82
 msgid "Batch chỉ nhận từ 1 đến 3 video."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:306
+#: apps/upscalevideo/routes.py:311
 msgid "Batch manifest không hợp lệ."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:335
+#: apps/upscalevideo/routes.py:340
 msgid "Batch retry chỉ khớp một phần."
 msgstr ""
 
@@ -248,7 +248,7 @@ msgstr ""
 msgid "Chi phí theo phút nguồn + số output"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:56
+#: apps/upscalevideo/templates/upscalevideo.html:54
 msgid "Chi phí ước tính"
 msgstr ""
 
@@ -258,6 +258,10 @@ msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:73
 msgid "Chi phí:"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:18
+msgid "Chi tiết cao hơn, xử lý chậm hơn nhiều."
 msgstr ""
 
 #: server/templates/nap_don.html:14
@@ -292,7 +296,7 @@ msgstr ""
 msgid "Chưa chọn dự án"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:71
+#: apps/upscalevideo/templates/upscalevideo.html:69
 msgid "Chưa chọn video"
 msgstr ""
 
@@ -349,16 +353,12 @@ msgstr ""
 msgid "Chưa có hội thoại."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:108
+#: apps/upscalevideo/templates/upscalevideo.html:105
 msgid "Chưa có job. Chọn video để bắt đầu."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:33
 msgid "Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên."
-msgstr ""
-
-#: apps/upscalevideo/templates/upscalevideo.html:45
-msgid "Chưa có pipeline HDR giữ đúng màu và metadata"
 msgstr ""
 
 #: apps/agent/templates/_agent_progress.html:17
@@ -407,14 +407,6 @@ msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:45
 msgid "Chưa lấy được model (sidecar chưa sẵn sàng?)."
-msgstr ""
-
-#: apps/upscalevideo/templates/upscalevideo.html:20
-msgid "Chưa mở — không dùng Quality để giả lập."
-msgstr ""
-
-#: apps/upscalevideo/templates/upscalevideo.html:45
-msgid "Chưa mở — không nâng SDR giả thành HDR."
 msgstr ""
 
 #: apps/thumbnail/jobs.py:179
@@ -484,10 +476,6 @@ msgstr ""
 msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:19
-msgid "Chỉ mở sau benchmark engine thật"
-msgstr ""
-
 #: apps/chataistudio/features.py:43
 msgid "Chỉ nhận PNG/JPEG/WebP, TXT/MD/CSV/JSON hoặc PDF."
 msgstr ""
@@ -505,7 +493,7 @@ msgstr ""
 msgid "Chỉ nhận ảnh, video hoặc audio."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:267
+#: apps/upscalevideo/routes.py:272
 msgid "Chỉ quản trị viên được xem telemetry."
 msgstr ""
 
@@ -557,11 +545,11 @@ msgstr ""
 msgid "Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:70
+#: apps/upscalevideo/templates/upscalevideo.html:68
 msgid "Chọn tệp từ máy"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:46
+#: apps/upscalevideo/templates/upscalevideo.html:42
 msgid "Chọn tối đa 3 video; submit nguyên tử."
 msgstr ""
 
@@ -578,7 +566,7 @@ msgid "Chọn tối đa hai ảnh thật"
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:47
-#: apps/upscalevideo/templates/upscalevideo.html:56
+#: apps/upscalevideo/templates/upscalevideo.html:54
 msgid "Chọn video"
 msgstr ""
 
@@ -604,8 +592,8 @@ msgstr ""
 msgid "Chọn ảnh thứ nhất"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:43
-#: apps/upscalevideo/templates/upscalevideo.html:95
+#: apps/upscalevideo/templates/upscalevideo.html:40
+#: apps/upscalevideo/templates/upscalevideo.html:92
 msgid "Chống rung"
 msgstr ""
 
@@ -621,7 +609,7 @@ msgstr ""
 msgid "Clip của tôi"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:33
+#: apps/upscalevideo/templates/upscalevideo.html:30
 msgid "Codec đầu ra"
 msgstr ""
 
@@ -678,8 +666,9 @@ msgstr ""
 msgid "Cách chia dòng"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:18
-msgid "Cân bằng tốc độ và chất lượng."
+#: apps/upscalevideo/routes.py:103
+#, python-brace-format
+msgid "Còn khoảng {minutes} phút"
 msgstr ""
 
 #: server/templates/home.html:5
@@ -691,6 +680,7 @@ msgid "Công cụ handoff chưa khả dụng."
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:64
+#: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Cũ nhất"
 msgstr ""
 
@@ -745,7 +735,7 @@ msgstr ""
 
 #: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:116
 #: apps/autosubvideo/routes.py:646 apps/taoclipngan/routes.py:161
-#: apps/upscalevideo/routes.py:179
+#: apps/upscalevideo/routes.py:184
 msgid "Cần tài khoản người dùng."
 msgstr ""
 
@@ -766,6 +756,7 @@ msgid "Cộng đồng sẽ mở khi có không gian thảo luận thật"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
+#: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Danh sách"
 msgstr ""
 
@@ -797,7 +788,7 @@ msgstr ""
 msgid "Dễ đọc, chia theo từng cảnh."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:76
+#: apps/upscalevideo/templates/upscalevideo.html:74
 msgid "Dữ liệu thật"
 msgstr ""
 
@@ -805,23 +796,23 @@ msgstr ""
 msgid "Dự án mới"
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:43
+#: apps/upscalevideo/jobs.py:63
 msgid "Engine Real-ESRGAN chưa sẵn sàng."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:69
+#: apps/upscalevideo/jobs.py:91
 msgid "Engine không tạo output ảnh."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:276
+#: apps/upscalevideo/jobs.py:301
 msgid "Engine treo (>5' không có frame mới). Thử lại."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:193
+#: apps/upscalevideo/jobs.py:217
 msgid "Engine upscale chưa sẵn sàng (thiếu vendor/engine)."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:278
+#: apps/upscalevideo/jobs.py:303
 msgid "Engine upscale thất bại (xem log)."
 msgstr ""
 
@@ -833,7 +824,7 @@ msgstr ""
 msgid "FFmpeg không tách được frame từ video."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:354
+#: apps/upscalevideo/routes.py:359
 msgid "File local rỗng hoặc tổng >90MB."
 msgstr ""
 
@@ -868,6 +859,10 @@ msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:34
 msgid "Font thương hiệu"
+msgstr ""
+
+#: apps/upscalevideo/jobs.py:46
+msgid "GPU đã được cấp không còn khả dụng; vui lòng thử lại."
 msgstr ""
 
 #: apps/mediatools/jobs.py:178
@@ -914,11 +909,11 @@ msgstr ""
 msgid "Giọng văn"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:40
+#: apps/upscalevideo/templates/upscalevideo.html:37
 msgid "Giữ nguyên FPS gốc"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:41
+#: apps/upscalevideo/templates/upscalevideo.html:38
 msgid "Giữ nguyên âm thanh"
 msgstr ""
 
@@ -944,6 +939,8 @@ msgstr ""
 
 #: apps/taoanh/templates/image.html:29
 #: apps/thumbnail/templates/thumbnail.html:66
+#: apps/upscalevideo/templates/upscalevideo.html:85
+#: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:9 server/templates/jobs.html:11
 #: server/templates/jobs.html:33
 msgid "Hoàn tất"
@@ -965,7 +962,7 @@ msgstr ""
 msgid "Hoặc mô tả phong cách riêng..."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:88
+#: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Hàng đợi xử lý"
 msgstr ""
 
@@ -1005,7 +1002,7 @@ msgstr ""
 msgid "Hủy"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:105
+#: apps/upscalevideo/templates/upscalevideo.html:102
 msgid "Hủy job"
 msgstr ""
 
@@ -1147,7 +1144,7 @@ msgstr ""
 #: apps/autosubvideo/routes.py:561 apps/autosubvideo/routes.py:585
 #: apps/autosubvideo/routes.py:602 apps/prompt_ai_ommi/routes/projects.py:222
 #: apps/prompt_ai_ommi/routes/resources.py:512
-#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/upscalevideo/routes.py:594
+#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/upscalevideo/routes.py:599
 #: server/routes/jobs.py:186 server/routes/jobs.py:202
 #: server/routes/jobs.py:237 server/routes/jobs.py:244
 #: server/routes/jobs.py:264 server/routes/jobs.py:289
@@ -1210,7 +1207,7 @@ msgstr ""
 msgid "Không tìm thấy tệp kết quả."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:665
+#: apps/upscalevideo/routes.py:693
 msgid "Không tìm thấy video nguồn."
 msgstr ""
 
@@ -1219,8 +1216,9 @@ msgid "Không tìm thấy video sau khi tải."
 msgstr ""
 
 #: apps/autosubvideo/routes.py:806 apps/taovideo/routes.py:476
-#: apps/taovideo/routes.py:485 apps/upscalevideo/routes.py:613
-#: apps/upscalevideo/routes.py:643
+#: apps/taovideo/routes.py:485 apps/upscalevideo/routes.py:618
+#: apps/upscalevideo/routes.py:655 apps/upscalevideo/routes.py:671
+#: apps/upscalevideo/routes.py:719
 msgid "Không tìm thấy video."
 msgstr ""
 
@@ -1266,7 +1264,7 @@ msgstr ""
 msgid "Không xác định được app nhận handoff."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:220
+#: apps/upscalevideo/jobs.py:244
 msgid "Không đọc được luồng video."
 msgstr ""
 
@@ -1290,7 +1288,7 @@ msgstr ""
 msgid "Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:42
+#: apps/upscalevideo/templates/upscalevideo.html:39
 msgid "Kiểm chất lượng với chi phí thấp."
 msgstr ""
 
@@ -1302,8 +1300,16 @@ msgstr ""
 msgid "Kiểu chữ (preset)"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:68
+#: apps/upscalevideo/templates/upscalevideo.html:85
+msgid "Kiểu hiển thị"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:66
 msgid "Kéo &amp; thả video vào đây"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:78
+msgid "Kéo để so sánh trước và sau"
 msgstr ""
 
 #: platform_core/image_input.py:48
@@ -1314,7 +1320,7 @@ msgstr ""
 msgid "Kế hoạch Agent"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:79
+#: apps/upscalevideo/templates/upscalevideo.html:77
 msgid "Kết quả sẽ xuất hiện tại đây"
 msgstr ""
 
@@ -1403,6 +1409,7 @@ msgid "Lưu trữ"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
+#: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Lưới"
 msgstr ""
 
@@ -1431,6 +1438,10 @@ msgstr ""
 msgid "Lịch sử xử lý"
 msgstr ""
 
+#: apps/upscalevideo/templates/upscalevideo.html:85
+msgid "Lọc hàng đợi"
+msgstr ""
+
 #: server/templates/home.html:36
 msgid "Lọc theo nhóm ứng dụng"
 msgstr ""
@@ -1449,6 +1460,8 @@ msgstr ""
 
 #: apps/taoanh/templates/image.html:29
 #: apps/thumbnail/templates/thumbnail.html:66
+#: apps/upscalevideo/templates/upscalevideo.html:85
+#: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:11 server/templates/jobs.html:12
 #: server/templates/jobs.html:34
 msgid "Lỗi"
@@ -1458,7 +1471,7 @@ msgstr ""
 msgid "MIME ảnh tham chiếu không khớp nội dung file."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:69
+#: apps/upscalevideo/templates/upscalevideo.html:67
 msgid "MP4, MOV, MKV, AVI · browser tối đa 90MB khi R2 CORS chưa được bật"
 msgstr ""
 
@@ -1542,7 +1555,7 @@ msgstr ""
 msgid "Mô tả ảnh quá ngắn — tối thiểu 8 ký tự."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:44
+#: apps/upscalevideo/templates/upscalevideo.html:41
 msgid "Mượt chuyển động 2×"
 msgstr ""
 
@@ -1586,7 +1599,9 @@ msgstr ""
 msgid "Một video chỉ nhận tối đa 4 tài nguyên tham chiếu."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:64 server/templates/home.html:29
+#: apps/taovideo/templates/taovideo.html:64
+#: apps/upscalevideo/templates/upscalevideo.html:85
+#: server/templates/home.html:29
 msgid "Mới nhất"
 msgstr ""
 
@@ -1642,11 +1657,6 @@ msgstr ""
 
 #: apps/agent/routes/assistant.py:36
 msgid "Mục tiêu/ngân sách không hợp lệ."
-msgstr ""
-
-#: apps/upscalevideo/templates/upscalevideo.html:20
-#: apps/upscalevideo/templates/upscalevideo.html:45
-msgid "NGHIÊN CỨU"
 msgstr ""
 
 #: apps/kichban/templates/_script_view.html:11
@@ -1760,10 +1770,6 @@ msgstr ""
 msgid "Nâng cấp AI"
 msgstr ""
 
-#: apps/upscalevideo/manifest.py:41
-msgid "Nâng cấp video"
-msgstr ""
-
 #: apps/taovideo/templates/taovideo.html:74
 msgid "Nâng cấp video AI"
 msgstr ""
@@ -1850,7 +1856,7 @@ msgstr ""
 msgid "Nội dung tải về không phải video hợp lệ."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:44
+#: apps/upscalevideo/templates/upscalevideo.html:41
 msgid "Nội suy 48/60 FPS rồi upscale · +120%."
 msgstr ""
 
@@ -1890,10 +1896,6 @@ msgstr ""
 msgid "Package vượt giới hạn 900 KiB."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:88
-msgid "Pause và Delete đang hoãn theo Q47"
-msgstr ""
-
 #: apps/agent/routes/workspace.py:46
 msgid "Phiên bản trình bày không hợp lệ."
 msgstr ""
@@ -1910,8 +1912,8 @@ msgstr ""
 #: apps/agent/routes/legacy_runs.py:132 apps/agent/routes/legacy_runs.py:146
 #: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:123
 #: apps/autosubvideo/routes.py:236 apps/autosubvideo/routes.py:285
-#: apps/upscalevideo/routes.py:214 apps/upscalevideo/routes.py:232
-#: apps/upscalevideo/routes.py:585 server/routes/jobs.py:255
+#: apps/upscalevideo/routes.py:219 apps/upscalevideo/routes.py:237
+#: apps/upscalevideo/routes.py:590 server/routes/jobs.py:255
 #: server/routes/jobs.py:278
 msgid "Phiên đã hết hạn."
 msgstr ""
@@ -2021,6 +2023,10 @@ msgstr ""
 msgid "Sai loại project PROMPT AI OMMI."
 msgstr ""
 
+#: apps/upscalevideo/templates/upscalevideo.html:79
+msgid "Sau"
+msgstr ""
+
 #: apps/taovideo/routes.py:156 apps/taovideo/routes.py:158
 msgid "Seed phải là số nguyên từ 0 đến 2147483647."
 msgstr ""
@@ -2080,7 +2086,7 @@ msgstr ""
 #: apps/taoanh/templates/image.html:31
 #: apps/taoclipngan/templates/taoclipngan.html:68
 #: apps/thumbnail/templates/thumbnail.html:72
-#: apps/upscalevideo/templates/upscalevideo.html:104
+#: apps/upscalevideo/templates/upscalevideo.html:101
 msgid "So sánh"
 msgstr ""
 
@@ -2117,6 +2123,10 @@ msgstr ""
 msgid "Sắp xếp"
 msgstr ""
 
+#: apps/upscalevideo/templates/upscalevideo.html:85
+msgid "Sắp xếp hàng đợi"
+msgstr ""
+
 #: server/templates/home.html:29
 msgid "Sắp xếp:"
 msgstr ""
@@ -2137,7 +2147,7 @@ msgstr ""
 msgid "Số dư hiện tại"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:338
+#: apps/upscalevideo/routes.py:343
 msgid "Số file không khớp manifest."
 msgstr ""
 
@@ -2158,7 +2168,7 @@ msgstr ""
 msgid "Số ảnh"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:63
+#: apps/upscalevideo/templates/upscalevideo.html:61
 msgid "Telemetry quản trị"
 msgstr ""
 
@@ -2232,7 +2242,7 @@ msgid "Thiếu transcript (chưa nạp phụ đề)."
 msgstr ""
 
 #: apps/autosubvideo/jobs.py:368 apps/taoclipngan/jobs.py:74
-#: apps/upscalevideo/jobs.py:171
+#: apps/upscalevideo/jobs.py:194
 msgid "Thiếu video (video_key)."
 msgstr ""
 
@@ -2240,7 +2250,7 @@ msgstr ""
 msgid "Thiếu văn bản cần đọc."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:52
+#: apps/upscalevideo/templates/upscalevideo.html:49
 msgid "Thu hồi"
 msgstr ""
 
@@ -2318,7 +2328,9 @@ msgstr ""
 msgid "Tiêu đề trên ảnh"
 msgstr ""
 
-#: apps/agent/templates/_agent_progress.html:3 server/templates/jobs.html:25
+#: apps/agent/templates/_agent_progress.html:3
+#: apps/upscalevideo/templates/upscalevideo.html:97
+#: server/templates/jobs.html:25
 msgid "Tiến độ"
 msgstr ""
 
@@ -2334,7 +2346,7 @@ msgstr ""
 msgid "Tiếng Việt"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:53
+#: apps/upscalevideo/templates/upscalevideo.html:50
 msgid "Token chỉ có quyền Watch Upscale và chỉ hiển thị một lần."
 msgstr ""
 
@@ -2390,7 +2402,7 @@ msgstr ""
 msgid "Trò chuyện, phát triển ý tưởng và tạo ảnh trong một phiên riêng tư."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:81
+#: apps/upscalevideo/templates/upscalevideo.html:79
 msgid "Trước"
 msgstr ""
 
@@ -2513,7 +2525,7 @@ msgstr ""
 msgid "Tùy chọn giao diện không hợp lệ."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:39
+#: apps/upscalevideo/templates/upscalevideo.html:36
 msgid "Tùy chọn nâng cao"
 msgstr ""
 
@@ -2566,7 +2578,7 @@ msgstr ""
 msgid "Tạo run Canvas đang tạm khóa."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:52
+#: apps/upscalevideo/templates/upscalevideo.html:49
 msgid "Tạo token kết nối"
 msgstr ""
 
@@ -2641,21 +2653,22 @@ msgstr ""
 msgid "Tải video"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:104
+#: apps/upscalevideo/templates/upscalevideo.html:101
 msgid "Tải xuống"
 msgstr ""
 
+#: apps/upscalevideo/templates/upscalevideo.html:85
 #: server/templates/home.html:6 server/templates/home.html:37
 #: server/templates/home.html:40 server/templates/jobs.html:8
 #: server/templates/jobs.html:14
 msgid "Tất cả"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:40
+#: apps/upscalevideo/templates/upscalevideo.html:37
 msgid "Tắt để chuẩn hóa 30 FPS."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:41
+#: apps/upscalevideo/templates/upscalevideo.html:38
 msgid "Tắt để xuất video không audio."
 msgstr ""
 
@@ -2777,6 +2790,10 @@ msgstr ""
 msgid "Upload ảnh / video / audio"
 msgstr ""
 
+#: apps/upscalevideo/manifest.py:41
+msgid "Upscale Video"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:63
 msgid "VD: Chiến dịch ra mắt sản phẩm mùa hè"
 msgstr ""
@@ -2887,19 +2904,20 @@ msgstr ""
 msgid "Về trang đăng nhập"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:83
-msgid "Vị trí đường so sánh"
+#: apps/upscalevideo/routes.py:91
+#, python-brace-format
+msgid "Vị trí {position} trong hàng đợi"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:202
+#: apps/upscalevideo/routes.py:207
 msgid "Watch Agent token không hợp lệ."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:308
+#: apps/upscalevideo/routes.py:313
 msgid "Watch batch chỉ nhận 1–3 video."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:313
+#: apps/upscalevideo/routes.py:318
 msgid "Watch batch thiếu request id."
 msgstr ""
 
@@ -2936,11 +2954,15 @@ msgstr ""
 msgid "Xem thêm"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:42
+#: apps/upscalevideo/templates/upscalevideo.html:39
 msgid "Xem thử 8 giây"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:76
+#: apps/upscalevideo/templates/upscalevideo.html:89
+msgid "Xem trước"
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:74
 msgid "Xem trước so sánh"
 msgstr ""
 
@@ -2992,7 +3014,7 @@ msgstr ""
 msgid "Xóa lọc"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:46
+#: apps/upscalevideo/templates/upscalevideo.html:42
 msgid "Xử lý hàng loạt"
 msgstr ""
 
@@ -3125,6 +3147,7 @@ msgstr ""
 msgid "Đang chạy"
 msgstr ""
 
+#: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:7 server/templates/jobs.html:9
 #: server/templates/jobs.html:37 server/templates/nap.html:65
 msgid "Đang chờ"
@@ -3171,6 +3194,8 @@ msgid "Đang xác nhận với ngân hàng…"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:102
+#: apps/upscalevideo/templates/upscalevideo.html:85
+#: apps/upscalevideo/templates/upscalevideo.html:96
 msgid "Đang xử lý"
 msgstr ""
 
@@ -3178,8 +3203,12 @@ msgstr ""
 msgid "Đang xử lý."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:63
+#: apps/upscalevideo/templates/upscalevideo.html:61
 msgid "Đang đọc dữ liệu thật…"
+msgstr ""
+
+#: apps/upscalevideo/routes.py:106
+msgid "Đang ước tính ETA"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:7
@@ -3226,6 +3255,8 @@ msgstr ""
 msgid "Đã hoàn tất."
 msgstr ""
 
+#: apps/upscalevideo/templates/upscalevideo.html:85
+#: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:10 server/templates/jobs.html:13
 #: server/templates/jobs.html:35
 msgid "Đã hủy"
@@ -3383,7 +3414,7 @@ msgstr ""
 msgid "Định danh nhân vật, địa điểm, đạo cụ và media tham chiếu."
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:32
+#: apps/upscalevideo/templates/upscalevideo.html:29
 msgid "Định dạng &amp; codec"
 msgstr ""
 
@@ -3429,7 +3460,7 @@ msgid "Độ phân giải"
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:74
-#: apps/upscalevideo/templates/upscalevideo.html:25
+#: apps/upscalevideo/templates/upscalevideo.html:22
 msgid "Độ phân giải đầu ra"
 msgstr ""
 
@@ -3446,7 +3477,7 @@ msgstr ""
 msgid "Ảnh do AI tạo"
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:37
+#: apps/upscalevideo/jobs.py:57
 msgid "Ảnh không thuộc tài khoản đang chạy workflow."
 msgstr ""
 
@@ -3523,7 +3554,7 @@ msgstr ""
 msgid "Ảnh, video hoặc audio tham chiếu"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:43
+#: apps/upscalevideo/templates/upscalevideo.html:40
 msgid "Ổn định hai pass bằng libvidstab · +20%."
 msgstr ""
 
@@ -3575,7 +3606,7 @@ msgstr ""
 msgid "✅ Kết quả"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:57
+#: apps/upscalevideo/templates/upscalevideo.html:55
 msgid "✦ Bắt đầu xử lý"
 msgstr ""
 
