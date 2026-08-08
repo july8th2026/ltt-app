@@ -1744,3 +1744,40 @@ Paddle chỉ là viết adapter trong `platform_core/payments/`, không đụng 
 **Vướng nằm ngoài kỹ thuật:** Stripe/Paddle đòi pháp nhân, khai thuế, hoá đơn,
 và chính sách hoàn tiền. Đây là việc pháp lý/kế toán, không phải việc mã nguồn —
 **chủ sản phẩm nhận xử lý** (chốt 2026-08-06).
+
+---
+
+## H26 — Chuẩn hóa portfolio app, lịch sử job và UX update 2026-08-08
+
+Nguồn: `docs/APP_AUDIT/platform/2026-08-08-app-update/`. Phạm vi và thứ tự ở
+`07_IMPLEMENTATION_ROADMAP.md`; thực hiện tuần tự, phase trước PASS mới sang
+phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
+
+- [x] H26.0 Audit STANDARD + inventory + roadmap — 2026-08-08: đọc toàn bộ ảnh/
+  `MoTa.txt`, kiểm source/browser/hardware, lập Q/M/E, G0-G8, findings, decision
+  gate và Phase 0-5. Không sửa runtime, không deploy.
+- [ ] H26.1 Khóa 12 quyết định sản phẩm trong `06_OPTIONS_AND_DECISIONS.md`.
+- [ ] H26.2 Phase 0: audience/lifecycle contract; soft-retire Kịch bản, ẩn Demo,
+  runtime-only Media Tools mà không làm gãy Agent.
+- [ ] H26.3 Phase 1: `JobEvent`, timeline/log/redaction/retention, History dùng
+  chung cho từng tool và Jobs toàn cục.
+- [ ] H26.4 Phase 2: marketplace card/taxonomy/lifecycle/design system và hợp
+  nhất Thumbnail vào Tạo ảnh AI.
+- [ ] H26.5 Phase 3.1: Upscale Video — controls, compare sync, queue/download,
+  benchmark và concurrency 2×16 GB.
+- [ ] H26.6 Phase 3.2: AutoSub — sửa version drift, canary React Studio và giữ
+  legacy rollback một release.
+- [ ] H26.7 Phase 3.3: đổi tên + UX Tạo Video Seedance, giữ option/provider đúng.
+- [ ] H26.8 Phase 3.4: đổi tên + UX Prompt AI, khảo sát read-only Prompt Seedance
+  và di trú tài nguyên không import chéo.
+- [ ] H26.9 Phase 3.5: shell Tạo ảnh AI hợp nhất Thumbnail, giữ history/job cũ.
+- [ ] H26.10 Phase 3.6: audit rồi mới build Clip ngắn, Chat, Agent và maintenance
+  Socialbot; các folder mô tả trống giữ UNKNOWN.
+- [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
+  failure recovery.
+- [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
+  re-audit Q/M/E + G0-G8.
+
+Điều kiện chặn: không xóa vật lý Kịch bản/Media trước khi ToolSpec dependency đã
+di trú; không coi 2 GPU 16 GB là một GPU 32 GB; không gọi app “đã hoàn thiện”
+theo quality gate khi còn G4/G8 FAIL.

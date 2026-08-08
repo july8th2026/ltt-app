@@ -14,6 +14,57 @@
 
 ---
 
+## 2026-08-08 — H26.0: audit portfolio và lập roadmap update app
+
+- **Mục tiêu:** áp dụng `quy_tac_audit.md` cho kho ứng dụng, ba tool cần bỏ/ẩn,
+  lịch sử job/log và bộ ảnh/MoTa update.
+- **Hạng mục:** H26.0 — hoàn thành phần audit/plan; chưa BUILD, chưa deploy.
+- **Trạng thái:** xong.
+
+### Đã làm
+
+- Đọc toàn bộ 10 folder, 7 file mô tả có nội dung/mẫu và 8 ảnh trong
+  `AppLttStudio_Update_08082025`; các folder trống được ghi UNKNOWN.
+- Kiểm browser local 8100: catalog public render thật, console 0 error/0 warning,
+  không có failed request bất ngờ; Kịch bản YouTube vẫn public.
+- Phát hiện không thể xóa thẳng Kịch bản/Media: chúng sở hữu các ToolSpec Text,
+  asset, audio và transform của Agent. Chọn đưa ra decision gate soft-retire.
+- Phát hiện `Job` chỉ lưu snapshot hiện tại, chưa có durable event timeline dùng
+  chung. Roadmap dùng `JobEvent`, không nhân bảng job theo app.
+- Xác định AutoSub production mặc định rơi về legacy nếu thiếu
+  `LTT_AUTOSUB_STUDIO_ROLLOUT=public`.
+- Đo hardware thật: 2 RTX 5060 Ti, mỗi card 16.311 MiB; ghi rõ không cộng thành
+  một pool VRAM 32 GB cho một job.
+- Tạo hồ sơ 8 phần tại
+  `docs/APP_AUDIT/platform/2026-08-08-app-update/`; baseline tạm
+  `Q58 · M UNKNOWN · E31 · G4/G8 FAIL`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Playwright local 8100 catalog + console/requests | PASS trong phạm vi public; 0 console error/warning, 0 failed request bất ngờ |
+| `python tools\gate.py --quick` | PASS 8/8 bước trong 26,8 giây: secret, contract, undefined names, silent-except, i18n và 3 frontend |
+
+### Quyết định mới
+
+Chưa có quyết định nền mới: 12 lựa chọn đang chờ khóa trong audit dossier, không
+tự ghi thành Q khi chủ sản phẩm chưa duyệt.
+
+### Cách lùi lại
+
+Revert commit tài liệu H26.0; không có migration/runtime/deploy cần lùi.
+
+### Còn tồn đọng
+
+H26.1-H26.12; competitor benchmark và authenticated A-Z từng app chưa chạy.
+
+### Việc tiếp theo
+
+1. Khóa decision gate H26.1 theo phương án khuyến nghị.
+2. Thực hiện Phase 0 soft-retire/visibility và browser regression.
+3. Chỉ sau Phase 0 PASS mới xây JobEvent/History chung.
+
 ## 2026-08-07 — Nhân viên không tạo được tài khoản: trần 3/IP/ngày
 
 - **Trạng thái:** xong (đã deploy 17:59)
