@@ -120,6 +120,8 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
                for model in palette["models"])
     assert all("price" not in tool and "params_schema" in tool for tool in palette["tools"])
+    assert next(tool for tool in palette["tools"]
+                if tool["name"] == "text.script")["customer_visible"] is False
     assert {tool["name"]: tool["label"] for tool in palette["tools"] if tool["primary"]} == {
         "text.generate": "Tạo văn bản", "image.generate": "Tạo hình ảnh",
         "video.generate": "Tạo video", "audio.generate": "Tạo âm thanh"}

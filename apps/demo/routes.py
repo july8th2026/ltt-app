@@ -14,14 +14,14 @@ from fastapi.responses import HTMLResponse
 from apps.demo import jobs
 from apps.demo.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
-from server.auth.session import require_login
+from server.deps import require_operator
 from server.templating import templates
 
 router = APIRouter(tags=["demo"])
 
 
 @router.get("", response_class=HTMLResponse)
-def demo_page(request: Request, user: str = Depends(require_login)):
+def demo_page(request: Request, user: str = Depends(require_operator)):
     return templates.TemplateResponse(request, "demo.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
@@ -34,7 +34,7 @@ def demo_run(
     request: Request,
     csrf_token: str = Form(...),
     text: str = Form(""),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     """Chạy job ngay trong request — CHỈ hợp lệ vì job này mất vài ms.
 
@@ -67,7 +67,7 @@ def demo_queue(
     request: Request,
     csrf_token: str = Form(...),
     text: str = Form(""),
-    user: str = Depends(require_login),
+    user: str = Depends(require_operator),
 ):
     """Chạy demo QUA HÀNG ĐỢI — đây mới là khuôn cho app thật (Q1/H4).
 

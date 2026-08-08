@@ -28,8 +28,12 @@ def env(tmp_path, monkeypatch):
     from platform_core import credit
     from platform_core.users import tao_nguoi_dung
     gen = dbmod.get_session(); s = next(gen)
-    ua = tao_nguoi_dung(s, email="a@x.com", password="matkhau-tot", is_verified=True)
-    ub = tao_nguoi_dung(s, email="b@x.com", password="matkhau-tot", is_verified=True)
+    ua = tao_nguoi_dung(s, email="a@x.com", password="matkhau-tot",
+                        is_verified=True, role="admin")
+    ub = tao_nguoi_dung(s, email="b@x.com", password="matkhau-tot",
+                        is_verified=True, role="admin")
+    tao_nguoi_dung(s, email="customer@x.com", password="matkhau-tot",
+                   is_verified=True)
     credit.nap(s, ua.id, 100)
     credit.nap(s, ub.id, 100)
     s.commit()
@@ -172,6 +176,6 @@ def test_user_khac_khong_huy_duoc_job(env):
 
 def test_normal_user_khong_vao_duoc_cau_hinh_va_status_operator(env):
     client, _ = env
-    _login(client, "a@x.com")
+    _login(client, "customer@x.com")
     assert client.get("/settings", follow_redirects=False).status_code == 403
     assert client.get("/status", follow_redirects=False).status_code == 403

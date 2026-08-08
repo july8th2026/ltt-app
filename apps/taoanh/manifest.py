@@ -80,6 +80,7 @@ MANIFEST = AppManifest(
     )),
 
     enabled=True,
+    lifecycle="development",
     group="Ảnh",
     notes="Di trú A1 từ gemini_image. Key qua APIKEYS (provider gemini, category image).",
 )

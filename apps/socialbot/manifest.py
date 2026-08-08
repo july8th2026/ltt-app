@@ -54,6 +54,7 @@ MANIFEST = AppManifest(
     enabled=True,
     group="Đăng bài",
     public=False,   # đóng băng (Q10) + cần OAuth/browser — ẩn khỏi catalog công khai (H6/Q30)
+    lifecycle="maintenance",
     notes="Đang chạy production. Route ở đường dẫn gốc vì lý do lịch sử — "
           "xem docstring của file này.",
 )

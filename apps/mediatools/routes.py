@@ -8,4 +8,4 @@ router = APIRouter(tags=["mediatools"])
 
 @router.get("")
 def media_tools(_identity: str = Depends(require_login)):
-    return RedirectResponse("/agent/canvas", status_code=307)
+    return RedirectResponse("/agent/canvas", status_code=308)

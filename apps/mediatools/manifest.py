@@ -73,6 +73,7 @@ MANIFEST = AppManifest(
                      "url": {"type": "string", "required": True, "max_length": 2048},
                      "confirm_rights": {"type": "bool", "required": True},
                  }, returns={"video_key": "video"}, verifiable=("technical",)),
-    ), enabled=True, public=False, group="Hạ tầng",
+    ), enabled=True, public=False, surface="runtime", lifecycle="internal",
+    group="Hạ tầng",
     notes="Không có UI độc lập; dùng qua /agent/canvas. Xử lý cục bộ bằng Pillow/FFmpeg.",
 )

@@ -38,6 +38,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
+from platform_core.i18n import _ as _t
+
 APPS_DIR = pathlib.Path(__file__).resolve().parent.parent / "apps"
 
 TOOL_PARAM_TYPES = frozenset({
@@ -47,6 +49,10 @@ TOOL_PARAM_TYPES = frozenset({
 TOOL_PORT_TYPES = frozenset({
     "text", "image", "image[]", "video", "video[]", "audio", "json",
     "model_ref",
+})
+APP_SURFACES = frozenset({"customer", "admin", "runtime"})
+APP_LIFECYCLES = frozenset({
+    "released", "development", "maintenance", "internal", "retired",
 })
 _TOOL_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
 _PROMPT_SOURCE_RE = re.compile(r"^prompts/[a-zA-Z0-9_-]+$")
@@ -67,6 +73,9 @@ class ToolSpec:
     params_schema: dict
     returns: dict
     verifiable: tuple = ()
+    # False = giữ runtime/schema để workflow cũ chạy, nhưng không mời khách
+    # tạo node mới từ palette. Đây là soft-retire, không phải xoá capability.
+    customer_visible: bool = True
 
 
 @dataclass(frozen=True)
@@ -126,6 +135,14 @@ class AppManifest:
     #           ẩn khỏi trang chủ công khai, vẫn dùng được khi đã đăng nhập.
     # App tự khai qua cờ này; nền tảng KHÔNG hardcode tên app (test_60 chốt).
     public: bool = True
+
+    # Bề mặt sản phẩm (Q69-Q72), độc lập với `enabled` và `public`.
+    # customer: catalog/nav khách hàng; admin: chỉ operator; runtime: không có
+    # bề mặt độc lập nhưng route/job/tool vẫn được mount để giữ tương thích.
+    surface: str = "customer"
+
+    # Vòng đời hiển thị (Q73), không dùng badge marketing để giả trạng thái.
+    lifecycle: str = "development"
 
     # Tiêu đề các mục kiểm tra (doctor) THUỘC app này (H6.6). Nền tảng dùng để
     # gắn badge "cần thiết lập" lên ĐÚNG thẻ app, thay vì treo một banner blocker
@@ -284,6 +301,14 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
         # FastAPI không báo gì cả — rất khó truy.
         raise RegistryError(
             f"[{manifest.slug}] route_prefix trùng: {manifest.route_prefix!r}")
+    if manifest.surface not in APP_SURFACES:
+        raise RegistryError(
+            _t("[{slug}] surface không hợp lệ: {value!r}").format(
+                slug=manifest.slug, value=manifest.surface))
+    if manifest.lifecycle not in APP_LIFECYCLES:
+        raise RegistryError(
+            _t("[{slug}] lifecycle không hợp lệ: {value!r}").format(
+                slug=manifest.slug, value=manifest.lifecycle))
     # Fail SỚM ngay lúc discover (W1.6): app sinh job mà KHÔNG khai credit_cost
     # thì job không tra được giá — trước đây chỉ vỡ lúc submit (app đã hiện trên
     # catalog, khách bấm rồi mới lỗi). Đánh dấu app lỗi ngay để không lên catalog.
@@ -310,6 +335,20 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
     for tool in manifest.tools:
         _validate_tool(manifest, tool, seen_tool_names | local_tool_names)
         local_tool_names.add(tool.name)
+
+
+def visible_on_surface(manifest: AppManifest, *, authenticated: bool,
+                       operator: bool = False) -> bool:
+    """Một nguồn chân lý cho catalog/header; không quyết định quyền route.
+
+    Route của app ``runtime`` vẫn được mount. App ``admin`` chỉ xuất hiện với
+    operator đã đăng nhập. App ``customer`` tuân theo cờ public khi ẩn danh.
+    """
+    if manifest.surface == "runtime":
+        return False
+    if manifest.surface == "admin":
+        return bool(authenticated and operator)
+    return bool(authenticated or manifest.public)
 
 
 def discover(apps_dir: pathlib.Path = APPS_DIR) -> list:

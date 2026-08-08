@@ -79,7 +79,8 @@ def home(request: Request):
     `enabled and public`), bấm một app thì mới cần đăng nhập. Đã đăng nhập thì
     lọc theo quyền (AppAccess) và hiện blocker/app-lỗi như trước.
     """
-    from platform_core.registry import discover
+    from platform_core.registry import discover, visible_on_surface
+    from server.deps import is_operator
 
     user = current_identity_optional(request)
     authed = user is not None
@@ -88,8 +89,8 @@ def home(request: Request):
 
     if not authed:
         # Khách: chỉ hiện app self-serve công khai; KHÔNG lộ blocker/app-lỗi.
-        visible = [a for a in ok_apps
-                   if a.manifest.enabled and a.manifest.public]
+        visible = [a for a in ok_apps if a.manifest.enabled and
+                   visible_on_surface(a.manifest, authenticated=False)]
         return templates.TemplateResponse(request, "home.html", {
             "user": None, "authed": False, "nav": "home",
             "apps": visible, "broken": [], "app_setup": {},
@@ -100,7 +101,8 @@ def home(request: Request):
     # trang trắng.
     from tools import doctor
     report = doctor.run(check_sheet_flag=False)
-    visible = ok_apps
+    visible = [a for a in ok_apps if visible_on_surface(
+        a.manifest, authenticated=True, operator=is_operator(request))]
     db_user = None
     try:
         db_user = _user_hien_tai(request)

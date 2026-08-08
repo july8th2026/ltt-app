@@ -5,7 +5,8 @@ Trọng tâm: chặn ở **tầng route**, không chỉ ẩn nút. Test quan tr�
 thẳng URL của một app bị ẩn/khoá và xác nhận bị chặn — vì "ẩn khỏi trang chủ
 nhưng vẫn gọi được URL" là lỗ hổng chứ không phải phân quyền.
 
-Chạy trên SQLite tạm. Dùng app `demo` (có route thật `/demo`) làm đối tượng.
+Chạy trên SQLite tạm. Dùng app khách hàng `agent` làm đối tượng; `demo` có
+surface admin và được kiểm riêng để không biến app vận hành thành UI khách.
 """
 from __future__ import annotations
 
@@ -145,7 +146,7 @@ def _dat_quyen_db(level):
         from sqlalchemy import select
         from platform_core.models import User
         uid = s.execute(select(User.id).where(User.email == "user@x.com")).scalar_one()
-        dat_quyen(s, uid, "demo", level)
+        dat_quyen(s, uid, "agent", level)
         s.commit()
     finally:
         try: next(gen)
@@ -154,7 +155,7 @@ def _dat_quyen_db(level):
 
 def test_app_mo_thi_vao_duoc(client):
     _dang_nhap(client)
-    r = client.get("/demo", follow_redirects=False)
+    r = client.get("/agent/canvas", follow_redirects=False)
     assert r.status_code == 200
 
 
@@ -162,22 +163,28 @@ def test_app_an_thi_go_url_thang_bi_404(client):
     """Gõ thẳng URL app bị ẩn → 404, không phải vào được."""
     _dang_nhap(client)
     _dat_quyen_db("hidden")
-    r = client.get("/demo", follow_redirects=False)
+    r = client.get("/agent/canvas", follow_redirects=False)
     assert r.status_code == 404
 
 
 def test_app_khoa_thi_go_url_thang_bi_403(client):
     _dang_nhap(client)
     _dat_quyen_db("locked")
-    r = client.get("/demo", follow_redirects=False)
+    r = client.get("/agent/canvas", follow_redirects=False)
     assert r.status_code == 403
 
 
 def test_app_an_bi_bo_khoi_trang_chu(client):
     _dang_nhap(client)
-    assert "/demo" in client.get("/").text, "khi mo thi phai hien tren trang chu"
+    assert "LTT Agent AI" in client.get("/").text, "khi mo thi phai hien tren trang chu"
     _dat_quyen_db("hidden")
-    assert "/demo" not in client.get("/").text, "khi an thi phai bien khoi trang chu"
+    assert "LTT Agent AI" not in client.get("/").text, \
+        "khi an thi phai bien khoi trang chu"
+
+
+def test_demo_surface_admin_tra_404_cho_customer(client):
+    _dang_nhap(client)
+    assert client.get("/demo", follow_redirects=False).status_code == 404
 
 
 def test_an_danh_khong_bi_middleware_nuot_redirect(client):

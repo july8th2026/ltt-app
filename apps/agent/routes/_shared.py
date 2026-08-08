@@ -276,6 +276,7 @@ def _palette_tool(name, spec, owner, loaded) -> dict:
         spec.name, (spec.name.replace(".", " ").title(), "advanced", False))
     return {"name": spec.name, "label": label, "category": category,
             "primary": primary, "description": spec.description,
+            "customer_visible": spec.customer_visible,
             "app_slug": owner.slug, "app_name": owner.manifest.display_name,
             "requires": list(owner.manifest.requires), "params_schema": schema,
             "schema_variants": variants, "returns": spec.returns,

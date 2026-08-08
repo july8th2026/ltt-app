@@ -1758,8 +1758,10 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   gate và Phase 0-5. Không sửa runtime, không deploy.
 - [x] H26.1 Khóa 12 quyết định sản phẩm — 2026-08-08: chủ sản phẩm chọn toàn bộ
   phương án A; ghi thành Q69-Q80 trong nguồn chân lý.
-- [ ] H26.2 Phase 0: audience/lifecycle contract; soft-retire Kịch bản, ẩn Demo,
-  runtime-only Media Tools mà không làm gãy Agent.
+- [x] H26.2 Phase 0 — 2026-08-08: thêm contract `surface/lifecycle` và
+  `customer_visible`; Kịch bản + Media runtime-only, landing 308 sang Canvas;
+  Demo admin-only/customer 404; build lại Canvas, browser anonymous/customer/
+  operator PASS, console 0, full `python tools\gate.py` PASS 9/9.
 - [ ] H26.3 Phase 1: `JobEvent`, timeline/log/redaction/retention, History dùng
   chung cho từng tool và Jobs toàn cục.
 - [ ] H26.4 Phase 2: marketplace card/taxonomy/lifecycle/design system và hợp

@@ -80,6 +80,7 @@ MANIFEST = AppManifest(
     )),
 
     enabled=True,
+    lifecycle="released",
     group="Video",
     badge="MỚI",
     notes="Di trú Đợt C từ video_upscale. Cần GPU NVIDIA + vendor engine. Job GPU dài.",

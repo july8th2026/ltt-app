@@ -658,7 +658,8 @@ def test_double_submit_khong_tao_2_job(client):
     gen = dbmod.get_session(); db = next(gen)
     try:
         u = tao_nguoi_dung(db, email="dup@example.com",
-                           password="matkhau-tot-12", is_verified=True)
+                           password="matkhau-tot-12", is_verified=True,
+                           role="admin")
         credit.cap_tay(db, u.id, 50, by="test"); db.commit(); uid = u.id
     finally:
         try: next(gen)

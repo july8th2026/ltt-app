@@ -62,16 +62,18 @@ export function blockPresentation(tool?:PaletteTool):BlockPresentation|undefined
 }
 
 export function canonicalCreativeTools(palette:PaletteTool[]):PaletteTool[]{
+  const visible=palette.filter(tool=>tool.customer_visible!==false)
   return (Object.keys(coreTools) as CreativeModality[]).flatMap(modality=>{
-    const exact=palette.find(tool=>tool.name===coreTools[modality])
-    const fallback=palette.find(tool=>creativeModality(tool)===modality&&!tool.name.startsWith('asset.'))
+    const exact=visible.find(tool=>tool.name===coreTools[modality])
+    const fallback=visible.find(tool=>creativeModality(tool)===modality&&!tool.name.startsWith('asset.'))
     return exact?[exact]:fallback?[fallback]:[]
   })
 }
 
 export function customerPaletteTools(palette:PaletteTool[],advanced=false):PaletteTool[]{
   if(!advanced)return canonicalCreativeTools(palette)
-  return palette.filter(tool=>blockPresentation(tool)?.tier!=='internal')
+  return palette.filter(tool=>tool.customer_visible!==false&&
+    blockPresentation(tool)?.tier!=='internal')
 }
 
 export function customerToolLabel(tool?:PaletteTool):string{

@@ -146,12 +146,19 @@ def _nav_apps(request=None):
     khớp với trang chủ, nếu không app bị ẩn vẫn hiện ở thanh bên. Bọc an toàn:
     lỗi lọc (chưa có CSDL, admin-env) thì hiện đủ, không làm sập trang."""
     try:
-        from platform_core.registry import discover
+        from platform_core.registry import discover, visible_on_surface
         loaded = [a for a in discover() if a.manifest.enabled and not a.error]
     except Exception:
         # Sidebar lỗi không được làm sập trang. Trả rỗng còn hơn 500.
         return []
 
+    authed = _da_dang_nhap(request) if request is not None else False
+    operator = False
+    if authed and request is not None:
+        from server.deps import is_operator
+        operator = is_operator(request)
+    loaded = [a for a in loaded if visible_on_surface(
+        a.manifest, authenticated=authed, operator=operator)]
     if request is None:
         return loaded
     try:
@@ -268,12 +275,18 @@ def _nav_groups(request=None):
     """App gom theo `group` cho HEADER (UX Pha 2). Khách: chỉ app public; đã đăng
     nhập: lọc theo quyền. Trả dict {group: [LoadedApp]} — bọc an toàn, lỗi trả {}."""
     try:
-        from platform_core.registry import discover
+        from platform_core.registry import discover, visible_on_surface
         loaded = [a for a in discover() if a.manifest.enabled and not a.error]
     except Exception:
         return {}
 
     authed = _da_dang_nhap(request)
+    operator = False
+    if authed and request is not None:
+        from server.deps import is_operator
+        operator = is_operator(request)
+    loaded = [a for a in loaded if visible_on_surface(
+        a.manifest, authenticated=authed, operator=operator)]
     sid = None
     try:
         sid = request.session.get("sid") if request is not None else None
@@ -294,9 +307,6 @@ def _nav_groups(request=None):
                 except StopIteration: pass
         except Exception:
             pass
-    if not authed:
-        loaded = [a for a in loaded if a.manifest.public]
-
     groups: dict = {}
     for a in loaded:
         groups.setdefault(a.manifest.group or "Ứng dụng", []).append(a)

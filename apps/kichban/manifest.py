@@ -51,6 +51,7 @@ MANIFEST = AppManifest(
             "language": {"type": "enum", "source": "prompts/ngon_ngu"},
         },
         returns={"script": "json"},
+        customer_visible=False,
     ), ToolSpec(
         name="text.generate", job_type="kichban.generate",
         description=N_('Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra.'),
@@ -67,6 +68,9 @@ MANIFEST = AppManifest(
     )),
 
     enabled=True,
+    public=False,
+    surface="runtime",
+    lifecycle="retired",
     group="Kịch bản",
     notes="Di trú A1 từ youtube_script. Đầu ra text/JSON. Key qua APIKEYS (chat).",
 )

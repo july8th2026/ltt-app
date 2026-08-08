@@ -34,6 +34,13 @@ describe('creative presentation adapter',()=>{
     expect(primaryOutputHandle(palette[3])).toBe('image_keys')
   })
 
+  it('keeps soft-retired tools resolvable but removes them from customer menus',()=>{
+    const retired={...make('text.script'),customer_visible:false}
+    const palette=[retired,make('text.generate'),make('image.generate',{image_keys:'image[]'})]
+    expect(palette.find(tool=>tool.name==='text.script')).toBe(retired)
+    expect(customerPaletteTools(palette,true).map(tool=>tool.name)).not.toContain('text.script')
+  })
+
   it('uses human intent and a unique destination label instead of field names',()=>{
     const text=make('text.generate',{text:'text'});const image=make('image.generate',{image_keys:'image[]'})
     expect(connectionIntent(text,'text',image)).toBe('Tạo hình ảnh')

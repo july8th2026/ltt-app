@@ -14,6 +14,71 @@
 
 ---
 
+## 2026-08-08 — H26.2: Phase 0 surface/lifecycle PASS
+
+- **Mục tiêu:** bỏ/ẩn ba tool theo quyết định A mà không phá runtime, workflow
+  cũ hay khả năng debug.
+- **Hạng mục:** H26.2 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Mở rộng `AppManifest` bằng enum `surface=customer|admin|runtime` và
+  `lifecycle=released|development|maintenance|internal|retired`, validate fail
+  sớm và một helper visibility dùng chung cho catalog/header/sidebar.
+- Kịch bản YouTube thành `runtime/retired`, landing 308 sang Agent Canvas;
+  `text.script` vẫn resolve được cho workflow cũ nhưng `customer_visible=False`
+  nên không còn trong palette khách. `text.generate` tiếp tục phục vụ block Text.
+- Media Tools thành `runtime/internal`, landing 308 sang Canvas; toàn bộ asset,
+  audio và transform ToolSpec vẫn giữ nguyên.
+- Demo thành `admin/internal`; user thường gõ URL nhận 404, database admin vẫn
+  thấy card và chạy được pipeline test.
+- Gắn lifecycle thật cho toàn portfolio theo Q73/Q78 và build lại bundle Canvas.
+- Bổ sung test registry, surface, access-control, soft-retire palette và cập
+  nhật fixture browser có operator riêng.
+- Full gate phát hiện lỗi baseline WEB-001: `route-map.json` có canonical
+  WordPress `/en/` nhưng không có file legacy. Đã khai tường minh
+  `source_exists:false`; production audit vẫn giữ target, test coverage legacy
+  không còn coi route ảo là file.
+- Hai lượt gate đầu bị shell timeout để lại hai pytest chạy song song. Đã xác
+  định và dừng đúng bốn PID do phiên này tạo, không đụng dịch vụ/BOT khác; lượt
+  cuối chạy một tiến trình và PASS.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_60_app_registry.py tests/test_66_phan_quyen_app.py tests/test_69_web_jobs.py tests/test_97_agent_workflow_api.py` | PASS, 64 test |
+| `npm test -- --run tests/presentationAdapter.test.ts` tại `frontend/agent-canvas` | PASS, 4 test |
+| `npm run build` tại `frontend/agent-canvas` | PASS; typecheck + Vite build, bundle mới được ghi vào `server/static/agent-canvas` |
+| `python tools\gate.py --quick` | PASS 8/8 trong 27,8 giây |
+| Playwright server cô lập `127.0.0.1:8111` | PASS anonymous/customer/operator; customer Demo 404; Kịch bản/Media 308; palette không còn Kịch bản; console 0 error/0 warning; request app 200 sau locale redirect |
+| `python -m pytest -q tests/test_125_website_route_contract.py` | PASS, 3 test |
+| `php deploy/wordpress/tests/route-contract-test.php` | Chưa chạy: máy không có PHP CLI |
+| `python tools\gate.py` | PASS 9/9; pytest PASS trong 1.509,3 giây |
+
+### Quyết định mới
+
+Không có. Triển khai đúng Q69-Q73 và Q78 đã khóa ở H26.1; sửa WEB-001 chỉ làm
+rõ dữ kiện nguồn tồn tại, không đổi ownership hay canonical URL.
+
+### Cách lùi lại
+
+Revert commit H26.2. Không có migration dữ liệu; bundle cũ quay lại cùng commit.
+Runtime Kịch bản/Media chưa bị xoá nên rollback không cần khôi phục dữ liệu.
+
+### Còn tồn đọng
+
+- H26.3 Phase 1 JobEvent/History/log chung chưa triển khai.
+- PHP contract test chưa chạy vì thiếu executable; không chặn Phase 0 app.
+- Chưa deploy; production chưa thay đổi.
+
+### Việc tiếp theo
+
+1. Thiết kế migration `JobEvent`, redaction và retention theo Q75-Q76.
+2. Viết service append event + lifecycle coverage trước khi nối UI History.
+3. Chỉ chuyển Phase 2 sau khi Phase 1 full gate và browser ownership PASS.
+
 ## 2026-08-08 — H26.1: khóa decision gate
 
 - **Mục tiêu:** chuyển 12 lựa chọn audit thành quyết định có hiệu lực trước BUILD.

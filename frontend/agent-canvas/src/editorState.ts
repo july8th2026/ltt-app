@@ -272,6 +272,7 @@ export type PaletteTool = {
   label?: string
   category?: 'content'|'input'|'transform'|'specialized'|'advanced'
   primary?: boolean
+  customer_visible?: boolean
   description: string
   app_slug: string
   app_name: string

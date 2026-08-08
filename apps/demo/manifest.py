@@ -50,5 +50,7 @@ MANIFEST = AppManifest(
     enabled=True,
     group="Khác",
     public=False,   # app test hạ tầng — ẩn khỏi catalog công khai (H6/Q30)
+    surface="admin",
+    lifecycle="internal",
     notes="Giữ lại vĩnh viễn. Mỗi lần sửa hạ tầng thì test bằng app này trước.",
 )

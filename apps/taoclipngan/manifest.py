@@ -62,6 +62,7 @@ MANIFEST = AppManifest(
     ),),
 
     enabled=True,
+    lifecycle="development",
     group="Video",
     badge="MỚI",
     notes="Di trú engine cutclipshort (D:/FULL AUTO VIDEO). GPU: whisper+YOLO. Job dài.",

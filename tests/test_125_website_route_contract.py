@@ -16,8 +16,14 @@ def _contract():
 
 def test_route_map_covers_every_legacy_html_page_once():
     contract = _contract()
-    mapped = [rule["source"] for rule in contract["rules"]]
-    assert len(mapped) == len(set(mapped)), "duplicate source route"
+    all_sources = [rule["source"] for rule in contract["rules"]]
+    assert len(all_sources) == len(set(all_sources)), "duplicate source route"
+    # Canonical WordPress targets can exist without a file in the legacy
+    # static reference bundle. Such entries remain in the route contract so
+    # production audit still checks them, but do not pretend a source file
+    # exists (WEB-001 regression found 2026-08-08).
+    mapped = [rule["source"] for rule in contract["rules"]
+              if rule.get("source_exists", True)]
 
     files = {
         "/" if path.relative_to(SITE).as_posix() == "index.html"

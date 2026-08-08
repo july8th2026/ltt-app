@@ -28,6 +28,10 @@ for email, amount in (("agent-a@example.com", 100), ("agent-b@example.com", 100)
     user = tao_nguoi_dung(db, email=email, password="Browser-test-123",
                           is_verified=True)
     credit.cap_tay(db, user.id, amount, by="browser-test")
+operator = tao_nguoi_dung(db, email="agent-admin@example.com",
+                          password="Browser-test-123", role="admin",
+                          is_verified=True)
+credit.cap_tay(db, operator.id, 100, by="browser-test")
 db.commit(); db.close()
 
 from server.app import create_app

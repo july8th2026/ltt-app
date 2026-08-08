@@ -20,6 +20,7 @@ MANIFEST = AppManifest(
     credit_cost=_orchestration_cost,
     enabled=True,
     public=True,
+    lifecycle="development",
     group="AI Studio",
     badge="MỚI",
     notes="Agent/Canvas dùng chung Plan v1 và executor server-side.",

@@ -3,7 +3,13 @@
 Thực hiện **tuần tự**, mỗi phase phải PASS mới sang phase sau. Không deploy trong
 audit dossier này.
 
+**Tiến độ 2026-08-08:** Phase 0 **PASS**; Phase 1 là hạng mục đang mở. Chưa deploy.
+
 ## Phase 0 - Scope, surface và rollback (P0)
+
+**Kết quả:** PASS ngày 2026-08-08. Kịch bản/Media không còn trên customer
+surface; Demo chỉ operator; runtime/ToolSpec cũ vẫn còn; Canvas bundle đã build;
+Playwright customer/operator 0 console error/warning; full gate 9/9 PASS.
 
 1. Khóa decision gate ở `06_OPTIONS_AND_DECISIONS.md`.
 2. Mở rộng manifest bằng audience/surface và lifecycle có enum/test; platform
@@ -122,4 +128,3 @@ folder trống.
    health, job/event/credit và UI thật.
 5. Re-audit Q/M/E và G0-G8; chỉ đóng khi G0-G8 PASS hoặc exception được chủ sản
    phẩm chấp nhận bằng văn bản.
-

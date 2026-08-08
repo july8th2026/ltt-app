@@ -7,7 +7,7 @@
   "source_owner": "legacy-static-reference",
   "rules": [
     {"source": "/", "production": "/", "disposition": "canonical", "locale": "vi"},
-    {"source": "/en/", "production": "/en/", "disposition": "canonical", "locale": "en"},
+    {"source": "/en/", "production": "/en/", "disposition": "canonical", "locale": "en", "source_exists": false},
     {"source": "/about.html", "production": "/en/about/", "disposition": "redirect", "locale": "en"},
     {"source": "/products.html", "production": "/en/products/", "disposition": "redirect", "locale": "en"},
     {"source": "/support.html", "production": "/en/faq/", "disposition": "redirect", "locale": "en"},

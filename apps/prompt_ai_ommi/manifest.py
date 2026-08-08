@@ -99,6 +99,7 @@ MANIFEST = AppManifest(
     table_prefix="ommi",
     enabled=True,
     public=True,
+    lifecycle="released",
     group="AI Studio",
     badge="MỚI",
     notes="H19/Q65: replatform Prompt Seedance Studio trên AppProject/Job/Credit/Storage.",

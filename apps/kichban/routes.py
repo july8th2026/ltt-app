@@ -106,7 +106,9 @@ def _lay_job(request: Request, job_id: str):
 
 @router.get("", response_class=HTMLResponse)
 def page(request: Request, user: str = Depends(require_login)):
-    return _render(request, user)
+    # Q69-Q70: bề mặt Kịch bản đã soft-retire. Runtime POST/result vẫn giữ một
+    # release cho workflow và bookmark cũ; landing chuyển sang Canvas.
+    return RedirectResponse("/agent/canvas", status_code=308)
 
 
 @router.post("/queue", response_class=HTMLResponse)

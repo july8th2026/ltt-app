@@ -18,6 +18,7 @@ from platform_core.registry import (
     credit_for,
     discover,
     job_type_owners,
+    visible_on_surface,
 )
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -34,6 +35,21 @@ def test_discovers_every_app_folder():
 def test_no_app_fails_to_load():
     broken = {a.slug: a.error for a in discover() if a.error}
     assert broken == {}, f"app nạp lỗi: {broken}"
+
+
+def test_portfolio_surface_and_lifecycle_match_locked_decisions():
+    apps = {a.slug: a.manifest for a in discover()}
+    assert apps["kichban"].surface == "runtime"
+    assert apps["kichban"].lifecycle == "retired"
+    assert apps["mediatools"].surface == "runtime"
+    assert apps["demo"].surface == "admin"
+    assert apps["socialbot"].lifecycle == "maintenance"
+    assert {apps[slug].lifecycle for slug in (
+        "upscalevideo", "prompt_ai_ommi", "taovideo")} == {"released"}
+    script = next(tool for tool in apps["kichban"].tools
+                  if tool.name == "text.script")
+    assert script.customer_visible is False
+    assert any(tool.name == "text.generate" for tool in apps["kichban"].tools)
 
 
 def test_every_apps_subfolder_has_a_manifest():
@@ -85,6 +101,32 @@ def test_registry_rejects_relative_prefix():
     m = AppManifest(slug="x", display_name="X", route_prefix="demo")
     with pytest.raises(RegistryError, match="phải bắt đầu bằng"):
         _validate(m, seen_slugs=set(), seen_prefixes=set())
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("surface", "partner"), ("lifecycle", "beta"),
+])
+def test_registry_rejects_unknown_product_state(field, value):
+    kwargs = {field: value}
+    m = AppManifest(slug="x", display_name="X", route_prefix="/x", **kwargs)
+    with pytest.raises(RegistryError, match=field):
+        _validate(m, seen_slugs=set(), seen_prefixes=set())
+
+
+def test_surface_visibility_separates_customer_admin_and_runtime():
+    customer = AppManifest(slug="c", display_name="C", route_prefix="/c")
+    private = AppManifest(slug="p", display_name="P", route_prefix="/p",
+                          public=False)
+    admin = AppManifest(slug="a", display_name="A", route_prefix="/a",
+                        surface="admin")
+    runtime = AppManifest(slug="r", display_name="R", route_prefix="/r",
+                          surface="runtime")
+    assert visible_on_surface(customer, authenticated=False)
+    assert not visible_on_surface(private, authenticated=False)
+    assert visible_on_surface(private, authenticated=True)
+    assert not visible_on_surface(admin, authenticated=True, operator=False)
+    assert visible_on_surface(admin, authenticated=True, operator=True)
+    assert not visible_on_surface(runtime, authenticated=True, operator=True)
 
 
 def test_validate_tu_choi_job_types_thieu_credit_cost():

@@ -22,6 +22,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from platform_core.i18n import _ as _t
 from server.templating import templates
 
 
@@ -42,6 +43,8 @@ class AccessControlMiddleware(BaseHTTPMiddleware):
             return None
         if slug is None:
             return None
+        item = next((entry for entry in loaded if entry.manifest.slug == slug), None)
+        surface = getattr(getattr(item, "manifest", None), "surface", "customer")
 
         # admin-env (đường lui) là admin → không bao giờ bị chặn ở đây.
         try:
@@ -65,6 +68,11 @@ class AccessControlMiddleware(BaseHTTPMiddleware):
                 user = lay_user_tu_phien(db, sid)
                 if user is None:
                     return None
+                if surface == "admin":
+                    if user.role == "admin":
+                        return None
+                    return self._trang_loi(
+                        request, 404, _t("Không tìm thấy trang bạn yêu cầu."))
                 level = muc_quyen(db, user, slug)
                 db.commit()
             finally:
