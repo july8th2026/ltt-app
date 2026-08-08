@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import job_events
-from platform_core.models import Job
+from platform_core.models import CreditEntry, Job
 
 STATUSES = {"queued", "running", "done", "error", "cancelled"}
 
@@ -73,3 +73,41 @@ def customer_payload(db: DbSession, job: Job, *, with_events: bool = False) -> d
             "created_at": event.created_at,
         } for event in job_events.timeline(db, job.id)]
     return data
+
+
+def support_payload(db: DbSession, job: Job) -> dict:
+    """Gói support operator-only, không chứa params/result/error/note/user PII."""
+    events = job_events.timeline(db, job.id, include_internal=True, limit=500)
+    ledger_rows = db.execute(select(
+        CreditEntry.kind, func.sum(CreditEntry.delta), func.count(CreditEntry.id),
+    ).where(CreditEntry.job_id == job.id).group_by(CreditEntry.kind)).all()
+    return {
+        "schema": "ltt.support-job.v1",
+        "job": {
+            "id": job.id,
+            "app_slug": job.app_slug,
+            "job_type": job.job_type,
+            "status": job.status,
+            "progress": max(0, min(100, int(job.progress or 0))),
+            "attempts": int(job.attempts or 0),
+            "max_attempts": int(job.max_attempts or 0),
+            "retry_of_id": job.retry_of_id,
+            "correlation_id": job.correlation_id,
+            "created_at": job.created_at,
+            "started_at": job.started_at,
+            "finished_at": job.finished_at,
+        },
+        "events": [{
+            "sequence": row.sequence,
+            "code": row.event_code,
+            "level": row.level,
+            "visibility": row.visibility,
+            "message": job_events.redact_details(row.public_message),
+            "details": job_events.redact_details(row.details),
+            "created_at": row.created_at,
+        } for row in events],
+        "credit": {
+            str(kind): {"delta": int(delta or 0), "entries": int(count or 0)}
+            for kind, delta, count in ledger_rows
+        },
+    }

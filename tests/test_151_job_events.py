@@ -22,9 +22,9 @@ def db(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
-def _job(db):
+def _job(db, user_id="u1"):
     from platform_core.jobs import submit
-    job = submit(db, user_id="u1", app_slug="sample", job_type="sample.run",
+    job = submit(db, user_id=user_id, app_slug="sample", job_type="sample.run",
                  params={"prompt": "không được vào event"})
     db.commit()
     return job
@@ -104,6 +104,66 @@ def test_retention_customer_365_internal_30_tach_biet(db):
     db.commit()
     assert removed == {"customer": 1, "internal": 1}
     assert [row.event_code for row in db.query(JobEvent).all()] == ["submitted", "recent"]
+
+
+def test_retention_report_va_purge_job_terminal_khong_xoa_ledger(db):
+    from platform_core import credit, job_events
+    from platform_core.models import JOB_DONE, JOB_RUNNING, CreditEntry, Job, JobEvent
+    from platform_core.users import tao_nguoi_dung
+
+    now = datetime.now(timezone.utc)
+    user = tao_nguoi_dung(
+        db, email="retention@example.com", password="matkhau-tot-12",
+        is_verified=True)
+    old_done = _job(db, user.id)
+    old_done.status = JOB_DONE
+    old_done.created_at = now - timedelta(days=366)
+    old_done.finished_at = now - timedelta(days=366)
+    old_running = _job(db, user.id)
+    old_running.status = JOB_RUNNING
+    old_running.created_at = now - timedelta(days=400)
+    credit.cap_tay(db, user.id, 7, by="retention-test")
+    credit.giu_cho(db, user.id, 3, old_done.id)
+    for event in db.query(JobEvent).filter_by(job_id=old_done.id).all():
+        event.created_at = now - timedelta(days=366)
+    db.commit()
+
+    report = job_events.retention_report(db, now=now)
+    assert report["customer_events_due"] >= 1
+    assert report["terminal_jobs_due"] == 1
+    assert report["active_jobs_older_than_policy"] == 1
+
+    removed = job_events.purge_expired_jobs(db, now=now)
+    db.commit()
+    db.expire_all()
+    assert removed == 1
+    assert db.get(Job, old_done.id) is None
+    assert db.get(Job, old_running.id) is not None
+    assert db.query(CreditEntry).filter_by(job_id=old_done.id).count() == 1
+
+
+def test_support_export_loc_payload_va_ledger(db):
+    from platform_core import credit, job_events, job_history
+    from platform_core.users import tao_nguoi_dung
+
+    user = tao_nguoi_dung(
+        db, email="support@example.com", password="matkhau-tot-12",
+        is_verified=True)
+    job = _job(db, user.id)
+    credit.cap_tay(db, user.id, 9, by="support-test")
+    credit.giu_cho(db, user.id, 4, job.id)
+    job_events.append(
+        db, job, "provider_debug", visibility=job_events.INTERNAL,
+        details={"error": "token=secret-value", "prompt": "private prompt"})
+    db.commit()
+
+    payload = job_history.support_payload(db, job)
+    raw = str(payload)
+    assert "params" not in payload["job"]
+    assert "result" not in payload["job"]
+    assert "error" not in payload["job"]
+    assert "secret-value" not in raw and "private prompt" not in raw
+    assert payload["credit"]["hold"]["delta"] == -4
 
 
 def test_retry_lineage_duoc_luu_truc_tiep_tren_job(db):

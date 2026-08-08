@@ -1,61 +1,77 @@
-# Data Retention Policy
+# Data Retention Policy — LTT Studios App
 
-> P2 deliverable ("Define data retention for logs, audits, cache, and
-> completed jobs"). Documents what already runs today, plus known gaps
-> flagged for a later phase. No secret values appear in this file.
+**Hiệu lực:** 2026-08-09
+**Nguồn quyết định:** Q75–Q76 trong `QUYET_DINH_NEN_TANG.md`
 
-## Summary table
+Tài liệu này mô tả platform web hiện hành. Các file JSONL/SQLite của Socialbot
+đóng băng được ghi riêng ở cuối; chúng không phải nguồn lịch sử Job của app web.
 
-| Data category | Location | Retention mechanism | Default period |
-|---|---|---|---|
-| Application logs | `logs/*.log` | `RotatingFileHandler` (size-based) in `utils/logger.py` | 5 MB per file, 3 backups kept |
-| Audit log | `data/audit_log.jsonl` | Rotation in `utils/audit_logger.py` | `_MAX_BACKUPS = 5` (`.jsonl.1` .. `.jsonl.5`) |
-| Content-history dedup DB | `data/content_history.db` (SQLite) | `MaintenanceDaemon._do_sweep()` calls `purge_older_than()` hourly | `anti_spam_retention_days` config key (has a built-in default; see `core/maintenance.py::_DEFAULT_RETENTION`) |
-| Temporary downloaded videos | `temp_videos/` | Deleted immediately after a successful upload | Controlled by `delete_video_after_upload` config key, default `True` |
-| Video-variation scratch files | `temp_videos/` (varied copies) | `core/video_variation.cleanup_varied_tmp()`, run by `MaintenanceDaemon` | `older_than_hours=24` |
-| Retry state | `data/retry_<sheet>_<tab>.json` | In-memory entries older than 1 h are discarded on load (`SheetRunner._load_retry_state`) | 1 hour for *entries*; the file itself is not deleted (see Known gaps) |
-| Session ownership locks | `data/session_locks/*.lock` | TTL-based staleness check (`SessionLock.is_stale`), reclaimed on next `acquire()` for the same target | 5 minutes; the file itself is not proactively deleted until reclaimed (see Known gaps) |
-| Encrypted OAuth tokens | `data/tokens.enc`, `data/tiktok_tokens.enc` | No automatic expiry — tokens live until the account is disconnected or the file is deleted | Indefinite (by design — these are credentials, not disposable data) |
-| Completed job records | Google Sheet rows (external, not local storage) | Managed by the sheet owner, outside this application's retention scope | N/A |
+## Chính sách đang có hiệu lực
 
-## Backup scope (cross-reference: P7)
+| Lớp dữ liệu | Thời hạn | Cơ chế | Người được đọc |
+|---|---:|---|---|
+| Job metadata + customer timeline | 365 ngày | `JobEvent` purge tự động; Job terminal purge explicit theo batch | Chủ Job; operator |
+| Internal debug event | 30 ngày | Worker gọi purge mỗi 6 giờ | Operator/support |
+| Credit ledger | Không purge theo Job | `CreditEntry` append-only, không FK cascade theo Job | Chủ tài khoản ở UI đã lọc; operator |
+| Artifact/source/output | Policy storage riêng | Chưa tự xóa trong H26.11A | Owner qua opaque route; operator theo quyền |
+| Session | Theo session policy | Thu hồi/hết hạn độc lập | Owner/operator theo auth |
+| Application log | Size-based | Rotating handler; giới hạn theo cấu hình service | Operator |
 
-Per `AGENTS.md` and `docs/_luutru/WEB_PLATFORM_PLAN.md` P7, scheduled backups must cover
-databases, configuration, and required key material, and must **exclude**
-the disposable video cache. Given the table above, a P7 backup job should
-include:
+`Job` chỉ được purge khi ở trạng thái terminal `done/error/cancelled` và quá 365
+ngày. Job `queued/running` quá tuổi **không bị xóa** mà được báo trong dry-run để
+đi qua recovery. Xóa Job không xóa ledger tiền hoặc artifact; hai lớp đó có
+chính sách độc lập.
 
-- `data/config.json` (or its environment-resolved path per `core/runtime_paths.py`)
-- `data/tokens.enc`, `data/tiktok_tokens.enc`
-- `data/content_history.db`
-- `data/audit_log.jsonl` (current + rotated backups)
+## Quy trình purge an toàn
 
-and exclude:
+1. Xem dry-run operator: `GET /ops/jobs-retention` hoặc:
 
-- `temp_videos/`
-- `data/session_locks/`
-- `logs/` (operational, not authoritative — recreated automatically)
+   ```powershell
+   python tools\job_retention.py
+   ```
 
-## Known gaps (not fixed in this pass — flagged for a follow-up)
+2. Nếu `active_jobs_older_than_policy > 0`, xử lý recovery trước; không purge để
+   che job kẹt.
+3. Tạo và kiểm backup theo `deploy/windows/backup.ps1`.
+4. Chạy một batch có xác nhận tường minh:
 
-1. **Stale `retry_*.json` files are never deleted**, only their in-memory
-   entries expire on load. A sheet tab that is removed leaves an orphaned
-   retry-state file behind indefinitely. Low impact (small JSON files,
-   bounded by number of sheet tabs ever configured) but should be swept by
-   a future `MaintenanceDaemon` task.
-2. **Stale `session_locks/*.lock` files are not proactively deleted**,
-   only reclaimed the next time something tries to acquire that same
-   target. A target that is never retried again (e.g., a page removed
-   from rotation) leaves its lock file behind indefinitely. Same low-impact
-   profile as above.
+   ```powershell
+   python tools\job_retention.py --apply --confirm PURGE
+   ```
 
-Neither gap affects correctness (both are already handled safely at
-*read* time — stale entries/locks are simply ignored/reclaimed) or
-security (no secret material in either file). Fixing them is a small,
-independent `MaintenanceDaemon` addition better scoped as its own change
-than bundled into the P2 runtime-boundary work.
+5. Chạy lại dry-run, kiểm `/ops/jobs-metrics`, ledger và health. Lặp batch nếu
+   cần. Không bật lịch xóa Job tự động trước H26.12 canary.
 
-## Change history
+Worker chỉ tự purge event đã quá hạn; việc này không chạm `Job`, artifact hay
+ledger. Support export tại `/ops/jobs/{job_id}/support-export` chỉ chứa metadata,
+event đã lọc và tổng ledger theo loại; không chứa params/result/error/note/PII.
 
-- 2026-07-29 — Initial policy documented against the current (P2) codebase
-  state. No code changed as part of writing this document.
+## Privacy và redaction
+
+- Customer API không trả `params`, `result`, lỗi thô hoặc event internal.
+- Event internal cũng được lọc trước khi ghi; support export lọc lại lần hai để
+  bảo vệ dữ liệu legacy.
+- Raw technical endpoint/export bắt buộc operator. Customer chỉ thấy timeline
+  bằng ngôn ngữ sản phẩm.
+- Secret scan và source log policy vẫn là gate trước release.
+
+## Artifact — gap đã ghi rõ
+
+H26.11A chưa xóa source/output vì thời hạn artifact chưa được Q75 ấn định và
+nhiều project lưu reference tới kết quả cũ. Đây không phải lời hứa lưu vĩnh
+viễn. Trước khi bật artifact purge phải có inventory theo app, owner check,
+legal/privacy decision, preview count/bytes, restore/rollback và canary riêng.
+
+## Dữ liệu Socialbot đóng băng
+
+`data/audit_log.jsonl`, `content_history.db`, retry state, session lock và OAuth
+token là runtime lịch sử Q10; vẫn theo rotation/maintenance cũ. H26 không refactor
+hay đổi retention nghiệp vụ Socialbot. OAuth token chỉ mất khi disconnect/revoke;
+không được đưa vào support export hoặc log mới.
+
+## Changelog
+
+- 2026-08-09: thay tài liệu desktop cũ bằng policy platform Q75/Q76; thêm
+  dry-run, terminal Job purge explicit, support export lọc và ranh giới ledger/
+  artifact/Socialbot.
+- 2026-07-29: policy desktop/Socialbot ban đầu.

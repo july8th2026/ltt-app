@@ -102,9 +102,19 @@ def test_timeline_owner_va_debug_chi_operator(env):
     debug = client.get(f"/ops/jobs/{job_id}/events")
     assert debug.status_code == 200
     assert debug.json()["events"][0]["code"] == "submitted"
+    export = client.get(f"/ops/jobs/{job_id}/support-export")
+    assert export.status_code == 200
+    assert export.headers["content-disposition"].startswith("attachment;")
+    assert export.json()["job"]["id"] == job_id
+    assert "params" not in export.json()["job"]
+    retention = client.get("/ops/jobs-retention")
+    assert retention.status_code == 200
+    assert retention.json()["policy"]["customer_days"] == 365
 
     _login(client, "customer@x.com")
     assert client.get(f"/ops/jobs/{job_id}/events").status_code == 403
+    assert client.get(f"/ops/jobs/{job_id}/support-export").status_code == 403
+    assert client.get("/ops/jobs-retention").status_code == 403
     assert client.get(f"/api/jobs/{job_id}").status_code == 404
 
 

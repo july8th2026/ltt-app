@@ -18,7 +18,8 @@ import os
 from datetime import date, datetime, time, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -330,6 +331,43 @@ def debug_events(request: Request, job_id: str,
                 "created_at": row.created_at,
             } for row in rows],
         }
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.get("/ops/jobs/{job_id}/support-export")
+def support_export(request: Request, job_id: str,
+                   _operator: str = Depends(require_operator)):
+    """Tải gói debug đã lọc; không xuất payload, lỗi thô, PII hay ledger note."""
+    from platform_core import job_history
+    from platform_core.db import get_session
+    from platform_core.models import Job
+    gen = get_session(); db = next(gen)
+    try:
+        job = db.get(Job, job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
+        payload = job_history.support_payload(db, job)
+        return JSONResponse(
+            content=jsonable_encoder(payload),
+            headers={"Content-Disposition":
+                     f'attachment; filename="ltt-support-{job.id[:8]}.json"'},
+        )
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+@router.get("/ops/jobs-retention")
+def jobs_retention(_request: Request,
+                   _operator: str = Depends(require_operator)):
+    """Dry-run retention cho operator; endpoint này tuyệt đối không xóa dữ liệu."""
+    from platform_core import job_events
+    from platform_core.db import get_session
+    gen = get_session(); db = next(gen)
+    try:
+        return job_events.retention_report(db)
     finally:
         try: next(gen)
         except StopIteration: pass

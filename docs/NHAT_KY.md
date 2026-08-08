@@ -14,6 +14,52 @@
 
 ---
 
+## 2026-08-09 — H26.11A: retention/privacy/support export PASS
+
+- **Mục tiêu:** hoàn thiện retention và gói debug an toàn trước khi đo tải;
+  không xóa dữ liệu production trong phase development.
+- **Hạng mục:** H26.11A — hoàn thành; H26.11B là bước tiếp theo.
+- **Trạng thái:** code local; chưa deploy, chưa apply purge production.
+
+### Đã làm
+
+- Thêm dry-run `retention_report`: customer event 365 ngày, internal event 30
+  ngày, Job terminal đến hạn và Job active quá tuổi được đếm riêng.
+- Thêm purge Job terminal theo batch, không bao giờ xóa queued/running, credit
+  ledger hoặc artifact. CLI mặc định dry-run; `--apply` bắt buộc
+  `--confirm PURGE`. Chưa gọi apply trên production.
+- Thêm support export operator-only: metadata tối thiểu, event lọc lại lần hai,
+  tổng ledger theo loại; không chứa params/result/error/note/user PII. Customer
+  nhận 403. Thêm endpoint operator dry-run `/ops/jobs-retention`.
+- Viết lại `DATA_RETENTION_POLICY.md` theo platform Q75/Q76; tách rõ artifact
+  chưa có thời hạn đã chốt và Socialbot runtime đóng băng.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted đỏ lần 1 | FAIL 3 đúng gap; 2 fixture thiếu User thật, 1 route chưa có |
+| Targeted lần 2 | FAIL 1 do fixture chưa đặt tuổi event; code route/export đã xanh |
+| `python -m pytest -q tests\\test_151_job_events.py tests\\test_69_web_jobs.py` | PASS 18 test, 1 warning, 40,15 giây |
+| `python tools\\job_retention.py --help` | PASS; CLI import/chạy được từ workspace |
+| `python tools\\gate.py --quick` | PASS 8/8 trong 26,8 giây |
+| `python tools\\scan_source_secrets.py` | PASS 1.133 file/175.275 dòng/0 finding trước lần sửa import CLI |
+
+### Quyết định mới
+
+Không có. Thực thi Q75/Q76. Artifact vẫn là policy riêng; không tự chọn thời hạn
+và xóa output khi chưa có quyết định/owner inventory.
+
+### Cách lùi lại
+
+Revert commit H26.11A. Vì purge production chưa chạy nên không có dữ liệu phải
+khôi phục; khi H26.12 apply thật bắt buộc backup và dry-run trước.
+
+### Việc tiếp theo
+
+H26.11B: khóa SLO theo app rồi chạy load/soak; không dùng throughput tổng để che
+P95 xấu.
+
 ## 2026-08-09 — H26.10C: Agent delta audit + Socialbot maintenance PASS
 
 - **Mục tiêu:** nghiệm thu lại Agent theo Q68 bằng hành vi khách hàng thật và

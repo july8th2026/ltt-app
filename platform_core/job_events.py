@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core.models import Job, JobEvent
@@ -35,6 +35,8 @@ _SECRET_TEXT = re.compile(
     r"\s*[:=]\s*\S+)"
 )
 _event_write_failures = 0
+CUSTOMER_RETENTION_DAYS = 365
+INTERNAL_RETENTION_DAYS = 30
 
 
 def _safe_text(value: Any, limit: int = 2000) -> str:
@@ -140,8 +142,49 @@ def timeline(db: DbSession, job_id: str, *, include_internal: bool = False,
     ).scalars().all())
 
 
+def retention_report(db: DbSession, *, now: datetime | None = None,
+                     customer_days: int = CUSTOMER_RETENTION_DAYS,
+                     internal_days: int = INTERNAL_RETENTION_DAYS) -> dict:
+    """Dry-run không chứa dữ liệu người dùng trước khi dọn retention.
+
+    Job active quá tuổi không bao giờ bị xóa: nó là tín hiệu recovery cần xử
+    lý. Ledger credit nằm ở bảng append-only riêng và không thuộc purge này.
+    """
+    current = now or datetime.now(timezone.utc)
+    customer_days = max(1, int(customer_days))
+    internal_days = max(1, int(internal_days))
+    customer_cutoff = current - timedelta(days=customer_days)
+    internal_cutoff = current - timedelta(days=internal_days)
+    terminal = ("done", "error", "cancelled")
+    active = ("queued", "running")
+
+    def count(stmt) -> int:
+        return int(db.execute(stmt).scalar_one() or 0)
+
+    return {
+        "policy": {
+            "customer_days": customer_days,
+            "internal_days": internal_days,
+            "artifacts": "separate_policy",
+            "credit_ledger": "never_purged_by_job_retention",
+        },
+        "customer_events_due": count(select(func.count(JobEvent.id)).where(
+            JobEvent.visibility == CUSTOMER,
+            JobEvent.created_at < customer_cutoff)),
+        "internal_events_due": count(select(func.count(JobEvent.id)).where(
+            JobEvent.visibility == INTERNAL,
+            JobEvent.created_at < internal_cutoff)),
+        "terminal_jobs_due": count(select(func.count(Job.id)).where(
+            Job.status.in_(terminal), Job.created_at < customer_cutoff)),
+        "active_jobs_older_than_policy": count(select(func.count(Job.id)).where(
+            Job.status.in_(active), Job.created_at < customer_cutoff)),
+        "generated_at": current,
+    }
+
+
 def purge_expired(db: DbSession, *, now: datetime | None = None,
-                  customer_days: int = 365, internal_days: int = 30) -> dict[str, int]:
+                  customer_days: int = CUSTOMER_RETENTION_DAYS,
+                  internal_days: int = INTERNAL_RETENTION_DAYS) -> dict[str, int]:
     """Xoá event hết hạn theo lớp dữ liệu; artifact có chính sách riêng."""
     current = now or datetime.now(timezone.utc)
     customer_cutoff = current - timedelta(days=max(1, customer_days))
@@ -154,3 +197,27 @@ def purge_expired(db: DbSession, *, now: datetime | None = None,
     )).rowcount or 0
     db.flush()
     return {CUSTOMER: int(customer), INTERNAL: int(internal)}
+
+
+def purge_expired_jobs(db: DbSession, *, now: datetime | None = None,
+                       customer_days: int = CUSTOMER_RETENTION_DAYS,
+                       batch_size: int = 1000) -> int:
+    """Xóa một batch Job terminal quá hạn; không bao giờ chạm ledger/artifact.
+
+    Hàm cố ý không được worker gọi tự động ở H26.11. Operator phải xem dry-run,
+    có backup và gọi explicit trong release runbook. Event được xóa tường minh
+    để hành vi giống nhau cả khi SQLite không bật foreign-key cascade.
+    """
+    current = now or datetime.now(timezone.utc)
+    cutoff = current - timedelta(days=max(1, int(customer_days)))
+    size = max(1, min(int(batch_size), 5000))
+    ids = list(db.execute(select(Job.id).where(
+        Job.status.in_(("done", "error", "cancelled")),
+        Job.created_at < cutoff,
+    ).order_by(Job.created_at).limit(size)).scalars().all())
+    if not ids:
+        return 0
+    db.execute(delete(JobEvent).where(JobEvent.job_id.in_(ids)))
+    removed = db.execute(delete(Job).where(Job.id.in_(ids))).rowcount or 0
+    db.flush()
+    return int(removed)

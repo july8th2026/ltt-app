@@ -1829,6 +1829,14 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     runtime/OAuth; `public=False` tiếp tục ẩn anonymous và phân quyền sau login.
 - [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
   failure recovery.
+  - [x] H26.11A — **PASS 2026-08-09, chưa deploy/chưa apply production**:
+    retention report operator-only; event 365/30 ngày; CLI dry-run mặc định và
+    purge explicit có confirm cho Job terminal >365 ngày. Job active, ledger và
+    artifact không bị xóa. Support export JSON lọc params/result/error/note/PII,
+    customer 403. Policy platform được viết lại, nêu rõ artifact gap. Targeted
+    18 PASS; quick gate 8/8.
+  - [ ] H26.11B — SLO theo app, load/soak queue/upload/GPU và cost/success.
+  - [ ] H26.11C — failure recovery: restart/orphan/storage/provider/refund.
 - [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
   re-audit Q/M/E + G0-G8.
 
