@@ -67,7 +67,8 @@ def test_trang_chu_cong_khai_cho_khach(client):
     r = client.get("/")
     assert r.status_code == 200                    # KHÔNG đá về /login
     body = r.text
-    assert "Tạo Thumbnail" in body                 # app public hiện
+    assert "Tạo ảnh AI" in body                    # một entry point ảnh hiện
+    assert "Tạo Thumbnail YouTube" not in body     # mode con không lặp card
     assert "Đăng nhập" in body and "Đăng ký" in body
     # App nội bộ (public=False) KHÔNG hiện cho khách:
     assert "Demo — kiểm tra" not in body
@@ -77,8 +78,10 @@ def test_trang_chu_cong_khai_cho_khach(client):
 
 
 def test_click_app_khi_chua_dang_nhap_deep_link_login(client):
-    # Trên catalog, nút app public trỏ /login?next=<route_prefix>.
-    assert "/login?next=/thumbnail" in client.get("/").text
+    # Catalog trỏ vào shell Tạo ảnh AI; route Thumbnail cũ vẫn được test riêng.
+    body = client.get("/").text
+    assert "/login?next=/taoanh" in body
+    assert "/login?next=/thumbnail" not in body
 
 
 # ── require_login mang next ─────────────────────────────────────────────────────

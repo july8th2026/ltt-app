@@ -14,6 +14,71 @@
 
 ---
 
+## 2026-08-08 — H26.4: Phase 2 Marketplace/design system PASS
+
+- **Mục tiêu:** chuẩn hóa marketplace theo lifecycle/capability và hợp nhất bề
+  mặt Tạo ảnh AI/Thumbnail mà không phá executor, history hay link cũ.
+- **Hạng mục:** H26.4 — hoàn thành.
+- **Trạng thái:** xong; chưa deploy.
+
+### Đã làm
+
+- Mở rộng `AppManifest` bằng `capabilities` và `catalog_parent`; customer
+  catalog/header không hiển thị child Thumbnail nhưng registry/job/backend vẫn
+  nạp bình thường. Category, lifecycle, sort và workspace label được dựng từ
+  manifest thay vì bảng app hardcode.
+- Sửa root cause click card bị hiểu nhầm thành lọc category: listener chỉ còn
+  gắn vào button filter. Toàn card trở thành một link có focus ring; bỏ icon
+  cover lặp và metadata API/GPU hướng dev; filter capability/lifecycle độc lập.
+- Thêm responsive 1/2/4/5 cột cho 390/768/1366/1920, touch target 44 px,
+  lifecycle token, empty-state đúng thuộc tính `hidden` và mask chữ marketing
+  có sẵn trong cover. Không tạo ảnh mới.
+- Tạo ảnh AI có hai mode General/Thumbnail. `/taoanh/thumbnail` redirect 308
+  sang `/thumbnail`; form `/thumbnail/queue`, job `thumbnail.generate`, history
+  và output cũ được giữ. Browser đã nộp một job Thumbnail qua fake provider và
+  nhận output thành công.
+- Sửa lỗi build i18n tiềm ẩn: PO update không còn bỏ header làm catalog fuzzy;
+  catalog English hiện 873 chuỗi, 0 thiếu, 0 fuzzy và `.mo` được compile thật.
+- Full gate đầu phát hiện đúng một regression accessibility do đổi aria-label
+  từ “nhóm” sang “thể loại”. Đã giữ nhãn UI “Thể loại” và dùng aria-label rõ
+  nghĩa “Lọc theo nhóm ứng dụng”, thêm bản dịch và test lại trước full gate cuối.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_60_app_registry.py tests/test_72_vanhanh.py tests/test_71_thumbnail.py tests/test_78_a1_migration.py tests/test_156_marketplace_h26.py -q` | PASS, 82 test |
+| `python tools\gate.py --quick` trước fix i18n | FAIL đúng i18n ratchet; đã sửa PO header/fuzzy |
+| `python tools\gate.py --quick` sau sửa | PASS 8/8 |
+| Playwright fixture `127.0.0.1:8111` tại 390/768/1366/1920 | PASS 1/2/4/5 cột, không overflow, filter độc lập, card click/keyboard/focus, hai mode ảnh, legacy Thumbnail job/output |
+| Playwright console/network | 0 error, 0 warning; request ứng dụng 200/304 |
+| `python tools\gate.py` lượt đầu | FAIL 1 accessibility assertion; 2.539 pass, 8 skip, 23 subtest |
+| `python -m pytest tests/test_109_home_shell_ui.py::test_home_filter_va_progress_co_accessible_state tests/test_156_marketplace_h26.py -q` | PASS, 7 test |
+| `python tools\gate.py` sau sửa | PASS 9/9 trong 1.626,1 giây; pytest PASS trong 1.598,9 giây |
+
+### Quyết định mới
+
+Không có. Thực thi Q70, Q73 và Q78; Phase 2 chỉ hợp nhất presentation, chưa xóa
+owner/executor Thumbnail.
+
+### Cách lùi lại
+
+Revert commit H26.4. Không có migration dữ liệu; route `/thumbnail`, job type,
+history và output cũ vẫn còn nên catalog có thể trở lại hai entry mà không đổi dữ
+liệu production.
+
+### Còn tồn đọng
+
+- H26.9 vẫn cần một history shell chung có filter theo mode; Phase 2 mới khóa
+  entry point/tabs và compatibility contract.
+- Chưa deploy; production chưa đổi giao diện.
+
+### Việc tiếp theo
+
+1. H26.5 Phase 3.1 Upscale: controls, compare sync, queue/download.
+2. Benchmark/autotune từng GPU 16 GB; chỉ tăng concurrency sau soak không OOM.
+3. Giữ AutoSub ở H26.6, không triển khai song song.
+
 ## 2026-08-08 — H26.3: Phase 1 Job History/Support PASS
 
 - **Mục tiêu:** mọi tool tiếp tục dùng một nguồn job nhưng có lịch sử vòng đời,

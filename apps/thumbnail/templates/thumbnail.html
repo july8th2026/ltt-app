@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block page_mode %}wide{% endblock %}
-{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>Thumbnail Studio</strong>{% endblock %}
+{% block title %}{{ _("Tạo ảnh AI") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Tạo ảnh AI") }}</strong>{% endblock %}
 
 {% macro chipgroup(name, items, default) %}
   <div class="th-chips">
@@ -14,7 +14,8 @@
 {% block content %}
 <script src="/static/htmx.min.js"></script>
 <section class="th-studio" aria-labelledby="th-title">
-  <header class="th-heading"><div><span class="th-kicker">AI CREATIVE STUDIO</span><h1 id="th-title">{{ _("Tạo Thumbnail YouTube") }}</h1>
+  <nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}"><a href="/taoanh">{{ _("Ảnh tổng quát") }}</a><a href="/thumbnail" aria-current="page">{{ _("Thumbnail YouTube") }}</a></nav>
+  <header class="th-heading"><div><span class="th-kicker">AI CREATIVE STUDIO · THUMBNAIL MODE</span><h1 id="th-title">{{ _("Tạo ảnh AI") }}</h1>
     <p>{{ _("Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a></header>
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}

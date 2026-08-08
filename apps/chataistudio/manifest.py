@@ -28,6 +28,7 @@ MANIFEST = AppManifest(
     enabled=True,
     public=True,
     lifecycle="development",
+    capabilities=("Chat & Prompt",),
     group="Chat",
     badge="MỚI",
     notes="Di trú từ AI Creative Studio (codex). Qua sidecar LTTStudioCodex. Cần đăng nhập tài khoản ChatGPT ở admin.",

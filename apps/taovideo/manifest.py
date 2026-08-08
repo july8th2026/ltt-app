@@ -78,6 +78,7 @@ MANIFEST = AppManifest(
 
     enabled=True,
     lifecycle="released",
+    capabilities=("AI Video",),
     group="Video",
     badge="MỚI",
     notes="Di trú A2 từ seedance_video. Key qua APIKEYS (provider byteplus, category video).",

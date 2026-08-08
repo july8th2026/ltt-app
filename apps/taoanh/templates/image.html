@@ -7,6 +7,7 @@
 
 {% block content %}
 <section class="im-studio" aria-labelledby="im-title">
+  <nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}"><a href="/taoanh" aria-current="page">{{ _("Ảnh tổng quát") }}</a><a href="/taoanh/thumbnail">{{ _("Thumbnail YouTube") }}</a></nav>
   <header class="im-heading"><div><span class="im-kicker">GENERATIVE IMAGE</span><h1 id="im-title">{{ _("Tạo ảnh AI") }}</h1><p>{{ _("Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật.") }}</p></div><a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a></header>
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
   <div class="im-layout">

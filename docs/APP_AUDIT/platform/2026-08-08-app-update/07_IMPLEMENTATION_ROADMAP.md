@@ -3,8 +3,8 @@
 Thực hiện **tuần tự**, mỗi phase phải PASS mới sang phase sau. Không deploy trong
 audit dossier này.
 
-**Tiến độ 2026-08-08:** Phase 0 và Phase 1 **PASS**; Phase 2 là hạng mục tiếp
-theo. Chưa deploy.
+**Tiến độ 2026-08-08:** Phase 0, Phase 1 và Phase 2 **PASS**; Phase 3.1 Upscale
+Video là hạng mục tiếp theo. Chưa deploy.
 
 ## Phase 0 - Scope, surface và rollback (P0)
 
@@ -53,6 +53,12 @@ redaction; browser customer/admin; restore drill.
 
 ## Phase 2 - Marketplace và design system chung (P1/P2)
 
+**Kết quả:** PASS ngày 2026-08-08. Card là một link duy nhất; taxonomy capability
+và lifecycle lấy từ manifest; category/lifecycle filter độc lập; Thumbnail ẩn
+khỏi catalog và xuất hiện như mode của Tạo ảnh AI nhưng route, job type, history
+và output cũ vẫn hoạt động. Playwright 390/768/1366/1920 không tràn ngang,
+keyboard/focus PASS, console 0 lỗi/0 cảnh báo; full gate 9/9 PASS.
+
 1. Toàn card clickable/accessibility, control con không bubble sai; bỏ icon giữa
    cover và metadata kỹ thuật.
 2. Lifecycle + capability taxonomy từ manifest; status filter và category filter
@@ -68,7 +74,9 @@ redaction; browser customer/admin; restore drill.
 
 **PASS:** card behavior đúng 100%, không icon lặp, không category cứng, no
 horizontal overflow, không mất history/link cũ.  
-**Rollback:** feature flag shell/taxonomy cũ trong một release.
+**Rollback:** revert commit H26.4; không có migration dữ liệu. `catalog_parent`
+chỉ đổi presentation, còn route `/thumbnail`, job type và history cũ không bị
+xóa nên có thể trả catalog về hai card mà không chuyển dữ liệu.
 
 ## Phase 3 - Từng app, không song song
 

@@ -50,7 +50,7 @@ def trich() -> int:
         po = LOCALE / lang / "LC_MESSAGES" / "messages.po"
         if po.exists():
             rc = _chay("update", "-i", str(POT), "-d", str(LOCALE),
-                       "-l", lang, "--no-wrap", "--omit-header")
+                       "-l", lang, "--no-wrap")
         else:
             po.parent.mkdir(parents=True, exist_ok=True)
             # `init` khong nhan `--omit-header` (khac `extract`/`update`).

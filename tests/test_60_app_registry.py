@@ -50,6 +50,11 @@ def test_portfolio_surface_and_lifecycle_match_locked_decisions():
                   if tool.name == "text.script")
     assert script.customer_visible is False
     assert any(tool.name == "text.generate" for tool in apps["kichban"].tools)
+    assert apps["thumbnail"].catalog_parent == "taoanh"
+    assert apps["thumbnail"].job_types == ("thumbnail.generate",)
+    customer_cards = [m for m in apps.values()
+                      if m.surface == "customer" and not m.catalog_parent]
+    assert customer_cards and all(m.capabilities for m in customer_cards)
 
 
 def test_every_apps_subfolder_has_a_manifest():
@@ -105,6 +110,7 @@ def test_registry_rejects_relative_prefix():
 
 @pytest.mark.parametrize(("field", "value"), [
     ("surface", "partner"), ("lifecycle", "beta"),
+    ("capabilities", ("",)), ("catalog_parent", "bad-parent"),
 ])
 def test_registry_rejects_unknown_product_state(field, value):
     kwargs = {field: value}
@@ -121,12 +127,15 @@ def test_surface_visibility_separates_customer_admin_and_runtime():
                         surface="admin")
     runtime = AppManifest(slug="r", display_name="R", route_prefix="/r",
                           surface="runtime")
+    child = AppManifest(slug="child", display_name="Child", route_prefix="/child",
+                        catalog_parent="c")
     assert visible_on_surface(customer, authenticated=False)
     assert not visible_on_surface(private, authenticated=False)
     assert visible_on_surface(private, authenticated=True)
     assert not visible_on_surface(admin, authenticated=True, operator=False)
     assert visible_on_surface(admin, authenticated=True, operator=True)
     assert not visible_on_surface(runtime, authenticated=True, operator=True)
+    assert not visible_on_surface(child, authenticated=True, operator=True)
 
 
 def test_validate_tu_choi_job_types_thieu_credit_cost():

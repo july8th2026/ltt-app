@@ -13,20 +13,45 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
+from platform_core.i18n import N_
 from server.auth.session import current_identity_optional
 from server.templating import templates
 
 router = APIRouter(tags=["home"])
 
-_CATEGORY_BY_GROUP = {
-    "Ảnh": "AI Image", "Video": "AI Video", "Chat": "Chat & Prompt",
-    "Kịch bản": "Chat & Prompt", "AI Studio": "Automation",
+_LIFECYCLE_UI = {
+    "released": (N_("Đã phát hành"), 0),
+    "development": (N_("Đang phát triển"), 1),
+    "maintenance": (N_("Đang bảo trì"), 2),
+    "internal": (N_("Nội bộ"), 3),
+    "retired": (N_("Đã ngừng"), 4),
 }
 
 
-def _home_category(group: str) -> str:
-    """Taxonomy launcher; không thay đổi hợp đồng manifest của từng app."""
-    return _CATEGORY_BY_GROUP.get(group or "", "Utilities")
+def _prepare_home_items(items: list) -> list[str]:
+    """Gắn metadata trình bày chỉ từ manifest và trả taxonomy duy nhất.
+
+    Không suy luận category từ slug/tên app. ``group`` chỉ là fallback tương
+    thích cho manifest nội bộ cũ; mọi card customer H26 đều khai capabilities.
+    """
+    categories: list[str] = []
+    for item in items:
+        manifest = item.manifest
+        capabilities = tuple(manifest.capabilities) or (manifest.group or "Utilities",)
+        item.home_categories = capabilities
+        item.home_category = capabilities[0]
+        for category in capabilities:
+            if category not in categories:
+                categories.append(category)
+        label, order = _LIFECYCLE_UI.get(
+            manifest.lifecycle, (manifest.lifecycle, 99))
+        item.home_lifecycle_label = label
+        item.home_lifecycle_order = order
+    items.sort(key=lambda item: (
+        item.home_lifecycle_order,
+        str(item.manifest.display_name).casefold(),
+    ))
+    return categories
 
 
 def _workspace_data(visible: list, db_user) -> dict:
@@ -91,9 +116,11 @@ def home(request: Request):
         # Khách: chỉ hiện app self-serve công khai; KHÔNG lộ blocker/app-lỗi.
         visible = [a for a in ok_apps if a.manifest.enabled and
                    visible_on_surface(a.manifest, authenticated=False)]
+        categories = _prepare_home_items(visible)
         return templates.TemplateResponse(request, "home.html", {
             "user": None, "authed": False, "nav": "home",
             "apps": visible, "broken": [], "app_setup": {},
+            "home_categories": categories,
         })
 
     # Đã đăng nhập: lọc theo quyền (H1.4) + tính "cần thiết lập" theo TỪNG app.
@@ -129,9 +156,11 @@ def home(request: Request):
         if hits:
             app_setup[item.manifest.slug] = hits
 
-    workspace = _workspace_data(visible, db_user)
+    # Dùng toàn bộ manifest đã nạp để lịch sử của mode ẩn trong catalog (ví dụ
+    # Thumbnail) vẫn hiện đúng tên/icon; card chỉ lấy từ ``visible``.
+    workspace = _workspace_data(ok_apps, db_user)
+    categories = _prepare_home_items(visible)
     for item in visible:
-        item.home_category = _home_category(item.manifest.group)
         item.home_popularity = workspace["popularity"].get(item.manifest.slug, 0)
         item.home_used = item.manifest.slug in workspace["used_slugs"]
 
@@ -144,6 +173,7 @@ def home(request: Request):
         "app_setup": app_setup,
         "home_workspace": True,
         "workspace": workspace,
+        "home_categories": categories,
     })
 
 

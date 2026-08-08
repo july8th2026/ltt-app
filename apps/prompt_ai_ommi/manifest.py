@@ -100,6 +100,7 @@ MANIFEST = AppManifest(
     enabled=True,
     public=True,
     lifecycle="released",
+    capabilities=("Chat & Prompt", "Automation"),
     group="AI Studio",
     badge="MỚI",
     notes="H19/Q65: replatform Prompt Seedance Studio trên AppProject/Job/Credit/Storage.",

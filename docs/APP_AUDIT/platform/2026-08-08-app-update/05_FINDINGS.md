@@ -17,6 +17,17 @@
 | F13 | P1 | Prompt AI target có team cost/activity nhưng scope hiện tại chủ yếu single-user | khóa quyết định team trước; không dựng dashboard số giả |
 | F14 | P1 | Nhiều folder yêu cầu còn trống | audit browser + benchmark rồi trình decision gate; không build từ suy đoán |
 
+## Trạng thái xử lý
+
+- **F01-F02 đóng ở Phase 0:** surface/lifecycle contract và route guard đã có
+  regression test; Kịch bản/Media runtime-only, Demo admin-only.
+- **F03 đóng ở Phase 1:** `JobEvent`, History API/UI, redaction/retention,
+  support/operator metrics và ownership test đã PASS.
+- **F04-F06 đóng ở Phase 2:** card-link/accessibility, taxonomy/lifecycle từ
+  manifest và hai mode Tạo ảnh AI đã PASS browser matrix + full gate. Backend
+  Thumbnail cũ được giữ để tương thích, không phải xóa hay di trú dữ liệu.
+- **F07-F14 còn mở** và được xử lý tuần tự từ Phase 3.1; không làm song song.
+
 ## Chỉ số sau sửa
 
 - 0 tool internal/retired xuất hiện trong customer catalog/header/search.
@@ -25,4 +36,3 @@
 - Console error và failed network bất ngờ = 0 trên core journey.
 - Upscale compare drift <= 120 ms sau seek/play và divider/range sai lệch <= 1 px.
 - Job success, retry, credit refund, P50/P95 và support rate đo được theo app.
-

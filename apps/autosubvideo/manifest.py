@@ -69,6 +69,7 @@ MANIFEST = AppManifest(
 
     enabled=True,
     lifecycle="development",
+    capabilities=("AI Video", "Utilities"),
     group="Video",
     badge="MỚI",
     notes="Quick import + Full Studio; WhisperX/faster-whisper + burn ffmpeg/libass.",

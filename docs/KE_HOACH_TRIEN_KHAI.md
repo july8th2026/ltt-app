@@ -1767,8 +1767,11 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   Jobs filter/date/cursor/timeline/lineage/artifact/retry/cancel; metrics/operator
   log; migration restore drill, browser customer/cross-tenant/operator/mobile và
   full `python tools\gate.py` PASS 9/9.
-- [ ] H26.4 Phase 2: marketplace card/taxonomy/lifecycle/design system và hợp
-  nhất Thumbnail vào Tạo ảnh AI.
+- [x] H26.4 Phase 2 — 2026-08-08: card-link accessible; capability/lifecycle từ
+  manifest; filter độc lập và sort lifecycle; hợp nhất presentation Thumbnail
+  thành mode Tạo ảnh AI nhưng giữ route/job/history cũ; Playwright
+  390/768/1366/1920 + keyboard/console/network PASS; full
+  `python tools\gate.py` PASS 9/9 (pytest 2.540 pass, 8 skip, 23 subtest).
 - [ ] H26.5 Phase 3.1: Upscale Video — controls, compare sync, queue/download,
   benchmark và concurrency 2×16 GB.
 - [ ] H26.6 Phase 3.2: AutoSub — sửa version drift, canary React Studio và giữ

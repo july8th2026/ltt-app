@@ -21,6 +21,7 @@ MANIFEST = AppManifest(
     enabled=True,
     public=True,
     lifecycle="development",
+    capabilities=("Automation",),
     group="AI Studio",
     badge="MỚI",
     notes="Agent/Canvas dùng chung Plan v1 và executor server-side.",

@@ -203,7 +203,8 @@ html{background:var(--surface-canvas)}
 .hero h1{font-size:26px;letter-spacing:-.4px;max-width:22ch;position:relative}
 .hero p{color:var(--muted);margin:9px 0 0;max-width:54ch;font-size:14.5px;position:relative}
 .grid{display:grid;gap:15px;grid-template-columns:repeat(auto-fill,minmax(288px,1fr))}
-.appcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;transition:.18s;position:relative}
+.appcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;transition:.18s;position:relative;color:inherit;text-decoration:none}
+.appcard:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
 .appcard:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:0 10px 30px #0006}
 .appcard .accent{height:3px}
 .appcard .in{padding:17px 18px}
@@ -288,7 +289,6 @@ html{background:var(--surface-canvas)}
 
 /* Thẻ catalog: cover gradient + badge (UX Pha 2) */
 .appcard .cover{height:120px;display:grid;place-items:center;position:relative}
-.appcard .cover .big{font-size:44px;filter:drop-shadow(0 4px 10px #0007)}
 .appcard .cover .cbadge{position:absolute;top:10px;right:10px}
 .catbar{display:flex;gap:12px;align-items:center;margin:2px 0 16px;flex-wrap:wrap}
 .catbar .search{flex:1;min-width:200px;max-width:340px}
@@ -361,6 +361,39 @@ html{background:var(--surface-canvas)}
 .market-card-body>p{color:var(--text-secondary)}.market-card-foot{color:var(--text-muted)}
 .market-card-foot a,.rail-credit a{background:var(--brand-strong);border-color:var(--brand-border);color:var(--text-primary)}
 .market-badge{background:var(--brand-strong)}.market-badge.warn{background:var(--status-warning-soft);border:1px solid var(--status-warning-border);color:var(--status-warning)}
+
+/* H26.4 Marketplace: hai trục filter, lifecycle thật và card là một link. */
+.market-filters{display:grid;gap:8px}
+.market-filter-group{display:flex;min-width:0;align-items:center;gap:10px}
+.market-filter-group>span{flex:0 0 68px;color:var(--text-muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.market-categories{min-width:0;padding-bottom:3px}
+.market-categories button{min-height:44px}
+.market-card{display:block;color:inherit;text-decoration:none}
+.market-card:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
+.market-card.disabled{opacity:.65}
+.market-badge{border:1px solid transparent}
+.market-setup-badge{left:8px;right:auto}
+.market-cover:after{content:"";position:absolute;z-index:1;inset:0 0 auto;height:34px;background:linear-gradient(180deg,var(--surface-raised) 0 70%,transparent 100%);pointer-events:none}
+.market-badge{z-index:2}
+.market-empty[hidden]{display:none}
+.lifecycle-released{border-color:var(--status-success-border)!important;background:var(--status-success-soft)!important;color:var(--status-success)!important}
+.lifecycle-development{border-color:var(--status-warning-border)!important;background:var(--status-warning-soft)!important;color:var(--status-warning)!important}
+.lifecycle-maintenance{border-color:var(--status-danger-border)!important;background:var(--status-danger-soft)!important;color:var(--status-danger)!important}
+.market-lifecycles button[data-lifecycle=released].on{border-color:var(--status-success-border);background:var(--status-success-soft);color:var(--status-success)}
+.market-lifecycles button[data-lifecycle=development].on{border-color:var(--status-warning-border);background:var(--status-warning-soft);color:var(--status-warning)}
+.market-lifecycles button[data-lifecycle=maintenance].on{border-color:var(--status-danger-border);background:var(--status-danger-soft);color:var(--status-danger)}
+.market-card-foot>span{display:flex;min-width:0;flex-wrap:wrap;gap:4px}
+.market-card-foot i{padding:2px 5px;border:1px solid var(--border-subtle);border-radius:99px;font-style:normal}
+.market-card-foot strong{flex:0 0 auto;padding:5px 7px;border:1px solid var(--brand-border);border-radius:5px;background:var(--brand-strong);color:var(--text-primary);font-size:10px}
+@media(max-width:760px){.market-filter-group{align-items:flex-start;flex-direction:column;gap:4px}.market-filter-group>span{flex-basis:auto}}
+@media(max-width:900px){.market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:400px){.market-grid{grid-template-columns:minmax(0,1fr)}}
+
+.image-product-tabs{display:flex;width:max-content;max-width:100%;gap:4px;margin-bottom:14px;padding:4px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--surface-raised);overflow-x:auto}
+.image-product-tabs a{display:flex;min-height:44px;align-items:center;padding:7px 13px;border-radius:7px;color:var(--text-secondary);text-decoration:none;white-space:nowrap}
+.image-product-tabs a:hover{background:var(--surface-interactive);color:var(--text-primary)}
+.image-product-tabs a[aria-current=page]{background:var(--brand-strong);color:var(--text-primary);font-weight:700}
+.image-product-tabs a:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 .market-setup{color:var(--status-warning)}.market-empty{border-color:var(--border-strong);color:var(--text-secondary)}
 .activity-list li,.running-list li{border-color:var(--border-subtle)}
 .progress{background:var(--surface-interactive)}.progress i{background:linear-gradient(90deg,var(--brand-strong),var(--brand-hover))}

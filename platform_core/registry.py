@@ -144,6 +144,17 @@ class AppManifest:
     # Vòng đời hiển thị (Q73), không dùng badge marketing để giả trạng thái.
     lifecycle: str = "development"
 
+    # Taxonomy năng lực hiển thị trong Marketplace (Q74). Một app có thể nằm
+    # trong nhiều nhóm; nền tảng chỉ đọc dữ liệu này, tuyệt đối không suy luận
+    # từ slug/tên app. Phần tử đầu tiên là nhóm chính để chọn ảnh cover.
+    capabilities: tuple = ()
+
+    # App con vẫn giữ route/job/history riêng nhưng không tạo card/nav độc lập.
+    # Dùng khi hai executor cùng nằm dưới một sản phẩm customer-facing, ví dụ
+    # một mode chuyên biệt trong shell của app cha. Route cũ vẫn được mount để
+    # deep link và workflow cũ không gãy.
+    catalog_parent: str = ""
+
     # Tiêu đề các mục kiểm tra (doctor) THUỘC app này (H6.6). Nền tảng dùng để
     # gắn badge "cần thiết lập" lên ĐÚNG thẻ app, thay vì treo một banner blocker
     # toàn cục ở trang chủ (mô hình cũ thời desktop-app). App tự khai danh sách
@@ -309,6 +320,19 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
         raise RegistryError(
             _t("[{slug}] lifecycle không hợp lệ: {value!r}").format(
                 slug=manifest.slug, value=manifest.lifecycle))
+    if (not isinstance(manifest.capabilities, tuple) or
+            any(not isinstance(value, str) or not value.strip()
+                for value in manifest.capabilities)):
+        raise RegistryError(
+            _t("[{slug}] capabilities phải là tuple chuỗi không rỗng").format(
+                slug=manifest.slug))
+    if manifest.catalog_parent:
+        parent = manifest.catalog_parent
+        if (parent == manifest.slug or
+                not parent.replace("_", "").isalnum()):
+            raise RegistryError(
+                _t("[{slug}] catalog_parent không hợp lệ: {value!r}").format(
+                    slug=manifest.slug, value=parent))
     # Fail SỚM ngay lúc discover (W1.6): app sinh job mà KHÔNG khai credit_cost
     # thì job không tra được giá — trước đây chỉ vỡ lúc submit (app đã hiện trên
     # catalog, khách bấm rồi mới lỗi). Đánh dấu app lỗi ngay để không lên catalog.
@@ -344,7 +368,7 @@ def visible_on_surface(manifest: AppManifest, *, authenticated: bool,
     Route của app ``runtime`` vẫn được mount. App ``admin`` chỉ xuất hiện với
     operator đã đăng nhập. App ``customer`` tuân theo cờ public khi ẩn danh.
     """
-    if manifest.surface == "runtime":
+    if manifest.surface == "runtime" or manifest.catalog_parent:
         return False
     if manifest.surface == "admin":
         return bool(authenticated and operator)

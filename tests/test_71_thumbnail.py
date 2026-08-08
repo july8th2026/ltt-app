@@ -283,7 +283,8 @@ def test_image_route_chan_cross_user(tmp_path, monkeypatch):
         assert r2.status_code == 200
         studio = c.get("/thumbnail")
         assert studio.status_code == 200
-        assert "Thumbnail Studio" in studio.text and "TIEU_DE_CUA_A" in studio.text
+        assert "Tạo ảnh AI" in studio.text and "Thumbnail YouTube" in studio.text
+        assert "TIEU_DE_CUA_A" in studio.text
         assert "th-compare-pick" in studio.text and "NOI_DUNG_CUA_A" not in studio.text
         remix = c.get(f"/thumbnail/remix/{seeded_id}/0")
         assert remix.status_code == 200 and "Đang remix từ output đã chọn" in remix.text

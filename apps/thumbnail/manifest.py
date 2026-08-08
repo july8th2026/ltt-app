@@ -67,6 +67,8 @@ MANIFEST = AppManifest(
 
     enabled=True,
     lifecycle="development",
+    capabilities=("AI Image",),
+    catalog_parent="taoanh",
     group="Ảnh",
     badge="MỚI",
     notes="Cần GEMINI_API_KEY trong secrets/app.env. Tool tính phí đầu tiên (H5).",

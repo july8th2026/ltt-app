@@ -1,4 +1,4 @@
-# Translations template for PROJECT.
+# English translations for PROJECT.
 # Copyright (C) 2026 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
@@ -7,10 +7,12 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-08-07 11:57+0700\n"
+"POT-Creation-Date: 2026-08-08 19:09+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -124,7 +126,7 @@ msgstr "The batch manifest is not valid."
 msgid "Batch retry chỉ khớp một phần."
 msgstr "The batch retry only matched partially."
 
-#: apps/taoanh/templates/image.html:10
+#: apps/taoanh/templates/image.html:11
 msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật."
 msgstr "Turn a prompt into up to four images, follow the progress and compare the real outputs."
 
@@ -184,9 +186,13 @@ msgstr "STEP 04"
 msgid "BƯỚC 05"
 msgstr "STEP 05"
 
-#: server/templates/home.html:61
+#: server/templates/home.html:66
 msgid "Bạn chưa dùng app nào."
 msgstr "You haven't used any apps yet."
+
+#: server/templates/_job_progress.html:21
+msgid "Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành."
+msgstr "You can retry or send the support ID to the operations team."
 
 #: apps/mediatools/jobs.py:296
 msgid "Bạn phải xác nhận có quyền sử dụng video."
@@ -228,13 +234,17 @@ msgstr "Start using the tools"
 msgid "Bắt đầu một ý tưởng mới"
 msgstr "Start a new idea"
 
+#: platform_core/jobs.py:143
+msgid "Bắt đầu xử lý."
+msgstr "Processing started."
+
 #: apps/taoanh/jobs.py:164 apps/thumbnail/jobs.py:165
 msgid "Bị chặn vì lý do an toàn nội dung."
 msgstr "Blocked for content-safety reasons."
 
-#: apps/taoanh/templates/image.html:24
+#: apps/taoanh/templates/image.html:25
 #: apps/taoclipngan/templates/taoclipngan.html:56
-#: apps/thumbnail/templates/thumbnail.html:56
+#: apps/thumbnail/templates/thumbnail.html:57
 msgid "Bỏ chọn"
 msgstr "Clear selection"
 
@@ -274,7 +284,7 @@ msgstr "Cost:"
 msgid "Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được."
 msgstr "Transfer the exact amount — credits are added automatically once we receive it."
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Chuyển phong cách"
 msgstr "Style transfer"
 
@@ -331,7 +341,7 @@ msgstr "No Gemini API key for the chat category yet."
 msgid "Chưa có API key Gemini."
 msgstr "No Gemini API key yet."
 
-#: server/templates/home.html:40 server/templates/home.html:62
+#: server/templates/home.html:45 server/templates/home.html:67
 msgid "Chưa có app phù hợp."
 msgstr "No matching apps."
 
@@ -351,7 +361,7 @@ msgstr "No projects yet"
 msgid "Chưa có gói nạp nào. Admin thêm gói ở trang quản trị."
 msgstr "No credit packages yet. An admin can add them in the admin area."
 
-#: server/templates/home.html:44
+#: server/templates/home.html:49
 msgid "Chưa có hoạt động. Mở một công cụ để bắt đầu."
 msgstr "No activity yet. Open a tool to get started."
 
@@ -379,7 +389,7 @@ msgstr "No execution decisions yet."
 msgid "Chưa có thay đổi"
 msgstr "No changes yet"
 
-#: apps/thumbnail/templates/thumbnail.html:61
+#: apps/thumbnail/templates/thumbnail.html:62
 msgid "Chưa có thumbnail"
 msgstr "No thumbnails yet"
 
@@ -395,7 +405,7 @@ msgstr "No videos yet. Create your first one above."
 msgid "Chưa có video phù hợp."
 msgstr "No matching videos."
 
-#: server/templates/jobs.html:44
+#: server/templates/jobs.html:46
 msgid "Chưa có việc nào."
 msgstr "No jobs yet."
 
@@ -403,11 +413,11 @@ msgstr "No jobs yet."
 msgid "Chưa có đơn nạp."
 msgstr "No orders yet."
 
-#: apps/taoanh/templates/image.html:28
+#: apps/taoanh/templates/image.html:29
 msgid "Chưa có ảnh"
 msgstr "No images yet"
 
-#: server/templates/home.html:39
+#: server/templates/home.html:44
 msgid "Chưa dùng được"
 msgstr "Not available yet"
 
@@ -457,9 +467,14 @@ msgid "Chất lượng"
 msgstr "Quality"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:89
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Chế độ"
 msgstr "Mode"
+
+#: apps/taoanh/templates/image.html:10
+#: apps/thumbnail/templates/thumbnail.html:17
+msgid "Chế độ Tạo ảnh AI"
+msgstr "AI image modes"
 
 #: apps/taoanh/jobs.py:209
 msgid "Chế độ chỉnh sửa cần ảnh nguồn."
@@ -485,7 +500,7 @@ msgstr "Only admins can publish a template to the catalog."
 msgid "Chỉ admin được xem vận hành."
 msgstr "Only admins can view operations."
 
-#: apps/taoanh/templates/image.html:23
+#: apps/taoanh/templates/image.html:24
 msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
 msgstr "Shows only the data you entered"
 
@@ -518,7 +533,7 @@ msgstr "Only admins can view telemetry."
 msgid "Chỉ retry render đã lỗi hoặc đã hủy."
 msgstr "You can only retry a render that failed or was cancelled."
 
-#: server/routes/jobs.py:173
+#: server/routes/jobs.py:291
 msgid "Chỉ thử lại job đã lỗi hoặc đã hủy."
 msgstr "You can only retry a job that failed or was cancelled."
 
@@ -526,11 +541,11 @@ msgstr "You can only retry a job that failed or was cancelled."
 msgid "Chỉ được lên lịch tối đa 30 ngày."
 msgstr "You can schedule at most 30 days ahead."
 
-#: apps/taoanh/templates/image.html:30
+#: apps/taoanh/templates/image.html:31
 msgid "Chỉnh sửa"
 msgstr "Edit"
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Chỉnh sửa ảnh"
 msgstr "Edit image"
 
@@ -574,11 +589,11 @@ msgstr "Pick up to 3 videos; submitted as one atomic batch."
 msgid "Chọn tối đa hai clip đã render"
 msgstr "Pick up to two rendered clips"
 
-#: apps/thumbnail/templates/thumbnail.html:54
+#: apps/thumbnail/templates/thumbnail.html:55
 msgid "Chọn tối đa hai output thật trong lịch sử"
 msgstr "Pick up to two real outputs from your history"
 
-#: apps/taoanh/templates/image.html:24
+#: apps/taoanh/templates/image.html:25
 msgid "Chọn tối đa hai ảnh thật"
 msgstr "Pick up to two real images"
 
@@ -599,13 +614,13 @@ msgstr "Pick a video in the Studio to get started."
 msgid "Chọn ít nhất một track đang hiện và có cue."
 msgstr "Select at least one visible track that has cues."
 
-#: apps/taoanh/templates/image.html:24
-#: apps/thumbnail/templates/thumbnail.html:55
+#: apps/taoanh/templates/image.html:25
+#: apps/thumbnail/templates/thumbnail.html:56
 msgid "Chọn ảnh thứ hai"
 msgstr "Pick the second image"
 
-#: apps/taoanh/templates/image.html:24
-#: apps/thumbnail/templates/thumbnail.html:55
+#: apps/taoanh/templates/image.html:25
+#: apps/thumbnail/templates/thumbnail.html:56
 msgid "Chọn ảnh thứ nhất"
 msgstr "Pick the first image"
 
@@ -634,7 +649,7 @@ msgstr "Output codec"
 msgid "Credit &amp; thanh toán"
 msgstr "Credit &amp; payments"
 
-#: server/templates/home.html:46
+#: server/templates/home.html:51
 msgid "Credit của bạn"
 msgstr "Your credits"
 
@@ -650,6 +665,10 @@ msgstr "Credits added"
 msgid "Credit đã tính"
 msgstr "Credits charged"
 
+#: platform_core/credit.py:269
+msgid "Credit đã được hoàn lại."
+msgstr "Credits have been refunded."
+
 #: server/templates/nap_khong_thay.html:23
 msgid "Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này."
 msgstr "Credits are added when your bank confirms the transfer, not by this page."
@@ -661,6 +680,10 @@ msgstr "Steps"
 #: server/templates/nap.html:20
 msgid "Các gói credit"
 msgstr "Credit packages"
+
+#: server/templates/job_detail.html:9
+msgid "Các lần chạy liên quan"
+msgstr "Related runs"
 
 #: apps/kichban/templates/_script_view.html:8
 #: apps/kichban/templates/script.html:10
@@ -699,8 +722,8 @@ msgstr "This scene does not have enough description to generate an image."
 msgid "Cấu hình"
 msgstr "Settings"
 
-#: apps/taoanh/templates/image.html:23
-#: apps/thumbnail/templates/thumbnail.html:52
+#: apps/taoanh/templates/image.html:24
+#: apps/thumbnail/templates/thumbnail.html:53
 msgid "Cấu hình gửi đi"
 msgstr "Submission settings"
 
@@ -727,6 +750,10 @@ msgstr "Joining needs 2–12 videos."
 #: apps/mediatools/jobs.py:86
 msgid "Cần 2–12 ảnh để ghép."
 msgstr "Combining needs 2–12 images."
+
+#: server/templates/home.html:44
+msgid "Cần thiết lập:"
+msgstr "Setup required:"
 
 #: apps/autosubvideo/routes.py:512
 msgid "Cần transcript nguồn trước khi phân vai."
@@ -774,11 +801,11 @@ msgstr "Demo — infrastructure check"
 msgid "Duyệt sẽ giữ chỗ"
 msgstr "Approving places a hold"
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Dùng cho chuyển phong cách"
 msgstr "Used for style transfer"
 
-#: server/templates/home.html:46
+#: server/templates/home.html:51
 msgid "Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy."
 msgstr "Credits are charged transparently per task, and your balance is always shown before you run anything."
 
@@ -859,7 +886,7 @@ msgstr "Files are stored scoped to their owner. Images 20 MB, video 60 MB, audio
 msgid "File ảnh không hợp lệ."
 msgstr "That is not a valid image file."
 
-#: apps/thumbnail/templates/thumbnail.html:33
+#: apps/thumbnail/templates/thumbnail.html:34
 msgid "Font thương hiệu"
 msgstr "Brand font"
 
@@ -899,7 +926,7 @@ msgstr "Combines 2–12 images into a horizontal, vertical or grid contact sheet
 msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
 msgstr "Price: 1 credit per 100 characters (set by the app manifest)."
 
-#: apps/thumbnail/templates/thumbnail.html:35
+#: apps/thumbnail/templates/thumbnail.html:36
 msgid "Giọng thương hiệu"
 msgstr "Brand voice"
 
@@ -919,6 +946,10 @@ msgstr "Keep the original audio"
 msgid "Google Sheets, tên cột, Meta App, TikTok, chống spam, thông báo."
 msgstr "Google Sheets, column names, Meta App, TikTok, anti-spam, notifications."
 
+#: platform_core/jobs.py:216
+msgid "Gặp gián đoạn tạm thời, hệ thống sẽ tự thử lại."
+msgstr "A temporary interruption occurred. The system will retry automatically."
+
 #: apps/chataistudio/templates/chataistudio.html:19
 msgid "Gửi"
 msgstr "Send"
@@ -931,18 +962,18 @@ msgstr "Send reset link"
 msgid "Hook (15–30 giây đầu)"
 msgstr "Hook (first 15–30 seconds)"
 
-#: apps/taoanh/templates/image.html:28
-#: apps/thumbnail/templates/thumbnail.html:65
+#: apps/taoanh/templates/image.html:29
+#: apps/thumbnail/templates/thumbnail.html:66
 #: server/templates/_job_progress.html:9 server/templates/jobs.html:11
-#: server/templates/jobs.html:31
+#: server/templates/jobs.html:33
 msgid "Hoàn tất"
 msgstr "Done"
 
-#: server/templates/home.html:43
+#: server/templates/home.html:48
 msgid "Hoạt động của bạn"
 msgstr "Your activity"
 
-#: server/templates/home.html:44
+#: server/templates/home.html:49
 msgid "Hoạt động gần đây"
 msgstr "Recent activity"
 
@@ -958,7 +989,7 @@ msgstr "Or describe your own style…"
 msgid "Hàng đợi xử lý"
 msgstr "Processing queue"
 
-#: server/templates/home.html:40 server/templates/home.html:60
+#: server/templates/home.html:45 server/templates/home.html:65
 msgid "Hãy đổi từ khóa, nhóm hoặc quay lại kho ứng dụng."
 msgstr "Try another keyword or category, or go back to the app store."
 
@@ -1032,7 +1063,7 @@ msgstr "The job returned no images."
 msgid "Job này không sinh ảnh."
 msgstr "This job does not produce images."
 
-#: apps/thumbnail/templates/thumbnail.html:27
+#: apps/thumbnail/templates/thumbnail.html:28
 msgid "KIẾM TIỀN 2026"
 msgstr "MONETISATION 2026"
 
@@ -1040,8 +1071,8 @@ msgstr "MONETISATION 2026"
 msgid "Kho tài nguyên cá nhân chưa được phát hành"
 msgstr "Your personal asset library has not shipped yet"
 
-#: server/templates/home.html:14 server/templates/home.html:38
-#: server/templates/home.html:57
+#: server/templates/home.html:14 server/templates/home.html:43
+#: server/templates/home.html:62
 msgid "Kho ứng dụng"
 msgstr "App store"
 
@@ -1073,7 +1104,7 @@ msgstr "No subtitle track selected to render."
 msgid "Không có tệp ·"
 msgstr "No file ·"
 
-#: server/templates/home.html:45
+#: server/templates/home.html:50
 msgid "Không có việc nào đang chạy."
 msgstr "No jobs are running."
 
@@ -1085,7 +1116,7 @@ msgstr "No clips could be built from this video (try another video or another ti
 msgid "Không dựng được file phụ đề ASS."
 msgstr "The ASS subtitle file could not be built."
 
-#: apps/thumbnail/templates/thumbnail.html:52
+#: apps/thumbnail/templates/thumbnail.html:53
 msgid "Không hiển thị prompt nội bộ của nền tảng"
 msgstr "Platform-internal prompts are never shown"
 
@@ -1100,6 +1131,14 @@ msgstr "No speech was detected in this video."
 #: apps/mediatools/jobs.py:209
 msgid "Không phân giải được máy chủ video."
 msgstr "The video host could not be resolved."
+
+#: platform_core/jobs.py:226
+msgid "Không thể hoàn tất yêu cầu. Bạn có thể thử lại."
+msgstr "The request could not be completed. You can retry."
+
+#: server/templates/_job_progress.html:21
+msgid "Không thể hoàn tất."
+msgstr "Unable to complete."
 
 #: apps/autosubvideo/parsers.py:105
 msgid "Không tìm thấy Dialogue nào trong file ASS"
@@ -1129,8 +1168,10 @@ msgstr "File not found."
 #: apps/autosubvideo/routes.py:602 apps/prompt_ai_ommi/routes/projects.py:222
 #: apps/prompt_ai_ommi/routes/resources.py:512
 #: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/upscalevideo/routes.py:594
-#: server/routes/jobs.py:116 server/routes/jobs.py:129
-#: server/routes/jobs.py:146 server/routes/jobs.py:171
+#: server/routes/jobs.py:186 server/routes/jobs.py:202
+#: server/routes/jobs.py:237 server/routes/jobs.py:244
+#: server/routes/jobs.py:264 server/routes/jobs.py:289
+#: server/routes/jobs.py:321
 msgid "Không tìm thấy job."
 msgstr "Job not found."
 
@@ -1181,7 +1222,11 @@ msgstr "Share not found."
 msgid "Không tìm thấy snapshot."
 msgstr "Snapshot not found."
 
-#: server/routes/jobs.py:197
+#: server/access_middleware.py:75
+msgid "Không tìm thấy trang bạn yêu cầu."
+msgstr "The requested page was not found."
+
+#: server/routes/jobs.py:357
 msgid "Không tìm thấy tệp kết quả."
 msgstr "Result file not found."
 
@@ -1219,14 +1264,14 @@ msgstr "Proposal not found."
 
 #: apps/chataistudio/routes.py:429 apps/prompt_ai_ommi/routes/resources.py:347
 #: apps/prompt_ai_ommi/routes/resources.py:366
-#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:211
-#: apps/taoanh/routes.py:219 apps/taoanh/routes.py:237
-#: apps/taoanh/routes.py:245 apps/thumbnail/routes.py:366
+#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:221
+#: apps/taoanh/routes.py:229 apps/taoanh/routes.py:247
+#: apps/taoanh/routes.py:255 apps/thumbnail/routes.py:366
 #: apps/thumbnail/routes.py:374
 msgid "Không tìm thấy ảnh."
 msgstr "Image not found."
 
-#: apps/agent/routes/_shared.py:333 apps/autosubvideo/routes.py:768
+#: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:768
 #: apps/chataistudio/routes.py:337 apps/chataistudio/routes.py:361
 #: apps/chataistudio/routes.py:421 apps/chataistudio/routes.py:436
 #: apps/taoclipngan/routes.py:384
@@ -1337,7 +1382,7 @@ msgstr "Product and support links"
 msgid "Liên kết xác thực không hợp lệ hoặc đã hết hạn."
 msgstr "This verification link is invalid or has expired."
 
-#: server/templates/jobs.html:23
+#: server/templates/jobs.html:25
 msgid "Loại"
 msgstr "Type"
 
@@ -1353,7 +1398,7 @@ msgstr "Invalid reference asset type."
 msgid "Loại tài sản đã lưu không hợp lệ."
 msgstr "Invalid saved-asset type."
 
-#: server/templates/jobs.html:23
+#: server/templates/jobs.html:25
 msgid "Lúc"
 msgstr "At"
 
@@ -1365,7 +1410,7 @@ msgstr "Save API key"
 msgid "Lưu dự án"
 msgstr "Save project"
 
-#: apps/thumbnail/templates/thumbnail.html:36
+#: apps/thumbnail/templates/thumbnail.html:37
 msgid "Lưu làm Brand Kit mặc định của tôi"
 msgstr "Save as my default brand kit"
 
@@ -1381,6 +1426,14 @@ msgstr "Archive"
 msgid "Lưới"
 msgstr "Grid"
 
+#: server/templates/job_detail.html:10
+msgid "Lần thử lại"
+msgstr "Retry"
+
+#: server/templates/job_detail.html:10
+msgid "Lần trước"
+msgstr "Previous run"
+
 #: apps/agent/templates/agent.html:7
 msgid "Lập kế hoạch Agent"
 msgstr "Plan with the agent"
@@ -1393,9 +1446,18 @@ msgstr "Plan and see the price"
 msgid "Lịch sử prompt"
 msgstr "Prompt history"
 
-#: server/templates/home.html:35
-msgid "Lọc theo nhóm"
-msgstr "Filter by category"
+#: server/templates/_job_progress.html:23
+#: server/templates/_job_progress.html:24
+msgid "Lịch sử xử lý"
+msgstr "Processing history"
+
+#: server/templates/home.html:36
+msgid "Lọc theo nhóm ứng dụng"
+msgstr "Filter by app group"
+
+#: server/templates/home.html:39
+msgid "Lọc theo trạng thái"
+msgstr "Filter by status"
 
 #: apps/taovideo/templates/taovideo.html:65
 msgid "Lọc video"
@@ -1405,16 +1467,12 @@ msgstr "Filter videos"
 msgid "Lọc việc"
 msgstr "Filter jobs"
 
-#: apps/taoanh/templates/image.html:28
-#: apps/thumbnail/templates/thumbnail.html:65
+#: apps/taoanh/templates/image.html:29
+#: apps/thumbnail/templates/thumbnail.html:66
 #: server/templates/_job_progress.html:11 server/templates/jobs.html:12
-#: server/templates/jobs.html:32
+#: server/templates/jobs.html:34
 msgid "Lỗi"
 msgstr "Error"
-
-#: server/templates/_job_progress.html:21
-msgid "Lỗi:"
-msgstr "Error:"
 
 #: platform_core/image_input.py:46
 msgid "MIME ảnh tham chiếu không khớp nội dung file."
@@ -1432,11 +1490,11 @@ msgstr "MP4, MOV, MKV… · large videos upload straight to Storage"
 msgid "Markdown + JSON trong một gói."
 msgstr "Markdown plus JSON in a single package."
 
-#: apps/thumbnail/templates/thumbnail.html:34
+#: apps/thumbnail/templates/thumbnail.html:35
 msgid "Màu chính"
 msgstr "Primary colour"
 
-#: apps/thumbnail/templates/thumbnail.html:34
+#: apps/thumbnail/templates/thumbnail.html:35
 msgid "Màu phụ"
 msgstr "Secondary colour"
 
@@ -1455,6 +1513,10 @@ msgstr "Static camera"
 #: server/templates/_nap_trangthai.html:36
 msgid "Mã giao dịch"
 msgstr "Transaction ID"
+
+#: server/templates/job_detail.html:13
+msgid "Mã hỗ trợ"
+msgstr "Support ID"
 
 #: apps/autosubvideo/routes.py:544
 msgid "Mã ngôn ngữ đích không hợp lệ."
@@ -1480,7 +1542,7 @@ msgstr "Describe the scene, subject, camera movement and lighting."
 msgid "Mô tả kết quả bạn muốn. Agent lập kế hoạch và báo giá trước; chưa duyệt sẽ không giữ credit hay chạy công cụ."
 msgstr "Describe the result you want. The agent plans and quotes first; nothing is held or run until you approve."
 
-#: apps/taoanh/templates/image.html:15
+#: apps/taoanh/templates/image.html:16
 msgid "Mô tả sáng tạo"
 msgstr "Creative brief"
 
@@ -1492,7 +1554,7 @@ msgstr "Video prompt"
 msgid "Mô tả video. Gõ @tên để dùng tham chiếu…"
 msgstr "Describe the video. Type @name to use a reference…"
 
-#: apps/taoanh/templates/image.html:16
+#: apps/taoanh/templates/image.html:17
 msgid "Mô tả ảnh"
 msgstr "Image prompt"
 
@@ -1504,7 +1566,7 @@ msgstr "The image prompt is too short — 8 characters minimum."
 msgid "Mượt chuyển động 2×"
 msgstr "Motion smoothing 2×"
 
-#: apps/thumbnail/templates/thumbnail.html:35
+#: apps/thumbnail/templates/thumbnail.html:36
 msgid "Mạnh mẽ, công nghệ, rõ ràng"
 msgstr "Bold, technical, clear"
 
@@ -1536,7 +1598,7 @@ msgstr "An Image node accepts at most 8 reference images."
 msgid "Một node Text chỉ nhận tối đa 8 ảnh."
 msgstr "A Text node accepts at most 8 images."
 
-#: apps/taoanh/templates/image.html:16
+#: apps/taoanh/templates/image.html:17
 msgid "Một phi hành gia khám phá thành phố tương lai, ánh sáng điện ảnh, chi tiết cao"
 msgstr "An astronaut exploring a futuristic city, cinematic lighting, highly detailed"
 
@@ -1548,8 +1610,8 @@ msgstr "A video accepts at most 4 reference assets."
 msgid "Mới nhất"
 msgstr "Newest"
 
-#: apps/taoanh/templates/image.html:30
-#: apps/thumbnail/templates/thumbnail.html:71
+#: apps/taoanh/templates/image.html:31
+#: apps/thumbnail/templates/thumbnail.html:72
 #: server/templates/dashboard.html:24 server/templates/dashboard.html:29
 #: server/templates/dashboard.html:37 server/templates/dashboard.html:42
 #: server/templates/nap_khong_thay.html:24
@@ -1564,7 +1626,7 @@ msgstr "Open Jobs"
 msgid "Mở PayOS / VietQR"
 msgstr "Open PayOS / VietQR"
 
-#: server/templates/home.html:39
+#: server/templates/home.html:44
 msgid "Mở app"
 msgstr "Open app"
 
@@ -1581,7 +1643,11 @@ msgstr "Open the app list"
 msgid "Mở menu tài khoản"
 msgstr "Open account menu"
 
-#: apps/taoanh/templates/image.html:18
+#: server/templates/_job_progress.html:19
+msgid "Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất."
+msgstr "Open Result files below; reload the page if the job has just completed."
+
+#: apps/taoanh/templates/image.html:19
 msgid "Mở rộng khung hình"
 msgstr "Outpaint the frame"
 
@@ -1638,7 +1704,7 @@ msgstr "Maximum budget (credits)"
 #: apps/kichban/templates/script.html:10
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
 #: apps/taoclipngan/templates/taoclipngan.html:43
-#: apps/thumbnail/templates/thumbnail.html:44
+#: apps/thumbnail/templates/thumbnail.html:45
 msgid "Ngôn ngữ"
 msgstr "Language"
 
@@ -1662,7 +1728,7 @@ msgstr "Type anything — the job will reverse this text"
 msgid "Nhập mật khẩu"
 msgstr "Enter your password"
 
-#: apps/thumbnail/templates/thumbnail.html:53
+#: apps/thumbnail/templates/thumbnail.html:54
 msgid "Nhập nội dung và chọn “Xem cấu hình” để kiểm tra trước khi tạo."
 msgstr "Enter your content and choose \"View settings\" to check before generating."
 
@@ -1670,7 +1736,7 @@ msgstr "Enter your content and choose \"View settings\" to check before generati
 msgid "Nhập project JSON"
 msgstr "Import project JSON"
 
-#: apps/taoanh/templates/image.html:23
+#: apps/taoanh/templates/image.html:24
 msgid "Nhập prompt rồi chọn “Xem cấu hình”."
 msgstr "Enter a prompt, then choose \"View settings\"."
 
@@ -1734,7 +1800,7 @@ msgstr "Upscales video to 1080p, 2K or 4K with Real-ESRGAN."
 msgid "Năng động"
 msgstr "Dynamic"
 
-#: server/templates/home.html:31 server/templates/home.html:46
+#: server/templates/home.html:31 server/templates/home.html:51
 #: server/templates/nap.html:7
 msgid "Nạp credit"
 msgstr "Add credit"
@@ -1775,8 +1841,12 @@ msgstr "AI tools platform"
 msgid "Nối 2–12 video theo thứ tự thành một MP4 chuẩn H.264."
 msgstr "Joins 2–12 videos in order into a single standard H.264 MP4."
 
+#: server/routes/dashboard.py:26
+msgid "Nội bộ"
+msgstr "Internal"
+
 #: apps/kichban/templates/_script_view.html:8
-#: apps/thumbnail/templates/thumbnail.html:25 server/templates/demo.html:20
+#: apps/thumbnail/templates/thumbnail.html:26 server/templates/demo.html:20
 msgid "Nội dung"
 msgstr "Content"
 
@@ -1812,19 +1882,19 @@ msgstr "Invalid operation."
 msgid "Output có cấu trúc"
 msgstr "Structured output"
 
-#: apps/thumbnail/templates/thumbnail.html:30
+#: apps/thumbnail/templates/thumbnail.html:31
 msgid "Output dùng làm tham chiếu"
 msgstr "Outputs used as references"
 
-#: apps/taoanh/templates/image.html:28
+#: apps/taoanh/templates/image.html:29
 msgid "Output thật sẽ xuất hiện ở đây sau job đầu tiên."
 msgstr "Real outputs will appear here after your first job."
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "PNG/JPEG/WebP · tối đa 8 MB"
 msgstr "PNG/JPEG/WebP · up to 8 MB"
 
-#: apps/thumbnail/templates/thumbnail.html:31
+#: apps/thumbnail/templates/thumbnail.html:32
 msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini để hướng dẫn tạo ảnh, không công khai"
 msgstr "PNG/JPEG/WebP · up to 8 MB · sent to Gemini to guide generation, never made public"
 
@@ -1861,8 +1931,8 @@ msgstr "Your session has expired — reload the page."
 #: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:123
 #: apps/autosubvideo/routes.py:236 apps/autosubvideo/routes.py:285
 #: apps/upscalevideo/routes.py:214 apps/upscalevideo/routes.py:232
-#: apps/upscalevideo/routes.py:585 server/routes/jobs.py:137
-#: server/routes/jobs.py:160
+#: apps/upscalevideo/routes.py:585 server/routes/jobs.py:255
+#: server/routes/jobs.py:278
 msgid "Phiên đã hết hạn."
 msgstr "Your session has expired."
 
@@ -1874,7 +1944,7 @@ msgstr "Style"
 msgid "Phong cách hình ảnh"
 msgstr "Visual style"
 
-#: apps/thumbnail/templates/thumbnail.html:39
+#: apps/thumbnail/templates/thumbnail.html:40
 msgid "Phong cách ảnh"
 msgstr "Image style"
 
@@ -1886,7 +1956,7 @@ msgstr "Analyses a long video and exports several short clips, reframed and subt
 msgid "Phổ biến"
 msgstr "Popular"
 
-#: apps/thumbnail/templates/thumbnail.html:28
+#: apps/thumbnail/templates/thumbnail.html:29
 msgid "Phụ đề"
 msgstr "Subtitles"
 
@@ -1911,7 +1981,7 @@ msgstr "The project must be an object."
 msgid "Project đã được sửa ở phiên khác."
 msgstr "This project was changed in another session."
 
-#: apps/taoanh/templates/image.html:15
+#: apps/taoanh/templates/image.html:16
 msgid "Prompt tối đa 4.000 ký tự"
 msgstr "Prompts are limited to 4,000 characters"
 
@@ -1923,7 +1993,7 @@ msgstr "The provider returned no video URL."
 msgid "Pyannote chưa cấu hình token/model."
 msgstr "Pyannote has no token or model configured."
 
-#: server/templates/home.html:59
+#: server/templates/home.html:64
 msgid "Quay lại kho ứng dụng và mở app đầu tiên."
 msgstr "Go back to the app store and open your first app."
 
@@ -1983,7 +2053,7 @@ msgstr "Seed (optional)"
 msgid "Share chỉ có quyền xem."
 msgstr "This share is view-only."
 
-#: apps/agent/routes/_shared.py:327
+#: apps/agent/routes/_shared.py:328
 msgid "Share không tồn tại hoặc đã hết hạn."
 msgstr "That share does not exist, or it has expired."
 
@@ -2011,7 +2081,7 @@ msgstr "Generates Seedance video from a prompt and optional reference assets."
 msgid "Sinh video từ mô tả (+ảnh tham chiếu) bằng Seedance 2.0. Tính phí theo token thật."
 msgstr "Generates video from a prompt (plus reference images) with Seedance 2.0. Charged on actual token usage."
 
-#: apps/kichban/manifest.py:56
+#: apps/kichban/manifest.py:57
 msgid "Sinh văn bản đa dụng từ chỉ dẫn, có thể chọn định dạng đầu ra."
 msgstr "General-purpose text generation from an instruction, with a choice of output format."
 
@@ -2027,18 +2097,18 @@ msgstr "The project snapshot is no longer intact."
 msgid "Snapshot/source của job cũ không còn hợp lệ."
 msgstr "The snapshot or source of the earlier job is no longer valid."
 
-#: apps/taoanh/templates/image.html:30
+#: apps/taoanh/templates/image.html:31
 #: apps/taoclipngan/templates/taoclipngan.html:68
-#: apps/thumbnail/templates/thumbnail.html:71
+#: apps/thumbnail/templates/thumbnail.html:72
 #: apps/upscalevideo/templates/upscalevideo.html:104
 msgid "So sánh"
 msgstr "Compare"
 
-#: apps/thumbnail/templates/thumbnail.html:54
+#: apps/thumbnail/templates/thumbnail.html:55
 msgid "So sánh kết quả"
 msgstr "Compare results"
 
-#: apps/taoanh/templates/image.html:24
+#: apps/taoanh/templates/image.html:25
 #: apps/taoclipngan/templates/taoclipngan.html:54
 msgid "So sánh output"
 msgstr "Compare outputs"
@@ -2059,7 +2129,7 @@ msgstr "The source video has not been uploaded, or does not belong to this user.
 msgid "Source video không thuộc project owner."
 msgstr "The source video does not belong to the project owner."
 
-#: apps/thumbnail/templates/thumbnail.html:38
+#: apps/thumbnail/templates/thumbnail.html:39
 msgid "Style chữ"
 msgstr "Type style"
 
@@ -2103,8 +2173,8 @@ msgstr "Amount"
 msgid "Số từ"
 msgstr "Word count"
 
-#: apps/taoanh/templates/image.html:19
-#: apps/thumbnail/templates/thumbnail.html:45
+#: apps/taoanh/templates/image.html:20
+#: apps/thumbnail/templates/thumbnail.html:46
 msgid "Số ảnh"
 msgstr "Number of images"
 
@@ -2120,7 +2190,7 @@ msgstr "References"
 msgid "Thanh toán thành công"
 msgstr "Payment successful"
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Thay vùng theo mô tả"
 msgstr "Replace a region from a prompt"
 
@@ -2132,7 +2202,7 @@ msgstr "Track every job and credit in one shared source of truth."
 msgid "Theo dõi, lọc và mở kết quả từ mọi app."
 msgstr "Track, filter and open results from every app."
 
-#: apps/thumbnail/templates/thumbnail.html:18
+#: apps/thumbnail/templates/thumbnail.html:19
 msgid "Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải."
 msgstr "Design several variants from real prompts, follow the history and compare results before downloading."
 
@@ -2194,6 +2264,11 @@ msgstr "There is no text to read out."
 msgid "Thu hồi"
 msgstr "Revoke"
 
+#: apps/taoanh/templates/image.html:10
+#: apps/thumbnail/templates/thumbnail.html:17
+msgid "Thumbnail YouTube"
+msgstr "YouTube thumbnail"
+
 #: server/templates/home.html:31
 msgid "Thành viên"
 msgstr "Member"
@@ -2210,9 +2285,9 @@ msgstr "The platform-wide template library has not shipped yet"
 msgid "Thư viện nguồn gần đây"
 msgstr "Recent source library"
 
-#: apps/taoclipngan/templates/taoclipngan.html:42
+#: apps/taoclipngan/templates/taoclipngan.html:42 server/templates/home.html:36
 msgid "Thể loại"
-msgstr "Genre"
+msgstr "Category"
 
 #: server/templates/nap.html:59
 msgid "Thời gian"
@@ -2259,11 +2334,11 @@ msgstr "Title &amp; hook"
 msgid "Tiêu đề phần"
 msgstr "Section title"
 
-#: apps/thumbnail/templates/thumbnail.html:27
+#: apps/thumbnail/templates/thumbnail.html:28
 msgid "Tiêu đề trên ảnh"
 msgstr "Title on the image"
 
-#: apps/agent/templates/_agent_progress.html:3 server/templates/jobs.html:23
+#: apps/agent/templates/_agent_progress.html:3 server/templates/jobs.html:25
 msgid "Tiến độ"
 msgstr "Progress"
 
@@ -2339,8 +2414,9 @@ msgstr "Chat, develop ideas and generate images in one private session."
 msgid "Trước"
 msgstr "Previous"
 
-#: apps/agent/templates/agent_run.html:10 server/templates/jobs.html:8
-#: server/templates/jobs.html:23 server/templates/nap.html:59
+#: apps/agent/templates/agent_run.html:10 server/templates/home.html:29
+#: server/templates/home.html:39 server/templates/jobs.html:8
+#: server/templates/jobs.html:25 server/templates/nap.html:59
 msgid "Trạng thái"
 msgstr "Status"
 
@@ -2405,7 +2481,7 @@ msgstr "Project name"
 msgid "Tên hoặc nội dung…"
 msgstr "Name or content…"
 
-#: apps/thumbnail/templates/thumbnail.html:32
+#: apps/thumbnail/templates/thumbnail.html:33
 msgid "Tên thương hiệu"
 msgstr "Brand name"
 
@@ -2466,11 +2542,11 @@ msgstr "Advanced options"
 msgid "Tạo Clip ngắn"
 msgstr "Make short clips"
 
-#: apps/thumbnail/manifest.py:37 apps/thumbnail/templates/thumbnail.html:17
+#: apps/thumbnail/manifest.py:37
 msgid "Tạo Thumbnail YouTube"
 msgstr "Make YouTube thumbnails"
 
-#: apps/thumbnail/templates/thumbnail.html:71
+#: apps/thumbnail/templates/thumbnail.html:72
 msgid "Tạo biến thể"
 msgstr "Create variants"
 
@@ -2494,7 +2570,7 @@ msgstr "Start a conversation, pick a model and message the AI. Ask it to \"gener
 msgid "Tạo job PROMPT AI OMMI đang tạm khóa."
 msgstr "Creating PROMPT AI OMMI jobs is temporarily disabled."
 
-#: apps/thumbnail/templates/thumbnail.html:61
+#: apps/thumbnail/templates/thumbnail.html:62
 msgid "Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh."
 msgstr "Generate for the first time; the real results will appear here to open and compare."
 
@@ -2539,11 +2615,14 @@ msgstr "Generate audio"
 msgid "Tạo đơn mới"
 msgstr "Create a new order"
 
-#: apps/taoanh/manifest.py:43 apps/taoanh/templates/image.html:10
+#: apps/taoanh/manifest.py:43 apps/taoanh/templates/image.html:11
+#: apps/thumbnail/templates/thumbnail.html:3
+#: apps/thumbnail/templates/thumbnail.html:4
+#: apps/thumbnail/templates/thumbnail.html:18
 msgid "Tạo ảnh AI"
 msgstr "Make AI images"
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Tạo ảnh mới"
 msgstr "Generate a new image"
 
@@ -2551,12 +2630,13 @@ msgstr "Generate a new image"
 msgid "Tạo ảnh trong chat:"
 msgstr "Generate images in chat:"
 
-#: apps/taoanh/templates/image.html:20
-#: apps/thumbnail/templates/thumbnail.html:48
+#: apps/taoanh/templates/image.html:21
+#: apps/thumbnail/templates/thumbnail.html:49
 msgid "Tạo ảnh ·"
 msgstr "Generate images ·"
 
 #: apps/taoclipngan/templates/taoclipngan.html:68
+#: server/templates/job_detail.html:12
 msgid "Tải"
 msgstr "Download"
 
@@ -2585,7 +2665,9 @@ msgstr "Download video"
 msgid "Tải xuống"
 msgstr "Download"
 
-#: server/templates/home.html:6 server/templates/jobs.html:8
+#: server/templates/home.html:6 server/templates/home.html:37
+#: server/templates/home.html:40 server/templates/jobs.html:8
+#: server/templates/jobs.html:14
 msgid "Tất cả"
 msgstr "All"
 
@@ -2601,11 +2683,11 @@ msgstr "Turn off to export the video without audio."
 msgid "Tệp không có nội dung văn bản có thể đọc."
 msgstr "This file has no readable text content."
 
-#: server/templates/job_detail.html:9
+#: server/templates/job_detail.html:12
 msgid "Tệp kết quả"
 msgstr "Result files"
 
-#: server/routes/jobs.py:207
+#: server/routes/jobs.py:367
 msgid "Tệp kết quả không còn tồn tại."
 msgstr "That result file no longer exists."
 
@@ -2618,8 +2700,8 @@ msgid "Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB."
 msgstr "The attachment is empty or over the 8 MB limit."
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:69
-#: apps/taoanh/templates/image.html:19 apps/taovideo/templates/taovideo.html:54
-#: apps/thumbnail/templates/thumbnail.html:43
+#: apps/taoanh/templates/image.html:20 apps/taovideo/templates/taovideo.html:54
+#: apps/thumbnail/templates/thumbnail.html:44
 msgid "Tỉ lệ"
 msgstr "Ratio"
 
@@ -2671,7 +2753,11 @@ msgstr "Up to 8,000 characters. Do not paste tokens, passwords or private data."
 msgid "Tổng tài sản đã lưu và file mới không được vượt quá 4."
 msgstr "Saved assets and new files together must not exceed 4."
 
-#: apps/thumbnail/templates/thumbnail.html:28
+#: server/templates/jobs.html:15
+msgid "Từ ngày"
+msgstr "From date"
+
+#: apps/thumbnail/templates/thumbnail.html:29
 msgid "Từ số 0"
 msgstr "From zero"
 
@@ -2777,14 +2863,14 @@ msgid "Việc"
 msgstr "Jobs"
 
 #: apps/autosubvideo/templates/autosubvideo.html:33
-#: apps/kichban/templates/script.html:7 apps/taoanh/templates/image.html:10
+#: apps/kichban/templates/script.html:7 apps/taoanh/templates/image.html:11
 #: apps/taoclipngan/templates/taoclipngan.html:17
-#: apps/thumbnail/templates/thumbnail.html:19 server/templates/_header.html:40
+#: apps/thumbnail/templates/thumbnail.html:20 server/templates/_header.html:40
 #: server/templates/home.html:31 server/templates/jobs.html:4
 msgid "Việc của tôi"
 msgstr "My work"
 
-#: server/templates/home.html:45
+#: server/templates/home.html:50
 msgid "Việc đang chạy"
 msgstr "Running jobs"
 
@@ -2796,17 +2882,13 @@ msgstr "Why did the AI pick this segment?"
 msgid "Ví dụ: Cách học tiếng Anh hiệu quả trong 30 ngày"
 msgstr "For example: how to learn English effectively in 30 days"
 
-#: apps/thumbnail/templates/thumbnail.html:26
+#: apps/thumbnail/templates/thumbnail.html:27
 msgid "Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới"
 msgstr "For example: a beginners guide to investing in stocks"
 
 #: apps/agent/templates/agent.html:12
 msgid "Ví dụ: Viết kịch bản 60 giây, tạo ảnh minh họa và dựng video dọc…"
 msgstr "For example: write a 60-second script, generate illustrations and build a vertical video…"
-
-#: server/templates/jobs.html:14
-msgid "Ví dụ: upscalevideo"
-msgstr "For example: upscalevideo"
 
 #: apps/kichban/jobs.py:168
 msgid "Văn bản tham chiếu vượt giới hạn 32.000 ký tự."
@@ -2861,14 +2943,18 @@ msgstr "View details"
 msgid "Xem chẩn đoán chi tiết →"
 msgstr "View full diagnostics →"
 
-#: apps/taoanh/templates/image.html:20
-#: apps/thumbnail/templates/thumbnail.html:47
+#: apps/taoanh/templates/image.html:21
+#: apps/thumbnail/templates/thumbnail.html:48
 msgid "Xem cấu hình"
 msgstr "View settings"
 
 #: apps/taovideo/templates/taovideo.html:37
 msgid "Xem prompt hoàn chỉnh"
 msgstr "View the full prompt"
+
+#: server/templates/jobs.html:48
+msgid "Xem thêm"
+msgstr "View more"
 
 #: apps/upscalevideo/templates/upscalevideo.html:42
 msgid "Xem thử 8 giây"
@@ -2882,7 +2968,7 @@ msgstr "Compare preview"
 msgid "Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán."
 msgstr "You will see the exact amount and credits before paying; credits are only added once the payment is confirmed."
 
-#: server/templates/home.html:44 server/templates/home.html:45
+#: server/templates/home.html:49 server/templates/home.html:50
 msgid "Xem tất cả"
 msgstr "View all"
 
@@ -2922,7 +3008,7 @@ msgstr "Verify your account:"
 msgid "Xóa dữ liệu"
 msgstr "Delete my data"
 
-#: server/templates/jobs.html:15
+#: server/templates/jobs.html:17
 msgid "Xóa lọc"
 msgstr "Clear filters"
 
@@ -2941,6 +3027,26 @@ msgstr "Invalid assistant request."
 #: server/templates/reset_password.html:20
 msgid "Yêu cầu liên kết mới"
 msgstr "Request a new link"
+
+#: platform_core/registry.py:327
+#, python-brace-format
+msgid "[{slug}] capabilities phải là tuple chuỗi không rỗng"
+msgstr "[{slug}] capabilities must be a tuple of non-empty strings"
+
+#: platform_core/registry.py:334
+#, python-brace-format
+msgid "[{slug}] catalog_parent không hợp lệ: {value!r}"
+msgstr "[{slug}] invalid catalog_parent: {value!r}"
+
+#: platform_core/registry.py:321
+#, python-brace-format
+msgid "[{slug}] lifecycle không hợp lệ: {value!r}"
+msgstr "[{slug}] invalid lifecycle: {value!r}"
+
+#: platform_core/registry.py:317
+#, python-brace-format
+msgid "[{slug}] surface không hợp lệ: {value!r}"
+msgstr "[{slug}] invalid surface: {value!r}"
 
 #: apps/prompt_ai_ommi/services/composer.py:15
 msgid "catalog prompt không hợp lệ"
@@ -2962,11 +3068,11 @@ msgstr "duplicate cue id within the track"
 msgid "cue id phải duy nhất toàn project"
 msgstr "cue ids must be unique across the whole project"
 
-#: server/templates/home.html:58
+#: server/templates/home.html:63
 msgid "công cụ sẵn sàng"
 msgstr "tools ready"
 
-#: server/templates/home.html:39
+#: server/templates/home.html:44
 msgid "cần thiết lập"
 msgstr "needs setup"
 
@@ -3002,6 +3108,10 @@ msgstr "the add-credit page"
 msgid "tính"
 msgstr "charged"
 
+#: server/templates/job_detail.html:4
+msgid "tạo lúc"
+msgstr "created at"
+
 #: apps/autosubvideo/schemas.py:189
 msgid "word end phải lớn hơn start"
 msgstr "word end must be greater than start"
@@ -3018,21 +3128,25 @@ msgstr "view status"
 msgid "z_index của track đang hiện bị trùng"
 msgstr "duplicate z_index among visible tracks"
 
-#: server/templates/jobs.html:15
+#: server/templates/jobs.html:17
 msgid "Áp dụng"
 msgstr "Apply"
 
-#: apps/thumbnail/templates/thumbnail.html:26
+#: apps/thumbnail/templates/thumbnail.html:27
 msgid "Ý tưởng / chủ đề"
 msgstr "Idea / topic"
 
+#: server/routes/dashboard.py:25 server/templates/home.html:40
+msgid "Đang bảo trì"
+msgstr "Maintenance"
+
 #: server/templates/_job_progress.html:8 server/templates/jobs.html:10
-#: server/templates/jobs.html:34
+#: server/templates/jobs.html:36
 msgid "Đang chạy"
 msgstr "Running"
 
 #: server/templates/_job_progress.html:7 server/templates/jobs.html:9
-#: server/templates/jobs.html:35 server/templates/nap.html:65
+#: server/templates/jobs.html:37 server/templates/nap.html:65
 msgid "Đang chờ"
 msgstr "Pending"
 
@@ -3044,7 +3158,15 @@ msgstr "Waiting for you to confirm in ChatGPT…"
 msgid "Đang chờ thanh toán…"
 msgstr "Waiting for payment…"
 
-#: apps/thumbnail/templates/thumbnail.html:30
+#: platform_core/job_runner.py:234
+msgid "Đang chờ tài nguyên xử lý."
+msgstr "Waiting for processing resources."
+
+#: server/routes/dashboard.py:24 server/templates/home.html:40
+msgid "Đang phát triển"
+msgstr "In development"
+
+#: apps/thumbnail/templates/thumbnail.html:31
 msgid "Đang remix từ output đã chọn"
 msgstr "Remixing from the selected output"
 
@@ -3068,13 +3190,13 @@ msgstr "Loading the workspace…"
 msgid "Đang xác nhận với ngân hàng…"
 msgstr "Confirming with your bank…"
 
-#: server/templates/home.html:39
-msgid "Đang xây"
-msgstr "In progress"
-
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:102
 msgid "Đang xử lý"
 msgstr "Processing"
+
+#: platform_core/jobs.py:163
+msgid "Đang xử lý."
+msgstr "Processing."
 
 #: apps/upscalevideo/templates/upscalevideo.html:63
 msgid "Đang đọc dữ liệu thật…"
@@ -3096,7 +3218,7 @@ msgstr "Marketplace navigation"
 msgid "Điều khoản"
 msgstr "Terms"
 
-#: apps/thumbnail/templates/thumbnail.html:70
+#: apps/thumbnail/templates/thumbnail.html:71
 msgid "Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng"
 msgstr "Technical score v1: contrast, detail and exposure"
 
@@ -3120,18 +3242,38 @@ msgstr "Used"
 msgid "Đã dùng hết 12 lượt chép lời miễn phí hôm nay."
 msgstr "You have used all 12 free transcription runs for today."
 
+#: platform_core/jobs.py:176
+msgid "Đã hoàn tất."
+msgstr "Completed."
+
 #: server/templates/_job_progress.html:10 server/templates/jobs.html:13
-#: server/templates/jobs.html:33
+#: server/templates/jobs.html:35
 msgid "Đã hủy"
 msgstr "Cancelled"
 
-#: apps/taoanh/templates/image.html:18
+#: platform_core/jobs.py:194
+msgid "Đã hủy theo yêu cầu."
+msgstr "Cancelled as requested."
+
+#: server/routes/dashboard.py:27
+msgid "Đã ngừng"
+msgstr "Retired"
+
+#: apps/taoanh/templates/image.html:19
 msgid "Đã nạp output làm ảnh nguồn"
 msgstr "Loaded the output as the source image"
+
+#: server/routes/dashboard.py:23 server/templates/home.html:40
+msgid "Đã phát hành"
+msgstr "Released"
 
 #: server/templates/nap.html:64
 msgid "Đã thanh toán"
 msgstr "Paid"
+
+#: platform_core/jobs.py:94
+msgid "Đã tiếp nhận yêu cầu."
+msgstr "Request received."
 
 #: apps/chataistudio/templates/chataistudio_admin.html:10
 msgid "Đã đăng nhập"
@@ -3245,6 +3387,10 @@ msgstr "Reset your password:"
 msgid "Đặt mật khẩu mới"
 msgstr "Set a new password"
 
+#: server/templates/jobs.html:16
+msgid "Đến ngày"
+msgstr "To date"
+
 #: apps/agent/routes/assistant.py:139
 msgid "Đề xuất đã hết hạn hoặc không hợp lệ."
 msgstr "That proposal has expired, or is not valid."
@@ -3311,8 +3457,8 @@ msgstr "Output resolution"
 msgid "để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng."
 msgstr "to see your order history and current balance. If nothing appears after 5 minutes, send an admin your bank transaction ID."
 
-#: apps/taoanh/templates/image.html:27
-#: apps/thumbnail/templates/thumbnail.html:60
+#: apps/taoanh/templates/image.html:28
+#: apps/thumbnail/templates/thumbnail.html:61
 msgid "Ảnh của tôi"
 msgstr "My images"
 
@@ -3324,15 +3470,15 @@ msgstr "AI-generated images"
 msgid "Ảnh không thuộc tài khoản đang chạy workflow."
 msgstr "That image does not belong to the account running this workflow."
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Ảnh nguồn"
 msgstr "Source image"
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Ảnh nguồn đã chọn"
 msgstr "Selected source image"
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Ảnh phong cách"
 msgstr "Style image"
 
@@ -3348,7 +3494,7 @@ msgstr "The reference image is invalid, or does not belong to this user."
 msgid "Ảnh tham chiếu không thuộc người dùng hiện tại."
 msgstr "That reference image does not belong to the current user."
 
-#: apps/thumbnail/templates/thumbnail.html:31
+#: apps/thumbnail/templates/thumbnail.html:32
 msgid "Ảnh tham chiếu mới"
 msgstr "New reference images"
 
@@ -3360,9 +3506,14 @@ msgstr "The reference image is empty."
 msgid "Ảnh tham chiếu vượt giới hạn 8 MB."
 msgstr "The reference image exceeds the 8 MB limit."
 
-#: apps/taoanh/templates/image.html:18
+#: apps/taoanh/templates/image.html:19
 msgid "Ảnh tham chiếu được gửi tới Gemini để xử lý và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
 msgstr "Reference images are sent to Gemini for processing and stored in your account private data area. \"Replace a region\" works from a natural-language description; it is not a pixel-accurate masking tool."
+
+#: apps/taoanh/templates/image.html:10
+#: apps/thumbnail/templates/thumbnail.html:17
+msgid "Ảnh tổng quát"
+msgstr "General images"
 
 #: apps/prompt_ai_ommi/routes/resources.py:257
 msgid "Ảnh vượt 20 MB."
@@ -3400,7 +3551,7 @@ msgstr "Two-pass stabilisation with libvidstab · +20%."
 msgid "Ứng dụng"
 msgstr "Apps"
 
-#: server/templates/home.html:15 server/templates/home.html:57
+#: server/templates/home.html:15 server/templates/home.html:62
 msgid "Ứng dụng của tôi"
 msgstr "My apps"
 
@@ -3416,7 +3567,7 @@ msgstr "← Back to Chat AI Studio"
 msgid "← Về PROMPT AI OMMI"
 msgstr "← Back to PROMPT AI OMMI"
 
-#: server/templates/job_detail.html:10
+#: server/templates/job_detail.html:14
 msgid "← Về danh sách việc"
 msgstr "← Back to jobs"
 
@@ -3452,10 +3603,6 @@ msgstr "✦ Start processing"
 msgid "✦ Chạy AI Director"
 msgstr "✦ Run AI Director"
 
-#: server/templates/home.html:36
-msgid "✦ Tất cả"
-msgstr "✦ All"
-
 #: apps/chataistudio/templates/chataistudio.html:11
 msgid "＋ Hội thoại mới"
 msgstr "＋ New conversation"
@@ -3480,90 +3627,20 @@ msgstr "🔧 Settings"
 msgid "🧪 Chạy thử một job"
 msgstr "🧪 Run a test job"
 
-#: server/templates/jobs.html
-msgid "Từ ngày"
-msgstr "From date"
+#~ msgid "Lỗi:"
+#~ msgstr "Error:"
 
-#: server/templates/jobs.html
-msgid "Đến ngày"
-msgstr "To date"
+#~ msgid "Ví dụ: upscalevideo"
+#~ msgstr "For example: upscalevideo"
 
-#: server/templates/jobs.html
-msgid "Xem thêm"
-msgstr "View more"
+#~ msgid "Đang xây"
+#~ msgstr "In progress"
 
-#: server/templates/job_detail.html
-msgid "Các lần chạy liên quan"
-msgstr "Related runs"
+#~ msgid "✦ Tất cả"
+#~ msgstr "✦ All"
 
-#: server/templates/job_detail.html
-msgid "Lần trước"
-msgstr "Previous run"
+#~ msgid "xong"
+#~ msgstr "done"
 
-#: server/templates/job_detail.html
-msgid "Lần thử lại"
-msgstr "Retry"
-
-#: server/templates/job_detail.html
-msgid "Mã hỗ trợ"
-msgstr "Support ID"
-
-#: server/templates/_job_progress.html
-msgid "Không thể hoàn tất."
-msgstr "Unable to complete."
-
-#: server/templates/_job_progress.html
-msgid "Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành."
-msgstr "You can retry or send the support ID to the operations team."
-
-#: server/templates/_job_progress.html
-msgid "Lịch sử xử lý"
-msgstr "Processing history"
-
-#: platform_core/jobs.py
-msgid "Đã tiếp nhận yêu cầu."
-msgstr "Request received."
-
-#: platform_core/jobs.py
-msgid "Bắt đầu xử lý."
-msgstr "Processing started."
-
-#: platform_core/jobs.py
-msgid "Đang xử lý."
-msgstr "Processing."
-
-#: platform_core/jobs.py
-msgid "Đã hoàn tất."
-msgstr "Completed."
-
-#: platform_core/jobs.py
-msgid "Đã hủy theo yêu cầu."
-msgstr "Cancelled as requested."
-
-#: platform_core/jobs.py
-msgid "Gặp gián đoạn tạm thời, hệ thống sẽ tự thử lại."
-msgstr "A temporary interruption occurred. The system will retry automatically."
-
-#: platform_core/jobs.py
-msgid "Không thể hoàn tất yêu cầu. Bạn có thể thử lại."
-msgstr "The request could not be completed. You can retry."
-
-#: platform_core/job_runner.py
-msgid "Đang chờ tài nguyên xử lý."
-msgstr "Waiting for processing resources."
-
-#: platform_core/job_runner.py
-msgid "Credit đã được hoàn lại."
-msgstr "Credits have been refunded."
-
-#: server/templates/job_detail.html
-msgid "tạo lúc"
-msgstr "created at"
-
-#: server/templates/_job_progress.html
-msgid "xong"
-msgstr "done"
-
-#: server/templates/_job_progress.html
-msgid "Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất."
-msgstr "Open Result files below; reload the page if the job has just completed."
+#~ msgid "Lọc theo thể loại"
+#~ msgstr "Filter by category"

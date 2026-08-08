@@ -99,6 +99,16 @@ def page(request: Request, user: str = Depends(require_login)):
     return _render(request, user, jobs=_jobs_cua_toi(request))
 
 
+@router.get("/thumbnail", response_class=RedirectResponse)
+def thumbnail_mode(user: str = Depends(require_login)):
+    """Entry canonical của mode Thumbnail; executor/route cũ vẫn sở hữu job.
+
+    Redirect tách presentation khỏi runtime: không import chéo app, và mọi
+    deep link/output `/thumbnail/*` đã lưu vẫn tiếp tục hoạt động.
+    """
+    return RedirectResponse("/thumbnail", status_code=308)
+
+
 @router.post("/queue", response_class=HTMLResponse)
 async def queue(
     request: Request,
