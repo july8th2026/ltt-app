@@ -200,6 +200,51 @@ def test_metrics_co_success_queue_runtime_retry_refund_va_stale(db):
         {"code": "job_stale", "level": "error"}]
 
 
+def test_metrics_tach_theo_app_credit_moi_success_va_slo(db):
+    from platform_core import job_metrics
+    from platform_core.models import (CREDIT_HOLD, CREDIT_SETTLE, JOB_DONE,
+                                      JOB_ERROR, CreditEntry, Job)
+
+    now = datetime.now(timezone.utc)
+    for index in range(20):
+        job = Job(
+            user_id="metric-user", app_slug="metric-image",
+            job_type="metric.image", params={},
+            status=JOB_DONE if index else JOB_ERROR,
+            created_at=now - timedelta(seconds=10 + index),
+            started_at=now - timedelta(seconds=8 + index),
+            finished_at=now - timedelta(seconds=index),
+        )
+        db.add(job); db.flush()
+        if job.status == JOB_DONE:
+            db.add_all([
+                CreditEntry(user_id=job.user_id, delta=-5, kind=CREDIT_HOLD,
+                            job_id=job.id),
+                CreditEntry(user_id=job.user_id, delta=2, kind=CREDIT_SETTLE,
+                            job_id=job.id),
+            ])
+    db.add(Job(user_id="other", app_slug="metric-video", job_type="metric.video",
+               params={}, status=JOB_DONE, created_at=now, started_at=now,
+               finished_at=now))
+    db.commit()
+
+    image = job_metrics.snapshot(db, now=now, app_slug="metric-image")
+    assert image["jobs_total"] == 20 and image["finished_total"] == 20
+    assert image["success_rate"] == 0.95
+    assert image["credit_spent_total"] == 57
+    assert image["credit_per_successful_job"] == 3.0
+    assert job_metrics.snapshot(db, now=now, app_slug="metric-video")["jobs_total"] == 1
+
+    budget = job_metrics.slo_budget(("gpu",))
+    assert budget["queue_wait_p95_s_max"] == 120.0
+    evaluation = job_metrics.evaluate_slo(image, budget)
+    assert evaluation["state"] == "pass" and evaluation["checks"]["success_rate"]
+    assert job_metrics.evaluate_slo(
+        {**image, "success_rate": 0.5}, budget)["state"] == "fail"
+    assert job_metrics.evaluate_slo(
+        {**image, "finished_total": 2}, budget)["state"] == "insufficient_data"
+
+
 def test_history_contract_cursor_khong_lo_payload(db):
     from platform_core import job_history
     from platform_core.jobs import submit

@@ -1,0 +1,32 @@
+{
+  "snapshot_date": "2026-08-09",
+  "production_data": false,
+  "provider_called": false,
+  "queue_soak": {
+    "kind": "synthetic_sqlite_queue",
+    "jobs": 300,
+    "wall_seconds": 2.922,
+    "profiles": {
+      "api": {"finished": 100, "success_rate": 0.98, "queue_p95_s": 5.444, "credit_per_success": 3.0, "slo": "pass"},
+      "compute": {"finished": 100, "success_rate": 0.98, "queue_p95_s": 5.517, "credit_per_success": 3.0, "slo": "pass"},
+      "browser": {"finished": 100, "success_rate": 0.98, "queue_p95_s": 5.607, "credit_per_success": 3.0, "slo": "pass"}
+    }
+  },
+  "autosub_large_project": {
+    "cues": 3000,
+    "timeline_seconds": 3150.0,
+    "elapsed_seconds": 0.429,
+    "peak_memory_mb": 8.98,
+    "passed": true
+  },
+  "dual_gpu_reference": {
+    "source": "docs/UI_REDESIGN/upscalevideo/evidence/h26-dual-gpu-soak.json",
+    "snapshot_date": "2026-08-08",
+    "wall_seconds": 27.99,
+    "gpu_count": 2,
+    "max_util_percent_each": 100,
+    "max_temp_c": 64,
+    "thermal_slowdown": false,
+    "passed": true
+  }
+}

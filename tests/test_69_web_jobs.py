@@ -110,11 +110,15 @@ def test_timeline_owner_va_debug_chi_operator(env):
     retention = client.get("/ops/jobs-retention")
     assert retention.status_code == 200
     assert retention.json()["policy"]["customer_days"] == 365
+    metrics = client.get("/ops/jobs-metrics")
+    assert metrics.status_code == 200
+    assert metrics.json()["apps"]["demo"]["slo"]["state"] == "insufficient_data"
 
     _login(client, "customer@x.com")
     assert client.get(f"/ops/jobs/{job_id}/events").status_code == 403
     assert client.get(f"/ops/jobs/{job_id}/support-export").status_code == 403
     assert client.get("/ops/jobs-retention").status_code == 403
+    assert client.get("/ops/jobs-metrics").status_code == 403
     assert client.get(f"/api/jobs/{job_id}").status_code == 404
 
 

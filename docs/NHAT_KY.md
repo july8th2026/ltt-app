@@ -14,6 +14,52 @@
 
 ---
 
+## 2026-08-09 — H26.11B: SLO theo app + load/soak PASS development
+
+- **Mục tiêu:** không dùng throughput tổng che app chậm; đo queue, reliability
+  và credit/success theo app trước failure drill.
+- **Hạng mục:** H26.11B — hoàn thành development; production SLO chờ H26.12.
+- **Trạng thái:** code/evidence local; chưa deploy.
+
+### Đã làm
+
+- `job_metrics.snapshot` nhận `app_slug`, tách event/queue/runtime/success/stale,
+  tổng credit tiêu và credit mỗi Job thành công. Endpoint operator trả metric +
+  SLO cho từng manifest, customer vẫn 403.
+- Khóa ba profile không hardcode app: API P95 queue <=30s, compute <=120s,
+  browser <=300s; success >=90% với tối thiểu 20 finished; stale/event write
+  failure bằng 0. Dưới mẫu là `insufficient_data`, không giả PASS.
+- Thêm soak cô lập dùng state machine thật; 300 Job qua submit/claim/complete/
+  fail, ba profile cùng 98% success, 3 credit/success, không stale/event failure.
+- Chạy lại AutoSub 3.000 cue. Dual-GPU và matrix 12 ca dùng evidence 2026-08-08
+  ngay trong H26: hai GPU 100%, max 64°C, không thermal slowdown; không đốt lại
+  phép đo đã có. Ghi evidence Markdown + JSON máy đọc được.
+
+### Test/benchmark đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Test SLO mới trước code | FAIL 1 đúng gap: `snapshot` chưa nhận `app_slug` |
+| `python -m pytest -q tests\\test_151_job_events.py -k metrics` | PASS 2 |
+| `python tools\\h26_queue_soak.py --jobs-per-app 100` | PASS 300 Job/2,922 giây; 3/3 SLO PASS |
+| `python tools\\autosub_load_benchmark.py --cues 3000 --output tmp\\h26-autosub-load.json` | PASS 0,429 giây; peak 8,98 MB |
+| `python -m pytest -q tests\\test_151_job_events.py tests\\test_69_web_jobs.py` | PASS 19, 1 warning, 40,96 giây |
+| `python -m pytest -q tests\\test_99_agent_hardening.py tests\\test_101_agent_body_limit.py tests\\test_150_gpu_lease.py tests\\test_151_worker_gpu.py` | PASS 31, 1 warning, 15,59 giây |
+| `python tools\\gate.py --quick` | PASS 8/8 trong 26,8 giây |
+
+### Quyết định mới
+
+Không có quyết định sản phẩm. Budget H26.11 là release budget kỹ thuật; runtime
+P95 chỉ báo cáo theo app, chưa đặt một ngưỡng giả dùng chung cho text và video.
+
+### Cách lùi lại
+
+Revert commit H26.11B; schema không đổi, evidence synthetic không chạm runtime.
+
+### Việc tiếp theo
+
+H26.11C drill restart/orphan/provider/storage/cancel/refund, sau đó full gate.
+
 ## 2026-08-09 — H26.11A: retention/privacy/support export PASS
 
 - **Mục tiêu:** hoàn thiện retention và gói debug an toàn trước khi đo tải;

@@ -377,10 +377,22 @@ def jobs_retention(_request: Request,
 def jobs_metrics(_request: Request, _operator: str = Depends(require_operator)):
     from platform_core import job_metrics
     from platform_core.db import get_session
+    from platform_core.registry import discover
     gen = get_session(); db = next(gen)
     try:
         metrics = job_metrics.snapshot(db)
-        return {"metrics": metrics, "alerts": job_metrics.alerts(metrics)}
+        apps = {}
+        for item in discover():
+            if item.error:
+                continue
+            own = job_metrics.snapshot(db, app_slug=item.slug)
+            budget = job_metrics.slo_budget(item.manifest.requires)
+            apps[item.slug] = {
+                "metrics": own,
+                "slo": job_metrics.evaluate_slo(own, budget),
+            }
+        return {"metrics": metrics, "alerts": job_metrics.alerts(metrics),
+                "apps": apps}
     finally:
         try: next(gen)
         except StopIteration: pass

@@ -1835,7 +1835,12 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     artifact không bị xóa. Support export JSON lọc params/result/error/note/PII,
     customer 403. Policy platform được viết lại, nêu rõ artifact gap. Targeted
     18 PASS; quick gate 8/8.
-  - [ ] H26.11B — SLO theo app, load/soak queue/upload/GPU và cost/success.
+  - [x] H26.11B — **PASS development 2026-08-09, chưa deploy**: SLO theo
+    profile executor và metric tách từng app; dưới 20 finished là
+    `insufficient_data`. Queue soak cô lập 300 Job/3 profile PASS, success 98%,
+    P95 5,444–5,607s, 3 credit/success; AutoSub 3.000 cue 0,429s/8,98 MB.
+    Targeted concurrency/body-cap/GPU 31 PASS; dual-GPU/matrix dùng evidence
+    2026-08-08 còn hiệu lực, không chạy lặp. Production SLO chờ H26.12.
   - [ ] H26.11C — failure recovery: restart/orphan/storage/provider/refund.
 - [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
   re-audit Q/M/E + G0-G8.
