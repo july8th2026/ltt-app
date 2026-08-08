@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-09 — H26.10A: Clip Studio customer-first PASS
+
+- **Mục tiêu:** audit và sửa UX Clip ngắn theo hành vi khách hàng; không viết
+  lại engine hay bịa tính năng từ folder desktop trống.
+- **Hạng mục:** H26.10A — hoàn thành; parent H26.10 còn Chat/Agent/Socialbot.
+- **Trạng thái:** xong development; chưa deploy.
+
+### Đã làm
+
+- Xác minh `TaoClipNgan` chỉ có `desktop.ini`; ghi UNKNOWN, không tạo feature từ
+  suy đoán.
+- Giữ số clip+tỉ lệ ở bề mặt chính; gom tier/brand/platform/genre/language/
+  min-max vào Advanced mặc định đóng. Đổi nhãn engine thành Best/Balanced/Fast.
+- Thêm source preview/filename/duration/size/clear cho file local và summary cho
+  asset library. Browser bắt CSS làm `[hidden]` mất hiệu lực; đã sửa và khóa test.
+- Localize copy Python/Jinja/JS, estimate, status/progress và lỗi customer;
+  English catalog 967 chuỗi, 0 thiếu, 0 fuzzy.
+- Mọi job card có Activity log; giữ raw kỹ thuật trong job detail phục vụ debug,
+  không phơi ở Studio.
+- Browser fixture 8116 với MP4 thật 7,2 MB/52 giây: Fast quote 20, fake worker
+  tạo 2 clip, settle 15 (100→85), history/compare/package revision 1/log PASS;
+  mobile 390 và desktop 1920 không overflow, console 0 error/0 warning, request
+  app 200/206.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `tests/test_161_clip_customer_workflow_h26.py` trước sửa | FAIL 2/2 đúng gap |
+| Targeted Clip cuối | PASS 16/16 trong 9,04 giây |
+| `python tools\\gate.py --quick` | PASS 8/8 trong 26,6 giây |
+| `python tools\\gate.py` | PASS 9/9 trong 1.670,8 giây; pytest 1.645,4 giây |
+
+### Quyết định mới
+
+Không có quyết định kiến trúc mới: triển khai theo Q52/Q77/H26 option A; giữ
+engine/job/cost hiện hữu và sửa presentation/customer workflow.
+
+### Cách lùi lại
+
+Revert commit H26.10A. Không migration, không xóa job/output/project/package.
+
+### Việc tiếp theo
+
+1. H26.10B audit rồi xử lý Chat AI Studio.
+2. Không deploy trước H26.12.
+
 ## 2026-08-09 — H26.9: hợp nhất Tạo ảnh AI + Thumbnail PASS
 
 - **Mục tiêu:** biến hai full page cùng nhóm ảnh thành một product khách hàng,

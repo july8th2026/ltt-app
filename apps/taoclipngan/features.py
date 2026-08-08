@@ -1,14 +1,16 @@
 """Governed brand, rationale and social package helpers for Clip Studio."""
 from __future__ import annotations
 
+from platform_core.i18n import N_
+
 BRAND_PRESETS = {
-    "auto": {"label": "Tự động theo thể loại", "overrides": {}},
-    "ltt_red": {"label": "LTT Red", "overrides": {
+    "auto": {"label": N_("Tự động theo thể loại"), "overrides": {}},
+    "ltt_red": {"label": N_("LTT Red"), "overrides": {
         "color_preset": "cinematic", "caption_preset": "viral_pop",
         "hook_caption_preset": "viral_pop"}},
-    "creator_clean": {"label": "Creator Clean", "overrides": {
+    "creator_clean": {"label": N_("Creator Clean"), "overrides": {
         "color_preset": "clear_fresh", "caption_preset": "clean_boxed"}},
-    "cinematic": {"label": "Cinematic", "overrides": {
+    "cinematic": {"label": N_("Cinematic"), "overrides": {
         "color_preset": "cinematic", "caption_preset": "cinematic"}},
 }
 PLATFORMS = ("tiktok", "youtube_shorts", "instagram_reels")

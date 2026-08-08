@@ -13,7 +13,7 @@
 | `prompt_ai_ommi` | public, enabled | H26.8: Prompt AI; project/resource/library/storyboard/job/credit dashboard | giữ slug/job/provider; chưa deploy |
 | `socialbot` | non-public, enabled, frozen | log/manual job riêng, route sau feature flag | trạng thái bảo trì; không mở feature mới |
 | `taoanh` | public, enabled | H26.9: shell canonical General + Thumbnail, history hai mode | giữ; chưa deploy |
-| `taoclipngan` | public, enabled | clip history | giữ; yêu cầu folder hiện UNKNOWN |
+| `taoclipngan` | public, enabled | H26.10A: source preview, customer-first controls, package/history/log | giữ engine/job/cost; folder UNKNOWN; chưa deploy |
 | `taovideo` | public, enabled | H26.7: Tạo Video Seedance; filter/history/assets/jobs + responsive Studio PASS | giữ slug/provider; chưa deploy |
 | `thumbnail` | public, enabled, catalog child | H26.9: executor/job/history/fragment tương thích | `/thumbnail` 308 về `/taoanh/thumbnail`; chưa deploy |
 | `upscalevideo` | public, enabled | 12 job, queue, compare, batch | giữ; ưu tiên sửa đầu tiên |

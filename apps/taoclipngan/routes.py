@@ -4,7 +4,7 @@ lùi multipart nếu chưa CORS. Job GPU dài → hàng đợi worker. Router KH
 """
 from __future__ import annotations
 
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
@@ -21,16 +21,16 @@ from server.templating import templates
 
 router = APIRouter(tags=["taoclipngan"])
 
-_TIERS = [("high_quality", "Cao (large-v3 + tách nhạc)"), ("balanced", "Cân bằng"),
-          ("fast", "Nhanh")]
-_ASPECTS = [("9:16", "Dọc 9:16"), ("1:1", "Vuông 1:1"), ("16:9", "Ngang 16:9"),
+_TIERS = [("high_quality", N_("Tốt nhất")), ("balanced", N_("Cân bằng")),
+          ("fast", N_("Nhanh"))]
+_ASPECTS = [("9:16", N_("Dọc 9:16")), ("1:1", N_("Vuông 1:1")), ("16:9", N_("Ngang 16:9")),
             ("4:5", "4:5")]
-_GENRES = [("talking_head", "Nói chuyện/vlog"), ("podcast", "Podcast"),
-           ("interview", "Phỏng vấn"), ("storytelling", "Kể chuyện"),
-           ("comedy", "Hài"), ("education", "Giáo dục"),
-           ("news_commentary", "Bình luận/tin"), ("review", "Review"),
-           ("history", "Lịch sử"), ("kids_music", "Nhạc thiếu nhi")]
-_LANGS = [("", "Tự nhận"), ("vi", "Tiếng Việt"), ("en", "English")]
+_GENRES = [("talking_head", N_("Nói chuyện/vlog")), ("podcast", "Podcast"),
+           ("interview", N_("Phỏng vấn")), ("storytelling", N_("Kể chuyện")),
+           ("comedy", N_("Hài")), ("education", N_("Giáo dục")),
+           ("news_commentary", N_("Bình luận/tin")), ("review", "Review"),
+           ("history", N_("Lịch sử")), ("kids_music", N_("Nhạc thiếu nhi"))]
+_LANGS = [("", N_("Tự nhận")), ("vi", N_("Tiếng Việt")), ("en", "English")]
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
 
 
@@ -39,9 +39,13 @@ def _render(request: Request, user: str, *, error: str = "", status_code: int = 
     return templates.TemplateResponse(request, "taoclipngan.html", {
         "user": user, "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
-        "tiers": _TIERS, "aspects": _ASPECTS, "genres": _GENRES, "langs": _LANGS,
+        "tiers": [(key, _t(label)) for key, label in _TIERS],
+        "aspects": [(key, _t(label)) for key, label in _ASPECTS],
+        "genres": [(key, _t(label)) for key, label in _GENRES],
+        "langs": [(key, _t(label)) for key, label in _LANGS],
         "jobs": _jobs_cua_toi(request), "library": _source_library(request),
-        "brand_presets": [(key, value["label"]) for key, value in BRAND_PRESETS.items()],
+        "brand_presets": [(key, _t(value["label"]))
+                          for key, value in BRAND_PRESETS.items()],
         "platforms": PLATFORMS,
         "error": error,
     }, status_code=status_code)
@@ -74,12 +78,24 @@ def _jobs_cua_toi(request: Request):
             r = j.result or {}
             project = project_by_job.get(j.id)
             payload = (project.payload or {}) if project else {}
+            tier_key = str((j.params or {}).get("tier") or "")
+            status_label = {
+                "done": _t("Hoàn tất"), "error": _t("Lỗi"),
+                "queued": _t("Đang chờ"), "running": _t("Đang xử lý"),
+                "cancelled": _t("Đã huỷ"),
+            }.get(j.status, j.status)
+            progress_label = _t("Đang chờ xử lý")
+            if j.status == "running":
+                progress_label = (_t("Đang phân tích video") if j.progress < 60 else
+                                  _t("Đang dựng clip") if j.progress < 98 else
+                                  _t("Đang hoàn tất"))
             out.append({"id": j.id, "status": j.status, "progress": j.progress,
-                        "progress_msg": j.progress_msg, "error": j.error,
+                        "status_label": status_label,
+                        "progress_label": progress_label, "error": j.error,
                         "clips": payload.get("clips") or r.get("clips") or [],
                         "source_name": str((j.params or {}).get("source_filename") or
                                            (j.params or {}).get("video_key") or "Video")[:160],
-                        "tier": str((j.params or {}).get("tier") or ""),
+                        "tier": _t(dict(_TIERS).get(tier_key, tier_key)),
                         "aspect_ratio": str((j.params or {}).get("aspect_ratio") or ""),
                         "brand_preset": str((j.params or {}).get("brand_preset") or "auto"),
                         "platforms": payload.get("platforms") or r.get("platforms") or [],
@@ -147,10 +163,12 @@ def estimate(request: Request, duration_s: str = Form("0"), tier: str = Form("hi
         n = 3
     e = cost.uoc_luong(dur, tier if tier in ("fast", "balanced", "high_quality") else "high_quality", n)
     if dur <= 0:
-        return HTMLResponse('<span class="dim">Chọn video để tính chi phí.</span>')
+        return HTMLResponse(f'<span class="dim">{_t("Chọn video để tính chi phí.")}</span>')
     return HTMLResponse(
         f'<strong>{e["credit"]} credit</strong> '
-        f'<span class="dim">(~{e["vnd"]:,}đ · {e["minutes"]} phút nguồn · {e["tier"]} · {n} clip)</span>')
+        f'<span class="dim">(~{e["vnd"]:,}đ · {e["minutes"]} '
+        f'{_t("phút nguồn")} · {_t(dict(_TIERS).get(e["tier"], e["tier"]))} · '
+        f'{n} {_t("clip")})</span>')
 
 
 @router.post("/upload-url")
@@ -191,29 +209,30 @@ async def queue(request: Request, csrf_token: str = Form(...),
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
 
     def _fail(msg, code=400):
+        msg = _t(str(msg))
         if ajax:
             return JSONResponse({"ok": False, "error": msg}, status_code=code)
         return _render(request, user, error=msg, status_code=code)
 
     if not verify_csrf_token(request, csrf_token):
-        return _fail("Phiên đã hết hạn — tải lại trang.")
+        return _fail(_t("Phiên đã hết hạn — tải lại trang."))
     u = user_hien_tai(request)
     if u is None:
-        return _fail("Cần đăng nhập bằng tài khoản người dùng.")
+        return _fail(_t("Cần đăng nhập bằng tài khoản người dùng."))
 
     storage = get_storage()
     vkey = (video_key or "").strip()
     if vkey:
         if not vkey.startswith(f"taoclipngan/{u.id}/") or not storage.exists(vkey):
-            return _fail("Video chưa upload xong hoặc không hợp lệ.")
+            return _fail(_t("Video chưa upload xong hoặc không hợp lệ."))
     else:
         if video is None or not getattr(video, "filename", ""):
-            return _fail("Chưa chọn video.")
+            return _fail(_t("Chưa chọn video."))
         vdata = await video.read()
         if not vdata:
-            return _fail("File video rỗng.")
+            return _fail(_t("File video rỗng."))
         if len(vdata) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
-            return _fail("Video >90MB phải dùng upload thẳng (R2). Bật CORS bucket R2.")
+            return _fail(_t("Video >90MB cần upload trực tiếp; lưu trữ hiện chưa sẵn sàng."))
         ext = ""
         if "." in video.filename:
             ext = "." + video.filename.rsplit(".", 1)[1].lower()[:5]
@@ -280,14 +299,14 @@ def save_package(request: Request, job_id: str, csrf_token: str = Form(...),
                  package_json: str = Form("{}"), project_id: str = Form(""),
                  revision: int = Form(0), user: str = Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
-        return JSONResponse({"ok": False, "error": "Phiên hết hạn."}, status_code=400)
+        return JSONResponse({"ok": False, "error": _t("Phiên hết hạn.")}, status_code=400)
     import json
     try:
         draft = json.loads(package_json)
         if not isinstance(draft, dict):
             raise ValueError
     except (TypeError, ValueError):
-        return JSONResponse({"ok": False, "error": "Package không hợp lệ."}, status_code=400)
+        return JSONResponse({"ok": False, "error": _t("Package không hợp lệ.")}, status_code=400)
     from apps.taoclipngan.features import package_payload
     from platform_core import app_projects
     from platform_core.db import get_session
@@ -295,7 +314,7 @@ def save_package(request: Request, job_id: str, csrf_token: str = Form(...),
     try:
         job = _owned_done_job(db, u.id, job_id) if u else None
         if job is None:
-            return JSONResponse({"ok": False, "error": "Không tìm thấy job."}, status_code=404)
+            return JSONResponse({"ok": False, "error": _t("Không tìm thấy job.")}, status_code=404)
         payload = package_payload(job_id=job_id,
             original_clips=list((job.result or {}).get("clips") or []),
             drafts=list(draft.get("clips") or []), platforms=draft.get("platforms") or [],

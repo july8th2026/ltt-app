@@ -150,6 +150,10 @@ msgstr ""
 msgid "Báo giá đã thay đổi."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:31
+msgid "Bình luận/tin"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:58
 msgid "BƯỚC 01"
 msgstr ""
@@ -202,7 +206,7 @@ msgstr ""
 msgid "Bấm để đặt lại mật khẩu (hết hạn sau 1 giờ):"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:70
+#: apps/taoclipngan/templates/taoclipngan.html:82
 msgid "Bắt đầu"
 msgstr ""
 
@@ -227,17 +231,21 @@ msgid "Bị chặn vì lý do an toàn nội dung."
 msgstr ""
 
 #: apps/taoanh/templates/image.html:25
-#: apps/taoclipngan/templates/taoclipngan.html:56
+#: apps/taoclipngan/templates/taoclipngan.html:68
 #: apps/thumbnail/templates/thumbnail.html:57
 #: apps/thumbnail/templates/thumbnail_fragment.html:32
 msgid "Bỏ chọn"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:50
+msgid "Bộ nhận diện"
 msgstr ""
 
 #: apps/mediatools/jobs.py:37
 msgid "Bộ ảnh có asset trùng hoặc không còn tồn tại."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:47
+#: apps/taoclipngan/templates/taoclipngan.html:59
 msgid "CHI PHÍ ƯỚC TÍNH"
 msgstr ""
 
@@ -249,7 +257,7 @@ msgstr ""
 msgid "Catalog tích hợp Prompt AI không hợp lệ."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:36
+#: apps/taoclipngan/templates/taoclipngan.html:41
 msgid "Chi phí theo phút nguồn + số output"
 msgstr ""
 
@@ -305,7 +313,8 @@ msgstr ""
 msgid "Chưa chọn video"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:298
+#: apps/autosubvideo/routes.py:298 apps/taoclipngan/routes.py:230
+#: apps/taoclipngan/templates/taoclipngan.html:98
 msgid "Chưa chọn video."
 msgstr ""
 
@@ -334,7 +343,7 @@ msgstr ""
 msgid "Chưa có app phù hợp."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:61
+#: apps/taoclipngan/templates/taoclipngan.html:73
 msgid "Chưa có clip"
 msgstr ""
 
@@ -362,7 +371,7 @@ msgstr ""
 msgid "Chưa có job. Chọn video để bắt đầu."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:33
+#: apps/taoclipngan/templates/taoclipngan.html:38
 msgid "Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên."
 msgstr ""
 
@@ -431,6 +440,11 @@ msgstr ""
 msgid "Chưa nhập mô tả ảnh (prompt)."
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:37
+#: apps/taoclipngan/templates/taoclipngan.html:97
+msgid "Chưa rõ thời lượng"
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/resources.py:297
 msgid "Chưa thấy file trên kho lưu trữ."
 msgstr ""
@@ -440,8 +454,15 @@ msgid "Chưa đăng nhập"
 msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:53
-#: apps/taoclipngan/templates/taoclipngan.html:37
 msgid "Chất lượng"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:49
+msgid "Chất lượng xử lý"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:47
+msgid "Chất lượng, thương hiệu và package xuất bản"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:89
@@ -523,11 +544,15 @@ msgstr ""
 msgid "Chỉnh sửa ảnh"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:55
+#: apps/taoclipngan/templates/taoclipngan.html:101
+msgid "Chọn clip thứ"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:67
 msgid "Chọn clip thứ hai"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:55
+#: apps/taoclipngan/templates/taoclipngan.html:67
 msgid "Chọn clip thứ nhất"
 msgstr ""
 
@@ -559,7 +584,7 @@ msgstr ""
 msgid "Chọn tối đa 3 video; submit nguyên tử."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:54
+#: apps/taoclipngan/templates/taoclipngan.html:66
 msgid "Chọn tối đa hai clip đã render"
 msgstr ""
 
@@ -572,7 +597,7 @@ msgstr ""
 msgid "Chọn tối đa hai ảnh thật"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:47
+#: apps/taoclipngan/templates/taoclipngan.html:59
 #: apps/upscalevideo/templates/upscalevideo.html:54
 msgid "Chọn video"
 msgstr ""
@@ -581,7 +606,11 @@ msgstr ""
 msgid "Chọn video từ máy"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:61
+#: apps/taoclipngan/routes.py:166
+msgid "Chọn video để tính chi phí."
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:73
 msgid "Chọn video ở Studio để bắt đầu."
 msgstr ""
 
@@ -622,12 +651,20 @@ msgstr ""
 msgid "Chủ đề video"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:60
+#: apps/taoclipngan/features.py:13
+msgid "Cinematic"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:72
 msgid "Clip của tôi"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:30
 msgid "Codec đầu ra"
+msgstr ""
+
+#: apps/taoclipngan/features.py:11
+msgid "Creator Clean"
 msgstr ""
 
 #: server/templates/_platform_footer.html:7
@@ -683,6 +720,10 @@ msgstr ""
 msgid "Cách chia dòng"
 msgstr ""
 
+#: apps/taoclipngan/routes.py:24
+msgid "Cân bằng"
+msgstr ""
+
 #: apps/upscalevideo/routes.py:103
 #, python-brace-format
 msgid "Còn khoảng {minutes} phút"
@@ -727,7 +768,7 @@ msgstr ""
 msgid "Cấu hình ngay"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:36
+#: apps/taoclipngan/templates/taoclipngan.html:41
 msgid "Cấu hình tuyển chọn"
 msgstr ""
 
@@ -756,9 +797,13 @@ msgid "Cần tài khoản người dùng trong CSDL để sử dụng app."
 msgstr ""
 
 #: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:120
-#: apps/autosubvideo/routes.py:674 apps/taoclipngan/routes.py:161
+#: apps/autosubvideo/routes.py:674 apps/taoclipngan/routes.py:179
 #: apps/upscalevideo/routes.py:184
 msgid "Cần tài khoản người dùng."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:221
+msgid "Cần đăng nhập bằng tài khoản người dùng."
 msgstr ""
 
 #: apps/chataistudio/routes.py:118
@@ -818,6 +863,10 @@ msgstr ""
 msgid "Dễ đọc, chia theo từng cảnh."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:26
+msgid "Dọc 9:16"
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:74
 msgid "Dữ liệu thật"
 msgstr ""
@@ -874,8 +923,16 @@ msgstr ""
 msgid "File tham chiếu không phải ảnh hợp lệ."
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:95
+msgid "File từ máy"
+msgstr ""
+
 #: apps/autosubvideo/burn.py:116
 msgid "File video rỗng (0 byte)."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:233
+msgid "File video rỗng."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:78
@@ -932,6 +989,10 @@ msgstr ""
 msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:30
+msgid "Giáo dục"
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:36
 #: apps/thumbnail/templates/thumbnail_fragment.html:20
 msgid "Giọng thương hiệu"
@@ -969,7 +1030,7 @@ msgstr ""
 msgid "Hook (15–30 giây đầu)"
 msgstr ""
 
-#: apps/taoanh/templates/image.html:29
+#: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:83
 #: apps/thumbnail/templates/thumbnail.html:66
 #: apps/thumbnail/templates/thumbnail_fragment.html:36
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -993,6 +1054,10 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:71
 msgid "Hoặc mô tả phong cách riêng..."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:30
+msgid "Hài"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -1152,6 +1217,18 @@ msgstr ""
 msgid "Không thể hoàn tất."
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:133
+msgid "Không thể lưu"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:100
+msgid "Không thể tạo job"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:77
+msgid "Không thể xử lý video."
+msgstr ""
+
 #: apps/autosubvideo/parsers.py:105
 msgid "Không tìm thấy Dialogue nào trong file ASS"
 msgstr ""
@@ -1164,7 +1241,7 @@ msgstr ""
 msgid "Không tìm thấy asset."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:392
+#: apps/taoclipngan/routes.py:411
 msgid "Không tìm thấy clip."
 msgstr ""
 
@@ -1179,11 +1256,11 @@ msgstr ""
 #: apps/autosubvideo/routes.py:600 apps/autosubvideo/routes.py:613
 #: apps/autosubvideo/routes.py:630 apps/prompt_ai_ommi/routes/projects.py:222
 #: apps/prompt_ai_ommi/routes/resources.py:512
-#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/upscalevideo/routes.py:599
-#: server/routes/jobs.py:186 server/routes/jobs.py:202
-#: server/routes/jobs.py:237 server/routes/jobs.py:244
-#: server/routes/jobs.py:264 server/routes/jobs.py:289
-#: server/routes/jobs.py:321
+#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/taoclipngan/routes.py:317
+#: apps/upscalevideo/routes.py:599 server/routes/jobs.py:186
+#: server/routes/jobs.py:202 server/routes/jobs.py:237
+#: server/routes/jobs.py:244 server/routes/jobs.py:264
+#: server/routes/jobs.py:289 server/routes/jobs.py:321
 msgid "Không tìm thấy job."
 msgstr ""
 
@@ -1195,7 +1272,7 @@ msgstr ""
 msgid "Không tìm thấy lượt Agent."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:342
+#: apps/taoclipngan/routes.py:361
 msgid "Không tìm thấy package."
 msgstr ""
 
@@ -1287,7 +1364,7 @@ msgstr ""
 #: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:796
 #: apps/chataistudio/routes.py:337 apps/chataistudio/routes.py:361
 #: apps/chataistudio/routes.py:421 apps/chataistudio/routes.py:436
-#: apps/taoclipngan/routes.py:384
+#: apps/taoclipngan/routes.py:403
 msgid "Không tìm thấy."
 msgstr ""
 
@@ -1384,12 +1461,16 @@ msgstr ""
 msgid "Kết quả đã sẵn sàng."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:70
+#: apps/taoclipngan/templates/taoclipngan.html:82
 msgid "Kết thúc"
 msgstr ""
 
 #: apps/agent/templates/_agent_progress.html:13
 msgid "Kết thúc:"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:29
+msgid "Kể chuyện"
 msgstr ""
 
 #: apps/kichban/manifest.py:32 apps/kichban/templates/script.html:7
@@ -1411,6 +1492,10 @@ msgstr ""
 #: apps/thumbnail/templates/thumbnail.html:71
 #: apps/thumbnail/templates/thumbnail_fragment.html:38
 msgid "Kỹ thuật"
+msgstr ""
+
+#: apps/taoclipngan/features.py:8
+msgid "LTT Red"
 msgstr ""
 
 #: server/templates/_platform_footer.html:6
@@ -1462,6 +1547,11 @@ msgstr ""
 msgid "Lưu làm Brand Kit mặc định của tôi"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:84
+#: apps/taoclipngan/templates/taoclipngan.html:133
+msgid "Lưu package"
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:4
 msgid "Lưu phiên bản"
 msgstr ""
@@ -1491,7 +1581,7 @@ msgstr ""
 msgid "Lập kế hoạch và xem giá"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:10
+#: apps/taoclipngan/routes.py:32 apps/taovideo/templates/taovideo.html:10
 msgid "Lịch sử"
 msgstr ""
 
@@ -1524,7 +1614,9 @@ msgstr ""
 msgid "Lọc việc"
 msgstr ""
 
-#: apps/taoanh/templates/image.html:29
+#: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:83
+#: apps/taoclipngan/templates/taoclipngan.html:100
+#: apps/taoclipngan/templates/taoclipngan.html:133
 #: apps/thumbnail/templates/thumbnail.html:66
 #: apps/thumbnail/templates/thumbnail_fragment.html:36
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -1532,6 +1624,10 @@ msgstr ""
 #: server/templates/_job_progress.html:11 server/templates/jobs.html:12
 #: server/templates/jobs.html:34
 msgid "Lỗi"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:98
+msgid "Lỗi mạng khi tải video"
 msgstr ""
 
 #: platform_core/image_input.py:46
@@ -1746,6 +1842,10 @@ msgstr ""
 msgid "Mục tiêu/ngân sách không hợp lệ."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:26
+msgid "Ngang 16:9"
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:11
 msgid "Nghiên cứu"
 msgstr ""
@@ -1766,6 +1866,10 @@ msgstr ""
 msgid "Nguồn tham khảo"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:96
+msgid "Nguồn trong thư viện"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:27
 msgid "Nguồn video"
 msgstr ""
@@ -1780,10 +1884,14 @@ msgstr ""
 
 #: apps/kichban/templates/script.html:10
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
-#: apps/taoclipngan/templates/taoclipngan.html:43 apps/thumbnail/routes.py:244
+#: apps/taoclipngan/templates/taoclipngan.html:54 apps/thumbnail/routes.py:244
 #: apps/thumbnail/templates/thumbnail.html:45
 #: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Ngôn ngữ"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:25
+msgid "Nhanh"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:40
@@ -1792,6 +1900,10 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:40
 msgid "Nhân bản project"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:32
+msgid "Nhạc thiếu nhi"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:97
@@ -1827,6 +1939,7 @@ msgstr ""
 msgid "Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube Shorts, Instagram/Facebook Reels hoặc URL HTTPS trực tiếp."
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:75
 #: apps/taovideo/templates/taovideo.html:72
 msgid "Nhật ký"
 msgstr ""
@@ -1873,6 +1986,10 @@ msgstr ""
 
 #: apps/upscalevideo/manifest.py:58
 msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:28
+msgid "Nói chuyện/vlog"
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:34
@@ -1939,7 +2056,7 @@ msgstr ""
 msgid "Nội dung brief tối thiểu 20 ký tự."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:70
+#: apps/taoclipngan/templates/taoclipngan.html:82
 msgid "Nội dung caption"
 msgstr ""
 
@@ -1984,11 +2101,15 @@ msgstr ""
 msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini, không công khai"
 msgstr ""
 
+#: apps/taoclipngan/routes.py:309
+msgid "Package không hợp lệ."
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/assets_catalog.py:112
 msgid "Package không đúng định dạng."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:40
+#: apps/taoclipngan/templates/taoclipngan.html:51
 msgid "Package nền tảng"
 msgstr ""
 
@@ -2004,7 +2125,11 @@ msgstr ""
 msgid "Phiên bản đã chụp"
 msgstr ""
 
-#: apps/prompt_ai_ommi/routes/_shared.py:78
+#: apps/taoclipngan/routes.py:302
+msgid "Phiên hết hạn."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/_shared.py:78 apps/taoclipngan/routes.py:218
 msgid "Phiên đã hết hạn — tải lại trang."
 msgstr ""
 
@@ -2035,6 +2160,10 @@ msgstr ""
 msgid "Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:29
+msgid "Phỏng vấn"
+msgstr ""
+
 #: server/templates/home.html:29
 msgid "Phổ biến"
 msgstr ""
@@ -2048,7 +2177,7 @@ msgstr ""
 msgid "Preflight miễn phí. Bạn luôn thấy chi phí trước khi gửi provider."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:39
+#: apps/taoclipngan/templates/taoclipngan.html:50
 msgid "Preset được đưa vào render thật; không thay bằng CSS preview."
 msgstr ""
 
@@ -2182,7 +2311,7 @@ msgid "Snapshot/source của job cũ không còn hợp lệ."
 msgstr ""
 
 #: apps/taoanh/templates/image.html:31
-#: apps/taoclipngan/templates/taoclipngan.html:68
+#: apps/taoclipngan/templates/taoclipngan.html:80
 #: apps/thumbnail/templates/thumbnail.html:72
 #: apps/thumbnail/templates/thumbnail_fragment.html:38
 #: apps/upscalevideo/templates/upscalevideo.html:101
@@ -2195,7 +2324,7 @@ msgid "So sánh kết quả"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:25
-#: apps/taoclipngan/templates/taoclipngan.html:54
+#: apps/taoclipngan/templates/taoclipngan.html:66
 msgid "So sánh output"
 msgstr ""
 
@@ -2233,7 +2362,7 @@ msgid "Sắp xếp:"
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:44
-msgid "Số clip"
+msgid "Số clip mong muốn"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:68
@@ -2373,11 +2502,11 @@ msgstr ""
 msgid "Thư viện mẫu toàn nền tảng chưa được phát hành"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:30
+#: apps/taoclipngan/templates/taoclipngan.html:35
 msgid "Thư viện nguồn gần đây"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:42 server/templates/home.html:36
+#: apps/taoclipngan/templates/taoclipngan.html:53 server/templates/home.html:36
 msgid "Thể loại"
 msgstr ""
 
@@ -2427,6 +2556,10 @@ msgstr ""
 msgid "Tiêu đề &amp; Hook"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:80
+msgid "Tiêu đề clip"
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:8
 msgid "Tiêu đề phần"
 msgstr ""
@@ -2437,6 +2570,7 @@ msgid "Tiêu đề trên ảnh"
 msgstr ""
 
 #: apps/agent/templates/_agent_progress.html:3
+#: apps/taoclipngan/templates/taoclipngan.html:76
 #: apps/upscalevideo/templates/upscalevideo.html:97
 #: server/templates/jobs.html:25
 msgid "Tiến độ"
@@ -2455,6 +2589,7 @@ msgid "Tiến độ viết kịch bản"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
+#: apps/taoclipngan/routes.py:33
 msgid "Tiếng Việt"
 msgstr ""
 
@@ -2486,7 +2621,7 @@ msgstr ""
 msgid "Trang này chỉ dành cho quản trị viên."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:70
+#: apps/taoclipngan/templates/taoclipngan.html:82
 msgid "Transcript & biên tập package"
 msgstr ""
 
@@ -2502,7 +2637,7 @@ msgstr ""
 msgid "Transcript rỗng hoặc quá lớn (>8MB)."
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:70
+#: apps/taoclipngan/templates/taoclipngan.html:82
 msgid "Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn."
 msgstr ""
 
@@ -2522,6 +2657,10 @@ msgstr ""
 #: server/templates/home.html:39 server/templates/jobs.html:8
 #: server/templates/jobs.html:25 server/templates/nap.html:59
 msgid "Trạng thái"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:47
+msgid "Tuỳ chọn nâng cao"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:8
@@ -2664,7 +2803,7 @@ msgstr ""
 msgid "Tạo biến thể"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:47
+#: apps/taoclipngan/templates/taoclipngan.html:59
 msgid "Tạo clip"
 msgstr ""
 
@@ -2752,7 +2891,7 @@ msgstr ""
 msgid "Tạo ảnh ·"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:68
+#: apps/taoclipngan/templates/taoclipngan.html:80
 #: server/templates/job_detail.html:12
 msgid "Tải"
 msgstr ""
@@ -2770,7 +2909,7 @@ msgstr ""
 msgid "Tải .zip"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:72
+#: apps/taoclipngan/templates/taoclipngan.html:84
 msgid "Tải ZIP"
 msgstr ""
 
@@ -2833,11 +2972,11 @@ msgstr ""
 msgid "Tỉ lệ"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:38
+#: apps/taoclipngan/templates/taoclipngan.html:43
 msgid "Tỉ lệ khung"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:46
+#: apps/taoclipngan/templates/taoclipngan.html:56
 msgid "Tối thiểu (giây)"
 msgstr ""
 
@@ -2849,7 +2988,7 @@ msgstr ""
 msgid "Tối đa"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:46
+#: apps/taoclipngan/templates/taoclipngan.html:56
 msgid "Tối đa (giây)"
 msgstr ""
 
@@ -2877,6 +3016,14 @@ msgstr ""
 msgid "Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:24
+msgid "Tốt nhất"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:49
+msgid "Tốt nhất ưu tiên chất lượng; Nhanh ưu tiên thời gian xử lý."
+msgstr ""
+
 #: apps/taovideo/routes.py:388
 msgid "Tổng tài sản đã lưu và file mới không được vượt quá 4."
 msgstr ""
@@ -2898,8 +3045,16 @@ msgstr ""
 msgid "Tự kiểm tra mỗi 4 giây."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:33
+msgid "Tự nhận"
+msgstr ""
+
 #: apps/taovideo/templates/taovideo.html:34
 msgid "Tự động"
+msgstr ""
+
+#: apps/taoclipngan/features.py:7
+msgid "Tự động theo thể loại"
 msgstr ""
 
 #: apps/mediatools/jobs.py:331
@@ -2934,8 +3089,20 @@ msgstr ""
 msgid "VD: Chiến dịch ra mắt sản phẩm mùa hè"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:99
+msgid "Video >90MB cần cấu hình Storage."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:235
+msgid "Video >90MB cần upload trực tiếp; lưu trữ hiện chưa sẵn sàng."
+msgstr ""
+
 #: apps/mediatools/jobs.py:321 apps/mediatools/jobs.py:326
 msgid "Video URL vượt giới hạn 90 MB."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:227
+msgid "Video chưa upload xong hoặc không hợp lệ."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:65
@@ -3004,7 +3171,11 @@ msgstr ""
 msgid "Việc đang chạy"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:69
+#: apps/taoclipngan/routes.py:26
+msgid "Vuông 1:1"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:81
 msgid "Vì sao AI chọn đoạn này?"
 msgstr ""
 
@@ -3117,7 +3288,7 @@ msgstr ""
 msgid "Xuất kèm .srt"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:72
+#: apps/taoclipngan/templates/taoclipngan.html:84
 msgid "Xuất metadata cho"
 msgstr ""
 
@@ -3181,12 +3352,20 @@ msgstr ""
 msgid "[{slug}] surface không hợp lệ: {value!r}"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:35
+msgid "asset"
+msgstr ""
+
 #: apps/prompt_ai_ommi/services/composer.py:15
 msgid "catalog prompt không hợp lệ"
 msgstr ""
 
 #: server/templates/nap_don.html:24
 msgid "chưa trừ tiền"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:171
+msgid "clip"
 msgstr ""
 
 #: apps/taovideo/routes.py:207
@@ -3213,10 +3392,18 @@ msgstr ""
 msgid "cần thiết lập"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:96
+msgid "giây"
+msgstr ""
+
 #: apps/taoanh/templates/image.html:28
 #: apps/thumbnail/templates/thumbnail.html:61
 #: apps/thumbnail/templates/thumbnail_fragment.html:35
 msgid "job gần nhất"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:72
+msgid "job gần đây"
 msgstr ""
 
 #: platform_core/storage.py:146
@@ -3231,12 +3418,24 @@ msgstr ""
 msgid "kết quả phù hợp"
 msgstr ""
 
+#: apps/taoclipngan/routes.py:47
+msgid "label"
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:93
 msgid "lỗi"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:16
 msgid "một tài khoản ChatGPT riêng"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:37
+msgid "phút"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:170
+msgid "phút nguồn"
 msgstr ""
 
 #: apps/autosubvideo/schemas.py:274
@@ -3298,6 +3497,7 @@ msgstr ""
 msgid "Đang chạy"
 msgstr ""
 
+#: apps/taoclipngan/routes.py:84
 #: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:7 server/templates/jobs.html:9
 #: server/templates/jobs.html:37 server/templates/nap.html:65
@@ -3316,12 +3516,36 @@ msgstr ""
 msgid "Đang chờ tài nguyên xử lý."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:87
+msgid "Đang chờ xử lý"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:90
+msgid "Đang dựng clip"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:91
+msgid "Đang hoàn tất"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:133
+msgid "Đang lưu…"
+msgstr ""
+
 #: apps/taoanh/templates/image_thumbnail_shell.html:18
 msgid "Đang lấy preset, Brand Kit và lịch sử của tài khoản."
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:99
+msgid "Đang nộp job…"
+msgstr ""
+
 #: server/routes/dashboard.py:24 server/templates/home.html:40
 msgid "Đang phát triển"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:89
+msgid "Đang phân tích video"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:31
@@ -3345,6 +3569,10 @@ msgstr ""
 msgid "Đang tải công cụ Thumbnail…"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:97
+msgid "Đang tải video"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html:7
 msgid "Đang tải workspace…"
 msgstr ""
@@ -3354,6 +3582,7 @@ msgid "Đang xác nhận với ngân hàng…"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:102
+#: apps/taoclipngan/routes.py:84
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
 msgid "Đang xử lý"
@@ -3392,12 +3621,16 @@ msgstr ""
 msgid "Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng"
 msgstr ""
 
-#: apps/taoclipngan/templates/taoclipngan.html:69
+#: apps/taoclipngan/templates/taoclipngan.html:81
 msgid "Điểm xếp hạng nội bộ, không phải dự đoán lượt xem."
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:34
 msgid "Điện ảnh"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:95
+msgid "Đã chọn"
 msgstr ""
 
 #: server/templates/register.html:24
@@ -3416,6 +3649,10 @@ msgstr ""
 msgid "Đã hoàn tất."
 msgstr ""
 
+#: apps/taoclipngan/routes.py:85
+msgid "Đã huỷ"
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
 #: server/templates/_job_progress.html:10 server/templates/jobs.html:13
@@ -3425,6 +3662,10 @@ msgstr ""
 
 #: platform_core/jobs.py:194
 msgid "Đã hủy theo yêu cầu."
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:133
+msgid "Đã lưu phiên bản"
 msgstr ""
 
 #: server/routes/dashboard.py:27
@@ -3604,6 +3845,10 @@ msgstr ""
 msgid "Đối tượng"
 msgstr ""
 
+#: apps/taoclipngan/templates/taoclipngan.html:32
+msgid "Đổi nguồn"
+msgstr ""
+
 #: server/templates/_doi_ngon_ngu.html:10
 msgid "Đổi ngôn ngữ"
 msgstr ""
@@ -3627,6 +3872,10 @@ msgstr ""
 #: apps/taovideo/templates/taovideo.html:77
 #: apps/upscalevideo/templates/upscalevideo.html:22
 msgid "Độ phân giải đầu ra"
+msgstr ""
+
+#: apps/taoclipngan/templates/taoclipngan.html:80
+msgid "điểm"
 msgstr ""
 
 #: server/templates/nap_khong_thay.html:25

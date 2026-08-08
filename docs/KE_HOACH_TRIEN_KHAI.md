@@ -1808,6 +1808,14 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   full gate 9/9 trong 1.673,8 giây.
 - [ ] H26.10 Phase 3.6: audit rồi mới build Clip ngắn, Chat, Agent và maintenance
   Socialbot; các folder mô tả trống giữ UNKNOWN.
+  - [x] H26.10A — **PASS 2026-08-09, chưa deploy**: Clip Studio customer-first;
+    source preview/summary/clear; số clip+tỉ lệ là control chính; tùy chọn nâng
+    cao mặc định đóng; không lộ engine metadata; i18n runtime; mọi card có job
+    log. Browser file thật quote 20/settle 15 credit, compare/package revision,
+    desktop/mobile/console/network PASS. Targeted 16; full gate 9/9 trong
+    1.670,8 giây.
+  - [ ] H26.10B — Chat AI Studio.
+  - [ ] H26.10C — LTT Agent AI và Socialbot maintenance.
 - [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
   failure recovery.
 - [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
