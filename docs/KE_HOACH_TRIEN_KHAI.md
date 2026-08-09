@@ -1917,8 +1917,15 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   15 P2, 6 P3. Blocker: Thumbnail flat-price làm Pro vẫn 5 credit, validation
   xóa form và reference/artifact lifecycle không khép kín. 48 targeted test pass
   nhưng không phủ ba blocker.
-- [ ] H27.6 Tạo Clip ngắn DEEP — **app audit kế tiếp**.
-- [ ] H27.7 Chat AI Studio DEEP.
+- [x] H27.6 Tạo Clip ngắn DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/taoclipngan/2026-08-09-deep/` đủ 00–07 + 6 screenshot.
+  Chốt `Q58 · M56 · E92 · BLOCKED`; 0 P0, 4 P1, 15 P2, 5 P3. Blocker:
+  package SRT giữ timestamp video nguồn, upload/admission và quote chưa
+  canonical, worker không cooperative cancel/deadline, vòng đời source/output
+  chưa khép kín. Browser file thật/VI/EN/desktop/mobile/ba trạng thái job/
+  compare/transcript/ZIP/Range/console/network đã chạy; 19 targeted test PASS.
+  Không sửa code, không deploy.
+- [ ] H27.7 Chat AI Studio DEEP — **app audit kế tiếp**.
 - [ ] H27.8 LTT Agent AI DEEP.
 - [ ] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.
 - [ ] H27.10 Tổng hợp cross-app: trùng finding, shared fix, dependency graph,

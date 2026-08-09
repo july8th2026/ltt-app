@@ -14,6 +14,56 @@
 
 ---
 
+## 2026-08-09 — H27.6: Tạo Clip ngắn DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** audit Tạo Clip ngắn theo LTT-AQA A0–A10/G0–G8, kiểm kê toàn
+  bộ journey/control/worker/credit/artifact/package và benchmark quốc tế.
+- **Hạng mục:** H27.6 hoàn thành audit; H27.7 Chat AI Studio là app kế tiếp.
+- **Trạng thái:** audit-only, không sửa runtime, không deploy, không gọi GPU
+  hay provider production.
+
+### Đã làm
+
+- Lập hồ sơ `docs/APP_AUDIT/taoclipngan/2026-08-09-deep/` đủ 00–07 và evidence;
+  giữ hồ sơ H26 cũ riêng để không ghi đè lịch sử.
+- Đọc manifest/routes/features/cost/jobs/template, engine `cutclipshort`,
+  JobContext/storage/credit và targeted tests; khóa truth map upload → hold →
+  GPU pipeline → settle → history/compare/package.
+- Browser fixture cô lập với video thật: quote 52 giây High/3 = 25 credit,
+  Fast/10 = 55; empty/source/advanced, done/running/error, compare, transcript,
+  ZIP, VI/EN và mobile không overflow. MP4 Range trả 206; console/network sạch.
+- Đọc ZIP thật và tái hiện SRT clip độc lập bắt đầu ở timestamp video nguồn
+  `00:00:04` thay vì `00:00:00`.
+- Chốt bốn P1: SRT sai timeline; admission/quote/upload chưa canonical; worker
+  không cooperative cancel/deadline; retention/delete/GC source-output chưa
+  khép kín. Benchmark official OpusClip, CapCut và Adobe.
+- Kết luận `Q58 · M56 · E92 · BLOCKED`; 0 P0, 4 P1, 15 P2, 5 P3.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright 1440×1000, 390×844, VI/EN, file/job/package | 6 PNG; console 0; failed network 0; MP4 206; ZIP 200 |
+| `python -m pytest -q tests\\test_84_taoclipngan.py tests\\test_122_taoclipngan_ui.py tests\\test_123_taoclipngan_features.py tests\\test_129_adaptive_page_layouts.py tests\\test_161_clip_customer_workflow_h26.py` | **19 passed**, 1 warning deprecation |
+| `python tools\\gate.py --quick` | **PASS 8/8**, 25,9 giây |
+
+### Quyết định mới
+
+Không có. Các lựa chọn BUILD/DEFER nằm ở A8 và chưa biến thành quyết định sản phẩm.
+
+### Cách lùi lại
+
+Revert commit H27.6; chỉ xóa hồ sơ audit/evidence và mục kế hoạch/nhật ký này.
+
+### Còn tồn đọng
+
+Production SLO/GPU quality/user test thật UNKNOWN; không được đổi thành PASS.
+
+### Việc tiếp theo
+
+1. H27.7 — audit Chat AI Studio độc lập.
+2. Sau H27.8–H27.9, H27.10 mới tổng hợp shared fixes và BUILD order.
+
 ## 2026-08-09 — H27.5: Tạo ảnh AI + Thumbnail DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** audit lại product ảnh theo LTT-AQA A0–A10/G0–G8, tách khỏi
