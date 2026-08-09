@@ -1925,8 +1925,15 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   chưa khép kín. Browser file thật/VI/EN/desktop/mobile/ba trạng thái job/
   compare/transcript/ZIP/Range/console/network đã chạy; 19 targeted test PASS.
   Không sửa code, không deploy.
-- [ ] H27.7 Chat AI Studio DEEP — **app audit kế tiếp**.
-- [ ] H27.8 LTT Agent AI DEEP.
+- [x] H27.7 Chat AI Studio DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/chataistudio/2026-08-09-deep/` đủ 00–07 + 6 screenshot.
+  Chốt `Q48 · M42 · E94 · BLOCKED`; 0 P0, 7 P1, 17 P2, 5 P3. Blocker:
+  provider commercial/auth/data-control chưa có evidence; branch/restart không
+  giữ AI context; lượt ảnh không khóa trần/confirm; stop/error/crash/idempotency
+  có gap credit; delete để orphan image/thread; sidecar image path không được
+  validate. Browser SSE/file/reload/delete/VI/EN/desktop/mobile/console/network
+  đã chạy; 20 targeted test PASS. Không sửa code, không deploy.
+- [ ] H27.8 LTT Agent AI DEEP — **app audit kế tiếp**.
 - [ ] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.
 - [ ] H27.10 Tổng hợp cross-app: trùng finding, shared fix, dependency graph,
   thứ tự BUILD, release gate từng app và portfolio.

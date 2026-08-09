@@ -14,6 +14,56 @@
 
 ---
 
+## 2026-08-09 — H27.7: Chat AI Studio DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** chấm lại Chat như sản phẩm khách hàng theo A0–A10, gồm context,
+  SSE/credit, file/image, privacy, provider authorization và recovery.
+- **Hạng mục:** H27.7 hoàn thành audit; H27.8 LTT Agent AI là app kế tiếp.
+- **Trạng thái:** audit-only; fixture cô lập, không gọi OpenAI production, không
+  sửa runtime và không deploy.
+
+### Đã làm
+
+- Giữ hồ sơ H26 lịch sử; lập `2026-08-09-deep/` đủ 00–07 và 6 screenshot.
+- Browser route/SSE/DB/Storage/Credit thật qua provider giả: ba lượt 100→97→94→91,
+  file JSON/PNG, live/reload, delete, desktop/mobile, VI/EN; console/network sạch.
+- Tái hiện file live chỉ hiện fallback nhưng reload bung extracted content; English
+  app copy đúng nhưng top nav vẫn VI; confirm delete xong PNG vẫn tồn tại Storage.
+- Source chứng minh branch clone DB nhưng không replay/fork AI thread; thread mất
+  không rebuild; no idempotency/conversation lock/deadline/ChatRun reconciler;
+  error/Stop partial settle không trả receipt và ảnh có trần phát sinh 83 credit
+  nhưng không quote/confirm trước turn.
+- Dùng OpenAI Docs/official policies để tách sự thật: Codex hỗ trợ ChatGPT-managed
+  auth, nhưng ChatGPT subscription/API billing tách biệt và account cá nhân không
+  phải bằng chứng cho shared commercial backend. Đánh dấu blocker cần API/business
+  authorization hoặc xác nhận bằng văn bản, không tuyên bố pháp lý suy đoán.
+- Chốt `Q48 · M42 · E94 · BLOCKED`; 0 P0, 7 P1, 17 P2, 5 P3.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright 1440×1000, 390×844, VI/EN, SSE/file/reload/delete | 6 PNG; SSE 200; no overflow; console 0; failed app request 0 |
+| 5 file test targeted Chat/H26/layout | **20 passed**, 1 warning deprecation |
+| `python tools\\gate.py --quick` | **PASS 8/8**, 26,3 giây |
+
+### Quyết định mới
+
+Không có. Q56 conversation-as-project vẫn hiệu lực; audit không tự đổi provider.
+
+### Cách lùi lại
+
+Revert commit H27.7; chỉ tài liệu/evidence/kế hoạch/nhật ký bị ảnh hưởng.
+
+### Còn tồn đọng
+
+Provider production quality/SLO, legal authorization và user test thật UNKNOWN.
+
+### Việc tiếp theo
+
+1. H27.8 Agent AI DEEP, sau đó H27.9 maintenance contract.
+2. H27.10 tổng hợp shared fixes và thứ tự BUILD.
+
 ## 2026-08-09 — H27.6: Tạo Clip ngắn DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** audit Tạo Clip ngắn theo LTT-AQA A0–A10/G0–G8, kiểm kê toàn
