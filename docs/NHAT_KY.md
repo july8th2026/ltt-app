@@ -14,6 +14,60 @@
 
 ---
 
+## 2026-08-09 — H27.8: LTT Agent AI DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** chấm lại Agent như app cho creator, không phải dev; kiểm toàn
+  bộ node semantics, graph, quote/credit, execution, project và mobile.
+- **Hạng mục:** H27.8 hoàn thành audit; H27.9 maintenance contract là bước kế.
+- **Trạng thái:** audit-only; fixture cô lập, không provider/production, không
+  sửa runtime và không deploy.
+
+### Đã làm
+
+- Lập hồ sơ `docs/APP_AUDIT/agent/2026-08-09-deep/` đủ 00–07 và 5 screenshot;
+  benchmark official FLORA, ComfyUI, n8n, Make và hồ sơ PlenX nội bộ.
+- Browser desktop/mobile kiểm starter Text→Image, prompt inline, run node,
+  quote/approve/error, run inspector, context menu, workspace/snapshot, legacy
+  planner, console/network.
+- Tái hiện một lỗi critical ở fixture: một run sinh hai child text, step 3 credit
+  bị settle 6, run trần 8 dừng trước Image và refund 2. Source chỉ ra hai đường
+  advance là browser `/tick` và worker `agent.advance`; impact PostgreSQL
+  production UNKNOWN, không suy đoán thành sự cố production.
+- Chứng minh starter “viết một lần” vẫn thực thi `text.generate`; cancel chỉ
+  hủy orchestration job; Canvas không có UI mở/chuyển workflow; `/agent` legacy
+  lộ tool ID/fan-out/retry; mobile view-only phơi catalog disabled; locale/API
+  redirect chưa nhất quán.
+- Chốt `Q43 · M38 · E95 · BLOCKED`; 1 P0, 7 P1, 18 P2, 6 P3.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright 1440×900, 390×844, starter/run/error/context/legacy | 5 PNG; console 0; failed request 0; duplicate child/credit lỗi E3 |
+| pytest Agent test 87–102 | **201 passed**, 1 warning, 119,45 giây |
+| pytest Agent media/input test 130–134 | **24 passed**, 1,63 giây |
+| `npm test -- --run` + `npm run typecheck` tại agent-canvas | **52 passed**, typecheck PASS |
+| lần pytest gộp 21 file đầu tiên | **TIMEOUT 125,2 giây**, không có kết quả |
+| `python tools\\gate.py --quick` | **PASS 8/8**, 26,3 giây |
+
+### Quyết định mới
+
+Không có; audit đề xuất Decision Gate A nhưng chưa tự chuyển sang BUILD.
+
+### Cách lùi lại
+
+Revert commit H27.8; chỉ tài liệu/evidence/kế hoạch/nhật ký bị ảnh hưởng.
+
+### Còn tồn đọng
+
+PostgreSQL concurrency/cancel canary, provider/GPU/SLO, WCAG assistive-tech và
+user test thật UNKNOWN.
+
+### Việc tiếp theo
+
+1. H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.
+2. H27.10 tổng hợp toàn bộ issue/shared fix/dependency/gate thành plan BUILD.
+
 ## 2026-08-09 — H27.7: Chat AI Studio DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** chấm lại Chat như sản phẩm khách hàng theo A0–A10, gồm context,

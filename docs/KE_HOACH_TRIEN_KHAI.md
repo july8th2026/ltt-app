@@ -1933,7 +1933,14 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   có gap credit; delete để orphan image/thread; sidecar image path không được
   validate. Browser SSE/file/reload/delete/VI/EN/desktop/mobile/console/network
   đã chạy; 20 targeted test PASS. Không sửa code, không deploy.
-- [ ] H27.8 LTT Agent AI DEEP — **app audit kế tiếp**.
+- [x] H27.8 LTT Agent AI DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/agent/2026-08-09-deep/` đủ 00–07 + 5 screenshot. Chốt
+  `Q43 · M38 · E95 · BLOCKED`; 1 P0, 7 P1, 18 P2, 6 P3. Browser phát hiện
+  dual orchestration tạo hai child text, quote 8 nhưng settle 6 rồi dừng trước
+  image; starter nhập tay vẫn gọi text AI trả phí; cancel không hủy child,
+  workflow library vắng, legacy `/agent` lộ dev jargon và mobile chỉ xem nhưng
+  phơi catalog disabled. 225 backend + 52 frontend + typecheck PASS; lần gộp
+  đầu TIMEOUT 125 giây được ghi đúng, không tính PASS. Không sửa runtime/deploy.
 - [ ] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.
 - [ ] H27.10 Tổng hợp cross-app: trùng finding, shared fix, dependency graph,
   thứ tự BUILD, release gate từng app và portfolio.
