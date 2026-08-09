@@ -4,7 +4,7 @@
 
 - **Quality Score: 57/100**
 - **Market Score: 64/100**
-- **Evidence Confidence: 87/100**
+- **Evidence Confidence: 61/100** — hiệu chỉnh H28; E87 cũ dùng sai cấp E4
 - **Release Gate: BLOCKED**
 - Finding: **0 P0 · 3 P1 · 11 P2 · 4 P3**
 - Blocker chính: quyết toán có thể vượt khoản giữ và làm số dư âm; reference

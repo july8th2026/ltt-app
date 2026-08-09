@@ -2,7 +2,7 @@
 
 ## Dashboard
 
-**Q 58 · M 56 · E 92 · BLOCKED**
+**Q 58 · M 56 · E 61 · BLOCKED** — E92 cũ được hiệu chỉnh ở H28.
 
 | Nhóm | Trọng số | Điểm 0–5 | Điểm quy đổi | Lý do tóm tắt |
 |---|---:|---:|---:|---|
@@ -18,7 +18,7 @@
 | Kiến trúc/ops/observability | 7 | 2.5 | 3.5 | Có job log/test; thiếu per-stage recovery/retention |
 | **Tổng** | **100** |  | **58.1 → 58** | Cần nâng cấp lớn |
 
-Market Score 56 vì LTT có pipeline thật và economics hợp lý nhưng thiếu editor, quản trị project, đa nguồn và publish/schedule; correctness hiện tại kéo table stakes xuống. Evidence 92 vì source + 19 targeted test + browser/file thật + ZIP artifact; production SLO, GPU render và user test thật chưa chạy.
+Market Score 56 vì LTT có pipeline thật và economics hợp lý nhưng thiếu editor, quản trị project, đa nguồn và publish/schedule; correctness hiện tại kéo table stakes xuống. Evidence 61 vì source E1 + 19 targeted test E2 + browser/file/ZIP local E3; production SLO, GPU render và user test thật chưa chạy.
 
 ## G0–G8
 

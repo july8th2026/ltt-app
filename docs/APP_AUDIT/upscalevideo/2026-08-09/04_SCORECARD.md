@@ -4,7 +4,7 @@
 
 - **Quality Score: 64/100**
 - **Market Score: 57/100**
-- **Evidence Confidence: 84/100**
+- **Evidence Confidence: 61/100** — hiệu chỉnh H28; E84 cũ dùng sai cấp E4
 - **Release Gate: BLOCKED**
 - Blocker: G2/G5 fail vì direct upload chưa có policy size/type/quota đủ mạnh
   và artifact upload có thể mồ côi; G4 fail vì entitlement/copy/i18n không trung

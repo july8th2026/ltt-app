@@ -1,6 +1,6 @@
 # A5 — Scorecard
 
-**Q 48 · M 42 · E 94 · BLOCKED**
+**Q 48 · M 42 · E 58 · BLOCKED** — E94 cũ được hiệu chỉnh ở H28.
 
 | Nhóm | W | 0–5 | Quy đổi | Nhận định |
 |---|---:|---:|---:|---|
@@ -16,7 +16,7 @@
 | Ops/observability | 7 | 2.0 | 2.8 | lifecycle log có; no reconciler/SLO/provider runbook |
 | **Tổng** | **100** |  | **47.7 → 48** | major rebuild/repair |
 
-M42: LTT có search/export/branch hình thức và receipt khác biệt, nhưng thua table stakes về context durability, output controls, project knowledge, web/citations và data control. E94: E1 source/official docs, E2 20 targeted tests, E3 browser/SSE/Storage deletion artifact; production provider quality/SLO và legal confirmation UNKNOWN.
+M42: LTT có search/export/branch hình thức và receipt khác biệt, nhưng thua table stakes về context durability, output controls, project knowledge, web/citations và data control. E58: E1 source/official docs, E2 20 targeted tests, E3 browser/SSE/Storage deletion artifact; production provider quality/SLO và legal confirmation UNKNOWN.
 
 | Gate | Result | Reopen condition |
 |---|---|---|

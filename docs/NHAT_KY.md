@@ -14,6 +14,49 @@
 
 ---
 
+## 2026-08-09 — H28: re-audit vòng 2 và hiệu chỉnh độ tin cậy
+
+- **Mục tiêu:** audit lại toàn portfolio, kiểm định cả chất lượng hồ sơ H27 thay
+  vì tin điểm/tuyên bố `DONE`.
+- **Hạng mục:** H28.0–H28.4 hoàn thành ở mức audit-only.
+- **Trạng thái:** không sửa runtime, không deploy; E4 và bốn control ledger sâu
+  vẫn UNKNOWN/PARTIAL, được ghi rõ thay vì giả PASS.
+
+### Đã làm
+
+- Chạy 13 manifest route ở desktop 1440×900 và mobile 390×844 bằng Chrome thật;
+  26 navigation. Customer route 200, Demo 404 đúng contract, Kịch bản/Media
+  redirect Agent, Thumbnail redirect child mode; không failed request/JS error
+  ngoài 404 dự kiến.
+- Phát hiện thêm Socialbot tràn ngang mobile 392/390 và `#vfile` Upscale thiếu
+  accessible name; lưu hai screenshot trong hồ sơ H28.
+- Phát hiện H27 gắn source/test/browser thành E4 trái LTT-AQA §5. Sửa evidence
+  index và 12 scorecard: E mới 38–61; trung bình 8 customer app 59,9 thay 90,6.
+- Giữ Q, Gate và 3 P0. Gắn M của Socialbot/Demo/Kịch bản/Media là provisional;
+  bổ sung benchmark official-source, nhưng không giả hands-on.
+- Tạo `docs/APP_AUDIT/portfolio/2026-08-09-reaudit/` gồm charter, audit-quality
+  review, route matrix, scorecard hiệu chỉnh, benchmark, remaining work và gate.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `playwright-cli -s=ltt run-code --filename=tmp/reaudit_route_matrix.js` | 26 route/viewport; kết quả như matrix H28 |
+| `playwright-cli -s=ltt run-code --filename=tmp/reaudit_targeted_inspection.js` | tái hiện 2 finding UI/a11y và chụp evidence |
+| `python -m pytest -q tests/test_60_app_registry.py tests/test_66_phan_quyen_app.py tests/test_152_socialbot_route_flag.py tests/test_89_agent_runs.py tests/test_92_agent_executor.py tests/test_97_agent_workflow_api.py` | **89 passed**, 1 deprecation warning, 81,61s |
+| `python tools\gate.py --quick` | **PASS 8/8** hai lượt, 26,4s và 25,8s; secret scan PASS |
+
+### Cách lùi lại
+
+Revert commit H28; chỉ tài liệu/evidence bị ảnh hưởng, runtime/data/deploy không
+đổi. Không khôi phục điểm E cũ nếu chưa thay taxonomy trong LTT-AQA.
+
+### Việc tiếp theo
+
+1. Hoàn thiện A2 từng control cho Socialbot/Demo/Kịch bản/Media.
+2. Chạy negative auth/exactly-once/SSRF/recovery matrix trước BUILD/release.
+3. Thu E4 production/user evidence có kiểm soát rồi mới nâng E/G7/G8.
+
 ## 2026-08-09 — H27.10: tổng hợp audit toàn portfolio hoàn tất
 
 - **Mục tiêu:** biến audit rời của từng app thành một inventory không sót,

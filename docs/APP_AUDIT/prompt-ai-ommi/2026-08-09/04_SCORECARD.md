@@ -4,7 +4,7 @@
 
 - **Quality Score: 48/100**
 - **Market Score: 51/100**
-- **Evidence Confidence: 92/100**
+- **Evidence Confidence: 56/100** — hiệu chỉnh H28 theo E1/E2/E3 thực tế
 - **Release Gate: BLOCKED**
 - Finding: **0 P0 · 5 P1 · 14 P2 · 6 P3**
 - Blocker: paid Director không apply được; autosave có đường mất dữ liệu; core

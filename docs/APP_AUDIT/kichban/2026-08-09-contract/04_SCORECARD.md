@@ -1,6 +1,6 @@
 # 04 — Scorecard
 
-**Q64 · M50 · E91 · BLOCKED** (blocker nằm ở integration Agent, không phải
+**Q64 · M50* · E38 · BLOCKED** (M provisional; blocker nằm ở integration Agent, không phải
 route retired).
 
 | Nhóm | Điểm |
@@ -20,4 +20,3 @@ route retired).
 G0 PASS · G1 PASS có điều kiện E2 · G2 PASS theo owned key tests · G3 **FAIL ở
 manual-text integration** · G4 FAIL · G5 PARTIAL · G6 UNKNOWN · G7 UNKNOWN ·
 G8 PARTIAL. Provider production và output quality là UNKNOWN.
-

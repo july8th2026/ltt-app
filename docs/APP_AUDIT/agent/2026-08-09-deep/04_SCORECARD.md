@@ -1,6 +1,6 @@
 # A5 — Scorecard
 
-**Q 43 · M 38 · E 95 · BLOCKED**
+**Q 43 · M 38 · E 61 · BLOCKED** — E95 cũ được hiệu chỉnh ở H28.
 
 | Nhóm | W | 0–5 | Quy đổi | Nhận định |
 |---|---:|---:|---:|---|
@@ -16,7 +16,7 @@
 | Ops/observability | 7 | 2.4 | 3.4 | run/job logs có; reconciliation/canary customer path thiếu |
 | **Tổng** | **100** |  | **43.0** | major repair/reframe |
 
-E95: E1 source + official market docs, E2 225 backend/52 frontend/typecheck,
+E61: E1 source + official market docs, E2 225 backend/52 frontend/typecheck,
 E3 browser/credit/jobs/desktop/mobile/console/network. Production Postgres race,
 provider output/SLO, GPU/load, WCAG assistive tech và user test thật còn UNKNOWN.
 

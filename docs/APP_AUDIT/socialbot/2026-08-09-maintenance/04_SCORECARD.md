@@ -2,7 +2,7 @@
 
 ## Dashboard
 
-**Q41 · M35 · E94 · BLOCKED**
+**Q41 · M35 · E60 · BLOCKED** — E94 cũ được hiệu chỉnh ở H28.
 
 | Nhóm | Trọng số | Điểm 0–5 | Quy đổi | Evidence |
 |---|---:|---:|---:|---|
@@ -32,6 +32,6 @@
 | G8 | FAIL | thiếu tenant audit/alert/runbook cho access abuse |
 
 Evidence: `evidence/01-ordinary-user-facebook-token-admin.png`, source và 411
-targeted tests. E94 vì ranh giới lỗi được thấy ở E3; production provider còn
+targeted tests. E60 vì ranh giới lỗi được thấy ở E3 nhưng các nhóm khác chỉ
+được E1/E2; production provider còn
 UNKNOWN.
-

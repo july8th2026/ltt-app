@@ -1879,6 +1879,9 @@ theo quality gate khi còn G4/G8 FAIL.
 
 ## H27 — Audit DEEP độc lập từng app theo LTT-AQA
 
+> **Superseded một phần bởi H28:** các điểm E ghi trong lịch sử H27 là snapshot
+> chấm sai taxonomy; dùng điểm E hiệu chỉnh ở H28. Q/finding/Gate vẫn hiệu lực.
+
 Nguồn quy tắc: `docs/quy_tac_audit.md`. H26 là audit portfolio/release, không
 thay thế audit A0–A10 độc lập của từng sản phẩm. H27 chỉ audit và khóa roadmap;
 không sửa runtime, không deploy trước Decision Gate của app tương ứng.
@@ -1962,3 +1965,33 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
 Mỗi app bắt buộc có charter/current truth/journey-control registry/benchmark/
 scorecard/findings/options/roadmap; UNKNOWN không được đổi thành PASS vì app khác
 đã có test hoặc vì portfolio từng deploy thành công.
+
+---
+
+## H28 — Re-audit độc lập vòng 2 và kiểm định chính hồ sơ H27
+
+H28 supersede điểm Evidence Confidence và trạng thái completeness của H27;
+không thay finding/Q/Gate nếu không có bằng chứng mới. Audit-only, không sửa
+runtime và không deploy.
+
+- [x] H28.0 Integrity review — 2026-08-09: phát hiện H27 gắn nhầm source/test/
+  browser thành E4; đúng phải là E1/E2/E3. Hiệu chỉnh hai evidence index và 12
+  scorecard; E mới 38–61, trung bình 8 customer app 59,9.
+- [x] H28.1 Browser route matrix — 2026-08-09: 13 manifest × desktop 1440×900
+  + mobile 390×844; 26 navigation. Customer routes 200, Demo 404 đúng contract,
+  Kịch bản/Media redirect Agent, Thumbnail redirect child mode; không failed
+  request/JS console error ngoài 404 dự kiến. Phát hiện Socialbot overflow
+  mobile và Upscale file input thiếu accessible name.
+- [x] H28.2 Critical regression — 2026-08-09: registry/access/Agent run/executor/
+  workflow API **89 PASS**, 1 deprecation warning. Test xanh không bác bỏ 3 P0
+  vì thiếu negative authorization/exactly-once coverage tương ứng.
+- [x] H28.3 A2/A4 completeness — 2026-08-09: Social/Demo/Kịch bản/Media còn
+  control registry mỏng; Market Score của bốn phạm vi chuyển provisional. Bổ
+  sung official-source benchmark 5–7 mẫu nhưng hands-on/plan/region còn thiếu.
+- [x] H28.4 Corrected dashboard/roadmap — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/portfolio/2026-08-09-reaudit/` ghi rõ phần đã xác minh và phần
+  bắt buộc còn UNKNOWN. Q/Gate/P0 giữ nguyên; runtime fix/deploy 0%.
+
+**Trạng thái đúng:** vòng re-audit hồ sơ đã hoàn thành; audit triệt để cấp E4
+chưa hoàn thành vì thiếu telemetry/user test/provider/production và A2 chi tiết
+của bốn runtime. Không được đổi UNKNOWN thành PASS.

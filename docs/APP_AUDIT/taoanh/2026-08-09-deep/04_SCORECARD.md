@@ -4,7 +4,7 @@
 
 - **Quality Score: 56/100**
 - **Market Score: 54/100**
-- **Evidence Confidence: 91/100**
+- **Evidence Confidence: 60/100** — hiệu chỉnh H28 theo E1/E2/E3 thực tế
 - **Release Gate: BLOCKED**
 - Finding: **0 P0 · 3 P1 · 15 P2 · 6 P3**
 - Score H26.9 `Q85` là nghiệm thu sau hợp nhất shell, không còn đại diện cho

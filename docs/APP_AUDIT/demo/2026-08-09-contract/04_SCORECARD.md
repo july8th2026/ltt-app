@@ -1,6 +1,6 @@
 # 04 — Scorecard
 
-**Q78 · M70 · E92 · INTERNAL**
+**Q78 · M70* · E40 · INTERNAL** — M là contract-fit; E92 cũ được hiệu chỉnh H28.
 
 | Nhóm | Điểm quy đổi |
 |---|---:|
@@ -18,4 +18,3 @@
 G0 PASS · G1 PASS cho reverse/queue · G2 PASS · G3 PASS qua queue, N/A direct
 diagnostic · G4 PASS · G5 PASS theo Job platform · G6 UNKNOWN · G7 UNKNOWN ·
 G8 PARTIAL. Customer 404 có E3; contract có E1/E2.
-

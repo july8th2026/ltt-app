@@ -4,7 +4,7 @@
 
 - **Quality Score: 56/100**
 - **Market Score: 65/100**
-- **Evidence Confidence: 90/100**
+- **Evidence Confidence: 61/100** — hiệu chỉnh H28 theo E1/E2/E3 thực tế
 - **Release Gate: BLOCKED**
 - Finding: **0 P0 · 3 P1 · 14 P2 · 5 P3**
 - Blocker: upload/source lifecycle chưa an toàn; workload/giới hạn/quote không
@@ -57,4 +57,3 @@ Tổng quy đổi **55,8**, làm tròn **56/100**.
 | `/en/autosubvideo` | Toàn bộ React vẫn VI | EV-BR-006 |
 | `python -m pytest -q tests/test_81_autosubvideo.py tests/test_103_autosub_projects.py` | **36 passed**, 3 warning; 2 warning là unhandled media thread | EV-TEST-001 |
 | `npm test -- --run` trong frontend | **13 passed** | EV-TEST-001 |
-
