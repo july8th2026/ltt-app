@@ -38,3 +38,57 @@ hoạch; bịa điểm thị trường ở đây sẽ vi phạm quy tắc eviden
 
 Không app nào được gọi là “đã hoàn thiện” theo quality gate chỉ từ nhãn catalog.
 
+---
+
+## Release re-audit — 2026-08-09
+
+`Q 87 · M 73 · E 80 · PUBLIC`
+
+Điểm này áp dụng cho **marketplace shell + vận hành portfolio/customer
+journey**, không áp dụng cho chất lượng output/model AI. Trọng số vẫn giữ đúng
+phân bổ đã khóa ở baseline; không đổi sau khi thấy kết quả.
+
+| Nhóm đã điều chỉnh | Trọng số | Điểm /5 | Đạt | Evidence chính |
+|---|---:|---:|---:|---|
+| Giá trị/JTBD | 15 | 4,2 | 12,6 | một tài khoản, catalog/customer audience, history và credit chung |
+| Tính năng/đầy đủ | 15 | 4,2 | 12,6 | lifecycle, JobEvent, retry/cancel/download, image modes và các phase app |
+| Control đúng | 12 | 4,4 | 10,6 | control registry, quote/confirm, compare, queue và regression theo app |
+| UX/workflow/IA | 14 | 4,1 | 11,5 | card-link, taxonomy, ẩn nội bộ, history entry point và browser A-Z |
+| UI/design system | 8 | 4,1 | 6,6 | shell/token/card/state thống nhất; vẫn còn nợ asset library xuyên app |
+| Responsive/a11y | 7 | 4,2 | 5,9 | 11 route desktop/mobile, keyboard control, không overflow |
+| Reliability/performance | 11 | 4,5 | 9,9 | load/soak, retry/reclaim, GPU lease, canary và production health |
+| Security/tenant/credit | 10 | 4,7 | 9,4 | ownership, redaction, secret scan, quote/hold/settle/refund |
+| Operations/observability | 8 | 4,7 | 7,5 | metrics/alert/runbook, support export, backup/restore/rollback/deploy |
+| **Tổng** | **100** | | **86,6 → Q87** | |
+
+### Evidence Confidence
+
+- E3 cho product, feature, control, UX, UI, responsive và security: source/test
+  đã chạy và quan sát browser thật.
+- E4 cho reliability và operations: archive canary, production health, service
+  state, backup/restore và deploy log thật.
+- `E = 81 × 0,75 + 19 × 1,00 = 79,75 → E80`.
+
+Không nâng E lên 90+: chưa có authenticated production session lưu sẵn cho
+vòng browser sau deploy, chưa đủ mẫu production SLO và chưa có external
+pentest/user study độc lập.
+
+### G0-G8 sau release
+
+| Gate | Verdict | Evidence/giới hạn |
+|---|---|---|
+| G0 Scope | PASS | charter, audience, route và dữ liệu canary đã khóa |
+| G1 Core Outcome | PASS | A-Z theo app ở H26.5-H26.10; archive canary chạy output thật và public shell đúng build |
+| G2 Security | PASS | owner scope, role/audience guard, log redaction, protected env và secret scan 0 |
+| G3 Money/Credit | PASS | quote/confirm/hold/settle/refund/idempotency test; browser Chat/Agent/Tạo ảnh trừ đúng |
+| G4 Honest UI | PASS | retired/internal bị ẩn; lifecycle thật; control P1 đã đóng và không còn CTA giả đã biết |
+| G5 Data Recovery | PASS | append-only JobEvent, retry/reclaim, partial cleanup, backup restore và rollback rehearsal |
+| G6 Accessibility | PASS baseline | keyboard/card/compare và desktop/mobile core journey đạt baseline; không tuyên bố chứng nhận WCAG toàn site |
+| G7 Performance | PASS release budget | SLO theo app, load/soak và topology hai GPU đạt evidence development/canary; tiếp tục thu production sample |
+| G8 Operations | PASS | metrics/alerts/runbook/support export, rollback đủ 3 service, backup và release evidence |
+
+### Release class
+
+`PUBLIC` là mức hợp lý: production có thể cho khách dùng, đường lùi và
+observability đã đủ. Chưa nâng `COMMERCIAL` cho toàn portfolio cho tới khi đủ
+production SLO sample, trial benchmark có trả phí và blind evaluation output AI.

@@ -152,3 +152,11 @@ folder trống.
    health, job/event/credit và UI thật.
 5. Re-audit Q/M/E và G0-G8; chỉ đóng khi G0-G8 PASS hoặc exception được chủ sản
    phẩm chấp nhận bằng văn bản.
+
+**Kết quả release:** PASS ngày 2026-08-09. Full gate 9/9; backup/restore và
+rollback rehearsal PASS; archive canary 22/22 route desktop/mobile và output
+Tạo ảnh/credit đúng; deploy production `EXITCODE=0`, ba service RUNNING, public
+health ready. Re-audit chốt `Q87 · M73 · E80 · PUBLIC`, G0-G8 PASS theo baseline
+đã khóa. Giới hạn còn lại (production SLO sample, authenticated browser sau
+deploy, external pentest/user study và blind output benchmark) được giữ rõ,
+không dùng để nâng giả lên COMMERCIAL. Evidence: `H26_12C_RELEASE_PRODUCTION.md`.

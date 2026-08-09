@@ -1850,7 +1850,8 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     nhưng đỏ 1 test do chữ `P95` bị hiểu nhầm là hệ kế hoạch P9; test đó đã sửa
     và PASS. Output full gate lần 2 bị host làm mất sau khi process kết thúc;
     release gate cuối được chạy lại một lần ở H26.12, không giả báo PASS.
-- [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
+- [x] H26.12 Phase 5: **PASS + DEPLOYED 2026-08-09** — full gate, browser A-Z,
+  backup/rollback, canary, deploy và
   re-audit Q/M/E + G0-G8.
   - [x] H26.12A — **PASS local 2026-08-09, chưa deploy**: browser pre-release
     11 route desktop + mobile sạch; Chat SSE 3 credit, Agent Text→Image 2 bước
@@ -1861,8 +1862,14 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     3/3. Sửa rollback điều khiển đủ Web/Worker/Codex và bắt readiness thật.
     Deploy regression 48 PASS; full `python tools\\gate.py` PASS 9/9, pytest
     1.596,9 giây.
-  - [ ] H26.12C — canary/deploy, health/build-meta, public browser smoke và
-    re-audit Q/M/E + G0-G8.
+  - [x] H26.12C — **PASS + DEPLOYED 2026-08-09**: build archive 1.404 file,
+    SHA-256 `8148becd1342a6685caa6fa93069d7dae8d9ce502f289d37d2b6731501890750`;
+    canary đúng archive đạt 22/22 route desktop/mobile và Tạo ảnh settle 5
+    credit. Deploy `EXITCODE=0`; ba service RUNNING; local/public health ready,
+    build `v1.0`, hash production khớp source. Public browser không overflow;
+    Turnstile render và sinh token. Re-audit `Q87 · M73 · E80 · PUBLIC`, G0-G8
+    PASS theo baseline; chưa nâng COMMERCIAL do chưa đủ production SLO sample,
+    authenticated browser sau deploy và đánh giá output độc lập.
 
 Điều kiện chặn: không xóa vật lý Kịch bản/Media trước khi ToolSpec dependency đã
 di trú; không coi 2 GPU 16 GB là một GPU 32 GB; không gọi app “đã hoàn thiện”

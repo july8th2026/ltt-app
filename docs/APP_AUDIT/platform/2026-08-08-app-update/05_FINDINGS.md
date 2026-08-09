@@ -26,7 +26,23 @@
 - **F04-F06 đóng ở Phase 2:** card-link/accessibility, taxonomy/lifecycle từ
   manifest và hai mode Tạo ảnh AI đã PASS browser matrix + full gate. Backend
   Thumbnail cũ được giữ để tương thích, không phải xóa hay di trú dữ liệu.
-- **F07-F14 còn mở** và được xử lý tuần tự từ Phase 3.1; không làm song song.
+- **F07 đóng ở Phase 3.2 / H26.6:** AutoSub bundle public được khóa bằng
+  preflight/hash/browser canary và có rollback; không còn phụ thuộc default
+  legacy mơ hồ.
+- **F08-F12 đóng ở Phase 3.1 / H26.5:** Upscale mutual exclusion có cả UI và
+  server guard; compare dùng pointer/keyboard/master clock; queue có
+  filter/view/thumbnail/download; GPU budget theo từng card; Watch Folder và
+  control experimental không còn lộ ở customer surface.
+- **F13 đóng theo quyết định honest scope ở Phase 3.4 / H26.8:** Prompt AI chỉ
+  hiển thị project/activity owner-scoped đã có dữ liệu thật; không dựng team
+  cost, số thành viên hoặc dashboard cộng tác giả.
+- **F14 đóng ở Phase 3.3-3.6 / H26.7-H26.10:** các folder có yêu cầu được xử lý
+  tuần tự bằng audit browser + evidence; folder trống giữ `UNKNOWN`, không build
+  từ suy đoán. Socialbot vẫn maintenance/frozen đúng quyết định nền.
+
+Tại release re-audit 2026-08-09, **F01-F14 đều đóng**. Nợ sản phẩm mới về asset
+library/project xuyên app và collaboration được ghi là roadmap sau release,
+không hồi sinh các finding đã đóng.
 
 ## Chỉ số sau sửa
 

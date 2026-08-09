@@ -14,6 +14,59 @@
 
 ---
 
+## 2026-08-09 — H26.12C: canary, deploy production và release re-audit PASS
+
+- **Mục tiêu:** phát hành đúng archive đã kiểm, xác minh production và chốt
+  audit H26 bằng bằng chứng thay vì trạng thái kế hoạch.
+- **Hạng mục:** H26.12C và toàn bộ H26.12 — hoàn thành.
+- **Trạng thái:** đã deploy `https://app.lttstudios.com`; release class PUBLIC.
+
+### Đã làm
+
+- Build `dist/ltt-release-1.0.0.zip` gồm 1.404 file, 78,7 MB, secret scan 0;
+  SHA-256 được ghi trong evidence release.
+- Giải nén đúng archive sang canary cô lập cổng 8122. Browser đạt 11/11 route
+  desktop + 11/11 mobile, không overflow/console/network app error; Tạo ảnh đi
+  queued → done và settle đúng 5 credit.
+- Deploy bằng wrapper elevated hai lớp có log bền; inner process trả
+  `EXITCODE=0`. Alembic, dependency, WhisperX và readiness đều đạt; đủ ba
+  service Web/Worker/Codex RUNNING.
+- Local/public health trả ready production, build `v1.0`; hash production khớp
+  source cho các file hành vi thay đổi. Browser public landing/register đạt;
+  Turnstile render và sinh response token. Noise WebGL/PAT 401 nằm trong iframe
+  Cloudflare, không phải request app lỗi.
+- Benchmark lại bằng tài liệu chính thức Canva, Adobe, Magnific/Freepik, Krea
+  và Runway; giữ gap asset library/project/collaboration. Chốt
+  `Q87 · M73 · E80 · PUBLIC`
+  và G0-G8 PASS theo baseline đã khóa, không nâng giả lên COMMERCIAL.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| `python tools\\gate.py` (H26.12B, trước build) | PASS 9/9; pytest 1.596,9 giây |
+| Archive canary browser desktop/mobile | PASS 22/22 route; console/network app error 0 |
+| Canary Tạo ảnh + credit | PASS queued → done; 100 → 95 |
+| Elevated production deploy | PASS `EXITCODE=0`; archive hash khớp |
+| `sc.exe query` Web/Worker/Codex | PASS 3/3 RUNNING |
+| local/public `/health/ready` + build meta | PASS ready production; `v1.0` |
+| public browser landing/register | PASS; không overflow, Turnstile có token |
+| `pytest test_62 -k he_danh_so` sau chốt tài liệu | PASS 1, 23 deselected |
+| `python tools\\gate.py --quick` sau chốt tài liệu | PASS 8/8 trong 25,8 giây |
+
+### Giới hạn đã ghi rõ
+
+Public browser profile không có authenticated test session lưu sẵn, nên không
+tạo/sửa production user chỉ để tăng evidence. Authenticated A-Z đã chạy trên
+đúng archive canary. Tiếp tục thu production SLO sample, external pentest/user
+study và blind output benchmark trước khi xét COMMERCIAL.
+
+### Cách lùi lại
+
+Dùng `deploy/windows/rollback.ps1` và backup predeploy được ghi trong
+`H26_12C_RELEASE_PRODUCTION.md`. Không restore live DB nếu chưa xác định migration
+hoặc dữ liệu là nguyên nhân.
+
 ## 2026-08-09 — H26.12B: backup/rollback + full release gate PASS
 
 - **Mục tiêu:** chứng minh có đường lùi thật và chạy release gate quan sát được
