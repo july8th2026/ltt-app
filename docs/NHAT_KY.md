@@ -14,6 +14,62 @@
 
 ---
 
+## 2026-08-09 — H27.9: audit maintenance/runtime theo từng app hoàn tất
+
+- **Mục tiêu:** không gộp các app ẩn/nội bộ thành một ghi chú; kiểm từng app
+  theo A0–A10 và phân biệt visibility, authorization, runtime ToolSpec.
+- **Hạng mục:** H27.9 hoàn thành; H27.10 tổng hợp portfolio là bước tiếp theo.
+- **Trạng thái:** audit-only; không sửa runtime, không dùng production data,
+  không deploy.
+
+### Đã làm
+
+- Lập bốn hồ sơ độc lập đủ 00–07 và evidence cho Socialbot, Demo, Kịch bản và
+  Media Tools.
+- Browser bằng customer test chứng minh `/facebook` trả 200 và phơi form dán
+  System User token cùng 8 trang operator; `/demo` trả 404; `/kichban` và
+  `/mediatools` redirect Agent Canvas đúng contract.
+- Truy source tới root cause Socialbot: `public=False` chỉ là visibility;
+  Q25 vẫn mở route và các route nhạy cảm chỉ `require_login`, trong khi token
+  store/worker/monitor là singleton toàn tiến trình. Chốt 2 P0 và G2 FAIL.
+- Demo được giữ INTERNAL đúng mục đích, nhưng direct handler không thể thay
+  bằng chứng queue/storage canary. Kịch bản giữ `text.generate` và ẩn
+  `text.script`; integration Agent vẫn làm literal Text thành job trả phí.
+  Media Tools có ownership/local limit tốt nhưng direct URL kiểm DNS trước rồi
+  client resolve lại, còn DNS-rebinding TOCTOU; artifact lifecycle chưa có.
+- Chốt dashboard: Socialbot `Q41/M35/E94/BLOCKED`; Demo
+  `Q78/M70/E92/INTERNAL`; Kịch bản `Q64/M50/E91/BLOCKED`; Media Tools
+  `Q59/M47/E90/BLOCKED`.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| pytest 14 file Socialbot legacy/web/security/ops | **411 passed, 1 skipped**, 1 warning, 54,75 giây |
+| pytest 11 file registry/access/job/credit/Kịch bản/Media/Agent | **186 passed**, 1 warning, 88,46 giây |
+| Playwright 1440×900 `/facebook`, `/demo`, `/kichban`, `/mediatools` | Socialbot 200 customer; Demo 404; hai runtime redirect Agent; ảnh đã lưu; trang cuối console 0/failed request 0 |
+| `python tools\\gate.py --quick` | **PASS 8/8**, 26,3 giây; secret scan 0 finding |
+
+### Quyết định mới
+
+Không có. Audit khuyến nghị Socialbot operator-only và source node 0-credit,
+nhưng chưa tự đổi Q10/Q25 hay code trước Decision Gate.
+
+### Cách lùi lại
+
+Revert commit H27.9; chỉ tài liệu/evidence/kế hoạch/nhật ký bị ảnh hưởng.
+
+### Còn tồn đọng
+
+Provider/SLO/production canary, Socialbot publish thật, Media URL abuse test và
+assistive-tech vẫn UNKNOWN. H27.10 phải khử trùng finding và khóa thứ tự BUILD.
+
+### Việc tiếp theo
+
+1. H27.10 tạo dashboard toàn portfolio và danh sách vấn đề còn lại.
+2. Gom shared fix/dependency graph, sau đó triển khai tuần tự từng app qua
+   Decision Gate; không làm chồng chéo.
+
 ## 2026-08-09 — H27.8: LTT Agent AI DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** chấm lại Agent như app cho creator, không phải dev; kiểm toàn

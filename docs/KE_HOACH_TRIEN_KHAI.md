@@ -1941,7 +1941,16 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   workflow library vắng, legacy `/agent` lộ dev jargon và mobile chỉ xem nhưng
   phơi catalog disabled. 225 backend + 52 frontend + typecheck PASS; lần gộp
   đầu TIMEOUT 125 giây được ghi đúng, không tính PASS. Không sửa runtime/deploy.
-- [ ] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.
+- [x] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract —
+  2026-08-09: bốn hồ sơ độc lập đủ 00–07 + browser evidence. Socialbot
+  `Q41 · M35 · E94 · BLOCKED` (2 P0): customer thường vào được route operator,
+  sửa token/worker state toàn cục dù app `public=False`; 411 targeted test PASS
+  nhưng không có access-negative test. Demo `Q78 · M70 · E92 · INTERNAL`;
+  customer `/demo` = 404 đúng. Kịch bản runtime `Q64 · M50 · E91 · BLOCKED`;
+  route retired redirect Agent đúng nhưng literal Text/paid generation và
+  dual-submit integration chặn G3/G4. Media Tools `Q59 · M47 · E90 · BLOCKED`;
+  direct URL còn DNS-rebinding TOCTOU, artifact lifecycle và Agent orchestration
+  chưa khép kín. 186 targeted runtime test PASS. Audit-only, không sửa/deploy.
 - [ ] H27.10 Tổng hợp cross-app: trùng finding, shared fix, dependency graph,
   thứ tự BUILD, release gate từng app và portfolio.
 
