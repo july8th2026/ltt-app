@@ -1,8 +1,26 @@
 # 05 — Findings: Tạo Video Seedance
 
-## P1 — phải đóng trước mở rộng thương mại
+## P0 — chặn mọi release trả phí
 
-### F-001 — Token settlement có thể làm số dư credit âm
+### F-001 — Token settlement vượt hold trong job thật (nâng từ P1)
+
+Deep-round đã tái hiện trên canary Mini 4s 480p có một ảnh + một video: UI bắt
+đầu với 520 credit, còn 491 sau submit và còn 442 sau settle. Actual = 78
+credit, trong khi canonical video-input hold phải là 29 credit. Variance 49
+credit là bằng chứng E4, không còn là mẫu giả định. Theo LTT-AQA §4, mọi lỗi về
+tiền luôn chặn release.
+
+- **Gate:** G3, P0.
+- **Acceptance:** quote có `quote_id` bao gồm loại ref; customer không bao giờ
+  bị charge quá hold đã xác nhận; variance được ghi riêng cho platform và có
+  alert; settlement/refund idempotent, balance không âm.
+
+## P1 — phải đóng trước mở rộng thương mại (hồ sơ gốc)
+
+### ~~F-001 — Token settlement có thể làm số dư credit âm~~ (đã thay bởi F-001 P0 deep-round)
+
+> Phần phân tích gốc dưới đây được giữ để truy nguyên; verdict hiện hành là
+> F-001 P0 ở đầu tài liệu, với bằng chứng job thật.
 
 - Nhóm/gate: economics/credit; G3.
 - Hiện tượng: estimate được hiệu chỉnh từ đúng một job Mini 480p/5s, hold bằng
@@ -151,6 +169,52 @@
 
 - Finding dùng chung đã thấy ở Upscale; Seedance kế thừa shell.
 - Fix một lần ở shell, regression axe/accessibility snapshot cho mọi app.
+
+## P1 — Deep-round provider/asset findings
+
+### F-020 — Audio reference bị gửi như Image (mới)
+
+`apps/taovideo/jobs.py` gọi `assets.to_asset("audio", data, ".m4a")`, nhưng
+`apps/taovideo/assets.py` chỉ phân biệt `video` và mặc định mọi loại còn lại là
+`AssetType=Image`, `content-type=image/png`. UI vẫn cho MP3/WAV/M4A nên đây là
+contract sai: có thể tạo asset bị từ chối hoặc gửi sai modality.
+
+- **Evidence:** EV-SRC-007; đối chiếu Bot `asset_service.ensure_asset(kind)`.
+- **Acceptance:** magic/container sniff; `Audio`/MIME đúng; audio canary
+  provider pass, hoặc lỗi customer-safe + refund.
+
+### F-021 — Không có remote asset registry/reconcile/lifecycle (mới)
+
+Bot Gemini có hash cache theo owner, remote list/reconcile, 50-slot quota,
+in-flight pin, grace/LRU và delete sync. LTT chỉ giữ blob ref trong params của
+60 job gần nhất; `to_asset` tạo remote asset rồi xóa temp R2 nhưng không lưu
+asset id/cache hay xóa remote asset. Job thật đã chứng minh asset creation hoạt
+động, nhưng không chứng minh cleanup.
+
+- **Gate:** G2/G5/G8.
+- **Acceptance:** retry cùng digest dùng lại asset; remote/local counts đối soát;
+  sweep idempotent không chạm asset đang chạy; data-deletion xoá đúng owner.
+
+## P2 — Deep-round UX/delivery additions
+
+### F-019 — Remix “Biến thể” mất reference binding (mới)
+
+Browser mobile sau click `Biến thể` đặt `count=2`, giữ prompt/preset nhưng
+`saved_ref_keys` vẫn rỗng. Vì vậy job biến thể có thể thành text-only và tốn gấp
+đôi output so với ý định customer.
+
+- **Evidence:** EV-BR-008.
+- **Acceptance:** remix khôi phục refs/role/handle hoặc báo rõ “tạo lại không
+  kèm tài sản”; không tự tăng count nếu user chưa chọn.
+
+### F-022 — Download output thiếu attachment semantics (mới)
+
+`Tải video` chuyển tới signed R2 URL, browser mở player inline. Chưa có
+`Content-Disposition`, filename ổn định hoặc resume-download contract.
+
+- **Evidence:** EV-RJ-004.
+- **Acceptance:** download có tên, content type và range/resume đúng; owner check
+  vẫn giữ khi proxy/redirect.
 
 ## Priority
 

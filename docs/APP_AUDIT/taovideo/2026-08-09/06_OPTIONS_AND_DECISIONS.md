@@ -31,3 +31,20 @@ PASS. Không thêm model/tool chỉ để tăng số lượng.
 | D8 | Release? | A fixture→gate→canary→auth prod verify; B deploy thẳng | **A** | Chưa khóa |
 
 Không BUILD khi D1–D8 chưa khóa. Audit app kế tiếp vẫn được tiếp tục độc lập.
+
+## Deep-round decision gate (2026-08-09)
+
+Job thật đã cung cấp E4 nhưng mở một stop-line mới: **D2 không được chọn B
+(trừ thêm sau chạy)**. Khuyến nghị hiệu lực là **D2-A: customer charge cap ở
+hold đã xác nhận; phần vượt là platform variance**, cho tới khi có quote
+canonical được customer xác nhận lại.
+
+| Câu hỏi bổ sung | Lựa chọn | Khuyến nghị | Lý do |
+|---|---|---|---|
+| D9 Audio reference | A sửa đúng Audio + canary; B ẩn audio; C giữ như hiện tại | **A** | UI đang quảng cáo audio; Bot Gemini có contract rõ |
+| D10 Asset lifecycle | A hash/cache/reconcile/quota/pin/LRU; B tạo mới mỗi lần; C tắt video ref | **A** | tránh rò asset remote và bảo vệ privacy/quota |
+| D11 Remix | A giữ refs/handle + count user chọn; B text-only rõ ràng; C giữ hành vi hiện tại | **A** | ngăn job biến thể sai ngữ nghĩa/tốn tiền |
+| D12 Output download | A attachment có tên + range; B chỉ player; C ZIP mọi lúc | **A** | đúng kỳ vọng nút “Tải video” |
+
+**Trạng thái:** D9–D12 là khuyến nghị audit, chưa phải quyết định kiến trúc;
+không tự BUILD trong vòng audit này.

@@ -1995,3 +1995,35 @@ runtime và không deploy.
 **Trạng thái đúng:** vòng re-audit hồ sơ đã hoàn thành; audit triệt để cấp E4
 chưa hoàn thành vì thiếu telemetry/user test/provider/production và A2 chi tiết
 của bốn runtime. Không được đổi UNKNOWN thành PASS.
+
+---
+
+## H29 — Deep audit Seedance: đối chiếu Bot Gemini + canary thật
+
+H29 tiếp tục từ H28, chỉ audit/verification; **không sửa runtime và không
+deploy**. Hồ sơ: `docs/APP_AUDIT/taovideo/2026-08-09/` (bổ sung
+`08_DEEP_ROUND_BOT_GEMINI_REALJOB.md`).
+
+- [x] H29.0 Preflight/Current Truth — 2026-08-09: đọc quyết định nền, plan,
+  nhật ký, source Seedance và Bot Gemini read-only; fixture 8112 chỉ có UI,
+  không có provider credential/R2.
+- [x] H29.1 Browser A2 — 2026-08-09: desktop 1440 upload ảnh + video thật,
+  role/handle/preview/quote; console warning=0, app request 2xx; mobile 390
+  overflow=0, saved refs/output card.
+- [x] H29.2 Real provider canary — 2026-08-09: Mini · 4s · 480p · 16:9, một
+  ảnh + một video, prompt hai @handle; job `121eb14b…` DONE, log/progress/
+  support ID, R2 output browser playable.
+- [x] H29.3 Artifact verification — 2026-08-09: tải qua browser, `ffprobe`
+  output H.264/AAC 864×496, 4.096s; frame strip xác nhận chuyển động và giữ
+  visual reference.
+- [x] H29.4 Billing/asset audit — 2026-08-09: quan sát 520→491→442 (78 actual
+  vs 29 canonical video hold) → nâng F-001 lên P0; xác nhận audio Image/MIME
+  bug và thiếu remote asset registry so với Bot Gemini.
+- [x] H29.5 Hồ sơ/roadmap — 2026-08-09: cập nhật scorecard Q57/M64/E76,
+  Gate BLOCKED, Control Registry, findings F-019..F-022, options/roadmap và
+  evidence index; không BUILD.
+
+**H29 kết luận:** core image+video generation đã có một canary E4 PASS, nhưng
+app **chưa đạt “mọi tính năng vận hành tốt”**. G3 P0, audio contract và asset
+lifecycle là stop-line; Phase 0A–0D trong `07_IMPLEMENTATION_ROADMAP.md` phải
+được BUILD + regression trước canary trả phí tiếp theo.

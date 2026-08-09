@@ -18,5 +18,15 @@
 | EV-TEST-001 | Test E2 | 77 targeted PASS: 39 + 38; 1 deprecation warning |
 | EV-TEST-002 | Gate E2 | `python tools\gate.py --quick` PASS 8/8, 26s |
 | EV-MKT-001 | Market E1 | Official docs của 6 benchmark + BytePlus, snapshot 2026-08-09 |
+| EV-SRC-007 | Source E1 | `apps/taovideo/refs.py`, `assets.py`, `jobs.py`, `manifest.py`: positional tags, asset MIME/type, video-rate quote, task/poll/settle |
+| EV-RJ-001 | Browser E4 | Deploy `app.lttstudios.com`, account test; Mini/4s/480p, 1 ảnh + 1 video, @handle; submit thành công, hold/credit quan sát được |
+| EV-RJ-002 | Browser E4 | Job `121eb14b…`: asset → submit → poll → download → done, history/saved refs sau reload |
+| EV-RJ-003 | Browser E4 | Output player readyState=4, 864×496, 4.096s, không media error; `seedance-deep-output-frame.jpg` + strip |
+| EV-RJ-004 | Browser E4 | Link tải redirect signed R2 và mở player; chưa có attachment semantics |
+| EV-BR-007 | Browser E3 | Desktop 1440×1000 upload ảnh/video thật, preview dimensions, role/handle, estimate/network/console sạch |
+| EV-BR-008 | Browser E3 | Mobile click `Biến thể`: count=2 nhưng saved refs=0, binding không khôi phục |
+| EV-BR-009 | Browser E3 | Production 390×844: overflow=0, saved refs + output card/player; drawer initial đóng |
+| EV-TEST-003 | Test E2 | 67 targeted Seedance/platform tests PASS, 1 deprecation warning, 54.82s |
+| EV-MEDIA-001 | Tool E2 | `ffprobe` input/output; output H.264/AAC, 864×496, 4.096s; frame strip trực quan |
 
 Không lưu cookie, token, email, secret hoặc dữ liệu production trong hồ sơ.

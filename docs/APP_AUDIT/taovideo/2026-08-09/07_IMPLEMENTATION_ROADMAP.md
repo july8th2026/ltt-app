@@ -33,3 +33,20 @@ phase trước PASS.
 | Mobile keyboard drawer | FAIL | PASS |
 | Production success/P95 | UNKNOWN | ≥95%; queue P95≤30s |
 | Retry success | UI MISSING | ≥80% lỗi retryable |
+
+## Deep-round evidence delta (2026-08-09)
+
+Canary thật đã **PASS G1 core outcome** có điều kiện nhưng **FAIL G3 P0**:
+Mini 4s/480p với ảnh + video tạo MP4 playable; actual 78 credit trong khi hold
+video-rate 29. Vì vậy mọi phase sau 0A đều khóa, không chạy thêm job trả phí.
+
+| Phase bắt buộc trước provider canary tiếp theo | Acceptance đóng phase |
+|---|---|
+| 0A Credit cap + canonical quote | Không charge quá hold; quote phân biệt video/audio; ledger idempotent; balance không âm |
+| 0B Audio/input contract | magic sniff; `AssetType`/MIME Audio đúng; corrupt media refund; canary audio pass |
+| 0C Asset registry | hash cache, owner, remote reconcile, 50-slot quota, pin/grace/LRU, cleanup audit |
+| 0D Recovery/delivery | remix giữ refs/handles; retry/cancel/re-poll; ffprobe; download attachment |
+
+**Rollback:** feature flag tắt audio/video-reference mới; giữ đường image-inline
+đã chứng minh; cap charge ở held và hoàn phần variance platform; không xóa asset
+remote khi chưa có dry-run/reconcile.

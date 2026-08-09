@@ -4,12 +4,13 @@
 
 - **Quality Score: 57/100**
 - **Market Score: 64/100**
-- **Evidence Confidence: 61/100** — hiệu chỉnh H28; E87 cũ dùng sai cấp E4
+- **Evidence Confidence: 76/100** — sau deep-round có E4 job/artifact thật;
+  load, nhiều model và audio-reference vẫn UNKNOWN
 - **Release Gate: BLOCKED**
-- Finding: **0 P0 · 3 P1 · 11 P2 · 4 P3**
-- Blocker chính: quyết toán có thể vượt khoản giữ và làm số dư âm; reference
+- Finding: **1 P0 · 4 P1 · 13 P2 · 4 P3** (sau deep-round; F-001 cũ chỉ giữ để truy nguyên)
+- Blocker chính: canary thật quyết toán vượt khoản giữ và làm số dư âm; reference
   được lưu trước credit/job rồi không cleanup; double-submit với ref mới có thể
-  vượt dedupe và giữ credit hai lần.
+  vượt dedupe và giữ credit hai lần; audio reference đang gắn sai AssetType/MIME.
 
 `BLOCKED` không phủ nhận app đang public theo H26. Nó có nghĩa không mở rộng
 thương mại hoặc thêm feature trước khi Phase 0 đóng G2/G3/G5.
@@ -58,3 +59,35 @@ Tổng quy đổi **56,5**, làm tròn **57/100**.
 | 39 test app trực tiếp | **39 passed**, 3,72s | EV-TEST-001 |
 | 38 test vận hành/layout/layer | **38 passed**, 1 warning, 54,06s | EV-TEST-001 |
 | `python tools\gate.py --quick` | **PASS 8/8**, 26s | EV-TEST-002 |
+
+## Deep-round adjustment (2026-08-09)
+
+The prior dashboard remains the baseline scorecard. This round adds E4 evidence
+but does **not** turn one successful canary into a blanket release claim:
+
+- **Q: 57/100 (giữ nguyên).** Core outcome/performance evidence improved, nhưng
+  real billing variance, audio contract và asset lifecycle là nợ material nên
+  không tăng điểm tổng.
+- **M: 64/100 (giữ nguyên).** Chưa thu benchmark capability mới trong vòng này.
+- **E: 76/100 (61 → 76).** Có E4 cho một job thật + media artifact/player,
+  E3 cho desktop/mobile, E2 cho 67 test; load, nhiều model, audio-reference,
+  telemetry dài hạn vẫn UNKNOWN.
+- **Release Gate: BLOCKED; F-001 được nâng từ P1 lên P0** vì quan sát thật
+  `520 → 491 → 442` (78 credit actual trong khi hold canonical video-rate là
+  29). Không được hiểu “job đã DONE” là “billing đã an toàn”.
+
+| Gate | Deep-round verdict | Lý do |
+|---|---|---|
+| G0 Scope | PASS | Đúng app/preset/tài khoản test và dữ liệu canary |
+| G1 Core outcome | PASS có điều kiện | E4 output playable, image+video refs; chưa đủ corpus/model |
+| G2 Security | FAIL | MIME/container chưa sniff; audio type sai; remote asset lifecycle chưa chứng minh |
+| G3 Money/Credit | **FAIL P0** | actual vượt hold 49 credit trong job thật |
+| G4 Honest UI | FAIL | quote không phản ánh video input; Remix tạo 2 variant nhưng mất refs |
+| G5 Data recovery | FAIL | ref staging/cleanup, retry/cancel và asset registry còn thiếu |
+| G6 Accessibility | FAIL | drawer focus/Escape và i18n còn finding từ EV-BR-002/005 |
+| G7 Performance | UNKNOWN | một job mất ~2m05s; chưa có P95/load budget |
+| G8 Operations | FAIL | không có remote asset reconcile/quota/attempt billing/ffprobe runtime |
+
+**Đếm finding sau vòng này:** 1 P0 · 4 P1 · 13 P2 · 4 P3 (F-001, F-002,
+  F-003, F-020, F-021 là các blocker/major; F-019/F-022 là finding mới; F-001
+  bản cũ chỉ là phần truy nguyên, không đếm hai lần).

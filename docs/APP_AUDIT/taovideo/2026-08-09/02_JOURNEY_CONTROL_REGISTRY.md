@@ -58,3 +58,16 @@
 | `/en/` 1440 | Quote/status/title/action lẫn VI | Không | Locale không bền | FAIL |
 | Insufficient credit EN | POST 400/console error; URL `/taovideo/queue` | Không | Prompt/model/count mất, EN→VI | FAIL |
 | 390×844 EN | Initial request không fail | Không | Tab/Escape focus vào panel ngoài màn hình | FAIL |
+
+## Deep-round registry delta
+
+| ID | Control/journey | Kết quả thật | Verdict |
+|---|---|---|---|
+| J-17 | Job thật image+video → provider → output | 1 canary DONE; asset stage, poll, R2 MP4 và browser playback đều PASS | LIVE có điều kiện |
+| J-18 | Audio reference contract | Route accepts UI file nhưng worker maps audio to Image/image/png | BROKEN |
+| J-19 | Remix saved references | `Biến thể` mở drawer/count=2 nhưng không tick saved refs/handles | MISLEADING |
+| J-20 | Actual credit settlement | 78 actual vs 29 video-rate hold; balance 520→442 | BROKEN/P0 |
+| C-23 | Asset remote lifecycle | No hash cache/reconcile/pin/grace/LRU/delete registry in LTT | MISSING |
+| C-24 | Output verification | Browser + ffprobe evidence PASS for canary; handler still lacks runtime ffprobe contract | PARTIAL |
+
+Deep-round evidence: EV-RJ-001..004, EV-BR-007..009, EV-MEDIA-001.

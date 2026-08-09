@@ -14,6 +14,64 @@
 
 ---
 
+## 2026-08-09 — H29: Deep audit Seedance + canary image/video thật
+
+- **Mục tiêu:** tiếp tục từ H28; kiểm toàn bộ Seedance app, đối chiếu module
+  `seedance_video` của `D:\BOT GEMINI` read-only, và chạy một job thật Mini ·
+  4s · 480p với ảnh + video reference.
+- **Phạm vi/quyền:** browser Playwright profile dự án; tài khoản test đang đăng
+  nhập trên `app.lttstudios.com`; dữ liệu người dùng chỉ định. Không sửa code,
+  không deploy, không chạy test trong cây Bot Gemini.
+
+### Đã chạy và kết quả thật
+
+| Lệnh/flow | Kết quả |
+|---|---|
+| Playwright desktop 1440×1000: upload ảnh/video, role/handle, preview, prompt/estimate | PASS; console warning=0; app requests đều 2xx; blob video preview 206 |
+| Browser production job `121eb14b…` | DONE; image+video refs, prompt hai @handle, progress 3→100%, log/support ID |
+| Output browser playback | PASS; readyState=4, không media error; 864×496, 4.096s |
+| Browser download + `ffprobe` | PASS; H.264 video + AAC audio, 1.192.985 bytes, 24fps; frame/strip evidence |
+| Mobile 390×844 sau job | PASS overflow=0; saved refs và output card/player hiển thị; drawer initial đóng |
+| Click “Biến thể” mobile | **FAIL/MISLEADING**; count=2 nhưng saved refs=0, mất binding |
+| Seedance targeted pytest | **67 passed**, 1 deprecation warning, 54.82s |
+
+### Phát hiện/đối soát
+
+1. Job thật trừ **520 → 491 khi submit → 442 sau settle = 78 credit**;
+   canonical video-input hold là **29** (UI đang hiển thị 47 do estimate không
+   nhận video). Đây là F-001 **P0**, G3 FAIL, không được gọi là an toàn tiền.
+2. `assets.to_asset("audio")` mặc định sang `Image` + `image/png`; UI audio
+   hiện không có contract đúng — F-020 P1.
+3. LTT tạo asset remote nhưng chưa có content-hash cache/reconcile/quota/pin/
+   grace/LRU/delete sync như Bot Gemini — F-021 P1.
+4. Link “Tải video” redirect signed R2 mở player inline, chưa đảm bảo
+   `Content-Disposition` — F-022 P2.
+
+### Hồ sơ/evidence
+
+Đã cập nhật `docs/APP_AUDIT/taovideo/2026-08-09/`: scorecard Q57/M64/E76,
+Gate BLOCKED, control registry, findings/options/roadmap và file deep-round.
+Evidence mới: `seedance-deep-before-submit.png`,
+`seedance-deep-job-done.png`, `seedance-deep-output-frame.jpg`,
+`seedance-deep-output-strip.jpg`; không lưu cookie, token, email hoặc secret.
+
+### Chưa chạy / không kết luận
+
+- Không chạy audio-reference canary thứ hai để tránh tiêu thêm credit khi source
+  đã chứng minh sai MIME/AssetType; cần sửa F-020 rồi mới canary.
+- Chưa có load/P95, nhiều model, 100-sample billing, remote asset count/reconcile,
+  assistive-tech hoặc user panel; G2/G3/G5/G6/G7/G8 vẫn FAIL/UNKNOWN.
+- `python tools\gate.py --quick` → **PASS 8/8**, 25.8s; secret scan 0 finding.
+  Commit tài liệu H29 chưa tạo ở thời điểm ghi mục này.
+
+### Rollback
+
+Chỉ tài liệu/evidence/plan thay đổi; không có runtime/data/deploy mutation. Nếu
+cần lùi hồ sơ H29, revert commit tài liệu H29; không hoàn tác job canary trên
+provider bằng thao tác xóa mù.
+
+---
+
 ## 2026-08-09 — H28: re-audit vòng 2 và hiệu chỉnh độ tin cậy
 
 - **Mục tiêu:** audit lại toàn portfolio, kiểm định cả chất lượng hồ sơ H27 thay

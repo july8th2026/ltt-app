@@ -41,3 +41,18 @@ download R2/local → settle token thật hoặc refund → gallery/download/ups
 | U-04 | R2 có lifecycle rule ngoài repo | Operator đọc policy, không chép secret | G5/G8 |
 | U-05 | Production success/queue/render P95/cost | ≥20 terminal/model | G7/G8 |
 | U-06 | Model endpoint hiện tại có đủ edit/extend/video-to-video capability | Capability probe staging + official API | Roadmap parity |
+
+## Deep-round append (2026-08-09)
+
+Canary deploy đã xác nhận đường đi thật image+video: R2 staging → ModelArk
+asset → submit/poll → R2 MP4. Output playable và saved-ref picker khôi phục
+sau reload. Đây là E4 cho một mẫu, không phải chứng nhận mọi modality.
+
+Hai sự thật mới phải ưu tiên hơn mô tả cũ:
+
+1. Billing actual **78 credit** vượt hold canonical video-rate **29** ở job có
+   video input; G3/P0.
+2. Audio code path gắn mọi loại khác video thành `Image`/`image/png`; audio UI
+   hiện không có contract provider đúng.
+
+Xem matrix/evidence đầy đủ ở `08_DEEP_ROUND_BOT_GEMINI_REALJOB.md`.
