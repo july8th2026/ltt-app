@@ -1905,8 +1905,13 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   13 frontend PASS nhưng còn 2 unhandled-thread warning; quick gate 8/8 PASS.
   Browser chứng minh 4K/source cùng 1 credit, QA lỗi vẫn quote, waveform tải
   trọn video, mobile bị cắt và `/en/` vẫn VI. Không sửa code, không deploy.
-- [ ] H27.4 Prompt AI DEEP — **app audit kế tiếp**.
-- [ ] H27.5 Tạo ảnh AI + Thumbnail mode DEEP.
+- [x] H27.4 Prompt AI DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/prompt-ai-ommi/2026-08-09/` đủ 00–07 + evidence desktop/
+  mobile/EN/theme/classic. Chốt `Q48 · M51 · E92 · BLOCKED`; 0 P0, 5 P1,
+  14 P2, 6 P3. Paid Director apply conflict, autosave mất dữ liệu, workflow
+  reference→storyboard→handoff đứt và upload lifecycle là blocker. 170 backend
+  195 backend + 22 frontend test pass nhưng chưa phủ paid A–Z.
+- [ ] H27.5 Tạo ảnh AI + Thumbnail mode DEEP — **app audit kế tiếp**.
 - [ ] H27.6 Tạo Clip ngắn DEEP.
 - [ ] H27.7 Chat AI Studio DEEP.
 - [ ] H27.8 LTT Agent AI DEEP.

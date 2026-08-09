@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-09 — H27.4: Prompt AI OMMI DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** đối soát toàn bộ Prompt AI OMMI theo hành trình khách hàng,
+  không coi API/legacy tồn tại hoặc test xanh là capability đã nghiệm thu.
+- **Hạng mục:** H27.4 hoàn thành audit; H27.5 Tạo ảnh + Thumbnail là app kế tiếp.
+- **Trạng thái:** audit-only, không sửa runtime, không deploy, không gọi provider.
+
+### Đã làm
+
+- Lập đủ 00–07 và evidence tại
+  `docs/APP_AUDIT/prompt-ai-ommi/2026-08-09/`; kiểm manifest/migration, current
+  React workspace, `/classic`, project, resource, library, storyboard,
+  handoff, provider/job/credit/storage, metrics, i18n/theme/mobile và test.
+- Playwright fixture cô lập: tạo project 4 cảnh, resource + upload ảnh, kiểm
+  quote Director/resource rồi hủy; kiểm desktop 1440×900, mobile 390×844,
+  `/en/`, light theme, reload, console/network và legacy classic.
+- Bắt P1 mà test hiện tại không phủ: frontend apply paid Director gửi body rỗng
+  nên backend nhận revision 0 và conflict 409; autosave/global busy làm click
+  bị vô hiệu im lặng, prompt chưa lưu và mất khi đổi màn hình.
+- Chứng minh UI mới chưa nối resource/style/meta vào project/scene, không lộ
+  handoff image/video và lifecycle project; API có nhưng khách không hoàn thành
+  reference→storyboard→production. `/en/` vẫn VI, theme sáng không áp dụng,
+  HTML 422 bị rút thành `Lỗi 422`, mobile panel chặn nav.
+- Kiểm upload/storage: tin declared MIME, full-buffer, put-before-DB và delete
+  row không delete blob; metrics overall p95 luôn 0. Benchmark nguồn chính thức
+  LTX Studio, Flow, Runway, Firefly Boards, FLORA và Freepik Spaces.
+- Chốt `Q48 · M51 · E92 · BLOCKED`, gồm 0 P0, 5 P1, 14 P2, 6 P3. Khuyến nghị
+  REPAIR → PARITY chọn lọc; hoãn differentiated canvas đến khi core journey ổn.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright desktop/mobile, VI/EN/theme/classic/project/resource/quote | Evidence 4 PNG; tái hiện data loss, 422 và capability mismatch |
+| `npm test -- --run` trong `frontend/prompt-ai-ommi` | **22 passed** |
+| Nhóm backend `test_130`, `135`–`144`, `153`–`155`, `159` | **195 passed**, chỉ warning deprecation |
+| `python tools\gate.py --quick` | **PASS 8/8**, 26,3 giây |
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới. D1–D12 trong hồ sơ là Decision Gate, chưa cho
+phép BUILD hoặc deploy.
+
+### Cách lùi lại
+
+Chỉ revert/xóa commit tài liệu H27.4; fixture/storage riêng, không có dữ liệu
+production hoặc runtime cần rollback.
+
+### Còn tồn đọng
+
+Prompt AI BLOCKED đến khi paid apply, autosave/recovery, storage lifecycle và
+canonical connected journey đóng P1/G1/G2/G3/G5.
+
+### Việc tiếp theo
+
+H27.5 audit DEEP Tạo ảnh AI + Thumbnail theo cùng A0–A10 và G0–G8.
+
 ## 2026-08-09 — H27.3: Auto Sub Studio DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** kiểm kê Auto Sub từ upload đến artifact theo LTT-AQA, không
