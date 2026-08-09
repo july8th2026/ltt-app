@@ -1911,8 +1911,13 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   14 P2, 6 P3. Paid Director apply conflict, autosave mất dữ liệu, workflow
   reference→storyboard→handoff đứt và upload lifecycle là blocker. 170 backend
   195 backend + 22 frontend test pass nhưng chưa phủ paid A–Z.
-- [ ] H27.5 Tạo ảnh AI + Thumbnail mode DEEP — **app audit kế tiếp**.
-- [ ] H27.6 Tạo Clip ngắn DEEP.
+- [x] H27.5 Tạo ảnh AI + Thumbnail mode DEEP — 2026-08-09: giữ hồ sơ H26
+  lịch sử, lập audit độc lập tại `docs/APP_AUDIT/taoanh/2026-08-09-deep/` đủ
+  00–07 + 5 screenshot. Chốt `Q56 · M54 · E91 · BLOCKED`; 0 P0, 3 P1,
+  15 P2, 6 P3. Blocker: Thumbnail flat-price làm Pro vẫn 5 credit, validation
+  xóa form và reference/artifact lifecycle không khép kín. 48 targeted test pass
+  nhưng không phủ ba blocker.
+- [ ] H27.6 Tạo Clip ngắn DEEP — **app audit kế tiếp**.
 - [ ] H27.7 Chat AI Studio DEEP.
 - [ ] H27.8 LTT Agent AI DEEP.
 - [ ] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.

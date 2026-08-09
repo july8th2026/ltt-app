@@ -14,6 +14,59 @@
 
 ---
 
+## 2026-08-09 — H27.5: Tạo ảnh AI + Thumbnail DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** audit lại product ảnh theo LTT-AQA A0–A10/G0–G8, tách khỏi
+  nghiệm thu hợp nhất shell H26.9 và kiểm kê money/data/UX bằng browser thật.
+- **Hạng mục:** H27.5 hoàn thành audit; H27.6 Tạo Clip ngắn là app kế tiếp.
+- **Trạng thái:** audit-only, không sửa runtime, không deploy, không gọi Gemini.
+
+### Đã làm
+
+- Giữ nguyên hồ sơ H26.9 tại `docs/APP_AUDIT/taoanh/2026-08-09/`; lập current
+  DEEP snapshot đủ 00–07 + evidence ở `2026-08-09-deep/`.
+- Kiểm hai manifest/runtime, routes/templates, model/cost, upload/reference,
+  worker/provider/partial settlement, ownership/storage, Brand Kit, history,
+  compare/remix, i18n/mobile và retention.
+- Playwright fixture cô lập desktop/mobile/VI/EN: general, edit, Thumbnail,
+  preview, model cost, history và validation. Không submit provider job.
+- Bắt ba P1: Thumbnail chọn Gemini 3 Pro vẫn hiển thị/giữ 5 credit trong khi
+  general định 16 và giá provider khác rõ; edit thiếu source trả 400 rồi xóa
+  prompt/mode; upload full-read và reference/output retention tạo đường
+  memory/orphan/inaccessible artifact.
+- Tái hiện Thumbnail `/en/` vẫn VI do fragment unlocalized; mode link làm rơi
+  locale; Thumbnail không poll; history 12/recent owner scan 60; partial result,
+  technical score và preview chưa phản ánh đầy đủ sự thật.
+- Benchmark nguồn chính thức Adobe Firefly, Midjourney Web, Gemini Image API và
+  YouTube Studio. Chốt `Q56 · M54 · E91 · BLOCKED`, 0 P0, 3 P1, 15 P2, 6 P3.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright 1440×900, 390×844, VI/EN, general/thumbnail/model/validation | 5 PNG; tái hiện 3 blocker và locale/progress gap |
+| 8 file test targeted image/thumbnail/H26 | **48 passed**, 1 warning deprecation |
+| `python tools\gate.py --quick` | **PASS 8/8**, 26,2 giây |
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới. D1–D12 trong audit là Decision Gate, chưa cho
+phép BUILD/deploy.
+
+### Cách lùi lại
+
+Revert commit tài liệu H27.5; fixture có DB/storage riêng và không ảnh hưởng
+runtime hoặc production.
+
+### Còn tồn đọng
+
+Product ảnh BLOCKED đến khi model-aware price, validation recovery và
+reference/artifact lifecycle đóng P1/G2/G3/G5.
+
+### Việc tiếp theo
+
+H27.6 audit DEEP Tạo Clip ngắn theo cùng quy tắc.
+
 ## 2026-08-09 — H27.4: Prompt AI OMMI DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** đối soát toàn bộ Prompt AI OMMI theo hành trình khách hàng,
