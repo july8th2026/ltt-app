@@ -14,6 +14,59 @@
 
 ---
 
+## 2026-08-09 — H27.3: Auto Sub Studio DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** kiểm kê Auto Sub từ upload đến artifact theo LTT-AQA, không
+  dùng feature breadth hay test pass để thay thế quality/release evidence.
+- **Hạng mục:** H27.3 hoàn thành audit; H27.4 Prompt AI là app kế tiếp.
+- **Trạng thái:** audit-only, không sửa runtime, không deploy.
+
+### Đã làm
+
+- Lập đủ 00–07 và evidence tại
+  `docs/APP_AUDIT/autosubvideo/2026-08-09/`; kiểm manifest, React Studio,
+  AppProject/autosave, upload/source, parser/schema, ASR/diarize/translate,
+  style/preview/timeline, quote/credit, render/artifact, history/download/test.
+- Playwright fixture cô lập với video thật 3 MB và SRT: empty, attach, import,
+  cue edit/QA, source-vs-4K quote, desktop/mobile, VI/EN, console và network.
+  Không bấm xác nhận render, không gọi provider và không tiêu credit.
+- Chứng minh ba blocker P1: upload/source thiếu staging/TTL/probe và có orphan;
+  quote/admission tin metadata client, bỏ workload pixels/codec/track và cap
+  duration không thống nhất; autosave/conflict/offline có đường mất edit.
+- Tái hiện 4K/source cùng 1 credit; QA=70 với hai overlap vẫn mở dialog giữ
+  credit; waveform tạo GET 200 toàn source và có fallback dữ liệu giả; mobile
+  390 bị cắt timeline; `/en/` vẫn toàn tiếng Việt.
+- Benchmark chính thức CapCut, Descript, VEED, Adobe Premiere và Kapwing. Chốt
+  `Q56 · M65 · E90 · BLOCKED`, gồm 0 P0, 3 P1, 14 P2, 5 P3. Khuyến nghị
+  REPAIR trước, PARITY project/timeline/brand chọn lọc sau; không xây full NLE.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright desktop/mobile, VI/EN, video/SRT thật, QA/quote/network | Evidence 3 PNG + YAML; console 0; bắt các lỗi nêu trên |
+| `python -m pytest -q tests\test_81_autosubvideo.py tests\test_103_autosub_projects.py` | **36 passed**, 3 warning; 2 warning là unhandled thread exception |
+| `npm test -- --run` trong `frontend/autosub-studio` | **13 passed** |
+| `python tools\gate.py --quick` | **PASS 8/8**, 25,8 giây |
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới. D1–D11 trong hồ sơ là câu hỏi khóa logic,
+chưa tự động trở thành code hoặc quyền deploy.
+
+### Cách lùi lại
+
+Chỉ revert/xóa commit tài liệu H27.3; fixture/browser data cô lập, không có
+runtime, production database hoặc deployment cần rollback.
+
+### Còn tồn đọng
+
+Auto Sub BLOCKED cho mở rộng thương mại đến khi Phase 0 đóng P1 và G2/G3/G5/G7.
+
+### Việc tiếp theo
+
+H27.4 audit DEEP Prompt AI theo cùng hồ sơ A0–A10 và G0–G8.
+
 ## 2026-08-09 — H27.2: Tạo Video Seedance DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** kiểm kê toàn bộ hành vi của Seedance theo LTT-AQA, tách kết

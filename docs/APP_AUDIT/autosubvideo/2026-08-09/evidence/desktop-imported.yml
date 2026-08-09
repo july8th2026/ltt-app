@@ -1,0 +1,231 @@
+- generic [ref=f15e1]:
+  - banner [ref=f15e2]:
+    - link "LTT LTT AI Studio" [ref=f15e3] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f15e4]: LTT
+      - text: LTT AI Studio
+    - navigation [ref=f15e5]:
+      - group [ref=f15e6]:
+        - generic "Ảnh ▾" [ref=f15e7] [cursor=pointer]:
+          - text: Ảnh
+          - generic [ref=f15e8]: ▾
+      - group [ref=f15e9]:
+        - generic "Video ▾" [ref=f15e10] [cursor=pointer]:
+          - text: Video
+          - generic [ref=f15e11]: ▾
+      - group [ref=f15e12]:
+        - generic "Đăng bài ▾" [ref=f15e13] [cursor=pointer]:
+          - text: Đăng bài
+          - generic [ref=f15e14]: ▾
+      - group [ref=f15e15]:
+        - generic "AI Studio ▾" [ref=f15e16] [cursor=pointer]:
+          - text: AI Studio
+          - generic [ref=f15e17]: ▾
+      - group [ref=f15e18]:
+        - generic "Chat ▾" [ref=f15e19] [cursor=pointer]:
+          - text: Chat
+          - generic [ref=f15e20]: ▾
+    - generic [ref=f15e21]:
+      - link "Bảng giá" [ref=f15e22] [cursor=pointer]:
+        - /url: /nap
+      - link "💎 906 credit" [ref=f15e23] [cursor=pointer]:
+        - /url: /nap
+      - group [ref=f15e24]:
+        - generic "UP" [ref=f15e25] [cursor=pointer]
+  - main [ref=f15e27]:
+    - strong [ref=f15e30]: 💬 Khắc phụ đề video
+    - main [ref=f15e44]:
+      - generic [ref=f15e45]:
+        - generic [ref=f15e46]:
+          - generic [ref=f15e47]: LTT
+          - strong [ref=f15e48]: AUTO SUB VIDEO
+        - list [ref=f15e49]:
+          - listitem [ref=f15e50]:
+            - button "1 Upload" [ref=f15e51] [cursor=pointer]:
+              - generic [ref=f15e52]: "1"
+              - text: Upload
+          - listitem [ref=f15e53]:
+            - button "2 Transcript" [ref=f15e54] [cursor=pointer]:
+              - generic [ref=f15e55]: "2"
+              - text: Transcript
+          - listitem [ref=f15e56]:
+            - button "3 Style" [ref=f15e57] [cursor=pointer]:
+              - generic [ref=f15e58]: "3"
+              - text: Style
+          - listitem [ref=f15e59]:
+            - button "4 Render" [ref=f15e60] [cursor=pointer]:
+              - generic [ref=f15e61]: "4"
+              - text: Render
+        - generic [ref=f15e62]:
+          - button "Hoàn tác" [disabled] [ref=f15e63] [cursor=pointer]: ↶
+          - button "Làm lại" [disabled] [ref=f15e64] [cursor=pointer]: ↷
+          - status [ref=f15e65]: Đã nhập transcript
+      - generic [ref=f15e66]:
+        - complementary [ref=f15e67]:
+          - generic [ref=f15e68]:
+            - text: PROJECT
+            - textbox "Tên project" [ref=f15e69]: Dự án chưa đặt tên
+          - generic [ref=f15e70]:
+            - heading "FILES" [level=2] [ref=f15e71]
+            - generic [ref=f15e72] [cursor=pointer]:
+              - button "＋ Kéo thả hoặc chọn video MP4, MOV, MKV · tối đa 120 phút" [ref=f15e73]
+              - generic [ref=f15e74]: ＋
+              - strong [ref=f15e75]: Kéo thả hoặc chọn video
+              - generic [ref=f15e76]: MP4, MOV, MKV · tối đa 120 phút
+            - article [ref=f15e185]:
+              - strong [ref=f15e186]: video (10).mp4
+              - generic [ref=f15e187]: 10s · 864×496
+          - generic [ref=f15e77]:
+            - heading "TRANSCRIPT" [level=2] [ref=f15e78]
+            - generic [ref=f15e79]:
+              - generic [ref=f15e80] [cursor=pointer]:
+                - text: Nhập SRT/VTT/ASS
+                - button "Nhập SRT/VTT/ASS" [active] [ref=f15e81]
+              - button "WhisperX · 0 credit" [ref=f15e82] [cursor=pointer]
+            - generic [ref=f15e83]:
+              - combobox "Track phụ đề" [ref=f15e84]:
+                - option "browser_sample.srt · vi" [selected]
+              - button "Thêm track" [ref=f15e85] [cursor=pointer]: ＋ Track
+              - button "Ẩn hiện track" [ref=f15e194] [cursor=pointer]: ◉
+            - generic "Trạng thái công cụ AI" [ref=f15e86]:
+              - generic [ref=f15e87]:
+                - generic [ref=f15e89]:
+                  - strong [ref=f15e90]: WhisperX
+                  - generic [ref=f15e91]: Transcript và word timing
+                - generic [ref=f15e92]: Chưa cấu hình
+              - generic [ref=f15e93]:
+                - generic [ref=f15e95]:
+                  - strong [ref=f15e96]: Pyannote
+                  - generic [ref=f15e97]: Phân vai ẩn danh
+                - generic [ref=f15e98]: Chưa cấu hình
+              - generic [ref=f15e99]:
+                - generic [ref=f15e101]:
+                  - strong [ref=f15e102]: Gemini
+                  - generic [ref=f15e103]: Dịch transcript theo cue
+                - generic [ref=f15e104]: Chưa cấu hình
+            - generic [ref=f15e105]:
+              - button "Phân vai · 0 credit" [disabled] [ref=f15e106] [cursor=pointer]
+              - generic [ref=f15e107]:
+                - combobox "Ngôn ngữ dịch" [ref=f15e108]:
+                  - option "English" [selected]
+                  - option "Tiếng Việt"
+                  - option "中文"
+                  - option "日本語"
+                  - option "한국어"
+                  - option "Français"
+                  - option "Deutsch"
+                  - option "Español"
+                - button "Dịch Gemini · 0 credit" [disabled] [ref=f15e109] [cursor=pointer]
+            - textbox "Tìm transcript" [ref=f15e110]:
+              - /placeholder: Tìm transcript…
+            - generic [ref=f15e195]:
+              - button "00:00:00 Xin chào từ LTT Studios." [ref=f15e196] [cursor=pointer]:
+                - time [ref=f15e197]: 00:00:00
+                - generic [ref=f15e198]: Xin chào từ LTT Studios.
+              - button "00:00:03 Timeline có thể kéo, tách và chỉnh sửa." [ref=f15e199] [cursor=pointer]:
+                - time [ref=f15e200]: 00:00:03
+                - generic [ref=f15e201]: Timeline có thể kéo, tách và chỉnh sửa.
+              - button "00:00:06 Đây là dữ liệu kiểm thử cô lập." [ref=f15e202] [cursor=pointer]:
+                - time [ref=f15e203]: 00:00:06
+                - generic [ref=f15e204]: Đây là dữ liệu kiểm thử cô lập.
+            - paragraph [ref=f15e111]: 1 track · 3 cue
+          - region "Kiểm tra chất lượng transcript" [ref=f15e112]:
+            - generic [ref=f15e113]:
+              - heading "TRANSCRIPT QA" [level=2] [ref=f15e114]
+              - strong [ref=f15e115]: 100/100
+            - paragraph [ref=f15e205]: Không phát hiện lỗi timing/nội dung/tốc độ đọc.
+            - generic [ref=f15e206]:
+              - heading "NGƯỜI NÓI" [level=3] [ref=f15e207]
+              - generic [ref=f15e208]: Chưa có speaker. Dùng Phân vai hoặc nhập speaker trong cue.
+          - generic [ref=f15e117]:
+            - generic [ref=f15e118]:
+              - heading "LỊCH SỬ JOB" [level=2] [ref=f15e119]
+              - link "Xem tất cả" [ref=f15e120] [cursor=pointer]:
+                - /url: /jobs
+            - paragraph [ref=f15e121]: Chưa có job trong project này.
+        - generic [ref=f15e122]:
+          - generic [ref=f15e123]:
+            - generic [ref=f15e124]: Fit (100%)
+            - generic [ref=f15e125]: 864:496
+          - generic [ref=f15e131]:
+            - button "Về đầu" [ref=f15e132] [cursor=pointer]: "|◀"
+            - button "Phát hoặc dừng" [ref=f15e133] [cursor=pointer]: ▶
+            - button "Tới cuối" [ref=f15e134] [cursor=pointer]: ▶|
+            - generic [ref=f15e135]: 00:00:00 / 00:00:10
+          - generic [ref=f15e136]:
+            - generic "Dạng sóng âm thanh" [ref=f15e137]
+            - generic [ref=f15e138]:
+              - button "00:00" [ref=f15e139] [cursor=pointer]
+              - button "00:02" [ref=f15e189] [cursor=pointer]
+              - button "00:04" [ref=f15e190] [cursor=pointer]
+              - button "00:06" [ref=f15e191] [cursor=pointer]
+              - button "00:08" [ref=f15e192] [cursor=pointer]
+              - button "00:10" [ref=f15e193] [cursor=pointer]
+            - generic [ref=f15e210]:
+              - generic "browser_sample.srt" [ref=f15e211]: CC
+              - generic [ref=f15e212]:
+                - button "Xin chào từ LTT Studios., 00:00 đến 00:03" [ref=f15e213]:
+                  - generic [ref=f15e215]: Xin chào từ LTT Studios.
+                - button "Timeline có thể kéo, tách và chỉnh sửa., 00:03 đến 00:06" [ref=f15e217]:
+                  - generic [ref=f15e219]: Timeline có thể kéo, tách và chỉnh sửa.
+                - button "Đây là dữ liệu kiểm thử cô lập., 00:06 đến 00:09" [ref=f15e221]:
+                  - generic [ref=f15e223]: Đây là dữ liệu kiểm thử cô lập.
+          - generic [ref=f15e145]:
+            - generic [ref=f15e146]:
+              - button "＋ Cue" [ref=f15e147] [cursor=pointer]
+              - button "Tách" [disabled] [ref=f15e148] [cursor=pointer]
+              - button "Gộp sau" [disabled] [ref=f15e149] [cursor=pointer]
+              - button "Xóa" [disabled] [ref=f15e150] [cursor=pointer]
+            - paragraph [ref=f15e151]: Chọn một cue trên timeline hoặc thêm cue mới.
+        - complementary [ref=f15e152]:
+          - navigation [ref=f15e153]:
+            - button "TEMPLATES" [ref=f15e154] [cursor=pointer]
+            - button "STYLE" [ref=f15e155] [cursor=pointer]
+            - button "ANIMATION" [ref=f15e156] [cursor=pointer]
+          - generic [ref=f15e157]:
+            - button "THE QUICK BROWN FOX LTT Brand" [ref=f15e158] [cursor=pointer]:
+              - strong [ref=f15e159]: THE QUICKBROWN FOX
+              - generic [ref=f15e160]: LTT Brand
+            - button "THE QUICK BROWN FOX TikTok Bold" [ref=f15e161] [cursor=pointer]:
+              - strong [ref=f15e162]: THE QUICKBROWN FOX
+              - generic [ref=f15e163]: TikTok Bold
+            - button "THE QUICK BROWN FOX Reels Clean" [ref=f15e164] [cursor=pointer]:
+              - strong [ref=f15e165]: THE QUICKBROWN FOX
+              - generic [ref=f15e166]: Reels Clean
+            - button "THE QUICK BROWN FOX Cinematic" [ref=f15e167] [cursor=pointer]:
+              - strong [ref=f15e168]: THE QUICKBROWN FOX
+              - generic [ref=f15e169]: Cinematic
+            - button "THE QUICK BROWN FOX Meme Punch" [ref=f15e170] [cursor=pointer]:
+              - strong [ref=f15e171]: THE QUICKBROWN FOX
+              - generic [ref=f15e172]: Meme Punch
+            - button "THE QUICK BROWN FOX Kids Color" [ref=f15e173] [cursor=pointer]:
+              - strong [ref=f15e174]: THE QUICKBROWN FOX
+              - generic [ref=f15e175]: Kids Color
+            - button "THE QUICK BROWN FOX Punchline" [ref=f15e176] [cursor=pointer]:
+              - strong [ref=f15e177]: THE QUICKBROWN FOX
+              - generic [ref=f15e178]: Punchline
+            - button "THE QUICK BROWN FOX Word Emphasis" [ref=f15e179] [cursor=pointer]:
+              - strong [ref=f15e180]: THE QUICKBROWN FOX
+              - generic [ref=f15e181]: Word Emphasis
+            - button "THE QUICK BROWN FOX Mặc định" [ref=f15e182] [cursor=pointer]:
+              - strong [ref=f15e183]: THE QUICKBROWN FOX
+              - generic [ref=f15e184]: Mặc định
+  - contentinfo "Thông tin LTT Studios" [ref=f15e33]:
+    - navigation "Liên kết sản phẩm và hỗ trợ" [ref=f15e34]:
+      - link "Hệ sinh thái LTT" [ref=f15e35] [cursor=pointer]:
+        - /url: https://lttstudios.com/
+      - link "Ứng dụng" [ref=f15e36] [cursor=pointer]:
+        - /url: https://lttstudios.com/applications/
+      - link "Hỗ trợ" [ref=f15e37] [cursor=pointer]:
+        - /url: https://lttstudios.com/faq/
+      - link "Liên hệ" [ref=f15e38] [cursor=pointer]:
+        - /url: https://lttstudios.com/contact/
+      - link "Credit & thanh toán" [ref=f15e39] [cursor=pointer]:
+        - /url: /nap
+    - navigation "Liên kết pháp lý" [ref=f15e40]:
+      - link "Quyền riêng tư" [ref=f15e41] [cursor=pointer]:
+        - /url: https://lttstudios.com/privacy-policy/
+      - link "Điều khoản" [ref=f15e42] [cursor=pointer]:
+        - /url: https://lttstudios.com/terms/
+      - link "Xóa dữ liệu" [ref=f15e43] [cursor=pointer]:
+        - /url: https://lttstudios.com/data-deletion/

@@ -1898,8 +1898,14 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   G6/G8 FAIL, G7 UNKNOWN. Targeted 77 PASS; quick gate 8/8; browser file thật,
   2 variants, credit failure, VI/EN, desktop/mobile/keyboard/console/network đã
   chạy. Không sửa code, không deploy.
-- [ ] H27.3 AutoSub Video DEEP — **đang audit**.
-- [ ] H27.4 Prompt AI DEEP.
+- [x] H27.3 AutoSub Video DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/autosubvideo/2026-08-09/` đủ 00–07 + evidence desktop/mobile/
+  EN/video thật/network. Chốt `Q56 · M65 · E90 · BLOCKED`; 0 P0, 3 P1,
+  14 P2, 5 P3. G2–G8 FAIL; G1 PASS có điều kiện. Targeted 36 Python +
+  13 frontend PASS nhưng còn 2 unhandled-thread warning; quick gate 8/8 PASS.
+  Browser chứng minh 4K/source cùng 1 credit, QA lỗi vẫn quote, waveform tải
+  trọn video, mobile bị cắt và `/en/` vẫn VI. Không sửa code, không deploy.
+- [ ] H27.4 Prompt AI DEEP — **app audit kế tiếp**.
 - [ ] H27.5 Tạo ảnh AI + Thumbnail mode DEEP.
 - [ ] H27.6 Tạo Clip ngắn DEEP.
 - [ ] H27.7 Chat AI Studio DEEP.
