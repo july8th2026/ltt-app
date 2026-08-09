@@ -13,6 +13,8 @@ param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$ServiceName = 'LTTStudioWeb',
     [string]$WorkerServiceName = 'LTTStudioWorker',
+    [string]$CodexServiceName = 'LTTStudioCodex',
+    [switch]$SkipServiceControl,
     [int]$Port = 8100
 )
 
@@ -28,9 +30,10 @@ if (-not (Test-Path $previous)) {
 
 Write-Host "`n=== Rolling back ===" -ForegroundColor Cyan
 
-if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-    Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
-    Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
+if (-not $SkipServiceControl -and (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
+    foreach ($name in @($CodexServiceName, $WorkerServiceName, $ServiceName)) {
+        Stop-Service $name -Force -ErrorAction SilentlyContinue
+    }
     Start-Sleep -Seconds 5
 }
 
@@ -40,12 +43,19 @@ if (Test-Path $release) { Move-Item $release $failed }
 Move-Item $previous $release
 Write-Host "  [OK] Previous release restored (bad release kept at $failed)" -ForegroundColor Green
 
+if ($SkipServiceControl) {
+    Write-Host '  [OK] Rehearsal complete; service control and health check skipped.' -ForegroundColor Green
+    exit 0
+}
+
 Start-Service $ServiceName
 Start-Service $WorkerServiceName -ErrorAction SilentlyContinue
+Start-Service $CodexServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 8
 
 try {
     $resp = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/health/ready" -TimeoutSec 15
+    if ($resp.status -ne 'ready') { throw "readiness reported '$($resp.status)'" }
     Write-Host "  [OK] Service healthy after rollback (status: $($resp.status))" -ForegroundColor Green
 } catch {
     Write-Host "  [WARNING] Rollback completed but health check failed: $_" -ForegroundColor Red

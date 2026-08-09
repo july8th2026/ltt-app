@@ -14,6 +14,49 @@
 
 ---
 
+## 2026-08-09 — H26.12B: backup/rollback + full release gate PASS
+
+- **Mục tiêu:** chứng minh có đường lùi thật và chạy release gate quan sát được
+  trước khi canary/deploy.
+- **Hạng mục:** H26.12B — hoàn thành; H26.12C còn mở.
+- **Trạng thái:** đủ điều kiện build/canary; chưa deploy.
+
+### Đã làm
+
+- Tạo backup production sang `D:\LTTBackups`, kiểm ZIP có database dump và
+  protected environment file. Retention 14 bản tự prune bản cũ 2026-08-02.
+- Restore rehearsal đủ 4 entry vào thư mục test dưới `C:\LTTPlatform`, không
+  dùng `-Live`, không sửa production.
+- Audit rollback bắt việc bỏ sót service Codex và không kiểm `status=ready`.
+  Thêm điều khiển đủ ba service, readiness nghiêm ngặt và chế độ rehearsal chỉ
+  xoay thư mục cô lập.
+- Rehearsal rollback đạt 3/3: good → app, bad → app.failed, previous hết hiệu
+  lực. Full gate chạy nền có log bền để host ngắt cũng không mất kết quả.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\\test_45_deploy_scripts.py tests\\test_46_deploy_realworld_fixes.py` | PASS 48 trong 0,47 giây |
+| `rollback.ps1 -SkipServiceControl` trên root trong `tmp` | PASS 3/3 assertion |
+| `backup.ps1 -IncludeSecrets -BackupDir D:\\LTTBackups` | PASS; ZIP 4 entry, có DB dump + protected env |
+| `restore.ps1` không `-Live` | PASS; giải nén 4 entry, live data không đổi |
+| `python tools\\gate.py` | PASS 9/9; pytest 1.596,9 giây |
+
+### Quyết định mới
+
+Không có. Sửa script để thực thi đúng topology ba service hiện hành.
+
+### Cách lùi lại
+
+Revert commit H26.12B. Backup predeploy vẫn giữ theo retention; không restore
+live trừ khi có sự cố thật.
+
+### Việc tiếp theo
+
+H26.12C: build release, canary, deploy, health/build-meta, public browser và
+re-audit Q/M/E + G0-G8.
+
 ## 2026-08-09 — H26.12A: browser pre-release và hai regression UX
 
 - **Mục tiêu:** kiểm hành vi customer thật trên bản release cô lập trước khi

@@ -56,6 +56,15 @@ def test_update_runs_migrations_before_start():
     assert text.index("alembic upgrade head") < text.index("Start-Service $ServiceName")
 
 
+def test_rollback_controls_all_runtime_services_and_supports_safe_rehearsal():
+    text = _read("rollback.ps1")
+
+    assert "CodexServiceName" in text
+    assert "SkipServiceControl" in text
+    assert "@($CodexServiceName, $WorkerServiceName, $ServiceName)" in text
+    assert "$resp.status -ne 'ready'" in text
+
+
 def test_service_env_loader_allows_empty_optional_integration_placeholders():
     text = _read("set-service-env.ps1")
     assert "skip empty" in text

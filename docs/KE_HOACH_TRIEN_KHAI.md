@@ -1856,7 +1856,11 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     11 route desktop + mobile sạch; Chat SSE 3 credit, Agent Text→Image 2 bước
     8/8 credit, Tạo ảnh AI 5 credit. Sửa overflow Seedance mobile và polling
     lịch sử Tạo ảnh không reload form. Targeted 9 PASS; quick gate 8/8.
-  - [ ] H26.12B — backup/rollback rehearsal + full release gate quan sát được.
+  - [x] H26.12B — **PASS 2026-08-09, chưa deploy**: backup production sang ổ
+    D có dump DB + protected env; restore cô lập đủ 4 entry; rollback rehearsal
+    3/3. Sửa rollback điều khiển đủ Web/Worker/Codex và bắt readiness thật.
+    Deploy regression 48 PASS; full `python tools\\gate.py` PASS 9/9, pytest
+    1.596,9 giây.
   - [ ] H26.12C — canary/deploy, health/build-meta, public browser smoke và
     re-audit Q/M/E + G0-G8.
 
