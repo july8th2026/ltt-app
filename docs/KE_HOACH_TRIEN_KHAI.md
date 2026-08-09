@@ -1827,7 +1827,7 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     Agent/Socialbot/registry/access 98 PASS. Không phát hiện gap code mới nên
     không tạo churn. Socialbot giữ frozen/maintenance theo Q10/Q78, không đụng
     runtime/OAuth; `public=False` tiếp tục ẩn anonymous và phân quyền sau login.
-- [ ] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
+- [x] H26.11 Phase 4: performance/privacy/ops, retention, SLO, load/soak và
   failure recovery.
   - [x] H26.11A — **PASS 2026-08-09, chưa deploy/chưa apply production**:
     retention report operator-only; event 365/30 ngày; CLI dry-run mặc định và
@@ -1852,6 +1852,13 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
     release gate cuối được chạy lại một lần ở H26.12, không giả báo PASS.
 - [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
   re-audit Q/M/E + G0-G8.
+  - [x] H26.12A — **PASS local 2026-08-09, chưa deploy**: browser pre-release
+    11 route desktop + mobile sạch; Chat SSE 3 credit, Agent Text→Image 2 bước
+    8/8 credit, Tạo ảnh AI 5 credit. Sửa overflow Seedance mobile và polling
+    lịch sử Tạo ảnh không reload form. Targeted 9 PASS; quick gate 8/8.
+  - [ ] H26.12B — backup/rollback rehearsal + full release gate quan sát được.
+  - [ ] H26.12C — canary/deploy, health/build-meta, public browser smoke và
+    re-audit Q/M/E + G0-G8.
 
 Điều kiện chặn: không xóa vật lý Kịch bản/Media trước khi ToolSpec dependency đã
 di trú; không coi 2 GPU 16 GB là một GPU 32 GB; không gọi app “đã hoàn thiện”

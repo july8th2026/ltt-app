@@ -73,3 +73,10 @@ def test_reference_preview_uses_selected_local_file_and_preserves_safe_dom_contr
     assert "insertAdjacentHTML" not in page
     assert "selectedFiles().length" in page
     assert "total>4" in page
+
+
+def test_empty_library_cannot_force_horizontal_scroll_on_mobile():
+    css = _read("server/static/ltt.css")
+
+    assert ".tv-empty{box-sizing:border-box;min-width:0;max-width:100%;" in css
+    assert ".tv-grid{grid-template-columns:minmax(0,1fr)}" in css

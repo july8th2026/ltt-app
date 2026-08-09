@@ -66,3 +66,14 @@ def test_image_template_has_no_inline_layout_and_safe_compare_dom():
     assert src.count('style="') == 1 and 'style="width:{{j.progress}}%"' in src
     assert "textContent" in src and "innerHTML" not in src
     assert "aria-pressed" in src and "role=\"progressbar\"" in src
+
+
+def test_image_history_polls_active_jobs_without_reloading_the_form():
+    from pathlib import Path
+    src = (Path(__file__).parents[1] / "apps" / "taoanh" / "templates" / "image.html").read_text("utf-8")
+
+    assert 'data-job-id="{{j.id}}"' in src
+    assert 'data-job-status="{{j.status}}"' in src
+    assert "/api/jobs/${card.dataset.jobId}" in src
+    assert "refreshHistory" in src
+    assert "window.location.reload" not in src

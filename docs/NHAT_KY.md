@@ -14,6 +14,50 @@
 
 ---
 
+## 2026-08-09 — H26.12A: browser pre-release và hai regression UX
+
+- **Mục tiêu:** kiểm hành vi customer thật trên bản release cô lập trước khi
+  backup/full gate/deploy.
+- **Hạng mục:** H26.12A — hoàn thành local; H26.12B/C còn mở.
+- **Trạng thái:** code/evidence local; chưa deploy.
+
+### Đã làm
+
+- Browser desktop/mobile qua 11 route customer hợp lệ, không overflow, console
+  và network sạch. Không coi `/account` thử nhầm là route sản phẩm.
+- Chạy Chat SSE và Agent Text→Image qua quote/credit/worker/output thật trên
+  fixture cô lập; Agent settle đúng 8/8 và reload giữ graph.
+- Bắt bằng trình duyệt lỗi Seedance mobile bị rule hai cột khai sau ghi đè rule
+  mobile. Khóa lưới một cột dưới 640 px và chặn empty state ép rộng viewport.
+- Bắt lỗi Tạo ảnh backend đã xong nhưng card giữ `queued 0%`. Thêm polling
+  owner-scoped, cập nhật tiến độ và thay riêng vùng history khi terminal để
+  không reload/làm mất dữ liệu form. Compare/clear vẫn hoạt động sau thay DOM.
+- Lưu evidence tại `docs/APP_AUDIT/platform/2026-08-08-app-update/evidence/`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Regression polling mới trước code | FAIL 1 đúng gap |
+| `python -m pytest -q tests\\test_116_taoanh_ui.py tests\\test_158_taovideo_h26.py` | PASS 9, 1 warning, 4,03 giây |
+| Browser Tạo ảnh live polling | PASS: queued → done + output sau 2 poll; console/network 0 |
+| Browser compare sau patch i18n cuối | PASS; console/network 0, không overflow |
+| `python tools\\gate.py --quick` lần 1 | FAIL i18n: một dòng client mới chưa dùng label dịch |
+| `python tools\\gate.py --quick` sau sửa | PASS 8/8 trong 25,5 giây |
+
+### Quyết định mới
+
+Không có. Đây là bugfix theo Q68/Q69/Q76, không đổi phạm vi sản phẩm.
+
+### Cách lùi lại
+
+Revert commit H26.12A. Không migration, không thay dữ liệu production.
+
+### Việc tiếp theo
+
+1. H26.12B: rehearsal backup/rollback rồi full gate quan sát được.
+2. H26.12C: canary/deploy và public post-deploy audit.
+
 ## 2026-08-09 — H26.11C: failure recovery PASS development
 
 - **Mục tiêu:** diễn tập hỏng worker/provider/storage và khóa việc hoàn credit,
