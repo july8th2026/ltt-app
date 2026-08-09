@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-09 — H27.2: Tạo Video Seedance DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** kiểm kê toàn bộ hành vi của Seedance theo LTT-AQA, tách kết
+  quả test kỹ thuật khỏi quality/release gate của sản phẩm.
+- **Hạng mục:** H27.2 hoàn thành audit; H27.3 AutoSub là app kế tiếp.
+- **Trạng thái:** audit-only, không sửa runtime, không deploy.
+
+### Đã làm
+
+- Lập đủ hồ sơ 00–07 tại `docs/APP_AUDIT/taovideo/2026-08-09/`; kiểm manifest,
+  model/cost, UI, route/reference, worker/provider, credit, storage, history,
+  bridge Upscale và test.
+- Playwright fixture cô lập: desktop/mobile, VI/EN, đủ năm job state, ảnh và
+  video thật, role/handle, model capability, prompt assist, quote, limit ref,
+  submit 2 variants và failure thiếu credit. Không gọi provider trả phí.
+- Phát hiện ba P1 chưa có test cũ: settle token thật có thể vượt hold làm số dư
+  âm; ref lưu trước hold rồi không cleanup; double-submit với ref UUID mới có
+  thể vượt dedupe và double hold.
+- Tái hiện trực tiếp lỗi EN→VI và mất prompt/model/count sau 400, drawer mobile
+  ẩn vẫn nhận focus, ObjectURL bị revoke gây request blob thất bại và quote
+  không tính video ref.
+- Đối chiếu tài liệu chính thức Runway, Google Flow/Veo, Adobe Firefly, Luma,
+  Kling, Pika và BytePlus. Chốt `Q57 · M64 · E87 · BLOCKED`, gồm 0 P0, 3 P1,
+  11 P2, 4 P3. Khuyến nghị PARITY có kiểm soát nhưng Phase 0 repair phải PASS
+  trước mọi edit/extend/scene feature.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright desktop/mobile, VI/EN, file thật, submit/failure/keyboard/network | Evidence 3 screenshot; không overflow; bắt lỗi locale/focus/blob/data loss |
+| `python -m pytest -q tests\test_79_taovideo.py tests\test_111_taovideo_ui.py tests\test_112_taovideo_saved_assets.py tests\test_113_taovideo_prompt_controls.py tests\test_158_taovideo_h26.py` | **39 passed**, 3,72s |
+| `python -m pytest -q tests\test_72_vanhanh.py tests\test_129_adaptive_page_layouts.py tests\test_133_agent_video_inputs.py tests\test_147_layering.py` | **38 passed**, 1 warning, 54,06s |
+| `python tools\gate.py --quick` | **PASS 8/8**, 26s |
+
+### Quyết định mới
+
+Không có quyết định mới. D1–D8 trong hồ sơ audit là câu hỏi khóa logic, chưa tự
+động trở thành quyết định nền tảng hay code.
+
+### Cách lùi lại
+
+Chỉ revert/xóa commit tài liệu H27.2; không có runtime, DB hoặc deploy cần lùi.
+
+### Còn tồn đọng
+
+Seedance vẫn BLOCKED cho mở rộng thương mại đến khi Phase 0 đóng P1 và G2/G3/G5.
+
+### Việc tiếp theo
+
+H27.3 audit DEEP AutoSub Video theo cùng A0–A10 và G0–G8.
+
 ## 2026-08-09 — H27.1: Upscale Video DEEP audit độc lập hoàn tất
 
 - **Mục tiêu:** áp dụng đầy đủ `quy_tac_audit.md` cho từng app, không dùng kết

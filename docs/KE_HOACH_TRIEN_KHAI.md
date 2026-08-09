@@ -1892,8 +1892,13 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   Chốt `Q64 · M57 · E84 · BLOCKED`; 0 P0, 2 P1, 10 P2, 4 P3. G2/G4/G5/G6/G8
   FAIL, G7 UNKNOWN. Targeted 50 PASS; browser video thật/VI/EN/responsive/
   controls/console/network đã chạy. Không sửa code, không deploy.
-- [ ] H27.2 Tạo Video Seedance DEEP — **đang audit**.
-- [ ] H27.3 AutoSub Video DEEP.
+- [x] H27.2 Tạo Video Seedance DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/taovideo/2026-08-09/` đủ 00–07 + 3 evidence screenshot.
+  Chốt `Q57 · M64 · E87 · BLOCKED`; 0 P0, 3 P1, 11 P2, 4 P3. G2/G3/G4/G5/
+  G6/G8 FAIL, G7 UNKNOWN. Targeted 77 PASS; quick gate 8/8; browser file thật,
+  2 variants, credit failure, VI/EN, desktop/mobile/keyboard/console/network đã
+  chạy. Không sửa code, không deploy.
+- [ ] H27.3 AutoSub Video DEEP — **đang audit**.
 - [ ] H27.4 Prompt AI DEEP.
 - [ ] H27.5 Tạo ảnh AI + Thumbnail mode DEEP.
 - [ ] H27.6 Tạo Clip ngắn DEEP.
