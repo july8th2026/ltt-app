@@ -41,4 +41,3 @@ download R2/local → settle token thật hoặc refund → gallery/download/ups
 | U-04 | R2 có lifecycle rule ngoài repo | Operator đọc policy, không chép secret | G5/G8 |
 | U-05 | Production success/queue/render P95/cost | ≥20 terminal/model | G7/G8 |
 | U-06 | Model endpoint hiện tại có đủ edit/extend/video-to-video capability | Capability probe staging + official API | Roadmap parity |
-

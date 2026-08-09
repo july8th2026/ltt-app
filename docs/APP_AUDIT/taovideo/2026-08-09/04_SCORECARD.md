@@ -58,4 +58,3 @@ Tổng quy đổi **56,5**, làm tròn **57/100**.
 | 39 test app trực tiếp | **39 passed**, 3,72s | EV-TEST-001 |
 | 38 test vận hành/layout/layer | **38 passed**, 1 warning, 54,06s | EV-TEST-001 |
 | `python tools\gate.py --quick` | **PASS 8/8**, 26s | EV-TEST-002 |
-

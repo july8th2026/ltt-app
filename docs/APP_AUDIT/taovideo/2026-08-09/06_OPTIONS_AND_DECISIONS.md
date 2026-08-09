@@ -31,4 +31,3 @@ PASS. Không thêm model/tool chỉ để tăng số lượng.
 | D8 | Release? | A fixture→gate→canary→auth prod verify; B deploy thẳng | **A** | Chưa khóa |
 
 Không BUILD khi D1–D8 chưa khóa. Audit app kế tiếp vẫn được tiếp tục độc lập.
-

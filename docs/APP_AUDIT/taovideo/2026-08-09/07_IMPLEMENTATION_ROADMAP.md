@@ -33,4 +33,3 @@ phase trước PASS.
 | Mobile keyboard drawer | FAIL | PASS |
 | Production success/P95 | UNKNOWN | ≥95%; queue P95≤30s |
 | Retry success | UI MISSING | ≥80% lỗi retryable |
-

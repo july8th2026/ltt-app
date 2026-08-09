@@ -56,4 +56,3 @@ blind evidence về chất lượng output.
   từng keyframe và lưu generation history. LTT hiện không có lifecycle tương tự.
 - Kling 3.0 và Flow đã đưa multi-shot/scene builder thành creator workflow.
   Với MVP LTT, chỉ nên thêm shot plan/sequence sau khi generation đơn đã an toàn.
-

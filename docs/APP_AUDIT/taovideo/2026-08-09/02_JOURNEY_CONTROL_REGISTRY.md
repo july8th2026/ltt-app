@@ -58,4 +58,3 @@
 | `/en/` 1440 | Quote/status/title/action lẫn VI | Không | Locale không bền | FAIL |
 | Insufficient credit EN | POST 400/console error; URL `/taovideo/queue` | Không | Prompt/model/count mất, EN→VI | FAIL |
 | 390×844 EN | Initial request không fail | Không | Tab/Escape focus vào panel ngoài màn hình | FAIL |
-
