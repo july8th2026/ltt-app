@@ -14,6 +14,56 @@
 
 ---
 
+## 2026-08-09 — H27.10: tổng hợp audit toàn portfolio hoàn tất
+
+- **Mục tiêu:** biến audit rời của từng app thành một inventory không sót,
+  không đếm trùng và một thứ tự BUILD tuần tự có PASS gate.
+- **Hạng mục:** H27.10 hoàn thành; H27 audit DONE.
+- **Trạng thái:** audit-only; chưa sửa runtime và chưa deploy.
+
+### Đã làm
+
+- Tạo `docs/APP_AUDIT/portfolio/2026-08-09-deep/` gồm dashboard, shared finding
+  registry, dependency/sequence, phase pass gates và Decision Gate A.
+- Kiểm kê 13/13 manifest; Thumbnail là child mode của Tạo ảnh nhưng có finding/
+  giá/control riêng. Có 12 hồ sơ audit độc lập, đủ 00–07.
+- Tổng hợp đúng **248 finding: 3 P0, 45 P1, 146 P2, 54 P3**. Khử trùng thành
+  12 chương trình nhưng giữ mọi acceptance trong file `05_FINDINGS.md` gốc.
+- Chốt 8 customer product chính có Q trung bình 53,8, M 53,4, E 90,6; cả 8
+  BLOCKED ở audit độc lập. Demo là INTERNAL; Socialbot/Kịch bản/Media chịu gate
+  theo đúng vai trò operator/runtime.
+- Chốt stop-the-line tuần tự: Socialbot authorization → Agent exactly-once →
+  Media SSRF → Chat provider/path/money; sau đó shared foundation và từng app.
+
+### Test/kiểm tra đã chạy
+
+H27.10 chỉ thêm tài liệu tổng hợp từ bằng chứng đã commit ở H27.1–H27.9; không
+tái chạy 597 targeted test chỉ để lập bảng tổng hợp.
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\\gate.py --quick` | **PASS 8/8**, 27,3 giây; secret scan 0 finding |
+
+### Quyết định mới
+
+Không có. `04_DECISION_GATE.md` là khuyến nghị A, chưa tự đổi quyết định nền
+tảng hoặc cấp quyền BUILD/DEPLOY.
+
+### Cách lùi lại
+
+Revert commit H27.10; không ảnh hưởng runtime/data/deploy.
+
+### Còn tồn đọng
+
+3 P0 và toàn bộ P1/P2/P3 vẫn là việc BUILD, không được diễn giải audit DONE
+thành app DONE.
+
+### Việc tiếp theo
+
+1. Khóa Decision Gate A.
+2. BUILD hạng mục đầu tiên: Socialbot route authorization, chạy test âm browser.
+3. Tiếp tục đúng sequence, nghiệm thu từng app trước app kế tiếp.
+
 ## 2026-08-09 — H27.9: audit maintenance/runtime theo từng app hoàn tất
 
 - **Mục tiêu:** không gộp các app ẩn/nội bộ thành một ghi chú; kiểm từng app

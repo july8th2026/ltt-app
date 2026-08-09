@@ -1951,8 +1951,13 @@ không sửa runtime, không deploy trước Decision Gate của app tương ứ
   dual-submit integration chặn G3/G4. Media Tools `Q59 · M47 · E90 · BLOCKED`;
   direct URL còn DNS-rebinding TOCTOU, artifact lifecycle và Agent orchestration
   chưa khép kín. 186 targeted runtime test PASS. Audit-only, không sửa/deploy.
-- [ ] H27.10 Tổng hợp cross-app: trùng finding, shared fix, dependency graph,
-  thứ tự BUILD, release gate từng app và portfolio.
+- [x] H27.10 Tổng hợp cross-app — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/portfolio/2026-08-09-deep/` khóa dashboard 13/13 manifest,
+  12/12 hồ sơ sản phẩm/runtime, 248 raw finding = 3 P0/45 P1/146 P2/54 P3;
+  khử trùng thành 12 shared program nhưng giữ acceptance từng app. Chốt thứ tự
+  tuần tự: stop-the-line Socialbot → Agent → Media → Chat; shared foundation;
+  Media/Kịch bản runtime → Agent; rồi từng customer app và portfolio P5. Audit
+  inventory DONE; runtime fix cố ý 0% vì H27 audit-only, chờ Decision Gate.
 
 Mỗi app bắt buộc có charter/current truth/journey-control registry/benchmark/
 scorecard/findings/options/roadmap; UNKNOWN không được đổi thành PASS vì app khác
