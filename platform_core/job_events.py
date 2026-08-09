@@ -39,11 +39,16 @@ CUSTOMER_RETENTION_DAYS = 365
 INTERNAL_RETENTION_DAYS = 30
 
 
-def _safe_text(value: Any, limit: int = 2000) -> str:
+def sanitize_text(value: Any, limit: int = 2000) -> str:
+    """Lọc chuỗi không tin cậy trước khi ghi CSDL hoặc operational log."""
     text = str(value or "")
     text = _EMAIL.sub("[Filtered email]", text)
     text = _SECRET_TEXT.sub("[Filtered]", text)
     return text[:limit]
+
+
+# Alias nội bộ giữ bề mặt cũ trong module; caller mới dùng tên công khai rõ nghĩa.
+_safe_text = sanitize_text
 
 
 def redact_details(value: Any) -> Any:

@@ -117,8 +117,8 @@ class Storage:
             return self.url_for(key, ttl_s=ttl_s)
         except StorageError:
             return None                     # thiếu cấu hình / key sai: đã biết trước
-        except Exception:                   # noqa: BLE001 - degrade nhưng phải thấy
-            log.exception("Không tạo được URL tải trực tiếp cho %s", key)
+        except Exception as exc:            # noqa: BLE001 - degrade nhưng phải thấy
+            _log_storage_failure("Không tạo được URL tải trực tiếp", key, exc)
             return None
 
     def try_put_url(self, key: str, ttl_s: int = DEFAULT_TTL_S,
@@ -129,9 +129,26 @@ class Storage:
             return self.put_url(key, ttl_s=ttl_s, content_type=content_type)
         except StorageError:
             return None
-        except Exception:                   # noqa: BLE001 - degrade nhưng phải thấy
-            log.exception("Không tạo được vé upload trực tiếp cho %s", key)
+        except Exception as exc:            # noqa: BLE001 - degrade nhưng phải thấy
+            _log_storage_failure("Không tạo được vé upload trực tiếp", key, exc)
             return None
+
+
+def _log_storage_failure(message: str, key: str, exc: Exception) -> None:
+    """Ghi lỗi storage có type/callsite nhưng không phát tán payload bí mật.
+
+    ``logging.exception`` mặc định render nguyên message của exception. SDK
+    provider có thể nhét credential/email vào đó, biến log thành kho secret.
+    Ta vẫn đặt ``exc_info`` để hệ giám sát phân loại đây là exception, nhưng
+    thay exception bằng bản đã lọc và không chuyển traceback chứa dữ liệu thô.
+    """
+    from platform_core.job_events import sanitize_text
+
+    safe_key = sanitize_text(key, limit=500)
+    safe_exc = RuntimeError(sanitize_text(
+        f"{type(exc).__name__}: {exc}", limit=2000))
+    log.error("%s cho %s", message, safe_key,
+              exc_info=(type(safe_exc), safe_exc, None))
 
 
 def _safe_key(key: str) -> str:

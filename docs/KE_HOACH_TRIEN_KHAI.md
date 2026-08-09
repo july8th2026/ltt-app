@@ -1838,10 +1838,18 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
   - [x] H26.11B — **PASS development 2026-08-09, chưa deploy**: SLO theo
     profile executor và metric tách từng app; dưới 20 finished là
     `insufficient_data`. Queue soak cô lập 300 Job/3 profile PASS, success 98%,
-    P95 5,444–5,607s, 3 credit/success; AutoSub 3.000 cue 0,429s/8,98 MB.
+    queue-wait p95 5,444–5,607s, 3 credit/success; AutoSub 3.000 cue
+    0,429s/8,98 MB.
     Targeted concurrency/body-cap/GPU 31 PASS; dual-GPU/matrix dùng evidence
     2026-08-08 còn hiệu lực, không chạy lặp. Production SLO chờ H26.12.
-  - [ ] H26.11C — failure recovery: restart/orphan/storage/provider/refund.
+  - [x] H26.11C — **PASS development 2026-08-09, chưa deploy**: worker
+    restart/orphan, retry/cancel race, provider/storage outage, process timeout,
+    GPU lease và refund/settle idempotent đạt 102 targeted test. Bịt gap lỗi
+    provider thô trong `Job.error`/worker/storage log; LocalStorage partial được
+    dọn nguyên tử. Secret scan 0, quick gate 8/8. Full gate lần 1 đạt 2.578 pass
+    nhưng đỏ 1 test do chữ `P95` bị hiểu nhầm là hệ kế hoạch P9; test đó đã sửa
+    và PASS. Output full gate lần 2 bị host làm mất sau khi process kết thúc;
+    release gate cuối được chạy lại một lần ở H26.12, không giả báo PASS.
 - [ ] H26.12 Phase 5: full gate, browser A-Z, backup/rollback, canary, deploy và
   re-audit Q/M/E + G0-G8.
 

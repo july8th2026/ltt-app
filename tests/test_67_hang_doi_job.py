@@ -178,6 +178,19 @@ def test_fail_het_luot_thi_thanh_error(db):
     assert j.finished_at is not None
 
 
+def test_fail_loc_bi_mat_va_email_truoc_khi_ghi_db(db):
+    """Lỗi provider là dữ liệu không tin cậy, không được biến Job thành kho secret."""
+    from platform_core.jobs import claim, fail
+
+    _submit(db, max_attempts=1)
+    job = claim(db, worker_id="w-private"); db.commit()
+    fail(db, job, "token=provider-secret customer@example.com"); db.commit()
+
+    assert "provider-secret" not in job.error
+    assert "customer@example.com" not in job.error
+    assert "[Filtered]" in job.error
+
+
 # ── Job mồ côi ────────────────────────────────────────────────────────────────
 
 def test_reclaim_orphan_nhat_lai_job_worker_chet(db):
@@ -251,3 +264,23 @@ def test_chay_job_loi_thi_fail(db):
     assert job.status == JOB_ERROR       # max_attempts=1 -> that bai la error luon
     assert "error" not in (job.result or {}), "job loi khong duoc co result"
     assert job.error, "phai ghi ly do loi"
+
+
+def test_worker_khong_ghi_bi_mat_cua_provider_vao_log(db, monkeypatch, caplog):
+    """Trace phục vụ debug nhưng payload bí mật phải bị lọc trước khi log."""
+    import logging
+    from platform_core import jobs as jobq
+    from platform_core.job_runner import _chay_mot_job
+
+    _submit(db, max_attempts=1)
+
+    def provider_down(_params, _ctx):
+        raise RuntimeError("api_key=provider-secret customer@example.com")
+
+    monkeypatch.setattr(jobq, "resolve_handler", lambda _job_type: provider_down)
+    with caplog.at_level(logging.WARNING, logger="platform_core.job_runner"):
+        assert _chay_mot_job("w-private-log") is True
+
+    assert "provider-secret" not in caplog.text
+    assert "customer@example.com" not in caplog.text
+    assert "[Filtered]" in caplog.text

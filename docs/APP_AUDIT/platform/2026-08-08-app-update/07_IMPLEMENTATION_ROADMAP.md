@@ -3,8 +3,9 @@
 Thực hiện **tuần tự**, mỗi phase phải PASS mới sang phase sau. Không deploy trong
 audit dossier này.
 
-**Tiến độ 2026-08-08:** Phase 0, Phase 1, Phase 2 và Phase 3.1 Upscale Video
-**PASS**; Phase 3.2 AutoSub là hạng mục tiếp theo. Chưa deploy.
+**Tiến độ 2026-08-09:** Phase 0–3 và Phase 4 development **PASS**. Retention,
+support export, SLO/load và failure recovery đã có evidence; Phase 5 release là
+hạng mục tiếp theo. Chưa deploy.
 
 ## Phase 0 - Scope, surface và rollback (P0)
 
@@ -133,6 +134,9 @@ control registry, Q/M/E, decision gate riêng rồi mới BUILD. Không suy đo�
 folder trống.
 
 ## Phase 4 - Performance, privacy và operations
+
+**Kết quả development:** PASS ngày 2026-08-09. Evidence H26.11A–C ở thư mục
+`evidence/`; production SLO/canary vẫn thuộc Phase 5.
 
 - Retention/purge/archive, support export đã lọc, dashboards/alerts/runbook.
 - Load/soak queue, upload lớn, worker restart, orphan reclaim, storage/provider

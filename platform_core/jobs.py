@@ -205,7 +205,8 @@ def fail(db: DbSession, job: Job, error: str) -> None:
     dần thay vì dồn dập.
     """
     job.attempts += 1
-    job.error = (error or "")[:5000]
+    safe_error = job_events.sanitize_text(error, limit=5000)
+    job.error = safe_error
     if job.attempts < job.max_attempts:
         cho = min(_RETRY_MAX_S, _RETRY_BASE_S * (2 ** (job.attempts - 1)))
         job.status = JOB_QUEUED
@@ -229,7 +230,7 @@ def fail(db: DbSession, job: Job, error: str) -> None:
         )
     job_events.append(
         db, job, "attempt_error", visibility=job_events.INTERNAL, level="error",
-        details={"attempt": job.attempts, "error": error},
+        details={"attempt": job.attempts, "error": safe_error},
         event_key=f"attempt-error:{job.attempts}",
     )
     db.flush()

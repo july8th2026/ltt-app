@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-09 — H26.11C: failure recovery PASS development
+
+- **Mục tiêu:** diễn tập hỏng worker/provider/storage và khóa việc hoàn credit,
+  retry, cancel không làm mất tiền hoặc phát tán bí mật.
+- **Hạng mục:** H26.11C — hoàn thành development; release gate cuối ở H26.12.
+- **Trạng thái:** code/evidence local; chưa deploy.
+
+### Đã làm
+
+- Tái hiện restart/orphan, retry/backoff, cancel race, provider outage,
+  LocalStorage/R2 outage, WhisperX timeout, GPU lease orphan và các luồng
+  settle/refund của Agent/Chat/AutoSub trên dữ liệu cô lập.
+- TDD bắt được 3 gap privacy: `Job.error`, warning của worker và exception log
+  storage giữ payload lỗi thô. Thêm `job_events.sanitize_text()`, lọc trước DB/
+  internal event/log và giữ exception signal đã lọc cho monitoring.
+- Khóa LocalStorage atomic: stream hỏng giữa chừng không tạo artifact đích và
+  không để lại `.part`.
+- Viết `docs/H26_OPERATIONS_RUNBOOK.md` và evidence H26.11C gồm JSON máy đọc
+  được. Không gọi provider/production, không dùng credit hoặc dữ liệu khách.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Ba regression redaction trước sửa | FAIL 3 đúng gap |
+| `python -m pytest tests\\test_67_hang_doi_job.py tests\\test_149_presign_khong_nuot_loi.py tests\\test_80_r2_storage.py -q` | PASS 35 trong 25,03 giây |
+| Targeted recovery 10 file | PASS 102, 1 warning, 115,75 giây |
+| `python tools\\scan_source_secrets.py` | PASS 1.136 file/175.783 dòng/0 finding |
+| `python tools\\gate.py --quick` | PASS 8/8 trong 25,5 giây |
+| `python tools\\gate.py` lần 1 | FAIL 1/9: 2.578 pass, 8 skip, 23 subtest; duy nhất test kế hoạch hiểu chữ `P95` là hệ P9 |
+| Test kế hoạch sau đổi thành `queue-wait p95` | PASS 1 trong 0,07 giây |
+| `python tools\\gate.py --quick` sau fix | PASS 8/8 trong 27,1 giây |
+| `python tools\\gate.py` lần 2 | Process kết thúc nhưng host đóng cell/mất output; **không ghi PASS**. Chạy release gate quan sát được ở H26.12. |
+
+### Quyết định mới
+
+Không có quyết định sản phẩm. Bổ sung control privacy kỹ thuật theo Q75/Q76:
+error từ provider là input không tin cậy và phải lọc trước mọi persistence/log.
+
+### Cách lùi lại
+
+Revert commit H26.11C. Không migration, không purge và không chạm production.
+
+### Việc tiếp theo
+
+1. H26.12 pre-release inventory và browser A-Z trên local/canary.
+2. Backup/rollback rehearsal rồi chạy full gate quan sát được trước deploy.
+3. Chỉ deploy sau khi toàn bộ release gate PASS.
+
 ## 2026-08-09 — H26.11B: SLO theo app + load/soak PASS development
 
 - **Mục tiêu:** không dùng throughput tổng che app chậm; đo queue, reliability

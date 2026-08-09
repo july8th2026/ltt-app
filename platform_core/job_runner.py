@@ -257,6 +257,8 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
         # 3a. Thất bại → fail(). Chỉ HOÀN credit khi job hết lượt (thành error);
         # nếu còn lượt (quay lại queued) thì giữ nguyên phần đã giữ để lần chạy
         # sau dùng — hoàn rồi giữ lại mỗi lần retry là thừa và dễ sai.
+        safe_error = job_events.sanitize_text(
+            f"{type(exc).__name__}: {exc}", limit=5000)
         for db in _one_session():
             job = db.get(Job, job_id)
             if job is not None:
@@ -268,11 +270,11 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                     db.commit()
                     log.info("job %s da huy cooperative", job_id[:8])
                     return True
-                jobq.fail(db, job, f"{type(exc).__name__}: {exc}")
+                jobq.fail(db, job, safe_error)
                 if job.status == JOB_ERROR:
                     _hoan_credit(db, job)
                 db.commit()
-        log.warning("job %s that bai: %s", job_id[:8], exc)
+        log.warning("job %s that bai: %s", job_id[:8], safe_error)
         return True
 
     # 3b. Thành công → complete() + quyết toán credit (cùng transaction).

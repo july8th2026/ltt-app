@@ -51,6 +51,9 @@ event đã lọc và tổng ledger theo loại; không chứa params/result/erro
 - Customer API không trả `params`, `result`, lỗi thô hoặc event internal.
 - Event internal cũng được lọc trước khi ghi; support export lọc lại lần hai để
   bảo vệ dữ liệu legacy.
+- `Job.error`, worker log và lỗi storage/provider cũng được lọc token/email
+  trước khi ghi; traceback/payload thô không được biến application log thành
+  kho bí mật thứ hai.
 - Raw technical endpoint/export bắt buộc operator. Customer chỉ thấy timeline
   bằng ngôn ngữ sản phẩm.
 - Secret scan và source log policy vẫn là gate trước release.

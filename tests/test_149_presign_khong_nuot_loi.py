@@ -49,6 +49,20 @@ def test_loi_bat_ngo_cua_r2_van_degrade_nhung_PHAI_vao_log(caplog):
     assert all(r.exc_info for r in ghi), "log thieu traceback -> khong debug duoc"
 
 
+def test_traceback_storage_loc_bi_mat_truoc_khi_ghi_log(caplog):
+    """Giữ traceback để debug nhưng không giữ credential từ SDK/provider."""
+    class R2RoBiMat(Storage):
+        def url_for(self, key, ttl_s=900):
+            raise RuntimeError("token=storage-secret owner@example.com")
+
+    with caplog.at_level(logging.ERROR, logger="platform_core.storage"):
+        assert R2RoBiMat().try_url_for("jobs/u1/file.mp4") is None
+
+    assert "storage-secret" not in caplog.text
+    assert "owner@example.com" not in caplog.text
+    assert "[Filtered]" in caplog.text
+
+
 def test_storage_error_thi_im_lang_vi_da_biet_truoc():
     """Thieu cau hinh R2 hay key sai la truong hop DA LUONG TRUOC, khong phai
     su co - bao dong moi lan tai anh se lam log vo dung."""

@@ -57,6 +57,25 @@ def test_local_put_url_none(tmp_path):
     assert s.put_url("uploads/u1/v.mp4") is None   # Local → app nhận multipart
 
 
+def test_local_storage_put_giua_chung_khong_de_lai_file_hong(tmp_path):
+    """Upload/storage outage không được biến partial thành artifact hợp lệ."""
+    import io
+    from platform_core.storage import LocalStorage
+
+    class BrokenStream(io.BytesIO):
+        def read(self, size=-1):
+            if self.tell() >= 4:
+                raise OSError("disk stream interrupted")
+            return super().read(4)
+
+    store = LocalStorage(str(tmp_path))
+    with pytest.raises(OSError):
+        store.put("jobs/u1/output.mp4", BrokenStream(b"0123456789"))
+
+    assert not store.exists("jobs/u1/output.mp4")
+    assert not list(tmp_path.rglob("*.part*"))
+
+
 def test_r2_put_url_presigned_rang_buoc_content_type(monkeypatch):
     from platform_core.storage import R2Storage
     r2 = R2Storage(bucket="ltt", endpoint_url="https://x.r2.cloudflarestorage.com",

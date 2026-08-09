@@ -1,0 +1,33 @@
+{
+  "date": "2026-08-09",
+  "environment": "isolated-development",
+  "production_data_used": false,
+  "provider_called": false,
+  "targeted_tests": {
+    "passed": 102,
+    "failed": 0,
+    "warnings": 1,
+    "seconds": 115.75
+  },
+  "redaction_tdd": {
+    "initial_failed": 3,
+    "after_fix_passed": 35
+  },
+  "secret_scan": {
+    "files": 1136,
+    "lines": 175783,
+    "findings": 0,
+    "state": "pass"
+  },
+  "failure_modes": {
+    "worker_orphan": "pass",
+    "retry_backoff": "pass",
+    "cancel_race": "pass",
+    "provider_outage_and_refund": "pass",
+    "storage_degrade_and_atomic_write": "pass",
+    "subprocess_timeout": "pass",
+    "gpu_lease_orphan": "pass",
+    "credit_idempotency": "pass",
+    "tenant_boundary": "pass"
+  }
+}
