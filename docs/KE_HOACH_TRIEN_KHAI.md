@@ -1874,3 +1874,35 @@ phase sau. Baseline tạm: `Q58 · M UNKNOWN · E31 · BLOCKED`.
 Điều kiện chặn: không xóa vật lý Kịch bản/Media trước khi ToolSpec dependency đã
 di trú; không coi 2 GPU 16 GB là một GPU 32 GB; không gọi app “đã hoàn thiện”
 theo quality gate khi còn G4/G8 FAIL.
+
+---
+
+## H27 — Audit DEEP độc lập từng app theo LTT-AQA
+
+Nguồn quy tắc: `docs/quy_tac_audit.md`. H26 là audit portfolio/release, không
+thay thế audit A0–A10 độc lập của từng sản phẩm. H27 chỉ audit và khóa roadmap;
+không sửa runtime, không deploy trước Decision Gate của app tương ứng.
+
+- [x] H27.0 Inventory và thứ tự — 2026-08-09: 8 customer product; audit tuần
+  tự, không chồng chéo: Upscale → Seedance → AutoSub → Prompt AI → Tạo ảnh +
+  Thumbnail → Clip ngắn → Chat AI → Agent AI; sau đó Socialbot maintenance và
+  Demo/Kịch bản/Media runtime contract; cuối cùng tổng hợp cross-app.
+- [x] H27.1 Upscale Video DEEP — 2026-08-09: hồ sơ
+  `docs/APP_AUDIT/upscalevideo/2026-08-09/` đủ 00–07 + evidence desktop/mobile.
+  Chốt `Q64 · M57 · E84 · BLOCKED`; 0 P0, 2 P1, 10 P2, 4 P3. G2/G4/G5/G6/G8
+  FAIL, G7 UNKNOWN. Targeted 50 PASS; browser video thật/VI/EN/responsive/
+  controls/console/network đã chạy. Không sửa code, không deploy.
+- [ ] H27.2 Tạo Video Seedance DEEP — **đang audit**.
+- [ ] H27.3 AutoSub Video DEEP.
+- [ ] H27.4 Prompt AI DEEP.
+- [ ] H27.5 Tạo ảnh AI + Thumbnail mode DEEP.
+- [ ] H27.6 Tạo Clip ngắn DEEP.
+- [ ] H27.7 Chat AI Studio DEEP.
+- [ ] H27.8 LTT Agent AI DEEP.
+- [ ] H27.9 Socialbot maintenance + Demo/Kịch bản/Media runtime contract.
+- [ ] H27.10 Tổng hợp cross-app: trùng finding, shared fix, dependency graph,
+  thứ tự BUILD, release gate từng app và portfolio.
+
+Mỗi app bắt buộc có charter/current truth/journey-control registry/benchmark/
+scorecard/findings/options/roadmap; UNKNOWN không được đổi thành PASS vì app khác
+đã có test hoặc vì portfolio từng deploy thành công.

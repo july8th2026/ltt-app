@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-09 — H27.1: Upscale Video DEEP audit độc lập hoàn tất
+
+- **Mục tiêu:** áp dụng đầy đủ `quy_tac_audit.md` cho từng app, không dùng kết
+  luận portfolio H26 thay cho evidence riêng của sản phẩm.
+- **Hạng mục:** H27.0 inventory và H27.1 Upscale Video — hoàn thành audit;
+  H27.2 Seedance là app kế tiếp.
+- **Trạng thái:** audit-only, không sửa runtime, không deploy.
+
+### Đã làm
+
+- Lập charter DEEP, persona/JTBD/budget và ranh giới production; kiểm manifest,
+  template/JS/CSS, routes, service, worker/GPU, credit, storage và test.
+- Mở fixture cô lập cổng 8130 bằng Playwright profile dự án; chạy desktop
+  1440×900, mobile 390×844, VI/EN, file video thật, quote, mutual exclusion,
+  filter/sort/grid, compare keyboard, cancel, console và network.
+- Benchmark E1 bằng tài liệu chính thức Topaz, TensorPix, AVCLabs, HitPaw, Krea,
+  CapCut; không giả là đã hands-on bản trả phí.
+- Hồ sơ 00–07 và evidence nằm ở
+  `docs/APP_AUDIT/upscalevideo/2026-08-09/`.
+- Chốt `Q64 · M57 · E84 · BLOCKED`: 2 P1 về upload policy và orphan artifact;
+  thêm gap entitlement/copy/i18n/history/retry/live progress/validation/download
+  và temporal enhancement. App đang PUBLIC theo H26 là sự thật triển khai,
+  nhưng không được nâng COMMERCIAL hoặc phát hành mới khi Phase 0 chưa PASS.
+
+### Test/kiểm tra đã chạy
+
+| Lệnh/luồng | Kết quả |
+|---|---|
+| Playwright desktop/mobile, upload video thật, VI/EN, controls | Không overflow; console 0; network 0 failed; bắt lỗi EN/cancel locale |
+| Compare keyboard | 50 → 100 → 90 PASS |
+| `python -m pytest -q tests/test_82_upscalevideo.py tests/test_114_upscale_ui.py tests/test_115_upscale_feature_benchmark.py tests/test_116_upscale_motion_features.py tests/test_157_upscale_h26.py tests/test_151_worker_gpu.py` | **50 passed**, 1 warning, 13.86s |
+| `python tools\gate.py --quick` | **PASS 8/8**, 25.8s |
+
+### Quyết định mới
+
+Không có quyết định kiến trúc/sản phẩm mới. `06_OPTIONS_AND_DECISIONS.md` đưa
+khuyến nghị PARITY có kiểm soát nhưng giữ D1–D7 ở trạng thái chưa khóa; audit
+không tự biến khuyến nghị thành code.
+
+### Cách lùi lại
+
+Chỉ xóa commit tài liệu H27.1; không có runtime/database/deploy để rollback.
+
+### Việc tiếp theo
+
+H27.2 audit DEEP Tạo Video Seedance theo đúng cùng bộ evidence 00–07.
+
 ## 2026-08-09 — H26.12C: canary, deploy production và release re-audit PASS
 
 - **Mục tiêu:** phát hành đúng archive đã kiểm, xác minh production và chốt
