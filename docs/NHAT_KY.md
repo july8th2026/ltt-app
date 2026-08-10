@@ -14,6 +14,50 @@
 
 ---
 
+## 2026-08-09 — H30: nâng cấp logging/observability cho mọi app
+
+- **Mục tiêu:** audit toàn hệ thống về log từng job, khả năng truy nguyên lỗi,
+  correlation, billing trace và cleanup chống tồn đọng rác.
+- **Phạm vi:** chỉ code/tài liệu trong `D:\LTTSTUDIOSAPP`; không đọc/ghi
+  `D:\BOT GEMINI`, không xóa dữ liệu production, chưa deploy.
+
+### Đã thay đổi
+
+- `platform_core.job_runner`: mọi handler nhận lifecycle event nội bộ
+  `execution_started/completed/failed/cancelled`, attempt, worker, duration,
+  result key names và error fingerprint; context log gắn job/app/type/worker/
+  correlation. Thêm `JobContext.event()` và `stage()` best-effort cho mốc đặc thù.
+- `platform_core.credit`: thêm `credit_held`; settle ghi held/actual/adjustment;
+  refund ghi amount; event cùng transaction với ledger.
+- `platform_core.observability`: JSONL process log redaction tại boundary,
+  rotating theo kích thước và prune có scope `ltt-*.jsonl*` theo TTL.
+- Entry point `server/run.py`, `job_worker.py`, `worker_main.py` và
+  `tools/agent_browser_server.py` khởi tạo file logging.
+- Tạo `docs/LOGGING_OBSERVABILITY.md`, cập nhật
+  `docs/DATA_RETENTION_POLICY.md`; cập nhật expectation web job cho event hold.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_155_logging_observability.py tests/test_151_job_events.py tests/test_67_hang_doi_job.py` | **33 passed**, 39.36s |
+| `python -m pytest -q tests/test_68_credit.py tests/test_69_web_jobs.py tests/test_151_worker_gpu.py` | **37 passed**, 1 warning deprecation, 51.96s |
+| `python tools/lint_app_contract.py` | PASS; 12 app, 1 warning demo legacy |
+| `python tools/scan_source_secrets.py` | PASS; 0 finding |
+| `git diff --check` | PASS |
+| `python tools\gate.py` lần 1 | **FAIL 7/9**: 1 silent-except mới và pytest thu nhầm `tmp/h26-canary.../tests` |
+| `python tools\gate.py` lần 2 | **TIMEOUT** sau 904s; không tính pass/fail |
+| `python tools\gate.py` lần cuối (2026-08-10) | **PASS 9/9**; pytest 2.593 test 1.675,9s; tổng 1.702,9s |
+
+### Xử lý sau gate fail
+
+- Exception formatter đã dùng `exc` an toàn thay vì nuốt lỗi.
+- `tools/gate.py` loại `tmp/` và `test-results/` khỏi pytest collection theo
+  đúng ranh giới repo; không xóa artefact audit của người dùng.
+- H30 chưa deploy production; commit được tạo sau kiểm diff/secret scan cuối.
+
+---
+
 ## 2026-08-09 — H29: Deep audit Seedance + canary image/video thật
 
 - **Mục tiêu:** tiếp tục từ H28; kiểm toàn bộ Seedance app, đối chiếu module

@@ -68,7 +68,11 @@ def _steps(quick: bool) -> list[Step]:
             continue
         steps.append(Step(f"frontend {name}", [npm, "test", "--", "--run"], folder))
     if not quick:
-        steps.append(Step("pytest", [sys.executable, "-m", "pytest", "-q"], ROOT))
+        # Browser/audit artifacts live under tmp/ and test-results/ by contract;
+        # they may contain copied ``tests`` folders and must never be collected
+        # as a second copy of the repository test suite.
+        steps.append(Step("pytest", [sys.executable, "-m", "pytest", "-q",
+                                      "--ignore=tmp", "--ignore=test-results"], ROOT))
     return steps
 
 

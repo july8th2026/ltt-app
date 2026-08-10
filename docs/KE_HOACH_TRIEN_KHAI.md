@@ -2027,3 +2027,30 @@ deploy**. Hồ sơ: `docs/APP_AUDIT/taovideo/2026-08-09/` (bổ sung
 app **chưa đạt “mọi tính năng vận hành tốt”**. G3 P0, audio contract và asset
 lifecycle là stop-line; Phase 0A–0D trong `07_IMPLEMENTATION_ROADMAP.md` phải
 được BUILD + regression trước canary trả phí tiếp theo.
+
+## H30 — Job logging/observability toàn hệ thống
+
+Mục tiêu: mọi app chạy qua hàng đợi có lịch sử job đủ để truy nguyên lỗi, credit
+và worker; process log có redaction, correlation và cleanup có giới hạn. Không
+đụng artifact/ledger bằng purge log, không deploy production trong hạng mục này.
+
+- [x] H30.0 Audit hiện trạng — 2026-08-09: `JobEvent`, job history, support
+  export, retention worker và 13 manifest đã được đối chiếu. Gap: thiếu mốc
+  execution/duration/error fingerprint, credit hold detail và rotating file log
+  thực thi.
+- [x] H30.1 Lifecycle instrumentation — 2026-08-09: runner tự ghi
+  `execution_started/completed/failed/cancelled`; `JobContext.event/stage` cho
+  mốc đặc thù; details không ghi params/result/provider payload.
+- [x] H30.2 Credit trace — 2026-08-09: ghi `credit_held`; settle ghi
+  held/actual/adjustment; refund ghi số credit hoàn trong cùng transaction.
+- [x] H30.3 Process log + TTL — 2026-08-09: thêm JSONL redacted rotating handler
+  tại `platform_core/observability.py`; server/job worker/publisher/agent
+  worker khởi tạo handler; chỉ prune `ltt-*.jsonl*` theo TTL 30 ngày mặc định.
+- [x] H30.4 Tài liệu/runbook — 2026-08-09: `docs/LOGGING_OBSERVABILITY.md`
+  và cập nhật `DATA_RETENTION_POLICY.md` với event catalogue, ma trận app,
+  biến cấu hình, cách tra correlation/support export và ranh giới purge.
+- [x] H30.5 Gate — 2026-08-10: `python tools\gate.py` **PASS 9/9**;
+  full pytest 2.593 test mất 1.675,9s, tổng gate 1.702,9s. Gate bỏ đúng
+  `tmp/`/`test-results/` khỏi collection vì đó là artefact browser/audit, không
+  phải test source. Chưa deploy production; commit riêng H30 được tạo sau bước
+  kiểm diff cuối.

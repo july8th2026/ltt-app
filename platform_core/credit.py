@@ -207,6 +207,17 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
             f"Khong du credit: can {amount}, con {con}.")
     _ghi(db, user_id=user_id, delta=-amount, kind=CREDIT_HOLD, job_id=job_id,
          note=f"giu cho job {job_id[:8]}")
+    # Durable internal event: support can explain the hold without reading the
+    # credit note or the app's private params.  It is in the same transaction
+    # as the hold, so a rollback cannot leave a misleading log row.
+    from platform_core import job_events
+    from platform_core.models import Job
+    job = db.get(Job, job_id)
+    if job is not None:
+        job_events.append(
+            db, job, "credit_held", visibility=job_events.INTERNAL,
+            details={"credit": int(amount)}, event_key="credit-held",
+        )
 
 
 def _da_ket_so(db: DbSession, job_id: str) -> bool:
@@ -243,7 +254,8 @@ def quyet_toan(db: DbSession, user_id: str, job_id: str, actual: int) -> None:
     if job is not None:
         job_events.append(
             db, job, "credit_settled", visibility=job_events.INTERNAL,
-            details={"credit": int(actual)}, event_key="credit-settled",
+            details={"held_credit": int(held), "credit": int(actual),
+                     "adjustment": int(dieu_chinh)}, event_key="credit-settled",
         )
 
 
@@ -267,5 +279,6 @@ def hoan(db: DbSession, user_id: str, job_id: str) -> None:
     if job is not None:
         job_events.append(
             db, job, "credit_refunded", public_message=N_("Credit đã được hoàn lại."),
-            details={"status": job.status}, event_key="credit-refunded",
+            details={"credit": int(held), "status": job.status},
+            event_key="credit-refunded",
         )

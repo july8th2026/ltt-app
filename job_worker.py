@@ -34,6 +34,8 @@ import signal
 import socket
 import sys
 
+from platform_core.observability import configure_logging
+
 log = logging.getLogger("job_worker")
 
 
@@ -59,6 +61,7 @@ def _chay_mot_worker(thu_tu: int) -> None:
         level=logging.INFO,
         format=f"%(asctime)s %(levelname)s [w{thu_tu}] %(name)s: %(message)s",
     )
+    configure_logging(component=f"job-worker-{thu_tu}")
     # pid nằm trong worker_id nên mỗi tiến trình là một worker khác nhau trong
     # bảng jobs — truy được job nào chạy ở đâu.
     worker_id = f"{socket.gethostname()}:{os.getpid()}"
@@ -82,6 +85,7 @@ def main() -> int:
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    configure_logging(component="job-worker")
 
     try:
         from platform_core.db import database_url

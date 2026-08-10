@@ -33,11 +33,13 @@ import sys
 import threading
 
 from core.worker_app import WorkerApplication, WorkerOwnershipError
+from platform_core.observability import configure_logging
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
+configure_logging(component="publisher-worker")
 log = logging.getLogger("worker_main")
 
 

@@ -61,6 +61,10 @@ class JobContext:
         # song song cùng đọc "GPU 0 trống" rồi cùng nạp model lên đó và OOM —
         # đó là lý do việc giành chỗ nằm ở nền tảng, không ở app.
         self.gpu_uuid = gpu_uuid
+        self.worker_id = ""
+        self.attempt = 0
+        self.app_slug = ""
+        self.job_type = ""
 
     @property
     def has_gpu(self) -> bool:
@@ -87,6 +91,40 @@ class JobContext:
                     raise JobCancelled()
                 jobq.set_progress(db, job, percent, message)
                 db.commit()
+
+    def event(self, event_code: str, message: str = "", *, details: dict | None = None,
+              level: str = "info", visibility: str = job_events.INTERNAL,
+              event_key: str | None = None) -> bool:
+        """Ghi một mốc nghiệp vụ/kỹ thuật cho job mà không lộ payload.
+
+        App dùng API này cho các mốc đặc thù (ví dụ ``provider_submitted`` hay
+        ``artifact_saved``). Lỗi ghi telemetry không được làm hỏng job đang
+        chạy; bộ đếm ``event_write_failures`` và process log vẫn lưu dấu vết.
+        """
+        try:
+            for db in _one_session():
+                job = db.get(Job, self.job_id)
+                if job is None:
+                    return False
+                job_events.append(
+                    db, job, event_code, public_message=message,
+                    details=details or {}, level=level, visibility=visibility,
+                    event_key=event_key,
+                )
+                db.commit()
+                return True
+        except Exception:  # noqa: BLE001 - observability must be best effort
+            log.exception("khong ghi duoc job event %s", event_code)
+            return False
+        return False
+
+    def stage(self, name: str, message: str = "", *, details: dict | None = None,
+              event_key: str | None = None) -> bool:
+        """Tên gọi ngắn cho app ghi mốc ``stage`` nội bộ."""
+        return self.event(
+            "stage", message or name, details={"stage": str(name)[:80], **(details or {})},
+            visibility=job_events.INTERNAL, event_key=event_key,
+        )
 
     def is_cancelled(self) -> bool:
         """Read the durable job state; safe for subprocess polling callbacks."""
@@ -242,52 +280,121 @@ def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
 
 def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                   ctx: "JobContext") -> bool:
-    try:
-        handler = jobq.resolve_handler(job_type)
-        result = handler(params, ctx)
-        if not isinstance(result, dict):
-            result = {"result": result}
-    except JobCancelled:
-        for db in _one_session():
-            job = db.get(Job, job_id)
-            if job is not None:
-                _hoan_credit(db, job); db.commit()
-        return True
-    except Exception as exc:
-        # 3a. Thất bại → fail(). Chỉ HOÀN credit khi job hết lượt (thành error);
-        # nếu còn lượt (quay lại queued) thì giữ nguyên phần đã giữ để lần chạy
-        # sau dùng — hoàn rồi giữ lại mỗi lần retry là thừa và dễ sai.
-        safe_error = job_events.sanitize_text(
-            f"{type(exc).__name__}: {exc}", limit=5000)
-        for db in _one_session():
-            job = db.get(Job, job_id)
-            if job is not None:
-                # A subprocess can notice cancellation by callback and unwind with
-                # its own exception type. Never turn that cancelled job back into
-                # queued/error through fail().
-                if job.status == JOB_CANCELLED:
-                    _hoan_credit(db, job)
-                    db.commit()
-                    log.info("job %s da huy cooperative", job_id[:8])
-                    return True
-                jobq.fail(db, job, safe_error)
-                if job.status == JOB_ERROR:
-                    _hoan_credit(db, job)
-                db.commit()
-        log.warning("job %s that bai: %s", job_id[:8], safe_error)
-        return True
-
-    # 3b. Thành công → complete() + quyết toán credit (cùng transaction).
+    started = time.perf_counter()
+    app_slug = ""
+    attempt = 0
+    correlation_id = ""
     for db in _one_session():
         job = db.get(Job, job_id)
         if job is not None:
-            if job.status == JOB_CANCELLED:
-                _hoan_credit(db, job); db.commit(); return True
-            jobq.complete(db, job, result)
-            _quyet_toan_credit(db, job, result)
+            app_slug = job.app_slug
+            attempt = int(job.attempts or 0) + 1
+            correlation_id = job.correlation_id or ""
+    ctx.worker_id = worker_id
+    ctx.attempt = attempt
+    ctx.app_slug = app_slug
+    ctx.job_type = job_type
+    from platform_core.observability import job_logging_context
+    with job_logging_context(job_id=job_id, app_slug=app_slug, job_type=job_type,
+                             worker_id=worker_id, correlation_id=correlation_id):
+        _runtime_event(
+            job_id, "execution_started", details={"worker_id": worker_id,
+            "attempt": attempt}, event_key=f"execution-started:{attempt}")
+        try:
+            handler = jobq.resolve_handler(job_type)
+            result = handler(params, ctx)
+            if not isinstance(result, dict):
+                result = {"result": result}
+        except JobCancelled:
+            _runtime_event(job_id, "execution_cancelled", level="warning",
+                           details={"attempt": attempt,
+                                    "duration_ms": _duration_ms(started)},
+                           event_key=f"execution-cancelled:{attempt}")
+            for db in _one_session():
+                job = db.get(Job, job_id)
+                if job is not None:
+                    _hoan_credit(db, job); db.commit()
+            return True
+        except Exception as exc:
+            # 3a. Thất bại → fail(). Chỉ hoàn credit khi job hết lượt;
+            # retry còn lại giữ nguyên hold để lượt sau dùng.
+            safe_error = job_events.sanitize_text(
+                f"{type(exc).__name__}: {exc}", limit=5000)
+            _runtime_event(job_id, "execution_failed", level="error", details={
+                "attempt": attempt, "error_type": type(exc).__name__,
+                "error": safe_error, "duration_ms": _duration_ms(started),
+                "error_fingerprint": job_events.error_fingerprint(safe_error),
+            }, event_key=f"execution-failed:{attempt}")
+            for db in _one_session():
+                job = db.get(Job, job_id)
+                if job is not None:
+                    # A subprocess can notice cancellation by callback and unwind
+                    # with its own exception type. Never fail() a cancelled job.
+                    if job.status == JOB_CANCELLED:
+                        _hoan_credit(db, job)
+                        db.commit()
+                        log.info("job %s da huy cooperative", job_id[:8])
+                        return True
+                    jobq.fail(db, job, safe_error)
+                    if job.status == JOB_ERROR:
+                        _hoan_credit(db, job)
+                    db.commit()
+            log.warning("job %s that bai: %s", job_id[:8], safe_error)
+            return True
+
+        # 3b. Thành công → complete() + quyết toán credit (cùng transaction).
+        _runtime_event(job_id, "execution_completed", details={
+            "attempt": attempt, "duration_ms": _duration_ms(started),
+            "result_keys": _result_keys(result),
+            "reported_credit_cost": _safe_credit_cost(result),
+        }, event_key=f"execution-completed:{attempt}")
+        for db in _one_session():
+            job = db.get(Job, job_id)
+            if job is not None:
+                if job.status == JOB_CANCELLED:
+                    _hoan_credit(db, job); db.commit(); return True
+                jobq.complete(db, job, result)
+                _quyet_toan_credit(db, job, result)
+                db.commit()
+        log.info("job %s xong", job_id[:8])
+        return True
+
+
+def _duration_ms(started: float) -> int:
+    return max(0, int(round((time.perf_counter() - started) * 1000)))
+
+
+def _result_keys(result: dict) -> list[str]:
+    """Chỉ ghi tên key, không ghi nội dung kết quả/artifact."""
+    return sorted(str(key)[:80] for key in result.keys())[:50]
+
+
+def _safe_credit_cost(result: dict) -> int | None:
+    value = result.get("credit_cost")
+    if isinstance(value, bool):
+        return None
+    try:
+        return max(0, int(value)) if value is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _runtime_event(job_id: str, event_code: str, *, details: dict | None = None,
+                   level: str = "info", event_key: str | None = None) -> bool:
+    """Best-effort internal event writer used around every app handler."""
+    try:
+        for db in _one_session():
+            job = db.get(Job, job_id)
+            if job is None:
+                return False
+            job_events.append(db, job, event_code, visibility=job_events.INTERNAL,
+                              level=level, details=details or {}, event_key=event_key)
             db.commit()
-    log.info("job %s xong", job_id[:8])
-    return True
+            return True
+    except Exception:  # noqa: BLE001
+        log.exception("khong ghi duoc runtime event %s", event_code)
+        return False
+    return False
 
 
 def _quyet_toan_credit(db, job: Job, result: dict) -> None:

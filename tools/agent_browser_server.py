@@ -224,7 +224,9 @@ def _advance(db, *, run_id, user_id):
 agent_jobs.advance = _advance
 
 from platform_core.job_runner import run_forever
+from platform_core.observability import configure_logging
 
 _stop = threading.Event()
+configure_logging(component="agent-browser-worker")
 threading.Thread(target=run_forever, args=("agent-browser-worker",),
                  kwargs={"stop": _stop.is_set}, daemon=True).start()

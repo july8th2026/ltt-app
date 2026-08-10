@@ -193,7 +193,7 @@ def test_owner_huy_job_va_thu_lai_tao_job_moi(env):
         assert credit.so_du(db, ua_id) == 100  # hold của job cũ đã hoàn
         assert [event.event_code for event in db.query(JobEvent).filter_by(
             job_id=old_id).order_by(JobEvent.sequence)] == [
-                "submitted", "cancelled", "credit_refunded"]
+                "submitted", "credit_held", "cancelled", "credit_refunded"]
     finally:
         try: next(gen)
         except StopIteration: pass

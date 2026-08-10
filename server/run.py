@@ -14,7 +14,9 @@ import os
 import uvicorn
 
 from server.app import create_app
+from platform_core.observability import configure_logging
 
+configure_logging(component="server")
 app = create_app()
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ hai.
 from __future__ import annotations
 
 import re
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -45,6 +46,11 @@ def sanitize_text(value: Any, limit: int = 2000) -> str:
     text = _EMAIL.sub("[Filtered email]", text)
     text = _SECRET_TEXT.sub("[Filtered]", text)
     return text[:limit]
+
+
+def error_fingerprint(value: Any) -> str:
+    """Ổn định hóa lỗi đã lọc để gom nhóm bug mà không lưu traceback/payload."""
+    return hashlib.sha256(sanitize_text(value, limit=5000).encode("utf-8")).hexdigest()[:16]
 
 
 # Alias nội bộ giữ bề mặt cũ trong module; caller mới dùng tên công khai rõ nghĩa.

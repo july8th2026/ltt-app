@@ -15,7 +15,7 @@ Tài liệu này mô tả platform web hiện hành. Các file JSONL/SQLite củ
 | Credit ledger | Không purge theo Job | `CreditEntry` append-only, không FK cascade theo Job | Chủ tài khoản ở UI đã lọc; operator |
 | Artifact/source/output | Policy storage riêng | Chưa tự xóa trong H26.11A | Owner qua opaque route; operator theo quyền |
 | Session | Theo session policy | Thu hồi/hết hạn độc lập | Owner/operator theo auth |
-| Application log | Size-based | Rotating handler; giới hạn theo cấu hình service | Operator |
+| Application log | Size + 30 ngày mặc định | `platform_core.observability`: JSONL rotating, redact boundary và prune file `ltt-*.jsonl*` theo `LTT_LOG_RETENTION_DAYS` | Operator |
 
 `Job` chỉ được purge khi ở trạng thái terminal `done/error/cancelled` và quá 365
 ngày. Job `queued/running` quá tuổi **không bị xóa** mà được báo trong dry-run để
@@ -42,8 +42,8 @@ chính sách độc lập.
 5. Chạy lại dry-run, kiểm `/ops/jobs-metrics`, ledger và health. Lặp batch nếu
    cần. Không bật lịch xóa Job tự động trước H26.12 canary.
 
-Worker chỉ tự purge event đã quá hạn; việc này không chạm `Job`, artifact hay
-ledger. Support export tại `/ops/jobs/{job_id}/support-export` chỉ chứa metadata,
+Worker chỉ tự purge event đã quá hạn; process log LTT cũng tự prune file do LTT
+tạo. Hai cơ chế không chạm `Job`, artifact hay ledger. Support export tại `/ops/jobs/{job_id}/support-export` chỉ chứa metadata,
 event đã lọc và tổng ledger theo loại; không chứa params/result/error/note/PII.
 
 ## Privacy và redaction
