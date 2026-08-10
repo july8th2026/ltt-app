@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import select
 
 from apps.qualitylab.manifest import MANIFEST
+from apps.qualitylab.evaluator_assets import public_asset_status
 from apps.qualitylab.registry import PACKS, public_registry
 from platform_core.i18n import _ as _t
 from platform_core.job_submit import dedupe_key_for, submit_with_credit
@@ -38,7 +39,8 @@ def _context(request: Request, db, *, error: str = "") -> dict:
     return {
         "request": request, "app": MANIFEST, "nav": MANIFEST.slug,
         "csrf_token": issue_csrf_token(request), "packs": PACKS,
-        "registry": public_registry(), "recent_jobs": _recent(db), "error": error,
+        "registry": public_registry(), "asset_status": public_asset_status(),
+        "recent_jobs": _recent(db), "error": error,
     }
 
 
@@ -87,6 +89,7 @@ async def evaluate(
     source_file: UploadFile | None = File(default=None),
     reference_key: str = Form(""),
     low_input_key: str = Form(""),
+    source_job_id: str = Form(""),
     reference_file: UploadFile | None = File(default=None),
     low_input_file: UploadFile | None = File(default=None),
     _operator: str = Depends(require_operator),
@@ -127,8 +130,19 @@ async def evaluate(
             raise HTTPException(status_code=400, detail=_t("Ảnh HR reference không tồn tại."))
         if low_key and not get_storage().exists(low_key):
             raise HTTPException(status_code=400, detail=_t("Ảnh LR đầu vào không tồn tại."))
-        if pack == "upscale_paired_diagnostic" and not ref_key:
-            raise HTTPException(status_code=400, detail=_t("Pack paired cần ảnh HR reference."))
+        if pack in {"upscale_paired_diagnostic", "upscale_video_diagnostic"} and not ref_key:
+            raise HTTPException(status_code=400, detail=_t("Pack paired cần HR reference."))
+        performance: dict = {}
+        source_job_value = source_job_id.strip()
+        if source_job_value:
+            source_job = db.get(Job, source_job_value)
+            if (source_job is None or source_job.app_slug != "upscalevideo" or
+                    source_job.status != "done"):
+                raise HTTPException(status_code=400, detail=_t(
+                    "Job nguồn phải là job Upscale đã hoàn tất."))
+            result = source_job.result if isinstance(source_job.result, dict) else {}
+            performance = {key: result.get(key) for key in (
+                "processing_seconds", "frames", "encoder", "preset", "target_height")}
         audio_expectation = None
         if expected_audio in {"yes", "no"}:
             audio_expectation = expected_audio == "yes"
@@ -139,6 +153,8 @@ async def evaluate(
         params = {
             "pack": pack, "source_key": key, "source_name": name,
             "reference_key": ref_key, "low_input_key": low_key,
+            "source_job_id": source_job_value,
+            "source_job_performance": performance,
             "expected_text_key": truth_key,
             "expectations": {
                 "expected_width": max(0, expected_width),
@@ -155,7 +171,7 @@ async def evaluate(
             dedupe_key=dedupe_key_for("qualitylab.evaluate", params), max_attempts=2,
         )
         db.flush()
-        return RedirectResponse(f"/jobs/{job.id}", status_code=303)
+        return RedirectResponse(f"/qualitylab/reports/{job.id}", status_code=303)
     except Exception:
         for item in ephemeral:
             get_storage().delete(item)
@@ -174,10 +190,13 @@ def report_page(request: Request, job_id: str,
                 _operator: str = Depends(require_operator), db=Depends(get_db)):
     job = _quality_job(db, job_id)
     report = (job.result or {}).get("report") if isinstance(job.result, dict) else None
-    return templates.TemplateResponse(request, "qualitylab_report.html", {
+    response = templates.TemplateResponse(request, "qualitylab_report.html", {
         "request": request, "app": MANIFEST, "nav": MANIFEST.slug,
         "job": job, "report": report,
     })
+    if report is None and job.status in {"queued", "running"}:
+        response.headers["Refresh"] = "2"
+    return response
 
 
 @router.get("/api/reports/{job_id}")

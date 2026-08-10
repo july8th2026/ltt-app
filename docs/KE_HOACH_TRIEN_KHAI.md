@@ -2085,8 +2085,20 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
     1.661,8 giây. LPIPS là candidate chưa cài; pyIQA/DOVER bị chặn vì license.
   - [ ] H31.3b Evaluator provisioning: LPIPS offline + checksum; pyIQA và DOVER
     đang BLOCKED do license phi thương mại, không được cài/bật lặng lẽ.
+    - [x] H31.3b1 Fail-closed provision gate — 2026-08-10: manifest source/
+      license/version, artifact bytes/SHA, chống traversal, không tải mạng và
+      chỉ public status; LPIPS chưa có assets hiển thị `manifest_missing`.
+    - [ ] H31.3b2 Cấp thật LPIPS 0.1.4 + AlexNet offline, ghi checksum rồi
+      benchmark; thiếu file vẫn giữ evaluator disabled/`UNKNOWN`.
   - [ ] H31.3c Video temporal + performance: frame sampling, flicker/motion,
     decode/encode contract, latency/VRAM/throughput trên GPU đích.
+    - [x] H31.3c1 Paired video diagnostic — 2026-08-10: contract A/V, sample
+      frame tránh EOF, PSNR/SSIM/bicubic delta, temporal residual và source-job
+      throughput. Targeted **28 pass**; Playwright video A-Z/report auto-refresh,
+      mobile 390 px, console/network sạch, ephemeral 0; full gate **PASS 9/9**,
+      pytest 1.670,9 giây.
+    - [ ] H31.3c2 GPU evidence: benchmark dataset trên GPU đích và ghi peak VRAM
+      theo job; hiện runtime Upscale chưa có field này nên bắt buộc `UNKNOWN`.
   - [ ] H31.3d Calibration: tối thiểu 30 ảnh + 12 video có slice/degradation,
     human A/B mù, baseline và threshold theo từng slice/model.
 - [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.

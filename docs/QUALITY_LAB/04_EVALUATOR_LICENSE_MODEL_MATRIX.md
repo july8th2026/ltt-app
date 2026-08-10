@@ -37,8 +37,10 @@ Thiếu một mục thì kết quả là `UNKNOWN`; không fallback sang một m
    benchmark tài nguyên/chất lượng).
 2. Tải package và weight trong tác vụ operator riêng có mạng; runtime worker
    không được tải mạng.
-3. Ghi manifest `{name, version, source_url, license, bytes, sha256}` cho linear
-   weight và backbone. Không ghi đường dẫn máy hay credential vào report.
+3. Ghi manifest evaluator `{schema_version, evaluator, package_version, source,
+   license, artifacts[]}`; mỗi artifact bắt buộc có `{role, filename,
+   source_url, license, bytes, sha256}`. Không ghi đường dẫn máy hay credential
+   vào report.
 4. Khi khởi động evaluator, kiểm tất cả checksum trước khi import/instantiate;
    thiếu hoặc lệch hash thì fail closed và trả `UNKNOWN` có reason code.
 5. Benchmark CPU/GPU, peak VRAM, latency và đối chiếu human A/B; chỉ sau đó mới

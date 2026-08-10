@@ -14,6 +14,60 @@
 
 ---
 
+## 2026-08-10 — H31.3b1 + H31.3c1: offline model gate và Upscale video diagnostic
+
+- **Mục tiêu:** thêm cổng cấp evaluator model fail-closed và bộ đo video paired
+  có temporal/performance evidence, vẫn không giả là đã calibrated.
+- **Trạng thái:** hai subphase hoàn tất local; H31.3 tổng thể còn mở, chưa
+  deploy production, chưa cài LPIPS, chưa có peak VRAM hoặc human threshold.
+
+### Đã thay đổi
+
+- `evaluator_assets.py` chỉ kiểm file local dưới `data_path`: evaluator/source/
+  license/package version, role, filename an toàn, bytes và SHA-256. LPIPS phải
+  đủ linear Alex v0.1 + AlexNet backbone; thiếu/sai/traversal đều fail closed,
+  không có code tải mạng và UI chỉ thấy reason/status không thấy local path.
+- Registry phân biệt BẬT / ỨNG VIÊN / BỊ CHẶN và hiển thị asset status. pyIQA/
+  DOVER vẫn blocked; LPIPS vẫn disabled vì `manifest_missing`.
+- Thêm pack `upscale_video_diagnostic`: candidate + HR video, LR tùy chọn;
+  contract kích thước/duration/FPS/audio PASS/FAIL; frame PSNR/local-SSIM,
+  bicubic delta, temporal delta/flicker và performance snapshot đều UNKNOWN
+  trước calibration. Peak VRAM thiếu từ runtime nguồn được hiển thị UNKNOWN.
+- Lấy frame tránh sát EOF sau khi test bắt lỗi clip 1 giây/4fps. Job hash các
+  input và xóa upload ephemeral trong `finally`.
+- Sửa UX: submit đi thẳng report app-owned; trạng thái `queued`/`running` tự
+  refresh 2 giây và có link timeline kỹ thuật, thay vì kết thúc ở Job chung mà
+  không có nút mở report.
+
+### Nghiệm thu browser thật
+
+- Playwright fixture cô lập cổng 8113 chạy video tổng hợp 96×64, 4fps, 1 giây
+  A-Z: upload candidate/reference → queued → auto-refresh → report UNKNOWN.
+  Contract PASS; PSNR 99, SSIM 1 và temporal 0 vẫn UNKNOWN đúng contract.
+- Desktop và mobile 390×844 render đúng; `scrollWidth=375`, console 0 lỗi/cảnh
+  báo, request hỏng 0, storage còn `EPHEMERAL_FILES=0`.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\test_166_quality_lab_upscale_video.py tests\test_165_quality_lab_evaluator_assets.py tests\test_164_quality_lab_upscale.py tests\test_156_quality_lab.py` | PASS, 28 test, 1,15 giây |
+| `python tools\gate.py --quick` | PASS 8/8, 28,6 giây |
+| `python tools\gate.py` | PASS 9/9; pytest PASS 1.670,9 giây; secret/app-contract/undefined-name/swallowed-error/i18n và 3 frontend đều PASS |
+| Playwright video A-Z + desktop/mobile + console/requests | PASS; report auto-refresh đúng, không overflow, input tạm còn 0 |
+
+### Cách lùi lại
+
+Gỡ `evaluator_assets.py`, `services/upscale_video.py`, hai test H31.3b/c và
+revert pack/form/report redirect. Không có migration, model cache hay thay đổi
+runtime của `apps/upscalevideo`.
+
+### Việc tiếp theo
+
+1. Bổ sung VMAF full-reference bằng `libvmaf` sẵn có, pin model/version và giữ
+   UNKNOWN trước calibration; không dùng VMAF làm một điểm tổng duy nhất.
+2. H31.3b2 cấp LPIPS offline; H31.3c2 GPU/peak VRAM; H31.3d dataset + human A/B.
+
 ## 2026-08-10 — H31.3a: Upscale paired diagnostic, chưa calibrated
 
 - **Mục tiêu:** xây checkpoint đo paired có bằng chứng cho Upscale mà không giả

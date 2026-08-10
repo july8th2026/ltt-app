@@ -13,6 +13,7 @@ from apps.qualitylab.registry import enabled_pack, pack_evaluators
 from apps.qualitylab.services.media import inspect_media, kind_for_name
 from apps.qualitylab.services.subtitle import inspect_subtitle
 from apps.qualitylab.services.upscale import inspect_upscale_pair
+from apps.qualitylab.services.upscale_video import inspect_upscale_video_pair
 from platform_core.i18n import N_
 from platform_core.storage import get_storage
 
@@ -77,19 +78,24 @@ def handle(params: dict, ctx=None) -> dict:
             ctx.progress(35, N_("Đang kiểm tra contract"))
 
         extra_artifacts: dict[str, object] = {}
-        if pack_key == "upscale_paired_diagnostic":
+        if pack_key in {"upscale_paired_diagnostic", "upscale_video_diagnostic"}:
             reference_key = str(params.get("reference_key") or "").strip()
             if not reference_key:
                 raise ValueError(N_("Pack paired thiếu ảnh HR reference."))
-            reference = work / "reference.png"
+            reference = work / ("reference" + (Path(reference_key).suffix or ".bin"))
             reference_sha256 = _copy_from_storage(reference_key, reference)
             low_key = str(params.get("low_input_key") or "").strip()
             low_path = None
             low_sha256 = ""
             if low_key:
-                low_path = work / "low-input.png"
+                low_path = work / ("low-input" + (Path(low_key).suffix or ".bin"))
                 low_sha256 = _copy_from_storage(low_key, low_path)
-            dimensions, summary = inspect_upscale_pair(local, reference, low_path)
+            if pack_key == "upscale_video_diagnostic":
+                dimensions, summary = inspect_upscale_video_pair(
+                    local, reference, low_path, work,
+                    dict(params.get("source_job_performance") or {}))
+            else:
+                dimensions, summary = inspect_upscale_pair(local, reference, low_path)
             extra_artifacts = {
                 "reference_sha256": reference_sha256,
                 "low_input_sha256": low_sha256 or None,

@@ -9,8 +9,9 @@
   .ql-value{text-align:right;font-variant-numeric:tabular-nums}.ql-result{display:block}.ql-json{max-height:420px;overflow:auto}
 </style>
 <p><a href="/qualitylab">{{ _("← Quality Lab") }}</a></p>
+<p><a href="/jobs/{{ job.id }}">{{ _("Mở timeline kỹ thuật của job") }}</a></p>
 {% if not report %}
-  <div class="alert alert-warn" role="status">{{ _("Job đang ở trạng thái") }} {{ job.status }}. {{ _("Report chưa sẵn sàng.") }}</div>
+  <div class="alert {{ 'alert-err' if job.status in ['error', 'cancelled'] else 'alert-warn' }}" role="status">{{ _("Job đang ở trạng thái") }} {{ job.status }}. {{ _("Report chưa sẵn sàng.") }}{% if job.status in ['queued', 'running'] %} {{ _("Trang sẽ tự làm mới.") }}{% endif %}</div>
 {% else %}
   <div class="alert {{ 'alert-ok' if report.overall_verdict == 'PASS' else ('alert-err' if report.overall_verdict == 'FAIL' else 'alert-warn') }}" role="status">
     <strong>{{ report.overall_verdict }}</strong> · {{ report.pack }} · schema {{ report.schema_version }}

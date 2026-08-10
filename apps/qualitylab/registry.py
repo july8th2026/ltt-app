@@ -45,6 +45,12 @@ EVALUATORS = {
         note=N_("PSNR/local-SSIM/bicubic/artifact proxy; chưa human-calibrated."),
         status="enabled",
     ),
+    "ltt_upscale_video": Evaluator(
+        key="ltt_upscale_video", version="0.1.0-diagnostic", license="LTT internal",
+        source="apps/qualitylab/services/upscale_video.py", enabled=True,
+        note=N_("Frame-paired/temporal/performance proxy; chưa human-calibrated."),
+        status="enabled",
+    ),
     "lpips": Evaluator(
         key="lpips", version="0.1.4-candidate", license="BSD-2-Clause",
         source="https://github.com/richzhang/PerceptualSimilarity", enabled=False,
@@ -102,6 +108,12 @@ PACKS = {
         "accepts": ("image",),
         "evaluators": ("pillow", "ltt_upscale_fr"),
         "description": N_("So candidate với HR và bicubic baseline; chưa release gate."),
+    },
+    "upscale_video_diagnostic": {
+        "label": N_("Upscale video diagnostic"),
+        "accepts": ("video",),
+        "evaluators": ("ffprobe", "ltt_upscale_video"),
+        "description": N_("Contract A/V, paired frame, temporal và job performance."),
     },
     "autosub_foundation": {
         "label": N_("AutoSub foundation"),

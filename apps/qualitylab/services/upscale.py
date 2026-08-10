@@ -74,7 +74,7 @@ def _blockiness(array: np.ndarray, block: int = 8) -> float:
     return float(np.mean(parts)) if parts else 0.0
 
 
-def _paired_scores(reference: np.ndarray, candidate: np.ndarray) -> dict[str, float]:
+def paired_scores(reference: np.ndarray, candidate: np.ndarray) -> dict[str, float]:
     return {
         "psnr_db": round(_psnr(reference, candidate), 4),
         "ssim_local": round(_local_ssim(reference, candidate), 6),
@@ -108,7 +108,7 @@ def inspect_upscale_pair(candidate_path: Path, reference_path: Path,
         return [contract], {"candidate_shape": list(candidate.shape),
                             "reference_shape": list(reference.shape)}
 
-    candidate_scores = _paired_scores(reference, candidate)
+    candidate_scores = paired_scores(reference, candidate)
     full_reference = Dimension("full_reference", N_("Full-reference"), "UNKNOWN", (
         Metric("psnr_db", "PSNR", candidate_scores["psnr_db"], "dB", "UNKNOWN",
                direction="higher", valid_range="0..99",
@@ -125,7 +125,7 @@ def inspect_upscale_pair(candidate_path: Path, reference_path: Path,
         baseline_image = Image.fromarray(low.astype(np.uint8), mode="RGB").resize(
             (reference.shape[1], reference.shape[0]), Image.Resampling.BICUBIC)
         baseline = np.asarray(baseline_image, dtype=np.float32)
-        baseline_scores = _paired_scores(reference, baseline)
+        baseline_scores = paired_scores(reference, baseline)
         psnr_delta = candidate_scores["psnr_db"] - baseline_scores["psnr_db"]
         ssim_delta = candidate_scores["ssim_local"] - baseline_scores["ssim_local"]
         baseline_verdict = "WARN" if psnr_delta < 0 and ssim_delta < 0 else "UNKNOWN"

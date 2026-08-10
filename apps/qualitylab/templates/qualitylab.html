@@ -29,11 +29,12 @@
       <div class="field"><label for="ql-key">{{ _("Hoặc storage key") }}</label><input id="ql-key" name="source_key" type="text" placeholder="jobs/.../output.mp4"></div>
       <div class="field"><label for="ql-name">{{ _("Tên file nếu key không có đuôi") }}</label><input id="ql-name" name="source_name" type="text" placeholder="output.mp4"></div>
       <details><summary>{{ _("Đối chiếu Upscale paired") }}</summary>
-        <p class="hint">{{ _("Chỉ dùng cho Upscale paired diagnostic. Candidate ở ô File cần đo phía trên.") }}</p>
-        <div class="field"><label for="ql-reference">{{ _("Ảnh HR reference") }}</label><input id="ql-reference" name="reference_file" type="file" accept="image/*"></div>
+        <p class="hint">{{ _("Dùng cho Upscale paired ảnh/video. Candidate ở ô File cần đo phía trên.") }}</p>
+        <div class="field"><label for="ql-reference">{{ _("HR reference (ảnh/video)") }}</label><input id="ql-reference" name="reference_file" type="file" accept="image/*,video/*"></div>
         <div class="field"><label for="ql-reference-key">{{ _("Hoặc HR storage key") }}</label><input id="ql-reference-key" name="reference_key" type="text" placeholder="quality-datasets/.../hr.png"></div>
-        <div class="field"><label for="ql-low">{{ _("Ảnh LR đầu vào để dựng bicubic baseline") }}</label><input id="ql-low" name="low_input_file" type="file" accept="image/*"></div>
+        <div class="field"><label for="ql-low">{{ _("LR đầu vào để dựng bicubic baseline") }}</label><input id="ql-low" name="low_input_file" type="file" accept="image/*,video/*"></div>
         <div class="field"><label for="ql-low-key">{{ _("Hoặc LR storage key") }}</label><input id="ql-low-key" name="low_input_key" type="text" placeholder="quality-datasets/.../lr.png"></div>
+        <div class="field"><label for="ql-source-job">{{ _("Job Upscale nguồn (tùy chọn)") }}</label><input id="ql-source-job" name="source_job_id" type="text" placeholder="UUID job đã hoàn tất"><span class="hint">{{ _("Dùng snapshot thật để tính processing time/throughput; peak VRAM chưa có sẽ là UNKNOWN.") }}</span></div>
       </details>
       <details><summary>{{ _("Kỳ vọng kỹ thuật") }}</summary>
         <div class="row"><div class="field"><label>{{ _("Rộng (px)") }}</label><input name="expected_width" type="number" min="0" value="0"></div>
@@ -53,6 +54,7 @@
         <span class="badge {{ 'badge-ok' if evaluator.enabled else 'badge-err' if evaluator.status == 'blocked' else 'badge-warn' }}">{{ _("BẬT") if evaluator.enabled else _("BỊ CHẶN") if evaluator.status == 'blocked' else _("ỨNG VIÊN") if evaluator.status == 'candidate' else _("CHƯA DUYỆT") }}</span>
         <div class="dim">{{ evaluator.version }} · {{ evaluator.license }}</div>
         {% if evaluator.note %}<div class="dim">{{ evaluator.note }}</div>{% endif %}
+        {% if key in asset_status %}<div class="dim">{{ _("Assets: đã verify") if asset_status[key].ready else _("Assets: chưa sẵn sàng") }} · {{ asset_status[key].reason }}</div>{% endif %}
       </div>{% endfor %}
     </div></div>
     <div class="card ql-table"><h2>{{ _("Evaluation gần đây") }}</h2>
