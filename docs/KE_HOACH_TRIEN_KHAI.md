@@ -2077,6 +2077,18 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
   ephemeral còn 0 file. `python tools\gate.py` **PASS 9/9**; full pytest
   1.680,5 giây.
 - [ ] H31.3 Pack Upscale calibrated: FR/NR/temporal/artifact/performance.
+  - [x] H31.3a Paired diagnostic + dataset contract — 2026-08-10: PSNR/
+    local-SSIM, bicubic delta, artifact proxy, hash ba đầu vào, consent/license/
+    retention gate; mọi metric chưa calibrated giữ `UNKNOWN` và không release
+    gate. Targeted **51 pass**, Playwright desktop/mobile console/network sạch,
+    input ephemeral còn 0 file; `python tools\gate.py` **PASS 9/9**, full pytest
+    1.661,8 giây. LPIPS là candidate chưa cài; pyIQA/DOVER bị chặn vì license.
+  - [ ] H31.3b Evaluator provisioning: LPIPS offline + checksum; pyIQA và DOVER
+    đang BLOCKED do license phi thương mại, không được cài/bật lặng lẽ.
+  - [ ] H31.3c Video temporal + performance: frame sampling, flicker/motion,
+    decode/encode contract, latency/VRAM/throughput trên GPU đích.
+  - [ ] H31.3d Calibration: tối thiểu 30 ảnh + 12 video có slice/degradation,
+    human A/B mù, baseline và threshold theo từng slice/model.
 - [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.
 - [ ] H31.5 Pack Seedance/Image/Thumbnail/Clip/Text/Agent tuần tự.
 - [ ] H31.6 Release regression, trend, canary, rollback và LTT-AQA audit.

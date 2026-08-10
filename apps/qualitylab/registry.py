@@ -18,6 +18,7 @@ class Evaluator:
     needs_gpu: bool = False
     model_sha256: str = ""
     note: str = ""
+    status: str = "planned"
 
 
 EVALUATORS = {
@@ -25,30 +26,46 @@ EVALUATORS = {
         key="pillow", version=PILLOW_VERSION, license="HPND",
         source="https://github.com/python-pillow/Pillow", enabled=True,
         note=N_("Giải mã và đọc contract ảnh; không phải metric cảm nhận."),
+        status="enabled",
     ),
     "ffprobe": Evaluator(
         key="ffprobe", version="system", license=N_("LGPL/GPL theo build cài đặt"),
         source="https://ffmpeg.org/", enabled=True,
         note=N_("Phase foundation; deploy phải lưu ffprobe -version/configuration."),
+        status="enabled",
     ),
     "ltt_subtitle_rules": Evaluator(
         key="ltt_subtitle_rules", version="1.0.0", license="LTT internal",
         source="apps/qualitylab/services/subtitle.py", enabled=True,
+        status="enabled",
+    ),
+    "ltt_upscale_fr": Evaluator(
+        key="ltt_upscale_fr", version="0.1.0-diagnostic", license="LTT internal",
+        source="apps/qualitylab/services/upscale.py", enabled=True,
+        note=N_("PSNR/local-SSIM/bicubic/artifact proxy; chưa human-calibrated."),
+        status="enabled",
     ),
     "lpips": Evaluator(
-        key="lpips", version="planned", license="BSD-2-Clause",
+        key="lpips", version="0.1.4-candidate", license="BSD-2-Clause",
         source="https://github.com/richzhang/PerceptualSimilarity", enabled=False,
-        needs_gpu=True, note=N_("H31.3: pin package/weights/hash trước khi bật."),
+        needs_gpu=True, note=N_(
+            "Ứng viên thương mại; phải provision offline linear weight + "
+            "torchvision backbone và khóa checksum trước khi bật."),
+        status="candidate",
     ),
     "pyiqa": Evaluator(
-        key="pyiqa", version="planned", license="review-required",
+        key="pyiqa", version="current", license="PolyForm Noncommercial 1.0.0",
         source="https://github.com/chaofengc/IQA-PyTorch", enabled=False,
-        needs_gpu=True, note=N_("H31.3: duyệt từng metric/weight, không duyệt theo repo chung."),
+        needs_gpu=True, note=N_(
+            "BLOCKED cho SaaS thương mại; chỉ xem xét lại khi có license riêng."),
+        status="blocked",
     ),
     "dover_mobile": Evaluator(
-        key="dover_mobile", version="planned", license="review-required",
+        key="dover_mobile", version="current", license="S-Lab License 1.0",
         source="https://github.com/VQAssessment/DOVER", enabled=False,
-        needs_gpu=True, note=N_("H31.3: benchmark VRAM/runtime trên GPU 16 GB."),
+        needs_gpu=True, note=N_(
+            "BLOCKED cho SaaS thương mại; tác giả yêu cầu liên hệ để dùng thương mại."),
+        status="blocked",
     ),
     "whisperx": Evaluator(
         key="whisperx", version="planned", license="BSD-2-Clause",
@@ -79,6 +96,12 @@ PACKS = {
         "accepts": ("image", "video"),
         "evaluators": ("pillow", "ffprobe"),
         "description": N_("Contract đầu ra Upscale; perceptual/temporal mở ở H31.3."),
+    },
+    "upscale_paired_diagnostic": {
+        "label": N_("Upscale paired diagnostic"),
+        "accepts": ("image",),
+        "evaluators": ("pillow", "ltt_upscale_fr"),
+        "description": N_("So candidate với HR và bicubic baseline; chưa release gate."),
     },
     "autosub_foundation": {
         "label": N_("AutoSub foundation"),

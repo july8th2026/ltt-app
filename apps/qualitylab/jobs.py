@@ -12,6 +12,7 @@ from apps.qualitylab.contracts import build_report
 from apps.qualitylab.registry import enabled_pack, pack_evaluators
 from apps.qualitylab.services.media import inspect_media, kind_for_name
 from apps.qualitylab.services.subtitle import inspect_subtitle
+from apps.qualitylab.services.upscale import inspect_upscale_pair
 from platform_core.i18n import N_
 from platform_core.storage import get_storage
 
@@ -75,7 +76,25 @@ def handle(params: dict, ctx=None) -> dict:
         if ctx is not None:
             ctx.progress(35, N_("Đang kiểm tra contract"))
 
-        if source_kind == "subtitle":
+        extra_artifacts: dict[str, object] = {}
+        if pack_key == "upscale_paired_diagnostic":
+            reference_key = str(params.get("reference_key") or "").strip()
+            if not reference_key:
+                raise ValueError(N_("Pack paired thiếu ảnh HR reference."))
+            reference = work / "reference.png"
+            reference_sha256 = _copy_from_storage(reference_key, reference)
+            low_key = str(params.get("low_input_key") or "").strip()
+            low_path = None
+            low_sha256 = ""
+            if low_key:
+                low_path = work / "low-input.png"
+                low_sha256 = _copy_from_storage(low_key, low_path)
+            dimensions, summary = inspect_upscale_pair(local, reference, low_path)
+            extra_artifacts = {
+                "reference_sha256": reference_sha256,
+                "low_input_sha256": low_sha256 or None,
+            }
+        elif source_kind == "subtitle":
             if local.stat().st_size > MAX_TEXT_BYTES:
                 raise ValueError(N_("File subtitle vượt 4 MB."))
             raw = local.read_text(encoding="utf-8-sig")
@@ -96,7 +115,7 @@ def handle(params: dict, ctx=None) -> dict:
                      "summary": summary},
             source_artifact={"sha256": source_sha256,
                              "bytes": local.stat().st_size,
-                             "kind": source_kind},
+                             "kind": source_kind, **extra_artifacts},
             evaluators=pack_evaluators(pack_key),
             environment=_environment(),
         )

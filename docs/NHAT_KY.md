@@ -14,6 +14,61 @@
 
 ---
 
+## 2026-08-10 — H31.3a: Upscale paired diagnostic, chưa calibrated
+
+- **Mục tiêu:** xây checkpoint đo paired có bằng chứng cho Upscale mà không giả
+  metric proxy là chất lượng cảm nhận hoặc release gate.
+- **Trạng thái:** H31.3a hoàn tất local; H31.3 tổng thể còn mở, chưa deploy
+  production, chưa tải/cài model học máy.
+
+### Đã thay đổi
+
+- Thêm dataset manifest version/hash, sample license/ownership và consent +
+  retention bắt buộc cho dữ liệu production; storage key được chặn traversal.
+- Thêm pack `upscale_paired_diagnostic`: candidate/HR reference bắt buộc cùng
+  kích thước; LR tùy chọn dựng bicubic baseline; report có PSNR, local SSIM,
+  delta baseline, gradient ratio, blockiness và SHA-256 của cả ba đầu vào.
+- Chỉ contract giải mã/kích thước được PASS/FAIL. FR/baseline/artifact chưa
+  human-calibrated luôn `UNKNOWN` (chỉ WARN khi candidate cùng regress PSNR và
+  SSIM so với bicubic); `release_gate_eligible` vẫn false.
+- UI operator nhận ba file/key, hiển thị rõ evaluator BẬT / ỨNG VIÊN / BỊ CHẶN.
+  Raw upload vẫn là ephemeral và worker xóa trong `finally`.
+- Khóa ma trận giấy phép tại
+  `docs/QUALITY_LAB/04_EVALUATOR_LICENSE_MODEL_MATRIX.md`: LPIPS 0.1.4/BSD là
+  candidate nhưng cần offline weight/backbone + checksum; pyIQA PolyForm
+  Noncommercial và DOVER S-Lab 1.0 bị chặn cho SaaS thương mại nếu chưa có
+  license riêng.
+
+### Nghiệm thu browser thật
+
+- Fixture cô lập cổng 8113, tài khoản admin test: chạy paired job A-Z, report
+  overall `UNKNOWN`, contract PASS, input ephemeral còn 0 file.
+- Sau cập nhật registry: desktop render đúng BẬT/ỨNG VIÊN/BỊ CHẶN; mobile
+  390×844 mở panel paired, `scrollWidth=375`, không tràn ngang. Console 0 lỗi/
+  cảnh báo và không có request hỏng. Không dùng media production.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\test_164_quality_lab_upscale.py tests\test_156_quality_lab.py tests\test_60_app_registry.py` | PASS, 51 test, 1,42 giây |
+| `python tools\gate.py --quick` | PASS 8/8, khoảng 30 giây |
+| `python tools\gate.py` | PASS 9/9; pytest PASS 1.661,8 giây; secret/app-contract/undefined-name/swallowed-error/i18n và 3 frontend đều PASS |
+| Playwright desktop/mobile + console/requests | PASS; paired report đúng, registry đúng, không overflow, input tạm còn 0 |
+
+### Cách lùi lại
+
+Gỡ `datasets.py`, `services/upscale.py`, pack/field UI paired và test H31.3a;
+revert riêng ma trận evaluator. Không có migration, model cache mới hay thay đổi
+runtime của `apps/upscalevideo`.
+
+### Việc tiếp theo
+
+1. H31.3b: xây provision manifest/checksum cho LPIPS nhưng giữ disabled cho tới
+   khi model được cấp offline và benchmark; không dùng pyIQA/DOVER thương mại.
+2. H31.3c: frame sampling, temporal/flicker/motion, media contract và performance
+   GPU; sau đó H31.3d mới tạo dataset đủ mẫu và human A/B calibration.
+
 ## 2026-08-10 — H31.1–H31.2: Quality Lab foundation operator-only
 
 - **Mục tiêu:** dựng hợp đồng đo chất lượng có bằng chứng và app nội bộ chạy

@@ -85,6 +85,10 @@ async def evaluate(
     expected_fps: float = Form(0),
     expected_audio: str = Form(""),
     source_file: UploadFile | None = File(default=None),
+    reference_key: str = Form(""),
+    low_input_key: str = Form(""),
+    reference_file: UploadFile | None = File(default=None),
+    low_input_file: UploadFile | None = File(default=None),
     _operator: str = Depends(require_operator),
     db=Depends(get_db),
 ):
@@ -105,12 +109,26 @@ async def evaluate(
     ephemeral: list[str] = []
     key = source_key.strip()
     name = PurePosixPath(source_name or key).name
+    ref_key = reference_key.strip()
+    low_key = low_input_key.strip()
     try:
         if source_file is not None and source_file.filename:
             key, name = await _store_upload(source_file, current.id)
             ephemeral.append(key)
         if not key or not get_storage().exists(key):
             raise HTTPException(status_code=400, detail=_t("Source artifact không tồn tại."))
+        if reference_file is not None and reference_file.filename:
+            ref_key, _ = await _store_upload(reference_file, current.id)
+            ephemeral.append(ref_key)
+        if low_input_file is not None and low_input_file.filename:
+            low_key, _ = await _store_upload(low_input_file, current.id)
+            ephemeral.append(low_key)
+        if ref_key and not get_storage().exists(ref_key):
+            raise HTTPException(status_code=400, detail=_t("Ảnh HR reference không tồn tại."))
+        if low_key and not get_storage().exists(low_key):
+            raise HTTPException(status_code=400, detail=_t("Ảnh LR đầu vào không tồn tại."))
+        if pack == "upscale_paired_diagnostic" and not ref_key:
+            raise HTTPException(status_code=400, detail=_t("Pack paired cần ảnh HR reference."))
         audio_expectation = None
         if expected_audio in {"yes", "no"}:
             audio_expectation = expected_audio == "yes"
@@ -120,6 +138,7 @@ async def evaluate(
             ephemeral.append(truth_key)
         params = {
             "pack": pack, "source_key": key, "source_name": name,
+            "reference_key": ref_key, "low_input_key": low_key,
             "expected_text_key": truth_key,
             "expectations": {
                 "expected_width": max(0, expected_width),
