@@ -1,7 +1,8 @@
 # LTT Quality Lab — kiến trúc và nguyên tắc đo chất lượng
 
 Ngày khảo sát: 2026-08-10  
-Trạng thái: **đã khóa thiết kế nghiên cứu; chưa BUILD, chưa tải model, chưa deploy**
+Trạng thái: **H31.1–H31.2 foundation đã BUILD local; chưa tải model học máy,
+chưa calibrated, chưa deploy production**
 
 ## 1. Bài toán thật
 
@@ -102,4 +103,3 @@ version mới, không sửa đè lịch sử.
 - Promptfoo: https://github.com/promptfoo/promptfoo
 - WCAG captions: https://w3c.github.io/wcag/guidelines/22/#captions-prerecorded
 - Netflix subtitle timing guide: https://partnerhelp.netflixstudios.com/hc/en-us/articles/360051554394-Timed-Text-Style-Guide-Subtitle-Timing-Guidelines
-

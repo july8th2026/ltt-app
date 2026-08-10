@@ -1,5 +1,9 @@
 # LTT Quality Lab — roadmap triển khai tuần tự
 
+Trạng thái 2026-08-10: Phase 0 và foundation CPU/FFmpeg/SRT của Phase 1 đã
+hoàn thành local. Phase Upscale calibrated trở đi chưa triển khai; mọi report
+foundation vẫn `release_gate_eligible=false`.
+
 ## Phase 0 — Khóa measurement contract và license (2–3 ngày)
 
 - Chốt schema evaluation/metric/evidence/verdict và registry evaluator.
@@ -74,4 +78,3 @@ Các câu dưới không chặn nghiên cứu, nhưng phải thành quyết đ�
 **Khuyến nghị mặc định:** operator-only; raw temp xóa ngay, metric/hash giữ theo
 policy; chạy local/staging; fast gate 15 phút mỗi core pack và nightly đầy đủ;
 không dùng dữ liệu khách hay sinh trắc học nếu chưa có consent rõ ràng.
-

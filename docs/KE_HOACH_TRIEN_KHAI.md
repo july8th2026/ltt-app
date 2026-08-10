@@ -2065,8 +2065,17 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
   DOVER/VBench/JiWER/WhisperX/pyannote/PaddleOCR/COMET/DNSMOS/STOI/NISQA và
   LLM eval. Hồ sơ `docs/QUALITY_LAB/` khóa nguyên tắc, ma trận app, dataset/
   calibration và roadmap. **Chưa BUILD, chưa tải model, chưa deploy.**
-- [ ] H31.1 Measurement contract + license/model registry + privacy/retention.
-- [ ] H31.2 App Quality Lab operator-only: CPU/FFmpeg/SRT foundation + report.
+- [x] H31.1 Measurement contract + license/model registry + privacy/retention —
+  2026-08-10: schema vector v1, verdict `UNKNOWN/NOT_APPLICABLE`, artifact
+  SHA-256, evaluator snapshot, environment không định danh; Q83 khóa input/
+  transcript ephemeral và cấm release gate/model runtime-download.
+- [x] H31.2 App Quality Lab operator-only: CPU/FFmpeg/SRT foundation + report —
+  2026-08-10: app `/qualitylab`, Job giá 0, Pillow/ffprobe/media contract,
+  SRT timing/overlap/CPS/CPL/WER chẩn đoán, JSON+HTML report và H30 timeline.
+  Targeted **44 pass**; Playwright A–Z upload SRT/ảnh, worker/report/API,
+  mobile 390 px không overflow, console 0 error, network 0 failed và input
+  ephemeral còn 0 file. `python tools\gate.py` **PASS 9/9**; full pytest
+  1.680,5 giây.
 - [ ] H31.3 Pack Upscale calibrated: FR/NR/temporal/artifact/performance.
 - [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.
 - [ ] H31.5 Pack Seedance/Image/Thumbnail/Clip/Text/Agent tuần tự.

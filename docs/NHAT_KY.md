@@ -14,6 +14,74 @@
 
 ---
 
+## 2026-08-10 — H31.1–H31.2: Quality Lab foundation operator-only
+
+- **Mục tiêu:** dựng hợp đồng đo chất lượng có bằng chứng và app nội bộ chạy
+  evaluation riêng, chưa bật metric cảm nhận/GPU hay release gate.
+- **Trạng thái:** H31.1–H31.2 hoàn tất local; chưa deploy production, chưa tải
+  model học máy, H31.3 Upscale calibrated chưa bắt đầu.
+
+### Đã thay đổi
+
+- Tạo `apps/qualitylab/` theo app contract: operator-only, Job
+  `qualitylab.evaluate` giá 0, không sửa `platform_core`/`server` hay runtime
+  của app sản xuất.
+- Schema report vector v1 lưu verdict theo dimension/metric, SHA-256 artifact,
+  snapshot evaluator/version/license/hash, environment fingerprint không định
+  danh và cờ `release_gate_eligible=false`.
+- Registry chỉ bật Pillow, ffprobe và rule subtitle nội bộ. LPIPS, pyiqa,
+  DOVER-Mobile, WhisperX, PaddleOCR và VBench ở trạng thái chưa duyệt; không có
+  runtime download hoặc fallback im lặng.
+- Foundation đo ảnh/media contract và SRT: decode, kích thước, duration, FPS,
+  audio, cue/timing/overlap/CPS/CPL và WER chẩn đoán. WER dù bằng 0 vẫn
+  `UNKNOWN` cho tới khi human-calibrated; overlap nâng dimension thành `WARN`.
+- UI HTML/JSON report, registry và recent evaluations. Input file cùng
+  transcript chuẩn do UI nạp đi qua key ephemeral; worker xóa trong `finally`.
+  Tên file gốc và transcript không được ghi vào Job params/report.
+- Khóa Q83 và cập nhật `DATA_RETENTION_POLICY.md`: report/hash theo Job 365
+  ngày; raw upload tạm xóa sau evaluation; artifact được tham chiếu không bị
+  Quality Lab xóa; không dùng production media nếu chưa có consent.
+
+### Nghiệm thu browser thật
+
+- Playwright CLI dùng hồ sơ test tách biệt, đăng nhập admin fixture rồi chạy
+  A–Z hai luồng: upload SRT → worker → report/API và upload PNG → worker →
+  report. SRT WER 0 hiển thị đúng overall `UNKNOWN`; ảnh 1024×576 PASS contract.
+- Desktop 1440×900 và mobile 390×844 đã render; mobile `scrollWidth=375`,
+  `innerWidth=390`, không horizontal overflow. Console 0 error/warning, request
+  không có failed network. Storage fixture sau job có `EPHEMERAL_FILES=0`.
+- Fixture dùng SQLite/storage dưới `tmp/qualitylab-browser`, không chạm dữ liệu
+  production; wrapper PowerShell thuần ASCII và browser server restart được.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\test_156_quality_lab.py tests\test_60_app_registry.py` | PASS, 44 test, 1,42 giây |
+| `python tools\gate.py --quick` | PASS 8/8, 28,1 giây |
+| `python tools\gate.py` | PASS 9/9; pytest PASS 1.680,5 giây; secret/app-contract/undefined-name/swallowed-error/i18n và 3 frontend đều PASS |
+| Playwright A–Z + console/requests/responsive | PASS; 2 job Done, report HTML/API đúng, console/network sạch, không overflow |
+
+### Quyết định mới
+
+- Q83: Quality Lab operator-only; input/transcript UI ephemeral; report vector
+  không calibrated không được làm release gate; evaluator/model phải qua
+  source/license/version/checksum trước khi bật.
+
+### Cách lùi lại
+
+Gỡ riêng `apps/qualitylab/`, test/fixture/wrapper liên quan và revert Q83/H31.1–
+H31.2. Không có migration hoặc thay đổi runtime app sản xuất; model cache chưa
+được tạo. Report test chỉ ở storage/DB fixture dưới `tmp/`.
+
+### Việc tiếp theo
+
+1. H31.3 tuần tự: dataset manifest + baseline bicubic, FR/NR/temporal/artifact/
+   performance cho Upscale, license/model pin và human A/B calibration.
+2. Chỉ sau H31.3 mới sang H31.4 AutoSub calibrated; không chạy song song.
+
+---
+
 ## 2026-08-10 — H31.0: nghiên cứu kiến trúc LTT Quality Lab
 
 - **Mục tiêu:** thiết kế bộ công cụ đo output thực tế theo từng app, ưu tiên

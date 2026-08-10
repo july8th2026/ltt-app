@@ -16,6 +16,8 @@ Tài liệu này mô tả platform web hiện hành. Các file JSONL/SQLite củ
 | Artifact/source/output | Policy storage riêng | Chưa tự xóa trong H26.11A | Owner qua opaque route; operator theo quyền |
 | Session | Theo session policy | Thu hồi/hết hạn độc lập | Owner/operator theo auth |
 | Application log | Size + 30 ngày mặc định | `platform_core.observability`: JSONL rotating, redact boundary và prune file `ltt-*.jsonl*` theo `LTT_LOG_RETENTION_DAYS` | Operator |
+| Quality Lab input nạp từ UI | Đến khi evaluation kết thúc | Storage key ephemeral; worker xóa trong `finally`, cleanup lỗi làm Job fail hữu hình | Chỉ operator trong lúc Job chạy |
+| Quality Lab report/hash | 365 ngày theo Job | Lưu trong `Job.result`; không chứa raw media, transcript chuẩn, hostname/user/path | Operator |
 
 `Job` chỉ được purge khi ở trạng thái terminal `done/error/cancelled` và quá 365
 ngày. Job `queued/running` quá tuổi **không bị xóa** mà được báo trong dry-run để
@@ -65,6 +67,12 @@ nhiều project lưu reference tới kết quả cũ. Đây không phải lời 
 viễn. Trước khi bật artifact purge phải có inventory theo app, owner check,
 legal/privacy decision, preview count/bytes, restore/rollback và canary riêng.
 
+Quality Lab là ngoại lệ hẹp đã khóa bởi Q83: file và transcript chuẩn do operator
+nạp trực tiếp chỉ là input tạm và bị xóa sau evaluation. Artifact gốc được tham
+chiếu bằng storage key không bị Quality Lab xóa; nó vẫn theo policy của app sở
+hữu. Foundation chưa lưu frame/crop/audio evidence riêng và không dùng dữ liệu
+production nếu chưa có consent.
+
 ## Dữ liệu Socialbot đóng băng
 
 `data/audit_log.jsonl`, `content_history.db`, retry state, session lock và OAuth
@@ -74,6 +82,7 @@ không được đưa vào support export hoặc log mới.
 
 ## Changelog
 
+- 2026-08-10: thêm retention Q83 cho input ephemeral và report Quality Lab.
 - 2026-08-09: thay tài liệu desktop cũ bằng policy platform Q75/Q76; thêm
   dry-run, terminal Job purge explicit, support export lọc và ranh giới ledger/
   artifact/Socialbot.

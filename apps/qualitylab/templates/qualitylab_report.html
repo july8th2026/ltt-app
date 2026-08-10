@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Quality report — LTT Studios{% endblock %}
+{% block page_mode %}wide{% endblock %}
+{% block topbar_title %}<strong>Quality report · {{ job.id[:8] }}</strong>{% endblock %}
+{% block content %}
+<style>
+  .ql-dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;max-width:1500px}
+  .ql-metric{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+  .ql-value{text-align:right;font-variant-numeric:tabular-nums}.ql-result{display:block}.ql-json{max-height:420px;overflow:auto}
+</style>
+<p><a href="/qualitylab">{{ _("← Quality Lab") }}</a></p>
+{% if not report %}
+  <div class="alert alert-warn" role="status">{{ _("Job đang ở trạng thái") }} {{ job.status }}. {{ _("Report chưa sẵn sàng.") }}</div>
+{% else %}
+  <div class="alert {{ 'alert-ok' if report.overall_verdict == 'PASS' else ('alert-err' if report.overall_verdict == 'FAIL' else 'alert-warn') }}" role="status">
+    <strong>{{ report.overall_verdict }}</strong> · {{ report.pack }} · schema {{ report.schema_version }}
+    <div>{{ report.notice }}</div>
+    <div>{{ _("Foundation chưa calibrated; không dùng kết quả này làm release gate.") }}</div>
+  </div>
+  <div class="ql-dims">{% for dimension in report.dimensions %}<section class="card">
+    <h2>{{ dimension.label }} <span class="badge {{ 'badge-ok' if dimension.verdict == 'PASS' else ('badge-err' if dimension.verdict == 'FAIL' else 'badge-warn') }}">{{ dimension.verdict }}</span></h2>
+    {% for metric in dimension.metrics %}<div class="ql-metric"><div><strong>{{ metric.label }}</strong>{% if metric.threshold %}<div class="dim">{{ metric.threshold }}</div>{% endif %}</div>
+      <div class="ql-value"><span class="ql-result">{{ metric.value if metric.value is not none else '—' }}{% if metric.unit %} {{ metric.unit }}{% endif %}</span><span class="dim">{{ metric.verdict }}</span></div></div>{% endfor %}
+  </section>{% endfor %}</div>
+  <details class="card"><summary>{{ _("JSON evidence") }}</summary><pre class="ql-json">{{ report|tojson(indent=2) }}</pre></details>
+{% endif %}
+{% endblock %}
