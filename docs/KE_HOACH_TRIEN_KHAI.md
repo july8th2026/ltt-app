@@ -2054,3 +2054,24 @@ và worker; process log có redaction, correlation và cleanup có giới hạn.
   `tmp/`/`test-results/` khỏi collection vì đó là artefact browser/audit, không
   phải test source. Chưa deploy production; commit riêng H30 được tạo sau bước
   kiểm diff cuối.
+
+## H31 — LTT Quality Lab: đo chất lượng đầu ra theo từng app
+
+Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debug; không nhầm
+`Job DONE` với output tốt và không dùng một điểm proxy làm chân lý.
+
+- [x] H31.0 Research + inventory — 2026-08-10: kiểm kê 13 manifest, benchmark
+  Upscale hiện có và RTX 5060 Ti 16 GB; nghiên cứu nguồn chính VMAF/LPIPS/pyiqa/
+  DOVER/VBench/JiWER/WhisperX/pyannote/PaddleOCR/COMET/DNSMOS/STOI/NISQA và
+  LLM eval. Hồ sơ `docs/QUALITY_LAB/` khóa nguyên tắc, ma trận app, dataset/
+  calibration và roadmap. **Chưa BUILD, chưa tải model, chưa deploy.**
+- [ ] H31.1 Measurement contract + license/model registry + privacy/retention.
+- [ ] H31.2 App Quality Lab operator-only: CPU/FFmpeg/SRT foundation + report.
+- [ ] H31.3 Pack Upscale calibrated: FR/NR/temporal/artifact/performance.
+- [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.
+- [ ] H31.5 Pack Seedance/Image/Thumbnail/Clip/Text/Agent tuần tự.
+- [ ] H31.6 Release regression, trend, canary, rollback và LTT-AQA audit.
+
+Điều kiện chặn: không dùng production media khi chưa consent/retention; không
+tải model runtime; không bật release gate cho metric chưa tương quan human;
+không sửa platform/server chỉ để thêm app Quality Lab.

@@ -14,6 +14,49 @@
 
 ---
 
+## 2026-08-10 — H31.0: nghiên cứu kiến trúc LTT Quality Lab
+
+- **Mục tiêu:** thiết kế bộ công cụ đo output thực tế theo từng app, ưu tiên
+  Upscale và AutoSub, để audit/debug có evidence thay vì cảm tính.
+- **Trạng thái:** research/plan xong; chưa BUILD, chưa tải model, chưa deploy.
+
+### Đã làm
+
+- Kiểm kê 13 manifest, Job/observability H30, benchmark Upscale hiện có và GPU
+  thực tế: RTX 5060 Ti 16.311 MiB.
+- Đối chiếu nguồn chính về quality video/image/audio/speech/subtitle/OCR/LLM;
+  chốt mô hình vector 6 lớp và hard gate, không dùng một điểm tổng chưa calibrated.
+- Tạo bốn tài liệu `docs/QUALITY_LAB/`: kiến trúc/nguyên tắc, ma trận theo app,
+  dữ liệu+human calibration và roadmap tuần tự.
+- Chọn phương án app `apps/qualitylab/` operator-only dùng adapter, Job, Storage
+  và H30 evidence; chưa tạo code vì Phase 0 còn phải khóa license/retention.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader` | PASS; RTX 5060 Ti, 16.311 MiB, driver 596.21 |
+| `git status --short` trước thay đổi | sạch |
+| Research nguồn chính/GitHub | hoàn thành, URL ghi trong hồ sơ |
+| `python tools\gate.py --quick` | PASS 8/8, 29,3 giây |
+| `python tools\gate.py` | PASS 9/9, 1.695,7 giây; pytest PASS 1.666,7 giây |
+
+### Quyết định mới
+
+Chưa ghi Q mới: đây là phương án kiến trúc đề xuất trong kế hoạch, chưa BUILD.
+Decision Gate H31.1 sẽ khóa operator scope, retention và release-gate policy.
+
+### Cách lùi lại
+
+Xóa `docs/QUALITY_LAB/` và bỏ mục H31 khỏi kế hoạch/nhật ký; không có runtime
+hay dữ liệu production nào bị thay đổi.
+
+### Việc tiếp theo
+
+1. Khi bắt đầu BUILD: làm H31.1 trước, sau đó foundation → Upscale → AutoSub.
+
+---
+
 ## 2026-08-09 — H30: nâng cấp logging/observability cho mọi app
 
 - **Mục tiêu:** audit toàn hệ thống về log từng job, khả năng truy nguyên lỗi,
