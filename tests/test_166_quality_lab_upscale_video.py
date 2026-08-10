@@ -57,6 +57,20 @@ def test_video_diagnostic_contract_temporal_and_performance_are_honest(tmp_path)
     assert len(vmaf.evidence["ffmpeg_binary_sha256"]) == 64
 
 
+def test_external_peak_vram_evidence_is_visible_but_never_auto_passes(tmp_path):
+    from apps.qualitylab.services.upscale_video import inspect_upscale_video_pair
+
+    candidate = tmp_path / "candidate.mp4"
+    reference = tmp_path / "reference.mp4"
+    _video(candidate); shutil.copyfile(candidate, reference)
+    dimensions, _summary = inspect_upscale_video_pair(
+        candidate, reference, None, tmp_path / "work",
+        {"processing_seconds": 34.12, "frames": 24, "peak_vram_mb": 11180})
+    performance = {item.key: item for item in dimensions[-1].metrics}
+    assert performance["peak_vram_mb"].value == 11180
+    assert performance["peak_vram_mb"].verdict == "UNKNOWN"
+
+
 def test_video_diagnostic_fails_before_sampling_on_dimension_mismatch(tmp_path):
     from apps.qualitylab.services.upscale_video import inspect_upscale_video_pair
 

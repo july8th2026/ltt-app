@@ -122,6 +122,7 @@ def temporal_scores(reference: list[np.ndarray], candidate: list[np.ndarray]) ->
 def _performance(snapshot: dict[str, Any]) -> Dimension:
     seconds = float(snapshot.get("processing_seconds") or 0.0)
     frames = int(snapshot.get("frames") or 0)
+    peak_vram = int(snapshot.get("peak_vram_mb") or 0)
     throughput = round(frames / seconds, 4) if frames > 0 and seconds > 0 else None
     metrics = (
         Metric("processing_seconds", N_("Thời gian xử lý Upscale"),
@@ -132,8 +133,9 @@ def _performance(snapshot: dict[str, Any]) -> Dimension:
         Metric("throughput_fps", N_("Thông lượng xử lý"), throughput,
                "frame/s", "UNKNOWN", direction="higher",
                threshold=N_("Chưa có baseline theo GPU/model/resolution")),
-        Metric("peak_vram_mb", N_("Peak VRAM"), None, "MB", "UNKNOWN",
-               threshold=N_("Runtime Upscale chưa ghi peak VRAM theo job")),
+        Metric("peak_vram_mb", N_("Peak VRAM"), peak_vram or None, "MB", "UNKNOWN",
+               threshold=(N_("Chưa có baseline theo model/slice") if peak_vram else
+                          N_("Runtime Upscale chưa ghi peak VRAM theo job"))),
     )
     return Dimension("performance", N_("Hiệu năng job nguồn"), "UNKNOWN", metrics)
 

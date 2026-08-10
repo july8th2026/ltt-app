@@ -14,6 +14,60 @@
 
 ---
 
+## 2026-08-10 — H31.3c2a: sampler và benchmark peak VRAM Upscale
+
+- **Mục tiêu:** đo peak VRAM thật trong toàn lifecycle benchmark trên đúng GPU,
+  có provenance và không gọi snapshot cuối hoặc metric toàn card là per-process.
+- **Trạng thái:** H31.3c2a hoàn tất local; H31.3c2b production contract còn mở,
+  chưa sửa runtime/scheduler, chưa deploy.
+
+### Đã thay đổi
+
+- Thêm `GpuEvidenceSampler`: lấy mẫu `nvidia-smi` theo UUID mỗi 200 ms, giữ
+  aggregate baseline/peak/delta/utilization/temperature; chỉ qualified khi đủ
+  mẫu, sampling error 0 và GPU ban đầu rảnh. Evidence ghi rõ scope whole-device.
+- `tools/upscale_gpu_smoke.py` từ chối GPU bận mặc định, hash định danh GPU thay
+  vì lưu UUID thô, hash source cùng toàn bundle engine/model và xóa toàn bộ file
+  trung gian. Tool không sửa runtime production hay dữ liệu nguồn.
+- Quality Lab có thể hiển thị `peak_vram_mb` external nhưng verdict vẫn
+  `UNKNOWN`; job production chưa cung cấp field này vẫn hiển thị thiếu bằng chứng.
+- Chạy 4 ca Fast/Quality × 1080p/1440p trên GPU 1 rảnh với hai video folder test
+  người dùng chỉ định. Cả bốn pass contract, sampling error 0:
+  - Fast: +848 MiB, 5,53–5,94 frame/s;
+  - Quality: +11.176–11.177 MiB, 0,68–0,70 frame/s.
+- Hồ sơ bền vững `docs/QUALITY_LAB/05_UPSCALE_GPU_EVIDENCE.md` lưu phương pháp,
+  aggregate, engine/model checksum, giới hạn và hai finding:
+  - GPU-001: manifest đang khai 4.000 MB, thấp hơn nhiều peak Quality;
+  - GPU-002: Quality chậm Fast khoảng tám lần, không được dùng chung ETA/SLO.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\test_167_quality_lab_gpu_evidence.py tests\test_166_quality_lab_upscale_video.py tests\test_156_quality_lab.py` | PASS, 22 test, 2,09 giây |
+| `python tools\gate.py --quick` | PASS 8/8, 30,5 giây gồm targeted chạy trước |
+| 4 lệnh `python tools\upscale_gpu_smoke.py ... --gpu-index 1 --max-seconds 1` | PASS 4/4; output/contract đúng, baseline 4 MiB, sampling error 0 |
+| `python tools\gate.py` | PASS 9/9; pytest 1.690,8 giây; scanner và 3 frontend đều PASS |
+
+### Cách lùi lại
+
+Gỡ `gpu_evidence.py`, test 167 và phần sampler/fingerprint trong GPU smoke;
+revert field peak VRAM optional, hồ sơ/kế hoạch. Không có migration, model tải
+mới, thay đổi production runtime hay deploy.
+
+### Còn tồn đọng
+
+- H31.3c2b: production job chưa ghi peak VRAM; manifest 4.000 MB là stop-line
+  cần benchmark mở rộng và phase runtime riêng theo Q83.
+- H31.3b2 LPIPS offline và H31.3d dataset/human A/B vẫn chưa hoàn tất.
+
+### Việc tiếp theo
+
+1. Xây phase runtime riêng cho GPU-001: thêm content/duration/input slice,
+   chọn safety margin và quyết định static worst-case hay VRAM theo preset.
+2. Test scheduler từ chối GPU thiếu VRAM trước khi đổi manifest/contract.
+3. Tiếp tục H31.3d calibration; không đặt quality threshold từ bốn ca này.
+
 ## 2026-08-10 — H31.3c1a: VMAF pinned evidence cho Upscale video
 
 - **Mục tiêu:** bổ sung metric full-reference VMAF có nguồn gốc triển khai rõ

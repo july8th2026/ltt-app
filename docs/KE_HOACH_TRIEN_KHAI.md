@@ -2105,7 +2105,18 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
       nhau nhưng overall vẫn UNKNOWN, console/network sạch, ephemeral 0;
       full gate **PASS 9/9**, pytest 1.660,7 giây.
     - [ ] H31.3c2 GPU evidence: benchmark dataset trên GPU đích và ghi peak VRAM
-      theo job; hiện runtime Upscale chưa có field này nên bắt buộc `UNKNOWN`.
+      theo job.
+      - [x] H31.3c2a Isolated GPU sampler — 2026-08-10: lấy mẫu 200 ms theo
+        UUID, baseline/peak/delta whole-device, từ chối GPU bận mặc định và hash
+        engine/model/source. Ma trận 4 ca Fast/Quality × 1080p/1440p trên RTX
+        5060 Ti đều pass contract; Fast +848 MB/5,53–5,94 fps, Quality
+        +11.176–11.177 MB/0,68–0,70 fps, sampling error 0. Hồ sơ:
+        `docs/QUALITY_LAB/05_UPSCALE_GPU_EVIDENCE.md`. Targeted **22 pass**;
+        full gate **PASS 9/9**, pytest 1.690,8 giây.
+      - [ ] H31.3c2b Production contract: runtime Upscale chưa ghi peak VRAM
+        theo job nên report job thật vẫn `UNKNOWN`. Benchmark phát hiện manifest
+        đang khai 4.000 MB thấp hơn nhiều peak Quality; xử lý scheduler/runtime
+        phải là phase riêng, không sửa lẫn vào Quality Lab theo Q83.
   - [ ] H31.3d Calibration: tối thiểu 30 ảnh + 12 video có slice/degradation,
     human A/B mù, baseline và threshold theo từng slice/model.
 - [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.
