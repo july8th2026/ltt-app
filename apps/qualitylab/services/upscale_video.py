@@ -1,7 +1,10 @@
 """Paired-video diagnostics cho Upscale; CPU sampling, chưa calibrated."""
 from __future__ import annotations
 
+import hashlib
+import json
 import subprocess
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +17,60 @@ from platform_core import media
 from platform_core.i18n import N_
 
 MAX_SAMPLES = 8
+VMAF_MODEL = "vmaf_v0.6.1"
+
+
+@lru_cache(maxsize=1)
+def libvmaf_runtime_fingerprint() -> dict[str, str]:
+    """Pin implementation/model embedded bằng hash binary, không lộ local path."""
+    try:
+        binary = Path(media.ffmpeg_bin())
+        digest = hashlib.sha256()
+        with binary.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(chunk)
+        result = subprocess.run([str(binary), "-version"], capture_output=True,
+                                text=True, timeout=10, check=False)
+        version = (result.stdout or "").splitlines()[0][:160]
+        return {"binary_sha256": digest.hexdigest(), "ffmpeg_version": version,
+                "model": VMAF_MODEL}
+    except (OSError, subprocess.SubprocessError):
+        return {"binary_sha256": "", "ffmpeg_version": "unavailable",
+                "model": VMAF_MODEL}
+
+
+def _vmaf_metric(candidate_path: Path, reference_path: Path, work: Path) -> Metric:
+    log_path = work / "vmaf.json"
+    graph = (
+        "[0:v]settb=AVTB,setpts=PTS-STARTPTS[dist];"
+        "[1:v]settb=AVTB,setpts=PTS-STARTPTS[ref];"
+        f"[dist][ref]libvmaf=model=version={VMAF_MODEL}:"
+        "log_fmt=json:log_path=vmaf.json:n_threads=2")
+    command = [media.ffmpeg_bin(), "-hide_banner", "-loglevel", "error",
+               "-i", str(candidate_path), "-i", str(reference_path),
+               "-lavfi", graph, "-f", "null", "-"]
+    try:
+        result = subprocess.run(command, cwd=work, capture_output=True, text=True,
+                                timeout=300, check=False)
+        if result.returncode != 0 or not log_path.is_file():
+            raise RuntimeError(N_("FFmpeg/libvmaf không sẵn sàng."))
+        payload = json.loads(log_path.read_text(encoding="utf-8"))
+        score = float(payload["pooled_metrics"]["vmaf"]["mean"])
+        version = str(payload.get("version") or "")[:80]
+        if not np.isfinite(score):
+            raise ValueError(N_("VMAF trả điểm không hữu hạn."))
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError, KeyError,
+            TypeError, ValueError, RuntimeError) as exc:
+        return Metric("vmaf_v0_6_1", "VMAF v0.6.1", None, "score", "UNKNOWN",
+                      direction="higher", threshold=N_("Evaluator chưa sẵn sàng"),
+                      evidence={"reason": type(exc).__name__, "model": VMAF_MODEL})
+    fingerprint = libvmaf_runtime_fingerprint()
+    return Metric(
+        "vmaf_v0_6_1", "VMAF v0.6.1", round(score, 6), "score", "UNKNOWN",
+        direction="higher", valid_range="0..100",
+        threshold=N_("Chưa calibrated; model gốc nhắm 1080p HDTV ở khoảng 3H"),
+        evidence={"libvmaf_version": version, "model": VMAF_MODEL,
+                  "ffmpeg_binary_sha256": fingerprint["binary_sha256"]})
 
 
 def _sample_times(duration: float) -> list[float]:
@@ -145,6 +202,7 @@ def inspect_upscale_video_pair(candidate_path: Path, reference_path: Path,
     mean_ssim = _mean([item["ssim_local"] for item in scores])
     baseline_psnr = _mean([item["psnr_db"] for item in baseline_scores]) if baseline_scores else None
     baseline_ssim = _mean([item["ssim_local"] for item in baseline_scores]) if baseline_scores else None
+    vmaf = _vmaf_metric(candidate_path, reference_path, work)
     full_reference = Dimension("full_reference", N_("Full-reference theo frame"),
                                "UNKNOWN", (
         Metric("sampled_frames", N_("Số frame đã lấy mẫu"), len(scores), "frame",
@@ -159,6 +217,7 @@ def inspect_upscale_video_pair(candidate_path: Path, reference_path: Path,
         Metric("ssim_delta_vs_bicubic", N_("SSIM delta so với bicubic"),
                round(mean_ssim - baseline_ssim, 6) if baseline_ssim is not None else None,
                "ratio", "UNKNOWN", direction="higher", threshold=N_("Chưa calibrated")),
+        vmaf,
     ))
     temporal_dimension = Dimension("temporal", N_("Nhất quán theo thời gian"),
                                    "UNKNOWN", (
@@ -174,6 +233,7 @@ def inspect_upscale_video_pair(candidate_path: Path, reference_path: Path,
         "sample_times_seconds": [round(value, 4) for value in times],
         "candidate_mean": {"psnr_db": mean_psnr, "ssim_local": mean_ssim},
         "bicubic_mean": {"psnr_db": baseline_psnr, "ssim_local": baseline_ssim},
-        "temporal": temporal, "candidate_probe": candidate_info,
+        "temporal": temporal, "vmaf": vmaf.value,
+        "candidate_probe": candidate_info,
         "reference_probe": reference_info,
     }

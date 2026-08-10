@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-10 — H31.3c1a: VMAF pinned evidence cho Upscale video
+
+- **Mục tiêu:** bổ sung metric full-reference VMAF có nguồn gốc triển khai rõ
+  ràng, nhưng không biến một điểm kỹ thuật chưa calibrated thành release gate.
+- **Trạng thái:** checkpoint VMAF hoàn tất local; H31.3 tổng thể còn mở, chưa
+  deploy production, chưa có LPIPS, peak VRAM/dataset hay human threshold.
+
+### Đã thay đổi
+
+- Pack `upscale_video_diagnostic` chạy `libvmaf` từ FFmpeg đã cài với model
+  explicit `vmaf_v0.6.1`; không dựa vào default có thể đổi giữa các build.
+- Evaluator snapshot giữ model, dòng version FFmpeg và SHA-256 toàn binary vì
+  model đang nhúng trong build, còn evidence metric giữ version libvmaf thực.
+- Khi FFmpeg/libvmaf thiếu, timeout hoặc JSON không hợp lệ, metric trả
+  `UNKNOWN` kèm reason an toàn; job/report không giả PASS và không lộ local path.
+- Ma trận license ghi BSD-2-Clause-Patent của VMAF cùng ranh giới license build
+  FFmpeg. VMAF là full-reference, không thay no-reference, temporal, artifact
+  hay human A/B và không được dùng một mình để kết luận Upscale tốt/xấu.
+
+### Nghiệm thu browser thật
+
+- Playwright fixture cô lập cổng 8113 chạy lại video tổng hợp candidate/reference
+  A-Z. Report hiển thị VMAF `99.357169`, verdict metric và overall đều
+  `UNKNOWN`; contract video vẫn `PASS`.
+- Mobile 390×844 có `scrollWidth=375`, console 0 lỗi/cảnh báo, request hỏng 0;
+  storage Quality Lab sau job còn 0 file ephemeral.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\test_166_quality_lab_upscale_video.py tests\test_165_quality_lab_evaluator_assets.py tests\test_164_quality_lab_upscale.py tests\test_156_quality_lab.py` | PASS, 29 test, 1,66 giây |
+| `python tools\gate.py --quick` | PASS 8/8, 26,2 giây |
+| `python tools\scan_source_secrets.py` | PASS, 0 finding |
+| `python tools\gate.py` | PASS 9/9; pytest 1.660,7 giây; scanner và 3 frontend đều PASS |
+| Playwright video A-Z + console/requests/responsive | PASS; VMAF render đúng, không overflow, input tạm còn 0 |
+
+### Cách lùi lại
+
+Gỡ evaluator `ffmpeg_libvmaf`, hàm chạy VMAF và metric khỏi pack video; revert
+test/tài liệu tương ứng. Không có migration, model download hay thay đổi runtime
+của `apps/upscalevideo`.
+
+### Còn tồn đọng
+
+- H31.3b2 LPIPS offline chưa được cấp assets/checksum.
+- H31.3c2 cần benchmark GPU theo UUID và lấy mẫu peak VRAM trong suốt job;
+  snapshot VRAM cuối hiện tại không đủ bằng chứng.
+- H31.3d cần dataset tối thiểu 30 ảnh + 12 video và human A/B mù để calibration.
+
+### Việc tiếp theo
+
+1. Xây bộ sampler peak VRAM độc lập cho benchmark GPU, không sửa runtime
+   production và không gọi snapshot cuối là peak.
+2. Chạy dataset thử có license/consent trên đúng GPU đích, lưu aggregate/hash.
+3. Chỉ sau calibration mới xem xét threshold hoặc release gate.
+
 ## 2026-08-10 — H31.3b1 + H31.3c1: offline model gate và Upscale video diagnostic
 
 - **Mục tiêu:** thêm cổng cấp evaluator model fail-closed và bộ đo video paired

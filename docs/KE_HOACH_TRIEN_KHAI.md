@@ -2097,6 +2097,13 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
       throughput. Targeted **28 pass**; Playwright video A-Z/report auto-refresh,
       mobile 390 px, console/network sạch, ephemeral 0; full gate **PASS 9/9**,
       pytest 1.670,9 giây.
+    - [x] H31.3c1a VMAF evidence — 2026-08-10: dùng `libvmaf` trong FFmpeg đã
+      cài, pin rõ model `vmaf_v0.6.1`, hash binary triển khai trong evaluator
+      snapshot và lưu version libvmaf trong evidence. VMAF vẫn luôn `UNKNOWN`
+      trước calibration, không thay temporal/artifact/human A/B. Targeted
+      **29 pass**; Playwright mobile A-Z hiển thị 99,357 cho cặp video giống
+      nhau nhưng overall vẫn UNKNOWN, console/network sạch, ephemeral 0;
+      full gate **PASS 9/9**, pytest 1.660,7 giây.
     - [ ] H31.3c2 GPU evidence: benchmark dataset trên GPU đích và ghi peak VRAM
       theo job; hiện runtime Upscale chưa có field này nên bắt buộc `UNKNOWN`.
   - [ ] H31.3d Calibration: tối thiểu 30 ảnh + 12 video có slice/degradation,

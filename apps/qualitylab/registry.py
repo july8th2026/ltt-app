@@ -51,6 +51,13 @@ EVALUATORS = {
         note=N_("Frame-paired/temporal/performance proxy; chưa human-calibrated."),
         status="enabled",
     ),
+    "ffmpeg_libvmaf": Evaluator(
+        key="ffmpeg_libvmaf", version="system-vmaf_v0.6.1",
+        license="BSD-2-Clause-Patent; FFmpeg build license applies",
+        source="https://github.com/Netflix/vmaf", enabled=True,
+        note=N_("Full-reference diagnostic; implementation/model pinned by FFmpeg hash."),
+        status="enabled",
+    ),
     "lpips": Evaluator(
         key="lpips", version="0.1.4-candidate", license="BSD-2-Clause",
         source="https://github.com/richzhang/PerceptualSimilarity", enabled=False,
@@ -112,7 +119,7 @@ PACKS = {
     "upscale_video_diagnostic": {
         "label": N_("Upscale video diagnostic"),
         "accepts": ("video",),
-        "evaluators": ("ffprobe", "ltt_upscale_video"),
+        "evaluators": ("ffprobe", "ltt_upscale_video", "ffmpeg_libvmaf"),
         "description": N_("Contract A/V, paired frame, temporal và job performance."),
     },
     "autosub_foundation": {
@@ -137,7 +144,17 @@ def enabled_pack(key: str) -> dict:
 def pack_evaluators(key: str) -> list[dict]:
     """Snapshot version/license/hash để report cũ không đổi khi registry đổi."""
     pack = enabled_pack(key)
-    return [asdict(EVALUATORS[name]) for name in pack["evaluators"]]
+    snapshots = [asdict(EVALUATORS[name]) for name in pack["evaluators"]]
+    for snapshot in snapshots:
+        if snapshot["key"] == "ffmpeg_libvmaf":
+            from apps.qualitylab.services.upscale_video import (
+                libvmaf_runtime_fingerprint,
+            )
+            fingerprint = libvmaf_runtime_fingerprint()
+            snapshot["model_sha256"] = fingerprint["binary_sha256"]
+            snapshot["version"] = (fingerprint["ffmpeg_version"] +
+                                   f"; model={fingerprint['model']}")[:240]
+    return snapshots
 
 
 def public_registry() -> dict:

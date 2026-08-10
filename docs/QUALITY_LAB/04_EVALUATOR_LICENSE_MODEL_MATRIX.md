@@ -16,6 +16,7 @@ Thiếu một mục thì kết quả là `UNKNOWN`; không fallback sang một m
 |---|---|---|---|---|
 | LTT PSNR/local-SSIM/bicubic/artifact proxy | LTT internal | **ENABLED diagnostic** | Không có | Chỉ chẩn đoán, chưa human-calibrated và không release gate |
 | LPIPS 0.1.4 | BSD-2-Clause | **CANDIDATE, DISABLED** | Linear weights nằm trong package; AlexNet/VGG/SqueezeNet backbone do torchvision nạp | Chỉ bật sau offline provision và checksum cả hai lớp weight |
+| FFmpeg/libvmaf + `vmaf_v0.6.1` | BSD-2-Clause-Patent; FFmpeg build license riêng | **ENABLED diagnostic** | Model đi kèm libvmaf build | Pin model rõ và hash toàn bộ FFmpeg binary trong evaluator snapshot; vẫn UNKNOWN trước calibration |
 | pyIQA/IQA-PyTorch current | PolyForm Noncommercial 1.0.0 | **BLOCKED** | Nhiều metric/weight, thường lấy từ model hub | Không dùng cho dịch vụ SaaS thương mại nếu chưa có license riêng |
 | DOVER/DOVER-Mobile current | S-Lab License 1.0 | **BLOCKED** | Checkpoint riêng | Upstream chỉ cho mục đích phi thương mại; dùng thương mại phải liên hệ tác giả |
 
@@ -30,6 +31,9 @@ Thiếu một mục thì kết quả là `UNKNOWN`; không fallback sang một m
   <https://github.com/chaofengc/IQA-PyTorch/blob/master/LICENSE>
 - DOVER license hiện tại:
   <https://github.com/VQAssessment/DOVER/blob/master/LICENSE>
+- VMAF license và model guidance:
+  <https://github.com/Netflix/vmaf/blob/master/LICENSE>,
+  <https://github.com/Netflix/vmaf/blob/master/resource/doc/models_v0.md>
 
 ## Quy trình provision LPIPS dự kiến
 
@@ -52,3 +56,5 @@ Thiếu một mục thì kết quả là `UNKNOWN`; không fallback sang một m
 - LPIPS là đường mở duy nhất trong ba ứng viên hiện tại nhưng vẫn chưa được cài.
 - No-reference video phải nghiên cứu evaluator khác có license thương mại phù
   hợp hoặc mua license; không thay DOVER bằng proxy rồi gọi đó là chất lượng.
+- VMAF là full-reference và có thể phản ánh enhancement gain; không dùng một
+  mình để quyết định Upscale tốt/xấu, không thay temporal/artifact/human A/B.

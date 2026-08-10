@@ -50,6 +50,11 @@ def test_video_diagnostic_contract_temporal_and_performance_are_honest(tmp_path)
     assert performance["peak_vram_mb"].value is None
     assert summary["candidate_mean"]["psnr_db"] == 99.0
     assert summary["temporal"]["temporal_delta_mae"] == 0.0
+    vmaf = {item.key: item for item in by_key["full_reference"].metrics}[
+        "vmaf_v0_6_1"]
+    assert vmaf.verdict == "UNKNOWN"
+    assert vmaf.value is not None and vmaf.value > 95
+    assert len(vmaf.evidence["ffmpeg_binary_sha256"]) == 64
 
 
 def test_video_diagnostic_fails_before_sampling_on_dimension_mismatch(tmp_path):
@@ -97,3 +102,14 @@ def test_quality_report_flow_redirects_to_app_owned_report():
     assert 'job.status in {"queued", "running"}' in routes
     assert 'response.headers["Refresh"] = "2"' in routes
     assert 'href="/jobs/{{ job.id }}"' in report
+
+
+def test_vmaf_evaluator_snapshot_pins_binary_and_model():
+    from apps.qualitylab.registry import pack_evaluators
+
+    evaluators = {item["key"]: item for item in pack_evaluators(
+        "upscale_video_diagnostic")}
+    snapshot = evaluators["ffmpeg_libvmaf"]
+    assert snapshot["enabled"] is True
+    assert len(snapshot["model_sha256"]) == 64
+    assert "model=vmaf_v0.6.1" in snapshot["version"]
