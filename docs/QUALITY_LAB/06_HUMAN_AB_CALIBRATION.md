@@ -70,7 +70,9 @@ không được đưa storage key vào HTML/URL/log.
 
 ## Việc chưa hoàn thành
 
-- Chưa có 30 ảnh + 12 video đã license/materialize.
+- Đã có materializer fail-closed và readiness checker theo
+  `07_DATASET_MATERIALIZATION.md`; chưa có 30 ảnh + 12 video thực tế được khai
+  báo bằng intake có license evidence.
 - Chưa có ba người thật chấm từng case.
 - Chưa có threshold/profile/slice version hay blind-regression holdout.
 - Chưa có UI stream artifact qua token; CLI hiện là contract/operator tool.

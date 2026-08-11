@@ -12,7 +12,9 @@ MAX_ITEMS = 500
 ALLOWED_DEGRADATIONS = {"bicubic", "blur", "noise", "compression", "mixed"}
 ALLOWED_MEDIA_KINDS = {"image", "video"}
 ALLOWED_SPLITS = {"development", "calibration", "blind-regression"}
+REQUIRED_SLICES = {"face", "text", "nature", "animation", "low-light", "motion"}
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
+_SAMPLE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$")
 
 
 def _safe_key(value: object, label: str) -> str:
@@ -43,6 +45,13 @@ def _safe_tags(value: object) -> list[str]:
     return tags
 
 
+def _safe_sample_id(value: object) -> str:
+    sample_id = str(value or "").strip()
+    if not _SAMPLE_ID.fullmatch(sample_id):
+        raise ValueError(N_("Sample id chỉ được gồm chữ, số, dấu chấm, gạch ngang hoặc gạch dưới."))
+    return sample_id
+
+
 def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
     if payload.get("schema_version") != 1:
         raise ValueError(N_("Dataset manifest phải dùng schema_version=1."))
@@ -56,14 +65,15 @@ def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
     for raw in raw_items:
         if not isinstance(raw, dict):
             raise ValueError(N_("Sample dataset phải là object."))
-        sample_id = str(raw.get("id") or "").strip()
-        if not sample_id or sample_id in seen:
+        sample_id = _safe_sample_id(raw.get("id"))
+        if sample_id in seen:
             raise ValueError(N_("Sample id rỗng hoặc bị trùng."))
         seen.add(sample_id)
         degradation = str(raw.get("degradation") or "")
         if degradation not in ALLOWED_DEGRADATIONS:
             raise ValueError(N_("Kiểu degradation chưa được hỗ trợ."))
         license_name = str(raw.get("license") or "").strip()
+        license_evidence_id = str(raw.get("license_evidence_id") or "").strip()
         if not license_name or not bool(raw.get("owned_or_licensed")):
             raise ValueError(N_("Sample chưa có bằng chứng sở hữu/license."))
         production = bool(raw.get("production_data"))
@@ -91,6 +101,7 @@ def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
             "degraded_sha256": _safe_sha256(
                 raw.get("degraded_sha256"), "degraded_sha256"),
             "license": license_name[:160],
+            "license_evidence_id": license_evidence_id[:160],
             "owned_or_licensed": True,
             "production_data": production,
             "consent_id": consent_id[:160] if production else "",
@@ -108,3 +119,38 @@ def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
                            separators=(",", ":")).encode("utf-8")
     normalized["manifest_sha256"] = hashlib.sha256(canonical).hexdigest()
     return normalized
+
+
+def readiness_report(payload: dict[str, Any]) -> dict[str, Any]:
+    """Kiểm tra độ phủ MVP; không biến độ phủ thành release verdict."""
+    manifest = validate_manifest(payload)
+    items = manifest["items"]
+    kinds = {kind: sum(item["media_kind"] == kind for item in items)
+             for kind in sorted(ALLOWED_MEDIA_KINDS)}
+    slices = {item["slice"] for item in items}
+    degradations = {item["degradation"] for item in items}
+    splits = {item["split"] for item in items}
+    reasons: list[str] = []
+    if kinds["image"] < 30:
+        reasons.append("image_items<30")
+    if kinds["video"] < 12:
+        reasons.append("video_items<12")
+    reasons.extend(f"missing_slice:{value}" for value in sorted(REQUIRED_SLICES - slices))
+    reasons.extend(f"missing_degradation:{value}"
+                   for value in sorted(ALLOWED_DEGRADATIONS - degradations))
+    reasons.extend(f"missing_split:{value}" for value in sorted(ALLOWED_SPLITS - splits))
+    if any(not item["reference_sha256"] or not item["degraded_sha256"] for item in items):
+        reasons.append("artifact_hash_missing")
+    if any(not item["license_evidence_id"] for item in items):
+        reasons.append("license_evidence_missing")
+    return {
+        "dataset_version": manifest["dataset_version"],
+        "manifest_sha256": manifest["manifest_sha256"],
+        "item_counts": kinds,
+        "missing_slices": sorted(REQUIRED_SLICES - slices),
+        "missing_degradations": sorted(ALLOWED_DEGRADATIONS - degradations),
+        "missing_splits": sorted(ALLOWED_SPLITS - splits),
+        "ready_for_human_calibration": not reasons,
+        "readiness_reasons": reasons,
+        "release_gate_eligible": False,
+    }

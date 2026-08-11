@@ -14,6 +14,56 @@
 
 ---
 
+## 2026-08-11 — H31.3d2a: materializer dataset fail-closed
+
+- **Mục tiêu:** biến media được khai báo quyền sử dụng thành dataset bất biến,
+  có thể kiểm toán; từ chối file/path/provenance không đủ thay vì tự coi media
+  tìm thấy trên máy là đã được cấp phép.
+- **Trạng thái:** H31.3d2a hoàn tất local; H31.3d2 tổng thể còn mở vì chưa có
+  intake thực tế đủ 30 ảnh + 12 video. Chưa deploy.
+
+### Đã thay đổi
+
+- Dataset contract thêm sample ID an toàn, `license_evidence_id` và readiness
+  report cho count/slice/degradation/split/hash/evidence; readiness không bao
+  giờ đổi thành release gate.
+- Thêm materializer kiểm đường dẫn tương đối và symlink trong source-root,
+  probe nội dung thật bằng Pillow/ffprobe, hash reference/degraded, copy qua
+  staging rồi rename atomically. Output root tồn tại bị từ chối để giữ benchmark
+  version bất biến; manifest không chứa absolute source path.
+- Thêm CLI `tools/qualitylab_dataset.py` cho inspect/materialize/readiness và
+  runbook `docs/QUALITY_LAB/07_DATASET_MATERIALIZATION.md`.
+- Thêm năm test cho materialize ảnh, hash/provenance, path escape, file giả,
+  chống ghi đè, coverage 30+12 và output CLI không lộ source path.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted Quality Lab 164 + 168 + 169 lần đầu | FAIL 1/19: CLI thiếu workspace bootstrap; không phải lỗi evaluator |
+| Targeted sau sửa bootstrap | PASS, 19 test, 0,69 giây |
+| `python tools\gate.py --quick` | PASS 8/8, 28,2 giây |
+| `python tools\gate.py` lần đầu | Bị wrapper timeout ở 125,1 giây; không tính PASS/FAIL; process cũ được xác minh và dừng |
+| `python tools\gate.py` với timeout phù hợp | PASS 9/9; pytest 1.831,4 giây; tổng 1.858,9 giây |
+
+### Cách lùi lại
+
+Gỡ `materializer.py`, CLI/test 169, readiness và field evidence additive trong
+`datasets.py`; revert runbook/kế hoạch. Dataset output do operator tạo nằm ngoài
+repo và không được tự động xóa bởi rollback code.
+
+### Còn tồn đọng
+
+- H31.3d2b chưa có intake media thật với bằng chứng license đủ 30 ảnh + 12 video.
+- H31.3d3 chưa thu ba rater thật/case và chưa version threshold.
+- H31.3b2 LPIPS offline và H31.3c2b production peak VRAM vẫn mở.
+
+### Việc tiếp theo
+
+1. Kiểm kê nguồn media được chủ sở hữu xác nhận, tạo intake không chứa bí mật.
+2. Chạy inspect trước; chỉ materialize những item có evidence/consent hợp lệ.
+3. Sau khi readiness đủ mới tạo calibration suite và mở blind review thật.
+
 ## 2026-08-11 — H31.3d1: contract human A/B mù có chữ ký
 
 - **Mục tiêu:** xây đường thu và kiểm toán đánh giá cảm nhận của người thật mà

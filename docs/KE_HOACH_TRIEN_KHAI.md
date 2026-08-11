@@ -2129,6 +2129,16 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
       `docs/QUALITY_LAB/06_HUMAN_AB_CALIBRATION.md`.
     - [ ] H31.3d2 Materialize dataset có license: tối thiểu 30 ảnh + 12 video,
       đủ six slice/five degradation, tách development/calibration/blind set.
+      - [x] H31.3d2a Materializer fail-closed — 2026-08-11: intake chỉ nhận
+        relative path trong source-root, probe file thật bằng Pillow/ffprobe,
+        bắt buộc `license_evidence_id`, consent/retention với production, hash
+        hai artifact, copy atomically và không ghi đè version cũ. Readiness
+        kiểm đủ 30 ảnh/12 video, six slice/five degradation/three split nhưng
+        luôn giữ `release_gate_eligible=false`. Targeted **19 pass**; quick gate
+        **PASS 8/8**; full gate **PASS 9/9**, pytest 1.831,4 giây. Runbook:
+        `docs/QUALITY_LAB/07_DATASET_MATERIALIZATION.md`.
+      - [ ] H31.3d2b Khai báo intake và materialize media thực tế đủ số lượng;
+        không tự suy luận license từ file tìm thấy trên máy.
     - [ ] H31.3d3 Thu vote người thật: tối thiểu 3 rater hợp lệ/case, review
       agreement/correlation theo slice rồi version threshold; không dùng vote
       synthetic trong test làm bằng chứng sản phẩm.
