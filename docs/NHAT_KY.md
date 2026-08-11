@@ -14,6 +14,58 @@
 
 ---
 
+## 2026-08-11 — H32.0–H32.1: batch charter và AutoSub Video A–Z
+
+- **Mục tiêu:** bắt đầu batch `AppLttStudio_11082026` theo LTT-AQA; xử lý tuần
+  tự từng tool bằng browser/output thật, không tác động production.
+- **Hạng mục:** H32.0 và H32.1 hoàn thành; H32.2 Prompt AI tiếp theo.
+- **Trạng thái:** AutoSub happy path PASS; release gate AI có điều kiện.
+
+### Đã làm
+
+- Kiểm kê 6 tool, đọc từng `MoTa.txt`, probe/hash asset và khóa master plan,
+  output naming, evidence/gate/rollback.
+- Dựng fixture AutoSub cô lập cổng 8140 + worker/DB/data riêng; dùng video thật,
+  SRT 4 cue tự tạo, TikTok Bold, Montserrat 64, middle, source/MP4/standard.
+- Job `71d7dd4f…` quote/trừ đúng 2 credit, render NVENC khoảng 3 giây; output có
+  H.264+AAC, 864×496, 24fps, 15,069s. Hai frame kiểm thị giác xác nhận subtitle
+  Unicode, outline và word emphasis đúng.
+- Đổi label manifest/nav từ “Khắc phụ đề video” thành “AutoSub Video”; restart
+  và browser xác minh title/page heading mới.
+- Lưu output deterministic vào folder người dùng và lập đầy đủ hồ sơ H32.1:
+  current truth, control registry, benchmark, scorecard 70/100, finding, quyết
+  định và roadmap. Fixture không cấu hình ba AI engine nên không giả PASS.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| Playwright 1440×1000 + 390×844 | PASS lõi; console 0; network 0 request 4xx/5xx; locale/mobile partial |
+| `ffprobe` + frame 2s/6s | PASS video/audio/metadata/subtitle |
+| `python -m pytest -q tests/test_81_autosubvideo.py tests/test_103_autosub_projects.py` | 36 pass, 3 warning; 2 warning thread đã ghi finding |
+| `npm test -- --run` (`frontend/autosub-studio`) | 13 pass |
+| `python tools\gate.py` | Chưa chạy; để H32.7 sau toàn batch, không được gọi full regression PASS |
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới. Chọn phương án customer-first/progressive
+controls cho roadmap AutoSub; không biến app thành NLE tổng quát.
+
+### Cách lùi lại
+
+Revert hai label trong `apps/autosubvideo/manifest.py`; hồ sơ audit chỉ là tài
+liệu/evidence. Fixture cổng 8140 và dữ liệu nằm trong `tmp/`, không phải production.
+
+### Còn tồn đọng
+
+AI staging A–Z, negative upload/quote gate, i18n, mobile precision, deterministic
+Content-Disposition, subtitle Pro controls, golden parity và warning thread.
+
+### Việc tiếp theo
+
+1. H32.2 Prompt AI: đối chiếu module read-only và test brief→build→preview.
+2. H32.3 Tạo ảnh sau khi H32.2 có checkpoint PASS/blocked rõ ràng.
+
 ## 2026-08-11 — H31.R1: deploy toàn bộ checkpoint Quality Lab lên production
 
 - **Mục tiêu:** phát hành toàn bộ commit đã full-gate lên control plane

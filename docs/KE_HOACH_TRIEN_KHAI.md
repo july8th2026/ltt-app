@@ -2156,3 +2156,27 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
 Điều kiện chặn: không dùng production media khi chưa consent/retention; không
 tải model runtime; không bật release gate cho metric chưa tương quan human;
 không sửa platform/server chỉ để thêm app Quality Lab.
+
+## H32 — Batch audit/nâng cấp AppLttStudio_11082026
+
+Nguồn yêu cầu/tài nguyên chỉ đọc:
+`C:\Users\Thang Tuong\Desktop\AppLttStudio_11082026`. Quy trình chi tiết và
+output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
+
+- [x] H32.0 Charter, source truth, asset inventory và browser harness cô lập —
+  2026-08-11: kiểm kê đủ 6 folder/MoTa/asset/hash/media probe; khóa thứ tự,
+  evidence contract và output naming trong master plan; fixture AutoSub riêng
+  cổng 8140, production 8100 không bị tác động.
+- [x] H32.1 AutoSub Video — 2026-08-11: đổi tên manifest/nav; Playwright thật
+  upload 15s → SRT → TikTok Bold/Montserrat 64/middle → quote 2 credit → NVENC
+  render 3s → download/media/frame/history/reload/mobile. Output H.264+AAC
+  864×496/24fps/15,069s, console 0, network 0 lỗi; **36 pytest + 13 Vitest
+  pass**. AI WhisperX/Pyannote/Gemini chưa cấu hình nên giữ gate có điều kiện;
+  roadmap/scorecard/finding ở `docs/APP_AUDIT/autosubvideo/2026-08-11-h32/`.
+- [ ] H32.2 Prompt AI: đối chiếu Prompt Seedance Studio read-only, library/style/
+  Meta Director, brief→build→preview.
+- [ ] H32.3 Tạo ảnh AI: general + YouTube Thumbnail, provider output/download.
+- [ ] H32.4 Tạo Clip ngắn: 523,9 MB, option/GPU/queue/output/download.
+- [ ] H32.5 Seedance: visual audit/nâng cấp theo ảnh, tuyệt đối không chạy job.
+- [ ] H32.6 Upscale: full option matrix, queue/GPU/performance/quality evidence.
+- [ ] H32.7 Per-tool scorecard/report, full gate và release plan; không tự deploy.

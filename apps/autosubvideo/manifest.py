@@ -34,13 +34,13 @@ def _cost(params: dict) -> int:
 
 MANIFEST = AppManifest(
     slug="autosubvideo",
-    display_name=N_('Khắc phụ đề video'),
+    display_name=N_('AutoSub Video'),
     route_prefix="/autosubvideo",
     summary=N_('Nạp video + transcript (.srt/.json), chọn kiểu chữ, khắc phụ đề đẹp vào video.'),
     icon="💬",
     accent="#0E7C86",
 
-    nav=(NavEntry("Khắc phụ đề video", "/autosubvideo", "💬", "autosubvideo"),),
+    nav=(NavEntry("AutoSub Video", "/autosubvideo", "💬", "autosubvideo"),),
 
     job_types=("autosubvideo.render", "autosubvideo.transcribe",
                "autosubvideo.diarize", "autosubvideo.translate"),
