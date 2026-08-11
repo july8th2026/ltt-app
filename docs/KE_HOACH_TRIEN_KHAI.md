@@ -2114,9 +2114,10 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
         `docs/QUALITY_LAB/05_UPSCALE_GPU_EVIDENCE.md`. Targeted **22 pass**;
         full gate **PASS 9/9**, pytest 1.690,8 giây.
       - [ ] H31.3c2b Production contract: runtime Upscale chưa ghi peak VRAM
-        theo job nên report job thật vẫn `UNKNOWN`. Benchmark phát hiện manifest
-        đang khai 4.000 MB thấp hơn nhiều peak Quality; xử lý scheduler/runtime
-        phải là phase riêng, không sửa lẫn vào Quality Lab theo Q83.
+        theo job nên report job thật vẫn `UNKNOWN`. H32.6 đã sửa manifest từ
+        4.000 lên 12.000 MB theo peak Quality 11.176 MB và thêm CLI evidence;
+        telemetry per-job/scheduler split Fast–Quality vẫn là phase riêng theo
+        Q83, chưa được coi là hoàn tất.
   - [ ] H31.3d Calibration: tối thiểu 30 ảnh + 12 video có slice/degradation,
     human A/B mù, baseline và threshold theo từng slice/model.
     - [x] H31.3d1 Blind calibration contract — 2026-08-11: dataset thêm
@@ -2201,5 +2202,12 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   overflow, final console 0/request 200–206; **50 targeted pass**, quick gate
   **PASS 8/8**. Q 63 · M 64 · E 84 · BLOCKED bởi P0 billing kế thừa; hồ sơ tại
   `docs/APP_AUDIT/taovideo/2026-08-11-h32/`.
-- [ ] H32.6 Upscale: full option matrix, queue/GPU/performance/quality evidence.
+- [x] H32.6 Upscale — 2026-08-11: actual source/browser batch, **17/17 GPU
+  option matrix**, full Fast 15,069s pass; sửa smooth 24→48, blob metadata,
+  mobile inert/focus, fake Pro/jargon/raw worker status; manifest 12.000 MB theo
+  Quality peak 11.176 MB. Desktop/mobile console 0/request lỗi 0; **56 targeted
+  pass**, quick gate **PASS 8/8**. Quality Lab contract PASS nhưng perceived
+  quality `UNKNOWN`; dual-GPU current bị GPU0 external workload chặn an toàn.
+  Q 72 · M 57 · E 94 · BLOCKED; hồ sơ tại
+  `docs/APP_AUDIT/upscalevideo/2026-08-11-h32/`.
 - [ ] H32.7 Per-tool scorecard/report, full gate và release plan; không tự deploy.

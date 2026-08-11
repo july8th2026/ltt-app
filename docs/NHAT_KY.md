@@ -14,6 +14,72 @@
 
 ---
 
+## 2026-08-11 — H32.6: Upscale 17/17 option PASS, quality vẫn UNKNOWN
+
+- **Mục tiêu:** chạy toàn bộ lựa chọn Upscale trên video được cấp, đo GPU/queue/
+  output thật, sửa lỗi quan sát được và không dùng metric chưa calibrate làm
+  bằng chứng chất lượng thương mại.
+- **Hạng mục:** H32.6 hoàn thành; H32.7 release audit tiếp theo.
+- **Trạng thái:** Q 72 · M 57 · E 94 · BLOCKED bởi upload/lifecycle/quality gate.
+
+### Đã làm
+
+- Dựng fixture cô lập cổng 8145 với DB/storage/user riêng; upload source thật
+  864×496, 24 fps, 15,069 giây. Browser batch hai file giữ đúng 96 credit và
+  tạo queue position 1/2, 2/2.
+- Chạy GPU 1: 12 core Fast/Quality × 1080/1440/2160 × H264/HEVC cùng năm ca
+  normalize/noaudio, stabilize, smooth, stabilize+smooth, preview. Lần đầu bắt
+  smooth 24→60; sửa worker nhân đôi cadence nguồn và rerun chỉ hai ca lỗi.
+  Kết quả cuối **17/17 PASS**, smooth 48 fps.
+- Full Fast 1080 source hoàn thành 32,78 giây xử lý/32,944 giây wall; output
+  1882×1080, 24 fps, AAC, 26.009.834 byte. GPU 1 peak 848 MB, 100%, 67°C,
+  không thermal slowdown. GPU 0 có external load nên bộ đo từ chối; không dừng
+  tiến trình ngoài phạm vi và không báo dual-GPU PASS.
+- Quality peak delta 11.176 MB chứng minh manifest 4.000 MB không an toàn; nâng
+  reservation job type chung lên 12.000 MB. Tách Fast/Quality để không lãng phí
+  reservation được ghi roadmap, chưa làm lẫn vào phase này.
+- Bỏ fake Pro và R2/CORS jargon; status/preset customer-friendly, link History/
+  Activity log. Mobile panel dùng inert/aria-hidden/focus return. Sửa vòng đời
+  blob metadata; final upload không còn `ERR_FILE_NOT_FOUND`.
+- Quality Lab xác minh decodable/dimensions/duration/FPS/audio PASS. PSNR 27,83,
+  SSIM 0,9256 và temporal chỉ diagnostic so Lanczos, verdict `UNKNOWN`, không
+  release-gate eligible.
+- Lập đủ hồ sơ A0–A10 tại
+  `docs/APP_AUDIT/upscalevideo/2026-08-11-h32/`.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `python -m pytest tests/test_82_upscalevideo.py tests/test_114_upscale_ui.py tests/test_115_upscale_feature_benchmark.py tests/test_116_upscale_motion_features.py tests/test_157_upscale_h26.py tests/test_164_quality_lab_upscale.py tests/test_166_quality_lab_upscale_video.py tests/test_171_upscale_h32.py -q` | **56 passed**, 1 deprecation warning, 7,11s |
+| `python tools/upscale_option_matrix.py ... --resume` | **17/17 PASS** trên GPU 1; chỉ rerun hai ca smooth lỗi |
+| `python tools/upscale_dual_gpu_soak.py ...` | PARTIAL: GPU1 full source PASS; GPU0 safety refusal vì không idle |
+| Playwright 1586×992 + 390×844 | actual upload/quote/batch/mobile/history/log PASS; console 0; failed app request 0 |
+| `python tools/qualitylab_upscale_video_cli.py ...` | Contract PASS; perceived/temporal quality **UNKNOWN** |
+| `python tools\gate.py --quick` | **PASS 8/8**, 31,2s |
+| `python tools\gate.py` | Chưa chạy; dành cho H32.7 theo master plan |
+
+### Quyết định mới
+
+Không có Q nền tảng mới. Áp dụng fail-closed: metric chưa calibrated và GPU
+không idle không được biến thành PASS.
+
+### Cách lùi lại
+
+Revert commit H32.6; dừng fixture 8145. Không migration, provider call, deploy
+hay thay đổi production 8100.
+
+### Còn tồn đọng
+
+- Upload session security, artifact lifecycle/retention, calibrated HR+blind set.
+- Live progress/retry/history cursor, canonical preflight/confirmation.
+- Tách job type Fast/Quality và rerun qualified dual-GPU khi cả hai card idle.
+
+### Việc tiếp theo
+
+H32.7 tổng hợp sáu scorecard, chạy full gate và lập release/rollback plan; không
+tự deploy.
+
 ## 2026-08-11 — H32.5: Seedance visual pass không tạo tính năng giả
 
 - **Mục tiêu:** đối chiếu giao diện Seedance thật với `GiaoDien.png`, nâng

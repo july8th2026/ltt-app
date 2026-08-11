@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "evaluation_id": "b3fe411f-d099-407f-b873-962f4150331f",
+  "pack": "upscale_video_diagnostic",
+  "source_kind": "video",
+  "source_artifact": {
+    "candidate_sha256": "700441dfc1965ab0dd11a7e59c95a77a0245020676a3952e4ab1e8f9f2d5523c",
+    "reference_sha256": "12e361a09e5b8de9ec81970cc4919611a47575424df460d9e979426a1c56dd27",
+    "low_input_sha256": "90052f12813a3cbe1f93339d967953d75da2da817fdbdb7df97a92a3fcc994ba"
+  },
+  "evaluator_version": "h32-cli-v1",
+  "evaluators": [],
+  "calibration_version": "foundation-uncalibrated-v1",
+  "release_gate_eligible": false,
+  "overall_verdict": "UNKNOWN",
+  "dimensions": [
+    {
+      "key": "video_contract",
+      "label": "Contract video",
+      "verdict": "PASS",
+      "metrics": [
+        {
+          "key": "video_decodable",
+          "label": "Candidate/reference giải mã được",
+          "value": true,
+          "unit": "",
+          "verdict": "PASS",
+          "threshold": "",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "same_dimensions",
+          "label": "Kích thước khớp HR",
+          "value": true,
+          "unit": "",
+          "verdict": "PASS",
+          "threshold": "",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {
+            "candidate": [
+              1882,
+              1080
+            ],
+            "reference": [
+              1882,
+              1080
+            ]
+          }
+        },
+        {
+          "key": "duration_delta",
+          "label": "Sai lệch thời lượng",
+          "value": 0.021,
+          "unit": "s",
+          "verdict": "PASS",
+          "threshold": "<= max(0.1s, 2%)",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "fps_delta",
+          "label": "Sai lệch FPS",
+          "value": 0.0,
+          "unit": "fps",
+          "verdict": "PASS",
+          "threshold": "<= 0.05 fps",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "audio_parity",
+          "label": "Trạng thái audio được giữ",
+          "value": true,
+          "unit": "",
+          "verdict": "PASS",
+          "threshold": "",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "key": "full_reference",
+      "label": "Full-reference theo frame",
+      "verdict": "UNKNOWN",
+      "metrics": [
+        {
+          "key": "sampled_frames",
+          "label": "Số frame đã lấy mẫu",
+          "value": 2,
+          "unit": "frame",
+          "verdict": "UNKNOWN",
+          "threshold": "",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "mean_psnr_db",
+          "label": "PSNR trung bình",
+          "value": 27.8326,
+          "unit": "dB",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa calibrated",
+          "direction": "higher",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "mean_ssim_local",
+          "label": "Local SSIM trung bình",
+          "value": 0.925592,
+          "unit": "ratio",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa calibrated",
+          "direction": "higher",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "psnr_delta_vs_bicubic",
+          "label": "PSNR delta so với bicubic",
+          "value": -12.98025,
+          "unit": "dB",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa calibrated",
+          "direction": "higher",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "ssim_delta_vs_bicubic",
+          "label": "SSIM delta so với bicubic",
+          "value": -0.055952,
+          "unit": "ratio",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa calibrated",
+          "direction": "higher",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "vmaf_v0_6_1",
+          "label": "VMAF v0.6.1",
+          "value": null,
+          "unit": "score",
+          "verdict": "UNKNOWN",
+          "threshold": "Evaluator chưa sẵn sàng",
+          "direction": "higher",
+          "valid_range": "",
+          "evidence": {
+            "reason": "RuntimeError",
+            "model": "vmaf_v0.6.1"
+          }
+        }
+      ]
+    },
+    {
+      "key": "temporal",
+      "label": "Nhất quán theo thời gian",
+      "verdict": "UNKNOWN",
+      "metrics": [
+        {
+          "key": "temporal_delta_mae",
+          "label": "Sai số biến thiên frame",
+          "value": 6.99915,
+          "unit": "luma",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa calibrated",
+          "direction": "lower",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "luma_flicker_residual",
+          "label": "Flicker độ sáng dư",
+          "value": 0.010994,
+          "unit": "luma",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa calibrated",
+          "direction": "lower",
+          "valid_range": "",
+          "evidence": {}
+        }
+      ]
+    },
+    {
+      "key": "performance",
+      "label": "Hiệu năng job nguồn",
+      "verdict": "UNKNOWN",
+      "metrics": [
+        {
+          "key": "processing_seconds",
+          "label": "Thời gian xử lý Upscale",
+          "value": 4.93,
+          "unit": "s",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa có baseline theo model/slice",
+          "direction": "lower",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "processed_frames",
+          "label": "Số frame đã xử lý",
+          "value": 24,
+          "unit": "frame",
+          "verdict": "UNKNOWN",
+          "threshold": "",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "throughput_fps",
+          "label": "Thông lượng xử lý",
+          "value": 4.8682,
+          "unit": "frame/s",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa có baseline theo GPU/model/resolution",
+          "direction": "higher",
+          "valid_range": "",
+          "evidence": {}
+        },
+        {
+          "key": "peak_vram_mb",
+          "label": "Peak VRAM",
+          "value": 848,
+          "unit": "MB",
+          "verdict": "UNKNOWN",
+          "threshold": "Chưa có baseline theo model/slice",
+          "direction": "",
+          "valid_range": "",
+          "evidence": {}
+        }
+      ]
+    }
+  ],
+  "runtime": {
+    "summary": {
+      "sample_times_seconds": [
+        0.05,
+        0.75
+      ],
+      "candidate_mean": {
+        "psnr_db": 27.8326,
+        "ssim_local": 0.925592
+      },
+      "bicubic_mean": {
+        "psnr_db": 40.81285,
+        "ssim_local": 0.981544
+      },
+      "temporal": {
+        "temporal_delta_mae": 6.99915,
+        "luma_flicker_residual": 0.010994
+      },
+      "vmaf": null,
+      "candidate_probe": {
+        "duration": 1.0,
+        "width": 1882,
+        "height": 1080,
+        "codec": "h264",
+        "fps": 24.0,
+        "audio_codec": "aac",
+        "file_size_mb": 1.8,
+        "bitrate_kbps": 15248
+      },
+      "reference_probe": {
+        "duration": 1.021,
+        "width": 1882,
+        "height": 1080,
+        "codec": "h264",
+        "fps": 24.0,
+        "audio_codec": "aac",
+        "file_size_mb": 0.5,
+        "bitrate_kbps": 3877
+      }
+    }
+  },
+  "environment": {},
+  "created_at": "2026-08-11T15:09:18.757698+00:00",
+  "notice": "Kết quả foundation dùng để chẩn đoán; chưa được hiệu chuẩn với đánh giá mù của con người và không được dùng làm release gate."
+}

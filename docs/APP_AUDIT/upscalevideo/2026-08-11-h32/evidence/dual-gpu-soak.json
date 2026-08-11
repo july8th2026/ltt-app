@@ -1,0 +1,46 @@
+{
+  "passed": false,
+  "source_name": "VideoTest.mp4",
+  "wall_seconds": 35.658,
+  "workers": [
+    {
+      "gpu_index": 0,
+      "returncode": 1,
+      "worker_passed": false,
+      "elapsed_seconds": null,
+      "output": {},
+      "error_tail": "Traceback (most recent call last):\n  File \"D:\\LTTSTUDIOSAPP\\tools\\upscale_gpu_smoke.py\", line 176, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"D:\\LTTSTUDIOSAPP\\tools\\upscale_gpu_smoke.py\", line 121, in main\n    raise RuntimeError(\n        \"Assigned GPU is not idle enough for qualified peak VRAM evidence.\")\nRuntimeError: Assigned GPU is not idle enough for qualified peak VRAM evidence.\n"
+    },
+    {
+      "gpu_index": 1,
+      "returncode": 0,
+      "worker_passed": true,
+      "elapsed_seconds": 32.944,
+      "output": {
+        "width": 1882,
+        "height": 1080,
+        "fps": 24.0,
+        "duration_s": 15.069002,
+        "has_audio": true,
+        "size_bytes": 26009834
+      },
+      "error_tail": ""
+    }
+  ],
+  "telemetry": {
+    "0": {
+      "sample_count": 63,
+      "max_util_percent": 29,
+      "max_temp_c": 47,
+      "max_vram_used_mb": 1160,
+      "thermal_slowdown_observed": false
+    },
+    "1": {
+      "sample_count": 63,
+      "max_util_percent": 100,
+      "max_temp_c": 67,
+      "max_vram_used_mb": 852,
+      "thermal_slowdown_observed": false
+    }
+  }
+}

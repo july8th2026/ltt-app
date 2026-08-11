@@ -122,6 +122,16 @@ E 84 · BLOCKED do P0 billing cũ, không phải do visual gate. Hồ sơ:
 - PASS: mọi option hỗ trợ được chứng minh; option không chạy phải ẩn/disable hoặc
   sửa; manifest GPU contract khớp bằng chứng runtime.
 
+**Checkpoint 2026-08-11:** 17/17 option matrix PASS trên GPU 1; full source
+15,069 giây Fast 1080 H.264 hoàn thành 32,78 giây, 1882×1080/24 fps/AAC,
+peak delta 848 MB, 67°C, không thermal slowdown. Quality peak delta 11.176 MB
+nên manifest đã tăng 4.000→12.000 MB. Sửa smooth 24→60 thành đúng source cadence
+24→48; browser batch giữ đúng 96 credit và queue 1/2, 2/2. Desktop/mobile sạch;
+**56 targeted pass**, quick gate **PASS 8/8**. Quality Lab chỉ PASS video
+contract, perceived quality vẫn `UNKNOWN`; current dual-GPU soak bị từ chối an
+toàn vì GPU 0 có workload ngoài phạm vi. Q 72 · M 57 · E 94 · BLOCKED; hồ sơ:
+`docs/APP_AUDIT/upscalevideo/2026-08-11-h32/`.
+
 ### H32.7 — Release audit
 
 - Mỗi tool có: charter, current truth, control registry, scorecard Q/M/E/Gate,

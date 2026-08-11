@@ -72,6 +72,16 @@ def main() -> int:
     parser.add_argument("--preset", choices=("fast", "quality"), default="fast")
     parser.add_argument("--target-height", type=int, choices=(1080, 1440, 2160),
                         default=1080)
+    parser.add_argument("--codec", choices=("h264", "hevc"), default="h264")
+    parser.add_argument("--preserve-fps", action=argparse.BooleanOptionalAction,
+                        default=True)
+    parser.add_argument("--preserve-audio", action=argparse.BooleanOptionalAction,
+                        default=True)
+    parser.add_argument("--preview", action="store_true")
+    parser.add_argument("--stabilize", action="store_true")
+    parser.add_argument("--smooth-motion", action="store_true")
+    parser.add_argument("--artifact-output", type=Path,
+                        help="Optional local copy for a separate Quality Lab run.")
     parser.add_argument("--max-seconds", type=float, default=0.0)
     parser.add_argument("--sample-interval-ms", type=int, default=200)
     parser.add_argument("--max-baseline-memory-mb", type=int, default=512)
@@ -120,11 +130,15 @@ def main() -> int:
             if busy and not args.allow_busy_gpu:
                 raise RuntimeError(
                     "Assigned GPU is not idle enough for qualified peak VRAM evidence.")
+            preserve_fps = bool(args.preserve_fps) and not args.smooth_motion
             result = handle({"video_key": source_key, "owner_id": "",
                              "preset": args.preset,
-                             "target_height": args.target_height, "codec": "h264",
-                             "preview": False,
-                             "preserve_fps": True, "preserve_audio": True}, ctx)
+                             "target_height": args.target_height, "codec": args.codec,
+                             "preview": args.preview,
+                             "preserve_fps": preserve_fps,
+                             "preserve_audio": args.preserve_audio,
+                             "stabilize": args.stabilize,
+                             "smooth_motion": args.smooth_motion}, ctx)
         elapsed = time.perf_counter() - started
         gpu_evidence = sampler.summary()
         gpu_evidence["baseline_gate_passed"] = not busy
@@ -133,10 +147,18 @@ def main() -> int:
         output_local = work / "output.mp4"
         with storage.open(result["video_key"]) as source, output_local.open("wb") as target:
             shutil.copyfileobj(source, target)
+        if args.artifact_output:
+            args.artifact_output.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(output_local, args.artifact_output)
         output_probe = probe_video(str(output_local))
+        expected_fps = (source_probe["fps"] * 2 if args.smooth_motion else
+                        (source_probe["fps"] if preserve_fps else 30.0))
+        expected_audio = bool(source_probe["has_audio"] and args.preserve_audio)
+        expected_codec = "hevc" if args.codec == "hevc" else "h264"
         passed = (output_probe["h"] == args.target_height and output_probe["w"] > 0 and
-                  abs(output_probe["fps"] - source_probe["fps"]) < 0.05 and
-                  bool(output_probe["has_audio"]) == bool(source_probe["has_audio"]) and
+                  abs(output_probe["fps"] - expected_fps) < 0.05 and
+                  bool(output_probe["has_audio"]) == expected_audio and
+                  output_probe["vcodec"] == expected_codec and
                   output_local.stat().st_size > 0)
         evidence = {"schema_version": 2, "passed": passed,
                     "source_artifact": {"sha256": _sha256(args.source),
@@ -146,6 +168,12 @@ def main() -> int:
                                           selected.uuid.encode("utf-8")).hexdigest(),
                                       "name": selected.name},
                     "preset": args.preset, "target_height": args.target_height,
+                    "options": {"codec": args.codec,
+                                "preserve_fps": preserve_fps,
+                                "preserve_audio": bool(args.preserve_audio),
+                                "preview": bool(args.preview),
+                                "stabilize": bool(args.stabilize),
+                                "smooth_motion": bool(args.smooth_motion)},
                     "derived_input": {"width": source_probe["w"], "height": source_probe["h"],
                                       "fps": source_probe["fps"],
                                       "duration_s": source_probe["duration"],
@@ -154,6 +182,7 @@ def main() -> int:
                                "fps": output_probe["fps"],
                                "duration_s": output_probe["duration"],
                                "has_audio": output_probe["has_audio"],
+                               "codec": output_probe["vcodec"],
                                "size_bytes": output_local.stat().st_size},
                     "engine_result": {key: value for key, value in result.items()
                                       if key != "video_key"},

@@ -144,6 +144,18 @@ def _resolve_encoder(codec: Codec) -> str:
     return "libx264"                      # Intel/AMD/CPU → x264 (chậm nhưng không chết)
 
 
+def _output_fps(fps_str: str, preserve_fps: bool, smooth_motion: bool) -> str:
+    """Resolve the customer FPS intent without silently changing its base.
+
+    Motion smoothing means *double the source cadence*.  It is not compatible
+    with a promise to preserve the output FPS, but that must not turn a 24 fps
+    source into a 30 fps source before interpolation (24→48, not 30→60).
+    """
+    if smooth_motion:
+        return ff.multiply_rate(fps_str)
+    return fps_str if preserve_fps else "30"
+
+
 def _upscale_batched(tmp, in_dir, tune, n, info, target_h, encoder, ctx, on_prog,
                      cancel_check, gpu_index=None, process_env=None):
     """Video dài: chunk _BATCH_SIZE frame → upscale → encode segment → concat."""
@@ -267,8 +279,7 @@ def handle(params: dict, ctx=None) -> dict:
 
         if ctx is not None:
             ctx.progress(4, "tách frame")
-        base_fps = info["fps_str"] if preserve_fps else "30"
-        output_fps = ff.multiply_rate(base_fps) if smooth_motion else base_fps
+        output_fps = _output_fps(info["fps_str"], preserve_fps, smooth_motion)
         cfr = None if smooth_motion else (info["fps_str"] if preserve_fps and info.get("is_vfr") else (
             "30" if not preserve_fps else None)
         )

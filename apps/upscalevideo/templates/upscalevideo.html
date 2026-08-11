@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block page_mode %}immersive{% endblock %}
 {% block title %}Upscale Video — LTT Studios{% endblock %}
-{% block topbar_title %}<strong>Upscale Video</strong><span class="up-pro">PRO</span>{% endblock %}
+{% block topbar_title %}<strong>Upscale Video</strong>{% endblock %}
 {% block content %}
 <div class="up-studio">
   <button class="up-settings-toggle" id="up-settings-toggle" type="button" aria-controls="upform" aria-expanded="false">{{ _("Thiết lập nâng cấp") }} <span aria-hidden="true">⌄</span></button>
@@ -64,7 +64,7 @@
         <input type="file" id="vfile" name="video" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*">
         <div class="up-upload-icon">⇧</div>
         <h1>{{ _("Kéo &amp; thả video vào đây") }}</h1>
-        <p>{{ _("MP4, MOV, MKV, AVI · browser tối đa 90MB khi R2 CORS chưa được bật") }}</p>
+        <p>MP4, MOV, MKV, AVI</p>
         <button type="button" id="choosebtn">{{ _("Chọn tệp từ máy") }}</button>
         <small id="filemeta">{{ _("Chưa chọn video") }}</small>
         <div id="batch-files" class="up-batch-files"></div>
@@ -82,23 +82,23 @@
     </section>
 
     <section class="up-queue">
-      <header><div><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><small id="up-queue-count" aria-live="polite"></small></div><div class="up-queue-controls"><div class="up-job-filters" role="group" aria-label="{{ _('Lọc hàng đợi') }}"><button type="button" class="on" data-job-filter="all" aria-pressed="true">{{ _("Tất cả") }}</button><button type="button" data-job-filter="done" aria-pressed="false">{{ _("Hoàn tất") }}</button><button type="button" data-job-filter="processing" aria-pressed="false">{{ _("Đang xử lý") }}</button><button type="button" data-job-filter="cancelled" aria-pressed="false">{{ _("Đã hủy") }}</button><button type="button" data-job-filter="error" aria-pressed="false">{{ _("Lỗi") }}</button></div><label class="up-job-sort"><span class="sr-only">{{ _("Sắp xếp hàng đợi") }}</span><select id="up-job-sort"><option value="newest">{{ _("Mới nhất") }}</option><option value="oldest">{{ _("Cũ nhất") }}</option></select></label><div class="up-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-job-view="list" aria-pressed="true" title="{{ _('Danh sách') }}">☷</button><button type="button" data-job-view="grid" aria-pressed="false" title="{{ _('Lưới') }}">▦</button></div></div></header>
+      <header><div><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><small id="up-queue-count" aria-live="polite"></small></div><div class="up-queue-controls"><a class="up-history-link" href="/jobs?app=upscalevideo">{{ _("Lịch sử") }}</a><div class="up-job-filters" role="group" aria-label="{{ _('Lọc hàng đợi') }}"><button type="button" class="on" data-job-filter="all" aria-pressed="true">{{ _("Tất cả") }}</button><button type="button" data-job-filter="done" aria-pressed="false">{{ _("Hoàn tất") }}</button><button type="button" data-job-filter="processing" aria-pressed="false">{{ _("Đang xử lý") }}</button><button type="button" data-job-filter="cancelled" aria-pressed="false">{{ _("Đã hủy") }}</button><button type="button" data-job-filter="error" aria-pressed="false">{{ _("Lỗi") }}</button></div><label class="up-job-sort"><span class="sr-only">{{ _("Sắp xếp hàng đợi") }}</span><select id="up-job-sort"><option value="newest">{{ _("Mới nhất") }}</option><option value="oldest">{{ _("Cũ nhất") }}</option></select></label><div class="up-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-job-view="list" aria-pressed="true" title="{{ _('Danh sách') }}">☷</button><button type="button" data-job-view="grid" aria-pressed="false" title="{{ _('Lưới') }}">▦</button></div></div></header>
       <div class="up-job-list" id="up-job-list">
         {% for j in jobs %}
         <article class="up-job" data-state="{{j.status}}" data-state-group="{% if j.status in ('queued','running') %}processing{% else %}{{j.status}}{% endif %}" data-created="{{j.created_at}}" aria-labelledby="up-job-title-{{j.id}}">
           <video class="up-job-thumb" muted playsinline preload="metadata" src="{{app.route_prefix}}/jobs/{{j.id}}/source#t=0.1" aria-label="{{ _('Xem trước') }} {{j.source_name}}"></video>
           <div class="up-job-info">
             <strong id="up-job-title-{{j.id}}">{{j.source_name}}</strong>
-            <div class="up-job-tags"><span class="tag-preset">{{j.preset}}</span><span class="tag-codec">{{j.codec|upper}}</span><span class="tag-resolution">{{j.target_height or 1080}}p</span>{% if j.stabilize %}<span class="tag-stabilize">{{ _("Chống rung") }}</span>{% endif %}{% if j.smooth_motion %}<span class="tag-motion">FPS 2×</span>{% endif %}{% if j.duration_s %}<span class="tag-duration">{{j.duration_s}}s</span>{% endif %}</div>
+            <div class="up-job-tags"><span class="tag-preset">{{ _("Chất lượng") if j.preset=='quality' else _("Nhanh") }}</span><span class="tag-codec">{{j.codec|upper}}</span><span class="tag-resolution">{{j.target_height or 1080}}p</span>{% if j.stabilize %}<span class="tag-stabilize">{{ _("Chống rung") }}</span>{% endif %}{% if j.smooth_motion %}<span class="tag-motion">FPS 2×</span>{% endif %}{% if j.duration_s %}<span class="tag-duration">{{j.duration_s}}s</span>{% endif %}</div>
             {% if j.error %}<small class="up-error">{{j.error}}</small>{% elif j.warning %}<small>{{j.warning}}</small>{% endif %}
           </div>
           <div class="up-job-progress" aria-live="polite">
             <strong class="up-state up-state-{{j.status}}">{% if j.status=='done' %}{{ _("Hoàn tất") }}{% elif j.status=='error' %}{{ _("Lỗi") }}{% elif j.status=='cancelled' %}{{ _("Đã hủy") }}{% elif j.status=='running' %}{{ _("Đang xử lý") }} · {{j.progress}}%{% else %}{{ _("Đang chờ") }}{% endif %}</strong>
             <div role="progressbar" aria-label="{{ _('Tiến độ') }} {{j.source_name}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{j.progress}}"><i style="width:{{j.progress}}%"></i></div>
-            <small>{{j.progress_msg or j.status}}{% if j.eta_text %} · {{j.eta_text}}{% endif %}</small>
+            <small>{% if j.status=='queued' %}{{j.eta_text or _("Đang chờ")}}{% elif j.status=='running' %}{{ _("Đang xử lý") }}{% if j.eta_text %} · {{j.eta_text}}{% endif %}{% elif j.status=='done' %}{{ _("Tải xuống") }}{% elif j.status=='cancelled' %}{{ _("Đã hủy") }}{% else %}{{ _("Nhật ký") }}{% endif %}</small>
           </div>
           <div class="up-job-actions">
-            {% if j.video_key %}<a href="{{app.route_prefix}}/jobs/{{j.id}}/download">{{ _("Tải xuống") }}</a><a class="up-use-compare" href="#up-compare" data-source="{{app.route_prefix}}/jobs/{{j.id}}/source" data-output="{{app.route_prefix}}/v/{{j.video_key}}">{{ _("So sánh") }}</a>{% endif %}
+            {% if j.video_key %}<a href="{{app.route_prefix}}/jobs/{{j.id}}/download">{{ _("Tải xuống") }}</a><a class="up-use-compare" href="#up-compare" data-source="{{app.route_prefix}}/jobs/{{j.id}}/source" data-output="{{app.route_prefix}}/v/{{j.video_key}}">{{ _("So sánh") }}</a>{% endif %}<a href="/jobs/{{j.id}}">{{ _("Nhật ký") }}</a>
             {% if j.status in ('queued','running') %}<form method="post" action="{{app.route_prefix}}/jobs/{{j.id}}/cancel"><input type="hidden" name="csrf_token" value="{{csrf_token}}"><button type="submit">{{ _("Hủy job") }}</button></form>{% endif %}
           </div>
         </article>
@@ -119,9 +119,12 @@
   const settingsToggle=document.getElementById('up-settings-toggle'), compareView=document.getElementById('up-compare-view');
   const outputPreview=document.getElementById('output-preview'), compareDivider=document.getElementById('up-compare-divider');
   const preserveFps=document.getElementById('preserve_fps'), smoothMotion=document.getElementById('smooth_motion');
-  let selected=[], batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
+  const compact=window.matchMedia('(max-width:720px)');
+  let selected=[], previewUrls=[], batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
 
-  settingsToggle.onclick=()=>{const open=form.classList.toggle('mobile-open');settingsToggle.setAttribute('aria-expanded',String(open));settingsToggle.querySelector('span').textContent=open?'⌃':'⌄'};
+  function syncSettingsAccessibility(){const hidden=compact.matches&&!form.classList.contains('mobile-open');form.toggleAttribute('inert',hidden);if(hidden)form.setAttribute('aria-hidden','true');else form.removeAttribute('aria-hidden')}
+  settingsToggle.onclick=()=>{const open=form.classList.toggle('mobile-open');settingsToggle.setAttribute('aria-expanded',String(open));settingsToggle.querySelector('span').textContent=open?'⌃':'⌄';syncSettingsAccessibility();if(!open)settingsToggle.focus()};
+  if(compact.addEventListener)compact.addEventListener('change',syncSettingsAccessibility);else compact.addListener(syncSettingsAccessibility);syncSettingsAccessibility();
   function setComparePosition(value){const n=Math.max(0,Math.min(100,+value||0));if(outputPreview?.tagName==='VIDEO')outputPreview.style.clipPath=`inset(0 0 0 ${n}%)`;compareDivider.style.left=`${n}%`;compareDivider.setAttribute('aria-valuenow',String(Math.round(n)))}
   function compareFromPointer(event){const rect=compareView.getBoundingClientRect();setComparePosition((event.clientX-rect.left)/rect.width*100)}
   compareDivider.addEventListener('pointerdown',event=>{if(compareDivider.getAttribute('aria-disabled')==='true')return;compareDivider.setPointerCapture(event.pointerId);compareFromPointer(event)});
@@ -152,7 +155,7 @@
 
   input.addEventListener('change',()=>selectFiles([...input.files]));
 
-  function probe(file){return new Promise(resolve=>{const video=document.createElement('video'),url=URL.createObjectURL(file);video.preload='metadata';video.onloadedmetadata=()=>{const value=Math.max(0,Math.round(video.duration||0));URL.revokeObjectURL(url);resolve(value)};video.onerror=()=>{URL.revokeObjectURL(url);resolve(0)};video.src=url})}
+  function probe(file){return new Promise(resolve=>{const video=document.createElement('video'),url=URL.createObjectURL(file);video.preload='metadata';function finish(value){video.removeAttribute('src');video.load();setTimeout(()=>URL.revokeObjectURL(url),0);resolve(value)}video.onloadedmetadata=()=>finish(Math.max(0,Math.round(video.duration||0)));video.onerror=()=>finish(0);video.src=url})}
   async function selectFiles(files){
     const limit=batchToggle.checked?3:1;
     if(files.length>limit){status.textContent=`Chỉ nhận tối đa ${limit} video.`;files=files.slice(0,limit)}else status.textContent='';
@@ -160,7 +163,7 @@
     if(files.some(file=>!allowed.test(file.name))){status.textContent='Có file không đúng định dạng video hỗ trợ.';return}
     batchId=(crypto.randomUUID?crypto.randomUUID():String(Date.now()));
     selected=await Promise.all(files.map(async(file,index)=>({file,duration:await probe(file),request_id:`${batchId}-${index}`})));
-    renderFiles();if(selected[0]){preview.src=URL.createObjectURL(selected[0].file);preview.load()}await updateQuote();
+    renderFiles();if(selected[0]){const url=URL.createObjectURL(selected[0].file);previewUrls.push(url);preview.src=url;preview.load()}await updateQuote();
   }
   function renderFiles(){
     key.value='';dur.value=selected[0]?.duration||0;fileMeta.textContent=selected.length?`${selected.length} video · ${(selected.reduce((n,x)=>n+x.file.size,0)/1048576).toFixed(1)} MB`:'Chưa chọn video';
@@ -211,6 +214,7 @@
       const result=await response.json();if(result.ok)location.href=prefix;else throw new Error(result.error||'Không thể tạo job');
     }catch(err){status.textContent='Lỗi: '+err.message;button.disabled=false}
   });
+  window.addEventListener('beforeunload',()=>previewUrls.forEach(url=>URL.revokeObjectURL(url)));
 })();
 </script>
 {% endblock %}

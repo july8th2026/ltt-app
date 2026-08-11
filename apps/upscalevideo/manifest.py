@@ -48,10 +48,12 @@ MANIFEST = AppManifest(
 
     job_types=("upscalevideo.render",),
     requires=("gpu", "ffmpeg"),
-    # Sàn để xếp chỗ, không phải hạn mức: `autotune.pick()` vẫn hạ tile size
-    # theo VRAM thật lúc chạy. Preset quality (x4plus) muốn ~10 GB mới nhanh,
-    # nhưng chạy được từ ~4 GB — nên lấy 4 GB làm sàn để không chờ vô ích.
-    gpu_vram_mb={"upscalevideo.render": 4000},
+    # H32.6 đo runtime thật trên RTX 5060 Ti: Quality x4plus đạt peak delta
+    # 11.176 MB. Job type hiện dùng chung cho Fast/Quality nên allocator phải
+    # giữ theo worst case; nếu chỉ khai 4 GB, Quality có thể được cấp vào card
+    # không đủ VRAM rồi chậm/OOM. Phase sau có thể tách job type theo preset để
+    # Fast (peak delta ~848 MB) vẫn chạy trên card nhỏ hơn.
+    gpu_vram_mb={"upscalevideo.render": 12000},
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.upscale", job_type="upscalevideo.render",

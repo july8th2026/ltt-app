@@ -1,0 +1,394 @@
+{
+  "schema_version": 2,
+  "passed": true,
+  "source_artifact": {
+    "sha256": "0f76e48703fbbd4c1e6f28dce47e68527031296e2747c87662727210c8101209",
+    "bytes": 6592927
+  },
+  "requested_gpu": {
+    "index": 1,
+    "uuid_sha256": "cf7c294aec15fed90322fc1d2c49b8d71d1e310b7073304665311b875c549430",
+    "name": "NVIDIA GeForce RTX 5060 Ti"
+  },
+  "preset": "fast",
+  "target_height": 1080,
+  "derived_input": {
+    "width": 836,
+    "height": 480,
+    "fps": 24.0,
+    "duration_s": 15.069002,
+    "has_audio": true
+  },
+  "output": {
+    "width": 1882,
+    "height": 1080,
+    "fps": 24.0,
+    "duration_s": 15.069002,
+    "has_audio": true,
+    "size_bytes": 26009834
+  },
+  "engine_result": {
+    "credit_cost": 8,
+    "duration_s": 15.1,
+    "preset": "fast",
+    "target_height": 1080,
+    "out_w": 1882,
+    "out_h": 1080,
+    "codec": "h264",
+    "encoder": "h264_nvenc",
+    "fps": 24.0,
+    "has_audio": true,
+    "preserve_fps": true,
+    "preserve_audio": true,
+    "stabilize": false,
+    "smooth_motion": false,
+    "frames": 361,
+    "processing_seconds": 32.78
+  },
+  "elapsed_seconds": 32.944,
+  "gpu": {
+    "available": true,
+    "gpus": [
+      {
+        "index": 0,
+        "model": "NVIDIA GeForce RTX 5060 Ti",
+        "util_percent": 10,
+        "temp_c": 45,
+        "vram_total_mb": 16311,
+        "vram_used_mb": 1160
+      },
+      {
+        "index": 1,
+        "model": "NVIDIA GeForce RTX 5060 Ti",
+        "util_percent": 0,
+        "temp_c": 51,
+        "vram_total_mb": 16311,
+        "vram_used_mb": 4
+      }
+    ],
+    "count": 2,
+    "model": "NVIDIA GeForce RTX 5060 Ti",
+    "util_percent": 10,
+    "temp_c": 45,
+    "vram_total_mb": 16311,
+    "vram_used_mb": 1160
+  },
+  "gpu_memory_evidence": {
+    "schema_version": 1,
+    "gpu_id_sha256": "cf7c294aec15fed90322fc1d2c49b8d71d1e310b7073304665311b875c549430",
+    "scope": "whole_device_delta_from_idle_baseline",
+    "sampling_interval_ms": 200,
+    "sample_count": 124,
+    "sampling_errors": 0,
+    "duration_seconds": 32.868,
+    "baseline_memory_used_mb": 4,
+    "peak_memory_used_mb": 852,
+    "peak_delta_memory_mb": 848,
+    "baseline_utilization_percent": 0,
+    "peak_utilization_percent": 100,
+    "peak_temperature_c": 67,
+    "qualified": true,
+    "qualification_note": "Valid only for an otherwise idle, exclusively assigned GPU; memory is whole-device allocation, not per-process memory.",
+    "baseline_gate_passed": true
+  },
+  "runtime_fingerprint": {
+    "engine_bundle": "upscalevideo/vendor/engine",
+    "artifacts": [
+      {
+        "path": "models/realesr-general-wdn-x4v3.bin",
+        "bytes": 4853320,
+        "sha256": "26a607eb84bd114cde27ea9728de9fdeef4e1c33f4f92d88c5a7822b183857c9"
+      },
+      {
+        "path": "models/realesr-general-wdn-x4v3.param",
+        "bytes": 9015,
+        "sha256": "33950f36822fd37786502db9bd6a3638f677c13b23814c8e5a6e8fd9bcea2163"
+      },
+      {
+        "path": "models/realesr-general-x4v3.bin",
+        "bytes": 4853320,
+        "sha256": "bfdfaebf0b26be9442faa30b8cec617fe04a808ae2aa3616ece85b92d81ae0ce"
+      },
+      {
+        "path": "models/realesr-general-x4v3.param",
+        "bytes": 9015,
+        "sha256": "33950f36822fd37786502db9bd6a3638f677c13b23814c8e5a6e8fd9bcea2163"
+      },
+      {
+        "path": "models/realesrgan-x4plus.bin",
+        "bytes": 33424520,
+        "sha256": "713ee713b0353afaa27976f0563a64a5043bd70b9bd8936c2e26e25ebcdbcddf"
+      },
+      {
+        "path": "models/realesrgan-x4plus.param",
+        "bytes": 116029,
+        "sha256": "35330ececcea33b6c397a72548e788d5d53becee4734c50b7fada36e89f10a86"
+      },
+      {
+        "path": "realesrgan-ncnn-vulkan.exe",
+        "bytes": 6161408,
+        "sha256": "07e49f7cbb4ede01ae4dd4c399d3a7e5846e3d2085c3128eff881e55cb7b1a0c"
+      },
+      {
+        "path": "vcomp140.dll",
+        "bytes": 182704,
+        "sha256": "8f72ef2e483465444b2059fc6744d6cb22cd8d8a27f6fa56befd2a42dcd0f78b"
+      },
+      {
+        "path": "vcomp140d.dll",
+        "bytes": 207736,
+        "sha256": "34980f5a28002967d4f2659b10a417b1b9a242e240195947c89195083d146c53"
+      }
+    ]
+  },
+  "progress_stages": [
+    {
+      "percent": 2,
+      "message": "tải video"
+    },
+    {
+      "percent": 4,
+      "message": "tách frame"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét realesr-general-x4v3 (tile 384)…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét đoạn 1/2…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 5,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 6,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 8,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 10,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 11,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 13,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 15,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 16,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 18,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 20,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 22,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 24,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 26,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 27,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 29,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 31,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 33,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 35,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 36,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 38,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 40,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 42,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 43,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 45,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 47,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 48,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 50,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 52,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 53,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 55,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 57,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 59,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 61,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 62,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 64,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 66,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 68,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 69,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 71,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 73,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 74,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 76,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 78,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 80,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 82,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 83,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 85,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 87,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 87,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 87,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 87,
+      "message": "nâng nét đoạn 2/2…"
+    },
+    {
+      "percent": 87,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 88,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 88,
+      "message": "nâng nét…"
+    },
+    {
+      "percent": 92,
+      "message": "nối 2 đoạn + audio…"
+    },
+    {
+      "percent": 96,
+      "message": "lưu kết quả"
+    },
+    {
+      "percent": 100,
+      "message": "xong"
+    }
+  ]
+}
