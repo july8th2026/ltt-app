@@ -14,6 +14,62 @@
 
 ---
 
+## 2026-08-11 — H31.3d1: contract human A/B mù có chữ ký
+
+- **Mục tiêu:** xây đường thu và kiểm toán đánh giá cảm nhận của người thật mà
+  không lộ candidate/baseline, không lưu rater ID thô và không cho sửa vote.
+- **Trạng thái:** H31.3d1 hoàn tất local; H31.3d tổng thể còn mở vì chưa có
+  dataset 30 ảnh + 12 video và ba rater thật/case. Chưa deploy.
+
+### Đã thay đổi
+
+- Dataset manifest v1 được mở rộng additive với media kind, split
+  development/calibration/blind-regression, tags và SHA-256 artifact; contract
+  license/consent/retention cũ vẫn giữ nguyên.
+- Thêm calibration suite version/hash, case slice/degradation và metric paired.
+  Assignment random trái/phải theo từng rater bằng HMAC. Public assignment chỉ
+  trả artifact token; backend mới resolve token thành key và không được
+  serialize key vào HTML/URL/log.
+- Normalized vote chỉ lưu rater HMAC, preference canonical, rubric 1–5 và chữ
+  ký HMAC trên toàn vote. Aggregate từ chối vote bị sửa hoặc rater chấm trùng.
+- Readiness yêu cầu >=30 ảnh, >=12 video, đủ face/text/nature/animation/
+  low-light/motion, đủ năm degradation và >=3 vote hợp lệ/case. Báo Fleiss
+  kappa cùng Spearman metric-vs-human; thiếu/constant evidence trả `None`.
+- Dù readiness đạt, output vẫn `release_gate_eligible=false`; threshold phải qua
+  review/version riêng, không tự sinh từ test fixture.
+- CLI `tools/qualitylab_calibration.py` hỗ trợ validate/assign/vote/aggregate;
+  secret và rater đi qua env, không qua command line. Runbook ở
+  `docs/QUALITY_LAB/06_HUMAN_AB_CALIBRATION.md`.
+
+### Kiểm tra đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests\test_168_quality_lab_calibration.py` | PASS, 7 test, 0,17 giây |
+| Targeted calibration + dataset/GPU | PASS, 16 test, 0,57 giây trước bước ký vote |
+| CLI `validate`, `assign`, `vote` trên fixture | PASS; output không có storage key/rater ID/model role |
+| `python tools\gate.py --quick` | PASS 8/8 |
+| `python tools\gate.py` | PASS 9/9; pytest 1.655,0 giây; scanner và 3 frontend đều PASS |
+
+### Cách lùi lại
+
+Gỡ `calibration.py`, CLI, test/fixture 168 và các field additive trong
+`datasets.py`; revert runbook/kế hoạch. Không có migration, model download,
+production media hay thay đổi runtime app sản xuất.
+
+### Còn tồn đọng
+
+- H31.3d2 chưa materialize đủ 30 ảnh + 12 video có license/slice/degradation.
+- H31.3d3 chưa có ba người thật/case, threshold version và blind holdout.
+- H31.3b2 LPIPS offline và H31.3c2b production peak VRAM vẫn mở.
+
+### Việc tiếp theo
+
+1. Xây dataset materializer deterministic, chỉ nhận media owned/licensed và
+   giữ raw ngoài repo theo retention.
+2. Xây trusted artifact streaming/UI trên token mù rồi thu vote thật.
+3. Chỉ sau agreement/correlation review mới tạo calibration threshold version.
+
 ## 2026-08-10 — H31.3c2a: sampler và benchmark peak VRAM Upscale
 
 - **Mục tiêu:** đo peak VRAM thật trong toàn lifecycle benchmark trên đúng GPU,

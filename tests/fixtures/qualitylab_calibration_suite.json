@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "calibration_version": "fixture-upscale-human-v1",
+  "dataset_manifest_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "cases": [
+    {
+      "id": "fixture-image-1",
+      "dataset_sample_id": "fixture-sample-1",
+      "media_kind": "image",
+      "degradation": "bicubic",
+      "slice": "text",
+      "candidate_key": "quality-datasets/private/a1.png",
+      "baseline_key": "quality-datasets/private/b1.png",
+      "metric_value": 0.75
+    }
+  ]
+}

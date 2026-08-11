@@ -3,12 +3,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any
 
 from platform_core.i18n import N_
 
 MAX_ITEMS = 500
 ALLOWED_DEGRADATIONS = {"bicubic", "blur", "noise", "compression", "mixed"}
+ALLOWED_MEDIA_KINDS = {"image", "video"}
+ALLOWED_SPLITS = {"development", "calibration", "blind-regression"}
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
 def _safe_key(value: object, label: str) -> str:
@@ -16,6 +20,27 @@ def _safe_key(value: object, label: str) -> str:
     if not key or ".." in key.split("/") or ":" in key:
         raise ValueError(N_(f"{label} không hợp lệ."))
     return key
+
+
+def _safe_sha256(value: object, label: str) -> str:
+    digest = str(value or "").lower().strip()
+    if digest and not _SHA256.fullmatch(digest):
+        raise ValueError(N_(f"{label} phải là SHA-256 hợp lệ."))
+    return digest
+
+
+def _safe_tags(value: object) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > 12:
+        raise ValueError(N_("tags phải là list tối đa 12 mục."))
+    tags: list[str] = []
+    for raw in value:
+        tag = str(raw or "").strip().lower()
+        if not tag or len(tag) > 40 or tag in tags:
+            raise ValueError(N_("tag rỗng, trùng hoặc quá dài."))
+        tags.append(tag)
+    return tags
 
 
 def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
@@ -46,12 +71,25 @@ def validate_manifest(payload: dict[str, Any]) -> dict[str, Any]:
         retention_days = int(raw.get("retention_days") or 0)
         if production and (not consent_id or retention_days <= 0):
             raise ValueError(N_("Dữ liệu production thiếu consent hoặc retention."))
+        media_kind = str(raw.get("media_kind") or "image")
+        if media_kind not in ALLOWED_MEDIA_KINDS:
+            raise ValueError(N_("media_kind chưa được hỗ trợ."))
+        split = str(raw.get("split") or "development")
+        if split not in ALLOWED_SPLITS:
+            raise ValueError(N_("Dataset split chưa được hỗ trợ."))
         items.append({
             "id": sample_id,
             "reference_key": _safe_key(raw.get("reference_key"), "reference_key"),
             "degraded_key": _safe_key(raw.get("degraded_key"), "degraded_key"),
             "degradation": degradation,
+            "media_kind": media_kind,
+            "split": split,
             "slice": str(raw.get("slice") or "general")[:80],
+            "tags": _safe_tags(raw.get("tags")),
+            "reference_sha256": _safe_sha256(
+                raw.get("reference_sha256"), "reference_sha256"),
+            "degraded_sha256": _safe_sha256(
+                raw.get("degraded_sha256"), "degraded_sha256"),
             "license": license_name[:160],
             "owned_or_licensed": True,
             "production_data": production,

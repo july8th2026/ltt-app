@@ -2119,6 +2119,19 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
         phải là phase riêng, không sửa lẫn vào Quality Lab theo Q83.
   - [ ] H31.3d Calibration: tối thiểu 30 ảnh + 12 video có slice/degradation,
     human A/B mù, baseline và threshold theo từng slice/model.
+    - [x] H31.3d1 Blind calibration contract — 2026-08-11: dataset thêm
+      media kind/split/tags/artifact hash; assignment trái/phải dùng token HMAC
+      không lộ storage key/model role; vote ẩn rater ID, ký HMAC chống sửa và
+      chặn vote trùng. Aggregate tính Fleiss kappa/Spearman, chỉ báo
+      `ready_for_threshold_review`, luôn giữ `release_gate_eligible=false`.
+      CLI fixture và 7 test chuyên biệt PASS; full gate **PASS 9/9**, pytest
+      1.655,0 giây. Runbook:
+      `docs/QUALITY_LAB/06_HUMAN_AB_CALIBRATION.md`.
+    - [ ] H31.3d2 Materialize dataset có license: tối thiểu 30 ảnh + 12 video,
+      đủ six slice/five degradation, tách development/calibration/blind set.
+    - [ ] H31.3d3 Thu vote người thật: tối thiểu 3 rater hợp lệ/case, review
+      agreement/correlation theo slice rồi version threshold; không dùng vote
+      synthetic trong test làm bằng chứng sản phẩm.
 - [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.
 - [ ] H31.5 Pack Seedance/Image/Thumbnail/Clip/Text/Agent tuần tự.
 - [ ] H31.6 Release regression, trend, canary, rollback và LTT-AQA audit.
