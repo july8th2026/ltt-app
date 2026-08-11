@@ -46,11 +46,16 @@ class FFmpegHWAdapter(BaseAdapter):
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 test_out = Path(tmp) / "test.mp4"
+                # NVENC trên một số GPU/driver (đặc biệt RTX 50xx) từ chối
+                # frame 64x64 dù encoder hoạt động bình thường với video thật.
+                # Probe 256x256 thống nhất với platform_core.media để không
+                # báo âm giả rồi lùi cả job về libx264.
                 args = [
                     self.executable,
                     "-y",
                     "-f", "lavfi",
-                    "-i", "color=black:s=64x64:d=0.1",
+                    "-i", "color=black:s=256x256:d=0.1",
+                    "-pix_fmt", "yuv420p",
                     "-c:v", encoder,
                     "-frames:v", "1",
                     str(test_out),

@@ -87,7 +87,8 @@ def handle(params: dict, ctx=None) -> dict:
     except (TypeError, ValueError):
         min_dur, max_dur, target_n = 15.0, 60.0, 3
     target_n = max(1, min(target_n, 10))
-    from apps.taoclipngan.features import (brand_overrides, clean_brand,
+    from apps.taoclipngan.features import (AnalysisProgressTracker,
+                                           brand_overrides, clean_brand,
                                            clean_platforms, platform_copy,
                                            score_rationale)
     brand_preset = clean_brand(str(params.get("brand_preset") or "auto"))
@@ -112,6 +113,8 @@ def handle(params: dict, ctx=None) -> dict:
             shutil.copyfileobj(fsrc, fdst, length=1024 * 1024)
 
         true_dur = media.duration_seconds(str(src))
+        if true_dur <= 0:
+            raise ValueError(_t("Không đọc được thời lượng video nguồn."))
         _dam_bao_giu_cho(job_id, params.get("owner_id", ""),
                          cost.uoc_luong_credit(true_dur, tier, target_n))
 
@@ -131,9 +134,12 @@ def handle(params: dict, ctx=None) -> dict:
         config.set_quality_tier(tier)
         config.set("analysis", "whisper_language", language)
 
+        analysis_progress = AnalysisProgressTracker()
+
         def _acb(engine_name, pct):
-            if ctx is not None:
-                ctx.progress(min(58, 5 + int(pct * 53)), f"phân tích: {engine_name}")
+            update = analysis_progress.update(engine_name, pct)
+            if ctx is not None and update is not None:
+                ctx.progress(*update)
 
         if ctx is not None:
             ctx.progress(5, "phân tích video (chép lời…)")

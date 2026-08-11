@@ -2187,7 +2187,14 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   E 88 · INTERNAL; provider E4 và chênh pricing cùng model còn là blocker, nên
   không giả output fixture thành kết quả AI và không deploy. Hồ sơ:
   `docs/APP_AUDIT/taoanh/2026-08-11-h32/`.
-- [ ] H32.4 Tạo Clip ngắn: 523,9 MB, option/GPU/queue/output/download.
+- [x] H32.4 Tạo Clip ngắn — 2026-08-11: upload/reuse source 523,9 MB; ba
+  job Fast thật, credit 28/job; sửa SRT timeline, progress lùi/spam, NVENC âm
+  giả RTX 50xx, pixel geometry 4:5 và hardening upload. Output cuối H.264 NVENC
+  1080×1350 SAR 1:1/AAC/18,633s, decode pass; ZIP SRT 0..19,750s; mobile sạch.
+  **21 targeted pass**, quick gate chạy lần đầu fail i18n carry-forward Prompt
+  AI rồi đã sửa; kết quả rerun ghi trong nhật ký. Q 77 · M 58 · E 95 · INTERNAL;
+  matrix tier/count/genre, cancel/lifecycle/editor còn trong roadmap tại
+  `docs/APP_AUDIT/taoclipngan/2026-08-11-h32/`.
 - [ ] H32.5 Seedance: visual audit/nâng cấp theo ảnh, tuyệt đối không chạy job.
 - [ ] H32.6 Upscale: full option matrix, queue/GPU/performance/quality evidence.
 - [ ] H32.7 Per-tool scorecard/report, full gate và release plan; không tự deploy.

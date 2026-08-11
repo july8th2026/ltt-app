@@ -79,3 +79,25 @@ def test_clip_estimate_and_dynamic_labels_follow_english_locale(client):
     assert estimate.status_code == 200
     assert "Chọn video" not in estimate.text
     assert "Choose a video" in estimate.text
+
+
+def test_clip_direct_upload_ticket_is_csrf_size_and_type_bound(client):
+    studio = client.get("/en/taoclipngan")
+    token = re.search(r'name="csrf_token" value="([^"]+)"', studio.text).group(1)
+    endpoint = "/en/taoclipngan/upload-url"
+    assert client.post(endpoint, data={"filename": "video.mp4",
+        "content_type": "video/mp4", "size_bytes": "100"}).status_code == 422
+    bad_csrf = client.post(endpoint, data={"csrf_token": "bad", "filename": "video.mp4",
+        "content_type": "video/mp4", "size_bytes": "100"})
+    assert bad_csrf.status_code == 400 and bad_csrf.headers["content-type"].startswith("application/json")
+    bad_type = client.post(endpoint, data={"csrf_token": token, "filename": "payload.exe",
+        "content_type": "application/octet-stream", "size_bytes": "100"})
+    assert bad_type.status_code == 400 and bad_type.json()["detail"]
+    disguised = client.post(endpoint, data={"csrf_token": token, "filename": "payload.mp4",
+        "content_type": "text/html", "size_bytes": "100"})
+    assert disguised.status_code == 400 and disguised.json()["detail"]
+    assert client.post(endpoint, data={"csrf_token": token, "filename": "video.mp4",
+        "content_type": "video/mp4", "size_bytes": str(1024 ** 3 + 1)}).status_code == 413
+    accepted = client.post(endpoint, data={"csrf_token": token, "filename": "video.mp4",
+        "content_type": "video/mp4", "size_bytes": "100"})
+    assert accepted.status_code == 200 and accepted.json()["mode"] == "local"

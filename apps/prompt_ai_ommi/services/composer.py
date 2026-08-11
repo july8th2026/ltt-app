@@ -76,7 +76,7 @@ def preview(project: dict, *, style_override: str = "", style_negative: str = ""
             "resource_count": len(resources), "scene_count": brief["scene_count"],
             "selections": {
                 "style": str(names.get("style") or brief.get("style_id") or "cinematic"),
-                "meta": str(names.get("meta") or "Mặc định"),
+                "meta": str(names.get("meta") or _t("Mặc định")),
                 "snippets": list(names.get("snippets") or []),
             }}
 

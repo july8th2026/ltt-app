@@ -79,10 +79,18 @@ def _resolve_target_resolution(
         return _auto_select_resolution(video_bitrate_kbps, aspect)
 
     if res in _RESOLUTION_MAP:
-        w, h = _RESOLUTION_MAP[res]
-        if clip.target_width > clip.target_height:
-            w, h = h, w
-        return w, h
+        # Tên preset chỉ khóa cạnh ngắn; tỉ lệ phải theo ClipSpec. Cách cũ chỉ
+        # đảo 1080x1920 nên 1:1/4:5 bị encode bằng pixel không vuông (SAR != 1).
+        short_edge = _RESOLUTION_MAP[res][0]
+        ratio = clip.target_width / clip.target_height if clip.target_height else 1.0
+        if ratio >= 1.0:
+            h = short_edge
+            w = round(h * ratio)
+        else:
+            w = short_edge
+            h = round(w / ratio)
+        # H.264 yuv420p cần kích thước chẵn.
+        return max(2, w - w % 2), max(2, h - h % 2)
 
     return clip.target_width, clip.target_height
 

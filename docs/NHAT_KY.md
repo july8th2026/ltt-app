@@ -14,6 +14,75 @@
 
 ---
 
+## 2026-08-11 — H32.4: Tạo Clip chạy GPU thật, sửa bốn lỗi output/ops
+
+- **Mục tiêu:** audit DEEP Tạo Clip bằng source 523,9 MB, chạy như khách hàng,
+  sửa lỗi quan sát được và khóa roadmap cạnh tranh.
+- **Hạng mục:** H32.4 hoàn thành; H32.5 Seedance UI tiếp theo.
+- **Trạng thái:** Q 77 · M 58 · E 95 · INTERNAL; Fast sampled pass, release
+  rộng bị chặn bởi matrix/cancel/storage lifecycle/editor.
+
+### Đã làm
+
+- Upload thẳng 523,9 MB và reuse source library; chạy ba job Fast × 1 clip.
+  Credit 1.000→972→944→916, đúng 28/job; không rò hold.
+- Sửa SRT từ timeline nguồn 39,780s về clip-local 0..19,750s. ZIP bàn giao đã
+  tạo lại và kiểm byte.
+- Sửa aggregate progress sáu engine: thread-safe, không lùi, chỉ ghi bước ≥2%.
+  Job thật có 26 mốc tăng từ 2 đến 100 thay vì hàng trăm event/lùi 58→55.
+- Phép đo FFmpeg chứng minh probe 64×64 làm RTX 5060 Ti trả âm giả; đổi 256×256
+  yuv420p. Output sau sửa mang encoder `h264_nvenc`.
+- Browser/probe bắt 4:5 bị encode 1080×1920/SAR 64:45. Sửa resolution giữ cạnh
+  ngắn theo aspect; output cuối 1080×1350, SAR 1:1, DAR 4:5, 30 fps, AAC,
+  18,633s, 35.530.400 byte, decode exit 0; frame thật crop/caption rõ.
+- Hardening ticket upload bằng CSRF/extension/declared 1 GiB; local đọc cap+1;
+  reject duration/video invalid. API lỗi upload nay trả JSON cho frontend.
+- Benchmark tài liệu chính thức OpusClip/Descript/CapCut; chốt hướng generator
+  hai bước + Review/Edit tối giản, không sao chép full editor đa lớp.
+- Lập 8 file audit tại `docs/APP_AUDIT/taoclipngan/2026-08-11-h32/` và lưu ba
+  MP4/ZIP bằng tên chuẩn vào folder người dùng. File `08643cba` là bằng chứng
+  pre-fix không dùng nghiệm thu; file `15814c05` là output pass.
+- Quick gate lần đầu bắt một chuỗi “Mặc định” carry-forward từ H32.2 chưa bọc
+  i18n; đã bọc `_t()` thay vì hạ baseline.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `python -m pytest tests/test_84_taoclipngan.py tests/test_122_taoclipngan_ui.py tests/test_123_taoclipngan_features.py tests/test_161_clip_customer_workflow_h26.py -q` | **21 passed**, 1 warning deprecation |
+| `python -m pytest tests/test_84_taoclipngan.py tests/test_123_taoclipngan_features.py -q` | **13 passed** |
+| FFmpeg NVENC probe 64×64 / 256×256 | 64 fail -22; 256 pass 0 |
+| Playwright headed desktop + mobile 390×844 | upload/reuse/quote/job/output/package pass; overflow false; console sau reload 0 |
+| FFprobe + full FFmpeg decode output `15814c05` | 1080×1350, SAR 1:1, h264_nvenc/AAC; decode exit 0 |
+| Browser security probe | bad CSRF/type 400 JSON; >1 GiB 413 JSON; valid ticket 200 |
+| `python tools/gate.py --quick` lần 1 | **FAIL 1/8**: i18n Prompt AI 5→6; đã sửa, không tính pass |
+| `python tools/gate.py --quick` lần 2 | **PASS 8/8**; 3 frontend và 5 scanner đều xanh |
+| `python tools/gate.py` | Chưa chạy; để H32.7 theo master plan |
+
+### Quyết định mới
+
+Không có Q nền tảng mới. Phương án sản phẩm O2 được khuyến nghị trong audit,
+chưa biến thành Q cho tới phase Review/Edit.
+
+### Cách lùi lại
+
+Revert commit H32.4. Fixture cổng 8143 và worker DB riêng có thể tắt; production
+8100 không đổi. Output trong folder yêu cầu là artifact kiểm thử, không phải
+dữ liệu production.
+
+### Còn tồn đọng
+
+- Actual object-size server-side, cooperative cancel/deadline, TTL/quota/delete.
+- E4 Balanced/Best/multi-clip/genre/language/aspect matrix và Quality Lab.
+- Transcript VI Fast còn sai; thiếu guided prompt, transcript/timeline editor,
+  reframe/caption preview/rerender và Publish Bot handoff.
+
+### Việc tiếp theo
+
+1. H32.5: Seedance visual audit/nâng cấp theo ảnh, không chạy provider/job.
+2. H32.6: Upscale option/GPU/Quality Lab.
+3. H32.7: full gate và release plan; chưa deploy.
+
 ## 2026-08-11 — H32.3: Tạo ảnh AI disclosure đúng, gate provider vẫn khóa
 
 - **Mục tiêu:** audit hai mode General/YouTube Thumbnail theo LTT-AQA, sửa lỗi

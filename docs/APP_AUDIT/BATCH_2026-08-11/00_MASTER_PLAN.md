@@ -89,6 +89,14 @@ trong hồ sơ `docs/APP_AUDIT/taoanh/2026-08-11-h32/`; không tạo output gi�
 - PASS: output đúng count/contract hoặc lỗi có root cause; download/probe từng
   clip; không giữ credit sai.
 
+**Checkpoint 2026-08-11:** Fast/1 clip/VI/9:16+4:5 pass E4 trên source 523,9
+MB và worker CUDA. Đã sửa SRT rebase, progress monotonic/throttle, NVENC probe
+RTX 50xx, exact aspect geometry, upload CSRF/type/size/local cap và JSON error.
+Output nghiệm thu 4:5 là 1080×1350 SAR 1:1, `h264_nvenc`, decode exit 0; credit
+28/job khớp. Q 77 · M 58 · E 95 · INTERNAL. Balanced/Best, multi-clip, cancel,
+actual object-size/lifecycle và Review/Edit vẫn là blocker, xem hồ sơ
+`docs/APP_AUDIT/taoclipngan/2026-08-11-h32/`.
+
 ### H32.5 — Seedance UI
 
 - Không chạy provider/job theo yêu cầu. So sánh current UI với `GiaoDien.png` ở

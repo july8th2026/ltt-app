@@ -33,6 +33,59 @@ def test_brand_platform_rationale_and_srt_helpers():
         {"start": 1.25, "end": 3.5, "text": "Xin chào"}])
 
 
+def test_package_rebases_source_captions_and_manual_text_to_clip_timeline():
+    from apps.taoclipngan.features import package_payload, srt_text
+
+    source = {"source_start": 39.78, "source_end": 59.53, "duration_s": 19.75,
+              "title": "Clip", "transcript": [
+                  {"start": 39.78, "end": 45.86, "text": "Câu một"},
+                  {"start": 53.19, "end": 60.2, "text": "Câu hai"},
+              ]}
+    package = package_payload(job_id="job", original_clips=[source], drafts=[],
+                              platforms=["tiktok"], brand_preset="auto")
+    captions = package["clips"][0]["transcript"]
+    assert captions[0]["start"] == 0
+    assert captions[-1]["end"] == 19.75
+    rendered = srt_text(captions)
+    assert "00:00:00,000 --> 00:00:06,080" in rendered
+    assert "00:00:19,750" in rendered
+    assert "00:00:39,780" not in rendered
+
+    edited = package_payload(job_id="job", original_clips=[source],
+                             drafts=[{"index": 0, "transcript_text": "Đã sửa"}],
+                             platforms=["tiktok"], brand_preset="auto")
+    assert edited["clips"][0]["transcript"] == [
+        {"start": 0.0, "end": 19.75, "text": "Đã sửa", "speaker": ""}]
+
+    # Offset nhỏ hơn duration vẫn là timestamp nguồn theo contract worker.
+    short_offset = package_payload(job_id="job", original_clips=[{
+        "source_start": 2, "source_end": 12, "duration_s": 10,
+        "transcript": [{"start": 2, "end": 5, "text": "Đầu clip"}]}],
+        drafts=[], platforms=["tiktok"], brand_preset="auto")
+    assert short_offset["clips"][0]["transcript"][0]["start"] == 0
+
+
+def test_parallel_analysis_progress_is_monotonic_and_throttled():
+    from apps.taoclipngan.features import ANALYSIS_ENGINES, AnalysisProgressTracker
+
+    tracker = AnalysisProgressTracker()
+    emitted = []
+    # Engine nhanh hoàn tất trước, engine chậm bắt đầu sau: progress không được lùi.
+    for name, value in [("audio", 1), ("scene", .9), ("speech", .1),
+                        ("visual", .25), ("motion", .05), ("content", .2)]:
+        result = tracker.update(name, value)
+        if result:
+            emitted.append(result[0])
+    for step in range(1, 101):
+        for name in ANALYSIS_ENGINES:
+            result = tracker.update(name, step / 100)
+            if result:
+                emitted.append(result[0])
+    assert emitted == sorted(set(emitted))
+    assert emitted[-1] == 58
+    assert len(emitted) <= 27
+
+
 def test_clip_feature_controls_are_wired_to_worker_and_routes():
     root = Path(__file__).parents[1]
     template = (root / "apps" / "taoclipngan" / "templates" /

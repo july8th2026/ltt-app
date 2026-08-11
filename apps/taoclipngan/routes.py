@@ -32,6 +32,13 @@ _GENRES = [("talking_head", N_("Nói chuyện/vlog")), ("podcast", "Podcast"),
            ("history", N_("Lịch sử")), ("kids_music", N_("Nhạc thiếu nhi"))]
 _LANGS = [("", N_("Tự nhận")), ("vi", N_("Tiếng Việt")), ("en", "English")]
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
+_DIRECT_VIDEO_MAX = 1024 * 1024 * 1024
+_VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"}
+
+
+def _video_extension(filename: str) -> str:
+    name = str(filename or "").strip()
+    return ("." + name.rsplit(".", 1)[1].lower()) if "." in name else ""
 
 
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
@@ -172,17 +179,32 @@ def estimate(request: Request, duration_s: str = Form("0"), tier: str = Form("hi
 
 
 @router.post("/upload-url")
-def upload_url(request: Request, filename: str = Form(""), content_type: str = Form(""),
+def upload_url(request: Request, csrf_token: str = Form(...),
+               filename: str = Form(""), content_type: str = Form(""),
+               size_bytes: str = Form("0"),
                user: str = Depends(require_login)):
+    def _ticket_error(message: str, status_code: int):
+        return JSONResponse({"ok": False, "detail": _t(message)}, status_code=status_code)
+
+    if not verify_csrf_token(request, csrf_token):
+        return _ticket_error("Phiên đã hết hạn — tải lại trang.", 400)
     u = user_hien_tai(request)
     if u is None:
         raise HTTPException(status_code=400, detail=_t('Cần tài khoản người dùng.'))
     from platform_core.storage import get_storage
-    ext = ""
-    if "." in (filename or ""):
-        ext = "." + filename.rsplit(".", 1)[1].lower()[:5]
+    ext = _video_extension(filename)
+    if ext not in _VIDEO_EXTS:
+        return _ticket_error("Định dạng video không được hỗ trợ.", 400)
+    ct = (content_type or "video/mp4").split(";")[0].strip().lower() or "video/mp4"
+    if not (ct.startswith("video/") or ct == "application/octet-stream"):
+        return _ticket_error("Content-Type video không được hỗ trợ.", 400)
+    try:
+        declared_size = int(size_bytes or 0)
+    except (TypeError, ValueError):
+        declared_size = 0
+    if declared_size <= 0 or declared_size > _DIRECT_VIDEO_MAX:
+        return _ticket_error("Video phải từ 1 byte đến 1 GiB.", 413)
     key = f"taoclipngan/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
-    ct = (content_type or "video/mp4").split(";")[0].strip() or "video/mp4"
     target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
     if target is None:
         return JSONResponse({"mode": "local", "key": key})
@@ -228,14 +250,14 @@ async def queue(request: Request, csrf_token: str = Form(...),
     else:
         if video is None or not getattr(video, "filename", ""):
             return _fail(_t("Chưa chọn video."))
-        vdata = await video.read()
+        vdata = await video.read(min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT) + 1)
         if not vdata:
             return _fail(_t("File video rỗng."))
         if len(vdata) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
             return _fail(_t("Video >90MB cần upload trực tiếp; lưu trữ hiện chưa sẵn sàng."))
-        ext = ""
-        if "." in video.filename:
-            ext = "." + video.filename.rsplit(".", 1)[1].lower()[:5]
+        ext = _video_extension(video.filename)
+        if ext not in _VIDEO_EXTS:
+            return _fail(_t("Định dạng video không được hỗ trợ."))
         vkey = f"taoclipngan/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
         import io as _io
         storage.put(vkey, _io.BytesIO(vdata), content_type=(video.content_type or "video/mp4"))
@@ -253,6 +275,8 @@ async def queue(request: Request, csrf_token: str = Form(...),
         mx = float(max_clip_duration_sec or 60)
     except (TypeError, ValueError):
         dur, n, mn, mx = 0.0, 3, 15.0, 60.0
+    if mn < 5 or mx > 180 or mx < mn:
+        return _fail(_t("Khoảng thời lượng clip không hợp lệ (5–180 giây)."))
 
     from apps.taoclipngan.features import clean_brand, clean_platforms
     params = {"video_key": vkey, "duration_s": dur, "tier": tier, "genre": genre,

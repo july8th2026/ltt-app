@@ -73,3 +73,35 @@ def test_jobs_aspect_map_day_du():
     src = (ROOT / "apps" / "taoclipngan" / "jobs.py").read_text(encoding="utf-8")
     for a in ("9:16", "1:1", "16:9", "4:5"):
         assert a in src
+
+
+def test_nvenc_probe_uses_supported_frame_size(monkeypatch):
+    """Không dò NVENC bằng 64x64: RTX 50xx trả âm giả rồi render CPU."""
+    from cutclipshort.adapters.ffmpeg_hw import FFmpegHWAdapter
+
+    commands = []
+
+    def fake_run(args, **_kwargs):
+        commands.append(args)
+        pathlib.Path(args[-1]).write_bytes(b"encoded")
+
+    monkeypatch.setattr("cutclipshort.adapters.ffmpeg_hw.subprocess.run", fake_run)
+    adapter = FFmpegHWAdapter("ffmpeg")
+    # executable_path không tồn tại sẽ dò PATH; không liên quan lệnh fake.
+    monkeypatch.setattr(adapter, "_find_executable", lambda: "ffmpeg")
+    assert adapter._test_encoder("h264_nvenc") is True
+    assert "color=black:s=256x256:d=0.1" in commands[0]
+    assert "yuv420p" in commands[0]
+
+
+def test_render_resolution_preserves_every_customer_aspect_with_square_pixels():
+    from cutclipshort.render.segment_renderer import _resolve_target_resolution
+    from cutclipshort.types import ClipSpec, RenderSettings, TimeRange
+
+    expected = {(1080, 1920): (1080, 1920), (1080, 1080): (1080, 1080),
+                (1920, 1080): (1920, 1080), (1080, 1350): (1080, 1350)}
+    settings = RenderSettings(target_resolution="1080p")
+    for (width, height), output in expected.items():
+        clip = ClipSpec(clip_id="aspect", source_range=TimeRange(0, 10),
+                        target_width=width, target_height=height)
+        assert _resolve_target_resolution(settings, clip, 10_000) == output
