@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-11 — H31.R1: deploy toàn bộ checkpoint Quality Lab lên production
+
+- **Mục tiêu:** phát hành toàn bộ commit đã full-gate lên control plane
+  production, giữ backup/rollback và kiểm chứng bằng browser thật.
+- **Trạng thái:** deploy thành công `https://app.lttstudios.com`; chưa rollback.
+
+### Đã thực hiện
+
+- Build archive 1.610 file, 83,5 MB; secret scan 0 finding; kiểm năm file
+  Quality Lab mới có trong ZIP trước khi dừng service.
+- `update.ps1` backup production, dừng Web/Worker/Codex, rotate release, giữ
+  protected config, cập nhật dependency, giữ WhisperX CUDA sidecar khỏe, chạy
+  Alembic và start lại. Deploy summary ghi `EXITCODE=0` và đúng archive hash.
+- Xác minh SHA-256 production khớp source cho calibration/materializer, hai CLI
+  và runbook; Alembic ở head; cả ba service Running/Automatic.
+- Playwright desktop/mobile kiểm landing public render thật, không overflow,
+  console error 0 và request app thất bại 0. Quality Lab trả đúng auth redirect
+  local. Automation public bị Cloudflare challenge trên login nên không tạo user
+  production chỉ để tăng evidence.
+
+### Kiểm tra đã chạy
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Full gate trước build | PASS 9/9; pytest 1.831,4 giây |
+| Release build + secret scan | PASS; 1.610 file, 83,5 MB, 0 finding |
+| Deploy production | PASS, `EXITCODE=0` |
+| Alembic | `f4a5b6c7d8e9 (head)` |
+| Web/Worker/Codex | Running/Automatic |
+| Local/public readiness | ready, production, database ok |
+| Playwright desktop 1440 px | PASS; overflow false, console/request app error 0 |
+| Playwright mobile 390 px | PASS; overflow false, console/request app error 0 |
+
+### Artifact và rollback
+
+- Archive SHA-256:
+  `ebd4a73156e2e31bf3ec9d90d17aa5d9f7ef15a3d7f1b84c4bfc192dac36f0ea`.
+- Backup: `C:\LTTPlatform\backups\ltt_data_20260811_083857.zip`.
+- Release trước: `C:\LTTPlatform\app.previous`.
+- Rollback: `deploy/windows/rollback.ps1`; không restore database nếu chưa xác
+  định migration/data là nguyên nhân.
+
+### Còn tồn đọng
+
+H31.3d2b/d3, LPIPS offline và production peak-VRAM contract vẫn mở. Deploy code
+không biến evidence còn thiếu thành PASS hay bật release gate.
+
 ## 2026-08-11 — H31.3d2a: materializer dataset fail-closed
 
 - **Mục tiêu:** biến media được khai báo quyền sử dụng thành dataset bất biến,

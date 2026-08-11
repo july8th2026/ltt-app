@@ -2145,6 +2145,13 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
 - [ ] H31.4 Pack AutoSub calibrated: transcript/alignment/diarization/render.
 - [ ] H31.5 Pack Seedance/Image/Thumbnail/Clip/Text/Agent tuần tự.
 - [ ] H31.6 Release regression, trend, canary, rollback và LTT-AQA audit.
+- [x] H31.R1 Production deploy checkpoint — 2026-08-11: phát hành commit
+  `82567eb` cùng checkpoint `f6eca9e` bằng archive 1.610 file/83,5 MB, SHA-256
+  `ebd4a731…f0ea`; deploy `EXITCODE=0`, backup + `app.previous` sẵn sàng,
+  Alembic head, ba service Running, health local/public ready. Playwright
+  desktop/mobile landing không overflow, console/request app error 0; auth
+  boundary Quality Lab đúng 303. Hồ sơ:
+  `docs/QUALITY_LAB/08_PRODUCTION_DEPLOY_20260811.md`.
 
 Điều kiện chặn: không dùng production media khi chưa consent/retention; không
 tải model runtime; không bật release gate cho metric chưa tương quan human;
