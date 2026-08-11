@@ -2173,8 +2173,13 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   864×496/24fps/15,069s, console 0, network 0 lỗi; **36 pytest + 13 Vitest
   pass**. AI WhisperX/Pyannote/Gemini chưa cấu hình nên giữ gate có điều kiện;
   roadmap/scorecard/finding ở `docs/APP_AUDIT/autosubvideo/2026-08-11-h32/`.
-- [ ] H32.2 Prompt AI: đối chiếu Prompt Seedance Studio read-only, library/style/
-  Meta Director, brief→build→preview.
+- [x] H32.2 Prompt AI — 2026-08-11: đối chiếu Prompt Seedance Studio read-only;
+  nối 8 Style/4 Meta/4 Snippet vào prompt thật; brief đủ field, explicit save,
+  preview/preflight miễn phí, quote khóa payload và apply đúng revision. Sửa GET
+  locale 302; browser desktop/mobile console sạch, journey mới toàn 200;
+  **83 pytest + 24 Vitest pass**, frontend build pass. Provider E4 chưa cấu hình
+  nên gate CONDITIONAL; score 72/100 và hồ sơ tại
+  `docs/APP_AUDIT/prompt-ai-ommi/2026-08-11-h32/`.
 - [ ] H32.3 Tạo ảnh AI: general + YouTube Thumbnail, provider output/download.
 - [ ] H32.4 Tạo Clip ngắn: 523,9 MB, option/GPU/queue/output/download.
 - [ ] H32.5 Seedance: visual audit/nâng cấp theo ảnh, tuyệt đối không chạy job.

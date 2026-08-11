@@ -14,6 +14,70 @@
 
 ---
 
+## 2026-08-11 — H32.2: Prompt AI biến catalog thành logic vận hành thật
+
+- **Mục tiêu:** chắt lọc Prompt Library, Style và Meta Director từ module
+  Prompt Seedance Studio read-only, rồi kiểm brief → preview → quote trên GUI.
+- **Hạng mục:** H32.2 hoàn thành; H32.3 Tạo ảnh AI tiếp theo.
+- **Trạng thái:** core composer PASS; release gate CONDITIONAL do chưa có
+  provider/worker E4 trong fixture.
+
+### Đã làm
+
+- Xác nhận bug P0: frontend apply kết quả job bằng body rỗng nên revision >0
+  luôn 409. Sửa UI gửi revision và thêm integration khóa stale/current.
+- Project chỉ lưu ID Style/Meta/Snippet; backend resolve mẫu catalog/bản riêng
+  theo owner lúc preview/quote/run. Body, negative và reusable block nay thực sự
+  đi vào master/director prompt; ID mất trả 422.
+- Thay autosave-onBlur bằng draft + explicit save; preview/quote luôn flush
+  draft trước. Bổ sung goal, audience, duration, scene count, aspect, language,
+  Style, Meta và tối đa 8 snippet. Quote chỉ mở sau preflight và khóa field để
+  payload/giá không lệch.
+- Browser fixture 8141: tạo project, điền brief tiếng Việt, chọn Hành động điện
+  ảnh + Video liên tục có timecode + 2 snippet; preview PASS đủ nội dung, quote
+  6 credit. Console 0; mobile 390 không overflow.
+- Browser bắt GET API bị 302 qua locale. Sửa BASE theo `/en|vi`; sau reload 8
+  request overview/projects/library mới đều 200 trực tiếp.
+- Lập hồ sơ LTT-AQA H32.2, score 72/100; không copy database/runtime/secret từ
+  `D:\BOT GEMINI`, không báo provider output PASS khi chưa chạy.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `python -m pytest -q tests/test_130_prompt_ai_ommi.py tests/test_140_ommi_library.py tests/test_141_ommi_library_api.py tests/test_144_ommi_overview.py tests/test_159_prompt_ai_h26.py` | 83 pass, 1 deprecation warning |
+| `npm test -- --run` (`frontend/prompt-ai-ommi`) | 24 pass |
+| `npm run build` (`frontend/prompt-ai-ommi`) | PASS typecheck + Vite build |
+| Playwright headed 1440×900 + 390×844 | PASS preview/quote/reload; console 0; journey mới không 302/4xx/5xx; overflow false |
+| `npm test` từ repo root | FAIL ENOENT do sai working directory; đã chạy lại đúng frontend và PASS |
+| 15 file pytest OMMI mở rộng | TIMEOUT 365 giây, không có kết quả; không tính PASS/FAIL |
+| `python tools/scan_source_secrets.py` | PASS, 0 finding / 1.320 file |
+| `python tools/lint_app_contract.py` | PASS, 0 error; 2 warning carry-forward demo/qualitylab |
+| `git diff --check` | PASS |
+| `python tools/gate.py` | Chưa chạy; để H32.7 sau toàn batch |
+
+### Quyết định mới
+
+Không có Q nền tảng mới; hiện thực hóa Q81/H26: catalog immutable, chắt lọc
+customer core, giữ bulk/team/operator controls khỏi màn khách hàng.
+
+### Cách lùi lại
+
+Revert commit H32.2. Schema JSON backward-compatible và không có migration;
+project cũ tự nhận meta/snippet rỗng qua `clean_project`.
+
+### Còn tồn đọng
+
+- Provider/worker canary, settlement/refund và output quality chưa có E4.
+- Model chooser customer-facing, i18n `/en`, project activity/recovery và export
+  browser/probe nằm trong roadmap H32.2.
+- Full gate chưa chạy.
+
+### Việc tiếp theo
+
+1. H32.3 Tạo ảnh AI: general + YouTube Thumbnail.
+2. Chỉ khi toàn batch xong mới full gate và lập release plan.
+
 ## 2026-08-11 — H32.0–H32.1: batch charter và AutoSub Video A–Z
 
 - **Mục tiêu:** bắt đầu batch `AppLttStudio_11082026` theo LTT-AQA; xử lý tuần

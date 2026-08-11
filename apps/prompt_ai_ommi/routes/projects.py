@@ -12,6 +12,54 @@ from apps.prompt_ai_ommi.routes._shared import (
     _csrf, _models, _owned_production, _production_rows, _require_run_enabled, _row, _user, router, MANIFEST, require_login, get_db, SCHEMA_VERSION, clean_project, empty_project, prompt_job_params)
 
 
+def _prompt_context(db: Session, user_id: str, payload: dict) -> dict:
+    """Resolve user-visible catalog choices into bounded generation guidance.
+
+    Projects persist stable IDs only. Resolving at preview/run time means catalog
+    updates are visible, private ownership is enforced, and stale IDs fail with
+    a useful 422 instead of silently producing a different prompt.
+    """
+    from apps.prompt_ai_ommi.services import library as lsvc
+    from apps.prompt_ai_ommi.services.composer import load_catalog
+
+    brief = payload["brief"]
+    context = {"style_override": "", "style_negative": "", "meta_prompt": "",
+               "snippets": [], "selection_names": {"snippets": []}}
+    simple_styles = {str(item.get("id") or "") for item in
+                     load_catalog().get("styles", [])}
+
+    style_id = str(brief.get("style_id") or "cinematic")
+    if not brief.get("style_custom") and style_id not in simple_styles:
+        try:
+            row = lsvc.get_visible(db, "style", style_id, user_id)
+        except lsvc.LibraryNotFound as exc:
+            raise HTTPException(status_code=422,
+                                detail=_t('Phong cách đã chọn không còn khả dụng.')) from exc
+        context["style_override"] = row.body
+        context["style_negative"] = row.negative or ""
+        context["selection_names"]["style"] = row.name
+
+    meta_id = str(brief.get("meta_prompt_id") or "")
+    if meta_id:
+        try:
+            row = lsvc.get_visible(db, "meta", meta_id, user_id)
+        except lsvc.LibraryNotFound as exc:
+            raise HTTPException(status_code=422,
+                                detail=_t('Meta Director đã chọn không còn khả dụng.')) from exc
+        context["meta_prompt"] = row.body
+        context["selection_names"]["meta"] = row.name
+
+    for snippet_id in brief.get("snippet_ids") or []:
+        try:
+            row = lsvc.get_visible(db, "snippet", snippet_id, user_id)
+        except lsvc.LibraryNotFound as exc:
+            raise HTTPException(status_code=422,
+                                detail=_t('Một khối prompt đã chọn không còn khả dụng.')) from exc
+        context["snippets"].append(row.body)
+        context["selection_names"]["snippets"].append(row.name)
+    return context
+
+
 @router.get("/api/projects")
 def list_projects(request: Request, archived: bool = False,
                   _identity: str = Depends(require_login), db: Session = Depends(get_db)):
@@ -159,7 +207,7 @@ async def preview_project(request: Request, project_id: str,
     row = _owned_production(db, project_id, user.id)
     payload = clean_project(body.get("payload") or row.payload)
     from apps.prompt_ai_ommi.services.composer import preview
-    return preview(payload)
+    return preview(payload, **_prompt_context(db, user.id, payload))
 
 
 def _chat_model(value: str) -> str:
@@ -176,8 +224,10 @@ async def quote_project(request: Request, project_id: str,
     row = _owned_production(db, project_id, user.id)
     payload = clean_project(body.get("payload") or row.payload)
     operation = str(body.get("operation") or "director")
-    params = prompt_job_params(payload, operation=operation,
-                               model=_chat_model(str(body.get("model") or "")))
+    params = prompt_job_params(
+        payload, operation=operation,
+        model=_chat_model(str(body.get("model") or "")),
+        prompt_context=_prompt_context(db, user.id, payload))
     params["project_id"] = project_id
     from platform_core.registry import credit_for
     return {"operation": params["operation"], "credit": credit_for(
@@ -193,8 +243,10 @@ async def generate_project(request: Request, project_id: str,
     row = _owned_production(db, project_id, user.id)
     payload = clean_project(body.get("payload") or row.payload)
     operation = str(body.get("operation") or "director")
-    params = prompt_job_params(payload, operation=operation,
-                               model=_chat_model(str(body.get("model") or "")))
+    params = prompt_job_params(
+        payload, operation=operation,
+        model=_chat_model(str(body.get("model") or "")),
+        prompt_context=_prompt_context(db, user.id, payload))
     if len(params["story"].strip()) < 20:
         raise HTTPException(status_code=422, detail=_t('Nội dung brief tối thiểu 20 ký tự.'))
     params["project_id"] = project_id; params["owner_id"] = user.id

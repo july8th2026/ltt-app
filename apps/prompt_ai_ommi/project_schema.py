@@ -43,7 +43,8 @@ def empty_project(name: str = "Dự án mới") -> dict:
             "title": _text(name, 160), "story": "", "goal": "",
             "audience": "", "duration_seconds": 30, "scene_count": 6,
             "aspect_ratio": "16:9", "language": "vi", "style_id": "cinematic",
-            "style_custom": "", "notes": "",
+            "style_custom": "", "meta_prompt_id": "", "snippet_ids": [],
+            "notes": "",
         },
         "resources": [], "scenes": [],
         "storyboard": {"layout": "3x2", "frames": [], "selected_version": 0},
@@ -102,6 +103,11 @@ def clean_project(payload: dict) -> dict:
         raise ValueError(_t('Sai loại project PROMPT AI OMMI.'))
     source = copy.deepcopy(empty_project())
     brief = payload.get("brief") if isinstance(payload.get("brief"), dict) else {}
+    snippet_ids = []
+    for value in list(brief.get("snippet_ids") or [])[:8]:
+        item_id = _text(value, 80)
+        if item_id and item_id not in snippet_ids:
+            snippet_ids.append(item_id)
     source["brief"] = {
         "title": _text(brief.get("title"), 160) or "Dự án mới",
         "story": _multiline(brief.get("story"), 12000),
@@ -113,6 +119,8 @@ def clean_project(payload: dict) -> dict:
         "language": brief.get("language") if brief.get("language") in LANGUAGES else "vi",
         "style_id": _text(brief.get("style_id"), 80) or "cinematic",
         "style_custom": _multiline(brief.get("style_custom"), 500),
+        "meta_prompt_id": _text(brief.get("meta_prompt_id"), 80),
+        "snippet_ids": snippet_ids,
         "notes": _multiline(brief.get("notes"), 2000),
     }
     source["resources"] = [clean_resource(item) for item in
@@ -147,9 +155,12 @@ def clean_project(payload: dict) -> dict:
     return source
 
 
-def prompt_job_params(project: dict, *, operation: str, model: str) -> dict:
+def prompt_job_params(project: dict, *, operation: str, model: str,
+                      prompt_context: dict | None = None) -> dict:
     clean = clean_project(project); brief = clean["brief"]
-    style = brief["style_custom"] or brief["style_id"]
+    context = prompt_context or {}
+    style = (brief["style_custom"] or context.get("style_override") or
+             brief["style_id"])
     return {
         "operation": operation if operation in {"director", "storyboard"} else "director",
         "title": brief["title"], "story": brief["story"],
@@ -157,6 +168,11 @@ def prompt_job_params(project: dict, *, operation: str, model: str) -> dict:
         "duration_seconds": brief["duration_seconds"],
         "scene_count": brief["scene_count"], "aspect_ratio": brief["aspect_ratio"],
         "style": style, "language": brief["language"],
+        "style_negative": str(context.get("style_negative") or "")[:3000],
+        "meta_prompt": str(context.get("meta_prompt") or "")[:24000],
+        "snippets": [str(item)[:4000] for item in
+                     list(context.get("snippets") or [])[:8]],
+        "selection_names": dict(context.get("selection_names") or {}),
         "resources": clean["resources"], "existing_scenes": clean["scenes"],
         "model": model,
     }

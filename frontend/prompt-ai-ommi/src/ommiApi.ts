@@ -5,7 +5,14 @@
  * một chỗ dịch lỗi sang tiếng người dùng, và một chỗ để sửa khi hợp đồng đổi.
  */
 
-const BASE = '/prompt-ai-ommi/api'
+export function promptApiBase(pathname: string): string {
+  const locale = pathname.match(/^\/(vi|en)(?:\/|$)/)?.[1]
+  return `${locale ? `/${locale}` : ''}/prompt-ai-ommi/api`
+}
+
+// Giữ locale hiện tại ngay từ request đầu. Gọi đường không locale khiến mọi
+// GET bị 302 rồi mới 200, làm màn Brief tải 7 request thành 14 request.
+const BASE = promptApiBase(window.location.pathname)
 
 export const RESOURCE_KINDS = ['character', 'background', 'prop', 'vehicle', 'misc'] as const
 export type ResourceKind = (typeof RESOURCE_KINDS)[number]
@@ -588,6 +595,26 @@ export type DirectorQuote = {
   model: string
 }
 
+export type ProjectPreview = {
+  valid: boolean
+  checklist: Array<{ id: string; label: string; passed: boolean }>
+  master_prompt: string
+  resource_count: number
+  scene_count: number
+  selections: { style: string; meta: string; snippets: string[] }
+}
+
+/** Dựng prompt miễn phí, không gọi model và không trừ credit. */
+export function previewProject(
+  id: string,
+  payload: Record<string, unknown>,
+): Promise<ProjectPreview> {
+  return request<ProjectPreview>(`/projects/${id}/preview`, {
+    method: 'POST',
+    body: JSON.stringify({ payload }),
+  })
+}
+
 export function quoteProject(
   id: string,
   body: { payload?: Record<string, unknown>; operation?: string; model?: string },
@@ -608,10 +635,14 @@ export function generateProject(
   })
 }
 
-export function applyJob(projectId: string, jobId: string): Promise<ProjectDetail> {
+export function applyJob(
+  projectId: string,
+  jobId: string,
+  revision: number,
+): Promise<ProjectDetail> {
   return request<ProjectDetail>(`/projects/${projectId}/apply/${jobId}`, {
     method: 'POST',
-    body: JSON.stringify({}),
+    body: JSON.stringify({ revision }),
   })
 }
 

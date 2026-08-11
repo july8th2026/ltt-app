@@ -15,13 +15,20 @@ def test_manifest_and_schema_are_public_versioned_and_defensive():
     assert {tool.name for tool in MANIFEST.tools} == {
         "text.prompt_package", "story.storyboard"}
     payload = empty_project("Demo")
-    payload["brief"].update({"duration_seconds": "invalid", "scene_count": 999})
+    payload["brief"].update({"duration_seconds": "invalid", "scene_count": 999,
+                             "meta_prompt_id": "builtin-meta-01",
+                             "snippet_ids": ["builtin-snippet-01",
+                                             "builtin-snippet-01",
+                                             "builtin-snippet-02"]})
     payload["resources"] = [{"size": "invalid", "kind": "unknown"}]
     payload["scenes"] = [{"duration_seconds": "invalid", "selected_version": "bad"}]
     clean = clean_project(payload)
     assert clean["version"] == 1
     assert clean["brief"]["duration_seconds"] == 30
     assert clean["brief"]["scene_count"] == 20
+    assert clean["brief"]["meta_prompt_id"] == "builtin-meta-01"
+    assert clean["brief"]["snippet_ids"] == ["builtin-snippet-01",
+                                                "builtin-snippet-02"]
     assert clean["resources"][0]["kind"] == "prop"
     assert clean["scenes"][0]["duration_seconds"] == 5
 
@@ -66,6 +73,34 @@ def test_preview_and_worker_normalize_provider_output(monkeypatch):
     assert result["tokens_used"] == 123
     assert len(result["prompt_package"]["scenes"]) == project["brief"]["scene_count"]
     assert result["prompt_package"]["scenes"][0]["versions"]
+
+
+def test_selected_catalog_guidance_reaches_preview_and_director_prompt():
+    from apps.prompt_ai_ommi.project_schema import empty_project, prompt_job_params
+    from apps.prompt_ai_ommi.services.composer import director_prompt, preview
+    project = empty_project("Catalog")
+    project["brief"]["story"] = "Một câu chuyện đủ dài để kiểm tra prompt catalog đã chọn."
+    context = {
+        "style_override": "STYLE BODY UNIQUE",
+        "style_negative": "NEGATIVE UNIQUE",
+        "meta_prompt": "META BODY UNIQUE",
+        "snippets": ["SNIPPET BODY UNIQUE"],
+        "selection_names": {"style": "Style test", "meta": "Meta test",
+                            "snippets": ["Snippet test"]},
+    }
+    checked = preview(project, **context)
+    assert checked["valid"] is True
+    assert checked["selections"] == {"style": "Style test", "meta": "Meta test",
+                                      "snippets": ["Snippet test"]}
+    assert all(value in checked["master_prompt"] for value in
+               ("STYLE BODY UNIQUE", "NEGATIVE UNIQUE", "META BODY UNIQUE",
+                "SNIPPET BODY UNIQUE"))
+    params = prompt_job_params(project, operation="director", model="test",
+                               prompt_context=context)
+    system, user = director_prompt(params)
+    assert "META BODY UNIQUE" in system
+    assert all(value in user for value in
+               ("STYLE BODY UNIQUE", "NEGATIVE UNIQUE", "SNIPPET BODY UNIQUE"))
 
 
 def _build_app(tmp_path, monkeypatch):
@@ -127,6 +162,24 @@ def test_project_revision_preferences_credit_and_ownership(tmp_path, monkeypatch
             headers={"X-CSRF-Token": csrf}, json={"revision": project["revision"],
                                                   "payload": payload})
         assert saved.status_code == 200 and saved.json()["revision"] == project["revision"] + 1
+        selected = saved.json()["payload"]
+        selected["brief"].update({
+            "style_id": "builtin-style-01",
+            "meta_prompt_id": "builtin-meta-01",
+            "snippet_ids": ["builtin-snippet-01"],
+        })
+        selected_saved = owner.put(f"/prompt-ai-ommi/api/projects/{project_id}",
+            headers={"X-CSRF-Token": csrf},
+            json={"revision": saved.json()["revision"], "payload": selected})
+        assert selected_saved.status_code == 200
+        checked = owner.post(f"/prompt-ai-ommi/api/projects/{project_id}/preview",
+            headers={"X-CSRF-Token": csrf}, json={"payload": selected_saved.json()["payload"]})
+        assert checked.status_code == 200 and checked.json()["valid"] is True
+        assert checked.json()["selections"] == {
+            "style": "Hành động điện ảnh",
+            "meta": "Video liên tục có timecode",
+            "snippets": ["Khóa nhất quán nhân vật"],
+        }
         stale = owner.put(f"/prompt-ai-ommi/api/projects/{project_id}",
             headers={"X-CSRF-Token": csrf}, json={"revision": 0, "payload": payload})
         assert stale.status_code == 409
@@ -140,6 +193,28 @@ def test_project_revision_preferences_credit_and_ownership(tmp_path, monkeypatch
         job = owner.post(f"/prompt-ai-ommi/api/projects/{project_id}/generate",
             headers={"X-CSRF-Token": csrf}, json={"operation": "director"})
         assert job.status_code == 201 and job.json()["status"] == "queued"
+        gen = dbmod.get_session(); db = next(gen)
+        try:
+            from platform_core.models import JOB_DONE, Job
+            row = db.get(Job, job.json()["id"])
+            row.status = JOB_DONE
+            row.result = {"operation": "director", "prompt_package": {"scenes": [{
+                "id": "scene_catalog", "title": "Mở đầu", "prompt": "Catalog prompt",
+            }]}}
+            db.commit()
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+        missing_revision = owner.post(
+            f"/prompt-ai-ommi/api/projects/{project_id}/apply/{job.json()['id']}",
+            headers={"X-CSRF-Token": csrf}, json={})
+        assert missing_revision.status_code == 409
+        applied = owner.post(
+            f"/prompt-ai-ommi/api/projects/{project_id}/apply/{job.json()['id']}",
+            headers={"X-CSRF-Token": csrf},
+            json={"revision": selected_saved.json()["revision"]})
+        assert applied.status_code == 200
+        assert applied.json()["payload"]["scenes"][0]["id"] == "scene_catalog"
         package = owner.get(f"/prompt-ai-ommi/api/projects/{project_id}/export/json")
         assert package.status_code == 200 and package.json()["format"] == "ltt-prompt-ai-ommi"
         imported = owner.post("/prompt-ai-ommi/api/import",
