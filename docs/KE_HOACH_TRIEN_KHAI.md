@@ -2195,6 +2195,11 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   AI rồi đã sửa; kết quả rerun ghi trong nhật ký. Q 77 · M 58 · E 95 · INTERNAL;
   matrix tier/count/genre, cancel/lifecycle/editor còn trong roadmap tại
   `docs/APP_AUDIT/taoclipngan/2026-08-11-h32/`.
-- [ ] H32.5 Seedance: visual audit/nâng cấp theo ảnh, tuyệt đối không chạy job.
+- [x] H32.5 Seedance — 2026-08-11: visual-only đúng MoTa, không submit job/
+  provider; composer scroll+dock, asset disclosure, i18n status/title, honest
+  quote failure, mobile inert/close/focus. Browser 1.586×992 + 390×844 không
+  overflow, final console 0/request 200–206; **50 targeted pass**, quick gate
+  **PASS 8/8**. Q 63 · M 64 · E 84 · BLOCKED bởi P0 billing kế thừa; hồ sơ tại
+  `docs/APP_AUDIT/taovideo/2026-08-11-h32/`.
 - [ ] H32.6 Upscale: full option matrix, queue/GPU/performance/quality evidence.
 - [ ] H32.7 Per-tool scorecard/report, full gate và release plan; không tự deploy.

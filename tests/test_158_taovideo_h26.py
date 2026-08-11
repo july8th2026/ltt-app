@@ -36,7 +36,7 @@ def test_estimate_shows_the_full_hold_for_two_variants():
 def test_customer_ui_keeps_real_controls_and_hides_advanced_options_by_default():
     page = _read("apps/taovideo/templates/taovideo.html")
 
-    assert "Tạo Video Seedance — LTT AI Studio" in page
+    assert '{% block title %}{{ _("Tạo Video Seedance") }} — LTT AI Studio{% endblock %}' in page
     assert '<details class="tv-fieldset tv-assist"' in page
     assert 'name="camera"' in page and 'name="motion"' in page
     assert 'name="visual_style"' in page and 'name="seed"' in page

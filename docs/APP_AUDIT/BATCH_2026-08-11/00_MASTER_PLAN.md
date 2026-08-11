@@ -105,6 +105,14 @@ actual object-size/lifecycle và Review/Edit vẫn là blocker, xem hồ sơ
 - Chỉ nâng giao diện dựa trên chức năng có thật; không tạo CTA giả.
 - PASS: visual/control regression xanh, console/network sạch, responsive.
 
+**Checkpoint 2026-08-11:** hoàn tất visual/control audit, không submit job hay
+gọi provider. Composer đã tách scroll + quote/CTA dock; asset progressive
+disclosure; EN/VI status/title; estimate failure khóa CTA; mobile inert/close/
+focus return. Desktop 1.586×992 và mobile 390×844 không overflow, final console
+0, request 200/206. **50 targeted pass**, quick gate **PASS 8/8**. Q 63 · M 64 ·
+E 84 · BLOCKED do P0 billing cũ, không phải do visual gate. Hồ sơ:
+`docs/APP_AUDIT/taovideo/2026-08-11-h32/`.
+
 ### H32.6 — Upscale Video
 
 - Chạy ma trận Fast/Quality × 1080p/1440p/2160p × H.264/HEVC cùng preview,

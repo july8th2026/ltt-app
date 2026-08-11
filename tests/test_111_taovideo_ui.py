@@ -18,7 +18,7 @@ def test_composer_co_label_drawer_va_keyboard_contract():
     assert 'class="tv-compose-scrim"' in page
     assert "function closeCompose()" in page
     assert "function openCompose()" in page
-    assert "if(e.key==='Escape')closeCompose()" in page
+    assert "if(e.key==='Escape'&&compose.classList.contains('open'))closeCompose()" in page
     assert 'for="tv-prompt"' in page
     assert 'for="tv-images"' in page
     assert 'for="tv-videos"' in page

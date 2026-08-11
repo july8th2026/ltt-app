@@ -14,6 +14,68 @@
 
 ---
 
+## 2026-08-11 — H32.5: Seedance visual pass không tạo tính năng giả
+
+- **Mục tiêu:** đối chiếu giao diện Seedance thật với `GiaoDien.png`, nâng
+  hierarchy/responsive/control state nhưng tuyệt đối không submit provider/job.
+- **Hạng mục:** H32.5 hoàn thành; H32.6 Upscale tiếp theo.
+- **Trạng thái:** Q 63 · M 64 · E 84 · BLOCKED bởi P0 billing cũ; visual gate
+  riêng PASS.
+
+### Đã làm
+
+- Dựng fixture cô lập cổng 8144 với 4 state done/running/error/cancelled và MP4
+  local chỉ để kiểm player/Range; không worker, không ModelArk, không credit.
+- Browser baseline bắt quote/Create nằm dưới fold; bản sticky đầu tiên còn che
+  Setup nên đã loại ngay. Bản cuối dùng hai vùng thật: nội dung cuộn độc lập và
+  quote/CTA dock cố định, không chồng control ở desktop/mobile.
+- Saved assets chuyển sang details có count; sidebar mở và cuộn đúng asset.
+  Library filter/header/card được nén theo ảnh nhưng giữ accessible name.
+- Status và title đi qua gettext; card running dùng customer state + phần trăm,
+  không lộ `progress_msg` worker.
+- Mobile composer đóng dùng `inert`/`aria-hidden`, có close button, trả focus về
+  drawer và đồng bộ breakpoint. Tab sau khi đóng không đi vào panel offscreen.
+- Quote HTMX có pending/failure: negative 500 hiện `Lỗi · Thử lại`, disable CTA;
+  sau bỏ fault và reload 200, quote trở lại và CTA enabled.
+- Kiểm model Standard, image preview, grid/list persisted, filter done/empty,
+  Upscale quote 3 credit và Remix. Remix vẫn mất refs + tự count=2; ghi P2,
+  không mở rộng khỏi visual-only để sửa lén logic job.
+- Lập đủ hồ sơ + evidence tại
+  `docs/APP_AUDIT/taovideo/2026-08-11-h32/`.
+
+### Test đã chạy
+
+| Lệnh/flow | Kết quả thật |
+|---|---|
+| `python -m pytest tests/test_79_taovideo.py tests/test_111_taovideo_ui.py tests/test_112_taovideo_saved_assets.py tests/test_113_taovideo_prompt_controls.py tests/test_129_adaptive_page_layouts.py tests/test_133_agent_video_inputs.py tests/test_158_taovideo_h26.py tests/test_170_taovideo_h32_ui.py -q` | **50 passed**, 5,24s |
+| `python tools\gate.py --quick` | **PASS 8/8**, 41s; 3 frontend + 5 scanner xanh |
+| Playwright 1.586×992 EN/VI | model/ref/grid/list/status/empty/dialog PASS; console final 0; request 200/206 |
+| Playwright 390×844 EN/VI | no overflow; inert/close/focus return/dock PASS; console final 0 |
+| Playwright route `/taovideo/estimate` 500 chủ ý → bỏ fault 200 | failure khóa CTA; success mở lại; PASS |
+| `python tools\gate.py` | Chưa chạy; giữ cho H32.7 theo master plan |
+
+### Quyết định mới
+
+Không có Q nền tảng mới. Chọn visual parity chỉ trên chức năng thật; không dựng
+bulk delete/retry/template/settings giả từ ảnh tham khảo.
+
+### Cách lùi lại
+
+Revert commit H32.5; dừng fixture 8144. Không có migration, provider output hay
+thay đổi production 8100.
+
+### Còn tồn đọng
+
+- P0 actual charge vượt hold; orphan/double-submit/audio AssetType/lifecycle.
+- Remix mất refs/count, live refresh/cancel/retry/delete/pagination và reference
+  remove/replace/reorder.
+- Full gate và deploy chưa chạy trong H32.5.
+
+### Việc tiếp theo
+
+1. H32.6 Upscale: option matrix/GPU/performance/Quality Lab bằng video đã cấp.
+2. H32.7: report batch, full gate và release plan; không tự deploy.
+
 ## 2026-08-11 — H32.4: Tạo Clip chạy GPU thật, sửa bốn lỗi output/ops
 
 - **Mục tiêu:** audit DEEP Tạo Clip bằng source 523,9 MB, chạy như khách hàng,
