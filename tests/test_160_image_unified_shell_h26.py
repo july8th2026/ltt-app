@@ -134,3 +134,21 @@ def test_thumbnail_fragment_submits_job_and_redirects_the_whole_shell(tmp_path,
         assert "Chưa nhập chủ đề thumbnail" in invalid.text
     finally:
         client.close(); dbmod.reset_engine()
+
+
+def test_thumbnail_preview_discloses_full_customer_configuration(tmp_path, monkeypatch):
+    client, dbmod = _client(tmp_path, monkeypatch)
+    try:
+        response = client.post("/thumbnail/preview", data={
+            "topic": "Ảnh thử", "title": "H32", "count": "3",
+            "model": "gemini-2.5-flash-image", "brand_name": "LTT",
+            "brand_font": "Barlow", "brand_primary": "#E53935",
+            "brand_secondary": "#111111", "brand_tone": "Mạnh mẽ",
+            "aspect_ratio": "16:9",
+        })
+        assert response.status_code == 200
+        for value in ("Gemini 2.5 Flash", "3", "15 credit", "LTT", "Barlow",
+                      "#E53935 / #111111", "Mạnh mẽ"):
+            assert value in response.text
+    finally:
+        client.close(); dbmod.reset_engine()

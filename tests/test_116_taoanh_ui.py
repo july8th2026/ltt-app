@@ -77,3 +77,11 @@ def test_image_history_polls_active_jobs_without_reloading_the_form():
     assert "/api/jobs/${card.dataset.jobId}" in src
     assert "refreshHistory" in src
     assert "window.location.reload" not in src
+
+
+def test_general_preview_discloses_model_and_estimated_credit():
+    from pathlib import Path
+    src = (Path(__file__).parents[1] / "apps" / "taoanh" /
+           "templates" / "image.html").read_text("utf-8")
+    assert "['Model',modelLabel]" in src
+    assert "['Chi phí dự kiến',`${cost.textContent} credit`]" in src

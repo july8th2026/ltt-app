@@ -77,6 +77,11 @@ tên. Mỗi output phải probe lại codec/resolution/duration và gắn job/co
 - Chạy canary thật khi provider sẵn sàng, tải ảnh về folder và probe file.
 - PASS: quote/hold/settle, output/ownership/download/history và các state rõ.
 
+**Checkpoint 2026-08-11:** hoàn tất audit/code/browser ở mức INTERNAL. Preview
+hai mode đã disclosure model/giá/config; edit/remix/mobile/console/network pass.
+Provider E4 và canonical pricing chưa pass, được chuyển thành release blocker
+trong hồ sơ `docs/APP_AUDIT/taoanh/2026-08-11-h32/`; không tạo output giả.
+
 ### H32.4 — Tạo Clip ngắn
 
 - Upload thẳng video 523,9 MB; kiểm tier/genre/aspect/language/count/duration/

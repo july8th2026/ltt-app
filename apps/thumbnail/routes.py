@@ -214,7 +214,16 @@ def preview(
     phong_cach: str = Form(""),
     kieu_trend: str = Form(""),
     ngon_ngu: str = Form(""),
+    model: str = Form(""),
     aspect_ratio: str = Form("16:9"),
+    count: int = Form(1),
+    brand_name: str = Form(""),
+    brand_font: str = Form(""),
+    brand_primary: str = Form("#E53935"),
+    brand_secondary: str = Form("#111111"),
+    brand_tone: str = Form(""),
+    reference_image: UploadFile | None = File(None),
+    saved_reference_key: str = Form(""),
     user: str = Depends(require_login),
 ):
     """Xem trước LỰA CHỌN sẽ dùng (HTMX) — không sinh ảnh, không tốn credit.
@@ -235,14 +244,26 @@ def preview(
         except Exception:  # noqa: BLE001
             return v
 
+    model_map = dict(_models())
+    selected_model = model if model in model_map else next(iter(model_map), model)
+    count = max(1, min(int(count or 1), 4))
     rows = [(_t("Chủ đề"), topic.strip()[:2000]),
             (_t("Tiêu đề"), title.strip()[:200]),
             (_t("Phụ đề"), subtitle.strip()[:200]),
             (_t("Kiểu chữ"), _lbl("text_style", text_style)),
             (_t("Phong cách"), _lbl("phong_cach", phong_cach)),
             (_t("Kiểu trend"), _lbl("kieu_trend", kieu_trend)),
+            (_t("Model"), model_map.get(selected_model, selected_model)),
             (_t("Ngôn ngữ"), _lbl("ngon_ngu", ngon_ngu)),
-            (_t("Tỉ lệ"), aspect_ratio if aspect_ratio in _ASPECTS else "16:9")]
+            (_t("Tỉ lệ"), aspect_ratio if aspect_ratio in _ASPECTS else "16:9"),
+            (_t("Số ảnh"), count),
+            (_t("Chi phí dự kiến"), f"{MANIFEST.credit_cost({'count': count})} credit"),
+            (_t("Tham chiếu"), "Đã chọn" if
+             ((reference_image and reference_image.filename) or saved_reference_key) else "Không"),
+            (_t("Thương hiệu"), brand_name.strip()[:80]),
+            (_t("Font thương hiệu"), brand_font.strip()[:80]),
+            (_t("Màu thương hiệu"), f"{brand_primary} / {brand_secondary}"),
+            (_t("Giọng thương hiệu"), brand_tone.strip()[:160])]
     html = "".join(
         f'<div><span class="dim">{escape(k)}:</span> {escape(str(v))}</div>'
         for k, v in rows if v)

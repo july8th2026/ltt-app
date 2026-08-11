@@ -2180,7 +2180,13 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   **83 pytest + 24 Vitest pass**, frontend build pass. Provider E4 chưa cấu hình
   nên gate CONDITIONAL; score 72/100 và hồ sơ tại
   `docs/APP_AUDIT/prompt-ai-ommi/2026-08-11-h32/`.
-- [ ] H32.3 Tạo ảnh AI: general + YouTube Thumbnail, provider output/download.
+- [x] H32.3 Tạo ảnh AI — 2026-08-11: audit General + YouTube Thumbnail trên
+  fixture cô lập; sửa preview công khai model/giá và đầy đủ Brand Kit/reference;
+  edit/remix handoff pass; desktop/mobile không overflow, console 0, request lỗi
+  0; **34 pytest pass**, scanner secret/contract/undefined pass. Q 74 · M 70 ·
+  E 88 · INTERNAL; provider E4 và chênh pricing cùng model còn là blocker, nên
+  không giả output fixture thành kết quả AI và không deploy. Hồ sơ:
+  `docs/APP_AUDIT/taoanh/2026-08-11-h32/`.
 - [ ] H32.4 Tạo Clip ngắn: 523,9 MB, option/GPU/queue/output/download.
 - [ ] H32.5 Seedance: visual audit/nâng cấp theo ảnh, tuyệt đối không chạy job.
 - [ ] H32.6 Upscale: full option matrix, queue/GPU/performance/quality evidence.

@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-11 — H32.3: Tạo ảnh AI disclosure đúng, gate provider vẫn khóa
+
+- **Mục tiêu:** audit hai mode General/YouTube Thumbnail theo LTT-AQA, sửa lỗi
+  quan sát được và kiểm chứng browser thật mà không giả provider evidence.
+- **Hạng mục:** H32.3 hoàn thành; H32.4 Tạo Clip ngắn tiếp theo.
+- **Trạng thái:** Q 74 · M 70 · E 88 · INTERNAL; provider E4 và canonical
+  pricing còn là release blocker.
+
+### Đã làm
+
+- Dựng fixture cô lập cổng 8142 với user/credit/storage riêng; production 8100
+  không bị tác động. Fixture seed done/error để thử UI, không gọi provider.
+- Kiểm toàn bộ model/mode/reference/aspect/count, history/error/compare; handoff
+  Edit General khôi phục prompt/mode/source và Remix Thumbnail khôi phục brief/
+  saved reference. Desktop và mobile 390×844 không overflow; console 0; failed
+  app request 0.
+- Sửa General preview hiện model và tổng credit; sửa Thumbnail preview hiện
+  model/count/credit/reference/Brand Kit. Thêm regression test cho cả hai.
+- Phát hiện cùng Gemini 3 Pro nhưng General 16 credit/ảnh, Thumbnail 5
+  credit/ảnh. Không tự đổi pricing trong audit; ghi P1 cần pricing version và
+  test quote/hold/settle/refund.
+- Không chép ảnh fixture vào folder người dùng và không gọi đó là output AI.
+  Provider canary/output/download thật chưa chạy, ghi rõ unknown/blocker trong
+  hồ sơ `docs/APP_AUDIT/taoanh/2026-08-11-h32/`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest -q tests/test_71_thumbnail.py tests/test_77_thumbnail_parity.py tests/test_116_taoanh_ui.py tests/test_117_taoanh_features.py tests/test_160_image_unified_shell_h26.py` | **34 passed**, 1 warning deprecation |
+| `python tools/scan_source_secrets.py` | **0 finding, PASS** |
+| `python tools/lint_app_contract.py` | PASS; 2 WARN baseline demo/qualitylab |
+| `python tools/check_undefined_names.py` | 272 file, 0 tên chưa định nghĩa, PASS |
+| Playwright `h32`, 1440×1000 và 390×844 | edit/remix/preview pass; console 0; failed app request 0 |
+| `python tools/scan_undefined_names.py` | **không chạy:** sai tên file; lệnh đúng đã chạy ngay sau đó |
+| `python tools/gate.py` | Chưa chạy; chủ động để H32.7 theo master plan |
+
+### Quyết định mới
+
+Không có Q mới. Không thay pricing khi chưa có quyết định economics/version.
+
+### Cách lùi lại
+
+Revert commit H32.3; thay đổi hành vi chỉ nằm ở hai preview và hai test. Fixture
+8142 có thể tắt mà không ảnh hưởng production.
+
+### Còn tồn đọng
+
+- Provider E4/output thật, quality/latency và artifact download chưa chứng minh.
+- Canonical pricing, draft recovery, upload lifecycle, Thumbnail polling/cancel/
+  retry, download/search/delete và model capability còn trong roadmap.
+
+### Việc tiếp theo
+
+1. H32.4: audit sâu Tạo Clip ngắn với video 523,9 MB.
+2. H32.7: full gate và release/rollback toàn batch; chưa deploy.
+
 ## 2026-08-11 — H32.2: Prompt AI biến catalog thành logic vận hành thật
 
 - **Mục tiêu:** chắt lọc Prompt Library, Style và Meta Director từ module
