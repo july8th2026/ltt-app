@@ -140,6 +140,13 @@ toàn vì GPU 0 có workload ngoài phạm vi. Q 72 · M 57 · E 94 · BLOCKED; 
 - Browser retest desktop/mobile, console error 0, failed app request 0.
 - Chưa deploy; phát hành là phase riêng có backup/rollback/public smoke.
 
+**Checkpoint 2026-08-11:** đủ sáu hồ sơ app và ba tài liệu batch release. Full
+`python tools\gate.py` **PASS 9/9** trong 1.777 giây; pytest 1.734,2 giây, ba
+frontend và năm scanner đều PASS. Browser final theo từng app desktop/mobile có
+console 0 và failed application request 0. Source gate PASS; commercial gate
+toàn batch vẫn BLOCKED theo Seedance P0 và upload/lifecycle/calibration P1.
+Không deploy; release plan tuần tự ở `02_RELEASE_PLAN.md`.
+
 ## Trạng thái ban đầu
 
 Chưa chấm điểm chính thức trước browser baseline. Mọi Q/M/E/Gate ghi UNKNOWN cho

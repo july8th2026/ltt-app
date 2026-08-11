@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-11 — H32.7: full batch source gate PASS, commercial gate BLOCKED
+
+- **Mục tiêu:** tổng nghiệm thu sáu tool sau các phase tuần tự, chạy full gate
+  và lập kế hoạch phát hành mà không tự deploy.
+- **Hạng mục:** H32.7 hoàn thành; batch H32 đóng ở mức source/release audit.
+- **Trạng thái:** source PASS; commercial BLOCKED theo rủi ro cao nhất.
+
+### Đã làm
+
+- Tổng hợp sáu scorecard: trung bình tham khảo Q 71,3 · M 64,3 · E 89,2.
+  AutoSub/Prompt CONDITIONAL, Image/Clip INTERNAL, Seedance/Upscale BLOCKED.
+- Khóa blocker theo thứ tự: Seedance money P0; shared upload/artifact P1;
+  provider E4; Upscale calibrated quality; job recovery/live progress.
+- Lập release plan tuần tự, không gộp các blocker vào một lần deploy khó rollback.
+- Đối chiếu browser evidence cuối của từng app: desktop/mobile, console 0,
+  failed application request 0. CSS thay đổi cuối chỉ scoped `.up-*`.
+- Dừng fixture Upscale 8145; production 8100 tiếp tục listen và không bị sửa.
+
+### Test đã chạy
+
+| Lệnh | Kết quả thật |
+|---|---|
+| `python tools\gate.py` | **PASS 9/9**, 1.777s; pytest PASS 1.734,2s; ba frontend + năm scanner PASS |
+| Browser evidence sáu phase | desktop/mobile PASS; console 0; failed app request 0 |
+
+Gate runner không in pytest count khi pass; không ghi số lượng suy đoán.
+
+### Quyết định mới
+
+Không có Q nền tảng mới. H32 nghiệm thu source không đồng nghĩa cấp quyền phát
+hành thương mại hoặc deploy production.
+
+### Cách lùi lại
+
+Mỗi app là một commit H32 riêng (`22feaec`→`4227b36`); có thể revert theo app.
+H32.7 chỉ thêm tài liệu/memory, không migration/runtime/deploy.
+
+### Còn tồn đọng
+
+Thực hiện `02_RELEASE_PLAN.md` từ R1; cần đóng money/upload/lifecycle/provider/
+calibration trước staging và production decision.
+
+### Việc tiếp theo
+
+Chờ lệnh triển khai release slice cụ thể; không tự deploy toàn batch khi gate
+sản phẩm vẫn BLOCKED.
+
 ## 2026-08-11 — H32.6: Upscale 17/17 option PASS, quality vẫn UNKNOWN
 
 - **Mục tiêu:** chạy toàn bộ lựa chọn Upscale trên video được cấp, đo GPU/queue/

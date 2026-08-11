@@ -2210,4 +2210,10 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   quality `UNKNOWN`; dual-GPU current bị GPU0 external workload chặn an toàn.
   Q 72 · M 57 · E 94 · BLOCKED; hồ sơ tại
   `docs/APP_AUDIT/upscalevideo/2026-08-11-h32/`.
-- [ ] H32.7 Per-tool scorecard/report, full gate và release plan; không tự deploy.
+- [x] H32.7 Release audit — 2026-08-11: tổng hợp 6 app tại
+  `docs/APP_AUDIT/BATCH_2026-08-11/01_RELEASE_AUDIT.md`; Q trung bình 71,3,
+  M 64,3, E 89,2 nhưng overall BLOCKED theo gate cao nhất. Lập release plan
+  tuần tự money → upload/lifecycle → provider → calibration/scheduler → UX →
+  staging. Full `python tools\gate.py` **PASS 9/9**, 1.777s; pytest 1.734,2s,
+  ba frontend và năm scanner PASS. Browser final sáu app desktop/mobile console
+  0/request app lỗi 0. **Chưa deploy**; production 8100 giữ nguyên.
