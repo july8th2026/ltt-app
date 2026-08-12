@@ -349,6 +349,7 @@ class JobEvent(Base):
 
 UPLOAD_PENDING = "pending"
 UPLOAD_READY = "ready"
+UPLOAD_ATTACHED = "attached"
 UPLOAD_PROMOTED = "promoted"
 UPLOAD_DELETED = "deleted"
 
@@ -371,6 +372,7 @@ class UploadSession(Base):
     status: Mapped[str] = mapped_column(
         String(16), default=UPLOAD_PENDING, nullable=False)
     job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
@@ -381,6 +383,7 @@ class UploadSession(Base):
         Index("ix_upload_sessions_owner_status", "user_id", "status", "expires_at"),
         Index("ix_upload_sessions_app_created", "app_slug", "created_at"),
         Index("ix_upload_sessions_job", "job_id"),
+        Index("ix_upload_sessions_project", "project_id", "status"),
     )
 
 

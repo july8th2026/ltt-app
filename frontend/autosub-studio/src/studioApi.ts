@@ -23,7 +23,7 @@ export type StudioPayload = { schema_version: 1;
     quality:'draft'|'standard'|'high'; track_ids:string[]; export_srt:boolean;
     export_vtt:boolean;export_json:boolean;export_ass:boolean; bundle_zip:boolean } }
 export type StudioProject = { id: string; name: string; revision: number;
-  status: 'active' | 'archived'; payload: StudioPayload }
+  status: 'active' | 'archived'; source_expired?:boolean; payload: StudioPayload }
 export type StudioCapabilities={whisperx:boolean;diarization:boolean;translation:boolean;
   credit:{transcribe:number;diarize:number;translate:number}}
 export type StudioJob={id:string;type:string;status:string;progress:number;message:string;
@@ -72,10 +72,10 @@ export async function saveProject(project: StudioProject, csrf: string,
 export async function attachSource(project: StudioProject, csrf: string, file: File,
                                    metadata: { duration: number; width: number; height: number },
                                    onProgress: (value: number) => void): Promise<StudioProject> {
-  const ticketBody = new FormData()
-  ticketBody.append('filename', file.name); ticketBody.append('content_type', file.type)
-  const ticket = await decode(await fetch('/autosubvideo/upload-url', {
-    method: 'POST', credentials: 'same-origin', body: ticketBody,
+  const ticket = await decode(await fetch('/autosubvideo/api/uploads', {
+    method: 'POST', credentials: 'same-origin', headers:{'Content-Type':'application/json',
+      'X-CSRF-Token':csrf}, body:JSON.stringify({filename:file.name,
+      content_type:file.type||'video/mp4',expected_size:file.size}),
   }))
   const form = new FormData()
   form.append('revision', String(project.revision)); form.append('csrf_token', csrf)
@@ -84,7 +84,7 @@ export async function attachSource(project: StudioProject, csrf: string, file: F
   if (ticket.mode === 'direct') {
     const response = await fetch(ticket.url, { method: 'PUT', headers: ticket.headers, body: file })
     if (!response.ok) throw new Error(`Upload R2 lỗi (${response.status})`)
-    form.append('video_key', ticket.key); onProgress(90)
+    form.append('upload_id', ticket.upload_id); onProgress(90)
   } else {
     form.append('video', file); onProgress(30)
   }

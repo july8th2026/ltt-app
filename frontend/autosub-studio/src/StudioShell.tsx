@@ -46,7 +46,8 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
 
   useEffect(() => { loadOrCreateProject(csrfToken).then(row => {
     projectRef.current = row; setProject(row); setSelectedTrackId(row.payload.tracks[0]?.id||'')
-    setState('ready'); setMessage('Sẵn sàng')
+    setState('ready'); setMessage(row.source_expired
+      ? 'Video nguồn đã hết hạn — hãy tải lại để tiếp tục.' : 'Sẵn sàng')
     void loadStudioJobs(row.id).then(items=>{setJobHistory(items)
       setRenderJob(items.find(job=>job.type==='autosubvideo.render')||null)
       setAuxJob(items.find(job=>job.type!=='autosubvideo.render'&&['queued','running'].includes(job.status))||null)

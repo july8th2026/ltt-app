@@ -54,9 +54,9 @@ Thực hiện tuần tự AutoSub → Prompt → Image → Clip, mỗi app một
 - [ ] Corpus VI/EN có ground truth để đo WER/timing; pyannote DER và Gemini
   translation thật. Smoke không ground truth chỉ chứng minh engine chạy, không
   chứng minh độ chính xác thương mại.
-- [ ] Đưa source upload của Studio vào draft attachment/UploadSession có
-  owner/TTL/recovery. Không gắn file draft chưa có paid Job vào lifecycle Q85
-  bằng một đường tắt thiếu hợp đồng.
+- [x] Source draft attachment — 2026-08-12, Q89: UploadSession owner/app/project,
+  validation actual-size/magic, TTL 30 ngày gia hạn khi mở, sweep/reconcile và
+  expired-source recovery. Q85 paid promote-after-hold vẫn giữ nguyên.
 - **TECHNICAL CONDITIONAL PASS:** bằng chứng chi tiết ở
   `06_R3_AUTOSUB_PROVIDER_EVIDENCE.md`; AutoSub R3 chưa được đóng toàn bộ.
 

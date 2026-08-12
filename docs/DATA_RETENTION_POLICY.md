@@ -14,6 +14,7 @@ Tài liệu này mô tả platform web hiện hành. Các file JSONL/SQLite củ
 | Internal debug event | 30 ngày | Worker gọi purge mỗi 6 giờ | Operator/support |
 | Credit ledger | Không purge theo Job | `CreditEntry` append-only, không FK cascade theo Job | Chủ tài khoản ở UI đã lọc; operator |
 | Input upload đang staging | 1 giờ | `UploadSession`; worker sweep mỗi giờ, idempotent; operator CLI dry-run/apply | Owner theo vé; operator chỉ thấy báo cáo đã lọc |
+| Source draft gắn AppProject | 30 ngày từ lần owner mở gần nhất | `UploadSession.attached`; owner/app/project-scoped; sweeper/reconcile dùng chung | Owner qua project; operator chỉ thấy báo cáo đã lọc |
 | Input đã promote cho Job | 30 ngày sau promote | Chỉ promote sau hold; xóa ngay nếu Job lỗi/hủy; không xóa Job active | Owner qua route app; operator theo quyền |
 | Output/project artifact | Policy storage riêng | Chưa tự xóa trong H26.11A/H33.R2 | Owner qua opaque route; operator theo quyền |
 | Session | Theo session policy | Thu hồi/hết hạn độc lập | Owner/operator theo auth |
@@ -78,8 +79,10 @@ viễn. Trước khi bật artifact purge phải có inventory theo app, owner c
 legal/privacy decision, preview count/bytes, restore/rollback và canary riêng.
 
 Input upload trả phí là contract hẹp Q85: staging một giờ, promoted input 30
-ngày và xóa sớm khi Job lỗi/hủy. Nó không cho phép xóa output hoặc asset đã lưu
-trong project. Quality Lab là ngoại lệ hẹp đã khóa bởi Q83: file và transcript chuẩn do operator
+ngày và xóa sớm khi Job lỗi/hủy. Source draft Q89 là contract riêng: attachment
+gắn project được gia hạn khi owner mở, hết 30 ngày không dùng thì dọn và project
+yêu cầu tải lại. Hai contract không cho phép xóa output hoặc asset đã lưu trong
+project. Quality Lab là ngoại lệ hẹp đã khóa bởi Q83: file và transcript chuẩn do operator
 nạp trực tiếp chỉ là input tạm và bị xóa sau evaluation. Artifact gốc được tham
 chiếu bằng storage key không bị Quality Lab xóa; nó vẫn theo policy của app sở
 hữu. Foundation chưa lưu frame/crop/audio evidence riêng và không dùng dữ liệu
@@ -94,6 +97,7 @@ không được đưa vào support export hoặc log mới.
 
 ## Changelog
 
+- 2026-08-12: thêm source draft attachment/TTL/recovery Q89.
 - 2026-08-12: thêm upload/input lifecycle Q85, sweeper và operator reconcile.
 - 2026-08-10: thêm retention Q83 cho input ephemeral và report Quality Lab.
 - 2026-08-09: thay tài liệu desktop cũ bằng policy platform Q75/Q76; thêm

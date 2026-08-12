@@ -1,8 +1,9 @@
 """Upload staging lifecycle dùng chung cho app file/media.
 
-File mới luôn vào ``staging/``. Chỉ sau khi job đã giữ credit, service mới
-promote sang key bền vững. Session hết hạn/failure có sweeper idempotent để
-không biến validation, thiếu credit hay browser bỏ dở thành rác vĩnh viễn.
+File mới luôn vào ``staging/``. Paid input chỉ promote sau khi job giữ credit.
+Editor có project bền vững được attach source vào project với TTL riêng; đây
+không phải paid input và không được đi vòng qua ``promote(job)``. Session hết
+hạn/failure có sweeper idempotent để browser bỏ dở không thành rác vĩnh viễn.
 """
 from __future__ import annotations
 
@@ -17,12 +18,13 @@ from sqlalchemy import func, select
 
 from platform_core.i18n import _ as _t
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job,
-                                  UPLOAD_DELETED, UPLOAD_PENDING,
+                                  UPLOAD_ATTACHED, UPLOAD_DELETED, UPLOAD_PENDING,
                                   UPLOAD_PROMOTED, UPLOAD_READY, UploadSession)
 
 
 DEFAULT_TTL_S = 60 * 60
 PROMOTED_RETENTION_DAYS = 30
+DRAFT_RETENTION_DAYS = 30
 MAX_ACTIVE_SESSIONS = 20
 MAX_ACTIVE_BYTES = 2 * 1024 * 1024 * 1024
 MAX_CREATED_PER_MINUTE = 12
@@ -224,6 +226,69 @@ def promote(db, storage, session: UploadSession, *, job: Job,
     return stored.key
 
 
+def attach_to_project(db, storage, session: UploadSession, *, project_id: str,
+                      final_key: str, now: datetime | None = None) -> str:
+    """Attach a validated source to an owner-scoped editor project.
+
+    This transition is deliberately separate from ``promote``: a draft source
+    is needed before a paid Job exists, while paid inputs must still prove a
+    credit hold. The caller owns the AppProject ownership/revision check and
+    must compensate the object move if its database commit fails.
+    """
+    current = now or _now()
+    pid = str(project_id or "").strip()
+    prefix = f"{session.app_slug}/{session.user_id}/"
+    if not pid or not str(final_key).startswith(prefix):
+        raise UploadSessionError(_t("Đích project upload không hợp lệ."))
+    if session.status == UPLOAD_ATTACHED:
+        if session.project_id != pid or session.final_key != final_key:
+            raise UploadSessionError(_t("Upload đã gắn vào project khác."))
+        session.expires_at = current + timedelta(days=DRAFT_RETENTION_DAYS)
+        session.updated_at = current
+        db.flush()
+        return session.final_key
+    if session.status == UPLOAD_PROMOTED:
+        raise UploadSessionError(_t("Upload đã được dùng cho job."))
+    confirm(db, storage, session, now=current)
+    try:
+        stored = storage.promote(
+            session.staging_key, final_key, content_type=session.content_type)
+        if stored.size != session.actual_size:
+            raise UploadSessionError(_t("Attach file không toàn vẹn."))
+        session.status = UPLOAD_ATTACHED
+        session.final_key = stored.key
+        session.project_id = pid
+        session.expires_at = current + timedelta(days=DRAFT_RETENTION_DAYS)
+        session.updated_at = current
+        db.flush()
+    except Exception:
+        compensate(storage, [(session.staging_key, final_key,
+                              session.content_type)])
+        raise
+    return stored.key
+
+
+def project_attachment(db, *, user_id: str, app_slug: str,
+                       project_id: str, final_key: str) -> UploadSession | None:
+    return db.execute(select(UploadSession).where(
+        UploadSession.user_id == user_id,
+        UploadSession.app_slug == app_slug,
+        UploadSession.project_id == project_id,
+        UploadSession.final_key == final_key,
+    )).scalar_one_or_none()
+
+
+def touch_project_attachment(db, session: UploadSession,
+                             *, now: datetime | None = None) -> bool:
+    if session.status != UPLOAD_ATTACHED:
+        return False
+    current = now or _now()
+    session.expires_at = current + timedelta(days=DRAFT_RETENTION_DAYS)
+    session.updated_at = current
+    db.flush()
+    return True
+
+
 def compensate(storage, promotions: list[tuple[str, str, str]]) -> int:
     """Đảo các move chưa commit, theo thứ tự ngược; best-effort và idempotent.
 
@@ -241,11 +306,17 @@ def compensate(storage, promotions: list[tuple[str, str, str]]) -> int:
     return restored
 
 
+def _stored_key(session: UploadSession) -> str:
+    return (session.final_key if session.status in (UPLOAD_ATTACHED, UPLOAD_PROMOTED)
+            else session.staging_key)
+
+
 def sweep(db, storage, *, now: datetime | None = None,
           dry_run: bool = True, limit: int = 500) -> dict:
     current = now or _now()
     rows = list(db.execute(select(UploadSession).where(
-        UploadSession.status.in_((UPLOAD_PENDING, UPLOAD_READY, UPLOAD_PROMOTED)),
+        UploadSession.status.in_((UPLOAD_PENDING, UPLOAD_READY, UPLOAD_ATTACHED,
+                                  UPLOAD_PROMOTED)),
         UploadSession.expires_at <= current,
     ).order_by(UploadSession.expires_at).limit(max(1, min(int(limit), 5000)))).scalars())
     due = []; skipped_active = 0; errors = 0; deleted = 0
@@ -255,7 +326,7 @@ def sweep(db, storage, *, now: datetime | None = None,
             if job is not None and job.status not in (JOB_DONE, JOB_ERROR, JOB_CANCELLED):
                 skipped_active += 1
                 continue
-        key = session.final_key if session.status == UPLOAD_PROMOTED else session.staging_key
+        key = _stored_key(session)
         due.append({"upload_id": session.id, "status": session.status,
                     "bytes": session.actual_size or session.expected_size})
         if dry_run:
@@ -300,11 +371,12 @@ def cleanup_failed_job(db, storage, job: Job) -> int:
 
 def reconcile(db, storage, *, limit: int = 1000) -> dict:
     rows = list(db.execute(select(UploadSession).where(
-        UploadSession.status.in_((UPLOAD_PENDING, UPLOAD_READY, UPLOAD_PROMOTED)),
+        UploadSession.status.in_((UPLOAD_PENDING, UPLOAD_READY, UPLOAD_ATTACHED,
+                                  UPLOAD_PROMOTED)),
     ).limit(max(1, min(int(limit), 5000)))).scalars())
     missing = []
     for session in rows:
-        key = session.final_key if session.status == UPLOAD_PROMOTED else session.staging_key
+        key = _stored_key(session)
         if not storage.exists(key):
             missing.append({"upload_id": session.id, "status": session.status,
                             "job_id": session.job_id})

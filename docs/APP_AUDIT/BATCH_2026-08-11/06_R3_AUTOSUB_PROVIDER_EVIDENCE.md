@@ -51,7 +51,7 @@ là **engine smoke PASS**, chưa phải chuẩn chất lượng ngôn ngữ.
 | Fatal/warning preflight | PASS | browser negative + warning path |
 | ASR accuracy VI/EN | CONDITIONAL | chưa có corpus ground truth; WER UNKNOWN |
 | Diarization/translation | BLOCKED | chưa có pyannote/Gemini evidence thật |
-| Source draft lifecycle | OPEN P1 | còn dùng source bền trước paid Job |
+| Source draft lifecycle | PASS | Q89 owner/project attach, TTL/recovery/sweep |
 
 **Quyết định:** AutoSub đạt **technical conditional PASS**, chưa đạt commercial
 quality/release PASS. Không hạ chuẩn Q50/Q83 để hợp thức hóa thiếu evidence.
@@ -60,6 +60,4 @@ quality/release PASS. Không hạ chuẩn Q50/Q83 để hợp thức hóa thiế
 
 1. Tạo corpus VI/EN có license/consent và transcript chuẩn; đo WER, timing drift.
 2. Chạy pyannote có speaker ground truth và Gemini translation có human review.
-3. Thiết kế draft attachment owner-scoped + TTL + recovery rồi đưa source
-   Studio vào lifecycle; không buộc Q85 paid-job session gánh sai bài toán.
-4. Sau AutoSub mới chuyển tuần tự Prompt → Image → Clip trên exact RC.
+3. Sau AutoSub mới chuyển tuần tự Prompt → Image → Clip trên exact RC.

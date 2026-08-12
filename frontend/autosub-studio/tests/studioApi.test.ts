@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createAutosave, DEFAULT_STYLE, loadOrCreateProject, ProjectConflictError, saveProject,
+import { attachSource, createAutosave, DEFAULT_STYLE, loadOrCreateProject, ProjectConflictError, saveProject,
   type StudioProject } from '../src/studioApi'
 
 const payload = { schema_version: 1 as const, active_step: 'upload' as const,
@@ -32,6 +32,24 @@ describe('project API', () => {
     const headers = fetch.mock.calls[0][1]?.headers as Record<string,string>
     expect(headers['If-Match']).toBe('"1"')
   })
+})
+
+it('stages a Studio source through the project upload contract', async () => {
+  const file=new File([new Uint8Array([0,0,0,0])],'source.mp4',{type:'video/mp4'})
+  const fetch=vi.spyOn(globalThis,'fetch')
+    .mockResolvedValueOnce(new Response(JSON.stringify({mode:'direct',upload_id:'up-1',
+      url:'https://upload.test/source',headers:{'Content-Type':'video/mp4'}}),{status:200}))
+    .mockResolvedValueOnce(new Response('',{status:200}))
+    .mockResolvedValueOnce(new Response(JSON.stringify({...project,revision:2}),{status:200}))
+  const saved=await attachSource(project,'csrf',file,{duration:4,width:1280,height:720},()=>{})
+  expect(saved.revision).toBe(2)
+  const ticket=fetch.mock.calls[0]
+  expect(String(ticket[0])).toBe('/autosubvideo/api/uploads')
+  expect(JSON.parse(String(ticket[1]?.body))).toMatchObject({expected_size:4,
+    filename:'source.mp4',content_type:'video/mp4'})
+  const attached=fetch.mock.calls[2][1]?.body as FormData
+  expect(attached.get('upload_id')).toBe('up-1')
+  expect(attached.get('video_key')).toBeNull()
 })
 
 it('autosave coalesces edits and flushes the latest value', async () => {

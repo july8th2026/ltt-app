@@ -94,6 +94,37 @@ def test_chi_promote_sau_hold_va_gan_job_owner(env):
     assert session.status == "promoted" and session.job_id == job.id
 
 
+def test_attach_project_owner_scoped_ttl_va_sweep(env):
+    from platform_core import upload_sessions
+    db, storage = env
+    start = datetime(2026, 8, 12, tzinfo=timezone.utc)
+    session = _session(db, now=start)
+    storage.put(session.staging_key, io.BytesIO(MP4), content_type="video/mp4")
+    final = "demo/u1/drafts/project-1/source.mp4"
+
+    key = upload_sessions.attach_to_project(
+        db, storage, session, project_id="project-1", final_key=final, now=start)
+    db.commit()
+
+    assert key == final and session.status == "attached"
+    assert session.project_id == "project-1" and storage.exists(final)
+    assert upload_sessions.project_attachment(
+        db, user_id="u1", app_slug="demo", project_id="project-1",
+        final_key=final) is session
+    assert upload_sessions.project_attachment(
+        db, user_id="other", app_slug="demo", project_id="project-1",
+        final_key=final) is None
+
+    assert upload_sessions.touch_project_attachment(
+        db, session, now=start + timedelta(days=29)) is True
+    report = upload_sessions.sweep(
+        db, storage, now=start + timedelta(days=31), dry_run=False)
+    assert report["due"] == 0 and storage.exists(final)
+    report = upload_sessions.sweep(
+        db, storage, now=start + timedelta(days=60), dry_run=False)
+    assert report["deleted"] == 1 and not storage.exists(final)
+
+
 def test_quota_va_rate_fail_closed(env, monkeypatch):
     from platform_core import upload_sessions
     db, _storage = env

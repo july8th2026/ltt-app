@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-12 — H33.R3.1b: AutoSub source draft lifecycle
+
+- **Mục tiêu:** source video của editor có recovery đa phiên nhưng không thành
+  orphan vô hạn và không phá bất biến promote-after-hold của paid Job.
+- **Hạng mục:** phần source lifecycle còn mở của AutoSub R3/R5.
+- **Trạng thái:** SOURCE/BROWSER/REGRESSION PASS; production chưa deploy.
+
+### Đã làm
+
+- Q89 + migration `b6c7d8e9f0a1`: UploadSession có `attached/project_id`, TTL
+  30 ngày được touch khi owner mở project; sweeper/reconcile đọc đúng final key.
+- Studio dùng `/api/uploads` owner-scoped, kiểm size/MIME/magic rồi attach vào
+  project. Commit lỗi trả file về staging; user/project khác không chiếm vé.
+- Attachment mất/hết hạn làm project bỏ source và báo tải lại. Source legacy
+  không có UploadSession vẫn giữ tương thích.
+- Tách nghiệp vụ source draft khỏi route vào `services/source_drafts.py`;
+  `routes.py` còn 899 dòng và không còn cảnh báo contract AutoSub.
+- Playwright fixture cô lập 8153 sau refactor: upload MP4 45,13 giây qua
+  `/api/uploads` rồi attach source đều 200 → project draft key → preview Range
+  200/206 → reload vẫn khôi phục; mobile 390×844 overflow false; console 0.
+  Production 8100 không bị chạm.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted UploadSession + AutoSub project | **31 passed**, 1 warning, 51,03s |
+| Ownership/expiry targeted sau hardening | **2 passed**, 1 warning, 6,64s |
+| `npm test -- --run` AutoSub | **15 passed** |
+| `npm run build` AutoSub | **PASS** |
+| Migration SQLite `upgrade head` → `downgrade a5b6c7d8e9f0` → `upgrade head` | **PASS** |
+| Playwright sau refactor: upload/reload/network/mobile/console | **PASS**; API 200, media 200/206, overflow false, console 0 |
+| `python tools\gate.py --quick` sau refactor | **PASS 8/8**, 28,9s |
+| `python tools\gate.py` | **PASS 9/9**, 1.819,3s; pytest 1.790,6s |
+
+### Quyết định mới
+
+Q89 đã thêm và retention policy đã đồng bộ.
+
+### Cách lùi lại
+
+Revert commit trước khi chạy migration. Nếu staging đã migrate, kiểm không còn
+session `attached`, chạy reconcile/dry-run rồi downgrade về `a5b6c7d8e9f0`.
+
+### Còn tồn đọng
+
+AutoSub quality corpus/pyannote/Gemini; Prompt/Image/Clip provider matrix; R4
+commercial calibration; R5 còn lại và R6 staging/rollback.
+
 ## 2026-08-12 — H33.R3.1: AutoSub technical conditional PASS
 
 - **Mục tiêu:** chạy provider/output path AutoSub thật từ UI đến GPU, render,
@@ -59,8 +108,8 @@ lập có thể xóa; production không thay đổi.
 
 ### Còn tồn đọng
 
-- AutoSub: corpus ground truth VI/EN, pyannote/Gemini và draft attachment
-  lifecycle. Prompt/Image thiếu exact provider key; Clip matrix exact RC còn mở.
+- AutoSub: corpus ground truth VI/EN và pyannote/Gemini. Prompt/Image thiếu
+  exact provider key; Clip matrix exact RC còn mở.
 - R4 commercial calibration, phần còn lại R5 và R6 staging/rollback vẫn mở.
 
 ## 2026-08-12 — H33.R5a: Job Center adaptive recovery source/browser PASS

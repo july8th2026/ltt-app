@@ -45,6 +45,9 @@ _QUALITY = [("draft", "Nháp"), ("standard", "Chuẩn"), ("high", "Cao")]
 _FORMATS = ["mp4", "mkv", "webm"]
 _TRANSCRIPT_MAX = 8 * 1024 * 1024      # 8MB transcript là quá đủ
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024    # fallback Local: dưới trần 100MB CF
+_PROJECT_VIDEO_MAX = 2 * 1024 * 1024 * 1024
+_VIDEO_TYPES = ("video/mp4", "video/quicktime", "video/x-m4v",
+                "video/webm", "video/x-matroska", "video/x-msvideo")
 
 
 def _studio_enabled() -> bool:
@@ -143,15 +146,16 @@ def _project_json(row, *, include_payload: bool = True) -> dict:
            "status": row.status, "created_at": row.created_at.isoformat(),
            "updated_at": row.updated_at.isoformat()}
     if include_payload:
-        # Normalize additive schema defaults on read so projects created by an
-        # older Studio bundle immediately receive new output options.
         from apps.autosubvideo.schemas import StudioProjectV1
         out["payload"] = StudioProjectV1.model_validate(row.payload).model_dump(mode="json")
     return out
 
 
-def _project_response(row, *, status_code: int = 200):
-    return JSONResponse(_project_json(row), status_code=status_code,
+def _project_response(row, *, status_code: int = 200, source_expired: bool = False):
+    body = _project_json(row)
+    if source_expired:
+        body["source_expired"] = True
+    return JSONResponse(body, status_code=status_code,
                         headers={"ETag": f'"{row.revision}"'})
 
 
@@ -185,13 +189,39 @@ async def project_create(request: Request, _identity: str = Depends(require_logi
 @router.get("/api/projects/{project_id}")
 def project_get(request: Request, project_id: str,
                 _identity: str = Depends(require_login), db: Session = Depends(get_db)):
+    from apps.autosubvideo.services import source_drafts
     from platform_core import app_projects
+    from platform_core.storage import get_storage
     current = _api_user(request)
     try:
-        return _project_response(app_projects.get_owned(
-            db, project_id, current.id, MANIFEST.slug))
+        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
+        row, expired = source_drafts.refresh(
+            db, get_storage(), row, user_id=current.id, app_slug=MANIFEST.slug)
+        return _project_response(row, source_expired=expired)
     except app_projects.ProjectNotFound:
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
+
+
+@router.post("/api/uploads")
+async def project_upload_ticket(request: Request,
+                                _identity: str = Depends(require_login),
+                                db: Session = Depends(get_db)):
+    from apps.autosubvideo.services import source_drafts
+    from platform_core import upload_sessions
+    from platform_core.storage import get_storage
+    body = await request.json(); _verify_json_csrf(request, body)
+    current = _api_user(request)
+    try:
+        return source_drafts.create_ticket(
+            db, get_storage(), user_id=current.id, app_slug=MANIFEST.slug,
+            filename=str(body.get("filename", "")),
+            content_type=str(body.get("content_type", "video/mp4")),
+            expected_size=body.get("expected_size", 0),
+            direct_enabled=_browser_direct_upload_enabled(),
+            max_size=_PROJECT_VIDEO_MAX, local_max=_LOCAL_VIDEO_MAX,
+            allowed_types=_VIDEO_TYPES)
+    except upload_sessions.UploadSessionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
 @router.put("/api/projects/{project_id}")
@@ -270,54 +300,42 @@ async def project_import_transcript(
     return _project_response(saved)
 
 
-_TRANSCRIBE_DAILY_LIMIT = 12
-_DIARIZE_DAILY_LIMIT = 6
-_TRANSLATE_DAILY_LIMIT = 20
-
+_TRANSCRIBE_DAILY_LIMIT, _DIARIZE_DAILY_LIMIT, _TRANSLATE_DAILY_LIMIT = 12, 6, 20
 
 @router.post("/api/projects/{project_id}/source")
 async def project_attach_source(
         request: Request, project_id: str, revision: int = Form(...),
-        csrf_token: str = Form(""), video_key: str = Form(""),
+        csrf_token: str = Form(""), upload_id: str = Form(""),
         filename: str = Form(""), duration_s: float = Form(0),
         width: int = Form(0), height: int = Form(0),
         video: UploadFile = File(default=None),
         _identity: str = Depends(require_login), db: Session = Depends(get_db)):
-    import io
-    from platform_core import app_projects
+    from pydantic import ValidationError
+    from apps.autosubvideo.services import source_drafts
+    from platform_core import app_projects, upload_sessions
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
     if not verify_csrf_token(request, request.headers.get("X-CSRF-Token", "") or csrf_token):
         raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
-    current = _api_user(request); storage = get_storage(); key = video_key.strip()
+    current = _api_user(request); storage = get_storage()
     try:
-        row = app_projects.get_owned(db, project_id, current.id, MANIFEST.slug)
-        if key:
-            if not key.startswith(f"autosubvideo/{current.id}/") or not storage.exists(key):
-                raise HTTPException(status_code=422, detail=_t('Video upload không hợp lệ.'))
-        else:
-            if video is None or not getattr(video, "filename", ""):
-                raise HTTPException(status_code=422, detail=_t('Chưa chọn video.'))
-            raw = await video.read()
-            if not raw or len(raw) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
-                raise HTTPException(status_code=422, detail=_t('Video local rỗng hoặc quá 90MB.'))
-            ext = "." + video.filename.rsplit(".", 1)[-1].lower()[:5] if "." in video.filename else ".mp4"
-            key = f"autosubvideo/{current.id}/uploads/{uuid.uuid4().hex}{ext}"
-            storage.put(key, io.BytesIO(raw), video.content_type or "video/mp4")
-        payload = dict(row.payload)
-        payload["source"] = {"key": key, "filename": (filename or
-            getattr(video, "filename", "video.mp4"))[:255],
-            "duration_s": max(0, min(float(duration_s), 86400)),
-            "width": max(0, min(int(width), 16384)),
-            "height": max(0, min(int(height), 16384))}
-        payload["active_step"] = "transcript"
-        validated = _validated_project_payload(payload)
-        saved = app_projects.save(db, project_id=project_id, user_id=current.id,
-                                  app_slug=MANIFEST.slug, revision=revision,
-                                  name=row.name, schema_version=1, payload=validated)
+        raw = await video.read() if video is not None else None
+        if raw is not None and len(raw) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
+            raise upload_sessions.UploadSessionError(
+                _t('Video local rỗng hoặc quá 90MB.'))
+        saved = source_drafts.attach(
+            db, storage, project_id=project_id, user_id=current.id,
+            app_slug=MANIFEST.slug, revision=revision, upload_id=upload_id,
+            video_name=getattr(video, "filename", "") or "",
+            video_content_type=getattr(video, "content_type", "") or "",
+            video_data=raw, filename=filename, duration_s=duration_s,
+            width=width, height=height, local_max=_LOCAL_VIDEO_MAX,
+            allowed_types=_VIDEO_TYPES)
     except app_projects.ProjectConflict as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
     except app_projects.ProjectNotFound:
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy project.')) from None
+    except (upload_sessions.UploadSessionError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
     return _project_response(saved)
 
 

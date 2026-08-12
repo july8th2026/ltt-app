@@ -154,16 +154,20 @@ def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):
             b"1\n00:00:00,000 --> 00:00:02,000\nXin chao\n", "text/plain")})
     assert imported.status_code == 200 and imported.json()["payload"]["tracks"][0]["cues"]
 
-    ticket = a.post("/autosubvideo/upload-url", data={"filename": "sample.mp4",
-                    "content_type": "video/mp4"}).json()
-    from platform_core.storage import get_storage
-    get_storage().put(ticket["key"], io.BytesIO(b"fake-video"), "video/mp4")
     attached = a.post(f"/autosubvideo/api/projects/{made['id']}/source", headers={
         "X-CSRF-Token": token}, data={"revision": 2, "csrf_token": token,
-        "video_key": ticket["key"], "filename": "sample.mp4", "duration_s": 4,
-        "width": 1280, "height": 720})
+        "filename": "sample.mp4", "duration_s": 4, "width": 1280, "height": 720},
+        files={"video": ("sample.mp4", b"\x00\x00\x00\x18ftypisom" + b"x" * 52,
+                         "video/mp4")})
     assert attached.status_code == 200
     saved = attached.json()
+    assert "/drafts/" in saved["payload"]["source"]["key"]
+    import platform_core.db as dbmod
+    from platform_core.models import UploadSession
+    db = next(dbmod.get_session())
+    session = db.query(UploadSession).filter_by(project_id=made["id"]).one()
+    assert session.status == "attached" and session.user_id in session.final_key
+    db.close()
     queued = a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe", headers={
         "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'},
         json={"language": "vi"})
@@ -172,7 +176,6 @@ def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):
         "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'},
         json={"language": "vi"})
     assert again.status_code == 202 and again.json()["job_id"] == queued.json()["job_id"]
-    import platform_core.db as dbmod
     from platform_core import credit
     from platform_core.models import Job, User
     db = next(dbmod.get_session())
@@ -186,6 +189,48 @@ def test_import_and_zero_credit_transcribe_dedupe_quota(studio_api):
     blocked = a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe", headers={
         "X-CSRF-Token": token, "If-Match": f'"{saved["revision"]}"'}, json={})
     assert blocked.status_code == 429
+
+
+def test_project_source_ticket_validates_owner_size_and_expiry(studio_api, monkeypatch):
+    a,token,b,token_b=studio_api
+    monkeypatch.setenv("LTT_R2_BROWSER_UPLOAD_ENABLED", "1")
+    from platform_core.storage import get_storage
+    monkeypatch.setattr(get_storage(), "try_put_url", lambda *args, **kwargs:
+        type("Target", (), {"url":"https://upload.test/source", "method":"PUT",
+                            "headers":{}, "key":args[0]})())
+    made=a.post("/autosubvideo/api/projects",headers={"X-CSRF-Token":token},
+        json={"name":"draft-source"}).json()
+    ticket=a.post("/autosubvideo/api/uploads",headers={"X-CSRF-Token":token},json={
+        "filename":"source.mp4","content_type":"video/mp4","expected_size":64})
+    assert ticket.status_code==200 and ticket.json()["mode"]=="direct"
+    upload_id=ticket.json()["upload_id"]
+    import platform_core.db as dbmod
+    from platform_core.models import UploadSession
+    db=next(dbmod.get_session());session=db.get(UploadSession,upload_id)
+    get_storage().put(session.staging_key,io.BytesIO(
+        b"\x00\x00\x00\x18ftypisom"+b"x"*52),"video/mp4");db.close()
+
+    other=b.post("/autosubvideo/api/projects",headers={"X-CSRF-Token":token_b},
+        json={"name":"other-project"}).json()
+    stolen=b.post(f"/autosubvideo/api/projects/{other['id']}/source",headers={
+        "X-CSRF-Token":token_b},data={"revision":1,"upload_id":upload_id,
+        "filename":"source.mp4"})
+    assert stolen.status_code==422 and "không thuộc user" in stolen.json()["detail"]
+    attached=a.post(f"/autosubvideo/api/projects/{made['id']}/source",headers={
+        "X-CSRF-Token":token},data={"revision":1,"upload_id":upload_id,
+        "filename":"source.mp4","duration_s":4,"width":1280,"height":720})
+    assert attached.status_code==200
+
+    db=next(dbmod.get_session());session=db.get(UploadSession,upload_id)
+    get_storage().delete(session.final_key);db.close()
+    reloaded=a.get(f"/autosubvideo/api/projects/{made['id']}")
+    assert reloaded.status_code==200 and reloaded.json()["source_expired"] is True
+    assert reloaded.json()["payload"]["source"]["key"]==""
+
+    oversized=a.post("/autosubvideo/api/uploads",headers={"X-CSRF-Token":token},json={
+        "filename":"large.mp4","content_type":"video/mp4",
+        "expected_size":2*1024*1024*1024+1})
+    assert oversized.status_code==422
 
 
 def test_transcribe_handler_updates_matching_revision(tmp_path, monkeypatch):

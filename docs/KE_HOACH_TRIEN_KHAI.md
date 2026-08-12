@@ -2241,8 +2241,11 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
     H.264/AAC, output subtitle bundle và ledger 1.000→996 đúng quote. Sửa lỗi
     transcribe không khởi tạo polling; thêm preflight fatal/warning và Q88 JSON
     API error. **Technical conditional PASS; không gọi là quality PASS.**
-  - [ ] AutoSub quality: corpus VI/EN ground truth WER/timing, pyannote DER,
-    Gemini translation và source draft attachment/UploadSession owner+TTL.
+  - [x] AutoSub source draft lifecycle — 2026-08-12, Q89: staging validation,
+    attach owner/app/project, TTL 30 ngày/touch khi mở, sweep/reconcile, báo tải
+    lại khi source hết hạn; migration `b6c7d8e9f0a1`, browser reload/mobile PASS.
+  - [ ] AutoSub quality: corpus VI/EN ground truth WER/timing, pyannote DER và
+    Gemini translation.
   - [ ] Prompt provider/output/ledger matrix trên exact RC.
   - [ ] Image provider/output/ledger matrix trên exact RC.
   - [ ] Clip provider/output/ledger matrix trên exact RC.
