@@ -61,6 +61,37 @@ def test_safe_next_chan_open_redirect():
     assert safe_next("evil.com") == "/"          # không bắt đầu bằng /
 
 
+def test_progress_bao_terminal_de_trang_tu_nap_action_va_artifact(client):
+    import platform_core.db as dbmod
+    from platform_core.models import JOB_DONE, JOB_RUNNING, Job
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email="job-progress@example.com",
+                              password="matkhau-tot-12", is_verified=True)
+        running = Job(user_id=user.id, app_slug="demo", job_type="demo.reverse",
+                      status=JOB_RUNNING)
+        done = Job(user_id=user.id, app_slug="demo", job_type="demo.reverse",
+                   status=JOB_DONE, result={"text_key": "demo/result.txt"})
+        db.add_all([running, done]); db.commit()
+        running_id, done_id = running.id, done.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    token = _csrf(client, "/login")
+    assert client.post("/login", data={"username": "job-progress@example.com",
+                                        "password": "matkhau-tot-12",
+                                        "csrf_token": token}).status_code == 303
+    active = client.get(f"/jobs/{running_id}/progress")
+    terminal = client.get(f"/jobs/{done_id}/progress")
+    assert active.status_code == 200
+    assert "X-LTT-Job-Terminal" not in active.headers
+    assert terminal.status_code == 200
+    assert terminal.headers["X-LTT-Job-Terminal"] == "1"
+
+
 # ── Catalog công khai ───────────────────────────────────────────────────────────
 
 def test_trang_chu_cong_khai_cho_khach(client):

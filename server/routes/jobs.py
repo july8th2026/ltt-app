@@ -201,9 +201,15 @@ def tien_do(request: Request, job_id: str, user: str = Depends(require_login)):
     if job is None:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
-    return templates.TemplateResponse(request, "_job_progress.html", {
+    response = templates.TemplateResponse(request, "_job_progress.html", {
         "job": job, "events": _events_cua_job(job.id),
     })
+    # The detail page contains actions/artifact links outside this fragment.
+    # Signal a one-time full refresh when polling observes a terminal state so
+    # customers do not have to guess that "reload the page" is required.
+    if job.status not in {"queued", "running"}:
+        response.headers["X-LTT-Job-Terminal"] = "1"
+    return response
 
 
 @router.get("/api/jobs")

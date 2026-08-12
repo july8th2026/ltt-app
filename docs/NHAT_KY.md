@@ -14,6 +14,33 @@
 
 ---
 
+## 2026-08-12 — H33.R5a: Job Center adaptive recovery source/browser PASS
+
+- **Mục tiêu:** progress không im lặng hoặc spam request khi offline; terminal
+  tự cập nhật action/artifact mà khách không phải đoán để reload.
+- **Hạng mục:** lát cắt Job Center của H33.R5 hoàn thành; R5 tổng vẫn mở.
+- **Trạng thái:** SOURCE/BROWSER PASS; production chưa deploy.
+
+### Đã làm và test
+
+- Q87: polling 2s khi khỏe, backoff 4→8→16→30s khi lỗi, online/visible reset;
+  terminal header reload một lần; dừng poll khi terminal/unload.
+- `29 passed`; quick gate **PASS 8/8**.
+- Full `python tools\gate.py` **PASS 9/9**, 1.783,8s; pytest 1.756,6s.
+- Playwright fixture cô lập: job queued thật, offline 15s chỉ ba request mới,
+  notice hiện; online trả 200/notice ẩn; terminal từ tab khác tự reload, hiện
+  Retry và hoàn credit 995→1000; mobile 390px không overflow; console cuối 0.
+- Fixture 8151/8152 đã dừng; production 8100 không bị chạm.
+
+### Còn tồn đọng
+
+- Draft recovery; preflight matrix; browser A–Z exact staging RC. R3/provider
+  và R4 commercial calibration vẫn blocked như kế hoạch.
+
+### Cách lùi lại
+
+Revert Q87 để quay về HTMX fixed polling 2 giây; không có migration/dữ liệu đổi.
+
 ## 2026-08-12 — H33.R4a: Upscale scheduler lane source PASS
 
 - **Mục tiêu:** Fast không còn giữ thừa VRAM theo worst-case Quality nhưng job

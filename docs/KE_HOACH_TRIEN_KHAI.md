@@ -2246,4 +2246,12 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   - [ ] Qualified dual-GPU: chỉ chạy khi cả hai card qua idle guard; GPU0 đang
     baseline 1.126 MB > 512 MB nên chưa đủ điều kiện bằng chứng.
 - [ ] H33.R5 UX/recovery parity.
+  - [x] Job Center adaptive progress/recovery — 2026-08-12, Q87: poll 2s khỏe,
+    exponential backoff tới 30s khi offline, online reset, terminal reload một
+    lần để nạp Retry/Artifact. **29 targeted pass; quick gate PASS 8/8;
+    full gate PASS 9/9 trong 1.783,8s; Playwright queued/offline/online/cancel/
+    terminal/mobile PASS, console cuối 0.**
+  - [ ] Draft recovery có privacy/user scoping cho form không dùng AppProject.
+  - [ ] Preflight/confirmation matrix cho job giá cao/dài còn lại.
+  - [ ] Browser A–Z sáu app trên exact staging RC.
 - [ ] H33.R6 Staging, rollback drill và production decision riêng.

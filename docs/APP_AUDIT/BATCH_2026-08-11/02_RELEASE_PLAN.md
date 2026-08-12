@@ -60,9 +60,15 @@ Thực hiện tuần tự AutoSub → Prompt → Image → Clip, mỗi app một
 
 ## R5 — UX/recovery parity
 
-- Live progress với backoff, retry/cancel/resume, cursor history và draft recovery.
-- Canonical preflight/confirmation cho job giá cao/dài.
-- Browser A–Z desktop/mobile, keyboard/focus/offline/error/refresh.
+- [x] Job Center live progress/backoff/terminal refresh — 2026-08-12, Q87:
+  2s khỏe; offline 4→8→16→30s; online reset; terminal reload đúng một lần để
+  hiện Retry/Artifact. Retry/cancel/lineage, cursor history đã có và regression.
+- [ ] Draft recovery thống nhất cho form chưa có project bền vững; phải chốt
+  privacy/user scoping trước khi lưu nội dung nhạy cảm ở browser.
+- [ ] Canonical preflight/confirmation cho toàn bộ job giá cao/dài (Seedance,
+  Upscale đã có; cần đóng matrix AutoSub/Clip/Image/Prompt).
+- [ ] Browser A–Z đủ sáu app desktop/mobile, keyboard/focus/offline/error/refresh
+  trên exact staging RC. Lát cắt Job Center source/browser đã PASS.
 
 ## R6 — Staging release
 

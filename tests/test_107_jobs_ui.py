@@ -37,5 +37,12 @@ def test_job_templates_have_filters_actions_progress_and_artifacts():
     assert "/cancel" in detail and "/retry" in detail and "/artifacts/" in detail
     assert 'role="progressbar"' in progress and 'aria-live="polite"' in progress
     assert "job-timeline" in progress and "job.correlation_id" in detail
+    assert "X-LTT-Job-Terminal" in (ROOT / "server" / "routes" / "jobs.py").read_text(encoding="utf-8")
+    assert "job-network-state" in detail
+    assert "delay=Math.min(delay*2,maxDelay)" in detail
+    assert "window.addEventListener('online'" in detail
+    assert "response.headers.get('X-LTT-Job-Terminal')==='1'" in detail
+    assert 'data-running="{{ \'true\' if running else \'false\' }}"' in progress
+    assert 'hx-trigger="every 2s"' not in progress
     assert "job.result | tojson" not in progress
     assert "job.error" not in progress
