@@ -306,7 +306,9 @@ def test_studio_render_quote_snapshot_hold_cancel_refund_and_retry(studio_api):
     assert quote.status_code == 200
     assert quote.json()["quote"] == {"credit": 8, "vnd": 800, "minutes": 1.02,
         "quality": "high", "resolution": "1080p", "format": "mp4",
-        "track_ids": ["source"], "project_revision": 1}
+        "track_ids": ["source"], "project_revision": 1,
+        "preflight": {"score": 100, "error_count": 0, "warning_count": 0,
+                      "issue_codes": []}}
     submitted = a.post(endpoint + "/render", headers={"X-CSRF-Token": token,
         "If-Match": '"1"'}, json={"output": made["payload"]["output"]})
     assert submitted.status_code == 202
@@ -435,6 +437,39 @@ def test_render_quote_rejects_unknown_track_and_long_asr_source(studio_api):
     transcribe=a.post(f"/autosubvideo/api/projects/{made['id']}/transcribe",headers={
         "X-CSRF-Token":token,"If-Match":'"1"'},json={})
     assert transcribe.status_code==422
+
+
+def test_render_preflight_blocks_fatal_timing_and_reports_warnings(studio_api):
+    a,token,*_=studio_api
+    import platform_core.db as dbmod
+    from platform_core.models import User
+    from platform_core.storage import get_storage
+    db=next(dbmod.get_session());owner=db.query(User).filter_by(
+        email="studio-a@example.com").one().id;db.close()
+    payload=_payload();payload["source"]["key"]=f"autosubvideo/{owner}/uploads/qa.mp4"
+    get_storage().put(payload["source"]["key"],io.BytesIO(b"video"),"video/mp4")
+    payload["tracks"][0]["cues"]=[
+        {"id":"cue-1","start":0,"end":.2,"text":"Nội dung đọc quá nhanh",
+         "speaker":"","words":[]},
+        {"id":"cue-2","start":.1,"end":1,"text":"Bị chồng thời gian",
+         "speaker":"","words":[]},
+    ]
+    made=a.post("/autosubvideo/api/projects",headers={"X-CSRF-Token":token},
+        json={"name":"preflight","payload":payload}).json()
+    endpoint=f"/autosubvideo/api/projects/{made['id']}/quote"
+    blocked=a.post(endpoint,headers={"X-CSRF-Token":token,"If-Match":'"1"'},
+        json={"output":made["payload"]["output"]})
+    assert blocked.status_code==422 and "phải sửa" in blocked.json()["detail"]
+    assert blocked.headers["content-type"].startswith("application/json")
+
+    payload=made["payload"];payload["tracks"][0]["cues"]=payload["tracks"][0]["cues"][:1]
+    saved=a.put(f"/autosubvideo/api/projects/{made['id']}",headers={
+        "X-CSRF-Token":token,"If-Match":'"1"'},json={"name":"preflight","payload":payload})
+    quoted=a.post(endpoint,headers={"X-CSRF-Token":token,"If-Match":'"2"'},
+        json={"output":saved.json()["payload"]["output"]})
+    report=quoted.json()["quote"]["preflight"]
+    assert quoted.status_code==200 and report["error_count"]==0
+    assert report["warning_count"]>=2 and {"short","speed"}.issubset(report["issue_codes"])
 
 
 def test_autosub_studio_bundle_is_hashed_fresh_and_in_release():

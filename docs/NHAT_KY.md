@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-12 — H33.R3.1: AutoSub technical conditional PASS
+
+- **Mục tiêu:** chạy provider/output path AutoSub thật từ UI đến GPU, render,
+  ledger và preflight; không giả smoke thành bằng chứng chất lượng thương mại.
+- **Hạng mục:** lát cắt AutoSub của H33.R3 và preflight AutoSub trong H33.R5.
+- **Trạng thái:** TECHNICAL CONDITIONAL PASS; production chưa deploy.
+
+### Đã làm và đo thật
+
+- WhisperX Tiny/Large-v3 trên GPU1 với speech 45,13 giây: 6/9 segment,
+  129/131 aligned word, RTF 0,343/0,498, timing monotonic. Không có ground
+  truth nên WER là `UNKNOWN`; benchmark không còn bịa WER khi thiếu reference.
+- Playwright fixture cô lập 8153 bắt được lỗi transcribe không khởi tạo polling.
+  Đã sửa; UI queued→done, project reload thành 1 track/9 cue.
+- Paid render NVENC: quote 4 credit, balance 1.000→996, H.264/AAC 1080p,
+  45,133 giây và đủ MP4/ASS/SRT/VTT/JSON/ZIP. Frame thật có subtitle burn-in.
+- Thêm AutoSub render preflight: fatal chặn trước quote, warning hiện trong
+  confirmation. Thêm Q88 để API app trả JSON an toàn thay vì HTML.
+- Evidence: `docs/APP_AUDIT/BATCH_2026-08-11/06_R3_AUTOSUB_PROVIDER_EVIDENCE.md`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_103_autosub_projects.py tests\test_175_autosub_asr_benchmark.py tests\test_176_api_error_contract.py -q` | **25 passed**, 1 warning, 36,30s |
+| `npm test -- --run` tại `frontend/autosub-studio` | **14 passed** |
+| `npm run build` tại `frontend/autosub-studio` | **PASS** |
+| Playwright CLI desktop/mobile, ASR/render/preflight | **PASS**; console cuối 0, overflow false |
+| `python tools\gate.py --quick` | **PASS 8/8**, 29,3s |
+| `python tools\gate.py` lượt 1 | **FAIL 8/9**; pytest 19 fail + 18 error sau 2.640 pass do test Q88 để singleton DB trỏ vào `tmp_path` đã xóa |
+| Chuỗi `test_176_api_error_contract.py` → `test_53_content_tools.py` sau sửa | **23 passed**, 1 warning, 6,55s |
+| `python tools\gate.py` lượt 2 | **PASS 9/9**, 1.805,7s; pytest 1.776,7s |
+
+### Quyết định mới
+
+Q88 đã thêm: lỗi HTTP của API app phải là JSON no-store, bỏ `input`/`ctx`;
+page browser vẫn là HTML.
+
+### Cách lùi lại
+
+Revert commit của lát cắt H33.R3.1; không có migration. Artifact/DB fixture cô
+lập có thể xóa; production không thay đổi.
+
+### Còn tồn đọng
+
+- AutoSub: corpus ground truth VI/EN, pyannote/Gemini và draft attachment
+  lifecycle. Prompt/Image thiếu exact provider key; Clip matrix exact RC còn mở.
+- R4 commercial calibration, phần còn lại R5 và R6 staging/rollback vẫn mở.
+
 ## 2026-08-12 — H33.R5a: Job Center adaptive recovery source/browser PASS
 
 - **Mục tiêu:** progress không im lặng hoặc spam request khi offline; terminal

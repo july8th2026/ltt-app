@@ -43,6 +43,29 @@ Thực hiện tuần tự AutoSub → Prompt → Image → Clip, mỗi app một
 - đối soát quote/hold/settle/refund và ownership/download;
 - đóng app đó trước khi sang app kế tiếp.
 
+### R3.1 — AutoSub
+
+- [x] Local WhisperX engine + UI A–Z: upload speech thật, job worker trên GPU1,
+  polling queued→done, project reload 9 cue và render NVENC 1080p H.264/AAC.
+  Credit 1.000→996 đúng quote 4; output MP4/ASS/SRT/VTT/JSON/ZIP tải được.
+- [x] Paid-render preflight: overlap/empty/out-of-source chặn trước quote; tốc
+  độ đọc/cue ngắn/line budget cảnh báo trong confirmation. Lỗi API lồng trả
+  JSON theo Q88 để frontend hiện đúng hướng xử lý.
+- [ ] Corpus VI/EN có ground truth để đo WER/timing; pyannote DER và Gemini
+  translation thật. Smoke không ground truth chỉ chứng minh engine chạy, không
+  chứng minh độ chính xác thương mại.
+- [ ] Đưa source upload của Studio vào draft attachment/UploadSession có
+  owner/TTL/recovery. Không gắn file draft chưa có paid Job vào lifecycle Q85
+  bằng một đường tắt thiếu hợp đồng.
+- **TECHNICAL CONDITIONAL PASS:** bằng chứng chi tiết ở
+  `06_R3_AUTOSUB_PROVIDER_EVIDENCE.md`; AutoSub R3 chưa được đóng toàn bộ.
+
+### R3.2–R3.4 — Prompt, Image, Clip
+
+- [ ] Prompt/Image: exact provider key test chưa có trong process hiện tại.
+- [ ] Clip: canary Fast cũ đã có nhưng matrix provider/output/ledger trên exact
+  release candidate vẫn phải chạy lại tuần tự.
+
 ## R4 — Upscale commercial quality
 
 1. Materialize HR dataset có license/consent; tối thiểu 12 video đủ slice.
@@ -66,7 +89,7 @@ Thực hiện tuần tự AutoSub → Prompt → Image → Clip, mỗi app một
 - [ ] Draft recovery thống nhất cho form chưa có project bền vững; phải chốt
   privacy/user scoping trước khi lưu nội dung nhạy cảm ở browser.
 - [ ] Canonical preflight/confirmation cho toàn bộ job giá cao/dài (Seedance,
-  Upscale đã có; cần đóng matrix AutoSub/Clip/Image/Prompt).
+  Upscale và AutoSub đã có; cần đóng matrix Clip/Image/Prompt).
 - [ ] Browser A–Z đủ sáu app desktop/mobile, keyboard/focus/offline/error/refresh
   trên exact staging RC. Lát cắt Job Center source/browser đã PASS.
 

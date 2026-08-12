@@ -143,7 +143,8 @@ export async function cancelStudioJob(id:string,csrf:string){
     credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:'{}'}))
 }
 export type RenderQuote={credit:number;vnd:number;minutes:number;quality:string;
-  resolution:string;format:string;track_ids:string[];project_revision:number}
+  resolution:string;format:string;track_ids:string[];project_revision:number;
+  preflight?:{score:number;error_count:number;warning_count:number;issue_codes:string[]}}
 export async function quoteRender(project:StudioProject,csrf:string){
   const body=await decode(await fetch(`/autosubvideo/api/projects/${project.id}/quote`,{
     method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',

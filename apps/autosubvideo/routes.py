@@ -20,6 +20,7 @@ from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
 from sqlalchemy.orm import Session
 
 from apps.autosubvideo import cost
+from apps.autosubvideo.features import render_preflight
 from apps.autosubvideo.manifest import MANIFEST
 from platform_core.frontend_bundle import bundle_assets
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
@@ -438,10 +439,14 @@ def _render_snapshot(row, current, body: dict, request: Request) -> tuple[dict, 
     unknown = selected.difference(track.id for track in project.tracks)
     if unknown:
         raise HTTPException(status_code=422, detail=_t('Track render không tồn tại.'))
+    preflight = render_preflight(project, available)
+    if preflight["error_count"]:
+        raise HTTPException(status_code=422, detail=_t(
+            'Transcript còn lỗi nội dung/timing phải sửa trước khi xuất video.'))
     quote = cost.uoc_luong(project.source.duration_s, project.output.quality)
     quote.update({"resolution": project.output.resolution, "format": project.output.format,
                   "track_ids": [track.id for track in available],
-                  "project_revision": row.revision})
+                  "project_revision": row.revision, "preflight": preflight})
     return project.model_dump(mode="json"), quote
 
 

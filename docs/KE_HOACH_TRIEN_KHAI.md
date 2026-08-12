@@ -2236,6 +2236,16 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   MP4 6,59 MB desktop/mobile console 0. **Source PASS; staging migration/CORS
   smoke chuyển R6, chưa deploy production.**
 - [ ] H33.R3 Provider matrices AutoSub → Prompt → Image → Clip.
+  - [x] AutoSub local engine + Studio A–Z — 2026-08-12: WhisperX Tiny/
+    Large-v3 smoke GPU1, job queued→done, project 9 cue, NVENC render 1080p
+    H.264/AAC, output subtitle bundle và ledger 1.000→996 đúng quote. Sửa lỗi
+    transcribe không khởi tạo polling; thêm preflight fatal/warning và Q88 JSON
+    API error. **Technical conditional PASS; không gọi là quality PASS.**
+  - [ ] AutoSub quality: corpus VI/EN ground truth WER/timing, pyannote DER,
+    Gemini translation và source draft attachment/UploadSession owner+TTL.
+  - [ ] Prompt provider/output/ledger matrix trên exact RC.
+  - [ ] Image provider/output/ledger matrix trên exact RC.
+  - [ ] Clip provider/output/ledger matrix trên exact RC.
 - [ ] H33.R4 Upscale commercial calibration/scheduler.
   - [x] Scheduler lane Fast/Quality — 2026-08-12, Q86: submit UI và Seedance
     chọn `render.fast` 2.000 MB hoặc `render.quality` 12.000 MB; legacy
@@ -2252,6 +2262,7 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
     full gate PASS 9/9 trong 1.783,8s; Playwright queued/offline/online/cancel/
     terminal/mobile PASS, console cuối 0.**
   - [ ] Draft recovery có privacy/user scoping cho form không dùng AppProject.
-  - [ ] Preflight/confirmation matrix cho job giá cao/dài còn lại.
+  - [ ] Preflight/confirmation matrix cho job giá cao/dài còn lại; AutoSub đã
+    chặn fatal và cảnh báo trước confirm, còn Clip/Image/Prompt.
   - [ ] Browser A–Z sáu app trên exact staging RC.
 - [ ] H33.R6 Staging, rollback drill và production decision riêng.

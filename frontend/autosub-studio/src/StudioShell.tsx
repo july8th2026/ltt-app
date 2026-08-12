@@ -118,8 +118,11 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   }
   const transcribe = async () => {
     if (!projectRef.current) return; setMessage('Đang tạo job WhisperX…')
-    try { const job = await startTranscription(projectRef.current, csrfToken)
-      setMessage(`WhisperX đang chạy · job ${job.job_id.slice(0,8)} · 0 credit`)
+    try { const response = await startTranscription(projectRef.current, csrfToken)
+      const job={id:response.job_id,type:'autosubvideo.transcribe',status:response.status,
+        progress:0,message:'đang xếp hàng',error:'',result:{}}
+      setAuxJob(job);upsertJob(setJobHistory,job)
+      setMessage(`WhisperX đang chạy · job ${response.job_id.slice(0,8)} · 0 credit`)
     } catch (error) { setState('error'); setMessage(friendlyStudioError(error)) }
   }
   const runAux=async(operation:'diarize'|'translate')=>{if(!projectRef.current)return

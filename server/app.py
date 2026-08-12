@@ -44,6 +44,23 @@ _ERROR_MESSAGES = {
     500: "Máy chủ gặp lỗi khi xử lý yêu cầu.",
 }
 
+
+def _json_error_detail(value):
+    """Make framework/app error details serializable without echoing input.
+
+    Pydantic error dictionaries can contain the original request under
+    ``input`` and exception objects under ``ctx``. Neither belongs in a public
+    response: one may expose customer content and the other breaks json.dumps.
+    """
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_json_error_detail(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _json_error_detail(item) for key, item in value.items()
+                if key not in {"input", "ctx"}}
+    return str(value)
+
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60  # 8h idle expiry
 _HASHED_FRONTEND_ASSET = re.compile(
     r"^/static/(?:agent-canvas|autosub-studio)/assets/.+-[A-Za-z0-9_-]{8,}\.(?:js|css)$"
@@ -310,10 +327,18 @@ def create_app(*, env: dict | None = None) -> FastAPI:
             location = (exc.headers or {}).get("Location", "/login")
             return RedirectResponse(location, status_code=exc.status_code)
 
-        # /health/* is probed by the reverse proxy and service manager —
-        # those callers want JSON, not an HTML page.
-        if request.url.path.startswith("/health"):
-            return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+        # Health probes and app APIs need a machine-readable contract. App
+        # routes are mounted below their slug (for example ``/<slug>/api``),
+        # so checking only a root ``/api`` prefix silently returned an HTML
+        # error page to fetch clients and hid the actionable validation detail.
+        path = request.url.path
+        if path.startswith("/health") or path.startswith("/api/") or "/api/" in path:
+            body = {"detail": _json_error_detail(exc.detail)}
+            cid = getattr(request.state, "correlation_id", "")
+            if cid:
+                body["correlation_id"] = cid
+            return JSONResponse(body, status_code=exc.status_code,
+                                headers={"Cache-Control": "no-store"})
 
         return templates.TemplateResponse(
             request, "error.html",
