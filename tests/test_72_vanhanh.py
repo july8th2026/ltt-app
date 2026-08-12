@@ -282,6 +282,7 @@ def test_seedance_upscale_quote_va_confirm_chi_cho_video_cua_chu_so_huu(client):
     try:
         child = db.get(Job, confirmed.json()["upscale_job_id"])
         assert child.user_id == mine.id and child.app_slug == "upscalevideo"
+        assert child.job_type == "upscalevideo.render.quality"
         assert child.params["video_key"] == f"taovideo/{mine.id}/out.mp4"
         assert child.params["target_height"] == 2160 and child.params["preset"] == "quality"
     finally:
@@ -311,6 +312,8 @@ def test_upscale_cancel_owner_only_hoan_credit_dung_mot_lan(client):
         foreign_job = submit_upscale_job(
             db, user_id=other.id, video_key=f"upscalevideo/{other.id}/in.mp4",
             duration_s=60, target_height=1080)
+        assert own_job.job_type == "upscalevideo.render.fast"
+        assert foreign_job.job_type == "upscalevideo.render.fast"
         db.commit(); own_id, foreign_id, mine_id = own_job.id, foreign_job.id, mine.id
         assert credit.so_du(db, mine_id) == 70
     finally:

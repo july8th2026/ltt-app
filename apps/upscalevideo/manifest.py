@@ -46,14 +46,20 @@ MANIFEST = AppManifest(
 
     nav=(NavEntry("Upscale Video", "/upscalevideo", "🔍", "upscalevideo"),),
 
-    job_types=("upscalevideo.render",),
+    # ``render`` is the compatibility lane for already-queued jobs and the
+    # static Agent ToolSpec contract. Customer submissions use the preset-
+    # specific lanes below so Fast no longer reserves Quality's measured peak.
+    job_types=("upscalevideo.render", "upscalevideo.render.fast",
+               "upscalevideo.render.quality"),
     requires=("gpu", "ffmpeg"),
-    # H32.6 đo runtime thật trên RTX 5060 Ti: Quality x4plus đạt peak delta
-    # 11.176 MB. Job type hiện dùng chung cho Fast/Quality nên allocator phải
-    # giữ theo worst case; nếu chỉ khai 4 GB, Quality có thể được cấp vào card
-    # không đủ VRAM rồi chậm/OOM. Phase sau có thể tách job type theo preset để
-    # Fast (peak delta ~848 MB) vẫn chạy trên card nhỏ hơn.
-    gpu_vram_mb={"upscalevideo.render": 12000},
+    # H32.6 runtime evidence on RTX 5060 Ti: Fast peak delta 848 MB, Quality
+    # x4plus 11,176 MB. Fast receives >2x headroom; Quality and the legacy lane
+    # remain at the measured worst-case ceiling rounded up to 12 GB.
+    gpu_vram_mb={
+        "upscalevideo.render": 12000,
+        "upscalevideo.render.fast": 2000,
+        "upscalevideo.render.quality": 12000,
+    },
     credit_cost=_cost,
     tools=(ToolSpec(
         name="video.upscale", job_type="upscalevideo.render",

@@ -47,9 +47,16 @@ Thực hiện tuần tự AutoSub → Prompt → Image → Clip, mỗi app một
 
 1. Materialize HR dataset có license/consent; tối thiểu 12 video đủ slice.
 2. Blind A/B ≥3 rater/case, review agreement/correlation.
-3. Version threshold quality/cost/P95; tách job type Fast/Quality.
-4. Rerun qualified dual-GPU khi cả hai card idle.
-5. **PASS:** G1/G7/G8 xanh; không dùng diagnostic Lanczos hiện tại làm gate.
+3. [x] Tách job type Fast/Quality ở source — 2026-08-12, Q86: submit mới từ
+   UI/Seedance dùng lane theo preset; Fast 2 GB, Quality 12 GB; legacy 12 GB
+   vẫn resolve cùng handler cho job cũ và ToolSpec tĩnh.
+4. [ ] Version threshold quality/cost/P95 sau khi có dataset và human rating.
+5. [ ] Rerun qualified dual-GPU khi cả hai card idle. Telemetry 2026-08-12:
+   GPU1 idle nhưng GPU0 baseline 1.126 MB vượt guard 512 MB; không dừng workload
+   ngoài phạm vi để ép evidence.
+6. **SOURCE SCHEDULER PASS / COMMERCIAL BLOCKED:** scheduler regression xanh;
+   G1/G7/G8 vẫn chờ dữ liệu có license, ≥3 rater/case và dual-GPU qualified.
+   Không dùng diagnostic Lanczos hiện tại làm gate.
 
 ## R5 — UX/recovery parity
 

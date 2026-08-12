@@ -57,10 +57,12 @@ def test_option_matrix_covers_customer_visible_compatibility_surface():
             "--stabilize", "--smooth-motion"} <= flags
 
 
-def test_gpu_lease_contract_covers_measured_quality_peak():
+def test_gpu_lease_contract_splits_fast_and_quality_from_legacy_lane():
     from apps.upscalevideo.manifest import MANIFEST
 
     assert MANIFEST.vram_for("upscalevideo.render") == 12000
+    assert MANIFEST.vram_for("upscalevideo.render.fast") == 2000
+    assert MANIFEST.vram_for("upscalevideo.render.quality") == 12000
 
 
 def test_motion_smoothing_doubles_source_cadence_instead_of_forcing_60fps():

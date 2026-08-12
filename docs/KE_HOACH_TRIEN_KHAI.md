@@ -2237,5 +2237,13 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   smoke chuyển R6, chưa deploy production.**
 - [ ] H33.R3 Provider matrices AutoSub → Prompt → Image → Clip.
 - [ ] H33.R4 Upscale commercial calibration/scheduler.
+  - [x] Scheduler lane Fast/Quality — 2026-08-12, Q86: submit UI và Seedance
+    chọn `render.fast` 2.000 MB hoặc `render.quality` 12.000 MB; legacy
+    `render` 12.000 MB giữ tương thích job cũ/ToolSpec. **50 targeted pass,
+    quick gate PASS 8/8; full gate PASS 9/9 trong 1.806,3s.**
+  - [ ] Dataset HR có license/consent ≥12 video, blind A/B ≥3 rater/case và
+    threshold quality/cost/P95 có version. Không biến fixture/Lanczos thành PASS.
+  - [ ] Qualified dual-GPU: chỉ chạy khi cả hai card qua idle guard; GPU0 đang
+    baseline 1.126 MB > 512 MB nên chưa đủ điều kiện bằng chứng.
 - [ ] H33.R5 UX/recovery parity.
 - [ ] H33.R6 Staging, rollback drill và production decision riêng.

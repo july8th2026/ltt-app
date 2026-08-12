@@ -39,6 +39,8 @@ def test_app_nap_sach():
     assert a is not None and a.error == "" and a.router is not None
     assert a.manifest.requires == ("gpu", "ffmpeg")
     assert job_type_owners().get("upscalevideo.render") == "upscalevideo"
+    assert job_type_owners().get("upscalevideo.render.fast") == "upscalevideo"
+    assert job_type_owners().get("upscalevideo.render.quality") == "upscalevideo"
 
 
 def test_vendor_engine_co_mat():
@@ -93,6 +95,23 @@ def test_service_build_params_chuan_hoa():
     changed = build_params(video_key="x", owner_id="u", preserve_fps=False,
                            preserve_audio=False)
     assert changed["preserve_fps"] is False and changed["preserve_audio"] is False
+
+
+def test_service_chon_lane_theo_preset_va_giu_legacy_compatibility():
+    from apps.upscalevideo.manifest import MANIFEST
+    from apps.upscalevideo.service import (
+        FAST_JOB_TYPE, LEGACY_JOB_TYPE, QUALITY_JOB_TYPE, job_type_for_preset,
+    )
+    from platform_core.jobs import resolve_handler
+
+    assert job_type_for_preset("fast") == FAST_JOB_TYPE
+    assert job_type_for_preset("quality") == QUALITY_JOB_TYPE
+    assert job_type_for_preset("invalid") == FAST_JOB_TYPE
+    assert resolve_handler(LEGACY_JOB_TYPE) is resolve_handler(FAST_JOB_TYPE)
+    assert resolve_handler(FAST_JOB_TYPE) is resolve_handler(QUALITY_JOB_TYPE)
+    assert MANIFEST.vram_for(LEGACY_JOB_TYPE) == 12000
+    assert MANIFEST.vram_for(FAST_JOB_TYPE) == 2000
+    assert MANIFEST.vram_for(QUALITY_JOB_TYPE) == 12000
 
 
 def test_ffmpeg_subprocess_bi_kill_khi_job_cancel(monkeypatch):

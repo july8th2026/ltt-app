@@ -14,6 +14,45 @@
 
 ---
 
+## 2026-08-12 — H33.R4a: Upscale scheduler lane source PASS
+
+- **Mục tiêu:** Fast không còn giữ thừa VRAM theo worst-case Quality nhưng job
+  legacy vẫn chạy được.
+- **Hạng mục:** scheduler slice của H33.R4 hoàn thành; commercial calibration
+  và qualified dual-GPU vẫn mở.
+- **Trạng thái:** SOURCE PASS; RELEASE CONDITIONAL; production chưa deploy.
+
+### Đã làm
+
+- Thêm Q86 và ba lane: legacy 12 GB, Fast 2 GB, Quality 12 GB. UI Upscale và
+  handoff Seedance chọn lane tại service chung sau normalize preset.
+- Giữ ToolSpec Agent ở legacy an toàn; cả ba lane resolve cùng handler. Không
+  sửa loại của Job đã tồn tại.
+- Telemetry đọc thật: GPU1 idle, GPU0 dùng baseline 1.126 MB nên vượt guard
+  qualified 512 MB; không tắt workload ngoài phạm vi để ép dual-GPU evidence.
+- Hồ sơ bằng chứng:
+  `docs/APP_AUDIT/BATCH_2026-08-11/04_R4_UPSCALE_SCHEDULER_EVIDENCE.md`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted manifest/service/Seedance/credit/cancel | **50 passed** |
+| `python tools\gate.py --quick` | **PASS 8/8** |
+| `python tools\gate.py` | **PASS 9/9**, 1.806,3s; pytest 1.778,3s |
+
+### Còn tồn đọng
+
+- R1b/R3 cần exact staging/provider test key để chạy output thật và ledger.
+- R4 calibration cần ≥12 video có license/consent, ≥3 human rater/case và
+  threshold versioned; dual-GPU cần cả hai card idle.
+- R5 UX/recovery và R6 staging/rollback chưa hoàn tất. Production chưa deploy.
+
+### Cách lùi lại
+
+Revert commit Q86 sau khi kiểm kê/drain hai lane mới; không xóa job type khi còn
+Job chờ/chạy.
+
 ## 2026-08-12 — H33.R2: shared upload lifecycle source PASS
 
 - **Mục tiêu:** đóng P1 file ghi trước hold, orphan sau rollback và thiếu

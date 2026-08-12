@@ -3,8 +3,12 @@ service.py — điểm DÙNG LẠI cho app khác (đặc biệt taovideo/seedanc
 
 Yêu cầu người dùng: "upscale cho seedance lấy code từ app upscale". Thay vì nhân
 đôi code Real-ESRGAN, taovideo gọi `submit_upscale_job()` để nộp một job
-`upscalevideo.render` cho video đã có trong storage (vd video Seedance vừa tạo).
+job preset-specific cho video đã có trong storage (vd video Seedance vừa tạo).
 Nền tảng giữ chỗ credit + worker xử lý y hệt job upscale thường.
+
+``upscalevideo.render`` vẫn tồn tại như compatibility lane cho job cũ và
+ToolSpec tĩnh. Submit mới từ app/Seedance dùng ``render.fast`` hoặc
+``render.quality`` để scheduler không giữ thừa VRAM.
 """
 from __future__ import annotations
 
@@ -14,13 +18,27 @@ from pathlib import PurePosixPath
 from sqlalchemy.orm import Session as DbSession
 
 
+LEGACY_JOB_TYPE = "upscalevideo.render"
+FAST_JOB_TYPE = "upscalevideo.render.fast"
+QUALITY_JOB_TYPE = "upscalevideo.render.quality"
+
+
+def job_type_for_preset(preset: str) -> str:
+    """Map customer intent to a scheduler lane; invalid input fails to Fast.
+
+    Parameter normalization uses the same fail-safe, so the selected lane and
+    the engine preset cannot disagree for submissions through this service.
+    """
+    return QUALITY_JOB_TYPE if preset == "quality" else FAST_JOB_TYPE
+
+
 def build_params(*, video_key: str, owner_id: str, preset: str = "fast",
                  target_height: int = 1080, codec: str = "h264",
                  preview: bool = False, duration_s: float = 0.0,
                  preserve_fps: bool = True, preserve_audio: bool = True,
                  stabilize: bool = False, smooth_motion: bool = False,
                  request_id: str = "", source_name: str = "") -> dict:
-    """Chuẩn hoá params cho job upscalevideo.render (dùng chung route + seedance)."""
+    """Chuẩn hoá params cho job upscale (dùng chung route + Seedance)."""
     if target_height not in (1080, 1440, 2160):
         target_height = 1080
     if preset not in ("fast", "quality"):
@@ -61,10 +79,11 @@ def submit_upscale_job(db: DbSession, *, user_id: str, video_key: str,
                           request_id=request_id, source_name=source_name)
     dedupe_params = ({"owner_id": user_id, "request_id": request_id}
                      if request_id else params)
+    job_type = job_type_for_preset(params["preset"])
     return submit_with_credit(
         db, user_id=user_id, app_slug="upscalevideo",
-        job_type="upscalevideo.render", params=params,
-        dedupe_key=dedupe_key_for("upscalevideo.render", dedupe_params))
+        job_type=job_type, params=params,
+        dedupe_key=dedupe_key_for(job_type, dedupe_params))
 
 
 def submit_upscale_batch(db: DbSession, *, user_id: str, items: list[dict],
