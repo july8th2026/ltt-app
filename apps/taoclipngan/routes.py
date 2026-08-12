@@ -5,7 +5,6 @@ lùi multipart nếu chưa CORS. Job GPU dài → hàng đợi worker. Router KH
 from __future__ import annotations
 
 from platform_core.i18n import N_, _ as _t
-import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
@@ -34,11 +33,22 @@ _LANGS = [("", N_("Tự nhận")), ("vi", N_("Tiếng Việt")), ("en", "English
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
 _DIRECT_VIDEO_MAX = 1024 * 1024 * 1024
 _VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"}
+_VIDEO_TYPES = ("video/mp4", "video/quicktime", "video/webm",
+                "video/x-matroska", "video/x-msvideo", "video/x-m4v")
 
 
 def _video_extension(filename: str) -> str:
     name = str(filename or "").strip()
     return ("." + name.rsplit(".", 1)[1].lower()) if "." in name else ""
+
+
+def _video_content_type(filename: str, declared: str) -> str:
+    value = str(declared or "").split(";", 1)[0].strip().lower()
+    if value in _VIDEO_TYPES:
+        return value
+    return {".mov": "video/quicktime", ".webm": "video/webm",
+            ".mkv": "video/x-matroska", ".avi": "video/x-msvideo",
+            ".m4v": "video/x-m4v"}.get(_video_extension(filename), "video/mp4")
 
 
 def _render(request: Request, user: str, *, error: str = "", status_code: int = 200):
@@ -191,24 +201,42 @@ def upload_url(request: Request, csrf_token: str = Form(...),
     u = user_hien_tai(request)
     if u is None:
         raise HTTPException(status_code=400, detail=_t('Cần tài khoản người dùng.'))
+    from platform_core import upload_sessions
+    from platform_core.db import get_session
     from platform_core.storage import get_storage
     ext = _video_extension(filename)
     if ext not in _VIDEO_EXTS:
         return _ticket_error("Định dạng video không được hỗ trợ.", 400)
-    ct = (content_type or "video/mp4").split(";")[0].strip().lower() or "video/mp4"
-    if not (ct.startswith("video/") or ct == "application/octet-stream"):
-        return _ticket_error("Content-Type video không được hỗ trợ.", 400)
+    declared_type = str(content_type or "").split(";", 1)[0].strip().lower()
+    if declared_type not in _VIDEO_TYPES:
+        return _ticket_error("MIME video không khớp định dạng được hỗ trợ.", 400)
+    ct = _video_content_type(filename, content_type)
     try:
         declared_size = int(size_bytes or 0)
     except (TypeError, ValueError):
         declared_size = 0
     if declared_size <= 0 or declared_size > _DIRECT_VIDEO_MAX:
         return _ticket_error("Video phải từ 1 byte đến 1 GiB.", 413)
-    key = f"taoclipngan/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
-    target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
-    if target is None:
-        return JSONResponse({"mode": "local", "key": key})
-    return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
+    gen = get_session(); db = next(gen)
+    try:
+        try:
+            session = upload_sessions.create(
+                db, user_id=u.id, app_slug=MANIFEST.slug, filename=filename,
+                content_type=ct, expected_size=declared_size,
+                max_size=_DIRECT_VIDEO_MAX, allowed_types=_VIDEO_TYPES,
+            )
+            target = upload_sessions.upload_target(get_storage(), session)
+            if target is None:
+                db.delete(session); db.commit()
+                return JSONResponse({"mode": "local"})
+            db.commit()
+        except upload_sessions.UploadSessionError as exc:
+            db.rollback(); return _ticket_error(str(exc), 400)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"mode": "direct", "key": session.staging_key,
+                         "upload_id": session.id, "url": target.url,
                          "method": target.method, "headers": target.headers or {}})
 
 
@@ -228,6 +256,7 @@ async def queue(request: Request, csrf_token: str = Form(...),
     from platform_core.db import get_session
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
     from platform_core.registry import RegistryError
+    from platform_core import upload_sessions
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
 
     def _fail(msg, code=400):
@@ -245,7 +274,9 @@ async def queue(request: Request, csrf_token: str = Form(...),
     storage = get_storage()
     vkey = (video_key or "").strip()
     if vkey:
-        if not vkey.startswith(f"taoclipngan/{u.id}/") or not storage.exists(vkey):
+        if (not vkey.startswith("staging/") and
+                (not vkey.startswith(f"taoclipngan/{u.id}/") or
+                 not storage.exists(vkey))):
             return _fail(_t("Video chưa upload xong hoặc không hợp lệ."))
     else:
         if video is None or not getattr(video, "filename", ""):
@@ -258,9 +289,23 @@ async def queue(request: Request, csrf_token: str = Form(...),
         ext = _video_extension(video.filename)
         if ext not in _VIDEO_EXTS:
             return _fail(_t("Định dạng video không được hỗ trợ."))
-        vkey = f"taoclipngan/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
-        import io as _io
-        storage.put(vkey, _io.BytesIO(vdata), content_type=(video.content_type or "video/mp4"))
+        stage_gen = get_session(); stage_db = next(stage_gen)
+        try:
+            try:
+                staged = upload_sessions.stage_bytes(
+                    stage_db, storage, user_id=u.id, app_slug=MANIFEST.slug,
+                    filename=video.filename, content_type=_video_content_type(
+                        video.filename, video.content_type or ""), data=vdata,
+                    max_size=_LOCAL_VIDEO_MAX, allowed_types=_VIDEO_TYPES,
+                )
+                stage_db.commit(); vkey = staged.staging_key
+            except Exception:
+                stage_db.rollback(); raise
+        except upload_sessions.UploadSessionError as exc:
+            return _fail(str(exc))
+        finally:
+            try: next(stage_gen)
+            except StopIteration: pass
 
     if tier not in ("fast", "balanced", "high_quality"):
         tier = "high_quality"
@@ -288,18 +333,58 @@ async def queue(request: Request, csrf_token: str = Form(...),
                                   vkey.rsplit("/", 1)[-1])[:160],
               "brand_preset": clean_brand(brand_preset),
               "platforms": clean_platforms(platforms)}
+    promotions = []
     gen = get_session(); db = next(gen)
     last_id = None
     try:
         try:
-            job = submit_with_credit(db, user_id=u.id, app_slug=MANIFEST.slug,
-                                     job_type="taoclipngan.render", params=params,
-                                     dedupe_key=dedupe_key_for("taoclipngan.render", params))
+            upload_session = (upload_sessions.owned(
+                db, staging_key=vkey, user_id=u.id, app_slug=MANIFEST.slug)
+                if vkey.startswith("staging/") else None)
+            if vkey.startswith("staging/") and upload_session is None:
+                raise upload_sessions.UploadSessionError(
+                    _t("Vé upload không hợp lệ hoặc không thuộc tài khoản."))
+            if upload_session is not None:
+                if upload_session.status == "promoted":
+                    vkey = upload_session.final_key
+                    params["video_key"] = vkey
+                    from platform_core.models import Job
+                    job = db.get(Job, upload_session.job_id)
+                    if job is None or job.user_id != u.id or job.app_slug != MANIFEST.slug:
+                        raise upload_sessions.UploadSessionError(
+                            _t("Upload đã gắn với job không hợp lệ."))
+                else:
+                    upload_sessions.confirm(db, storage, upload_session)
+                    job = submit_with_credit(
+                        db, user_id=u.id, app_slug=MANIFEST.slug,
+                        job_type="taoclipngan.render", params=params,
+                        dedupe_key=dedupe_key_for("taoclipngan.render", {
+                            **params, "video_key": upload_session.id,
+                        }))
+                    ext = _video_extension(upload_session.filename)
+                    final_key = f"taoclipngan/{u.id}/inputs/{job.id}{ext}"
+                    promoted_params = dict(job.params or {})
+                    promoted_params["video_key"] = upload_sessions.promote(
+                        db, storage, upload_session, job=job, final_key=final_key)
+                    promotions.append((upload_session.staging_key, final_key,
+                                       upload_session.content_type))
+                    job.params = promoted_params
+            else:
+                job = submit_with_credit(
+                    db, user_id=u.id, app_slug=MANIFEST.slug,
+                    job_type="taoclipngan.render", params=params,
+                    dedupe_key=dedupe_key_for("taoclipngan.render", params))
             last_id = job.id
             db.commit()
-        except (credit.ThieuCreditError, RegistryError) as exc:
+        except (credit.ThieuCreditError, RegistryError,
+                upload_sessions.UploadSessionError) as exc:
             db.rollback()
+            upload_sessions.compensate(storage, promotions)
             return _fail(str(exc))
+        except Exception:
+            db.rollback()
+            upload_sessions.compensate(storage, promotions)
+            raise
     finally:
         try: next(gen)
         except StopIteration: pass

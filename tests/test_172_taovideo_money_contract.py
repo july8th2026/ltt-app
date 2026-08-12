@@ -83,3 +83,23 @@ def test_submit_lai_cung_quote_khong_tao_job_hay_giu_credit_lan_hai(db):
     assert credit.so_du(db, "u1") == after_first
     assert replay[0].params["seed"] == 100
     assert replay[1].params["seed"] == 101
+
+
+def test_submit_batch_gan_bo_tham_chieu_rieng_cho_tung_variant(db):
+    from apps.taovideo import quotes
+    from platform_core import credit
+
+    bao_dam_user(db, "u1")
+    credit.nap(db, "u1", 500); db.commit()
+    _token, quote = quotes.issue("u1", _params(video=True), 2, True)
+    groups = [
+        [{"kind": "video", "storage_key": "staging/u1/a"}],
+        [{"kind": "video", "storage_key": "staging/u1/b"}],
+    ]
+    rows = quotes.submit_batch(
+        db, user_id="u1", quote=quote,
+        base_params={**_params(video=True), "prompt": "p", "owner_id": "u1"},
+        variant_refs=groups,
+    )
+    assert rows[0].params["refs"] == groups[0]
+    assert rows[1].params["refs"] == groups[1]

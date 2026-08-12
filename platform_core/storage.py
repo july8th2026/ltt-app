@@ -77,6 +77,21 @@ class Storage:
     def size(self, key: str) -> int:
         raise NotImplementedError
 
+    def promote(self, staging_key: str, final_key: str,
+                content_type: str = "application/octet-stream") -> StoredFile:
+        """Chuyển artifact staging sang key bền vững rồi xóa bản staging.
+
+        Backend có thể override bằng rename/copy server-side. Fallback này giữ
+        contract đúng cho backend tùy biến, nhưng không tối ưu file lớn.
+        """
+        source = self.open(staging_key)
+        try:
+            stored = self.put(final_key, source, content_type=content_type)
+        finally:
+            source.close()
+        self.delete(staging_key)
+        return stored
+
     def download_token(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> str:
         """Vé tải file có hạn. Với R2 sau này đây sẽ là presigned URL."""
         raise NotImplementedError
@@ -228,6 +243,18 @@ class LocalStorage(Storage):
     def size(self, key: str) -> int:
         return self._path(key).stat().st_size
 
+    def promote(self, staging_key: str, final_key: str,
+                content_type: str = "application/octet-stream") -> StoredFile:
+        source = self._path(staging_key)
+        target = self._path(final_key)
+        if not source.exists():
+            raise StorageError(_t('không có file staging: {key}').format(
+                key=staging_key))
+        target.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(source, target)
+        return StoredFile(key=_safe_key(final_key), size=target.stat().st_size,
+                          content_type=content_type)
+
     def download_token(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> str:
         key = _safe_key(key)
         if not self.exists(key):
@@ -306,6 +333,17 @@ class R2Storage(Storage):
     def size(self, key: str) -> int:
         return int(self._c().head_object(Bucket=self.bucket,
                                          Key=_safe_key(key))["ContentLength"])
+
+    def promote(self, staging_key: str, final_key: str,
+                content_type: str = "application/octet-stream") -> StoredFile:
+        source = _safe_key(staging_key); target = _safe_key(final_key)
+        self._c().copy_object(
+            Bucket=self.bucket, Key=target,
+            CopySource={"Bucket": self.bucket, "Key": source},
+            MetadataDirective="COPY",
+        )
+        self._c().delete_object(Bucket=self.bucket, Key=source)
+        return StoredFile(key=target, size=self.size(target), content_type=content_type)
 
     def url_for(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> Optional[str]:
         return self._c().generate_presigned_url(

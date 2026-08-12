@@ -347,6 +347,43 @@ class JobEvent(Base):
     )
 
 
+UPLOAD_PENDING = "pending"
+UPLOAD_READY = "ready"
+UPLOAD_PROMOTED = "promoted"
+UPLOAD_DELETED = "deleted"
+
+
+class UploadSession(Base):
+    """Vé upload owner-scoped; artifact chỉ bền vững sau hold credit."""
+
+    __tablename__ = "upload_sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    app_slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    staging_key: Mapped[str] = mapped_column(String(512), nullable=False, unique=True)
+    final_key: Mapped[str] = mapped_column(String(512), default="", nullable=False)
+    filename: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    content_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    expected_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    actual_size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), default=UPLOAD_PENDING, nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, onupdate=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_upload_sessions_owner_status", "user_id", "status", "expires_at"),
+        Index("ix_upload_sessions_app_created", "app_slug", "created_at"),
+        Index("ix_upload_sessions_job", "job_id"),
+    )
+
+
 class AgentRun(Base):
     """Plan đã chuẩn hoá cùng checkpoint để resume executor sau khi worker chết."""
 

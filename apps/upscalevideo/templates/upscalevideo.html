@@ -192,7 +192,7 @@
     button.disabled=true;const manifest=[],localFiles=[];
     try{
       for(let i=0;i<selected.length;i++){
-        const entry=selected[i],file=entry.file,init=new FormData();init.append('filename',file.name);init.append('content_type',file.type||'video/mp4');
+        const entry=selected[i],file=entry.file,init=new FormData();init.append('csrf_token',form.csrf_token.value);init.append('filename',file.name);init.append('content_type',file.type||'video/mp4');init.append('size_bytes',String(file.size));
         const ticket=await (await fetch(prefix+'/upload-url',{method:'POST',body:init})).json();
         let uploadedKey='';status.textContent=`Chuẩn bị video ${i+1}/${selected.length}…`;
         if(ticket.mode==='direct'){

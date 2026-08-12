@@ -7,7 +7,6 @@ KHÔNG dính trần 100MB của Cloudflare (không cần R2 cho clip ngắn).
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
-import uuid
 from pathlib import PurePath
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
@@ -273,13 +272,19 @@ def _actual_uploads(*groups) -> list[UploadFile]:
     return out
 
 
-async def _luu_refs(u_id: str, files, roles, handles=None) -> list:
-    """Lưu ref (ảnh/video/audio) → spec {kind,storage_key,role}. ≤4 tệp. Ảnh ≤8MB đi
-    inline; ảnh lớn/video/audio đi asset:// (worker lo). Cap: ảnh 20MB, video 60MB, audio 20MB."""
+async def _luu_refs(u_id: str, files, roles, handles=None, *, copies: int = 1,
+                    grouped: bool = False) -> list:
+    """Stage ref owner-scoped; ``copies`` tách input cho từng job trong batch.
+
+    File chưa thành asset bền vững ở đây. Queue chỉ promote bản tương ứng sau
+    khi job đó đã giữ credit, nên batch hai video không dùng chung một file có
+    thể bị cleanup nhầm khi một job thất bại.
+    """
+    from platform_core import upload_sessions
+    from platform_core.db import get_session
     from platform_core.storage import get_storage
-    import io as _io
     storage = get_storage()
-    specs = []; prepared = []
+    prepared = []
     actual = [f for f in (files or []) if f and getattr(f, "filename", "")]
     if len(actual) > 4:
         raise ValueError(_t('Tối đa 4 file tham chiếu.'))
@@ -307,14 +312,41 @@ async def _luu_refs(u_id: str, files, roles, handles=None) -> list:
         name = PurePath(str(f.filename).replace("\\", "/")).name[:120]
         prepared.append((kind, ct, data, role, name,
                          (handles[i] if handles and i < len(handles) else "")[:32]))
-    # Chỉ ghi sau khi TOÀN BỘ batch đã qua MIME/size/empty validation.
-    for kind, ct, data, role, name, handle in prepared:
-        skey = f"taovideo/{u_id}/refs/{uuid.uuid4().hex}"
-        storage.put(skey, _io.BytesIO(data), content_type=ct or "image/png")
-        specs.append({"kind": kind, "storage_key": skey,
-                      "role": role, "handle": handle,
-                      "name": name, "content_type": ct, "size": len(data)})
-    return specs
+    copies = max(1, min(int(copies), 2))
+    groups = [[] for _ in range(copies)]
+    staged_keys = []
+    gen = get_session(); db = next(gen)
+    try:
+        try:
+            for variant in range(copies):
+                for kind, ct, data, role, name, handle in prepared:
+                    session = upload_sessions.stage_bytes(
+                        db, storage, user_id=u_id, app_slug=MANIFEST.slug,
+                        filename=name, content_type=ct, data=data,
+                        max_size=_CAP[kind],
+                        allowed_types=(
+                            "image/png", "image/jpeg", "image/webp",
+                            "video/mp4", "video/quicktime", "video/webm",
+                            "audio/wav", "audio/x-wav", "audio/mpeg",
+                            "audio/mp3", "audio/mp4", "audio/x-m4a",
+                        ),
+                    )
+                    staged_keys.append(session.staging_key)
+                    groups[variant].append({
+                        "kind": kind, "storage_key": session.staging_key,
+                        "upload_id": session.id, "role": role, "handle": handle,
+                        "name": name, "content_type": ct, "size": len(data),
+                    })
+            db.commit()
+        except Exception:
+            db.rollback()
+            for key in staged_keys:
+                storage.delete(key)
+            raise
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return groups if grouped else groups[0]
 
 
 def _saved_refs_for_user(user_id: str, keys: list[str]) -> list[dict]:
@@ -381,7 +413,7 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                 saved_ref_keys: list[str] = Form(default=[]),
                 quote_id: str = Form(""),
                 user: str = Depends(require_login)):
-    from platform_core import credit
+    from platform_core import credit, upload_sessions
     from platform_core.db import get_session
     from platform_core.registry import RegistryError
 
@@ -426,6 +458,8 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
             jobs=_jobs_cua_toi(request), status_code=409,
         )
 
+    from platform_core.storage import get_storage
+    storage = get_storage(); promotions = []
     gen = get_session(); db = next(gen)
     try:
         try:
@@ -433,8 +467,9 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
             if prior:
                 db.commit()
                 return RedirectResponse("/taovideo", status_code=303)
-            ref_specs = saved_refs + await _luu_refs(
-                u.id, actual_files, ref_roles, ref_handles)
+            staged_ref_groups = await _luu_refs(
+                u.id, actual_files, ref_roles, ref_handles,
+                copies=n, grouped=True)
         except ValueError as exc:
             db.rollback()
             return _render(request, user, error=str(exc),
@@ -448,19 +483,45 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                        "model": mid, "resolution": res,
                        "duration": dur, "aspect_ratio": asp,
                        "generate_audio": bool(generate_audio), "owner_id": u.id,
-                       "refs": ref_specs}
+                       "refs": saved_refs}
         jobs = quotes.submit_batch(
             db, user_id=u.id, quote=verified_quote,
             base_params=base_params, fixed_seed=fixed_seed,
+            variant_refs=[saved_refs + refs for refs in staged_ref_groups],
         )
+        for job, refs in zip(jobs, staged_ref_groups):
+            final_refs = list(saved_refs)
+            for index, ref in enumerate(refs):
+                session = upload_sessions.owned(
+                    db, session_id=ref["upload_id"], user_id=u.id,
+                    app_slug=MANIFEST.slug)
+                if session is None:
+                    raise upload_sessions.UploadSessionError(
+                        _t("Vé upload tham chiếu không hợp lệ."))
+                suffix = PurePath(session.filename).suffix.lower()[:12]
+                final_key = (f"taovideo/{u.id}/refs/{job.id}/"
+                             f"{index}-{ref['role']}{suffix}")
+                key = upload_sessions.promote(
+                    db, storage, session, job=job, final_key=final_key)
+                promotions.append((session.staging_key, final_key,
+                                   session.content_type))
+                final_refs.append({key: value for key, value in ref.items()
+                                   if key != "upload_id"} | {"storage_key": key})
+            job.params = dict(job.params or {}, refs=final_refs)
         if any(MANIFEST.credit_cost(job.params or {}) != verified_quote["unit_hold"]
                for job in jobs):
             raise RuntimeError(_t('Báo giá không còn khớp với cấu hình hệ thống.'))
         db.commit()
-    except (credit.ThieuCreditError, RegistryError, RuntimeError) as exc:
+    except (credit.ThieuCreditError, RegistryError, RuntimeError,
+            upload_sessions.UploadSessionError) as exc:
         db.rollback()
+        upload_sessions.compensate(storage, promotions)
         return _render(request, user, error=str(exc),
                        jobs=_jobs_cua_toi(request), status_code=400)
+    except Exception:
+        db.rollback()
+        upload_sessions.compensate(storage, promotions)
+        raise
     finally:
         try: next(gen)
         except StopIteration: pass

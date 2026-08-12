@@ -106,13 +106,16 @@ def existing_jobs(db, user_id: str, intent: str, count: int) -> list:
 
 
 def submit_batch(db, *, user_id: str, quote: dict, base_params: dict,
-                 fixed_seed: int | None = None) -> list:
+                 fixed_seed: int | None = None,
+                 variant_refs: list[list[dict]] | None = None) -> list:
     """Tạo/reuse nguyên batch dưới khóa quote, giữ credit đúng một lần."""
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import Job
 
     intent = str(quote["intent"])
     count = int(quote["count"])
+    if variant_refs is not None and len(variant_refs) != count:
+        raise ValueError(_t("Số bộ tham chiếu không khớp batch."))
     _lock_intent(db, user_id, intent)
     prior = existing_jobs(db, user_id, intent, count)
     if prior:
@@ -130,6 +133,8 @@ def submit_batch(db, *, user_id: str, quote: dict, base_params: dict,
             continue
         params = dict(base_params, _n=variant,
                       _quote_intent=intent, _quote_version=_VERSION)
+        if variant_refs is not None:
+            params["refs"] = list(variant_refs[variant])
         if fixed_seed is not None:
             params["seed"] = (fixed_seed + variant) % 2_147_483_648
         jobs.append(submit_with_credit(

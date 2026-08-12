@@ -42,6 +42,7 @@ GPU_HEARTBEAT_S = 60.0
 # vòng đốt CPU, đủ ngắn để người dùng không thấy job đứng im.
 GPU_RETRY_DELAY_S = 20
 EVENT_PURGE_INTERVAL_S = 6 * 60 * 60
+UPLOAD_SWEEP_INTERVAL_S = 60 * 60
 
 
 class JobContext:
@@ -423,6 +424,12 @@ def _hoan_credit(db, job: Job) -> None:
     if not job.user_id or credit.so_da_giu(db, job.id) == 0:
         return
     credit.hoan(db, job.user_id, job.id)
+    try:
+        from platform_core import upload_sessions
+        from platform_core.storage import get_storage
+        upload_sessions.cleanup_failed_job(db, get_storage(), job)
+    except Exception:  # noqa: BLE001 - refund must not be blocked by cleanup
+        log.exception("khong cleanup duoc input cua job %s", job.id[:8])
 
 
 def run_forever(worker_id: str, *, stop=None) -> None:
@@ -433,6 +440,7 @@ def run_forever(worker_id: str, *, stop=None) -> None:
     """
     log.info("worker %s bat dau", worker_id)
     next_event_purge = 0.0
+    next_upload_sweep = 0.0
     while stop is None or not stop():
         try:
             if time.monotonic() >= next_event_purge:
@@ -443,6 +451,20 @@ def run_forever(worker_id: str, *, stop=None) -> None:
                         log.info("don job event het han: customer=%s internal=%s",
                                  removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
                 next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
+            if time.monotonic() >= next_upload_sweep:
+                from platform_core import upload_sessions
+                from platform_core.storage import get_storage
+                for db in _one_session():
+                    report = upload_sessions.sweep(
+                        db, get_storage(), dry_run=False)
+                    db.commit()
+                    if report["due"] or report["errors"]:
+                        log.info(
+                            "don upload het han: due=%s deleted=%s errors=%s active=%s",
+                            report["due"], report["deleted"], report["errors"],
+                            report["skipped_active"],
+                        )
+                next_upload_sweep = time.monotonic() + UPLOAD_SWEEP_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()

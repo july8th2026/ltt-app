@@ -30,6 +30,22 @@ _PRESETS = [("fast", "⚡ Fast (khuyến nghị)"), ("quality", "💎 Quality (n
 _HEIGHTS = [(1080, "1080p"), (1440, "1440p (2K)"), (2160, "2160p (4K)")]
 _CODECS = [("h264", "H.264"), ("hevc", "H.265 (nhỏ hơn)")]
 _LOCAL_VIDEO_MAX = 90 * 1024 * 1024
+_DIRECT_VIDEO_MAX = 1024 * 1024 * 1024
+_VIDEO_TYPES = ("video/mp4", "video/quicktime", "video/webm",
+                "video/x-matroska", "video/x-msvideo", "video/x-m4v")
+
+
+def _video_ext(filename: str) -> str:
+    return PurePosixPath(str(filename or "")).suffix.lower()[:12]
+
+
+def _video_type(filename: str, declared: str) -> str:
+    value = str(declared or "").split(";", 1)[0].strip().lower()
+    if value in _VIDEO_TYPES:
+        return value
+    return {".mov": "video/quicktime", ".webm": "video/webm",
+            ".mkv": "video/x-matroska", ".avi": "video/x-msvideo",
+            ".m4v": "video/x-m4v"}.get(_video_ext(filename), "video/mp4")
 
 
 def _browser_direct_upload_enabled() -> bool:
@@ -177,23 +193,49 @@ async def batch_quote(request: Request, user: str = Depends(require_login)):
 
 
 @router.post("/upload-url")
-def upload_url(request: Request, filename: str = Form(""), content_type: str = Form(""),
+def upload_url(request: Request, csrf_token: str = Form(""), filename: str = Form(""),
+               content_type: str = Form(""), size_bytes: str = Form("0"),
                user: str = Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        return JSONResponse({"ok": False, "detail": _t("Phiên đã hết hạn.")}, status_code=400)
     u = user_hien_tai(request)
     if u is None:
         raise HTTPException(status_code=400, detail=_t('Cần tài khoản người dùng.'))
+    if not _browser_direct_upload_enabled():
+        return JSONResponse({"mode": "local"})
+    declared_type = str(content_type or "").split(";", 1)[0].strip().lower()
+    if declared_type not in _VIDEO_TYPES:
+        return JSONResponse({"ok": False, "detail": _t(
+            "MIME video không khớp định dạng được hỗ trợ.")}, status_code=400)
+    try:
+        declared_size = int(size_bytes or 0)
+    except (TypeError, ValueError):
+        declared_size = 0
+    from platform_core import upload_sessions
+    from platform_core.db import get_session
     from platform_core.storage import get_storage
-    ext = ""
-    if "." in (filename or ""):
-        ext = "." + filename.rsplit(".", 1)[1].lower()[:5]
-    key = f"upscalevideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
-    ct = (content_type or "video/mp4").split(";")[0].strip() or "video/mp4"
-    target = None
-    if _browser_direct_upload_enabled():
-        target = get_storage().try_put_url(key, ttl_s=3600, content_type=ct)
-    if target is None:
-        return JSONResponse({"mode": "local", "key": key})
-    return JSONResponse({"mode": "direct", "key": target.key, "url": target.url,
+    gen = get_session(); db = next(gen)
+    try:
+        try:
+            session = upload_sessions.create(
+                db, user_id=u.id, app_slug=MANIFEST.slug, filename=filename,
+                content_type=_video_type(filename, content_type),
+                expected_size=declared_size, max_size=_DIRECT_VIDEO_MAX,
+                allowed_types=_VIDEO_TYPES,
+            )
+            target = upload_sessions.upload_target(get_storage(), session)
+            if target is None:
+                db.delete(session); db.commit()
+                return JSONResponse({"mode": "local"})
+            db.commit()
+        except upload_sessions.UploadSessionError as exc:
+            db.rollback()
+            return JSONResponse({"ok": False, "detail": str(exc)}, status_code=400)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return JSONResponse({"mode": "direct", "key": session.staging_key,
+                         "upload_id": session.id, "url": target.url,
                          "method": target.method, "headers": target.headers or {}})
 
 
@@ -396,7 +438,7 @@ async def queue(request: Request, csrf_token: str = Form(...),
                 stabilize: str = Form(""), smooth_motion: str = Form(""),
                 video: UploadFile = File(default=None),
                 user: str = Depends(require_login)):
-    from platform_core import credit
+    from platform_core import credit, upload_sessions
     from platform_core.db import get_session
     from platform_core.registry import RegistryError
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
@@ -416,7 +458,9 @@ async def queue(request: Request, csrf_token: str = Form(...),
     storage = get_storage()
     vkey = (video_key or "").strip()
     if vkey:
-        if not vkey.startswith(f"upscalevideo/{u.id}/") or not storage.exists(vkey):
+        if (not vkey.startswith("staging/") and
+                (not vkey.startswith(f"upscalevideo/{u.id}/") or
+                 not storage.exists(vkey))):
             return _fail("Video chưa upload xong hoặc không hợp lệ.")
     else:
         if video is None or not getattr(video, "filename", ""):
@@ -426,12 +470,24 @@ async def queue(request: Request, csrf_token: str = Form(...),
             return _fail("File video rỗng.")
         if len(vdata) > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
             return _fail("Video >90MB phải dùng upload thẳng (R2). Bật CORS bucket R2.")
-        ext = ""
-        if "." in video.filename:
-            ext = "." + video.filename.rsplit(".", 1)[1].lower()[:5]
-        vkey = f"upscalevideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
-        import io as _io
-        storage.put(vkey, _io.BytesIO(vdata), content_type=(video.content_type or "video/mp4"))
+        stage_gen = get_session(); stage_db = next(stage_gen)
+        try:
+            try:
+                staged = upload_sessions.stage_bytes(
+                    stage_db, storage, user_id=u.id, app_slug=MANIFEST.slug,
+                    filename=video.filename,
+                    content_type=_video_type(video.filename, video.content_type or ""),
+                    data=vdata, max_size=_LOCAL_VIDEO_MAX,
+                    allowed_types=_VIDEO_TYPES,
+                )
+                stage_db.commit(); vkey = staged.staging_key
+            except Exception:
+                stage_db.rollback(); raise
+        except upload_sessions.UploadSessionError as exc:
+            return _fail(str(exc))
+        finally:
+            try: next(stage_gen)
+            except StopIteration: pass
 
     if preset not in ("fast", "quality"):
         preset = "fast"
@@ -448,23 +504,54 @@ async def queue(request: Request, csrf_token: str = Form(...),
     except (TypeError, ValueError):
         dur = 0.0
 
+    promotions = []
     gen = get_session(); db = next(gen)
     last_id = None
     try:
         try:
-            job = submit_upscale_job(db, user_id=u.id, video_key=vkey, preset=preset,
-                                     target_height=th, codec=codec,
-                                     preview=bool(preview), duration_s=dur,
-                                     preserve_fps=preserve_fps != "0",
-                                     preserve_audio=preserve_audio != "0",
-                                     stabilize=stabilize == "1",
-                                     smooth_motion=smooth_motion == "1",
-                                     source_name=(getattr(video, "filename", "") or ""))
+            upload_session = (upload_sessions.owned(
+                db, staging_key=vkey, user_id=u.id, app_slug=MANIFEST.slug)
+                if vkey.startswith("staging/") else None)
+            if vkey.startswith("staging/") and upload_session is None:
+                raise upload_sessions.UploadSessionError(
+                    _t("Vé upload không hợp lệ hoặc không thuộc tài khoản."))
+            if upload_session is not None and upload_session.status == "promoted":
+                from platform_core.models import Job
+                job = db.get(Job, upload_session.job_id)
+                if job is None or job.user_id != u.id or job.app_slug != MANIFEST.slug:
+                    raise upload_sessions.UploadSessionError(
+                        _t("Upload đã gắn với job không hợp lệ."))
+            else:
+                if upload_session is not None:
+                    upload_sessions.confirm(db, storage, upload_session)
+                job = submit_upscale_job(
+                    db, user_id=u.id, video_key=vkey, preset=preset,
+                    target_height=th, codec=codec, preview=bool(preview),
+                    duration_s=dur, preserve_fps=preserve_fps != "0",
+                    preserve_audio=preserve_audio != "0",
+                    stabilize=stabilize == "1", smooth_motion=smooth_motion == "1",
+                    source_name=(getattr(video, "filename", "") or
+                                 (upload_session.filename if upload_session else "")))
+                if upload_session is not None:
+                    final_key = (f"upscalevideo/{u.id}/inputs/{job.id}"
+                                 f"{_video_ext(upload_session.filename)}")
+                    params = dict(job.params or {})
+                    params["video_key"] = upload_sessions.promote(
+                        db, storage, upload_session, job=job, final_key=final_key)
+                    promotions.append((upload_session.staging_key, final_key,
+                                       upload_session.content_type))
+                    job.params = params
             last_id = job.id
             db.commit()
-        except (credit.ThieuCreditError, RegistryError) as exc:
+        except (credit.ThieuCreditError, RegistryError,
+                upload_sessions.UploadSessionError) as exc:
             db.rollback()
+            upload_sessions.compensate(storage, promotions)
             return _fail(str(exc))
+        except Exception:
+            db.rollback()
+            upload_sessions.compensate(storage, promotions)
+            raise
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -484,7 +571,7 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
                       videos: list[UploadFile] = File(default=[]),
                       user: str = Depends(require_login)):
     """Nộp batch tối đa 3; job + credit là một transaction duy nhất."""
-    from platform_core import credit
+    from platform_core import credit, upload_sessions
     from platform_core.db import get_session
     from platform_core.registry import RegistryError
     from platform_core.storage import CLOUDFLARE_BODY_LIMIT, get_storage
@@ -519,7 +606,9 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
         item = dict(raw)
         key = str(item.get("video_key") or "").strip()
         if key:
-            if not key.startswith(f"upscalevideo/{u.id}/") or not storage.exists(key):
+            if (not key.startswith("staging/") and
+                    (not key.startswith(f"upscalevideo/{u.id}/") or
+                     not storage.exists(key))):
                 return fail(f"Video {index + 1} chưa upload xong hoặc không thuộc tài khoản.")
         else:
             upload = videos[local_cursor]; local_cursor += 1
@@ -533,9 +622,9 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
             local_total += len(data)
             if local_total > min(_LOCAL_VIDEO_MAX, CLOUDFLARE_BODY_LIMIT):
                 return fail("Tổng file local >90MB; cần upload thẳng qua R2.")
-            key = f"upscalevideo/{u.id}/uploads/{uuid.uuid4().hex}{ext}"
             item["_data"] = data
-            item["_content_type"] = upload.content_type or "video/mp4"
+            item["_filename"] = filename
+            item["_content_type"] = _video_type(filename, upload.content_type or "")
         try:
             item["duration_s"] = max(0.0, float(item.get("duration_s") or 0))
         except (TypeError, ValueError):
@@ -546,12 +635,34 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
         item["video_key"] = key
         prepared.append(item)
 
-    # Chỉ ghi local artifact sau khi toàn bộ manifest đã qua preflight.
-    import io as _io
-    for item in prepared:
-        if "_data" in item:
-            storage.put(item["video_key"], _io.BytesIO(item.pop("_data")),
-                        content_type=item.pop("_content_type"))
+    # Chỉ stage local artifact sau khi toàn bộ manifest đã qua preflight.
+    local_staged = []
+    stage_gen = get_session(); stage_db = next(stage_gen)
+    try:
+        try:
+            for item in prepared:
+                if "_data" not in item:
+                    continue
+                session = upload_sessions.stage_bytes(
+                    stage_db, storage, user_id=u.id, app_slug=MANIFEST.slug,
+                    filename=item.pop("_filename"),
+                    content_type=item.pop("_content_type"),
+                    data=item.pop("_data"), max_size=_LOCAL_VIDEO_MAX,
+                    allowed_types=_VIDEO_TYPES,
+                )
+                item["video_key"] = session.staging_key
+                local_staged.append(session.staging_key)
+            stage_db.commit()
+        except Exception:
+            stage_db.rollback()
+            for key in local_staged:
+                storage.delete(key)
+            raise
+    except upload_sessions.UploadSessionError as exc:
+        return fail(str(exc))
+    finally:
+        try: next(stage_gen)
+        except StopIteration: pass
     try:
         th = int(target_height)
     except (TypeError, ValueError):
@@ -560,20 +671,68 @@ async def batch_queue(request: Request, csrf_token: str = Form(...),
     preset = preset if preset in ("fast", "quality") else "fast"
     codec = codec if codec in ("h264", "hevc") else "h264"
 
+    promotions = []
     gen = get_session(); db = next(gen)
     try:
         try:
+            sessions = []
+            for item in prepared:
+                key = str(item.get("video_key") or "")
+                session = (upload_sessions.owned(
+                    db, staging_key=key, user_id=u.id, app_slug=MANIFEST.slug)
+                    if key.startswith("staging/") else None)
+                if key.startswith("staging/") and session is None:
+                    raise upload_sessions.UploadSessionError(
+                        _t("Vé upload không hợp lệ hoặc không thuộc tài khoản."))
+                sessions.append(session)
+            promoted = [session for session in sessions
+                        if session is not None and session.status == "promoted"]
+            if promoted:
+                if len(promoted) != len(prepared) or any(session is None for session in sessions):
+                    raise upload_sessions.UploadSessionError(
+                        _t("Batch upload đã dùng một phần; không thể nộp lại."))
+                from platform_core.models import Job
+                batch_jobs = [db.get(Job, session.job_id) for session in sessions]
+                if any(job is None or job.user_id != u.id or
+                       job.app_slug != MANIFEST.slug for job in batch_jobs):
+                    raise upload_sessions.UploadSessionError(
+                        _t("Batch upload đã gắn với job không hợp lệ."))
+                db.commit()
+                return JSONResponse({"ok": True, "deduplicated": True, "jobs": [
+                    {"request_id": item["request_id"], "job_id": job.id,
+                     "status": job.status}
+                    for item, job in zip(prepared, batch_jobs)]})
+            for session in sessions:
+                if session is not None:
+                    upload_sessions.confirm(db, storage, session)
             batch_jobs = submit_upscale_batch(
                 db, user_id=u.id, items=prepared, preset=preset,
                 target_height=th, codec=codec, preview=bool(preview),
                 preserve_fps=preserve_fps != "0",
                 preserve_audio=preserve_audio != "0",
                 stabilize=stabilize == "1", smooth_motion=smooth_motion == "1")
+            for item, job, session in zip(prepared, batch_jobs, sessions):
+                if session is None:
+                    continue
+                final_key = (f"upscalevideo/{u.id}/inputs/{job.id}"
+                             f"{_video_ext(session.filename)}")
+                params = dict(job.params or {})
+                params["video_key"] = upload_sessions.promote(
+                    db, storage, session, job=job, final_key=final_key)
+                promotions.append((session.staging_key, final_key,
+                                   session.content_type))
+                job.params = params
             db.commit()
-        except (credit.ThieuCreditError, RegistryError, ValueError) as exc:
+        except (credit.ThieuCreditError, RegistryError, ValueError,
+                upload_sessions.UploadSessionError) as exc:
             db.rollback()
+            upload_sessions.compensate(storage, promotions)
             return fail(str(exc), items=[{"request_id": x["request_id"],
                                          "status": "not_submitted"} for x in prepared])
+        except Exception:
+            db.rollback()
+            upload_sessions.compensate(storage, promotions)
+            raise
     finally:
         try: next(gen)
         except StopIteration: pass
@@ -589,7 +748,7 @@ def cancel_job(request: Request, job_id: str, csrf_token: str = Form(...),
     if not verify_csrf_token(request, csrf_token):
         raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
     u = user_hien_tai(request)
-    from platform_core import credit, jobs
+    from platform_core import credit, jobs, upload_sessions
     from platform_core.db import get_session
     from platform_core.models import Job
     gen = get_session(); db = next(gen)
@@ -599,6 +758,8 @@ def cancel_job(request: Request, job_id: str, csrf_token: str = Form(...),
             raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
         if jobs.cancel(db, job):
             credit.hoan(db, u.id, job.id)
+            from platform_core.storage import get_storage
+            upload_sessions.cleanup_failed_job(db, get_storage(), job)
         db.commit()
     finally:
         try: next(gen)

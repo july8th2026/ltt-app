@@ -21,10 +21,18 @@
 
 ## R2 — Upload và artifact lifecycle dùng chung
 
-1. Staging upload session owner-scoped, TTL, type/signature/actual size/quota/rate.
-2. Promote sau hold; cleanup failure/abandon; sweeper dry-run/idempotent.
-3. Retention/delete/reconcile có audit event và metric.
-4. **PASS:** G2/G5 xanh cho Upscale/Clip/Image/Video.
+1. [x] Staging upload session owner-scoped, TTL, type/signature/actual
+   size/quota/rate — 2026-08-12, Q85.
+2. [x] Promote sau hold; compensation DB rollback; cleanup failure/abandon;
+   sweeper dry-run/idempotent và bỏ qua Job active.
+3. [x] Retention/delete/reconcile có audit event, log worker và CLI operator
+   không lộ storage key/filename.
+4. [x] **SOURCE PASS:** G2/G5 xanh cho Upscale/Clip/Image/Video; 12 core/route
+   lifecycle test pass; Playwright Upscale MP4 thật 6,59 MB tạo Job, credit
+   1000→992, source route 206, console 0, mobile không overflow.
+5. [ ] **RELEASE CONDITIONAL:** Alembic/CORS/object storage phải được dry-run và
+   smoke trên exact staging RC ở R6. Browser direct upload vẫn default-off theo
+   Q48 cho tới khi bucket CORS pass; production 8100 chưa deploy.
 
 ## R3 — Provider/output matrices
 

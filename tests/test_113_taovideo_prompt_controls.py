@@ -65,6 +65,7 @@ def test_modelark_chi_gui_seed_khi_co(monkeypatch):
 def test_ui_co_preview_capability_bien_the_va_remix():
     page = (ROOT / "apps/taovideo/templates/taovideo.html").read_text(encoding="utf-8")
     routes = (ROOT / "apps/taovideo/routes.py").read_text(encoding="utf-8")
+    quotes = (ROOT / "apps/taovideo/quotes.py").read_text(encoding="utf-8")
     jobs = (ROOT / "apps/taovideo/jobs.py").read_text(encoding="utf-8")
 
     assert '<details class="tv-fieldset tv-assist" id="tv-assist">' in page
@@ -73,5 +74,5 @@ def test_ui_co_preview_capability_bien_the_va_remix():
     assert 'name="visual_style"' in page and 'name="seed"' in page
     assert 'class="tv-remix"' in page
     assert "q('[name=count]').value='2'" in page
-    assert '"seed"] = (fixed_seed + k)' in routes
+    assert 'params["seed"] = (fixed_seed + variant)' in quotes
     assert 'seed = int(params["seed"])' in jobs

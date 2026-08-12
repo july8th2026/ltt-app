@@ -21,30 +21,50 @@ class _Storage:
     def exists(self, key):
         return key in self.files
 
+    def size(self, key):
+        return len(self.files[key][0])
 
-def _upload(name: str, content_type: str, data: bytes = b"media") -> UploadFile:
+    def open(self, key):
+        return io.BytesIO(self.files[key][0])
+
+    def delete(self, key):
+        self.files.pop(key, None)
+
+
+def _upload(name: str, content_type: str,
+            data: bytes = b"\x00\x00\x00\x18ftypisommedia") -> UploadFile:
     return UploadFile(io.BytesIO(data), filename=name,
                       headers=Headers({"content-type": content_type}))
 
 
-def test_upload_ref_luu_metadata_va_chuan_hoa_role(monkeypatch):
+def test_upload_ref_luu_metadata_va_chuan_hoa_role(tmp_path, monkeypatch):
     from apps.taovideo.routes import _luu_refs
+    import platform_core.db as dbmod
     import platform_core.storage as storage_module
+    from tests.conftest import bao_dam_user
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'stage-ref.db').as_posix()}")
+    dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); db = next(gen)
+    bao_dam_user(db, "u1"); db.commit(); db.close()
     storage = _Storage()
     monkeypatch.setattr(storage_module, "get_storage", lambda: storage)
+    try:
+        refs = asyncio.run(_luu_refs(
+            "u1", [_upload(r"C:\fake\clip.mp4", "video/mp4")],
+            ["first_frame"], ["hero"],
+        ))
 
-    refs = asyncio.run(_luu_refs(
-        "u1", [_upload(r"C:\fake\clip.mp4", "video/mp4")],
-        ["first_frame"], ["hero"],
-    ))
-
-    assert len(refs) == 1
-    assert refs[0]["kind"] == "video"
-    assert refs[0]["role"] == "reference_video"
-    assert refs[0]["name"] == "clip.mp4"
-    assert refs[0]["content_type"] == "video/mp4"
-    assert refs[0]["size"] == 5
-    assert refs[0]["storage_key"].startswith("taovideo/u1/refs/")
+        assert len(refs) == 1
+        assert refs[0]["kind"] == "video"
+        assert refs[0]["role"] == "reference_video"
+        assert refs[0]["name"] == "clip.mp4"
+        assert refs[0]["content_type"] == "video/mp4"
+        assert refs[0]["size"] == 17
+        assert refs[0]["storage_key"].startswith("staging/u1/taovideo/")
+        assert refs[0]["upload_id"]
+    finally:
+        dbmod.reset_engine()
 
 
 def test_upload_ref_tu_choi_mime_va_qua_bon_file(monkeypatch):

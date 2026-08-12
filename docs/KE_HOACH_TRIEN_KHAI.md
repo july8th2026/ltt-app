@@ -2229,8 +2229,12 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
 - [ ] H33.R1b Canary provider trên exact release candidate + ledger G3. Không
   chạy trên production cũ; thực hiện trong R6 staging hoặc môi trường cô lập có
   provider key test.
-- [ ] H33.R2 Shared upload/artifact lifecycle: staging session → hold → promote,
-  cleanup/sweeper/reconcile/retention theo release plan.
+- [x] H33.R2 Shared upload/artifact lifecycle — 2026-08-12: Q85, Alembic
+  `a5b6c7d8e9f0`, staging owner/app + MIME/signature/actual-size/quota/rate/TTL,
+  hold→promote + DB compensation, retry không giữ tiền hai lần, cleanup lỗi/hủy,
+  worker sweep/CLI reconcile. HTTP integration bốn app PASS; Playwright Upscale
+  MP4 6,59 MB desktop/mobile console 0. **Source PASS; staging migration/CORS
+  smoke chuyển R6, chưa deploy production.**
 - [ ] H33.R3 Provider matrices AutoSub → Prompt → Image → Clip.
 - [ ] H33.R4 Upscale commercial calibration/scheduler.
 - [ ] H33.R5 UX/recovery parity.

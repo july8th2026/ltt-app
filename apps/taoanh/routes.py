@@ -135,7 +135,7 @@ async def queue(
     saved_source_key: str = Form(""),
     user: str = Depends(require_login),
 ):
-    from platform_core import credit
+    from platform_core import credit, upload_sessions
     from platform_core.db import get_session
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
     from platform_core.registry import RegistryError
@@ -162,7 +162,7 @@ async def queue(
                        jobs=_jobs_cua_toi(request), status_code=400)
 
     references: list[dict] = []
-    uploaded_keys: list[str] = []
+    prepared_uploads: list[tuple[str, str, str, bytes]] = []
     if saved_source_key:
         if not _owned_output(u.id, saved_source_key):
             return _render(request, user, error="Ảnh nguồn đã lưu không hợp lệ.",
@@ -176,30 +176,50 @@ async def queue(
             try:
                 mime, _dimensions = validate_reference(data, upload.content_type or "")
             except ValueError as exc:
-                for key in uploaded_keys:
-                    storage.delete(key)
                 return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request),
                                status_code=400)
-            import io, uuid
-            key = f"taoanh/{u.id}/refs/{uuid.uuid4().hex}"
-            storage.put(key, io.BytesIO(data), content_type=mime)
-            uploaded_keys.append(key)
+            prepared_uploads.append((role, upload.filename, mime, data))
             references = [r for r in references if r["role"] != role]
-            references.append({"key": key, "mime": mime, "role": role})
     if edit_mode != "generate" and not any(r["role"] == "source" for r in references):
-        for key in uploaded_keys:
-            storage.delete(key)
-        return _render(request, user, error="Chế độ chỉnh sửa cần ảnh nguồn.",
-                       jobs=_jobs_cua_toi(request), status_code=400)
-    if edit_mode == "style_transfer" and not any(r["role"] == "style" for r in references):
-        for key in uploaded_keys:
-            storage.delete(key)
+        if not any(role == "source" for role, *_rest in prepared_uploads):
+            return _render(request, user, error="Chế độ chỉnh sửa cần ảnh nguồn.",
+                           jobs=_jobs_cua_toi(request), status_code=400)
+    if (edit_mode == "style_transfer" and
+            not any(r["role"] == "style" for r in references) and
+            not any(role == "style" for role, *_rest in prepared_uploads)):
         return _render(request, user, error="Chuyển phong cách cần thêm ảnh phong cách.",
                        jobs=_jobs_cua_toi(request), status_code=400)
+
+    staged = []
+    if prepared_uploads:
+        stage_gen = get_session(); stage_db = next(stage_gen)
+        try:
+            try:
+                for role, filename, mime, data in prepared_uploads:
+                    session = upload_sessions.stage_bytes(
+                        stage_db, storage, user_id=u.id, app_slug=MANIFEST.slug,
+                        filename=filename, content_type=mime, data=data,
+                        max_size=8 * 1024 * 1024,
+                        allowed_types=("image/png", "image/jpeg", "image/webp"),
+                    )
+                    staged.append((role, session))
+                    references.append({"key": session.staging_key, "mime": mime,
+                                       "role": role, "upload_id": session.id})
+                stage_db.commit()
+            except Exception:
+                stage_db.rollback()
+                raise
+        except upload_sessions.UploadSessionError as exc:
+            return _render(request, user, error=str(exc),
+                           jobs=_jobs_cua_toi(request), status_code=400)
+        finally:
+            try: next(stage_gen)
+            except StopIteration: pass
 
     params = {"prompt": prompt, "model": model,
               "aspect_ratio": aspect_ratio, "count": count, "owner_id": u.id,
               "edit_mode": edit_mode, "references": references}
+    promotions = []
     gen = get_session(); db = next(gen)
     try:
         try:
@@ -207,13 +227,44 @@ async def queue(
                 db, user_id=u.id, app_slug=MANIFEST.slug,
                 job_type="taoanh.generate", params=params,
                 dedupe_key=dedupe_key_for("taoanh.generate", params))
+            if staged:
+                final_references = []
+                sessions = {session.id: upload_sessions.owned(
+                    db, session_id=session.id, user_id=u.id,
+                    app_slug=MANIFEST.slug) for _role, session in staged}
+                for ref in references:
+                    upload_id = str(ref.get("upload_id") or "")
+                    if not upload_id:
+                        final_references.append(ref)
+                        continue
+                    session = sessions.get(upload_id)
+                    if session is None:
+                        raise upload_sessions.UploadSessionError(
+                            _t("Vé upload ảnh không hợp lệ."))
+                    suffix = {
+                        "image/jpeg": ".jpg", "image/png": ".png",
+                        "image/webp": ".webp",
+                    }.get(session.content_type, "")
+                    final_key = (f"taoanh/{u.id}/refs/{job.id}/"
+                                 f"{ref['role']}{suffix}")
+                    key = upload_sessions.promote(
+                        db, storage, session, job=job, final_key=final_key)
+                    promotions.append((session.staging_key, final_key,
+                                       session.content_type))
+                    final_references.append({"key": key, "mime": ref["mime"],
+                                             "role": ref["role"]})
+                job.params = dict(job.params or {}, references=final_references)
             db.commit(); job_id = job.id
-        except (credit.ThieuCreditError, RegistryError) as exc:
+        except (credit.ThieuCreditError, RegistryError,
+                upload_sessions.UploadSessionError) as exc:
             db.rollback()
-            for key in uploaded_keys:
-                storage.delete(key)
+            upload_sessions.compensate(storage, promotions)
             return _render(request, user, error=str(exc),
                            jobs=_jobs_cua_toi(request), status_code=400)
+        except Exception:
+            db.rollback()
+            upload_sessions.compensate(storage, promotions)
+            raise
     finally:
         try: next(gen)
         except StopIteration: pass

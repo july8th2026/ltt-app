@@ -13,7 +13,9 @@ Tài liệu này mô tả platform web hiện hành. Các file JSONL/SQLite củ
 | Job metadata + customer timeline | 365 ngày | `JobEvent` purge tự động; Job terminal purge explicit theo batch | Chủ Job; operator |
 | Internal debug event | 30 ngày | Worker gọi purge mỗi 6 giờ | Operator/support |
 | Credit ledger | Không purge theo Job | `CreditEntry` append-only, không FK cascade theo Job | Chủ tài khoản ở UI đã lọc; operator |
-| Artifact/source/output | Policy storage riêng | Chưa tự xóa trong H26.11A | Owner qua opaque route; operator theo quyền |
+| Input upload đang staging | 1 giờ | `UploadSession`; worker sweep mỗi giờ, idempotent; operator CLI dry-run/apply | Owner theo vé; operator chỉ thấy báo cáo đã lọc |
+| Input đã promote cho Job | 30 ngày sau promote | Chỉ promote sau hold; xóa ngay nếu Job lỗi/hủy; không xóa Job active | Owner qua route app; operator theo quyền |
+| Output/project artifact | Policy storage riêng | Chưa tự xóa trong H26.11A/H33.R2 | Owner qua opaque route; operator theo quyền |
 | Session | Theo session policy | Thu hồi/hết hạn độc lập | Owner/operator theo auth |
 | Application log | Size + 30 ngày mặc định | `platform_core.observability`: JSONL rotating, redact boundary và prune file `ltt-*.jsonl*` theo `LTT_LOG_RETENTION_DAYS` | Operator |
 | Quality Lab input nạp từ UI | Đến khi evaluation kết thúc | Storage key ephemeral; worker xóa trong `finally`, cleanup lỗi làm Job fail hữu hình | Chỉ operator trong lúc Job chạy |
@@ -45,7 +47,15 @@ chính sách độc lập.
    cần. Không bật lịch xóa Job tự động trước H26.12 canary.
 
 Worker chỉ tự purge event đã quá hạn; process log LTT cũng tự prune file do LTT
-tạo. Hai cơ chế không chạm `Job`, artifact hay ledger. Support export tại `/ops/jobs/{job_id}/support-export` chỉ chứa metadata,
+tạo. Worker còn dọn riêng input upload theo Q85; không chạm output/project,
+`Job` hay ledger. Xem trước/đối soát thủ công:
+
+```powershell
+python tools\upload_lifecycle.py --reconcile
+python tools\upload_lifecycle.py --reconcile --apply
+```
+
+Support export tại `/ops/jobs/{job_id}/support-export` chỉ chứa metadata,
 event đã lọc và tổng ledger theo loại; không chứa params/result/error/note/PII.
 
 ## Privacy và redaction
@@ -62,12 +72,14 @@ event đã lọc và tổng ledger theo loại; không chứa params/result/erro
 
 ## Artifact — gap đã ghi rõ
 
-H26.11A chưa xóa source/output vì thời hạn artifact chưa được Q75 ấn định và
+H26.11A chưa xóa output/project vì thời hạn artifact chưa được Q75 ấn định và
 nhiều project lưu reference tới kết quả cũ. Đây không phải lời hứa lưu vĩnh
 viễn. Trước khi bật artifact purge phải có inventory theo app, owner check,
 legal/privacy decision, preview count/bytes, restore/rollback và canary riêng.
 
-Quality Lab là ngoại lệ hẹp đã khóa bởi Q83: file và transcript chuẩn do operator
+Input upload trả phí là contract hẹp Q85: staging một giờ, promoted input 30
+ngày và xóa sớm khi Job lỗi/hủy. Nó không cho phép xóa output hoặc asset đã lưu
+trong project. Quality Lab là ngoại lệ hẹp đã khóa bởi Q83: file và transcript chuẩn do operator
 nạp trực tiếp chỉ là input tạm và bị xóa sau evaluation. Artifact gốc được tham
 chiếu bằng storage key không bị Quality Lab xóa; nó vẫn theo policy của app sở
 hữu. Foundation chưa lưu frame/crop/audio evidence riêng và không dùng dữ liệu
@@ -82,6 +94,7 @@ không được đưa vào support export hoặc log mới.
 
 ## Changelog
 
+- 2026-08-12: thêm upload/input lifecycle Q85, sweeper và operator reconcile.
 - 2026-08-10: thêm retention Q83 cho input ephemeral và report Quality Lab.
 - 2026-08-09: thay tài liệu desktop cũ bằng policy platform Q75/Q76; thêm
   dry-run, terminal Job purge explicit, support export lọc và ranh giới ledger/

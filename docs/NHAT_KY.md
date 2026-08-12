@@ -14,6 +14,65 @@
 
 ---
 
+## 2026-08-12 — H33.R2: shared upload lifecycle source PASS
+
+- **Mục tiêu:** đóng P1 file ghi trước hold, orphan sau rollback và thiếu
+  cleanup/reconcile cho input media.
+- **Hạng mục:** H33.R2 hoàn thành ở source; staging migration/CORS thuộc R6.
+- **Trạng thái:** SOURCE PASS; RELEASE CONDITIONAL; production chưa deploy.
+
+### Đã làm
+
+- Thêm Q85 + migration `a5b6c7d8e9f0`: UploadSession owner/app-scoped, TTL,
+  quota/rate, expected/actual size, MIME + magic signature, trạng thái staging/
+  ready/promoted/deleted.
+- Tích hợp Upscale, Clip ngắn, Tạo ảnh và Seedance theo đúng thứ tự staging →
+  hold credit → promote → DB commit. Retry cùng vé trả Job cũ; Seedance batch
+  tạo input riêng cho từng variant.
+- Thêm compensation trả file về staging nếu DB commit lỗi; Job error/cancel
+  cleanup input. Worker sweep mỗi giờ, bỏ qua Job active; CLI operator mặc định
+  dry-run/reconcile không lộ filename hay storage key.
+- Full gate lần đầu bắt MIME `text/html` đội tên `.mp4` ở Clip direct ticket;
+  sửa allowlist fail-closed thay vì suy MIME từ extension.
+- Playwright fixture 8150 với MP4 thật 6.592.927 byte: upload/quote/queue 200,
+  balance 1000→992, source 206, console 0; mobile 390×844 không overflow.
+  Fixture đã dừng; production 8100 vẫn listen và không bị chạm.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_173_upload_sessions.py tests\test_174_app_upload_lifecycle.py -q` | **12 passed** |
+| Targeted Upscale/Clip | **65 passed** trước browser |
+| Targeted Tạo ảnh | **22 passed** |
+| Targeted Seedance | **55 passed** |
+| Regression MIME + lifecycle | **13 passed** |
+| `python tools\gate.py --quick` | lượt 1 FAIL silent/i18n; sửa xong, lượt cuối **PASS 8/8** |
+| `python tools\gate.py` | lượt 1 FAIL 1 MIME (2.669 pass); sửa xong, lượt 2 **PASS 9/9**, pytest 1.792,0s |
+| Playwright CLI fixture 8150 desktop/mobile | submit MP4/credit/source PASS; console 0; request app 200/206; mobile overflow false |
+
+### Quyết định mới
+
+Q85 đã thêm vào `QUYET_DINH_NEN_TANG.md`; retention policy và release plan đã
+đồng bộ trong cùng commit.
+
+### Cách lùi lại
+
+Revert commit H33.R2 trước migration. Nếu staging đã migrate, dry-run reconcile
+và xác nhận không còn session active trước downgrade/drop bảng.
+
+### Còn tồn đọng
+
+- R1b paid Seedance canary + R3 provider matrix cần exact staging/provider key.
+- R4 cần dataset có license/vote thật; R5 UX/recovery; R6 migration/CORS/rollback
+  drill. Chưa deploy production.
+
+### Việc tiếp theo
+
+1. Commit H33.R2.
+2. Thực hiện R3 tuần tự khi staging/provider test secret sẵn sàng; không giả
+   fixture thành provider canary.
+
 ## 2026-08-12 — H33.R1a: Seedance money source contract PASS
 
 - **Mục tiêu:** đóng P0 giữ 29 nhưng thu 78 và chặn double submit Seedance.
