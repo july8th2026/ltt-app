@@ -14,6 +14,55 @@
 
 ---
 
+## 2026-08-12 — H34: hồ sơ hệ thống tự cập nhật
+
+- **Mục tiêu:** tạo một hồ sơ để AI/người mới hiểu toàn hệ thống nhưng không
+  trở thành tài liệu viết tay nhanh lỗi thời hoặc nơi sao chép secret/runtime.
+- **Hạng mục:** H34 — hoàn thành.
+- **Trạng thái:** SOURCE/REGRESSION PASS; chưa deploy bản hồ sơ mới.
+
+### Đã làm
+
+- Thêm Q90 và `ho_so_he_thong.txt`: snapshot deterministic khoảng 103 KB có
+  fingerprint của 849 file nguồn; bao phủ 14 app, 285 route, 34 bảng, 28
+  migration, 3 frontend, env-name/test/deploy và chỉ mục source.
+- Bộ sinh gồm `tools/build_system_profile.py`, package
+  `tools/system_profile/`, config phạm vi và hướng dẫn
+  `docs/HO_SO_HE_THONG.md`. Chế độ `--check` không ghi file và fail khi stale.
+- Exclude tuyệt đối data/secrets/log/tmp/browser/node_modules; hồ sơ chỉ ghi tên
+  biến môi trường, không ghi giá trị. Ghi UTF-8 không BOM và replace atomically.
+- Thêm bước `system profile` vào quick/full gate, test đối chiếu mọi app/job/
+  ToolSpec/migration/frontend và bắt route platform ngoài `server/routes`.
+- `AGENTS.md`/`CLAUDE.md` yêu cầu phiên sau đọc hồ sơ như bản đồ sau nguồn chân
+  lý; release artifact bắt buộc chứa hồ sơ.
+- Trong vòng test, phát hiện và sửa hai thiếu sót: CLI Unicode vỡ trên console
+  CP1252; route scanner bỏ `api.py` của app và `/favicon.ico` trong `server/app.py`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Targeted system-profile/gate/release/setup/logic | **147 passed**, 16,12s |
+| `python tools/scan_source_secrets.py` | **0 finding** |
+| `python tools/gate.py --quick` | **PASS 9/9**, 33,2s |
+| `python tools/gate.py` | **PASS 10/10**, 1.852,1s; pytest 1.818,5s |
+
+### Quyết định mới
+
+Q90 đã thêm: hồ sơ deterministic/secret-safe, luôn đứng sau quyết định,
+code và test; freshness là gate bắt buộc.
+
+### Cách lùi lại
+
+Revert commit H34; bỏ bước `system profile` khỏi gate và dòng đọc hồ sơ khỏi
+AGENTS/CLAUDE. Không có migration hoặc dữ liệu runtime.
+
+### Còn tồn đọng
+
+- Bản production hiện tại chưa chứa hồ sơ H34; chỉ deploy khi chủ sản phẩm yêu
+  cầu một release mới.
+- Hồ sơ là code map, không thay live health/provider/GPU/browser audit.
+
 ## 2026-08-12 — Deploy production commit b957049
 
 - **Mục tiêu:** đưa bản Q84–Q89 đã full-gate lên production theo yêu cầu trực

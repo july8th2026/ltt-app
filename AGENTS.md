@@ -41,8 +41,11 @@ Theo đúng thứ tự, không bỏ bước:
    với nó thì nó đúng.
 2. `docs/KE_HOACH_TRIEN_KHAI.md` — hạng mục đang làm và tiêu chí hoàn thành.
 3. `docs/NHAT_KY.md` — hai mục gần nhất.
-4. Đọc chính các file sắp sửa, **trước khi** sửa.
-5. `git status` — biết cây làm việc đang sạch hay bẩn.
+4. `ho_so_he_thong.txt` — bản đồ code được sinh tự động; dùng để định vị, không
+   được coi cao hơn quyết định/code/test. Nếu stale, chạy
+   `python tools/build_system_profile.py` rồi review diff.
+5. Đọc chính các file sắp sửa, **trước khi** sửa.
+6. `git status` — biết cây làm việc đang sạch hay bẩn.
 
 `docs/_luutru/` là tài liệu lịch sử. Đọc để hiểu *vì sao*, **không bao giờ làm
 theo hướng dẫn trong đó**.

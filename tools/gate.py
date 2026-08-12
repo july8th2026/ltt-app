@@ -57,6 +57,10 @@ def _steps(quick: bool) -> list[Step]:
         # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh
         # lot vao giua trang tieng Viet ma khong ai biet tu luc nao.
         Step("chuoi chua dich", [sys.executable, "tools/check_i18n.py"], ROOT),
+        # Hồ sơ là bản đồ để AI/người mới hiểu code. Nếu không khóa freshness,
+        # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
+        Step("system profile", [sys.executable, "tools/build_system_profile.py",
+                                 "--check"], ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

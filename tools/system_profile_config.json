@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "output": "ho_so_he_thong.txt",
+  "source_roots": [
+    "alembic",
+    "apps",
+    "core",
+    "deploy",
+    "frontend",
+    "platform_core",
+    "server",
+    "setup",
+    "tests",
+    "tools"
+  ],
+  "root_sources": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "config.example.json",
+    "requirements.txt",
+    "requirements-server.txt",
+    "version.py"
+  ],
+  "authoritative_docs": [
+    "docs/QUYET_DINH_NEN_TANG.md",
+    "docs/KE_HOACH_TRIEN_KHAI.md",
+    "docs/quy_tac_audit.md",
+    "docs/DATA_RETENTION_POLICY.md",
+    "docs/SECURITY_CHECKLIST.md",
+    "docs/03_THEM_APP_MOI.md",
+    "docs/01_COPY_LEN_SERVER.md",
+    "docs/HO_SO_HE_THONG.md"
+  ],
+  "include_extensions": [
+    ".css",
+    ".html",
+    ".ini",
+    ".js",
+    ".json",
+    ".md",
+    ".mjs",
+    ".ps1",
+    ".py",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".txt",
+    ".yaml",
+    ".yml"
+  ],
+  "exclude_parts": [
+    ".git",
+    ".playwright-cli",
+    ".playwright-mcp",
+    ".pytest_cache",
+    "__pycache__",
+    "data",
+    "dist",
+    "logs",
+    "node_modules",
+    "secrets",
+    "test-results",
+    "tmp",
+    "venv"
+  ]
+}

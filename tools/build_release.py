@@ -49,6 +49,7 @@ EXCLUDED_SUFFIXES = (
 
 # Directories that MUST be present in the archive for it to be usable.
 REQUIRED_ENTRIES = (
+    "ho_so_he_thong.txt",
     "server/app.py",
     "core/worker_app.py",
     "requirements.txt",

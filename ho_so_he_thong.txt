@@ -1,0 +1,2033 @@
+HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
+==============================================================================
+Schema hồ sơ : 1
+Phiên bản app : 1.0.0
+Fingerprint   : sha256:f70fa39fd8baf9ed6aaaf281b7f45ce6d6273d4d475b5b4630be1ef10ee98a3f
+Nguồn đã quét : 849 file repository; không đọc runtime/secrets/log
+
+MỤC ĐÍCH VÀ CÁCH DÙNG
+- Đây là bản đồ điều hướng và hành vi được sinh từ code để AI/người mới
+  hiểu hệ thống nhanh; KHÔNG phải bản sao source và KHÔNG phải health live.
+- Khi cần sửa, phải mở file nguồn được chỉ ra; không suy diễn từ hồ sơ.
+- Thứ tự chân lý: QUYET_DINH_NEN_TANG.md → code/test → kế hoạch → hồ sơ.
+- Tạo lại: python tools/build_system_profile.py
+- Kiểm tra: python tools/build_system_profile.py --check
+
+1. NHẬN DIỆN VÀ BẤT BIẾN
+- Sản phẩm: SaaS đa người dùng bán công cụ AI theo credit.
+- Control plane: app.lttstudios.com; app dùng route path /<slug>.
+- Web/worker là tiến trình riêng; PostgreSQL là nguồn chân lý job/credit.
+- Job trả phí: quote → approve → hold → queue → settle/refund.
+- Job dài chạy trong worker; không chạy đồng bộ trong HTTP request.
+- D:\BOT GEMINI chỉ đọc; không truy cập cây đó trong runtime.
+- Hai cây mã nguồn độc lập; cấm phụ thuộc/import chéo.
+- Production code C:\LTTPlatform\app; data/secrets nằm ngoài release.
+- Cổng nền tảng 8100; cổng 8000 thuộc hệ thống khác.
+- Secret chỉ qua biến môi trường/thư mục bảo vệ; hồ sơ chỉ ghi TÊN biến.
+
+2. LUỒNG VẬN HÀNH CỐT LÕI
+Browser → Cloudflare Tunnel → FastAPI/Jinja/React → PostgreSQL
+                                     ↓
+                              Job queue + credit hold
+                                     ↓
+                         Worker → API/FFmpeg/GPU/storage
+                                     ↓
+                       Job event/artifact → UI → settle/refund
+Các lớp chính:
+- platform_core/: auth-domain, registry, DB, jobs, credit, GPU, storage,
+  provider, upload lifecycle, observability và Agent runtime dùng chung.
+- server/: HTTP/control plane, middleware, auth, template và admin.
+- apps/<slug>/: manifest, HTTP adapter, service/features, jobs và bảng riêng.
+- core/: social publishing legacy/frozen và worker compatibility còn được dùng.
+- frontend/: ba workspace React/Vite; production chỉ phục vụ bundle đã build.
+
+3. DANH MỤC APP (14)
+[agent] LTT Agent AI
+  URL=/agent | surface=customer | lifecycle=development
+  enabled=True | public=True | parent=-
+  requires=api | capabilities=Automation
+  HTTP routes=48 | table_prefix=- | manifest_error=-
+  credit_cost=apps.agent.manifest._orchestration_cost
+  job_types=agent.advance
+  Agent tools (0):
+    - none
+  File map:
+    - apps/agent/__init__.py
+    - apps/agent/jobs.py
+    - apps/agent/manifest.py
+    - apps/agent/routes/__init__.py
+    - apps/agent/routes/_shared.py
+    - apps/agent/routes/admin.py
+    - apps/agent/routes/assistant.py
+    - apps/agent/routes/legacy_runs.py
+    - apps/agent/routes/library.py
+    - apps/agent/routes/runs.py
+    - apps/agent/routes/sharing.py
+    - apps/agent/routes/workflows.py
+    - apps/agent/routes/workspace.py
+    - apps/agent/templates/_agent_progress.html
+    - apps/agent/templates/agent.html
+    - apps/agent/templates/agent_canvas.html
+    - apps/agent/templates/agent_run.html
+
+[autosubvideo] AutoSub Video
+  URL=/autosubvideo | surface=customer | lifecycle=development
+  enabled=True | public=True | parent=-
+  requires=ffmpeg | capabilities=AI Video,Utilities
+  HTTP routes=25 | table_prefix=- | manifest_error=-
+  credit_cost=apps.autosubvideo.manifest._cost
+  job_types=autosubvideo.render, autosubvideo.transcribe, autosubvideo.diarize, autosubvideo.translate
+  gpu_vram_mb=autosubvideo.diarize:2000, autosubvideo.transcribe:6000
+  Agent tools (1):
+    - video.subtitle → autosubvideo.render | customer_visible=True
+      inputs: video_key:video, transcript:json, style_id:enum, segment_mode:enum, quality:enum, output_format:enum, export_srt:bool, duration_s:number
+      outputs: video_key:video, srt_key:text, ass_key:text
+  File map:
+    - apps/autosubvideo/__init__.py
+    - apps/autosubvideo/ai_workflows.py
+    - apps/autosubvideo/ass_builder.py
+    - apps/autosubvideo/burn.py
+    - apps/autosubvideo/cost.py
+    - apps/autosubvideo/features.py
+    - apps/autosubvideo/font_checker.py
+    - apps/autosubvideo/jobs.py
+    - apps/autosubvideo/manifest.py
+    - apps/autosubvideo/parsers.py
+    - apps/autosubvideo/project_render.py
+    - apps/autosubvideo/pyannote_runner.py
+    - apps/autosubvideo/routes.py
+    - apps/autosubvideo/schemas.py
+    - apps/autosubvideo/segmenter.py
+    - apps/autosubvideo/services/__init__.py
+    - apps/autosubvideo/services/source_drafts.py
+    - apps/autosubvideo/style_registry.py
+    - apps/autosubvideo/subtitle_adapter.py
+    - apps/autosubvideo/templates/autosubvideo.html
+    - apps/autosubvideo/transcript_normalizer.py
+    - apps/autosubvideo/transcription.py
+    - apps/autosubvideo/whisperx_runner.py
+
+[chataistudio] Chat AI Studio
+  URL=/chataistudio | surface=customer | lifecycle=development
+  enabled=True | public=True | parent=-
+  requires=api | capabilities=Chat & Prompt
+  HTTP routes=12 | table_prefix=- | manifest_error=-
+  credit_cost=none
+  job_types=-
+  Agent tools (0):
+    - none
+  File map:
+    - apps/chataistudio/__init__.py
+    - apps/chataistudio/cost.py
+    - apps/chataistudio/features.py
+    - apps/chataistudio/manifest.py
+    - apps/chataistudio/routes.py
+    - apps/chataistudio/sidecar_client.py
+    - apps/chataistudio/templates/chataistudio.html
+    - apps/chataistudio/templates/chataistudio_admin.html
+
+[demo] Demo — kiểm tra hạ tầng
+  URL=/demo | surface=admin | lifecycle=internal
+  enabled=True | public=False | parent=-
+  requires=api | capabilities=-
+  HTTP routes=3 | table_prefix=- | manifest_error=-
+  credit_cost=apps.demo.manifest._cost
+  job_types=demo.reverse
+  Agent tools (0):
+    - none
+  File map:
+    - apps/demo/__init__.py
+    - apps/demo/desktop.ini
+    - apps/demo/jobs.py
+    - apps/demo/manifest.py
+    - apps/demo/routes.py
+
+[kichban] Kịch bản YouTube
+  URL=/kichban | surface=runtime | lifecycle=retired
+  enabled=True | public=False | parent=-
+  requires=api | capabilities=-
+  HTTP routes=5 | table_prefix=- | manifest_error=-
+  credit_cost=apps.kichban.manifest._cost
+  job_types=kichban.generate
+  Agent tools (2):
+    - text.script → kichban.generate | customer_visible=False
+      inputs: topic:string, duration:enum, tone:enum, audience:enum, language:enum
+      outputs: script:json
+    - text.generate → kichban.generate | customer_visible=True
+      inputs: prompt:string, source_text:text, image_key:image, image_keys:image[], video_key:video, model:model_ref, format:enum
+      outputs: text:text
+  File map:
+    - apps/kichban/__init__.py
+    - apps/kichban/features.py
+    - apps/kichban/jobs.py
+    - apps/kichban/manifest.py
+    - apps/kichban/prompts/base_prompt.txt
+    - apps/kichban/prompts/do_dai_video/10-15_phut.txt
+    - apps/kichban/prompts/do_dai_video/15-30_phut.txt
+    - apps/kichban/prompts/do_dai_video/3-5_phut.txt
+    - apps/kichban/prompts/do_dai_video/30_phut_plus.txt
+    - apps/kichban/prompts/do_dai_video/5-10_phut.txt
+    - apps/kichban/prompts/do_dai_video/_labels.json
+    - apps/kichban/prompts/doi_tuong/_labels.json
+    - apps/kichban/prompts/doi_tuong/beginner.txt
+    - apps/kichban/prompts/doi_tuong/expert.txt
+    - apps/kichban/prompts/doi_tuong/general.txt
+    - apps/kichban/prompts/doi_tuong/intermediate.txt
+    - apps/kichban/prompts/doi_tuong/professional.txt
+    - apps/kichban/prompts/doi_tuong/youth.txt
+    - apps/kichban/prompts/giong_van/_labels.json
+    - apps/kichban/prompts/giong_van/educational.txt
+    - apps/kichban/prompts/giong_van/entertaining.txt
+    - apps/kichban/prompts/giong_van/motivational.txt
+    - apps/kichban/prompts/giong_van/professional.txt
+    - apps/kichban/prompts/giong_van/review.txt
+    - apps/kichban/prompts/giong_van/storytelling.txt
+    - apps/kichban/prompts/ngon_ngu/_labels.json
+    - apps/kichban/prompts/ngon_ngu/en.txt
+    - apps/kichban/prompts/ngon_ngu/vi.txt
+    - apps/kichban/routes.py
+    - apps/kichban/templates/_script_view.html
+    - apps/kichban/templates/script.html
+    - apps/kichban/templates/script_result.html
+
+[mediatools] Media Tools
+  URL=/mediatools | surface=runtime | lifecycle=internal
+  enabled=True | public=False | parent=-
+  requires=ffmpeg | capabilities=-
+  HTTP routes=1 | table_prefix=- | manifest_error=-
+  credit_cost=apps.mediatools.manifest._cost
+  job_types=mediatools.process
+  Agent tools (9):
+    - asset.image → mediatools.process | customer_visible=True
+      inputs: image_key:string
+      outputs: image_key:image
+    - asset.images → mediatools.process | customer_visible=True
+      inputs: image_keys:json
+      outputs: image_keys:image[]
+    - asset.video → mediatools.process | customer_visible=True
+      inputs: video_key:string
+      outputs: video_key:video
+    - asset.audio → mediatools.process | customer_visible=True
+      inputs: audio_key:string
+      outputs: audio_key:audio
+    - audio.generate → mediatools.process | customer_visible=True
+      inputs: text:string, model:model_ref, voice:enum, style:string
+      outputs: audio_key:audio
+    - video.extract_frames → mediatools.process | customer_visible=True
+      inputs: video_key:video, interval_sec:number, max_frames:int
+      outputs: image_keys:image[]
+    - media.merge_image → mediatools.process | customer_visible=True
+      inputs: images:image[], layout:enum
+      outputs: image_key:image
+    - media.merge_video → mediatools.process | customer_visible=True
+      inputs: videos:video[], transition:enum
+      outputs: video_key:video
+    - video.social_import → mediatools.process | customer_visible=True
+      inputs: url:string, confirm_rights:bool
+      outputs: video_key:video
+  File map:
+    - apps/mediatools/__init__.py
+    - apps/mediatools/jobs.py
+    - apps/mediatools/manifest.py
+    - apps/mediatools/routes.py
+
+[prompt_ai_ommi] Prompt AI
+  URL=/prompt-ai-ommi | surface=customer | lifecycle=released
+  enabled=True | public=True | parent=-
+  requires=api | capabilities=Chat & Prompt,Automation
+  HTTP routes=68 | table_prefix=ommi | manifest_error=-
+  credit_cost=apps.prompt_ai_ommi.manifest._cost
+  job_types=prompt_ai_ommi.generate
+  Agent tools (2):
+    - text.prompt_package → prompt_ai_ommi.generate | customer_visible=True
+      inputs: operation:enum, title:string, story:text, scene_count:int, duration_seconds:int, aspect_ratio:enum, style:string, audience:string, language:enum, resources:json, model:model_ref
+      outputs: prompt_package:json, master_prompt:text
+    - story.storyboard → prompt_ai_ommi.generate | customer_visible=True
+      inputs: operation:enum, title:string, story:text, scene_count:int, aspect_ratio:enum, style:string, resources:json, model:model_ref
+      outputs: storyboard:json, master_prompt:text
+  File map:
+    - apps/prompt_ai_ommi/__init__.py
+    - apps/prompt_ai_ommi/jobs.py
+    - apps/prompt_ai_ommi/manifest.py
+    - apps/prompt_ai_ommi/project_schema.py
+    - apps/prompt_ai_ommi/prompts/__init__.py
+    - apps/prompt_ai_ommi/prompts/catalog.json
+    - apps/prompt_ai_ommi/prompts/director_system.txt
+    - apps/prompt_ai_ommi/prompts/director_user.txt
+    - apps/prompt_ai_ommi/prompts/library_catalog.json
+    - apps/prompt_ai_ommi/provider.py
+    - apps/prompt_ai_ommi/routes/__init__.py
+    - apps/prompt_ai_ommi/routes/_shared.py
+    - apps/prompt_ai_ommi/routes/assets_catalog.py
+    - apps/prompt_ai_ommi/routes/handoff.py
+    - apps/prompt_ai_ommi/routes/library.py
+    - apps/prompt_ai_ommi/routes/overview.py
+    - apps/prompt_ai_ommi/routes/pages.py
+    - apps/prompt_ai_ommi/routes/projects.py
+    - apps/prompt_ai_ommi/routes/resources.py
+    - apps/prompt_ai_ommi/routes/storyboard.py
+    - apps/prompt_ai_ommi/services/__init__.py
+    - apps/prompt_ai_ommi/services/builtin_catalog.py
+    - apps/prompt_ai_ommi/services/composer.py
+    - apps/prompt_ai_ommi/services/library.py
+    - apps/prompt_ai_ommi/services/metrics.py
+    - apps/prompt_ai_ommi/services/resources.py
+    - apps/prompt_ai_ommi/services/retention.py
+    - apps/prompt_ai_ommi/services/storyboard.py
+    - apps/prompt_ai_ommi/tables.py
+    - apps/prompt_ai_ommi/templates/prompt_ai_ommi.html
+    - apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html
+
+[qualitylab] Quality Lab
+  URL=/qualitylab | surface=admin | lifecycle=internal
+  enabled=True | public=False | parent=-
+  requires=ffmpeg | capabilities=-
+  HTTP routes=4 | table_prefix=- | manifest_error=-
+  credit_cost=apps.qualitylab.manifest._cost
+  job_types=qualitylab.evaluate
+  Agent tools (0):
+    - none
+  File map:
+    - apps/qualitylab/__init__.py
+    - apps/qualitylab/calibration.py
+    - apps/qualitylab/contracts.py
+    - apps/qualitylab/datasets.py
+    - apps/qualitylab/evaluator_assets.py
+    - apps/qualitylab/jobs.py
+    - apps/qualitylab/manifest.py
+    - apps/qualitylab/materializer.py
+    - apps/qualitylab/registry.py
+    - apps/qualitylab/routes.py
+    - apps/qualitylab/services/__init__.py
+    - apps/qualitylab/services/gpu_evidence.py
+    - apps/qualitylab/services/media.py
+    - apps/qualitylab/services/subtitle.py
+    - apps/qualitylab/services/upscale.py
+    - apps/qualitylab/services/upscale_video.py
+    - apps/qualitylab/templates/qualitylab.html
+    - apps/qualitylab/templates/qualitylab_report.html
+
+[socialbot] Đăng bài Facebook + TikTok
+  URL=/facebook | surface=customer | lifecycle=maintenance
+  enabled=True | public=False | parent=-
+  requires=browser | capabilities=Automation
+  HTTP routes=0 | table_prefix=- | manifest_error=-
+  credit_cost=none
+  job_types=-
+  Agent tools (0):
+    - none
+  File map:
+    - apps/socialbot/__init__.py
+    - apps/socialbot/desktop.ini
+    - apps/socialbot/manifest.py
+
+[taoanh] Tạo ảnh AI
+  URL=/taoanh | surface=customer | lifecycle=development
+  enabled=True | public=True | parent=-
+  requires=api | capabilities=AI Image
+  HTTP routes=5 | table_prefix=- | manifest_error=-
+  credit_cost=apps.taoanh.manifest._cost
+  job_types=taoanh.generate
+  Agent tools (2):
+    - image.generate → taoanh.generate | customer_visible=True
+      inputs: prompt:string, image_key:image, image_keys:image[], model:model_ref, aspect_ratio:enum, count:int
+      outputs: image_keys:image[], prompt:text
+    - image.batch_generate → taoanh.generate | customer_visible=True
+      inputs: prompt:string, image_key:image, image_keys:image[], model:model_ref, aspect_ratio:enum, count:int
+      outputs: image_keys:image[], prompt:text
+  File map:
+    - apps/taoanh/__init__.py
+    - apps/taoanh/features.py
+    - apps/taoanh/jobs.py
+    - apps/taoanh/manifest.py
+    - apps/taoanh/routes.py
+    - apps/taoanh/templates/_image_mode_nav.html
+    - apps/taoanh/templates/image.html
+    - apps/taoanh/templates/image_thumbnail_shell.html
+
+[taoclipngan] Tạo Clip ngắn
+  URL=/taoclipngan | surface=customer | lifecycle=development
+  enabled=True | public=True | parent=-
+  requires=gpu,ffmpeg | capabilities=AI Video
+  HTTP routes=7 | table_prefix=- | manifest_error=-
+  credit_cost=apps.taoclipngan.manifest._cost
+  job_types=taoclipngan.render
+  gpu_vram_mb=taoclipngan.render:6000
+  Agent tools (1):
+    - video.short_clips → taoclipngan.render | customer_visible=True
+      inputs: video_key:video, tier:enum, genre:enum, aspect_ratio:enum, language:enum, target_clip_count:int, min_clip_duration_sec:number, max_clip_duration_sec:number, duration_s:number, brand_preset:enum, platforms:json
+      outputs: clips:json
+  File map:
+    - apps/taoclipngan/__init__.py
+    - apps/taoclipngan/cost.py
+    - apps/taoclipngan/features.py
+    - apps/taoclipngan/jobs.py
+    - apps/taoclipngan/manifest.py
+    - apps/taoclipngan/routes.py
+    - apps/taoclipngan/templates/taoclipngan.html
+
+[taovideo] Tạo Video Seedance
+  URL=/taovideo | surface=customer | lifecycle=released
+  enabled=True | public=True | parent=-
+  requires=api | capabilities=AI Video
+  HTTP routes=8 | table_prefix=- | manifest_error=-
+  credit_cost=apps.taovideo.manifest._cost
+  job_types=taovideo.generate
+  Agent tools (1):
+    - video.generate → taovideo.generate | customer_visible=True
+      inputs: prompt:string, model:model_ref, resolution:enum, duration:enum, aspect_ratio:enum, generate_audio:bool, camera:enum, motion:enum, visual_style:enum, seed:number, image_key:image, image_keys:image[], video_key:video, audio_key:audio, refs:json
+      outputs: video_key:video
+  File map:
+    - apps/taovideo/__init__.py
+    - apps/taovideo/assets.py
+    - apps/taovideo/cost.py
+    - apps/taovideo/jobs.py
+    - apps/taovideo/manifest.py
+    - apps/taovideo/modelark.py
+    - apps/taovideo/models.py
+    - apps/taovideo/quotes.py
+    - apps/taovideo/refs.py
+    - apps/taovideo/routes.py
+    - apps/taovideo/templates/taovideo.html
+    - apps/taovideo/translate.py
+
+[thumbnail] Tạo Thumbnail YouTube
+  URL=/thumbnail | surface=customer | lifecycle=development
+  enabled=True | public=True | parent=taoanh
+  requires=api | capabilities=AI Image
+  HTTP routes=6 | table_prefix=- | manifest_error=-
+  credit_cost=apps.thumbnail.manifest._cost
+  job_types=thumbnail.generate
+  Agent tools (1):
+    - image.thumbnail → thumbnail.generate | customer_visible=True
+      inputs: topic:string, title:string, subtitle:string, text_style:enum, phong_cach:enum, kieu_trend:enum, ngon_ngu:enum, model:model_ref, aspect_ratio:enum, count:int
+      outputs: image_keys:image[], prompt:text
+  File map:
+    - apps/thumbnail/__init__.py
+    - apps/thumbnail/features.py
+    - apps/thumbnail/jobs.py
+    - apps/thumbnail/manifest.py
+    - apps/thumbnail/prompts/base_prompt.txt
+    - apps/thumbnail/prompts/kieu_trend/_labels.json
+    - apps/thumbnail/prompts/kieu_trend/bi_an_gay_to_mo.txt
+    - apps/thumbnail/prompts/kieu_trend/huong_dan_tutorial.txt
+    - apps/thumbnail/prompts/kieu_trend/khuon_mat_cam_xuc.txt
+    - apps/thumbnail/prompts/kieu_trend/listicle_numbered.txt
+    - apps/thumbnail/prompts/kieu_trend/mui_ten_chi_dan.txt
+    - apps/thumbnail/prompts/kieu_trend/reaction_phan_ung.txt
+    - apps/thumbnail/prompts/kieu_trend/so_sanh_truoc_sau.txt
+    - apps/thumbnail/prompts/kieu_trend/storytelling.txt
+    - apps/thumbnail/prompts/kieu_trend/text_heavy_chu_lon.txt
+    - apps/thumbnail/prompts/ngon_ngu/_labels.json
+    - apps/thumbnail/prompts/ngon_ngu/chinese.txt
+    - apps/thumbnail/prompts/ngon_ngu/english.txt
+    - apps/thumbnail/prompts/ngon_ngu/japanese.txt
+    - apps/thumbnail/prompts/ngon_ngu/korean.txt
+    - apps/thumbnail/prompts/ngon_ngu/tieng_viet.txt
+    - apps/thumbnail/prompts/phong_cach/3d_render.txt
+    - apps/thumbnail/prompts/phong_cach/Lego_Manh.txt
+    - apps/thumbnail/prompts/phong_cach/Tranh_thuy_mac.txt
+    - apps/thumbnail/prompts/phong_cach/_labels.json
+    - apps/thumbnail/prompts/phong_cach/chuyen_nghiep_toi_gian.txt
+    - apps/thumbnail/prompts/phong_cach/cinematic.txt
+    - apps/thumbnail/prompts/phong_cach/collage.txt
+    - apps/thumbnail/prompts/phong_cach/flat_design.txt
+    - apps/thumbnail/prompts/phong_cach/hoat_hinh_cartoon.txt
+    - apps/thumbnail/prompts/phong_cach/khanh.txt
+    - apps/thumbnail/prompts/phong_cach/retro_vintage.txt
+    - apps/thumbnail/prompts/phong_cach/visual_style.txt
+    - apps/thumbnail/prompts/text_style/_labels.json
+    - apps/thumbnail/prompts/text_style/bold_impact.txt
+    - apps/thumbnail/prompts/text_style/clean_minimal.txt
+    - apps/thumbnail/prompts/text_style/dramatic_gold.txt
+    - apps/thumbnail/prompts/text_style/neon_glow.txt
+    - apps/thumbnail/prompts/text_style/street_art.txt
+    - apps/thumbnail/prompts/text_style/thu_phap.txt
+    - apps/thumbnail/routes.py
+    - apps/thumbnail/templates/thumbnail.html
+    - apps/thumbnail/templates/thumbnail_fragment.html
+
+[upscalevideo] Upscale Video
+  URL=/upscalevideo | surface=customer | lifecycle=released
+  enabled=True | public=True | parent=-
+  requires=gpu,ffmpeg | capabilities=AI Video
+  HTTP routes=16 | table_prefix=- | manifest_error=-
+  credit_cost=apps.upscalevideo.manifest._cost
+  job_types=upscalevideo.render, upscalevideo.render.fast, upscalevideo.render.quality
+  gpu_vram_mb=upscalevideo.render:12000, upscalevideo.render.fast:2000, upscalevideo.render.quality:12000
+  Agent tools (2):
+    - video.upscale → upscalevideo.render | customer_visible=True
+      inputs: video_key:video, preset:enum, target_height:enum, codec:enum, preview:bool, preserve_fps:bool, preserve_audio:bool, stabilize:bool, smooth_motion:bool, duration_s:number
+      outputs: video_key:video
+    - image.upscale → upscalevideo.render | customer_visible=True
+      inputs: image_key:image, preset:enum
+      outputs: image_key:image
+  File map:
+    - apps/upscalevideo/__init__.py
+    - apps/upscalevideo/autotune.py
+    - apps/upscalevideo/cost.py
+    - apps/upscalevideo/engine.py
+    - apps/upscalevideo/ff.py
+    - apps/upscalevideo/install_watch_agent.ps1
+    - apps/upscalevideo/jobs.py
+    - apps/upscalevideo/manifest.py
+    - apps/upscalevideo/routes.py
+    - apps/upscalevideo/schemas.py
+    - apps/upscalevideo/service.py
+    - apps/upscalevideo/telemetry.py
+    - apps/upscalevideo/templates/upscalevideo.html
+    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.bin
+    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.param
+    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.bin
+    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.param
+    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.bin
+    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.param
+    - apps/upscalevideo/vendor/engine/realesrgan-ncnn-vulkan.exe
+    - apps/upscalevideo/vendor/engine/vcomp140.dll
+    - apps/upscalevideo/vendor/engine/vcomp140d.dll
+    - apps/upscalevideo/watch_agent.py
+    - apps/upscalevideo/watch_auth.py
+
+4. HTTP ROUTE INVENTORY (285)
+Auth là gợi ý AST, không thay security review hay browser test.
+- [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
+- [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
+- [agent] GET    /agent/api/admin/runs → agent_admin_runs | auth~login | apps/agent/routes/admin.py:21
+- [agent] POST   /agent/api/admin/runs/{run_id}/cancel → agent_admin_cancel | auth~login | apps/agent/routes/admin.py:72
+- [agent] POST   /agent/api/assets → workflow_asset_upload | auth~login | apps/agent/routes/workspace.py:88
+- [agent] GET    /agent/api/assets/{asset_name} → workflow_asset_preview | auth~login | apps/agent/routes/workspace.py:132
+- [agent] GET    /agent/api/palette → workflow_palette | auth~login | apps/agent/routes/workspace.py:69
+- [agent] GET    /agent/api/preferences → get_preferences | auth~login | apps/agent/routes/workspace.py:29
+- [agent] PUT    /agent/api/preferences → save_preferences | auth~login | apps/agent/routes/workspace.py:36
+- [agent] GET    /agent/api/runs → workflow_run_list | auth~login | apps/agent/routes/runs.py:101
+- [agent] GET    /agent/api/runs/{run_id} → workflow_run_get | auth~login | apps/agent/routes/runs.py:110
+- [agent] POST   /agent/api/runs/{run_id}/again → workflow_run_again | auth~login | apps/agent/routes/runs.py:118
+- [agent] POST   /agent/api/runs/{run_id}/approve → workflow_approve_run | auth~login | apps/agent/routes/runs.py:60
+- [agent] GET    /agent/api/runs/{run_id}/artifacts/{step_id}/{index} → workflow_artifact | auth~login | apps/agent/routes/runs.py:160
+- [agent] GET    /agent/api/runs/{run_id}/bundle → workflow_run_bundle | auth~login | apps/agent/routes/runs.py:181
+- [agent] POST   /agent/api/runs/{run_id}/cancel → workflow_cancel_run | auth~login | apps/agent/routes/runs.py:147
+- [agent] POST   /agent/api/runs/{run_id}/restore-workflow → workflow_restore_run | auth~login | apps/agent/routes/runs.py:85
+- [agent] POST   /agent/api/runs/{run_id}/tick → workflow_tick_run | auth~login | apps/agent/routes/runs.py:134
+- [agent] POST   /agent/api/tools/{tool_name}/quote → workflow_tool_quote | auth~login | apps/agent/routes/workspace.py:174
+- [agent] GET    /agent/api/workflows → workflow_list | auth~login | apps/agent/routes/workflows.py:19
+- [agent] POST   /agent/api/workflows → workflow_create | auth~login | apps/agent/routes/workflows.py:28
+- [agent] POST   /agent/api/workflows/import → workflow_import | auth~login | apps/agent/routes/library.py:121
+- [agent] POST   /agent/api/workflows/plan → workflow_plan | auth~login | apps/agent/routes/assistant.py:25
+- [agent] GET    /agent/api/workflows/{workflow_id} → workflow_get | auth~login | apps/agent/routes/workflows.py:41
+- [agent] PUT    /agent/api/workflows/{workflow_id} → workflow_save | auth~login | apps/agent/routes/workflows.py:52
+- [agent] GET    /agent/api/workflows/{workflow_id}/activity → workflow_activity | auth~login | apps/agent/routes/library.py:19
+- [agent] POST   /agent/api/workflows/{workflow_id}/archive → workflow_archive | auth~login | apps/agent/routes/library.py:74
+- [agent] POST   /agent/api/workflows/{workflow_id}/assistant/apply → workflow_assistant_apply | auth~login | apps/agent/routes/assistant.py:129
+- [agent] POST   /agent/api/workflows/{workflow_id}/assistant/preview → workflow_assistant_preview | auth~login | apps/agent/routes/assistant.py:57
+- [agent] POST   /agent/api/workflows/{workflow_id}/clone → workflow_clone | auth~login | apps/agent/routes/library.py:59
+- [agent] GET    /agent/api/workflows/{workflow_id}/export → workflow_export | auth~login | apps/agent/routes/library.py:88
+- [agent] GET    /agent/api/workflows/{workflow_id}/frames/{frame_id}/export → workflow_frame_export | auth~login | apps/agent/routes/library.py:102
+- [agent] POST   /agent/api/workflows/{workflow_id}/runs → workflow_create_run | auth~login | apps/agent/routes/runs.py:29
+- [agent] GET    /agent/api/workflows/{workflow_id}/shares → workflow_shares | auth~login | apps/agent/routes/sharing.py:23
+- [agent] POST   /agent/api/workflows/{workflow_id}/shares → workflow_share_create | auth~login | apps/agent/routes/sharing.py:37
+- [agent] POST   /agent/api/workflows/{workflow_id}/shares/{share_id}/revoke → workflow_share_revoke | auth~login | apps/agent/routes/sharing.py:84
+- [agent] GET    /agent/api/workflows/{workflow_id}/snapshots → workflow_snapshots | auth~login | apps/agent/routes/workflows.py:71
+- [agent] POST   /agent/api/workflows/{workflow_id}/snapshots/{revision}/restore → workflow_snapshot_restore | auth~login | apps/agent/routes/workflows.py:85
+- [agent] POST   /agent/api/workflows/{workflow_id}/validate → workflow_validate | auth~login | apps/agent/routes/library.py:35
+- [agent] GET    /agent/canvas → canvas_page | auth~login | apps/agent/routes/legacy_runs.py:36
+- [agent] POST   /agent/plan → create_plan | auth~login | apps/agent/routes/legacy_runs.py:47
+- [agent] GET    /agent/runs/{run_id} → run_page | auth~login | apps/agent/routes/legacy_runs.py:88
+- [agent] GET    /agent/runs/{run_id}/api → run_api | auth~login | apps/agent/routes/legacy_runs.py:98
+- [agent] POST   /agent/runs/{run_id}/approve → approve_run | auth~login | apps/agent/routes/legacy_runs.py:105
+- [agent] POST   /agent/runs/{run_id}/cancel → cancel_run | auth~login | apps/agent/routes/legacy_runs.py:143
+- [agent] POST   /agent/runs/{run_id}/tick → tick_run | auth~login | apps/agent/routes/legacy_runs.py:129
+- [agent] GET    /agent/shared/{token} → workflow_shared_view | auth~login | apps/agent/routes/sharing.py:60
+- [agent] POST   /agent/shared/{token}/clone → workflow_shared_clone | auth~login | apps/agent/routes/sharing.py:69
+- [autosubvideo] GET    /autosubvideo → page | auth~login | apps/autosubvideo/routes.py:111
+- [autosubvideo] GET    /autosubvideo/api/capabilities → studio_capabilities | auth~login | apps/autosubvideo/routes.py:400
+- [autosubvideo] GET    /autosubvideo/api/jobs → studio_jobs | auth~login | apps/autosubvideo/routes.py:599
+- [autosubvideo] GET    /autosubvideo/api/jobs/{job_id} → studio_job_status | auth~login | apps/autosubvideo/routes.py:617
+- [autosubvideo] POST   /autosubvideo/api/jobs/{job_id}/cancel → studio_job_cancel | auth~login | apps/autosubvideo/routes.py:628
+- [autosubvideo] POST   /autosubvideo/api/jobs/{job_id}/retry → studio_job_retry | auth~login | apps/autosubvideo/routes.py:644
+- [autosubvideo] GET    /autosubvideo/api/projects → project_list | auth~login | apps/autosubvideo/routes.py:163
+- [autosubvideo] POST   /autosubvideo/api/projects → project_create | auth~login | apps/autosubvideo/routes.py:173
+- [autosubvideo] GET    /autosubvideo/api/projects/{project_id} → project_get | auth~login | apps/autosubvideo/routes.py:190
+- [autosubvideo] PUT    /autosubvideo/api/projects/{project_id} → project_save | auth~login | apps/autosubvideo/routes.py:228
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/archive → project_archive | auth~login | apps/autosubvideo/routes.py:250
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/diarize → project_diarize | auth~login | apps/autosubvideo/routes.py:516
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/import → project_import_transcript | auth~login | apps/autosubvideo/routes.py:263
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/quote → project_render_quote | auth~login | apps/autosubvideo/routes.py:472
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/render → project_render_submit | auth~login | apps/autosubvideo/routes.py:485
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/source → project_attach_source | auth~login | apps/autosubvideo/routes.py:306
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/transcribe → project_transcribe | auth~login | apps/autosubvideo/routes.py:343
+- [autosubvideo] POST   /autosubvideo/api/projects/{project_id}/translate → project_translate | auth~login | apps/autosubvideo/routes.py:551
+- [autosubvideo] GET    /autosubvideo/api/styles → studio_styles | auth~login | apps/autosubvideo/routes.py:116
+- [autosubvideo] POST   /autosubvideo/api/uploads → project_upload_ticket | auth~login | apps/autosubvideo/routes.py:206
+- [autosubvideo] POST   /autosubvideo/estimate → estimate | auth~login | apps/autosubvideo/routes.py:676
+- [autosubvideo] GET    /autosubvideo/f/{key:path} → file_out | auth~login | apps/autosubvideo/routes.py:881
+- [autosubvideo] POST   /autosubvideo/queue → queue | auth~login | apps/autosubvideo/routes.py:715
+- [autosubvideo] POST   /autosubvideo/upload-url → upload_url | auth~login | apps/autosubvideo/routes.py:691
+- [autosubvideo] GET    /autosubvideo/v/{key:path} → video_out | auth~login | apps/autosubvideo/routes.py:846
+- [chataistudio] GET    /chataistudio → page | auth~login | apps/chataistudio/routes.py:102
+- [chataistudio] GET    /chataistudio/admin → admin_page | auth~login | apps/chataistudio/routes.py:530
+- [chataistudio] POST   /chataistudio/admin/api-key → admin_api_key | auth~login | apps/chataistudio/routes.py:573
+- [chataistudio] POST   /chataistudio/admin/device/start → admin_device_start | auth~login | apps/chataistudio/routes.py:548
+- [chataistudio] POST   /chataistudio/admin/device/wait → admin_device_wait | auth~login | apps/chataistudio/routes.py:560
+- [chataistudio] POST   /chataistudio/admin/logout → admin_logout | auth~login | apps/chataistudio/routes.py:586
+- [chataistudio] POST   /chataistudio/branch/{conv_id} → branch_conv | auth~login | apps/chataistudio/routes.py:398
+- [chataistudio] POST   /chataistudio/delete/{conv_id} → delete_conv | auth~login | apps/chataistudio/routes.py:159
+- [chataistudio] GET    /chataistudio/export/{conv_id}.{fmt} → export_conv | auth~login | apps/chataistudio/routes.py:424
+- [chataistudio] GET    /chataistudio/img/{key:path} → chat_image | auth~login | apps/chataistudio/routes.py:504
+- [chataistudio] POST   /chataistudio/new → new_conv | auth~login | apps/chataistudio/routes.py:138
+- [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
+- [demo] GET    /demo → demo_page | auth~admin | apps/demo/routes.py:24
+- [demo] POST   /demo → demo_run | auth~admin | apps/demo/routes.py:33
+- [demo] POST   /demo/queue → demo_queue | auth~admin | apps/demo/routes.py:66
+- [kichban] GET    /kichban → page | auth~login | apps/kichban/routes.py:108
+- [kichban] POST   /kichban/queue → queue | auth~login | apps/kichban/routes.py:115
+- [kichban] GET    /kichban/r/{job_id} → result | auth~login | apps/kichban/routes.py:165
+- [kichban] POST   /kichban/r/{job_id}/save → save_version | auth~login | apps/kichban/routes.py:186
+- [kichban] GET    /kichban/r/{job_id}/status → result_status | auth~login | apps/kichban/routes.py:176
+- [mediatools] GET    /mediatools → media_tools | auth~login | apps/mediatools/routes.py:10
+- [platform] GET    / → home | auth~optional | server/routes/dashboard.py:100
+- [platform] GET    /api/audit/status → audit_status | auth~login | server/routes/monitor.py:76
+- [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
+- [platform] GET    /api/jobs/{job_id} → job_api | auth~login | server/routes/jobs.py:241
+- [platform] GET    /api/manual/{platform}/status → manual_status | auth~login | server/routes/manual.py:377
+- [platform] GET    /api/monitor/logs → monitor_logs | auth~login | server/routes/monitor.py:43
+- [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
+- [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
+- [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
+- [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
+- [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
+- [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
+- [platform] POST   /facebook/page → fb_toggle_page | auth~login | server/routes/accounts.py:116
+- [platform] POST   /facebook/system-token → fb_import_system_token | auth~login | server/routes/accounts.py:86
+- [platform] POST   /facebook/test → fb_test | auth~login | server/routes/accounts.py:101
+- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:302
+- [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
+- [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
+- [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
+- [platform] GET    /health/ready → ready | auth~unspecified | server/routes/health.py:24
+- [platform] GET    /health/version → version | auth~unspecified | server/routes/health.py:82
+- [platform] GET    /jobs → danh_sach | auth~login | server/routes/jobs.py:129
+- [platform] GET    /jobs/{job_id} → chi_tiet | auth~login | server/routes/jobs.py:183
+- [platform] GET    /jobs/{job_id}/artifacts/{index} → tai_artifact | auth~login | server/routes/jobs.py:408
+- [platform] POST   /jobs/{job_id}/cancel → huy_job | auth~login | server/routes/jobs.py:259
+- [platform] GET    /jobs/{job_id}/progress → tien_do | auth~login | server/routes/jobs.py:198
+- [platform] POST   /jobs/{job_id}/retry → thu_lai_job | auth~login | server/routes/jobs.py:282
+- [platform] GET    /login → login_form | auth~optional | server/routes/auth.py:71
+- [platform] POST   /login → login_submit | auth~optional | server/routes/auth.py:94
+- [platform] POST   /logout → logout | auth~unspecified | server/routes/auth.py:202
+- [platform] GET    /manual/facebook → manual_fb_page | auth~login | server/routes/manual.py:124
+- [platform] POST   /manual/facebook → manual_fb_publish | auth~login | server/routes/manual.py:130
+- [platform] GET    /manual/tiktok → manual_tt_page | auth~login | server/routes/manual.py:193
+- [platform] POST   /manual/tiktok/prepare → manual_tt_prepare | auth~login | server/routes/manual.py:199
+- [platform] POST   /manual/tiktok/publish → manual_tt_publish | auth~login | server/routes/manual.py:301
+- [platform] GET    /monitor → monitor_page | auth~login | server/routes/monitor.py:23
+- [platform] POST   /monitor/reset-metrics → monitor_reset | auth~login | server/routes/monitor.py:32
+- [platform] GET    /nap → trang_nap | auth~login | server/routes/billing.py:24
+- [platform] GET    /nap/don/{order_id} → chi_tiet_don | auth~login | server/routes/billing.py:96
+- [platform] GET    /nap/don/{order_id}/trangthai → trang_thai_don | auth~login | server/routes/billing.py:129
+- [platform] POST   /nap/tao → tao_don | auth~login | server/routes/billing.py:50
+- [platform] GET    /oauth/facebook/callback → facebook_callback | auth~login | server/routes/oauth.py:67
+- [platform] POST   /oauth/facebook/start → facebook_start | auth~login | server/routes/oauth.py:51
+- [platform] GET    /oauth/tiktok/callback → tiktok_callback | auth~login | server/routes/oauth.py:137
+- [platform] GET    /oauth/tiktok/disclosure → tiktok_disclosure | auth~login | server/routes/oauth.py:94
+- [platform] POST   /oauth/tiktok/start → tiktok_start | auth~login | server/routes/oauth.py:115
+- [platform] GET    /ops/jobs-metrics → jobs_metrics | auth~admin | server/routes/jobs.py:383
+- [platform] GET    /ops/jobs-retention → jobs_retention | auth~admin | server/routes/jobs.py:369
+- [platform] GET    /ops/jobs/{job_id}/events → debug_events | auth~admin | server/routes/jobs.py:319
+- [platform] GET    /ops/jobs/{job_id}/support-export → support_export | auth~admin | server/routes/jobs.py:346
+- [platform] GET    /register → register_form | auth~unspecified | server/routes/register.py:71
+- [platform] POST   /register → register_submit | auth~optional | server/routes/register.py:76
+- [platform] GET    /reset-password → reset_form | auth~unspecified | server/routes/register.py:219
+- [platform] POST   /reset-password → reset_submit | auth~optional | server/routes/register.py:230
+- [platform] GET    /settings → settings_page | auth~admin | server/routes/settings.py:53
+- [platform] POST   /settings → settings_save | auth~admin | server/routes/settings.py:60
+- [platform] POST   /settings/credentials → upload_credentials | auth~admin | server/routes/settings.py:105
+- [platform] POST   /settings/duplicates → show_duplicates | auth~admin | server/routes/settings.py:206
+- [platform] POST   /settings/export-history → export_history | auth~admin | server/routes/settings.py:171
+- [platform] POST   /settings/import-calendar → import_calendar | auth~admin | server/routes/settings.py:222
+- [platform] POST   /settings/test-sheet → test_sheet | auth~admin | server/routes/settings.py:147
+- [platform] GET    /sheet/{platform} → sheet_page | auth~login | server/routes/sheet.py:84
+- [platform] POST   /sheet/{platform}/queue → refresh_queue | auth~login | server/routes/sheet.py:171
+- [platform] POST   /sheet/{platform}/start → sheet_start | auth~login | server/routes/sheet.py:195
+- [platform] POST   /sheet/{platform}/stop → sheet_stop | auth~login | server/routes/sheet.py:224
+- [platform] POST   /sheet/{platform}/tabs → load_tabs | auth~login | server/routes/sheet.py:90
+- [platform] POST   /sheet/{platform}/workers/add → worker_add | auth~login | server/routes/sheet.py:128
+- [platform] POST   /sheet/{platform}/workers/remove → worker_remove | auth~login | server/routes/sheet.py:153
+- [platform] GET    /status → status_page | auth~admin | server/routes/status.py:19
+- [platform] GET    /tiktok → tiktok_accounts | auth~login | server/routes/accounts.py:81
+- [platform] POST   /tiktok/disconnect → tt_disconnect | auth~login | server/routes/accounts.py:163
+- [platform] POST   /tiktok/refresh → tt_refresh | auth~login | server/routes/accounts.py:148
+- [platform] GET    /verify-email → verify_email | auth~optional | server/routes/register.py:144
+- [platform] POST   /webhooks/payment/payos → payos_webhook | auth~unspecified | server/routes/webhooks.py:20
+- [platform] GET    /workers → workers_page | auth~login | server/routes/workers.py:62
+- [platform] POST   /workers/start → start_worker | auth~login | server/routes/workers.py:67
+- [platform] POST   /workers/stop → stop_worker | auth~login | server/routes/workers.py:95
+- [prompt_ai_ommi] GET    /prompt-ai-ommi → page | auth~login | apps/prompt_ai_ommi/routes/pages.py:13
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/admin/catalog → admin_catalog | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:139
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/admin/health → admin_health | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:22
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/assets → upload_asset | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:39
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/catalog → catalog | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:125
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/credit → credit_summary | auth~login | apps/prompt_ai_ommi/routes/overview.py:80
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/import → import_project | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:105
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/jobs/{job_id} → job_status | auth~login | apps/prompt_ai_ommi/routes/projects.py:268
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/library/{kind} → list_library | auth~login | apps/prompt_ai_ommi/routes/library.py:45
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/library/{kind} → create_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:64
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/library/{kind}/deprecated-sources → library_deprecated_sources | auth~login | apps/prompt_ai_ommi/routes/library.py:199
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/library/{kind}/{item_id} → get_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:85
+- [prompt_ai_ommi] PUT    /prompt-ai-ommi/api/library/{kind}/{item_id} → update_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:104
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/library/{kind}/{item_id}/archive → archive_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:122
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/library/{kind}/{item_id}/clone → clone_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:138
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/library/{kind}/{item_id}/deprecate → deprecate_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:174
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/library/{kind}/{item_id}/publish → publish_library_item | auth~login | apps/prompt_ai_ommi/routes/library.py:154
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/metrics → job_metrics | auth~login | apps/prompt_ai_ommi/routes/overview.py:118
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/overview → overview | auth~login | apps/prompt_ai_ommi/routes/overview.py:21
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/preferences → get_preferences | auth~login | apps/prompt_ai_ommi/routes/pages.py:49
+- [prompt_ai_ommi] PUT    /prompt-ai-ommi/api/preferences → save_preferences | auth~login | apps/prompt_ai_ommi/routes/pages.py:56
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/projects → list_projects | auth~login | apps/prompt_ai_ommi/routes/projects.py:64
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects → create_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:72
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/projects/{project_id} → get_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:88
+- [prompt_ai_ommi] PUT    /prompt-ai-ommi/api/projects/{project_id} → save_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:94
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/apply/{job_id} → apply_job | auth~login | apps/prompt_ai_ommi/routes/projects.py:282
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/archive → archive_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:129
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/clone → clone_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:116
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/projects/{project_id}/export/{fmt} → export_project | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:72
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/generate → generate_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:239
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/handoff-batch/image → handoff_image_batch | auth~login | apps/prompt_ai_ommi/routes/handoff.py:103
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/handoff/{kind} → handoff | auth~login | apps/prompt_ai_ommi/routes/handoff.py:68
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/preview → preview_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:204
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/quote → quote_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:221
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/restore/{snapshot_id} → restore_snapshot | auth~login | apps/prompt_ai_ommi/routes/projects.py:179
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/snapshot → snapshot_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:152
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/projects/{project_id}/snapshots → list_snapshots | auth~login | apps/prompt_ai_ommi/routes/projects.py:166
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/projects/{project_id}/unarchive → unarchive_project | auth~login | apps/prompt_ai_ommi/routes/projects.py:138
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/resources → list_resources | auth~login | apps/prompt_ai_ommi/routes/resources.py:47
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources → create_resource | auth~login | apps/prompt_ai_ommi/routes/resources.py:70
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/resources/{resource_id} → get_resource | auth~login | apps/prompt_ai_ommi/routes/resources.py:88
+- [prompt_ai_ommi] PUT    /prompt-ai-ommi/api/resources/{resource_id} → update_resource | auth~login | apps/prompt_ai_ommi/routes/resources.py:105
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/archive → archive_resource | auth~login | apps/prompt_ai_ommi/routes/resources.py:126
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/clone → clone_resource | auth~login | apps/prompt_ai_ommi/routes/resources.py:142
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/images → upload_resource_image | auth~login | apps/prompt_ai_ommi/routes/resources.py:239
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/images/confirm → confirm_resource_image | auth~login | apps/prompt_ai_ommi/routes/resources.py:273
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/images/from-job → attach_generated_images | auth~login | apps/prompt_ai_ommi/routes/resources.py:491
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/images/generate → generate_resource_image | auth~login | apps/prompt_ai_ommi/routes/resources.py:445
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/resources/{resource_id}/images/ticket → resource_image_ticket | auth~login | apps/prompt_ai_ommi/routes/resources.py:216
+- [prompt_ai_ommi] DELETE /prompt-ai-ommi/api/resources/{resource_id}/images/{variant_id} → delete_resource_image | auth~login | apps/prompt_ai_ommi/routes/resources.py:312
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/resources/{resource_id}/images/{variant_id}/url → resource_image_url | auth~login | apps/prompt_ai_ommi/routes/resources.py:328
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/resources/{resource_id}/usage → resource_usage | auth~login | apps/prompt_ai_ommi/routes/resources.py:157
+- [prompt_ai_ommi] DELETE /prompt-ai-ommi/api/scenes/{scene_id} → delete_scene_route | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:147
+- [prompt_ai_ommi] PUT    /prompt-ai-ommi/api/scenes/{scene_id} → update_scene_route | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:129
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/scenes/{scene_id}/attach/{job_id} → attach_scene_render | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:263
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/scenes/{scene_id}/compare → compare_scene_versions | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:295
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/scenes/{scene_id}/render → render_scene | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:209
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/scenes/{scene_id}/restore/{version} → restore_scene_version | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:193
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/scenes/{scene_id}/versions → scene_versions | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:178
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/storyboards → list_storyboards | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:46
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/storyboards → create_storyboard | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:58
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/api/storyboards/{board_id} → get_storyboard | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:79
+- [prompt_ai_ommi] PUT    /prompt-ai-ommi/api/storyboards/{board_id} → update_storyboard | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:93
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/storyboards/{board_id}/reorder → reorder_scenes | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:162
+- [prompt_ai_ommi] POST   /prompt-ai-ommi/api/storyboards/{board_id}/scenes → add_storyboard_scene | auth~login | apps/prompt_ai_ommi/routes/storyboard.py:110
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/classic → classic_page | auth~login | apps/prompt_ai_ommi/routes/pages.py:31
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/f/{key:path} → resource_image_file | auth~login | apps/prompt_ai_ommi/routes/resources.py:352
+- [prompt_ai_ommi] GET    /prompt-ai-ommi/workspace → workspace | auth~login | apps/prompt_ai_ommi/routes/pages.py:25
+- [qualitylab] GET    /qualitylab → page | auth~admin | apps/qualitylab/routes.py:48
+- [qualitylab] GET    /qualitylab/api/reports/{job_id} → report_api | auth~admin | apps/qualitylab/routes.py:203
+- [qualitylab] POST   /qualitylab/evaluate → evaluate | auth~admin | apps/qualitylab/routes.py:77
+- [qualitylab] GET    /qualitylab/reports/{job_id} → report_page | auth~admin | apps/qualitylab/routes.py:189
+- [taoanh] GET    /taoanh → page | auth~login | apps/taoanh/routes.py:98
+- [taoanh] GET    /taoanh/edit/{job_id}/{image_index} → edit_output | auth~login | apps/taoanh/routes.py:276
+- [taoanh] GET    /taoanh/f/{key:path} → image_file | auth~login | apps/taoanh/routes.py:304
+- [taoanh] POST   /taoanh/queue → queue | auth~login | apps/taoanh/routes.py:125
+- [taoanh] GET    /taoanh/thumbnail → thumbnail_mode | auth~login | apps/taoanh/routes.py:103
+- [taoclipngan] GET    /taoclipngan → page | auth~login | apps/taoclipngan/routes.py:166
+- [taoclipngan] POST   /taoclipngan/estimate → estimate | auth~login | apps/taoclipngan/routes.py:171
+- [taoclipngan] GET    /taoclipngan/package/{job_id}.zip → download_package | auth~login | apps/taoclipngan/routes.py:456
+- [taoclipngan] POST   /taoclipngan/package/{job_id}/save → save_package | auth~login | apps/taoclipngan/routes.py:407
+- [taoclipngan] POST   /taoclipngan/queue → queue | auth~login | apps/taoclipngan/routes.py:244
+- [taoclipngan] POST   /taoclipngan/upload-url → upload_url | auth~login | apps/taoclipngan/routes.py:192
+- [taoclipngan] GET    /taoclipngan/v/{key:path} → clip_out | auth~login | apps/taoclipngan/routes.py:507
+- [taovideo] GET    /taovideo → page | auth~login | apps/taovideo/routes.py:178
+- [taovideo] POST   /taovideo/estimate → estimate | auth~login | apps/taovideo/routes.py:190
+- [taovideo] POST   /taovideo/prompt-assist → prompt_assist | auth~login | apps/taovideo/routes.py:249
+- [taovideo] POST   /taovideo/queue → queue | auth~login | apps/taovideo/routes.py:403
+- [taovideo] POST   /taovideo/translate → translate | auth~login | apps/taovideo/routes.py:224
+- [taovideo] POST   /taovideo/upscale-confirm → upscale_confirm | auth~login | apps/taovideo/routes.py:567
+- [taovideo] POST   /taovideo/upscale-quote → upscale_quote | auth~login | apps/taovideo/routes.py:543
+- [taovideo] GET    /taovideo/v/{key:path} → video | auth~login | apps/taovideo/routes.py:602
+- [thumbnail] GET    /thumbnail → page | auth~login | apps/thumbnail/routes.py:153
+- [thumbnail] GET    /thumbnail/image/{key:path} → image | auth~login | apps/thumbnail/routes.py:412
+- [thumbnail] POST   /thumbnail/preview → preview | auth~login | apps/thumbnail/routes.py:208
+- [thumbnail] POST   /thumbnail/queue → queue | auth~login | apps/thumbnail/routes.py:274
+- [thumbnail] GET    /thumbnail/remix/{job_id}/{image_index} → remix | auth~login | apps/thumbnail/routes.py:195
+- [thumbnail] GET    /thumbnail/studio-fragment → studio_fragment | auth~login | apps/thumbnail/routes.py:180
+- [upscalevideo] GET    /upscalevideo → page | auth~login | apps/upscalevideo/routes.py:144
+- [upscalevideo] GET    /upscalevideo/admin-telemetry → admin_telemetry | auth~login | apps/upscalevideo/routes.py:308
+- [upscalevideo] POST   /upscalevideo/batch → batch_queue | auth~login | apps/upscalevideo/routes.py:565
+- [upscalevideo] POST   /upscalevideo/batch-quote → batch_quote | auth~login | apps/upscalevideo/routes.py:172
+- [upscalevideo] POST   /upscalevideo/estimate → estimate | auth~login | apps/upscalevideo/routes.py:149
+- [upscalevideo] POST   /upscalevideo/jobs/{job_id}/cancel → cancel_job | auth~login | apps/upscalevideo/routes.py:745
+- [upscalevideo] GET    /upscalevideo/jobs/{job_id}/download → download_video | auth~login | apps/upscalevideo/routes.py:859
+- [upscalevideo] GET    /upscalevideo/jobs/{job_id}/source → source_video | auth~login | apps/upscalevideo/routes.py:837
+- [upscalevideo] POST   /upscalevideo/queue → queue | auth~login | apps/upscalevideo/routes.py:433
+- [upscalevideo] POST   /upscalevideo/upload-url → upload_url | auth~login | apps/upscalevideo/routes.py:196
+- [upscalevideo] GET    /upscalevideo/v/{key:path} → video_out | auth~login | apps/upscalevideo/routes.py:828
+- [upscalevideo] POST   /upscalevideo/watch/batch → watch_batch | auth~unspecified | apps/upscalevideo/routes.py:341
+- [upscalevideo] POST   /upscalevideo/watch/revoke → watch_revoke | auth~login | apps/upscalevideo/routes.py:276
+- [upscalevideo] GET    /upscalevideo/watch/status → watch_status | auth~unspecified | apps/upscalevideo/routes.py:293
+- [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
+- [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
+
+5. DATA MODEL (34 bảng)
+- agent_runs → AgentRun | platform_core/models.py:390
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:475
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:457
+- agent_workflows → AgentWorkflow | platform_core/models.py:425
+- api_keys → ApiKey | platform_core/models.py:582
+- app_access → AppAccess | platform_core/models.py:157
+- app_projects → AppProject | platform_core/models.py:190
+- chat_conversations → ChatConversation | platform_core/models.py:725
+- chat_messages → ChatMessage | platform_core/models.py:745
+- credit_entries → CreditEntry | platform_core/models.py:528
+- credit_packages → CreditPackage | platform_core/models.py:658
+- gpu_leases → GpuLease | platform_core/models.py:766
+- job_events → JobEvent | platform_core/models.py:313
+- jobs → Job | platform_core/models.py:238
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:503
+- ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
+- ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
+- ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
+- ommi_prompt_snippet → OmmiPromptSnippet | apps/prompt_ai_ommi/tables.py:220
+- ommi_prompt_version → OmmiPromptVersion | apps/prompt_ai_ommi/tables.py:250
+- ommi_resource → OmmiResource | apps/prompt_ai_ommi/tables.py:48
+- ommi_resource_tag → OmmiResourceTag | apps/prompt_ai_ommi/tables.py:124
+- ommi_resource_usage → OmmiResourceUsage | apps/prompt_ai_ommi/tables.py:160
+- ommi_resource_variant → OmmiResourceVariant | apps/prompt_ai_ommi/tables.py:83
+- ommi_scene → OmmiScene | apps/prompt_ai_ommi/tables.py:327
+- ommi_scene_version → OmmiSceneVersion | apps/prompt_ai_ommi/tables.py:359
+- ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
+- ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
+- ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
+- payment_orders → PaymentOrder | platform_core/models.py:682
+- platform_info → PlatformInfo | platform_core/models.py:35
+- sessions → Session | platform_core/models.py:127
+- upload_sessions → UploadSession | platform_core/models.py:357
+- users → User | platform_core/models.py:62
+
+6. ALEMBIC MIGRATIONS (28)
+- ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
+- ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
+- ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
+- ? ← None | them bang app_access | alembic/versions/20260731_0821_them_bang_app_access.py
+- ? ← None | them bang jobs | alembic/versions/20260731_0850_them_bang_jobs.py
+- ? ← None | them bang credit_entries | alembic/versions/20260731_0910_them_bang_credit_entries.py
+- ? ← None | bam token phien (P0-5): sessions.id luu SHA-256 hex thay vi token tho | alembic/versions/20260731_1130_bam_token_phien.py
+- ? ← None | index tong hop cho cau truy van claim job (W2.6c) | alembic/versions/20260731_1400_index_claim_job.py
+- ? ← None | them bang api_keys (H8 - bo may APIKEYS) | alembic/versions/20260731_1600_them_bang_api_keys.py
+- ? ← None | them cot telemetry cho api_keys (H8 Pha 2 - rpm/tpm/token + cua so) | alembic/versions/20260801_1000_apikeys_telemetry.py
+- ? ← None | them bang thanh toan: credit_packages + payment_orders (H9) | alembic/versions/20260801_1400_thanh_toan.py
+- ? ← None | them bang chat ai studio: chat_conversations + chat_messages (CHAT AI STUDIO) | alembic/versions/20260801_1600_chat_ai_studio.py
+- ? ← None | agent runs, checkpoint and child job linkage | alembic/versions/20260802_1200_agent_runs.py
+- ? ← None | agent canvas workflows | alembic/versions/20260802_1800_agent_workflows.py
+- ? ← None | generic app projects for stateful editors | alembic/versions/20260802_2300_app_projects.py
+- ? ← None | agent canvas document v2 | alembic/versions/20260804_0200_agent_canvas_v2.py
+- ? ← None | agent workflow snapshots and private shares | alembic/versions/20260804_0300_agent_version_share.py
+- ? ← None | PROMPT AI OMMI: kho tai nguyen va thu vien prompt rieng theo nguoi dung | alembic/versions/20260805_1900_ommi_library.py
+- ? ← None | PROMPT AI OMMI: storyboard, canh va phien ban theo canh | alembic/versions/20260805_2200_ommi_storyboard.py
+- ? ← None | H23: bang giu cho GPU (gpu_leases) | alembic/versions/20260806_1500_gpu_lease.py
+- ? ← None | H19.5: luu gop y cua nguoi dung vao tung phien ban canh | alembic/versions/20260806_1600_ommi_feedback.py
+- ? ← None | H19.6: ngung dung mau catalog (deprecate) - tach khoi archive | alembic/versions/20260806_1700_ommi_deprecate.py
+- c1d2e3f4a5b6 ← e5f6a4b5c6d7 | F-01 — khoá ngoại credit_entries.user_id -> users.id | alembic/versions/20260807_1000_credit_fk_user.py
+- d2e3f4a5b6c7 ← c1d2e3f4a5b6 | F-06 — bảng nhật ký thao tác quản trị | alembic/versions/20260807_1100_nhat_ky_admin.py
+- e3f4a5b6c7d8 ← d2e3f4a5b6c7 | Chống spam L1 — cột `email_chuan` để kiểm trùng theo hộp thư thật | alembic/versions/20260807_1800_email_chuan.py
+- f4a5b6c7d8e9 ← e3f4a5b6c7d8 | them timeline va debug event cho job | alembic/versions/20260808_1000_job_events.py
+- a5b6c7d8e9f0 ← f4a5b6c7d8e9 | them upload staging lifecycle | alembic/versions/20260812_1000_upload_sessions.py
+- b6c7d8e9f0a1 ← a5b6c7d8e9f0 | gan upload session vao editor project | alembic/versions/20260812_1500_project_upload_attachments.py
+
+7. FRONTEND WORKSPACES (3)
+- agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
+- autosub-studio: package=ltt-autosub-studio@0.1.0, Node=24.17.0, src=10, tests=2, bundle=assets/main-C1Q3T130.js
+- prompt-ai-ommi: package=ltt-prompt-ai-ommi@0.1.0, Node=24.17.0, src=11, tests=4, bundle=assets/main-CgVyWR3g.js
+- Sau mọi thay đổi GUI: Playwright render thật + console + failed network + mobile.
+
+8. STORAGE, LOG, RETENTION VÀ BẢO MẬT
+- Upload trả phí: staging owner/app, TTL 1h, promote sau hold, cleanup terminal.
+- Editor draft: attachment owner/app/project, TTL 30 ngày, touch khi mở.
+- Job metadata/timeline customer: 365 ngày; debug event nội bộ: 30 ngày.
+- CreditEntry append-only; không purge theo vòng đời Job.
+- Customer chỉ xem log đã làm sạch; raw kỹ thuật chỉ admin/support.
+- Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
+- Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
+
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (75 tên; KHÔNG có giá trị)
+- LTT_ADMIN_EMAIL
+- LTT_ADMIN_PASSWORD_HASH
+- LTT_ADMIN_USERNAME
+- LTT_AGENT_BROWSER_TEST
+- LTT_AGENT_CANVAS_PRESENTATION
+- LTT_AGENT_CANVAS_RUN_ENABLED
+- LTT_AGENT_CANVAS_RUN_ROLLOUT
+- LTT_AGENT_CANVAS_RUN_USER_IDS
+- LTT_AUTOSUB_BROWSER_TEST
+- LTT_AUTOSUB_STUDIO_ROLLOUT
+- LTT_AUTOSUB_WHISPER_COMPUTE
+- LTT_AUTOSUB_WHISPER_DEVICE
+- LTT_CODEX_SIDECAR_PORT
+- LTT_CODEX_SIDECAR_TOKEN
+- LTT_CONFIG_PATH
+- LTT_DANGKY_MIEN_TIN_CAY
+- LTT_DATABASE_URL
+- LTT_DATA_DIR
+- LTT_DISPOSABLE_EXTRA
+- LTT_ENV
+- LTT_FFMPEG
+- LTT_FFPROBE
+- LTT_FILE_LOGGING
+- LTT_HF_TOKEN
+- LTT_I18N_BAT_BUOC
+- LTT_LOGS_DIR
+- LTT_LOG_BACKUP_COUNT
+- LTT_LOG_MAX_BYTES
+- LTT_LOG_RETENTION_DAYS
+- LTT_MAIL_FROM
+- LTT_MAX_DANGKY_IP_NGAY
+- LTT_MODELARK_
+- LTT_MODELARK_ACCESS_KEY
+- LTT_MODELARK_REGION
+- LTT_MODELARK_SECRET_KEY
+- LTT_NEW_ADMIN_PASSWORD
+- LTT_PAYOS_
+- LTT_PAYOS_API_KEY
+- LTT_PAYOS_BASE_URL
+- LTT_PAYOS_CHECKSUM_KEY
+- LTT_PAYOS_CLIENT_ID
+- LTT_PROMPT_AI_OMMI_ROLLOUT
+- LTT_PROMPT_AI_OMMI_USER_IDS
+- LTT_QUALITYLAB_BLIND_SECRET
+- LTT_QUALITYLAB_BROWSER_TEST
+- LTT_QUALITYLAB_RATER_ID
+- LTT_R2_
+- LTT_R2_ACCESS_KEY_ID
+- LTT_R2_ACCOUNT_ID
+- LTT_R2_BROWSER_UPLOAD_ENABLED
+- LTT_R2_BUCKET
+- LTT_R2_ENDPOINT
+- LTT_R2_SECRET_ACCESS_KEY
+- LTT_SECRETS_DIR
+- LTT_SENTRY_DSN
+- LTT_SENTRY_TRACES_SAMPLE_RATE
+- LTT_SERVER_HOST
+- LTT_SERVER_PORT
+- LTT_SESSION_SECRET
+- LTT_SMOKE_PASS
+- LTT_SMOKE_URL
+- LTT_SMOKE_USER
+- LTT_SOCIALBOT_ROUTES
+- LTT_STORAGE
+- LTT_TEMP_VIDEO_DIR
+- LTT_TEST_DATABASE_URL
+- LTT_TOKEN_ENCRYPTION_KEY
+- LTT_TOKEN_ENCRYPTION_KEY_FILE
+- LTT_TRIAL_CREDIT
+- LTT_UPSCALE_BROWSER_TEST
+- LTT_UPSCALE_BROWSER_VIDEO
+- LTT_UPSCALE_WATCH_TOKEN
+- LTT_WHISPERX_PYTHON
+- LTT_WHISPERX_TIMEOUT_SECONDS
+- LTT_WORKER_PROCESSES
+
+10. QUALITY GATES (180 file pytest + 3 frontend)
+- Lệnh duy nhất trước khi báo xong: python tools/gate.py
+- Quick loop: python tools/gate.py --quick
+- Gate: secret scan, app contract, undefined names, silent-except,
+  i18n growth, system-profile freshness, frontend tests và pytest.
+- GUI không được coi là PASS nếu chưa kiểm Playwright trên render thật.
+Test inventory:
+- tests/test_03_sheet_client.py
+- tests/test_04_drive_downloader.py
+- tests/test_05_misc_utils.py
+- tests/test_06_concurrent_runner.py
+- tests/test_07_k1_metadata.py
+- tests/test_08_k5_notifier.py
+- tests/test_09_k6_retry.py
+- tests/test_100_agent_telemetry.py
+- tests/test_101_agent_body_limit.py
+- tests/test_102_agent_metrics.py
+- tests/test_103_autosub_projects.py
+- tests/test_104_design_system_contract.py
+- tests/test_105_public_auth_ui.py
+- tests/test_106_billing_ui.py
+- tests/test_107_jobs_ui.py
+- tests/test_108_settings_boundary_ui.py
+- tests/test_109_home_shell_ui.py
+- tests/test_10_k8_reels.py
+- tests/test_110_home_information_architecture.py
+- tests/test_111_taovideo_ui.py
+- tests/test_112_taovideo_saved_assets.py
+- tests/test_113_taovideo_prompt_controls.py
+- tests/test_114_upscale_ui.py
+- tests/test_115_upscale_feature_benchmark.py
+- tests/test_116_taoanh_ui.py
+- tests/test_116_upscale_motion_features.py
+- tests/test_117_taoanh_features.py
+- tests/test_118_chataistudio_ui.py
+- tests/test_119_chataistudio_features.py
+- tests/test_11_upgrades.py
+- tests/test_120_kichban_ui.py
+- tests/test_121_kichban_features.py
+- tests/test_122_taoclipngan_ui.py
+- tests/test_123_taoclipngan_features.py
+- tests/test_124_admin_ui.py
+- tests/test_125_website_route_contract.py
+- tests/test_126_website_link_consistency.py
+- tests/test_127_wordpress_deploy_contract.py
+- tests/test_129_adaptive_page_layouts.py
+- tests/test_12_tiktok.py
+- tests/test_130_agent_media_tools.py
+- tests/test_130_prompt_ai_ommi.py
+- tests/test_131_agent_scale_contract.py
+- tests/test_132_agent_multimodal_text.py
+- tests/test_133_agent_video_inputs.py
+- tests/test_134_agent_image_inputs.py
+- tests/test_135_ommi_ownership.py
+- tests/test_136_ommi_resources.py
+- tests/test_137_ommi_resource_api.py
+- tests/test_138_ommi_resource_images.py
+- tests/test_139_ommi_resource_generate.py
+- tests/test_13_compliance.py
+- tests/test_140_ommi_library.py
+- tests/test_141_ommi_library_api.py
+- tests/test_142_ommi_storyboard.py
+- tests/test_143_ommi_storyboard_api.py
+- tests/test_144_ommi_overview.py
+- tests/test_145_gate_covers_everything.py
+- tests/test_146_touch_targets.py
+- tests/test_147_layering.py
+- tests/test_148_frontend_bundle.py
+- tests/test_149_presign_khong_nuot_loi.py
+- tests/test_14_audit.py
+- tests/test_150_gpu_lease.py
+- tests/test_151_job_events.py
+- tests/test_151_worker_gpu.py
+- tests/test_152_socialbot_route_flag.py
+- tests/test_153_ommi_feedback_compare.py
+- tests/test_154_ommi_deprecate_retention.py
+- tests/test_155_logging_observability.py
+- tests/test_155_ommi_metrics.py
+- tests/test_156_marketplace_h26.py
+- tests/test_156_nap_trang_phan_hoi.py
+- tests/test_156_quality_lab.py
+- tests/test_157_dang_nhap_leo_thang.py
+- tests/test_157_upscale_h26.py
+- tests/test_158_i18n_chon_ngon_ngu.py
+- tests/test_158_taovideo_h26.py
+- tests/test_159_i18n_middleware.py
+- tests/test_159_prompt_ai_h26.py
+- tests/test_15_tiktok_commenter.py
+- tests/test_160_i18n_ky_tu_dac_biet.py
+- tests/test_160_image_unified_shell_h26.py
+- tests/test_161_clip_customer_workflow_h26.py
+- tests/test_161_i18n_lop_python.py
+- tests/test_162_cap_credit_admin.py
+- tests/test_162_chat_customer_workflow_h26.py
+- tests/test_163_grant_credit_http.py
+- tests/test_164_chong_spam_dang_ky.py
+- tests/test_164_quality_lab_upscale.py
+- tests/test_165_quality_lab_evaluator_assets.py
+- tests/test_166_quality_lab_upscale_video.py
+- tests/test_167_quality_lab_gpu_evidence.py
+- tests/test_168_quality_lab_calibration.py
+- tests/test_169_quality_lab_dataset_materializer.py
+- tests/test_16_facebook_commenter.py
+- tests/test_170_taovideo_h32_ui.py
+- tests/test_171_upscale_h32.py
+- tests/test_172_taovideo_money_contract.py
+- tests/test_173_upload_sessions.py
+- tests/test_174_app_upload_lifecycle.py
+- tests/test_175_autosub_asr_benchmark.py
+- tests/test_176_api_error_contract.py
+- tests/test_177_system_profile.py
+- tests/test_17_rate_limiter_safety.py
+- tests/test_18_platform_config.py
+- tests/test_19_tiktok_rate_limit.py
+- tests/test_20_option_a_audit.py
+- tests/test_21_antispam_phase1.py
+- tests/test_22_antispam_phase2.py
+- tests/test_23_antispam_phase3_4.py
+- tests/test_24_antispam_final.py
+- tests/test_25_antispam_integration.py
+- tests/test_26_phase5_sprints.py
+- tests/test_27_phase5_wiring.py
+- tests/test_28_tiktok_parity.py
+- tests/test_29_tiktok_preflight.py
+- tests/test_31_audit_readiness.py
+- tests/test_32_system_user_token.py
+- tests/test_33_secret_scanner.py
+- tests/test_34_p1_headless_worker.py
+- tests/test_35_p2_runtime_boundary.py
+- tests/test_36_p2_token_key_migration.py
+- tests/test_37_p3_web_foundation.py
+- tests/test_38_pa_token_store_diagnostics.py
+- tests/test_39_pa_preflight.py
+- tests/test_40_pa_worker_store_and_doctor.py
+- tests/test_41_p456_web_modules.py
+- tests/test_42_session_lock_runtime_path.py
+- tests/test_43_web_hardening.py
+- tests/test_44_release_build.py
+- tests/test_45_deploy_scripts.py
+- tests/test_46_deploy_realworld_fixes.py
+- tests/test_47_web_settings.py
+- tests/test_48_google_credentials.py
+- tests/test_49_manual_publish.py
+- tests/test_50_monitor_audit.py
+- tests/test_51_oauth_web.py
+- tests/test_52_desktop_removed.py
+- tests/test_53_content_tools.py
+- tests/test_60_app_registry.py
+- tests/test_61_setup_scripts.py
+- tests/test_62_khoa_logic.py
+- tests/test_63_lop_csdl.py
+- tests/test_64_nguoi_dung.py
+- tests/test_65_dang_ky.py
+- tests/test_66_phan_quyen_app.py
+- tests/test_67_hang_doi_job.py
+- tests/test_68_credit.py
+- tests/test_69_web_jobs.py
+- tests/test_70_admin_h3.py
+- tests/test_71_thumbnail.py
+- tests/test_72_vanhanh.py
+- tests/test_73_dong_thoi_pg.py
+- tests/test_74_smoke_playwright.py
+- tests/test_75_api_keys.py
+- tests/test_76_billing.py
+- tests/test_77_thumbnail_parity.py
+- tests/test_78_a1_migration.py
+- tests/test_79_taovideo.py
+- tests/test_80_r2_storage.py
+- tests/test_81_autosubvideo.py
+- tests/test_82_upscalevideo.py
+- tests/test_83_chataistudio.py
+- tests/test_84_taoclipngan.py
+- tests/test_85_app_contract_lint.py
+- tests/test_86_usage_rate_limit.py
+- tests/test_87_agent_toolspec.py
+- tests/test_88_agent_toolspec_apps.py
+- tests/test_89_agent_runs.py
+- tests/test_90_agent_planner_validator.py
+- tests/test_91_agent_budget.py
+- tests/test_92_agent_executor.py
+- tests/test_93_agent_verifier.py
+- tests/test_94_agent_app.py
+- tests/test_95_agent_canvas_build.py
+- tests/test_96_agent_workflows.py
+- tests/test_97_agent_workflow_api.py
+- tests/test_98_agent_canvas_run.py
+- tests/test_99_agent_hardening.py
+
+11. DEPLOY / ROLLBACK
+- Build: python tools/build_release.py --output <folder>
+- Update: deploy/windows/update.ps1 -SourceZip <release.zip>
+- Update bắt buộc backup → stop → rotate → extract → deps → migration → health.
+- Rollback code: deploy/windows/rollback.ps1; data không tự downgrade.
+- Health: /health/live và /health/ready; production phải database=ok.
+- Source of truth vận hành: docs/01_COPY_LEN_SERVER.md.
+
+12. TÀI LIỆU PHẢI ĐỌC
+- docs/QUYET_DINH_NEN_TANG.md
+- docs/KE_HOACH_TRIEN_KHAI.md
+- docs/quy_tac_audit.md
+- docs/DATA_RETENTION_POLICY.md
+- docs/SECURITY_CHECKLIST.md
+- docs/03_THEM_APP_MOI.md
+- docs/01_COPY_LEN_SERVER.md
+- docs/HO_SO_HE_THONG.md
+- docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
+
+13. CHỈ MỤC SOURCE (849 file)
+Phân bố extension: .css:7, .html:58, .ini:27, .js:8, .json:38, .md:18, .mjs:3, .ps1:17, .py:570, .ts:19, .tsx:28, .txt:56
+[AGENTS.md] (1)
+- AGENTS.md
+
+[CLAUDE.md] (1)
+- CLAUDE.md
+
+[alembic] (30)
+- alembic/README.md
+- alembic/env.py
+- alembic/versions/20260731_0001_khoi_tao_platform_info.py
+- alembic/versions/20260731_0724_them_bang_users_va_sessions.py
+- alembic/versions/20260731_0753_them_cot_registration_ip.py
+- alembic/versions/20260731_0821_them_bang_app_access.py
+- alembic/versions/20260731_0850_them_bang_jobs.py
+- alembic/versions/20260731_0910_them_bang_credit_entries.py
+- alembic/versions/20260731_1130_bam_token_phien.py
+- alembic/versions/20260731_1400_index_claim_job.py
+- alembic/versions/20260731_1600_them_bang_api_keys.py
+- alembic/versions/20260801_1000_apikeys_telemetry.py
+- alembic/versions/20260801_1400_thanh_toan.py
+- alembic/versions/20260801_1600_chat_ai_studio.py
+- alembic/versions/20260802_1200_agent_runs.py
+- alembic/versions/20260802_1800_agent_workflows.py
+- alembic/versions/20260802_2300_app_projects.py
+- alembic/versions/20260804_0200_agent_canvas_v2.py
+- alembic/versions/20260804_0300_agent_version_share.py
+- alembic/versions/20260805_1900_ommi_library.py
+- alembic/versions/20260805_2200_ommi_storyboard.py
+- alembic/versions/20260806_1500_gpu_lease.py
+- alembic/versions/20260806_1600_ommi_feedback.py
+- alembic/versions/20260806_1700_ommi_deprecate.py
+- alembic/versions/20260807_1000_credit_fk_user.py
+- alembic/versions/20260807_1100_nhat_ky_admin.py
+- alembic/versions/20260807_1800_email_chuan.py
+- alembic/versions/20260808_1000_job_events.py
+- alembic/versions/20260812_1000_upload_sessions.py
+- alembic/versions/20260812_1500_project_upload_attachments.py
+
+[apps] (228)
+- apps/__init__.py
+- apps/agent/__init__.py
+- apps/agent/jobs.py
+- apps/agent/manifest.py
+- apps/agent/routes/__init__.py
+- apps/agent/routes/_shared.py
+- apps/agent/routes/admin.py
+- apps/agent/routes/assistant.py
+- apps/agent/routes/legacy_runs.py
+- apps/agent/routes/library.py
+- apps/agent/routes/runs.py
+- apps/agent/routes/sharing.py
+- apps/agent/routes/workflows.py
+- apps/agent/routes/workspace.py
+- apps/agent/templates/_agent_progress.html
+- apps/agent/templates/agent.html
+- apps/agent/templates/agent_canvas.html
+- apps/agent/templates/agent_run.html
+- apps/autosubvideo/__init__.py
+- apps/autosubvideo/ai_workflows.py
+- apps/autosubvideo/ass_builder.py
+- apps/autosubvideo/burn.py
+- apps/autosubvideo/cost.py
+- apps/autosubvideo/features.py
+- apps/autosubvideo/font_checker.py
+- apps/autosubvideo/jobs.py
+- apps/autosubvideo/manifest.py
+- apps/autosubvideo/parsers.py
+- apps/autosubvideo/project_render.py
+- apps/autosubvideo/pyannote_runner.py
+- apps/autosubvideo/routes.py
+- apps/autosubvideo/schemas.py
+- apps/autosubvideo/segmenter.py
+- apps/autosubvideo/services/__init__.py
+- apps/autosubvideo/services/source_drafts.py
+- apps/autosubvideo/style_registry.py
+- apps/autosubvideo/subtitle_adapter.py
+- apps/autosubvideo/templates/autosubvideo.html
+- apps/autosubvideo/transcript_normalizer.py
+- apps/autosubvideo/transcription.py
+- apps/autosubvideo/whisperx_runner.py
+- apps/chataistudio/__init__.py
+- apps/chataistudio/cost.py
+- apps/chataistudio/features.py
+- apps/chataistudio/manifest.py
+- apps/chataistudio/routes.py
+- apps/chataistudio/sidecar_client.py
+- apps/chataistudio/templates/chataistudio.html
+- apps/chataistudio/templates/chataistudio_admin.html
+- apps/demo/__init__.py
+- apps/demo/desktop.ini
+- apps/demo/jobs.py
+- apps/demo/manifest.py
+- apps/demo/routes.py
+- apps/desktop.ini
+- apps/kichban/__init__.py
+- apps/kichban/features.py
+- apps/kichban/jobs.py
+- apps/kichban/manifest.py
+- apps/kichban/prompts/base_prompt.txt
+- apps/kichban/prompts/do_dai_video/10-15_phut.txt
+- apps/kichban/prompts/do_dai_video/15-30_phut.txt
+- apps/kichban/prompts/do_dai_video/3-5_phut.txt
+- apps/kichban/prompts/do_dai_video/30_phut_plus.txt
+- apps/kichban/prompts/do_dai_video/5-10_phut.txt
+- apps/kichban/prompts/do_dai_video/_labels.json
+- apps/kichban/prompts/doi_tuong/_labels.json
+- apps/kichban/prompts/doi_tuong/beginner.txt
+- apps/kichban/prompts/doi_tuong/expert.txt
+- apps/kichban/prompts/doi_tuong/general.txt
+- apps/kichban/prompts/doi_tuong/intermediate.txt
+- apps/kichban/prompts/doi_tuong/professional.txt
+- apps/kichban/prompts/doi_tuong/youth.txt
+- apps/kichban/prompts/giong_van/_labels.json
+- apps/kichban/prompts/giong_van/educational.txt
+- apps/kichban/prompts/giong_van/entertaining.txt
+- apps/kichban/prompts/giong_van/motivational.txt
+- apps/kichban/prompts/giong_van/professional.txt
+- apps/kichban/prompts/giong_van/review.txt
+- apps/kichban/prompts/giong_van/storytelling.txt
+- apps/kichban/prompts/ngon_ngu/_labels.json
+- apps/kichban/prompts/ngon_ngu/en.txt
+- apps/kichban/prompts/ngon_ngu/vi.txt
+- apps/kichban/routes.py
+- apps/kichban/templates/_script_view.html
+- apps/kichban/templates/script.html
+- apps/kichban/templates/script_result.html
+- apps/mediatools/__init__.py
+- apps/mediatools/jobs.py
+- apps/mediatools/manifest.py
+- apps/mediatools/routes.py
+- apps/prompt_ai_ommi/__init__.py
+- apps/prompt_ai_ommi/jobs.py
+- apps/prompt_ai_ommi/manifest.py
+- apps/prompt_ai_ommi/project_schema.py
+- apps/prompt_ai_ommi/prompts/__init__.py
+- apps/prompt_ai_ommi/prompts/catalog.json
+- apps/prompt_ai_ommi/prompts/director_system.txt
+- apps/prompt_ai_ommi/prompts/director_user.txt
+- apps/prompt_ai_ommi/prompts/library_catalog.json
+- apps/prompt_ai_ommi/provider.py
+- apps/prompt_ai_ommi/routes/__init__.py
+- apps/prompt_ai_ommi/routes/_shared.py
+- apps/prompt_ai_ommi/routes/assets_catalog.py
+- apps/prompt_ai_ommi/routes/handoff.py
+- apps/prompt_ai_ommi/routes/library.py
+- apps/prompt_ai_ommi/routes/overview.py
+- apps/prompt_ai_ommi/routes/pages.py
+- apps/prompt_ai_ommi/routes/projects.py
+- apps/prompt_ai_ommi/routes/resources.py
+- apps/prompt_ai_ommi/routes/storyboard.py
+- apps/prompt_ai_ommi/services/__init__.py
+- apps/prompt_ai_ommi/services/builtin_catalog.py
+- apps/prompt_ai_ommi/services/composer.py
+- apps/prompt_ai_ommi/services/library.py
+- apps/prompt_ai_ommi/services/metrics.py
+- apps/prompt_ai_ommi/services/resources.py
+- apps/prompt_ai_ommi/services/retention.py
+- apps/prompt_ai_ommi/services/storyboard.py
+- apps/prompt_ai_ommi/tables.py
+- apps/prompt_ai_ommi/templates/prompt_ai_ommi.html
+- apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html
+- apps/qualitylab/__init__.py
+- apps/qualitylab/calibration.py
+- apps/qualitylab/contracts.py
+- apps/qualitylab/datasets.py
+- apps/qualitylab/evaluator_assets.py
+- apps/qualitylab/jobs.py
+- apps/qualitylab/manifest.py
+- apps/qualitylab/materializer.py
+- apps/qualitylab/registry.py
+- apps/qualitylab/routes.py
+- apps/qualitylab/services/__init__.py
+- apps/qualitylab/services/gpu_evidence.py
+- apps/qualitylab/services/media.py
+- apps/qualitylab/services/subtitle.py
+- apps/qualitylab/services/upscale.py
+- apps/qualitylab/services/upscale_video.py
+- apps/qualitylab/templates/qualitylab.html
+- apps/qualitylab/templates/qualitylab_report.html
+- apps/socialbot/__init__.py
+- apps/socialbot/desktop.ini
+- apps/socialbot/manifest.py
+- apps/taoanh/__init__.py
+- apps/taoanh/features.py
+- apps/taoanh/jobs.py
+- apps/taoanh/manifest.py
+- apps/taoanh/routes.py
+- apps/taoanh/templates/_image_mode_nav.html
+- apps/taoanh/templates/image.html
+- apps/taoanh/templates/image_thumbnail_shell.html
+- apps/taoclipngan/__init__.py
+- apps/taoclipngan/cost.py
+- apps/taoclipngan/features.py
+- apps/taoclipngan/jobs.py
+- apps/taoclipngan/manifest.py
+- apps/taoclipngan/routes.py
+- apps/taoclipngan/templates/taoclipngan.html
+- apps/taovideo/__init__.py
+- apps/taovideo/assets.py
+- apps/taovideo/cost.py
+- apps/taovideo/jobs.py
+- apps/taovideo/manifest.py
+- apps/taovideo/modelark.py
+- apps/taovideo/models.py
+- apps/taovideo/quotes.py
+- apps/taovideo/refs.py
+- apps/taovideo/routes.py
+- apps/taovideo/templates/taovideo.html
+- apps/taovideo/translate.py
+- apps/thumbnail/__init__.py
+- apps/thumbnail/features.py
+- apps/thumbnail/jobs.py
+- apps/thumbnail/manifest.py
+- apps/thumbnail/prompts/base_prompt.txt
+- apps/thumbnail/prompts/kieu_trend/_labels.json
+- apps/thumbnail/prompts/kieu_trend/bi_an_gay_to_mo.txt
+- apps/thumbnail/prompts/kieu_trend/huong_dan_tutorial.txt
+- apps/thumbnail/prompts/kieu_trend/khuon_mat_cam_xuc.txt
+- apps/thumbnail/prompts/kieu_trend/listicle_numbered.txt
+- apps/thumbnail/prompts/kieu_trend/mui_ten_chi_dan.txt
+- apps/thumbnail/prompts/kieu_trend/reaction_phan_ung.txt
+- apps/thumbnail/prompts/kieu_trend/so_sanh_truoc_sau.txt
+- apps/thumbnail/prompts/kieu_trend/storytelling.txt
+- apps/thumbnail/prompts/kieu_trend/text_heavy_chu_lon.txt
+- apps/thumbnail/prompts/ngon_ngu/_labels.json
+- apps/thumbnail/prompts/ngon_ngu/chinese.txt
+- apps/thumbnail/prompts/ngon_ngu/english.txt
+- apps/thumbnail/prompts/ngon_ngu/japanese.txt
+- apps/thumbnail/prompts/ngon_ngu/korean.txt
+- apps/thumbnail/prompts/ngon_ngu/tieng_viet.txt
+- apps/thumbnail/prompts/phong_cach/3d_render.txt
+- apps/thumbnail/prompts/phong_cach/Lego_Manh.txt
+- apps/thumbnail/prompts/phong_cach/Tranh_thuy_mac.txt
+- apps/thumbnail/prompts/phong_cach/_labels.json
+- apps/thumbnail/prompts/phong_cach/chuyen_nghiep_toi_gian.txt
+- apps/thumbnail/prompts/phong_cach/cinematic.txt
+- apps/thumbnail/prompts/phong_cach/collage.txt
+- apps/thumbnail/prompts/phong_cach/flat_design.txt
+- apps/thumbnail/prompts/phong_cach/hoat_hinh_cartoon.txt
+- apps/thumbnail/prompts/phong_cach/khanh.txt
+- apps/thumbnail/prompts/phong_cach/retro_vintage.txt
+- apps/thumbnail/prompts/phong_cach/visual_style.txt
+- apps/thumbnail/prompts/text_style/_labels.json
+- apps/thumbnail/prompts/text_style/bold_impact.txt
+- apps/thumbnail/prompts/text_style/clean_minimal.txt
+- apps/thumbnail/prompts/text_style/dramatic_gold.txt
+- apps/thumbnail/prompts/text_style/neon_glow.txt
+- apps/thumbnail/prompts/text_style/street_art.txt
+- apps/thumbnail/prompts/text_style/thu_phap.txt
+- apps/thumbnail/routes.py
+- apps/thumbnail/templates/thumbnail.html
+- apps/thumbnail/templates/thumbnail_fragment.html
+- apps/upscalevideo/__init__.py
+- apps/upscalevideo/autotune.py
+- apps/upscalevideo/cost.py
+- apps/upscalevideo/engine.py
+- apps/upscalevideo/ff.py
+- apps/upscalevideo/install_watch_agent.ps1
+- apps/upscalevideo/jobs.py
+- apps/upscalevideo/manifest.py
+- apps/upscalevideo/routes.py
+- apps/upscalevideo/schemas.py
+- apps/upscalevideo/service.py
+- apps/upscalevideo/telemetry.py
+- apps/upscalevideo/templates/upscalevideo.html
+- apps/upscalevideo/watch_agent.py
+- apps/upscalevideo/watch_auth.py
+
+[config.example.json] (1)
+- config.example.json
+
+[core] (70)
+- core/__init__.py
+- core/adaptive_backoff.py
+- core/anti_spam_analytics.py
+- core/app_status.py
+- core/auth_manager.py
+- core/caption_rotator.py
+- core/circuit_breaker.py
+- core/concurrent_runner.py
+- core/config_defaults.py
+- core/config_help.py
+- core/config_validator.py
+- core/content_calendar.py
+- core/content_history.py
+- core/content_vault.py
+- core/desktop.ini
+- core/facebook/__init__.py
+- core/facebook/commenter.py
+- core/facebook/desktop.ini
+- core/facebook/error_codes.py
+- core/facebook/publisher_service.py
+- core/graph_client.py
+- core/graph_uploader.py
+- core/i18n.py
+- core/maintenance.py
+- core/multi_app.py
+- core/network_identity.py
+- core/page_health.py
+- core/page_warmup.py
+- core/perceptual_hash.py
+- core/preflight.py
+- core/publisher.py
+- core/publisher_registry.py
+- core/rate_limiter.py
+- core/rate_tuner.py
+- core/reels_uploader.py
+- core/session_lock.py
+- core/settings.py
+- core/sheet_runner.py
+- core/tiktok/__init__.py
+- core/tiktok/account_warmup.py
+- core/tiktok/audio_rights.py
+- core/tiktok/audit_checklist.py
+- core/tiktok/auth_manager.py
+- core/tiktok/client.py
+- core/tiktok/commenter.py
+- core/tiktok/compliance_guard.py
+- core/tiktok/content_validator.py
+- core/tiktok/creator_info.py
+- core/tiktok/desktop.ini
+- core/tiktok/error_codes.py
+- core/tiktok/multi_client.py
+- core/tiktok/publisher_service.py
+- core/tiktok/scope_verify.py
+- core/tiktok/spam_check.py
+- core/tiktok/status_poller.py
+- core/tiktok/token_store.py
+- core/tiktok/upload_utils.py
+- core/tiktok/uploader_direct.py
+- core/tiktok/uploader_draft.py
+- core/tiktok/video_validator.py
+- core/tiktok/watermark_detector.py
+- core/time_intel.py
+- core/token_health.py
+- core/token_refresher.py
+- core/token_store.py
+- core/upload_engine.py
+- core/utils.py
+- core/video_variation.py
+- core/worker_app.py
+- core/worker_store.py
+
+[deploy] (13)
+- deploy/desktop.ini
+- deploy/windows/5-lich-backup.ps1
+- deploy/windows/backup.ps1
+- deploy/windows/bootstrap-server2016.ps1
+- deploy/windows/desktop.ini
+- deploy/windows/install-whisperx-sidecar.ps1
+- deploy/windows/install.ps1
+- deploy/windows/restore.ps1
+- deploy/windows/rollback.ps1
+- deploy/windows/set-service-env.ps1
+- deploy/windows/update.ps1
+- deploy/wordpress/KICH_HOAT.md
+- deploy/wordpress/README.md
+
+[docs] (8)
+- docs/01_COPY_LEN_SERVER.md
+- docs/03_THEM_APP_MOI.md
+- docs/DATA_RETENTION_POLICY.md
+- docs/HO_SO_HE_THONG.md
+- docs/KE_HOACH_TRIEN_KHAI.md
+- docs/QUYET_DINH_NEN_TANG.md
+- docs/SECURITY_CHECKLIST.md
+- docs/quy_tac_audit.md
+
+[frontend] (68)
+- frontend/agent-canvas/package-lock.json
+- frontend/agent-canvas/package.json
+- frontend/agent-canvas/scripts/write-build-meta.mjs
+- frontend/agent-canvas/src/CanvasEdgeView.tsx
+- frontend/agent-canvas/src/CanvasShell.tsx
+- frontend/agent-canvas/src/Inspector.tsx
+- frontend/agent-canvas/src/RunInspector.tsx
+- frontend/agent-canvas/src/ToolNode.tsx
+- frontend/agent-canvas/src/canvas.css
+- frontend/agent-canvas/src/editorState.ts
+- frontend/agent-canvas/src/main.tsx
+- frontend/agent-canvas/src/nodePresentation.ts
+- frontend/agent-canvas/src/presentationAdapter.ts
+- frontend/agent-canvas/src/workflowApi.ts
+- frontend/agent-canvas/tests/CanvasShell.test.tsx
+- frontend/agent-canvas/tests/Inspector.test.tsx
+- frontend/agent-canvas/tests/editorState.test.ts
+- frontend/agent-canvas/tests/nodePresentation.test.ts
+- frontend/agent-canvas/tests/presentationAdapter.test.ts
+- frontend/agent-canvas/tests/setup.ts
+- frontend/agent-canvas/tests/workflowApi.test.ts
+- frontend/agent-canvas/tsconfig.app.json
+- frontend/agent-canvas/tsconfig.json
+- frontend/agent-canvas/tsconfig.node.json
+- frontend/agent-canvas/vite.config.ts
+- frontend/autosub-studio/package-lock.json
+- frontend/autosub-studio/package.json
+- frontend/autosub-studio/scripts/write-build-meta.mjs
+- frontend/autosub-studio/src/EditorTimeline.tsx
+- frontend/autosub-studio/src/RenderPanel.tsx
+- frontend/autosub-studio/src/StudioShell.tsx
+- frontend/autosub-studio/src/StyleInspector.tsx
+- frontend/autosub-studio/src/TranscriptQuality.tsx
+- frontend/autosub-studio/src/Waveform.tsx
+- frontend/autosub-studio/src/main.tsx
+- frontend/autosub-studio/src/studio.css
+- frontend/autosub-studio/src/studioApi.ts
+- frontend/autosub-studio/src/useProjectHistory.ts
+- frontend/autosub-studio/tests/StudioShell.test.tsx
+- frontend/autosub-studio/tests/setup.ts
+- frontend/autosub-studio/tests/studioApi.test.ts
+- frontend/autosub-studio/tsconfig.app.json
+- frontend/autosub-studio/tsconfig.json
+- frontend/autosub-studio/tsconfig.node.json
+- frontend/autosub-studio/vite.config.ts
+- frontend/prompt-ai-ommi/package-lock.json
+- frontend/prompt-ai-ommi/package.json
+- frontend/prompt-ai-ommi/scripts/write-build-meta.mjs
+- frontend/prompt-ai-ommi/src/AccountScreens.tsx
+- frontend/prompt-ai-ommi/src/LibraryScreen.tsx
+- frontend/prompt-ai-ommi/src/OmmiShell.tsx
+- frontend/prompt-ai-ommi/src/OverviewScreen.tsx
+- frontend/prompt-ai-ommi/src/ProjectScreen.tsx
+- frontend/prompt-ai-ommi/src/ResourceLibrary.tsx
+- frontend/prompt-ai-ommi/src/StoryboardScreen.tsx
+- frontend/prompt-ai-ommi/src/main.tsx
+- frontend/prompt-ai-ommi/src/ommi.css
+- frontend/prompt-ai-ommi/src/ommiApi.ts
+- frontend/prompt-ai-ommi/src/useEscape.ts
+- frontend/prompt-ai-ommi/tests/Escape.test.tsx
+- frontend/prompt-ai-ommi/tests/ProjectScreen.test.tsx
+- frontend/prompt-ai-ommi/tests/ResourceLibrary.test.tsx
+- frontend/prompt-ai-ommi/tests/SceneCompare.test.tsx
+- frontend/prompt-ai-ommi/tests/setup.ts
+- frontend/prompt-ai-ommi/tsconfig.app.json
+- frontend/prompt-ai-ommi/tsconfig.json
+- frontend/prompt-ai-ommi/tsconfig.node.json
+- frontend/prompt-ai-ommi/vite.config.ts
+
+[platform_core] (50)
+- platform_core/__init__.py
+- platform_core/agent/__init__.py
+- platform_core/agent/budget.py
+- platform_core/agent/executor.py
+- platform_core/agent/metrics.py
+- platform_core/agent/normalizer.py
+- platform_core/agent/planner.py
+- platform_core/agent/runs.py
+- platform_core/agent/tools.py
+- platform_core/agent/validator.py
+- platform_core/agent/verifier.py
+- platform_core/agent/workflows.py
+- platform_core/antifraud.py
+- platform_core/api_keys.py
+- platform_core/api_pool.py
+- platform_core/app_access.py
+- platform_core/app_projects.py
+- platform_core/billing.py
+- platform_core/billing_math.py
+- platform_core/credit.py
+- platform_core/db.py
+- platform_core/desktop.ini
+- platform_core/frontend_bundle.py
+- platform_core/gpu.py
+- platform_core/gpu_lease.py
+- platform_core/i18n.py
+- platform_core/image_input.py
+- platform_core/job_events.py
+- platform_core/job_history.py
+- platform_core/job_metrics.py
+- platform_core/job_runner.py
+- platform_core/job_submit.py
+- platform_core/jobs.py
+- platform_core/mailer.py
+- platform_core/media.py
+- platform_core/models.py
+- platform_core/observability.py
+- platform_core/password_hashing.py
+- platform_core/payments/__init__.py
+- platform_core/payments/payos.py
+- platform_core/prompt_fragments.py
+- platform_core/providers.py
+- platform_core/providers_live.py
+- platform_core/registry.py
+- platform_core/runtime_paths.py
+- platform_core/secretbox.py
+- platform_core/storage.py
+- platform_core/tokens.py
+- platform_core/upload_sessions.py
+- platform_core/users.py
+
+[requirements-server.txt] (1)
+- requirements-server.txt
+
+[requirements.txt] (1)
+- requirements.txt
+
+[server] (103)
+- server/__init__.py
+- server/access_middleware.py
+- server/admin.py
+- server/admin_templates/sqladmin/base.html
+- server/app.py
+- server/auth/__init__.py
+- server/auth/csrf.py
+- server/auth/desktop.ini
+- server/auth/rate_limit.py
+- server/auth/session.py
+- server/auth/turnstile.py
+- server/deps.py
+- server/desktop.ini
+- server/i18n_middleware.py
+- server/request_body_limit.py
+- server/routes/__init__.py
+- server/routes/accounts.py
+- server/routes/auth.py
+- server/routes/billing.py
+- server/routes/dashboard.py
+- server/routes/desktop.ini
+- server/routes/health.py
+- server/routes/jobs.py
+- server/routes/manual.py
+- server/routes/monitor.py
+- server/routes/ngon_ngu.py
+- server/routes/oauth.py
+- server/routes/register.py
+- server/routes/settings.py
+- server/routes/sheet.py
+- server/routes/status.py
+- server/routes/webhooks.py
+- server/routes/workers.py
+- server/run.py
+- server/services/__init__.py
+- server/services/accounts.py
+- server/services/accounts_actions.py
+- server/services/audit_service.py
+- server/services/content_tools.py
+- server/services/credentials_service.py
+- server/services/desktop.ini
+- server/services/manual_publish.py
+- server/services/monitor_service.py
+- server/services/oauth_service.py
+- server/services/settings_schema.py
+- server/services/settings_service.py
+- server/services/sheet_service.py
+- server/services/ui_constants.py
+- server/services/worker_control.py
+- server/settings.py
+- server/static/agent-canvas/.vite/manifest.json
+- server/static/agent-canvas/assets/main-Aor7-v29.js
+- server/static/agent-canvas/assets/main-D_pcwDG7.css
+- server/static/agent-canvas/build-meta.json
+- server/static/autosub-studio/.vite/manifest.json
+- server/static/autosub-studio/assets/main-C1Q3T130.js
+- server/static/autosub-studio/assets/main-vCwUoeAp.css
+- server/static/autosub-studio/build-meta.json
+- server/static/htmx.min.js
+- server/static/ltt.css
+- server/static/prompt-ai-ommi/.vite/manifest.json
+- server/static/prompt-ai-ommi/assets/main-BGZsPeyu.css
+- server/static/prompt-ai-ommi/assets/main-CgVyWR3g.js
+- server/static/prompt-ai-ommi/build-meta.json
+- server/telemetry.py
+- server/templates/_auth_brand.html
+- server/templates/_doi_ngon_ngu.html
+- server/templates/_header.html
+- server/templates/_job_progress.html
+- server/templates/_nap_trangthai.html
+- server/templates/_platform_footer.html
+- server/templates/accounts.html
+- server/templates/audit.html
+- server/templates/base.html
+- server/templates/base_plain.html
+- server/templates/base_public.html
+- server/templates/dashboard.html
+- server/templates/demo.html
+- server/templates/desktop.ini
+- server/templates/error.html
+- server/templates/forgot_password.html
+- server/templates/home.html
+- server/templates/job_detail.html
+- server/templates/jobs.html
+- server/templates/login.html
+- server/templates/manual_fb.html
+- server/templates/manual_tiktok.html
+- server/templates/monitor.html
+- server/templates/nap.html
+- server/templates/nap_don.html
+- server/templates/nap_khong_thay.html
+- server/templates/oauth_result.html
+- server/templates/oauth_tiktok_disclosure.html
+- server/templates/register.html
+- server/templates/register_sent.html
+- server/templates/reset_password.html
+- server/templates/settings.html
+- server/templates/sheet.html
+- server/templates/status.html
+- server/templates/verify_result.html
+- server/templates/workers.html
+- server/templating.py
+- server/usage_rate_limit.py
+
+[setup] (6)
+- setup/0-kiem-tra-truoc-khi-chuyen.py
+- setup/1-kiem-tra-may.ps1
+- setup/2-cai-dat.ps1
+- setup/3-cloudflare.ps1
+- setup/4-nghiem-thu.ps1
+- setup/desktop.ini
+
+[tests] (197)
+- tests/__init__.py
+- tests/browser/autosub_as5.js
+- tests/browser/autosub_as6_disabled.js
+- tests/browser/upscale_h32_batch.js
+- tests/browser/upscale_h32_probe.js
+- tests/conftest.py
+- tests/desktop.ini
+- tests/fixtures/autosubvideo/studio_states.json
+- tests/fixtures/clip_studio_server.py
+- tests/fixtures/image_studio_server.py
+- tests/fixtures/prompt_ai_ommi_server.py
+- tests/fixtures/qualitylab_calibration_suite.json
+- tests/fixtures/qualitylab_server.py
+- tests/fixtures/seedance_studio_server.py
+- tests/fixtures/upscale_studio_server.py
+- tests/run_tests.py
+- tests/screenshots/desktop.ini
+- tests/test_03_sheet_client.py
+- tests/test_04_drive_downloader.py
+- tests/test_05_misc_utils.py
+- tests/test_06_concurrent_runner.py
+- tests/test_07_k1_metadata.py
+- tests/test_08_k5_notifier.py
+- tests/test_09_k6_retry.py
+- tests/test_100_agent_telemetry.py
+- tests/test_101_agent_body_limit.py
+- tests/test_102_agent_metrics.py
+- tests/test_103_autosub_projects.py
+- tests/test_104_design_system_contract.py
+- tests/test_105_public_auth_ui.py
+- tests/test_106_billing_ui.py
+- tests/test_107_jobs_ui.py
+- tests/test_108_settings_boundary_ui.py
+- tests/test_109_home_shell_ui.py
+- tests/test_10_k8_reels.py
+- tests/test_110_home_information_architecture.py
+- tests/test_111_taovideo_ui.py
+- tests/test_112_taovideo_saved_assets.py
+- tests/test_113_taovideo_prompt_controls.py
+- tests/test_114_upscale_ui.py
+- tests/test_115_upscale_feature_benchmark.py
+- tests/test_116_taoanh_ui.py
+- tests/test_116_upscale_motion_features.py
+- tests/test_117_taoanh_features.py
+- tests/test_118_chataistudio_ui.py
+- tests/test_119_chataistudio_features.py
+- tests/test_11_upgrades.py
+- tests/test_120_kichban_ui.py
+- tests/test_121_kichban_features.py
+- tests/test_122_taoclipngan_ui.py
+- tests/test_123_taoclipngan_features.py
+- tests/test_124_admin_ui.py
+- tests/test_125_website_route_contract.py
+- tests/test_126_website_link_consistency.py
+- tests/test_127_wordpress_deploy_contract.py
+- tests/test_129_adaptive_page_layouts.py
+- tests/test_12_tiktok.py
+- tests/test_130_agent_media_tools.py
+- tests/test_130_prompt_ai_ommi.py
+- tests/test_131_agent_scale_contract.py
+- tests/test_132_agent_multimodal_text.py
+- tests/test_133_agent_video_inputs.py
+- tests/test_134_agent_image_inputs.py
+- tests/test_135_ommi_ownership.py
+- tests/test_136_ommi_resources.py
+- tests/test_137_ommi_resource_api.py
+- tests/test_138_ommi_resource_images.py
+- tests/test_139_ommi_resource_generate.py
+- tests/test_13_compliance.py
+- tests/test_140_ommi_library.py
+- tests/test_141_ommi_library_api.py
+- tests/test_142_ommi_storyboard.py
+- tests/test_143_ommi_storyboard_api.py
+- tests/test_144_ommi_overview.py
+- tests/test_145_gate_covers_everything.py
+- tests/test_146_touch_targets.py
+- tests/test_147_layering.py
+- tests/test_148_frontend_bundle.py
+- tests/test_149_presign_khong_nuot_loi.py
+- tests/test_14_audit.py
+- tests/test_150_gpu_lease.py
+- tests/test_151_job_events.py
+- tests/test_151_worker_gpu.py
+- tests/test_152_socialbot_route_flag.py
+- tests/test_153_ommi_feedback_compare.py
+- tests/test_154_ommi_deprecate_retention.py
+- tests/test_155_logging_observability.py
+- tests/test_155_ommi_metrics.py
+- tests/test_156_marketplace_h26.py
+- tests/test_156_nap_trang_phan_hoi.py
+- tests/test_156_quality_lab.py
+- tests/test_157_dang_nhap_leo_thang.py
+- tests/test_157_upscale_h26.py
+- tests/test_158_i18n_chon_ngon_ngu.py
+- tests/test_158_taovideo_h26.py
+- tests/test_159_i18n_middleware.py
+- tests/test_159_prompt_ai_h26.py
+- tests/test_15_tiktok_commenter.py
+- tests/test_160_i18n_ky_tu_dac_biet.py
+- tests/test_160_image_unified_shell_h26.py
+- tests/test_161_clip_customer_workflow_h26.py
+- tests/test_161_i18n_lop_python.py
+- tests/test_162_cap_credit_admin.py
+- tests/test_162_chat_customer_workflow_h26.py
+- tests/test_163_grant_credit_http.py
+- tests/test_164_chong_spam_dang_ky.py
+- tests/test_164_quality_lab_upscale.py
+- tests/test_165_quality_lab_evaluator_assets.py
+- tests/test_166_quality_lab_upscale_video.py
+- tests/test_167_quality_lab_gpu_evidence.py
+- tests/test_168_quality_lab_calibration.py
+- tests/test_169_quality_lab_dataset_materializer.py
+- tests/test_16_facebook_commenter.py
+- tests/test_170_taovideo_h32_ui.py
+- tests/test_171_upscale_h32.py
+- tests/test_172_taovideo_money_contract.py
+- tests/test_173_upload_sessions.py
+- tests/test_174_app_upload_lifecycle.py
+- tests/test_175_autosub_asr_benchmark.py
+- tests/test_176_api_error_contract.py
+- tests/test_177_system_profile.py
+- tests/test_17_rate_limiter_safety.py
+- tests/test_18_platform_config.py
+- tests/test_19_tiktok_rate_limit.py
+- tests/test_20_option_a_audit.py
+- tests/test_21_antispam_phase1.py
+- tests/test_22_antispam_phase2.py
+- tests/test_23_antispam_phase3_4.py
+- tests/test_24_antispam_final.py
+- tests/test_25_antispam_integration.py
+- tests/test_26_phase5_sprints.py
+- tests/test_27_phase5_wiring.py
+- tests/test_28_tiktok_parity.py
+- tests/test_29_tiktok_preflight.py
+- tests/test_31_audit_readiness.py
+- tests/test_32_system_user_token.py
+- tests/test_33_secret_scanner.py
+- tests/test_34_p1_headless_worker.py
+- tests/test_35_p2_runtime_boundary.py
+- tests/test_36_p2_token_key_migration.py
+- tests/test_37_p3_web_foundation.py
+- tests/test_38_pa_token_store_diagnostics.py
+- tests/test_39_pa_preflight.py
+- tests/test_40_pa_worker_store_and_doctor.py
+- tests/test_41_p456_web_modules.py
+- tests/test_42_session_lock_runtime_path.py
+- tests/test_43_web_hardening.py
+- tests/test_44_release_build.py
+- tests/test_45_deploy_scripts.py
+- tests/test_46_deploy_realworld_fixes.py
+- tests/test_47_web_settings.py
+- tests/test_48_google_credentials.py
+- tests/test_49_manual_publish.py
+- tests/test_50_monitor_audit.py
+- tests/test_51_oauth_web.py
+- tests/test_52_desktop_removed.py
+- tests/test_53_content_tools.py
+- tests/test_60_app_registry.py
+- tests/test_61_setup_scripts.py
+- tests/test_62_khoa_logic.py
+- tests/test_63_lop_csdl.py
+- tests/test_64_nguoi_dung.py
+- tests/test_65_dang_ky.py
+- tests/test_66_phan_quyen_app.py
+- tests/test_67_hang_doi_job.py
+- tests/test_68_credit.py
+- tests/test_69_web_jobs.py
+- tests/test_70_admin_h3.py
+- tests/test_71_thumbnail.py
+- tests/test_72_vanhanh.py
+- tests/test_73_dong_thoi_pg.py
+- tests/test_74_smoke_playwright.py
+- tests/test_75_api_keys.py
+- tests/test_76_billing.py
+- tests/test_77_thumbnail_parity.py
+- tests/test_78_a1_migration.py
+- tests/test_79_taovideo.py
+- tests/test_80_r2_storage.py
+- tests/test_81_autosubvideo.py
+- tests/test_82_upscalevideo.py
+- tests/test_83_chataistudio.py
+- tests/test_84_taoclipngan.py
+- tests/test_85_app_contract_lint.py
+- tests/test_86_usage_rate_limit.py
+- tests/test_87_agent_toolspec.py
+- tests/test_88_agent_toolspec_apps.py
+- tests/test_89_agent_runs.py
+- tests/test_90_agent_planner_validator.py
+- tests/test_91_agent_budget.py
+- tests/test_92_agent_executor.py
+- tests/test_93_agent_verifier.py
+- tests/test_94_agent_app.py
+- tests/test_95_agent_canvas_build.py
+- tests/test_96_agent_workflows.py
+- tests/test_97_agent_workflow_api.py
+- tests/test_98_agent_canvas_run.py
+- tests/test_99_agent_hardening.py
+
+[tools] (70)
+- tools/3video/desktop.ini
+- tools/agent_browser_config.json
+- tools/agent_browser_server.py
+- tools/agent_image_upscale_smoke.py
+- tools/audit_public_web.py
+- tools/audit_van_hanh.py
+- tools/autosub_asr_benchmark.py
+- tools/autosub_browser_server.py
+- tools/autosub_gpu_smoke.py
+- tools/autosub_load_benchmark.py
+- tools/benchmark_upscale_ai_detail.py
+- tools/build_release.py
+- tools/build_system_profile.py
+- tools/check_i18n.py
+- tools/check_silent_except.py
+- tools/check_undefined_names.py
+- tools/cleanup_agent_canary.py
+- tools/create_admin.py
+- tools/demo_fb/README.md
+- tools/demo_fb/VOICE_TEXT.md
+- tools/demo_fb/desktop.ini
+- tools/demo_fb/fb_scenes.py
+- tools/demo_fb/gen_voice.py
+- tools/demo_fb/output/ASSEMBLY.md
+- tools/demo_fb/output/desktop.ini
+- tools/demo_fb/output/tracks/desktop.ini
+- tools/demo_fb/output/voice/desktop.ini
+- tools/demo_fb/produce.py
+- tools/demo_fb/teleprompter.py
+- tools/demo_v2/01_generate_voice.py
+- tools/demo_v2/02_generate_slides.py
+- tools/demo_v2/03_teleprompter.py
+- tools/demo_v2/README.md
+- tools/demo_v2/VOICE_TEXT_FOR_ELEVENLABS.md
+- tools/demo_v2/desktop.ini
+- tools/demo_v2/output/desktop.ini
+- tools/demo_v2/output/slides/desktop.ini
+- tools/demo_v2/output/voice/desktop.ini
+- tools/demo_v2/scene_config.py
+- tools/desktop.ini
+- tools/doctor.py
+- tools/gate.py
+- tools/h26_queue_soak.py
+- tools/hash_admin_password.py
+- tools/i18n.py
+- tools/i18n_baseline.json
+- tools/import_api_keys_from_botgemini.py
+- tools/import_r2_modelark_from_botgemini.py
+- tools/job_retention.py
+- tools/lint_app_contract.py
+- tools/prepare_agent_canary.py
+- tools/qualitylab_calibration.py
+- tools/qualitylab_dataset.py
+- tools/qualitylab_upscale_video_cli.py
+- tools/restore_drill_agent.ps1
+- tools/restore_drill_schema.py
+- tools/run_qualitylab_fixture.ps1
+- tools/scan_source_secrets.py
+- tools/seed_credit_packages.py
+- tools/silent_except_baseline.json
+- tools/system_profile/__init__.py
+- tools/system_profile/builder.py
+- tools/system_profile_config.json
+- tools/tail_audit.py
+- tools/test_agent_p3_postgres.ps1
+- tools/upload_lifecycle.py
+- tools/upscale_browser_server.py
+- tools/upscale_dual_gpu_soak.py
+- tools/upscale_gpu_smoke.py
+- tools/upscale_option_matrix.py
+
+[version.py] (1)
+- version.py
+
+14. GIỚI HẠN CỦA HỒ SƠ
+- Không chứa giá trị secret, user data, job payload, log hay browser state.
+- Không xác nhận provider/GPU/Cloudflare đang live; dùng doctor/health/browser.
+- Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
+- Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.

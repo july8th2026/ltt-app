@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q89; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68 đã thay)
+## 1. Quyết định đã chốt (đến Q90; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -114,6 +114,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q87 | Progress/recovery dùng chung cho Job Center | **Trang chi tiết job poll 2 giây khi khỏe; lỗi mạng phải báo rõ và exponential backoff 4→8→16→30 giây, sự kiện online/visible đưa về 2 giây. Khi poll thấy trạng thái terminal, response phát tín hiệu để trang reload đúng một lần và nạp action/artifact/ledger mới; poll dừng ở terminal và trước unload. Contract owner-scoped hiện có không đổi.** | HTMX fixed 2 giây bắn request liên tục khi offline và fragment terminal không cập nhật phần action/artifact nằm ngoài fragment, buộc khách tự reload. Browser thật bắt được cả hai lỗi. Poll adaptive giảm tải lúc sự cố, còn reload một lần bảo đảm trang nhất quán mà không dựng state store thứ hai trong từng app. |
 | Q88 | Hợp đồng lỗi cho API app | **Mọi lỗi HTTP ở `/health`, `/api/*` và API lồng dưới route app `/<slug>/api/*` phải trả JSON, `Cache-Control: no-store` và correlation ID khi có; trang browser thường vẫn trả HTML. Chi tiết validation công khai phải bỏ trường `input` và `ctx` trước khi serialize.** | Fetch client AutoSub nhận trang HTML cho lỗi 422 nên mất thông báo sửa transcript và chỉ hiện lỗi chung. `input` có thể chứa nội dung khách hàng, còn `ctx` có thể chứa exception không serialize được. Một hợp đồng JSON an toàn giúp mọi frontend hiển thị lỗi hành động được mà không lộ dữ liệu. |
 | Q89 | Vòng đời source draft của editor | **Editor có `AppProject` được gắn một `UploadSession` owner/app/project-scoped ở trạng thái `attached`, TTL 30 ngày và gia hạn khi owner mở project. File vẫn đi staging → actual-size + magic-signature → attach; commit hỏng phải compensation về staging. Sweeper/reconcile dùng chung xóa attachment hết hạn. Đây là nhánh draft riêng, không thay Q85: paid input vẫn chỉ `promote(job)` sau hold. Project có attachment đã mất/hết hạn phải bỏ source và báo khách tải lại; source legacy không có session giữ tương thích.** | AutoSub cần source trước job WhisperX 0-credit và trước paid render, nên không thể chứng minh hold để gọi `promote(job)`. Lưu thẳng bền vững tạo orphan vô hạn; ép paid contract vào draft lại phá thứ tự sản phẩm. Trạng thái attach tách hai bài toán nhưng tái dùng validation/quota/sweeper và giữ recovery đa phiên. |
+| Q90 | Hồ sơ hệ thống dành cho AI/người tiếp quản | **`ho_so_he_thong.txt` là snapshot sinh tự động, deterministic và secret-safe từ code/manifest/route/model/migration/frontend/test; không chỉnh tay và không chứa runtime data. `tools/build_system_profile.py --check` là một bước của gate. Hồ sơ dùng để định vị nhưng luôn đứng sau quyết định, code và test.** | Một bản mô tả viết tay sẽ stale ngay sau vài commit và khiến phiên sau học sai. Fingerprint + gate biến độ tươi thành invariant; chỉ mục đầy đủ giúp AI hiểu nhanh mà không sao chép source hoặc secret vào một tài liệu khổng lồ. |
 
 ---
 

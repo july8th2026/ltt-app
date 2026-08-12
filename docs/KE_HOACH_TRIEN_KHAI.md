@@ -2276,3 +2276,19 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
     desktop/mobile PASS và console app 0.
   - [ ] Exact staging matrix sáu app, CORS direct upload, provider/ledger
     canary và rollback drill; production deploy trên không thay thế các gate này.
+
+## H34 — Hồ sơ hệ thống tự cập nhật cho AI/người tiếp quản
+
+- [x] H34.1 Schema và phạm vi — 2026-08-12, Q90: snapshot không chứa secret/
+  runtime data, có thứ tự nguồn chân lý và fingerprint source.
+- [x] H34.2 Generator — `tools/build_system_profile.py` sinh atomically UTF-8
+  không BOM; `--check` deterministic, cấu hình tại
+  `tools/system_profile_config.json`.
+- [x] H34.3 Coverage — 14 app, manifest/job/ToolSpec/file map, toàn bộ route
+  HTTP, bảng SQLAlchemy, migration, frontend, tên env, test/deploy và source
+  index; test tự đối chiếu app/job/tool/migration/frontend.
+- [x] H34.4 Anti-stale — `system profile` là bước bắt buộc của quick/full gate;
+  `AGENTS.md` và `CLAUDE.md` yêu cầu đọc hồ sơ để định vị sau nguồn chân lý.
+- [x] H34.5 Nghiệm thu — 2026-08-12: targeted contract/release **147 pass**,
+  secret scan 0 finding; quick gate **PASS 9/9** trong 33,2s; full gate
+  **PASS 10/10** trong 1.852,1s, pytest 1.818,5s; khóa trong checkpoint H34.
