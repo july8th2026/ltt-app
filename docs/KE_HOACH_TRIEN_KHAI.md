@@ -2233,8 +2233,9 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   `a5b6c7d8e9f0`, staging owner/app + MIME/signature/actual-size/quota/rate/TTL,
   hold→promote + DB compensation, retry không giữ tiền hai lần, cleanup lỗi/hủy,
   worker sweep/CLI reconcile. HTTP integration bốn app PASS; Playwright Upscale
-  MP4 6,59 MB desktop/mobile console 0. **Source PASS; staging migration/CORS
-  smoke chuyển R6, chưa deploy production.**
+  MP4 6,59 MB desktop/mobile console 0. **Source PASS; production migration
+  đã deploy tới Q89 theo yêu cầu ngày 2026-08-12; staging CORS/direct-upload
+  smoke vẫn chuyển R6.**
 - [ ] H33.R3 Provider matrices AutoSub → Prompt → Image → Clip.
   - [x] AutoSub local engine + Studio A–Z — 2026-08-12: WhisperX Tiny/
     Large-v3 smoke GPU1, job queued→done, project 9 cue, NVENC render 1080p
@@ -2269,3 +2270,9 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
     chặn fatal và cảnh báo trước confirm, còn Clip/Image/Prompt.
   - [ ] Browser A–Z sáu app trên exact staging RC.
 - [ ] H33.R6 Staging, rollback drill và production decision riêng.
+  - [x] Deploy production theo yêu cầu trực tiếp — 2026-08-12: commit
+    `b957049`, release SHA-256 `6380f624...f9a28b`, backup PostgreSQL/runtime,
+    Alembic head `b6c7d8e9f0a1`, ba service Running, public AutoSub bundle/API
+    desktop/mobile PASS và console app 0.
+  - [ ] Exact staging matrix sáu app, CORS direct upload, provider/ledger
+    canary và rollback drill; production deploy trên không thay thế các gate này.

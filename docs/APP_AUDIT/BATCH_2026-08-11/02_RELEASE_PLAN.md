@@ -30,9 +30,11 @@
 4. [x] **SOURCE PASS:** G2/G5 xanh cho Upscale/Clip/Image/Video; 12 core/route
    lifecycle test pass; Playwright Upscale MP4 thật 6,59 MB tạo Job, credit
    1000→992, source route 206, console 0, mobile không overflow.
-5. [ ] **RELEASE CONDITIONAL:** Alembic/CORS/object storage phải được dry-run và
-   smoke trên exact staging RC ở R6. Browser direct upload vẫn default-off theo
-   Q48 cho tới khi bucket CORS pass; production 8100 chưa deploy.
+5. [ ] **RELEASE CONDITIONAL:** Alembic PostgreSQL production đã chạy tới
+   `b6c7d8e9f0a1` khi chủ sản phẩm yêu cầu deploy commit `b957049` ngày
+   2026-08-12. CORS/object storage direct vẫn phải smoke trên exact staging RC;
+   browser direct upload tiếp tục default-off theo Q48 cho tới khi bucket CORS
+   pass.
 
 ## R3 — Provider/output matrices
 
@@ -99,6 +101,12 @@ Thực hiện tuần tự AutoSub → Prompt → Image → Clip, mỗi app một
 2. `python tools\gate.py` PASS trên exact commit.
 3. Deploy staging; public-like smoke từng app, console/network/SLO/credit ledger.
 4. Rollback drill; chỉ sau đó mới đề xuất production deploy riêng.
+
+**Ngoại lệ vận hành theo yêu cầu trực tiếp của chủ sản phẩm, 2026-08-12:**
+commit `b957049` đã được deploy production sau full gate 9/9, backup PostgreSQL,
+hai migration Q85/Q89 và AutoSub public smoke. Việc này **không đóng R6**:
+staging matrix sáu app, CORS direct, ledger/provider canary và rollback drill
+vẫn còn bắt buộc trước khi gọi toàn batch là release-ready.
 
 ## Thứ tự vé khuyến nghị
 

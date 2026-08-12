@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-12 — Deploy production commit b957049
+
+- **Mục tiêu:** đưa bản Q84–Q89 đã full-gate lên production theo yêu cầu trực
+  tiếp của chủ sản phẩm, giữ backup và đường rollback.
+- **Hạng mục:** deploy vận hành; H33.R6 tổng vẫn mở.
+- **Trạng thái:** DEPLOY PASS; production healthy; chưa chạy rollback drill.
+
+### Đã làm
+
+- Đóng gói 1.734 file, 87,6 MB; secret scan 0 finding; SHA-256 release
+  `6380f624a017b8b1ec86d8b213adef5fad611f1908836c18fe84b174dbf9a28b`.
+- `update.ps1` tạo backup PostgreSQL/runtime
+  `ltt_data_20260812_153027.zip`, giữ release cũ tại `app.previous`, cập nhật
+  dependencies và giữ WhisperX CUDA sidecar khỏe.
+- Alembic PostgreSQL chạy `f4a5b6c7d8e9 → a5b6c7d8e9f0 → b6c7d8e9f0a1`;
+  `current` và `heads` cùng ở `b6c7d8e9f0a1`.
+- `LTTStudioWeb`, `LTTStudioWorker`, `LTTStudioCodex` đều Running; local live
+  OK và readiness `production/database ok`.
+- Playwright public qua Cloudflare: challenge đầu phiên tự hoàn tất; đăng nhập
+  và `/autosubvideo` 200, bundle mới `main-C1Q3T130.js` 200, project/styles/
+  capabilities/jobs 200 và create project 201. Mobile 390×844 không overflow;
+  console ứng dụng 0. Một DNS failure thuộc hostname challenge Cloudflare,
+  không thuộc request LTT và không chặn trang.
+- Log sau restart: web startup complete, hai worker bắt đầu; không có traceback/
+  error mới trong đoạn log hậu triển khai.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| Full gate trên exact commit `b957049` trước deploy | **PASS 9/9**, 1.819,3s |
+| `python tools\build_release.py --output ...` | **PASS**, 0 secret finding |
+| `deploy\windows\update.ps1` | **PASS**, backup + migration + health |
+| Alembic `current` / `heads` production | **b6c7d8e9f0a1 (head)** |
+| Playwright public AutoSub desktop/mobile/console/network | **PASS**; app requests 200/201, overflow false, console app 0 |
+
+### Cách lùi lại
+
+Chạy `C:\LTTPlatform\app\deploy\windows\rollback.ps1`; release trước đang ở
+`C:\LTTPlatform\app.previous`. Migration không tự downgrade; backup dữ liệu
+đã xác minh đọc được nằm trong `C:\LTTPlatform\backups`.
+
+### Còn tồn đọng
+
+R6 staging sáu app, CORS direct upload, provider/ledger canary và rollback drill
+chưa hoàn thành; lần deploy theo yêu cầu này không biến các gate đó thành PASS.
+
 ## 2026-08-12 — H33.R3.1b: AutoSub source draft lifecycle
 
 - **Mục tiêu:** source video của editor có recovery đa phiên nhưng không thành
