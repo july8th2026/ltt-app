@@ -13,7 +13,7 @@ from pathlib import PurePath
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
 
-from apps.taovideo import cost, models
+from apps.taovideo import cost, models, quotes
 from apps.taovideo.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -191,21 +191,34 @@ def page(request: Request, status: str = "all", sort: str = "newest",
 def estimate(request: Request, model: str = Form(""), resolution: str = Form("480p"),
              duration: str = Form("5"), aspect_ratio: str = Form("16:9"),
              count: str = Form("1"),
+             quote_has_video: str = Form("0"),
              user: str = Depends(require_login)):
-    mid, res, dur, _asp = _clean(model, resolution, duration, aspect_ratio)
-    e = cost.uoc_luong(mid, res, dur, False)
+    from markupsafe import escape
+    mid, res, dur, asp = _clean(model, resolution, duration, aspect_ratio)
     try:
         quantity = max(1, min(int(count or 1), 2))
     except (TypeError, ValueError):
         quantity = 1
-    held = MANIFEST.credit_cost({"model": mid, "resolution": res,
-                                 "duration": dur}) * quantity
+    u = user_hien_tai(request) if request is not None else None
+    owner_id = u.id if u is not None else str(user)
+    has_video = str(quote_has_video).strip().lower() in {"1", "true", "yes"}
+    priced = {"model": mid, "resolution": res, "duration": dur,
+              "aspect_ratio": asp}
+    if has_video:
+        priced["refs"] = [{"kind": "video"}]
+    e = cost.uoc_luong(mid, res, dur, has_video)
+    try:
+        quote_id, quote = quotes.issue(owner_id, priced, quantity, has_video)
+    except RuntimeError as exc:
+        return HTMLResponse(f'<span class="tv-quote-error">{escape(str(exc))}</span>', 503)
+    held = int(quote["unit_hold"]) * quantity
     estimated = e["credit"] * quantity
-    details = _t('{quantity} video · dự kiến {estimated} credit; quyết toán theo token thật').format(
+    details = _t('{quantity} video · dự kiến {estimated} credit; không thu vượt mức xác nhận').format(
         quantity=quantity, estimated=estimated)
     return HTMLResponse(
-        f'<strong>{held} {_t("credit tạm giữ")}</strong> '
-        f'<span class="dim">({details})</span>')
+        f'<strong>{held} {_t("credit tối đa")}</strong> '
+        f'<span class="dim">({details})</span>'
+        f'<input type="hidden" name="quote_id" value="{escape(quote_id)}">')
 
 
 @router.post("/translate", response_class=HTMLResponse)
@@ -248,6 +261,16 @@ def prompt_assist(request: Request, prompt: str = Form(""), camera: str = Form("
 
 
 _CAP = {"image": 20 * 1024 * 1024, "video": 60 * 1024 * 1024, "audio": 20 * 1024 * 1024}
+
+
+def _actual_uploads(*groups) -> list[UploadFile]:
+    """Gộp ba input file; bỏ dependency marker khi unit test gọi route trực tiếp."""
+    out = []
+    for group in groups:
+        if not isinstance(group, (list, tuple)):
+            continue
+        out.extend(f for f in group if f and getattr(f, "filename", ""))
+    return out
 
 
 async def _luu_refs(u_id: str, files, roles, handles=None) -> list:
@@ -352,12 +375,14 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
                 camera: str = Form(""), motion: str = Form(""),
                 visual_style: str = Form(""), seed: str = Form(""),
                 ref_images: list[UploadFile] = File(default=[]),
+                ref_videos: list[UploadFile] = File(default=[]),
+                ref_audios: list[UploadFile] = File(default=[]),
                 ref_roles: list[str] = Form(default=[]), ref_handles: list[str] = Form(default=[]),
                 saved_ref_keys: list[str] = Form(default=[]),
+                quote_id: str = Form(""),
                 user: str = Depends(require_login)):
     from platform_core import credit
     from platform_core.db import get_session
-    from platform_core.job_submit import dedupe_key_for, submit_with_credit
     from platform_core.registry import RegistryError
 
     if not verify_csrf_token(request, csrf_token):
@@ -382,40 +407,60 @@ async def queue(request: Request, csrf_token: str = Form(...), prompt: str = For
 
     try:
         saved_refs = _saved_refs_for_user(u.id, saved_ref_keys)
-        new_count = sum(1 for f in (ref_images or [])
-                        if f and getattr(f, "filename", ""))
+        actual_files = _actual_uploads(ref_images, ref_videos, ref_audios)
+        new_count = len(actual_files)
         if len(saved_refs) + new_count > 4:
             raise ValueError(_t('Tổng tài sản đã lưu và file mới không được vượt quá 4.'))
-        ref_specs = saved_refs + await _luu_refs(u.id, ref_images, ref_roles, ref_handles)
     except ValueError as exc:
         return _render(request, user, error=str(exc), jobs=_jobs_cua_toi(request), status_code=400)
-    final_prompt = _compose_prompt(prompt, camera, motion, visual_style)
-    base_params = {"prompt": final_prompt, "raw_prompt": prompt.strip()[:10000],
-                   "camera": camera if camera in _CAMERA else "",
-                   "motion": motion if motion in _MOTION else "",
-                   "visual_style": visual_style if visual_style in _VISUAL_STYLE else "",
-                   "model": mid, "resolution": res,
-                   "duration": dur, "aspect_ratio": asp,
-                   "generate_audio": bool(generate_audio), "owner_id": u.id,
-                   "refs": ref_specs}
+    has_video = any((getattr(f, "content_type", "") or "").lower() in
+                    {"video/mp4", "video/quicktime", "video/webm"}
+                    for f in actual_files) or any(r.get("kind") == "video" for r in saved_refs)
+    quote_params = {"model": mid, "resolution": res, "duration": dur,
+                    "aspect_ratio": asp}
+    verified_quote = quotes.verify(quote_id, u.id, quote_params, n, has_video)
+    if verified_quote is None:
+        return _render(
+            request, user,
+            error=_t('Báo giá đã hết hạn hoặc cấu hình đã đổi. Vui lòng chờ báo giá mới.'),
+            jobs=_jobs_cua_toi(request), status_code=409,
+        )
+
     gen = get_session(); db = next(gen)
-    last_id = None
     try:
         try:
-            for k in range(n):                      # ×N video (dedupe khác nhau theo idx)
-                p = dict(base_params, _n=k)
-                if fixed_seed is not None:
-                    p["seed"] = (fixed_seed + k) % 2_147_483_648
-                job = submit_with_credit(
-                    db, user_id=u.id, app_slug=MANIFEST.slug,
-                    job_type="taovideo.generate", params=p,
-                    dedupe_key=dedupe_key_for("taovideo.generate", p))
-                last_id = job.id
-            db.commit()
-        except (credit.ThieuCreditError, RegistryError) as exc:
+            prior = quotes.existing_jobs(db, u.id, verified_quote["intent"], n)
+            if prior:
+                db.commit()
+                return RedirectResponse("/taovideo", status_code=303)
+            ref_specs = saved_refs + await _luu_refs(
+                u.id, actual_files, ref_roles, ref_handles)
+        except ValueError as exc:
             db.rollback()
             return _render(request, user, error=str(exc),
                            jobs=_jobs_cua_toi(request), status_code=400)
+
+        final_prompt = _compose_prompt(prompt, camera, motion, visual_style)
+        base_params = {"prompt": final_prompt, "raw_prompt": prompt.strip()[:10000],
+                       "camera": camera if camera in _CAMERA else "",
+                       "motion": motion if motion in _MOTION else "",
+                       "visual_style": visual_style if visual_style in _VISUAL_STYLE else "",
+                       "model": mid, "resolution": res,
+                       "duration": dur, "aspect_ratio": asp,
+                       "generate_audio": bool(generate_audio), "owner_id": u.id,
+                       "refs": ref_specs}
+        jobs = quotes.submit_batch(
+            db, user_id=u.id, quote=verified_quote,
+            base_params=base_params, fixed_seed=fixed_seed,
+        )
+        if any(MANIFEST.credit_cost(job.params or {}) != verified_quote["unit_hold"]
+               for job in jobs):
+            raise RuntimeError(_t('Báo giá không còn khớp với cấu hình hệ thống.'))
+        db.commit()
+    except (credit.ThieuCreditError, RegistryError, RuntimeError) as exc:
+        db.rollback()
+        return _render(request, user, error=str(exc),
+                       jobs=_jobs_cua_toi(request), status_code=400)
     finally:
         try: next(gen)
         except StopIteration: pass

@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q83; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68 đã thay)
+## 1. Quyết định đã chốt (đến Q84; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -108,6 +108,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q81 | Catalog tích hợp Prompt AI | **Preset chắt lọc đi cùng code dưới dạng catalog bất biến; catalog admin vẫn ở DB; user chỉ sửa bản clone riêng. Không đọc runtime/database/file user từ BOT GEMINI.** | Catalog có version và rollback theo release, không import chéo, không bê shared-owner hoặc dữ liệu thật sang app đa người dùng. |
 | Q82 | Hợp nhất Tạo ảnh AI và Thumbnail | **Một bề mặt khách hàng canonical tại `/taoanh`; mode Thumbnail ở `/taoanh/thumbnail` nạp fragment đã xác thực qua HTTP route công khai của app `thumbnail`. `/thumbnail` chỉ còn redirect 308 tương thích. Giữ hai manifest, executor, job type, bảng, credit và storage riêng; cấm import Python internals chéo app.** | Người dùng cần một product/IA nhưng hợp đồng app cấm app gọi ruột app khác. Composition qua HTTP fragment giữ ownership/CSRF/route contract, không tạo runtime thứ ba, không di trú hay làm mất history; có thể rollback presentation độc lập với dữ liệu và executor. |
 | Q83 | Phạm vi và độ trung thực của Quality Lab | **Quality Lab là app `operator-only`, chạy evaluation thành Job riêng giá 0 và không sửa runtime app sản xuất. Upload thô và transcript chuẩn từ UI là ephemeral, phải xóa sau evaluation; report vector, hash và timeline theo retention Job 365 ngày. Foundation chưa human-calibrated luôn `release_gate_eligible=false`; metric chưa có chuẩn/threshold phải là `UNKNOWN`, không được biến thành PASS. Evaluator/model chỉ được bật sau khi registry có source, license, version và checksum weight nếu có; không runtime-download và không dùng media production nếu chưa có consent.** | Tách phép đo khỏi job khách giữ latency/credit ổn định; xóa input giảm rủi ro riêng tư; vector + UNKNOWN ngăn một proxy đẹp che lỗi bắt buộc. Registry/version/hash làm kết quả có thể truy nguyên và rollback độc lập. |
+| Q84 | Trần thu credit và variance provider | **Số credit khách trả cuối cùng không bao giờ vượt phần đã giữ theo quote đã xác nhận. Chi phí provider vượt hold là variance của nền tảng, phải ghi warning nội bộ để reconcile; không được âm thầm trừ thêm. Settle/refund của một job phải được tuần tự hóa và exactly-once. Quote có tác động tiền phải được ký, khóa user/cấu hình/loại input/số lượng, có hạn và dùng intent idempotent cho cả batch.** | Canary Seedance 2026-08-09 đã giữ 29 nhưng thu 78, làm lời hứa trước submit sai và có thể đẩy số dư âm. Buffer ước tính không thể là rào an toàn tuyệt đối. Trần thu bảo vệ khách; variance/event giữ đủ sự thật kinh tế để operator sửa pricing mà không bóp méo ledger. |
 
 ---
 

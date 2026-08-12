@@ -20,23 +20,8 @@ from platform_core.registry import AppManifest, NavEntry, ToolSpec
 def _cost(params: dict) -> int:
     """Giá GIỮ CHỖ = ước tính theo model/độ phân giải/thời lượng (token→VND→credit).
     Quyết toán chính xác theo token thật ở handler (worker hoàn phần dư)."""
-    from apps.taovideo.cost import uoc_luong_credit
-    from apps.taovideo.models import DEFAULT_MODEL
-    model = params.get("model") or DEFAULT_MODEL
-    resolution = params.get("resolution", "480p")
-    try:
-        duration = int(params.get("duration", 5))
-    except (TypeError, ValueError):
-        duration = 5
-    # GIỮ CHỖ bảo thủ ×1.25: ước tính token calib 1 điểm; token THẬT có thể vượt →
-    # nếu giữ chỗ sát quá, quyết toán (token thật) đẩy số dư ÂM. Đệm 25% để held ≥ thật
-    # trong hầu hết trường hợp; quyết toán vẫn theo token thật (hoàn phần dư).
-    import math
-    legacy_refs = params.get("refs") if isinstance(params.get("refs"), list) else []
-    has_video_input = bool(params.get("video_key")) or any(
-        isinstance(item, dict) and item.get("kind") == "video" for item in legacy_refs)
-    est = uoc_luong_credit(model, resolution, duration, has_video_input)
-    return max(1, math.ceil(est * 1.25))
+    from apps.taovideo.cost import customer_charge_cap
+    return customer_charge_cap(params)
 
 
 MANIFEST = AppManifest(

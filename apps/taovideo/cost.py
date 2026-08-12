@@ -80,3 +80,23 @@ def uoc_luong(model: str, resolution: str, duration: int,
 def uoc_luong_credit(model: str, resolution: str, duration: int,
                      has_video_input: bool = False) -> int:
     return uoc_luong(model, resolution, duration, has_video_input)["credit"]
+
+
+def has_video_reference(params: dict) -> bool:
+    refs = params.get("refs") if isinstance(params.get("refs"), list) else []
+    return bool(params.get("video_key")) or any(
+        isinstance(item, dict) and item.get("kind") == "video" for item in refs)
+
+
+def customer_charge_cap(params: dict) -> int:
+    """Mức khách xác nhận và nền tảng giữ; là trần thu cuối cùng của job."""
+    from apps.taovideo.models import DEFAULT_MODEL
+    model = params.get("model") or DEFAULT_MODEL
+    resolution = params.get("resolution", "480p")
+    try:
+        duration = int(params.get("duration", 5))
+    except (TypeError, ValueError):
+        duration = 5
+    est = uoc_luong_credit(
+        model, resolution, duration, has_video_reference(params))
+    return max(1, math.ceil(est * 1.25))

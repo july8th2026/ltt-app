@@ -8,10 +8,16 @@
 
 ## R1 — Seedance money correctness
 
-1. Khóa canonical quote/hold/actual cap/exactly-once/refund/reconcile.
-2. Chạy negative race, retry, duplicate submit, insufficient credit.
-3. Canary provider nhỏ với tài khoản test và đối soát ledger.
-4. **PASS:** không âm/charge vượt hold, G3 xanh; rollback app commit độc lập.
+1. [x] Khóa canonical quote/hold/actual cap/exactly-once/refund/reconcile ở
+   source — 2026-08-12, Q84.
+2. [x] Chạy negative settle/refund, provider overage, duplicate quote kể cả job
+   terminal, insufficient credit kế thừa — 48 targeted pass.
+3. [ ] Canary provider nhỏ trên exact release candidate với tài khoản test và
+   đối soát ledger. Fixture cô lập không có provider key; không dùng production
+   8100 hoặc giả provider thành bằng chứng trả phí.
+4. **SOURCE PASS / RELEASE CONDITIONAL:** browser thật MP4 6,59 MB quote 47→29,
+   submit lặp chỉ một job/hold, balance 500→424 đúng 47+29, console sạch;
+   G3 chỉ xanh sau canary mục 3.
 
 ## R2 — Upload và artifact lifecycle dùng chung
 

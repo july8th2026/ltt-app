@@ -19,18 +19,20 @@ def test_public_name_is_tao_video_seedance_without_changing_slug():
     assert MANIFEST.job_types == ("taovideo.generate",)
 
 
-def test_estimate_shows_the_full_hold_for_two_variants():
+def test_estimate_shows_the_confirmed_cap_for_two_variants(monkeypatch):
     from apps.taovideo.manifest import MANIFEST
     from apps.taovideo.routes import estimate
 
+    monkeypatch.setenv("LTT_SESSION_SECRET", "seedance-quote-test")
     params = {"model": "seedance-2.0-mini", "resolution": "480p", "duration": 5}
     expected = MANIFEST.credit_cost(params) * 2
     response = estimate(None, model=params["model"], resolution=params["resolution"],
                         duration=str(params["duration"]), aspect_ratio="16:9",
-                        count="2", user="test")
+                        count="2", quote_has_video="0", user="test")
     body = response.body.decode("utf-8")
-    assert f"{expected} credit tạm giữ" in body
-    assert "2 video" in body and "quyết toán theo token thật" in body
+    assert f"{expected} credit tối đa" in body
+    assert "2 video" in body and "không thu vượt mức xác nhận" in body
+    assert 'name="quote_id"' in body
 
 
 def test_customer_ui_keeps_real_controls_and_hides_advanced_options_by_default():
@@ -44,6 +46,9 @@ def test_customer_ui_keeps_real_controls_and_hides_advanced_options_by_default()
     assert 'accept="image/*"' in page
     assert 'accept="video/mp4,video/quicktime,video/webm"' in page
     assert 'accept="audio/*"' in page
+    assert 'name="ref_videos"' in page and 'name="ref_audios"' in page
+    assert 'name="quote_has_video"' in page
+    assert 'hx-params="not ref_images, ref_videos, ref_audios, ref_roles, ref_handles"' in page
     assert 'name="duration"' in page and 'name="aspect_ratio"' in page
     assert 'name="resolution"' in page and 'name="count"' in page
     assert 'name="generate_audio"' in page
@@ -71,7 +76,7 @@ def test_reference_preview_uses_selected_local_file_and_preserves_safe_dom_contr
     assert "out.replaceChildren()" in page
     assert "title.textContent=file.name" in page
     assert "insertAdjacentHTML" not in page
-    assert "selectedFiles().length" in page
+    assert "selected=selectedFiles()" in page and "files=selected.length" in page
     assert "total>4" in page
 
 

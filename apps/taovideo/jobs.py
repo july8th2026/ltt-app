@@ -156,8 +156,7 @@ def handle(params: dict, ctx=None) -> dict:
     storage = get_storage()
     vkey = f"taovideo/{owner_id}/{job_id}/video.mp4"
     if storage.exists(vkey):                      # resume: đã tạo xong trước đó
-        return {"video_key": vkey, "credit_cost": cost.uoc_luong_credit(
-            model, resolution, duration, False)}
+        return {"video_key": vkey, "credit_cost": cost.customer_charge_cap(params)}
 
     # Refs (Pha 2): ảnh ≤8MB → inline (Pillow); ảnh >8MB / video / audio → asset://
     # (R2 temp presigned → ModelArk CreateAsset). Giữ `data` để heal người-thật sau.

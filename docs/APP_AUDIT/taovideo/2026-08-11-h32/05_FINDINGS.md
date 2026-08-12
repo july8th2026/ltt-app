@@ -16,9 +16,9 @@
 
 | ID | Severity | Bằng chứng | Root cause / acceptance |
 |---|---|---|---|
-| CORE-01 | P0 | Audit 2026-08-09 | actual charge > hold; cap customer charge + reconcile |
+| ~~CORE-01~~ | ~~P0~~ | **SOURCE FIXED 2026-08-12** | Q84 cap customer charge; provider variance warning/reconcile. Post-fix paid canary còn ở R1.3 |
 | CORE-02 | P1 | Source/audit cũ | ref lưu trước hold, thiếu staging TTL/sweeper |
-| CORE-03 | P1 | Source/audit cũ | double submit/ref UUID phá dedupe |
+| ~~CORE-03~~ | ~~P1~~ | **FIXED 2026-08-12** | signed quote intent reuse mọi status; double submit chỉ một job/hold |
 | CORE-04 | P1 | Source/audit cũ | audio ref AssetType/MIME sai; fix/canary hoặc ẩn |
 | UX-08 | P2 | E3 Remix: refs=0, count=2 | giữ refs/role/count hoặc disclosure rõ |
 | UX-09 | P2 | Control registry | thiếu live refresh/cancel/retry/delete/pagination |
@@ -28,3 +28,7 @@
 
 Không thêm CTA giả để che UX-09/10. App-level release vẫn BLOCKED dù H32.5 visual
 gate đã pass.
+
+Phát hiện bổ sung R1: ba file input dùng cùng tên và HTMX encode thành
+`[object File]`, làm quote video trả 422. Đã tách `ref_images/ref_videos/ref_audios`,
+quote chỉ gửi cờ loại input và queue đối chiếu lại file thật; MP4 6,59 MB pass.

@@ -354,7 +354,11 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                 if job.status == JOB_CANCELLED:
                     _hoan_credit(db, job); db.commit(); return True
                 jobq.complete(db, job, result)
-                _quyet_toan_credit(db, job, result)
+                settlement = _quyet_toan_credit(db, job, result)
+                if settlement is not None:
+                    public_result = dict(result)
+                    public_result["credit_cost"] = settlement.charged_credit
+                    job.result = public_result
                 db.commit()
         log.info("job %s xong", job_id[:8])
         return True
@@ -397,7 +401,7 @@ def _runtime_event(job_id: str, event_code: str, *, details: dict | None = None,
     return False
 
 
-def _quyet_toan_credit(db, job: Job, result: dict) -> None:
+def _quyet_toan_credit(db, job: Job, result: dict):
     """Quyết toán credit khi job xong. Chỉ chạm sổ nếu job có giữ chỗ.
 
     Giá thật lấy từ `result["credit_cost"]` nếu handler báo (như Seedance tính
@@ -406,11 +410,11 @@ def _quyet_toan_credit(db, job: Job, result: dict) -> None:
     """
     from platform_core import credit
     if not job.user_id or credit.so_da_giu(db, job.id) == 0:
-        return
+        return None
     actual = result.get("credit_cost")
     if actual is None:
         actual = credit.so_da_giu(db, job.id)
-    credit.quyet_toan(db, job.user_id, job.id, int(actual))
+    return credit.quyet_toan(db, job.user_id, job.id, int(actual))
 
 
 def _hoan_credit(db, job: Job) -> None:

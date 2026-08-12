@@ -16,6 +16,8 @@ quyết toán khi job xong) quyết định ranh giới transaction.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+import logging
 from typing import Optional
 
 from sqlalchemy import func, select, text
@@ -23,6 +25,22 @@ from sqlalchemy.orm import Session as DbSession
 
 from platform_core.models import (CREDIT_GRANT, CREDIT_HOLD, CREDIT_REFUND,
                                   CREDIT_SETTLE, CREDIT_TOPUP, CreditEntry)
+
+
+log = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class SettlementResult:
+    """Kết quả quyết toán tách giá provider khỏi số tiền khách thực trả."""
+
+    held_credit: int
+    provider_credit: int
+    charged_credit: int
+    adjustment: int
+    variance_credit: int
+    capped: bool
+    already_final: bool = False
 
 
 class ThieuCreditError(Exception):
@@ -231,32 +249,81 @@ def _da_ket_so(db: DbSession, job_id: str) -> bool:
     return n > 0
 
 
-def quyet_toan(db: DbSession, user_id: str, job_id: str, actual: int) -> None:
-    """Chốt job xong theo giá thật `actual`. Idempotent theo job.
+def _khoa_ket_so_job(db: DbSession, job_id: str) -> None:
+    """Tuần tự hoá settle/refund của cùng một job trong PostgreSQL.
 
-    Đã giữ `held` lúc submit; giờ trừ đúng `actual`. Ghi một bút toán điều chỉnh
-    delta = held - actual:
-    - actual < held (giá thật rẻ hơn ước tính) → delta dương → hoàn phần dư;
-    - actual > held (đắt hơn) → delta âm → trừ thêm.
-    Kết cục cho job: -held + (held-actual) = -actual. Đúng bằng giá thật.
+    Kiểm tra ``_da_ket_so`` rồi ghi là một thao tác check-then-write. Hai worker
+    hoặc một worker và request huỷ có thể cùng vượt qua kiểm tra nếu không có
+    khoá. Advisory transaction lock làm cả cụm nguyên tử mà không cần thay đổi
+    schema ledger append-only.
     """
-    if _da_ket_so(db, job_id):
-        return
-    if actual < 0:
-        actual = 0
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+                   {"k": f"credit-final:{job_id}"})
+
+
+def _ket_qua_da_chot(db: DbSession, job_id: str) -> SettlementResult | None:
+    entry = db.execute(
+        select(CreditEntry).where(
+            CreditEntry.job_id == job_id,
+            CreditEntry.kind.in_((CREDIT_SETTLE, CREDIT_REFUND)),
+        ).order_by(CreditEntry.created_at.asc())
+    ).scalars().first()
+    if entry is None:
+        return None
     held = so_da_giu(db, job_id)
-    dieu_chinh = held - actual
+    charged = 0 if entry.kind == CREDIT_REFUND else max(0, held - int(entry.delta))
+    return SettlementResult(
+        held_credit=held, provider_credit=charged, charged_credit=charged,
+        adjustment=int(entry.delta), variance_credit=0, capped=False,
+        already_final=True,
+    )
+
+
+def quyet_toan(db: DbSession, user_id: str, job_id: str,
+               actual: int) -> SettlementResult:
+    """Chốt job xong nhưng không bao giờ thu khách vượt mức đã giữ.
+
+    ``actual`` là chi phí provider quan sát được. Nếu provider đắt hơn báo giá,
+    phần vượt là variance nội bộ của nền tảng; khách chỉ trả tối đa ``held``.
+    Kết quả trả về giúp worker công khai đúng ``charged_credit`` thay vì vô tình
+    hiển thị giá provider như số tiền đã thu.
+    """
+    _khoa_ket_so_job(db, job_id)
+    existing = _ket_qua_da_chot(db, job_id)
+    if existing is not None:
+        return existing
+    provider_actual = max(0, int(actual))
+    held = so_da_giu(db, job_id)
+    charged = min(provider_actual, held)
+    variance = max(0, provider_actual - held)
+    dieu_chinh = held - charged
     _ghi(db, user_id=user_id, delta=dieu_chinh, kind=CREDIT_SETTLE, job_id=job_id,
-         note=f"quyet toan job {job_id[:8]}: giu {held}, that {actual}")
+         note=(f"quyet toan job {job_id[:8]}: giu {held}, thu {charged}, "
+               f"provider {provider_actual}, variance {variance}"))
     from platform_core import job_events
     from platform_core.models import Job
     job = db.get(Job, job_id)
     if job is not None:
         job_events.append(
             db, job, "credit_settled", visibility=job_events.INTERNAL,
-            details={"held_credit": int(held), "credit": int(actual),
-                     "adjustment": int(dieu_chinh)}, event_key="credit-settled",
+            details={"held_credit": int(held), "credit": int(charged),
+                     "provider_credit": int(provider_actual),
+                     "variance_credit": int(variance),
+                     "adjustment": int(dieu_chinh), "capped": bool(variance)},
+            level="warning" if variance else "info",
+            event_key="credit-settled",
         )
+    if variance:
+        log.warning(
+            "credit provider variance job=%s held=%s provider=%s variance=%s",
+            job_id[:8], held, provider_actual, variance,
+        )
+    return SettlementResult(
+        held_credit=held, provider_credit=provider_actual,
+        charged_credit=charged, adjustment=dieu_chinh,
+        variance_credit=variance, capped=bool(variance),
+    )
 
 
 def hoan(db: DbSession, user_id: str, job_id: str) -> None:
@@ -265,6 +332,7 @@ def hoan(db: DbSession, user_id: str, job_id: str) -> None:
     Kết cục cho job: -held + held = 0. Người dùng không mất gì cho một job thất
     bại — đây là lý do phải giữ-chỗ-trước chứ không trừ-thẳng.
     """
+    _khoa_ket_so_job(db, job_id)
     if _da_ket_so(db, job_id):
         return
     held = so_da_giu(db, job_id)

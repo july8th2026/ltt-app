@@ -2217,3 +2217,21 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   staging. Full `python tools\gate.py` **PASS 9/9**, 1.777s; pytest 1.734,2s,
   ba frontend và năm scanner PASS. Browser final sáu app desktop/mobile console
   0/request app lỗi 0. **Chưa deploy**; production 8100 giữ nguyên.
+
+## H33 — Release hardening theo H32.7
+
+- [x] H33.R1a Seedance money source contract — 2026-08-12: Q84 cap thu khách
+  tại hold, provider overage thành warning variance; settle/refund khóa exactly-once;
+  signed quote 15 phút khóa user/config/input/count và intent idempotent toàn batch.
+  Sửa luôn quote upload 422. **48 targeted pass**, quick gate **PASS 8/8**;
+  Playwright desktop/mobile MP4 thật 6,59 MB quote 47→29, double submit một
+  job/hold, balance 500→424 đúng hai job 47+29, console sạch.
+- [ ] H33.R1b Canary provider trên exact release candidate + ledger G3. Không
+  chạy trên production cũ; thực hiện trong R6 staging hoặc môi trường cô lập có
+  provider key test.
+- [ ] H33.R2 Shared upload/artifact lifecycle: staging session → hold → promote,
+  cleanup/sweeper/reconcile/retention theo release plan.
+- [ ] H33.R3 Provider matrices AutoSub → Prompt → Image → Clip.
+- [ ] H33.R4 Upscale commercial calibration/scheduler.
+- [ ] H33.R5 UX/recovery parity.
+- [ ] H33.R6 Staging, rollback drill và production decision riêng.

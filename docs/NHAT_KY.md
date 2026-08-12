@@ -14,6 +14,53 @@
 
 ---
 
+## 2026-08-12 — H33.R1a: Seedance money source contract PASS
+
+- **Mục tiêu:** đóng P0 giữ 29 nhưng thu 78 và chặn double submit Seedance.
+- **Hạng mục:** H33.R1a hoàn thành; R1.3 paid canary chuyển sang exact staging RC.
+- **Trạng thái:** source PASS; release CONDITIONAL; production chưa deploy.
+
+### Đã làm
+
+- Thêm Q84: customer charge cap tại hold, provider overage là variance nội bộ;
+  settle/refund exactly-once bằng advisory transaction lock theo job.
+- Worker thay `result.credit_cost` bằng số khách thực trả; event nội bộ giữ
+  provider actual/variance/capped để reconcile, overage log ở mức warning.
+- Seedance dùng quote ký TTL 15 phút khóa user/config/input/count; intent giữ
+  idempotency cả sau khi job terminal. Resume tính đúng ref video.
+- Playwright phát hiện quote upload thật trả 422 vì ba file input cùng tên và
+  HTMX encode `[object File]`; tách modality, estimate không upload bytes và
+  queue vẫn kiểm MIME thật/quote.
+- Browser fixture 8146 dùng MP4 thật 6.592.927 byte: quote 47→29, gửi cùng quote
+  hai lần chỉ một job; số dư 500→424 đúng 47+29; desktop/mobile không overflow,
+  console cuối 0. Production 8100 không bị chạm.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests\test_68_credit.py tests\test_79_taovideo.py tests\test_112_taovideo_saved_assets.py tests\test_158_taovideo_h26.py tests\test_172_taovideo_money_contract.py -q` | **48 passed** |
+| `python tools\gate.py --quick` | lượt 1 FAIL i18n 1 chuỗi mới; sửa gettext; lượt 2 **PASS 8/8** |
+| Playwright CLI fixture 8146 desktop/mobile | quote/file/double-submit/ledger/overflow PASS; console cuối 0 |
+
+### Quyết định mới
+
+Q84 đã thêm vào `QUYET_DINH_NEN_TANG.md`.
+
+### Cách lùi lại
+
+Revert commit H33.R1a. Không migration/deploy; dừng fixture 8146.
+
+### Còn tồn đọng
+
+- R1.3 paid provider canary trên exact staging release candidate.
+- R2 shared upload/artifact lifecycle và các phase R3→R6.
+
+### Việc tiếp theo
+
+1. Commit H33.R1a.
+2. Triển khai H33.R2 tuần tự.
+
 ## 2026-08-11 — H32.7: full batch source gate PASS, commercial gate BLOCKED
 
 - **Mục tiêu:** tổng nghiệm thu sáu tool sau các phase tuần tự, chạy full gate

@@ -103,6 +103,35 @@ def test_quyet_toan_idempotent(db):
     assert credit.so_du(db, "u1") == 70, "quyet toan hai lan khong tru hai lan"
 
 
+def test_quyet_toan_khong_thu_vuot_muc_da_giu(db):
+    """Provider vượt quote là chi phí nền tảng, không được làm số dư khách âm."""
+    from platform_core import credit
+    credit.nap(db, "u1", 30); db.commit()
+    credit.giu_cho(db, "u1", 29, "job-overage"); db.commit()
+
+    settled = credit.quyet_toan(db, "u1", "job-overage", 78); db.commit()
+
+    assert credit.so_du(db, "u1") == 1
+    assert settled.held_credit == 29
+    assert settled.provider_credit == 78
+    assert settled.charged_credit == 29
+    assert settled.variance_credit == 49
+    assert settled.capped is True
+
+
+def test_hoan_va_quyet_toan_chi_mot_duong_duoc_chot(db):
+    from platform_core import credit
+    credit.nap(db, "u1", 50); db.commit()
+    credit.giu_cho(db, "u1", 20, "job-refund-first"); db.commit()
+    credit.hoan(db, "u1", "job-refund-first"); db.commit()
+
+    settled = credit.quyet_toan(db, "u1", "job-refund-first", 20); db.commit()
+
+    assert settled.already_final is True
+    assert settled.charged_credit == 0
+    assert credit.so_du(db, "u1") == 50
+
+
 # ── Tích hợp submit + credit ──────────────────────────────────────────────────
 
 def _nap(db, uid, n):
@@ -172,6 +201,36 @@ def test_job_thanh_cong_tru_dung_credit(db):
     db.expire_all()
     assert db.get(Job, jid).status == JOB_DONE
     assert credit.so_du(db, "u1") == 100 - held, "tru dung phan da giu"
+
+
+def test_worker_cong_khai_so_thu_da_cap_thay_vi_gia_provider(db, monkeypatch):
+    from platform_core import credit
+    from platform_core.job_runner import _chay_mot_job
+    from platform_core.job_submit import submit_with_credit
+    from platform_core.models import Job, JobEvent
+    from apps.demo import jobs as demo_jobs
+
+    _nap(db, "u1", 100)
+    job = submit_with_credit(db, user_id="u1", app_slug="demo",
+                             job_type="demo.reverse", params={"text": "abc"})
+    db.commit()
+    held = credit.so_da_giu(db, job.id)
+    monkeypatch.setattr(
+        demo_jobs, "handle",
+        lambda params, ctx=None: {"text": "cba", "credit_cost": held + 49},
+    )
+
+    _chay_mot_job("w-cap")
+
+    db.expire_all()
+    finished = db.get(Job, job.id)
+    assert finished.result["credit_cost"] == held
+    event = db.query(JobEvent).filter_by(
+        job_id=job.id, event_code="credit_settled").one()
+    assert event.details["provider_credit"] == held + 49
+    assert event.details["credit"] == held
+    assert event.details["variance_credit"] == 49
+    assert event.level == "warning"
 
 
 def test_job_that_bai_hoan_credit(db):
