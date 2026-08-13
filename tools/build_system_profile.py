@@ -18,7 +18,8 @@ from tools.system_profile import build_profile, profile_path  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build a secret-safe system dossier.")
+    parser = argparse.ArgumentParser(
+        description="Build a secret-safe full-source system dossier.")
     parser.add_argument("--check", action="store_true",
                         help="do not write; fail when the snapshot is stale")
     parser.add_argument("--output", type=Path,

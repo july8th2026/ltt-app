@@ -2292,3 +2292,9 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
 - [x] H34.5 Nghiệm thu — 2026-08-12: targeted contract/release **147 pass**,
   secret scan 0 finding; quick gate **PASS 9/9** trong 33,2s; full gate
   **PASS 10/10** trong 1.852,1s, pytest 1.818,5s; khóa trong checkpoint H34.
+- [x] H34.6 Full-source dossier — 2026-08-12, Q91 thay Q90: bỏ mô hình chỉ mục;
+  nhúng nguyên văn toàn bộ code/config nguồn thuộc 14 miền vận hành, gồm đủ
+  `apps/`, backend/frontend, worker/sidecar, `cutclipshort`, migration, deploy,
+  setup, tool và test; không có trần dung lượng. Mỗi block có path/hash/byte/
+  dòng; test khóa coverage/integrity và exclusions. Kết quả nghiệm thu thật ghi
+  tại mục H34.6 mới nhất trong `NHAT_KY.md`.

@@ -1,9 +1,9 @@
 """Build the deterministic ``ho_so_he_thong.txt`` repository dossier.
 
-The dossier is a navigation and behavior map, not a copy of source code and
-not a live-production status report. It intentionally reads only repository
-sources selected by ``tools/system_profile_config.json``. Runtime data,
-credentials, browser profiles, logs and temporary artifacts are excluded.
+The dossier combines a generated architecture map with a complete textual
+snapshot of the repository sources selected by
+``tools/system_profile_config.json``. Runtime data, credentials, browser
+profiles, logs, binaries and temporary artifacts are excluded.
 """
 from __future__ import annotations
 
@@ -32,8 +32,10 @@ def profile_path() -> Path:
 def _excluded(path: Path, config: dict) -> bool:
     relative = path.relative_to(ROOT)
     excluded = set(config["exclude_parts"])
-    return any(part in excluded or part.startswith(".backup_")
-               for part in relative.parts)
+    excluded_names = set(config.get("exclude_names", ()))
+    return (path.name in excluded_names
+            or any(part in excluded or part.startswith(".backup_")
+                   for part in relative.parts))
 
 
 def source_files() -> list[Path]:
@@ -314,6 +316,44 @@ def _line(lines: list[str], value: str = "") -> None:
     lines.append(value.rstrip())
 
 
+def _source_text(path: Path) -> tuple[bytes, str]:
+    """Read one source losslessly as UTF-8 and normalize only line endings.
+
+    A profile that silently replaces undecodable bytes would claim complete
+    coverage while hiding part of the code. Failing the build is safer and
+    forces the source/config boundary to be corrected explicitly.
+    """
+    raw = path.read_bytes()
+    text = raw.decode("utf-8")
+    return raw, text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _append_source_snapshot(lines: list[str], paths: list[Path]) -> None:
+    """Append every selected source file with integrity metadata and content."""
+    total_bytes = sum(path.stat().st_size for path in paths)
+    _line(lines, f"15. SNAPSHOT TOÀN BỘ SOURCE ({len(paths)} file; {total_bytes} byte)")
+    _line(lines, "- Không giới hạn dung lượng theo file hoặc tổng hồ sơ.")
+    _line(lines, "- Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;")
+    _line(lines, "  line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.")
+    _line(lines, "- Mỗi block có path + SHA-256 byte gốc để đối chiếu file thật.")
+    _line(lines, "- Không gồm secret/runtime data/log/binary/generated dependency directory.")
+    _line(lines)
+    for path in paths:
+        raw, content = _source_text(path)
+        relative = path.relative_to(ROOT).as_posix()
+        digest = hashlib.sha256(raw).hexdigest()
+        line_count = len(content.splitlines())
+        _line(lines, f"@@@LTT_PROFILE_FILE_BEGIN@@@ {relative}")
+        _line(lines, f"SHA256={digest} BYTES={len(raw)} LINES={line_count}")
+        _line(lines, "@@@LTT_PROFILE_CONTENT_BEGIN@@@")
+        # Append as one item so source indentation and blank lines stay intact.
+        lines.append(content)
+        if content and not content.endswith("\n"):
+            _line(lines)
+        _line(lines, "@@@LTT_PROFILE_FILE_END@@@")
+        _line(lines)
+
+
 def build_profile() -> str:
     config = _config()
     paths = source_files()
@@ -333,9 +373,9 @@ def build_profile() -> str:
     _line(lines, f"Nguồn đã quét : {len(paths)} file repository; không đọc runtime/secrets/log")
     _line(lines)
     _line(lines, "MỤC ĐÍCH VÀ CÁCH DÙNG")
-    _line(lines, "- Đây là bản đồ điều hướng và hành vi được sinh từ code để AI/người mới")
-    _line(lines, "  hiểu hệ thống nhanh; KHÔNG phải bản sao source và KHÔNG phải health live.")
-    _line(lines, "- Khi cần sửa, phải mở file nguồn được chỉ ra; không suy diễn từ hồ sơ.")
+    _line(lines, "- Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để")
+    _line(lines, "  AI/người mới hiểu toàn bộ vận hành hiện tại sau một lần build hồ sơ.")
+    _line(lines, "- Khi cần sửa vẫn phải mở file nguồn thật; hồ sơ là snapshot chỉ đọc.")
     _line(lines, "- Thứ tự chân lý: QUYET_DINH_NEN_TANG.md → code/test → kế hoạch → hồ sơ.")
     _line(lines, "- Tạo lại: python tools/build_system_profile.py")
     _line(lines, "- Kiểm tra: python tools/build_system_profile.py --check")
@@ -479,6 +519,7 @@ def build_profile() -> str:
     _line(lines, "- Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.")
     _line(lines, "- Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.")
     _line(lines)
+    _append_source_snapshot(lines, paths)
     return "\n".join(lines).rstrip() + "\n"
 
 

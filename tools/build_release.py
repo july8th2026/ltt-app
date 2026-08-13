@@ -191,11 +191,18 @@ def scan_for_secrets(files: list) -> list:
     from pathlib import Path
 
     from tools.scan_source_secrets import (TEXT_EXTENSIONS, _is_excluded_dir,
+                                           _is_excluded_file as scanner_excludes_file,
                                            _scan_line)
 
     findings = []
     for full, rel in files:
         if os.path.splitext(rel)[1].lower() not in TEXT_EXTENSIONS:
+            continue
+        # Generated profile mirrors the selected repository sources. Originals
+        # are scanned below at their canonical paths, so scanning the mirror
+        # would duplicate results (and resurrect samples from excluded vendor
+        # code). The file still ships and is freshness/integrity checked.
+        if scanner_excludes_file(Path("."), Path(rel)):
             continue
         # Ton trong cung danh sach loai tru dir cua scan_source_secrets (vd engine
         # vendored `cutclipshort` — ma ben thu ba, co vi du sha256 rut gon lam trip).

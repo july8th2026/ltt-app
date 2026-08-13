@@ -95,6 +95,19 @@ def _run(step: Step) -> None:
     step.tail = "\n".join(lines[-4:])
 
 
+def _console_text(value: str, encoding: str | None = None) -> str:
+    """Make captured UTF-8 diagnostics printable on legacy Windows consoles.
+
+    PowerShell 5.1 commonly exposes CP1252. A failed test may contain Vietnamese
+    or symbols; reporting that failure must not itself crash and hide the cause.
+    """
+    target = encoding or getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        return value.encode(target, errors="backslashreplace").decode(target)
+    except LookupError:
+        return value.encode("ascii", errors="backslashreplace").decode("ascii")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Chay toan bo cong chat luong.")
     parser.add_argument("--quick", action="store_true",
@@ -115,7 +128,7 @@ def main() -> int:
     if failed:
         print("\nChi tiet buoc that bai:")
         for step in failed:
-            print(f"\n--- {step.name} ---\n{step.tail}")
+            print(_console_text(f"\n--- {step.name} ---\n{step.tail}"))
     print("=" * 62)
     print("RESULT:", "PASS" if not failed else f"FAIL ({len(failed)}/{len(steps)})")
     return 0 if not failed else 1

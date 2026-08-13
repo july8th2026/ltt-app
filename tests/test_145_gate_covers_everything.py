@@ -56,6 +56,14 @@ def test_quick_mode_only_drops_pytest():
     assert full - quick == {"pytest"}
 
 
+def test_gate_failure_tail_is_safe_on_windows_cp1252_console():
+    from tools.gate import _console_text
+
+    rendered = _console_text("lỗi tiếng Việt — thất bại", "cp1252")
+    rendered.encode("cp1252")
+    assert "\\u" in rendered
+
+
 def test_gate_reports_every_step_instead_of_stopping_at_the_first_failure():
     """Dừng ở lỗi đầu buộc người sửa chạy lại cả bộ để thấy lỗi thứ hai — với
     pytest 20 phút thì mỗi vòng mất nửa giờ."""

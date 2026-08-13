@@ -10,7 +10,8 @@ Internet qua **Cloudflare Tunnel** (không mở cổng, không cần IP tĩnh).
 
 **Nguồn chân lý là `docs/QUYET_DINH_NEN_TANG.md`** — đọc nó trước, rồi
 `docs/KE_HOACH_TRIEN_KHAI.md`, `docs/NHAT_KY.md` và `ho_so_he_thong.txt` để
-định vị code. Hồ sơ là bản đồ sinh tự động, không cao hơn quyết định/code/test.
+định vị code. Hồ sơ gồm bản đồ + snapshot source text sinh tự động, không cao
+hơn quyết định/code/test.
 Quy tắc làm việc đầy đủ (kể cả quy tắc cập nhật memory và giao thức đổi quyết
 định) ở `AGENTS.md`.
 

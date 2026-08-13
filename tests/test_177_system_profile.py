@@ -38,6 +38,55 @@ def test_profile_covers_every_app_job_tool_migration_and_frontend():
     assert "server/app.py:" in text
 
 
+def test_profile_embeds_every_selected_source_once_without_size_limit():
+    from tools.system_profile import source_files
+
+    config = __import__("json").loads(
+        (ROOT / "tools/system_profile_config.json").read_text(encoding="utf-8")
+    )
+    assert "max_bytes" not in config
+    required_roots = {
+        "alembic", "apps", "codex_sidecar", "core", "cutclipshort", "deploy",
+        "frontend", "platform_core", "scripts", "server", "setup", "tests",
+        "tools", "utils",
+    }
+    assert required_roots.issubset(config["source_roots"])
+    required_entrypoints = {
+        "codex_sidecar_main.py", "job_worker.py", "worker_main.py",
+        "requirements-whisperx.txt",
+    }
+    assert required_entrypoints.issubset(config["root_sources"])
+
+    marker = "@@@LTT_PROFILE_FILE_BEGIN@@@ "
+    text = PROFILE.read_text(encoding="utf-8")
+    embedded = [line[len(marker):] for line in text.splitlines()
+                if line.startswith(marker)]
+    expected = [path.relative_to(ROOT).as_posix() for path in source_files()]
+    assert embedded == expected
+    assert len(embedded) == len(set(embedded))
+    assert any(path.startswith("apps/") for path in embedded)
+    assert any(path.startswith("platform_core/") for path in embedded)
+    assert any(path.startswith("frontend/") for path in embedded)
+
+
+def test_profile_source_blocks_have_original_byte_hashes():
+    import hashlib
+
+    from tools.system_profile import source_files
+
+    marker = "@@@LTT_PROFILE_FILE_BEGIN@@@ "
+    lines = PROFILE.read_text(encoding="utf-8").splitlines()
+    metadata = {
+        line[len(marker):]: lines[index + 1]
+        for index, line in enumerate(lines[:-1])
+        if line.startswith(marker)
+    }
+    for path in source_files():
+        relative = path.relative_to(ROOT).as_posix()
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        assert metadata[relative].startswith(f"SHA256={digest} ")
+
+
 def test_profile_scope_excludes_runtime_and_secret_directories():
     from tools.system_profile import source_files
 
