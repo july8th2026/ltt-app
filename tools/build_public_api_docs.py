@@ -24,6 +24,9 @@ GUIDE = ROOT / "docs" / "PUBLIC_API" / "DEVELOPER_GUIDE.md"
 BEGIN = "<!-- BEGIN GENERATED TOOLS -->"
 END = "<!-- END GENERATED TOOLS -->"
 
+ENV_BEGIN = "<!-- BEGIN GENERATED ENV -->"
+ENV_END = "<!-- END GENERATED ENV -->"
+
 PROTOCOL = ROOT / "docs" / "PUBLIC_API" / "PROTOCOL_V1.md"
 ERR_BEGIN = "<!-- BEGIN GENERATED ERRORS -->"
 ERR_END = "<!-- END GENERATED ERRORS -->"
@@ -120,6 +123,33 @@ def render() -> str:
     return "\n".join(lines)
 
 
+def render_env() -> str:
+    """Environment variables and one runnable first call.
+
+    Generated for the same reason the tool reference is: the snippet has to
+    match a schema that changes, and a hand-written one silently stops matching.
+    """
+    from platform_core.public_api import examples
+
+    lines = [ENV_BEGIN, "", "| Biến | Ví dụ | Để làm gì |", "|---|---|---|"]
+    for name, sample, purpose in examples.ENV_VARS:
+        shown = f"`{sample}`" if sample else "—"
+        lines.append(f"| `{name}` | {shown} | {purpose} |")
+    lines.append("")
+    for shell, snippet in examples.SHELL_EXPORTS:
+        lines += [f"**{shell}**", "", "```", snippet, "```", ""]
+
+    catalog = _catalog()
+    if catalog:
+        tool = catalog[0]
+        lines += [f"Lời gọi đầu tiên (`{tool.name}`) — báo giá trước, chạy sau:",
+                  "", "```bash", examples.curl_quote(tool), "```", "",
+                  "```bash", examples.curl_submit(tool), "```", ""]
+    lines += ["Không viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, "
+              "vào log và vào ảnh chụp màn hình.", "", ENV_END]
+    return "\n".join(lines)
+
+
 def render_errors() -> str:
     """The error registry as a table — generated, because a stale retry table
     is worse than none: it tells a client to give up on a retryable failure."""
@@ -154,6 +184,7 @@ def main() -> int:
 
     targets = [
         (GUIDE, render(), BEGIN, END, "developer guide"),
+        (GUIDE, render_env(), ENV_BEGIN, ENV_END, "environment section"),
         (PROTOCOL, render_errors(), ERR_BEGIN, ERR_END, "protocol reference"),
     ]
     stale = False

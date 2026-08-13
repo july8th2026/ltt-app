@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c1122122b9724cbe5ab12d9c17c89accd7b1ff563b3266e140ba890e2bc5390b
-Nguồn đã quét : 1066 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:74c585271f7be67c13c7770073500d28a6fcab108ca65535caa07b000412b6e7
+Nguồn đã quét : 1069 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (300)
+4. HTTP ROUTE INVENTORY (301)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -593,21 +593,22 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
-- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:253
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:413
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:391
-- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:269
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:428
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:465
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:478
-- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:262
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:522
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:538
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:422
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:275
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:310
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:398
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:406
+- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:254
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:467
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:445
+- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:270
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:482
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:519
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:532
+- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:263
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:576
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:592
+- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:276
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:476
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:329
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:364
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:452
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:460
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -881,7 +882,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (98 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (99 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -933,6 +934,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_PROFILE_CONTENT_BEGIN
 - LTT_PROFILE_FILE_BEGIN
 - LTT_PROFILE_FILE_END
+- LTT_PROJECT_ID
 - LTT_PROMPT_AI_OMMI_ROLLOUT
 - LTT_PROMPT_AI_OMMI_USER_IDS
 - LTT_PUBLIC_API
@@ -981,7 +983,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (201 file pytest + 3 frontend)
+10. QUALITY GATES (202 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1115,6 +1117,7 @@ Test inventory:
 - tests/test_196_public_api_projects.py
 - tests/test_197_developer_api_tab.py
 - tests/test_198_variable_reference.py
+- tests/test_199_quickstart_examples.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
@@ -1209,8 +1212,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1066 file)
-Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:791, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1069 file)
+Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:793, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1810,7 +1813,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (71)
+[platform_core] (72)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1859,6 +1862,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 - platform_core/public_api/delivery.py
 - platform_core/public_api/error_registry.py
 - platform_core/public_api/errors.py
+- platform_core/public_api/examples.py
 - platform_core/public_api/idempotency.py
 - platform_core/public_api/invocation.py
 - platform_core/public_api/keys.py
@@ -1904,7 +1908,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (123)
+[server] (124)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -1998,6 +2002,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 - server/templates/dev_keys.html
 - server/templates/dev_overview.html
 - server/templates/dev_projects.html
+- server/templates/dev_quickstart.html
 - server/templates/dev_settings.html
 - server/templates/dev_tool_detail.html
 - server/templates/dev_tools.html
@@ -2036,7 +2041,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (217)
+[tests] (218)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2180,6 +2185,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 - tests/test_196_public_api_projects.py
 - tests/test_197_developer_api_tab.py
 - tests/test_198_variable_reference.py
+- tests/test_199_quickstart_examples.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
@@ -2343,7 +2349,7 @@ Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1066 file; 9229527 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1069 file; 9258861 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -107972,6 +107978,219 @@ def quote_invalid(detail: object = "") -> ApiError:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
+SHA256=57a4b6d9d69d91de5c563223b5b121ce85de3db2a4159177ed1bbb3c489bc659 BYTES=8503 LINES=207
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Runnable examples, generated from the contract rather than written twice.
+
+Every snippet a developer copies — the quickstart, the per-tool recipe, the
+n8n node body — is built here from the same :class:`PublicTool` the API
+validates against. That is the only way an example cannot drift: there is no
+second copy of the payload to forget to update.
+
+Environment variables are part of the contract too, so they are named once:
+
+    LTT_BASE_URL    where the API lives, e.g. https://app.lttstudios.com
+    LTT_API_KEY     the developer key, ltt_sk_…
+    LTT_PROJECT_ID  optional; only useful for a caller juggling several
+                    integrations, since the key already decides the project
+
+No snippet ever contains a key. They read the environment, and the tests refuse
+anything that looks like a literal credential.
+"""
+from __future__ import annotations
+
+import json
+
+ENV_API_KEY = "LTT_API_KEY"
+ENV_BASE_URL = "LTT_BASE_URL"
+ENV_PROJECT_ID = "LTT_PROJECT_ID"
+
+#: What a caller must set before anything works, and what each one is for.
+ENV_VARS = (
+    (ENV_BASE_URL, "https://app.lttstudios.com",
+     "Where the API lives. No trailing slash; /api/v1 is added for you."),
+    (ENV_API_KEY, "ltt_sk_…",
+     "Your developer key. Create it in the portal; it is shown once."),
+    (ENV_PROJECT_ID, "",
+     "Optional. The key already belongs to a project — set this only if your "
+     "own code routes by project."),
+)
+
+#: How to set them, per shell. People paste the wrong one constantly.
+SHELL_EXPORTS = (
+    ("bash / zsh (macOS, Linux)",
+     'export LTT_BASE_URL="https://app.lttstudios.com"\n'
+     'export LTT_API_KEY="ltt_sk_…"'),
+    ("PowerShell (Windows)",
+     '$env:LTT_BASE_URL = "https://app.lttstudios.com"\n'
+     '$env:LTT_API_KEY  = "ltt_sk_…"'),
+    ("cmd.exe (Windows)",
+     'set LTT_BASE_URL=https://app.lttstudios.com\n'
+     'set LTT_API_KEY=ltt_sk_…'),
+)
+
+
+def example_input(tool) -> dict:
+    """A payload built from the tool's own declared examples.
+
+    A required parameter with no declared example gets a typed placeholder
+    rather than an invented value: a made-up prompt reads like advice, and
+    ``<string>`` reads like the instruction it is.
+    """
+    schema = tool.input_schema
+    required = set(schema.get("required", ()))
+    payload: dict = {}
+    for name, spec in (schema.get("properties") or {}).items():
+        examples = spec.get("examples") or []
+        if examples:
+            payload[name] = examples[0]
+        elif name in required:
+            payload[name] = f"<{spec.get('type', 'string')}>"
+    return payload
+
+
+def _json(payload) -> str:
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def curl_quote(tool) -> str:
+    return (f'curl -X POST "${ENV_BASE_URL}/api/v1/quotes" \\\n'
+            f'  -H "Authorization: Bearer ${ENV_API_KEY}" \\\n'
+            f'  -H "Content-Type: application/json" \\\n'
+            f"  -d '{_json({'tool': tool.name, 'input': example_input(tool)})}'")
+
+
+def curl_submit(tool) -> str:
+    """The chargeable call. The Idempotency-Key is not optional decoration."""
+    return (f'curl -X POST "${ENV_BASE_URL}/api/v1/jobs" \\\n'
+            f'  -H "Authorization: Bearer ${ENV_API_KEY}" \\\n'
+            f'  -H "Content-Type: application/json" \\\n'
+            f'  -H "Idempotency-Key: $(uuidgen)" \\\n'
+            f"  -d '{_json({'tool': tool.name, 'quote': '<quote from the step above>', 'input': example_input(tool)})}'")
+
+
+def python_snippet(tool) -> str:
+    payload = _json(example_input(tool)).replace("\n", "\n    ")
+    return f'''import os, time, uuid, urllib.request, json
+
+BASE = os.environ["{ENV_BASE_URL}"].rstrip("/") + "/api/v1"
+HEAD = {{"Authorization": "Bearer " + os.environ["{ENV_API_KEY}"],
+        "Content-Type": "application/json"}}
+
+
+def call(method, path, body=None, extra=None):
+    data = json.dumps(body).encode() if body is not None else None
+    request = urllib.request.Request(BASE + path, data=data, method=method,
+                                     headers={{**HEAD, **(extra or {{}})}})
+    with urllib.request.urlopen(request) as response:
+        return json.loads(response.read())
+
+
+payload = {payload}
+
+quote = call("POST", "/quotes", {{"tool": "{tool.name}", "input": payload}})
+print("costs", quote["credit"], "credit")
+
+# The same key on every retry of THIS call: a timeout you retry without one is
+# a second job and a second charge.
+job = call("POST", "/jobs",
+           {{"tool": "{tool.name}", "quote": quote["quote"], "input": payload}},
+           {{"Idempotency-Key": str(uuid.uuid4())}})
+
+while job["status"] in ("queued", "running"):
+    time.sleep(2)
+    job = call("GET", "/jobs/" + job["id"])
+print(job["status"], job.get("outputs"))'''
+
+
+def typescript_snippet(tool) -> str:
+    payload = _json(example_input(tool)).replace("\n", "\n  ")
+    return f'''const BASE = `${{process.env.{ENV_BASE_URL}}}/api/v1`;
+const HEAD = {{
+  Authorization: `Bearer ${{process.env.{ENV_API_KEY}}}`,
+  "Content-Type": "application/json",
+}};
+
+async function call(method: string, path: string, body?: unknown,
+                    extra: Record<string, string> = {{}}) {{
+  const response = await fetch(BASE + path, {{
+    method, headers: {{ ...HEAD, ...extra }},
+    body: body === undefined ? undefined : JSON.stringify(body),
+  }});
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+}}
+
+const input = {payload};
+
+const quote = await call("POST", "/quotes", {{ tool: "{tool.name}", input }});
+let job = await call("POST", "/jobs",
+  {{ tool: "{tool.name}", quote: quote.quote, input }},
+  {{ "Idempotency-Key": crypto.randomUUID() }});
+
+while (job.status === "queued" || job.status === "running") {{
+  await new Promise((r) => setTimeout(r, 2000));
+  job = await call("GET", `/jobs/${{job.id}}`);
+}}
+console.log(job.status, job.outputs);'''
+
+
+def raw_http_snippet(tool) -> str:
+    """For anyone whose tool speaks HTTP and nothing else — n8n, Make, curl in
+    a language nobody here has heard of."""
+    body = _json({"tool": tool.name, "quote": "<quote>",
+                  "input": example_input(tool)})
+    return (f"POST /api/v1/jobs HTTP/1.1\n"
+            f"Host: app.lttstudios.com\n"
+            f"Authorization: Bearer <{ENV_API_KEY}>\n"
+            f"Content-Type: application/json\n"
+            f"Idempotency-Key: 8f14e45f-ea0b-4b3f-8c1a-0f9d2e6c7a10\n"
+            f"\n{body}")
+
+
+def powershell_snippet(tool) -> str:
+    payload = _json(example_input(tool)).replace("\n", "\n  ")
+    return f'''$base = "$env:{ENV_BASE_URL}/api/v1"
+$head = @{{ Authorization = "Bearer $env:{ENV_API_KEY}" }}
+$input = @'
+{payload}
+'@ | ConvertFrom-Json
+
+$quote = Invoke-RestMethod -Method Post -Uri "$base/quotes" -Headers $head `
+  -ContentType "application/json" `
+  -Body (@{{ tool = "{tool.name}"; input = $input }} | ConvertTo-Json -Depth 8)
+
+$head["Idempotency-Key"] = [guid]::NewGuid().ToString()
+$job = Invoke-RestMethod -Method Post -Uri "$base/jobs" -Headers $head `
+  -ContentType "application/json" `
+  -Body (@{{ tool = "{tool.name}"; quote = $quote.quote; input = $input }} |
+         ConvertTo-Json -Depth 8)
+$job.id'''
+
+
+#: Integrations that speak HTTP without code. Each entry is (name, how).
+NO_CODE_RECIPES = (
+    ("n8n — HTTP Request node",
+     "Method POST, URL `{{$env.LTT_BASE_URL}}/api/v1/jobs`, Authentication "
+     "*Generic → Header Auth* with name `Authorization` and value "
+     "`Bearer {{$env.LTT_API_KEY}}`. Add a header `Idempotency-Key` set to an "
+     "expression that is stable for one logical call — `{{$json.orderId}}` is "
+     "right, `{{$now}}` is a second charge on every retry. Quote first in a "
+     "preceding node and pass `quote` through."),
+    ("Make — HTTP module",
+     "Use *Make a request*: POST to `/api/v1/jobs`, headers `Authorization: "
+     "Bearer …` and `Idempotency-Key`. Parse response = Yes. Make retries "
+     "failed modules by default, which is safe here only because the key is "
+     "constant per call — take it from the bundle, never from a timestamp."),
+    ("Any HTTP client",
+     "Two calls: POST /api/v1/quotes to learn the price, POST /api/v1/jobs "
+     "with the quote and an Idempotency-Key. Then poll GET /api/v1/jobs/{id} "
+     "or register a webhook. Nothing else is required."),
+)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/idempotency.py
 SHA256=23f51bc5acb55bc59bbbaffc4ace535913ee0e142f6f271c6a5bbc20a3bf334a BYTES=6103 LINES=146
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -120360,7 +120579,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=1b3793f98ed5fa7f9f3fd20f109ccf1e3a5b3a67756f617459630fa5c5d792c3 BYTES=24351 LINES=550
+SHA256=b4fe7cbdaaea47149eab32ece6b263b9fcd8fdb40925780331a21f014211eb9a BYTES=26730 LINES=604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -120474,6 +120693,7 @@ def _public_api_config(request: Request):
 # than greyed, because D1 decided not to build them at all.
 SECTIONS = (
     ("overview", "/developers", N_("Tổng quan")),
+    ("quickstart", "/developers/quickstart", N_("Bắt đầu nhanh")),
     ("projects", "/developers/projects", N_("Project")),
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
@@ -120634,6 +120854,59 @@ def developer_keys(request: Request, user=Depends(require_account),
                    db: Session = Depends(get_db)):
     return _keys_page(request, db, user)
 
+
+@router.get("/quickstart", response_class=HTMLResponse)
+def developer_quickstart(request: Request, tool: str = "",
+                         user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """Everything a new integration needs, generated from the live catalog.
+
+    The snippets are not written here and not stored anywhere: they are built
+    from the same contract the API validates against, so an example cannot
+    describe a call the server would reject.
+    """
+    from platform_core.public_api import examples
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    chosen = None
+    for candidate in catalog:
+        if candidate.name == str(tool or "") or (not tool and chosen is None):
+            chosen = candidate
+            if tool:
+                break
+
+    snippets = []
+    if chosen is not None:
+        snippets = [
+            ("cURL — " + _t("báo giá"), examples.curl_quote(chosen)),
+            ("cURL — " + _t("chạy job"), examples.curl_submit(chosen)),
+            ("Python", examples.python_snippet(chosen)),
+            ("TypeScript", examples.typescript_snippet(chosen)),
+            ("PowerShell", examples.powershell_snippet(chosen)),
+            ("HTTP", examples.raw_http_snippet(chosen)),
+        ]
+    return _render(
+        request, db, user, "quickstart", "dev_quickstart.html",
+        env_vars=examples.ENV_VARS, shells=examples.SHELL_EXPORTS,
+        no_code=examples.NO_CODE_RECIPES,
+        tool={"name": chosen.name} if chosen is not None else None,
+        tool_names=[item.name for item in catalog],
+        snippets=snippets,
+        retry_snippet=RETRY_EXAMPLE)
+
+
+# One idempotency key per logical call, reused on every retry of it. Written
+# out rather than described, because "reuse the key" is the sentence everyone
+# agrees with and then implements as `uuid4()` inside the retry loop.
+RETRY_EXAMPLE = """key = str(uuid.uuid4())          # ONCE, outside the loop
+
+for attempt in range(5):
+    try:
+        job = call("POST", "/jobs", body, {"Idempotency-Key": key})
+        break
+    except Timeout:               # the request may have succeeded
+        time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
 
 @router.get("/tools", response_class=HTMLResponse)
 def developer_tools(request: Request, q: str = "", capability: str = "",
@@ -128040,6 +128313,91 @@ SHA256=ad7de3c35d452efe6333eec7849b3fd0ec432d98f069927cb4b71a4e06c866e1 BYTES=20
            placeholder="{{ _('trang bán hàng') }}" required>
     <button type="submit" class="btn btn-primary">{{ _("Tạo project") }}</button>
   </form>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_quickstart.html
+SHA256=57e3b4401a0d6e10a84aad95212ae279f6f64422544bd068c5d89ae2a3900cad BYTES=3582 LINES=79
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bảy bước tới lời gọi đầu tiên") }}</h2>
+  <ol>
+    <li><a href="/developers/projects">{{ _("Tạo project") }}</a>
+        — {{ _("mỗi tích hợp một project.") }}</li>
+    <li><a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
+        — {{ _("chuỗi bí mật chỉ hiện một lần.") }}</li>
+    <li>{{ _("Đặt biến môi trường (bảng bên dưới).") }}</li>
+    <li><a href="/developers/tools">{{ _("Xem công cụ và model") }}</a>
+        — {{ _("hoặc gọi") }} <code>GET /api/v1/tools</code>.</li>
+    <li>{{ _("Có tệp đầu vào thì tải lên trước:") }}
+        <code>POST /api/v1/uploads</code> → <code>/content</code> →
+        <code>/confirm</code>.</li>
+    <li><code>POST /api/v1/quotes</code> → <code>POST /api/v1/jobs</code>
+        — {{ _("báo giá rồi chạy.") }}</li>
+    <li>{{ _("Chờ kết quả bằng") }} <code>GET /api/v1/jobs/{job_id}</code>
+        {{ _("hoặc webhook, rồi lấy tệp ở") }}
+        <code>GET /api/v1/artifacts/{artifact_id}</code>.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Biến môi trường") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Tên") }}</th><th>{{ _("Ví dụ") }}</th><th>{{ _("Để làm gì") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for name, sample, purpose in env_vars %}
+        <tr>
+          <td><code>{{ name }}</code></td>
+          <td>{% if sample %}<code>{{ sample }}</code>{% else %}—{% endif %}</td>
+          <td>{{ purpose }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% for shell, snippet in shells %}
+    <p class="muted" style="margin-bottom:2px;">{{ shell }}</p>
+    <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+  {% endfor %}
+  <p class="muted">{{ _("Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào ảnh chụp màn hình.") }}</p>
+</div>
+
+{% if tool %}
+  <div class="card">
+    <h2 style="margin-top:0;">{{ _("Ví dụ chạy được") }}
+      — <code>{{ tool.name }}</code></h2>
+    <p class="muted">{{ _("Sinh từ chính hợp đồng của công cụ, nên không lệch với thứ máy chủ nhận. Đổi công cụ:") }}
+      {% for name in tool_names %}
+        <a href="/developers/quickstart?tool={{ name }}"><code>{{ name }}</code></a>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </p>
+    {% for label, snippet in snippets %}
+      <h3>{{ label }}</h3>
+      <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Không viết mã") }}</h2>
+  {% for name, how in no_code %}
+    <h3>{{ name }}</h3>
+    <p>{{ how }}</p>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Thử lại cho đúng") }}</h2>
+  <p>{{ _("Chỉ một quy tắc, và nó là quy tắc giữ tiền:") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ retry_snippet }}</code></pre>
+  <p class="muted">{{ _("Timeout mạng là ca nguy hiểm nhất: request có thể đã thành công. Thử lại với ĐÚNG Idempotency-Key cũ thì kết quả xấu nhất là nhận lại câu trả lời đầu tiên, thay vì mua lần thứ hai. Bảng lỗi đầy đủ nằm trong trang từng công cụ.") }}</p>
 </div>
 
 {% endblock %}
@@ -163075,6 +163433,316 @@ def test_filtering_narrows_the_model_list_with_it(portal):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_199_quickstart_examples.py
+SHA256=f1213c0b86bc57616d80ed302f927a664fbfb30109e5f5d9ee2c7fafa7a308dd BYTES=13492 LINES=304
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-07 — the quickstart: a fresh integration that actually completes.
+
+Two failure modes are worth testing here and only two. An example that no longer
+matches the schema is worse than no example, because a developer trusts it and
+loses an afternoon. And an example carrying a real credential is a leak that
+ships with the documentation.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import examples, keys as devkeys, limits
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.registry import (AppManifest, LoadedApp, ToolSpec, discover)
+from server.api.inventory import API_V1_PREFIX, declared_paths
+
+PEPPER = "quickstart-test-pepper-" + "q" * 40
+
+
+def _live_catalog():
+    names = ",".join(sorted({tool.name for item in discover() if not item.error
+                             for tool in item.manifest.tools}))
+    return build_catalog(load_public_api_config(
+        {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": names}))
+
+
+def _snippets(tool) -> dict:
+    return {
+        "curl_quote": examples.curl_quote(tool),
+        "curl_submit": examples.curl_submit(tool),
+        "python": examples.python_snippet(tool),
+        "typescript": examples.typescript_snippet(tool),
+        "powershell": examples.powershell_snippet(tool),
+        "http": examples.raw_http_snippet(tool),
+    }
+
+
+# ── Examples match the schema they claim to call ─────────────────────────────
+
+def _violations(payload: dict, schema: dict) -> list:
+    """A small schema check: the published contract is a narrow subset of JSON
+    Schema, so a dependency to validate it would be more surface than value."""
+    problems = []
+    properties = schema.get("properties") or {}
+    for name in schema.get("required", ()):
+        if name not in payload:
+            problems.append(f"missing required {name}")
+    for name, value in payload.items():
+        if name not in properties:
+            problems.append(f"unknown field {name}")
+            continue
+        spec = properties[name]
+        placeholder = isinstance(value, str) and value.startswith("<")
+        expected = spec.get("type")
+        if not placeholder:
+            if expected == "integer" and not isinstance(value, int):
+                problems.append(f"{name} should be an integer")
+            if expected == "string" and not isinstance(value, str):
+                problems.append(f"{name} should be a string")
+            if spec.get("enum") and value not in spec["enum"]:
+                problems.append(f"{name}={value!r} is not in the enum")
+            if isinstance(value, str) and "maxLength" in spec:
+                if len(value) > spec["maxLength"]:
+                    problems.append(f"{name} is longer than maxLength")
+            if isinstance(value, int) and "minimum" in spec:
+                if value < spec["minimum"]:
+                    problems.append(f"{name} below minimum")
+            if isinstance(value, int) and "maximum" in spec:
+                if value > spec["maximum"]:
+                    problems.append(f"{name} above maximum")
+    return problems
+
+
+def test_every_example_payload_validates_against_its_own_tool_schema():
+    for tool in _live_catalog():
+        payload = examples.example_input(tool)
+        assert not _violations(payload, tool.input_schema), tool.name
+
+
+def test_the_example_payload_would_be_accepted_by_the_real_submit_path():
+    """The same validation the chargeable route runs, not a lookalike."""
+    from platform_core.public_api.invocation import validate_public_input
+
+    for tool in _live_catalog():
+        # The whole payload, exactly as the page prints it. Media ids are only
+        # resolved to real uploads later, so a placeholder id is a valid input
+        # as far as this layer is concerned — which is the layer that decides
+        # whether a caller pasting the example gets a 400.
+        validate_public_input(tool, examples.example_input(tool))
+
+
+def test_every_snippet_only_calls_endpoints_that_exist():
+    declared = {path for _method, path in declared_paths()}
+    for tool in _live_catalog():
+        for label, snippet in _snippets(tool).items():
+            for path in set(re.findall(r"/api/v1/[a-z/{}_]+", snippet)):
+                clean = path.rstrip("/")
+                # Snippets use readable placeholders; the inventory uses the
+                # route's own parameter names.
+                normalised = re.sub(r"\{[a-z_]+\}", "{x}", clean)
+                known = {re.sub(r"\{[a-z_]+\}", "{x}", item)
+                         for item in declared}
+                assert normalised in known, f"{tool.name}/{label}: {path}"
+
+
+def test_no_snippet_contains_anything_that_looks_like_a_key():
+    """A credential in an example ships with the documentation forever."""
+    for tool in _live_catalog():
+        for label, snippet in _snippets(tool).items():
+            assert "ltt_sk_" not in snippet.replace("ltt_sk_…", ""), label
+            # …and every snippet must read the key from the environment.
+            assert examples.ENV_API_KEY in snippet, f"{tool.name}/{label}"
+
+
+def test_the_chargeable_snippets_carry_an_idempotency_key():
+    for tool in _live_catalog():
+        snippets = _snippets(tool)
+        for label in ("curl_submit", "python", "typescript", "powershell",
+                      "http"):
+            assert "Idempotency-Key" in snippets[label], f"{tool.name}/{label}"
+        # …and the quote call does not pretend to need one.
+        assert "Idempotency-Key" not in snippets["curl_quote"]
+
+
+def test_the_environment_variables_are_named_once_and_used_everywhere():
+    assert (examples.ENV_API_KEY, examples.ENV_BASE_URL) == ("LTT_API_KEY",
+                                                             "LTT_BASE_URL")
+    names = {name for name, _sample, _why in examples.ENV_VARS}
+    assert names == {"LTT_API_KEY", "LTT_BASE_URL", "LTT_PROJECT_ID"}
+    for _shell, snippet in examples.SHELL_EXPORTS:
+        assert "LTT_BASE_URL" in snippet and "LTT_API_KEY" in snippet
+
+
+def test_a_required_parameter_without_an_example_gets_a_placeholder():
+    tool = ToolSpec(
+        name="text.placeheld", job_type="samplehold.run", description="Fixture.",
+        params_schema={"needed": {"type": "string", "required": True}},
+        returns={"text": "text"}, api_exposed=True,
+        api_contract={"scopes": ("jobs:create",),
+                      "params": {"needed": {"description": "Say something."}}})
+    manifest = AppManifest(
+        slug="samplehold", display_name="S", route_prefix="/samplehold",
+        job_types=("samplehold.run",), credit_cost=lambda p: 1,
+        lifecycle="released", surface="customer", tools=(tool,))
+    catalog = build_catalog(
+        load_public_api_config({"LTT_PUBLIC_API": "1",
+                                "LTT_PUBLIC_API_TOOLS": "text.placeheld"}),
+        apps=[LoadedApp(manifest=manifest, router=None, error="")])
+    # A made-up value reads like advice; "<string>" reads like an instruction.
+    assert examples.example_input(catalog[0]) == {"needed": "<string>"}
+
+
+# ── The page ─────────────────────────────────────────────────────────────────
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'quickstart.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "quickstart-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "image.thumbnail",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _sign_in(client) -> str:
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"qs-{uuid.uuid4().hex[:6]}@example.com"
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 200, by="test")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    return email
+
+
+def test_the_quickstart_page_shows_the_path_and_the_variables(portal):
+    _sign_in(portal)
+    page = portal.get("/developers/quickstart").text
+    for fragment in ("LTT_BASE_URL", "LTT_API_KEY", "LTT_PROJECT_ID",
+                     "PowerShell", "cmd.exe", "n8n", "Make",
+                     "/api/v1/quotes", "/api/v1/jobs", "Idempotency-Key"):
+        assert fragment in page, fragment
+
+
+def test_the_quickstart_is_one_click_from_the_area(portal):
+    _sign_in(portal)
+    assert 'href="/developers/quickstart"' in portal.get("/developers").text
+
+
+def test_the_page_offers_a_snippet_for_the_published_tool(portal):
+    import html
+
+    _sign_in(portal)
+    page = html.unescape(portal.get("/developers/quickstart").text)
+    assert '"tool": "image.thumbnail"' in page
+    assert "How to fix a leaking tap" in page          # declared example value
+
+
+# ── The acceptance criterion: a fresh integration completes ──────────────────
+
+def test_a_developer_who_follows_the_quickstart_gets_a_result(portal):
+    """Portal → key → env → tools → quote → job → artifact, in that order.
+
+    This is the whole promise of EXT-07 expressed as a test: if any step of the
+    documented path stops working, this fails.
+    """
+    _sign_in(portal)
+
+    # Step 1-2: create the key exactly as the page says to.
+    keys_page = portal.get("/developers/keys").text
+    created = portal.post("/developers/keys", data={
+        "name": "quickstart", "csrf_token": _csrf(keys_page),
+        "scopes": ["tools:read", "jobs:create", "jobs:read", "artifacts:read"]})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+    auth = {"Authorization": f"Bearer {token}"}
+
+    # Step 4: discover.
+    tools = portal.get(f"{API_V1_PREFIX}/tools", headers=auth).json()
+    published = [item["name"] for item in tools["items"]]
+    assert "image.thumbnail" in published
+
+    # Step 6: quote, then submit with an idempotency key.
+    catalog_tool = next(item for item in _live_catalog()
+                        if item.name == "image.thumbnail")
+    payload = examples.example_input(catalog_tool)
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": "image.thumbnail", "input": payload},
+                        headers=auth)
+    assert quote.status_code == 200, quote.text
+    assert quote.json()["credit"] > 0
+
+    job = portal.post(f"{API_V1_PREFIX}/jobs",
+                      json={"tool": "image.thumbnail",
+                            "quote": quote.json()["quote"], "input": payload},
+                      headers={**auth, "Idempotency-Key": str(uuid.uuid4())})
+    assert job.status_code == 201, job.text
+
+    # Step 7: the job runs and its artifact is fetchable.
+    from platform_core.job_runner import _chay_mot_job
+
+    assert _chay_mot_job("quickstart-worker") is True
+
+    finished = portal.get(f"{API_V1_PREFIX}/jobs/{job.json()['id']}",
+                          headers=auth).json()
+    assert finished["status"] == "succeeded", finished
+    #  is a list of artifact descriptors, one per produced file.
+    artifact = finished["outputs"][0]["id"]
+    detail = portal.get(f"{API_V1_PREFIX}/artifacts/{artifact}", headers=auth)
+    assert detail.status_code == 200, detail.text
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_19_tiktok_rate_limit.py
 SHA256=59a2e2eaae1589889a585e9584f4c1f49af4f445386cb78c0b1990a2c748598e BYTES=9626 LINES=204
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -182394,7 +183062,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/build_public_api_docs.py
-SHA256=8dfc5aa8de6e591b232918968f154e67f8a4de5263f1e6c0af4afaaeafde8019 BYTES=7412 LINES=182
+SHA256=e27a7c6eae5727a197eebf4f7e08049f160339100066d18040ab906d5c2dc9d9 BYTES=8790 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Generate the tool reference inside the developer guide from the catalog.
 
@@ -182421,6 +183089,9 @@ sys.path.insert(0, str(ROOT))
 GUIDE = ROOT / "docs" / "PUBLIC_API" / "DEVELOPER_GUIDE.md"
 BEGIN = "<!-- BEGIN GENERATED TOOLS -->"
 END = "<!-- END GENERATED TOOLS -->"
+
+ENV_BEGIN = "<!-- BEGIN GENERATED ENV -->"
+ENV_END = "<!-- END GENERATED ENV -->"
 
 PROTOCOL = ROOT / "docs" / "PUBLIC_API" / "PROTOCOL_V1.md"
 ERR_BEGIN = "<!-- BEGIN GENERATED ERRORS -->"
@@ -182518,6 +183189,33 @@ def render() -> str:
     return "\n".join(lines)
 
 
+def render_env() -> str:
+    """Environment variables and one runnable first call.
+
+    Generated for the same reason the tool reference is: the snippet has to
+    match a schema that changes, and a hand-written one silently stops matching.
+    """
+    from platform_core.public_api import examples
+
+    lines = [ENV_BEGIN, "", "| Biến | Ví dụ | Để làm gì |", "|---|---|---|"]
+    for name, sample, purpose in examples.ENV_VARS:
+        shown = f"`{sample}`" if sample else "—"
+        lines.append(f"| `{name}` | {shown} | {purpose} |")
+    lines.append("")
+    for shell, snippet in examples.SHELL_EXPORTS:
+        lines += [f"**{shell}**", "", "```", snippet, "```", ""]
+
+    catalog = _catalog()
+    if catalog:
+        tool = catalog[0]
+        lines += [f"Lời gọi đầu tiên (`{tool.name}`) — báo giá trước, chạy sau:",
+                  "", "```bash", examples.curl_quote(tool), "```", "",
+                  "```bash", examples.curl_submit(tool), "```", ""]
+    lines += ["Không viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, "
+              "vào log và vào ảnh chụp màn hình.", "", ENV_END]
+    return "\n".join(lines)
+
+
 def render_errors() -> str:
     """The error registry as a table — generated, because a stale retry table
     is worse than none: it tells a client to give up on a retryable failure."""
@@ -182552,6 +183250,7 @@ def main() -> int:
 
     targets = [
         (GUIDE, render(), BEGIN, END, "developer guide"),
+        (GUIDE, render_env(), ENV_BEGIN, ENV_END, "environment section"),
         (PROTOCOL, render_errors(), ERR_BEGIN, ERR_END, "protocol reference"),
     ]
     stale = False

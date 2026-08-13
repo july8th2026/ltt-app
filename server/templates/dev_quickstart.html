@@ -1,0 +1,79 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bảy bước tới lời gọi đầu tiên") }}</h2>
+  <ol>
+    <li><a href="/developers/projects">{{ _("Tạo project") }}</a>
+        — {{ _("mỗi tích hợp một project.") }}</li>
+    <li><a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
+        — {{ _("chuỗi bí mật chỉ hiện một lần.") }}</li>
+    <li>{{ _("Đặt biến môi trường (bảng bên dưới).") }}</li>
+    <li><a href="/developers/tools">{{ _("Xem công cụ và model") }}</a>
+        — {{ _("hoặc gọi") }} <code>GET /api/v1/tools</code>.</li>
+    <li>{{ _("Có tệp đầu vào thì tải lên trước:") }}
+        <code>POST /api/v1/uploads</code> → <code>/content</code> →
+        <code>/confirm</code>.</li>
+    <li><code>POST /api/v1/quotes</code> → <code>POST /api/v1/jobs</code>
+        — {{ _("báo giá rồi chạy.") }}</li>
+    <li>{{ _("Chờ kết quả bằng") }} <code>GET /api/v1/jobs/{job_id}</code>
+        {{ _("hoặc webhook, rồi lấy tệp ở") }}
+        <code>GET /api/v1/artifacts/{artifact_id}</code>.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Biến môi trường") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Tên") }}</th><th>{{ _("Ví dụ") }}</th><th>{{ _("Để làm gì") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for name, sample, purpose in env_vars %}
+        <tr>
+          <td><code>{{ name }}</code></td>
+          <td>{% if sample %}<code>{{ sample }}</code>{% else %}—{% endif %}</td>
+          <td>{{ purpose }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% for shell, snippet in shells %}
+    <p class="muted" style="margin-bottom:2px;">{{ shell }}</p>
+    <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+  {% endfor %}
+  <p class="muted">{{ _("Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào ảnh chụp màn hình.") }}</p>
+</div>
+
+{% if tool %}
+  <div class="card">
+    <h2 style="margin-top:0;">{{ _("Ví dụ chạy được") }}
+      — <code>{{ tool.name }}</code></h2>
+    <p class="muted">{{ _("Sinh từ chính hợp đồng của công cụ, nên không lệch với thứ máy chủ nhận. Đổi công cụ:") }}
+      {% for name in tool_names %}
+        <a href="/developers/quickstart?tool={{ name }}"><code>{{ name }}</code></a>{% if not loop.last %} · {% endif %}
+      {% endfor %}
+    </p>
+    {% for label, snippet in snippets %}
+      <h3>{{ label }}</h3>
+      <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Không viết mã") }}</h2>
+  {% for name, how in no_code %}
+    <h3>{{ name }}</h3>
+    <p>{{ how }}</p>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Thử lại cho đúng") }}</h2>
+  <p>{{ _("Chỉ một quy tắc, và nó là quy tắc giữ tiền:") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ retry_snippet }}</code></pre>
+  <p class="muted">{{ _("Timeout mạng là ca nguy hiểm nhất: request có thể đã thành công. Thử lại với ĐÚNG Idempotency-Key cũ thì kết quả xấu nhất là nhận lại câu trả lời đầu tiên, thay vì mua lần thứ hai. Bảng lỗi đầy đủ nằm trong trang từng công cụ.") }}</p>
+</div>
+
+{% endblock %}

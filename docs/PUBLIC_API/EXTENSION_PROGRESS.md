@@ -18,7 +18,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 04 | Projects / service accounts / delegated auth decision | **PASS** | 2026-08-13 |
 | 05 | Developer API tab / information architecture | **PASS** | 2026-08-13 |
 | 06 | Schema-driven apps/models/tools variable reference | **PASS** | 2026-08-13 |
-| 07 | Quickstart / env vars / examples / recipes | chưa chạy | — |
+| 07 | Quickstart / env vars / examples / recipes | **PASS** | 2026-08-13 |
 | 08 | Playground / request builder / job inspector | chưa chạy | — |
 | 09 | Request logs / trace / job timeline | chưa chạy | — |
 | 10 | Webhook console / event catalog / resend | chưa chạy | — |
@@ -706,3 +706,88 @@ migration.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/07_QUICKSTART_ENV_VARS_CODE_EXAMPLES_AND_INTEGRATION_RECIPES.txt`
+
+
+---
+
+## EXT-07 — QUICKSTART, BIẾN MÔI TRƯỜNG, VÍ DỤ, RECIPE ✅
+
+### Entry gate
+
+EXT-06 PASS ✅ (`36af52f`), cây sạch. Head vẫn `d0e1f2a3b4c5` — **không**
+migration, **không** route `/api/v1` mới, **không** phụ thuộc mới.
+
+### Status before → after
+
+| | Before | After |
+|---|---|---|
+| Biến môi trường | `LTT_API_KEY` xuất hiện rải rác trong guide; base URL viết cứng `https://app.lttstudios.com` | **3 biến chuẩn hoá một chỗ** (`platform_core/public_api/examples.py`), dùng lại ở guide + portal + mọi snippet |
+| Ví dụ mã | 1 khối cURL viết tay trong guide | cURL (báo giá + chạy), Python, TypeScript, PowerShell, HTTP thô — **sinh từ hợp đồng**, cho **từng** tool |
+| Shell | chỉ bash | bash/zsh, PowerShell, cmd.exe |
+| Không-viết-mã | không có | n8n, Make, "bất kỳ HTTP client nào" |
+| Chống lệch | không có | ví dụ được **kiểm bằng chính validator của route tính tiền** |
+
+### Cách chống lệch ví dụ
+
+`examples.example_input(tool)` dựng payload từ `params[].example` đã khai
+(EXT-06), rồi mọi snippet dựng từ payload đó. **Không có bản sao thứ hai** để
+quên cập nhật.
+
+Kiểm bằng ba tầng, tăng dần độ thật:
+1. bộ kiểm schema nhỏ trong test (kiểu, enum, min/max, maxLength, trường lạ);
+2. **`validate_public_input`** — đúng hàm mà `POST /jobs` chạy, nên nếu khách
+   dán ví dụ mà bị 400 thì test đỏ trước;
+3. mọi đường dẫn xuất hiện trong snippet phải nằm trong **inventory route** —
+   một ví dụ trỏ tới endpoint không tồn tại không lọt được.
+
+Tham số bắt buộc **không có** ví dụ thì nhận placeholder có kiểu (`<string>`),
+không phải giá trị bịa: một giá trị bịa đọc như lời khuyên, `<string>` đọc như
+chỉ dẫn.
+
+### Nghiệm thu "fresh integration completes E2E"
+
+`test_a_developer_who_follows_the_quickstart_gets_a_result` đi **đúng** bảy bước
+trang hướng dẫn nói: đăng nhập portal → tạo khoá (lấy chuỗi bí mật từ chính
+phản hồi) → `GET /tools` → `POST /quotes` → `POST /jobs` kèm `Idempotency-Key`
+→ chạy worker thật → `GET /jobs/{id}` = `succeeded` → `GET /artifacts/{id}`
+trả về đường tải. Bất kỳ bước nào của con đường được ghi trong tài liệu hỏng thì
+test này đỏ.
+
+### Tests
+
+`tests/test_199_quickstart_examples.py` — **11 test**: payload hợp lệ theo
+schema; payload qua được validator thật; snippet chỉ gọi endpoint có thật;
+**không snippet nào chứa thứ giống một khoá** và mọi snippet đều đọc khoá từ
+biến môi trường; snippet tính tiền **đều có** `Idempotency-Key` còn snippet báo
+giá thì không; tên biến môi trường chốt ở một chỗ; placeholder cho tham số bắt
+buộc thiếu ví dụ; trang có đủ đường đi + biến + recipe; quickstart cách khu API
+một cú bấm; và E2E ở trên.
+
+Guide có thêm khối **sinh tự động** cho biến môi trường + lời gọi đầu tiên,
+`--check` chặn lệch (đã có trong `test_191`).
+
+### Browser
+
+Cổng 8123: `/developers/quickstart` hiện 7 bước, bảng 3 biến, 3 shell, 6 snippet
+cho `image.generate`, đổi tool bằng link, 3 recipe không-viết-mã, và khối "thử
+lại cho đúng". **0 lỗi console.**
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| — | Recipe OAuth ("Connect LTT account") | D1 hoãn OAuth → không áp dụng |
+| — | Snippet cho STREAM/BATCH | chưa mode nào dùng (D5) |
+| — | Ví dụ upload nhiều bước dạng chạy-được | EXT-08 (playground) sẽ làm được trực quan hơn |
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-07 | Kết quả |
+|---|---|
+| Fresh integration completes test E2E | ✅ 7 bước, worker thật, artifact tải được |
+| Không hardcode secret | ✅ test quét mọi snippet; tất cả đọc từ env |
+| Không lệch ví dụ | ✅ sinh từ hợp đồng + kiểm bằng validator của route tính tiền + `--check` |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/08_API_PLAYGROUND_REQUEST_BUILDER_COST_STREAM_BATCH_JOB_INSPECTOR.txt`
+— **checkpoint full gate**.

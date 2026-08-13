@@ -8,6 +8,77 @@ Spec máy đọc: `GET /api/v1/openapi.json`.
 
 ---
 
+## 0. Biến môi trường
+
+<!-- BEGIN GENERATED ENV -->
+
+| Biến | Ví dụ | Để làm gì |
+|---|---|---|
+| `LTT_BASE_URL` | `https://app.lttstudios.com` | Where the API lives. No trailing slash; /api/v1 is added for you. |
+| `LTT_API_KEY` | `ltt_sk_…` | Your developer key. Create it in the portal; it is shown once. |
+| `LTT_PROJECT_ID` | — | Optional. The key already belongs to a project — set this only if your own code routes by project. |
+
+**bash / zsh (macOS, Linux)**
+
+```
+export LTT_BASE_URL="https://app.lttstudios.com"
+export LTT_API_KEY="ltt_sk_…"
+```
+
+**PowerShell (Windows)**
+
+```
+$env:LTT_BASE_URL = "https://app.lttstudios.com"
+$env:LTT_API_KEY  = "ltt_sk_…"
+```
+
+**cmd.exe (Windows)**
+
+```
+set LTT_BASE_URL=https://app.lttstudios.com
+set LTT_API_KEY=ltt_sk_…
+```
+
+Lời gọi đầu tiên (`image.generate`) — báo giá trước, chạy sau:
+
+```bash
+curl -X POST "$LTT_BASE_URL/api/v1/quotes" \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+  "tool": "image.generate",
+  "input": {
+    "prompt": "a paper boat on a rain-soaked street at night",
+    "image_key": "upl_from_POST_/api/v1/uploads",
+    "model": "standard",
+    "aspect_ratio": "16:9",
+    "count": 1
+  }
+}'
+```
+
+```bash
+curl -X POST "$LTT_BASE_URL/api/v1/jobs" \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+  "tool": "image.generate",
+  "quote": "<quote from the step above>",
+  "input": {
+    "prompt": "a paper boat on a rain-soaked street at night",
+    "image_key": "upl_from_POST_/api/v1/uploads",
+    "model": "standard",
+    "aspect_ratio": "16:9",
+    "count": 1
+  }
+}'
+```
+
+Không viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào ảnh chụp màn hình.
+
+<!-- END GENERATED ENV -->
+
 ## 1. Bắt đầu trong 5 phút
 
 **Bước 1 — lấy khóa.** Đăng nhập, mở **`/developers`**, bấm *Tạo khóa*. Chuỗi

@@ -110,6 +110,7 @@ def _public_api_config(request: Request):
 # than greyed, because D1 decided not to build them at all.
 SECTIONS = (
     ("overview", "/developers", N_("Tổng quan")),
+    ("quickstart", "/developers/quickstart", N_("Bắt đầu nhanh")),
     ("projects", "/developers/projects", N_("Project")),
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
@@ -270,6 +271,59 @@ def developer_keys(request: Request, user=Depends(require_account),
                    db: Session = Depends(get_db)):
     return _keys_page(request, db, user)
 
+
+@router.get("/quickstart", response_class=HTMLResponse)
+def developer_quickstart(request: Request, tool: str = "",
+                         user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """Everything a new integration needs, generated from the live catalog.
+
+    The snippets are not written here and not stored anywhere: they are built
+    from the same contract the API validates against, so an example cannot
+    describe a call the server would reject.
+    """
+    from platform_core.public_api import examples
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    chosen = None
+    for candidate in catalog:
+        if candidate.name == str(tool or "") or (not tool and chosen is None):
+            chosen = candidate
+            if tool:
+                break
+
+    snippets = []
+    if chosen is not None:
+        snippets = [
+            ("cURL — " + _t("báo giá"), examples.curl_quote(chosen)),
+            ("cURL — " + _t("chạy job"), examples.curl_submit(chosen)),
+            ("Python", examples.python_snippet(chosen)),
+            ("TypeScript", examples.typescript_snippet(chosen)),
+            ("PowerShell", examples.powershell_snippet(chosen)),
+            ("HTTP", examples.raw_http_snippet(chosen)),
+        ]
+    return _render(
+        request, db, user, "quickstart", "dev_quickstart.html",
+        env_vars=examples.ENV_VARS, shells=examples.SHELL_EXPORTS,
+        no_code=examples.NO_CODE_RECIPES,
+        tool={"name": chosen.name} if chosen is not None else None,
+        tool_names=[item.name for item in catalog],
+        snippets=snippets,
+        retry_snippet=RETRY_EXAMPLE)
+
+
+# One idempotency key per logical call, reused on every retry of it. Written
+# out rather than described, because "reuse the key" is the sentence everyone
+# agrees with and then implements as `uuid4()` inside the retry loop.
+RETRY_EXAMPLE = """key = str(uuid.uuid4())          # ONCE, outside the loop
+
+for attempt in range(5):
+    try:
+        job = call("POST", "/jobs", body, {"Idempotency-Key": key})
+        break
+    except Timeout:               # the request may have succeeded
+        time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
 
 @router.get("/tools", response_class=HTMLResponse)
 def developer_tools(request: Request, q: str = "", capability: str = "",
