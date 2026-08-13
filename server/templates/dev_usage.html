@@ -1,0 +1,20 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <ul>
+    <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
+    <li>{{ _("Đã dùng hôm nay:") }} <strong>{{ usage_today.net_charged_credit }}</strong>
+        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit }})</li>
+    <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
+        {{ limits.create_rpm }} {{ _("job/phút") }},
+        {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}
+        {% if limits.daily_credit_limit %}, {{ _("trần") }}
+          {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
+  </ul>
+  <p class="muted">{{ _("Chi tiết theo từng job:") }} <code>GET /api/v1/usage</code>.
+     {{ _("Ngân sách và cảnh báo chi tiêu là hạng mục riêng, chưa có ở bước này.") }}</p>
+  <p><a class="btn" href="/nap">{{ _("Nạp credit") }}</a></p>
+</div>
+
+{% endblock %}

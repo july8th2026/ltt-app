@@ -16,7 +16,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 02 | Protocol / execution modes / error-retry standards | **PASS** | 2026-08-13 |
 | 03 | Models / capabilities / tool catalog / schema chain | **PASS** | 2026-08-13 |
 | 04 | Projects / service accounts / delegated auth decision | **PASS** | 2026-08-13 |
-| 05 | Developer API tab / information architecture | chưa chạy | — |
+| 05 | Developer API tab / information architecture | **PASS** | 2026-08-13 |
 | 06 | Schema-driven apps/models/tools variable reference | chưa chạy | — |
 | 07 | Quickstart / env vars / examples / recipes | chưa chạy | — |
 | 08 | Playground / request builder / job inspector | chưa chạy | — |
@@ -513,3 +513,109 @@ Lần 2, trên cây mã cuối: **`RESULT: PASS` 10/10**, pytest 2.672,9 s.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/05_DEVELOPER_API_TAB_AND_INFORMATION_ARCHITECTURE.txt`
+
+
+---
+
+## EXT-05 — DEVELOPER API TAB + INFORMATION ARCHITECTURE ✅
+
+### Entry gate
+
+EXT-04 PASS ✅ (`b3cf664`, full gate 10/10), cây sạch. Head vẫn `d0e1f2a3b4c5`
+— **không** migration, **không** route `/api/v1` mới.
+
+### Reused V2 components
+
+Khung template hiện có (`base.html`, `_header.html`), CSS `ltt.css` (+
+`asset_ver` cache-bust), phiên đăng nhập + CSRF, `catalog`/`projects`/`keys`/
+`usage` đã có. **0 phụ thuộc mới, 0 bảng, 0 migration.**
+
+### Status before → after
+
+| | Before | After |
+|---|---|---|
+| Lối vào | **không có link nào** tới `/developers` (rủi ro X4) | menu tài khoản trên **cả** trang catalog và header chung → **2 cú bấm** |
+| Cấu trúc | một trang dài, mọi thứ xếp chồng | 9 section có route riêng + sub-nav dùng chung |
+| Overview | không có | số dư, chi tiêu hôm nay, số project/khoá, job 30 ngày, sức khoẻ webhook, hạn mức, trạng thái dịch vụ |
+| Empty state | "Chưa có khóa nào." | ba bước tới lời gọi đầu tiên, có link thẳng |
+| Section chưa xây | không được nhắc tới | có tên, gắn nhãn "sắp có", **không** phải link chết |
+
+### Quyết định đáng nói
+
+**Chỗ chưa xây thì nêu tên, không tạo link.** Playground (EXT-08), Nhật ký
+request (EXT-09), Thông báo (EXT-11) hiện trong sub-nav dưới dạng chữ xám kèm
+nhãn. Hình dạng của khu API là thông tin người tích hợp dùng để lập kế hoạch;
+một link trả 404 thì không. **OAuth Apps thì vắng mặt hẳn** chứ không xám — D1
+đã quyết định *không xây*, và một mục xám ngụ ý "sắp có" sẽ là lời hứa sai.
+
+**Một portal, không hai.** Form tạo khoá chỉ tồn tại ở đúng một section, và có
+test khẳng định điều đó trên **mọi** section. Hai nơi quản lý cùng một khoá là
+cách người ta thu hồi nhầm khoá.
+
+**Lối vào phải sửa ở hai chỗ.** Trang catalog (`home.html`) có menu tài khoản
+**riêng** (`market-account`), không dùng `_header.html`. Sửa một chỗ là vẫn
+không tìm thấy khu API từ trang chủ — đúng cái bẫy mà rủi ro X4 mô tả. Test bắt
+được điều này, không phải mắt người.
+
+### Tests
+
+`tests/test_197_developer_api_tab.py` — **23 test**:
+- **khả năng tìm thấy**: trang chủ có link tới `/developers`;
+- 9 section đều trả 200 và đều dựng chung một khung (nav không bao giờ biến mất);
+- nav **giống hệt nhau** trên mọi section (so trong khối `<nav>`, vì phần thân
+  có link riêng);
+- section chưa xây: có tên, **không** có link, và `/developers/playground` trả
+  404 thật;
+- `aria-current="page"` đúng **một** phần tử;
+- **tenancy**: tạo project/khoá cho tài khoản A rồi đăng nhập tài khoản B —
+  không section nào lộ tên project, tên khoá hay `key_id` của A;
+- mọi section đòi phiên đăng nhập (302 → `/login`);
+- ghi vẫn cần CSRF;
+- overview đếm đúng số project/khoá thật;
+- tools không lộ vendor/slug app; docs có lệnh `curl` chạy được.
+
+`test_191` sửa 3 chỗ: nội dung **chuyển section**, nên test đi theo (form khoá →
+`/developers/keys`, hạn mức → `/usage`, danh sách tool → `/tools`). Không phải
+nới lỏng khẳng định — vẫn kiểm đúng những thứ cũ, ở đúng chỗ mới.
+
+Tổng: 38 test portal + IA xanh. i18n: **1439 (mốc 1500) — không tăng**; nhãn
+section dùng `N_()` để đánh dấu trích xuất và `_t()` lúc render, vì một `_()` ở
+cấp module sẽ **đóng băng ngôn ngữ lúc import**.
+
+### Browser (bắt buộc theo CLAUDE.md mục 5)
+
+Server dùng-một-lần cổng 8123. Đã đi: đăng nhập → `/developers` (Tổng quan hiện
+đủ số liệu + 3 bước bắt đầu) → sub-nav sang **Công cụ & model** (2 tool, 4 alias
+model, giá **không** hiện theo model, không tên vendor) → về trang chủ → mở menu
+tài khoản → **API cho lập trình viên** → quay lại khu API. **0 lỗi console, 0
+request hỏng.**
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| — | Playground | EXT-08 |
+| — | Nhật ký request/trace | EXT-09 |
+| — | Thông báo + ngân sách | EXT-11 |
+| — | Webhook console (xem payload, gửi lại) | EXT-10 |
+| — | Xuất/xoá dữ liệu (mục Cài đặt nói thẳng là chưa có) | EXT-19 |
+
+X4 **đóng**.
+
+### Rollback
+
+Hoàn nguyên `server/routes/developer.py`, xoá 9 template `dev_*.html` +
+`developers_base.html` (khôi phục `developers.html` từ git), bỏ 2 dòng link
+trong `_header.html`/`home.html` và khối CSS `.dev-nav`. Không dữ liệu, không
+migration.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-05 | Kết quả |
+|---|---|
+| Khu API ≤ 2 cú bấm từ dashboard | ✅ menu tài khoản → API; có test trên trang chủ thật |
+| Không có portal trùng lặp | ✅ form tạo khoá tồn tại đúng một nơi, có test trên mọi section |
+| Browser/tenant test PASS | ✅ 23 test + kiểm trình duyệt thật, 0 lỗi console |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/06_SCHEMA_DRIVEN_APPS_MODELS_TOOLS_VARIABLE_REFERENCE.txt`

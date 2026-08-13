@@ -1,0 +1,20 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("An toàn khóa") }}</h2>
+  <ul>
+    <li>{{ _("Chuỗi bí mật chỉ hiện một lần, lúc tạo. Máy chủ giữ dấu vân tay một chiều nên không ai lấy lại được — kể cả quản trị viên.") }}</li>
+    <li>{{ _("Thu hồi có hiệu lực ở request kế tiếp và không đảo ngược được.") }}</li>
+    <li>{{ _("Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.") }}</li>
+    <li>{{ _("Giới hạn khóa theo IP/CIDR và đặt hạn dùng khi giao cho bên thứ ba.") }}</li>
+    <li>{{ _("Khóa bị lộ: thu hồi ngay ở mục Khóa API, rồi kiểm mục Job xem có lời gọi lạ không.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Dữ liệu của bạn") }}</h2>
+  <p class="muted">{{ _("Xuất và xoá dữ liệu tích hợp là hạng mục riêng, chưa có ở bước này. Trong lúc chờ, liên hệ hỗ trợ kèm mã khóa công khai.") }}</p>
+</div>
+
+{% endblock %}

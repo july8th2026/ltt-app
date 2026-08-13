@@ -1,0 +1,56 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <p class="muted">{{ _("Đây là những gì máy chủ này đang mở. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}</p>
+  {% if not catalog %}
+    <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Công cụ") }}</th><th>{{ _("Nhóm") }}</th>
+        <th>{{ _("Chạy kiểu") }}</th><th>{{ _("Phạm vi cần") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for tool in catalog %}
+          <tr>
+            <td><code>{{ tool.name }}</code><br>
+                <span class="muted">{{ tool.description }}</span></td>
+            <td>{{ tool.capability }}</td>
+            <td><code>{{ tool.execution_mode }}</code></td>
+            <td>{% for scope in tool.scopes %}<code>{{ scope }}</code> {% endfor %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
+{% if models %}
+  <div class="card">
+    <h2 style="margin-top:0;">Model</h2>
+    <table class="table">
+      <thead><tr>
+        <th>Alias</th><th>{{ _("Nhóm") }}</th><th>{{ _("Độ ổn định") }}</th>
+        <th>{{ _("Công cụ nhận") }}</th><th>{{ _("Ghi chú") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for model in models %}
+          <tr>
+            <td><code>{{ model.name }}</code></td>
+            <td>{{ model.capability }}</td>
+            <td>{{ model.stability }}</td>
+            <td>{% for tool in model.tools %}<code>{{ tool }}</code> {% endfor %}</td>
+            <td>{{ model.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+<p class="muted">{{ _("Hợp đồng đầy đủ của từng công cụ:") }}
+  <code>GET /api/v1/tools/{tool_name}</code> ·
+  <a href="/api/v1/openapi.json">OpenAPI</a></p>
+
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <ul>
+    <li><a href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a>
+        — {{ _("mô tả máy đọc được, kèm schema của từng công cụ.") }}</li>
+    <li><code>docs/PUBLIC_API/DEVELOPER_GUIDE.md</code>
+        — {{ _("hướng dẫn bắt đầu và tham chiếu từng công cụ.") }}</li>
+    <li><code>docs/PUBLIC_API/PROTOCOL_V1.md</code>
+        — {{ _("chế độ chạy, quy ước, bảng lỗi và khi nào nên thử lại.") }}</li>
+    <li><code>sdk/python/ltt_public_api.py</code>,
+        <code>sdk/typescript/ltt-public-api.ts</code>
+        — {{ _("SDK một file, không phụ thuộc ngoài.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Gọi thử") }}</h2>
+  <pre style="overflow-x:auto;"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
+     {{ base_url }}/api/v1/me</code></pre>
+  <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — xem PROTOCOL_V1.md mục 2.1.") }}</p>
+</div>
+
+{% endblock %}

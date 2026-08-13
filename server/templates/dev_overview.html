@@ -1,0 +1,58 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Tình trạng") }}</h2>
+  <ul>
+    <li>{{ _("API công khai:") }}
+      <strong>{% if not api_enabled %}{{ _("đang tắt") }}
+        {% elif read_only %}{{ _("chỉ đọc") }}
+        {% else %}{{ _("đang phục vụ") }}{% endif %}</strong></li>
+    <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
+    <li>{{ _("Đã dùng hôm nay:") }} <strong>{{ usage_today.net_charged_credit }}</strong>
+        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit }})
+        {% if limits.daily_credit_limit %}
+          — {{ _("trần ngày") }} {{ limits.daily_credit_limit }}
+        {% else %}
+          — <span class="muted">{{ _("chưa đặt trần ngày") }}</span>
+        {% endif %}</li>
+    <li>{{ _("Project:") }} <strong>{{ counts.projects }}</strong> ·
+        {{ _("khóa đang hoạt động:") }} <strong>{{ counts.active_keys }}</strong></li>
+    <li>{{ _("Job qua API (30 ngày):") }} <strong>{{ counts.api_jobs }}</strong></li>
+    <li>Webhook:
+      {% if counts.webhooks == 0 %}<span class="muted">{{ _("chưa đăng ký") }}</span>
+      {% else %}<strong>{{ counts.webhooks }}</strong>
+        {% if counts.webhook_failures %}
+          — <span class="alert-err">{{ counts.webhook_failures }}
+            {{ _("lần giao thất bại gần đây") }}</span>
+        {% else %}— {{ _("đang khỏe") }}{% endif %}
+      {% endif %}</li>
+    <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
+        {{ limits.create_rpm }} {{ _("job/phút") }},
+        {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  {% if counts.active_keys == 0 %}
+    <p>{{ _("Chưa có khóa nào. Ba bước để gọi được lần đầu:") }}</p>
+    <ol>
+      <li><a href="/developers/projects">{{ _("Tạo một project") }}</a>
+          — {{ _("mỗi tích hợp một project.") }}</li>
+      <li><a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
+          — {{ _("chuỗi bí mật chỉ hiện một lần.") }}</li>
+      <li><a href="/developers/docs">{{ _("Gọi thử theo hướng dẫn") }}</a></li>
+    </ol>
+  {% else %}
+    <p class="muted">{{ _("Bạn đã có khóa. Những nơi hay dùng:") }}</p>
+    <p>
+      <a class="btn" href="/developers/keys">{{ _("Khóa API") }}</a>
+      <a class="btn" href="/developers/tools">{{ _("Công cụ & model") }}</a>
+      <a class="btn" href="/developers/jobs">{{ _("Job gần đây") }}</a>
+      <a class="btn" href="/developers/docs">{{ _("Tài liệu & SDK") }}</a>
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}

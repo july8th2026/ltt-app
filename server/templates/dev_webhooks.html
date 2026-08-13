@@ -1,0 +1,27 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  {% if not webhooks %}
+    <p class="muted">{{ _("Chưa đăng ký webhook nào.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr><th>URL</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Tạo lúc") }}</th></tr></thead>
+      <tbody>
+        {% for hook in webhooks %}
+          <tr>
+            <td><code>{{ hook.url }}</code></td>
+            <td>{{ hook.events|join(", ") }}</td>
+            <td>{{ hook.created_at.strftime("%Y-%m-%d") if hook.created_at else "" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  <p class="muted">{{ _("Đăng ký và huỷ đăng ký bằng API:") }}
+     <code>POST /api/v1/webhooks</code> ·
+     <code>GET /api/v1/webhooks/deliveries</code>.
+     {{ _("Bảng điều khiển webhook (xem payload, gửi lại) là hạng mục riêng, chưa có ở bước này.") }}</p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  {% if not recent_jobs %}
+    <p class="muted">{{ _("Chưa có job nào tạo qua API.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>Job</th><th>{{ _("Công cụ") }}</th><th>{{ _("Khóa") }}</th>
+        <th>{{ _("Trạng thái") }}</th><th>{{ _("Lúc") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for job in recent_jobs %}
+          <tr>
+            <td><code>{{ job.id[:8] }}</code></td>
+            <td>{{ job.tool }}</td>
+            <td><code>{{ job.key_id[:8] }}</code></td>
+            <td>{{ job.status }}</td>
+            <td>{{ job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  <p class="muted">{{ _("Danh sách đầy đủ và chi tiết từng job:") }}
+     <code>GET /api/v1/jobs</code>.</p>
+</div>
+
+{% endblock %}

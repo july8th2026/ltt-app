@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:de87af572469f83a7d2fea34e74cf1e0d1f4c2647289e2cbbc23f1ecf89f4861
-Nguồn đã quét : 1054 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:123d226becab0f3af02110e1571500ba4df1499df2e627b55e906b93329c0fac
+Nguồn đã quét : 1064 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (291)
+4. HTTP ROUTE INVENTORY (299)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -593,12 +593,20 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
-- [platform] GET    /developers → developer_home | auth~unspecified | server/routes/developer.py:162
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:168
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:204
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:217
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:260
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:275
+- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:253
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:314
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:292
+- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:269
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:329
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:366
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:379
+- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:262
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:423
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:439
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:323
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:275
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:299
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:307
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -970,7 +978,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (199 file pytest + 3 frontend)
+10. QUALITY GATES (200 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1102,6 +1110,7 @@ Test inventory:
 - tests/test_194_public_api_protocol.py
 - tests/test_195_public_api_models.py
 - tests/test_196_public_api_projects.py
+- tests/test_197_developer_api_tab.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
@@ -1196,8 +1205,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1054 file)
-Phân bố extension: .cfg:1, .css:7, .html:59, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:789, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1064 file)
+Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:790, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1891,7 +1900,7 @@ Phân bố extension: .cfg:1, .css:7, .html:59, .ini:1, .js:8, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (113)
+[server] (122)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -1980,7 +1989,16 @@ Phân bố extension: .cfg:1, .css:7, .html:59, .ini:1, .js:8, .json:39, .md:19,
 - server/templates/base_public.html
 - server/templates/dashboard.html
 - server/templates/demo.html
-- server/templates/developers.html
+- server/templates/dev_docs.html
+- server/templates/dev_jobs.html
+- server/templates/dev_keys.html
+- server/templates/dev_overview.html
+- server/templates/dev_projects.html
+- server/templates/dev_settings.html
+- server/templates/dev_tools.html
+- server/templates/dev_usage.html
+- server/templates/dev_webhooks.html
+- server/templates/developers_base.html
 - server/templates/error.html
 - server/templates/forgot_password.html
 - server/templates/home.html
@@ -2013,7 +2031,7 @@ Phân bố extension: .cfg:1, .css:7, .html:59, .ini:1, .js:8, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (215)
+[tests] (216)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2155,6 +2173,7 @@ Phân bố extension: .cfg:1, .css:7, .html:59, .ini:1, .js:8, .json:39, .md:19,
 - tests/test_194_public_api_protocol.py
 - tests/test_195_public_api_models.py
 - tests/test_196_public_api_projects.py
+- tests/test_197_developer_api_tab.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
@@ -2318,7 +2337,7 @@ Phân bố extension: .cfg:1, .css:7, .html:59, .ini:1, .js:8, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1054 file; 9158831 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1064 file; 9188300 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -120117,7 +120136,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=ff272150aad8f80fbb001a4c67bec344c6c2c78623b1a9e053259c520ef783ca BYTES=13061 LINES=287
+SHA256=05fe257a7380a1047ab7a8f8d44cdbdeffb2612b3b9ba6e24437e6a376ebc935 BYTES=19860 LINES=451
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -120146,7 +120165,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from platform_core import credit
-from platform_core.i18n import _ as _t
+from platform_core.i18n import N_, _ as _t
 from platform_core.models import Job
 from platform_core.public_api import keys as devkeys, projects, usage
 from platform_core.public_api.catalog import build_catalog
@@ -120224,65 +120243,226 @@ def _public_api_config(request: Request):
     return config if config is not None else load_public_api_config()
 
 
-def _page(request: Request, db: Session, user, *, revealed: str = "",
-          error: str = "", created_key=None) -> HTMLResponse:
+# The area's information architecture, in one place. `href=None` means the
+# section is named but not built yet: EXT-08 owns the playground, EXT-09 the
+# request logs, EXT-11 the notifications. Showing them greyed is honest about
+# the shape of the area; a link that 404s is not. OAuth apps are absent rather
+# than greyed, because D1 decided not to build them at all.
+SECTIONS = (
+    ("overview", "/developers", N_("Tổng quan")),
+    ("projects", "/developers/projects", N_("Project")),
+    ("keys", "/developers/keys", N_("Khóa API")),
+    ("tools", "/developers/tools", N_("Công cụ & model")),
+    ("playground", None, N_("Playground")),
+    ("logs", None, N_("Nhật ký request")),
+    ("jobs", "/developers/jobs", N_("Job")),
+    ("usage", "/developers/usage", N_("Sử dụng & credit")),
+    ("webhooks", "/developers/webhooks", N_("Webhook")),
+    ("notifications", None, N_("Thông báo")),
+    ("docs", "/developers/docs", N_("Tài liệu & SDK")),
+    ("settings", "/developers/settings", N_("Cài đặt & bảo mật")),
+)
+
+
+def _nav(active: str) -> list:
+    return [{"key": key, "href": href, "label": _t(label),
+             "active": key == active}
+            for key, href, label in SECTIONS]
+
+
+def _title(active: str) -> str:
+    for key, _href, label in SECTIONS:
+        if key == active:
+            return _t(label)
+    return _t(N_("Tổng quan"))
+
+
+def _base_context(request: Request, db: Session, user, active: str,
+                  error: str = "") -> dict:
+    """What every section needs: navigation, service state, CSRF."""
     config = _public_api_config(request)
+    return {
+        "csrf_token": issue_csrf_token(request),
+        "api_enabled": config.enabled,
+        "read_only": config.read_only,
+        "nav": _nav(active),
+        "section_title": _title(active),
+        "error": error,
+    }
+
+
+def _projects_context(db: Session, user) -> dict:
+    rows = projects.list_for(db, user_id=user.id)
+    return {"projects": [
+        {"id": project.id, "name": project.name, "slug": project.slug,
+         "created_at": project.created_at,
+         "key_count": len(projects.keys_of(db, project_id=project.id))}
+        for project in rows]}
+
+
+def _keys_context(db: Session, user, config) -> dict:
+    now = datetime.now(timezone.utc)
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    return {
+        "keys": [
+            {
+                "key_id": key.key_id, "name": key.name,
+                "status": key.status(now=now),
+                "scopes": list(key.scopes or ()),
+                "allowed_tools": list(key.allowed_tools or ()),
+                "allowed_ips": list(key.allowed_ips or ()),
+                "project": names.get(str(key.project_id or ""), ""),
+                "created_at": key.created_at,
+                "last_used_at": key.last_used_at,
+                "expires_at": key.expires_at,
+            }
+            for key in devkeys.list_for_user(db, user.id)
+        ],
+        "scopes": sorted(KNOWN_SCOPES),
+        "default_scopes": list(DEFAULT_SCOPES),
+        "tools": [tool.name for tool in build_catalog(config)],
+    }
+
+
+def _usage_context(db: Session, user, config) -> dict:
     now = datetime.now(timezone.utc)
     window_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    project_names = {project.id: project.name
-                     for project in projects.list_for(db, user_id=user.id,
-                                                      include_archived=True)}
-    return templates.TemplateResponse(
-        request, "developers.html",
-        {
-            "csrf_token": issue_csrf_token(request),
-            "api_enabled": config.enabled,
-            "read_only": config.read_only,
-            "projects": [
-                {"id": project.id, "name": project.name, "slug": project.slug,
-                 "created_at": project.created_at}
-                for project in projects.list_for(db, user_id=user.id)
-            ],
-            "keys": [
-                {
-                    "key_id": key.key_id, "name": key.name,
-                    "status": key.status(now=now),
-                    "scopes": list(key.scopes or ()),
-                    "allowed_tools": list(key.allowed_tools or ()),
-                    "allowed_ips": list(key.allowed_ips or ()),
-                    "project": project_names.get(str(key.project_id or ""), ""),
-                    "created_at": key.created_at,
-                    "last_used_at": key.last_used_at,
-                    "expires_at": key.expires_at,
-                }
-                for key in devkeys.list_for_user(db, user.id)
-            ],
-            # Shown once, on this response only.
-            "revealed_secret": revealed,
-            "created_key": created_key,
-            "error": error,
-            "scopes": sorted(KNOWN_SCOPES),
-            "default_scopes": list(DEFAULT_SCOPES),
-            "tools": [tool.name for tool in build_catalog(config)],
-            "balance": credit.so_du(db, user.id),
-            "usage_today": usage.usage_totals(db, user_id=user.id,
-                                              since=window_start, until=now),
-            "limits": {
-                "request_rpm": config.request_rpm,
-                "create_rpm": config.create_rpm,
-                "max_active_jobs": config.max_active_jobs,
-                "daily_credit_limit": config.daily_credit_limit,
-            },
-            "webhooks": _webhooks(db, user.id),
-            "recent_jobs": _recent_api_jobs(db, user.id),
+    return {
+        "balance": credit.so_du(db, user.id),
+        "usage_today": usage.usage_totals(db, user_id=user.id,
+                                          since=window_start, until=now),
+        "limits": {
+            "request_rpm": config.request_rpm,
+            "create_rpm": config.create_rpm,
+            "max_active_jobs": config.max_active_jobs,
+            "daily_credit_limit": config.daily_credit_limit,
         },
-    )
+    }
+
+
+def _overview_counts(db: Session, user) -> dict:
+    """The numbers the overview answers "is anything wrong?" with."""
+    from sqlalchemy import func
+
+    from platform_core.public_api.tables import (WEBHOOK_DEAD, WEBHOOK_FAILED,
+                                                 WebhookDelivery)
+
+    now = datetime.now(timezone.utc)
+    active_keys = sum(1 for key in devkeys.list_for_user(db, user.id)
+                      if key.is_usable(now=now))
+    failures = int(db.execute(
+        select(func.count(WebhookDelivery.id)).where(
+            WebhookDelivery.user_id == user.id,
+            WebhookDelivery.status.in_((WEBHOOK_FAILED, WEBHOOK_DEAD)),
+        )).scalar_one())
+    since = now - timedelta(days=30)
+    api_jobs = sum(1 for job in db.execute(
+        select(Job).where(Job.user_id == user.id,
+                          Job.created_at >= since)).scalars().all()
+        if api_meta(job))
+    return {
+        "projects": len(projects.list_for(db, user_id=user.id)),
+        "active_keys": active_keys,
+        "webhooks": len(_webhooks(db, user.id)),
+        "webhook_failures": failures,
+        "api_jobs": api_jobs,
+    }
+
+
+def _render(request: Request, db: Session, user, active: str, template: str,
+            **extra) -> HTMLResponse:
+    context = _base_context(request, db, user, active,
+                            error=str(extra.pop("error", "") or ""))
+    context.update(extra)
+    return templates.TemplateResponse(request, template, context)
+
+
+def _keys_page(request: Request, db: Session, user, *, revealed: str = "",
+               error: str = "", created_key=None) -> HTMLResponse:
+    config = _public_api_config(request)
+    return _render(request, db, user, "keys", "dev_keys.html",
+                   error=error, revealed_secret=revealed,
+                   created_key=created_key,
+                   **_projects_context(db, user),
+                   **_keys_context(db, user, config))
 
 
 @router.get("", response_class=HTMLResponse)
-def developer_home(request: Request, user=Depends(require_account),
+def developer_overview(request: Request, user=Depends(require_account),
+                       db: Session = Depends(get_db)):
+    config = _public_api_config(request)
+    return _render(request, db, user, "overview", "dev_overview.html",
+                   counts=_overview_counts(db, user),
+                   **_usage_context(db, user, config))
+
+
+@router.get("/projects", response_class=HTMLResponse)
+def developer_projects(request: Request, user=Depends(require_account),
+                       db: Session = Depends(get_db)):
+    return _render(request, db, user, "projects", "dev_projects.html",
+                   **_projects_context(db, user))
+
+
+@router.get("/keys", response_class=HTMLResponse)
+def developer_keys(request: Request, user=Depends(require_account),
                    db: Session = Depends(get_db)):
-    return _page(request, db, user)
+    return _keys_page(request, db, user)
+
+
+@router.get("/tools", response_class=HTMLResponse)
+def developer_tools(request: Request, user=Depends(require_account),
+                    db: Session = Depends(get_db)):
+    from platform_core.public_api.catalog import build_models
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    return _render(request, db, user, "tools", "dev_tools.html",
+                   catalog=[{"name": tool.name, "description": tool.description,
+                             "capability": tool.capability,
+                             "execution_mode": tool.execution_mode,
+                             "scopes": list(tool.scopes)}
+                            for tool in catalog],
+                   models=[model.to_public_dict()
+                           for model in build_models(catalog)])
+
+
+@router.get("/jobs", response_class=HTMLResponse)
+def developer_jobs(request: Request, user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    return _render(request, db, user, "jobs", "dev_jobs.html",
+                   recent_jobs=_recent_api_jobs(db, user.id))
+
+
+@router.get("/usage", response_class=HTMLResponse)
+def developer_usage(request: Request, user=Depends(require_account),
+                    db: Session = Depends(get_db)):
+    config = _public_api_config(request)
+    return _render(request, db, user, "usage", "dev_usage.html",
+                   **_usage_context(db, user, config))
+
+
+@router.get("/webhooks", response_class=HTMLResponse)
+def developer_webhooks(request: Request, user=Depends(require_account),
+                       db: Session = Depends(get_db)):
+    return _render(request, db, user, "webhooks", "dev_webhooks.html",
+                   webhooks=_webhooks(db, user.id))
+
+
+@router.get("/docs", response_class=HTMLResponse)
+def developer_docs(request: Request, user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    # The origin as the caller's browser sees it, so the copyable curl example
+    # works on a laptop, behind the tunnel and in a test alike.
+    return _render(request, db, user, "docs", "dev_docs.html",
+                   base_url=str(request.base_url).rstrip("/"))
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def developer_settings(request: Request, user=Depends(require_account),
+                       db: Session = Depends(get_db)):
+    return _render(request, db, user, "settings", "dev_settings.html")
 
 
 @router.post("/keys", response_class=HTMLResponse)
@@ -120294,15 +120474,15 @@ def create_key(request: Request, name: str = Form(""),
                csrf_token: str = Form(""), user=Depends(require_account),
                db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers")
+        raise _redirect("/developers/keys")
     try:
         project = (projects.get_owned(db, user_id=user.id, project_id=project_id)
                    if project_id else projects.default_for(db, user_id=user.id))
         if project is None or not project.is_active():
             # Ownership is resolved from the session user, so a forged id
             # simply does not resolve — it never reaches the key.
-            return _page(request, db, user,
-                         error=_t("Không tìm thấy project."))
+            return _keys_page(request, db, user,
+                              error=_t("Không tìm thấy project."))
         expiry = _expiry_from_days(expires_in_days)
         key, token = devkeys.issue(
             db, user_id=user.id, name=name, scopes=scopes,
@@ -120315,38 +120495,40 @@ def create_key(request: Request, name: str = Form(""),
                                 projects.ProjectError)):
             raise
         db.rollback()
-        return _page(request, db, user, error=str(exc))
+        return _keys_page(request, db, user, error=str(exc))
     # The plaintext exists only in this response. Nothing stores it, and the
     # page below says so — a customer who closes the tab must create a new key.
-    return _page(request, db, user, revealed=token, created_key=key.key_id)
+    return _keys_page(request, db, user, revealed=token,
+                      created_key=key.key_id)
 
 
 @router.post("/keys/{key_id}/revoke")
 def revoke_key(request: Request, key_id: str, csrf_token: str = Form(""),
                user=Depends(require_account), db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        return RedirectResponse("/developers", status_code=303)
+        return RedirectResponse("/developers/keys", status_code=303)
     key = devkeys.get_owned(db, user_id=user.id, key_id=key_id)
     if key is not None:
         devkeys.revoke(db, key)
     # Same redirect whether or not the key existed: a portal must not become a
     # way to find out which key ids belong to somebody else.
-    return RedirectResponse("/developers", status_code=303)
+    return RedirectResponse("/developers/keys", status_code=303)
 
 
 @router.post("/keys/{key_id}/rotate", response_class=HTMLResponse)
 def rotate_key(request: Request, key_id: str, csrf_token: str = Form(""),
                user=Depends(require_account), db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers")
+        raise _redirect("/developers/keys")
     key = devkeys.get_owned(db, user_id=user.id, key_id=key_id)
     if key is None:
-        return _page(request, db, user, error=_t("Không tìm thấy khóa."))
+        return _keys_page(request, db, user, error=_t("Không tìm thấy khóa."))
     try:
         token = devkeys.rotate(db, key)
     except devkeys.DeveloperKeyError as exc:
-        return _page(request, db, user, error=str(exc))
-    return _page(request, db, user, revealed=token, created_key=key.key_id)
+        return _keys_page(request, db, user, error=str(exc))
+    return _keys_page(request, db, user, revealed=token,
+                      created_key=key.key_id)
 
 
 def _split_ips(value: str) -> list:
@@ -120382,14 +120564,15 @@ def create_project(request: Request, name: str = Form(""),
                    csrf_token: str = Form(""), user=Depends(require_account),
                    db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers")
+        raise _redirect("/developers/projects")
     try:
         projects.create(db, user_id=user.id, name=name)
     except projects.ProjectError as exc:
         db.rollback()
-        return _page(request, db, user, error=str(exc))
+        return _render(request, db, user, "projects", "dev_projects.html",
+                       error=str(exc), **_projects_context(db, user))
     db.commit()
-    raise _redirect("/developers")
+    raise _redirect("/developers/projects")
 
 
 @router.post("/projects/{project_id}/archive")
@@ -120397,7 +120580,7 @@ def archive_project(request: Request, project_id: str,
                     csrf_token: str = Form(""), user=Depends(require_account),
                     db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
-        return RedirectResponse("/developers", status_code=303)
+        return RedirectResponse("/developers/projects", status_code=303)
     project = projects.get_owned(db, user_id=user.id, project_id=project_id)
     if project is not None:
         # Archiving revokes the project's keys and touches nothing else: jobs,
@@ -120405,7 +120588,7 @@ def archive_project(request: Request, project_id: str,
         # integration cannot make them untrue.
         projects.archive(db, project)
         db.commit()
-    return RedirectResponse("/developers", status_code=303)
+    return RedirectResponse("/developers/projects", status_code=303)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -125602,7 +125785,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=7be7aebd0c9688aadbf2458b383d751c465dac04bcd5ad9879af1c6fe07c9eb8 BYTES=112670 LINES=563
+SHA256=7a6e7a0e2dcf42920b6d0ae04177df84857717181115227c43f4aa0a3b0f042b BYTES=113619 LINES=576
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -126168,6 +126351,19 @@ html{background:var(--surface-canvas)}
 /* H26.10B Chat AI customer workflow and per-turn trace. */
 .chat-more{position:relative}.chat-more>summary{display:grid;min-width:44px;min-height:44px;place-items:center;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer;list-style:none}.chat-more>summary::-webkit-details-marker{display:none}.chat-more .chat-thread-actions{position:absolute;right:0;top:calc(100% + 6px);z-index:3;min-width:210px;padding:7px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-raised);box-shadow:0 12px 30px #0005}.chat-more .chat-thread-actions>*{flex:1}.chat-msg>header{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text-muted);font-size:10px}.chat-msg.user>header{flex-direction:row-reverse}.chat-msg time{font-size:9px}.chat-turn-meta{max-width:100%;color:var(--text-muted);font-size:9px}.chat-turn-meta summary{min-height:24px;cursor:pointer}.chat-turn-meta span{display:block;padding:3px 0}.chat-suggestions{display:grid;max-width:620px;margin:auto;place-items:center;gap:9px;color:var(--text-secondary);text-align:center}.chat-suggestions p{margin:0}.chat-suggestions>div{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}.chat-suggestions button{min-height:44px;padding:7px 11px;border:1px solid var(--border-subtle);border-radius:99px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer}.chat-suggestions button:hover{border-color:var(--brand-primary);color:var(--text-primary)}.chat-file-list{display:block;max-width:100%;overflow:hidden;color:var(--text-muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap}.chat-status.busy{color:var(--text-secondary)}.chat-status.success{color:var(--status-success)}.chat-status.warn{color:var(--status-warning)}.chat-status.error{color:var(--status-danger)}#stopbtn[hidden],#sendbtn[hidden]{display:none}@media(max-width:480px){.chat-more .chat-thread-actions{right:auto;left:0}.chat-suggestions>div{display:grid;width:100%}.chat-suggestions button{width:100%}}
 
+/* EXT-05 Developer API area: one portal, one navigation. The sub-nav scrolls
+   horizontally on a phone rather than wrapping into a wall of links. */
+.dev-nav{margin:0 0 14px;border-bottom:1px solid var(--border-subtle);overflow-x:auto;scrollbar-width:none}
+.dev-nav::-webkit-scrollbar{display:none}
+.dev-nav ul{display:flex;gap:2px;margin:0;padding:0;list-style:none;white-space:nowrap}
+.dev-nav li{margin:0}
+.dev-nav a,.dev-nav span{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:8px 12px;border-bottom:2px solid transparent;color:var(--text-secondary);font-size:13px;text-decoration:none}
+.dev-nav a:hover{color:var(--text-primary)}
+.dev-nav a.active{border-bottom-color:var(--brand-primary);color:var(--text-primary);font-weight:600}
+.dev-nav span{cursor:not-allowed;opacity:.55}
+.dev-nav .pill{padding:1px 6px;border-radius:99px;background:var(--surface-overlay);font-size:9px}
+.dev-h1{margin:0 0 12px;font-size:20px}
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/prompt-ai-ommi/.vite/manifest.json
@@ -126312,7 +126508,7 @@ SHA256=eea299f9a8a485befdfa5dcb3e95fa401dc0c0696e926d9d4237271a84d58a91 BYTES=11
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/_header.html
-SHA256=2445476ffb380ec5e0ee17e0272e3c2acb60b88d53d44ed15896e182cee51b2a BYTES=3642 LINES=76
+SHA256=f927ed0765a609ece8b030d034482fd78d12ca80ce022ceac356550c314be4cc BYTES=3746 LINES=77
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <header class="hdr">
   <a class="hdr-logo" href="/"><span class="mark">LTT</span> LTT AI Studio</a>
@@ -126354,6 +126550,7 @@ SHA256=2445476ffb380ec5e0ee17e0272e3c2acb60b88d53d44ed15896e182cee51b2a BYTES=36
           <div class="acc-head"><b>{{ _acc.name }}</b><small>{{ _acc.email }}</small>
             <span class="badge b-grey"><span class="dot"></span>{{ _acc.role }}</span></div>
           <a href="/jobs"><span class="ic">📋</span> {{ _("Việc của tôi") }}</a>
+          <a href="/developers"><span class="ic">🔌</span> {{ _("API cho lập trình viên") }}</a>
           {% if is_admin(request) %}<a href="/settings"><span class="ic">🔧</span> {{ _("Cấu hình hệ thống") }}</a>
           <a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
           <a href="/admin/apikeys"><span class="ic">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
@@ -127212,29 +127409,78 @@ SHA256=3e6b9072a493e0b418b3f06ec156788ba2332435e26b398f836e1053cafeab59 BYTES=29
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/developers.html
-SHA256=68e59f6060f7d097f2809b1b9874ff13110b45b3b9b8450624a835ad37a197e4 BYTES=10544 LINES=236
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_docs.html
+SHA256=01561447ca7389abfec14329dbfa18243808b4cee1e4235c3da6d39bff847e3f BYTES=1166 LINES=25
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-{% extends "base.html" %}
-{% block title %}{{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("API cho lập trình viên") }}</strong>{% endblock %}
-{% block content %}
+{% extends "developers_base.html" %}
+{% block section %}
 
-{% if not api_enabled %}
-  <div class="alert alert-warn" role="status">
-    <strong>{{ _("API công khai đang tắt trên máy chủ này.") }}</strong>
-    {{ _("Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. Quản trị viên bật bằng biến môi trường LTT_PUBLIC_API.") }}
-  </div>
-{% elif read_only %}
-  <div class="alert alert-warn" role="status">
-    <strong>{{ _("API đang ở chế độ chỉ đọc.") }}</strong>
-    {{ _("Đọc vẫn chạy; tạo job tạm thời bị từ chối.") }}
-  </div>
-{% endif %}
+<div class="card">
+  <ul>
+    <li><a href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a>
+        — {{ _("mô tả máy đọc được, kèm schema của từng công cụ.") }}</li>
+    <li><code>docs/PUBLIC_API/DEVELOPER_GUIDE.md</code>
+        — {{ _("hướng dẫn bắt đầu và tham chiếu từng công cụ.") }}</li>
+    <li><code>docs/PUBLIC_API/PROTOCOL_V1.md</code>
+        — {{ _("chế độ chạy, quy ước, bảng lỗi và khi nào nên thử lại.") }}</li>
+    <li><code>sdk/python/ltt_public_api.py</code>,
+        <code>sdk/typescript/ltt-public-api.ts</code>
+        — {{ _("SDK một file, không phụ thuộc ngoài.") }}</li>
+  </ul>
+</div>
 
-{% if error %}
-  <div class="alert alert-err" role="alert">{{ error }}</div>
-{% endif %}
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Gọi thử") }}</h2>
+  <pre style="overflow-x:auto;"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
+     {{ base_url }}/api/v1/me</code></pre>
+  <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — xem PROTOCOL_V1.md mục 2.1.") }}</p>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_jobs.html
+SHA256=12df58125492d11663c0096fb7aca7785aedbee862fd19ea9f37483357033bed BYTES=987 LINES=30
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  {% if not recent_jobs %}
+    <p class="muted">{{ _("Chưa có job nào tạo qua API.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>Job</th><th>{{ _("Công cụ") }}</th><th>{{ _("Khóa") }}</th>
+        <th>{{ _("Trạng thái") }}</th><th>{{ _("Lúc") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for job in recent_jobs %}
+          <tr>
+            <td><code>{{ job.id[:8] }}</code></td>
+            <td>{{ job.tool }}</td>
+            <td><code>{{ job.key_id[:8] }}</code></td>
+            <td>{{ job.status }}</td>
+            <td>{{ job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  <p class="muted">{{ _("Danh sách đầy đủ và chi tiết từng job:") }}
+     <code>GET /api/v1/jobs</code>.</p>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_keys.html
+SHA256=4ce67cfd912323508755bb3e7583f0076f269c040f7ba5832cdd905f061da59f BYTES=5812 LINES=125
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
 
 {% if revealed_secret %}
   {# Hiện ĐÚNG MỘT LẦN. Máy chủ không lưu chuỗi này và không tái tạo được. #}
@@ -127248,99 +127494,6 @@ SHA256=68e59f6060f7d097f2809b1b9874ff13110b45b3b9b8450624a835ad37a197e4 BYTES=10
 {% endif %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Tạo khóa mới") }}</h2>
-  <section class="card">
-    <h2>{{ _("Project") }}</h2>
-    <p class="muted">{{ _("Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng.") }}</p>
-    {% if projects %}
-      <table>
-        <thead><tr>
-          <th>{{ _("Tên") }}</th><th>{{ _("Định danh") }}</th>
-          <th>{{ _("Tạo lúc") }}</th><th></th>
-        </tr></thead>
-        <tbody>
-          {% for project in projects %}
-            <tr>
-              <td>{{ project.name }}</td>
-              <td><code>{{ project.slug }}</code></td>
-              <td>{{ project.created_at.strftime("%Y-%m-%d") }}</td>
-              <td>
-                <form method="post" action="/developers/projects/{{ project.id }}/archive"
-                      onsubmit="return confirm('{{ _('Lưu trữ project này? Mọi khóa của nó bị thu hồi.') }}');">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                  <button type="submit" class="btn btn-ghost">{{ _("Lưu trữ") }}</button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="muted">{{ _("Chưa có project nào. Tạo khóa đầu tiên sẽ tự sinh project “Default”.") }}</p>
-    {% endif %}
-    <form method="post" action="/developers/projects">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <label for="project-name">{{ _("Tên project mới") }}</label>
-      <input id="project-name" name="name" maxlength="120"
-             placeholder="{{ _('trang bán hàng') }}">
-      <button type="submit" class="btn">{{ _("Tạo project") }}</button>
-    </form>
-  </section>
-
-  <form method="post" action="/developers/keys">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <p>
-      <label for="key-name">{{ _("Tên gợi nhớ") }}</label><br>
-      <input id="key-name" name="name" maxlength="120"
-             placeholder="{{ _('máy chủ sản xuất') }}">
-    </p>
-    <p>
-      <label for="key-project">{{ _("Thuộc project") }}</label><br>
-      <select id="key-project" name="project_id">
-        <option value="">{{ _("Default") }}</option>
-        {% for project in projects %}
-          <option value="{{ project.id }}">{{ project.name }}</option>
-        {% endfor %}
-      </select>
-    </p>
-    <p>
-      <label for="key-expiry">{{ _("Tự hết hạn sau (ngày, để trống = không hết hạn)") }}</label><br>
-      <input id="key-expiry" name="expires_in_days" inputmode="numeric"
-             placeholder="90">
-    </p>
-    <p>
-      <label for="key-ips">{{ _("Chỉ cho phép gọi từ IP/CIDR (để trống = mọi nơi)") }}</label><br>
-      <input id="key-ips" name="allowed_ips" placeholder="203.0.113.4, 198.51.100.0/24">
-    </p>
-    <fieldset>
-      <legend>{{ _("Phạm vi (scope)") }}</legend>
-      {% for scope in scopes %}
-        <label style="display:inline-block; margin-right:1rem;">
-          <input type="checkbox" name="scopes" value="{{ scope }}"
-                 {% if scope in default_scopes %}checked{% endif %}>
-          <code>{{ scope }}</code>
-        </label>
-      {% endfor %}
-      <p class="muted">{{ _("Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu credit.")|format(scopes=default_scopes|join(', ')) }}</p>
-    </fieldset>
-    {% if tools %}
-      <fieldset>
-        <legend>{{ _("Giới hạn theo công cụ (tùy chọn)") }}</legend>
-        {% for tool in tools %}
-          <label style="display:inline-block; margin-right:1rem;">
-            <input type="checkbox" name="allowed_tools" value="{{ tool }}">
-            <code>{{ tool }}</code>
-          </label>
-        {% endfor %}
-        <p class="muted">{{ _("Không chọn gì = khóa dùng được mọi công cụ đang mở.") }}</p>
-      </fieldset>
-    {% endif %}
-    <button type="submit" class="btn btn-primary">{{ _("Tạo khóa") }}</button>
-  </form>
-</div>
-
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Khóa của bạn") }}</h2>
   {% if not keys %}
     <p class="muted">{{ _("Chưa có khóa nào.") }}</p>
   {% else %}
@@ -127397,7 +127550,274 @@ SHA256=68e59f6060f7d097f2809b1b9874ff13110b45b3b9b8450624a835ad37a197e4 BYTES=10
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Hạn mức và số dư") }}</h2>
+  <h2 style="margin-top:0;">{{ _("Tạo khóa mới") }}</h2>
+  <form method="post" action="/developers/keys">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <p>
+      <label for="key-name">{{ _("Tên gợi nhớ") }}</label><br>
+      <input id="key-name" name="name" maxlength="120"
+             placeholder="{{ _('máy chủ sản xuất') }}">
+    </p>
+    <p>
+      <label for="key-project">{{ _("Thuộc project") }}</label><br>
+      <select id="key-project" name="project_id">
+        <option value="">{{ _("Default") }}</option>
+        {% for project in projects %}
+          <option value="{{ project.id }}">{{ project.name }}</option>
+        {% endfor %}
+      </select>
+    </p>
+    <p>
+      <label for="key-expiry">{{ _("Tự hết hạn sau (ngày, để trống = không hết hạn)") }}</label><br>
+      <input id="key-expiry" name="expires_in_days" inputmode="numeric"
+             placeholder="90">
+    </p>
+    <p>
+      <label for="key-ips">{{ _("Chỉ cho phép gọi từ IP/CIDR (để trống = mọi nơi)") }}</label><br>
+      <input id="key-ips" name="allowed_ips" placeholder="203.0.113.4, 198.51.100.0/24">
+    </p>
+    <fieldset>
+      <legend>{{ _("Phạm vi (scope)") }}</legend>
+      {% for scope in scopes %}
+        <label style="display:inline-block; margin-right:1rem;">
+          <input type="checkbox" name="scopes" value="{{ scope }}"
+                 {% if scope in default_scopes %}checked{% endif %}>
+          <code>{{ scope }}</code>
+        </label>
+      {% endfor %}
+      <p class="muted">{{ _("Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu credit.")|format(scopes=default_scopes|join(', ')) }}</p>
+    </fieldset>
+    {% if tools %}
+      <fieldset>
+        <legend>{{ _("Giới hạn theo công cụ (tùy chọn)") }}</legend>
+        {% for tool in tools %}
+          <label style="display:inline-block; margin-right:1rem;">
+            <input type="checkbox" name="allowed_tools" value="{{ tool }}">
+            <code>{{ tool }}</code>
+          </label>
+        {% endfor %}
+        <p class="muted">{{ _("Không chọn gì = khóa dùng được mọi công cụ đang mở.") }}</p>
+      </fieldset>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">{{ _("Tạo khóa") }}</button>
+  </form>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_overview.html
+SHA256=4360ac675017dd7b82f3f4ae3c70b77c7c3813cbae2ea6712df66ff78ca57740 BYTES=2868 LINES=58
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Tình trạng") }}</h2>
+  <ul>
+    <li>{{ _("API công khai:") }}
+      <strong>{% if not api_enabled %}{{ _("đang tắt") }}
+        {% elif read_only %}{{ _("chỉ đọc") }}
+        {% else %}{{ _("đang phục vụ") }}{% endif %}</strong></li>
+    <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
+    <li>{{ _("Đã dùng hôm nay:") }} <strong>{{ usage_today.net_charged_credit }}</strong>
+        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit }})
+        {% if limits.daily_credit_limit %}
+          — {{ _("trần ngày") }} {{ limits.daily_credit_limit }}
+        {% else %}
+          — <span class="muted">{{ _("chưa đặt trần ngày") }}</span>
+        {% endif %}</li>
+    <li>{{ _("Project:") }} <strong>{{ counts.projects }}</strong> ·
+        {{ _("khóa đang hoạt động:") }} <strong>{{ counts.active_keys }}</strong></li>
+    <li>{{ _("Job qua API (30 ngày):") }} <strong>{{ counts.api_jobs }}</strong></li>
+    <li>Webhook:
+      {% if counts.webhooks == 0 %}<span class="muted">{{ _("chưa đăng ký") }}</span>
+      {% else %}<strong>{{ counts.webhooks }}</strong>
+        {% if counts.webhook_failures %}
+          — <span class="alert-err">{{ counts.webhook_failures }}
+            {{ _("lần giao thất bại gần đây") }}</span>
+        {% else %}— {{ _("đang khỏe") }}{% endif %}
+      {% endif %}</li>
+    <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
+        {{ limits.create_rpm }} {{ _("job/phút") }},
+        {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  {% if counts.active_keys == 0 %}
+    <p>{{ _("Chưa có khóa nào. Ba bước để gọi được lần đầu:") }}</p>
+    <ol>
+      <li><a href="/developers/projects">{{ _("Tạo một project") }}</a>
+          — {{ _("mỗi tích hợp một project.") }}</li>
+      <li><a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
+          — {{ _("chuỗi bí mật chỉ hiện một lần.") }}</li>
+      <li><a href="/developers/docs">{{ _("Gọi thử theo hướng dẫn") }}</a></li>
+    </ol>
+  {% else %}
+    <p class="muted">{{ _("Bạn đã có khóa. Những nơi hay dùng:") }}</p>
+    <p>
+      <a class="btn" href="/developers/keys">{{ _("Khóa API") }}</a>
+      <a class="btn" href="/developers/tools">{{ _("Công cụ & model") }}</a>
+      <a class="btn" href="/developers/jobs">{{ _("Job gần đây") }}</a>
+      <a class="btn" href="/developers/docs">{{ _("Tài liệu & SDK") }}</a>
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_projects.html
+SHA256=ad7de3c35d452efe6333eec7849b3fd0ec432d98f069927cb4b71a4e06c866e1 BYTES=2005 LINES=46
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <p class="muted">{{ _("Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng. Lưu trữ một project sẽ thu hồi khóa của nó và không đụng tới job hay sổ credit.") }}</p>
+  {% if projects %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Tên") }}</th><th>{{ _("Định danh") }}</th>
+        <th>{{ _("Khóa") }}</th><th>{{ _("Tạo lúc") }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for project in projects %}
+          <tr>
+            <td>{{ project.name }}</td>
+            <td><code>{{ project.slug }}</code></td>
+            <td>{{ project.key_count }}</td>
+            <td>{{ project.created_at.strftime("%Y-%m-%d") }}</td>
+            <td>
+              <form method="post" action="/developers/projects/{{ project.id }}/archive"
+                    onsubmit="return confirm('{{ _("Lưu trữ project này? Mọi khóa của nó bị thu hồi.") }}');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-ghost">{{ _("Lưu trữ") }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">{{ _("Chưa có project nào. Tạo khóa đầu tiên sẽ tự sinh project “Default”.") }}</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Project mới") }}</h2>
+  <form method="post" action="/developers/projects">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="project-name">{{ _("Tên project") }}</label>
+    <input id="project-name" name="name" maxlength="120"
+           placeholder="{{ _('trang bán hàng') }}" required>
+    <button type="submit" class="btn btn-primary">{{ _("Tạo project") }}</button>
+  </form>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_settings.html
+SHA256=1c0526e1e72133c8a820ab67323127a41dad533ca6e4ef5ff2b370b63e46d9f7 BYTES=1177 LINES=20
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("An toàn khóa") }}</h2>
+  <ul>
+    <li>{{ _("Chuỗi bí mật chỉ hiện một lần, lúc tạo. Máy chủ giữ dấu vân tay một chiều nên không ai lấy lại được — kể cả quản trị viên.") }}</li>
+    <li>{{ _("Thu hồi có hiệu lực ở request kế tiếp và không đảo ngược được.") }}</li>
+    <li>{{ _("Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.") }}</li>
+    <li>{{ _("Giới hạn khóa theo IP/CIDR và đặt hạn dùng khi giao cho bên thứ ba.") }}</li>
+    <li>{{ _("Khóa bị lộ: thu hồi ngay ở mục Khóa API, rồi kiểm mục Job xem có lời gọi lạ không.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Dữ liệu của bạn") }}</h2>
+  <p class="muted">{{ _("Xuất và xoá dữ liệu tích hợp là hạng mục riêng, chưa có ở bước này. Trong lúc chờ, liên hệ hỗ trợ kèm mã khóa công khai.") }}</p>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_tools.html
+SHA256=bd067e8cb9e9407bec0447d41d16786804f363a69f2638ab7b63615241685721 BYTES=2073 LINES=56
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <p class="muted">{{ _("Đây là những gì máy chủ này đang mở. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}</p>
+  {% if not catalog %}
+    <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Công cụ") }}</th><th>{{ _("Nhóm") }}</th>
+        <th>{{ _("Chạy kiểu") }}</th><th>{{ _("Phạm vi cần") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for tool in catalog %}
+          <tr>
+            <td><code>{{ tool.name }}</code><br>
+                <span class="muted">{{ tool.description }}</span></td>
+            <td>{{ tool.capability }}</td>
+            <td><code>{{ tool.execution_mode }}</code></td>
+            <td>{% for scope in tool.scopes %}<code>{{ scope }}</code> {% endfor %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
+{% if models %}
+  <div class="card">
+    <h2 style="margin-top:0;">Model</h2>
+    <table class="table">
+      <thead><tr>
+        <th>Alias</th><th>{{ _("Nhóm") }}</th><th>{{ _("Độ ổn định") }}</th>
+        <th>{{ _("Công cụ nhận") }}</th><th>{{ _("Ghi chú") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for model in models %}
+          <tr>
+            <td><code>{{ model.name }}</code></td>
+            <td>{{ model.capability }}</td>
+            <td>{{ model.stability }}</td>
+            <td>{% for tool in model.tools %}<code>{{ tool }}</code> {% endfor %}</td>
+            <td>{{ model.description }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+<p class="muted">{{ _("Hợp đồng đầy đủ của từng công cụ:") }}
+  <code>GET /api/v1/tools/{tool_name}</code> ·
+  <a href="/api/v1/openapi.json">OpenAPI</a></p>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_usage.html
+SHA256=aefbafe913dc36ba039e20f6f0fff0d40ce3320b03d4c504c9cf5a0ceffbbe6e BYTES=1015 LINES=20
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
   <ul>
     <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
     <li>{{ _("Đã dùng hôm nay:") }} <strong>{{ usage_today.net_charged_credit }}</strong>
@@ -127408,47 +127828,100 @@ SHA256=68e59f6060f7d097f2809b1b9874ff13110b45b3b9b8450624a835ad37a197e4 BYTES=10
         {% if limits.daily_credit_limit %}, {{ _("trần") }}
           {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
   </ul>
+  <p class="muted">{{ _("Chi tiết theo từng job:") }} <code>GET /api/v1/usage</code>.
+     {{ _("Ngân sách và cảnh báo chi tiêu là hạng mục riêng, chưa có ở bước này.") }}</p>
+  <p><a class="btn" href="/nap">{{ _("Nạp credit") }}</a></p>
 </div>
 
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_webhooks.html
+SHA256=31a368995d408bb5282902fcd888a47d363ff5915a38f93f24a25799d4fbe7ee BYTES=993 LINES=27
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
 <div class="card">
-  <h2 style="margin-top:0;">Webhook</h2>
   {% if not webhooks %}
-    <p class="muted">{{ _("Chưa đăng ký webhook nào. Đăng ký bằng POST /api/v1/webhooks.") }}</p>
-  {% else %}
-    <ul>
-      {% for hook in webhooks %}
-        <li><code>{{ hook.url }}</code> — {{ hook.events|join(', ') }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
-</div>
-
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Job gần đây qua API") }}</h2>
-  {% if not recent_jobs %}
-    <p class="muted">{{ _("Chưa có job nào tạo qua API.") }}</p>
+    <p class="muted">{{ _("Chưa đăng ký webhook nào.") }}</p>
   {% else %}
     <table class="table">
-      <thead><tr>
-        <th>Job</th><th>{{ _("Công cụ") }}</th>
-        <th>{{ _("Trạng thái") }}</th><th>{{ _("Lúc") }}</th>
-      </tr></thead>
+      <thead><tr><th>URL</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Tạo lúc") }}</th></tr></thead>
       <tbody>
-      {% for job in recent_jobs %}
-        <tr>
-          <td><code>{{ job.id[:8] }}</code></td>
-          <td>{{ job.tool }}</td>
-          <td>{{ job.status }}</td>
-          <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '' }}</td>
-        </tr>
-      {% endfor %}
+        {% for hook in webhooks %}
+          <tr>
+            <td><code>{{ hook.url }}</code></td>
+            <td>{{ hook.events|join(", ") }}</td>
+            <td>{{ hook.created_at.strftime("%Y-%m-%d") if hook.created_at else "" }}</td>
+          </tr>
+        {% endfor %}
       </tbody>
     </table>
   {% endif %}
+  <p class="muted">{{ _("Đăng ký và huỷ đăng ký bằng API:") }}
+     <code>POST /api/v1/webhooks</code> ·
+     <code>GET /api/v1/webhooks/deliveries</code>.
+     {{ _("Bảng điều khiển webhook (xem payload, gửi lại) là hạng mục riêng, chưa có ở bước này.") }}</p>
 </div>
 
-<p class="muted">{{ _("Tài liệu:") }} <a href="/api/v1/openapi.json">OpenAPI</a> ·
-  {{ _("hướng dẫn bắt đầu ở docs/PUBLIC_API/DEVELOPER_GUIDE.md.") }}</p>
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/developers_base.html
+SHA256=9d0858de50a2af8aab32a48d6600ea7eea2410700f23fe06c10817a0b7383b74 BYTES=2115 LINES=51
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{# Shell for the whole developer API area: one portal, one navigation.
+
+   The sections below used to be one long page. They became routes when the area
+   grew past what a person can scan — but they stayed a *single* portal, because
+   two places to manage the same key is how a customer revokes the wrong one. #}
+{% extends "base.html" %}
+{% block title %}{{ section_title }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("API cho lập trình viên") }}</strong>{% endblock %}
+{% block content %}
+
+<nav class="dev-nav" aria-label="{{ _('Khu API') }}">
+  <ul>
+    {% for item in nav %}
+      <li>
+        {% if item.href %}
+          <a href="{{ item.href }}"
+             {% if item.active %}aria-current="page" class="active"{% endif %}>
+            {{ item.label }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
+          </a>
+        {% else %}
+          {# Named but not built yet. A dead link is worse than an honest label:
+             the shape of the area is information, a 404 is not. #}
+          <span class="muted" title="{{ _('Sắp có') }}">{{ item.label }}
+            <span class="pill">{{ _("sắp có") }}</span></span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</nav>
+
+{% if not api_enabled %}
+  <div class="alert alert-warn" role="status">
+    <strong>{{ _("API công khai đang tắt trên máy chủ này.") }}</strong>
+    {{ _("Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. Quản trị viên bật bằng biến môi trường LTT_PUBLIC_API.") }}
+  </div>
+{% elif read_only %}
+  <div class="alert alert-warn" role="status">
+    <strong>{{ _("API đang ở chế độ chỉ đọc.") }}</strong>
+    {{ _("Đọc vẫn chạy; tạo job tạm thời bị từ chối.") }}
+  </div>
+{% endif %}
+
+{% if error %}
+  <div class="alert alert-err" role="alert">{{ error }}</div>
+{% endif %}
+
+<h1 class="dev-h1">{{ section_title }}</h1>
+
+{% block section %}{% endblock %}
 
 {% endblock %}
 
@@ -127504,7 +127977,7 @@ SHA256=86fae0b8ccf5204782f11c25eb8e2ab6a9b9c1e92112bcd9e743d0af2fe25782 BYTES=13
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/home.html
-SHA256=5bd6e5be8762df747c5614feba31eee4c85b0116a03d55a27e64b3f3d7a1e0cc BYTES=15925 LINES=78
+SHA256=fd98fbf17251b4ebf35893f5e97b7cb6dd673993e146e7aa1ab446bf432628fa BYTES=16005 LINES=78
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" if authed else "base_public.html" %}
 {% block title %}LTT AI Studio{% endblock %}
@@ -127536,7 +128009,7 @@ SHA256=5bd6e5be8762df747c5614feba31eee4c85b0116a03d55a27e64b3f3d7a1e0cc BYTES=15
       <label class="market-search"><span aria-hidden="true">⌕</span><span class="sr-only">{{ _("Tìm ứng dụng") }}</span><input id="market-search" type="search" placeholder="{{ _('Tìm ứng dụng, công cụ AI, tính năng…') }}" autocomplete="off"><kbd>Ctrl K</kbd></label>
       <label class="market-sort"><span aria-hidden="true">⇅</span> <span>{{ _("Sắp xếp:") }}</span><select id="market-sort"><option value="lifecycle">{{ _("Trạng thái") }}</option><option value="popular">{{ _("Phổ biến") }}</option><option value="new">{{ _("Mới nhất") }}</option><option value="name">{{ _("Tên A–Z") }}</option></select></label>
       {% set balance = so_du_credit(request) %}<a class="market-credit" href="/nap" aria-label="Nạp credit; số dư {{ balance if balance is not none else 0 }} credit"><span aria-hidden="true">✦</span><span>Credit</span><b>{{ balance if balance is not none else 0 }}</b><i aria-hidden="true">+</i></a>
-      {% set account = tai_khoan(request) %}<details class="market-account"><summary aria-label="{{ _('Mở menu tài khoản') }}"><span class="ava">{{ account.initial if account else 'L' }}</span><span><b>{{ account.name if account else 'LTT Studio' }}</b><small>{{ _("Thành viên") }}</small></span><em aria-hidden="true">⌄</em></summary><div class="market-account-menu"><a href="/jobs">{{ _("Việc của tôi") }}</a>{% if is_admin(request) %}<a href="/settings">{{ _("Cấu hình hệ thống") }}</a><a href="/status">{{ _("Tình trạng hệ thống") }}</a><a href="/admin/">{{ _("Quản trị") }}</a>{% endif %}<a href="/nap">{{ _("Nạp credit") }}</a><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}"><button type="submit">{{ _("Đăng xuất") }}</button></form></div></details>
+      {% set account = tai_khoan(request) %}<details class="market-account"><summary aria-label="{{ _('Mở menu tài khoản') }}"><span class="ava">{{ account.initial if account else 'L' }}</span><span><b>{{ account.name if account else 'LTT Studio' }}</b><small>{{ _("Thành viên") }}</small></span><em aria-hidden="true">⌄</em></summary><div class="market-account-menu"><a href="/jobs">{{ _("Việc của tôi") }}</a><a href="/developers">{{ _("API cho lập trình viên") }}</a>{% if is_admin(request) %}<a href="/settings">{{ _("Cấu hình hệ thống") }}</a><a href="/status">{{ _("Tình trạng hệ thống") }}</a><a href="/admin/">{{ _("Quản trị") }}</a>{% endif %}<a href="/nap">{{ _("Nạp credit") }}</a><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}"><button type="submit">{{ _("Đăng xuất") }}</button></form></div></details>
     </header>
     <main class="market-main">
       {% if broken %}<div class="alert alert-err" role="alert"><strong>{{ broken|length }} app nạp lỗi</strong></div>{% endif %}
@@ -158584,7 +159057,7 @@ def test_the_agent_app_is_an_orchestrator_not_a_tool():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_191_developer_portal_sdk.py
-SHA256=46729f82d3083cb0398d449a3075d0b836c2cc206b234dd5f9a89f8705e7a251 BYTES=16196 LINES=383
+SHA256=c0abf37e0930fd6ffc7646bca3c4ad4b3e465aeb5c316cfce5c535e16ac08298 BYTES=16545 LINES=390
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 15 — developer portal, docs and SDKs.
 
@@ -158693,7 +159166,7 @@ def test_the_portal_requires_a_login(portal):
 
 def test_a_key_is_created_and_revealed_exactly_once(portal):
     _register(portal, "dev@example.com")
-    page = portal.get("/developers")
+    page = portal.get("/developers/keys")
     assert page.status_code == 200
 
     created = portal.post("/developers/keys",
@@ -158705,7 +159178,7 @@ def test_a_key_is_created_and_revealed_exactly_once(portal):
     token = secret.group(1)
 
     # A refresh must not bring it back — nothing on the server can reproduce it.
-    again = portal.get("/developers")
+    again = portal.get("/developers/keys")
     assert token not in again.text
     assert token.split("_", 3)[2] in again.text      # the public key_id remains
 
@@ -158813,11 +159286,18 @@ def test_the_portal_never_shows_a_provider_credential(portal):
 
 
 def test_the_portal_shows_limits_balance_and_api_state(portal):
+    """The numbers moved into sections (EXT-05); all of them are still one
+    click from the overview, and the overview itself still answers the two
+    questions that matter: what do I have left, and is anything wrong."""
     _register(portal, "limits@example.com")
-    page = portal.get("/developers").text
-    assert "credit" in page.lower()
-    assert "120" in page and "20" in page          # request/create per minute
-    assert "image.thumbnail" in page               # published tools offered
+    overview = portal.get("/developers").text
+    assert "credit" in overview.lower()
+
+    usage = portal.get("/developers/usage").text
+    assert "120" in usage and "20" in usage        # request/create per minute
+
+    tools = portal.get("/developers/tools").text
+    assert "image.thumbnail" in tools              # published tools offered
 
 
 # ── Docs ─────────────────────────────────────────────────────────────────────
@@ -161367,6 +161847,293 @@ def test_the_migration_backfills_a_default_project_for_existing_keys(db):
     assert key.project_id == project.id
     assert db.execute(sa.select(sa.func.count(ApiProject.id)).where(
         ApiProject.user_id == user.id)).scalar_one() == 1
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_197_developer_api_tab.py
+SHA256=4d51b7b42a93c5ef2e31658460194dd6c9ee241b566496cfb1c311057a26e37a BYTES=11521 LINES=281
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-05 — the developer API area: one portal, reachable, tenant-safe.
+
+The failure this file exists to prevent is the one the EXT-01 audit found: a
+feature that works perfectly and that nobody can find. Everything else here is
+about the second failure mode of a portal — showing one customer another
+customer's integration.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import keys as devkeys, limits, projects
+
+PEPPER = "devtab-test-pepper-" + "t" * 40
+
+# Every section the area promises, and whether it is built. Named-but-unbuilt
+# sections are rendered as plain text, never as links (EXT-08/09/11 own them).
+BUILT = ("/developers", "/developers/projects", "/developers/keys",
+         "/developers/tools", "/developers/jobs", "/developers/usage",
+         "/developers/webhooks", "/developers/docs", "/developers/settings")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'devtab.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "devtab-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "image.thumbnail",
+    })
+    # https, because the session cookie is marked secure.
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _csrf(html: str) -> str:
+    match = re.search(r'name="csrf_token" value="([^"]+)"', html)
+    assert match, "no CSRF token on the page"
+    return match.group(1)
+
+
+def _register(client, email: str) -> None:
+    """A verified account with credit, signed in."""
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 500, by="test")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    page = client.get("/login")
+    response = client.post("/login", data={
+        "username": email, "password": "a-good-password-12",
+        "csrf_token": _csrf(page.text)}, follow_redirects=False)
+    assert response.status_code in (302, 303), response.text
+
+
+# ── Reachability ─────────────────────────────────────────────────────────────
+
+def test_the_api_area_is_two_clicks_from_anywhere_signed_in(portal):
+    """The gap EXT-01 found: the portal existed and nothing linked to it."""
+    _register(portal, f"nav-{uuid.uuid4().hex[:6]}@example.com")
+    home = portal.get("/").text
+    # One click opens the account menu, the second is this link.
+    assert 'href="/developers"' in home
+
+
+@pytest.mark.parametrize("path", BUILT)
+def test_every_built_section_answers(portal, path):
+    _register(portal, f"sec-{uuid.uuid4().hex[:6]}@example.com")
+    response = portal.get(path)
+    assert response.status_code == 200, path
+    # Each section renders the shared shell, so navigation never disappears.
+    assert 'class="dev-nav"' in response.text
+
+
+def test_the_navigation_is_the_same_on_every_section(portal):
+    _register(portal, f"same-{uuid.uuid4().hex[:6]}@example.com")
+    links = None
+    for path in BUILT:
+        # Only the nav block: a section may of course link elsewhere in its body
+        # (the overview's call-to-action does).
+        block = re.search(r'<nav class="dev-nav".*?</nav>', portal.get(path).text,
+                          re.S)
+        assert block, path
+        found = re.findall(r'<a href="(/developers[^"]*)"', block.group(0))
+        if links is None:
+            links = found
+        assert found == links, path
+
+
+def test_unbuilt_sections_are_named_but_not_linked(portal):
+    """A dead link is worse than an honest label: the shape of the area is
+    information a developer uses to plan; a 404 is not."""
+    _register(portal, f"soon-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers").text
+    for label in ("Playground", "request", "báo"):
+        assert label.lower() in page.lower()
+    assert 'href="/developers/playground"' not in page
+    assert portal.get("/developers/playground").status_code == 404
+
+
+def test_the_current_section_is_marked_for_assistive_technology(portal):
+    _register(portal, f"aria-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers/keys").text
+    assert 'aria-current="page"' in page
+    assert page.count('aria-current="page"') == 1
+
+
+def test_there_is_exactly_one_portal(portal):
+    """No second place to manage a key: revoking the wrong one is a real cost."""
+    _register(portal, f"one-{uuid.uuid4().hex[:6]}@example.com")
+    for path in BUILT:
+        text = portal.get(path).text
+        # The creation form lives on exactly one section.
+        if path != "/developers/keys":
+            assert 'action="/developers/keys"' not in text, path
+
+
+# ── Overview ─────────────────────────────────────────────────────────────────
+
+def test_the_overview_answers_what_do_i_have_and_is_anything_wrong(portal):
+    _register(portal, f"ov-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers").text
+    for fragment in ("credit", "Project", "Webhook", "request/"):
+        assert fragment.lower() in page.lower(), fragment
+
+
+def test_a_new_account_is_told_the_three_steps_to_a_first_call(portal):
+    """Empty state: the most common visit is the first one."""
+    _register(portal, f"new-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers").text
+    assert 'href="/developers/projects"' in page
+    assert 'href="/developers/keys"' in page
+    assert 'href="/developers/docs"' in page
+
+
+def test_the_overview_counts_what_the_account_actually_has(portal):
+    email = f"count-{uuid.uuid4().hex[:6]}@example.com"
+    _register(portal, email)
+
+    from platform_core.db import get_session
+    from platform_core.models import User
+    from sqlalchemy import select
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = db.execute(select(User).where(User.email == email)).scalar_one()
+        project = projects.create(db, user_id=user.id, name="Counted")
+        devkeys.issue(db, user_id=user.id, project_id=project.id,
+                      env={devkeys.PEPPER_ENV: PEPPER})
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    page = portal.get("/developers").text
+    # One project, one active key — and the empty-state CTA is gone.
+    assert "Counted" not in page          # the overview counts, it does not list
+    assert ">1</strong>" in page
+
+
+# ── Tenancy ──────────────────────────────────────────────────────────────────
+
+def test_no_section_shows_another_account_anything(portal):
+    first = f"a-{uuid.uuid4().hex[:6]}@example.com"
+    _register(portal, first)
+
+    from platform_core.db import get_session
+    from platform_core.models import User
+    from sqlalchemy import select
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        alice = db.execute(select(User).where(User.email == first)).scalar_one()
+        secret_project = projects.create(db, user_id=alice.id,
+                                         name="AliceOnlyProject")
+        key, _token = devkeys.issue(db, user_id=alice.id,
+                                    project_id=secret_project.id,
+                                    name="AliceOnlyKey",
+                                    env={devkeys.PEPPER_ENV: PEPPER})
+        alice_key_id = key.key_id
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    portal.post("/logout", data={}, follow_redirects=False)
+    _register(portal, f"b-{uuid.uuid4().hex[:6]}@example.com")
+    for path in BUILT:
+        text = portal.get(path).text
+        assert "AliceOnlyProject" not in text, path
+        assert "AliceOnlyKey" not in text, path
+        assert alice_key_id not in text, path
+
+
+def test_every_section_needs_a_session(portal):
+    for path in BUILT:
+        response = portal.get(path, follow_redirects=False)
+        assert response.status_code in (302, 303), path
+        assert "/login" in response.headers.get("location", ""), path
+
+
+def test_writes_still_need_a_csrf_token(portal):
+    _register(portal, f"csrf-{uuid.uuid4().hex[:6]}@example.com")
+    before = portal.get("/developers/projects").text
+    refused = portal.post("/developers/projects",
+                          data={"name": "NoToken"}, follow_redirects=False)
+    assert refused.status_code in (302, 303)
+    assert "NoToken" not in portal.get("/developers/projects").text
+    assert "NoToken" not in before
+
+
+# ── Sections carry their own content ─────────────────────────────────────────
+
+def test_the_tools_section_lists_what_this_deployment_sells(portal):
+    _register(portal, f"tool-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers/tools").text
+    assert "image.thumbnail" in page
+    assert "ASYNC_JOB" in page
+    # …and never how it is implemented.
+    for leak in ("gemini", "thumbnail.", "provider", "credential"):
+        assert leak.lower() not in page.lower(), leak
+
+
+def test_the_docs_section_gives_a_runnable_first_call(portal):
+    _register(portal, f"doc-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers/docs").text
+    assert "curl" in page and "/api/v1/me" in page
+    assert "Authorization: Bearer" in page
+
+
+def test_creating_a_project_lands_back_on_the_projects_section(portal):
+    _register(portal, f"flow-{uuid.uuid4().hex[:6]}@example.com")
+    page = portal.get("/developers/projects")
+    created = portal.post("/developers/projects",
+                          data={"name": "Flow", "csrf_token": _csrf(page.text)},
+                          follow_redirects=False)
+    assert created.status_code == 303
+    assert created.headers["location"] == "/developers/projects"
+    assert "Flow" in portal.get("/developers/projects").text
 
 @@@LTT_PROFILE_FILE_END@@@
 

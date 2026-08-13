@@ -105,7 +105,7 @@ def test_the_portal_requires_a_login(portal):
 
 def test_a_key_is_created_and_revealed_exactly_once(portal):
     _register(portal, "dev@example.com")
-    page = portal.get("/developers")
+    page = portal.get("/developers/keys")
     assert page.status_code == 200
 
     created = portal.post("/developers/keys",
@@ -117,7 +117,7 @@ def test_a_key_is_created_and_revealed_exactly_once(portal):
     token = secret.group(1)
 
     # A refresh must not bring it back — nothing on the server can reproduce it.
-    again = portal.get("/developers")
+    again = portal.get("/developers/keys")
     assert token not in again.text
     assert token.split("_", 3)[2] in again.text      # the public key_id remains
 
@@ -225,11 +225,18 @@ def test_the_portal_never_shows_a_provider_credential(portal):
 
 
 def test_the_portal_shows_limits_balance_and_api_state(portal):
+    """The numbers moved into sections (EXT-05); all of them are still one
+    click from the overview, and the overview itself still answers the two
+    questions that matter: what do I have left, and is anything wrong."""
     _register(portal, "limits@example.com")
-    page = portal.get("/developers").text
-    assert "credit" in page.lower()
-    assert "120" in page and "20" in page          # request/create per minute
-    assert "image.thumbnail" in page               # published tools offered
+    overview = portal.get("/developers").text
+    assert "credit" in overview.lower()
+
+    usage = portal.get("/developers/usage").text
+    assert "120" in usage and "20" in usage        # request/create per minute
+
+    tools = portal.get("/developers/tools").text
+    assert "image.thumbnail" in tools              # published tools offered
 
 
 # ── Docs ─────────────────────────────────────────────────────────────────────

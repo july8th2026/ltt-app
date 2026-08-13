@@ -38,6 +38,7 @@
           <div class="acc-head"><b>{{ _acc.name }}</b><small>{{ _acc.email }}</small>
             <span class="badge b-grey"><span class="dot"></span>{{ _acc.role }}</span></div>
           <a href="/jobs"><span class="ic">📋</span> {{ _("Việc của tôi") }}</a>
+          <a href="/developers"><span class="ic">🔌</span> {{ _("API cho lập trình viên") }}</a>
           {% if is_admin(request) %}<a href="/settings"><span class="ic">🔧</span> {{ _("Cấu hình hệ thống") }}</a>
           <a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
           <a href="/admin/apikeys"><span class="ic">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
