@@ -49,6 +49,55 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+PROJECT_ACTIVE = "active"
+PROJECT_ARCHIVED = "archived"
+
+
+class ApiProject(Base):
+    """One integration belonging to one account: the unit keys are grouped by.
+
+    Why this exists at all, given that ``User`` already owns everything: an
+    account that runs two integrations — say a website and an internal batch
+    job — has no way to revoke one without disturbing the other, no way to give
+    each its own spend ceiling, and no way to tell from a log line which of them
+    is misbehaving. A project is the smallest thing that fixes all three, and it
+    is deliberately *not* an organisation: billing still belongs to the user
+    (Q92), so no second source of truth about money appears here.
+
+    Archiving, never deleting. Keys, jobs and ledger entries are evidence about
+    money that moved; a project that could be deleted would take the meaning of
+    those rows with it while the rows themselves stayed.
+    """
+
+    __tablename__ = "api_projects"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    # Stable, human-readable, unique per account — what a log line and a support
+    # ticket refer to, and what stays put when the display name is edited.
+    slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default=PROJECT_ACTIVE,
+                                        nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "slug", name="uq_api_project_owner_slug"),
+        Index("ix_api_projects_owner_status", "user_id", "status"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiProject {self.slug} user={self.user_id[:8]}>"
+
+    def is_active(self) -> bool:
+        return self.status == PROJECT_ACTIVE
+
+
 class DeveloperApiKey(Base):
     """One credential belonging to one platform ``User`` (Q92: principal = user)."""
 
@@ -61,6 +110,16 @@ class DeveloperApiKey(Base):
         String(36), ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    # Nullable on purpose. Keys issued before projects existed keep working
+    # exactly as they did; the migration gives each of them a project, and this
+    # column stays nullable so that a future key-issuing path which forgets to
+    # pass one fails visibly in review rather than at 3am on an upgrade.
+    project_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("api_projects.id", ondelete="RESTRICT"),
+        nullable=True, index=True)
+    # CIDR blocks this key may be presented from. Empty = anywhere, which is the
+    # honest default: most integrations run from a host whose address changes.
+    allowed_ips: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
     # Public half of the token: safe to show in a UI, in a log line and in an
     # audit record. This is what a support conversation refers to.

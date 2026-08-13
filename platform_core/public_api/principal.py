@@ -41,6 +41,10 @@ class Principal:
 
     key_id: str
     user_id: str
+    #: Which integration this credential belongs to. Empty only for keys issued
+    #: before projects existed; ownership and billing still hang off `user_id`,
+    #: so nothing downstream may *require* it (EXT-04).
+    project_id: str = ""
     scopes: frozenset = field(default_factory=frozenset)
     allowed_tools: frozenset = field(default_factory=frozenset)
     request_id: str = ""

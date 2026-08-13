@@ -132,7 +132,10 @@ def main() -> int:
                     "uq_public_api_idempotency",
                     # Mat rang buoc nay = gui trung webhook sau moi lan
                     # worker nhat lai job.
-                    "uq_public_api_webhook_event"):
+                    "uq_public_api_webhook_event",
+                    # Mat rang buoc nay = hai project cung slug trong mot tai
+                    # khoan, va moi thu tra cuu theo slug se tro nham cho.
+                    "uq_api_project_owner_slug"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

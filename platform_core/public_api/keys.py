@@ -50,6 +50,7 @@ LAST_USED_BUCKET = timedelta(minutes=5)
 
 MAX_KEYS_PER_USER = 25
 MAX_EXPIRY = timedelta(days=365)
+MAX_ALLOWED_IPS = 20
 
 PEPPER_ENV = "LTT_API_KEY_PEPPER"
 PEPPER_VERSION_ENV = "LTT_API_KEY_PEPPER_VERSION"
@@ -161,7 +162,61 @@ def parse_token(token: str) -> tuple[str, str] | None:
 
 # ── Issue ─────────────────────────────────────────────────────────────────────
 
+def normalize_ips(values) -> list:
+    """Validate an IP allowlist into canonical CIDR strings.
+
+    A bare address is accepted and stored as a /32 (or /128): people think in
+    addresses, and silently widening `203.0.113.4` to a range would be the
+    opposite of what they asked for.
+    """
+    import ipaddress
+
+    out: list = []
+    for value in values or ():
+        raw = str(value).strip()
+        if not raw:
+            continue
+        try:
+            network = ipaddress.ip_network(raw, strict=False)
+        except ValueError as exc:
+            raise DeveloperKeyError(
+                f"{raw!r} is not an IP address or CIDR block.") from exc
+        text = str(network)
+        if text not in out:
+            out.append(text)
+    if len(out) > MAX_ALLOWED_IPS:
+        raise DeveloperKeyError(
+            f"An API key may list at most {MAX_ALLOWED_IPS} IP ranges.")
+    return out
+
+
+def ip_allowed(key: DeveloperApiKey, address: str) -> bool:
+    """Is this key allowed to be presented from ``address``?
+
+    An empty allowlist means anywhere. A non-empty one with an unparseable or
+    unknown caller address means **no** — a restriction that silently stops
+    applying when the address cannot be determined is not a restriction.
+    """
+    import ipaddress
+
+    allowed = list(key.allowed_ips or ())
+    if not allowed:
+        return True
+    try:
+        caller = ipaddress.ip_address(str(address or "").strip())
+    except ValueError:
+        return False
+    for entry in allowed:
+        try:
+            if caller in ipaddress.ip_network(str(entry), strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
+          allowed_ips=(), project_id: str = "",
           expires_at: datetime | None = None, env: dict | None = None,
           now: datetime | None = None) -> tuple[DeveloperApiKey, str]:
     """Create a key. Returns the row and the plaintext token **once**.
@@ -191,6 +246,7 @@ def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
 
     clean_scopes = normalize_scopes(scopes)
     clean_tools = _normalize_tools(allowed_tools)
+    clean_ips = normalize_ips(allowed_ips)
 
     # A 128-bit key_id will not collide in practice; retrying anyway means a
     # freak collision (or a truncated generator in a future edit) fails one
@@ -202,8 +258,9 @@ def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
             id=str(uuid.uuid4()), user_id=owner, name=str(name or "")[:120],
             key_id=key_id, verifier_digest=digest_secret(secret, pepper),
             pepper_version=version, scopes=clean_scopes,
-            allowed_tools=clean_tools, enabled=True, created_at=current,
-            expires_at=expiry,
+            allowed_tools=clean_tools, allowed_ips=clean_ips,
+            project_id=str(project_id) or None, enabled=True,
+            created_at=current, expires_at=expiry,
         )
         db.add(key)
         try:

@@ -32,12 +32,68 @@
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Tạo khóa mới") }}</h2>
+  <section class="card">
+    <h2>{{ _("Project") }}</h2>
+    <p class="muted">{{ _("Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng.") }}</p>
+    {% if projects %}
+      <table>
+        <thead><tr>
+          <th>{{ _("Tên") }}</th><th>{{ _("Định danh") }}</th>
+          <th>{{ _("Tạo lúc") }}</th><th></th>
+        </tr></thead>
+        <tbody>
+          {% for project in projects %}
+            <tr>
+              <td>{{ project.name }}</td>
+              <td><code>{{ project.slug }}</code></td>
+              <td>{{ project.created_at.strftime("%Y-%m-%d") }}</td>
+              <td>
+                <form method="post" action="/developers/projects/{{ project.id }}/archive"
+                      onsubmit="return confirm('{{ _('Lưu trữ project này? Mọi khóa của nó bị thu hồi.') }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-ghost">{{ _("Lưu trữ") }}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">{{ _("Chưa có project nào. Tạo khóa đầu tiên sẽ tự sinh project “Default”.") }}</p>
+    {% endif %}
+    <form method="post" action="/developers/projects">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="project-name">{{ _("Tên project mới") }}</label>
+      <input id="project-name" name="name" maxlength="120"
+             placeholder="{{ _('trang bán hàng') }}">
+      <button type="submit" class="btn">{{ _("Tạo project") }}</button>
+    </form>
+  </section>
+
   <form method="post" action="/developers/keys">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <p>
       <label for="key-name">{{ _("Tên gợi nhớ") }}</label><br>
       <input id="key-name" name="name" maxlength="120"
              placeholder="{{ _('máy chủ sản xuất') }}">
+    </p>
+    <p>
+      <label for="key-project">{{ _("Thuộc project") }}</label><br>
+      <select id="key-project" name="project_id">
+        <option value="">{{ _("Default") }}</option>
+        {% for project in projects %}
+          <option value="{{ project.id }}">{{ project.name }}</option>
+        {% endfor %}
+      </select>
+    </p>
+    <p>
+      <label for="key-expiry">{{ _("Tự hết hạn sau (ngày, để trống = không hết hạn)") }}</label><br>
+      <input id="key-expiry" name="expires_in_days" inputmode="numeric"
+             placeholder="90">
+    </p>
+    <p>
+      <label for="key-ips">{{ _("Chỉ cho phép gọi từ IP/CIDR (để trống = mọi nơi)") }}</label><br>
+      <input id="key-ips" name="allowed_ips" placeholder="203.0.113.4, 198.51.100.0/24">
     </p>
     <fieldset>
       <legend>{{ _("Phạm vi (scope)") }}</legend>
@@ -74,6 +130,7 @@
     <table class="table">
       <thead><tr>
         <th>{{ _("Mã khóa") }}</th><th>{{ _("Tên") }}</th>
+        <th>{{ _("Project") }}</th>
         <th>{{ _("Trạng thái") }}</th><th>{{ _("Phạm vi") }}</th>
         <th>{{ _("Dùng lần cuối") }}</th><th></th>
       </tr></thead>
@@ -82,12 +139,21 @@
         <tr>
           <td><code>{{ key.key_id }}</code></td>
           <td>{{ key.name }}</td>
+          <td>{{ key.project or '—' }}</td>
           <td>{{ key.status }}</td>
           <td>
             {% for scope in key.scopes %}<code>{{ scope }}</code> {% endfor %}
             {% if key.allowed_tools %}
               <br><span class="muted">{{ _("công cụ:") }}
               {% for tool in key.allowed_tools %}<code>{{ tool }}</code> {% endfor %}</span>
+            {% endif %}
+            {% if key.allowed_ips %}
+              <br><span class="muted">{{ _("chỉ từ:") }}
+              {% for cidr in key.allowed_ips %}<code>{{ cidr }}</code> {% endfor %}</span>
+            {% endif %}
+            {% if key.expires_at %}
+              <br><span class="muted">{{ _("hết hạn:") }}
+              {{ key.expires_at.strftime('%Y-%m-%d') }}</span>
             {% endif %}
           </td>
           <td>{{ key.last_used_at.strftime('%Y-%m-%d %H:%M') if key.last_used_at else '—' }}</td>

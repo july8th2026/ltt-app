@@ -44,6 +44,7 @@ REASON_MALFORMED = "malformed_token"
 REASON_UNKNOWN_OR_WRONG = "unknown_or_wrong_secret"
 REASON_UNUSABLE = "revoked_expired_or_disabled"
 REASON_MISCONFIGURED = "pepper_not_configured"
+REASON_IP_NOT_ALLOWED = "ip_not_in_key_allowlist"
 
 
 def _config(request):
@@ -102,6 +103,15 @@ def resolve_from_database(request, db) -> Principal | None:
         _throttle(request, config, public_key_id)
         return None
 
+    # The key verified; it is simply not allowed to be presented from here.
+    # Same 401 as every other failure — telling a caller "right key, wrong
+    # address" confirms the key is real to whoever stole it.
+    proxies = getattr(config, "trusted_proxies", ()) if config else ()
+    if not devkeys.ip_allowed(key, client_ip(request, proxies)):
+        _audit_failure(request, REASON_IP_NOT_ALLOWED, public_key_id)
+        _throttle(request, config, public_key_id)
+        return None
+
     # Rate limit before doing anything else with the request: a key in a loop
     # should cost one window lookup, not a full handler.
     if config is not None:
@@ -116,6 +126,7 @@ def resolve_from_database(request, db) -> Principal | None:
         user_id=key.user_id,
         scopes=frozenset(key.scopes or ()),
         allowed_tools=frozenset(key.allowed_tools or ()),
+        project_id=str(key.project_id or ""),
         request_id=request_id(request),
     )
     # Published for the access log; nothing else reads it, and it never leaves

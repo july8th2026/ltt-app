@@ -31,6 +31,12 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-04 (2026-08-13):** Extension domain 4 (`projects`) và 6
+> (`IP restriction / key expiry`) `MISSING` → `DONE`; domain 5 (`service
+> accounts`) và 7 (`OAuth`) → `DEFERRED_WITH_ADR` (D6, D7, D1). Domain C
+> `PARTIAL` → `DONE`. Rủi ro X4 vẫn mở (portal chưa có lối vào từ header) —
+> EXT-05.
+
 > **Cập nhật sau EXT-03 (2026-08-13):** domain D chuyển `PARTIAL` → `DONE`;
 > Extension domain 3 (`models/capabilities catalog`) `MISSING` → `DONE`. Thêm
 > `GET /models`, `GET /models/{name}`, capability suy từ tên tool,

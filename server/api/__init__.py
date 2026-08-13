@@ -140,6 +140,10 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
             {
                 "key_id": principal.key_id,
                 "account_id": principal.user_id,
+                # Which integration this credential belongs to. A deployment
+                # running several projects otherwise has no way to confirm from
+                # the outside that it picked up the right key.
+                "project_id": principal.project_id,
                 "scopes": sorted(principal.scopes),
                 "allowed_tools": sorted(principal.allowed_tools),
             },

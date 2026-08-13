@@ -210,6 +210,56 @@ Có provider chat hợp đồng thương mại rõ ràng trong `api_pool` → m�
 
 ---
 
+## D6 — Service account: **HOÃN, có ADR.** Project là tầng sở hữu, key là danh tính máy.
+
+**Chủ sở hữu:** EXT-04 (đã thi hành phần project).
+
+### Bối cảnh
+Phân cấp mà EXT-04 chốt:
+
+```
+User            billing, credit — mọi thứ nền tảng đã sở hữu (Q92)
+ └─ Project     một tích hợp; đơn vị để THU HỒI, ĐẶT NGÂN SÁCH, ĐỌC LOG
+     └─ Key     một credential; đơn vị để XOAY
+```
+
+Service account sẽ nằm **giữa** project và key: một danh tính máy sống lâu hơn
+bất kỳ credential nào của nó.
+
+### Quyết định
+Không xây bây giờ. Hôm nay **key chính là danh tính máy**: nó có scope, có tool
+allowlist, có IP allowlist, có hạn dùng, và thuộc một project. Thêm một thực thể
+nữa với đúng một dòng cho mỗi key và **không hành vi riêng** là thêm một phép
+join phải bảo trì để đổi lấy không gì cả.
+
+### Vì sao hoãn được mà không thành nợ xấu
+Thêm sau là **cộng thêm**, không phải sửa lại: key đã trỏ vào project, nên service
+account chỉ cần là một chủ sở hữu **tuỳ chọn** bên trong project đó. Không dòng
+nào phải di chuyển, không khoá ngoại nào phải đổi hướng.
+
+### Điều kiện xem lại
+Xuất hiện **một** trong hai dấu hiệu: (a) một khách cần nhiều credential dùng
+chung *đúng một* bộ quyền và muốn quản lý bộ quyền đó ở một chỗ; hoặc (b) audit
+cần trả lời "máy nào đã làm việc này" khi credential đã bị xoay nhiều lần.
+
+---
+
+## D7 — API Client Application (OAuth client): **KHÔNG tạo bảng trước.**
+
+**Chủ sở hữu:** EXT-04, gắn với [D1](#d1--delegated-oauth-hoãn-có-adr-thay-bằng-khoá-bị-giới-hạn).
+
+D1 đã hoãn delegated OAuth. `client_id`, redirect URI, consent, refresh rotation
+chỉ có nghĩa **bên trong** một authorization server. Tạo sẵn bảng
+`api_client_applications` rỗng lúc này là dựng một bảng không ai đọc, không ai
+ghi, nhưng vẫn phải migrate, sao lưu và khôi phục.
+
+Hình dạng đã ghi lại để lúc cần không phải thiết kế từ đầu: `client_id`, chủ sở
+hữu (User), tên, trạng thái, danh sách redirect URI **khớp chính xác**, scope
+được phép, `created_at`; client bí mật chỉ dành cho confidential client; không
+implicit grant, không resource-owner-password.
+
+---
+
 ## Tóm tắt
 
 | # | Quyết định | Prompt | Hệ quả ngay |
@@ -219,5 +269,7 @@ Có provider chat hợp đồng thương mại rõ ràng trong `api_pool` → m�
 | D3 | 2.000 credit/ngày, chỉ đếm chi tiêu qua API, cảnh báo 50%/80% | EXT-11/14 | Sửa một lỗi phạm vi đang có trong `limits.py` |
 | D4 | Sandbox mock, cùng đường code, khoá `ltt_sk_test_` không tiêu tiền | EXT-12 | Khoá test rò = 0đ |
 | D5 | Định nghĩa STREAM, không mở chat qua sidecar | EXT-02/20 | Tránh bán lại tài khoản tiêu dùng |
+| D6 | Hoãn service account; project là tầng sở hữu, key là danh tính máy | EXT-04 | Thêm sau là cộng thêm, không phải sửa lại |
+| D7 | Không tạo trước bảng OAuth client | EXT-04 | Bảng rỗng vẫn phải migrate/sao lưu/khôi phục |
 
 Không quyết định nào ở trên còn để trạng thái UNKNOWN.

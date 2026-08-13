@@ -15,7 +15,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 01 | V2 reconciliation, master gap matrix, dependency graph | **PASS** | 2026-08-13 |
 | 02 | Protocol / execution modes / error-retry standards | **PASS** | 2026-08-13 |
 | 03 | Models / capabilities / tool catalog / schema chain | **PASS** | 2026-08-13 |
-| 04 | Projects / service accounts / delegated auth decision | chưa chạy | — |
+| 04 | Projects / service accounts / delegated auth decision | **PASS** | 2026-08-13 |
 | 05 | Developer API tab / information architecture | chưa chạy | — |
 | 06 | Schema-driven apps/models/tools variable reference | chưa chạy | — |
 | 07 | Quickstart / env vars / examples / recipes | chưa chạy | — |
@@ -369,3 +369,147 @@ Bỏ 2 route khỏi inventory + `tools.py`, bỏ `build_models`/`PublicModel`/
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/04_PROJECTS_SERVICE_ACCOUNTS_API_CLIENTS_AND_DELEGATED_AUTH_DECISION.txt`
 — **checkpoint full gate** theo `MANIFEST.json`.
+
+---
+
+## EXT-04 — PROJECTS, SERVICE ACCOUNTS, API CLIENTS, DELEGATED AUTH ✅
+
+**Checkpoint full gate** theo `MANIFEST.json`.
+
+### Entry gate
+
+EXT-03 PASS ✅ (`f019f73`), cây sạch. Head trước lượt này `c9d0e1f2a3b4`.
+
+### Reused V2 components
+
+`DeveloperApiKey` (thêm 2 cột), `Principal`, `context.client_ip`, portal phiên,
+CSRF, `credit`/`jobs` không đổi một dòng. **1 migration mới**, 1 bảng mới, 0 phụ
+thuộc mới, **0 route `/api/v1` mới**.
+
+### Phân cấp đã chốt
+
+```
+User            billing, credit — mọi thứ nền tảng đã sở hữu (Q92)
+ └─ Project     một tích hợp; đơn vị để THU HỒI, ĐẶT NGÂN SÁCH, ĐỌC LOG
+     └─ Key     một credential; đơn vị để XOAY
+```
+
+Ba quyết định kèm ADR (`EXTENSION_DECISIONS.md`):
+- **D1** delegated OAuth: hoãn (đã chốt ở lượt trước).
+- **D6** service account: hoãn. Hôm nay **key chính là danh tính máy** — có
+  scope, tool allowlist, IP allowlist, hạn dùng, thuộc project. Thêm một thực
+  thể một-dòng-mỗi-key mà không có hành vi riêng là thêm join để bảo trì. Thêm
+  sau là **cộng thêm**: key đã trỏ project, service account chỉ là chủ sở hữu
+  tuỳ chọn bên trong project.
+- **D7** bảng OAuth client: **không tạo trước**. Bảng rỗng vẫn phải migrate, sao
+  lưu, khôi phục. Hình dạng đã ghi lại để lúc cần không thiết kế từ đầu.
+
+### Migration `d0e1f2a3b4c5` — an toàn cho dữ liệu V2
+
+`project_id` **nullable** + backfill: mỗi tài khoản đang sở hữu key nhận một
+project `Default`, key trỏ vào đó. Khoá cũ chạy y nguyên ở **mọi** bước; không
+có thời điểm nào key mất quyền. Vòng tiến–lùi–tiến xanh (`test_63`).
+
+Khoá ngoại `project_id` chỉ tạo trên **không phải SQLite**: SQLite không ALTER
+thêm được ràng buộc, và batch mode sẽ **copy cả bảng credential** sang bảng mới
+rồi đổi tên — đắt và rủi ro, đổi lấy một ràng buộc mà PostgreSQL (Q1, production)
+vẫn có đầy đủ. Ghi rõ trong file migration.
+
+UNIQUE mới `uq_api_project_owner_slug` đã vào `tools/restore_drill_schema.py`
+(`test_155` yêu cầu).
+
+### Key restrictions
+
+| Ràng buộc | Trạng thái |
+|---|---|
+| scope | đã có (V2) |
+| tool allowlist | đã có (V2) |
+| **hạn dùng** | đã có ở CSDL, **giờ đặt được từ portal** (tối đa 1 năm) |
+| **IP allowlist (CIDR)** | **mới** — chuẩn hoá về CIDR, tối đa 20 dải |
+
+IP allowlist **fail-closed**: allowlist không rỗng mà không xác định được địa chỉ
+người gọi → **từ chối**. Một ràng buộc lặng lẽ ngừng áp dụng khi không đo được
+địa chỉ thì không phải ràng buộc.
+
+Khoá bị từ chối vì IP vẫn trả **đúng một** `401 unauthorized` như mọi thất bại
+credential khác: nói "đúng khoá, sai địa chỉ" là xác nhận khoá có thật với kẻ
+vừa lấy trộm nó.
+
+### Trusted proxy
+
+`is_trusted_peer` giờ hiểu **cả CIDR**, không chỉ địa chỉ chính xác. Cloudflare
+công bố biên của họ theo dải; một danh sách chỉ khớp chính xác buộc operator dán
+hàng trăm dòng và dán lại mỗi lần dải đổi. Entry sai cú pháp bị **bỏ qua**, không
+được tin — một lỗi gõ trong file cấu hình không được biến thành "tin mọi người".
+
+### Tests
+
+`tests/test_196_public_api_projects.py` — **31 test**. Đáng kể:
+- lưu trữ project thu hồi khoá **của nó** và không đụng project khác;
+- lưu trữ **không xoá** một dòng `jobs` hay `credit_entries` nào — bất biến làm
+  cho việc lưu trữ dám mời khách dùng;
+- gỡ lưu trữ trả project về nhưng **khoá vẫn revoked** (thu hồi là một chiều);
+- project `Default` bị lưu trữ sẽ tự sống lại, nếu không tài khoản không tạo
+  được khoá nào nữa;
+- allowlist quyết theo dải và **fail-closed** (5 ca tham số hoá);
+- header `CF-Connecting-IP` chỉ được tin **từ peer tin cậy** — từ nơi khác thì
+  khoá bị từ chối, nếu không IP allowlist sẽ bị đi vòng bởi bất kỳ ai chạm được
+  thẳng vào tiến trình;
+- khoá **không** project vẫn chạy (hình dạng dữ liệu V2 vẫn hợp lệ);
+- backfill của migration diễn lại trên chính bảng nó chạm.
+
+### Browser (bắt buộc theo CLAUDE.md mục 5)
+
+Server dùng-một-lần, cổng **8123**, SQLite tạm — không chạm 8100/8000. Luồng
+thật: đăng nhập → tạo project "Trang bán hàng" → tạo khoá trong project đó với
+hạn 90 ngày và IP `203.0.113.4, 198.51.100.0/24` → bảng khoá hiện **project,
+CIDR đã chuẩn hoá (`203.0.113.4/32`), hạn `2026-11-11`** → lưu trữ project →
+khoá chuyển `revoked` và project rời danh sách. **0 lỗi console, 0 request hỏng.**
+
+Trình duyệt bắt được một lỗi test không thấy: slug của "Trang bán hàng" ra
+`trang-b-n-h-ng`. Slug tồn tại để **đọc được** trong log và ticket; bỏ dấu tiếng
+Việt biến hầu hết tên project thành một hàng gạch nối. Đã sửa (`NFKD` + bỏ dấu,
+`đ`→`d`) và có test.
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| X4 | Portal vẫn **không có lối vào từ header** | EXT-05 |
+| — | Service account | D6, mở lại khi có tín hiệu đã ghi |
+| — | OAuth client + delegated flow | D1/D7 |
+| — | Trần chi **theo project** (mới có theo tài khoản) | EXT-11/14 |
+
+### Rollback
+
+`alembic downgrade c9d0e1f2a3b4` (xoá bảng + 2 cột; job/credit/khoá không bị
+chạm), gỡ `projects.py`, hoàn nguyên portal và `auth.py`. Khoá đã cấp vẫn chạy
+vì `project_id` là nullable.
+
+### Acceptance Gate
+
+### Full gate — checkpoint
+
+Lần 1: **FAIL (1/10)**. pytest **PASS** (2.681,8 s), 8/9 bước còn lại PASS; đỏ
+duy nhất là bánh cóc i18n vì `slugify()` có `text.replace("đ", "d")` — một
+**bảng chuyển tự**, không phải câu hiển thị. Bánh cóc chỉ đếm chuỗi *chứa ký tự
+tiếng Việt* chưa bọc `_()`, nên nó đọc ký tự `đ` như thông điệp chưa dịch.
+
+Sửa bằng `chr(0x0111)` kèm chú thích, **không** nới `tools/check_i18n.py`: bọc
+`_()` quanh một ký tự chuyển tự là vô nghĩa, còn sửa công cụ dùng chung để né
+một trường hợp cục bộ là làm yếu bánh cóc cho cả repo.
+
+Lần 2, trên cây mã cuối: **`RESULT: PASS` 10/10**, pytest 2.672,9 s.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-04 | Kết quả |
+|---|---|
+| Không phải làm lại owner model ở UI sau này | ✅ User → Project → Key; service account/OAuth cắm thêm được mà không dời dòng nào |
+| Dữ liệu V2 migrate an toàn | ✅ nullable + backfill; khoá không project vẫn chạy, có test |
+| Cross-project/tenant PASS | ✅ `get_owned` lọc theo chủ trong **truy vấn**; lưu trữ chỉ chạm khoá của chính project |
+| OAuth chỉ bật khi security gate PASS; hoãn thì có ADR và không ảnh hưởng luồng API key | ✅ D1/D7, luồng API key không đổi một dòng |
+| Full gate tại checkpoint | ✅ 10/10 |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/05_DEVELOPER_API_TAB_AND_INFORMATION_ARCHITECTURE.txt`
