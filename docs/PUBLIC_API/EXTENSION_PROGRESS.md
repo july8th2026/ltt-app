@@ -129,10 +129,25 @@ Không áp dụng — không đổi mã chạy, không đổi giao diện.
 | X4 | Portal không có lối vào từ header | Thấp | EXT-05 |
 | X5 | Không có correlation header trên phản hồi thành công | Trung bình | EXT-02 |
 
-**Năm quyết định sản phẩm chặn phía trước** (chi tiết ở §4 của dependency graph):
-delegated OAuth có hay không; sửa gốc giá-theo-thời-lượng bằng cách nào; con số
-trần credit ngày; sandbox mock hay tốn tiền thật; có mở STREAM cho chat không.
-Bốn trong năm chặn ngay tại EXT-02/EXT-04 — nêu sớm để không va giữa chừng.
+**Năm quyết định sản phẩm** (§4 của dependency graph) — **đã chốt 2026-08-13**,
+chủ sản phẩm uỷ quyền cho Claude quyết và sẽ điều chỉnh nếu vận hành cho thấy
+vấn đề. Nội dung đầy đủ kèm điều kiện xem lại ở
+[`EXTENSION_DECISIONS.md`](EXTENSION_DECISIONS.md):
+
+| # | Chốt | Prompt |
+|---|---|---|
+| D1 | Hoãn delegated OAuth; thay bằng restricted key (project + IP + hạn dùng + trần chi) | EXT-04 |
+| D2 | Đo thời lượng phía server lúc báo giá; job API không được top-up → **mở được 3 tool** | EXT-02/03 |
+| D3 | Trần 2.000 credit/ngày, **chỉ đếm chi tiêu qua API**, cảnh báo 50%/80% | EXT-11/14 |
+| D4 | Sandbox mock đi đúng đường code, khoá `ltt_sk_test_` không tiêu được tiền | EXT-12 |
+| D5 | Định nghĩa mode STREAM nhưng **không** mở chat qua sidecar | EXT-02/20 |
+
+Mỗi quyết định được nâng thành mục Q trong `docs/QUYET_DINH_NEN_TANG.md` khi
+prompt sở hữu thi công xong, theo giao thức ở `AGENTS.md`.
+
+D3 kéo theo **một lỗi phải sửa**, không phải tuỳ chọn: `credit_spent_since()`
+đang cộng cả chi tiêu trên giao diện web, nên khách dùng web nhiều sẽ làm API của
+chính họ ngừng chạy.
 
 ### Rollback
 
