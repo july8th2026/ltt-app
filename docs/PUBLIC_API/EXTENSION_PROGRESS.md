@@ -14,7 +14,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 |---|---|---|---|
 | 01 | V2 reconciliation, master gap matrix, dependency graph | **PASS** | 2026-08-13 |
 | 02 | Protocol / execution modes / error-retry standards | **PASS** | 2026-08-13 |
-| 03 | Models / capabilities / tool catalog / schema chain | chưa chạy | — |
+| 03 | Models / capabilities / tool catalog / schema chain | **PASS** | 2026-08-13 |
 | 04 | Projects / service accounts / delegated auth decision | chưa chạy | — |
 | 05 | Developer API tab / information architecture | chưa chạy | — |
 | 06 | Schema-driven apps/models/tools variable reference | chưa chạy | — |
@@ -270,3 +270,102 @@ migration, không có dữ liệu nào phải dọn.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/03_MODELS_CAPABILITIES_TOOL_CATALOG_AND_SCHEMA_CHAIN.txt`
+
+---
+
+## EXT-03 — MODELS / CAPABILITIES / TOOL CATALOG / SCHEMA CHAIN ✅
+
+### Entry gate
+
+EXT-02 PASS ✅ (`16246a3`), cây sạch. Head vẫn `c9d0e1f2a3b4` — **không**
+migration.
+
+### Reused V2 components
+
+`catalog.py` (mở rộng), `registry._validate_api_contract`, `pagination`,
+`require_scope`, `build_public_api_docs`. **0 bảng mới, 0 migration, 0 phụ
+thuộc mới.** Hai route mới: `GET /models`, `GET /models/{model_name}` → **24
+route**.
+
+### Status before → after
+
+| Hạng mục | Before | After |
+|---|---|---|
+| Model | alias nằm **bên trong** hợp đồng từng tool, không ai liệt kê được | domain công khai riêng: alias + capability + stability + tool nào nhận + ràng buộc |
+| Capability | không có khái niệm | suy từ chính tên tool (`image.generate` → `image`), không phải trường khai riêng |
+| Metadata alias | chỉ là `alias → id nội bộ` | thêm `description`, `stability`, `constraints`, `replaced_by`; khoá lạ bị **từ chối nạp** |
+| Hợp đồng tool | không có dấu vân tay | `contract_hash` 16 hex, tính trên chính nội dung khách nhận |
+| Đổi tên tool | mất tích hợp cũ | `aliases` — tên cũ vẫn resolve, nhưng **không** thành mục thứ hai trong catalog |
+| Schema chain | OpenAPI chỉ mô tả phong bì | schema của **mọi** tool nằm trong `components.schemas` |
+
+### Quyết định đáng nói
+
+**Capability suy ra, không khai báo.** Một trường `capability` trong manifest là
+thêm một chỗ phải giữ đồng bộ với tên tool, và lần đầu chúng lệch nhau thì
+catalog đang nói dối. `image.generate` thuộc capability `image` **vì** nó tên
+như vậy.
+
+**Không publish giá theo model.** Giá phụ thuộc toàn bộ input (bao nhiêu ảnh,
+bao nhiêu scene), nên một con số gắn vào model sẽ đúng đủ để được tin và sai đủ
+để gây thiệt. `POST /quotes` là nơi duy nhất định giá **một lời gọi**. Có test
+khẳng định payload model **không** chứa `credit`/`price`.
+
+**Không publish tình trạng provider (`degraded`).** Tính được từ `api_pool`,
+nhưng đường đọc đó phải chạm vào provider/pool nội bộ ngay trên một route đọc
+công khai, và `_ung_vien()` còn **mutate** trạng thái key (hồi cooldown, cuộn cửa
+sổ). Đổi lại chỉ là một nhãn. Tín hiệu sức khoẻ thuộc EXT-14 (capacity), nơi dữ
+liệu vận hành đã sẵn có.
+
+**`capabilities` trả về trong `/models`, không phải `/capabilities`.** Route
+`/capabilities` ẩn danh; deployment này bán những miền gì là thông tin thương
+mại, và V2 đã chốt danh sách tool nằm sau khoá.
+
+### Tests
+
+`tests/test_195_public_api_models.py` — **25 test**. Đáng kể:
+- alias **không bao giờ** lộ id model thật, tên vendor hay slug app — kiểm cả
+  trên fixture lẫn trên **catalog thật của repo**;
+- khoá lạ trong alias (`provider`) bị registry từ chối → không ai publish được
+  tên vendor bằng cách thêm một field vào manifest;
+- alias `deprecated` **bắt buộc** nói thay bằng gì, và cái thay thế phải tồn tại;
+- khoá bị giới hạn `allowed_tools` thấy **rỗng** cả model lẫn capability — danh
+  sách model là hình chiếu của catalog **khách thấy được**, không phải của
+  deployment;
+- mọi `model_ref` công khai đều có enum giá trị hợp lệ (tiêu chí nghiệm thu);
+- mọi input schema là JSON Schema hợp lệ, `additionalProperties: false`, mọi
+  `required` đều có khai báo;
+- `contract_hash` tính trên body **không kể chính nó**, và đổi khi hợp đồng đổi;
+- OpenAPI mang schema của mọi tool **mà không** thêm path nào ngoài inventory.
+
+Toàn bộ Public API: **370 test** — pass. Quick gate: **PASS 9/9**. Docs
+`--check`: PASS.
+
+Ba test cũ đổi kỳ vọng: `test_178` (thêm `models` vào capability areas),
+`test_193` (đóng băng 22 → **24** route), và hai golden snapshot được sinh lại
+(thêm `capability` + `contract_hash`).
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| — | Contract **compatibility checker** (đổi thế nào là breaking) | EXT-17 |
+| — | Tín hiệu `degraded` theo sức khoẻ provider | EXT-14 |
+| — | Model của các tool đang DEFER (`video.generate` có ma trận enum theo model) | prompt mở tool, theo D2 |
+
+### Rollback
+
+Bỏ 2 route khỏi inventory + `tools.py`, bỏ `build_models`/`PublicModel`/
+`contract_hash`/`aliases` khỏi `catalog.py`, hoàn nguyên `models` của
+`apps/taoanh` về dạng chuỗi, xoá `test_195`. Không migration, không dữ liệu.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-03 | Kết quả |
+|---|---|
+| Mọi `model_ref` public có giá trị hợp lệ discover được | ✅ có test quét toàn registry |
+| Không lộ provider secret/routing nội bộ | ✅ 2 test (fixture + repo thật) + khoá lạ bị từ chối |
+| Schema chain single-source PASS | ✅ contract → JSON Schema → OpenAPI trong **một** tài liệu, có test |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/04_PROJECTS_SERVICE_ACCOUNTS_API_CLIENTS_AND_DELEGATED_AUTH_DECISION.txt`
+— **checkpoint full gate** theo `MANIFEST.json`.

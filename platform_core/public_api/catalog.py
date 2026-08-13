@@ -21,10 +21,20 @@ runs behind which tool and hand them the vocabulary of internal prompt sets.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import dataclass, field
 
 from platform_core.public_api.errors import not_found
 from platform_core.public_api.protocol import ASYNC_JOB, mode_of_tool
+
+# How stable a published model alias is. Stability is a *promise about change*,
+# not a quality rating: `beta` may be withdrawn, `stable` will be deprecated
+# before it disappears, `deprecated` already has a replacement.
+STABILITY_STABLE = "stable"
+STABILITY_BETA = "beta"
+STABILITY_DEPRECATED = "deprecated"
+STABILITIES = (STABILITY_STABLE, STABILITY_BETA, STABILITY_DEPRECATED)
 
 # Apps that may ever appear on the public API. Everything else is closed by
 # construction, including future lifecycles nobody has thought of yet.
@@ -82,6 +92,9 @@ class PublicTool:
     job_type: str
     model_aliases: dict = field(default_factory=dict)
     deprecated: str = ""
+    #: Former public names that still resolve to this tool. Renaming a tool
+    #: without one of these breaks every integration that used the old name.
+    aliases: tuple = ()
     #: How a call to this tool executes. Published so a client knows whether to
     #: expect a job id or an answer *before* it writes the integration, rather
     #: than discovering it from the shape of the first response.
@@ -90,19 +103,92 @@ class PublicTool:
     def to_public_dict(self) -> dict:
         body = {
             "name": self.name,
+            "capability": self.capability,
             "description": self.description,
             "execution_mode": self.execution_mode,
             "input_schema": self.input_schema,
             "output_schema": self.output_schema,
             "required_scopes": list(self.scopes),
         }
+        if self.aliases:
+            body["aliases"] = list(self.aliases)
         if self.deprecated:
             body["deprecated"] = self.deprecated
+        # Last, and computed over everything above it: a caller can store this
+        # and detect that a contract moved without diffing schemas by hand, and
+        # `--check` can prove the docs describe this exact contract.
+        body["contract_hash"] = contract_hash(body)
         return body
+
+    @property
+    def capability(self) -> str:
+        """The domain this tool belongs to, taken from its own public name.
+
+        Derived rather than declared: a separate `capability` field in the
+        manifest is one more thing to keep in sync with the name, and the first
+        time they disagree the catalog is lying. `image.generate` is an image
+        capability because it is called `image.generate`.
+        """
+        return self.name.split(".")[0]
 
     def resolve_model(self, alias: str) -> str:
         """Public alias -> internal model id. Empty when the alias is unknown."""
-        return str(self.model_aliases.get(str(alias), ""))
+        target = self.model_aliases.get(str(alias))
+        if isinstance(target, dict):
+            return str(target.get("id") or "")
+        return str(target or "")
+
+    def model_names(self) -> list:
+        return sorted(self.model_aliases)
+
+
+@dataclass(frozen=True)
+class PublicModel:
+    """One publishable model alias, aggregated across the tools that accept it.
+
+    A model is a *public* concept here — the alias, what it can do, how stable
+    it is and which tools take it. The provider, the real model id, the pool it
+    is served from and its live health are all internal and stay that way; a
+    customer who learns which vendor sits behind `pro` has learned something
+    they can only use to route around LTT.
+    """
+
+    name: str
+    capability: str
+    stability: str = STABILITY_STABLE
+    description: str = ""
+    tools: tuple = ()
+    constraints: dict = field(default_factory=dict)
+    replaced_by: str = ""
+
+    def to_public_dict(self) -> dict:
+        body = {
+            "name": self.name,
+            "capability": self.capability,
+            "stability": self.stability,
+            "description": self.description,
+            "tools": list(self.tools),
+            # Deliberately absent: price. What a call costs depends on the whole
+            # input (how many images, how many scenes), so a per-model number
+            # would be right often enough to be trusted and wrong often enough
+            # to matter. `POST /quotes` is the one place that prices a *call*.
+            "constraints": dict(self.constraints),
+        }
+        if self.replaced_by:
+            body["replaced_by"] = self.replaced_by
+        return body
+
+
+def canonical(payload) -> str:
+    """Stable JSON for hashing: sorted keys, no incidental whitespace."""
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False)
+
+
+def contract_hash(payload: dict) -> str:
+    body = {key: value for key, value in payload.items()
+            if key != "contract_hash"}
+    return hashlib.sha256(canonical(body).encode("utf-8")).hexdigest()[:16]
 
 
 def app_may_be_public(manifest, *, error: str = "") -> bool:
@@ -121,7 +207,12 @@ def project_tool(manifest, tool) -> PublicTool:
     contract = tool.api_contract or {}
     hidden = {str(name) for name in (contract.get("hidden") or ())}
     enums = contract.get("enums") or {}
-    models = {str(alias): str(target)
+    # An alias maps either to a bare internal id (the original form) or to a
+    # dict that also carries what a caller needs to choose between aliases.
+    # Both are kept: a tool with one obvious model should not have to write a
+    # dictionary to say so.
+    models = {str(alias): (dict(target) if isinstance(target, dict)
+                           else {"id": str(target)})
               for alias, target in (contract.get("models") or {}).items()}
 
     properties: dict = {}
@@ -186,8 +277,58 @@ def project_tool(manifest, tool) -> PublicTool:
         job_type=tool.job_type,
         model_aliases=models,
         deprecated=str(contract.get("deprecated") or ""),
+        aliases=tuple(str(name) for name in (contract.get("aliases") or ())),
         execution_mode=mode_of_tool(contract),
     )
+
+
+def build_models(catalog: list) -> list:
+    """The model aliases the published catalog exposes, one entry per alias.
+
+    Aggregated across tools rather than declared centrally, for the same reason
+    the capability is derived: a central list is a second place to update, and
+    the day it disagrees with the tools it is the catalog that is wrong.
+    """
+    merged: dict = {}
+    for tool in catalog:
+        for alias, spec in tool.model_aliases.items():
+            entry = merged.setdefault(alias, {
+                "capability": tool.capability, "tools": [],
+                "stability": str(spec.get("stability") or STABILITY_STABLE),
+                "description": str(spec.get("description") or ""),
+                "constraints": dict(spec.get("constraints") or {}),
+                "replaced_by": str(spec.get("replaced_by") or ""),
+            })
+            entry["tools"].append(tool.name)
+            # A tool that says nothing keeps whatever the first describing tool
+            # said; a tool that *does* describe the alias wins, so metadata can
+            # live next to the richest use of the model.
+            if spec.get("description") and not entry["description"]:
+                entry["description"] = str(spec["description"])
+            if spec.get("stability"):
+                entry["stability"] = str(spec["stability"])
+    return sorted(
+        (PublicModel(name=alias, capability=data["capability"],
+                     stability=data["stability"],
+                     description=data["description"],
+                     tools=tuple(sorted(set(data["tools"]))),
+                     constraints=data["constraints"],
+                     replaced_by=data["replaced_by"])
+         for alias, data in merged.items()),
+        key=lambda model: model.name)
+
+
+def require_model(models: list, name: str) -> PublicModel:
+    wanted = str(name or "")
+    for model in models:
+        if model.name == wanted:
+            return model
+    raise not_found("No such model.")
+
+
+def capabilities_of(catalog: list) -> list:
+    """Distinct capability domains this deployment publishes."""
+    return sorted({tool.capability for tool in catalog})
 
 
 def build_catalog(config, apps=None) -> list:
@@ -229,7 +370,10 @@ def require_tool(catalog: list, name: str, principal=None) -> PublicTool:
 
     wanted = str(name or "")
     for tool in catalog:
-        if tool.name == wanted:
+        # A former name resolves to the same tool. The key's allowlist is still
+        # checked against the *current* name, so renaming a tool cannot widen
+        # what an existing key may call.
+        if tool.name == wanted or wanted in tool.aliases:
             if principal is not None:
                 ensure_tool_allowed(principal, tool.name, publicly_exposed=True)
             return tool

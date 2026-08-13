@@ -67,6 +67,7 @@ một số job dài bị từ chối giữa chừng.
 GET    /api/v1/health            GET    /api/v1/capabilities
 GET    /api/v1/me
 GET    /api/v1/tools             GET    /api/v1/tools/{tool_name}
+GET    /api/v1/models            GET    /api/v1/models/{model_name}
 POST   /api/v1/quotes
 POST   /api/v1/jobs              GET    /api/v1/jobs
 GET    /api/v1/jobs/{job_id}     POST   /api/v1/jobs/{job_id}/cancel

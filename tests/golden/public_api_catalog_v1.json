@@ -2,6 +2,7 @@
  "tools": [
   {
    "name": "image.generate",
+   "capability": "image",
    "description": "Generate one to four images from a text prompt, optionally guided by one reference image.",
    "execution_mode": "ASYNC_JOB",
    "input_schema": {
@@ -61,10 +62,12 @@
    },
    "required_scopes": [
     "jobs:create"
-   ]
+   ],
+   "contract_hash": "40e51bd26ad81fe1"
   },
   {
    "name": "image.thumbnail",
+   "capability": "image",
    "description": "Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.",
    "execution_mode": "ASYNC_JOB",
    "input_schema": {
@@ -164,10 +167,12 @@
    },
    "required_scopes": [
     "jobs:create"
-   ]
+   ],
+   "contract_hash": "75c7f308edd01af0"
   },
   {
    "name": "image.upscale",
+   "capability": "image",
    "description": "Upscale an image to four times its original size. Costs 2 credits at the fast preset and 4 at the quality preset.",
    "execution_mode": "ASYNC_JOB",
    "input_schema": {
@@ -201,10 +206,12 @@
    },
    "required_scopes": [
     "jobs:create"
-   ]
+   ],
+   "contract_hash": "7a328847197a662d"
   },
   {
    "name": "story.storyboard",
+   "capability": "story",
    "description": "Turn a story brief into a storyboard: one shot description per scene plus a master prompt. Priced by scene count.",
    "execution_mode": "ASYNC_JOB",
    "input_schema": {
@@ -260,10 +267,12 @@
    },
    "required_scopes": [
     "jobs:create"
-   ]
+   ],
+   "contract_hash": "ca93492e8df3e2e1"
   },
   {
    "name": "text.prompt_package",
+   "capability": "text",
    "description": "Turn a story brief into a structured prompt package: one prompt per scene plus a master prompt. Priced by scene count.",
    "execution_mode": "ASYNC_JOB",
    "input_schema": {
@@ -337,7 +346,8 @@
    },
    "required_scopes": [
     "jobs:create"
-   ]
+   ],
+   "contract_hash": "9d38ae81ca23e2c4"
   }
  ]
 }

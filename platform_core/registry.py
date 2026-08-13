@@ -345,7 +345,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
 
     unknown_keys = set(contract) - {"public_name", "description", "models",
                                     "enums", "hidden", "scopes", "deprecated",
-                                    "execution_mode"}
+                                    "execution_mode", "aliases"}
     if unknown_keys:
         raise RegistryError(_t(
             "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
@@ -410,6 +410,58 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
                 "[{slug}] tool {tool!r} api_contract nhắc tham số không tồn "
                 "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
                                           param=param))
+
+    _validate_model_aliases(manifest, tool, models)
+
+    for alias in (contract.get("aliases") or ()):
+        if not _TOOL_NAME_RE.fullmatch(str(alias)):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias không hợp lệ: {value!r}").format(
+                    slug=manifest.slug, tool=tool.name, value=alias))
+        if str(alias) == public_name:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias trùng chính public_name").format(
+                    slug=manifest.slug, tool=tool.name))
+
+
+def _validate_model_aliases(manifest: AppManifest, tool: ToolSpec,
+                            models: dict) -> None:
+    """A model alias is a public promise; check it says enough and no more."""
+    from platform_core.public_api.catalog import STABILITIES
+
+    for alias, target in models.items():
+        spec = target if isinstance(target, dict) else {"id": target}
+        if not str(spec.get("id") or "").strip():
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias model {alias!r} thiếu `id` nội "
+                "bộ").format(slug=manifest.slug, tool=tool.name, alias=alias))
+        stability = str(spec.get("stability") or "stable")
+        if stability not in STABILITIES:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias model {alias!r} có stability lạ: "
+                "{value!r}").format(slug=manifest.slug, tool=tool.name,
+                                    alias=alias, value=stability))
+        if stability == "deprecated" and not str(spec.get("replaced_by") or ""):
+            # A deprecated alias without a successor tells a caller their
+            # integration is dying and nothing about where to go instead.
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias model {alias!r} đánh dấu "
+                "deprecated nhưng không nói thay bằng gì").format(
+                    slug=manifest.slug, tool=tool.name, alias=alias))
+        unknown = set(spec) - {"id", "stability", "description", "constraints",
+                               "replaced_by"}
+        if unknown:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias model {alias!r} có khoá lạ: "
+                "{keys}").format(slug=manifest.slug, tool=tool.name,
+                                 alias=alias, keys=sorted(unknown)))
+        replacement = str(spec.get("replaced_by") or "")
+        if replacement and replacement not in models:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} alias model {alias!r} trỏ tới alias "
+                "không tồn tại: {value!r}").format(
+                    slug=manifest.slug, tool=tool.name, alias=alias,
+                    value=replacement))
 
 
 def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,

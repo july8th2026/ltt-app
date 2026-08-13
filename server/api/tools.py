@@ -9,7 +9,9 @@ from __future__ import annotations
 from fastapi import Depends, Query
 from fastapi.responses import JSONResponse
 
-from platform_core.public_api.catalog import build_catalog, require_tool, visible_to
+from platform_core.public_api.catalog import (build_catalog, build_models,
+                                              capabilities_of, require_model,
+                                              require_tool, visible_to)
 from platform_core.public_api.pagination import Page, PageRequest
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import SCOPE_TOOLS_READ
@@ -54,3 +56,45 @@ def register_tool_routes(api, config, tag: str) -> None:
     ) -> JSONResponse:
         tool = require_tool(build_catalog(config), tool_name, principal)
         return JSONResponse(tool.to_public_dict(), headers=_NO_STORE)
+
+    @router.get("/models", tags=[tag],
+                summary="List the model aliases this API key may use",
+                description=("Returns the public model aliases, what they can "
+                             "do, how stable they are and which tools accept "
+                             "them. Prices come from POST /quotes, which prices "
+                             "a whole call rather than a model."))
+    def list_models(
+        capability: str = Query(default="", description="Filter by capability."),
+        limit: int = Query(default=None, description="Page size (max 100)."),
+        offset: int = Query(default=None, description="Rows to skip."),
+        principal: Principal = Depends(require_scope(SCOPE_TOOLS_READ)),
+    ) -> JSONResponse:
+        page_request = PageRequest.parse(limit, offset)
+        catalog = visible_to(build_catalog(config), principal)
+        models = build_models(catalog)
+        if capability:
+            models = [model for model in models
+                      if model.capability == str(capability)]
+        window = models[page_request.offset:
+                        page_request.offset + page_request.fetch_limit]
+        page = Page.of([model.to_public_dict() for model in window],
+                       page_request)
+        body = page.to_dict()
+        # Capabilities belong with the models rather than on the anonymous
+        # `/capabilities` route: which domains a deployment actually sells is
+        # commercial information, and V2 already decided the tool list lives
+        # behind a key.
+        body["capabilities"] = capabilities_of(catalog)
+        return JSONResponse(body, headers=_NO_STORE)
+
+    @router.get("/models/{model_name}", tags=[tag],
+                summary="Details of one model alias",
+                description=("Returns one model alias. Unknown or unavailable "
+                             "aliases answer 404, exactly like a tool."))
+    def get_model(
+        model_name: str,
+        principal: Principal = Depends(require_scope(SCOPE_TOOLS_READ)),
+    ) -> JSONResponse:
+        catalog = visible_to(build_catalog(config), principal)
+        model = require_model(build_models(catalog), model_name)
+        return JSONResponse(model.to_public_dict(), headers=_NO_STORE)

@@ -49,7 +49,7 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # Endpoints: the declared set is what the sub-app serves (checked in
     # test_192); here we freeze the *count* so an accidental addition shows up
     # in a diff rather than in production.
-    assert len(declared_paths()) == 22
+    assert len(declared_paths()) == 24        # +2: /models, /models/{name}
     assert all(route.path.startswith(API_V1_PREFIX) for route in API_V1_ROUTES)
 
     # Tools: the published catalog equals the golden contract.

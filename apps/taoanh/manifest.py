@@ -76,11 +76,35 @@ MANIFEST = AppManifest(
             # The alias names describe what a caller is buying (quality tier),
             # which is also what `_cost` prices — so quote, charge and choice
             # all move together.
+            # An alias may be a bare internal id or carry the metadata a caller
+            # needs to choose between aliases. What it must never carry is
+            # anything a customer could use to identify or reach the vendor
+            # directly — the descriptions below say what you get, not who makes
+            # it.
             "models": {
-                "standard": "gemini-2.5-flash-image",
-                "standard-lite": "gemini-3.1-flash-lite-image",
-                "enhanced": "gemini-3.1-flash-image",
-                "pro": "gemini-3-pro-image",
+                "standard": {
+                    "id": "gemini-2.5-flash-image",
+                    "description": "Balanced quality and cost. Start here.",
+                    "stability": "stable",
+                },
+                "standard-lite": {
+                    "id": "gemini-3.1-flash-lite-image",
+                    "description": ("Same price as standard, tuned for speed "
+                                    "over detail."),
+                    "stability": "stable",
+                },
+                "enhanced": {
+                    "id": "gemini-3.1-flash-image",
+                    "description": ("Better prompt adherence and fine detail "
+                                    "than standard."),
+                    "stability": "stable",
+                },
+                "pro": {
+                    "id": "gemini-3-pro-image",
+                    "description": ("Highest fidelity; use when the result is "
+                                    "the deliverable."),
+                    "stability": "stable",
+                },
             },
             # One reference image is supported through the public upload flow;
             # the multi-image form is a Canvas/UI path that takes a list, and

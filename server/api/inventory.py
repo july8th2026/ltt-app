@@ -50,6 +50,10 @@ API_V1_ROUTES: tuple = (
              "List the tools this API key may call", authenticated=True),
     ApiRoute("GET", f"{API_V1_PREFIX}/tools/{{tool_name}}",
              "Contract for one tool", authenticated=True),
+    ApiRoute("GET", f"{API_V1_PREFIX}/models",
+             "List the model aliases this API key may use", authenticated=True),
+    ApiRoute("GET", f"{API_V1_PREFIX}/models/{{model_name}}",
+             "Details of one model alias", authenticated=True),
     ApiRoute("POST", f"{API_V1_PREFIX}/quotes",
              "Price a tool call before running it", authenticated=True),
     # The one chargeable operation on the surface, and the only ASYNC_JOB route:

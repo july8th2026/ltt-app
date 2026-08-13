@@ -259,6 +259,8 @@ Input:
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
+Contract hash: `40e51bd26ad81fe1`
+
 ### `image.thumbnail`
 
 Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.
@@ -281,6 +283,8 @@ Input:
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
+Contract hash: `75c7f308edd01af0`
+
 ### `image.upscale`
 
 Upscale an image to four times its original size. Costs 2 credits at the fast preset and 4 at the quality preset.
@@ -295,6 +299,8 @@ Input:
 - `preset` — string, one of `fast`, `quality`, default fast
 
 Output: `image_key` (artifact)
+
+Contract hash: `7a328847197a662d`
 
 ### `story.storyboard`
 
@@ -313,6 +319,8 @@ Input:
 - `style` — string, max length 500
 
 Output: `storyboard` (object), `master_prompt` (string)
+
+Contract hash: `ca93492e8df3e2e1`
 
 ### `text.prompt_package`
 
@@ -334,5 +342,18 @@ Input:
 - `language` — string, one of `vi`, `en`, default vi
 
 Output: `prompt_package` (object), `master_prompt` (string)
+
+Contract hash: `9d38ae81ca23e2c4`
+
+### Models
+
+Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: price depends on the whole input, so a number printed against a model would be wrong often enough to matter.
+
+| Alias | Capability | Stability | Tools | Notes |
+|---|---|---|---|---|
+| `enhanced` | image | stable | `image.generate` | Better prompt adherence and fine detail than standard. |
+| `pro` | image | stable | `image.generate` | Highest fidelity; use when the result is the deliverable. |
+| `standard` | image | stable | `image.generate` | Balanced quality and cost. Start here. |
+| `standard-lite` | image | stable | `image.generate` | Same price as standard, tuned for speed over detail. |
 
 <!-- END GENERATED TOOLS -->

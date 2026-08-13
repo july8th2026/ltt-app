@@ -28,7 +28,7 @@ Nên mode được **khai báo**, và khai báo bị kiểm.
 | `BATCH` | một lời gọi mang nhiều lời gọi con | đã đặc tả đầy đủ, **chưa operation nào dùng** — xem §1.1 |
 | `NOT_PUBLIC` | năng lực nội bộ | không có đường nào ra `/api/v1` |
 
-Hôm nay: **21 route `SYNC`, 1 route `ASYNC_JOB`** (`POST /jobs` — route duy nhất
+Hôm nay: **23 route `SYNC`, 1 route `ASYNC_JOB`** (`POST /jobs` — route duy nhất
 tiêu tiền), và **5 tool đều `ASYNC_JOB`**.
 
 Manifest khai mode qua `api_contract["execution_mode"]`. Vắng mặt = `ASYNC_JOB`,

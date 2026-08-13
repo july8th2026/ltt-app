@@ -151,7 +151,33 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
     register_upload_routes(api, config, PUBLIC_API_TAG)
     register_webhook_routes(api, config, PUBLIC_API_TAG)
     register_usage_routes(api, config, PUBLIC_API_TAG)
+    _publish_tool_schemas(api, config)
     return api
+
+
+def _publish_tool_schemas(api, config) -> None:
+    """Put every published tool's JSON Schema into the OpenAPI document.
+
+    Without this the spec describes the *envelope* — POST /jobs takes a tool
+    name, a quote and an object — and says nothing about what may be inside that
+    object, so every generator (SDK, Postman, playground) has to fetch /tools
+    separately and merge by hand. With it there is one artefact, and the chain
+    contract → JSON Schema → OpenAPI is literally one document.
+    """
+    from platform_core.public_api.catalog import build_catalog
+
+    original = api.openapi
+
+    def openapi_with_tool_schemas():
+        document = original()
+        schemas = document.setdefault("components", {}).setdefault("schemas", {})
+        for tool in build_catalog(config):
+            schemas[f"Tool_{tool.name}_Input"] = tool.input_schema
+            schemas[f"Tool_{tool.name}_Output"] = tool.output_schema
+        api.openapi_schema = document
+        return document
+
+    api.openapi = openapi_with_tool_schemas
 
 
 def mount_public_api(app, *, env: dict | None = None) -> PublicApiConfig:

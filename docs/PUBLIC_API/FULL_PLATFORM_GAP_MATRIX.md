@@ -31,6 +31,12 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-03 (2026-08-13):** domain D chuyển `PARTIAL` → `DONE`;
+> Extension domain 3 (`models/capabilities catalog`) `MISSING` → `DONE`. Thêm
+> `GET /models`, `GET /models/{name}`, capability suy từ tên tool,
+> `contract_hash`, alias tool, và schema của mọi tool nằm trong OpenAPI.
+> Riêng "contract compatibility checker" vẫn thuộc EXT-17.
+
 > **Cập nhật sau EXT-02 (2026-08-13):** domain A chuyển `PARTIAL` → `DONE`;
 > Extension domain 1 (`execution mode`) và 2 (`error/retry catalog`) chuyển
 > `MISSING`/`PARTIAL` → `DONE`. Rủi ro X5 đã đóng. Chi tiết ở

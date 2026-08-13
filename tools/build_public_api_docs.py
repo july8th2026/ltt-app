@@ -86,9 +86,36 @@ def render() -> str:
         lines.append("Output: " + ", ".join(
             f"`{name}` ({spec.get('type')})" for name, spec in outputs.items()))
         lines.append("")
+        if tool.aliases:
+            lines.append("Also answers to: "
+                         + ", ".join(f"`{alias}`" for alias in tool.aliases))
+            lines.append("")
         if tool.deprecated:
             lines.append(f"> Deprecated: {tool.deprecated}")
             lines.append("")
+        lines.append(f"Contract hash: `{tool.to_public_dict()['contract_hash']}`")
+        lines.append("")
+
+    from platform_core.public_api.catalog import build_models
+
+    models = build_models(catalog)
+    if models:
+        lines += ["### Models", "",
+                  "Aliases, not vendor model ids. What a call *costs* comes "
+                  "from `POST /quotes`: price depends on the whole input, so a "
+                  "number printed against a model would be wrong often enough "
+                  "to matter.", "",
+                  "| Alias | Capability | Stability | Tools | Notes |",
+                  "|---|---|---|---|---|"]
+        for model in models:
+            note = model.description
+            if model.replaced_by:
+                note = f"{note} Replaced by `{model.replaced_by}`.".strip()
+            lines.append(
+                f"| `{model.name}` | {model.capability} | {model.stability} | "
+                + ", ".join(f"`{name}`" for name in model.tools)
+                + f" | {note} |")
+        lines.append("")
     lines.append(END)
     return "\n".join(lines)
 

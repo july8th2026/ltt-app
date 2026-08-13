@@ -118,8 +118,9 @@ def test_health_and_capabilities_expose_nothing_internal(enabled_client):
     assert body["api_version"] == "v1" and body["read_only"] is False
     # Feature areas of the version, never the deployment's published tool list
     # and never the kernel's own endpoints.
-    assert body["capabilities"] == ["tools", "quotes", "jobs", "uploads",
-                                    "artifacts", "webhooks", "credits", "usage"]
+    assert body["capabilities"] == ["tools", "models", "quotes", "jobs",
+                                    "uploads", "artifacts", "webhooks",
+                                    "credits", "usage"]
     assert not {"health", "me", "capabilities"} & set(body["capabilities"])
     body = capabilities.text.lower()
     for leak in ("gemini", "seedance", "postgres", "r2", "c:\\", "/data/", "secret"):

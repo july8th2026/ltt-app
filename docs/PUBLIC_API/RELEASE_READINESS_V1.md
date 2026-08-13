@@ -8,12 +8,13 @@ của chủ sản phẩm.
 
 ## A. Inventory freeze
 
-### Endpoint (22)
+### Endpoint (24)
 
 ```
 GET    /api/v1/health                    GET    /api/v1/capabilities
 GET    /api/v1/me                        GET    /api/v1/openapi.json
 GET    /api/v1/tools                     GET    /api/v1/tools/{tool_name}
+GET    /api/v1/models                    GET    /api/v1/models/{model_name}
 POST   /api/v1/quotes
 POST   /api/v1/jobs                      GET    /api/v1/jobs
 GET    /api/v1/jobs/{job_id}             POST   /api/v1/jobs/{job_id}/cancel
