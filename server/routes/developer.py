@@ -74,6 +74,14 @@ def _webhooks(db: Session, user_id: str) -> list:
     ).order_by(WebhookSubscription.created_at.desc())).scalars().all())
 
 
+def _all_webhooks(db: Session, user_id: str) -> list:
+    """Including the disabled ones: an endpoint you turned off is still part of
+    the story its delivery history tells."""
+    return list(db.execute(select(WebhookSubscription).where(
+        WebhookSubscription.user_id == user_id,
+    ).order_by(WebhookSubscription.created_at.desc())).scalars().all())
+
+
 def _recent_api_jobs(db: Session, user_id: str) -> list:
     """Jobs this account created through the API, newest first."""
     rows = db.execute(select(Job).where(Job.user_id == user_id)
@@ -558,11 +566,133 @@ def developer_usage(request: Request, user=Depends(require_account),
                    **_usage_context(db, user, config))
 
 
+#: Session slot for a value that must be shown once and never persisted.
+SECRET_ONCE_KEY = "webhook_secret_once"
+
+VERIFY_SNIPPET = """import hmac, hashlib, time
+
+def verify(secret, headers, body):                 # body = raw bytes
+    stamp = int(headers["X-LTT-Timestamp"])
+    if abs(time.time() - stamp) > 300:             # replay window
+        return False
+    signed = f"{stamp}.{headers['X-LTT-Event-Id']}.".encode() + body
+    expected = "v1=" + hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    # The header may carry several signatures during a secret rotation.
+    return any(hmac.compare_digest(expected, part.strip())
+               for part in headers["X-LTT-Signature"].split(","))"""
+
+
 @router.get("/webhooks", response_class=HTMLResponse)
 def developer_webhooks(request: Request, user=Depends(require_account),
                        db: Session = Depends(get_db)):
-    return _render(request, db, user, "webhooks", "dev_webhooks.html",
-                   webhooks=_webhooks(db, user.id))
+    from platform_core.public_api import webhook_console, webhooks as hooks
+
+    catalog = [
+        (hooks.EVENT_JOB_SUCCEEDED, _t("Job kết thúc thành công.")),
+        (hooks.EVENT_JOB_FAILED, _t("Job hỏng — credit đã được hoàn.")),
+        (hooks.EVENT_JOB_CANCELLED, _t("Job bị hủy — credit đã được hoàn.")),
+        (webhook_console.EVENT_TEST,
+         _t("Bạn bấm Gửi thử. Không job nào chạy, không credit nào chuyển.")),
+    ]
+    return _render(
+        request, db, user, "webhooks", "dev_webhooks.html",
+        subscriptions=_all_webhooks(db, user.id),
+        deliveries=webhook_console.deliveries_for(db, user_id=user.id),
+        health=webhook_console.health(db, user_id=user.id),
+        event_catalog=catalog, payload_version=hooks.SIGNATURE_VERSION,
+        headers={"signature": hooks.SIGNATURE_HEADER,
+                 "timestamp": hooks.TIMESTAMP_HEADER,
+                 "event": hooks.EVENT_HEADER},
+        verify_snippet=VERIFY_SNIPPET,
+        tolerance_s=300,
+        grace_hours=int(webhook_console.ROTATION_GRACE.total_seconds() // 3600),
+        # Popped: shown on exactly one render, and gone even if the page is
+        # reloaded or shared.
+        revealed_secret=request.session.pop(SECRET_ONCE_KEY, ""))
+
+
+@router.post("/webhooks/{subscription_id}/test")
+def developer_webhook_test(request: Request, subscription_id: str,
+                           csrf_token: str = Form(""),
+                           user=Depends(require_account),
+                           db: Session = Depends(get_db)):
+    """Queue a test event. Nothing runs and nothing is charged."""
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    subscription = webhook_console.owned_subscription(
+        db, user_id=user.id, subscription_id=subscription_id)
+    if subscription is not None and subscription.enabled:
+        webhook_console.send_test(db, subscription)
+        db.commit()
+    return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.post("/webhooks/{subscription_id}/rotate")
+def developer_webhook_rotate(request: Request, subscription_id: str,
+                             csrf_token: str = Form(""),
+                             user=Depends(require_account),
+                             db: Session = Depends(get_db)):
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    subscription = webhook_console.owned_subscription(
+        db, user_id=user.id, subscription_id=subscription_id)
+    if subscription is None:
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    secret = webhook_console.rotate_secret(db, subscription)
+    db.commit()
+    # Handed over through the session, not the URL: a query string ends up in
+    # browser history, in the Referer of the next click and in every access log
+    # between here and the browser. The next render pops it.
+    request.session[SECRET_ONCE_KEY] = secret
+    return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.post("/webhooks/{subscription_id}/disable")
+def developer_webhook_disable(request: Request, subscription_id: str,
+                              csrf_token: str = Form(""),
+                              user=Depends(require_account),
+                              db: Session = Depends(get_db)):
+    from datetime import datetime as _dt
+
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    subscription = webhook_console.owned_subscription(
+        db, user_id=user.id, subscription_id=subscription_id)
+    if subscription is not None:
+        # Disabled, not deleted: the delivery history is the evidence of what
+        # this endpoint was told, and deleting the subscription would orphan it.
+        subscription.enabled = False
+        subscription.disabled_at = _dt.now(timezone.utc)
+        db.commit()
+    return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.post("/webhooks/deliveries/{delivery_id}/resend")
+def developer_webhook_resend(request: Request, delivery_id: str,
+                             csrf_token: str = Form(""),
+                             user=Depends(require_account),
+                             db: Session = Depends(get_db)):
+    """Try the same event again — same id, same payload, no job, no credit."""
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    delivery = webhook_console.owned_delivery(db, user_id=user.id,
+                                              delivery_id=delivery_id)
+    if delivery is None:
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    try:
+        webhook_console.resend(db, delivery)
+        db.commit()
+    except webhook_console.WebhookConsoleError:
+        db.rollback()
+    return RedirectResponse("/developers/webhooks", status_code=303)
 
 
 @router.get("/docs", response_class=HTMLResponse)

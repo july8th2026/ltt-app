@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e04c273ef61fa13e892715dc8d7f8db90ffea1b44f8ca47b4960b4891303d948
-Nguồn đã quét : 1077 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d88ad7761c66de315a1a177e89cf3eac95943ddca14d4225fbb4778dbae94c1c
+Nguồn đã quét : 1080 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (304)
+4. HTTP ROUTE INVENTORY (308)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -593,25 +593,29 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
-- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:254
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:569
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:547
-- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:270
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:584
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:621
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:634
-- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:367
-- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:400
-- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:329
-- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:263
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:678
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:694
-- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:276
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:578
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:431
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:466
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:554
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:562
+- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:262
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:699
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:555
+- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:278
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:714
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:751
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:764
+- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:375
+- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:408
+- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:337
+- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:271
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:808
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:824
+- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:284
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:708
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:439
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:474
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:562
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:586
+- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:677
+- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:655
+- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:633
+- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:615
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -831,13 +835,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - platform_info → PlatformInfo | platform_core/models.py:42
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:190
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:238
-- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:325
+- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:333
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:292
 - sessions → Session | platform_core/models.py:134
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (33)
+6. ALEMBIC MIGRATIONS (34)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -871,6 +875,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - c9d0e1f2a3b4 ← b8c9d0e1f2a3 | them bang webhook cho Public API (Q92) | alembic/versions/20260813_1800_public_api_webhooks.py
 - d0e1f2a3b4c5 ← c9d0e1f2a3b4 | them project cho Public API + rang buoc IP cho developer key (EXT-04) | alembic/versions/20260814_0900_api_projects.py
 - e1f2a3b4c5d6 ← d0e1f2a3b4c5 | them bang nhat ky request cho Public API (EXT-09) | alembic/versions/20260814_1400_public_api_requests.py
+- f2a3b4c5d6e7 ← e1f2a3b4c5d6 | them cot xoay secret cho webhook (EXT-10) | alembic/versions/20260814_1800_webhook_secret_rotation.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -988,7 +993,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (204 file pytest + 3 frontend)
+10. QUALITY GATES (205 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1126,6 +1131,7 @@ Test inventory:
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_200_playground.py
 - tests/test_201_request_logs.py
+- tests/test_202_webhook_console.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1219,8 +1225,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1077 file)
-Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:797, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1080 file)
+Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:800, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1233,7 +1239,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (35)
+[alembic] (36)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1269,6 +1275,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260813_1800_public_api_webhooks.py
 - alembic/versions/20260814_0900_api_projects.py
 - alembic/versions/20260814_1400_public_api_requests.py
+- alembic/versions/20260814_1800_webhook_secret_rotation.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1821,7 +1828,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (73)
+[platform_core] (74)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1887,6 +1894,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/scopes.py
 - platform_core/public_api/tables.py
 - platform_core/public_api/usage.py
+- platform_core/public_api/webhook_console.py
 - platform_core/public_api/webhooks.py
 - platform_core/registry.py
 - platform_core/runtime_paths.py
@@ -2054,7 +2062,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (220)
+[tests] (221)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2202,6 +2210,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_200_playground.py
 - tests/test_201_request_logs.py
+- tests/test_202_webhook_console.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2364,7 +2373,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1077 file; 9340931 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1080 file; 9384637 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5296,6 +5305,44 @@ def downgrade() -> None:
     op.drop_index("ix_public_api_requests_request_id",
                   table_name="public_api_requests")
     op.drop_table("public_api_requests")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260814_1800_webhook_secret_rotation.py
+SHA256=bd36ee1cb95789e117e271d87fbda4d2da0ba9f5a3e7c9da675277d2c61a7d02 BYTES=1052 LINES=32
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""them cot xoay secret cho webhook (EXT-10)
+
+Xoay secret ma co hieu luc tuc thi se lam hong MOI lan giao dang bay tren duong
+o mot receiver da doi sang secret moi — dung luc khach dang nhin. Nen giu secret
+cu them mot cua so an han va KY BANG CA HAI trong khoang do.
+
+Revision ID: f2a3b4c5d6e7
+Revises: e1f2a3b4c5d6
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "f2a3b4c5d6e7"
+down_revision = "e1f2a3b4c5d6"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("public_api_webhooks",
+                  sa.Column("previous_secret_enc", sa.Text(), nullable=False,
+                            server_default=""))
+    op.add_column("public_api_webhooks",
+                  sa.Column("previous_secret_until",
+                            sa.DateTime(timezone=True), nullable=True))
+
+
+def downgrade() -> None:
+    op.drop_column("public_api_webhooks", "previous_secret_until")
+    op.drop_column("public_api_webhooks", "previous_secret_enc")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -107530,7 +107577,7 @@ def load_public_api_config(env: dict | None = None) -> PublicApiConfig:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/delivery.py
-SHA256=1e98565ec8bbdac4a9f59615b0a7e7369744f1f6191a38c5e836c693abe1cd02 BYTES=3496 LINES=80
+SHA256=dee6fa3291fd37e89053a6c5e6311ff9ba159a3a48c2272a82e37fd702074836 BYTES=4711 LINES=103
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The outbound HTTP call for one webhook delivery.
 
@@ -107569,23 +107616,46 @@ def _opener() -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(_NoRedirect)
 
 
+def build_headers(subscription, delivery, *, body: bytes | None = None,
+                  timestamp: int | None = None) -> dict:
+    """The headers one delivery is sent with, including its signature(s).
+
+    Separated from sending so the signature can be checked in a test without a
+    receiver — the thing most worth checking is exactly the thing that needs a
+    server to observe otherwise.
+    """
+    from platform_core import secretbox
+    from platform_core.public_api import webhook_console
+
+    payload_body = webhooks.canonical_body(delivery.payload or {}) \
+        if body is None else body
+    stamp = int(time.time()) if timestamp is None else int(timestamp)
+    signatures = [webhooks.sign(secretbox.giai_ma(subscription.secret_enc),
+                                timestamp=stamp, event_id=delivery.event_id,
+                                body=payload_body)]
+
+    # During a rotation grace window the event is signed with both secrets, so a
+    # receiver that has switched and one that has not both verify. They travel
+    # comma-separated and a verifier accepts if *any* entry matches.
+    previous = webhook_console.grace_secret(subscription)
+    if previous:
+        signatures.append(webhooks.sign(previous, timestamp=stamp,
+                                        event_id=delivery.event_id,
+                                        body=payload_body))
+    return {
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+        webhooks.SIGNATURE_HEADER: ",".join(signatures),
+        webhooks.TIMESTAMP_HEADER: str(stamp),
+        webhooks.EVENT_HEADER: delivery.event_id,
+    }
+
+
 def send_delivery(subscription, delivery, *, require_https: bool = True,
                   resolver=None, timeout: float = webhooks.DELIVERY_TIMEOUT_S) -> int:
     """POST one signed event. Returns the HTTP status code."""
-    from platform_core import secretbox
-
-    secret = secretbox.giai_ma(subscription.secret_enc)
     body = webhooks.canonical_body(delivery.payload or {})
-    timestamp = int(time.time())
-    signature = webhooks.sign(secret, timestamp=timestamp,
-                              event_id=delivery.event_id, body=body)
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-        webhooks.SIGNATURE_HEADER: signature,
-        webhooks.TIMESTAMP_HEADER: str(timestamp),
-        webhooks.EVENT_HEADER: delivery.event_id,
-    }
+    headers = build_headers(subscription, delivery, body=body)
 
     url = subscription.url
     opener = _opener()
@@ -110825,7 +110895,7 @@ def normalize_scopes(scopes) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=367faa0ee8a9e27bd0c4e5b96aa6146bce34069cd20ef47b7a01dd6f5040fcea BYTES=18110 LINES=367
+SHA256=c25002e5e3cf7a6c8d963cbc45bf0b47053ef27d4d5537bc8aa468f9041ce039 BYTES=18658 LINES=375
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -111136,6 +111206,14 @@ class WebhookSubscription(Base):
     key_id: Mapped[str] = mapped_column(String(48), default="", nullable=False)
     url: Mapped[str] = mapped_column(String(2000), nullable=False)
     secret_enc: Mapped[str] = mapped_column(Text, nullable=False)
+    # Kept for a grace window after a rotation, and signed with alongside the
+    # new one. A rotation that took effect instantly would fail every delivery
+    # already in flight at a receiver that had switched — which is exactly the
+    # moment a customer is watching (EXT-10).
+    previous_secret_enc: Mapped[str] = mapped_column(Text, default="",
+                                                     nullable=False)
+    previous_secret_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
     events: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -111411,8 +111489,216 @@ def reconcile(db, *, user_id: str = "", since: datetime | None = None,
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/webhook_console.py
+SHA256=8b9c269ef07e009f6d0fd23b821a83322680dd4da40423045e3b1064220cd6f0 BYTES=8278 LINES=202
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Operations a webhook owner needs: resend, test, rotate, disable.
+
+Each of these is a small function with one sharp rule behind it, and the rules
+are what make them safe to offer at all.
+
+**Resend never re-runs anything.** It queues the *same* event id with the *same*
+payload for another delivery attempt. It does not touch the job, does not touch
+the ledger, and cannot: nothing here reads or writes either. That matters because
+a support conversation that ends in "just resend it" must not be a way to
+re-charge a customer, and because the receiver's own idempotency key is the
+event id — a resend carrying a fresh id would look like a second event and could
+be processed twice on their side.
+
+**A test event is clearly a test.** It has its own event type, no job id, and a
+payload that says so. A receiver that treats it as a real completion is a
+receiver whose author was misled, so the payload does not pretend.
+
+**Rotation has a grace window.** Deliveries in flight were signed with the old
+secret; a rotation that took effect instantly would fail every one of them at a
+receiver that had already switched. So both signatures are sent during the
+window, and the receiver may accept either.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select
+
+from platform_core.public_api import webhooks
+from platform_core.public_api.tables import (WEBHOOK_DEAD, WEBHOOK_FAILED,
+                                             WEBHOOK_PENDING, WebhookDelivery,
+                                             WebhookSubscription)
+
+#: How many manual resends one account may ask for per hour. A resend is a
+#: request *we* make to somebody else's server; an unbounded button is an
+#: outbound amplifier pointed at whatever URL the customer configured.
+RESEND_LIMIT_PER_HOUR = 20
+
+#: Both secrets are accepted for this long after a rotation.
+ROTATION_GRACE = timedelta(hours=24)
+
+EVENT_TEST = "webhook.test"
+
+
+class WebhookConsoleError(Exception):
+    """Refusal a human caused and a human can fix."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value):
+    if value is None:
+        return None
+    return value if value.tzinfo is not None else value.replace(
+        tzinfo=timezone.utc)
+
+
+def owned_subscription(db, *, user_id: str, subscription_id: str):
+    return db.execute(select(WebhookSubscription).where(
+        WebhookSubscription.id == str(subscription_id or ""),
+        WebhookSubscription.user_id == str(user_id or ""),
+    )).scalar_one_or_none()
+
+
+def owned_delivery(db, *, user_id: str, delivery_id: str):
+    return db.execute(select(WebhookDelivery).where(
+        WebhookDelivery.id == str(delivery_id or ""),
+        WebhookDelivery.user_id == str(user_id or ""),
+    )).scalar_one_or_none()
+
+
+def deliveries_for(db, *, user_id: str, subscription_id: str = "",
+                   status: str = "", limit: int = 50) -> list:
+    statement = select(WebhookDelivery).where(
+        WebhookDelivery.user_id == str(user_id or ""))
+    if subscription_id:
+        statement = statement.where(
+            WebhookDelivery.subscription_id == str(subscription_id))
+    if status:
+        statement = statement.where(WebhookDelivery.status == str(status))
+    return list(db.execute(
+        statement.order_by(WebhookDelivery.created_at.desc())
+        .limit(int(limit))).scalars().all())
+
+
+def health(db, *, user_id: str) -> dict:
+    """What the console shows at the top: is anything stuck."""
+    rows = db.execute(
+        select(WebhookDelivery.status, func.count(WebhookDelivery.id))
+        .where(WebhookDelivery.user_id == str(user_id or ""))
+        .group_by(WebhookDelivery.status)).all()
+    counts = {str(status): int(total) for status, total in rows}
+    return {"pending": counts.get(WEBHOOK_PENDING, 0),
+            "delivered": counts.get("delivered", 0),
+            "failed": counts.get(WEBHOOK_FAILED, 0),
+            "dead": counts.get(WEBHOOK_DEAD, 0)}
+
+
+def resend(db, delivery, *, now: datetime | None = None) -> WebhookDelivery:
+    """Queue another attempt at the same event. Caller commits.
+
+    The row is reused rather than copied: same id, same event id, same payload,
+    attempts reset to zero and due immediately. A copy would be a second event
+    to the receiver, and their deduplication — which is the event id — would not
+    save them.
+    """
+    current = now or _now()
+    if _recent_resends(db, user_id=delivery.user_id, since=current
+                       - timedelta(hours=1)) >= RESEND_LIMIT_PER_HOUR:
+        raise WebhookConsoleError(
+            f"At most {RESEND_LIMIT_PER_HOUR} manual resends per hour.")
+
+    delivery.status = WEBHOOK_PENDING
+    delivery.attempts = 0
+    delivery.next_attempt_at = current
+    delivery.last_error = ""
+    delivery.last_status_code = 0
+    delivery.delivered_at = None
+    # Audit trail: who asked, and when. Kept on the row rather than in a second
+    # table, because the only question anyone asks is "was this one resent".
+    payload = dict(delivery.payload or {})
+    resends = int(payload.get("_resends") or 0) + 1
+    payload["_resends"] = resends
+    payload["_resent_at"] = current.isoformat()
+    delivery.payload = payload
+    return delivery
+
+
+def _recent_resends(db, *, user_id: str, since: datetime) -> int:
+    rows = db.execute(select(WebhookDelivery).where(
+        WebhookDelivery.user_id == str(user_id or ""))).scalars().all()
+    total = 0
+    for row in rows:
+        payload = row.payload or {}
+        stamp = payload.get("_resent_at")
+        if not stamp:
+            continue
+        try:
+            when = datetime.fromisoformat(str(stamp))
+        except ValueError:
+            continue
+        if _aware(when) >= since:
+            total += int(payload.get("_resends") or 1)
+    return total
+
+
+def send_test(db, subscription, *, now: datetime | None = None) -> WebhookDelivery:
+    """Queue a test event for this subscription. Caller commits.
+
+    A distinct event type and no job id, so a receiver can tell instantly that
+    nothing ran and nothing was charged. Wiring is exactly the real one: the
+    same outbox row, the same worker, the same signature.
+    """
+    current = now or _now()
+    event_id = webhooks.new_event_id()
+    payload = {
+        "id": event_id,
+        "type": EVENT_TEST,
+        "created_at": current.isoformat(),
+        "data": {"message": "This is a test event. No job ran and no credit "
+                            "moved.",
+                 "subscription_id": subscription.id},
+    }
+    delivery = WebhookDelivery(
+        id=str(uuid.uuid4()), subscription_id=subscription.id,
+        user_id=subscription.user_id, event_id=event_id, event_type=EVENT_TEST,
+        job_id="", payload=payload, status=WEBHOOK_PENDING,
+        next_attempt_at=current, created_at=current)
+    db.add(delivery)
+    return delivery
+
+
+def rotate_secret(db, subscription, *, now: datetime | None = None) -> str:
+    """New signing secret, old one honoured for the grace window.
+
+    Returns the plaintext **once**. The same encryption the subscription
+    already uses (`platform_core.secretbox`) — the server has to reproduce this
+    secret to sign, which is exactly why it is encrypted rather than hashed.
+    """
+    from platform_core import secretbox
+
+    current = now or _now()
+    previous = secretbox.giai_ma(subscription.secret_enc)
+    fresh = webhooks.new_secret()
+    subscription.secret_enc = secretbox.ma_hoa(fresh)
+    subscription.previous_secret_enc = secretbox.ma_hoa(previous)
+    subscription.previous_secret_until = current + ROTATION_GRACE
+    return fresh
+
+
+def grace_secret(subscription, *, now: datetime | None = None):
+    """The old secret while it is still honoured, else None."""
+    from platform_core import secretbox
+
+    until = _aware(getattr(subscription, "previous_secret_until", None))
+    if not until or until <= (now or _now()):
+        return None
+    blob = getattr(subscription, "previous_secret_enc", "") or ""
+    return secretbox.giai_ma(blob) if blob else None
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/webhooks.py
-SHA256=23b46dc3eb01af3869a7d88f1a78624661d69c332b73a1386b92b4c1baf84f4e BYTES=9340 LINES=221
+SHA256=d6aea9b5567c881ff708c77a5e541509ca4d9f87b0d2a866abead21cd7b70f71 BYTES=9475 LINES=227
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Webhook subscriptions, transactional outbox, signing and SSRF defence.
 
@@ -111579,14 +111865,20 @@ def sign(secret: str, *, timestamp: int, event_id: str, body: bytes) -> str:
 
 def verify(secret: str, *, timestamp: int, event_id: str, body: bytes,
            signature: str, tolerance_s: int = 300) -> bool:
-    """What a receiver runs. Shipped here so the docs and the tests agree."""
+    """True when `signature` was produced by `secret` for this exact event.
+
+    The header may carry several comma-separated signatures — during a secret
+    rotation the platform signs with both the new and the old secret — so a
+    receiver checking with one of them must accept if **any** entry matches.
+    """
     if abs(int(time.time()) - int(timestamp)) > tolerance_s:
         return False
     expected = sign(secret, timestamp=timestamp, event_id=event_id, body=body)
-    return hmac.compare_digest(expected, str(signature or ""))
+    for candidate in str(signature or "").split(","):
+        if hmac.compare_digest(expected, candidate.strip()):
+            return True
+    return False
 
-
-# ── Event payloads ────────────────────────────────────────────────────────────
 
 def job_event_type(status: str) -> str:
     from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR
@@ -121069,7 +121361,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=cdd1c4443146c3771611c4cce90ce9addd940b2a3b649d684c7578cbb9acb8da BYTES=31967 LINES=706
+SHA256=95bafc866f29bc4fed26564a0dd5d7e1063434ac24a50bae1b0efcddcc08b713 BYTES=38346 LINES=836
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -121144,6 +121436,14 @@ def _webhooks(db: Session, user_id: str) -> list:
     return list(db.execute(select(WebhookSubscription).where(
         WebhookSubscription.user_id == user_id,
         WebhookSubscription.enabled.is_(True),
+    ).order_by(WebhookSubscription.created_at.desc())).scalars().all())
+
+
+def _all_webhooks(db: Session, user_id: str) -> list:
+    """Including the disabled ones: an endpoint you turned off is still part of
+    the story its delivery history tells."""
+    return list(db.execute(select(WebhookSubscription).where(
+        WebhookSubscription.user_id == user_id,
     ).order_by(WebhookSubscription.created_at.desc())).scalars().all())
 
 
@@ -121631,11 +121931,133 @@ def developer_usage(request: Request, user=Depends(require_account),
                    **_usage_context(db, user, config))
 
 
+#: Session slot for a value that must be shown once and never persisted.
+SECRET_ONCE_KEY = "webhook_secret_once"
+
+VERIFY_SNIPPET = """import hmac, hashlib, time
+
+def verify(secret, headers, body):                 # body = raw bytes
+    stamp = int(headers["X-LTT-Timestamp"])
+    if abs(time.time() - stamp) > 300:             # replay window
+        return False
+    signed = f"{stamp}.{headers['X-LTT-Event-Id']}.".encode() + body
+    expected = "v1=" + hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    # The header may carry several signatures during a secret rotation.
+    return any(hmac.compare_digest(expected, part.strip())
+               for part in headers["X-LTT-Signature"].split(","))"""
+
+
 @router.get("/webhooks", response_class=HTMLResponse)
 def developer_webhooks(request: Request, user=Depends(require_account),
                        db: Session = Depends(get_db)):
-    return _render(request, db, user, "webhooks", "dev_webhooks.html",
-                   webhooks=_webhooks(db, user.id))
+    from platform_core.public_api import webhook_console, webhooks as hooks
+
+    catalog = [
+        (hooks.EVENT_JOB_SUCCEEDED, _t("Job kết thúc thành công.")),
+        (hooks.EVENT_JOB_FAILED, _t("Job hỏng — credit đã được hoàn.")),
+        (hooks.EVENT_JOB_CANCELLED, _t("Job bị hủy — credit đã được hoàn.")),
+        (webhook_console.EVENT_TEST,
+         _t("Bạn bấm Gửi thử. Không job nào chạy, không credit nào chuyển.")),
+    ]
+    return _render(
+        request, db, user, "webhooks", "dev_webhooks.html",
+        subscriptions=_all_webhooks(db, user.id),
+        deliveries=webhook_console.deliveries_for(db, user_id=user.id),
+        health=webhook_console.health(db, user_id=user.id),
+        event_catalog=catalog, payload_version=hooks.SIGNATURE_VERSION,
+        headers={"signature": hooks.SIGNATURE_HEADER,
+                 "timestamp": hooks.TIMESTAMP_HEADER,
+                 "event": hooks.EVENT_HEADER},
+        verify_snippet=VERIFY_SNIPPET,
+        tolerance_s=300,
+        grace_hours=int(webhook_console.ROTATION_GRACE.total_seconds() // 3600),
+        # Popped: shown on exactly one render, and gone even if the page is
+        # reloaded or shared.
+        revealed_secret=request.session.pop(SECRET_ONCE_KEY, ""))
+
+
+@router.post("/webhooks/{subscription_id}/test")
+def developer_webhook_test(request: Request, subscription_id: str,
+                           csrf_token: str = Form(""),
+                           user=Depends(require_account),
+                           db: Session = Depends(get_db)):
+    """Queue a test event. Nothing runs and nothing is charged."""
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    subscription = webhook_console.owned_subscription(
+        db, user_id=user.id, subscription_id=subscription_id)
+    if subscription is not None and subscription.enabled:
+        webhook_console.send_test(db, subscription)
+        db.commit()
+    return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.post("/webhooks/{subscription_id}/rotate")
+def developer_webhook_rotate(request: Request, subscription_id: str,
+                             csrf_token: str = Form(""),
+                             user=Depends(require_account),
+                             db: Session = Depends(get_db)):
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    subscription = webhook_console.owned_subscription(
+        db, user_id=user.id, subscription_id=subscription_id)
+    if subscription is None:
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    secret = webhook_console.rotate_secret(db, subscription)
+    db.commit()
+    # Handed over through the session, not the URL: a query string ends up in
+    # browser history, in the Referer of the next click and in every access log
+    # between here and the browser. The next render pops it.
+    request.session[SECRET_ONCE_KEY] = secret
+    return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.post("/webhooks/{subscription_id}/disable")
+def developer_webhook_disable(request: Request, subscription_id: str,
+                              csrf_token: str = Form(""),
+                              user=Depends(require_account),
+                              db: Session = Depends(get_db)):
+    from datetime import datetime as _dt
+
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    subscription = webhook_console.owned_subscription(
+        db, user_id=user.id, subscription_id=subscription_id)
+    if subscription is not None:
+        # Disabled, not deleted: the delivery history is the evidence of what
+        # this endpoint was told, and deleting the subscription would orphan it.
+        subscription.enabled = False
+        subscription.disabled_at = _dt.now(timezone.utc)
+        db.commit()
+    return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.post("/webhooks/deliveries/{delivery_id}/resend")
+def developer_webhook_resend(request: Request, delivery_id: str,
+                             csrf_token: str = Form(""),
+                             user=Depends(require_account),
+                             db: Session = Depends(get_db)):
+    """Try the same event again — same id, same payload, no job, no credit."""
+    from platform_core.public_api import webhook_console
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    delivery = webhook_console.owned_delivery(db, user_id=user.id,
+                                              delivery_id=delivery_id)
+    if delivery is None:
+        return RedirectResponse("/developers/webhooks", status_code=303)
+    try:
+        webhook_console.resend(db, delivery)
+        db.commit()
+    except webhook_console.WebhookConsoleError:
+        db.rollback()
+    return RedirectResponse("/developers/webhooks", status_code=303)
 
 
 @router.get("/docs", response_class=HTMLResponse)
@@ -129905,32 +130327,138 @@ SHA256=aefbafe913dc36ba039e20f6f0fff0d40ce3320b03d4c504c9cf5a0ceffbbe6e BYTES=10
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_webhooks.html
-SHA256=31a368995d408bb5282902fcd888a47d363ff5915a38f93f24a25799d4fbe7ee BYTES=993 LINES=27
+SHA256=e66b8be080910e86d33e172dd5fd688a34fe6b0b7c1838621dd099c56225967e BYTES=6812 LINES=133
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
 
+{% if revealed_secret %}
+  <div class="card" style="border-color:#B4530A;">
+    <h2 style="margin-top:0;">{{ _("Secret mới — chỉ hiện một lần") }}</h2>
+    <pre style="user-select:all; overflow-x:auto;"><code>{{ revealed_secret }}</code></pre>
+    <p class="muted">{{ _("Secret cũ vẫn được ký kèm trong %(hours)s giờ nữa, nên bạn có thời gian đổi bên nhận mà không mất sự kiện nào.")|format(hours=grace_hours) }}</p>
+  </div>
+{% endif %}
+
 <div class="card">
-  {% if not webhooks %}
-    <p class="muted">{{ _("Chưa đăng ký webhook nào.") }}</p>
+  <ul>
+    <li>{{ _("Đang chờ giao:") }} <strong>{{ health.pending }}</strong>
+        · {{ _("đã giao:") }} <strong>{{ health.delivered }}</strong>
+        · {{ _("đang thử lại:") }} <strong>{{ health.failed }}</strong>
+        · {{ _("bỏ cuộc:") }} <strong>{{ health.dead }}</strong></li>
+    <li class="muted">{{ _("Mỗi sự kiện có id riêng và được ký; giao trùng là an toàn nếu bên nhận khử trùng theo id đó.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Điểm nhận") }}</h2>
+  {% if not subscriptions %}
+    <p class="muted">{{ _("Chưa đăng ký điểm nhận nào.") }}</p>
   {% else %}
     <table class="table">
-      <thead><tr><th>URL</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Tạo lúc") }}</th></tr></thead>
+      <thead><tr>
+        <th>URL</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Trạng thái") }}</th>
+        <th>{{ _("Tạo lúc") }}</th><th></th>
+      </tr></thead>
       <tbody>
-        {% for hook in webhooks %}
+        {% for hook in subscriptions %}
           <tr>
             <td><code>{{ hook.url }}</code></td>
-            <td>{{ hook.events|join(", ") }}</td>
+            <td>{% for event in hook.events %}<code>{{ event }}</code> {% endfor %}
+                {% if not hook.events %}<span class="muted">{{ _("tất cả") }}</span>{% endif %}</td>
+            <td>{% if hook.enabled %}{{ _("đang bật") }}{% else %}{{ _("đã tắt") }}{% endif %}</td>
             <td>{{ hook.created_at.strftime("%Y-%m-%d") if hook.created_at else "" }}</td>
+            <td>
+              {% if hook.enabled %}
+                <form method="post" action="/developers/webhooks/{{ hook.id }}/test"
+                      style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn">{{ _("Gửi thử") }}</button>
+                </form>
+                <form method="post" action="/developers/webhooks/{{ hook.id }}/rotate"
+                      style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn">{{ _("Đổi secret") }}</button>
+                </form>
+                <form method="post" action="/developers/webhooks/{{ hook.id }}/disable"
+                      style="display:inline;"
+                      onsubmit="return confirm('{{ _("Tắt điểm nhận này?") }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-danger">{{ _("Tắt") }}</button>
+                </form>
+              {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% endif %}
-  <p class="muted">{{ _("Đăng ký và huỷ đăng ký bằng API:") }}
-     <code>POST /api/v1/webhooks</code> ·
-     <code>GET /api/v1/webhooks/deliveries</code>.
-     {{ _("Bảng điều khiển webhook (xem payload, gửi lại) là hạng mục riêng, chưa có ở bước này.") }}</p>
+  <p class="muted">{{ _("Đăng ký điểm nhận mới bằng POST /api/v1/webhooks — secret chỉ hiện một lần trong phản hồi đó.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Lần giao gần đây") }}</h2>
+  {% if not deliveries %}
+    <p class="muted">{{ _("Chưa có lần giao nào.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Lúc") }}</th><th>{{ _("Sự kiện") }}</th><th>Job</th>
+        <th>{{ _("Trạng thái") }}</th><th>{{ _("Lần thử") }}</th>
+        <th>HTTP</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for item in deliveries %}
+          <tr>
+            <td>{{ item.created_at.strftime("%m-%d %H:%M:%S") if item.created_at else "" }}</td>
+            <td><code>{{ item.event_type }}</code><br>
+                <span class="muted"><code>{{ item.event_id[:12] }}</code></span></td>
+            <td>{% if item.job_id %}<code>{{ item.job_id[:8] }}</code>{% else %}—{% endif %}</td>
+            <td>{{ item.status }}
+                {% if item.last_error %}<br><span class="muted">{{ item.last_error[:80] }}</span>{% endif %}</td>
+            <td>{{ item.attempts }}</td>
+            <td>{{ item.last_status_code or "—" }}</td>
+            <td>
+              <form method="post" action="/developers/webhooks/deliveries/{{ item.id }}/resend"
+                    style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-ghost">{{ _("Gửi lại") }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">{{ _("Gửi lại dùng ĐÚNG event id và payload cũ: bên nhận khử trùng theo id nên không xử lý hai lần, và job cùng credit không hề bị chạm.") }}</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Danh mục sự kiện") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("Loại") }}</th><th>{{ _("Khi nào") }}</th></tr></thead>
+    <tbody>
+      {% for name, when in event_catalog %}
+        <tr><td><code>{{ name }}</code></td><td>{{ when }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Payload có %(version)s ở trường `type` và một `id` duy nhất cho mỗi sự kiện.")|format(version="`" + payload_version + "`") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Kiểm chữ ký") }}</h2>
+  <p>{{ _("Mỗi request mang ba header:") }}
+    <code>{{ headers.signature }}</code>,
+    <code>{{ headers.timestamp }}</code>,
+    <code>{{ headers.event }}</code>.</p>
+  <pre style="overflow-x:auto;"><code>{{ verify_snippet }}</code></pre>
+  <ul>
+    <li>{{ _("Từ chối nếu timestamp lệch quá %(seconds)s giây — đó là thứ chặn phát lại.")|format(seconds=tolerance_s) }}</li>
+    <li>{{ _("Header chữ ký có thể chứa NHIỀU chữ ký cách nhau bằng dấu phẩy trong lúc đổi secret; chấp nhận nếu KHỚP MỘT trong số đó.") }}</li>
+    <li>{{ _("Thứ tự không được bảo đảm: hai sự kiện của hai job có thể tới ngược thứ tự. Hãy dựa vào trạng thái trong payload, đừng dựa vào thứ tự tới.") }}</li>
+    <li>{{ _("Giao trùng là có thể (worker nhặt lại, hoặc bạn bấm Gửi lại). Khử trùng theo") }} <code>id</code>.</li>
+  </ul>
 </div>
 
 {% endblock %}
@@ -165929,6 +166457,528 @@ def test_the_worker_prunes_the_request_log():
 
     source = Path("platform_core/job_runner.py").read_text(encoding="utf-8")
     assert "request_log.purge_expired" in source
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_202_webhook_console.py
+SHA256=e19bb26500eea3fd41aad998217950c9ff660f9316089854e046e8d5928c9bfc BYTES=20280 LINES=516
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-10 — webhook console: resend, test, rotate, and the rules behind them.
+
+The dangerous operation here is resend. A support conversation that ends in
+"just resend it" must not be able to re-run work, re-charge a customer, or make
+a receiver process the same event twice — and those are three different
+mistakes, so they get three different tests.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import (keys as devkeys, limits, webhook_console,
+                                      webhooks)
+from platform_core.public_api.tables import (WEBHOOK_DEAD, WEBHOOK_PENDING,
+                                             WebhookDelivery,
+                                             WebhookSubscription)
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "console-test-pepper-" + "c" * 40
+TOOL = "image.thumbnail"
+RECEIVER = "https://receiver.example.com/hook"
+
+
+def _public_dns(host: str) -> list:
+    """Resolve the test receiver without depending on somebody else's DNS.
+
+    The production path resolves for real and refuses a host it cannot resolve;
+    the SSRF rules themselves are exercised with explicit resolvers below.
+    """
+    if host.endswith("example.com"):
+        return ["93.184.216.34"]
+    raise OSError(f"unknown test host: {host}")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setattr(webhooks, "_system_resolver", _public_dns)
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'console.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY",
+                       "console-encryption-key-0123456789")
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "console-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _account(client, scopes=("tools:read", "jobs:create", "jobs:read",
+                             "webhooks:manage")):
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"wc-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 200, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    keys_page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": "console", "csrf_token": _csrf(keys_page),
+                                "scopes": list(scopes)})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+    return user_id, token
+
+
+def _subscribe(client, token, url: str = RECEIVER):
+    response = client.post(f"{API_V1_PREFIX}/webhooks",
+                           json={"url": url},
+                           headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code in (200, 201), response.text
+    return response.json()
+
+
+def _delivery_rows(user_id: str) -> list:
+    gen, db = _session()
+    try:
+        return webhook_console.deliveries_for(db, user_id=user_id)
+    finally:
+        _close(gen)
+
+
+def _post(client, path: str) -> None:
+    page = client.get("/developers/webhooks").text
+    client.post(path, data={"csrf_token": _csrf(page)}, follow_redirects=False)
+
+
+# ── Resend ───────────────────────────────────────────────────────────────────
+
+def _finished_job_with_delivery(client, token, user_id):
+    """One real job that ran, and the delivery its terminal state queued."""
+    quote = client.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": {"topic": "hook", "count": 1}},
+                        headers={"Authorization": f"Bearer {token}"}).json()
+    created = client.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote["quote"],
+              "input": {"topic": "hook", "count": 1}},
+        headers={"Authorization": f"Bearer {token}",
+                 "Idempotency-Key": f"console-{uuid.uuid4().hex[:8]}"})
+    assert created.status_code == 201
+    from platform_core.job_runner import _chay_mot_job
+    assert _chay_mot_job("console-worker") is True
+    rows = _delivery_rows(user_id)
+    assert rows, "a finished job queues a delivery"
+    return created.json()["id"], rows[0]
+
+
+def test_resend_reuses_the_event_id_and_payload(portal):
+    user_id, token = _account(portal)
+    _subscribe(portal, token)
+    _job_id, delivery = _finished_job_with_delivery(portal, token, user_id)
+    before = {"event_id": delivery.event_id,
+              "payload": dict(delivery.payload or {})}
+
+    _post(portal, f"/developers/webhooks/deliveries/{delivery.id}/resend")
+
+    after = _delivery_rows(user_id)[0]
+    assert after.id == delivery.id, "the row is reused, not copied"
+    assert after.event_id == before["event_id"]
+    assert after.status == WEBHOOK_PENDING and after.attempts == 0
+    # The receiver deduplicates on the event id; a fresh id would defeat that.
+    assert after.payload["id"] == before["payload"]["id"]
+    assert after.payload["type"] == before["payload"]["type"]
+    assert after.payload["_resends"] == 1
+
+
+def test_resend_touches_neither_the_job_nor_the_ledger(portal):
+    """The rule that makes 'just resend it' safe to say out loud."""
+    import sqlalchemy as sa
+    from platform_core.models import CreditEntry, Job
+
+    user_id, token = _account(portal)
+    _subscribe(portal, token)
+    job_id, delivery = _finished_job_with_delivery(portal, token, user_id)
+
+    def _snapshot():
+        gen, db = _session()
+        try:
+            job = db.get(Job, job_id)
+            ledger = db.execute(sa.select(CreditEntry).where(
+                CreditEntry.user_id == user_id).order_by(
+                    CreditEntry.created_at)).scalars().all()
+            return (job.status, job.attempts,
+                    [(entry.kind, entry.delta) for entry in ledger])
+        finally:
+            _close(gen)
+
+    before = _snapshot()
+    _post(portal, f"/developers/webhooks/deliveries/{delivery.id}/resend")
+    assert _snapshot() == before
+
+
+def test_a_dead_delivery_can_be_revived(portal):
+    """The case the button exists for: the receiver was down all afternoon."""
+    user_id, token = _account(portal)
+    _subscribe(portal, token)
+    _job_id, delivery = _finished_job_with_delivery(portal, token, user_id)
+
+    gen, db = _session()
+    try:
+        row = db.get(WebhookDelivery, delivery.id)
+        row.status = WEBHOOK_DEAD
+        row.attempts = webhooks.MAX_ATTEMPTS
+        db.commit()
+    finally:
+        _close(gen)
+
+    _post(portal, f"/developers/webhooks/deliveries/{delivery.id}/resend")
+    after = _delivery_rows(user_id)[0]
+    assert after.status == WEBHOOK_PENDING and after.attempts == 0
+
+
+def test_resend_is_rate_limited(portal):
+    user_id, token = _account(portal)
+    _subscribe(portal, token)
+    _job_id, delivery = _finished_job_with_delivery(portal, token, user_id)
+
+    gen, db = _session()
+    try:
+        row = db.get(WebhookDelivery, delivery.id)
+        payload = dict(row.payload or {})
+        payload["_resends"] = webhook_console.RESEND_LIMIT_PER_HOUR
+        payload["_resent_at"] = datetime.now(timezone.utc).isoformat()
+        row.payload = payload
+        db.commit()
+        with pytest.raises(webhook_console.WebhookConsoleError):
+            webhook_console.resend(db, row)
+    finally:
+        _close(gen)
+
+
+def test_resend_only_works_on_your_own_delivery(portal):
+    first_id, first_token = _account(portal)
+    _subscribe(portal, first_token)
+    _job_id, delivery = _finished_job_with_delivery(portal, first_token, first_id)
+
+    portal.post("/logout", data={}, follow_redirects=False)
+    _second_id, _second_token = _account(portal)
+    _post(portal, f"/developers/webhooks/deliveries/{delivery.id}/resend")
+
+    after = _delivery_rows(first_id)[0]
+    assert "_resends" not in (after.payload or {})
+
+
+# ── Test event ───────────────────────────────────────────────────────────────
+
+def test_a_test_event_says_it_is_a_test_and_costs_nothing(portal):
+    import sqlalchemy as sa
+    from platform_core.models import CreditEntry, Job
+
+    user_id, token = _account(portal)
+    subscription = _subscribe(portal, token)
+
+    gen, db = _session()
+    try:
+        jobs_before = int(db.execute(
+            sa.select(sa.func.count(Job.id))).scalar_one())
+        ledger_before = int(db.execute(
+            sa.select(sa.func.count(CreditEntry.id))).scalar_one())
+    finally:
+        _close(gen)
+
+    _post(portal, f"/developers/webhooks/{subscription['id']}/test")
+
+    rows = _delivery_rows(user_id)
+    assert len(rows) == 1
+    event = rows[0]
+    assert event.event_type == webhook_console.EVENT_TEST
+    assert event.job_id == ""
+    assert "test event" in event.payload["data"]["message"].lower()
+
+    gen, db = _session()
+    try:
+        assert int(db.execute(
+            sa.select(sa.func.count(Job.id))).scalar_one()) == jobs_before
+        assert int(db.execute(
+            sa.select(sa.func.count(CreditEntry.id))).scalar_one()) == ledger_before
+    finally:
+        _close(gen)
+
+
+def test_a_test_event_goes_through_the_real_delivery_path(portal):
+    """Otherwise it proves nothing about the wiring it is meant to prove."""
+    user_id, token = _account(portal)
+    subscription = _subscribe(portal, token)
+    _post(portal, f"/developers/webhooks/{subscription['id']}/test")
+
+    sent = []
+
+    def _sender(sub, delivery, **kwargs):
+        sent.append((sub.url, delivery.event_type, delivery.payload))
+        return 200
+
+    from platform_core.public_api import outbox
+
+    gen, db = _session()
+    try:
+        report = outbox.deliver_due(db, sender=_sender)
+        db.commit()
+    finally:
+        _close(gen)
+    assert report["delivered"] == 1
+    assert sent and sent[0][0] == RECEIVER
+    assert sent[0][1] == webhook_console.EVENT_TEST
+
+
+# ── Rotation ─────────────────────────────────────────────────────────────────
+
+def test_rotation_signs_with_both_secrets_during_the_grace_window(portal):
+    user_id, token = _account(portal)
+    created = _subscribe(portal, token)
+    old_secret = created["secret"]
+
+    page = portal.get("/developers/webhooks").text
+    response = portal.post(
+        f"/developers/webhooks/{created['id']}/rotate",
+        data={"csrf_token": _csrf(page)}, follow_redirects=False)
+    # The secret must not travel in the URL: history, Referer and access logs
+    # all keep query strings. It comes back on the next render, once.
+    assert "secret=" not in response.headers["location"]
+    shown = portal.get("/developers/webhooks").text
+    new_secret = re.search(r"<code>([A-Za-z0-9_-]{20,})</code>", shown).group(1)
+    assert new_secret and new_secret != old_secret
+    # …and it is gone on the next load.
+    assert new_secret not in portal.get("/developers/webhooks").text
+
+    _post(portal, f"/developers/webhooks/{created['id']}/test")
+
+    captured = {}
+
+    def _sender(sub, delivery, **kwargs):
+        from platform_core.public_api import delivery as delivery_mod
+        captured["headers"] = delivery_mod.build_headers(sub, delivery)
+        return 200
+
+    from platform_core.public_api import outbox
+
+    gen, db = _session()
+    try:
+        outbox.deliver_due(db, sender=_sender)
+        db.commit()
+    finally:
+        _close(gen)
+
+    headers = captured["headers"]
+    signature = headers[webhooks.SIGNATURE_HEADER]
+    body = webhooks.canonical_body(_delivery_rows(user_id)[0].payload)
+    stamp = int(headers[webhooks.TIMESTAMP_HEADER])
+    event_id = headers[webhooks.EVENT_HEADER]
+    # A receiver that already switched verifies…
+    assert webhooks.verify(new_secret, timestamp=stamp, event_id=event_id,
+                           body=body, signature=signature)
+    # …and one that has not yet switched still verifies.
+    assert webhooks.verify(old_secret, timestamp=stamp, event_id=event_id,
+                           body=body, signature=signature)
+
+
+def test_the_old_secret_stops_working_after_the_window(portal):
+    _user_id, token = _account(portal)
+    created = _subscribe(portal, token)
+
+    gen, db = _session()
+    try:
+        subscription = db.get(WebhookSubscription, created["id"])
+        webhook_console.rotate_secret(db, subscription)
+        db.commit()
+        assert webhook_console.grace_secret(subscription) is not None
+        later = datetime.now(timezone.utc) + webhook_console.ROTATION_GRACE \
+            + timedelta(minutes=1)
+        assert webhook_console.grace_secret(subscription, now=later) is None
+    finally:
+        _close(gen)
+
+
+# ── Disable ──────────────────────────────────────────────────────────────────
+
+def test_disabling_keeps_the_history_and_stops_new_events(portal):
+    user_id, token = _account(portal)
+    created = _subscribe(portal, token)
+    _job_id, _delivery = _finished_job_with_delivery(portal, token, user_id)
+    before = len(_delivery_rows(user_id))
+
+    _post(portal, f"/developers/webhooks/{created['id']}/disable")
+
+    gen, db = _session()
+    try:
+        subscription = db.get(WebhookSubscription, created["id"])
+        assert subscription is not None, "disabled, not deleted"
+        assert subscription.enabled is False
+    finally:
+        _close(gen)
+    assert len(_delivery_rows(user_id)) == before
+
+    # A later job queues nothing for a disabled endpoint.
+    _finished_job_with_delivery(portal, token, user_id)
+    assert len(_delivery_rows(user_id)) == before
+
+
+# ── SSRF regression ──────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("url", [
+    "http://receiver.example.com/hook",     # plain http
+    "https://127.0.0.1/hook",
+    "https://[::1]/hook",
+    "https://169.254.169.254/latest/meta-data/",
+])
+def test_the_console_cannot_reach_an_internal_target(portal, url):
+    """Every console operation ends in a request we make; the guard is the
+    same one subscription creation uses, and it is checked again here."""
+    _user_id, token = _account(portal)
+    refused = portal.post(f"{API_V1_PREFIX}/webhooks", json={"url": url},
+                          headers={"Authorization": f"Bearer {token}"})
+    assert refused.status_code == 400, url
+
+
+def test_a_resend_revalidates_the_target_before_sending(portal, monkeypatch):
+    """The URL was safe when it was registered; it is checked again on the way
+    out, because DNS can be repointed after the fact."""
+    from platform_core.public_api import delivery as delivery_mod
+
+    user_id, token = _account(portal)
+    _subscribe(portal, token)
+    _job_id, delivery = _finished_job_with_delivery(portal, token, user_id)
+    _post(portal, f"/developers/webhooks/deliveries/{delivery.id}/resend")
+
+    seen = []
+    monkeypatch.setattr(
+        webhooks, "validate_target",
+        lambda url, **kwargs: seen.append(url))
+    try:
+        delivery_mod.send_delivery(
+            _subscription_of(user_id), _delivery_rows(user_id)[0],
+            resolver=lambda host: ["203.0.113.10"])
+    except Exception:                          # noqa: BLE001 - no real receiver
+        pass
+    assert seen and seen[0] == RECEIVER
+
+
+def _subscription_of(user_id: str):
+    gen, db = _session()
+    try:
+        import sqlalchemy as sa
+        return db.execute(sa.select(WebhookSubscription).where(
+            WebhookSubscription.user_id == user_id)).scalars().first()
+    finally:
+        _close(gen)
+
+
+# ── The page ─────────────────────────────────────────────────────────────────
+
+def test_the_console_documents_the_event_catalog_and_the_signature(portal):
+    _account(portal)
+    page = portal.get("/developers/webhooks").text
+    for fragment in ("job.succeeded", "job.failed", "job.cancelled",
+                     webhook_console.EVENT_TEST, webhooks.SIGNATURE_HEADER,
+                     webhooks.TIMESTAMP_HEADER, webhooks.EVENT_HEADER,
+                     "hmac"):
+        assert fragment in page, fragment
+
+
+def test_the_console_explains_ordering_and_duplicates(portal):
+    _account(portal)
+    page = portal.get("/developers/webhooks").text.lower()
+    assert "thứ tự" in page and "trùng" in page
+
+
+def test_the_console_never_shows_a_stored_secret(portal):
+    _user_id, token = _account(portal)
+    created = _subscribe(portal, token)
+    page = portal.get("/developers/webhooks").text
+    assert created["secret"] not in page
+
+
+def test_every_console_write_needs_a_csrf_token(portal):
+    user_id, token = _account(portal)
+    created = _subscribe(portal, token)
+    _job_id, delivery = _finished_job_with_delivery(portal, token, user_id)
+
+    for path in (f"/developers/webhooks/{created['id']}/test",
+                 f"/developers/webhooks/{created['id']}/rotate",
+                 f"/developers/webhooks/{created['id']}/disable",
+                 f"/developers/webhooks/deliveries/{delivery.id}/resend"):
+        portal.post(path, data={}, follow_redirects=False)
+
+    rows = _delivery_rows(user_id)
+    assert len(rows) == 1 and rows[0].event_type != webhook_console.EVENT_TEST
+    gen, db = _session()
+    try:
+        assert db.get(WebhookSubscription, created["id"]).enabled is True
+    finally:
+        _close(gen)
 
 @@@LTT_PROFILE_FILE_END@@@
 

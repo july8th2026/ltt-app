@@ -163,14 +163,20 @@ def sign(secret: str, *, timestamp: int, event_id: str, body: bytes) -> str:
 
 def verify(secret: str, *, timestamp: int, event_id: str, body: bytes,
            signature: str, tolerance_s: int = 300) -> bool:
-    """What a receiver runs. Shipped here so the docs and the tests agree."""
+    """True when `signature` was produced by `secret` for this exact event.
+
+    The header may carry several comma-separated signatures — during a secret
+    rotation the platform signs with both the new and the old secret — so a
+    receiver checking with one of them must accept if **any** entry matches.
+    """
     if abs(int(time.time()) - int(timestamp)) > tolerance_s:
         return False
     expected = sign(secret, timestamp=timestamp, event_id=event_id, body=body)
-    return hmac.compare_digest(expected, str(signature or ""))
+    for candidate in str(signature or "").split(","):
+        if hmac.compare_digest(expected, candidate.strip()):
+            return True
+    return False
 
-
-# ── Event payloads ────────────────────────────────────────────────────────────
 
 def job_event_type(status: str) -> str:
     from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR

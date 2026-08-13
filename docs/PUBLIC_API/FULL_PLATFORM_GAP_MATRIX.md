@@ -31,6 +31,11 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-10 (2026-08-14):** domain H (webhooks) và
+> Extension domain 13 `PARTIAL` → `DONE`: console, danh mục sự kiện,
+> gửi lại (giữ nguyên event id, không chạm job/credit), sự kiện thử,
+> xoay secret có cửa an hạn 24 giờ ký bằng cả hai.
+
 > **Cập nhật sau EXT-09 (2026-08-14):** Extension domain 12
 > (`request log/trace`) `MISSING` → `DONE`. Ghi **thất bại + lời gọi
 > không phải đọc** (đo được: ghi mọi request tốn 4× thông lượng),

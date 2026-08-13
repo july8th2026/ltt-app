@@ -35,23 +35,46 @@ def _opener() -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(_NoRedirect)
 
 
+def build_headers(subscription, delivery, *, body: bytes | None = None,
+                  timestamp: int | None = None) -> dict:
+    """The headers one delivery is sent with, including its signature(s).
+
+    Separated from sending so the signature can be checked in a test without a
+    receiver — the thing most worth checking is exactly the thing that needs a
+    server to observe otherwise.
+    """
+    from platform_core import secretbox
+    from platform_core.public_api import webhook_console
+
+    payload_body = webhooks.canonical_body(delivery.payload or {}) \
+        if body is None else body
+    stamp = int(time.time()) if timestamp is None else int(timestamp)
+    signatures = [webhooks.sign(secretbox.giai_ma(subscription.secret_enc),
+                                timestamp=stamp, event_id=delivery.event_id,
+                                body=payload_body)]
+
+    # During a rotation grace window the event is signed with both secrets, so a
+    # receiver that has switched and one that has not both verify. They travel
+    # comma-separated and a verifier accepts if *any* entry matches.
+    previous = webhook_console.grace_secret(subscription)
+    if previous:
+        signatures.append(webhooks.sign(previous, timestamp=stamp,
+                                        event_id=delivery.event_id,
+                                        body=payload_body))
+    return {
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+        webhooks.SIGNATURE_HEADER: ",".join(signatures),
+        webhooks.TIMESTAMP_HEADER: str(stamp),
+        webhooks.EVENT_HEADER: delivery.event_id,
+    }
+
+
 def send_delivery(subscription, delivery, *, require_https: bool = True,
                   resolver=None, timeout: float = webhooks.DELIVERY_TIMEOUT_S) -> int:
     """POST one signed event. Returns the HTTP status code."""
-    from platform_core import secretbox
-
-    secret = secretbox.giai_ma(subscription.secret_enc)
     body = webhooks.canonical_body(delivery.payload or {})
-    timestamp = int(time.time())
-    signature = webhooks.sign(secret, timestamp=timestamp,
-                              event_id=delivery.event_id, body=body)
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-        webhooks.SIGNATURE_HEADER: signature,
-        webhooks.TIMESTAMP_HEADER: str(timestamp),
-        webhooks.EVENT_HEADER: delivery.event_id,
-    }
+    headers = build_headers(subscription, delivery, body=body)
 
     url = subscription.url
     opener = _opener()

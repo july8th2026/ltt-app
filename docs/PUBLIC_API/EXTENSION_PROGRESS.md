@@ -21,7 +21,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 07 | Quickstart / env vars / examples / recipes | **PASS** | 2026-08-13 |
 | 08 | Playground / request builder / job inspector | **PASS** | 2026-08-13 |
 | 09 | Request logs / trace / job timeline | **PASS** | 2026-08-14 |
-| 10 | Webhook console / event catalog / resend | chưa chạy | — |
+| 10 | Webhook console / event catalog / resend | **PASS** | 2026-08-14 |
 | 11 | Usage / budgets / credit alerts / notifications | chưa chạy | — |
 | 12 | Sandbox / test mode / live isolation | chưa chạy | — |
 | 13 | API admin console core | chưa chạy | — |
@@ -1036,3 +1036,92 @@ Không có dữ liệu nào khác bị chạm.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/10_WEBHOOK_CONSOLE_EVENT_CATALOG_RESEND_REPLAY_SAFETY.txt`
+
+
+---
+
+## EXT-10 — WEBHOOK CONSOLE, DANH MỤC SỰ KIỆN, GỬI LẠI ✅
+
+### Entry gate
+
+EXT-09 PASS ✅ (`b5344d2`), cây sạch. Migration mới: **`f2a3b4c5d6e7`** (head).
+
+### Bốn thao tác, mỗi thao tác một luật
+
+**Gửi lại không chạy lại gì.** Dùng **đúng** dòng cũ: cùng `event_id`, cùng
+payload, `attempts` về 0, đến hạn ngay. Không chạm job, không chạm sổ credit —
+và **không thể** chạm, vì module này không đọc/ghi cả hai. Quan trọng vì hai lẽ:
+một cuộc hỗ trợ kết thúc bằng "gửi lại đi" không được là đường tính tiền lần
+hai; và khoá khử trùng của bên nhận **chính là** `event_id`, nên một lần gửi lại
+mang id mới sẽ bị họ xử lý hai lần.
+
+**Sự kiện thử tự nhận là thử.** Loại riêng `webhook.test`, không `job_id`,
+payload nói thẳng "không job nào chạy, không credit nào chuyển" — nhưng đi qua
+**đúng** outbox, worker và chữ ký thật, nếu không nó chẳng chứng minh được cái
+dây nối mà nó sinh ra để chứng minh.
+
+**Xoay secret có cửa an hạn 24 giờ.** Xoay có hiệu lực tức thì sẽ làm hỏng mọi
+lần giao đang bay ở một receiver đã đổi — đúng lúc khách đang nhìn. Trong cửa sổ
+đó, mỗi sự kiện được **ký bằng cả hai** secret, header chứa nhiều chữ ký cách
+nhau bằng dấu phẩy, và `verify()` chấp nhận nếu **khớp một**.
+
+**Tắt chứ không xoá.** Lịch sử giao là bằng chứng về việc điểm nhận đó đã được
+báo những gì; xoá subscription sẽ làm mồ côi chỗ bằng chứng ấy.
+
+### Một lỗ hổng tôi tự tạo ra và trình duyệt bắt được
+
+Bản đầu trả secret mới qua **query string** (`?secret=…`). Query string đi vào
+lịch sử trình duyệt, vào header `Referer` của cú bấm kế tiếp, và vào mọi log
+truy cập trên đường. Đã đổi sang một ô **dùng một lần trong session**: trang kế
+tiếp `pop` ra, hiện đúng một lần, tải lại là mất. Có test khẳng định `secret=`
+**không** xuất hiện trong `Location` và giá trị biến mất ở lần tải sau.
+
+### Giới hạn có lý do
+
+20 lần gửi lại/giờ mỗi tài khoản: gửi lại là một request **chúng ta** phát đi
+tới máy chủ của người khác — một nút bấm không giới hạn là một bộ khuếch đại
+hướng vào bất kỳ URL nào khách cấu hình.
+
+### Tests
+
+`tests/test_202_webhook_console.py` — **19 test**: gửi lại giữ nguyên id/payload
+và **không** đổi job hay sổ credit (so snapshot trước/sau); hồi sinh được lần
+giao `dead`; bị giới hạn nhịp; không gửi lại được của người khác; sự kiện thử
+không tạo job/credit và đi đúng đường giao thật; xoay secret ký bằng **cả hai**
+và secret cũ hết hiệu lực sau cửa sổ; tắt thì giữ lịch sử và không nhận sự kiện
+mới; 4 URL nội bộ/không-https bị từ chối (hồi quy SSRF); mọi thao tác ghi đều
+cần CSRF; trang không bao giờ hiện secret đã lưu; và trang có đủ danh mục sự
+kiện + hướng dẫn kiểm chữ ký + ghi rõ **thứ tự không bảo đảm, giao trùng là có
+thể**.
+
+### Browser
+
+Cổng 8123, **không** chạy vòng giao webhook nên không có request nào đi ra
+ngoài: đăng ký điểm nhận → console hiện `Đang chờ giao: 1` sau khi bấm **Gửi
+thử**, dòng `webhook.test` với `pending 0` → bấm **Đổi secret** → secret mới
+hiện đúng một lần kèm dòng nhắc về cửa an hạn.
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| — | Sự kiện cho STREAM/BATCH | chưa mode nào dùng (D5) |
+| — | Đăng ký điểm nhận **từ portal** (hiện vẫn qua API) | secret chỉ hiện một lần trong phản hồi API là đủ an toàn; thêm form là thêm chỗ lộ |
+| — | Xuất lịch sử giao | EXT-19 |
+
+### Rollback
+
+`alembic downgrade e1f2a3b4c5d6`, gỡ `webhook_console.py`, hoàn nguyên
+`delivery.build_headers` và `webhooks.verify`, bỏ 5 route console và bản
+`dev_webhooks.html` cũ, xoá `test_202`.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-10 | Kết quả |
+|---|---|
+| Gửi lại không mutate job/credit | ✅ snapshot job + toàn bộ ledger giống hệt trước/sau |
+| Không hồi quy SSRF | ✅ 4 URL bị chặn + kiểm lại đích ngay trước khi gửi |
+| Lịch sử giao an toàn theo tenant | ✅ lọc theo chủ trong truy vấn; gửi lại của người khác không có hiệu lực |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/11_USAGE_BUDGETS_CREDIT_ALERTS_AND_DEVELOPER_NOTIFICATIONS.txt`

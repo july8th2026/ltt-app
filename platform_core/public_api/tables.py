@@ -307,6 +307,14 @@ class WebhookSubscription(Base):
     key_id: Mapped[str] = mapped_column(String(48), default="", nullable=False)
     url: Mapped[str] = mapped_column(String(2000), nullable=False)
     secret_enc: Mapped[str] = mapped_column(Text, nullable=False)
+    # Kept for a grace window after a rotation, and signed with alongside the
+    # new one. A rotation that took effect instantly would fail every delivery
+    # already in flight at a receiver that had switched — which is exactly the
+    # moment a customer is watching (EXT-10).
+    previous_secret_enc: Mapped[str] = mapped_column(Text, default="",
+                                                     nullable=False)
+    previous_secret_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
     events: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
