@@ -115,7 +115,7 @@ SECTIONS = (
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
     ("playground", "/developers/playground", N_("Playground")),
-    ("logs", None, N_("Nhật ký request")),
+    ("logs", "/developers/logs", N_("Nhật ký request")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
     ("webhooks", "/developers/webhooks", N_("Webhook")),
@@ -351,6 +351,81 @@ def developer_playground(request: Request, user=Depends(require_account),
                    catalog_json=json.dumps(published, ensure_ascii=False)
                    .replace("<", "\\u003c"))
 
+
+#: Status filters people actually think in. "4xx" is a question, "412" is not.
+STATUS_CHOICES = (("2xx", N_("Thành công (2xx)")),
+                  ("4xx", N_("Lỗi của request (4xx)")),
+                  ("401", N_("Không xác thực được (401)")),
+                  ("403", N_("Thiếu quyền (403)")),
+                  ("409", N_("Xung đột (409)")),
+                  ("422", N_("Sai dữ liệu (422)")),
+                  ("429", N_("Vượt hạn mức (429)")),
+                  ("5xx", N_("Lỗi máy chủ (5xx)")))
+
+
+@router.get("/logs", response_class=HTMLResponse)
+def developer_logs(request: Request, request_id: str = "", status: str = "",
+                   tool: str = "", key_id: str = "",
+                   user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    """This account's own API calls — including the ones that never ran.
+
+    A job explains a job. Nothing else explained the 401 that stopped an
+    integration, the 403 that named a scope the developer thought they had, or
+    the 429 that arrived when their queue backed up; those are exactly the calls
+    somebody needs to look up, and until now only an operator could.
+    """
+    from platform_core.public_api import request_log
+
+    config = _public_api_config(request)
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    rows = request_log.list_for(db, user_id=user.id, request_id=request_id,
+                                status=status, tool=tool, key_id=key_id,
+                                limit=100)
+    return _render(
+        request, db, user, "logs", "dev_logs.html",
+        rows=rows,
+        counts=request_log.counts(db, user_id=user.id, since=since),
+        retention_days=request_log.RETENTION_DAYS,
+        tools=[item.name for item in build_catalog(config)],
+        keys=[{"key_id": key.key_id, "name": key.name}
+              for key in devkeys.list_for_user(db, user.id)],
+        status_choices=[(value, _t(label)) for value, label in STATUS_CHOICES],
+        filters={"request_id": request_id, "status": status, "tool": tool,
+                 "key_id": key_id,
+                 "any": bool(request_id or status or tool or key_id)})
+
+
+@router.get("/logs/{wanted_id}", response_class=HTMLResponse)
+def developer_log_detail(request: Request, wanted_id: str,
+                         user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """One request, and everything reachable from it.
+
+    Assembled from rows that already exist — the job, its customer-visible
+    events, the ledger entries, the artifacts, the webhook deliveries. Storing a
+    second copy of any of that would be a second thing to keep true.
+    """
+    from platform_core.public_api import request_log
+    from platform_core.public_api.error_registry import REGISTRY
+
+    row = request_log.get_owned(db, user_id=user.id, request_id=wanted_id)
+    if row is None:
+        # Same 404 a request that never existed gets: a log page must not
+        # confirm that somebody else's request id is real.
+        raise _redirect("/developers/logs", status_code=404)
+    spec = REGISTRY.get(row.code)
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    return _render(
+        request, db, user, "logs", "dev_log_detail.html",
+        section_title=row.request_id[:8],
+        row=row, timeline=request_log.timeline(db, row),
+        project_name=names.get(row.project_id, ""),
+        advice=({"action": spec.action, "retry": spec.retry,
+                 "reuse_idempotency_key": spec.reuse_idempotency_key}
+                if spec is not None else None))
 
 @router.get("/tools", response_class=HTMLResponse)
 def developer_tools(request: Request, q: str = "", capability: str = "",

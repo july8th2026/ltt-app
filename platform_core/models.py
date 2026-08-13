@@ -25,8 +25,8 @@ from platform_core.db import Base
 # nó trong `Base.metadata` — không có dòng này thì autogenerate coi bảng đó là
 # bảng lạ và sinh migration XOÁ nó.
 from platform_core.public_api.tables import (  # noqa: F401
-    ApiIdempotencyRecord, ApiProject, DeveloperApiKey, WebhookDelivery,
-    WebhookSubscription)
+    ApiIdempotencyRecord, ApiProject, ApiRequestLog, DeveloperApiKey,
+    WebhookDelivery, WebhookSubscription)
 
 
 def _bay_gio() -> datetime:

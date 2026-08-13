@@ -378,9 +378,11 @@ def test_the_access_log_carries_the_fields_support_needs(api, caplog):
     user_id, token = _account()
     with caplog.at_level(logging.INFO, logger="ltt.public_api.access"):
         created = _job(api, token, "harden-logging-0001")
+    # The route is logged as the caller wrote it (EXT-09): a line saying
+    # "/jobs" was a puzzle to match against the API a customer sees.
     line = next(record.getMessage() for record in caplog.records
-                if "route=/jobs" in record.getMessage() and "method=POST" in
-                record.getMessage())
+                if "route=/api/v1/jobs" in record.getMessage()
+                and "method=POST" in record.getMessage())
     for field in ("request_id=", "route=", "status=201", "latency_ms=",
                   f"key_id={devkeys.parse_token(token)[0]}", f"owner={user_id}",
                   f"tool={TOOL}", f"job_id={created.json()['id']}",

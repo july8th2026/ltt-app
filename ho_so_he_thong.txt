@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:aee5a06124abdd2989ad8d55dc19646451c2fa7c5500527d00624c50ad2e836f
-Nguồn đã quét : 1072 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:e04c273ef61fa13e892715dc8d7f8db90ffea1b44f8ca47b4960b4891303d948
+Nguồn đã quét : 1077 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (302)
+4. HTTP ROUTE INVENTORY (304)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -594,22 +594,24 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
 - [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:254
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:494
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:472
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:569
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:547
 - [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:270
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:509
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:546
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:559
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:584
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:621
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:634
+- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:367
+- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:400
 - [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:329
 - [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:263
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:603
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:619
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:678
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:694
 - [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:276
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:503
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:356
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:391
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:479
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:487
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:578
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:431
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:466
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:554
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:562
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -793,7 +795,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (39 bảng)
+5. DATA MODEL (40 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
@@ -828,13 +830,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - payment_orders → PaymentOrder | platform_core/models.py:689
 - platform_info → PlatformInfo | platform_core/models.py:42
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:190
-- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:277
-- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:244
+- public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:238
+- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:325
+- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:292
 - sessions → Session | platform_core/models.py:134
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (32)
+6. ALEMBIC MIGRATIONS (33)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -867,6 +870,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - b8c9d0e1f2a3 ← a7b8c9d0e1f2 | them bang public_api_idempotency cho Public API (Q92) | alembic/versions/20260813_1400_public_api_idempotency.py
 - c9d0e1f2a3b4 ← b8c9d0e1f2a3 | them bang webhook cho Public API (Q92) | alembic/versions/20260813_1800_public_api_webhooks.py
 - d0e1f2a3b4c5 ← c9d0e1f2a3b4 | them project cho Public API + rang buoc IP cho developer key (EXT-04) | alembic/versions/20260814_0900_api_projects.py
+- e1f2a3b4c5d6 ← d0e1f2a3b4c5 | them bang nhat ky request cho Public API (EXT-09) | alembic/versions/20260814_1400_public_api_requests.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -984,7 +988,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (203 file pytest + 3 frontend)
+10. QUALITY GATES (204 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1121,6 +1125,7 @@ Test inventory:
 - tests/test_199_quickstart_examples.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_200_playground.py
+- tests/test_201_request_logs.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1214,8 +1219,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1072 file)
-Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:794, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1077 file)
+Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:797, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1228,7 +1233,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (34)
+[alembic] (35)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1263,6 +1268,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260813_1400_public_api_idempotency.py
 - alembic/versions/20260813_1800_public_api_webhooks.py
 - alembic/versions/20260814_0900_api_projects.py
+- alembic/versions/20260814_1400_public_api_requests.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1815,7 +1821,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (72)
+[platform_core] (73)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1877,6 +1883,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/projects.py
 - platform_core/public_api/protocol.py
 - platform_core/public_api/quotes.py
+- platform_core/public_api/request_log.py
 - platform_core/public_api/scopes.py
 - platform_core/public_api/tables.py
 - platform_core/public_api/usage.py
@@ -1910,7 +1917,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (126)
+[server] (128)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2003,6 +2010,8 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - server/templates/dev_docs.html
 - server/templates/dev_jobs.html
 - server/templates/dev_keys.html
+- server/templates/dev_log_detail.html
+- server/templates/dev_logs.html
 - server/templates/dev_overview.html
 - server/templates/dev_playground.html
 - server/templates/dev_projects.html
@@ -2045,7 +2054,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (219)
+[tests] (220)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2192,6 +2201,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_199_quickstart_examples.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_200_playground.py
+- tests/test_201_request_logs.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2354,7 +2364,7 @@ Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1072 file; 9290464 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1077 file; 9340931 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5205,6 +5215,87 @@ def downgrade() -> None:
     op.drop_index("ix_api_projects_owner_status", table_name="api_projects")
     op.drop_index("ix_api_projects_user_id", table_name="api_projects")
     op.drop_table("api_projects")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260814_1400_public_api_requests.py
+SHA256=4fe731e36e489523548b507188c3366d2f378af76fe83d97479fc57244236e95 BYTES=3477 LINES=75
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""them bang nhat ky request cho Public API (EXT-09)
+
+Vi sao can bang nay du da co dong log `ltt.public_api.access`: dong log chi
+operator doc duoc. Khach hang khong grep duoc dia cua chung ta, va nhung loi goi
+ho can hieu nhat (401, 403, 429) khong bao gio tao job — tuc khong co gi khac
+luu lai.
+
+KHONG co cot body/detail: bang go roi ma tich luy payload se thanh mot ban sao
+noi dung khach hang voi cai ten de nghe hon. Chi luu bo xuong cua loi goi.
+
+Retention 30 ngay nam trong `platform_core/public_api/request_log.py` va duoc
+worker goi dinh ky — dat ngay tu dau, khong de lap lai bai hoc
+`webhook_deliveries` (phinh vo han vi tao du lieu ma quen chinh sach don).
+
+Revision ID: e1f2a3b4c5d6
+Revises: d0e1f2a3b4c5
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "e1f2a3b4c5d6"
+down_revision = "d0e1f2a3b4c5"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "public_api_requests",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("request_id", sa.String(64), nullable=False),
+        sa.Column("user_id", sa.String(36), nullable=False),
+        sa.Column("key_id", sa.String(48), nullable=False, server_default=""),
+        sa.Column("project_id", sa.String(36), nullable=False,
+                  server_default=""),
+        sa.Column("method", sa.String(8), nullable=False, server_default=""),
+        sa.Column("route", sa.String(200), nullable=False, server_default=""),
+        sa.Column("status", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("code", sa.String(48), nullable=False, server_default=""),
+        sa.Column("latency_ms", sa.Integer(), nullable=False,
+                  server_default="0"),
+        sa.Column("tool", sa.String(64), nullable=False, server_default=""),
+        sa.Column("job_id", sa.String(36), nullable=False, server_default=""),
+        sa.Column("credit_delta", sa.Integer(), nullable=False,
+                  server_default="0"),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_public_api_requests_request_id", "public_api_requests",
+                    ["request_id"])
+    op.create_index("ix_public_api_requests_user_id", "public_api_requests",
+                    ["user_id"])
+    op.create_index("ix_public_api_requests_job_id", "public_api_requests",
+                    ["job_id"])
+    # Hai cau hoi trang nay hoi: "loi goi gan day cua toi" va "loi goi hong".
+    op.create_index("ix_public_api_requests_owner_time", "public_api_requests",
+                    ["user_id", "created_at"])
+    op.create_index("ix_public_api_requests_owner_status", "public_api_requests",
+                    ["user_id", "status"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_public_api_requests_owner_status",
+                  table_name="public_api_requests")
+    op.drop_index("ix_public_api_requests_owner_time",
+                  table_name="public_api_requests")
+    op.drop_index("ix_public_api_requests_job_id",
+                  table_name="public_api_requests")
+    op.drop_index("ix_public_api_requests_user_id",
+                  table_name="public_api_requests")
+    op.drop_index("ix_public_api_requests_request_id",
+                  table_name="public_api_requests")
+    op.drop_table("public_api_requests")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -103899,7 +103990,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=d5ca96d474fa0babf39804c9bc9c10ffd3cff244e07820aa33fddd394cf651cc BYTES=23034 LINES=536
+SHA256=7787586ea4a677836b89c51bed9d44258517f30df63fc20528ff058e4943fa7b BYTES=23623 LINES=546
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104403,6 +104494,16 @@ def run_forever(worker_id: str, *, stop=None) -> None:
                     if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
                         log.info("don job event het han: customer=%s internal=%s",
                                  removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
+                # The API request log ages out on the same visit: it is created
+                # by every call, so a policy that waits for a later prompt is a
+                # table that grows forever (the lesson `webhook_deliveries`
+                # taught this platform once already).
+                from platform_core.public_api import request_log
+                for db in _one_session():
+                    gone = request_log.purge_expired(db)
+                    db.commit()
+                    if gone:
+                        log.info("don %d dong nhat ky request API", gone)
                 next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
             if time.monotonic() >= next_upload_sweep:
                 from platform_core import upload_sessions
@@ -105195,7 +105296,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=f9c82083cf497adf813669bf28507bf880dba45426adf2c0f479cbf18a6416c8 BYTES=44666 LINES=820
+SHA256=8d78700c60bf0fcc458d101ff3aad18d933c4e65103243720b4009670431065a BYTES=44681 LINES=820
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -105224,8 +105325,8 @@ from platform_core.db import Base
 # nó trong `Base.metadata` — không có dòng này thì autogenerate coi bảng đó là
 # bảng lạ và sinh migration XOÁ nó.
 from platform_core.public_api.tables import (  # noqa: F401
-    ApiIdempotencyRecord, ApiProject, DeveloperApiKey, WebhookDelivery,
-    WebhookSubscription)
+    ApiIdempotencyRecord, ApiProject, ApiRequestLog, DeveloperApiKey,
+    WebhookDelivery, WebhookSubscription)
 
 
 def _bay_gio() -> datetime:
@@ -108349,7 +108450,7 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=49a677c520d32c453d9c036fcd2f76bfc68dc0f8acbc79814cf22c3e282c0da1 BYTES=11719 LINES=273
+SHA256=16f8d6de1a84af7f12a473afaed4e1a64f3a8e5b1be79ea664812ca935a6a30b BYTES=12022 LINES=277
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -108598,6 +108699,10 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         "key_id": principal.key_id,
         "quote_intent": str(quote.get("intent") or ""),
         "idempotency_key": str(idempotency_key or ""),
+        # The correlation id of the request that created this job, so support
+        # and the customer's own log page can walk request → job → events →
+        # ledger without a new identifier to keep in step (EXT-09).
+        "request_id": str(getattr(principal, "request_id", "") or ""),
     }
     job_params = dict(params)
     # Every app handler in this platform reads `owner_id` from its parameters to
@@ -110434,6 +110539,224 @@ def check_matches(payload: dict, *, tool_name: str, params: dict) -> None:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/request_log.py
+SHA256=6161fd5c7d93e4a28fb0ddd8aedf798a9d6ab891dfca9a91071b0c5b0ae37d6d BYTES=9174 LINES=212
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""One row per public API request, so a developer can debug their own calls.
+
+Why a table when there is already a log line
+--------------------------------------------
+
+``ltt.public_api.access`` writes a structured line per request, and that is
+enough for an operator with shell access. It is not enough for the person who
+actually needs it: a customer cannot grep our disk, cannot filter by their own
+account, and — most importantly — the calls they most need to understand never
+reach anything else that is stored. A job explains a job; nothing explains the
+401 that stopped them, the 403 that named a scope they thought they had, or the
+429 that arrived when their queue backed up.
+
+What is deliberately **not** stored
+-----------------------------------
+
+* **No request or response body.** Not truncated, not "just the first 200
+  characters" — none. Payloads are where customer content and prompts live, and
+  a debugging table is the last place that should quietly become a copy of them.
+* **No `detail` string.** Validation details can echo a caller's own input back;
+  the stable ``code`` is what a client branches on anyway.
+* **No credential.** ``key_id`` is the public half and is already what a support
+  conversation refers to.
+
+What that leaves is the skeleton of a call — who, what, how it ended, how long
+it took, what it cost — which is exactly what makes a request explainable
+without becoming a second copy of the request.
+
+Retention is part of the design rather than a later prompt's problem: this table
+grows with every request, and the platform already learned that lesson from
+``webhook_deliveries``, which had no policy until an audit found it.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import delete, func, select
+
+from platform_core.public_api.tables import ApiRequestLog
+
+#: How long a customer can still look a request up. Long enough to debug last
+#: week's incident, short enough that the table is not an archive.
+RETENTION_DAYS = 30
+
+#: A single page of history. Same ceiling as the API's own listings.
+MAX_PAGE = 100
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def record(db, *, request_id: str, user_id: str, key_id: str = "",
+           project_id: str = "", method: str = "", route: str = "",
+           status: int = 0, code: str = "", latency_ms: float = 0.0,
+           tool: str = "", job_id: str = "", credit_delta: int = 0,
+           now: datetime | None = None) -> ApiRequestLog:
+    """Write one request row. Caller commits.
+
+    Deliberately tolerant about missing pieces: an unauthenticated failure has
+    no key, no project and no tool, and it is precisely the row a developer
+    needs most.
+    """
+    row = ApiRequestLog(
+        id=str(uuid.uuid4()),
+        request_id=str(request_id or "")[:64],
+        user_id=str(user_id or ""),
+        key_id=str(key_id or "")[:48],
+        project_id=str(project_id or "")[:36],
+        method=str(method or "")[:8],
+        route=str(route or "")[:200],
+        status=int(status or 0),
+        code=str(code or "")[:48],
+        latency_ms=int(max(0.0, latency_ms)),
+        tool=str(tool or "")[:64],
+        job_id=str(job_id or "")[:36],
+        credit_delta=int(credit_delta or 0),
+        created_at=now or _now(),
+    )
+    db.add(row)
+    return row
+
+
+def list_for(db, *, user_id: str, since: datetime | None = None,
+             until: datetime | None = None, status: str = "", code: str = "",
+             tool: str = "", key_id: str = "", request_id: str = "",
+             failures_only: bool = False, limit: int = 50,
+             offset: int = 0) -> list:
+    """This account's requests, newest first.
+
+    Ownership is in the query rather than checked afterwards, for the same
+    reason it is everywhere else on this surface: a filter that is applied by
+    the caller is a filter somebody eventually forgets.
+    """
+    statement = select(ApiRequestLog).where(
+        ApiRequestLog.user_id == str(user_id or ""))
+    if since is not None:
+        statement = statement.where(ApiRequestLog.created_at >= since)
+    if until is not None:
+        statement = statement.where(ApiRequestLog.created_at <= until)
+    if request_id:
+        statement = statement.where(
+            ApiRequestLog.request_id == str(request_id).strip())
+    if code:
+        statement = statement.where(ApiRequestLog.code == str(code).strip())
+    if tool:
+        statement = statement.where(ApiRequestLog.tool == str(tool).strip())
+    if key_id:
+        statement = statement.where(ApiRequestLog.key_id == str(key_id).strip())
+    if status:
+        text = str(status).strip()
+        if text.endswith("xx") and text[:1].isdigit():
+            # "4xx" is how a person thinks about a class of failures.
+            first = int(text[0])
+            statement = statement.where(
+                ApiRequestLog.status >= first * 100,
+                ApiRequestLog.status < (first + 1) * 100)
+        elif text.isdigit():
+            statement = statement.where(ApiRequestLog.status == int(text))
+    if failures_only:
+        statement = statement.where(ApiRequestLog.status >= 400)
+    statement = statement.order_by(ApiRequestLog.created_at.desc())
+    return list(db.execute(
+        statement.limit(min(int(limit), MAX_PAGE)).offset(max(0, int(offset)))
+    ).scalars().all())
+
+
+def get_owned(db, *, user_id: str, request_id: str):
+    return db.execute(select(ApiRequestLog).where(
+        ApiRequestLog.user_id == str(user_id or ""),
+        ApiRequestLog.request_id == str(request_id or ""),
+    ).order_by(ApiRequestLog.created_at.desc())).scalars().first()
+
+
+def timeline(db, row) -> dict:
+    """Everything reachable from one request, assembled for a detail page.
+
+    Nothing new is stored to make this possible: the job, its events, the ledger
+    entries and the webhook deliveries already exist and already carry the ids
+    that connect them. A request log that duplicated them would be a second copy
+    to keep true.
+    """
+    from platform_core.models import CreditEntry, Job, JobEvent
+    from platform_core.public_api import media
+    from platform_core.public_api.tables import WebhookDelivery
+
+    found: dict = {"job": None, "events": [], "credit": [], "artifacts": [],
+                   "webhooks": []}
+    if not row or not row.job_id:
+        return found
+
+    job = db.execute(select(Job).where(
+        Job.id == row.job_id, Job.user_id == row.user_id)).scalar_one_or_none()
+    if job is None:
+        return found
+    found["job"] = job
+    found["events"] = list(db.execute(
+        select(JobEvent).where(
+            JobEvent.job_id == job.id,
+            # Operator-only lines stay operator-only, even for the job's owner.
+            JobEvent.visibility == "customer",
+        ).order_by(JobEvent.sequence)).scalars().all())
+    found["credit"] = list(db.execute(
+        select(CreditEntry).where(
+            CreditEntry.job_id == job.id,
+            CreditEntry.user_id == row.user_id,
+        ).order_by(CreditEntry.created_at)).scalars().all())
+    found["webhooks"] = list(db.execute(
+        select(WebhookDelivery).where(
+            WebhookDelivery.job_id == job.id,
+            WebhookDelivery.user_id == row.user_id,
+        ).order_by(WebhookDelivery.created_at)).scalars().all())
+
+    tool = None
+    if row.tool:
+        from platform_core.public_api.catalog import build_catalog
+        from platform_core.public_api.config import load_public_api_config
+
+        config = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                         "LTT_PUBLIC_API_TOOLS": row.tool})
+        for candidate in build_catalog(config):
+            if candidate.name == row.tool:
+                tool = candidate
+                break
+    if tool is not None:
+        found["artifacts"] = media.artifacts_of(job, tool)
+    return found
+
+
+def counts(db, *, user_id: str, since: datetime) -> dict:
+    """A small summary for the top of the page: total, failures, spend."""
+    rows = db.execute(select(
+        func.count(ApiRequestLog.id),
+        func.sum(func.abs(ApiRequestLog.credit_delta)),
+    ).where(ApiRequestLog.user_id == str(user_id or ""),
+            ApiRequestLog.created_at >= since)).one()
+    failures = int(db.execute(select(func.count(ApiRequestLog.id)).where(
+        ApiRequestLog.user_id == str(user_id or ""),
+        ApiRequestLog.created_at >= since,
+        ApiRequestLog.status >= 400)).scalar_one())
+    return {"requests": int(rows[0] or 0), "failures": failures,
+            "credit": int(rows[1] or 0)}
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    """Delete rows past the retention window. Returns how many went."""
+    cutoff = (now or _now()) - timedelta(days=int(days))
+    result = db.execute(
+        delete(ApiRequestLog).where(ApiRequestLog.created_at < cutoff))
+    return int(result.rowcount or 0)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/scopes.py
 SHA256=6245a67279a29af2ef551ef85119fba4a8ec9d106f87efd5d3ba678390cb093e BYTES=2451 LINES=61
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -110502,7 +110825,7 @@ def normalize_scopes(scopes) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=bd1614b6994e8fd60fb3e91ad891488aecfe9b47963214d907e23ebc5812ab1e BYTES=15467 LINES=319
+SHA256=367faa0ee8a9e27bd0c4e5b96aa6146bce34069cd20ef47b7a01dd6f5040fcea BYTES=18110 LINES=367
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -110739,6 +111062,54 @@ class ApiIdempotencyRecord(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return (f"<ApiIdempotencyRecord {self.operation} {self.status} "
                 f"job={self.job_id[:8]}>")
+
+
+class ApiRequestLog(Base):
+    """One public API request, reduced to what makes it explainable.
+
+    The columns are chosen by what a developer asks when something goes wrong —
+    *which key, which tool, how did it end, how long, what did it cost, and
+    where is the job* — and stop there. There is no body column and no `detail`
+    column, because a debugging table that quietly accumulates payloads becomes
+    a copy of customer content with a friendlier name.
+
+    ``request_id`` is the same correlation id the response carries, so the
+    string a customer pastes into a support ticket is the primary way in.
+    """
+
+    __tablename__ = "public_api_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False,
+                                            index=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    key_id: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), default="",
+                                            nullable=False)
+    method: Mapped[str] = mapped_column(String(8), default="", nullable=False)
+    #: The templated route, not the filled-in path: an id in a URL is noise,
+    #: and grouping by route is what makes the list readable.
+    route: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    status: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    code: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tool: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
+                                        index=True)
+    credit_delta: Mapped[int] = mapped_column(Integer, default=0,
+                                              nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        # The two questions the page asks: "my recent calls" and "my failures".
+        Index("ix_public_api_requests_owner_time", "user_id", "created_at"),
+        Index("ix_public_api_requests_owner_status", "user_id", "status"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return (f"<ApiRequestLog {self.method} {self.route} {self.status} "
+                f"{self.request_id[:8]}>")
 
 
 WEBHOOK_PENDING = "pending"
@@ -116997,7 +117368,7 @@ __all__ = ["API_V1_PREFIX", "API_V1_ROUTES", "PUBLIC_API_TAG", "PUBLIC_API_TITLE
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/auth.py
-SHA256=440c1102a7bffc68d8a71cc4fae38a74457b6cd5c8437f95449b7607d28540d9 BYTES=7199 LINES=184
+SHA256=62a50ac000424886230ea234740d5c300c356c3294e00976a1d1177f8ff29274 BYTES=7414 LINES=187
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bearer authentication for ``/api/v1``.
 
@@ -117113,6 +117484,20 @@ def resolve_from_database(request, db) -> Principal | None:
         _throttle(request, config, public_key_id)
         return None
 
+    principal = Principal(
+        key_id=key.key_id,
+        user_id=key.user_id,
+        scopes=frozenset(key.scopes or ()),
+        allowed_tools=frozenset(key.allowed_tools or ()),
+        project_id=str(key.project_id or ""),
+        request_id=request_id(request),
+    )
+    # Published before the limiter runs, not after: a 429 belongs to a caller
+    # who has already proved who they are, and it is the failure they are most
+    # likely to come looking for. Attaching it afterwards left exactly that one
+    # unattributable in the access log and in the request log (EXT-09).
+    request.state.api_principal = principal
+
     # Rate limit before doing anything else with the request: a key in a loop
     # should cost one window lookup, not a full handler.
     if config is not None:
@@ -117122,17 +117507,6 @@ def resolve_from_database(request, db) -> Principal | None:
     devkeys.touch_last_used(db, key)
 
     metrics.increment(metrics.AUTH_SUCCESS)
-    principal = Principal(
-        key_id=key.key_id,
-        user_id=key.user_id,
-        scopes=frozenset(key.scopes or ()),
-        allowed_tools=frozenset(key.allowed_tools or ()),
-        project_id=str(key.project_id or ""),
-        request_id=request_id(request),
-    )
-    # Published for the access log; nothing else reads it, and it never leaves
-    # the process.
-    request.state.api_principal = principal
     return principal
 
 
@@ -117388,7 +117762,7 @@ __all__ = ["Principal", "PrincipalResolver", "bearer_token", "current_resolver",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/errors.py
-SHA256=387b7af71e4abd6e19eadfd7bc254c0dae5ed0d8515834b32b226a43b4807fa9 BYTES=5014 LINES=108
+SHA256=59345a63915e1813913ad6996a16432bc6cd475a5e5e4393f765411c35dc557a BYTES=5272 LINES=113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Error boundary for ``/api/v1``.
 
@@ -117447,6 +117821,9 @@ def problem_response(problem: ApiProblem) -> JSONResponse:
 
 
 def api_error_response(request: Request, exc: ApiError) -> JSONResponse:
+    # Remembered for the request log: the stable code is what a developer
+    # branches on, and the only part of a failure worth storing.
+    request.state.api_error_code = exc.code
     return problem_response(exc.problem(
         instance=request.url.path, request_id=request_id(request)))
 
@@ -117454,9 +117831,11 @@ def api_error_response(request: Request, exc: ApiError) -> JSONResponse:
 def status_problem_response(request: Request, status: int,
                             detail: object = "") -> JSONResponse:
     """Render a framework-raised status (404/405/…) as a problem document."""
-    return problem_response(api_errors.problem_for_status(
+    problem = api_errors.problem_for_status(
         status, detail, instance=request.url.path,
-        request_id=request_id(request)))
+        request_id=request_id(request))
+    request.state.api_error_code = problem.code
+    return problem_response(problem)
 
 
 async def validation_error_handler(request: Request, exc: RequestValidationError):
@@ -117502,7 +117881,7 @@ def install_api_error_handlers(api) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/guard.py
-SHA256=c1a24b2742ea48ec1bd370abba0e2cbdc35951c1372d35825582c8b0a786d4d0 BYTES=5716 LINES=123
+SHA256=330ee3ef8c9aa3977c2e3cc19bf654e6e3bf6079ebf4fb2fb4f69cf455536329 BYTES=10199 LINES=229
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Surface-wide guards for ``/api/v1``: the read-only switch and the size cap.
 
@@ -117553,6 +117932,9 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         self._stamp(response, request, correlation_id)
         self._record(request, response.status_code, started, correlation_id)
+        self._schedule_log(response, request, response.status_code,
+                           (time.perf_counter() - started) * 1000.0,
+                           correlation_id)
         return response
 
     def _stamp(self, response, request, correlation_id: str) -> None:
@@ -117609,11 +117991,114 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
             client_ip(request, getattr(self._config, "trusted_proxies", ())),
         )
 
+    def _schedule_log(self, response, request, status: int, latency_ms: float,
+                      correlation_id: str) -> None:
+        """Queue the database row to be written once the response is out.
+
+        Not inline: the request's own session is still finishing at this point,
+        and a second connection writing at the same moment deadlocks SQLite and
+        doubles connection use on PostgreSQL. A background task runs after the
+        response is sent, when the request's session is definitively closed.
+        """
+        from starlette.background import BackgroundTask
+
+        principal = getattr(request.state, "api_principal", None)
+        if principal is None or not getattr(principal, "user_id", ""):
+            return
+        if not _worth_recording(request, status):
+            return
+        fields = {
+            "request_id": correlation_id,
+            "user_id": principal.user_id,
+            "key_id": getattr(principal, "key_id", ""),
+            "project_id": getattr(principal, "project_id", ""),
+            "method": request.method,
+            "route": _route_of(request),
+            "status": int(status),
+            "code": str(getattr(request.state, "api_error_code", "") or ""),
+            "latency_ms": latency_ms,
+            "tool": getattr(request.state, "api_tool", "") or "",
+            "job_id": getattr(request.state, "api_job_id", "") or "",
+            "credit_delta": getattr(request.state, "api_credit_delta", 0) or 0,
+        }
+        task = BackgroundTask(_write_request_log, fields)
+        if response.background is None:
+            response.background = task
+        else:
+            existing = response.background
+            response.background = BackgroundTask(
+                _run_both, existing, task)
+
+
+def _worth_recording(request, status: int) -> bool:
+    """Which requests earn a row in the customer-visible log.
+
+    Everything that failed, and everything that was not a read. What is left
+    out — a successful GET — is the polling and discovery traffic, which is both
+    the overwhelming majority of requests and the part a developer can already
+    see: the job explains itself, and the catalog is the same for everyone.
+
+    This is not a micro-optimisation. Measured on the load harness, a row per
+    request cost 177 rps → 42.6 rps and p95 47ms → 333ms. Paying that so a
+    successful `GET /jobs/{id}` poll can be listed twice is a bad trade; the
+    operator's access log still has every request either way.
+    """
+    if status >= 400:
+        return True
+    return request.method != "GET"
+
+
+async def _run_both(first, second) -> None:
+    await first()
+    await second()
+
+
+def _write_request_log(fields: dict) -> None:
+    """One row, best effort.
+
+    A request that succeeded must not be reported as failed because its
+    bookkeeping row could not be written, so a failure here is logged and
+    swallowed — the one place in this file where swallowing is right.
+    """
+    from platform_core.db import get_session
+    from platform_core.public_api import request_log
+
+    gen = get_session()
+    try:
+        db = next(gen)
+    except Exception:                            # pragma: no cover - no database
+        log.warning("request log unavailable request_id=%s",
+                    fields.get("request_id"))
+        return
+    try:
+        request_log.record(db, **fields)
+        db.commit()
+    except Exception:                            # noqa: BLE001 - see docstring
+        db.rollback()
+        log.warning("could not write request log request_id=%s",
+                    fields.get("request_id"), exc_info=True)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
 
 def _route_of(request) -> str:
+    """The templated path as the *caller* wrote it.
+
+    The sub-application knows its routes without the mount prefix, so a route
+    object says "/me" where the customer typed "/api/v1/me". Logging the short
+    form makes every line and every log row a puzzle to match against the API
+    the customer sees.
+    """
+    from server.api.inventory import API_V1_PREFIX
+
     route = request.scope.get("route")
     path = getattr(route, "path", "") if route is not None else ""
-    return path or request.url.path
+    if not path:
+        return request.url.path
+    return path if path.startswith(API_V1_PREFIX) else API_V1_PREFIX + path
 
 
 def _declared_route(request):
@@ -120584,7 +121069,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=2a6103edf64829ee3c819f0ac01c1b44a326ff5f094cd289ee4cf53b24d841e2 BYTES=28120 LINES=631
+SHA256=cdd1c4443146c3771611c4cce90ce9addd940b2a3b649d684c7578cbb9acb8da BYTES=31967 LINES=706
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -120703,7 +121188,7 @@ SECTIONS = (
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
     ("playground", "/developers/playground", N_("Playground")),
-    ("logs", None, N_("Nhật ký request")),
+    ("logs", "/developers/logs", N_("Nhật ký request")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
     ("webhooks", "/developers/webhooks", N_("Webhook")),
@@ -120939,6 +121424,81 @@ def developer_playground(request: Request, user=Depends(require_account),
                    catalog_json=json.dumps(published, ensure_ascii=False)
                    .replace("<", "\\u003c"))
 
+
+#: Status filters people actually think in. "4xx" is a question, "412" is not.
+STATUS_CHOICES = (("2xx", N_("Thành công (2xx)")),
+                  ("4xx", N_("Lỗi của request (4xx)")),
+                  ("401", N_("Không xác thực được (401)")),
+                  ("403", N_("Thiếu quyền (403)")),
+                  ("409", N_("Xung đột (409)")),
+                  ("422", N_("Sai dữ liệu (422)")),
+                  ("429", N_("Vượt hạn mức (429)")),
+                  ("5xx", N_("Lỗi máy chủ (5xx)")))
+
+
+@router.get("/logs", response_class=HTMLResponse)
+def developer_logs(request: Request, request_id: str = "", status: str = "",
+                   tool: str = "", key_id: str = "",
+                   user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    """This account's own API calls — including the ones that never ran.
+
+    A job explains a job. Nothing else explained the 401 that stopped an
+    integration, the 403 that named a scope the developer thought they had, or
+    the 429 that arrived when their queue backed up; those are exactly the calls
+    somebody needs to look up, and until now only an operator could.
+    """
+    from platform_core.public_api import request_log
+
+    config = _public_api_config(request)
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    rows = request_log.list_for(db, user_id=user.id, request_id=request_id,
+                                status=status, tool=tool, key_id=key_id,
+                                limit=100)
+    return _render(
+        request, db, user, "logs", "dev_logs.html",
+        rows=rows,
+        counts=request_log.counts(db, user_id=user.id, since=since),
+        retention_days=request_log.RETENTION_DAYS,
+        tools=[item.name for item in build_catalog(config)],
+        keys=[{"key_id": key.key_id, "name": key.name}
+              for key in devkeys.list_for_user(db, user.id)],
+        status_choices=[(value, _t(label)) for value, label in STATUS_CHOICES],
+        filters={"request_id": request_id, "status": status, "tool": tool,
+                 "key_id": key_id,
+                 "any": bool(request_id or status or tool or key_id)})
+
+
+@router.get("/logs/{wanted_id}", response_class=HTMLResponse)
+def developer_log_detail(request: Request, wanted_id: str,
+                         user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """One request, and everything reachable from it.
+
+    Assembled from rows that already exist — the job, its customer-visible
+    events, the ledger entries, the artifacts, the webhook deliveries. Storing a
+    second copy of any of that would be a second thing to keep true.
+    """
+    from platform_core.public_api import request_log
+    from platform_core.public_api.error_registry import REGISTRY
+
+    row = request_log.get_owned(db, user_id=user.id, request_id=wanted_id)
+    if row is None:
+        # Same 404 a request that never existed gets: a log page must not
+        # confirm that somebody else's request id is real.
+        raise _redirect("/developers/logs", status_code=404)
+    spec = REGISTRY.get(row.code)
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    return _render(
+        request, db, user, "logs", "dev_log_detail.html",
+        section_title=row.request_id[:8],
+        row=row, timeline=request_log.timeline(db, row),
+        project_name=names.get(row.project_id, ""),
+        advice=({"action": spec.action, "retry": spec.retry,
+                 "reuse_idempotency_key": spec.reuse_idempotency_key}
+                if spec is not None else None))
 
 @router.get("/tools", response_class=HTMLResponse)
 def developer_tools(request: Request, q: str = "", capability: str = "",
@@ -128559,6 +129119,216 @@ SHA256=4ce67cfd912323508755bb3e7583f0076f269c040f7ba5832cdd905f061da59f BYTES=58
     {% endif %}
     <button type="submit" class="btn btn-primary">{{ _("Tạo khóa") }}</button>
   </form>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_log_detail.html
+SHA256=bc258a4bd226be97ff5ea2282b40e9f13f83881fd3a753fb43e761c699659e4b BYTES=4647 LINES=114
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<p><a href="/developers/logs">← {{ _("Tất cả request") }}</a></p>
+
+<div class="card">
+  <ul>
+    <li><code>{{ row.method }} {{ row.route }}</code> →
+        <strong>{{ row.status }}</strong>
+        {% if row.code %}<code>{{ row.code }}</code>{% endif %}</li>
+    <li>{{ _("Lúc:") }} {{ row.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC
+        · {{ row.latency_ms }} ms</li>
+    <li>{{ _("Khóa:") }} <code>{{ row.key_id or "—" }}</code>
+        {% if project_name %} · {{ _("project") }} {{ project_name }}{% endif %}</li>
+    <li>request_id: <code>{{ row.request_id }}</code>
+        <span class="muted">{{ _("— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ.") }}</span></li>
+  </ul>
+  {% if advice %}
+    <p class="alert alert-warn" role="status">
+      <strong><code>{{ row.code }}</code></strong> — {{ advice.action }}
+      <br><span class="muted">{{ _("Thử lại:") }} <code>{{ advice.retry }}</code>{% if advice.reuse_idempotency_key %} · {{ _("dùng lại Idempotency-Key cũ") }}{% endif %}</span>
+    </p>
+  {% endif %}
+</div>
+
+{% if timeline.job %}
+  <div class="card">
+    <h2 style="margin-top:0;">Job</h2>
+    <ul>
+      <li><code>{{ timeline.job.id }}</code> — {{ timeline.job.status }}</li>
+      <li>{{ _("Tạo:") }} {{ timeline.job.created_at.strftime("%H:%M:%S") if timeline.job.created_at else "—" }}
+          · {{ _("bắt đầu:") }} {{ timeline.job.started_at.strftime("%H:%M:%S") if timeline.job.started_at else "—" }}
+          · {{ _("kết thúc:") }} {{ timeline.job.finished_at.strftime("%H:%M:%S") if timeline.job.finished_at else "—" }}</li>
+    </ul>
+
+    {% if timeline.events %}
+      <table class="table">
+        <thead><tr><th>#</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Thông báo") }}</th></tr></thead>
+        <tbody>
+          {% for event in timeline.events %}
+            <tr>
+              <td>{{ event.sequence }}</td>
+              <td><code>{{ event.event_code }}</code></td>
+              <td>{{ event.public_message }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">{{ _("Job này chưa ghi sự kiện nào cho khách.") }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Credit</h2>
+    {% if timeline.credit %}
+      <table class="table">
+        <thead><tr><th>{{ _("Lúc") }}</th><th>{{ _("Loại") }}</th><th>{{ _("Thay đổi") }}</th></tr></thead>
+        <tbody>
+          {% for entry in timeline.credit %}
+            <tr>
+              <td>{{ entry.created_at.strftime("%H:%M:%S") if entry.created_at else "" }}</td>
+              <td><code>{{ entry.kind }}</code></td>
+              <td>{{ entry.delta }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="muted">{{ _("Giữ chỗ rồi quyết toán đúng một lần. Job hỏng hoặc bị hủy thì hoàn đủ.") }}</p>
+    {% else %}
+      <p class="muted">{{ _("Lời gọi này không động tới credit.") }}</p>
+    {% endif %}
+  </div>
+
+  {% if timeline.artifacts %}
+    <div class="card">
+      <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
+      <ul>
+        {% for artifact in timeline.artifacts %}
+          <li><code>{{ artifact.id }}</code> — {{ artifact.field }}</li>
+        {% endfor %}
+      </ul>
+      <p class="muted">{{ _("Đổi id lấy đường tải ở GET /api/v1/artifacts/{id}.") }}</p>
+    </div>
+  {% endif %}
+
+  {% if timeline.webhooks %}
+    <div class="card">
+      <h2 style="margin-top:0;">Webhook</h2>
+      <table class="table">
+        <thead><tr>
+          <th>{{ _("Sự kiện") }}</th><th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Lần thử") }}</th><th>HTTP</th>
+        </tr></thead>
+        <tbody>
+          {% for delivery in timeline.webhooks %}
+            <tr>
+              <td><code>{{ delivery.event_type }}</code></td>
+              <td>{{ delivery.status }}</td>
+              <td>{{ delivery.attempts }}</td>
+              <td>{{ delivery.last_status_code or "—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="card">
+    <p class="muted">{{ _("Lời gọi này không tạo job — nên không có timeline job, và đó thường chính là câu trả lời: request bị từ chối trước khi chạm tới hàng đợi.") }}</p>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_logs.html
+SHA256=da47a68ae45d7bd4db7c5117892b08a16b3f9a0f9e4f853942dc2bde92500e8e BYTES=3562 LINES=84
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <ul>
+    <li>{{ _("7 ngày qua:") }} <strong>{{ counts.requests }}</strong>
+        {{ _("request") }}, <strong>{{ counts.failures }}</strong>
+        {{ _("lỗi") }}, <strong>{{ counts.credit }}</strong> credit</li>
+    <li class="muted">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</li>
+  </ul>
+
+  <form method="get" action="/developers/logs" role="search">
+    <label for="lg-request" class="sr-only">request_id</label>
+    <input id="lg-request" type="search" name="request_id" value="{{ filters.request_id }}"
+           placeholder="{{ _('dán request_id từ phản hồi hoặc ticket') }}"
+           style="min-width:min(320px,100%)">
+    <label for="lg-status" class="sr-only">{{ _("Trạng thái") }}</label>
+    <select id="lg-status" name="status">
+      <option value="">{{ _("Mọi trạng thái") }}</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}"
+                {% if value == filters.status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <label for="lg-tool" class="sr-only">{{ _("Công cụ") }}</label>
+    <select id="lg-tool" name="tool">
+      <option value="">{{ _("Mọi công cụ") }}</option>
+      {% for name in tools %}
+        <option value="{{ name }}"
+                {% if name == filters.tool %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <label for="lg-key" class="sr-only">{{ _("Khóa") }}</label>
+    <select id="lg-key" name="key_id">
+      <option value="">{{ _("Mọi khóa") }}</option>
+      {% for key in keys %}
+        <option value="{{ key.key_id }}"
+                {% if key.key_id == filters.key_id %}selected{% endif %}>
+          {{ key.name or key.key_id[:8] }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn">{{ _("Lọc") }}</button>
+    {% if filters.any %}
+      <a class="btn btn-ghost" href="/developers/logs">{{ _("Bỏ lọc") }}</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card">
+  {% if not rows %}
+    <p class="muted">
+      {% if filters.any %}{{ _("Không request nào khớp.") }}
+      {% else %}{{ _("Chưa có lời gọi API nào. Nhật ký bắt đầu từ request đầu tiên.") }}
+      {% endif %}
+    </p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Lúc") }}</th><th>{{ _("Lời gọi") }}</th>
+        <th>{{ _("Kết quả") }}</th><th>{{ _("Công cụ") }}</th>
+        <th>{{ _("Độ trễ") }}</th><th>Credit</th><th>request_id</th>
+      </tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.created_at.strftime("%m-%d %H:%M:%S") }}</td>
+            <td><code>{{ row.method }} {{ row.route }}</code></td>
+            <td>
+              <strong>{{ row.status }}</strong>
+              {% if row.code %}<br><code>{{ row.code }}</code>{% endif %}
+            </td>
+            <td>{{ row.tool or "—" }}</td>
+            <td>{{ row.latency_ms }} ms</td>
+            <td>{% if row.credit_delta %}{{ row.credit_delta }}{% else %}—{% endif %}</td>
+            <td><a href="/developers/logs/{{ row.request_id }}">
+              <code>{{ row.request_id[:8] }}</code></a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
 </div>
 
 {% endblock %}
@@ -160863,7 +161633,7 @@ def test_both_sdks_cover_the_documented_surface():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_192_public_api_hardening.py
-SHA256=08df4054c0772f4314eeb81612bed73b37cacebfedb456d1f136141cc3f55680 BYTES=22588 LINES=512
+SHA256=28e123e0761f7228294ec83f753230560c8fe93201524e7a19b15751b216b17c BYTES=22739 LINES=514
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 16 — the security suite, observability and the restore rehearsal.
 
@@ -161245,9 +162015,11 @@ def test_the_access_log_carries_the_fields_support_needs(api, caplog):
     user_id, token = _account()
     with caplog.at_level(logging.INFO, logger="ltt.public_api.access"):
         created = _job(api, token, "harden-logging-0001")
+    # The route is logged as the caller wrote it (EXT-09): a line saying
+    # "/jobs" was a puzzle to match against the API a customer sees.
     line = next(record.getMessage() for record in caplog.records
-                if "route=/jobs" in record.getMessage() and "method=POST" in
-                record.getMessage())
+                if "route=/api/v1/jobs" in record.getMessage()
+                and "method=POST" in record.getMessage())
     for field in ("request_id=", "route=", "status=201", "latency_ms=",
                   f"key_id={devkeys.parse_token(token)[0]}", f"owner={user_id}",
                   f"tool={TOOL}", f"job_id={created.json()['id']}",
@@ -161381,7 +162153,7 @@ def test_the_new_tables_survive_a_backup_and_restore(api, tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_193_public_api_release.py
-SHA256=c9c722e69024c7b7f012804f310360cf94db3e2155325dd367c8c7e39b53cb67 BYTES=19157 LINES=471
+SHA256=738e5521995c06b8ee3a9d01beafdc6c9d57c82c312a0c842739a7af371c9059 BYTES=19164 LINES=471
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 17 — the release gate: canary, load, failure recovery.
 
@@ -161449,7 +162221,7 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in
                       Path("alembic/versions").glob("2026081*_public_api*.py"))
-    assert len(versions) == 2          # idempotency + webhooks
+    assert len(versions) == 3   # idempotency + webhooks + request log
     assert Path("alembic/versions/20260813_1000_developer_api_keys.py").exists()
 
     # Flags: every switch the runbook mentions exists with a safe default.
@@ -164723,6 +165495,440 @@ def test_running_from_a_form_is_the_same_call_as_running_from_a_server(portal):
     assert again.status_code == 200
     assert again.json()["id"] == first.json()["id"]
     assert again.headers.get("Idempotency-Replayed") == "true"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_201_request_logs.py
+SHA256=d71ad939135e727f795a69930b19758954f389d824be2e74b77c490d3f8a0e65 BYTES=17096 LINES=428
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-09 — request logs: a developer debugging their own calls.
+
+The acceptance is specific: 401, 403, 409, 422, 429, 5xx and a failed job must
+all be explainable afterwards. Everything else here defends the two properties
+that make such a log safe to keep — it holds no payload, and it never shows one
+account another account's traffic.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import keys as devkeys, limits, request_log
+from platform_core.public_api.tables import ApiRequestLog
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "requestlog-test-pepper-" + "r" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "artifacts:read")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'reqlog.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "reqlog-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_RPM": "40",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _account(client, credits: int = 100, scopes=SCOPES):
+    """A signed-in account with a key, the way a real developer starts."""
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"rl-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, credits, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    keys_page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": "logs", "csrf_token": _csrf(keys_page),
+                                "scopes": list(scopes)})
+    found = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text)
+    assert found, "key creation did not reveal a token"
+    return user_id, found.group(1)
+
+
+def _auth(token, idem=""):
+    headers = {"Authorization": f"Bearer {token}"}
+    if idem:
+        headers["Idempotency-Key"] = idem
+    return headers
+
+
+def _rows(user_id: str) -> list:
+    gen, db = _session()
+    try:
+        return request_log.list_for(db, user_id=user_id, limit=100)
+    finally:
+        _close(gen)
+
+
+def _quote(client, token, count=1):
+    return client.post(f"{API_V1_PREFIX}/quotes",
+                       json={"tool": TOOL,
+                             "input": {"topic": "logs", "count": count}},
+                       headers=_auth(token))
+
+
+# ── Every failure class is explainable afterwards ───────────────────────────
+
+def test_the_log_records_what_changed_or_refused_something(portal):
+    """The recording rule, stated as behaviour.
+
+    A row per request cost 177 rps → 42.6 rps on the load harness, and the
+    volume was almost entirely successful polling — traffic a developer can
+    already see, because the job explains itself. So: every failure, and every
+    call that was not a read.
+    """
+    user_id, token = _account(portal)
+
+    read = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    assert read.status_code == 200
+    assert _rows(user_id) == [], "a successful read is not worth a row"
+
+    quote = _quote(portal, token)
+    assert quote.status_code == 200
+    rows = _rows(user_id)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.status == 200 and row.route.endswith("/quotes")
+    assert row.request_id == quote.headers["X-Correlation-ID"]
+    assert row.latency_ms >= 0
+
+    # …and a failed read is recorded, because that is the one a developer comes
+    # looking for.
+    missing = portal.get(f"{API_V1_PREFIX}/jobs/nope", headers=_auth(token))
+    assert missing.status_code == 404
+    assert any(item.status == 404 for item in _rows(user_id))
+
+
+def test_a_missing_scope_is_recorded_with_its_code(portal):
+    user_id, token = _account(portal, scopes=("jobs:read",))
+    denied = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    assert denied.status_code == 403
+
+    row = _rows(user_id)[0]
+    assert row.status == 403 and row.code == "missing_scope"
+
+
+def test_running_out_of_credit_is_recorded_as_its_own_code(portal):
+    user_id, token = _account(portal, credits=1)
+    quote = _quote(portal, token)
+    refused = portal.post(f"{API_V1_PREFIX}/jobs",
+                          json={"tool": TOOL, "quote": quote.json()["quote"],
+                                "input": {"topic": "logs", "count": 1}},
+                          headers=_auth(token, "reqlog-broke-1"))
+    assert refused.status_code == 409
+
+    codes = [row.code for row in _rows(user_id)]
+    assert "insufficient_credit" in codes
+
+
+def test_a_malformed_body_is_recorded(portal):
+    user_id, token = _account(portal)
+    bad = portal.post(f"{API_V1_PREFIX}/quotes",
+                      json={"tool": TOOL, "input": {"nope": 1}},
+                      headers=_auth(token))
+    assert bad.status_code in (400, 422)
+    assert _rows(user_id)[0].code in ("invalid_request", "unprocessable_request")
+
+
+def test_hitting_the_rate_limit_is_recorded(portal):
+    user_id, token = _account(portal)
+    for _ in range(60):
+        response = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+        if response.status_code == 429:
+            break
+    assert response.status_code == 429
+    assert any(row.status == 429 for row in _rows(user_id))
+
+
+def test_a_call_with_no_credential_is_not_recorded_against_anyone(portal):
+    """A row with no owner belongs to nobody and could only be shown to
+    everybody. Anonymous failures stay in the operator's log."""
+    user_id, token = _account(portal)
+    _quote(portal, token)
+    before = len(_rows(user_id))
+    assert portal.get(f"{API_V1_PREFIX}/tools").status_code == 401
+
+    gen, db = _session()
+    try:
+        from sqlalchemy import func, select
+        total = int(db.execute(
+            select(func.count(ApiRequestLog.id))).scalar_one())
+    finally:
+        _close(gen)
+    assert len(_rows(user_id)) == before
+    assert total == before
+
+
+def test_a_failed_job_is_traceable_from_the_request_that_created_it(portal,
+                                                                    monkeypatch):
+    user_id, token = _account(portal)
+    quote = _quote(portal, token)
+    created = portal.post(f"{API_V1_PREFIX}/jobs",
+                          json={"tool": TOOL, "quote": quote.json()["quote"],
+                                "input": {"topic": "logs", "count": 1}},
+                          headers=_auth(token, "reqlog-fail-1"))
+    assert created.status_code == 201
+    job_id = created.json()["id"]
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("provider said no")))
+    # A failed provider call is retried with a backoff, so one pass leaves the
+    # job queued again and the next pass finds nothing until the delay expires.
+    # Bring `next_run_at` forward instead of sleeping: the point of the test is
+    # the terminal state, not the wait.
+    from platform_core.job_runner import _chay_mot_job
+    from platform_core.models import Job
+
+    for _ in range(5):
+        if not _chay_mot_job("reqlog-worker"):
+            gen, db = _session()
+            try:
+                job = db.get(Job, job_id)
+                if job.status != "queued":
+                    break
+                job.next_run_at = datetime.now(timezone.utc)
+                db.commit()
+            finally:
+                _close(gen)
+            continue
+
+    row = next(item for item in _rows(user_id) if item.job_id == job_id)
+    gen, db = _session()
+    try:
+        timeline = request_log.timeline(db, row)
+    finally:
+        _close(gen)
+    assert timeline["job"] is not None and timeline["job"].status == "error"
+    # The refund is part of the story, and it is in the ledger already.
+    assert any(entry.delta > 0 for entry in timeline["credit"])
+
+
+def test_a_finished_job_links_request_to_events_credit_and_artifacts(portal):
+    user_id, token = _account(portal)
+    quote = _quote(portal, token)
+    created = portal.post(f"{API_V1_PREFIX}/jobs",
+                          json={"tool": TOOL, "quote": quote.json()["quote"],
+                                "input": {"topic": "logs", "count": 1}},
+                          headers=_auth(token, "reqlog-ok-1"))
+    assert created.status_code == 201
+    from platform_core.job_runner import _chay_mot_job
+    assert _chay_mot_job("reqlog-worker-2") is True
+
+    row = next(item for item in _rows(user_id)
+               if item.job_id == created.json()["id"])
+    gen, db = _session()
+    try:
+        timeline = request_log.timeline(db, row)
+    finally:
+        _close(gen)
+    assert timeline["job"].status == "done"
+    assert timeline["artifacts"], "a finished image job has an artifact"
+    assert any(entry.kind for entry in timeline["credit"])
+
+
+def test_the_job_carries_the_request_id_that_created_it(portal):
+    """Trace propagation: API → job → worker events, with no new identifier."""
+    from platform_core.public_api.invocation import api_meta
+    from platform_core.models import Job
+
+    _user_id, token = _account(portal)
+    quote = _quote(portal, token)
+    created = portal.post(f"{API_V1_PREFIX}/jobs",
+                          json={"tool": TOOL, "quote": quote.json()["quote"],
+                                "input": {"topic": "logs", "count": 1}},
+                          headers=_auth(token, "reqlog-trace-1"))
+    gen, db = _session()
+    try:
+        job = db.get(Job, created.json()["id"])
+        assert api_meta(job)["request_id"] == created.headers["X-Correlation-ID"]
+    finally:
+        _close(gen)
+
+
+# ── What must never be in there ─────────────────────────────────────────────
+
+def test_the_log_stores_no_payload_and_no_detail():
+    columns = set(ApiRequestLog.__table__.columns.keys())
+    for forbidden in ("body", "request_body", "response", "payload", "detail",
+                      "input", "headers", "token"):
+        assert forbidden not in columns, forbidden
+
+
+def test_the_stored_row_carries_nothing_a_customer_typed(portal):
+    """The topic is customer content; the row must not contain it."""
+    user_id, token = _account(portal)
+    secret_topic = "a-very-distinctive-customer-phrase"
+    portal.post(f"{API_V1_PREFIX}/quotes",
+                json={"tool": TOOL, "input": {"topic": secret_topic}},
+                headers=_auth(token))
+    for row in _rows(user_id):
+        assert secret_topic not in str(
+            {column: getattr(row, column)
+             for column in ApiRequestLog.__table__.columns.keys()})
+
+
+def test_the_log_never_contains_a_credential(portal):
+    user_id, token = _account(portal)
+    _quote(portal, token)
+    for row in _rows(user_id):
+        assert token not in str(row.__dict__)
+        assert row.key_id and row.key_id in token   # public half only
+
+
+# ── Tenant isolation ────────────────────────────────────────────────────────
+
+def test_one_account_never_sees_another_accounts_requests(portal):
+    first_id, first_token = _account(portal)
+    _quote(portal, first_token)
+    first_request = _rows(first_id)[0].request_id
+
+    portal.post("/logout", data={}, follow_redirects=False)
+    second_id, second_token = _account(portal)
+    _quote(portal, second_token)
+
+    assert all(row.user_id == second_id for row in _rows(second_id))
+    page = portal.get("/developers/logs").text
+    assert first_request not in page
+    # …and the detail page refuses a request id that is not theirs.
+    assert portal.get(f"/developers/logs/{first_request}",
+                      follow_redirects=False).status_code == 404
+
+
+# ── The page ────────────────────────────────────────────────────────────────
+
+def test_the_log_page_lists_and_filters(portal):
+    _user_id, token = _account(portal)
+    _quote(portal, token)
+    portal.get(f"{API_V1_PREFIX}/jobs/nope", headers=_auth(token))
+
+    page = portal.get("/developers/logs").text
+    assert "/api/v1/quotes" in page and "/api/v1/jobs/{job_id}" in page
+    only_failures = portal.get("/developers/logs?status=4xx").text
+    assert "not_found" in only_failures
+    assert "/api/v1/quotes" not in only_failures
+
+
+def test_the_detail_page_explains_what_to_do_about_the_code(portal):
+    _user_id, token = _account(portal, scopes=("jobs:read",))
+    denied = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    detail = portal.get(
+        f"/developers/logs/{denied.headers['X-Correlation-ID']}").text
+    assert "missing_scope" in detail
+    # The registry's advice, not a second copy written for the page.
+    from platform_core.public_api.error_registry import spec_for
+    assert spec_for("missing_scope").action[:40] in detail
+
+
+def test_the_logs_section_is_linked_and_needs_a_session(portal):
+    # Signed out first: logging out needs a CSRF token, and a test that fakes
+    # the sign-out proves nothing about the signed-out case.
+    assert portal.get("/developers/logs",
+                      follow_redirects=False).status_code in (302, 303)
+    _account(portal)
+    assert 'href="/developers/logs"' in portal.get("/developers").text
+
+
+# ── Retention ───────────────────────────────────────────────────────────────
+
+def test_old_rows_are_purged_and_recent_ones_are_not(portal):
+    user_id, token = _account(portal)
+    _quote(portal, token)
+
+    gen, db = _session()
+    try:
+        old = request_log.record(
+            db, request_id="old-" + uuid.uuid4().hex, user_id=user_id,
+            method="GET", route="/api/v1/me", status=200,
+            now=datetime.now(timezone.utc) - timedelta(days=90))
+        db.commit()
+        removed = request_log.purge_expired(db)
+        db.commit()
+        assert removed == 1
+        assert db.get(ApiRequestLog, old.id) is None
+        assert request_log.list_for(db, user_id=user_id)
+    finally:
+        _close(gen)
+
+
+def test_the_worker_prunes_the_request_log():
+    """Retention that only exists as a function nobody calls is not retention."""
+    from pathlib import Path
+
+    source = Path("platform_core/job_runner.py").read_text(encoding="utf-8")
+    assert "request_log.purge_expired" in source
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -500,6 +500,16 @@ def run_forever(worker_id: str, *, stop=None) -> None:
                     if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
                         log.info("don job event het han: customer=%s internal=%s",
                                  removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
+                # The API request log ages out on the same visit: it is created
+                # by every call, so a policy that waits for a later prompt is a
+                # table that grows forever (the lesson `webhook_deliveries`
+                # taught this platform once already).
+                from platform_core.public_api import request_log
+                for db in _one_session():
+                    gone = request_log.purge_expired(db)
+                    db.commit()
+                    if gone:
+                        log.info("don %d dong nhat ky request API", gone)
                 next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
             if time.monotonic() >= next_upload_sweep:
                 from platform_core import upload_sessions

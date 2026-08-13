@@ -1,0 +1,114 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<p><a href="/developers/logs">← {{ _("Tất cả request") }}</a></p>
+
+<div class="card">
+  <ul>
+    <li><code>{{ row.method }} {{ row.route }}</code> →
+        <strong>{{ row.status }}</strong>
+        {% if row.code %}<code>{{ row.code }}</code>{% endif %}</li>
+    <li>{{ _("Lúc:") }} {{ row.created_at.strftime("%Y-%m-%d %H:%M:%S") }} UTC
+        · {{ row.latency_ms }} ms</li>
+    <li>{{ _("Khóa:") }} <code>{{ row.key_id or "—" }}</code>
+        {% if project_name %} · {{ _("project") }} {{ project_name }}{% endif %}</li>
+    <li>request_id: <code>{{ row.request_id }}</code>
+        <span class="muted">{{ _("— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ.") }}</span></li>
+  </ul>
+  {% if advice %}
+    <p class="alert alert-warn" role="status">
+      <strong><code>{{ row.code }}</code></strong> — {{ advice.action }}
+      <br><span class="muted">{{ _("Thử lại:") }} <code>{{ advice.retry }}</code>{% if advice.reuse_idempotency_key %} · {{ _("dùng lại Idempotency-Key cũ") }}{% endif %}</span>
+    </p>
+  {% endif %}
+</div>
+
+{% if timeline.job %}
+  <div class="card">
+    <h2 style="margin-top:0;">Job</h2>
+    <ul>
+      <li><code>{{ timeline.job.id }}</code> — {{ timeline.job.status }}</li>
+      <li>{{ _("Tạo:") }} {{ timeline.job.created_at.strftime("%H:%M:%S") if timeline.job.created_at else "—" }}
+          · {{ _("bắt đầu:") }} {{ timeline.job.started_at.strftime("%H:%M:%S") if timeline.job.started_at else "—" }}
+          · {{ _("kết thúc:") }} {{ timeline.job.finished_at.strftime("%H:%M:%S") if timeline.job.finished_at else "—" }}</li>
+    </ul>
+
+    {% if timeline.events %}
+      <table class="table">
+        <thead><tr><th>#</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Thông báo") }}</th></tr></thead>
+        <tbody>
+          {% for event in timeline.events %}
+            <tr>
+              <td>{{ event.sequence }}</td>
+              <td><code>{{ event.event_code }}</code></td>
+              <td>{{ event.public_message }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted">{{ _("Job này chưa ghi sự kiện nào cho khách.") }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Credit</h2>
+    {% if timeline.credit %}
+      <table class="table">
+        <thead><tr><th>{{ _("Lúc") }}</th><th>{{ _("Loại") }}</th><th>{{ _("Thay đổi") }}</th></tr></thead>
+        <tbody>
+          {% for entry in timeline.credit %}
+            <tr>
+              <td>{{ entry.created_at.strftime("%H:%M:%S") if entry.created_at else "" }}</td>
+              <td><code>{{ entry.kind }}</code></td>
+              <td>{{ entry.delta }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="muted">{{ _("Giữ chỗ rồi quyết toán đúng một lần. Job hỏng hoặc bị hủy thì hoàn đủ.") }}</p>
+    {% else %}
+      <p class="muted">{{ _("Lời gọi này không động tới credit.") }}</p>
+    {% endif %}
+  </div>
+
+  {% if timeline.artifacts %}
+    <div class="card">
+      <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
+      <ul>
+        {% for artifact in timeline.artifacts %}
+          <li><code>{{ artifact.id }}</code> — {{ artifact.field }}</li>
+        {% endfor %}
+      </ul>
+      <p class="muted">{{ _("Đổi id lấy đường tải ở GET /api/v1/artifacts/{id}.") }}</p>
+    </div>
+  {% endif %}
+
+  {% if timeline.webhooks %}
+    <div class="card">
+      <h2 style="margin-top:0;">Webhook</h2>
+      <table class="table">
+        <thead><tr>
+          <th>{{ _("Sự kiện") }}</th><th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Lần thử") }}</th><th>HTTP</th>
+        </tr></thead>
+        <tbody>
+          {% for delivery in timeline.webhooks %}
+            <tr>
+              <td><code>{{ delivery.event_type }}</code></td>
+              <td>{{ delivery.status }}</td>
+              <td>{{ delivery.attempts }}</td>
+              <td>{{ delivery.last_status_code or "—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="card">
+    <p class="muted">{{ _("Lời gọi này không tạo job — nên không có timeline job, và đó thường chính là câu trả lời: request bị từ chối trước khi chạm tới hàng đợi.") }}</p>
+  </div>
+{% endif %}
+
+{% endblock %}

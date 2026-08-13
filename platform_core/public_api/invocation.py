@@ -245,6 +245,10 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         "key_id": principal.key_id,
         "quote_intent": str(quote.get("intent") or ""),
         "idempotency_key": str(idempotency_key or ""),
+        # The correlation id of the request that created this job, so support
+        # and the customer's own log page can walk request → job → events →
+        # ledger without a new identifier to keep in step (EXT-09).
+        "request_id": str(getattr(principal, "request_id", "") or ""),
     }
     job_params = dict(params)
     # Every app handler in this platform reads `owner_id` from its parameters to

@@ -20,7 +20,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 06 | Schema-driven apps/models/tools variable reference | **PASS** | 2026-08-13 |
 | 07 | Quickstart / env vars / examples / recipes | **PASS** | 2026-08-13 |
 | 08 | Playground / request builder / job inspector | **PASS** | 2026-08-13 |
-| 09 | Request logs / trace / job timeline | chưa chạy | — |
+| 09 | Request logs / trace / job timeline | **PASS** | 2026-08-14 |
 | 10 | Webhook console / event catalog / resend | chưa chạy | — |
 | 11 | Usage / budgets / credit alerts / notifications | chưa chạy | — |
 | 12 | Sandbox / test mode / live isolation | chưa chạy | — |
@@ -910,3 +910,129 @@ Lần 2, trên cây mã cuối: **`RESULT: PASS` 10/10**, pytest 2.807,9 s.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/09_USER_REQUEST_LOGS_TRACE_DEBUG_AND_JOB_TIMELINE.txt`
+
+
+---
+
+## EXT-09 — NHẬT KÝ REQUEST, TRACE, GỠ LỖI ✅
+
+### Entry gate
+
+EXT-08 PASS ✅ (`0df0d95`, full gate 10/10), cây sạch. Migration mới:
+**`e1f2a3b4c5d6`** (head).
+
+### Vì sao phải có bảng, dù đã có dòng log
+
+`ltt.public_api.access` ghi đủ mọi request — nhưng chỉ **operator** đọc được.
+Khách không grep được đĩa của chúng ta, và những lời gọi họ cần hiểu nhất
+(401, 403, 429) **không bao giờ tạo job**, tức không có gì khác lưu lại. Suy ra
+từ `jobs` + `credit` + `webhook` chỉ phủ được phần tiêu tiền.
+
+### Chi phí đo được, và quy tắc rút ra từ nó
+
+Bản đầu ghi **một dòng cho mọi request**. Đo bằng `tools/public_api_load_test.py`:
+
+| | Trước | Ghi mọi request | Quy tắc cuối |
+|---|---|---|---|
+| reads rps | 177 | **42,6** | **174,7** |
+| p50 | 29 ms | 107 ms | 29 ms |
+| p95 | 47 ms | 333 ms | 48 ms |
+
+Mất 4× thông lượng cho một bảng gỡ lỗi là cái giá sai. Quy tắc cuối:
+**ghi mọi thất bại, và mọi lời gọi không phải là đọc.** Thứ bị bỏ ra — một `GET`
+thành công — chính là phần áp đảo về số lượng (poll + khám phá catalog) và cũng
+là phần khách **đã** nhìn thấy: job tự kể chuyện của nó. Log file của operator
+vẫn có đủ mọi request.
+
+Con số này nằm trong docstring của `_worth_recording`, không phải chỉ trong
+handoff — người sau sửa hàm đó sẽ đọc được lý do trước khi đổi.
+
+### Ghi sau khi trả lời, không ghi bên cạnh
+
+Bản đầu mở **phiên CSDL thứ hai** ngay trong middleware → `database is locked`
+trên SQLite, và trên PostgreSQL sẽ âm thầm gấp đôi số kết nối mỗi request. Đổi
+sang `BackgroundTask` của Starlette: hàng được ghi **sau khi phản hồi đã ra**,
+lúc phiên của request chắc chắn đã đóng. Ghi hỏng thì log cảnh báo rồi bỏ qua —
+một request đã thành công không được báo là hỏng chỉ vì dòng sổ sách của nó
+không ghi được.
+
+### Không lưu gì
+
+Không cột body, không cột `detail`, không credential. Chỉ bộ xương: ai, gọi gì,
+kết thúc ra sao, mất bao lâu, tốn bao nhiêu, job nào. Có test đọc **danh sách
+cột** và cấm `body/payload/detail/input/headers/token`, và một test nữa gửi một
+cụm từ đặc trưng của khách rồi khẳng định nó không xuất hiện trong bất kỳ cột
+nào.
+
+### Hai lỗi thật mà bộ test tìm ra
+
+1. **Route bị ghi thiếu tiền tố.** Sub-app biết route của nó là `/me`, còn khách
+   gõ `/api/v1/me`. Dòng log và bảng đều ghi dạng ngắn → mọi việc đối chiếu với
+   API mà khách thấy trở thành câu đố. Sửa ở `_route_of`, nên **cả dòng log của
+   operator cũng đúng lên**.
+2. **429 không quy được cho ai.** Giới hạn nhịp chạy **trước** khi principal
+   được gắn vào `request.state`, nên đúng cái thất bại khách hay đi tìm nhất lại
+   là cái duy nhất không gắn được chủ. Đổi thứ tự: dựng principal → gắn state →
+   rồi mới áp giới hạn.
+
+### Trace, không thêm định danh mới
+
+`request_id` được nhét vào `api_meta` của job (chỗ đã có `tool`/`key_id`/
+`idempotency_key`), nên đường đi **request → job → sự kiện worker → dòng credit
+→ artifact → webhook** nối bằng khoá đã có. Trang chi tiết đọc lại `JobEvent`
+(chỉ dòng `visibility=customer`), `CreditEntry`, `WebhookDelivery`,
+`media.artifacts_of` — **không** lưu bản sao nào.
+
+### Retention ngay từ đầu
+
+30 ngày, `request_log.purge_expired`, worker gọi cùng nhịp với dọn job event.
+Không lặp lại bài học `webhook_deliveries` (tạo dữ liệu, quên chính sách dọn,
+audit mới phát hiện).
+
+### Tests
+
+`tests/test_201_request_logs.py` — **18 test**: quy tắc ghi (đọc thành công thì
+không, quote/job thì có, đọc **hỏng** thì có); 403/409/422/429 đều có mã;
+request ẩn danh **không** ghi vào sổ của ai; job hỏng truy được từ request (kèm
+drain retry + backoff); job xong nối được events/credit/artifact; `request_id`
+có trong job meta; bảng không có cột payload; nội dung khách không lọt vào hàng;
+cách ly tenant ở cả danh sách lẫn trang chi tiết (404 cho request của người
+khác); trang lọc theo `4xx`; trang chi tiết in **lời khuyên lấy từ error
+registry**, không phải bản sao thứ hai; purge xoá đúng cái cũ; và một test đọc
+`job_runner.py` để bảo đảm retention **được gọi** chứ không chỉ tồn tại.
+
+Ba test cũ đổi kỳ vọng: `test_192` (route giờ có tiền tố — chính là lỗi #1),
+`test_193` (đóng băng số migration 2 → 3), và `test_197` (đã sửa ở EXT-08).
+
+### Browser
+
+Cổng 8123: tạo khoá → gọi một 404, một quote, một job thật → `/developers/logs`
+hiện **3 dòng** đúng thứ tự với route đầy đủ, mã lỗi, độ trễ, credit `-5` → mở
+chi tiết job: timeline `submitted → started → progress → completed`, sổ credit
+`hold -5` rồi `settle 0`, và artifact. Lọc `?status=4xx` còn **đúng 1 dòng**.
+Lỗi console duy nhất là 404 do chính tôi gọi.
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| — | `GET` thành công không có trong sổ của khách | có chủ đích; log operator vẫn đủ |
+| — | Phân loại nguyên nhân job hỏng (`provider_timeout`…) | EXT-16, cần worker gắn nhãn |
+| — | Xuất nhật ký (CSV/API) | EXT-19 (privacy/export) |
+
+### Rollback
+
+`alembic downgrade d0e1f2a3b4c5`, gỡ `request_log.py`, bỏ `_schedule_log` khỏi
+guard, bỏ `request_id` khỏi job meta, xoá hai template + route + `test_201`.
+Không có dữ liệu nào khác bị chạm.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-09 | Kết quả |
+|---|---|
+| Debug được 401/403/409/422/429/5xx/job fail | ✅ có test cho từng lớp (401 = ẩn danh, cố ý không gắn chủ) |
+| Tenant isolation | ✅ lọc theo chủ **trong truy vấn**; request của người khác trả 404 |
+| Không lộ secret/PII | ✅ không cột payload; test quét cột và quét nội dung khách |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/10_WEBHOOK_CONSOLE_EVENT_CATALOG_RESEND_REPLAY_SAFETY.txt`

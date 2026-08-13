@@ -112,6 +112,20 @@ def resolve_from_database(request, db) -> Principal | None:
         _throttle(request, config, public_key_id)
         return None
 
+    principal = Principal(
+        key_id=key.key_id,
+        user_id=key.user_id,
+        scopes=frozenset(key.scopes or ()),
+        allowed_tools=frozenset(key.allowed_tools or ()),
+        project_id=str(key.project_id or ""),
+        request_id=request_id(request),
+    )
+    # Published before the limiter runs, not after: a 429 belongs to a caller
+    # who has already proved who they are, and it is the failure they are most
+    # likely to come looking for. Attaching it afterwards left exactly that one
+    # unattributable in the access log and in the request log (EXT-09).
+    request.state.api_principal = principal
+
     # Rate limit before doing anything else with the request: a key in a loop
     # should cost one window lookup, not a full handler.
     if config is not None:
@@ -121,17 +135,6 @@ def resolve_from_database(request, db) -> Principal | None:
     devkeys.touch_last_used(db, key)
 
     metrics.increment(metrics.AUTH_SUCCESS)
-    principal = Principal(
-        key_id=key.key_id,
-        user_id=key.user_id,
-        scopes=frozenset(key.scopes or ()),
-        allowed_tools=frozenset(key.allowed_tools or ()),
-        project_id=str(key.project_id or ""),
-        request_id=request_id(request),
-    )
-    # Published for the access log; nothing else reads it, and it never leaves
-    # the process.
-    request.state.api_principal = principal
     return principal
 
 

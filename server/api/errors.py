@@ -55,6 +55,9 @@ def problem_response(problem: ApiProblem) -> JSONResponse:
 
 
 def api_error_response(request: Request, exc: ApiError) -> JSONResponse:
+    # Remembered for the request log: the stable code is what a developer
+    # branches on, and the only part of a failure worth storing.
+    request.state.api_error_code = exc.code
     return problem_response(exc.problem(
         instance=request.url.path, request_id=request_id(request)))
 
@@ -62,9 +65,11 @@ def api_error_response(request: Request, exc: ApiError) -> JSONResponse:
 def status_problem_response(request: Request, status: int,
                             detail: object = "") -> JSONResponse:
     """Render a framework-raised status (404/405/…) as a problem document."""
-    return problem_response(api_errors.problem_for_status(
+    problem = api_errors.problem_for_status(
         status, detail, instance=request.url.path,
-        request_id=request_id(request)))
+        request_id=request_id(request))
+    request.state.api_error_code = problem.code
+    return problem_response(problem)
 
 
 async def validation_error_handler(request: Request, exc: RequestValidationError):

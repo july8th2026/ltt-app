@@ -31,6 +31,12 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-09 (2026-08-14):** Extension domain 12
+> (`request log/trace`) `MISSING` → `DONE`. Ghi **thất bại + lời gọi
+> không phải đọc** (đo được: ghi mọi request tốn 4× thông lượng),
+> retention 30 ngày có worker gọi, và trace nối bằng `request_id`
+> trong job meta.
+
 > **Cập nhật sau EXT-08 (2026-08-13):** Extension domain 11
 > (`playground`) `MISSING` → `DONE`. Trang gọi thẳng `/api/v1` bằng
 > khóa của khách — không có endpoint portal nào chạy tool, nên không

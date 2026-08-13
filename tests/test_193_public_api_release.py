@@ -64,7 +64,7 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in
                       Path("alembic/versions").glob("2026081*_public_api*.py"))
-    assert len(versions) == 2          # idempotency + webhooks
+    assert len(versions) == 3   # idempotency + webhooks + request log
     assert Path("alembic/versions/20260813_1000_developer_api_keys.py").exists()
 
     # Flags: every switch the runbook mentions exists with a safe default.

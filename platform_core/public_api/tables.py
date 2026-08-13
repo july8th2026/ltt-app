@@ -235,6 +235,54 @@ class ApiIdempotencyRecord(Base):
                 f"job={self.job_id[:8]}>")
 
 
+class ApiRequestLog(Base):
+    """One public API request, reduced to what makes it explainable.
+
+    The columns are chosen by what a developer asks when something goes wrong —
+    *which key, which tool, how did it end, how long, what did it cost, and
+    where is the job* — and stop there. There is no body column and no `detail`
+    column, because a debugging table that quietly accumulates payloads becomes
+    a copy of customer content with a friendlier name.
+
+    ``request_id`` is the same correlation id the response carries, so the
+    string a customer pastes into a support ticket is the primary way in.
+    """
+
+    __tablename__ = "public_api_requests"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False,
+                                            index=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    key_id: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), default="",
+                                            nullable=False)
+    method: Mapped[str] = mapped_column(String(8), default="", nullable=False)
+    #: The templated route, not the filled-in path: an id in a URL is noise,
+    #: and grouping by route is what makes the list readable.
+    route: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    status: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    code: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tool: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
+                                        index=True)
+    credit_delta: Mapped[int] = mapped_column(Integer, default=0,
+                                              nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        # The two questions the page asks: "my recent calls" and "my failures".
+        Index("ix_public_api_requests_owner_time", "user_id", "created_at"),
+        Index("ix_public_api_requests_owner_status", "user_id", "status"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return (f"<ApiRequestLog {self.method} {self.route} {self.status} "
+                f"{self.request_id[:8]}>")
+
+
 WEBHOOK_PENDING = "pending"
 WEBHOOK_DELIVERED = "delivered"
 WEBHOOK_FAILED = "failed"

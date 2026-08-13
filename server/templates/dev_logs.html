@@ -1,0 +1,84 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <ul>
+    <li>{{ _("7 ngày qua:") }} <strong>{{ counts.requests }}</strong>
+        {{ _("request") }}, <strong>{{ counts.failures }}</strong>
+        {{ _("lỗi") }}, <strong>{{ counts.credit }}</strong> credit</li>
+    <li class="muted">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</li>
+  </ul>
+
+  <form method="get" action="/developers/logs" role="search">
+    <label for="lg-request" class="sr-only">request_id</label>
+    <input id="lg-request" type="search" name="request_id" value="{{ filters.request_id }}"
+           placeholder="{{ _('dán request_id từ phản hồi hoặc ticket') }}"
+           style="min-width:min(320px,100%)">
+    <label for="lg-status" class="sr-only">{{ _("Trạng thái") }}</label>
+    <select id="lg-status" name="status">
+      <option value="">{{ _("Mọi trạng thái") }}</option>
+      {% for value, label in status_choices %}
+        <option value="{{ value }}"
+                {% if value == filters.status %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <label for="lg-tool" class="sr-only">{{ _("Công cụ") }}</label>
+    <select id="lg-tool" name="tool">
+      <option value="">{{ _("Mọi công cụ") }}</option>
+      {% for name in tools %}
+        <option value="{{ name }}"
+                {% if name == filters.tool %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <label for="lg-key" class="sr-only">{{ _("Khóa") }}</label>
+    <select id="lg-key" name="key_id">
+      <option value="">{{ _("Mọi khóa") }}</option>
+      {% for key in keys %}
+        <option value="{{ key.key_id }}"
+                {% if key.key_id == filters.key_id %}selected{% endif %}>
+          {{ key.name or key.key_id[:8] }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn">{{ _("Lọc") }}</button>
+    {% if filters.any %}
+      <a class="btn btn-ghost" href="/developers/logs">{{ _("Bỏ lọc") }}</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card">
+  {% if not rows %}
+    <p class="muted">
+      {% if filters.any %}{{ _("Không request nào khớp.") }}
+      {% else %}{{ _("Chưa có lời gọi API nào. Nhật ký bắt đầu từ request đầu tiên.") }}
+      {% endif %}
+    </p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Lúc") }}</th><th>{{ _("Lời gọi") }}</th>
+        <th>{{ _("Kết quả") }}</th><th>{{ _("Công cụ") }}</th>
+        <th>{{ _("Độ trễ") }}</th><th>Credit</th><th>request_id</th>
+      </tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.created_at.strftime("%m-%d %H:%M:%S") }}</td>
+            <td><code>{{ row.method }} {{ row.route }}</code></td>
+            <td>
+              <strong>{{ row.status }}</strong>
+              {% if row.code %}<br><code>{{ row.code }}</code>{% endif %}
+            </td>
+            <td>{{ row.tool or "—" }}</td>
+            <td>{{ row.latency_ms }} ms</td>
+            <td>{% if row.credit_delta %}{{ row.credit_delta }}{% else %}—{% endif %}</td>
+            <td><a href="/developers/logs/{{ row.request_id }}">
+              <code>{{ row.request_id[:8] }}</code></a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
+{% endblock %}
