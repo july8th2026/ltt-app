@@ -70,6 +70,26 @@ MANIFEST = AppManifest(
             },
             returns={"prompt_package": "json", "master_prompt": "text"},
             verifiable=("structural",),
+
+            # ── Public API (Q92, wave 3) ─────────────────────────────────────
+            # Priced from `scene_count` alone — no client-declared duration, so
+            # no run-time top-up, so a signed quote stays true (unlike the
+            # duration-priced video tools deferred in waves 2 and 3).
+            api_exposed=True,
+            api_contract={
+                "scopes": ("jobs:create",),
+                "description": ("Turn a story brief into a structured prompt "
+                                "package: one prompt per scene plus a master "
+                                "prompt. Priced by scene count."),
+                # `operation` is how the app routes internally between its two
+                # generators; a public caller picks a tool, not an internal
+                # branch. `model` is hidden because the price does not depend on
+                # it — publishing the choice would sell the dearest model at the
+                # cheapest price. `resources` is a free-form JSON blob the
+                # project schema interprets, references included; until it has a
+                # public, owner-checked shape it stays out.
+                "hidden": ("operation", "model", "resources"),
+            },
         ),
         ToolSpec(
             name="story.storyboard",
@@ -92,6 +112,26 @@ MANIFEST = AppManifest(
             },
             returns={"storyboard": "json", "master_prompt": "text"},
             verifiable=("structural",),
+
+            # ── Public API (Q92, wave 3) ─────────────────────────────────────
+            # Priced from `scene_count` alone — no client-declared duration, so
+            # no run-time top-up, so a signed quote stays true (unlike the
+            # duration-priced video tools deferred in waves 2 and 3).
+            api_exposed=True,
+            api_contract={
+                "scopes": ("jobs:create",),
+                "description": ("Turn a story brief into a storyboard: one shot "
+                                "description per scene plus a master prompt. "
+                                "Priced by scene count."),
+                # `operation` is how the app routes internally between its two
+                # generators; a public caller picks a tool, not an internal
+                # branch. `model` is hidden because the price does not depend on
+                # it — publishing the choice would sell the dearest model at the
+                # cheapest price. `resources` is a free-form JSON blob the
+                # project schema interprets, references included; until it has a
+                # public, owner-checked shape it stays out.
+                "hidden": ("operation", "model", "resources"),
+            },
         ),
     ),
     # Kho tài nguyên và thư viện prompt dùng chung giữa nhiều project nên không

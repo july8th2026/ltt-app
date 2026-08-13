@@ -64,6 +64,29 @@ MANIFEST = AppManifest(
         },
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
+
+        # ── Public API (Q92, wave 1) ─────────────────────────────────────────
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Generate one to four images from a text prompt, "
+                            "optionally guided by one reference image."),
+            # Aliases, never provider model ids: the public contract must not
+            # name the vendor, and it must survive the day a model id changes.
+            # The alias names describe what a caller is buying (quality tier),
+            # which is also what `_cost` prices — so quote, charge and choice
+            # all move together.
+            "models": {
+                "standard": "gemini-2.5-flash-image",
+                "standard-lite": "gemini-3.1-flash-lite-image",
+                "enhanced": "gemini-3.1-flash-image",
+                "pro": "gemini-3-pro-image",
+            },
+            # One reference image is supported through the public upload flow;
+            # the multi-image form is a Canvas/UI path that takes a list, and
+            # the API media contract handles single references only today.
+            "hidden": ("image_keys",),
+        },
     ), ToolSpec(
         name="image.batch_generate", job_type="taoanh.generate",
         description=N_('Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model.'),

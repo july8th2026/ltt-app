@@ -21,8 +21,12 @@ _EXPENSIVE_SUFFIXES = ("/translate", "/diarize", "/preview", "/estimate", "/uplo
                        "/runs", "/again")
 
 # Path KHÔNG áp (có limiter riêng theo IP, hoặc là auth flow) — tránh double-limit.
+# `/api/v1` has its own principal-aware limiter (`platform_core.public_api.limits`).
+# Leaving it here would key every API client by `request.client.host`, which is
+# the loopback address of the Cloudflare tunnel for ALL of them — one noisy
+# integration would throttle every other customer's API traffic.
 _EXEMPT_PREFIXES = ("/login", "/register", "/logout", "/forgot-password",
-                    "/reset-password", "/health")
+                    "/reset-password", "/health", "/api/v1")
 
 
 def _user_key(request) -> str:

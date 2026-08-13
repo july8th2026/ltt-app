@@ -43,6 +43,14 @@ GPU_HEARTBEAT_S = 60.0
 GPU_RETRY_DELAY_S = 20
 EVENT_PURGE_INTERVAL_S = 6 * 60 * 60
 UPLOAD_SWEEP_INTERVAL_S = 60 * 60
+# Webhooks are delivered by the worker, never by the request that
+# finished the job: a customer's endpoint being slow or down must not
+# delay a settlement (Q92 / Public API prompt 09).
+WEBHOOK_DELIVERY_INTERVAL_S = 15
+# The Public API keeps its counters in memory (see
+# `platform_core/public_api/metrics.py`); the worker prints them so an operator
+# has something to read without adding a metrics service.
+METRICS_LOG_INTERVAL_S = 5 * 60
 
 
 class JobContext:
@@ -314,7 +322,9 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
             for db in _one_session():
                 job = db.get(Job, job_id)
                 if job is not None:
-                    _hoan_credit(db, job); db.commit()
+                    _hoan_credit(db, job)
+                    _enqueue_webhooks(db, job)
+                    db.commit()
             return True
         except Exception as exc:
             # 3a. Thất bại → fail(). Chỉ hoàn credit khi job hết lượt;
@@ -339,6 +349,7 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                     jobq.fail(db, job, safe_error)
                     if job.status == JOB_ERROR:
                         _hoan_credit(db, job)
+                        _enqueue_webhooks(db, job)
                     db.commit()
             log.warning("job %s that bai: %s", job_id[:8], safe_error)
             return True
@@ -356,6 +367,7 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                     _hoan_credit(db, job); db.commit(); return True
                 jobq.complete(db, job, result)
                 settlement = _quyet_toan_credit(db, job, result)
+                _enqueue_webhooks(db, job)
                 if settlement is not None:
                     public_result = dict(result)
                     public_result["credit_cost"] = settlement.charged_credit
@@ -402,6 +414,18 @@ def _runtime_event(job_id: str, event_code: str, *, details: dict | None = None,
     return False
 
 
+def _enqueue_webhooks(db, job: Job) -> None:
+    """Write the outbox rows in the job's own transaction.
+
+    Same transaction on purpose: an event that is written afterwards can be lost
+    by a crash in between, and an event written before the job commits can
+    announce something that never happened.
+    """
+    from platform_core.public_api.outbox import enqueue_for_job
+
+    enqueue_for_job(db, job)
+
+
 def _quyet_toan_credit(db, job: Job, result: dict):
     """Quyết toán credit khi job xong. Chỉ chạm sổ nếu job có giữ chỗ.
 
@@ -432,6 +456,30 @@ def _hoan_credit(db, job: Job) -> None:
         log.exception("khong cleanup duoc input cua job %s", job.id[:8])
 
 
+def _giao_webhook() -> None:
+    """One pass of the webhook outbox. Never fatal to the worker loop."""
+    import random
+
+    from platform_core.public_api.outbox import deliver_due
+
+    for db in _one_session():
+        report = deliver_due(db, jitter=random.random())
+        db.commit()
+        if report["attempted"]:
+            log.info("webhook: attempted=%s delivered=%s failed=%s dead=%s",
+                     report["attempted"], report["delivered"], report["failed"],
+                     report["dead"])
+
+
+def _ghi_metrics() -> None:
+    """One line of counters. Cheap, and the only observability this needs."""
+    from platform_core.public_api import metrics
+
+    snapshot = metrics.snapshot()
+    if snapshot["counters"]:
+        log.info("public api metrics %s", snapshot)
+
+
 def run_forever(worker_id: str, *, stop=None) -> None:
     """Vòng lặp chính của worker. `stop` là callable trả True để dừng êm.
 
@@ -441,6 +489,8 @@ def run_forever(worker_id: str, *, stop=None) -> None:
     log.info("worker %s bat dau", worker_id)
     next_event_purge = 0.0
     next_upload_sweep = 0.0
+    next_webhook_run = 0.0
+    next_metrics_log = 0.0
     while stop is None or not stop():
         try:
             if time.monotonic() >= next_event_purge:
@@ -465,6 +515,12 @@ def run_forever(worker_id: str, *, stop=None) -> None:
                             report["skipped_active"],
                         )
                 next_upload_sweep = time.monotonic() + UPLOAD_SWEEP_INTERVAL_S
+            if time.monotonic() >= next_webhook_run:
+                _giao_webhook()
+                next_webhook_run = time.monotonic() + WEBHOOK_DELIVERY_INTERVAL_S
+            if time.monotonic() >= next_metrics_log:
+                _ghi_metrics()
+                next_metrics_log = time.monotonic() + METRICS_LOG_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()

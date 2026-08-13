@@ -1,0 +1,338 @@
+{
+ "tools": [
+  {
+   "name": "image.generate",
+   "description": "Generate one to four images from a text prompt, optionally guided by one reference image.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "prompt": {
+      "type": "string",
+      "maxLength": 4000
+     },
+     "image_key": {
+      "type": "string",
+      "description": "Upload or artifact id."
+     },
+     "model": {
+      "type": "string",
+      "enum": [
+       "enhanced",
+       "pro",
+       "standard",
+       "standard-lite"
+      ],
+      "description": "Model alias."
+     },
+     "aspect_ratio": {
+      "type": "string",
+      "enum": [
+       "16:9",
+       "9:16",
+       "1:1",
+       "4:3",
+       "3:4"
+      ],
+      "default": "16:9"
+     },
+     "count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 1
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "prompt"
+    ]
+   },
+   "output_schema": {
+    "type": "object",
+    "properties": {
+     "image_keys": {
+      "type": "artifact[]"
+     },
+     "prompt": {
+      "type": "string"
+     }
+    }
+   },
+   "required_scopes": [
+    "jobs:create"
+   ]
+  },
+  {
+   "name": "image.thumbnail",
+   "description": "Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "topic": {
+      "type": "string",
+      "maxLength": 2000
+     },
+     "title": {
+      "type": "string",
+      "maxLength": 200
+     },
+     "subtitle": {
+      "type": "string",
+      "maxLength": 200
+     },
+     "text_style": {
+      "type": "string",
+      "enum": [
+       "bold_impact",
+       "clean_minimal",
+       "dramatic_gold",
+       "neon_glow",
+       "street_art"
+      ]
+     },
+     "phong_cach": {
+      "type": "string",
+      "enum": [
+       "chuyen_nghiep_toi_gian",
+       "hoat_hinh_cartoon",
+       "cinematic",
+       "flat_design",
+       "3d_render",
+       "collage",
+       "retro_vintage"
+      ]
+     },
+     "kieu_trend": {
+      "type": "string",
+      "enum": [
+       "khuon_mat_cam_xuc",
+       "so_sanh_truoc_sau",
+       "bi_an_gay_to_mo",
+       "listicle_numbered",
+       "huong_dan_tutorial",
+       "reaction_phan_ung",
+       "storytelling",
+       "mui_ten_chi_dan",
+       "text_heavy_chu_lon"
+      ]
+     },
+     "ngon_ngu": {
+      "type": "string",
+      "enum": [
+       "tieng_viet",
+       "english",
+       "japanese",
+       "korean",
+       "chinese"
+      ]
+     },
+     "aspect_ratio": {
+      "type": "string",
+      "enum": [
+       "16:9",
+       "9:16",
+       "1:1",
+       "4:3",
+       "3:4"
+      ],
+      "default": "16:9"
+     },
+     "count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "default": 1
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "topic"
+    ]
+   },
+   "output_schema": {
+    "type": "object",
+    "properties": {
+     "image_keys": {
+      "type": "artifact[]"
+     },
+     "prompt": {
+      "type": "string"
+     }
+    }
+   },
+   "required_scopes": [
+    "jobs:create"
+   ]
+  },
+  {
+   "name": "image.upscale",
+   "description": "Upscale an image to four times its original size. Costs 2 credits at the fast preset and 4 at the quality preset.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "image_key": {
+      "type": "string",
+      "description": "Upload or artifact id."
+     },
+     "preset": {
+      "type": "string",
+      "enum": [
+       "fast",
+       "quality"
+      ],
+      "default": "fast"
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "image_key"
+    ]
+   },
+   "output_schema": {
+    "type": "object",
+    "properties": {
+     "image_key": {
+      "type": "artifact"
+     }
+    }
+   },
+   "required_scopes": [
+    "jobs:create"
+   ]
+  },
+  {
+   "name": "story.storyboard",
+   "description": "Turn a story brief into a storyboard: one shot description per scene plus a master prompt. Priced by scene count.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 160
+     },
+     "story": {
+      "type": "string",
+      "maxLength": 12000
+     },
+     "scene_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 6
+     },
+     "aspect_ratio": {
+      "type": "string",
+      "enum": [
+       "16:9",
+       "9:16",
+       "1:1",
+       "4:3",
+       "3:4",
+       "21:9"
+      ],
+      "default": "16:9"
+     },
+     "style": {
+      "type": "string",
+      "maxLength": 500
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "story",
+     "title"
+    ]
+   },
+   "output_schema": {
+    "type": "object",
+    "properties": {
+     "storyboard": {
+      "type": "object"
+     },
+     "master_prompt": {
+      "type": "string"
+     }
+    }
+   },
+   "required_scopes": [
+    "jobs:create"
+   ]
+  },
+  {
+   "name": "text.prompt_package",
+   "description": "Turn a story brief into a structured prompt package: one prompt per scene plus a master prompt. Priced by scene count.",
+   "input_schema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 160
+     },
+     "story": {
+      "type": "string",
+      "maxLength": 12000
+     },
+     "scene_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 6
+     },
+     "duration_seconds": {
+      "type": "integer",
+      "minimum": 3,
+      "maximum": 600,
+      "default": 30
+     },
+     "aspect_ratio": {
+      "type": "string",
+      "enum": [
+       "16:9",
+       "9:16",
+       "1:1",
+       "4:3",
+       "3:4",
+       "21:9"
+      ],
+      "default": "16:9"
+     },
+     "style": {
+      "type": "string",
+      "maxLength": 500
+     },
+     "audience": {
+      "type": "string",
+      "maxLength": 300
+     },
+     "language": {
+      "type": "string",
+      "enum": [
+       "vi",
+       "en"
+      ],
+      "default": "vi"
+     }
+    },
+    "additionalProperties": false,
+    "required": [
+     "story",
+     "title"
+    ]
+   },
+   "output_schema": {
+    "type": "object",
+    "properties": {
+     "prompt_package": {
+      "type": "object"
+     },
+     "master_prompt": {
+      "type": "string"
+     }
+    }
+   },
+   "required_scopes": [
+    "jobs:create"
+   ]
+  }
+ ]
+}

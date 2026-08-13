@@ -125,7 +125,14 @@ def main() -> int:
                     "uq_app_access_user_app",
                     "uq_ommi_prompt_version_target",
                     "uq_ommi_tag_owner_name",
-                    "uq_ommi_usage_resource_project_scene"):
+                    "uq_ommi_usage_resource_project_scene",
+                    # Public API (Q92): mat rang buoc nay = mat co che chong
+                    # double-charge. Hai request cung Idempotency-Key se cung
+                    # tao job va cung giu credit, va khong co gi bao dong.
+                    "uq_public_api_idempotency",
+                    # Mat rang buoc nay = gui trung webhook sau moi lan
+                    # worker nhat lai job.
+                    "uq_public_api_webhook_event"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

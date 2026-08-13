@@ -85,6 +85,29 @@ MANIFEST = AppManifest(
             "image_key": {"type": "image", "required": True},
             "preset": {"type": "enum", "values": ["fast", "quality"], "default": "fast"},
         }, returns={"image_key": "image"}, verifiable=("technical", "vlm_judge"),
+
+        # ── Public API (Q92, wave 2) ─────────────────────────────────────────
+        # This is the GPU workload wave 2 opens. Its price is a flat 2/4 credits
+        # by preset, decided before the job starts, so a signed quote stays true
+        # from quote to settlement.
+        #
+        # Its sibling `video.upscale` is deliberately NOT exposed: its price
+        # depends on `duration_s` declared by the caller, and the worker tops the
+        # hold up when it measures the real duration (`_dam_bao_giu_cho` in
+        # jobs.py). That is fine for the UI, where a person picked a file they
+        # can see — but for a machine caller it breaks the promise a signed quote
+        # makes (Q84: never charge past the confirmed hold). Exposing it needs
+        # the duration measured server-side from the uploaded asset at quote
+        # time, or the top-up capped for API jobs. Tracked in PROGRESS as R25.
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            # No infrastructure in the description: a customer buys a
+            # larger image, not a sentence about our hardware.
+            "description": ("Upscale an image to four times its original size. "
+                            "Costs 2 credits at the fast preset and 4 at the "
+                            "quality preset."),
+        },
     )),
 
     enabled=True,

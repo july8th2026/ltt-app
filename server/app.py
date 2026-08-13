@@ -51,15 +51,14 @@ def _json_error_detail(value):
     Pydantic error dictionaries can contain the original request under
     ``input`` and exception objects under ``ctx``. Neither belongs in a public
     response: one may expose customer content and the other breaks json.dumps.
+
+    The rule itself lives in ``platform_core.public_api.errors.scrub_detail`` so
+    the Q88 contract here and the RFC 9457 contract on ``/api/v1`` cannot drift
+    apart; this name stays because routes and tests already use it.
     """
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-    if isinstance(value, (list, tuple)):
-        return [_json_error_detail(item) for item in value]
-    if isinstance(value, dict):
-        return {str(key): _json_error_detail(item) for key, item in value.items()
-                if key not in {"input", "ctx"}}
-    return str(value)
+    from platform_core.public_api.errors import scrub_detail
+
+    return scrub_detail(value)
 
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60  # 8h idle expiry
 _HASHED_FRONTEND_ASSET = re.compile(
@@ -245,6 +244,7 @@ def create_app(*, env: dict | None = None) -> FastAPI:
             )
         return response
 
+    from server.routes import developer as developer_routes
     from server.routes import jobs as jobs_routes
     from server.routes import register as register_routes
 
@@ -256,6 +256,10 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(jobs_routes.router)
     app.include_router(dashboard_routes.router)
     app.include_router(status_routes.router)
+    # Developer portal: session + CSRF surface where API keys are created. It is
+    # mounted unconditionally so a customer can prepare keys before an operator
+    # turns the API itself on; the page says plainly when `/api/v1` is off.
+    app.include_router(developer_routes.router)
 
     # ── Bảng điều khiển FB/TikTok cũ (H22.10) ────────────────────────────────
     #
@@ -307,6 +311,13 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     from platform_core.registry import mount_all
     app.state.loaded_apps = mount_all(app)
 
+    # Public API `/api/v1` (Q92). Đây KHÔNG phải một app: một app không mount
+    # được path ngoài `route_prefix` của nó và không được biết app khác, nên
+    # bề mặt máy-gọi-máy phải nằm ở nền tảng. Mặc định TẮT — không bật cờ
+    # `LTT_PUBLIC_API` thì router không được dựng và bề mặt route y hệt hôm nay.
+    from server.api import mount_public_api
+    app.state.public_api = mount_public_api(app, env=env)
+
     # Trang quan tri (H3-admin, Q15) o /admin. Chi admin vao duoc (AdminAuth).
     # Bo qua an toan khi thieu sqladmin (moi truong test khong cai) HOAC chua co
     # CSDL (nhieu test khong dung PostgreSQL) - admin chi co nghia khi co ca hai.
@@ -327,11 +338,20 @@ def create_app(*, env: dict | None = None) -> FastAPI:
             location = (exc.headers or {}).get("Location", "/login")
             return RedirectResponse(location, status_code=exc.status_code)
 
+        path = request.url.path
+
+        # Public API owns a stricter contract (RFC 9457) than Q88's JSON body,
+        # and it must apply even when the surface is disabled — otherwise a
+        # client discovers the switch by receiving an HTML page. Checked first
+        # because `/api/v1/...` also matches the `/api/` test below.
+        from server.api.errors import is_public_api_path, status_problem_response
+        if is_public_api_path(path):
+            return status_problem_response(request, exc.status_code, exc.detail)
+
         # Health probes and app APIs need a machine-readable contract. App
         # routes are mounted below their slug (for example ``/<slug>/api``),
         # so checking only a root ``/api`` prefix silently returned an HTML
         # error page to fetch clients and hid the actionable validation detail.
-        path = request.url.path
         if path.startswith("/health") or path.startswith("/api/") or "/api/" in path:
             body = {"detail": _json_error_detail(exc.detail)}
             cid = getattr(request.state, "correlation_id", "")
@@ -361,6 +381,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         cid = getattr(request.state, "correlation_id", "")
         logging.getLogger(__name__).exception(
             "Loi chua bat [%s] %s %s", cid, request.method, request.url.path)
+        # An API caller gets the same problem document as for any other error,
+        # with a fixed detail: the exception text can carry provider secrets or
+        # customer data, and a stack trace is free reconnaissance.
+        from server.api.errors import is_public_api_path, status_problem_response
+        if is_public_api_path(request.url.path):
+            return status_problem_response(request, 500)
         if request.url.path.startswith("/health"):
             return JSONResponse({"detail": "internal error"}, status_code=500,
                                 headers={"Cache-Control": "no-store"})

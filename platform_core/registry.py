@@ -77,6 +77,34 @@ class ToolSpec:
     # tạo node mới từ palette. Đây là soft-retire, không phải xoá capability.
     customer_visible: bool = True
 
+    # ── Public API (Q92) ─────────────────────────────────────────────────────
+    # MẶC ĐỊNH TẮT. `customer_visible` nói về palette của Agent trong giao diện
+    # LTT; nó KHÔNG phải cờ public. Một tool chỉ ra `/api/v1` khi app tự khai
+    # `api_exposed=True` VÀ hợp đồng công khai đủ (xem `api_contract`) VÀ operator
+    # bật nó trong `LTT_PUBLIC_API_TOOLS`. Ba cổng độc lập: quên một cái thì hậu
+    # quả là thiếu tính năng, không phải lộ năng lực nội bộ.
+    api_exposed: bool = False
+
+    # Hợp đồng công khai của tool. Rỗng khi `api_exposed=False`.
+    #
+    #   api_contract={
+    #       "public_name": "<domain>.<action>",   # mặc định là `name`
+    #       "description": "câu mô tả cho khách",  # mặc định là `description`
+    #       "models": {"standard": "<model id nội bộ>"},   # alias → id thật
+    #       "enums": {"text_style": ["bold", "clean"]},    # giá trị công khai
+    #       "hidden": ("ngon_ngu",),              # tham số server tự quyết
+    #       "scopes": ("jobs:create",),           # scope cần để gọi
+    #       "deprecated": "",                     # thông điệp/ngày sunset
+    #   }
+    #
+    # Vì sao phải có: `params_schema` nội bộ chứa `model_ref` (kèm tên provider
+    # và id model thật) và `enum` lấy giá trị từ `prompts/...` — bê nguyên ra
+    # ngoài là lộ nhà cung cấp và thư viện prompt nội bộ. Không khai đủ thì
+    # registry TỪ CHỐI expose, chứ không im lặng publish một hợp đồng rò rỉ.
+    # `description` cũng vậy: mô tả nội bộ hay nêu thẳng tên nhà cung cấp, nên
+    # tool public phải viết lại một câu cho khách.
+    api_contract: dict = field(default_factory=dict)
+
 
 @dataclass(frozen=True)
 class NavEntry:
@@ -287,6 +315,82 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
             raise RegistryError(
                 f"[{manifest.slug}] tool {tool.name!r} kiểu output không hợp lệ: "
                 f"{output!r}={port_type!r}")
+
+    _validate_api_contract(manifest, tool)
+
+
+def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
+    """Chỉ cho phép expose khi hợp đồng công khai ĐỦ (Q92).
+
+    Fail-closed có chủ ý: một tool khai `api_exposed=True` mà thiếu alias model
+    hoặc thiếu giá trị enum công khai sẽ **bị từ chối nạp**, thay vì lặng lẽ
+    publish một hợp đồng làm lộ tên provider hoặc thư viện prompt nội bộ.
+    """
+    contract = tool.api_contract or {}
+    if not isinstance(contract, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} api_contract phải là dict").format(
+                slug=manifest.slug, tool=tool.name))
+    if not tool.api_exposed:
+        if contract:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} có api_contract nhưng api_exposed=False "
+                "— bỏ hợp đồng hoặc bật cờ, đừng để nửa vời").format(
+                    slug=manifest.slug, tool=tool.name))
+        return
+
+    from platform_core.public_api.scopes import KNOWN_SCOPES
+
+    unknown_keys = set(contract) - {"public_name", "description", "models",
+                                    "enums", "hidden", "scopes", "deprecated"}
+    if unknown_keys:
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
+                slug=manifest.slug, tool=tool.name, keys=sorted(unknown_keys)))
+
+    public_name = str(contract.get("public_name") or tool.name)
+    if not _TOOL_NAME_RE.fullmatch(public_name):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} public_name không hợp lệ: {value!r}").format(
+                slug=manifest.slug, tool=tool.name, value=public_name))
+
+    scopes = tuple(contract.get("scopes") or ())
+    unknown_scopes = sorted(set(map(str, scopes)) - set(KNOWN_SCOPES))
+    if unknown_scopes:
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} scope lạ: {scopes}").format(
+                slug=manifest.slug, tool=tool.name, scopes=unknown_scopes))
+
+    hidden = {str(name) for name in (contract.get("hidden") or ())}
+    models = contract.get("models") or {}
+    enums = contract.get("enums") or {}
+    if not isinstance(models, dict) or not isinstance(enums, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} models/enums phải là dict").format(
+                slug=manifest.slug, tool=tool.name))
+
+    for param, schema in tool.params_schema.items():
+        if param in hidden:
+            continue
+        kind = schema.get("type")
+        if kind == "model_ref" and not models:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tham số {param!r} là model_ref nhưng "
+                "api_contract thiếu alias `models` — không được để id model/nhà "
+                "cung cấp thật lọt ra API công khai").format(
+                    slug=manifest.slug, tool=tool.name, param=param))
+        if kind == "enum" and "values" not in schema and param not in enums:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} enum {param!r} lấy giá trị từ nguồn nội "
+                "bộ nhưng api_contract không khai `enums` cũng không đưa vào "
+                "`hidden`").format(slug=manifest.slug, tool=tool.name, param=param))
+
+    for param in hidden | set(enums):
+        if param not in tool.params_schema:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} api_contract nhắc tham số không tồn "
+                "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
+                                          param=param))
 
 
 def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,

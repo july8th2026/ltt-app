@@ -1,0 +1,95 @@
+# Public API V1 — Disposition CHỐT của 100% app và tool
+
+**Bản này thay bản Prompt 01** (bản đầu là *ý định* trước khi đọc chi tiết từng
+app; bản này là *kết quả* sau khi đã xây kernel và chạy 3 wave thật).
+
+Nguồn: `platform_core.registry.discover()` + code app thật, ngày 2026-08-13 —
+**14 app, 21 ToolSpec, 17 job_type**.
+
+**Không tài liệu nào tự chứng minh được.** Bảng dưới đây được máy kiểm bằng
+`tests/test_190_public_api_coverage.py`: thêm một app mà chưa quyết định thì
+test đỏ; đánh EXPOSE_V1 mà không publish đúng tool đó thì test đỏ; đánh bất kỳ
+trạng thái nào khác mà app vẫn publish thì test đỏ.
+
+---
+
+## 1. Bảng chốt (14/14 app)
+
+| App | Disposition | Đang public | Lý do |
+|---|---|---|---|
+| `thumbnail` | **EXPOSE_V1** | `image.thumbnail` | Giá phẳng theo số ảnh, chốt trước khi chạy. Đã E2E qua worker (wave 1). |
+| `taoanh` | **EXPOSE_V1** | `image.generate` | Giá theo model qua alias công khai; 1 ảnh tham chiếu qua upload (wave 1). |
+| `upscalevideo` | **EXPOSE_V1** | `image.upscale` | Giá phẳng 2/4 theo preset; đường GPU thật (wave 2). |
+| `prompt_ai_ommi` | **EXPOSE_V1** | `text.prompt_package`, `story.storyboard` | Giá theo `scene_count`; kết quả là dữ liệu, trả qua `result` (wave 3). |
+| `taovideo` | **MIGRATE_CAPABILITY_THEN_EXPOSE** | — | `resolution/duration/aspect_ratio` phụ thuộc model, tập hợp lệ khác nhau theo model → publish hợp nhất sẽ để khách trả tiền cho tổ hợp provider từ chối. |
+| `autosubvideo` | **MIGRATE_CAPABILITY_THEN_EXPOSE** | — | Giá theo `duration_s` do client khai + worker **nâng hold** khi đo thật (`_dam_bao_giu_cho`) → phá lời hứa quote đã ký (Q84). Ngoài ra 3 job 0-credit (Q50) không được mở khi chưa có quota chống lạm dụng. |
+| `taoclipngan` | **MIGRATE_CAPABILITY_THEN_EXPOSE** | — | Cùng nguyên nhân: giá theo `duration_s` + nâng hold; thêm GPU. |
+| `chataistudio` | **DEFER** | — | **Không có Job**: credit giữ theo id tin nhắn, chạy streaming qua sidecar. Toàn bộ hợp đồng job/quote/settle không áp dụng được. Mở cần thiết kế async riêng + quyết định ToS về sidecar. |
+| `agent` | **DEFER** | — | Là **runtime điều phối**, không phải một tool: public nó là public cả một cơ chế chạy. Cần ranh giới chi phí/sandbox riêng trước khi bàn. |
+| `mediatools` | **INTERNAL_ONLY** | — | `surface=runtime` (Q72). Có `video.social_import` nhận URL từ người gọi → SSRF nếu public. |
+| `qualitylab` | **INTERNAL_ONLY** | — | `surface=admin`, operator-only (Q83). |
+| `demo` | **INTERNAL_ONLY** | — | App thử hạ tầng, khách phải nhận 404 (Q71). |
+| `socialbot` | **INTERNAL_ONLY** | — | Đóng băng (Q10/Q78), cần browser + OAuth, không job_types, không giá. Mở cần threat model riêng cho tự động hoá credential. |
+| `kichban` | **RETIRED_NO_EXPOSE** | — | Retired (Q69). Có ToolSpec `text.generate` với `customer_visible=True` — đó là cờ palette của Agent, **không phải** cờ public. Muốn năng lực sinh text thì migrate sang app được hỗ trợ, không hồi sinh app cũ. |
+
+## 2. Tool đang public (5/21 ToolSpec)
+
+| Tool | App | Giá | Ghi chú hợp đồng |
+|---|---|---|---|
+| `image.thumbnail` | thumbnail | 5/ảnh | ẩn `model` (giá không theo model), enum style là tập chắt lọc |
+| `image.generate` | taoanh | 5/5/8/16 theo alias | 4 alias model; ẩn `image_keys` (mảng chưa hỗ trợ) |
+| `image.upscale` | upscalevideo | 2 (fast) / 4 (quality) | GPU; input qua upload |
+| `text.prompt_package` | prompt_ai_ommi | theo `scene_count` | ẩn `operation`/`model`/`resources` |
+| `story.storyboard` | prompt_ai_ommi | theo `scene_count` | như trên |
+
+16 ToolSpec còn lại **không** public: 9 của `mediatools` (internal), 2 của
+`kichban` (retired), `video.generate`, `video.upscale`, `video.subtitle`,
+`video.short_clips` (chờ migrate), `image.batch_generate` (trùng năng lực với
+`image.generate`, `count` đã làm được).
+
+## 3. Ba việc chặn, một nguyên nhân gốc
+
+`video.upscale`, `video.subtitle`, `video.short_clips` bị chặn bởi **cùng một
+thứ**: giá dựa trên thời lượng **do người gọi khai**, và worker nâng hold khi đo
+được thời lượng thật. Với người dùng chọn file trên giao diện thì chấp nhận
+được; với máy gọi máy thì mâu thuẫn với lời hứa của một quote đã ký (Q84).
+
+**Sửa một chỗ là mở được cả ba:** đo thời lượng phía server từ chính file đã
+upload lúc báo giá (file đã nằm trong `upload_sessions`, đã qua magic-check),
+rồi khoá giá; hoặc cấm top-up cho job đến từ API và để job fail-refund nếu vượt.
+
+Cần quyết định sản phẩm: cách một tốn thêm một lần đọc metadata; cách hai làm
+một số job dài bị từ chối giữa chừng.
+
+## 4. Endpoint family V1 (đang chạy)
+
+```
+GET    /api/v1/health            GET    /api/v1/capabilities
+GET    /api/v1/me
+GET    /api/v1/tools             GET    /api/v1/tools/{tool_name}
+POST   /api/v1/quotes
+POST   /api/v1/jobs              GET    /api/v1/jobs
+GET    /api/v1/jobs/{job_id}     POST   /api/v1/jobs/{job_id}/cancel
+POST   /api/v1/uploads           POST   /api/v1/uploads/{id}/content
+POST   /api/v1/uploads/{id}/confirm
+GET    /api/v1/artifacts/{id}    GET    /api/v1/artifacts/{id}/content
+POST   /api/v1/webhooks          GET    /api/v1/webhooks
+GET    /api/v1/webhooks/deliveries
+DELETE /api/v1/webhooks/{webhook_id}
+GET    /api/v1/credits/balance   GET    /api/v1/usage
+GET    /api/v1/openapi.json
+```
+
+Quản lý developer key **không** nằm trên `/api/v1`: tạo/thu hồi khoá làm ở portal
+có phiên đăng nhập (Prompt 15). Một khoá tự cấp khoá khác là leo thang quyền
+không cần thiết cho V1.
+
+## 5. Vẫn đúng sau 3 wave
+
+- `customer_visible=True` **không** làm một tool public — `kichban` là bằng chứng
+  sống, và có test.
+- App `retired/internal/maintenance` hoặc `surface` `admin/runtime` **không bao
+  giờ** public: chặn ở `catalog.app_may_be_public()`, không phụ thuộc cờ trong
+  manifest.
+- Ba cổng độc lập vẫn nguyên: disposition app → khai báo tool → công tắc
+  operator (`LTT_PUBLIC_API_TOOLS`), rồi `allowed_tools` của từng khoá.

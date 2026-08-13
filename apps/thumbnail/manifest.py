@@ -63,6 +63,41 @@ MANIFEST = AppManifest(
         },
         returns={"image_keys": "image[]", "prompt": "text"},
         verifiable=("vlm_judge",),
+
+        # ── Public API (Q92, wave 1) ─────────────────────────────────────────
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Generate one to four YouTube thumbnail images from "
+                            "a topic, with optional title text, style and "
+                            "language."),
+            # `model` is hidden on purpose. This tool prices every image at
+            # CREDIT_PER_IMAGE regardless of model, so letting an API caller
+            # pick the most expensive model would sell a 16-credit-tier render
+            # for 5 credits and quietly hand the platform the difference (Q84
+            # variance). The UI has the same flat price, so hiding the choice
+            # keeps API and UI charging identically. Expose it the day the cost
+            # function prices per model, as the image-generation tool does.
+            "hidden": ("model",),
+            # Published values are a curated subset of the internal prompt
+            # library: the ones with stable, self-explanatory ids. The internal
+            # set keeps entries named after people and experiments, which are
+            # neither a promise to customers nor safe to freeze into a contract.
+            "enums": {
+                "text_style": ["bold_impact", "clean_minimal", "dramatic_gold",
+                               "neon_glow", "street_art"],
+                "phong_cach": ["chuyen_nghiep_toi_gian", "hoat_hinh_cartoon",
+                               "cinematic", "flat_design", "3d_render",
+                               "collage", "retro_vintage"],
+                "kieu_trend": ["khuon_mat_cam_xuc", "so_sanh_truoc_sau",
+                               "bi_an_gay_to_mo", "listicle_numbered",
+                               "huong_dan_tutorial", "reaction_phan_ung",
+                               "storytelling", "mui_ten_chi_dan",
+                               "text_heavy_chu_lon"],
+                "ngon_ngu": ["tieng_viet", "english", "japanese", "korean",
+                             "chinese"],
+            },
+        },
     ),),
 
     enabled=True,
