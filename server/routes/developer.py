@@ -127,7 +127,7 @@ SECTIONS = (
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
     ("webhooks", "/developers/webhooks", N_("Webhook")),
-    ("notifications", None, N_("Thông báo")),
+    ("notifications", "/developers/notifications", N_("Thông báo")),
     ("docs", "/developers/docs", N_("Tài liệu & SDK")),
     ("settings", "/developers/settings", N_("Cài đặt & bảo mật")),
 )
@@ -559,11 +559,114 @@ def developer_jobs(request: Request, user=Depends(require_account),
 
 
 @router.get("/usage", response_class=HTMLResponse)
-def developer_usage(request: Request, user=Depends(require_account),
+def developer_usage(request: Request, tool: str = "", key_id: str = "",
+                    status: str = "", user=Depends(require_account),
                     db: Session = Depends(get_db)):
+    return _usage_page(request, db, user, tool=tool, key_id=key_id,
+                       status=status)
+
+
+def _usage_page(request: Request, db: Session, user, *, tool: str = "",
+                key_id: str = "", status: str = "",
+                error: str = "") -> HTMLResponse:
+    from platform_core.public_api import budgets as budget_mod
+
     config = _public_api_config(request)
-    return _render(request, db, user, "usage", "dev_usage.html",
-                   **_usage_context(db, user, config))
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(days=30)
+    lines = usage.usage_lines(db, user_id=user.id, since=window_start,
+                              until=now, tool=tool, key_id=key_id, limit=50)
+    if status:
+        lines = [line for line in lines if line.get("status") == status]
+
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    rows = []
+    for budget in budget_mod.list_for(db, user_id=user.id):
+        state = budget_mod.status(db, budget)
+        rows.append({
+            "budget": budget, "spent": state["spent"],
+            "amount": state["amount"], "percent": state["percent"],
+            "scope_label": (names.get(budget.project_id, budget.project_id)
+                            if budget.scope == budget_mod.SCOPE_PROJECT
+                            else _t("cả tài khoản")),
+        })
+
+    return _render(
+        request, db, user, "usage", "dev_usage.html", error=error,
+        budgets=rows, lines=lines,
+        tools=[item.name for item in build_catalog(config)],
+        keys=[{"key_id": key.key_id, "name": key.name}
+              for key in devkeys.list_for_user(db, user.id)],
+        statuses=["queued", "running", "succeeded", "failed", "cancelled"],
+        filters={"tool": tool, "key_id": key_id, "status": status},
+        **_projects_context(db, user),
+        **_usage_context(db, user, config))
+
+
+@router.post("/budgets", response_class=HTMLResponse)
+def developer_create_budget(request: Request, amount: str = Form(""),
+                            period: str = Form("month"),
+                            project_id: str = Form(""),
+                            hard_cap: str = Form(""),
+                            csrf_token: str = Form(""),
+                            user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import budgets as budget_mod
+
+    if not verify_csrf_token(request, csrf_token):
+        raise _redirect("/developers/usage")
+    scope = (budget_mod.SCOPE_PROJECT if project_id
+             else budget_mod.SCOPE_ACCOUNT)
+    try:
+        budget_mod.create(db, user_id=user.id, amount=amount, period=period,
+                          scope=scope, project_id=project_id,
+                          hard_cap=bool(hard_cap))
+    except budget_mod.BudgetError as exc:
+        db.rollback()
+        return _usage_page(request, db, user, error=str(exc))
+    db.commit()
+    raise _redirect("/developers/usage")
+
+
+@router.post("/budgets/{budget_id}/delete")
+def developer_delete_budget(request: Request, budget_id: str,
+                            csrf_token: str = Form(""),
+                            user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import budgets as budget_mod
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/usage", status_code=303)
+    budget = budget_mod.get_owned(db, user_id=user.id, budget_id=budget_id)
+    if budget is not None:
+        db.delete(budget)
+        db.commit()
+    return RedirectResponse("/developers/usage", status_code=303)
+
+
+@router.get("/notifications", response_class=HTMLResponse)
+def developer_notifications(request: Request, user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import notifications
+
+    return _render(request, db, user, "notifications",
+                   "dev_notifications.html",
+                   rows=notifications.list_for(db, user_id=user.id))
+
+
+@router.post("/notifications/read")
+def developer_notifications_read(request: Request, csrf_token: str = Form(""),
+                                 user=Depends(require_account),
+                                 db: Session = Depends(get_db)):
+    from platform_core.public_api import notifications
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/notifications", status_code=303)
+    notifications.mark_all_read(db, user_id=user.id)
+    db.commit()
+    return RedirectResponse("/developers/notifications", status_code=303)
 
 
 #: Session slot for a value that must be shown once and never persisted.

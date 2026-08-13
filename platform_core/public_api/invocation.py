@@ -243,6 +243,10 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     meta = {
         "tool": tool.name,
         "key_id": principal.key_id,
+        # The project the key belongs to, so a project-scoped budget can be
+        # measured from the ledger without joining back through the key — which
+        # would break the moment a key is rotated or revoked (EXT-11).
+        "project_id": str(getattr(principal, "project_id", "") or ""),
         "quote_intent": str(quote.get("intent") or ""),
         "idempotency_key": str(idempotency_key or ""),
         # The correlation id of the request that created this job, so support

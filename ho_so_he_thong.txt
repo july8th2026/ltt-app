@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d88ad7761c66de315a1a177e89cf3eac95943ddca14d4225fbb4778dbae94c1c
-Nguồn đã quét : 1080 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:558ba774ed2d4c44d9021827ea2d5cb30311c569a0e2fa1bef9ed2422532e1e2
+Nguồn đã quét : 1086 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (308)
+4. HTTP ROUTE INVENTORY (312)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -594,28 +594,32 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
 - [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:262
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:699
+- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:609
+- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:634
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:802
 - [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:555
 - [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:278
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:714
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:751
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:764
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:817
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:854
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:867
 - [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:375
 - [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:408
+- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:650
+- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:660
 - [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:337
 - [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:271
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:808
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:824
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:911
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:927
 - [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:284
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:708
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:811
 - [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:439
 - [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:474
 - [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:562
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:586
-- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:677
-- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:655
-- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:633
-- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:615
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:689
+- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:780
+- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:758
+- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:736
+- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:718
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -799,12 +803,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (40 bảng)
+5. DATA MODEL (42 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
 - agent_workflows → AgentWorkflow | platform_core/models.py:432
+- api_budgets → ApiBudget | platform_core/public_api/tables.py:286
 - api_keys → ApiKey | platform_core/models.py:589
+- api_notifications → ApiNotification | platform_core/public_api/tables.py:329
 - api_projects → ApiProject | platform_core/public_api/tables.py:56
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
@@ -835,13 +841,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - platform_info → PlatformInfo | platform_core/models.py:42
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:190
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:238
-- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:333
-- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:292
+- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:411
+- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:370
 - sessions → Session | platform_core/models.py:134
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (34)
+6. ALEMBIC MIGRATIONS (35)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -876,6 +882,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - d0e1f2a3b4c5 ← c9d0e1f2a3b4 | them project cho Public API + rang buoc IP cho developer key (EXT-04) | alembic/versions/20260814_0900_api_projects.py
 - e1f2a3b4c5d6 ← d0e1f2a3b4c5 | them bang nhat ky request cho Public API (EXT-09) | alembic/versions/20260814_1400_public_api_requests.py
 - f2a3b4c5d6e7 ← e1f2a3b4c5d6 | them cot xoay secret cho webhook (EXT-10) | alembic/versions/20260814_1800_webhook_secret_rotation.py
+- a3b4c5d6e7f8 ← f2a3b4c5d6e7 | them ngan sach va thong bao cho khu API (EXT-11) | alembic/versions/20260814_2200_api_budgets_notifications.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -993,7 +1000,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (205 file pytest + 3 frontend)
+10. QUALITY GATES (206 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1132,6 +1139,7 @@ Test inventory:
 - tests/test_200_playground.py
 - tests/test_201_request_logs.py
 - tests/test_202_webhook_console.py
+- tests/test_203_budgets_alerts.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1225,8 +1233,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1080 file)
-Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:800, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1086 file)
+Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:805, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1239,7 +1247,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (36)
+[alembic] (37)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1276,6 +1284,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260814_0900_api_projects.py
 - alembic/versions/20260814_1400_public_api_requests.py
 - alembic/versions/20260814_1800_webhook_secret_rotation.py
+- alembic/versions/20260814_2200_api_budgets_notifications.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1828,7 +1837,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (74)
+[platform_core] (77)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1872,6 +1881,8 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/providers.py
 - platform_core/providers_live.py
 - platform_core/public_api/__init__.py
+- platform_core/public_api/alerting.py
+- platform_core/public_api/budgets.py
 - platform_core/public_api/catalog.py
 - platform_core/public_api/config.py
 - platform_core/public_api/delivery.py
@@ -1884,6 +1895,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/limits.py
 - platform_core/public_api/media.py
 - platform_core/public_api/metrics.py
+- platform_core/public_api/notifications.py
 - platform_core/public_api/outbox.py
 - platform_core/public_api/pagination.py
 - platform_core/public_api/principal.py
@@ -1925,7 +1937,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (128)
+[server] (129)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2020,6 +2032,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - server/templates/dev_keys.html
 - server/templates/dev_log_detail.html
 - server/templates/dev_logs.html
+- server/templates/dev_notifications.html
 - server/templates/dev_overview.html
 - server/templates/dev_playground.html
 - server/templates/dev_projects.html
@@ -2062,7 +2075,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (221)
+[tests] (222)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2211,6 +2224,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_200_playground.py
 - tests/test_201_request_logs.py
 - tests/test_202_webhook_console.py
+- tests/test_203_budgets_alerts.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2373,7 +2387,7 @@ Phân bố extension: .cfg:1, .css:7, .html:73, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1080 file; 9384637 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1086 file; 9452291 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5343,6 +5357,86 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column("public_api_webhooks", "previous_secret_until")
     op.drop_column("public_api_webhooks", "previous_secret_enc")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260814_2200_api_budgets_notifications.py
+SHA256=3facfefbe133f91eedb3cc32a1b8c9c49ce4a291ba7753baf9d8e425d41f3b84 BYTES=3411 LINES=74
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""them ngan sach va thong bao cho khu API (EXT-11)
+
+Ngan sach QUAN SAT chi tieu, khong ghi so credit: khong cot nao o day co the
+lam doi mot dong `credit_entries`. Ngan sach "cung" thi tu choi loi goi ke tiep;
+ngan sach "mem" chi bao. Hai loi hua khac nhau nen la hai truong khac nhau.
+
+Thong bao khu trung theo (user, kind, subject) trong mot cua so cooldown — mot
+kenh canh bao qua on thi khach tat het, ma tat het thi giong het nhu khong co.
+
+Revision ID: a3b4c5d6e7f8
+Revises: f2a3b4c5d6e7
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "a3b4c5d6e7f8"
+down_revision = "f2a3b4c5d6e7"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "api_budgets",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("user_id", sa.String(36), nullable=False),
+        sa.Column("scope", sa.String(16), nullable=False,
+                  server_default="account"),
+        sa.Column("project_id", sa.String(36), nullable=False,
+                  server_default=""),
+        sa.Column("period", sa.String(8), nullable=False,
+                  server_default="month"),
+        sa.Column("amount", sa.Integer(), nullable=False),
+        sa.Column("thresholds", sa.JSON(), nullable=False),
+        sa.Column("hard_cap", sa.Boolean(), nullable=False,
+                  server_default=sa.false()),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="RESTRICT"),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_api_budgets_user_id", "api_budgets", ["user_id"])
+    op.create_index("ix_api_budgets_owner", "api_budgets", ["user_id", "scope"])
+
+    op.create_table(
+        "api_notifications",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("user_id", sa.String(36), nullable=False),
+        sa.Column("kind", sa.String(32), nullable=False),
+        sa.Column("subject", sa.String(120), nullable=False, server_default=""),
+        sa.Column("title", sa.String(200), nullable=False, server_default=""),
+        sa.Column("body", sa.String(1000), nullable=False, server_default=""),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("read_at", sa.DateTime(timezone=True), nullable=True),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="RESTRICT"),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_api_notifications_user_id", "api_notifications",
+                    ["user_id"])
+    op.create_index("ix_api_notifications_dedupe", "api_notifications",
+                    ["user_id", "kind", "subject", "created_at"])
+    op.create_index("ix_api_notifications_unread", "api_notifications",
+                    ["user_id", "read_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_api_notifications_unread", table_name="api_notifications")
+    op.drop_index("ix_api_notifications_dedupe", table_name="api_notifications")
+    op.drop_index("ix_api_notifications_user_id", table_name="api_notifications")
+    op.drop_table("api_notifications")
+    op.drop_index("ix_api_budgets_owner", table_name="api_budgets")
+    op.drop_index("ix_api_budgets_user_id", table_name="api_budgets")
+    op.drop_table("api_budgets")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -104037,7 +104131,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=7787586ea4a677836b89c51bed9d44258517f30df63fc20528ff058e4943fa7b BYTES=23623 LINES=546
+SHA256=98d8df310c55078389622b914e7c7f5db9547899e784995f07dfb3583317e494 BYTES=24865 LINES=577
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104512,6 +104606,33 @@ def _giao_webhook() -> None:
                      report["dead"])
 
 
+#: Alert conditions are slow-moving — a budget threshold, an expiring key, a
+#: webhook that has given up. Scanning every fifteen minutes is soon enough to
+#: be useful and rare enough to cost nothing.
+ALERT_SCAN_INTERVAL_S = 15 * 60
+
+
+def _quet_canh_bao() -> None:
+    """Raise the alerts that are true right now, and age out the old ones.
+
+    Deduplication lives in `notifications.raise_alert`, so re-detecting the same
+    condition on every pass is harmless by design — which is what lets this be a
+    plain periodic scan instead of an event pipeline.
+    """
+    from platform_core.public_api import alerting, notifications
+    from platform_core.public_api.config import load_public_api_config
+
+    config = load_public_api_config()
+    for db in _one_session():
+        raised = alerting.scan_all(db, config=config)
+        gone = notifications.purge_expired(db)
+        db.commit()
+        if raised:
+            log.info("canh bao API: %d thong bao moi", raised)
+        if gone:
+            log.info("don %d thong bao API het han", gone)
+
+
 def _ghi_metrics() -> None:
     """One line of counters. Cheap, and the only observability this needs."""
     from platform_core.public_api import metrics
@@ -104532,6 +104653,7 @@ def run_forever(worker_id: str, *, stop=None) -> None:
     next_upload_sweep = 0.0
     next_webhook_run = 0.0
     next_metrics_log = 0.0
+    next_alert_scan = 0.0
     while stop is None or not stop():
         try:
             if time.monotonic() >= next_event_purge:
@@ -104572,6 +104694,9 @@ def run_forever(worker_id: str, *, stop=None) -> None:
             if time.monotonic() >= next_metrics_log:
                 _ghi_metrics()
                 next_metrics_log = time.monotonic() + METRICS_LOG_INTERVAL_S
+            if time.monotonic() >= next_alert_scan:
+                _quet_canh_bao()
+                next_alert_scan = time.monotonic() + ALERT_SCAN_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()
@@ -105343,7 +105468,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=8d78700c60bf0fcc458d101ff3aad18d933c4e65103243720b4009670431065a BYTES=44681 LINES=820
+SHA256=4f7252f7ea094e3f2ad348b4acfbb20d3e131498ab07c8168834dc7a639d12ea BYTES=44709 LINES=820
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -105372,8 +105497,8 @@ from platform_core.db import Base
 # nó trong `Base.metadata` — không có dòng này thì autogenerate coi bảng đó là
 # bảng lạ và sinh migration XOÁ nó.
 from platform_core.public_api.tables import (  # noqa: F401
-    ApiIdempotencyRecord, ApiProject, ApiRequestLog, DeveloperApiKey,
-    WebhookDelivery, WebhookSubscription)
+    ApiBudget, ApiIdempotencyRecord, ApiNotification, ApiProject,
+    ApiRequestLog, DeveloperApiKey, WebhookDelivery, WebhookSubscription)
 
 
 def _bay_gio() -> datetime:
@@ -107008,6 +107133,444 @@ __all__ = [
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/alerting.py
+SHA256=631f653ed7eb2f7503e26f19ca2a8cd3f2378c8ee1e862c3d9eb4007ee4b0ae1 BYTES=9137 LINES=211
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Detecting the conditions worth telling a developer about.
+
+Kept apart from :mod:`notifications`, which only stores and deduplicates: this
+module decides *when* something is true. The split matters because the scan runs
+on a schedule and will re-detect the same condition every pass — the storage
+layer is what makes that harmless, so the detection layer is free to be simple
+and stateless.
+
+Every condition here is one the customer can act on. "Your balance is low" is
+actionable; "your job took 4 seconds" is not, and an alert nobody can act on
+teaches people to ignore the channel.
+Alert text is translated **when it is raised**, not when it is read: the row
+stores what a customer will see, and the scan runs in the worker where there is
+no request locale. That freezes an alert in the platform's default language,
+which is the honest trade for not building a message-catalogue layer for eight
+sentences.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select
+
+from platform_core.i18n import _ as _t
+from platform_core.public_api import budgets, notifications
+
+#: Warn when the balance would not cover a handful of average calls. Not a
+#: percentage of anything: an account that tops up in small amounts would be
+#: permanently "low", and one that tops up in large amounts would be warned too
+#: late.
+LOW_CREDIT_THRESHOLD = 20
+
+#: Warn this far ahead of a key's expiry. Long enough to rotate calmly during a
+#: working week.
+KEY_EXPIRY_WARNING = timedelta(days=7)
+
+#: A webhook endpoint that produced this many dead deliveries in a day is not
+#: having a bad moment; it is broken.
+DEAD_DELIVERY_THRESHOLD = 3
+
+QUOTA_NEAR_PERCENT = 80
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def scan_account(db, *, user_id: str, config=None,
+                 now: datetime | None = None) -> list:
+    """Raise whatever is true for this account. Returns the new alerts.
+
+    Suppressed duplicates are simply absent from the result, so a caller can
+    log "3 new alerts" honestly.
+    """
+    current = now or _now()
+    raised = []
+    for finding in (_low_credit(db, user_id, current),
+                    *_budget_alerts(db, user_id, current),
+                    *_quota_alerts(db, user_id, config, current),
+                    *_expiring_keys(db, user_id, current),
+                    *_failing_webhooks(db, user_id, current)):
+        if finding is None:
+            continue
+        row = notifications.raise_alert(db, user_id=user_id, now=current,
+                                        **finding)
+        if row is not None:
+            raised.append(row)
+    return raised
+
+
+def _low_credit(db, user_id: str, now: datetime):
+    from platform_core import credit
+
+    balance = credit.so_du(db, user_id)
+    if balance > LOW_CREDIT_THRESHOLD:
+        return None
+    return {
+        "kind": notifications.LOW_CREDIT,
+        # The subject is the balance bucket, not the exact number: otherwise
+        # every credit spent would be a "new" subject and the cooldown would
+        # never apply.
+        "subject": "balance",
+        "title": _t("Số dư còn %(n)s credit") % {"n": balance},
+        "body": _t("Lời gọi API sẽ bị từ chối khi không đủ credit cho báo "
+                   "giá. Nạp thêm ở /nap."),
+    }
+
+
+def _budget_alerts(db, user_id: str, now: datetime) -> list:
+    found = []
+    for budget in budgets.list_for(db, user_id=user_id):
+        state = budgets.status(db, budget, now=now)
+        for threshold in state["crossed"]:
+            exceeded = int(threshold) >= 100
+            found.append({
+                "kind": (notifications.BUDGET_EXCEEDED if exceeded
+                         else notifications.BUDGET_THRESHOLD),
+                # One subject per budget *and* threshold: crossing 80% and then
+                # 100% are two different pieces of news.
+                "subject": f"{budget.id}:{threshold}",
+                "title": _t("Đã dùng %(percent)s%% ngân sách %(period)s") % {
+                    "percent": state["percent"], "period": budget.period},
+                "body": (
+                    _t("%(spent)s/%(amount)s credit trong kỳ này.") % {
+                        "spent": state["spent"], "amount": state["amount"]}
+                    + (" " + _t("Ngân sách cứng: lời gọi mới bị từ chối.")
+                       if budget.hard_cap and exceeded else "")),
+            })
+    return found
+
+
+def _quota_alerts(db, user_id: str, config, now: datetime) -> list:
+    ceiling = int(getattr(config, "daily_credit_limit", 0) or 0)
+    if ceiling <= 0:
+        return []
+    spent = budgets.api_spend_since(
+        db, user_id=user_id, since=budgets.window_start(budgets.PERIOD_DAY,
+                                                        now=now))
+    percent = int(spent * 100 / max(1, ceiling))
+    if percent < QUOTA_NEAR_PERCENT:
+        return []
+    exceeded = percent >= 100
+    return [{
+        "kind": (notifications.QUOTA_EXCEEDED if exceeded
+                 else notifications.QUOTA_NEAR),
+        "subject": f"daily:{now:%Y-%m-%d}",
+        "title": _t("Đã dùng %(percent)s%% hạn mức credit ngày của máy chủ")
+        % {"percent": percent},
+        "body": _t("%(spent)s/%(ceiling)s credit hôm nay. Hạn mức này do quản "
+                   "trị viên đặt và không nới được từ phía tài khoản.") % {
+                       "spent": spent, "ceiling": ceiling},
+    }]
+
+
+def _expiring_keys(db, user_id: str, now: datetime) -> list:
+    from platform_core.public_api.tables import DeveloperApiKey
+
+    rows = db.execute(select(DeveloperApiKey).where(
+        DeveloperApiKey.user_id == str(user_id),
+        DeveloperApiKey.revoked_at.is_(None),
+        DeveloperApiKey.expires_at.is_not(None))).scalars().all()
+    found = []
+    for key in rows:
+        expires = key.expires_at
+        if expires is None:
+            continue
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if not now < expires <= now + KEY_EXPIRY_WARNING:
+            continue
+        days = max(0, (expires - now).days)
+        found.append({
+            "kind": notifications.KEY_EXPIRING,
+            "subject": key.key_id,
+            "title": _t("Khóa API hết hạn sau %(days)s ngày") % {"days": days},
+            "body": _t("Khóa %(key)s (%(name)s) hết hạn %(date)s. Tạo khóa "
+                       "mới, chuyển ứng dụng sang, rồi thu hồi khóa cũ.") % {
+                           "key": key.key_id,
+                           "name": key.name or _t("không tên"),
+                           "date": f"{expires:%Y-%m-%d}"},
+        })
+    return found
+
+
+def _failing_webhooks(db, user_id: str, now: datetime) -> list:
+    from platform_core.public_api.tables import (WEBHOOK_DEAD, WebhookDelivery,
+                                                 WebhookSubscription)
+
+    since = now - timedelta(days=1)
+    rows = db.execute(
+        select(WebhookDelivery.subscription_id, func.count(WebhookDelivery.id))
+        .where(WebhookDelivery.user_id == str(user_id),
+               WebhookDelivery.status == WEBHOOK_DEAD,
+               WebhookDelivery.created_at >= since)
+        .group_by(WebhookDelivery.subscription_id)).all()
+    found = []
+    for subscription_id, total in rows:
+        if int(total) < DEAD_DELIVERY_THRESHOLD:
+            continue
+        subscription = db.get(WebhookSubscription, subscription_id)
+        url = subscription.url if subscription is not None else subscription_id
+        found.append({
+            "kind": notifications.WEBHOOK_FAILING,
+            "subject": str(subscription_id),
+            "title": _t("%(n)s sự kiện webhook không giao được") % {
+                "n": int(total)},
+            "body": _t("Điểm nhận %(url)s đã bỏ cuộc sau đủ số lần thử. Job "
+                       "và credit không bị ảnh hưởng; gửi lại từ khu Webhook "
+                       "sau khi sửa xong.") % {"url": url},
+        })
+    return found
+
+
+def scan_all(db, *, config=None, now: datetime | None = None) -> int:
+    """Scan every account that has touched the API. Returns alerts raised.
+
+    Scoped to API users rather than every account on the platform: somebody who
+    has never made an API call cannot have an API budget, an expiring key or a
+    failing webhook, and scanning them would grow this job with the user table
+    instead of with the API.
+    """
+    from platform_core.public_api.tables import DeveloperApiKey
+
+    owners = [row[0] for row in db.execute(
+        select(DeveloperApiKey.user_id).distinct()).all()]
+    total = 0
+    for user_id in owners:
+        for row in scan_account(db, user_id=user_id, config=config, now=now):
+            notifications.send_email_for(db, row)
+            total += 1
+    return total
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/budgets.py
+SHA256=57e06b4561775962ee96a076cd81fd366c6900e6ae7cc65816f5ee9f3c5def1e BYTES=9027 LINES=215
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Spending limits a customer sets for themselves, and the alerts around them.
+
+Three ideas kept apart on purpose, because merging any two of them is how a
+budget feature ends up lying about money:
+
+**The ledger is untouched.** A budget observes spending; it never writes a credit
+entry, never adjusts one, never hides one. Everything here reads
+``credit_entries`` and stops.
+
+**Soft and hard are different promises.** A soft budget notifies. A hard cap
+refuses the call. A customer who asked to be *told* at 80% must not discover
+that being told also meant being stopped.
+
+**The account's own limit never overrides the operator's.** If the deployment
+caps daily spend and the customer sets a higher budget, the deployment still
+wins — a self-service field cannot buy more headroom than the platform sells.
+The effective ceiling is the *lower* of the two, always, and the refusal names
+which one applied so support is not guesswork.
+
+Scope is user or project. Project-scoped budgets exist because the whole point
+of a project (EXT-04) is to be the unit you can revoke and bound separately.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from platform_core.public_api.tables import ApiBudget
+
+PERIOD_DAY = "day"
+PERIOD_MONTH = "month"
+PERIODS = (PERIOD_DAY, PERIOD_MONTH)
+
+SCOPE_ACCOUNT = "account"
+SCOPE_PROJECT = "project"
+SCOPES = (SCOPE_ACCOUNT, SCOPE_PROJECT)
+
+#: Where a customer is warned. Bounded rather than free-form: an alert at 3% is
+#: noise, and noise is how people learn to ignore the one at 100%.
+DEFAULT_THRESHOLDS = (50, 80, 100)
+MIN_THRESHOLD = 10
+MAX_BUDGETS_PER_USER = 10
+
+#: A budget below this cannot express anything useful — the cheapest tool costs
+#: 2 credits — and a budget of 0 would mean "refuse everything", which is what
+#: revoking a key is for.
+MIN_AMOUNT = 10
+
+
+class BudgetError(Exception):
+    """Refusal a human caused and a human can fix."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def window_start(period: str, *, now: datetime | None = None) -> datetime:
+    """When the current period began.
+
+    A *calendar* day and month, not a rolling window: a customer reading
+    "monthly budget" means the month, and a rolling 30 days would put their
+    reset date somewhere they cannot predict.
+    """
+    current = now or _now()
+    if period == PERIOD_MONTH:
+        return current.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return current.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def normalize_thresholds(values) -> list:
+    cleaned = []
+    for value in values or DEFAULT_THRESHOLDS:
+        try:
+            number = int(value)
+        except (TypeError, ValueError) as exc:
+            raise BudgetError(f"{value!r} is not a percentage.") from exc
+        if not MIN_THRESHOLD <= number <= 100:
+            raise BudgetError(
+                f"Thresholds must be between {MIN_THRESHOLD} and 100.")
+        if number not in cleaned:
+            cleaned.append(number)
+    return sorted(cleaned)
+
+
+def create(db, *, user_id: str, amount: int, period: str = PERIOD_MONTH,
+           scope: str = SCOPE_ACCOUNT, project_id: str = "",
+           thresholds=None, hard_cap: bool = False,
+           now: datetime | None = None) -> ApiBudget:
+    owner = str(user_id or "").strip()
+    if not owner:
+        raise BudgetError("A budget must belong to an account.")
+    if period not in PERIODS:
+        raise BudgetError(f"Period must be one of {', '.join(PERIODS)}.")
+    if scope not in SCOPES:
+        raise BudgetError(f"Scope must be one of {', '.join(SCOPES)}.")
+    if scope == SCOPE_PROJECT and not project_id:
+        raise BudgetError("A project budget needs a project.")
+    try:
+        credit = int(amount)
+    except (TypeError, ValueError) as exc:
+        raise BudgetError("Amount must be a whole number of credits.") from exc
+    if credit < MIN_AMOUNT:
+        raise BudgetError(f"A budget must be at least {MIN_AMOUNT} credits.")
+
+    existing = list_for(db, user_id=owner)
+    if len(existing) >= MAX_BUDGETS_PER_USER:
+        raise BudgetError(
+            f"This account already has {MAX_BUDGETS_PER_USER} budgets.")
+    for row in existing:
+        if row.period == period and row.scope == scope and \
+                str(row.project_id or "") == str(project_id or ""):
+            raise BudgetError("A budget for that scope and period exists.")
+
+    budget = ApiBudget(
+        id=str(uuid.uuid4()), user_id=owner, scope=scope,
+        project_id=str(project_id or ""), period=period, amount=credit,
+        thresholds=normalize_thresholds(thresholds), hard_cap=bool(hard_cap),
+        created_at=now or _now())
+    db.add(budget)
+    return budget
+
+
+def list_for(db, *, user_id: str) -> list:
+    return list(db.execute(select(ApiBudget).where(
+        ApiBudget.user_id == str(user_id or "")).order_by(
+            ApiBudget.created_at)).scalars().all())
+
+
+def get_owned(db, *, user_id: str, budget_id: str):
+    return db.execute(select(ApiBudget).where(
+        ApiBudget.id == str(budget_id or ""),
+        ApiBudget.user_id == str(user_id or ""))).scalar_one_or_none()
+
+
+def api_spend_since(db, *, user_id: str, since: datetime,
+                    project_id: str = "") -> int:
+    """Credit committed **through the API** in a window.
+
+    Holds minus what came back, counting only jobs the API created. Counting
+    every credit entry — which is what the daily ceiling did before EXT-11 —
+    meant a customer using the web app could exhaust their own integration's
+    allowance, which is the opposite of what a limit on an API key is for
+    (decision D3).
+    """
+    from platform_core.models import (CREDIT_HOLD, CREDIT_REFUND, CREDIT_SETTLE,
+                                      CreditEntry, Job)
+    from platform_core.public_api.invocation import API_META_KEY
+
+    rows = db.execute(
+        select(CreditEntry.delta, Job.params)
+        .join(Job, Job.id == CreditEntry.job_id)
+        .where(CreditEntry.user_id == str(user_id or ""),
+               CreditEntry.created_at >= since,
+               CreditEntry.kind.in_((CREDIT_HOLD, CREDIT_SETTLE,
+                                     CREDIT_REFUND)))).all()
+    total = 0
+    for delta, params in rows:
+        meta = (params or {}).get(API_META_KEY)
+        if not isinstance(meta, dict):
+            continue                      # made in the UI, not through the API
+        if project_id and str(meta.get("project_id") or "") != str(project_id):
+            continue
+        total += int(delta or 0)
+    return max(0, -total)
+
+
+def status(db, budget, *, now: datetime | None = None) -> dict:
+    """Where this budget stands right now."""
+    current = now or _now()
+    start = window_start(budget.period, now=current)
+    spent = api_spend_since(db, user_id=budget.user_id, since=start,
+                            project_id=budget.project_id or "")
+    amount = max(1, int(budget.amount))
+    percent = int(spent * 100 / amount)
+    return {"budget": budget, "spent": spent, "amount": int(budget.amount),
+            "percent": percent, "remaining": max(0, int(budget.amount) - spent),
+            "window_start": start,
+            "crossed": [value for value in (budget.thresholds or ())
+                        if percent >= int(value)]}
+
+
+def effective_cap(db, *, user_id: str, project_id: str = "",
+                  operator_daily: int = 0, now: datetime | None = None) -> dict:
+    """The ceiling that actually applies, and which rule set it.
+
+    The lower of the operator's daily allowance and any hard-capped budget of
+    the customer's own. Returned rather than enforced here so the caller can
+    name the reason in its refusal.
+    """
+    current = now or _now()
+    found = {"limit": 0, "spent": 0, "source": "", "period": ""}
+
+    if operator_daily and operator_daily > 0:
+        spent = api_spend_since(db, user_id=user_id,
+                                since=window_start(PERIOD_DAY, now=current))
+        found = {"limit": int(operator_daily), "spent": spent,
+                 "source": "operator", "period": PERIOD_DAY}
+
+    for budget in list_for(db, user_id=user_id):
+        if not budget.hard_cap:
+            continue
+        if budget.scope == SCOPE_PROJECT and \
+                str(budget.project_id or "") != str(project_id or ""):
+            continue
+        state = status(db, budget, now=current)
+        remaining_here = state["amount"] - state["spent"]
+        remaining_found = (found["limit"] - found["spent"]) if found["limit"] \
+            else None
+        if remaining_found is None or remaining_here < remaining_found:
+            found = {"limit": state["amount"], "spent": state["spent"],
+                     "source": "budget", "period": budget.period}
+    return found
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
 SHA256=abb50466a247a4eef3fa0361d6a2dbe7ba549ef3f622fdfb2ee3b0403e2e5e2b BYTES=16541 LINES=391
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -108520,7 +109083,7 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=16f8d6de1a84af7f12a473afaed4e1a64f3a8e5b1be79ea664812ca935a6a30b BYTES=12022 LINES=277
+SHA256=ad027b3d2086a0a54652dd0d7a757686eb809594ffdb73835c75b1da81e1c98c BYTES=12326 LINES=281
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -108767,6 +109330,10 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     meta = {
         "tool": tool.name,
         "key_id": principal.key_id,
+        # The project the key belongs to, so a project-scoped budget can be
+        # measured from the ledger without joining back through the key — which
+        # would break the moment a key is rotated or revoked (EXT-11).
+        "project_id": str(getattr(principal, "project_id", "") or ""),
         "quote_intent": str(quote.get("intent") or ""),
         "idempotency_key": str(idempotency_key or ""),
         # The correlation id of the request that created this job, so support
@@ -109228,7 +109795,7 @@ __all__ = ["DEVKEY_ACTIVE", "DeveloperKeyError", "current_pepper", "digest_secre
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/limits.py
-SHA256=33c15571ce46447598e118d8043c174597d1cc3ca2deba4e15c2ac73e50c666e BYTES=10049 LINES=236
+SHA256=bf7198aec92ebe5436dbdaa764f75dfdfed3a0fabfa3c5b4da61cb75479dc5ce BYTES=11199 LINES=259
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rate, quota, concurrency and capacity limits for the Public API.
 
@@ -109436,23 +110003,46 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
 # ── Layer 5: daily credit ceiling ─────────────────────────────────────────────
 
 def credit_spent_since(db, user_id: str, since: datetime) -> int:
-    """Credit committed in a window: everything held, minus what came back.
+    """Credit committed **through the API** in a window.
 
-    Counting holds rather than settlements is deliberate — the ceiling has to
+    Holds minus what came back, counting only jobs the API created. Counting
+    every credit entry — which is what this did until EXT-11 — meant a customer
+    using the web app could exhaust their own integration's daily allowance. The
+    ceiling exists to bound the blast radius of a leaked *API key*, so it counts
+    what an API key can spend (decision D3).
+
+    Counting holds rather than settlements is deliberate: the ceiling has to
     stop spending *before* the work runs, and a hold is the moment the account
     commits to the cost.
     """
-    from sqlalchemy import func, select
-    from platform_core.models import (CREDIT_HOLD, CREDIT_REFUND, CREDIT_SETTLE,
-                                      CreditEntry)
+    from platform_core.public_api.budgets import api_spend_since
 
-    total = db.execute(
-        select(func.coalesce(func.sum(CreditEntry.delta), 0)).where(
-            CreditEntry.user_id == str(user_id),
-            CreditEntry.created_at >= since,
-            CreditEntry.kind.in_((CREDIT_HOLD, CREDIT_SETTLE, CREDIT_REFUND)),
-        )).scalar_one()
-    return max(0, -int(total))
+    return api_spend_since(db, user_id=str(user_id), since=since)
+
+
+def enforce_budget(db, *, principal, cost: int) -> None:
+    """Refuse when a hard-capped budget of the customer's own is exhausted.
+
+    Separate from the operator's ceiling and checked alongside it: whichever
+    allows less wins, and the refusal says which, because "quota_exceeded" with
+    no attribution turns every support conversation into an investigation.
+    """
+    from platform_core.public_api import budgets
+
+    for budget in budgets.list_for(db, user_id=principal.user_id):
+        if not budget.hard_cap:
+            continue
+        if budget.scope == budgets.SCOPE_PROJECT and \
+                str(budget.project_id or "") != str(
+                    getattr(principal, "project_id", "") or ""):
+            continue
+        state = budgets.status(db, budget)
+        if state["spent"] + int(cost) > state["amount"]:
+            raise _too_many(
+                f"This call would exceed the {budget.period} budget you set "
+                f"for this account.", 60, code=CODE_QUOTA,
+                limit=state["amount"], spent=state["spent"],
+                scope=budget.scope, period=budget.period, source="budget")
 
 
 def enforce_daily_credit(db, *, principal, config, cost: int) -> None:
@@ -109705,6 +110295,183 @@ def reset() -> None:
     with _lock:
         _counters.clear()
         _latencies.clear()
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/notifications.py
+SHA256=a33ce09d2c8e19e5d0f120c7312c0c16b1dcc52423db835a7c3fdd008e461f5b BYTES=6720 LINES=171
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Alerts a developer sees, with the deduplication that keeps them worth seeing.
+
+An alerting feature fails in one of two directions and both are bad. Too quiet
+and the customer finds out from their invoice. Too loud and they filter the
+whole channel, which is the same as too quiet but harder to notice.
+
+So every alert has a **subject** — the specific thing it is about, like one key
+id or one threshold of one budget — and a **cooldown**. The same subject cannot
+raise the same alert twice inside its cooldown, and crossing 80% does not send
+80% again tomorrow if nothing changed. Deduplication is on the row, not in the
+sender: any code path that emits gets it.
+
+Channels are the ones the platform already has: a row a portal page reads, plus
+email through ``platform_core.mailer``. No SMS, no push, no third service to
+own — COMMON_RULES §6, and the same reasoning that kept Redis out.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from platform_core.public_api.tables import ApiNotification
+
+# What can be raised. Each is a thing the customer can act on; nothing here is
+# informational-only, because an alert nobody can act on is noise by definition.
+LOW_CREDIT = "credit.low"
+BUDGET_THRESHOLD = "budget.threshold"
+BUDGET_EXCEEDED = "budget.exceeded"
+QUOTA_NEAR = "quota.near"
+QUOTA_EXCEEDED = "quota.exceeded"
+KEY_EXPIRING = "key.expiring"
+WEBHOOK_FAILING = "webhook.failing"
+PROJECT_SUSPENDED = "project.suspended"
+
+KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
+         QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED)
+
+#: How long the same subject stays quiet after being raised. Long enough that a
+#: customer is not paged by a condition they have already seen; short enough
+#: that a condition still true tomorrow is raised again.
+COOLDOWN = {
+    LOW_CREDIT: timedelta(days=1),
+    BUDGET_THRESHOLD: timedelta(days=1),
+    BUDGET_EXCEEDED: timedelta(days=1),
+    QUOTA_NEAR: timedelta(hours=6),
+    QUOTA_EXCEEDED: timedelta(hours=6),
+    KEY_EXPIRING: timedelta(days=3),
+    WEBHOOK_FAILING: timedelta(hours=12),
+    PROJECT_SUSPENDED: timedelta(days=7),
+}
+DEFAULT_COOLDOWN = timedelta(days=1)
+
+#: Which alerts are worth an email as well as a page a customer may not visit.
+#: The test is simple: would they want to be interrupted? Money and credentials,
+#: yes; a threshold they set themselves to be informative, on the page only.
+EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
+                         KEY_EXPIRING, PROJECT_SUSPENDED})
+
+RETENTION_DAYS = 90
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value):
+    if value is None:
+        return None
+    return value if value.tzinfo is not None else value.replace(
+        tzinfo=timezone.utc)
+
+
+def raise_alert(db, *, user_id: str, kind: str, subject: str = "",
+                title: str = "", body: str = "", now: datetime | None = None):
+    """Record an alert unless the same subject is still in cooldown.
+
+    Returns the row, or ``None`` when it was suppressed. Callers may run on a
+    schedule and re-detect the same condition every pass; suppression here is
+    what makes that safe.
+    """
+    if kind not in KINDS:
+        raise ValueError(f"unknown notification kind: {kind}")
+    current = now or _now()
+    since = current - COOLDOWN.get(kind, DEFAULT_COOLDOWN)
+    recent = db.execute(select(ApiNotification).where(
+        ApiNotification.user_id == str(user_id or ""),
+        ApiNotification.kind == kind,
+        ApiNotification.subject == str(subject or ""),
+        ApiNotification.created_at >= since,
+    )).scalars().first()
+    if recent is not None:
+        return None
+
+    row = ApiNotification(
+        id=str(uuid.uuid4()), user_id=str(user_id or ""), kind=kind,
+        subject=str(subject or "")[:120], title=str(title or "")[:200],
+        body=str(body or "")[:1000], created_at=current)
+    db.add(row)
+    return row
+
+
+def list_for(db, *, user_id: str, unread_only: bool = False,
+             limit: int = 50) -> list:
+    statement = select(ApiNotification).where(
+        ApiNotification.user_id == str(user_id or ""))
+    if unread_only:
+        statement = statement.where(ApiNotification.read_at.is_(None))
+    return list(db.execute(
+        statement.order_by(ApiNotification.created_at.desc())
+        .limit(int(limit))).scalars().all())
+
+
+def unread_count(db, *, user_id: str) -> int:
+    from sqlalchemy import func
+
+    return int(db.execute(select(func.count(ApiNotification.id)).where(
+        ApiNotification.user_id == str(user_id or ""),
+        ApiNotification.read_at.is_(None))).scalar_one())
+
+
+def mark_all_read(db, *, user_id: str, now: datetime | None = None) -> int:
+    rows = list_for(db, user_id=user_id, unread_only=True, limit=500)
+    current = now or _now()
+    for row in rows:
+        row.read_at = current
+    return len(rows)
+
+
+def send_email_for(db, row, *, mailer=None) -> bool:
+    """Email the ones worth interrupting somebody for. Best effort.
+
+    A failed email must not lose the alert: the row is already stored and the
+    portal shows it either way, so this returns False rather than raising.
+    """
+    if row is None or row.kind not in EMAIL_KINDS:
+        return False
+
+    from platform_core.i18n import _ as _t
+    from platform_core.mailer import Email, get_mailer
+    from platform_core.models import User
+
+    user = db.get(User, row.user_id)
+    if user is None or not user.email:
+        return False
+    body = f"{row.title}\n\n{row.body}\n\nhttps://app.lttstudios.com/developers/notifications"
+    try:
+        (mailer or get_mailer()).send(Email(
+            to=user.email, subject=row.title,
+            html=f"<p>{row.body}</p>"
+                 f'<p><a href="https://app.lttstudios.com/developers/'
+                 f'notifications">{_t("Mở khu API")}</a></p>',
+            text=body))
+        return True
+    except Exception:                            # noqa: BLE001 - see docstring
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "could not email notification %s", row.kind, exc_info=True)
+        return False
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    from sqlalchemy import delete
+
+    cutoff = (now or _now()) - timedelta(days=int(days))
+    result = db.execute(
+        delete(ApiNotification).where(ApiNotification.created_at < cutoff))
+    return int(result.rowcount or 0)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -110895,7 +111662,7 @@ def normalize_scopes(scopes) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=c25002e5e3cf7a6c8d963cbc45bf0b47053ef27d4d5537bc8aa468f9041ce039 BYTES=18658 LINES=375
+SHA256=6225c5fd70e0285a11e4475f2242dd35d17ecef3cd0212d2be914b13b19f874c BYTES=22330 LINES=453
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -111180,6 +111947,84 @@ class ApiRequestLog(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return (f"<ApiRequestLog {self.method} {self.route} {self.status} "
                 f"{self.request_id[:8]}>")
+
+
+class ApiBudget(Base):
+    """A spending limit a customer set for themselves.
+
+    Note what is **not** here: any column that could change what the ledger
+    says. A budget observes spending and, if hard-capped, refuses the next call;
+    it never writes, adjusts or hides a credit entry. That separation is the
+    only reason a self-service field is allowed near money at all.
+    """
+
+    __tablename__ = "api_budgets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True)
+    #: "account" or "project" — a project is the unit EXT-04 made revocable and
+    #: budgetable on its own.
+    scope: Mapped[str] = mapped_column(String(16), default="account",
+                                       nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), default="",
+                                            nullable=False)
+    period: Mapped[str] = mapped_column(String(8), default="month",
+                                        nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Percentages at which to warn. Bounded on the way in: an alert at 3% is
+    #: noise, and noise is how people learn to ignore the one at 100%.
+    thresholds: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    #: False warns, True refuses. A customer who asked to be *told* at 80% must
+    #: not discover that being told also meant being stopped.
+    hard_cap: Mapped[bool] = mapped_column(Boolean, default=False,
+                                           nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        Index("ix_api_budgets_owner", "user_id", "scope"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return (f"<ApiBudget {self.scope} {self.period} {self.amount} "
+                f"hard={self.hard_cap}>")
+
+
+class ApiNotification(Base):
+    """One alert raised for one account.
+
+    ``kind`` + ``subject`` is what deduplication keys on: "budget X crossed 80%"
+    is a different subject from "budget X crossed 100%", and both are different
+    from the same threshold on another budget.
+    """
+
+    __tablename__ = "api_notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    subject: Mapped[str] = mapped_column(String(120), default="",
+                                         nullable=False)
+    title: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    body: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # The cooldown lookup: same account, same kind, same subject, recent.
+        Index("ix_api_notifications_dedupe", "user_id", "kind", "subject",
+              "created_at"),
+        Index("ix_api_notifications_unread", "user_id", "read_at"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiNotification {self.kind} {self.subject}>"
 
 
 WEBHOOK_PENDING = "pending"
@@ -118543,7 +119388,7 @@ def documented_paths() -> frozenset:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/jobs.py
-SHA256=d0fb712cebc77f155779bd27e249bbd8aa92280869c40a77a47e7473ac4f57c9 BYTES=17181 LINES=352
+SHA256=25c5b85c0ab1a612c6105d821e7be1ef278a16b721738f09f23787df050c26ff BYTES=17386 LINES=355
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/quotes`` and ``/api/v1/jobs`` — the chargeable control plane.
 
@@ -118787,6 +119632,9 @@ def register_job_routes(api, config, tag: str) -> None:
             class_slugs=_class_slugs(tool), resource=_resource_of(tool))
         limits.enforce_daily_credit(db, principal=principal, config=config,
                                     cost=cost)
+        # …and the customer's own hard cap, which may be stricter than the
+        # operator's. Whichever allows less wins (EXT-11).
+        limits.enforce_budget(db, principal=principal, cost=cost)
 
         promotions: list = []
         try:
@@ -121361,7 +122209,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=95bafc866f29bc4fed26564a0dd5d7e1063434ac24a50bae1b0efcddcc08b713 BYTES=38346 LINES=836
+SHA256=a5b400167edfeb98b072c8c690f1bb24eab2cb4884b93b3775331e19a56c4e48 BYTES=43060 LINES=939
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -121492,7 +122340,7 @@ SECTIONS = (
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
     ("webhooks", "/developers/webhooks", N_("Webhook")),
-    ("notifications", None, N_("Thông báo")),
+    ("notifications", "/developers/notifications", N_("Thông báo")),
     ("docs", "/developers/docs", N_("Tài liệu & SDK")),
     ("settings", "/developers/settings", N_("Cài đặt & bảo mật")),
 )
@@ -121924,11 +122772,114 @@ def developer_jobs(request: Request, user=Depends(require_account),
 
 
 @router.get("/usage", response_class=HTMLResponse)
-def developer_usage(request: Request, user=Depends(require_account),
+def developer_usage(request: Request, tool: str = "", key_id: str = "",
+                    status: str = "", user=Depends(require_account),
                     db: Session = Depends(get_db)):
+    return _usage_page(request, db, user, tool=tool, key_id=key_id,
+                       status=status)
+
+
+def _usage_page(request: Request, db: Session, user, *, tool: str = "",
+                key_id: str = "", status: str = "",
+                error: str = "") -> HTMLResponse:
+    from platform_core.public_api import budgets as budget_mod
+
     config = _public_api_config(request)
-    return _render(request, db, user, "usage", "dev_usage.html",
-                   **_usage_context(db, user, config))
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(days=30)
+    lines = usage.usage_lines(db, user_id=user.id, since=window_start,
+                              until=now, tool=tool, key_id=key_id, limit=50)
+    if status:
+        lines = [line for line in lines if line.get("status") == status]
+
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    rows = []
+    for budget in budget_mod.list_for(db, user_id=user.id):
+        state = budget_mod.status(db, budget)
+        rows.append({
+            "budget": budget, "spent": state["spent"],
+            "amount": state["amount"], "percent": state["percent"],
+            "scope_label": (names.get(budget.project_id, budget.project_id)
+                            if budget.scope == budget_mod.SCOPE_PROJECT
+                            else _t("cả tài khoản")),
+        })
+
+    return _render(
+        request, db, user, "usage", "dev_usage.html", error=error,
+        budgets=rows, lines=lines,
+        tools=[item.name for item in build_catalog(config)],
+        keys=[{"key_id": key.key_id, "name": key.name}
+              for key in devkeys.list_for_user(db, user.id)],
+        statuses=["queued", "running", "succeeded", "failed", "cancelled"],
+        filters={"tool": tool, "key_id": key_id, "status": status},
+        **_projects_context(db, user),
+        **_usage_context(db, user, config))
+
+
+@router.post("/budgets", response_class=HTMLResponse)
+def developer_create_budget(request: Request, amount: str = Form(""),
+                            period: str = Form("month"),
+                            project_id: str = Form(""),
+                            hard_cap: str = Form(""),
+                            csrf_token: str = Form(""),
+                            user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import budgets as budget_mod
+
+    if not verify_csrf_token(request, csrf_token):
+        raise _redirect("/developers/usage")
+    scope = (budget_mod.SCOPE_PROJECT if project_id
+             else budget_mod.SCOPE_ACCOUNT)
+    try:
+        budget_mod.create(db, user_id=user.id, amount=amount, period=period,
+                          scope=scope, project_id=project_id,
+                          hard_cap=bool(hard_cap))
+    except budget_mod.BudgetError as exc:
+        db.rollback()
+        return _usage_page(request, db, user, error=str(exc))
+    db.commit()
+    raise _redirect("/developers/usage")
+
+
+@router.post("/budgets/{budget_id}/delete")
+def developer_delete_budget(request: Request, budget_id: str,
+                            csrf_token: str = Form(""),
+                            user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import budgets as budget_mod
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/usage", status_code=303)
+    budget = budget_mod.get_owned(db, user_id=user.id, budget_id=budget_id)
+    if budget is not None:
+        db.delete(budget)
+        db.commit()
+    return RedirectResponse("/developers/usage", status_code=303)
+
+
+@router.get("/notifications", response_class=HTMLResponse)
+def developer_notifications(request: Request, user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import notifications
+
+    return _render(request, db, user, "notifications",
+                   "dev_notifications.html",
+                   rows=notifications.list_for(db, user_id=user.id))
+
+
+@router.post("/notifications/read")
+def developer_notifications_read(request: Request, csrf_token: str = Form(""),
+                                 user=Depends(require_account),
+                                 db: Session = Depends(get_db)):
+    from platform_core.public_api import notifications
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/notifications", status_code=303)
+    notifications.mark_all_read(db, user_id=user.id)
+    db.commit()
+    return RedirectResponse("/developers/notifications", status_code=303)
 
 
 #: Session slot for a value that must be shown once and never persisted.
@@ -129757,6 +130708,44 @@ SHA256=da47a68ae45d7bd4db7c5117892b08a16b3f9a0f9e4f853942dc2bde92500e8e BYTES=35
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_notifications.html
+SHA256=ffa450b2dd35354f8ee1099be332a7270557862f1ec44f4634bac2fdc57fa331 BYTES=1417 LINES=32
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  {% if not rows %}
+    <p class="muted">{{ _("Chưa có thông báo nào. Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc.") }}</p>
+  {% else %}
+    <form method="post" action="/developers/notifications/read">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">{{ _("Đánh dấu đã đọc") }}</button>
+    </form>
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Lúc") }}</th><th>{{ _("Việc") }}</th><th>{{ _("Chi tiết") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.created_at.strftime("%m-%d %H:%M") }}
+                {% if not row.read_at %}<br><span class="pill">{{ _("mới") }}</span>{% endif %}</td>
+            <td><strong>{{ row.title }}</strong><br>
+                <code>{{ row.kind }}</code></td>
+            <td>{{ row.body }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  <p class="muted">{{ _("Cảnh báo về tiền và về khóa còn được gửi qua email; những cái còn lại chỉ hiện ở đây, để hộp thư của bạn không thành nơi bị bỏ qua.") }}</p>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_overview.html
 SHA256=4360ac675017dd7b82f3f4ae3c70b77c7c3813cbae2ea6712df66ff78ca57740 BYTES=2868 LINES=58
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -130301,7 +131290,7 @@ SHA256=a527025b5dfc2d2c804184151258d710237c6004d04facdba68962d5a5ec6198 BYTES=31
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_usage.html
-SHA256=aefbafe913dc36ba039e20f6f0fff0d40ce3320b03d4c504c9cf5a0ceffbbe6e BYTES=1015 LINES=20
+SHA256=ae8c0c557192c05765e6869d7005d58c1f5c1caaedc66f1e6540e0c96c8692a8 BYTES=6087 LINES=137
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
@@ -130309,17 +131298,134 @@ SHA256=aefbafe913dc36ba039e20f6f0fff0d40ce3320b03d4c504c9cf5a0ceffbbe6e BYTES=10
 <div class="card">
   <ul>
     <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
-    <li>{{ _("Đã dùng hôm nay:") }} <strong>{{ usage_today.net_charged_credit }}</strong>
+    <li>{{ _("Đã dùng hôm nay qua API:") }}
+        <strong>{{ usage_today.net_charged_credit }}</strong>
         credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit }})</li>
     <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
         {{ limits.create_rpm }} {{ _("job/phút") }},
         {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}
-        {% if limits.daily_credit_limit %}, {{ _("trần") }}
+        {% if limits.daily_credit_limit %}, {{ _("trần của máy chủ") }}
           {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
   </ul>
-  <p class="muted">{{ _("Chi tiết theo từng job:") }} <code>GET /api/v1/usage</code>.
-     {{ _("Ngân sách và cảnh báo chi tiêu là hạng mục riêng, chưa có ở bước này.") }}</p>
   <p><a class="btn" href="/nap">{{ _("Nạp credit") }}</a></p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Ngân sách của bạn") }}</h2>
+  <p class="muted">{{ _("Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. Ngân sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. Nếu máy chủ đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy cái chặt hơn.") }}</p>
+
+  {% if budgets %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Phạm vi") }}</th><th>{{ _("Kỳ") }}</th>
+        <th>{{ _("Đã dùng") }}</th><th>{{ _("Ngưỡng cảnh báo") }}</th>
+        <th>{{ _("Kiểu") }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for item in budgets %}
+          <tr>
+            <td>{{ item.scope_label }}</td>
+            <td>{{ item.budget.period }}</td>
+            <td><strong>{{ item.spent }}</strong>/{{ item.amount }}
+                ({{ item.percent }}%)</td>
+            <td>{% for value in item.budget.thresholds %}{{ value }}% {% endfor %}</td>
+            <td>{% if item.budget.hard_cap %}{{ _("cứng — chặn") }}
+                {% else %}{{ _("mềm — chỉ báo") }}{% endif %}</td>
+            <td>
+              <form method="post" action="/developers/budgets/{{ item.budget.id }}/delete"
+                    onsubmit="return confirm('{{ _("Xoá ngân sách này?") }}');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-ghost">{{ _("Xoá") }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">{{ _("Chưa đặt ngân sách nào.") }}</p>
+  {% endif %}
+
+  <form method="post" action="/developers/budgets">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <p>
+      <label for="bg-amount">{{ _("Số credit") }}</label>
+      <input id="bg-amount" name="amount" inputmode="numeric" placeholder="500" required>
+      <label for="bg-period">{{ _("Kỳ") }}</label>
+      <select id="bg-period" name="period">
+        <option value="month">{{ _("tháng") }}</option>
+        <option value="day">{{ _("ngày") }}</option>
+      </select>
+      <label for="bg-project">{{ _("Phạm vi") }}</label>
+      <select id="bg-project" name="project_id">
+        <option value="">{{ _("cả tài khoản") }}</option>
+        {% for project in projects %}
+          <option value="{{ project.id }}">{{ project.name }}</option>
+        {% endfor %}
+      </select>
+    </p>
+    <p>
+      <label>
+        <input type="checkbox" name="hard_cap" value="1">
+        {{ _("Chặn lời gọi khi vượt (ngân sách cứng)") }}
+      </label>
+      <span class="muted">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</span>
+    </p>
+    <button type="submit" class="btn btn-primary">{{ _("Đặt ngân sách") }}</button>
+  </form>
+  {% if error %}{% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Chi tiêu theo lời gọi") }}</h2>
+  <form method="get" action="/developers/usage">
+    <label for="us-tool" class="sr-only">{{ _("Công cụ") }}</label>
+    <select id="us-tool" name="tool">
+      <option value="">{{ _("Mọi công cụ") }}</option>
+      {% for name in tools %}
+        <option value="{{ name }}" {% if name == filters.tool %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+    <label for="us-key" class="sr-only">{{ _("Khóa") }}</label>
+    <select id="us-key" name="key_id">
+      <option value="">{{ _("Mọi khóa") }}</option>
+      {% for key in keys %}
+        <option value="{{ key.key_id }}" {% if key.key_id == filters.key_id %}selected{% endif %}>
+          {{ key.name or key.key_id[:8] }}</option>
+      {% endfor %}
+    </select>
+    <label for="us-status" class="sr-only">{{ _("Trạng thái") }}</label>
+    <select id="us-status" name="status">
+      <option value="">{{ _("Mọi trạng thái") }}</option>
+      {% for value in statuses %}
+        <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{{ value }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn">{{ _("Lọc") }}</button>
+  </form>
+
+  {% if not lines %}
+    <p class="muted">{{ _("Chưa có lời gọi nào khớp.") }}</p>
+  {% else %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Lúc") }}</th><th>{{ _("Công cụ") }}</th><th>{{ _("Khóa") }}</th>
+        <th>{{ _("Trạng thái") }}</th><th>{{ _("Đã tính") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for line in lines %}
+          <tr>
+            <td>{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
+            <td>{{ line.tool or "—" }}</td>
+            <td><code>{{ (line.key_id or "")[:8] }}</code></td>
+            <td>{{ line.status }}</td>
+            <td>{{ line.credit.net_charged }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+  <p class="muted">{{ _("Cùng dữ liệu có ở") }} <code>GET /api/v1/usage</code>.</p>
 </div>
 
 {% endblock %}
@@ -164561,7 +165667,7 @@ def test_the_migration_backfills_a_default_project_for_existing_keys(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_197_developer_api_tab.py
-SHA256=3dbd059bc41f7a441a4d77abf93eeb80296491d7cb3d653c029d2607f5095b8a BYTES=12077 LINES=292
+SHA256=28485d2a666cf9f25ed78e4c7b8cd25bb3852d513361b724ea9624cd71c3b347 BYTES=12090 LINES=292
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-05 — the developer API area: one portal, reachable, tenant-safe.
 
@@ -164584,9 +165690,14 @@ PEPPER = "devtab-test-pepper-" + "t" * 40
 
 # Every section the area promises, and whether it is built. Named-but-unbuilt
 # sections are rendered as plain text, never as links (EXT-08/09/11 own them).
-BUILT = ("/developers", "/developers/projects", "/developers/keys",
-         "/developers/tools", "/developers/jobs", "/developers/usage",
-         "/developers/webhooks", "/developers/docs", "/developers/settings")
+# Every section of the area. It started as "the built ones" while some were
+# still named-but-unlinked; EXT-11 finished the last of them, so it is simply
+# the list now — and the tests below hold all of it to the same rules.
+BUILT = ("/developers", "/developers/quickstart", "/developers/projects",
+         "/developers/keys", "/developers/tools", "/developers/playground",
+         "/developers/logs", "/developers/jobs", "/developers/usage",
+         "/developers/webhooks", "/developers/notifications",
+         "/developers/docs", "/developers/settings")
 
 
 @pytest.fixture()
@@ -164688,26 +165799,21 @@ def test_the_navigation_is_the_same_on_every_section(portal):
         assert found == links, path
 
 
-def test_unbuilt_sections_are_named_but_not_linked(portal):
-    """A dead link is worse than an honest label: the shape of the area is
-    information a developer uses to plan; a 404 is not.
+def test_the_navigation_promises_nothing_it_cannot_serve(portal):
+    """Replaces the unbuilt-section test, which retired itself when the last
+    section shipped: it asserted that named-but-unlinked entries exist, and
+    that stopped being true rather than stopping being important.
 
-    Which sections are unbuilt is read from the declaration rather than listed
-    here — the first version of this test named them, and building the
-    playground turned a correct change into a red suite.
+    What still matters is the property underneath it — the navigation never
+    offers something that does not answer.
     """
     from server.routes.developer import SECTIONS
 
-    _register(portal, f"soon-{uuid.uuid4().hex[:6]}@example.com")
-    page = portal.get("/developers").text
-    unbuilt = [(key, label) for key, href, label in SECTIONS if href is None]
-    assert unbuilt, "every section is built — delete this test rather than lie"
-    for key, label in unbuilt:
-        # Named, so a developer knows the area is coming…
-        assert label.lower() in page.lower(), label
-        # …but not a link, and not a route that half-answers.
-        assert f'href="/developers/{key}"' not in page, key
-        assert portal.get(f"/developers/{key}").status_code == 404, key
+    _register(portal, f"nav-{uuid.uuid4().hex[:6]}@example.com")
+    for _key, href, _label in SECTIONS:
+        if href is None:
+            continue                      # named but not built: nothing to open
+        assert portal.get(href).status_code == 200, href
 
 
 def test_the_current_section_is_marked_for_assistive_technology(portal):
@@ -166979,6 +168085,587 @@ def test_every_console_write_needs_a_csrf_token(portal):
         assert db.get(WebhookSubscription, created["id"]).enabled is True
     finally:
         _close(gen)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_203_budgets_alerts.py
+SHA256=884b33967b24832000d531ed9d0bb3f3f5ff9e337664344f1fd2ddb61a102339 BYTES=21542 LINES=575
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-11 — budgets, alerts and the D3 fix.
+
+Three properties decide whether a budget feature is safe: it never writes to the
+ledger, a hard cap refuses deterministically, and the alerts do not become noise.
+Everything here tests one of those.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import (alerting, budgets, keys as devkeys, limits,
+                                      notifications)
+from platform_core.public_api.tables import ApiNotification
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "budget-test-pepper-" + "b" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'budgets.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "budget-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _account(client, credits: int = 500):
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"bg-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, credits, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    keys_page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": "budget", "csrf_token": _csrf(keys_page),
+                                "scopes": list(SCOPES)})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+    return user_id, token
+
+
+def _run(client, token, *, count: int = 1, key: str = ""):
+    payload = {"topic": "budget", "count": count}
+    quote = client.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": payload},
+                        headers={"Authorization": f"Bearer {token}"})
+    assert quote.status_code == 200, quote.text
+    return client.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote.json()["quote"], "input": payload},
+        headers={"Authorization": f"Bearer {token}",
+                 "Idempotency-Key": key or f"bg-{uuid.uuid4().hex[:8]}"})
+
+
+def _ledger(user_id: str) -> list:
+    import sqlalchemy as sa
+    from platform_core.models import CreditEntry
+
+    gen, db = _session()
+    try:
+        return [(row.kind, row.delta) for row in db.execute(
+            sa.select(CreditEntry).where(CreditEntry.user_id == user_id)
+            .order_by(CreditEntry.id)).scalars().all()]
+    finally:
+        _close(gen)
+
+
+# ── The D3 fix: the ceiling counts API spending only ────────────────────────
+
+def test_web_spending_does_not_consume_the_api_allowance(portal):
+    """The defect EXT-01 found and D3 decided: a customer using the web app
+    could exhaust the daily allowance that exists to bound a leaked API key."""
+    from platform_core import credit
+
+    user_id, token = _account(portal)
+    assert _run(portal, token).status_code == 201        # 5 credits via the API
+
+    # A job created the way the UI creates one: no API meta on its params.
+    gen, db = _session()
+    try:
+        from platform_core.job_submit import submit_with_credit
+
+        submit_with_credit(db, user_id=user_id, app_slug="thumbnail",
+                           job_type="thumbnail.generate",
+                           params={"topic": "made in the ui", "count": 4,
+                                   "owner_id": user_id})
+        db.commit()
+        since = budgets.window_start(budgets.PERIOD_DAY)
+        api_only = budgets.api_spend_since(db, user_id=user_id, since=since)
+        everything = -sum(
+            delta for kind, delta in _ledger(user_id) if delta < 0)
+    finally:
+        _close(gen)
+
+    assert api_only == 5, "only the API job counts"
+    assert everything > api_only, "the UI job did spend, it just is not counted"
+    assert credit.so_du(*_balance_args(user_id)) >= 0
+
+
+def _balance_args(user_id: str):
+    gen, db = _session()
+    try:
+        from platform_core import credit
+
+        return db, user_id
+    finally:
+        _close(gen)
+
+
+# ── Hard caps ────────────────────────────────────────────────────────────────
+
+def test_a_hard_cap_refuses_the_call_that_would_cross_it(portal):
+    user_id, token = _account(portal)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=10, period="day",
+                       hard_cap=True)
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert _run(portal, token).status_code == 201        # 5 of 10
+    assert _run(portal, token).status_code == 201        # 10 of 10
+    refused = _run(portal, token)                        # would be 15
+    assert refused.status_code == 429
+    body = refused.json()
+    assert body["code"] == "quota_exceeded"
+    # The refusal names which rule applied — otherwise every support
+    # conversation about a 429 starts with an investigation.
+    assert body["source"] == "budget" and body["limit"] == 10
+
+
+def test_a_soft_budget_never_refuses_anything(portal):
+    """Somebody who asked to be *told* at 80% must not be silently stopped."""
+    user_id, token = _account(portal)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=10, period="day",
+                       hard_cap=False)
+        db.commit()
+    finally:
+        _close(gen)
+
+    for _ in range(4):
+        assert _run(portal, token).status_code == 201    # 20 credits, over 10
+
+
+def test_the_stricter_of_operator_and_customer_wins(portal):
+    user_id, _token = _account(portal)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=1000, period="day",
+                       hard_cap=True)
+        db.commit()
+        # The operator allows less than the customer asked for.
+        cap = budgets.effective_cap(db, user_id=user_id, operator_daily=50)
+        assert cap["limit"] == 50 and cap["source"] == "operator"
+        # …and the other way around.
+        cap = budgets.effective_cap(db, user_id=user_id, operator_daily=5000)
+        assert cap["limit"] == 1000 and cap["source"] == "budget"
+    finally:
+        _close(gen)
+
+
+def test_a_budget_never_writes_to_the_ledger(portal):
+    """The property that makes a self-service field safe to put near money."""
+    user_id, token = _account(portal)
+    assert _run(portal, token).status_code == 201
+    before = _ledger(user_id)
+
+    gen, db = _session()
+    try:
+        budget = budgets.create(db, user_id=user_id, amount=10, period="day",
+                                hard_cap=True)
+        db.commit()
+        budgets.status(db, budget)
+        alerting.scan_account(db, user_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert _ledger(user_id) == before
+
+
+def test_a_replayed_call_is_not_counted_twice(portal):
+    """Idempotent replay must not look like a second purchase to a budget."""
+    user_id, token = _account(portal)
+    payload = {"topic": "budget", "count": 1}
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": payload},
+                        headers={"Authorization": f"Bearer {token}"}).json()
+    body = {"tool": TOOL, "quote": quote["quote"], "input": payload}
+    headers = {"Authorization": f"Bearer {token}",
+               "Idempotency-Key": f"bg-replay-{uuid.uuid4().hex[:6]}"}
+
+    first = portal.post(f"{API_V1_PREFIX}/jobs", json=body, headers=headers)
+    assert first.status_code == 201
+    # The identical request again — which is what a client retrying a timeout
+    # sends, and the only thing that counts as a replay.
+    again = portal.post(f"{API_V1_PREFIX}/jobs", json=body, headers=headers)
+    assert again.status_code == 200 and again.json()["id"] == first.json()["id"]
+
+    gen, db = _session()
+    try:
+        spent = budgets.api_spend_since(
+            db, user_id=user_id, since=budgets.window_start("day"))
+    finally:
+        _close(gen)
+    assert spent == 5
+
+
+def test_a_project_budget_only_counts_that_project(portal):
+    from platform_core.public_api import projects
+
+    user_id, token = _account(portal)
+    assert _run(portal, token).status_code == 201
+
+    gen, db = _session()
+    try:
+        other = projects.create(db, user_id=user_id, name="Elsewhere")
+        db.commit()
+        since = budgets.window_start("day")
+        assert budgets.api_spend_since(db, user_id=user_id, since=since,
+                                       project_id=other.id) == 0
+        assert budgets.api_spend_since(db, user_id=user_id, since=since) == 5
+    finally:
+        _close(gen)
+
+
+# ── Alerts ───────────────────────────────────────────────────────────────────
+
+def _alerts(user_id: str) -> list:
+    gen, db = _session()
+    try:
+        return notifications.list_for(db, user_id=user_id)
+    finally:
+        _close(gen)
+
+
+def test_crossing_a_threshold_raises_one_alert_not_many(portal):
+    user_id, token = _account(portal)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=10, period="day")
+        db.commit()
+    finally:
+        _close(gen)
+    assert _run(portal, token).status_code == 201        # 5 of 10 = 50%
+
+    gen, db = _session()
+    try:
+        first = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+        again = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+
+    kinds = [row.kind for row in first]
+    assert notifications.BUDGET_THRESHOLD in kinds
+    assert again == [], "the same condition must not alert twice in cooldown"
+
+
+def test_each_threshold_is_its_own_news(portal):
+    user_id, token = _account(portal)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=10, period="day")
+        db.commit()
+    finally:
+        _close(gen)
+
+    _run(portal, token)                                   # 50%
+    gen, db = _session()
+    try:
+        alerting.scan_account(db, user_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+
+    _run(portal, token)                                   # 100%
+    gen, db = _session()
+    try:
+        raised = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+    assert any(row.kind == notifications.BUDGET_EXCEEDED for row in raised)
+
+
+def test_a_low_balance_is_raised_once_a_day(portal):
+    user_id, _token = _account(portal, credits=5)
+    gen, db = _session()
+    try:
+        first = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+        second = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+        assert any(row.kind == notifications.LOW_CREDIT for row in first)
+        assert second == []
+        # …and again once the cooldown has passed.
+        later = datetime.now(timezone.utc) + timedelta(days=2)
+        third = alerting.scan_account(db, user_id=user_id, now=later)
+        db.commit()
+        assert any(row.kind == notifications.LOW_CREDIT for row in third)
+    finally:
+        _close(gen)
+
+
+def test_an_expiring_key_is_flagged_before_it_dies(portal):
+    user_id, _token = _account(portal)
+    gen, db = _session()
+    try:
+        devkeys.issue(db, user_id=user_id, name="short",
+                      expires_at=datetime.now(timezone.utc) + timedelta(days=3),
+                      env={devkeys.PEPPER_ENV: PEPPER})
+        db.commit()
+        raised = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+    assert any(row.kind == notifications.KEY_EXPIRING for row in raised)
+
+
+def test_a_dead_webhook_endpoint_is_reported(portal):
+    from platform_core.public_api.tables import (WEBHOOK_DEAD, WebhookDelivery,
+                                                 WebhookSubscription)
+    from platform_core import secretbox
+
+    user_id, _token = _account(portal)
+    gen, db = _session()
+    try:
+        subscription = WebhookSubscription(
+            id=str(uuid.uuid4()), user_id=user_id, url="https://example.com/x",
+            secret_enc=secretbox.ma_hoa("s" * 32), events=[], enabled=True,
+            created_at=datetime.now(timezone.utc))
+        db.add(subscription)
+        for index in range(alerting.DEAD_DELIVERY_THRESHOLD):
+            db.add(WebhookDelivery(
+                id=str(uuid.uuid4()), subscription_id=subscription.id,
+                user_id=user_id, event_id=f"e{index}", event_type="job.succeeded",
+                payload={}, status=WEBHOOK_DEAD, attempts=6,
+                next_attempt_at=datetime.now(timezone.utc),
+                created_at=datetime.now(timezone.utc)))
+        db.commit()
+        raised = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+    assert any(row.kind == notifications.WEBHOOK_FAILING for row in raised)
+
+
+def test_only_money_and_credentials_are_worth_an_email():
+    for kind in (notifications.LOW_CREDIT, notifications.BUDGET_EXCEEDED,
+                 notifications.KEY_EXPIRING):
+        assert kind in notifications.EMAIL_KINDS
+    # A threshold the customer set to be informed by is not an interruption.
+    assert notifications.BUDGET_THRESHOLD not in notifications.EMAIL_KINDS
+
+
+def test_an_email_failure_does_not_lose_the_alert(portal):
+    class _Broken:
+        def send(self, email):
+            raise RuntimeError("smtp is down")
+
+    user_id, _token = _account(portal, credits=1)
+    gen, db = _session()
+    try:
+        raised = alerting.scan_account(db, user_id=user_id)
+        db.commit()
+        row = next(item for item in raised
+                   if item.kind == notifications.LOW_CREDIT)
+        assert notifications.send_email_for(db, row, mailer=_Broken()) is False
+    finally:
+        _close(gen)
+    assert any(item.kind == notifications.LOW_CREDIT
+               for item in _alerts(user_id))
+
+
+# ── Validation and tenancy ───────────────────────────────────────────────────
+
+@pytest.mark.parametrize("amount", [0, 5, -100, "abc"])
+def test_a_useless_budget_is_refused(portal, amount):
+    user_id, _token = _account(portal)
+    gen, db = _session()
+    try:
+        with pytest.raises(budgets.BudgetError):
+            budgets.create(db, user_id=user_id, amount=amount, period="day")
+    finally:
+        _close(gen)
+
+
+def test_thresholds_are_bounded(portal):
+    with pytest.raises(budgets.BudgetError):
+        budgets.normalize_thresholds([3])
+    with pytest.raises(budgets.BudgetError):
+        budgets.normalize_thresholds([150])
+    assert budgets.normalize_thresholds([80, 50, 50]) == [50, 80]
+
+
+def test_one_account_never_sees_another_accounts_budget_or_alerts(portal):
+    first_id, _token = _account(portal)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=first_id, amount=99, period="day")
+        notifications.raise_alert(db, user_id=first_id,
+                                  kind=notifications.LOW_CREDIT,
+                                  subject="balance", title="AliceOnlyAlert")
+        db.commit()
+    finally:
+        _close(gen)
+
+    portal.post("/logout", data={}, follow_redirects=False)
+    _account(portal)
+    assert "AliceOnlyAlert" not in portal.get("/developers/notifications").text
+    assert "99" not in _budget_cell(portal.get("/developers/usage").text)
+
+
+def _budget_cell(html: str) -> str:
+    match = re.search(r"Ngân sách của bạn.*?</div>", html, re.S)
+    return match.group(0) if match else ""
+
+
+# ── The pages ────────────────────────────────────────────────────────────────
+
+def test_a_budget_can_be_created_and_deleted_from_the_page(portal):
+    user_id, _token = _account(portal)
+    page = portal.get("/developers/usage").text
+    portal.post("/developers/budgets",
+                data={"amount": "250", "period": "month", "project_id": "",
+                      "hard_cap": "1", "csrf_token": _csrf(page)},
+                follow_redirects=False)
+
+    gen, db = _session()
+    try:
+        rows = budgets.list_for(db, user_id=user_id)
+        assert len(rows) == 1 and rows[0].amount == 250
+        assert rows[0].hard_cap is True
+        budget_id = rows[0].id
+    finally:
+        _close(gen)
+
+    page = portal.get("/developers/usage").text
+    assert "250" in page
+    portal.post(f"/developers/budgets/{budget_id}/delete",
+                data={"csrf_token": _csrf(page)}, follow_redirects=False)
+    gen, db = _session()
+    try:
+        assert budgets.list_for(db, user_id=user_id) == []
+    finally:
+        _close(gen)
+
+
+def _usage_rows(html: str) -> str:
+    """Just the results table: the filter dropdown lists every tool whatever
+    the filter is, so searching the whole page proves nothing."""
+    match = re.search(r"Chi tiêu theo lời gọi.*?</table>", html, re.S)
+    if not match:
+        return ""
+    body = re.search(r"<tbody>.*?</tbody>", match.group(0), re.S)
+    return body.group(0) if body else ""
+
+
+def test_the_usage_page_filters_by_tool_key_and_status(portal):
+    _user_id, token = _account(portal)
+    assert _run(portal, token).status_code == 201
+
+    assert TOOL in _usage_rows(portal.get(f"/developers/usage?tool={TOOL}").text)
+    assert TOOL not in _usage_rows(
+        portal.get("/developers/usage?tool=image.generate").text)
+    # The job is queued, not succeeded, so filtering on succeeded empties it.
+    assert TOOL not in _usage_rows(
+        portal.get("/developers/usage?status=succeeded").text)
+    assert TOOL in _usage_rows(
+        portal.get("/developers/usage?status=queued").text)
+
+
+def test_the_notifications_page_marks_everything_read(portal):
+    user_id, _token = _account(portal, credits=1)
+    gen, db = _session()
+    try:
+        alerting.scan_account(db, user_id=user_id)
+        db.commit()
+        assert notifications.unread_count(db, user_id=user_id) >= 1
+    finally:
+        _close(gen)
+
+    page = portal.get("/developers/notifications").text
+    portal.post("/developers/notifications/read",
+                data={"csrf_token": _csrf(page)}, follow_redirects=False)
+    gen, db = _session()
+    try:
+        assert notifications.unread_count(db, user_id=user_id) == 0
+    finally:
+        _close(gen)
+
+
+def test_the_worker_scans_for_alerts():
+    """A scanner nobody runs is a scanner that never fires."""
+    from pathlib import Path
+
+    source = Path("platform_core/job_runner.py").read_text(encoding="utf-8")
+    assert "alerting.scan_all" in source
+    assert "notifications.purge_expired" in source
 
 @@@LTT_PROFILE_FILE_END@@@
 

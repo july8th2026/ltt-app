@@ -22,7 +22,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 08 | Playground / request builder / job inspector | **PASS** | 2026-08-13 |
 | 09 | Request logs / trace / job timeline | **PASS** | 2026-08-14 |
 | 10 | Webhook console / event catalog / resend | **PASS** | 2026-08-14 |
-| 11 | Usage / budgets / credit alerts / notifications | chưa chạy | — |
+| 11 | Usage / budgets / credit alerts / notifications | **PASS** | 2026-08-14 |
 | 12 | Sandbox / test mode / live isolation | chưa chạy | — |
 | 13 | API admin console core | chưa chạy | — |
 | 14 | Admin policy / tiers / quota / kill switch | chưa chạy | — |
@@ -1125,3 +1125,94 @@ hiện đúng một lần kèm dòng nhắc về cửa an hạn.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/11_USAGE_BUDGETS_CREDIT_ALERTS_AND_DEVELOPER_NOTIFICATIONS.txt`
+
+
+---
+
+## EXT-11 — NGÂN SÁCH, CẢNH BÁO, THÔNG BÁO ✅
+
+### Entry gate
+
+EXT-10 PASS ✅ (`cb194c6`), cây sạch. Migration mới: **`a3b4c5d6e7f8`** (head).
+Đây là nơi **D3 được thi hành**.
+
+### D3: sửa một lỗi phạm vi có thật
+
+`limits.credit_spent_since()` trước đây cộng **mọi** chi tiêu credit của tài
+khoản. Hệ quả: khách dùng nhiều trên giao diện web sẽ làm cạn hạn mức ngày của
+**chính API của họ** — ngược hẳn mục đích, vì trần đó sinh ra để giới hạn bán
+kính thiệt hại của một **khoá API bị rò**. Giờ chỉ đếm job do API tạo (`_api`
+trong `job.params`), và job có mang thêm `project_id` để đo được ngân sách theo
+project mà không phải join ngược qua khoá — thứ sẽ vỡ ngay khi khoá bị xoay.
+
+Có test dựng **cả hai** loại job (một qua API, một theo đúng đường UI) rồi khẳng
+định chỉ cái đầu được tính.
+
+### Ba ý giữ riêng, vì trộn hai cái bất kỳ là lúc tính năng ngân sách nói dối
+
+**Sổ credit không bị chạm.** Ngân sách **quan sát**; nó không ghi, không sửa,
+không giấu một dòng nào. Có test chụp toàn bộ sổ trước/sau khi tạo ngân sách,
+tính trạng thái và quét cảnh báo — giống hệt.
+
+**Mềm và cứng là hai lời hứa khác nhau.** Mềm chỉ cảnh báo (test: vượt 200% vẫn
+chạy được); cứng từ chối lời gọi kế tiếp. Người đã xin được **báo** ở 80% không
+được phát hiện ra rằng "báo" cũng có nghĩa là "chặn".
+
+**Trần của khách không bao giờ nới được trần của máy chủ.** Lấy **cái chặt hơn**
+trong hai, và lời từ chối **nói rõ** cái nào đã áp (`source: budget|operator`) —
+không thì mọi cuộc hỗ trợ về một cái 429 đều bắt đầu bằng một cuộc điều tra.
+
+### Cảnh báo không thành tiếng ồn
+
+Mỗi cảnh báo có **subject** (một khoá cụ thể, một ngưỡng của một ngân sách cụ
+thể) và một **cooldown**. Khử trùng nằm ở tầng lưu, không ở nơi phát — nên bộ
+quét chạy 15 phút/lần và phát hiện lại cùng một điều kiện mỗi lượt là vô hại
+**theo thiết kế**. Vượt 80% rồi vượt 100% là **hai** tin khác nhau, nên chúng là
+hai subject.
+
+Chỉ **tiền và credential** đáng gửi email (số dư thấp, vượt ngân sách, vượt hạn
+mức, khoá sắp hết hạn, project bị đình chỉ). Một ngưỡng do chính khách đặt để
+được *biết* thì chỉ hiện trên trang — hộp thư bị làm phiền là hộp thư bị lọc.
+Email hỏng **không** làm mất cảnh báo: dòng đã lưu, trang vẫn hiện.
+
+### Kênh: chỉ những gì nền tảng đã có
+
+Một dòng trong CSDL cho trang **Thông báo** (mục cuối cùng của khu API, giờ đã
+xây) + email qua `platform_core/mailer.py`. Không SMS, không push, không dịch vụ
+thứ ba phải nuôi — COMMON_RULES §6.
+
+### Tests
+
+`tests/test_203_budgets_alerts.py` — **24 test**: D3 (web không ăn hạn mức API);
+hard cap chặn đúng lời gọi vượt và nêu `source`; soft không bao giờ chặn; lấy
+cái chặt hơn giữa operator/budget theo cả hai chiều; ngân sách **không** đổi sổ
+credit; **replay idempotent không bị tính hai lần**; ngân sách theo project chỉ
+đếm project đó; ngưỡng chỉ báo một lần trong cooldown và mỗi ngưỡng là một tin;
+số dư thấp báo lại sau khi hết cooldown; khoá sắp hết hạn; webhook chết; email
+chỉ cho loại đáng làm phiền; email hỏng không mất cảnh báo; ngân sách vô nghĩa
+bị từ chối (4 giá trị); ngưỡng bị chặn biên; cách ly tenant; tạo/xoá từ trang;
+lọc usage theo tool/khoá/trạng thái; và worker **có gọi** bộ quét.
+
+`test_197` có một thay đổi đáng nói: test "section chưa xây" **tự nghỉ hưu**
+đúng như thông điệp nó tự viết ở EXT-08 — mọi section giờ đã xây, nên nó được
+thay bằng một test giữ đúng tính chất còn lại: *navigation không hứa thứ nó
+không phục vụ được*.
+
+### Rollback
+
+`alembic downgrade f2a3b4c5d6e7`, gỡ `budgets.py`/`notifications.py`/
+`alerting.py`, bỏ `enforce_budget` khỏi route job, hoàn nguyên
+`credit_spent_since` (lưu ý: hoàn nguyên là **mang lỗi D3 trở lại**), bỏ hai
+route + hai template, xoá `test_203`.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-11 | Kết quả |
+|---|---|
+| Budget alert không thay ledger | ✅ snapshot toàn bộ sổ trước/sau, giống hệt |
+| Hard cap tất định khi bật | ✅ chặn đúng lời gọi làm vượt; nêu limit/spent/source |
+| Notification dedupe PASS | ✅ cùng subject không báo lại trong cooldown; mỗi ngưỡng là một subject |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/12_SANDBOX_TEST_MODE_MOCK_EXECUTION_AND_LIVE_ISOLATION.txt`
+— **checkpoint full gate**, và là nơi thi hành D4.

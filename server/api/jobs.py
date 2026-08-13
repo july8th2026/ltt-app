@@ -240,6 +240,9 @@ def register_job_routes(api, config, tag: str) -> None:
             class_slugs=_class_slugs(tool), resource=_resource_of(tool))
         limits.enforce_daily_credit(db, principal=principal, config=config,
                                     cost=cost)
+        # …and the customer's own hard cap, which may be stricter than the
+        # operator's. Whichever allows less wins (EXT-11).
+        limits.enforce_budget(db, principal=principal, cost=cost)
 
         promotions: list = []
         try:

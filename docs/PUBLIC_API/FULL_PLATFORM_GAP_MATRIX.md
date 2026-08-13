@@ -31,6 +31,11 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-11 (2026-08-14):** Extension domain 14
+> (`budgets/alerts/notifications`) `MISSING` → `DONE`, và **D3 đã
+> thi hành**: hạn mức ngày chỉ còn đếm chi tiêu qua API. Mọi mục
+> trong khu API giờ đã xây.
+
 > **Cập nhật sau EXT-10 (2026-08-14):** domain H (webhooks) và
 > Extension domain 13 `PARTIAL` → `DONE`: console, danh mục sự kiện,
 > gửi lại (giữ nguyên event id, không chạm job/credit), sự kiện thử,

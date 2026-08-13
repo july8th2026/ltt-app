@@ -266,7 +266,7 @@ implicit grant, không resource-owner-password.
 |---|---|---|---|
 | D1 | Hoãn OAuth, làm restricted key (project + IP + hạn dùng + trần chi) | EXT-04 | Bỏ 3–4 prompt; giữ `Principal` mở đường cho OAuth sau |
 | D2 | Đo thời lượng phía server lúc báo giá; cấm top-up cho job API | EXT-02/03 | Mở được **3 tool** đang bị chặn |
-| D3 | 2.000 credit/ngày, chỉ đếm chi tiêu qua API, cảnh báo 50%/80% | EXT-11/14 | Sửa một lỗi phạm vi đang có trong `limits.py` |
+| D3 | 2.000 credit/ngày, chỉ đếm chi tiêu qua API, cảnh báo 50%/80% | EXT-11/14 — **đã thi hành ở EXT-11** | Sửa một lỗi phạm vi đang có trong `limits.py` |
 | D4 | Sandbox mock, cùng đường code, khoá `ltt_sk_test_` không tiêu tiền | EXT-12 | Khoá test rò = 0đ |
 | D5 | Định nghĩa STREAM, không mở chat qua sidecar | EXT-02/20 | Tránh bán lại tài khoản tiêu dùng |
 | D6 | Hoãn service account; project là tầng sở hữu, key là danh tính máy | EXT-04 | Thêm sau là cộng thêm, không phải sửa lại |

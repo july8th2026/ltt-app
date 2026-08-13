@@ -19,9 +19,14 @@ PEPPER = "devtab-test-pepper-" + "t" * 40
 
 # Every section the area promises, and whether it is built. Named-but-unbuilt
 # sections are rendered as plain text, never as links (EXT-08/09/11 own them).
-BUILT = ("/developers", "/developers/projects", "/developers/keys",
-         "/developers/tools", "/developers/jobs", "/developers/usage",
-         "/developers/webhooks", "/developers/docs", "/developers/settings")
+# Every section of the area. It started as "the built ones" while some were
+# still named-but-unlinked; EXT-11 finished the last of them, so it is simply
+# the list now — and the tests below hold all of it to the same rules.
+BUILT = ("/developers", "/developers/quickstart", "/developers/projects",
+         "/developers/keys", "/developers/tools", "/developers/playground",
+         "/developers/logs", "/developers/jobs", "/developers/usage",
+         "/developers/webhooks", "/developers/notifications",
+         "/developers/docs", "/developers/settings")
 
 
 @pytest.fixture()
@@ -123,26 +128,21 @@ def test_the_navigation_is_the_same_on_every_section(portal):
         assert found == links, path
 
 
-def test_unbuilt_sections_are_named_but_not_linked(portal):
-    """A dead link is worse than an honest label: the shape of the area is
-    information a developer uses to plan; a 404 is not.
+def test_the_navigation_promises_nothing_it_cannot_serve(portal):
+    """Replaces the unbuilt-section test, which retired itself when the last
+    section shipped: it asserted that named-but-unlinked entries exist, and
+    that stopped being true rather than stopping being important.
 
-    Which sections are unbuilt is read from the declaration rather than listed
-    here — the first version of this test named them, and building the
-    playground turned a correct change into a red suite.
+    What still matters is the property underneath it — the navigation never
+    offers something that does not answer.
     """
     from server.routes.developer import SECTIONS
 
-    _register(portal, f"soon-{uuid.uuid4().hex[:6]}@example.com")
-    page = portal.get("/developers").text
-    unbuilt = [(key, label) for key, href, label in SECTIONS if href is None]
-    assert unbuilt, "every section is built — delete this test rather than lie"
-    for key, label in unbuilt:
-        # Named, so a developer knows the area is coming…
-        assert label.lower() in page.lower(), label
-        # …but not a link, and not a route that half-answers.
-        assert f'href="/developers/{key}"' not in page, key
-        assert portal.get(f"/developers/{key}").status_code == 404, key
+    _register(portal, f"nav-{uuid.uuid4().hex[:6]}@example.com")
+    for _key, href, _label in SECTIONS:
+        if href is None:
+            continue                      # named but not built: nothing to open
+        assert portal.get(href).status_code == 200, href
 
 
 def test_the_current_section_is_marked_for_assistive_technology(portal):

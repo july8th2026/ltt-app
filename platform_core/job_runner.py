@@ -471,6 +471,33 @@ def _giao_webhook() -> None:
                      report["dead"])
 
 
+#: Alert conditions are slow-moving — a budget threshold, an expiring key, a
+#: webhook that has given up. Scanning every fifteen minutes is soon enough to
+#: be useful and rare enough to cost nothing.
+ALERT_SCAN_INTERVAL_S = 15 * 60
+
+
+def _quet_canh_bao() -> None:
+    """Raise the alerts that are true right now, and age out the old ones.
+
+    Deduplication lives in `notifications.raise_alert`, so re-detecting the same
+    condition on every pass is harmless by design — which is what lets this be a
+    plain periodic scan instead of an event pipeline.
+    """
+    from platform_core.public_api import alerting, notifications
+    from platform_core.public_api.config import load_public_api_config
+
+    config = load_public_api_config()
+    for db in _one_session():
+        raised = alerting.scan_all(db, config=config)
+        gone = notifications.purge_expired(db)
+        db.commit()
+        if raised:
+            log.info("canh bao API: %d thong bao moi", raised)
+        if gone:
+            log.info("don %d thong bao API het han", gone)
+
+
 def _ghi_metrics() -> None:
     """One line of counters. Cheap, and the only observability this needs."""
     from platform_core.public_api import metrics
@@ -491,6 +518,7 @@ def run_forever(worker_id: str, *, stop=None) -> None:
     next_upload_sweep = 0.0
     next_webhook_run = 0.0
     next_metrics_log = 0.0
+    next_alert_scan = 0.0
     while stop is None or not stop():
         try:
             if time.monotonic() >= next_event_purge:
@@ -531,6 +559,9 @@ def run_forever(worker_id: str, *, stop=None) -> None:
             if time.monotonic() >= next_metrics_log:
                 _ghi_metrics()
                 next_metrics_log = time.monotonic() + METRICS_LOG_INTERVAL_S
+            if time.monotonic() >= next_alert_scan:
+                _quet_canh_bao()
+                next_alert_scan = time.monotonic() + ALERT_SCAN_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()

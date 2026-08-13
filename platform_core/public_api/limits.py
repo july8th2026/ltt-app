@@ -204,23 +204,46 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
 # ── Layer 5: daily credit ceiling ─────────────────────────────────────────────
 
 def credit_spent_since(db, user_id: str, since: datetime) -> int:
-    """Credit committed in a window: everything held, minus what came back.
+    """Credit committed **through the API** in a window.
 
-    Counting holds rather than settlements is deliberate — the ceiling has to
+    Holds minus what came back, counting only jobs the API created. Counting
+    every credit entry — which is what this did until EXT-11 — meant a customer
+    using the web app could exhaust their own integration's daily allowance. The
+    ceiling exists to bound the blast radius of a leaked *API key*, so it counts
+    what an API key can spend (decision D3).
+
+    Counting holds rather than settlements is deliberate: the ceiling has to
     stop spending *before* the work runs, and a hold is the moment the account
     commits to the cost.
     """
-    from sqlalchemy import func, select
-    from platform_core.models import (CREDIT_HOLD, CREDIT_REFUND, CREDIT_SETTLE,
-                                      CreditEntry)
+    from platform_core.public_api.budgets import api_spend_since
 
-    total = db.execute(
-        select(func.coalesce(func.sum(CreditEntry.delta), 0)).where(
-            CreditEntry.user_id == str(user_id),
-            CreditEntry.created_at >= since,
-            CreditEntry.kind.in_((CREDIT_HOLD, CREDIT_SETTLE, CREDIT_REFUND)),
-        )).scalar_one()
-    return max(0, -int(total))
+    return api_spend_since(db, user_id=str(user_id), since=since)
+
+
+def enforce_budget(db, *, principal, cost: int) -> None:
+    """Refuse when a hard-capped budget of the customer's own is exhausted.
+
+    Separate from the operator's ceiling and checked alongside it: whichever
+    allows less wins, and the refusal says which, because "quota_exceeded" with
+    no attribution turns every support conversation into an investigation.
+    """
+    from platform_core.public_api import budgets
+
+    for budget in budgets.list_for(db, user_id=principal.user_id):
+        if not budget.hard_cap:
+            continue
+        if budget.scope == budgets.SCOPE_PROJECT and \
+                str(budget.project_id or "") != str(
+                    getattr(principal, "project_id", "") or ""):
+            continue
+        state = budgets.status(db, budget)
+        if state["spent"] + int(cost) > state["amount"]:
+            raise _too_many(
+                f"This call would exceed the {budget.period} budget you set "
+                f"for this account.", 60, code=CODE_QUOTA,
+                limit=state["amount"], spent=state["spent"],
+                scope=budget.scope, period=budget.period, source="budget")
 
 
 def enforce_daily_credit(db, *, principal, config, cost: int) -> None:

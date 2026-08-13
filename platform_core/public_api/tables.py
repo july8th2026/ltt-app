@@ -283,6 +283,84 @@ class ApiRequestLog(Base):
                 f"{self.request_id[:8]}>")
 
 
+class ApiBudget(Base):
+    """A spending limit a customer set for themselves.
+
+    Note what is **not** here: any column that could change what the ledger
+    says. A budget observes spending and, if hard-capped, refuses the next call;
+    it never writes, adjusts or hides a credit entry. That separation is the
+    only reason a self-service field is allowed near money at all.
+    """
+
+    __tablename__ = "api_budgets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True)
+    #: "account" or "project" — a project is the unit EXT-04 made revocable and
+    #: budgetable on its own.
+    scope: Mapped[str] = mapped_column(String(16), default="account",
+                                       nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), default="",
+                                            nullable=False)
+    period: Mapped[str] = mapped_column(String(8), default="month",
+                                        nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Percentages at which to warn. Bounded on the way in: an alert at 3% is
+    #: noise, and noise is how people learn to ignore the one at 100%.
+    thresholds: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    #: False warns, True refuses. A customer who asked to be *told* at 80% must
+    #: not discover that being told also meant being stopped.
+    hard_cap: Mapped[bool] = mapped_column(Boolean, default=False,
+                                           nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        Index("ix_api_budgets_owner", "user_id", "scope"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return (f"<ApiBudget {self.scope} {self.period} {self.amount} "
+                f"hard={self.hard_cap}>")
+
+
+class ApiNotification(Base):
+    """One alert raised for one account.
+
+    ``kind`` + ``subject`` is what deduplication keys on: "budget X crossed 80%"
+    is a different subject from "budget X crossed 100%", and both are different
+    from the same threshold on another budget.
+    """
+
+    __tablename__ = "api_notifications"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    subject: Mapped[str] = mapped_column(String(120), default="",
+                                         nullable=False)
+    title: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    body: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # The cooldown lookup: same account, same kind, same subject, recent.
+        Index("ix_api_notifications_dedupe", "user_id", "kind", "subject",
+              "created_at"),
+        Index("ix_api_notifications_unread", "user_id", "read_at"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiNotification {self.kind} {self.subject}>"
+
+
 WEBHOOK_PENDING = "pending"
 WEBHOOK_DELIVERED = "delivered"
 WEBHOOK_FAILED = "failed"
