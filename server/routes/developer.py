@@ -114,7 +114,7 @@ SECTIONS = (
     ("projects", "/developers/projects", N_("Project")),
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
-    ("playground", None, N_("Playground")),
+    ("playground", "/developers/playground", N_("Playground")),
     ("logs", None, N_("Nhật ký request")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
@@ -324,6 +324,33 @@ for attempt in range(5):
         break
     except Timeout:               # the request may have succeeded
         time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
+
+@router.get("/playground", response_class=HTMLResponse)
+def developer_playground(request: Request, user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """A request builder that calls the public API the way a customer does.
+
+    The page holds no credential and the server mints none for it: the browser
+    sends the developer's own key straight to `/api/v1`. A portal endpoint that
+    borrowed the session instead would be a second road to the chargeable path,
+    and the platform has exactly one on purpose — a policy bug on the second one
+    costs real money.
+    """
+    import json
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    published = [tool.to_public_dict() for tool in catalog]
+    return _render(request, db, user, "playground", "dev_playground.html",
+                   catalog=[{"name": item["name"],
+                             "execution_mode": item["execution_mode"]}
+                            for item in published],
+                   # Escaped for embedding in a <script> block: a schema that
+                   # happened to contain "</script>" would otherwise end the
+                   # element and become markup.
+                   catalog_json=json.dumps(published, ensure_ascii=False)
+                   .replace("<", "\\u003c"))
+
 
 @router.get("/tools", response_class=HTMLResponse)
 def developer_tools(request: Request, q: str = "", capability: str = "",

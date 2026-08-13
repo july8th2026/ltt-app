@@ -125,13 +125,24 @@ def test_the_navigation_is_the_same_on_every_section(portal):
 
 def test_unbuilt_sections_are_named_but_not_linked(portal):
     """A dead link is worse than an honest label: the shape of the area is
-    information a developer uses to plan; a 404 is not."""
+    information a developer uses to plan; a 404 is not.
+
+    Which sections are unbuilt is read from the declaration rather than listed
+    here — the first version of this test named them, and building the
+    playground turned a correct change into a red suite.
+    """
+    from server.routes.developer import SECTIONS
+
     _register(portal, f"soon-{uuid.uuid4().hex[:6]}@example.com")
     page = portal.get("/developers").text
-    for label in ("Playground", "request", "báo"):
-        assert label.lower() in page.lower()
-    assert 'href="/developers/playground"' not in page
-    assert portal.get("/developers/playground").status_code == 404
+    unbuilt = [(key, label) for key, href, label in SECTIONS if href is None]
+    assert unbuilt, "every section is built — delete this test rather than lie"
+    for key, label in unbuilt:
+        # Named, so a developer knows the area is coming…
+        assert label.lower() in page.lower(), label
+        # …but not a link, and not a route that half-answers.
+        assert f'href="/developers/{key}"' not in page, key
+        assert portal.get(f"/developers/{key}").status_code == 404, key
 
 
 def test_the_current_section_is_marked_for_assistive_technology(portal):

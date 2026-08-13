@@ -1,0 +1,72 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+{% if not catalog %}
+  <div class="card">
+    <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API, nên chưa có gì để thử.") }}</p>
+  </div>
+{% else %}
+<div class="card">
+  <p class="muted">{{ _("Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó.") }}</p>
+  <p class="alert alert-warn" role="status">
+    <strong>{{ _("Lời gọi ở đây tiêu credit thật.") }}</strong>
+    {{ _("Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng một đường đi.") }}
+  </p>
+</div>
+
+<div id="playground" class="card"
+     data-need-key="{{ _('Dán khóa API vào ô bên trên trước đã.') }}"
+     data-working="{{ _('Đang gọi…') }}"
+     data-costs="{{ _('Báo giá: {n} credit') }}">
+  <p>
+    <label for="pg-key">{{ _("Khóa API") }}</label><br>
+    <input id="pg-key" type="password" autocomplete="off" spellcheck="false"
+           placeholder="ltt_sk_…" style="width:min(560px,100%)">
+    <br><small class="muted">{{ _("Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu ngoài chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn phải dán khóa mình đang giữ.") }}</small>
+  </p>
+
+  <p>
+    <label for="pg-tool">{{ _("Công cụ") }}</label><br>
+    <select id="pg-tool">
+      {% for tool in catalog %}
+        <option value="{{ tool.name }}">{{ tool.name }} — {{ tool.execution_mode }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" id="pg-raw-toggle" class="btn btn-ghost">{{ _("JSON thô") }}</button>
+  </p>
+
+  <div id="pg-form"></div>
+
+  <p id="pg-raw-wrap" hidden>
+    <label for="pg-raw">{{ _("Input dạng JSON") }}</label><br>
+    <textarea id="pg-raw" rows="8" style="width:min(720px,100%);font-family:monospace"></textarea>
+  </p>
+
+  <p>
+    <button type="button" id="pg-quote" class="btn">{{ _("Kiểm & báo giá") }}</button>
+    <button type="button" id="pg-run" class="btn btn-primary">{{ _("Chạy thật") }}</button>
+    <strong id="pg-cost"></strong>
+  </p>
+
+  <pre id="pg-out" class="pg-out" aria-live="polite"></pre>
+
+  {# The catalog the form is generated from: the same document /api/v1/tools
+     serves, so the form cannot offer a field the API rejects. #}
+  <script type="application/json" id="pg-catalog">{{ catalog_json|safe }}</script>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Chế độ chạy khác") }}</h2>
+  <ul>
+    <li><code>ASYNC_JOB</code> — {{ _("mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → artifact.") }}</li>
+    <li><code>SYNC</code> — {{ _("chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu này.") }}</li>
+    <li><code>STREAM</code>, <code>BATCH</code> —
+        {{ _("đã đặc tả nhưng chưa operation nào dùng, nên chưa có gì để thử ở đây. Xem PROTOCOL_V1.md mục 1.1.") }}</li>
+  </ul>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script src="/static/dev_playground.js?v={{ asset_ver }}"></script>
+{% endblock %}

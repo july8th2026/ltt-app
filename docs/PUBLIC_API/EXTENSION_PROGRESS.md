@@ -19,7 +19,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 05 | Developer API tab / information architecture | **PASS** | 2026-08-13 |
 | 06 | Schema-driven apps/models/tools variable reference | **PASS** | 2026-08-13 |
 | 07 | Quickstart / env vars / examples / recipes | **PASS** | 2026-08-13 |
-| 08 | Playground / request builder / job inspector | chưa chạy | — |
+| 08 | Playground / request builder / job inspector | **PASS** | 2026-08-13 |
 | 09 | Request logs / trace / job timeline | chưa chạy | — |
 | 10 | Webhook console / event catalog / resend | chưa chạy | — |
 | 11 | Usage / budgets / credit alerts / notifications | chưa chạy | — |
@@ -791,3 +791,122 @@ lại cho đúng". **0 lỗi console.**
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/08_API_PLAYGROUND_REQUEST_BUILDER_COST_STREAM_BATCH_JOB_INSPECTOR.txt`
 — **checkpoint full gate**.
+
+
+---
+
+## EXT-08 — PLAYGROUND ✅
+
+**Checkpoint full gate** theo `MANIFEST.json`.
+
+### Entry gate
+
+EXT-07 PASS ✅ (`7b6d67a`), cây sạch. Head vẫn `d0e1f2a3b4c5` — **không**
+migration, **không** route `/api/v1` mới, **không** phụ thuộc mới.
+
+### Quyết định thiết kế đáng nói nhất
+
+Trang gọi `/api/v1` **từ trình duyệt bằng khóa do khách dán vào**, chứ không đi
+qua một endpoint portal mượn phiên đăng nhập.
+
+Một proxy như vậy sẽ phải dựng lại danh tính người gọi ở phía máy chủ, và trở
+thành **con đường thứ hai** tới đường tính tiền — đúng thứ COMMON_RULES cấm, và
+là nơi một lỗi chính sách làm mất tiền thật. Dán khóa nghĩa là playground **chính
+là** API: cùng xác thực, cùng scope, cùng hạn mức, cùng sổ credit, cùng
+idempotency. Chạy được ở đây thì chạy được từ máy chủ khách; bị từ chối ở đây thì
+cũng bị từ chối ở đó.
+
+Khóa nằm trong biến của tab: **không** localStorage, **không** cookie, không gửi
+đi đâu ngoài header `Authorization` tới chính origin này. Có test quét mã nguồn
+JS (sau khi bỏ comment, để bộ quét không vấp vào chính tài liệu của nó).
+
+**Không có chế độ chạy miễn phí.** Trang nói thẳng "lời gọi ở đây tiêu credit
+thật" — nếu có chế độ miễn phí thì nó đã không còn là cùng một đường đi.
+
+### Form sinh từ hợp đồng
+
+Toàn bộ form dựng từ JSON Schema mà `/api/v1/tools` phục vụ (nhúng nguyên văn
+vào trang, escape `<` để một schema chứa `</script>` không thoát ra thành
+markup). Enum thành `<select>`, `integer` thành number có min/max, tham số media
+thành `<input type=file>` đi **đúng ba bước upload thật** (vé → bytes →
+confirm). Có `JSON thô` cho người muốn tự gõ.
+
+`Idempotency-Key` sinh tự động **một lần cho mỗi lời gọi logic** và **bị vứt đi
+khi input đổi** — đổi input là lời gọi khác, phát lại câu trả lời cũ sẽ là sai.
+
+Bảng trace chỉ hiện header khách cần hành động: `X-Correlation-ID`,
+`X-LTT-API-Version`, `Retry-After`, `Idempotency-Replayed`, `Location`. Có test
+chốt đúng tập đó — `Authorization` không bao giờ được vọng lại lên trang.
+
+### Chế độ chạy khác
+
+`SYNC` chỉ dành cho đọc; `STREAM`/`BATCH` đã đặc tả nhưng **chưa operation nào
+dùng** (D5), nên trang nói rõ là chưa có gì để thử thay vì dựng một tab rỗng.
+
+### Tests
+
+`tests/test_200_playground.py` — **15 test**. Đáng kể:
+- **không route portal nào** chứa `run`/`execute`/`quote` — không có con đường
+  thứ hai tới đường tính tiền;
+- mọi `fetch` trong JS chỉ trỏ `/api/v1`, và mọi path phải có trong inventory;
+- trang **không chứa** khóa vừa tạo, không có `localStorage`/`cookie`, ô khóa là
+  `type=password`;
+- catalog nhúng **bằng đúng** `to_public_dict()` của catalog thật;
+- deployment chỉ mở `image.thumbnail` thì trang **không** hiện `image.generate`;
+- script có `?v=` cache-bust;
+- **parity**: chạy đúng những gì trang làm bằng request thường → bấm Run hai lần
+  cùng input trả **cùng job id** + `Idempotency-Replayed: true`, tức không tính
+  tiền hai lần — chính hành vi trang dựa vào.
+
+### Browser E2E (bắt buộc)
+
+Server dùng-một-lần cổng 8123, provider **stub**, worker chạy trong tiến trình.
+Luồng thật trong trình duyệt: tạo khóa ở portal → mở Playground → chọn
+`image.thumbnail` → dán khóa → **Kiểm & báo giá** = `5 credit` → **Chạy thật** →
+job `queued` → poll → `succeeded`, `credit: held 5 / charged 5`, và một dòng
+`artifact <id>`. **0 lỗi console.**
+
+Trình duyệt cũng bắt được một lỗi của bản dựng đầu: job hỏng vì handler tra
+credential provider **trước** khi gọi, nên chỉ stub hàm gọi là chưa đủ — đúng
+loại chi tiết mà test đơn vị (đã stub sẵn env) không thấy.
+
+### Risks / deferred
+
+| # | Việc | Chủ sở hữu |
+|---|---|---|
+| — | Tab STREAM/BATCH | khi có operation đầu tiên (D5) |
+| — | Lưu lịch sử lời gọi trong playground | EXT-09 (request logs) làm đúng chỗ hơn |
+
+### Rollback
+
+Xoá `dev_playground.html`, `server/static/dev_playground.js`, khối CSS `.pg-*`,
+route `/developers/playground`, trả mục nav về `None`, xoá `test_200`. Không dữ
+liệu, không migration.
+
+### Full gate — checkpoint
+
+Lần 1: **FAIL (1/10)**. pytest 3.157 pass, đúng **một** test đỏ:
+`test_197::test_unbuilt_sections_are_named_but_not_linked`. Nó đỏ vì EXT-08
+**đã xây** Playground, trong khi test viết ở EXT-05 **liệt kê cứng** những
+section chưa xây và khẳng định `/developers/playground` phải trả 404 — một thay
+đổi đúng làm suite đỏ. Lỗi của test, không phải của mã.
+
+Sửa tận gốc: test đọc danh sách từ chính khai báo `SECTIONS` (`href is None`),
+kiểm mỗi section chưa xây đều có tên, **không** có link, và route trả 404 thật.
+Thêm một khẳng định: nếu mọi section đều đã xây thì test tự báo "xoá tôi đi thay
+vì nói dối", vì lúc đó nó không còn kiểm điều gì.
+
+Lần 2, trên cây mã cuối: **`RESULT: PASS` 10/10**, pytest 2.807,9 s.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-08 | Kết quả |
+|---|---|
+| Playground semantics == external API | ✅ trang **là** API; test parity chứng minh replay/không tính tiền hai lần |
+| No raw key recovery | ✅ máy chủ không đọc lại được khóa; trang không chứa/không lưu khóa nào |
+| No credit bypass | ✅ không route portal nào chạy tool; mọi lời gọi qua quote + hold + ledger |
+| Browser E2E | ✅ chạy trọn vòng tới artifact, 0 lỗi console |
+| Full gate tại checkpoint | ✅ 10/10 |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/09_USER_REQUEST_LOGS_TRACE_DEBUG_AND_JOB_TIMELINE.txt`

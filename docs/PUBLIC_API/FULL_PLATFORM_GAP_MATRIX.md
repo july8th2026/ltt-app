@@ -31,6 +31,11 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-08 (2026-08-13):** Extension domain 11
+> (`playground`) `MISSING` → `DONE`. Trang gọi thẳng `/api/v1` bằng
+> khóa của khách — không có endpoint portal nào chạy tool, nên không
+> có đường thứ hai tới tính tiền.
+
 > **Cập nhật sau EXT-07 (2026-08-13):** Extension domain 10
 > (`quickstart/env/recipes`) `MISSING` → `DONE`; snippet sinh từ hợp
 > đồng cho 6 dạng client + n8n/Make, và một test E2E đi đúng bảy

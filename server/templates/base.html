@@ -170,5 +170,8 @@
   {% block content %}{% endblock %}
 </main>
 {% include "_platform_footer.html" %}
+{# Page scripts load after the content they operate on, and carry ?v= so a
+   change reaches a browser instead of waiting out a cache TTL. #}
+{% block scripts %}{% endblock %}
 </body>
 </html>

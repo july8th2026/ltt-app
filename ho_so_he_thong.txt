@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:74c585271f7be67c13c7770073500d28a6fcab108ca65535caa07b000412b6e7
-Nguồn đã quét : 1069 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:aee5a06124abdd2989ad8d55dc19646451c2fa7c5500527d00624c50ad2e836f
+Nguồn đã quét : 1072 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (301)
+4. HTTP ROUTE INVENTORY (302)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -594,21 +594,22 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
 - [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:254
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:467
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:445
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:494
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:472
 - [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:270
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:482
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:519
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:532
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:509
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:546
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:559
+- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:329
 - [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:263
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:576
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:592
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:603
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:619
 - [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:276
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:476
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:329
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:364
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:452
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:460
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:503
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:356
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:391
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:479
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:487
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -983,7 +984,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (202 file pytest + 3 frontend)
+10. QUALITY GATES (203 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1119,6 +1120,7 @@ Test inventory:
 - tests/test_198_variable_reference.py
 - tests/test_199_quickstart_examples.py
 - tests/test_19_tiktok_rate_limit.py
+- tests/test_200_playground.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1212,8 +1214,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1069 file)
-Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:793, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1072 file)
+Phân bố extension: .cfg:1, .css:7, .html:71, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:794, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1908,7 +1910,7 @@ Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (124)
+[server] (126)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -1976,6 +1978,7 @@ Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19,
 - server/static/autosub-studio/assets/main-C1Q3T130.js
 - server/static/autosub-studio/assets/main-vCwUoeAp.css
 - server/static/autosub-studio/build-meta.json
+- server/static/dev_playground.js
 - server/static/favicon.svg
 - server/static/htmx.min.js
 - server/static/ltt.css
@@ -2001,6 +2004,7 @@ Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19,
 - server/templates/dev_jobs.html
 - server/templates/dev_keys.html
 - server/templates/dev_overview.html
+- server/templates/dev_playground.html
 - server/templates/dev_projects.html
 - server/templates/dev_quickstart.html
 - server/templates/dev_settings.html
@@ -2041,7 +2045,7 @@ Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (218)
+[tests] (219)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2187,6 +2191,7 @@ Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19,
 - tests/test_198_variable_reference.py
 - tests/test_199_quickstart_examples.py
 - tests/test_19_tiktok_rate_limit.py
+- tests/test_200_playground.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2349,7 +2354,7 @@ Phân bố extension: .cfg:1, .css:7, .html:70, .ini:1, .js:8, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1069 file; 9258861 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1072 file; 9290464 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -120579,7 +120584,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=b4fe7cbdaaea47149eab32ece6b263b9fcd8fdb40925780331a21f014211eb9a BYTES=26730 LINES=604
+SHA256=2a6103edf64829ee3c819f0ac01c1b44a326ff5f094cd289ee4cf53b24d841e2 BYTES=28120 LINES=631
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -120697,7 +120702,7 @@ SECTIONS = (
     ("projects", "/developers/projects", N_("Project")),
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
-    ("playground", None, N_("Playground")),
+    ("playground", "/developers/playground", N_("Playground")),
     ("logs", None, N_("Nhật ký request")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
@@ -120907,6 +120912,33 @@ for attempt in range(5):
         break
     except Timeout:               # the request may have succeeded
         time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
+
+@router.get("/playground", response_class=HTMLResponse)
+def developer_playground(request: Request, user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """A request builder that calls the public API the way a customer does.
+
+    The page holds no credential and the server mints none for it: the browser
+    sends the developer's own key straight to `/api/v1`. A portal endpoint that
+    borrowed the session instead would be a second road to the chargeable path,
+    and the platform has exactly one on purpose — a policy bug on the second one
+    costs real money.
+    """
+    import json
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    published = [tool.to_public_dict() for tool in catalog]
+    return _render(request, db, user, "playground", "dev_playground.html",
+                   catalog=[{"name": item["name"],
+                             "execution_mode": item["execution_mode"]}
+                            for item in published],
+                   # Escaped for embedding in a <script> block: a schema that
+                   # happened to contain "</script>" would otherwise end the
+                   # element and become markup.
+                   catalog_json=json.dumps(published, ensure_ascii=False)
+                   .replace("<", "\\u003c"))
+
 
 @router.get("/tools", response_class=HTMLResponse)
 def developer_tools(request: Request, q: str = "", capability: str = "",
@@ -126363,6 +126395,326 @@ SHA256=f7a01135550c8932e79fcf00239bdcbc78d1450954c456f5a650fb7e25e4d45e BYTES=14
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/dev_playground.js
+SHA256=2b1b9c846817f949da4a38b0e4952b8df25004ad9364e88dc7f4a9eeafe84592 BYTES=11681 LINES=314
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+/* Developer playground — talks to /api/v1 exactly the way a customer does.
+ *
+ * The single design decision worth explaining: this page calls the public API
+ * from the browser with a key the developer pastes in, rather than proxying
+ * through a portal endpoint that borrows their session.
+ *
+ * A proxy would have to reconstruct the caller's identity server-side and would
+ * become a second way to reach the chargeable path — the one thing the platform
+ * rules forbid, and the one place a policy bug costs real money. Pasting a key
+ * means the playground *is* the API: same auth, same scopes, same rate limits,
+ * same credit ledger, same idempotency. If it works here it works from a
+ * server, and if it is refused here it would have been refused there.
+ *
+ * The key lives in a variable for the lifetime of the tab. It is never written
+ * to localStorage, never sent anywhere except the Authorization header of
+ * requests to this same origin, and the field is cleared on submit-to-nowhere.
+ */
+(function () {
+  "use strict";
+
+  var root = document.getElementById("playground");
+  if (!root) return;
+
+  var catalog = JSON.parse(document.getElementById("pg-catalog").textContent);
+  var state = { tool: null, uploads: {} };
+
+  var els = {
+    tool: document.getElementById("pg-tool"),
+    key: document.getElementById("pg-key"),
+    form: document.getElementById("pg-form"),
+    raw: document.getElementById("pg-raw"),
+    rawWrap: document.getElementById("pg-raw-wrap"),
+    rawToggle: document.getElementById("pg-raw-toggle"),
+    quote: document.getElementById("pg-quote"),
+    run: document.getElementById("pg-run"),
+    out: document.getElementById("pg-out"),
+    cost: document.getElementById("pg-cost"),
+  };
+
+  function show(message, kind) {
+    els.out.textContent = message;
+    els.out.className = "pg-out " + (kind || "");
+  }
+
+  function append(message) {
+    els.out.textContent += "\n" + message;
+  }
+
+  function toolByName(name) {
+    for (var i = 0; i < catalog.length; i += 1) {
+      if (catalog[i].name === name) return catalog[i];
+    }
+    return null;
+  }
+
+  /* Build the form from the published JSON Schema — the same document the
+     server validates against, so the form cannot offer a field the API
+     rejects or miss one it requires. */
+  function renderForm(tool) {
+    els.form.innerHTML = "";
+    state.uploads = {};
+    var required = tool.input_schema.required || [];
+    var props = tool.input_schema.properties || {};
+    Object.keys(props).forEach(function (name) {
+      var spec = props[name];
+      var row = document.createElement("p");
+      var label = document.createElement("label");
+      label.setAttribute("for", "pg-f-" + name);
+      label.textContent = name + (required.indexOf(name) >= 0 ? " *" : "");
+      row.appendChild(label);
+      row.appendChild(document.createElement("br"));
+
+      var field;
+      if (spec.enum) {
+        field = document.createElement("select");
+        if (required.indexOf(name) < 0) {
+          field.appendChild(new Option("—", ""));
+        }
+        spec.enum.forEach(function (value) {
+          field.appendChild(new Option(String(value), String(value)));
+        });
+      } else if (isMedia(spec)) {
+        field = document.createElement("input");
+        field.type = "file";
+        field.dataset.media = "1";
+      } else {
+        field = document.createElement("input");
+        field.type = spec.type === "integer" ? "number" : "text";
+        if (spec.minimum !== undefined) field.min = spec.minimum;
+        if (spec.maximum !== undefined) field.max = spec.maximum;
+        if (spec.maxLength !== undefined) field.maxLength = spec.maxLength;
+      }
+      field.id = "pg-f-" + name;
+      field.name = name;
+      if (spec.default !== undefined && field.tagName !== "SELECT") {
+        field.value = spec.default;
+      } else if (spec.default !== undefined) {
+        field.value = String(spec.default);
+      } else if (spec.examples && spec.examples.length && !isMedia(spec)) {
+        field.value = String(spec.examples[0]);
+      }
+      row.appendChild(field);
+
+      if (spec.description) {
+        var hint = document.createElement("small");
+        hint.className = "muted";
+        hint.textContent = " " + spec.description;
+        row.appendChild(hint);
+      }
+      els.form.appendChild(row);
+    });
+    syncRaw();
+  }
+
+  function isMedia(spec) {
+    return spec.type === "string" &&
+      /Upload or artifact id|upload/i.test(spec.description || "");
+  }
+
+  function collect() {
+    var payload = {};
+    var props = (state.tool.input_schema.properties) || {};
+    Object.keys(props).forEach(function (name) {
+      var field = document.getElementById("pg-f-" + name);
+      if (!field) return;
+      if (field.dataset && field.dataset.media) {
+        if (state.uploads[name]) payload[name] = state.uploads[name];
+        return;
+      }
+      var value = field.value;
+      if (value === "" || value === null) return;
+      payload[name] = props[name].type === "integer" ? Number(value) : value;
+    });
+    return payload;
+  }
+
+  function syncRaw() {
+    if (els.rawWrap.hidden) return;
+    els.raw.value = JSON.stringify(collect(), null, 2);
+  }
+
+  function currentInput() {
+    if (!els.rawWrap.hidden && els.raw.value.trim()) {
+      return JSON.parse(els.raw.value);
+    }
+    return collect();
+  }
+
+  function headers(extra) {
+    var base = {
+      "Authorization": "Bearer " + els.key.value.trim(),
+      "Content-Type": "application/json",
+    };
+    Object.keys(extra || {}).forEach(function (k) { base[k] = extra[k]; });
+    return base;
+  }
+
+  function traceOf(response) {
+    /* Only headers a caller is meant to act on. Nothing else is echoed. */
+    var safe = ["X-Correlation-ID", "X-LTT-API-Version", "Retry-After",
+                "Idempotency-Replayed", "Location"];
+    var seen = [];
+    safe.forEach(function (name) {
+      var value = response.headers.get(name);
+      if (value) seen.push(name + ": " + value);
+    });
+    return seen.join("\n");
+  }
+
+  function call(method, path, body, extra) {
+    return fetch("/api/v1" + path, {
+      method: method,
+      headers: headers(extra),
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; })
+        .then(function (data) {
+          return { ok: response.ok, status: response.status, data: data,
+                   trace: traceOf(response) };
+        });
+    });
+  }
+
+  function requireKey() {
+    if (!els.key.value.trim()) {
+      show(root.dataset.needKey, "err");
+      return false;
+    }
+    return true;
+  }
+
+  /* Media inputs go through the real upload flow: ticket, bytes, confirm. */
+  function uploadPending() {
+    var fields = els.form.querySelectorAll("input[data-media]");
+    var chain = Promise.resolve();
+    Array.prototype.forEach.call(fields, function (field) {
+      if (!field.files || !field.files[0] || state.uploads[field.name]) return;
+      var file = field.files[0];
+      chain = chain.then(function () {
+        return call("POST", "/uploads", {
+          tool: state.tool.name, field: field.name,
+          filename: file.name, content_type: file.type || "application/octet-stream",
+          size: file.size,
+        }).then(function (result) {
+          if (!result.ok) throw new Error(JSON.stringify(result.data));
+          var id = result.data.id;
+          return fetch("/api/v1/uploads/" + id + "/content", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + els.key.value.trim(),
+                       "Content-Type": file.type || "application/octet-stream" },
+            body: file,
+          }).then(function () {
+            return call("POST", "/uploads/" + id + "/confirm", {});
+          }).then(function (confirmed) {
+            if (!confirmed.ok) throw new Error(JSON.stringify(confirmed.data));
+            state.uploads[field.name] = id;
+            append("upload " + field.name + " → " + id);
+          });
+        });
+      });
+    });
+    return chain;
+  }
+
+  function doQuote() {
+    if (!requireKey()) return Promise.resolve(null);
+    show(root.dataset.working);
+    return uploadPending().then(function () {
+      return call("POST", "/quotes",
+                  { tool: state.tool.name, input: currentInput() });
+    }).then(function (result) {
+      show(JSON.stringify(result.data, null, 2), result.ok ? "" : "err");
+      if (result.trace) append("\n" + result.trace);
+      els.cost.textContent = result.ok
+        ? root.dataset.costs.replace("{n}", result.data.credit)
+        : "";
+      return result.ok ? result.data : null;
+    }).catch(function (error) {
+      show(String(error), "err");
+      return null;
+    });
+  }
+
+  function poll(id, tries) {
+    return call("GET", "/jobs/" + id).then(function (result) {
+      var status = result.data.status;
+      append("… " + status);
+      if (status === "queued" || status === "running") {
+        if (tries <= 0) return result;
+        return new Promise(function (resolve) {
+          setTimeout(function () { resolve(poll(id, tries - 1)); }, 2000);
+        });
+      }
+      return result;
+    });
+  }
+
+  function doRun() {
+    if (!requireKey()) return;
+    doQuote().then(function (quote) {
+      if (!quote) return;
+      /* One key per logical call, generated here so a developer cannot forget
+         it — and reused if they press Run twice with the same input, which is
+         precisely the double-charge this header exists to prevent. */
+      var key = state.idempotencyKey || (state.idempotencyKey = uuid());
+      append("\nIdempotency-Key: " + key);
+      return call("POST", "/jobs",
+                  { tool: state.tool.name, quote: quote.quote,
+                    input: currentInput() },
+                  { "Idempotency-Key": key }).then(function (result) {
+        append("\n" + JSON.stringify(result.data, null, 2));
+        if (result.trace) append("\n" + result.trace);
+        if (!result.ok) return;
+        return poll(result.data.id, 30).then(function (final) {
+          append("\n" + JSON.stringify(final.data, null, 2));
+          var outputs = (final.data || {}).outputs || [];
+          outputs.forEach(function (artifact) {
+            append("artifact " + artifact.id);
+          });
+        });
+      });
+    });
+  }
+
+  function uuid() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    return "pg-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+
+  els.tool.addEventListener("change", function () {
+    state.tool = toolByName(els.tool.value);
+    state.idempotencyKey = null;
+    els.cost.textContent = "";
+    if (state.tool) renderForm(state.tool);
+  });
+  els.form.addEventListener("input", function () {
+    /* Any change is a different call, so the previous key must not be reused:
+       reusing it would replay the first answer instead of running the new
+       input, and the API would be right to refuse. */
+    state.idempotencyKey = null;
+    syncRaw();
+  });
+  els.rawToggle.addEventListener("click", function () {
+    els.rawWrap.hidden = !els.rawWrap.hidden;
+    syncRaw();
+  });
+  els.quote.addEventListener("click", doQuote);
+  els.run.addEventListener("click", doRun);
+
+  state.tool = toolByName(els.tool.value);
+  if (state.tool) renderForm(state.tool);
+})();
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/favicon.svg
 SHA256=0e3421c5e695a22f8e237579faf379ceec9b16a3ec4b1fa499a48ca3a98cfd00 BYTES=269 LINES=4
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -126381,7 +126733,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=7a6e7a0e2dcf42920b6d0ae04177df84857717181115227c43f4aa0a3b0f042b BYTES=113619 LINES=576
+SHA256=62c03aa4d01341d6869018fd78e0c5667d4f55a6f237b3ee1aab03bd0562b484 BYTES=114292 LINES=583
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -126959,6 +127311,13 @@ html{background:var(--surface-canvas)}
 .dev-nav span{cursor:not-allowed;opacity:.55}
 .dev-nav .pill{padding:1px 6px;border-radius:99px;background:var(--surface-overlay);font-size:9px}
 .dev-h1{margin:0 0 12px;font-size:20px}
+
+/* EXT-08 playground: the response pane is the point of the page, so it gets
+   room and keeps its own scroll instead of stretching the layout. */
+.pg-out{max-height:420px;overflow:auto;padding:10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);font-size:12px;white-space:pre-wrap;word-break:break-word}
+.pg-out.err{border-color:var(--status-danger);color:var(--status-danger)}
+#playground label{color:var(--text-secondary);font-size:12px}
+#playground input[type=text],#playground input[type=password],#playground input[type=number],#playground select,#playground textarea{max-width:min(560px,100%)}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -127612,7 +127971,7 @@ SHA256=15a163864a14afebf89db57e4f8049cac153092484f1ed3637404526d20181c5 BYTES=29
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/base.html
-SHA256=bc7a6cd567af00cdc7a7377ced22163c9bb40aa90ecb4e9d32b3b1a2e0248911 BYTES=8838 LINES=174
+SHA256=0c58a248f5e1ad3cb19039c867760127270f6878c25c8fd40c07118a5b27ee3e BYTES=9017 LINES=177
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <!DOCTYPE html>
 <html lang="{{ lang_hien_tai() }}">
@@ -127786,6 +128145,9 @@ SHA256=bc7a6cd567af00cdc7a7377ced22163c9bb40aa90ecb4e9d32b3b1a2e0248911 BYTES=88
   {% block content %}{% endblock %}
 </main>
 {% include "_platform_footer.html" %}
+{# Page scripts load after the content they operate on, and carry ?v= so a
+   change reaches a browser instead of waiting out a cache TTL. #}
+{% block scripts %}{% endblock %}
 </body>
 </html>
 
@@ -128263,6 +128625,84 @@ SHA256=4360ac675017dd7b82f3f4ae3c70b77c7c3813cbae2ea6712df66ff78ca57740 BYTES=28
   {% endif %}
 </div>
 
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_playground.html
+SHA256=18bdf93d473e61d4a09d84b4b2f01a22635561506f5fc7ae896614bc717d33da BYTES=3440 LINES=72
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+{% if not catalog %}
+  <div class="card">
+    <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API, nên chưa có gì để thử.") }}</p>
+  </div>
+{% else %}
+<div class="card">
+  <p class="muted">{{ _("Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó.") }}</p>
+  <p class="alert alert-warn" role="status">
+    <strong>{{ _("Lời gọi ở đây tiêu credit thật.") }}</strong>
+    {{ _("Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng một đường đi.") }}
+  </p>
+</div>
+
+<div id="playground" class="card"
+     data-need-key="{{ _('Dán khóa API vào ô bên trên trước đã.') }}"
+     data-working="{{ _('Đang gọi…') }}"
+     data-costs="{{ _('Báo giá: {n} credit') }}">
+  <p>
+    <label for="pg-key">{{ _("Khóa API") }}</label><br>
+    <input id="pg-key" type="password" autocomplete="off" spellcheck="false"
+           placeholder="ltt_sk_…" style="width:min(560px,100%)">
+    <br><small class="muted">{{ _("Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu ngoài chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn phải dán khóa mình đang giữ.") }}</small>
+  </p>
+
+  <p>
+    <label for="pg-tool">{{ _("Công cụ") }}</label><br>
+    <select id="pg-tool">
+      {% for tool in catalog %}
+        <option value="{{ tool.name }}">{{ tool.name }} — {{ tool.execution_mode }}</option>
+      {% endfor %}
+    </select>
+    <button type="button" id="pg-raw-toggle" class="btn btn-ghost">{{ _("JSON thô") }}</button>
+  </p>
+
+  <div id="pg-form"></div>
+
+  <p id="pg-raw-wrap" hidden>
+    <label for="pg-raw">{{ _("Input dạng JSON") }}</label><br>
+    <textarea id="pg-raw" rows="8" style="width:min(720px,100%);font-family:monospace"></textarea>
+  </p>
+
+  <p>
+    <button type="button" id="pg-quote" class="btn">{{ _("Kiểm & báo giá") }}</button>
+    <button type="button" id="pg-run" class="btn btn-primary">{{ _("Chạy thật") }}</button>
+    <strong id="pg-cost"></strong>
+  </p>
+
+  <pre id="pg-out" class="pg-out" aria-live="polite"></pre>
+
+  {# The catalog the form is generated from: the same document /api/v1/tools
+     serves, so the form cannot offer a field the API rejects. #}
+  <script type="application/json" id="pg-catalog">{{ catalog_json|safe }}</script>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Chế độ chạy khác") }}</h2>
+  <ul>
+    <li><code>ASYNC_JOB</code> — {{ _("mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → artifact.") }}</li>
+    <li><code>SYNC</code> — {{ _("chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu này.") }}</li>
+    <li><code>STREAM</code>, <code>BATCH</code> —
+        {{ _("đã đặc tả nhưng chưa operation nào dùng, nên chưa có gì để thử ở đây. Xem PROTOCOL_V1.md mục 1.1.") }}</li>
+  </ul>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script src="/static/dev_playground.js?v={{ asset_ver }}"></script>
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -162821,7 +163261,7 @@ def test_the_migration_backfills_a_default_project_for_existing_keys(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_197_developer_api_tab.py
-SHA256=4d51b7b42a93c5ef2e31658460194dd6c9ee241b566496cfb1c311057a26e37a BYTES=11521 LINES=281
+SHA256=3dbd059bc41f7a441a4d77abf93eeb80296491d7cb3d653c029d2607f5095b8a BYTES=12077 LINES=292
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-05 — the developer API area: one portal, reachable, tenant-safe.
 
@@ -162950,13 +163390,24 @@ def test_the_navigation_is_the_same_on_every_section(portal):
 
 def test_unbuilt_sections_are_named_but_not_linked(portal):
     """A dead link is worse than an honest label: the shape of the area is
-    information a developer uses to plan; a 404 is not."""
+    information a developer uses to plan; a 404 is not.
+
+    Which sections are unbuilt is read from the declaration rather than listed
+    here — the first version of this test named them, and building the
+    playground turned a correct change into a red suite.
+    """
+    from server.routes.developer import SECTIONS
+
     _register(portal, f"soon-{uuid.uuid4().hex[:6]}@example.com")
     page = portal.get("/developers").text
-    for label in ("Playground", "request", "báo"):
-        assert label.lower() in page.lower()
-    assert 'href="/developers/playground"' not in page
-    assert portal.get("/developers/playground").status_code == 404
+    unbuilt = [(key, label) for key, href, label in SECTIONS if href is None]
+    assert unbuilt, "every section is built — delete this test rather than lie"
+    for key, label in unbuilt:
+        # Named, so a developer knows the area is coming…
+        assert label.lower() in page.lower(), label
+        # …but not a link, and not a route that half-answers.
+        assert f'href="/developers/{key}"' not in page, key
+        assert portal.get(f"/developers/{key}").status_code == 404, key
 
 
 def test_the_current_section_is_marked_for_assistive_technology(portal):
@@ -163950,6 +164401,328 @@ class TestNoneRateLimiterBackCompat(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_200_playground.py
+SHA256=556e6423eca5947ff2f686a32fe4657394ec15b8c87ff83550e7aa634444e9bb BYTES=13684 LINES=316
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-08 — the playground: the same API, from a form.
+
+The three things that must be true are the three ways a playground normally
+goes wrong: it grows a private execution path that skips policy, it hands the
+page a credential the customer was told they could not recover, or it quietly
+runs work for free. Each has a test here.
+"""
+from __future__ import annotations
+
+import json
+import re
+import uuid
+from pathlib import Path
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import keys as devkeys, limits
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.registry import discover
+from server.api.inventory import API_V1_PREFIX, declared_paths
+
+PEPPER = "playground-test-pepper-" + "g" * 40
+SCRIPT = Path(__file__).resolve().parent.parent / "server" / "static" / "dev_playground.js"
+
+
+def _live_catalog():
+    names = ",".join(sorted({tool.name for item in discover() if not item.error
+                             for tool in item.manifest.tools}))
+    return build_catalog(load_public_api_config(
+        {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": names}))
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'playground.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "playground-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "image.thumbnail",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _sign_in(client) -> None:
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"pg-{uuid.uuid4().hex[:6]}@example.com"
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 200, by="test")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+
+
+# ── No private execution path ────────────────────────────────────────────────
+
+def test_the_portal_has_no_route_that_runs_a_tool(portal):
+    """The playground must not become a second road to the chargeable path.
+
+    Every way to spend credit stays on `/api/v1`, where the quote, the
+    idempotency key, the limits and the ledger already live.
+    """
+    _sign_in(portal)
+    routes = [route.path for route in portal.app.routes
+              if str(getattr(route, "path", "")).startswith("/developers")]
+    for path in routes:
+        assert "run" not in path and "execute" not in path, path
+        assert "quote" not in path, path
+
+
+def test_the_page_talks_to_the_public_api_and_nothing_else():
+    source = SCRIPT.read_text(encoding="utf-8")
+    called = set(re.findall(r'fetch\("([^"]+)"', source))
+    called |= set(re.findall(r'fetch\("(/api/v1[^"]*)"', source))
+    for target in called:
+        assert target.startswith("/api/v1"), target
+    # …and every path it builds exists in the route inventory.
+    declared = {re.sub(r"\{[a-z_]+\}", "{x}", path)
+                for _method, path in declared_paths()}
+    for path in re.findall(r'"/(?:api/v1)?(/[a-z/]+)"', source):
+        candidate = re.sub(r"\{[a-z_]+\}", "{x}", API_V1_PREFIX + path)
+        if candidate.endswith(("/quotes", "/jobs", "/uploads")):
+            assert candidate in declared, path
+
+
+# ── No raw key recovery ──────────────────────────────────────────────────────
+
+def test_the_page_never_contains_a_key_and_never_stores_one(portal):
+    """The customer was told a key cannot be recovered. That has to stay true."""
+    _sign_in(portal)
+    keys_page = portal.get("/developers/keys").text
+    created = portal.post("/developers/keys", data={
+        "name": "playground", "csrf_token": _csrf(keys_page),
+        "scopes": ["tools:read", "jobs:create", "jobs:read", "artifacts:read"]})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+
+    page = portal.get("/developers/playground").text
+    assert token not in page
+    assert "ltt_sk_" not in page.replace("ltt_sk_…", "")
+    # The field is a password input and the script keeps the value in memory.
+    assert 'id="pg-key" type="password"' in page
+    # Comments stripped first: the file *explains* that it never uses these,
+    # and a scan that trips on its own documentation is a scan people delete.
+    source = re.sub(r"/\*.*?\*/", "", SCRIPT.read_text(encoding="utf-8"),
+                    flags=re.S)
+    source = re.sub(r"^\s*//.*$", "", source, flags=re.M)
+    for forbidden in ("localStorage", "sessionStorage", "document.cookie"):
+        assert forbidden not in source, forbidden
+
+
+def test_the_server_never_receives_the_key_from_the_page(portal):
+    """Nothing in the page posts back to the portal, so there is nothing for a
+    portal handler to log, store or leak."""
+    _sign_in(portal)
+    page = portal.get("/developers/playground").text
+    assert 'action="/developers' not in page.split('id="playground"')[1]
+
+
+# ── The form is generated from the published contract ───────────────────────
+
+def test_the_form_is_built_from_the_same_catalog_the_api_serves(portal):
+    _sign_in(portal)
+    page = portal.get("/developers/playground").text
+    embedded = json.loads(
+        re.search(r'id="pg-catalog">(.*?)</script>', page, re.S).group(1))
+    published = [tool.to_public_dict() for tool in _live_catalog()
+                 if tool.name == "image.thumbnail"]
+    assert embedded == published
+
+
+def test_the_page_offers_only_tools_this_deployment_publishes(portal):
+    _sign_in(portal)
+    page = portal.get("/developers/playground").text
+    assert "image.thumbnail" in page
+    # Published by the repository, but switched off on this deployment.
+    assert "image.generate" not in page
+
+
+def test_the_page_says_the_run_costs_real_credit(portal):
+    """There is no free mode, and pretending otherwise would be the bypass."""
+    _sign_in(portal)
+    page = portal.get("/developers/playground").text
+    assert "credit thật" in page
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "/quotes" in source and "/jobs" in source
+
+
+# ── Idempotency and inspection ───────────────────────────────────────────────
+
+def test_the_page_generates_an_idempotency_key_and_reuses_it_per_call():
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "Idempotency-Key" in source
+    # Generated once per call…
+    assert "state.idempotencyKey = uuid()" in source.replace(
+        "(state.idempotencyKey = uuid())", "state.idempotencyKey = uuid()")
+    # …and thrown away when the input changes, because that is a different call
+    # and replaying the old answer would be wrong.
+    assert "state.idempotencyKey = null" in source
+
+
+def test_the_inspector_shows_only_headers_a_caller_should_act_on():
+    source = SCRIPT.read_text(encoding="utf-8")
+    safe = re.search(r'var safe = \[(.*?)\];', source, re.S).group(1)
+    shown = set(re.findall(r'"([A-Za-z-]+)"', safe))
+    assert shown == {"X-Correlation-ID", "X-LTT-API-Version", "Retry-After",
+                     "Idempotency-Replayed", "Location"}
+    # Nothing that would echo a credential back onto the page.
+    assert "Authorization" not in safe
+
+
+def test_the_page_explains_the_modes_nobody_can_try_yet(portal):
+    _sign_in(portal)
+    page = portal.get("/developers/playground").text
+    assert "STREAM" in page and "BATCH" in page
+    assert "ASYNC_JOB" in page
+
+
+# ── The area ─────────────────────────────────────────────────────────────────
+
+def test_the_playground_is_linked_from_the_area(portal):
+    _sign_in(portal)
+    assert 'href="/developers/playground"' in portal.get("/developers").text
+
+
+def test_the_script_is_cache_busted(portal):
+    """A changed script must reach a browser, not wait out a Cloudflare TTL."""
+    _sign_in(portal)
+    page = portal.get("/developers/playground").text
+    assert re.search(r'/static/dev_playground\.js\?v=[0-9a-f]+', page)
+
+
+def test_the_playground_needs_a_session(portal):
+    response = portal.get("/developers/playground", follow_redirects=False)
+    assert response.status_code in (302, 303)
+
+
+def test_a_deployment_with_no_published_tool_says_so(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'empty.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "playground-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        _sign_in(client)
+        page = client.get("/developers/playground")
+        assert page.status_code == 200
+        assert "chưa mở công cụ nào" in page.text
+        assert 'id="playground"' not in page.text
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+# ── The semantics the page relies on are the API's, not its own ─────────────
+
+def test_running_from_a_form_is_the_same_call_as_running_from_a_server(portal):
+    """What the page does, done here with plain requests: identical outcome.
+
+    If these two ever diverge, the playground is lying to whoever trusts it.
+    """
+    _sign_in(portal)
+    keys_page = portal.get("/developers/keys").text
+    created = portal.post("/developers/keys", data={
+        "name": "same-path", "csrf_token": _csrf(keys_page),
+        "scopes": ["tools:read", "jobs:create", "jobs:read"]})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+    auth = {"Authorization": f"Bearer {token}"}
+    payload = {"topic": "playground parity", "count": 1}
+
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": "image.thumbnail", "input": payload},
+                        headers=auth)
+    assert quote.status_code == 200
+    key = str(uuid.uuid4())
+    first = portal.post(f"{API_V1_PREFIX}/jobs",
+                        json={"tool": "image.thumbnail",
+                              "quote": quote.json()["quote"], "input": payload},
+                        headers={**auth, "Idempotency-Key": key})
+    assert first.status_code == 201
+
+    # Pressing Run twice with the same input replays rather than charging again
+    # — the behaviour the page depends on by reusing its key.
+    again = portal.post(f"{API_V1_PREFIX}/jobs",
+                        json={"tool": "image.thumbnail",
+                              "quote": quote.json()["quote"], "input": payload},
+                        headers={**auth, "Idempotency-Key": key})
+    assert again.status_code == 200
+    assert again.json()["id"] == first.json()["id"]
+    assert again.headers.get("Idempotency-Replayed") == "true"
 
 @@@LTT_PROFILE_FILE_END@@@
 

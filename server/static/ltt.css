@@ -574,3 +574,10 @@ html{background:var(--surface-canvas)}
 .dev-nav span{cursor:not-allowed;opacity:.55}
 .dev-nav .pill{padding:1px 6px;border-radius:99px;background:var(--surface-overlay);font-size:9px}
 .dev-h1{margin:0 0 12px;font-size:20px}
+
+/* EXT-08 playground: the response pane is the point of the page, so it gets
+   room and keeps its own scroll instead of stretching the layout. */
+.pg-out{max-height:420px;overflow:auto;padding:10px;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);font-size:12px;white-space:pre-wrap;word-break:break-word}
+.pg-out.err{border-color:var(--status-danger);color:var(--status-danger)}
+#playground label{color:var(--text-secondary);font-size:12px}
+#playground input[type=text],#playground input[type=password],#playground input[type=number],#playground select,#playground textarea{max-width:min(560px,100%)}
