@@ -79,6 +79,57 @@ MANIFEST = AppManifest(
             # keeps API and UI charging identically. Expose it the day the cost
             # function prices per model, as the image-generation tool does.
             "hidden": ("model",),
+            "params": {
+                "topic": {
+                    "description": ("What the thumbnail is about. The whole "
+                                    "image is generated from this, so be "
+                                    "specific about subject and mood."),
+                    "example": "How to fix a leaking tap in 5 minutes",
+                },
+                "title": {
+                    "description": ("Large text drawn on the image. Leave "
+                                    "empty for an image with no text."),
+                    "example": "5 MINUTE FIX",
+                },
+                "subtitle": {
+                    "description": "Smaller supporting line under the title.",
+                    "example": "no plumber needed",
+                },
+                "text_style": {
+                    "description": ("How the text is drawn. Ignored when both "
+                                    "title and subtitle are empty."),
+                    "example": "bold_impact",
+                },
+                "phong_cach": {
+                    "description": ("Visual style of the image itself. The "
+                                    "name is Vietnamese because it is a stable "
+                                    "identifier, not a label; the values are "
+                                    "listed in `enum`."),
+                    "example": "cinematic",
+                },
+                "kieu_trend": {
+                    "description": ("Composition pattern — what makes the "
+                                    "thumbnail work as a thumbnail (a reacting "
+                                    "face, a before/after split, a numbered "
+                                    "list, and so on)."),
+                    "example": "khuon_mat_cam_xuc",
+                },
+                "ngon_ngu": {
+                    "description": "Language of the text drawn on the image.",
+                    "example": "english",
+                },
+                "aspect_ratio": {
+                    "description": ("Shape of the output. 16:9 is the YouTube "
+                                    "thumbnail shape."),
+                    "example": "16:9",
+                },
+                "count": {
+                    "description": ("How many variations to generate. Each one "
+                                    "is charged, so a quote for count=4 costs "
+                                    "four times a quote for count=1."),
+                    "example": 2,
+                },
+            },
             # Published values are a curated subset of the internal prompt
             # library: the ones with stable, self-explanatory ids. The internal
             # set keeps entries named after people and experiments, which are

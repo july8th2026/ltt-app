@@ -31,6 +31,12 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
+> **Cập nhật sau EXT-06 (2026-08-13):** Extension domain 9
+> (`variable reference`) `PARTIAL` → `DONE`: 29/29 tham số công khai
+> có mô tả + ví dụ, trang tham chiếu từng tool sinh từ hợp đồng, và
+> registry từ chối tài liệu lệch. Đổi tên tham số tiếng Việt →
+> EXT-17.
+
 > **Cập nhật sau EXT-05 (2026-08-13):** domain K (developer portal)
 > `PARTIAL` → `DONE`; Extension domain 8 (`Developer API tab`)
 > `PARTIAL` → `DONE`. **Rủi ro X4 đóng.** Playground/logs/thông báo

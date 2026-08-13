@@ -17,7 +17,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 03 | Models / capabilities / tool catalog / schema chain | **PASS** | 2026-08-13 |
 | 04 | Projects / service accounts / delegated auth decision | **PASS** | 2026-08-13 |
 | 05 | Developer API tab / information architecture | **PASS** | 2026-08-13 |
-| 06 | Schema-driven apps/models/tools variable reference | chưa chạy | — |
+| 06 | Schema-driven apps/models/tools variable reference | **PASS** | 2026-08-13 |
 | 07 | Quickstart / env vars / examples / recipes | chưa chạy | — |
 | 08 | Playground / request builder / job inspector | chưa chạy | — |
 | 09 | Request logs / trace / job timeline | chưa chạy | — |
@@ -619,3 +619,90 @@ migration.
 
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/06_SCHEMA_DRIVEN_APPS_MODELS_TOOLS_VARIABLE_REFERENCE.txt`
+
+
+---
+
+## EXT-06 — VARIABLE REFERENCE SINH TỪ HỢP ĐỒNG ✅
+
+### Entry gate
+
+EXT-05 PASS ✅ (`e142772`), cây sạch. Head vẫn `d0e1f2a3b4c5` — **không**
+migration, **không** route `/api/v1` mới, **không** phụ thuộc mới.
+
+### Status before → after
+
+| | Before | After |
+|---|---|---|
+| Mô tả tham số công khai | **0/29** — khách phải đoán `kieu_trend` là gì | **29/29**, máy kiểm |
+| Ví dụ giá trị | không có | mọi tham số có `example`, và ví dụ `curl` được **dựng từ chính chúng** |
+| Trang tham chiếu | một bảng liệt kê tên tool | trang riêng cho từng tool: mục đích, nhóm, chế độ chạy + luật của chế độ đó, endpoint, scope, cách tính tiền, **bảng biến đầy đủ**, kết quả, model, sự kiện webhook, giới hạn, **bảng lỗi + khi nào thử lại** |
+| Tìm kiếm | không | theo tên, mô tả **và tên tham số**, lọc theo nhóm |
+
+### Cách chống drift
+
+Tài liệu biến nằm ở `api_contract["params"]`, **không** ở `params_schema` nội
+bộ: schema nội bộ viết cho worker và thường xuyên nhắc tên provider, còn văn bản
+này viết cho khách và đi thẳng ra trang tham chiếu.
+
+Registry **từ chối nạp app** khi tài liệu lệch khỏi thứ nó mô tả:
+- mô tả một tham số **không tồn tại** → lỗi;
+- mô tả một tham số **đang ẩn** → lỗi (khách không gửi được, mô tả là lời hứa
+  không giữ);
+- `description` rỗng → lỗi;
+- khoá lạ ngoài `{description, example}` → lỗi (chặn đường tuồn ghi chú nội bộ
+  ra ngoài).
+
+Trang tham chiếu **render từ chính catalog mà API phục vụ**, nên không thể mô tả
+một tham số máy chủ không nhận. Có test khẳng định tập tham số trên trang **bằng
+đúng** tập trong schema — không thiếu, không thừa.
+
+Cái này bắt lỗi thật ngay khi viết: khối tài liệu dùng chung cho hai tool của
+`prompt_ai_ommi` khai `duration_seconds` cho `story.storyboard`, và registry từ
+chối nạp app — đúng việc của nó.
+
+### Tests
+
+`tests/test_198_variable_reference.py` — **20 test**: 29/29 tham số có mô tả;
+tài liệu không mô tả tham số ẩn/không tồn tại; mô tả không nhắc vendor; 4 kiểu
+hợp đồng sai bị từ chối; mô tả + ví dụ tới được schema công khai; **mọi** tool
+đang public có trang; tập biến trên trang == schema; trang có endpoint/scope/
+mode/sự kiện/giới hạn/bảng lỗi; ví dụ `curl` dựng từ example đã khai; tool
+deployment **không** publish thì **không** có trang (trang không được biến thành
+danh bạ năng lực nội bộ); tìm kiếm theo tên/tham số; lọc theo nhóm; lọc cũng thu
+hẹp danh sách model theo.
+
+### Browser
+
+Server dùng-một-lần cổng 8123: `?q=thumbnail` → mở trang `image.thumbnail` →
+9 biến đủ kiểu/bắt buộc/giới hạn/mặc định/mô tả/ví dụ, khối `curl` nhiều dòng
+dán chạy được, bảng lỗi 22 dòng, sự kiện webhook, giới hạn. **0 lỗi console.**
+
+### Phát hiện, chưa sửa (có chủ đích)
+
+Ba tham số công khai mang tên tiếng Việt — `phong_cach`, `kieu_trend`,
+`ngon_ngu` — và enum của chúng cũng vậy. Đây là **hợp đồng công khai** của một
+API nói tiếng Anh. Đổi tên bây giờ **miễn phí** (chưa có khách), nhưng nó sửa
+đường đi của *input đã định giá*: fingerprint quote, `build_job_params`, phiên
+upload theo tên trường. Trộn một thay đổi hợp đồng vào một prompt tài liệu là
+cách để hỏng thứ đang đúng. Đã mô tả rõ trong tài liệu biến ("tên là định danh
+ổn định, không phải nhãn") và giao cho **EXT-17** (versioning/compat) quyết định
+kèm cơ chế `public name → internal name`.
+
+### Rollback
+
+Bỏ khối `"params"` khỏi 4 manifest, gỡ `_validate_param_docs`, gỡ 2 dòng chiếu
+trong `catalog.project_tool`, xoá `dev_tool_detail.html` + route chi tiết, hoàn
+nguyên `dev_tools.html`, xoá `test_198`, sinh lại golden. Không dữ liệu, không
+migration.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-06 | Kết quả |
+|---|---|
+| 100% operation đang public có trang tham chiếu | ✅ 5/5, có test lặp qua catalog thật |
+| Docs fields == server schema | ✅ trang render từ catalog; test so **bằng nhau** hai chiều |
+| Drift làm CI đỏ | ✅ registry từ chối nạp (4 test) + `build_public_api_docs --check` trong `test_191` |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/07_QUICKSTART_ENV_VARS_CODE_EXAMPLES_AND_INTEGRATION_RECIPES.txt`

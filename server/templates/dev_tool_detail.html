@@ -1,0 +1,146 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<p><a href="/developers/tools">← {{ _("Tất cả công cụ") }}</a></p>
+
+<div class="card">
+  <p>{{ tool.description }}</p>
+  <ul>
+    <li>{{ _("Nhóm:") }} <strong>{{ tool.capability }}</strong></li>
+    <li>{{ _("Chạy kiểu:") }} <code>{{ tool.execution_mode }}</code>
+        — {{ mode_rule }}</li>
+    <li>{{ _("Phạm vi cần:") }}
+        {% for scope in tool.required_scopes %}<code>{{ scope }}</code> {% endfor %}</li>
+    <li>{{ _("Dấu vân tay hợp đồng:") }} <code>{{ tool.contract_hash }}</code></li>
+    {% if tool.aliases %}
+      <li>{{ _("Tên cũ vẫn dùng được:") }}
+          {% for alias in tool.aliases %}<code>{{ alias }}</code> {% endfor %}</li>
+    {% endif %}
+    {% if tool.deprecated %}
+      <li class="alert-err">{{ _("Sắp ngừng hỗ trợ:") }} {{ tool.deprecated }}</li>
+    {% endif %}
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Gọi thế nào") }}</h2>
+  <ol>
+    <li><code>POST /api/v1/quotes</code> — {{ _("nhận giá và một báo giá đã ký, sống 15 phút.") }}</li>
+    <li><code>POST /api/v1/jobs</code> — {{ _("gửi kèm báo giá đó và một") }}
+        <code>Idempotency-Key</code>. {{ _("Trả 201 và một job id.") }}</li>
+    <li><code>GET /api/v1/jobs/{job_id}</code> — {{ _("hoặc đăng ký webhook để khỏi hỏi liên tục.") }}</li>
+    {% if tool.output_schema.properties and has_artifacts %}
+      <li><code>GET /api/v1/artifacts/{artifact_id}</code> — {{ _("lấy đường tải kết quả.") }}</li>
+    {% endif %}
+  </ol>
+  <p class="muted">{{ _("Giá phụ thuộc toàn bộ input, nên báo giá là nơi duy nhất nói giá. Credit được giữ lúc tạo job và quyết toán đúng một lần khi job kết thúc.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ example_request }}</code></pre>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Biến đầu vào") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Tên") }}</th><th>{{ _("Kiểu") }}</th>
+      <th>{{ _("Bắt buộc") }}</th><th>{{ _("Giới hạn") }}</th>
+      <th>{{ _("Mặc định") }}</th><th>{{ _("Mô tả") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for param in params %}
+        <tr>
+          <td><code>{{ param.name }}</code></td>
+          <td>{{ param.type }}</td>
+          <td>{% if param.required %}{{ _("có") }}{% else %}—{% endif %}</td>
+          <td>
+            {% if param.enum %}
+              {% for value in param.enum %}<code>{{ value }}</code> {% endfor %}
+            {% elif param.bounds %}{{ param.bounds }}
+            {% else %}—{% endif %}
+          </td>
+          <td>{% if param.default is not none %}<code>{{ param.default }}</code>
+              {% else %}—{% endif %}</td>
+          <td>{{ param.description }}
+            {% if param.example is not none %}
+              <br><span class="muted">{{ _("ví dụ:") }}
+                <code>{{ param.example }}</code></span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị lặng lẽ bỏ đi là cách khách trả tiền cho một job không làm đúng việc.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("Trường") }}</th><th>{{ _("Kiểu") }}</th></tr></thead>
+    <tbody>
+      {% for name, spec in tool.output_schema.properties.items() %}
+        <tr><td><code>{{ name }}</code></td><td>{{ spec.type }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if has_artifacts %}
+    <p class="muted">{{ _("Trường kiểu artifact trả về một id; đổi id lấy đường tải ngắn hạn ở /api/v1/artifacts.") }}</p>
+  {% else %}
+    <p class="muted">{{ _("Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong job.") }}</p>
+  {% endif %}
+</div>
+
+{% if models %}
+  <div class="card">
+    <h2 style="margin-top:0;">Model</h2>
+    <ul>
+      {% for model in models %}
+        <li><code>{{ model.name }}</code> ({{ model.stability }})
+            — {{ model.description }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Sự kiện webhook") }}</h2>
+  <ul>
+    {% for event in events %}<li><code>{{ event }}</code></li>{% endfor %}
+  </ul>
+  <p class="muted">{{ _("Đăng ký ở POST /api/v1/webhooks. Mỗi lần giao có chữ ký; giao trùng là an toàn vì mỗi sự kiện có id riêng.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Giới hạn") }}</h2>
+  <ul>
+    <li>{{ limits.request_rpm }} {{ _("request/phút") }},
+        {{ limits.create_rpm }} {{ _("job/phút") }}</li>
+    <li>{{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy cùng lúc") }}
+        {% if limits.daily_credit_limit %}, {{ _("trần") }}
+          {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
+    <li>{{ _("thân request tối đa") }} {{ limits.max_body_kib }} KiB
+        — {{ _("tệp lớn đi qua /api/v1/uploads.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Lỗi và cách thử lại") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Mã") }}</th><th>HTTP</th><th>{{ _("Thử lại") }}</th>
+      <th>{{ _("Dùng lại Idempotency-Key") }}</th><th>{{ _("Nên làm gì") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for row in errors %}
+        <tr>
+          <td><code>{{ row.code }}</code></td>
+          <td>{{ row.status }}</td>
+          <td><code>{{ row.retry }}</code></td>
+          <td>{% if row.reuse_idempotency_key %}{{ _("có") }}{% else %}—{% endif %}</td>
+          <td>{{ row.action }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

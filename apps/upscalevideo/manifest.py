@@ -107,6 +107,20 @@ MANIFEST = AppManifest(
             "description": ("Upscale an image to four times its original size. "
                             "Costs 2 credits at the fast preset and 4 at the "
                             "quality preset."),
+            "params": {
+                "image_key": {
+                    "description": ("The image to enlarge, given as the id of "
+                                    "an upload you confirmed or of an artifact "
+                                    "from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "preset": {
+                    "description": ("How hard to work on the result. `fast` "
+                                    "costs 2 credits, `quality` costs 4 and "
+                                    "takes longer."),
+                    "example": "fast",
+                },
+            },
         },
     )),
 

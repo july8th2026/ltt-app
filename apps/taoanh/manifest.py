@@ -110,6 +110,35 @@ MANIFEST = AppManifest(
             # the multi-image form is a Canvas/UI path that takes a list, and
             # the API media contract handles single references only today.
             "hidden": ("image_keys",),
+            "params": {
+                "prompt": {
+                    "description": ("What to draw. Everything about the image "
+                                    "comes from this text."),
+                    "example": "a paper boat on a rain-soaked street at night",
+                },
+                "image_key": {
+                    "description": ("Optional reference image, given as the id "
+                                    "of an upload you confirmed or of an "
+                                    "artifact from an earlier job. The result "
+                                    "follows its subject and composition."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "model": {
+                    "description": ("Quality tier. This is what the price "
+                                    "depends on — see the model list for what "
+                                    "each alias is for."),
+                    "example": "standard",
+                },
+                "aspect_ratio": {
+                    "description": "Shape of the output image.",
+                    "example": "16:9",
+                },
+                "count": {
+                    "description": ("How many images to generate. Each one is "
+                                    "charged."),
+                    "example": 1,
+                },
+            },
         },
     ), ToolSpec(
         name="image.batch_generate", job_type="taoanh.generate",

@@ -251,15 +251,15 @@ Scopes: `jobs:create`
 
 Input:
 
-- `prompt` — string, **required**, max length 4000
-- `image_key` — string, Upload or artifact id.
-- `model` — string, one of `enhanced`, `pro`, `standard`, `standard-lite`, Model alias.
-- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9
-- `count` — integer, min 1, max 4, default 1
+- `prompt` — string, **required**, max length 4000, What to draw. Everything about the image comes from this text.
+- `image_key` — string, Optional reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. The result follows its subject and composition.
+- `model` — string, one of `enhanced`, `pro`, `standard`, `standard-lite`, Quality tier. This is what the price depends on — see the model list for what each alias is for.
+- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9, Shape of the output image.
+- `count` — integer, min 1, max 4, default 1, How many images to generate. Each one is charged.
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `40e51bd26ad81fe1`
+Contract hash: `f6fd70a8e5a91489`
 
 ### `image.thumbnail`
 
@@ -271,19 +271,19 @@ Scopes: `jobs:create`
 
 Input:
 
-- `topic` — string, **required**, max length 2000
-- `title` — string, max length 200
-- `subtitle` — string, max length 200
-- `text_style` — string, one of `bold_impact`, `clean_minimal`, `dramatic_gold`, `neon_glow`, `street_art`
-- `phong_cach` — string, one of `chuyen_nghiep_toi_gian`, `hoat_hinh_cartoon`, `cinematic`, `flat_design`, `3d_render`, `collage`, `retro_vintage`
-- `kieu_trend` — string, one of `khuon_mat_cam_xuc`, `so_sanh_truoc_sau`, `bi_an_gay_to_mo`, `listicle_numbered`, `huong_dan_tutorial`, `reaction_phan_ung`, `storytelling`, `mui_ten_chi_dan`, `text_heavy_chu_lon`
-- `ngon_ngu` — string, one of `tieng_viet`, `english`, `japanese`, `korean`, `chinese`
-- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9
-- `count` — integer, min 1, max 4, default 1
+- `topic` — string, **required**, max length 2000, What the thumbnail is about. The whole image is generated from this, so be specific about subject and mood.
+- `title` — string, max length 200, Large text drawn on the image. Leave empty for an image with no text.
+- `subtitle` — string, max length 200, Smaller supporting line under the title.
+- `text_style` — string, one of `bold_impact`, `clean_minimal`, `dramatic_gold`, `neon_glow`, `street_art`, How the text is drawn. Ignored when both title and subtitle are empty.
+- `phong_cach` — string, one of `chuyen_nghiep_toi_gian`, `hoat_hinh_cartoon`, `cinematic`, `flat_design`, `3d_render`, `collage`, `retro_vintage`, Visual style of the image itself. The name is Vietnamese because it is a stable identifier, not a label; the values are listed in `enum`.
+- `kieu_trend` — string, one of `khuon_mat_cam_xuc`, `so_sanh_truoc_sau`, `bi_an_gay_to_mo`, `listicle_numbered`, `huong_dan_tutorial`, `reaction_phan_ung`, `storytelling`, `mui_ten_chi_dan`, `text_heavy_chu_lon`, Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a numbered list, and so on).
+- `ngon_ngu` — string, one of `tieng_viet`, `english`, `japanese`, `korean`, `chinese`, Language of the text drawn on the image.
+- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9, Shape of the output. 16:9 is the YouTube thumbnail shape.
+- `count` — integer, min 1, max 4, default 1, How many variations to generate. Each one is charged, so a quote for count=4 costs four times a quote for count=1.
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `75c7f308edd01af0`
+Contract hash: `f1894755c0b48b16`
 
 ### `image.upscale`
 
@@ -295,12 +295,12 @@ Scopes: `jobs:create`
 
 Input:
 
-- `image_key` — string, **required**, Upload or artifact id.
-- `preset` — string, one of `fast`, `quality`, default fast
+- `image_key` — string, **required**, The image to enlarge, given as the id of an upload you confirmed or of an artifact from an earlier job.
+- `preset` — string, one of `fast`, `quality`, default fast, How hard to work on the result. `fast` costs 2 credits, `quality` costs 4 and takes longer.
 
 Output: `image_key` (artifact)
 
-Contract hash: `7a328847197a662d`
+Contract hash: `917d9f5da2fe9a80`
 
 ### `story.storyboard`
 
@@ -312,15 +312,15 @@ Scopes: `jobs:create`
 
 Input:
 
-- `title` — string, **required**, max length 160
-- `story` — string, **required**, max length 12000
-- `scene_count` — integer, min 1, max 20, default 6
-- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`, default 16:9
-- `style` — string, max length 500
+- `title` — string, **required**, max length 160, Working title of the piece. Used for tone and for naming the result.
+- `story` — string, **required**, max length 12000, The story or brief, in prose. This is the source everything else is derived from.
+- `scene_count` — integer, min 1, max 20, default 6, How many scenes to produce. This is what the price depends on.
+- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`, default 16:9, Shape the scenes are written for; it changes framing advice, not the file.
+- `style` — string, max length 500, Visual or narrative style to aim for, in your own words.
 
 Output: `storyboard` (object), `master_prompt` (string)
 
-Contract hash: `ca93492e8df3e2e1`
+Contract hash: `9c7cfd84114e0c1b`
 
 ### `text.prompt_package`
 
@@ -332,18 +332,18 @@ Scopes: `jobs:create`
 
 Input:
 
-- `title` — string, **required**, max length 160
-- `story` — string, **required**, max length 12000
-- `scene_count` — integer, min 1, max 20, default 6
-- `duration_seconds` — integer, min 3, max 600, default 30
-- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`, default 16:9
-- `style` — string, max length 500
-- `audience` — string, max length 300
-- `language` — string, one of `vi`, `en`, default vi
+- `title` — string, **required**, max length 160, Working title of the piece. Used for tone and for naming the result.
+- `story` — string, **required**, max length 12000, The story or brief, in prose. This is the source everything else is derived from.
+- `scene_count` — integer, min 1, max 20, default 6, How many scenes to produce. This is what the price depends on.
+- `duration_seconds` — integer, min 3, max 600, default 30, Target length of the finished piece. Scenes are paced to fit it.
+- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`, default 16:9, Shape the scenes are written for; it changes framing advice, not the file.
+- `style` — string, max length 500, Visual or narrative style to aim for, in your own words.
+- `audience` — string, max length 300, Who the piece is for.
+- `language` — string, one of `vi`, `en`, default vi, Language the prompts are written in.
 
 Output: `prompt_package` (object), `master_prompt` (string)
 
-Contract hash: `9d38ae81ca23e2c4`
+Contract hash: `c55834222a3c4a0c`
 
 ### Models
 

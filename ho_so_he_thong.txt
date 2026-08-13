@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:123d226becab0f3af02110e1571500ba4df1499df2e627b55e906b93329c0fac
-Nguồn đã quét : 1064 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:c1122122b9724cbe5ab12d9c17c89accd7b1ff563b3266e140ba890e2bc5390b
+Nguồn đã quét : 1066 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (299)
+4. HTTP ROUTE INVENTORY (300)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -594,19 +594,20 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
 - [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:253
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:314
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:292
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:413
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:391
 - [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:269
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:329
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:366
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:379
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:428
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:465
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:478
 - [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:262
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:423
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:439
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:323
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:522
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:538
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:422
 - [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:275
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:299
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:307
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:310
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:398
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:406
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -880,7 +881,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (96 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (98 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -889,6 +890,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_AGENT_CANVAS_RUN_ENABLED
 - LTT_AGENT_CANVAS_RUN_ROLLOUT
 - LTT_AGENT_CANVAS_RUN_USER_IDS
+- LTT_API_KEY
 - LTT_API_KEY_PEPPER
 - LTT_API_KEY_PEPPER_V
 - LTT_API_KEY_PEPPER_V1
@@ -898,6 +900,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_AUTOSUB_STUDIO_ROLLOUT
 - LTT_AUTOSUB_WHISPER_COMPUTE
 - LTT_AUTOSUB_WHISPER_DEVICE
+- LTT_BASE_URL
 - LTT_CODEX_SIDECAR_PORT
 - LTT_CODEX_SIDECAR_TOKEN
 - LTT_CONFIG_PATH
@@ -978,7 +981,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (200 file pytest + 3 frontend)
+10. QUALITY GATES (201 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1111,6 +1114,7 @@ Test inventory:
 - tests/test_195_public_api_models.py
 - tests/test_196_public_api_projects.py
 - tests/test_197_developer_api_tab.py
+- tests/test_198_variable_reference.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
@@ -1205,8 +1209,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1064 file)
-Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:790, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1066 file)
+Phân bố extension: .cfg:1, .css:7, .html:69, .ini:1, .js:8, .json:39, .md:19, .mjs:3, .ps1:17, .py:791, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1900,7 +1904,7 @@ Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (122)
+[server] (123)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -1995,6 +1999,7 @@ Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19,
 - server/templates/dev_overview.html
 - server/templates/dev_projects.html
 - server/templates/dev_settings.html
+- server/templates/dev_tool_detail.html
 - server/templates/dev_tools.html
 - server/templates/dev_usage.html
 - server/templates/dev_webhooks.html
@@ -2031,7 +2036,7 @@ Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (216)
+[tests] (217)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2174,6 +2179,7 @@ Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19,
 - tests/test_195_public_api_models.py
 - tests/test_196_public_api_projects.py
 - tests/test_197_developer_api_tab.py
+- tests/test_198_variable_reference.py
 - tests/test_19_tiktok_rate_limit.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
@@ -2337,7 +2343,7 @@ Phân bố extension: .cfg:1, .css:7, .html:68, .ini:1, .js:8, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1064 file; 9188300 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1066 file; 9229527 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -14919,7 +14925,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/prompt_ai_ommi/manifest.py
-SHA256=b8f7efd73ed949ae912b7ed062bde2617073bdf8230312cf2726ed53a7a92069 BYTES=7496 LINES=148
+SHA256=ee5ad7a67fdaa2a431f171336eeeb56aaffe23927ff8a5bab63bd229998c6919 BYTES=11216 LINES=219
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Manifest for PROMPT AI OMMI (Q65/H19)."""
 from __future__ import annotations
@@ -15012,6 +15018,48 @@ MANIFEST = AppManifest(
                 # project schema interprets, references included; until it has a
                 # public, owner-checked shape it stays out.
                 "hidden": ("operation", "model", "resources"),
+                "params": {
+                    "title": {
+                        "description": ("Working title of the piece. Used for "
+                                        "tone and for naming the result."),
+                        "example": "The last train home",
+                    },
+                    "story": {
+                        "description": ("The story or brief, in prose. This is "
+                                        "the source everything else is derived "
+                                        "from."),
+                        "example": ("A courier misses the last train and walks "
+                                    "the city until dawn."),
+                    },
+                    "scene_count": {
+                        "description": ("How many scenes to produce. This is "
+                                        "what the price depends on."),
+                        "example": 6,
+                    },
+                    "aspect_ratio": {
+                        "description": ("Shape the scenes are written for; it "
+                                        "changes framing advice, not the file."),
+                        "example": "16:9",
+                    },
+                    "style": {
+                        "description": ("Visual or narrative style to aim for, "
+                                        "in your own words."),
+                        "example": "neo-noir, heavy rain, neon reflections",
+                    },
+                    "duration_seconds": {
+                        "description": ("Target length of the finished piece. "
+                                        "Scenes are paced to fit it."),
+                        "example": 45,
+                    },
+                    "audience": {
+                        "description": "Who the piece is for.",
+                        "example": "people who commute late at night",
+                    },
+                    "language": {
+                        "description": "Language the prompts are written in.",
+                        "example": "en",
+                    },
+                },
             },
         ),
         ToolSpec(
@@ -15054,6 +15102,35 @@ MANIFEST = AppManifest(
                 # project schema interprets, references included; until it has a
                 # public, owner-checked shape it stays out.
                 "hidden": ("operation", "model", "resources"),
+                "params": {
+                    "title": {
+                        "description": ("Working title of the piece. Used for "
+                                        "tone and for naming the result."),
+                        "example": "The last train home",
+                    },
+                    "story": {
+                        "description": ("The story or brief, in prose. This is "
+                                        "the source everything else is derived "
+                                        "from."),
+                        "example": ("A courier misses the last train and walks "
+                                    "the city until dawn."),
+                    },
+                    "scene_count": {
+                        "description": ("How many scenes to produce. This is "
+                                        "what the price depends on."),
+                        "example": 6,
+                    },
+                    "aspect_ratio": {
+                        "description": ("Shape the scenes are written for; it "
+                                        "changes framing advice, not the file."),
+                        "example": "16:9",
+                    },
+                    "style": {
+                        "description": ("Visual or narrative style to aim for, "
+                                        "in your own words."),
+                        "example": "neo-noir, heavy rain, neon reflections",
+                    },
+                },
             },
         ),
     ),
@@ -22631,7 +22708,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/taoanh/manifest.py
-SHA256=8730d228a2fb8825cf22aaf3ff85d8b6bd7e85ebfc36147670ff9f9874605eda BYTES=6266 LINES=134
+SHA256=7051793d6d9463277a302c609e5714ad8182571179b19b7f6b991ab3d07a30be BYTES=7702 LINES=163
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `taoanh` — Tạo ảnh AI từ mô tả (Gemini Image). Di trú từ BOT GEMINI
@@ -22745,6 +22822,35 @@ MANIFEST = AppManifest(
             # the multi-image form is a Canvas/UI path that takes a list, and
             # the API media contract handles single references only today.
             "hidden": ("image_keys",),
+            "params": {
+                "prompt": {
+                    "description": ("What to draw. Everything about the image "
+                                    "comes from this text."),
+                    "example": "a paper boat on a rain-soaked street at night",
+                },
+                "image_key": {
+                    "description": ("Optional reference image, given as the id "
+                                    "of an upload you confirmed or of an "
+                                    "artifact from an earlier job. The result "
+                                    "follows its subject and composition."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "model": {
+                    "description": ("Quality tier. This is what the price "
+                                    "depends on — see the model list for what "
+                                    "each alias is for."),
+                    "example": "standard",
+                },
+                "aspect_ratio": {
+                    "description": "Shape of the output image.",
+                    "example": "16:9",
+                },
+                "count": {
+                    "description": ("How many images to generate. Each one is "
+                                    "charged."),
+                    "example": 1,
+                },
+            },
         },
     ), ToolSpec(
         name="image.batch_generate", job_type="taoanh.generate",
@@ -26778,7 +26884,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/thumbnail/manifest.py
-SHA256=5f84aa8875983708b09c8737c2aac6cfe82a322470416df7f39633853d11348a BYTES=5684 LINES=110
+SHA256=e89e49e5310a5207b8b3f7e35523d9d811ed9a0a526f7bc96d112be26c5018eb BYTES=8287 LINES=161
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `thumbnail` — tạo thumbnail YouTube bằng Gemini Image API (H5, Q11).
@@ -26861,6 +26967,57 @@ MANIFEST = AppManifest(
             # keeps API and UI charging identically. Expose it the day the cost
             # function prices per model, as the image-generation tool does.
             "hidden": ("model",),
+            "params": {
+                "topic": {
+                    "description": ("What the thumbnail is about. The whole "
+                                    "image is generated from this, so be "
+                                    "specific about subject and mood."),
+                    "example": "How to fix a leaking tap in 5 minutes",
+                },
+                "title": {
+                    "description": ("Large text drawn on the image. Leave "
+                                    "empty for an image with no text."),
+                    "example": "5 MINUTE FIX",
+                },
+                "subtitle": {
+                    "description": "Smaller supporting line under the title.",
+                    "example": "no plumber needed",
+                },
+                "text_style": {
+                    "description": ("How the text is drawn. Ignored when both "
+                                    "title and subtitle are empty."),
+                    "example": "bold_impact",
+                },
+                "phong_cach": {
+                    "description": ("Visual style of the image itself. The "
+                                    "name is Vietnamese because it is a stable "
+                                    "identifier, not a label; the values are "
+                                    "listed in `enum`."),
+                    "example": "cinematic",
+                },
+                "kieu_trend": {
+                    "description": ("Composition pattern — what makes the "
+                                    "thumbnail work as a thumbnail (a reacting "
+                                    "face, a before/after split, a numbered "
+                                    "list, and so on)."),
+                    "example": "khuon_mat_cam_xuc",
+                },
+                "ngon_ngu": {
+                    "description": "Language of the text drawn on the image.",
+                    "example": "english",
+                },
+                "aspect_ratio": {
+                    "description": ("Shape of the output. 16:9 is the YouTube "
+                                    "thumbnail shape."),
+                    "example": "16:9",
+                },
+                "count": {
+                    "description": ("How many variations to generate. Each one "
+                                    "is charged, so a quote for count=4 costs "
+                                    "four times a quote for count=1."),
+                    "example": 2,
+                },
+            },
             # Published values are a curated subset of the internal prompt
             # library: the ones with stable, self-explanatory ids. The internal
             # set keeps entries named after people and experiments, which are
@@ -28759,7 +28916,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/upscalevideo/manifest.py
-SHA256=57101a512f0590469620d8a76afa7abeeb0023fd0cfb5c545954f5a07e63c146 BYTES=6144 LINES=119
+SHA256=f9c352e60bc02d17bbbae13a1ec210d61c845691db80698d5a666df971d3aa2c BYTES=6829 LINES=133
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `upscalevideo` — Nâng cấp video (Real-ESRGAN NCNN ×4), di trú từ BOT GEMINI
@@ -28870,6 +29027,20 @@ MANIFEST = AppManifest(
             "description": ("Upscale an image to four times its original size. "
                             "Costs 2 credits at the fast preset and 4 at the "
                             "quality preset."),
+            "params": {
+                "image_key": {
+                    "description": ("The image to enlarge, given as the id of "
+                                    "an upload you confirmed or of an artifact "
+                                    "from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "preset": {
+                    "description": ("How hard to work on the result. `fast` "
+                                    "costs 2 credits, `quality` costs 4 and "
+                                    "takes longer."),
+                    "example": "fast",
+                },
+            },
         },
     )),
 
@@ -106679,7 +106850,7 @@ __all__ = [
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
-SHA256=5d29546e6f42a08d46347f543485fa0f924789013bd4fbcf7ac1cd74523fc88a BYTES=15960 LINES=380
+SHA256=abb50466a247a4eef3fa0361d6a2dbe7ba549ef3f622fdfb2ee3b0403e2e5e2b BYTES=16541 LINES=391
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The public tool catalog: what ``/api/v1`` is allowed to offer, and in what shape.
 
@@ -106897,6 +107068,7 @@ def project_tool(manifest, tool) -> PublicTool:
     models = {str(alias): (dict(target) if isinstance(target, dict)
                            else {"id": str(target)})
               for alias, target in (contract.get("models") or {}).items()}
+    param_docs = dict(contract.get("params") or {})
 
     properties: dict = {}
     required: list = []
@@ -106931,6 +107103,16 @@ def project_tool(manifest, tool) -> PublicTool:
                                ("default", "default")):
             if source in schema:
                 public[target] = schema[source]
+
+        # Public prose, if the app wrote any. It overrides the generic line the
+        # projection puts on media/model parameters, because "the id of the
+        # image to enlarge" beats "Upload or artifact id." every time.
+        docs = param_docs.get(param) or {}
+        if docs.get("description"):
+            public["description"] = str(docs["description"])
+        if "example" in docs:
+            # JSON Schema 2020-12 spells this `examples`, as a list.
+            public["examples"] = [docs["example"]]
         properties[param] = public
         if schema.get("required"):
             required.append(param)
@@ -110862,7 +111044,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=01fb15fa90baacbfdfa21d6e3d4350dcb064f6a900e8fa7b09216a004cac81d9 BYTES=34567 LINES=700
+SHA256=47b4c23f0176cfc4bb566ac77fa9deb6cf933f4c111419da9b5d3e09396472c8 BYTES=36795 LINES=742
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -111211,7 +111393,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
 
     unknown_keys = set(contract) - {"public_name", "description", "models",
                                     "enums", "hidden", "scopes", "deprecated",
-                                    "execution_mode", "aliases"}
+                                    "execution_mode", "aliases", "params"}
     if unknown_keys:
         raise RegistryError(_t(
             "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
@@ -111278,6 +111460,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
                                           param=param))
 
     _validate_model_aliases(manifest, tool, models)
+    _validate_param_docs(manifest, tool, contract.get("params") or {}, hidden)
 
     for alias in (contract.get("aliases") or ()):
         if not _TOOL_NAME_RE.fullmatch(str(alias)):
@@ -111288,6 +111471,47 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} alias trùng chính public_name").format(
                     slug=manifest.slug, tool=tool.name))
+
+
+def _validate_param_docs(manifest: AppManifest, tool: ToolSpec, params,
+                         hidden: set) -> None:
+    """Public prose about a parameter, checked against the parameter it describes.
+
+    The docs live in the public contract rather than in ``params_schema``: the
+    internal schema is written for the worker and routinely names providers and
+    internal prompt sets, while this text is written for a customer and goes
+    straight into the reference page (EXT-06).
+    """
+    if not isinstance(params, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} api_contract.params phải là dict").format(
+                slug=manifest.slug, tool=tool.name))
+    for name, spec in params.items():
+        if name not in tool.params_schema:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params mô tả tham số không tồn tại: "
+                "{param!r}").format(slug=manifest.slug, tool=tool.name,
+                                    param=name))
+        if name in hidden:
+            # Documenting a parameter the caller cannot send is a promise the
+            # API does not keep.
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params mô tả tham số đang ẩn: {param!r}"
+            ).format(slug=manifest.slug, tool=tool.name, param=name))
+        if not isinstance(spec, dict):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}] phải là dict").format(
+                    slug=manifest.slug, tool=tool.name, param=name))
+        unknown = set(spec) - {"description", "example"}
+        if unknown:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}] có khoá lạ: {keys}"
+            ).format(slug=manifest.slug, tool=tool.name, param=name,
+                     keys=sorted(unknown)))
+        if not str(spec.get("description") or "").strip():
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}] thiếu description"
+            ).format(slug=manifest.slug, tool=tool.name, param=name))
 
 
 def _validate_model_aliases(manifest: AppManifest, tool: ToolSpec,
@@ -120136,7 +120360,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=05fe257a7380a1047ab7a8f8d44cdbdeffb2612b3b9ba6e24437e6a376ebc935 BYTES=19860 LINES=451
+SHA256=1b3793f98ed5fa7f9f3fd20f109ccf1e3a5b3a67756f617459630fa5c5d792c3 BYTES=24351 LINES=550
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -120412,20 +120636,119 @@ def developer_keys(request: Request, user=Depends(require_account),
 
 
 @router.get("/tools", response_class=HTMLResponse)
-def developer_tools(request: Request, user=Depends(require_account),
+def developer_tools(request: Request, q: str = "", capability: str = "",
+                    user=Depends(require_account),
                     db: Session = Depends(get_db)):
-    from platform_core.public_api.catalog import build_models
+    from platform_core.public_api.catalog import build_models, capabilities_of
 
     config = _public_api_config(request)
     catalog = build_catalog(config)
+    needle = str(q or "").strip().lower()
+    wanted = str(capability or "").strip()
+
+    def _matches(tool) -> bool:
+        if wanted and tool.capability != wanted:
+            return False
+        if not needle:
+            return True
+        # Search the parameter names too: "aspect_ratio" is how somebody looks
+        # for the tool that takes it.
+        haystack = " ".join([tool.name, tool.description,
+                             " ".join(tool.input_schema.get("properties", {}))])
+        return needle in haystack.lower()
+
+    shown = [tool for tool in catalog if _matches(tool)]
     return _render(request, db, user, "tools", "dev_tools.html",
+                   query=needle, capability=wanted,
+                   capabilities=capabilities_of(catalog),
                    catalog=[{"name": tool.name, "description": tool.description,
                              "capability": tool.capability,
                              "execution_mode": tool.execution_mode,
                              "scopes": list(tool.scopes)}
-                            for tool in catalog],
+                            for tool in shown],
                    models=[model.to_public_dict()
-                           for model in build_models(catalog)])
+                           for model in build_models(shown)])
+
+
+@router.get("/tools/{tool_name}", response_class=HTMLResponse)
+def developer_tool_detail(request: Request, tool_name: str,
+                          user=Depends(require_account),
+                          db: Session = Depends(get_db)):
+    """The reference page for one tool, rendered from its contract.
+
+    Nothing here is written twice: every field comes from the same catalog the
+    API serves, so a page cannot describe a parameter the server does not
+    accept. That is the whole point of generating it (EXT-06).
+    """
+    from platform_core.public_api.catalog import build_models, require_tool
+    from platform_core.public_api.error_registry import as_rows
+    from platform_core.public_api.protocol import MODE_RULES
+    from platform_core.public_api.webhooks import TERMINAL_EVENTS
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    try:
+        tool = require_tool(catalog, tool_name)
+    except Exception as exc:  # noqa: BLE001 - a missing tool is a 404 page
+        from platform_core.public_api.errors import ApiError
+
+        if not isinstance(exc, ApiError):
+            raise
+        raise _redirect("/developers/tools", status_code=404) from exc
+
+    body = tool.to_public_dict()
+    schema = body["input_schema"]
+    required = set(schema.get("required", ()))
+    params = []
+    for name, spec in schema.get("properties", {}).items():
+        bounds = ""
+        if "minimum" in spec or "maximum" in spec:
+            bounds = f"{spec.get('minimum', '')}–{spec.get('maximum', '')}"
+        elif "maxLength" in spec:
+            bounds = _t("tối đa %(n)s ký tự") % {"n": spec["maxLength"]}
+        params.append({
+            "name": name, "type": spec.get("type", "string"),
+            "required": name in required, "enum": spec.get("enum"),
+            "bounds": bounds, "default": spec.get("default"),
+            "description": spec.get("description", ""),
+            "example": (spec.get("examples") or [None])[0],
+        })
+
+    example = _example_request(tool, params)
+    outputs = body["output_schema"].get("properties", {})
+    return _render(
+        request, db, user, "tools", "dev_tool_detail.html",
+        section_title=tool.name, tool=body, params=params,
+        mode_rule=MODE_RULES.get(tool.execution_mode, ""),
+        example_request=example,
+        has_artifacts=any(str(spec.get("type", "")).startswith("artifact")
+                          for spec in outputs.values()),
+        models=[model.to_public_dict() for model in build_models([tool])],
+        events=sorted(TERMINAL_EVENTS),
+        errors=as_rows(),
+        limits={"request_rpm": config.request_rpm,
+                "create_rpm": config.create_rpm,
+                "max_active_jobs": config.max_active_jobs,
+                "daily_credit_limit": config.daily_credit_limit,
+                "max_body_kib": config.max_body_bytes // 1024})
+
+
+def _example_request(tool, params) -> str:
+    """A quote call a reader can paste, built from the tool's own examples."""
+    import json
+
+    payload = {}
+    for param in params:
+        if param["example"] is not None:
+            payload[param["name"]] = param["example"]
+        elif param["required"] and param["default"] is None:
+            payload[param["name"]] = f"<{param['type']}>"
+    body = json.dumps({"tool": tool.name, "input": payload},
+                      ensure_ascii=False, indent=2)
+    return (f'curl -X POST "$LTT_BASE_URL/api/v1/quotes" \\\n'
+            f'  -H "Authorization: Bearer $LTT_API_KEY" \\\n'
+            f'  -H "Content-Type: application/json" \\\n'
+            f"  -d '{body}'")
 
 
 @router.get("/jobs", response_class=HTMLResponse)
@@ -127749,16 +128072,191 @@ SHA256=1c0526e1e72133c8a820ab67323127a41dad533ca6e4ef5ff2b370b63e46d9f7 BYTES=11
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_tool_detail.html
+SHA256=4b10e87072a86e35c923c9286d0e82ee57188d6517fbd188918fdaa850ebd5e9 BYTES=6155 LINES=146
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<p><a href="/developers/tools">← {{ _("Tất cả công cụ") }}</a></p>
+
+<div class="card">
+  <p>{{ tool.description }}</p>
+  <ul>
+    <li>{{ _("Nhóm:") }} <strong>{{ tool.capability }}</strong></li>
+    <li>{{ _("Chạy kiểu:") }} <code>{{ tool.execution_mode }}</code>
+        — {{ mode_rule }}</li>
+    <li>{{ _("Phạm vi cần:") }}
+        {% for scope in tool.required_scopes %}<code>{{ scope }}</code> {% endfor %}</li>
+    <li>{{ _("Dấu vân tay hợp đồng:") }} <code>{{ tool.contract_hash }}</code></li>
+    {% if tool.aliases %}
+      <li>{{ _("Tên cũ vẫn dùng được:") }}
+          {% for alias in tool.aliases %}<code>{{ alias }}</code> {% endfor %}</li>
+    {% endif %}
+    {% if tool.deprecated %}
+      <li class="alert-err">{{ _("Sắp ngừng hỗ trợ:") }} {{ tool.deprecated }}</li>
+    {% endif %}
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Gọi thế nào") }}</h2>
+  <ol>
+    <li><code>POST /api/v1/quotes</code> — {{ _("nhận giá và một báo giá đã ký, sống 15 phút.") }}</li>
+    <li><code>POST /api/v1/jobs</code> — {{ _("gửi kèm báo giá đó và một") }}
+        <code>Idempotency-Key</code>. {{ _("Trả 201 và một job id.") }}</li>
+    <li><code>GET /api/v1/jobs/{job_id}</code> — {{ _("hoặc đăng ký webhook để khỏi hỏi liên tục.") }}</li>
+    {% if tool.output_schema.properties and has_artifacts %}
+      <li><code>GET /api/v1/artifacts/{artifact_id}</code> — {{ _("lấy đường tải kết quả.") }}</li>
+    {% endif %}
+  </ol>
+  <p class="muted">{{ _("Giá phụ thuộc toàn bộ input, nên báo giá là nơi duy nhất nói giá. Credit được giữ lúc tạo job và quyết toán đúng một lần khi job kết thúc.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ example_request }}</code></pre>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Biến đầu vào") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Tên") }}</th><th>{{ _("Kiểu") }}</th>
+      <th>{{ _("Bắt buộc") }}</th><th>{{ _("Giới hạn") }}</th>
+      <th>{{ _("Mặc định") }}</th><th>{{ _("Mô tả") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for param in params %}
+        <tr>
+          <td><code>{{ param.name }}</code></td>
+          <td>{{ param.type }}</td>
+          <td>{% if param.required %}{{ _("có") }}{% else %}—{% endif %}</td>
+          <td>
+            {% if param.enum %}
+              {% for value in param.enum %}<code>{{ value }}</code> {% endfor %}
+            {% elif param.bounds %}{{ param.bounds }}
+            {% else %}—{% endif %}
+          </td>
+          <td>{% if param.default is not none %}<code>{{ param.default }}</code>
+              {% else %}—{% endif %}</td>
+          <td>{{ param.description }}
+            {% if param.example is not none %}
+              <br><span class="muted">{{ _("ví dụ:") }}
+                <code>{{ param.example }}</code></span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị lặng lẽ bỏ đi là cách khách trả tiền cho một job không làm đúng việc.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("Trường") }}</th><th>{{ _("Kiểu") }}</th></tr></thead>
+    <tbody>
+      {% for name, spec in tool.output_schema.properties.items() %}
+        <tr><td><code>{{ name }}</code></td><td>{{ spec.type }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if has_artifacts %}
+    <p class="muted">{{ _("Trường kiểu artifact trả về một id; đổi id lấy đường tải ngắn hạn ở /api/v1/artifacts.") }}</p>
+  {% else %}
+    <p class="muted">{{ _("Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong job.") }}</p>
+  {% endif %}
+</div>
+
+{% if models %}
+  <div class="card">
+    <h2 style="margin-top:0;">Model</h2>
+    <ul>
+      {% for model in models %}
+        <li><code>{{ model.name }}</code> ({{ model.stability }})
+            — {{ model.description }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Sự kiện webhook") }}</h2>
+  <ul>
+    {% for event in events %}<li><code>{{ event }}</code></li>{% endfor %}
+  </ul>
+  <p class="muted">{{ _("Đăng ký ở POST /api/v1/webhooks. Mỗi lần giao có chữ ký; giao trùng là an toàn vì mỗi sự kiện có id riêng.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Giới hạn") }}</h2>
+  <ul>
+    <li>{{ limits.request_rpm }} {{ _("request/phút") }},
+        {{ limits.create_rpm }} {{ _("job/phút") }}</li>
+    <li>{{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy cùng lúc") }}
+        {% if limits.daily_credit_limit %}, {{ _("trần") }}
+          {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
+    <li>{{ _("thân request tối đa") }} {{ limits.max_body_kib }} KiB
+        — {{ _("tệp lớn đi qua /api/v1/uploads.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Lỗi và cách thử lại") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Mã") }}</th><th>HTTP</th><th>{{ _("Thử lại") }}</th>
+      <th>{{ _("Dùng lại Idempotency-Key") }}</th><th>{{ _("Nên làm gì") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for row in errors %}
+        <tr>
+          <td><code>{{ row.code }}</code></td>
+          <td>{{ row.status }}</td>
+          <td><code>{{ row.retry }}</code></td>
+          <td>{% if row.reuse_idempotency_key %}{{ _("có") }}{% else %}—{% endif %}</td>
+          <td>{{ row.action }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_tools.html
-SHA256=bd067e8cb9e9407bec0447d41d16786804f363a69f2638ab7b63615241685721 BYTES=2073 LINES=56
+SHA256=a527025b5dfc2d2c804184151258d710237c6004d04facdba68962d5a5ec6198 BYTES=3149 LINES=80
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
 
 <div class="card">
   <p class="muted">{{ _("Đây là những gì máy chủ này đang mở. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}</p>
+
+  <form method="get" action="/developers/tools" role="search">
+    <label for="tool-q" class="sr-only">{{ _("Tìm công cụ") }}</label>
+    <input id="tool-q" type="search" name="q" value="{{ query }}"
+           placeholder="{{ _('tìm theo tên, mô tả hoặc tên tham số') }}">
+    <label for="tool-cap" class="sr-only">{{ _("Nhóm") }}</label>
+    <select id="tool-cap" name="capability">
+      <option value="">{{ _("Mọi nhóm") }}</option>
+      {% for item in capabilities %}
+        <option value="{{ item }}"
+                {% if item == capability %}selected{% endif %}>{{ item }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn">{{ _("Lọc") }}</button>
+    {% if query or capability %}
+      <a class="btn btn-ghost" href="/developers/tools">{{ _("Bỏ lọc") }}</a>
+    {% endif %}
+  </form>
+
   {% if not catalog %}
-    <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API.") }}</p>
+    {% if query or capability %}
+      <p class="muted">{{ _("Không công cụ nào khớp.") }}</p>
+    {% else %}
+      <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API.") }}</p>
+    {% endif %}
   {% else %}
     <table class="table">
       <thead><tr>
@@ -127768,7 +128266,8 @@ SHA256=bd067e8cb9e9407bec0447d41d16786804f363a69f2638ab7b63615241685721 BYTES=20
       <tbody>
         {% for tool in catalog %}
           <tr>
-            <td><code>{{ tool.name }}</code><br>
+            <td><a href="/developers/tools/{{ tool.name }}">
+                  <code>{{ tool.name }}</code></a><br>
                 <span class="muted">{{ tool.description }}</span></td>
             <td>{{ tool.capability }}</td>
             <td><code>{{ tool.execution_mode }}</code></td>
@@ -132005,7 +132504,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=7213 LINES=353
+SHA256=f020ff78be7fa9c1426f30d9a8c800778518d6a020ecf223904acef8d4929e90 BYTES=11718 LINES=466
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
  "tools": [
@@ -132019,11 +132518,18 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
     "properties": {
      "prompt": {
       "type": "string",
-      "maxLength": 4000
+      "maxLength": 4000,
+      "description": "What to draw. Everything about the image comes from this text.",
+      "examples": [
+       "a paper boat on a rain-soaked street at night"
+      ]
      },
      "image_key": {
       "type": "string",
-      "description": "Upload or artifact id."
+      "description": "Optional reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. The result follows its subject and composition.",
+      "examples": [
+       "upl_from_POST_/api/v1/uploads"
+      ]
      },
      "model": {
       "type": "string",
@@ -132033,7 +132539,10 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "standard",
        "standard-lite"
       ],
-      "description": "Model alias."
+      "description": "Quality tier. This is what the price depends on — see the model list for what each alias is for.",
+      "examples": [
+       "standard"
+      ]
      },
      "aspect_ratio": {
       "type": "string",
@@ -132044,13 +132553,21 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "4:3",
        "3:4"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape of the output image.",
+      "examples": [
+       "16:9"
+      ]
      },
      "count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 4,
-      "default": 1
+      "default": 1,
+      "description": "How many images to generate. Each one is charged.",
+      "examples": [
+       1
+      ]
      }
     },
     "additionalProperties": false,
@@ -132072,7 +132589,7 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "40e51bd26ad81fe1"
+   "contract_hash": "f6fd70a8e5a91489"
   },
   {
    "name": "image.thumbnail",
@@ -132084,15 +132601,27 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
     "properties": {
      "topic": {
       "type": "string",
-      "maxLength": 2000
+      "maxLength": 2000,
+      "description": "What the thumbnail is about. The whole image is generated from this, so be specific about subject and mood.",
+      "examples": [
+       "How to fix a leaking tap in 5 minutes"
+      ]
      },
      "title": {
       "type": "string",
-      "maxLength": 200
+      "maxLength": 200,
+      "description": "Large text drawn on the image. Leave empty for an image with no text.",
+      "examples": [
+       "5 MINUTE FIX"
+      ]
      },
      "subtitle": {
       "type": "string",
-      "maxLength": 200
+      "maxLength": 200,
+      "description": "Smaller supporting line under the title.",
+      "examples": [
+       "no plumber needed"
+      ]
      },
      "text_style": {
       "type": "string",
@@ -132102,6 +132631,10 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "dramatic_gold",
        "neon_glow",
        "street_art"
+      ],
+      "description": "How the text is drawn. Ignored when both title and subtitle are empty.",
+      "examples": [
+       "bold_impact"
       ]
      },
      "phong_cach": {
@@ -132114,6 +132647,10 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "3d_render",
        "collage",
        "retro_vintage"
+      ],
+      "description": "Visual style of the image itself. The name is Vietnamese because it is a stable identifier, not a label; the values are listed in `enum`.",
+      "examples": [
+       "cinematic"
       ]
      },
      "kieu_trend": {
@@ -132128,6 +132665,10 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "storytelling",
        "mui_ten_chi_dan",
        "text_heavy_chu_lon"
+      ],
+      "description": "Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a numbered list, and so on).",
+      "examples": [
+       "khuon_mat_cam_xuc"
       ]
      },
      "ngon_ngu": {
@@ -132138,6 +132679,10 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "japanese",
        "korean",
        "chinese"
+      ],
+      "description": "Language of the text drawn on the image.",
+      "examples": [
+       "english"
       ]
      },
      "aspect_ratio": {
@@ -132149,13 +132694,21 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "4:3",
        "3:4"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape of the output. 16:9 is the YouTube thumbnail shape.",
+      "examples": [
+       "16:9"
+      ]
      },
      "count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 4,
-      "default": 1
+      "default": 1,
+      "description": "How many variations to generate. Each one is charged, so a quote for count=4 costs four times a quote for count=1.",
+      "examples": [
+       2
+      ]
      }
     },
     "additionalProperties": false,
@@ -132177,7 +132730,7 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "75c7f308edd01af0"
+   "contract_hash": "f1894755c0b48b16"
   },
   {
    "name": "image.upscale",
@@ -132189,7 +132742,10 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
     "properties": {
      "image_key": {
       "type": "string",
-      "description": "Upload or artifact id."
+      "description": "The image to enlarge, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+      "examples": [
+       "upl_from_POST_/api/v1/uploads"
+      ]
      },
      "preset": {
       "type": "string",
@@ -132197,7 +132753,11 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "fast",
        "quality"
       ],
-      "default": "fast"
+      "default": "fast",
+      "description": "How hard to work on the result. `fast` costs 2 credits, `quality` costs 4 and takes longer.",
+      "examples": [
+       "fast"
+      ]
      }
     },
     "additionalProperties": false,
@@ -132216,7 +132776,7 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "7a328847197a662d"
+   "contract_hash": "917d9f5da2fe9a80"
   },
   {
    "name": "story.storyboard",
@@ -132228,17 +132788,29 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
     "properties": {
      "title": {
       "type": "string",
-      "maxLength": 160
+      "maxLength": 160,
+      "description": "Working title of the piece. Used for tone and for naming the result.",
+      "examples": [
+       "The last train home"
+      ]
      },
      "story": {
       "type": "string",
-      "maxLength": 12000
+      "maxLength": 12000,
+      "description": "The story or brief, in prose. This is the source everything else is derived from.",
+      "examples": [
+       "A courier misses the last train and walks the city until dawn."
+      ]
      },
      "scene_count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 20,
-      "default": 6
+      "default": 6,
+      "description": "How many scenes to produce. This is what the price depends on.",
+      "examples": [
+       6
+      ]
      },
      "aspect_ratio": {
       "type": "string",
@@ -132250,11 +132822,19 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "3:4",
        "21:9"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape the scenes are written for; it changes framing advice, not the file.",
+      "examples": [
+       "16:9"
+      ]
      },
      "style": {
       "type": "string",
-      "maxLength": 500
+      "maxLength": 500,
+      "description": "Visual or narrative style to aim for, in your own words.",
+      "examples": [
+       "neo-noir, heavy rain, neon reflections"
+      ]
      }
     },
     "additionalProperties": false,
@@ -132277,7 +132857,7 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "ca93492e8df3e2e1"
+   "contract_hash": "9c7cfd84114e0c1b"
   },
   {
    "name": "text.prompt_package",
@@ -132289,23 +132869,39 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
     "properties": {
      "title": {
       "type": "string",
-      "maxLength": 160
+      "maxLength": 160,
+      "description": "Working title of the piece. Used for tone and for naming the result.",
+      "examples": [
+       "The last train home"
+      ]
      },
      "story": {
       "type": "string",
-      "maxLength": 12000
+      "maxLength": 12000,
+      "description": "The story or brief, in prose. This is the source everything else is derived from.",
+      "examples": [
+       "A courier misses the last train and walks the city until dawn."
+      ]
      },
      "scene_count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 20,
-      "default": 6
+      "default": 6,
+      "description": "How many scenes to produce. This is what the price depends on.",
+      "examples": [
+       6
+      ]
      },
      "duration_seconds": {
       "type": "integer",
       "minimum": 3,
       "maximum": 600,
-      "default": 30
+      "default": 30,
+      "description": "Target length of the finished piece. Scenes are paced to fit it.",
+      "examples": [
+       45
+      ]
      },
      "aspect_ratio": {
       "type": "string",
@@ -132317,15 +132913,27 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "3:4",
        "21:9"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape the scenes are written for; it changes framing advice, not the file.",
+      "examples": [
+       "16:9"
+      ]
      },
      "style": {
       "type": "string",
-      "maxLength": 500
+      "maxLength": 500,
+      "description": "Visual or narrative style to aim for, in your own words.",
+      "examples": [
+       "neo-noir, heavy rain, neon reflections"
+      ]
      },
      "audience": {
       "type": "string",
-      "maxLength": 300
+      "maxLength": 300,
+      "description": "Who the piece is for.",
+      "examples": [
+       "people who commute late at night"
+      ]
      },
      "language": {
       "type": "string",
@@ -132333,7 +132941,11 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
        "vi",
        "en"
       ],
-      "default": "vi"
+      "default": "vi",
+      "description": "Language the prompts are written in.",
+      "examples": [
+       "en"
+      ]
      }
     },
     "additionalProperties": false,
@@ -132356,7 +132968,7 @@ SHA256=72745c8bcb48112987a6bda9c773a4ad6065500775138c8ad5be11e5f98d2407 BYTES=72
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "9d38ae81ca23e2c4"
+   "contract_hash": "c55834222a3c4a0c"
   }
  ]
 }
@@ -162134,6 +162746,332 @@ def test_creating_a_project_lands_back_on_the_projects_section(portal):
     assert created.status_code == 303
     assert created.headers["location"] == "/developers/projects"
     assert "Flow" in portal.get("/developers/projects").text
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_198_variable_reference.py
+SHA256=2c400b4fc4ba110bd5667f94e3da68fde40caf3288ccecf5b269df3ac102bc62 BYTES=13747 LINES=320
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-06 — the variable reference: every published input, documented once.
+
+The rule this file enforces is narrow and strict: a customer must be able to
+find out what a parameter *is* without reading the app's source, and the page
+that tells them must be generated from the same contract the server validates
+against. Two copies of a schema is one copy that will be wrong.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import keys as devkeys, limits
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.registry import (AppManifest, LoadedApp, RegistryError,
+                                    ToolSpec, discover)
+
+PEPPER = "varref-test-pepper-" + "v" * 40
+
+
+def _live_catalog():
+    names = ",".join(sorted({tool.name for item in discover() if not item.error
+                             for tool in item.manifest.tools}))
+    return build_catalog(load_public_api_config(
+        {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": names}))
+
+
+# ── The acceptance criterion, checked against the live repository ────────────
+
+def test_every_published_parameter_has_a_description():
+    """100% of exposed operations documented — the whole point of EXT-06."""
+    missing = [(tool.name, name)
+               for tool in _live_catalog()
+               for name, spec in tool.input_schema["properties"].items()
+               if not str(spec.get("description") or "").strip()]
+    assert not missing, f"undocumented public parameters: {missing}"
+
+
+def test_documentation_never_describes_a_parameter_the_api_refuses():
+    """The opposite failure: prose promising an input that does not exist."""
+    for item in discover():
+        if item.error:
+            continue
+        for tool in item.manifest.tools:
+            contract = tool.api_contract or {}
+            documented = set(contract.get("params") or {})
+            hidden = set(contract.get("hidden") or ())
+            assert documented <= set(tool.params_schema), tool.name
+            assert not (documented & hidden), tool.name
+
+
+def test_the_public_docs_say_nothing_about_the_vendor():
+    text = " ".join(
+        str(spec.get("description", "")) + " " + str(spec.get("examples", ""))
+        for tool in _live_catalog()
+        for spec in tool.input_schema["properties"].values()).lower()
+    for vendor in ("gemini", "openai", "byteplus", "anthropic", "realesrgan",
+                   "whisper", "prompt library"):
+        assert vendor not in text, vendor
+
+
+# ── The contract refuses documentation that would drift ─────────────────────
+
+def _tool_with(params) -> tuple:
+    tool = ToolSpec(
+        name="text.documented", job_type="sampledoc.run",
+        description="Fixture tool.",
+        params_schema={"prompt": {"type": "string", "required": True},
+                       "secret_knob": {"type": "string"}},
+        returns={"text": "text"}, api_exposed=True,
+        api_contract={"scopes": ("jobs:create",), "hidden": ("secret_knob",),
+                      "params": params})
+    manifest = AppManifest(
+        slug="sampledoc", display_name="Sample", route_prefix="/sampledoc",
+        job_types=("sampledoc.run",), credit_cost=lambda params: 1,
+        lifecycle="released", surface="customer", tools=(tool,))
+    return manifest, tool
+
+
+def test_documenting_an_unknown_parameter_is_refused():
+    from platform_core.registry import _validate_api_contract
+
+    manifest, tool = _tool_with({"ghost": {"description": "nope"}})
+    with pytest.raises(RegistryError) as raised:
+        _validate_api_contract(manifest, tool)
+    assert "ghost" in str(raised.value)
+
+
+def test_documenting_a_hidden_parameter_is_refused():
+    """A caller cannot send it, so describing it is a promise nobody keeps."""
+    from platform_core.registry import _validate_api_contract
+
+    manifest, tool = _tool_with({"secret_knob": {"description": "internal"}})
+    with pytest.raises(RegistryError) as raised:
+        _validate_api_contract(manifest, tool)
+    assert "secret_knob" in str(raised.value)
+
+
+def test_an_empty_description_is_refused():
+    from platform_core.registry import _validate_api_contract
+
+    manifest, tool = _tool_with({"prompt": {"example": "hello"}})
+    with pytest.raises(RegistryError):
+        _validate_api_contract(manifest, tool)
+
+
+def test_an_unknown_documentation_key_is_refused():
+    from platform_core.registry import _validate_api_contract
+
+    manifest, tool = _tool_with({"prompt": {"description": "ok",
+                                            "internal_note": "leak"}})
+    with pytest.raises(RegistryError) as raised:
+        _validate_api_contract(manifest, tool)
+    assert "internal_note" in str(raised.value)
+
+
+def test_the_description_reaches_the_published_schema():
+    manifest, _tool = _tool_with({"prompt": {"description": "What to write.",
+                                             "example": "a haiku"}})
+    catalog = build_catalog(
+        load_public_api_config({"LTT_PUBLIC_API": "1",
+                                "LTT_PUBLIC_API_TOOLS": "text.documented"}),
+        apps=[LoadedApp(manifest=manifest, router=None, error="")])
+    published = catalog[0].input_schema["properties"]["prompt"]
+    assert published["description"] == "What to write."
+    # JSON Schema 2020-12 spells this `examples`, and it is a list.
+    assert published["examples"] == ["a haiku"]
+    assert "secret_knob" not in catalog[0].input_schema["properties"]
+
+
+# ── The reference pages ──────────────────────────────────────────────────────
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'varref.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    published = ",".join(tool.name for tool in _live_catalog())
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "varref-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": published,
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        _sign_in(client)
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _sign_in(client) -> None:
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"ref-{uuid.uuid4().hex[:6]}@example.com"
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 100, by="test")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    page = client.get("/login").text
+    token = re.search(r'name="csrf_token" value="([^"]+)"', page).group(1)
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": token}, follow_redirects=False)
+
+
+def test_every_published_tool_has_a_reference_page(portal):
+    for tool in _live_catalog():
+        response = portal.get(f"/developers/tools/{tool.name}")
+        assert response.status_code == 200, tool.name
+
+
+def test_the_page_lists_exactly_the_parameters_the_server_accepts(portal):
+    """Docs fields == server schema. Not a subset, not a superset."""
+    for tool in _live_catalog():
+        page = portal.get(f"/developers/tools/{tool.name}").text
+        table = re.search(r"Biến đầu vào.*?</table>", page,
+                          re.S)
+        assert table, tool.name
+        listed = set(re.findall(r"<td><code>([a-z_]+)</code></td>",
+                                table.group(0)))
+        assert listed == set(tool.input_schema["properties"]), tool.name
+
+
+def test_the_page_shows_what_a_caller_needs_to_fill_a_parameter_in(portal):
+    page = portal.get("/developers/tools/image.thumbnail").text
+    # Type, bound, default, enum values and the description all reach the page.
+    assert "bold_impact" in page                      # an enum value
+    assert "16:9" in page                             # a default
+    assert "5 MINUTE FIX" in page                     # an example
+    assert "How many variations to generate" in page  # a description
+    assert "tối đa 2000" in page or "2000" in page    # a maxLength bound
+
+
+def test_the_page_documents_the_call_itself(portal):
+    page = portal.get("/developers/tools/image.generate").text
+    for fragment in ("/api/v1/quotes", "/api/v1/jobs", "Idempotency-Key",
+                     "ASYNC_JOB", "jobs:create", "job.succeeded",
+                     "insufficient_credit", "request/"):
+        assert fragment in page, fragment
+
+
+def test_the_example_request_is_built_from_the_tool_s_own_examples(portal):
+    import html
+
+    # Unescaped, because the page escapes the quotes in the JSON body — which
+    # is exactly what it should do with anything a manifest wrote.
+    page = html.unescape(portal.get("/developers/tools/image.generate").text)
+    assert "curl -X POST" in page
+    assert '"tool": "image.generate"' in page
+    assert "a paper boat" in page                     # the declared example
+
+
+def test_a_data_tool_says_the_result_is_data_not_a_file(portal):
+    page = portal.get("/developers/tools/text.prompt_package").text
+    assert "không phải tệp" in page or "artifact" not in page.split("Kết quả")[1][:400]
+
+
+def test_the_reference_page_leaks_no_vendor(portal):
+    for tool in _live_catalog():
+        page = portal.get(f"/developers/tools/{tool.name}").text.lower()
+        for vendor in ("gemini", "byteplus", "realesrgan", "credential"):
+            assert vendor not in page, f"{tool.name}: {vendor}"
+
+
+def test_an_unknown_tool_does_not_get_a_page(portal):
+    assert portal.get("/developers/tools/nope.nothing",
+                      follow_redirects=False).status_code == 404
+
+
+def test_a_tool_the_deployment_does_not_publish_has_no_page(tmp_path,
+                                                            monkeypatch):
+    """The page must not become a directory of unpublished capability."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'varref2.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "varref-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        # Only one tool is published on this deployment.
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": "image.thumbnail",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        _sign_in(client)
+        assert client.get("/developers/tools/image.thumbnail").status_code == 200
+        assert client.get("/developers/tools/image.generate",
+                          follow_redirects=False).status_code == 404
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+# ── Search and filter ────────────────────────────────────────────────────────
+
+def test_the_tool_list_can_be_searched_by_name_description_or_parameter(portal):
+    by_name = portal.get("/developers/tools?q=thumbnail").text
+    assert "image.thumbnail" in by_name and "image.upscale" not in by_name
+
+    by_param = portal.get("/developers/tools?q=scene_count").text
+    assert "story.storyboard" in by_param and "image.thumbnail" not in by_param
+
+    nothing = portal.get("/developers/tools?q=zzzzz").text
+    assert "Không công cụ nào khớp" in nothing
+
+
+def test_the_tool_list_can_be_filtered_by_capability(portal):
+    images = portal.get("/developers/tools?capability=image").text
+    assert "image.thumbnail" in images
+    assert "story.storyboard" not in images
+
+
+def test_filtering_narrows_the_model_list_with_it(portal):
+    """Otherwise a filtered page shows models for tools it is not showing."""
+    page = portal.get("/developers/tools?q=upscale").text
+    assert "image.upscale" in page
+    assert "standard-lite" not in page
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -89,6 +89,48 @@ MANIFEST = AppManifest(
                 # project schema interprets, references included; until it has a
                 # public, owner-checked shape it stays out.
                 "hidden": ("operation", "model", "resources"),
+                "params": {
+                    "title": {
+                        "description": ("Working title of the piece. Used for "
+                                        "tone and for naming the result."),
+                        "example": "The last train home",
+                    },
+                    "story": {
+                        "description": ("The story or brief, in prose. This is "
+                                        "the source everything else is derived "
+                                        "from."),
+                        "example": ("A courier misses the last train and walks "
+                                    "the city until dawn."),
+                    },
+                    "scene_count": {
+                        "description": ("How many scenes to produce. This is "
+                                        "what the price depends on."),
+                        "example": 6,
+                    },
+                    "aspect_ratio": {
+                        "description": ("Shape the scenes are written for; it "
+                                        "changes framing advice, not the file."),
+                        "example": "16:9",
+                    },
+                    "style": {
+                        "description": ("Visual or narrative style to aim for, "
+                                        "in your own words."),
+                        "example": "neo-noir, heavy rain, neon reflections",
+                    },
+                    "duration_seconds": {
+                        "description": ("Target length of the finished piece. "
+                                        "Scenes are paced to fit it."),
+                        "example": 45,
+                    },
+                    "audience": {
+                        "description": "Who the piece is for.",
+                        "example": "people who commute late at night",
+                    },
+                    "language": {
+                        "description": "Language the prompts are written in.",
+                        "example": "en",
+                    },
+                },
             },
         ),
         ToolSpec(
@@ -131,6 +173,35 @@ MANIFEST = AppManifest(
                 # project schema interprets, references included; until it has a
                 # public, owner-checked shape it stays out.
                 "hidden": ("operation", "model", "resources"),
+                "params": {
+                    "title": {
+                        "description": ("Working title of the piece. Used for "
+                                        "tone and for naming the result."),
+                        "example": "The last train home",
+                    },
+                    "story": {
+                        "description": ("The story or brief, in prose. This is "
+                                        "the source everything else is derived "
+                                        "from."),
+                        "example": ("A courier misses the last train and walks "
+                                    "the city until dawn."),
+                    },
+                    "scene_count": {
+                        "description": ("How many scenes to produce. This is "
+                                        "what the price depends on."),
+                        "example": 6,
+                    },
+                    "aspect_ratio": {
+                        "description": ("Shape the scenes are written for; it "
+                                        "changes framing advice, not the file."),
+                        "example": "16:9",
+                    },
+                    "style": {
+                        "description": ("Visual or narrative style to aim for, "
+                                        "in your own words."),
+                        "example": "neo-noir, heavy rain, neon reflections",
+                    },
+                },
             },
         ),
     ),

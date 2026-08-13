@@ -345,7 +345,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
 
     unknown_keys = set(contract) - {"public_name", "description", "models",
                                     "enums", "hidden", "scopes", "deprecated",
-                                    "execution_mode", "aliases"}
+                                    "execution_mode", "aliases", "params"}
     if unknown_keys:
         raise RegistryError(_t(
             "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
@@ -412,6 +412,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
                                           param=param))
 
     _validate_model_aliases(manifest, tool, models)
+    _validate_param_docs(manifest, tool, contract.get("params") or {}, hidden)
 
     for alias in (contract.get("aliases") or ()):
         if not _TOOL_NAME_RE.fullmatch(str(alias)):
@@ -422,6 +423,47 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} alias trùng chính public_name").format(
                     slug=manifest.slug, tool=tool.name))
+
+
+def _validate_param_docs(manifest: AppManifest, tool: ToolSpec, params,
+                         hidden: set) -> None:
+    """Public prose about a parameter, checked against the parameter it describes.
+
+    The docs live in the public contract rather than in ``params_schema``: the
+    internal schema is written for the worker and routinely names providers and
+    internal prompt sets, while this text is written for a customer and goes
+    straight into the reference page (EXT-06).
+    """
+    if not isinstance(params, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} api_contract.params phải là dict").format(
+                slug=manifest.slug, tool=tool.name))
+    for name, spec in params.items():
+        if name not in tool.params_schema:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params mô tả tham số không tồn tại: "
+                "{param!r}").format(slug=manifest.slug, tool=tool.name,
+                                    param=name))
+        if name in hidden:
+            # Documenting a parameter the caller cannot send is a promise the
+            # API does not keep.
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params mô tả tham số đang ẩn: {param!r}"
+            ).format(slug=manifest.slug, tool=tool.name, param=name))
+        if not isinstance(spec, dict):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}] phải là dict").format(
+                    slug=manifest.slug, tool=tool.name, param=name))
+        unknown = set(spec) - {"description", "example"}
+        if unknown:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}] có khoá lạ: {keys}"
+            ).format(slug=manifest.slug, tool=tool.name, param=name,
+                     keys=sorted(unknown)))
+        if not str(spec.get("description") or "").strip():
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}] thiếu description"
+            ).format(slug=manifest.slug, tool=tool.name, param=name))
 
 
 def _validate_model_aliases(manifest: AppManifest, tool: ToolSpec,

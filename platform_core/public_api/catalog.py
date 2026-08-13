@@ -214,6 +214,7 @@ def project_tool(manifest, tool) -> PublicTool:
     models = {str(alias): (dict(target) if isinstance(target, dict)
                            else {"id": str(target)})
               for alias, target in (contract.get("models") or {}).items()}
+    param_docs = dict(contract.get("params") or {})
 
     properties: dict = {}
     required: list = []
@@ -248,6 +249,16 @@ def project_tool(manifest, tool) -> PublicTool:
                                ("default", "default")):
             if source in schema:
                 public[target] = schema[source]
+
+        # Public prose, if the app wrote any. It overrides the generic line the
+        # projection puts on media/model parameters, because "the id of the
+        # image to enlarge" beats "Upload or artifact id." every time.
+        docs = param_docs.get(param) or {}
+        if docs.get("description"):
+            public["description"] = str(docs["description"])
+        if "example" in docs:
+            # JSON Schema 2020-12 spells this `examples`, as a list.
+            public["examples"] = [docs["example"]]
         properties[param] = public
         if schema.get("required"):
             required.append(param)

@@ -10,11 +10,18 @@
     "properties": {
      "prompt": {
       "type": "string",
-      "maxLength": 4000
+      "maxLength": 4000,
+      "description": "What to draw. Everything about the image comes from this text.",
+      "examples": [
+       "a paper boat on a rain-soaked street at night"
+      ]
      },
      "image_key": {
       "type": "string",
-      "description": "Upload or artifact id."
+      "description": "Optional reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. The result follows its subject and composition.",
+      "examples": [
+       "upl_from_POST_/api/v1/uploads"
+      ]
      },
      "model": {
       "type": "string",
@@ -24,7 +31,10 @@
        "standard",
        "standard-lite"
       ],
-      "description": "Model alias."
+      "description": "Quality tier. This is what the price depends on — see the model list for what each alias is for.",
+      "examples": [
+       "standard"
+      ]
      },
      "aspect_ratio": {
       "type": "string",
@@ -35,13 +45,21 @@
        "4:3",
        "3:4"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape of the output image.",
+      "examples": [
+       "16:9"
+      ]
      },
      "count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 4,
-      "default": 1
+      "default": 1,
+      "description": "How many images to generate. Each one is charged.",
+      "examples": [
+       1
+      ]
      }
     },
     "additionalProperties": false,
@@ -63,7 +81,7 @@
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "40e51bd26ad81fe1"
+   "contract_hash": "f6fd70a8e5a91489"
   },
   {
    "name": "image.thumbnail",
@@ -75,15 +93,27 @@
     "properties": {
      "topic": {
       "type": "string",
-      "maxLength": 2000
+      "maxLength": 2000,
+      "description": "What the thumbnail is about. The whole image is generated from this, so be specific about subject and mood.",
+      "examples": [
+       "How to fix a leaking tap in 5 minutes"
+      ]
      },
      "title": {
       "type": "string",
-      "maxLength": 200
+      "maxLength": 200,
+      "description": "Large text drawn on the image. Leave empty for an image with no text.",
+      "examples": [
+       "5 MINUTE FIX"
+      ]
      },
      "subtitle": {
       "type": "string",
-      "maxLength": 200
+      "maxLength": 200,
+      "description": "Smaller supporting line under the title.",
+      "examples": [
+       "no plumber needed"
+      ]
      },
      "text_style": {
       "type": "string",
@@ -93,6 +123,10 @@
        "dramatic_gold",
        "neon_glow",
        "street_art"
+      ],
+      "description": "How the text is drawn. Ignored when both title and subtitle are empty.",
+      "examples": [
+       "bold_impact"
       ]
      },
      "phong_cach": {
@@ -105,6 +139,10 @@
        "3d_render",
        "collage",
        "retro_vintage"
+      ],
+      "description": "Visual style of the image itself. The name is Vietnamese because it is a stable identifier, not a label; the values are listed in `enum`.",
+      "examples": [
+       "cinematic"
       ]
      },
      "kieu_trend": {
@@ -119,6 +157,10 @@
        "storytelling",
        "mui_ten_chi_dan",
        "text_heavy_chu_lon"
+      ],
+      "description": "Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a numbered list, and so on).",
+      "examples": [
+       "khuon_mat_cam_xuc"
       ]
      },
      "ngon_ngu": {
@@ -129,6 +171,10 @@
        "japanese",
        "korean",
        "chinese"
+      ],
+      "description": "Language of the text drawn on the image.",
+      "examples": [
+       "english"
       ]
      },
      "aspect_ratio": {
@@ -140,13 +186,21 @@
        "4:3",
        "3:4"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape of the output. 16:9 is the YouTube thumbnail shape.",
+      "examples": [
+       "16:9"
+      ]
      },
      "count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 4,
-      "default": 1
+      "default": 1,
+      "description": "How many variations to generate. Each one is charged, so a quote for count=4 costs four times a quote for count=1.",
+      "examples": [
+       2
+      ]
      }
     },
     "additionalProperties": false,
@@ -168,7 +222,7 @@
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "75c7f308edd01af0"
+   "contract_hash": "f1894755c0b48b16"
   },
   {
    "name": "image.upscale",
@@ -180,7 +234,10 @@
     "properties": {
      "image_key": {
       "type": "string",
-      "description": "Upload or artifact id."
+      "description": "The image to enlarge, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+      "examples": [
+       "upl_from_POST_/api/v1/uploads"
+      ]
      },
      "preset": {
       "type": "string",
@@ -188,7 +245,11 @@
        "fast",
        "quality"
       ],
-      "default": "fast"
+      "default": "fast",
+      "description": "How hard to work on the result. `fast` costs 2 credits, `quality` costs 4 and takes longer.",
+      "examples": [
+       "fast"
+      ]
      }
     },
     "additionalProperties": false,
@@ -207,7 +268,7 @@
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "7a328847197a662d"
+   "contract_hash": "917d9f5da2fe9a80"
   },
   {
    "name": "story.storyboard",
@@ -219,17 +280,29 @@
     "properties": {
      "title": {
       "type": "string",
-      "maxLength": 160
+      "maxLength": 160,
+      "description": "Working title of the piece. Used for tone and for naming the result.",
+      "examples": [
+       "The last train home"
+      ]
      },
      "story": {
       "type": "string",
-      "maxLength": 12000
+      "maxLength": 12000,
+      "description": "The story or brief, in prose. This is the source everything else is derived from.",
+      "examples": [
+       "A courier misses the last train and walks the city until dawn."
+      ]
      },
      "scene_count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 20,
-      "default": 6
+      "default": 6,
+      "description": "How many scenes to produce. This is what the price depends on.",
+      "examples": [
+       6
+      ]
      },
      "aspect_ratio": {
       "type": "string",
@@ -241,11 +314,19 @@
        "3:4",
        "21:9"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape the scenes are written for; it changes framing advice, not the file.",
+      "examples": [
+       "16:9"
+      ]
      },
      "style": {
       "type": "string",
-      "maxLength": 500
+      "maxLength": 500,
+      "description": "Visual or narrative style to aim for, in your own words.",
+      "examples": [
+       "neo-noir, heavy rain, neon reflections"
+      ]
      }
     },
     "additionalProperties": false,
@@ -268,7 +349,7 @@
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "ca93492e8df3e2e1"
+   "contract_hash": "9c7cfd84114e0c1b"
   },
   {
    "name": "text.prompt_package",
@@ -280,23 +361,39 @@
     "properties": {
      "title": {
       "type": "string",
-      "maxLength": 160
+      "maxLength": 160,
+      "description": "Working title of the piece. Used for tone and for naming the result.",
+      "examples": [
+       "The last train home"
+      ]
      },
      "story": {
       "type": "string",
-      "maxLength": 12000
+      "maxLength": 12000,
+      "description": "The story or brief, in prose. This is the source everything else is derived from.",
+      "examples": [
+       "A courier misses the last train and walks the city until dawn."
+      ]
      },
      "scene_count": {
       "type": "integer",
       "minimum": 1,
       "maximum": 20,
-      "default": 6
+      "default": 6,
+      "description": "How many scenes to produce. This is what the price depends on.",
+      "examples": [
+       6
+      ]
      },
      "duration_seconds": {
       "type": "integer",
       "minimum": 3,
       "maximum": 600,
-      "default": 30
+      "default": 30,
+      "description": "Target length of the finished piece. Scenes are paced to fit it.",
+      "examples": [
+       45
+      ]
      },
      "aspect_ratio": {
       "type": "string",
@@ -308,15 +405,27 @@
        "3:4",
        "21:9"
       ],
-      "default": "16:9"
+      "default": "16:9",
+      "description": "Shape the scenes are written for; it changes framing advice, not the file.",
+      "examples": [
+       "16:9"
+      ]
      },
      "style": {
       "type": "string",
-      "maxLength": 500
+      "maxLength": 500,
+      "description": "Visual or narrative style to aim for, in your own words.",
+      "examples": [
+       "neo-noir, heavy rain, neon reflections"
+      ]
      },
      "audience": {
       "type": "string",
-      "maxLength": 300
+      "maxLength": 300,
+      "description": "Who the piece is for.",
+      "examples": [
+       "people who commute late at night"
+      ]
      },
      "language": {
       "type": "string",
@@ -324,7 +433,11 @@
        "vi",
        "en"
       ],
-      "default": "vi"
+      "default": "vi",
+      "description": "Language the prompts are written in.",
+      "examples": [
+       "en"
+      ]
      }
     },
     "additionalProperties": false,
@@ -347,7 +460,7 @@
    "required_scopes": [
     "jobs:create"
    ],
-   "contract_hash": "9d38ae81ca23e2c4"
+   "contract_hash": "c55834222a3c4a0c"
   }
  ]
 }
