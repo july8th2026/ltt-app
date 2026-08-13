@@ -41,6 +41,25 @@ CODE_INTERNAL = "internal_error"
 CODE_READ_ONLY = "read_only"
 CODE_SERVICE_UNAVAILABLE = "service_unavailable"
 
+# Specific causes (EXT-02). These exist because the generic code above told the
+# caller *that* it failed without telling them *what to do*: `conflict` covered
+# "top up credit", "request a new quote" and "your client reused a key with a
+# different body" — three problems with three different fixes.
+#
+# Note what is deliberately NOT split: 401. Every credential failure keeps one
+# code, because separate codes for "unknown key" and "wrong secret" turn the
+# endpoint into an oracle for guessing key ids.
+CODE_MISSING_SCOPE = "missing_scope"
+CODE_TOOL_NOT_ALLOWED = "tool_not_allowed"
+CODE_INSUFFICIENT_CREDIT = "insufficient_credit"
+CODE_PRICE_CHANGED = "price_changed"
+CODE_IDEMPOTENCY_CONFLICT = "idempotency_conflict"
+CODE_IDEMPOTENCY_IN_PROGRESS = "idempotency_in_progress"
+CODE_QUOTE_EXPIRED = "quote_expired"
+CODE_QUOTE_INVALID = "quote_invalid"
+CODE_CONCURRENCY_LIMITED = "concurrency_limited"
+CODE_QUOTA_EXCEEDED = "quota_exceeded"
+
 _TITLES = {
     CODE_INVALID_REQUEST: "Invalid request",
     CODE_UNAUTHORIZED: "Unauthorized",
@@ -54,6 +73,16 @@ _TITLES = {
     CODE_INTERNAL: "Internal error",
     CODE_READ_ONLY: "Read-only mode",
     CODE_SERVICE_UNAVAILABLE: "Service unavailable",
+    CODE_MISSING_SCOPE: "Missing scope",
+    CODE_TOOL_NOT_ALLOWED: "Tool not allowed",
+    CODE_INSUFFICIENT_CREDIT: "Insufficient credit",
+    CODE_PRICE_CHANGED: "Price changed",
+    CODE_IDEMPOTENCY_CONFLICT: "Idempotency conflict",
+    CODE_IDEMPOTENCY_IN_PROGRESS: "Request still in progress",
+    CODE_QUOTE_EXPIRED: "Quote expired",
+    CODE_QUOTE_INVALID: "Quote invalid",
+    CODE_CONCURRENCY_LIMITED: "Too many concurrent jobs",
+    CODE_QUOTA_EXCEEDED: "Quota exceeded",
 }
 
 _STATUS_CODES = {
@@ -188,3 +217,45 @@ def read_only(detail: object = "") -> ApiError:
     """Emergency switch answer: reads keep working, writes stop."""
     return ApiError(503, CODE_READ_ONLY, detail,
                     title=_TITLES[CODE_READ_ONLY])
+
+
+# ── Specific causes (EXT-02) ─────────────────────────────────────────────────
+# Same statuses as the generic helpers they replace; only the code and the
+# advice change. A caller matching on status keeps working.
+
+def missing_scope(detail: object = "", **extra) -> ApiError:
+    return ApiError(403, CODE_MISSING_SCOPE, detail, extra=extra or None)
+
+
+def tool_not_allowed(detail: object = "", **extra) -> ApiError:
+    return ApiError(403, CODE_TOOL_NOT_ALLOWED, detail, extra=extra or None)
+
+
+def insufficient_credit(detail: object = "", **extra) -> ApiError:
+    return ApiError(409, CODE_INSUFFICIENT_CREDIT, detail, extra=extra or None)
+
+
+def price_changed(detail: object = "", **extra) -> ApiError:
+    return ApiError(409, CODE_PRICE_CHANGED, detail, extra=extra or None)
+
+
+def idempotency_conflict(detail: object = "", **extra) -> ApiError:
+    return ApiError(409, CODE_IDEMPOTENCY_CONFLICT, detail, extra=extra or None)
+
+
+def idempotency_in_progress(detail: object = "", **extra) -> ApiError:
+    """The first attempt is still running — the opposite of a permanent error.
+
+    Sharing `conflict` with the different-body case told a client to give up on
+    a request that was about to succeed.
+    """
+    return ApiError(409, CODE_IDEMPOTENCY_IN_PROGRESS, detail,
+                    extra=extra or None)
+
+
+def quote_expired(detail: object = "") -> ApiError:
+    return ApiError(400, CODE_QUOTE_EXPIRED, detail)
+
+
+def quote_invalid(detail: object = "") -> ApiError:
+    return ApiError(400, CODE_QUOTE_INVALID, detail)

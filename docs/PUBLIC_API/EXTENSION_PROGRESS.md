@@ -13,7 +13,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | # | Prompt | Trạng thái | Ngày |
 |---|---|---|---|
 | 01 | V2 reconciliation, master gap matrix, dependency graph | **PASS** | 2026-08-13 |
-| 02 | Protocol / execution modes / error-retry standards | chưa chạy | — |
+| 02 | Protocol / execution modes / error-retry standards | **PASS** | 2026-08-13 |
 | 03 | Models / capabilities / tool catalog / schema chain | chưa chạy | — |
 | 04 | Projects / service accounts / delegated auth decision | chưa chạy | — |
 | 05 | Developer API tab / information architecture | chưa chạy | — |
@@ -167,3 +167,106 @@ Không có tác động runtime.
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế tiếp: `prompts/02_PUBLIC_API_PROTOCOL_EXECUTION_MODES_ERROR_RETRY_STANDARDS.txt`
 Khuyến nghị **trước** khi chạy: commit V2 (rủi ro X1).
+
+---
+
+## EXT-02 — PROTOCOL CONTRACT, EXECUTION MODES, ERROR/RETRY STANDARDS ✅
+
+### Entry gate
+
+EXT-01 PASS ✅. Head vẫn `c9d0e1f2a3b4` (**không** migration mới). Cây mã sạch
+tại `5978fcc` trước khi bắt đầu.
+
+### Reused V2 components
+
+`errors.py` (mở rộng, không thay), `limits.py`, `catalog.py`, `inventory.py`,
+`guard.py`, `registry._validate_api_contract`, `tools/build_public_api_docs.py`
+(thêm block thứ hai thay vì công cụ thứ hai). **0 route mới, 0 bảng mới, 0
+migration, 0 phụ thuộc mới.**
+
+### Status before → after
+
+| Hạng mục | Before | After |
+|---|---|---|
+| Execution mode | không tồn tại (grep = 0) | khai báo ở **cả** route và tool, có kiểm |
+| Mã lỗi | 14, phần lớn chung chung | **23**, mỗi mã có retry + hành động |
+| 3 nguyên nhân 409 khác nhau | cùng mã `conflict` | `insufficient_credit` / `price_changed` / `idempotency_conflict` / `idempotency_in_progress` |
+| `X-Correlation-ID` | chỉ trên phản hồi bị guard chặn (X5) | **mọi** phản hồi |
+| `X-LTT-API-Version` | không có | mọi phản hồi |
+| `Retry-After` | chỉ trong body | header **và** body, cùng một số |
+| `Location` khi tạo job | không có | có, và GET được ngay |
+| Deprecation | không có cơ chế | `Deprecation`/`Sunset` (RFC 8594) theo dữ liệu inventory |
+| Tài liệu bảng lỗi | không có | **sinh tự động** từ registry, `--check` chặn drift |
+
+### Evidence
+
+- `platform_core/public_api/protocol.py` — 5 mode, luật của từng mode,
+  `PublicOperationContract` tự kiểm lúc khởi tạo, quy ước chung.
+- `platform_core/public_api/error_registry.py` — 23 mã × (status, retry class,
+  có phải dùng lại Idempotency-Key, hành động) + ma trận retry theo status.
+- `MODES_IN_USE` chỉ có `ASYNC_JOB` và `SYNC`. Manifest khai `STREAM`/`BATCH`
+  bị **registry từ chối nạp** — đặc tả xong không có nghĩa là dùng được.
+- 21 route `SYNC`, **1** route `ASYNC_JOB` (`POST /jobs`), và có test chứng minh
+  không route `SYNC` nào tạo job.
+
+### Tests
+
+`tests/test_194_public_api_protocol.py` — **29 test**. Đáng kể:
+- mọi route/tool khai mode nền tảng thi hành được;
+- manifest **không** opt-in được vào mode chưa thi hành (2 test tham số hoá);
+- mọi `CODE_*` trong mã nguồn phải có trong registry (bánh cóc), và status trong
+  registry phải khớp status mà helper thật sự ném;
+- 401 **không** bị tách — test cấm các mã `invalid_api_key`/`key_expired` xuất
+  hiện trong registry;
+- header trên phản hồi thành công, phản hồi lỗi và phản hồi ẩn danh; id trong
+  header **bằng** id trong problem body; caller **không** tự chọn được id;
+- `Retry-After` header khớp body; `Location` khi 201 và GET được;
+- ba mã 409 phân biệt được bằng test hành vi thật (hết credit / quote hết hạn /
+  trùng key khác body);
+- SDK Python và TypeScript retry **đúng** tập status mà registry cho là retry
+  được, và không được retry mù 409.
+
+Toàn bộ Public API: **345 test** (`test_178`…`test_194`) — pass.
+Quick gate: **PASS 9/9**. Full gate: theo `MANIFEST.json`, checkpoint kế là
+EXT-04; EXT-02 chạy targeted + quick.
+
+Bốn test cũ đổi kỳ vọng (`test_180`, `test_181`, `test_182`, `test_191`): mã lỗi
+được **làm cụ thể hơn**, không phải test bị sửa để che semantics sai. Đổi được vì
+`/api/v1` chưa deploy — sau khi có khách thật thì đây sẽ là breaking change và
+phải đi đường version.
+
+### OBSERVED_DIFFERENCE
+
+Pack yêu cầu tách `invalid_api_key`, `key_expired/revoked` thành mã riêng.
+**Không làm.** Tách ra biến endpoint thành máy tra key id: kẻ tấn công đoán một
+triệu key id và học được cái nào tồn tại. `tests/test_192` đã khoá tính chất
+"mọi thất bại credential trả một câu trả lời"; COMMON_RULES §2 nói code+test
+thắng prompt. Người gọi thật có portal, nơi nói chính xác khoá của họ sao lại
+chết. Ghi ở `PROTOCOL_V1.md` §4.1.
+
+### Deferred (có lý do, không phải quên)
+
+**Phân loại nguyên nhân job hỏng** (`provider_timeout`, `capacity_unavailable`…)
+chưa làm. Muốn đúng thì worker phải **gắn nhãn** lúc hỏng; đoán bằng cách dò
+chuỗi lỗi nội bộ sẽ có lúc nói sai, và một nhãn "thử lại được" sai chỗ khiến
+khách chạy lại một job chắc chắn hỏng — mất tiền thật. Chủ sở hữu: EXT-16. Hiện
+job hỏng **đã được hoàn tiền** nên khách không mất gì; `PROTOCOL_V1.md` §3 nói
+thẳng điều này với khách.
+
+### Rollback
+
+Xoá `protocol.py`, `error_registry.py`, `PROTOCOL_V1.md`, `test_194`; hoàn
+nguyên các mã lỗi cụ thể về helper chung; bỏ 3 header trong `guard.py`. Không có
+migration, không có dữ liệu nào phải dọn.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-02 | Kết quả |
+|---|---|
+| Không operation public nào có mode UNKNOWN | ✅ 22 route + 5 tool, có test |
+| Retry rules không cho chargeable POST tạo bản sao | ✅ registry buộc `reuse_idempotency_key`; SDK bị test chặn retry mù 409 |
+| Stream/batch semantics có test nếu enabled | ✅ **không** enabled; test chứng minh không ai dùng được chúng |
+| Docs sinh được từ contract | ✅ bảng lỗi sinh từ registry, `--check` trong `test_191` |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/03_MODELS_CAPABILITIES_TOOL_CATALOG_AND_SCHEMA_CHAIN.txt`

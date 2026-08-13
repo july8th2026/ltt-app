@@ -24,6 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from platform_core.public_api.errors import not_found
+from platform_core.public_api.protocol import ASYNC_JOB, mode_of_tool
 
 # Apps that may ever appear on the public API. Everything else is closed by
 # construction, including future lifecycles nobody has thought of yet.
@@ -81,11 +82,16 @@ class PublicTool:
     job_type: str
     model_aliases: dict = field(default_factory=dict)
     deprecated: str = ""
+    #: How a call to this tool executes. Published so a client knows whether to
+    #: expect a job id or an answer *before* it writes the integration, rather
+    #: than discovering it from the shape of the first response.
+    execution_mode: str = ASYNC_JOB
 
     def to_public_dict(self) -> dict:
         body = {
             "name": self.name,
             "description": self.description,
+            "execution_mode": self.execution_mode,
             "input_schema": self.input_schema,
             "output_schema": self.output_schema,
             "required_scopes": list(self.scopes),
@@ -180,6 +186,7 @@ def project_tool(manifest, tool) -> PublicTool:
         job_type=tool.job_type,
         model_aliases=models,
         deprecated=str(contract.get("deprecated") or ""),
+        execution_mode=mode_of_tool(contract),
     )
 
 

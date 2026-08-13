@@ -3,6 +3,7 @@
   {
    "name": "image.generate",
    "description": "Generate one to four images from a text prompt, optionally guided by one reference image.",
+   "execution_mode": "ASYNC_JOB",
    "input_schema": {
     "type": "object",
     "properties": {
@@ -65,6 +66,7 @@
   {
    "name": "image.thumbnail",
    "description": "Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.",
+   "execution_mode": "ASYNC_JOB",
    "input_schema": {
     "type": "object",
     "properties": {
@@ -167,6 +169,7 @@
   {
    "name": "image.upscale",
    "description": "Upscale an image to four times its original size. Costs 2 credits at the fast preset and 4 at the quality preset.",
+   "execution_mode": "ASYNC_JOB",
    "input_schema": {
     "type": "object",
     "properties": {
@@ -203,6 +206,7 @@
   {
    "name": "story.storyboard",
    "description": "Turn a story brief into a storyboard: one shot description per scene plus a master prompt. Priced by scene count.",
+   "execution_mode": "ASYNC_JOB",
    "input_schema": {
     "type": "object",
     "properties": {
@@ -261,6 +265,7 @@
   {
    "name": "text.prompt_package",
    "description": "Turn a story brief into a structured prompt package: one prompt per scene plus a master prompt. Priced by scene count.",
+   "execution_mode": "ASYNC_JOB",
    "input_schema": {
     "type": "object",
     "properties": {

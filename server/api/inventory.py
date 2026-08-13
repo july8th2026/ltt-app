@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from platform_core.public_api.protocol import ASYNC_JOB, SYNC
+
 API_V1_PREFIX = "/api/v1"
 
 
@@ -23,6 +25,14 @@ class ApiRoute:
     summary: str
     authenticated: bool
     in_schema: bool = True
+    #: How this operation executes (EXT-02). Defaulting to SYNC is safe here in
+    #: a way it would not be for a tool: a route that forgets to declare is a
+    #: read, and `test_194` refuses any SYNC route that touches the queue.
+    execution_mode: str = SYNC
+    #: RFC 8594 dates, emitted as headers when set. Empty until something is on
+    #: its way out.
+    deprecated_on: str = ""
+    sunset_on: str = ""
 
 
 # Prompt 02 kernel surface. Later prompts extend this list together with the
@@ -42,8 +52,11 @@ API_V1_ROUTES: tuple = (
              "Contract for one tool", authenticated=True),
     ApiRoute("POST", f"{API_V1_PREFIX}/quotes",
              "Price a tool call before running it", authenticated=True),
+    # The one chargeable operation on the surface, and the only ASYNC_JOB route:
+    # everything else here reads or arranges, this one buys.
     ApiRoute("POST", f"{API_V1_PREFIX}/jobs",
-             "Run a quoted tool call", authenticated=True),
+             "Run a quoted tool call", authenticated=True,
+             execution_mode=ASYNC_JOB),
     ApiRoute("GET", f"{API_V1_PREFIX}/jobs",
              "List this account's jobs", authenticated=True),
     ApiRoute("GET", f"{API_V1_PREFIX}/jobs/{{job_id}}",
@@ -77,6 +90,12 @@ API_V1_ROUTES: tuple = (
              "OpenAPI document for the public surface only",
              authenticated=False, in_schema=False),
 )
+
+
+def execution_modes() -> dict:
+    """Route → declared execution mode, for `/capabilities` and the tests."""
+    return {f"{route.method} {route.path}": route.execution_mode
+            for route in API_V1_ROUTES}
 
 
 def capability_areas() -> tuple:

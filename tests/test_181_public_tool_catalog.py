@@ -323,7 +323,8 @@ def test_listing_tools_requires_a_key_and_the_right_scope(api):
     wrong = _token(scopes=(SCOPE_JOBS_READ,))
     denied = api.get(f"{API_V1_PREFIX}/tools",
                      headers={"Authorization": f"Bearer {wrong}"})
-    assert denied.status_code == 403 and denied.json()["code"] == "forbidden"
+    assert denied.status_code == 403
+    assert denied.json()["code"] == "missing_scope"
 
     allowed = api.get(f"{API_V1_PREFIX}/tools",
                       headers={"Authorization": f"Bearer {_token()}"})

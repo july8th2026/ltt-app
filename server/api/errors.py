@@ -27,7 +27,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from platform_core.public_api import errors as api_errors
+from platform_core.public_api import errors as api_errors, protocol
 from platform_core.public_api.errors import (ApiError, ApiProblem,
                                              PROBLEM_CONTENT_TYPE)
 from server.api.context import request_id
@@ -39,10 +39,18 @@ def is_public_api_path(path: str, prefix: str = "/api/v1") -> bool:
 
 
 def problem_response(problem: ApiProblem) -> JSONResponse:
+    body = problem.to_dict()
+    headers = {"Cache-Control": "no-store"}
+    # `retry_after` has been in the body since the limiter shipped, which the
+    # platform's own SDKs read. Every other HTTP client in the world reads the
+    # header instead — a proxy, a load generator, `requests` with a retry
+    # adapter — so the same number goes in both places (EXT-02).
+    retry_after = body.get("retry_after")
+    if isinstance(retry_after, int) and retry_after > 0:
+        headers[protocol.HEADER_RETRY_AFTER] = str(retry_after)
     return JSONResponse(
-        problem.to_dict(), status_code=problem.status,
-        media_type=PROBLEM_CONTENT_TYPE,
-        headers={"Cache-Control": "no-store"},
+        body, status_code=problem.status, media_type=PROBLEM_CONTENT_TYPE,
+        headers=headers,
     )
 
 

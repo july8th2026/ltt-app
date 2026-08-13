@@ -245,6 +245,8 @@ chưa dựng nó.
 
 Generate one to four images from a text prompt, optionally guided by one reference image.
 
+Execution mode: `ASYNC_JOB`
+
 Scopes: `jobs:create`
 
 Input:
@@ -260,6 +262,8 @@ Output: `image_keys` (artifact[]), `prompt` (string)
 ### `image.thumbnail`
 
 Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.
+
+Execution mode: `ASYNC_JOB`
 
 Scopes: `jobs:create`
 
@@ -281,6 +285,8 @@ Output: `image_keys` (artifact[]), `prompt` (string)
 
 Upscale an image to four times its original size. Costs 2 credits at the fast preset and 4 at the quality preset.
 
+Execution mode: `ASYNC_JOB`
+
 Scopes: `jobs:create`
 
 Input:
@@ -293,6 +299,8 @@ Output: `image_key` (artifact)
 ### `story.storyboard`
 
 Turn a story brief into a storyboard: one shot description per scene plus a master prompt. Priced by scene count.
+
+Execution mode: `ASYNC_JOB`
 
 Scopes: `jobs:create`
 
@@ -309,6 +317,8 @@ Output: `storyboard` (object), `master_prompt` (string)
 ### `text.prompt_package`
 
 Turn a story brief into a structured prompt package: one prompt per scene plus a master prompt. Priced by scene count.
+
+Execution mode: `ASYNC_JOB`
 
 Scopes: `jobs:create`
 

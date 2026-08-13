@@ -23,7 +23,8 @@ import uuid
 
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 
-from platform_core.public_api.errors import invalid_request
+from platform_core.public_api.errors import (invalid_request, quote_expired,
+                                             quote_invalid)
 from platform_core.public_api.idempotency import canonical_hash
 
 QUOTE_TTL_S = 15 * 60
@@ -73,19 +74,19 @@ def verify(*, secret: str, token: str, user_id: str,
     try:
         payload = _serializer(secret).loads(token, salt=_SALT, max_age=ttl)
     except SignatureExpired as exc:
-        raise invalid_request("This quote has expired; request a new one.") from exc
+        raise quote_expired("This quote has expired; request a new one.") from exc
     except BadSignature as exc:
-        raise invalid_request("This quote is not valid.") from exc
+        raise quote_invalid("This quote is not valid.") from exc
     if not isinstance(payload, dict) or payload.get("v") != _VERSION:
-        raise invalid_request("This quote is not valid.")
+        raise quote_invalid("This quote is not valid.")
     if str(payload.get("user_id") or "") != str(user_id):
         # Same answer as a forged signature on purpose: a caller must not learn
         # that somebody else's quote exists and is merely mis-addressed.
-        raise invalid_request("This quote is not valid.")
+        raise quote_invalid("This quote is not valid.")
     if len(str(payload.get("intent") or "")) != 32:
-        raise invalid_request("This quote is not valid.")
+        raise quote_invalid("This quote is not valid.")
     if int(payload.get("credit", -1)) < 0:
-        raise invalid_request("This quote is not valid.")
+        raise quote_invalid("This quote is not valid.")
     return payload
 
 
@@ -97,7 +98,7 @@ def check_matches(payload: dict, *, tool_name: str, params: dict) -> None:
     price a promise about *this* request rather than about a token.
     """
     if str(payload.get("tool") or "") != str(tool_name):
-        raise invalid_request("This quote was issued for a different tool.")
+        raise quote_invalid("This quote was issued for a different tool.")
     if str(payload.get("fingerprint") or "") != fingerprint(tool_name, params):
-        raise invalid_request(
+        raise quote_invalid(
             "This quote was issued for a different input; request a new quote.")

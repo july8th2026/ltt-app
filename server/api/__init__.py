@@ -27,6 +27,7 @@ from __future__ import annotations
 from fastapi import Depends, FastAPI
 from fastapi.responses import JSONResponse
 
+from platform_core.public_api import protocol
 from platform_core.public_api.config import PublicApiConfig, load_public_api_config
 from platform_core.public_api.principal import Principal
 from server.api.auth import install_database_resolver, require_principal
@@ -114,6 +115,11 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
                 # Feature areas of this API version — not this deployment's tool
                 # list, which belongs behind a key at `/tools`.
                 "capabilities": list(capability_areas()),
+                # Which execution modes this version can actually honour. A
+                # client library reads this to know whether to compile in its
+                # streaming or batching path at all, instead of discovering the
+                # answer from a 400 in production.
+                "execution_modes": list(protocol.MODES_IN_USE),
             },
             headers=_NO_STORE,
         )

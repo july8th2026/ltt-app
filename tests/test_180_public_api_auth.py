@@ -255,7 +255,11 @@ def test_scope_dependency_refuses_before_the_route_body_runs(api):
     response = api.post(f"{API_V1_PREFIX}/spend-for-test", json={},
                         headers=_auth(token))
     assert response.status_code == 403
-    assert response.json()["code"] == "forbidden"
+    # EXT-02: the code names the cause. "forbidden" told a developer their key
+    # was wrong somehow; "missing_scope" plus `required_scope` tells them what
+    # to mint instead.
+    assert response.json()["code"] == "missing_scope"
+    assert response.json()["required_scope"] == SCOPE_JOBS_CREATE
     assert executed == [], "route body must not run without the scope"
 
     _user_id2, spender = _account("spender@example.com",

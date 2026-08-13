@@ -24,7 +24,9 @@ from datetime import datetime, timezone
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
-from platform_core.public_api.errors import conflict, invalid_request
+from platform_core.public_api.errors import (idempotency_conflict,
+                                             idempotency_in_progress,
+                                             invalid_request)
 from platform_core.public_api.tables import (ApiIdempotencyRecord,
                                              IDEMPOTENCY_COMPLETED,
                                              IDEMPOTENCY_IN_PROGRESS)
@@ -125,11 +127,11 @@ def _replay(record, request_hash: str):
 
     if record.request_hash != request_hash:
         metrics.increment(metrics.IDEMPOTENCY_CONFLICT)
-        raise conflict(
+        raise idempotency_conflict(
             "This Idempotency-Key was already used with a different request "
             "body.", idempotency_key=record.idempotency_key)
     if record.status != IDEMPOTENCY_COMPLETED:
-        raise conflict(
+        raise idempotency_in_progress(
             "A request with this Idempotency-Key is still being processed.",
             idempotency_key=record.idempotency_key)
     return record, True

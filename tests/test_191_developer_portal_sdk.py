@@ -330,7 +330,9 @@ def test_the_python_sdk_reuses_one_idempotency_key_across_retries(sdk_client):
     # the server's real answer (a rejected quote), not the transient 503.
     assert len(seen_keys) == 2
     assert len(set(seen_keys)) == 1 and seen_keys[0]
-    assert raised.value.code == "invalid_request"
+    # EXT-02 named the cause: a rejected quote is `quote_invalid`, which the
+    # registry marks as never worth retrying — unlike `quote_expired`.
+    assert raised.value.code == "quote_invalid"
 
 
 def test_the_python_sdk_verifies_a_webhook_signature(sdk_client):

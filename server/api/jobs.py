@@ -21,7 +21,9 @@ from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED
 from platform_core.public_api import (idempotency, invocation, limits, media,
                                       metrics, quotes)
 from platform_core.public_api.catalog import build_catalog, require_tool
-from platform_core.public_api.errors import conflict, invalid_request
+from platform_core.public_api.errors import (insufficient_credit,
+                                             invalid_request, price_changed)
+from server.api.inventory import API_V1_PREFIX
 from platform_core.public_api.pagination import Page, PageRequest
 from platform_core.public_api.principal import Principal, ensure_owner
 from platform_core.public_api.scopes import (SCOPE_JOBS_CANCEL, SCOPE_JOBS_CREATE,
@@ -225,9 +227,9 @@ def register_job_routes(api, config, tag: str) -> None:
         if cost != int(quote.get("credit", -1)):
             # Price moved between quote and submit. Refusing is the only answer
             # that keeps the quote a promise (Q84).
-            raise conflict("The price for this call has changed; request a new "
-                           "quote.", quoted_credit=int(quote.get("credit", 0)),
-                           current_credit=cost)
+            raise price_changed(
+                "The price for this call has changed; request a new quote.",
+                quoted_credit=int(quote.get("credit", 0)), current_credit=cost)
 
         # Admission control, after validation and before any money moves. The
         # order matters: a caller over its limits must not be charged, and a
@@ -269,9 +271,9 @@ def register_job_routes(api, config, tag: str) -> None:
             # readable, and the balance tells the client what to do next. The
             # hold never happened, so there is nothing promoted to compensate.
             db.rollback()
-            raise conflict("Not enough credit for this call.",
-                           required_credit=cost,
-                           balance=credit.so_du(db, principal.user_id)) from exc
+            raise insufficient_credit(
+                "Not enough credit for this call.", required_credit=cost,
+                balance=credit.so_du(db, principal.user_id)) from exc
         except Exception:
             db.rollback()
             if promotions:
@@ -281,7 +283,13 @@ def register_job_routes(api, config, tag: str) -> None:
                 upload_sessions.compensate(get_storage(), promotions)
             raise
 
-        return JSONResponse(response, status_code=201, headers=_NO_STORE)
+        # 201 rather than 202: the work is asynchronous but a resource really
+        # was created and is addressable right now, so the caller gets its
+        # address the way any other created resource would give it (EXT-02).
+        return JSONResponse(
+            response, status_code=201,
+            headers={**_NO_STORE,
+                     "Location": f"{API_V1_PREFIX}/jobs/{job.id}"})
 
     @api.get("/jobs", tags=[tag], summary="List this account's jobs",
              description="Owner-scoped, newest first, with optional status filter.")

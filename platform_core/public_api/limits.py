@@ -37,10 +37,15 @@ import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 
-from platform_core.public_api.errors import ApiError, CODE_RATE_LIMITED
+from platform_core.public_api.errors import (ApiError, CODE_CONCURRENCY_LIMITED,
+                                             CODE_QUOTA_EXCEEDED,
+                                             CODE_RATE_LIMITED)
 
-CODE_CONCURRENCY = "concurrency_limited"
-CODE_QUOTA = "quota_exceeded"
+# Kept as local aliases so the call sites below read the same as before; the
+# codes themselves now live with every other code, because a code defined next
+# to the one module that raises it is a code the error registry cannot see.
+CODE_CONCURRENCY = CODE_CONCURRENCY_LIMITED
+CODE_QUOTA = CODE_QUOTA_EXCEEDED
 
 _lock = threading.Lock()
 _windows: dict = defaultdict(deque)

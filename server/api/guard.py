@@ -17,7 +17,7 @@ import time
 
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from platform_core.public_api import metrics
+from platform_core.public_api import metrics, protocol
 from platform_core.public_api.config import PublicApiConfig
 from platform_core.public_api.errors import ApiError
 from server.api.context import client_ip, request_id
@@ -41,12 +41,32 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
         except ApiError as exc:
             response = problem_response(exc.problem(
                 instance=request.url.path, request_id=correlation_id))
-            response.headers["X-Correlation-ID"] = correlation_id
+            self._stamp(response, request, correlation_id)
             self._record(request, response.status_code, started, correlation_id)
             return response
         response = await call_next(request)
+        self._stamp(response, request, correlation_id)
         self._record(request, response.status_code, started, correlation_id)
         return response
+
+    def _stamp(self, response, request, correlation_id: str) -> None:
+        """Correlation id and API version on **every** response.
+
+        Until EXT-02 the correlation id was only stamped on responses this
+        middleware refused itself. A caller whose successful-then-mysterious
+        request needed support had nothing to quote, and the audit found it: the
+        id existed in the server's log and nowhere the customer could see.
+        """
+        response.headers[protocol.HEADER_CORRELATION_ID] = correlation_id
+        response.headers[protocol.HEADER_API_VERSION] = protocol.API_VERSION
+        route = _declared_route(request)
+        # RFC 8594. Nothing is deprecated today; the hook exists so that
+        # retiring an endpoint is a data change in the inventory rather than a
+        # code change here, at the moment when getting it right matters.
+        if route is not None and route.deprecated_on:
+            response.headers[protocol.HEADER_DEPRECATION] = route.deprecated_on
+            if route.sunset_on:
+                response.headers[protocol.HEADER_SUNSET] = route.sunset_on
 
     def _record(self, request, status: int, started: float,
                 correlation_id: str) -> None:
@@ -88,3 +108,16 @@ def _route_of(request) -> str:
     route = request.scope.get("route")
     path = getattr(route, "path", "") if route is not None else ""
     return path or request.url.path
+
+
+def _declared_route(request):
+    """The inventory entry for this request, or None for an unmatched path."""
+    from server.api.inventory import API_V1_ROUTES, API_V1_PREFIX
+
+    path = _route_of(request)
+    if not path.startswith(API_V1_PREFIX):
+        path = API_V1_PREFIX + path
+    for route in API_V1_ROUTES:
+        if route.path == path and route.method == request.method:
+            return route
+    return None

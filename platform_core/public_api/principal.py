@@ -25,7 +25,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from platform_core.public_api.errors import forbidden, not_found
+from platform_core.public_api.errors import (missing_scope, not_found,
+                                             tool_not_allowed)
 
 
 @dataclass(frozen=True)
@@ -62,15 +63,17 @@ def ensure_scope(principal: Principal, scope: str) -> None:
     makes an integration take a support ticket to finish.
     """
     if not principal.has_scope(scope):
-        raise forbidden(f"This API key is missing the required scope: {scope}.")
+        raise missing_scope(
+            f"This API key is missing the required scope: {scope}.",
+            required_scope=str(scope))
 
 
 def ensure_any_scope(principal: Principal, scopes) -> None:
     wanted = [str(scope) for scope in scopes]
     if not any(principal.has_scope(scope) for scope in wanted):
-        raise forbidden(
+        raise missing_scope(
             "This API key is missing one of the required scopes: "
-            f"{', '.join(sorted(wanted))}.")
+            f"{', '.join(sorted(wanted))}.", required_scope=sorted(wanted))
 
 
 def ensure_tool_allowed(principal: Principal, tool_name: str, *,
@@ -85,7 +88,9 @@ def ensure_tool_allowed(principal: Principal, tool_name: str, *,
     if not publicly_exposed:
         raise not_found("No such tool.")
     if not principal.may_use_tool(tool_name):
-        raise forbidden("This API key is not allowed to use this tool.")
+        raise tool_not_allowed(
+            "This API key is not allowed to use this tool.",
+            tool=str(tool_name))
 
 
 def ensure_owner(obj, principal: Principal, *, owner_attr: str = "user_id"):

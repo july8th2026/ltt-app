@@ -182,7 +182,9 @@ def test_a_quote_cannot_be_moved_to_another_account(api):
                               "input": quote["input"]},
                         headers=_auth(bob, "bob-steals-a-quote-1"))
     assert response.status_code == 400
-    assert response.json()["code"] == "invalid_request"
+    # Same answer a forged signature gets: "quote_invalid", never a hint that
+    # the quote is real and merely addressed to somebody else.
+    assert response.json()["code"] == "quote_invalid"
 
 
 def test_a_tampered_or_reused_quote_is_refused(api):
@@ -355,7 +357,11 @@ def test_the_same_key_with_a_different_body_is_a_conflict(api):
                      json={"tool": TOOL, "quote": second_quote["quote"],
                            "input": second_quote["input"]},
                      headers=_auth(token, "one-key-two-bodies1"))
-    assert clash.status_code == 409 and clash.json()["code"] == "conflict"
+    # Distinct from insufficient_credit and price_changed, which share the
+    # status but need the opposite reaction: those two are worth retrying
+    # after a fix, this one never is.
+    assert clash.status_code == 409
+    assert clash.json()["code"] == "idempotency_conflict"
     assert _rows(user_id, CREDIT_HOLD) == 1
 
 

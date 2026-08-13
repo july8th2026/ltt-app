@@ -31,7 +31,14 @@ Ký hiệu: `DONE` / `PARTIAL` / `MISSING` / `CONFLICT` / `NOT_APPLICABLE` /
 
 ## 1. Domain A–N (những gì V2 đụng tới)
 
-### A. Kernel / versioning / request-id / errors — `PARTIAL`
+> **Cập nhật sau EXT-02 (2026-08-13):** domain A chuyển `PARTIAL` → `DONE`;
+> Extension domain 1 (`execution mode`) và 2 (`error/retry catalog`) chuyển
+> `MISSING`/`PARTIAL` → `DONE`. Rủi ro X5 đã đóng. Chi tiết ở
+> `PROTOCOL_V1.md` và mục EXT-02 của `EXTENSION_PROGRESS.md`. Các dòng "Thiếu"
+> bên dưới giữ nguyên làm hồ sơ **tại thời điểm audit**, không xoá — mất lý do
+> là mai sau lặp lại đúng cuộc tranh luận đã xong.
+
+### A. Kernel / versioning / request-id / errors — `PARTIAL` → **`DONE`** (EXT-02)
 
 | Có | Bằng chứng |
 |---|---|

@@ -341,12 +341,31 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
 
     from platform_core.public_api.scopes import KNOWN_SCOPES
 
+    from platform_core.public_api.protocol import MODES_IN_USE, TOOL_MODES
+
     unknown_keys = set(contract) - {"public_name", "description", "models",
-                                    "enums", "hidden", "scopes", "deprecated"}
+                                    "enums", "hidden", "scopes", "deprecated",
+                                    "execution_mode"}
     if unknown_keys:
         raise RegistryError(_t(
             "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
                 slug=manifest.slug, tool=tool.name, keys=sorted(unknown_keys)))
+
+    # Absent means ASYNC_JOB: every tool the platform has runs on a worker and
+    # charges credit. Declaring anything else is deliberate, and only the modes
+    # whose semantics are already implemented and tested may be declared — a
+    # manifest cannot opt into STREAM or BATCH before the platform can honour
+    # what those modes promise (EXT-02, D5).
+    mode = str(contract.get("execution_mode") or "ASYNC_JOB")
+    if mode not in TOOL_MODES:
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} execution_mode không hợp lệ: {value!r}"
+        ).format(slug=manifest.slug, tool=tool.name, value=mode))
+    if mode not in MODES_IN_USE:
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} khai execution_mode {value!r} nhưng nền "
+            "tảng chưa thi hành mode đó").format(
+                slug=manifest.slug, tool=tool.name, value=mode))
 
     public_name = str(contract.get("public_name") or tool.name)
     if not _TOOL_NAME_RE.fullmatch(public_name):

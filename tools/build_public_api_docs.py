@@ -24,6 +24,10 @@ GUIDE = ROOT / "docs" / "PUBLIC_API" / "DEVELOPER_GUIDE.md"
 BEGIN = "<!-- BEGIN GENERATED TOOLS -->"
 END = "<!-- END GENERATED TOOLS -->"
 
+PROTOCOL = ROOT / "docs" / "PUBLIC_API" / "PROTOCOL_V1.md"
+ERR_BEGIN = "<!-- BEGIN GENERATED ERRORS -->"
+ERR_END = "<!-- END GENERATED ERRORS -->"
+
 
 def _catalog():
     from platform_core.public_api.catalog import build_catalog
@@ -69,6 +73,8 @@ def render() -> str:
         lines.append("")
         lines.append(tool.description)
         lines.append("")
+        lines.append(f"Execution mode: `{tool.execution_mode}`")
+        lines.append("")
         lines.append(f"Scopes: {', '.join(f'`{s}`' for s in tool.scopes) or '—'}")
         lines.append("")
         lines.append("Input:")
@@ -87,10 +93,31 @@ def render() -> str:
     return "\n".join(lines)
 
 
-def _splice(text: str, block: str) -> str:
-    start = text.index(BEGIN)
-    end = text.index(END) + len(END)
-    return text[:start] + block + text[end:]
+def render_errors() -> str:
+    """The error registry as a table — generated, because a stale retry table
+    is worse than none: it tells a client to give up on a retryable failure."""
+    from platform_core.public_api.error_registry import (IDEMPOTENCY_RULE,
+                                                         RETRY_MATRIX, as_rows)
+
+    lines = [ERR_BEGIN, "", "| Code | HTTP | Retry | Reuse Idempotency-Key | What to do |",
+             "|---|---|---|---|---|"]
+    for row in as_rows():
+        lines.append(
+            f"| `{row['code']}` | {row['status']} | `{row['retry']}` | "
+            f"{'yes' if row['reuse_idempotency_key'] else 'no'} | "
+            f"{row['action']} |")
+    lines += ["", "### Retry matrix by status", "",
+              "| Response | Retry | Note |", "|---|---|---|"]
+    for status, retry, note in RETRY_MATRIX:
+        lines.append(f"| {status} | `{retry}` | {note} |")
+    lines += ["", f"> {IDEMPOTENCY_RULE}", "", ERR_END]
+    return "\n".join(lines)
+
+
+def _splice(text: str, block: str, begin: str = BEGIN, end: str = END) -> str:
+    start = text.index(begin)
+    stop = text.index(end) + len(end)
+    return text[:start] + block + text[stop:]
 
 
 def main() -> int:
@@ -98,18 +125,30 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
 
-    current = GUIDE.read_text(encoding="utf-8")
-    updated = _splice(current, render())
-    if args.check:
+    targets = [
+        (GUIDE, render(), BEGIN, END, "developer guide"),
+        (PROTOCOL, render_errors(), ERR_BEGIN, ERR_END, "protocol reference"),
+    ]
+    stale = False
+    for path, block, begin, end, label in targets:
+        current = path.read_text(encoding="utf-8")
+        updated = _splice(current, block, begin, end)
+        if args.check:
+            if current != updated:
+                print("STALE:", path)
+                stale = True
+            continue
         if current != updated:
-            print("STALE:", GUIDE)
+            path.write_text(updated, encoding="utf-8")
+            print("WROTE:", path)
+        else:
+            print("UNCHANGED:", path)
+    if args.check:
+        if stale:
             print("Run: python tools/build_public_api_docs.py")
             return 1
-        print("PASS: developer guide matches the published catalog")
-        return 0
-    GUIDE.write_text(updated, encoding="utf-8")
-    print("WROTE:", GUIDE)
-    return 0
+        print("PASS: docs match the published catalog and error registry")
+    return 1 if stale else 0
 
 
 if __name__ == "__main__":
