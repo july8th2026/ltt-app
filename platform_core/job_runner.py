@@ -369,6 +369,11 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                     _hoan_credit(db, job); db.commit(); return True
                 jobq.complete(db, job, result)
                 settlement = _quyet_toan_credit(db, job, result)
+                # After settlement, so the observation sits beside the charge it
+                # will be compared against; before the webhook is queued only in
+                # the sense that both happen in this transaction — a bookkeeping
+                # estimate must never be why a customer's callback is late.
+                _ghi_chi_phi(db, job)
                 _enqueue_webhooks(db, job)
                 if settlement is not None:
                     public_result = dict(result)
@@ -498,6 +503,21 @@ def _quet_canh_bao() -> None:
             log.info("canh bao API: %d thong bao moi", raised)
         if gone:
             log.info("don %d thong bao API het han", gone)
+
+
+def _ghi_chi_phi(db, job) -> None:
+    """Record what this job consumed, if the operator configured any rates.
+
+    Never fatal: cost analytics is a business view, and a platform that failed
+    a customer's job because it could not write an estimate would have its
+    priorities exactly backwards.
+    """
+    from platform_core.public_api import costing
+
+    try:
+        costing.record_job(db, job)
+    except Exception:  # noqa: BLE001
+        log.exception("khong ghi duoc quan sat chi phi cho job %s", job.id[:8])
 
 
 def _ket_qua_sandbox(job_id: str, params: dict):

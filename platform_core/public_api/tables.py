@@ -29,8 +29,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, DateTime, ForeignKey, Index, Integer, JSON,
-                        String, Text, UniqueConstraint)
+from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Index,
+                        Integer, JSON, String, Text, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
@@ -606,3 +606,114 @@ class ApiKillSwitch(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return f"<ApiKillSwitch {self.scope}:{self.subject or '*'}>"
 
+# ── Pricing and cost (EXT-15) ─────────────────────────────────────────────────
+#
+# A pricing version does **not** price anything. The app's `credit_cost()` still
+# computes every number; this records *which regime was in force*, so a charge
+# can be reconciled months later from two facts written at the time rather than
+# by re-running today's code against yesterday's call.
+
+PRICE_DRAFT = "draft"
+PRICE_SCHEDULED = "scheduled"
+PRICE_ACTIVE = "active"
+PRICE_RETIRED = "retired"
+PRICE_STATUSES = (PRICE_DRAFT, PRICE_SCHEDULED, PRICE_ACTIVE, PRICE_RETIRED)
+
+COST_DURATION_MS = "duration_ms"
+COST_BYTES = "bytes"
+COST_TOKENS = "tokens"
+COST_KINDS = (COST_DURATION_MS, COST_BYTES, COST_TOKENS)
+
+
+class ApiPricingVersion(Base):
+    """One published pricing regime for a tool, with its window and bounds.
+
+    Rows here are **append-only in practice**: publishing a new version closes
+    the previous one's window rather than editing its numbers, and retiring sets
+    an end date rather than deleting. What a version priced while it was in force
+    stays exactly as it was — which is what makes "no retroactive price change" a
+    property of the schema rather than a rule somebody has to remember.
+    """
+
+    __tablename__ = "api_pricing_versions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tool: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    #: Empty means "every model of this tool". A row naming a model is more
+    #: specific and wins over one that does not.
+    model: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    label: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default=PRICE_DRAFT,
+                                        nullable=False, index=True)
+
+    effective_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    #: NULL = open-ended. Closed when a later version takes over.
+    effective_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    min_credit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_credit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rounding: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rounding_mode: Mapped[str] = mapped_column(String(8), default="nearest",
+                                               nullable=False)
+
+    #: Which code computes the number — recorded, never copied. Duplicating the
+    #: formula here would be the second pricing engine this design avoids.
+    formula_ref: Mapped[str] = mapped_column(String(200), default="",
+                                             nullable=False)
+    notes: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    created_by: Mapped[str] = mapped_column(String(255), default="",
+                                            nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    published_by: Mapped[str] = mapped_column(String(255), default="",
+                                              nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("tool", "label", name="uq_api_pricing_label"),
+        Index("ix_api_pricing_window", "tool", "status", "effective_from"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiPricingVersion {self.tool}:{self.label} {self.status}>"
+
+
+class ApiCostObservation(Base):
+    """What one job consumed, and what that is *believed* to have cost.
+
+    ``is_estimate`` is not decoration. The platform measures quantities — a
+    duration, a byte count — but the money value of a GPU-second or a stored byte
+    is a contract price entered by an operator. Every figure derived from one is
+    an estimate, and storing that fact next to the number is what stops a margin
+    dashboard from being read as settled accounting.
+    """
+
+    __tablename__ = "api_cost_observations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    job_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    tool: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: The measured amount — milliseconds, bytes or tokens. Evidence.
+    quantity: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    #: The configured rate applied to it. Assumption.
+    unit_cost_micros: Mapped[int] = mapped_column(Integer, nullable=False)
+    cost_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    is_estimate: Mapped[bool] = mapped_column(Boolean, default=True,
+                                              nullable=False)
+    #: Where the quantity came from, so a reader can tell measurement from guess.
+    source: Mapped[str] = mapped_column(String(32), default="configured_rate",
+                                        nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+
+    __table_args__ = (
+        Index("ix_api_cost_window", "created_at", "tool"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return (f"<ApiCostObservation {self.tool} {self.kind}="
+                f"{self.quantity}>")

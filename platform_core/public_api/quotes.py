@@ -44,8 +44,15 @@ def fingerprint(tool_name: str, params: dict) -> str:
 
 
 def issue(*, secret: str, user_id: str, key_id: str, tool_name: str,
-          params: dict, credit: int) -> tuple[str, dict]:
-    """Mint a quote token and its payload."""
+          params: dict, credit: int,
+          pricing_version: str = "") -> tuple[str, dict]:
+    """Mint a quote token and its payload.
+
+    ``pricing_version`` travels **inside the signature**. That is the whole
+    mechanism behind "no retroactive price change": the label and the amount
+    were written together, at the same moment, and neither can be edited
+    afterwards without breaking the signature (EXT-15).
+    """
     payload = {
         "v": _VERSION,
         "user_id": str(user_id),
@@ -57,6 +64,7 @@ def issue(*, secret: str, user_id: str, key_id: str, tool_name: str,
         "tool": str(tool_name),
         "fingerprint": fingerprint(tool_name, params),
         "credit": int(credit),
+        "pricing_version": str(pricing_version or ""),
         "intent": uuid.uuid4().hex,
     }
     return _serializer(secret).dumps(payload, salt=_SALT), payload

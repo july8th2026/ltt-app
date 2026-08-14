@@ -41,16 +41,27 @@ def submit_with_credit(
     db: DbSession, *, user_id: str, app_slug: str, job_type: str,
     params: dict, dedupe_key: str = "", max_attempts: int = 3,
     correlation_id: str = "", retry_of_id: str = "",
+    quoted_credit: int | None = None,
 ) -> Job:
     """Nộp job và giữ chỗ credit trong cùng transaction. KHÔNG commit — caller
     commit (nhờ vậy job + credit cùng thành hoặc cùng bại).
 
     Raise `credit.ThieuCreditError` nếu không đủ (job sẽ rollback cùng), hoặc
     `registry.RegistryError` nếu job_type không tra được giá.
+
+    `quoted_credit`: số đã HỨA với khách. Khi có, giữ đúng số đó thay vì tính
+    lại. Cần thiết vì từ EXT-15 giá công bố có sàn/trần: tính lại ở đây sẽ bỏ
+    qua chúng, và khách được báo một số rồi bị trừ một số khác — đã xảy ra thật
+    (báo 7, giữ 10) và chỉ lộ ra khi bấm thử trên trình duyệt. Đường UI không
+    truyền tham số này nên vẫn tính như cũ.
     """
     from platform_core.registry import credit_for
 
-    estimate = int(credit_for(job_type, params))   # raise sớm nếu không có giá
+    # Vẫn gọi `credit_for` kể cả khi đã có giá báo: nó là chỗ raise sớm khi một
+    # job_type chưa khai giá, và mất lời cảnh báo đó nghĩa là job chạy miễn phí
+    # ngoài ý muốn.
+    computed = int(credit_for(job_type, params))
+    estimate = computed if quoted_credit is None else max(0, int(quoted_credit))
 
     job = jobs.submit(db, user_id=user_id, app_slug=app_slug, job_type=job_type,
                       params=params, dedupe_key=dedupe_key, max_attempts=max_attempts,

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:05f52c0b33c77c8bbc8d5f2bf474d75eda0c7eefd8fea6469ff0bc153d13d34a
-Nguồn đã quét : 1096 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:0ed7e3cad6f5607ab7a56b5a5035fd63f916c70a0ca8dd7ede1bca0a81346d7c
+Nguồn đã quét : 1101 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (312)
+4. HTTP ROUTE INVENTORY (313)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -593,33 +593,34 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
-- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:264
-- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:611
-- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:636
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:804
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:557
-- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:280
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:819
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:858
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:871
-- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:377
-- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:410
-- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:652
-- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:662
-- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:339
-- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:273
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:915
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:931
-- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:286
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:813
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:441
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:476
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:564
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:691
-- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:782
-- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:760
-- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:738
-- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:720
+- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:268
+- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:673
+- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:698
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:866
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:619
+- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:284
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:881
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:920
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:933
+- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:439
+- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:472
+- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:714
+- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:724
+- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:401
+- [platform] GET    /developers/pricing → developer_pricing | auth~unspecified | server/routes/developer.py:343
+- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:277
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:977
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:993
+- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:290
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:875
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:503
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:538
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:626
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:753
+- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:844
+- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:822
+- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:800
+- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:782
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -803,17 +804,19 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (45 bảng)
+5. DATA MODEL (47 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
 - agent_workflows → AgentWorkflow | platform_core/models.py:432
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
+- api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:684
 - api_keys → ApiKey | platform_core/models.py:589
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:559
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
 - api_policies → ApiPolicy | platform_core/public_api/tables.py:490
 - api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:534
+- api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:628
 - api_projects → ApiProject | platform_core/public_api/tables.py:62
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
@@ -850,7 +853,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (37)
+6. ALEMBIC MIGRATIONS (38)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -888,6 +891,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - a3b4c5d6e7f8 ← f2a3b4c5d6e7 | them ngan sach va thong bao cho khu API (EXT-11) | alembic/versions/20260814_2200_api_budgets_notifications.py
 - b4c5d6e7f8a9 ← a3b4c5d6e7f8 | danh dau khoa API la live hay test (EXT-12) | alembic/versions/20260814_2300_api_key_mode.py
 - c5d6e7f8a9b0 ← b4c5d6e7f8a9 | them chinh sach han muc va kill switch cho khu API (EXT-14) | alembic/versions/20260814_2400_api_policy_engine.py
+- d6e7f8a9b0c1 ← c5d6e7f8a9b0 | them phien ban gia va quan sat chi phi cho khu API (EXT-15) | alembic/versions/20260815_0100_api_pricing_costing.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -904,7 +908,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (99 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (102 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -927,6 +931,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_CODEX_SIDECAR_PORT
 - LTT_CODEX_SIDECAR_TOKEN
 - LTT_CONFIG_PATH
+- LTT_COST_MICROS_PER_BYTE
+- LTT_COST_MICROS_PER_MS
+- LTT_COST_MICROS_PER_TOKEN
 - LTT_DANGKY_MIEN_TIN_CAY
 - LTT_DATABASE_URL
 - LTT_DATA_DIR
@@ -1005,7 +1012,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (209 file pytest + 3 frontend)
+10. QUALITY GATES (210 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1148,6 +1155,7 @@ Test inventory:
 - tests/test_204_sandbox.py
 - tests/test_205_admin_api_console.py
 - tests/test_206_policy_engine.py
+- tests/test_207_pricing.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1241,8 +1249,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1096 file)
-Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:815, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1101 file)
+Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:819, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1255,7 +1263,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (39)
+[alembic] (40)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1295,6 +1303,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260814_2200_api_budgets_notifications.py
 - alembic/versions/20260814_2300_api_key_mode.py
 - alembic/versions/20260814_2400_api_policy_engine.py
+- alembic/versions/20260815_0100_api_pricing_costing.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1847,7 +1856,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (81)
+[platform_core] (83)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1897,6 +1906,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/capacity.py
 - platform_core/public_api/catalog.py
 - platform_core/public_api/config.py
+- platform_core/public_api/costing.py
 - platform_core/public_api/delivery.py
 - platform_core/public_api/error_registry.py
 - platform_core/public_api/errors.py
@@ -1911,6 +1921,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/outbox.py
 - platform_core/public_api/pagination.py
 - platform_core/public_api/policy.py
+- platform_core/public_api/pricing.py
 - platform_core/public_api/principal.py
 - platform_core/public_api/projects.py
 - platform_core/public_api/protocol.py
@@ -1951,7 +1962,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (130)
+[server] (131)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2050,6 +2061,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - server/templates/dev_notifications.html
 - server/templates/dev_overview.html
 - server/templates/dev_playground.html
+- server/templates/dev_pricing.html
 - server/templates/dev_projects.html
 - server/templates/dev_quickstart.html
 - server/templates/dev_settings.html
@@ -2090,7 +2102,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (225)
+[tests] (226)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2243,6 +2255,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_204_sandbox.py
 - tests/test_205_admin_api_console.py
 - tests/test_206_policy_engine.py
+- tests/test_207_pricing.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2405,7 +2418,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1096 file; 9691589 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1101 file; 9788219 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5598,6 +5611,114 @@ def downgrade() -> None:
                   table_name="api_policy_assignments")
     op.drop_table("api_policy_assignments")
     op.drop_table("api_policies")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260815_0100_api_pricing_costing.py
+SHA256=fa58f6375a760e61f256471be78f5b2e91b5754906a4fe62e847e7d4fd19446d BYTES=4938 LINES=102
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""them phien ban gia va quan sat chi phi cho khu API (EXT-15)
+
+`api_pricing_versions` KHONG tinh gia. Gia van do `credit_cost()` cua app tinh;
+bang nay ghi lai CHE DO GIA nao dang co hieu luc, kem cua so va gioi han, roi
+nhan do duoc dong dau len quote va job. Nho vay "khong sua gia hoi to" la tinh
+chat cua luoc do, khong phai mot luat ai do phai nho: phat hanh ban moi la THEM
+dong, khong sua dong cu.
+
+`api_cost_observations` tach hoan toan khoi so credit. So credit la doanh thu
+that; bang nay la chi phi UOC LUONG, va cot `is_estimate` ton tai de khong truy
+van nao lo trinh bay no nhu so da doi soat.
+
+Revision ID: d6e7f8a9b0c1
+Revises: c5d6e7f8a9b0
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "d6e7f8a9b0c1"
+down_revision = "c5d6e7f8a9b0"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "api_pricing_versions",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("tool", sa.String(64), nullable=False),
+        sa.Column("model", sa.String(64), nullable=False, server_default=""),
+        sa.Column("label", sa.String(64), nullable=False),
+        sa.Column("status", sa.String(16), nullable=False,
+                  server_default="draft"),
+        sa.Column("effective_from", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("effective_until", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("min_credit", sa.Integer(), nullable=True),
+        sa.Column("max_credit", sa.Integer(), nullable=True),
+        sa.Column("rounding", sa.Integer(), nullable=True),
+        sa.Column("rounding_mode", sa.String(8), nullable=False,
+                  server_default="nearest"),
+        sa.Column("formula_ref", sa.String(200), nullable=False,
+                  server_default=""),
+        sa.Column("notes", sa.String(1000), nullable=False, server_default=""),
+        sa.Column("created_by", sa.String(255), nullable=False,
+                  server_default=""),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("published_by", sa.String(255), nullable=False,
+                  server_default=""),
+        sa.PrimaryKeyConstraint("id"),
+        # Mat rang buoc nay = hai phien ban cung nhan cho mot cong cu, va mot
+        # dau gia tren hoa don khong con tro ve duoc mot dong duy nhat.
+        sa.UniqueConstraint("tool", "label", name="uq_api_pricing_label"),
+    )
+    op.create_index("ix_api_pricing_versions_tool", "api_pricing_versions",
+                    ["tool"])
+    op.create_index("ix_api_pricing_versions_status", "api_pricing_versions",
+                    ["status"])
+    op.create_index("ix_api_pricing_window", "api_pricing_versions",
+                    ["tool", "status", "effective_from"])
+
+    op.create_table(
+        "api_cost_observations",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("job_id", sa.String(36), nullable=False),
+        sa.Column("tool", sa.String(64), nullable=False, server_default=""),
+        sa.Column("kind", sa.String(16), nullable=False),
+        # Dai luong DO DUOC.
+        sa.Column("quantity", sa.BigInteger(), nullable=False),
+        # Don gia CAU HINH ap len no.
+        sa.Column("unit_cost_micros", sa.Integer(), nullable=False),
+        sa.Column("cost_micros", sa.BigInteger(), nullable=False),
+        sa.Column("is_estimate", sa.Boolean(), nullable=False,
+                  server_default=sa.true()),
+        sa.Column("source", sa.String(32), nullable=False,
+                  server_default="configured_rate"),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_api_cost_observations_job_id", "api_cost_observations",
+                    ["job_id"])
+    op.create_index("ix_api_cost_observations_created_at",
+                    "api_cost_observations", ["created_at"])
+    op.create_index("ix_api_cost_window", "api_cost_observations",
+                    ["created_at", "tool"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_api_cost_window", table_name="api_cost_observations")
+    op.drop_index("ix_api_cost_observations_created_at",
+                  table_name="api_cost_observations")
+    op.drop_index("ix_api_cost_observations_job_id",
+                  table_name="api_cost_observations")
+    op.drop_table("api_cost_observations")
+    op.drop_index("ix_api_pricing_window", table_name="api_pricing_versions")
+    op.drop_index("ix_api_pricing_versions_status",
+                  table_name="api_pricing_versions")
+    op.drop_index("ix_api_pricing_versions_tool",
+                  table_name="api_pricing_versions")
+    op.drop_table("api_pricing_versions")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -104297,7 +104418,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=6e22cd248df9b18fcf0f5e204d861ebf310b3034f4fa21d68f8dc352e0f4e80c BYTES=26564 LINES=612
+SHA256=271abcec912e6eaa2c96fbc47d550095c866896748cb7460120d125c2f008a71 BYTES=27446 LINES=632
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104670,6 +104791,11 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                     _hoan_credit(db, job); db.commit(); return True
                 jobq.complete(db, job, result)
                 settlement = _quyet_toan_credit(db, job, result)
+                # After settlement, so the observation sits beside the charge it
+                # will be compared against; before the webhook is queued only in
+                # the sense that both happen in this transaction — a bookkeeping
+                # estimate must never be why a customer's callback is late.
+                _ghi_chi_phi(db, job)
                 _enqueue_webhooks(db, job)
                 if settlement is not None:
                     public_result = dict(result)
@@ -104801,6 +104927,21 @@ def _quet_canh_bao() -> None:
             log.info("don %d thong bao API het han", gone)
 
 
+def _ghi_chi_phi(db, job) -> None:
+    """Record what this job consumed, if the operator configured any rates.
+
+    Never fatal: cost analytics is a business view, and a platform that failed
+    a customer's job because it could not write an estimate would have its
+    priorities exactly backwards.
+    """
+    from platform_core.public_api import costing
+
+    try:
+        costing.record_job(db, job)
+    except Exception:  # noqa: BLE001
+        log.exception("khong ghi duoc quan sat chi phi cho job %s", job.id[:8])
+
+
 def _ket_qua_sandbox(job_id: str, params: dict):
     """Canned output for a test-mode job, or ``None`` for a live one.
 
@@ -104915,7 +105056,7 @@ def run_forever(worker_id: str, *, stop=None) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_submit.py
-SHA256=beec7155c89fe9cadf024b21d90d5763a4e72cc89bac09b997c480688f5ded30 BYTES=3137 LINES=62
+SHA256=eed4038e730c0d24a6787a0f5aa10e9f48ec74808335c4ad2cf0f05797573d93 BYTES=3912 LINES=73
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_submit.py — nộp job KÈM giữ chỗ credit, trong một giao dịch (H3 × H2).
@@ -104960,16 +105101,27 @@ def submit_with_credit(
     db: DbSession, *, user_id: str, app_slug: str, job_type: str,
     params: dict, dedupe_key: str = "", max_attempts: int = 3,
     correlation_id: str = "", retry_of_id: str = "",
+    quoted_credit: int | None = None,
 ) -> Job:
     """Nộp job và giữ chỗ credit trong cùng transaction. KHÔNG commit — caller
     commit (nhờ vậy job + credit cùng thành hoặc cùng bại).
 
     Raise `credit.ThieuCreditError` nếu không đủ (job sẽ rollback cùng), hoặc
     `registry.RegistryError` nếu job_type không tra được giá.
+
+    `quoted_credit`: số đã HỨA với khách. Khi có, giữ đúng số đó thay vì tính
+    lại. Cần thiết vì từ EXT-15 giá công bố có sàn/trần: tính lại ở đây sẽ bỏ
+    qua chúng, và khách được báo một số rồi bị trừ một số khác — đã xảy ra thật
+    (báo 7, giữ 10) và chỉ lộ ra khi bấm thử trên trình duyệt. Đường UI không
+    truyền tham số này nên vẫn tính như cũ.
     """
     from platform_core.registry import credit_for
 
-    estimate = int(credit_for(job_type, params))   # raise sớm nếu không có giá
+    # Vẫn gọi `credit_for` kể cả khi đã có giá báo: nó là chỗ raise sớm khi một
+    # job_type chưa khai giá, và mất lời cảnh báo đó nghĩa là job chạy miễn phí
+    # ngoài ý muốn.
+    computed = int(credit_for(job_type, params))
+    estimate = computed if quoted_credit is None else max(0, int(quoted_credit))
 
     job = jobs.submit(db, user_id=user_id, app_slug=app_slug, job_type=job_type,
                       params=params, dedupe_key=dedupe_key, max_attempts=max_attempts,
@@ -109086,6 +109238,337 @@ def load_public_api_config(env: dict | None = None) -> PublicApiConfig:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/costing.py
+SHA256=489abd41018fe8987876e1549153bae0a1168559a31d31961bed625420eb94bb BYTES=13557 LINES=325
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""What a job cost us, separated from what the customer paid.
+
+Two numbers that must never be confused
+---------------------------------------
+
+**Revenue** is the credit ledger. It is what the customer was actually charged,
+it is auditable, and it is the billing truth. Nothing in this module writes,
+adjusts or hides a ledger row — the same separation the budgets in EXT-11 keep.
+
+**Cost** is what serving that job consumed. It is *not* auditable in the same
+way, and pretending otherwise would be the most expensive kind of wrong: a
+margin dashboard that looks precise gets used to set prices.
+
+So this module records **measured quantities** as evidence, and converts them to
+money only through configured rates that are labelled as estimates, every time,
+in the data rather than in a footnote.
+
+What the platform can actually measure
+--------------------------------------
+
+Honest inventory, because the brief says "cost only from evidence":
+
+* **duration** — ``job_events`` already carries ``duration_ms`` per job. Real
+  evidence, measured by the worker that ran the work;
+* **artifact bytes** — the size of what was stored. Real evidence;
+* **provider tokens** — ``api_keys.total_tokens`` is a running total **per
+  credential**, not per job. It cannot be attributed to one call, so this module
+  will not pretend it can. A per-job token figure appears here only when a
+  handler reports one in its result.
+
+And what it cannot: the money value of a GPU-second, a stored byte or a provider
+token. Those are contract prices that live outside the system, entered by an
+operator. Every figure derived from them is therefore an **estimate**, and is
+stored with ``is_estimate=True`` so no query can accidentally present it as
+settled.
+
+The consequence, stated plainly: **margin here is an estimate**, and the admin
+page says so. A number that cannot be reconciled must not look like one that
+can.
+"""
+from __future__ import annotations
+
+import uuid
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select
+
+from platform_core.i18n import _ as _t
+
+from platform_core.models import (CREDIT_HOLD, CREDIT_REFUND, CREDIT_SETTLE,
+                                  CreditEntry)
+from platform_core.public_api.tables import (ApiCostObservation, COST_BYTES,
+                                             COST_DURATION_MS, COST_KINDS,
+                                             COST_TOKENS)
+
+#: Micro-units per credit-equivalent, so a rate like "0.0004 per second" is an
+#: integer here. Floats in money arithmetic accumulate error nobody can trace.
+MICROS = 1_000_000
+
+#: Configured unit costs, in micros per unit. Zero means "not configured", and a
+#: zero rate produces no observation at all rather than a confident zero — a
+#: cost of exactly nothing is a claim, and this module is not entitled to it.
+RATE_ENV = {
+    COST_DURATION_MS: "LTT_COST_MICROS_PER_MS",
+    COST_BYTES: "LTT_COST_MICROS_PER_BYTE",
+    COST_TOKENS: "LTT_COST_MICROS_PER_TOKEN",
+}
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def rates(env: dict | None = None) -> dict:
+    """Configured unit costs. Absent is absent, not zero."""
+    import os
+
+    values = os.environ if env is None else env
+    out: dict = {}
+    for kind, name in RATE_ENV.items():
+        raw = str(values.get(name, "") or "").strip()
+        if not raw:
+            continue
+        try:
+            rate = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if rate > 0:
+            out[kind] = rate
+    return out
+
+
+def observe(db, *, job_id: str, tool: str, kind: str, quantity: int,
+            unit_cost_micros: int = 0, is_estimate: bool = True,
+            source: str = "configured_rate",
+            now: datetime | None = None) -> ApiCostObservation | None:
+    """Record one measured quantity and what it is believed to have cost.
+
+    Returns ``None`` when there is no rate configured for the kind: an
+    observation whose money value is unknown is better absent than stored as
+    zero, because a zero flows into a margin and reads as "free".
+    """
+    if kind not in COST_KINDS:
+        raise ValueError(f"unknown cost kind: {kind}")
+    amount = max(0, int(quantity))
+    if amount == 0 or unit_cost_micros <= 0:
+        return None
+    row = ApiCostObservation(
+        id=str(uuid.uuid4()), job_id=str(job_id), tool=str(tool or ""),
+        kind=kind, quantity=amount, unit_cost_micros=int(unit_cost_micros),
+        cost_micros=amount * int(unit_cost_micros),
+        is_estimate=bool(is_estimate), source=str(source)[:32],
+        created_at=now or _now())
+    db.add(row)
+    return row
+
+
+def record_job(db, job, *, env: dict | None = None,
+               now: datetime | None = None) -> list:
+    """Turn what a finished job actually measured into cost observations.
+
+    Called from the worker after a job reaches a terminal state. Reads the
+    evidence that already exists — it does not instrument anything new, and it
+    never guesses a quantity it did not measure.
+    """
+    from platform_core.public_api.invocation import api_meta
+
+    configured = rates(env)
+    if not configured:
+        return []
+
+    tool = api_meta(job).get("tool") or ""
+    made: list = []
+
+    duration = _duration_ms(db, job)
+    if duration and COST_DURATION_MS in configured:
+        row = observe(db, job_id=job.id, tool=tool, kind=COST_DURATION_MS,
+                      quantity=duration,
+                      unit_cost_micros=configured[COST_DURATION_MS],
+                      source="evidence:job_events", now=now)
+        if row is not None:
+            made.append(row)
+
+    tokens = _tokens(job)
+    if tokens and COST_TOKENS in configured:
+        row = observe(db, job_id=job.id, tool=tool, kind=COST_TOKENS,
+                      quantity=tokens,
+                      unit_cost_micros=configured[COST_TOKENS],
+                      source="evidence:handler", now=now)
+        if row is not None:
+            made.append(row)
+    return made
+
+
+def _duration_ms(db, job) -> int:
+    """How long the work took, from the event the worker already writes."""
+    from platform_core.models import JobEvent
+
+    rows = db.execute(select(JobEvent.details).where(
+        JobEvent.job_id == job.id)).scalars().all()
+    for details in reversed(rows):
+        if isinstance(details, dict) and details.get("duration_ms"):
+            try:
+                return int(details["duration_ms"])
+            except (TypeError, ValueError):
+                continue
+    return 0
+
+
+def _tokens(job) -> int:
+    """Provider tokens, only when the handler reported them for this job.
+
+    Never taken from ``api_keys.total_tokens``: that is a running total per
+    credential shared by every job it served, and splitting it would be
+    invention rather than measurement.
+    """
+    result = job.result if isinstance(job.result, dict) else {}
+    for field in ("tokens", "total_tokens", "usage_tokens"):
+        value = result.get(field)
+        if isinstance(value, int) and value > 0:
+            return value
+    return 0
+
+
+# ── Margin ───────────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class Margin:
+    """Revenue from the ledger, cost from estimates, and the gap between them."""
+
+    since: datetime
+    until: datetime
+    revenue_credit: int
+    cost_micros: int
+    observations: int
+    #: Always true today. Kept as a field rather than a comment so a caller has
+    #: to handle it, and so it can become false the day real invoices are
+    #: reconciled in.
+    cost_is_estimate: bool = True
+
+    @property
+    def margin_micros(self) -> int:
+        return self.revenue_credit * MICROS - self.cost_micros
+
+    @property
+    def is_negative(self) -> bool:
+        return self.margin_micros < 0
+
+
+def margin(db, *, since: datetime, until: datetime | None = None,
+           tool: str = "") -> Margin:
+    """Revenue minus estimated cost for a window.
+
+    Revenue is computed from the ledger, never from the cost table: the two are
+    independent by design, and a margin that read both sides from the same place
+    would hide exactly the disagreement it exists to reveal.
+    """
+    end = until or _now()
+
+    held = db.execute(select(func.coalesce(func.sum(CreditEntry.delta), 0))
+                      .where(CreditEntry.created_at >= since,
+                             CreditEntry.created_at <= end,
+                             CreditEntry.kind == CREDIT_HOLD)).scalar_one()
+    settled = db.execute(select(func.coalesce(func.sum(CreditEntry.delta), 0))
+                         .where(CreditEntry.created_at >= since,
+                                CreditEntry.created_at <= end,
+                                CreditEntry.kind == CREDIT_SETTLE)).scalar_one()
+    refunded = db.execute(select(func.coalesce(func.sum(CreditEntry.delta), 0))
+                          .where(CreditEntry.created_at >= since,
+                                 CreditEntry.created_at <= end,
+                                 CreditEntry.kind == CREDIT_REFUND)).scalar_one()
+    revenue = max(0, int(-held) - int(settled) - int(refunded))
+
+    statement = select(func.coalesce(func.sum(ApiCostObservation.cost_micros), 0),
+                       func.count()).where(
+        ApiCostObservation.created_at >= since,
+        ApiCostObservation.created_at <= end)
+    if tool:
+        statement = statement.where(ApiCostObservation.tool == str(tool))
+    cost, count = db.execute(statement).one()
+
+    return Margin(since=since, until=end, revenue_credit=revenue,
+                  cost_micros=int(cost), observations=int(count))
+
+
+def margin_by_tool(db, *, since: datetime,
+                   until: datetime | None = None) -> list:
+    """Per-tool cost, so an operator can see which one is upside down."""
+    end = until or _now()
+    rows = db.execute(
+        select(ApiCostObservation.tool,
+               func.coalesce(func.sum(ApiCostObservation.cost_micros), 0),
+               func.count())
+        .where(ApiCostObservation.created_at >= since,
+               ApiCostObservation.created_at <= end)
+        .group_by(ApiCostObservation.tool)).all()
+    return sorted(({"tool": str(tool or "—"), "cost_micros": int(cost),
+                    "observations": int(count)} for tool, cost, count in rows),
+                  key=lambda row: row["cost_micros"], reverse=True)
+
+
+def _alert_kind() -> str:
+    """The kind, from the module that owns the allowlist.
+
+    Not a literal repeated here: `notifications.KINDS` is a closed set, and a
+    second copy of the string is the one that eventually disagrees.
+    """
+    from platform_core.public_api import notifications
+
+    return notifications.MARGIN_NEGATIVE
+
+
+#: Kept as a module attribute for callers and tests that want to name it.
+ALERT_KIND = "margin.negative"
+
+
+def scan_for_alerts(db, *, hours: int = 24, now: datetime | None = None) -> list:
+    """Tell the operators when the estimated margin goes negative.
+
+    Reuses the EXT-11 notification channel rather than adding a second alerting
+    path, and dedupes on the same subject so a persistent condition does not
+    become a persistent stream.
+
+    Addressed to each **admin account** rather than to a null user: the
+    notification table's `user_id` is a foreign key to a real person, and it
+    should stay that way — a nullable owner would make every query on that table
+    handle a case that exists for one alert.
+    """
+    from platform_core.models import User
+    from platform_core.public_api import notifications
+
+    moment = now or _now()
+    window = margin(db, since=moment - timedelta(hours=max(1, int(hours))),
+                    until=moment)
+    if not window.is_negative or window.observations == 0:
+        return []
+
+    shortfall = -window.margin_micros // MICROS
+    operators = db.execute(select(User).where(
+        User.role == "admin", User.is_active.is_(True))).scalars().all()
+    raised = []
+    for operator in operators:
+        row = notifications.raise_alert(
+            db, user_id=operator.id, kind=_alert_kind(),
+            subject=f"margin:{hours}h",
+            title=_t("Biên lợi nhuận ước tính đang âm"),
+            # The wording carries the caveat on purpose: this number is built
+            # from configured rates, and an operator reading it in a hurry must
+            # not act on it as though it were reconciled.
+            body=_t("Trong {hours} giờ gần nhất, chi phí ước tính vượt doanh "
+                    "thu khoảng {shortfall} credit. Con số chi phí là ƯỚC "
+                    "LƯỢNG, dựng từ đơn giá cấu hình — hãy đối chiếu hoá đơn "
+                    "thật trước khi đổi giá.").format(hours=hours,
+                                                     shortfall=shortfall),
+            now=moment)
+        if row is not None:
+            raised.append(row)
+    return raised
+
+
+__all__ = [
+    "ALERT_KIND", "MICROS", "Margin", "RATE_ENV", "margin", "margin_by_tool",
+    "observe", "rates", "record_job", "scan_for_alerts",
+]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/delivery.py
 SHA256=dee6fa3291fd37e89053a6c5e6311ff9ba159a3a48c2272a82e37fd702074836 BYTES=4711 LINES=103
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -110042,7 +110525,7 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=26f2aa6fa358a888e67f357ddc23d4c3da3d225177f7ab61bbd778d5879ee7a3 BYTES=13214 LINES=296
+SHA256=487ac7deb758abd20319d6d7c209445132c6aabb50dda8c18f35c86fb15ba759 BYTES=13758 LINES=304
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -110298,6 +110781,10 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         # provider, and every listing reads it to keep the two apart (EXT-12).
         "mode": str(getattr(principal, "mode", "live") or "live"),
         "quote_intent": str(quote.get("intent") or ""),
+        # Copied from the signed quote rather than looked up again: what matters
+        # for reconciliation is the regime in force when the price was promised,
+        # not the one in force when the worker happened to run (EXT-15).
+        "pricing_version": str(quote.get("pricing_version") or ""),
         "idempotency_key": str(idempotency_key or ""),
         # The correlation id of the request that created this job, so support
         # and the customer's own log page can walk request → job → events →
@@ -110330,9 +110817,13 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
             db, user_id=principal.user_id, app_slug=tool.app_slug,
             job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
         )
+    # The quote is a promise: hold exactly what it said. Recomputing here would
+    # skip the published price bounds and charge past a number the customer was
+    # shown (EXT-15).
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+        quoted_credit=int(quote.get("credit", 0)),
     )
 
 
@@ -111348,7 +111839,7 @@ def reset() -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/notifications.py
-SHA256=a33ce09d2c8e19e5d0f120c7312c0c16b1dcc52423db835a7c3fdd008e461f5b BYTES=6720 LINES=171
+SHA256=6737747c73bcb81431fb4586d095f8aaaa48b17b4fbc18c3ab7c51754c6d2d55 BYTES=7614 LINES=185
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Alerts a developer sees, with the deduplication that keeps them worth seeing.
 
@@ -111385,9 +111876,15 @@ QUOTA_EXCEEDED = "quota.exceeded"
 KEY_EXPIRING = "key.expiring"
 WEBHOOK_FAILING = "webhook.failing"
 PROJECT_SUSPENDED = "project.suspended"
+#: The one kind addressed to **operators** rather than to a customer: the
+#: estimated cost of serving the platform has passed what it earned. It uses the
+#: same table and the same dedupe because the machinery is the same; only the
+#: audience differs, and it is delivered to each admin account (EXT-15).
+MARGIN_NEGATIVE = "margin.negative"
 
 KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
-         QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED)
+         QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED,
+         MARGIN_NEGATIVE)
 
 #: How long the same subject stays quiet after being raised. Long enough that a
 #: customer is not paged by a condition they have already seen; short enough
@@ -111401,6 +111898,10 @@ COOLDOWN = {
     KEY_EXPIRING: timedelta(days=3),
     WEBHOOK_FAILING: timedelta(hours=12),
     PROJECT_SUSPENDED: timedelta(days=7),
+    # A margin that is upside down stays upside down until somebody changes a
+    # price. Daily is often enough to keep it in view without becoming the
+    # thing operators filter out.
+    MARGIN_NEGATIVE: timedelta(days=1),
 }
 DEFAULT_COOLDOWN = timedelta(days=1)
 
@@ -111409,6 +111910,10 @@ DEFAULT_COOLDOWN = timedelta(days=1)
 #: yes; a threshold they set themselves to be informative, on the page only.
 EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
                          KEY_EXPIRING, PROJECT_SUSPENDED})
+# `MARGIN_NEGATIVE` is deliberately absent. The number behind it is an estimate
+# built from configured rates, and an estimate has no business interrupting
+# anybody at night — it belongs on the page an operator visits to decide about
+# pricing, next to the words saying what it is.
 
 RETENTION_DAYS = 90
 
@@ -112325,6 +112830,337 @@ __all__ = [
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/pricing.py
+SHA256=43f5b1b47afc25851dda65e919dbe65e637629fe0aba20ce53b9f5a26454328b BYTES=14195 LINES=325
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""What a call costs, which regime said so, and why that can never change later.
+
+The one decision this module is built around
+--------------------------------------------
+
+**Price is computed by the app, not by a table here.** Every app declares
+``credit_cost(params)`` in its manifest, and ``registry.credit_for()`` is the
+only thing that turns a call into a number. A pricing table that *replaced* that
+would be a second pricing engine, and the first time the two disagreed there
+would be no way to say which one the customer was actually charged by
+(COMMON_RULES §3 — no parallel engines).
+
+So a **pricing version** does not price anything. It records *which regime was in
+force*, with its window, its bounds and its formula reference, and that label is
+stamped onto the quote and onto the job. Reconciling a charge months later then
+means reading two facts that were both written at the time, rather than
+re-running today's code against yesterday's call and hoping.
+
+Why that makes "no retroactive price mutation" structural
+---------------------------------------------------------
+
+A quote is signed (``itsdangerous``) and carries both the credit amount and the
+version label. A job carries the same pair in its meta. Neither can be edited
+without breaking a signature or rewriting history, and nothing in this module
+offers a path to either. Publishing a new version writes a **new row**; it never
+touches an old one. Retiring closes a window; it does not reprice what happened
+inside it.
+
+That is a stronger guarantee than a rule saying "do not change prices
+retroactively", because there is no code that could.
+
+The ledger is still the billing truth
+-------------------------------------
+
+Nothing here writes, adjusts or hides a credit entry — same separation the
+budgets in EXT-11 keep. A pricing version is a *description* of what was charged;
+the ledger is *what was charged*. When they disagree, the ledger is right and
+this module has a bug.
+"""
+from __future__ import annotations
+
+import uuid
+from dataclasses import dataclass
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+
+from platform_core.i18n import _ as _t
+from platform_core.public_api.tables import (ApiPricingVersion, PRICE_ACTIVE,
+                                             PRICE_DRAFT, PRICE_RETIRED,
+                                             PRICE_SCHEDULED, PRICE_STATUSES)
+
+#: What goes on a quote and a job when no version has ever been published.
+#: Deployments that never open the pricing console still get a stable, honest
+#: label rather than an empty string that later reads as "lost".
+UNVERSIONED = "unversioned"
+
+MIN_REASON = 8
+
+ROUNDING_MODES = ("up", "down", "nearest")
+
+
+class PricingError(Exception):
+    """A refusal an operator should read, not a bug."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value):
+    if value is None:
+        return None
+    return value if value.tzinfo is not None else value.replace(
+        tzinfo=timezone.utc)
+
+
+# ── Reading the regime in force ──────────────────────────────────────────────
+
+def active_for(db, *, tool: str, model: str = "",
+               now: datetime | None = None) -> ApiPricingVersion | None:
+    """The version whose window contains ``now``, most specific first.
+
+    A row naming a model beats a row naming only the tool: an operator who
+    priced one model differently meant that to win. Among equally specific rows,
+    the one that started most recently wins — windows are not supposed to
+    overlap, and when they do the later intent is the live one.
+    """
+    moment = now or _now()
+    rows = db.execute(select(ApiPricingVersion).where(
+        ApiPricingVersion.tool == str(tool))).scalars().all()
+
+    live = [row for row in rows
+            if row.status in (PRICE_ACTIVE, PRICE_SCHEDULED)
+            and _aware(row.effective_from) <= moment
+            and (row.effective_until is None
+                 or _aware(row.effective_until) > moment)]
+    if not live:
+        return None
+    live.sort(key=lambda row: (bool(row.model and row.model == model),
+                              _aware(row.effective_from)), reverse=True)
+    # A row that names a *different* model must not win over a tool-wide row.
+    for row in live:
+        if not row.model or row.model == model:
+            return row
+    return None
+
+
+def stamp_for(db, *, tool: str, model: str = "",
+              now: datetime | None = None) -> str:
+    """The label to write onto a quote or a job. Never empty."""
+    row = active_for(db, tool=tool, model=model, now=now)
+    return row.label if row is not None else UNVERSIONED
+
+
+def apply_bounds(credit: int, version: ApiPricingVersion | None) -> int:
+    """Clamp and round a computed price to what the published regime promised.
+
+    Applied to the number the app computed rather than replacing it: the app
+    still decides the price, and the version says what the platform committed to
+    publicly. If the two ever disagree, the published bound wins — a customer
+    was shown that bound and cannot be charged past it.
+    """
+    value = int(credit)
+    if version is None:
+        return value
+    step = int(version.rounding or 0)
+    if step > 1:
+        mode = str(version.rounding_mode or "nearest")
+        if mode == "up":
+            value = -(-value // step) * step
+        elif mode == "down":
+            value = (value // step) * step
+        else:
+            value = int(round(value / step)) * step
+    if version.min_credit is not None:
+        value = max(int(version.min_credit), value)
+    if version.max_credit is not None:
+        value = min(int(version.max_credit), value)
+    return max(0, value)
+
+
+# ── Writing: publish, schedule, retire ───────────────────────────────────────
+
+def create_version(db, *, tool: str, label: str, model: str = "",
+                   effective_from: datetime | None = None,
+                   effective_until: datetime | None = None,
+                   min_credit: int | None = None,
+                   max_credit: int | None = None,
+                   rounding: int | None = None,
+                   rounding_mode: str = "nearest",
+                   formula_ref: str = "", notes: str = "",
+                   created_by: str = "",
+                   now: datetime | None = None) -> ApiPricingVersion:
+    """Draft a version. Nothing is in force until it is published."""
+    clean_tool = str(tool or "").strip()
+    clean_label = str(label or "").strip()
+    if not clean_tool:
+        raise PricingError(_t("Phiên bản giá phải gắn với một công cụ."))
+    if not clean_label:
+        raise PricingError(_t("Phiên bản giá phải có nhãn."))
+    if db.execute(select(ApiPricingVersion).where(
+            ApiPricingVersion.tool == clean_tool,
+            ApiPricingVersion.label == clean_label)).scalar_one_or_none():
+        raise PricingError(_t("Công cụ này đã có phiên bản trùng nhãn."))
+    if rounding_mode not in ROUNDING_MODES:
+        raise PricingError(_t("Kiểu làm tròn không hợp lệ."))
+    if (min_credit is not None and max_credit is not None
+            and int(min_credit) > int(max_credit)):
+        raise PricingError(_t("Giá sàn không được lớn hơn giá trần."))
+
+    moment = now or _now()
+    start = _aware(effective_from) or moment
+    end = _aware(effective_until)
+    if end is not None and end <= start:
+        raise PricingError(_t("Cửa sổ hiệu lực phải kết thúc sau khi bắt đầu."))
+
+    row = ApiPricingVersion(
+        id=str(uuid.uuid4()), tool=clean_tool, model=str(model or ""),
+        label=clean_label, status=PRICE_DRAFT, effective_from=start,
+        effective_until=end,
+        min_credit=None if min_credit is None else int(min_credit),
+        max_credit=None if max_credit is None else int(max_credit),
+        rounding=None if rounding is None else max(0, int(rounding)),
+        rounding_mode=rounding_mode,
+        # Which code actually computes the number. Recorded rather than copied:
+        # the formula lives in the app, and duplicating it here would be the
+        # second pricing engine this module exists to avoid.
+        formula_ref=str(formula_ref or "")[:200],
+        notes=str(notes or "")[:1000], created_by=str(created_by or "")[:255],
+        created_at=moment)
+    db.add(row)
+    db.flush()
+    return row
+
+
+def publish(db, version: ApiPricingVersion, *, published_by: str = "",
+            now: datetime | None = None) -> ApiPricingVersion:
+    """Put a draft into force — now, or at the start of its window.
+
+    Publishing **closes the window of whatever it replaces** rather than editing
+    it. The old row keeps its dates, its bounds and every charge that referenced
+    it; what changes is only where the boundary between them falls.
+    """
+    moment = now or _now()
+    if version.status == PRICE_RETIRED:
+        raise PricingError(_t("Phiên bản đã ngừng thì không phát hành lại."))
+
+    start = _aware(version.effective_from) or moment
+    version.status = PRICE_SCHEDULED if start > moment else PRICE_ACTIVE
+    version.published_at = moment
+    version.published_by = str(published_by or "")[:255]
+
+    for other in db.execute(select(ApiPricingVersion).where(
+            ApiPricingVersion.tool == version.tool,
+            ApiPricingVersion.model == version.model,
+            ApiPricingVersion.id != version.id)).scalars():
+        if other.status not in (PRICE_ACTIVE, PRICE_SCHEDULED):
+            continue
+        if other.effective_until is None or _aware(other.effective_until) > start:
+            other.effective_until = start
+            if _aware(other.effective_from) >= start:
+                # Fully eclipsed before it ever applied.
+                other.status = PRICE_RETIRED
+    db.flush()
+    return version
+
+
+def retire(db, version: ApiPricingVersion, *,
+           now: datetime | None = None) -> ApiPricingVersion:
+    """Stop a version applying from now on. What it already priced stands."""
+    moment = now or _now()
+    version.status = PRICE_RETIRED
+    if version.effective_until is None or _aware(version.effective_until) > moment:
+        version.effective_until = moment
+    db.flush()
+    return version
+
+
+def list_for(db, *, tool: str = "") -> list:
+    statement = select(ApiPricingVersion)
+    if tool:
+        statement = statement.where(ApiPricingVersion.tool == str(tool))
+    return list(db.execute(statement.order_by(
+        ApiPricingVersion.tool, ApiPricingVersion.effective_from.desc())
+    ).scalars())
+
+
+def version_by_id(db, version_id: str):
+    return db.get(ApiPricingVersion, str(version_id))
+
+
+@dataclass(frozen=True)
+class Timeline:
+    """What is charging now, what takes over, and what already stopped."""
+
+    current: ApiPricingVersion | None
+    upcoming: list
+    history: list
+
+
+def timeline(db, *, tool: str, model: str = "",
+             now: datetime | None = None) -> Timeline:
+    moment = now or _now()
+    rows = [row for row in list_for(db, tool=tool)
+            if not model or not row.model or row.model == model]
+    current = active_for(db, tool=tool, model=model, now=moment)
+    # A draft belongs in "upcoming" whatever its start date says. It has never
+    # been in force, so it cannot be history — and a freshly created draft whose
+    # window opens *now* would otherwise land in the past, where the person who
+    # just created it would never look for it. Found by making one.
+    upcoming = [row for row in rows
+                if row.status == PRICE_DRAFT
+                or (row.status == PRICE_SCHEDULED
+                    and _aware(row.effective_from) > moment)]
+    history = [row for row in rows
+               if row is not current and row not in upcoming]
+    return Timeline(current=current, upcoming=upcoming, history=history)
+
+
+# ── The simulator ────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class Simulation:
+    """A price, and everything needed to trust it — without a charge."""
+
+    tool: str
+    credit: int
+    raw_credit: int
+    pricing_version: str
+    bounded: bool
+    detail: str = ""
+
+
+def simulate(db, *, tool, params: dict, now: datetime | None = None) -> Simulation:
+    """Price a hypothetical call with the **production** formula, charge nothing.
+
+    Deliberately the same call the real quote path makes, not a copy of it. A
+    simulator with its own arithmetic answers a question nobody asked: what
+    matters is what the customer would actually be billed, and that only stays
+    true if the same code produces both numbers.
+
+    No quote token is minted and no credit moves, so a simulation cannot be
+    presented at ``POST /jobs`` — it is an answer, not a promise.
+    """
+    from platform_core.public_api import invocation
+
+    raw = invocation.price(tool, dict(params or {}))
+    version = active_for(db, tool=tool.name, now=now)
+    final = apply_bounds(raw, version)
+    return Simulation(
+        tool=tool.name, credit=final, raw_credit=int(raw),
+        pricing_version=version.label if version is not None else UNVERSIONED,
+        bounded=final != int(raw),
+        detail=(f"clamped by {version.label}" if final != int(raw) and version
+                else ""))
+
+
+__all__ = [
+    "MIN_REASON", "PRICE_ACTIVE", "PRICE_DRAFT", "PRICE_RETIRED",
+    "PRICE_SCHEDULED", "PRICE_STATUSES", "PricingError", "ROUNDING_MODES",
+    "Simulation", "Timeline", "UNVERSIONED", "active_for", "apply_bounds",
+    "create_version", "list_for", "publish", "retire", "simulate", "stamp_for",
+    "timeline", "version_by_id",
+]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/principal.py
 SHA256=852b04e3fa47cbefd4d57ea6d10d09005b2e2891998733ab61f70fd2252657bc BYTES=5064 LINES=116
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -112855,7 +113691,7 @@ CONVENTIONS = {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/quotes.py
-SHA256=10a121edc5c62da28493a19b043342b9ea690409c4c771ad8c2f582f1bacf546 BYTES=4817 LINES=104
+SHA256=f4030f5af95716e8a940c83b512bb34cc5d8f31e5ceb67f854ffb23eb0bb8a91 BYTES=5205 LINES=112
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Signed quotes for the Public API.
 
@@ -112903,8 +113739,15 @@ def fingerprint(tool_name: str, params: dict) -> str:
 
 
 def issue(*, secret: str, user_id: str, key_id: str, tool_name: str,
-          params: dict, credit: int) -> tuple[str, dict]:
-    """Mint a quote token and its payload."""
+          params: dict, credit: int,
+          pricing_version: str = "") -> tuple[str, dict]:
+    """Mint a quote token and its payload.
+
+    ``pricing_version`` travels **inside the signature**. That is the whole
+    mechanism behind "no retroactive price change": the label and the amount
+    were written together, at the same moment, and neither can be edited
+    afterwards without breaking the signature (EXT-15).
+    """
     payload = {
         "v": _VERSION,
         "user_id": str(user_id),
@@ -112916,6 +113759,7 @@ def issue(*, secret: str, user_id: str, key_id: str, tool_name: str,
         "tool": str(tool_name),
         "fingerprint": fingerprint(tool_name, params),
         "credit": int(credit),
+        "pricing_version": str(pricing_version or ""),
         "intent": uuid.uuid4().hex,
     }
     return _serializer(secret).dumps(payload, salt=_SALT), payload
@@ -113398,7 +114242,7 @@ def normalize_scopes(scopes) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=a7c96a2ce8c29c0671a69030bb7a28796a67ffcfdd243cf27bc5200d8fbe8a3a BYTES=29855 LINES=608
+SHA256=f703f7ac5d3c026d0feefaa4dc1970c7c9e7fa4c16e1606f06d0dddf5a983f30 BYTES=35634 LINES=719
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -113431,8 +114275,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, DateTime, ForeignKey, Index, Integer, JSON,
-                        String, Text, UniqueConstraint)
+from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Index,
+                        Integer, JSON, String, Text, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
@@ -114008,6 +114852,117 @@ class ApiKillSwitch(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return f"<ApiKillSwitch {self.scope}:{self.subject or '*'}>"
 
+# ── Pricing and cost (EXT-15) ─────────────────────────────────────────────────
+#
+# A pricing version does **not** price anything. The app's `credit_cost()` still
+# computes every number; this records *which regime was in force*, so a charge
+# can be reconciled months later from two facts written at the time rather than
+# by re-running today's code against yesterday's call.
+
+PRICE_DRAFT = "draft"
+PRICE_SCHEDULED = "scheduled"
+PRICE_ACTIVE = "active"
+PRICE_RETIRED = "retired"
+PRICE_STATUSES = (PRICE_DRAFT, PRICE_SCHEDULED, PRICE_ACTIVE, PRICE_RETIRED)
+
+COST_DURATION_MS = "duration_ms"
+COST_BYTES = "bytes"
+COST_TOKENS = "tokens"
+COST_KINDS = (COST_DURATION_MS, COST_BYTES, COST_TOKENS)
+
+
+class ApiPricingVersion(Base):
+    """One published pricing regime for a tool, with its window and bounds.
+
+    Rows here are **append-only in practice**: publishing a new version closes
+    the previous one's window rather than editing its numbers, and retiring sets
+    an end date rather than deleting. What a version priced while it was in force
+    stays exactly as it was — which is what makes "no retroactive price change" a
+    property of the schema rather than a rule somebody has to remember.
+    """
+
+    __tablename__ = "api_pricing_versions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tool: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    #: Empty means "every model of this tool". A row naming a model is more
+    #: specific and wins over one that does not.
+    model: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    label: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default=PRICE_DRAFT,
+                                        nullable=False, index=True)
+
+    effective_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    #: NULL = open-ended. Closed when a later version takes over.
+    effective_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    min_credit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_credit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rounding: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rounding_mode: Mapped[str] = mapped_column(String(8), default="nearest",
+                                               nullable=False)
+
+    #: Which code computes the number — recorded, never copied. Duplicating the
+    #: formula here would be the second pricing engine this design avoids.
+    formula_ref: Mapped[str] = mapped_column(String(200), default="",
+                                             nullable=False)
+    notes: Mapped[str] = mapped_column(String(1000), default="", nullable=False)
+    created_by: Mapped[str] = mapped_column(String(255), default="",
+                                            nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    published_by: Mapped[str] = mapped_column(String(255), default="",
+                                              nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("tool", "label", name="uq_api_pricing_label"),
+        Index("ix_api_pricing_window", "tool", "status", "effective_from"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiPricingVersion {self.tool}:{self.label} {self.status}>"
+
+
+class ApiCostObservation(Base):
+    """What one job consumed, and what that is *believed* to have cost.
+
+    ``is_estimate`` is not decoration. The platform measures quantities — a
+    duration, a byte count — but the money value of a GPU-second or a stored byte
+    is a contract price entered by an operator. Every figure derived from one is
+    an estimate, and storing that fact next to the number is what stops a margin
+    dashboard from being read as settled accounting.
+    """
+
+    __tablename__ = "api_cost_observations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    job_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    tool: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: The measured amount — milliseconds, bytes or tokens. Evidence.
+    quantity: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    #: The configured rate applied to it. Assumption.
+    unit_cost_micros: Mapped[int] = mapped_column(Integer, nullable=False)
+    cost_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    is_estimate: Mapped[bool] = mapped_column(Boolean, default=True,
+                                              nullable=False)
+    #: Where the quantity came from, so a reader can tell measurement from guess.
+    source: Mapped[str] = mapped_column(String(32), default="configured_rate",
+                                        nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+
+    __table_args__ = (
+        Index("ix_api_cost_window", "created_at", "tool"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return (f"<ApiCostObservation {self.tool} {self.kind}="
+                f"{self.quantity}>")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -120132,7 +121087,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin_api.py
-SHA256=dc4fe874deed29de9f64667c5e12008db854efbdf38df3f7cb3154249d396f89 BYTES=52137 LINES=1040
+SHA256=f92d1c84167632eae11d02c5d5502968d1d03f17340b48341021c49659a49901 BYTES=68924 LINES=1360
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """server/admin_api.py — khu quản trị dành riêng cho API platform (EXT-13).
 
@@ -120168,13 +121123,21 @@ mà không kèm lý do là một sự kiện không có ý nghĩa.
 """
 from __future__ import annotations
 
+import logging
+
 from markupsafe import escape
 from sqladmin import BaseView, expose
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
 from platform_core.db import get_session
-from platform_core.public_api import admin_console, policy
+from platform_core.public_api.tables import (PRICE_ACTIVE,
+                                             PRICE_DRAFT,
+                                             PRICE_SCHEDULED)
+from platform_core.public_api import (admin_console, costing,
+                                      policy, pricing)
+
+_log = logging.getLogger("ltt.admin.api")
 
 _OK = "var(--ok)"
 _WARN = "var(--warn)"
@@ -121141,6 +122104,316 @@ class ApiKillSwitchView(BaseView):
         return RedirectResponse(back, status_code=303)
 
 
+class ApiPricingView(BaseView):
+    """Giá hiện tại, giá sắp tới, giá đã qua — và một chỗ thử không tốn tiền."""
+
+    name = "API - Gia"
+    icon = "fa-solid fa-tags"
+
+    @expose("/api-gia", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api.catalog import build_catalog
+        from server.auth.csrf import issue_csrf_token
+
+        config = _config()
+        catalog = build_catalog(config)
+        chosen = request.query_params.get("tool", "")
+        tool = next((item for item in catalog if item.name == chosen),
+                    catalog[0] if catalog else None)
+
+        gen, db = _session()
+        try:
+            line = (pricing.timeline(db, tool=tool.name)
+                    if tool is not None else None)
+            preview = (pricing.simulate(db, tool=tool,
+                                        params=_example_input(tool))
+                       if tool is not None else None)
+        finally:
+            _close(gen)
+
+        token = issue_csrf_token(request)
+        note = _error_note(request)
+
+        tabs = "".join(
+            f'<a class="{"on" if tool is not None and item.name == tool.name else ""}" '
+            f'href="/admin/api-gia?tool={escape(item.name)}">{escape(item.name)}</a>'
+            for item in catalog) or '<span class="muted">Chưa mở công cụ nào.</span>'
+
+        def row(version, *, actions: bool) -> str:
+            window = (f'{_when(version.effective_from)} → '
+                      f'{_when(version.effective_until)}')
+            bounds = " / ".join(str(x) for x in (
+                version.min_credit if version.min_credit is not None else "—",
+                version.max_credit if version.max_credit is not None else "—"))
+            rounding = (f'{version.rounding} ({escape(version.rounding_mode)})'
+                        if version.rounding else "—")
+            buttons = ""
+            if actions:
+                if version.status in (PRICE_DRAFT,):
+                    buttons += _reason_form(
+                        "/admin/api-gia-action", token, "publish", "Phát hành",
+                        extra={"version_id": version.id})
+                if version.status in (PRICE_ACTIVE, PRICE_SCHEDULED):
+                    buttons += _reason_form(
+                        "/admin/api-gia-action", token, "retire", "Ngừng",
+                        danger=True, extra={"version_id": version.id})
+            return (f'<tr><td><b>{escape(version.label)}</b>'
+                    f'{" · " + escape(version.model) if version.model else ""}'
+                    f'<br><span class="muted">{escape(version.formula_ref or "")}'
+                    f'</span></td>'
+                    f'<td>{escape(version.status)}</td>'
+                    f'<td class="muted">{window}</td>'
+                    f'<td class="tnum">{bounds}</td>'
+                    f'<td class="tnum">{rounding}</td>'
+                    f'<td class="muted">{escape(version.published_by or "—")}'
+                    f'</td><td>{buttons}</td></tr>')
+
+        if line is None:
+            body_rows = ('<tr><td colspan="7" class="muted">Chưa có công cụ '
+                         'nào được mở.</td></tr>')
+            upcoming = history = ""
+        else:
+            body_rows = (row(line.current, actions=True) if line.current
+                         else '<tr><td colspan="7" class="muted">Chưa phát '
+                              'hành phiên bản nào — giá vẫn do app tính, và '
+                              'quote mang nhãn "unversioned".</td></tr>')
+            upcoming = "".join(row(v, actions=True) for v in line.upcoming) or (
+                '<tr><td colspan="7" class="muted">Không có gì đang chờ.</td></tr>')
+            history = "".join(row(v, actions=False) for v in line.history) or (
+                '<tr><td colspan="7" class="muted">Chưa có lịch sử.</td></tr>')
+
+        head = ('<thead><tr><th>Nhãn</th><th>Trạng thái</th><th>Cửa sổ</th>'
+                '<th>Sàn / trần</th><th>Làm tròn</th><th>Ai phát hành</th>'
+                '<th></th></tr></thead>')
+
+        sim = ""
+        if preview is not None:
+            sim = (f'<p>Cùng công thức mà báo giá thật dùng, với đầu vào ví dụ: '
+                   f'<b class="tnum">{preview.credit}</b> credit'
+                   f'{" (app tính " + str(preview.raw_credit) + ", bị chặn bởi "
+                      + escape(preview.pricing_version) + ")" if preview.bounded else ""}'
+                   f'. Không sinh báo giá, không trừ credit.</p>')
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Giá</h1>'
+            f'<p>Phiên bản giá <b>không</b> tính giá. Giá vẫn do '
+            f'<code>credit_cost()</code> của app tính; phiên bản ghi lại chế độ '
+            f'nào đang có hiệu lực, kèm sàn/trần/làm tròn, rồi được đóng dấu '
+            f'lên báo giá và job. Phát hành bản mới là <b>thêm dòng</b> và đóng '
+            f'cửa sổ bản cũ — không sửa số của bản cũ, nên không có đường nào '
+            f'đổi giá hồi tố.</p></div></div>{note}'
+            f'<div class="tabs">{tabs}</div>'
+            f'<section><h2 style="margin:22px 0 10px">Đang áp dụng</h2>'
+            f'<div class="tablewrap"><table class="ui-table">{head}'
+            f'<tbody>{body_rows}</tbody></table></div>{sim}</section>'
+            f'<section><h2 style="margin:22px 0 10px">Sắp tới</h2>'
+            f'<div class="tablewrap"><table class="ui-table">{head}'
+            f'<tbody>{upcoming}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Lịch sử</h2>'
+            f'<div class="tablewrap"><table class="ui-table">{head}'
+            f'<tbody>{history}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Tạo phiên bản</h2>'
+            f'<form method="post" action="/admin/api-gia-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="create">'
+            f'<input type="hidden" name="tool" '
+            f'value="{escape(tool.name if tool else "")}">'
+            f'<p><input name="label" placeholder="nhãn (vd 2026-09-a)" required> '
+            f'<input name="model" placeholder="model (bỏ trống = mọi model)"> '
+            f'<input name="min_credit" inputmode="numeric" placeholder="sàn" '
+            f'style="width:110px"> '
+            f'<input name="max_credit" inputmode="numeric" placeholder="trần" '
+            f'style="width:110px"> '
+            f'<input name="rounding" inputmode="numeric" '
+            f'placeholder="làm tròn" style="width:130px"> '
+            f'<select name="rounding_mode">'
+            + "".join(f'<option value="{m}">{m}</option>'
+                      for m in pricing.ROUNDING_MODES) +
+            f'</select></p>'
+            f'<p><input name="starts_in_hours" inputmode="numeric" '
+            f'style="width:190px" placeholder="bắt đầu sau (giờ, trống = ngay)"> '
+            f'<input name="notes" size="40" placeholder="ghi chú"></p>'
+            f'<p><input name="reason" size="50" required '
+            f'minlength="{pricing.MIN_REASON}" '
+            f'placeholder="Lý do (bắt buộc, ≥ {pricing.MIN_REASON} ký tự)"> '
+            f'<button class="btn btn-primary sm">Tạo bản nháp</button></p>'
+            f'<p class="muted">Bản nháp chưa có hiệu lực. Phải bấm Phát hành, '
+            f'và cả hai thao tác đều ghi nhật ký.</p></form></section></div>')
+        return HTMLResponse(_admin_shell("API - Gia", "api_pricing", body))
+
+    @expose("/api-gia-action", methods=["POST"])
+    async def action(self, request: Request):
+        from datetime import datetime, timedelta, timezone
+
+        from server.admin import _email_admin, ghi_nhat_ky
+        from server.auth.csrf import verify_csrf_token
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+
+        op = str(form.get("op") or "")
+        reason = str(form.get("reason") or "")
+        back = f'/admin/api-gia?tool={str(form.get("tool") or "")}'
+        if len(reason.strip()) < pricing.MIN_REASON:
+            return _redirect(back, "Phải ghi lý do cho thao tác này.")
+
+        gen, db = _session()
+        try:
+            try:
+                if op == "create":
+                    hours = str(form.get("starts_in_hours") or "").strip()
+                    starts = None
+                    if hours:
+                        starts = (datetime.now(timezone.utc)
+                                  + timedelta(hours=max(0, int(hours))))
+                    version = pricing.create_version(
+                        db, tool=str(form.get("tool") or ""),
+                        label=str(form.get("label") or ""),
+                        model=str(form.get("model") or ""),
+                        effective_from=starts,
+                        min_credit=_maybe_int(form.get("min_credit")),
+                        max_credit=_maybe_int(form.get("max_credit")),
+                        rounding=_maybe_int(form.get("rounding")),
+                        rounding_mode=str(form.get("rounding_mode")
+                                          or "nearest"),
+                        notes=str(form.get("notes") or ""),
+                        created_by=_email_admin(request))
+                    detail = f"{version.tool}:{version.label} (nhap)"
+                elif op in ("publish", "retire"):
+                    version = pricing.version_by_id(
+                        db, str(form.get("version_id") or ""))
+                    if version is None:
+                        return HTMLResponse("Không thấy phiên bản.",
+                                            status_code=404)
+                    if op == "publish":
+                        pricing.publish(db, version,
+                                        published_by=_email_admin(request))
+                    else:
+                        pricing.retire(db, version)
+                    detail = f"{version.tool}:{version.label}"
+                    back = f"/admin/api-gia?tool={version.tool}"
+                else:
+                    return HTMLResponse("Thao tác không hợp lệ.",
+                                        status_code=400)
+            except (pricing.PricingError, ValueError) as exc:
+                db.rollback()
+                return _redirect(back, str(exc))
+            ghi_nhat_ky(db, request, f"api_gia_{op}", doi_tuong=detail,
+                        chi_tiet=f"ly do: {reason.strip()}")
+            db.commit()
+        finally:
+            _close(gen)
+        return RedirectResponse(back, status_code=303)
+
+
+def _maybe_int(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    return int(raw)
+
+
+def _example_input(tool) -> dict:
+    """A plausible call for the preview, from the contract's own examples."""
+    from platform_core.public_api import examples
+
+    try:
+        return examples.example_input(tool)
+    except Exception as exc:  # noqa: BLE001 - a preview is a convenience
+        # An empty preview is acceptable; an unexplained one is not. A tool
+        # whose contract cannot produce an example is a contract problem, and
+        # the pricing page is where somebody would first notice.
+        _log.warning("khong dung duoc vi du cho %s: %s: %s",
+                     getattr(tool, "name", "?"), type(exc).__name__, exc)
+        return {}
+
+
+class ApiMarginView(BaseView):
+    """Doanh thu từ sổ credit, chi phí là ước lượng — và nói rõ điều đó."""
+
+    name = "API - Margin"
+    icon = "fa-solid fa-scale-balanced"
+
+    @expose("/api-margin", methods=["GET"])
+    async def page(self, request: Request):
+        from datetime import datetime, timedelta, timezone
+
+        hours = _int(request, "hours", 24)
+        since = datetime.now(timezone.utc) - timedelta(hours=max(1, hours))
+
+        gen, db = _session()
+        try:
+            window = costing.margin(db, since=since)
+            by_tool = costing.margin_by_tool(db, since=since)
+            configured = costing.rates()
+        finally:
+            _close(gen)
+
+        def money(micros: int) -> str:
+            return f"{micros / costing.MICROS:.2f}"
+
+        cards = "".join([
+            _stat("Doanh thu (credit)", window.revenue_credit,
+                  "từ sổ credit — con số đã đối soát"),
+            _stat("Chi phí ước tính", money(window.cost_micros),
+                  f"{window.observations} quan sát"),
+            _stat("Chênh lệch ước tính", money(window.margin_micros),
+                  "ước lượng, không phải kế toán",
+                  colour=_ERR if window.is_negative else _OK),
+        ])
+
+        rows = "".join(
+            f'<tr><td class="mono">{escape(row["tool"])}</td>'
+            f'<td class="tnum">{money(row["cost_micros"])}</td>'
+            f'<td class="tnum">{row["observations"]}</td></tr>'
+            for row in by_tool) or (
+            '<tr><td colspan="3" class="muted">Chưa có quan sát chi phí nào '
+            'trong khoảng này.</td></tr>')
+
+        if configured:
+            rates = " ".join(
+                f'<code>{escape(kind)}={value}µ</code>'
+                for kind, value in sorted(configured.items()))
+            rate_note = (f'<p>Đơn giá đang cấu hình: {rates}. Đây là con số '
+                         f'<b>giả định</b> do người vận hành nhập, không phải '
+                         f'hoá đơn.</p>')
+        else:
+            rate_note = ('<p class="muted">Chưa cấu hình đơn giá nào '
+                         f'({", ".join(sorted(costing.RATE_ENV.values()))}), '
+                         'nên nền tảng không ghi quan sát chi phí. Cố ý: một '
+                         'chi phí bằng 0 là một khẳng định, và khi chưa có đơn '
+                         'giá thì nền tảng không có quyền khẳng định điều đó.'
+                         '</p>')
+
+        windows = "".join(
+            f'<a class="{"on" if hours == h else ""}" '
+            f'href="/admin/api-margin?hours={h}">{label}</a>'
+            for h, label in ((24, "24 giờ"), (168, "7 ngày"), (720, "30 ngày")))
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Margin</h1>'
+            f'<p><b>Doanh thu</b> lấy từ sổ credit: đó là số khách thật sự bị '
+            f'tính, và là chân lý thanh toán. <b>Chi phí</b> ở đây là '
+            f'<b>ƯỚC LƯỢNG</b>: nền tảng đo được thời lượng và số byte, nhưng '
+            f'giá tiền của một giây GPU hay một byte lưu trữ là con số hợp đồng '
+            f'do người vận hành nhập. Đừng đổi giá bán chỉ dựa vào trang này — '
+            f'hãy đối chiếu hoá đơn thật trước.</p></div></div>'
+            f'<div class="tabs">{windows}</div>'
+            f'{_TILES}{cards}</div>'
+            f'{rate_note}'
+            f'<section><h2 style="margin:22px 0 10px">Chi phí ước tính theo '
+            f'công cụ</h2><div class="tablewrap"><table class="ui-table">'
+            f'<thead><tr><th>Công cụ</th><th>Chi phí ước tính</th>'
+            f'<th>Số quan sát</th></tr></thead><tbody>{rows}</tbody></table>'
+            f'</div></section></div>')
+        return HTMLResponse(_admin_shell("API - Margin", "api_margin", body))
+
+
 def _redirect(path: str, message: str):
     from urllib.parse import quote
 
@@ -121159,7 +122432,7 @@ def _admin_shell(title: str, active: str, body: str) -> str:
 #: Đăng ký ở `server/admin.py`. Giữ danh sách ở đây để thêm một trang là sửa
 #: một file, không phải hai.
 VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
-         ApiPolicyView, ApiKillSwitchView)
+         ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView)
 
 #: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
 #: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
@@ -121173,6 +122446,8 @@ NAV = (
     ("/admin/api-cong-cu", "CC", "API — Công cụ", "api_tools"),
     ("/admin/api-chinh-sach", "CS", "API — Chính sách", "api_policy"),
     ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
+    ("/admin/api-gia", "GI", "API — Giá", "api_pricing"),
+    ("/admin/api-margin", "MG", "API — Margin", "api_margin"),
 )
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -122428,7 +123703,7 @@ def documented_paths() -> frozenset:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/jobs.py
-SHA256=6454cdc76c4e4206f8e38e50ac0eb5c988c1094fce5d7ee355f7923bc4fecc73 BYTES=21114 LINES=432
+SHA256=7214ea67f3f82e03378191a82ab850a277f1b24b5fa9c0e1b8d3510b27208819 BYTES=21666 LINES=440
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/quotes`` and ``/api/v1/jobs`` — the chargeable control plane.
 
@@ -122451,8 +123726,8 @@ from platform_core import credit, jobs as jobq
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, Job)
 from platform_core.public_api import (capacity, idempotency, invocation,
-                                      limits, media, metrics, policy, quotes,
-                                      sandbox)
+                                      limits, media, metrics, policy, pricing,
+                                      quotes, sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request, price_changed,
@@ -122648,18 +123923,24 @@ def register_job_routes(api, config, tag: str) -> None:
         params = invocation.build_job_params(
             tool, clean, media_values={name: f"upload:{session.id}"
                                        for name, session in sessions.items()})
-        cost = invocation.price(tool, params)
+        # The app computes the price; the published regime bounds it and
+        # names itself on the quote. Two facts written at the same instant is
+        # what makes a charge reconcilable months later (EXT-15).
+        version = pricing.active_for(db, tool=tool.name)
+        cost = pricing.apply_bounds(invocation.price(tool, params), version)
+        stamp = version.label if version is not None else pricing.UNVERSIONED
 
         token, payload = quotes.issue(
             secret=_quote_secret(request), user_id=principal.user_id,
             key_id=principal.key_id, tool_name=tool.name, params=clean,
-            credit=cost)
+            credit=cost, pricing_version=stamp)
         return JSONResponse(
             {
                 "quote": token,
                 "tool": tool.name,
                 "credit": cost,
                 "expires_in": quotes.QUOTE_TTL_S,
+                "pricing_version": stamp,
                 # What the caller can spend right now, so a client can tell the
                 # difference between "too expensive" and "broken" before trying.
                 "balance": credit.so_du(db, principal.user_id),
@@ -122707,7 +123988,9 @@ def register_job_routes(api, config, tag: str) -> None:
         params = invocation.build_job_params(
             tool, clean, media_values={name: f"upload:{session.id}"
                                        for name, session in sessions.items()})
-        cost = invocation.price(tool, params)
+        cost = pricing.apply_bounds(
+            invocation.price(tool, params),
+            pricing.active_for(db, tool=tool.name))
         if cost != int(quote.get("credit", -1)):
             # Price moved between quote and submit. Refusing is the only answer
             # that keeps the quote a promise (Q84).
@@ -125335,7 +126618,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=f5bf3861a0e734485d728e94f62b976d08f162b71fd9e29527873335456c80f1 BYTES=43314 LINES=943
+SHA256=7a908b249981e9a058d45c21245adc59d95b2ff07aeb3f0e7a4bfdfe627fb42a BYTES=46037 LINES=1005
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -125356,6 +126639,7 @@ seeing that they exist, let alone their preview.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -125376,6 +126660,8 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
+
+_log = logging.getLogger("ltt.developers")
 
 router = APIRouter(prefix="/developers", tags=["developers"])
 
@@ -125462,6 +126748,7 @@ SECTIONS = (
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
     ("playground", "/developers/playground", N_("Playground")),
+    ("pricing", "/developers/pricing", N_("Giá & mô phỏng")),
     ("logs", "/developers/logs", N_("Nhật ký request")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
@@ -125673,6 +126960,64 @@ for attempt in range(5):
         break
     except Timeout:               # the request may have succeeded
         time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
+
+@router.get("/pricing", response_class=HTMLResponse)
+def developer_pricing(request: Request, user=Depends(require_account),
+                      db: Session = Depends(get_db)):
+    """What a call would cost, priced by the code that really charges.
+
+    The number here comes from `invocation.price` — the same function the quote
+    route calls — bounded by the same published regime. A simulator with its own
+    arithmetic would answer a question nobody asked: what matters is what the
+    customer will actually be billed, and that stays true only while one piece
+    of code produces both numbers.
+
+    Nothing is charged and no quote token is minted, so a simulation cannot be
+    presented at `POST /jobs`.
+    """
+    from platform_core.public_api import examples, pricing
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    wanted = str(request.query_params.get("tool") or "")
+    tool = next((item for item in catalog if item.name == wanted),
+                catalog[0] if catalog else None)
+
+    raw_input = str(request.query_params.get("input") or "").strip()
+    payload, error, result = {}, "", None
+    if tool is not None:
+        if raw_input:
+            import json
+
+            try:
+                payload = json.loads(raw_input)
+                if not isinstance(payload, dict):
+                    raise ValueError(_t("input phải là một object JSON"))
+            except (ValueError, TypeError) as exc:
+                error = str(exc)
+                payload = {}
+        else:
+            payload = examples.example_input(tool)
+
+        if not error:
+            try:
+                result = pricing.simulate(db, tool=tool, params=payload)
+            except Exception as exc:  # noqa: BLE001 - shown to this customer
+                # Surfaced rather than swallowed: a price that cannot be
+                # computed is exactly what somebody came here to find out.
+                _log.warning("mo phong gia that bai cho %s: %s: %s",
+                             tool.name, type(exc).__name__, exc)
+                error = _t("Không tính được giá cho đầu vào này.")
+
+    import json as _json
+
+    return _render(request, db, user, "pricing", "dev_pricing.html",
+                   tools=[item.name for item in catalog],
+                   chosen=tool.name if tool is not None else "",
+                   input_json=_json.dumps(payload, ensure_ascii=False,
+                                          indent=2),
+                   result=result, error=error)
+
 
 @router.get("/playground", response_class=HTMLResponse)
 def developer_playground(request: Request, user=Depends(require_account),
@@ -134050,6 +135395,66 @@ SHA256=18bdf93d473e61d4a09d84b4b2f01a22635561506f5fc7ae896614bc717d33da BYTES=34
 {% endblock %}
 {% block scripts %}
 <script src="/static/dev_playground.js?v={{ asset_ver }}"></script>
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_pricing.html
+SHA256=9e8f0af80a7acbd17622e12f9df74133dc888390acf4dec2ce41a7f83cbe3029 BYTES=2340 LINES=54
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <p>{{ _("Giá ở đây được tính bằng ĐÚNG công thức mà báo giá thật dùng, rồi áp cùng một sàn/trần/làm tròn của phiên bản giá đang có hiệu lực. Nếu con số ở đây khác con số bạn nhận khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý.") }}</p>
+  <p class="muted">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Thử một lời gọi") }}</h2>
+  <form method="get" action="/developers/pricing">
+    <p>
+      <label for="pr-tool">{{ _("Công cụ") }}</label><br>
+      <select id="pr-tool" name="tool">
+        {% for name in tools %}
+          <option value="{{ name }}" {% if name == chosen %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </p>
+    <p>
+      <label for="pr-input">{{ _("Đầu vào (JSON)") }}</label><br>
+      <textarea id="pr-input" name="input" rows="8" style="width:100%; font-family:var(--mono, monospace);">{{ input_json }}</textarea>
+    </p>
+    <button type="submit" class="btn btn-primary">{{ _("Tính thử") }}</button>
+  </form>
+
+  {% if error %}
+    <p class="badge b-err" style="display:block; padding:10px; margin-top:12px;">{{ error }}</p>
+  {% endif %}
+
+  {% if result %}
+    <table class="table" style="margin-top:16px;">
+      <tbody>
+        <tr>
+          <th>{{ _("Sẽ tính") }}</th>
+          <td><strong class="tnum" style="font-size:20px;">{{ result.credit }}</strong> credit</td>
+        </tr>
+        <tr>
+          <th>{{ _("Phiên bản giá") }}</th>
+          <td><code>{{ result.pricing_version }}</code></td>
+        </tr>
+        {% if result.bounded %}
+          <tr>
+            <th>{{ _("Công thức app tính") }}</th>
+            <td class="tnum">{{ result.raw_credit }}
+              <span class="muted">{{ _("— bị chặn bởi sàn/trần của phiên bản trên") }}</span></td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -172483,7 +173888,7 @@ def test_the_canned_result_follows_the_schema_it_is_given():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_205_admin_api_console.py
-SHA256=93f35dc36eb827a07f134d1e01ecadcaecfe0cbb83511386e3ad0a8dd580ef5c BYTES=32197 LINES=842
+SHA256=e457586bd18a1bfa7e56a69a2c9a278f61c2ec36eddd35ad571c2c39d03a6cf1 BYTES=36596 LINES=955
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-13 — the API admin console: what an operator can see, and change, and prove.
 
@@ -173327,6 +174732,119 @@ def test_the_kill_switch_page_says_its_scope_is_the_api(console):
     assert "/api/v1" in page
     assert 'name="confirm"' in page
     assert "Không có công tắc nào đang bật" in page
+
+
+# ── The pricing console and the margin view (EXT-15) ─────────────────────────
+
+PRICING_PAGES = ("/admin/api-gia", "/admin/api-margin")
+
+
+def test_the_pricing_pages_are_operator_only(console):
+    _make_user("curious@example.com")
+    _login(console, "curious@example.com")
+    for path in PRICING_PAGES:
+        answer = console.get(path, follow_redirects=False)
+        assert answer.status_code in (302, 303, 307), path
+        assert "/login" in answer.headers.get("location", ""), path
+
+
+def test_creating_and_publishing_a_price_is_audited(console):
+    from platform_core.public_api import pricing
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+
+    made = _post(console, "/admin/api-gia-action", "/admin/api-gia",
+                 {"op": "create", "tool": "image.thumbnail", "label": "v1",
+                  "max_credit": "40", "rounding_mode": "nearest",
+                  "reason": "opening the commercial price"})
+    assert made.status_code == 303, made.text[:300]
+
+    gen, db = _session()
+    try:
+        rows = pricing.list_for(db, tool="image.thumbnail")
+        assert len(rows) == 1 and rows[0].status == "draft"
+        # A draft prices nothing until somebody publishes it.
+        assert pricing.active_for(db, tool="image.thumbnail") is None
+        version_id = rows[0].id
+    finally:
+        _close(gen)
+
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "publish", "version_id": version_id, "tool": "image.thumbnail",
+           "reason": "agreed with the product owner"})
+
+    gen, db = _session()
+    try:
+        assert pricing.active_for(db, tool="image.thumbnail").label == "v1"
+    finally:
+        _close(gen)
+
+    actions = [row.hanh_dong for row in _audit_rows()]
+    assert actions == ["api_gia_create", "api_gia_publish"]
+    assert "agreed with the product owner" in _audit_rows()[-1].chi_tiet
+
+
+def test_a_price_change_without_a_reason_changes_nothing(console):
+    from platform_core.public_api import pricing
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    answer = _post(console, "/admin/api-gia-action", "/admin/api-gia",
+                   {"op": "create", "tool": "image.thumbnail", "label": "sneaky",
+                    "reason": "x"})
+    assert answer.status_code == 303 and "err=" in answer.headers["location"]
+
+    gen, db = _session()
+    try:
+        assert pricing.list_for(db) == []
+    finally:
+        _close(gen)
+    assert _audit_rows() == []
+
+
+def test_retiring_a_price_is_audited(console):
+    from platform_core.public_api import pricing
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "create", "tool": "image.thumbnail", "label": "v1",
+           "rounding_mode": "nearest", "reason": "opening the price"})
+    gen, db = _session()
+    try:
+        version_id = pricing.list_for(db)[0].id
+    finally:
+        _close(gen)
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "publish", "version_id": version_id, "reason": "going live"})
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "retire", "version_id": version_id,
+           "reason": "withdrawing this tier"})
+
+    assert [row.hanh_dong for row in _audit_rows()] == [
+        "api_gia_create", "api_gia_publish", "api_gia_retire"]
+
+
+def test_the_pricing_page_says_it_does_not_price(console):
+    """The page has to explain the one thing about it people get wrong."""
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-gia").text
+    assert "credit_cost()" in page
+    assert "hồi tố" in page
+
+
+def test_the_margin_page_labels_its_cost_as_an_estimate(console):
+    """A number that cannot be reconciled must not look like one that can."""
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-margin").text
+    assert "ƯỚC LƯỢNG" in page
+    assert "sổ credit" in page
+    # With no rates configured the page must say why it is empty rather than
+    # showing a confident zero.
+    assert "Chưa cấu hình đơn giá" in page
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -174273,6 +175791,773 @@ def test_a_policy_cannot_raise_the_upload_ceiling_past_the_platform_s(portal):
               "content_type": "image/png", "size": 200_000_000},
         headers=_auth(token))
     assert refused.status_code == 400, refused.text
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_207_pricing.py
+SHA256=685794ec1db516f03683ecbd61a0795a5c192443e7e30525eaf018fb0d1fbbaf BYTES=27633 LINES=761
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-15 — pricing versions, the simulator, and cost kept apart from revenue.
+
+Three acceptance criteria, and all three are about what must **not** happen:
+
+* **no retroactive price mutation** — publishing a new version cannot change
+  what an issued quote promised, what a created job recorded, or what the ledger
+  says;
+* **the ledger remains billing truth** — nothing in pricing or costing writes,
+  adjusts or hides a credit entry;
+* **pricing publish is audited** — every publish, schedule and retire leaves a
+  row naming who did it and why.
+
+Plus the one the brief states in passing and which is easy to get wrong: cost
+figures are **estimates**, and must be stored and shown as such.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import (costing, keys as devkeys, limits,
+                                      pricing)
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.tables import (PRICE_ACTIVE, PRICE_DRAFT,
+                                             PRICE_RETIRED, PRICE_SCHEDULED)
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "pricing-test-pepper-" + "q" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "artifacts:read")
+INPUT = {"topic": "pricing", "count": 1}
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'pricing.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    for name in costing.RATE_ENV.values():
+        monkeypatch.delenv(name, raising=False)
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "pricing-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_RPM": "600", "LTT_PUBLIC_API_CREATE_RPM": "200",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+# ── Plumbing ─────────────────────────────────────────────────────────────────
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _sign_in(client, credits: int = 500) -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"pr-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, credits, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    return user_id
+
+
+def _issue(client) -> str:
+    page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": "pricing", "csrf_token": _csrf(page),
+                                "scopes": list(SCOPES)})
+    return re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+
+
+def _auth(token: str, idem: str = "") -> dict:
+    headers = {"Authorization": f"Bearer {token}"}
+    if idem:
+        headers["Idempotency-Key"] = idem
+    return headers
+
+
+def _quote(client, token, payload=None):
+    return client.post(f"{API_V1_PREFIX}/quotes",
+                       json={"tool": TOOL, "input": dict(payload or INPUT)},
+                       headers=_auth(token))
+
+
+def _ledger_snapshot(user_id: str) -> list:
+    from sqlalchemy import select
+
+    from platform_core.models import CreditEntry
+
+    gen, db = _session()
+    try:
+        rows = db.execute(select(CreditEntry).where(
+            CreditEntry.user_id == user_id).order_by(
+                CreditEntry.id)).scalars().all()
+        return [(row.kind, row.delta, row.job_id, row.note) for row in rows]
+    finally:
+        _close(gen)
+
+
+def _publish(db, **kwargs):
+    version = pricing.create_version(db, **kwargs)
+    pricing.publish(db, version, published_by="operator@example.com")
+    return version
+
+
+def _tool():
+    from platform_core.public_api.catalog import build_catalog
+
+    config = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                     "LTT_PUBLIC_API_TOOLS": TOOL})
+    return next(item for item in build_catalog(config) if item.name == TOOL)
+
+
+# ── A version records a regime; it does not price anything ───────────────────
+
+def test_with_no_version_a_quote_is_still_priced_and_labelled(portal):
+    """A deployment that never opens the pricing console still works.
+
+    The label is a stable word rather than an empty string, because an empty
+    field later reads as "lost" rather than "never set".
+    """
+    _sign_in(portal)
+    token = _issue(portal)
+    answer = _quote(portal, token)
+    assert answer.status_code == 200, answer.text
+    body = answer.json()
+    assert body["credit"] > 0
+    assert body["pricing_version"] == pricing.UNVERSIONED
+
+
+def test_the_published_version_names_itself_on_the_quote(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="2026-08-a",
+                 formula_ref="apps.thumbnail.manifest.credit_cost")
+        db.commit()
+    finally:
+        _close(gen)
+
+    body = _quote(portal, token).json()
+    assert body["pricing_version"] == "2026-08-a"
+
+
+def test_bounds_clamp_the_app_s_number_without_replacing_it(portal):
+    """The app still computes the price; the published regime bounds it.
+
+    If the two disagree the published bound wins — a customer was shown that
+    bound and cannot be charged past it.
+    """
+    _sign_in(portal)
+    token = _issue(portal)
+    natural = _quote(portal, token).json()["credit"]
+    assert natural > 1
+
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="capped", max_credit=1)
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert _quote(portal, token).json()["credit"] == 1
+
+
+def test_the_job_holds_exactly_what_the_quote_promised(portal):
+    """The bug this was written for: quoted 7, held 10.
+
+    `submit_with_credit` recomputed the price from the app's formula and never
+    saw the published cap, so the ceiling applied to what the customer was
+    *shown* and not to what they were *charged*. No test caught it because every
+    earlier case priced a call whose bounded price equalled its raw price —
+    only pressing the button in a browser did.
+    """
+    from platform_core import credit
+
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="capped-hold", max_credit=1)
+        db.commit()
+        before = credit.so_du(db, user_id)
+    finally:
+        _close(gen)
+
+    quoted = _quote(portal, token, {"topic": "hold", "count": 4}).json()
+    assert quoted["credit"] == 1, "the cap must reach the quote"
+
+    created = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quoted["quote"],
+              "input": {"topic": "hold", "count": 4}},
+        headers=_auth(token, f"pr-{uuid.uuid4().hex[:8]}"))
+    assert created.status_code == 201, created.text
+    assert created.json()["credit"]["held"] == 1, "held more than promised"
+
+    gen, db = _session()
+    try:
+        assert credit.so_du(db, user_id) == before - 1
+    finally:
+        _close(gen)
+
+
+def test_the_ui_path_still_prices_itself(portal):
+    """No `quoted_credit` means compute as before — the web app never quotes."""
+    from platform_core.job_submit import submit_with_credit
+
+    user_id = _sign_in(portal)
+    gen, db = _session()
+    try:
+        job = submit_with_credit(
+            db, user_id=user_id, app_slug="thumbnail",
+            job_type="thumbnail.generate",
+            params={"topic": "ui", "count": 2, "owner_id": user_id})
+        db.commit()
+        from platform_core import credit
+
+        assert credit.so_da_giu(db, job.id) == 10, "5 credit per image"
+    finally:
+        _close(gen)
+
+
+def test_rounding_modes_do_what_they_say():
+    class _Version:
+        rounding = 10
+        rounding_mode = "up"
+        min_credit = None
+        max_credit = None
+
+    version = _Version()
+    assert pricing.apply_bounds(11, version) == 20
+    version.rounding_mode = "down"
+    assert pricing.apply_bounds(19, version) == 10
+    version.rounding_mode = "nearest"
+    assert pricing.apply_bounds(14, version) == 10
+    assert pricing.apply_bounds(16, version) == 20
+    assert pricing.apply_bounds(7, None) == 7, "no version means no change"
+
+
+def test_a_model_specific_version_beats_a_tool_wide_one(portal):
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="wide", max_credit=100)
+        _publish(db, tool=TOOL, label="narrow", model="fast", max_credit=7)
+        db.commit()
+
+        assert pricing.active_for(db, tool=TOOL).label == "wide"
+        assert pricing.active_for(db, tool=TOOL, model="fast").label == "narrow"
+        # …and a row naming a different model must not win.
+        assert pricing.active_for(db, tool=TOOL, model="slow").label == "wide"
+    finally:
+        _close(gen)
+
+
+# ── No retroactive price mutation ────────────────────────────────────────────
+
+def test_publishing_a_new_price_does_not_change_an_issued_quote(portal):
+    """The property the whole design exists for.
+
+    The amount and the version label were signed together at the same instant;
+    neither can be edited afterwards without breaking the signature.
+    """
+    _sign_in(portal)
+    token = _issue(portal)
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="old", max_credit=100)
+        db.commit()
+    finally:
+        _close(gen)
+
+    quoted = _quote(portal, token).json()
+    assert quoted["pricing_version"] == "old"
+
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="new", max_credit=1)
+        db.commit()
+    finally:
+        _close(gen)
+
+    # The quote is now priced under a regime that no longer applies, so the
+    # platform refuses it rather than silently repricing.
+    refused = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quoted["quote"], "input": INPUT},
+        headers=_auth(token, f"pr-{uuid.uuid4().hex[:8]}"))
+    assert refused.status_code == 409, refused.text
+    assert refused.json()["code"] == "price_changed"
+    assert refused.json()["quoted_credit"] == quoted["credit"]
+
+
+def test_a_job_keeps_the_version_it_was_quoted_under(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="at-submit-time")
+        db.commit()
+    finally:
+        _close(gen)
+
+    quoted = _quote(portal, token).json()
+    created = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quoted["quote"], "input": INPUT},
+        headers=_auth(token, f"pr-{uuid.uuid4().hex[:8]}"))
+    assert created.status_code == 201, created.text
+
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="much-later")
+        db.commit()
+
+        from platform_core.models import Job
+        from platform_core.public_api.invocation import api_meta
+
+        job = db.get(Job, created.json()["id"])
+        assert api_meta(job)["pricing_version"] == "at-submit-time"
+    finally:
+        _close(gen)
+
+
+def test_publishing_closes_the_old_window_rather_than_editing_it(portal):
+    gen, db = _session()
+    try:
+        first = _publish(db, tool=TOOL, label="first", max_credit=50)
+        db.commit()
+        assert first.status == PRICE_ACTIVE
+        assert first.effective_until is None
+
+        second = _publish(db, tool=TOOL, label="second", max_credit=60)
+        db.commit()
+        db.refresh(first)
+
+        assert first.effective_until is not None, "the old window must close"
+        assert first.max_credit == 50, "the old numbers must not be edited"
+        assert first.label == "first"
+        assert pricing.active_for(db, tool=TOOL).label == second.label
+    finally:
+        _close(gen)
+
+
+def test_retiring_stops_a_version_without_repricing_what_it_priced(portal):
+    gen, db = _session()
+    try:
+        version = _publish(db, tool=TOOL, label="retiring", max_credit=42)
+        db.commit()
+        pricing.retire(db, version)
+        db.commit()
+
+        assert version.status == PRICE_RETIRED
+        assert version.max_credit == 42
+        assert pricing.active_for(db, tool=TOOL) is None
+    finally:
+        _close(gen)
+
+
+# ── The ledger remains billing truth ─────────────────────────────────────────
+
+def test_pricing_and_costing_never_touch_the_ledger(portal):
+    """Snapshot every credit row before and after, and compare.
+
+    The strongest form of "does not touch the ledger" is to look at all of it.
+    """
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    quoted = _quote(portal, token).json()
+    portal.post(f"{API_V1_PREFIX}/jobs",
+                json={"tool": TOOL, "quote": quoted["quote"], "input": INPUT},
+                headers=_auth(token, f"pr-{uuid.uuid4().hex[:8]}"))
+
+    before = _ledger_snapshot(user_id)
+    assert before, "this test needs a ledger to compare"
+
+    gen, db = _session()
+    try:
+        version = _publish(db, tool=TOOL, label="ledger-probe", max_credit=1)
+        costing.observe(db, job_id="j1", tool=TOOL, kind="duration_ms",
+                        quantity=5000, unit_cost_micros=3)
+        costing.margin(db, since=datetime.now(timezone.utc)
+                       - timedelta(days=1))
+        costing.margin_by_tool(db, since=datetime.now(timezone.utc)
+                               - timedelta(days=1))
+        pricing.retire(db, version)
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert _ledger_snapshot(user_id) == before
+
+
+# ── The simulator ────────────────────────────────────────────────────────────
+
+def test_the_simulator_uses_the_production_formula(portal):
+    """Not a copy of the arithmetic — the same call the quote path makes.
+
+    A simulator with its own maths answers a question nobody asked; what matters
+    is what the customer would actually be billed.
+    """
+    _sign_in(portal)
+    token = _issue(portal)
+    quoted = _quote(portal, token, {"topic": "x", "count": 3}).json()
+
+    gen, db = _session()
+    try:
+        simulated = pricing.simulate(db, tool=_tool(),
+                                     params={"topic": "x", "count": 3})
+    finally:
+        _close(gen)
+    assert simulated.credit == quoted["credit"]
+    assert simulated.tool == TOOL
+
+
+def test_a_simulation_charges_nothing_and_mints_no_quote(portal):
+    user_id = _sign_in(portal)
+    _issue(portal)
+    before = _ledger_snapshot(user_id)
+
+    gen, db = _session()
+    try:
+        result = pricing.simulate(db, tool=_tool(), params=INPUT)
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert result.credit > 0
+    assert not hasattr(result, "quote"), "a simulation must not be presentable"
+    assert _ledger_snapshot(user_id) == before
+
+
+def test_the_simulator_reports_when_a_bound_moved_the_number(portal):
+    gen, db = _session()
+    try:
+        _publish(db, tool=TOOL, label="tight", max_credit=1)
+        db.commit()
+        result = pricing.simulate(db, tool=_tool(),
+                                  params={"topic": "x", "count": 4})
+        assert result.raw_credit > 1
+        assert result.credit == 1
+        assert result.bounded is True
+        assert result.pricing_version == "tight"
+    finally:
+        _close(gen)
+
+
+# ── Cost is evidence plus an assumption, and says so ─────────────────────────
+
+def test_no_configured_rate_means_no_observation(portal):
+    """A cost of exactly nothing is a claim this module is not entitled to."""
+    gen, db = _session()
+    try:
+        assert costing.rates({}) == {}
+        assert costing.observe(db, job_id="j", tool=TOOL, kind="duration_ms",
+                               quantity=1000, unit_cost_micros=0) is None
+    finally:
+        _close(gen)
+
+
+def test_a_rate_turns_a_measurement_into_a_labelled_estimate(portal):
+    gen, db = _session()
+    try:
+        row = costing.observe(db, job_id="j", tool=TOOL, kind="duration_ms",
+                              quantity=2000, unit_cost_micros=5,
+                              source="evidence:job_events")
+        db.commit()
+        assert row.cost_micros == 10_000
+        assert row.is_estimate is True, "money from a configured rate is a guess"
+        assert row.source == "evidence:job_events", "the quantity was measured"
+    finally:
+        _close(gen)
+
+
+def test_tokens_are_only_counted_when_the_handler_reported_them(portal):
+    """`api_keys.total_tokens` is a per-credential running total shared by every
+    job it served; splitting it would be invention, not measurement."""
+    class _Job:
+        id = "j1"
+        result = {"image_keys": ["a"], "tokens": 1234}
+        params = {"_api": {"tool": TOOL}}
+
+    class _Bare:
+        id = "j2"
+        result = {"image_keys": ["a"]}
+        params = {"_api": {"tool": TOOL}}
+
+    assert costing._tokens(_Job()) == 1234
+    assert costing._tokens(_Bare()) == 0
+
+
+def test_margin_reads_revenue_from_the_ledger_and_cost_from_observations(portal):
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    quoted = _quote(portal, token).json()
+    portal.post(f"{API_V1_PREFIX}/jobs",
+                json={"tool": TOOL, "quote": quoted["quote"], "input": INPUT},
+                headers=_auth(token, f"pr-{uuid.uuid4().hex[:8]}"))
+
+    since = datetime.now(timezone.utc) - timedelta(hours=1)
+    gen, db = _session()
+    try:
+        window = costing.margin(db, since=since)
+        assert window.revenue_credit == quoted["credit"]
+        assert window.cost_micros == 0
+        assert window.cost_is_estimate is True
+
+        costing.observe(db, job_id="j", tool=TOOL, kind="duration_ms",
+                        quantity=1000, unit_cost_micros=2)
+        db.commit()
+        richer = costing.margin(db, since=since)
+        assert richer.cost_micros == 2000
+        assert richer.observations == 1
+    finally:
+        _close(gen)
+    assert user_id
+
+
+def test_a_negative_margin_alerts_the_operators_not_a_null_user(portal):
+    """The notification table's owner is a foreign key to a real person, and it
+    should stay that way — a nullable owner would make every other query handle
+    a case that exists for one alert."""
+    from platform_core.public_api import notifications
+    from platform_core.users import tao_nguoi_dung
+
+    gen, db = _session()
+    try:
+        operator = tao_nguoi_dung(db, email=f"op-{uuid.uuid4().hex[:6]}@x.com",
+                                  password="a-good-password-12", role="admin",
+                                  is_verified=True)
+        db.flush()
+        costing.observe(db, job_id="j", tool=TOOL, kind="duration_ms",
+                        quantity=1_000_000, unit_cost_micros=50)
+        db.commit()
+
+        raised = costing.scan_for_alerts(db, hours=24)
+        db.commit()
+        assert raised, "a negative estimated margin should be said out loud"
+        rows = notifications.list_for(db, user_id=operator.id)
+        assert any(row.kind == costing.ALERT_KIND for row in rows)
+        body = next(row for row in rows if row.kind == costing.ALERT_KIND).body
+        assert "ƯỚC LƯỢNG" in body, "the alert must not read as settled cost"
+    finally:
+        _close(gen)
+
+
+def test_a_healthy_margin_says_nothing(portal):
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    quoted = _quote(portal, token).json()
+    portal.post(f"{API_V1_PREFIX}/jobs",
+                json={"tool": TOOL, "quote": quoted["quote"], "input": INPUT},
+                headers=_auth(token, f"pr-{uuid.uuid4().hex[:8]}"))
+
+    gen, db = _session()
+    try:
+        costing.observe(db, job_id="j", tool=TOOL, kind="duration_ms",
+                        quantity=10, unit_cost_micros=1)
+        db.commit()
+        assert costing.scan_for_alerts(db, hours=24) == []
+    finally:
+        _close(gen)
+    assert user_id
+
+
+# ── Version lifecycle rules ──────────────────────────────────────────────────
+
+def test_a_draft_is_not_in_force_until_it_is_published(portal):
+    gen, db = _session()
+    try:
+        pricing.create_version(db, tool=TOOL, label="draft-only", max_credit=1)
+        db.commit()
+        assert pricing.active_for(db, tool=TOOL) is None
+    finally:
+        _close(gen)
+
+
+def test_a_future_version_is_scheduled_rather_than_active(portal):
+    gen, db = _session()
+    try:
+        soon = datetime.now(timezone.utc) + timedelta(days=1)
+        version = pricing.create_version(db, tool=TOOL, label="next-week",
+                                         effective_from=soon)
+        pricing.publish(db, version, published_by="op@example.com")
+        db.commit()
+
+        assert version.status == PRICE_SCHEDULED
+        assert pricing.active_for(db, tool=TOOL) is None
+        assert pricing.active_for(db, tool=TOOL,
+                                  now=soon + timedelta(minutes=1)) is version
+    finally:
+        _close(gen)
+
+
+def test_the_timeline_separates_now_next_and_done(portal):
+    gen, db = _session()
+    try:
+        current = _publish(db, tool=TOOL, label="current")
+        future = pricing.create_version(
+            db, tool=TOOL, label="future",
+            effective_from=datetime.now(timezone.utc) + timedelta(days=2))
+        pricing.publish(db, future, published_by="op@example.com")
+        db.commit()
+
+        # A draft that starts *now* is still upcoming: it has never been in
+        # force, so it cannot be history — and the person who just created it
+        # would never look for it there. Caught by making one in a browser.
+        draft = pricing.create_version(db, tool=TOOL, label="just-drafted")
+        db.commit()
+
+        line = pricing.timeline(db, tool=TOOL)
+        assert line.current is current
+        assert {row.label for row in line.upcoming} == {"future", "just-drafted"}
+        assert draft not in line.history
+    finally:
+        _close(gen)
+
+
+def test_a_version_refuses_nonsense(portal):
+    gen, db = _session()
+    try:
+        pricing.create_version(db, tool=TOOL, label="taken")
+        db.commit()
+        cases = (
+            {"tool": "", "label": "x"},
+            {"tool": TOOL, "label": ""},
+            {"tool": TOOL, "label": "taken"},
+            {"tool": TOOL, "label": "y", "rounding_mode": "sideways"},
+            {"tool": TOOL, "label": "z", "min_credit": 10, "max_credit": 1},
+            {"tool": TOOL, "label": "w",
+             "effective_from": datetime.now(timezone.utc),
+             "effective_until": datetime.now(timezone.utc)
+             - timedelta(hours=1)},
+        )
+        for kwargs in cases:
+            with pytest.raises(pricing.PricingError):
+                pricing.create_version(db, **kwargs)
+            db.rollback()
+    finally:
+        _close(gen)
+
+
+def test_a_retired_version_cannot_be_republished(portal):
+    gen, db = _session()
+    try:
+        version = _publish(db, tool=TOOL, label="gone")
+        pricing.retire(db, version)
+        db.commit()
+        assert version.status == PRICE_RETIRED
+        with pytest.raises(pricing.PricingError):
+            pricing.publish(db, version)
+    finally:
+        _close(gen)
+
+
+def test_a_draft_starts_as_draft():
+    assert PRICE_DRAFT == "draft"
+    assert PRICE_ACTIVE == "active"
+
+
+# ── The portal simulator ─────────────────────────────────────────────────────
+
+def test_the_portal_prices_a_call_without_charging_for_it(portal):
+    user_id = _sign_in(portal)
+    _issue(portal)
+    before = _ledger_snapshot(user_id)
+
+    page = portal.get(f"/developers/pricing?tool={TOOL}")
+    assert page.status_code == 200, page.text[:300]
+    assert "credit" in page.text
+    assert _ledger_snapshot(user_id) == before
+
+
+def test_the_portal_simulation_matches_the_real_quote(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    payload = {"topic": "match", "count": 2}
+    quoted = _quote(portal, token, payload).json()["credit"]
+
+    import json
+
+    page = portal.get("/developers/pricing", params={
+        "tool": TOOL, "input": json.dumps(payload)}).text
+    assert f">{quoted}</strong>" in page.replace(" ", "") or str(quoted) in page
+
+
+def test_bad_json_is_reported_rather_than_swallowed(portal):
+    _sign_in(portal)
+    _issue(portal)
+    page = portal.get("/developers/pricing",
+                      params={"tool": TOOL, "input": "{not json"}).text
+    assert "b-err" in page
+
+
+def test_the_portal_page_says_a_simulation_is_not_a_quote(portal):
+    _sign_in(portal)
+    _issue(portal)
+    page = portal.get("/developers/pricing").text
+    assert "KHÔNG sinh báo giá" in page
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -199034,7 +201319,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/restore_drill_schema.py
-SHA256=dc17427beb336e873190c6e60b7208e0c7dba0cbaf173c5d8b06912b391acc0c BYTES=7801 LINES=169
+SHA256=8c078208e205351826b2b5cddfa5a4768149caca1ac5d9a6b49c161a8b7bb583 BYTES=8045 LINES=173
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 restore_drill_schema.py - dien tap khoi phuc tren LUOC DO THAT (H19.8).
@@ -199180,7 +201465,11 @@ def main() -> int:
                     "uq_api_policy_subject",
                     # Mat rang buoc nay = hai cong tat cung pham vi/doi tuong,
                     # nen "tat roi hay chua" khong con mot cau tra loi.
-                    "uq_api_kill_subject"):
+                    "uq_api_kill_subject",
+                    # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
+                    # cong cu, va mot dau gia tren hoa don khong con tro ve
+                    # duoc mot dong duy nhat.
+                    "uq_api_pricing_label"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

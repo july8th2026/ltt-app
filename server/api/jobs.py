@@ -19,8 +19,8 @@ from platform_core import credit, jobs as jobq
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, Job)
 from platform_core.public_api import (capacity, idempotency, invocation,
-                                      limits, media, metrics, policy, quotes,
-                                      sandbox)
+                                      limits, media, metrics, policy, pricing,
+                                      quotes, sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request, price_changed,
@@ -216,18 +216,24 @@ def register_job_routes(api, config, tag: str) -> None:
         params = invocation.build_job_params(
             tool, clean, media_values={name: f"upload:{session.id}"
                                        for name, session in sessions.items()})
-        cost = invocation.price(tool, params)
+        # The app computes the price; the published regime bounds it and
+        # names itself on the quote. Two facts written at the same instant is
+        # what makes a charge reconcilable months later (EXT-15).
+        version = pricing.active_for(db, tool=tool.name)
+        cost = pricing.apply_bounds(invocation.price(tool, params), version)
+        stamp = version.label if version is not None else pricing.UNVERSIONED
 
         token, payload = quotes.issue(
             secret=_quote_secret(request), user_id=principal.user_id,
             key_id=principal.key_id, tool_name=tool.name, params=clean,
-            credit=cost)
+            credit=cost, pricing_version=stamp)
         return JSONResponse(
             {
                 "quote": token,
                 "tool": tool.name,
                 "credit": cost,
                 "expires_in": quotes.QUOTE_TTL_S,
+                "pricing_version": stamp,
                 # What the caller can spend right now, so a client can tell the
                 # difference between "too expensive" and "broken" before trying.
                 "balance": credit.so_du(db, principal.user_id),
@@ -275,7 +281,9 @@ def register_job_routes(api, config, tag: str) -> None:
         params = invocation.build_job_params(
             tool, clean, media_values={name: f"upload:{session.id}"
                                        for name, session in sessions.items()})
-        cost = invocation.price(tool, params)
+        cost = pricing.apply_bounds(
+            invocation.price(tool, params),
+            pricing.active_for(db, tool=tool.name))
         if cost != int(quote.get("credit", -1)):
             # Price moved between quote and submit. Refusing is the only answer
             # that keeps the quote a promise (Q84).

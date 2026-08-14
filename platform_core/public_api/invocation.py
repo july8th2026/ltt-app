@@ -252,6 +252,10 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         # provider, and every listing reads it to keep the two apart (EXT-12).
         "mode": str(getattr(principal, "mode", "live") or "live"),
         "quote_intent": str(quote.get("intent") or ""),
+        # Copied from the signed quote rather than looked up again: what matters
+        # for reconciliation is the regime in force when the price was promised,
+        # not the one in force when the worker happened to run (EXT-15).
+        "pricing_version": str(quote.get("pricing_version") or ""),
         "idempotency_key": str(idempotency_key or ""),
         # The correlation id of the request that created this job, so support
         # and the customer's own log page can walk request → job → events →
@@ -284,9 +288,13 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
             db, user_id=principal.user_id, app_slug=tool.app_slug,
             job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
         )
+    # The quote is a promise: hold exactly what it said. Recomputing here would
+    # skip the published price bounds and charge past a number the customer was
+    # shown (EXT-15).
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+        quoted_credit=int(quote.get("credit", 0)),
     )
 
 

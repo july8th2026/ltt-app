@@ -840,3 +840,116 @@ def test_the_kill_switch_page_says_its_scope_is_the_api(console):
     assert "/api/v1" in page
     assert 'name="confirm"' in page
     assert "Không có công tắc nào đang bật" in page
+
+
+# ── The pricing console and the margin view (EXT-15) ─────────────────────────
+
+PRICING_PAGES = ("/admin/api-gia", "/admin/api-margin")
+
+
+def test_the_pricing_pages_are_operator_only(console):
+    _make_user("curious@example.com")
+    _login(console, "curious@example.com")
+    for path in PRICING_PAGES:
+        answer = console.get(path, follow_redirects=False)
+        assert answer.status_code in (302, 303, 307), path
+        assert "/login" in answer.headers.get("location", ""), path
+
+
+def test_creating_and_publishing_a_price_is_audited(console):
+    from platform_core.public_api import pricing
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+
+    made = _post(console, "/admin/api-gia-action", "/admin/api-gia",
+                 {"op": "create", "tool": "image.thumbnail", "label": "v1",
+                  "max_credit": "40", "rounding_mode": "nearest",
+                  "reason": "opening the commercial price"})
+    assert made.status_code == 303, made.text[:300]
+
+    gen, db = _session()
+    try:
+        rows = pricing.list_for(db, tool="image.thumbnail")
+        assert len(rows) == 1 and rows[0].status == "draft"
+        # A draft prices nothing until somebody publishes it.
+        assert pricing.active_for(db, tool="image.thumbnail") is None
+        version_id = rows[0].id
+    finally:
+        _close(gen)
+
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "publish", "version_id": version_id, "tool": "image.thumbnail",
+           "reason": "agreed with the product owner"})
+
+    gen, db = _session()
+    try:
+        assert pricing.active_for(db, tool="image.thumbnail").label == "v1"
+    finally:
+        _close(gen)
+
+    actions = [row.hanh_dong for row in _audit_rows()]
+    assert actions == ["api_gia_create", "api_gia_publish"]
+    assert "agreed with the product owner" in _audit_rows()[-1].chi_tiet
+
+
+def test_a_price_change_without_a_reason_changes_nothing(console):
+    from platform_core.public_api import pricing
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    answer = _post(console, "/admin/api-gia-action", "/admin/api-gia",
+                   {"op": "create", "tool": "image.thumbnail", "label": "sneaky",
+                    "reason": "x"})
+    assert answer.status_code == 303 and "err=" in answer.headers["location"]
+
+    gen, db = _session()
+    try:
+        assert pricing.list_for(db) == []
+    finally:
+        _close(gen)
+    assert _audit_rows() == []
+
+
+def test_retiring_a_price_is_audited(console):
+    from platform_core.public_api import pricing
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "create", "tool": "image.thumbnail", "label": "v1",
+           "rounding_mode": "nearest", "reason": "opening the price"})
+    gen, db = _session()
+    try:
+        version_id = pricing.list_for(db)[0].id
+    finally:
+        _close(gen)
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "publish", "version_id": version_id, "reason": "going live"})
+    _post(console, "/admin/api-gia-action", "/admin/api-gia",
+          {"op": "retire", "version_id": version_id,
+           "reason": "withdrawing this tier"})
+
+    assert [row.hanh_dong for row in _audit_rows()] == [
+        "api_gia_create", "api_gia_publish", "api_gia_retire"]
+
+
+def test_the_pricing_page_says_it_does_not_price(console):
+    """The page has to explain the one thing about it people get wrong."""
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-gia").text
+    assert "credit_cost()" in page
+    assert "hồi tố" in page
+
+
+def test_the_margin_page_labels_its_cost_as_an_estimate(console):
+    """A number that cannot be reconciled must not look like one that can."""
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-margin").text
+    assert "ƯỚC LƯỢNG" in page
+    assert "sổ credit" in page
+    # With no rates configured the page must say why it is empty rather than
+    # showing a confident zero.
+    assert "Chưa cấu hình đơn giá" in page

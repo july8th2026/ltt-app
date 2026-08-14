@@ -32,13 +32,21 @@ mà không kèm lý do là một sự kiện không có ý nghĩa.
 """
 from __future__ import annotations
 
+import logging
+
 from markupsafe import escape
 from sqladmin import BaseView, expose
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
 from platform_core.db import get_session
-from platform_core.public_api import admin_console, policy
+from platform_core.public_api.tables import (PRICE_ACTIVE,
+                                             PRICE_DRAFT,
+                                             PRICE_SCHEDULED)
+from platform_core.public_api import (admin_console, costing,
+                                      policy, pricing)
+
+_log = logging.getLogger("ltt.admin.api")
 
 _OK = "var(--ok)"
 _WARN = "var(--warn)"
@@ -1005,6 +1013,316 @@ class ApiKillSwitchView(BaseView):
         return RedirectResponse(back, status_code=303)
 
 
+class ApiPricingView(BaseView):
+    """Giá hiện tại, giá sắp tới, giá đã qua — và một chỗ thử không tốn tiền."""
+
+    name = "API - Gia"
+    icon = "fa-solid fa-tags"
+
+    @expose("/api-gia", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api.catalog import build_catalog
+        from server.auth.csrf import issue_csrf_token
+
+        config = _config()
+        catalog = build_catalog(config)
+        chosen = request.query_params.get("tool", "")
+        tool = next((item for item in catalog if item.name == chosen),
+                    catalog[0] if catalog else None)
+
+        gen, db = _session()
+        try:
+            line = (pricing.timeline(db, tool=tool.name)
+                    if tool is not None else None)
+            preview = (pricing.simulate(db, tool=tool,
+                                        params=_example_input(tool))
+                       if tool is not None else None)
+        finally:
+            _close(gen)
+
+        token = issue_csrf_token(request)
+        note = _error_note(request)
+
+        tabs = "".join(
+            f'<a class="{"on" if tool is not None and item.name == tool.name else ""}" '
+            f'href="/admin/api-gia?tool={escape(item.name)}">{escape(item.name)}</a>'
+            for item in catalog) or '<span class="muted">Chưa mở công cụ nào.</span>'
+
+        def row(version, *, actions: bool) -> str:
+            window = (f'{_when(version.effective_from)} → '
+                      f'{_when(version.effective_until)}')
+            bounds = " / ".join(str(x) for x in (
+                version.min_credit if version.min_credit is not None else "—",
+                version.max_credit if version.max_credit is not None else "—"))
+            rounding = (f'{version.rounding} ({escape(version.rounding_mode)})'
+                        if version.rounding else "—")
+            buttons = ""
+            if actions:
+                if version.status in (PRICE_DRAFT,):
+                    buttons += _reason_form(
+                        "/admin/api-gia-action", token, "publish", "Phát hành",
+                        extra={"version_id": version.id})
+                if version.status in (PRICE_ACTIVE, PRICE_SCHEDULED):
+                    buttons += _reason_form(
+                        "/admin/api-gia-action", token, "retire", "Ngừng",
+                        danger=True, extra={"version_id": version.id})
+            return (f'<tr><td><b>{escape(version.label)}</b>'
+                    f'{" · " + escape(version.model) if version.model else ""}'
+                    f'<br><span class="muted">{escape(version.formula_ref or "")}'
+                    f'</span></td>'
+                    f'<td>{escape(version.status)}</td>'
+                    f'<td class="muted">{window}</td>'
+                    f'<td class="tnum">{bounds}</td>'
+                    f'<td class="tnum">{rounding}</td>'
+                    f'<td class="muted">{escape(version.published_by or "—")}'
+                    f'</td><td>{buttons}</td></tr>')
+
+        if line is None:
+            body_rows = ('<tr><td colspan="7" class="muted">Chưa có công cụ '
+                         'nào được mở.</td></tr>')
+            upcoming = history = ""
+        else:
+            body_rows = (row(line.current, actions=True) if line.current
+                         else '<tr><td colspan="7" class="muted">Chưa phát '
+                              'hành phiên bản nào — giá vẫn do app tính, và '
+                              'quote mang nhãn "unversioned".</td></tr>')
+            upcoming = "".join(row(v, actions=True) for v in line.upcoming) or (
+                '<tr><td colspan="7" class="muted">Không có gì đang chờ.</td></tr>')
+            history = "".join(row(v, actions=False) for v in line.history) or (
+                '<tr><td colspan="7" class="muted">Chưa có lịch sử.</td></tr>')
+
+        head = ('<thead><tr><th>Nhãn</th><th>Trạng thái</th><th>Cửa sổ</th>'
+                '<th>Sàn / trần</th><th>Làm tròn</th><th>Ai phát hành</th>'
+                '<th></th></tr></thead>')
+
+        sim = ""
+        if preview is not None:
+            sim = (f'<p>Cùng công thức mà báo giá thật dùng, với đầu vào ví dụ: '
+                   f'<b class="tnum">{preview.credit}</b> credit'
+                   f'{" (app tính " + str(preview.raw_credit) + ", bị chặn bởi "
+                      + escape(preview.pricing_version) + ")" if preview.bounded else ""}'
+                   f'. Không sinh báo giá, không trừ credit.</p>')
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Giá</h1>'
+            f'<p>Phiên bản giá <b>không</b> tính giá. Giá vẫn do '
+            f'<code>credit_cost()</code> của app tính; phiên bản ghi lại chế độ '
+            f'nào đang có hiệu lực, kèm sàn/trần/làm tròn, rồi được đóng dấu '
+            f'lên báo giá và job. Phát hành bản mới là <b>thêm dòng</b> và đóng '
+            f'cửa sổ bản cũ — không sửa số của bản cũ, nên không có đường nào '
+            f'đổi giá hồi tố.</p></div></div>{note}'
+            f'<div class="tabs">{tabs}</div>'
+            f'<section><h2 style="margin:22px 0 10px">Đang áp dụng</h2>'
+            f'<div class="tablewrap"><table class="ui-table">{head}'
+            f'<tbody>{body_rows}</tbody></table></div>{sim}</section>'
+            f'<section><h2 style="margin:22px 0 10px">Sắp tới</h2>'
+            f'<div class="tablewrap"><table class="ui-table">{head}'
+            f'<tbody>{upcoming}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Lịch sử</h2>'
+            f'<div class="tablewrap"><table class="ui-table">{head}'
+            f'<tbody>{history}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Tạo phiên bản</h2>'
+            f'<form method="post" action="/admin/api-gia-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="create">'
+            f'<input type="hidden" name="tool" '
+            f'value="{escape(tool.name if tool else "")}">'
+            f'<p><input name="label" placeholder="nhãn (vd 2026-09-a)" required> '
+            f'<input name="model" placeholder="model (bỏ trống = mọi model)"> '
+            f'<input name="min_credit" inputmode="numeric" placeholder="sàn" '
+            f'style="width:110px"> '
+            f'<input name="max_credit" inputmode="numeric" placeholder="trần" '
+            f'style="width:110px"> '
+            f'<input name="rounding" inputmode="numeric" '
+            f'placeholder="làm tròn" style="width:130px"> '
+            f'<select name="rounding_mode">'
+            + "".join(f'<option value="{m}">{m}</option>'
+                      for m in pricing.ROUNDING_MODES) +
+            f'</select></p>'
+            f'<p><input name="starts_in_hours" inputmode="numeric" '
+            f'style="width:190px" placeholder="bắt đầu sau (giờ, trống = ngay)"> '
+            f'<input name="notes" size="40" placeholder="ghi chú"></p>'
+            f'<p><input name="reason" size="50" required '
+            f'minlength="{pricing.MIN_REASON}" '
+            f'placeholder="Lý do (bắt buộc, ≥ {pricing.MIN_REASON} ký tự)"> '
+            f'<button class="btn btn-primary sm">Tạo bản nháp</button></p>'
+            f'<p class="muted">Bản nháp chưa có hiệu lực. Phải bấm Phát hành, '
+            f'và cả hai thao tác đều ghi nhật ký.</p></form></section></div>')
+        return HTMLResponse(_admin_shell("API - Gia", "api_pricing", body))
+
+    @expose("/api-gia-action", methods=["POST"])
+    async def action(self, request: Request):
+        from datetime import datetime, timedelta, timezone
+
+        from server.admin import _email_admin, ghi_nhat_ky
+        from server.auth.csrf import verify_csrf_token
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+
+        op = str(form.get("op") or "")
+        reason = str(form.get("reason") or "")
+        back = f'/admin/api-gia?tool={str(form.get("tool") or "")}'
+        if len(reason.strip()) < pricing.MIN_REASON:
+            return _redirect(back, "Phải ghi lý do cho thao tác này.")
+
+        gen, db = _session()
+        try:
+            try:
+                if op == "create":
+                    hours = str(form.get("starts_in_hours") or "").strip()
+                    starts = None
+                    if hours:
+                        starts = (datetime.now(timezone.utc)
+                                  + timedelta(hours=max(0, int(hours))))
+                    version = pricing.create_version(
+                        db, tool=str(form.get("tool") or ""),
+                        label=str(form.get("label") or ""),
+                        model=str(form.get("model") or ""),
+                        effective_from=starts,
+                        min_credit=_maybe_int(form.get("min_credit")),
+                        max_credit=_maybe_int(form.get("max_credit")),
+                        rounding=_maybe_int(form.get("rounding")),
+                        rounding_mode=str(form.get("rounding_mode")
+                                          or "nearest"),
+                        notes=str(form.get("notes") or ""),
+                        created_by=_email_admin(request))
+                    detail = f"{version.tool}:{version.label} (nhap)"
+                elif op in ("publish", "retire"):
+                    version = pricing.version_by_id(
+                        db, str(form.get("version_id") or ""))
+                    if version is None:
+                        return HTMLResponse("Không thấy phiên bản.",
+                                            status_code=404)
+                    if op == "publish":
+                        pricing.publish(db, version,
+                                        published_by=_email_admin(request))
+                    else:
+                        pricing.retire(db, version)
+                    detail = f"{version.tool}:{version.label}"
+                    back = f"/admin/api-gia?tool={version.tool}"
+                else:
+                    return HTMLResponse("Thao tác không hợp lệ.",
+                                        status_code=400)
+            except (pricing.PricingError, ValueError) as exc:
+                db.rollback()
+                return _redirect(back, str(exc))
+            ghi_nhat_ky(db, request, f"api_gia_{op}", doi_tuong=detail,
+                        chi_tiet=f"ly do: {reason.strip()}")
+            db.commit()
+        finally:
+            _close(gen)
+        return RedirectResponse(back, status_code=303)
+
+
+def _maybe_int(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    return int(raw)
+
+
+def _example_input(tool) -> dict:
+    """A plausible call for the preview, from the contract's own examples."""
+    from platform_core.public_api import examples
+
+    try:
+        return examples.example_input(tool)
+    except Exception as exc:  # noqa: BLE001 - a preview is a convenience
+        # An empty preview is acceptable; an unexplained one is not. A tool
+        # whose contract cannot produce an example is a contract problem, and
+        # the pricing page is where somebody would first notice.
+        _log.warning("khong dung duoc vi du cho %s: %s: %s",
+                     getattr(tool, "name", "?"), type(exc).__name__, exc)
+        return {}
+
+
+class ApiMarginView(BaseView):
+    """Doanh thu từ sổ credit, chi phí là ước lượng — và nói rõ điều đó."""
+
+    name = "API - Margin"
+    icon = "fa-solid fa-scale-balanced"
+
+    @expose("/api-margin", methods=["GET"])
+    async def page(self, request: Request):
+        from datetime import datetime, timedelta, timezone
+
+        hours = _int(request, "hours", 24)
+        since = datetime.now(timezone.utc) - timedelta(hours=max(1, hours))
+
+        gen, db = _session()
+        try:
+            window = costing.margin(db, since=since)
+            by_tool = costing.margin_by_tool(db, since=since)
+            configured = costing.rates()
+        finally:
+            _close(gen)
+
+        def money(micros: int) -> str:
+            return f"{micros / costing.MICROS:.2f}"
+
+        cards = "".join([
+            _stat("Doanh thu (credit)", window.revenue_credit,
+                  "từ sổ credit — con số đã đối soát"),
+            _stat("Chi phí ước tính", money(window.cost_micros),
+                  f"{window.observations} quan sát"),
+            _stat("Chênh lệch ước tính", money(window.margin_micros),
+                  "ước lượng, không phải kế toán",
+                  colour=_ERR if window.is_negative else _OK),
+        ])
+
+        rows = "".join(
+            f'<tr><td class="mono">{escape(row["tool"])}</td>'
+            f'<td class="tnum">{money(row["cost_micros"])}</td>'
+            f'<td class="tnum">{row["observations"]}</td></tr>'
+            for row in by_tool) or (
+            '<tr><td colspan="3" class="muted">Chưa có quan sát chi phí nào '
+            'trong khoảng này.</td></tr>')
+
+        if configured:
+            rates = " ".join(
+                f'<code>{escape(kind)}={value}µ</code>'
+                for kind, value in sorted(configured.items()))
+            rate_note = (f'<p>Đơn giá đang cấu hình: {rates}. Đây là con số '
+                         f'<b>giả định</b> do người vận hành nhập, không phải '
+                         f'hoá đơn.</p>')
+        else:
+            rate_note = ('<p class="muted">Chưa cấu hình đơn giá nào '
+                         f'({", ".join(sorted(costing.RATE_ENV.values()))}), '
+                         'nên nền tảng không ghi quan sát chi phí. Cố ý: một '
+                         'chi phí bằng 0 là một khẳng định, và khi chưa có đơn '
+                         'giá thì nền tảng không có quyền khẳng định điều đó.'
+                         '</p>')
+
+        windows = "".join(
+            f'<a class="{"on" if hours == h else ""}" '
+            f'href="/admin/api-margin?hours={h}">{label}</a>'
+            for h, label in ((24, "24 giờ"), (168, "7 ngày"), (720, "30 ngày")))
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Margin</h1>'
+            f'<p><b>Doanh thu</b> lấy từ sổ credit: đó là số khách thật sự bị '
+            f'tính, và là chân lý thanh toán. <b>Chi phí</b> ở đây là '
+            f'<b>ƯỚC LƯỢNG</b>: nền tảng đo được thời lượng và số byte, nhưng '
+            f'giá tiền của một giây GPU hay một byte lưu trữ là con số hợp đồng '
+            f'do người vận hành nhập. Đừng đổi giá bán chỉ dựa vào trang này — '
+            f'hãy đối chiếu hoá đơn thật trước.</p></div></div>'
+            f'<div class="tabs">{windows}</div>'
+            f'{_TILES}{cards}</div>'
+            f'{rate_note}'
+            f'<section><h2 style="margin:22px 0 10px">Chi phí ước tính theo '
+            f'công cụ</h2><div class="tablewrap"><table class="ui-table">'
+            f'<thead><tr><th>Công cụ</th><th>Chi phí ước tính</th>'
+            f'<th>Số quan sát</th></tr></thead><tbody>{rows}</tbody></table>'
+            f'</div></section></div>')
+        return HTMLResponse(_admin_shell("API - Margin", "api_margin", body))
+
+
 def _redirect(path: str, message: str):
     from urllib.parse import quote
 
@@ -1023,7 +1341,7 @@ def _admin_shell(title: str, active: str, body: str) -> str:
 #: Đăng ký ở `server/admin.py`. Giữ danh sách ở đây để thêm một trang là sửa
 #: một file, không phải hai.
 VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
-         ApiPolicyView, ApiKillSwitchView)
+         ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView)
 
 #: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
 #: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
@@ -1037,4 +1355,6 @@ NAV = (
     ("/admin/api-cong-cu", "CC", "API — Công cụ", "api_tools"),
     ("/admin/api-chinh-sach", "CS", "API — Chính sách", "api_policy"),
     ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
+    ("/admin/api-gia", "GI", "API — Giá", "api_pricing"),
+    ("/admin/api-margin", "MG", "API — Margin", "api_margin"),
 )

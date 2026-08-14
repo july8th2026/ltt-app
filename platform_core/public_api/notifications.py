@@ -33,9 +33,15 @@ QUOTA_EXCEEDED = "quota.exceeded"
 KEY_EXPIRING = "key.expiring"
 WEBHOOK_FAILING = "webhook.failing"
 PROJECT_SUSPENDED = "project.suspended"
+#: The one kind addressed to **operators** rather than to a customer: the
+#: estimated cost of serving the platform has passed what it earned. It uses the
+#: same table and the same dedupe because the machinery is the same; only the
+#: audience differs, and it is delivered to each admin account (EXT-15).
+MARGIN_NEGATIVE = "margin.negative"
 
 KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
-         QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED)
+         QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED,
+         MARGIN_NEGATIVE)
 
 #: How long the same subject stays quiet after being raised. Long enough that a
 #: customer is not paged by a condition they have already seen; short enough
@@ -49,6 +55,10 @@ COOLDOWN = {
     KEY_EXPIRING: timedelta(days=3),
     WEBHOOK_FAILING: timedelta(hours=12),
     PROJECT_SUSPENDED: timedelta(days=7),
+    # A margin that is upside down stays upside down until somebody changes a
+    # price. Daily is often enough to keep it in view without becoming the
+    # thing operators filter out.
+    MARGIN_NEGATIVE: timedelta(days=1),
 }
 DEFAULT_COOLDOWN = timedelta(days=1)
 
@@ -57,6 +67,10 @@ DEFAULT_COOLDOWN = timedelta(days=1)
 #: yes; a threshold they set themselves to be informative, on the page only.
 EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
                          KEY_EXPIRING, PROJECT_SUSPENDED})
+# `MARGIN_NEGATIVE` is deliberately absent. The number behind it is an estimate
+# built from configured rates, and an estimate has no business interrupting
+# anybody at night — it belongs on the page an operator visits to decide about
+# pricing, next to the words saying what it is.
 
 RETENTION_DAYS = 90
 

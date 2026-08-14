@@ -47,7 +47,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 12 | Sandbox / test mode / live isolation | **PASS** | 2026-08-14 |
 | 13 | API admin console core | **PASS** | 2026-08-14 |
 | 14 | Admin policy / tiers / quota / kill switch | **PASS** | 2026-08-14 |
-| 15 | Pricing catalog / versioned credits / margin | chưa chạy | — |
+| 15 | Pricing catalog / versioned credits / margin | **PASS** | 2026-08-15 |
 | 16 | Admin operations / security / support trace | chưa chạy | — |
 | 17 | Versioning / changelog / deprecation / status | chưa chạy | — |
 | 18 | SDK / CLI / Postman / OpenAPI ecosystem | chưa chạy | — |
@@ -1665,3 +1665,137 @@ bảng mới chỉ chứa chính sách và công tắc.
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/15_PRICING_CATALOG_VERSIONED_CREDITS_COST_MARGIN_AND_QUOTE_SIMULATOR.txt`
 (EXT-15).
+
+---
+
+## EXT-15 — GIÁ CÓ PHIÊN BẢN, CHI PHÍ, MARGIN, MÔ PHỎNG ✅
+
+### Entry gate
+
+EXT-14 PASS ✅ (`0b050e1`), cây sạch. Migration mới: **`d6e7f8a9b0c1`** (head) —
+hai bảng, không sửa bảng nào đang có.
+
+### Quyết định thiết kế lớn nhất: bảng giá KHÔNG định giá
+
+Mọi app khai `credit_cost(params)`, và `registry.credit_for()` là thứ **duy
+nhất** biến một lời gọi thành con số. Một bảng giá *thay thế* nó sẽ là engine
+định giá thứ hai (COMMON_RULES §3), và lần đầu hai bên lệch nhau thì không ai
+nói được khách bị tính theo cái nào.
+
+Nên **phiên bản giá chỉ ghi lại chế độ nào đang có hiệu lực** — cửa sổ, sàn,
+trần, làm tròn, tham chiếu công thức — rồi nhãn đó được **đóng dấu lên báo giá
+và lên job**. Đối soát một khoản tiền sau nhiều tháng là đọc hai sự thật đã
+được ghi *cùng lúc*, thay vì chạy lại code hôm nay trên lời gọi hôm qua.
+
+Hệ quả: **"không sửa giá hồi tố" là tính chất của lược đồ**, không phải một luật
+ai đó phải nhớ. Báo giá được ký (`itsdangerous`) mang cả số tiền lẫn nhãn; phát
+hành bản mới là **thêm dòng** và đóng cửa sổ bản cũ; thu hồi là đặt ngày kết
+thúc. Không có đường code nào sửa số của một dòng cũ.
+
+### Lỗi tiền thật, chỉ lộ ra khi bấm thử
+
+Operator công bố trần 7. Báo giá trả **7**. Job giữ **10**.
+
+`submit_with_credit` tự tính lại giá từ `registry.credit_for()` và **không** thấy
+sàn/trần đã công bố — nên trần áp lên cái khách được **xem**, không áp lên cái
+khách bị **tính**. Đây là hình dạng tệ nhất mà một lỗi giá có thể có.
+
+Không test nào bắt được, vì mọi ca trước đó đều có giá-sau-chặn bằng
+giá-thô. Chỉ có bấm nút trên trình duyệt mới lộ.
+
+Sửa: `submit_with_credit(..., quoted_credit=)` — có báo giá thì giữ **đúng** số
+đã hứa. Vẫn gọi `credit_for` để giữ cảnh báo sớm khi một `job_type` chưa khai
+giá. Đường UI không truyền tham số này nên tính như cũ (có test khoá lại).
+
+### Chi phí: đo được là bằng chứng, tiền là ước lượng
+
+Nền tảng **đo** được `duration_ms` (worker ghi) và số byte. Nền tảng **không**
+biết giá tiền của một giây GPU hay một byte lưu trữ — đó là con số hợp đồng do
+người vận hành nhập.
+
+`api_keys.total_tokens` là **tổng theo khoá**, dùng chung cho mọi job nó phục
+vụ. Chia ra cho từng job là **bịa**, nên module từ chối; token chỉ được ghi khi
+chính handler báo cho job đó.
+
+Vì thế mọi số tiền mang `is_estimate=True` **trong dữ liệu**, không phải trong
+một dòng chú thích. Chưa cấu hình đơn giá thì **không ghi quan sát nào** — một
+chi phí bằng 0 là một khẳng định, và nền tảng chưa có quyền khẳng định điều đó.
+Trang Margin nói thẳng: doanh thu đã đối soát, chi phí là ước lượng, đừng đổi
+giá bán chỉ dựa vào trang này.
+
+### Mô phỏng
+
+Gọi **đúng** `invocation.price` mà đường báo giá gọi, áp đúng sàn/trần đang có
+hiệu lực. Một simulator có số học riêng trả lời một câu hỏi không ai hỏi. Không
+sinh quote token và không trừ credit, nên một mô phỏng **không** trình ra
+`POST /jobs` được — nó là câu trả lời, không phải lời hứa.
+
+Đặt ở **cổng lập trình viên**, không phải một route API mới: thêm một con đường
+thứ hai tới đường định giá để chứng minh hai đường cho ra cùng số là tự mâu
+thuẫn.
+
+### Hai chỗ code hiện có bắt lỗi tôi, và cả hai lần code đều đúng
+
+1. `notifications.KINDS` là danh sách trắng → từ chối loại `margin.negative` tôi
+   tự đặt. Danh sách trắng chính là thiết kế nói rằng loại cảnh báo phải khai
+   tập trung. Giờ khai đúng chỗ, kèm cooldown, và **cố ý không** vào
+   `EMAIL_KINDS`: con số đằng sau là ước lượng, mà ước lượng không có quyền đánh
+   thức ai lúc nửa đêm.
+2. `ApiNotification.user_id` là khoá ngoại tới `users` → không gửi được với user
+   rỗng. Thay vì nới cột thành nullable (bắt mọi truy vấn khác xử lý một trường
+   hợp chỉ tồn tại cho một loại cảnh báo), gửi tới từng tài khoản admin thật.
+
+### Một lỗi giao diện nữa do trình duyệt bắt
+
+Bản nháp vừa tạo bị xếp vào **Lịch sử**. Một bản nháp chưa từng có hiệu lực thì
+không thể là quá khứ — và người vừa tạo nó sẽ không bao giờ tìm ở đó. Giờ bản
+nháp luôn thuộc "Sắp tới", bất kể ngày bắt đầu.
+
+### Tests
+
+`tests/test_207_pricing.py` — **31 test**; `test_205` thêm **6 test** cho hai
+trang admin (tổng 42).
+
+Gồm: không có phiên bản vẫn báo giá được và mang nhãn `unversioned`; nhãn hiện
+trên quote; sàn/trần chặn số của app mà không thay nó; ba kiểu làm tròn; bản
+theo model thắng bản theo tool; **phát hành bản mới không đổi báo giá đã ký**
+(quote cũ bị từ chối bằng `price_changed`, không bị định giá lại); job giữ nhãn
+lúc được báo giá; phát hành **đóng cửa sổ** chứ không sửa số; thu hồi không định
+giá lại cái đã tính; **job giữ đúng số đã hứa** (test hồi quy cho lỗi 7→10);
+đường UI vẫn tự tính; **snapshot toàn bộ sổ credit trước/sau mọi thao tác giá và
+margin → giống hệt**; mô phỏng khớp báo giá thật, không trừ tiền, không sinh
+quote; chưa cấu hình đơn giá thì không ghi quan sát; token chỉ tính khi handler
+báo; margin đọc doanh thu từ sổ và chi phí từ quan sát; margin âm báo cho admin
+thật kèm chữ "ƯỚC LƯỢNG"; vòng đời draft→scheduled→active→retired.
+
+### Kiểm bằng trình duyệt (uvicorn thật, cổng 8123)
+
+Tạo bản nháp (bắt buộc lý do) → hiện ở **Sắp tới**, không phải Lịch sử. Phát
+hành (bắt buộc lý do) → **Đang áp dụng**, preview nói *"app tính 10, bị chặn bởi
+2026-08-a"*. Gọi API thật bằng khoá thật: `POST /quotes` → **7**, nhãn
+`2026-08-a`; `POST /jobs` → giữ **7** (trước khi sửa là 10); job meta mang
+`pricing_version=2026-08-a`. Trang Margin hiện đúng "Chưa cấu hình đơn giá nào"
+thay vì một số 0 tự tin. Trang mô phỏng ở cổng dev: `count=4` → *"SẼ TÍNH 7,
+CÔNG THỨC APP TÍNH 20 — bị chặn"*. Console: 0 lỗi.
+
+### Rollback
+
+`alembic downgrade c5d6e7f8a9b0`; xoá `pricing.py` + `costing.py`; bỏ
+`pricing_version` khỏi `quotes.issue`/`invocation`/route job; bỏ `quoted_credit`
+khỏi `submit_with_credit` (**lưu ý: hoàn nguyên là mang lỗi báo-7-giữ-10 trở
+lại**); bỏ `_ghi_chi_phi` khỏi worker; bỏ 2 view + 2 mục NAV + trang
+`dev_pricing.html`; bỏ `MARGIN_NEGATIVE` khỏi `notifications`; xoá `test_207` và
+khối EXT-15 trong `test_205`.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-15 | Kết quả |
+|---|---|
+| No retroactive price mutation | ✅ tính chất cấu trúc: nhãn + số tiền được ký cùng lúc; phát hành là thêm dòng, không sửa dòng cũ; quote cũ bị **từ chối** chứ không bị định giá lại |
+| Ledger remains billing truth | ✅ snapshot toàn bộ sổ trước/sau mọi thao tác giá + margin → giống hệt; margin đọc doanh thu **từ sổ**, chi phí từ bảng khác |
+| Pricing publish audited | ✅ mỗi create/publish/retire ghi `nhat_ky_admin` kèm ai/cái gì/**vì sao**; thiếu lý do thì không đổi gì và không ghi gì |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/16_ADMIN_OPERATIONS_REQUESTS_JOBS_WEBHOOK_SECURITY_SUPPORT_TRACE.txt`
+(EXT-16) —
+**checkpoint full gate**.

@@ -17,6 +17,7 @@ seeing that they exist, let alone their preview.
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -37,6 +38,8 @@ from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
+
+_log = logging.getLogger("ltt.developers")
 
 router = APIRouter(prefix="/developers", tags=["developers"])
 
@@ -123,6 +126,7 @@ SECTIONS = (
     ("keys", "/developers/keys", N_("Khóa API")),
     ("tools", "/developers/tools", N_("Công cụ & model")),
     ("playground", "/developers/playground", N_("Playground")),
+    ("pricing", "/developers/pricing", N_("Giá & mô phỏng")),
     ("logs", "/developers/logs", N_("Nhật ký request")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
@@ -334,6 +338,64 @@ for attempt in range(5):
         break
     except Timeout:               # the request may have succeeded
         time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
+
+@router.get("/pricing", response_class=HTMLResponse)
+def developer_pricing(request: Request, user=Depends(require_account),
+                      db: Session = Depends(get_db)):
+    """What a call would cost, priced by the code that really charges.
+
+    The number here comes from `invocation.price` — the same function the quote
+    route calls — bounded by the same published regime. A simulator with its own
+    arithmetic would answer a question nobody asked: what matters is what the
+    customer will actually be billed, and that stays true only while one piece
+    of code produces both numbers.
+
+    Nothing is charged and no quote token is minted, so a simulation cannot be
+    presented at `POST /jobs`.
+    """
+    from platform_core.public_api import examples, pricing
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    wanted = str(request.query_params.get("tool") or "")
+    tool = next((item for item in catalog if item.name == wanted),
+                catalog[0] if catalog else None)
+
+    raw_input = str(request.query_params.get("input") or "").strip()
+    payload, error, result = {}, "", None
+    if tool is not None:
+        if raw_input:
+            import json
+
+            try:
+                payload = json.loads(raw_input)
+                if not isinstance(payload, dict):
+                    raise ValueError(_t("input phải là một object JSON"))
+            except (ValueError, TypeError) as exc:
+                error = str(exc)
+                payload = {}
+        else:
+            payload = examples.example_input(tool)
+
+        if not error:
+            try:
+                result = pricing.simulate(db, tool=tool, params=payload)
+            except Exception as exc:  # noqa: BLE001 - shown to this customer
+                # Surfaced rather than swallowed: a price that cannot be
+                # computed is exactly what somebody came here to find out.
+                _log.warning("mo phong gia that bai cho %s: %s: %s",
+                             tool.name, type(exc).__name__, exc)
+                error = _t("Không tính được giá cho đầu vào này.")
+
+    import json as _json
+
+    return _render(request, db, user, "pricing", "dev_pricing.html",
+                   tools=[item.name for item in catalog],
+                   chosen=tool.name if tool is not None else "",
+                   input_json=_json.dumps(payload, ensure_ascii=False,
+                                          indent=2),
+                   result=result, error=error)
+
 
 @router.get("/playground", response_class=HTMLResponse)
 def developer_playground(request: Request, user=Depends(require_account),

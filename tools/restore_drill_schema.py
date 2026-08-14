@@ -142,7 +142,11 @@ def main() -> int:
                     "uq_api_policy_subject",
                     # Mat rang buoc nay = hai cong tat cung pham vi/doi tuong,
                     # nen "tat roi hay chua" khong con mot cau tra loi.
-                    "uq_api_kill_subject"):
+                    "uq_api_kill_subject",
+                    # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
+                    # cong cu, va mot dau gia tren hoa don khong con tro ve
+                    # duoc mot dong duy nhat.
+                    "uq_api_pricing_label"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()
