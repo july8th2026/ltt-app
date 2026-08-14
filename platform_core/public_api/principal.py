@@ -45,6 +45,9 @@ class Principal:
     #: before projects existed; ownership and billing still hang off `user_id`,
     #: so nothing downstream may *require* it (EXT-04).
     project_id: str = ""
+    #: "live" or "test". Everything downstream reads this rather than the key
+    #: row, so a sandbox decision is made once, at the boundary (EXT-12).
+    mode: str = "live"
     scopes: frozenset = field(default_factory=frozenset)
     allowed_tools: frozenset = field(default_factory=frozenset)
     request_id: str = ""

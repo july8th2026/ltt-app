@@ -260,7 +260,7 @@ bằng code — chúng cần tài nguyên/phê duyệt. → EXT-21 nhắc lại.
 | 12 | Request log / trace / job timeline cho khách | `MISSING` | log chỉ vào file của operator (`ltt.public_api.access`) | EXT-09 |
 | 13 | Webhook console / event catalog / resend | `MISSING` | chỉ có list deliveries qua API | EXT-10 |
 | 14 | Budgets / credit alerts / notifications | `MISSING` | chỉ có trần credit ngày (chặn cứng), không có cảnh báo; `platform_core/mailer.py` có sẵn để tái dùng | EXT-11 |
-| 15 | Sandbox / test mode | `MISSING` | grep `sandbox|test_mode` trong code = 0 (chỉ là chữ trong docs nói *chưa có*) | EXT-12 |
+| 15 | Sandbox / test mode | ✅ `DONE` (EXT-12) | `platform_core/public_api/sandbox.py`, cột `developer_api_keys.mode`, tiền tố khoá `ltt_tk`, `tests/test_204_sandbox.py` | — |
 | 16 | Admin API console | `MISSING` | xem §1.L | EXT-13 |
 | 17 | Policy/tier/quota/kill switch | `MISSING` | xem §1.G | EXT-14 |
 | 18 | Pricing version / margin / quote simulator | `MISSING` | giá lấy thẳng từ `credit_for`, không snapshot | EXT-15 |

@@ -79,6 +79,9 @@ MANIFEST = AppManifest(
             # keeps API and UI charging identically. Expose it the day the cost
             # function prices per model, as the image-generation tool does.
             "hidden": ("model",),
+            # `count` decides how many images come back, so test mode returns
+            # that many canned files instead of always one (EXT-12).
+            "output_counts": {"image_keys": "count"},
             "params": {
                 "topic": {
                     "description": ("What the thumbnail is about. The whole "

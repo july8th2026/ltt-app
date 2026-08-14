@@ -184,7 +184,9 @@ bộ suite mới lộ.
 
 1. **Giới hạn nhịp là per-process.** Một tiến trình web thì đúng; chạy nhiều
    instance thì lớp nhịp nhân lên theo số instance (lớp job/credit vẫn đúng).
-2. **Không có sandbox.** Mọi lời gọi tiêu credit thật.
+2. ~~Không có sandbox.~~ **Đã có từ EXT-12**: khoá `ltt_tk` chạy hết chuỗi
+   thật, thay đúng một mắt xích (handler), không tiêu credit. Giới hạn còn lại:
+   sandbox không nói gì về **chất lượng** đầu ra.
 3. **Trần credit ngày mặc định tắt** — cần chủ sản phẩm chọn số.
 4. **3 tool bị hoãn vì một nguyên nhân gốc**: giá theo thời lượng client khai +
    worker nâng hold (`video.upscale`, `video.subtitle`, `video.short_clips`).

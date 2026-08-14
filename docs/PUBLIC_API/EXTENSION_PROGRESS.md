@@ -1216,3 +1216,132 @@ route + hai template, xoá `test_203`.
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/12_SANDBOX_TEST_MODE_MOCK_EXECUTION_AND_LIVE_ISOLATION.txt`
 — **checkpoint full gate**, và là nơi thi hành D4.
+
+---
+
+## EXT-12 — SANDBOX / TEST MODE ✅ (checkpoint full gate)
+
+### Entry gate
+
+EXT-11 PASS ✅ (`16ce533`), cây sạch. Migration mới: **`b4c5d6e7f8a9`** (head),
+thêm đúng **một cột**: `developer_api_keys.mode`.
+
+### Thi hành D4: thay đúng MỘT mắt xích
+
+Sandbox này không phải một bản sao của API. Nó **là** API, với handler bị thay:
+
+```
+auth → scope → catalog → validate → quote → Idempotency-Key → job row →
+worker lease → [HANDLER ← chỗ duy nhất bị thay] → settlement → artifact →
+event → webhook + chữ ký
+```
+
+Chỗ thay nằm ở `platform_core/job_runner._ket_qua_sandbox()`: job có
+`params["_api"]["mode"] == "test"` thì worker dựng kết quả từ **`output_schema`
+đã công bố của chính tool đó** thay vì gọi handler. Sandbox mà bỏ qua bất kỳ
+bước nào ở trên sẽ cho một tích hợp xanh ở đây rồi vỡ ở production — tệ hơn là
+không có sandbox (COMMON_RULES §3: không dựng engine song song).
+
+### Hai luật cứng, và cách chúng được thi hành
+
+**Khoá test không tiêu được credit — không phải "tiêu ít".** `invocation.submit`
+rẽ sang `jobs.submit` (không `submit_with_credit`), nên **không có `giu_cho`**,
+không có dòng sổ, không có gì để quyết toán. Đây là tính chất khiến một khoá
+test bị rò trở nên vô hại — thứ khoá live không bao giờ có được.
+
+Hệ quả có chủ ý: **trần chi tiêu không áp lên test**. Trần ngày (operator) và
+ngân sách (EXT-11) đo *chi tiêu*; áp chúng lên một lời gọi không thể chi là đo
+một việc không thể xảy ra. Cũng **không** đòi số dư: người mà sandbox sinh ra để
+phục vụ chính là người **chưa** nạp tiền. Giới hạn **nhịp** và **số job song
+song** thì vẫn áp — lời gọi test vẫn dùng máy thật.
+
+**Live và test không trộn.** Cùng bảng, cùng worker, một cờ:
+- `sandbox.ensure_same_mode()` trên `GET /jobs/{id}`, `POST /jobs/{id}/cancel`
+  và `/artifacts/*` → **404 y hệt** tài nguyên của người khác, không tạo oracle;
+- `sandbox.restrict_to_mode()` lọc **trong SQL** ở `GET /jobs`. Lọc sau khi lấy
+  trang sẽ cho trang ngắn và cờ `has_more` sai — khách sẽ phân trang qua lỗ hổng;
+- job **không có** `mode` (tạo từ giao diện web, hoặc có trước EXT-12) là
+  **live**. Khoá test không thừa hưởng lịch sử của tài khoản.
+
+### Tiền tố, không phải một cột phải tra
+
+`ltt_sk` = live, `ltt_tk` = test. Một bí mật lọt vào log hay ảnh chụp màn hình
+phải phân loại được **bằng mắt**; "khoá này có tiêu tiền được không" không nên
+cần một truy vấn. Không dùng hậu tố trong token vì định dạng là
+`<prefix>_<key_id>_<secret>` và secret là base64 url-safe có chứa `_`.
+
+Xoay khoá **giữ nguyên** môi trường: một khoá lặng lẽ thành live khi xoay sẽ
+chĩa một tích hợp đã xong vào tiền thật; chiều ngược lại chĩa production vào
+mock và trông y như sự cố.
+
+### Kiểm bằng trình duyệt bắt được thứ test không thấy
+
+Chạy thật trên uvicorn (cổng 8123, SQLite tạm, provider bị stub — **không** đụng
+8100/8000): gọi `count=2`, báo giá **10 credit**, nhưng sandbox trả **1** ảnh.
+Đúng *hình dạng*, sai *số lượng* — đủ để vỡ một tích hợp đọc phần tử thứ hai.
+
+Nền tảng không suy ra được điều này; chỉ app biết `count` nhân `image_keys`. Nên
+nó vào **hợp đồng app**: `api_contract["output_counts"] = {"image_keys": "count"}`,
+có validate hai phía trong `registry._validate_output_counts` (khai một đầu ra
+không phải danh sách, hoặc một tham số không tồn tại → `RegistryError`). Trường
+này **nội bộ**, không vào `to_public_dict`, nên **không contract hash nào đổi**.
+Trần `MAX_SANDBOX_FILES = 8`.
+
+Kiểm trình duyệt cũng bắt một lỗi cũ hơn: sau khi có project mặc định, ô chọn
+project hiện **hai** dòng "Default" (một placeholder rỗng + một project thật).
+Đã sửa: placeholder chỉ hiện khi chưa có project nào.
+
+### Cổng lập trình viên
+
+Tab **Khoá** có nhóm **Môi trường** (Live mặc định / Test), cột **Môi trường**
+trong bảng, chip `Test` ở trang **Sử dụng** (dòng test luôn là 0 credit — nêu
+tên môi trường để người đọc không tưởng số 0 là lỗi), và một mục trong
+**Tài liệu & SDK**. `GET /api/v1/me` trả thêm `mode` để một deployment tự khẳng
+định được trong smoke check của chính nó.
+
+Webhook: payload thêm `data.mode`, chữ ký/header/hình dạng **giống hệt** live —
+một endpoint phục vụ được cả hai thế giới, và bên nhận verify ở sandbox thì
+verify được ở production.
+
+### Tests
+
+`tests/test_204_sandbox.py` — **23 test**: tiền tố nhận diện được; cả hai tiền
+tố vào cùng một cửa và `/me` nói đúng môi trường; xoay khoá giữ môi trường; lời
+gọi test **không chạm sổ** (số dư + mọi dòng sổ); sandbox mở cho tài khoản **0
+credit**; hard cap chặn live nhưng không chặn test; test **không** gọi provider
+còn live **có**; hình dạng đúng `output_schema`; **số lượng** đúng `count`
+(1/2/4); tool không khai `output_counts` vẫn trả 1; artifact tải được qua đúng
+đường thật và là PNG thật; `mode` có trên mọi job; hai chiều 404 (đọc, huỷ,
+tải artifact); listing tách hai thế giới; job cũ không có mode là live; webhook
+test ký như live và nói `mode`; cổng hiện môi trường; và các luật đơn vị.
+
+`test_191` đổi một khẳng định: hướng dẫn từng "nói thẳng chưa có sandbox", giờ
+nói thẳng sandbox **không chứng minh được chất lượng** đầu ra.
+
+### Tài liệu đã sửa cho khớp sự thật mới
+
+`DEVELOPER_GUIDE.md` §12 (viết lại), `PROTOCOL_V1.md` §2.2 (mới),
+`THREAT_MODEL_V1.md` (rủi ro "không có sandbox" → đóng, nêu rủi ro còn lại),
+`RELEASE_READINESS_V1.md`, `DEVELOPER_KEYS_V1.md` §10 (cột `mode` giờ có ngữ
+nghĩa thật đứng sau), `FULL_PLATFORM_GAP_MATRIX.md` #15 → DONE.
+
+### Rollback
+
+`alembic downgrade a3b4c5d6e7f8`; xoá `platform_core/public_api/sandbox.py`; bỏ
+nhánh `is_test` trong `invocation.submit`, `_ket_qua_sandbox` trong worker,
+`ensure_same_mode`/`restrict_to_mode` trong route job/upload; bỏ `mode` khỏi
+`Principal`/`/me`/payload webhook/`_public_job`/dòng usage; bỏ `output_counts`
+khỏi hai manifest + `registry` + `catalog`; hoàn nguyên template; xoá `test_204`.
+Khoá `ltt_tk` đã cấp sẽ ngừng phân giải — thu hồi chúng trước khi hạ.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-12 | Kết quả |
+|---|---|
+| Default sandbox provider cost = 0 | ✅ không `giu_cho`, không dòng sổ, `credit.held = charged = 0`; chạy được với số dư 0 |
+| No live/mock cross-over | ✅ 404 hai chiều (đọc/huỷ/artifact), listing lọc trong SQL, job không có mode = live |
+| Schema parity | ✅ dựng từ `output_schema`; **và** đúng số lượng theo `output_counts` (lỗi do kiểm trình duyệt bắt) |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/13_API_ADMIN_CONSOLE_CORE_USERS_PROJECTS_KEYS_CLIENTS_TOOLS.txt`
+(EXT-13).

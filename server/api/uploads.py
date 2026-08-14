@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from platform_core import upload_sessions
 from platform_core.models import Job, UPLOAD_READY
-from platform_core.public_api import media
+from platform_core.public_api import media, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import invalid_request, not_found
 from platform_core.public_api.principal import Principal, ensure_owner
@@ -219,7 +219,8 @@ def _owned_artifact(db, principal: Principal, artifact_id: str, config):
     from platform_core.public_api.invocation import api_meta
 
     job_id, field, index = media.parse_artifact_id(artifact_id)
-    job = ensure_owner(db.get(Job, job_id), principal)
+    job = sandbox.ensure_same_mode(
+        ensure_owner(db.get(Job, job_id), principal), principal)
     name = api_meta(job).get("tool") or ""
     tool = next((entry for entry in build_catalog(config) if entry.name == name),
                 None)

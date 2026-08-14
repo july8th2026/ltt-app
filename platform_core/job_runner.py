@@ -311,7 +311,9 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
             "attempt": attempt}, event_key=f"execution-started:{attempt}")
         try:
             handler = jobq.resolve_handler(job_type)
-            result = handler(params, ctx)
+            result = _ket_qua_sandbox(job_id, params)
+            if result is None:
+                result = handler(params, ctx)
             if not isinstance(result, dict):
                 result = {"result": result}
         except JobCancelled:
@@ -496,6 +498,39 @@ def _quet_canh_bao() -> None:
             log.info("canh bao API: %d thong bao moi", raised)
         if gone:
             log.info("don %d thong bao API het han", gone)
+
+
+def _ket_qua_sandbox(job_id: str, params: dict):
+    """Canned output for a test-mode job, or ``None`` for a live one.
+
+    This is the single link test mode replaces. Everything before it — auth,
+    scopes, validation, quoting, idempotency, the job row, the lease — and
+    everything after it — settlement, artifacts, events, webhooks — is the same
+    code a live call runs. A sandbox that skipped any of those would let an
+    integration pass here and fail in production (EXT-12, decision D4).
+    """
+    from platform_core.public_api import sandbox
+    from platform_core.public_api.catalog import build_catalog
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.storage import get_storage
+
+    meta = (params or {}).get("_api")
+    if not isinstance(meta, dict) or not sandbox.is_test(meta.get("mode")):
+        return None
+
+    name = str(meta.get("tool") or "")
+    # Built for this one tool rather than read from process configuration: the
+    # worker must answer the same shape whatever the API process happens to be
+    # publishing right now, and the job already names its tool.
+    config = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                     "LTT_PUBLIC_API_TOOLS": name})
+    tool = next((item for item in build_catalog(config) if item.name == name),
+                None)
+    if tool is None:
+        raise RuntimeError("sandbox job names a tool that is not published")
+
+    log.info("job %s chay che do test: khong goi provider", job_id[:8])
+    return sandbox.canned_result(tool, params, get_storage())
 
 
 def _ghi_metrics() -> None:

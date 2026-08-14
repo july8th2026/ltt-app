@@ -144,6 +144,10 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
                 # running several projects otherwise has no way to confirm from
                 # the outside that it picked up the right key.
                 "project_id": principal.project_id,
+                # "live" or "test". The first thing a deployment should assert
+                # in its own smoke check: pointing production at a sandbox key
+                # looks like an outage, and the reverse costs real money.
+                "mode": principal.mode,
                 "scopes": sorted(principal.scopes),
                 "allowed_tools": sorted(principal.allowed_tools),
             },

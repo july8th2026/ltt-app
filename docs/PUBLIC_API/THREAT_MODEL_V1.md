@@ -52,7 +52,7 @@ nào, và cái gì chặn**, cộng với những việc operator phải làm tr
 | Rủi ro | Trạng thái | Vì sao chấp nhận được lúc này |
 |---|---|---|
 | Giới hạn nhịp là **per-process** | Mở | Nền tảng chạy một tiến trình web (ADR-005). Chạy nhiều instance thì lớp 1–3 nhân lên theo số instance; lớp 4–5 vẫn đúng. Phải viết ADR trước khi scale ngang. |
-| **Không có sandbox** | Mở | Mọi lời gọi tiêu credit thật. Tài liệu nói thẳng; giảm rủi ro bằng trần credit ngày. |
+| ~~Không có sandbox~~ | **Đóng (EXT-12)** | Khoá test `ltt_tk` chạy đúng chuỗi live nhưng không gọi provider và **không chạm sổ credit**, nên khoá test lộ ra không mất tiền. Live/test cách ly cứng (hỏi chéo trả 404). Rủi ro còn lại: sandbox không chứng minh được chất lượng đầu ra — tài liệu nói thẳng. |
 | Trần credit ngày mặc định **tắt** | Mở | Là quyết định sản phẩm (số bao nhiêu), không phải mặc định kỹ thuật. **Nên đặt trước khi mở cho khách ngoài.** |
 | SDK TypeScript chưa có toolchain kiểm | Mở | Repo chưa có TS toolchain ngoài ba app Vite; hợp đồng được kiểm ở mức văn bản. |
 | Quét lỗ hổng phụ thuộc | Mở | Không có `pip-audit` cài sẵn và không có chính sách lấy advisory. `pip list --outdated` cho thấy nhiều gói có bản mới — nâng cấp là việc riêng, Q17 buộc pin cận trên. |

@@ -35,7 +35,7 @@ from sqlalchemy.exc import IntegrityError
 
 from platform_core.public_api.scopes import normalize_scopes
 from platform_core.public_api.tables import (DeveloperApiKey, KEY_PREFIX,
-                                             DEVKEY_ACTIVE)
+                                             KEY_PREFIX_TEST, DEVKEY_ACTIVE)
 
 # 32 bytes = 256 bits, urlsafe-base64 without padding -> 43 characters.
 SECRET_BYTES = 32
@@ -130,8 +130,9 @@ def _new_secret() -> str:
     return secrets.token_urlsafe(SECRET_BYTES)[:SECRET_LENGTH]
 
 
-def format_token(key_id: str, secret: str) -> str:
-    return f"{KEY_PREFIX}_{key_id}_{secret}"
+def format_token(key_id: str, secret: str, mode: str = "live") -> str:
+    prefix = KEY_PREFIX_TEST if str(mode) == "test" else KEY_PREFIX
+    return f"{prefix}_{key_id}_{secret}"
 
 
 def parse_token(token: str) -> tuple[str, str] | None:
@@ -148,7 +149,7 @@ def parse_token(token: str) -> tuple[str, str] | None:
     parts = token.split("_", 3)
     if len(parts) != 4:                       # "ltt", "sk", key_id, secret
         return None
-    if f"{parts[0]}_{parts[1]}" != KEY_PREFIX:
+    if f"{parts[0]}_{parts[1]}" not in (KEY_PREFIX, KEY_PREFIX_TEST):
         return None
     key_id, secret = parts[2], parts[3]
     if len(key_id) != KEY_ID_LENGTH or len(secret) != SECRET_LENGTH:
@@ -216,7 +217,7 @@ def ip_allowed(key: DeveloperApiKey, address: str) -> bool:
 
 
 def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
-          allowed_ips=(), project_id: str = "",
+          allowed_ips=(), project_id: str = "", mode: str = "live",
           expires_at: datetime | None = None, env: dict | None = None,
           now: datetime | None = None) -> tuple[DeveloperApiKey, str]:
     """Create a key. Returns the row and the plaintext token **once**.
@@ -259,8 +260,8 @@ def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
             key_id=key_id, verifier_digest=digest_secret(secret, pepper),
             pepper_version=version, scopes=clean_scopes,
             allowed_tools=clean_tools, allowed_ips=clean_ips,
-            project_id=str(project_id) or None, enabled=True,
-            created_at=current, expires_at=expiry,
+            project_id=str(project_id) or None, mode=str(mode or "live"),
+            enabled=True, created_at=current, expires_at=expiry,
         )
         db.add(key)
         try:
@@ -269,7 +270,7 @@ def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
             db.rollback()
             last_error = exc
             continue
-        return key, format_token(key_id, secret)
+        return key, format_token(key_id, secret, key.mode)
     raise DeveloperKeyError("Could not allocate a unique key id.") from last_error
 
 
@@ -405,7 +406,10 @@ def rotate(db, key: DeveloperApiKey, *, env: dict | None = None,
         except IntegrityError:
             db.rollback()
             continue
-        return format_token(key_id, secret)
+        # Same mode as before: rotation replaces secret material, and a key that
+        # silently changed world on rotation would point a live integration at
+        # mocks (or a test one at the ledger).
+        return format_token(key_id, secret, key.mode)
     raise DeveloperKeyError("Could not allocate a unique key id.")
 
 

@@ -50,14 +50,16 @@ def enqueue_for_job(db, job) -> int:
 
     from platform_core.public_api.invocation import api_meta
 
-    tool = api_meta(job).get("tool") or ""
+    meta = api_meta(job)
+    tool = meta.get("tool") or ""
     # Deterministic: the same job in the same terminal state is the same event,
     # whoever asks and however often.
     event_id = uuid.uuid5(uuid.NAMESPACE_URL,
                           f"ltt:job:{job.id}:{job.status}").hex
     payload = webhooks.build_payload(
         event_id=event_id, event_type=event_type, job_id=job.id, tool=tool,
-        status=event_type.split(".", 1)[-1])
+        status=event_type.split(".", 1)[-1],
+        mode=str(meta.get("mode") or "live"))
 
     queued = 0
     for subscription in subscriptions:

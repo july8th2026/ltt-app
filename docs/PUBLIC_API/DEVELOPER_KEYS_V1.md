@@ -118,8 +118,10 @@ Test bằng PostgreSQL thật (UNIQUE dưới tải, FK RESTRICT) nằm trong
 
 ## 10. Cố ý KHÔNG có
 
-- Không có cột `environment`/`sandbox`: chưa có ngữ nghĩa thật cho sandbox thì
-  một cột như vậy chỉ là lời hứa suông trong lược đồ.
+- ~~Không có cột `environment`/`sandbox`~~ — **EXT-12 đã thêm cột `mode`**
+  (`live`/`test`), đúng vào lúc có ngữ nghĩa thật đứng sau nó: không giữ chỗ
+  credit, không gọi provider, cách ly cứng khỏi job live. Trước đó một cột như
+  vậy chỉ là lời hứa suông trong lược đồ.
 - Không có route HTTP nào ở prompt này. Tạo/thu hồi khoá sẽ nằm ở portal có
   phiên đăng nhập (Prompt 15); một khoá tự cấp khoá khác là leo thang quyền
   không cần thiết cho V1.

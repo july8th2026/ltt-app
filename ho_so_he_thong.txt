@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:558ba774ed2d4c44d9021827ea2d5cb30311c569a0e2fa1bef9ed2422532e1e2
-Nguồn đã quét : 1086 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:b6f15028e84f34deb80543d40fe45a71b9132f9b234747b7a6d1ded94404c22c
+Nguồn đã quét : 1089 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -593,33 +593,33 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
-- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:262
-- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:609
-- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:634
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:802
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:555
-- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:278
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:817
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:854
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:867
-- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:375
-- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:408
-- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:650
-- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:660
-- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:337
-- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:271
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:911
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:927
-- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:284
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:811
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:439
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:474
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:562
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:689
-- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:780
-- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:758
-- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:736
-- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:718
+- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:264
+- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:611
+- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:636
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:804
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:557
+- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:280
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:819
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:858
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:871
+- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:377
+- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:410
+- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:652
+- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:662
+- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:339
+- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:273
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:915
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:931
+- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:286
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:813
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:441
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:476
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:564
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:691
+- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:782
+- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:760
+- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:738
+- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:720
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -808,17 +808,17 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
 - agent_workflows → AgentWorkflow | platform_core/models.py:432
-- api_budgets → ApiBudget | platform_core/public_api/tables.py:286
+- api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_keys → ApiKey | platform_core/models.py:589
-- api_notifications → ApiNotification | platform_core/public_api/tables.py:329
-- api_projects → ApiProject | platform_core/public_api/tables.py:56
+- api_notifications → ApiNotification | platform_core/public_api/tables.py:339
+- api_projects → ApiProject | platform_core/public_api/tables.py:62
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
 - chat_conversations → ChatConversation | platform_core/models.py:732
 - chat_messages → ChatMessage | platform_core/models.py:752
 - credit_entries → CreditEntry | platform_core/models.py:535
 - credit_packages → CreditPackage | platform_core/models.py:665
-- developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:101
+- developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
 - gpu_leases → GpuLease | platform_core/models.py:773
 - job_events → JobEvent | platform_core/models.py:320
 - jobs → Job | platform_core/models.py:245
@@ -839,15 +839,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
 - payment_orders → PaymentOrder | platform_core/models.py:689
 - platform_info → PlatformInfo | platform_core/models.py:42
-- public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:190
-- public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:238
-- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:411
-- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:370
+- public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
+- public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
+- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:421
+- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:380
 - sessions → Session | platform_core/models.py:134
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (35)
+6. ALEMBIC MIGRATIONS (36)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -883,6 +883,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - e1f2a3b4c5d6 ← d0e1f2a3b4c5 | them bang nhat ky request cho Public API (EXT-09) | alembic/versions/20260814_1400_public_api_requests.py
 - f2a3b4c5d6e7 ← e1f2a3b4c5d6 | them cot xoay secret cho webhook (EXT-10) | alembic/versions/20260814_1800_webhook_secret_rotation.py
 - a3b4c5d6e7f8 ← f2a3b4c5d6e7 | them ngan sach va thong bao cho khu API (EXT-11) | alembic/versions/20260814_2200_api_budgets_notifications.py
+- b4c5d6e7f8a9 ← a3b4c5d6e7f8 | danh dau khoa API la live hay test (EXT-12) | alembic/versions/20260814_2300_api_key_mode.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1000,7 +1001,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (206 file pytest + 3 frontend)
+10. QUALITY GATES (207 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1140,6 +1141,7 @@ Test inventory:
 - tests/test_201_request_logs.py
 - tests/test_202_webhook_console.py
 - tests/test_203_budgets_alerts.py
+- tests/test_204_sandbox.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1233,8 +1235,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1086 file)
-Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:805, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1089 file)
+Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:808, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1247,7 +1249,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (37)
+[alembic] (38)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1285,6 +1287,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260814_1400_public_api_requests.py
 - alembic/versions/20260814_1800_webhook_secret_rotation.py
 - alembic/versions/20260814_2200_api_budgets_notifications.py
+- alembic/versions/20260814_2300_api_key_mode.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1837,7 +1840,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (77)
+[platform_core] (78)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1903,6 +1906,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/protocol.py
 - platform_core/public_api/quotes.py
 - platform_core/public_api/request_log.py
+- platform_core/public_api/sandbox.py
 - platform_core/public_api/scopes.py
 - platform_core/public_api/tables.py
 - platform_core/public_api/usage.py
@@ -2075,7 +2079,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (222)
+[tests] (223)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2225,6 +2229,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_201_request_logs.py
 - tests/test_202_webhook_console.py
 - tests/test_203_budgets_alerts.py
+- tests/test_204_sandbox.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2387,7 +2392,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1086 file; 9452291 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1089 file; 9495006 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5437,6 +5442,45 @@ def downgrade() -> None:
     op.drop_index("ix_api_budgets_owner", table_name="api_budgets")
     op.drop_index("ix_api_budgets_user_id", table_name="api_budgets")
     op.drop_table("api_budgets")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260814_2300_api_key_mode.py
+SHA256=7b83378a57bd9c1098ab8573fb58a283be304544f0f75f849685d9ab64ae27b2 BYTES=927 LINES=33
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""danh dau khoa API la live hay test (EXT-12)
+
+Mot cot chu khong phai mot bang: che do test dung y nguyen bang khoa, y nguyen
+so credit, y nguyen hang doi job. Bang thu hai se la thu hai phai giu dung, va
+khi hai ban sao lech nhau thi sandbox day nguoi tich hop vao mot loi that o
+production.
+
+Khoa cu deu la "live". Server default de dong cu khong bi NULL, va model cung
+dat default nen khong phu thuoc vao rieng mot phia.
+
+Revision ID: b4c5d6e7f8a9
+Revises: a3b4c5d6e7f8
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "b4c5d6e7f8a9"
+down_revision = "a3b4c5d6e7f8"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column(
+        "developer_api_keys",
+        sa.Column("mode", sa.String(8), nullable=False, server_default="live"),
+    )
+
+
+def downgrade() -> None:
+    op.drop_column("developer_api_keys", "mode")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -22951,7 +22995,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/taoanh/manifest.py
-SHA256=7051793d6d9463277a302c609e5714ad8182571179b19b7f6b991ab3d07a30be BYTES=7702 LINES=163
+SHA256=78f5785a6a7b8313a0ab6d254edb6b860f8549083c1d89fdc58cf60ae0ffc6d2 BYTES=7830 LINES=165
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `taoanh` — Tạo ảnh AI từ mô tả (Gemini Image). Di trú từ BOT GEMINI
@@ -23065,6 +23109,8 @@ MANIFEST = AppManifest(
             # the multi-image form is a Canvas/UI path that takes a list, and
             # the API media contract handles single references only today.
             "hidden": ("image_keys",),
+            # As for the thumbnail tool: `count` multiplies the output.
+            "output_counts": {"image_keys": "count"},
             "params": {
                 "prompt": {
                     "description": ("What to draw. Everything about the image "
@@ -27127,7 +27173,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/thumbnail/manifest.py
-SHA256=e89e49e5310a5207b8b3f7e35523d9d811ed9a0a526f7bc96d112be26c5018eb BYTES=8287 LINES=161
+SHA256=6371af1895b29c421643833dfad74cde4c5006eaebc61b3bce541308ca2268b4 BYTES=8491 LINES=164
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `thumbnail` — tạo thumbnail YouTube bằng Gemini Image API (H5, Q11).
@@ -27210,6 +27256,9 @@ MANIFEST = AppManifest(
             # keeps API and UI charging identically. Expose it the day the cost
             # function prices per model, as the image-generation tool does.
             "hidden": ("model",),
+            # `count` decides how many images come back, so test mode returns
+            # that many canned files instead of always one (EXT-12).
+            "output_counts": {"image_keys": "count"},
             "params": {
                 "topic": {
                     "description": ("What the thumbnail is about. The whole "
@@ -104131,7 +104180,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=98d8df310c55078389622b914e7c7f5db9547899e784995f07dfb3583317e494 BYTES=24865 LINES=577
+SHA256=6e22cd248df9b18fcf0f5e204d861ebf310b3034f4fa21d68f8dc352e0f4e80c BYTES=26564 LINES=612
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104446,7 +104495,9 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
             "attempt": attempt}, event_key=f"execution-started:{attempt}")
         try:
             handler = jobq.resolve_handler(job_type)
-            result = handler(params, ctx)
+            result = _ket_qua_sandbox(job_id, params)
+            if result is None:
+                result = handler(params, ctx)
             if not isinstance(result, dict):
                 result = {"result": result}
         except JobCancelled:
@@ -104631,6 +104682,39 @@ def _quet_canh_bao() -> None:
             log.info("canh bao API: %d thong bao moi", raised)
         if gone:
             log.info("don %d thong bao API het han", gone)
+
+
+def _ket_qua_sandbox(job_id: str, params: dict):
+    """Canned output for a test-mode job, or ``None`` for a live one.
+
+    This is the single link test mode replaces. Everything before it — auth,
+    scopes, validation, quoting, idempotency, the job row, the lease — and
+    everything after it — settlement, artifacts, events, webhooks — is the same
+    code a live call runs. A sandbox that skipped any of those would let an
+    integration pass here and fail in production (EXT-12, decision D4).
+    """
+    from platform_core.public_api import sandbox
+    from platform_core.public_api.catalog import build_catalog
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.storage import get_storage
+
+    meta = (params or {}).get("_api")
+    if not isinstance(meta, dict) or not sandbox.is_test(meta.get("mode")):
+        return None
+
+    name = str(meta.get("tool") or "")
+    # Built for this one tool rather than read from process configuration: the
+    # worker must answer the same shape whatever the API process happens to be
+    # publishing right now, and the job already names its tool.
+    config = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                     "LTT_PUBLIC_API_TOOLS": name})
+    tool = next((item for item in build_catalog(config) if item.name == name),
+                None)
+    if tool is None:
+        raise RuntimeError("sandbox job names a tool that is not published")
+
+    log.info("job %s chay che do test: khong goi provider", job_id[:8])
+    return sandbox.canned_result(tool, params, get_storage())
 
 
 def _ghi_metrics() -> None:
@@ -107572,7 +107656,7 @@ def effective_cap(db, *, user_id: str, project_id: str = "",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
-SHA256=abb50466a247a4eef3fa0361d6a2dbe7ba549ef3f622fdfb2ee3b0403e2e5e2b BYTES=16541 LINES=391
+SHA256=ad15533dda77d5d4fbb2af2cecc9c4c343cdf68976051f1953bf63ef5c16f274 BYTES=17041 LINES=398
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The public tool catalog: what ``/api/v1`` is allowed to offer, and in what shape.
 
@@ -107667,6 +107751,11 @@ class PublicTool:
     app_slug: str
     job_type: str
     model_aliases: dict = field(default_factory=dict)
+    #: ``{output_field: input_param}`` — which input decides how many entries an
+    #: ``artifact[]`` output holds. Internal: it never reaches
+    #: ``to_public_dict``, so declaring it moves no contract hash. Read by test
+    #: mode so a canned answer has the same cardinality as a live one (EXT-12).
+    output_counts: dict = field(default_factory=dict)
     deprecated: str = ""
     #: Former public names that still resolve to this tool. Renaming a tool
     #: without one of these breaks every integration that used the old name.
@@ -107863,6 +107952,8 @@ def project_tool(manifest, tool) -> PublicTool:
         app_slug=manifest.slug,
         job_type=tool.job_type,
         model_aliases=models,
+        output_counts={str(key): str(value) for key, value
+                       in (contract.get("output_counts") or {}).items()},
         deprecated=str(contract.get("deprecated") or ""),
         aliases=tuple(str(name) for name in (contract.get("aliases") or ())),
         execution_mode=mode_of_tool(contract),
@@ -109083,7 +109174,7 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=ad027b3d2086a0a54652dd0d7a757686eb809594ffdb73835c75b1da81e1c98c BYTES=12326 LINES=281
+SHA256=26f2aa6fa358a888e67f357ddc23d4c3da3d225177f7ab61bbd778d5879ee7a3 BYTES=13214 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -109326,6 +109417,7 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     leaves neither behind.
     """
     from platform_core.job_submit import submit_with_credit
+    from platform_core.public_api.sandbox import is_test
 
     meta = {
         "tool": tool.name,
@@ -109334,6 +109426,9 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         # measured from the ledger without joining back through the key — which
         # would break the moment a key is rotated or revoked (EXT-11).
         "project_id": str(getattr(principal, "project_id", "") or ""),
+        # "live" or "test". The worker reads it to decide whether to call a
+        # provider, and every listing reads it to keep the two apart (EXT-12).
+        "mode": str(getattr(principal, "mode", "live") or "live"),
         "quote_intent": str(quote.get("intent") or ""),
         "idempotency_key": str(idempotency_key or ""),
         # The correlation id of the request that created this job, so support
@@ -109356,6 +109451,17 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     dedupe = dedupe_key_for(tool.job_type, {
         "intent": meta["quote_intent"], "key_id": principal.key_id})
 
+    if is_test(getattr(principal, "mode", "live")):
+        # A test key never reaches the ledger. Not "spends little" — cannot
+        # spend, which is the property that makes a leaked test key harmless.
+        # Everything else about the submission is the live path, including the
+        # dedupe key, so a retry behaves here exactly as it will in production.
+        from platform_core import jobs as jobq
+
+        return jobq.submit(
+            db, user_id=principal.user_id, app_slug=tool.app_slug,
+            job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+        )
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
@@ -109370,7 +109476,7 @@ def api_meta(job) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/keys.py
-SHA256=31c50fcd995af548d5a34c05888b97cfcb1bf9402f9c8c874c059d10a20f8ae8 BYTES=16851 LINES=419
+SHA256=b583eb6a43d263fb3e4d1df5c0bf438b7f9b451454da574f63569e7c529a4fff BYTES=17252 LINES=423
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Lifecycle of developer API keys: issue, verify, list, revoke, rotate.
 
@@ -109409,7 +109515,7 @@ from sqlalchemy.exc import IntegrityError
 
 from platform_core.public_api.scopes import normalize_scopes
 from platform_core.public_api.tables import (DeveloperApiKey, KEY_PREFIX,
-                                             DEVKEY_ACTIVE)
+                                             KEY_PREFIX_TEST, DEVKEY_ACTIVE)
 
 # 32 bytes = 256 bits, urlsafe-base64 without padding -> 43 characters.
 SECRET_BYTES = 32
@@ -109504,8 +109610,9 @@ def _new_secret() -> str:
     return secrets.token_urlsafe(SECRET_BYTES)[:SECRET_LENGTH]
 
 
-def format_token(key_id: str, secret: str) -> str:
-    return f"{KEY_PREFIX}_{key_id}_{secret}"
+def format_token(key_id: str, secret: str, mode: str = "live") -> str:
+    prefix = KEY_PREFIX_TEST if str(mode) == "test" else KEY_PREFIX
+    return f"{prefix}_{key_id}_{secret}"
 
 
 def parse_token(token: str) -> tuple[str, str] | None:
@@ -109522,7 +109629,7 @@ def parse_token(token: str) -> tuple[str, str] | None:
     parts = token.split("_", 3)
     if len(parts) != 4:                       # "ltt", "sk", key_id, secret
         return None
-    if f"{parts[0]}_{parts[1]}" != KEY_PREFIX:
+    if f"{parts[0]}_{parts[1]}" not in (KEY_PREFIX, KEY_PREFIX_TEST):
         return None
     key_id, secret = parts[2], parts[3]
     if len(key_id) != KEY_ID_LENGTH or len(secret) != SECRET_LENGTH:
@@ -109590,7 +109697,7 @@ def ip_allowed(key: DeveloperApiKey, address: str) -> bool:
 
 
 def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
-          allowed_ips=(), project_id: str = "",
+          allowed_ips=(), project_id: str = "", mode: str = "live",
           expires_at: datetime | None = None, env: dict | None = None,
           now: datetime | None = None) -> tuple[DeveloperApiKey, str]:
     """Create a key. Returns the row and the plaintext token **once**.
@@ -109633,8 +109740,8 @@ def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
             key_id=key_id, verifier_digest=digest_secret(secret, pepper),
             pepper_version=version, scopes=clean_scopes,
             allowed_tools=clean_tools, allowed_ips=clean_ips,
-            project_id=str(project_id) or None, enabled=True,
-            created_at=current, expires_at=expiry,
+            project_id=str(project_id) or None, mode=str(mode or "live"),
+            enabled=True, created_at=current, expires_at=expiry,
         )
         db.add(key)
         try:
@@ -109643,7 +109750,7 @@ def issue(db, *, user_id: str, name: str = "", scopes=(), allowed_tools=(),
             db.rollback()
             last_error = exc
             continue
-        return key, format_token(key_id, secret)
+        return key, format_token(key_id, secret, key.mode)
     raise DeveloperKeyError("Could not allocate a unique key id.") from last_error
 
 
@@ -109779,7 +109886,10 @@ def rotate(db, key: DeveloperApiKey, *, env: dict | None = None,
         except IntegrityError:
             db.rollback()
             continue
-        return format_token(key_id, secret)
+        # Same mode as before: rotation replaces secret material, and a key that
+        # silently changed world on rotation would point a live integration at
+        # mocks (or a test one at the ledger).
+        return format_token(key_id, secret, key.mode)
     raise DeveloperKeyError("Could not allocate a unique key id.")
 
 
@@ -110060,7 +110170,7 @@ def enforce_daily_credit(db, *, principal, config, cost: int) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/media.py
-SHA256=7364e263ca1c20a85bea71de7dd8e4733e727d321ecfc73a610c5c2989433ecd BYTES=6118 LINES=144
+SHA256=0609059bf3879b92bb0ee46f7a703f3ac2dfe5cbfa79b3950d195657da46b69d BYTES=6786 LINES=162
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Public media: upload tickets in, artifacts out.
 
@@ -110159,6 +110269,24 @@ def artifacts_of(job, tool) -> list:
             found.append({"id": artifact_id(job.id, field, 0),
                           "field": field, "index": 0})
     return found
+
+
+def store_sandbox_artifact(storage, params: dict, field: str,
+                           index: int) -> str:
+    """Write a canned file and return its storage key.
+
+    Real bytes in real storage, so the download path a sandbox caller exercises
+    is the same one live output uses — presigned URL, expiry and all.
+    """
+    import io
+    import uuid as _uuid
+
+    from platform_core.public_api.sandbox import SAMPLE_PNG
+
+    owner = str((params or {}).get("owner_id") or "sandbox")
+    key = f"users/{owner}/sandbox/{_uuid.uuid4().hex}-{field}-{index}.png"
+    storage.put(key, io.BytesIO(SAMPLE_PNG), content_type="image/png")
+    return key
 
 
 def storage_key_for(job, field: str, index: int, tool=None) -> str:
@@ -110476,7 +110604,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/outbox.py
-SHA256=f7d6f3ce3f960459f49c3e49a7a34584818fb523d0695e7af64d543935787841 BYTES=6923 LINES=163
+SHA256=6aa7ddc99cc45dd4539cfad460c51f2bf817732b82717c1338fbf42a4c8b67d9 BYTES=6987 LINES=165
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The webhook outbox: enqueue in the job's transaction, deliver from the worker.
 
@@ -110530,14 +110658,16 @@ def enqueue_for_job(db, job) -> int:
 
     from platform_core.public_api.invocation import api_meta
 
-    tool = api_meta(job).get("tool") or ""
+    meta = api_meta(job)
+    tool = meta.get("tool") or ""
     # Deterministic: the same job in the same terminal state is the same event,
     # whoever asks and however often.
     event_id = uuid.uuid5(uuid.NAMESPACE_URL,
                           f"ltt:job:{job.id}:{job.status}").hex
     payload = webhooks.build_payload(
         event_id=event_id, event_type=event_type, job_id=job.id, tool=tool,
-        status=event_type.split(".", 1)[-1])
+        status=event_type.split(".", 1)[-1],
+        mode=str(meta.get("mode") or "live"))
 
     queued = 0
     for subscription in subscriptions:
@@ -110741,7 +110871,7 @@ def _positive_int(name: str, value, default: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/principal.py
-SHA256=9a847da11841d1ffa2dbe29e3173d44f2f4880c0b31b8d109df2fa74e0d0c950 BYTES=4886 LINES=113
+SHA256=852b04e3fa47cbefd4d57ea6d10d09005b2e2891998733ab61f70fd2252657bc BYTES=5064 LINES=116
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The caller of a ``/api/v1`` request, and the authorization rules about it.
 
@@ -110790,6 +110920,9 @@ class Principal:
     #: before projects existed; ownership and billing still hang off `user_id`,
     #: so nothing downstream may *require* it (EXT-04).
     project_id: str = ""
+    #: "live" or "test". Everything downstream reads this rather than the key
+    #: row, so a sandbox decision is made once, at the boundary (EXT-12).
+    mode: str = "live"
     scopes: frozenset = field(default_factory=frozenset)
     allowed_tools: frozenset = field(default_factory=frozenset)
     request_id: str = ""
@@ -111594,6 +111727,154 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/sandbox.py
+SHA256=3540925e155786762cb928c8ce40bd81150f707606b43e1fe11b4e88cfbfad38 BYTES=5943 LINES=142
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Test mode: the whole API, with the provider replaced and no money moved.
+
+What a sandbox is for, and what it therefore must be
+----------------------------------------------------
+
+An integrator needs to prove the *wiring*: that their key works, that their
+payload matches the schema, that a retry does not double-charge, that their
+webhook receiver is reachable and verifies a signature. None of that needs a
+provider call. What a sandbox can never prove is output quality — and pretending
+otherwise is how a mock becomes a lie, so quality is checked with one live call
+on the cheapest tool instead.
+
+So test mode changes exactly one link in the chain: the handler. Authentication,
+scopes, the tool catalog, input validation, quoting, the idempotency record, the
+job row, the worker, the webhook and its signature are the same code as live. A
+sandbox that skipped any of those would let an integration pass here and fail in
+production, which is worse than having no sandbox at all (decision D4).
+
+The two hard rules
+------------------
+
+**A test key cannot spend.** Not "spends little" — cannot. It never reaches
+``credit.giu_cho``, so a leaked test key costs nothing, which is the property a
+live key can never have.
+
+**Live and test never mix.** A test key sees only test jobs; a live key sees only
+live ones. Same tables, same worker, one flag — a second ledger or a second queue
+would be a second thing to keep correct (COMMON_RULES §3).
+"""
+from __future__ import annotations
+
+MODE_LIVE = "live"
+MODE_TEST = "test"
+MODES = (MODE_LIVE, MODE_TEST)
+
+#: What a canned artifact contains. A real PNG header so a client that inspects
+#: the bytes sees an image rather than something that only claims to be one.
+SAMPLE_PNG = (b"\x89PNG\r\n\x1a\n"
+              b"\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+              b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+              b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
+              b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
+
+SAMPLE_TEXT = ("This is sandbox output. No provider was called and no credit "
+               "moved. Switch to a live key to get real results.")
+
+
+def is_test(mode: str) -> bool:
+    return str(mode or MODE_LIVE) == MODE_TEST
+
+
+def mode_of_job(job) -> str:
+    """The mode a job was created in, from the meta block the API attached."""
+    from platform_core.public_api.invocation import api_meta
+
+    return str(api_meta(job).get("mode") or MODE_LIVE)
+
+
+def ensure_same_mode(job, principal):
+    """Return ``job``, or raise the same 404 a stranger's job would.
+
+    A test key must not be able to read, cancel or download a live job — and a
+    live key must not see test traffic mixed into its history. Same 404 as
+    ownership uses: a caller cannot tell "not yours" from "wrong world" from
+    "never existed".
+    """
+    from platform_core.public_api.errors import not_found
+
+    if mode_of_job(job) != str(getattr(principal, "mode", MODE_LIVE)
+                               or MODE_LIVE):
+        raise not_found("Not found.")
+    return job
+
+
+def restrict_to_mode(statement, model, principal):
+    """Narrow a job query to the caller's own world.
+
+    Filtered in SQL rather than after the fetch, because filtering a page after
+    it is read gives short pages and a wrong "has more" — the caller would page
+    through gaps.
+
+    Jobs created before this column existed, and every job created from the web
+    UI, carry no mode at all. Those are live work, so a live key sees them and a
+    test key does not.
+    """
+    from sqlalchemy import or_
+
+    from platform_core.public_api.invocation import API_META_KEY
+
+    column = model.params[(API_META_KEY, "mode")].as_string()
+    if is_test(getattr(principal, "mode", MODE_LIVE)):
+        return statement.where(column == MODE_TEST)
+    return statement.where(or_(column.is_(None), column != MODE_TEST))
+
+
+#: Ceiling on canned files per output field. The count comes from validated
+#: input, so it is already bounded by the tool's own schema; this is the belt
+#: that keeps a contract mistake from turning one call into a disk full.
+MAX_SANDBOX_FILES = 8
+
+
+def _how_many(tool, field: str, params: dict) -> int:
+    """How many entries an ``artifact[]`` field should hold.
+
+    A live ``count=2`` call returns two files; a sandbox that always returned
+    one would have the right *shape* and the wrong *cardinality*, which is
+    enough to break an integration that reads the second entry.
+    """
+    param = (getattr(tool, "output_counts", None) or {}).get(field)
+    if not param:
+        return 1
+    try:
+        wanted = int((params or {}).get(param, 1))
+    except (TypeError, ValueError):
+        wanted = 1
+    return max(1, min(wanted, MAX_SANDBOX_FILES))
+
+
+def canned_result(tool, params: dict, storage) -> dict:
+    """A result shaped exactly like the tool's published output schema.
+
+    Driven by the contract rather than hand-written per tool: a sandbox whose
+    response shape drifts from the real one teaches an integrator to parse
+    something that will not arrive.
+    """
+    from platform_core.public_api.media import store_sandbox_artifact
+
+    outputs = (tool.output_schema or {}).get("properties", {})
+    result: dict = {}
+    for field, spec in outputs.items():
+        kind = str(spec.get("type") or "")
+        if kind == "artifact":
+            result[field] = store_sandbox_artifact(storage, params, field, 0)
+        elif kind == "artifact[]":
+            count = _how_many(tool, field, params)
+            result[field] = [store_sandbox_artifact(storage, params, field, i)
+                             for i in range(count)]
+        elif kind == "object":
+            result[field] = {"sandbox": True, "note": SAMPLE_TEXT}
+        else:
+            result[field] = SAMPLE_TEXT
+    return result
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/scopes.py
 SHA256=6245a67279a29af2ef551ef85119fba4a8ec9d106f87efd5d3ba678390cb093e BYTES=2451 LINES=61
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -111662,7 +111943,7 @@ def normalize_scopes(scopes) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=6225c5fd70e0285a11e4475f2242dd35d17ecef3cd0212d2be914b13b19f874c BYTES=22330 LINES=453
+SHA256=9ce5267d54899e70a6464f7bb18e1ec48fe30c34d4ca3912f1a5615978d15c00 BYTES=22990 LINES=463
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -111704,6 +111985,12 @@ from platform_core.db import Base
 # Human-recognisable prefix. "sk" = secret key: if one of these ever appears in
 # a paste, a log or a public repository, it is greppable and revocable.
 KEY_PREFIX = "ltt_sk"
+#: Test keys carry their own prefix rather than a suffix inside the token: the
+#: format is ``<prefix>_<key_id>_<secret>`` and the secret is url-safe base64
+#: containing underscores, so an extra segment could not be parsed apart. A
+#: distinct prefix is also greppable on its own — "is this a test key" is
+#: answerable by looking (EXT-12).
+KEY_PREFIX_TEST = "ltt_tk"
 
 DEVKEY_ACTIVE = "active"
 DEVKEY_REVOKED = "revoked"
@@ -111776,6 +112063,10 @@ class DeveloperApiKey(Base):
         String(36), ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    #: "live" or "test". A test key never reaches the ledger and never reaches a
+    #: provider, so a leaked one costs nothing — the property a live key cannot
+    #: have (EXT-12, decision D4).
+    mode: Mapped[str] = mapped_column(String(8), default="live", nullable=False)
     # Nullable on purpose. Keys issued before projects existed keep working
     # exactly as they did; the migration gives each of them a project, and this
     # column stays nullable so that a future key-issuing path which forgets to
@@ -112121,7 +112412,7 @@ class WebhookDelivery(Base):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/usage.py
-SHA256=b6caf5957a86bd841b4c051f95485c5b7a3765b4d058331d931cc3bb65e4959a BYTES=8765 LINES=208
+SHA256=a598bafb9a7db3771732a359e12cc271bcccb991ad6108cf1929ce2faf003983 BYTES=8952 LINES=211
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Usage and balance — **derived** from the credit ledger, never stored twice.
 
@@ -112237,6 +112528,9 @@ def _line(job, ledger: dict) -> dict:
         "job_id": job.id,
         "tool": meta.get("tool") or None,
         "key_id": meta.get("key_id") or None,
+        # A test line always reads zero credit; naming the mode keeps a reader
+        # from wondering whether the zero is a bug (EXT-12).
+        "mode": meta.get("mode") or "live",
         "status": job.status,
         "created_at": _aware(job.created_at).isoformat() if job.created_at else None,
         "finished_at": (_aware(job.finished_at).isoformat()
@@ -112543,7 +112837,7 @@ def grace_secret(subscription, *, now: datetime | None = None):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/webhooks.py
-SHA256=d6aea9b5567c881ff708c77a5e541509ca4d9f87b0d2a866abead21cd7b70f71 BYTES=9475 LINES=227
+SHA256=013edecbe5ac0cf4ae80219840cc7e42a321798a568399d35f284230b36d4b3c BYTES=9755 LINES=231
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Webhook subscriptions, transactional outbox, signing and SSRF defence.
 
@@ -112733,7 +113027,8 @@ def job_event_type(status: str) -> str:
 
 
 def build_payload(*, event_id: str, event_type: str, job_id: str,
-                  tool: str, status: str, created_at: datetime | None = None) -> dict:
+                  tool: str, status: str, mode: str = "live",
+                  created_at: datetime | None = None) -> dict:
     """Deliberately thin: identifiers and status, never results or params.
 
     A webhook goes to an address the platform cannot vouch for, and a
@@ -112744,8 +113039,11 @@ def build_payload(*, event_id: str, event_type: str, job_id: str,
         "id": str(event_id),
         "type": str(event_type),
         "created_at": (created_at or _now()).isoformat(),
+        # ``mode`` lets one receiver serve both worlds: a test delivery is
+        # signed and shaped exactly like a live one, so the only way to tell
+        # them apart is if the payload says so (EXT-12).
         "data": {"job_id": str(job_id), "tool": str(tool or ""),
-                 "status": str(status)},
+                 "status": str(status), "mode": str(mode or "live")},
     }
 
 
@@ -112776,7 +113074,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=47b4c23f0176cfc4bb566ac77fa9deb6cf933f4c111419da9b5d3e09396472c8 BYTES=36795 LINES=742
+SHA256=45b786592e0d65738fb62451aecad7fae2d536851978ede09ca549b9d1e0ab0c BYTES=38304 LINES=771
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -113125,7 +113423,8 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
 
     unknown_keys = set(contract) - {"public_name", "description", "models",
                                     "enums", "hidden", "scopes", "deprecated",
-                                    "execution_mode", "aliases", "params"}
+                                    "execution_mode", "aliases", "params",
+                                    "output_counts"}
     if unknown_keys:
         raise RegistryError(_t(
             "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
@@ -113191,6 +113490,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
                 "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
                                           param=param))
 
+    _validate_output_counts(manifest, tool, contract.get("output_counts") or {})
     _validate_model_aliases(manifest, tool, models)
     _validate_param_docs(manifest, tool, contract.get("params") or {}, hidden)
 
@@ -113203,6 +113503,33 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} alias trùng chính public_name").format(
                     slug=manifest.slug, tool=tool.name))
+
+
+def _validate_output_counts(manifest: AppManifest, tool: ToolSpec,
+                            counts) -> None:
+    """Which input decides how long a list output is.
+
+    Only the app knows that `count` multiplies `image_keys`, so it is declared
+    here rather than guessed. Checked on both sides — a declaration naming an
+    output that is not a list, or a parameter that does not exist, is a typo
+    that would otherwise surface as a sandbox quietly returning one file
+    (EXT-12).
+    """
+    if not isinstance(counts, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} api_contract.output_counts phải là dict"
+        ).format(slug=manifest.slug, tool=tool.name))
+    for output, param in counts.items():
+        if not str(tool.returns.get(output, "")).endswith("[]"):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} output_counts khai {output!r} nhưng đó "
+                "không phải đầu ra dạng danh sách").format(
+                    slug=manifest.slug, tool=tool.name, output=output))
+        if param not in tool.params_schema:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} output_counts trỏ tới tham số không tồn "
+                "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
+                                         param=param))
 
 
 def _validate_param_docs(manifest: AppManifest, tool: ToolSpec, params,
@@ -118277,7 +118604,7 @@ SHA256=6e165506043f74f61035f098bd1dba1ce3b6b9419ffbb254b7272c17cec19ec5 BYTES=47
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/__init__.py
-SHA256=f91c259535b2c5a0c3a73dc51a665ba7dd768dd8cf71ec03eac33bfc5a4d0ac6 BYTES=11005 LINES=222
+SHA256=c399548aab66b31db388d094b7eab61cc1a7a4938eab4210a15c79faa6280d9f BYTES=11281 LINES=226
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP surface of the Public API — the ``/api/v1`` kernel (Q92).
 
@@ -118425,6 +118752,10 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
                 # running several projects otherwise has no way to confirm from
                 # the outside that it picked up the right key.
                 "project_id": principal.project_id,
+                # "live" or "test". The first thing a deployment should assert
+                # in its own smoke check: pointing production at a sandbox key
+                # looks like an outage, and the reverse costs real money.
+                "mode": principal.mode,
                 "scopes": sorted(principal.scopes),
                 "allowed_tools": sorted(principal.allowed_tools),
             },
@@ -118505,7 +118836,7 @@ __all__ = ["API_V1_PREFIX", "API_V1_ROUTES", "PUBLIC_API_TAG", "PUBLIC_API_TITLE
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/auth.py
-SHA256=62a50ac000424886230ea234740d5c300c356c3294e00976a1d1177f8ff29274 BYTES=7414 LINES=187
+SHA256=de5c92f48f0955719033a135dc7742e5a21e4f8ed712d70197c4665bdb80f3c1 BYTES=7473 LINES=188
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bearer authentication for ``/api/v1``.
 
@@ -118627,6 +118958,7 @@ def resolve_from_database(request, db) -> Principal | None:
         scopes=frozenset(key.scopes or ()),
         allowed_tools=frozenset(key.allowed_tools or ()),
         project_id=str(key.project_id or ""),
+        mode=str(getattr(key, "mode", "live") or "live"),
         request_id=request_id(request),
     )
     # Published before the limiter runs, not after: a 429 belongs to a caller
@@ -119388,7 +119720,7 @@ def documented_paths() -> frozenset:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/jobs.py
-SHA256=25c5b85c0ab1a612c6105d821e7be1ef278a16b721738f09f23787df050c26ff BYTES=17386 LINES=355
+SHA256=b0cf07204a7510aa8399850122f01e5115c27306275a95193ba260696e83c541 BYTES=18540 LINES=372
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/quotes`` and ``/api/v1/jobs`` — the chargeable control plane.
 
@@ -119411,7 +119743,7 @@ from platform_core import credit, jobs as jobq
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, Job)
 from platform_core.public_api import (idempotency, invocation, limits, media,
-                                      metrics, quotes)
+                                      metrics, quotes, sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request, price_changed)
@@ -119465,6 +119797,9 @@ def _public_job(db, job: Job, tool=None) -> dict:
         "started_at": _iso(job.started_at),
         "finished_at": _iso(job.finished_at),
         "credit": {"held": held, "charged": max(0, charged)},
+        # Named on every job, not only test ones: a caller reading a response
+        # should never have to infer which world produced it (EXT-12).
+        "mode": meta.get("mode") or sandbox.MODE_LIVE,
     }
     if job.status == JOB_ERROR:
         body["error"] = {"message": "The job could not be completed."}
@@ -119630,11 +119965,19 @@ def register_job_routes(api, config, tag: str) -> None:
         limits.enforce_active_jobs(
             db, principal=principal, config=config, app_slug=tool.app_slug,
             class_slugs=_class_slugs(tool), resource=_resource_of(tool))
-        limits.enforce_daily_credit(db, principal=principal, config=config,
-                                    cost=cost)
-        # …and the customer's own hard cap, which may be stricter than the
-        # operator's. Whichever allows less wins (EXT-11).
-        limits.enforce_budget(db, principal=principal, cost=cost)
+        # Spending limits apply to spending. A test call moves no credit, so a
+        # daily ceiling or a budget would be metering something that cannot
+        # happen — and requiring a balance would shut the sandbox to exactly the
+        # developer it exists for, one who has not paid yet. The rate and
+        # concurrency limits above still apply: those protect the machine, which
+        # a test call uses like any other (EXT-12).
+        testing = sandbox.is_test(principal.mode)
+        if not testing:
+            limits.enforce_daily_credit(db, principal=principal, config=config,
+                                        cost=cost)
+            # …and the customer's own hard cap, which may be stricter than the
+            # operator's. Whichever allows less wins (EXT-11).
+            limits.enforce_budget(db, principal=principal, cost=cost)
 
         promotions: list = []
         try:
@@ -119656,10 +119999,13 @@ def register_job_routes(api, config, tag: str) -> None:
             # roll back with the database.
             db.commit()
             metrics.increment(metrics.JOBS_CREATED)
-            metrics.increment(metrics.CREDIT_HELD, cost)
+            metrics.increment(metrics.CREDIT_HELD, 0 if testing else cost)
             request.state.api_job_id = job.id
             request.state.api_tool = tool.name
-            request.state.api_credit_delta = -cost
+            # The quote still says what this call would cost live, so an
+            # integrator sees real pricing; what is recorded as spent is zero,
+            # because zero is what moved.
+            request.state.api_credit_delta = 0 if testing else -cost
         except credit.ThieuCreditError as exc:
             # 402 would be more evocative but is not in the platform's error
             # vocabulary; 409 with a stable code keeps the contract machine
@@ -119696,7 +120042,8 @@ def register_job_routes(api, config, tag: str) -> None:
         db: Session = Depends(get_db),
     ) -> JSONResponse:
         page_request = PageRequest.parse(limit, offset)
-        statement = select(Job).where(Job.user_id == principal.user_id)
+        statement = sandbox.restrict_to_mode(
+            select(Job).where(Job.user_id == principal.user_id), Job, principal)
         wanted = str(status or "").strip()
         if wanted:
             if wanted not in PUBLIC_STATUSES:
@@ -119718,7 +120065,8 @@ def register_job_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_READ)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        job = ensure_owner(db.get(Job, str(job_id)), principal)
+        job = sandbox.ensure_same_mode(
+            ensure_owner(db.get(Job, str(job_id)), principal), principal)
         return JSONResponse(_public_job(db, job, _tool_of(job)),
                             headers=_NO_STORE)
 
@@ -119731,7 +120079,8 @@ def register_job_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CANCEL)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        job = ensure_owner(db.get(Job, str(job_id)), principal)
+        job = sandbox.ensure_same_mode(
+            ensure_owner(db.get(Job, str(job_id)), principal), principal)
         refunded = credit.so_da_giu(db, job.id)
         if jobq.cancel(db, job):
             # Same transaction as the cancel: a refund that commits without the
@@ -119855,7 +120204,7 @@ def register_tool_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/uploads.py
-SHA256=a3f77819092cbdeb254fda30d9d9e7c78ffaf0cc24aba86249cfd1f35db1f0de BYTES=11681 LINES=255
+SHA256=07410a12790227c4de6eef83354b425fb9c4def839abe3c95bfd62694e0acdc7 BYTES=11737 LINES=256
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/uploads`` and ``/api/v1/artifacts`` — media in and media out.
 
@@ -119882,7 +120231,7 @@ from sqlalchemy.orm import Session
 
 from platform_core import upload_sessions
 from platform_core.models import Job, UPLOAD_READY
-from platform_core.public_api import media
+from platform_core.public_api import media, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import invalid_request, not_found
 from platform_core.public_api.principal import Principal, ensure_owner
@@ -120078,7 +120427,8 @@ def _owned_artifact(db, principal: Principal, artifact_id: str, config):
     from platform_core.public_api.invocation import api_meta
 
     job_id, field, index = media.parse_artifact_id(artifact_id)
-    job = ensure_owner(db.get(Job, job_id), principal)
+    job = sandbox.ensure_same_mode(
+        ensure_owner(db.get(Job, job_id), principal), principal)
     name = api_meta(job).get("tool") or ""
     tool = next((entry for entry in build_catalog(config) if entry.name == name),
                 None)
@@ -122209,7 +122559,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=a5b400167edfeb98b072c8c690f1bb24eab2cb4884b93b3775331e19a56c4e48 BYTES=43060 LINES=939
+SHA256=f5bf3861a0e734485d728e94f62b976d08f162b71fd9e29527873335456c80f1 BYTES=43314 LINES=943
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -122240,7 +122590,7 @@ from sqlalchemy.orm import Session
 from platform_core import credit
 from platform_core.i18n import N_, _ as _t
 from platform_core.models import Job
-from platform_core.public_api import keys as devkeys, projects, usage
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
 from platform_core.public_api.catalog import build_catalog
 from platform_core.public_api.config import load_public_api_config
 from platform_core.public_api.invocation import api_meta
@@ -122396,6 +122746,7 @@ def _keys_context(db: Session, user, config) -> dict:
                 "allowed_tools": list(key.allowed_tools or ()),
                 "allowed_ips": list(key.allowed_ips or ()),
                 "project": names.get(str(key.project_id or ""), ""),
+                "mode": str(getattr(key, "mode", "live") or "live"),
                 "created_at": key.created_at,
                 "last_used_at": key.last_used_at,
                 "expires_at": key.expires_at,
@@ -122404,6 +122755,7 @@ def _keys_context(db: Session, user, config) -> dict:
         ],
         "scopes": sorted(KNOWN_SCOPES),
         "default_scopes": list(DEFAULT_SCOPES),
+        "modes": list(sandbox.MODES),
         "tools": [tool.name for tool in build_catalog(config)],
     }
 
@@ -123031,7 +123383,7 @@ def create_key(request: Request, name: str = Form(""),
                scopes: list[str] = Form(default=[]),
                allowed_tools: list[str] = Form(default=[]),
                project_id: str = Form(""), allowed_ips: str = Form(""),
-               expires_in_days: str = Form(""),
+               expires_in_days: str = Form(""), mode: str = Form("live"),
                csrf_token: str = Form(""), user=Depends(require_account),
                db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
@@ -123048,7 +123400,9 @@ def create_key(request: Request, name: str = Form(""),
         key, token = devkeys.issue(
             db, user_id=user.id, name=name, scopes=scopes,
             allowed_tools=allowed_tools, project_id=project.id,
-            allowed_ips=_split_ips(allowed_ips), expires_at=expiry)
+            allowed_ips=_split_ips(allowed_ips), expires_at=expiry,
+            mode=(sandbox.MODE_TEST if mode == sandbox.MODE_TEST
+                  else sandbox.MODE_LIVE))
     except Exception as exc:  # noqa: BLE001 - message is for this one customer
         from platform_core.public_api.scopes import ScopeError
 
@@ -130301,7 +130655,7 @@ SHA256=3e6b9072a493e0b418b3f06ec156788ba2332435e26b398f836e1053cafeab59 BYTES=29
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_docs.html
-SHA256=01561447ca7389abfec14329dbfa18243808b4cee1e4235c3da6d39bff847e3f BYTES=1166 LINES=25
+SHA256=7e338bd96013b14ec1b456b65893c646a3d14eda2f7cb6aa6fa69c9c553f722b BYTES=2402 LINES=37
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
@@ -130325,6 +130679,18 @@ SHA256=01561447ca7389abfec14329dbfa18243808b4cee1e4235c3da6d39bff847e3f BYTES=11
   <pre style="overflow-x:auto;"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
      {{ base_url }}/api/v1/me</code></pre>
   <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — xem PROTOCOL_V1.md mục 2.1.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Môi trường test") }}</h2>
+  <p>{{ _("Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố.") }}</p>
+  <ul>
+    <li>{{ _("Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền.") }}</li>
+    <li>{{ _("Khóa test chỉ thấy job test; khóa live chỉ thấy job live. Hỏi chéo trả 404 y hệt job của người khác.") }}</li>
+    <li>{{ _("Mỗi job và mỗi webhook đều có trường mode để bên nhận phân biệt hai thế giới bằng một endpoint.") }}</li>
+    <li>{{ _("Sandbox không chứng minh được CHẤT LƯỢNG kết quả. Muốn biết đầu ra thật thế nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất.") }}</li>
+  </ul>
+  <p class="muted">{{ _("Tạo khóa test ở tab Khóa, chọn Môi trường = Test.") }}</p>
 </div>
 
 {% endblock %}
@@ -130368,7 +130734,7 @@ SHA256=12df58125492d11663c0096fb7aca7785aedbee862fd19ea9f37483357033bed BYTES=98
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_keys.html
-SHA256=4ce67cfd912323508755bb3e7583f0076f269c040f7ba5832cdd905f061da59f BYTES=5812 LINES=125
+SHA256=33c0f5de9fd77d79e4cdefbff2d56c70cec0569b98601fdd691b0b04c45e8ee5 BYTES=7114 LINES=149
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
@@ -130391,7 +130757,7 @@ SHA256=4ce67cfd912323508755bb3e7583f0076f269c040f7ba5832cdd905f061da59f BYTES=58
     <table class="table">
       <thead><tr>
         <th>{{ _("Mã khóa") }}</th><th>{{ _("Tên") }}</th>
-        <th>{{ _("Project") }}</th>
+        <th>{{ _("Project") }}</th><th>{{ _("Môi trường") }}</th>
         <th>{{ _("Trạng thái") }}</th><th>{{ _("Phạm vi") }}</th>
         <th>{{ _("Dùng lần cuối") }}</th><th></th>
       </tr></thead>
@@ -130401,6 +130767,13 @@ SHA256=4ce67cfd912323508755bb3e7583f0076f269c040f7ba5832cdd905f061da59f BYTES=58
           <td><code>{{ key.key_id }}</code></td>
           <td>{{ key.name }}</td>
           <td>{{ key.project or '—' }}</td>
+          <td>
+            {% if key.mode == 'test' %}
+              <span class="chip v">{{ _("Test") }}</span>
+            {% else %}
+              {{ _("Live") }}
+            {% endif %}
+          </td>
           <td>{{ key.status }}</td>
           <td>
             {% for scope in key.scopes %}<code>{{ scope }}</code> {% endfor %}
@@ -130452,12 +130825,29 @@ SHA256=4ce67cfd912323508755bb3e7583f0076f269c040f7ba5832cdd905f061da59f BYTES=58
     <p>
       <label for="key-project">{{ _("Thuộc project") }}</label><br>
       <select id="key-project" name="project_id">
-        <option value="">{{ _("Default") }}</option>
+        {# Chỉ hiện lựa chọn rỗng khi CHƯA có project nào: khi đã có, project
+           mặc định đã nằm trong danh sách, và hai dòng cùng tên "Default" làm
+           người dùng tưởng có hai project. #}
+        {% if not projects %}
+          <option value="">{{ _("Default") }}</option>
+        {% endif %}
         {% for project in projects %}
           <option value="{{ project.id }}">{{ project.name }}</option>
         {% endfor %}
       </select>
     </p>
+    <fieldset>
+      <legend>{{ _("Môi trường") }}</legend>
+      <label style="display:inline-block; margin-right:1rem;">
+        <input type="radio" name="mode" value="live" checked>
+        {{ _("Live — gọi nhà cung cấp thật, trừ credit thật") }}
+      </label>
+      <label style="display:inline-block;">
+        <input type="radio" name="mode" value="test">
+        {{ _("Test — kết quả mẫu, không gọi nhà cung cấp, không trừ credit") }}
+      </label>
+      <p class="muted">{{ _("Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, nên lộ ra cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live chỉ nhìn thấy job live.") }}</p>
+    </fieldset>
     <p>
       <label for="key-expiry">{{ _("Tự hết hạn sau (ngày, để trống = không hết hạn)") }}</label><br>
       <input id="key-expiry" name="expires_in_days" inputmode="numeric"
@@ -131290,7 +131680,7 @@ SHA256=a527025b5dfc2d2c804184151258d710237c6004d04facdba68962d5a5ec6198 BYTES=31
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_usage.html
-SHA256=ae8c0c557192c05765e6869d7005d58c1f5c1caaedc66f1e6540e0c96c8692a8 BYTES=6087 LINES=137
+SHA256=6f6f4c53a1811da20194bde7d2c4b414a9a49000b9c0a9d8c3444bfa0a5f80e4 BYTES=6185 LINES=138
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
@@ -131417,7 +131807,8 @@ SHA256=ae8c0c557192c05765e6869d7005d58c1f5c1caaedc66f1e6540e0c96c8692a8 BYTES=60
           <tr>
             <td>{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
             <td>{{ line.tool or "—" }}</td>
-            <td><code>{{ (line.key_id or "")[:8] }}</code></td>
+            <td><code>{{ (line.key_id or "")[:8] }}</code>
+              {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
             <td>{{ line.status }}</td>
             <td>{{ line.credit.net_charged }}</td>
           </tr>
@@ -162871,7 +163262,7 @@ def test_the_agent_app_is_an_orchestrator_not_a_tool():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_191_developer_portal_sdk.py
-SHA256=c0abf37e0930fd6ffc7646bca3c4ad4b3e465aeb5c316cfce5c535e16ac08298 BYTES=16545 LINES=390
+SHA256=003b87544838710d3d1109369351e9cd63091593eed6cf350ae7a0f290919b72 BYTES=16712 LINES=393
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 15 — developer portal, docs and SDKs.
 
@@ -163129,8 +163520,11 @@ def test_the_guide_documents_the_things_that_cost_money():
     for topic in ("Idempotency-Key", "quote", "scope", "problem+json",
                   "retry_after", "webhook", "upload", "credit"):
         assert topic.lower() in text.lower(), topic
-    # And it is honest about what does not exist yet.
-    assert "Chưa có sandbox" in text
+    # And about the sandbox that now does exist, including the part it cannot
+    # prove: a mock says nothing about output quality (EXT-12).
+    assert "ltt_tk" in text
+    assert "không tiêu được credit" in text
+    assert "chất lượng" in text
 
 
 def test_the_guide_lists_every_published_tool():
@@ -168666,6 +169060,620 @@ def test_the_worker_scans_for_alerts():
     source = Path("platform_core/job_runner.py").read_text(encoding="utf-8")
     assert "alerting.scan_all" in source
     assert "notifications.purge_expired" in source
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_204_sandbox.py
+SHA256=1ffb1195c4f3725625cc61d7e15d08e620c0378704e42992ff4f49819f96b724 BYTES=23877 LINES=608
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-12 — test mode: the whole API, with the provider replaced.
+
+What is being defended here is a pair of claims a developer has to be able to
+trust without reading our code:
+
+* a test key **cannot** spend. Not "spends little" — the ledger is never
+  touched, so a leaked test key costs nothing;
+* live and test **never mix**. A test key sees only test work; a live key sees
+  only live work, and neither can read, cancel or download the other's.
+
+And one claim that keeps the sandbox honest: the response shape is the tool's
+published contract, not a hand-written mock. A sandbox whose shape drifts from
+production teaches an integration to parse something that will never arrive.
+"""
+from __future__ import annotations
+
+import re
+import time
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import (keys as devkeys, limits, sandbox,
+                                      webhooks)
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "sandbox-test-pepper-" + "s" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "jobs:cancel",
+          "artifacts:read", "webhooks:manage")
+INPUT = {"topic": "sandbox", "count": 1}
+RECEIVER = "https://receiver.example.com/hook"
+
+#: Every provider call the fixture saw. A test job must add nothing to it.
+PROVIDER_CALLS: list = []
+
+
+def _public_dns(host: str) -> list:
+    """Resolve the test receiver without depending on somebody else's DNS."""
+    if host.endswith("example.com"):
+        return ["93.184.216.34"]
+    raise OSError(f"unknown test host: {host}")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setattr(webhooks, "_system_resolver", _public_dns)
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'sandbox.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+    PROVIDER_CALLS.clear()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+
+    def _stub(*args, **kwargs):
+        PROVIDER_CALLS.append(1)
+        return b"\x89PNG\r\n\x1a\n" + b"0" * 100
+
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _stub)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "sandbox-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_RPM": "600", "LTT_PUBLIC_API_CREATE_RPM": "200",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+# ── Plumbing ─────────────────────────────────────────────────────────────────
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _sign_in(client, credits: int = 200) -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"sb-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        if credits:
+            credit.cap_tay(db, user.id, credits, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    return user_id
+
+
+def _issue(client, mode: str = "live", scopes=SCOPES) -> str:
+    page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": f"{mode} key", "mode": mode,
+                                "csrf_token": _csrf(page),
+                                "scopes": list(scopes)})
+    found = re.search(r"<code>(ltt_[st]k_[^<]+)</code>", created.text)
+    assert found, created.text[:400]
+    return found.group(1)
+
+
+def _auth(token: str, idem: str = "") -> dict:
+    headers = {"Authorization": f"Bearer {token}"}
+    if idem:
+        headers["Idempotency-Key"] = idem
+    return headers
+
+
+def _run(client, token, payload=None) -> dict:
+    """Quote, submit, run the worker once. Returns the finished job body."""
+    body = dict(payload or INPUT)
+    quote = client.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": body}, headers=_auth(token))
+    assert quote.status_code == 200, quote.text
+    created = client.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote.json()["quote"], "input": body},
+        headers=_auth(token, f"sb-{uuid.uuid4().hex[:10]}"))
+    assert created.status_code == 201, created.text
+
+    from platform_core.job_runner import _chay_mot_job
+
+    assert _chay_mot_job("sandbox-worker") is True
+    finished = client.get(f"{API_V1_PREFIX}/jobs/{created.json()['id']}",
+                          headers=_auth(token))
+    assert finished.status_code == 200, finished.text
+    return finished.json()
+
+
+def _balance(user_id: str) -> int:
+    from platform_core import credit
+
+    gen, db = _session()
+    try:
+        return credit.so_du(db, user_id)
+    finally:
+        _close(gen)
+
+
+def _ledger_rows(user_id: str) -> list:
+    from sqlalchemy import select
+
+    from platform_core.models import CreditEntry
+
+    gen, db = _session()
+    try:
+        return db.execute(select(CreditEntry).where(
+            CreditEntry.user_id == user_id)).scalars().all()
+    finally:
+        _close(gen)
+
+
+# ── A test key announces itself ──────────────────────────────────────────────
+
+def test_a_test_key_is_recognisable_before_it_is_used(portal):
+    """The prefix, not a field somewhere, is what a human sees first.
+
+    A secret in a log or a screenshot has to be classifiable at a glance —
+    "is this the one that can spend?" must not need a database lookup.
+    """
+    _sign_in(portal)
+    assert _issue(portal, "live").startswith("ltt_sk_")
+    assert _issue(portal, "test").startswith("ltt_tk_")
+
+
+def test_both_prefixes_authenticate_through_the_same_door(portal):
+    _sign_in(portal)
+    for mode in ("live", "test"):
+        token = _issue(portal, mode)
+        answer = portal.get(f"{API_V1_PREFIX}/me", headers=_auth(token))
+        assert answer.status_code == 200, (mode, answer.text)
+        # …and /me says which world, so a deployment can assert it in its own
+        # smoke check rather than discovering it from an invoice.
+        assert answer.json()["mode"] == mode
+
+
+def test_rotation_keeps_a_key_in_its_own_world(portal):
+    """Rotation replaces secret material, never the environment.
+
+    A key that quietly became live on rotation would point a finished
+    integration at real money; the other direction would point production at
+    mocks and look like an outage.
+    """
+    _sign_in(portal)
+    token = _issue(portal, "test")
+    key_id = token.split("_")[2]
+
+    page = portal.get("/developers/keys").text
+    rotated = portal.post(f"/developers/keys/{key_id}/rotate",
+                          data={"csrf_token": _csrf(page)})
+    found = re.search(r"<code>(ltt_[st]k_[^<]+)</code>", rotated.text)
+    assert found and found.group(1).startswith("ltt_tk_"), rotated.text[:300]
+
+
+# ── A test key cannot spend ──────────────────────────────────────────────────
+
+def test_a_test_call_never_touches_the_ledger(portal):
+    user_id = _sign_in(portal, credits=200)
+    token = _issue(portal, "test")
+    before = _balance(user_id)
+
+    finished = _run(portal, token)
+
+    assert finished["status"] == "succeeded", finished
+    assert _balance(user_id) == before, "a test call moved credit"
+    assert _ledger_rows(user_id) == [] or all(
+        row.job_id != finished["id"] for row in _ledger_rows(user_id)), (
+        "a test job wrote a ledger row")
+    assert finished["credit"] == {"held": 0, "charged": 0}
+
+
+def test_the_sandbox_is_open_to_an_account_that_has_not_paid(portal):
+    """The developer a sandbox exists for is the one who has not paid yet.
+
+    Requiring a balance for a call that spends nothing would shut the door on
+    exactly that person, and it would be measuring something that cannot happen.
+    """
+    user_id = _sign_in(portal, credits=0)
+    assert _balance(user_id) == 0
+    token = _issue(portal, "test")
+
+    finished = _run(portal, token)
+    assert finished["status"] == "succeeded", finished
+
+
+def test_a_hard_budget_does_not_refuse_a_call_that_spends_nothing(portal):
+    from platform_core.public_api import budgets
+
+    user_id = _sign_in(portal, credits=200)
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=budgets.MIN_AMOUNT,
+                       hard_cap=True)
+        db.commit()
+    finally:
+        _close(gen)
+
+    live_token = _issue(portal, "live")
+    test_token = _issue(portal, "test")
+    # Three images cost more than the cap allows in the whole period.
+    over = {"topic": "sandbox", "count": 3}
+
+    # The live call is refused by the cap — that is EXT-11 still working…
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": over},
+                        headers=_auth(live_token)).json()
+    refused = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote["quote"], "input": over},
+        headers=_auth(live_token, f"sb-{uuid.uuid4().hex[:10]}"))
+    assert refused.status_code == 429, refused.text
+    assert refused.json()["source"] == "budget"
+
+    # …and the same call on a test key goes through, because there is nothing
+    # to cap.
+    assert _run(portal, test_token, over)["status"] == "succeeded"
+
+
+# ── A test key never reaches a provider ──────────────────────────────────────
+
+def test_a_test_job_calls_no_provider_and_a_live_one_does(portal):
+    _sign_in(portal, credits=200)
+
+    _run(portal, _issue(portal, "test"))
+    assert PROVIDER_CALLS == [], "the sandbox called the provider"
+
+    _run(portal, _issue(portal, "live"))
+    assert PROVIDER_CALLS, "the live path stopped calling the provider"
+
+
+# ── Schema parity ────────────────────────────────────────────────────────────
+
+def _published_tool(client, token):
+    detail = client.get(f"{API_V1_PREFIX}/tools/{TOOL}", headers=_auth(token))
+    assert detail.status_code == 200, detail.text
+    return detail.json()
+
+
+def test_the_sandbox_answers_the_shape_the_contract_promises(portal):
+    """Driven by ``output_schema``, so the mock cannot drift from the contract.
+
+    Every artifact field comes back as a downloadable artifact and every data
+    field as data — the same partition a live job produces.
+    """
+    _sign_in(portal, credits=200)
+    token = _issue(portal, "test")
+    finished = _run(portal, token)
+    outputs = _published_tool(portal, token)["output_schema"]["properties"]
+
+    artifact_fields = {name for name, spec in outputs.items()
+                       if str(spec.get("type", "")).startswith("artifact")}
+    data_fields = set(outputs) - artifact_fields
+    assert artifact_fields, "this test assumes the tool returns a file"
+
+    assert {item["field"] for item in finished["outputs"]} == artifact_fields
+    assert set(finished.get("result") or {}) == data_fields
+
+
+def test_the_sandbox_returns_as_many_files_as_the_call_asked_for(portal):
+    """Right shape, right *cardinality*.
+
+    Caught by a browser check, not by a test: a live `count=2` call returns two
+    images and the sandbox returned one, so an integration reading the second
+    entry would have passed here and failed in production. The app declares
+    which input multiplies which output (`api_contract["output_counts"]`);
+    only the app can know that.
+    """
+    _sign_in(portal, credits=200)
+    token = _issue(portal, "test")
+
+    for count in (1, 2, 4):
+        finished = _run(portal, token, {"topic": "sandbox", "count": count})
+        images = [item for item in finished["outputs"]
+                  if item["field"] == "image_keys"]
+        assert len(images) == count, (count, finished["outputs"])
+        assert [item["index"] for item in images] == list(range(count))
+
+
+def test_a_tool_that_declares_no_count_still_answers_one(portal):
+    """The declaration is optional, and its absence is not a failure."""
+    class _Tool:
+        output_schema = {"properties": {"files": {"type": "artifact[]"}}}
+        output_counts: dict = {}
+
+    class _Storage:
+        def put(self, key, stream, content_type=""):
+            return None
+
+    result = sandbox.canned_result(_Tool(), {"count": 4}, _Storage())
+    assert len(result["files"]) == 1
+
+
+def test_a_sandbox_artifact_downloads_through_the_real_path(portal):
+    _sign_in(portal, credits=200)
+    token = _issue(portal, "test")
+    finished = _run(portal, token)
+
+    artifact = finished["outputs"][0]["id"]
+    detail = portal.get(f"{API_V1_PREFIX}/artifacts/{artifact}",
+                        headers=_auth(token))
+    assert detail.status_code == 200, detail.text
+    content = portal.get(f"{API_V1_PREFIX}/artifacts/{artifact}/content",
+                         headers=_auth(token))
+    assert content.status_code == 200
+    assert content.content.startswith(b"\x89PNG"), "canned bytes are not an image"
+
+
+def test_the_mode_is_named_on_every_job(portal):
+    _sign_in(portal, credits=200)
+    assert _run(portal, _issue(portal, "test"))["mode"] == "test"
+    assert _run(portal, _issue(portal, "live"))["mode"] == "live"
+
+
+# ── Live and test never mix ──────────────────────────────────────────────────
+
+def test_neither_key_can_read_the_other_s_job(portal):
+    """The same 404 ownership uses: no oracle, in either direction."""
+    _sign_in(portal, credits=200)
+    live_token = _issue(portal, "live")
+    test_token = _issue(portal, "test")
+
+    live_job = _run(portal, live_token)["id"]
+    test_job = _run(portal, test_token)["id"]
+
+    assert portal.get(f"{API_V1_PREFIX}/jobs/{live_job}",
+                      headers=_auth(test_token)).status_code == 404
+    assert portal.get(f"{API_V1_PREFIX}/jobs/{test_job}",
+                      headers=_auth(live_token)).status_code == 404
+
+
+def test_a_listing_shows_one_world_at_a_time(portal):
+    _sign_in(portal, credits=200)
+    live_token = _issue(portal, "live")
+    test_token = _issue(portal, "test")
+    live_job = _run(portal, live_token)["id"]
+    test_job = _run(portal, test_token)["id"]
+
+    live_ids = [item["id"] for item in portal.get(
+        f"{API_V1_PREFIX}/jobs", headers=_auth(live_token)).json()["items"]]
+    test_ids = [item["id"] for item in portal.get(
+        f"{API_V1_PREFIX}/jobs", headers=_auth(test_token)).json()["items"]]
+
+    assert live_job in live_ids and test_job not in live_ids
+    assert test_job in test_ids and live_job not in test_ids
+
+
+def test_a_job_made_before_this_existed_reads_as_live(portal):
+    """Every job without a mode is live work — including everything the web UI
+    creates. A test key must not inherit the account's whole history."""
+    user_id = _sign_in(portal, credits=200)
+    live_token = _issue(portal, "live")
+    test_token = _issue(portal, "test")
+
+    from platform_core import jobs as jobq
+
+    gen, db = _session()
+    try:
+        legacy = jobq.submit(db, user_id=user_id, app_slug="thumbnail",
+                             job_type="thumbnail.tao_anh",
+                             params={"topic": "old", "count": 1})
+        db.commit()
+        legacy_id = legacy.id
+    finally:
+        _close(gen)
+
+    live_ids = [item["id"] for item in portal.get(
+        f"{API_V1_PREFIX}/jobs", headers=_auth(live_token)).json()["items"]]
+    test_ids = [item["id"] for item in portal.get(
+        f"{API_V1_PREFIX}/jobs", headers=_auth(test_token)).json()["items"]]
+    assert legacy_id in live_ids
+    assert legacy_id not in test_ids
+
+
+def test_a_test_key_cannot_cancel_a_live_job(portal):
+    _sign_in(portal, credits=200)
+    live_token = _issue(portal, "live")
+    test_token = _issue(portal, "test")
+
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(live_token)).json()
+    created = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote["quote"], "input": INPUT},
+        headers=_auth(live_token, f"sb-{uuid.uuid4().hex[:10]}"))
+    job_id = created.json()["id"]
+
+    denied = portal.post(f"{API_V1_PREFIX}/jobs/{job_id}/cancel",
+                         headers=_auth(test_token))
+    assert denied.status_code == 404, denied.text
+    # …and the live owner can still cancel it, so the refusal was about the
+    # world and not about breaking cancellation.
+    assert portal.post(f"{API_V1_PREFIX}/jobs/{job_id}/cancel",
+                       headers=_auth(live_token)).status_code == 200
+
+
+def test_a_test_key_cannot_download_a_live_artifact(portal):
+    _sign_in(portal, credits=200)
+    live_token = _issue(portal, "live")
+    test_token = _issue(portal, "test")
+
+    artifact = _run(portal, live_token)["outputs"][0]["id"]
+    denied = portal.get(f"{API_V1_PREFIX}/artifacts/{artifact}",
+                        headers=_auth(test_token))
+    assert denied.status_code == 404, denied.text
+
+
+# ── The webhook a receiver actually gets ─────────────────────────────────────
+
+def test_a_test_delivery_is_signed_like_a_live_one_and_says_it_is_test(portal):
+    """The whole point of exercising webhooks in a sandbox.
+
+    Same signature algorithm, same header, same payload shape — otherwise a
+    receiver that verifies here would reject production traffic. ``mode`` is
+    what lets one receiver serve both worlds.
+    """
+    from platform_core.public_api import webhook_console
+
+    user_id = _sign_in(portal, credits=200)
+    test_token = _issue(portal, "test")
+    created = portal.post(f"{API_V1_PREFIX}/webhooks",
+                          json={"url": RECEIVER},
+                          headers=_auth(test_token))
+    assert created.status_code in (200, 201), created.text
+    secret = created.json()["secret"]
+
+    _run(portal, test_token)
+
+    gen, db = _session()
+    try:
+        rows = webhook_console.deliveries_for(db, user_id=user_id)
+    finally:
+        _close(gen)
+    assert rows, "a finished test job queued no delivery"
+    payload = dict(rows[0].payload or {})
+    assert payload["data"]["mode"] == "test"
+
+    body = webhooks.canonical_body(payload)
+    stamp = int(time.time())
+    signature = webhooks.sign(secret, timestamp=stamp,
+                              event_id=payload["id"], body=body)
+    assert webhooks.verify(secret, timestamp=stamp, event_id=payload["id"],
+                           body=body, signature=signature)
+
+
+def test_a_live_delivery_still_says_live(portal):
+    from platform_core.public_api import webhook_console
+
+    user_id = _sign_in(portal, credits=200)
+    live_token = _issue(portal, "live")
+    portal.post(f"{API_V1_PREFIX}/webhooks",
+                json={"url": RECEIVER},
+                headers=_auth(live_token))
+    _run(portal, live_token)
+
+    gen, db = _session()
+    try:
+        rows = webhook_console.deliveries_for(db, user_id=user_id)
+    finally:
+        _close(gen)
+    assert rows and dict(rows[0].payload)["data"]["mode"] == "live"
+
+
+# ── The portal ───────────────────────────────────────────────────────────────
+
+def test_the_portal_names_the_environment_of_every_key(portal):
+    _sign_in(portal)
+    _issue(portal, "live")
+    _issue(portal, "test")
+
+    page = portal.get("/developers/keys").text
+    assert "Test" in page and "Live" in page
+    assert 'name="mode"' in page, "the portal offers no way to choose"
+
+
+def test_the_usage_page_marks_a_test_line(portal):
+    _sign_in(portal, credits=200)
+    _run(portal, _issue(portal, "test"))
+    page = portal.get("/developers/usage").text
+    assert "Test" in page
+
+
+# ── The unit rules, without an HTTP app ──────────────────────────────────────
+
+def test_is_test_defaults_to_live_for_anything_unset():
+    assert sandbox.is_test("test") is True
+    assert sandbox.is_test("live") is False
+    assert sandbox.is_test("") is False
+    assert sandbox.is_test(None) is False
+    assert sandbox.is_test("TEST") is False, "only the exact token counts"
+
+
+def test_the_canned_result_follows_the_schema_it_is_given():
+    class _Tool:
+        output_schema = {"properties": {
+            "picture": {"type": "artifact"},
+            "gallery": {"type": "artifact[]"},
+            "package": {"type": "object"},
+            "caption": {"type": "string"},
+        }}
+        output_counts = {"gallery": "count"}
+
+    class _Storage:
+        def __init__(self):
+            self.written = []
+
+        def put(self, key, stream, content_type=""):
+            self.written.append((key, stream.read(), content_type))
+
+    storage = _Storage()
+    result = sandbox.canned_result(_Tool(), {"owner_id": "u1", "count": 3},
+                                   storage)
+
+    assert set(result) == {"picture", "gallery", "package", "caption"}
+    assert isinstance(result["gallery"], list) and len(result["gallery"]) == 3
+    assert result["package"]["sandbox"] is True
+    assert result["caption"] == sandbox.SAMPLE_TEXT
+    assert len(storage.written) == 4, "one file per artifact, three in the list"
+    assert all(data.startswith(b"\x89PNG") for _key, data, _ct in storage.written)
+    assert all(key.startswith("users/u1/sandbox/")
+               for key, _data, _ct in storage.written)
 
 @@@LTT_PROFILE_FILE_END@@@
 

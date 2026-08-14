@@ -186,7 +186,8 @@ def job_event_type(status: str) -> str:
 
 
 def build_payload(*, event_id: str, event_type: str, job_id: str,
-                  tool: str, status: str, created_at: datetime | None = None) -> dict:
+                  tool: str, status: str, mode: str = "live",
+                  created_at: datetime | None = None) -> dict:
     """Deliberately thin: identifiers and status, never results or params.
 
     A webhook goes to an address the platform cannot vouch for, and a
@@ -197,8 +198,11 @@ def build_payload(*, event_id: str, event_type: str, job_id: str,
         "id": str(event_id),
         "type": str(event_type),
         "created_at": (created_at or _now()).isoformat(),
+        # ``mode`` lets one receiver serve both worlds: a test delivery is
+        # signed and shaped exactly like a live one, so the only way to tell
+        # them apart is if the payload says so (EXT-12).
         "data": {"job_id": str(job_id), "tool": str(tool or ""),
-                 "status": str(status)},
+                 "status": str(status), "mode": str(mode or "live")},
     }
 
 

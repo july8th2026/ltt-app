@@ -19,7 +19,7 @@ from platform_core import credit, jobs as jobq
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, Job)
 from platform_core.public_api import (idempotency, invocation, limits, media,
-                                      metrics, quotes)
+                                      metrics, quotes, sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request, price_changed)
@@ -73,6 +73,9 @@ def _public_job(db, job: Job, tool=None) -> dict:
         "started_at": _iso(job.started_at),
         "finished_at": _iso(job.finished_at),
         "credit": {"held": held, "charged": max(0, charged)},
+        # Named on every job, not only test ones: a caller reading a response
+        # should never have to infer which world produced it (EXT-12).
+        "mode": meta.get("mode") or sandbox.MODE_LIVE,
     }
     if job.status == JOB_ERROR:
         body["error"] = {"message": "The job could not be completed."}
@@ -238,11 +241,19 @@ def register_job_routes(api, config, tag: str) -> None:
         limits.enforce_active_jobs(
             db, principal=principal, config=config, app_slug=tool.app_slug,
             class_slugs=_class_slugs(tool), resource=_resource_of(tool))
-        limits.enforce_daily_credit(db, principal=principal, config=config,
-                                    cost=cost)
-        # …and the customer's own hard cap, which may be stricter than the
-        # operator's. Whichever allows less wins (EXT-11).
-        limits.enforce_budget(db, principal=principal, cost=cost)
+        # Spending limits apply to spending. A test call moves no credit, so a
+        # daily ceiling or a budget would be metering something that cannot
+        # happen — and requiring a balance would shut the sandbox to exactly the
+        # developer it exists for, one who has not paid yet. The rate and
+        # concurrency limits above still apply: those protect the machine, which
+        # a test call uses like any other (EXT-12).
+        testing = sandbox.is_test(principal.mode)
+        if not testing:
+            limits.enforce_daily_credit(db, principal=principal, config=config,
+                                        cost=cost)
+            # …and the customer's own hard cap, which may be stricter than the
+            # operator's. Whichever allows less wins (EXT-11).
+            limits.enforce_budget(db, principal=principal, cost=cost)
 
         promotions: list = []
         try:
@@ -264,10 +275,13 @@ def register_job_routes(api, config, tag: str) -> None:
             # roll back with the database.
             db.commit()
             metrics.increment(metrics.JOBS_CREATED)
-            metrics.increment(metrics.CREDIT_HELD, cost)
+            metrics.increment(metrics.CREDIT_HELD, 0 if testing else cost)
             request.state.api_job_id = job.id
             request.state.api_tool = tool.name
-            request.state.api_credit_delta = -cost
+            # The quote still says what this call would cost live, so an
+            # integrator sees real pricing; what is recorded as spent is zero,
+            # because zero is what moved.
+            request.state.api_credit_delta = 0 if testing else -cost
         except credit.ThieuCreditError as exc:
             # 402 would be more evocative but is not in the platform's error
             # vocabulary; 409 with a stable code keeps the contract machine
@@ -304,7 +318,8 @@ def register_job_routes(api, config, tag: str) -> None:
         db: Session = Depends(get_db),
     ) -> JSONResponse:
         page_request = PageRequest.parse(limit, offset)
-        statement = select(Job).where(Job.user_id == principal.user_id)
+        statement = sandbox.restrict_to_mode(
+            select(Job).where(Job.user_id == principal.user_id), Job, principal)
         wanted = str(status or "").strip()
         if wanted:
             if wanted not in PUBLIC_STATUSES:
@@ -326,7 +341,8 @@ def register_job_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_READ)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        job = ensure_owner(db.get(Job, str(job_id)), principal)
+        job = sandbox.ensure_same_mode(
+            ensure_owner(db.get(Job, str(job_id)), principal), principal)
         return JSONResponse(_public_job(db, job, _tool_of(job)),
                             headers=_NO_STORE)
 
@@ -339,7 +355,8 @@ def register_job_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CANCEL)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        job = ensure_owner(db.get(Job, str(job_id)), principal)
+        job = sandbox.ensure_same_mode(
+            ensure_owner(db.get(Job, str(job_id)), principal), principal)
         refunded = credit.so_da_giu(db, job.id)
         if jobq.cancel(db, job):
             # Same transaction as the cancel: a refund that commits without the

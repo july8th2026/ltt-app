@@ -19,7 +19,7 @@
     <table class="table">
       <thead><tr>
         <th>{{ _("Mã khóa") }}</th><th>{{ _("Tên") }}</th>
-        <th>{{ _("Project") }}</th>
+        <th>{{ _("Project") }}</th><th>{{ _("Môi trường") }}</th>
         <th>{{ _("Trạng thái") }}</th><th>{{ _("Phạm vi") }}</th>
         <th>{{ _("Dùng lần cuối") }}</th><th></th>
       </tr></thead>
@@ -29,6 +29,13 @@
           <td><code>{{ key.key_id }}</code></td>
           <td>{{ key.name }}</td>
           <td>{{ key.project or '—' }}</td>
+          <td>
+            {% if key.mode == 'test' %}
+              <span class="chip v">{{ _("Test") }}</span>
+            {% else %}
+              {{ _("Live") }}
+            {% endif %}
+          </td>
           <td>{{ key.status }}</td>
           <td>
             {% for scope in key.scopes %}<code>{{ scope }}</code> {% endfor %}
@@ -80,12 +87,29 @@
     <p>
       <label for="key-project">{{ _("Thuộc project") }}</label><br>
       <select id="key-project" name="project_id">
-        <option value="">{{ _("Default") }}</option>
+        {# Chỉ hiện lựa chọn rỗng khi CHƯA có project nào: khi đã có, project
+           mặc định đã nằm trong danh sách, và hai dòng cùng tên "Default" làm
+           người dùng tưởng có hai project. #}
+        {% if not projects %}
+          <option value="">{{ _("Default") }}</option>
+        {% endif %}
         {% for project in projects %}
           <option value="{{ project.id }}">{{ project.name }}</option>
         {% endfor %}
       </select>
     </p>
+    <fieldset>
+      <legend>{{ _("Môi trường") }}</legend>
+      <label style="display:inline-block; margin-right:1rem;">
+        <input type="radio" name="mode" value="live" checked>
+        {{ _("Live — gọi nhà cung cấp thật, trừ credit thật") }}
+      </label>
+      <label style="display:inline-block;">
+        <input type="radio" name="mode" value="test">
+        {{ _("Test — kết quả mẫu, không gọi nhà cung cấp, không trừ credit") }}
+      </label>
+      <p class="muted">{{ _("Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, nên lộ ra cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live chỉ nhìn thấy job live.") }}</p>
+    </fieldset>
     <p>
       <label for="key-expiry">{{ _("Tự hết hạn sau (ngày, để trống = không hết hạn)") }}</label><br>
       <input id="key-expiry" name="expires_in_days" inputmode="numeric"

@@ -254,8 +254,11 @@ def test_the_guide_documents_the_things_that_cost_money():
     for topic in ("Idempotency-Key", "quote", "scope", "problem+json",
                   "retry_after", "webhook", "upload", "credit"):
         assert topic.lower() in text.lower(), topic
-    # And it is honest about what does not exist yet.
-    assert "Chưa có sandbox" in text
+    # And about the sandbox that now does exist, including the part it cannot
+    # prove: a mock says nothing about output quality (EXT-12).
+    assert "ltt_tk" in text
+    assert "không tiêu được credit" in text
+    assert "chất lượng" in text
 
 
 def test_the_guide_lists_every_published_tool():

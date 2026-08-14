@@ -91,6 +91,11 @@ class PublicTool:
     app_slug: str
     job_type: str
     model_aliases: dict = field(default_factory=dict)
+    #: ``{output_field: input_param}`` — which input decides how many entries an
+    #: ``artifact[]`` output holds. Internal: it never reaches
+    #: ``to_public_dict``, so declaring it moves no contract hash. Read by test
+    #: mode so a canned answer has the same cardinality as a live one (EXT-12).
+    output_counts: dict = field(default_factory=dict)
     deprecated: str = ""
     #: Former public names that still resolve to this tool. Renaming a tool
     #: without one of these breaks every integration that used the old name.
@@ -287,6 +292,8 @@ def project_tool(manifest, tool) -> PublicTool:
         app_slug=manifest.slug,
         job_type=tool.job_type,
         model_aliases=models,
+        output_counts={str(key): str(value) for key, value
+                       in (contract.get("output_counts") or {}).items()},
         deprecated=str(contract.get("deprecated") or ""),
         aliases=tuple(str(name) for name in (contract.get("aliases") or ())),
         execution_mode=mode_of_tool(contract),

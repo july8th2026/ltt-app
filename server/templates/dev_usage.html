@@ -123,7 +123,8 @@
           <tr>
             <td>{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
             <td>{{ line.tool or "—" }}</td>
-            <td><code>{{ (line.key_id or "")[:8] }}</code></td>
+            <td><code>{{ (line.key_id or "")[:8] }}</code>
+              {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
             <td>{{ line.status }}</td>
             <td>{{ line.credit.net_charged }}</td>
           </tr>

@@ -22,4 +22,16 @@
   <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — xem PROTOCOL_V1.md mục 2.1.") }}</p>
 </div>
 
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Môi trường test") }}</h2>
+  <p>{{ _("Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố.") }}</p>
+  <ul>
+    <li>{{ _("Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền.") }}</li>
+    <li>{{ _("Khóa test chỉ thấy job test; khóa live chỉ thấy job live. Hỏi chéo trả 404 y hệt job của người khác.") }}</li>
+    <li>{{ _("Mỗi job và mỗi webhook đều có trường mode để bên nhận phân biệt hai thế giới bằng một endpoint.") }}</li>
+    <li>{{ _("Sandbox không chứng minh được CHẤT LƯỢNG kết quả. Muốn biết đầu ra thật thế nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất.") }}</li>
+  </ul>
+  <p class="muted">{{ _("Tạo khóa test ở tab Khóa, chọn Môi trường = Test.") }}</p>
+</div>
+
 {% endblock %}

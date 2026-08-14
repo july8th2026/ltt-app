@@ -345,7 +345,8 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
 
     unknown_keys = set(contract) - {"public_name", "description", "models",
                                     "enums", "hidden", "scopes", "deprecated",
-                                    "execution_mode", "aliases", "params"}
+                                    "execution_mode", "aliases", "params",
+                                    "output_counts"}
     if unknown_keys:
         raise RegistryError(_t(
             "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}").format(
@@ -411,6 +412,7 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
                 "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
                                           param=param))
 
+    _validate_output_counts(manifest, tool, contract.get("output_counts") or {})
     _validate_model_aliases(manifest, tool, models)
     _validate_param_docs(manifest, tool, contract.get("params") or {}, hidden)
 
@@ -423,6 +425,33 @@ def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} alias trùng chính public_name").format(
                     slug=manifest.slug, tool=tool.name))
+
+
+def _validate_output_counts(manifest: AppManifest, tool: ToolSpec,
+                            counts) -> None:
+    """Which input decides how long a list output is.
+
+    Only the app knows that `count` multiplies `image_keys`, so it is declared
+    here rather than guessed. Checked on both sides — a declaration naming an
+    output that is not a list, or a parameter that does not exist, is a typo
+    that would otherwise surface as a sandbox quietly returning one file
+    (EXT-12).
+    """
+    if not isinstance(counts, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} api_contract.output_counts phải là dict"
+        ).format(slug=manifest.slug, tool=tool.name))
+    for output, param in counts.items():
+        if not str(tool.returns.get(output, "")).endswith("[]"):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} output_counts khai {output!r} nhưng đó "
+                "không phải đầu ra dạng danh sách").format(
+                    slug=manifest.slug, tool=tool.name, output=output))
+        if param not in tool.params_schema:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} output_counts trỏ tới tham số không tồn "
+                "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
+                                         param=param))
 
 
 def _validate_param_docs(manifest: AppManifest, tool: ToolSpec, params,

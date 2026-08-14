@@ -78,6 +78,24 @@ Bắt buộc trên **mọi mutation tốn tiền** (hôm nay: `POST /jobs`).
 
 Ba tình huống này trước EXT-02 dùng chung một mã `conflict`.
 
+### 2.2 `mode` — live hay test (EXT-12)
+
+Mỗi khoá thuộc **đúng một** môi trường và tiền tố token nói ra điều đó:
+`ltt_sk` = live, `ltt_tk` = test. Mọi job và mọi payload webhook mang trường
+`mode` tương ứng.
+
+- Khoá test đi qua **cùng** một chuỗi: xác thực, scope, catalog, kiểm tham số,
+  báo giá đã ký, `Idempotency-Key`, hàng đợi job, artifact, webhook + chữ ký.
+  Đúng **một** mắt xích bị thay — handler trả kết quả mẫu dựng theo
+  `output_schema` đã công bố, không gọi provider.
+- Khoá test **không chạm sổ credit**. Báo giá vẫn nói giá live; `credit.held` và
+  `credit.charged` của job test luôn bằng 0. Vì thế trần chi tiêu (ngày, ngân
+  sách EXT-11) **không** áp lên test — chúng đo một việc không thể xảy ra — còn
+  giới hạn nhịp và số job song song **vẫn** áp.
+- **Cách ly cứng**: khoá test chỉ thấy job test, khoá live chỉ thấy job live.
+  Hỏi chéo trả `404` y hệt tài nguyên của tài khoản khác — không tạo oracle.
+  Job không có `mode` (tạo từ giao diện web, hoặc có trước EXT-12) là **live**.
+
 ## 3. Vòng đời một job
 
 ```

@@ -239,6 +239,7 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     leaves neither behind.
     """
     from platform_core.job_submit import submit_with_credit
+    from platform_core.public_api.sandbox import is_test
 
     meta = {
         "tool": tool.name,
@@ -247,6 +248,9 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         # measured from the ledger without joining back through the key — which
         # would break the moment a key is rotated or revoked (EXT-11).
         "project_id": str(getattr(principal, "project_id", "") or ""),
+        # "live" or "test". The worker reads it to decide whether to call a
+        # provider, and every listing reads it to keep the two apart (EXT-12).
+        "mode": str(getattr(principal, "mode", "live") or "live"),
         "quote_intent": str(quote.get("intent") or ""),
         "idempotency_key": str(idempotency_key or ""),
         # The correlation id of the request that created this job, so support
@@ -269,6 +273,17 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     dedupe = dedupe_key_for(tool.job_type, {
         "intent": meta["quote_intent"], "key_id": principal.key_id})
 
+    if is_test(getattr(principal, "mode", "live")):
+        # A test key never reaches the ledger. Not "spends little" — cannot
+        # spend, which is the property that makes a leaked test key harmless.
+        # Everything else about the submission is the live path, including the
+        # dedupe key, so a retry behaves here exactly as it will in production.
+        from platform_core import jobs as jobq
+
+        return jobq.submit(
+            db, user_id=principal.user_id, app_slug=tool.app_slug,
+            job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+        )
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=tool.job_type, params=job_params, dedupe_key=dedupe,

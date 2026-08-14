@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 from platform_core import credit
 from platform_core.i18n import N_, _ as _t
 from platform_core.models import Job
-from platform_core.public_api import keys as devkeys, projects, usage
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
 from platform_core.public_api.catalog import build_catalog
 from platform_core.public_api.config import load_public_api_config
 from platform_core.public_api.invocation import api_meta
@@ -183,6 +183,7 @@ def _keys_context(db: Session, user, config) -> dict:
                 "allowed_tools": list(key.allowed_tools or ()),
                 "allowed_ips": list(key.allowed_ips or ()),
                 "project": names.get(str(key.project_id or ""), ""),
+                "mode": str(getattr(key, "mode", "live") or "live"),
                 "created_at": key.created_at,
                 "last_used_at": key.last_used_at,
                 "expires_at": key.expires_at,
@@ -191,6 +192,7 @@ def _keys_context(db: Session, user, config) -> dict:
         ],
         "scopes": sorted(KNOWN_SCOPES),
         "default_scopes": list(DEFAULT_SCOPES),
+        "modes": list(sandbox.MODES),
         "tools": [tool.name for tool in build_catalog(config)],
     }
 
@@ -818,7 +820,7 @@ def create_key(request: Request, name: str = Form(""),
                scopes: list[str] = Form(default=[]),
                allowed_tools: list[str] = Form(default=[]),
                project_id: str = Form(""), allowed_ips: str = Form(""),
-               expires_in_days: str = Form(""),
+               expires_in_days: str = Form(""), mode: str = Form("live"),
                csrf_token: str = Form(""), user=Depends(require_account),
                db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
@@ -835,7 +837,9 @@ def create_key(request: Request, name: str = Form(""),
         key, token = devkeys.issue(
             db, user_id=user.id, name=name, scopes=scopes,
             allowed_tools=allowed_tools, project_id=project.id,
-            allowed_ips=_split_ips(allowed_ips), expires_at=expiry)
+            allowed_ips=_split_ips(allowed_ips), expires_at=expiry,
+            mode=(sandbox.MODE_TEST if mode == sandbox.MODE_TEST
+                  else sandbox.MODE_LIVE))
     except Exception as exc:  # noqa: BLE001 - message is for this one customer
         from platform_core.public_api.scopes import ScopeError
 

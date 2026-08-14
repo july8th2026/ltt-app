@@ -97,6 +97,24 @@ def artifacts_of(job, tool) -> list:
     return found
 
 
+def store_sandbox_artifact(storage, params: dict, field: str,
+                           index: int) -> str:
+    """Write a canned file and return its storage key.
+
+    Real bytes in real storage, so the download path a sandbox caller exercises
+    is the same one live output uses — presigned URL, expiry and all.
+    """
+    import io
+    import uuid as _uuid
+
+    from platform_core.public_api.sandbox import SAMPLE_PNG
+
+    owner = str((params or {}).get("owner_id") or "sandbox")
+    key = f"users/{owner}/sandbox/{_uuid.uuid4().hex}-{field}-{index}.png"
+    storage.put(key, io.BytesIO(SAMPLE_PNG), content_type="image/png")
+    return key
+
+
 def storage_key_for(job, field: str, index: int, tool=None) -> str:
     """The internal key behind an artifact id. Never returned to a caller.
 

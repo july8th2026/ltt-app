@@ -112,6 +112,9 @@ def _line(job, ledger: dict) -> dict:
         "job_id": job.id,
         "tool": meta.get("tool") or None,
         "key_id": meta.get("key_id") or None,
+        # A test line always reads zero credit; naming the mode keeps a reader
+        # from wondering whether the zero is a bug (EXT-12).
+        "mode": meta.get("mode") or "live",
         "status": job.status,
         "created_at": _aware(job.created_at).isoformat() if job.created_at else None,
         "finished_at": (_aware(job.finished_at).isoformat()

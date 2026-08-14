@@ -118,6 +118,7 @@ def resolve_from_database(request, db) -> Principal | None:
         scopes=frozenset(key.scopes or ()),
         allowed_tools=frozenset(key.allowed_tools or ()),
         project_id=str(key.project_id or ""),
+        mode=str(getattr(key, "mode", "live") or "live"),
         request_id=request_id(request),
     )
     # Published before the limiter runs, not after: a 429 belongs to a caller

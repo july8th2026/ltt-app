@@ -296,12 +296,38 @@ Chỉ chấp nhận `https` và địa chỉ công khai.
 
 Cả hai: GET có retry, **POST tính tiền chỉ retry với cùng `Idempotency-Key`**.
 
-## 12. Sandbox
+## 12. Sandbox (môi trường test)
 
-**Chưa có sandbox.** Mọi lời gọi chạy trên hạ tầng thật và tiêu credit thật.
-Cách thử an toàn: dùng công cụ rẻ nhất, `count` nhỏ nhất, và đặt trần credit
-ngày cho tài khoản thử. Chúng tôi không giả vờ có môi trường thử nghiệm khi
-chưa dựng nó.
+Tạo khóa ở tab **Khóa** trong cổng lập trình viên, chọn **Môi trường = Test**.
+Khóa test có tiền tố `ltt_tk` thay vì `ltt_sk` — nhìn là biết, không cần tra
+cơ sở dữ liệu.
+
+Khóa test đi qua **đúng** chuỗi mà khóa live đi qua: xác thực, scope, catalog,
+kiểm tham số, báo giá đã ký, `Idempotency-Key`, hàng đợi job, upload/artifact,
+webhook và chữ ký. Chỉ **một** mắt xích bị thay: handler không gọi nhà cung
+cấp mà trả kết quả mẫu dựng theo đúng `output_schema` đã công bố của công cụ.
+Sandbox mà bỏ qua bất kỳ bước nào ở trên sẽ cho một tích hợp "chạy được" ở đây
+rồi vỡ ở production — tệ hơn là không có sandbox.
+
+Hai luật cứng:
+
+- **Khóa test không tiêu được credit.** Không phải "tiêu ít" — nó không bao giờ
+  chạm vào sổ credit, nên khóa test lộ ra thì cũng không mất tiền. Báo giá vẫn
+  cho biết lời gọi đó *sẽ* tốn bao nhiêu ở live; phần ghi nhận đã tiêu là 0.
+  Vì thế trần chi tiêu (ngày, ngân sách) không áp lên khóa test — chúng đo một
+  việc không thể xảy ra — còn giới hạn tần suất và số job chạy song song thì
+  vẫn áp, vì lời gọi test vẫn dùng máy.
+- **Live và test không bao giờ trộn.** Khóa test chỉ thấy job test; khóa live
+  chỉ thấy job live. Hỏi chéo trả `404` y hệt job của người khác. Job tạo từ
+  giao diện web, và mọi job có trước khi có chế độ này, đều là live.
+
+Job và webhook đều mang trường `mode` (`"live"` hoặc `"test"`), nên một endpoint
+nhận webhook phục vụ được cả hai thế giới. Chữ ký, header và hình dạng payload
+của webhook test giống hệt live — đó chính là thứ cần thử.
+
+Sandbox **không** chứng minh được **chất lượng** đầu ra. Muốn biết kết quả thật
+trông thế nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất; giả vờ ngược
+lại là biến mô phỏng thành lời nói dối.
 
 ---
 

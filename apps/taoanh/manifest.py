@@ -110,6 +110,8 @@ MANIFEST = AppManifest(
             # the multi-image form is a Canvas/UI path that takes a list, and
             # the API media contract handles single references only today.
             "hidden": ("image_keys",),
+            # As for the thumbnail tool: `count` multiplies the output.
+            "output_counts": {"image_keys": "count"},
             "params": {
                 "prompt": {
                     "description": ("What to draw. Everything about the image "

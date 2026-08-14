@@ -38,6 +38,12 @@ from platform_core.db import Base
 # Human-recognisable prefix. "sk" = secret key: if one of these ever appears in
 # a paste, a log or a public repository, it is greppable and revocable.
 KEY_PREFIX = "ltt_sk"
+#: Test keys carry their own prefix rather than a suffix inside the token: the
+#: format is ``<prefix>_<key_id>_<secret>`` and the secret is url-safe base64
+#: containing underscores, so an extra segment could not be parsed apart. A
+#: distinct prefix is also greppable on its own — "is this a test key" is
+#: answerable by looking (EXT-12).
+KEY_PREFIX_TEST = "ltt_tk"
 
 DEVKEY_ACTIVE = "active"
 DEVKEY_REVOKED = "revoked"
@@ -110,6 +116,10 @@ class DeveloperApiKey(Base):
         String(36), ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    #: "live" or "test". A test key never reaches the ledger and never reaches a
+    #: provider, so a leaked one costs nothing — the property a live key cannot
+    #: have (EXT-12, decision D4).
+    mode: Mapped[str] = mapped_column(String(8), default="live", nullable=False)
     # Nullable on purpose. Keys issued before projects existed keep working
     # exactly as they did; the migration gives each of them a project, and this
     # column stays nullable so that a future key-issuing path which forgets to
