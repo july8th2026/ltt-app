@@ -1927,5 +1927,55 @@ bại xác thực vô hình trở lại**); bỏ 4 view + 4 mục NAV; bỏ kh�
 | No ledger direct edit | ✅ mọi bề mặt ở đây chỉ đọc; snapshot **toàn bộ** sổ credit trước/sau → giống hệt |
 | No secret in export | ✅ tạo khoá thật + secret webhook thật rồi quét file xuất; `redact()` che theo **cấu trúc**, nên trường mới bị che mặc định |
 
-**NEXT_EXTENSION_PROMPT_ALLOWED=true**
-Prompt kế: `prompts/17_...` (EXT-17 — lifecycle / version / status / incident).
+**NEXT_EXTENSION_PROMPT_ALLOWED=false** — xem BLOCKER bên dưới.
+
+---
+
+## BLOCKER — 2026-08-15: pack mở rộng không còn trên ổ đĩa
+
+Sau khi EXT-16 PASS, thư mục pack biến mất:
+
+```
+G:\My Drive\AI\A LTT AII\LTT_API_FULL_EXTENSION_PACK_V2_OPTIMIZED\   ← KHÔNG còn
+```
+
+Thư mục cha `A LTT AII` giờ chỉ chứa **một** pack khác, tạo lúc
+2026-08-15 01:28:
+
+```
+G:\My Drive\AI\A LTT AII\LTT_AI_NEXT_QUALITY_VALIDATION_V2_18_PROMPTS\
+```
+
+Pack mới là **việc khác hẳn**: 18 prompt về kiểm định **chất lượng video/AI**
+(benchmark harness, golden case set, baseline identity/character/action/VFX/
+continuity/audio, hiệu chuẩn QC, closed-loop repair, đóng băng F1). Không liên
+quan tới API platform.
+
+### Hệ quả
+
+EXT-17…EXT-21 **không đọc được**, nên không chạy tiếp được đúng quy trình. Cụ
+thể còn thiếu: lifecycle/version/status/incident (17), SDK/hệ sinh thái (18),
+quyền riêng tư & vòng đời dữ liệu (19), chứng nhận app/tool/model (20), audit
+cuối + load + chaos (21). Chỉ prompt 21 mới được phép kết luận
+`API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY`, nên **chưa có** kết luận đó.
+
+### Vì sao dừng thay vì tự chọn
+
+Quy tắc "chạy liên tục, không cần phê duyệt" (mục Chế độ chạy) nói về việc
+**không dừng giữa các prompt của pack đang chạy**. Nó không cho phép tự ý đổi
+sang một pack khác tìm thấy trên đĩa — chọn *làm việc gì* là quyết định của chủ
+sản phẩm, không phải quyết định kỹ thuật.
+
+### Ba lựa chọn
+
+1. **Khôi phục pack mở rộng** (thùng rác Google Drive / bản sao khác) rồi chạy
+   tiếp EXT-17…21 đúng thứ tự.
+2. **Chuyển sang pack mới** `LTT_AI_NEXT_QUALITY_VALIDATION_V2_18_PROMPTS`
+   (P01…P18) và tạm gác 5 prompt còn lại của API platform.
+3. **Tự soạn** EXT-17…21 từ `ROADMAP.md` + `COMMON_RULES.md` đã đọc. Làm được,
+   nhưng chúng sẽ là **suy diễn của tôi**, không phải yêu cầu đã duyệt — và
+   `COMMON_RULES §2` xếp prompt dưới nguồn chân lý, nên tự viết prompt rồi tự
+   nghiệm thu theo nó là mất đi lớp kiểm tra độc lập.
+
+Trạng thái tới thời điểm dừng: **16/21 PASS**, nhánh `public-api-v2`, cây sạch,
+không deploy gì.
