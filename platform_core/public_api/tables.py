@@ -717,3 +717,60 @@ class ApiCostObservation(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return (f"<ApiCostObservation {self.tool} {self.kind}="
                 f"{self.quantity}>")
+
+
+# ── Security events (EXT-16) ──────────────────────────────────────────────────
+#
+# A table of its own, and the reason matters: `ApiRequestLog` is the *customer's*
+# log and its `user_id` is the axis that keeps one account from seeing another's
+# traffic. The events here often belong to nobody — a caller with no credential,
+# a key that never existed, a key revoked last week. Writing those into a
+# tenant-scoped table would mean inventing an owner or storing rows nobody can
+# see; both are wrong, so they live apart and only an operator reads them.
+
+SECURITY_KINDS = ("auth.no_credential", "auth.unknown_key", "auth.revoked_key",
+                  "auth.ip_not_allowed", "auth.misconfigured", "auth.throttled")
+
+
+class ApiSecurityEvent(Base):
+    """One attempt that failed before it could become a request.
+
+    Until EXT-16 these were invisible in the database: ``guard.py`` skips the
+    request log when there is no principal, so every authentication failure went
+    only to a process log file. "Is somebody probing us" and "is a revoked key
+    still in use" — the two questions this table exists to answer — could not be
+    asked of the data at all.
+
+    ``key_id`` is the **public half** of a presented token, which is what a
+    support conversation already refers to. The secret half never reaches this
+    module; there is no parameter that would accept it.
+    """
+
+    __tablename__ = "api_security_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    ip: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    #: Public half only. Empty when nothing parseable was presented.
+    key_id: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    #: Deliberately not a foreign key: most of these belong to no account, and a
+    #: constraint requiring one would be a reason not to record the very events
+    #: that matter most.
+    user_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    route: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    request_id: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False, index=True)
+    detail: Mapped[str] = mapped_column(String(200), default="",
+                                        nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+
+    __table_args__ = (
+        # The two questions an operator asks: "what happened lately" and "what
+        # is this address doing".
+        Index("ix_api_security_window", "created_at", "kind"),
+        Index("ix_api_security_source", "ip", "created_at"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiSecurityEvent {self.kind} ip={self.ip}>"

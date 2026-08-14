@@ -535,3 +535,136 @@ __all__ = [
     "key_by_id", "key_usage", "keys_page", "overview", "revoke_key",
     "tools_page",
 ]
+
+
+# ── Operations: cross-account reads (EXT-16) ──────────────────────────────────
+#
+# The customer-facing modules answer these questions for one account. An operator
+# needs the same facts across all of them, and needs the parts a customer is
+# deliberately not shown: the worker, the queue delay, the raw error.
+
+def requests_page(db, *, query: str = "", status: str = "", code: str = "",
+                  hours: int = 24, limit: int = PAGE_SIZE,
+                  offset: int = 0) -> Page:
+    """Recorded requests from every account, newest first.
+
+    Remember what is in this table: failures and non-GET calls only (EXT-09).
+    That is a deliberate throughput decision, not an omission, and any count
+    taken from here is a count of *recorded* traffic.
+    """
+    size, start = clamp_page(limit, offset)
+    statement = select(ApiRequestLog).where(
+        ApiRequestLog.created_at >= _window(hours))
+
+    wanted = str(query or "").strip()
+    if wanted:
+        statement = statement.where(
+            ApiRequestLog.request_id.ilike(f"%{wanted}%")
+            | ApiRequestLog.key_id.ilike(f"%{wanted}%")
+            | ApiRequestLog.route.ilike(f"%{wanted}%")
+            | ApiRequestLog.tool.ilike(f"%{wanted}%"))
+    if status == "failed":
+        statement = statement.where(ApiRequestLog.status >= 400)
+    elif status == "ok":
+        statement = statement.where(ApiRequestLog.status < 400)
+    if code:
+        statement = statement.where(ApiRequestLog.code == str(code))
+
+    total = db.execute(select(func.count()).select_from(
+        statement.subquery())).scalar_one()
+    rows = db.execute(statement.order_by(ApiRequestLog.created_at.desc())
+                      .offset(start).limit(size)).scalars().all()
+
+    emails = _emails_for(db, {row.user_id for row in rows})
+    out = [{"row": row, "email": emails.get(row.user_id, "")} for row in rows]
+    return Page(out, offset=start, limit=size, total=int(total))
+
+
+def jobs_page(db, *, status: str = "", tool: str = "", hours: int = 24,
+              limit: int = PAGE_SIZE, offset: int = 0) -> Page:
+    """API jobs with the three numbers a customer's page never shows.
+
+    Queue delay separates "we were slow" from "the queue was full", which is the
+    first fork in almost every latency complaint; the worker id says *which*
+    machine; the attempt count says whether it had already failed once.
+    """
+    size, start = clamp_page(limit, offset)
+    from platform_core.public_api.invocation import API_META_KEY
+
+    statement = select(Job).where(Job.created_at >= _window(hours))
+    # API jobs only: a job with no `_api` block came from the web UI, and this
+    # console is about the API platform.
+    statement = statement.where(
+        Job.params[(API_META_KEY, "tool")].as_string().is_not(None))
+    if status:
+        statement = statement.where(Job.status == str(status))
+    if tool:
+        statement = statement.where(
+            Job.params[(API_META_KEY, "tool")].as_string() == str(tool))
+
+    total = db.execute(select(func.count()).select_from(
+        statement.subquery())).scalar_one()
+    rows = db.execute(statement.order_by(Job.created_at.desc())
+                      .offset(start).limit(size)).scalars().all()
+
+    emails = _emails_for(db, {row.user_id for row in rows})
+    out = []
+    for job in rows:
+        out.append({
+            "job": job,
+            "email": emails.get(job.user_id, ""),
+            "tool": _api_tool(job),
+            "queue_delay_ms": _delay_ms(job.created_at, job.started_at),
+            "run_ms": _delay_ms(job.started_at, job.finished_at),
+            "held": credit_held(db, job.id),
+        })
+    return Page(out, offset=start, limit=size, total=int(total))
+
+
+def failing_webhooks(db, *, hours: int = 24, limit: int = PAGE_SIZE) -> list:
+    """Deliveries that failed or died, across accounts.
+
+    Dead ones first: a `failed` delivery will be retried, a `dead` one will not,
+    and only the second is a customer who is silently missing their callbacks.
+    """
+    from platform_core.public_api.tables import WEBHOOK_FAILED
+
+    rows = db.execute(
+        select(WebhookDelivery)
+        .where(WebhookDelivery.created_at >= _window(hours),
+               WebhookDelivery.status.in_((WEBHOOK_DEAD, WEBHOOK_FAILED)))
+        .order_by(WebhookDelivery.status.desc(),
+                  WebhookDelivery.created_at.desc())
+        .limit(max(1, min(int(limit), MAX_PAGE_SIZE)))).scalars().all()
+    emails = _emails_for(db, {row.user_id for row in rows})
+    return [{"row": row, "email": emails.get(row.user_id, "")} for row in rows]
+
+
+def credit_held(db, job_id: str) -> int:
+    from platform_core import credit
+
+    return credit.so_da_giu(db, str(job_id))
+
+
+def _emails_for(db, user_ids) -> dict:
+    """One query for every owner on the page, not one per row."""
+    clean = {str(value) for value in user_ids if value}
+    if not clean:
+        return {}
+    rows = db.execute(select(User.id, User.email).where(
+        User.id.in_(clean))).all()
+    return {str(user_id): str(email) for user_id, email in rows}
+
+
+def _api_tool(job) -> str:
+    from platform_core.public_api.invocation import api_meta
+
+    return str(api_meta(job).get("tool") or "")
+
+
+def _delay_ms(start, end) -> int | None:
+    if not start or not end:
+        return None
+    start = start if start.tzinfo else start.replace(tzinfo=timezone.utc)
+    end = end if end.tzinfo else end.replace(tzinfo=timezone.utc)
+    return max(0, int((end - start).total_seconds() * 1000))

@@ -31,6 +31,7 @@ from platform_core.public_api import keys as devkeys
 from platform_core.public_api import limits
 from platform_core.public_api import metrics
 from platform_core.public_api import policy
+from platform_core.public_api import security_log
 from platform_core.public_api.principal import Principal, ensure_scope
 from server.api import deps
 from server.api.context import client_ip, request_id
@@ -52,19 +53,53 @@ def _config(request):
     return getattr(request.app.state, "public_api_config", None)
 
 
-def _audit_failure(request, reason: str, key_id: str = "") -> None:
-    """One redacted line per rejected request.
+#: Which security-event kind each rejection reason becomes. Kept here, beside
+#: the reasons themselves, so adding a reason without deciding how it is
+#: recorded is a visible omission rather than a silent one.
+_SECURITY_KIND = {
+    REASON_NO_HEADER: security_log.NO_CREDENTIAL,
+    # A token that does not even parse is the same signal as one that does not
+    # exist: somebody is trying strings.
+    REASON_MALFORMED: security_log.UNKNOWN_KEY,
+    REASON_UNKNOWN_OR_WRONG: security_log.UNKNOWN_KEY,
+    REASON_UNUSABLE: security_log.REVOKED_KEY,
+    REASON_IP_NOT_ALLOWED: security_log.IP_NOT_ALLOWED,
+    REASON_MISCONFIGURED: security_log.MISCONFIGURED,
+}
+
+
+def _audit_failure(request, reason: str, key_id: str = "", db=None) -> None:
+    """One redacted line per rejected request, and one row an operator can query.
 
     ``key_id`` is the public half of the token and is safe to record; it is what
     a support conversation refers to. The secret half is never passed in.
+
+    Until EXT-16 this wrote only to the process log, because `guard.py` skips
+    the request log when there is no principal — so an unknown key, a **revoked**
+    key and a scanner walking the key space all left nothing in the database.
+    Those are precisely the events an operator needs to search.
     """
     proxies = getattr(_config(request), "trusted_proxies", ())
+    address = client_ip(request, proxies)
     metrics.increment(metrics.AUTH_FAILURE)
     log.warning(
         "public api auth rejected reason=%s key_id=%s ip=%s path=%s request_id=%s",
-        reason, key_id or "-", client_ip(request, proxies), request.url.path,
-        request_id(request),
+        reason, key_id or "-", address, request.url.path, request_id(request),
     )
+    if db is None:
+        return
+    try:
+        security_log.record(
+            db, kind=_SECURITY_KIND.get(reason, security_log.UNKNOWN_KEY),
+            ip=address, key_id=key_id, route=request.url.path,
+            request_id=request_id(request), detail=reason)
+        db.commit()
+    except Exception as exc:  # noqa: BLE001 - observing must not break refusing
+        # A logging problem must never turn a 401 into a 500: the caller is
+        # being refused either way, and the refusal is the part that protects
+        # the platform.
+        db.rollback()
+        log.exception("khong ghi duoc su kien bao mat: %s", type(exc).__name__)
 
 
 def resolve_from_database(request, db) -> Principal | None:
@@ -75,7 +110,7 @@ def resolve_from_database(request, db) -> Principal | None:
     config = _config(request)
     token = deps.bearer_token(request)
     if not token:
-        _audit_failure(request, REASON_NO_HEADER)
+        _audit_failure(request, REASON_NO_HEADER, db=db)
         _throttle(request, config, "")
         return None
 
@@ -83,7 +118,7 @@ def resolve_from_database(request, db) -> Principal | None:
     if parsed is None:
         # Still runs a digest inside verify(); do not shortcut it here either.
         devkeys.verify(db, token)
-        _audit_failure(request, REASON_MALFORMED)
+        _audit_failure(request, REASON_MALFORMED, db=db)
         _throttle(request, config, "")
         return None
     public_key_id = parsed[0]
@@ -93,14 +128,14 @@ def resolve_from_database(request, db) -> Principal | None:
     except devkeys.DeveloperKeyError:
         # Missing/short pepper: the platform is misconfigured, not the caller.
         # Fail closed and make the cause visible to an operator.
-        _audit_failure(request, REASON_MISCONFIGURED, public_key_id)
+        _audit_failure(request, REASON_MISCONFIGURED, public_key_id, db=db)
         return None
     if key is None:
-        _audit_failure(request, REASON_UNKNOWN_OR_WRONG, public_key_id)
+        _audit_failure(request, REASON_UNKNOWN_OR_WRONG, public_key_id, db=db)
         _throttle(request, config, public_key_id)
         return None
     if not key.is_usable():
-        _audit_failure(request, REASON_UNUSABLE, public_key_id)
+        _audit_failure(request, REASON_UNUSABLE, public_key_id, db=db)
         _throttle(request, config, public_key_id)
         return None
 
@@ -109,7 +144,7 @@ def resolve_from_database(request, db) -> Principal | None:
     # address" confirms the key is real to whoever stole it.
     proxies = getattr(config, "trusted_proxies", ()) if config else ()
     if not devkeys.ip_allowed(key, client_ip(request, proxies)):
-        _audit_failure(request, REASON_IP_NOT_ALLOWED, public_key_id)
+        _audit_failure(request, REASON_IP_NOT_ALLOWED, public_key_id, db=db)
         _throttle(request, config, public_key_id)
         return None
 

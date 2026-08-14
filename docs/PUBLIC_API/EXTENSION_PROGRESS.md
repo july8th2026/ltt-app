@@ -48,7 +48,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 13 | API admin console core | **PASS** | 2026-08-14 |
 | 14 | Admin policy / tiers / quota / kill switch | **PASS** | 2026-08-14 |
 | 15 | Pricing catalog / versioned credits / margin | **PASS** | 2026-08-15 |
-| 16 | Admin operations / security / support trace | chưa chạy | — |
+| 16 | Admin operations / security / support trace | **PASS** | 2026-08-15 |
 | 17 | Versioning / changelog / deprecation / status | chưa chạy | — |
 | 18 | SDK / CLI / Postman / OpenAPI ecosystem | chưa chạy | — |
 | 19 | Privacy / retention / export / delete | chưa chạy | — |
@@ -1799,3 +1799,133 @@ khối EXT-15 trong `test_205`.
 Prompt kế: `prompts/16_ADMIN_OPERATIONS_REQUESTS_JOBS_WEBHOOK_SECURITY_SUPPORT_TRACE.txt`
 (EXT-16) —
 **checkpoint full gate**.
+
+---
+
+## EXT-16 — VẬN HÀNH, BẢO MẬT, TRUY VẾT HỖ TRỢ ✅ (checkpoint full gate)
+
+### Entry gate
+
+EXT-15 PASS ✅ (`393a5aa`), cây sạch. Migration mới: **`e7f8a9b0c1d2`** (head) —
+một bảng, không sửa bảng nào đang có.
+
+### Khoảng trống thật, và nó nghiêm trọng
+
+`server/api/guard.py::_schedule_log` **return sớm khi chưa có principal**. Hệ
+quả: **mọi thất bại xác thực không để lại dòng nào trong CSDL** — không header,
+khoá không tồn tại, khoá **đã thu hồi**, IP không được phép, kẻ dò bị bóp. Tất
+cả chỉ vào file log của tiến trình.
+
+Nghĩa là đúng hai câu hỏi đề bài liệt kê — *"có ai đang dò khoá không"* và
+*"khoá đã thu hồi còn bị dùng không"* — **không hỏi được bằng dữ liệu**.
+
+### Bảng riêng, không nới `ApiRequestLog`
+
+`ApiRequestLog.user_id` là NOT NULL và là **trục phân tách tenant** của trang
+nhật ký khách. Sự kiện bảo mật thì thường **chẳng thuộc về ai**; một dòng
+`user_id=""` ở bảng đó sẽ hoặc lọt vào trang của người khác, hoặc vô hình — cả
+hai đều sai. Nên `api_security_events` đứng riêng, chỉ operator đọc, và **không**
+có khoá ngoại tới `users` (một ràng buộc đòi hỏi chủ sẽ là lý do để **không** ghi
+đúng những sự kiện quan trọng nhất).
+
+Không lưu: nửa bí mật của token, header Authorization, body. `key_id` là **nửa
+công khai** — đúng thứ một cuộc hỗ trợ vẫn nhắc tới, và đúng lý lẽ
+`_audit_failure` đã viết từ trước.
+
+### Một giới hạn phải nói thẳng: loại sự kiện không nói được "đã thu hồi"
+
+`keys.verify()` trả **cùng một `None`** cho khoá lạ, secret sai và khoá đã thu
+hồi — **cố ý**, để một caller không thể liệt kê key id hợp lệ bằng cách xem mình
+nhận lỗi nào. Nên đường xác thực **thật sự không biết** nó vừa gặp một khoá đã
+thu hồi, và nhãn ghi lúc đó không thể nói điều đó.
+
+Câu hỏi được trả lời ở **lúc đọc**: `security_log.revoked_key_attempts()` đối
+chiếu key id đã thử với bảng khoá. Phản hồi mà kẻ tấn công nhìn thấy **không đổi
+một chút nào**; chỉ có phân tích về sau của người vận hành là đổi. (Bộ test bắt
+đúng chỗ này: giả định ban đầu của tôi rằng nhãn sẽ là `REVOKED_KEY` là sai.)
+
+### Truy vết: một chuỗi, từ bất kỳ mẩu định danh nào
+
+`support.trace()` nhận correlation id / job id / key id / project id / email /
+địa chỉ IP và trả về **một** dòng thời gian:
+
+```
+request → job → chờ hàng đợi (worker) → chạy → sổ credit → webhook
+```
+
+Không lưu thêm gì để làm được: mọi mắt xích đã tồn tại và đã mang id nối chúng.
+EXT-09 dựng nửa dành cho khách; đây là nửa của người vận hành — **xuyên tài
+khoản**, và **gồm cả sự kiện nội bộ** (`visibility != "customer"`), worker id,
+độ trễ hàng đợi và **lỗi thô** mà khách chỉ được xem bản đã làm sạch (Q76). Đó
+chính là toàn bộ lý do có một trang truy vết riêng: trang của khách được viết để
+an toàn, và an toàn phải trả giá bằng chi tiết.
+
+### Export: che theo cấu trúc, không theo danh sách
+
+`support.redact()` áp lên **toàn bộ** cấu trúc chứ không lên một danh sách
+trường đã biết. Một model sẽ mọc thêm cột theo thời gian, và danh sách trắng là
+một lời hứa phải nhớ; cách này thì **trường mới bị che mặc định**. Che cả tên
+trường gợi bí mật (`secret`, `token`, `digest`, `pepper`, …) lẫn tên gợi **vị
+trí** (`storage_key`, `path`, `url`) — không bí mật, nhưng chúng mã hoá bố cục
+bucket và id chủ sở hữu, mà một file hỗ trợ thì đi lung tung.
+
+### Bốn trang mới
+
+**Request** (xuyên tài khoản, nói rõ nhật ký chỉ ghi lời gọi hỏng + lời gọi ghi
+dữ liệu), **Job** (chờ hàng đợi / thời gian chạy / worker — ba con số trang
+khách không có; kèm webhook hỏng, `dead` đứng trước `failed` vì chỉ `dead` mới là
+một khách đang lặng lẽ mất callback), **Bảo mật** (địa chỉ ồn nhất: một địa chỉ
+hỏng 400 lần là bot, 400 địa chỉ hỏng mỗi cái một lần là bản phát hành lỗi —
+cùng tổng số, hai việc khác nhau), **Truy vết** (+ xuất JSON).
+
+### Role separation: mô hình hiện tại KHÔNG đỡ được
+
+Đề bài ghi *"role separation **if existing model supports**"*. `User.role` chỉ có
+`admin` và `user`; không có vai trò "hỗ trợ chỉ đọc". Tôi **không** bịa thêm một
+vai trò mà không đường nào cấp và không test nào bảo vệ — nó sẽ là một lời hứa
+phân quyền không có thật. Muốn có thì cần một quyết định sản phẩm + migration
+riêng, và nên là một prompt của nó.
+
+### Tests
+
+`tests/test_208_support_trace.py` — **19 test**, chạy trên một lời gọi **thật**
+đã chạy qua worker chứ không phải dòng dựng tay: truy vết từ correlation id thấy
+đủ job/worker/độ trễ/hold/webhook; truy vết được từ job id, key id, project id,
+email; chuỗi lạ thì **không đoán bừa**; trace của operator ⊇ trace của khách và
+có dòng nội bộ; khoá lạ / không credential nay **để lại dòng**; **khoá đã thu
+hồi bị dùng** tìm được bằng join (và khoá chưa từng tồn tại **không** bị đếm
+nhầm); nửa bí mật không bao giờ được ghi; gom nhóm tách một nguồn ồn khỏi nhiều
+nguồn; loại lạ bị từ chối thay vì lưu; dọn theo hạn lưu; **export không chứa bí
+mật** (khoá thật + secret webhook thật rồi quét file); che phủ cả trường chưa ai
+nghĩ tới; **snapshot toàn bộ sổ credit trước/sau mọi bề mặt operator → giống
+hệt**; bốn trang chỉ operator vào được; trang Job bỏ qua job tạo từ giao diện
+web.
+
+### Kiểm bằng trình duyệt (uvicorn thật, cổng 8123)
+
+Một lời gọi thật chạy hết chuỗi, rồi dán correlation id vào trang Truy vết:
+thấy **Ai** (tài khoản/project/khoá), **Dòng thời gian** (request 201 → job →
+**chờ hàng đợi 1.293 ms** trên `browser-trace-worker` → chạy 134 ms → sổ credit
+hold −5), và **sự kiện job gồm cả nội bộ** (`credit_held`, `claimed` — hai dòng
+trang khách không có). Xuất JSON: `Content-Disposition: attachment`, **không có
+chuỗi nào dài ≥ 40 ký tự** trông giống bí mật, `image_keys` chỉ xuất hiện như
+**tên trường** trong `result_keys` chứ không phải đường dẫn lưu trữ. Trang Bảo
+mật đếm đúng 3 lần khoá lạ. Console: 0 lỗi.
+
+### Rollback
+
+`alembic downgrade d6e7f8a9b0c1`; xoá `security_log.py` + `support.py`; bỏ
+`db=` và `_SECURITY_KIND` khỏi `auth.py` (**lưu ý: hoàn nguyên là làm mọi thất
+bại xác thực vô hình trở lại**); bỏ 4 view + 4 mục NAV; bỏ khối
+"Operations" cuối `admin_console.py`; xoá `test_208`.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-16 | Kết quả |
+|---|---|
+| One E2E request traceable end-to-end | ✅ một lời gọi thật đã chạy qua worker: quote → hold → job → worker → chạy → quyết toán → webhook, tra được từ correlation id, job id, key id, project id hoặc email |
+| No ledger direct edit | ✅ mọi bề mặt ở đây chỉ đọc; snapshot **toàn bộ** sổ credit trước/sau → giống hệt |
+| No secret in export | ✅ tạo khoá thật + secret webhook thật rồi quét file xuất; `redact()` che theo **cấu trúc**, nên trường mới bị che mặc định |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/17_...` (EXT-17 — lifecycle / version / status / incident).

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0ed7e3cad6f5607ab7a56b5a5035fd63f916c70a0ca8dd7ede1bca0a81346d7c
-Nguồn đã quét : 1101 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:b66e64c067c15d3f60915c83adf12c6215733c7dedd892a8d3ba0f698b4ab0f6
+Nguồn đã quét : 1105 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -804,7 +804,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (47 bảng)
+5. DATA MODEL (48 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
@@ -818,6 +818,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:534
 - api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:628
 - api_projects → ApiProject | platform_core/public_api/tables.py:62
+- api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:735
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
 - chat_conversations → ChatConversation | platform_core/models.py:732
@@ -853,7 +854,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (38)
+6. ALEMBIC MIGRATIONS (39)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -892,6 +893,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - b4c5d6e7f8a9 ← a3b4c5d6e7f8 | danh dau khoa API la live hay test (EXT-12) | alembic/versions/20260814_2300_api_key_mode.py
 - c5d6e7f8a9b0 ← b4c5d6e7f8a9 | them chinh sach han muc va kill switch cho khu API (EXT-14) | alembic/versions/20260814_2400_api_policy_engine.py
 - d6e7f8a9b0c1 ← c5d6e7f8a9b0 | them phien ban gia va quan sat chi phi cho khu API (EXT-15) | alembic/versions/20260815_0100_api_pricing_costing.py
+- e7f8a9b0c1d2 ← d6e7f8a9b0c1 | them bang su kien bao mat cho khu API (EXT-16) | alembic/versions/20260815_0200_api_security_events.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1012,7 +1014,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (210 file pytest + 3 frontend)
+10. QUALITY GATES (211 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1156,6 +1158,7 @@ Test inventory:
 - tests/test_205_admin_api_console.py
 - tests/test_206_policy_engine.py
 - tests/test_207_pricing.py
+- tests/test_208_support_trace.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1249,8 +1252,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1101 file)
-Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:819, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1105 file)
+Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:823, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1263,7 +1266,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (40)
+[alembic] (41)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1304,6 +1307,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260814_2300_api_key_mode.py
 - alembic/versions/20260814_2400_api_policy_engine.py
 - alembic/versions/20260815_0100_api_pricing_costing.py
+- alembic/versions/20260815_0200_api_security_events.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1856,7 +1860,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (83)
+[platform_core] (85)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1929,6 +1933,8 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/request_log.py
 - platform_core/public_api/sandbox.py
 - platform_core/public_api/scopes.py
+- platform_core/public_api/security_log.py
+- platform_core/public_api/support.py
 - platform_core/public_api/tables.py
 - platform_core/public_api/usage.py
 - platform_core/public_api/webhook_console.py
@@ -2102,7 +2108,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (226)
+[tests] (227)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2256,6 +2262,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_205_admin_api_console.py
 - tests/test_206_policy_engine.py
 - tests/test_207_pricing.py
+- tests/test_208_support_trace.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2418,7 +2425,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1101 file; 9788219 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1105 file; 9869717 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5719,6 +5726,82 @@ def downgrade() -> None:
     op.drop_index("ix_api_pricing_versions_tool",
                   table_name="api_pricing_versions")
     op.drop_table("api_pricing_versions")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260815_0200_api_security_events.py
+SHA256=95d44a592898db237b2827e9cb3780947601adb986a5017b891f8c64b5c92054 BYTES=3184 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""them bang su kien bao mat cho khu API (EXT-16)
+
+Vi sao mot bang RIENG chu khong noi `public_api_requests`: cot `user_id` cua
+bang do la NOT NULL va la truc phan tach tenant cua trang nhat ky khach. Su kien
+o day thuong KHONG thuoc ve ai — goi khong co credential, khoa khong ton tai,
+khoa da thu hoi. Mot dong `user_id=""` trong bang kia se hoac lot vao trang cua
+ai do, hoac vo hinh; ca hai deu sai.
+
+Truoc EXT-16 nhung su kien nay khong co dong nao trong CSDL: `guard.py` bo qua
+nhat ky request khi chua co principal, nen moi that bai xac thuc chi vao file
+log cua tien trinh. Cau hoi "co ai dang do khoa khong" khong tra loi duoc bang
+du lieu.
+
+KHONG luu: nua bi mat cua token, header Authorization, body. `key_id` la nua
+CONG KHAI, dung thu ma mot cuoc ho tro van nhac toi.
+
+Revision ID: e7f8a9b0c1d2
+Revises: d6e7f8a9b0c1
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "e7f8a9b0c1d2"
+down_revision = "d6e7f8a9b0c1"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "api_security_events",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("kind", sa.String(32), nullable=False),
+        sa.Column("ip", sa.String(64), nullable=False, server_default=""),
+        sa.Column("key_id", sa.String(48), nullable=False, server_default=""),
+        # Co y KHONG phai khoa ngoai: phan lon su kien khong thuoc tai khoan
+        # nao, va mot rang buoc doi hoi chu se la ly do de KHONG ghi dung nhung
+        # su kien quan trong nhat.
+        sa.Column("user_id", sa.String(36), nullable=False, server_default=""),
+        sa.Column("route", sa.String(200), nullable=False, server_default=""),
+        sa.Column("request_id", sa.String(64), nullable=False,
+                  server_default=""),
+        sa.Column("detail", sa.String(200), nullable=False, server_default=""),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_api_security_events_kind", "api_security_events",
+                    ["kind"])
+    op.create_index("ix_api_security_events_request_id", "api_security_events",
+                    ["request_id"])
+    op.create_index("ix_api_security_events_created_at", "api_security_events",
+                    ["created_at"])
+    op.create_index("ix_api_security_window", "api_security_events",
+                    ["created_at", "kind"])
+    op.create_index("ix_api_security_source", "api_security_events",
+                    ["ip", "created_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_api_security_source", table_name="api_security_events")
+    op.drop_index("ix_api_security_window", table_name="api_security_events")
+    op.drop_index("ix_api_security_events_created_at",
+                  table_name="api_security_events")
+    op.drop_index("ix_api_security_events_request_id",
+                  table_name="api_security_events")
+    op.drop_index("ix_api_security_events_kind",
+                  table_name="api_security_events")
+    op.drop_table("api_security_events")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -107487,7 +107570,7 @@ __all__ = [
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/admin_console.py
-SHA256=c88c4915391cf644abd25784e3524323d2cf0aaa168f3e0f1853c7b922d79aa4 BYTES=23945 LINES=537
+SHA256=354d66c9f7521d9508b953235712d6b5b3d52c23f5cbe088e8ccea2cff304c09 BYTES=29641 LINES=670
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """What an operator needs to know and change about the API platform.
 
@@ -108026,6 +108109,139 @@ __all__ = [
     "key_by_id", "key_usage", "keys_page", "overview", "revoke_key",
     "tools_page",
 ]
+
+
+# ── Operations: cross-account reads (EXT-16) ──────────────────────────────────
+#
+# The customer-facing modules answer these questions for one account. An operator
+# needs the same facts across all of them, and needs the parts a customer is
+# deliberately not shown: the worker, the queue delay, the raw error.
+
+def requests_page(db, *, query: str = "", status: str = "", code: str = "",
+                  hours: int = 24, limit: int = PAGE_SIZE,
+                  offset: int = 0) -> Page:
+    """Recorded requests from every account, newest first.
+
+    Remember what is in this table: failures and non-GET calls only (EXT-09).
+    That is a deliberate throughput decision, not an omission, and any count
+    taken from here is a count of *recorded* traffic.
+    """
+    size, start = clamp_page(limit, offset)
+    statement = select(ApiRequestLog).where(
+        ApiRequestLog.created_at >= _window(hours))
+
+    wanted = str(query or "").strip()
+    if wanted:
+        statement = statement.where(
+            ApiRequestLog.request_id.ilike(f"%{wanted}%")
+            | ApiRequestLog.key_id.ilike(f"%{wanted}%")
+            | ApiRequestLog.route.ilike(f"%{wanted}%")
+            | ApiRequestLog.tool.ilike(f"%{wanted}%"))
+    if status == "failed":
+        statement = statement.where(ApiRequestLog.status >= 400)
+    elif status == "ok":
+        statement = statement.where(ApiRequestLog.status < 400)
+    if code:
+        statement = statement.where(ApiRequestLog.code == str(code))
+
+    total = db.execute(select(func.count()).select_from(
+        statement.subquery())).scalar_one()
+    rows = db.execute(statement.order_by(ApiRequestLog.created_at.desc())
+                      .offset(start).limit(size)).scalars().all()
+
+    emails = _emails_for(db, {row.user_id for row in rows})
+    out = [{"row": row, "email": emails.get(row.user_id, "")} for row in rows]
+    return Page(out, offset=start, limit=size, total=int(total))
+
+
+def jobs_page(db, *, status: str = "", tool: str = "", hours: int = 24,
+              limit: int = PAGE_SIZE, offset: int = 0) -> Page:
+    """API jobs with the three numbers a customer's page never shows.
+
+    Queue delay separates "we were slow" from "the queue was full", which is the
+    first fork in almost every latency complaint; the worker id says *which*
+    machine; the attempt count says whether it had already failed once.
+    """
+    size, start = clamp_page(limit, offset)
+    from platform_core.public_api.invocation import API_META_KEY
+
+    statement = select(Job).where(Job.created_at >= _window(hours))
+    # API jobs only: a job with no `_api` block came from the web UI, and this
+    # console is about the API platform.
+    statement = statement.where(
+        Job.params[(API_META_KEY, "tool")].as_string().is_not(None))
+    if status:
+        statement = statement.where(Job.status == str(status))
+    if tool:
+        statement = statement.where(
+            Job.params[(API_META_KEY, "tool")].as_string() == str(tool))
+
+    total = db.execute(select(func.count()).select_from(
+        statement.subquery())).scalar_one()
+    rows = db.execute(statement.order_by(Job.created_at.desc())
+                      .offset(start).limit(size)).scalars().all()
+
+    emails = _emails_for(db, {row.user_id for row in rows})
+    out = []
+    for job in rows:
+        out.append({
+            "job": job,
+            "email": emails.get(job.user_id, ""),
+            "tool": _api_tool(job),
+            "queue_delay_ms": _delay_ms(job.created_at, job.started_at),
+            "run_ms": _delay_ms(job.started_at, job.finished_at),
+            "held": credit_held(db, job.id),
+        })
+    return Page(out, offset=start, limit=size, total=int(total))
+
+
+def failing_webhooks(db, *, hours: int = 24, limit: int = PAGE_SIZE) -> list:
+    """Deliveries that failed or died, across accounts.
+
+    Dead ones first: a `failed` delivery will be retried, a `dead` one will not,
+    and only the second is a customer who is silently missing their callbacks.
+    """
+    from platform_core.public_api.tables import WEBHOOK_FAILED
+
+    rows = db.execute(
+        select(WebhookDelivery)
+        .where(WebhookDelivery.created_at >= _window(hours),
+               WebhookDelivery.status.in_((WEBHOOK_DEAD, WEBHOOK_FAILED)))
+        .order_by(WebhookDelivery.status.desc(),
+                  WebhookDelivery.created_at.desc())
+        .limit(max(1, min(int(limit), MAX_PAGE_SIZE)))).scalars().all()
+    emails = _emails_for(db, {row.user_id for row in rows})
+    return [{"row": row, "email": emails.get(row.user_id, "")} for row in rows]
+
+
+def credit_held(db, job_id: str) -> int:
+    from platform_core import credit
+
+    return credit.so_da_giu(db, str(job_id))
+
+
+def _emails_for(db, user_ids) -> dict:
+    """One query for every owner on the page, not one per row."""
+    clean = {str(value) for value in user_ids if value}
+    if not clean:
+        return {}
+    rows = db.execute(select(User.id, User.email).where(
+        User.id.in_(clean))).all()
+    return {str(user_id): str(email) for user_id, email in rows}
+
+
+def _api_tool(job) -> str:
+    from platform_core.public_api.invocation import api_meta
+
+    return str(api_meta(job).get("tool") or "")
+
+
+def _delay_ms(start, end) -> int | None:
+    if not start or not end:
+        return None
+    start = start if start.tzinfo else start.replace(tzinfo=timezone.utc)
+    end = end if end.tzinfo else end.replace(tzinfo=timezone.utc)
+    return max(0, int((end - start).total_seconds() * 1000))
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -114241,8 +114457,554 @@ def normalize_scopes(scopes) -> list:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/security_log.py
+SHA256=6887fac3f2aab9ca48661e4568c8a058e85c338271de1ae40b04e108f643f24e BYTES=8384 LINES=190
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Attempts that never became a request, and the ones that did but should not.
+
+Why a table of its own
+----------------------
+
+``ApiRequestLog`` (EXT-09) is the **customer's** log, and its ``user_id`` is the
+axis that keeps one account from seeing another's traffic. The events here often
+belong to nobody: a caller with no credential, a key that does not exist, a key
+that was revoked last week. Writing those into a tenant-scoped table would mean
+either inventing an owner or storing rows nobody can ever see — so they live
+apart, and only an operator reads them.
+
+That separation was not obvious until the gap showed itself: ``guard.py`` skips
+the request log entirely when there is no principal, so **every authentication
+failure was invisible in the database**. "Is somebody probing us" and "is a
+revoked key still being used" — both named in the EXT-16 brief — could not be
+answered without reading process log files.
+
+What is recorded, and what is refused
+-------------------------------------
+
+Recorded: the kind of failure, the address it came from, the **public half** of
+whatever key id was presented, the route, and the correlation id that ties it to
+everything else. The public half is what a support conversation already refers
+to, which is the same reasoning ``auth.py`` used when it started logging it.
+
+Never recorded: the secret half of a token, an ``Authorization`` header, a
+request body, or a provider credential. There is no code path here that accepts
+them, so a future caller cannot pass one by accident.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select
+
+from platform_core.public_api.tables import ApiSecurityEvent
+
+#: The kinds worth a row. Each one is a question an operator actually asks; a
+#: kind nobody would search for is noise that makes the real ones harder to see.
+#:
+#: One limit worth stating: ``REVOKED_KEY`` is almost never what gets recorded,
+#: because ``keys.verify()`` answers the same ``None`` for an unknown key, a
+#: wrong secret and a revoked one — on purpose, so a caller cannot enumerate
+#: valid key ids by watching which failure comes back. The authentication path
+#: therefore does not know it saw a revoked key. ``revoked_key_attempts()``
+#: below answers that question at read time instead, where answering it costs
+#: nothing.
+NO_CREDENTIAL = "auth.no_credential"
+UNKNOWN_KEY = "auth.unknown_key"
+REVOKED_KEY = "auth.revoked_key"
+IP_NOT_ALLOWED = "auth.ip_not_allowed"
+MISCONFIGURED = "auth.misconfigured"
+THROTTLED = "auth.throttled"
+KINDS = (NO_CREDENTIAL, UNKNOWN_KEY, REVOKED_KEY, IP_NOT_ALLOWED,
+         MISCONFIGURED, THROTTLED)
+
+#: How long these are kept. Long enough to investigate an incident from last
+#: month; short enough that a table nobody prunes does not become the biggest
+#: thing in the database.
+RETENTION_DAYS = 90
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def record(db, *, kind: str, ip: str = "", key_id: str = "", route: str = "",
+           request_id: str = "", user_id: str = "", detail: str = "",
+           now: datetime | None = None) -> ApiSecurityEvent | None:
+    """Write one attempt. Unknown kinds are refused rather than stored.
+
+    Returns ``None`` for an unknown kind instead of raising: this is called from
+    the authentication path, and a logging mistake must never turn a 401 into a
+    500.
+    """
+    if kind not in KINDS:
+        return None
+    row = ApiSecurityEvent(
+        id=str(uuid.uuid4()), kind=kind, ip=str(ip or "")[:64],
+        key_id=str(key_id or "")[:48], route=str(route or "")[:200],
+        request_id=str(request_id or "")[:64], user_id=str(user_id or "")[:36],
+        detail=str(detail or "")[:200], created_at=now or _now())
+    db.add(row)
+    return row
+
+
+def list_recent(db, *, kind: str = "", ip: str = "", key_id: str = "",
+                since: datetime | None = None, limit: int = 100,
+                offset: int = 0) -> list:
+    statement = select(ApiSecurityEvent)
+    if kind:
+        statement = statement.where(ApiSecurityEvent.kind == str(kind))
+    if ip:
+        statement = statement.where(ApiSecurityEvent.ip == str(ip))
+    if key_id:
+        statement = statement.where(ApiSecurityEvent.key_id == str(key_id))
+    if since is not None:
+        statement = statement.where(ApiSecurityEvent.created_at >= since)
+    return list(db.execute(
+        statement.order_by(ApiSecurityEvent.created_at.desc())
+        .offset(max(0, int(offset))).limit(max(1, min(int(limit), 500)))
+    ).scalars())
+
+
+def summary(db, *, hours: int = 24, now: datetime | None = None) -> dict:
+    """Counts per kind, plus the noisiest sources.
+
+    The addresses matter more than the total: one address failing four hundred
+    times is a scanner, four hundred addresses failing once each is a broken
+    release, and the same total tells the two apart only when it is broken down.
+    """
+    moment = now or _now()
+    since = moment - timedelta(hours=max(1, int(hours)))
+
+    by_kind = dict(db.execute(
+        select(ApiSecurityEvent.kind, func.count())
+        .where(ApiSecurityEvent.created_at >= since)
+        .group_by(ApiSecurityEvent.kind)).all())
+    top_ips = db.execute(
+        select(ApiSecurityEvent.ip, func.count())
+        .where(ApiSecurityEvent.created_at >= since, ApiSecurityEvent.ip != "")
+        .group_by(ApiSecurityEvent.ip)
+        .order_by(func.count().desc()).limit(10)).all()
+    top_keys = db.execute(
+        select(ApiSecurityEvent.key_id, func.count())
+        .where(ApiSecurityEvent.created_at >= since,
+               ApiSecurityEvent.key_id != "")
+        .group_by(ApiSecurityEvent.key_id)
+        .order_by(func.count().desc()).limit(10)).all()
+
+    return {
+        "hours": int(hours),
+        "since": since,
+        "total": sum(int(count) for count in by_kind.values()),
+        # Counted by joining, not by reading a label — see the note on KINDS.
+        "revoked_in_use": len(revoked_key_attempts(db, since=since)),
+        "by_kind": {str(kind): int(count) for kind, count in by_kind.items()},
+        "top_ips": [(str(ip), int(count)) for ip, count in top_ips],
+        "top_keys": [(str(key), int(count)) for key, count in top_keys],
+    }
+
+
+def revoked_key_attempts(db, *, since: datetime | None = None,
+                         limit: int = 100) -> list:
+    """Recorded attempts whose key id belongs to a key that was revoked.
+
+    Matched here rather than labelled at write time, because the code that
+    refuses the call is deliberately unable to tell a revoked key from an
+    invented one. Doing the join now changes nothing an attacker can observe and
+    gives an operator the answer they actually came for: *somebody is still
+    using a credential we turned off* — which usually means a deployment nobody
+    updated, not an attack.
+    """
+    from platform_core.public_api.tables import DeveloperApiKey
+
+    statement = select(ApiSecurityEvent).where(ApiSecurityEvent.key_id != "")
+    if since is not None:
+        statement = statement.where(ApiSecurityEvent.created_at >= since)
+    rows = list(db.execute(statement.order_by(
+        ApiSecurityEvent.created_at.desc()).limit(
+            max(1, min(int(limit), 500)))).scalars())
+    if not rows:
+        return []
+
+    revoked = {
+        str(key_id) for (key_id,) in db.execute(
+            select(DeveloperApiKey.key_id).where(
+                DeveloperApiKey.revoked_at.is_not(None),
+                DeveloperApiKey.key_id.in_({row.key_id for row in rows}))).all()
+    }
+    return [row for row in rows if row.key_id in revoked]
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(ApiSecurityEvent).where(
+        ApiSecurityEvent.created_at < cutoff)).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)
+
+
+__all__ = [
+    "IP_NOT_ALLOWED", "KINDS", "MISCONFIGURED", "NO_CREDENTIAL",
+    "RETENTION_DAYS", "REVOKED_KEY", "THROTTLED", "UNKNOWN_KEY", "list_recent",
+    "purge_expired", "record", "revoked_key_attempts", "summary",
+]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/support.py
+SHA256=6eaad2bac73ae97c781ea0a9747fe911ca0b5da816f0f13100c1a30eec146c45 BYTES=14626 LINES=344
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""One call, end to end, from whatever identifier the person in front of you has.
+
+The problem this solves
+-----------------------
+
+A support conversation starts with whatever the customer happened to copy: a
+correlation id from a response header, a job id from their own logs, the public
+half of a key, an email address. Each of those already reaches part of the story
+— but only part, and joining them by hand across five tables is how a ten-minute
+question becomes an afternoon.
+
+So there is one lookup that accepts any of them and returns **one timeline**:
+
+    request → quote → hold → job → worker → artifact → settle → webhook
+
+Nothing new is stored to make that possible. Every link already exists and
+already carries the id that connects it; EXT-09 built the customer-facing half of
+this, and what is added here is the operator's view — across accounts, including
+the events a customer must not see.
+
+What the operator sees that the customer does not
+-------------------------------------------------
+
+Internal job events (``visibility != "customer"``), the worker that ran the job,
+the queue delay, and the failure text a customer is deliberately shown a cleaned
+version of (Q76). That is the whole point of an operator trace: the customer's
+page is written to be safe, and safety costs detail.
+
+What nobody sees
+----------------
+
+No secret, in any view or any export. Not a key's secret half — it does not
+exist anywhere to be shown — not a webhook signing secret, not a provider
+credential, not a raw upload path. ``redact()`` is applied to every exported
+structure rather than to selected fields, so a value added to a model later is
+covered by default instead of by remembering.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+
+from sqlalchemy import or_, select
+
+from platform_core.models import CreditEntry, Job, JobEvent, User
+from platform_core.public_api.tables import (ApiProject, ApiRequestLog,
+                                             ApiSecurityEvent,
+                                             DeveloperApiKey, WebhookDelivery)
+
+#: Field names whose *value* must never leave the platform, whatever the shape
+#: it is nested in. Matched by substring on the key, because the day somebody
+#: adds `webhook_secret_enc` is the day an allowlist of exact names fails.
+SECRET_HINTS = ("secret", "token", "password", "credential", "digest",
+                "pepper", "authorization", "api_key", "signature")
+
+#: Fields that name *where* something is stored. Not secret, but they encode the
+#: bucket layout and the owner id, and a support export is a file that travels.
+LOCATION_HINTS = ("storage_key", "staging_key", "path", "url")
+
+REDACTED = "[redacted]"
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def redact(value):
+    """Strip secrets and locations from anything before it leaves.
+
+    Applied to whole structures rather than to a list of known fields: a model
+    gains columns over time, and an allowlist is a promise to remember. This is
+    the opposite — a new field is redacted unless its name says it is safe.
+    """
+    if isinstance(value, dict):
+        clean = {}
+        for key, item in value.items():
+            name = str(key).lower()
+            if any(hint in name for hint in SECRET_HINTS):
+                clean[key] = REDACTED
+            elif any(hint in name for hint in LOCATION_HINTS):
+                clean[key] = REDACTED
+            else:
+                clean[key] = redact(item)
+        return clean
+    if isinstance(value, (list, tuple)):
+        return [redact(item) for item in value]
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return value
+
+
+@dataclass
+class Trace:
+    """Everything known about one call, in the order it happened."""
+
+    query: str = ""
+    matched_by: str = ""
+    request: ApiRequestLog | None = None
+    requests: list = field(default_factory=list)
+    job: Job | None = None
+    events: list = field(default_factory=list)
+    credit: list = field(default_factory=list)
+    webhooks: list = field(default_factory=list)
+    security: list = field(default_factory=list)
+    user: User | None = None
+    project: ApiProject | None = None
+    key: DeveloperApiKey | None = None
+
+    @property
+    def found(self) -> bool:
+        return bool(self.request or self.job or self.requests or self.security)
+
+    @property
+    def queue_delay_ms(self) -> int | None:
+        """How long the job waited before a worker picked it up.
+
+        The number that separates "we were slow" from "the queue was full",
+        which is the first fork in almost every latency complaint.
+        """
+        if self.job is None or not self.job.started_at:
+            return None
+        started = _aware(self.job.started_at)
+        created = _aware(self.job.created_at)
+        if started is None or created is None:
+            return None
+        return max(0, int((started - created).total_seconds() * 1000))
+
+    @property
+    def run_ms(self) -> int | None:
+        if self.job is None or not (self.job.started_at and self.job.finished_at):
+            return None
+        return max(0, int((_aware(self.job.finished_at)
+                           - _aware(self.job.started_at)).total_seconds() * 1000))
+
+
+def _aware(value):
+    if value is None:
+        return None
+    return value if value.tzinfo is not None else value.replace(
+        tzinfo=timezone.utc)
+
+
+def trace(db, query: str, *, limit: int = 25) -> Trace:
+    """Find a call by correlation id, job id, key id, project id or email.
+
+    Tried in order of how specific the identifier is. A correlation id names one
+    request; an email names an account and returns its recent traffic instead.
+    Guessing wrong is cheap — each lookup is indexed — and guessing at all is
+    what makes the box on the page accept whatever the customer pasted.
+    """
+    wanted = str(query or "").strip()
+    found = Trace(query=wanted)
+    if not wanted:
+        return found
+
+    row = db.execute(select(ApiRequestLog).where(
+        ApiRequestLog.request_id == wanted).order_by(
+            ApiRequestLog.created_at.desc())).scalars().first()
+    if row is not None:
+        found.matched_by = "request_id"
+        found.request = row
+        _fill_from_request(db, found, row)
+        _fill_actors(db, found, user_id=row.user_id, key_id=row.key_id,
+                     project_id=row.project_id)
+        found.security = _security_for(db, request_id=wanted)
+        return found
+
+    job = db.get(Job, wanted)
+    if job is not None:
+        found.matched_by = "job_id"
+        found.job = job
+        _fill_from_job(db, found, job)
+        found.requests = list(db.execute(select(ApiRequestLog).where(
+            ApiRequestLog.job_id == job.id).order_by(
+                ApiRequestLog.created_at)).scalars())
+        if found.requests:
+            found.request = found.requests[0]
+        _fill_actors(db, found, user_id=job.user_id)
+        return found
+
+    key = db.execute(select(DeveloperApiKey).where(
+        DeveloperApiKey.key_id == wanted)).scalar_one_or_none()
+    if key is not None:
+        found.matched_by = "key_id"
+        found.key = key
+        found.requests = list(db.execute(select(ApiRequestLog).where(
+            ApiRequestLog.key_id == key.key_id).order_by(
+                ApiRequestLog.created_at.desc()).limit(limit)).scalars())
+        found.security = _security_for(db, key_id=key.key_id, limit=limit)
+        _fill_actors(db, found, user_id=key.user_id,
+                     project_id=str(key.project_id or ""))
+        return found
+
+    project = db.get(ApiProject, wanted)
+    if project is not None:
+        found.matched_by = "project_id"
+        found.project = project
+        found.requests = list(db.execute(select(ApiRequestLog).where(
+            ApiRequestLog.project_id == project.id).order_by(
+                ApiRequestLog.created_at.desc()).limit(limit)).scalars())
+        _fill_actors(db, found, user_id=project.user_id)
+        return found
+
+    user = db.execute(select(User).where(
+        or_(User.id == wanted, User.email == wanted))).scalar_one_or_none()
+    if user is not None:
+        found.matched_by = "user"
+        found.user = user
+        found.requests = list(db.execute(select(ApiRequestLog).where(
+            ApiRequestLog.user_id == user.id).order_by(
+                ApiRequestLog.created_at.desc()).limit(limit)).scalars())
+        return found
+
+    # Nothing matched an object; it may still name an address that was refused.
+    found.security = _security_for(db, ip=wanted, limit=limit)
+    if found.security:
+        found.matched_by = "ip"
+    return found
+
+
+def _fill_from_request(db, found: Trace, row: ApiRequestLog) -> None:
+    if not row.job_id:
+        return
+    job = db.get(Job, row.job_id)
+    if job is not None:
+        found.job = job
+        _fill_from_job(db, found, job)
+
+
+def _fill_from_job(db, found: Trace, job: Job) -> None:
+    """Events, ledger and deliveries for one job — **all** events.
+
+    The customer's timeline filters to `visibility == "customer"` (EXT-09); this
+    one does not, because the internal lines are the ones that say what actually
+    went wrong.
+    """
+    found.events = list(db.execute(select(JobEvent).where(
+        JobEvent.job_id == job.id).order_by(JobEvent.sequence)).scalars())
+    found.credit = list(db.execute(select(CreditEntry).where(
+        CreditEntry.job_id == job.id).order_by(
+            CreditEntry.created_at)).scalars())
+    found.webhooks = list(db.execute(select(WebhookDelivery).where(
+        WebhookDelivery.job_id == job.id).order_by(
+            WebhookDelivery.created_at)).scalars())
+
+
+def _fill_actors(db, found: Trace, *, user_id: str = "", key_id: str = "",
+                 project_id: str = "") -> None:
+    if user_id and found.user is None:
+        found.user = db.get(User, str(user_id))
+    if key_id and found.key is None:
+        found.key = db.execute(select(DeveloperApiKey).where(
+            DeveloperApiKey.key_id == str(key_id))).scalar_one_or_none()
+    if project_id and found.project is None:
+        found.project = db.get(ApiProject, str(project_id))
+
+
+def _security_for(db, *, request_id: str = "", key_id: str = "", ip: str = "",
+                  limit: int = 25) -> list:
+    statement = select(ApiSecurityEvent)
+    if request_id:
+        statement = statement.where(ApiSecurityEvent.request_id == request_id)
+    elif key_id:
+        statement = statement.where(ApiSecurityEvent.key_id == key_id)
+    elif ip:
+        statement = statement.where(ApiSecurityEvent.ip == ip)
+    else:
+        return []
+    return list(db.execute(statement.order_by(
+        ApiSecurityEvent.created_at.desc()).limit(limit)).scalars())
+
+
+# ── Export ───────────────────────────────────────────────────────────────────
+
+def export(found: Trace) -> dict:
+    """A support trace as a file somebody can attach to a ticket.
+
+    Every structure goes through ``redact`` on the way out. The ledger is
+    included because a billing dispute is the commonest reason to export one —
+    and it is included **read-only**, as a description of entries that exist;
+    nothing here can create, edit or hide one.
+    """
+    body = {
+        "query": found.query,
+        "matched_by": found.matched_by,
+        "exported_at": _now().isoformat(),
+        "account": ({"id": found.user.id, "email": found.user.email}
+                    if found.user else None),
+        "project": ({"id": found.project.id, "name": found.project.name,
+                     "slug": found.project.slug} if found.project else None),
+        "key": ({"key_id": found.key.key_id, "name": found.key.name,
+                 "mode": getattr(found.key, "mode", "live"),
+                 "status": found.key.status()} if found.key else None),
+        "request": _request_dict(found.request),
+        "requests": [_request_dict(row) for row in found.requests],
+        "job": _job_dict(found),
+        "events": [{"sequence": row.sequence, "code": row.event_code,
+                    "level": row.level, "visibility": row.visibility,
+                    "at": row.created_at, "details": row.details}
+                   for row in found.events],
+        "credit": [{"kind": row.kind, "delta": row.delta, "at": row.created_at,
+                    "note": row.note} for row in found.credit],
+        "webhooks": [{"event_type": row.event_type, "status": row.status,
+                      "attempts": row.attempts,
+                      "last_status_code": row.last_status_code,
+                      "at": row.created_at} for row in found.webhooks],
+        "security": [{"kind": row.kind, "ip": row.ip, "key_id": row.key_id,
+                      "route": row.route, "at": row.created_at}
+                     for row in found.security],
+    }
+    return redact(body)
+
+
+def _request_dict(row) -> dict | None:
+    if row is None:
+        return None
+    return {"request_id": row.request_id, "method": row.method,
+            "route": row.route, "status": row.status, "code": row.code,
+            "latency_ms": row.latency_ms, "tool": row.tool,
+            "job_id": row.job_id, "credit_delta": row.credit_delta,
+            "at": row.created_at}
+
+
+def _job_dict(found: Trace) -> dict | None:
+    job = found.job
+    if job is None:
+        return None
+    return {
+        "id": job.id, "status": job.status, "job_type": job.job_type,
+        "app_slug": job.app_slug, "attempts": job.attempts,
+        # Operator-only, all three: the worker that ran it, how long it waited,
+        # and how long it took. None of these are in the customer's view.
+        "worker_id": job.worker_id, "queue_delay_ms": found.queue_delay_ms,
+        "run_ms": found.run_ms,
+        "created_at": job.created_at, "started_at": job.started_at,
+        "finished_at": job.finished_at,
+        # The raw error, which the customer is deliberately shown a cleaned
+        # version of (Q76). Redaction still applies to it.
+        "error": job.error,
+    }
+
+
+__all__ = ["LOCATION_HINTS", "REDACTED", "SECRET_HINTS", "Trace", "export",
+           "redact", "trace"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=f703f7ac5d3c026d0feefaa4dc1970c7c9e7fa4c16e1606f06d0dddf5a983f30 BYTES=35634 LINES=719
+SHA256=3b1023b93e40b326593b14e5f95e4bd5c925537cbe8e30b347ceef641a3f6eb3 BYTES=38734 LINES=776
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -114963,6 +115725,63 @@ class ApiCostObservation(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return (f"<ApiCostObservation {self.tool} {self.kind}="
                 f"{self.quantity}>")
+
+
+# ── Security events (EXT-16) ──────────────────────────────────────────────────
+#
+# A table of its own, and the reason matters: `ApiRequestLog` is the *customer's*
+# log and its `user_id` is the axis that keeps one account from seeing another's
+# traffic. The events here often belong to nobody — a caller with no credential,
+# a key that never existed, a key revoked last week. Writing those into a
+# tenant-scoped table would mean inventing an owner or storing rows nobody can
+# see; both are wrong, so they live apart and only an operator reads them.
+
+SECURITY_KINDS = ("auth.no_credential", "auth.unknown_key", "auth.revoked_key",
+                  "auth.ip_not_allowed", "auth.misconfigured", "auth.throttled")
+
+
+class ApiSecurityEvent(Base):
+    """One attempt that failed before it could become a request.
+
+    Until EXT-16 these were invisible in the database: ``guard.py`` skips the
+    request log when there is no principal, so every authentication failure went
+    only to a process log file. "Is somebody probing us" and "is a revoked key
+    still in use" — the two questions this table exists to answer — could not be
+    asked of the data at all.
+
+    ``key_id`` is the **public half** of a presented token, which is what a
+    support conversation already refers to. The secret half never reaches this
+    module; there is no parameter that would accept it.
+    """
+
+    __tablename__ = "api_security_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    ip: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    #: Public half only. Empty when nothing parseable was presented.
+    key_id: Mapped[str] = mapped_column(String(48), default="", nullable=False)
+    #: Deliberately not a foreign key: most of these belong to no account, and a
+    #: constraint requiring one would be a reason not to record the very events
+    #: that matter most.
+    user_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    route: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    request_id: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False, index=True)
+    detail: Mapped[str] = mapped_column(String(200), default="",
+                                        nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+
+    __table_args__ = (
+        # The two questions an operator asks: "what happened lately" and "what
+        # is this address doing".
+        Index("ix_api_security_window", "created_at", "kind"),
+        Index("ix_api_security_source", "ip", "created_at"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiSecurityEvent {self.kind} ip={self.ip}>"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -121087,7 +121906,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin_api.py
-SHA256=f92d1c84167632eae11d02c5d5502968d1d03f17340b48341021c49659a49901 BYTES=68924 LINES=1360
+SHA256=38ec24ab0e289b8d80ff2f6b794241b3172552105f2b6c377cdde9ea44436404 BYTES=92504 LINES=1816
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """server/admin_api.py — khu quản trị dành riêng cho API platform (EXT-13).
 
@@ -122414,6 +123233,457 @@ class ApiMarginView(BaseView):
         return HTMLResponse(_admin_shell("API - Margin", "api_margin", body))
 
 
+class ApiRequestsView(BaseView):
+    """Lời gọi đã ghi, của mọi tài khoản."""
+
+    name = "API - Request"
+    icon = "fa-solid fa-list"
+
+    @expose("/api-request", methods=["GET"])
+    async def page(self, request: Request):
+        query = request.query_params.get("q", "")
+        status = request.query_params.get("status", "")
+        code = request.query_params.get("code", "")
+        hours = _int(request, "hours", 24)
+        limit, offset = admin_console.clamp_page(
+            request.query_params.get("limit"),
+            request.query_params.get("offset"))
+
+        gen, db = _session()
+        try:
+            page = admin_console.requests_page(
+                db, query=query, status=status, code=code, hours=hours,
+                limit=limit, offset=offset)
+        finally:
+            _close(gen)
+
+        rows = ""
+        for item in page.rows:
+            row = item["row"]
+            colour = _ERR if row.status >= 400 else ""
+            style = f' style="color:{colour}"' if colour else ""
+            rows += (
+                f'<tr><td class="muted">{_when(row.created_at)}</td>'
+                f'<td class="mono">'
+                f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
+                f'{escape(row.request_id[:12])}</a></td>'
+                f'<td>{escape(item["email"] or "—")}</td>'
+                f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
+                f'<td class="tnum"{style}>{row.status}</td>'
+                f'<td class="mono muted">{escape(row.code or "")}</td>'
+                f'<td class="tnum">{row.latency_ms}</td>'
+                f'<td class="tnum">{row.credit_delta}</td></tr>')
+        rows = rows or ('<tr><td colspan="8" class="muted" '
+                        'style="padding:26px;text-align:center">'
+                        'Không có lời gọi nào khớp.</td></tr>')
+
+        base = (f'/admin/api-request?q={escape(query)}&status={escape(status)}'
+                f'&code={escape(code)}&hours={hours}')
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Request</h1>'
+            f'<p>Nhật ký này chỉ ghi <b>lời gọi hỏng</b> và <b>lời gọi ghi dữ '
+            f'liệu</b> (EXT-09) — một quyết định về thông lượng, không phải '
+            f'thiếu sót. Mọi con số ở đây là con số trên phần đã ghi.</p>'
+            f'</div></div>'
+            f'<form method="get" class="job-filters">'
+            f'<input name="q" value="{escape(query)}" '
+            f'placeholder="correlation id, khoá, route, tool…">'
+            f'<select name="status">'
+            f'<option value="">mọi kết quả</option>'
+            f'<option value="failed"{" selected" if status == "failed" else ""}>'
+            f'chỉ hỏng</option>'
+            f'<option value="ok"{" selected" if status == "ok" else ""}>'
+            f'chỉ thành công</option></select>'
+            f'<input name="code" value="{escape(code)}" placeholder="mã lỗi">'
+            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<button class="btn ghost sm">Lọc</button></form>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Lúc</th><th>Correlation</th><th>Tài khoản</th><th>Route</th>'
+            f'<th>HTTP</th><th>Mã</th><th>ms</th><th>Credit</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>'
+            f'{_pager(page, base)}</div>')
+        return HTMLResponse(_admin_shell("API - Request", "api_requests", body))
+
+
+class ApiJobsView(BaseView):
+    """Job của khu API, kèm ba con số trang khách không bao giờ thấy."""
+
+    name = "API - Job"
+    icon = "fa-solid fa-diagram-project"
+
+    @expose("/api-job", methods=["GET"])
+    async def page(self, request: Request):
+        status = request.query_params.get("status", "")
+        tool = request.query_params.get("tool", "")
+        hours = _int(request, "hours", 24)
+        limit, offset = admin_console.clamp_page(
+            request.query_params.get("limit"),
+            request.query_params.get("offset"))
+
+        gen, db = _session()
+        try:
+            page = admin_console.jobs_page(db, status=status, tool=tool,
+                                           hours=hours, limit=limit,
+                                           offset=offset)
+            failing = admin_console.failing_webhooks(db, hours=hours)
+        finally:
+            _close(gen)
+
+        def ms(value) -> str:
+            return "—" if value is None else f"{value:,}"
+
+        rows = ""
+        for item in page.rows:
+            job = item["job"]
+            rows += (
+                f'<tr><td class="mono">'
+                f'<a href="/admin/api-trace?q={escape(job.id)}">'
+                f'{escape(job.id[:12])}</a></td>'
+                f'<td>{escape(item["email"] or "—")}</td>'
+                f'<td class="mono">{escape(item["tool"] or "—")}</td>'
+                f'<td>{escape(job.status)}</td>'
+                f'<td class="tnum">{ms(item["queue_delay_ms"])}</td>'
+                f'<td class="tnum">{ms(item["run_ms"])}</td>'
+                f'<td class="mono muted">{escape(job.worker_id or "—")}</td>'
+                f'<td class="tnum">{job.attempts}</td>'
+                f'<td class="tnum">{item["held"]}</td></tr>')
+        rows = rows or ('<tr><td colspan="9" class="muted" '
+                        'style="padding:26px;text-align:center">'
+                        'Không có job API nào trong khoảng này.</td></tr>')
+
+        hooks = ""
+        for item in failing:
+            row = item["row"]
+            colour = _ERR if row.status == "dead" else _WARN
+            hooks += (f'<tr><td style="color:{colour}">{escape(row.status)}</td>'
+                      f'<td>{escape(item["email"] or "—")}</td>'
+                      f'<td class="mono">{escape(row.event_type)}</td>'
+                      f'<td class="tnum">{row.attempts}</td>'
+                      f'<td class="tnum">{row.last_status_code or "—"}</td>'
+                      f'<td class="muted">{_when(row.created_at)}</td></tr>')
+        hooks = hooks or ('<tr><td colspan="6" class="muted">Không có webhook '
+                          'nào hỏng trong khoảng này.</td></tr>')
+
+        base = (f'/admin/api-job?status={escape(status)}&tool={escape(tool)}'
+                f'&hours={hours}')
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Job</h1>'
+            f'<p><b>Chờ hàng đợi</b> tách "chúng ta chậm" khỏi "hàng đợi đầy" — '
+            f'ngã rẽ đầu tiên của gần như mọi khiếu nại về độ trễ. Ba cột '
+            f'chờ/chạy/worker là của người vận hành; trang của khách không có '
+            f'chúng.</p></div></div>'
+            f'<form method="get" class="job-filters">'
+            f'<input name="status" value="{escape(status)}" '
+            f'placeholder="trạng thái"> '
+            f'<input name="tool" value="{escape(tool)}" placeholder="tool"> '
+            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<button class="btn ghost sm">Lọc</button></form>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Job</th><th>Tài khoản</th><th>Tool</th><th>Trạng thái</th>'
+            f'<th>Chờ (ms)</th><th>Chạy (ms)</th><th>Worker</th><th>Lần</th>'
+            f'<th>Đã giữ</th></tr></thead><tbody>{rows}</tbody></table></div>'
+            f'{_pager(page, base)}'
+            f'<section><h2 style="margin:22px 0 10px">Webhook hỏng</h2>'
+            f'<p class="muted">Dòng <b>dead</b> đứng trước: một delivery '
+            f'<i>failed</i> sẽ được thử lại, một <i>dead</i> thì không — và chỉ '
+            f'cái thứ hai là một khách đang lặng lẽ mất callback.</p>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Trạng thái</th><th>Tài khoản</th><th>Sự kiện</th>'
+            f'<th>Lần</th><th>HTTP cuối</th><th>Lúc</th></tr></thead>'
+            f'<tbody>{hooks}</tbody></table></div></section></div>')
+        return HTMLResponse(_admin_shell("API - Job", "api_jobs", body))
+
+
+class ApiSecurityView(BaseView):
+    """Những lần bị từ chối trước khi kịp thành một request."""
+
+    name = "API - Bao mat"
+    icon = "fa-solid fa-shield-halved"
+
+    @expose("/api-bao-mat", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api import security_log
+
+        hours = _int(request, "hours", 24)
+        kind = request.query_params.get("kind", "")
+
+        gen, db = _session()
+        try:
+            data = security_log.summary(db, hours=hours)
+            rows = security_log.list_recent(
+                db, kind=kind, since=data["since"], limit=100)
+        finally:
+            _close(gen)
+
+        cards = "".join([
+            _stat("Lần bị từ chối", data["total"],
+                  colour=_ERR if data["total"] else ""),
+            _stat("Khoá đã thu hồi bị dùng", data["revoked_in_use"],
+                  "thường là một bản triển khai chưa ai cập nhật",
+                  colour=_ERR if data["revoked_in_use"] else ""),
+            _stat("Khoá lạ", data["by_kind"].get(security_log.UNKNOWN_KEY, 0),
+                  "nhiều + từ một địa chỉ = đang dò"),
+            _stat("Bị bóp vì dò nhiều",
+                  data["by_kind"].get(security_log.THROTTLED, 0)),
+        ])
+
+        sources = "".join(
+            f'<tr><td class="mono">{escape(ip)}</td>'
+            f'<td class="tnum">{count}</td></tr>'
+            for ip, count in data["top_ips"]) or (
+            '<tr><td colspan="2" class="muted">Không có.</td></tr>')
+
+        listed = "".join(
+            f'<tr><td class="muted">{_when(row.created_at)}</td>'
+            f'<td><code>{escape(row.kind)}</code></td>'
+            f'<td class="mono">{escape(row.ip or "—")}</td>'
+            f'<td class="mono">{escape(row.key_id or "—")}</td>'
+            f'<td class="mono muted">{escape(row.route or "")}</td>'
+            f'<td class="mono muted">'
+            f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
+            f'{escape(row.request_id[:12])}</a></td></tr>'
+            for row in rows) or (
+            '<tr><td colspan="6" class="muted" style="padding:26px;'
+            'text-align:center">Không có sự kiện nào. Đó là trạng thái bình '
+            'thường.</td></tr>')
+
+        kinds = "".join(
+            f'<option value="{k}"{" selected" if k == kind else ""}>{k}</option>'
+            for k in ("",) + security_log.KINDS)
+
+        windows = "".join(
+            f'<a class="{"on" if hours == h else ""}" '
+            f'href="/admin/api-bao-mat?hours={h}">{label}</a>'
+            for h, label in ((1, "1 giờ"), (24, "24 giờ"), (168, "7 ngày")))
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Bảo mật</h1>'
+            f'<p>Những lần bị từ chối <b>trước khi</b> kịp thành một request có '
+            f'chủ. Trước EXT-16 chúng chỉ vào file log, nên "có ai đang dò khoá "'
+            f'"không" và "khoá đã thu hồi còn bị dùng không" không hỏi được bằng '
+            f'dữ liệu. Ở đây chỉ lưu <b>nửa công khai</b> của khoá — nửa bí mật '
+            f'không tồn tại ở đâu để mà hiện.</p></div></div>'
+            f'<div class="tabs">{windows}</div>'
+            f'{_TILES}{cards}</div>'
+            f'{_COLS}'
+            f'<section><h2 style="margin:22px 0 10px">Địa chỉ ồn nhất</h2>'
+            f'<p class="muted">Một địa chỉ hỏng 400 lần là một con bot; 400 địa '
+            f'chỉ hỏng mỗi cái một lần là một bản phát hành lỗi. Cùng một tổng '
+            f'số, hai việc khác nhau.</p>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Địa chỉ</th><th>Số lần</th></tr></thead>'
+            f'<tbody>{sources}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Theo loại</h2>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Loại</th><th>Số lần</th></tr></thead><tbody>'
+            + "".join(f'<tr><td><code>{escape(k)}</code></td>'
+                      f'<td class="tnum">{v}</td></tr>'
+                      for k, v in sorted(data["by_kind"].items()))
+            + f'</tbody></table></div></section></div>'
+            f'<form method="get" class="job-filters">'
+            f'<select name="kind">{kinds}</select>'
+            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<button class="btn ghost sm">Lọc</button></form>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Lúc</th><th>Loại</th><th>Địa chỉ</th><th>Khoá đã thử</th>'
+            f'<th>Route</th><th>Correlation</th></tr></thead>'
+            f'<tbody>{listed}</tbody></table></div></div>')
+        return HTMLResponse(_admin_shell("API - Bao mat", "api_security", body))
+
+
+class ApiTraceView(BaseView):
+    """Một lời gọi, từ đầu đến cuối, từ bất kỳ mẩu định danh nào."""
+
+    name = "API - Truy vet"
+    icon = "fa-solid fa-magnifying-glass"
+
+    @expose("/api-trace", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api import support
+
+        query = request.query_params.get("q", "")
+        gen, db = _session()
+        try:
+            found = support.trace(db, query) if query else support.Trace()
+        finally:
+            _close(gen)
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Truy vết</h1>'
+            f'<p>Dán vào đây bất kỳ thứ gì khách đưa: correlation id, job id, '
+            f'mã khoá, id project, email — hoặc một địa chỉ IP. Tất cả dẫn về '
+            f'<b>một</b> dòng thời gian.</p></div></div>'
+            f'<form method="get" class="job-filters">'
+            f'<input name="q" value="{escape(query)}" size="46" '
+            f'placeholder="correlation id / job / khoá / project / email / IP">'
+            f'<button class="btn sm">Tra</button>'
+            + (f'<a class="btn ghost sm" '
+               f'href="/admin/api-trace-export?q={escape(query)}">Xuất JSON</a>'
+               if found.found else "")
+            + f'</form>'
+            + (_trace_body(found) if query else "")
+            + '</div>')
+        return HTMLResponse(_admin_shell("API - Truy vet", "api_trace", body))
+
+    @expose("/api-trace-export", methods=["GET"])
+    async def export(self, request: Request):
+        import json
+
+        from platform_core.public_api import support
+
+        query = request.query_params.get("q", "")
+        gen, db = _session()
+        try:
+            found = support.trace(db, query)
+            payload = support.export(found)
+        finally:
+            _close(gen)
+
+        from starlette.responses import Response
+
+        # `Content-Disposition` so it lands as a file: a support trace is
+        # something somebody attaches to a ticket, not something they read in a
+        # browser tab and lose.
+        return Response(
+            json.dumps(payload, ensure_ascii=False, indent=2, default=str),
+            media_type="application/json",
+            headers={"Content-Disposition":
+                     f'attachment; filename="trace-{query[:24]}.json"',
+                     "Cache-Control": "no-store"})
+
+
+def _trace_body(found) -> str:
+    """The timeline, in the order the work actually happened."""
+    if not found.found:
+        return ('<p class="muted" style="padding:26px">Không tìm thấy gì khớp. '
+                'Correlation id chỉ được lưu cho lời gọi hỏng và lời gọi ghi '
+                'dữ liệu (EXT-09).</p>')
+
+    def line(label: str, value: str, muted: bool = False) -> str:
+        cls = ' class="muted"' if muted else ""
+        return f'<tr><th>{escape(label)}</th><td{cls}>{value}</td></tr>'
+
+    who = ""
+    if found.user is not None:
+        who += line("Tài khoản",
+                    f'<a href="/admin/api-tai-khoan?user={escape(found.user.id)}">'
+                    f'{escape(found.user.email)}</a>')
+    if found.project is not None:
+        who += line("Project", escape(found.project.name))
+    if found.key is not None:
+        who += line("Khoá",
+                    f'<a href="/admin/api-khoa?key={escape(found.key.key_id)}">'
+                    f'<code>{escape(found.key.key_id[:16])}</code></a> '
+                    f'{_mode_chip(getattr(found.key, "mode", "live"))}')
+
+    steps = ""
+    row = found.request
+    if row is not None:
+        steps += (f'<tr><td>1. Request</td>'
+                  f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
+                  f'<td class="tnum">{row.status}</td>'
+                  f'<td class="muted">{_when(row.created_at)}</td></tr>')
+    job = found.job
+    if job is not None:
+        steps += (f'<tr><td>2. Job</td><td class="mono">{escape(job.id[:16])}</td>'
+                  f'<td>{escape(job.status)}</td>'
+                  f'<td class="muted">{_when(job.created_at)}</td></tr>')
+        delay = found.queue_delay_ms
+        steps += (f'<tr><td>3. Chờ hàng đợi</td>'
+                  f'<td class="tnum">{"—" if delay is None else f"{delay:,} ms"}'
+                  f'</td><td class="mono muted">{escape(job.worker_id or "—")}'
+                  f'</td><td class="muted">{_when(job.started_at)}</td></tr>')
+        run = found.run_ms
+        steps += (f'<tr><td>4. Chạy</td>'
+                  f'<td class="tnum">{"—" if run is None else f"{run:,} ms"}</td>'
+                  f'<td>{escape(job.status)}</td>'
+                  f'<td class="muted">{_when(job.finished_at)}</td></tr>')
+    for entry in found.credit:
+        steps += (f'<tr><td>5. Sổ credit</td><td>{escape(entry.kind)}</td>'
+                  f'<td class="tnum">{entry.delta:+d}</td>'
+                  f'<td class="muted">{_when(entry.created_at)}</td></tr>')
+    for hook in found.webhooks:
+        steps += (f'<tr><td>6. Webhook</td>'
+                  f'<td class="mono">{escape(hook.event_type)}</td>'
+                  f'<td>{escape(hook.status)} ({hook.attempts})</td>'
+                  f'<td class="muted">{_when(hook.created_at)}</td></tr>')
+
+    events = "".join(
+        f'<tr><td class="tnum">{row.sequence}</td>'
+        f'<td class="mono">{escape(row.event_code)}</td>'
+        f'<td>{escape(row.level)}</td>'
+        f'<td>{"khách" if row.visibility == "customer" else "nội bộ"}</td>'
+        f'<td class="muted">{escape(str(row.details or "")[:160])}</td></tr>'
+        for row in found.events) or (
+        '<tr><td colspan="5" class="muted">Không có sự kiện.</td></tr>')
+
+    recent = "".join(
+        f'<tr><td class="muted">{_when(row.created_at)}</td>'
+        f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
+        f'<td class="tnum">{row.status}</td>'
+        f'<td class="mono muted">{escape(row.code or "")}</td>'
+        f'<td class="mono muted">'
+        f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
+        f'{escape(row.request_id[:12])}</a></td></tr>'
+        for row in found.requests)
+
+    security = "".join(
+        f'<tr><td class="muted">{_when(row.created_at)}</td>'
+        f'<td><code>{escape(row.kind)}</code></td>'
+        f'<td class="mono">{escape(row.ip or "—")}</td>'
+        f'<td class="mono">{escape(row.key_id or "—")}</td></tr>'
+        for row in found.security)
+
+    out = (f'<p class="muted">Khớp theo <code>{escape(found.matched_by)}</code>.'
+           f'</p>')
+    if who:
+        out += (f'<section><h2 style="margin:22px 0 10px">Ai</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><tbody>'
+                f'{who}</tbody></table></div></section>')
+    if steps:
+        out += (f'<section><h2 style="margin:22px 0 10px">Dòng thời gian</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Bước</th><th></th><th></th><th>Lúc</th></tr></thead>'
+                f'<tbody>{steps}</tbody></table></div></section>')
+    if found.job is not None:
+        out += (f'<section><h2 style="margin:22px 0 10px">Sự kiện job '
+                f'(gồm cả nội bộ)</h2>'
+                f'<p class="muted">Trang của khách chỉ hiện dòng '
+                f'<i>khách</i>. Chỗ này hiện cả hai — đó là toàn bộ lý do có '
+                f'một trang truy vết cho người vận hành.</p>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>#</th><th>Mã</th><th>Mức</th><th>Ai thấy</th>'
+                f'<th>Chi tiết</th></tr></thead><tbody>{events}</tbody></table>'
+                f'</div></section>')
+        if found.job.error:
+            out += (f'<section><h2 style="margin:22px 0 10px">Lỗi thô</h2>'
+                    f'<p class="muted">Khách được xem một bản đã làm sạch '
+                    f'(Q76). Bản gốc ở đây.</p>'
+                    f'<pre class="mono" style="white-space:pre-wrap">'
+                    f'{escape(found.job.error[:2000])}</pre></section>')
+    if recent:
+        out += (f'<section><h2 style="margin:22px 0 10px">Lời gọi gần đây</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th>'
+                f'<th>Correlation</th></tr></thead><tbody>{recent}</tbody>'
+                f'</table></div></section>')
+    if security:
+        out += (f'<section><h2 style="margin:22px 0 10px">Sự kiện bảo mật</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Lúc</th><th>Loại</th><th>Địa chỉ</th><th>Khoá</th>'
+                f'</tr></thead><tbody>{security}</tbody></table></div>'
+                f'</section>')
+    return out
+
+
 def _redirect(path: str, message: str):
     from urllib.parse import quote
 
@@ -122432,7 +123702,8 @@ def _admin_shell(title: str, active: str, body: str) -> str:
 #: Đăng ký ở `server/admin.py`. Giữ danh sách ở đây để thêm một trang là sửa
 #: một file, không phải hai.
 VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
-         ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView)
+         ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView,
+         ApiRequestsView, ApiJobsView, ApiSecurityView, ApiTraceView)
 
 #: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
 #: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
@@ -122448,6 +123719,10 @@ NAV = (
     ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
     ("/admin/api-gia", "GI", "API — Giá", "api_pricing"),
     ("/admin/api-margin", "MG", "API — Margin", "api_margin"),
+    ("/admin/api-request", "RQ", "API — Request", "api_requests"),
+    ("/admin/api-job", "AJ", "API — Job", "api_jobs"),
+    ("/admin/api-bao-mat", "BM", "API — Bảo mật", "api_security"),
+    ("/admin/api-trace", "TV", "API — Truy vết", "api_trace"),
 )
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -122769,7 +124044,7 @@ __all__ = ["API_V1_PREFIX", "API_V1_ROUTES", "PUBLIC_API_TAG", "PUBLIC_API_TITLE
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/auth.py
-SHA256=288d58050a753be925bf4e0b09288acd65745374e4bb285c5ef9b424cdb7d49e BYTES=9949 LINES=238
+SHA256=5b04523981d34c89cb1fc5af28328ba71886e18f5a9b7a042ea6b979b716f358 BYTES=11753 LINES=273
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bearer authentication for ``/api/v1``.
 
@@ -122804,6 +124079,7 @@ from platform_core.public_api import keys as devkeys
 from platform_core.public_api import limits
 from platform_core.public_api import metrics
 from platform_core.public_api import policy
+from platform_core.public_api import security_log
 from platform_core.public_api.principal import Principal, ensure_scope
 from server.api import deps
 from server.api.context import client_ip, request_id
@@ -122825,19 +124101,53 @@ def _config(request):
     return getattr(request.app.state, "public_api_config", None)
 
 
-def _audit_failure(request, reason: str, key_id: str = "") -> None:
-    """One redacted line per rejected request.
+#: Which security-event kind each rejection reason becomes. Kept here, beside
+#: the reasons themselves, so adding a reason without deciding how it is
+#: recorded is a visible omission rather than a silent one.
+_SECURITY_KIND = {
+    REASON_NO_HEADER: security_log.NO_CREDENTIAL,
+    # A token that does not even parse is the same signal as one that does not
+    # exist: somebody is trying strings.
+    REASON_MALFORMED: security_log.UNKNOWN_KEY,
+    REASON_UNKNOWN_OR_WRONG: security_log.UNKNOWN_KEY,
+    REASON_UNUSABLE: security_log.REVOKED_KEY,
+    REASON_IP_NOT_ALLOWED: security_log.IP_NOT_ALLOWED,
+    REASON_MISCONFIGURED: security_log.MISCONFIGURED,
+}
+
+
+def _audit_failure(request, reason: str, key_id: str = "", db=None) -> None:
+    """One redacted line per rejected request, and one row an operator can query.
 
     ``key_id`` is the public half of the token and is safe to record; it is what
     a support conversation refers to. The secret half is never passed in.
+
+    Until EXT-16 this wrote only to the process log, because `guard.py` skips
+    the request log when there is no principal — so an unknown key, a **revoked**
+    key and a scanner walking the key space all left nothing in the database.
+    Those are precisely the events an operator needs to search.
     """
     proxies = getattr(_config(request), "trusted_proxies", ())
+    address = client_ip(request, proxies)
     metrics.increment(metrics.AUTH_FAILURE)
     log.warning(
         "public api auth rejected reason=%s key_id=%s ip=%s path=%s request_id=%s",
-        reason, key_id or "-", client_ip(request, proxies), request.url.path,
-        request_id(request),
+        reason, key_id or "-", address, request.url.path, request_id(request),
     )
+    if db is None:
+        return
+    try:
+        security_log.record(
+            db, kind=_SECURITY_KIND.get(reason, security_log.UNKNOWN_KEY),
+            ip=address, key_id=key_id, route=request.url.path,
+            request_id=request_id(request), detail=reason)
+        db.commit()
+    except Exception as exc:  # noqa: BLE001 - observing must not break refusing
+        # A logging problem must never turn a 401 into a 500: the caller is
+        # being refused either way, and the refusal is the part that protects
+        # the platform.
+        db.rollback()
+        log.exception("khong ghi duoc su kien bao mat: %s", type(exc).__name__)
 
 
 def resolve_from_database(request, db) -> Principal | None:
@@ -122848,7 +124158,7 @@ def resolve_from_database(request, db) -> Principal | None:
     config = _config(request)
     token = deps.bearer_token(request)
     if not token:
-        _audit_failure(request, REASON_NO_HEADER)
+        _audit_failure(request, REASON_NO_HEADER, db=db)
         _throttle(request, config, "")
         return None
 
@@ -122856,7 +124166,7 @@ def resolve_from_database(request, db) -> Principal | None:
     if parsed is None:
         # Still runs a digest inside verify(); do not shortcut it here either.
         devkeys.verify(db, token)
-        _audit_failure(request, REASON_MALFORMED)
+        _audit_failure(request, REASON_MALFORMED, db=db)
         _throttle(request, config, "")
         return None
     public_key_id = parsed[0]
@@ -122866,14 +124176,14 @@ def resolve_from_database(request, db) -> Principal | None:
     except devkeys.DeveloperKeyError:
         # Missing/short pepper: the platform is misconfigured, not the caller.
         # Fail closed and make the cause visible to an operator.
-        _audit_failure(request, REASON_MISCONFIGURED, public_key_id)
+        _audit_failure(request, REASON_MISCONFIGURED, public_key_id, db=db)
         return None
     if key is None:
-        _audit_failure(request, REASON_UNKNOWN_OR_WRONG, public_key_id)
+        _audit_failure(request, REASON_UNKNOWN_OR_WRONG, public_key_id, db=db)
         _throttle(request, config, public_key_id)
         return None
     if not key.is_usable():
-        _audit_failure(request, REASON_UNUSABLE, public_key_id)
+        _audit_failure(request, REASON_UNUSABLE, public_key_id, db=db)
         _throttle(request, config, public_key_id)
         return None
 
@@ -122882,7 +124192,7 @@ def resolve_from_database(request, db) -> Principal | None:
     # address" confirms the key is real to whoever stole it.
     proxies = getattr(config, "trusted_proxies", ()) if config else ()
     if not devkeys.ip_allowed(key, client_ip(request, proxies)):
-        _audit_failure(request, REASON_IP_NOT_ALLOWED, public_key_id)
+        _audit_failure(request, REASON_IP_NOT_ALLOWED, public_key_id, db=db)
         _throttle(request, config, public_key_id)
         return None
 
@@ -176558,6 +177868,581 @@ def test_the_portal_page_says_a_simulation_is_not_a_quote(portal):
     _issue(portal)
     page = portal.get("/developers/pricing").text
     assert "KHÔNG sinh báo giá" in page
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_208_support_trace.py
+SHA256=e9b65bffadc965acf58fea36c8abb4c48f951a0d271c87ab6f457bb3ca4ce87e BYTES=21124 LINES=569
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-16 — operations, security events and the support trace.
+
+Three acceptance criteria, and each is checked against a real call rather than a
+constructed row:
+
+* **one E2E request traceable end to end** — quote, hold, job, worker, artifact,
+  settlement and webhook all reachable from the one string a customer would
+  paste;
+* **no ledger direct edit** — every operator surface here reads; the whole ledger
+  is snapshotted before and after and compared;
+* **no secret in export** — a real key and a real webhook secret are created,
+  the trace is exported, and the file is searched for them.
+
+The fourth thing this file defends is the gap EXT-16 was written to close: an
+authentication failure used to leave nothing in the database, so "is a revoked
+key still being used" could not be asked of the data.
+"""
+from __future__ import annotations
+
+import json
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import (admin_console, keys as devkeys, limits,
+                                      security_log, support)
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "trace-test-pepper-" + "t" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "artifacts:read",
+          "webhooks:manage")
+INPUT = {"topic": "trace", "count": 1}
+RECEIVER = "https://receiver.example.com/hook"
+
+
+def _public_dns(host: str) -> list:
+    if host.endswith("example.com"):
+        return ["93.184.216.34"]
+    raise OSError(f"unknown test host: {host}")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    from platform_core.public_api import webhooks
+
+    monkeypatch.setattr(webhooks, "_system_resolver", _public_dns)
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'trace.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "trace-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_RPM": "600", "LTT_PUBLIC_API_CREATE_RPM": "200",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+# ── Plumbing ─────────────────────────────────────────────────────────────────
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _sign_in(client, email: str = "", credits: int = 500,
+             role: str = "user") -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    address = email or f"tr-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=address, password="a-good-password-12",
+                              role=role)
+        user.is_verified = True
+        db.flush()
+        if credits:
+            credit.cap_tay(db, user.id, credits, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": address,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    return user_id
+
+
+def _issue(client) -> str:
+    page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": "trace", "csrf_token": _csrf(page),
+                                "scopes": list(SCOPES)})
+    return re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+
+
+def _auth(token: str, idem: str = "") -> dict:
+    headers = {"Authorization": f"Bearer {token}"}
+    if idem:
+        headers["Idempotency-Key"] = idem
+    return headers
+
+
+def _ledger_snapshot() -> list:
+    from sqlalchemy import select
+
+    from platform_core.models import CreditEntry
+
+    gen, db = _session()
+    try:
+        rows = db.execute(select(CreditEntry).order_by(
+            CreditEntry.id)).scalars().all()
+        return [(r.user_id, r.kind, r.delta, r.job_id, r.note) for r in rows]
+    finally:
+        _close(gen)
+
+
+def _run_one_call(client, token) -> dict:
+    """A real call, all the way to a delivered webhook."""
+    quote = client.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(token))
+    assert quote.status_code == 200, quote.text
+    created = client.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote.json()["quote"], "input": INPUT},
+        headers=_auth(token, f"tr-{uuid.uuid4().hex[:10]}"))
+    assert created.status_code == 201, created.text
+
+    from platform_core.job_runner import _chay_mot_job
+
+    assert _chay_mot_job("trace-worker") is True
+    return {"job_id": created.json()["id"],
+            "correlation": created.headers["X-Correlation-ID"]}
+
+
+# ── One request, traceable end to end ────────────────────────────────────────
+
+def test_one_real_call_is_traceable_from_its_correlation_id(portal):
+    """The acceptance criterion, against a call that actually ran.
+
+    Quote, hold, job, worker, settlement and webhook all reachable from the one
+    string a customer would paste into a ticket.
+    """
+    _sign_in(portal)
+    token = _issue(portal)
+    portal.post(f"{API_V1_PREFIX}/webhooks", json={"url": RECEIVER},
+                headers=_auth(token))
+    call = _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        found = support.trace(db, call["correlation"])
+        assert found.found and found.matched_by == "request_id"
+        assert found.job is not None and found.job.id == call["job_id"]
+        assert found.user is not None
+        assert found.key is not None
+        # The worker that ran it, and how long it waited — neither is on the
+        # customer's page.
+        assert found.job.worker_id == "trace-worker"
+        assert found.queue_delay_ms is not None
+        assert found.run_ms is not None
+        # Hold and settlement both present.
+        kinds = [row.kind for row in found.credit]
+        assert "hold" in kinds
+        # …and the callback the customer depends on.
+        assert found.webhooks, "the delivery is part of the story"
+    finally:
+        _close(gen)
+
+
+def test_the_same_call_is_reachable_from_the_job_id(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    call = _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        found = support.trace(db, call["job_id"])
+        assert found.matched_by == "job_id"
+        assert found.job is not None
+        assert found.requests, "the request that created it should be attached"
+    finally:
+        _close(gen)
+
+
+def test_a_trace_can_start_from_a_key_a_project_or_an_email(portal):
+    """A support conversation starts with whatever the customer copied."""
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    _run_one_call(portal, token)
+    key_id = token.split("_")[2]
+
+    gen, db = _session()
+    try:
+        by_key = support.trace(db, key_id)
+        assert by_key.matched_by == "key_id" and by_key.key is not None
+
+        project_id = str(by_key.key.project_id or "")
+        by_project = support.trace(db, project_id)
+        assert by_project.matched_by == "project_id"
+
+        from platform_core.models import User
+
+        email = db.get(User, user_id).email
+        by_email = support.trace(db, email)
+        assert by_email.matched_by == "user"
+        assert by_email.requests
+    finally:
+        _close(gen)
+
+
+def test_an_unknown_string_finds_nothing_rather_than_guessing(portal):
+    gen, db = _session()
+    try:
+        found = support.trace(db, "not-a-real-identifier")
+        assert not found.found
+        assert found.job is None and found.request is None
+    finally:
+        _close(gen)
+
+
+def test_the_operator_trace_shows_events_the_customer_does_not(portal):
+    """The whole reason an operator trace exists.
+
+    The customer's timeline filters to `visibility == "customer"`; this one does
+    not, because the internal lines are the ones that say what went wrong.
+    """
+    from platform_core.public_api import request_log
+
+    _sign_in(portal)
+    token = _issue(portal)
+    call = _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        found = support.trace(db, call["correlation"])
+        row = request_log.get_owned(db, user_id=found.user.id,
+                                    request_id=call["correlation"])
+        customer_view = request_log.timeline(db, row)
+
+        operator_codes = {event.event_code for event in found.events}
+        customer_codes = {event.event_code for event in customer_view["events"]}
+        assert operator_codes >= customer_codes
+        assert any(event.visibility != "customer" for event in found.events), (
+            "this test assumes the platform writes internal events")
+    finally:
+        _close(gen)
+
+
+# ── The security gap this prompt closes ──────────────────────────────────────
+
+def test_an_unknown_key_now_leaves_a_row(portal):
+    """Before EXT-16 this was invisible in the database.
+
+    `guard.py` skips the request log when there is no principal, so a caller
+    probing the key space left nothing but a line in a log file.
+    """
+    answer = portal.get(f"{API_V1_PREFIX}/me",
+                        headers=_auth("ltt_sk_" + "a" * 32 + "_" + "b" * 43))
+    assert answer.status_code == 401
+
+    gen, db = _session()
+    try:
+        rows = security_log.list_recent(db)
+        assert rows, "an unknown key must be recorded"
+        assert rows[0].kind == security_log.UNKNOWN_KEY
+        assert rows[0].route.endswith("/me")
+        assert rows[0].request_id
+    finally:
+        _close(gen)
+
+
+def test_a_revoked_key_still_in_use_is_visible(portal):
+    """One of the two questions the brief names outright — answered by a join.
+
+    `keys.verify()` returns the same `None` for an unknown key, a wrong secret
+    and a revoked one, deliberately, so a caller cannot enumerate valid key ids
+    by watching which failure comes back. The authentication path therefore
+    cannot label the event "revoked". The question is answered at read time by
+    matching the presented key id against the keys table — which changes nothing
+    an attacker can observe.
+    """
+    _sign_in(portal)
+    token = _issue(portal)
+    key_id = token.split("_")[2]
+    gen, db = _session()
+    try:
+        devkeys.revoke(db, admin_console.key_by_id(db, key_id))
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert portal.get(f"{API_V1_PREFIX}/me",
+                      headers=_auth(token)).status_code == 401
+
+    gen, db = _session()
+    try:
+        attempts = security_log.revoked_key_attempts(db)
+        assert attempts, "a revoked key in use must be findable"
+        assert attempts[0].key_id == key_id
+        assert security_log.summary(db, hours=1)["revoked_in_use"] == 1
+
+        # An unknown key that was never issued must NOT be counted as revoked.
+        security_log.record(db, kind=security_log.UNKNOWN_KEY,
+                            key_id="never-existed", ip="9.9.9.9")
+        db.commit()
+        assert len(security_log.revoked_key_attempts(db)) == 1
+    finally:
+        _close(gen)
+
+
+def test_a_request_with_no_credential_is_recorded_as_such(portal):
+    assert portal.get(f"{API_V1_PREFIX}/me").status_code == 401
+    gen, db = _session()
+    try:
+        rows = security_log.list_recent(db,
+                                        kind=security_log.NO_CREDENTIAL)
+        assert rows
+    finally:
+        _close(gen)
+
+
+def test_the_secret_half_of_a_token_is_never_recorded(portal):
+    """`key_id` is the public half; the secret must not appear anywhere."""
+    _sign_in(portal)
+    token = _issue(portal)
+    secret = token.split("_", 3)[-1]
+    gen, db = _session()
+    try:
+        devkeys.revoke(db, admin_console.key_by_id(db, token.split("_")[2]))
+        db.commit()
+    finally:
+        _close(gen)
+    portal.get(f"{API_V1_PREFIX}/me", headers=_auth(token))
+
+    gen, db = _session()
+    try:
+        for row in security_log.list_recent(db):
+            blob = " ".join(str(value) for value in
+                            (row.kind, row.ip, row.key_id, row.route,
+                             row.detail, row.request_id))
+            assert secret not in blob
+    finally:
+        _close(gen)
+
+
+def test_the_summary_separates_one_noisy_source_from_many(portal):
+    """One address failing 400 times is a scanner; 400 addresses failing once
+    is a broken release. The same total tells them apart only broken down."""
+    gen, db = _session()
+    try:
+        for index in range(5):
+            security_log.record(db, kind=security_log.UNKNOWN_KEY,
+                                ip="10.0.0.1", key_id=f"k{index}")
+        security_log.record(db, kind=security_log.NO_CREDENTIAL, ip="10.0.0.2")
+        db.commit()
+
+        data = security_log.summary(db, hours=1)
+        assert data["total"] == 6
+        assert data["by_kind"][security_log.UNKNOWN_KEY] == 5
+        assert data["top_ips"][0] == ("10.0.0.1", 5)
+    finally:
+        _close(gen)
+
+
+def test_an_unknown_kind_is_refused_rather_than_stored(portal):
+    """Called from the authentication path: a logging mistake must never turn a
+    401 into a 500."""
+    gen, db = _session()
+    try:
+        assert security_log.record(db, kind="not.a.kind", ip="1.1.1.1") is None
+    finally:
+        _close(gen)
+
+
+def test_old_security_events_can_be_purged(portal):
+    gen, db = _session()
+    try:
+        old = datetime.now(timezone.utc) - timedelta(days=200)
+        security_log.record(db, kind=security_log.UNKNOWN_KEY, ip="1.1.1.1",
+                            now=old)
+        security_log.record(db, kind=security_log.UNKNOWN_KEY, ip="2.2.2.2")
+        db.commit()
+        assert security_log.purge_expired(db) == 1
+        db.commit()
+        assert len(security_log.list_recent(db)) == 1
+    finally:
+        _close(gen)
+
+
+# ── No secret in export ──────────────────────────────────────────────────────
+
+def test_an_export_carries_no_secret(portal):
+    """A real key and a real webhook secret, then search the exported file."""
+    _sign_in(portal)
+    token = _issue(portal)
+    created = portal.post(f"{API_V1_PREFIX}/webhooks", json={"url": RECEIVER},
+                          headers=_auth(token))
+    hook_secret = created.json()["secret"]
+    key_secret = token.split("_", 3)[-1]
+    call = _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        found = support.trace(db, call["correlation"])
+        blob = json.dumps(support.export(found), ensure_ascii=False,
+                          default=str)
+    finally:
+        _close(gen)
+
+    assert key_secret not in blob, "the key's secret half leaked into an export"
+    assert hook_secret not in blob, "the webhook signing secret leaked"
+    assert "secret_enc" not in blob or support.REDACTED in blob
+    # …and the export is still useful.
+    assert call["correlation"] in blob
+    assert call["job_id"] in blob
+
+
+def test_redaction_covers_fields_nobody_thought_of(portal):
+    """Applied to whole structures rather than to a list of known fields.
+
+    A model gains columns over time, and an allowlist is a promise to remember.
+    """
+    payload = {"webhook_secret_enc": "s3cr3t", "nested": {"pepper": "p"},
+               "rows": [{"authorization": "Bearer x", "safe": 1}],
+               "storage_key": "users/u1/a.png", "name": "keep me"}
+    clean = support.redact(payload)
+    assert clean["webhook_secret_enc"] == support.REDACTED
+    assert clean["nested"]["pepper"] == support.REDACTED
+    assert clean["rows"][0]["authorization"] == support.REDACTED
+    assert clean["rows"][0]["safe"] == 1
+    assert clean["storage_key"] == support.REDACTED, "locations travel too"
+    assert clean["name"] == "keep me"
+
+
+# ── No ledger direct edit ────────────────────────────────────────────────────
+
+def test_no_operator_read_changes_the_ledger(portal):
+    """Snapshot the whole ledger, exercise every operator surface, compare."""
+    _sign_in(portal)
+    token = _issue(portal)
+    call = _run_one_call(portal, token)
+    before = _ledger_snapshot()
+    assert before, "this test needs a ledger to compare"
+
+    gen, db = _session()
+    try:
+        admin_console.requests_page(db)
+        admin_console.jobs_page(db)
+        admin_console.failing_webhooks(db)
+        security_log.summary(db)
+        found = support.trace(db, call["correlation"])
+        support.export(found)
+        db.commit()
+    finally:
+        _close(gen)
+
+    assert _ledger_snapshot() == before
+
+
+def test_the_operator_pages_are_admin_only(portal):
+    """A signed-in customer is not an operator, and these pages hold every
+    account's traffic."""
+    _sign_in(portal)
+    for path in ("/admin/api-request", "/admin/api-job", "/admin/api-bao-mat",
+                 "/admin/api-trace"):
+        answer = portal.get(path, follow_redirects=False)
+        assert answer.status_code in (302, 303, 307), path
+        assert "/login" in answer.headers.get("location", ""), path
+
+
+# ── The operations reads ─────────────────────────────────────────────────────
+
+def test_the_job_page_shows_queue_delay_and_worker(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        page = admin_console.jobs_page(db)
+        assert page.total == 1
+        row = page.rows[0]
+        assert row["queue_delay_ms"] is not None
+        assert row["job"].worker_id == "trace-worker"
+        assert row["email"]
+        assert row["tool"] == TOOL
+    finally:
+        _close(gen)
+
+
+def test_the_job_page_ignores_jobs_the_web_app_made(portal):
+    """This console is about the API platform; a UI job has no `_api` block."""
+    user_id = _sign_in(portal)
+    from platform_core import jobs as jobq
+
+    gen, db = _session()
+    try:
+        jobq.submit(db, user_id=user_id, app_slug="thumbnail",
+                    job_type="thumbnail.generate",
+                    params={"topic": "ui", "count": 1, "owner_id": user_id})
+        db.commit()
+        assert admin_console.jobs_page(db).total == 0
+    finally:
+        _close(gen)
+
+
+def test_the_request_page_can_be_narrowed_to_failures(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    portal.get(f"{API_V1_PREFIX}/jobs/nope", headers=_auth(token))
+    _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        assert admin_console.requests_page(db, status="failed").total >= 1
+        every = admin_console.requests_page(db).total
+        assert every >= admin_console.requests_page(db, status="failed").total
+    finally:
+        _close(gen)
 
 @@@LTT_PROFILE_FILE_END@@@
 

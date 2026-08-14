@@ -1323,6 +1323,457 @@ class ApiMarginView(BaseView):
         return HTMLResponse(_admin_shell("API - Margin", "api_margin", body))
 
 
+class ApiRequestsView(BaseView):
+    """Lời gọi đã ghi, của mọi tài khoản."""
+
+    name = "API - Request"
+    icon = "fa-solid fa-list"
+
+    @expose("/api-request", methods=["GET"])
+    async def page(self, request: Request):
+        query = request.query_params.get("q", "")
+        status = request.query_params.get("status", "")
+        code = request.query_params.get("code", "")
+        hours = _int(request, "hours", 24)
+        limit, offset = admin_console.clamp_page(
+            request.query_params.get("limit"),
+            request.query_params.get("offset"))
+
+        gen, db = _session()
+        try:
+            page = admin_console.requests_page(
+                db, query=query, status=status, code=code, hours=hours,
+                limit=limit, offset=offset)
+        finally:
+            _close(gen)
+
+        rows = ""
+        for item in page.rows:
+            row = item["row"]
+            colour = _ERR if row.status >= 400 else ""
+            style = f' style="color:{colour}"' if colour else ""
+            rows += (
+                f'<tr><td class="muted">{_when(row.created_at)}</td>'
+                f'<td class="mono">'
+                f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
+                f'{escape(row.request_id[:12])}</a></td>'
+                f'<td>{escape(item["email"] or "—")}</td>'
+                f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
+                f'<td class="tnum"{style}>{row.status}</td>'
+                f'<td class="mono muted">{escape(row.code or "")}</td>'
+                f'<td class="tnum">{row.latency_ms}</td>'
+                f'<td class="tnum">{row.credit_delta}</td></tr>')
+        rows = rows or ('<tr><td colspan="8" class="muted" '
+                        'style="padding:26px;text-align:center">'
+                        'Không có lời gọi nào khớp.</td></tr>')
+
+        base = (f'/admin/api-request?q={escape(query)}&status={escape(status)}'
+                f'&code={escape(code)}&hours={hours}')
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Request</h1>'
+            f'<p>Nhật ký này chỉ ghi <b>lời gọi hỏng</b> và <b>lời gọi ghi dữ '
+            f'liệu</b> (EXT-09) — một quyết định về thông lượng, không phải '
+            f'thiếu sót. Mọi con số ở đây là con số trên phần đã ghi.</p>'
+            f'</div></div>'
+            f'<form method="get" class="job-filters">'
+            f'<input name="q" value="{escape(query)}" '
+            f'placeholder="correlation id, khoá, route, tool…">'
+            f'<select name="status">'
+            f'<option value="">mọi kết quả</option>'
+            f'<option value="failed"{" selected" if status == "failed" else ""}>'
+            f'chỉ hỏng</option>'
+            f'<option value="ok"{" selected" if status == "ok" else ""}>'
+            f'chỉ thành công</option></select>'
+            f'<input name="code" value="{escape(code)}" placeholder="mã lỗi">'
+            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<button class="btn ghost sm">Lọc</button></form>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Lúc</th><th>Correlation</th><th>Tài khoản</th><th>Route</th>'
+            f'<th>HTTP</th><th>Mã</th><th>ms</th><th>Credit</th></tr></thead>'
+            f'<tbody>{rows}</tbody></table></div>'
+            f'{_pager(page, base)}</div>')
+        return HTMLResponse(_admin_shell("API - Request", "api_requests", body))
+
+
+class ApiJobsView(BaseView):
+    """Job của khu API, kèm ba con số trang khách không bao giờ thấy."""
+
+    name = "API - Job"
+    icon = "fa-solid fa-diagram-project"
+
+    @expose("/api-job", methods=["GET"])
+    async def page(self, request: Request):
+        status = request.query_params.get("status", "")
+        tool = request.query_params.get("tool", "")
+        hours = _int(request, "hours", 24)
+        limit, offset = admin_console.clamp_page(
+            request.query_params.get("limit"),
+            request.query_params.get("offset"))
+
+        gen, db = _session()
+        try:
+            page = admin_console.jobs_page(db, status=status, tool=tool,
+                                           hours=hours, limit=limit,
+                                           offset=offset)
+            failing = admin_console.failing_webhooks(db, hours=hours)
+        finally:
+            _close(gen)
+
+        def ms(value) -> str:
+            return "—" if value is None else f"{value:,}"
+
+        rows = ""
+        for item in page.rows:
+            job = item["job"]
+            rows += (
+                f'<tr><td class="mono">'
+                f'<a href="/admin/api-trace?q={escape(job.id)}">'
+                f'{escape(job.id[:12])}</a></td>'
+                f'<td>{escape(item["email"] or "—")}</td>'
+                f'<td class="mono">{escape(item["tool"] or "—")}</td>'
+                f'<td>{escape(job.status)}</td>'
+                f'<td class="tnum">{ms(item["queue_delay_ms"])}</td>'
+                f'<td class="tnum">{ms(item["run_ms"])}</td>'
+                f'<td class="mono muted">{escape(job.worker_id or "—")}</td>'
+                f'<td class="tnum">{job.attempts}</td>'
+                f'<td class="tnum">{item["held"]}</td></tr>')
+        rows = rows or ('<tr><td colspan="9" class="muted" '
+                        'style="padding:26px;text-align:center">'
+                        'Không có job API nào trong khoảng này.</td></tr>')
+
+        hooks = ""
+        for item in failing:
+            row = item["row"]
+            colour = _ERR if row.status == "dead" else _WARN
+            hooks += (f'<tr><td style="color:{colour}">{escape(row.status)}</td>'
+                      f'<td>{escape(item["email"] or "—")}</td>'
+                      f'<td class="mono">{escape(row.event_type)}</td>'
+                      f'<td class="tnum">{row.attempts}</td>'
+                      f'<td class="tnum">{row.last_status_code or "—"}</td>'
+                      f'<td class="muted">{_when(row.created_at)}</td></tr>')
+        hooks = hooks or ('<tr><td colspan="6" class="muted">Không có webhook '
+                          'nào hỏng trong khoảng này.</td></tr>')
+
+        base = (f'/admin/api-job?status={escape(status)}&tool={escape(tool)}'
+                f'&hours={hours}')
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Job</h1>'
+            f'<p><b>Chờ hàng đợi</b> tách "chúng ta chậm" khỏi "hàng đợi đầy" — '
+            f'ngã rẽ đầu tiên của gần như mọi khiếu nại về độ trễ. Ba cột '
+            f'chờ/chạy/worker là của người vận hành; trang của khách không có '
+            f'chúng.</p></div></div>'
+            f'<form method="get" class="job-filters">'
+            f'<input name="status" value="{escape(status)}" '
+            f'placeholder="trạng thái"> '
+            f'<input name="tool" value="{escape(tool)}" placeholder="tool"> '
+            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<button class="btn ghost sm">Lọc</button></form>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Job</th><th>Tài khoản</th><th>Tool</th><th>Trạng thái</th>'
+            f'<th>Chờ (ms)</th><th>Chạy (ms)</th><th>Worker</th><th>Lần</th>'
+            f'<th>Đã giữ</th></tr></thead><tbody>{rows}</tbody></table></div>'
+            f'{_pager(page, base)}'
+            f'<section><h2 style="margin:22px 0 10px">Webhook hỏng</h2>'
+            f'<p class="muted">Dòng <b>dead</b> đứng trước: một delivery '
+            f'<i>failed</i> sẽ được thử lại, một <i>dead</i> thì không — và chỉ '
+            f'cái thứ hai là một khách đang lặng lẽ mất callback.</p>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Trạng thái</th><th>Tài khoản</th><th>Sự kiện</th>'
+            f'<th>Lần</th><th>HTTP cuối</th><th>Lúc</th></tr></thead>'
+            f'<tbody>{hooks}</tbody></table></div></section></div>')
+        return HTMLResponse(_admin_shell("API - Job", "api_jobs", body))
+
+
+class ApiSecurityView(BaseView):
+    """Những lần bị từ chối trước khi kịp thành một request."""
+
+    name = "API - Bao mat"
+    icon = "fa-solid fa-shield-halved"
+
+    @expose("/api-bao-mat", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api import security_log
+
+        hours = _int(request, "hours", 24)
+        kind = request.query_params.get("kind", "")
+
+        gen, db = _session()
+        try:
+            data = security_log.summary(db, hours=hours)
+            rows = security_log.list_recent(
+                db, kind=kind, since=data["since"], limit=100)
+        finally:
+            _close(gen)
+
+        cards = "".join([
+            _stat("Lần bị từ chối", data["total"],
+                  colour=_ERR if data["total"] else ""),
+            _stat("Khoá đã thu hồi bị dùng", data["revoked_in_use"],
+                  "thường là một bản triển khai chưa ai cập nhật",
+                  colour=_ERR if data["revoked_in_use"] else ""),
+            _stat("Khoá lạ", data["by_kind"].get(security_log.UNKNOWN_KEY, 0),
+                  "nhiều + từ một địa chỉ = đang dò"),
+            _stat("Bị bóp vì dò nhiều",
+                  data["by_kind"].get(security_log.THROTTLED, 0)),
+        ])
+
+        sources = "".join(
+            f'<tr><td class="mono">{escape(ip)}</td>'
+            f'<td class="tnum">{count}</td></tr>'
+            for ip, count in data["top_ips"]) or (
+            '<tr><td colspan="2" class="muted">Không có.</td></tr>')
+
+        listed = "".join(
+            f'<tr><td class="muted">{_when(row.created_at)}</td>'
+            f'<td><code>{escape(row.kind)}</code></td>'
+            f'<td class="mono">{escape(row.ip or "—")}</td>'
+            f'<td class="mono">{escape(row.key_id or "—")}</td>'
+            f'<td class="mono muted">{escape(row.route or "")}</td>'
+            f'<td class="mono muted">'
+            f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
+            f'{escape(row.request_id[:12])}</a></td></tr>'
+            for row in rows) or (
+            '<tr><td colspan="6" class="muted" style="padding:26px;'
+            'text-align:center">Không có sự kiện nào. Đó là trạng thái bình '
+            'thường.</td></tr>')
+
+        kinds = "".join(
+            f'<option value="{k}"{" selected" if k == kind else ""}>{k}</option>'
+            for k in ("",) + security_log.KINDS)
+
+        windows = "".join(
+            f'<a class="{"on" if hours == h else ""}" '
+            f'href="/admin/api-bao-mat?hours={h}">{label}</a>'
+            for h, label in ((1, "1 giờ"), (24, "24 giờ"), (168, "7 ngày")))
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Bảo mật</h1>'
+            f'<p>Những lần bị từ chối <b>trước khi</b> kịp thành một request có '
+            f'chủ. Trước EXT-16 chúng chỉ vào file log, nên "có ai đang dò khoá "'
+            f'"không" và "khoá đã thu hồi còn bị dùng không" không hỏi được bằng '
+            f'dữ liệu. Ở đây chỉ lưu <b>nửa công khai</b> của khoá — nửa bí mật '
+            f'không tồn tại ở đâu để mà hiện.</p></div></div>'
+            f'<div class="tabs">{windows}</div>'
+            f'{_TILES}{cards}</div>'
+            f'{_COLS}'
+            f'<section><h2 style="margin:22px 0 10px">Địa chỉ ồn nhất</h2>'
+            f'<p class="muted">Một địa chỉ hỏng 400 lần là một con bot; 400 địa '
+            f'chỉ hỏng mỗi cái một lần là một bản phát hành lỗi. Cùng một tổng '
+            f'số, hai việc khác nhau.</p>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Địa chỉ</th><th>Số lần</th></tr></thead>'
+            f'<tbody>{sources}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Theo loại</h2>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Loại</th><th>Số lần</th></tr></thead><tbody>'
+            + "".join(f'<tr><td><code>{escape(k)}</code></td>'
+                      f'<td class="tnum">{v}</td></tr>'
+                      for k, v in sorted(data["by_kind"].items()))
+            + f'</tbody></table></div></section></div>'
+            f'<form method="get" class="job-filters">'
+            f'<select name="kind">{kinds}</select>'
+            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<button class="btn ghost sm">Lọc</button></form>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Lúc</th><th>Loại</th><th>Địa chỉ</th><th>Khoá đã thử</th>'
+            f'<th>Route</th><th>Correlation</th></tr></thead>'
+            f'<tbody>{listed}</tbody></table></div></div>')
+        return HTMLResponse(_admin_shell("API - Bao mat", "api_security", body))
+
+
+class ApiTraceView(BaseView):
+    """Một lời gọi, từ đầu đến cuối, từ bất kỳ mẩu định danh nào."""
+
+    name = "API - Truy vet"
+    icon = "fa-solid fa-magnifying-glass"
+
+    @expose("/api-trace", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api import support
+
+        query = request.query_params.get("q", "")
+        gen, db = _session()
+        try:
+            found = support.trace(db, query) if query else support.Trace()
+        finally:
+            _close(gen)
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Truy vết</h1>'
+            f'<p>Dán vào đây bất kỳ thứ gì khách đưa: correlation id, job id, '
+            f'mã khoá, id project, email — hoặc một địa chỉ IP. Tất cả dẫn về '
+            f'<b>một</b> dòng thời gian.</p></div></div>'
+            f'<form method="get" class="job-filters">'
+            f'<input name="q" value="{escape(query)}" size="46" '
+            f'placeholder="correlation id / job / khoá / project / email / IP">'
+            f'<button class="btn sm">Tra</button>'
+            + (f'<a class="btn ghost sm" '
+               f'href="/admin/api-trace-export?q={escape(query)}">Xuất JSON</a>'
+               if found.found else "")
+            + f'</form>'
+            + (_trace_body(found) if query else "")
+            + '</div>')
+        return HTMLResponse(_admin_shell("API - Truy vet", "api_trace", body))
+
+    @expose("/api-trace-export", methods=["GET"])
+    async def export(self, request: Request):
+        import json
+
+        from platform_core.public_api import support
+
+        query = request.query_params.get("q", "")
+        gen, db = _session()
+        try:
+            found = support.trace(db, query)
+            payload = support.export(found)
+        finally:
+            _close(gen)
+
+        from starlette.responses import Response
+
+        # `Content-Disposition` so it lands as a file: a support trace is
+        # something somebody attaches to a ticket, not something they read in a
+        # browser tab and lose.
+        return Response(
+            json.dumps(payload, ensure_ascii=False, indent=2, default=str),
+            media_type="application/json",
+            headers={"Content-Disposition":
+                     f'attachment; filename="trace-{query[:24]}.json"',
+                     "Cache-Control": "no-store"})
+
+
+def _trace_body(found) -> str:
+    """The timeline, in the order the work actually happened."""
+    if not found.found:
+        return ('<p class="muted" style="padding:26px">Không tìm thấy gì khớp. '
+                'Correlation id chỉ được lưu cho lời gọi hỏng và lời gọi ghi '
+                'dữ liệu (EXT-09).</p>')
+
+    def line(label: str, value: str, muted: bool = False) -> str:
+        cls = ' class="muted"' if muted else ""
+        return f'<tr><th>{escape(label)}</th><td{cls}>{value}</td></tr>'
+
+    who = ""
+    if found.user is not None:
+        who += line("Tài khoản",
+                    f'<a href="/admin/api-tai-khoan?user={escape(found.user.id)}">'
+                    f'{escape(found.user.email)}</a>')
+    if found.project is not None:
+        who += line("Project", escape(found.project.name))
+    if found.key is not None:
+        who += line("Khoá",
+                    f'<a href="/admin/api-khoa?key={escape(found.key.key_id)}">'
+                    f'<code>{escape(found.key.key_id[:16])}</code></a> '
+                    f'{_mode_chip(getattr(found.key, "mode", "live"))}')
+
+    steps = ""
+    row = found.request
+    if row is not None:
+        steps += (f'<tr><td>1. Request</td>'
+                  f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
+                  f'<td class="tnum">{row.status}</td>'
+                  f'<td class="muted">{_when(row.created_at)}</td></tr>')
+    job = found.job
+    if job is not None:
+        steps += (f'<tr><td>2. Job</td><td class="mono">{escape(job.id[:16])}</td>'
+                  f'<td>{escape(job.status)}</td>'
+                  f'<td class="muted">{_when(job.created_at)}</td></tr>')
+        delay = found.queue_delay_ms
+        steps += (f'<tr><td>3. Chờ hàng đợi</td>'
+                  f'<td class="tnum">{"—" if delay is None else f"{delay:,} ms"}'
+                  f'</td><td class="mono muted">{escape(job.worker_id or "—")}'
+                  f'</td><td class="muted">{_when(job.started_at)}</td></tr>')
+        run = found.run_ms
+        steps += (f'<tr><td>4. Chạy</td>'
+                  f'<td class="tnum">{"—" if run is None else f"{run:,} ms"}</td>'
+                  f'<td>{escape(job.status)}</td>'
+                  f'<td class="muted">{_when(job.finished_at)}</td></tr>')
+    for entry in found.credit:
+        steps += (f'<tr><td>5. Sổ credit</td><td>{escape(entry.kind)}</td>'
+                  f'<td class="tnum">{entry.delta:+d}</td>'
+                  f'<td class="muted">{_when(entry.created_at)}</td></tr>')
+    for hook in found.webhooks:
+        steps += (f'<tr><td>6. Webhook</td>'
+                  f'<td class="mono">{escape(hook.event_type)}</td>'
+                  f'<td>{escape(hook.status)} ({hook.attempts})</td>'
+                  f'<td class="muted">{_when(hook.created_at)}</td></tr>')
+
+    events = "".join(
+        f'<tr><td class="tnum">{row.sequence}</td>'
+        f'<td class="mono">{escape(row.event_code)}</td>'
+        f'<td>{escape(row.level)}</td>'
+        f'<td>{"khách" if row.visibility == "customer" else "nội bộ"}</td>'
+        f'<td class="muted">{escape(str(row.details or "")[:160])}</td></tr>'
+        for row in found.events) or (
+        '<tr><td colspan="5" class="muted">Không có sự kiện.</td></tr>')
+
+    recent = "".join(
+        f'<tr><td class="muted">{_when(row.created_at)}</td>'
+        f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
+        f'<td class="tnum">{row.status}</td>'
+        f'<td class="mono muted">{escape(row.code or "")}</td>'
+        f'<td class="mono muted">'
+        f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
+        f'{escape(row.request_id[:12])}</a></td></tr>'
+        for row in found.requests)
+
+    security = "".join(
+        f'<tr><td class="muted">{_when(row.created_at)}</td>'
+        f'<td><code>{escape(row.kind)}</code></td>'
+        f'<td class="mono">{escape(row.ip or "—")}</td>'
+        f'<td class="mono">{escape(row.key_id or "—")}</td></tr>'
+        for row in found.security)
+
+    out = (f'<p class="muted">Khớp theo <code>{escape(found.matched_by)}</code>.'
+           f'</p>')
+    if who:
+        out += (f'<section><h2 style="margin:22px 0 10px">Ai</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><tbody>'
+                f'{who}</tbody></table></div></section>')
+    if steps:
+        out += (f'<section><h2 style="margin:22px 0 10px">Dòng thời gian</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Bước</th><th></th><th></th><th>Lúc</th></tr></thead>'
+                f'<tbody>{steps}</tbody></table></div></section>')
+    if found.job is not None:
+        out += (f'<section><h2 style="margin:22px 0 10px">Sự kiện job '
+                f'(gồm cả nội bộ)</h2>'
+                f'<p class="muted">Trang của khách chỉ hiện dòng '
+                f'<i>khách</i>. Chỗ này hiện cả hai — đó là toàn bộ lý do có '
+                f'một trang truy vết cho người vận hành.</p>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>#</th><th>Mã</th><th>Mức</th><th>Ai thấy</th>'
+                f'<th>Chi tiết</th></tr></thead><tbody>{events}</tbody></table>'
+                f'</div></section>')
+        if found.job.error:
+            out += (f'<section><h2 style="margin:22px 0 10px">Lỗi thô</h2>'
+                    f'<p class="muted">Khách được xem một bản đã làm sạch '
+                    f'(Q76). Bản gốc ở đây.</p>'
+                    f'<pre class="mono" style="white-space:pre-wrap">'
+                    f'{escape(found.job.error[:2000])}</pre></section>')
+    if recent:
+        out += (f'<section><h2 style="margin:22px 0 10px">Lời gọi gần đây</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th>'
+                f'<th>Correlation</th></tr></thead><tbody>{recent}</tbody>'
+                f'</table></div></section>')
+    if security:
+        out += (f'<section><h2 style="margin:22px 0 10px">Sự kiện bảo mật</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Lúc</th><th>Loại</th><th>Địa chỉ</th><th>Khoá</th>'
+                f'</tr></thead><tbody>{security}</tbody></table></div>'
+                f'</section>')
+    return out
+
+
 def _redirect(path: str, message: str):
     from urllib.parse import quote
 
@@ -1341,7 +1792,8 @@ def _admin_shell(title: str, active: str, body: str) -> str:
 #: Đăng ký ở `server/admin.py`. Giữ danh sách ở đây để thêm một trang là sửa
 #: một file, không phải hai.
 VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
-         ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView)
+         ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView,
+         ApiRequestsView, ApiJobsView, ApiSecurityView, ApiTraceView)
 
 #: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
 #: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
@@ -1357,4 +1809,8 @@ NAV = (
     ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
     ("/admin/api-gia", "GI", "API — Giá", "api_pricing"),
     ("/admin/api-margin", "MG", "API — Margin", "api_margin"),
+    ("/admin/api-request", "RQ", "API — Request", "api_requests"),
+    ("/admin/api-job", "AJ", "API — Job", "api_jobs"),
+    ("/admin/api-bao-mat", "BM", "API — Bảo mật", "api_security"),
+    ("/admin/api-trace", "TV", "API — Truy vết", "api_trace"),
 )
