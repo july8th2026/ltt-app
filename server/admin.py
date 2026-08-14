@@ -96,6 +96,8 @@ class AdminAuth(AuthenticationBackend):
 
 
 # ── Vỏ quản trị DARK dùng chung (UX-1) — thay các trang trắng tự viết ─────────
+from server.admin_api import NAV as _NAV_API
+
 _ADM_NAV = [
     ("/", "LT", "Trang chủ", "home"),
     ("__grp__", "", "Quản trị", ""),
@@ -107,6 +109,10 @@ _ADM_NAV = [
     ("/admin/job/list", "JB", "Job", "job"),
     ("/admin/session/list", "SS", "Phiên", "session"),
     ("/admin/nhat-ky-admin/list", "NK", "Nhật ký admin", "nhatky"),
+    # Khu API tự khai mục điều hướng của nó (`server/admin_api.NAV`) — chép lại
+    # ở đây là tạo bản thứ hai của cùng một danh sách, và bản thứ hai luôn là
+    # bản bị quên khi thêm trang.
+    *_NAV_API,
     ("__grp__", "", "Thanh toán", ""),
     ("/admin/doanh-thu", "DT", "Doanh thu", "revenue"),
     ("/admin/goi", "GN", "Gói nạp", "goi"),
@@ -1168,6 +1174,12 @@ def setup_admin(app, *, session_secret: str) -> bool:
     admin.add_view(JobAdmin)
     admin.add_view(SessionAdmin)
     admin.add_view(PlatformInfoAdmin)
+    # Khu API platform sống ở `server/admin_api.py`: cùng vỏ, cùng nhật ký, cùng
+    # cổng quyền, nhưng là một miền khác — và file này đã đủ dài (EXT-13).
+    from server.admin_api import VIEWS as _API_VIEWS
+
+    for _view in _API_VIEWS:
+        admin.add_view(_view)
     admin.add_view(RevenueView)
     admin.add_view(PackagesView)
     admin.add_view(OrdersView)

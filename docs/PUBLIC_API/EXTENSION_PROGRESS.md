@@ -3,10 +3,31 @@
 Pack: `LTT_API_FULL_EXTENSION_PACK_V2_OPTIMIZED` (v2.0), 21 prompt.
 Chạy **sau** Public API V2 (Q92, 17/17 PASS).
 
-**Chế độ chạy:** pack này khai `strict sequential; one prompt per Claude turn`
-(`MANIFEST.json`) và `START_HERE.md` viết "Mỗi lượt chỉ 1 prompt". Chủ sản phẩm
-cũng ra lệnh "dừng sau EXT-01". → **Không** áp dụng chế độ chạy liên tục của pack
-V2. Mỗi lượt một prompt, dừng và báo cáo.
+**Chế độ chạy — ĐÃ ĐỔI 2026-08-14 (chủ sản phẩm quyết định):**
+
+Pack khai `strict sequential; one prompt per Claude turn` (`MANIFEST.json`,
+`START_HERE.md`). Từ EXT-14 trở đi, chủ sản phẩm **huỷ** ràng buộc "mỗi lượt một
+prompt": *"triển khai đúng quy trình, không dừng lại, thêm quy tắc không dừng
+giữa các prompt, không cần phê duyệt của tôi"*. Prompt không thắng người ra
+quyết định (COMMON_RULES §2 xếp prompt **dưới** source of truth).
+
+Vậy quy tắc chạy hiện hành là:
+
+1. **Chạy liên tục** EXT-14 → EXT-21, hết prompt này sang prompt kế, **không
+   dừng xin phê duyệt**.
+2. Vẫn giữ **thứ tự** (sequential) — phụ thuộc giữa các prompt là thật, xem
+   `ROADMAP.md`.
+3. Vẫn giữ **đủ quy trình mỗi prompt**: audit trước khi thêm → kế hoạch → làm →
+   test → **kiểm bằng trình duyệt nếu đụng giao diện** → cập nhật file này →
+   commit. Bỏ dừng lại **không** có nghĩa là bỏ bước nào.
+4. Vẫn **full gate ở checkpoint** (EXT-16, 20, 21) và quick gate ở các prompt
+   còn lại; gate đỏ thì **dừng và sửa gốc**, không đi tiếp, không sửa test để
+   che.
+5. **Chỉ dừng** khi: gate đỏ không sửa được, phát hiện blocker kiến trúc, hoặc
+   chạm việc cần quyết định thương mại/rủi ro mà code không trả lời được. Khi đó
+   ghi rõ blocker vào file này rồi mới dừng.
+6. **Không deploy production** — điều này COMMON_RULES §11 giữ nguyên, không ai
+   huỷ.
 
 Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 
@@ -23,8 +44,8 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 09 | Request logs / trace / job timeline | **PASS** | 2026-08-14 |
 | 10 | Webhook console / event catalog / resend | **PASS** | 2026-08-14 |
 | 11 | Usage / budgets / credit alerts / notifications | **PASS** | 2026-08-14 |
-| 12 | Sandbox / test mode / live isolation | chưa chạy | — |
-| 13 | API admin console core | chưa chạy | — |
+| 12 | Sandbox / test mode / live isolation | **PASS** | 2026-08-14 |
+| 13 | API admin console core | **PASS** | 2026-08-14 |
 | 14 | Admin policy / tiers / quota / kill switch | chưa chạy | — |
 | 15 | Pricing catalog / versioned credits / margin | chưa chạy | — |
 | 16 | Admin operations / security / support trace | chưa chạy | — |
@@ -1345,3 +1366,137 @@ Khoá `ltt_tk` đã cấp sẽ ngừng phân giải — thu hồi chúng trướ
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/13_API_ADMIN_CONSOLE_CORE_USERS_PROJECTS_KEYS_CLIENTS_TOOLS.txt`
 (EXT-13).
+
+---
+
+## EXT-13 — ADMIN CONSOLE CORE ✅
+
+### Entry gate
+
+EXT-12 PASS ✅ (`3e4d708`), cây sạch. **Không migration mới** — khu này chỉ đọc
+những bảng đã có và ghi vào `nhat_ky_admin` đã có từ F-06.
+
+### INVENTORY: cái gì đã có, cái gì thiếu
+
+| Thứ | Trạng thái trước EXT-13 |
+|---|---|
+| Trang quản trị (sqladmin, cổng `is_operator`, vỏ dark) | ✅ `server/admin.py` |
+| Nhật ký thao tác admin | ✅ bảng `nhat_ky_admin` + `ghi_nhat_ky()` (F-06) |
+| CSRF cho form quản trị | ✅ `server/auth/csrf.py`, đã dùng ở 5 view |
+| Quản **khoá provider** (`api_keys`) | ✅ — nhưng **không phải** khoá của khách |
+| Quản **khoá developer**, project, độ phơi bày tool | ❌ `MISSING` — chỉ có đường CSDL |
+| Mọi truy vấn khu API | ⚠️ `PARTIAL` — đều **user-scoped**, không có bản đọc xuyên tài khoản |
+
+Nói cách khác: mọi câu hỏi vận hành về API ("khoá nào đang đốt credit lúc 3 giờ
+sáng") chỉ trả lời được bằng shell CSDL — vừa chậm vừa **không để lại dấu vết**.
+
+### REUSE: không viết lại cái gì
+
+`is_operator` (cổng quyền), `ghi_nhat_ky` (F-06), `_admin_shell` (vỏ), CSRF,
+`keys.revoke` / `keys.set_enabled` (chính hàm cổng khách gọi),
+`key.status()` (trạng thái suy ra), `build_catalog` + `project_tool` (tool),
+`load_public_api_config` (allowlist). Không class CSS mới → **không đổi asset
+hash**, không lo cache-bust.
+
+Thu hồi **uỷ quyền** cho `keys.revoke` chứ không tự set cột: một định nghĩa thứ
+hai của "đã thu hồi" sẽ lệch với cái thứ nhất ngay lần đầu một trong hai đổi.
+
+### Đặt ở đâu, và vì sao không nhét vào `admin.py`
+
+- `platform_core/public_api/admin_console.py` — **toàn bộ** truy vấn và luật.
+- `server/admin_api.py` — chỉ đọc request, kiểm CSRF, gọi service, dựng HTML,
+  ghi nhật ký. 4 view, đăng ký từ `setup_admin`.
+
+`admin.py` đã 1.174 dòng và lo miền khác (người dùng, sổ credit, khoá provider,
+đơn hàng). Nhét thêm vào là đúng cơ chế đã sinh ra file route 1.799 dòng trước
+đây (AGENTS.md mục 8).
+
+### Bốn trang, đúng phần CORE của prompt
+
+| Trang | Trả lời câu hỏi |
+|---|---|
+| `/admin/api-tong-quan` | Credential đang lưu hành, lời gọi có chạy không, tiền có chảy không, callback có tới không — mỗi con số đổi được một quyết định |
+| `/admin/api-tai-khoan` | Ai đang dùng API; một trang gom project + khoá + ngân sách + webhook + 20 lời gọi gần nhất của **một** người |
+| `/admin/api-khoa` | Mọi credential của khách, lọc theo trạng thái **suy ra** / môi trường / email; trang chi tiết kèm **bằng chứng để hành động** |
+| `/admin/api-cong-cu` | Tool nào mở, mở theo luật nào, đang chạy ra sao |
+
+NAV trong prompt là **mục tiêu của cả khu admin** (COMMON_RULES §7), không phải
+việc của riêng EXT-13. Theo ROADMAP: Requests/Support-Trace/Security/Health →
+**EXT-16**; Policies/Limits/kill switch → **EXT-14**; Pricing → **EXT-15**;
+Versions/Status → **EXT-17**. Trang Công cụ **nói thẳng** nó chưa có kill switch
+và đó là việc của EXT-14, thay vì vẽ một cái nút không bấm được.
+
+Service account / OAuth client: **DEFERRED** theo D6/D7 đã chốt ở EXT-01 — chưa
+có bảng nào để hiện, và một tab rỗng hứa hẹn còn tệ hơn không có tab.
+
+### Ba luật của khu này
+
+**Không có đường nào lộ bí mật.** Không hiện khoá, không hiện `verifier_digest`,
+không hiện secret webhook (vốn đã lưu mã hoá), không hiện credential provider.
+Có test lấy token thật rồi quét **mọi** trang admin để chắc chuỗi đó không xuất
+hiện ở đâu.
+
+**Mọi mutation ghi nhật ký, cùng transaction.** `admin_email`, hành động, đối
+tượng (`key_id (user_id)`) và **lý do**. Thao tác bị từ chối **không** ghi — một
+việc không xảy ra mà có dòng nhật ký thì nhật ký thành nhiễu.
+
+**Nguy hiểm thì phải nói lý do và phải xác nhận.** Thu hồi cần lý do ≥ 8 ký tự
+**và** một ô tích. Tắt tạm thời chỉ cần lý do — nó đảo ngược được, và một người
+nghi có rò rỉ cần cầm máu mà không phá tích hợp của khách vì một nghi ngờ.
+
+### Bounded reads
+
+Mọi danh sách phân trang (`PAGE_SIZE=50`, trần `MAX_PAGE_SIZE=200` kể cả khi
+caller xin 10.000) và đếm tổng, vì "12 khoá" với "50 khoá đầu của 4.000" dẫn tới
+hai hành động khác nhau. Các bảng này lớn theo **traffic**, không theo số khách.
+
+### Hai lỗi thật bắt được khi chạy
+
+1. `subquery().c.keys` phân giải thành **`ColumnCollection.keys`** — cái method —
+   và SQLAlchemy từ chối nó cách chỗ gây lỗi vài frame. Đổi nhãn thành
+   `key_count`.
+2. Nút "Hồ sơ đầy đủ" trỏ `?id=` trong khi trang chi tiết người dùng nhận `?q=`.
+   Link hỏng nhưng vẫn trả **200** (một form tìm kiếm rỗng) — hỏng mà không ai
+   thấy hỏng. **Kiểm bằng trình duyệt bắt được, test không.** Giờ đã có test.
+
+### Kiểm bằng trình duyệt (uvicorn thật, cổng 8123, SQLite tạm)
+
+Seed: 1 operator, 2 khách, khoá live + test + một khoá đã thu hồi, 5 dòng nhật
+ký request, 1 webhook. Đã đi hết: khách đăng nhập bị **đá khỏi** `/admin/api-khoa`;
+operator vào được cả 4 trang; **thu hồi không tích ô → bị từ chối** kèm biểu ngữ
+đỏ, khoá vẫn `active`; **tắt kèm lý do → thành công**, bộ nút đổi sang "Bật lại",
+và dòng `api_khoa_disable` hiện ở **Nhật ký admin** kèm email người thao tác và
+lý do. Console: 0 lỗi (ngoài một 405 do chính tôi GET `/logout`). Network: 0
+request hỏng.
+
+### Tests
+
+`tests/test_205_admin_api_console.py` — **28 test**: khách chưa đăng nhập và
+khách **đã** đăng nhập đều bị chặn ở cả 4 trang; khách POST thẳng vào action
+không thu hồi được gì và **không sinh dòng nhật ký**; disable/enable/revoke đều
+ghi đúng một dòng kèm lý do và email; thu hồi là **một chiều** (bật lại bị từ
+chối, lần thu hồi thứ hai bị từ chối và **không** ghi thêm); thiếu lý do / lý do
+quá ngắn / thiếu ô xác nhận / thiếu CSRF / thao tác lạ → **không đổi gì, không
+ghi gì**; chữ xác nhận có thật trên trang; token thật và digest **không** xuất
+hiện ở bất kỳ trang nào; secret webhook không lộ; phân trang + trần trang; lọc
+theo trạng thái suy ra (kể cả `expired`); danh sách tài khoản chỉ gồm người có
+khoá; overview đếm live/test/revoked tách nhau; trang tool tách **declared** với
+**published**; link hồ sơ đầy đủ mở đúng trang.
+
+### Rollback
+
+Xoá `server/admin_api.py` + `platform_core/public_api/admin_console.py`, gỡ 5
+dòng NAV và vòng `add_view` trong `server/admin.py`, xoá `test_205`. Không có
+migration để hạ, không có dữ liệu để mất — khu này chỉ đọc, và thứ duy nhất nó
+ghi (`nhat_ky_admin`) là bằng chứng, giữ lại.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-13 | Kết quả |
+|---|---|
+| Non-admin blocked | ✅ chưa đăng nhập **và** đã đăng nhập-nhưng-không-phải-admin đều bị đá về `/login`; POST thẳng vào action cũng không đổi được gì (kiểm cả bằng test lẫn trình duyệt) |
+| All admin mutations audited | ✅ mỗi mutation đúng một dòng `nhat_ky_admin` kèm ai/làm gì/lên cái gì/**vì sao**; thao tác bị từ chối không ghi |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/14_ADMIN_POLICY_TIERS_QUOTA_CONCURRENCY_CAPACITY_KILL_SWITCH.txt`
+(EXT-14).

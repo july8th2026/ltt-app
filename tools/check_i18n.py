@@ -18,7 +18,8 @@ Cùng cơ chế với `tools/check_silent_except.py`.
 
 ## Không đếm
 
-- `server/admin.py` và template admin — chủ sản phẩm chốt GIỮ tiếng Việt.
+- `server/admin.py`, `server/admin_api.py` và template admin — chủ sản phẩm
+  chốt GIỮ tiếng Việt.
 - chú thích và docstring — không hiện cho người dùng (tách bằng AST).
 - `tests/`, `tools/`, `docs/`, `core/` (đã đóng băng).
 """
@@ -41,8 +42,8 @@ BO_QUA_THU_MUC = ("__pycache__", "node_modules", "/core/", "\\core\\",
                   "/tests/", "\\tests\\", "/tools/", "\\tools\\",
                   "/docs/", "\\docs\\", "/locale/", "\\locale\\")
 # Trang admin: chốt giữ tiếng Việt, chỉ một người đọc.
-BO_QUA_FILE = ("server/admin.py", "server/templates/admin",
-               "server/routes/admin")
+BO_QUA_FILE = ("server/admin.py", "server/admin_api.py",
+               "server/templates/admin", "server/routes/admin")
 
 if hasattr(sys.stdout, "buffer"):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",

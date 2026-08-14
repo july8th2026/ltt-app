@@ -482,13 +482,35 @@ def test_one_account_never_sees_another_accounts_budget_or_alerts(portal):
         _close(gen)
 
     portal.post("/logout", data={}, follow_redirects=False)
-    _account(portal)
+    second_id, _token = _account(portal)
     assert "AliceOnlyAlert" not in portal.get("/developers/notifications").text
-    assert "99" not in _budget_cell(portal.get("/developers/usage").text)
+
+    # Asserting on the *state* the second account should be in, not on the
+    # absence of a substring. The earlier version looked for "99" inside the
+    # budget card — a region that also renders the account's project ids, and a
+    # uuid contains "99" about one time in nine. It passed on luck and failed a
+    # full-suite run for a reason that had nothing to do with tenant isolation.
+    card = _budget_cell(portal.get("/developers/usage").text)
+    assert card, "the budget card should render even with no budget set"
+    assert "Chưa đặt ngân sách nào." in card
+    assert "Ngưỡng cảnh báo" not in card, "somebody else's budget table rendered"
+
+    gen, db = _session()
+    try:
+        assert budgets.list_for(db, user_id=second_id) == []
+        assert len(budgets.list_for(db, user_id=first_id)) == 1
+    finally:
+        _close(gen)
 
 
 def _budget_cell(html: str) -> str:
-    match = re.search(r"Ngân sách của bạn.*?</div>", html, re.S)
+    """The budget card only — up to the end of its own `div.card`.
+
+    Anchored on the next card rather than on the first `</div>`, which used to
+    stop early or run long depending on markup nobody thought was load-bearing.
+    """
+    match = re.search(r'Ngân sách của bạn.*?(?=<div class="card">|\Z)', html,
+                      re.S)
     return match.group(0) if match else ""
 
 
