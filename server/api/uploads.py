@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from platform_core import upload_sessions
 from platform_core.models import Job, UPLOAD_READY
-from platform_core.public_api import media, sandbox
+from platform_core.public_api import media, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import invalid_request, not_found
 from platform_core.public_api.principal import Principal, ensure_owner
@@ -88,6 +88,14 @@ def register_upload_routes(api, config, tag: str) -> None:
         field = str(payload.get("field") or "")
         kind = _kind_for_tool(tool, field)
         allowed, max_size = media.rules_for(kind)
+
+        # A policy may lower the ceiling for a tier or an account, never raise
+        # it: the media rules and the edge still bound what is possible, and a
+        # tier that could opt past them would be selling something the platform
+        # cannot deliver (EXT-14).
+        resolved = policy.resolve(db, config=config, principal=principal,
+                                  tool_name=tool.name)
+        max_size = min(max_size, max(1, resolved.max_upload_bytes))
 
         try:
             session = upload_sessions.create(

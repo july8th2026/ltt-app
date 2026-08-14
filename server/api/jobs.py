@@ -18,11 +18,13 @@ from sqlalchemy.orm import Session
 from platform_core import credit, jobs as jobq
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, Job)
-from platform_core.public_api import (idempotency, invocation, limits, media,
-                                      metrics, quotes, sandbox)
+from platform_core.public_api import (capacity, idempotency, invocation,
+                                      limits, media, metrics, policy, quotes,
+                                      sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
-                                             invalid_request, price_changed)
+                                             invalid_request, price_changed,
+                                             service_unavailable)
 from server.api.inventory import API_V1_PREFIX
 from platform_core.public_api.pagination import Page, PageRequest
 from platform_core.public_api.principal import Principal, ensure_owner
@@ -50,6 +52,53 @@ def _iso(value: datetime | None) -> str | None:
         return None
     aware = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
     return aware.isoformat()
+
+
+def _refuse_if_tool_switched_off(db, principal, tool) -> None:
+    """A tool an operator has switched off refuses here, not at the provider.
+
+    Checked with the tool named, which the authentication boundary could not do:
+    it knows the caller, not what the caller is about to call.
+    """
+    from platform_core.public_api.tables import KILL_TOOL
+
+    refusal = policy.check(db, principal=principal, tool_name=tool.name,
+                           is_write=True)
+    if refusal is None or refusal.scope != KILL_TOOL:
+        # Every other scope was already refused at authentication; re-raising
+        # them here would only change where the same 403 comes from.
+        return
+    metrics.increment(metrics.KILL_SWITCH_REFUSED)
+    raise service_unavailable(
+        f"This tool is temporarily unavailable: {refusal.reason}",
+        retry_after=refusal.retry_after, tool=tool.name)
+
+
+def _refuse_if_no_capacity(db, tool) -> None:
+    """Refuse work the machinery cannot do — before the hold, never after.
+
+    Refusing costs the caller nothing. Holding credit for a job that is certain
+    to fail costs a refund to reconcile and a support conversation to have.
+    """
+    manifest = _manifest_of(tool)
+    missing = capacity.check(db, tool=tool, manifest=manifest)
+    if missing is None:
+        return
+    metrics.increment(metrics.CAPACITY_REFUSED)
+    raise service_unavailable(missing.detail,
+                              retry_after=missing.retry_after,
+                              resource=missing.resource)
+
+
+def _manifest_of(tool):
+    from platform_core.registry import discover
+
+    for item in discover():
+        if item.error or item.manifest is None:
+            continue
+        if item.manifest.slug == tool.app_slug:
+            return item.manifest
+    return None
 
 
 def _public_job(db, job: Job, tool=None) -> dict:
@@ -237,10 +286,21 @@ def register_job_routes(api, config, tag: str) -> None:
         # Admission control, after validation and before any money moves. The
         # order matters: a caller over its limits must not be charged, and a
         # caller under them must not be able to open unbounded work.
-        limits.enforce_create_rate(key_id=principal.key_id, config=config)
+        #
+        # Limits are resolved once, here, with the tool named — the tool step is
+        # the narrowest in the chain and only this route knows which tool is
+        # being called (EXT-14).
+        resolved = policy.resolve(db, config=config, principal=principal,
+                                  tool_name=tool.name)
+        _refuse_if_tool_switched_off(db, principal, tool)
+        _refuse_if_no_capacity(db, tool)
+        limits.enforce_create_rate(key_id=principal.key_id, config=config,
+                                   limits=resolved,
+                                   user_id=principal.user_id)
         limits.enforce_active_jobs(
             db, principal=principal, config=config, app_slug=tool.app_slug,
-            class_slugs=_class_slugs(tool), resource=_resource_of(tool))
+            class_slugs=_class_slugs(tool), resource=_resource_of(tool),
+            limits=resolved)
         # Spending limits apply to spending. A test call moves no credit, so a
         # daily ceiling or a budget would be metering something that cannot
         # happen — and requiring a balance would shut the sandbox to exactly the
@@ -250,7 +310,7 @@ def register_job_routes(api, config, tag: str) -> None:
         testing = sandbox.is_test(principal.mode)
         if not testing:
             limits.enforce_daily_credit(db, principal=principal, config=config,
-                                        cost=cost)
+                                        cost=cost, limits=resolved)
             # …and the customer's own hard cap, which may be stricter than the
             # operator's. Whichever allows less wins (EXT-11).
             limits.enforce_budget(db, principal=principal, cost=cost)

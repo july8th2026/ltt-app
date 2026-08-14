@@ -38,7 +38,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
 from platform_core.db import get_session
-from platform_core.public_api import admin_console
+from platform_core.public_api import admin_console, policy
 
 _OK = "var(--ok)"
 _WARN = "var(--warn)"
@@ -666,6 +666,345 @@ class ApiToolsView(BaseView):
         return HTMLResponse(_admin_shell("API — Công cụ", "api_tools", body))
 
 
+def _error_note(request: Request) -> str:
+    """Biểu ngữ lỗi sau một lần chuyển hướng. Rỗng khi không có gì để nói."""
+    message = request.query_params.get("err", "")
+    if not message:
+        return ""
+    return (f'<p class="badge b-err" style="display:block;padding:10px">'
+            f'{escape(message)}</p>')
+
+
+def _reason_form(action: str, token: str, op: str, label: str, *,
+                 danger: bool = False, extra: dict | None = None) -> str:
+    """Một nút thao tác luôn đi kèm ô lý do.
+
+    Cùng khuôn với trang Khoá (EXT-13): thao tác ghi nào cũng phải để lại lý do,
+    vì dòng nhật ký sẽ được đọc lại bởi người không có mặt lúc đó.
+    """
+    hidden = "".join(
+        f'<input type="hidden" name="{escape(name)}" value="{escape(value)}">'
+        for name, value in (extra or {}).items())
+    cls = "btn btn-danger sm" if danger else "btn sm"
+    return (f'<form method="post" action="{action}" '
+            f'style="display:flex;gap:6px;align-items:center">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="{escape(op)}">{hidden}'
+            f'<input name="reason" required minlength="{policy.MIN_REASON}" '
+            f'placeholder="Lý do (≥ {policy.MIN_REASON})">'
+            f'<button class="{cls}">{escape(label)}</button></form>')
+
+
+class ApiPolicyView(BaseView):
+    """Hạn mức: ai được gọi bao nhiêu, và con số đó đến từ đâu."""
+
+    name = "API - Chinh sach"
+    icon = "fa-solid fa-sliders"
+
+    @expose("/api-chinh-sach", methods=["GET"])
+    async def page(self, request: Request):
+        from server.auth.csrf import issue_csrf_token
+
+        gen, db = _session()
+        try:
+            rows = policy.list_policies(db)
+            data = [{"policy": row,
+                     "assignments": policy.assignments_for(db, row.id)}
+                    for row in rows]
+            # Mức nền khi KHÔNG có ai cụ thể: đó là con số mọi tài khoản nhận
+            # được, và là thứ đầu tiên người vận hành cần thấy.
+            baseline = policy.resolve(db, config=_config())
+        finally:
+            _close(gen)
+
+        token = issue_csrf_token(request)
+        note = _error_note(request)
+
+        def cell(value) -> str:
+            return ('<span class="muted">kế thừa</span>' if value is None
+                    else f'<span class="tnum">{value}</span>')
+
+        rows_html = ""
+        for item in data:
+            row = item["policy"]
+            targets = " ".join(
+                f'<code>{escape(a.scope)}:{escape(a.subject_id[:8])}</code>'
+                for a in item["assignments"]) or (
+                    '<span class="muted">chưa gán</span>')
+            default = ('<span class="chip i">mặc định</span>'
+                       if row.is_default else "")
+            rows_html += (
+                f'<tr><td><b>{escape(row.name)}</b> {default}<br>'
+                f'<span class="muted">{escape(row.description or "")}</span>'
+                f'</td>'
+                f'<td>{cell(row.rpm_read)}</td><td>{cell(row.rpm_write)}</td>'
+                f'<td>{cell(row.rpm_create)}</td>'
+                f'<td>{cell(row.max_active_jobs)}</td>'
+                f'<td>{cell(row.daily_credit)}</td>'
+                f'<td>{targets}</td>'
+                f'<td>{_reason_form("/admin/api-chinh-sach-action", token, "delete", "Xoá", danger=True, extra={"policy_id": row.id})}</td>'
+                f'</tr>')
+        rows_html = rows_html or (
+            '<tr><td colspan="8" class="muted" style="padding:26px;'
+            'text-align:center">Chưa có chính sách nào — mọi tài khoản dùng '
+            'mức nền của deployment.</td></tr>')
+
+        baseline_rows = "".join(
+            f'<tr><td class="mono">{escape(field)}</td>'
+            f'<td class="tnum">{getattr(baseline, field)}</td>'
+            f'<td class="muted">{escape(baseline.sources.get(field, ""))}</td>'
+            f'</tr>' for field in policy.LIMIT_FIELDS)
+
+        fields = "".join(
+            f'<label style="display:inline-block;margin:0 12px 8px 0">'
+            f'{escape(field)}<br><input name="{field}" inputmode="numeric" '
+            f'placeholder="kế thừa" style="width:130px"></label>'
+            for field in policy.LIMIT_FIELDS)
+
+        choices = "".join(
+            f'<option value="{escape(item["policy"].id)}">'
+            f'{escape(item["policy"].name)}</option>' for item in data)
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Chính sách</h1>'
+            f'<p>Chuỗi ưu tiên: <code>global → tier → user → project → '
+            f'credential → tool</code>. Ô trống nghĩa là <b>kế thừa</b> bước '
+            f'trước, không phải 0 — 0 là một hạn mức thật (nhịp 0 = từ chối tất '
+            f'cả).</p></div></div>{note}'
+            f'<section><h2 style="margin:22px 0 10px">Mức nền đang áp dụng</h2>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Hạn mức</th><th>Giá trị</th><th>Đến từ</th></tr></thead>'
+            f'<tbody>{baseline_rows}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Chính sách</h2>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Tên</th><th>rpm read</th><th>rpm write</th>'
+            f'<th>rpm create</th><th>job đồng thời</th><th>credit/ngày</th>'
+            f'<th>Đã gán</th><th></th></tr></thead>'
+            f'<tbody>{rows_html}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Tạo chính sách</h2>'
+            f'<form method="post" action="/admin/api-chinh-sach-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="create">'
+            f'<p><input name="name" placeholder="tên (vd: pro)" required> '
+            f'<input name="description" placeholder="mô tả" size="40"> '
+            f'<label><input type="checkbox" name="is_default" value="1"> '
+            f'dùng làm tier mặc định</label></p><p>{fields}</p>'
+            f'<p><input name="reason" size="46" required '
+            f'minlength="{policy.MIN_REASON}" '
+            f'placeholder="Lý do (bắt buộc, ≥ {policy.MIN_REASON} ký tự)"> '
+            f'<button class="btn btn-primary sm">Tạo</button></p></form>'
+            f'</section>'
+            f'<section><h2 style="margin:22px 0 10px">Gán chính sách</h2>'
+            f'<form method="post" action="/admin/api-chinh-sach-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="assign">'
+            f'<p><select name="policy_id">{choices}</select> '
+            f'<select name="scope"><option value="user">user</option>'
+            f'<option value="project">project</option>'
+            f'<option value="key">key</option></select> '
+            f'<input name="subject_id" placeholder="id của đối tượng" required> '
+            f'<input name="reason" required minlength="{policy.MIN_REASON}" '
+            f'placeholder="Lý do (≥ {policy.MIN_REASON})"> '
+            f'<button class="btn sm">Gán</button></p></form></section></div>')
+        return HTMLResponse(_admin_shell("API - Chinh sach", "api_policy",
+                                         body))
+
+    @expose("/api-chinh-sach-action", methods=["POST"])
+    async def action(self, request: Request):
+        from server.admin import ghi_nhat_ky
+        from server.auth.csrf import verify_csrf_token
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+
+        op = str(form.get("op") or "")
+        reason = str(form.get("reason") or "")
+        back = "/admin/api-chinh-sach"
+        if len(reason.strip()) < policy.MIN_REASON:
+            return _redirect(back, "Phải ghi lý do cho thao tác này.")
+
+        gen, db = _session()
+        try:
+            try:
+                detail = _apply_policy_op(db, op, form)
+            except policy.PolicyError as exc:
+                db.rollback()
+                return _redirect(back, str(exc))
+            except KeyError:
+                return HTMLResponse("Thao tác không hợp lệ.", status_code=400)
+            ghi_nhat_ky(db, request, f"api_chinh_sach_{op}", doi_tuong=detail,
+                        chi_tiet=f"ly do: {reason.strip()}")
+            db.commit()
+        finally:
+            _close(gen)
+        return RedirectResponse(back, status_code=303)
+
+
+def _apply_policy_op(db, op: str, form) -> str:
+    """Chạy một thao tác chính sách; trả mô tả để ghi nhật ký."""
+    from platform_core.public_api.tables import ApiPolicy
+
+    if op == "create":
+        numbers = {field: str(form.get(field) or "").strip()
+                   for field in policy.LIMIT_FIELDS
+                   if str(form.get(field) or "").strip()}
+        made = policy.create_policy(
+            db, name=str(form.get("name") or ""),
+            description=str(form.get("description") or ""),
+            is_default=str(form.get("is_default") or "") == "1", **numbers)
+        return f"{made.name} ({made.id})"
+    if op == "assign":
+        target = db.get(ApiPolicy, str(form.get("policy_id") or ""))
+        if target is None:
+            raise policy.PolicyError("Không thấy chính sách.")
+        scope = str(form.get("scope") or "")
+        subject = str(form.get("subject_id") or "")
+        policy.assign(db, policy=target, scope=scope, subject_id=subject)
+        return f"{target.name} -> {scope}:{subject}"
+    if op == "delete":
+        target = db.get(ApiPolicy, str(form.get("policy_id") or ""))
+        if target is None:
+            raise policy.PolicyError("Không thấy chính sách.")
+        name = target.name
+        policy.delete_policy(db, target)
+        return f"{name} (da xoa)"
+    raise KeyError(op)
+
+
+class ApiKillSwitchView(BaseView):
+    """Công tắc sự cố: tắt cái gì, vì sao, và tới bao giờ."""
+
+    name = "API - Kill switch"
+    icon = "fa-solid fa-power-off"
+
+    @expose("/api-kill-switch", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api.tables import KILL_SCOPES
+        from server.auth.csrf import issue_csrf_token
+
+        gen, db = _session()
+        try:
+            rows = policy.active_switches(db)
+        finally:
+            _close(gen)
+
+        token = issue_csrf_token(request)
+        note = _error_note(request)
+
+        rows_html = ""
+        for row in rows:
+            rows_html += (
+                f'<tr><td><code>{escape(row.scope)}</code></td>'
+                f'<td class="mono">{escape(row.subject or "—")}</td>'
+                f'<td>{escape(row.reason)}</td>'
+                f'<td class="muted">{escape(row.created_by or "—")}</td>'
+                f'<td class="muted">{_when(row.created_at)}</td>'
+                f'<td class="muted">{_when(row.expires_at)}</td>'
+                f'<td>{_reason_form("/admin/api-kill-switch-action", token, "release", "Bật lại", extra={"switch_id": row.id})}</td>'
+                f'</tr>')
+        rows_html = rows_html or (
+            '<tr><td colspan="7" class="muted" style="padding:26px;'
+            'text-align:center">Không có công tắc nào đang bật. Đó là trạng '
+            'thái bình thường.</td></tr>')
+
+        options = "".join(f'<option value="{scope}">{scope}</option>'
+                          for scope in KILL_SCOPES)
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Kill switch</h1>'
+            f'<p>Công tắc <b>không phải</b> hạn mức đặt về 0. Hạn mức là chính '
+            f'sách thường trực; công tắc là công cụ xử lý sự cố — có người bật, '
+            f'có lý do, và nên có hạn dùng. Phạm vi của mọi công tắc ở đây là '
+            f'<code>/api/v1</code>; giao diện web không bị ảnh hưởng.</p>'
+            f'</div></div>{note}'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Phạm vi</th><th>Đối tượng</th><th>Lý do</th><th>Ai bật</th>'
+            f'<th>Bật lúc</th><th>Hết hiệu lực</th><th></th></tr></thead>'
+            f'<tbody>{rows_html}</tbody></table></div>'
+            f'<section><h2 style="margin:22px 0 10px">Bật một công tắc</h2>'
+            f'<form method="post" action="/admin/api-kill-switch-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="engage">'
+            f'<p><select name="scope">{options}</select> '
+            f'<input name="subject" size="46" placeholder="đối tượng (bỏ trống '
+            f'với global_writes / maintenance)"></p>'
+            f'<p><input name="reason" size="60" required '
+            f'minlength="{policy.MIN_REASON}" placeholder="Lý do (bắt buộc, '
+            f'≥ {policy.MIN_REASON} ký tự) — sẽ hiện cho khách"> '
+            f'<input name="minutes" inputmode="numeric" style="width:180px" '
+            f'placeholder="tự tắt sau (phút)"></p>'
+            f'<p><label><input type="checkbox" name="confirm" value="1"> '
+            f'Tôi hiểu thao tác này chặn lời gọi của khách hàng thật ngay lập '
+            f'tức.</label></p>'
+            f'<button class="btn btn-danger sm">Bật</button></form>'
+            f'<p class="muted">Không đặt "tự tắt sau" thì công tắc là vĩnh viễn '
+            f'cho tới khi có người tắt tay. Lỗi thường gặp nhất của một công tắc '
+            f'sự cố là không ai nhớ tắt nó đi.</p></section></div>')
+        return HTMLResponse(_admin_shell("API - Kill switch", "api_kill", body))
+
+    @expose("/api-kill-switch-action", methods=["POST"])
+    async def action(self, request: Request):
+        from datetime import datetime, timedelta, timezone
+
+        from server.admin import _email_admin, ghi_nhat_ky
+        from server.auth.csrf import verify_csrf_token
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+
+        op = str(form.get("op") or "")
+        reason = str(form.get("reason") or "")
+        back = "/admin/api-kill-switch"
+        if op == "engage" and str(form.get("confirm") or "") != "1":
+            return _redirect(back, "Bật công tắc cần tích ô xác nhận.")
+        if len(reason.strip()) < policy.MIN_REASON:
+            return _redirect(back, "Phải ghi lý do cho thao tác này.")
+
+        expires = None
+        raw_minutes = str(form.get("minutes") or "").strip()
+        if raw_minutes:
+            try:
+                expires = (datetime.now(timezone.utc)
+                           + timedelta(minutes=max(1, int(raw_minutes))))
+            except (TypeError, ValueError):
+                return _redirect(back, "Số phút không hợp lệ.")
+
+        gen, db = _session()
+        try:
+            try:
+                if op == "engage":
+                    row = policy.engage(
+                        db, scope=str(form.get("scope") or ""),
+                        subject=str(form.get("subject") or ""), reason=reason,
+                        created_by=_email_admin(request), expires_at=expires)
+                    detail = f"{row.scope}:{row.subject or '*'}"
+                elif op == "release":
+                    row = policy.switch_by_id(
+                        db, str(form.get("switch_id") or ""))
+                    if row is None:
+                        return HTMLResponse("Không thấy công tắc.",
+                                            status_code=404)
+                    detail = f"{row.scope}:{row.subject or '*'}"
+                    policy.release(db, row)
+                else:
+                    return HTMLResponse("Thao tác không hợp lệ.",
+                                        status_code=400)
+            except policy.PolicyError as exc:
+                db.rollback()
+                return _redirect(back, str(exc))
+            ghi_nhat_ky(db, request, f"api_kill_{op}", doi_tuong=detail,
+                        chi_tiet=f"ly do: {reason.strip()}")
+            db.commit()
+        finally:
+            _close(gen)
+        return RedirectResponse(back, status_code=303)
+
+
 def _redirect(path: str, message: str):
     from urllib.parse import quote
 
@@ -683,7 +1022,8 @@ def _admin_shell(title: str, active: str, body: str) -> str:
 
 #: Đăng ký ở `server/admin.py`. Giữ danh sách ở đây để thêm một trang là sửa
 #: một file, không phải hai.
-VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView)
+VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
+         ApiPolicyView, ApiKillSwitchView)
 
 #: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
 #: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
@@ -695,4 +1035,6 @@ NAV = (
     ("/admin/api-tai-khoan", "TK", "API — Tài khoản", "api_accounts"),
     ("/admin/api-khoa", "KH", "API — Khoá", "api_keys"),
     ("/admin/api-cong-cu", "CC", "API — Công cụ", "api_tools"),
+    ("/admin/api-chinh-sach", "CS", "API — Chính sách", "api_policy"),
+    ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
 )

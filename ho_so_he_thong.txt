@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:da195673d2e133c4aefec79614c0e5f6978eaedd8e6f2b82dab8c2f34240573d
-Nguồn đã quét : 1092 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:05f52c0b33c77c8bbc8d5f2bf474d75eda0c7eefd8fea6469ff0bc153d13d34a
+Nguồn đã quét : 1096 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -803,14 +803,17 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (42 bảng)
+5. DATA MODEL (45 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
 - agent_workflows → AgentWorkflow | platform_core/models.py:432
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_keys → ApiKey | platform_core/models.py:589
+- api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:559
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
+- api_policies → ApiPolicy | platform_core/public_api/tables.py:490
+- api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:534
 - api_projects → ApiProject | platform_core/public_api/tables.py:62
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
@@ -847,7 +850,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (36)
+6. ALEMBIC MIGRATIONS (37)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -884,6 +887,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - f2a3b4c5d6e7 ← e1f2a3b4c5d6 | them cot xoay secret cho webhook (EXT-10) | alembic/versions/20260814_1800_webhook_secret_rotation.py
 - a3b4c5d6e7f8 ← f2a3b4c5d6e7 | them ngan sach va thong bao cho khu API (EXT-11) | alembic/versions/20260814_2200_api_budgets_notifications.py
 - b4c5d6e7f8a9 ← a3b4c5d6e7f8 | danh dau khoa API la live hay test (EXT-12) | alembic/versions/20260814_2300_api_key_mode.py
+- c5d6e7f8a9b0 ← b4c5d6e7f8a9 | them chinh sach han muc va kill switch cho khu API (EXT-14) | alembic/versions/20260814_2400_api_policy_engine.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1001,7 +1005,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (208 file pytest + 3 frontend)
+10. QUALITY GATES (209 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1143,6 +1147,7 @@ Test inventory:
 - tests/test_203_budgets_alerts.py
 - tests/test_204_sandbox.py
 - tests/test_205_admin_api_console.py
+- tests/test_206_policy_engine.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1236,8 +1241,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1092 file)
-Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:811, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1096 file)
+Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:815, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1250,7 +1255,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (38)
+[alembic] (39)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1289,6 +1294,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - alembic/versions/20260814_1800_webhook_secret_rotation.py
 - alembic/versions/20260814_2200_api_budgets_notifications.py
 - alembic/versions/20260814_2300_api_key_mode.py
+- alembic/versions/20260814_2400_api_policy_engine.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1841,7 +1847,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (79)
+[platform_core] (81)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1888,6 +1894,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/admin_console.py
 - platform_core/public_api/alerting.py
 - platform_core/public_api/budgets.py
+- platform_core/public_api/capacity.py
 - platform_core/public_api/catalog.py
 - platform_core/public_api/config.py
 - platform_core/public_api/delivery.py
@@ -1903,6 +1910,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/notifications.py
 - platform_core/public_api/outbox.py
 - platform_core/public_api/pagination.py
+- platform_core/public_api/policy.py
 - platform_core/public_api/principal.py
 - platform_core/public_api/projects.py
 - platform_core/public_api/protocol.py
@@ -2082,7 +2090,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (224)
+[tests] (225)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2234,6 +2242,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_203_budgets_alerts.py
 - tests/test_204_sandbox.py
 - tests/test_205_admin_api_console.py
+- tests/test_206_policy_engine.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2396,7 +2405,7 @@ Phân bố extension: .cfg:1, .css:7, .html:74, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1092 file; 9581382 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1096 file; 9691589 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5485,6 +5494,110 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("developer_api_keys", "mode")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260814_2400_api_policy_engine.py
+SHA256=e4c5222ddbdd54035a98e0472bdaf913a25aeb545795ad5dbe74d5b6f41df85d BYTES=4704 LINES=98
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""them chinh sach han muc va kill switch cho khu API (EXT-14)
+
+Moi cot so deu NULLABLE va NULL nghia la "ke thua". Khong dung 0 lam dau hieu
+"chua dat": 0 la mot han muc that va co nghia (nhip 0 = tu choi tat ca), tieu no
+cho "chua dat" thi khong bao gio dien dat duoc nua.
+
+Kill switch tach khoi chinh sach vi chung tra loi hai cau hoi khac nhau: chinh
+sach noi "bao nhieu", kill switch noi "khong phai luc nay". Gop lai thi ban ghi
+duy nhat ve "3 gio sang tat cai nay vi sao" chi con la mot con so.
+
+Revision ID: c5d6e7f8a9b0
+Revises: b4c5d6e7f8a9
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "c5d6e7f8a9b0"
+down_revision = "b4c5d6e7f8a9"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "api_policies",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("name", sa.String(64), nullable=False),
+        sa.Column("description", sa.String(500), nullable=False,
+                  server_default=""),
+        sa.Column("rpm_read", sa.Integer(), nullable=True),
+        sa.Column("rpm_write", sa.Integer(), nullable=True),
+        sa.Column("rpm_create", sa.Integer(), nullable=True),
+        sa.Column("max_active_jobs", sa.Integer(), nullable=True),
+        sa.Column("daily_credit", sa.Integer(), nullable=True),
+        sa.Column("max_upload_bytes", sa.Integer(), nullable=True),
+        sa.Column("class_concurrency", sa.JSON(), nullable=False),
+        sa.Column("tool_overrides", sa.JSON(), nullable=False),
+        sa.Column("is_default", sa.Boolean(), nullable=False,
+                  server_default=sa.false()),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("name", name="uq_api_policy_name"),
+    )
+
+    op.create_table(
+        "api_policy_assignments",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("policy_id", sa.String(36), nullable=False),
+        sa.Column("scope", sa.String(16), nullable=False),
+        sa.Column("subject_id", sa.String(48), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        # CASCADE, khac voi cac khoa ngoai khac o day dung RESTRICT: mot dong
+        # gan khong phai bang chung ve tien, no chi la mot con tro. Xoa chinh
+        # sach thi han muc tut ve buoc truoc — thay doi doan truoc duoc.
+        sa.ForeignKeyConstraint(["policy_id"], ["api_policies.id"],
+                                ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("scope", "subject_id", name="uq_api_policy_subject"),
+    )
+    op.create_index("ix_api_policy_assignments_policy_id",
+                    "api_policy_assignments", ["policy_id"])
+    op.create_index("ix_api_policy_lookup", "api_policy_assignments",
+                    ["scope", "subject_id"])
+
+    op.create_table(
+        "api_kill_switches",
+        sa.Column("id", sa.String(36), nullable=False),
+        sa.Column("scope", sa.String(20), nullable=False),
+        sa.Column("subject", sa.String(64), nullable=False, server_default=""),
+        # NOT NULL co chu dich: mot cong tat khong co ly do la mot su co khong
+        # ai giai thich duoc ve sau.
+        sa.Column("reason", sa.String(500), nullable=False),
+        sa.Column("created_by", sa.String(255), nullable=False,
+                  server_default=""),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        # Het han = tu het hieu luc, khong can job don. Loi thuong gap nhat cua
+        # mot cong tat su co la khong ai nho tat no di.
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("scope", "subject", name="uq_api_kill_subject"),
+    )
+    op.create_index("ix_api_kill_switches_scope", "api_kill_switches", ["scope"])
+    op.create_index("ix_api_kill_scope", "api_kill_switches",
+                    ["scope", "expires_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_api_kill_scope", table_name="api_kill_switches")
+    op.drop_index("ix_api_kill_switches_scope", table_name="api_kill_switches")
+    op.drop_table("api_kill_switches")
+    op.drop_index("ix_api_policy_lookup", table_name="api_policy_assignments")
+    op.drop_index("ix_api_policy_assignments_policy_id",
+                  table_name="api_policy_assignments")
+    op.drop_table("api_policy_assignments")
+    op.drop_table("api_policies")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -108202,6 +108315,202 @@ def effective_cap(db, *, user_id: str, project_id: str = "",
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/capacity.py
+SHA256=8fb44e880cc6aa3a80b1ab2231fb4c7372004a518beaa2e2bc6d118a42362218 BYTES=7641 LINES=190
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Is the machinery behind a tool actually able to do the work right now.
+
+A limit says "you have had enough". Capacity says "there is nothing to give" —
+and they need different answers, because the second one is not the caller's
+fault and retrying later really will work.
+
+What is checked, and why only these
+-----------------------------------
+
+Each check maps to a resource whose absence makes a job **certain** to fail, and
+each reads a signal the platform already maintains:
+
+* **provider credentials** — ``api_pool`` already tracks health, cooldown and
+  quota per key. Only meaningful when the pool is actually the source for that
+  category: every app here falls back to an environment credential, so an empty
+  pool says nothing, while a pool that holds keys and can serve none is a real
+  signal that the next job will fail after paying;
+* **GPU** — ``gpu.available()`` for tools whose app declares ``requires=("gpu",)``;
+* **storage** — the object store must accept a write, because a tool that
+  produces a file and cannot store it fails at the very end, after paying;
+
+Nothing here polls, retries or scores. It reads what other modules already know.
+A second health engine would be a second thing to keep correct, and the first
+time the two disagreed the honest answer would be unknowable.
+
+Where it is enforced, and where it is not
+-----------------------------------------
+
+Only at **job creation**. Reads keep working during an outage — a customer whose
+provider is down still needs to list their jobs and fetch yesterday's artifacts,
+and refusing that turns a degraded platform into a dark one.
+
+It also refuses **before** the credit hold, never after: refusing a call costs
+the caller nothing, while holding credit for work that cannot run means a refund
+to reconcile and a support conversation to have.
+"""
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+
+log = logging.getLogger("ltt.public_api.capacity")
+
+#: Cached probe results, keyed by resource. Storage and GPU probes touch real
+#: devices, and doing that on every job creation would make the guard the
+#: slowest part of the call it is protecting.
+_TTL_S = 15.0
+_cache: dict = {}
+
+
+@dataclass(frozen=True)
+class Unavailable:
+    """Which resource is missing, in words a caller can act on."""
+
+    resource: str
+    detail: str
+    retry_after: int = 60
+
+
+def reset() -> None:
+    """Drop cached probes. For tests, and for a clean process start."""
+    _cache.clear()
+
+
+def _cached(resource: str, probe, *, now: float | None = None):
+    import time
+
+    moment = time.monotonic() if now is None else now
+    hit = _cache.get(resource)
+    if hit is not None and moment - hit[0] < _TTL_S:
+        return hit[1]
+    value = probe()
+    _cache[resource] = (moment, value)
+    return value
+
+
+def _providers_healthy(db, category: str) -> bool:
+    """Is the credential pool *in use for this category and exhausted*?
+
+    Two states have to be told apart, and conflating them was a real bug caught
+    by the existing suite:
+
+    * the pool holds **no** keys for this category — apps fall back to an
+      environment credential when the pool cannot serve them, so an empty pool
+      says nothing about whether the work can run. Refusing here would ground a
+      deployment that never opted into the pool at all;
+    * the pool holds keys and **none are usable** — cooling down, out of quota,
+      disabled. That is a genuine capacity signal: the app will try the pool,
+      the pool will refuse, and the job fails after the hold.
+
+    So: silent when the pool is not the source of truth for this category, and
+    honest when it is.
+    """
+    from sqlalchemy import select
+
+    from platform_core import api_pool
+    from platform_core.models import ApiKey
+
+    rows = db.execute(select(ApiKey).where(
+        ApiKey.enabled.is_(True))).scalars().all()
+    if not any(category in (key.categories or []) for key in rows):
+        return True
+
+    try:
+        api_pool.chon_key(db, category=category)
+        return True
+    except Exception as exc:  # noqa: BLE001 - any refusal means "cannot serve"
+        # Logged, not swallowed: the refusal is correct, but "which provider,
+        # and why" is the whole question an operator has when jobs start being
+        # turned away.
+        log.warning("khong chon duoc key cho category %s: %s: %s",
+                    category, type(exc).__name__, exc)
+        return False
+
+
+def _gpu_present() -> bool:
+    from platform_core import gpu
+
+    try:
+        return bool(gpu.available())
+    except Exception as exc:  # noqa: BLE001 - a probe that errors is not a yes
+        log.warning("probe GPU that bai: %s: %s", type(exc).__name__, exc)
+        return False
+
+
+def _storage_writable() -> bool:
+    """A real round trip, like `/health/ready` does for the database.
+
+    A configuration check would pass while the bucket was unreachable, which is
+    exactly the failure this is meant to catch.
+    """
+    import io
+    import uuid
+
+    from platform_core.storage import get_storage
+
+    key = f"health/capacity-{uuid.uuid4().hex}.probe"
+    storage = get_storage()
+    try:
+        storage.put(key, io.BytesIO(b"ok"), content_type="text/plain")
+    except Exception as exc:  # noqa: BLE001 - unreachable storage is the point
+        log.warning("storage khong nhan ghi: %s: %s", type(exc).__name__, exc)
+        return False
+    try:
+        storage.delete(key)
+    except Exception as exc:  # noqa: BLE001 - a leftover probe is not a failure
+        # Deliberately not fatal: the write succeeded, which is what was being
+        # asked. But a probe file that cannot be removed will accumulate, so it
+        # is said out loud rather than dropped.
+        log.info("khong xoa duoc file probe %s: %s", key, type(exc).__name__)
+    return True
+
+
+def check(db, *, tool, manifest=None) -> Unavailable | None:
+    """The first missing resource for this tool, or ``None``.
+
+    ``manifest`` is optional so a caller that already resolved it does not look
+    it up twice; without it, only the resources every tool needs are checked.
+    """
+    if not _cached("storage", _storage_writable):
+        return Unavailable(
+            "storage", "Object storage is not accepting writes right now.", 120)
+
+    requires = set(getattr(manifest, "requires", ()) or ())
+    if "gpu" in requires and not _cached("gpu", _gpu_present):
+        return Unavailable("gpu", "No GPU is available for this tool.", 300)
+
+    category = _category_for(tool)
+    if category and not _cached(f"provider:{category}",
+                                lambda: _providers_healthy(db, category)):
+        return Unavailable(
+            "provider",
+            "No provider credential is available for this capability.", 120)
+    return None
+
+
+def _category_for(tool) -> str:
+    """Which provider category a tool's work draws on, from its public name.
+
+    Derived from the capability the catalog already computes rather than from a
+    new manifest field: the tool is called `image.generate` because it generates
+    images, and a second declaration of that would be a second thing to keep in
+    step (AGENTS.md 8.4 — the platform must not know app names).
+    """
+    capability = str(getattr(tool, "capability", "") or "")
+    return {"image": "image", "video": "video", "chat": "chat",
+            "text": "chat", "story": "chat"}.get(capability, "")
+
+
+__all__ = ["Unavailable", "check", "reset"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
 SHA256=ad15533dda77d5d4fbb2af2cecc9c4c343cdf68976051f1953bf63ef5c16f274 BYTES=17041 LINES=398
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -109089,7 +109398,7 @@ IDEMPOTENCY_RULE = (
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/errors.py
-SHA256=6490e6d76112080e2e0a475f9adf3a21c53e35c8db1f4e3c8c0b7e5f6cbc9c01 BYTES=10239 LINES=261
+SHA256=92d53e4eea051fcf483831a6e502ea7dc1af9d62f87a0c317f45fbebdd21efee BYTES=10830 LINES=273
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Machine-readable error contract for ``/api/v1`` — RFC 9457 problem details.
 
@@ -109310,6 +109619,18 @@ def read_only(detail: object = "") -> ApiError:
     """Emergency switch answer: reads keep working, writes stop."""
     return ApiError(503, CODE_READ_ONLY, detail,
                     title=_TITLES[CODE_READ_ONLY])
+
+
+def service_unavailable(detail: object = "", *, retry_after: int = 0,
+                        **extra) -> ApiError:
+    """Temporarily cannot serve this — come back. The code already existed in
+    the registry; until EXT-14 nothing constructed it, because the only 503 the
+    platform could raise was the global read-only switch."""
+    if retry_after:
+        extra = {**extra, "retry_after": int(retry_after)}
+    return ApiError(503, CODE_SERVICE_UNAVAILABLE, detail,
+                    title=_TITLES[CODE_SERVICE_UNAVAILABLE],
+                    extra=extra or None)
 
 
 # ── Specific causes (EXT-02) ─────────────────────────────────────────────────
@@ -110452,7 +110773,7 @@ __all__ = ["DEVKEY_ACTIVE", "DeveloperKeyError", "current_pepper", "digest_secre
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/limits.py
-SHA256=bf7198aec92ebe5436dbdaa764f75dfdfed3a0fabfa3c5b4da61cb75479dc5ce BYTES=11199 LINES=259
+SHA256=72f9fec4298ddf1723b1fdfc957eb53c5cb30e902c826392d043eae4977fbb28 BYTES=13680 LINES=305
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rate, quota, concurrency and capacity limits for the Public API.
 
@@ -110471,6 +110792,19 @@ resources:
 5. **daily credit ceiling per account** — a blast radius limit for a leaked key
    or a runaway script; off by default because it is a product decision, not a
    safety default.
+
+**Where the numbers come from.** Until EXT-14 every limit came straight from the
+deployment's environment, which meant one number for every customer. They now
+come from ``policy.resolve()``, which walks global → tier → user → project →
+credential → tool and hands back a ``Limits``. This module still owns *how* a
+limit is enforced; it no longer owns *what the number is*.
+
+**Per key and per account.** Layers 2 and 3 used to be bucketed on ``key_id``
+alone, so an account that wanted five times the rate created five keys — no
+exploit needed, just the credential page. Each rate is now charged to the key
+*and* to the account: the key bucket stops one broken client, and the account
+bucket is the one that means anything commercially. Layers 4 and 5 were already
+per account.
 
 **Where the counters live.** The platform runs a single web process (ADR-005,
 one NSSM service), so an in-process window is authoritative for the RPM layers
@@ -110579,24 +110913,51 @@ def note_auth_failure(*, client_ip: str, key_id: str, config) -> None:
 
 # ── Layers 2 and 3: request rate ──────────────────────────────────────────────
 
-def enforce_request_rate(*, key_id: str, config) -> None:
-    allowed, retry = _hit(f"rpm:{key_id}", config.request_rpm, 60.0)
+def enforce_request_rate(*, key_id: str, config, limits=None,
+                         user_id: str = "", is_write: bool = False) -> None:
+    """Ration ordinary calls, per key and per account.
+
+    Reads and writes get separate allowances once a policy says so. A read costs
+    a query; a write costs a row, a lock and often a hold, so a burst of cheap
+    reads must not be able to consume the allowance that protects them — nor the
+    reverse. Without a policy both come from the same configured number, which
+    is exactly the behaviour deployments already had.
+    """
+    ceiling = config.request_rpm if limits is None else (
+        limits.rpm_write if is_write else limits.rpm_read)
+    allowed, retry = _hit(f"rpm:{key_id}", ceiling, 60.0)
     if not allowed:
         _bump("request_rate_limited")
         raise _too_many("Too many requests for this API key.", retry)
 
+    if user_id:
+        # The anti-bypass bucket. Same ceiling, wider subject: more keys buy
+        # more parallelism against the platform, never more rate.
+        allowed, retry = _hit(f"rpm:acct:{user_id}", ceiling, 60.0)
+        if not allowed:
+            _bump("request_rate_limited_account")
+            raise _too_many("Too many requests for this account.", retry)
 
-def enforce_create_rate(*, key_id: str, config) -> None:
+
+def enforce_create_rate(*, key_id: str, config, limits=None,
+                        user_id: str = "") -> None:
     """Chargeable creates are rationed separately and much more tightly.
 
     A read costs a query; a create costs credit, a worker slot and provider
     quota. Sharing one budget between them would let a burst of cheap calls
     exhaust the allowance that protects the expensive ones — or the reverse.
     """
-    allowed, retry = _hit(f"create:{key_id}", config.create_rpm, 60.0)
+    ceiling = config.create_rpm if limits is None else limits.rpm_create
+    allowed, retry = _hit(f"create:{key_id}", ceiling, 60.0)
     if not allowed:
         _bump("create_rate_limited")
         raise _too_many("Too many job creations for this API key.", retry)
+
+    if user_id:
+        allowed, retry = _hit(f"create:acct:{user_id}", ceiling, 60.0)
+        if not allowed:
+            _bump("create_rate_limited_account")
+            raise _too_many("Too many job creations for this account.", retry)
 
 
 # ── Layer 4: concurrency and capacity (database-backed) ───────────────────────
@@ -110630,14 +110991,16 @@ def resource_class(manifest) -> str:
 
 
 def enforce_active_jobs(db, *, principal, config, app_slug: str,
-                        class_slugs=None, resource: str = "api") -> None:
+                        class_slugs=None, resource: str = "api",
+                        limits=None) -> None:
     """Refuse to open a new job when this account already has enough running.
 
     Backpressure at admission, not in the queue: an unbounded queue turns a
     burst into an hours-long backlog that every other customer waits behind,
     and the credit for it is already held.
     """
-    limit = config.max_active_jobs
+    limit = (config.max_active_jobs if limits is None
+             else limits.max_active_jobs)
     if limit > 0:
         active = active_job_count(db, principal.user_id)
         if active >= limit:
@@ -110646,7 +111009,9 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
                 "This account already has the maximum number of active jobs.",
                 30, code=CODE_CONCURRENCY, active_jobs=active, limit=limit)
 
-    class_limit = config.class_concurrency.get(resource, 0)
+    classes = (config.class_concurrency if limits is None
+               else limits.class_concurrency)
+    class_limit = classes.get(resource, 0)
     if class_limit > 0 and class_slugs:
         active = active_job_count(db, principal.user_id, app_slugs=class_slugs)
         if active >= class_limit:
@@ -110702,8 +111067,10 @@ def enforce_budget(db, *, principal, cost: int) -> None:
                 scope=budget.scope, period=budget.period, source="budget")
 
 
-def enforce_daily_credit(db, *, principal, config, cost: int) -> None:
-    ceiling = config.daily_credit_limit
+def enforce_daily_credit(db, *, principal, config, cost: int,
+                         limits=None) -> None:
+    ceiling = (config.daily_credit_limit if limits is None
+               else limits.daily_credit)
     if ceiling <= 0:
         return
     since = datetime.now(timezone.utc) - timedelta(days=1)
@@ -110885,7 +111252,7 @@ def results_of(job, tool) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/metrics.py
-SHA256=f905ce136a2087873840e6da32838b6a4f2ed5182e360c87e1458ddf23f32f6e BYTES=2940 LINES=83
+SHA256=8d3718b566a841e83f7dea335d4e071349ce0c00142f8fbb1534f9eb1298c280 BYTES=3351 LINES=90
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """In-process counters for the Public API.
 
@@ -110921,6 +111288,13 @@ REQUESTS = "requests"
 RESPONSES_4XX = "responses_4xx"
 RESPONSES_5XX = "responses_5xx"
 RATE_LIMITED = "rate_limited"
+#: How often a kill switch actually refused something. A switch nobody can see
+#: working is a switch nobody trusts is working (EXT-14).
+KILL_SWITCH_REFUSED = "kill_switch_refused"
+#: How often a job was refused because the machinery behind it was missing,
+#: rather than because the caller had had enough. Different cause, different
+#: fix, so a different counter.
+CAPACITY_REFUSED = "capacity_refused"
 IDEMPOTENCY_REPLAY = "idempotency_replay"
 IDEMPOTENCY_CONFLICT = "idempotency_conflict"
 CREDIT_HELD = "credit_held"
@@ -111414,6 +111788,540 @@ def _positive_int(name: str, value, default: int) -> int:
     if parsed < 0:
         raise invalid_request(f"{name} must not be negative.")
     return parsed
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/policy.py
+SHA256=f133b1467c639d3df4b7356562a4b4e5d6211b1bf35e5d7cfc57b4e07aedd0b8 BYTES=21071 LINES=528
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Who may call how much, and the switch that stops everything.
+
+Two things live here, and they are separate on purpose.
+
+**Policy** answers *how much*. It resolves one number — a rate, a concurrency
+cap, a credit ceiling, an upload size — from a chain of overrides, and the answer
+must be the same every time for the same inputs. A limit that varies with the
+order the code happened to check things is a limit nobody can support.
+
+**Kill switch** answers *not now*. It is not a limit set to zero. A limit is
+steady-state policy; a kill switch is an incident tool with an author, a reason
+and usually an expiry. Conflating them means the only record of "we turned this
+off at 3am and why" is a number that looks like configuration.
+
+The precedence chain
+--------------------
+
+::
+
+    global  →  tier  →  user  →  project  →  credential  →  tool
+
+* **global** — the deployment's environment (``PublicApiConfig``). It already
+  existed, and it stays the floor;
+* **tier** — the default policy row, if the operator defined one. A commercial
+  plan lands here;
+* **user → project → credential** — an override attached to a specific subject,
+  narrowest last;
+* **tool** — per-tool overrides carried inside whichever policy won.
+
+Each step overrides **only the fields it actually sets**. A policy that sets a
+concurrency cap and nothing else changes concurrency and leaves every other
+number where the previous step left it. Without that rule, attaching a policy to
+raise one limit would silently reset the four it says nothing about — and the
+person who attached it would have no way to know.
+
+That is also why every numeric column is nullable and ``NULL`` means "inherit"
+rather than using ``0`` as the sentinel: zero is a real, meaningful limit (a rate
+of zero refuses everything), and a scheme that spent it on "unset" could never
+express it.
+
+Anti-bypass
+-----------
+
+Before this module, the rate limits were bucketed per **key**. An account that
+wanted five times the rate created five keys — no exploit required, just the
+credential page. So a rate now costs the account as well as the key: the key
+bucket protects the platform from one broken client, and the **account** bucket
+is the one that means anything commercially.
+
+Concurrency and the daily credit ceiling were already per account, so the hole
+was specific to the two rate layers.
+
+What is deliberately absent
+---------------------------
+
+**Priority classes.** The brief asks for them "only if the scheduler supports
+it". ``jobs.claim()`` takes work strictly FIFO by ``created_at``; there is no
+priority column on ``Job`` and nothing reads one. A ``priority`` field that no
+scheduler consults would be a promise the platform cannot keep — visible in the
+admin UI, and wrong. It belongs with a scheduler change, not here.
+"""
+from __future__ import annotations
+
+import uuid
+from dataclasses import dataclass, replace
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+
+from platform_core.i18n import _ as _t
+from platform_core.public_api.tables import (ApiKillSwitch, ApiPolicy,
+                                             ApiPolicyAssignment,
+                                             KILL_GLOBAL_SCOPES,
+                                             KILL_GLOBAL_WRITES, KILL_KEY,
+                                             KILL_MAINTENANCE, KILL_PROJECT,
+                                             KILL_SCOPES, KILL_TOOL, KILL_USER,
+                                             POLICY_SCOPE_KEY,
+                                             POLICY_SCOPE_PROJECT,
+                                             POLICY_SCOPE_USER, POLICY_SCOPES)
+
+#: Fields a policy may override. Order is the order they are documented in.
+LIMIT_FIELDS = ("rpm_read", "rpm_write", "rpm_create", "max_active_jobs",
+                "daily_credit", "max_upload_bytes")
+
+MIN_REASON = 8
+
+
+class PolicyError(Exception):
+    """A refusal an operator should read, not a bug."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+@dataclass(frozen=True)
+class Limits:
+    """The resolved answer, and a record of how it was reached.
+
+    ``sources`` names the step that last set each field. It exists because the
+    first question about any limit is "why is it that number", and an engine
+    that cannot answer it turns every support conversation into an
+    investigation.
+    """
+
+    rpm_read: int
+    rpm_write: int
+    rpm_create: int
+    max_active_jobs: int
+    daily_credit: int
+    max_upload_bytes: int
+    class_concurrency: dict
+    sources: dict
+
+    def as_dict(self) -> dict:
+        return {field: getattr(self, field) for field in LIMIT_FIELDS}
+
+
+def _from_config(config) -> Limits:
+    """The floor: whatever this deployment's environment already said.
+
+    ``rpm_read`` and ``rpm_write`` both start from the single ``request_rpm``
+    the config has always carried. Splitting reads from writes is new here, so
+    the starting point has to be the number that was already in force —
+    inventing a different default would change behaviour for a deployment that
+    never opted into policies at all.
+    """
+    return Limits(
+        rpm_read=int(config.request_rpm),
+        rpm_write=int(config.request_rpm),
+        rpm_create=int(config.create_rpm),
+        max_active_jobs=int(config.max_active_jobs),
+        daily_credit=int(config.daily_credit_limit),
+        # The platform's own upload ceiling, not `max_body_bytes` — that one
+        # caps a JSON control-plane body (256 KB) and has nothing to do with
+        # media. Showing it here read as "uploads are capped at 256 KB", which
+        # is wrong by four orders of magnitude.
+        max_upload_bytes=_platform_upload_ceiling(),
+        class_concurrency=dict(config.class_concurrency or {}),
+        sources={field: "global" for field in LIMIT_FIELDS},
+    )
+
+
+def _platform_upload_ceiling() -> int:
+    """What an upload can be before the platform itself refuses it.
+
+    Cloudflare rejects a body over 100 MB before it reaches the origin, so the
+    multipart fallback is capped below that; a policy may lower the number for a
+    tier but must not be able to raise it past what the edge will pass.
+    """
+    from platform_core.public_api.media import MULTIPART_LIMIT
+
+    return int(MULTIPART_LIMIT)
+
+
+def _apply(limits: Limits, policy: ApiPolicy, label: str) -> Limits:
+    """Overlay one policy. Only the fields it sets; everything else survives."""
+    changes: dict = {}
+    sources = dict(limits.sources)
+    for field in LIMIT_FIELDS:
+        value = getattr(policy, field, None)
+        if value is None:
+            continue
+        changes[field] = int(value)
+        sources[field] = label
+    classes = policy.class_concurrency or {}
+    if classes:
+        merged = dict(limits.class_concurrency)
+        merged.update({str(key): int(value) for key, value in classes.items()})
+        changes["class_concurrency"] = merged
+        sources["class_concurrency"] = label
+    if not changes:
+        return limits
+    return replace(limits, sources=sources, **changes)
+
+
+def _apply_tool(limits: Limits, policy: ApiPolicy, tool_name: str) -> Limits:
+    """The narrowest step: this policy's overrides for one named tool."""
+    overrides = (policy.tool_overrides or {}).get(str(tool_name or ""))
+    if not isinstance(overrides, dict) or not overrides:
+        return limits
+    changes: dict = {}
+    sources = dict(limits.sources)
+    for field in LIMIT_FIELDS:
+        if field not in overrides or overrides[field] is None:
+            continue
+        try:
+            changes[field] = int(overrides[field])
+        except (TypeError, ValueError):
+            continue
+        sources[field] = f"tool:{tool_name}"
+    if not changes:
+        return limits
+    return replace(limits, sources=sources, **changes)
+
+
+def _assigned(db, scope: str, subject_id: str) -> ApiPolicy | None:
+    if not subject_id:
+        return None
+    row = db.execute(
+        select(ApiPolicy)
+        .join(ApiPolicyAssignment,
+              ApiPolicyAssignment.policy_id == ApiPolicy.id)
+        .where(ApiPolicyAssignment.scope == scope,
+               ApiPolicyAssignment.subject_id == str(subject_id))
+    ).scalar_one_or_none()
+    return row
+
+
+def default_policy(db) -> ApiPolicy | None:
+    return db.execute(select(ApiPolicy).where(
+        ApiPolicy.is_default.is_(True))).scalar_one_or_none()
+
+
+def resolve(db, *, config, principal=None, tool_name: str = "") -> Limits:
+    """Walk the chain once and return the numbers that apply right now.
+
+    Deterministic by construction: the steps are a fixed list, each one either
+    sets a field or does not, and the last writer wins. No step can be skipped
+    by data — a missing policy is simply a step that changes nothing.
+    """
+    limits = _from_config(config)
+
+    tier = default_policy(db)
+    if tier is not None:
+        limits = _apply(limits, tier, f"tier:{tier.name}")
+
+    winner = tier
+    if principal is not None:
+        for scope, subject in (
+            (POLICY_SCOPE_USER, getattr(principal, "user_id", "")),
+            (POLICY_SCOPE_PROJECT, getattr(principal, "project_id", "")),
+            (POLICY_SCOPE_KEY, getattr(principal, "key_id", "")),
+        ):
+            policy = _assigned(db, scope, str(subject or ""))
+            if policy is not None:
+                limits = _apply(limits, policy, f"{scope}:{policy.name}")
+                winner = policy
+
+    # Tool overrides come from whichever policy won, not from every policy in
+    # the chain: a tool rule inside a policy that was overridden wholesale is a
+    # rule its author no longer intends to apply.
+    if winner is not None and tool_name:
+        limits = _apply_tool(limits, winner, tool_name)
+    return limits
+
+
+# ── Policies: writes ─────────────────────────────────────────────────────────
+
+def create_policy(db, *, name: str, description: str = "", is_default=False,
+                  class_concurrency=None, tool_overrides=None,
+                  now: datetime | None = None, **fields) -> ApiPolicy:
+    clean_name = str(name or "").strip()
+    if not clean_name:
+        raise PolicyError(_t("Chính sách phải có tên."))
+    if db.execute(select(ApiPolicy).where(
+            ApiPolicy.name == clean_name)).scalar_one_or_none() is not None:
+        raise PolicyError(_t("Đã có chính sách trùng tên."))
+
+    moment = now or _now()
+    policy = ApiPolicy(
+        id=str(uuid.uuid4()), name=clean_name,
+        description=str(description or "")[:500],
+        class_concurrency=_clean_classes(class_concurrency),
+        tool_overrides=_clean_tool_overrides(tool_overrides),
+        is_default=bool(is_default), created_at=moment, updated_at=moment,
+        **_clean_fields(fields))
+    db.add(policy)
+    db.flush()
+    if policy.is_default:
+        _make_only_default(db, policy)
+    return policy
+
+
+def update_policy(db, policy: ApiPolicy, *, description=None,
+                  class_concurrency=None, tool_overrides=None,
+                  is_default=None, now: datetime | None = None,
+                  **fields) -> ApiPolicy:
+    if description is not None:
+        policy.description = str(description)[:500]
+    if class_concurrency is not None:
+        policy.class_concurrency = _clean_classes(class_concurrency)
+    if tool_overrides is not None:
+        policy.tool_overrides = _clean_tool_overrides(tool_overrides)
+    for field, value in _clean_fields(fields, allow_none=True).items():
+        setattr(policy, field, value)
+    policy.updated_at = now or _now()
+    if is_default is not None:
+        policy.is_default = bool(is_default)
+        if policy.is_default:
+            _make_only_default(db, policy)
+    db.flush()
+    return policy
+
+
+def delete_policy(db, policy: ApiPolicy) -> None:
+    """Assignments go with it (``ON DELETE CASCADE``); limits fall back a step.
+
+    Nothing is orphaned and nothing is silently kept: an account whose policy is
+    deleted resolves to the tier, or to the global floor. That is a change an
+    operator can predict, which is the only kind worth allowing.
+    """
+    db.execute(ApiPolicyAssignment.__table__.delete().where(
+        ApiPolicyAssignment.policy_id == policy.id))
+    db.delete(policy)
+    db.flush()
+
+
+def assign(db, *, policy: ApiPolicy, scope: str, subject_id: str,
+           now: datetime | None = None) -> ApiPolicyAssignment:
+    if scope not in POLICY_SCOPES:
+        raise PolicyError(_t("Phạm vi gán không hợp lệ."))
+    subject = str(subject_id or "").strip()
+    if not subject:
+        raise PolicyError(_t("Phải nêu đối tượng được gán."))
+
+    existing = db.execute(select(ApiPolicyAssignment).where(
+        ApiPolicyAssignment.scope == scope,
+        ApiPolicyAssignment.subject_id == subject)).scalar_one_or_none()
+    if existing is not None:
+        # Reassignment rather than a second row: two policies on one subject
+        # would make the answer depend on row order, which is exactly the
+        # non-determinism this module exists to prevent.
+        existing.policy_id = policy.id
+        db.flush()
+        return existing
+
+    row = ApiPolicyAssignment(id=str(uuid.uuid4()), policy_id=policy.id,
+                              scope=scope, subject_id=subject,
+                              created_at=now or _now())
+    db.add(row)
+    db.flush()
+    return row
+
+
+def unassign(db, *, scope: str, subject_id: str) -> bool:
+    row = db.execute(select(ApiPolicyAssignment).where(
+        ApiPolicyAssignment.scope == scope,
+        ApiPolicyAssignment.subject_id == str(subject_id))).scalar_one_or_none()
+    if row is None:
+        return False
+    db.delete(row)
+    db.flush()
+    return True
+
+
+def list_policies(db) -> list:
+    return list(db.execute(select(ApiPolicy).order_by(
+        ApiPolicy.is_default.desc(), ApiPolicy.name)).scalars())
+
+
+def assignments_for(db, policy_id: str) -> list:
+    return list(db.execute(select(ApiPolicyAssignment).where(
+        ApiPolicyAssignment.policy_id == str(policy_id))).scalars())
+
+
+def _make_only_default(db, policy: ApiPolicy) -> None:
+    for row in db.execute(select(ApiPolicy).where(
+            ApiPolicy.is_default.is_(True))).scalars():
+        if row.id != policy.id:
+            row.is_default = False
+    db.flush()
+
+
+def _clean_fields(fields: dict, *, allow_none: bool = False) -> dict:
+    out: dict = {}
+    for field, value in (fields or {}).items():
+        if field not in LIMIT_FIELDS:
+            raise PolicyError(_t("Trường hạn mức không hợp lệ: {field}"
+                                 ).format(field=field))
+        if value is None:
+            if allow_none:
+                out[field] = None
+            continue
+        try:
+            number = int(value)
+        except (TypeError, ValueError) as exc:
+            raise PolicyError(_t("Hạn mức phải là số nguyên: {field}"
+                                 ).format(field=field)) from exc
+        if number < 0:
+            raise PolicyError(_t("Hạn mức không được âm: {field}"
+                                 ).format(field=field))
+        out[field] = number
+    return out
+
+
+def _clean_classes(values) -> dict:
+    out: dict = {}
+    for key, value in (values or {}).items():
+        try:
+            out[str(key)] = max(0, int(value))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _clean_tool_overrides(values) -> dict:
+    out: dict = {}
+    for tool, fields in (values or {}).items():
+        if not isinstance(fields, dict):
+            continue
+        clean = {field: int(value) for field, value in fields.items()
+                 if field in LIMIT_FIELDS and str(value).lstrip("-").isdigit()
+                 and int(value) >= 0}
+        if clean:
+            out[str(tool)] = clean
+    return out
+
+
+# ── Kill switches ────────────────────────────────────────────────────────────
+
+def active_switches(db, *, now: datetime | None = None) -> list:
+    """Every switch still in force. Expired rows are simply not returned.
+
+    No sweeper: a switch whose expiry has passed stops applying the moment it
+    passes, and the row stays as evidence of what was done and why.
+    """
+    moment = now or _now()
+    return [row for row in db.execute(select(ApiKillSwitch)).scalars()
+            if row.is_active(now=moment)]
+
+
+def engage(db, *, scope: str, subject: str = "", reason: str,
+           created_by: str = "", expires_at: datetime | None = None,
+           now: datetime | None = None) -> ApiKillSwitch:
+    """Turn something off, on the record.
+
+    ``reason`` is required and checked here rather than in the UI: a switch
+    reached from a script with no reason is exactly the outage nobody can
+    explain afterwards.
+    """
+    if scope not in KILL_SCOPES:
+        raise PolicyError(_t("Phạm vi kill switch không hợp lệ."))
+    clean_subject = "" if scope in KILL_GLOBAL_SCOPES else str(subject or "").strip()
+    if scope not in KILL_GLOBAL_SCOPES and not clean_subject:
+        raise PolicyError(_t("Phải nêu đối tượng cho phạm vi này."))
+    if len(str(reason or "").strip()) < MIN_REASON:
+        raise PolicyError(_t(
+            "Phải ghi lý do (ít nhất {n} ký tự) cho thao tác này."
+        ).format(n=MIN_REASON))
+
+    moment = now or _now()
+    if expires_at is not None and expires_at <= moment:
+        raise PolicyError(_t("Thời điểm hết hiệu lực phải ở tương lai."))
+
+    existing = db.execute(select(ApiKillSwitch).where(
+        ApiKillSwitch.scope == scope,
+        ApiKillSwitch.subject == clean_subject)).scalar_one_or_none()
+    if existing is not None:
+        existing.reason = str(reason).strip()[:500]
+        existing.created_by = str(created_by or "")[:255]
+        existing.created_at = moment
+        existing.expires_at = expires_at
+        db.flush()
+        return existing
+
+    row = ApiKillSwitch(id=str(uuid.uuid4()), scope=scope,
+                        subject=clean_subject, reason=str(reason).strip()[:500],
+                        created_by=str(created_by or "")[:255],
+                        created_at=moment, expires_at=expires_at)
+    db.add(row)
+    db.flush()
+    return row
+
+
+def release(db, switch: ApiKillSwitch) -> None:
+    db.delete(switch)
+    db.flush()
+
+
+def switch_by_id(db, switch_id: str):
+    return db.get(ApiKillSwitch, str(switch_id))
+
+
+@dataclass(frozen=True)
+class Refusal:
+    """Why a call is being refused, in terms the caller can act on."""
+
+    scope: str
+    reason: str
+    retry_after: int = 60
+
+
+def check(db, *, principal=None, tool_name: str = "", is_write: bool = False,
+          now: datetime | None = None) -> Refusal | None:
+    """The first refusal that applies, or ``None``.
+
+    Ordered widest first — maintenance, then global writes, then the subject,
+    then the tool. When several switches apply, the caller is told about the
+    broadest one, because that is the one whose lifting unblocks them.
+    """
+    moment = now or _now()
+    switches = active_switches(db, now=moment)
+    if not switches:
+        return None
+
+    by_key = {(row.scope, row.subject): row for row in switches}
+
+    row = by_key.get((KILL_MAINTENANCE, ""))
+    if row is not None:
+        return Refusal(KILL_MAINTENANCE, row.reason, 300)
+
+    if is_write:
+        row = by_key.get((KILL_GLOBAL_WRITES, ""))
+        if row is not None:
+            return Refusal(KILL_GLOBAL_WRITES, row.reason, 300)
+
+    if principal is not None:
+        for scope, subject in ((KILL_USER, getattr(principal, "user_id", "")),
+                               (KILL_PROJECT, getattr(principal, "project_id", "")),
+                               (KILL_KEY, getattr(principal, "key_id", ""))):
+            row = by_key.get((scope, str(subject or "")))
+            if row is not None:
+                return Refusal(scope, row.reason, 0)
+
+    if tool_name:
+        row = by_key.get((KILL_TOOL, str(tool_name)))
+        if row is not None:
+            return Refusal(KILL_TOOL, row.reason, 300)
+    return None
+
+
+__all__ = [
+    "LIMIT_FIELDS", "Limits", "MIN_REASON", "PolicyError", "Refusal",
+    "active_switches", "assign", "assignments_for", "check", "create_policy",
+    "default_policy", "delete_policy", "engage", "list_policies", "release",
+    "resolve", "switch_by_id", "unassign", "update_policy",
+]
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -112490,7 +113398,7 @@ def normalize_scopes(scopes) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=9ce5267d54899e70a6464f7bb18e1ec48fe30c34d4ca3912f1a5615978d15c00 BYTES=22990 LINES=463
+SHA256=a7c96a2ce8c29c0671a69030bb7a28796a67ffcfdd243cf27bc5200d8fbe8a3a BYTES=29855 LINES=608
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -112955,6 +113863,151 @@ class WebhookDelivery(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return (f"<WebhookDelivery {self.event_type} {self.status} "
                 f"attempts={self.attempts}>")
+
+
+# ── Policy engine (EXT-14) ────────────────────────────────────────────────────
+#
+# Two tables and one rule about them: a **policy** answers "how much", a **kill
+# switch** answers "not now". Keeping them apart is not tidiness — a limit set
+# to zero and an incident switch look identical in a settings table, and then
+# the only record of "we turned this off at 3am and why" is a number.
+
+POLICY_SCOPE_USER = "user"
+POLICY_SCOPE_PROJECT = "project"
+POLICY_SCOPE_KEY = "key"
+POLICY_SCOPES = (POLICY_SCOPE_USER, POLICY_SCOPE_PROJECT, POLICY_SCOPE_KEY)
+
+KILL_GLOBAL_WRITES = "global_writes"
+KILL_MAINTENANCE = "maintenance"
+KILL_TOOL = "tool"
+KILL_USER = "user"
+KILL_PROJECT = "project"
+KILL_KEY = "key"
+KILL_SCOPES = (KILL_GLOBAL_WRITES, KILL_MAINTENANCE, KILL_TOOL, KILL_USER,
+               KILL_PROJECT, KILL_KEY)
+#: Switches that name no subject: there is only ever one of each.
+KILL_GLOBAL_SCOPES = (KILL_GLOBAL_WRITES, KILL_MAINTENANCE)
+
+
+class ApiPolicy(Base):
+    """A named set of limits — a commercial tier, or one account's exception.
+
+    **Every numeric column is nullable, and NULL means "inherit".** Not zero:
+    zero is a real, meaningful value (a rate of zero refuses everything), and a
+    policy that used zero for "unset" could never express it. More importantly,
+    a policy attached to raise one limit must not silently reset the four it
+    says nothing about.
+    """
+
+    __tablename__ = "api_policies"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String(500), default="",
+                                             nullable=False)
+
+    rpm_read: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rpm_write: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rpm_create: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_active_jobs: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    daily_credit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_upload_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: ``{resource: limit}`` — "gpu", "ffmpeg", "browser", "api".
+    class_concurrency: Mapped[dict] = mapped_column(JSON, default=dict,
+                                                    nullable=False)
+    #: ``{tool_name: {field: value}}`` — the narrowest step of the chain.
+    tool_overrides: Mapped[dict] = mapped_column(JSON, default=dict,
+                                                 nullable=False)
+
+    #: The tier every account gets without an explicit assignment. At most one
+    #: row may hold it; the service enforces that rather than a partial index,
+    #: which SQLite cannot express portably.
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiPolicy {self.name}{' default' if self.is_default else ''}>"
+
+
+class ApiPolicyAssignment(Base):
+    """Which subject gets which policy. One policy per subject, at most."""
+
+    __tablename__ = "api_policy_assignments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    policy_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("api_policies.id", ondelete="CASCADE"),
+        nullable=False, index=True)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: user id, project id or key id, depending on ``scope``.
+    subject_id: Mapped[str] = mapped_column(String(48), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("scope", "subject_id",
+                         name="uq_api_policy_subject"),
+        Index("ix_api_policy_lookup", "scope", "subject_id"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiPolicyAssignment {self.scope}={self.subject_id[:8]}>"
+
+
+class ApiKillSwitch(Base):
+    """A deliberate refusal, with a reason and usually an end.
+
+    ``reason`` is not nullable and the service refuses an empty one: a switch
+    without a reason is an outage nobody can explain. ``expires_at`` is how a
+    switch stops being permanent by accident — the commonest failure of an
+    incident tool is that somebody forgets to turn it off, so an expired row
+    simply stops applying without needing a sweeper.
+    """
+
+    __tablename__ = "api_kill_switches"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    scope: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    #: Tool name, user id, project id or key id. Empty for the global scopes.
+    subject: Mapped[str] = mapped_column(String(64), default="",
+                                         nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_by: Mapped[str] = mapped_column(String(255), default="",
+                                            nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("scope", "subject", name="uq_api_kill_subject"),
+        Index("ix_api_kill_scope", "scope", "expires_at"),
+    )
+
+    def is_active(self, *, now: datetime | None = None) -> bool:
+        """Still in force?
+
+        The expiry is normalised to UTC before comparing because SQLite hands
+        back a naive datetime for a column PostgreSQL returns aware — the same
+        asymmetry `keys.py` already works around. Comparing the two raises, and
+        it would raise inside the kill-switch check on every request, turning an
+        incident tool into an incident.
+        """
+        moment = now or _now()
+        expiry = self.expires_at
+        if expiry is None:
+            return True
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        return expiry > moment
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiKillSwitch {self.scope}:{self.subject or '*'}>"
+
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -119079,7 +120132,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin_api.py
-SHA256=8710d8cad623eeec9ef745d1edc61a2858192e886eb8405a0f55b0d37376c448 BYTES=34573 LINES=698
+SHA256=dc4fe874deed29de9f64667c5e12008db854efbdf38df3f7cb3154249d396f89 BYTES=52137 LINES=1040
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """server/admin_api.py — khu quản trị dành riêng cho API platform (EXT-13).
 
@@ -119121,7 +120174,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
 from platform_core.db import get_session
-from platform_core.public_api import admin_console
+from platform_core.public_api import admin_console, policy
 
 _OK = "var(--ok)"
 _WARN = "var(--warn)"
@@ -119749,6 +120802,345 @@ class ApiToolsView(BaseView):
         return HTMLResponse(_admin_shell("API — Công cụ", "api_tools", body))
 
 
+def _error_note(request: Request) -> str:
+    """Biểu ngữ lỗi sau một lần chuyển hướng. Rỗng khi không có gì để nói."""
+    message = request.query_params.get("err", "")
+    if not message:
+        return ""
+    return (f'<p class="badge b-err" style="display:block;padding:10px">'
+            f'{escape(message)}</p>')
+
+
+def _reason_form(action: str, token: str, op: str, label: str, *,
+                 danger: bool = False, extra: dict | None = None) -> str:
+    """Một nút thao tác luôn đi kèm ô lý do.
+
+    Cùng khuôn với trang Khoá (EXT-13): thao tác ghi nào cũng phải để lại lý do,
+    vì dòng nhật ký sẽ được đọc lại bởi người không có mặt lúc đó.
+    """
+    hidden = "".join(
+        f'<input type="hidden" name="{escape(name)}" value="{escape(value)}">'
+        for name, value in (extra or {}).items())
+    cls = "btn btn-danger sm" if danger else "btn sm"
+    return (f'<form method="post" action="{action}" '
+            f'style="display:flex;gap:6px;align-items:center">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="{escape(op)}">{hidden}'
+            f'<input name="reason" required minlength="{policy.MIN_REASON}" '
+            f'placeholder="Lý do (≥ {policy.MIN_REASON})">'
+            f'<button class="{cls}">{escape(label)}</button></form>')
+
+
+class ApiPolicyView(BaseView):
+    """Hạn mức: ai được gọi bao nhiêu, và con số đó đến từ đâu."""
+
+    name = "API - Chinh sach"
+    icon = "fa-solid fa-sliders"
+
+    @expose("/api-chinh-sach", methods=["GET"])
+    async def page(self, request: Request):
+        from server.auth.csrf import issue_csrf_token
+
+        gen, db = _session()
+        try:
+            rows = policy.list_policies(db)
+            data = [{"policy": row,
+                     "assignments": policy.assignments_for(db, row.id)}
+                    for row in rows]
+            # Mức nền khi KHÔNG có ai cụ thể: đó là con số mọi tài khoản nhận
+            # được, và là thứ đầu tiên người vận hành cần thấy.
+            baseline = policy.resolve(db, config=_config())
+        finally:
+            _close(gen)
+
+        token = issue_csrf_token(request)
+        note = _error_note(request)
+
+        def cell(value) -> str:
+            return ('<span class="muted">kế thừa</span>' if value is None
+                    else f'<span class="tnum">{value}</span>')
+
+        rows_html = ""
+        for item in data:
+            row = item["policy"]
+            targets = " ".join(
+                f'<code>{escape(a.scope)}:{escape(a.subject_id[:8])}</code>'
+                for a in item["assignments"]) or (
+                    '<span class="muted">chưa gán</span>')
+            default = ('<span class="chip i">mặc định</span>'
+                       if row.is_default else "")
+            rows_html += (
+                f'<tr><td><b>{escape(row.name)}</b> {default}<br>'
+                f'<span class="muted">{escape(row.description or "")}</span>'
+                f'</td>'
+                f'<td>{cell(row.rpm_read)}</td><td>{cell(row.rpm_write)}</td>'
+                f'<td>{cell(row.rpm_create)}</td>'
+                f'<td>{cell(row.max_active_jobs)}</td>'
+                f'<td>{cell(row.daily_credit)}</td>'
+                f'<td>{targets}</td>'
+                f'<td>{_reason_form("/admin/api-chinh-sach-action", token, "delete", "Xoá", danger=True, extra={"policy_id": row.id})}</td>'
+                f'</tr>')
+        rows_html = rows_html or (
+            '<tr><td colspan="8" class="muted" style="padding:26px;'
+            'text-align:center">Chưa có chính sách nào — mọi tài khoản dùng '
+            'mức nền của deployment.</td></tr>')
+
+        baseline_rows = "".join(
+            f'<tr><td class="mono">{escape(field)}</td>'
+            f'<td class="tnum">{getattr(baseline, field)}</td>'
+            f'<td class="muted">{escape(baseline.sources.get(field, ""))}</td>'
+            f'</tr>' for field in policy.LIMIT_FIELDS)
+
+        fields = "".join(
+            f'<label style="display:inline-block;margin:0 12px 8px 0">'
+            f'{escape(field)}<br><input name="{field}" inputmode="numeric" '
+            f'placeholder="kế thừa" style="width:130px"></label>'
+            for field in policy.LIMIT_FIELDS)
+
+        choices = "".join(
+            f'<option value="{escape(item["policy"].id)}">'
+            f'{escape(item["policy"].name)}</option>' for item in data)
+
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Chính sách</h1>'
+            f'<p>Chuỗi ưu tiên: <code>global → tier → user → project → '
+            f'credential → tool</code>. Ô trống nghĩa là <b>kế thừa</b> bước '
+            f'trước, không phải 0 — 0 là một hạn mức thật (nhịp 0 = từ chối tất '
+            f'cả).</p></div></div>{note}'
+            f'<section><h2 style="margin:22px 0 10px">Mức nền đang áp dụng</h2>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Hạn mức</th><th>Giá trị</th><th>Đến từ</th></tr></thead>'
+            f'<tbody>{baseline_rows}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Chính sách</h2>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Tên</th><th>rpm read</th><th>rpm write</th>'
+            f'<th>rpm create</th><th>job đồng thời</th><th>credit/ngày</th>'
+            f'<th>Đã gán</th><th></th></tr></thead>'
+            f'<tbody>{rows_html}</tbody></table></div></section>'
+            f'<section><h2 style="margin:22px 0 10px">Tạo chính sách</h2>'
+            f'<form method="post" action="/admin/api-chinh-sach-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="create">'
+            f'<p><input name="name" placeholder="tên (vd: pro)" required> '
+            f'<input name="description" placeholder="mô tả" size="40"> '
+            f'<label><input type="checkbox" name="is_default" value="1"> '
+            f'dùng làm tier mặc định</label></p><p>{fields}</p>'
+            f'<p><input name="reason" size="46" required '
+            f'minlength="{policy.MIN_REASON}" '
+            f'placeholder="Lý do (bắt buộc, ≥ {policy.MIN_REASON} ký tự)"> '
+            f'<button class="btn btn-primary sm">Tạo</button></p></form>'
+            f'</section>'
+            f'<section><h2 style="margin:22px 0 10px">Gán chính sách</h2>'
+            f'<form method="post" action="/admin/api-chinh-sach-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="assign">'
+            f'<p><select name="policy_id">{choices}</select> '
+            f'<select name="scope"><option value="user">user</option>'
+            f'<option value="project">project</option>'
+            f'<option value="key">key</option></select> '
+            f'<input name="subject_id" placeholder="id của đối tượng" required> '
+            f'<input name="reason" required minlength="{policy.MIN_REASON}" '
+            f'placeholder="Lý do (≥ {policy.MIN_REASON})"> '
+            f'<button class="btn sm">Gán</button></p></form></section></div>')
+        return HTMLResponse(_admin_shell("API - Chinh sach", "api_policy",
+                                         body))
+
+    @expose("/api-chinh-sach-action", methods=["POST"])
+    async def action(self, request: Request):
+        from server.admin import ghi_nhat_ky
+        from server.auth.csrf import verify_csrf_token
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+
+        op = str(form.get("op") or "")
+        reason = str(form.get("reason") or "")
+        back = "/admin/api-chinh-sach"
+        if len(reason.strip()) < policy.MIN_REASON:
+            return _redirect(back, "Phải ghi lý do cho thao tác này.")
+
+        gen, db = _session()
+        try:
+            try:
+                detail = _apply_policy_op(db, op, form)
+            except policy.PolicyError as exc:
+                db.rollback()
+                return _redirect(back, str(exc))
+            except KeyError:
+                return HTMLResponse("Thao tác không hợp lệ.", status_code=400)
+            ghi_nhat_ky(db, request, f"api_chinh_sach_{op}", doi_tuong=detail,
+                        chi_tiet=f"ly do: {reason.strip()}")
+            db.commit()
+        finally:
+            _close(gen)
+        return RedirectResponse(back, status_code=303)
+
+
+def _apply_policy_op(db, op: str, form) -> str:
+    """Chạy một thao tác chính sách; trả mô tả để ghi nhật ký."""
+    from platform_core.public_api.tables import ApiPolicy
+
+    if op == "create":
+        numbers = {field: str(form.get(field) or "").strip()
+                   for field in policy.LIMIT_FIELDS
+                   if str(form.get(field) or "").strip()}
+        made = policy.create_policy(
+            db, name=str(form.get("name") or ""),
+            description=str(form.get("description") or ""),
+            is_default=str(form.get("is_default") or "") == "1", **numbers)
+        return f"{made.name} ({made.id})"
+    if op == "assign":
+        target = db.get(ApiPolicy, str(form.get("policy_id") or ""))
+        if target is None:
+            raise policy.PolicyError("Không thấy chính sách.")
+        scope = str(form.get("scope") or "")
+        subject = str(form.get("subject_id") or "")
+        policy.assign(db, policy=target, scope=scope, subject_id=subject)
+        return f"{target.name} -> {scope}:{subject}"
+    if op == "delete":
+        target = db.get(ApiPolicy, str(form.get("policy_id") or ""))
+        if target is None:
+            raise policy.PolicyError("Không thấy chính sách.")
+        name = target.name
+        policy.delete_policy(db, target)
+        return f"{name} (da xoa)"
+    raise KeyError(op)
+
+
+class ApiKillSwitchView(BaseView):
+    """Công tắc sự cố: tắt cái gì, vì sao, và tới bao giờ."""
+
+    name = "API - Kill switch"
+    icon = "fa-solid fa-power-off"
+
+    @expose("/api-kill-switch", methods=["GET"])
+    async def page(self, request: Request):
+        from platform_core.public_api.tables import KILL_SCOPES
+        from server.auth.csrf import issue_csrf_token
+
+        gen, db = _session()
+        try:
+            rows = policy.active_switches(db)
+        finally:
+            _close(gen)
+
+        token = issue_csrf_token(request)
+        note = _error_note(request)
+
+        rows_html = ""
+        for row in rows:
+            rows_html += (
+                f'<tr><td><code>{escape(row.scope)}</code></td>'
+                f'<td class="mono">{escape(row.subject or "—")}</td>'
+                f'<td>{escape(row.reason)}</td>'
+                f'<td class="muted">{escape(row.created_by or "—")}</td>'
+                f'<td class="muted">{_when(row.created_at)}</td>'
+                f'<td class="muted">{_when(row.expires_at)}</td>'
+                f'<td>{_reason_form("/admin/api-kill-switch-action", token, "release", "Bật lại", extra={"switch_id": row.id})}</td>'
+                f'</tr>')
+        rows_html = rows_html or (
+            '<tr><td colspan="7" class="muted" style="padding:26px;'
+            'text-align:center">Không có công tắc nào đang bật. Đó là trạng '
+            'thái bình thường.</td></tr>')
+
+        options = "".join(f'<option value="{scope}">{scope}</option>'
+                          for scope in KILL_SCOPES)
+        body = (
+            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
+            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>API — Kill switch</h1>'
+            f'<p>Công tắc <b>không phải</b> hạn mức đặt về 0. Hạn mức là chính '
+            f'sách thường trực; công tắc là công cụ xử lý sự cố — có người bật, '
+            f'có lý do, và nên có hạn dùng. Phạm vi của mọi công tắc ở đây là '
+            f'<code>/api/v1</code>; giao diện web không bị ảnh hưởng.</p>'
+            f'</div></div>{note}'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Phạm vi</th><th>Đối tượng</th><th>Lý do</th><th>Ai bật</th>'
+            f'<th>Bật lúc</th><th>Hết hiệu lực</th><th></th></tr></thead>'
+            f'<tbody>{rows_html}</tbody></table></div>'
+            f'<section><h2 style="margin:22px 0 10px">Bật một công tắc</h2>'
+            f'<form method="post" action="/admin/api-kill-switch-action">'
+            f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
+            f'<input type="hidden" name="op" value="engage">'
+            f'<p><select name="scope">{options}</select> '
+            f'<input name="subject" size="46" placeholder="đối tượng (bỏ trống '
+            f'với global_writes / maintenance)"></p>'
+            f'<p><input name="reason" size="60" required '
+            f'minlength="{policy.MIN_REASON}" placeholder="Lý do (bắt buộc, '
+            f'≥ {policy.MIN_REASON} ký tự) — sẽ hiện cho khách"> '
+            f'<input name="minutes" inputmode="numeric" style="width:180px" '
+            f'placeholder="tự tắt sau (phút)"></p>'
+            f'<p><label><input type="checkbox" name="confirm" value="1"> '
+            f'Tôi hiểu thao tác này chặn lời gọi của khách hàng thật ngay lập '
+            f'tức.</label></p>'
+            f'<button class="btn btn-danger sm">Bật</button></form>'
+            f'<p class="muted">Không đặt "tự tắt sau" thì công tắc là vĩnh viễn '
+            f'cho tới khi có người tắt tay. Lỗi thường gặp nhất của một công tắc '
+            f'sự cố là không ai nhớ tắt nó đi.</p></section></div>')
+        return HTMLResponse(_admin_shell("API - Kill switch", "api_kill", body))
+
+    @expose("/api-kill-switch-action", methods=["POST"])
+    async def action(self, request: Request):
+        from datetime import datetime, timedelta, timezone
+
+        from server.admin import _email_admin, ghi_nhat_ky
+        from server.auth.csrf import verify_csrf_token
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+
+        op = str(form.get("op") or "")
+        reason = str(form.get("reason") or "")
+        back = "/admin/api-kill-switch"
+        if op == "engage" and str(form.get("confirm") or "") != "1":
+            return _redirect(back, "Bật công tắc cần tích ô xác nhận.")
+        if len(reason.strip()) < policy.MIN_REASON:
+            return _redirect(back, "Phải ghi lý do cho thao tác này.")
+
+        expires = None
+        raw_minutes = str(form.get("minutes") or "").strip()
+        if raw_minutes:
+            try:
+                expires = (datetime.now(timezone.utc)
+                           + timedelta(minutes=max(1, int(raw_minutes))))
+            except (TypeError, ValueError):
+                return _redirect(back, "Số phút không hợp lệ.")
+
+        gen, db = _session()
+        try:
+            try:
+                if op == "engage":
+                    row = policy.engage(
+                        db, scope=str(form.get("scope") or ""),
+                        subject=str(form.get("subject") or ""), reason=reason,
+                        created_by=_email_admin(request), expires_at=expires)
+                    detail = f"{row.scope}:{row.subject or '*'}"
+                elif op == "release":
+                    row = policy.switch_by_id(
+                        db, str(form.get("switch_id") or ""))
+                    if row is None:
+                        return HTMLResponse("Không thấy công tắc.",
+                                            status_code=404)
+                    detail = f"{row.scope}:{row.subject or '*'}"
+                    policy.release(db, row)
+                else:
+                    return HTMLResponse("Thao tác không hợp lệ.",
+                                        status_code=400)
+            except policy.PolicyError as exc:
+                db.rollback()
+                return _redirect(back, str(exc))
+            ghi_nhat_ky(db, request, f"api_kill_{op}", doi_tuong=detail,
+                        chi_tiet=f"ly do: {reason.strip()}")
+            db.commit()
+        finally:
+            _close(gen)
+        return RedirectResponse(back, status_code=303)
+
+
 def _redirect(path: str, message: str):
     from urllib.parse import quote
 
@@ -119766,7 +121158,8 @@ def _admin_shell(title: str, active: str, body: str) -> str:
 
 #: Đăng ký ở `server/admin.py`. Giữ danh sách ở đây để thêm một trang là sửa
 #: một file, không phải hai.
-VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView)
+VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
+         ApiPolicyView, ApiKillSwitchView)
 
 #: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
 #: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
@@ -119778,6 +121171,8 @@ NAV = (
     ("/admin/api-tai-khoan", "TK", "API — Tài khoản", "api_accounts"),
     ("/admin/api-khoa", "KH", "API — Khoá", "api_keys"),
     ("/admin/api-cong-cu", "CC", "API — Công cụ", "api_tools"),
+    ("/admin/api-chinh-sach", "CS", "API — Chính sách", "api_policy"),
+    ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
 )
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -120099,7 +121494,7 @@ __all__ = ["API_V1_PREFIX", "API_V1_ROUTES", "PUBLIC_API_TAG", "PUBLIC_API_TITLE
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/auth.py
-SHA256=de5c92f48f0955719033a135dc7742e5a21e4f8ed712d70197c4665bdb80f3c1 BYTES=7473 LINES=188
+SHA256=288d58050a753be925bf4e0b09288acd65745374e4bb285c5ef9b424cdb7d49e BYTES=9949 LINES=238
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bearer authentication for ``/api/v1``.
 
@@ -120133,6 +121528,7 @@ from platform_core.public_api import errors
 from platform_core.public_api import keys as devkeys
 from platform_core.public_api import limits
 from platform_core.public_api import metrics
+from platform_core.public_api import policy
 from platform_core.public_api.principal import Principal, ensure_scope
 from server.api import deps
 from server.api.context import client_ip, request_id
@@ -120230,10 +121626,23 @@ def resolve_from_database(request, db) -> Principal | None:
     # unattributable in the access log and in the request log (EXT-09).
     request.state.api_principal = principal
 
+    # A kill switch is checked here rather than in the middleware because three
+    # of its six scopes name a subject — a user, a project, a credential — and
+    # the subject is only known once the credential has verified. Doing it at
+    # the same boundary keeps one place where "not now" is decided (EXT-14).
+    _refuse_if_switched_off(db, request, principal)
+
     # Rate limit before doing anything else with the request: a key in a loop
-    # should cost one window lookup, not a full handler.
+    # should cost one window lookup, not a full handler. The ceiling comes from
+    # the resolved policy, and the account bucket is what stops a caller buying
+    # more rate by creating more keys.
     if config is not None:
-        limits.enforce_request_rate(key_id=key.key_id, config=config)
+        resolved = policy.resolve(db, config=config, principal=principal)
+        request.state.api_limits = resolved
+        limits.enforce_request_rate(
+            key_id=key.key_id, config=config, limits=resolved,
+            user_id=principal.user_id,
+            is_write=request.method.upper() not in ("GET", "HEAD", "OPTIONS"))
 
     # Bucketed, so a client polling a job does not turn every read into a write.
     devkeys.touch_last_used(db, key)
@@ -120249,6 +121658,42 @@ def _throttle(request, config, key_id: str) -> None:
     limits.note_auth_failure(
         client_ip=client_ip(request, getattr(config, "trusted_proxies", ())),
         key_id=key_id, config=config)
+
+
+def _refuse_if_switched_off(db, request, principal) -> None:
+    """Turn an engaged switch into the refusal a caller can act on.
+
+    No new error codes: `maintenance` and a disabled tool are 503s because the
+    caller should come back, and a suspended subject is a 403 because coming
+    back will not help. Inventing codes for these would grow the public error
+    vocabulary for states it already describes.
+
+    The reason the operator typed **is** returned. It is written by an operator
+    for a customer, and withholding it just moves the same conversation into a
+    support ticket.
+    """
+    from platform_core.public_api.tables import (KILL_GLOBAL_WRITES,
+                                                 KILL_MAINTENANCE, KILL_TOOL)
+
+    is_write = request.method.upper() not in ("GET", "HEAD", "OPTIONS")
+    refusal = policy.check(db, principal=principal, is_write=is_write)
+    if refusal is None:
+        return
+
+    metrics.increment(metrics.KILL_SWITCH_REFUSED)
+    if refusal.scope == KILL_MAINTENANCE:
+        raise errors.service_unavailable(
+            f"The API is in maintenance: {refusal.reason}",
+            retry_after=refusal.retry_after)
+    if refusal.scope == KILL_GLOBAL_WRITES:
+        raise errors.read_only(
+            f"Write operations are paused: {refusal.reason}")
+    if refusal.scope == KILL_TOOL:
+        raise errors.service_unavailable(
+            f"This tool is temporarily unavailable: {refusal.reason}",
+            retry_after=refusal.retry_after)
+    raise errors.forbidden(
+        f"API access for this account is suspended: {refusal.reason}")
 
 
 def install_database_resolver() -> None:
@@ -120983,7 +122428,7 @@ def documented_paths() -> frozenset:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/jobs.py
-SHA256=b0cf07204a7510aa8399850122f01e5115c27306275a95193ba260696e83c541 BYTES=18540 LINES=372
+SHA256=6454cdc76c4e4206f8e38e50ac0eb5c988c1094fce5d7ee355f7923bc4fecc73 BYTES=21114 LINES=432
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/quotes`` and ``/api/v1/jobs`` — the chargeable control plane.
 
@@ -121005,11 +122450,13 @@ from sqlalchemy.orm import Session
 from platform_core import credit, jobs as jobq
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
                                   JOB_RUNNING, Job)
-from platform_core.public_api import (idempotency, invocation, limits, media,
-                                      metrics, quotes, sandbox)
+from platform_core.public_api import (capacity, idempotency, invocation,
+                                      limits, media, metrics, policy, quotes,
+                                      sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
-                                             invalid_request, price_changed)
+                                             invalid_request, price_changed,
+                                             service_unavailable)
 from server.api.inventory import API_V1_PREFIX
 from platform_core.public_api.pagination import Page, PageRequest
 from platform_core.public_api.principal import Principal, ensure_owner
@@ -121037,6 +122484,53 @@ def _iso(value: datetime | None) -> str | None:
         return None
     aware = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
     return aware.isoformat()
+
+
+def _refuse_if_tool_switched_off(db, principal, tool) -> None:
+    """A tool an operator has switched off refuses here, not at the provider.
+
+    Checked with the tool named, which the authentication boundary could not do:
+    it knows the caller, not what the caller is about to call.
+    """
+    from platform_core.public_api.tables import KILL_TOOL
+
+    refusal = policy.check(db, principal=principal, tool_name=tool.name,
+                           is_write=True)
+    if refusal is None or refusal.scope != KILL_TOOL:
+        # Every other scope was already refused at authentication; re-raising
+        # them here would only change where the same 403 comes from.
+        return
+    metrics.increment(metrics.KILL_SWITCH_REFUSED)
+    raise service_unavailable(
+        f"This tool is temporarily unavailable: {refusal.reason}",
+        retry_after=refusal.retry_after, tool=tool.name)
+
+
+def _refuse_if_no_capacity(db, tool) -> None:
+    """Refuse work the machinery cannot do — before the hold, never after.
+
+    Refusing costs the caller nothing. Holding credit for a job that is certain
+    to fail costs a refund to reconcile and a support conversation to have.
+    """
+    manifest = _manifest_of(tool)
+    missing = capacity.check(db, tool=tool, manifest=manifest)
+    if missing is None:
+        return
+    metrics.increment(metrics.CAPACITY_REFUSED)
+    raise service_unavailable(missing.detail,
+                              retry_after=missing.retry_after,
+                              resource=missing.resource)
+
+
+def _manifest_of(tool):
+    from platform_core.registry import discover
+
+    for item in discover():
+        if item.error or item.manifest is None:
+            continue
+        if item.manifest.slug == tool.app_slug:
+            return item.manifest
+    return None
 
 
 def _public_job(db, job: Job, tool=None) -> dict:
@@ -121224,10 +122718,21 @@ def register_job_routes(api, config, tag: str) -> None:
         # Admission control, after validation and before any money moves. The
         # order matters: a caller over its limits must not be charged, and a
         # caller under them must not be able to open unbounded work.
-        limits.enforce_create_rate(key_id=principal.key_id, config=config)
+        #
+        # Limits are resolved once, here, with the tool named — the tool step is
+        # the narrowest in the chain and only this route knows which tool is
+        # being called (EXT-14).
+        resolved = policy.resolve(db, config=config, principal=principal,
+                                  tool_name=tool.name)
+        _refuse_if_tool_switched_off(db, principal, tool)
+        _refuse_if_no_capacity(db, tool)
+        limits.enforce_create_rate(key_id=principal.key_id, config=config,
+                                   limits=resolved,
+                                   user_id=principal.user_id)
         limits.enforce_active_jobs(
             db, principal=principal, config=config, app_slug=tool.app_slug,
-            class_slugs=_class_slugs(tool), resource=_resource_of(tool))
+            class_slugs=_class_slugs(tool), resource=_resource_of(tool),
+            limits=resolved)
         # Spending limits apply to spending. A test call moves no credit, so a
         # daily ceiling or a budget would be metering something that cannot
         # happen — and requiring a balance would shut the sandbox to exactly the
@@ -121237,7 +122742,7 @@ def register_job_routes(api, config, tag: str) -> None:
         testing = sandbox.is_test(principal.mode)
         if not testing:
             limits.enforce_daily_credit(db, principal=principal, config=config,
-                                        cost=cost)
+                                        cost=cost, limits=resolved)
             # …and the customer's own hard cap, which may be stricter than the
             # operator's. Whichever allows less wins (EXT-11).
             limits.enforce_budget(db, principal=principal, cost=cost)
@@ -121467,7 +122972,7 @@ def register_tool_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/uploads.py
-SHA256=07410a12790227c4de6eef83354b425fb9c4def839abe3c95bfd62694e0acdc7 BYTES=11737 LINES=256
+SHA256=d883848175c6955dc390115791cfcde4950f4eb1a12aebd175068bbc64c1f6d3 BYTES=12224 LINES=264
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/uploads`` and ``/api/v1/artifacts`` — media in and media out.
 
@@ -121494,7 +122999,7 @@ from sqlalchemy.orm import Session
 
 from platform_core import upload_sessions
 from platform_core.models import Job, UPLOAD_READY
-from platform_core.public_api import media, sandbox
+from platform_core.public_api import media, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import invalid_request, not_found
 from platform_core.public_api.principal import Principal, ensure_owner
@@ -121559,6 +123064,14 @@ def register_upload_routes(api, config, tag: str) -> None:
         field = str(payload.get("field") or "")
         kind = _kind_for_tool(tool, field)
         allowed, max_size = media.rules_for(kind)
+
+        # A policy may lower the ceiling for a tier or an account, never raise
+        # it: the media rules and the edge still bound what is possible, and a
+        # tier that could opt past them would be selling something the platform
+        # cannot deliver (EXT-14).
+        resolved = policy.resolve(db, config=config, principal=principal,
+                                  tool_name=tool.name)
+        max_size = min(max_size, max(1, resolved.max_upload_bytes))
 
         try:
             session = upload_sessions.create(
@@ -161735,7 +163248,7 @@ def test_artifact_ids_round_trip_and_reject_garbage():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_184_public_api_limits.py
-SHA256=a01ba34dbb71da6d8750adb2c46f8113db955399588d7e6e5c30efa89327431e BYTES=16367 LINES=405
+SHA256=a13347364d22e5514d8126f8e6a387b04134605274cea3afee8609b190bf22e2 BYTES=16770 LINES=412
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 08 — rate, quota, concurrency, capacity.
 
@@ -161992,10 +163505,17 @@ def test_rate_limits_cannot_be_dodged_by_changing_endpoint(make_api):
                    headers=_auth(token)).status_code == 429
 
 
-def test_two_keys_of_one_account_each_get_their_own_request_budget(make_api):
-    """Rotating a key is not a way around the limit — the account still hits
-    the job concurrency and credit ceilings, which are per account."""
-    api = make_api(LTT_PUBLIC_API_RPM="2", LTT_PUBLIC_API_MAX_ACTIVE_JOBS="1")
+def test_a_second_key_does_not_dodge_the_account_s_concurrency_cap(make_api):
+    """Rotating or adding a key is not a way around the limit.
+
+    Renamed at EXT-14. It used to be called "two keys each get their own request
+    budget", and that premise was the hole the policy engine closed: an account
+    wanting five times the rate just made five keys. Rates are now charged to
+    the account as well as the key (see `test_206_policy_engine.py`), so the RPM
+    here is raised out of the way — this test is about the *concurrency* cap,
+    which was always per account, and the low RPM was incidental to it.
+    """
+    api = make_api(LTT_PUBLIC_API_RPM="100", LTT_PUBLIC_API_MAX_ACTIVE_JOBS="1")
     user_id, first = _account()
     gen, db = _session()
     try:
@@ -170963,7 +172483,7 @@ def test_the_canned_result_follows_the_schema_it_is_given():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_205_admin_api_console.py
-SHA256=4fa34fa1a741f37cce8b8171c6bc69543e6f4593e72b058a92364f768489860a BYTES=26085 LINES=677
+SHA256=93f35dc36eb827a07f134d1e01ecadcaecfe0cbb83511386e3ad0a8dd580ef5c BYTES=32197 LINES=842
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-13 — the API admin console: what an operator can see, and change, and prove.
 
@@ -171642,6 +173162,1117 @@ def test_clamp_page_survives_nonsense():
     assert admin_console.clamp_page(-5, -5) == (1, 0)
     assert admin_console.clamp_page(10_000, 10) == (
         admin_console.MAX_PAGE_SIZE, 10)
+
+
+# ── The policy and kill-switch pages (EXT-14) ────────────────────────────────
+
+POLICY_PAGES = ("/admin/api-chinh-sach", "/admin/api-kill-switch")
+
+
+def _post(client, path: str, page_path: str, data: dict):
+    page = client.get(page_path).text
+    return client.post(path, data={"csrf_token": _csrf(page), **data},
+                       follow_redirects=False)
+
+
+def test_the_policy_pages_are_operator_only(console):
+    _make_user("nosy@example.com")
+    _login(console, "nosy@example.com")
+    for path in POLICY_PAGES:
+        answer = console.get(path, follow_redirects=False)
+        assert answer.status_code in (302, 303, 307), path
+        assert "/login" in answer.headers.get("location", ""), path
+
+
+def test_creating_a_policy_from_the_page_is_audited(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+
+    answer = _post(console, "/admin/api-chinh-sach-action",
+                   "/admin/api-chinh-sach",
+                   {"op": "create", "name": "pro", "description": "paid tier",
+                    "rpm_create": "40", "is_default": "1",
+                    "reason": "new commercial tier agreed"})
+    assert answer.status_code == 303, answer.text[:300]
+
+    gen, db = _session()
+    try:
+        rows = policy.list_policies(db)
+        assert len(rows) == 1
+        assert rows[0].name == "pro" and rows[0].rpm_create == 40
+        # Untouched fields stay NULL — inherit, not zero.
+        assert rows[0].rpm_read is None
+    finally:
+        _close(gen)
+
+    audit = _audit_rows()
+    assert [row.hanh_dong for row in audit] == ["api_chinh_sach_create"]
+    assert "new commercial tier agreed" in audit[0].chi_tiet
+    assert audit[0].admin_email == ADMIN_EMAIL
+
+
+def test_a_policy_change_without_a_reason_changes_nothing(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    answer = _post(console, "/admin/api-chinh-sach-action",
+                   "/admin/api-chinh-sach",
+                   {"op": "create", "name": "sneaky", "reason": "x"})
+    assert answer.status_code == 303 and "err=" in answer.headers["location"]
+
+    gen, db = _session()
+    try:
+        assert policy.list_policies(db) == []
+    finally:
+        _close(gen)
+    assert _audit_rows() == []
+
+
+def test_engaging_a_kill_switch_needs_confirmation_and_is_audited(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+
+    refused = _post(console, "/admin/api-kill-switch-action",
+                    "/admin/api-kill-switch",
+                    {"op": "engage", "scope": "maintenance",
+                     "reason": "database migration window"})
+    assert refused.status_code == 303 and "err=" in refused.headers["location"]
+    gen, db = _session()
+    try:
+        assert policy.active_switches(db) == []
+    finally:
+        _close(gen)
+    assert _audit_rows() == []
+
+    ok = _post(console, "/admin/api-kill-switch-action",
+               "/admin/api-kill-switch",
+               {"op": "engage", "scope": "maintenance", "confirm": "1",
+                "reason": "database migration window"})
+    assert ok.status_code == 303
+    gen, db = _session()
+    try:
+        switches = policy.active_switches(db)
+        assert len(switches) == 1
+        assert switches[0].created_by == ADMIN_EMAIL
+        assert switches[0].expires_at is None
+    finally:
+        _close(gen)
+    assert [row.hanh_dong for row in _audit_rows()] == ["api_kill_engage"]
+
+
+def test_a_switch_can_be_given_an_expiry_from_the_page(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    _post(console, "/admin/api-kill-switch-action", "/admin/api-kill-switch",
+          {"op": "engage", "scope": "global_writes", "confirm": "1",
+           "minutes": "30", "reason": "provider incident 91"})
+
+    gen, db = _session()
+    try:
+        switch = policy.active_switches(db)[0]
+        assert switch.expires_at is not None
+    finally:
+        _close(gen)
+
+
+def test_releasing_a_switch_is_audited_too(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    _post(console, "/admin/api-kill-switch-action", "/admin/api-kill-switch",
+          {"op": "engage", "scope": "maintenance", "confirm": "1",
+           "reason": "database migration window"})
+
+    gen, db = _session()
+    try:
+        switch_id = policy.active_switches(db)[0].id
+    finally:
+        _close(gen)
+
+    _post(console, "/admin/api-kill-switch-action", "/admin/api-kill-switch",
+          {"op": "release", "switch_id": switch_id,
+           "reason": "migration finished, service restored"})
+
+    gen, db = _session()
+    try:
+        assert policy.active_switches(db) == []
+    finally:
+        _close(gen)
+    assert [row.hanh_dong for row in _audit_rows()] == ["api_kill_engage",
+                                                        "api_kill_release"]
+
+
+def test_the_policy_page_shows_where_each_number_comes_from(console):
+    """The first question about any limit is "why is it that number"."""
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-chinh-sach").text
+    assert "Mức nền đang áp dụng" in page
+    assert "global" in page
+    assert "kế thừa" in page, "the page must say blank means inherit, not zero"
+
+
+def test_the_kill_switch_page_says_its_scope_is_the_api(console):
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-kill-switch").text
+    assert "/api/v1" in page
+    assert 'name="confirm"' in page
+    assert "Không có công tắc nào đang bật" in page
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_206_policy_engine.py
+SHA256=2103fb940cdb9d171cd29571d0216a174c1469edead304c5523565e5e131c38d BYTES=36377 LINES=940
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-14 — the policy engine: how much, and the switch that says not now.
+
+Three acceptance criteria drive this file, and each one is a property rather
+than a feature:
+
+* **deterministic precedence** — the same inputs resolve to the same numbers,
+  whatever order rows were created in. A limit that depends on insertion order
+  is a limit nobody can support;
+* **abuse isolation** — one account cannot buy more rate by creating more keys,
+  and one account being throttled does not throttle another;
+* **UI apps unaffected** — every switch here is scoped to `/api/v1`. Turning the
+  API off must not take the web app down with it.
+
+And one more the brief states plainly: a **historical quote is unaffected**.
+Changing a limit must not reprice work a customer was already promised.
+"""
+from __future__ import annotations
+
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import (capacity, keys as devkeys, limits,
+                                      policy)
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.tables import (KILL_GLOBAL_WRITES, KILL_KEY,
+                                             KILL_MAINTENANCE, KILL_PROJECT,
+                                             KILL_TOOL, KILL_USER,
+                                             POLICY_SCOPE_KEY,
+                                             POLICY_SCOPE_PROJECT,
+                                             POLICY_SCOPE_USER)
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "policy-test-pepper-" + "p" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "artifacts:read",
+          "uploads:write")
+INPUT = {"topic": "policy", "count": 1}
+#: The published tool that actually takes an upload — the thumbnail tool has no
+#: media input, so the upload ceiling has to be exercised somewhere real.
+UPLOAD_TOOL = "image.upscale"
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'policy.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+    capacity.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "policy-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1",
+        "LTT_PUBLIC_API_TOOLS": f"{TOOL},{UPLOAD_TOOL}",
+        "LTT_PUBLIC_API_RPM": "600", "LTT_PUBLIC_API_CREATE_RPM": "200",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    capacity.reset()
+    dbmod.reset_engine()
+
+
+# ── Plumbing ─────────────────────────────────────────────────────────────────
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _sign_in(client, credits: int = 500) -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"pol-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, credits, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    return user_id
+
+
+def _issue(client, name: str = "key") -> str:
+    page = client.get("/developers/keys").text
+    created = client.post("/developers/keys",
+                          data={"name": name, "csrf_token": _csrf(page),
+                                "scopes": list(SCOPES)})
+    return re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+
+
+def _auth(token: str, idem: str = "") -> dict:
+    headers = {"Authorization": f"Bearer {token}"}
+    if idem:
+        headers["Idempotency-Key"] = idem
+    return headers
+
+
+def _config(**over):
+    env = {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL}
+    env.update(over)
+    return load_public_api_config(env)
+
+
+class _Principal:
+    def __init__(self, user_id="u1", project_id="p1", key_id="k1"):
+        self.user_id = user_id
+        self.project_id = project_id
+        self.key_id = key_id
+
+
+# ── Precedence: deterministic, and only what a step actually sets ────────────
+
+def test_with_no_policies_the_numbers_are_the_deployment_s_own(portal):
+    gen, db = _session()
+    try:
+        resolved = policy.resolve(db, config=_config(
+            LTT_PUBLIC_API_RPM="120", LTT_PUBLIC_API_CREATE_RPM="20"))
+        assert resolved.rpm_read == 120
+        # Reads and writes start from the one number that was already in force;
+        # splitting them must not change an untouched deployment.
+        assert resolved.rpm_write == 120
+        assert resolved.rpm_create == 20
+        assert set(resolved.sources.values()) == {"global"}
+    finally:
+        _close(gen)
+
+
+def test_each_step_overrides_only_what_it_sets(portal):
+    """The rule the whole engine rests on.
+
+    A policy attached to raise one limit must not silently reset the four it
+    says nothing about — the person attaching it would have no way to know.
+    """
+    gen, db = _session()
+    try:
+        tier = policy.create_policy(db, name="tier", rpm_read=100,
+                                    rpm_create=10, max_active_jobs=5,
+                                    is_default=True)
+        narrow = policy.create_policy(db, name="narrow", rpm_create=3)
+        policy.assign(db, policy=narrow, scope=POLICY_SCOPE_USER,
+                      subject_id="u1")
+        db.commit()
+
+        resolved = policy.resolve(db, config=_config(), principal=_Principal())
+        assert resolved.rpm_create == 3, "the narrow step should win"
+        assert resolved.rpm_read == 100, "the tier's other fields survive"
+        assert resolved.max_active_jobs == 5
+        assert resolved.sources["rpm_create"] == "user:narrow"
+        assert resolved.sources["rpm_read"] == "tier:tier"
+        assert tier.is_default is True
+    finally:
+        _close(gen)
+
+
+def test_the_chain_runs_widest_to_narrowest(portal):
+    gen, db = _session()
+    try:
+        for name, scope, subject, value in (
+            ("t", None, None, 10), ("u", POLICY_SCOPE_USER, "u1", 20),
+            ("p", POLICY_SCOPE_PROJECT, "p1", 30),
+            ("k", POLICY_SCOPE_KEY, "k1", 40),
+        ):
+            made = policy.create_policy(db, name=name, rpm_create=value,
+                                        is_default=scope is None)
+            if scope:
+                policy.assign(db, policy=made, scope=scope, subject_id=subject)
+        db.commit()
+
+        resolved = policy.resolve(db, config=_config(), principal=_Principal())
+        assert resolved.rpm_create == 40, "the credential is narrowest"
+        assert resolved.sources["rpm_create"] == "key:k"
+
+        # …and removing the narrowest step falls back exactly one level.
+        policy.unassign(db, scope=POLICY_SCOPE_KEY, subject_id="k1")
+        db.commit()
+        assert policy.resolve(db, config=_config(),
+                              principal=_Principal()).rpm_create == 30
+    finally:
+        _close(gen)
+
+
+def test_a_tool_override_is_the_last_word(portal):
+    gen, db = _session()
+    try:
+        made = policy.create_policy(
+            db, name="per-tool", rpm_create=50,
+            tool_overrides={TOOL: {"rpm_create": 2}})
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id="u1")
+        db.commit()
+
+        without = policy.resolve(db, config=_config(), principal=_Principal())
+        withtool = policy.resolve(db, config=_config(), principal=_Principal(),
+                                  tool_name=TOOL)
+        assert without.rpm_create == 50
+        assert withtool.rpm_create == 2
+        assert withtool.sources["rpm_create"] == f"tool:{TOOL}"
+    finally:
+        _close(gen)
+
+
+def test_a_tool_override_from_a_losing_policy_does_not_apply(portal):
+    """Overrides come from the policy that won, not from every policy seen.
+
+    A tool rule inside a policy that was overridden wholesale is a rule its
+    author no longer intends to apply.
+    """
+    gen, db = _session()
+    try:
+        tier = policy.create_policy(
+            db, name="tier", rpm_create=50, is_default=True,
+            tool_overrides={TOOL: {"rpm_create": 1}})
+        winner = policy.create_policy(db, name="winner", rpm_create=9)
+        policy.assign(db, policy=winner, scope=POLICY_SCOPE_USER,
+                      subject_id="u1")
+        db.commit()
+
+        resolved = policy.resolve(db, config=_config(), principal=_Principal(),
+                                  tool_name=TOOL)
+        assert resolved.rpm_create == 9, "the losing tier's tool rule applied"
+        assert tier.tool_overrides[TOOL]["rpm_create"] == 1
+    finally:
+        _close(gen)
+
+
+def test_resolution_does_not_depend_on_insertion_order(portal):
+    """Deterministic, stated as the thing that could go wrong.
+
+    Rows created in the reverse order must resolve to the same numbers; if they
+    did not, the engine would be answering from row order.
+    """
+    gen, db = _session()
+    try:
+        narrow = policy.create_policy(db, name="narrow", rpm_create=3)
+        policy.assign(db, policy=narrow, scope=POLICY_SCOPE_KEY,
+                      subject_id="k1")
+        policy.create_policy(db, name="tier", rpm_create=100, rpm_read=90,
+                             is_default=True)
+        db.commit()
+        first = policy.resolve(db, config=_config(),
+                               principal=_Principal()).as_dict()
+    finally:
+        _close(gen)
+
+    gen, db = _session()
+    try:
+        for row in policy.list_policies(db):
+            policy.delete_policy(db, row)
+        policy.create_policy(db, name="tier", rpm_create=100, rpm_read=90,
+                             is_default=True)
+        narrow = policy.create_policy(db, name="narrow", rpm_create=3)
+        policy.assign(db, policy=narrow, scope=POLICY_SCOPE_KEY,
+                      subject_id="k1")
+        db.commit()
+        second = policy.resolve(db, config=_config(),
+                                principal=_Principal()).as_dict()
+    finally:
+        _close(gen)
+
+    assert first == second
+
+
+def test_only_one_policy_can_be_the_default(portal):
+    gen, db = _session()
+    try:
+        first = policy.create_policy(db, name="one", is_default=True)
+        second = policy.create_policy(db, name="two", is_default=True)
+        db.commit()
+        db.refresh(first)
+        assert second.is_default is True
+        assert first.is_default is False, "two defaults make the tier ambiguous"
+    finally:
+        _close(gen)
+
+
+def test_one_subject_holds_one_policy(portal):
+    """Reassignment, not a second row: two policies on one subject would make
+    the answer depend on which row came back first."""
+    gen, db = _session()
+    try:
+        first = policy.create_policy(db, name="a", rpm_create=5)
+        second = policy.create_policy(db, name="b", rpm_create=6)
+        policy.assign(db, policy=first, scope=POLICY_SCOPE_USER, subject_id="u1")
+        policy.assign(db, policy=second, scope=POLICY_SCOPE_USER, subject_id="u1")
+        db.commit()
+
+        assert len(policy.assignments_for(db, first.id)) == 0
+        assert len(policy.assignments_for(db, second.id)) == 1
+        assert policy.resolve(db, config=_config(),
+                              principal=_Principal()).rpm_create == 6
+    finally:
+        _close(gen)
+
+
+def test_deleting_a_policy_falls_back_rather_than_orphaning(portal):
+    gen, db = _session()
+    try:
+        policy.create_policy(db, name="tier", rpm_create=30, is_default=True)
+        narrow = policy.create_policy(db, name="narrow", rpm_create=4)
+        policy.assign(db, policy=narrow, scope=POLICY_SCOPE_USER,
+                      subject_id="u1")
+        db.commit()
+        assert policy.resolve(db, config=_config(),
+                              principal=_Principal()).rpm_create == 4
+
+        policy.delete_policy(db, narrow)
+        db.commit()
+        assert policy.resolve(db, config=_config(),
+                              principal=_Principal()).rpm_create == 30
+    finally:
+        _close(gen)
+
+
+def test_zero_is_a_real_limit_and_not_an_unset_marker(portal):
+    """The reason every column is nullable.
+
+    A rate of zero refuses everything, and it has to be expressible — a scheme
+    that spent zero on "unset" could never say it.
+    """
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="frozen", rpm_create=0)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER, subject_id="u1")
+        db.commit()
+        resolved = policy.resolve(db, config=_config(), principal=_Principal())
+        assert resolved.rpm_create == 0
+        assert resolved.sources["rpm_create"] == "user:frozen"
+    finally:
+        _close(gen)
+
+
+def test_a_policy_refuses_nonsense(portal):
+    gen, db = _session()
+    try:
+        policy.create_policy(db, name="taken")
+        db.commit()
+        for kwargs in ({"name": ""}, {"name": "taken"},
+                       {"name": "x", "rpm_read": -1},
+                       {"name": "y", "rpm_read": "abc"},
+                       {"name": "z", "nonsense_field": 1}):
+            with pytest.raises(policy.PolicyError):
+                policy.create_policy(db, **kwargs)
+            db.rollback()
+    finally:
+        _close(gen)
+
+
+# ── Abuse isolation ──────────────────────────────────────────────────────────
+
+def test_more_keys_do_not_buy_more_rate(portal):
+    """The hole this prompt exists to close.
+
+    Before EXT-14 the rate was bucketed on the key alone, so an account that
+    wanted five times the rate created five keys — no exploit needed, just the
+    credential page.
+    """
+    user_id = _sign_in(portal)
+    first, second = _issue(portal, "one"), _issue(portal, "two")
+
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="tight", rpm_read=3)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+    limits.reset()
+
+    seen = []
+    for index in range(8):
+        token = first if index % 2 == 0 else second
+        seen.append(portal.get(f"{API_V1_PREFIX}/tools",
+                               headers=_auth(token)).status_code)
+    assert 429 in seen, "two keys shared one account allowance and never tripped"
+    assert seen.count(200) <= 3, seen
+
+
+def test_one_account_being_throttled_does_not_throttle_another(portal):
+    noisy = _sign_in(portal)
+    noisy_token = _issue(portal, "noisy")
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="tight", rpm_read=2)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id=noisy)
+        db.commit()
+    finally:
+        _close(gen)
+    limits.reset()
+
+    for _ in range(5):
+        portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(noisy_token))
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(noisy_token)).status_code == 429
+
+    _sign_in(portal)
+    quiet_token = _issue(portal, "quiet")
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(quiet_token)).status_code == 200
+
+
+def test_reads_and_writes_have_separate_allowances(portal):
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="split", rpm_read=2, rpm_write=50)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+    limits.reset()
+
+    for _ in range(4):
+        portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 429
+
+    # A write still goes through: exhausting the read allowance must not
+    # consume the one that protects the expensive calls.
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(token))
+    assert quote.status_code == 200, quote.text
+
+
+# ── Kill switches ────────────────────────────────────────────────────────────
+
+def _engage(**kwargs):
+    gen, db = _session()
+    try:
+        row = policy.engage(db, **kwargs)
+        db.commit()
+        return row.id
+    finally:
+        _close(gen)
+
+
+def test_maintenance_stops_reads_and_writes_alike(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 200
+
+    _engage(scope=KILL_MAINTENANCE, reason="migrating the database",
+            created_by="operator@example.com")
+    answer = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    assert answer.status_code == 503
+    body = answer.json()
+    assert body["code"] == "service_unavailable"
+    # The reason an operator typed is written for a customer; withholding it
+    # only moves the same conversation into a support ticket.
+    assert "migrating the database" in body["detail"]
+
+
+def test_the_global_write_switch_leaves_reads_alone(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    _engage(scope=KILL_GLOBAL_WRITES, reason="provider incident 91",
+            created_by="operator@example.com")
+
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 200
+    refused = portal.post(f"{API_V1_PREFIX}/quotes",
+                          json={"tool": TOOL, "input": INPUT},
+                          headers=_auth(token))
+    assert refused.status_code == 503
+    assert refused.json()["code"] == "read_only"
+    assert "incident 91" in refused.json()["detail"]
+
+
+def test_a_suspended_account_is_told_so_and_not_told_to_retry(portal):
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    _engage(scope=KILL_USER, subject=user_id, reason="chargeback under review",
+            created_by="operator@example.com")
+
+    answer = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    assert answer.status_code == 403, answer.text
+    assert answer.json()["code"] == "forbidden"
+    assert "chargeback under review" in answer.json()["detail"]
+
+
+def test_switching_off_one_account_leaves_the_others_working(portal):
+    blocked = _sign_in(portal)
+    blocked_token = _issue(portal)
+    _engage(scope=KILL_USER, subject=blocked, reason="abuse investigation",
+            created_by="operator@example.com")
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(blocked_token)).status_code == 403
+
+    _sign_in(portal)
+    other = _issue(portal, "other")
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(other)).status_code == 200
+
+
+def test_a_switched_off_tool_refuses_at_creation_not_at_the_provider(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(token))
+    assert quote.status_code == 200
+
+    _engage(scope=KILL_TOOL, subject=TOOL, reason="upstream model degraded",
+            created_by="operator@example.com")
+    refused = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote.json()["quote"], "input": INPUT},
+        headers=_auth(token, f"pol-{uuid.uuid4().hex[:8]}"))
+    assert refused.status_code == 503, refused.text
+    assert refused.json()["code"] == "service_unavailable"
+    assert "upstream model degraded" in refused.json()["detail"]
+
+
+def test_a_switched_off_tool_holds_no_credit(portal):
+    """Refusing costs the caller nothing; holding for work that cannot run
+    costs a refund to reconcile and a conversation to have."""
+    from platform_core import credit
+
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(token)).json()
+
+    gen, db = _session()
+    try:
+        before = credit.so_du(db, user_id)
+    finally:
+        _close(gen)
+
+    _engage(scope=KILL_TOOL, subject=TOOL, reason="upstream model degraded",
+            created_by="operator@example.com")
+    portal.post(f"{API_V1_PREFIX}/jobs",
+                json={"tool": TOOL, "quote": quote["quote"], "input": INPUT},
+                headers=_auth(token, f"pol-{uuid.uuid4().hex[:8]}"))
+
+    gen, db = _session()
+    try:
+        assert credit.so_du(db, user_id) == before
+    finally:
+        _close(gen)
+
+
+def test_an_expired_switch_simply_stops_applying(portal):
+    """No sweeper. The commonest failure of an incident tool is that nobody
+    remembers to turn it off."""
+    _sign_in(portal)
+    token = _issue(portal)
+
+    gen, db = _session()
+    try:
+        row = policy.engage(db, scope=KILL_MAINTENANCE,
+                            reason="ten minute window",
+                            created_by="operator@example.com",
+                            expires_at=datetime.now(timezone.utc)
+                            + timedelta(minutes=10))
+        db.commit()
+        switch_id = row.id
+    finally:
+        _close(gen)
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 503
+
+    gen, db = _session()
+    try:
+        db.get(type(row), switch_id).expires_at = (
+            datetime.now(timezone.utc) - timedelta(seconds=1))
+        db.commit()
+    finally:
+        _close(gen)
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 200
+
+
+def test_the_broadest_switch_is_the_one_reported(portal):
+    """When several apply, name the one whose lifting actually unblocks them."""
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    _engage(scope=KILL_USER, subject=user_id, reason="account under review",
+            created_by="op@example.com")
+    _engage(scope=KILL_MAINTENANCE, reason="platform maintenance",
+            created_by="op@example.com")
+
+    body = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token)).json()
+    assert "platform maintenance" in body["detail"]
+
+
+def test_a_switch_without_a_reason_is_refused(portal):
+    gen, db = _session()
+    try:
+        for reason in ("", "  ", "short"):
+            with pytest.raises(policy.PolicyError):
+                policy.engage(db, scope=KILL_MAINTENANCE, reason=reason)
+            db.rollback()
+        with pytest.raises(policy.PolicyError):
+            policy.engage(db, scope=KILL_TOOL, subject="",
+                          reason="a good enough reason")
+        db.rollback()
+        with pytest.raises(policy.PolicyError):
+            policy.engage(db, scope="nonsense", reason="a good enough reason")
+        db.rollback()
+        with pytest.raises(policy.PolicyError):
+            policy.engage(db, scope=KILL_MAINTENANCE,
+                          reason="a good enough reason",
+                          expires_at=datetime.now(timezone.utc)
+                          - timedelta(minutes=1))
+    finally:
+        _close(gen)
+
+
+def test_releasing_a_switch_restores_service(portal):
+    _sign_in(portal)
+    token = _issue(portal)
+    switch_id = _engage(scope=KILL_MAINTENANCE, reason="short outage",
+                        created_by="op@example.com")
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 503
+
+    gen, db = _session()
+    try:
+        policy.release(db, policy.switch_by_id(db, switch_id))
+        db.commit()
+    finally:
+        _close(gen)
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 200
+
+
+def test_one_credential_can_be_switched_off_without_the_account(portal):
+    """The narrowest scope: a leaked key stops, the customer keeps working."""
+    user_id = _sign_in(portal)
+    blocked = _issue(portal, "leaked")
+    working = _issue(portal, "healthy")
+
+    _engage(scope=KILL_KEY, subject=blocked.split("_")[2],
+            reason="credential rotated out", created_by="op@example.com")
+
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(blocked)).status_code == 403
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(working)).status_code == 200
+    assert user_id
+
+
+def test_a_project_can_be_switched_off_on_its_own(portal):
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+
+    gen, db = _session()
+    try:
+        key = devkeys.get_owned(db, user_id=user_id,
+                                key_id=token.split("_")[2])
+        project_id = str(key.project_id or "")
+        assert project_id, "this test assumes keys carry a project (EXT-04)"
+    finally:
+        _close(gen)
+
+    _engage(scope=KILL_PROJECT, subject=project_id,
+            reason="integration paused by agreement", created_by="op@example.com")
+    answer = portal.get(f"{API_V1_PREFIX}/tools", headers=_auth(token))
+    assert answer.status_code == 403
+    assert "integration paused by agreement" in answer.json()["detail"]
+
+
+# ── The two properties the brief calls out ───────────────────────────────────
+
+def test_the_web_app_keeps_working_while_the_api_is_switched_off(portal):
+    """Every switch here is scoped to `/api/v1`.
+
+    Turning the API off during an incident must not take the product down with
+    it — and a customer mid-task in the web app is not the caller being
+    rate-limited.
+    """
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    _engage(scope=KILL_MAINTENANCE, reason="api maintenance window",
+            created_by="op@example.com")
+    assert portal.get(f"{API_V1_PREFIX}/tools",
+                      headers=_auth(token)).status_code == 503
+
+    # The portal still answers…
+    assert portal.get("/developers/keys").status_code == 200
+    # …and a job submitted the way the web app submits one still runs.
+    from platform_core import jobs as jobq
+
+    gen, db = _session()
+    try:
+        job = jobq.submit(db, user_id=user_id, app_slug="thumbnail",
+                          job_type="thumbnail.tao_anh",
+                          params={"topic": "ui", "count": 1,
+                                  "owner_id": user_id})
+        db.commit()
+        assert job.status == "queued"
+    finally:
+        _close(gen)
+
+
+def test_a_policy_change_does_not_reprice_an_issued_quote(portal):
+    """A limit is not a price. Refusing is allowed; repricing is not."""
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(token)).json()
+
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="after", rpm_create=99,
+                                    daily_credit=100000)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+    limits.reset()
+
+    created = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote["quote"], "input": INPUT},
+        headers=_auth(token, f"pol-{uuid.uuid4().hex[:8]}"))
+    assert created.status_code == 201, created.text
+    assert created.json()["credit"]["held"] == quote["credit"]
+
+
+# ── Capacity ─────────────────────────────────────────────────────────────────
+
+def test_capacity_is_silent_when_the_pool_is_not_the_source(portal):
+    """An empty credential pool says nothing.
+
+    Every app here falls back to an environment credential, so refusing on an
+    empty pool would ground a deployment that never opted into the pool — which
+    is exactly what an earlier version of this guard did.
+    """
+    from platform_core.public_api.catalog import build_catalog
+
+    gen, db = _session()
+    try:
+        tool = next(item for item in build_catalog(_config())
+                    if item.name == TOOL)
+        assert capacity.check(db, tool=tool) is None
+    finally:
+        _close(gen)
+
+
+def test_capacity_refuses_when_storage_will_not_take_a_write(portal, monkeypatch):
+    from platform_core.public_api.catalog import build_catalog
+
+    capacity.reset()
+    monkeypatch.setattr(capacity, "_storage_writable", lambda: False)
+    gen, db = _session()
+    try:
+        tool = next(item for item in build_catalog(_config())
+                    if item.name == TOOL)
+        missing = capacity.check(db, tool=tool)
+        assert missing is not None and missing.resource == "storage"
+    finally:
+        _close(gen)
+    capacity.reset()
+
+
+def test_a_job_is_refused_before_the_hold_when_capacity_is_gone(portal,
+                                                               monkeypatch):
+    from platform_core import credit
+
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": INPUT},
+                        headers=_auth(token)).json()
+
+    gen, db = _session()
+    try:
+        before = credit.so_du(db, user_id)
+    finally:
+        _close(gen)
+
+    capacity.reset()
+    monkeypatch.setattr(capacity, "_storage_writable", lambda: False)
+    refused = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote["quote"], "input": INPUT},
+        headers=_auth(token, f"pol-{uuid.uuid4().hex[:8]}"))
+    capacity.reset()
+
+    assert refused.status_code == 503, refused.text
+    assert refused.json()["resource"] == "storage"
+    gen, db = _session()
+    try:
+        assert credit.so_du(db, user_id) == before
+    finally:
+        _close(gen)
+
+
+# ── What is deliberately absent ──────────────────────────────────────────────
+
+def test_no_priority_field_is_offered_because_nothing_schedules_it():
+    """The brief allows priority classes "only if the scheduler supports it".
+
+    `jobs.claim()` takes work strictly FIFO by `created_at`. A priority field
+    that no scheduler consults would be a promise the platform cannot keep,
+    visible in the admin UI and wrong.
+    """
+    import inspect
+
+    from platform_core import jobs as jobq
+    from platform_core.models import Job
+
+    assert not hasattr(Job, "priority")
+    assert "priority" not in policy.LIMIT_FIELDS
+    source = inspect.getsource(jobq)
+    assert "order_by(Job.created_at)" in source
+
+
+# ── Upload ceiling ───────────────────────────────────────────────────────────
+
+def test_the_upload_baseline_is_an_upload_size_not_the_json_body_cap(portal):
+    """Caught by looking at the rendered admin page.
+
+    The baseline was seeded from `max_body_bytes` — the 256 KB control-plane
+    JSON cap — so the console read "uploads are capped at 256 KB", wrong by four
+    orders of magnitude and about a completely different thing.
+    """
+    from platform_core.public_api.media import MULTIPART_LIMIT
+
+    gen, db = _session()
+    try:
+        resolved = policy.resolve(db, config=_config())
+        assert resolved.max_upload_bytes == MULTIPART_LIMIT
+        assert resolved.max_upload_bytes > 1_000_000
+    finally:
+        _close(gen)
+
+
+def test_a_policy_lowers_the_upload_ceiling_and_the_ticket_obeys(portal):
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+    ticket = {"tool": UPLOAD_TOOL, "field": "image_key",
+              "filename": "big.png", "content_type": "image/png",
+              "size": 400_000}
+
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="small-uploads",
+                                    max_upload_bytes=100_000)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+
+    refused = portal.post(f"{API_V1_PREFIX}/uploads", json=ticket,
+                          headers=_auth(token))
+    assert refused.status_code == 400, refused.text
+
+    ticket["size"] = 50_000
+    allowed = portal.post(f"{API_V1_PREFIX}/uploads", json=ticket,
+                          headers=_auth(token))
+    assert allowed.status_code == 201, allowed.text
+
+
+def test_a_policy_cannot_raise_the_upload_ceiling_past_the_platform_s(portal):
+    """A tier that could opt past the media rules would be selling something
+    the platform cannot deliver — Cloudflare rejects it at the edge."""
+    user_id = _sign_in(portal)
+    token = _issue(portal)
+
+    gen, db = _session()
+    try:
+        made = policy.create_policy(db, name="greedy",
+                                    max_upload_bytes=5_000_000_000)
+        policy.assign(db, policy=made, scope=POLICY_SCOPE_USER,
+                      subject_id=user_id)
+        db.commit()
+    finally:
+        _close(gen)
+
+    # The image rules cap this kind at 16 MB; the policy asked for 5 GB.
+    refused = portal.post(
+        f"{API_V1_PREFIX}/uploads",
+        json={"tool": UPLOAD_TOOL, "field": "image_key", "filename": "huge.png",
+              "content_type": "image/png", "size": 200_000_000},
+        headers=_auth(token))
+    assert refused.status_code == 400, refused.text
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -196403,7 +199034,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/restore_drill_schema.py
-SHA256=55c8963c49df8eae2be739731f600e1660f697fec15794b5427310cef7ca4b2f BYTES=7351 LINES=162
+SHA256=dc17427beb336e873190c6e60b7208e0c7dba0cbaf173c5d8b06912b391acc0c BYTES=7801 LINES=169
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 restore_drill_schema.py - dien tap khoi phuc tren LUOC DO THAT (H19.8).
@@ -196542,7 +199173,14 @@ def main() -> int:
                     "uq_public_api_webhook_event",
                     # Mat rang buoc nay = hai project cung slug trong mot tai
                     # khoan, va moi thu tra cuu theo slug se tro nham cho.
-                    "uq_api_project_owner_slug"):
+                    "uq_api_project_owner_slug",
+                    # Mat rang buoc nay = mot subject giu HAI chinh sach, va
+                    # han muc tra ve tuy dong nao doc truoc: dung cai
+                    # khong-tat-dinh ma EXT-14 sinh ra de chan.
+                    "uq_api_policy_subject",
+                    # Mat rang buoc nay = hai cong tat cung pham vi/doi tuong,
+                    # nen "tat roi hay chua" khong con mot cau tra loi.
+                    "uq_api_kill_subject"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

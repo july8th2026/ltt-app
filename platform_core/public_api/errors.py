@@ -219,6 +219,18 @@ def read_only(detail: object = "") -> ApiError:
                     title=_TITLES[CODE_READ_ONLY])
 
 
+def service_unavailable(detail: object = "", *, retry_after: int = 0,
+                        **extra) -> ApiError:
+    """Temporarily cannot serve this — come back. The code already existed in
+    the registry; until EXT-14 nothing constructed it, because the only 503 the
+    platform could raise was the global read-only switch."""
+    if retry_after:
+        extra = {**extra, "retry_after": int(retry_after)}
+    return ApiError(503, CODE_SERVICE_UNAVAILABLE, detail,
+                    title=_TITLES[CODE_SERVICE_UNAVAILABLE],
+                    extra=extra or None)
+
+
 # ── Specific causes (EXT-02) ─────────────────────────────────────────────────
 # Same statuses as the generic helpers they replace; only the code and the
 # advice change. A caller matching on status keeps working.

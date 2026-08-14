@@ -30,6 +30,7 @@ from platform_core.public_api import errors
 from platform_core.public_api import keys as devkeys
 from platform_core.public_api import limits
 from platform_core.public_api import metrics
+from platform_core.public_api import policy
 from platform_core.public_api.principal import Principal, ensure_scope
 from server.api import deps
 from server.api.context import client_ip, request_id
@@ -127,10 +128,23 @@ def resolve_from_database(request, db) -> Principal | None:
     # unattributable in the access log and in the request log (EXT-09).
     request.state.api_principal = principal
 
+    # A kill switch is checked here rather than in the middleware because three
+    # of its six scopes name a subject — a user, a project, a credential — and
+    # the subject is only known once the credential has verified. Doing it at
+    # the same boundary keeps one place where "not now" is decided (EXT-14).
+    _refuse_if_switched_off(db, request, principal)
+
     # Rate limit before doing anything else with the request: a key in a loop
-    # should cost one window lookup, not a full handler.
+    # should cost one window lookup, not a full handler. The ceiling comes from
+    # the resolved policy, and the account bucket is what stops a caller buying
+    # more rate by creating more keys.
     if config is not None:
-        limits.enforce_request_rate(key_id=key.key_id, config=config)
+        resolved = policy.resolve(db, config=config, principal=principal)
+        request.state.api_limits = resolved
+        limits.enforce_request_rate(
+            key_id=key.key_id, config=config, limits=resolved,
+            user_id=principal.user_id,
+            is_write=request.method.upper() not in ("GET", "HEAD", "OPTIONS"))
 
     # Bucketed, so a client polling a job does not turn every read into a write.
     devkeys.touch_last_used(db, key)
@@ -146,6 +160,42 @@ def _throttle(request, config, key_id: str) -> None:
     limits.note_auth_failure(
         client_ip=client_ip(request, getattr(config, "trusted_proxies", ())),
         key_id=key_id, config=config)
+
+
+def _refuse_if_switched_off(db, request, principal) -> None:
+    """Turn an engaged switch into the refusal a caller can act on.
+
+    No new error codes: `maintenance` and a disabled tool are 503s because the
+    caller should come back, and a suspended subject is a 403 because coming
+    back will not help. Inventing codes for these would grow the public error
+    vocabulary for states it already describes.
+
+    The reason the operator typed **is** returned. It is written by an operator
+    for a customer, and withholding it just moves the same conversation into a
+    support ticket.
+    """
+    from platform_core.public_api.tables import (KILL_GLOBAL_WRITES,
+                                                 KILL_MAINTENANCE, KILL_TOOL)
+
+    is_write = request.method.upper() not in ("GET", "HEAD", "OPTIONS")
+    refusal = policy.check(db, principal=principal, is_write=is_write)
+    if refusal is None:
+        return
+
+    metrics.increment(metrics.KILL_SWITCH_REFUSED)
+    if refusal.scope == KILL_MAINTENANCE:
+        raise errors.service_unavailable(
+            f"The API is in maintenance: {refusal.reason}",
+            retry_after=refusal.retry_after)
+    if refusal.scope == KILL_GLOBAL_WRITES:
+        raise errors.read_only(
+            f"Write operations are paused: {refusal.reason}")
+    if refusal.scope == KILL_TOOL:
+        raise errors.service_unavailable(
+            f"This tool is temporarily unavailable: {refusal.reason}",
+            retry_after=refusal.retry_after)
+    raise errors.forbidden(
+        f"API access for this account is suspended: {refusal.reason}")
 
 
 def install_database_resolver() -> None:

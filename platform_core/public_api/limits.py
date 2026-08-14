@@ -16,6 +16,19 @@ resources:
    or a runaway script; off by default because it is a product decision, not a
    safety default.
 
+**Where the numbers come from.** Until EXT-14 every limit came straight from the
+deployment's environment, which meant one number for every customer. They now
+come from ``policy.resolve()``, which walks global → tier → user → project →
+credential → tool and hands back a ``Limits``. This module still owns *how* a
+limit is enforced; it no longer owns *what the number is*.
+
+**Per key and per account.** Layers 2 and 3 used to be bucketed on ``key_id``
+alone, so an account that wanted five times the rate created five keys — no
+exploit needed, just the credential page. Each rate is now charged to the key
+*and* to the account: the key bucket stops one broken client, and the account
+bucket is the one that means anything commercially. Layers 4 and 5 were already
+per account.
+
 **Where the counters live.** The platform runs a single web process (ADR-005,
 one NSSM service), so an in-process window is authoritative for the RPM layers
 and costs nothing. The layers that must stay correct regardless of how many
@@ -123,24 +136,51 @@ def note_auth_failure(*, client_ip: str, key_id: str, config) -> None:
 
 # ── Layers 2 and 3: request rate ──────────────────────────────────────────────
 
-def enforce_request_rate(*, key_id: str, config) -> None:
-    allowed, retry = _hit(f"rpm:{key_id}", config.request_rpm, 60.0)
+def enforce_request_rate(*, key_id: str, config, limits=None,
+                         user_id: str = "", is_write: bool = False) -> None:
+    """Ration ordinary calls, per key and per account.
+
+    Reads and writes get separate allowances once a policy says so. A read costs
+    a query; a write costs a row, a lock and often a hold, so a burst of cheap
+    reads must not be able to consume the allowance that protects them — nor the
+    reverse. Without a policy both come from the same configured number, which
+    is exactly the behaviour deployments already had.
+    """
+    ceiling = config.request_rpm if limits is None else (
+        limits.rpm_write if is_write else limits.rpm_read)
+    allowed, retry = _hit(f"rpm:{key_id}", ceiling, 60.0)
     if not allowed:
         _bump("request_rate_limited")
         raise _too_many("Too many requests for this API key.", retry)
 
+    if user_id:
+        # The anti-bypass bucket. Same ceiling, wider subject: more keys buy
+        # more parallelism against the platform, never more rate.
+        allowed, retry = _hit(f"rpm:acct:{user_id}", ceiling, 60.0)
+        if not allowed:
+            _bump("request_rate_limited_account")
+            raise _too_many("Too many requests for this account.", retry)
 
-def enforce_create_rate(*, key_id: str, config) -> None:
+
+def enforce_create_rate(*, key_id: str, config, limits=None,
+                        user_id: str = "") -> None:
     """Chargeable creates are rationed separately and much more tightly.
 
     A read costs a query; a create costs credit, a worker slot and provider
     quota. Sharing one budget between them would let a burst of cheap calls
     exhaust the allowance that protects the expensive ones — or the reverse.
     """
-    allowed, retry = _hit(f"create:{key_id}", config.create_rpm, 60.0)
+    ceiling = config.create_rpm if limits is None else limits.rpm_create
+    allowed, retry = _hit(f"create:{key_id}", ceiling, 60.0)
     if not allowed:
         _bump("create_rate_limited")
         raise _too_many("Too many job creations for this API key.", retry)
+
+    if user_id:
+        allowed, retry = _hit(f"create:acct:{user_id}", ceiling, 60.0)
+        if not allowed:
+            _bump("create_rate_limited_account")
+            raise _too_many("Too many job creations for this account.", retry)
 
 
 # ── Layer 4: concurrency and capacity (database-backed) ───────────────────────
@@ -174,14 +214,16 @@ def resource_class(manifest) -> str:
 
 
 def enforce_active_jobs(db, *, principal, config, app_slug: str,
-                        class_slugs=None, resource: str = "api") -> None:
+                        class_slugs=None, resource: str = "api",
+                        limits=None) -> None:
     """Refuse to open a new job when this account already has enough running.
 
     Backpressure at admission, not in the queue: an unbounded queue turns a
     burst into an hours-long backlog that every other customer waits behind,
     and the credit for it is already held.
     """
-    limit = config.max_active_jobs
+    limit = (config.max_active_jobs if limits is None
+             else limits.max_active_jobs)
     if limit > 0:
         active = active_job_count(db, principal.user_id)
         if active >= limit:
@@ -190,7 +232,9 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
                 "This account already has the maximum number of active jobs.",
                 30, code=CODE_CONCURRENCY, active_jobs=active, limit=limit)
 
-    class_limit = config.class_concurrency.get(resource, 0)
+    classes = (config.class_concurrency if limits is None
+               else limits.class_concurrency)
+    class_limit = classes.get(resource, 0)
     if class_limit > 0 and class_slugs:
         active = active_job_count(db, principal.user_id, app_slugs=class_slugs)
         if active >= class_limit:
@@ -246,8 +290,10 @@ def enforce_budget(db, *, principal, cost: int) -> None:
                 scope=budget.scope, period=budget.period, source="budget")
 
 
-def enforce_daily_credit(db, *, principal, config, cost: int) -> None:
-    ceiling = config.daily_credit_limit
+def enforce_daily_credit(db, *, principal, config, cost: int,
+                         limits=None) -> None:
+    ceiling = (config.daily_credit_limit if limits is None
+               else limits.daily_credit)
     if ceiling <= 0:
         return
     since = datetime.now(timezone.utc) - timedelta(days=1)

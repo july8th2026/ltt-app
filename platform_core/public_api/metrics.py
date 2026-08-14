@@ -32,6 +32,13 @@ REQUESTS = "requests"
 RESPONSES_4XX = "responses_4xx"
 RESPONSES_5XX = "responses_5xx"
 RATE_LIMITED = "rate_limited"
+#: How often a kill switch actually refused something. A switch nobody can see
+#: working is a switch nobody trusts is working (EXT-14).
+KILL_SWITCH_REFUSED = "kill_switch_refused"
+#: How often a job was refused because the machinery behind it was missing,
+#: rather than because the caller had had enough. Different cause, different
+#: fix, so a different counter.
+CAPACITY_REFUSED = "capacity_refused"
 IDEMPOTENCY_REPLAY = "idempotency_replay"
 IDEMPOTENCY_CONFLICT = "idempotency_conflict"
 CREDIT_HELD = "credit_held"

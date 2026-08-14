@@ -253,10 +253,17 @@ def test_rate_limits_cannot_be_dodged_by_changing_endpoint(make_api):
                    headers=_auth(token)).status_code == 429
 
 
-def test_two_keys_of_one_account_each_get_their_own_request_budget(make_api):
-    """Rotating a key is not a way around the limit — the account still hits
-    the job concurrency and credit ceilings, which are per account."""
-    api = make_api(LTT_PUBLIC_API_RPM="2", LTT_PUBLIC_API_MAX_ACTIVE_JOBS="1")
+def test_a_second_key_does_not_dodge_the_account_s_concurrency_cap(make_api):
+    """Rotating or adding a key is not a way around the limit.
+
+    Renamed at EXT-14. It used to be called "two keys each get their own request
+    budget", and that premise was the hole the policy engine closed: an account
+    wanting five times the rate just made five keys. Rates are now charged to
+    the account as well as the key (see `test_206_policy_engine.py`), so the RPM
+    here is raised out of the way — this test is about the *concurrency* cap,
+    which was always per account, and the low RPM was incidental to it.
+    """
+    api = make_api(LTT_PUBLIC_API_RPM="100", LTT_PUBLIC_API_MAX_ACTIVE_JOBS="1")
     user_id, first = _account()
     gen, db = _session()
     try:

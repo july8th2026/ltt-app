@@ -135,7 +135,14 @@ def main() -> int:
                     "uq_public_api_webhook_event",
                     # Mat rang buoc nay = hai project cung slug trong mot tai
                     # khoan, va moi thu tra cuu theo slug se tro nham cho.
-                    "uq_api_project_owner_slug"):
+                    "uq_api_project_owner_slug",
+                    # Mat rang buoc nay = mot subject giu HAI chinh sach, va
+                    # han muc tra ve tuy dong nao doc truoc: dung cai
+                    # khong-tat-dinh ma EXT-14 sinh ra de chan.
+                    "uq_api_policy_subject",
+                    # Mat rang buoc nay = hai cong tat cung pham vi/doi tuong,
+                    # nen "tat roi hay chua" khong con mot cau tra loi.
+                    "uq_api_kill_subject"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

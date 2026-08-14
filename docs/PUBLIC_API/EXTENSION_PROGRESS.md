@@ -46,7 +46,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 11 | Usage / budgets / credit alerts / notifications | **PASS** | 2026-08-14 |
 | 12 | Sandbox / test mode / live isolation | **PASS** | 2026-08-14 |
 | 13 | API admin console core | **PASS** | 2026-08-14 |
-| 14 | Admin policy / tiers / quota / kill switch | chưa chạy | — |
+| 14 | Admin policy / tiers / quota / kill switch | **PASS** | 2026-08-14 |
 | 15 | Pricing catalog / versioned credits / margin | chưa chạy | — |
 | 16 | Admin operations / security / support trace | chưa chạy | — |
 | 17 | Versioning / changelog / deprecation / status | chưa chạy | — |
@@ -1500,3 +1500,168 @@ ghi (`nhat_ky_admin`) là bằng chứng, giữ lại.
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/14_ADMIN_POLICY_TIERS_QUOTA_CONCURRENCY_CAPACITY_KILL_SWITCH.txt`
 (EXT-14).
+
+---
+
+## EXT-14 — POLICY ENGINE: TIER, HẠN MỨC, CAPACITY, KILL SWITCH ✅
+
+### Entry gate
+
+EXT-13 PASS ✅ (`747e006`), cây sạch. Migration mới: **`c5d6e7f8a9b0`** (head) —
+ba bảng, không sửa bảng nào đang có.
+
+### AUDIT: năm lớp đã có, và cái lỗ trong đó
+
+| Lớp | Trước EXT-14 | Khoá theo |
+|---|---|---|
+| 1 auth-failure throttle | ✅ | IP + key_id |
+| 2 request RPM | ✅ | **key_id** ← lỗ |
+| 3 create RPM | ✅ | **key_id** ← lỗ |
+| 4 job đồng thời + theo lớp tài nguyên | ✅ | user_id |
+| 5 trần credit ngày | ✅ | user_id |
+| Cấu hình | chỉ **global** từ env — một con số cho mọi khách | |
+
+**Lỗ lách có thật:** lớp 2–3 bucket theo `key_id`. Một tài khoản muốn gấp 5 lần
+nhịp chỉ cần vào trang tạo khoá và tạo 5 khoá — không cần khai thác gì. Lớp 4–5
+đã theo tài khoản nên không dính. Đây chính là "anti-bypass across multiple
+keys" trong đề bài, và giờ mỗi nhịp tính **cả cho khoá lẫn cho tài khoản**.
+
+### Chuỗi ưu tiên
+
+```
+global(env) → tier(policy mặc định) → user → project → credential → tool
+```
+
+Mỗi bước **chỉ ghi đè trường nó thực sự đặt**. Không có luật đó thì gắn một
+policy để nới một hạn mức sẽ lặng lẽ reset bốn hạn mức khác, và người gắn không
+có cách nào biết.
+
+Vì thế **mọi cột số đều NULL-able và NULL = kế thừa**, không dùng 0 làm dấu
+"chưa đặt": 0 là một hạn mức thật và có nghĩa (nhịp 0 = từ chối tất cả), tiêu nó
+cho "chưa đặt" thì không bao giờ diễn đạt được nữa.
+
+`Limits.sources` ghi lại **bước nào đặt trường nào**. Câu hỏi đầu tiên về bất kỳ
+hạn mức nào là "vì sao lại là con số đó", và một engine không trả lời được sẽ
+biến mọi cuộc hỗ trợ thành một cuộc điều tra. Trang admin hiện đúng cột đó.
+
+### Kill switch ≠ hạn mức bằng 0
+
+Hạn mức là chính sách thường trực; công tắc là công cụ xử lý **sự cố**, có người
+bật, có **lý do bắt buộc** và nên có **hạn dùng**. Gộp hai thứ lại thì bản ghi
+duy nhất về "3 giờ sáng tắt cái này vì sao" chỉ còn là một con số trông như cấu
+hình.
+
+Sáu phạm vi: `maintenance`, `global_writes`, `tool`, `user`, `project`, `key`.
+Hết hạn = **tự hết hiệu lực**, không cần job dọn — lỗi thường gặp nhất của một
+công tắc sự cố là không ai nhớ tắt nó đi.
+
+**Không thêm mã lỗi mới.** `service_unavailable` (503), `read_only` (503) và
+`forbidden` (403) đã diễn đạt đủ. Bảng lỗi công khai và tài liệu sinh tự động
+**không đổi**. Chỉ thêm một hàm dựng cho `service_unavailable` — mã đã có trong
+registry từ EXT-02 nhưng chưa có gì tạo ra nó.
+
+Khi nhiều công tắc cùng áp, caller được báo **cái rộng nhất**: đó là cái mà gỡ
+đi thì họ chạy được.
+
+**Lý do operator gõ được trả về cho khách.** Nó do người vận hành viết cho khách
+hàng; giữ lại chỉ chuyển đúng cuộc trò chuyện đó sang một ticket hỗ trợ.
+
+### Capacity guard
+
+`platform_core/public_api/capacity.py` — hỏi lại thứ nền tảng **đã biết**, không
+dựng engine sức khoẻ thứ hai: storage có nhận ghi không (round trip thật, như
+`/health/ready` làm với CSDL), có GPU không (chỉ với app khai `requires=gpu`),
+và pool credential.
+
+Chỉ chặn ở **tạo job**, và chặn **trước khi giữ credit**. Đọc vẫn chạy trong sự
+cố — khách có provider hỏng vẫn cần liệt kê job và tải artifact hôm qua; chặn cả
+đọc là biến một nền tảng suy giảm thành một nền tảng tối.
+
+### Ba lỗi thật, bắt được bằng cách chạy chứ không phải bằng cách nghĩ
+
+1. **Capacity chặn nhầm mọi thứ.** Tôi suy đoán mọi tool ảnh/video lấy
+   credential từ `api_pool`. Đọc code thật: các app có **fallback sang biến môi
+   trường**. Pool rỗng ⇒ **không** nói lên điều gì. Luật đúng: im lặng khi pool
+   không phải nguồn cho category đó; chỉ báo khi pool **có** khoá mà **không**
+   khoá nào dùng được. Bộ test hiện có bắt được ngay (18 test đỏ).
+2. **So sánh datetime naive với aware.** SQLite trả naive cho `expires_at`,
+   PostgreSQL trả aware. `is_active()` ném lỗi — và nó nằm trong đường kiểm kill
+   switch của **mọi** request, tức là biến một công cụ xử lý sự cố thành một sự
+   cố. Chuẩn hoá về UTC trước khi so, đúng cách `keys.py` đã làm.
+3. **`max_upload_bytes` lấy nền sai và không nối vào đâu cả.** Trang admin hiện
+   `262144` — đó là trần **thân JSON** của control plane, không phải trần upload,
+   sai bốn bậc độ lớn và về một thứ hoàn toàn khác. Tệ hơn: trường này chưa được
+   thi hành ở đâu — đúng loại "hứa suông" mà tôi vừa từ chối làm với priority.
+   Giờ nền là `media.MULTIPART_LIMIT` (90 MB, chỗ Cloudflare chặn) và vé upload
+   **thật sự** tôn trọng nó; policy chỉ **hạ** được, không **nâng** được quá
+   trần của nền tảng.
+
+### Priority class: CỐ Ý KHÔNG LÀM
+
+Đề bài cho phép "only if scheduler supports". `jobs.claim()` sắp xếp
+`order_by(Job.created_at)` thuần FIFO; `priority` chỉ tồn tại trên bảng
+`api_keys` của **provider**, không phải trên `Job`. Một trường `priority` mà
+không scheduler nào đọc là một lời hứa nền tảng không giữ được — lại còn hiện ra
+trong admin. Nó thuộc về một thay đổi scheduler, không thuộc về đây. Có test
+khoá tính chất này lại.
+
+### Admin
+
+Hai trang mới trong khu API (cùng khuôn EXT-13: lý do bắt buộc, xác nhận cho
+thao tác nguy hiểm, ghi nhật ký cùng transaction): **Chính sách** (kèm bảng "mức
+nền đang áp dụng" và cột *đến từ*) và **Kill switch**. Trang Công cụ ở EXT-13
+từng nói "kill switch là việc của EXT-14" — giờ nó có thật.
+
+### Tests
+
+`tests/test_206_policy_engine.py` — **35 test**; `test_205` thêm **8 test** cho
+hai trang admin (tổng 36).
+
+Precedence: mức nền khi không có policy; mỗi bước chỉ ghi đè cái nó đặt; chuỗi
+chạy rộng→hẹp và gỡ bước hẹp thì tụt đúng một bậc; tool override là lời cuối;
+override của policy **thua** thì không áp; **kết quả không phụ thuộc thứ tự
+chèn**; chỉ một default; một subject một policy; xoá policy thì tụt bậc chứ
+không mồ côi; **0 là hạn mức thật**; input rác bị từ chối.
+
+Abuse isolation: **nhiều khoá không mua thêm nhịp**; một tài khoản bị bóp không
+ảnh hưởng tài khoản khác; đọc và ghi có hai hạn ngạch riêng.
+
+Kill switch: maintenance chặn cả đọc lẫn ghi; global_writes để đọc yên; tài
+khoản bị đình chỉ nhận 403 kèm lý do; tắt một tài khoản không ảnh hưởng tài
+khoản khác; tool bị tắt bị từ chối **trước khi giữ credit** (có test số dư);
+công tắc hết hạn tự thôi áp dụng; công tắc rộng nhất là cái được báo; thiếu lý
+do / sai phạm vi / hạn dùng ở quá khứ đều bị từ chối; tắt công tắc thì dịch vụ
+trở lại; khoá và project tắt được riêng.
+
+Hai tính chất đề bài nêu thẳng: **giao diện web vẫn chạy** khi API bị tắt (job
+nộp kiểu UI vẫn vào hàng đợi), và **đổi policy không định giá lại một báo giá đã
+ký**.
+
+### Kiểm bằng trình duyệt (uvicorn thật, cổng 8123)
+
+Bật maintenance **không tích ô** → bị từ chối kèm biểu ngữ đỏ. Tích ô + lý do +
+30 phút → bật được, bảng hiện đúng ai bật/lý do/hạn dùng. Gọi
+`GET /api/v1/tools` bằng khoá thật → **503 `service_unavailable`** kèm đúng lý do
+operator vừa gõ. Bấm "Bật lại" kèm lý do → API trả **200** lại, và **Nhật ký
+admin** có đủ hai dòng `api_kill_engage` / `api_kill_release` kèm lý do và email
+người thao tác. Console: 0 lỗi.
+
+### Rollback
+
+`alembic downgrade b4c5d6e7f8a9`; xoá `policy.py` + `capacity.py`; bỏ
+`_refuse_if_switched_off` khỏi `auth.py`, hai helper khỏi `jobs.py`, trần upload
+khỏi `uploads.py`; trả `limits.py` về đọc thẳng `config`; bỏ 2 view + 2 mục NAV;
+xoá `test_206` và khối EXT-14 trong `test_205`. Không mất dữ liệu vận hành: ba
+bảng mới chỉ chứa chính sách và công tắc.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-14 | Kết quả |
+|---|---|
+| Deterministic precedence tests | ✅ chuỗi cố định, chỉ-ghi-đè-cái-đã-đặt, có test **đảo thứ tự chèn cho cùng kết quả**, và `sources` nói rõ số đến từ đâu |
+| Abuse isolation | ✅ nhiều khoá không cộng dồn nhịp (bucket theo tài khoản); một tài khoản bị bóp không ảnh hưởng người khác |
+| UI apps unaffected | ✅ mọi công tắc phạm vi `/api/v1`; test dựng job kiểu UI trong lúc API đang maintenance và job vẫn vào hàng đợi; trang nói rõ phạm vi |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/15_PRICING_CATALOG_VERSIONED_CREDITS_COST_MARGIN_AND_QUOTE_SIMULATOR.txt`
+(EXT-15).

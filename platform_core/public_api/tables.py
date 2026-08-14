@@ -461,3 +461,148 @@ class WebhookDelivery(Base):
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return (f"<WebhookDelivery {self.event_type} {self.status} "
                 f"attempts={self.attempts}>")
+
+
+# ── Policy engine (EXT-14) ────────────────────────────────────────────────────
+#
+# Two tables and one rule about them: a **policy** answers "how much", a **kill
+# switch** answers "not now". Keeping them apart is not tidiness — a limit set
+# to zero and an incident switch look identical in a settings table, and then
+# the only record of "we turned this off at 3am and why" is a number.
+
+POLICY_SCOPE_USER = "user"
+POLICY_SCOPE_PROJECT = "project"
+POLICY_SCOPE_KEY = "key"
+POLICY_SCOPES = (POLICY_SCOPE_USER, POLICY_SCOPE_PROJECT, POLICY_SCOPE_KEY)
+
+KILL_GLOBAL_WRITES = "global_writes"
+KILL_MAINTENANCE = "maintenance"
+KILL_TOOL = "tool"
+KILL_USER = "user"
+KILL_PROJECT = "project"
+KILL_KEY = "key"
+KILL_SCOPES = (KILL_GLOBAL_WRITES, KILL_MAINTENANCE, KILL_TOOL, KILL_USER,
+               KILL_PROJECT, KILL_KEY)
+#: Switches that name no subject: there is only ever one of each.
+KILL_GLOBAL_SCOPES = (KILL_GLOBAL_WRITES, KILL_MAINTENANCE)
+
+
+class ApiPolicy(Base):
+    """A named set of limits — a commercial tier, or one account's exception.
+
+    **Every numeric column is nullable, and NULL means "inherit".** Not zero:
+    zero is a real, meaningful value (a rate of zero refuses everything), and a
+    policy that used zero for "unset" could never express it. More importantly,
+    a policy attached to raise one limit must not silently reset the four it
+    says nothing about.
+    """
+
+    __tablename__ = "api_policies"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String(500), default="",
+                                             nullable=False)
+
+    rpm_read: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rpm_write: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rpm_create: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_active_jobs: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    daily_credit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    max_upload_bytes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: ``{resource: limit}`` — "gpu", "ffmpeg", "browser", "api".
+    class_concurrency: Mapped[dict] = mapped_column(JSON, default=dict,
+                                                    nullable=False)
+    #: ``{tool_name: {field: value}}`` — the narrowest step of the chain.
+    tool_overrides: Mapped[dict] = mapped_column(JSON, default=dict,
+                                                 nullable=False)
+
+    #: The tier every account gets without an explicit assignment. At most one
+    #: row may hold it; the service enforces that rather than a partial index,
+    #: which SQLite cannot express portably.
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiPolicy {self.name}{' default' if self.is_default else ''}>"
+
+
+class ApiPolicyAssignment(Base):
+    """Which subject gets which policy. One policy per subject, at most."""
+
+    __tablename__ = "api_policy_assignments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    policy_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("api_policies.id", ondelete="CASCADE"),
+        nullable=False, index=True)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: user id, project id or key id, depending on ``scope``.
+    subject_id: Mapped[str] = mapped_column(String(48), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("scope", "subject_id",
+                         name="uq_api_policy_subject"),
+        Index("ix_api_policy_lookup", "scope", "subject_id"),
+    )
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiPolicyAssignment {self.scope}={self.subject_id[:8]}>"
+
+
+class ApiKillSwitch(Base):
+    """A deliberate refusal, with a reason and usually an end.
+
+    ``reason`` is not nullable and the service refuses an empty one: a switch
+    without a reason is an outage nobody can explain. ``expires_at`` is how a
+    switch stops being permanent by accident — the commonest failure of an
+    incident tool is that somebody forgets to turn it off, so an expired row
+    simply stops applying without needing a sweeper.
+    """
+
+    __tablename__ = "api_kill_switches"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    scope: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    #: Tool name, user id, project id or key id. Empty for the global scopes.
+    subject: Mapped[str] = mapped_column(String(64), default="",
+                                         nullable=False)
+    reason: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_by: Mapped[str] = mapped_column(String(255), default="",
+                                            nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("scope", "subject", name="uq_api_kill_subject"),
+        Index("ix_api_kill_scope", "scope", "expires_at"),
+    )
+
+    def is_active(self, *, now: datetime | None = None) -> bool:
+        """Still in force?
+
+        The expiry is normalised to UTC before comparing because SQLite hands
+        back a naive datetime for a column PostgreSQL returns aware — the same
+        asymmetry `keys.py` already works around. Comparing the two raises, and
+        it would raise inside the kill-switch check on every request, turning an
+        incident tool into an incident.
+        """
+        moment = now or _now()
+        expiry = self.expires_at
+        if expiry is None:
+            return True
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        return expiry > moment
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiKillSwitch {self.scope}:{self.subject or '*'}>"
+

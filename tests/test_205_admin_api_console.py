@@ -675,3 +675,168 @@ def test_clamp_page_survives_nonsense():
     assert admin_console.clamp_page(-5, -5) == (1, 0)
     assert admin_console.clamp_page(10_000, 10) == (
         admin_console.MAX_PAGE_SIZE, 10)
+
+
+# ── The policy and kill-switch pages (EXT-14) ────────────────────────────────
+
+POLICY_PAGES = ("/admin/api-chinh-sach", "/admin/api-kill-switch")
+
+
+def _post(client, path: str, page_path: str, data: dict):
+    page = client.get(page_path).text
+    return client.post(path, data={"csrf_token": _csrf(page), **data},
+                       follow_redirects=False)
+
+
+def test_the_policy_pages_are_operator_only(console):
+    _make_user("nosy@example.com")
+    _login(console, "nosy@example.com")
+    for path in POLICY_PAGES:
+        answer = console.get(path, follow_redirects=False)
+        assert answer.status_code in (302, 303, 307), path
+        assert "/login" in answer.headers.get("location", ""), path
+
+
+def test_creating_a_policy_from_the_page_is_audited(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+
+    answer = _post(console, "/admin/api-chinh-sach-action",
+                   "/admin/api-chinh-sach",
+                   {"op": "create", "name": "pro", "description": "paid tier",
+                    "rpm_create": "40", "is_default": "1",
+                    "reason": "new commercial tier agreed"})
+    assert answer.status_code == 303, answer.text[:300]
+
+    gen, db = _session()
+    try:
+        rows = policy.list_policies(db)
+        assert len(rows) == 1
+        assert rows[0].name == "pro" and rows[0].rpm_create == 40
+        # Untouched fields stay NULL — inherit, not zero.
+        assert rows[0].rpm_read is None
+    finally:
+        _close(gen)
+
+    audit = _audit_rows()
+    assert [row.hanh_dong for row in audit] == ["api_chinh_sach_create"]
+    assert "new commercial tier agreed" in audit[0].chi_tiet
+    assert audit[0].admin_email == ADMIN_EMAIL
+
+
+def test_a_policy_change_without_a_reason_changes_nothing(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    answer = _post(console, "/admin/api-chinh-sach-action",
+                   "/admin/api-chinh-sach",
+                   {"op": "create", "name": "sneaky", "reason": "x"})
+    assert answer.status_code == 303 and "err=" in answer.headers["location"]
+
+    gen, db = _session()
+    try:
+        assert policy.list_policies(db) == []
+    finally:
+        _close(gen)
+    assert _audit_rows() == []
+
+
+def test_engaging_a_kill_switch_needs_confirmation_and_is_audited(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+
+    refused = _post(console, "/admin/api-kill-switch-action",
+                    "/admin/api-kill-switch",
+                    {"op": "engage", "scope": "maintenance",
+                     "reason": "database migration window"})
+    assert refused.status_code == 303 and "err=" in refused.headers["location"]
+    gen, db = _session()
+    try:
+        assert policy.active_switches(db) == []
+    finally:
+        _close(gen)
+    assert _audit_rows() == []
+
+    ok = _post(console, "/admin/api-kill-switch-action",
+               "/admin/api-kill-switch",
+               {"op": "engage", "scope": "maintenance", "confirm": "1",
+                "reason": "database migration window"})
+    assert ok.status_code == 303
+    gen, db = _session()
+    try:
+        switches = policy.active_switches(db)
+        assert len(switches) == 1
+        assert switches[0].created_by == ADMIN_EMAIL
+        assert switches[0].expires_at is None
+    finally:
+        _close(gen)
+    assert [row.hanh_dong for row in _audit_rows()] == ["api_kill_engage"]
+
+
+def test_a_switch_can_be_given_an_expiry_from_the_page(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    _post(console, "/admin/api-kill-switch-action", "/admin/api-kill-switch",
+          {"op": "engage", "scope": "global_writes", "confirm": "1",
+           "minutes": "30", "reason": "provider incident 91"})
+
+    gen, db = _session()
+    try:
+        switch = policy.active_switches(db)[0]
+        assert switch.expires_at is not None
+    finally:
+        _close(gen)
+
+
+def test_releasing_a_switch_is_audited_too(console):
+    from platform_core.public_api import policy
+
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    _post(console, "/admin/api-kill-switch-action", "/admin/api-kill-switch",
+          {"op": "engage", "scope": "maintenance", "confirm": "1",
+           "reason": "database migration window"})
+
+    gen, db = _session()
+    try:
+        switch_id = policy.active_switches(db)[0].id
+    finally:
+        _close(gen)
+
+    _post(console, "/admin/api-kill-switch-action", "/admin/api-kill-switch",
+          {"op": "release", "switch_id": switch_id,
+           "reason": "migration finished, service restored"})
+
+    gen, db = _session()
+    try:
+        assert policy.active_switches(db) == []
+    finally:
+        _close(gen)
+    assert [row.hanh_dong for row in _audit_rows()] == ["api_kill_engage",
+                                                        "api_kill_release"]
+
+
+def test_the_policy_page_shows_where_each_number_comes_from(console):
+    """The first question about any limit is "why is it that number"."""
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-chinh-sach").text
+    assert "Mức nền đang áp dụng" in page
+    assert "global" in page
+    assert "kế thừa" in page, "the page must say blank means inherit, not zero"
+
+
+def test_the_kill_switch_page_says_its_scope_is_the_api(console):
+    _make_user(ADMIN_EMAIL, role="admin")
+    _login(console, ADMIN_EMAIL)
+    page = console.get("/admin/api-kill-switch").text
+    assert "/api/v1" in page
+    assert 'name="confirm"' in page
+    assert "Không có công tắc nào đang bật" in page
