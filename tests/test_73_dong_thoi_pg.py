@@ -18,7 +18,12 @@ import threading
 
 import pytest
 
-PG_URL = os.environ.get("LTT_TEST_DATABASE_URL", "").strip()
+# Không đọc thẳng biến môi trường: `pg_scratch` từ chối một URL không chứng
+# minh được nó là CSDL vứt đi. Các test này gọi `drop_all()`, và trên máy chủ
+# thì PostgreSQL của nền tảng đang chạy ngay cạnh.
+from tests.pg_scratch import scratch_url
+
+PG_URL = scratch_url()
 
 pytestmark = pytest.mark.skipif(
     not PG_URL,

@@ -359,8 +359,18 @@ class ApiNotification(Base):
         DateTime(timezone=True), default=_now, nullable=False)
     read_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    #: Danh tính của MỘT lần cảnh báo: kind + subject + ô thời gian của cooldown.
+    #: Cooldown trước đây chỉ được thi hành bằng đọc-rồi-ghi trong Python, nên
+    #: hai tiến trình quét cùng lúc đều thấy "chưa có gì gần đây" và đều ghi —
+    #: khách nhận email trùng. Ràng buộc dưới đây để CSDL quyết định, giống hệt
+    #: cách `job_events` đã làm với `event_key`.
+    event_key: Mapped[str] = mapped_column(String(200), default="",
+                                           nullable=False)
 
     __table_args__ = (
+        # Trái tim của việc chống trùng: một khoá chỉ ghi được một lần.
+        UniqueConstraint("user_id", "event_key",
+                         name="uq_api_notifications_event_key"),
         # The cooldown lookup: same account, same kind, same subject, recent.
         Index("ix_api_notifications_dedupe", "user_id", "kind", "subject",
               "created_at"),
@@ -372,6 +382,11 @@ class ApiNotification(Base):
 
 
 WEBHOOK_PENDING = "pending"
+#: Đã được một worker nhận và đang gửi. Trạng thái này tồn tại vì nền tảng chạy
+#: nhiều tiến trình worker: không có nó thì hai worker cùng đọc một delivery là
+#: "đến hạn" và khách nhận hai callback giống hệt. `next_attempt_at` đóng vai
+#: hạn của lượt nhận — worker chết giữa chừng thì hết hạn rồi có người nhận lại.
+WEBHOOK_SENDING = "sending"
 WEBHOOK_DELIVERED = "delivered"
 WEBHOOK_FAILED = "failed"
 WEBHOOK_DEAD = "dead"

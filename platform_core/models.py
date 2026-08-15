@@ -818,3 +818,42 @@ class GpuLease(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<GpuLease {self.host}:{self.gpu_index} job={self.job_id[:8]}>"
+
+
+class SingletonLease(Base):
+    """Ai được phép làm một việc mà chỉ MỘT tiến trình được làm.
+
+    Cùng ý tưởng với `GpuLease` và cố ý giống hệt: giành bằng INSERT, ràng buộc
+    UNIQUE quyết định người thắng, `heartbeat_at` khiến chủ chết thì lease tự
+    hết hạn. Khác ở chỗ tài nguyên không phải một card mà là một **vai trò**
+    ("người chạy vòng bảo trì").
+
+    Vì sao không dùng `pg_advisory_lock`: xem `platform_core/leases.py`. Tóm
+    tắt — SQLite không có, nên đường quan trọng nhất sẽ không test được ở nơi
+    dễ chạy nhất.
+
+    Vì sao lease **hết hạn** thay vì giữ mãi: một tiến trình giữ vai trò rồi
+    chết sẽ làm việc nền dừng **vĩnh viễn và im lặng** — không job nào hỏng để
+    ai nhận ra, chỉ là webhook không còn được gửi nữa.
+    """
+
+    __tablename__ = "singleton_leases"
+    __table_args__ = (
+        # Trái tim của cơ chế: một tên chỉ có tối đa một lease sống. Đặt TÊN cho
+        # ràng buộc vì bộ kiểm phục hồi (`tools/restore_drill_schema.py`) đối
+        # chiếu theo tên — mất ràng buộc này sau một lần khôi phục nghĩa là mọi
+        # tiến trình worker lại cùng chạy việc nền, im lặng.
+        UniqueConstraint("name", name="uq_singleton_lease_name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    holder: Mapped[str] = mapped_column(String(160), nullable=False)
+
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<SingletonLease {self.name} holder={self.holder}>"

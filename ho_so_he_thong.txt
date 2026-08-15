@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7426cfa81ac3a92686ff0c2debd258fb99874b5a9e9ad959e82d7fcc558b55f6
-Nguồn đã quét : 1120 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:7aca9a68078c38d8c5a5bedc50e08f11d9293402196e16b0c9400f40968c5455
+Nguồn đã quét : 1125 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -808,21 +808,21 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (48 bảng)
+5. DATA MODEL (49 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
 - agent_workflows → AgentWorkflow | platform_core/models.py:432
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
-- api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:684
+- api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:699
 - api_keys → ApiKey | platform_core/models.py:589
-- api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:559
+- api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:574
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
-- api_policies → ApiPolicy | platform_core/public_api/tables.py:490
-- api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:534
-- api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:628
+- api_policies → ApiPolicy | platform_core/public_api/tables.py:505
+- api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:549
+- api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:643
 - api_projects → ApiProject | platform_core/public_api/tables.py:62
-- api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:735
+- api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:750
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
 - chat_conversations → ChatConversation | platform_core/models.py:732
@@ -852,13 +852,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - platform_info → PlatformInfo | platform_core/models.py:42
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
-- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:421
-- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:380
+- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:436
+- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:395
 - sessions → Session | platform_core/models.py:134
+- singleton_leases → SingletonLease | platform_core/models.py:823
 - upload_sessions → UploadSession | platform_core/models.py:364
 - users → User | platform_core/models.py:69
 
-6. ALEMBIC MIGRATIONS (39)
+6. ALEMBIC MIGRATIONS (40)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -898,6 +899,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - c5d6e7f8a9b0 ← b4c5d6e7f8a9 | them chinh sach han muc va kill switch cho khu API (EXT-14) | alembic/versions/20260814_2400_api_policy_engine.py
 - d6e7f8a9b0c1 ← c5d6e7f8a9b0 | them phien ban gia va quan sat chi phi cho khu API (EXT-15) | alembic/versions/20260815_0100_api_pricing_costing.py
 - e7f8a9b0c1d2 ← d6e7f8a9b0c1 | them bang su kien bao mat cho khu API (EXT-16) | alembic/versions/20260815_0200_api_security_events.py
+- f8a9b0c1d2e3 ← e7f8a9b0c1d2 | lease co ten + khoa chong trung canh bao (T1/T2 runtime hardening) | alembic/versions/20260815_1200_singleton_leases.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1018,7 +1020,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (216 file pytest + 3 frontend)
+10. QUALITY GATES (218 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1169,6 +1171,8 @@ Test inventory:
 - tests/test_211_data_governance.py
 - tests/test_212_coverage_certification.py
 - tests/test_213_full_platform_release.py
+- tests/test_214_multi_process_runtime.py
+- tests/test_215_lease_and_outbox_claim.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -1261,8 +1265,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1120 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:834, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1125 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:839, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1275,7 +1279,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (41)
+[alembic] (42)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1317,6 +1321,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - alembic/versions/20260814_2400_api_policy_engine.py
 - alembic/versions/20260815_0100_api_pricing_costing.py
 - alembic/versions/20260815_0200_api_security_events.py
+- alembic/versions/20260815_1200_singleton_leases.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1869,7 +1874,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (88)
+[platform_core] (89)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1902,6 +1907,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/job_runner.py
 - platform_core/job_submit.py
 - platform_core/jobs.py
+- platform_core/leases.py
 - platform_core/mailer.py
 - platform_core/media.py
 - platform_core/models.py
@@ -2124,7 +2130,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (232)
+[tests] (235)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2140,6 +2146,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/fixtures/seedance_studio_server.py
 - tests/fixtures/upscale_studio_server.py
 - tests/golden/public_api_catalog_v1.json
+- tests/pg_scratch.py
 - tests/run_tests.py
 - tests/test_03_sheet_client.py
 - tests/test_04_drive_downloader.py
@@ -2285,6 +2292,8 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_211_data_governance.py
 - tests/test_212_coverage_certification.py
 - tests/test_213_full_platform_release.py
+- tests/test_214_multi_process_runtime.py
+- tests/test_215_lease_and_outbox_claim.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -2449,7 +2458,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1120 file; 10090882 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1125 file; 10144358 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5851,6 +5860,77 @@ def downgrade() -> None:
     op.drop_index("ix_api_security_events_kind",
                   table_name="api_security_events")
     op.drop_table("api_security_events")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260815_1200_singleton_leases.py
+SHA256=a771a7a2a371b520ec1d6b7b3f94582216466cd31537b28f3bac9c6677c3f6c7 BYTES=2883 LINES=65
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""lease co ten + khoa chong trung canh bao (T1/T2 runtime hardening)
+
+Vi sao can: nen tang chay NHIEU tien trinh worker (so tien trinh mac dinh bang
+so GPU), nhung moi viec nen — don du lieu, gui webhook, quet canh bao — deu duoc
+viet voi gia dinh ngam "chi mot tien trinh chay vong nay". Khong ai viet gia dinh
+do ra nen khong ai kiem no, va no sai.
+
+`singleton_leases` bien gia dinh do thanh mot co che co ten: giu bang INSERT,
+UNIQUE quyet dinh nguoi thang, `heartbeat_at` khien chu chet thi lease tu het
+han. Cung khuon voi `gpu_leases` da chay trong production.
+
+`api_notifications.event_key` + UNIQUE: cooldown cua canh bao truoc day chi duoc
+thi hanh bang doc-roi-ghi trong Python, nen hai tien trinh quet cung luc deu thay
+"chua co gi gan day" va deu ghi — khach nhan email trung. Gio CSDL quyet dinh,
+giong het cach `job_events.event_key` da lam.
+
+Dong cu duoc lap khoa tu id: khong the tinh lai o thoi gian goc, va de trong thi
+UNIQUE se coi moi dong cu la trung nhau.
+
+Revision ID: f8a9b0c1d2e3
+Revises: e7f8a9b0c1d2
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "f8a9b0c1d2e3"
+down_revision = "e7f8a9b0c1d2"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "singleton_leases",
+        sa.Column("id", sa.String(length=36), primary_key=True),
+        sa.Column("name", sa.String(length=64), nullable=False),
+        sa.Column("holder", sa.String(length=160), nullable=False),
+        sa.Column("acquired_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("heartbeat_at", sa.DateTime(timezone=True), nullable=False),
+        sa.UniqueConstraint("name", name="uq_singleton_lease_name"),
+    )
+    op.create_index("ix_singleton_leases_heartbeat_at", "singleton_leases",
+                    ["heartbeat_at"])
+
+    op.add_column("api_notifications",
+                  sa.Column("event_key", sa.String(length=200),
+                            nullable=False, server_default=""))
+    # Dong cu: lap khoa tu id de moi dong van duy nhat. Khong tinh lai duoc khoa
+    # that (can thoi diem goc theo o cooldown), va de trong thi UNIQUE se coi
+    # tat ca dong cu la trung nhau va migration se hong.
+    op.execute("UPDATE api_notifications SET event_key = 'legacy:' || id "
+               "WHERE event_key = ''")
+    op.create_unique_constraint("uq_api_notifications_event_key",
+                                "api_notifications", ["user_id", "event_key"])
+
+
+def downgrade() -> None:
+    op.drop_constraint("uq_api_notifications_event_key", "api_notifications",
+                       type_="unique")
+    op.drop_column("api_notifications", "event_key")
+    op.drop_index("ix_singleton_leases_heartbeat_at",
+                  table_name="singleton_leases")
+    op.drop_table("singleton_leases")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -104588,7 +104668,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=c889bd3c5b5c8f317f0f5cfa35d58b7c9426f7734dc6ebbffb9628b9384f0b99 BYTES=28744 LINES=662
+SHA256=f122ef63ea262647118cbb66291b86ba8ce01a490b3e8d44a41a8e7689c4e8b7 BYTES=32244 LINES=746
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104752,17 +104832,23 @@ def _one_session():
             pass
 
 
-def _chay_mot_job(worker_id: str) -> bool:
+def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
     """Nhặt và chạy đúng một job. Trả True nếu có job để chạy, False nếu trống.
 
     claim() ở một transaction, chạy handler ở ngoài transaction đó, rồi
     complete/fail ở transaction khác — xem docstring module vì sao.
+
+    `capabilities` giới hạn tiến trình này chỉ nhặt job của app khai
+    `manifest.requires` nằm gọn trong tập đó — cho phép chia đội hình worker
+    theo loại tài nguyên thay vì theo số card. None nghĩa là đa năng, giữ
+    nguyên hành vi cũ.
     """
     # 1. Nhặt (transaction ngắn, commit ngay để job thành 'running').
     job_id: Optional[str] = None
     job_type = params = None
     for db in _one_session():
-        job = jobq.claim(db, worker_id=worker_id)
+        job = jobq.claim(db, worker_id=worker_id,
+                         capabilities=capabilities)
         if job is None:
             db.commit()
             return False
@@ -105187,70 +105273,148 @@ def _ghi_metrics() -> None:
         log.info("public api metrics %s", snapshot)
 
 
-def run_forever(worker_id: str, *, stop=None) -> None:
+#: Bao lâu thử giành lại lease bảo trì khi tiến trình khác đang giữ. Ngắn so với
+#: TTL của lease, để chủ chết thì có người nhận trong một chu kỳ chứ không phải
+#: chờ hết hạn rồi mới bắt đầu hỏi.
+LEASE_RETRY_S = 20.0
+
+
+def _mot_luot_bao_tri(moc: dict) -> None:
+    """Chạy những việc nền đã đến hạn. `moc` giữ mốc thời gian giữa các lượt."""
+    if time.monotonic() >= moc["event_purge"]:
+        for db in _one_session():
+            removed = job_events.purge_expired(db)
+            db.commit()
+            if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
+                log.info("don job event het han: customer=%s internal=%s",
+                         removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
+        # …and every other retention rule on the same visit. Each of these used
+        # to be "somebody handles it"; writing the inventory in
+        # `public_api/governance.py` showed that four of them nobody did, and
+        # one had a purge function that was never called. A retention policy
+        # naming a function nobody runs reads as a promise (EXT-19).
+        _don_du_lieu_het_han()
+        moc["event_purge"] = time.monotonic() + EVENT_PURGE_INTERVAL_S
+
+    if time.monotonic() >= moc["upload_sweep"]:
+        from platform_core import upload_sessions
+        from platform_core.storage import get_storage
+        for db in _one_session():
+            report = upload_sessions.sweep(db, get_storage(), dry_run=False)
+            db.commit()
+            if report["due"] or report["errors"]:
+                log.info(
+                    "don upload het han: due=%s deleted=%s errors=%s active=%s",
+                    report["due"], report["deleted"], report["errors"],
+                    report["skipped_active"],
+                )
+        moc["upload_sweep"] = time.monotonic() + UPLOAD_SWEEP_INTERVAL_S
+
+    if time.monotonic() >= moc["webhook"]:
+        _giao_webhook()
+        moc["webhook"] = time.monotonic() + WEBHOOK_DELIVERY_INTERVAL_S
+
+    if time.monotonic() >= moc["metrics"]:
+        _ghi_metrics()
+        moc["metrics"] = time.monotonic() + METRICS_LOG_INTERVAL_S
+
+    if time.monotonic() >= moc["alert"]:
+        _quet_canh_bao()
+        moc["alert"] = time.monotonic() + ALERT_SCAN_INTERVAL_S
+
+
+def _vong_bao_tri(stop) -> None:
+    """Việc nền, chạy ở ĐÚNG MỘT tiến trình, trong luồng riêng.
+
+    Hai điều được sửa ở đây, và chúng khác nhau:
+
+    **Đúng một tiến trình.** Trước đây mọi tiến trình worker đều chạy vòng này —
+    mà số tiến trình mặc định bằng số GPU. Hai tiến trình nghĩa là mọi việc nền
+    chạy hai lần, cùng lúc, vì chúng khởi động cùng nhau nên đồng hồ hẹn giờ
+    trùng pha. Lease quyết định ai chạy; ai không giành được thì chỉ chạy job.
+
+    **Luồng riêng.** Ngay cả khi chỉ một tiến trình chạy, vòng bảo trì vẫn xen
+    *giữa các job* — nên một job năm phút làm webhook của mọi khách khác chờ năm
+    phút. Con số "độ trễ webhook 4,71 ms" đo trước đây là của một hàng đợi rỗng.
+    Việc nền ở đây là chờ mạng và chờ CSDL nên luồng là đúng hình dạng; việc
+    nặng gọi CUDA giữ GIL thì đã nằm ở tiến trình riêng rồi.
+
+    Mất lease thì **dừng ngay**. Tiếp tục làm sau khi mất quyền là đúng cái mà
+    lease sinh ra để ngăn.
+    """
+    from platform_core import leases
+
+    moc = {"event_purge": 0.0, "upload_sweep": 0.0, "webhook": 0.0,
+           "metrics": 0.0, "alert": 0.0}
+    lease = None
+    while stop is None or not stop():
+        try:
+            if lease is None:
+                for db in _one_session():
+                    lease = leases.acquire(db, name=leases.MAINTENANCE)
+                if lease is None:
+                    time.sleep(LEASE_RETRY_S)
+                    continue
+                log.info("tien trinh nay chay vong bao tri")
+
+            _mot_luot_bao_tri(moc)
+
+            for db in _one_session():
+                if not leases.heartbeat(db, lease):
+                    log.warning("mat lease bao tri — dung viec nen")
+                    lease = None
+        except Exception:
+            log.exception("loi trong vong bao tri, tiep tuc")
+        time.sleep(POLL_INTERVAL_S)
+
+    if lease is not None:
+        try:
+            for db in _one_session():
+                leases.release(db, lease)
+        except Exception:                       # noqa: BLE001
+            log.exception("khong nha duoc lease bao tri")
+
+
+def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
+                capabilities=None) -> None:
     """Vòng lặp chính của worker. `stop` là callable trả True để dừng êm.
 
     Trước mỗi lượt rảnh, dọn job mồ côi — nhờ vậy một worker vừa khởi động lại
     sẽ tự nhặt lại job mà worker chết để lại, không cần ai can thiệp.
+
+    `maintenance=False` cho một tiến trình **chỉ chạy job**. Việc nền vẫn được
+    bảo vệ bằng lease dù cờ này bật ở mọi tiến trình — cờ là tiện nghi, lease
+    mới là cơ chế.
+
+    `capabilities` giới hạn tiến trình này chỉ nhặt job mà app khai
+    `manifest.requires` nằm gọn trong tập đó. None nghĩa là đa năng.
     """
-    log.info("worker %s bat dau", worker_id)
-    next_event_purge = 0.0
-    next_upload_sweep = 0.0
-    next_webhook_run = 0.0
-    next_metrics_log = 0.0
-    next_alert_scan = 0.0
+    log.info("worker %s bat dau%s", worker_id,
+             f" (nang luc: {sorted(capabilities)})" if capabilities else "")
+
+    luong = None
+    if maintenance:
+        luong = threading.Thread(target=_vong_bao_tri, args=(stop,),
+                                 name=f"bao-tri-{worker_id}", daemon=True)
+        luong.start()
+
     while stop is None or not stop():
         try:
-            if time.monotonic() >= next_event_purge:
-                for db in _one_session():
-                    removed = job_events.purge_expired(db)
-                    db.commit()
-                    if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
-                        log.info("don job event het han: customer=%s internal=%s",
-                                 removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
-                # …and every other retention rule on the same visit. Each of
-                # these used to be "somebody handles it"; writing the inventory
-                # in `public_api/governance.py` showed that four of them nobody
-                # did, and one had a purge function that was never called. A
-                # retention policy naming a function nobody runs reads as a
-                # promise (EXT-19).
-                _don_du_lieu_het_han()
-                next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
-            if time.monotonic() >= next_upload_sweep:
-                from platform_core import upload_sessions
-                from platform_core.storage import get_storage
-                for db in _one_session():
-                    report = upload_sessions.sweep(
-                        db, get_storage(), dry_run=False)
-                    db.commit()
-                    if report["due"] or report["errors"]:
-                        log.info(
-                            "don upload het han: due=%s deleted=%s errors=%s active=%s",
-                            report["due"], report["deleted"], report["errors"],
-                            report["skipped_active"],
-                        )
-                next_upload_sweep = time.monotonic() + UPLOAD_SWEEP_INTERVAL_S
-            if time.monotonic() >= next_webhook_run:
-                _giao_webhook()
-                next_webhook_run = time.monotonic() + WEBHOOK_DELIVERY_INTERVAL_S
-            if time.monotonic() >= next_metrics_log:
-                _ghi_metrics()
-                next_metrics_log = time.monotonic() + METRICS_LOG_INTERVAL_S
-            if time.monotonic() >= next_alert_scan:
-                _quet_canh_bao()
-                next_alert_scan = time.monotonic() + ALERT_SCAN_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()
                 if n:
                     log.warning("nhat lai %d job mo coi", n)
-            co_viec = _chay_mot_job(worker_id)
+            co_viec = _chay_mot_job(worker_id, capabilities=capabilities)
             if not co_viec:
                 time.sleep(POLL_INTERVAL_S)
         except Exception:
             # Một lượt hỏng không được giết cả worker — ngủ rồi thử lại.
             log.exception("loi trong vong worker, tiep tuc")
             time.sleep(POLL_INTERVAL_S)
+
+    if luong is not None:
+        luong.join(timeout=30)
     log.info("worker %s dung", worker_id)
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -105626,6 +105790,158 @@ def resolve_handler(job_type: str) -> Callable[..., dict]:
     if handler is None:
         raise JobError(f"apps.{slug}.jobs không có hàm handle()")
     return handler
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/leases.py
+SHA256=297f897df7c36ca4137ddc2952dfc60615b220394aadb1b3457e91c51982e97c BYTES=6420 LINES=146
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Lease có tên: cho phép đúng MỘT tiến trình làm một việc, và tự lành.
+
+Nền tảng chạy nhiều tiến trình worker (số tiến trình mặc định = số GPU). Hàng
+đợi job được thiết kế cho điều đó từ đầu — `jobs.claim()` dùng
+``FOR UPDATE SKIP LOCKED``. Nhưng mọi **việc nền** viết sau đó (dọn dữ liệu, gửi
+webhook, quét cảnh báo, ghi metrics) lại được viết với giả định ngầm ngược lại:
+"chỉ có một tiến trình chạy vòng này".
+
+Không ai viết giả định đó ra, nên không ai kiểm nó, và nó sai. Module này biến
+nó thành một cơ chế có tên gọi.
+
+## Vì sao là bảng, không phải `pg_advisory_lock`
+
+Advisory lock của PostgreSQL sạch hơn và tự nhả khi mất kết nối. Nhưng **SQLite
+không có** — nghĩa là đường chạy quan trọng nhất của nền tảng sẽ không có test
+nào đi qua nó ở nơi dễ chạy nhất. Lease bằng bảng chạy giống hệt trên cả hai
+engine, và mẫu này đã được `platform_core/gpu_lease.py` chứng minh trong
+production: giành bằng INSERT, `IntegrityError` nghĩa là **người khác đã giành
+trước** — đó là đường chạy bình thường, không phải sự cố.
+
+## Vì sao tự lành quan trọng hơn giành đúng
+
+Tiến trình giữ lease sẽ chết: bị kill, mất điện, worker khởi động lại khi cập
+nhật. Nếu lease không hết hạn thì việc nền **dừng vĩnh viễn và im lặng** — không
+job nào hỏng để ai nhận ra, chỉ là webhook không còn được gửi. Nên lease có hạn
+và phải đập nhịp để giữ; chủ chết thì tiến trình khác nhận trong một chu kỳ.
+"""
+from __future__ import annotations
+
+import logging
+import socket
+import os
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+from sqlalchemy.orm import Session as DbSession
+
+from platform_core.models import SingletonLease
+
+log = logging.getLogger(__name__)
+
+#: Lease sống bao lâu nếu không được đập nhịp. Đủ dài để một lượt bảo trì chậm
+#: (dọn dữ liệu trên bảng lớn) không làm mất lease giữa chừng, đủ ngắn để việc
+#: nền không đứng lâu sau khi chủ chết.
+DEFAULT_TTL = timedelta(minutes=2)
+
+#: Tên các lease nền tảng dùng. Đặt hằng số vì tên lease là hợp đồng giữa các
+#: tiến trình: gõ sai một chữ nghĩa là hai tiến trình cùng tưởng mình độc quyền.
+MAINTENANCE = "maintenance"
+WEB = "web"
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    """PostgreSQL trả datetime có múi giờ, SQLite trả naive. So sánh cần cùng loại."""
+    if value is None:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def holder_id() -> str:
+    """Nhận dạng tiến trình này: máy + pid. Truy được ai đang giữ."""
+    return f"{socket.gethostname()}:{os.getpid()}"
+
+
+def reclaim_expired(db: DbSession, *, name: str,
+                    ttl: timedelta = DEFAULT_TTL) -> bool:
+    """Xoá lease đã quá hạn đập nhịp. True nếu có xoá."""
+    row = db.execute(select(SingletonLease).where(
+        SingletonLease.name == str(name))).scalar_one_or_none()
+    if row is None:
+        return False
+    beat = _aware(row.heartbeat_at) or _aware(row.acquired_at)
+    if beat is not None and beat > _now() - ttl:
+        return False
+    log.info("thu hoi lease %r cua %s (qua han dap nhip)", name, row.holder)
+    db.delete(row)
+    db.flush()
+    return True
+
+
+def acquire(db: DbSession, *, name: str, holder: str = "",
+            ttl: timedelta = DEFAULT_TTL) -> SingletonLease | None:
+    """Giành lease `name`. Trả None khi tiến trình khác đang giữ.
+
+    None **không phải lỗi**: nó là câu trả lời bình thường cho "tôi có phải
+    người chạy việc này không". Caller đợi lượt sau.
+    """
+    who = holder or holder_id()
+    reclaim_expired(db, name=name, ttl=ttl)
+
+    row = SingletonLease(name=str(name), holder=who,
+                         acquired_at=_now(), heartbeat_at=_now())
+    db.add(row)
+    try:
+        db.commit()
+    except IntegrityError:
+        # Tiến trình khác vừa giành đúng lease này giữa lúc ta đọc và ghi. Đây
+        # là đường chạy BÌNH THƯỜNG của cơ chế — lùi lại, không phải sự cố.
+        db.rollback()
+        return None
+    db.refresh(row)
+    log.info("giu lease %r (%s)", name, who)
+    return row
+
+
+def heartbeat(db: DbSession, lease: SingletonLease) -> bool:
+    """Gia hạn lease. False khi lease đã bị người khác thu hồi.
+
+    False nghĩa là **mất quyền**: caller phải dừng việc nền ngay, vì tiến trình
+    khác có thể đã nhận. Tiếp tục làm sau khi mất lease là đúng cái mà lease
+    sinh ra để ngăn.
+    """
+    row = db.execute(select(SingletonLease).where(
+        SingletonLease.name == lease.name)).scalar_one_or_none()
+    if row is None or row.holder != lease.holder:
+        return False
+    row.heartbeat_at = _now()
+    db.commit()
+    return True
+
+
+def release(db: DbSession, lease: SingletonLease) -> None:
+    """Nhả lease sớm khi dừng êm, để tiến trình khác nhận ngay thay vì đợi hết hạn."""
+    row = db.execute(select(SingletonLease).where(
+        SingletonLease.name == lease.name)).scalar_one_or_none()
+    if row is not None and row.holder == lease.holder:
+        db.delete(row)
+        db.commit()
+        log.info("nha lease %r (%s)", lease.name, lease.holder)
+
+
+def current_holder(db: DbSession, *, name: str) -> str:
+    """Ai đang giữ lease, hoặc chuỗi rỗng. Dùng cho trang trạng thái/chẩn đoán."""
+    row = db.execute(select(SingletonLease).where(
+        SingletonLease.name == str(name))).scalar_one_or_none()
+    return str(row.holder) if row is not None else ""
+
+
+__all__ = ["DEFAULT_TTL", "MAINTENANCE", "WEB", "acquire", "current_holder",
+           "heartbeat", "holder_id", "reclaim_expired", "release"]
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -106021,7 +106337,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=4f7252f7ea094e3f2ad348b4acfbb20d3e131498ab07c8168834dc7a639d12ea BYTES=44709 LINES=820
+SHA256=5e279b67351b1286e17337f71449a0a19b2ae0166d3aae795c6391e058e27167 BYTES=46794 LINES=859
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -106843,6 +107159,45 @@ class GpuLease(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<GpuLease {self.host}:{self.gpu_index} job={self.job_id[:8]}>"
+
+
+class SingletonLease(Base):
+    """Ai được phép làm một việc mà chỉ MỘT tiến trình được làm.
+
+    Cùng ý tưởng với `GpuLease` và cố ý giống hệt: giành bằng INSERT, ràng buộc
+    UNIQUE quyết định người thắng, `heartbeat_at` khiến chủ chết thì lease tự
+    hết hạn. Khác ở chỗ tài nguyên không phải một card mà là một **vai trò**
+    ("người chạy vòng bảo trì").
+
+    Vì sao không dùng `pg_advisory_lock`: xem `platform_core/leases.py`. Tóm
+    tắt — SQLite không có, nên đường quan trọng nhất sẽ không test được ở nơi
+    dễ chạy nhất.
+
+    Vì sao lease **hết hạn** thay vì giữ mãi: một tiến trình giữ vai trò rồi
+    chết sẽ làm việc nền dừng **vĩnh viễn và im lặng** — không job nào hỏng để
+    ai nhận ra, chỉ là webhook không còn được gửi nữa.
+    """
+
+    __tablename__ = "singleton_leases"
+    __table_args__ = (
+        # Trái tim của cơ chế: một tên chỉ có tối đa một lease sống. Đặt TÊN cho
+        # ràng buộc vì bộ kiểm phục hồi (`tools/restore_drill_schema.py`) đối
+        # chiếu theo tên — mất ràng buộc này sau một lần khôi phục nghĩa là mọi
+        # tiến trình worker lại cùng chạy việc nền, im lặng.
+        UniqueConstraint("name", name="uq_singleton_lease_name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    holder: Mapped[str] = mapped_column(String(160), nullable=False)
+
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+    def __repr__(self) -> str:      # pragma: no cover
+        return f"<SingletonLease {self.name} holder={self.holder}>"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -112708,7 +113063,7 @@ def reset() -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/notifications.py
-SHA256=6737747c73bcb81431fb4586d095f8aaaa48b17b4fbc18c3ab7c51754c6d2d55 BYTES=7614 LINES=185
+SHA256=d86e898a6a50c00493ecd2393c01303ac53ce714d668f64d72a4270a55f10e06 BYTES=9235 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Alerts a developer sees, with the deduplication that keeps them worth seeing.
 
@@ -112732,6 +113087,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from platform_core.public_api.tables import ApiNotification
 
@@ -112822,9 +113178,39 @@ def raise_alert(db, *, user_id: str, kind: str, subject: str = "",
     row = ApiNotification(
         id=str(uuid.uuid4()), user_id=str(user_id or ""), kind=kind,
         subject=str(subject or "")[:120], title=str(title or "")[:200],
-        body=str(body or "")[:1000], created_at=current)
-    db.add(row)
+        body=str(body or "")[:1000], created_at=current,
+        event_key=cooldown_key(kind, subject, now=current))
+    # Lần đọc ở trên loại phần lớn trường hợp mà không cần chạm khoá; ràng buộc
+    # UNIQUE mới là thứ thi hành thật. Nền tảng chạy nhiều tiến trình worker,
+    # nên hai lần quét cùng lúc đều thấy "chưa có gì gần đây" — và một cooldown
+    # chỉ sống trong Python thì không cản được điều đó.
+    #
+    # SAVEPOINT chứ không phải `rollback()`: một lượt quét dựng nhiều cảnh báo
+    # trong cùng transaction, và rollback cả transaction vì MỘT cái trùng sẽ vứt
+    # luôn những cái hợp lệ đứng trước nó.
+    try:
+        with db.begin_nested():
+            db.add(row)
+            db.flush()
+    except IntegrityError:
+        # Tiến trình khác vừa ghi đúng cảnh báo này. Đường chạy BÌNH THƯỜNG.
+        return None
     return row
+
+
+def cooldown_key(kind: str, subject: str = "", *,
+                 now: datetime | None = None) -> str:
+    """Danh tính một lần cảnh báo, dùng cho ràng buộc UNIQUE.
+
+    Ô thời gian lấy theo chính cooldown của loại đó, nên "một cảnh báo mỗi
+    cooldown" trở thành thứ CSDL cưỡng chế được thay vì một quy ước mà mọi
+    người gọi phải nhớ.
+    """
+    current = now or _now()
+    window = COOLDOWN.get(kind, DEFAULT_COOLDOWN)
+    giay = max(1, int(window.total_seconds()))
+    o = int(current.timestamp()) // giay
+    return f"{kind}:{str(subject or '')[:120]}:{o}"
 
 
 def list_for(db, *, user_id: str, unread_only: bool = False,
@@ -112899,7 +113285,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/outbox.py
-SHA256=697fb93d9d918580c7f667f0e9e3f56f49b2550b17ce9f4a81ff348769c3dca4 BYTES=8154 LINES=192
+SHA256=a80bd2d4be355cd8929282ad182ba4210bf6b3253100a7fc32d96090e9f97e64 BYTES=10955 LINES=245
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The webhook outbox: enqueue in the job's transaction, deliver from the worker.
 
@@ -112924,13 +113310,20 @@ from sqlalchemy.exc import IntegrityError
 from platform_core.public_api import webhooks
 from platform_core.public_api.tables import (WEBHOOK_DEAD, WEBHOOK_DELIVERED,
                                              WEBHOOK_FAILED, WEBHOOK_PENDING,
-                                             WebhookDelivery, WebhookSubscription)
+                                             WEBHOOK_SENDING, WebhookDelivery,
+                                             WebhookSubscription)
 
 log = logging.getLogger("ltt.public_api.webhooks")
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _holder() -> str:
+    from platform_core import leases
+
+    return leases.holder_id()
 
 
 def enqueue_for_job(db, job) -> int:
@@ -112985,22 +113378,68 @@ def enqueue_for_job(db, job) -> int:
     return queued
 
 
-def claim_due(db, *, limit: int = 20, now: datetime | None = None) -> list:
-    """Deliveries whose backoff has elapsed, oldest first."""
+#: Một lượt nhận sống bao lâu trước khi worker khác được phép nhận lại. Dài hơn
+#: bất kỳ lần gửi HTTP nào (có timeout riêng ở `delivery`), ngắn hơn lần thử lại
+#: sớm nhất, để một worker chết không giam delivery lâu hơn cần thiết.
+CLAIM_TTL = timedelta(seconds=120)
+
+
+def claim_due(db, *, limit: int = 20, now: datetime | None = None,
+              holder: str = "") -> list:
+    """Nhận quyền gửi những delivery đến hạn. **Nhận thật, không chỉ đọc.**
+
+    Trước đây hàm này là một SELECT trần, và `deliver_due` gọi HTTP **trước khi**
+    ghi lại bất cứ gì. Nền tảng chạy nhiều tiến trình worker, nên hai worker
+    cùng đọc một hàng là "đến hạn" và khách nhận hai callback giống hệt — còn
+    bảng thì vẫn hiện `attempts=1`, vì cả hai ghi đè cùng một giá trị. Hỏng im
+    lặng.
+
+    Giờ nó dùng đúng khuôn của hàng đợi job (`jobs.claim`), vì đây là cùng một
+    bài toán:
+
+    * ``FOR UPDATE SKIP LOCKED`` — worker khác đang khoá hàng nào thì bỏ qua
+      thay vì chờ;
+    * chuyển sang ``sending`` và **commit trước khi gửi**, nên trạng thái đã bền
+      vững trước lời gọi HTTP đầu tiên;
+    * ``attempts`` tăng **ở đây**, không phải lúc ghi kết quả — nếu tiến trình
+      chết giữa lúc gửi, lượt đó vẫn đã được tính, và delivery không quay lại vô
+      hạn lần;
+    * ``next_attempt_at`` đóng vai hạn của lượt nhận, nên một worker chết giữa
+      chừng không giam delivery mãi mãi: hết hạn là có người nhận lại.
+
+    Nhờ dùng lại ``next_attempt_at`` mà không cần thêm cột nào, tức không cần
+    migration cho một tính chất vốn phải đúng từ đầu.
+    """
     current = now or _now()
-    return list(db.execute(
+    who = holder or _holder()
+    rows = list(db.execute(
         select(WebhookDelivery)
-        .where(WebhookDelivery.status.in_((WEBHOOK_PENDING, WEBHOOK_FAILED)),
+        .where(WebhookDelivery.status.in_(
+                   (WEBHOOK_PENDING, WEBHOOK_FAILED, WEBHOOK_SENDING)),
                WebhookDelivery.next_attempt_at <= current)
         .order_by(WebhookDelivery.next_attempt_at)
         .limit(max(1, min(int(limit), 200)))
+        .with_for_update(skip_locked=True)
     ).scalars().all())
+
+    for row in rows:
+        if row.status == WEBHOOK_SENDING:
+            log.warning("nhan lai delivery %s bi ke tren %s (worker chet?)",
+                        row.id[:8], row.last_error[:40] or "-")
+        row.status = WEBHOOK_SENDING
+        row.attempts += 1
+        row.last_error = f"sending by {who}"[:500]
+        row.next_attempt_at = current + CLAIM_TTL
+    # Bền vững TRƯỚC khi có lời gọi HTTP nào. Đây là toàn bộ điểm của hàm.
+    db.commit()
+    return rows
 
 
 def record_success(db, delivery, *, status_code: int,
                    now: datetime | None = None) -> None:
+    # `attempts` đã tăng lúc nhận (xem `claim_due`), nên ở đây KHÔNG tăng nữa —
+    # tăng hai chỗ là cách một delivery chết sau ba lần thử thay vì sáu.
     delivery.status = WEBHOOK_DELIVERED
-    delivery.attempts += 1
     delivery.last_status_code = int(status_code)
     delivery.last_error = ""
     delivery.delivered_at = now or _now()
@@ -113015,7 +113454,7 @@ def record_failure(db, delivery, *, status_code: int = 0, error: str = "",
     refused" is exactly what a customer needs to see, and deleting the evidence
     turns a receiver outage into a mystery.
     """
-    delivery.attempts += 1
+    # Không tăng `attempts`: lượt này đã được tính lúc nhận.
     delivery.last_status_code = int(status_code or 0)
     # Truncated and free of the URL: an error string from an HTTP client can
     # carry the full target, and a target can carry a token in its query.
@@ -115865,7 +116304,7 @@ __all__ = ["LOCATION_HINTS", "REDACTED", "SECRET_HINTS", "Trace", "export",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=3b1023b93e40b326593b14e5f95e4bd5c925537cbe8e30b347ceef641a3f6eb3 BYTES=38734 LINES=776
+SHA256=86fb947a7567b1f257887f709b303e48eababbf0f3aef05cfd7014fdbd1ec5bf BYTES=39980 LINES=791
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -116228,8 +116667,18 @@ class ApiNotification(Base):
         DateTime(timezone=True), default=_now, nullable=False)
     read_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    #: Danh tính của MỘT lần cảnh báo: kind + subject + ô thời gian của cooldown.
+    #: Cooldown trước đây chỉ được thi hành bằng đọc-rồi-ghi trong Python, nên
+    #: hai tiến trình quét cùng lúc đều thấy "chưa có gì gần đây" và đều ghi —
+    #: khách nhận email trùng. Ràng buộc dưới đây để CSDL quyết định, giống hệt
+    #: cách `job_events` đã làm với `event_key`.
+    event_key: Mapped[str] = mapped_column(String(200), default="",
+                                           nullable=False)
 
     __table_args__ = (
+        # Trái tim của việc chống trùng: một khoá chỉ ghi được một lần.
+        UniqueConstraint("user_id", "event_key",
+                         name="uq_api_notifications_event_key"),
         # The cooldown lookup: same account, same kind, same subject, recent.
         Index("ix_api_notifications_dedupe", "user_id", "kind", "subject",
               "created_at"),
@@ -116241,6 +116690,11 @@ class ApiNotification(Base):
 
 
 WEBHOOK_PENDING = "pending"
+#: Đã được một worker nhận và đang gửi. Trạng thái này tồn tại vì nền tảng chạy
+#: nhiều tiến trình worker: không có nó thì hai worker cùng đọc một delivery là
+#: "đến hạn" và khách nhận hai callback giống hệt. `next_attempt_at` đóng vai
+#: hạn của lượt nhận — worker chết giữa chừng thì hết hạn rồi có người nhận lại.
+WEBHOOK_SENDING = "sending"
 WEBHOOK_DELIVERED = "delivered"
 WEBHOOK_FAILED = "failed"
 WEBHOOK_DEAD = "dead"
@@ -144113,6 +144567,84 @@ SHA256=f020ff78be7fa9c1426f30d9a8c800778518d6a020ecf223904acef8d4929e90 BYTES=11
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/pg_scratch.py
+SHA256=3e96946f58912369f7e57750b647264dc910ec561fb612e6b8c65f2919bb5c75 BYTES=2697 LINES=72
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""One gate for every test that wants a real PostgreSQL database.
+
+These tests call ``Base.metadata.drop_all()``. That is correct for a scratch
+database and catastrophic for any other one, and the only thing standing between
+the two is an environment variable — on a machine where the platform's own
+PostgreSQL is running, a single typo in ``LTT_TEST_DATABASE_URL`` drops the
+tables serving real customers.
+
+So the rule is not "be careful". The rule is that a URL has to **prove** it is
+disposable before anything destructive touches it:
+
+* its database name must contain ``test`` — a production database will not be
+  named that by accident, and naming one that way is a deliberate act;
+* it must not be the URL this deployment actually runs on.
+
+A URL that fails those checks is a **hard failure**, never a skip. Skipping is
+how a mistake becomes silence: the suite goes green, and nobody learns that the
+guard fired.
+"""
+from __future__ import annotations
+
+import os
+
+import pytest
+
+ENV = "LTT_TEST_DATABASE_URL"
+
+
+def _database_name(url: str) -> str:
+    """The database part of a SQLAlchemy URL, without parsing credentials out.
+
+    Deliberately string-level: this never needs to see the password, and code
+    that does not hold a secret cannot leak one.
+    """
+    tail = url.rsplit("/", 1)[-1]
+    return tail.split("?", 1)[0].strip().lower()
+
+
+def scratch_url() -> str:
+    """The scratch PostgreSQL URL, or "" when the suite should skip.
+
+    Raises when the variable is set to something that is not obviously a
+    throwaway — refusing loudly beats running destructively.
+    """
+    url = (os.environ.get(ENV) or "").strip()
+    if not url:
+        return ""
+
+    live = (os.environ.get("LTT_DATABASE_URL") or "").strip()
+    if live and url == live:
+        pytest.fail(
+            f"{ENV} is the same database this deployment runs on. These tests "
+            f"drop every table; point it at a scratch database.")
+
+    name = _database_name(url)
+    if "test" not in name:
+        pytest.fail(
+            f"{ENV} names database {name!r}, which does not look disposable. "
+            f"These tests drop every table, so the name must contain 'test'.")
+    return url
+
+
+def skip_without_postgres():
+    """`pytest.mark.skipif` for tests that need a real PostgreSQL.
+
+    The reason string names the variable, because a skipped test whose reason is
+    "not configured" teaches nobody how to configure it.
+    """
+    return pytest.mark.skipif(
+        not (os.environ.get(ENV) or "").strip(),
+        reason=f"Set {ENV} to a scratch PostgreSQL database (name must "
+               f"contain 'test').")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/run_tests.py
 SHA256=6eee75202e151f2e39ba968b1d5c313e7b9cf03dd9258706d5109b25c50722aa BYTES=5883 LINES=184
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -165301,7 +165833,7 @@ def test_public_openapi_does_not_describe_the_control_plane(enabled_client):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_179_developer_api_key.py
-SHA256=9a593b29deb3052bf8f92a0fb18ea1bde956016dcdaae2d66fbab4ea14023b11 BYTES=19944 LINES=486
+SHA256=8d7323ca8688399a78cf2f8aeb3906f962a5771515188e55cba27445c5531cc9 BYTES=20130 LINES=490
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 03 — developer API key domain.
 
@@ -165713,7 +166245,11 @@ def test_provider_api_keys_still_work_unchanged(db):
 
 import os as _os
 
-PG_URL = _os.environ.get("LTT_TEST_DATABASE_URL", "").strip()
+# Qua `pg_scratch`, vì fixture dưới đây gọi `drop_all()` — xem file đó vì sao
+# một biến môi trường gõ nhầm là chuyện nghiêm trọng trên máy chủ.
+from tests.pg_scratch import scratch_url
+
+PG_URL = scratch_url()
 postgres_only = pytest.mark.skipif(
     not PG_URL, reason="Set LTT_TEST_DATABASE_URL to a scratch PostgreSQL database.")
 
@@ -183698,6 +184234,744 @@ def test_the_public_status_page_says_nothing_a_stranger_should_not_know(
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_214_multi_process_runtime.py
+SHA256=116de7d6f63c5869e07ca8df38f578edb9871f574ec4cf70106ce09922a387fa BYTES=14806 LINES=379
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nhiều tiến trình worker thật, một CSDL: có gì xảy ra hai lần không?
+
+Ba lỗi P0 của bản audit 2026-08-15 lọt qua hơn ba nghìn test vì **chưa từng có
+gì chạy hai tiến trình worker cùng lúc trên một CSDL**. Có test chống gửi
+webhook trùng, và nó *đúng* — nhưng nó chạy worker tuần tự trong một tiến trình,
+nên nó khẳng định một điều không ai nghi ngờ.
+
+File này là phép đo còn thiếu. Nó đẻ **tiến trình thật** (không phải luồng,
+không phải giả lập), cho chúng chạy đúng vòng `run_forever` của production, rồi
+hỏi một câu duy nhất: *có thứ gì xảy ra hai lần không?*
+
+**Phải chạy trên PostgreSQL.** SQLite khoá cả CSDL khi ghi, nên nó **che đúng
+những cuộc đua này**: bản dựng lại lỗi gửi trùng trông như vô hại chỉ vì SQLite
+đã chặn lượt ghi thứ hai, và suýt nữa điều đó được đọc thành "có bảo vệ". Một
+test xanh vì lý do sai còn tệ hơn không có test.
+
+Ba bất biến dưới đây **đỏ khi file này được viết**. Đó là mục đích: có một phép
+đo khách quan cho "đã sửa xong", thay vì niềm tin rằng đã sửa.
+"""
+from __future__ import annotations
+
+import json
+import multiprocessing
+import os
+import pathlib
+import tempfile
+import time
+import uuid
+
+import pytest
+import sqlalchemy as sa
+
+from tests.pg_scratch import scratch_url, skip_without_postgres
+
+PG_URL = scratch_url()
+postgres_only = skip_without_postgres()
+
+PEPPER = "multiproc-pepper-" + "m" * 40
+WORKERS = 3
+RUN_SECONDS = 6.0
+
+#: Mỗi lần gửi webhook ghi một dòng vào đây. Dùng file chứ không dùng biến vì
+#: người đếm và người gửi là hai tiến trình khác nhau.
+SEND_LOG = "ltt-multiproc-sends.jsonl"
+
+
+# ── Tiến trình con ───────────────────────────────────────────────────────────
+
+def _child(url: str, data_dir: str, send_log: str, seconds: float,
+           index: int) -> None:
+    """Thân MỘT tiến trình worker. Ở cấp module để Windows `spawn` được.
+
+    Nó dựng môi trường **từ tham số truyền vào**, không thừa hưởng — một tiến
+    trình con nhặt nhầm `LTT_DATABASE_URL` của máy chủ sẽ giành job thật của
+    khách hàng, nên đường đó phải bị bịt bằng thiết kế chứ không bằng cẩn thận.
+    """
+    os.environ["LTT_DATABASE_URL"] = url
+    os.environ["LTT_DATA_DIR"] = data_dir
+    os.environ["LTT_API_KEY_PEPPER"] = PEPPER
+    os.environ["GEMINI_API_KEY"] = "multiproc-stub-not-used"
+    os.environ["LTT_FILE_LOGGING"] = "0"
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+
+    # Nhà cung cấp bị chặn: test này không được tiêu tiền hay gọi ra ngoài.
+    import apps.thumbnail.jobs as thumbnail_jobs
+    thumbnail_jobs._goi_gemini = lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 200
+
+    # Người gửi webhook được thay bằng một cái đếm. Mỗi lần gửi ghi một dòng —
+    # đó là thứ duy nhất chứng minh được "gửi hai lần", vì hai tiến trình ghi
+    # đè cùng một giá trị lên hàng delivery thì bảng vẫn hiện attempts=1.
+    from platform_core.public_api import delivery as delivery_mod
+
+    def _dem(subscription, row) -> int:
+        with open(send_log, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"delivery": row.id, "worker": index,
+                                 "pid": os.getpid()}) + "\n")
+        return 200
+
+    delivery_mod.send_delivery = _dem
+    import platform_core.public_api.outbox as outbox_mod
+    outbox_mod.send_delivery = _dem       # nếu module đã import sẵn tên đó
+
+    from platform_core.job_runner import run_forever
+
+    han = time.monotonic() + float(seconds)
+    run_forever(f"multiproc-{index}-{os.getpid()}",
+                stop=lambda: time.monotonic() >= han)
+
+
+# ── Dựng dữ liệu ─────────────────────────────────────────────────────────────
+
+@pytest.fixture()
+def scratch(tmp_path):
+    """CSDL sạch, thư mục dữ liệu riêng, và dọn sau khi xong."""
+    engine = sa.create_engine(PG_URL, future=True)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    os.environ["LTT_DATABASE_URL"] = PG_URL
+    os.environ["LTT_DATA_DIR"] = str(tmp_path / "data")
+    os.environ["LTT_API_KEY_PEPPER"] = PEPPER
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base
+
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
+    dbmod.reset_engine()
+
+    send_log = pathlib.Path(tempfile.gettempdir()) / f"{uuid.uuid4().hex}-{SEND_LOG}"
+    try:
+        yield {"engine": engine, "data_dir": str(tmp_path / "data"),
+               "send_log": str(send_log)}
+    finally:
+        Base.metadata.drop_all(engine)
+        engine.dispose()
+        dbmod.reset_engine()
+        send_log.unlink(missing_ok=True)
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _seed_account(credits: int = 10_000) -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=f"mp-{uuid.uuid4().hex[:8]}@example.com",
+                              password="a-good-password-12", is_verified=True)
+        db.flush()
+        credit.cap_tay(db, user.id, credits, by="multiproc-test")
+        db.commit()
+        return user.id
+    finally:
+        _close(gen)
+
+
+def _seed_jobs(user_id: str, count: int) -> list:
+    """Job thật qua đúng đường submit của nền tảng."""
+    from platform_core import job_submit
+
+    ids = []
+    gen, db = _session()
+    try:
+        for i in range(count):
+            job = job_submit.submit_with_credit(
+                db, user_id=user_id, app_slug="thumbnail",
+                job_type="thumbnail.generate",
+                params={"topic": f"multiproc {i}", "count": 1},
+                credit_cost=5)
+            ids.append(job.id)
+        db.commit()
+    finally:
+        _close(gen)
+    return ids
+
+
+def _seed_deliveries(user_id: str, count: int) -> list:
+    """Delivery đang chờ, đến hạn ngay."""
+    from datetime import datetime, timezone
+
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import (WebhookDelivery,
+                                                 WebhookSubscription)
+
+    now = datetime.now(timezone.utc)
+    ids = []
+    gen, db = _session()
+    try:
+        sub = WebhookSubscription(
+            id=uuid.uuid4().hex, user_id=user_id,
+            url="https://example.com/multiproc", events=["job.succeeded"],
+            enabled=True, secret_enc="enc:" + "s" * 40)
+        db.add(sub)
+        db.flush()
+        for _ in range(count):
+            row = WebhookDelivery(
+                id=uuid.uuid4().hex, subscription_id=sub.id, user_id=user_id,
+                event_id=uuid.uuid4().hex, event_type="job.succeeded",
+                job_id="", payload={"job_id": "", "tool": "image.thumbnail",
+                                    "status": "succeeded", "mode": "live"},
+                status=outbox.WEBHOOK_PENDING, attempts=0,
+                next_attempt_at=now, created_at=now)
+            db.add(row)
+            ids.append(row.id)
+        db.commit()
+    finally:
+        _close(gen)
+    return ids
+
+
+def _run_workers(scratch, seconds: float = RUN_SECONDS) -> None:
+    """N tiến trình worker thật, chạy đồng thời, rồi dừng êm."""
+    ctx = multiprocessing.get_context("spawn")
+    procs = [ctx.Process(target=_child,
+                         args=(PG_URL, scratch["data_dir"],
+                               scratch["send_log"], seconds, i),
+                         name=f"mp-worker-{i}")
+             for i in range(WORKERS)]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(timeout=seconds + 60)
+        if p.is_alive():
+            p.terminate()
+            p.join(timeout=10)
+
+
+def _sends(scratch) -> list:
+    path = pathlib.Path(scratch["send_log"])
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in
+            path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+# ── Bất biến ─────────────────────────────────────────────────────────────────
+
+@postgres_only
+def test_moi_job_chay_dung_mot_lan(scratch):
+    """Hàng đợi job vốn đã đúng — đây là chỗ chứng minh nó đúng thật.
+
+    `claim()` dùng `FOR UPDATE SKIP LOCKED`, nên bất biến này phải xanh ngay từ
+    đầu. Nó ở đây để khi một bất biến khác đỏ, ta biết bộ khung không hỏng.
+    """
+    from platform_core.models import JOB_DONE, Job
+
+    user_id = _seed_account()
+    ids = _seed_jobs(user_id, 9)
+    _run_workers(scratch)
+
+    gen, db = _session()
+    try:
+        rows = db.execute(sa.select(Job).where(Job.id.in_(ids))).scalars().all()
+        assert len(rows) == len(ids)
+        chua_xong = [r.id for r in rows if r.status != JOB_DONE]
+        assert not chua_xong, f"job chưa xong: {chua_xong}"
+        chay_lai = [(r.id, r.attempts) for r in rows if int(r.attempts or 0) > 1]
+        assert not chay_lai, f"job chạy nhiều hơn một lượt: {chay_lai}"
+    finally:
+        _close(gen)
+
+
+@postgres_only
+def test_moi_webhook_gui_dung_mot_lan(scratch):
+    """Hôm nay ĐỎ: `claim_due()` là SELECT trần và gửi trước khi ghi.
+
+    Đếm bằng file chứ không bằng cột `attempts`: hai tiến trình ghi đè **cùng
+    một giá trị** lên hàng delivery, nên bảng vẫn hiện `attempts=1` trong khi
+    khách đã nhận hai callback. Hỏng im lặng chỉ đếm được ở phía người gửi.
+    """
+    user_id = _seed_account()
+    ids = _seed_deliveries(user_id, 6)
+    _run_workers(scratch)
+
+    sends = _sends(scratch)
+    theo_delivery: dict = {}
+    for row in sends:
+        theo_delivery[row["delivery"]] = theo_delivery.get(row["delivery"], 0) + 1
+
+    gui_trung = {k: v for k, v in theo_delivery.items() if v > 1}
+    assert not gui_trung, (
+        f"{len(gui_trung)}/{len(ids)} delivery được gửi nhiều lần: "
+        f"{list(gui_trung.items())[:3]}")
+    assert set(theo_delivery) == set(ids), (
+        f"gửi {len(theo_delivery)} delivery, dựng {len(ids)}")
+
+
+@postgres_only
+def test_chi_mot_tien_trinh_chay_vong_bao_tri(scratch):
+    """Hôm nay ĐỎ: chưa có cơ chế nào chọn một tiến trình chạy việc nền.
+
+    Đo gián tiếp qua thứ việc nền để lại dấu vết: nếu N tiến trình cùng quét thì
+    N lượt gửi webhook xảy ra trong cùng một khoảnh khắc. Khi đã có lease, mọi
+    lượt gửi phải đến từ **một pid duy nhất**.
+    """
+    user_id = _seed_account()
+    _seed_deliveries(user_id, 4)
+    _run_workers(scratch)
+
+    pids = {row["pid"] for row in _sends(scratch)}
+    assert len(pids) <= 1, (
+        f"{len(pids)} tiến trình cùng chạy vòng bảo trì: {sorted(pids)}")
+
+
+@postgres_only
+def test_canh_bao_khong_bi_nhan_doi(scratch):
+    """Hôm nay ĐỎ: cooldown là đọc-rồi-ghi, index dedupe không UNIQUE.
+
+    Hai tiến trình quét cùng lúc đều thấy "chưa có cảnh báo nào gần đây" và đều
+    ghi. Khách nhận email trùng — thứ họ **thấy được**.
+    """
+    from platform_core.public_api import budgets
+    from platform_core.public_api.tables import ApiNotification
+
+    user_id = _seed_account()
+    gen, db = _session()
+    try:
+        budgets.create(db, user_id=user_id, amount=10, period="month",
+                       scope="account", thresholds=(50,), hard_cap=False)
+        db.commit()
+    finally:
+        _close(gen)
+
+    _seed_jobs(user_id, 3)          # tiêu tiền để vượt ngưỡng
+    _run_workers(scratch)
+
+    gen, db = _session()
+    try:
+        rows = db.execute(sa.select(ApiNotification).where(
+            ApiNotification.user_id == user_id)).scalars().all()
+        theo_khoa: dict = {}
+        for row in rows:
+            khoa = (row.kind, row.subject)
+            theo_khoa[khoa] = theo_khoa.get(khoa, 0) + 1
+        trung = {k: v for k, v in theo_khoa.items() if v > 1}
+        assert not trung, f"cảnh báo bị nhân đôi: {trung}"
+    finally:
+        _close(gen)
+
+
+@postgres_only
+def test_so_credit_van_khop_sau_khi_chay_dong_thoi(scratch):
+    """Tiền là thứ không được sai dù có bao nhiêu tiến trình.
+
+    `usage.reconcile` đã dùng ở `test_193` cho một tiến trình; đây là cùng bất
+    biến đó dưới tranh chấp thật.
+    """
+    from platform_core.public_api import usage
+
+    user_id = _seed_account()
+    _seed_jobs(user_id, 9)
+    _run_workers(scratch)
+
+    gen, db = _session()
+    try:
+        bao_cao = usage.reconcile(db, user_id=user_id)
+        assert bao_cao["ok"] is True, bao_cao
+    finally:
+        _close(gen)
+
+
+@postgres_only
+def test_don_du_lieu_chay_dong_thoi_khong_lam_hong_gi(scratch):
+    """Sáu vòng dọn của EXT-19 chạy trong N tiến trình cùng lúc.
+
+    Xoá là thao tác lặp lại được, nên cái cần chứng minh không phải "chỉ chạy
+    một lần" mà là **không tiến trình nào chết** vì tranh chấp — một vòng dọn
+    làm sập worker sẽ kéo theo cả job của khách.
+    """
+    from platform_core.models import JOB_DONE, Job
+
+    user_id = _seed_account()
+    ids = _seed_jobs(user_id, 6)
+    _seed_deliveries(user_id, 3)
+    _run_workers(scratch)
+
+    gen, db = _session()
+    try:
+        xong = db.execute(sa.select(sa.func.count(Job.id)).where(
+            Job.id.in_(ids), Job.status == JOB_DONE)).scalar_one()
+        assert xong == len(ids), (
+            f"chỉ {xong}/{len(ids)} job xong — có worker chết giữa chừng")
+    finally:
+        _close(gen)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_215_lease_and_outbox_claim.py
+SHA256=480b5f9afa1602cc8d96a9c13eea5f6d94dcffdf9b66ae41f65e1b54df7f3f85 BYTES=14429 LINES=347
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Lease có tên, và outbox nhận việc đúng cách.
+
+`test_214` chứng minh những tính chất này dưới **tranh chấp thật** và chỉ chạy
+trên PostgreSQL. File này kiểm chính cơ chế, tuần tự, nên nó chạy ở mọi nơi và
+chỉ ra *cái gì* hỏng khi `test_214` đỏ.
+
+Hai file cần cả hai: một cái nói cơ chế có đúng không, cái kia nói cơ chế có
+được dùng đúng chỗ không.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'lease.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+# ── Lease ────────────────────────────────────────────────────────────────────
+
+def test_chi_mot_nguoi_giu_duoc_lease(db):
+    from platform_core import leases
+
+    dau = leases.acquire(db, name=leases.MAINTENANCE, holder="tien-trinh-A")
+    sau = leases.acquire(db, name=leases.MAINTENANCE, holder="tien-trinh-B")
+
+    assert dau is not None
+    assert sau is None, "hai tiến trình cùng tưởng mình được chạy việc nền"
+    assert leases.current_holder(db, name=leases.MAINTENANCE) == "tien-trinh-A"
+
+
+def test_khong_giu_duoc_khong_phai_loi(db):
+    """`None` là câu trả lời bình thường cho "tôi có phải người chạy không".
+
+    Nếu nó là ngoại lệ thì mọi tiến trình không giành được lease sẽ ghi một vệt
+    lỗi mỗi chu kỳ, và log của người vận hành đầy thứ không phải sự cố.
+    """
+    from platform_core import leases
+
+    leases.acquire(db, name=leases.MAINTENANCE, holder="A")
+    assert leases.acquire(db, name=leases.MAINTENANCE, holder="B") is None
+
+
+def test_hai_lease_khac_ten_khong_dam_nhau(db):
+    from platform_core import leases
+
+    assert leases.acquire(db, name=leases.MAINTENANCE, holder="A") is not None
+    assert leases.acquire(db, name=leases.WEB, holder="A") is not None
+
+
+def test_chu_chet_thi_lease_het_han_va_nguoi_khac_nhan_duoc(db):
+    """Tự lành mới là tính chất quan trọng nhất.
+
+    Lease không hết hạn nghĩa là một tiến trình bị kill sẽ làm việc nền **dừng
+    vĩnh viễn và im lặng** — không job nào hỏng để ai nhận ra, chỉ là webhook
+    không còn được gửi nữa.
+    """
+    from platform_core import leases
+    from platform_core.models import SingletonLease
+
+    chet = leases.acquire(db, name=leases.MAINTENANCE, holder="da-chet")
+    assert chet is not None
+
+    # Giả lập: chủ ngừng đập nhịp từ lâu.
+    row = db.get(SingletonLease, chet.id)
+    row.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=30)
+    db.commit()
+
+    moi = leases.acquire(db, name=leases.MAINTENANCE, holder="con-song")
+    assert moi is not None, "lease của tiến trình đã chết không bao giờ nhả"
+    assert leases.current_holder(db, name=leases.MAINTENANCE) == "con-song"
+
+
+def test_dap_nhip_giu_duoc_lease_va_chan_nguoi_khac(db):
+    from platform_core import leases
+    from platform_core.models import SingletonLease
+
+    lease = leases.acquire(db, name=leases.MAINTENANCE, holder="A")
+    row = db.get(SingletonLease, lease.id)
+    row.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=30)
+    db.commit()
+
+    assert leases.heartbeat(db, lease) is True
+    assert leases.acquire(db, name=leases.MAINTENANCE, holder="B") is None
+
+
+def test_mat_lease_thi_dap_nhip_bao_that_bai(db):
+    """Người giữ phải biết mình mất quyền, để dừng ngay.
+
+    Tiếp tục làm việc nền sau khi lease đã sang tay là đúng cái mà lease sinh ra
+    để ngăn.
+    """
+    from platform_core import leases
+
+    lease = leases.acquire(db, name=leases.MAINTENANCE, holder="A")
+    leases.release(db, lease)
+    leases.acquire(db, name=leases.MAINTENANCE, holder="B")
+
+    assert leases.heartbeat(db, lease) is False
+
+
+def test_nha_som_thi_nguoi_khac_nhan_ngay(db):
+    from platform_core import leases
+
+    lease = leases.acquire(db, name=leases.MAINTENANCE, holder="A")
+    leases.release(db, lease)
+    assert leases.acquire(db, name=leases.MAINTENANCE, holder="B") is not None
+
+
+# ── Outbox ───────────────────────────────────────────────────────────────────
+
+def _delivery(db, *, count: int = 1) -> list:
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import (WebhookDelivery,
+                                                 WebhookSubscription)
+
+    now = datetime.now(timezone.utc)
+    sub = WebhookSubscription(
+        id=uuid.uuid4().hex, user_id="u-1", url="https://example.com/hook",
+        events=["job.succeeded"], enabled=True, secret_enc="enc:" + "s" * 40)
+    db.add(sub)
+    db.flush()
+    ids = []
+    for _ in range(count):
+        row = WebhookDelivery(
+            id=uuid.uuid4().hex, subscription_id=sub.id, user_id="u-1",
+            event_id=uuid.uuid4().hex, event_type="job.succeeded", job_id="",
+            payload={"job_id": "", "tool": "image.thumbnail",
+                     "status": "succeeded", "mode": "live"},
+            status=outbox.WEBHOOK_PENDING, attempts=0,
+            next_attempt_at=now, created_at=now)
+        db.add(row)
+        ids.append(row.id)
+    db.commit()
+    return ids
+
+
+def test_nhan_viec_roi_thi_nguoi_sau_khong_thay_no_den_han(db):
+    """Đây là lỗi gốc: trước đây `claim_due` chỉ SELECT, nên ai đọc cũng thấy.
+
+    Hai worker cùng thấy một delivery là "đến hạn" và cả hai đều gửi — khách
+    nhận hai callback, còn bảng vẫn hiện `attempts=1` vì cả hai ghi đè cùng một
+    giá trị. Sau khi nhận thật, lượt đọc thứ hai phải **không thấy gì**.
+    """
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import WEBHOOK_SENDING
+
+    _delivery(db, count=3)
+
+    dau = outbox.claim_due(db, holder="worker-A")
+    assert len(dau) == 3
+    assert all(row.status == WEBHOOK_SENDING for row in dau)
+
+    sau = outbox.claim_due(db, holder="worker-B")
+    assert sau == [], f"worker thứ hai vẫn nhận được {len(sau)} delivery"
+
+
+def test_nhan_viec_ben_vung_truoc_khi_goi_http(db):
+    """Trạng thái phải đã ghi xuống CSDL **trước** lời gọi mạng đầu tiên.
+
+    Nếu commit sau khi gửi thì một tiến trình chết giữa chừng để lại hàng ở
+    trạng thái cũ, và lượt quét sau gửi lại — đúng cái double-send cần chặn.
+    """
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import WEBHOOK_SENDING, WebhookDelivery
+
+    ids = _delivery(db, count=1)
+    outbox.claim_due(db, holder="worker-A")
+
+    db.expire_all()
+    row = db.get(WebhookDelivery, ids[0])
+    assert row.status == WEBHOOK_SENDING
+    assert row.attempts == 1, "lượt thử phải được tính lúc nhận, không phải lúc ghi kết quả"
+
+
+def test_worker_chet_giua_luc_gui_thi_delivery_duoc_nhan_lai(db):
+    """Nhận việc phải có hạn, nếu không một tiến trình chết giam nó vĩnh viễn."""
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import WebhookDelivery
+
+    ids = _delivery(db, count=1)
+    outbox.claim_due(db, holder="worker-chet")
+
+    row = db.get(WebhookDelivery, ids[0])
+    row.next_attempt_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+    db.commit()
+
+    lai = outbox.claim_due(db, holder="worker-khac")
+    assert [r.id for r in lai] == ids
+
+
+def test_luot_thu_khong_bi_dem_hai_lan(db):
+    """`attempts` tăng ở lúc nhận, nên chỗ ghi kết quả không được tăng nữa.
+
+    Đếm hai chỗ nghĩa là delivery chết sau ba lần thử thay vì sáu — nửa số lần
+    thử biến mất mà không ai thấy.
+    """
+    from platform_core.public_api import outbox, webhooks
+    from platform_core.public_api.tables import WebhookDelivery
+
+    ids = _delivery(db, count=1)
+    goi = {"n": 0}
+
+    def _hong(subscription, row):
+        goi["n"] += 1
+        raise RuntimeError("receiver down")
+
+    for _ in range(webhooks.MAX_ATTEMPTS):
+        row = db.get(WebhookDelivery, ids[0])
+        row.next_attempt_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        db.commit()
+        outbox.deliver_due(db, sender=_hong)
+        db.commit()
+
+    row = db.get(WebhookDelivery, ids[0])
+    assert row.attempts == webhooks.MAX_ATTEMPTS, row.attempts
+    assert goi["n"] == webhooks.MAX_ATTEMPTS, (
+        f"gửi {goi['n']} lần cho {webhooks.MAX_ATTEMPTS} lượt thử")
+    assert row.status == outbox.WEBHOOK_DEAD
+
+
+def test_gui_thanh_cong_van_ket_thuc_dung_trang_thai(db):
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import WEBHOOK_DELIVERED, WebhookDelivery
+
+    ids = _delivery(db, count=2)
+    bao_cao = outbox.deliver_due(db, sender=lambda sub, row: 200)
+    db.commit()
+
+    assert bao_cao["delivered"] == 2, bao_cao
+    for delivery_id in ids:
+        row = db.get(WebhookDelivery, delivery_id)
+        assert row.status == WEBHOOK_DELIVERED
+        assert row.attempts == 1
+
+
+# ── Cảnh báo ─────────────────────────────────────────────────────────────────
+
+def test_cung_mot_canh_bao_chi_ghi_duoc_mot_lan(db):
+    """Cooldown giờ do CSDL cưỡng chế, không phải do đọc-rồi-ghi trong Python."""
+    from platform_core.public_api import notifications
+
+    dau = notifications.raise_alert(
+        db, user_id="u-1", kind="budget.threshold", subject="account:80",
+        title="80%", body="…")
+    db.commit()
+    sau = notifications.raise_alert(
+        db, user_id="u-1", kind="budget.threshold", subject="account:80",
+        title="80%", body="…")
+    db.commit()
+
+    assert dau is not None
+    assert sau is None, "cảnh báo trùng vẫn ghi được"
+
+
+def test_khoa_chong_trung_song_sot_khi_lan_doc_truoc_khong_thay_gi(db):
+    """Mô phỏng đúng cuộc đua: hai tiến trình đều đọc thấy "chưa có gì".
+
+    Lần đọc chỉ là lối tắt cho trường hợp thường; ràng buộc UNIQUE mới là thứ
+    thi hành. Test này bỏ qua lối tắt để chỉ còn ràng buộc chịu trách nhiệm.
+    """
+    from platform_core.public_api import notifications
+    from platform_core.public_api.tables import ApiNotification
+
+    khoa = notifications.cooldown_key("budget.threshold", "account:50")
+    for _ in range(2):
+        row = ApiNotification(
+            id=str(uuid.uuid4()), user_id="u-1", kind="budget.threshold",
+            subject="account:50", title="50%", body="…",
+            created_at=datetime.now(timezone.utc), event_key=khoa)
+        db.add(row)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    from sqlalchemy import func, select
+
+    dem = db.execute(select(func.count(ApiNotification.id)).where(
+        ApiNotification.event_key == khoa)).scalar_one()
+    assert dem == 1, f"{dem} bản ghi cho một khoá cảnh báo"
+
+
+def test_canh_bao_khac_chu_de_van_ghi_duoc(db):
+    """Chống trùng không được biến thành chống-mọi-thứ."""
+    from platform_core.public_api import notifications
+
+    a = notifications.raise_alert(db, user_id="u-1", kind="budget.threshold",
+                                  subject="account:50", title="50%", body="…")
+    db.commit()
+    b = notifications.raise_alert(db, user_id="u-1", kind="budget.threshold",
+                                  subject="account:80", title="80%", body="…")
+    db.commit()
+    assert a is not None and b is not None
+
+
+def test_mot_canh_bao_trung_khong_lam_mat_nhung_cai_hop_le_cung_luot(db):
+    """Một lượt quét dựng nhiều cảnh báo; một cái trùng không được kéo đổ cả lượt.
+
+    Chống trùng bằng `rollback()` sẽ huỷ luôn những cảnh báo hợp lệ đã ghi trước
+    nó trong cùng transaction — khách mất cảnh báo thật vì một cảnh báo lặp.
+    """
+    from sqlalchemy import func, select
+
+    from platform_core.public_api import notifications
+    from platform_core.public_api.tables import ApiNotification
+
+    notifications.raise_alert(db, user_id="u-1", kind="budget.threshold",
+                              subject="account:50", title="50%", body="…")
+    db.commit()
+
+    # Một lượt: cái mới, cái trùng, rồi cái mới nữa.
+    notifications.raise_alert(db, user_id="u-1", kind="budget.threshold",
+                              subject="account:80", title="80%", body="…")
+    notifications.raise_alert(db, user_id="u-1", kind="budget.threshold",
+                              subject="account:50", title="50%", body="…")
+    notifications.raise_alert(db, user_id="u-1", kind="budget.threshold",
+                              subject="account:95", title="95%", body="…")
+    db.commit()
+
+    chu_de = {row.subject for row in db.execute(
+        select(ApiNotification)).scalars().all()}
+    assert chu_de == {"account:50", "account:80", "account:95"}, chu_de
+    assert db.execute(select(func.count(ApiNotification.id))).scalar_one() == 3
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_21_antispam_phase1.py
 SHA256=9a045cdce9f702cdf4c2afecdd8373308cae3fcd5da46de372991b36edb949fa BYTES=13230 LINES=330
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -196283,7 +197557,7 @@ def test_rate_limit_theo_cf_ip_khong_khoa_lien(client):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_73_dong_thoi_pg.py
-SHA256=5cfea3a1ecf6e1f8580779444605b9b8990160a5ad03d45d1e1c96b5d10b1656 BYTES=11962 LINES=324
+SHA256=ed2d7955ab52c2aefff512e044174291996b6381a0b2abd1b9dcaba07e780120 BYTES=12227 LINES=329
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 W0.1/W0.2 — kiểm ĐỒNG THỜI trên PostgreSQL thật (SQLite bỏ qua FOR UPDATE và
@@ -196305,7 +197579,12 @@ import threading
 
 import pytest
 
-PG_URL = os.environ.get("LTT_TEST_DATABASE_URL", "").strip()
+# Không đọc thẳng biến môi trường: `pg_scratch` từ chối một URL không chứng
+# minh được nó là CSDL vứt đi. Các test này gọi `drop_all()`, và trên máy chủ
+# thì PostgreSQL của nền tảng đang chạy ngay cạnh.
+from tests.pg_scratch import scratch_url
+
+PG_URL = scratch_url()
 
 pytestmark = pytest.mark.skipif(
     not PG_URL,
@@ -208651,7 +209930,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/restore_drill_schema.py
-SHA256=8c078208e205351826b2b5cddfa5a4768149caca1ac5d9a6b49c161a8b7bb583 BYTES=8045 LINES=173
+SHA256=1f25ba73433bb4f1e2e82774aacca5f21d0d315aa04bfa92ac862e46ec164d2d BYTES=8582 LINES=181
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 restore_drill_schema.py - dien tap khoi phuc tren LUOC DO THAT (H19.8).
@@ -208801,7 +210080,15 @@ def main() -> int:
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
                     # cong cu, va mot dau gia tren hoa don khong con tro ve
                     # duoc mot dong duy nhat.
-                    "uq_api_pricing_label"):
+                    "uq_api_pricing_label",
+                    # Mat rang buoc nay = cooldown canh bao chi con la
+                    # doc-roi-ghi trong Python, va hai tien trinh worker quet
+                    # cung luc deu ghi - khach nhan email trung.
+                    "uq_api_notifications_event_key",
+                    # Mat rang buoc nay = MOI tien trinh worker lai cung chay
+                    # vong bao tri, tuc gui webhook trung va quet canh bao
+                    # trung - dung lop loi ma lease sinh ra de dong.
+                    "uq_singleton_lease_name"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

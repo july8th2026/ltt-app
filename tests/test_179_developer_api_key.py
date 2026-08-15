@@ -408,7 +408,11 @@ def test_provider_api_keys_still_work_unchanged(db):
 
 import os as _os
 
-PG_URL = _os.environ.get("LTT_TEST_DATABASE_URL", "").strip()
+# Qua `pg_scratch`, vì fixture dưới đây gọi `drop_all()` — xem file đó vì sao
+# một biến môi trường gõ nhầm là chuyện nghiêm trọng trên máy chủ.
+from tests.pg_scratch import scratch_url
+
+PG_URL = scratch_url()
 postgres_only = pytest.mark.skipif(
     not PG_URL, reason="Set LTT_TEST_DATABASE_URL to a scratch PostgreSQL database.")
 

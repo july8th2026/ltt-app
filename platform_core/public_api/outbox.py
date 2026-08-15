@@ -21,13 +21,20 @@ from sqlalchemy.exc import IntegrityError
 from platform_core.public_api import webhooks
 from platform_core.public_api.tables import (WEBHOOK_DEAD, WEBHOOK_DELIVERED,
                                              WEBHOOK_FAILED, WEBHOOK_PENDING,
-                                             WebhookDelivery, WebhookSubscription)
+                                             WEBHOOK_SENDING, WebhookDelivery,
+                                             WebhookSubscription)
 
 log = logging.getLogger("ltt.public_api.webhooks")
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _holder() -> str:
+    from platform_core import leases
+
+    return leases.holder_id()
 
 
 def enqueue_for_job(db, job) -> int:
@@ -82,22 +89,68 @@ def enqueue_for_job(db, job) -> int:
     return queued
 
 
-def claim_due(db, *, limit: int = 20, now: datetime | None = None) -> list:
-    """Deliveries whose backoff has elapsed, oldest first."""
+#: Một lượt nhận sống bao lâu trước khi worker khác được phép nhận lại. Dài hơn
+#: bất kỳ lần gửi HTTP nào (có timeout riêng ở `delivery`), ngắn hơn lần thử lại
+#: sớm nhất, để một worker chết không giam delivery lâu hơn cần thiết.
+CLAIM_TTL = timedelta(seconds=120)
+
+
+def claim_due(db, *, limit: int = 20, now: datetime | None = None,
+              holder: str = "") -> list:
+    """Nhận quyền gửi những delivery đến hạn. **Nhận thật, không chỉ đọc.**
+
+    Trước đây hàm này là một SELECT trần, và `deliver_due` gọi HTTP **trước khi**
+    ghi lại bất cứ gì. Nền tảng chạy nhiều tiến trình worker, nên hai worker
+    cùng đọc một hàng là "đến hạn" và khách nhận hai callback giống hệt — còn
+    bảng thì vẫn hiện `attempts=1`, vì cả hai ghi đè cùng một giá trị. Hỏng im
+    lặng.
+
+    Giờ nó dùng đúng khuôn của hàng đợi job (`jobs.claim`), vì đây là cùng một
+    bài toán:
+
+    * ``FOR UPDATE SKIP LOCKED`` — worker khác đang khoá hàng nào thì bỏ qua
+      thay vì chờ;
+    * chuyển sang ``sending`` và **commit trước khi gửi**, nên trạng thái đã bền
+      vững trước lời gọi HTTP đầu tiên;
+    * ``attempts`` tăng **ở đây**, không phải lúc ghi kết quả — nếu tiến trình
+      chết giữa lúc gửi, lượt đó vẫn đã được tính, và delivery không quay lại vô
+      hạn lần;
+    * ``next_attempt_at`` đóng vai hạn của lượt nhận, nên một worker chết giữa
+      chừng không giam delivery mãi mãi: hết hạn là có người nhận lại.
+
+    Nhờ dùng lại ``next_attempt_at`` mà không cần thêm cột nào, tức không cần
+    migration cho một tính chất vốn phải đúng từ đầu.
+    """
     current = now or _now()
-    return list(db.execute(
+    who = holder or _holder()
+    rows = list(db.execute(
         select(WebhookDelivery)
-        .where(WebhookDelivery.status.in_((WEBHOOK_PENDING, WEBHOOK_FAILED)),
+        .where(WebhookDelivery.status.in_(
+                   (WEBHOOK_PENDING, WEBHOOK_FAILED, WEBHOOK_SENDING)),
                WebhookDelivery.next_attempt_at <= current)
         .order_by(WebhookDelivery.next_attempt_at)
         .limit(max(1, min(int(limit), 200)))
+        .with_for_update(skip_locked=True)
     ).scalars().all())
+
+    for row in rows:
+        if row.status == WEBHOOK_SENDING:
+            log.warning("nhan lai delivery %s bi ke tren %s (worker chet?)",
+                        row.id[:8], row.last_error[:40] or "-")
+        row.status = WEBHOOK_SENDING
+        row.attempts += 1
+        row.last_error = f"sending by {who}"[:500]
+        row.next_attempt_at = current + CLAIM_TTL
+    # Bền vững TRƯỚC khi có lời gọi HTTP nào. Đây là toàn bộ điểm của hàm.
+    db.commit()
+    return rows
 
 
 def record_success(db, delivery, *, status_code: int,
                    now: datetime | None = None) -> None:
+    # `attempts` đã tăng lúc nhận (xem `claim_due`), nên ở đây KHÔNG tăng nữa —
+    # tăng hai chỗ là cách một delivery chết sau ba lần thử thay vì sáu.
     delivery.status = WEBHOOK_DELIVERED
-    delivery.attempts += 1
     delivery.last_status_code = int(status_code)
     delivery.last_error = ""
     delivery.delivered_at = now or _now()
@@ -112,7 +165,7 @@ def record_failure(db, delivery, *, status_code: int = 0, error: str = "",
     refused" is exactly what a customer needs to see, and deleting the evidence
     turns a receiver outage into a mystery.
     """
-    delivery.attempts += 1
+    # Không tăng `attempts`: lượt này đã được tính lúc nhận.
     delivery.last_status_code = int(status_code or 0)
     # Truncated and free of the URL: an error string from an HTTP client can
     # carry the full target, and a target can carry a token in its query.

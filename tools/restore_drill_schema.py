@@ -146,7 +146,15 @@ def main() -> int:
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
                     # cong cu, va mot dau gia tren hoa don khong con tro ve
                     # duoc mot dong duy nhat.
-                    "uq_api_pricing_label"):
+                    "uq_api_pricing_label",
+                    # Mat rang buoc nay = cooldown canh bao chi con la
+                    # doc-roi-ghi trong Python, va hai tien trinh worker quet
+                    # cung luc deu ghi - khach nhan email trung.
+                    "uq_api_notifications_event_key",
+                    # Mat rang buoc nay = MOI tien trinh worker lai cung chay
+                    # vong bao tri, tuc gui webhook trung va quet canh bao
+                    # trung - dung lop loi ma lease sinh ra de dong.
+                    "uq_singleton_lease_name"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

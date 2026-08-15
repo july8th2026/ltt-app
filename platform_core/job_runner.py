@@ -160,17 +160,23 @@ def _one_session():
             pass
 
 
-def _chay_mot_job(worker_id: str) -> bool:
+def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
     """Nhặt và chạy đúng một job. Trả True nếu có job để chạy, False nếu trống.
 
     claim() ở một transaction, chạy handler ở ngoài transaction đó, rồi
     complete/fail ở transaction khác — xem docstring module vì sao.
+
+    `capabilities` giới hạn tiến trình này chỉ nhặt job của app khai
+    `manifest.requires` nằm gọn trong tập đó — cho phép chia đội hình worker
+    theo loại tài nguyên thay vì theo số card. None nghĩa là đa năng, giữ
+    nguyên hành vi cũ.
     """
     # 1. Nhặt (transaction ngắn, commit ngay để job thành 'running').
     job_id: Optional[str] = None
     job_type = params = None
     for db in _one_session():
-        job = jobq.claim(db, worker_id=worker_id)
+        job = jobq.claim(db, worker_id=worker_id,
+                         capabilities=capabilities)
         if job is None:
             db.commit()
             return False
@@ -595,68 +601,146 @@ def _ghi_metrics() -> None:
         log.info("public api metrics %s", snapshot)
 
 
-def run_forever(worker_id: str, *, stop=None) -> None:
+#: Bao lâu thử giành lại lease bảo trì khi tiến trình khác đang giữ. Ngắn so với
+#: TTL của lease, để chủ chết thì có người nhận trong một chu kỳ chứ không phải
+#: chờ hết hạn rồi mới bắt đầu hỏi.
+LEASE_RETRY_S = 20.0
+
+
+def _mot_luot_bao_tri(moc: dict) -> None:
+    """Chạy những việc nền đã đến hạn. `moc` giữ mốc thời gian giữa các lượt."""
+    if time.monotonic() >= moc["event_purge"]:
+        for db in _one_session():
+            removed = job_events.purge_expired(db)
+            db.commit()
+            if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
+                log.info("don job event het han: customer=%s internal=%s",
+                         removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
+        # …and every other retention rule on the same visit. Each of these used
+        # to be "somebody handles it"; writing the inventory in
+        # `public_api/governance.py` showed that four of them nobody did, and
+        # one had a purge function that was never called. A retention policy
+        # naming a function nobody runs reads as a promise (EXT-19).
+        _don_du_lieu_het_han()
+        moc["event_purge"] = time.monotonic() + EVENT_PURGE_INTERVAL_S
+
+    if time.monotonic() >= moc["upload_sweep"]:
+        from platform_core import upload_sessions
+        from platform_core.storage import get_storage
+        for db in _one_session():
+            report = upload_sessions.sweep(db, get_storage(), dry_run=False)
+            db.commit()
+            if report["due"] or report["errors"]:
+                log.info(
+                    "don upload het han: due=%s deleted=%s errors=%s active=%s",
+                    report["due"], report["deleted"], report["errors"],
+                    report["skipped_active"],
+                )
+        moc["upload_sweep"] = time.monotonic() + UPLOAD_SWEEP_INTERVAL_S
+
+    if time.monotonic() >= moc["webhook"]:
+        _giao_webhook()
+        moc["webhook"] = time.monotonic() + WEBHOOK_DELIVERY_INTERVAL_S
+
+    if time.monotonic() >= moc["metrics"]:
+        _ghi_metrics()
+        moc["metrics"] = time.monotonic() + METRICS_LOG_INTERVAL_S
+
+    if time.monotonic() >= moc["alert"]:
+        _quet_canh_bao()
+        moc["alert"] = time.monotonic() + ALERT_SCAN_INTERVAL_S
+
+
+def _vong_bao_tri(stop) -> None:
+    """Việc nền, chạy ở ĐÚNG MỘT tiến trình, trong luồng riêng.
+
+    Hai điều được sửa ở đây, và chúng khác nhau:
+
+    **Đúng một tiến trình.** Trước đây mọi tiến trình worker đều chạy vòng này —
+    mà số tiến trình mặc định bằng số GPU. Hai tiến trình nghĩa là mọi việc nền
+    chạy hai lần, cùng lúc, vì chúng khởi động cùng nhau nên đồng hồ hẹn giờ
+    trùng pha. Lease quyết định ai chạy; ai không giành được thì chỉ chạy job.
+
+    **Luồng riêng.** Ngay cả khi chỉ một tiến trình chạy, vòng bảo trì vẫn xen
+    *giữa các job* — nên một job năm phút làm webhook của mọi khách khác chờ năm
+    phút. Con số "độ trễ webhook 4,71 ms" đo trước đây là của một hàng đợi rỗng.
+    Việc nền ở đây là chờ mạng và chờ CSDL nên luồng là đúng hình dạng; việc
+    nặng gọi CUDA giữ GIL thì đã nằm ở tiến trình riêng rồi.
+
+    Mất lease thì **dừng ngay**. Tiếp tục làm sau khi mất quyền là đúng cái mà
+    lease sinh ra để ngăn.
+    """
+    from platform_core import leases
+
+    moc = {"event_purge": 0.0, "upload_sweep": 0.0, "webhook": 0.0,
+           "metrics": 0.0, "alert": 0.0}
+    lease = None
+    while stop is None or not stop():
+        try:
+            if lease is None:
+                for db in _one_session():
+                    lease = leases.acquire(db, name=leases.MAINTENANCE)
+                if lease is None:
+                    time.sleep(LEASE_RETRY_S)
+                    continue
+                log.info("tien trinh nay chay vong bao tri")
+
+            _mot_luot_bao_tri(moc)
+
+            for db in _one_session():
+                if not leases.heartbeat(db, lease):
+                    log.warning("mat lease bao tri — dung viec nen")
+                    lease = None
+        except Exception:
+            log.exception("loi trong vong bao tri, tiep tuc")
+        time.sleep(POLL_INTERVAL_S)
+
+    if lease is not None:
+        try:
+            for db in _one_session():
+                leases.release(db, lease)
+        except Exception:                       # noqa: BLE001
+            log.exception("khong nha duoc lease bao tri")
+
+
+def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
+                capabilities=None) -> None:
     """Vòng lặp chính của worker. `stop` là callable trả True để dừng êm.
 
     Trước mỗi lượt rảnh, dọn job mồ côi — nhờ vậy một worker vừa khởi động lại
     sẽ tự nhặt lại job mà worker chết để lại, không cần ai can thiệp.
+
+    `maintenance=False` cho một tiến trình **chỉ chạy job**. Việc nền vẫn được
+    bảo vệ bằng lease dù cờ này bật ở mọi tiến trình — cờ là tiện nghi, lease
+    mới là cơ chế.
+
+    `capabilities` giới hạn tiến trình này chỉ nhặt job mà app khai
+    `manifest.requires` nằm gọn trong tập đó. None nghĩa là đa năng.
     """
-    log.info("worker %s bat dau", worker_id)
-    next_event_purge = 0.0
-    next_upload_sweep = 0.0
-    next_webhook_run = 0.0
-    next_metrics_log = 0.0
-    next_alert_scan = 0.0
+    log.info("worker %s bat dau%s", worker_id,
+             f" (nang luc: {sorted(capabilities)})" if capabilities else "")
+
+    luong = None
+    if maintenance:
+        luong = threading.Thread(target=_vong_bao_tri, args=(stop,),
+                                 name=f"bao-tri-{worker_id}", daemon=True)
+        luong.start()
+
     while stop is None or not stop():
         try:
-            if time.monotonic() >= next_event_purge:
-                for db in _one_session():
-                    removed = job_events.purge_expired(db)
-                    db.commit()
-                    if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
-                        log.info("don job event het han: customer=%s internal=%s",
-                                 removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
-                # …and every other retention rule on the same visit. Each of
-                # these used to be "somebody handles it"; writing the inventory
-                # in `public_api/governance.py` showed that four of them nobody
-                # did, and one had a purge function that was never called. A
-                # retention policy naming a function nobody runs reads as a
-                # promise (EXT-19).
-                _don_du_lieu_het_han()
-                next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
-            if time.monotonic() >= next_upload_sweep:
-                from platform_core import upload_sessions
-                from platform_core.storage import get_storage
-                for db in _one_session():
-                    report = upload_sessions.sweep(
-                        db, get_storage(), dry_run=False)
-                    db.commit()
-                    if report["due"] or report["errors"]:
-                        log.info(
-                            "don upload het han: due=%s deleted=%s errors=%s active=%s",
-                            report["due"], report["deleted"], report["errors"],
-                            report["skipped_active"],
-                        )
-                next_upload_sweep = time.monotonic() + UPLOAD_SWEEP_INTERVAL_S
-            if time.monotonic() >= next_webhook_run:
-                _giao_webhook()
-                next_webhook_run = time.monotonic() + WEBHOOK_DELIVERY_INTERVAL_S
-            if time.monotonic() >= next_metrics_log:
-                _ghi_metrics()
-                next_metrics_log = time.monotonic() + METRICS_LOG_INTERVAL_S
-            if time.monotonic() >= next_alert_scan:
-                _quet_canh_bao()
-                next_alert_scan = time.monotonic() + ALERT_SCAN_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()
                 if n:
                     log.warning("nhat lai %d job mo coi", n)
-            co_viec = _chay_mot_job(worker_id)
+            co_viec = _chay_mot_job(worker_id, capabilities=capabilities)
             if not co_viec:
                 time.sleep(POLL_INTERVAL_S)
         except Exception:
             # Một lượt hỏng không được giết cả worker — ngủ rồi thử lại.
             log.exception("loi trong vong worker, tiep tuc")
             time.sleep(POLL_INTERVAL_S)
+
+    if luong is not None:
+        luong.join(timeout=30)
     log.info("worker %s dung", worker_id)

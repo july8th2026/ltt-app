@@ -20,6 +20,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from platform_core.public_api.tables import ApiNotification
 
@@ -110,9 +111,39 @@ def raise_alert(db, *, user_id: str, kind: str, subject: str = "",
     row = ApiNotification(
         id=str(uuid.uuid4()), user_id=str(user_id or ""), kind=kind,
         subject=str(subject or "")[:120], title=str(title or "")[:200],
-        body=str(body or "")[:1000], created_at=current)
-    db.add(row)
+        body=str(body or "")[:1000], created_at=current,
+        event_key=cooldown_key(kind, subject, now=current))
+    # Lần đọc ở trên loại phần lớn trường hợp mà không cần chạm khoá; ràng buộc
+    # UNIQUE mới là thứ thi hành thật. Nền tảng chạy nhiều tiến trình worker,
+    # nên hai lần quét cùng lúc đều thấy "chưa có gì gần đây" — và một cooldown
+    # chỉ sống trong Python thì không cản được điều đó.
+    #
+    # SAVEPOINT chứ không phải `rollback()`: một lượt quét dựng nhiều cảnh báo
+    # trong cùng transaction, và rollback cả transaction vì MỘT cái trùng sẽ vứt
+    # luôn những cái hợp lệ đứng trước nó.
+    try:
+        with db.begin_nested():
+            db.add(row)
+            db.flush()
+    except IntegrityError:
+        # Tiến trình khác vừa ghi đúng cảnh báo này. Đường chạy BÌNH THƯỜNG.
+        return None
     return row
+
+
+def cooldown_key(kind: str, subject: str = "", *,
+                 now: datetime | None = None) -> str:
+    """Danh tính một lần cảnh báo, dùng cho ràng buộc UNIQUE.
+
+    Ô thời gian lấy theo chính cooldown của loại đó, nên "một cảnh báo mỗi
+    cooldown" trở thành thứ CSDL cưỡng chế được thay vì một quy ước mà mọi
+    người gọi phải nhớ.
+    """
+    current = now or _now()
+    window = COOLDOWN.get(kind, DEFAULT_COOLDOWN)
+    giay = max(1, int(window.total_seconds()))
+    o = int(current.timestamp()) // giay
+    return f"{kind}:{str(subject or '')[:120]}:{o}"
 
 
 def list_for(db, *, user_id: str, unread_only: bool = False,
