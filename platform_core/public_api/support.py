@@ -51,7 +51,14 @@ from platform_core.public_api.tables import (ApiProject, ApiRequestLog,
 #: it is nested in. Matched by substring on the key, because the day somebody
 #: adds `webhook_secret_enc` is the day an allowlist of exact names fails.
 SECRET_HINTS = ("secret", "token", "password", "credential", "digest",
-                "pepper", "authorization", "api_key", "signature")
+                "pepper", "authorization", "signature")
+# `api_key` is deliberately absent. It was in this list by reflex, and it cost
+# something real: the substring matched `api_keys`, so a customer's data export
+# redacted the whole list of their own credentials — the most useful part of the
+# file — into the word "[redacted]". Nothing is lost by removing it: the secret
+# half of a key is never stored anywhere, and the stored digest is still caught
+# by "digest". A key *id* is public by design; it is what a support
+# conversation refers to.
 
 #: Fields that name *where* something is stored. Not secret, but they encode the
 #: bucket layout and the owner id, and a support export is a file that travels.

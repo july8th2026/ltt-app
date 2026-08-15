@@ -19,7 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
@@ -144,3 +144,27 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
     record.job_id = str(job_id or "")
     record.updated_at = _now()
     db.flush()
+
+
+#: The retry window a client could plausibly still be in. Past it, the record
+#: protects nothing — and it holds a stored response body, so keeping it longer
+#: is keeping a copy of somebody's data for no reason.
+RETENTION_DAYS = 7
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    """Drop idempotency records past the retry window. Caller commits.
+
+    Only completed ones: an in-flight record is what stops a concurrent retry
+    from opening a second job, and removing it mid-call would reintroduce the
+    double charge this table exists to prevent.
+    """
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(ApiIdempotencyRecord).where(
+        ApiIdempotencyRecord.created_at < cutoff,
+        ApiIdempotencyRecord.status != IDEMPOTENCY_IN_PROGRESS,
+    )).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)

@@ -319,7 +319,25 @@ def scan_for_alerts(db, *, hours: int = 24, now: datetime | None = None) -> list
     return raised
 
 
+#: Long enough to compare this quarter against the same quarter last year, which
+#: is the longest look-back anybody has asked a margin question over. Cost rows
+#: are estimates, not books — the ledger keeps the part that must survive.
+RETENTION_DAYS = 400
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    """Drop cost observations past their window. Caller commits."""
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(ApiCostObservation).where(
+        ApiCostObservation.created_at < cutoff)).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)
+
+
 __all__ = [
-    "ALERT_KIND", "MICROS", "Margin", "RATE_ENV", "margin", "margin_by_tool",
-    "observe", "rates", "record_job", "scan_for_alerts",
+    "ALERT_KIND", "MICROS", "RETENTION_DAYS", "Margin", "RATE_ENV", "margin", "margin_by_tool",
+    "observe", "purge_expired", "rates", "record_job",
+    "scan_for_alerts",
 ]

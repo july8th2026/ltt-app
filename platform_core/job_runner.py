@@ -505,6 +505,39 @@ def _quet_canh_bao() -> None:
             log.info("don %d thong bao API het han", gone)
 
 
+def _don_du_lieu_het_han() -> None:
+    """Run every declared retention rule once.
+
+    Each store gets its own session and its own commit: one table whose purge
+    fails must not stop the others, because the one that fails is usually the
+    biggest, and the biggest is the one that most needs the others to succeed.
+
+    The list here is checked against `governance.STORES` by
+    `test_211_data_governance`, so adding a table with a retention class and
+    forgetting to sweep it fails the suite rather than growing quietly.
+    """
+    from platform_core.public_api import (costing, idempotency, notifications,
+                                          outbox, request_log, security_log)
+
+    rules = (
+        ("nhat ky request API", request_log.purge_expired),
+        ("thong bao", notifications.purge_expired),
+        ("su kien bao mat", security_log.purge_expired),
+        ("quan sat chi phi", costing.purge_expired),
+        ("ban ghi webhook da gui", outbox.purge_expired),
+        ("ban ghi idempotency", idempotency.purge_expired),
+    )
+    for label, purge in rules:
+        try:
+            for db in _one_session():
+                gone = purge(db)
+                db.commit()
+                if gone:
+                    log.info("don %d dong %s", gone, label)
+        except Exception:  # noqa: BLE001 - housekeeping must not kill the worker
+            log.exception("khong don duoc %s", label)
+
+
 def _ghi_chi_phi(db, job) -> None:
     """Record what this job consumed, if the operator configured any rates.
 
@@ -583,16 +616,13 @@ def run_forever(worker_id: str, *, stop=None) -> None:
                     if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
                         log.info("don job event het han: customer=%s internal=%s",
                                  removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
-                # The API request log ages out on the same visit: it is created
-                # by every call, so a policy that waits for a later prompt is a
-                # table that grows forever (the lesson `webhook_deliveries`
-                # taught this platform once already).
-                from platform_core.public_api import request_log
-                for db in _one_session():
-                    gone = request_log.purge_expired(db)
-                    db.commit()
-                    if gone:
-                        log.info("don %d dong nhat ky request API", gone)
+                # …and every other retention rule on the same visit. Each of
+                # these used to be "somebody handles it"; writing the inventory
+                # in `public_api/governance.py` showed that four of them nobody
+                # did, and one had a purge function that was never called. A
+                # retention policy naming a function nobody runs reads as a
+                # promise (EXT-19).
+                _don_du_lieu_het_han()
                 next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
             if time.monotonic() >= next_upload_sweep:
                 from platform_core import upload_sessions

@@ -1,0 +1,61 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <p>{{ _("Bảng dưới đây sinh trực tiếp từ chính sách mà worker đang thi hành (platform_core/public_api/governance.py). Nó không thể lệch với thực tế: nếu một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước khi trang này kịp nói dối bạn.") }}</p>
+  <p class="muted">{{ _("Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, workflow…) có vòng đời riêng của app.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Lấy dữ liệu của bạn") }}</h2>
+  <p>{{ _("Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), job, bút toán credit, ngân sách, webhook và nhật ký request gần đây.") }}</p>
+  <p><a class="btn btn-primary" href="/developers/privacy/export">{{ _("Tải dữ liệu (JSON)") }}</a></p>
+  <p class="muted">{{ _("Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở đâu cả, nên không có gì để xuất.") }}</p>
+</div>
+
+{% for klass, stores in classes %}
+  <div class="card">
+    <h2 style="margin-top:0;">
+      {% if klass == "evidence" %}{{ _("Bằng chứng — không bao giờ xoá") }}
+      {% elif klass == "operational" %}{{ _("Vận hành — tự hết hạn") }}
+      {% elif klass == "content" %}{{ _("Nội dung của bạn") }}
+      {% else %}{{ _("Sinh lại được") }}{% endif %}
+    </h2>
+    {% if klass == "evidence" %}
+      <p class="muted">{{ _("Sổ credit, nhật ký thao tác quản trị, lịch sử giá, khoá đã cấp. Giữ vô thời hạn — một tranh chấp hoàn tiền sáu tháng sau được trả lời từ đây, và một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán.") }}</p>
+    {% elif klass == "operational" %}
+      <p class="muted">{{ _("Hữu ích khi còn mới, vô nghĩa khi đã cũ. Worker tự dọn theo lịch.") }}</p>
+    {% endif %}
+    <div class="tablewrap">
+      <table class="ui-table">
+        <thead><tr>
+          <th>{{ _("Nơi lưu") }}</th><th>{{ _("Giữ bao lâu") }}</th>
+          <th>{{ _("Ai đọc được") }}</th><th>{{ _("Vì sao giữ") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for store in stores %}
+            <tr>
+              <td><code>{{ store.table }}</code></td>
+              <td>{% if store.retention_days %}{{ store.retention_days }} {{ _("ngày") }}
+                  {% else %}<span class="muted">{{ _("theo vòng đời tài khoản") }}</span>{% endif %}</td>
+              <td class="muted">{{ store.readable_by }}</td>
+              <td class="muted">{{ store.reason }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Điều khoản pháp lý") }}</h2>
+  <p class="muted">{{ _("Trang này mô tả kỹ thuật. Cam kết pháp lý nằm ở các trang chính thức, và chúng tôi cố ý KHÔNG chép lại chúng ở đây — hai bản của một lời hứa thì sớm muộn sẽ khác nhau.") }}</p>
+  <ul>
+    <li><a href="{{ legal.privacy }}">{{ _("Chính sách riêng tư") }}</a></li>
+    <li><a href="{{ legal.terms }}">{{ _("Điều khoản") }}</a></li>
+    <li><a href="{{ legal.data_deletion }}">{{ _("Yêu cầu xoá dữ liệu") }}</a></li>
+  </ul>
+</div>
+
+{% endblock %}

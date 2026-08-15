@@ -2239,3 +2239,134 @@ Bỏ hai bước gate; xoá `tools/check_sdk_contract.py`, `tools/build_postman.
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/19_PRIVACY_RETENTION_EXPORT_DELETE_SECRETS_AND_DATA_GOVERNANCE.txt`
 (EXT-19).
+
+---
+
+## EXT-19 — QUYỀN RIÊNG TƯ, LƯU TRỮ, XUẤT DỮ LIỆU ✅
+
+### Entry gate
+
+EXT-18 PASS ✅ (`2148772`), cây sạch. **Không migration mới** — prompt này viết
+ra chính sách cho dữ liệu đã có, và làm cho chính sách đó thành sự thật.
+
+### Bánh cóc tìm ra 25 bảng không ai có chính sách
+
+Nền tảng **đã** có luật lưu trữ: job event, nhật ký request, thông báo. Mỗi luật
+nằm cạnh code ghi ra dòng đó — đúng chỗ cho *luật*, sai chỗ cho *chính sách*:
+không ai trả lời được "chúng ta giữ gì về một khách, trong bao lâu" mà không đọc
+năm module và hy vọng không có module thứ sáu.
+
+Có module thứ sáu. Và khi gom lại một chỗ, `unclassified()` chỉ ra **25 bảng**
+chưa ai viết chính sách — gồm **mọi tin nhắn chat, mọi cảnh storyboard, mọi
+workflow** người dùng dựng. Giờ cả 42 store đều khai lớp, hạn giữ, ai đọc được
+và **vì sao giữ**; bảng nào không chứa dữ liệu khách thì khai tường minh vào
+`NOT_CUSTOMER_DATA` — "đây không phải dữ liệu khách" là một khẳng định đáng viết
+ra, vì người sau sẽ tưởng chỗ trống là sơ suất.
+
+### Bốn lời hứa hoá ra chưa có thật
+
+Viết kiểm kê biến bốn giả định "chắc có ai lo" thành khoảng trống nhìn thấy
+được. Bốn bảng này **không có đường nào cho một dòng rời đi**:
+
+| Bảng | Trước |
+|---|---|
+| `api_cost_observations` | mỗi job một dòng, vĩnh viễn |
+| `public_api_webhook_deliveries` | mỗi lần gửi một dòng, vĩnh viễn — nền tảng **đã bị chính bảng này cắn một lần** |
+| `public_api_idempotency` | mỗi lời gọi tính tiền một dòng, vĩnh viễn, **kèm body phản hồi** |
+| `api_security_events` | có `purge_expired()` từ EXT-16 mà **chưa ai gọi** — lỗi của chính tôi ở prompt trước |
+
+Đã viết đủ bốn hàm dọn và nối tất cả vào **một** vòng quét trong worker, mỗi
+store một session riêng: một bảng dọn hỏng không được chặn các bảng khác, vì
+bảng hỏng thường là bảng to nhất, và bảng to nhất là bảng cần các bảng kia dọn
+được nhất.
+
+Hai chỗ **cố ý không dọn**: delivery đang chờ (dòng đó *chính là* hàng đợi —
+xoá là lặng lẽ đánh rơi một callback khách đang đợi) và bản ghi idempotency
+đang bay (xoá giữa chừng là mang lại đúng cái double-charge nó sinh ra để
+chặn). Cả hai có test.
+
+### Khoá lời hứa lại
+
+`test_211` kiểm **mỗi `purged_by` phải trỏ tới hàm có thật và được worker gọi**.
+Một chính sách nêu tên một hàm không ai chạy thì tệ hơn không có chính sách — nó
+đọc như một lời hứa, và đó đúng là trạng thái `api_security_events` đang ở khi
+file này được viết.
+
+### Trang riêng tư sinh từ chính sách
+
+`/developers/privacy` dựng thẳng từ `governance.STORES`, nên **không thể lệch**
+với thứ worker đang thi hành. Một trang riêng tư mô tả một quy tắc không ai chạy
+là kiểu sai tệ nhất: nó là một lời hứa, bằng văn bản, mà code không giữ.
+
+Bản xuất `/developers/privacy/export` dùng lại **đúng** `support.redact` của
+EXT-16 — một định nghĩa duy nhất về "thứ không bao giờ được rời khỏi hệ thống",
+áp cho cả hai chiều. Và nó **nói rõ phạm vi**: chỉ khu API, không nói thay cho
+dữ liệu từng app giữ. Hứa nhiều hơn từ đây là hứa thứ code này không giữ được.
+
+### Văn bản pháp lý: chỉ liên kết, không chép
+
+Site đã có trang chính sách riêng tư, điều khoản và yêu cầu xoá dữ liệu.
+`governance.LEGAL_LINKS` trỏ tới chúng, và có **test cấm** module này chép lại
+lời lẽ pháp lý: hai bản của một lời hứa thì sớm muộn sẽ khác nhau.
+
+### Ba lần bị chính công cụ sửa lưng
+
+1. **Ngưỡng "lý do > 20 ký tự" là phép đo sai.** Nó đo độ dài, và đang ép tôi
+   bơm chữ vào những mô tả vốn đã rõ ("Nhãn người dùng gắn." giải thích trọn vẹn
+   một bảng tag). Đổi phép đo thành "phải là một câu, không phải một nhãn".
+2. **Nhưng khi phép đo mới bắt `"Storyboard."`, nó đúng** — mô tả đó chỉ lặp lại
+   tên bảng. Sửa mô tả, **không** hạ chuẩn.
+3. **`redact()` nuốt mất cả danh sách khoá của khách.** Chuỗi gợi ý `api_key`
+   khớp chuỗi con `api_keys`, nên phần hữu ích nhất của bản xuất thành đúng chữ
+   `"[redacted]"`. Chỉ nhìn output thật mới thấy. Bỏ `api_key` khỏi danh sách:
+   nửa bí mật của khoá **không được lưu ở đâu cả**, digest vẫn bị `digest` bắt,
+   còn **mã khoá là công khai theo thiết kế** — nó là thứ một cuộc hỗ trợ vẫn
+   nhắc tới.
+
+### Tests
+
+`tests/test_211_data_governance.py` — **22 test**.
+
+Bánh cóc kiểm kê; mọi lớp hợp lệ; **mọi `purged_by` trỏ tới hàm worker thật
+gọi**; store vận hành phải có cả hạn lẫn người dọn; store bằng chứng **không
+được** có hạn; mọi store phải nói vì sao tồn tại.
+
+Nghiệm thu 1: già hoá **toàn bộ CSDL 10 năm** rồi chạy mọi vòng quét — sổ credit
+(so theo nội dung), nhật ký admin, lịch sử giá, khoá đều còn nguyên; và nửa còn
+lại: nhật ký request + sự kiện bảo mật **thật sự sạch** (một vòng quét giữ lại
+tất cả thì chẳng giữ gì cả). Delivery đang chờ và idempotency đang bay không bị
+xoá. Quét hai lần cho kết quả giống hệt.
+
+Nghiệm thu 2: tạo khoá thật + webhook thật + artifact thật rồi **quét mọi dòng
+của mọi bảng** tìm bí mật và URL presigned (kể cả `X-Amz-Signature`); nhật ký
+request không giữ payload.
+
+Cộng: archive project thu hồi khoá nhưng **giữ lại dòng khoá** (bằng chứng chi
+tiêu); trang riêng tư dựng từ chính sách; bản xuất đúng tài khoản đang đăng
+nhập, không lộ bí mật, và **`api_keys` là một danh sách chứ không phải chữ
+"[redacted]"**.
+
+### Kiểm bằng trình duyệt
+
+`/developers/privacy` liệt kê đủ **42 store** trong 4 nhóm, có link pháp lý.
+Tải `/developers/privacy/export`: `Content-Disposition: attachment`, có mã khoá
+công khai + trạng thái + mốc thời gian, **0 chuỗi dài ≥ 40 ký tự**, và vẫn còn
+`[redacted]` ở đúng chỗ. Console: 0 lỗi.
+
+### Rollback
+
+Xoá `governance.py`, `dev_privacy.html`, hai route `/developers/privacy*`,
+`test_211`; gỡ `_don_du_lieu_het_han` khỏi worker và bốn hàm `purge_expired` mới
+(**lưu ý: hoàn nguyên là để bốn bảng lớn mãi trở lại**); trả `SECRET_HINTS` về
+bản cũ (**sẽ mang lại lỗi che mất danh sách khoá**).
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-19 | Kết quả |
+|---|---|
+| Audit/billing records preserved as required | ✅ già hoá 10 năm + chạy mọi vòng quét: sổ credit, nhật ký admin, lịch sử giá, khoá đều nguyên; lớp `EVIDENCE` bị cấm có hạn lưu trữ |
+| No raw secret/presigned URL retention | ✅ quét **mọi dòng của mọi bảng** tìm secret khoá, secret webhook, URL presigned và `X-Amz-*`; nhật ký request không giữ payload |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/20_FULL_APP_TOOL_MODEL_EXECUTION_MODE_EXTERNAL_CERTIFICATION.txt`
+(EXT-20) — **checkpoint full gate**.

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:1ceb35ab632d8bae99fe9e6728a63b9c34df8432d30725edf674e143b6ea7735
-Nguồn đã quét : 1115 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:5798a4c348285b23495a72e2503535fd7a48860941e69a31f7f0d0b9322d33f3
+Nguồn đã quét : 1118 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (315)
+4. HTTP ROUTE INVENTORY (317)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -593,35 +593,37 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /api/workers/status → workers_status_api | auth~login | server/routes/workers.py:108
 - [platform] GET    /audit → audit_page | auth~login | server/routes/monitor.py:50
 - [platform] POST   /audit/refresh → audit_refresh | auth~login | server/routes/monitor.py:65
-- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:268
-- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:673
-- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:698
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:866
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:619
-- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:284
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:923
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:962
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:975
-- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:439
-- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:472
-- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:714
-- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:724
-- [platform] GET    /developers/openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer.py:875
-- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:401
-- [platform] GET    /developers/pricing → developer_pricing | auth~unspecified | server/routes/developer.py:343
-- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:277
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:1019
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:1035
-- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:290
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:917
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:503
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:538
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:626
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:753
-- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:844
-- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:822
-- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:800
-- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:782
+- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:269
+- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:674
+- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:699
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:867
+- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:620
+- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:285
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:1024
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:1063
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:1076
+- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:440
+- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:473
+- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:715
+- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:725
+- [platform] GET    /developers/openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer.py:876
+- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:402
+- [platform] GET    /developers/pricing → developer_pricing | auth~unspecified | server/routes/developer.py:344
+- [platform] GET    /developers/privacy → developer_privacy | auth~unspecified | server/routes/developer.py:918
+- [platform] GET    /developers/privacy/export → developer_privacy_export | auth~unspecified | server/routes/developer.py:938
+- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:278
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:1120
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:1136
+- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:291
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:1018
+- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:504
+- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:539
+- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:627
+- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:754
+- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:845
+- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:823
+- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:801
+- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:783
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /facebook → facebook_accounts | auth~login | server/routes/accounts.py:76
 - [platform] POST   /facebook/disconnect → fb_disconnect | auth~login | server/routes/accounts.py:133
@@ -1016,7 +1018,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (213 file pytest + 3 frontend)
+10. QUALITY GATES (214 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1164,6 +1166,7 @@ Test inventory:
 - tests/test_209_versioning_status.py
 - tests/test_20_option_a_audit.py
 - tests/test_210_sdk_ecosystem.py
+- tests/test_211_data_governance.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -1256,8 +1259,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1115 file)
-Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:830, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1118 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:832, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1864,7 +1867,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (87)
+[platform_core] (88)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1920,6 +1923,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/public_api/error_registry.py
 - platform_core/public_api/errors.py
 - platform_core/public_api/examples.py
+- platform_core/public_api/governance.py
 - platform_core/public_api/idempotency.py
 - platform_core/public_api/invocation.py
 - platform_core/public_api/keys.py
@@ -1976,7 +1980,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (132)
+[server] (133)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2076,6 +2080,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 - server/templates/dev_overview.html
 - server/templates/dev_playground.html
 - server/templates/dev_pricing.html
+- server/templates/dev_privacy.html
 - server/templates/dev_projects.html
 - server/templates/dev_quickstart.html
 - server/templates/dev_settings.html
@@ -2117,7 +2122,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (229)
+[tests] (230)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2275,6 +2280,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_209_versioning_status.py
 - tests/test_20_option_a_audit.py
 - tests/test_210_sdk_ecosystem.py
+- tests/test_211_data_governance.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -2439,7 +2445,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1115 file; 9967890 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1118 file; 10019618 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -104515,7 +104521,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=271abcec912e6eaa2c96fbc47d550095c866896748cb7460120d125c2f008a71 BYTES=27446 LINES=632
+SHA256=c889bd3c5b5c8f317f0f5cfa35d58b7c9426f7734dc6ebbffb9628b9384f0b99 BYTES=28744 LINES=662
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -105024,6 +105030,39 @@ def _quet_canh_bao() -> None:
             log.info("don %d thong bao API het han", gone)
 
 
+def _don_du_lieu_het_han() -> None:
+    """Run every declared retention rule once.
+
+    Each store gets its own session and its own commit: one table whose purge
+    fails must not stop the others, because the one that fails is usually the
+    biggest, and the biggest is the one that most needs the others to succeed.
+
+    The list here is checked against `governance.STORES` by
+    `test_211_data_governance`, so adding a table with a retention class and
+    forgetting to sweep it fails the suite rather than growing quietly.
+    """
+    from platform_core.public_api import (costing, idempotency, notifications,
+                                          outbox, request_log, security_log)
+
+    rules = (
+        ("nhat ky request API", request_log.purge_expired),
+        ("thong bao", notifications.purge_expired),
+        ("su kien bao mat", security_log.purge_expired),
+        ("quan sat chi phi", costing.purge_expired),
+        ("ban ghi webhook da gui", outbox.purge_expired),
+        ("ban ghi idempotency", idempotency.purge_expired),
+    )
+    for label, purge in rules:
+        try:
+            for db in _one_session():
+                gone = purge(db)
+                db.commit()
+                if gone:
+                    log.info("don %d dong %s", gone, label)
+        except Exception:  # noqa: BLE001 - housekeeping must not kill the worker
+            log.exception("khong don duoc %s", label)
+
+
 def _ghi_chi_phi(db, job) -> None:
     """Record what this job consumed, if the operator configured any rates.
 
@@ -105102,16 +105141,13 @@ def run_forever(worker_id: str, *, stop=None) -> None:
                     if removed[job_events.CUSTOMER] or removed[job_events.INTERNAL]:
                         log.info("don job event het han: customer=%s internal=%s",
                                  removed[job_events.CUSTOMER], removed[job_events.INTERNAL])
-                # The API request log ages out on the same visit: it is created
-                # by every call, so a policy that waits for a later prompt is a
-                # table that grows forever (the lesson `webhook_deliveries`
-                # taught this platform once already).
-                from platform_core.public_api import request_log
-                for db in _one_session():
-                    gone = request_log.purge_expired(db)
-                    db.commit()
-                    if gone:
-                        log.info("don %d dong nhat ky request API", gone)
+                # …and every other retention rule on the same visit. Each of
+                # these used to be "somebody handles it"; writing the inventory
+                # in `public_api/governance.py` showed that four of them nobody
+                # did, and one had a purge function that was never called. A
+                # retention policy naming a function nobody runs reads as a
+                # promise (EXT-19).
+                _don_du_lieu_het_han()
                 next_event_purge = time.monotonic() + EVENT_PURGE_INTERVAL_S
             if time.monotonic() >= next_upload_sweep:
                 from platform_core import upload_sessions
@@ -109711,7 +109747,7 @@ __all__ = ["BREAKING_CODE_FIELDS", "BREAKING_ROUTE_FIELDS",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/costing.py
-SHA256=489abd41018fe8987876e1549153bae0a1168559a31d31961bed625420eb94bb BYTES=13557 LINES=325
+SHA256=8100262b2d87f75a8a0f28f07644e8568de32c69fa995beb2b7db864739ecbd7 BYTES=14304 LINES=343
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """What a job cost us, separated from what the customer paid.
 
@@ -110034,9 +110070,27 @@ def scan_for_alerts(db, *, hours: int = 24, now: datetime | None = None) -> list
     return raised
 
 
+#: Long enough to compare this quarter against the same quarter last year, which
+#: is the longest look-back anybody has asked a margin question over. Cost rows
+#: are estimates, not books — the ledger keeps the part that must survive.
+RETENTION_DAYS = 400
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    """Drop cost observations past their window. Caller commits."""
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(ApiCostObservation).where(
+        ApiCostObservation.created_at < cutoff)).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)
+
+
 __all__ = [
-    "ALERT_KIND", "MICROS", "Margin", "RATE_ENV", "margin", "margin_by_tool",
-    "observe", "rates", "record_job", "scan_for_alerts",
+    "ALERT_KIND", "MICROS", "RETENTION_DAYS", "Margin", "RATE_ENV", "margin", "margin_by_tool",
+    "observe", "purge_expired", "rates", "record_job",
+    "scan_for_alerts",
 ]
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -110844,8 +110898,260 @@ NO_CODE_RECIPES = (
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
+SHA256=2c204ed2002b5e994567ed07181dfa5e5ce5f796e8696ce130465b353396db2d BYTES=14229 LINES=246
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Every store that holds customer data, how long it keeps it, and why.
+
+The problem with retention rules that live in constants
+-------------------------------------------------------
+
+This platform already ages out job events, request logs and notifications. Each
+rule lived next to the code that wrote the rows, which is the right place for
+the rule and the wrong place for the *policy*: nobody could answer "what do we
+hold about a customer, and for how long" without reading five modules and
+hoping there was not a sixth.
+
+There was a sixth. ``api_security_events`` shipped in EXT-16 with a
+``purge_expired()`` that nothing ever called — a retention function nobody runs
+is a comment, and the table would have grown forever.
+
+So the classes are declared here, in one place, and a **ratchet test** fails when
+a table appears without one. Forgetting becomes visible instead of silent.
+
+The classes, and what they mean
+-------------------------------
+
+``EVIDENCE``
+    Money and permission. Ledger entries, admin actions, pricing versions,
+    developer keys. **Never deleted** — not by retention, not by an account
+    closing. A refund dispute six months later is answered from these rows, and
+    an audit that can be aged out is not an audit.
+
+``OPERATIONAL``
+    Useful while fresh, worthless when stale: request logs, job events,
+    security events, cost observations, notifications. Aged out on a schedule.
+
+``CONTENT``
+    What the customer actually sent and received — uploads and artifacts. The
+    largest by far, and the most sensitive. Lifecycle belongs to the storage
+    layer and the upload sweeper, not to a row count here.
+
+``DERIVED``
+    Rebuildable from the others: the system dossier, generated docs, Postman.
+    Losing them costs a command, not a fact.
+
+What is deliberately *not* here
+-------------------------------
+
+Legal text. The site already has a privacy policy, terms and a data-deletion
+page, and this module links to them rather than restating them — a second copy
+of a legal promise is a second promise, and the two will differ.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from platform_core.i18n import N_, _ as _t
+
+EVIDENCE = "evidence"
+OPERATIONAL = "operational"
+CONTENT = "content"
+DERIVED = "derived"
+CLASSES = (EVIDENCE, OPERATIONAL, CONTENT, DERIVED)
+
+#: Where the legal wording lives. Links, never copies (see the module docstring).
+LEGAL_LINKS = {
+    "privacy": "https://lttstudios.com/privacy-policy/",
+    "terms": "https://lttstudios.com/terms/",
+    "data_deletion": "https://lttstudios.com/data-deletion/",
+}
+
+
+@dataclass(frozen=True)
+class Store:
+    """One place customer data lives, and the promise made about it."""
+
+    table: str
+    klass: str
+    #: ``None`` means "kept for as long as the account exists".
+    retention_days: int | None
+    #: Who can read it. Written for a person answering a privacy question.
+    readable_by: str
+    #: Why it is kept at all. A store nobody can justify is one to delete.
+    reason: str
+    #: How rows leave. Empty when nothing removes them, which is a claim the
+    #: ratchet test checks rather than takes on trust.
+    purged_by: str = ""
+
+
+#: Every table that holds something about a customer. Ordered by class so the
+#: page reads as a policy rather than a schema dump.
+STORES: tuple = (
+    # ── Evidence: never aged out ─────────────────────────────────────────────
+    Store("credit_entries", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Sổ credit là chân lý thanh toán. Một tranh chấp hoàn tiền sáu tháng "
+          "sau được trả lời từ đây.")),
+    Store("nhat_ky_admin", EVIDENCE, None, N_("vận hành"),
+          N_("Ai đã làm gì với tài khoản của khách. Một nhật ký kiểm toán xoá "
+          "được thì không phải nhật ký kiểm toán.")),
+    Store("api_pricing_versions", EVIDENCE, None, N_("vận hành + công khai"),
+          N_("Chế độ giá nào đang có hiệu lực lúc một khoản tiền được tính.")),
+    Store("developer_api_keys", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Khoá đã thu hồi vẫn giữ lại: nó là bằng chứng ai đã tiêu cái gì. "
+          "Chỉ giữ dấu vân tay một chiều, không giữ bí mật.")),
+    Store("api_projects", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Lưu trữ (archive) chứ không xoá — job và bút toán trỏ về nó.")),
+    Store("payment_orders", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Chứng từ thanh toán: khách trả bao nhiêu, lúc nào, qua cổng nào. "
+          "Đây là phía đối ứng của sổ credit — mất nó thì không đối soát được "
+          "tiền thật với credit đã cấp.")),
+
+    # ── Operational: aged out on a schedule ──────────────────────────────────
+    Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
+          N_("Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."),
+          "request_log.purge_expired (worker)"),
+    Store("job_events", OPERATIONAL, 365, N_("chủ tài khoản (dòng customer)"),
+          N_("Dòng thời gian một job. Dòng nội bộ chỉ giữ 30 ngày."),
+          "job_events.purge_expired (worker)"),
+    Store("api_notifications", OPERATIONAL, 90, N_("chủ tài khoản"),
+          N_("Cảnh báo đã đọc rồi thì hết giá trị."),
+          "notifications.purge_expired (worker)"),
+    Store("api_security_events", OPERATIONAL, 90, N_("vận hành"),
+          N_("Ai đang dò khoá. Chỉ lưu nửa CÔNG KHAI của khoá đã thử."),
+          "security_log.purge_expired (worker)"),
+    Store("api_cost_observations", OPERATIONAL, 400, N_("vận hành"),
+          N_("Chi phí ƯỚC TÍNH để tính biên lợi nhuận. Không phải sổ sách."),
+          "costing.purge_expired (worker)"),
+    Store("public_api_webhook_deliveries", OPERATIONAL, 30, N_("chủ tài khoản"),
+          N_("Đã gửi callback chưa, và bên nhận trả lời gì."),
+          "outbox.purge_expired (worker)"),
+    Store("public_api_idempotency", OPERATIONAL, 7, N_("không ai (nội bộ)"),
+          N_("Chống tính tiền hai lần trong cửa sổ thử lại."),
+          "idempotency.purge_expired (worker)"),
+    Store("sessions", OPERATIONAL, 30, N_("không ai (nội bộ)"),
+          N_("Phiên đăng nhập web. Lưu SHA-256 của token, không lưu token."),
+          "auth sweeper"),
+
+    # ── Content: the customer's own material ─────────────────────────────────
+    Store("upload_sessions", CONTENT, 7, N_("chủ tài khoản"),
+          N_("Vé tải lên chưa dùng. Bytes ở staging bị quét dọn cùng lúc."),
+          "upload_sessions.sweep (worker)"),
+    Store("jobs", CONTENT, None, N_("chủ tài khoản"),
+          N_("`params` và `result` là đầu vào/đầu ra của chính khách. Giữ chừng "
+          "nào tài khoản còn: một job là thứ bút toán credit trỏ về.")),
+    Store("users", CONTENT, None, N_("chủ tài khoản + vận hành"),
+          N_("Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) "
+          "chứ không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại "
+          "RESTRICT, và xoá được thì bằng chứng mất theo.")),
+    Store("public_api_webhooks", CONTENT, None, N_("chủ tài khoản"),
+          N_("Địa chỉ nhận callback + secret ký, **đã mã hoá**. Xoá khi khách xoá "
+          "đăng ký.")),
+    Store("api_budgets", CONTENT, None, N_("chủ tài khoản"),
+          N_("Trần chi khách tự đặt. Chỉ QUAN SÁT, không đổi sổ credit.")),
+    Store("app_projects", CONTENT, None, N_("chủ tài khoản"),
+          N_("Dự án của các editor có trạng thái. Vòng đời do app quản.")),
+
+    # Bảng do APP sở hữu. Tất cả là nội dung của khách, vòng đời đi theo app —
+    # nền tảng cố ý không đặt hạn cho chúng: app biết khi nào một cảnh, một
+    # workflow hay một cuộc trò chuyện hết ý nghĩa, nền tảng thì không.
+    Store("agent_runs", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một lần chạy agent: đầu vào, các bước, kết quả.")),
+    Store("agent_workflows", CONTENT, None, N_("chủ tài khoản"),
+          N_("Sơ đồ các bước tự động do người dùng dựng trên canvas.")),
+    Store("agent_workflow_snapshots", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bản chụp một workflow để người dùng quay lại phiên bản cũ.")),
+    Store("agent_workflow_shares", CONTENT, None, N_("chủ tài khoản"),
+          N_("Link chia sẻ riêng tư tới một workflow: ai cầm link thì xem được.")),
+    Store("chat_conversations", CONTENT, None, N_("chủ tài khoản"),
+          N_("Hội thoại người dùng.")),
+    Store("chat_messages", CONTENT, None, N_("chủ tài khoản"),
+          N_("Nội dung tin nhắn — thứ nhạy cảm nhất trong nhóm này.")),
+    Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
+          N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
+    Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),
+          N_("Biến thể (crop, upscale, đổi tỉ lệ) sinh ra từ một tài nguyên gốc.")),
+    Store("ommi_resource_tag", CONTENT, None, N_("chủ tài khoản"),
+          N_("Nhãn người dùng gắn lên một tài nguyên cụ thể.")),
+    Store("ommi_resource_usage", CONTENT, None, N_("chủ tài khoản"),
+          N_("Ghi nhận tài nguyên nào đã dùng ở cảnh nào, để tra ngược.")),
+    Store("ommi_tag", CONTENT, None, N_("chủ tài khoản"), N_("Tên nhãn do người dùng tự đặt để sắp xếp tài nguyên.")),
+    Store("ommi_style", CONTENT, None, N_("chủ tài khoản"), N_("Style người dùng lưu lại để tái dùng giữa các cảnh.")),
+    Store("ommi_collection", CONTENT, None, N_("chủ tài khoản"), N_("Nhóm tài nguyên người dùng tự gom lại.")),
+    Store("ommi_collection_item", CONTENT, None, N_("chủ tài khoản"),
+          N_("Liên kết một tài nguyên vào một bộ sưu tập.")),
+    Store("ommi_meta_prompt", CONTENT, None, N_("chủ tài khoản"),
+          N_("Meta-prompt người dùng viết để sinh ra prompt khác.")),
+    Store("ommi_prompt_snippet", CONTENT, None, N_("chủ tài khoản"),
+          N_("Mẩu prompt người dùng lưu để chèn lại nhiều nơi.")),
+    Store("ommi_prompt_version", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một phiên bản của prompt, giữ lại để so sánh và quay lui.")),
+    Store("ommi_storyboard", CONTENT, None, N_("chủ tài khoản"), N_("Kịch bản hình của người dùng: khung sườn của một video.")),
+    Store("ommi_scene", CONTENT, None, N_("chủ tài khoản"), N_("Một cảnh trong storyboard, kèm prompt và tham số của nó.")),
+    Store("ommi_scene_version", CONTENT, None, N_("chủ tài khoản"),
+          N_("Phiên bản một cảnh, kèm góp ý của người dùng.")),
+
+    # ── Derived: rebuildable ─────────────────────────────────────────────────
+    Store("ho_so_he_thong.txt", DERIVED, None, N_("nội bộ"),
+          N_("Bản đồ mã nguồn, sinh lại được bằng một lệnh.")),
+    Store("sdk/postman/*", DERIVED, None, N_("công khai"),
+          N_("Sinh từ OpenAPI.")),
+)
+
+
+def translated(store: "Store") -> dict:
+    """One row as the privacy page shows it, in the reader's language.
+
+    Resolved here rather than in the template so there is one place that knows
+    which fields are prose and which are identifiers — a table name is not
+    translated, and translating it would break the only thing that lets a
+    customer match this page against their export.
+    """
+    return {"table": store.table, "klass": store.klass,
+            "retention_days": store.retention_days,
+            "readable_by": _t(store.readable_by), "reason": _t(store.reason)}
+
+
+def by_class(klass: str) -> tuple:
+    return tuple(store for store in STORES if store.klass == klass)
+
+
+def store_for(table: str) -> Store | None:
+    for store in STORES:
+        if store.table == table:
+            return store
+    return None
+
+
+#: Tables that hold nothing about a customer, so they need no class. Listed
+#: explicitly: "it is not customer data" is a claim worth writing down, because
+#: the next person will assume the omission was an oversight.
+NOT_CUSTOMER_DATA = frozenset({
+    "alembic_version", "platform_info", "api_keys", "api_policies",
+    "api_policy_assignments", "api_kill_switches", "app_access",
+    "credit_packages", "gpu_leases",
+})
+
+
+def unclassified(tables) -> list:
+    """Tables the inventory does not mention. The ratchet's whole job.
+
+    A new table that holds customer data and slips in unlisted is exactly how a
+    platform ends up unable to answer "what do you keep about me" — and the
+    honest answer to that question is not one anybody wants to improvise.
+    """
+    known = {store.table for store in STORES} | set(NOT_CUSTOMER_DATA)
+    return sorted(name for name in tables if name not in known)
+
+
+__all__ = ["CLASSES", "CONTENT", "DERIVED", "EVIDENCE", "LEGAL_LINKS",
+           "NOT_CUSTOMER_DATA", "OPERATIONAL", "STORES", "Store", "by_class",
+           "store_for", "translated", "unclassified"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/idempotency.py
-SHA256=23f51bc5acb55bc59bbbaffc4ace535913ee0e142f6f271c6a5bbc20a3bf334a BYTES=6103 LINES=146
+SHA256=7979f005c78a3722fd961227226cda7c146d7c22ab21f8892c4fc5f6f7dfa2f8 BYTES=7093 LINES=170
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """DB-backed idempotency for chargeable API operations.
 
@@ -110868,7 +111174,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
@@ -110993,6 +111299,30 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
     record.job_id = str(job_id or "")
     record.updated_at = _now()
     db.flush()
+
+
+#: The retry window a client could plausibly still be in. Past it, the record
+#: protects nothing — and it holds a stored response body, so keeping it longer
+#: is keeping a copy of somebody's data for no reason.
+RETENTION_DAYS = 7
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS,
+                  now: datetime | None = None) -> int:
+    """Drop idempotency records past the retry window. Caller commits.
+
+    Only completed ones: an in-flight record is what stops a concurrent retry
+    from opening a second job, and removing it mid-call would reintroduce the
+    double charge this table exists to prevent.
+    """
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(ApiIdempotencyRecord).where(
+        ApiIdempotencyRecord.created_at < cutoff,
+        ApiIdempotencyRecord.status != IDEMPOTENCY_IN_PROGRESS,
+    )).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -112502,7 +112832,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/outbox.py
-SHA256=6aa7ddc99cc45dd4539cfad460c51f2bf817732b82717c1338fbf42a4c8b67d9 BYTES=6987 LINES=165
+SHA256=697fb93d9d918580c7f667f0e9e3f56f49b2550b17ce9f4a81ff348769c3dca4 BYTES=8154 LINES=192
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The webhook outbox: enqueue in the job's transaction, deliver from the worker.
 
@@ -112519,7 +112849,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -112669,6 +112999,33 @@ def deliver_due(db, *, sender=None, limit: int = 20,
                            error=f"HTTP {status_code}", jitter=jitter, now=now)
             report["dead" if delivery.status == WEBHOOK_DEAD else "failed"] += 1
     return report
+
+
+#: How long a delivery record is worth keeping. Long enough that a customer
+#: investigating "we never got the callback" last week finds it; short enough
+#: that a table written to on every job does not become the biggest thing in the
+#: database. This platform has been bitten by exactly that once already.
+RETENTION_DAYS = 30
+
+
+def purge_expired(db, *, days: int = 30, now: datetime | None = None) -> int:
+    """Drop delivery records past their window, terminal ones only.
+
+    A pending or retrying delivery is never removed however old it looks: the
+    row *is* the queue, and deleting it would silently drop a callback the
+    customer is still waiting for.
+    """
+    from platform_core.public_api.tables import (WEBHOOK_DEAD,
+                                                 WEBHOOK_DELIVERED)
+
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(WebhookDelivery).where(
+        WebhookDelivery.created_at < cutoff,
+        WebhookDelivery.status.in_((WEBHOOK_DELIVERED, WEBHOOK_DEAD)),
+    )).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -115084,7 +115441,7 @@ __all__ = ["CapabilityStatus", "DEGRADED", "MAINTENANCE", "OPERATIONAL",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/support.py
-SHA256=6eaad2bac73ae97c781ea0a9747fe911ca0b5da816f0f13100c1a30eec146c45 BYTES=14626 LINES=344
+SHA256=9e36be0ee51ad429993ae76fadf57dd5dbf97e4a5cafe3dfc100c81159bfa0f0 BYTES=15120 LINES=351
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """One call, end to end, from whatever identifier the person in front of you has.
 
@@ -115139,7 +115496,14 @@ from platform_core.public_api.tables import (ApiProject, ApiRequestLog,
 #: it is nested in. Matched by substring on the key, because the day somebody
 #: adds `webhook_secret_enc` is the day an allowlist of exact names fails.
 SECRET_HINTS = ("secret", "token", "password", "credential", "digest",
-                "pepper", "authorization", "api_key", "signature")
+                "pepper", "authorization", "signature")
+# `api_key` is deliberately absent. It was in this list by reflex, and it cost
+# something real: the substring matched `api_keys`, so a customer's data export
+# redacted the whole list of their own credentials — the most useful part of the
+# file — into the word "[redacted]". Nothing is lost by removing it: the secret
+# half of a key is never stored anywhere, and the stored digest is still caught
+# by "digest". A key *id* is public by design; it is what a support
+# conversation refers to.
 
 #: Fields that name *where* something is stored. Not secret, but they encode the
 #: bucket layout and the owner id, and a support export is a file that travels.
@@ -121115,7 +121479,7 @@ SHA256=a5612b3f5e5c3442f6dced7fc031cb6196dea7f99a4ab7cbec288021dd6d7f4d BYTES=42
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/python/ltt_public_api.py
-SHA256=00576c7d89a51817b76c6a5aeee95cfa653f332215816f5c282d6d4495c60f9f BYTES=16159 LINES=362
+SHA256=a87435942163aeb3a05a912678fd10e775375a00a169f86650c5d5f0cf0a346a BYTES=15797 LINES=362
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Minimal Python client for the LTT Studios Public API.
 
@@ -121483,7 +121847,7 @@ def verify_webhook(secret: str, *, timestamp, event_id: str, body: bytes,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/typescript/ltt-public-api.ts
-SHA256=01e401a130b386ff0b944b2340713532a842def3b807dc92a0cd4aa6f9411628 BYTES=14549 LINES=409
+SHA256=596c08d4cac8cde4f76bf9e3289f8f3057a4128f4fad1435e84fc7400a2ab0eb BYTES=14140 LINES=409
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * Minimal TypeScript client for the LTT Studios Public API.
@@ -129227,7 +129591,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=832d35c3a9fa5662e0797572a86bf0be12450377457df542d9314a209b53dc62 BYTES=47816 LINES=1047
+SHA256=74f7d1c4131756725f5d8d05a2fec2d3bd422d14081b23e92fcf010d67ab21e0 BYTES=53121 LINES=1148
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -129365,6 +129729,7 @@ SECTIONS = (
     ("notifications", "/developers/notifications", N_("Thông báo")),
     ("docs", "/developers/docs", N_("Tài liệu & SDK")),
     ("settings", "/developers/settings", N_("Cài đặt & bảo mật")),
+    ("privacy", "/developers/privacy", N_("Dữ liệu & lưu trữ")),
 )
 
 
@@ -130139,6 +130504,106 @@ def developer_openapi_download(request: Request,
     name = f"ltt-public-api-{protocol.API_VERSION}-openapi.json"
     return Response(
         json.dumps(document, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{name}"',
+                 "Cache-Control": "no-store"})
+
+
+@router.get("/privacy", response_class=HTMLResponse)
+def developer_privacy(request: Request, user=Depends(require_account),
+                      db: Session = Depends(get_db)):
+    """What this area keeps about you, for how long, and why.
+
+    Built from `governance.STORES` rather than written by hand, so the page
+    cannot drift from the policy the worker actually enforces — a privacy page
+    that describes a retention rule nobody runs is the worst kind of wrong.
+    """
+    from platform_core.public_api import governance
+
+    # Translated here rather than in the template: a privacy page the reader
+    # cannot read is not a disclosure.
+    classes = [(klass, [governance.translated(store)
+                        for store in governance.by_class(klass)])
+               for klass in governance.CLASSES]
+    return _render(request, db, user, "privacy", "dev_privacy.html",
+                   classes=classes, legal=governance.LEGAL_LINKS)
+
+
+@router.get("/privacy/export")
+def developer_privacy_export(request: Request, user=Depends(require_account),
+                             db: Session = Depends(get_db)):
+    """The API area's data about this account, as a file.
+
+    Scoped to this area on purpose. A whole-account export would have to speak
+    for every app's tables as well, and promising that from here would be a
+    promise this code cannot keep — so the page says what is and is not in it.
+
+    Redacted with the same function the support trace uses: one definition of
+    "what must never leave", applied in both directions.
+    """
+    import json
+
+    from sqlalchemy import select
+    from starlette.responses import Response
+
+    from platform_core import credit
+    from platform_core.models import CreditEntry, Job
+    from platform_core.public_api import projects, request_log, support, usage
+    from platform_core.public_api.invocation import api_meta
+    from platform_core.public_api.tables import ApiBudget, WebhookSubscription
+
+    keys = devkeys.list_for_user(db, user.id)
+    jobs = [job for job in db.execute(
+        select(Job).where(Job.user_id == user.id)
+        .order_by(Job.created_at.desc()).limit(500)).scalars()
+        if api_meta(job)]
+
+    body = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "scope": _t("Khu API của tài khoản này. KHÔNG bao gồm nội dung do từng "
+                    "app lưu (chat, storyboard, workflow…) — mỗi app giữ dữ "
+                    "liệu của nó, và trang này không nói thay được."),
+        "account": {"id": user.id, "email": user.email,
+                    "created_at": user.created_at,
+                    "credit_balance": credit.so_du(db, user.id)},
+        "projects": [{"id": row.id, "name": row.name, "slug": row.slug,
+                      "status": row.status, "created_at": row.created_at}
+                     for row in projects.list_for(db, user_id=user.id,
+                                                  include_archived=True)],
+        # Public halves only. The secret half is not stored anywhere, so there
+        # is nothing here to withhold.
+        "api_keys": [{"key_id": row.key_id, "name": row.name,
+                      "mode": getattr(row, "mode", "live"),
+                      "status": row.status(), "created_at": row.created_at,
+                      "last_used_at": row.last_used_at} for row in keys],
+        "jobs": [{"id": job.id, "tool": api_meta(job).get("tool"),
+                  "status": job.status, "created_at": job.created_at,
+                  "finished_at": job.finished_at} for job in jobs],
+        "credit_entries": [
+            {"kind": row.kind, "delta": row.delta, "job_id": row.job_id,
+             "note": row.note, "created_at": row.created_at}
+            for row in db.execute(select(CreditEntry).where(
+                CreditEntry.user_id == user.id)
+                .order_by(CreditEntry.created_at)).scalars()],
+        "budgets": [{"scope": row.scope, "period": row.period,
+                     "amount": row.amount, "hard_cap": row.hard_cap}
+                    for row in db.execute(select(ApiBudget).where(
+                        ApiBudget.user_id == user.id)).scalars()],
+        "webhooks": [{"url": row.url, "events": list(row.events or ()),
+                      "enabled": row.enabled, "created_at": row.created_at}
+                     for row in db.execute(select(WebhookSubscription).where(
+                         WebhookSubscription.user_id == user.id)).scalars()],
+        "recent_requests": [
+            {"request_id": row.request_id, "method": row.method,
+             "route": row.route, "status": row.status, "code": row.code,
+             "created_at": row.created_at}
+            for row in request_log.list_for(db, user_id=user.id, limit=200)],
+    }
+
+    name = f"ltt-api-data-{user.id[:8]}.json"
+    return Response(
+        json.dumps(support.redact(body), ensure_ascii=False, indent=2,
+                   default=str),
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="{name}"',
                  "Cache-Control": "no-store"})
@@ -138152,6 +138617,73 @@ SHA256=9e8f0af80a7acbd17622e12f9df74133dc888390acf4dec2ce41a7f83cbe3029 BYTES=23
       </tbody>
     </table>
   {% endif %}
+</div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_privacy.html
+SHA256=b144565fea1d967e6d14b79a2f0cf01a4834e48ff17efaffb55f22a51fa8dd52 BYTES=3545 LINES=61
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <p>{{ _("Bảng dưới đây sinh trực tiếp từ chính sách mà worker đang thi hành (platform_core/public_api/governance.py). Nó không thể lệch với thực tế: nếu một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước khi trang này kịp nói dối bạn.") }}</p>
+  <p class="muted">{{ _("Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, workflow…) có vòng đời riêng của app.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Lấy dữ liệu của bạn") }}</h2>
+  <p>{{ _("Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), job, bút toán credit, ngân sách, webhook và nhật ký request gần đây.") }}</p>
+  <p><a class="btn btn-primary" href="/developers/privacy/export">{{ _("Tải dữ liệu (JSON)") }}</a></p>
+  <p class="muted">{{ _("Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở đâu cả, nên không có gì để xuất.") }}</p>
+</div>
+
+{% for klass, stores in classes %}
+  <div class="card">
+    <h2 style="margin-top:0;">
+      {% if klass == "evidence" %}{{ _("Bằng chứng — không bao giờ xoá") }}
+      {% elif klass == "operational" %}{{ _("Vận hành — tự hết hạn") }}
+      {% elif klass == "content" %}{{ _("Nội dung của bạn") }}
+      {% else %}{{ _("Sinh lại được") }}{% endif %}
+    </h2>
+    {% if klass == "evidence" %}
+      <p class="muted">{{ _("Sổ credit, nhật ký thao tác quản trị, lịch sử giá, khoá đã cấp. Giữ vô thời hạn — một tranh chấp hoàn tiền sáu tháng sau được trả lời từ đây, và một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán.") }}</p>
+    {% elif klass == "operational" %}
+      <p class="muted">{{ _("Hữu ích khi còn mới, vô nghĩa khi đã cũ. Worker tự dọn theo lịch.") }}</p>
+    {% endif %}
+    <div class="tablewrap">
+      <table class="ui-table">
+        <thead><tr>
+          <th>{{ _("Nơi lưu") }}</th><th>{{ _("Giữ bao lâu") }}</th>
+          <th>{{ _("Ai đọc được") }}</th><th>{{ _("Vì sao giữ") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for store in stores %}
+            <tr>
+              <td><code>{{ store.table }}</code></td>
+              <td>{% if store.retention_days %}{{ store.retention_days }} {{ _("ngày") }}
+                  {% else %}<span class="muted">{{ _("theo vòng đời tài khoản") }}</span>{% endif %}</td>
+              <td class="muted">{{ store.readable_by }}</td>
+              <td class="muted">{{ store.reason }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Điều khoản pháp lý") }}</h2>
+  <p class="muted">{{ _("Trang này mô tả kỹ thuật. Cam kết pháp lý nằm ở các trang chính thức, và chúng tôi cố ý KHÔNG chép lại chúng ở đây — hai bản của một lời hứa thì sớm muộn sẽ khác nhau.") }}</p>
+  <ul>
+    <li><a href="{{ legal.privacy }}">{{ _("Chính sách riêng tư") }}</a></li>
+    <li><a href="{{ legal.terms }}">{{ _("Điều khoản") }}</a></li>
+    <li><a href="{{ legal.data_deletion }}">{{ _("Yêu cầu xoá dữ liệu") }}</a></li>
+  </ul>
 </div>
 
 {% endblock %}
@@ -181090,6 +181622,638 @@ def test_the_recipes_say_how_to_verify_a_webhook():
     assert "body thô" in text
     assert "hằng định" in text or "compare_digest" in text
     assert "5 phút" in text
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_211_data_governance.py
+SHA256=be8834fff4edb642ac2390d97c29459369135ee5d20514c33f573506f1e19c8d BYTES=24724 LINES=626
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-19 — what we keep about a customer, for how long, and what never goes.
+
+Two acceptance criteria:
+
+* **audit and billing records survive** — proven by aging everything by a decade
+  and checking the ledger, the admin log and the pricing versions are untouched;
+* **no raw secret and no presigned URL is retained** — proven by making a real
+  key, a real webhook, a real artifact, then searching every table's contents.
+
+And one property the inventory only earns if it is enforced: every claim in it
+must be **true**. A retention policy naming a function nobody calls is worse than
+no policy, because it reads as a promise — which is exactly the state
+`api_security_events` was in when this file was written.
+"""
+from __future__ import annotations
+
+import inspect
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import select
+
+from platform_core.public_api import governance, keys as devkeys, limits
+from server.api.inventory import API_V1_PREFIX
+
+PEPPER = "gov-test-pepper-" + "g" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "artifacts:read",
+          "webhooks:manage")
+RECEIVER = "https://receiver.example.com/hook"
+
+
+def _public_dns(host: str) -> list:
+    if host.endswith("example.com"):
+        return ["93.184.216.34"]
+    raise OSError(f"unknown test host: {host}")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    from platform_core.public_api import webhooks
+
+    monkeypatch.setattr(webhooks, "_system_resolver", _public_dns)
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'gov.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: bytes([137, 80, 78, 71, 13, 10, 26, 10])
+                        + b"0" * 200)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "gov-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_RPM": "600", "LTT_PUBLIC_API_CREATE_RPM": "200",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _account(client) -> tuple:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"gov-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 500, by="test")
+        db.commit()
+        user_id = user.id
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    keys_page = client.get("/developers/keys").text
+    made = client.post("/developers/keys",
+                       data={"name": "gov", "csrf_token": _csrf(keys_page),
+                             "scopes": list(SCOPES)})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", made.text).group(1)
+    return user_id, token
+
+
+def _run_one_call(client, token) -> str:
+    auth = {"Authorization": f"Bearer {token}"}
+    payload = {"topic": "governance", "count": 1}
+    quote = client.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": payload}, headers=auth)
+    created = client.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote.json()["quote"], "input": payload},
+        headers={**auth, "Idempotency-Key": f"gov-{uuid.uuid4().hex[:10]}"})
+    assert created.status_code == 201, created.text
+
+    from platform_core.job_runner import _chay_mot_job
+
+    assert _chay_mot_job("gov-worker") is True
+    return created.json()["id"]
+
+
+def _every_row_as_text(db) -> str:
+    """Everything in every table, flattened. Blunt on purpose.
+
+    A search for a secret has to look where nobody thought to put one.
+    """
+    from platform_core.db import Base
+
+    chunks = []
+    for table in Base.metadata.sorted_tables:
+        try:
+            rows = db.execute(select(table)).all()
+        except Exception:  # noqa: BLE001 - a table this deployment lacks
+            continue
+        for row in rows:
+            chunks.append(" ".join(str(value) for value in row))
+    return "\n".join(chunks)
+
+
+# ── The inventory is complete, and its claims are true ───────────────────────
+
+def test_every_table_has_a_retention_class(portal):
+    """The ratchet. On its first run it found twenty-five stores nobody had
+    written a policy for — including every chat message and storyboard scene."""
+    from platform_core.db import Base
+    from platform_core.registry import load_app_tables
+
+    load_app_tables()
+    missing = governance.unclassified(sorted(Base.metadata.tables))
+    assert missing == [], (
+        f"these tables hold data nobody has classified: {missing}. Add them to "
+        f"governance.STORES, or to NOT_CUSTOMER_DATA if they hold nothing "
+        f"about a customer.")
+
+
+def test_every_class_is_one_of_the_declared_ones():
+    for store in governance.STORES:
+        assert store.klass in governance.CLASSES, store.table
+
+
+def test_every_purge_claim_names_a_function_that_exists_and_runs():
+    """The failure that motivated this whole prompt.
+
+    `api_security_events` shipped with a `purge_expired()` nothing called. A
+    policy that names a function nobody runs is not a policy, it is a promise —
+    so every `purged_by` claim is checked against the worker's own sweep.
+    """
+    import platform_core.job_runner as runner
+
+    sweep = inspect.getsource(runner._don_du_lieu_het_han)
+    other_sweeps = (inspect.getsource(runner.run_forever)
+                    + inspect.getsource(runner))
+
+    for store in governance.STORES:
+        if not store.purged_by:
+            continue
+        function = store.purged_by.split(" ")[0]         # "module.function"
+        module, _, name = function.rpartition(".")
+        assert name, store.purged_by
+        # The claim must name something the worker actually calls.
+        assert f"{name}" in sweep or f"{name}" in other_sweeps, (
+            f"{store.table} claims it is purged by {store.purged_by}, but the "
+            f"worker never calls it")
+
+
+def test_operational_stores_all_declare_who_removes_them():
+    """A row that never leaves is a decision, and it has to be a stated one."""
+    for store in governance.by_class(governance.OPERATIONAL):
+        assert store.retention_days, store.table
+        assert store.purged_by, (
+            f"{store.table} has a retention window but nothing that enforces it")
+
+
+def test_evidence_is_never_given_a_retention_window():
+    """An audit trail that ages out is not an audit trail."""
+    for store in governance.by_class(governance.EVIDENCE):
+        assert store.retention_days is None, store.table
+        assert not store.purged_by, store.table
+
+
+def test_every_store_says_why_it_exists():
+    """A store nobody can justify is one to delete.
+
+    The check is for a *reason*, not for a word count. An earlier version
+    demanded twenty characters and started pushing me to pad descriptions that
+    were already clear — "Nhãn người dùng gắn." explains a tag table completely.
+    A length threshold measures verbosity; what matters is that somebody wrote
+    something meant, so the bar is set where only emptiness and placeholders
+    fall below it.
+    """
+    placeholders = {"todo", "tbd", "n/a", "-", "?", "xxx"}
+    for store in governance.STORES:
+        reason = store.reason.strip()
+        assert reason, store.table
+        assert reason.lower().rstrip(".") not in placeholders, store.table
+        assert len(reason.split()) >= 3, (
+            f"{store.table}: a reason should be a sentence, not a label")
+        assert store.readable_by, store.table
+
+
+# ── Audit and billing records survive ────────────────────────────────────────
+
+def test_a_decade_of_retention_leaves_the_ledger_and_the_audit_log_intact(portal):
+    """The acceptance criterion, applied with a blunt instrument.
+
+    Everything is aged ten years and every sweep is run. What must remain is
+    what somebody would need to answer a billing dispute or an access question.
+    """
+    from platform_core.models import CreditEntry, NhatKyAdmin
+    from platform_core.public_api import pricing
+    from platform_core.public_api.tables import ApiPricingVersion
+
+    user_id, token = _account(portal)
+    _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        db.add(NhatKyAdmin(admin_email="op@example.com", hanh_dong="test",
+                           doi_tuong="x", chi_tiet="y"))
+        version = pricing.create_version(db, tool=TOOL, label="kept")
+        pricing.publish(db, version, published_by="op@example.com")
+        db.commit()
+
+        # Compared as tuples, not ORM rows: two sessions give two objects for
+        # the same row, and `==` on those compares identity.
+        ledger_before = sorted(
+            (row.id, row.kind, row.delta, row.job_id)
+            for row in db.execute(select(CreditEntry)).scalars())
+        assert ledger_before, "this test needs a ledger"
+
+        ancient = datetime.now(timezone.utc) - timedelta(days=3650)
+        from platform_core.db import Base
+
+        for table in Base.metadata.sorted_tables:
+            if "created_at" in table.c:
+                db.execute(table.update().values(created_at=ancient))
+        db.commit()
+    finally:
+        _close(gen)
+
+    import platform_core.job_runner as runner
+
+    runner._don_du_lieu_het_han()
+
+    gen, db = _session()
+    try:
+        ledger_after = sorted(
+            (row.id, row.kind, row.delta, row.job_id)
+            for row in db.execute(select(CreditEntry)).scalars())
+        assert ledger_after == ledger_before
+        assert db.execute(select(NhatKyAdmin)).all(), "the audit log was purged"
+        assert db.execute(select(ApiPricingVersion)).all(), "pricing history went"
+        from platform_core.public_api.tables import DeveloperApiKey
+
+        assert db.execute(select(DeveloperApiKey)).all(), "key evidence went"
+    finally:
+        _close(gen)
+
+
+def test_the_operational_stores_really_do_empty(portal):
+    """The other half: a sweep that preserves everything preserves nothing."""
+    from platform_core.public_api import security_log
+    from platform_core.public_api.tables import ApiRequestLog, ApiSecurityEvent
+
+    user_id, token = _account(portal)
+    portal.get(f"{API_V1_PREFIX}/jobs/nope",
+               headers={"Authorization": f"Bearer {token}"})
+    portal.get(f"{API_V1_PREFIX}/me",
+               headers={"Authorization": "Bearer ltt_sk_" + "a" * 32 + "_"
+                        + "b" * 43})
+
+    gen, db = _session()
+    try:
+        assert db.execute(select(ApiRequestLog)).all()
+        assert db.execute(select(ApiSecurityEvent)).all()
+        ancient = datetime.now(timezone.utc) - timedelta(days=3650)
+        from platform_core.db import Base
+
+        for table in Base.metadata.sorted_tables:
+            if "created_at" in table.c:
+                db.execute(table.update().values(created_at=ancient))
+        db.commit()
+    finally:
+        _close(gen)
+
+    import platform_core.job_runner as runner
+
+    runner._don_du_lieu_het_han()
+
+    gen, db = _session()
+    try:
+        assert db.execute(select(ApiRequestLog)).all() == []
+        assert db.execute(select(ApiSecurityEvent)).all() == []
+        assert security_log.list_recent(db) == []
+    finally:
+        _close(gen)
+
+
+def test_a_pending_webhook_delivery_is_never_purged(portal):
+    """The row *is* the queue. Deleting it drops a callback silently."""
+    from platform_core.public_api import outbox
+    from platform_core.public_api.tables import (WebhookDelivery,
+                                                 WEBHOOK_PENDING)
+
+    user_id, _token = _account(portal)
+    gen, db = _session()
+    try:
+        ancient = datetime.now(timezone.utc) - timedelta(days=3650)
+        db.add(WebhookDelivery(
+            id=str(uuid.uuid4()), subscription_id="s1", user_id=user_id,
+            event_id="e1", event_type="job.succeeded", job_id="j1",
+            payload={}, status=WEBHOOK_PENDING, created_at=ancient,
+            next_attempt_at=ancient))
+        db.commit()
+
+        assert outbox.purge_expired(db) == 0, "a queued callback was deleted"
+        db.commit()
+        assert db.execute(select(WebhookDelivery)).all()
+    finally:
+        _close(gen)
+
+
+def test_an_in_flight_idempotency_record_is_never_purged(portal):
+    """Removing it mid-call reintroduces the double charge it prevents."""
+    from platform_core.public_api import idempotency
+    from platform_core.public_api.tables import (ApiIdempotencyRecord,
+                                                 IDEMPOTENCY_IN_PROGRESS)
+
+    gen, db = _session()
+    try:
+        ancient = datetime.now(timezone.utc) - timedelta(days=3650)
+        db.add(ApiIdempotencyRecord(
+            id=str(uuid.uuid4()), key_id="k1", user_id="u1",
+            operation="create_job", idempotency_key="abc", request_hash="h",
+            status=IDEMPOTENCY_IN_PROGRESS, created_at=ancient))
+        db.commit()
+        assert idempotency.purge_expired(db) == 0
+        db.commit()
+        assert db.execute(select(ApiIdempotencyRecord)).all()
+    finally:
+        _close(gen)
+
+
+def test_every_sweep_is_idempotent(portal):
+    """Running it twice must not do anything the first run did not."""
+    import platform_core.job_runner as runner
+
+    user_id, token = _account(portal)
+    _run_one_call(portal, token)
+
+    runner._don_du_lieu_het_han()
+    gen, db = _session()
+    try:
+        first = _every_row_as_text(db)
+    finally:
+        _close(gen)
+
+    runner._don_du_lieu_het_han()
+    gen, db = _session()
+    try:
+        assert _every_row_as_text(db) == first
+    finally:
+        _close(gen)
+
+
+# ── No raw secret, no presigned URL, retained anywhere ───────────────────────
+
+def test_no_table_holds_a_key_secret_or_a_webhook_secret(portal):
+    """Made for real, then searched for everywhere.
+
+    Blunt by design: the interesting leak is always in the table nobody thought
+    to check.
+    """
+    user_id, token = _account(portal)
+    created = portal.post(f"{API_V1_PREFIX}/webhooks", json={"url": RECEIVER},
+                          headers={"Authorization": f"Bearer {token}"})
+    hook_secret = created.json()["secret"]
+    key_secret = token.split("_", 3)[-1]
+    _run_one_call(portal, token)
+
+    gen, db = _session()
+    try:
+        blob = _every_row_as_text(db)
+    finally:
+        _close(gen)
+
+    assert key_secret not in blob, "a key secret is stored somewhere"
+    assert hook_secret not in blob, "a webhook signing secret is stored in clear"
+    assert token not in blob
+
+
+def test_no_table_holds_a_presigned_url(portal):
+    """A presigned URL is a bearer credential with an expiry.
+
+    Storing one turns a row that looks like metadata into a key to somebody's
+    file, and rows outlive expiries in every incident that matters.
+    """
+    user_id, token = _account(portal)
+    job_id = _run_one_call(portal, token)
+    auth = {"Authorization": f"Bearer {token}"}
+    finished = portal.get(f"{API_V1_PREFIX}/jobs/{job_id}", headers=auth).json()
+    artifact = finished["outputs"][0]["id"]
+    detail = portal.get(f"{API_V1_PREFIX}/artifacts/{artifact}",
+                        headers=auth).json()
+    url = str(detail.get("url") or "")
+
+    gen, db = _session()
+    try:
+        blob = _every_row_as_text(db)
+    finally:
+        _close(gen)
+
+    if url:
+        assert url not in blob, "a presigned URL was written to the database"
+    for marker in ("X-Amz-Signature", "X-Amz-Credential", "Signature="):
+        assert marker not in blob, f"{marker} found in stored data"
+
+
+def test_the_request_log_keeps_no_payload(portal):
+    """It records that a call happened, not what was in it."""
+    from platform_core.public_api.tables import ApiRequestLog
+
+    user_id, token = _account(portal)
+    secret_topic = f"topic-{uuid.uuid4().hex}"
+    portal.post(f"{API_V1_PREFIX}/quotes",
+                json={"tool": TOOL, "input": {"topic": secret_topic,
+                                              "count": 1}},
+                headers={"Authorization": f"Bearer {token}"})
+
+    gen, db = _session()
+    try:
+        rows = db.execute(select(ApiRequestLog)).all()
+        assert rows, "this test needs a recorded request"
+        assert secret_topic not in " ".join(str(value) for row in rows
+                                            for value in row)
+    finally:
+        _close(gen)
+
+
+# ── Lifecycle: revoking on the way out ───────────────────────────────────────
+
+def test_archiving_a_project_revokes_its_keys(portal):
+    """Already true before this prompt; locked down here because the inventory
+    now promises it."""
+    from platform_core.public_api import projects
+    from platform_core.public_api.tables import DeveloperApiKey
+
+    user_id, token = _account(portal)
+    gen, db = _session()
+    try:
+        project = projects.default_for(db, user_id=user_id)
+        db.flush()
+        revoked = projects.archive(db, project)
+        db.commit()
+        assert revoked >= 1
+        keys = db.execute(select(DeveloperApiKey).where(
+            DeveloperApiKey.user_id == user_id)).scalars().all()
+        assert all(key.revoked_at is not None for key in keys)
+        # …and the key rows themselves stay: they are evidence of spend.
+        assert keys
+    finally:
+        _close(gen)
+
+    assert portal.get(f"{API_V1_PREFIX}/me",
+                      headers={"Authorization": f"Bearer {token}"}
+                      ).status_code == 401
+
+
+# ── Legal text is linked, never written here ─────────────────────────────────
+
+def test_the_legal_links_point_at_the_existing_site():
+    """Restating a legal promise creates a second promise, and the two differ."""
+    for name, url in governance.LEGAL_LINKS.items():
+        assert url.startswith("https://lttstudios.com/"), name
+
+    source = inspect.getsource(governance)
+    for word in ("chúng tôi cam kết", "điều khoản sử dụng", "quyền của bạn"):
+        assert word not in source.lower(), (
+            f"governance.py appears to restate legal text ({word!r}); link to "
+            f"the approved page instead")
+
+
+# ── What a customer can see and take ─────────────────────────────────────────
+
+def test_the_privacy_page_is_built_from_the_policy_not_written_by_hand(portal):
+    """A privacy page that describes a rule nobody runs is the worst kind of
+    wrong: it is a promise, in writing, that the code does not keep."""
+    _account(portal)
+    page = portal.get("/developers/privacy").text
+    assert page.count("<code>") >= 20, "the table should list every store"
+    for store in governance.by_class(governance.EVIDENCE):
+        assert store.table in page, store.table
+    assert "governance.py" in page
+
+
+def test_the_privacy_page_links_legal_text_rather_than_restating_it(portal):
+    _account(portal)
+    page = portal.get("/developers/privacy").text
+    for url in governance.LEGAL_LINKS.values():
+        assert url in page
+
+
+def test_a_customer_can_export_the_api_data_held_about_them(portal):
+    import json
+
+    user_id, token = _account(portal)
+    _run_one_call(portal, token)
+
+    answer = portal.get("/developers/privacy/export")
+    assert answer.status_code == 200
+    assert "attachment" in answer.headers.get("content-disposition", "")
+    body = json.loads(answer.content)
+
+    assert body["account"]["id"] == user_id
+    # Lists, not the word "[redacted]". An earlier redactor matched the
+    # substring `api_key` and swallowed the customer's whole key list — the most
+    # useful part of their own export. Only visible by reading the output.
+    assert isinstance(body["api_keys"], list) and body["api_keys"]
+    assert body["api_keys"][0]["key_id"]
+    assert isinstance(body["jobs"], list) and body["jobs"]
+    assert isinstance(body["credit_entries"], list) and body["credit_entries"]
+    # …and it says what it does NOT cover, rather than implying it covers all.
+    assert "KHÔNG bao gồm" in body["scope"]
+
+
+def test_redaction_hides_secret_values_without_hiding_public_ones(portal):
+    """The line the redactor has to draw.
+
+    A key *id* is public by design — it is what a support conversation refers
+    to. The stored digest is not. Blurring the two made the export useless while
+    protecting nothing that was not already unstored.
+    """
+    from platform_core.public_api import support
+
+    clean = support.redact({
+        "api_keys": [{"key_id": "abc123", "name": "production"}],
+        "verifier_digest": "d", "webhook_secret_enc": "s",
+        "authorization": "Bearer x", "pepper_version": 1})
+    assert clean["api_keys"][0]["key_id"] == "abc123"
+    assert clean["api_keys"][0]["name"] == "production"
+    for field in ("verifier_digest", "webhook_secret_enc", "authorization"):
+        assert clean[field] == support.REDACTED, field
+
+
+def test_the_export_carries_no_secret(portal):
+    """Same redaction the support trace uses: one definition of what must never
+    leave, applied in both directions."""
+    user_id, token = _account(portal)
+    created = portal.post(f"{API_V1_PREFIX}/webhooks", json={"url": RECEIVER},
+                          headers={"Authorization": f"Bearer {token}"})
+    hook_secret = created.json()["secret"]
+    key_secret = token.split("_", 3)[-1]
+    _run_one_call(portal, token)
+
+    blob = portal.get("/developers/privacy/export").text
+    assert key_secret not in blob
+    assert hook_secret not in blob
+    assert token not in blob
+
+
+def test_the_export_belongs_to_the_signed_in_account_only(portal):
+    """Two accounts, one export: it must contain exactly one of them."""
+    import json
+
+    first_id, first_token = _account(portal)
+    _run_one_call(portal, first_token)
+    second_id, _second_token = _account(portal)      # signs in as the second
+
+    body = json.loads(portal.get("/developers/privacy/export").content)
+    assert body["account"]["id"] == second_id
+    assert first_id not in json.dumps(body)
+
+
+def test_an_anonymous_visitor_cannot_export_anything(portal):
+    portal.cookies.clear()
+    answer = portal.get("/developers/privacy/export", follow_redirects=False)
+    assert answer.status_code in (302, 303, 307)
 
 @@@LTT_PROFILE_FILE_END@@@
 

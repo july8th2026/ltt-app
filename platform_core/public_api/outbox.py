@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -163,3 +163,30 @@ def deliver_due(db, *, sender=None, limit: int = 20,
                            error=f"HTTP {status_code}", jitter=jitter, now=now)
             report["dead" if delivery.status == WEBHOOK_DEAD else "failed"] += 1
     return report
+
+
+#: How long a delivery record is worth keeping. Long enough that a customer
+#: investigating "we never got the callback" last week finds it; short enough
+#: that a table written to on every job does not become the biggest thing in the
+#: database. This platform has been bitten by exactly that once already.
+RETENTION_DAYS = 30
+
+
+def purge_expired(db, *, days: int = 30, now: datetime | None = None) -> int:
+    """Drop delivery records past their window, terminal ones only.
+
+    A pending or retrying delivery is never removed however old it looks: the
+    row *is* the queue, and deleting it would silently drop a callback the
+    customer is still waiting for.
+    """
+    from platform_core.public_api.tables import (WEBHOOK_DEAD,
+                                                 WEBHOOK_DELIVERED)
+
+    cutoff = (now or _now()) - timedelta(days=max(1, int(days)))
+    rows = db.execute(select(WebhookDelivery).where(
+        WebhookDelivery.created_at < cutoff,
+        WebhookDelivery.status.in_((WEBHOOK_DELIVERED, WEBHOOK_DEAD)),
+    )).scalars().all()
+    for row in rows:
+        db.delete(row)
+    return len(rows)
