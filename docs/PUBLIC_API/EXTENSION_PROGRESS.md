@@ -1927,7 +1927,7 @@ bại xác thực vô hình trở lại**); bỏ 4 view + 4 mục NAV; bỏ kh�
 | No ledger direct edit | ✅ mọi bề mặt ở đây chỉ đọc; snapshot **toàn bộ** sổ credit trước/sau → giống hệt |
 | No secret in export | ✅ tạo khoá thật + secret webhook thật rồi quét file xuất; `redact()` che theo **cấu trúc**, nên trường mới bị che mặc định |
 
-**NEXT_EXTENSION_PROMPT_ALLOWED=false** — xem BLOCKER bên dưới.
+**NEXT_EXTENSION_PROMPT_ALLOWED=true** — blocker đã gỡ, xem bên dưới.
 
 ---
 
@@ -1979,3 +1979,134 @@ sản phẩm, không phải quyết định kỹ thuật.
 
 Trạng thái tới thời điểm dừng: **16/21 PASS**, nhánh `public-api-v2`, cây sạch,
 không deploy gì.
+
+### ĐÃ GỠ — 2026-08-15
+
+Chủ sản phẩm chọn phương án 1 và khôi phục thư mục. Đã kiểm lại: đủ cả năm
+prompt `17…21` trong `prompts/`. Chạy tiếp từ EXT-17 theo đúng chế độ chạy liên
+tục ở đầu file.
+
+Ghi lại vì nó là một bài học vận hành, không phải một sự cố: pack nằm trên Google
+Drive nên nó **có thể biến mất giữa chừng** mà không ai làm gì sai. Hồ sơ bàn
+giao này là thứ duy nhất nối được hai phía của khoảng trống đó.
+
+---
+
+## EXT-17 — PHIÊN BẢN, CHANGELOG, NGỪNG HỖ TRỢ, TRẠNG THÁI ✅
+
+### Entry gate
+
+EXT-16 PASS ✅ (`1ee6072`, checkpoint full gate), cây sạch. **Không migration
+mới** — prompt này đóng băng những gì đã có chứ không thêm dữ liệu.
+
+### Trái tim: một bản chuẩn hợp đồng, và một cổng canh nó
+
+Mọi mảnh của hợp đồng đều **đã** tồn tại ở đâu đó: route trong
+`server/api/inventory.py`, hình dạng tool sau `contract_hash`, mã lỗi trong
+registry, loại sự kiện trong `webhooks`. Cái **chưa** tồn tại là một cách hỏi
+*"có gì đổi không, và đổi đó có được phép không"* — nên một thay đổi phá vỡ
+tương thích lên tàu được, vì không ai diff một thứ mà không ai gom lại.
+
+- `platform_core/public_api/contract.py` — `snapshot()` gom, `compare()` phân
+  loại.
+- `docs/PUBLIC_API/CONTRACT_BASELINE.json` — bản chuẩn, **nằm trong git**, nên
+  thay đổi hợp đồng hiện ra trong diff của pull request.
+- `tools/check_api_compat.py` + bước gate **`hop dong API`**.
+
+Phép thử không phải "byte có đổi không" mà **"một tích hợp đang chạy có hỏng
+không"**. Phá vỡ: route/tool biến mất hoặc đổi chỗ; operation bắt đầu đòi xác
+thực hoặc đòi thêm scope; `contract_hash` của tool đổi; đổi chế độ chạy; mã lỗi
+biến mất; loại sự kiện webhook biến mất; `payload_version` đổi. **Không** phá
+vỡ: thêm route, thêm tool, thêm mã lỗi, thêm sự kiện — client không hỏi tới thì
+không nhận ra.
+
+**Bất đối xứng có chủ ý:** thứ gì checker không phân loại được thì coi là **phá
+vỡ**. Đó đúng là trường hợp ai đó vừa đổi một thứ checker chưa được dạy, và mặc
+định "chắc là ổn" ở đó sẽ làm cả cái cổng thành trang trí.
+
+`--accept` **không** phải cửa sau: nó ghi lại bản chuẩn, và lần ghi đó là một
+thay đổi trong git mà người review nhìn thấy. Ý là: phá vỡ tương thích phải là
+một **quyết định có chủ đích**, không phải một tai nạn.
+
+### Trang trạng thái: hai khán giả, hai trang
+
+`/status` đã có và **chỉ operator** — nó là báo cáo doctor, nêu tên CSDL, đĩa,
+tunnel, pool credential. Đúng cho người đi sửa, và sai hoàn toàn cho công chúng:
+một trang sự cố liệt kê hạ tầng bên trong nói cho kẻ tấn công biết cửa nào đang
+mở.
+
+`/status/api` là **công khai**, nhóm theo **năng lực** (`image`, `video`, …) chứ
+không theo hạ tầng, và dựng từ ba nguồn nền tảng đã có: catalog (cái gì tồn
+tại), kill switch (operator cố ý tắt gì) và `capacity` (cái gì hỏng mà không ai
+quyết). Dùng lại `capacity` nghĩa là trang trạng thái **không thể** mâu thuẫn
+với việc API đang làm — kiểu hỏng "trang báo bình thường trong khi mọi lời gọi
+đều bị từ chối".
+
+Không có danh sách "service" riêng: một danh sách thứ hai là một danh sách sẽ
+trôi dạt, và lần đầu nó trôi thì trang trạng thái sai một cách tự tin.
+
+### Webhook payload có phiên bản
+
+`PAYLOAD_VERSION = 1` + `PAYLOAD_FIELDS` khai tường minh. Trong một phiên bản,
+trường có thể **thêm** nhưng không được bỏ hay đổi tên — và đổi số phiên bản là
+một thay đổi phá vỡ tương thích mà checker chặn. Khai tường minh chứ không suy
+từ một mẫu, vì checker phải so với thứ đã **hứa**, không phải thứ một ví dụ
+tình cờ chứa.
+
+### Changelog và hướng dẫn chuyển đổi
+
+`CHANGELOG.md` ghi **thay đổi một tích hợp cảm nhận được**, không phải mọi
+commit — mỗi mục trả lời ba câu: đổi cái gì, có phá vỡ không, phải làm gì.
+
+`MIGRATION.md` **nói thẳng là đang trống**: một trang ngừng-hỗ-trợ trống có thể
+nghĩa là "không có gì bị ngừng" hoặc "chưa ai cập nhật", và hai thứ đó rất khác
+nhau với người đang quyết định có nên tích hợp. Có test bắt buộc: nếu một route
+nào đó có ngày sunset mà `MIGRATION.md` không nhắc tới nó thì test đỏ.
+
+### OAuth: vẫn DEFERRED
+
+Prompt nêu "OAuth metadata/version status **if enabled**". D1/D7 đã chốt hoãn
+delegated access, nên không có metadata nào để công bố. Không dựng một trang
+trạng thái cho thứ không tồn tại.
+
+### Tests
+
+`tests/test_209_versioning_status.py` — **32 test**. Đáng kể nhất là **13 ca phá
+vỡ tương thích** chạy qua **chính công cụ thật, trên chính file bản chuẩn thật**
+(khôi phục sau mỗi ca): route biến mất, route đòi xác thực, tool biến mất, schema
+tool đổi, thêm scope, đổi chế độ chạy, mã lỗi biến mất, mã lỗi đổi HTTP status,
+`payload_version` đổi, sự kiện webhook biến mất, trường payload biến mất, đổi
+`api_version`, mất header. Một cổng chỉ kiểm qua thư viện là một cổng chưa ai
+kiểm dây nối.
+
+Cộng: thay đổi cộng thêm được cho qua; `--accept` ghi lại bản chuẩn thật; định
+dạng snapshot cũ bị **từ chối** thay vì so sai; bước gate có thật trong
+`gate.py`; trang công khai đọc được **không cần tài khoản** và **không chứa** 17
+từ khoá hạ tầng; `/status` vẫn chỉ operator; nhóm theo năng lực; bảo trì hiện
+đúng lời operator; một tool tắt thì **degraded** chứ không phải maintenance;
+switch hết hạn thì thôi hiện.
+
+### Kiểm bằng trình duyệt
+
+Mở `/status/api` **chưa đăng nhập** → 200, `Cache-Control: no-store`, không lộ
+từ khoá hạ tầng nào. Operator bật maintenance kèm lý do → tải lại trang công
+khai (đã xoá cookie) → "Đang bảo trì theo kế hoạch" + **đúng lời operator viết**
++ mốc thời gian. Console: 0 lỗi.
+
+### Rollback
+
+Bỏ bước `hop dong API` khỏi `gate.py`; xoá `contract.py`, `status.py`,
+`tools/check_api_compat.py`, `CONTRACT_BASELINE.json`, route `/status/api` +
+`status_api.html`, `test_209`; bỏ `PAYLOAD_VERSION`/`PAYLOAD_FIELDS` khỏi
+`webhooks.py`. `CHANGELOG.md` và `MIGRATION.md` giữ lại — chúng là lịch sử.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-17 | Kết quả |
+|---|---|
+| Breaking change fails CI unless versioned/approved | ✅ 13 loại phá vỡ đều bị bước gate chặn; cộng thêm thì cho qua; `--accept` là một thay đổi trong git chứ không phải cửa sau |
+| No sensitive topology leak | ✅ trang công khai nhóm theo năng lực, không chứa 17 từ khoá hạ tầng (kiểm cả bằng test lẫn trình duyệt); `/status` operator vẫn nguyên |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/18_SDK_CLI_POSTMAN_OPENAPI_AUTOMATION_ECOSYSTEM.txt`
+(EXT-18).

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Tình trạng API") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Tình trạng API") }}</strong>{% endblock %}
+{% block content %}
+<div class="wrap" style="max-width:820px;margin:0 auto;padding:24px 16px;">
+
+  <h1 style="margin-bottom:4px;">{{ _("Tình trạng API") }}</h1>
+  <p class="muted">{{ _("Cập nhật lúc") }} {{ report.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
+
+  <div class="ui-card" style="margin:16px 0;">
+    <div class="dim">{{ _("Tổng thể") }}</div>
+    <div style="font-size:22px;font-weight:700;">{{ report.overall_wording }}</div>
+  </div>
+
+  <div class="tablewrap">
+    <table class="ui-table">
+      <thead><tr>
+        <th>{{ _("Năng lực") }}</th><th>{{ _("Tình trạng") }}</th><th>{{ _("Ghi chú") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for row in report.capabilities %}
+          <tr>
+            <td><b>{{ row.capability }}</b><br>
+              <span class="muted" style="font-size:11px;">
+                {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
+            <td>{{ row.wording }}</td>
+            <td class="muted">
+              {{ row.note or "—" }}
+              {% if row.since %}<br><small>{{ _("từ") }} {{ row.since.strftime('%Y-%m-%d %H:%M') }} UTC</small>{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="muted">{{ _("Chưa mở năng lực nào ra API công khai.") }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted" style="margin-top:18px;">
+    {{ _("Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần.") }}
+  </p>
+</div>
+{% endblock %}

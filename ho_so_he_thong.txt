@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b66e64c067c15d3f60915c83adf12c6215733c7dedd892a8d3ba0f698b4ab0f6
-Nguồn đã quét : 1105 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:fbffc9e88b6f21e55b3aa85bf3f6bed3a7902fd0f580070374d0f794c1b84708
+Nguồn đã quét : 1110 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (313)
+4. HTTP ROUTE INVENTORY (314)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -680,7 +680,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /sheet/{platform}/tabs → load_tabs | auth~login | server/routes/sheet.py:90
 - [platform] POST   /sheet/{platform}/workers/add → worker_add | auth~login | server/routes/sheet.py:128
 - [platform] POST   /sheet/{platform}/workers/remove → worker_remove | auth~login | server/routes/sheet.py:153
-- [platform] GET    /status → status_page | auth~admin | server/routes/status.py:19
+- [platform] GET    /status → status_page | auth~admin | server/routes/status.py:61
+- [platform] GET    /status/api → public_api_status | auth~unspecified | server/routes/status.py:30
 - [platform] GET    /tiktok → tiktok_accounts | auth~login | server/routes/accounts.py:81
 - [platform] POST   /tiktok/disconnect → tt_disconnect | auth~login | server/routes/accounts.py:163
 - [platform] POST   /tiktok/refresh → tt_refresh | auth~login | server/routes/accounts.py:148
@@ -1014,7 +1015,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (211 file pytest + 3 frontend)
+10. QUALITY GATES (212 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1159,6 +1160,7 @@ Test inventory:
 - tests/test_206_policy_engine.py
 - tests/test_207_pricing.py
 - tests/test_208_support_trace.py
+- tests/test_209_versioning_status.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -1252,8 +1254,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1105 file)
-Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:823, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1110 file)
+Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:827, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1860,7 +1862,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (85)
+[platform_core] (87)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1910,6 +1912,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/capacity.py
 - platform_core/public_api/catalog.py
 - platform_core/public_api/config.py
+- platform_core/public_api/contract.py
 - platform_core/public_api/costing.py
 - platform_core/public_api/delivery.py
 - platform_core/public_api/error_registry.py
@@ -1934,6 +1937,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - platform_core/public_api/sandbox.py
 - platform_core/public_api/scopes.py
 - platform_core/public_api/security_log.py
+- platform_core/public_api/status.py
 - platform_core/public_api/support.py
 - platform_core/public_api/tables.py
 - platform_core/public_api/usage.py
@@ -1968,7 +1972,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (131)
+[server] (132)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2096,6 +2100,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - server/templates/settings.html
 - server/templates/sheet.html
 - server/templates/status.html
+- server/templates/status_api.html
 - server/templates/verify_result.html
 - server/templates/workers.html
 - server/templating.py
@@ -2108,7 +2113,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (227)
+[tests] (228)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2263,6 +2268,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_206_policy_engine.py
 - tests/test_207_pricing.py
 - tests/test_208_support_trace.py
+- tests/test_209_versioning_status.py
 - tests/test_20_option_a_audit.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
@@ -2337,7 +2343,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (64)
+[tools] (65)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2352,6 +2358,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - tools/build_public_api_docs.py
 - tools/build_release.py
 - tools/build_system_profile.py
+- tools/check_api_compat.py
 - tools/check_i18n.py
 - tools/check_silent_except.py
 - tools/check_undefined_names.py
@@ -2425,7 +2432,7 @@ Phân bố extension: .cfg:1, .css:7, .html:75, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1105 file; 9869717 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1110 file; 9913624 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -109454,6 +109461,248 @@ def load_public_api_config(env: dict | None = None) -> PublicApiConfig:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/contract.py
+SHA256=97b922e0ca30df28e15f228d54cef2ff9a7fc8d0b5235f0a87a0ef28b0dd4b30 BYTES=10319 LINES=236
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""The public surface, as one machine-readable fact, and what may change about it.
+
+Why this exists
+---------------
+
+Every piece of the contract already existed somewhere: routes in
+``server/api/inventory.py``, tool shapes behind ``contract_hash``, error codes in
+the registry, event types in ``webhooks``. What did not exist was a way to ask
+*"did any of that change, and was the change allowed?"* — so a breaking change
+could ship because nobody diffed a thing nobody had assembled.
+
+``snapshot()`` assembles it. ``compare()`` says what moved and, for each
+difference, whether it is the kind a client survives.
+
+What counts as breaking, and why
+--------------------------------
+
+The test is not "did bytes change" but **"would a working integration stop
+working"**:
+
+* a route or tool that disappears, or moves — the caller gets a 404 tomorrow;
+* an operation that starts requiring authentication, or a scope it did not need;
+* a tool whose ``contract_hash`` moves — that hash covers the input and output
+  schema, so a caller's payload may no longer validate or their parser may no
+  longer find a field;
+* an execution mode change — a client written for a job id cannot read a
+  synchronous answer;
+* an error code that vanishes from the registry — somebody is branching on it;
+* a webhook event type that disappears, or a payload version that moves — a
+  receiver verifies and parses on both.
+
+Additive changes are not breaking: a new route, a new tool, a new error code, a
+new event type. A client that never asks for them cannot notice them.
+
+The deliberate asymmetry
+------------------------
+
+Anything this module cannot classify is treated as **breaking**. An unknown
+difference is exactly the case where somebody has changed something the checker
+was not taught about, and defaulting to "probably fine" there would make the
+whole gate decorative.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from platform_core.public_api import protocol
+
+#: Bumped only when the *shape of the snapshot itself* changes, so an old
+#: baseline is refused loudly rather than compared against wrongly.
+SNAPSHOT_VERSION = 1
+
+
+def snapshot(config, *, routes=(), apps=None) -> dict:
+    """Everything a client can depend on, in a stable, comparable shape.
+
+    Sorted and keyed rather than positional: a diff of this file should show
+    what changed about the API, not that two routes swapped places.
+
+    ``routes`` is passed in rather than imported. The route inventory is an HTTP
+    concern that lives in ``server/``, and ``platform_core`` sits underneath it —
+    a lower layer that reaches upwards has quietly made the thing above it a
+    dependency, and the first symptom is a module you cannot import without a
+    web app. ``tools/check_api_compat.py`` knows both sides and supplies them.
+    """
+    from platform_core.public_api import errors, webhooks
+    from platform_core.public_api.catalog import build_catalog
+    from platform_core.public_api.error_registry import as_rows
+
+    routes_map = {}
+    for route in routes:
+        routes_map[f"{route.method} {route.path}"] = {
+            "authenticated": bool(route.authenticated),
+            "in_schema": bool(route.in_schema),
+            "execution_mode": route.execution_mode,
+            "deprecated_on": route.deprecated_on,
+            "sunset_on": route.sunset_on,
+        }
+
+    tools = {}
+    for tool in build_catalog(config, apps=apps):
+        body = tool.to_public_dict()
+        tools[tool.name] = {
+            "contract_hash": body["contract_hash"],
+            "execution_mode": body["execution_mode"],
+            "required_scopes": sorted(body.get("required_scopes") or ()),
+            "aliases": sorted(body.get("aliases") or ()),
+            "deprecated": body.get("deprecated", ""),
+            "models": sorted((tool.model_aliases or {}).keys()),
+        }
+
+    codes = {}
+    for row in as_rows():
+        codes[row["code"]] = {"status": int(row["status"]),
+                              "retry": row["retry"]}
+
+    return {
+        "snapshot_version": SNAPSHOT_VERSION,
+        "api_version": protocol.API_VERSION,
+        "routes": dict(sorted(routes_map.items())),
+        "tools": dict(sorted(tools.items())),
+        "error_codes": dict(sorted(codes.items())),
+        "webhook": {
+            # The signature scheme and the payload shape a receiver parses.
+            # Both are versioned, and both are immutable within a version —
+            # a receiver that verifies today must verify tomorrow.
+            "signature_version": webhooks.SIGNATURE_VERSION,
+            "payload_version": webhooks.PAYLOAD_VERSION,
+            "event_types": sorted(webhooks.TERMINAL_EVENTS),
+            "payload_fields": sorted(webhooks.PAYLOAD_FIELDS),
+        },
+        "headers": sorted((protocol.HEADER_CORRELATION_ID,
+                           protocol.HEADER_API_VERSION,
+                           protocol.HEADER_IDEMPOTENCY_KEY,
+                           protocol.HEADER_RETRY_AFTER)),
+        "execution_modes_in_use": sorted(protocol.MODES_IN_USE),
+        "problem_media_type": errors.PROBLEM_CONTENT_TYPE,
+    }
+
+
+@dataclass
+class Difference:
+    """One change, and whether a working integration survives it."""
+
+    area: str
+    subject: str
+    kind: str            # "removed" | "changed" | "added"
+    breaking: bool
+    detail: str = ""
+
+    def line(self) -> str:
+        mark = "BREAKING" if self.breaking else "ok"
+        return f"[{mark}] {self.area}: {self.subject} {self.kind} {self.detail}".strip()
+
+
+@dataclass
+class Comparison:
+    differences: list = field(default_factory=list)
+
+    @property
+    def breaking(self) -> list:
+        return [item for item in self.differences if item.breaking]
+
+    @property
+    def additive(self) -> list:
+        return [item for item in self.differences if not item.breaking]
+
+    @property
+    def clean(self) -> bool:
+        return not self.differences
+
+
+#: Per-area, the fields whose change breaks a client. Anything not listed here
+#: is metadata — and anything the checker does not recognise is breaking, which
+#: is the safe direction for a rule about not breaking people.
+BREAKING_ROUTE_FIELDS = ("authenticated", "execution_mode")
+BREAKING_TOOL_FIELDS = ("contract_hash", "execution_mode", "required_scopes")
+BREAKING_CODE_FIELDS = ("status",)
+
+
+def compare(old: dict, new: dict) -> Comparison:
+    """What changed between two snapshots, classified.
+
+    ``old`` is the committed baseline; ``new`` is what the code serves now.
+    """
+    found = Comparison()
+    if int(old.get("snapshot_version", 0)) != SNAPSHOT_VERSION:
+        found.differences.append(Difference(
+            "snapshot", "snapshot_version", "changed", True,
+            "baseline was written by a different checker; regenerate it"))
+        return found
+
+    if old.get("api_version") != new.get("api_version"):
+        found.differences.append(Difference(
+            "version", "api_version", "changed", True,
+            f'{old.get("api_version")} -> {new.get("api_version")}'))
+
+    _compare_map(found, "route", old.get("routes", {}), new.get("routes", {}),
+                 BREAKING_ROUTE_FIELDS)
+    _compare_map(found, "tool", old.get("tools", {}), new.get("tools", {}),
+                 BREAKING_TOOL_FIELDS)
+    _compare_map(found, "error_code", old.get("error_codes", {}),
+                 new.get("error_codes", {}), BREAKING_CODE_FIELDS)
+    _compare_webhook(found, old.get("webhook", {}), new.get("webhook", {}))
+
+    old_headers = set(old.get("headers") or ())
+    for gone in sorted(old_headers - set(new.get("headers") or ())):
+        found.differences.append(Difference(
+            "header", gone, "removed", True, "clients read it"))
+    return found
+
+
+def _compare_map(found: Comparison, area: str, old: dict, new: dict,
+                 breaking_fields) -> None:
+    for subject in sorted(set(old) - set(new)):
+        found.differences.append(Difference(area, subject, "removed", True))
+    for subject in sorted(set(new) - set(old)):
+        found.differences.append(Difference(area, subject, "added", False))
+    for subject in sorted(set(old) & set(new)):
+        before, after = old[subject], new[subject]
+        for key in sorted(set(before) | set(after)):
+            if before.get(key) == after.get(key):
+                continue
+            breaks = key in breaking_fields
+            if area == "tool" and key == "required_scopes":
+                # Only *adding* a required scope breaks a caller; dropping one
+                # widens what an existing key may do.
+                breaks = bool(set(after.get(key) or ())
+                              - set(before.get(key) or ()))
+            found.differences.append(Difference(
+                area, subject, "changed", breaks,
+                f'{key}: {before.get(key)!r} -> {after.get(key)!r}'))
+
+
+def _compare_webhook(found: Comparison, old: dict, new: dict) -> None:
+    for key in ("signature_version", "payload_version"):
+        if old.get(key) != new.get(key):
+            found.differences.append(Difference(
+                "webhook", key, "changed", True,
+                f'{old.get(key)} -> {new.get(key)} — receivers verify on this'))
+    old_events = set(old.get("event_types") or ())
+    new_events = set(new.get("event_types") or ())
+    for gone in sorted(old_events - new_events):
+        found.differences.append(Difference("webhook", gone, "removed", True,
+                                            "a subscriber asked for it"))
+    for extra in sorted(new_events - old_events):
+        found.differences.append(Difference("webhook", extra, "added", False))
+    old_fields = set(old.get("payload_fields") or ())
+    for gone in sorted(old_fields - set(new.get("payload_fields") or ())):
+        found.differences.append(Difference(
+            "webhook", f"payload.{gone}", "removed", True, "receivers parse it"))
+
+
+__all__ = ["BREAKING_CODE_FIELDS", "BREAKING_ROUTE_FIELDS",
+           "BREAKING_TOOL_FIELDS", "Comparison", "Difference",
+           "SNAPSHOT_VERSION", "compare", "snapshot"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/costing.py
 SHA256=489abd41018fe8987876e1549153bae0a1168559a31d31961bed625420eb94bb BYTES=13557 LINES=325
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -114653,6 +114902,180 @@ __all__ = [
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/status.py
+SHA256=7875f53342486b0d9bfc30961ae80a88331b311760bed4708525ddae66478dfe BYTES=6660 LINES=168
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""What a customer is allowed to know about how we are doing.
+
+Two audiences, two pages
+------------------------
+
+``/status`` already exists and is operator-only: it is the doctor report, and it
+names the database, the disk, the tunnel and the provider pool. That is exactly
+right for the person fixing things and exactly wrong for the public — an outage
+page that lists your internal topology tells an attacker which door is currently
+unlocked.
+
+So this module maps **internal health onto public capability**. A customer learns
+whether image generation is working; they do not learn that the answer came from
+a GPU lease table, a credential pool or a disk check.
+
+The mapping rule
+----------------
+
+Every public capability is derived from the tool catalog — the same names a
+customer already calls (`image.generate` → capability `image`). Nothing declares
+a separate list of "services", because a second list is one that drifts, and the
+first time it drifts the status page is confidently wrong.
+
+A capability is degraded when the machinery it *actually needs* is unavailable,
+which is the same question `capacity.py` answers at job creation. Reusing it
+means the status page cannot disagree with what the API is doing — the failure
+mode where a page says "operational" while every call is refused.
+
+What is deliberately withheld
+-----------------------------
+
+No host names, no queue depths, no provider names, no error text from upstream,
+no counts that reveal customer volume. The public page says which capability is
+affected, since when, and what is being done — and nothing that would only be
+useful to somebody planning to make it worse.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+
+from platform_core.i18n import N_, _ as _t
+
+OPERATIONAL = "operational"
+DEGRADED = "degraded"
+MAINTENANCE = "maintenance"
+OUTAGE = "outage"
+
+#: Worst-first, so a page can sort by severity without a second table.
+SEVERITY = {OUTAGE: 3, MAINTENANCE: 2, DEGRADED: 1, OPERATIONAL: 0}
+
+#: What a customer is told for each state. Written for somebody deciding whether
+#: to retry, not for somebody debugging us.
+#: Marked for translation at import and resolved at render, because a status
+#: page is read by whoever is affected — and during an incident that is the
+#: worst possible moment to serve somebody a language they do not read.
+PUBLIC_WORDING = {
+    OPERATIONAL: N_("Hoạt động bình thường."),
+    DEGRADED: N_("Đang trục trặc — lời gọi mới có thể bị từ chối tạm thời."),
+    MAINTENANCE: N_("Đang bảo trì theo kế hoạch."),
+    OUTAGE: N_("Đang gián đoạn."),
+}
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+@dataclass(frozen=True)
+class CapabilityStatus:
+    """One line on the public page."""
+
+    capability: str
+    state: str
+    tools: tuple
+    note: str = ""
+    since: datetime | None = None
+
+    @property
+    def wording(self) -> str:
+        return _t(PUBLIC_WORDING.get(self.state,
+                                     PUBLIC_WORDING[OPERATIONAL]))
+
+
+def public_status(db, config, *, now: datetime | None = None) -> dict:
+    """The whole public page, as data.
+
+    Assembled from three sources the platform already maintains: the catalog
+    (what exists), the kill switches (what an operator turned off deliberately)
+    and the capacity probes (what is broken without anybody deciding).
+    """
+    from platform_core.public_api import policy
+    from platform_core.public_api.catalog import build_catalog
+    from platform_core.public_api.tables import (KILL_MAINTENANCE, KILL_TOOL)
+
+    moment = now or _now()
+    tools = build_catalog(config)
+
+    switches = {}
+    for row in policy.active_switches(db, now=moment):
+        switches[(row.scope, row.subject)] = row
+    global_maintenance = switches.get((KILL_MAINTENANCE, ""))
+
+    grouped: dict = {}
+    for tool in tools:
+        grouped.setdefault(tool.capability, []).append(tool)
+
+    lines = []
+    for capability, members in sorted(grouped.items()):
+        state, note, since = OPERATIONAL, "", None
+
+        if global_maintenance is not None:
+            # An operator said so, and said why. The reason is written by an
+            # operator for a customer, so it is shown as written.
+            state = MAINTENANCE
+            note = global_maintenance.reason
+            since = global_maintenance.created_at
+        else:
+            off = [switches.get((KILL_TOOL, tool.name)) for tool in members]
+            off = [row for row in off if row is not None]
+            if off and len(off) == len(members):
+                state, note, since = MAINTENANCE, off[0].reason, off[0].created_at
+            elif off:
+                state, note, since = DEGRADED, off[0].reason, off[0].created_at
+            else:
+                missing = _capacity_gap(db, members)
+                if missing is not None:
+                    state = DEGRADED
+                    # `capacity` messages are already written for a caller —
+                    # "no GPU is available", not "gpu_leases row missing".
+                    note = missing
+
+        lines.append(CapabilityStatus(
+            capability=capability, state=state,
+            tools=tuple(tool.name for tool in members), note=note, since=since))
+
+    overall = OPERATIONAL
+    for line in lines:
+        if SEVERITY[line.state] > SEVERITY[overall]:
+            overall = line.state
+
+    return {
+        "checked_at": moment,
+        "overall": overall,
+        "overall_wording": _t(PUBLIC_WORDING[overall]),
+        "capabilities": sorted(lines,
+                               key=lambda row: (-SEVERITY[row.state],
+                                                row.capability)),
+    }
+
+
+def _capacity_gap(db, tools) -> str | None:
+    """The first missing resource across a capability's tools, in public words."""
+    from platform_core.public_api import capacity
+    from platform_core.registry import discover
+
+    manifests = {item.manifest.slug: item.manifest
+                 for item in discover() if not item.error and item.manifest}
+    for tool in tools:
+        missing = capacity.check(db, tool=tool,
+                                 manifest=manifests.get(tool.app_slug))
+        if missing is not None:
+            return missing.detail
+    return None
+
+
+__all__ = ["CapabilityStatus", "DEGRADED", "MAINTENANCE", "OPERATIONAL",
+           "OUTAGE", "PUBLIC_WORDING", "SEVERITY", "public_status"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/support.py
 SHA256=6eaad2bac73ae97c781ea0a9747fe911ca0b5da816f0f13100c1a30eec146c45 BYTES=14626 LINES=344
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -116211,7 +116634,7 @@ def grace_secret(subscription, *, now: datetime | None = None):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/webhooks.py
-SHA256=013edecbe5ac0cf4ae80219840cc7e42a321798a568399d35f284230b36d4b3c BYTES=9755 LINES=231
+SHA256=c7cd3b821bb1ed6ffb5b244c7528619b7848283c046465d67ad934c5c29c132f BYTES=10342 LINES=242
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Webhook subscriptions, transactional outbox, signing and SSRF defence.
 
@@ -116263,6 +116686,17 @@ TERMINAL_EVENTS = (EVENT_JOB_SUCCEEDED, EVENT_JOB_FAILED, EVENT_JOB_CANCELLED)
 SIGNATURE_HEADER = "X-LTT-Signature"
 TIMESTAMP_HEADER = "X-LTT-Timestamp"
 EVENT_HEADER = "X-LTT-Event-Id"
+
+#: The shape a receiver parses. Immutable within a version: a receiver written
+#: against `1` must keep working, so a field may be **added** to the payload but
+#: never removed or renamed without moving this number — and moving it is a
+#: breaking change the contract checker refuses (EXT-17).
+PAYLOAD_VERSION = 1
+
+#: The fields inside `data`. Listed rather than inferred from a sample, because
+#: the checker has to compare against something that says what was *promised*,
+#: not what one example happened to contain.
+PAYLOAD_FIELDS = ("job_id", "tool", "status", "mode")
 SIGNATURE_VERSION = "v1"
 
 MAX_ATTEMPTS = 6
@@ -130926,10 +131360,20 @@ def sheet_stop(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/status.py
-SHA256=c441aeefdb0bd50b3e0ed5e820755a312f0d491849a68d670d49abd8ed51896d BYTES=1171 LINES=37
+SHA256=945cbd2ed61ef078fecb293dcdc388d14b05523bd40316395e94c8cf09837eac BYTES=2979 LINES=79
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 /status — the doctor health report, in the browser (PB-2).
+
+Two pages live here, and the difference between them is the point:
+
+* ``/status/api`` is **public**. It groups by capability and says nothing about
+  how the platform is built;
+* ``/status`` is **operator-only**. It is the doctor report, and it names the
+  database, the disk, the tunnel and the credential pool.
+
+A page that mixed them would either be useless to a customer or dangerous to
+publish (EXT-17).
 
 Reuses tools/doctor.py rather than reimplementing the checks, so the CLI
 and the dashboard can never disagree about whether the bot can publish.
@@ -130938,11 +131382,43 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
+from sqlalchemy.orm import Session
 
-from server.deps import require_operator
+from server.deps import get_db, require_operator
 from server.templating import templates
 
 router = APIRouter(tags=["status"])
+
+
+@router.get("/status/api", response_class=HTMLResponse)
+def public_api_status(request: Request, db: Session = Depends(get_db)):
+    """Is the API working — for anyone, without an account.
+
+    Deliberately **not** behind `require_operator`, unlike `/status` below. A
+    status page a customer cannot read during an incident is a status page that
+    does not exist; the whole point is that it answers when support does not.
+
+    Equally deliberately, it says nothing about how the platform is built. The
+    operator report names the database, the disk, the tunnel and the credential
+    pool; publishing that during an outage would tell somebody planning the next
+    one which door is currently unlocked.
+    """
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.status import public_status
+
+    config = getattr(request.app.state, "public_api", None)
+    if config is None:
+        config = load_public_api_config()
+
+    report = public_status(db, config)
+    response = templates.TemplateResponse(request, "status_api.html", {
+        "nav": "status",
+        "report": report,
+    })
+    # An incident page must never be served from a cache that predates the
+    # incident.
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.get("/status", response_class=HTMLResponse)
@@ -139064,6 +139540,55 @@ SHA256=c3f6b7a65c027232c98317247665577359b897f3812bf68c651ad09e7ee5b4a2 BYTES=14
              style="width:auto;"> Kiểm tra cả Google Sheet (chậm hơn)
     </label>
   </form>
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/status_api.html
+SHA256=7e89f46cb706a296b31786eb8b6ce0b1e3ad4b15c18234812e760ed2ae3a6a74 BYTES=1990 LINES=43
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Tình trạng API") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Tình trạng API") }}</strong>{% endblock %}
+{% block content %}
+<div class="wrap" style="max-width:820px;margin:0 auto;padding:24px 16px;">
+
+  <h1 style="margin-bottom:4px;">{{ _("Tình trạng API") }}</h1>
+  <p class="muted">{{ _("Cập nhật lúc") }} {{ report.checked_at.strftime('%Y-%m-%d %H:%M') }} UTC</p>
+
+  <div class="ui-card" style="margin:16px 0;">
+    <div class="dim">{{ _("Tổng thể") }}</div>
+    <div style="font-size:22px;font-weight:700;">{{ report.overall_wording }}</div>
+  </div>
+
+  <div class="tablewrap">
+    <table class="ui-table">
+      <thead><tr>
+        <th>{{ _("Năng lực") }}</th><th>{{ _("Tình trạng") }}</th><th>{{ _("Ghi chú") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for row in report.capabilities %}
+          <tr>
+            <td><b>{{ row.capability }}</b><br>
+              <span class="muted" style="font-size:11px;">
+                {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
+            <td>{{ row.wording }}</td>
+            <td class="muted">
+              {{ row.note or "—" }}
+              {% if row.since %}<br><small>{{ _("từ") }} {{ row.since.strftime('%Y-%m-%d %H:%M') }} UTC</small>{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="muted">{{ _("Chưa mở năng lực nào ra API công khai.") }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted" style="margin-top:18px;">
+    {{ _("Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần.") }}
+  </p>
+</div>
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -178446,6 +178971,424 @@ def test_the_request_page_can_be_narrowed_to_failures(portal):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_209_versioning_status.py
+SHA256=0a68b8bedc5fe64354faee316d59ff75916558cc085edb828af9273f44df749e BYTES=16893 LINES=412
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-17 — the frozen contract, the changelog, and a status page that is safe to publish.
+
+Two acceptance criteria, and both are about what must be impossible:
+
+* **a breaking change fails CI unless it was versioned or accepted on purpose** —
+  proven by mutating the baseline in every way a client could notice and
+  checking the gate step refuses each one;
+* **no sensitive topology leaks** — proven by asking the public page for its
+  whole body and searching it for the words the operator page is full of.
+
+The third thing defended here is subtler: the checker must not be *decorative*.
+A gate that passes everything is worse than no gate, because it is trusted.
+"""
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+import sys
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import contract, keys as devkeys, limits
+from platform_core.public_api.config import load_public_api_config
+
+ROOT = __import__("pathlib").Path(__file__).resolve().parents[1]
+BASELINE = ROOT / "docs" / "PUBLIC_API" / "CONTRACT_BASELINE.json"
+CHANGELOG = ROOT / "docs" / "PUBLIC_API" / "CHANGELOG.md"
+MIGRATION = ROOT / "docs" / "PUBLIC_API" / "MIGRATION.md"
+
+PEPPER = "version-test-pepper-" + "v" * 40
+TOOL = "image.thumbnail"
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'ver.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "version-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _snapshot():
+    """The snapshot as the checker builds it.
+
+    Routes are passed in rather than imported by `contract.py`: that module
+    lives in `platform_core`, which must not reach up into `server` — a rule
+    `test_147_layering` enforces, and one my first version broke.
+    """
+    from server.api.inventory import API_V1_ROUTES
+
+    return contract.snapshot(_config(), routes=API_V1_ROUTES)
+
+
+def _config(tools: str = ""):
+    from platform_core.registry import discover
+
+    names = tools or ",".join(sorted(
+        tool.name for item in discover() if not item.error
+        for tool in item.manifest.tools if tool.api_exposed))
+    return load_public_api_config({"LTT_PUBLIC_API": "1",
+                                   "LTT_PUBLIC_API_TOOLS": names})
+
+
+def _checker(*args) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, "tools/check_api_compat.py", *args], cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+
+
+# ── The snapshot is a stable fact ────────────────────────────────────────────
+
+def test_a_snapshot_is_the_same_every_time():
+    """A checker whose input wobbles reports changes nobody made, and then
+    everybody learns to ignore it."""
+    assert _snapshot() == _snapshot()
+
+
+def test_the_snapshot_covers_what_a_client_depends_on():
+    snap = _snapshot()
+    assert snap["api_version"] == "v1"
+    assert snap["routes"] and snap["tools"] and snap["error_codes"]
+    for body in snap["tools"].values():
+        assert body["contract_hash"] and body["execution_mode"]
+    assert snap["webhook"]["payload_version"] >= 1
+    assert set(snap["webhook"]["payload_fields"]) >= {"job_id", "status"}
+
+
+def test_the_committed_baseline_matches_the_code():
+    """The whole mechanism rests on this file being true right now."""
+    assert BASELINE.is_file(), "the baseline must be committed"
+    baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
+    result = contract.compare(baseline, _snapshot())
+    assert result.clean, [item.line() for item in result.differences]
+
+
+# ── A breaking change fails CI ───────────────────────────────────────────────
+
+BREAKING_MUTATIONS = {
+    "a route disappears": lambda d: d["routes"].__setitem__(
+        "GET /api/v1/ghost", {"authenticated": True, "in_schema": True,
+                              "execution_mode": "SYNC", "deprecated_on": "",
+                              "sunset_on": ""}),
+    "a route starts needing auth": lambda d: d["routes"]["GET /api/v1/me"]
+        .__setitem__("authenticated", False),
+    "a tool disappears": lambda d: d["tools"].__setitem__(
+        "image.ghost", {"contract_hash": "0" * 16,
+                        "execution_mode": "ASYNC_JOB", "required_scopes": [],
+                        "aliases": [], "deprecated": "", "models": []}),
+    "a tool schema moves": lambda d: d["tools"][TOOL].__setitem__(
+        "contract_hash", "0" * 16),
+    "a tool needs a new scope": lambda d: d["tools"][TOOL].__setitem__(
+        "required_scopes", []),
+    "a tool changes execution mode": lambda d: d["tools"][TOOL].__setitem__(
+        "execution_mode", "SYNC"),
+    "an error code disappears": lambda d: d["error_codes"].__setitem__(
+        "ghost_code", {"status": 418, "retry": "never"}),
+    "an error code changes status": lambda d: d["error_codes"]["not_found"]
+        .__setitem__("status", 410),
+    "the webhook payload version moves": lambda d: d["webhook"].__setitem__(
+        "payload_version", 0),
+    "a webhook event disappears": lambda d: d["webhook"]["event_types"]
+        .append("job.ghost"),
+    "a webhook payload field disappears": lambda d: d["webhook"]
+        ["payload_fields"].append("ghost_field"),
+    "the api version moves": lambda d: d.__setitem__("api_version", "v0"),
+    "a response header disappears": lambda d: d["headers"].append("X-Ghost"),
+}
+
+
+@pytest.mark.parametrize("name", sorted(BREAKING_MUTATIONS))
+def test_every_kind_of_breaking_change_is_refused(name, tmp_path):
+    """Each entry is a way a working integration could stop working.
+
+    Run against the real checker, on the real baseline file, restored
+    afterwards — a gate tested only through its library is a gate whose wiring
+    nobody checked.
+    """
+    saved = BASELINE.read_text(encoding="utf-8")
+    try:
+        body = json.loads(saved)
+        BREAKING_MUTATIONS[name](body)
+        BASELINE.write_text(
+            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n", encoding="utf-8", newline="")
+        result = _checker()
+        assert result.returncode == 1, (
+            f"{name} was not refused:\n{result.stdout}{result.stderr}")
+        assert "PHA VO TUONG THICH" in result.stdout
+    finally:
+        BASELINE.write_text(saved, encoding="utf-8", newline="")
+
+
+def test_an_additive_change_is_allowed():
+    """A client that never asks for a new thing cannot notice it."""
+    saved = BASELINE.read_text(encoding="utf-8")
+    try:
+        body = json.loads(saved)
+        body["tools"].pop(TOOL)          # baseline knows less than the code
+        BASELINE.write_text(
+            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n", encoding="utf-8", newline="")
+        result = _checker()
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "CONG THEM" in result.stdout
+    finally:
+        BASELINE.write_text(saved, encoding="utf-8", newline="")
+
+
+def test_accepting_a_change_rewrites_the_baseline():
+    """`--accept` is not a way past the gate; it is a change a reviewer sees."""
+    saved = BASELINE.read_text(encoding="utf-8")
+    try:
+        body = json.loads(saved)
+        body["tools"][TOOL]["contract_hash"] = "0" * 16
+        BASELINE.write_text(
+            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n", encoding="utf-8", newline="")
+        assert _checker().returncode == 1
+
+        accepted = _checker("--accept")
+        assert accepted.returncode == 0
+        assert _checker().returncode == 0
+        # …and the file on disk really moved, which is what shows up in review.
+        assert BASELINE.read_text(encoding="utf-8") != json.dumps(
+            body, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    finally:
+        BASELINE.write_text(saved, encoding="utf-8", newline="")
+
+
+def test_a_stale_snapshot_format_is_refused_rather_than_compared():
+    old = {"snapshot_version": 0, "api_version": "v1"}
+    result = contract.compare(old, _snapshot())
+    assert result.breaking
+    assert "regenerate" in result.breaking[0].detail
+
+
+def test_an_unclassified_field_change_defaults_to_safe():
+    """Metadata moves are allowed; the classifier only calls things safe when
+    it recognises them."""
+    new = _snapshot()
+    old = json.loads(json.dumps(new))
+    old["tools"][TOOL]["deprecated"] = "2027-01-01"
+    result = contract.compare(old, new)
+    assert result.differences and not result.breaking
+
+
+def test_the_checker_is_wired_into_the_gate():
+    """A checker nobody runs is a comment."""
+    source = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "check_api_compat.py" in source
+
+
+# ── No sensitive topology leaks ──────────────────────────────────────────────
+
+FORBIDDEN_ON_A_PUBLIC_PAGE = (
+    "postgres", "postgresql", "sqlite", "cloudflare", "tunnel", "nssm",
+    "gemini", "worker_id", "C:\\", "D:\\", "127.0.0.1", "localhost",
+    "api_keys", "gpu_lease", "secrets/", "traceback",
+)
+
+
+def test_the_public_status_page_is_readable_without_an_account(portal):
+    """A status page a customer cannot read during an incident does not exist."""
+    answer = portal.get("/status/api")
+    assert answer.status_code == 200, answer.text[:300]
+    assert answer.headers.get("cache-control") == "no-store"
+
+
+def test_the_public_status_page_names_no_internal_topology(portal):
+    body = portal.get("/status/api").text.lower()
+    for word in FORBIDDEN_ON_A_PUBLIC_PAGE:
+        assert word.lower() not in body, f"public status page leaked {word!r}"
+
+
+def test_the_operator_status_page_still_requires_an_operator(portal):
+    answer = portal.get("/status", follow_redirects=False)
+    assert answer.status_code in (302, 303, 307, 401, 403)
+
+
+def test_the_public_page_groups_by_capability_not_by_tool(portal):
+    from platform_core.public_api.status import public_status
+
+    gen, db = _session()
+    try:
+        report = public_status(db, _config(TOOL))
+    finally:
+        _close(gen)
+
+    assert report["capabilities"]
+    line = report["capabilities"][0]
+    assert line.capability == "image", "grouped by what a customer buys"
+    assert TOOL in line.tools
+
+
+def test_a_maintenance_switch_shows_on_the_public_page(portal):
+    """The operator's own words, because they wrote them for a customer."""
+    from platform_core.public_api import policy
+    from platform_core.public_api.status import MAINTENANCE, public_status
+    from platform_core.public_api.tables import KILL_MAINTENANCE
+
+    gen, db = _session()
+    try:
+        policy.engage(db, scope=KILL_MAINTENANCE,
+                      reason="đang nâng cấp cơ sở dữ liệu",
+                      created_by="operator@example.com")
+        db.commit()
+        report = public_status(db, _config(TOOL))
+    finally:
+        _close(gen)
+
+    assert report["overall"] == MAINTENANCE
+    assert all(row.state == MAINTENANCE for row in report["capabilities"])
+    assert "nâng cấp" in report["capabilities"][0].note
+
+    body = portal.get("/status/api").text
+    assert "nâng cấp cơ sở dữ liệu" in body
+
+
+def test_one_tool_off_degrades_its_capability_without_claiming_an_outage(portal):
+    from platform_core.public_api import policy
+    from platform_core.public_api.status import (DEGRADED, MAINTENANCE,
+                                                 public_status)
+    from platform_core.public_api.tables import KILL_TOOL
+
+    gen, db = _session()
+    try:
+        policy.engage(db, scope=KILL_TOOL, subject="image.generate",
+                      reason="upstream model degraded",
+                      created_by="operator@example.com")
+        db.commit()
+        report = public_status(db, _config("image.generate,image.thumbnail"))
+    finally:
+        _close(gen)
+
+    image = next(row for row in report["capabilities"]
+                 if row.capability == "image")
+    assert image.state == DEGRADED, "one of two tools off is not maintenance"
+    assert image.state != MAINTENANCE
+
+
+def test_an_expired_switch_stops_showing(portal):
+    from platform_core.public_api import policy
+    from platform_core.public_api.status import OPERATIONAL, public_status
+    from platform_core.public_api.tables import ApiKillSwitch, KILL_MAINTENANCE
+
+    gen, db = _session()
+    try:
+        row = policy.engage(db, scope=KILL_MAINTENANCE, reason="short window",
+                            expires_at=datetime.now(timezone.utc)
+                            + timedelta(minutes=5))
+        db.commit()
+        switch_id = row.id
+        db.get(ApiKillSwitch, switch_id).expires_at = (
+            datetime.now(timezone.utc) - timedelta(seconds=1))
+        db.commit()
+        report = public_status(db, _config(TOOL))
+    finally:
+        _close(gen)
+    assert report["overall"] == OPERATIONAL
+
+
+# ── The written record ───────────────────────────────────────────────────────
+
+def test_the_changelog_answers_the_question_a_customer_has():
+    text = CHANGELOG.read_text(encoding="utf-8")
+    for marker in ("BREAKING", "ADDED", "DEPRECATED", "CONTRACT_BASELINE.json"):
+        assert marker in text
+    # It has to say how a breaking change is *allowed* to happen, or the rule
+    # lives only in somebody's head.
+    assert "check_api_compat.py --accept" in text
+
+
+def test_the_migration_page_is_explicit_about_being_empty():
+    """An empty deprecation page can mean "nothing is deprecated" or "nobody
+    updated this", and those are very different to somebody deciding whether to
+    integrate."""
+    text = MIGRATION.read_text(encoding="utf-8")
+    assert "chưa có gì bị ngừng hỗ trợ" in text.lower()
+    assert "Deprecation" in text and "Sunset" in text
+
+
+def test_nothing_is_deprecated_yet_and_the_docs_agree():
+    """If a route ever gains a sunset date, this test makes somebody update the
+    page that promises there is none."""
+    from server.api.inventory import API_V1_ROUTES
+
+    dated = [route for route in API_V1_ROUTES
+             if route.deprecated_on or route.sunset_on]
+    text = MIGRATION.read_text(encoding="utf-8")
+    if dated:
+        for route in dated:
+            assert route.path in text, (
+                f"{route.path} has a sunset date but MIGRATION.md does not "
+                f"mention it")
+    else:
+        assert "*(chưa có)*" in text
+
+
+def test_the_webhook_payload_version_is_declared_next_to_the_payload():
+    """A version a receiver parses on must live where the payload is built."""
+    from platform_core.public_api import webhooks
+
+    payload = webhooks.build_payload(
+        event_id=uuid.uuid4().hex, event_type=webhooks.EVENT_JOB_SUCCEEDED,
+        job_id="j1", tool=TOOL, status="succeeded")
+    assert set(payload["data"]) == set(webhooks.PAYLOAD_FIELDS)
+    assert webhooks.PAYLOAD_VERSION == 1
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_20_option_a_audit.py
 SHA256=4651e20bf2bb296569da7b53161e4eb696ffdce2dfcafae708bf1a860925ac58 BYTES=19300 LINES=427
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -198109,6 +199052,143 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_api_compat.py
+SHA256=36e9e8fc96fa0e3088413a16f5b225dc8dd83675363f705d867ad7e4839cb301 BYTES=5164 LINES=131
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""So sanh be mat cong khai voi ban chuan da dong bang.
+
+    python tools\\check_api_compat.py             # kiem tra, khong sua gi
+    python tools\\check_api_compat.py --accept    # chap nhan thay doi, ghi lai
+
+Vi sao can: moi manh cua hop dong deu da ton tai o dau do — route trong
+`server/api/inventory.py`, hinh dang tool sau `contract_hash`, ma loi trong
+registry, loai su kien trong `webhooks`. Cai chua ton tai la mot cach hoi "co gi
+doi khong, va doi do co duoc phep khong". Nen mot thay doi pha vo tuong thich co
+the len tau vi khong ai diff mot thu ma khong ai gom lai.
+
+`docs/PUBLIC_API/CONTRACT_BASELINE.json` la ban chuan. No nam trong git, nen
+thay doi hop dong hien ra trong diff cua pull request — dung cho no phai hien ra.
+
+`--accept` KHONG phai mot cach de qua cua. No ghi lai ban chuan, va viec ghi lai
+do la mot thay doi trong git ma nguoi review nhin thay. Y la: pha vo tuong thich
+phai la mot quyet dinh CO CHU DICH, khong phai mot tai nan.
+
+Nam trong `tools/gate.py`.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+BASELINE = ROOT / "docs" / "PUBLIC_API" / "CONTRACT_BASELINE.json"
+
+def _utf8_stdout() -> None:
+    """Console cua Windows khong mac dinh UTF-8, ma cac thong bao o day co dau.
+
+    Goi TRONG `main()` chu khong o cap module: file nay cung duoc `import` tu
+    test, va doi `sys.stdout` luc import se cuop mat co che bat output cua
+    pytest — dung nghia den, no lam vo phien chay test.
+    """
+    if hasattr(sys.stdout, "buffer"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                      errors="replace", line_buffering=True)
+
+
+def _current() -> dict:
+    """Be mat ma ma nguon dang phuc vu, doc lap voi cau hinh may nay.
+
+    Bat MOI tool ma app khai `api_exposed`, khong phai chi nhung tool
+    deployment nay bat: hop dong la thu chung ta hua voi khach, khong phai thu
+    mot may tinh tinh co dang chay.
+    """
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.contract import snapshot
+    from platform_core.registry import discover
+    from server.api.inventory import API_V1_ROUTES
+
+    apps = discover()
+    names = ",".join(sorted(
+        tool.name for item in apps if not item.error
+        for tool in item.manifest.tools if tool.api_exposed))
+    config = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                     "LTT_PUBLIC_API_TOOLS": names})
+    return snapshot(config, routes=API_V1_ROUTES, apps=apps)
+
+
+def _write(payload: dict) -> None:
+    BASELINE.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+    BASELINE.write_text(text + "\n", encoding="utf-8", newline="")
+
+
+def main() -> int:
+    _utf8_stdout()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--accept", action="store_true",
+                        help="ghi lai ban chuan (thay doi CO CHU DICH)")
+    args = parser.parse_args()
+
+    from platform_core.public_api.contract import compare
+
+    current = _current()
+
+    if not BASELINE.is_file():
+        _write(current)
+        print(f"Da tao ban chuan: {BASELINE.relative_to(ROOT)}")
+        print(f"{len(current['routes'])} route, {len(current['tools'])} tool, "
+              f"{len(current['error_codes'])} ma loi.")
+        return 0
+
+    baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
+    result = compare(baseline, current)
+
+    if args.accept:
+        _write(current)
+        print(f"Da ghi lai ban chuan ({len(result.differences)} thay doi, "
+              f"{len(result.breaking)} pha vo tuong thich).")
+        for item in result.differences:
+            print("  " + item.line())
+        if result.breaking:
+            print("\nNHO: dat cho no mot phien ban moi hoac mot ke hoach ngung "
+                  "ho tro, va ghi vao docs/PUBLIC_API/CHANGELOG.md.")
+        return 0
+
+    if result.clean:
+        print(f"Hop dong khong doi: {len(current['routes'])} route, "
+              f"{len(current['tools'])} tool, "
+              f"{len(current['error_codes'])} ma loi.")
+        return 0
+
+    for item in result.additive:
+        print("  " + item.line())
+    if not result.breaking:
+        print(f"\n{len(result.additive)} thay doi CONG THEM (khong pha vo "
+              f"tuong thich). Chay `--accept` de ghi vao ban chuan.")
+        return 0
+
+    print("\nPHA VO TUONG THICH:")
+    for item in result.breaking:
+        print("  " + item.line())
+    print(
+        "\nMot tich hop dang chay se hong vi nhung thay doi tren.\n"
+        "Neu la co y: dat phien ban moi (hoac lich ngung ho tro), ghi vao\n"
+        "docs/PUBLIC_API/CHANGELOG.md, roi chay:\n"
+        "    python tools/check_api_compat.py --accept\n"
+        "Lan ghi lai do se hien trong diff — dung cho no phai hien ra.")
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_i18n.py
 SHA256=5b47cf3d7118d74d5577a841f40d6afcd4f16e194d082791c144a0dd39e248bc BYTES=6587 LINES=166
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -201378,7 +202458,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=b86d4311a9470d11db0c97a137144889aa70f2eb969dc56e0923c73d9c2c74b7 BYTES=6025 LINES=138
+SHA256=3b6440c1aade07190861487a75c992fe0b1fcfae70491ab9a8cec039feb589e2 BYTES=6511 LINES=144
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -201443,6 +202523,12 @@ def _steps(quick: bool) -> list[Step]:
         # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
         Step("system profile", [sys.executable, "tools/build_system_profile.py",
                                  "--check"], ROOT),
+        # EXT-17: hợp đồng công khai của /api/v1 so với bản chuẩn đã đóng băng.
+        # Không có bước này thì một thay đổi phá vỡ tương thích lên tàu được vì
+        # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy
+        # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
+        Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
+             ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

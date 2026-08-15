@@ -61,6 +61,12 @@ def _steps(quick: bool) -> list[Step]:
         # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
         Step("system profile", [sys.executable, "tools/build_system_profile.py",
                                  "--check"], ROOT),
+        # EXT-17: hợp đồng công khai của /api/v1 so với bản chuẩn đã đóng băng.
+        # Không có bước này thì một thay đổi phá vỡ tương thích lên tàu được vì
+        # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy
+        # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
+        Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
+             ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

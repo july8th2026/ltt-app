@@ -1,0 +1,347 @@
+{
+  "api_version": "v1",
+  "error_codes": {
+    "concurrency_limited": {
+      "retry": "after_delay",
+      "status": 429
+    },
+    "conflict": {
+      "retry": "never",
+      "status": 409
+    },
+    "forbidden": {
+      "retry": "never",
+      "status": 403
+    },
+    "idempotency_conflict": {
+      "retry": "never",
+      "status": 409
+    },
+    "idempotency_in_progress": {
+      "retry": "after_delay",
+      "status": 409
+    },
+    "insufficient_credit": {
+      "retry": "after_fix",
+      "status": 409
+    },
+    "internal_error": {
+      "retry": "after_delay",
+      "status": 500
+    },
+    "invalid_request": {
+      "retry": "never",
+      "status": 400
+    },
+    "method_not_allowed": {
+      "retry": "never",
+      "status": 405
+    },
+    "missing_scope": {
+      "retry": "after_fix",
+      "status": 403
+    },
+    "not_found": {
+      "retry": "never",
+      "status": 404
+    },
+    "payload_too_large": {
+      "retry": "never",
+      "status": 413
+    },
+    "price_changed": {
+      "retry": "after_fix",
+      "status": 409
+    },
+    "quota_exceeded": {
+      "retry": "after_delay",
+      "status": 429
+    },
+    "quote_expired": {
+      "retry": "after_fix",
+      "status": 400
+    },
+    "quote_invalid": {
+      "retry": "never",
+      "status": 400
+    },
+    "rate_limited": {
+      "retry": "after_delay",
+      "status": 429
+    },
+    "read_only": {
+      "retry": "after_delay",
+      "status": 503
+    },
+    "service_unavailable": {
+      "retry": "after_delay",
+      "status": 503
+    },
+    "tool_not_allowed": {
+      "retry": "after_fix",
+      "status": 403
+    },
+    "unauthorized": {
+      "retry": "never",
+      "status": 401
+    },
+    "unprocessable_request": {
+      "retry": "never",
+      "status": 422
+    }
+  },
+  "execution_modes_in_use": [
+    "ASYNC_JOB",
+    "SYNC"
+  ],
+  "headers": [
+    "Idempotency-Key",
+    "Retry-After",
+    "X-Correlation-ID",
+    "X-LTT-API-Version"
+  ],
+  "problem_media_type": "application/problem+json",
+  "routes": {
+    "DELETE /api/v1/webhooks/{webhook_id}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/artifacts/{artifact_id}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/artifacts/{artifact_id}/content": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/capabilities": {
+      "authenticated": false,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/credits/balance": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/health": {
+      "authenticated": false,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/jobs": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/jobs/{job_id}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/me": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/models": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/models/{model_name}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/openapi.json": {
+      "authenticated": false,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": false,
+      "sunset_on": ""
+    },
+    "GET /api/v1/tools": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/tools/{tool_name}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/usage": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/webhooks": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/webhooks/deliveries": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/jobs": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "ASYNC_JOB",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/jobs/{job_id}/cancel": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/quotes": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/uploads": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/uploads/{upload_id}/confirm": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/uploads/{upload_id}/content": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/webhooks": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    }
+  },
+  "snapshot_version": 1,
+  "tools": {
+    "image.generate": {
+      "aliases": [],
+      "contract_hash": "f6fd70a8e5a91489",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [
+        "enhanced",
+        "pro",
+        "standard",
+        "standard-lite"
+      ],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "image.thumbnail": {
+      "aliases": [],
+      "contract_hash": "f1894755c0b48b16",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "image.upscale": {
+      "aliases": [],
+      "contract_hash": "917d9f5da2fe9a80",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "story.storyboard": {
+      "aliases": [],
+      "contract_hash": "9c7cfd84114e0c1b",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "text.prompt_package": {
+      "aliases": [],
+      "contract_hash": "c55834222a3c4a0c",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    }
+  },
+  "webhook": {
+    "event_types": [
+      "job.cancelled",
+      "job.failed",
+      "job.succeeded"
+    ],
+    "payload_fields": [
+      "job_id",
+      "mode",
+      "status",
+      "tool"
+    ],
+    "payload_version": 1,
+    "signature_version": "v1"
+  }
+}

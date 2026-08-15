@@ -48,6 +48,17 @@ TERMINAL_EVENTS = (EVENT_JOB_SUCCEEDED, EVENT_JOB_FAILED, EVENT_JOB_CANCELLED)
 SIGNATURE_HEADER = "X-LTT-Signature"
 TIMESTAMP_HEADER = "X-LTT-Timestamp"
 EVENT_HEADER = "X-LTT-Event-Id"
+
+#: The shape a receiver parses. Immutable within a version: a receiver written
+#: against `1` must keep working, so a field may be **added** to the payload but
+#: never removed or renamed without moving this number — and moving it is a
+#: breaking change the contract checker refuses (EXT-17).
+PAYLOAD_VERSION = 1
+
+#: The fields inside `data`. Listed rather than inferred from a sample, because
+#: the checker has to compare against something that says what was *promised*,
+#: not what one example happened to contain.
+PAYLOAD_FIELDS = ("job_id", "tool", "status", "mode")
 SIGNATURE_VERSION = "v1"
 
 MAX_ATTEMPTS = 6
