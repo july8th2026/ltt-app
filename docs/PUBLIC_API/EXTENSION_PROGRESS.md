@@ -50,7 +50,7 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 15 | Pricing catalog / versioned credits / margin | **PASS** | 2026-08-15 |
 | 16 | Admin operations / security / support trace | **PASS** | 2026-08-15 |
 | 17 | Versioning / changelog / deprecation / status | chưa chạy | — |
-| 18 | SDK / CLI / Postman / OpenAPI ecosystem | chưa chạy | — |
+| 18 | SDK / CLI / Postman / OpenAPI ecosystem | **PASS** | 2026-08-15 |
 | 19 | Privacy / retention / export / delete | chưa chạy | — |
 | 20 | Full app/tool/model/execution-mode certification | chưa chạy | — |
 | 21 | Final audit / load / chaos / security / release gate | chưa chạy | — |
@@ -2110,3 +2110,132 @@ Bỏ bước `hop dong API` khỏi `gate.py`; xoá `contract.py`, `status.py`,
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/18_SDK_CLI_POSTMAN_OPENAPI_AUTOMATION_ECOSYSTEM.txt`
 (EXT-18).
+
+---
+
+## EXT-18 — SDK, POSTMAN, OPENAPI, HỆ SINH THÁI ✅
+
+### Entry gate
+
+EXT-17 PASS ✅ (`27a6e92`), cây sạch. **Không migration mới.**
+
+### Audit: đo, không đoán
+
+Đối chiếu **24 route thật** với hai file SDK cho ra một danh sách việc, không
+phải một cảm giác:
+
+| SDK | Thiếu |
+|---|---|
+| Python | `models`, `models/{name}`, `health`, `webhooks/deliveries` |
+| TypeScript | tất cả những cái trên **cộng** `upload`, tải artifact, danh sách job, `GET/DELETE /webhooks` |
+
+Nói cách khác: "chúng tôi có SDK TypeScript" là một câu đúng theo cách **không
+sống nổi qua lần dùng thật đầu tiên** — một client không gửi được file thì không
+dùng được nửa catalog.
+
+Đã bù đủ hai phía. `tsc --strict` (dùng chính `typescript` có sẵn trong
+`frontend/agent-canvas/node_modules`) biên dịch sạch.
+
+### Kiểm khớp hợp đồng bằng khai báo, không bằng trí nhớ
+
+`tools/check_sdk_contract.py`: mỗi route phải được khai `@covers`, **hoặc**
+`@covers-not ... — lý do`. Không có ô "quên".
+
+Khai báo nằm **trong chính file SDK**, không phải một bảng đặt cạnh: một danh
+sách để bên ngoài là một danh sách sẽ trôi dạt, và lần đầu nó trôi thì checker
+tự tin sai về đúng thứ nó sinh ra để kiểm.
+
+Hiện: **23 phủ + 1 cố ý bỏ** (`GET /openapi.json` — đặc tả máy đọc, không phải
+lời gọi code người dùng viết) ở **cả hai** SDK. Có test khoá hai SDK phải phủ
+**cùng một** bề mặt: một SDK lặng lẽ tụt lại là cách một đội chọn nhầm ngôn ngữ
+rồi ba tuần sau mới biết.
+
+Đã thử phá theo ba cách — bỏ một khai báo, khai một route không tồn tại, bỏ qua
+mà không nêu lý do — cả ba đều bị bắt.
+
+### Postman: sinh, không viết tay
+
+`tools/build_postman.py` dựng collection + environment **từ OpenAPI** của chính
+app (dựng in-process, chạy được trên máy không có CSDL). `--check` nằm trong
+gate, cùng cơ chế với hồ sơ hệ thống: sinh rồi quên commit thì gate báo ngay.
+
+Hai chi tiết cố ý:
+
+- `POST /jobs` được điền sẵn header **`Idempotency-Key: {{$guid}}`** — thứ đắt
+  nhất khi quên;
+- file environment commit vào repo có `api_key` **rỗng**, kiểu `secret`. Một
+  file commit mà *có thể* chứa credential thật thì sớm muộn sẽ chứa.
+
+### OpenAPI tải về có phiên bản
+
+`/developers/openapi/download` trả **đúng** tài liệu API đang phục vụ, kèm số
+phiên bản trong tên file. Một client sinh ra chỉ debug được sáu tháng sau nếu
+biết nó sinh từ bản nào.
+
+Test so **byte-với-byte** giữa bản phục vụ và bản tải, và nó bắt được một lỗi
+thật: bản tải thiếu `servers` (FastAPI thêm khi *phục vụ*, không có trong bản
+dựng thẳng). Không phải khác biệt vô hại — một spec không có `servers` sinh ra
+client **không biết gọi đi đâu**.
+
+### Recipes: dùng được mà không cần SDK
+
+`docs/PUBLIC_API/RECIPES.md` — cURL, PowerShell, n8n, Make, backend thuần. Cảnh
+báo đúng cái bẫy **thật** của n8n: đặt `Idempotency-Key` bằng `{{$guid}}` thì
+node retry sinh key mới mỗi lần → **bị tính tiền nhiều lần**. Phải lấy một giá
+trị cố định theo lần chạy.
+
+### CLI: cố ý KHÔNG làm
+
+Prompt ghi "CLI **if maintainable**". Một CLI là một bề mặt nữa phải giữ khớp
+hợp đồng, mà cURL + `jq` đã làm đúng việc đó và không ai phải bảo trì. Khi nào
+có một thao tác nhiều bước mà một dòng lệnh làm gọn hơn hẳn (tải hàng loạt) thì
+CLI mới có lý do tồn tại. Đã ghi rõ trong `RECIPES.md` thay vì im lặng.
+
+### Không xuất bản lên registry
+
+Prompt cấm rõ, CLAUDE.md cấm deploy. SDK giữ nguyên hình thức **một file, thả
+vào dự án**.
+
+### Một lỗi của tôi đáng ghi lại
+
+`check_sdk_contract.py` đổi `sys.stdout` ở **cấp module** để in được tiếng Việt
+trên console Windows. Đúng cho một script; nhưng khi pytest `import` nó thì cơ
+chế bắt output của pytest bị cướp và **cả phiên chạy test vỡ** (23 lỗi). Giờ
+việc đó nằm trong `main()`. Sửa cùng khuôn cho `check_api_compat.py` và
+`build_postman.py`.
+
+### Tests
+
+`tests/test_210_sdk_ecosystem.py` — **17 test**.
+
+Tiêu chí 1 chạy **đúng nghĩa đen**: một test không import gì từ `sdk/`, dùng
+HTTP thuần đi hết chuỗi discover → quote → job (kèm `Idempotency-Key`) → chờ →
+tải bytes; cộng một test chứng minh gửi lại **cùng key** trả về **cùng job** với
+`Idempotency-Replayed: true`.
+
+Tiêu chí 2: chạy **chính công cụ thật** (không phải bản sao logic); ba cách phá
+đều bị bắt; hai SDK phủ cùng bề mặt; collection khớp spec và phủ mọi route công
+bố; `POST /jobs` có `Idempotency-Key`; environment không mang khoá; collection
+tự nói "đừng sửa tay"; spec tải về khớp byte-với-byte bản phục vụ; recipes có đủ
+4 công cụ, cảnh báo bẫy n8n và cách xác minh webhook.
+
+### Gate
+
+Thêm hai bước: **`SDK khop hop dong`** và **`postman`**. Gate nay 12 bước.
+
+### Rollback
+
+Bỏ hai bước gate; xoá `tools/check_sdk_contract.py`, `tools/build_postman.py`,
+`sdk/postman/`, `docs/PUBLIC_API/RECIPES.md`, route `/developers/openapi/download`,
+`test_210`; gỡ các phương thức mới + chú thích `@covers` khỏi hai SDK.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-18 | Kết quả |
+|---|---|
+| Generic HTTP client can E2E without SDK | ✅ test không import `sdk/`, chạy hết chuỗi bằng HTTP thuần và tải được bytes; replay cùng key trả cùng job |
+| SDK/CLI/Postman match contract | ✅ 23 phủ + 1 cố ý bỏ (có lý do) ở cả hai SDK, kiểm bằng bước gate; Postman **sinh** từ OpenAPI và `--check` trong gate; CLI cố ý không làm, nói rõ vì sao |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/19_PRIVACY_RETENTION_EXPORT_DELETE_SECRETS_AND_DATA_GOVERNANCE.txt`
+(EXT-19).

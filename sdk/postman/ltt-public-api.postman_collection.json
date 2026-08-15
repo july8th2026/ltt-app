@@ -1,0 +1,620 @@
+{
+  "info": {
+    "description": "Sinh tu OpenAPI bang `python tools/build_postman.py`. DUNG sua tay: lan sinh sau se ghi de, va mot collection sua tay la ban sao thu hai cua hop dong.",
+    "name": "LTT Public API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /artifacts/{artifact_id}",
+      "request": {
+        "description": "Returns a time-limited URL for one output of a job this account owns.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "artifacts",
+            "{artifact_id}"
+          ],
+          "raw": "{{base_url}}/artifacts/{{artifact_id}}"
+        }
+      }
+    },
+    {
+      "name": "GET /artifacts/{artifact_id}/content",
+      "request": {
+        "description": "Streams the output when the storage backend cannot issue a signed URL.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "artifacts",
+            "{artifact_id}",
+            "content"
+          ],
+          "raw": "{{base_url}}/artifacts/{{artifact_id}}/content"
+        }
+      }
+    },
+    {
+      "name": "GET /capabilities",
+      "request": {
+        "description": "Reports the API version, whether writes are currently accepted, and the capabilities available to callers.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "capabilities"
+          ],
+          "raw": "{{base_url}}/capabilities"
+        }
+      }
+    },
+    {
+      "name": "GET /credits/balance",
+      "request": {
+        "description": "The account's credit balance, from the credit ledger.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "credits",
+            "balance"
+          ],
+          "raw": "{{base_url}}/credits/balance"
+        }
+      }
+    },
+    {
+      "name": "GET /health",
+      "request": {
+        "description": "Returns ok while this API surface is serving requests.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ],
+          "raw": "{{base_url}}/health"
+        }
+      }
+    },
+    {
+      "name": "GET /jobs",
+      "request": {
+        "description": "Owner-scoped, newest first, with optional status filter.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs"
+          ],
+          "raw": "{{base_url}}/jobs"
+        }
+      }
+    },
+    {
+      "name": "POST /jobs",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Holds the quoted credit and queues the job. Requires an Idempotency-Key header.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "description": "Bat buoc. Gui lai cung mot key khi thu lai, neu khong ban se bi tinh hai lan.",
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs"
+          ],
+          "raw": "{{base_url}}/jobs"
+        }
+      }
+    },
+    {
+      "name": "GET /jobs/{job_id}",
+      "request": {
+        "description": "Owner-scoped. Unknown or foreign ids answer 404.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs",
+            "{job_id}"
+          ],
+          "raw": "{{base_url}}/jobs/{{job_id}}"
+        }
+      }
+    },
+    {
+      "name": "POST /jobs/{job_id}/cancel",
+      "request": {
+        "description": "Cancels a queued or running job and refunds the held credit. Repeating the call is safe.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs",
+            "{job_id}",
+            "cancel"
+          ],
+          "raw": "{{base_url}}/jobs/{{job_id}}/cancel"
+        }
+      }
+    },
+    {
+      "name": "GET /me",
+      "request": {
+        "description": "Returns the calling key's public id, the account it bills to, its scopes and its tool allowlist.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "me"
+          ],
+          "raw": "{{base_url}}/me"
+        }
+      }
+    },
+    {
+      "name": "GET /models",
+      "request": {
+        "description": "Returns the public model aliases, what they can do, how stable they are and which tools accept them. Prices come from POST /quotes, which prices a whole call rather than a model.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "models"
+          ],
+          "raw": "{{base_url}}/models"
+        }
+      }
+    },
+    {
+      "name": "GET /models/{model_name}",
+      "request": {
+        "description": "Returns one model alias. Unknown or unavailable aliases answer 404, exactly like a tool.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "models",
+            "{model_name}"
+          ],
+          "raw": "{{base_url}}/models/{{model_name}}"
+        }
+      }
+    },
+    {
+      "name": "POST /quotes",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Returns a signed quote bound to this account, tool and input. Submit it to POST /jobs to run the call.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "quotes"
+          ],
+          "raw": "{{base_url}}/quotes"
+        }
+      }
+    },
+    {
+      "name": "GET /tools",
+      "request": {
+        "description": "Returns the public tool catalog, narrowed to what the calling key is allowed to use.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "tools"
+          ],
+          "raw": "{{base_url}}/tools"
+        }
+      }
+    },
+    {
+      "name": "GET /tools/{tool_name}",
+      "request": {
+        "description": "Returns the input/output contract of a single tool. Unknown or unavailable tools answer 404.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "tools",
+            "{tool_name}"
+          ],
+          "raw": "{{base_url}}/tools/{{tool_name}}"
+        }
+      }
+    },
+    {
+      "name": "POST /uploads",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Reserves an upload slot for one tool input. Returns a direct upload target when the storage backend supports it.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uploads"
+          ],
+          "raw": "{{base_url}}/uploads"
+        }
+      }
+    },
+    {
+      "name": "POST /uploads/{upload_id}/confirm",
+      "request": {
+        "description": "Verifies the stored bytes against the declared size and format before the file may be used.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uploads",
+            "{upload_id}",
+            "confirm"
+          ],
+          "raw": "{{base_url}}/uploads/{{upload_id}}/confirm"
+        }
+      }
+    },
+    {
+      "name": "POST /uploads/{upload_id}/content",
+      "request": {
+        "description": "Sends the bytes through the API when the storage backend cannot issue a direct upload URL.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uploads",
+            "{upload_id}",
+            "content"
+          ],
+          "raw": "{{base_url}}/uploads/{{upload_id}}/content"
+        }
+      }
+    },
+    {
+      "name": "GET /usage",
+      "request": {
+        "description": "Per-job credit usage in a time window, plus window totals. Defaults to the last 30 days.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "usage"
+          ],
+          "raw": "{{base_url}}/usage"
+        }
+      }
+    },
+    {
+      "name": "GET /webhooks",
+      "request": {
+        "description": "Owner-scoped. Secrets are never included.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks"
+          ],
+          "raw": "{{base_url}}/webhooks"
+        }
+      }
+    },
+    {
+      "name": "POST /webhooks",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Registers an https endpoint for terminal job events. The signing secret is returned once.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks"
+          ],
+          "raw": "{{base_url}}/webhooks"
+        }
+      }
+    },
+    {
+      "name": "GET /webhooks/deliveries",
+      "request": {
+        "description": "Owner-scoped delivery history, newest first — what was sent, how often it was retried and why it failed.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks",
+            "deliveries"
+          ],
+          "raw": "{{base_url}}/webhooks/deliveries"
+        }
+      }
+    },
+    {
+      "name": "DELETE /webhooks/{webhook_id}",
+      "request": {
+        "description": "Owner-scoped and safe to repeat.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "DELETE",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks",
+            "{webhook_id}"
+          ],
+          "raw": "{{base_url}}/webhooks/{{webhook_id}}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://app.lttstudios.com/api/v1"
+    },
+    {
+      "key": "tool",
+      "value": "image.thumbnail"
+    }
+  ]
+}

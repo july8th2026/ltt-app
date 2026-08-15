@@ -67,6 +67,14 @@ def _steps(quick: bool) -> list[Step]:
         # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
         Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
              ROOT),
+        # EXT-18: SDK thiếu một route không bao giờ báo lỗi — nó chỉ để người
+        # dùng tự viết lấy, rồi họ viết sai retry hoặc quên Idempotency-Key.
+        Step("SDK khop hop dong",
+             [sys.executable, "tools/check_sdk_contract.py"], ROOT),
+        # …và collection Postman phải được SINH lại, không sửa tay: một bản sao
+        # thứ hai của hợp đồng luôn là bản trôi dạt.
+        Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
+             ROOT),
     ]
     npm = _npm()
     for name in FRONTENDS:

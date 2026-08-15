@@ -148,44 +148,106 @@ export class LttClient {
 
   // ── Reads (safe to retry) ─────────────────────────────────────────────────
 
+  // @covers GET /me
   me() {
     return this.request<Record<string, unknown>>("GET", "/me", { retry: true });
   }
 
+  // @covers GET /capabilities
   capabilities() {
     return this.request<Record<string, unknown>>("GET", "/capabilities", { retry: true });
   }
 
+  // @covers GET /tools
   tools(limit = 20, offset = 0) {
     return this.request<{ items: unknown[] }>(
       "GET", `/tools?limit=${limit}&offset=${offset}`, { retry: true });
   }
 
+  // @covers GET /tools/{tool_name}
   tool(name: string) {
     return this.request<Record<string, unknown>>(
       "GET", `/tools/${encodeURIComponent(name)}`, { retry: true });
   }
 
+  /**
+   * Model aliases this key may use.
+   *
+   * Aliases, never provider model ids: the platform publishes names it
+   * controls, so a provider swap does not become your migration.
+   */
+  // @covers GET /models
+  models(limit = 20, offset = 0) {
+    return this.request<{ items: unknown[] }>(
+      "GET", `/models?limit=${limit}&offset=${offset}`, { retry: true });
+  }
+
+  // @covers GET /models/{model_name}
+  model(name: string) {
+    return this.request<Record<string, unknown>>(
+      "GET", `/models/${encodeURIComponent(name)}`, { retry: true });
+  }
+
+  /** Liveness of the API surface. Needs no credential, so it is the one call
+   * worth making before blaming your key. */
+  // @covers GET /health
+  health() {
+    return this.request<Record<string, unknown>>("GET", "/health",
+      { retry: true });
+  }
+
+  // @covers GET /jobs/{job_id}
   job(jobId: string) {
     return this.request<Job>("GET", `/jobs/${encodeURIComponent(jobId)}`, { retry: true });
   }
 
+  // @covers GET /jobs
+  jobs(status = "", limit = 20, offset = 0) {
+    const query = new URLSearchParams({ status, limit: String(limit),
+                                        offset: String(offset) });
+    return this.request<{ items: Job[] }>("GET", `/jobs?${query}`,
+      { retry: true });
+  }
+
+  // @covers GET /credits/balance
   balance() {
     return this.request<{ balance: number }>("GET", "/credits/balance", { retry: true });
   }
 
+  // @covers GET /usage
   usage() {
     return this.request<Record<string, unknown>>("GET", "/usage", { retry: true });
   }
 
+  // @covers GET /artifacts/{artifact_id}
   async artifactUrl(artifactId: string): Promise<string> {
     const body = await this.request<{ url: string }>(
       "GET", `/artifacts/${encodeURIComponent(artifactId)}`, { retry: true });
     return body.url;
   }
 
+  /**
+   * The bytes of one output.
+   *
+   * Goes through `/content` rather than the signed URL so it works from a
+   * server with no outbound access to object storage — and so a caller does
+   * not have to handle a URL that expires while they are reading it.
+   */
+  // @covers GET /artifacts/{artifact_id}/content
+  async downloadArtifact(artifactId: string): Promise<ArrayBuffer> {
+    const response = await fetch(
+      this.url(`/artifacts/${encodeURIComponent(artifactId)}/content`),
+      { headers: { Authorization: `Bearer ${this.apiKey}` } });
+    if (!response.ok) {
+      throw new LttApiError(response.status, await response.json()
+        .catch(() => ({})) as Problem);
+    }
+    return response.arrayBuffer();
+  }
+
   // ── Writes ────────────────────────────────────────────────────────────────
 
+  // @covers POST /quotes
   quote(tool: string, input: Record<string, unknown>) {
     return this.request<Quote>("POST", "/quotes", { body: { tool, input }, retry: true });
   }
@@ -196,6 +258,7 @@ export class LttClient {
    * The idempotency key is generated once and reused for every retry of *this*
    * call. A fresh key on retry is what turns one timeout into two charges.
    */
+  // @covers POST /jobs
   createJob(quote: Quote, input: Record<string, unknown>, idempotencyKey?: string) {
     const key = idempotencyKey ?? crypto.randomUUID().replace(/-/g, "");
     return this.request<Job>("POST", "/jobs", {
@@ -205,6 +268,7 @@ export class LttClient {
     });
   }
 
+  // @covers POST /jobs/{job_id}/cancel
   cancelJob(jobId: string) {
     return this.request<Job>("POST", `/jobs/${encodeURIComponent(jobId)}/cancel`);
   }
@@ -223,9 +287,82 @@ export class LttClient {
     }
   }
 
+  // @covers POST /webhooks
   createWebhook(url: string, events: string[] = []) {
     return this.request<{ id: string; secret: string }>(
       "POST", "/webhooks", { body: { url, events } });
+  }
+
+  // @covers GET /webhooks
+  webhooks() {
+    return this.request<{ items: unknown[] }>("GET", "/webhooks",
+      { retry: true });
+  }
+
+  // @covers DELETE /webhooks/{webhook_id}
+  deleteWebhook(webhookId: string) {
+    return this.request<Record<string, unknown>>(
+      "DELETE", `/webhooks/${encodeURIComponent(webhookId)}`);
+  }
+
+  /**
+   * What we tried to send you, and how it went.
+   *
+   * The first thing to read when a callback did not arrive: it separates "we
+   * never sent it" from "we sent it and your endpoint refused".
+   */
+  // @covers GET /webhooks/deliveries
+  webhookDeliveries(subscriptionId = "", status = "", limit = 20, offset = 0) {
+    const query = new URLSearchParams({ limit: String(limit),
+                                        offset: String(offset) });
+    if (subscriptionId) query.set("subscription_id", subscriptionId);
+    if (status) query.set("status", status);
+    return this.request<{ items: unknown[] }>(
+      "GET", `/webhooks/deliveries?${query}`, { retry: true });
+  }
+
+  /**
+   * Put a file where a tool can read it: ticket, bytes, confirm.
+   *
+   * Three calls because the platform stages an upload before anything is paid
+   * for, and promotes it only after the job holds credit (Q85). The direct PUT
+   * is used when the storage backend offers one, so gigabytes never travel
+   * through the API process.
+   */
+  // @covers POST /uploads
+  // @covers POST /uploads/{upload_id}/content
+  // @covers POST /uploads/{upload_id}/confirm
+  async upload(tool: string, field: string, filename: string,
+               contentType: string, data: Blob | ArrayBuffer): Promise<string> {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const ticket = await this.request<{
+      id: string;
+      upload?: { method: string; url: string; headers?: Record<string, string> };
+    }>("POST", "/uploads", {
+      body: { tool, field, filename, content_type: contentType,
+              size: blob.size },
+    });
+
+    const target = ticket.upload;
+    if (target && target.method.toUpperCase() === "PUT") {
+      const put = await fetch(target.url, {
+        method: "PUT", body: blob,
+        headers: { "Content-Type": contentType, ...(target.headers ?? {}) },
+      });
+      if (!put.ok) throw new Error(`upload failed: HTTP ${put.status}`);
+    } else {
+      const form = new FormData();
+      form.append("file", blob, filename);
+      const post = await fetch(
+        this.url(`/uploads/${encodeURIComponent(ticket.id)}/content`),
+        { method: "POST", body: form,
+          headers: { Authorization: `Bearer ${this.apiKey}` } });
+      if (!post.ok) throw new Error(`upload failed: HTTP ${post.status}`);
+    }
+
+    await this.request<Record<string, unknown>>(
+      "POST", `/uploads/${encodeURIComponent(ticket.id)}/confirm`);
+    return ticket.id;
   }
 }
 
@@ -265,3 +402,8 @@ export async function verifyWebhook(options: {
   }
   return mismatch === 0;
 }
+
+// The one route no client method wraps, and why that is deliberate:
+// @covers-not GET /openapi.json — machine-readable spec, not a call your code
+// makes. Fetch it with any HTTP client, or download the versioned copy from the
+// developer portal; wrapping it would imply the SDK parses it, which it does not.

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fbffc9e88b6f21e55b3aa85bf3f6bed3a7902fd0f580070374d0f794c1b84708
-Nguồn đã quét : 1110 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:1ceb35ab632d8bae99fe9e6728a63b9c34df8432d30725edf674e143b6ea7735
+Nguồn đã quét : 1115 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -488,7 +488,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (314)
+4. HTTP ROUTE INVENTORY (315)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -599,20 +599,21 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:866
 - [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:619
 - [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:284
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:881
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:920
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:933
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:923
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:962
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:975
 - [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:439
 - [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:472
 - [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:714
 - [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:724
+- [platform] GET    /developers/openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer.py:875
 - [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:401
 - [platform] GET    /developers/pricing → developer_pricing | auth~unspecified | server/routes/developer.py:343
 - [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:277
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:977
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:993
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:1019
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:1035
 - [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:290
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:875
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:917
 - [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:503
 - [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:538
 - [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:626
@@ -1015,7 +1016,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (212 file pytest + 3 frontend)
+10. QUALITY GATES (213 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1162,6 +1163,7 @@ Test inventory:
 - tests/test_208_support_trace.py
 - tests/test_209_versioning_status.py
 - tests/test_20_option_a_audit.py
+- tests/test_210_sdk_ecosystem.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -1254,8 +1256,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1110 file)
-Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19, .mjs:3, .ps1:17, .py:827, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1115 file)
+Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:830, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1968,7 +1970,9 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19,
 - scripts/_verify_demo_video.py
 - scripts/demo_assets/_gen_slides.py
 
-[sdk] (2)
+[sdk] (4)
+- sdk/postman/ltt-public-api.postman_collection.json
+- sdk/postman/ltt-public-api.postman_environment.json
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
@@ -2113,7 +2117,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (228)
+[tests] (229)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2270,6 +2274,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_208_support_trace.py
 - tests/test_209_versioning_status.py
 - tests/test_20_option_a_audit.py
+- tests/test_210_sdk_ecosystem.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -2343,7 +2348,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (65)
+[tools] (67)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2355,11 +2360,13 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19,
 - tools/autosub_load_benchmark.py
 - tools/bench_public_api_key.py
 - tools/benchmark_upscale_ai_detail.py
+- tools/build_postman.py
 - tools/build_public_api_docs.py
 - tools/build_release.py
 - tools/build_system_profile.py
 - tools/check_api_compat.py
 - tools/check_i18n.py
+- tools/check_sdk_contract.py
 - tools/check_silent_except.py
 - tools/check_undefined_names.py
 - tools/cleanup_agent_canary.py
@@ -2432,7 +2439,7 @@ Phân bố extension: .cfg:1, .css:7, .html:76, .ini:1, .js:9, .json:39, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1110 file; 9913624 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1115 file; 9967890 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -120453,8 +120460,662 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ sdk/postman/ltt-public-api.postman_collection.json
+SHA256=b255930283391e18b5505ce87dc2db6991433e0f7a43570560f29f24c378ac77 BYTES=15933 LINES=620
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{
+  "info": {
+    "description": "Sinh tu OpenAPI bang `python tools/build_postman.py`. DUNG sua tay: lan sinh sau se ghi de, va mot collection sua tay la ban sao thu hai cua hop dong.",
+    "name": "LTT Public API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "GET /artifacts/{artifact_id}",
+      "request": {
+        "description": "Returns a time-limited URL for one output of a job this account owns.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "artifacts",
+            "{artifact_id}"
+          ],
+          "raw": "{{base_url}}/artifacts/{{artifact_id}}"
+        }
+      }
+    },
+    {
+      "name": "GET /artifacts/{artifact_id}/content",
+      "request": {
+        "description": "Streams the output when the storage backend cannot issue a signed URL.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "artifacts",
+            "{artifact_id}",
+            "content"
+          ],
+          "raw": "{{base_url}}/artifacts/{{artifact_id}}/content"
+        }
+      }
+    },
+    {
+      "name": "GET /capabilities",
+      "request": {
+        "description": "Reports the API version, whether writes are currently accepted, and the capabilities available to callers.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "capabilities"
+          ],
+          "raw": "{{base_url}}/capabilities"
+        }
+      }
+    },
+    {
+      "name": "GET /credits/balance",
+      "request": {
+        "description": "The account's credit balance, from the credit ledger.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "credits",
+            "balance"
+          ],
+          "raw": "{{base_url}}/credits/balance"
+        }
+      }
+    },
+    {
+      "name": "GET /health",
+      "request": {
+        "description": "Returns ok while this API surface is serving requests.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ],
+          "raw": "{{base_url}}/health"
+        }
+      }
+    },
+    {
+      "name": "GET /jobs",
+      "request": {
+        "description": "Owner-scoped, newest first, with optional status filter.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs"
+          ],
+          "raw": "{{base_url}}/jobs"
+        }
+      }
+    },
+    {
+      "name": "POST /jobs",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Holds the quoted credit and queues the job. Requires an Idempotency-Key header.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "description": "Bat buoc. Gui lai cung mot key khi thu lai, neu khong ban se bi tinh hai lan.",
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs"
+          ],
+          "raw": "{{base_url}}/jobs"
+        }
+      }
+    },
+    {
+      "name": "GET /jobs/{job_id}",
+      "request": {
+        "description": "Owner-scoped. Unknown or foreign ids answer 404.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs",
+            "{job_id}"
+          ],
+          "raw": "{{base_url}}/jobs/{{job_id}}"
+        }
+      }
+    },
+    {
+      "name": "POST /jobs/{job_id}/cancel",
+      "request": {
+        "description": "Cancels a queued or running job and refunds the held credit. Repeating the call is safe.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "jobs",
+            "{job_id}",
+            "cancel"
+          ],
+          "raw": "{{base_url}}/jobs/{{job_id}}/cancel"
+        }
+      }
+    },
+    {
+      "name": "GET /me",
+      "request": {
+        "description": "Returns the calling key's public id, the account it bills to, its scopes and its tool allowlist.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "me"
+          ],
+          "raw": "{{base_url}}/me"
+        }
+      }
+    },
+    {
+      "name": "GET /models",
+      "request": {
+        "description": "Returns the public model aliases, what they can do, how stable they are and which tools accept them. Prices come from POST /quotes, which prices a whole call rather than a model.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "models"
+          ],
+          "raw": "{{base_url}}/models"
+        }
+      }
+    },
+    {
+      "name": "GET /models/{model_name}",
+      "request": {
+        "description": "Returns one model alias. Unknown or unavailable aliases answer 404, exactly like a tool.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "models",
+            "{model_name}"
+          ],
+          "raw": "{{base_url}}/models/{{model_name}}"
+        }
+      }
+    },
+    {
+      "name": "POST /quotes",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Returns a signed quote bound to this account, tool and input. Submit it to POST /jobs to run the call.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "quotes"
+          ],
+          "raw": "{{base_url}}/quotes"
+        }
+      }
+    },
+    {
+      "name": "GET /tools",
+      "request": {
+        "description": "Returns the public tool catalog, narrowed to what the calling key is allowed to use.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "tools"
+          ],
+          "raw": "{{base_url}}/tools"
+        }
+      }
+    },
+    {
+      "name": "GET /tools/{tool_name}",
+      "request": {
+        "description": "Returns the input/output contract of a single tool. Unknown or unavailable tools answer 404.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "tools",
+            "{tool_name}"
+          ],
+          "raw": "{{base_url}}/tools/{{tool_name}}"
+        }
+      }
+    },
+    {
+      "name": "POST /uploads",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Reserves an upload slot for one tool input. Returns a direct upload target when the storage backend supports it.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uploads"
+          ],
+          "raw": "{{base_url}}/uploads"
+        }
+      }
+    },
+    {
+      "name": "POST /uploads/{upload_id}/confirm",
+      "request": {
+        "description": "Verifies the stored bytes against the declared size and format before the file may be used.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uploads",
+            "{upload_id}",
+            "confirm"
+          ],
+          "raw": "{{base_url}}/uploads/{{upload_id}}/confirm"
+        }
+      }
+    },
+    {
+      "name": "POST /uploads/{upload_id}/content",
+      "request": {
+        "description": "Sends the bytes through the API when the storage backend cannot issue a direct upload URL.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "uploads",
+            "{upload_id}",
+            "content"
+          ],
+          "raw": "{{base_url}}/uploads/{{upload_id}}/content"
+        }
+      }
+    },
+    {
+      "name": "GET /usage",
+      "request": {
+        "description": "Per-job credit usage in a time window, plus window totals. Defaults to the last 30 days.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "usage"
+          ],
+          "raw": "{{base_url}}/usage"
+        }
+      }
+    },
+    {
+      "name": "GET /webhooks",
+      "request": {
+        "description": "Owner-scoped. Secrets are never included.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks"
+          ],
+          "raw": "{{base_url}}/webhooks"
+        }
+      }
+    },
+    {
+      "name": "POST /webhooks",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Registers an https endpoint for terminal job events. The signing secret is returned once.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks"
+          ],
+          "raw": "{{base_url}}/webhooks"
+        }
+      }
+    },
+    {
+      "name": "GET /webhooks/deliveries",
+      "request": {
+        "description": "Owner-scoped delivery history, newest first — what was sent, how often it was retried and why it failed.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks",
+            "deliveries"
+          ],
+          "raw": "{{base_url}}/webhooks/deliveries"
+        }
+      }
+    },
+    {
+      "name": "DELETE /webhooks/{webhook_id}",
+      "request": {
+        "description": "Owner-scoped and safe to repeat.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "DELETE",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "webhooks",
+            "{webhook_id}"
+          ],
+          "raw": "{{base_url}}/webhooks/{{webhook_id}}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://app.lttstudios.com/api/v1"
+    },
+    {
+      "key": "tool",
+      "value": "image.thumbnail"
+    }
+  ]
+}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ sdk/postman/ltt-public-api.postman_environment.json
+SHA256=a5612b3f5e5c3442f6dced7fc031cb6196dea7f99a4ab7cbec288021dd6d7f4d BYTES=424 LINES=22
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{
+  "_postman_variable_scope": "environment",
+  "name": "LTT Public API — local",
+  "values": [
+    {
+      "enabled": true,
+      "key": "base_url",
+      "value": "http://127.0.0.1:8100/api/v1"
+    },
+    {
+      "enabled": true,
+      "key": "api_key",
+      "type": "secret",
+      "value": ""
+    },
+    {
+      "enabled": true,
+      "key": "tool",
+      "value": "image.thumbnail"
+    }
+  ]
+}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/python/ltt_public_api.py
-SHA256=aa4fbd6e56b74f5d1e4bd03b9a1b5cd89cc2e17a92590f40c07b6c168e79db87 BYTES=13460 LINES=300
+SHA256=00576c7d89a51817b76c6a5aeee95cfa653f332215816f5c282d6d4495c60f9f BYTES=16159 LINES=362
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Minimal Python client for the LTT Studios Public API.
 
@@ -120599,40 +121260,70 @@ class LttClient:
 
     # ── Reads (safe to retry) ────────────────────────────────────────────────
 
+    # @covers GET /me
     def me(self) -> dict:
         return self._json("GET", "/me", retry=True)
 
+    # @covers GET /capabilities
     def capabilities(self) -> dict:
         return self._json("GET", "/capabilities", retry=True)
 
+    # @covers GET /tools
     def tools(self, *, limit: int = 20, offset: int = 0) -> dict:
         return self._json("GET", f"/tools?limit={int(limit)}&offset={int(offset)}",
                           retry=True)
 
+    # @covers GET /models
+    def models(self, *, limit: int = 20, offset: int = 0) -> dict:
+        """Model aliases this key may use. Aliases, never provider model ids —
+        the platform publishes names it controls, so a provider swap does not
+        become your migration."""
+        query = urllib.parse.urlencode({"limit": int(limit),
+                                        "offset": int(offset)})
+        return self._json("GET", f"/models?{query}", retry=True)
+
+    # @covers GET /models/{model_name}
+    def model(self, name: str) -> dict:
+        return self._json("GET", f"/models/{urllib.parse.quote(name)}",
+                          retry=True)
+
+    # @covers GET /health
+    def health(self) -> dict:
+        """Liveness of the API surface. No credential required, so this is the
+        one call worth making before blaming your key."""
+        return self._json("GET", "/health", retry=True)
+
+    # @covers GET /tools/{tool_name}
     def tool(self, name: str) -> dict:
         return self._json("GET", f"/tools/{urllib.parse.quote(name)}", retry=True)
 
+    # @covers GET /jobs/{job_id}
     def job(self, job_id: str) -> dict:
         return self._json("GET", f"/jobs/{urllib.parse.quote(job_id)}", retry=True)
 
+    # @covers GET /jobs
     def jobs(self, *, status: str = "", limit: int = 20, offset: int = 0) -> dict:
         query = urllib.parse.urlencode(
             {"status": status, "limit": limit, "offset": offset})
         return self._json("GET", f"/jobs?{query}", retry=True)
 
+    # @covers GET /credits/balance
     def balance(self) -> dict:
         return self._json("GET", "/credits/balance", retry=True)
 
+    # @covers GET /usage
     def usage(self, **params) -> dict:
         query = urllib.parse.urlencode({k: v for k, v in params.items() if v})
         return self._json("GET", f"/usage?{query}" if query else "/usage",
                           retry=True)
 
+    # @covers GET /artifacts/{artifact_id}
     def artifact_url(self, artifact_id: str) -> str:
         return self._json(
             "GET", f"/artifacts/{urllib.parse.quote(artifact_id)}",
             retry=True)["url"]
 
+    # @covers GET /artifacts/{artifact_id}/content
     def download_artifact(self, artifact_id: str) -> bytes:
         _status, _headers, raw = self._request(
             "GET", f"/artifacts/{urllib.parse.quote(artifact_id)}/content",
@@ -120641,11 +121332,13 @@ class LttClient:
 
     # ── Writes ───────────────────────────────────────────────────────────────
 
+    # @covers POST /quotes
     def quote(self, tool: str, tool_input: dict) -> dict:
         """Price a call. Cheap, chargeable-free, and safe to repeat."""
         return self._json("POST", "/quotes",
                           body={"tool": tool, "input": tool_input}, retry=True)
 
+    # @covers POST /jobs
     def create_job(self, quote: dict, tool_input: dict, *,
                    idempotency_key: str = "") -> dict:
         """Run a quoted call.
@@ -120664,6 +121357,7 @@ class LttClient:
             # Safe precisely because the key is fixed for the whole loop.
             retry=True)
 
+    # @covers POST /jobs/{job_id}/cancel
     def cancel_job(self, job_id: str) -> dict:
         return self._json("POST", f"/jobs/{urllib.parse.quote(job_id)}/cancel")
 
@@ -120681,6 +121375,9 @@ class LttClient:
 
     # ── Uploads ──────────────────────────────────────────────────────────────
 
+    # @covers POST /uploads
+    # @covers POST /uploads/{upload_id}/content
+    # @covers POST /uploads/{upload_id}/confirm
     def upload(self, tool: str, field_name: str, filename: str,
                content_type: str, data: bytes) -> str:
         """Create a ticket, send the bytes, confirm. Returns the upload id."""
@@ -120727,15 +121424,35 @@ class LttClient:
 
     # ── Webhooks ─────────────────────────────────────────────────────────────
 
+    # @covers POST /webhooks
     def create_webhook(self, url: str, events=()) -> dict:
         return self._json("POST", "/webhooks",
                           body={"url": url, "events": list(events)})
 
+    # @covers GET /webhooks
     def webhooks(self) -> dict:
         return self._json("GET", "/webhooks", retry=True)
 
+    # @covers DELETE /webhooks/{webhook_id}
     def delete_webhook(self, webhook_id: str) -> dict:
         return self._json("DELETE", f"/webhooks/{urllib.parse.quote(webhook_id)}")
+
+    # @covers GET /webhooks/deliveries
+    def webhook_deliveries(self, *, subscription_id: str = "",
+                           status: str = "", limit: int = 20,
+                           offset: int = 0) -> dict:
+        """What we tried to send you, and how it went.
+
+        The first thing to read when a callback did not arrive: it separates
+        "we never sent it" from "we sent it and your endpoint refused".
+        """
+        params = {"limit": int(limit), "offset": int(offset)}
+        if subscription_id:
+            params["subscription_id"] = subscription_id
+        if status:
+            params["status"] = status
+        query = urllib.parse.urlencode(params)
+        return self._json("GET", f"/webhooks/deliveries?{query}", retry=True)
 
 
 def verify_webhook(secret: str, *, timestamp, event_id: str, body: bytes,
@@ -120757,10 +121474,16 @@ def verify_webhook(secret: str, *, timestamp, event_id: str, body: bytes,
                         hashlib.sha256).hexdigest()
     return hmac.compare_digest(f"v1={expected}", str(signature or ""))
 
+
+# The one route no client method wraps, and why that is deliberate:
+# @covers-not GET /openapi.json — machine-readable spec, not a call your code
+# makes. Fetch it with any HTTP client, or download the versioned copy from the
+# developer portal; wrapping it would imply the SDK parses it, which it does not.
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/typescript/ltt-public-api.ts
-SHA256=aa1b551d87816b1356f3fd8c792630cd42b01908a9b44ead5321b380eb0819eb BYTES=9038 LINES=267
+SHA256=01e401a130b386ff0b944b2340713532a842def3b807dc92a0cd4aa6f9411628 BYTES=14549 LINES=409
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * Minimal TypeScript client for the LTT Studios Public API.
@@ -120912,44 +121635,106 @@ export class LttClient {
 
   // ── Reads (safe to retry) ─────────────────────────────────────────────────
 
+  // @covers GET /me
   me() {
     return this.request<Record<string, unknown>>("GET", "/me", { retry: true });
   }
 
+  // @covers GET /capabilities
   capabilities() {
     return this.request<Record<string, unknown>>("GET", "/capabilities", { retry: true });
   }
 
+  // @covers GET /tools
   tools(limit = 20, offset = 0) {
     return this.request<{ items: unknown[] }>(
       "GET", `/tools?limit=${limit}&offset=${offset}`, { retry: true });
   }
 
+  // @covers GET /tools/{tool_name}
   tool(name: string) {
     return this.request<Record<string, unknown>>(
       "GET", `/tools/${encodeURIComponent(name)}`, { retry: true });
   }
 
+  /**
+   * Model aliases this key may use.
+   *
+   * Aliases, never provider model ids: the platform publishes names it
+   * controls, so a provider swap does not become your migration.
+   */
+  // @covers GET /models
+  models(limit = 20, offset = 0) {
+    return this.request<{ items: unknown[] }>(
+      "GET", `/models?limit=${limit}&offset=${offset}`, { retry: true });
+  }
+
+  // @covers GET /models/{model_name}
+  model(name: string) {
+    return this.request<Record<string, unknown>>(
+      "GET", `/models/${encodeURIComponent(name)}`, { retry: true });
+  }
+
+  /** Liveness of the API surface. Needs no credential, so it is the one call
+   * worth making before blaming your key. */
+  // @covers GET /health
+  health() {
+    return this.request<Record<string, unknown>>("GET", "/health",
+      { retry: true });
+  }
+
+  // @covers GET /jobs/{job_id}
   job(jobId: string) {
     return this.request<Job>("GET", `/jobs/${encodeURIComponent(jobId)}`, { retry: true });
   }
 
+  // @covers GET /jobs
+  jobs(status = "", limit = 20, offset = 0) {
+    const query = new URLSearchParams({ status, limit: String(limit),
+                                        offset: String(offset) });
+    return this.request<{ items: Job[] }>("GET", `/jobs?${query}`,
+      { retry: true });
+  }
+
+  // @covers GET /credits/balance
   balance() {
     return this.request<{ balance: number }>("GET", "/credits/balance", { retry: true });
   }
 
+  // @covers GET /usage
   usage() {
     return this.request<Record<string, unknown>>("GET", "/usage", { retry: true });
   }
 
+  // @covers GET /artifacts/{artifact_id}
   async artifactUrl(artifactId: string): Promise<string> {
     const body = await this.request<{ url: string }>(
       "GET", `/artifacts/${encodeURIComponent(artifactId)}`, { retry: true });
     return body.url;
   }
 
+  /**
+   * The bytes of one output.
+   *
+   * Goes through `/content` rather than the signed URL so it works from a
+   * server with no outbound access to object storage — and so a caller does
+   * not have to handle a URL that expires while they are reading it.
+   */
+  // @covers GET /artifacts/{artifact_id}/content
+  async downloadArtifact(artifactId: string): Promise<ArrayBuffer> {
+    const response = await fetch(
+      this.url(`/artifacts/${encodeURIComponent(artifactId)}/content`),
+      { headers: { Authorization: `Bearer ${this.apiKey}` } });
+    if (!response.ok) {
+      throw new LttApiError(response.status, await response.json()
+        .catch(() => ({})) as Problem);
+    }
+    return response.arrayBuffer();
+  }
+
   // ── Writes ────────────────────────────────────────────────────────────────
 
+  // @covers POST /quotes
   quote(tool: string, input: Record<string, unknown>) {
     return this.request<Quote>("POST", "/quotes", { body: { tool, input }, retry: true });
   }
@@ -120960,6 +121745,7 @@ export class LttClient {
    * The idempotency key is generated once and reused for every retry of *this*
    * call. A fresh key on retry is what turns one timeout into two charges.
    */
+  // @covers POST /jobs
   createJob(quote: Quote, input: Record<string, unknown>, idempotencyKey?: string) {
     const key = idempotencyKey ?? crypto.randomUUID().replace(/-/g, "");
     return this.request<Job>("POST", "/jobs", {
@@ -120969,6 +121755,7 @@ export class LttClient {
     });
   }
 
+  // @covers POST /jobs/{job_id}/cancel
   cancelJob(jobId: string) {
     return this.request<Job>("POST", `/jobs/${encodeURIComponent(jobId)}/cancel`);
   }
@@ -120987,9 +121774,82 @@ export class LttClient {
     }
   }
 
+  // @covers POST /webhooks
   createWebhook(url: string, events: string[] = []) {
     return this.request<{ id: string; secret: string }>(
       "POST", "/webhooks", { body: { url, events } });
+  }
+
+  // @covers GET /webhooks
+  webhooks() {
+    return this.request<{ items: unknown[] }>("GET", "/webhooks",
+      { retry: true });
+  }
+
+  // @covers DELETE /webhooks/{webhook_id}
+  deleteWebhook(webhookId: string) {
+    return this.request<Record<string, unknown>>(
+      "DELETE", `/webhooks/${encodeURIComponent(webhookId)}`);
+  }
+
+  /**
+   * What we tried to send you, and how it went.
+   *
+   * The first thing to read when a callback did not arrive: it separates "we
+   * never sent it" from "we sent it and your endpoint refused".
+   */
+  // @covers GET /webhooks/deliveries
+  webhookDeliveries(subscriptionId = "", status = "", limit = 20, offset = 0) {
+    const query = new URLSearchParams({ limit: String(limit),
+                                        offset: String(offset) });
+    if (subscriptionId) query.set("subscription_id", subscriptionId);
+    if (status) query.set("status", status);
+    return this.request<{ items: unknown[] }>(
+      "GET", `/webhooks/deliveries?${query}`, { retry: true });
+  }
+
+  /**
+   * Put a file where a tool can read it: ticket, bytes, confirm.
+   *
+   * Three calls because the platform stages an upload before anything is paid
+   * for, and promotes it only after the job holds credit (Q85). The direct PUT
+   * is used when the storage backend offers one, so gigabytes never travel
+   * through the API process.
+   */
+  // @covers POST /uploads
+  // @covers POST /uploads/{upload_id}/content
+  // @covers POST /uploads/{upload_id}/confirm
+  async upload(tool: string, field: string, filename: string,
+               contentType: string, data: Blob | ArrayBuffer): Promise<string> {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const ticket = await this.request<{
+      id: string;
+      upload?: { method: string; url: string; headers?: Record<string, string> };
+    }>("POST", "/uploads", {
+      body: { tool, field, filename, content_type: contentType,
+              size: blob.size },
+    });
+
+    const target = ticket.upload;
+    if (target && target.method.toUpperCase() === "PUT") {
+      const put = await fetch(target.url, {
+        method: "PUT", body: blob,
+        headers: { "Content-Type": contentType, ...(target.headers ?? {}) },
+      });
+      if (!put.ok) throw new Error(`upload failed: HTTP ${put.status}`);
+    } else {
+      const form = new FormData();
+      form.append("file", blob, filename);
+      const post = await fetch(
+        this.url(`/uploads/${encodeURIComponent(ticket.id)}/content`),
+        { method: "POST", body: form,
+          headers: { Authorization: `Bearer ${this.apiKey}` } });
+      if (!post.ok) throw new Error(`upload failed: HTTP ${post.status}`);
+    }
+
+    await this.request<Record<string, unknown>>(
+      "POST", `/uploads/${encodeURIComponent(ticket.id)}/confirm`);
+    return ticket.id;
   }
 }
 
@@ -121029,6 +121889,11 @@ export async function verifyWebhook(options: {
   }
   return mismatch === 0;
 }
+
+// The one route no client method wraps, and why that is deliberate:
+// @covers-not GET /openapi.json — machine-readable spec, not a call your code
+// makes. Fetch it with any HTTP client, or download the versioned copy from the
+// developer portal; wrapping it would imply the SDK parses it, which it does not.
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -128362,7 +129227,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=7a908b249981e9a058d45c21245adc59d95b2ff07aeb3f0e7a4bfdfe627fb42a BYTES=46037 LINES=1005
+SHA256=832d35c3a9fa5662e0797572a86bf0be12450377457df542d9314a209b53dc62 BYTES=47816 LINES=1047
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -129235,6 +130100,48 @@ def developer_docs(request: Request, user=Depends(require_account),
     # works on a laptop, behind the tunnel and in a test alike.
     return _render(request, db, user, "docs", "dev_docs.html",
                    base_url=str(request.base_url).rstrip("/"))
+
+
+@router.get("/openapi/download")
+def developer_openapi_download(request: Request,
+                               user=Depends(require_account)):
+    """The spec as a file, with the API version in its name.
+
+    The same document `/api/v1/openapi.json` serves — fetched from the running
+    app rather than rebuilt, because two ways of producing a spec is one way
+    too many. What this adds is a *name*: a generated client is only debuggable
+    six months later if you can tell which spec produced it.
+    """
+    import json
+
+    from starlette.responses import Response
+
+    from platform_core.public_api import protocol
+    from server.api.inventory import API_V1_PREFIX
+
+    document = None
+    for route in request.app.routes:
+        sub = getattr(route, "app", None)
+        if sub is not None and getattr(route, "path", "") == "/api/v1" \
+                and hasattr(sub, "openapi"):
+            document = sub.openapi()
+            break
+    if document is None:
+        raise _redirect("/developers/docs")
+
+    # FastAPI adds `servers` when it *serves* the document, from the mount
+    # path — so a copy taken straight from `sub.openapi()` would arrive without
+    # one, and a client generated from it would have no base URL to call. Caught
+    # by comparing the two byte for byte, which is the only way this kind of
+    # difference gets noticed.
+    document.setdefault("servers", [{"url": API_V1_PREFIX}])
+
+    name = f"ltt-public-api-{protocol.API_VERSION}-openapi.json"
+    return Response(
+        json.dumps(document, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{name}"',
+                 "Cache-Control": "no-store"})
 
 
 @router.get("/settings", response_class=HTMLResponse)
@@ -136562,7 +137469,7 @@ SHA256=3e6b9072a493e0b418b3f06ec156788ba2332435e26b398f836e1053cafeab59 BYTES=29
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_docs.html
-SHA256=7e338bd96013b14ec1b456b65893c646a3d14eda2f7cb6aa6fa69c9c553f722b BYTES=2402 LINES=37
+SHA256=a0b40b9bb4474902ed907e3f9c68680502987e75a9db96d7b46de403e0074ccc BYTES=3085 LINES=43
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
@@ -136578,6 +137485,12 @@ SHA256=7e338bd96013b14ec1b456b65893c646a3d14eda2f7cb6aa6fa69c9c553f722b BYTES=24
     <li><code>sdk/python/ltt_public_api.py</code>,
         <code>sdk/typescript/ltt-public-api.ts</code>
         — {{ _("SDK một file, không phụ thuộc ngoài.") }}</li>
+    <li><a href="/developers/openapi/download">{{ _("Tải OpenAPI (có phiên bản)") }}</a>
+        — {{ _("chính tài liệu API đang phục vụ, lưu thành file kèm số phiên bản trong tên — để sáu tháng sau còn biết client nào sinh từ bản nào.") }}</li>
+    <li><code>sdk/postman/</code>
+        — {{ _("collection + environment, SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt.") }}</li>
+    <li><code>docs/PUBLIC_API/RECIPES.md</code>
+        — {{ _("gọi bằng cURL, PowerShell, n8n, Make hoặc HTTP thuần — không cần SDK.") }}</li>
   </ul>
 </div>
 
@@ -179822,6 +180735,364 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_210_sdk_ecosystem.py
+SHA256=f7889aa01fe839cd0c83ee04bc0d46ef52c30b46e5e325fab463ef97f36513cd BYTES=14499 LINES=352
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""EXT-18 — SDKs, Postman, OpenAPI, and the promise that none of them is required.
+
+Two acceptance criteria:
+
+* **a generic HTTP client can go end to end without the SDK** — proven by doing
+  exactly that, with nothing but `urllib` from the standard library. If only our
+  own library can drive the API, it is not an API, it is a library;
+* **SDK, Postman and the contract agree** — proven by checking the declarations
+  against the route inventory, and by regenerating the collection and comparing.
+
+The third property, which the brief does not name but the whole thing rests on:
+the generated artefacts must be **generated**. A hand-edited Postman collection
+is a second copy of the contract, and a second copy is the one that drifts.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+import re
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+import uuid
+
+import pytest
+from fastapi.testclient import TestClient
+
+from platform_core.public_api import keys as devkeys, limits
+from server.api.inventory import API_V1_PREFIX, API_V1_ROUTES
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+PY_SDK = ROOT / "sdk" / "python" / "ltt_public_api.py"
+TS_SDK = ROOT / "sdk" / "typescript" / "ltt-public-api.ts"
+COLLECTION = ROOT / "sdk" / "postman" / "ltt-public-api.postman_collection.json"
+ENVIRONMENT = ROOT / "sdk" / "postman" / "ltt-public-api.postman_environment.json"
+RECIPES = ROOT / "docs" / "PUBLIC_API" / "RECIPES.md"
+
+PEPPER = "sdk-test-pepper-" + "s" * 40
+TOOL = "image.thumbnail"
+SCOPES = ("tools:read", "jobs:create", "jobs:read", "artifacts:read")
+
+
+@pytest.fixture()
+def portal(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'sdk.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
+    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
+    limits.reset()
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+
+    Base.metadata.create_all(get_engine())
+
+    import apps.thumbnail.jobs as thumbnail_jobs
+    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
+                        lambda *a, **k: bytes([137, 80, 78, 71, 13, 10, 26, 10])
+                        + b"0" * 200)
+
+    from server.app import create_app
+
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "sdk-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_RPM": "600", "LTT_PUBLIC_API_CREATE_RPM": "200",
+    })
+    with TestClient(app, base_url="https://testserver") as client:
+        yield client
+    from server.api import deps
+    deps.set_principal_resolver(None)
+    storage_mod.set_storage(None)
+    limits.reset()
+    dbmod.reset_engine()
+
+
+def _session():
+    from platform_core.db import get_session
+
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _csrf(html: str) -> str:
+    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+
+def _account(client) -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    email = f"sdk-{uuid.uuid4().hex[:6]}@example.com"
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email=email, password="a-good-password-12")
+        user.is_verified = True
+        db.flush()
+        credit.cap_tay(db, user.id, 500, by="test")
+        db.commit()
+    finally:
+        _close(gen)
+
+    page = client.get("/login").text
+    client.post("/login", data={"username": email,
+                                "password": "a-good-password-12",
+                                "csrf_token": _csrf(page)},
+                follow_redirects=False)
+    keys_page = client.get("/developers/keys").text
+    made = client.post("/developers/keys",
+                       data={"name": "sdk", "csrf_token": _csrf(keys_page),
+                             "scopes": list(SCOPES)})
+    return re.search(r"<code>(ltt_sk_[^<]+)</code>", made.text).group(1)
+
+
+# ── A generic HTTP client, with no SDK at all ────────────────────────────────
+
+def test_a_plain_http_client_can_go_end_to_end(portal):
+    """The acceptance criterion, taken literally.
+
+    Nothing from `sdk/` is imported. This is `TestClient` standing in for any
+    HTTP library: discover, quote, submit with an idempotency key, poll, and
+    download the bytes. If this test needed the SDK, the API would not be one.
+    """
+    token = _account(portal)
+    auth = {"Authorization": f"Bearer {token}"}
+    payload = {"topic": "generic client", "count": 1}
+
+    listing = portal.get(f"{API_V1_PREFIX}/tools", headers=auth)
+    assert listing.status_code == 200
+    assert TOOL in [item["name"] for item in listing.json()["items"]]
+
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": payload}, headers=auth)
+    assert quote.status_code == 200, quote.text
+    assert quote.json()["credit"] > 0
+
+    idem = uuid.uuid4().hex
+    created = portal.post(
+        f"{API_V1_PREFIX}/jobs",
+        json={"tool": TOOL, "quote": quote.json()["quote"], "input": payload},
+        headers={**auth, "Idempotency-Key": idem})
+    assert created.status_code == 201, created.text
+    job_id = created.json()["id"]
+
+    from platform_core.job_runner import _chay_mot_job
+
+    assert _chay_mot_job("sdk-worker") is True
+
+    finished = portal.get(f"{API_V1_PREFIX}/jobs/{job_id}", headers=auth).json()
+    assert finished["status"] == "succeeded", finished
+
+    artifact = finished["outputs"][0]["id"]
+    content = portal.get(f"{API_V1_PREFIX}/artifacts/{artifact}/content",
+                         headers=auth)
+    assert content.status_code == 200
+    assert content.content.startswith(bytes([137, 80, 78, 71]))
+
+
+def test_the_generic_client_gets_the_same_answer_on_a_replayed_key(portal):
+    """The one header that costs money to get wrong, exercised without an SDK."""
+    token = _account(portal)
+    auth = {"Authorization": f"Bearer {token}"}
+    payload = {"topic": "replay", "count": 1}
+    quote = portal.post(f"{API_V1_PREFIX}/quotes",
+                        json={"tool": TOOL, "input": payload},
+                        headers=auth).json()
+
+    idem = uuid.uuid4().hex
+    body = {"tool": TOOL, "quote": quote["quote"], "input": payload}
+    first = portal.post(f"{API_V1_PREFIX}/jobs", json=body,
+                        headers={**auth, "Idempotency-Key": idem})
+    second = portal.post(f"{API_V1_PREFIX}/jobs", json=body,
+                         headers={**auth, "Idempotency-Key": idem})
+
+    assert first.status_code == 201
+    assert second.status_code == 200
+    assert second.headers.get("Idempotency-Replayed") == "true"
+    assert first.json()["id"] == second.json()["id"], "a retry made a second job"
+
+
+# ── The SDKs agree with the contract ─────────────────────────────────────────
+
+def test_every_route_is_covered_or_deliberately_skipped():
+    """Run the real checker, not a copy of its logic."""
+    result = subprocess.run(
+        [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_a_missing_declaration_is_caught():
+    """A checker that passes everything is worse than no checker."""
+    saved = TS_SDK.read_text(encoding="utf-8")
+    try:
+        TS_SDK.write_text(saved.replace("  // @covers GET /models\n", "", 1),
+                          encoding="utf-8", newline="")
+        result = subprocess.run(
+            [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        assert result.returncode == 1
+        assert "GET /models" in result.stdout
+    finally:
+        TS_SDK.write_text(saved, encoding="utf-8", newline="")
+
+
+def test_a_skip_must_give_a_reason():
+    saved = PY_SDK.read_text(encoding="utf-8")
+    try:
+        text = saved.replace(
+            "# @covers-not GET /openapi.json — machine-readable spec, not a call your code",
+            "# @covers-not GET /openapi.json", 1)
+        PY_SDK.write_text(text, encoding="utf-8", newline="")
+        result = subprocess.run(
+            [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        assert result.returncode == 1
+        assert "ly do" in result.stdout
+    finally:
+        PY_SDK.write_text(saved, encoding="utf-8", newline="")
+
+
+def test_both_sdks_cover_the_same_surface():
+    """One SDK quietly lagging the other is how a team picks the wrong language
+    and finds out three weeks later."""
+    from tools.check_sdk_contract import declared
+
+    py_covered, py_skipped = declared(PY_SDK)
+    ts_covered, ts_skipped = declared(TS_SDK)
+    assert py_covered == ts_covered, {
+        "only python": sorted(py_covered - ts_covered),
+        "only typescript": sorted(ts_covered - py_covered)}
+    assert set(py_skipped) == set(ts_skipped)
+
+
+def test_the_sdks_carry_the_two_things_that_cost_money():
+    """Idempotency on the chargeable call, and retry that does not duplicate."""
+    py = PY_SDK.read_text(encoding="utf-8")
+    ts = TS_SDK.read_text(encoding="utf-8")
+    for text in (py, ts):
+        assert "Idempotency-Key" in text
+    assert "idempotency_key" in py or "idempotency-key" in py.lower()
+    assert "idempotencyKey" in ts
+
+
+# ── Postman is generated, and current ────────────────────────────────────────
+
+def test_the_postman_collection_matches_the_spec():
+    result = subprocess.run(
+        [sys.executable, "tools/build_postman.py", "--check"], cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_the_collection_covers_every_documented_route():
+    collection = json.loads(COLLECTION.read_text(encoding="utf-8"))
+    names = {item["name"] for item in collection["item"]}
+    for route in API_V1_ROUTES:
+        if not route.in_schema:
+            continue
+        tail = route.path.replace(API_V1_PREFIX, "")
+        if tail == "/openapi.json":
+            continue          # served by the framework, not a documented op
+        assert f"{route.method} {tail}" in names, f"{route.method} {tail}"
+
+
+def test_the_chargeable_request_carries_an_idempotency_key():
+    """The single most expensive thing to forget, pre-filled in the collection."""
+    collection = json.loads(COLLECTION.read_text(encoding="utf-8"))
+    job = next(item for item in collection["item"]
+               if item["name"] == "POST /jobs")
+    headers = {header["key"] for header in job["request"]["header"]}
+    assert "Idempotency-Key" in headers
+    assert "Authorization" in headers
+
+
+def test_the_committed_environment_carries_no_key():
+    """A committed file that could hold a real credential eventually holds one."""
+    environment = json.loads(ENVIRONMENT.read_text(encoding="utf-8"))
+    for value in environment["values"]:
+        if value["key"] == "api_key":
+            assert value["value"] == ""
+            assert value.get("type") == "secret"
+
+
+def test_the_collection_says_not_to_edit_it_by_hand():
+    collection = json.loads(COLLECTION.read_text(encoding="utf-8"))
+    assert "build_postman" in collection["info"]["description"]
+
+
+# ── The versioned spec ───────────────────────────────────────────────────────
+
+def test_the_spec_can_be_downloaded_with_the_version_in_its_name(portal):
+    _account(portal)
+    answer = portal.get("/developers/openapi/download")
+    assert answer.status_code == 200
+    disposition = answer.headers.get("content-disposition", "")
+    assert "attachment" in disposition
+    assert "v1" in disposition, "a saved spec must say which version it is"
+    document = json.loads(answer.content)
+    assert document["openapi"].startswith("3.")
+    assert "/tools" in document["paths"]
+
+
+def test_the_downloaded_spec_is_the_one_the_api_serves(portal):
+    """Two ways of producing a spec is one too many."""
+    token = _account(portal)
+    served = portal.get(f"{API_V1_PREFIX}/openapi.json",
+                        headers={"Authorization": f"Bearer {token}"})
+    downloaded = portal.get("/developers/openapi/download")
+    assert served.status_code == 200
+    assert json.loads(served.content) == json.loads(downloaded.content)
+
+
+# ── The recipes, for people who will never install our SDK ───────────────────
+
+def test_the_recipes_cover_the_tools_people_actually_use():
+    text = RECIPES.read_text(encoding="utf-8")
+    for tool in ("cURL", "PowerShell", "n8n", "Make"):
+        assert tool in text, tool
+    # …and each one has to warn about the mistake that costs money.
+    assert text.count("Idempotency-Key") >= 4
+
+
+def test_the_recipes_warn_about_the_n8n_retry_trap():
+    """The specific, real way an automation tool double-charges you."""
+    text = RECIPES.read_text(encoding="utf-8")
+    assert "$guid" in text
+    assert "nhiều lần" in text or "hai lần" in text
+
+
+def test_the_recipes_say_how_to_verify_a_webhook():
+    text = RECIPES.read_text(encoding="utf-8")
+    assert "body thô" in text
+    assert "hằng định" in text or "compare_digest" in text
+    assert "5 phút" in text
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_21_antispam_phase1.py
 SHA256=9a045cdce9f702cdf4c2afecdd8373308cae3fcd5da46de372991b36edb949fa BYTES=13230 LINES=330
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -198497,6 +199768,207 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/build_postman.py
+SHA256=87f7a70b7ee09514708f7e2c1e33e25e7cb2af6c5054c9daa2883ee4c15e5e55 BYTES=8210 LINES=195
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Sinh Postman collection + environment TU OpenAPI.
+
+    python tools\\build_postman.py            # ghi ra sdk/postman/
+    python tools\\build_postman.py --check    # fail neu da cu
+
+Vi sao sinh chu khong viet tay: mot collection viet tay la ban sao THU HAI cua
+hop dong, va ban thu hai luon la ban troi dat. Khi no troi, no khong bao loi —
+no chi day nguoi moi vao mot lo goi sai roi de ho tu doan.
+
+OpenAPI o day duoc dung tu chinh `create_app()` chu khong phai goi HTTP mot may
+chu dang chay, nen lenh nay chay duoc tren may khong co CSDL.
+
+`--check` nam trong `tools/gate.py`, cung co che voi ho so he thong: sinh ra roi
+quen commit thi gate bao ngay, khong doi toi luc ai do tai ve mot file cu.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import os
+import pathlib
+import sys
+import tempfile
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+OUT_DIR = ROOT / "sdk" / "postman"
+COLLECTION = OUT_DIR / "ltt-public-api.postman_collection.json"
+ENVIRONMENT = OUT_DIR / "ltt-public-api.postman_environment.json"
+
+def _utf8_stdout() -> None:
+    """Console cua Windows khong mac dinh UTF-8, ma cac thong bao o day co dau.
+
+    Goi TRONG `main()` chu khong o cap module: file nay cung duoc `import` tu
+    test, va doi `sys.stdout` luc import se cuop mat co che bat output cua
+    pytest — dung nghia den, no lam vo phien chay test.
+    """
+    if hasattr(sys.stdout, "buffer"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                      errors="replace", line_buffering=True)
+
+
+def _openapi() -> dict:
+    """The document this code serves, built in-process.
+
+    Every published tool is switched on for the build: the collection describes
+    the API we offer, not the subset one machine happens to have enabled.
+    """
+    from platform_core.registry import discover
+    from server.app import create_app
+
+    names = ",".join(sorted(
+        tool.name for item in discover() if not item.error
+        for tool in item.manifest.tools if tool.api_exposed))
+    work = pathlib.Path(tempfile.mkdtemp(prefix="ltt-postman-"))
+    os.environ.setdefault("LTT_DATABASE_URL",
+                          f"sqlite:///{(work / 'build.db').as_posix()}")
+    app = create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "postman-build-secret",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(work / "config.json"),
+        "LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": names,
+    })
+    for route in app.routes:
+        sub = getattr(route, "app", None)
+        if sub is not None and hasattr(sub, "openapi") and \
+                getattr(route, "path", "") == "/api/v1":
+            return sub.openapi()
+    raise SystemExit("khong tim thay sub-app /api/v1 de lay OpenAPI")
+
+
+def _example_body(operation: dict) -> str | None:
+    """A body a person can actually send, from the schema the spec publishes."""
+    content = ((operation.get("requestBody") or {})
+               .get("content", {}).get("application/json", {}))
+    example = content.get("example")
+    if example is not None:
+        return json.dumps(example, ensure_ascii=False, indent=2)
+    schema = content.get("schema") or {}
+    if not schema:
+        return None
+    # The public routes take free-form objects at this level; a placeholder that
+    # names the variables is more use than an invented payload that will not
+    # validate.
+    return json.dumps({"tool": "{{tool}}", "input": {}}, indent=2)
+
+
+def build() -> tuple[dict, dict]:
+    document = _openapi()
+    items = []
+    for path, methods in sorted((document.get("paths") or {}).items()):
+        for method, operation in sorted(methods.items()):
+            if method.upper() not in ("GET", "POST", "DELETE", "PUT", "PATCH"):
+                continue
+            # Postman variables, not literals: the collection has to work
+            # against a local instance and against production without editing.
+            url = "{{base_url}}" + path.replace("{", "{{").replace("}", "}}")
+            request = {
+                "method": method.upper(),
+                "header": [{"key": "Authorization",
+                            "value": "Bearer {{api_key}}", "type": "text"}],
+                "url": {"raw": url,
+                        "host": ["{{base_url}}"],
+                        "path": [part for part in path.strip("/").split("/")
+                                 if part]},
+                "description": operation.get("description")
+                or operation.get("summary", ""),
+            }
+            body = _example_body(operation)
+            if body is not None:
+                request["header"].append({"key": "Content-Type",
+                                          "value": "application/json"})
+                if method.upper() == "POST" and path.endswith("/jobs"):
+                    # The one header that costs money to forget.
+                    request["header"].append({
+                        "key": "Idempotency-Key",
+                        "value": "{{$guid}}",
+                        "description": "Bat buoc. Gui lai cung mot key khi thu "
+                                       "lai, neu khong ban se bi tinh hai lan."})
+                request["body"] = {"mode": "raw", "raw": body,
+                                   "options": {"raw": {"language": "json"}}}
+            items.append({"name": f"{method.upper()} {path}",
+                          "request": request})
+
+    collection = {
+        "info": {
+            "name": f"LTT Public API {document.get('info', {}).get('version', 'v1')}",
+            "description": (
+                "Sinh tu OpenAPI bang `python tools/build_postman.py`. "
+                "DUNG sua tay: lan sinh sau se ghi de, va mot collection sua "
+                "tay la ban sao thu hai cua hop dong."),
+            "schema": "https://schema.getpostman.com/json/collection/v2.1.0/"
+                      "collection.json",
+        },
+        "item": items,
+        "variable": [
+            {"key": "base_url", "value": "https://app.lttstudios.com/api/v1"},
+            {"key": "tool", "value": "image.thumbnail"},
+        ],
+    }
+
+    environment = {
+        "name": "LTT Public API — local",
+        "values": [
+            {"key": "base_url", "value": "http://127.0.0.1:8100/api/v1",
+             "enabled": True},
+            # Secret by type so Postman does not print it in shared runs, and
+            # empty by default so a committed file never carries a real key.
+            {"key": "api_key", "value": "", "type": "secret", "enabled": True},
+            {"key": "tool", "value": "image.thumbnail", "enabled": True},
+        ],
+        "_postman_variable_scope": "environment",
+    }
+    return collection, environment
+
+
+def _dump(payload: dict) -> str:
+    return json.dumps(payload, ensure_ascii=False, indent=2,
+                      sort_keys=True) + "\n"
+
+
+def main() -> int:
+    _utf8_stdout()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args()
+
+    collection, environment = build()
+    files = ((COLLECTION, _dump(collection)), (ENVIRONMENT, _dump(environment)))
+
+    if args.check:
+        stale = [path for path, text in files
+                 if not path.is_file()
+                 or path.read_text(encoding="utf-8") != text]
+        if stale:
+            for path in stale:
+                print(f"STALE: {path.relative_to(ROOT)}")
+            print("Run: python tools/build_postman.py")
+            return 1
+        print(f"Postman khop OpenAPI ({len(collection['item'])} request).")
+        return 0
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    for path, text in files:
+        path.write_text(text, encoding="utf-8", newline="")
+        print(f"WROTE: {path.relative_to(ROOT)}")
+    print(f"{len(collection['item'])} request.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/build_public_api_docs.py
 SHA256=e27a7c6eae5727a197eebf4f7e08049f160339100066d18040ab906d5c2dc9d9 BYTES=8790 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -199353,6 +200825,119 @@ def main() -> int:
     print(f"i18n: {tong} chuoi chua boc (moc {cu_tong}) — khong tang.")
     if tong < cu_tong:
         print("Da giam. Chay `--chot` de ha moc, khong cho no tang lai.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_sdk_contract.py
+SHA256=e01a3d4356bdd9d26ae1d23a7c737b2ca39452fe21f51fe8690b176104df6363 BYTES=3959 LINES=107
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Moi route cong khai phai duoc SDK phu — hoac duoc khai la CO Y khong phu.
+
+    python tools\\check_sdk_contract.py
+
+Vi sao can: mot SDK thieu mot route khong bao gio bao loi. No chi lam nguoi dung
+tu viet lay phan do, roi ho viet sai retry hoac quen Idempotency-Key — dung hai
+thu SDK sinh ra de lo. Va "quen" trong khong khac gi "co y bo qua", nen file nay
+bat phai NOI RA la cai nao.
+
+Doi chieu `server/api/inventory.py` (nguon su that ve route) voi khai bao phu
+trong chinh hai file SDK. Khai bao nam TRONG SDK chu khong o day, vi mot danh
+sach dat ben ngoai la mot danh sach se troi dat.
+
+Cu phap khai bao, viet ngay tren phuong thuc hoac o cuoi file:
+
+    # @covers GET /tools
+    # @covers-not GET /openapi.json — spec, khong phai loi goi cua nguoi dung
+
+Nam trong `tools/gate.py`.
+"""
+from __future__ import annotations
+
+import io
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+SDKS = {
+    "python": ROOT / "sdk" / "python" / "ltt_public_api.py",
+    "typescript": ROOT / "sdk" / "typescript" / "ltt-public-api.ts",
+}
+
+_COVERS = re.compile(r"@covers\s+([A-Z]+)\s+(\S+)")
+_COVERS_NOT = re.compile(r"@covers-not\s+([A-Z]+)\s+(\S+)")
+
+def _utf8_stdout() -> None:
+    """Console cua Windows khong mac dinh UTF-8, ma cac thong bao o day co dau.
+
+    Goi TRONG `main()` chu khong o cap module: file nay cung duoc `import` tu
+    test, va doi `sys.stdout` luc import se cuop mat co che bat output cua
+    pytest — dung nghia den, no lam vo phien chay test.
+    """
+    if hasattr(sys.stdout, "buffer"):
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                      errors="replace", line_buffering=True)
+
+
+def declared(path: pathlib.Path) -> tuple[set, dict]:
+    """(routes covered, {route: reason it is deliberately not covered})."""
+    text = path.read_text(encoding="utf-8")
+    covered = {f"{method} {route}" for method, route in _COVERS.findall(text)}
+    skipped = {}
+    for match in _COVERS_NOT.finditer(text):
+        method, route = match.group(1), match.group(2)
+        line = text[match.end():text.find("\n", match.end())]
+        skipped[f"{method} {route}"] = line.strip(" —-\t")
+    return covered, skipped
+
+
+def main() -> int:
+    _utf8_stdout()
+    from server.api.inventory import API_V1_PREFIX, API_V1_ROUTES
+
+    wanted = {f"{route.method} {route.path.replace(API_V1_PREFIX, '')}"
+              for route in API_V1_ROUTES}
+
+    problems = []
+    for name, path in SDKS.items():
+        if not path.is_file():
+            problems.append(f"{name}: khong thay {path.relative_to(ROOT)}")
+            continue
+        covered, skipped = declared(path)
+
+        unknown = (covered | set(skipped)) - wanted
+        for route in sorted(unknown):
+            problems.append(
+                f"{name}: khai phu route khong ton tai: {route}")
+
+        missing = wanted - covered - set(skipped)
+        for route in sorted(missing):
+            problems.append(
+                f"{name}: {route} chua khai — them `@covers` neu da lam, "
+                f"hoac `@covers-not ... — ly do` neu co y bo")
+
+        for route, reason in sorted(skipped.items()):
+            if not reason:
+                problems.append(
+                    f"{name}: {route} khai bo qua ma khong noi ly do")
+        print(f"{name}: {len(covered)} phu, {len(skipped)} co y bo, "
+              f"{len(wanted)} route")
+
+    if problems:
+        print("\nSDK khong khop hop dong:")
+        for line in problems:
+            print("  " + line)
+        print("\nMot SDK thieu route khong bao loi — no chi de nguoi dung tu "
+              "viet lay,\nroi ho viet sai retry hoac quen Idempotency-Key.")
+        return 1
+    print("SDK khop hop dong.")
     return 0
 
 
@@ -202458,7 +204043,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=3b6440c1aade07190861487a75c992fe0b1fcfae70491ab9a8cec039feb589e2 BYTES=6511 LINES=144
+SHA256=b5609e787ab3741a08b496b5e70f294cbef1b3b91fe911ce96a078b70c96e8fb BYTES=7080 LINES=152
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -202528,6 +204113,14 @@ def _steps(quick: bool) -> list[Step]:
         # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy
         # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
         Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
+             ROOT),
+        # EXT-18: SDK thiếu một route không bao giờ báo lỗi — nó chỉ để người
+        # dùng tự viết lấy, rồi họ viết sai retry hoặc quên Idempotency-Key.
+        Step("SDK khop hop dong",
+             [sys.executable, "tools/check_sdk_contract.py"], ROOT),
+        # …và collection Postman phải được SINH lại, không sửa tay: một bản sao
+        # thứ hai của hợp đồng luôn là bản trôi dạt.
+        Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
              ROOT),
     ]
     npm = _npm()

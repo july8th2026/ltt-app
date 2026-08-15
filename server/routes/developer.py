@@ -871,6 +871,48 @@ def developer_docs(request: Request, user=Depends(require_account),
                    base_url=str(request.base_url).rstrip("/"))
 
 
+@router.get("/openapi/download")
+def developer_openapi_download(request: Request,
+                               user=Depends(require_account)):
+    """The spec as a file, with the API version in its name.
+
+    The same document `/api/v1/openapi.json` serves — fetched from the running
+    app rather than rebuilt, because two ways of producing a spec is one way
+    too many. What this adds is a *name*: a generated client is only debuggable
+    six months later if you can tell which spec produced it.
+    """
+    import json
+
+    from starlette.responses import Response
+
+    from platform_core.public_api import protocol
+    from server.api.inventory import API_V1_PREFIX
+
+    document = None
+    for route in request.app.routes:
+        sub = getattr(route, "app", None)
+        if sub is not None and getattr(route, "path", "") == "/api/v1" \
+                and hasattr(sub, "openapi"):
+            document = sub.openapi()
+            break
+    if document is None:
+        raise _redirect("/developers/docs")
+
+    # FastAPI adds `servers` when it *serves* the document, from the mount
+    # path — so a copy taken straight from `sub.openapi()` would arrive without
+    # one, and a client generated from it would have no base URL to call. Caught
+    # by comparing the two byte for byte, which is the only way this kind of
+    # difference gets noticed.
+    document.setdefault("servers", [{"url": API_V1_PREFIX}])
+
+    name = f"ltt-public-api-{protocol.API_VERSION}-openapi.json"
+    return Response(
+        json.dumps(document, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{name}"',
+                 "Cache-Control": "no-store"})
+
+
 @router.get("/settings", response_class=HTMLResponse)
 def developer_settings(request: Request, user=Depends(require_account),
                        db: Session = Depends(get_db)):
