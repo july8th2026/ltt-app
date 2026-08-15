@@ -187,6 +187,23 @@ def stage_bytes(db, storage, *, user_id: str, app_slug: str, filename: str,
     return confirm(db, storage, session)
 
 
+def _la_job_thu(job: Job) -> bool:
+    """Job này có phải job chế độ thử (khoá `ltt_tk_`) hay không.
+
+    Cửa "phải giữ credit mới được lưu file" tồn tại để không ai biến input của
+    job thành kho lưu trữ miễn phí. Một job chế độ thử **không bao giờ** giữ
+    credit — đó chính là lời hứa của khoá thử — nên với nó cửa đó không phải một
+    hàng rào mà là một bức tường: mọi tool nhận file trở thành không thử được,
+    và đúng cái mà chế độ thử sinh ra để cho phép lại là cái nó chặn.
+
+    Trần chống lạm dụng của chế độ thử nằm ở chỗ khác và vẫn nguyên: giới hạn
+    kích thước, giới hạn nhịp gọi, và hạn lưu trữ của upload đã promote.
+    """
+    from platform_core.public_api import sandbox
+
+    return sandbox.is_test(sandbox.mode_of_job(job))
+
+
 def promote(db, storage, session: UploadSession, *, job: Job,
             final_key: str, now: datetime | None = None) -> str:
     from platform_core import credit, job_events
@@ -198,7 +215,7 @@ def promote(db, storage, session: UploadSession, *, job: Job,
             raise UploadSessionError(_t("Upload đã được dùng cho job khác."))
         return session.final_key
     confirm(db, storage, session, now=current)
-    if credit.so_da_giu(db, job.id) <= 0:
+    if credit.so_da_giu(db, job.id) <= 0 and not _la_job_thu(job):
         raise UploadSessionError(_t("Chưa giữ credit nên không thể lưu file."))
     try:
         stored = storage.promote(

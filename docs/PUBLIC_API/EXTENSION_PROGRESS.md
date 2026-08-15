@@ -2370,3 +2370,118 @@ bản cũ (**sẽ mang lại lỗi che mất danh sách khoá**).
 **NEXT_EXTENSION_PROMPT_ALLOWED=true**
 Prompt kế: `prompts/20_FULL_APP_TOOL_MODEL_EXECUTION_MODE_EXTERNAL_CERTIFICATION.txt`
 (EXT-20) — **checkpoint full gate**.
+
+---
+
+## EXT-20 — NGHIỆM THU 100% APP / TOOL / MODEL / CHẾ ĐỘ CHẠY ✅
+
+### Entry gate
+
+EXT-19 PASS ✅ (`ff42401`), cây sạch. **Không migration mới.**
+
+### Cái đã có, và tầng còn thiếu
+
+Phân loại ở mức **app** đã xong từ V1 và có bánh cóc (`test_190` +
+`APP_DISPOSITION_V1.md`). Nhưng prompt hỏi tới **tool, model và chế độ chạy** —
+và ở ba tầng đó thì chưa ai chốt gì: 21 ToolSpec chỉ có 5 được nhắc tên, còn 16
+cái kia tồn tại mà không có dòng nào nói vì sao chúng đóng.
+
+`APP_API_COVERAGE_FINAL.md` chốt cả bốn tầng: **14 app, 21 tool, 4 alias model,
+5 operation**. `test_212` đọc chính các bảng đó **như dữ liệu** — thêm bất cứ
+thứ gì mà không có dòng thì đỏ, và ghi một thứ không còn tồn tại cũng đỏ.
+
+### Bánh cóc bắt tôi ngay lần chạy đầu
+
+Tôi **đoán** tên 9 tool của `mediatools`/`kichban` thay vì đọc registry. Test đỏ
+ngay, chỉ đúng 9 tên bịa và 9 tên thật bị bỏ sót. Đây chính là lý do bảng phải
+được máy đọc: một bảng viết tay về 21 thứ thì sai, và sai một cách trông rất
+đáng tin.
+
+### Nghiệm thu bằng khoá test-mode — EXT-12 trả công
+
+Cả 5 operation được chạy **thật từ ngoài vào**: quote → submit → worker → poll →
+artifact/result → usage → webhook → idempotency. Trên **khoá test-mode**, nên
+một lần nghiệm thu đầy đủ **không tốn credit, không cần provider, không cần
+GPU** — kể cả operation chạy GPU. Đây là thứ EXT-12 sinh ra để làm được.
+
+### Và chính nó tìm ra chỗ chế độ thử chưa giữ lời
+
+`image.upscale` là operation duy nhất **bắt buộc** có file. Nó hỏng:
+
+> `Chưa giữ credit nên không thể lưu file.`
+
+Luật ấy đúng và cần: không cho ai biến input của job thành kho lưu trữ miễn phí.
+Nhưng job chế độ thử **không bao giờ** giữ credit — đó là toàn bộ lời hứa của
+khoá thử — nên với **mọi tool nhận file**, luật không phải hàng rào mà là bức
+tường. Chế độ thử quảng cáo "cả API, chỉ thay provider" trong khi đường upload
+thì không thử được.
+
+Sửa ở gốc (`upload_sessions.promote`), và **chốt lại phía bên kia**: job thật
+không có hold vẫn bị từ chối, có test riêng. Nới một hàng rào mà không chốt đầu
+kia là cách hàng rào biến mất trong im lặng.
+
+### Hai lần tôi sai, test sửa
+
+1. **Đoán `status == "done"`** — thật ra là `succeeded`.
+2. **Đoán artifact nằm trong `result`** — thật ra hợp đồng **tách đôi**: field
+   nào là file thì về `outputs` dưới dạng id tải được, còn lại mới ở `result`.
+   Sửa xong thì phép kiểm mạnh hơn hẳn: giờ nó chốt luôn **cách tách đó**, vì
+   một người tích hợp tìm nhầm chỗ sẽ kết luận job không sinh ra gì.
+
+### Quét "không lọt ra ngoài ý muốn"
+
+Mở công tắc `LTT_PUBLIC_API_TOOLS` **rộng hết mức hợp lệ** rồi mới quét — quét
+trên catalog rỗng thì luôn xanh và chẳng chứng minh gì (lần chạy đầu tôi dính
+đúng bẫy này: 0 rò rỉ, vì catalog rỗng).
+
+Với catalog rộng nhất có thể: 16 tool đóng không xuất hiện ở OpenAPI,
+`/capabilities`, docs, playground, trang giá, status, `/tools`, `/models`; gọi
+thẳng tên một tool đóng nhận **404** chứ không phải 403 (tên đó không tồn tại
+với khách); **không id vendor nào** lọt ra; mọi alias publish đều thuộc một tool
+đang publish.
+
+### Chế độ chạy
+
+Cả 5 operation đều `ASYNC_JOB`. Điều đáng nói không phải con số mà là chỗ nó
+được canh: `execution_mode` là khai báo trong manifest, registry **từ chối** giá
+trị nền tảng chưa thi hành được. Nên operation `SYNC`/`STREAM`/`BATCH` đầu tiên
+không thể lọt vào rồi mới phát hiện hợp đồng job không mô tả nổi nó — đúng chỗ
+`chataistudio` mắc, và vì vậy nó DEFER chứ không phải "chưa kịp làm".
+
+### Nhà mới cho năng lực chờ migrate
+
+Prompt đòi mỗi `MIGRATE` phải có **service home**, và có test cấm để trống hay
+ghi "TBD". Cả ba (`taovideo`, `autosubvideo`, `taoclipngan`) về `upscalevideo` —
+app duy nhất đã có hợp đồng media chốt giá trước khi chạy, có trần GPU và có
+đường huỷ-hoàn. Ba cái đó bị chặn bởi **cùng một nguyên nhân** (giá theo thời
+lượng khách khai + worker nâng hold), nên sửa một chỗ mở được cả ba.
+
+### Tests
+
+`tests/test_212_coverage_certification.py` — **47 test** (7 nhóm × 5 operation +
+12 test kiểm kê và quét). Chạy cùng `test_204`: **70 passed**.
+
+### Kiểm bằng trình duyệt
+
+Playground liệt kê đủ 5 tool + 4 alias model. Chạy thật `image.upscale` bằng
+khoá test-mode qua trình duyệt: upload 200 → confirm 200 → quote 2 credit → job
+`succeeded`, **charged 0**, artifact tải về đúng PNG. **Trước khi sửa, đường này
+luôn hỏng.** Console: 0 lỗi.
+
+### Rollback
+
+Xoá `APP_API_COVERAGE_FINAL.md` + `test_212`; hoàn `upload_sessions._la_job_thu`
+(**lưu ý: hoàn nguyên là làm mọi tool nhận file không thử được trở lại**).
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-20 | Kết quả |
+|---|---|
+| 100% apps classified | ✅ 14/14, có test so bảng với `registry.discover()` cả hai chiều |
+| 100% exposed operations certified | ✅ 5/5 chạy thật từ ngoài bằng khoá test-mode, đủ 13 mục checklist |
+| 0 accidental exposure | ✅ quét 9 surface với công tắc mở rộng nhất; 16 tool đóng và 4 id vendor không lọt chỗ nào; gọi tên tool đóng nhận 404 |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=true**
+Prompt kế: `prompts/21_FINAL_FULL_API_PLATFORM_AUDIT_LOAD_CHAOS_SECURITY_RELEASE_GATE.txt`
+(EXT-21) — **checkpoint cuối, prompt duy nhất được phép kết luận
+`API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY`**.
