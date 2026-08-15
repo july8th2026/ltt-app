@@ -117,6 +117,9 @@ STORES: tuple = (
     Store("api_security_events", OPERATIONAL, 90, N_("vận hành"),
           N_("Ai đang dò khoá. Chỉ lưu nửa CÔNG KHAI của khoá đã thử."),
           "security_log.purge_expired (worker)"),
+    Store("api_metric_samples", OPERATIONAL, 14, N_("vận hành"),
+          N_("Bộ đếm của từng tiến trình theo phút, để cộng lại khi đọc."),
+          "metrics.purge_expired (worker)"),
     Store("api_cost_observations", OPERATIONAL, 400, N_("vận hành"),
           N_("Chi phí ƯỚC TÍNH để tính biên lợi nhuận. Không phải sổ sách."),
           "costing.purge_expired (worker)"),
@@ -227,6 +230,8 @@ NOT_CUSTOMER_DATA = frozenset({
     "alembic_version", "platform_info", "api_keys", "api_policies",
     "api_policy_assignments", "api_kill_switches", "app_access",
     "credit_packages", "gpu_leases",
+    # Ai đang giữ vai trò chạy việc nền. Máy + pid, không có gì của khách.
+    "singleton_leases",
 })
 
 

@@ -55,7 +55,60 @@ def _so_tien_trinh() -> int:
         return 1
 
 
-def _chay_mot_worker(thu_tu: int) -> None:
+def _doi_hinh() -> list:
+    """Đội hình worker: mỗi phần tử là (tập năng lực, số tiến trình).
+
+    Vì sao cần chia lớp. Số tiến trình mặc định bằng **số GPU**, nhưng phần lớn
+    công cụ đang mở chỉ khai ``requires=('api',)`` — chúng ngồi chờ mạng nhà
+    cung cấp và không đụng tới card. Sizing theo GPU bắt chúng xếp hàng sau nhau
+    không vì lý do gì, và một job chờ tám giây chiếm trọn một slot đáng lẽ dành
+    cho việc dùng card.
+
+    Khai bằng ``LTT_WORKER_POOLS``, ví dụ::
+
+        LTT_WORKER_POOLS = "api:8, gpu:2"
+
+    Tên pool là **năng lực** trong ``manifest.requires``, nên nền tảng vẫn không
+    biết tên app nào (`AGENTS.md` 8.4). Một pool chỉ nhặt job của app khai đủ
+    năng lực nằm gọn trong tập của nó — `jobs.claim()` đã lọc như vậy sẵn.
+
+    Không khai thì giữ nguyên hành vi cũ: một pool đa năng. Đổi ngầm đội hình
+    của một máy chủ đang chạy là thứ không ai muốn gặp sau khi cập nhật.
+
+    Vì sao không tự suy ra đội hình: số worker `api` tối ưu phụ thuộc độ trễ nhà
+    cung cấp và băng thông — hai thứ không đo được lúc khởi động. Đoán một con
+    số rồi gọi là "tự động" chỉ là giấu một tham số, không phải bỏ nó đi.
+    """
+    dat = (os.environ.get("LTT_WORKER_POOLS") or "").strip()
+    if not dat:
+        return [(None, _so_tien_trinh())]
+
+    doi_hinh: list = []
+    for phan in dat.split(","):
+        phan = phan.strip()
+        if not phan:
+            continue
+        ten, _, so = phan.partition(":")
+        ten = ten.strip().lower()
+        try:
+            n = max(1, min(16, int(so.strip() or "1")))
+        except ValueError:
+            log.warning("LTT_WORKER_POOLS: %r khong phai so — bo qua", phan)
+            continue
+        if not ten:
+            continue
+        # Pool `gpu` vẫn phải chạy được job chỉ cần `api`: một worker khai nhiều
+        # năng lực hơn thì nhặt được nhiều loại hơn, không phải ít hơn.
+        nang_luc = {"api"} | {t.strip() for t in ten.split("+") if t.strip()}
+        doi_hinh.append((nang_luc, n))
+
+    if not doi_hinh:
+        log.warning("LTT_WORKER_POOLS khong doc duoc — dung mac dinh")
+        return [(None, _so_tien_trinh())]
+    return doi_hinh
+
+
+def _chay_mot_worker(thu_tu: int, nang_luc=None) -> None:
     """Thân của MỘT tiến trình worker. Phải ở cấp module để Windows spawn được."""
     logging.basicConfig(
         level=logging.INFO,
@@ -77,7 +130,8 @@ def _chay_mot_worker(thu_tu: int) -> None:
         signal.signal(signal.SIGTERM, _xin_dung)
 
     from platform_core.job_runner import run_forever
-    run_forever(worker_id, stop=lambda: dung["flag"])
+    run_forever(worker_id, stop=lambda: dung["flag"],
+                capabilities=set(nang_luc) if nang_luc else None)
 
 
 def main() -> int:
@@ -94,21 +148,29 @@ def main() -> int:
         log.error("Khong chay duoc worker: %s", exc)
         return 2
 
-    n = _so_tien_trinh()
-    if n == 1:
+    doi_hinh = _doi_hinh()
+    tong = sum(so for _nang_luc, so in doi_hinh)
+    if tong == 1 and doi_hinh[0][0] is None:
         # Đường một tiến trình giữ nguyên như trước: KHÔNG đẻ tiến trình con,
         # nên dịch vụ Windows vẫn giám sát đúng tiến trình đang làm việc.
         log.info("chay 1 tien trinh worker")
         _chay_mot_worker(0)
         return 0
 
-    log.info("chay %s tien trinh worker song song", n)
+    log.info("chay %s tien trinh worker: %s", tong,
+             ", ".join(f"{sorted(nl) if nl else 'da nang'}x{so}"
+                       for nl, so in doi_hinh))
     con: list = []
-    for i in range(n):
-        p = multiprocessing.Process(target=_chay_mot_worker, args=(i,),
-                                    name=f"ltt-worker-{i}", daemon=False)
-        p.start()
-        con.append(p)
+    i = 0
+    for nang_luc, so in doi_hinh:
+        for _ in range(so):
+            p = multiprocessing.Process(
+                target=_chay_mot_worker,
+                args=(i, sorted(nang_luc) if nang_luc else None),
+                name=f"ltt-worker-{i}", daemon=False)
+            p.start()
+            con.append(p)
+            i += 1
 
     def _dung_het(signum, frame):
         log.info("nhan tin hieu dung, bao %s tien trinh con thoat", len(con))

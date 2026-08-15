@@ -43,7 +43,8 @@ from platform_core.db import get_session
 from platform_core.public_api.tables import (PRICE_ACTIVE,
                                              PRICE_DRAFT,
                                              PRICE_SCHEDULED)
-from platform_core.public_api import (admin_console, costing,
+from platform_core import leases
+from platform_core.public_api import (admin_console, costing, metrics,
                                       policy, pricing)
 
 _log = logging.getLogger("ltt.admin.api")
@@ -140,6 +141,11 @@ class ApiOverviewView(BaseView):
         try:
             data = admin_console.overview(db, hours=hours)
             by_tool = admin_console.jobs_by_tool(db, hours=hours)
+            # Bộ đếm sống trong tiến trình, nên trước đây chúng mất khi khởi
+            # động lại và mỗi tiến trình giữ một bản riêng không ai cộng. Đây là
+            # đường đọc: cộng mọi tiến trình trong cửa sổ thời gian.
+            do = metrics.aggregate(db, hours=hours)
+            ai_bao_tri = leases.current_holder(db, name=leases.MAINTENANCE)
         finally:
             _close(gen)
 
@@ -164,6 +170,27 @@ class ApiOverviewView(BaseView):
             _stat("Webhook chết", hooks["dead"],
                   f'{hooks["pending"]} đang chờ · {hooks["subscriptions"]} đăng ký',
                   colour=_ERR if hooks["dead"] else ""),
+        ])
+
+        dem = do["counters"]
+        loi_5xx = dem.get("responses_5xx", 0)
+        xac_thuc_hong = dem.get("auth_failure", 0)
+        cho_hang_doi = do["latency"].get("queue_pickup_ms", {})
+        van_hanh = "".join([
+            _stat("Lỗi 5xx", loi_5xx, "nền tảng, không phải khách",
+                  colour=_ERR if loi_5xx else ""),
+            _stat("Xác thực hỏng", xac_thuc_hong, "khoá sai hoặc đã thu hồi",
+                  colour=_ERR if xac_thuc_hong else ""),
+            _stat("Bị chặn nhịp", dem.get("rate_limited", 0)),
+            _stat("Bị công tắc chặn", dem.get("kill_switch_refused", 0)),
+            _stat("Hết chỗ tài nguyên", dem.get("capacity_refused", 0)),
+            _stat("Webhook gửi hỏng", dem.get("webhook_failed", 0),
+                  colour=_ERR if dem.get("webhook_failed") else ""),
+            _stat("Chờ vào hàng đợi",
+                  f'{cho_hang_doi.get("avg_ms", 0)} ms',
+                  f'cao nhất {cho_hang_doi.get("max_ms", 0)} ms'),
+            _stat("Tiến trình đã gộp", do["processes"],
+                  f'bảo trì: {escape(ai_bao_tri or "chưa ai giữ")}'),
         ])
 
         codes = "".join(
@@ -201,6 +228,11 @@ class ApiOverviewView(BaseView):
             f'<div class="tabs">{windows}</div>'
             f'{_TILES}{cards}</div>'
             f'{_COLS}'
+            f'<section><h2 style="margin:22px 0 10px">Vận hành</h2>'
+            f'<p class="muted" style="margin:0 0 10px">Cộng từ mọi tiến trình '
+            f'web và worker. Bộ đếm sống trong tiến trình và được xả xuống CSDL '
+            f'mỗi phút, nên số ở đây tồn tại qua khởi động lại.</p>'
+            f'{_TILES}{van_hanh}</section>'
             f'<section><h2 style="margin:22px 0 10px">Mã lỗi hay gặp</h2>'
             f'<div class="tablewrap">'
             f'<table class="ui-table"><thead><tr><th>Mã</th><th>Số lần</th>'

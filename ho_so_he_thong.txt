@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7aca9a68078c38d8c5a5bedc50e08f11d9293402196e16b0c9400f40968c5455
-Nguồn đã quét : 1125 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:2a3cde920486e732b01d0de5259cae1591c2ed89ed48d587767b827943a6fe39
+Nguồn đã quét : 1126 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -808,21 +808,22 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (49 bảng)
+5. DATA MODEL (50 bảng)
 - agent_runs → AgentRun | platform_core/models.py:397
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
 - agent_workflows → AgentWorkflow | platform_core/models.py:432
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
-- api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:699
+- api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:740
 - api_keys → ApiKey | platform_core/models.py:589
-- api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:574
+- api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
+- api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
-- api_policies → ApiPolicy | platform_core/public_api/tables.py:505
-- api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:549
-- api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:643
+- api_policies → ApiPolicy | platform_core/public_api/tables.py:546
+- api_policy_assignments → ApiPolicyAssignment | platform_core/public_api/tables.py:590
+- api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:684
 - api_projects → ApiProject | platform_core/public_api/tables.py:62
-- api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:750
+- api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:791
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
 - chat_conversations → ChatConversation | platform_core/models.py:732
@@ -852,8 +853,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - platform_info → PlatformInfo | platform_core/models.py:42
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
-- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:436
-- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:395
+- public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
+- public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:134
 - singleton_leases → SingletonLease | platform_core/models.py:823
 - upload_sessions → UploadSession | platform_core/models.py:364
@@ -899,7 +900,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - c5d6e7f8a9b0 ← b4c5d6e7f8a9 | them chinh sach han muc va kill switch cho khu API (EXT-14) | alembic/versions/20260814_2400_api_policy_engine.py
 - d6e7f8a9b0c1 ← c5d6e7f8a9b0 | them phien ban gia va quan sat chi phi cho khu API (EXT-15) | alembic/versions/20260815_0100_api_pricing_costing.py
 - e7f8a9b0c1d2 ← d6e7f8a9b0c1 | them bang su kien bao mat cho khu API (EXT-16) | alembic/versions/20260815_0200_api_security_events.py
-- f8a9b0c1d2e3 ← e7f8a9b0c1d2 | lease co ten + khoa chong trung canh bao (T1/T2 runtime hardening) | alembic/versions/20260815_1200_singleton_leases.py
+- f8a9b0c1d2e3 ← e7f8a9b0c1d2 | lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening) | alembic/versions/20260815_1200_singleton_leases.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -916,7 +917,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (102 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (103 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1018,9 +1019,10 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_UPSCALE_WATCH_TOKEN
 - LTT_WHISPERX_PYTHON
 - LTT_WHISPERX_TIMEOUT_SECONDS
+- LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (218 file pytest + 3 frontend)
+10. QUALITY GATES (219 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1173,6 +1175,7 @@ Test inventory:
 - tests/test_213_full_platform_release.py
 - tests/test_214_multi_process_runtime.py
 - tests/test_215_lease_and_outbox_claim.py
+- tests/test_216_worker_pools_and_metrics.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -1265,8 +1268,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1125 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:839, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1126 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:840, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2130,7 +2133,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (235)
+[tests] (236)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2294,6 +2297,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_213_full_platform_release.py
 - tests/test_214_multi_process_runtime.py
 - tests/test_215_lease_and_outbox_claim.py
+- tests/test_216_worker_pools_and_metrics.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -2458,7 +2462,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1125 file; 10144358 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1126 file; 10169132 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5864,9 +5868,9 @@ def downgrade() -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260815_1200_singleton_leases.py
-SHA256=a771a7a2a371b520ec1d6b7b3f94582216466cd31537b28f3bac9c6677c3f6c7 BYTES=2883 LINES=65
+SHA256=bae802644e8f03c045dd63a76da23fbd6a0c9ae8123a0c6805d229c0f0a1ac59 BYTES=4043 LINES=86
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""lease co ten + khoa chong trung canh bao (T1/T2 runtime hardening)
+"""lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening)
 
 Vi sao can: nen tang chay NHIEU tien trinh worker (so tien trinh mac dinh bang
 so GPU), nhung moi viec nen — don du lieu, gui webhook, quet canh bao — deu duoc
@@ -5923,8 +5927,29 @@ def upgrade() -> None:
     op.create_unique_constraint("uq_api_notifications_event_key",
                                 "api_notifications", ["user_id", "event_key"])
 
+    # Duong ra cho bo dem: chung song trong tien trinh nen mat khi khoi dong lai,
+    # khong doc duoc tu ngoai, va nhieu tien trinh thi moi cai mot ban rieng.
+    op.create_table(
+        "api_metric_samples",
+        sa.Column("id", sa.String(length=36), primary_key=True),
+        sa.Column("process", sa.String(length=160), nullable=False),
+        sa.Column("name", sa.String(length=64), nullable=False),
+        sa.Column("kind", sa.String(length=16), nullable=False,
+                  server_default="counter"),
+        sa.Column("value", sa.BigInteger(), nullable=False, server_default="0"),
+        sa.Column("total_ms", sa.BigInteger(), nullable=False,
+                  server_default="0"),
+        sa.Column("max_ms", sa.BigInteger(), nullable=False, server_default="0"),
+        sa.Column("window_start", sa.DateTime(timezone=True), nullable=False),
+    )
+    op.create_index("ix_api_metric_samples_window", "api_metric_samples",
+                    ["window_start", "name"])
+
 
 def downgrade() -> None:
+    op.drop_index("ix_api_metric_samples_window",
+                  table_name="api_metric_samples")
+    op.drop_table("api_metric_samples")
     op.drop_constraint("uq_api_notifications_event_key", "api_notifications",
                        type_="unique")
     op.drop_column("api_notifications", "event_key")
@@ -100111,7 +100136,7 @@ export default defineConfig({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ job_worker.py
-SHA256=2886cf1764ec748030735aea522df227e63df747110def3c2c3287fb80a654dc BYTES=5065 LINES=139
+SHA256=292a760728f5704166b0e89b4289a5b76feba5ef35e1622ac00a5d4cd94db964 BYTES=7928 LINES=201
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_worker.py — entry point của dịch vụ LTTWorker (H2, Q6).
@@ -100170,7 +100195,60 @@ def _so_tien_trinh() -> int:
         return 1
 
 
-def _chay_mot_worker(thu_tu: int) -> None:
+def _doi_hinh() -> list:
+    """Đội hình worker: mỗi phần tử là (tập năng lực, số tiến trình).
+
+    Vì sao cần chia lớp. Số tiến trình mặc định bằng **số GPU**, nhưng phần lớn
+    công cụ đang mở chỉ khai ``requires=('api',)`` — chúng ngồi chờ mạng nhà
+    cung cấp và không đụng tới card. Sizing theo GPU bắt chúng xếp hàng sau nhau
+    không vì lý do gì, và một job chờ tám giây chiếm trọn một slot đáng lẽ dành
+    cho việc dùng card.
+
+    Khai bằng ``LTT_WORKER_POOLS``, ví dụ::
+
+        LTT_WORKER_POOLS = "api:8, gpu:2"
+
+    Tên pool là **năng lực** trong ``manifest.requires``, nên nền tảng vẫn không
+    biết tên app nào (`AGENTS.md` 8.4). Một pool chỉ nhặt job của app khai đủ
+    năng lực nằm gọn trong tập của nó — `jobs.claim()` đã lọc như vậy sẵn.
+
+    Không khai thì giữ nguyên hành vi cũ: một pool đa năng. Đổi ngầm đội hình
+    của một máy chủ đang chạy là thứ không ai muốn gặp sau khi cập nhật.
+
+    Vì sao không tự suy ra đội hình: số worker `api` tối ưu phụ thuộc độ trễ nhà
+    cung cấp và băng thông — hai thứ không đo được lúc khởi động. Đoán một con
+    số rồi gọi là "tự động" chỉ là giấu một tham số, không phải bỏ nó đi.
+    """
+    dat = (os.environ.get("LTT_WORKER_POOLS") or "").strip()
+    if not dat:
+        return [(None, _so_tien_trinh())]
+
+    doi_hinh: list = []
+    for phan in dat.split(","):
+        phan = phan.strip()
+        if not phan:
+            continue
+        ten, _, so = phan.partition(":")
+        ten = ten.strip().lower()
+        try:
+            n = max(1, min(16, int(so.strip() or "1")))
+        except ValueError:
+            log.warning("LTT_WORKER_POOLS: %r khong phai so — bo qua", phan)
+            continue
+        if not ten:
+            continue
+        # Pool `gpu` vẫn phải chạy được job chỉ cần `api`: một worker khai nhiều
+        # năng lực hơn thì nhặt được nhiều loại hơn, không phải ít hơn.
+        nang_luc = {"api"} | {t.strip() for t in ten.split("+") if t.strip()}
+        doi_hinh.append((nang_luc, n))
+
+    if not doi_hinh:
+        log.warning("LTT_WORKER_POOLS khong doc duoc — dung mac dinh")
+        return [(None, _so_tien_trinh())]
+    return doi_hinh
+
+
+def _chay_mot_worker(thu_tu: int, nang_luc=None) -> None:
     """Thân của MỘT tiến trình worker. Phải ở cấp module để Windows spawn được."""
     logging.basicConfig(
         level=logging.INFO,
@@ -100192,7 +100270,8 @@ def _chay_mot_worker(thu_tu: int) -> None:
         signal.signal(signal.SIGTERM, _xin_dung)
 
     from platform_core.job_runner import run_forever
-    run_forever(worker_id, stop=lambda: dung["flag"])
+    run_forever(worker_id, stop=lambda: dung["flag"],
+                capabilities=set(nang_luc) if nang_luc else None)
 
 
 def main() -> int:
@@ -100209,21 +100288,29 @@ def main() -> int:
         log.error("Khong chay duoc worker: %s", exc)
         return 2
 
-    n = _so_tien_trinh()
-    if n == 1:
+    doi_hinh = _doi_hinh()
+    tong = sum(so for _nang_luc, so in doi_hinh)
+    if tong == 1 and doi_hinh[0][0] is None:
         # Đường một tiến trình giữ nguyên như trước: KHÔNG đẻ tiến trình con,
         # nên dịch vụ Windows vẫn giám sát đúng tiến trình đang làm việc.
         log.info("chay 1 tien trinh worker")
         _chay_mot_worker(0)
         return 0
 
-    log.info("chay %s tien trinh worker song song", n)
+    log.info("chay %s tien trinh worker: %s", tong,
+             ", ".join(f"{sorted(nl) if nl else 'da nang'}x{so}"
+                       for nl, so in doi_hinh))
     con: list = []
-    for i in range(n):
-        p = multiprocessing.Process(target=_chay_mot_worker, args=(i,),
-                                    name=f"ltt-worker-{i}", daemon=False)
-        p.start()
-        con.append(p)
+    i = 0
+    for nang_luc, so in doi_hinh:
+        for _ in range(so):
+            p = multiprocessing.Process(
+                target=_chay_mot_worker,
+                args=(i, sorted(nang_luc) if nang_luc else None),
+                name=f"ltt-worker-{i}", daemon=False)
+            p.start()
+            con.append(p)
+            i += 1
 
     def _dung_het(signum, frame):
         log.info("nhan tin hieu dung, bao %s tien trinh con thoat", len(con))
@@ -104668,7 +104755,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=f122ef63ea262647118cbb66291b86ba8ce01a490b3e8d44a41a8e7689c4e8b7 BYTES=32244 LINES=746
+SHA256=a278a4807097f96910fecb5a2ed9c6b140330d20f590f19ea6a45d26fa077c54 BYTES=33649 LINES=776
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104723,6 +104810,9 @@ WEBHOOK_DELIVERY_INTERVAL_S = 15
 # `platform_core/public_api/metrics.py`); the worker prints them so an operator
 # has something to read without adding a metrics service.
 METRICS_LOG_INTERVAL_S = 5 * 60
+#: Xả bộ đếm xuống CSDL. Một lượt ghi gộp mỗi tiến trình mỗi phút —
+#: đủ mịn để thấy một cơn tăng đột biến, đủ thưa để không tốn gì.
+METRICS_FLUSH_INTERVAL_S = 60
 
 
 class JobContext:
@@ -105194,8 +105284,9 @@ def _don_du_lieu_het_han() -> None:
     `test_211_data_governance`, so adding a table with a retention class and
     forgetting to sweep it fails the suite rather than growing quietly.
     """
-    from platform_core.public_api import (costing, idempotency, notifications,
-                                          outbox, request_log, security_log)
+    from platform_core.public_api import (costing, idempotency, metrics,
+                                          notifications, outbox, request_log,
+                                          security_log)
 
     rules = (
         ("nhat ky request API", request_log.purge_expired),
@@ -105204,6 +105295,7 @@ def _don_du_lieu_het_han() -> None:
         ("quan sat chi phi", costing.purge_expired),
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
+        ("mau metrics", metrics.purge_expired),
     )
     for label, purge in rules:
         try:
@@ -105262,6 +105354,23 @@ def _ket_qua_sandbox(job_id: str, params: dict):
 
     log.info("job %s chay che do test: khong goi provider", job_id[:8])
     return sandbox.canned_result(tool, params, get_storage())
+
+
+def _xa_metrics() -> None:
+    """Đưa bộ đếm của tiến trình NÀY xuống CSDL.
+
+    Cố ý **không** nằm trong vòng bảo trì: vòng đó chỉ chạy ở một tiến trình,
+    còn bộ đếm thì mỗi tiến trình một bản. Để leader xả hộ nghĩa là mất số của
+    mọi tiến trình còn lại — và mất một cách im lặng, vì tổng vẫn ra một con số
+    trông hợp lý.
+    """
+    from platform_core.public_api import metrics
+
+    for db in _one_session():
+        n = metrics.flush(db)
+        db.commit()
+        if n:
+            log.debug("xa %d mau metrics", n)
 
 
 def _ghi_metrics() -> None:
@@ -105398,8 +105507,12 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                                  name=f"bao-tri-{worker_id}", daemon=True)
         luong.start()
 
+    next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
     while stop is None or not stop():
         try:
+            if time.monotonic() >= next_metrics_flush:
+                _xa_metrics()
+                next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()
@@ -105415,6 +105528,10 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
 
     if luong is not None:
         luong.join(timeout=30)
+    try:
+        _xa_metrics()          # số của lượt cuối không được biến mất theo tiến trình
+    except Exception:          # noqa: BLE001
+        log.exception("khong xa duoc metrics luc dung")
     log.info("worker %s dung", worker_id)
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -111321,7 +111438,7 @@ NO_CODE_RECIPES = (
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=2c204ed2002b5e994567ed07181dfa5e5ce5f796e8696ce130465b353396db2d BYTES=14229 LINES=246
+SHA256=da3c9e897ef1e871de9600a4c5d4954c8d3f44254b5aa6e823d616db582d8bc9 BYTES=14562 LINES=251
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -111442,6 +111559,9 @@ STORES: tuple = (
     Store("api_security_events", OPERATIONAL, 90, N_("vận hành"),
           N_("Ai đang dò khoá. Chỉ lưu nửa CÔNG KHAI của khoá đã thử."),
           "security_log.purge_expired (worker)"),
+    Store("api_metric_samples", OPERATIONAL, 14, N_("vận hành"),
+          N_("Bộ đếm của từng tiến trình theo phút, để cộng lại khi đọc."),
+          "metrics.purge_expired (worker)"),
     Store("api_cost_observations", OPERATIONAL, 400, N_("vận hành"),
           N_("Chi phí ƯỚC TÍNH để tính biên lợi nhuận. Không phải sổ sách."),
           "costing.purge_expired (worker)"),
@@ -111552,6 +111672,8 @@ NOT_CUSTOMER_DATA = frozenset({
     "alembic_version", "platform_info", "api_keys", "api_policies",
     "api_policy_assignments", "api_kill_switches", "app_access",
     "credit_packages", "gpu_leases",
+    # Ai đang giữ vai trò chạy việc nền. Máy + pid, không có gì của khách.
+    "singleton_leases",
 })
 
 
@@ -112967,7 +113089,7 @@ def results_of(job, tool) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/metrics.py
-SHA256=8d3718b566a841e83f7dea335d4e071349ce0c00142f8fbb1534f9eb1298c280 BYTES=3351 LINES=90
+SHA256=e294d33c19486f3796b8f117061de4379866d26023b2a412d0f8c073f5c3e4e2 BYTES=9075 LINES=228
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """In-process counters for the Public API.
 
@@ -113059,6 +113181,144 @@ def reset() -> None:
     with _lock:
         _counters.clear()
         _latencies.clear()
+
+
+# ── Đường ra khỏi tiến trình ─────────────────────────────────────────────────
+#
+# Mọi thứ trên đây sống trong một tiến trình. Điều đó đúng cho đường nóng và sai
+# cho người vận hành: số mất khi khởi động lại, không đọc được từ ngoài, và nền
+# tảng chạy nhiều tiến trình worker nên mỗi tiến trình giữ một bản riêng mà
+# không ai cộng lại. Phần dưới là cách chúng rời khỏi tiến trình — định kỳ,
+# theo lô, và **không** trên đường phục vụ request.
+
+#: Ô thời gian gom số. Đủ thô để một lượt ghi mỗi tiến trình mỗi phút là đủ,
+#: đủ mịn để một cơn tăng đột biến còn nhìn thấy được trong biểu đồ.
+WINDOW_S = 60
+
+#: Giữ bao lâu. Bảng ghi theo phút thì phải có người dọn — đó là bài học EXT-19,
+#: và store tương ứng được khai trong `governance.py`.
+RETENTION_DAYS = 14
+
+
+def _o_thoi_gian(now=None):
+    from datetime import datetime, timezone
+
+    current = now or datetime.now(timezone.utc)
+    giay = int(current.timestamp()) // WINDOW_S * WINDOW_S
+    return datetime.fromtimestamp(giay, tz=timezone.utc)
+
+
+def _process_id() -> str:
+    from platform_core import leases
+
+    return leases.holder_id()
+
+
+def drain() -> dict:
+    """Lấy phần tăng thêm rồi reset bộ đếm cục bộ. Nguyên tử với người ghi.
+
+    Lấy-rồi-xoá chứ không phải đọc-rồi-xoá: nếu một request tăng bộ đếm giữa hai
+    thao tác đó, số đếm ấy sẽ mất. Ở đây cả hai nằm trong cùng một lần giữ khoá.
+    """
+    with _lock:
+        counters = dict(_counters)
+        latencies = {name: dict(bucket) for name, bucket in _latencies.items()}
+        _counters.clear()
+        _latencies.clear()
+    return {"counters": counters, "latency": latencies}
+
+
+def flush(db, *, now=None, process: str = "") -> int:
+    """Ghi phần tăng thêm của tiến trình này xuống CSDL. Trả số dòng đã ghi.
+
+    Gọi từ **mọi** tiến trình, không nấp sau lease bảo trì: mỗi tiến trình có bộ
+    đếm riêng, nên để một tiến trình xả hộ nghĩa là mất số của tất cả những
+    tiến trình còn lại.
+    """
+    import uuid as _uuid
+
+    from platform_core.public_api.tables import ApiMetricSample
+
+    delta = drain()
+    if not delta["counters"] and not delta["latency"]:
+        return 0
+
+    who = process or _process_id()
+    o = _o_thoi_gian(now)
+    n = 0
+    for name, value in delta["counters"].items():
+        db.add(ApiMetricSample(id=str(_uuid.uuid4()), process=who, name=name,
+                               kind="counter", value=int(value),
+                               window_start=o))
+        n += 1
+    for name, bucket in delta["latency"].items():
+        db.add(ApiMetricSample(
+            id=str(_uuid.uuid4()), process=who, name=name, kind="latency",
+            value=int(bucket["count"]),
+            total_ms=int(bucket["total_ms"]),
+            max_ms=int(bucket["max_ms"]), window_start=o))
+        n += 1
+    db.flush()
+    return n
+
+
+def aggregate(db, *, hours: int = 24, now=None) -> dict:
+    """Cộng mọi tiến trình lại trong cửa sổ thời gian. Hình dạng như `snapshot()`.
+
+    Cùng hình dạng là cố ý: trang quản trị và test đọc được cả hai mà không cần
+    biết số đến từ một tiến trình hay từ tám.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    import sqlalchemy as sa
+
+    from platform_core.public_api.tables import ApiMetricSample
+
+    current = now or datetime.now(timezone.utc)
+    since = current - timedelta(hours=max(1, int(hours)))
+    rows = db.execute(sa.select(ApiMetricSample).where(
+        ApiMetricSample.window_start >= since)).scalars().all()
+
+    counters: dict = {}
+    latency: dict = {}
+    for row in rows:
+        if row.kind == "counter":
+            counters[row.name] = counters.get(row.name, 0) + int(row.value)
+        else:
+            bucket = latency.setdefault(row.name, {"count": 0, "total_ms": 0,
+                                                   "max_ms": 0})
+            bucket["count"] += int(row.value)
+            bucket["total_ms"] += int(row.total_ms)
+            bucket["max_ms"] = max(bucket["max_ms"], int(row.max_ms))
+
+    return {
+        "counters": dict(sorted(counters.items())),
+        "latency": {name: {"count": b["count"],
+                           "avg_ms": round(b["total_ms"] / b["count"], 2)
+                           if b["count"] else 0.0,
+                           "max_ms": round(b["max_ms"], 2)}
+                    for name, b in sorted(latency.items())},
+        "since": since.isoformat(),
+        "processes": len({row.process for row in rows}),
+    }
+
+
+def purge_expired(db, *, days: int = RETENTION_DAYS, now=None) -> int:
+    """Dọn mẫu cũ. Bảng ghi mỗi phút mỗi tiến trình thì không dọn là phình mãi."""
+    from datetime import datetime, timedelta, timezone
+
+    import sqlalchemy as sa
+
+    from platform_core.public_api.tables import ApiMetricSample
+
+    current = now or datetime.now(timezone.utc)
+    cutoff = current - timedelta(days=max(1, int(days)))
+    rows = db.execute(sa.select(ApiMetricSample).where(
+        ApiMetricSample.window_start < cutoff)).scalars().all()
+    for row in rows:
+        db.delete(row)
+    db.flush()
+    return len(rows)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -116304,7 +116564,7 @@ __all__ = ["LOCATION_HINTS", "REDACTED", "SECRET_HINTS", "Trace", "export",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/tables.py
-SHA256=86fb947a7567b1f257887f709b303e48eababbf0f3aef05cfd7014fdbd1ec5bf BYTES=39980 LINES=791
+SHA256=b73b71e8c7cab81bf59bab38e884ad1c5ddb4d9243083865184cb43d0bd71cb1 BYTES=42397 LINES=832
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Developer API key — the customer-facing machine credential (Q92, Prompt 03).
 
@@ -116687,6 +116947,47 @@ class ApiNotification(Base):
 
     def __repr__(self) -> str:      # pragma: no cover - debugging aid
         return f"<ApiNotification {self.kind} {self.subject}>"
+
+
+class ApiMetricSample(Base):
+    """Bộ đếm của MỘT tiến trình trong MỘT ô thời gian.
+
+    Bộ đếm sống trong tiến trình: tăng một số dưới khoá, không lượt ghi CSDL nào
+    trên đường phục vụ request — đó là lý do nó rẻ và phải giữ nguyên như vậy.
+    Nhưng nó cũng có nghĩa là số liệu **mất khi khởi động lại**, **không đọc
+    được từ ngoài**, và với nhiều tiến trình thì mỗi tiến trình một bản riêng
+    không ai cộng lại.
+
+    Bảng này là đường ra: mỗi tiến trình định kỳ ghi *phần tăng thêm* của mình
+    rồi reset bộ đếm cục bộ. Người đọc `SUM` theo cửa sổ thời gian, nên nhiều
+    tiến trình cộng lại đúng — cột `process` giữ chúng tách nhau.
+
+    Cố ý **không** phải Prometheus: thêm một dịch vụ để đếm chín thứ là thêm một
+    thứ phải cài, giám sát và mất lúc 2 giờ sáng. Hình dạng `tên → số` ở đây ánh
+    xạ thẳng sang exporter về sau mà không phải sửa chỗ gọi.
+    """
+
+    __tablename__ = "api_metric_samples"
+    __table_args__ = (
+        Index("ix_api_metric_samples_window", "window_start", "name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: Máy + pid. Hai tiến trình cùng ghi một tên trong một ô là chuyện bình
+    #: thường; cột này giữ chúng là hai dòng chứ không phải một cuộc đua.
+    process: Mapped[str] = mapped_column(String(160), nullable=False)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: "counter" hoặc "latency". Latency mang thêm count/total/max để cộng được.
+    kind: Mapped[str] = mapped_column(String(16), default="counter",
+                                      nullable=False)
+    value: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    total_ms: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    max_ms: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    window_start: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiMetricSample {self.name}={self.value} {self.process}>"
 
 
 WEBHOOK_PENDING = "pending"
@@ -124107,7 +124408,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin_api.py
-SHA256=38ec24ab0e289b8d80ff2f6b794241b3172552105f2b6c377cdde9ea44436404 BYTES=92504 LINES=1816
+SHA256=3293d81d9f8b4693740a147ac9951f8e1cd801fdb1249d85a8d2598bc8dd8c11 BYTES=94582 LINES=1848
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """server/admin_api.py — khu quản trị dành riêng cho API platform (EXT-13).
 
@@ -124154,7 +124455,8 @@ from platform_core.db import get_session
 from platform_core.public_api.tables import (PRICE_ACTIVE,
                                              PRICE_DRAFT,
                                              PRICE_SCHEDULED)
-from platform_core.public_api import (admin_console, costing,
+from platform_core import leases
+from platform_core.public_api import (admin_console, costing, metrics,
                                       policy, pricing)
 
 _log = logging.getLogger("ltt.admin.api")
@@ -124251,6 +124553,11 @@ class ApiOverviewView(BaseView):
         try:
             data = admin_console.overview(db, hours=hours)
             by_tool = admin_console.jobs_by_tool(db, hours=hours)
+            # Bộ đếm sống trong tiến trình, nên trước đây chúng mất khi khởi
+            # động lại và mỗi tiến trình giữ một bản riêng không ai cộng. Đây là
+            # đường đọc: cộng mọi tiến trình trong cửa sổ thời gian.
+            do = metrics.aggregate(db, hours=hours)
+            ai_bao_tri = leases.current_holder(db, name=leases.MAINTENANCE)
         finally:
             _close(gen)
 
@@ -124275,6 +124582,27 @@ class ApiOverviewView(BaseView):
             _stat("Webhook chết", hooks["dead"],
                   f'{hooks["pending"]} đang chờ · {hooks["subscriptions"]} đăng ký',
                   colour=_ERR if hooks["dead"] else ""),
+        ])
+
+        dem = do["counters"]
+        loi_5xx = dem.get("responses_5xx", 0)
+        xac_thuc_hong = dem.get("auth_failure", 0)
+        cho_hang_doi = do["latency"].get("queue_pickup_ms", {})
+        van_hanh = "".join([
+            _stat("Lỗi 5xx", loi_5xx, "nền tảng, không phải khách",
+                  colour=_ERR if loi_5xx else ""),
+            _stat("Xác thực hỏng", xac_thuc_hong, "khoá sai hoặc đã thu hồi",
+                  colour=_ERR if xac_thuc_hong else ""),
+            _stat("Bị chặn nhịp", dem.get("rate_limited", 0)),
+            _stat("Bị công tắc chặn", dem.get("kill_switch_refused", 0)),
+            _stat("Hết chỗ tài nguyên", dem.get("capacity_refused", 0)),
+            _stat("Webhook gửi hỏng", dem.get("webhook_failed", 0),
+                  colour=_ERR if dem.get("webhook_failed") else ""),
+            _stat("Chờ vào hàng đợi",
+                  f'{cho_hang_doi.get("avg_ms", 0)} ms',
+                  f'cao nhất {cho_hang_doi.get("max_ms", 0)} ms'),
+            _stat("Tiến trình đã gộp", do["processes"],
+                  f'bảo trì: {escape(ai_bao_tri or "chưa ai giữ")}'),
         ])
 
         codes = "".join(
@@ -124312,6 +124640,11 @@ class ApiOverviewView(BaseView):
             f'<div class="tabs">{windows}</div>'
             f'{_TILES}{cards}</div>'
             f'{_COLS}'
+            f'<section><h2 style="margin:22px 0 10px">Vận hành</h2>'
+            f'<p class="muted" style="margin:0 0 10px">Cộng từ mọi tiến trình '
+            f'web và worker. Bộ đếm sống trong tiến trình và được xả xuống CSDL '
+            f'mỗi phút, nên số ở đây tồn tại qua khởi động lại.</p>'
+            f'{_TILES}{van_hanh}</section>'
             f'<section><h2 style="margin:22px 0 10px">Mã lỗi hay gặp</h2>'
             f'<div class="tablewrap">'
             f'<table class="ui-table"><thead><tr><th>Mã</th><th>Số lần</th>'
@@ -184969,6 +185302,257 @@ def test_mot_canh_bao_trung_khong_lam_mat_nhung_cai_hop_le_cung_luot(db):
         select(ApiNotification)).scalars().all()}
     assert chu_de == {"account:50", "account:80", "account:95"}, chu_de
     assert db.execute(select(func.count(ApiNotification.id))).scalar_one() == 3
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_216_worker_pools_and_metrics.py
+SHA256=cd8044829205ee9e506dfa50b1c2aaeaa886c2ff3a93ae8d6d22d4af4f7bf650 BYTES=8794 LINES=245
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Đội hình worker theo lớp tài nguyên, và metrics rời khỏi tiến trình.
+
+Hai thay đổi khác nhau nhưng cùng một lý do: nền tảng chạy nhiều tiến trình, và
+cả hai chỗ này đều được viết như thể chỉ có một.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'pools.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+    from platform_core.public_api import metrics
+
+    Base.metadata.create_all(get_engine())
+    metrics.reset()
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        metrics.reset()
+        dbmod.reset_engine()
+
+
+# ── Đội hình worker ──────────────────────────────────────────────────────────
+
+def test_khong_khai_gi_thi_giu_nguyen_hanh_vi_cu(monkeypatch):
+    """Đổi ngầm đội hình của một máy chủ đang chạy là thứ không ai muốn gặp."""
+    import job_worker
+
+    monkeypatch.delenv("LTT_WORKER_POOLS", raising=False)
+    monkeypatch.setenv("LTT_WORKER_PROCESSES", "4")
+    assert job_worker._doi_hinh() == [(None, 4)]
+
+
+def test_khai_pool_thi_moi_pool_co_tap_nang_luc_rieng(monkeypatch):
+    import job_worker
+
+    monkeypatch.setenv("LTT_WORKER_POOLS", "api:6, gpu+ffmpeg:2")
+    doi_hinh = job_worker._doi_hinh()
+
+    assert [so for _nl, so in doi_hinh] == [6, 2]
+    assert doi_hinh[0][0] == {"api"}
+    assert doi_hinh[1][0] == {"api", "gpu", "ffmpeg"}
+
+
+def test_pool_gpu_van_nhat_duoc_job_chi_can_api(monkeypatch):
+    """Một worker khai nhiều năng lực hơn phải nhặt được NHIỀU loại hơn.
+
+    Nếu pool `gpu` chỉ nhặt job GPU thì lúc không có job GPU nó nằm không, trong
+    khi hàng đợi đầy job chờ mạng — đúng cái lãng phí mà việc chia lớp sinh ra
+    để chấm dứt.
+    """
+    import job_worker
+
+    monkeypatch.setenv("LTT_WORKER_POOLS", "gpu:1")
+    nang_luc, _so = job_worker._doi_hinh()[0]
+    assert "api" in nang_luc
+
+
+def test_khai_sai_thi_lui_ve_mac_dinh_chu_khong_sap(monkeypatch):
+    import job_worker
+
+    monkeypatch.setenv("LTT_WORKER_POOLS", "khong-phai-so:abc")
+    monkeypatch.setenv("LTT_WORKER_PROCESSES", "2")
+    assert job_worker._doi_hinh() == [(None, 2)]
+
+
+def test_worker_chi_nhat_job_nam_trong_nang_luc_cua_no(db):
+    """Đây là chỗ việc chia lớp thật sự có hiệu lực.
+
+    `jobs.claim()` lọc theo `manifest.requires`, nên một worker `api` không được
+    nhặt job của app đòi GPU — nếu nó nhặt, job sẽ chạy trên máy không có card.
+    """
+    from platform_core import jobs as jobq
+    from platform_core.models import Job
+
+    db.add(Job(id=str(uuid.uuid4()), user_id="u-1", app_slug="upscalevideo",
+               job_type="upscalevideo.render", params={},
+               status="queued", next_run_at=datetime.now(timezone.utc),
+               created_at=datetime.now(timezone.utc)))
+    db.commit()
+
+    chi_api = jobq.claim(db, worker_id="w-api", capabilities={"api"})
+    assert chi_api is None, "worker không có GPU vẫn nhặt job GPU"
+
+    co_gpu = jobq.claim(db, worker_id="w-gpu",
+                        capabilities={"api", "gpu", "ffmpeg"})
+    assert co_gpu is not None, "worker đủ năng lực vẫn không nhặt được"
+
+
+# ── Metrics ──────────────────────────────────────────────────────────────────
+
+def test_xa_roi_thi_bo_dem_cuc_bo_ve_khong(db):
+    """Lấy-rồi-xoá phải nguyên tử, nếu không số đếm giữa hai thao tác sẽ mất."""
+    from platform_core.public_api import metrics
+
+    metrics.increment("requests", 5)
+    metrics.observe("request_ms", 12.0)
+
+    assert metrics.flush(db) == 2
+    db.commit()
+
+    assert metrics.snapshot()["counters"] == {}
+    assert metrics.snapshot()["latency"] == {}
+
+
+def test_khong_co_gi_de_xa_thi_khong_ghi_dong_nao(db):
+    from platform_core.public_api import metrics
+
+    assert metrics.flush(db) == 0
+
+
+def test_so_song_sot_qua_khoi_dong_lai(db):
+    """Bộ đếm trong tiến trình mất khi khởi động lại — bảng thì không."""
+    from platform_core.public_api import metrics
+
+    metrics.increment("jobs_created", 7)
+    metrics.flush(db)
+    db.commit()
+
+    metrics.reset()          # như thể tiến trình vừa khởi động lại
+    assert metrics.snapshot()["counters"] == {}
+
+    gop = metrics.aggregate(db, hours=1)
+    assert gop["counters"]["jobs_created"] == 7
+
+
+def test_nhieu_tien_trinh_duoc_cong_lai(db):
+    """Điều mà bộ đếm trong tiến trình không bao giờ làm được."""
+    from platform_core.public_api import metrics
+
+    metrics.increment("requests", 10)
+    metrics.flush(db, process="may:1001")
+    metrics.increment("requests", 5)
+    metrics.flush(db, process="may:1002")
+    db.commit()
+
+    gop = metrics.aggregate(db, hours=1)
+    assert gop["counters"]["requests"] == 15
+    assert gop["processes"] == 2
+
+
+def test_do_tre_cong_dung_cach(db):
+    """Trung bình phải tính trên tổng, không phải trung bình của trung bình."""
+    from platform_core.public_api import metrics
+
+    metrics.observe("request_ms", 10.0)
+    metrics.observe("request_ms", 30.0)
+    metrics.flush(db, process="may:1")
+    metrics.observe("request_ms", 100.0)
+    metrics.flush(db, process="may:2")
+    db.commit()
+
+    do_tre = metrics.aggregate(db, hours=1)["latency"]["request_ms"]
+    assert do_tre["count"] == 3
+    assert do_tre["avg_ms"] == pytest.approx((10 + 30 + 100) / 3, abs=0.01)
+    assert do_tre["max_ms"] == 100.0
+
+
+def test_ngoai_cua_so_thi_khong_tinh(db):
+    from platform_core.public_api import metrics
+    from platform_core.public_api.tables import ApiMetricSample
+
+    metrics.increment("requests", 3)
+    metrics.flush(db)
+    db.commit()
+
+    cu = db.execute(__import__("sqlalchemy").select(ApiMetricSample)).scalars().first()
+    cu.window_start = datetime.now(timezone.utc) - timedelta(days=3)
+    db.commit()
+
+    assert metrics.aggregate(db, hours=24)["counters"] == {}
+
+
+def test_mau_cu_bi_don(db):
+    """Bảng ghi mỗi phút mỗi tiến trình thì không dọn là phình mãi."""
+    import sqlalchemy as sa
+
+    from platform_core.public_api import metrics
+    from platform_core.public_api.tables import ApiMetricSample
+
+    metrics.increment("requests", 1)
+    metrics.flush(db)
+    db.commit()
+
+    row = db.execute(sa.select(ApiMetricSample)).scalars().first()
+    row.window_start = datetime.now(timezone.utc) - timedelta(days=60)
+    db.commit()
+
+    assert metrics.purge_expired(db) == 1
+    db.commit()
+    assert db.execute(sa.select(sa.func.count(ApiMetricSample.id))).scalar_one() == 0
+
+
+def test_mau_con_han_khong_bi_don(db):
+    import sqlalchemy as sa
+
+    from platform_core.public_api import metrics
+    from platform_core.public_api.tables import ApiMetricSample
+
+    metrics.increment("requests", 1)
+    metrics.flush(db)
+    db.commit()
+
+    assert metrics.purge_expired(db) == 0
+    assert db.execute(sa.select(sa.func.count(ApiMetricSample.id))).scalar_one() == 1
+
+
+def test_mau_metrics_khong_mang_gi_cua_khach(db):
+    """Tên bộ đếm là hợp đồng với người vận hành, không phải dữ liệu khách.
+
+    Một bảng đo lường mà lỡ mang id khách hay nội dung là một kho dữ liệu mới
+    không ai khai trong bảng kiểm kê riêng tư.
+    """
+    import sqlalchemy as sa
+
+    from platform_core.public_api import metrics
+    from platform_core.public_api.tables import ApiMetricSample
+
+    metrics.increment("requests", 1)
+    metrics.flush(db)
+    db.commit()
+
+    cot = {c.name for c in ApiMetricSample.__table__.columns}
+    assert "user_id" not in cot and "key_id" not in cot and "payload" not in cot
+
+    row = db.execute(sa.select(ApiMetricSample)).scalars().first()
+    assert row.name in metrics.snapshot()["counters"] or row.name == "requests"
 
 @@@LTT_PROFILE_FILE_END@@@
 

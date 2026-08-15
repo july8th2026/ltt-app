@@ -381,6 +381,47 @@ class ApiNotification(Base):
         return f"<ApiNotification {self.kind} {self.subject}>"
 
 
+class ApiMetricSample(Base):
+    """Bộ đếm của MỘT tiến trình trong MỘT ô thời gian.
+
+    Bộ đếm sống trong tiến trình: tăng một số dưới khoá, không lượt ghi CSDL nào
+    trên đường phục vụ request — đó là lý do nó rẻ và phải giữ nguyên như vậy.
+    Nhưng nó cũng có nghĩa là số liệu **mất khi khởi động lại**, **không đọc
+    được từ ngoài**, và với nhiều tiến trình thì mỗi tiến trình một bản riêng
+    không ai cộng lại.
+
+    Bảng này là đường ra: mỗi tiến trình định kỳ ghi *phần tăng thêm* của mình
+    rồi reset bộ đếm cục bộ. Người đọc `SUM` theo cửa sổ thời gian, nên nhiều
+    tiến trình cộng lại đúng — cột `process` giữ chúng tách nhau.
+
+    Cố ý **không** phải Prometheus: thêm một dịch vụ để đếm chín thứ là thêm một
+    thứ phải cài, giám sát và mất lúc 2 giờ sáng. Hình dạng `tên → số` ở đây ánh
+    xạ thẳng sang exporter về sau mà không phải sửa chỗ gọi.
+    """
+
+    __tablename__ = "api_metric_samples"
+    __table_args__ = (
+        Index("ix_api_metric_samples_window", "window_start", "name"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: Máy + pid. Hai tiến trình cùng ghi một tên trong một ô là chuyện bình
+    #: thường; cột này giữ chúng là hai dòng chứ không phải một cuộc đua.
+    process: Mapped[str] = mapped_column(String(160), nullable=False)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: "counter" hoặc "latency". Latency mang thêm count/total/max để cộng được.
+    kind: Mapped[str] = mapped_column(String(16), default="counter",
+                                      nullable=False)
+    value: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    total_ms: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    max_ms: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    window_start: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False)
+
+    def __repr__(self) -> str:      # pragma: no cover - debugging aid
+        return f"<ApiMetricSample {self.name}={self.value} {self.process}>"
+
+
 WEBHOOK_PENDING = "pending"
 #: Đã được một worker nhận và đang gửi. Trạng thái này tồn tại vì nền tảng chạy
 #: nhiều tiến trình worker: không có nó thì hai worker cùng đọc một delivery là

@@ -1,4 +1,4 @@
-"""lease co ten + khoa chong trung canh bao (T1/T2 runtime hardening)
+"""lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening)
 
 Vi sao can: nen tang chay NHIEU tien trinh worker (so tien trinh mac dinh bang
 so GPU), nhung moi viec nen — don du lieu, gui webhook, quet canh bao — deu duoc
@@ -55,8 +55,29 @@ def upgrade() -> None:
     op.create_unique_constraint("uq_api_notifications_event_key",
                                 "api_notifications", ["user_id", "event_key"])
 
+    # Duong ra cho bo dem: chung song trong tien trinh nen mat khi khoi dong lai,
+    # khong doc duoc tu ngoai, va nhieu tien trinh thi moi cai mot ban rieng.
+    op.create_table(
+        "api_metric_samples",
+        sa.Column("id", sa.String(length=36), primary_key=True),
+        sa.Column("process", sa.String(length=160), nullable=False),
+        sa.Column("name", sa.String(length=64), nullable=False),
+        sa.Column("kind", sa.String(length=16), nullable=False,
+                  server_default="counter"),
+        sa.Column("value", sa.BigInteger(), nullable=False, server_default="0"),
+        sa.Column("total_ms", sa.BigInteger(), nullable=False,
+                  server_default="0"),
+        sa.Column("max_ms", sa.BigInteger(), nullable=False, server_default="0"),
+        sa.Column("window_start", sa.DateTime(timezone=True), nullable=False),
+    )
+    op.create_index("ix_api_metric_samples_window", "api_metric_samples",
+                    ["window_start", "name"])
+
 
 def downgrade() -> None:
+    op.drop_index("ix_api_metric_samples_window",
+                  table_name="api_metric_samples")
+    op.drop_table("api_metric_samples")
     op.drop_constraint("uq_api_notifications_event_key", "api_notifications",
                        type_="unique")
     op.drop_column("api_notifications", "event_key")

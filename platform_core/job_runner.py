@@ -51,6 +51,9 @@ WEBHOOK_DELIVERY_INTERVAL_S = 15
 # `platform_core/public_api/metrics.py`); the worker prints them so an operator
 # has something to read without adding a metrics service.
 METRICS_LOG_INTERVAL_S = 5 * 60
+#: Xả bộ đếm xuống CSDL. Một lượt ghi gộp mỗi tiến trình mỗi phút —
+#: đủ mịn để thấy một cơn tăng đột biến, đủ thưa để không tốn gì.
+METRICS_FLUSH_INTERVAL_S = 60
 
 
 class JobContext:
@@ -522,8 +525,9 @@ def _don_du_lieu_het_han() -> None:
     `test_211_data_governance`, so adding a table with a retention class and
     forgetting to sweep it fails the suite rather than growing quietly.
     """
-    from platform_core.public_api import (costing, idempotency, notifications,
-                                          outbox, request_log, security_log)
+    from platform_core.public_api import (costing, idempotency, metrics,
+                                          notifications, outbox, request_log,
+                                          security_log)
 
     rules = (
         ("nhat ky request API", request_log.purge_expired),
@@ -532,6 +536,7 @@ def _don_du_lieu_het_han() -> None:
         ("quan sat chi phi", costing.purge_expired),
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
+        ("mau metrics", metrics.purge_expired),
     )
     for label, purge in rules:
         try:
@@ -590,6 +595,23 @@ def _ket_qua_sandbox(job_id: str, params: dict):
 
     log.info("job %s chay che do test: khong goi provider", job_id[:8])
     return sandbox.canned_result(tool, params, get_storage())
+
+
+def _xa_metrics() -> None:
+    """Đưa bộ đếm của tiến trình NÀY xuống CSDL.
+
+    Cố ý **không** nằm trong vòng bảo trì: vòng đó chỉ chạy ở một tiến trình,
+    còn bộ đếm thì mỗi tiến trình một bản. Để leader xả hộ nghĩa là mất số của
+    mọi tiến trình còn lại — và mất một cách im lặng, vì tổng vẫn ra một con số
+    trông hợp lý.
+    """
+    from platform_core.public_api import metrics
+
+    for db in _one_session():
+        n = metrics.flush(db)
+        db.commit()
+        if n:
+            log.debug("xa %d mau metrics", n)
 
 
 def _ghi_metrics() -> None:
@@ -726,8 +748,12 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                                  name=f"bao-tri-{worker_id}", daemon=True)
         luong.start()
 
+    next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
     while stop is None or not stop():
         try:
+            if time.monotonic() >= next_metrics_flush:
+                _xa_metrics()
+                next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
             for db in _one_session():
                 n = jobq.reclaim_orphans(db)
                 db.commit()
@@ -743,4 +769,8 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
 
     if luong is not None:
         luong.join(timeout=30)
+    try:
+        _xa_metrics()          # số của lượt cuối không được biến mất theo tiến trình
+    except Exception:          # noqa: BLE001
+        log.exception("khong xa duoc metrics luc dung")
     log.info("worker %s dung", worker_id)
