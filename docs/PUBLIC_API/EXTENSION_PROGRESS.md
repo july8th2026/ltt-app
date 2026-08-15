@@ -49,11 +49,11 @@ Checkpoint chạy **full gate**: EXT-04, 08, 12, 16, 20, 21.
 | 14 | Admin policy / tiers / quota / kill switch | **PASS** | 2026-08-14 |
 | 15 | Pricing catalog / versioned credits / margin | **PASS** | 2026-08-15 |
 | 16 | Admin operations / security / support trace | **PASS** | 2026-08-15 |
-| 17 | Versioning / changelog / deprecation / status | chưa chạy | — |
+| 17 | Versioning / changelog / deprecation / status | **PASS** | 2026-08-15 |
 | 18 | SDK / CLI / Postman / OpenAPI ecosystem | **PASS** | 2026-08-15 |
-| 19 | Privacy / retention / export / delete | chưa chạy | — |
-| 20 | Full app/tool/model/execution-mode certification | chưa chạy | — |
-| 21 | Final audit / load / chaos / security / release gate | chưa chạy | — |
+| 19 | Privacy / retention / export / delete | **PASS** | 2026-08-15 |
+| 20 | Full app/tool/model/execution-mode certification | **PASS** | 2026-08-15 |
+| 21 | Final audit / load / chaos / security / release gate | **PASS** | 2026-08-15 |
 
 ---
 
