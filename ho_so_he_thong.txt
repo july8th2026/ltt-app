@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:aaf35bf45d5b421964ad1baf9b0372b52f310eded4565733fb3545222df70237
+Fingerprint   : sha256:84bc232e62e0e43eef24b688728c4334970b6a7a5558f4f4cc5e928366e935b1
 Nguồn đã quét : 1131 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2470,7 +2470,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1131 file; 10233162 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1131 file; 10237094 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2835,7 +2835,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=b98b1f2940a59baf099041877e2532abc5d36e0124eff57728018120d1ff04f3 BYTES=14598 LINES=261
+SHA256=15bbc9b14977cbc267a2a9a3a76263e388c06aa88b2b5bb2b9ad094e37f5c7a1 BYTES=15986 LINES=281
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3029,6 +3029,7 @@ nào**.
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 | Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92) — **chưa deploy**, nhánh `public-api-v2` |
+| Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -3072,6 +3073,25 @@ Ba thứ cần biết trước khi đụng vào:
   thật và OpenAPI. Thêm route mà quên khai là gate đỏ, và ngược lại.
 - **Thêm/đổi tool đang mở thì phải cập nhật `APP_API_COVERAGE_FINAL.md`** —
   `test_212` đọc bảng đó như dữ liệu và so với registry cả hai chiều.
+
+**H36 (2026-08-16)** sửa ba lỗi P0 mà audit tìm ra, tất cả cùng một gốc: **mọi
+vòng nền được viết như thể chỉ có một tiến trình chạy nó**, trong khi số tiến
+trình worker mặc định bằng **số GPU**. Hệ quả: webhook gửi trùng, cảnh báo trùng,
+việc dọn chạy N lần.
+
+Ba thứ cần biết trước khi đụng vào worker:
+
+- **Việc nền nằm sau một lease** (`platform_core/leases.py`). Thêm một việc nền
+  mới thì đặt nó trong `_mot_luot_bao_tri`, đừng tự chạy trong vòng job — vòng
+  đó chạy ở **mọi** tiến trình.
+- **Đội hình worker khai bằng `LTT_WORKER_POOLS`** (vd `api:8, gpu+ffmpeg:2`).
+  Không khai thì giữ nguyên hành vi cũ.
+- **`test_214` là bằng chứng đa tiến trình, và nó CHƯA nằm trong gate** — cần
+  `LTT_TEST_DATABASE_URL` trỏ tới CSDL PostgreSQL có chữ `test` trong tên. Chạy
+  nó bằng tay sau khi sửa bất cứ thứ gì trong worker hoặc outbox.
+
+Điểm audit trung thực sau H36: **8,5/10**, không hạng mục nào trên 9 —
+`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4b nói rõ vì sao và còn thiếu gì.
 
 Trạng thái và điều kiện còn lại: `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`
 (kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nặng nhất trong các
@@ -81145,7 +81165,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=a2da8957ed9703e19cd3eb3e159f57065a993838aa95c951bbbf4351c50c301a BYTES=158317 LINES=2338
+SHA256=adb0abc4ac2a5aa171b405b2c985237622264b1d82993e1b83a46baf7faef54c BYTES=160861 LINES=2379
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -83485,6 +83505,47 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
   báo; xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
 - [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
   ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.
+
+---
+
+## H36 — Củng cố phần thi hành của Public API
+
+Audit: `docs/PUBLIC_API/AUDIT_API_2026-08-15.md`. Thiết kế:
+`docs/PUBLIC_API/PLAN_RUNTIME_HARDENING.md`. Nhật ký thật: mục
+`2026-08-16 — H36` trong `NHAT_KY.md`.
+
+Nguyên nhân gốc của cả ba lỗi P0: **mọi vòng nền được viết với giả định "chỉ một
+tiến trình chạy nó"**, trong khi số tiến trình worker mặc định bằng số GPU.
+
+- [x] H36.1 Bộ khung đa tiến trình — 2026-08-16: `test_214` đẻ tiến trình worker
+  THẬT trên PostgreSQL thật. Viết **trước** khi sửa, và có kiểm "có răng": hoàn
+  nguyên `claim_due` thì đỏ 8/8.
+- [x] H36.2 Lease có tên + vòng bảo trì chạy luồng riêng — `platform_core/leases.py`.
+- [x] H36.3 Outbox claim đúng chuẩn hàng đợi job + cooldown cảnh báo do CSDL
+  cưỡng chế (`event_key` + UNIQUE).
+- [x] H36.4 Metrics rời khỏi tiến trình — bảng `api_metric_samples`, xả ở **mọi**
+  tiến trình web lẫn worker, cộng khi đọc, hiện trên trang Tổng quan.
+- [x] H36.5 Đội hình worker theo lớp tài nguyên — `LTT_WORKER_POOLS`; cha giám
+  sát và **thay thế con đã chết** (lỗ sẵn có).
+- [x] H36.6 Trần thời gian chạy job (`manifest.max_runtime_s`) + không thử lại
+  job treo.
+- [x] H36.7 Tách bằng chứng khỏi nội dung — nội dung job hết hạn 30 ngày, file
+  bị xoá, hàng job ở lại; cửa sổ tải artifact được công bố trong hợp đồng.
+- [x] H36.8 Ba tín hiệu bất thường (chỉ đọc), `retry` trong mọi phản hồi lỗi,
+  `RUNBOOK.md`.
+- [ ] H36.9 **Lên đạn cho bánh cóc** — gate phải chạy `test_214`. Hiện nó cần
+  `LTT_TEST_DATABASE_URL` mà gate không đặt, nên **luôn skip**: bằng chứng mạnh
+  nhất của H36 đã chạy đúng một lần, bằng tay.
+- [ ] H36.10 **Chạy thật ba đường chưa chạy lần nào** — `_het_gio` (test luôn
+  monkeypatch nó đi), vòng cha-thay-con, luồng xả metrics của web.
+- [ ] H36.11 **Chạy `test_218` trên R2** — `LTT_STORAGE=r2` ở production, còn
+  test chỉ chạy trên `LocalStorage`.
+- [ ] H36.12 **Đo lại tải** sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
+  metrics.
+
+Điểm trung thực sau H36: **7,0 → 8,5**, không hạng mục nào trên 9,0. Bốn ô còn
+trống ở trên chính là khoảng cách tới >9 — và cả bốn đều là **chứng minh**, không
+phải xây thêm.
 
 @@@LTT_PROFILE_FILE_END@@@
 

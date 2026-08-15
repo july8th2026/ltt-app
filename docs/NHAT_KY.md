@@ -14,6 +14,116 @@
 
 ---
 
+## 2026-08-16 — H36: củng cố phần THI HÀNH của Public API
+
+- **Mục tiêu:** audit toàn diện khu API rồi sửa phần yếu. Nửa hợp đồng (xác
+  thực, tính tiền, phiên bản) vốn đã chắc; nửa thi hành (worker, quan sát, vòng
+  đời file, chạy nhiều tiến trình) thì chưa.
+- **Hạng mục:** H36 — hoàn thành phần code; phần **chứng minh** còn nợ, xem
+  "Còn tồn đọng".
+- **Trạng thái:** SOURCE/REGRESSION PASS (full gate 13/13, pytest 4.770 s).
+  **Chưa deploy.**
+
+### Audit tìm ra ba lỗi P0 đang sống trên cấu hình mặc định
+
+1. **Mọi tiến trình worker đều chạy vòng bảo trì.** Số tiến trình mặc định bằng
+   **số GPU**, và mỗi tiến trình con chạy trọn `run_forever` — dọn dữ liệu, gửi
+   webhook, quét cảnh báo. Không leader, không khoá, và chúng khởi động cùng
+   nhau nên đồng hồ hẹn giờ **trùng pha**.
+2. **`outbox.claim_due()` không claim gì cả** — SELECT trần, không khoá dòng,
+   không đổi trạng thái, và `deliver_due` gọi HTTP **trước khi** ghi lại. Dựng
+   lại được: hai phiên cùng thấy một delivery là "đến hạn". Trên PostgreSQL cả
+   hai UPDATE đều thành công với cùng giá trị, nên khách nhận **hai callback**
+   mà bảng vẫn hiện `attempts=1`. Hỏng im lặng.
+3. **File kết quả không có chính sách lưu trữ nào.** `governance.py` kiểm kê 42
+   store và có test bắt mỗi store phải nêu hàm dọn có thật — nhưng nó **chỉ nhìn
+   bảng CSDL**. Một API bán ảnh giữ mọi đầu ra vĩnh viễn. Bánh cóc tự tin vì nó
+   đầy đủ trên đúng nửa nó nhìn thấy.
+
+Cả ba là **một** lỗi: mọi vòng nền được viết với giả định "chỉ một tiến trình
+chạy nó", không ai viết giả định đó ra nên không ai kiểm nó.
+
+### Đã làm — 5 đợt
+
+- **`platform_core/leases.py`** — lease có tên, cùng khuôn `gpu_lease` (giành
+  bằng INSERT, UNIQUE quyết định, heartbeat để tự lành). Chọn bảng chứ không
+  `pg_advisory_lock` vì SQLite không có, tức đường quan trọng nhất sẽ không test
+  được ở nơi dễ chạy nhất.
+- **Vòng bảo trì chạy luồng riêng** trong tiến trình giữ lease. Trước đó nó xen
+  *giữa các job*, nên một job 5 phút làm webhook của mọi khách chờ 5 phút — con
+  số "độ trễ webhook 4,71 ms" đo trước đây là **của hàng đợi rỗng**.
+- **Outbox claim đúng chuẩn hàng đợi job**: `FOR UPDATE SKIP LOCKED`, chuyển
+  `sending` và **commit trước lời gọi HTTP đầu tiên**, đếm lượt lúc nhận, mượn
+  `next_attempt_at` làm hạn giữ (không cần thêm cột).
+- **Cooldown cảnh báo do CSDL cưỡng chế** (`event_key` + UNIQUE), fallback bằng
+  SAVEPOINT để một cảnh báo trùng không huỷ những cái hợp lệ cùng lượt.
+- **Metrics rời khỏi tiến trình**: xả delta xuống `api_metric_samples` mỗi phút
+  ở **mọi** tiến trình (web lẫn worker), cộng lại khi đọc.
+- **Đội hình worker theo lớp tài nguyên**: `LTT_WORKER_POOLS="api:8, gpu:2"`.
+  Cơ chế đã có sẵn (manifest khai `requires`, `claim()` lọc theo đó) — chỉ chưa
+  ai truyền tham số vào.
+- **Trần thời gian chạy job** + **cha thay thế con đã chết** (lỗ sẵn có: một
+  worker con chết là mất vĩnh viễn tới lần khởi động lại dịch vụ).
+- **Nội dung job hết hạn 30 ngày**, hàng job ở lại. Xoá file **neo vào id của
+  chính job** nên sai theo hướng bỏ sót, không bao giờ xoá nhầm của job khác.
+- **Ba tín hiệu bất thường** (chỉ đọc), **`retry` trong mọi phản hồi lỗi**, và
+  `docs/PUBLIC_API/RUNBOOK.md`.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\gate.py` (full) | **PASS 13/13**, pytest 4.770 s, 3.571 test |
+| `test_214` trên PostgreSQL thật, 3 tiến trình worker | 7/7 PASS |
+| `test_214` sau khi **hoàn nguyên** `claim_due` | **đỏ 8/8 delivery gửi trùng** — bộ khung có răng |
+| `test_215/216/217/218/219` | 16 + 14 + 9 + 12 + 18 PASS |
+| alembic tiến–lùi–tiến trên PostgreSQL | sạch, 2/2 ràng buộc UNIQUE còn nguyên |
+| Trình duyệt | 12 lần gọi hỏng → trang vận hành hiện đúng 12; tiến trình web = 1 |
+
+**Full gate bắt hai lỗi quick gate không thấy:** tên app thật viết trong comment
+của `platform_core/registry.py` (bánh cóc `test_60` đúng khi tính cả comment), và
+migration dùng `create_unique_constraint` trần lên bảng đã tồn tại — **SQLite
+không ALTER được ràng buộc**. Migration đó *đã* xanh trên PostgreSQL, nên nếu chỉ
+kiểm ở đó thì đã kết luận sai: một migration chỉ chạy được ở production là một
+migration hỏng.
+
+### Quyết định mới
+
+Không có Q mới. Mọi thay đổi nằm trong hợp đồng sẵn có.
+
+### Cách lùi lại
+
+Commit `4af266a` (audit) → `5928205` (Đợt 5). Migration `f8a9b0c1d2e3` có
+`downgrade` đã kiểm. Hoàn nguyên nghĩa là **mang lại cả ba lỗi P0**.
+
+### Còn tồn đọng — đây là phần nợ THẬT
+
+Chấm điểm trung thực sau khi làm: **7,0 → 8,5**, không hạng mục nào trên 9,0
+(`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4b). Bốn việc còn thiếu, đều là
+**chứng minh** chứ không phải xây thêm:
+
+1. **Bánh cóc chưa lên đạn.** `test_214` cần `LTT_TEST_DATABASE_URL`, mà
+   `tools/gate.py` không đặt — nên trong gate nó **luôn skip**. Đã chạy đúng một
+   lần, bằng tay.
+2. **Ba đường viết ra mà chưa chạy lần nào**: `_het_gio` (test luôn monkeypatch
+   nó đi), vòng cha-thay-con (không có test), luồng xả metrics của web (không có
+   test).
+3. **`LTT_STORAGE=r2` nhưng `test_218` chỉ chạy trên `LocalStorage`.** Đường
+   `R2Storage.delete` chưa chạy lần nào — lời hứa "file hết hạn sau 30 ngày"
+   chưa được chứng minh trên chính kho đang dùng.
+4. **Chưa đo lại tải** sau khi thêm luồng bảo trì, đồng hồ canh giờ mỗi job và
+   xả metrics — ba thứ đều thêm chi phí.
+
+### Việc tiếp theo
+
+1. Làm 4 việc "còn tồn đọng" ở trên — đó là điều kiện để điểm thật vượt 9.
+2. **Người dùng:** đặt `LTT_WORKER_POOLS` trên máy chủ (mặc định giữ nguyên hành
+   vi cũ nên không có gì tự đổi), và **sao lưu `LTT_API_KEY_PEPPER` tách khỏi
+   CSDL** — vẫn chưa làm, và vẫn là thứ duy nhất không khôi phục được.
+3. Merge `public-api-v2` vào `master` hay giữ nhánh — chờ chủ sản phẩm quyết.
+
+---
+
 ## 2026-08-15 — H35: Public API `/api/v1` + pack mở rộng 21 prompt
 
 - **Mục tiêu:** mở một API cho khách lập trình gọi bằng máy, tính tiền qua đúng

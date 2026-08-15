@@ -190,6 +190,7 @@ nào**.
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 | Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92) — **chưa deploy**, nhánh `public-api-v2` |
+| Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -233,6 +234,25 @@ Ba thứ cần biết trước khi đụng vào:
   thật và OpenAPI. Thêm route mà quên khai là gate đỏ, và ngược lại.
 - **Thêm/đổi tool đang mở thì phải cập nhật `APP_API_COVERAGE_FINAL.md`** —
   `test_212` đọc bảng đó như dữ liệu và so với registry cả hai chiều.
+
+**H36 (2026-08-16)** sửa ba lỗi P0 mà audit tìm ra, tất cả cùng một gốc: **mọi
+vòng nền được viết như thể chỉ có một tiến trình chạy nó**, trong khi số tiến
+trình worker mặc định bằng **số GPU**. Hệ quả: webhook gửi trùng, cảnh báo trùng,
+việc dọn chạy N lần.
+
+Ba thứ cần biết trước khi đụng vào worker:
+
+- **Việc nền nằm sau một lease** (`platform_core/leases.py`). Thêm một việc nền
+  mới thì đặt nó trong `_mot_luot_bao_tri`, đừng tự chạy trong vòng job — vòng
+  đó chạy ở **mọi** tiến trình.
+- **Đội hình worker khai bằng `LTT_WORKER_POOLS`** (vd `api:8, gpu+ffmpeg:2`).
+  Không khai thì giữ nguyên hành vi cũ.
+- **`test_214` là bằng chứng đa tiến trình, và nó CHƯA nằm trong gate** — cần
+  `LTT_TEST_DATABASE_URL` trỏ tới CSDL PostgreSQL có chữ `test` trong tên. Chạy
+  nó bằng tay sau khi sửa bất cứ thứ gì trong worker hoặc outbox.
+
+Điểm audit trung thực sau H36: **8,5/10**, không hạng mục nào trên 9 —
+`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4b nói rõ vì sao và còn thiếu gì.
 
 Trạng thái và điều kiện còn lại: `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`
 (kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nặng nhất trong các

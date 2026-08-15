@@ -2336,3 +2336,44 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
   báo; xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
 - [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
   ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.
+
+---
+
+## H36 — Củng cố phần thi hành của Public API
+
+Audit: `docs/PUBLIC_API/AUDIT_API_2026-08-15.md`. Thiết kế:
+`docs/PUBLIC_API/PLAN_RUNTIME_HARDENING.md`. Nhật ký thật: mục
+`2026-08-16 — H36` trong `NHAT_KY.md`.
+
+Nguyên nhân gốc của cả ba lỗi P0: **mọi vòng nền được viết với giả định "chỉ một
+tiến trình chạy nó"**, trong khi số tiến trình worker mặc định bằng số GPU.
+
+- [x] H36.1 Bộ khung đa tiến trình — 2026-08-16: `test_214` đẻ tiến trình worker
+  THẬT trên PostgreSQL thật. Viết **trước** khi sửa, và có kiểm "có răng": hoàn
+  nguyên `claim_due` thì đỏ 8/8.
+- [x] H36.2 Lease có tên + vòng bảo trì chạy luồng riêng — `platform_core/leases.py`.
+- [x] H36.3 Outbox claim đúng chuẩn hàng đợi job + cooldown cảnh báo do CSDL
+  cưỡng chế (`event_key` + UNIQUE).
+- [x] H36.4 Metrics rời khỏi tiến trình — bảng `api_metric_samples`, xả ở **mọi**
+  tiến trình web lẫn worker, cộng khi đọc, hiện trên trang Tổng quan.
+- [x] H36.5 Đội hình worker theo lớp tài nguyên — `LTT_WORKER_POOLS`; cha giám
+  sát và **thay thế con đã chết** (lỗ sẵn có).
+- [x] H36.6 Trần thời gian chạy job (`manifest.max_runtime_s`) + không thử lại
+  job treo.
+- [x] H36.7 Tách bằng chứng khỏi nội dung — nội dung job hết hạn 30 ngày, file
+  bị xoá, hàng job ở lại; cửa sổ tải artifact được công bố trong hợp đồng.
+- [x] H36.8 Ba tín hiệu bất thường (chỉ đọc), `retry` trong mọi phản hồi lỗi,
+  `RUNBOOK.md`.
+- [ ] H36.9 **Lên đạn cho bánh cóc** — gate phải chạy `test_214`. Hiện nó cần
+  `LTT_TEST_DATABASE_URL` mà gate không đặt, nên **luôn skip**: bằng chứng mạnh
+  nhất của H36 đã chạy đúng một lần, bằng tay.
+- [ ] H36.10 **Chạy thật ba đường chưa chạy lần nào** — `_het_gio` (test luôn
+  monkeypatch nó đi), vòng cha-thay-con, luồng xả metrics của web.
+- [ ] H36.11 **Chạy `test_218` trên R2** — `LTT_STORAGE=r2` ở production, còn
+  test chỉ chạy trên `LocalStorage`.
+- [ ] H36.12 **Đo lại tải** sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
+  metrics.
+
+Điểm trung thực sau H36: **7,0 → 8,5**, không hạng mục nào trên 9,0. Bốn ô còn
+trống ở trên chính là khoảng cách tới >9 — và cả bốn đều là **chứng minh**, không
+phải xây thêm.
