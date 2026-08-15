@@ -44,8 +44,8 @@ from platform_core.public_api.tables import (PRICE_ACTIVE,
                                              PRICE_DRAFT,
                                              PRICE_SCHEDULED)
 from platform_core import leases
-from platform_core.public_api import (admin_console, costing, metrics,
-                                      policy, pricing)
+from platform_core.public_api import (admin_console, anomalies, costing,
+                                      metrics, policy, pricing)
 
 _log = logging.getLogger("ltt.admin.api")
 
@@ -191,6 +191,15 @@ class ApiOverviewView(BaseView):
                   f'cao nhất {cho_hang_doi.get("max_ms", 0)} ms'),
             _stat("Tiến trình đã gộp", do["processes"],
                   f'bảo trì: {escape(ai_bao_tri or "chưa ai giữ")}'),
+            # Ràng buộc này trước đây chỉ nằm trong docstring của `limits.py`,
+            # nên người mở tiến trình web thứ hai sẽ không bao giờ đọc tới nó.
+            # Bộ đếm nhịp sống TRONG tiến trình: hai tiến trình web nghĩa là mỗi
+            # khách được gấp đôi hạn mức, im lặng.
+            _stat("Tiến trình web", do["web_processes"],
+                  "phải là 1 — trần nhịp đếm trong tiến trình"
+                  if do["web_processes"] > 1 else "worker: "
+                  f'{do["worker_processes"]}',
+                  colour=_ERR if do["web_processes"] > 1 else ""),
         ])
 
         codes = "".join(
@@ -1538,8 +1547,41 @@ class ApiSecurityView(BaseView):
             data = security_log.summary(db, hours=hours)
             rows = security_log.list_recent(
                 db, kind=kind, since=data["since"], limit=100)
+            # Chặn được tấn công đã biết là một chuyện; **thấy** bất thường là
+            # chuyện khác. Ba câu hỏi này trả lời được từ dữ liệu đã có, và
+            # trước đây không ai hỏi.
+            bat_thuong = anomalies.quet(db, hours=hours)
         finally:
             _close(gen)
+
+        def _hang(cot: list) -> str:
+            return "".join(f'<tr>{"".join(cot)}</tr>')
+
+        canh_bao = ""
+        for row in bat_thuong["khoa_thu_hoi"]:
+            canh_bao += _hang([
+                '<td><span class="chip danger">Khoá đã thu hồi</span></td>',
+                f'<td class="mono">{escape(row["key_id"][:16])}</td>',
+                f'<td class="tnum">{row["lan"]}</td>',
+                f'<td class="muted">vẫn bị gọi từ {row["so_ip"]} địa chỉ — '
+                f'thứ đang giữ khoá không phải hệ thống vừa được cập nhật</td>'])
+        for row in bat_thuong["chi_tieu_vot"]:
+            gap = f'gấp {row["gap"]}×' if row["gap"] else "tài khoản mới"
+            canh_bao += _hang([
+                '<td><span class="chip warn">Chi tiêu vọt</span></td>',
+                f'<td class="mono">{escape(row["user_id"][:16])}</td>',
+                f'<td class="tnum">{row["tieu"]}</td>',
+                f'<td class="muted">{gap} mức thường ngày '
+                f'({row["thuong_ngay"]}/ngày)</td>'])
+        for row in bat_thuong["scope_bi_tu_choi"]:
+            canh_bao += _hang([
+                '<td><span class="chip warn">Thiếu quyền</span></td>',
+                f'<td class="mono">{escape(row["key_id"][:16])}</td>',
+                f'<td class="tnum">{row["lan"]}</td>',
+                f'<td class="muted">trên {row["so_route"]} route — cấu hình '
+                f'thiếu scope, hoặc đang dò xem với tới đâu</td>'])
+        canh_bao = canh_bao or ('<tr><td colspan="4" class="muted">Không có dấu '
+                                'hiệu bất thường nào trong khoảng này.</td></tr>')
 
         cards = "".join([
             _stat("Lần bị từ chối", data["total"],
@@ -1594,6 +1636,13 @@ class ApiSecurityView(BaseView):
             f'<div class="tabs">{windows}</div>'
             f'{_TILES}{cards}</div>'
             f'{_COLS}'
+            f'<section><h2 style="margin:22px 0 10px">Dấu hiệu bất thường</h2>'
+            f'<p class="muted">Một khoá bị lộ vẫn gọi đúng scope và đúng nhịp, '
+            f'nên nó không chạm vào bất kỳ hàng rào nào — cho tới khi hết tiền. '
+            f'Ba câu hỏi này nhìn vào <b>thói quen</b> thay vì vào luật.</p>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Dấu hiệu</th><th>Đối tượng</th><th>Số</th><th>Nghĩa là gì</th>'
+            f'</tr></thead><tbody>{canh_bao}</tbody></table></div></section>'
             f'<section><h2 style="margin:22px 0 10px">Địa chỉ ồn nhất</h2>'
             f'<p class="muted">Một địa chỉ hỏng 400 lần là một con bot; 400 địa '
             f'chỉ hỏng mỗi cái một lần là một bản phát hành lỗi. Cùng một tổng '

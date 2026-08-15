@@ -714,7 +714,7 @@ def _xa_metrics() -> None:
     from platform_core.public_api import metrics
 
     for db in _one_session():
-        n = metrics.flush(db)
+        n = metrics.flush(db, prefix=metrics.WORKER_PREFIX)
         db.commit()
         if n:
             log.debug("xa %d mau metrics", n)

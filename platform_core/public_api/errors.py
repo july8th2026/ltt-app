@@ -149,6 +149,23 @@ class ApiProblem:
             body["instance"] = self.instance
         if self.request_id:
             body["request_id"] = self.request_id
+
+        # Phân loại thử-lại đi kèm chính phản hồi, không nằm riêng trong tài
+        # liệu. Trước đây `error_registry` biết đủ cả — lỗi này thử lại được
+        # không, và thử lại có phải dùng lại `Idempotency-Key` không — nhưng
+        # thứ duy nhất khách nhận được là một mã lỗi. Nên mỗi tích hợp phải tự
+        # đoán, và đoán sai theo hướng "thử lại đi" là cách một lần gián đoạn
+        # biến thành hai lần tính tiền.
+        from platform_core.public_api import error_registry
+
+        #  chứ không phải : hàm kia cố tình ném lỗi cho mã chưa
+        # khai, và một mã lạ không được phép biến phản hồi lỗi thành lỗi 500.
+        spec = error_registry.REGISTRY.get(code)
+        if spec is not None:
+            body["retry"] = spec.retry
+            if spec.reuse_idempotency_key:
+                body["reuse_idempotency_key"] = True
+
         for key, value in (self.extra or {}).items():
             if key not in body:
                 body[key] = scrub_detail(value)

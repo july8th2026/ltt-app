@@ -115,10 +115,18 @@ def _o_thoi_gian(now=None):
     return datetime.fromtimestamp(giay, tz=timezone.utc)
 
 
-def _process_id() -> str:
+#: Tiền tố phân biệt tiến trình web với worker trong cột `process`. Cần vì hai
+#: loại có ràng buộc vận hành khác nhau: chạy nhiều worker là **đúng thiết kế**,
+#: còn chạy nhiều tiến trình web thì làm bộ đếm nhịp (RPM) sai — nó đếm trong
+#: tiến trình, nên hai tiến trình web nghĩa là khách được gấp đôi hạn mức.
+WEB_PREFIX = "web:"
+WORKER_PREFIX = "worker:"
+
+
+def _process_id(prefix: str = WORKER_PREFIX) -> str:
     from platform_core import leases
 
-    return leases.holder_id()
+    return f"{prefix}{leases.holder_id()}"
 
 
 def drain() -> dict:
@@ -135,7 +143,8 @@ def drain() -> dict:
     return {"counters": counters, "latency": latencies}
 
 
-def flush(db, *, now=None, process: str = "") -> int:
+def flush(db, *, now=None, process: str = "",
+          prefix: str = WORKER_PREFIX) -> int:
     """Ghi phần tăng thêm của tiến trình này xuống CSDL. Trả số dòng đã ghi.
 
     Gọi từ **mọi** tiến trình, không nấp sau lease bảo trì: mỗi tiến trình có bộ
@@ -150,7 +159,7 @@ def flush(db, *, now=None, process: str = "") -> int:
     if not delta["counters"] and not delta["latency"]:
         return 0
 
-    who = process or _process_id()
+    who = process or _process_id(prefix)
     o = _o_thoi_gian(now)
     n = 0
     for name, value in delta["counters"].items():
@@ -207,6 +216,12 @@ def aggregate(db, *, hours: int = 24, now=None) -> dict:
                     for name, b in sorted(latency.items())},
         "since": since.isoformat(),
         "processes": len({row.process for row in rows}),
+        # Đếm riêng vì ràng buộc khác nhau: nhiều worker là đúng thiết kế,
+        # nhiều tiến trình web thì hạn mức nhịp của khách bị nhân lên.
+        "web_processes": len({row.process for row in rows
+                              if row.process.startswith(WEB_PREFIX)}),
+        "worker_processes": len({row.process for row in rows
+                                 if row.process.startswith(WORKER_PREFIX)}),
     }
 
 

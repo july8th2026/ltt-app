@@ -52,8 +52,13 @@ def upgrade() -> None:
     # tat ca dong cu la trung nhau va migration se hong.
     op.execute("UPDATE api_notifications SET event_key = 'legacy:' || id "
                "WHERE event_key = ''")
-    op.create_unique_constraint("uq_api_notifications_event_key",
-                                "api_notifications", ["user_id", "event_key"])
+    # `batch_alter_table` chu khong phai `create_unique_constraint` tran: SQLite
+    # KHONG ALTER duoc rang buoc, va SQLite la CSDL cua may phat trien lan bo
+    # test. Batch mode dung lai bang tren SQLite va van la ALTER thuong tren
+    # PostgreSQL, nen mot migration chay duoc o ca hai noi.
+    with op.batch_alter_table("api_notifications") as batch:
+        batch.create_unique_constraint("uq_api_notifications_event_key",
+                                       ["user_id", "event_key"])
 
     # Duong ra cho bo dem: chung song trong tien trinh nen mat khi khoi dong lai,
     # khong doc duoc tu ngoai, va nhieu tien trinh thi moi cai mot ban rieng.
@@ -85,8 +90,8 @@ def downgrade() -> None:
     op.drop_index("ix_api_metric_samples_window",
                   table_name="api_metric_samples")
     op.drop_table("api_metric_samples")
-    op.drop_constraint("uq_api_notifications_event_key", "api_notifications",
-                       type_="unique")
+    with op.batch_alter_table("api_notifications") as batch:
+        batch.drop_constraint("uq_api_notifications_event_key", type_="unique")
     op.drop_column("api_notifications", "event_key")
     op.drop_index("ix_singleton_leases_heartbeat_at",
                   table_name="singleton_leases")

@@ -233,7 +233,7 @@ class AppManifest:
     gpu_vram_mb: dict = field(default_factory=dict)
 
     # Trần thời gian chạy (giây) cho MỘT job, theo `job_type`:
-    #   max_runtime_s = {"upscalevideo.render": 3600}
+    #   max_runtime_s = {"myapp.render": 3600}
     # Bỏ trống = dùng trần mặc định của nền tảng theo loại tài nguyên.
     #
     # Vì sao cần: nhặt job mồ côi chỉ bắt worker **chết** (mất đập nhịp). Một

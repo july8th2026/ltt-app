@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:94781ef8d71edddb955532fbc5f916aa178a7f048e79566ffa39d65df20e6f5d
-Nguồn đã quét : 1129 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:aaf35bf45d5b421964ad1baf9b0372b52f310eded4565733fb3545222df70237
+Nguồn đã quét : 1131 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -630,7 +630,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /facebook/page → fb_toggle_page | auth~login | server/routes/accounts.py:116
 - [platform] POST   /facebook/system-token → fb_import_system_token | auth~login | server/routes/accounts.py:86
 - [platform] POST   /facebook/test → fb_test | auth~login | server/routes/accounts.py:101
-- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:306
+- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:346
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
@@ -1022,7 +1022,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (221 file pytest + 3 frontend)
+10. QUALITY GATES (222 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1178,6 +1178,7 @@ Test inventory:
 - tests/test_216_worker_pools_and_metrics.py
 - tests/test_217_job_runtime_limit.py
 - tests/test_218_job_content_lifecycle.py
+- tests/test_219_anomaly_signals.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -1270,8 +1271,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1129 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:843, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1131 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:845, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1879,7 +1880,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (90)
+[platform_core] (91)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1927,6 +1928,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/public_api/__init__.py
 - platform_core/public_api/admin_console.py
 - platform_core/public_api/alerting.py
+- platform_core/public_api/anomalies.py
 - platform_core/public_api/budgets.py
 - platform_core/public_api/capacity.py
 - platform_core/public_api/catalog.py
@@ -2136,7 +2138,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (238)
+[tests] (239)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2303,6 +2305,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_216_worker_pools_and_metrics.py
 - tests/test_217_job_runtime_limit.py
 - tests/test_218_job_content_lifecycle.py
+- tests/test_219_anomaly_signals.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -2467,7 +2470,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1129 file; 10206684 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1131 file; 10233162 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5873,7 +5876,7 @@ def downgrade() -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260815_1200_singleton_leases.py
-SHA256=1579a9970ed64cb3c102941fbf961f4ab674380495150ce7fd78d9978a3c1a06 BYTES=4465 LINES=93
+SHA256=51353aecfa87c1a528885c3f5c8fe3b90434aeb4d32e88635a757c092fbcc4df BYTES=4844 LINES=98
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening)
 
@@ -5929,8 +5932,13 @@ def upgrade() -> None:
     # tat ca dong cu la trung nhau va migration se hong.
     op.execute("UPDATE api_notifications SET event_key = 'legacy:' || id "
                "WHERE event_key = ''")
-    op.create_unique_constraint("uq_api_notifications_event_key",
-                                "api_notifications", ["user_id", "event_key"])
+    # `batch_alter_table` chu khong phai `create_unique_constraint` tran: SQLite
+    # KHONG ALTER duoc rang buoc, va SQLite la CSDL cua may phat trien lan bo
+    # test. Batch mode dung lai bang tren SQLite va van la ALTER thuong tren
+    # PostgreSQL, nen mot migration chay duoc o ca hai noi.
+    with op.batch_alter_table("api_notifications") as batch:
+        batch.create_unique_constraint("uq_api_notifications_event_key",
+                                       ["user_id", "event_key"])
 
     # Duong ra cho bo dem: chung song trong tien trinh nen mat khi khoi dong lai,
     # khong doc duoc tu ngoai, va nhieu tien trinh thi moi cai mot ban rieng.
@@ -5962,8 +5970,8 @@ def downgrade() -> None:
     op.drop_index("ix_api_metric_samples_window",
                   table_name="api_metric_samples")
     op.drop_table("api_metric_samples")
-    op.drop_constraint("uq_api_notifications_event_key", "api_notifications",
-                       type_="unique")
+    with op.batch_alter_table("api_notifications") as batch:
+        batch.drop_constraint("uq_api_notifications_event_key", type_="unique")
     op.drop_column("api_notifications", "event_key")
     op.drop_index("ix_singleton_leases_heartbeat_at",
                   table_name="singleton_leases")
@@ -104943,7 +104951,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=9c74cd1144fc2c52b618683da1c1409bab5a5f4af76f68a6c937aec87c43a269 BYTES=38402 LINES=882
+SHA256=cc80326d1d2bbec27d0701d789619c9a637d1a8304f992cf2d77b34bab485819 BYTES=38432 LINES=882
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -105661,7 +105669,7 @@ def _xa_metrics() -> None:
     from platform_core.public_api import metrics
 
     for db in _one_session():
-        n = metrics.flush(db)
+        n = metrics.flush(db, prefix=metrics.WORKER_PREFIX)
         db.commit()
         if n:
             log.debug("xa %d mau metrics", n)
@@ -109354,6 +109362,170 @@ def scan_all(db, *, config=None, now: datetime | None = None) -> int:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/anomalies.py
+SHA256=94b98ac10128ee5babf19910b48688701cb7229217cd4e553a13cc3d8901e483 BYTES=7725 LINES=158
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Dấu hiệu bất thường: hỏi những câu mà dữ liệu đã có sẵn nhưng chưa ai hỏi.
+
+Khu API chống được các kiểu tấn công đã biết — SSRF, đọc chéo tài khoản, giả mạo
+header, dò khoá — và mỗi lần chặn đều để lại một dòng. Nhưng nó **không phát
+hiện** bất thường: một khoá bị lộ vẫn được dùng bình thường, đúng scope, đúng
+nhịp, cho tới khi hết tiền. Nhật ký ghi đầy đủ mọi lời gọi đó và không ai đọc.
+
+Ba câu hỏi dưới đây đều trả lời được từ `api_request_logs` và
+`api_security_events` đang có, **không cần bảng mới, không cần cột mới**. Đó là
+lý do chúng đáng làm trước: chi phí gần bằng không, và chúng chuyển việc phát
+hiện từ "khách báo cho ta" thành "ta thấy trước".
+
+Cố ý **chỉ đọc và chỉ báo cho người vận hành**, không tự khoá gì. Một hệ tự động
+khoá dựa trên suy đoán sẽ chặn nhầm khách thật vào đúng ngày họ chạy chiến dịch
+lớn — và mất một khách vì nghi oan thì đắt hơn nhiều so với xử lý muộn vài giờ.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+import sqlalchemy as sa
+
+from platform_core.public_api.tables import (ApiRequestLog, ApiSecurityEvent)
+
+#: Bao nhiêu lần bị từ chối vì thiếu quyền trong một cửa sổ thì đáng nhìn. Một
+#: tích hợp cấu hình sai cũng chạm ngưỡng này — và đó là chuyện tốt, vì khách
+#: đang gọi hỏng mà chưa chắc đã biết.
+SCOPE_DENIED_NGUONG = 20
+
+#: Chi tiêu hôm nay gấp bao nhiêu lần mức thường ngày thì đáng nhìn.
+CHI_TIEU_GAP = 5.0
+
+#: Sàn để một tài khoản mới không bị coi là bất thường: gấp 5 lần của một con số
+#: rất nhỏ vẫn là một con số rất nhỏ.
+CHI_TIEU_SAN = 50
+
+#: Bao nhiêu lần thử một khoá đã thu hồi thì đáng nhìn. Một lần là quên; lặp
+#: lại nghĩa là **có thứ đang giữ khoá đó và vẫn chạy** — hoặc là hệ thống của
+#: khách chưa cập nhật, hoặc là khoá đã ra ngoài.
+KHOA_THU_HOI_NGUONG = 3
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def scope_bi_tu_choi(db, *, hours: int = 24, now=None) -> list:
+    """Khoá nào đang bị từ chối vì thiếu quyền, nhiều lần.
+
+    Hai nguyên nhân, và người vận hành phân biệt được ngay khi nhìn: một tích
+    hợp mới cấu hình thiếu scope (rất nhiều lỗi, một route), hoặc ai đó đang dò
+    xem khoá này với được tới đâu (rải khắp nhiều route).
+    """
+    since = (now or _now()) - timedelta(hours=max(1, int(hours)))
+    rows = db.execute(
+        sa.select(ApiRequestLog.key_id,
+                  sa.func.count(ApiRequestLog.id).label("lan"),
+                  sa.func.count(sa.distinct(ApiRequestLog.route)).label("route"))
+        .where(ApiRequestLog.created_at >= since,
+               ApiRequestLog.status == 403,
+               ApiRequestLog.key_id != "")
+        .group_by(ApiRequestLog.key_id)
+        .having(sa.func.count(ApiRequestLog.id) >= SCOPE_DENIED_NGUONG)
+        .order_by(sa.desc("lan"))
+    ).all()
+    return [{"key_id": r.key_id, "lan": int(r.lan), "so_route": int(r.route)}
+            for r in rows]
+
+
+def chi_tieu_vot(db, *, hours: int = 24, now=None) -> list:
+    """Tài khoản nào đang tiêu vọt hẳn so với chính nó mọi ngày.
+
+    So với **chính tài khoản đó**, không so với trung bình toàn hệ thống: một
+    khách lớn tiêu nhiều là bình thường, còn một khách nhỏ đột nhiên tiêu như
+    khách lớn thì không.
+    """
+    current = now or _now()
+    since = current - timedelta(hours=max(1, int(hours)))
+    truoc = current - timedelta(days=14)
+
+    gan = dict(db.execute(
+        sa.select(ApiRequestLog.user_id,
+                  sa.func.coalesce(sa.func.sum(ApiRequestLog.credit_delta), 0))
+        .where(ApiRequestLog.created_at >= since, ApiRequestLog.user_id != "")
+        .group_by(ApiRequestLog.user_id)).all())
+    if not gan:
+        return []
+
+    truoc_do = dict(db.execute(
+        sa.select(ApiRequestLog.user_id,
+                  sa.func.coalesce(sa.func.sum(ApiRequestLog.credit_delta), 0))
+        .where(ApiRequestLog.created_at >= truoc,
+               ApiRequestLog.created_at < since,
+               ApiRequestLog.user_id != "")
+        .group_by(ApiRequestLog.user_id)).all())
+
+    ngay = max(1.0, (since - truoc).total_seconds() / 86400.0)
+    ra = []
+    for user_id, tieu in gan.items():
+        tieu = abs(int(tieu or 0))
+        if tieu < CHI_TIEU_SAN:
+            continue
+        thuong_ngay = abs(int(truoc_do.get(user_id, 0) or 0)) / ngay
+        if thuong_ngay <= 0:
+            # Chưa có nền để so. Chỉ báo khi con số đủ lớn để đáng nhìn dù là
+            # tài khoản mới — im lặng hẳn ở đây nghĩa là một khoá bị lộ ngay
+            # ngày đầu sẽ không ai thấy.
+            if tieu >= CHI_TIEU_SAN * 10:
+                ra.append({"user_id": user_id, "tieu": tieu,
+                           "thuong_ngay": 0.0, "gap": None})
+            continue
+        gap = tieu / thuong_ngay
+        if gap >= CHI_TIEU_GAP:
+            ra.append({"user_id": user_id, "tieu": tieu,
+                       "thuong_ngay": round(thuong_ngay, 1),
+                       "gap": round(gap, 1)})
+    return sorted(ra, key=lambda r: r["tieu"], reverse=True)
+
+
+def khoa_da_thu_hoi_van_bi_dung(db, *, hours: int = 24, now=None) -> list:
+    """Khoá đã thu hồi mà vẫn có thứ gì đó gọi bằng nó.
+
+    Đây là tín hiệu trực tiếp nhất về một credential đã ra ngoài: khách thu hồi
+    rồi mà vẫn có lời gọi nghĩa là **thứ đang giữ khoá không phải hệ thống mà họ
+    vừa cập nhật**. Đường xác thực cố ý không phân biệt khoá sai với khoá đã thu
+    hồi (để không ai dò được id hợp lệ), nên câu hỏi này chỉ trả lời được ở đây,
+    lúc đọc.
+    """
+    from platform_core.public_api import security_log
+
+    since = (now or _now()) - timedelta(hours=max(1, int(hours)))
+    rows = db.execute(
+        sa.select(ApiSecurityEvent.key_id,
+                  sa.func.count(ApiSecurityEvent.id).label("lan"),
+                  sa.func.count(sa.distinct(ApiSecurityEvent.ip)).label("ip"))
+        .where(ApiSecurityEvent.created_at >= since,
+               ApiSecurityEvent.kind == security_log.REVOKED_KEY,
+               ApiSecurityEvent.key_id != "")
+        .group_by(ApiSecurityEvent.key_id)
+        .having(sa.func.count(ApiSecurityEvent.id) >= KHOA_THU_HOI_NGUONG)
+        .order_by(sa.desc("lan"))
+    ).all()
+    return [{"key_id": r.key_id, "lan": int(r.lan), "so_ip": int(r.ip)}
+            for r in rows]
+
+
+def quet(db, *, hours: int = 24, now=None) -> dict:
+    """Cả ba câu hỏi, cho trang bảo mật của người vận hành."""
+    return {
+        "scope_bi_tu_choi": scope_bi_tu_choi(db, hours=hours, now=now),
+        "chi_tieu_vot": chi_tieu_vot(db, hours=hours, now=now),
+        "khoa_thu_hoi": khoa_da_thu_hoi_van_bi_dung(db, hours=hours, now=now),
+    }
+
+
+__all__ = ["CHI_TIEU_GAP", "CHI_TIEU_SAN", "KHOA_THU_HOI_NGUONG",
+           "SCOPE_DENIED_NGUONG", "chi_tieu_vot", "khoa_da_thu_hoi_van_bi_dung",
+           "quet", "scope_bi_tu_choi"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/budgets.py
 SHA256=57e06b4561775962ee96a076cd81fd366c6900e6ae7cc65816f5ee9f3c5def1e BYTES=9027 LINES=215
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -111249,7 +111421,7 @@ IDEMPOTENCY_RULE = (
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/errors.py
-SHA256=92d53e4eea051fcf483831a6e502ea7dc1af9d62f87a0c317f45fbebdd21efee BYTES=10830 LINES=273
+SHA256=b8fe4b324ab00b99bba8cd3bf67988ef135580ff952d2ac63206640b0b13ec3c BYTES=11850 LINES=290
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Machine-readable error contract for ``/api/v1`` — RFC 9457 problem details.
 
@@ -111402,6 +111574,23 @@ class ApiProblem:
             body["instance"] = self.instance
         if self.request_id:
             body["request_id"] = self.request_id
+
+        # Phân loại thử-lại đi kèm chính phản hồi, không nằm riêng trong tài
+        # liệu. Trước đây `error_registry` biết đủ cả — lỗi này thử lại được
+        # không, và thử lại có phải dùng lại `Idempotency-Key` không — nhưng
+        # thứ duy nhất khách nhận được là một mã lỗi. Nên mỗi tích hợp phải tự
+        # đoán, và đoán sai theo hướng "thử lại đi" là cách một lần gián đoạn
+        # biến thành hai lần tính tiền.
+        from platform_core.public_api import error_registry
+
+        #  chứ không phải : hàm kia cố tình ném lỗi cho mã chưa
+        # khai, và một mã lạ không được phép biến phản hồi lỗi thành lỗi 500.
+        spec = error_registry.REGISTRY.get(code)
+        if spec is not None:
+            body["retry"] = spec.retry
+            if spec.reuse_idempotency_key:
+                body["reuse_idempotency_key"] = True
+
         for key, value in (self.extra or {}).items():
             if key not in body:
                 body[key] = scrub_detail(value)
@@ -113394,7 +113583,7 @@ def results_of(job, tool) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/metrics.py
-SHA256=e294d33c19486f3796b8f117061de4379866d26023b2a412d0f8c073f5c3e4e2 BYTES=9075 LINES=228
+SHA256=7e55f66a647189612183e9e9eccf5202d9ca2f35a90d8a7d9d7316c6759f1b9d BYTES=10069 LINES=243
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """In-process counters for the Public API.
 
@@ -113513,10 +113702,18 @@ def _o_thoi_gian(now=None):
     return datetime.fromtimestamp(giay, tz=timezone.utc)
 
 
-def _process_id() -> str:
+#: Tiền tố phân biệt tiến trình web với worker trong cột `process`. Cần vì hai
+#: loại có ràng buộc vận hành khác nhau: chạy nhiều worker là **đúng thiết kế**,
+#: còn chạy nhiều tiến trình web thì làm bộ đếm nhịp (RPM) sai — nó đếm trong
+#: tiến trình, nên hai tiến trình web nghĩa là khách được gấp đôi hạn mức.
+WEB_PREFIX = "web:"
+WORKER_PREFIX = "worker:"
+
+
+def _process_id(prefix: str = WORKER_PREFIX) -> str:
     from platform_core import leases
 
-    return leases.holder_id()
+    return f"{prefix}{leases.holder_id()}"
 
 
 def drain() -> dict:
@@ -113533,7 +113730,8 @@ def drain() -> dict:
     return {"counters": counters, "latency": latencies}
 
 
-def flush(db, *, now=None, process: str = "") -> int:
+def flush(db, *, now=None, process: str = "",
+          prefix: str = WORKER_PREFIX) -> int:
     """Ghi phần tăng thêm của tiến trình này xuống CSDL. Trả số dòng đã ghi.
 
     Gọi từ **mọi** tiến trình, không nấp sau lease bảo trì: mỗi tiến trình có bộ
@@ -113548,7 +113746,7 @@ def flush(db, *, now=None, process: str = "") -> int:
     if not delta["counters"] and not delta["latency"]:
         return 0
 
-    who = process or _process_id()
+    who = process or _process_id(prefix)
     o = _o_thoi_gian(now)
     n = 0
     for name, value in delta["counters"].items():
@@ -113605,6 +113803,12 @@ def aggregate(db, *, hours: int = 24, now=None) -> dict:
                     for name, b in sorted(latency.items())},
         "since": since.isoformat(),
         "processes": len({row.process for row in rows}),
+        # Đếm riêng vì ràng buộc khác nhau: nhiều worker là đúng thiết kế,
+        # nhiều tiến trình web thì hạn mức nhịp của khách bị nhân lên.
+        "web_processes": len({row.process for row in rows
+                              if row.process.startswith(WEB_PREFIX)}),
+        "worker_processes": len({row.process for row in rows
+                                 if row.process.startswith(WORKER_PREFIX)}),
     }
 
 
@@ -118380,7 +118584,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=b6b251f2953a00984201364bd3639045db9fe9a9e8fe784f7d16f42887a3b031 BYTES=39573 LINES=791
+SHA256=500103aecf7cd826d92b35673c77b58977f5a2b19619d6328eaeb586bc90b1c6 BYTES=39566 LINES=791
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -118617,7 +118821,7 @@ class AppManifest:
     gpu_vram_mb: dict = field(default_factory=dict)
 
     # Trần thời gian chạy (giây) cho MỘT job, theo `job_type`:
-    #   max_runtime_s = {"upscalevideo.render": 3600}
+    #   max_runtime_s = {"myapp.render": 3600}
     # Bỏ trống = dùng trần mặc định của nền tảng theo loại tài nguyên.
     #
     # Vì sao cần: nhặt job mồ côi chỉ bắt worker **chết** (mất đập nhịp). Một
@@ -124733,7 +124937,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin_api.py
-SHA256=3293d81d9f8b4693740a147ac9951f8e1cd801fdb1249d85a8d2598bc8dd8c11 BYTES=94582 LINES=1848
+SHA256=c4744dbb084c2f4f265b8089068b389fd3579d983f3048d294522085d81239f2 BYTES=97967 LINES=1897
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """server/admin_api.py — khu quản trị dành riêng cho API platform (EXT-13).
 
@@ -124781,8 +124985,8 @@ from platform_core.public_api.tables import (PRICE_ACTIVE,
                                              PRICE_DRAFT,
                                              PRICE_SCHEDULED)
 from platform_core import leases
-from platform_core.public_api import (admin_console, costing, metrics,
-                                      policy, pricing)
+from platform_core.public_api import (admin_console, anomalies, costing,
+                                      metrics, policy, pricing)
 
 _log = logging.getLogger("ltt.admin.api")
 
@@ -124928,6 +125132,15 @@ class ApiOverviewView(BaseView):
                   f'cao nhất {cho_hang_doi.get("max_ms", 0)} ms'),
             _stat("Tiến trình đã gộp", do["processes"],
                   f'bảo trì: {escape(ai_bao_tri or "chưa ai giữ")}'),
+            # Ràng buộc này trước đây chỉ nằm trong docstring của `limits.py`,
+            # nên người mở tiến trình web thứ hai sẽ không bao giờ đọc tới nó.
+            # Bộ đếm nhịp sống TRONG tiến trình: hai tiến trình web nghĩa là mỗi
+            # khách được gấp đôi hạn mức, im lặng.
+            _stat("Tiến trình web", do["web_processes"],
+                  "phải là 1 — trần nhịp đếm trong tiến trình"
+                  if do["web_processes"] > 1 else "worker: "
+                  f'{do["worker_processes"]}',
+                  colour=_ERR if do["web_processes"] > 1 else ""),
         ])
 
         codes = "".join(
@@ -126275,8 +126488,41 @@ class ApiSecurityView(BaseView):
             data = security_log.summary(db, hours=hours)
             rows = security_log.list_recent(
                 db, kind=kind, since=data["since"], limit=100)
+            # Chặn được tấn công đã biết là một chuyện; **thấy** bất thường là
+            # chuyện khác. Ba câu hỏi này trả lời được từ dữ liệu đã có, và
+            # trước đây không ai hỏi.
+            bat_thuong = anomalies.quet(db, hours=hours)
         finally:
             _close(gen)
+
+        def _hang(cot: list) -> str:
+            return "".join(f'<tr>{"".join(cot)}</tr>')
+
+        canh_bao = ""
+        for row in bat_thuong["khoa_thu_hoi"]:
+            canh_bao += _hang([
+                '<td><span class="chip danger">Khoá đã thu hồi</span></td>',
+                f'<td class="mono">{escape(row["key_id"][:16])}</td>',
+                f'<td class="tnum">{row["lan"]}</td>',
+                f'<td class="muted">vẫn bị gọi từ {row["so_ip"]} địa chỉ — '
+                f'thứ đang giữ khoá không phải hệ thống vừa được cập nhật</td>'])
+        for row in bat_thuong["chi_tieu_vot"]:
+            gap = f'gấp {row["gap"]}×' if row["gap"] else "tài khoản mới"
+            canh_bao += _hang([
+                '<td><span class="chip warn">Chi tiêu vọt</span></td>',
+                f'<td class="mono">{escape(row["user_id"][:16])}</td>',
+                f'<td class="tnum">{row["tieu"]}</td>',
+                f'<td class="muted">{gap} mức thường ngày '
+                f'({row["thuong_ngay"]}/ngày)</td>'])
+        for row in bat_thuong["scope_bi_tu_choi"]:
+            canh_bao += _hang([
+                '<td><span class="chip warn">Thiếu quyền</span></td>',
+                f'<td class="mono">{escape(row["key_id"][:16])}</td>',
+                f'<td class="tnum">{row["lan"]}</td>',
+                f'<td class="muted">trên {row["so_route"]} route — cấu hình '
+                f'thiếu scope, hoặc đang dò xem với tới đâu</td>'])
+        canh_bao = canh_bao or ('<tr><td colspan="4" class="muted">Không có dấu '
+                                'hiệu bất thường nào trong khoảng này.</td></tr>')
 
         cards = "".join([
             _stat("Lần bị từ chối", data["total"],
@@ -126331,6 +126577,13 @@ class ApiSecurityView(BaseView):
             f'<div class="tabs">{windows}</div>'
             f'{_TILES}{cards}</div>'
             f'{_COLS}'
+            f'<section><h2 style="margin:22px 0 10px">Dấu hiệu bất thường</h2>'
+            f'<p class="muted">Một khoá bị lộ vẫn gọi đúng scope và đúng nhịp, '
+            f'nên nó không chạm vào bất kỳ hàng rào nào — cho tới khi hết tiền. '
+            f'Ba câu hỏi này nhìn vào <b>thói quen</b> thay vì vào luật.</p>'
+            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<th>Dấu hiệu</th><th>Đối tượng</th><th>Số</th><th>Nghĩa là gì</th>'
+            f'</tr></thead><tbody>{canh_bao}</tbody></table></div></section>'
             f'<section><h2 style="margin:22px 0 10px">Địa chỉ ồn nhất</h2>'
             f'<p class="muted">Một địa chỉ hỏng 400 lần là một con bot; 400 địa '
             f'chỉ hỏng mỗi cái một lần là một bản phát hành lỗi. Cùng một tổng '
@@ -128940,7 +129193,7 @@ def register_webhook_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/app.py
-SHA256=e236a9f8beab9bc1b4ed26683f1968820a44646ea21a080e8ee1d3f4b2a62d41 BYTES=20816 LINES=405
+SHA256=b2618c9f5690d23636b55b3f836f68c8b76d79acb86607f36b7c12139de31445 BYTES=22363 LINES=445
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 FastAPI application factory (P3).
@@ -128953,6 +129206,7 @@ worker_main.py.
 from __future__ import annotations
 
 import logging
+import threading
 import re
 import uuid
 from contextlib import asynccontextmanager
@@ -129017,6 +129271,38 @@ _HASHED_FRONTEND_ASSET = re.compile(
 # silently stop being enforced. The web app owns it now.
 
 
+def _xa_metrics_web(dung) -> None:
+    """Đưa bộ đếm của tiến trình WEB xuống CSDL.
+
+    Bộ đếm sống trong tiến trình. Worker đã có đường xả từ trước, nhưng phần lớn
+    con số đáng xem lại phát sinh **ở đây** — số request, lỗi xác thực, lần bị
+    chặn nhịp — nên trước khi có hàm này, trang vận hành cộng lại được mọi thứ
+    trừ chính thứ nó cần nhất.
+    """
+    import time as _time
+
+    from platform_core.db import get_session
+    from platform_core.public_api import metrics
+
+    log = logging.getLogger(__name__)
+    while not dung.wait(60.0):
+        try:
+            gen = get_session()
+            db = next(gen)
+            try:
+                metrics.flush(db, prefix=metrics.WEB_PREFIX)
+                db.commit()
+            finally:
+                try:
+                    next(gen)
+                except StopIteration:
+                    pass
+        except Exception:                   # noqa: BLE001
+            # Không xả được số liệu là chuyện phải chịu được; nó không được
+            # làm sập tầng web đang phục vụ khách.
+            log.warning("khong xa duoc metrics web", exc_info=True)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     app.state.maintenance = None
@@ -129032,9 +129318,16 @@ async def _lifespan(app: FastAPI):
             # serving — the operator needs it most when something is wrong.
             logging.getLogger(__name__).warning(
                 "MaintenanceDaemon failed to start", exc_info=True)
+    dung_metrics = threading.Event()
+    luong_metrics = threading.Thread(
+        target=_xa_metrics_web, args=(dung_metrics,),
+        name="xa-metrics-web", daemon=True)
+    luong_metrics.start()
     try:
         yield
     finally:
+        dung_metrics.set()
+        luong_metrics.join(timeout=5)
         daemon = getattr(app.state, "maintenance", None)
         if daemon is not None:
             daemon.stop()
@@ -186467,6 +186760,302 @@ def test_worker_that_su_goi_vong_don_nay(moi_truong):
 
     cau = inspect.getsource(job_runner._don_noi_dung_job)
     assert "job_content.purge_expired" in cau
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_219_anomaly_signals.py
+SHA256=b9733a842ce791b584113f8d1be55acf94f6be8e5f4d1b11588c281f789c9f28 BYTES=11405 LINES=290
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ba câu hỏi mà dữ liệu đã trả lời được, và trước đây không ai hỏi.
+
+Khu API chặn được thứ nó biết trước — SSRF, đọc chéo, giả mạo header, dò khoá.
+Nhưng một khoá **bị lộ** thì gọi đúng scope, đúng nhịp, đúng tài khoản: nó không
+chạm vào bất kỳ hàng rào nào cho tới khi hết tiền. Phòng thủ nhìn vào *luật*;
+phần này nhìn vào *thói quen*.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'anomaly.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _request(db, *, user_id="u-1", key_id="k-1", status=200, credit=0,
+             route="/api/v1/jobs", cach_day_gio=1.0):
+    from platform_core.public_api.tables import ApiRequestLog
+
+    db.add(ApiRequestLog(
+        id=str(uuid.uuid4()), request_id=uuid.uuid4().hex, user_id=user_id,
+        key_id=key_id, project_id="", method="POST", route=route,
+        status=status, code="", latency_ms=10, tool="", job_id="",
+        credit_delta=credit,
+        created_at=datetime.now(timezone.utc) - timedelta(hours=cach_day_gio)))
+
+
+def _su_kien(db, *, kind, key_id="k-1", ip="1.2.3.4", cach_day_gio=1.0):
+    from platform_core.public_api.tables import ApiSecurityEvent
+
+    db.add(ApiSecurityEvent(
+        id=str(uuid.uuid4()), kind=kind, ip=ip, key_id=key_id, user_id="",
+        route="/api/v1/jobs", request_id=uuid.uuid4().hex, detail="",
+        created_at=datetime.now(timezone.utc) - timedelta(hours=cach_day_gio)))
+
+
+# ── Thiếu quyền ──────────────────────────────────────────────────────────────
+
+def test_mot_khoa_bi_tu_choi_nhieu_lan_thi_noi_ra(db):
+    from platform_core.public_api import anomalies
+
+    for _ in range(anomalies.SCOPE_DENIED_NGUONG + 5):
+        _request(db, status=403)
+    db.commit()
+
+    ra = anomalies.scope_bi_tu_choi(db)
+    assert len(ra) == 1 and ra[0]["key_id"] == "k-1"
+
+
+def test_vai_lan_tu_choi_le_te_thi_im(db):
+    """Ngưỡng tồn tại để trang này không thành một danh sách ai cũng có tên."""
+    from platform_core.public_api import anomalies
+
+    for _ in range(3):
+        _request(db, status=403)
+    db.commit()
+
+    assert anomalies.scope_bi_tu_choi(db) == []
+
+
+def test_dem_so_route_de_phan_biet_cau_hinh_sai_voi_do_tim(db):
+    """Rất nhiều lỗi trên MỘT route là tích hợp cấu hình thiếu scope.
+
+    Rải khắp nhiều route là ai đó đang xem khoá này với tới đâu. Cùng một tổng
+    số, hai việc khác nhau, hai cách xử lý khác nhau.
+    """
+    from platform_core.public_api import anomalies
+
+    for i in range(anomalies.SCOPE_DENIED_NGUONG + 1):
+        _request(db, status=403, route=f"/api/v1/route-{i}")
+    db.commit()
+
+    assert anomalies.scope_bi_tu_choi(db)[0]["so_route"] > 1
+
+
+def test_loi_khac_403_khong_bi_tinh(db):
+    from platform_core.public_api import anomalies
+
+    for _ in range(50):
+        _request(db, status=500)
+    db.commit()
+
+    assert anomalies.scope_bi_tu_choi(db) == []
+
+
+# ── Chi tiêu vọt ─────────────────────────────────────────────────────────────
+
+def test_tieu_vot_han_so_voi_chinh_minh_thi_noi_ra(db):
+    """So với **chính tài khoản đó**, không so với trung bình toàn hệ thống.
+
+    Một khách lớn tiêu nhiều là bình thường; một khách nhỏ đột nhiên tiêu như
+    khách lớn thì không — và trung bình toàn hệ thống làm mờ đúng sự khác biệt
+    đó.
+    """
+    from platform_core.public_api import anomalies
+
+    for ngay in range(1, 15):               # nền: 10 credit mỗi ngày
+        _request(db, credit=10, cach_day_gio=24 * ngay + 1)
+    for _ in range(20):                     # hôm nay: 400 credit
+        _request(db, credit=20, cach_day_gio=0.5)
+    db.commit()
+
+    ra = anomalies.chi_tieu_vot(db)
+    assert len(ra) == 1
+    assert ra[0]["gap"] >= anomalies.CHI_TIEU_GAP
+
+
+def test_khach_lon_tieu_deu_thi_khong_bi_bao(db):
+    """Bất thường là **đổi thói quen**, không phải tiêu nhiều."""
+    from platform_core.public_api import anomalies
+
+    for ngay in range(1, 15):
+        for _ in range(10):
+            _request(db, credit=50, cach_day_gio=24 * ngay + 1)
+    for _ in range(10):
+        _request(db, credit=50, cach_day_gio=0.5)
+    db.commit()
+
+    assert anomalies.chi_tieu_vot(db) == []
+
+
+def test_so_nho_thi_khong_bao_du_ty_le_cao(db):
+    """Gấp 5 lần của một con số rất nhỏ vẫn là một con số rất nhỏ."""
+    from platform_core.public_api import anomalies
+
+    _request(db, credit=1, cach_day_gio=48)
+    _request(db, credit=10, cach_day_gio=0.5)
+    db.commit()
+
+    assert anomalies.chi_tieu_vot(db) == []
+
+
+def test_tai_khoan_moi_tieu_rat_lon_van_duoc_bao(db):
+    """Im lặng hẳn với tài khoản mới nghĩa là khoá lộ ngay ngày đầu sẽ không ai thấy."""
+    from platform_core.public_api import anomalies
+
+    for _ in range(20):
+        _request(db, credit=100, cach_day_gio=0.5)
+    db.commit()
+
+    ra = anomalies.chi_tieu_vot(db)
+    assert len(ra) == 1 and ra[0]["gap"] is None
+
+
+# ── Khoá đã thu hồi ──────────────────────────────────────────────────────────
+
+def test_khoa_da_thu_hoi_van_bi_goi_thi_noi_ra(db):
+    """Tín hiệu trực tiếp nhất về một credential đã ra ngoài.
+
+    Khách thu hồi rồi mà vẫn có lời gọi nghĩa là thứ đang giữ khoá **không phải**
+    hệ thống mà họ vừa cập nhật.
+    """
+    from platform_core.public_api import anomalies, security_log
+
+    for _ in range(anomalies.KHOA_THU_HOI_NGUONG + 2):
+        _su_kien(db, kind=security_log.REVOKED_KEY)
+    db.commit()
+
+    ra = anomalies.khoa_da_thu_hoi_van_bi_dung(db)
+    assert len(ra) == 1 and ra[0]["key_id"] == "k-1"
+
+
+def test_dem_dia_chi_vi_mot_may_khac_han_nhieu_may(db):
+    from platform_core.public_api import anomalies, security_log
+
+    for i in range(anomalies.KHOA_THU_HOI_NGUONG + 2):
+        _su_kien(db, kind=security_log.REVOKED_KEY, ip=f"10.0.0.{i}")
+    db.commit()
+
+    assert anomalies.khoa_da_thu_hoi_van_bi_dung(db)[0]["so_ip"] > 1
+
+
+def test_khoa_sai_binh_thuong_khong_bi_tinh_la_thu_hoi(db):
+    """Gõ nhầm một khoá không phải dấu hiệu credential bị lộ."""
+    from platform_core.public_api import anomalies, security_log
+
+    for _ in range(20):
+        _su_kien(db, kind=security_log.UNKNOWN_KEY)
+    db.commit()
+
+    assert anomalies.khoa_da_thu_hoi_van_bi_dung(db) == []
+
+
+# ── Ranh giới ────────────────────────────────────────────────────────────────
+
+def test_ngoai_cua_so_thoi_gian_thi_khong_tinh(db):
+    from platform_core.public_api import anomalies
+
+    for _ in range(50):
+        _request(db, status=403, cach_day_gio=200)
+    db.commit()
+
+    assert anomalies.scope_bi_tu_choi(db, hours=24) == []
+
+
+def test_chi_doc_khong_khoa_gi(db):
+    """Cố ý chỉ báo cho người vận hành, không tự chặn.
+
+    Một hệ tự khoá dựa trên suy đoán sẽ chặn nhầm khách thật vào đúng ngày họ
+    chạy chiến dịch lớn — mất một khách vì nghi oan đắt hơn xử lý muộn vài giờ.
+    """
+    import inspect
+
+    from platform_core.public_api import anomalies
+
+    nguon = inspect.getsource(anomalies)
+    for cam in ("db.add(", "db.delete(", "db.commit(", "revoke", "set_enabled"):
+        assert cam not in nguon, f"module chỉ-đọc lại có {cam!r}"
+
+
+def test_quet_tra_ve_du_ba_cau_hoi(db):
+    from platform_core.public_api import anomalies
+
+    ra = anomalies.quet(db)
+    assert set(ra) == {"scope_bi_tu_choi", "chi_tieu_vot", "khoa_thu_hoi"}
+
+
+# ── Ngữ nghĩa đường hỏng ─────────────────────────────────────────────────────
+
+def test_moi_loi_noi_ro_co_thu_lai_duoc_khong():
+    """Khách không phải tra bảng của ta mới biết nên làm gì tiếp.
+
+    `error_registry` vẫn luôn biết đủ — lỗi này thử lại được không, và thử lại
+    có phải dùng lại `Idempotency-Key` không. Thứ duy nhất khách nhận được lại
+    chỉ là một mã lỗi, nên mỗi tích hợp phải tự đoán; đoán sai theo hướng "thử
+    lại đi" là cách một lần gián đoạn thành hai lần tính tiền.
+    """
+    from platform_core.public_api import error_registry
+    from platform_core.public_api.errors import ApiProblem
+
+    for code, spec in error_registry.REGISTRY.items():
+        body = ApiProblem(status=spec.status, code=code, detail="x").to_dict()
+        assert body["retry"] == spec.retry, code
+        if spec.reuse_idempotency_key:
+            assert body["reuse_idempotency_key"] is True, code
+
+
+def test_ma_la_khong_lam_hong_phan_hoi_loi():
+    """Một mã chưa khai không được biến câu trả lời lỗi thành lỗi 500."""
+    from platform_core.public_api.errors import ApiProblem
+
+    body = ApiProblem(status=500, code="chua-khai-bao-gio", detail="x").to_dict()
+    assert body["code"] == "chua-khai-bao-gio"
+    assert "retry" not in body
+
+
+def test_tai_lieu_noi_cach_doi_chieu_sau_su_co():
+    """Recipe cho đường hỏng, không chỉ đường thuận."""
+    import pathlib
+
+    doc = (pathlib.Path(__file__).parent.parent / "docs" / "PUBLIC_API"
+           / "RECIPES.md").read_text(encoding="utf-8")
+    assert "Idempotency-Key" in doc
+    assert "/usage" in doc
+    assert "reuse_idempotency_key" in doc
+
+
+def test_runbook_noi_phai_lam_gi_chu_khong_chi_xem_o_dau():
+    """Một bảng điều khiển không dẫn tới hành động sẽ không được dùng."""
+    import pathlib
+
+    doc = (pathlib.Path(__file__).parent.parent / "docs" / "PUBLIC_API"
+           / "RUNBOOK.md").read_text(encoding="utf-8")
+    for muc in ("lease bảo trì", "LTT_WORKER_POOLS", "Tiến trình web",
+                "kill switch", "Biết là đã hết chưa"):
+        assert muc in doc, f"runbook thiếu: {muc}"
 
 @@@LTT_PROFILE_FILE_END@@@
 

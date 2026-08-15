@@ -9,6 +9,7 @@ worker_main.py.
 from __future__ import annotations
 
 import logging
+import threading
 import re
 import uuid
 from contextlib import asynccontextmanager
@@ -73,6 +74,38 @@ _HASHED_FRONTEND_ASSET = re.compile(
 # silently stop being enforced. The web app owns it now.
 
 
+def _xa_metrics_web(dung) -> None:
+    """Đưa bộ đếm của tiến trình WEB xuống CSDL.
+
+    Bộ đếm sống trong tiến trình. Worker đã có đường xả từ trước, nhưng phần lớn
+    con số đáng xem lại phát sinh **ở đây** — số request, lỗi xác thực, lần bị
+    chặn nhịp — nên trước khi có hàm này, trang vận hành cộng lại được mọi thứ
+    trừ chính thứ nó cần nhất.
+    """
+    import time as _time
+
+    from platform_core.db import get_session
+    from platform_core.public_api import metrics
+
+    log = logging.getLogger(__name__)
+    while not dung.wait(60.0):
+        try:
+            gen = get_session()
+            db = next(gen)
+            try:
+                metrics.flush(db, prefix=metrics.WEB_PREFIX)
+                db.commit()
+            finally:
+                try:
+                    next(gen)
+                except StopIteration:
+                    pass
+        except Exception:                   # noqa: BLE001
+            # Không xả được số liệu là chuyện phải chịu được; nó không được
+            # làm sập tầng web đang phục vụ khách.
+            log.warning("khong xa duoc metrics web", exc_info=True)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     app.state.maintenance = None
@@ -88,9 +121,16 @@ async def _lifespan(app: FastAPI):
             # serving — the operator needs it most when something is wrong.
             logging.getLogger(__name__).warning(
                 "MaintenanceDaemon failed to start", exc_info=True)
+    dung_metrics = threading.Event()
+    luong_metrics = threading.Thread(
+        target=_xa_metrics_web, args=(dung_metrics,),
+        name="xa-metrics-web", daemon=True)
+    luong_metrics.start()
     try:
         yield
     finally:
+        dung_metrics.set()
+        luong_metrics.join(timeout=5)
         daemon = getattr(app.state, "maintenance", None)
         if daemon is not None:
             daemon.stop()

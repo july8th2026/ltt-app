@@ -158,6 +158,51 @@ xoay secret. Khớp **bất kỳ** cái nào là hợp lệ.
 
 ---
 
+## Tiến trình của bạn chết giữa chừng thì làm gì
+
+Đây là tình huống mà mọi tích hợp thật sẽ gặp, và là chỗ dễ mất tiền nhất: bạn
+gửi `POST /jobs`, mạng đứt hoặc tiến trình bị kill **trước khi đọc được phản
+hồi**. Job đã tạo hay chưa? Đã bị tính tiền chưa?
+
+**Đừng đoán. Gửi lại đúng request đó với đúng `Idempotency-Key` cũ.**
+
+```bash
+# Lần đầu — và lần thử lại, giống hệt nhau
+curl -sS -X POST "$LTT_API_BASE/jobs"   -H "Authorization: Bearer $LTT_API_KEY"   -H "Idempotency-Key: don-hang-2026-08-15-0001"   -H "Content-Type: application/json"   -d '{"tool":"image.thumbnail","quote":"'"$QUOTE"'","input":{"topic":"…"}}'
+```
+
+- Nếu job **chưa** được tạo, nó được tạo bây giờ → `201`.
+- Nếu job **đã** được tạo, bạn nhận lại **chính job đó** → `200`, cùng `id`.
+- Không có đường nào dẫn tới hai job hay hai lần trừ tiền.
+
+Khoá idempotency có hiệu lực **7 ngày**. Quá hạn đó, cùng một khoá sẽ tạo job
+mới — nên với việc gián đoạn dài hơn, hãy đối chiếu thay vì gửi lại.
+
+### Đối chiếu: hỏi hệ thống thay vì suy đoán
+
+```bash
+# Bạn đã bị tính những gì trong khoảng này?
+curl -sS "$LTT_API_BASE/usage?since=2026-08-15T00:00:00Z"   -H "Authorization: Bearer $LTT_API_KEY"
+```
+
+`/usage` liệt kê **từng job kèm số credit thật sự bị tính**, nên nó là nguồn để
+đối chiếu với sổ sách của bạn — không phải log phía bạn, vốn có thể mất đúng
+những dòng cuối trước khi tiến trình chết.
+
+### Phản hồi lỗi tự nói nó có thử lại được không
+
+Mọi lỗi đều mang trường `retry`, nên bạn **không phải tra bảng** để biết nên làm
+gì tiếp:
+
+| `retry` | Nghĩa | Làm gì |
+|---|---|---|
+| `never` | Gửi lại y hệt sẽ hỏng y hệt | Sửa request, hoặc dừng |
+| `after_fix` | Request đúng, nhưng tài khoản/báo giá có vấn đề | Sửa cái đó trước; thử lại ngay chỉ tốn hạn mức nhịp |
+| `after_delay` | Tạm thời | Đợi `Retry-After` giây rồi thử lại, giãn cách tăng dần |
+
+Khi phản hồi có `"reuse_idempotency_key": true`, lần thử lại **bắt buộc** mang
+lại đúng khoá cũ — đó là thứ giữ cho một lần gián đoạn không thành hai lần mua.
+
 ## Vì sao không có CLI
 
 Một CLI là một bề mặt nữa phải giữ khớp hợp đồng, và cURL + `jq` đã làm đúng
