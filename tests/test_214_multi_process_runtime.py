@@ -160,8 +160,7 @@ def _seed_jobs(user_id: str, count: int) -> list:
             job = job_submit.submit_with_credit(
                 db, user_id=user_id, app_slug="thumbnail",
                 job_type="thumbnail.generate",
-                params={"topic": f"multiproc {i}", "count": 1},
-                credit_cost=5)
+                params={"topic": f"multiproc {i}", "count": 1})
             ids.append(job.id)
         db.commit()
     finally:
@@ -218,6 +217,11 @@ def _run_workers(scratch, seconds: float = RUN_SECONDS) -> None:
         if p.is_alive():
             p.terminate()
             p.join(timeout=10)
+
+    # Một tiến trình con chết lúc khởi động sẽ làm MỌI bất biến dưới đây xanh
+    # một cách vô nghĩa: không có gì chạy thì cũng không có gì xảy ra hai lần.
+    chet = [(p.name, p.exitcode) for p in procs if p.exitcode not in (0, None)]
+    assert not chet, f"worker chết bất thường: {chet}"
 
 
 def _sends(scratch) -> list:
@@ -377,3 +381,88 @@ def test_don_du_lieu_chay_dong_thoi_khong_lam_hong_gi(scratch):
             f"chỉ {xong}/{len(ids)} job xong — có worker chết giữa chừng")
     finally:
         _close(gen)
+
+
+def _child_chi_gui(url: str, data_dir: str, send_log: str, lan: int,
+                   index: int) -> None:
+    """Tiến trình chỉ gọi thẳng `deliver_due`, KHÔNG qua lease bảo trì."""
+    import time as _time
+
+    os.environ["LTT_DATABASE_URL"] = url
+    os.environ["LTT_DATA_DIR"] = data_dir
+    os.environ["LTT_API_KEY_PEPPER"] = PEPPER
+    os.environ["LTT_FILE_LOGGING"] = "0"
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import get_session
+    from platform_core.public_api import delivery as delivery_mod, outbox
+
+    def _dem(subscription, row) -> int:
+        with open(send_log, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"delivery": row.id, "worker": index,
+                                 "pid": os.getpid()}) + "\n")
+        # Gửi thật thì mất vài chục mili-giây; độ trễ đó chính là cửa sổ mà một
+        # `claim_due` chỉ-đọc để hở cho tiến trình khác đọc cùng một hàng.
+        _time.sleep(0.05)
+        return 200
+
+    delivery_mod.send_delivery = _dem
+
+    for _ in range(lan):
+        gen = get_session()
+        db = next(gen)
+        try:
+            outbox.deliver_due(db, sender=_dem)
+            db.commit()
+        except Exception:                   # noqa: BLE001
+            db.rollback()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+
+@postgres_only
+def test_gui_webhook_van_dung_mot_lan_khi_lease_khong_can_thiep(scratch):
+    """Lớp thứ hai: outbox phải tự đúng, không nhờ lease.
+
+    Bất biến ở trên xanh **cả khi `claim_due` còn là SELECT trần**, vì lease chỉ
+    cho một tiến trình chạy việc nền nên không ai đọc cùng lúc với ai. Lease che
+    mất lỗi — đúng như dự đoán khi thiết kế hai lớp, và cũng là lý do một test
+    xanh ở đó không chứng minh được gì về outbox.
+
+    Test này bỏ qua lease và gọi thẳng `deliver_due` từ nhiều tiến trình, tức
+    dựng lại đúng tình huống "chính sách hỏng hoặc bị ai đó chỉnh": tính đúng
+    đắn có còn không.
+    """
+    ctx = multiprocessing.get_context("spawn")
+    user_id = _seed_account()
+    ids = _seed_deliveries(user_id, 8)
+
+    procs = [ctx.Process(target=_child_chi_gui,
+                         args=(PG_URL, scratch["data_dir"],
+                               scratch["send_log"], 4, i),
+                         name=f"mp-gui-{i}")
+             for i in range(WORKERS)]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(timeout=120)
+        if p.is_alive():
+            p.terminate()
+            p.join(timeout=10)
+
+    chet = [(p.name, p.exitcode) for p in procs if p.exitcode not in (0, None)]
+    assert not chet, f"tiến trình gửi chết bất thường: {chet}"
+
+    theo_delivery: dict = {}
+    for row in _sends(scratch):
+        theo_delivery[row["delivery"]] = theo_delivery.get(row["delivery"], 0) + 1
+
+    trung = {k: v for k, v in theo_delivery.items() if v > 1}
+    assert not trung, (
+        f"{len(trung)}/{len(ids)} delivery được gửi nhiều lần: "
+        f"{list(trung.items())[:3]}")

@@ -46,12 +46,17 @@ def scratch_url() -> str:
     if not url:
         return ""
 
-    live = (os.environ.get("LTT_DATABASE_URL") or "").strip()
-    if live and url == live:
-        pytest.fail(
-            f"{ENV} is the same database this deployment runs on. These tests "
-            f"drop every table; point it at a scratch database.")
-
+    # Chỉ kiểm TÊN, không so với `LTT_DATABASE_URL`. Phép so đó từng có ở đây và
+    # nó bắn nhầm đúng vào tình huống rào sinh ra để bảo vệ: một test đa tiến
+    # trình trỏ `LTT_DATABASE_URL` về chính CSDL vứt đi, rồi tiến trình con
+    # (Windows dùng `spawn`) nạp lại module test — rào thấy hai giá trị bằng
+    # nhau, kết luận "đây là production", và giết mọi worker **trước khi in ra
+    # được gì**. Cả bộ test vẫn xanh, vì không có gì chạy thì cũng không có gì
+    # xảy ra hai lần.
+    #
+    # Phép kiểm tên đủ mạnh mà không có mặt trái đó: CSDL production của nền
+    # tảng không tình cờ mang chữ `test`, và đặt tên như vậy là một hành động
+    # cố ý.
     name = _database_name(url)
     if "test" not in name:
         pytest.fail(

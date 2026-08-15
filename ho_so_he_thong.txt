@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:8208573c940f78b2343c350f7baab0e9fa0b4e4618f3029e8c9a8066efd17dd5
+Fingerprint   : sha256:94781ef8d71edddb955532fbc5f916aa178a7f048e79566ffa39d65df20e6f5d
 Nguồn đã quét : 1129 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2467,7 +2467,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1129 file; 10202407 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1129 file; 10206684 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -145234,7 +145234,7 @@ SHA256=f020ff78be7fa9c1426f30d9a8c800778518d6a020ecf223904acef8d4929e90 BYTES=11
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/pg_scratch.py
-SHA256=3e96946f58912369f7e57750b647264dc910ec561fb612e6b8c65f2919bb5c75 BYTES=2697 LINES=72
+SHA256=98e767bb21be18166c81ddf40e8d2e9bec7e542dc6225a1b91d92f645363b07f BYTES=3268 LINES=77
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """One gate for every test that wants a real PostgreSQL database.
 
@@ -145284,12 +145284,17 @@ def scratch_url() -> str:
     if not url:
         return ""
 
-    live = (os.environ.get("LTT_DATABASE_URL") or "").strip()
-    if live and url == live:
-        pytest.fail(
-            f"{ENV} is the same database this deployment runs on. These tests "
-            f"drop every table; point it at a scratch database.")
-
+    # Chỉ kiểm TÊN, không so với `LTT_DATABASE_URL`. Phép so đó từng có ở đây và
+    # nó bắn nhầm đúng vào tình huống rào sinh ra để bảo vệ: một test đa tiến
+    # trình trỏ `LTT_DATABASE_URL` về chính CSDL vứt đi, rồi tiến trình con
+    # (Windows dùng `spawn`) nạp lại module test — rào thấy hai giá trị bằng
+    # nhau, kết luận "đây là production", và giết mọi worker **trước khi in ra
+    # được gì**. Cả bộ test vẫn xanh, vì không có gì chạy thì cũng không có gì
+    # xảy ra hai lần.
+    #
+    # Phép kiểm tên đủ mạnh mà không có mặt trái đó: CSDL production của nền
+    # tảng không tình cờ mang chữ `test`, và đặt tên như vậy là một hành động
+    # cố ý.
     name = _database_name(url)
     if "test" not in name:
         pytest.fail(
@@ -184901,7 +184906,7 @@ def test_the_public_status_page_says_nothing_a_stranger_should_not_know(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_214_multi_process_runtime.py
-SHA256=116de7d6f63c5869e07ca8df38f578edb9871f574ec4cf70106ce09922a387fa BYTES=14806 LINES=379
+SHA256=066ef2725db6c9784f937d429350af6737e92a537dbedd2595ae775546a8c232 BYTES=18512 LINES=468
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nhiều tiến trình worker thật, một CSDL: có gì xảy ra hai lần không?
 
@@ -185065,8 +185070,7 @@ def _seed_jobs(user_id: str, count: int) -> list:
             job = job_submit.submit_with_credit(
                 db, user_id=user_id, app_slug="thumbnail",
                 job_type="thumbnail.generate",
-                params={"topic": f"multiproc {i}", "count": 1},
-                credit_cost=5)
+                params={"topic": f"multiproc {i}", "count": 1})
             ids.append(job.id)
         db.commit()
     finally:
@@ -185123,6 +185127,11 @@ def _run_workers(scratch, seconds: float = RUN_SECONDS) -> None:
         if p.is_alive():
             p.terminate()
             p.join(timeout=10)
+
+    # Một tiến trình con chết lúc khởi động sẽ làm MỌI bất biến dưới đây xanh
+    # một cách vô nghĩa: không có gì chạy thì cũng không có gì xảy ra hai lần.
+    chet = [(p.name, p.exitcode) for p in procs if p.exitcode not in (0, None)]
+    assert not chet, f"worker chết bất thường: {chet}"
 
 
 def _sends(scratch) -> list:
@@ -185282,6 +185291,91 @@ def test_don_du_lieu_chay_dong_thoi_khong_lam_hong_gi(scratch):
             f"chỉ {xong}/{len(ids)} job xong — có worker chết giữa chừng")
     finally:
         _close(gen)
+
+
+def _child_chi_gui(url: str, data_dir: str, send_log: str, lan: int,
+                   index: int) -> None:
+    """Tiến trình chỉ gọi thẳng `deliver_due`, KHÔNG qua lease bảo trì."""
+    import time as _time
+
+    os.environ["LTT_DATABASE_URL"] = url
+    os.environ["LTT_DATA_DIR"] = data_dir
+    os.environ["LTT_API_KEY_PEPPER"] = PEPPER
+    os.environ["LTT_FILE_LOGGING"] = "0"
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import get_session
+    from platform_core.public_api import delivery as delivery_mod, outbox
+
+    def _dem(subscription, row) -> int:
+        with open(send_log, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"delivery": row.id, "worker": index,
+                                 "pid": os.getpid()}) + "\n")
+        # Gửi thật thì mất vài chục mili-giây; độ trễ đó chính là cửa sổ mà một
+        # `claim_due` chỉ-đọc để hở cho tiến trình khác đọc cùng một hàng.
+        _time.sleep(0.05)
+        return 200
+
+    delivery_mod.send_delivery = _dem
+
+    for _ in range(lan):
+        gen = get_session()
+        db = next(gen)
+        try:
+            outbox.deliver_due(db, sender=_dem)
+            db.commit()
+        except Exception:                   # noqa: BLE001
+            db.rollback()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+
+@postgres_only
+def test_gui_webhook_van_dung_mot_lan_khi_lease_khong_can_thiep(scratch):
+    """Lớp thứ hai: outbox phải tự đúng, không nhờ lease.
+
+    Bất biến ở trên xanh **cả khi `claim_due` còn là SELECT trần**, vì lease chỉ
+    cho một tiến trình chạy việc nền nên không ai đọc cùng lúc với ai. Lease che
+    mất lỗi — đúng như dự đoán khi thiết kế hai lớp, và cũng là lý do một test
+    xanh ở đó không chứng minh được gì về outbox.
+
+    Test này bỏ qua lease và gọi thẳng `deliver_due` từ nhiều tiến trình, tức
+    dựng lại đúng tình huống "chính sách hỏng hoặc bị ai đó chỉnh": tính đúng
+    đắn có còn không.
+    """
+    ctx = multiprocessing.get_context("spawn")
+    user_id = _seed_account()
+    ids = _seed_deliveries(user_id, 8)
+
+    procs = [ctx.Process(target=_child_chi_gui,
+                         args=(PG_URL, scratch["data_dir"],
+                               scratch["send_log"], 4, i),
+                         name=f"mp-gui-{i}")
+             for i in range(WORKERS)]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(timeout=120)
+        if p.is_alive():
+            p.terminate()
+            p.join(timeout=10)
+
+    chet = [(p.name, p.exitcode) for p in procs if p.exitcode not in (0, None)]
+    assert not chet, f"tiến trình gửi chết bất thường: {chet}"
+
+    theo_delivery: dict = {}
+    for row in _sends(scratch):
+        theo_delivery[row["delivery"]] = theo_delivery.get(row["delivery"], 0) + 1
+
+    trung = {k: v for k, v in theo_delivery.items() if v > 1}
+    assert not trung, (
+        f"{len(trung)}/{len(ids)} delivery được gửi nhiều lần: "
+        f"{list(trung.items())[:3]}")
 
 @@@LTT_PROFILE_FILE_END@@@
 
