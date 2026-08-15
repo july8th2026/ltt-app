@@ -25,7 +25,8 @@ from platform_core import jobs as jobq
 from platform_core import job_events
 from platform_core.db import get_session
 from platform_core.i18n import N_
-from platform_core.models import JOB_CANCELLED, JOB_ERROR, Job
+from platform_core.models import (JOB_CANCELLED, JOB_ERROR, JOB_RUNNING,
+                                   Job)
 
 log = logging.getLogger(__name__)
 
@@ -54,6 +55,13 @@ METRICS_LOG_INTERVAL_S = 5 * 60
 #: Xả bộ đếm xuống CSDL. Một lượt ghi gộp mỗi tiến trình mỗi phút —
 #: đủ mịn để thấy một cơn tăng đột biến, đủ thưa để không tốn gì.
 METRICS_FLUSH_INTERVAL_S = 60
+
+#: Trần thời gian chạy mặc định cho một job, theo lớp tài nguyên. App khai lại
+#: được qua `manifest.max_runtime_s`. Con số ở đây cố ý **rộng rãi**: nó không
+#: phải hạn mức hiệu năng, nó là cái chốt chặn cho job treo hẳn.
+RUNTIME_LIMIT_S = {"gpu": 2 * 3600, "ffmpeg": 2 * 3600, "browser": 30 * 60,
+                   "api": 30 * 60}
+RUNTIME_LIMIT_DEFAULT_S = 30 * 60
 
 
 class JobContext:
@@ -296,6 +304,89 @@ def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
              job_id[:8], job_type, GPU_RETRY_DELAY_S)
 
 
+def _tran_thoi_gian(app_slug: str, job_type: str) -> int:
+    """Job này được chạy tối đa bao nhiêu giây."""
+    from platform_core import registry
+    from platform_core.public_api.limits import resource_class
+
+    for item in registry.discover():
+        if item.error or item.manifest.slug != app_slug:
+            continue
+        lop = resource_class(item.manifest)
+        return item.manifest.runtime_limit_for(
+            job_type, default=RUNTIME_LIMIT_S.get(lop, RUNTIME_LIMIT_DEFAULT_S))
+    return RUNTIME_LIMIT_DEFAULT_S
+
+
+def _het_gio(job_id: str, job_type: str, giay: int) -> None:
+    """Job vượt trần: trả lời khách, hoàn tiền, rồi kết thúc tiến trình.
+
+    Vì sao phải kết thúc tiến trình. Handler đang chạy code tuỳ ý — thường là
+    thư viện C/CUDA giữ GIL — nên không có cách nào đáng tin để dừng nó từ
+    Python. Đánh dấu job hỏng mà để handler chạy tiếp thì khách có câu trả lời
+    nhưng **slot vẫn bị chiếm**, tức chỉ giải quyết được nửa vấn đề.
+
+    An toàn vì tiến trình cha thay thế con đã chết (`job_worker.main`), và vì
+    trạng thái job đã được ghi xuống CSDL **trước** khi thoát.
+
+    `retry=False`: thử lại một job treo chỉ tiêu thêm một slot rồi treo tiếp.
+    """
+    import os as _os
+
+    log.error("job %s (%s) vuot tran %ss — ket thuc tien trinh",
+              job_id[:8], job_type, giay)
+    try:
+        for db in _one_session():
+            job = db.get(Job, job_id)
+            if job is not None and job.status == JOB_RUNNING:
+                jobq.fail(db, job,
+                          f"Job vuot tran thoi gian chay ({giay}s).",
+                          retry=False)
+                db.commit()
+                _hoan_tien_neu_can(db, job)
+    except Exception:                       # noqa: BLE001
+        log.exception("khong ghi duoc trang thai het gio cho %s", job_id[:8])
+    finally:
+        # `_exit` chứ không phải `sys.exit`: handler có thể nuốt SystemExit, và
+        # ở đây không còn gì đáng dọn — trạng thái đã bền vững.
+        _os._exit(3)
+
+
+def _hoan_tien_neu_can(db, job) -> None:
+    """Trả lại phần credit đang giữ của một job không bao giờ hoàn tất."""
+    from platform_core import credit
+
+    try:
+        if credit.so_da_giu(db, job.id) > 0:
+            credit.hoan(db, job.user_id, job.id)
+            db.commit()
+    except Exception:                       # noqa: BLE001
+        log.exception("khong hoan duoc credit cho job %s", job.id[:8])
+
+
+@contextmanager
+def _canh_gio(job_id: str, app_slug: str, job_type: str):
+    """Đồng hồ canh giờ cho một job, tắt chắc chắn khi rời khối.
+
+    Là context manager chứ không phải hai lời gọi start/cancel rải rác: hàm này
+    có nhiều đường thoát, và quên tắt ở **một** đường nghĩa là một job chạy xong
+    trong năm giây vẫn bị giết tiến trình khi tới hạn — đồng hồ canh giờ biến
+    thành đồng hồ hẹn giờ tự sát.
+    """
+    tran = _tran_thoi_gian(app_slug, job_type)
+    dong_ho = None
+    if tran > 0:
+        dong_ho = threading.Timer(float(tran), _het_gio,
+                                  args=(job_id, job_type, tran))
+        dong_ho.daemon = True
+        dong_ho.start()
+    try:
+        yield tran
+    finally:
+        if dong_ho is not None:
+            dong_ho.cancel()
+
+
 def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                   ctx: "JobContext") -> bool:
     started = time.perf_counter()
@@ -314,7 +405,7 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
     ctx.job_type = job_type
     from platform_core.observability import job_logging_context
     with job_logging_context(job_id=job_id, app_slug=app_slug, job_type=job_type,
-                             worker_id=worker_id, correlation_id=correlation_id):
+                             worker_id=worker_id, correlation_id=correlation_id),             _canh_gio(job_id, app_slug, job_type):
         _runtime_event(
             job_id, "execution_started", details={"worker_id": worker_id,
             "attempt": attempt}, event_key=f"execution-started:{attempt}")
@@ -514,6 +605,17 @@ def _quet_canh_bao() -> None:
             log.info("don %d thong bao API het han", gone)
 
 
+def _don_noi_dung_job(db) -> int:
+    """Cầu nối cho vòng dọn chung: trả số job đã hết hạn nội dung."""
+    from platform_core import job_content
+
+    bao_cao = job_content.purge_expired(db)
+    if bao_cao["jobs"]:
+        log.info("het han noi dung %d job, xoa %d file",
+                 bao_cao["jobs"], bao_cao["files"])
+    return bao_cao["jobs"]
+
+
 def _don_du_lieu_het_han() -> None:
     """Run every declared retention rule once.
 
@@ -537,6 +639,10 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
+        # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
+        # ở lại (bằng chứng), nội dung thì hết hạn — trước đây cả hai chung một
+        # số phận là giữ vĩnh viễn, nên kho file phình không trần.
+        ("noi dung job het han", _don_noi_dung_job),
     )
     for label, purge in rules:
         try:

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:2a3cde920486e732b01d0de5259cae1591c2ed89ed48d587767b827943a6fe39
-Nguồn đã quét : 1126 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:8208573c940f78b2343c350f7baab0e9fa0b4e4618f3029e8c9a8066efd17dd5
+Nguồn đã quét : 1129 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -809,13 +809,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
 5. DATA MODEL (50 bảng)
-- agent_runs → AgentRun | platform_core/models.py:397
-- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:482
-- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:464
-- agent_workflows → AgentWorkflow | platform_core/models.py:432
+- agent_runs → AgentRun | platform_core/models.py:402
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:487
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:469
+- agent_workflows → AgentWorkflow | platform_core/models.py:437
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:740
-- api_keys → ApiKey | platform_core/models.py:589
+- api_keys → ApiKey | platform_core/models.py:594
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -826,15 +826,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:791
 - app_access → AppAccess | platform_core/models.py:164
 - app_projects → AppProject | platform_core/models.py:197
-- chat_conversations → ChatConversation | platform_core/models.py:732
-- chat_messages → ChatMessage | platform_core/models.py:752
-- credit_entries → CreditEntry | platform_core/models.py:535
-- credit_packages → CreditPackage | platform_core/models.py:665
+- chat_conversations → ChatConversation | platform_core/models.py:737
+- chat_messages → ChatMessage | platform_core/models.py:757
+- credit_entries → CreditEntry | platform_core/models.py:540
+- credit_packages → CreditPackage | platform_core/models.py:670
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- gpu_leases → GpuLease | platform_core/models.py:773
-- job_events → JobEvent | platform_core/models.py:320
+- gpu_leases → GpuLease | platform_core/models.py:778
+- job_events → JobEvent | platform_core/models.py:325
 - jobs → Job | platform_core/models.py:245
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:510
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:515
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -849,15 +849,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:689
+- payment_orders → PaymentOrder | platform_core/models.py:694
 - platform_info → PlatformInfo | platform_core/models.py:42
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:134
-- singleton_leases → SingletonLease | platform_core/models.py:823
-- upload_sessions → UploadSession | platform_core/models.py:364
+- singleton_leases → SingletonLease | platform_core/models.py:828
+- upload_sessions → UploadSession | platform_core/models.py:369
 - users → User | platform_core/models.py:69
 
 6. ALEMBIC MIGRATIONS (40)
@@ -1022,7 +1022,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (219 file pytest + 3 frontend)
+10. QUALITY GATES (221 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1176,6 +1176,8 @@ Test inventory:
 - tests/test_214_multi_process_runtime.py
 - tests/test_215_lease_and_outbox_claim.py
 - tests/test_216_worker_pools_and_metrics.py
+- tests/test_217_job_runtime_limit.py
+- tests/test_218_job_content_lifecycle.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -1268,8 +1270,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1126 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:840, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1129 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:843, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1877,7 +1879,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (89)
+[platform_core] (90)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1904,6 +1906,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/gpu_lease.py
 - platform_core/i18n.py
 - platform_core/image_input.py
+- platform_core/job_content.py
 - platform_core/job_events.py
 - platform_core/job_history.py
 - platform_core/job_metrics.py
@@ -2133,7 +2136,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (236)
+[tests] (238)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2298,6 +2301,8 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_214_multi_process_runtime.py
 - tests/test_215_lease_and_outbox_claim.py
 - tests/test_216_worker_pools_and_metrics.py
+- tests/test_217_job_runtime_limit.py
+- tests/test_218_job_content_lifecycle.py
 - tests/test_21_antispam_phase1.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
@@ -2462,7 +2467,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1126 file; 10169132 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1129 file; 10202407 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -5868,7 +5873,7 @@ def downgrade() -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260815_1200_singleton_leases.py
-SHA256=bae802644e8f03c045dd63a76da23fbd6a0c9ae8123a0c6805d229c0f0a1ac59 BYTES=4043 LINES=86
+SHA256=1579a9970ed64cb3c102941fbf961f4ab674380495150ce7fd78d9978a3c1a06 BYTES=4465 LINES=93
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening)
 
@@ -5945,8 +5950,15 @@ def upgrade() -> None:
     op.create_index("ix_api_metric_samples_window", "api_metric_samples",
                     ["window_start", "name"])
 
+    # Tach *bang chung* khoi *noi dung* trong mot hang `jobs`: hang song mai (but
+    # toan credit tro ve no), con prompt/ket qua/file thi het han. Truoc day ca
+    # hai chung mot so phan, nen file sinh ra nam lai vinh vien.
+    op.add_column("jobs", sa.Column("content_expired_at",
+                                    sa.DateTime(timezone=True), nullable=True))
+
 
 def downgrade() -> None:
+    op.drop_column("jobs", "content_expired_at")
     op.drop_index("ix_api_metric_samples_window",
                   table_name="api_metric_samples")
     op.drop_table("api_metric_samples")
@@ -100136,7 +100148,7 @@ export default defineConfig({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ job_worker.py
-SHA256=292a760728f5704166b0e89b4289a5b76feba5ef35e1622ac00a5d4cd94db964 BYTES=7928 LINES=201
+SHA256=76bbb9923790080a7f78c583c737de7a41fbbfddafd49db41729c13fa339a8d3 BYTES=9547 LINES=229
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_worker.py — entry point của dịch vụ LTTWorker (H2, Q6).
@@ -100173,6 +100185,7 @@ import os
 import signal
 import socket
 import sys
+import time
 
 from platform_core.observability import configure_logging
 
@@ -100301,9 +100314,13 @@ def main() -> int:
              ", ".join(f"{sorted(nl) if nl else 'da nang'}x{so}"
                        for nl, so in doi_hinh))
     con: list = []
+    #: Vị trí -> (năng lực, chỉ số pool). Cần để thay thế một con đã chết bằng
+    #: đúng lớp của nó; thay bằng worker đa năng sẽ lặng lẽ đổi đội hình.
+    nhan: list = []
     i = 0
     for nang_luc, so in doi_hinh:
         for _ in range(so):
+            nhan.append((nang_luc, i))
             p = multiprocessing.Process(
                 target=_chay_mot_worker,
                 args=(i, sorted(nang_luc) if nang_luc else None),
@@ -100312,8 +100329,19 @@ def main() -> int:
             con.append(p)
             i += 1
 
+    # Con chết thì THAY THẾ. Trước đây cha chỉ `join()` rồi thôi, nên một tiến
+    # trình con chết vì bất cứ lý do gì (OOM, thư viện C sập, vượt trần thời
+    # gian) sẽ biến mất cho tới lần khởi động lại dịch vụ — đội hình teo dần và
+    # không ai được báo. Với `LTT_WORKER_POOLS` thì điều đó còn tệ hơn: mất một
+    # con nghĩa là mất cả một lớp tài nguyên.
+    #
+    # Vòng giám sát này cũng là thứ làm cho trần thời gian chạy an toàn: một job
+    # treo kết thúc tiến trình của nó, và chỗ đó được lấp lại trong vài giây.
+    dung_het = {"flag": False}
+
     def _dung_het(signum, frame):
         log.info("nhan tin hieu dung, bao %s tien trinh con thoat", len(con))
+        dung_het["flag"] = True
         for p in con:
             if p.is_alive():
                 p.terminate()
@@ -100322,13 +100350,25 @@ def main() -> int:
     if hasattr(signal, "SIGTERM"):
         signal.signal(signal.SIGTERM, _dung_het)
 
-    # Tiến trình con KHÔNG được sống sót qua cha: dịch vụ Windows dừng cha thì
-    # con phải chết theo, nếu không lần khởi động sau sẽ có worker mồ côi vẫn
-    # nhặt job và ghi đè kết quả.
     try:
-        for p in con:
-            p.join()
+        while not dung_het["flag"]:
+            for vi_tri, p in enumerate(con):
+                if p.is_alive():
+                    continue
+                log.warning("worker %s (pid %s) da chet ma %s — thay the",
+                            p.name, p.pid, p.exitcode)
+                nang_luc, _ = nhan[vi_tri]
+                moi = multiprocessing.Process(
+                    target=_chay_mot_worker,
+                    args=(vi_tri, sorted(nang_luc) if nang_luc else None),
+                    name=f"ltt-worker-{vi_tri}", daemon=False)
+                moi.start()
+                con[vi_tri] = moi
+            time.sleep(2.0)
     finally:
+        # Tiến trình con KHÔNG được sống sót qua cha: dịch vụ Windows dừng cha
+        # thì con phải chết theo, nếu không lần khởi động sau sẽ có worker mồ
+        # côi vẫn nhặt job và ghi đè kết quả.
         for p in con:
             if p.is_alive():
                 p.terminate()
@@ -104241,6 +104281,154 @@ def validate_reference(data: bytes, content_type: str) -> tuple[str, tuple[int, 
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_content.py
+SHA256=cb7e8521f87d070b980fcd6c01425b49652157ae333c8c544facf1ad501d5211 BYTES=6092 LINES=142
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Hết hạn *nội dung* của một job, giữ nguyên *bằng chứng*.
+
+Một hàng `jobs` chứa hai thứ khác hẳn nhau, và trước đây chúng chung một số phận
+(giữ vĩnh viễn):
+
+* **bằng chứng** — ai, khi nào, công cụ gì, tính bao nhiêu credit. Phải sống lâu
+  hơn mọi tranh chấp hoá đơn, nên không có hạn;
+* **nội dung** — prompt khách viết, payload kết quả, và **file sinh ra**. Không
+  có lý do gì để giữ mãi, và giữ mãi là một khoản nợ về riêng tư lẫn chi phí.
+
+Chính bảng phân loại trong `public_api/governance.py` đã nói phải tách hai thứ
+này. Hàng `jobs` thì không tách — nên file kết quả của một API bán ảnh nằm lại
+vĩnh viễn, không có store nào khai, không có sweep nào dọn, và khách không có
+câu trả lời cho "tôi tải được artifact này trong bao lâu".
+
+## Vì sao neo vào id của job
+
+Ứng dụng tự dựng khoá lưu trữ theo quy ước ``{app}/{owner}/{job_id}/...``. Nền
+tảng **không** đọc khoá theo quy ước đó rồi suy ra, mà chỉ nhận những giá trị
+chuỗi trong ``params``/``result`` **có chứa id của chính job này**. Nếu phép
+nhận dạng sai, cái sai nhất có thể xảy ra là bỏ sót một file — chứ không bao giờ
+là xoá file của job khác. Với một thao tác không hoàn tác được, đó là hướng sai
+duy nhất chấp nhận được.
+"""
+from __future__ import annotations
+
+import logging
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session as DbSession
+
+from platform_core.models import Job
+
+log = logging.getLogger(__name__)
+
+#: Nội dung sống bao lâu sau khi job kết thúc. Đây là **lời hứa với khách** về
+#: cửa sổ tải artifact, nên nó phải xuất hiện trong tài liệu công khai chứ không
+#: chỉ ở đây.
+RETENTION_DAYS = 30
+
+#: Mỗi lượt quét dọn tối đa bao nhiêu job. Quét là việc nền chạy cạnh job thật;
+#: một lượt xoá hàng chục nghìn file sẽ giữ phiên CSDL quá lâu.
+BATCH = 200
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def content_keys(job: Job) -> list[str]:
+    """Khoá lưu trữ mà job này sở hữu.
+
+    Chỉ nhận chuỗi **có chứa id của job**. Xem docstring module: phép nhận dạng
+    này được thiết kế để sai theo hướng bỏ sót, không phải theo hướng xoá nhầm.
+    """
+    khoa: list[str] = []
+    job_id = str(job.id or "")
+    if not job_id:
+        return khoa
+
+    def _quet(value) -> None:
+        if isinstance(value, str):
+            if f"/{job_id}/" in value and not value.startswith(("http://",
+                                                                "https://")):
+                khoa.append(value)
+        elif isinstance(value, dict):
+            for item in value.values():
+                _quet(item)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                _quet(item)
+
+    _quet(job.result if isinstance(job.result, dict) else {})
+    _quet(job.params if isinstance(job.params, dict) else {})
+    # Giữ thứ tự nhưng bỏ trùng: cùng một khoá xuất hiện ở cả params lẫn result
+    # là chuyện bình thường, và xoá hai lần sẽ đếm sai số file đã dọn.
+    return list(dict.fromkeys(khoa))
+
+
+def expire_content(db: DbSession, storage, job: Job, *,
+                   now: datetime | None = None) -> int:
+    """Xoá file và nội dung của một job, giữ lại hàng. Trả số file đã xoá.
+
+    Hàng vẫn truy được, vẫn đối chiếu được hoá đơn; chỉ nội dung là hết hạn, và
+    `content_expired_at` nói rõ điều đó — một trường rỗng không có lời giải
+    thích sẽ bị đọc là mất dữ liệu.
+    """
+    da_xoa = 0
+    for key in content_keys(job):
+        try:
+            storage.delete(key)
+            da_xoa += 1
+        except FileNotFoundError:
+            # File đã biến mất là kết quả mong muốn, không phải lỗi.
+            da_xoa += 1
+        except Exception:                   # noqa: BLE001
+            # Một file không xoá được không được chặn những file còn lại — và
+            # job vẫn phải được đánh dấu, nếu không lượt sau sẽ thử lại mãi.
+            log.exception("khong xoa duoc file %s cua job %s", key, job.id[:8])
+
+    job.params = {}
+    job.result = {}
+    job.content_expired_at = now or _now()
+    db.flush()
+    return da_xoa
+
+
+def purge_expired(db: DbSession, storage=None, *, days: int = RETENTION_DAYS,
+                  limit: int = BATCH, now: datetime | None = None) -> dict:
+    """Hết hạn nội dung của những job đã xong đủ lâu.
+
+    Chỉ đụng job đã kết thúc: một job đang chờ hoặc đang chạy còn cần chính
+    `params` của nó để chạy được.
+    """
+    from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR
+
+    if storage is None:
+        from platform_core.storage import get_storage
+        storage = get_storage()
+
+    current = now or _now()
+    cutoff = current - timedelta(days=max(1, int(days)))
+    rows = db.execute(
+        select(Job)
+        .where(Job.status.in_((JOB_DONE, JOB_ERROR, JOB_CANCELLED)),
+               Job.content_expired_at.is_(None),
+               Job.finished_at.is_not(None),
+               Job.finished_at < cutoff)
+        .order_by(Job.finished_at)
+        .limit(max(1, int(limit)))
+    ).scalars().all()
+
+    bao_cao = {"jobs": 0, "files": 0}
+    for job in rows:
+        bao_cao["files"] += expire_content(db, storage, job, now=current)
+        bao_cao["jobs"] += 1
+    return bao_cao
+
+
+__all__ = ["BATCH", "RETENTION_DAYS", "content_keys", "expire_content",
+           "purge_expired"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_events.py
 SHA256=e5401b37fa2ef3b22efc8ae4d1e6ca0c40fbd69a3563f98e3c23bac1b503cbdb BYTES=9472 LINES=234
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -104755,7 +104943,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=a278a4807097f96910fecb5a2ed9c6b140330d20f590f19ea6a45d26fa077c54 BYTES=33649 LINES=776
+SHA256=9c74cd1144fc2c52b618683da1c1409bab5a5f4af76f68a6c937aec87c43a269 BYTES=38402 LINES=882
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -104784,7 +104972,8 @@ from platform_core import jobs as jobq
 from platform_core import job_events
 from platform_core.db import get_session
 from platform_core.i18n import N_
-from platform_core.models import JOB_CANCELLED, JOB_ERROR, Job
+from platform_core.models import (JOB_CANCELLED, JOB_ERROR, JOB_RUNNING,
+                                   Job)
 
 log = logging.getLogger(__name__)
 
@@ -104813,6 +105002,13 @@ METRICS_LOG_INTERVAL_S = 5 * 60
 #: Xả bộ đếm xuống CSDL. Một lượt ghi gộp mỗi tiến trình mỗi phút —
 #: đủ mịn để thấy một cơn tăng đột biến, đủ thưa để không tốn gì.
 METRICS_FLUSH_INTERVAL_S = 60
+
+#: Trần thời gian chạy mặc định cho một job, theo lớp tài nguyên. App khai lại
+#: được qua `manifest.max_runtime_s`. Con số ở đây cố ý **rộng rãi**: nó không
+#: phải hạn mức hiệu năng, nó là cái chốt chặn cho job treo hẳn.
+RUNTIME_LIMIT_S = {"gpu": 2 * 3600, "ffmpeg": 2 * 3600, "browser": 30 * 60,
+                   "api": 30 * 60}
+RUNTIME_LIMIT_DEFAULT_S = 30 * 60
 
 
 class JobContext:
@@ -105055,6 +105251,89 @@ def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
              job_id[:8], job_type, GPU_RETRY_DELAY_S)
 
 
+def _tran_thoi_gian(app_slug: str, job_type: str) -> int:
+    """Job này được chạy tối đa bao nhiêu giây."""
+    from platform_core import registry
+    from platform_core.public_api.limits import resource_class
+
+    for item in registry.discover():
+        if item.error or item.manifest.slug != app_slug:
+            continue
+        lop = resource_class(item.manifest)
+        return item.manifest.runtime_limit_for(
+            job_type, default=RUNTIME_LIMIT_S.get(lop, RUNTIME_LIMIT_DEFAULT_S))
+    return RUNTIME_LIMIT_DEFAULT_S
+
+
+def _het_gio(job_id: str, job_type: str, giay: int) -> None:
+    """Job vượt trần: trả lời khách, hoàn tiền, rồi kết thúc tiến trình.
+
+    Vì sao phải kết thúc tiến trình. Handler đang chạy code tuỳ ý — thường là
+    thư viện C/CUDA giữ GIL — nên không có cách nào đáng tin để dừng nó từ
+    Python. Đánh dấu job hỏng mà để handler chạy tiếp thì khách có câu trả lời
+    nhưng **slot vẫn bị chiếm**, tức chỉ giải quyết được nửa vấn đề.
+
+    An toàn vì tiến trình cha thay thế con đã chết (`job_worker.main`), và vì
+    trạng thái job đã được ghi xuống CSDL **trước** khi thoát.
+
+    `retry=False`: thử lại một job treo chỉ tiêu thêm một slot rồi treo tiếp.
+    """
+    import os as _os
+
+    log.error("job %s (%s) vuot tran %ss — ket thuc tien trinh",
+              job_id[:8], job_type, giay)
+    try:
+        for db in _one_session():
+            job = db.get(Job, job_id)
+            if job is not None and job.status == JOB_RUNNING:
+                jobq.fail(db, job,
+                          f"Job vuot tran thoi gian chay ({giay}s).",
+                          retry=False)
+                db.commit()
+                _hoan_tien_neu_can(db, job)
+    except Exception:                       # noqa: BLE001
+        log.exception("khong ghi duoc trang thai het gio cho %s", job_id[:8])
+    finally:
+        # `_exit` chứ không phải `sys.exit`: handler có thể nuốt SystemExit, và
+        # ở đây không còn gì đáng dọn — trạng thái đã bền vững.
+        _os._exit(3)
+
+
+def _hoan_tien_neu_can(db, job) -> None:
+    """Trả lại phần credit đang giữ của một job không bao giờ hoàn tất."""
+    from platform_core import credit
+
+    try:
+        if credit.so_da_giu(db, job.id) > 0:
+            credit.hoan(db, job.user_id, job.id)
+            db.commit()
+    except Exception:                       # noqa: BLE001
+        log.exception("khong hoan duoc credit cho job %s", job.id[:8])
+
+
+@contextmanager
+def _canh_gio(job_id: str, app_slug: str, job_type: str):
+    """Đồng hồ canh giờ cho một job, tắt chắc chắn khi rời khối.
+
+    Là context manager chứ không phải hai lời gọi start/cancel rải rác: hàm này
+    có nhiều đường thoát, và quên tắt ở **một** đường nghĩa là một job chạy xong
+    trong năm giây vẫn bị giết tiến trình khi tới hạn — đồng hồ canh giờ biến
+    thành đồng hồ hẹn giờ tự sát.
+    """
+    tran = _tran_thoi_gian(app_slug, job_type)
+    dong_ho = None
+    if tran > 0:
+        dong_ho = threading.Timer(float(tran), _het_gio,
+                                  args=(job_id, job_type, tran))
+        dong_ho.daemon = True
+        dong_ho.start()
+    try:
+        yield tran
+    finally:
+        if dong_ho is not None:
+            dong_ho.cancel()
+
+
 def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                   ctx: "JobContext") -> bool:
     started = time.perf_counter()
@@ -105073,7 +105352,7 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
     ctx.job_type = job_type
     from platform_core.observability import job_logging_context
     with job_logging_context(job_id=job_id, app_slug=app_slug, job_type=job_type,
-                             worker_id=worker_id, correlation_id=correlation_id):
+                             worker_id=worker_id, correlation_id=correlation_id),             _canh_gio(job_id, app_slug, job_type):
         _runtime_event(
             job_id, "execution_started", details={"worker_id": worker_id,
             "attempt": attempt}, event_key=f"execution-started:{attempt}")
@@ -105273,6 +105552,17 @@ def _quet_canh_bao() -> None:
             log.info("don %d thong bao API het han", gone)
 
 
+def _don_noi_dung_job(db) -> int:
+    """Cầu nối cho vòng dọn chung: trả số job đã hết hạn nội dung."""
+    from platform_core import job_content
+
+    bao_cao = job_content.purge_expired(db)
+    if bao_cao["jobs"]:
+        log.info("het han noi dung %d job, xoa %d file",
+                 bao_cao["jobs"], bao_cao["files"])
+    return bao_cao["jobs"]
+
+
 def _don_du_lieu_het_han() -> None:
     """Run every declared retention rule once.
 
@@ -105296,6 +105586,10 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
+        # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
+        # ở lại (bằng chứng), nội dung thì hết hạn — trước đây cả hai chung một
+        # số phận là giữ vĩnh viễn, nên kho file phình không trần.
+        ("noi dung job het han", _don_noi_dung_job),
     )
     for label, purge in rules:
         try:
@@ -105616,7 +105910,7 @@ def submit_with_credit(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/jobs.py
-SHA256=c0df7fdd4c74e36f17d43c5aeddc580320634a103417a671ec049edaa374383d BYTES=12158 LINES=289
+SHA256=8a52116324d5e42fdfb0b3699c5bc99e5c0cea5eeb821ae35707a47d4b75d3c9 BYTES=12452 LINES=293
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — hàng đợi job tự quản trên PostgreSQL (H2, Q26).
@@ -105818,16 +106112,20 @@ def cancel(db: DbSession, job: Job) -> bool:
     return True
 
 
-def fail(db: DbSession, job: Job, error: str) -> None:
+def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
     """Ghi nhận thất bại. Còn lượt thì hẹn chạy lại; hết lượt thì `error`.
 
     Giãn cách tăng dần để một lỗi tạm thời (mạng chập chờn) được thử lại thưa
     dần thay vì dồn dập.
+
+    `retry=False` cho những thất bại mà thử lại chắc chắn hỏng y hệt — job vượt
+    trần thời gian là ví dụ: nó treo vì chính công việc đó, nên chạy lại chỉ
+    tiêu thêm một slot rồi treo tiếp, ba lần.
     """
     job.attempts += 1
     safe_error = job_events.sanitize_text(error, limit=5000)
     job.error = safe_error
-    if job.attempts < job.max_attempts:
+    if retry and job.attempts < job.max_attempts:
         cho = min(_RETRY_MAX_S, _RETRY_BASE_S * (2 ** (job.attempts - 1)))
         job.status = JOB_QUEUED
         job.next_run_at = _bay_gio() + timedelta(seconds=cho)
@@ -106454,7 +106752,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=5e279b67351b1286e17337f71449a0a19b2ae0166d3aae795c6391e058e27167 BYTES=46794 LINES=859
+SHA256=832b0911831362e59f4f94645aca0b17f4262644c2d2a8584faa1bcf68ea10d6 BYTES=47211 LINES=864
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -106763,6 +107061,11 @@ class Job(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: Khi nào `params`/`result`/file của job này hết hạn và đã bị xoá. Hàng vẫn
+    #: còn — nó là **bằng chứng** mà bút toán credit trỏ về. Có mốc này thì một
+    #: `result` rỗng đọc ra là "đã hết hạn", chứ không phải "mất dữ liệu".
+    content_expired_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         # Index đúng câu truy vấn claim (W2.6c): WHERE status=? AND next_run_at<=?
@@ -111438,7 +111741,7 @@ NO_CODE_RECIPES = (
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=da3c9e897ef1e871de9600a4c5d4954c8d3f44254b5aa6e823d616db582d8bc9 BYTES=14562 LINES=251
+SHA256=c476df8d1dffb4f56a44d8e7c09997e01d723d9218f48d2c3ff9fe65dd4d5a32 BYTES=14699 LINES=253
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -111579,9 +111882,11 @@ STORES: tuple = (
     Store("upload_sessions", CONTENT, 7, N_("chủ tài khoản"),
           N_("Vé tải lên chưa dùng. Bytes ở staging bị quét dọn cùng lúc."),
           "upload_sessions.sweep (worker)"),
-    Store("jobs", CONTENT, None, N_("chủ tài khoản"),
-          N_("`params` và `result` là đầu vào/đầu ra của chính khách. Giữ chừng "
-          "nào tài khoản còn: một job là thứ bút toán credit trỏ về.")),
+    Store("jobs", CONTENT, 30, N_("chủ tài khoản"),
+          N_("`params`, `result` và file sinh ra là nội dung của chính khách, "
+          "hết hạn sau 30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán "
+          "credit trỏ về nó — bằng chứng và nội dung là hai thứ khác nhau."),
+          "job_content.purge_expired (worker)"),
     Store("users", CONTENT, None, N_("chủ tài khoản + vận hành"),
           N_("Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) "
           "chứ không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại "
@@ -118075,7 +118380,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=45b786592e0d65738fb62451aecad7fae2d536851978ede09ca549b9d1e0ab0c BYTES=38304 LINES=771
+SHA256=b6b251f2953a00984201364bd3639045db9fe9a9e8fe784f7d16f42887a3b031 BYTES=39573 LINES=791
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -118311,9 +118616,29 @@ class AppManifest:
     # xếp vào card chật; khai thừa thì job phải chờ lâu hơn cần thiết.
     gpu_vram_mb: dict = field(default_factory=dict)
 
+    # Trần thời gian chạy (giây) cho MỘT job, theo `job_type`:
+    #   max_runtime_s = {"upscalevideo.render": 3600}
+    # Bỏ trống = dùng trần mặc định của nền tảng theo loại tài nguyên.
+    #
+    # Vì sao cần: nhặt job mồ côi chỉ bắt worker **chết** (mất đập nhịp). Một
+    # job **treo** mà vẫn đập nhịp thì giữ slot vô hạn — và với đội hình vài
+    # tiến trình, vài job như vậy là dừng cả nền tảng, im lặng, không ai được
+    # báo. Khai ở manifest vì chỉ app biết việc của nó lâu nhất là bao lâu.
+    max_runtime_s: dict = field(default_factory=dict)
+
     def vram_for(self, job_type: str) -> int:
         """VRAM tối thiểu cho một `job_type`. 0 = không cần GPU riêng."""
         return int((self.gpu_vram_mb or {}).get(job_type, 0))
+
+    def runtime_limit_for(self, job_type: str, *, default: int = 0) -> int:
+        """Trần thời gian chạy cho một `job_type`, giây. 0 = không giới hạn.
+
+        App khai được thì dùng của app; không thì dùng trần nền tảng truyền vào.
+        Không bao giờ trả 0 khi nền tảng có mặc định — **không có trần mới là
+        mặc định nguy hiểm**, vì nó im lặng cho tới ngày một job treo thật.
+        """
+        khai = int((self.max_runtime_s or {}).get(job_type, 0))
+        return khai if khai > 0 else int(default)
 
     def needs_gpu(self) -> bool:
         return "gpu" in self.requires or bool(self.gpu_vram_mb)
@@ -121664,7 +121989,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/postman/ltt-public-api.postman_collection.json
-SHA256=b255930283391e18b5505ce87dc2db6991433e0f7a43570560f29f24c378ac77 BYTES=15933 LINES=620
+SHA256=cc07b5b0a18b229b1a72ddffade1e8714eeb8f7e9b0021c84b327e67da725975 BYTES=16103 LINES=620
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "info": {
@@ -121676,7 +122001,7 @@ SHA256=b255930283391e18b5505ce87dc2db6991433e0f7a43570560f29f24c378ac77 BYTES=15
     {
       "name": "GET /artifacts/{artifact_id}",
       "request": {
-        "description": "Returns a time-limited URL for one output of a job this account owns.",
+        "description": "Returns a time-limited URL for one output of a job this account owns. Outputs are kept for 30 days after the job finishes, then deleted; the job itself stays available for billing reconciliation.",
         "header": [
           {
             "key": "Authorization",
@@ -121700,7 +122025,7 @@ SHA256=b255930283391e18b5505ce87dc2db6991433e0f7a43570560f29f24c378ac77 BYTES=15
     {
       "name": "GET /artifacts/{artifact_id}/content",
       "request": {
-        "description": "Streams the output when the storage backend cannot issue a signed URL.",
+        "description": "Streams the output when the storage backend cannot issue a signed URL. Same 30-day window as the signed URL above.",
         "header": [
           {
             "key": "Authorization",
@@ -128099,7 +128424,7 @@ def register_tool_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/uploads.py
-SHA256=d883848175c6955dc390115791cfcde4950f4eb1a12aebd175068bbc64c1f6d3 BYTES=12224 LINES=264
+SHA256=9fa70de91936530f27c077a677b3ef6c3300e27b67b3bdd05b49a5342232d4dd BYTES=12680 LINES=272
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/uploads`` and ``/api/v1/artifacts`` — media in and media out.
 
@@ -128172,6 +128497,9 @@ def _kind_for_tool(tool, param: str) -> str:
     if not kind:
         raise invalid_request(f"{param} does not take an upload.", field=param)
     return kind
+
+
+from platform_core.job_content import RETENTION_DAYS as _ARTIFACT_RETENTION_DAYS
 
 
 def register_upload_routes(api, config, tag: str) -> None:
@@ -128266,7 +128594,10 @@ def register_upload_routes(api, config, tag: str) -> None:
     @api.get("/artifacts/{artifact_id}", tags=[tag],
              summary="Get a short-lived download URL for a job output",
              description=("Returns a time-limited URL for one output of a job "
-                          "this account owns."))
+                          "this account owns. Outputs are kept for "
+                          f"{_ARTIFACT_RETENTION_DAYS} days after the job "
+                          "finishes, then deleted; the job itself stays "
+                          "available for billing reconciliation."))
     def get_artifact(
         artifact_id: str = Path(...),
         principal: Principal = Depends(require_scope(SCOPE_ARTIFACTS_READ)),
@@ -128293,7 +128624,9 @@ def register_upload_routes(api, config, tag: str) -> None:
     @api.get("/artifacts/{artifact_id}/content", tags=[tag],
              summary="Download a job output (fallback path)",
              description=("Streams the output when the storage backend cannot "
-                          "issue a signed URL."))
+                          "issue a signed URL. Same "
+                          f"{_ARTIFACT_RETENTION_DAYS}-day window as the "
+                          "signed URL above."))
     def artifact_content(
         artifact_id: str = Path(...),
         principal: Principal = Depends(require_scope(SCOPE_ARTIFACTS_READ)),
@@ -185553,6 +185886,493 @@ def test_mau_metrics_khong_mang_gi_cua_khach(db):
 
     row = db.execute(sa.select(ApiMetricSample)).scalars().first()
     assert row.name in metrics.snapshot()["counters"] or row.name == "requests"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_217_job_runtime_limit.py
+SHA256=be8a794606ec8e4861cb07bce405b8c8f00094b73fb485e5d897babea7ab047f BYTES=7335 LINES=187
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trần thời gian chạy một job, và tiến trình con được thay thế khi chết.
+
+Nhặt job mồ côi chỉ bắt worker **chết** — mất đập nhịp. Một job **treo** mà vẫn
+đập nhịp thì giữ slot vô hạn, và với đội hình vài tiến trình thì vài job như vậy
+là dừng cả nền tảng: im lặng, không job nào hỏng, không ai được báo.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'runtime.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+# ── Trần đến từ đâu ──────────────────────────────────────────────────────────
+
+def test_app_khong_khai_thi_van_co_tran():
+    """Không có trần mới là mặc định nguy hiểm.
+
+    Nó im lặng cho tới đúng ngày một job treo thật, và ngày đó thì không ai
+    đang ngồi đọc code để nhận ra thiếu sót.
+    """
+    from platform_core.job_runner import _tran_thoi_gian
+
+    assert _tran_thoi_gian("thumbnail", "thumbnail.generate") > 0
+
+
+def test_app_khai_thi_lay_cua_app():
+    from platform_core.registry import AppManifest
+
+    m = AppManifest(slug="x", display_name="X", route_prefix="/x",
+                    max_runtime_s={"x.slow": 7200})
+    assert m.runtime_limit_for("x.slow", default=60) == 7200
+    assert m.runtime_limit_for("x.khac", default=60) == 60
+
+
+def test_job_gpu_duoc_tran_rong_hon_job_goi_mang():
+    """Trần là chốt chặn cho job treo, không phải hạn mức hiệu năng.
+
+    Một job GPU dựng video dài thật sự chạy lâu; một lời gọi nhà cung cấp thì
+    không. Cùng một con số cho cả hai nghĩa là hoặc giết oan cái đầu, hoặc thả
+    lỏng cái sau.
+    """
+    from platform_core.job_runner import (RUNTIME_LIMIT_S,
+                                          _tran_thoi_gian)
+
+    assert RUNTIME_LIMIT_S["gpu"] > RUNTIME_LIMIT_S["api"]
+    assert (_tran_thoi_gian("upscalevideo", "upscalevideo.render")
+            > _tran_thoi_gian("thumbnail", "thumbnail.generate"))
+
+
+# ── Đồng hồ ──────────────────────────────────────────────────────────────────
+
+def test_job_xong_som_thi_dong_ho_bi_tat(monkeypatch):
+    """Quên tắt đồng hồ = đồng hồ canh giờ thành đồng hồ hẹn giờ tự sát.
+
+    Một job chạy xong trong năm giây vẫn sẽ giết tiến trình khi tới hạn, và
+    triệu chứng (worker tự khởi động lại lúc rảnh) trông chẳng liên quan gì tới
+    nguyên nhân.
+    """
+    import platform_core.job_runner as jr
+
+    no = {"n": 0}
+    monkeypatch.setattr(jr, "_het_gio",
+                        lambda *a, **k: no.__setitem__("n", no["n"] + 1))
+    monkeypatch.setattr(jr, "_tran_thoi_gian", lambda *a, **k: 0.05)
+
+    import time
+    with jr._canh_gio("job-1", "thumbnail", "thumbnail.generate"):
+        pass
+    time.sleep(0.2)
+
+    assert no["n"] == 0, "đồng hồ vẫn nổ sau khi job đã xong"
+
+
+def test_job_qua_han_thi_dong_ho_no(monkeypatch):
+    import platform_core.job_runner as jr
+
+    no = {"n": 0}
+    monkeypatch.setattr(jr, "_het_gio",
+                        lambda *a, **k: no.__setitem__("n", no["n"] + 1))
+    monkeypatch.setattr(jr, "_tran_thoi_gian", lambda *a, **k: 0.05)
+
+    import time
+    with jr._canh_gio("job-1", "thumbnail", "thumbnail.generate"):
+        time.sleep(0.3)
+
+    assert no["n"] == 1
+
+
+def test_tran_bang_khong_thi_khong_dat_dong_ho(monkeypatch):
+    """Tắt hẳn phải là một lựa chọn tường minh, không phải một tai nạn."""
+    import platform_core.job_runner as jr
+
+    monkeypatch.setattr(jr, "_tran_thoi_gian", lambda *a, **k: 0)
+    with jr._canh_gio("job-1", "thumbnail", "thumbnail.generate") as tran:
+        assert tran == 0
+
+
+# ── Không thử lại một job treo ───────────────────────────────────────────────
+
+def test_job_vuot_tran_khong_duoc_thu_lai(db):
+    """Thử lại một job treo chỉ tiêu thêm một slot rồi treo tiếp, ba lần."""
+    import uuid
+    from datetime import datetime, timezone
+
+    from platform_core import jobs as jobq
+    from platform_core.models import JOB_ERROR, JOB_RUNNING, Job
+
+    job = Job(id=str(uuid.uuid4()), user_id="u-1", app_slug="thumbnail",
+              job_type="thumbnail.generate", params={}, status=JOB_RUNNING,
+              max_attempts=3, attempts=0,
+              next_run_at=datetime.now(timezone.utc),
+              created_at=datetime.now(timezone.utc))
+    db.add(job)
+    db.commit()
+
+    jobq.fail(db, job, "Job vuot tran thoi gian chay (60s).", retry=False)
+    db.commit()
+
+    assert job.status == JOB_ERROR, "job treo vẫn được xếp chạy lại"
+
+
+def test_that_bai_thuong_van_duoc_thu_lai(db):
+    """Không được biến mọi thất bại thành vĩnh viễn khi thêm `retry=False`."""
+    import uuid
+    from datetime import datetime, timezone
+
+    from platform_core import jobs as jobq
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
+
+    job = Job(id=str(uuid.uuid4()), user_id="u-1", app_slug="thumbnail",
+              job_type="thumbnail.generate", params={}, status=JOB_RUNNING,
+              max_attempts=3, attempts=0,
+              next_run_at=datetime.now(timezone.utc),
+              created_at=datetime.now(timezone.utc))
+    db.add(job)
+    db.commit()
+
+    jobq.fail(db, job, "mang chap chon")
+    db.commit()
+
+    assert job.status == JOB_QUEUED
+
+
+# ── Cha thay thế con ─────────────────────────────────────────────────────────
+
+def test_cha_biet_nang_luc_cua_tung_vi_tri_de_thay_dung_lop(monkeypatch):
+    """Thay một con GPU bằng worker đa năng là lặng lẽ đổi đội hình.
+
+    Đội hình là thứ người vận hành khai; nền tảng không được tự sửa nó khi đang
+    chữa một sự cố khác.
+    """
+    import job_worker
+
+    monkeypatch.setenv("LTT_WORKER_POOLS", "api:2, gpu:1")
+    doi_hinh = job_worker._doi_hinh()
+
+    nhan = []
+    for nang_luc, so in doi_hinh:
+        for _ in range(so):
+            nhan.append(nang_luc)
+
+    assert len(nhan) == 3
+    assert nhan[0] == nhan[1] == {"api"}
+    assert "gpu" in nhan[2]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_218_job_content_lifecycle.py
+SHA256=6d42884a4309ddcb8552ff26e221b3eba47fa3d19acd21f15562b72f55f64070 BYTES=10311 LINES=288
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nội dung của job hết hạn; bằng chứng thì không.
+
+Bản kiểm kê ở `governance.py` khai 42 store và có test bắt mỗi store phải nêu
+một hàm dọn **có thật và được worker gọi**. Nhưng nó chỉ nhìn **bảng CSDL**. File
+sinh ra không có store nào, không sweep nào, không cửa sổ tải về nào được công
+bố — một API bán ảnh giữ mọi đầu ra vĩnh viễn. Bánh cóc tự tin vì nó đầy đủ trên
+đúng nửa nó nhìn thấy.
+
+Nên phép kiểm ở đây là **hành vi**, không phải danh sách: chạy thật, ghi file
+thật, già hoá, quét, rồi hỏi kho lưu trữ xem còn gì không. Một danh sách khai
+báo sẽ đúng cho tới khi ai đó thêm một chỗ ghi file mới; câu hỏi "kho còn gì
+không" thì không lách được.
+"""
+from __future__ import annotations
+
+import io
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+
+@pytest.fixture()
+def moi_truong(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'content.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    import platform_core.storage as storage_mod
+    dbmod.reset_engine()
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session, storage_mod.get_storage()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        storage_mod.set_storage(None)
+        dbmod.reset_engine()
+
+
+def _job_co_file(db, storage, *, so_file: int = 3, xong_cach_day_ngay: int = 60):
+    """Một job đã xong, có file trong kho, theo đúng quy ước khoá của app."""
+    from platform_core.models import JOB_DONE, Job
+
+    job_id = str(uuid.uuid4())
+    owner = "u-1"
+    khoa = []
+    for i in range(so_file):
+        key = f"thumbnail/{owner}/{job_id}/{i}.png"
+        storage.put(key, io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 100),
+                    content_type="image/png")
+        khoa.append(key)
+
+    xong = datetime.now(timezone.utc) - timedelta(days=xong_cach_day_ngay)
+    job = Job(id=job_id, user_id=owner, app_slug="thumbnail",
+              job_type="thumbnail.generate",
+              params={"topic": "bí mật của khách", "count": so_file},
+              result={"image_keys": khoa, "prompt": "prompt đầy đủ của khách"},
+              status=JOB_DONE, finished_at=xong, created_at=xong,
+              next_run_at=xong)
+    db.add(job)
+    db.commit()
+    return job, khoa
+
+
+def _con_lai(storage, khoa) -> list:
+    con = []
+    for key in khoa:
+        try:
+            storage.open(key).close()
+            con.append(key)
+        except Exception:                   # noqa: BLE001
+            pass
+    return con
+
+
+# ── Nhận diện khoá: sai theo hướng bỏ sót, không phải xoá nhầm ───────────────
+
+def test_chi_nhan_khoa_co_id_cua_chinh_job(moi_truong):
+    """Với một thao tác không hoàn tác được, chỉ có một hướng sai chấp nhận được.
+
+    Nếu phép nhận dạng lỡ sai, cái tệ nhất được phép xảy ra là bỏ sót một file —
+    không bao giờ là xoá file của job khác.
+    """
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    job = Job(id="job-cua-toi", user_id="u", app_slug="thumbnail",
+              job_type="t", params={},
+              result={"cua_toi": "thumbnail/u/job-cua-toi/0.png",
+                      "cua_nguoi_khac": "thumbnail/u/job-khac/0.png",
+                      "khong_phai_khoa": "một câu mô tả bình thường"},
+              status="done")
+    khoa = job_content.content_keys(job)
+
+    assert khoa == ["thumbnail/u/job-cua-toi/0.png"]
+
+
+def test_khong_nhan_nham_url(moi_truong):
+    """Một URL presigned trong `result` không phải khoá lưu trữ để xoá."""
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    job = Job(id="j1", user_id="u", app_slug="x", job_type="t", params={},
+              result={"link": "https://cdn.example.com/x/u/j1/a.png"},
+              status="done")
+    assert job_content.content_keys(job) == []
+
+
+def test_khoa_lap_lai_chi_dem_mot_lan(moi_truong):
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    job = Job(id="j1", user_id="u", app_slug="x", job_type="t",
+              params={"nguon": "x/u/j1/a.png"},
+              result={"ket_qua": "x/u/j1/a.png"}, status="done")
+    assert job_content.content_keys(job) == ["x/u/j1/a.png"]
+
+
+# ── Hành vi thật trên kho lưu trữ ────────────────────────────────────────────
+
+def test_file_that_su_bien_mat(moi_truong):
+    """Câu hỏi mà một danh sách khai báo không trả lời được."""
+    from platform_core import job_content
+
+    db, storage = moi_truong
+    job, khoa = _job_co_file(db, storage)
+
+    assert _con_lai(storage, khoa) == khoa, "dựng test hỏng: file chưa tồn tại"
+
+    bao_cao = job_content.purge_expired(db, storage)
+    db.commit()
+
+    assert bao_cao == {"jobs": 1, "files": 3}
+    assert _con_lai(storage, khoa) == [], "file vẫn còn sau khi hết hạn"
+
+
+def test_bang_chung_o_lai_khi_noi_dung_ra_di(moi_truong):
+    """Hàng job phải sống sót: bút toán credit trỏ về nó.
+
+    Xoá hàng là làm một tranh chấp hoá đơn sáu tháng sau không trả lời được.
+    """
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    db, storage = moi_truong
+    job, _ = _job_co_file(db, storage)
+    job_id = job.id
+
+    job_content.purge_expired(db, storage)
+    db.commit()
+
+    con = db.get(Job, job_id)
+    assert con is not None, "hàng job bị xoá mất"
+    assert con.user_id == "u-1"
+    assert con.job_type == "thumbnail.generate"
+    assert con.status == "done"
+    assert con.finished_at is not None
+
+
+def test_noi_dung_cua_khach_khong_con_trong_hang(moi_truong):
+    """Prompt là thứ khách viết ra; giữ mãi là một khoản nợ riêng tư."""
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    db, storage = moi_truong
+    job, _ = _job_co_file(db, storage)
+    job_id = job.id
+
+    job_content.purge_expired(db, storage)
+    db.commit()
+
+    con = db.get(Job, job_id)
+    assert con.params == {}
+    assert con.result == {}
+    assert "bí mật của khách" not in str(con.params)
+
+
+def test_co_moc_de_phan_biet_het_han_voi_mat_du_lieu(moi_truong):
+    """Một `result` rỗng không có lời giải thích sẽ bị đọc là mất dữ liệu."""
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    db, storage = moi_truong
+    job, _ = _job_co_file(db, storage)
+    job_id = job.id
+
+    job_content.purge_expired(db, storage)
+    db.commit()
+
+    assert db.get(Job, job_id).content_expired_at is not None
+
+
+def test_job_con_han_khong_bi_dung_toi(moi_truong):
+    from platform_core import job_content
+
+    db, storage = moi_truong
+    job, khoa = _job_co_file(db, storage, xong_cach_day_ngay=3)
+
+    bao_cao = job_content.purge_expired(db, storage)
+    db.commit()
+
+    assert bao_cao["jobs"] == 0
+    assert _con_lai(storage, khoa) == khoa
+
+
+def test_job_dang_chay_khong_bi_dung_toi(moi_truong):
+    """Job chưa kết thúc còn cần chính `params` của nó để chạy được."""
+    from platform_core import job_content
+    from platform_core.models import JOB_QUEUED, Job
+
+    db, storage = moi_truong
+    cu = datetime.now(timezone.utc) - timedelta(days=90)
+    job = Job(id=str(uuid.uuid4()), user_id="u-1", app_slug="thumbnail",
+              job_type="thumbnail.generate", params={"topic": "vẫn cần"},
+              status=JOB_QUEUED, created_at=cu, next_run_at=cu)
+    db.add(job)
+    db.commit()
+
+    assert job_content.purge_expired(db, storage)["jobs"] == 0
+    assert db.get(Job, job.id).params == {"topic": "vẫn cần"}
+
+
+def test_quet_hai_lan_cho_ket_qua_giong_het(moi_truong):
+    """Lượt thứ hai không được tính lại những job đã hết hạn."""
+    from platform_core import job_content
+
+    db, storage = moi_truong
+    _job_co_file(db, storage)
+
+    dau = job_content.purge_expired(db, storage)
+    db.commit()
+    sau = job_content.purge_expired(db, storage)
+    db.commit()
+
+    assert dau["jobs"] == 1
+    assert sau["jobs"] == 0
+
+
+def test_mot_file_khong_xoa_duoc_khong_chan_nhung_file_con_lai(moi_truong):
+    """Và job vẫn phải được đánh dấu, nếu không lượt sau thử lại mãi."""
+    from platform_core import job_content
+    from platform_core.models import Job
+
+    db, storage = moi_truong
+    job, khoa = _job_co_file(db, storage)
+    job_id = job.id
+
+    that_bai = khoa[1]
+    goc = storage.delete
+
+    def _delete(key):
+        if key == that_bai:
+            raise OSError("file bi khoa")
+        return goc(key)
+
+    storage.delete = _delete
+    job_content.purge_expired(db, storage)
+    db.commit()
+    storage.delete = goc
+
+    assert db.get(Job, job_id).content_expired_at is not None
+    assert _con_lai(storage, khoa) == [that_bai]
+
+
+def test_worker_that_su_goi_vong_don_nay(moi_truong):
+    """Một chính sách nêu tên một hàm không ai chạy thì tệ hơn không có chính sách.
+
+    Đúng bài học EXT-19, và lần này là cho kho file.
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    nguon = inspect.getsource(job_runner._don_du_lieu_het_han)
+    assert "_don_noi_dung_job" in nguon
+
+    cau = inspect.getsource(job_runner._don_noi_dung_job)
+    assert "job_content.purge_expired" in cau
 
 @@@LTT_PROFILE_FILE_END@@@
 

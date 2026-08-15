@@ -33,6 +33,7 @@ import os
 import signal
 import socket
 import sys
+import time
 
 from platform_core.observability import configure_logging
 
@@ -161,9 +162,13 @@ def main() -> int:
              ", ".join(f"{sorted(nl) if nl else 'da nang'}x{so}"
                        for nl, so in doi_hinh))
     con: list = []
+    #: Vị trí -> (năng lực, chỉ số pool). Cần để thay thế một con đã chết bằng
+    #: đúng lớp của nó; thay bằng worker đa năng sẽ lặng lẽ đổi đội hình.
+    nhan: list = []
     i = 0
     for nang_luc, so in doi_hinh:
         for _ in range(so):
+            nhan.append((nang_luc, i))
             p = multiprocessing.Process(
                 target=_chay_mot_worker,
                 args=(i, sorted(nang_luc) if nang_luc else None),
@@ -172,8 +177,19 @@ def main() -> int:
             con.append(p)
             i += 1
 
+    # Con chết thì THAY THẾ. Trước đây cha chỉ `join()` rồi thôi, nên một tiến
+    # trình con chết vì bất cứ lý do gì (OOM, thư viện C sập, vượt trần thời
+    # gian) sẽ biến mất cho tới lần khởi động lại dịch vụ — đội hình teo dần và
+    # không ai được báo. Với `LTT_WORKER_POOLS` thì điều đó còn tệ hơn: mất một
+    # con nghĩa là mất cả một lớp tài nguyên.
+    #
+    # Vòng giám sát này cũng là thứ làm cho trần thời gian chạy an toàn: một job
+    # treo kết thúc tiến trình của nó, và chỗ đó được lấp lại trong vài giây.
+    dung_het = {"flag": False}
+
     def _dung_het(signum, frame):
         log.info("nhan tin hieu dung, bao %s tien trinh con thoat", len(con))
+        dung_het["flag"] = True
         for p in con:
             if p.is_alive():
                 p.terminate()
@@ -182,13 +198,25 @@ def main() -> int:
     if hasattr(signal, "SIGTERM"):
         signal.signal(signal.SIGTERM, _dung_het)
 
-    # Tiến trình con KHÔNG được sống sót qua cha: dịch vụ Windows dừng cha thì
-    # con phải chết theo, nếu không lần khởi động sau sẽ có worker mồ côi vẫn
-    # nhặt job và ghi đè kết quả.
     try:
-        for p in con:
-            p.join()
+        while not dung_het["flag"]:
+            for vi_tri, p in enumerate(con):
+                if p.is_alive():
+                    continue
+                log.warning("worker %s (pid %s) da chet ma %s — thay the",
+                            p.name, p.pid, p.exitcode)
+                nang_luc, _ = nhan[vi_tri]
+                moi = multiprocessing.Process(
+                    target=_chay_mot_worker,
+                    args=(vi_tri, sorted(nang_luc) if nang_luc else None),
+                    name=f"ltt-worker-{vi_tri}", daemon=False)
+                moi.start()
+                con[vi_tri] = moi
+            time.sleep(2.0)
     finally:
+        # Tiến trình con KHÔNG được sống sót qua cha: dịch vụ Windows dừng cha
+        # thì con phải chết theo, nếu không lần khởi động sau sẽ có worker mồ
+        # côi vẫn nhặt job và ghi đè kết quả.
         for p in con:
             if p.is_alive():
                 p.terminate()

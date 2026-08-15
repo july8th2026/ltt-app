@@ -8,7 +8,7 @@
     {
       "name": "GET /artifacts/{artifact_id}",
       "request": {
-        "description": "Returns a time-limited URL for one output of a job this account owns.",
+        "description": "Returns a time-limited URL for one output of a job this account owns. Outputs are kept for 30 days after the job finishes, then deleted; the job itself stays available for billing reconciliation.",
         "header": [
           {
             "key": "Authorization",
@@ -32,7 +32,7 @@
     {
       "name": "GET /artifacts/{artifact_id}/content",
       "request": {
-        "description": "Streams the output when the storage backend cannot issue a signed URL.",
+        "description": "Streams the output when the storage backend cannot issue a signed URL. Same 30-day window as the signed URL above.",
         "header": [
           {
             "key": "Authorization",

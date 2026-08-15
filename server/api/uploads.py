@@ -71,6 +71,9 @@ def _kind_for_tool(tool, param: str) -> str:
     return kind
 
 
+from platform_core.job_content import RETENTION_DAYS as _ARTIFACT_RETENTION_DAYS
+
+
 def register_upload_routes(api, config, tag: str) -> None:
 
     @api.post("/uploads", tags=[tag], summary="Create an upload ticket",
@@ -163,7 +166,10 @@ def register_upload_routes(api, config, tag: str) -> None:
     @api.get("/artifacts/{artifact_id}", tags=[tag],
              summary="Get a short-lived download URL for a job output",
              description=("Returns a time-limited URL for one output of a job "
-                          "this account owns."))
+                          "this account owns. Outputs are kept for "
+                          f"{_ARTIFACT_RETENTION_DAYS} days after the job "
+                          "finishes, then deleted; the job itself stays "
+                          "available for billing reconciliation."))
     def get_artifact(
         artifact_id: str = Path(...),
         principal: Principal = Depends(require_scope(SCOPE_ARTIFACTS_READ)),
@@ -190,7 +196,9 @@ def register_upload_routes(api, config, tag: str) -> None:
     @api.get("/artifacts/{artifact_id}/content", tags=[tag],
              summary="Download a job output (fallback path)",
              description=("Streams the output when the storage backend cannot "
-                          "issue a signed URL."))
+                          "issue a signed URL. Same "
+                          f"{_ARTIFACT_RETENTION_DAYS}-day window as the "
+                          "signed URL above."))
     def artifact_content(
         artifact_id: str = Path(...),
         principal: Principal = Depends(require_scope(SCOPE_ARTIFACTS_READ)),

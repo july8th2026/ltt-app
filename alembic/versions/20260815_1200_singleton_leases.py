@@ -73,8 +73,15 @@ def upgrade() -> None:
     op.create_index("ix_api_metric_samples_window", "api_metric_samples",
                     ["window_start", "name"])
 
+    # Tach *bang chung* khoi *noi dung* trong mot hang `jobs`: hang song mai (but
+    # toan credit tro ve no), con prompt/ket qua/file thi het han. Truoc day ca
+    # hai chung mot so phan, nen file sinh ra nam lai vinh vien.
+    op.add_column("jobs", sa.Column("content_expired_at",
+                                    sa.DateTime(timezone=True), nullable=True))
+
 
 def downgrade() -> None:
+    op.drop_column("jobs", "content_expired_at")
     op.drop_index("ix_api_metric_samples_window",
                   table_name="api_metric_samples")
     op.drop_table("api_metric_samples")

@@ -232,9 +232,29 @@ class AppManifest:
     # xếp vào card chật; khai thừa thì job phải chờ lâu hơn cần thiết.
     gpu_vram_mb: dict = field(default_factory=dict)
 
+    # Trần thời gian chạy (giây) cho MỘT job, theo `job_type`:
+    #   max_runtime_s = {"upscalevideo.render": 3600}
+    # Bỏ trống = dùng trần mặc định của nền tảng theo loại tài nguyên.
+    #
+    # Vì sao cần: nhặt job mồ côi chỉ bắt worker **chết** (mất đập nhịp). Một
+    # job **treo** mà vẫn đập nhịp thì giữ slot vô hạn — và với đội hình vài
+    # tiến trình, vài job như vậy là dừng cả nền tảng, im lặng, không ai được
+    # báo. Khai ở manifest vì chỉ app biết việc của nó lâu nhất là bao lâu.
+    max_runtime_s: dict = field(default_factory=dict)
+
     def vram_for(self, job_type: str) -> int:
         """VRAM tối thiểu cho một `job_type`. 0 = không cần GPU riêng."""
         return int((self.gpu_vram_mb or {}).get(job_type, 0))
+
+    def runtime_limit_for(self, job_type: str, *, default: int = 0) -> int:
+        """Trần thời gian chạy cho một `job_type`, giây. 0 = không giới hạn.
+
+        App khai được thì dùng của app; không thì dùng trần nền tảng truyền vào.
+        Không bao giờ trả 0 khi nền tảng có mặc định — **không có trần mới là
+        mặc định nguy hiểm**, vì nó im lặng cho tới ngày một job treo thật.
+        """
+        khai = int((self.max_runtime_s or {}).get(job_type, 0))
+        return khai if khai > 0 else int(default)
 
     def needs_gpu(self) -> bool:
         return "gpu" in self.requires or bool(self.gpu_vram_mb)

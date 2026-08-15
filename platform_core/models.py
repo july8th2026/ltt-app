@@ -305,6 +305,11 @@ class Job(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    #: Khi nào `params`/`result`/file của job này hết hạn và đã bị xoá. Hàng vẫn
+    #: còn — nó là **bằng chứng** mà bút toán credit trỏ về. Có mốc này thì một
+    #: `result` rỗng đọc ra là "đã hết hạn", chứ không phải "mất dữ liệu".
+    content_expired_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         # Index đúng câu truy vấn claim (W2.6c): WHERE status=? AND next_run_at<=?

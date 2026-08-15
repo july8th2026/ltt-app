@@ -198,16 +198,20 @@ def cancel(db: DbSession, job: Job) -> bool:
     return True
 
 
-def fail(db: DbSession, job: Job, error: str) -> None:
+def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
     """Ghi nhận thất bại. Còn lượt thì hẹn chạy lại; hết lượt thì `error`.
 
     Giãn cách tăng dần để một lỗi tạm thời (mạng chập chờn) được thử lại thưa
     dần thay vì dồn dập.
+
+    `retry=False` cho những thất bại mà thử lại chắc chắn hỏng y hệt — job vượt
+    trần thời gian là ví dụ: nó treo vì chính công việc đó, nên chạy lại chỉ
+    tiêu thêm một slot rồi treo tiếp, ba lần.
     """
     job.attempts += 1
     safe_error = job_events.sanitize_text(error, limit=5000)
     job.error = safe_error
-    if job.attempts < job.max_attempts:
+    if retry and job.attempts < job.max_attempts:
         cho = min(_RETRY_MAX_S, _RETRY_BASE_S * (2 ** (job.attempts - 1)))
         job.status = JOB_QUEUED
         job.next_run_at = _bay_gio() + timedelta(seconds=cho)

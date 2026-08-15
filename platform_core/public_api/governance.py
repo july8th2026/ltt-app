@@ -137,9 +137,11 @@ STORES: tuple = (
     Store("upload_sessions", CONTENT, 7, N_("chủ tài khoản"),
           N_("Vé tải lên chưa dùng. Bytes ở staging bị quét dọn cùng lúc."),
           "upload_sessions.sweep (worker)"),
-    Store("jobs", CONTENT, None, N_("chủ tài khoản"),
-          N_("`params` và `result` là đầu vào/đầu ra của chính khách. Giữ chừng "
-          "nào tài khoản còn: một job là thứ bút toán credit trỏ về.")),
+    Store("jobs", CONTENT, 30, N_("chủ tài khoản"),
+          N_("`params`, `result` và file sinh ra là nội dung của chính khách, "
+          "hết hạn sau 30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán "
+          "credit trỏ về nó — bằng chứng và nội dung là hai thứ khác nhau."),
+          "job_content.purge_expired (worker)"),
     Store("users", CONTENT, None, N_("chủ tài khoản + vận hành"),
           N_("Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) "
           "chứ không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại "
