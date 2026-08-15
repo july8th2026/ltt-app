@@ -2298,3 +2298,41 @@ output naming: `docs/APP_AUDIT/BATCH_2026-08-11/00_MASTER_PLAN.md`.
   setup, tool và test; không có trần dung lượng. Mỗi block có path/hash/byte/
   dòng; test khóa coverage/integrity và exclusions. Kết quả nghiệm thu thật ghi
   tại mục H34.6 mới nhất trong `NHAT_KY.md`.
+
+---
+
+## H35 — Public API `/api/v1` cho khách lập trình
+
+Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` trong
+`NHAT_KY.md`. Nhật ký từng bước của pack: `docs/PUBLIC_API/EXTENSION_PROGRESS.md`.
+
+- [x] H35.1 Nhân V2 — 2026-08-13: 24 route đóng băng ở `server/api/inventory.py`
+  (so hai chiều route thật ↔ inventory ↔ OpenAPI), lỗi RFC 9457, khoá
+  `ltt_sk_…` băm HMAC-SHA256 với pepper **ngoài CSDL**, quote ký số,
+  idempotency trong CSDL, hold → quyết toán/hoàn **đúng một lần**.
+- [x] H35.2 Không dựng engine thứ hai — dùng lại nguyên `jobs`, `credit`,
+  `upload_sessions`, `storage`, `api_pool`; `platform_core/public_api/` là
+  domain, `server/api/` là bề mặt HTTP, đúng Q92.
+- [x] H35.3 Cổng cho lập trình viên — 2026-08-13→14: 15 trang (project, khoá,
+  docs, playground, giá, nhật ký request, job, usage, webhook, thông báo, dữ
+  liệu & lưu trữ).
+- [x] H35.4 Bảng điều khiển vận hành — 2026-08-14→15: 12 trang admin, gồm
+  chính sách/quota/kill switch, phiên bản giá và margin, truy vết hỗ trợ.
+- [x] H35.5 Chế độ thử — 2026-08-14: khoá `ltt_tk_…` **không bao giờ** tiêu
+  credit; sandbox lấy hình dạng từ hợp đồng nên không lệch được khỏi production.
+- [x] H35.6 Riêng tư và lưu trữ — 2026-08-15: 42 store khai lớp/hạn/lý do, 6
+  vòng dọn chạy trong worker, bản xuất dữ liệu của khách.
+- [x] H35.7 Chứng nhận 100% — 2026-08-15: 14 app, 21 ToolSpec, 4 alias model, 5
+  operation đang mở; **16 tool đóng có lý do ghi ra và máy kiểm hai chiều với
+  registry** (`APP_API_COVERAGE_FINAL.md`, `test_212`).
+- [x] H35.8 Nghiệm thu toàn nền tảng — 2026-08-15: bốn hành trình chạy thật
+  (lập trình viên, máy chủ ngoài, vận hành, chỗ các hệ giao nhau), 8 kịch bản
+  đo tải, full gate **PASS 13/13** (pytest 4.591 s), kiểm trình duyệt 27 trang.
+  Kết luận `API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY` ghi tại
+  `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`.
+- [ ] H35.9 **Điều kiện của chữ "controlled" — chưa làm, cần máy chủ thật.**
+  Đo lại tải với PostgreSQL qua Cloudflare; **sao lưu `LTT_API_KEY_PEPPER` tách
+  khỏi CSDL** (mất pepper là mất toàn bộ khoá của khách); nối `metrics` vào cảnh
+  báo; xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
+- [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
+  ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.

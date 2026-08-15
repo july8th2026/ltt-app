@@ -14,6 +14,108 @@
 
 ---
 
+## 2026-08-15 — H35: Public API `/api/v1` + pack mở rộng 21 prompt
+
+- **Mục tiêu:** mở một API cho khách lập trình gọi bằng máy, tính tiền qua đúng
+  sổ credit đang có, và chứng minh được nó không lộ thứ không ai quyết định mở.
+- **Hạng mục:** H35 — hoàn thành.
+- **Trạng thái:** SOURCE/REGRESSION PASS. **Chưa deploy** — pack cấm deploy, và
+  còn hai điều kiện chỉ làm được trên máy chủ thật (xem "Còn tồn đọng").
+
+### Đã làm
+
+Nhánh `public-api-v2`, 26 commit từ 2026-08-13 đến 2026-08-15. Hai giai đoạn:
+
+**V2 (Q92)** — nhân: 24 route đóng băng ở `server/api/inventory.py`, lỗi theo
+RFC 9457, khoá `ltt_sk_…` băm HMAC-SHA256 với pepper **ngoài CSDL**, quote ký
+số, idempotency lưu trong CSDL, hold → quyết toán/hoàn **đúng một lần**. Đúng
+theo Q92: là adapter/policy layer, **không** phải một app trong `apps/`, và
+dùng lại nguyên `jobs`/`credit`/`upload_sessions`/`storage` — không dựng hàng
+đợi, sổ tiền hay pool thứ hai.
+
+**Pack mở rộng, 21 prompt (EXT-01…EXT-21)** — 16 file test mới
+(`test_198`…`test_213`), 17 migration một head duy nhất `e7f8a9b0c1d2`, 6 bước
+gate mới. Nhật ký từng prompt ở `docs/PUBLIC_API/EXTENSION_PROGRESS.md`.
+
+**Đang mở cho khách: 5 operation**, cả năm `ASYNC_JOB` — `image.thumbnail`,
+`image.generate`, `image.upscale`, `text.prompt_package`, `story.storyboard`.
+16 ToolSpec và 9 app còn lại đóng, **mỗi cái có lý do ghi ra và máy kiểm**
+(`APP_API_COVERAGE_FINAL.md` + `test_212`).
+
+Ba lỗi thật mà chỉ nhìn kết quả thật mới thấy, đáng ghi vì đều thuộc loại
+"trông như đang chạy":
+
+1. **Bản xuất dữ liệu nuốt mất danh sách khoá của khách.** Chuỗi gợi ý
+   `api_key` trong hàm che khớp cả container `api_keys`, nên phần hữu ích nhất
+   của bản xuất thành đúng chữ `"[redacted]"`. Test xanh, trang xanh, chỉ có
+   nội dung file tải về là sai.
+2. **Khoá chế độ thử không upload được file.** Luật "chưa giữ credit thì không
+   được lưu file" (chống dùng input job làm kho lưu trữ miễn phí) chặn luôn mọi
+   job thử — mà job thử thì **không bao giờ** giữ credit. Hệ quả: mọi tool nhận
+   file đều không thử được, trong khi chế độ thử quảng cáo "cả API, chỉ thay
+   provider". Sửa ở `upload_sessions.promote`, và chốt lại chiều còn lại: job
+   thật không có hold vẫn bị từ chối.
+3. **Harness đo tải báo hai con số vô nghĩa.** Kịch bản `uploads` xin ticket cho
+   một trường văn bản nên **mọi** request là 400 — throughput nó báo là tốc độ
+   của một lỗi validate. Kịch bản đo worker stub lời gọi provider nhưng không
+   đặt credential mà handler kiểm trước, nên nó đo tốc độ job **hỏng**: 49
+   job/giây, trông rất khoẻ.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\gate.py` (full, 2026-08-15) | **PASS 13/13**, pytest 4.591 s |
+| `python tools\gate.py --quick` (sau lần sửa cuối) | **PASS 12/12** |
+| `pytest tests/test_211 test_212 test_213` | 80 test, PASS |
+| `python tools\scan_source_secrets.py` (trong gate) | PASS, 0 phát hiện |
+| Kiểm trình duyệt (Playwright, cổng 8123/8124) | 15/15 trang lập trình viên + 12/12 trang vận hành render thật, **không trang nào lộ khoá**, 0 lỗi console |
+| `tools\public_api_load_test.py` — 8 kịch bản | số đo ở `API_PLATFORM_FULL_RELEASE_READINESS.md` §6 |
+
+Số đo tải là **chi phí control-plane trên SQLite trong tiến trình**, không phải
+sức chứa production: không Cloudflare, không mạng, không PostgreSQL.
+`creates` p99 **> 2 giây** ở đó — chưa đo lại trên máy chủ thật thì **không
+được** dùng để hứa SLA.
+
+### Quyết định mới
+
+Q92 đã có sẵn trong `QUYET_DINH_NEN_TANG.md` và pack này **không đổi** nó.
+
+Năm việc **hoãn có chủ ý**, mỗi việc kèm điều kiện mở lại, ghi ở
+`FULL_PLATFORM_GAP_MATRIX.md` §4c: OAuth delegated (ADR D1/D7 — đã kiểm: **0
+dòng oauth/pkce, không bảng, không endpoint dở dang**), CLI, priority class,
+3 tool video, và hai app `chataistudio`/`agent`. Hoãn mà không nói điều kiện mở
+lại thì là bỏ sót đội lốt quyết định.
+
+### Cách lùi lại
+
+- Tắt cả khu API: `LTT_PUBLIC_API=0` → web thường **không đổi gì** (có test).
+- Đóng một tool: bỏ khỏi `LTT_PUBLIC_API_TOOLS`.
+- Chặn một khách/khoá/project: kill switch trong trang admin, có ghi lý do.
+- Lùi mã: nhánh `public-api-v2`, commit đầu `3d28f9e`, cuối `b52922b`. Không
+  migration nào của pack xoá dữ liệu.
+
+### Còn tồn đọng
+
+1. **Đo lại tải trên máy chủ thật**, PostgreSQL thật, qua Cloudflare. Số hiện
+   có là của máy phát triển.
+2. **Sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL.** Mất pepper là mất **toàn
+   bộ** khoá của khách, không khôi phục được — đây là sự cố chưa xảy ra.
+3. Nối `metrics.snapshot()` (`responses_5xx`, `auth_failure`, `rate_limited`,
+   `kill_switch_refused`, `capacity_refused`, `webhook_failed`,
+   `queue_pickup_ms`) vào cảnh báo vận hành.
+4. Xác nhận trần Cloudflare trên tunnel thật: upload 100 MB, chờ 100 giây.
+5. Nhánh `public-api-v2` **chưa merge** vào `master`.
+
+### Việc tiếp theo
+
+1. **Người dùng quyết:** merge `public-api-v2` vào `master` hay giữ nhánh.
+2. Làm mục 1–4 phần "Còn tồn đọng" trên máy chủ trước khi mở cho khách trả tiền.
+3. Sửa một chỗ để mở được cả ba tool video: đo thời lượng phía server ngay lúc
+   báo giá, từ file đã upload, rồi khoá giá.
+
+---
+
 ## 2026-08-12 — H34: hồ sơ hệ thống tự cập nhật
 
 - **Mục tiêu:** tạo một hồ sơ để AI/người mới hiểu toàn hệ thống nhưng không

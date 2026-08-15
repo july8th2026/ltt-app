@@ -188,6 +188,8 @@ nào**.
 | Lưu file lớn qua R2 + `Storage.url_for()` (presigned, serve thẳng CDN) | ✅ xong 2026-08-01 (H10) |
 | Di trú app từ BOT GEMINI: thumbnail(parity)+taoanh+kichban+taovideo(video async) | ✅ đang (A1+A2 P1) |
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
+| Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
+| **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92) — **chưa deploy**, nhánh `public-api-v2` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -216,6 +218,27 @@ Ba việc còn lại, **hai trong đó chờ chủ sản phẩm quyết**:
   sống nằm sau **bánh cóc** `tools/check_silent_except.py` (trong gate): không
   cho tăng thêm. `core/` (78 chỗ) loại khỏi phép đo vì đã đóng băng.
 
+**H35 (Public API) — XONG 2026-08-15**, nhánh `public-api-v2`, quyết định nền
+Q92. Nó là **adapter/policy layer**, không phải một app trong `apps/`: domain ở
+`platform_core/public_api/`, HTTP ở `server/api/`. Dùng lại nguyên
+`jobs`/`credit`/`upload_sessions`/`storage` — **đừng dựng hàng đợi, sổ tiền hay
+pool thứ hai**.
+
+Ba thứ cần biết trước khi đụng vào:
+
+- **Fail-closed.** `LTT_PUBLIC_API` mặc định TẮT, và `LTT_PUBLIC_API_TOOLS` mặc
+  định **rỗng** — bật cờ một mình **không** mở tool nào. `customer_visible` của
+  ToolSpec **không** phải cờ public.
+- **24 route đóng băng** ở `server/api/inventory.py`, so hai chiều với route
+  thật và OpenAPI. Thêm route mà quên khai là gate đỏ, và ngược lại.
+- **Thêm/đổi tool đang mở thì phải cập nhật `APP_API_COVERAGE_FINAL.md`** —
+  `test_212` đọc bảng đó như dữ liệu và so với registry cả hai chiều.
+
+Trạng thái và điều kiện còn lại: `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`
+(kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nặng nhất trong các
+điều kiện: **sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL** — mất pepper là mất
+toàn bộ khoá của khách, không khôi phục được.
+
 ## Không bao giờ commit hay copy đi
 
 ```
@@ -232,5 +255,7 @@ cloudflare/config.yml cloudflare/*.json
 | `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |
+| `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` | app/tool/model nào mở, nào đóng, **vì sao** |
+| `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md` | trạng thái Public API + điều kiện còn lại |
 | `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
 | `AGENTS.md` | quy ước kỹ thuật chi tiết |
