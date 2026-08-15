@@ -323,6 +323,52 @@ disposition cấp model → EXT-03 phải lập bảng model và EXT-20 chứng 
 
 ---
 
+## 4b. Chốt cuối — EXT-21, ngày 2026-08-15
+
+Bảng §2 ở trên là **ảnh chụp trước khi chạy** (2026-08-13). Dưới đây là trạng
+thái sau khi EXT-02…EXT-20 đã chạy xong, mỗi dòng kèm bằng chứng chạy thật.
+
+| # | Domain | Trước | Sau | Bằng chứng |
+|---|---|---|---|---|
+| 1 | Execution mode | `MISSING` | ✅ `DONE` | `catalog.mode_of_tool`, registry từ chối mode chưa thi hành được; `test_212` |
+| 2 | Error/retry catalog | `PARTIAL` | ✅ `DONE` | `error_registry.py`, 22 mã, RFC 9457; `test_194` |
+| 3 | Models/capabilities | `MISSING` | ✅ `DONE` | `/api/v1/models`, 4 alias; `test_195`, `test_212` |
+| 4 | Projects | `MISSING` | ✅ `DONE` | `projects.py`, `test_196` |
+| 5 | Service accounts | `MISSING` | ✅ `DONE` | khoá gắn project + scope; `test_179`, `test_196` |
+| 6 | IP restriction / key expiry | `MISSING` | ✅ `DONE` | `keys.ip_allowed`, `MAX_EXPIRY`; `test_179` |
+| 7 | OAuth delegated | `MISSING` (cần quyết định) | ⏸️ `DEFERRED_WITH_ADR` | ADR D1/D7; **0 dòng oauth/pkce trong `platform_core/public_api/` và `server/api/`**, không bảng, không endpoint dở dang |
+| 8 | Developer API tab | `PARTIAL` | ✅ `DONE` | 15 mục nav; `test_197`, `test_213` mở đủ 14 trang |
+| 9 | Variable reference | `PARTIAL` | ✅ `DONE` | `test_198` |
+| 10 | Quickstart / recipes | `MISSING` | ✅ `DONE` | `RECIPES.md`, `examples.py`; `test_199`, `test_210` |
+| 11 | Playground | `MISSING` | ✅ `DONE` | `/developers/playground` gọi API thật; `test_200` |
+| 12 | Request log / trace cho khách | `MISSING` | ✅ `DONE` | `request_log.py`, `/developers/logs`; `test_201` |
+| 13 | Webhook console | `MISSING` | ✅ `DONE` | `webhook_console.py`; `test_202` |
+| 14 | Budgets / alerts | `MISSING` | ✅ `DONE` | `budgets.py`, `notifications.py`; `test_203` |
+| 15 | Sandbox / test mode | ✅ `DONE` | ✅ `DONE` | `test_204`; EXT-21 **sửa thêm**: khoá thử nay upload được (`upload_sessions.promote`) |
+| 16 | Admin API console | `MISSING` | ✅ `DONE` | 12 trang admin; `test_205`, `test_213` |
+| 17 | Policy / quota / kill switch | `MISSING` | ✅ `DONE` | `policy.py`, `capacity.py`; `test_206` (36 test) |
+| 18 | Pricing version / margin | `MISSING` | ✅ `DONE` | `pricing.py`, `costing.py`; `test_207` |
+| 19 | Support trace | `MISSING` | ✅ `DONE` | `support.py`, `security_log.py`; `test_208` |
+| 20 | Versioning / status | `MISSING` | ✅ `DONE` | `contract.py`, `status.py`, `/status/api`; `test_209` |
+| 21 | CLI / Postman / OpenAPI tải về | `MISSING` | ⚠️ `DONE` **trừ CLI** | SDK Python+TS, Postman sinh tự động, OpenAPI tải về; `test_210`. **CLI hoãn có chủ ý** — xem §4c |
+| 22 | Privacy / retention / export | `MISSING` | ✅ `DONE` | `governance.py` 42 store, 6 vòng dọn; `test_211` |
+| 23 | Chứng nhận 100% | `PARTIAL` | ✅ `DONE` | `APP_API_COVERAGE_FINAL.md`; `test_212` (47 test) |
+| 24 | Load/chaos/security toàn nền tảng | `PARTIAL` | ✅ `DONE` | `test_213` (10 test) + 8 kịch bản harness; xem `API_PLATFORM_FULL_RELEASE_READINESS.md` |
+
+Riêng X2 ở §5 (webhook_deliveries phình vô hạn) — **đã đóng** ở EXT-19, và
+đúng như dự đoán: nó là một trong bốn bảng không có đường nào cho một dòng rời
+đi.
+
+## 4c. Hoãn có chủ ý, không phải bỏ sót
+
+| Việc | Vì sao hoãn | Điều kiện mở lại |
+|---|---|---|
+| **CLI** | SDK Python + Postman + `curl` đã phủ mọi việc một CLI làm. Một CLI là bề mặt thứ tư phải giữ đồng bộ với hợp đồng, và mỗi bề mặt thêm vào là một chỗ nữa để lệch. | Khi có người dùng thật hỏi tới, chứ không phải vì danh sách tính năng thiếu một ô |
+| **OAuth delegated** | ADR D1: giải đúng một bài toán (bên thứ ba hành động thay mặt người dùng), mà bài toán đó chưa có. `Principal` đã tách sẵn nên sau này thêm là **thêm một nguồn**, không phải viết lại. | Khi có bên thứ ba thật, và khi trả lời được "credit của ai bị tiêu" |
+| **Priority class** | Không có gì trong hàng đợi xếp lịch theo ưu tiên, nên một trường `priority` sẽ là lời hứa suông. `test_206` **cấm** publish trường đó. | Khi worker thật sự xếp lịch theo ưu tiên |
+| **3 tool video** | Giá theo thời lượng khách khai + worker nâng hold → phá quote đã ký (Q84). | Đo thời lượng phía server lúc báo giá; sửa một chỗ mở được cả ba |
+| **`chataistudio`, `agent`** | Streaming/điều phối, không sinh Job — hợp đồng job hiện tại không mô tả nổi. | Cần hợp đồng chạy mới, không phải tool mới |
+
 ## 5. Rủi ro thấy được từ EXT-01
 
 | # | Rủi ro | Mức | Ghi chú |

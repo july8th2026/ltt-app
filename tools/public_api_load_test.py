@@ -14,7 +14,13 @@ Scenarios:
   creates     POST /jobs, one unique idempotency key each (chargeable)
   duplicates  POST /jobs, the *same* idempotency key (must never double-charge)
   abusive     one key in a tight loop next to well-behaved keys (isolation)
-  uploads     upload tickets
+  uploads     upload tickets until the per-account cap on open tickets engages,
+              then the refusal path — read `statuses` to see the split, because
+              those are two different measurements sharing one scenario
+  budgeted    creates with a budget and alert thresholds configured, so the
+              cost of the budget bookkeeping shows up next to plain `creates`
+  worker      queue jobs, then drain them: queue admission and worker throughput
+  webhooklag  time from a job finishing to its delivery being queued
 
 It never points at production: the target is an app this process builds, with a
 throwaway SQLite database. Loading a production deployment is a separate,
@@ -37,6 +43,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 TOOL = "image.thumbnail"
+#: The upload scenario needs a tool that actually accepts a file. Pointing
+#: it at a text field made every request a 400, so the numbers it reported
+#: were the throughput of a validation error rather than of upload tickets.
+UPLOAD_TOOL = "image.upscale"
+UPLOAD_FIELD = "image_key"
 PEPPER = "load-test-pepper-" + "L" * 40
 
 # The harness points the process at a throwaway database. As a script that is
@@ -45,7 +56,8 @@ PEPPER = "load-test-pepper-" + "L" * 40
 # runs afterwards — that is exactly how this leaked once: `create_app()` in a
 # much later test found LTT_DATA_DIR still aimed at a deleted temp folder, could
 # not load its config, and the maintenance daemon quietly never started.
-_OWNED_ENV = ("LTT_DATABASE_URL", "LTT_DATA_DIR", "LTT_API_KEY_PEPPER")
+_OWNED_ENV = ("LTT_DATABASE_URL", "LTT_DATA_DIR", "LTT_API_KEY_PEPPER",
+              "GEMINI_API_KEY")
 
 
 def _restore_env(saved: dict) -> None:
@@ -63,6 +75,11 @@ def _build(work: Path, **env_extra):
     os.environ["LTT_DATABASE_URL"] = f"sqlite:///{(work / 'load.db').as_posix()}"
     os.environ["LTT_DATA_DIR"] = str(work / "data")
     os.environ["LTT_API_KEY_PEPPER"] = PEPPER
+    # The handler looks up a provider credential before it calls anything.
+    # Without this the drain scenarios measure the throughput of *failing*
+    # jobs, which looks like a healthy number and means nothing. The call
+    # itself is stubbed, so this value never reaches a vendor.
+    os.environ.setdefault("GEMINI_API_KEY", "load-test-stub-not-used")
 
     import platform_core.db as dbmod
 
@@ -80,7 +97,7 @@ def _build(work: Path, **env_extra):
         "LTT_ENV": "local-server-test", "LTT_SESSION_SECRET": "load-secret-value",
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
         "LTT_CONFIG_PATH": str(work / "config.json"), "LTT_PUBLIC_API": "1",
-        "LTT_PUBLIC_API_TOOLS": TOOL,
+        "LTT_PUBLIC_API_TOOLS": f"{TOOL},{UPLOAD_TOOL}",
         # Limits raised for the measurement runs; the isolation scenario sets
         # them back down so the limiter is what is being measured.
         "LTT_PUBLIC_API_RPM": "100000", "LTT_PUBLIC_API_CREATE_RPM": "100000",
@@ -106,9 +123,37 @@ def _account(credits: int = 1_000_000) -> str:
         _key, token = devkeys.issue(db, user_id=user.id, name="load",
                                     scopes=("tools:read", "jobs:read",
                                             "jobs:create", "usage:read",
-                                            "uploads:write", "credits:read"))
+                                            "uploads:write", "credits:read",
+                                            "webhooks:manage"))
         db.commit()
         return token
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _give_budget(token: str) -> None:
+    """A budget with alert thresholds on the account behind this key.
+
+    The point of the `budgeted` scenario is the comparison: the same creates,
+    with the budget bookkeeping switched on. A number with no baseline says
+    nothing about whether the feature is affordable.
+    """
+    from platform_core.db import get_session
+    from platform_core.public_api import budgets, keys as devkeys
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        key_id, _secret = devkeys.parse_token(token)
+        row = db.execute(devkeys.select(devkeys.DeveloperApiKey).where(
+            devkeys.DeveloperApiKey.key_id == key_id)).scalar_one()
+        budgets.create(db, user_id=row.user_id, amount=10_000_000,
+                       period="month", scope="account",
+                       thresholds=(50, 80, 95), hard_cap=False)
+        db.commit()
     finally:
         try:
             next(gen)
@@ -152,7 +197,13 @@ def _run(scenario: str, seconds: float, workers: int) -> dict:
         env_extra = {"LTT_PUBLIC_API_RPM": "120", "LTT_PUBLIC_API_CREATE_RPM": "20"}
     client = _build(work, **env_extra)
     tokens = [_account() for _ in range(max(2, workers))]
-    shared_quote = _quote(client, tokens[0]) if scenario in ("creates", "duplicates") else {}
+    if scenario == "budgeted":
+        for token in tokens:
+            _give_budget(token)
+    if scenario in ("worker", "webhooklag"):
+        return _drain(client, tokens[0], scenario, seconds, workers, work)
+    shared_quote = _quote(client, tokens[0]) if scenario in (
+        "creates", "duplicates") else {}
     shared_key = uuid.uuid4().hex
 
     latencies: dict = {}
@@ -187,7 +238,7 @@ def _run(scenario: str, seconds: float, workers: int) -> dict:
                 path = ("/api/v1/tools", "/api/v1/jobs", "/api/v1/usage")[
                     int(started * 1000) % 3]
                 response = client.get(path, headers=headers)
-            elif scenario == "creates":
+            elif scenario in ("creates", "budgeted"):
                 quote = _quote(client, token)
                 response = client.post(
                     "/api/v1/jobs",
@@ -204,8 +255,9 @@ def _run(scenario: str, seconds: float, workers: int) -> dict:
             else:                                   # uploads
                 response = client.post(
                     "/api/v1/uploads",
-                    json={"tool": TOOL, "field": "topic", "filename": "a.png",
-                          "content_type": "image/png", "size": 1024},
+                    json={"tool": UPLOAD_TOOL, "field": UPLOAD_FIELD,
+                          "filename": "a.png", "content_type": "image/png",
+                          "size": 1024},
                     headers=headers)
             record(label, time.perf_counter() - started, response.status_code)
             if pace:
@@ -231,7 +283,7 @@ def _run(scenario: str, seconds: float, workers: int) -> dict:
                     for label, values in sorted(latencies.items())},
     }
 
-    if scenario in ("creates", "duplicates"):
+    if scenario in ("creates", "duplicates", "budgeted"):
         from platform_core.db import get_session
         from platform_core.models import CREDIT_HOLD, CreditEntry, Job
         import sqlalchemy as sa
@@ -257,11 +309,122 @@ def _run(scenario: str, seconds: float, workers: int) -> dict:
     return report
 
 
+def _drain(client, token: str, scenario: str, seconds: float, workers: int,
+           work: Path) -> dict:
+    """Queue jobs, then drain them, measuring the half a request cannot see.
+
+    Everything else here measures the control plane — the part that answers in
+    milliseconds. The two numbers an operator actually plans capacity with live
+    on the other side of the queue: how fast a worker retires jobs, and how long
+    after a job finishes its webhook is ready to send.
+
+    The provider is stubbed. Measuring a vendor's latency would tell us about
+    the vendor; what is being measured here is our own overhead around it.
+    """
+    import apps.thumbnail.jobs as thumbnail_jobs
+
+    from platform_core.db import get_session
+    from platform_core.job_runner import _chay_mot_job
+    from platform_core.models import Job
+
+    original = thumbnail_jobs._goi_gemini
+    thumbnail_jobs._goi_gemini = lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 200
+
+    headers = {"Authorization": f"Bearer {token}"}
+    if scenario == "webhooklag":
+        client.post("/api/v1/webhooks",
+                    json={"url": "https://example.com/load-test-receiver",
+                          "events": ["job.succeeded"]}, headers=headers)
+
+    submitted, admission = [], []
+    deadline = time.monotonic() + float(seconds)
+    while time.monotonic() < deadline and len(submitted) < 400:
+        quote = _quote(client, token)
+        started = time.perf_counter()
+        answer = client.post(
+            "/api/v1/jobs",
+            json={"tool": TOOL, "quote": quote["quote"],
+                  "input": {"topic": "load", "count": 1}},
+            headers={**headers, "Idempotency-Key": uuid.uuid4().hex})
+        admission.append(time.perf_counter() - started)
+        if answer.status_code == 201:
+            submitted.append(answer.json()["id"])
+
+    drained, per_job = 0, []
+    drain_started = time.monotonic()
+    while drained < len(submitted):
+        started = time.perf_counter()
+        if not _chay_mot_job("load-worker"):
+            break
+        per_job.append(time.perf_counter() - started)
+        drained += 1
+    drain_seconds = time.monotonic() - drain_started
+
+    thumbnail_jobs._goi_gemini = original
+
+    # Throughput of failing jobs is a meaningless number that looks fine, so
+    # the count of jobs that actually produced a result is reported next to it.
+    gen = get_session()
+    db = next(gen)
+    try:
+        import sqlalchemy as sa
+
+        succeeded = int(db.execute(
+            sa.select(sa.func.count(Job.id)).where(
+                Job.status == "done")).scalar_one())
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    report = {
+        "scenario": scenario, "seconds": round(drain_seconds, 2),
+        "workers": workers, "requests": len(submitted),
+        "jobs_queued": len(submitted), "jobs_drained": drained,
+        "jobs_succeeded": succeeded,
+        "jobs_per_second": (round(drained / drain_seconds, 2)
+                            if drain_seconds else 0),
+        "latency": {"admission": _percentiles(admission),
+                    "job": _percentiles(per_job)},
+    }
+
+    if scenario == "webhooklag":
+        import sqlalchemy as sa
+
+        from platform_core.public_api.tables import WebhookDelivery
+
+        gen = get_session()
+        db = next(gen)
+        try:
+            lags = []
+            rows = db.execute(sa.select(WebhookDelivery)).scalars().all()
+            for row in rows:
+                job = db.get(Job, row.job_id) if row.job_id else None
+                if job is not None and job.finished_at and row.created_at:
+                    lags.append(max(0.0, (row.created_at - job.finished_at)
+                                    .total_seconds()))
+            report["deliveries_queued"] = len(rows)
+            report["webhook_lag"] = _percentiles(lags)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    from platform_core.public_api import metrics
+
+    report["metrics"] = metrics.snapshot()
+    client.close()
+    return report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scenario", default="reads",
                         choices=("reads", "creates", "duplicates", "abusive",
-                                 "uploads"))
+                                 "uploads", "budgeted", "worker",
+                                 "webhooklag"))
     parser.add_argument("--seconds", type=float, default=10.0)
     parser.add_argument("--workers", type=int, default=8)
     args = parser.parse_args()

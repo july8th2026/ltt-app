@@ -2485,3 +2485,131 @@ Xoá `APP_API_COVERAGE_FINAL.md` + `test_212`; hoàn `upload_sessions._la_job_th
 Prompt kế: `prompts/21_FINAL_FULL_API_PLATFORM_AUDIT_LOAD_CHAOS_SECURITY_RELEASE_GATE.txt`
 (EXT-21) — **checkpoint cuối, prompt duy nhất được phép kết luận
 `API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY`**.
+
+---
+
+## EXT-21 — NGHIỆM THU TOÀN NỀN TẢNG ✅ (PROMPT CUỐI)
+
+### Entry gate
+
+EXT-20 PASS ✅ (`9507b93`), full gate 13/13, cây sạch. **Không feature mới,
+không migration** — prompt này cấm thêm, chỉ chứng minh.
+
+### Audit trước: phần lớn §F/§H/§I đã có bằng chứng từ trước
+
+Đọc thật trước khi viết: hỗn loạn (`test_192`/`test_193`), hợp đồng (3 bước
+trong gate), dữ liệu (`test_211`) đều đã có. Viết lại chúng sẽ là kể lại, không
+phải chứng minh. Việc thật của EXT-21 hoá ra nằm ở bốn chỗ khác.
+
+### 1. Bốn hành trình — chỗ không hệ nào nhận trách nhiệm
+
+Mỗi hệ con đều có file test riêng và đều xanh. Đó **không** phải là nền tảng
+chạy được. Khách không dùng một hệ con: họ đăng nhập, tạo project, lấy khoá,
+đọc docs, chạy, lấy file, xem hết bao nhiêu, và tìm lại dòng log khi hỏng. Mỗi
+bước **trao thứ gì đó cho bước sau**, và chỗ trao tay là chỗ không ai sở hữu.
+
+`test_213` viết dài và có thứ tự một cách cố ý. Chẻ nhỏ cho gọn sẽ test lại các
+mảnh và đánh mất đúng thứ duy nhất chưa ai phủ.
+
+- **§B** đăng nhập → 15 trang → project → khoá gắn project → docs → quote →
+  webhook → chạy → tải file → **quote = charge = biến động số dư** → usage →
+  nhật ký → job hiện trong portal → delivery vào hàng đợi.
+- **§C** xoá cookie, chỉ còn base URL + khoá. Đi hết vòng, và **gọi lại cùng
+  Idempotency-Key phải ra cùng một job**. Thu hồi khoá là mất quyền ngay.
+- **§E** 12 trang admin, đi từ tài khoản khách → khoá → job → trace theo
+  `request_id` → kill switch. **Trang khoá không bao giờ hiện lại được khoá.**
+- **§F** một job đi qua pricing + budget + log + trace: **năm phép đọc cùng một
+  sự kiện phải khớp**. Một nền tảng mà chúng lệch nhau là nền tảng không trả lời
+  được một tranh chấp hoá đơn.
+
+Thêm: provider **429** (khác timeout — là mã của chính nhà cung cấp, dội thẳng
+ra sẽ nói với khách rằng *ta* đang chặn họ) → hoàn tiền, không lộ host; chạy
+worker lần hai **không** sinh event webhook thứ hai; trang status không rò gì.
+
+### 2. Harness suýt nói dối hai lần
+
+Đây là phần đáng giá nhất của prompt này.
+
+- **Kịch bản `uploads` xin ticket cho một trường văn bản**, nên **mọi** request
+  là 400. Con số throughput nó vẫn báo bấy lâu là **tốc độ của một lỗi
+  validate**.
+- **Kịch bản drain stub lời gọi provider nhưng không đặt credential** mà handler
+  kiểm **trước** đó. Nó đo tốc độ job **hỏng** — 49 job/lượt, trông rất khoẻ.
+
+Cả hai đã sửa, và `test_213` chốt lại: ticket phải thật sự được cấp,
+`jobs_succeeded == jobs_drained`, delivery phải thật sự vào hàng đợi. **Không**
+chốt ngưỡng thời gian — ngưỡng chỉ là một test hay đỏ trên máy người khác.
+
+Còn cái 400 trong `uploads` sau khi sửa thì **đúng**: trần 12 ticket mở mỗi tài
+khoản. Ghi vào tài liệu harness thay vì né trần để biểu đồ đẹp hơn.
+
+### 3. Ba kịch bản đo mới (§G)
+
+`budgeted`, `worker`, `webhooklag`. Số thật ở
+`API_PLATFORM_FULL_RELEASE_READINESS.md` §6. Ba điều đọc được:
+
+- **Ngân sách gần như miễn phí** — `budgeted` so `creates` chênh trong nhiễu.
+- **Cách ly trần nhịp có thật** — kẻ lạm dụng ăn 250 lần 429, khách ngoan bên
+  cạnh **0 lần**.
+- **`creates` p99 > 2 giây** trên SQLite trong tiến trình. Ghi thẳng, kèm câu
+  cấm dùng nó để hứa SLA: đây là số của **máy này**.
+
+### 4. Đóng ma trận 24 domain (§A)
+
+`FULL_PLATFORM_GAP_MATRIX.md` §4b: 22 domain `DONE`, 1 `DEFERRED_WITH_ADR`
+(OAuth), 1 `DONE trừ CLI`. §4c ghi 5 việc **hoãn có chủ ý** kèm điều kiện mở
+lại — hoãn mà không nói điều kiện thì là bỏ sót đội lốt quyết định.
+
+§D kiểm thật: **0 dòng** `oauth`/`pkce` trong `platform_core/public_api/` và
+`server/api/`, không bảng, **không endpoint dở dang**.
+
+### Tests
+
+`tests/test_213_full_platform_release.py` — **10 test**.
+
+### Kiểm bằng trình duyệt
+
+15/15 trang lập trình viên render thật, không trang nào rơi về login. 12/12
+trang vận hành render, **không trang nào lộ khoá**. Console: 0 lỗi.
+
+### Rollback
+
+Xoá `test_213` + `API_PLATFORM_FULL_RELEASE_READINESS.md`, hoàn §4b/§4c của gap
+matrix và ba kịch bản harness. **Lưu ý:** hoàn nguyên harness sẽ mang lại hai
+phép đo trên rác.
+
+### Acceptance Gate
+
+| Yêu cầu của EXT-21 | Kết quả |
+|---|---|
+| §A mọi MUST HAVE `DONE` hoặc blocker rõ ràng | ✅ 24/24 domain có bằng chứng; OAuth `DEFERRED_WITH_ADR`; CLI hoãn có điều kiện mở lại |
+| §B user journey | ✅ một phiên liền mạch, 15 trang, quote=charge=số dư |
+| §C external server | ✅ chỉ base URL + khoá, idempotent, thu hồi là mất quyền ngay |
+| §D delegated app | ✅ hoãn có ADR, **0 endpoint dở dang** (kiểm bằng grep) |
+| §E admin | ✅ 12 trang, tài khoản→khoá→job→trace→kill switch, không lộ khoá |
+| §F security/chaos | ✅ mục có sẵn vẫn xanh; bổ sung 429, webhook nhân đôi, status leak; stream/batch `NOT_APPLICABLE` có lý do |
+| §G load/soak | ✅ 8 kịch bản, RPS + p50/p95/p99; **sửa 2 phép đo trên rác** |
+| §H contract | ✅ 3 bước gate: hợp đồng API, SDK, Postman |
+| §I data | ✅ `test_211`: giữ bằng chứng, hết hạn vận hành, không lưu bí mật |
+| §J tài liệu cuối | ✅ `API_PLATFORM_FULL_RELEASE_READINESS.md` |
+
+### Kết luận
+
+**`API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY`**
+
+Chữ **controlled** có điều kiện, ghi ở §11 của tài liệu cuối — nặng nhất là hai
+việc **không làm được từ kho mã**: đo lại tải trên máy chủ thật với PostgreSQL
+qua Cloudflare, và sao lưu `LTT_API_KEY_PEPPER` **tách khỏi CSDL** (mất pepper
+là mất toàn bộ khoá của khách).
+
+**Pack này không deploy.** Deploy là lệnh riêng của chủ sản phẩm.
+
+---
+
+# 🏁 PACK HOÀN TẤT — 21/21 PROMPT
+
+| Prompt | Kết quả |
+|---|---|
+| EXT-01 … EXT-21 | **PASS** |
+
+**NEXT_EXTENSION_PROMPT_ALLOWED=false** — không còn prompt nào.
