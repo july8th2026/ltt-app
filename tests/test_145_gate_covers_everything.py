@@ -47,13 +47,35 @@ def test_gate_runs_the_scanners_and_pytest():
         assert f"frontend {frontend}" in names
 
 
-def test_quick_mode_only_drops_pytest():
-    """`--quick` để lặp nhanh, nhưng không được lặng lẽ bỏ luôn scanner."""
+#: Những bước `--quick` được phép bỏ. Danh sách này là **hợp đồng**, không phải
+#: một chỗ để nới ra mỗi lần thêm bước chậm: mỗi tên ở đây là một thứ mà người
+#: chạy `--quick` sẽ KHÔNG được kiểm, và họ cần biết chính xác đó là gì.
+BUOC_CHAM = {
+    # Bộ test đầy đủ: ~78 phút, không thể nằm trong vòng lặp sửa-chạy.
+    "pytest",
+    # H36.9: đẻ tiến trình worker thật trên PostgreSQL, ~135 giây. Là bằng chứng
+    # duy nhất cho việc webhook không gửi trùng và cảnh báo không nhân đôi khi
+    # nhiều tiến trình chạy cùng lúc — nên nó BẮT BUỘC có trong gate đầy đủ,
+    # nhưng quá chậm cho `--quick`.
+    "bat bien da tien trinh",
+}
+
+
+def test_quick_mode_only_drops_the_declared_slow_steps():
+    """`--quick` để lặp nhanh, nhưng không được lặng lẽ bỏ luôn scanner.
+
+    Trước đây luật là "chỉ được bỏ pytest". Khi H36.9 thêm một bước chậm thứ
+    hai, luật đó không còn mô tả đúng thực tế — nên nó được viết lại thành một
+    **danh sách có tên**, chứ không nới thành "được bỏ vài bước". Khác biệt nằm
+    ở chỗ: một danh sách buộc người thêm bước chậm tiếp theo phải khai ra và
+    giải thích, còn một luật mờ thì không.
+    """
     from tools.gate import _steps
 
     full = {step.name for step in _steps(quick=False)}
     quick = {step.name for step in _steps(quick=True)}
-    assert full - quick == {"pytest"}
+    assert full - quick == BUOC_CHAM
+    assert quick - full == set(), "`--quick` không được có bước riêng"
 
 
 def test_gate_failure_tail_is_safe_on_windows_cp1252_console():

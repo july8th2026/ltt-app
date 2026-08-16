@@ -2364,16 +2364,16 @@ tiến trình chạy nó"**, trong khi số tiến trình worker mặc định b
   bị xoá, hàng job ở lại; cửa sổ tải artifact được công bố trong hợp đồng.
 - [x] H36.8 Ba tín hiệu bất thường (chỉ đọc), `retry` trong mọi phản hồi lỗi,
   `RUNBOOK.md`.
-- [ ] H36.9 **Lên đạn cho bánh cóc** — gate phải chạy `test_214`. Hiện nó cần
+- [x] H36.9 **Lên đạn cho bánh cóc** — 2026-08-16: `tools/check_multiproc.py` là bước riêng của gate; tự tìm/tạo CSDL test từ chính cấu hình triển khai, và khi không có PostgreSQL thì **nói thành câu** thay vì một chữ `s`. CŨ: — gate phải chạy `test_214`. Hiện nó cần
   `LTT_TEST_DATABASE_URL` mà gate không đặt, nên **luôn skip**: bằng chứng mạnh
   nhất của H36 đã chạy đúng một lần, bằng tay.
-- [ ] H36.10 **Chạy thật ba đường chưa chạy lần nào** — `_het_gio` (test luôn
+- [x] H36.10 **Đã chạy thật ba đường** — 2026-08-16, `test_220`. CŨ: — `_het_gio` (test luôn
   monkeypatch nó đi), vòng cha-thay-con, luồng xả metrics của web.
-- [ ] H36.11 **Chạy `test_218` trên R2** — `LTT_STORAGE=r2` ở production, còn
+- [~] H36.11 **R2: nối dây đã chứng minh, bucket thật CHƯA** — `test_221` chạy ngay khi có `LTT_TEST_R2_BUCKET`. Bị chặn vì token chỉ có quyền một bucket và bucket đó có thể dùng chung với hệ thống khác. CŨ: — `LTT_STORAGE=r2` ở production, còn
   test chỉ chạy trên `LocalStorage`.
-- [ ] H36.12 **Đo lại tải** sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
+- [x] H36.12 **Đã đo lại** — 2026-08-16: control-plane không đổi, thông lượng worker giảm ~6% do đồng hồ canh giờ mỗi job. CŨ: sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
   metrics.
 
-Điểm trung thực sau H36: **7,0 → 8,5**, không hạng mục nào trên 9,0. Bốn ô còn
-trống ở trên chính là khoảng cách tới >9 — và cả bốn đều là **chứng minh**, không
-phải xây thêm.
+Điểm trung thực: **7,0 → 8,5 → 9,0** sau khi làm H36.9–12 (`AUDIT_API_2026-08-15.md`
+§4b rồi §4c). Việc duy nhất còn nợ là chạy `test_221` trên một bucket R2 vứt đi —
+chặn bởi một quyết định về hạ tầng, không phải bởi code.

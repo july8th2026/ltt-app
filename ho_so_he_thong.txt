@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:df5c247d125a3b427165b5a491d2213ce593f1f182ec82593c48740b7a5cac35
-Nguồn đã quét : 1133 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:eb65d53c8e9d5a47d7bc2f314d252ad30ae7602898c71881cb00718d4a6122b7
+Nguồn đã quét : 1134 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -917,7 +917,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (103 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (104 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1011,6 +1011,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_STORAGE
 - LTT_TEMP_VIDEO_DIR
 - LTT_TEST_DATABASE_URL
+- LTT_TEST_R2_BUCKET
 - LTT_TOKEN_ENCRYPTION_KEY
 - LTT_TOKEN_ENCRYPTION_KEY_FILE
 - LTT_TRIAL_CREDIT
@@ -1022,7 +1023,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (223 file pytest + 3 frontend)
+10. QUALITY GATES (224 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1181,6 +1182,7 @@ Test inventory:
 - tests/test_219_anomaly_signals.py
 - tests/test_21_antispam_phase1.py
 - tests/test_220_paths_never_run.py
+- tests/test_221_r2_content_deletion.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
@@ -1272,8 +1274,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1133 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:847, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1134 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:848, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2139,7 +2141,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (240)
+[tests] (241)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2309,6 +2311,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_219_anomaly_signals.py
 - tests/test_21_antispam_phase1.py
 - tests/test_220_paths_never_run.py
+- tests/test_221_r2_content_deletion.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
@@ -2473,7 +2476,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1133 file; 10255697 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1134 file; 10264756 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -81168,7 +81171,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=adb0abc4ac2a5aa171b405b2c985237622264b1d82993e1b83a46baf7faef54c BYTES=160861 LINES=2379
+SHA256=646f6317e711e1d71aa7269fde7418d931cc74f39bd6e6733a3d6e6e0d98d401 BYTES=161483 LINES=2379
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -83536,19 +83539,19 @@ tiến trình chạy nó"**, trong khi số tiến trình worker mặc định b
   bị xoá, hàng job ở lại; cửa sổ tải artifact được công bố trong hợp đồng.
 - [x] H36.8 Ba tín hiệu bất thường (chỉ đọc), `retry` trong mọi phản hồi lỗi,
   `RUNBOOK.md`.
-- [ ] H36.9 **Lên đạn cho bánh cóc** — gate phải chạy `test_214`. Hiện nó cần
+- [x] H36.9 **Lên đạn cho bánh cóc** — 2026-08-16: `tools/check_multiproc.py` là bước riêng của gate; tự tìm/tạo CSDL test từ chính cấu hình triển khai, và khi không có PostgreSQL thì **nói thành câu** thay vì một chữ `s`. CŨ: — gate phải chạy `test_214`. Hiện nó cần
   `LTT_TEST_DATABASE_URL` mà gate không đặt, nên **luôn skip**: bằng chứng mạnh
   nhất của H36 đã chạy đúng một lần, bằng tay.
-- [ ] H36.10 **Chạy thật ba đường chưa chạy lần nào** — `_het_gio` (test luôn
+- [x] H36.10 **Đã chạy thật ba đường** — 2026-08-16, `test_220`. CŨ: — `_het_gio` (test luôn
   monkeypatch nó đi), vòng cha-thay-con, luồng xả metrics của web.
-- [ ] H36.11 **Chạy `test_218` trên R2** — `LTT_STORAGE=r2` ở production, còn
+- [~] H36.11 **R2: nối dây đã chứng minh, bucket thật CHƯA** — `test_221` chạy ngay khi có `LTT_TEST_R2_BUCKET`. Bị chặn vì token chỉ có quyền một bucket và bucket đó có thể dùng chung với hệ thống khác. CŨ: — `LTT_STORAGE=r2` ở production, còn
   test chỉ chạy trên `LocalStorage`.
-- [ ] H36.12 **Đo lại tải** sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
+- [x] H36.12 **Đã đo lại** — 2026-08-16: control-plane không đổi, thông lượng worker giảm ~6% do đồng hồ canh giờ mỗi job. CŨ: sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
   metrics.
 
-Điểm trung thực sau H36: **7,0 → 8,5**, không hạng mục nào trên 9,0. Bốn ô còn
-trống ở trên chính là khoảng cách tới >9 — và cả bốn đều là **chứng minh**, không
-phải xây thêm.
+Điểm trung thực: **7,0 → 8,5 → 9,0** sau khi làm H36.9–12 (`AUDIT_API_2026-08-15.md`
+§4b rồi §4c). Việc duy nhất còn nợ là chạy `test_221` trên một bucket R2 vứt đi —
+chặn bởi một quyết định về hạ tầng, không phải bởi code.
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -157924,7 +157927,7 @@ def test_the_workspace_alias_still_answers(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_145_gate_covers_everything.py
-SHA256=664e117c501fd23fdd4947e1a984ea80c3522ab673f72f9df6e26684818c2cfe BYTES=5716 LINES=132
+SHA256=e31eff03416ae6ff5d44cae670d41204bc96c62f4d0b4d44d35bf90ce2916165 BYTES=7090 LINES=154
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/gate.py` phải phủ MỌI thứ cần chạy trước khi báo xong.
 
@@ -157975,13 +157978,35 @@ def test_gate_runs_the_scanners_and_pytest():
         assert f"frontend {frontend}" in names
 
 
-def test_quick_mode_only_drops_pytest():
-    """`--quick` để lặp nhanh, nhưng không được lặng lẽ bỏ luôn scanner."""
+#: Những bước `--quick` được phép bỏ. Danh sách này là **hợp đồng**, không phải
+#: một chỗ để nới ra mỗi lần thêm bước chậm: mỗi tên ở đây là một thứ mà người
+#: chạy `--quick` sẽ KHÔNG được kiểm, và họ cần biết chính xác đó là gì.
+BUOC_CHAM = {
+    # Bộ test đầy đủ: ~78 phút, không thể nằm trong vòng lặp sửa-chạy.
+    "pytest",
+    # H36.9: đẻ tiến trình worker thật trên PostgreSQL, ~135 giây. Là bằng chứng
+    # duy nhất cho việc webhook không gửi trùng và cảnh báo không nhân đôi khi
+    # nhiều tiến trình chạy cùng lúc — nên nó BẮT BUỘC có trong gate đầy đủ,
+    # nhưng quá chậm cho `--quick`.
+    "bat bien da tien trinh",
+}
+
+
+def test_quick_mode_only_drops_the_declared_slow_steps():
+    """`--quick` để lặp nhanh, nhưng không được lặng lẽ bỏ luôn scanner.
+
+    Trước đây luật là "chỉ được bỏ pytest". Khi H36.9 thêm một bước chậm thứ
+    hai, luật đó không còn mô tả đúng thực tế — nên nó được viết lại thành một
+    **danh sách có tên**, chứ không nới thành "được bỏ vài bước". Khác biệt nằm
+    ở chỗ: một danh sách buộc người thêm bước chậm tiếp theo phải khai ra và
+    giải thích, còn một luật mờ thì không.
+    """
     from tools.gate import _steps
 
     full = {step.name for step in _steps(quick=False)}
     quick = {step.name for step in _steps(quick=True)}
-    assert full - quick == {"pytest"}
+    assert full - quick == BUOC_CHAM
+    assert quick - full == set(), "`--quick` không được có bước riêng"
 
 
 def test_gate_failure_tail_is_safe_on_windows_cp1252_console():
@@ -187734,6 +187759,179 @@ def test_tien_trinh_web_that_su_xa_bo_dem_xuong_csdl(tmp_path, monkeypatch):
         "đếm nhầm số tiến trình web, tức mất chính cái cảnh báo nó sinh ra để đưa")
 
     dbmod.reset_engine()
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_221_r2_content_deletion.py
+SHA256=ad93f6683234464d55c11a42ad2983b0d3d4966abe41b13acb3e0f3963e9f306 BYTES=7063 LINES=167
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Xoá nội dung job trên R2 — kho lưu trữ mà production thật sự dùng.
+
+`test_218` chứng minh file bị xoá thật, nhưng trên `LocalStorage`. Production
+chạy `LTT_STORAGE=r2`, nên lời hứa "file hết hạn sau 30 ngày" **chưa được chứng
+minh ở nơi nó phải đúng** — và nếu `R2Storage.delete` hỏng im lặng thì CSDL vẫn
+ghi "đã hết hạn" trong khi file còn nguyên, tức đúng kiểu sai mà cả đợt việc này
+sinh ra để đóng.
+
+Có một lý do **cấu trúc** khiến đường này chưa bao giờ được kiểm: `boto3` chỉ nằm
+trong venv của máy chủ, không có ở Python chạy bộ test. Một đường code mà bộ test
+không import nổi thì không phải "chưa ai viết test" — nó là *không thể* có test,
+cho tới khi ai đó nhận ra.
+
+Nên ở đây có hai tầng, và tầng nào chứng minh được gì thì nói rõ tầng đó:
+
+* **Luôn chạy** — nối dây: `R2Storage.delete` gọi `delete_object` đúng bucket,
+  đúng key, và `expire_content` coi khoá đã biến mất là đã xoá (R2 **không** báo
+  lỗi khi xoá key không tồn tại, khác `LocalStorage`).
+* **Chạy khi có `LTT_TEST_R2_BUCKET`** — thật: ghi lên R2 thật rồi xoá, và hỏi
+  lại chính R2 xem còn không.
+
+Tầng hai **cố ý không tự chạy với bucket production**: token R2 của triển khai
+này chỉ có quyền trên đúng một bucket, và tên bucket cho thấy nó có thể dùng
+chung với hệ thống khác đang phục vụ người thật. Ghi vào đó — dù chỉ vài byte
+dưới một tiền tố riêng — là quyết định của chủ sản phẩm, không phải của test.
+"""
+from __future__ import annotations
+
+import io
+import os
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+
+# ── Tầng 1: nối dây, luôn chạy ───────────────────────────────────────────────
+
+class _S3Gia:
+    """Client S3 giả, ghi lại đúng những lời gọi đã phát ra."""
+
+    def __init__(self):
+        self.da_xoa: list = []
+        self.da_ghi: list = []
+
+    def delete_object(self, Bucket, Key):       # noqa: N803 - chữ ký boto3
+        self.da_xoa.append((Bucket, Key))
+        return {}
+
+    def put_object(self, **kw):
+        self.da_ghi.append(kw.get("Key"))
+        return {}
+
+
+@pytest.fixture()
+def r2_gia(monkeypatch):
+    from platform_core import storage as storage_mod
+
+    kho = storage_mod.R2Storage.__new__(storage_mod.R2Storage)
+    kho.bucket = "bucket-gia"
+    gia = _S3Gia()
+    monkeypatch.setattr(type(kho), "_c", lambda self: gia, raising=False)
+    return kho, gia
+
+
+def test_r2_xoa_dung_bucket_va_dung_key(r2_gia):
+    """Sai bucket hoặc sai key thì file không bao giờ biến mất, và không ai báo."""
+    kho, gia = r2_gia
+    kho.delete("thumbnail/u-1/job-9/0.png")
+
+    assert gia.da_xoa == [("bucket-gia", "thumbnail/u-1/job-9/0.png")]
+
+
+def test_r2_khong_bao_loi_khi_key_da_bien_mat(r2_gia):
+    """Khác `LocalStorage`: S3 coi xoá một key không tồn tại là thành công.
+
+    `expire_content` dựa vào điều đó — nó đếm "đã xoá" cho cả trường hợp file
+    vốn đã không còn, vì kết quả mong muốn đã đạt. Nếu R2 ném lỗi ở đây thì mỗi
+    lượt quét lại sẽ log một vệt lỗi cho những file đã dọn từ lần trước.
+    """
+    kho, _gia = r2_gia
+    kho.delete("khong/ton/tai.png")         # không được ném
+
+
+def test_het_han_noi_dung_goi_dung_cac_khoa_cua_job_len_r2(tmp_path, r2_gia,
+                                                           monkeypatch):
+    """Ghép hai phần: chọn khoá (neo theo id job) và xoá (qua R2)."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'r2.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core import job_content
+    from platform_core.db import Base, get_engine, get_session
+    from platform_core.models import JOB_DONE, Job
+
+    Base.metadata.create_all(get_engine())
+    kho, gia = r2_gia
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        job_id = str(uuid.uuid4())
+        xong = datetime.now(timezone.utc) - timedelta(days=60)
+        khoa = [f"thumbnail/u-1/{job_id}/{i}.png" for i in range(3)]
+        db.add(Job(id=job_id, user_id="u-1", app_slug="thumbnail",
+                   job_type="thumbnail.generate",
+                   params={"topic": "bí mật"},
+                   result={"image_keys": khoa},
+                   status=JOB_DONE, finished_at=xong, created_at=xong,
+                   next_run_at=xong))
+        db.commit()
+
+        bao_cao = job_content.purge_expired(db, kho)
+        db.commit()
+
+        assert bao_cao == {"jobs": 1, "files": 3}
+        assert [k for _b, k in gia.da_xoa] == khoa
+        assert db.get(Job, job_id).content_expired_at is not None
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+# ── Tầng 2: R2 thật, chỉ chạy khi được chỉ định bucket ───────────────────────
+
+BUCKET = (os.environ.get("LTT_TEST_R2_BUCKET") or "").strip()
+r2_that = pytest.mark.skipif(
+    not BUCKET,
+    reason=("Đặt LTT_TEST_R2_BUCKET (bucket VỨT ĐI, không phải bucket "
+            "production) để chạy phần này. Xem docstring: bucket của triển "
+            "khai này có thể dùng chung với hệ thống khác."))
+
+
+@r2_that
+def test_ghi_len_r2_that_roi_xoa_va_hoi_lai(tmp_path, monkeypatch):
+    """Phép đo duy nhất chứng minh được lời hứa 30 ngày trên kho thật.
+
+    Hỏi lại chính R2 chứ không tin giá trị trả về: một `delete_object` trả 200
+    mà vẫn để file lại là đúng kiểu hỏng im lặng cần loại trừ ở đây.
+    """
+    monkeypatch.setenv("LTT_R2_BUCKET", BUCKET)
+    monkeypatch.setenv("LTT_STORAGE", "r2")
+
+    from platform_core import storage as storage_mod
+
+    storage_mod.set_storage(None)
+    kho = storage_mod.get_storage()
+    assert isinstance(kho, storage_mod.R2Storage), (
+        f"mong đợi R2Storage, nhận {type(kho).__name__}")
+
+    key = f"h36-selftest/{uuid.uuid4().hex}/anh.png"
+    kho.put(key, io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 64),
+            content_type="image/png")
+
+    kho.open(key).close()                   # có thật trước khi xoá
+    kho.delete(key)
+
+    with pytest.raises(Exception):          # noqa: B017 - đã biến mất thật
+        kho.open(key).close()
+
+    storage_mod.set_storage(None)
 
 @@@LTT_PROFILE_FILE_END@@@
 

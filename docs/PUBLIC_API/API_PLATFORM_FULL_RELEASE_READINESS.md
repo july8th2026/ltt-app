@@ -120,6 +120,30 @@ Cloudflare, không có mạng, không có PostgreSQL, không có GPU thật.
 | `worker` | 8,93 job/s | admission 62,0 ms | job 102,4 ms | — | 47/47 **thành công** |
 | `webhooklag` | 7,9 job/s | **lag 4,71 ms** | 10,1 ms | 17,2 ms | 50/50 delivery vào hàng đợi |
 
+### Đo lại sau H36 (2026-08-16)
+
+Cùng máy, cùng kịch bản, sau khi thêm luồng bảo trì, đồng hồ canh giờ **mỗi
+job**, và xả metrics:
+
+| Kịch bản | Trước H36 | Sau H36 |
+|---|---|---|
+| `reads` | 146,9 rps | **149,9 rps** |
+| `creates` | 10,6 rps · p99 2.276 ms | **10,8 rps · p99 1.977 ms** |
+| `duplicates` | 40,4 rps | **38,6 rps** |
+| `worker` | 8,93 job/s | **8,35 job/s** |
+| `webhooklag` p50 | 4,71 ms | **4,68 ms** |
+
+Control-plane **không đổi trong khoảng nhiễu**. Thông lượng worker giảm ~6%, và
+phần bị đo ở đây là **đồng hồ canh giờ mỗi job** — một `threading.Timer` dựng và
+huỷ cho mỗi job. Đó là giá phải trả để một job treo không giữ slot vĩnh viễn, và
+6% là rẻ so với thứ nó mua.
+
+**Hai thứ vẫn chưa được đo, nói rõ để không ai đọc nhầm:** harness gọi thẳng
+`_chay_mot_job`, nên **luồng bảo trì** và **vòng xả metrics** của `run_forever`
+không nằm trong con số nào ở trên. Muốn đo chúng thì harness phải chạy
+`run_forever` thật — đó là một khoảng trống của chính harness, không phải một
+kết luận về hiệu năng.
+
 Ba điều đọc ra được:
 
 1. **Ngân sách gần như miễn phí.** `budgeted` so `creates` chênh trong khoảng
