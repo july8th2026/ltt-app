@@ -2369,7 +2369,7 @@ tiến trình chạy nó"**, trong khi số tiến trình worker mặc định b
   nhất của H36 đã chạy đúng một lần, bằng tay.
 - [x] H36.10 **Đã chạy thật ba đường** — 2026-08-16, `test_220`. CŨ: — `_het_gio` (test luôn
   monkeypatch nó đi), vòng cha-thay-con, luồng xả metrics của web.
-- [~] H36.11 **R2: nối dây đã chứng minh, bucket thật CHƯA** — `test_221` chạy ngay khi có `LTT_TEST_R2_BUCKET`. Bị chặn vì token chỉ có quyền một bucket và bucket đó có thể dùng chung với hệ thống khác. CŨ: — `LTT_STORAGE=r2` ở production, còn
+- [x] H36.11 **R2: nối dây + GIAO THỨC đã chứng minh** — 2026-08-16, `test_221` chạy `boto3` thật với máy chủ S3 thật trong tiến trình (`moto`). Tầng "R2 thật trên mạng" **cố ý không chạy**: bucket dùng chung với BOT GEMINI (kiểm bằng dữ liệu), và `CLAUDE.md` cấm ghi vào đó. CŨ: — `test_221` chạy ngay khi có `LTT_TEST_R2_BUCKET`. Bị chặn vì token chỉ có quyền một bucket và bucket đó có thể dùng chung với hệ thống khác. CŨ: — `LTT_STORAGE=r2` ở production, còn
   test chỉ chạy trên `LocalStorage`.
 - [x] H36.12 **Đã đo lại** — 2026-08-16: control-plane không đổi, thông lượng worker giảm ~6% do đồng hồ canh giờ mỗi job. CŨ: sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
   metrics.

@@ -15,3 +15,16 @@ requests>=2.31.0,<3.0
 pytz>=2024.1
 tzdata>=2024.1
 cryptography>=42.0.0,<47.0
+
+# --- Phu thuoc chi dung cho TEST ---
+#
+# `boto3` da co trong requirements-server.txt voi ghi chu "import luoi nen khong
+# bat buoc luc dev". Ghi chu do dung ve runtime va la nguyen nhan cua mot lo
+# hong: khong bat buoc luc dev cung co nghia la duong R2 **khong bao gio duoc
+# test**, vi Python chay bo test khong import noi no.
+#
+# `moto` dung mot may chu S3 that trong tien trinh, nen `boto3` that noi voi mot
+# giao thuc S3 that. Do la tang duy nhat bat duoc nhung gia dinh ve S3 ma mot
+# stub luon dong y (vi du: xoa mot key khong ton tai la THANH CONG).
+boto3>=1.35,<2.0
+moto[s3]>=5.0,<6.0

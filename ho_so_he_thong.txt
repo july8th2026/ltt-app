@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:eb65d53c8e9d5a47d7bc2f314d252ad30ae7602898c71881cb00718d4a6122b7
+Fingerprint   : sha256:23dad5be1968fad9a61576cd8f38d7c751dcf7c9271fba9148c0f90ebcb97a13
 Nguồn đã quét : 1134 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2476,7 +2476,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1134 file; 10264756 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1134 file; 10271689 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -81171,7 +81171,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=646f6317e711e1d71aa7269fde7418d931cc74f39bd6e6733a3d6e6e0d98d401 BYTES=161483 LINES=2379
+SHA256=de304540662f2e1a3e065d5a3f0b90d4f3c19b7d3025ed69d4880423b349200f BYTES=161748 LINES=2379
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -83544,7 +83544,7 @@ tiến trình chạy nó"**, trong khi số tiến trình worker mặc định b
   nhất của H36 đã chạy đúng một lần, bằng tay.
 - [x] H36.10 **Đã chạy thật ba đường** — 2026-08-16, `test_220`. CŨ: — `_het_gio` (test luôn
   monkeypatch nó đi), vòng cha-thay-con, luồng xả metrics của web.
-- [~] H36.11 **R2: nối dây đã chứng minh, bucket thật CHƯA** — `test_221` chạy ngay khi có `LTT_TEST_R2_BUCKET`. Bị chặn vì token chỉ có quyền một bucket và bucket đó có thể dùng chung với hệ thống khác. CŨ: — `LTT_STORAGE=r2` ở production, còn
+- [x] H36.11 **R2: nối dây + GIAO THỨC đã chứng minh** — 2026-08-16, `test_221` chạy `boto3` thật với máy chủ S3 thật trong tiến trình (`moto`). Tầng "R2 thật trên mạng" **cố ý không chạy**: bucket dùng chung với BOT GEMINI (kiểm bằng dữ liệu), và `CLAUDE.md` cấm ghi vào đó. CŨ: — `test_221` chạy ngay khi có `LTT_TEST_R2_BUCKET`. Bị chặn vì token chỉ có quyền một bucket và bucket đó có thể dùng chung với hệ thống khác. CŨ: — `LTT_STORAGE=r2` ở production, còn
   test chỉ chạy trên `LocalStorage`.
 - [x] H36.12 **Đã đo lại** — 2026-08-16: control-plane không đổi, thông lượng worker giảm ~6% do đồng hồ canh giờ mỗi job. CŨ: sau khi thêm luồng bảo trì, đồng hồ mỗi job và xả
   metrics.
@@ -120878,7 +120878,7 @@ whisperx==3.8.6
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ requirements.txt
-SHA256=fd25bdc50a5dca9eae84f1b3626ac0bc80d9c1ec61aa0d68b3b5a523829e0016 BYTES=771 LINES=17
+SHA256=1bb9a47cf87599f5aa127a8a298d856a5f3aae47d78e4dcb2a4cbcd37923a306 BYTES=1368 LINES=30
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Core runtime — Google Sheets, the Graph / TikTok HTTP clients, and the
 # encrypted token store. Shared by the web app and worker_main.py.
@@ -120897,6 +120897,19 @@ requests>=2.31.0,<3.0
 pytz>=2024.1
 tzdata>=2024.1
 cryptography>=42.0.0,<47.0
+
+# --- Phu thuoc chi dung cho TEST ---
+#
+# `boto3` da co trong requirements-server.txt voi ghi chu "import luoi nen khong
+# bat buoc luc dev". Ghi chu do dung ve runtime va la nguyen nhan cua mot lo
+# hong: khong bat buoc luc dev cung co nghia la duong R2 **khong bao gio duoc
+# test**, vi Python chay bo test khong import noi no.
+#
+# `moto` dung mot may chu S3 that trong tien trinh, nen `boto3` that noi voi mot
+# giao thuc S3 that. Do la tang duy nhat bat duoc nhung gia dinh ve S3 ma mot
+# stub luon dong y (vi du: xoa mot key khong ton tai la THANH CONG).
+boto3>=1.35,<2.0
+moto[s3]>=5.0,<6.0
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -187763,7 +187776,7 @@ def test_tien_trinh_web_that_su_xa_bo_dem_xuong_csdl(tmp_path, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_221_r2_content_deletion.py
-SHA256=ad93f6683234464d55c11a42ad2983b0d3d4966abe41b13acb3e0f3963e9f306 BYTES=7063 LINES=167
+SHA256=08ff76147114ebfb3ab947cf3d3f87b220a0376b04db80be148cbcc7a1d09b9c BYTES=13134 LINES=304
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Xoá nội dung job trên R2 — kho lưu trữ mà production thật sự dùng.
 
@@ -187778,18 +187791,28 @@ trong venv của máy chủ, không có ở Python chạy bộ test. Một đư�
 không import nổi thì không phải "chưa ai viết test" — nó là *không thể* có test,
 cho tới khi ai đó nhận ra.
 
-Nên ở đây có hai tầng, và tầng nào chứng minh được gì thì nói rõ tầng đó:
+Nên ở đây có **ba tầng**, và tầng nào chứng minh được gì thì nói rõ tầng đó:
 
-* **Luôn chạy** — nối dây: `R2Storage.delete` gọi `delete_object` đúng bucket,
-  đúng key, và `expire_content` coi khoá đã biến mất là đã xoá (R2 **không** báo
-  lỗi khi xoá key không tồn tại, khác `LocalStorage`).
-* **Chạy khi có `LTT_TEST_R2_BUCKET`** — thật: ghi lên R2 thật rồi xoá, và hỏi
-  lại chính R2 xem còn không.
+1. **Nối dây** (luôn chạy) — `R2Storage.delete` gọi `delete_object` đúng bucket,
+   đúng key. Chứng minh code ta gọi đúng API, không chứng minh gì về S3.
+2. **Giao thức** (chạy khi có `moto`) — `boto3` thật, ký request thật, một máy
+   chủ S3 thật trong tiến trình. Đây là tầng bắt được những giả định mà tầng 1
+   không thể: ngữ nghĩa "xoá key không tồn tại là **thành công**" (khác hẳn
+   `LocalStorage`, vốn ném `FileNotFoundError`), và việc file **thật sự** biến
+   mất chứ không chỉ là một lời gọi trả 200.
+3. **R2 thật trên mạng** (chạy khi có `LTT_TEST_R2_BUCKET`) — chưa chạy lần nào.
 
-Tầng hai **cố ý không tự chạy với bucket production**: token R2 của triển khai
-này chỉ có quyền trên đúng một bucket, và tên bucket cho thấy nó có thể dùng
-chung với hệ thống khác đang phục vụ người thật. Ghi vào đó — dù chỉ vài byte
-dưới một tiền tố riêng — là quyết định của chủ sản phẩm, không phải của test.
+Tầng 3 **cố ý không tự chạy với bucket production**. Đã kiểm bằng dữ liệu chứ
+không đoán: bucket của triển khai này là `fb-video-storage` trên account
+`3530f3e5…`, và **hệ thống BOT GEMINI dùng đúng bucket đó, đúng account đó** cho
+đường asset của nó (`app/ui/static/js/modules/api-keys.js`). Đó là kho lưu trữ
+của một hệ thống đang phục vụ người thật mà `CLAUDE.md` cấm tạo/sửa/xoá bất cứ
+thứ gì. Ghi vài byte dưới một tiền tố riêng gần như chắc chắn vô hại — và "gần
+như chắc chắn" không phải mức đủ cho một thao tác không hoàn tác được trên kho
+của người khác.
+
+Tầng 2 tồn tại chính vì tầng 3 bị chặn: nó lấy lại phần lớn giá trị mà không
+chạm vào thứ gì của ai.
 """
 from __future__ import annotations
 
@@ -187799,6 +187822,10 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+
+#: Đủ để `image_input`/magic-byte coi là PNG. Một hằng số, không lặp lại
+#: literal ở bốn chỗ — mỗi lần lặp là một lần gõ nhầm chuỗi thoát.
+PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 
 
 # ── Tầng 1: nối dây, luôn chạy ───────────────────────────────────────────────
@@ -187894,7 +187921,131 @@ def test_het_han_noi_dung_goi_dung_cac_khoa_cua_job_len_r2(tmp_path, r2_gia,
         dbmod.reset_engine()
 
 
-# ── Tầng 2: R2 thật, chỉ chạy khi được chỉ định bucket ───────────────────────
+# ── Tầng 2: client S3 THẬT, chống lại một máy chủ S3 thật (trong tiến trình) ─
+
+moto = pytest.importorskip(
+    "moto",
+    reason=("Cần `moto` để dựng một máy chủ S3 thật trong tiến trình. Thiếu nó "
+            "thì đường R2 chỉ được kiểm ở mức nối dây."))
+
+
+@pytest.fixture()
+def r2_that_giao_thuc(monkeypatch):
+    """`R2Storage` thật, `boto3` thật, giao thức S3 thật — chỉ máy chủ là cục bộ.
+
+    Đây là tầng mà bản stub ở trên **không** chạm tới: ký request, mã lỗi của
+    S3, và ngữ nghĩa "xoá một key không tồn tại là thành công". Nếu giả định nào
+    trong số đó sai thì stub vẫn xanh còn production vẫn hỏng.
+    """
+    from moto import mock_aws
+
+    with mock_aws():
+        import boto3
+
+        monkeypatch.setenv("AWS_ACCESS_KEY_ID", "test")
+        monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "test")
+        monkeypatch.setenv("AWS_DEFAULT_REGION", "us-east-1")
+        boto3.client("s3").create_bucket(Bucket="ltt-moto-test")
+
+        monkeypatch.setenv("LTT_STORAGE", "r2")
+        monkeypatch.setenv("LTT_R2_BUCKET", "ltt-moto-test")
+        monkeypatch.setenv("LTT_R2_ACCOUNT_ID", "khong-dung")
+        monkeypatch.setenv("LTT_R2_ENDPOINT", "https://s3.amazonaws.com")
+        monkeypatch.setenv("LTT_R2_ACCESS_KEY_ID", "test")
+        monkeypatch.setenv("LTT_R2_SECRET_ACCESS_KEY", "test")
+
+        from platform_core import storage as storage_mod
+
+        storage_mod.set_storage(None)
+        kho = storage_mod.get_storage()
+        assert isinstance(kho, storage_mod.R2Storage), type(kho).__name__
+        try:
+            yield kho
+        finally:
+            storage_mod.set_storage(None)
+
+
+def test_ghi_roi_xoa_qua_client_s3_that(r2_that_giao_thuc):
+    """Ghi thật, xoá thật, rồi HỎI LẠI kho — không tin giá trị trả về.
+
+    Một `delete_object` trả 200 mà vẫn để file lại là đúng kiểu hỏng im lặng
+    cần loại trừ: CSDL sẽ ghi "đã hết hạn" trong khi file còn nguyên.
+    """
+    kho = r2_that_giao_thuc
+    key = f"thumbnail/u-1/{uuid.uuid4()}/0.png"
+    kho.put(key, io.BytesIO(PNG_BYTES),
+            content_type="image/png")
+
+    kho.open(key).close()                   # có thật trước khi xoá
+    kho.delete(key)
+
+    with pytest.raises(Exception):          # noqa: B017 - đã biến mất thật
+        kho.open(key).close()
+
+
+def test_xoa_key_khong_ton_tai_khong_bao_loi_tren_s3_that(r2_that_giao_thuc):
+    """Ngữ nghĩa S3, xác nhận bằng máy chủ chứ không bằng giả định.
+
+    `expire_content` dựa vào điều này để đếm "đã xoá" cho file vốn đã không còn.
+    Nếu S3 thật ném lỗi ở đây thì mỗi lượt quét lại sẽ log một vệt lỗi cho những
+    file đã dọn từ lần trước — và không ai nhận ra vì chúng chỉ là log.
+    """
+    r2_that_giao_thuc.delete("khong/ton/tai/bao-gio.png")
+
+
+def test_het_han_noi_dung_xoa_that_tren_s3(tmp_path, r2_that_giao_thuc,
+                                           monkeypatch):
+    """Vòng đầy đủ trên kho thật: job cũ → quét → hỏi lại kho xem còn gì không.
+
+    `test_218` làm đúng điều này trên đĩa. Production chạy R2, nên tới đây mới
+    là chỗ lời hứa "file hết hạn sau 30 ngày" được chứng minh trên **giao thức**
+    mà nó thật sự đi qua.
+    """
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'motojob.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core import job_content
+    from platform_core.db import Base, get_engine, get_session
+    from platform_core.models import JOB_DONE, Job
+
+    Base.metadata.create_all(get_engine())
+    kho = r2_that_giao_thuc
+
+    job_id = str(uuid.uuid4())
+    khoa = [f"thumbnail/u-1/{job_id}/{i}.png" for i in range(3)]
+    for key in khoa:
+        kho.put(key, io.BytesIO(PNG_BYTES),
+                content_type="image/png")
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        xong = datetime.now(timezone.utc) - timedelta(days=60)
+        db.add(Job(id=job_id, user_id="u-1", app_slug="thumbnail",
+                   job_type="thumbnail.generate", params={"topic": "bí mật"},
+                   result={"image_keys": khoa}, status=JOB_DONE,
+                   finished_at=xong, created_at=xong, next_run_at=xong))
+        db.commit()
+
+        assert job_content.purge_expired(db, kho) == {"jobs": 1, "files": 3}
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+    for key in khoa:
+        with pytest.raises(Exception):      # noqa: B017
+            kho.open(key).close()
+
+
+# ── Tầng 3: R2 THẬT trên mạng, chỉ chạy khi được chỉ định bucket vứt đi ──────
 
 BUCKET = (os.environ.get("LTT_TEST_R2_BUCKET") or "").strip()
 r2_that = pytest.mark.skipif(
@@ -187922,8 +188073,7 @@ def test_ghi_len_r2_that_roi_xoa_va_hoi_lai(tmp_path, monkeypatch):
         f"mong đợi R2Storage, nhận {type(kho).__name__}")
 
     key = f"h36-selftest/{uuid.uuid4().hex}/anh.png"
-    kho.put(key, io.BytesIO(b"\x89PNG\r\n\x1a\n" + b"0" * 64),
-            content_type="image/png")
+    kho.put(key, io.BytesIO(PNG_BYTES), content_type="image/png")
 
     kho.open(key).close()                   # có thật trước khi xoá
     kho.delete(key)
