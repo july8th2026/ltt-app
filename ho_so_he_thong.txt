@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:84bc232e62e0e43eef24b688728c4334970b6a7a5558f4f4cc5e928366e935b1
-Nguồn đã quét : 1131 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:df5c247d125a3b427165b5a491d2213ce593f1f182ec82593c48740b7a5cac35
+Nguồn đã quét : 1133 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -630,7 +630,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /facebook/page → fb_toggle_page | auth~login | server/routes/accounts.py:116
 - [platform] POST   /facebook/system-token → fb_import_system_token | auth~login | server/routes/accounts.py:86
 - [platform] POST   /facebook/test → fb_test | auth~login | server/routes/accounts.py:101
-- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:346
+- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:352
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
@@ -1022,7 +1022,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (222 file pytest + 3 frontend)
+10. QUALITY GATES (223 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1180,6 +1180,7 @@ Test inventory:
 - tests/test_218_job_content_lifecycle.py
 - tests/test_219_anomaly_signals.py
 - tests/test_21_antispam_phase1.py
+- tests/test_220_paths_never_run.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
@@ -1271,8 +1272,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1131 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:845, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1133 file)
+Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:847, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2138,7 +2139,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (239)
+[tests] (240)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2307,6 +2308,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_218_job_content_lifecycle.py
 - tests/test_219_anomaly_signals.py
 - tests/test_21_antispam_phase1.py
+- tests/test_220_paths_never_run.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
@@ -2379,7 +2381,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (67)
+[tools] (68)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2397,6 +2399,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tools/build_system_profile.py
 - tools/check_api_compat.py
 - tools/check_i18n.py
+- tools/check_multiproc.py
 - tools/check_sdk_contract.py
 - tools/check_silent_except.py
 - tools/check_undefined_names.py
@@ -2470,7 +2473,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1131 file; 10237094 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1133 file; 10255697 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -129254,7 +129257,7 @@ def register_webhook_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/app.py
-SHA256=b2618c9f5690d23636b55b3f836f68c8b76d79acb86607f36b7c12139de31445 BYTES=22363 LINES=445
+SHA256=b808a19cd2ceab2e094a0cf96e831a546ec88d9765b5ebf1b11454674b8afa8b BYTES=22653 LINES=451
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 FastAPI application factory (P3).
@@ -129332,6 +129335,12 @@ _HASHED_FRONTEND_ASSET = re.compile(
 # silently stop being enforced. The web app owns it now.
 
 
+#: Chu kỳ xả bộ đếm của tiến trình web. Là hằng số module để test rút ngắn được
+#: — một luồng nền chỉ chạy sau 60 giây thì trên thực tế là một luồng không có
+#: test nào đi qua.
+METRICS_FLUSH_INTERVAL_S = 60.0
+
+
 def _xa_metrics_web(dung) -> None:
     """Đưa bộ đếm của tiến trình WEB xuống CSDL.
 
@@ -129346,7 +129355,7 @@ def _xa_metrics_web(dung) -> None:
     from platform_core.public_api import metrics
 
     log = logging.getLogger(__name__)
-    while not dung.wait(60.0):
+    while not dung.wait(METRICS_FLUSH_INTERVAL_S):
         try:
             gen = get_session()
             db = next(gen)
@@ -187456,6 +187465,278 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_220_paths_never_run.py
+SHA256=45911f823da70ae3aa6b73773291e705f9e177ce9eaf4d8d1022b24b1a827f19 BYTES=11750 LINES=266
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ba đường đã viết ra mà chưa bao giờ chạy.
+
+Bản chấm điểm trung thực (`AUDIT_API_2026-08-15.md` §4b) chỉ ra ba chỗ có code,
+có mô tả, có cả test — nhưng **hàm thật chưa chạy lần nào**:
+
+* ``job_runner._het_gio`` — mọi test đều `monkeypatch` nó đi, trong khi nó hoàn
+  credit và gọi ``os._exit``;
+* vòng cha giám sát và thay thế worker con đã chết — không có test nào;
+* luồng xả metrics của tiến trình web — chỉ được xác minh thủ công một lần.
+
+Hai trong ba là đường **phá huỷ hoặc vận hành**, tức đúng loại phải chạy thử
+trước chứ không phải sau. Một hàm chưa chạy lần nào là một hàm chưa tồn tại về
+mặt hành vi, dù nó nằm sẵn trong file.
+
+Cả ba đều chạy **tiến trình thật** ở đây, vì cả ba đều chỉ có ý nghĩa khi có một
+tiến trình để kết thúc hoặc để thay thế.
+"""
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+import time
+import uuid
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+# ── 1. Job vượt trần: hoàn tiền, rồi kết thúc tiến trình ─────────────────────
+
+KICH_BAN_HET_GIO = '''
+import os, sys, uuid
+sys.path.insert(0, r"{root}")
+os.environ["LTT_DATABASE_URL"] = "sqlite:///{db}"
+os.environ["LTT_DATA_DIR"] = r"{data}"
+
+import platform_core.models  # noqa
+from platform_core.db import Base, get_engine, get_session
+Base.metadata.create_all(get_engine())
+
+from datetime import datetime, timezone
+from platform_core import credit
+from platform_core.models import JOB_RUNNING, Job
+from platform_core.users import tao_nguoi_dung
+
+gen = get_session(); db = next(gen)
+u = tao_nguoi_dung(db, email="hetgio@example.com",
+                   password="a-good-password-12", is_verified=True)
+db.flush()
+credit.cap_tay(db, u.id, 100, by="test")
+job = Job(id="{job_id}", user_id=u.id, app_slug="thumbnail",
+          job_type="thumbnail.generate", params={{}}, status=JOB_RUNNING,
+          max_attempts=3, attempts=0,
+          created_at=datetime.now(timezone.utc),
+          next_run_at=datetime.now(timezone.utc))
+db.add(job); db.flush()
+credit.giu_cho(db, u.id, 30, job.id)
+db.commit()
+
+from platform_core import job_runner
+job_runner._het_gio("{job_id}", "thumbnail.generate", 60)
+print("KHONG BAO GIO TOI DAY")   # `_het_gio` phải kết thúc tiến trình
+'''
+
+
+def test_job_vuot_tran_hoan_tien_roi_ket_thuc_tien_trinh(tmp_path):
+    """Chạy `_het_gio` THẬT, trong một tiến trình có thể chết.
+
+    Trước đây mọi test đều thay nó bằng một hàm đếm, nên phần quan trọng nhất —
+    ghi trạng thái xuống CSDL **trước** khi thoát, và hoàn credit — chưa bao giờ
+    được kiểm. Nếu thứ tự đó sai thì khách mất tiền cho một job không bao giờ
+    hoàn tất, và không ai biết vì tiến trình đã biến mất.
+    """
+    db_file = (tmp_path / "hetgio.db").as_posix()
+    job_id = str(uuid.uuid4())
+    script = tmp_path / "chay.py"
+    script.write_text(
+        KICH_BAN_HET_GIO.format(root=ROOT, db=db_file, data=tmp_path / "data",
+                                job_id=job_id),
+        encoding="utf-8")
+
+    ra = subprocess.run([sys.executable, str(script)], capture_output=True,
+                        text=True, timeout=180)
+
+    assert ra.returncode == 3, (
+        f"`_het_gio` phải kết thúc tiến trình với mã 3, nhận {ra.returncode}. "
+        f"{ra.stdout[-300:]} {ra.stderr[-500:]}")
+    assert "KHONG BAO GIO TOI DAY" not in ra.stdout, (
+        "tiến trình vẫn chạy tiếp sau khi hết giờ — slot không được giải phóng")
+
+    # Trạng thái phải đã bền vững TRƯỚC khi tiến trình biến mất.
+    import sqlalchemy as sa
+
+    engine = sa.create_engine(f"sqlite:///{db_file}", future=True)
+    with engine.connect() as conn:
+        status, loi = conn.execute(sa.text(
+            "SELECT status, error FROM jobs WHERE id = :i"),
+            {"i": job_id}).one()
+        assert status == "error", f"job kết thúc ở trạng thái {status!r}"
+        assert "tran thoi gian" in (loi or "").lower()
+
+        # Credit đã giữ phải được trả lại: job không bao giờ cho ra kết quả.
+        tong = conn.execute(sa.text(
+            "SELECT COALESCE(SUM(delta), 0) FROM credit_entries "
+            "WHERE job_id = :i"), {"i": job_id}).scalar_one()
+        assert tong == 0, (
+            f"credit ròng của job hết giờ là {tong}, phải là 0 — khách không "
+            f"được trả tiền cho việc không bao giờ hoàn tất")
+    engine.dispose()
+
+
+def test_job_het_gio_khong_duoc_xep_chay_lai(tmp_path):
+    """Cùng đường chạy trên, kiểm phần `retry=False`.
+
+    Thử lại một job treo chỉ tiêu thêm một slot rồi treo tiếp — ba lần.
+    """
+    db_file = (tmp_path / "hetgio2.db").as_posix()
+    job_id = str(uuid.uuid4())
+    script = tmp_path / "chay2.py"
+    script.write_text(
+        KICH_BAN_HET_GIO.format(root=ROOT, db=db_file, data=tmp_path / "data",
+                                job_id=job_id),
+        encoding="utf-8")
+    subprocess.run([sys.executable, str(script)], capture_output=True,
+                   text=True, timeout=180)
+
+    import sqlalchemy as sa
+
+    engine = sa.create_engine(f"sqlite:///{db_file}", future=True)
+    with engine.connect() as conn:
+        status, lan = conn.execute(sa.text(
+            "SELECT status, attempts FROM jobs WHERE id = :i"),
+            {"i": job_id}).one()
+    engine.dispose()
+
+    assert status == "error"
+    assert lan == 1, f"job hết giờ bị tính {lan} lượt — nó không được thử lại"
+
+
+# ── 2. Cha thay thế con đã chết ──────────────────────────────────────────────
+
+@pytest.mark.slow
+def test_cha_thay_the_worker_con_da_chet(tmp_path):
+    """Giết một tiến trình con thật, xem cha có dựng lại không.
+
+    Trước thay đổi này cha chỉ `join()`: một worker con chết vì bất cứ lý do gì
+    sẽ biến mất tới lần khởi động lại dịch vụ, đội hình teo dần, và không ai được
+    báo. Với trần thời gian chạy (job treo **cố ý** kết thúc tiến trình của nó),
+    tính chất này chuyển từ "nên có" thành "bắt buộc" — không có nó thì mỗi job
+    treo là mất vĩnh viễn một worker.
+    """
+    import psutil  # noqa: F401 — chỉ để bỏ qua sạch nếu máy không có
+
+    env = dict(os.environ)
+    env["LTT_DATABASE_URL"] = f"sqlite:///{(tmp_path / 'sup.db').as_posix()}"
+    env["LTT_DATA_DIR"] = str(tmp_path / "data")
+    env["LTT_API_KEY_PEPPER"] = "supervise-pepper-" + "s" * 40
+    env["LTT_WORKER_POOLS"] = "api:2"
+    env["LTT_FILE_LOGGING"] = "0"
+
+    # Ghi ra FILE chứ không phải `PIPE`. Với `PIPE` mà không ai đọc, ống 64 KB
+    # đầy lên là tiến trình cha **chặn ngay tại lệnh ghi** — vòng giám sát đứng,
+    # và test kết luận "cha không thay thế con" trong khi cha chỉ đang bị bịt
+    # miệng. Chính test này đã dính đúng bẫy đó một lần.
+    log_file = tmp_path / "worker.log"
+    fh = log_file.open("w", encoding="utf-8", errors="replace")
+    cha = subprocess.Popen([sys.executable, "-u", "job_worker.py"],
+                           cwd=str(ROOT), env=env, stdout=fh,
+                           stderr=subprocess.STDOUT, text=True)
+    try:
+        import psutil
+
+        cha_ps = psutil.Process(cha.pid)
+        con = []
+        for _ in range(60):                 # đợi hai con khởi động
+            con = cha_ps.children()
+            if len(con) >= 2:
+                break
+            time.sleep(1.0)
+        assert len(con) >= 2, f"cha chỉ đẻ {len(con)} con, mong đợi 2"
+
+        nan_nhan = con[0]
+        nan_nhan.kill()
+        nan_nhan.wait(timeout=30)
+
+        for _ in range(60):                 # đợi cha thay thế
+            con_moi = [c for c in cha_ps.children() if c.is_running()]
+            if len(con_moi) >= 2 and nan_nhan.pid not in {c.pid for c in con_moi}:
+                break
+            time.sleep(1.0)
+        else:
+            pytest.fail("cha không thay thế worker con đã chết")
+    finally:
+        cha.terminate()
+        try:
+            cha.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            cha.kill()
+        fh.close()
+
+
+# ── 3. Luồng xả metrics của tiến trình web ──────────────────────────────────
+
+def test_tien_trinh_web_that_su_xa_bo_dem_xuong_csdl(tmp_path, monkeypatch):
+    """Luồng nền của `server/app.py`, chạy thật qua vòng đời ứng dụng.
+
+    Phần lớn con số đáng xem — request, lỗi xác thực, lần bị chặn nhịp — phát
+    sinh ở tiến trình web. Trước khi có luồng này chúng **không bao giờ rời khỏi
+    tiến trình**, nên trang vận hành cộng lại được mọi thứ trừ chính thứ nó cần
+    nhất. Xác minh thủ công một lần không phải là một bánh cóc.
+    """
+    import sqlalchemy as sa
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'webflush.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_API_KEY_PEPPER", "webflush-pepper-" + "w" * 40)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    from platform_core.public_api import metrics
+    from platform_core.public_api.tables import ApiMetricSample
+
+    Base.metadata.create_all(get_engine())
+    metrics.reset()
+
+    import server.app as app_mod
+    monkeypatch.setattr(app_mod, "METRICS_FLUSH_INTERVAL_S", 0.3)
+
+    app = app_mod.create_app(env={
+        "LTT_ENV": "local-server-test",
+        "LTT_SESSION_SECRET": "webflush-secret-value",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "config.json"),
+    })
+
+    with TestClient(app):
+        metrics.increment("requests", 7)
+        metrics.increment("auth_failure", 2)
+        for _ in range(40):
+            with get_engine().connect() as conn:
+                co = conn.execute(sa.text(
+                    "SELECT COUNT(*) FROM api_metric_samples")).scalar_one()
+            if co:
+                break
+            time.sleep(0.25)
+
+    with get_engine().connect() as conn:
+        rows = conn.execute(sa.text(
+            "SELECT process, name, value FROM api_metric_samples")).all()
+
+    assert rows, "luồng xả của tiến trình web không ghi được dòng nào"
+    theo_ten = {r.name: r.value for r in rows}
+    assert theo_ten.get("requests") == 7
+    assert theo_ten.get("auth_failure") == 2
+    assert all(r.process.startswith(metrics.WEB_PREFIX) for r in rows), (
+        "số của tiến trình web bị ghi dưới tiền tố worker — trang vận hành sẽ "
+        "đếm nhầm số tiến trình web, tức mất chính cái cảnh báo nó sinh ra để đưa")
+
+    dbmod.reset_engine()
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_22_antispam_phase2.py
 SHA256=ab2c981ca9ebc65490cfd1dc10dabf7b2ebc7b9c379e232a18f5778fe522c942 BYTES=8934 LINES=231
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -206865,6 +207146,153 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_multiproc.py
+SHA256=101a0efc171dbc13d890b14a8aca57aa60e6b2ff824abbaf9bf2027e5e87529f BYTES=5942 LINES=141
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Chay bo bat bien da tien trinh (`test_214`) — hoac noi to rang no khong chay.
+
+Ba loi P0 cua ban audit 2026-08-15 lot qua hon ba nghin test vi CHUA TUNG co gi
+chay hai tien trinh worker cung luc tren mot CSDL. `test_214` la phep do con
+thieu do — nhung no can PostgreSQL, va `pytest` chi in mot chu `s` khi bo qua.
+Mot chu `s` giua ba nghin dau cham thi khong ai thay.
+
+Cong cu nay bien viec bo qua thanh MOT DONG RIENG trong gate. No khong lam gate
+do khi may khong co PostgreSQL — mot may phat trien khong co PostgreSQL van phai
+lam viec duoc — nhung no khong bao gio de viec bo qua tro nen VO HINH.
+
+Tim CSDL test theo thu tu:
+  1. `LTT_TEST_DATABASE_URL` neu da dat;
+  2. tu dung tu `LTT_DATABASE_URL` cua chinh trien khai nay, doi ten CSDL thanh
+     `<ten>_multiproc_test` va TAO neu chua co (can quyen tao CSDL, hoac mat
+     khau superuser o `secrets/postgres-superuser.txt` nhu bo cai dung).
+
+Ten CSDL luon chua chu `test` — rao o `tests/pg_scratch.py` tu choi bat cu URL
+nao khong chung minh duoc no la CSDL vut di, vi cac test nay goi `drop_all()`.
+"""
+from __future__ import annotations
+
+import os
+import pathlib
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+HAU_TO = "_multiproc_test"
+SUPER = (pathlib.Path(r"C:\LTTPlatform\secrets\postgres-superuser.txt"),
+         ROOT / "secrets" / "postgres-superuser.txt")
+
+
+def _doc_env(ten: str) -> str:
+    """Doc mot bien tu app.env da cai hoac trong kho. Khong in ra gia tri."""
+    for path in (pathlib.Path(r"C:\LTTPlatform\secrets\app.env"),
+                 ROOT / "secrets" / "app.env"):
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8-sig").splitlines():
+            if line.strip().startswith(f"{ten}="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return ""
+
+
+def _superuser_pw() -> str:
+    for path in SUPER:
+        if path.exists():
+            return path.read_text(encoding="utf-8-sig").strip()
+    return ""
+
+
+def _tim_url() -> tuple[str, str]:
+    """Tra (url, ly_do_bo_qua). Mot trong hai luon rong."""
+    dat = (os.environ.get("LTT_TEST_DATABASE_URL") or "").strip()
+    if dat:
+        return dat, ""
+
+    live = (os.environ.get("LTT_DATABASE_URL") or "").strip() or _doc_env("LTT_DATABASE_URL")
+    if not live.startswith(("postgresql", "postgres")):
+        return "", "khong tim thay PostgreSQL (LTT_DATABASE_URL khong phai postgres)"
+
+    base, _, ten = live.rpartition("/")
+    ten = ten.split("?", 1)[0]
+    scratch_ten = f"{ten}{HAU_TO}"
+    scratch = f"{base}/{scratch_ten}"
+
+    try:
+        import sqlalchemy as sa
+    except ImportError:
+        return "", "khong co sqlalchemy"
+
+    # Da co san thi dung luon.
+    try:
+        e = sa.create_engine(scratch, future=True,
+                             connect_args={"connect_timeout": 5})
+        with e.connect():
+            pass
+        e.dispose()
+        return scratch, ""
+    except Exception as exc:                # noqa: BLE001
+        # Khong noi duoc = chua tao, hoac PostgreSQL khong chay. Giu lai ly do
+        # de neu buoc duoi cung that bai thi nguoi doc biet vi sao, thay vi chi
+        # thay "khong tao duoc" ma khong ro tai buoc nao.
+        vi_sao_khong_noi_duoc = f"{type(exc).__name__}"
+
+    pw = _superuser_pw()
+    if not pw:
+        return "", (f"chua co CSDL {scratch_ten} ({vi_sao_khong_noi_duoc}) va "
+                    f"khong co mat khau superuser de tao")
+    try:
+        thong_tin, _, dia_chi = base.partition("://")[2].partition("@")
+        # CSDL phai thuoc ve tai khoan cua NEN TANG, khong phai superuser: neu
+        # khong, `ltt_app` khong tao duoc bang trong do va moi test do voi
+        # "permission denied for schema public". Chi lay TEN dang nhap, khong
+        # cham toi mat khau.
+        chu = thong_tin.split(":", 1)[0]
+        admin_url = f"postgresql+psycopg://postgres:{pw}@{dia_chi}/postgres"
+        e = sa.create_engine(admin_url, future=True,
+                             isolation_level="AUTOCOMMIT",
+                             connect_args={"connect_timeout": 5})
+        with e.connect() as c:
+            c.execute(sa.text(f'CREATE DATABASE "{scratch_ten}" OWNER "{chu}"'))
+        e.dispose()
+        print(f"[i] da tao CSDL test {scratch_ten}")
+        return scratch, ""
+    except Exception as exc:                # noqa: BLE001
+        return "", (f"khong tao duoc CSDL test: {type(exc).__name__} "
+                    f"(khong noi duoc truoc do: {vi_sao_khong_noi_duoc})")
+
+
+def main() -> int:
+    url, ly_do = _tim_url()
+    if not url:
+        # KHONG phai loi: mot may khong co PostgreSQL van phai lam viec duoc.
+        # Nhung phai noi to, vi day la bang chung cho ba loi P0 da dong.
+        print("BO QUA bo bat bien da tien trinh — " + ly_do)
+        print("  test_214 la thu duy nhat chung minh webhook khong gui trung,")
+        print("  canh bao khong nhan doi, va so credit khop khi nhieu tien")
+        print("  trinh worker chay cung luc. Chay tay:")
+        print("    set LTT_TEST_DATABASE_URL=postgresql+psycopg://.../..._test")
+        print("    python -m pytest tests/test_214_multi_process_runtime.py")
+        return 0
+
+    env = dict(os.environ)
+    env["LTT_TEST_DATABASE_URL"] = url
+    env.pop("LTT_DATABASE_URL", None)       # test tu tro CSDL cua no
+    done = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q",
+         "tests/test_214_multi_process_runtime.py"],
+        cwd=str(ROOT), env=env, capture_output=True, text=True)
+    if done.returncode != 0:
+        print(done.stdout[-3000:])
+        print(done.stderr[-1500:])
+        return done.returncode
+    print(done.stdout.strip().splitlines()[-1] if done.stdout.strip() else "OK")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_sdk_contract.py
 SHA256=e01a3d4356bdd9d26ae1d23a7c737b2ca39452fe21f51fe8690b176104df6363 BYTES=3959 LINES=107
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -210075,7 +210503,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=b5609e787ab3741a08b496b5e70f294cbef1b3b91fe911ce96a078b70c96e8fb BYTES=7080 LINES=152
+SHA256=77b350e298c5cba9da7cba9cea6ec4b996c5ddfb8db9316351198ca55545d834 BYTES=7701 LINES=161
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -210155,6 +210583,15 @@ def _steps(quick: bool) -> list[Step]:
         Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
              ROOT),
     ]
+    if not quick:
+        # H36.9: bo bat bien DA TIEN TRINH. Ba loi P0 cua ban audit 2026-08-15
+        # lot qua hon ba nghin test vi chua tung co gi chay hai tien trinh
+        # worker cung luc — va phep do bit lo hong do lai chi chay khi co
+        # PostgreSQL, nen `pytest` chi in mot chu `s`. Mot chu `s` giua ba
+        # nghin dau cham la vo hinh. Buoc rieng nay khong lam gate do khi may
+        # khong co PostgreSQL, nhung viec bo qua thi khong bao gio con lang le.
+        steps.append(Step("bat bien da tien trinh",
+                          [sys.executable, "tools/check_multiproc.py"], ROOT))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name

@@ -76,6 +76,15 @@ def _steps(quick: bool) -> list[Step]:
         Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
              ROOT),
     ]
+    if not quick:
+        # H36.9: bo bat bien DA TIEN TRINH. Ba loi P0 cua ban audit 2026-08-15
+        # lot qua hon ba nghin test vi chua tung co gi chay hai tien trinh
+        # worker cung luc — va phep do bit lo hong do lai chi chay khi co
+        # PostgreSQL, nen `pytest` chi in mot chu `s`. Mot chu `s` giua ba
+        # nghin dau cham la vo hinh. Buoc rieng nay khong lam gate do khi may
+        # khong co PostgreSQL, nhung viec bo qua thi khong bao gio con lang le.
+        steps.append(Step("bat bien da tien trinh",
+                          [sys.executable, "tools/check_multiproc.py"], ROOT))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name

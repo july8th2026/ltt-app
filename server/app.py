@@ -74,6 +74,12 @@ _HASHED_FRONTEND_ASSET = re.compile(
 # silently stop being enforced. The web app owns it now.
 
 
+#: Chu kỳ xả bộ đếm của tiến trình web. Là hằng số module để test rút ngắn được
+#: — một luồng nền chỉ chạy sau 60 giây thì trên thực tế là một luồng không có
+#: test nào đi qua.
+METRICS_FLUSH_INTERVAL_S = 60.0
+
+
 def _xa_metrics_web(dung) -> None:
     """Đưa bộ đếm của tiến trình WEB xuống CSDL.
 
@@ -88,7 +94,7 @@ def _xa_metrics_web(dung) -> None:
     from platform_core.public_api import metrics
 
     log = logging.getLogger(__name__)
-    while not dung.wait(60.0):
+    while not dung.wait(METRICS_FLUSH_INTERVAL_S):
         try:
             gen = get_session()
             db = next(gen)
