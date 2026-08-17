@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:23dad5be1968fad9a61576cd8f38d7c751dcf7c9271fba9148c0f90ebcb97a13
+Fingerprint   : sha256:18c9b21f5c2a711ddc1ab07e565c78e81a398c3354c139c997aeb8d76d1fa0c6
 Nguồn đã quét : 1134 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2476,7 +2476,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1134 file; 10271689 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1134 file; 10282636 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2841,7 +2841,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=15bbc9b14977cbc267a2a9a3a76263e388c06aa88b2b5bb2b9ad094e37f5c7a1 BYTES=15986 LINES=281
+SHA256=a4c9dcc352556e627f919bb363a805a42d2e2d1a0f11a02bf749a9cb013cd317 BYTES=16528 LINES=291
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3092,17 +3092,27 @@ Ba thứ cần biết trước khi đụng vào worker:
   đó chạy ở **mọi** tiến trình.
 - **Đội hình worker khai bằng `LTT_WORKER_POOLS`** (vd `api:8, gpu+ffmpeg:2`).
   Không khai thì giữ nguyên hành vi cũ.
-- **`test_214` là bằng chứng đa tiến trình, và nó CHƯA nằm trong gate** — cần
-  `LTT_TEST_DATABASE_URL` trỏ tới CSDL PostgreSQL có chữ `test` trong tên. Chạy
-  nó bằng tay sau khi sửa bất cứ thứ gì trong worker hoặc outbox.
+- **`test_214` là bằng chứng đa tiến trình.** Từ H36.9 nó đã vào gate qua
+  `tools/check_multiproc.py` (tự tìm/tạo CSDL test). Vẫn nên chạy tay sau khi
+  sửa bất cứ thứ gì trong worker hoặc outbox.
 
-Điểm audit trung thực sau H36: **8,5/10**, không hạng mục nào trên 9 —
-`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4b nói rõ vì sao và còn thiếu gì.
+Điểm audit trung thực sau H36.9–12: **9,0/10**
+(`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4c). Việc duy nhất còn nợ của H36 là
+chạy `test_221` trên một bucket R2 vứt đi — chặn bởi một quyết định hạ tầng,
+không phải bởi code.
 
 Trạng thái và điều kiện còn lại: `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`
-(kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nặng nhất trong các
-điều kiện: **sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL** — mất pepper là mất
-toàn bộ khoá của khách, không khôi phục được.
+(kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nợ thật là **H35.9**,
+năm điều kiện ở §11 của file đó, tất cả đều cần máy chủ thật:
+
+- ✅ **Sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL** — phần công cụ xong
+  2026-08-17: `backup.ps1` ghi **hai** zip riêng (`ltt_data_*` và
+  `ltt_secrets_*`, thư mục anh em). Còn lại là việc của người: sinh pepper cho
+  production và cất một bản **ngoài máy này**.
+- ⬜ đo lại tải trên PostgreSQL thật qua Cloudflare;
+- ⬜ xác nhận trần 100 MB / 100 giây trên tunnel thật;
+- ⬜ nối `metrics` vào cảnh báo;
+- ⬜ xoay khoá provider + `capacity.check` thấy pool thật.
 
 ## Không bao giờ commit hay copy đi
 
@@ -79376,7 +79386,7 @@ class SemanticContext:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/5-lich-backup.ps1
-SHA256=aaec1018f40ad8e825b52e3a23f81f9340cbf235436862c61ad252a50e73d621 BYTES=5430 LINES=113
+SHA256=da88e714d40d2d0832300473350120ed59cb24e5cf4b582ed12711156ad5c690 BYTES=7188 LINES=146
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -79388,8 +79398,15 @@ SHA256=aaec1018f40ad8e825b52e3a23f81f9340cbf235436862c61ad252a50e73d621 BYTES=54
     nen mot o hong hoac cai lai Windows khong mat ca hai.
 
     Task chay bang tai khoan SYSTEM (khong can dang nhap), quyen cao nhat, va
-    doc duoc secrets\ (icacls da cap cho SYSTEM). Backup GOM CA secrets\app.env
-    (chua LTT_TOKEN_ENCRYPTION_KEY) va pg_dump cua CSDL.
+    doc duoc secrets\ (icacls da cap cho SYSTEM).
+
+    HAI ban sao rieng (H35.9):
+      -BackupDir  (mac dinh D:\LTTBackups)          -> config + *.enc + pg_dump
+      -SecretsDir (mac dinh D:\LTTBackups-secrets)  -> secrets\app.env
+
+    app.env giu LTT_TOKEN_ENCRYPTION_KEY va LTT_API_KEY_PEPPER; dump giu ban ma
+    cua token va hash khoa API. Gop chung mot zip thi mot ban bi lay cap la du
+    de doc token va tan cong khoa API ngoai tuyen.
 
     Chay lai duoc nhieu lan: da co task thi ghi de cau hinh moi (-Force).
 
@@ -79403,6 +79420,9 @@ SHA256=aaec1018f40ad8e825b52e3a23f81f9340cbf235436862c61ad252a50e73d621 BYTES=54
 param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$BackupDir = 'D:\LTTBackups',
+    # H35.9: thu muc ANH EM, khong phai thu muc con - dong bo off-site tro vao
+    # $BackupDir se khong vo tinh keo theo bi mat.
+    [string]$SecretsDir = '',
     [string]$Time = '02:30',
     [string]$TaskName = 'LTTStudioBackup',
     [string]$BackupScript = ''
@@ -79437,21 +79457,33 @@ if ($backupDrive -eq $rootDrive) {
 if (-not (Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null }
 Ok "Backup se ghi vao $BackupDir"
 
+if (-not $SecretsDir) { $SecretsDir = "$($BackupDir.TrimEnd('\'))-secrets" }
+if ((Split-Path -Qualifier $SecretsDir) -eq (Split-Path -Qualifier $BackupDir)) {
+    Note "Ban sao secrets nam CUNG o voi ban sao du lieu ($SecretsDir)."
+    Note 'Tach file da chan duoc mot zip bi lay cap; mot o hong van mat ca hai.'
+    Note 'Giai doan thuong mai: tro -SecretsDir sang o khac hoac ra ngoai may.'
+}
+if (-not (Test-Path $SecretsDir)) { New-Item -ItemType Directory -Path $SecretsDir -Force | Out-Null }
+Ok "Ban sao secrets se ghi vao $SecretsDir"
+
 # Siet ACL: ban backup CHUA secrets (app.env co LTT_TOKEN_ENCRYPTION_KEY) + dump
 # toan bo CSDL. Chi SYSTEM va Administrators duoc doc. Dung SID (khong dung ten
 # nhom) de dung tren ca Windows tieng Viet: *S-1-5-18 = SYSTEM,
 # *S-1-5-32-544 = Administrators. /inheritance:r bo thua ke tu o cha (vd D:\ mo
 # cho Users), roi cap lai dung 2 nhom nay -> Users/Everyone het quyen.
-& icacls $BackupDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
-if ($LASTEXITCODE -eq 0) {
-    Ok 'Da siet ACL thu muc backup (chi SYSTEM + Administrators doc duoc)'
-} else {
-    Note 'Khong siet duoc ACL thu muc backup - kiem quyen thu cong (icacls).'
+foreach ($dir in @($BackupDir, $SecretsDir)) {
+    & icacls $dir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Ok "Da siet ACL $dir (chi SYSTEM + Administrators doc duoc)"
+    } else {
+        Note "Khong siet duoc ACL $dir - kiem quyen thu cong (icacls)."
+    }
 }
 
 Head 'Dang ky Scheduled Task'
 $argLine = "-NonInteractive -ExecutionPolicy Bypass -File `"$BackupScript`" " +
-           "-Root `"$Root`" -IncludeSecrets -BackupDir `"$BackupDir`""
+           "-Root `"$Root`" -IncludeSecrets -BackupDir `"$BackupDir`" " +
+           "-SecretsDir `"$SecretsDir`""
 $action  = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $argLine
 $trigger = New-ScheduledTaskTrigger -Daily -At $Time
 # SYSTEM: chay khong can dang nhap, doc duoc secrets\ (icacls cap cho SYSTEM).
@@ -79475,11 +79507,19 @@ Write-Host "  LastTaskResult: $($info.LastTaskResult)  (0 = thanh cong)"
 $newest = Get-ChildItem -Path $BackupDir -Filter 'ltt_data_*.zip' -ErrorAction SilentlyContinue |
           Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if ($newest) {
-    Ok "Da tao ban backup: $($newest.FullName)"
+    Ok "Da tao ban backup du lieu: $($newest.FullName)"
 } else {
     Note 'Chua thay file backup - task co the con chay hoac loi. Kiem:'
     Note "  Get-ScheduledTaskInfo -TaskName $TaskName"
     Note "  dir $BackupDir"
+}
+
+$newestSecret = Get-ChildItem -Path $SecretsDir -Filter 'ltt_secrets_*.zip' -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($newestSecret) {
+    Ok "Da tao ban backup secrets: $($newestSecret.FullName)"
+} else {
+    Note "Chua thay ban sao secrets trong $SecretsDir - kiem lai truoc khi tin."
 }
 
 Write-Host ""
@@ -79487,15 +79527,18 @@ Write-Host ("-" * 62)
 Write-Host "XONG. Lich backup hang ngay da bat." -ForegroundColor Green
 Write-Host "  Xem task    : Get-ScheduledTaskInfo -TaskName $TaskName" -ForegroundColor Cyan
 Write-Host "  Chay ngay   : Start-ScheduledTask -TaskName $TaskName" -ForegroundColor Cyan
-Write-Host "  Ban backup  : $BackupDir (giu 14 ban gan nhat)" -ForegroundColor Cyan
+Write-Host "  Ban du lieu : $BackupDir (giu 14 ban gan nhat)" -ForegroundColor Cyan
+Write-Host "  Ban secrets : $SecretsDir (giu 14 ban gan nhat)" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "NHAC: dinh ky khoi phuc THU tu backup de chac chan phuc hoi duoc." -ForegroundColor Yellow
+Write-Host "NHAC: cat MOT ban secrets ngoai may nay. Mat LTT_API_KEY_PEPPER la" -ForegroundColor Yellow
+Write-Host "      mat toan bo khoa API cua khach, khong khoi phuc duoc." -ForegroundColor Yellow
 Write-Host "Giai doan thuong mai: them mot ban off-site (R2/may khac)." -ForegroundColor Yellow
 
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/backup.ps1
-SHA256=f69ca65b500867658c3344e05b8e1c466d99aad0bd7539a031837ef062c4801f BYTES=5194 LINES=119
+SHA256=7e9675c4eeeb500171bc78a69ae22bc5cf5fdac659fd577cc0c34296c8b275e9 BYTES=7858 LINES=167
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -79506,9 +79549,21 @@ SHA256=f69ca65b500867658c3344e05b8e1c466d99aad0bd7539a031837ef062c4801f BYTES=51
     encrypted token stores and the audit log are included; the disposable
     video cache, session locks and rotating logs are excluded.
 
-    The archive contains SECRET MATERIAL (encrypted token stores, and
-    secrets\app.env if -IncludeSecrets is passed). Store it somewhere with
-    the same protection as the server itself.
+    HAI ban sao luu RIENG, khong bao gio chung mot file zip:
+
+      ltt_data_<stamp>.zip     -> -BackupDir   (config, *.enc, *.db, pg_dump)
+      ltt_secrets_<stamp>.zip  -> -SecretsDir  (secrets\app.env)
+
+    Vi sao tach (H35.9): app.env giu LTT_TOKEN_ENCRYPTION_KEY va
+    LTT_API_KEY_PEPPER, con dump giu ban ma cua token lan hash khoa API cua
+    khach. Gop chung mot zip nghia la MOT ban sao bi lay cap la du de doc token
+    va tan cong khoa API ngoai tuyen. Tach ra thi mot ban sao khong con du.
+
+    Mac dinh -SecretsDir la thu muc ANH EM cua -BackupDir (duoi '-secrets'),
+    KHONG phai thu muc con: dong bo off-site tro vao -BackupDir se khong vo
+    tinh keo theo bi mat.
+
+    Ca hai ban sao van CHUA du lieu nhay cam. Bao ve chung nhu bao ve may chu.
 #>
 [CmdletBinding()]
 param(
@@ -79517,13 +79572,16 @@ param(
     [switch]$IncludeSecrets,
     # Q28: mac dinh backup nam CUNG o voi ban chay ($Root\backups). De chong
     # mat du lieu khi mot o hong, tro sang O KHAC bang -BackupDir D:\LTTBackups.
-    [string]$BackupDir = ''
+    [string]$BackupDir = '',
+    # H35.9: noi cat ban sao secrets. Mac dinh "<BackupDir>-secrets".
+    [string]$SecretsDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
 
 $dataDir = Join-Path $Root 'data'
 if ($BackupDir) { $backups = $BackupDir } else { $backups = Join-Path $Root 'backups' }
+if ($SecretsDir) { $secretsOut = $SecretsDir } else { $secretsOut = "$($backups.TrimEnd('\'))-secrets" }
 $staging = Join-Path $env:TEMP "ltt_backup_$Stamp"
 
 if (-not (Test-Path $dataDir)) { throw "Data directory not found: $dataDir" }
@@ -79541,14 +79599,9 @@ foreach ($p in $patterns) {
     }
 }
 
-if ($IncludeSecrets) {
-    $envFile = Join-Path $Root 'secrets\app.env'
-    if (Test-Path $envFile) {
-        Copy-Item $envFile -Destination (Join-Path $staging 'app.env') -Force
-        $copied++
-        Write-Host '  [!] Secrets INCLUDED - protect this archive accordingly.' -ForegroundColor Yellow
-    }
-}
+# -IncludeSecrets duoc xu ly O CUOI FILE, trong mot ban sao RIENG. Khong copy
+# app.env vao $staging: staging la thu muc dung de nen ra ltt_data_*.zip, va
+# ca hai thu do nam chung mot zip chinh la loi dang sua (H35.9).
 
 # ---- PostgreSQL ------------------------------------------------------------
 # Sao luu file KHONG bat duoc du lieu Postgres: no nam trong thu muc du lieu
@@ -79592,6 +79645,28 @@ if (Test-Path $envFile) {
     }
 }
 
+# Nen mot thu muc staging thanh zip, MO LAI de kiem, roi don ban cu.
+# Mot ban sao luu chua tung mo lai la niem tin, khong phai ban sao luu.
+function Write-LttArchive {
+    param(
+        [Parameter(Mandatory = $true)][string]$Staging,
+        [Parameter(Mandatory = $true)][string]$Archive,
+        [Parameter(Mandatory = $true)][string]$Pattern,
+        [int]$Keep = 14
+    )
+    Compress-Archive -Path (Join-Path $Staging '*') -DestinationPath $Archive -Force
+    Remove-Item $Staging -Recurse -Force
+
+    $zip = [IO.Compression.ZipFile]::OpenRead($Archive)
+    try { $entries = $zip.Entries.Count } finally { $zip.Dispose() }
+    Write-Host "  [OK] Backup written: $Archive ($entries entries)" -ForegroundColor Green
+
+    Get-ChildItem -Path (Split-Path -Parent $Archive) -Filter $Pattern |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip $Keep |
+        ForEach-Object { Remove-Item $_.FullName -Force; Write-Host "  pruned $($_.Name)" }
+}
+
 if ($copied -eq 0) {
     # An empty data directory is a legitimate state (fresh install, before
     # any config or token exists) - not an error. Throwing here used to
@@ -79599,23 +79674,39 @@ if ($copied -eq 0) {
     # touches anything. Warn and succeed instead.
     Remove-Item $staging -Recurse -Force
     Write-Host '  [SKIP] Khong co du lieu de sao luu (cai moi) - bo qua.' -ForegroundColor Yellow
-    exit 0
+} else {
+    Write-LttArchive -Staging $staging `
+                     -Archive (Join-Path $backups "ltt_data_$Stamp.zip") `
+                     -Pattern 'ltt_data_*.zip'
 }
 
-$archive = Join-Path $backups "ltt_data_$Stamp.zip"
-Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive -Force
-Remove-Item $staging -Recurse -Force
+# ---- Secrets, trong mot ban sao RIENG ---------------------------------------
+# H35.9. Mat LTT_API_KEY_PEPPER la mat TOAN BO khoa API cua khach, khong khoi
+# phuc duoc - nen no phai duoc sao luu. Nhung sao luu no CUNG CHO voi pg_dump
+# thi mot ban zip bi lay cap la du de tan cong khoa ngoai tuyen. Hai file, hai
+# thu muc.
+if ($IncludeSecrets) {
+    $envFile = Join-Path $Root 'secrets\app.env'
+    if (Test-Path $envFile) {
+        if (-not (Test-Path $secretsOut)) {
+            New-Item -ItemType Directory -Path $secretsOut -Force | Out-Null
+        }
+        if ((Resolve-Path $backups).Path -eq (Resolve-Path $secretsOut).Path) {
+            Write-Host ('  [!] -SecretsDir TRUNG -BackupDir. Hai ban sao van la hai ' +
+                        'file rieng, nhung nam cung mot thu muc thi khong con tach ' +
+                        'that. Tro -SecretsDir sang cho khac.') -ForegroundColor Yellow
+        }
+        $secretStaging = Join-Path $env:TEMP "ltt_secrets_$Stamp"
+        New-Item -ItemType Directory -Path $secretStaging -Force | Out-Null
+        Copy-Item $envFile -Destination (Join-Path $secretStaging 'app.env') -Force
 
-# Verify the archive is readable before reporting success - an unverified
-# backup is not a backup.
-$entries = [IO.Compression.ZipFile]::OpenRead($archive).Entries.Count
-Write-Host "  [OK] Backup written: $archive ($entries entries, $copied files)" -ForegroundColor Green
-
-# Retention: keep the 14 most recent archives.
-Get-ChildItem -Path $backups -Filter 'ltt_data_*.zip' |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -Skip 14 |
-    ForEach-Object { Remove-Item $_.FullName -Force; Write-Host "  pruned $($_.Name)" }
+        Write-LttArchive -Staging $secretStaging `
+                         -Archive (Join-Path $secretsOut "ltt_secrets_$Stamp.zip") `
+                         -Pattern 'ltt_secrets_*.zip'
+        Write-Host ('  [!] Ban sao secrets CHUA khoa ma hoa va pepper. Cat mot ban ' +
+                    'NGOAI may nay (Q28: off-site).') -ForegroundColor Yellow
+    }
+}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -80006,7 +80097,7 @@ Write-Host @"
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/restore.ps1
-SHA256=a7c332d09400635575ac1c016727fea2cf9f053dd667a39e123ad7797d3bb5db BYTES=4418 LINES=94
+SHA256=d9e51a753c40d79f853aecead01c81f7199ff24b420966ebabc449ca4006e963 BYTES=5416 LINES=110
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -80032,6 +80123,22 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not (Test-Path $Archive)) { throw "Archive not found: $Archive" }
+
+# H35.9: backup.ps1 ghi hai loai zip. Ban secrets KHONG duoc do vao data\ va
+# KHONG duoc ghi de tu dong - app.env la file cau hinh cua dich vu dang chay,
+# ghi de nham no lam ca nen tang khong khoi dong lai duoc. Dien tay, co chu y.
+$isSecretArchive = (Split-Path -Leaf $Archive) -like 'ltt_secrets_*'
+if ($isSecretArchive -and $Live) {
+    Write-Host ''
+    Write-Host '  [!] Day la ban sao SECRETS, khong phai ban sao du lieu.' -ForegroundColor Red
+    Write-Host '      Khoi phuc secrets phai lam bang tay, co chu y:' -ForegroundColor Yellow
+    Write-Host "        1. Expand-Archive `"$Archive`" -DestinationPath <thu muc tam>" -ForegroundColor Cyan
+    Write-Host "        2. So sanh voi $Root\secrets\app.env truoc khi thay" -ForegroundColor Cyan
+    Write-Host '        3. Dung dich vu, thay file, khoi dong lai, kiem /health/ready' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host '      Bo -Live de dien thu vao thu muc rieng.' -ForegroundColor Yellow
+    exit 1
+}
 
 if (-not $Live) {
     $target = Join-Path $Root ('restore_test_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
@@ -81171,7 +81278,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=de304540662f2e1a3e065d5a3f0b90d4f3c19b7d3025ed69d4880423b349200f BYTES=161748 LINES=2379
+SHA256=def8a72464e5b702583c2d266693b73ec2b82aa8ed8121ecd5e6cb6b4d5c9942 BYTES=164047 LINES=2407
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -83505,10 +83612,38 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
   đo tải, full gate **PASS 13/13** (pytest 4.591 s), kiểm trình duyệt 27 trang.
   Kết luận `API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY` ghi tại
   `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`.
-- [ ] H35.9 **Điều kiện của chữ "controlled" — chưa làm, cần máy chủ thật.**
-  Đo lại tải với PostgreSQL qua Cloudflare; **sao lưu `LTT_API_KEY_PEPPER` tách
-  khỏi CSDL** (mất pepper là mất toàn bộ khoá của khách); nối `metrics` vào cảnh
-  báo; xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
+- [ ] H35.9 **Điều kiện của chữ "controlled" — cần máy chủ thật.** Năm điều kiện
+  ở §11 của `API_PLATFORM_FULL_RELEASE_READINESS.md`:
+  - [x] **H35.9a — tách ban sao pepper khỏi CSDL (phần công cụ), 2026-08-17.**
+    Đo trên máy chủ: `ltt_data_20260817_023001.zip` chứa **cả** `app.env` lẫn
+    `lttplatform.dump` trong **một** zip — nghĩa là một bản sao bị lấy cắp là đủ
+    để đọc token đã mã hoá (`LTT_TOKEN_ENCRYPTION_KEY` nằm ngay cạnh bản mã) và,
+    sau khi Public API lên, tấn công khoá API của khách ngoại tuyến
+    (`LTT_API_KEY_PEPPER` nằm ngay cạnh hash). Sửa: `backup.ps1` ghi **hai**
+    archive riêng — `ltt_data_*.zip` → `-BackupDir`, `ltt_secrets_*.zip` →
+    `-SecretsDir` (mặc định thư mục **anh em** `<BackupDir>-secrets`, không phải
+    thư mục con, để đồng bộ off-site không vô tình kéo theo bí mật).
+    `5-lich-backup.ps1` truyền `-SecretsDir` và siết ACL cả hai thư mục;
+    `restore.ps1` từ chối `-Live` trên bản secrets (đổ vào `data\` là sai chỗ, và
+    ghi đè `app.env` của dịch vụ đang chạy có thể làm nền tảng không khởi động
+    lại được). Bốn test chốt trong `test_45`, chạy thật hai kịch bản trên thư mục
+    giả: tách đúng hai zip, và **máy mới cài (data\ rỗng) vẫn có bản sao secrets**
+    — trước đây nhánh đó `exit 0` nên sẽ không sao lưu gì cả.
+
+    **Đã áp lên máy chủ 2026-08-17**, và lúc áp phát hiện lỗ hổng thứ hai:
+    `D:\LTTBackups` **chưa từng được siết ACL** (mọi ACE đều thừa kế từ `D:\`,
+    gồm `Authenticated Users:(M)`), nên mọi tài khoản đăng nhập được máy đều đọc
+    được `app.env` + dump CSDL. Test cũ chốt được *script có lệnh `icacls`*,
+    không chốt được *lệnh đó đã chạy trên máy thật*. Nay hai thư mục chỉ còn
+    `Administrators` + `SYSTEM`; bản sao ngày `154433` đã tách đúng
+    (`ltt_data_*` không còn `app.env`). **13 bản cũ vẫn gói chung** — đã được ACL
+    bảo vệ và tự rụng theo hạn giữ 14 bản.
+  - [ ] H35.9b Sinh pepper cho production + cất **một bản ngoài máy này**
+    (việc của người, không phải của code).
+  - [ ] H35.9c Đo lại tải với PostgreSQL thật qua Cloudflare.
+  - [ ] H35.9d Xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
+  - [ ] H35.9e Nối `metrics` vào cảnh báo; xoay khoá provider + `capacity.check`
+    thấy pool thật.
 - [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
   ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.
 
@@ -193709,7 +193844,7 @@ def test_fake_finding_matches_the_real_finding_fields():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_45_deploy_scripts.py
-SHA256=33a9d2f45ecf3920396c2966cb4f959344d84132a1a512a2c50f88ef8255c40f BYTES=8004 LINES=192
+SHA256=26f365c79cc2e729fb8174cf9d8c5f74e7a0c21c09637e15fda08bfd4fc45d63 BYTES=10095 LINES=240
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 P9 — deployment script sanity checks.
@@ -193783,6 +193918,54 @@ def test_service_env_loader_allows_empty_optional_integration_placeholders():
     assert "skip empty" in text
     assert "These variables are still empty" not in text
     assert "tools\\nssm.exe" in text
+
+
+def test_backup_never_puts_secrets_in_the_database_archive():
+    """H35.9: app.env va pg_dump khong duoc nam chung mot zip.
+
+    Do that ngay 2026-08-17 tren may chu: ltt_data_20260817_023001.zip chua ca
+    `app.env` lan `lttplatform.dump`. Nghia la MOT ban zip bi lay cap la du de
+    doc token da ma hoa (co LTT_TOKEN_ENCRYPTION_KEY) va - sau khi Public API
+    len - tan cong khoa API cua khach ngoai tuyen (co LTT_API_KEY_PEPPER).
+
+    Chot bang cau truc chu khong bang cau chu: ban secrets phai la mot archive
+    RIENG, va app.env khong duoc copy vao thu muc staging cua ban du lieu.
+    """
+    text = _read("backup.ps1")
+
+    assert "ltt_secrets_$Stamp.zip" in text, "phai co archive secrets rieng"
+    assert "SecretsDir" in text, "phai cho phep chon noi cat ban secrets"
+
+    # app.env chi duoc copy vao staging RIENG cua secrets, khong vao $staging.
+    for line in text.splitlines():
+        if "Copy-Item" not in line or "app.env" not in line:
+            continue
+        assert "$secretStaging" in line, (
+            f"app.env bi copy vao staging cua ban du lieu: {line.strip()}"
+        )
+
+
+def test_backup_secrets_dir_defaults_to_a_sibling_not_a_child():
+    """Thu muc CON se bi dong bo off-site keo theo cung ban du lieu, tuc la tach
+    xong lai gop lai o buoc sau. Mac dinh phai la thu muc ANH EM."""
+    text = _read("backup.ps1")
+    assert "-secrets\"" in text or "-secrets'" in text
+    assert "Join-Path $backups 'secrets'" not in text
+
+
+def test_scheduled_backup_passes_a_separate_secrets_dir():
+    text = _read("5-lich-backup.ps1")
+    assert "-SecretsDir" in text, "lich chay phai truyen -SecretsDir cho backup.ps1"
+    # ACL phai siet CA HAI thu muc - ban secrets khong duoc long hon ban du lieu.
+    assert "@($BackupDir, $SecretsDir)" in text
+
+
+def test_restore_refuses_to_overwrite_live_secrets():
+    """Ban secrets do vao data\\ la sai cho, va ghi de app.env cua dich vu dang
+    chay co the lam nen tang khong khoi dong lai duoc."""
+    text = _read("restore.ps1")
+    assert "ltt_secrets_*" in text
+    assert "$isSecretArchive -and $Live" in text
 
 
 def test_scheduled_backup_tightens_acl():
@@ -193907,7 +194090,7 @@ def test_server2016_bootstrap_pins_python_312_not_313():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_46_deploy_realworld_fixes.py
-SHA256=82321a119de4439e9faebd8d3bb4b99dff73adf39c99daac7bf3bef0c7a6b255 BYTES=7726 LINES=185
+SHA256=bccb2b645e49e48d658eecc549ff8dfd04357326570b4c892642523ea35f92ea BYTES=8321 LINES=196
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Two bugs found during the first real deployment to a Windows Server 2022
@@ -194041,8 +194224,19 @@ def test_backup_treats_empty_data_dir_as_skip_not_error():
         "an empty data directory is a legitimate fresh-install state, "
         "not a failure that should abort the caller"
     )
-    assert "exit 0" in src
     assert "[SKIP]" in src
+
+    # Truoc H35.9 duong nay la `exit 0`. Khong con nua, va co chu y: ban sao
+    # secrets duoc ghi SAU khoi nay, nen thoat som se lam mot may moi cai
+    # co app.env nhung KHONG co ban sao nao cua no. Chot bang cau truc:
+    # nhanh rong phai la mot `else`, khong duoc thoat khoi script.
+    empty_branch = src[src.index("[SKIP]"):]
+    assert "exit" not in empty_branch.split("}", 1)[0], (
+        "nhanh 'khong co du lieu' khong duoc exit: ban sao secrets nam sau no"
+    )
+    assert src.index("[SKIP]") < src.index("ltt_secrets_$Stamp"), (
+        "khoi secrets phai chay sau nhanh skip, khong bi no cat mat"
+    )
 
 
 def test_update_still_backs_up_before_changing_anything():

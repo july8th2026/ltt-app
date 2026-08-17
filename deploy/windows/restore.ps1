@@ -23,6 +23,22 @@ $ErrorActionPreference = 'Stop'
 
 if (-not (Test-Path $Archive)) { throw "Archive not found: $Archive" }
 
+# H35.9: backup.ps1 ghi hai loai zip. Ban secrets KHONG duoc do vao data\ va
+# KHONG duoc ghi de tu dong - app.env la file cau hinh cua dich vu dang chay,
+# ghi de nham no lam ca nen tang khong khoi dong lai duoc. Dien tay, co chu y.
+$isSecretArchive = (Split-Path -Leaf $Archive) -like 'ltt_secrets_*'
+if ($isSecretArchive -and $Live) {
+    Write-Host ''
+    Write-Host '  [!] Day la ban sao SECRETS, khong phai ban sao du lieu.' -ForegroundColor Red
+    Write-Host '      Khoi phuc secrets phai lam bang tay, co chu y:' -ForegroundColor Yellow
+    Write-Host "        1. Expand-Archive `"$Archive`" -DestinationPath <thu muc tam>" -ForegroundColor Cyan
+    Write-Host "        2. So sanh voi $Root\secrets\app.env truoc khi thay" -ForegroundColor Cyan
+    Write-Host '        3. Dung dich vu, thay file, khoi dong lai, kiem /health/ready' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host '      Bo -Live de dien thu vao thu muc rieng.' -ForegroundColor Yellow
+    exit 1
+}
+
 if (-not $Live) {
     $target = Join-Path $Root ('restore_test_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
     New-Item -ItemType Directory -Path $target -Force | Out-Null

@@ -247,17 +247,27 @@ Ba thứ cần biết trước khi đụng vào worker:
   đó chạy ở **mọi** tiến trình.
 - **Đội hình worker khai bằng `LTT_WORKER_POOLS`** (vd `api:8, gpu+ffmpeg:2`).
   Không khai thì giữ nguyên hành vi cũ.
-- **`test_214` là bằng chứng đa tiến trình, và nó CHƯA nằm trong gate** — cần
-  `LTT_TEST_DATABASE_URL` trỏ tới CSDL PostgreSQL có chữ `test` trong tên. Chạy
-  nó bằng tay sau khi sửa bất cứ thứ gì trong worker hoặc outbox.
+- **`test_214` là bằng chứng đa tiến trình.** Từ H36.9 nó đã vào gate qua
+  `tools/check_multiproc.py` (tự tìm/tạo CSDL test). Vẫn nên chạy tay sau khi
+  sửa bất cứ thứ gì trong worker hoặc outbox.
 
-Điểm audit trung thực sau H36: **8,5/10**, không hạng mục nào trên 9 —
-`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4b nói rõ vì sao và còn thiếu gì.
+Điểm audit trung thực sau H36.9–12: **9,0/10**
+(`docs/PUBLIC_API/AUDIT_API_2026-08-15.md` §4c). Việc duy nhất còn nợ của H36 là
+chạy `test_221` trên một bucket R2 vứt đi — chặn bởi một quyết định hạ tầng,
+không phải bởi code.
 
 Trạng thái và điều kiện còn lại: `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`
-(kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nặng nhất trong các
-điều kiện: **sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL** — mất pepper là mất
-toàn bộ khoá của khách, không khôi phục được.
+(kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nợ thật là **H35.9**,
+năm điều kiện ở §11 của file đó, tất cả đều cần máy chủ thật:
+
+- ✅ **Sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL** — phần công cụ xong
+  2026-08-17: `backup.ps1` ghi **hai** zip riêng (`ltt_data_*` và
+  `ltt_secrets_*`, thư mục anh em). Còn lại là việc của người: sinh pepper cho
+  production và cất một bản **ngoài máy này**.
+- ⬜ đo lại tải trên PostgreSQL thật qua Cloudflare;
+- ⬜ xác nhận trần 100 MB / 100 giây trên tunnel thật;
+- ⬜ nối `metrics` vào cảnh báo;
+- ⬜ xoay khoá provider + `capacity.check` thấy pool thật.
 
 ## Không bao giờ commit hay copy đi
 

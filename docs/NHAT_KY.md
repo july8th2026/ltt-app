@@ -14,6 +14,155 @@
 
 ---
 
+## 2026-08-17 — LTT NEXUS: discovery + H35.9a tách bản sao secrets khỏi CSDL
+
+- **Mục tiêu:** đọc `LTT_NEXUS_CLAUDE_BUILD_PACK_V2_ADAPTIVE` và bắt đầu xây
+  LTT Nexus (sản phẩm điều khiển máy từ xa). Theo `00_MASTER_ORCHESTRATOR.md`,
+  việc đầu tiên là discovery + dependency plan thật, không phải chạy 01→42.
+- **Hạng mục:** Nexus N0 (discovery) — xong; **H35.9a** — xong.
+- **Trạng thái:** discovery xong; H35.9a code + test xong, **chưa áp lên
+  production**.
+
+### Đã làm
+
+**1. Discovery Nexus** → `docs/nexus/CURRENT_STATE_AUDIT.md` +
+`docs/nexus/EXECUTION_PLAN.md`. Ba xung đột cứng tìm được, đều có bằng chứng:
+
+- **Mạng:** Cloudflare Tunnel không chở được phiên điều khiển (trần 100 giây +
+  hạn chế ToS về stream), mà máy chủ này cố ý *không mở cổng, không IP tĩnh*.
+  Nexus bắt buộc cần hạ tầng relay thứ hai có IP công khai.
+- **Hợp đồng app:** Nexus không vừa `apps/<slug>` (cần bảng thiết bị ở tầng nền
+  tảng, cấp credential cho tiến trình ngoài, bề mặt HTTP ngoài `route_prefix`).
+  Tiền lệ đúng là Q92 — phải bổ sung một dòng quyết định Q93, không đi vòng.
+- **Giấy phép:** kiểm trực tiếp github.com — RustDesk client **và**
+  rustdesk-server OSS đều **AGPL-3.0**.
+
+Chủ sản phẩm đã chốt: **P1** (đóng nợ Public API trước), **D1** = dùng RustDesk
+AGPL với ranh giới tiến trình, **D2** hoãn, **D3** = thuê bao tháng theo số máy.
+
+**2. Cải chính một chỗ tài liệu sai.** `CLAUDE.md` ghi "còn nợ 4 việc chứng minh
+— xem H36.9–12", nhưng H36.9–12 **đã xong 2026-08-16**. Nợ thật là **H35.9**.
+Đúng kiểu lỗi mà `QUYET_DINH_NEN_TANG.md` §4 đã cảnh báo: phần *nhật ký* được
+cập nhật kỷ luật, phần *tóm tắt trạng thái* thì không. Đã sửa `CLAUDE.md`.
+
+**3. H35.9a — bản sao secrets không còn nằm chung zip với CSDL.**
+
+Đo trên máy chủ thật trước khi sửa:
+
+```
+ltt_data_20260817_023001.zip -> app.env, config.json, content_history.db,
+                                lttplatform.dump
+```
+
+Một zip chứa **cả** `app.env` lẫn `pg_dump`. Hậu quả nếu không sửa: một bản sao
+lưu bị lấy cắp là đủ để (a) giải mã token đã mã hoá — `LTT_TOKEN_ENCRYPTION_KEY`
+nằm ngay cạnh bản mã, và (b) sau khi Public API lên, tấn công khoá API của khách
+ngoại tuyến — `LTT_API_KEY_PEPPER` nằm ngay cạnh hash. Đây chính là lý do điều
+kiện H35.9 nói **"tách khỏi CSDL"**, và nó không thể thoả bằng cách chỉ thêm một
+biến vào `app.env`.
+
+Sửa:
+
+- `backup.ps1` ghi **hai** archive: `ltt_data_*.zip` → `-BackupDir`,
+  `ltt_secrets_*.zip` → `-SecretsDir`. Mặc định `-SecretsDir` là thư mục **anh
+  em** `<BackupDir>-secrets`, **không** phải thư mục con — để đồng bộ off-site
+  trỏ vào `-BackupDir` không vô tình kéo theo bí mật.
+- Nhánh "data\ rỗng" không còn `exit 0`: máy mới cài vẫn phải có bản sao secrets.
+  Trước đây nhánh đó thoát sớm nên sẽ không sao lưu gì cả.
+- `5-lich-backup.ps1` truyền `-SecretsDir` và siết ACL **cả hai** thư mục.
+- `restore.ps1` từ chối `-Live` trên bản secrets: đổ vào `data\` là sai chỗ, và
+  ghi đè `app.env` của dịch vụ đang chạy có thể làm nền tảng không khởi động lại
+  được. In ra ba bước làm tay thay vì tự động hoá một việc nguy hiểm.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_45 tests/test_46 tests/test_62 tests/test_63 -q` | **93 passed** |
+| `python tools\gate.py --quick` | 11/12 PASS → hồ sơ hệ thống STALE → chạy `build_system_profile.py` → sạch |
+| Chạy thật `backup.ps1` trên thư mục giả (scratchpad) | `ltt_data_testrun.zip` → config.json, content_history.db, tokens.enc; `ltt_secrets_testrun.zip` → app.env. **Hai zip, hai thư mục.** |
+| Chạy thật với `data\` rỗng | `[SKIP]` bản dữ liệu, **vẫn ghi** `ltt_secrets_empty.zip` |
+| Chạy thật `restore.ps1 -Live` trên bản secrets | Từ chối, `EXIT=1`, in hướng dẫn làm tay |
+| `python -m pytest tests -q` | đang chạy khi ghi mục này — xem mục kế tiếp |
+
+Ghi chú: `python -m pytest -q` (không chỉ định thư mục) **lỗi collection** vì
+bản canary cũ trong `tmp/h26-canary-20260809-120519/tests`. Không liên quan thay
+đổi này; phải chạy `python -m pytest tests -q`.
+
+### Quyết định mới
+
+Chưa thêm dòng Q nào. **Q93 (Nexus là platform capability)** sẽ được thêm khi
+bắt đầu N2.0, không phải bây giờ — chưa viết code nền tảng thì chưa có gì để
+chốt. D1/D3 đã ghi trong `docs/nexus/EXECUTION_PLAN.md` mục 2.
+
+### Cách lùi lại
+
+Ba file trong `deploy/windows/` + hai file test. `git checkout` là đủ. Chưa có gì
+chạm production nên không cần lùi trên máy chủ.
+
+### Đã áp lên máy chủ — và một lỗ hổng thứ hai tìm được lúc áp
+
+Chủ sản phẩm yêu cầu tự chạy. **Không** chạy `setup\2-cai-dat.ps1` như liệt kê
+ban đầu: script đó thay **toàn bộ** `C:\LTTPlatform\app\` bằng cây nguồn hiện tại
+(đang ở `public-api-v2`, **đi trước `master` 38 commit**) và chạy
+`alembic upgrade head`. Đó là deploy cả khu Public API kèm migration, không phải
+sửa script backup. Tách ra thành quyết định riêng.
+
+Cũng **không** chạy `5-lich-backup.ps1` trước: nó truyền `-SecretsDir` cho
+`backup.ps1` trong `app\`, mà bản ở đó chưa có tham số này → binding error →
+**backup hằng ngày hỏng hẳn**. Thứ tự đúng: cập nhật script trước, task sau.
+
+Đã làm, theo thứ tự:
+
+1. Chép ba script đã sửa vào `C:\LTTPlatform\app\deploy\windows\` (hash khớp
+   nguồn). Có ý thức rằng `CLAUDE.md` cấm sửa file trong `app\`; ở đây nguồn đã
+   mang đúng nội dung đó nên lần cập nhật sau ghi đè bằng bản y hệt, không mất gì.
+2. Chạy `5-lich-backup.ps1` bằng quyền Administrator (mẫu hai lớp
+   `AGENTS.md` 9.3 — `EXITCODE=0`).
+
+**Lỗ hổng thứ hai, đo được lúc kiểm ACL:** `D:\LTTBackups` **chưa từng được
+siết**. Mọi ACE đều là `(I)` thừa kế từ `D:\`, gồm `Authenticated Users:(M)` và
+`BUILTIN\Users:(RX)`. Tức là **bất kỳ tài khoản nào đăng nhập được máy đều đọc
+được** bản zip chứa `app.env` (có `LTT_TOKEN_ENCRYPTION_KEY`) và toàn bộ dump
+CSDL. `5-lich-backup.ps1` vẫn luôn có dòng `icacls`, nhưng ở máy này nó chưa
+từng có hiệu lực — nghĩa là test `test_scheduled_backup_tightens_acl` chốt được
+*script có lệnh đó*, không chốt được *lệnh đó đã chạy*. Nay đã siết cả hai
+thư mục.
+
+### Bằng chứng trên máy chủ thật (không lấy lời script nói)
+
+```
+ACL D:\LTTBackups          -> Administrators:(OI)(CI)(F), SYSTEM:(OI)(CI)(F)   [het ACE thua ke]
+ACL D:\LTTBackups-secrets  -> Administrators:(OI)(CI)(F), SYSTEM:(OI)(CI)(F)
+
+ltt_data_20260817_154433.zip    -> config.json, content_history.db, lttplatform.dump
+ltt_secrets_20260817_154433.zip -> app.env
+```
+
+Phiên **không** nâng quyền của Claude đọc hai thư mục đó nay nhận
+`Access is denied` — đó là phép thử độc lập cho việc siết ACL.
+
+### Còn tồn đọng
+
+- **13 bản sao cũ vẫn gói chung `app.env` + `.dump`** trong một zip. Nay đã được
+  ACL bảo vệ, và chúng tự rụng theo hạn giữ 14 bản (khoảng hai tuần). Không xoá
+  tay: xoá bản sao lưu là hành động phá huỷ, và bản cũ vẫn là đường lùi.
+- **Bản sao secrets vẫn nằm cùng ổ D** với bản dữ liệu. Tách file đã chặn được
+  kịch bản "một zip bị lấy cắp"; **chưa** chặn được "ổ D hỏng". Cần bản off-site
+  (Q28 đã ghi là việc của giai đoạn thương mại).
+- H35.9 còn b/c/d/e — xem `KE_HOACH_TRIEN_KHAI.md`. Trong đó **b (sinh pepper +
+  cất một bản ngoài máy) là việc của người**, tôi không cầm giá trị bí mật.
+- **Chưa deploy `public-api-v2`.** H35.9c/d bắt buộc phải deploy xong mới đo được.
+
+### Việc tiếp theo
+
+1. Duyệt và áp hai hành động production ở trên, rồi kiểm bản sao ngày kế tiếp
+   thật sự ra **hai** zip.
+2. H35.9b: sinh `LTT_API_KEY_PEPPER` cho production, cất một bản **ngoài máy**.
+3. Deploy `public-api-v2`, rồi H35.9c/d/e (đo tải thật, trần Cloudflare, cảnh báo).
+
+---
+
 ## 2026-08-16 — H36: củng cố phần THI HÀNH của Public API
 
 - **Mục tiêu:** audit toàn diện khu API rồi sửa phần yếu. Nửa hợp đồng (xác

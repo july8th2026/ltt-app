@@ -2330,10 +2330,38 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
   đo tải, full gate **PASS 13/13** (pytest 4.591 s), kiểm trình duyệt 27 trang.
   Kết luận `API_PLATFORM_FULL_READY_FOR_CONTROLLED_DEPLOY` ghi tại
   `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`.
-- [ ] H35.9 **Điều kiện của chữ "controlled" — chưa làm, cần máy chủ thật.**
-  Đo lại tải với PostgreSQL qua Cloudflare; **sao lưu `LTT_API_KEY_PEPPER` tách
-  khỏi CSDL** (mất pepper là mất toàn bộ khoá của khách); nối `metrics` vào cảnh
-  báo; xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
+- [ ] H35.9 **Điều kiện của chữ "controlled" — cần máy chủ thật.** Năm điều kiện
+  ở §11 của `API_PLATFORM_FULL_RELEASE_READINESS.md`:
+  - [x] **H35.9a — tách ban sao pepper khỏi CSDL (phần công cụ), 2026-08-17.**
+    Đo trên máy chủ: `ltt_data_20260817_023001.zip` chứa **cả** `app.env` lẫn
+    `lttplatform.dump` trong **một** zip — nghĩa là một bản sao bị lấy cắp là đủ
+    để đọc token đã mã hoá (`LTT_TOKEN_ENCRYPTION_KEY` nằm ngay cạnh bản mã) và,
+    sau khi Public API lên, tấn công khoá API của khách ngoại tuyến
+    (`LTT_API_KEY_PEPPER` nằm ngay cạnh hash). Sửa: `backup.ps1` ghi **hai**
+    archive riêng — `ltt_data_*.zip` → `-BackupDir`, `ltt_secrets_*.zip` →
+    `-SecretsDir` (mặc định thư mục **anh em** `<BackupDir>-secrets`, không phải
+    thư mục con, để đồng bộ off-site không vô tình kéo theo bí mật).
+    `5-lich-backup.ps1` truyền `-SecretsDir` và siết ACL cả hai thư mục;
+    `restore.ps1` từ chối `-Live` trên bản secrets (đổ vào `data\` là sai chỗ, và
+    ghi đè `app.env` của dịch vụ đang chạy có thể làm nền tảng không khởi động
+    lại được). Bốn test chốt trong `test_45`, chạy thật hai kịch bản trên thư mục
+    giả: tách đúng hai zip, và **máy mới cài (data\ rỗng) vẫn có bản sao secrets**
+    — trước đây nhánh đó `exit 0` nên sẽ không sao lưu gì cả.
+
+    **Đã áp lên máy chủ 2026-08-17**, và lúc áp phát hiện lỗ hổng thứ hai:
+    `D:\LTTBackups` **chưa từng được siết ACL** (mọi ACE đều thừa kế từ `D:\`,
+    gồm `Authenticated Users:(M)`), nên mọi tài khoản đăng nhập được máy đều đọc
+    được `app.env` + dump CSDL. Test cũ chốt được *script có lệnh `icacls`*,
+    không chốt được *lệnh đó đã chạy trên máy thật*. Nay hai thư mục chỉ còn
+    `Administrators` + `SYSTEM`; bản sao ngày `154433` đã tách đúng
+    (`ltt_data_*` không còn `app.env`). **13 bản cũ vẫn gói chung** — đã được ACL
+    bảo vệ và tự rụng theo hạn giữ 14 bản.
+  - [ ] H35.9b Sinh pepper cho production + cất **một bản ngoài máy này**
+    (việc của người, không phải của code).
+  - [ ] H35.9c Đo lại tải với PostgreSQL thật qua Cloudflare.
+  - [ ] H35.9d Xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
+  - [ ] H35.9e Nối `metrics` vào cảnh báo; xoay khoá provider + `capacity.check`
+    thấy pool thật.
 - [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
   ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.
 

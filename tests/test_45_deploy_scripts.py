@@ -72,6 +72,54 @@ def test_service_env_loader_allows_empty_optional_integration_placeholders():
     assert "tools\\nssm.exe" in text
 
 
+def test_backup_never_puts_secrets_in_the_database_archive():
+    """H35.9: app.env va pg_dump khong duoc nam chung mot zip.
+
+    Do that ngay 2026-08-17 tren may chu: ltt_data_20260817_023001.zip chua ca
+    `app.env` lan `lttplatform.dump`. Nghia la MOT ban zip bi lay cap la du de
+    doc token da ma hoa (co LTT_TOKEN_ENCRYPTION_KEY) va - sau khi Public API
+    len - tan cong khoa API cua khach ngoai tuyen (co LTT_API_KEY_PEPPER).
+
+    Chot bang cau truc chu khong bang cau chu: ban secrets phai la mot archive
+    RIENG, va app.env khong duoc copy vao thu muc staging cua ban du lieu.
+    """
+    text = _read("backup.ps1")
+
+    assert "ltt_secrets_$Stamp.zip" in text, "phai co archive secrets rieng"
+    assert "SecretsDir" in text, "phai cho phep chon noi cat ban secrets"
+
+    # app.env chi duoc copy vao staging RIENG cua secrets, khong vao $staging.
+    for line in text.splitlines():
+        if "Copy-Item" not in line or "app.env" not in line:
+            continue
+        assert "$secretStaging" in line, (
+            f"app.env bi copy vao staging cua ban du lieu: {line.strip()}"
+        )
+
+
+def test_backup_secrets_dir_defaults_to_a_sibling_not_a_child():
+    """Thu muc CON se bi dong bo off-site keo theo cung ban du lieu, tuc la tach
+    xong lai gop lai o buoc sau. Mac dinh phai la thu muc ANH EM."""
+    text = _read("backup.ps1")
+    assert "-secrets\"" in text or "-secrets'" in text
+    assert "Join-Path $backups 'secrets'" not in text
+
+
+def test_scheduled_backup_passes_a_separate_secrets_dir():
+    text = _read("5-lich-backup.ps1")
+    assert "-SecretsDir" in text, "lich chay phai truyen -SecretsDir cho backup.ps1"
+    # ACL phai siet CA HAI thu muc - ban secrets khong duoc long hon ban du lieu.
+    assert "@($BackupDir, $SecretsDir)" in text
+
+
+def test_restore_refuses_to_overwrite_live_secrets():
+    """Ban secrets do vao data\\ la sai cho, va ghi de app.env cua dich vu dang
+    chay co the lam nen tang khong khoi dong lai duoc."""
+    text = _read("restore.ps1")
+    assert "ltt_secrets_*" in text
+    assert "$isSecretArchive -and $Live" in text
+
+
 def test_scheduled_backup_tightens_acl():
     """W1.5: ban backup off-drive CHUA secrets (app.env + dump) -> thu muc phai
     bi siet ACL (icacls SID) de Users/Everyone khong doc duoc."""

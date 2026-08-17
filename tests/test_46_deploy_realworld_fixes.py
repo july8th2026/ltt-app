@@ -130,8 +130,19 @@ def test_backup_treats_empty_data_dir_as_skip_not_error():
         "an empty data directory is a legitimate fresh-install state, "
         "not a failure that should abort the caller"
     )
-    assert "exit 0" in src
     assert "[SKIP]" in src
+
+    # Truoc H35.9 duong nay la `exit 0`. Khong con nua, va co chu y: ban sao
+    # secrets duoc ghi SAU khoi nay, nen thoat som se lam mot may moi cai
+    # co app.env nhung KHONG co ban sao nao cua no. Chot bang cau truc:
+    # nhanh rong phai la mot `else`, khong duoc thoat khoi script.
+    empty_branch = src[src.index("[SKIP]"):]
+    assert "exit" not in empty_branch.split("}", 1)[0], (
+        "nhanh 'khong co du lieu' khong duoc exit: ban sao secrets nam sau no"
+    )
+    assert src.index("[SKIP]") < src.index("ltt_secrets_$Stamp"), (
+        "khoi secrets phai chay sau nhanh skip, khong bi no cat mat"
+    )
 
 
 def test_update_still_backs_up_before_changing_anything():

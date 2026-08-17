@@ -239,6 +239,14 @@ phải hạng mục đã xong:
    vào chỗ nào là việc vận hành.
 4. **Pepper khoá API** phải được sinh riêng cho production và **sao lưu tách
    khỏi CSDL** — mất pepper là mất toàn bộ khoá của khách.
+
+   *Cập nhật 2026-08-17 — phần công cụ đã xong, phần người thì chưa.* Đo trên
+   máy chủ thật cho thấy bản sao lưu hằng ngày đang gói `app.env` **chung một
+   zip** với `pg_dump`, tức là điều kiện này không thể thoả được bằng cách chỉ
+   thêm một biến vào `app.env`. `backup.ps1` nay ghi hai archive riêng
+   (`ltt_data_*.zip` và `ltt_secrets_*.zip`, thư mục anh em) — xem H35.9a trong
+   `KE_HOACH_TRIEN_KHAI.md`. **Còn lại:** sinh pepper cho production và cất một
+   bản **ngoài máy này**. Chưa làm việc đó thì điều kiện 4 vẫn chưa đạt.
 5. **Xoay khoá provider** và xác nhận `capacity.check` thấy pool thật.
 
 ## 12. Kết luận

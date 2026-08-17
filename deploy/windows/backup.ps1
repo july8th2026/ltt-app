@@ -7,9 +7,21 @@
     encrypted token stores and the audit log are included; the disposable
     video cache, session locks and rotating logs are excluded.
 
-    The archive contains SECRET MATERIAL (encrypted token stores, and
-    secrets\app.env if -IncludeSecrets is passed). Store it somewhere with
-    the same protection as the server itself.
+    HAI ban sao luu RIENG, khong bao gio chung mot file zip:
+
+      ltt_data_<stamp>.zip     -> -BackupDir   (config, *.enc, *.db, pg_dump)
+      ltt_secrets_<stamp>.zip  -> -SecretsDir  (secrets\app.env)
+
+    Vi sao tach (H35.9): app.env giu LTT_TOKEN_ENCRYPTION_KEY va
+    LTT_API_KEY_PEPPER, con dump giu ban ma cua token lan hash khoa API cua
+    khach. Gop chung mot zip nghia la MOT ban sao bi lay cap la du de doc token
+    va tan cong khoa API ngoai tuyen. Tach ra thi mot ban sao khong con du.
+
+    Mac dinh -SecretsDir la thu muc ANH EM cua -BackupDir (duoi '-secrets'),
+    KHONG phai thu muc con: dong bo off-site tro vao -BackupDir se khong vo
+    tinh keo theo bi mat.
+
+    Ca hai ban sao van CHUA du lieu nhay cam. Bao ve chung nhu bao ve may chu.
 #>
 [CmdletBinding()]
 param(
@@ -18,13 +30,16 @@ param(
     [switch]$IncludeSecrets,
     # Q28: mac dinh backup nam CUNG o voi ban chay ($Root\backups). De chong
     # mat du lieu khi mot o hong, tro sang O KHAC bang -BackupDir D:\LTTBackups.
-    [string]$BackupDir = ''
+    [string]$BackupDir = '',
+    # H35.9: noi cat ban sao secrets. Mac dinh "<BackupDir>-secrets".
+    [string]$SecretsDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
 
 $dataDir = Join-Path $Root 'data'
 if ($BackupDir) { $backups = $BackupDir } else { $backups = Join-Path $Root 'backups' }
+if ($SecretsDir) { $secretsOut = $SecretsDir } else { $secretsOut = "$($backups.TrimEnd('\'))-secrets" }
 $staging = Join-Path $env:TEMP "ltt_backup_$Stamp"
 
 if (-not (Test-Path $dataDir)) { throw "Data directory not found: $dataDir" }
@@ -42,14 +57,9 @@ foreach ($p in $patterns) {
     }
 }
 
-if ($IncludeSecrets) {
-    $envFile = Join-Path $Root 'secrets\app.env'
-    if (Test-Path $envFile) {
-        Copy-Item $envFile -Destination (Join-Path $staging 'app.env') -Force
-        $copied++
-        Write-Host '  [!] Secrets INCLUDED - protect this archive accordingly.' -ForegroundColor Yellow
-    }
-}
+# -IncludeSecrets duoc xu ly O CUOI FILE, trong mot ban sao RIENG. Khong copy
+# app.env vao $staging: staging la thu muc dung de nen ra ltt_data_*.zip, va
+# ca hai thu do nam chung mot zip chinh la loi dang sua (H35.9).
 
 # ---- PostgreSQL ------------------------------------------------------------
 # Sao luu file KHONG bat duoc du lieu Postgres: no nam trong thu muc du lieu
@@ -93,6 +103,28 @@ if (Test-Path $envFile) {
     }
 }
 
+# Nen mot thu muc staging thanh zip, MO LAI de kiem, roi don ban cu.
+# Mot ban sao luu chua tung mo lai la niem tin, khong phai ban sao luu.
+function Write-LttArchive {
+    param(
+        [Parameter(Mandatory = $true)][string]$Staging,
+        [Parameter(Mandatory = $true)][string]$Archive,
+        [Parameter(Mandatory = $true)][string]$Pattern,
+        [int]$Keep = 14
+    )
+    Compress-Archive -Path (Join-Path $Staging '*') -DestinationPath $Archive -Force
+    Remove-Item $Staging -Recurse -Force
+
+    $zip = [IO.Compression.ZipFile]::OpenRead($Archive)
+    try { $entries = $zip.Entries.Count } finally { $zip.Dispose() }
+    Write-Host "  [OK] Backup written: $Archive ($entries entries)" -ForegroundColor Green
+
+    Get-ChildItem -Path (Split-Path -Parent $Archive) -Filter $Pattern |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -Skip $Keep |
+        ForEach-Object { Remove-Item $_.FullName -Force; Write-Host "  pruned $($_.Name)" }
+}
+
 if ($copied -eq 0) {
     # An empty data directory is a legitimate state (fresh install, before
     # any config or token exists) - not an error. Throwing here used to
@@ -100,20 +132,36 @@ if ($copied -eq 0) {
     # touches anything. Warn and succeed instead.
     Remove-Item $staging -Recurse -Force
     Write-Host '  [SKIP] Khong co du lieu de sao luu (cai moi) - bo qua.' -ForegroundColor Yellow
-    exit 0
+} else {
+    Write-LttArchive -Staging $staging `
+                     -Archive (Join-Path $backups "ltt_data_$Stamp.zip") `
+                     -Pattern 'ltt_data_*.zip'
 }
 
-$archive = Join-Path $backups "ltt_data_$Stamp.zip"
-Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $archive -Force
-Remove-Item $staging -Recurse -Force
+# ---- Secrets, trong mot ban sao RIENG ---------------------------------------
+# H35.9. Mat LTT_API_KEY_PEPPER la mat TOAN BO khoa API cua khach, khong khoi
+# phuc duoc - nen no phai duoc sao luu. Nhung sao luu no CUNG CHO voi pg_dump
+# thi mot ban zip bi lay cap la du de tan cong khoa ngoai tuyen. Hai file, hai
+# thu muc.
+if ($IncludeSecrets) {
+    $envFile = Join-Path $Root 'secrets\app.env'
+    if (Test-Path $envFile) {
+        if (-not (Test-Path $secretsOut)) {
+            New-Item -ItemType Directory -Path $secretsOut -Force | Out-Null
+        }
+        if ((Resolve-Path $backups).Path -eq (Resolve-Path $secretsOut).Path) {
+            Write-Host ('  [!] -SecretsDir TRUNG -BackupDir. Hai ban sao van la hai ' +
+                        'file rieng, nhung nam cung mot thu muc thi khong con tach ' +
+                        'that. Tro -SecretsDir sang cho khac.') -ForegroundColor Yellow
+        }
+        $secretStaging = Join-Path $env:TEMP "ltt_secrets_$Stamp"
+        New-Item -ItemType Directory -Path $secretStaging -Force | Out-Null
+        Copy-Item $envFile -Destination (Join-Path $secretStaging 'app.env') -Force
 
-# Verify the archive is readable before reporting success - an unverified
-# backup is not a backup.
-$entries = [IO.Compression.ZipFile]::OpenRead($archive).Entries.Count
-Write-Host "  [OK] Backup written: $archive ($entries entries, $copied files)" -ForegroundColor Green
-
-# Retention: keep the 14 most recent archives.
-Get-ChildItem -Path $backups -Filter 'ltt_data_*.zip' |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -Skip 14 |
-    ForEach-Object { Remove-Item $_.FullName -Force; Write-Host "  pruned $($_.Name)" }
+        Write-LttArchive -Staging $secretStaging `
+                         -Archive (Join-Path $secretsOut "ltt_secrets_$Stamp.zip") `
+                         -Pattern 'ltt_secrets_*.zip'
+        Write-Host ('  [!] Ban sao secrets CHUA khoa ma hoa va pepper. Cat mot ban ' +
+                    'NGOAI may nay (Q28: off-site).') -ForegroundColor Yellow
+    }
+}

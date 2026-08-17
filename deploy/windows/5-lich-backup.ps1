@@ -8,8 +8,15 @@
     nen mot o hong hoac cai lai Windows khong mat ca hai.
 
     Task chay bang tai khoan SYSTEM (khong can dang nhap), quyen cao nhat, va
-    doc duoc secrets\ (icacls da cap cho SYSTEM). Backup GOM CA secrets\app.env
-    (chua LTT_TOKEN_ENCRYPTION_KEY) va pg_dump cua CSDL.
+    doc duoc secrets\ (icacls da cap cho SYSTEM).
+
+    HAI ban sao rieng (H35.9):
+      -BackupDir  (mac dinh D:\LTTBackups)          -> config + *.enc + pg_dump
+      -SecretsDir (mac dinh D:\LTTBackups-secrets)  -> secrets\app.env
+
+    app.env giu LTT_TOKEN_ENCRYPTION_KEY va LTT_API_KEY_PEPPER; dump giu ban ma
+    cua token va hash khoa API. Gop chung mot zip thi mot ban bi lay cap la du
+    de doc token va tan cong khoa API ngoai tuyen.
 
     Chay lai duoc nhieu lan: da co task thi ghi de cau hinh moi (-Force).
 
@@ -23,6 +30,9 @@
 param(
     [string]$Root = 'C:\LTTPlatform',
     [string]$BackupDir = 'D:\LTTBackups',
+    # H35.9: thu muc ANH EM, khong phai thu muc con - dong bo off-site tro vao
+    # $BackupDir se khong vo tinh keo theo bi mat.
+    [string]$SecretsDir = '',
     [string]$Time = '02:30',
     [string]$TaskName = 'LTTStudioBackup',
     [string]$BackupScript = ''
@@ -57,21 +67,33 @@ if ($backupDrive -eq $rootDrive) {
 if (-not (Test-Path $BackupDir)) { New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null }
 Ok "Backup se ghi vao $BackupDir"
 
+if (-not $SecretsDir) { $SecretsDir = "$($BackupDir.TrimEnd('\'))-secrets" }
+if ((Split-Path -Qualifier $SecretsDir) -eq (Split-Path -Qualifier $BackupDir)) {
+    Note "Ban sao secrets nam CUNG o voi ban sao du lieu ($SecretsDir)."
+    Note 'Tach file da chan duoc mot zip bi lay cap; mot o hong van mat ca hai.'
+    Note 'Giai doan thuong mai: tro -SecretsDir sang o khac hoac ra ngoai may.'
+}
+if (-not (Test-Path $SecretsDir)) { New-Item -ItemType Directory -Path $SecretsDir -Force | Out-Null }
+Ok "Ban sao secrets se ghi vao $SecretsDir"
+
 # Siet ACL: ban backup CHUA secrets (app.env co LTT_TOKEN_ENCRYPTION_KEY) + dump
 # toan bo CSDL. Chi SYSTEM va Administrators duoc doc. Dung SID (khong dung ten
 # nhom) de dung tren ca Windows tieng Viet: *S-1-5-18 = SYSTEM,
 # *S-1-5-32-544 = Administrators. /inheritance:r bo thua ke tu o cha (vd D:\ mo
 # cho Users), roi cap lai dung 2 nhom nay -> Users/Everyone het quyen.
-& icacls $BackupDir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
-if ($LASTEXITCODE -eq 0) {
-    Ok 'Da siet ACL thu muc backup (chi SYSTEM + Administrators doc duoc)'
-} else {
-    Note 'Khong siet duoc ACL thu muc backup - kiem quyen thu cong (icacls).'
+foreach ($dir in @($BackupDir, $SecretsDir)) {
+    & icacls $dir /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Ok "Da siet ACL $dir (chi SYSTEM + Administrators doc duoc)"
+    } else {
+        Note "Khong siet duoc ACL $dir - kiem quyen thu cong (icacls)."
+    }
 }
 
 Head 'Dang ky Scheduled Task'
 $argLine = "-NonInteractive -ExecutionPolicy Bypass -File `"$BackupScript`" " +
-           "-Root `"$Root`" -IncludeSecrets -BackupDir `"$BackupDir`""
+           "-Root `"$Root`" -IncludeSecrets -BackupDir `"$BackupDir`" " +
+           "-SecretsDir `"$SecretsDir`""
 $action  = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $argLine
 $trigger = New-ScheduledTaskTrigger -Daily -At $Time
 # SYSTEM: chay khong can dang nhap, doc duoc secrets\ (icacls cap cho SYSTEM).
@@ -95,11 +117,19 @@ Write-Host "  LastTaskResult: $($info.LastTaskResult)  (0 = thanh cong)"
 $newest = Get-ChildItem -Path $BackupDir -Filter 'ltt_data_*.zip' -ErrorAction SilentlyContinue |
           Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if ($newest) {
-    Ok "Da tao ban backup: $($newest.FullName)"
+    Ok "Da tao ban backup du lieu: $($newest.FullName)"
 } else {
     Note 'Chua thay file backup - task co the con chay hoac loi. Kiem:'
     Note "  Get-ScheduledTaskInfo -TaskName $TaskName"
     Note "  dir $BackupDir"
+}
+
+$newestSecret = Get-ChildItem -Path $SecretsDir -Filter 'ltt_secrets_*.zip' -ErrorAction SilentlyContinue |
+                Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if ($newestSecret) {
+    Ok "Da tao ban backup secrets: $($newestSecret.FullName)"
+} else {
+    Note "Chua thay ban sao secrets trong $SecretsDir - kiem lai truoc khi tin."
 }
 
 Write-Host ""
@@ -107,7 +137,10 @@ Write-Host ("-" * 62)
 Write-Host "XONG. Lich backup hang ngay da bat." -ForegroundColor Green
 Write-Host "  Xem task    : Get-ScheduledTaskInfo -TaskName $TaskName" -ForegroundColor Cyan
 Write-Host "  Chay ngay   : Start-ScheduledTask -TaskName $TaskName" -ForegroundColor Cyan
-Write-Host "  Ban backup  : $BackupDir (giu 14 ban gan nhat)" -ForegroundColor Cyan
+Write-Host "  Ban du lieu : $BackupDir (giu 14 ban gan nhat)" -ForegroundColor Cyan
+Write-Host "  Ban secrets : $SecretsDir (giu 14 ban gan nhat)" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "NHAC: dinh ky khoi phuc THU tu backup de chac chan phuc hoi duoc." -ForegroundColor Yellow
+Write-Host "NHAC: cat MOT ban secrets ngoai may nay. Mat LTT_API_KEY_PEPPER la" -ForegroundColor Yellow
+Write-Host "      mat toan bo khoa API cua khach, khong khoi phuc duoc." -ForegroundColor Yellow
 Write-Host "Giai doan thuong mai: them mot ban off-site (R2/may khac)." -ForegroundColor Yellow
