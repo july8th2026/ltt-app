@@ -307,6 +307,19 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # turns the API itself on; the page says plainly when `/api/v1` is off.
     app.include_router(developer_routes.router)
 
+    # ── Nexus: bề mặt cho AGENT trên máy khách (Q93) ─────────────────────────
+    #
+    # Gắn KHÔNG điều kiện, và các route tự trả 404 khi `LTT_NEXUS` tắt. Cố ý làm
+    # vậy chứ không gác ở đây: `registry.mount_all()` đã cho thấy một cờ chỉ được
+    # đọc ở chỗ mount là một cờ **không đóng được URL** — nó chỉ ẩn khỏi catalog.
+    # Đặt phép kiểm trong route nghĩa là chỉ có một chỗ để quên, và có test chốt
+    # rằng chỗ đó không bị quên.
+    #
+    # Không nằm dưới `route_prefix` của app nào: agent không phải trình duyệt, và
+    # một app không mount được path ngoài prefix của nó (`AGENTS.md` 8.4).
+    from server import nexus as nexus_agent_routes
+    app.include_router(nexus_agent_routes.router)
+
     # ── Bảng điều khiển FB/TikTok cũ (H22.10) ────────────────────────────────
     #
     # Bảy router này là bản port từ GUI desktop của sản phẩm socialbot — app đó

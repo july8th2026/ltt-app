@@ -349,7 +349,18 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     # (AgentRun, platform_core.agent), so substring matching cannot distinguish
     # legitimate core terminology from a hardcoded app slug. Route/app wiring
     # for it is still covered by the same manifest/mount contract tests.
-    slugs = [a.slug for a in discover() if a.slug not in ("demo", "agent")]
+    #
+    # ``nexus`` is the same shape, from Q93: device identity belongs to the
+    # account rather than to an app, so the capability lives in
+    # ``platform_core.nexus`` and ``apps/nexus`` is only the customer-facing
+    # skin over it. The platform names the *capability*, never the app — which
+    # this test cannot tell apart by substring.
+    #
+    # Adding a name here is not free: it blinds this check to that string, so a
+    # genuine hardcoded reference to that app would slip through. It is only
+    # correct when the platform owns the namespace and the app is named after
+    # it, not the other way round.
+    slugs = [a.slug for a in discover() if a.slug not in ("demo", "agent", "nexus")]
     offenders = []
     for path in (ROOT / "platform_core").rglob("*.py"):
         text = path.read_text(encoding="utf-8")

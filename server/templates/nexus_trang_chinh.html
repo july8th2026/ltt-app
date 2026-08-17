@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{#
+  `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
+  khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
+  luc render. Day la mau "deferred translation" chuan cua gettext.
+
+  Cac app khac dang viet `{{ app.display_name }}` tran, nen tieu de cua chung
+  van hien tieng Viet tren trang tieng Anh. Do la mot khoang trong platform-wide
+  co tu truoc — sua no la viec rieng, khong nhet vao commit cua Nexus.
+#}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Máy của bạn") }}</h2>
+
+    {% if not thiet_bi %}
+      <p class="muted">{{ _("Chưa có máy nào được ghép vào tài khoản này.") }}</p>
+    {% else %}
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">{{ _("Máy") }}</th>
+            <th style="text-align:left;">{{ _("Trạng thái") }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for muc in thiet_bi %}
+          <tr>
+            <td>
+              {#
+                Viet dai dong co ly do: `check_i18n` chi nhan `{{ _(` o DAU bieu
+                thuc, nen dang `{{ x or _("...") }}` bi bao la chua dich du that
+                ra da dich. Khong noi long checker — no dang giu ~1.440 chuoi
+                khac, va noi long de tranh mot dong dai la doi rui ro that lay
+                tien nghi.
+              #}
+              <strong>
+                {% if muc.row.display_name %}{{ muc.row.display_name }}
+                {% else %}{{ _("(chưa đặt tên)") }}{% endif %}
+              </strong>
+              {% if muc.row.platform %}<span class="muted"> · {{ muc.row.platform }}</span>{% endif %}
+            </td>
+            <td>
+              {% if muc.phien %}
+                {# Rang buoc 7: dang co nguoi dieu khien thi phai NOI RO. #}
+                <strong style="color:#B4530A;">{{ _("Đang có người điều khiển") }}</strong>
+              {% elif muc.online %}
+                {{ _("Đang bật") }}
+              {% else %}
+                <span class="muted">{{ _("Đang tắt") }}</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              {#
+                Cau xac nhan den tu route (`xac_nhan_thu_hoi`), khong viet o day.
+                Viet truc tiep `onsubmit="... confirm('{{ _("...") }}')"` lam VO
+                HTML: dau ngoac kep cua `_()` dong luon thuoc tinh onsubmit giua
+                cau, phan con lai roi ra ngoai thanh text. Ban dau cua template
+                nay da vo dung nhu vay, va gate i18n la thu bat duoc.
+              #}
+              <form method="post" action="{{ app.route_prefix }}/thu-hoi/{{ muc.row.id }}"
+                    onsubmit="return confirm('{{ xac_nhan_thu_hoi }}');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-secondary">{{ _("Thu hồi") }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <form method="post" action="{{ app.route_prefix }}/ma-ghep" style="margin-top:1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">{{ _("Ghép một máy mới") }}</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Gần đây") }}</h2>
+    {% if not dong_thoi_gian %}
+      <p class="muted">{{ _("Chưa có hoạt động nào.") }}</p>
+    {% else %}
+      <ul>
+      {% for su_kien in dong_thoi_gian %}
+        <li>
+          {{ su_kien.luc.strftime('%d/%m %H:%M') if su_kien.luc else '' }} —
+          {# `nhan` dich ten su kien; thieu nhan thi hien khoa tho hon la bo trong. #}
+          {{ nhan.get(su_kien.loai, su_kien.loai) }}
+          {% if do_admin_lam(su_kien) %}
+            {# Mot lan nhan vien LTT dung vao may khach ma troi lan giua cac dong
+               khac thi coi nhu khong ai doc. #}
+            <strong style="color:#B4530A;">[{{ _("nhân viên LTT") }}: {{ su_kien.boi }}]</strong>
+          {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+      <a href="{{ app.route_prefix }}/nhat-ky">{{ _("Xem toàn bộ nhật ký") }}</a>
+    {% endif %}
+  </div>
+
+{% endblock %}

@@ -14,6 +14,209 @@
 
 ---
 
+## 2026-08-17 (tối) — LTT Nexus: prompt 03/04, Q93, và N2.1
+
+- **Mục tiêu:** bắt đầu xây Nexus theo đúng quy trình của pack, lần lượt từng
+  prompt.
+- **Hạng mục:** Nexus prompt 03, 04, N2.0 (Q93), N2.1.
+- **Trạng thái:** xong bốn mục; **chưa áp migration lên production**, cờ
+  `LTT_NEXUS` tắt.
+
+### Prompt 03 — giấy phép
+
+Kiểm chứng lại từ nguồn: `rustdesk` **1.4.9** (`6c578292…`), `rustdesk-server`
+**1.1.16** (`73523b31…`), cả hai **AGPL-3.0**.
+
+Đọc §13 từ chính file `LICENCE` của RustDesk và nó **có điều kiện**: nghĩa vụ mở
+nguồn cho người dùng qua mạng chỉ kích khi *"if you modify the Program"*. Chạy
+bản không sửa thì §13 không thêm nghĩa vụ nào — khác hiểu lầm phổ biến.
+
+Nhưng cách tự host thông thường là **build client có sẵn địa chỉ server và
+thương hiệu của mình**, và việc đó *là* sửa. Nên: **cái làm cho Nexus giống một
+sản phẩm chính là cái kích hoạt §13.** Đường "dùng nguyên bản" và đường "có sản
+phẩm riêng" gần như loại trừ nhau.
+
+Không kết luận pháp lý. Chuyển thành **sáu câu hỏi đóng** cho luật sư; câu quan
+trọng nhất là *Server Pro có cấp quyền phân phối một **client** đóng nguồn
+không* — vì client mới là thứ khách cài.
+
+### Prompt 04 — threat model
+
+Xếp theo **thiệt hại không hoàn tác được**, không theo xác suất. **T1** (lừa nạn
+nhân đọc mã ghép qua điện thoại) là nguy hiểm nhất và **không đóng được bằng kỹ
+thuật** — mọi bước đều hợp lệ. Giảm bằng ma sát; phần còn lại ghi là **chấp nhận
+có ý thức**. Ra **10 điều khoản** cho Q93, mỗi điều truy ngược về một mối đe doạ.
+
+### Q93
+
+Thêm vào `QUYET_DINH_NEN_TANG.md` (nối sau Q92, không sửa đè dòng nào) + ba mục
+mới ở §5 "Còn để mở". Hồ sơ hệ thống **tự** mang Q93 vì
+`QUYET_DINH_NEN_TANG.md` đã nằm trong `authoritative_docs` — không phải đổi cấu
+hình, đúng như đã dự đoán ở ledger L8.
+
+### N2.1 — code thật
+
+`platform_core/nexus/` + migration `b165aa3584e0` + 18 test.
+
+**Sự cố đáng ghi:** migration đầu tiên dùng `a1b2c3d4e5f6` — một id *trông* hợp
+lý mà **đã bị `chat_ai_studio` dùng**. Alembic báo `Cycle is detected` và **mọi**
+lệnh migration chết, kể cả `current`. Bộ test vẫn xanh, vì test dựng schema bằng
+`Base.metadata.create_all()` chứ không chạy alembic — tức là **bộ test có thể
+xanh trong khi CSDL không nâng cấp nổi**, và chỗ phát hiện sẽ là giữa một lần
+deploy. Đã thêm hai test tĩnh (id duy nhất, đúng một head) và ghi thành rủi ro
+R10.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_223_nexus_devices.py -q` | **18 passed** |
+| Kiểm "có răng" (trả id về giá trị trùng) | **2 failed** đúng chỗ, đã hoàn nguyên |
+| `alembic upgrade → downgrade → upgrade` (SQLite vứt đi) | xanh, **một head** |
+| `python tools\gate.py --quick` | **12/12 PASS** (i18n bắt 7 chuỗi chưa bọc `_()` → đã sửa) |
+| `python -m pytest tests -q` | đang chạy khi ghi mục này |
+
+### N2.2 + N2.3 — dọn dẹp và vé phiên
+
+**N2.2:** online được **suy ra** từ `last_seen_at`, không lưu thành cột — nên
+không có gì để dọn ở phần presence. Một cột `is_online` mới là thứ cần người đi
+dọn, và nó sẽ nói dối đúng lúc tiến trình ghi nó chết. Việc dọn duy nhất là mã
+ghép hết giá trị, hai thời hạn: đã dùng giữ 365 ngày (mẩu kiểm toán, theo Q75),
+hết hạn không ai dùng giữ 30 ngày. Nối vào vòng bảo trì **sau lease**, gác sau cờ
+`LTT_NEXUS` — cờ tắt là không chạm gì, vì bảng có thể chưa migrate.
+
+**N2.3 — chỗ uỷ quyền được quyết.** `sessions.py` + `nexus_sessions` +
+migration `d649cfad754f`.
+
+Quyết định đáng ghi nhất: **ràng buộc nằm trong chữ ký hàm.** `cap_ve` nhận
+**đối tượng thiết bị** và tự so chủ sở hữu; không có tham số `device_id`, không
+có cờ `force`. Nhận id rồi dặn nhau "nhớ kiểm chủ trước khi gọi" là cách sẽ có
+ngày quên. Có test chốt **chữ ký**, vì test hành vi vẫn xanh được sau khi cửa đã
+mở.
+
+Ba thứ khác: `doi_ve` **kiểm lại** thiết bị chứ không tin trạng thái lúc cấp (nếu
+tin thì nút thu hồi thành nút trang trí đúng lúc nó cần tác dụng nhất); cấp vé
+**không phải** mở phiên (lẫn hai thứ thì chỉ báo "đang có người điều khiển" sáng
+khi chưa ai vào máy, và người dùng học cách bỏ qua nó); băm vé **khác không
+gian** với băm mã ghép.
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_224_nexus_sessions.py -q` | **19 passed** |
+| `alembic upgrade → downgrade ×2 → upgrade` (SQLite vứt đi) | xanh, một head `d649cfad754f` |
+| `python tools\gate.py --quick` | **12/12 PASS** |
+
+### N2.4 + N2.5 + N2.6 — kiểm toán, bề mặt khách, bề mặt agent
+
+**N2.4 — không thêm bảng.** Dòng thời gian mà **chủ thiết bị** đọc được được
+**suy ra** từ ba bảng đã có. Thêm `nexus_audit_events` sẽ tạo nguồn chân lý thứ
+hai, và có ngày một phiên tồn tại mà không có dòng nhật ký. Nền tảng đã có
+`nhat_ky_admin` nhưng đó là nhật ký để **admin** xem — Q93 ràng buộc 5 đòi thứ
+khác hẳn. Kiểm "có răng": che tên người thu hồi thì hai test về admin đỏ ngay.
+
+**N2.5 — bề mặt khách + một phát hiện về nền tảng.**
+`registry.mount_all()` gắn router **bất kể** `manifest.enabled` — nên
+`enabled=False` chỉ ẩn app khỏi catalog, **không** đóng URL. Với app bán tool AI
+thì đó là chuyện hiển thị; với app điều khiển máy từ xa thì đó là chênh lệch
+giữa "chưa bật" và "đang mở cho ai biết đường dẫn". Lớp chặn ở route là lớp duy
+nhất thật sự đóng cửa, và có test chốt **mọi** handler đều gọi nó.
+
+**N2.6 — agent KÝ, không dùng token.** Ràng buộc 1 loại bỏ bearer token: token
+chép được, và chép được nghĩa là ai đọc được ổ đĩa của máy đó trở thành máy đó.
+Ed25519 vì không có tham số nào để chọn sai. Chuỗi ký gồm bốn phần và **mỗi
+phần có test riêng** chứng minh nó cần thiết.
+
+### Kiểm bằng trình duyệt — bắt được thứ test không thấy
+
+Dựng bản dev trên cổng 8123 (SQLite tạm, không chạm production), đăng nhập thật,
+xem ba trang. Trang render đúng, 0 lỗi console — nhưng **lẫn hai ngôn ngữ**.
+
+Đào ra: `msgmerge` đã **tự đoán bản dịch** cho chuỗi mới bằng khớp mờ với các mục
+cũ không liên quan — `"Máy của bạn"` → **`"Your credits"`**, `"Cắt phiên"` →
+**`"Snapshot this version"`**, `"Bắt đầu điều khiển"` → **`"Dashboard"`**. Tất cả
+mang cờ `fuzzy` nên gettext bỏ qua và người dùng chưa thấy sai. Nhưng ai xoá cờ
+fuzzy hàng loạt là trang danh sách máy bắt đầu nói "Your credits". Đã ghi đè 22
+bản dịch máy đoán và xoá cờ.
+
+**Hai khoảng trống có từ trước, không nhét vào commit Nexus:**
+`tools/i18n.py thieu` **không nằm trong gate** dù docstring nói là có — trước khi
+trích nó báo *0 chưa dịch*, sau khi trích là **543**. Và tiêu đề app không được
+dịch ở mọi app (`{{ app.display_name }}` trần).
+
+### Ổ D hết chỗ giữa chừng
+
+Gặp `No space left on device` khi sinh hồ sơ. Không phải do việc này:
+`LTTSTUDIOSAPP` chiếm 2,68 GB, còn ổ bị lấp bởi `VoiceClone_TTS` 181 GB,
+`FULL AUTO VIDEO` 87 GB, `Cut_only ver2` 73 GB, `backup bt` 55 GB. Điểm đáng lo
+nhất không phải Nexus mà là **`D:\BOT GEMINI` đang phục vụ 13 người dùng thật từ
+chính ổ đó**. Chủ sản phẩm đã dọn 37 GB.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest tests/test_223..228 -q` | **96 passed** (18+19+11+13+19+16) |
+| Kiểm "có răng" ×3 | quy tắc sườn, id migration, tên người thu hồi — đều đỏ đúng chỗ |
+| `alembic upgrade → downgrade ×2 → upgrade` | xanh, một head `d649cfad754f` |
+| Trình duyệt trên bản dev 8123 | 3 trang, 0 lỗi console |
+| `python tools\gate.py --quick` | **12/12 PASS** |
+| `python -m pytest tests -q` | đang chạy khi ghi mục này |
+
+### Bộ test đầy đủ bắt bảy thứ mà `--quick` không thấy
+
+Lượt chạy đầy đủ đầu tiên sau N2 cho **6 failed**, lượt sau thêm **1** nữa. Không
+cái nào là nhiễu — tất cả là hợp đồng nền tảng mà một app/bảng mới phải thoả:
+
+1. `platform_core` nhắc tên app trong **docstring** (`upscalevideo`,
+   `nexus-enroll`) — `AGENTS.md` 8.4 cấm "kể cả trong chú thích".
+2. Slug `nexus` trùng namespace `platform_core/nexus/`. Có tiền lệ: `agent` đã
+   được miễn trừ vì đúng lý do đó. Thêm `nexus`, **và viết ra cái giá**: miễn trừ
+   làm phép kiểm mù với chuỗi ấy, nên chỉ đúng khi nền tảng sở hữu namespace.
+3. Ba bảng chưa khai lưu trữ → `devices`/`sessions` là **EVIDENCE không hết hạn**
+   (nhật ký phiên rụng sau 30 ngày sẽ im lặng đúng lúc nó là thứ duy nhất trả
+   lời được "ai đã vào máy tôi"), `enrollments` là OPERATIONAL.
+4. + 5. Hai tài liệu chứng nhận phải phân loại **mọi** app → Nexus = **DEFER**.
+6. Thẻ app thiếu `capabilities`; `group` chưa bọc i18n. Gắn
+   `lifecycle="development"` chứ không `released` — Q73 cấm nhãn nói quá.
+7. **Ba ràng buộc UNIQUE mới chưa nằm trong restore drill.** Mất
+   `uq_nexus_enrollments_digest` = một mã ghép đổi được **hai lần**, tức là mã
+   nạn nhân đọc qua điện thoại (T1) vẫn dùng được sau khi kẻ lừa đảo đã dùng.
+
+### N3.1 — agent tham chiếu (nửa độc quyền của endpoint)
+
+Tách được ra làm trước vì endpoint là **hai tiến trình** và chỉ tiến trình B
+vướng AGPL. `nexus_agent/` + 11 test.
+
+**Khoá riêng không được là một file.** DPAPI qua `ctypes` (không thêm phụ thuộc)
+kèm entropy riêng. Test đọc file trên đĩa và khẳng định nó **khác** khoá thật,
+khoá **không nằm lọt bên trong**, file **dài hơn**. Ngoài Windows, đường lưu thô
+mặc định **đóng**.
+
+**Test chạy qua HTTP thật** (uvicorn, cổng ngẫu nhiên) chứ không gọi thẳng hàm:
+gọi thẳng thì cả hai bên dùng chung `canonical()`, nên lệch chuỗi ký giữa agent
+và server sẽ **không bao giờ** bị phát hiện — mà triệu chứng phía khách trông y
+hệt "sai khoá".
+
+Sửa một cái tên nói dối: `sign_for_test` → `sign`. Nó ký mọi request của mọi máy
+khách. Có test chốt `nexus_agent/` không gọi hàm `*_for_test` nào.
+
+### Test đã chạy (lượt cuối)
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests -q` | **3684 passed, 18 skipped, 1 failed** → lỗi thứ 7 ở trên, đã sửa |
+| `pytest test_155 + test_228 + test_229 -q` | **38 passed, 1 skipped** |
+| `python tools\gate.py --quick` | **12/12 PASS** |
+
+### Còn tồn đọng
+
+- **Chưa áp migration lên production.** Cờ `LTT_NEXUS` tắt, bảng chưa ai dùng.
+- D2 (relay) và legal review vẫn mở — chặn **N3.2** (ghép engine), không chặn
+  N3.1.
+- N3.3 (dịch vụ Windows + updater ký) cần **mua chứng thư ký mã** trước.
+
+---
+
 ## 2026-08-17 (chiều) — Deploy `public-api-v2` lên production + H35.9b/d
 
 - **Mục tiêu:** đóng nốt nợ H35.9 theo lựa chọn P1.

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Nhật ký") }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{#
+  `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
+  khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
+  luc render. Day la mau "deferred translation" chuan cua gettext.
+
+  Cac app khac dang viet `{{ app.display_name }}` tran, nen tieu de cua chung
+  van hien tieng Viet tren trang tieng Anh. Do la mot khoang trong platform-wide
+  co tu truoc — sua no la viec rieng, khong nhet vao commit cua Nexus.
+#}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Ai đã vào máy của bạn") }}</h2>
+    <p class="muted">
+      {# Q93 rang buoc 5: hanh dong cua admin phai de lai dau CHU THIET BI doc
+         duoc. Neu no chi vao nhat_ky_admin thi "khong co backdoor bi mat" chi la
+         mot cau noi, khong phai mot tinh chat kiem duoc. #}
+      {{ _("Nhật ký này bao gồm cả thao tác của nhân viên LTT, nếu có. Chúng được tô màu để bạn nhìn thấy ngay.") }}
+    </p>
+
+    {% if not dong_thoi_gian %}
+      <p class="muted">{{ _("Chưa có hoạt động nào.") }}</p>
+    {% else %}
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">{{ _("Lúc") }}</th>
+            <th style="text-align:left;">{{ _("Việc") }}</th>
+            <th style="text-align:left;">{{ _("Ai") }}</th>
+            <th style="text-align:left;">{{ _("Chi tiết") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for su_kien in dong_thoi_gian %}
+          <tr{% if do_admin_lam(su_kien) %} style="background:#3A2415;"{% endif %}>
+            <td>{{ su_kien.luc.strftime('%d/%m/%Y %H:%M') if su_kien.luc else '' }}</td>
+            <td>{{ nhan.get(su_kien.loai, su_kien.loai) }}</td>
+            <td>
+              {% if do_admin_lam(su_kien) %}
+                <strong style="color:#E8833A;">{{ _("nhân viên LTT") }} — {{ su_kien.boi }}</strong>
+              {% else %}
+                {{ _("bạn") }}
+              {% endif %}
+            </td>
+            <td class="muted">{{ su_kien.chi_tiet }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <p style="margin-top:1rem;">
+      <a href="{{ app.route_prefix }}">{{ _("Quay lại danh sách máy") }}</a>
+    </p>
+  </div>
+
+{% endblock %}

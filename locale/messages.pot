@@ -1,3 +1,18 @@
+#: platform_core/public_api/alerting.py:185
+#, python-format
+msgid "%(n)s sự kiện webhook không giao được"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:104
+#, python-format
+msgid "%(spent)s/%(amount)s credit trong kỳ này."
+msgstr ""
+
+#: platform_core/public_api/alerting.py:129
+#, python-format
+msgid "%(spent)s/%(ceiling)s credit hôm nay. Hạn mức này do quản trị viên đặt và không nới được từ phía tài khoản."
+msgstr ""
+
 #: server/templates/nap_don.html:18
 msgid "&larr; Gói nạp"
 msgstr ""
@@ -6,8 +21,16 @@ msgstr ""
 msgid "&larr; Tạo mới"
 msgstr ""
 
+#: server/templates/nexus_trang_chinh.html:43
+msgid "(chưa đặt tên)"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio_admin.html:16
 msgid "(khuyến nghị KHÔNG dùng chung với BOT GEMINI)."
+msgstr ""
+
+#: apps/qualitylab/registry.py:140
+msgid ", "
 msgstr ""
 
 #: apps/agent/templates/agent_run.html:23
@@ -30,7 +53,7 @@ msgstr ""
 msgid "15 giây"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:56
+#: apps/taovideo/templates/taovideo.html:61
 msgid "2 biến thể"
 msgstr ""
 
@@ -52,6 +75,10 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
 msgid "60 giây"
+msgstr ""
+
+#: server/templates/dev_logs.html:6
+msgid "7 ngày qua:"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
@@ -78,7 +105,7 @@ msgstr ""
 msgid "AI trả về không đúng JSON — đang hiển thị nội dung đã khôi phục."
 msgstr ""
 
-#: apps/chataistudio/routes.py:371
+#: apps/chataistudio/routes.py:379
 msgid "AI tạm thời không phản hồi. Nội dung đã nhận vẫn được lưu."
 msgstr ""
 
@@ -86,12 +113,61 @@ msgstr ""
 msgid "AI viết kịch bản YouTube đầy đủ: hook, nội dung, outro, description, tags."
 msgstr ""
 
+#: server/templates/_header.html:41 server/templates/developers_base.html:7
+#: server/templates/developers_base.html:8 server/templates/home.html:31
+msgid "API cho lập trình viên"
+msgstr ""
+
+#: server/templates/developers_base.html:33
+msgid "API công khai đang tắt trên máy chủ này."
+msgstr ""
+
+#: server/templates/dev_overview.html:7
+msgid "API công khai:"
+msgstr ""
+
+#: server/templates/developers_base.html:38
+msgid "API đang ở chế độ chỉ đọc."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:48
 msgid "Agent chạy trên máy chứa folder; web không nhận đường dẫn local."
 msgstr ""
 
+#: server/templates/nexus_nhat_ky.html:33
+msgid "Ai"
+msgstr ""
+
+#: platform_core/public_api/governance.py:118
+msgid "Ai đang dò khoá. Chỉ lưu nửa CÔNG KHAI của khoá đã thử."
+msgstr ""
+
+#: platform_core/public_api/governance.py:93
+msgid "Ai đã làm gì với tài khoản của khách. Một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán."
+msgstr ""
+
+#: server/templates/nexus_nhat_ky.html:17
+msgid "Ai đã vào máy của bạn"
+msgstr ""
+
+#: server/templates/dev_privacy.html:33
+msgid "Ai đọc được"
+msgstr ""
+
+#: server/templates/dev_settings.html:5
+msgid "An toàn khóa"
+msgstr ""
+
 #: apps/agent/routes/runs.py:174
 msgid "Artifact không còn tồn tại."
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:152
+msgid "Artifact proxy"
+msgstr ""
+
+#: apps/qualitylab/calibration.py:114
+msgid "Artifact token không hợp lệ."
 msgstr ""
 
 #: apps/mediatools/jobs.py:44
@@ -106,24 +182,84 @@ msgstr ""
 msgid "Asset phải từ 1 byte đến 90 MB."
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:57
+msgid "Assets: chưa sẵn sàng"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:57
+msgid "Assets: đã verify"
+msgstr ""
+
 #: apps/agent/routes/_shared.py:56
 msgid "Assistant proposal signer chưa được cấu hình."
 msgstr ""
 
-#: apps/upscalevideo/service.py:82
+#: platform_core/upload_sessions.py:274
+msgid "Attach file không toàn vẹn."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:44
+msgid "Audio"
+msgstr ""
+
+#: apps/autosubvideo/manifest.py:37
+msgid "AutoSub Video"
+msgstr ""
+
+#: apps/qualitylab/registry.py:126
+msgid "AutoSub foundation"
+msgstr ""
+
+#: apps/qualitylab/registry.py:73
+msgid "BLOCKED cho SaaS thương mại; chỉ xem xét lại khi có license riêng."
+msgstr ""
+
+#: apps/qualitylab/registry.py:80
+msgid "BLOCKED cho SaaS thương mại; tác giả yêu cầu liên hệ để dùng thương mại."
+msgstr ""
+
+#: apps/upscalevideo/service.py:101
 msgid "Batch chỉ nhận từ 1 đến 3 video."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:311
+#: apps/upscalevideo/routes.py:353
 msgid "Batch manifest không hợp lệ."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:340
+#: apps/upscalevideo/routes.py:382
 msgid "Batch retry chỉ khớp một phần."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:693
+msgid "Batch upload đã dùng một phần; không thể nộp lại."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:699
+msgid "Batch upload đã gắn với job không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:133
+msgid "Bicubic PSNR"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:147
+msgid "Bicubic baseline"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:135
+msgid "Bicubic local SSIM"
+msgstr ""
+
+#: platform_core/public_api/costing.py:307
+msgid "Biên lợi nhuận ước tính đang âm"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:11
 msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật."
+msgstr ""
+
+#: server/templates/dev_quickstart.html:26
+msgid "Biến môi trường"
 msgstr ""
 
 #: apps/agent/manifest.py:13
@@ -134,8 +270,12 @@ msgstr ""
 msgid "Biến prompt cảnh thành frame bằng job Tạo ảnh; không tạo ảnh giả trong giao diện."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:72
+#: apps/taovideo/templates/taovideo.html:80
 msgid "Biến thể"
+msgstr ""
+
+#: platform_core/public_api/governance.py:175
+msgid "Biến thể (crop, upscale, đổi tỉ lệ) sinh ra từ một tài nguyên gốc."
 msgstr ""
 
 #: apps/taoclipngan/manifest.py:32
@@ -146,12 +286,28 @@ msgstr ""
 msgid "Biến ý tưởng thành một hệ cảnh nhất quán."
 msgstr ""
 
+#: server/templates/dev_tool_detail.html:41
+msgid "Biến đầu vào"
+msgstr ""
+
+#: apps/qualitylab/calibration.py:26
+msgid "Blind secret phải có ít nhất 16 ký tự."
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:158
+msgid "Block boundary excess"
+msgstr ""
+
 #: apps/agent/routes/runs.py:198
 msgid "Bundle vượt 200 MB; tải từng artifact."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
 msgid "Báo giá"
+msgstr ""
+
+#: apps/taovideo/routes.py:513
+msgid "Báo giá không còn khớp với cấu hình hệ thống."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail_fragment.html:12
@@ -162,11 +318,20 @@ msgstr ""
 msgid "Báo giá trọn gói"
 msgstr ""
 
+#: apps/taovideo/routes.py:457
+msgid "Báo giá đã hết hạn hoặc cấu hình đã đổi. Vui lòng chờ báo giá mới."
+msgstr ""
+
 #: apps/agent/routes/runs.py:67
 msgid "Báo giá đã thay đổi."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:31
+#: server/templates/dev_playground.html:20
+#, python-brace-format
+msgid "Báo giá: {n} credit"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:30
 msgid "Bình luận/tin"
 msgstr ""
 
@@ -195,11 +360,15 @@ msgstr ""
 msgid "Bạn"
 msgstr ""
 
+#: server/routes/developer.py:763
+msgid "Bạn bấm Gửi thử. Không job nào chạy, không credit nào chuyển."
+msgstr ""
+
 #: server/templates/home.html:66
 msgid "Bạn chưa dùng app nào."
 msgstr ""
 
-#: server/templates/_job_progress.html:21
+#: server/templates/_job_progress.html:22
 msgid "Bạn có thể thử lại hoặc gửi mã hỗ trợ cho đội vận hành."
 msgstr ""
 
@@ -211,8 +380,28 @@ msgstr ""
 msgid "Bạn phải xác nhận có quyền sử dụng video."
 msgstr ""
 
+#: server/templates/developers_base.html:34
+msgid "Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. Quản trị viên bật bằng biến môi trường LTT_PUBLIC_API."
+msgstr ""
+
+#: server/templates/dev_overview.html:48
+msgid "Bạn đã có khóa. Những nơi hay dùng:"
+msgstr ""
+
 #: server/templates/nap_don.html:24
 msgid "Bạn đã huỷ ở bước thanh toán —"
+msgstr ""
+
+#: platform_core/public_api/governance.py:165
+msgid "Bản chụp một workflow để người dùng quay lại phiên bản cũ."
+msgstr ""
+
+#: platform_core/public_api/governance.py:198
+msgid "Bản đồ mã nguồn, sinh lại được bằng một lệnh."
+msgstr ""
+
+#: server/templates/dev_privacy.html:5
+msgid "Bảng dưới đây sinh trực tiếp từ chính sách mà worker đang thi hành (platform_core/public_api/governance.py). Nó không thể lệch với thực tế: nếu một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước khi trang này kịp nói dối bạn."
 msgstr ""
 
 #: server/templates/_header.html:30
@@ -223,6 +412,10 @@ msgstr ""
 msgid "Bảng điều khiển"
 msgstr ""
 
+#: server/templates/dev_quickstart.html:5
+msgid "Bảy bước tới lời gọi đầu tiên"
+msgstr ""
+
 #: server/routes/register.py:134
 msgid "Bấm vào liên kết dưới đây để xác thực tài khoản (hết hạn sau 24 giờ):"
 msgstr ""
@@ -231,7 +424,16 @@ msgstr ""
 msgid "Bấm để đặt lại mật khẩu (hết hạn sau 1 giờ):"
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:54
+msgid "BẬT"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:45
+msgid "Bắt buộc"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:82
+#: server/templates/dev_overview.html:37
 msgid "Bắt đầu"
 msgstr ""
 
@@ -247,8 +449,24 @@ msgstr ""
 msgid "Bắt đầu một ý tưởng mới"
 msgstr ""
 
+#: server/routes/developer.py:124
+msgid "Bắt đầu nhanh"
+msgstr ""
+
 #: platform_core/jobs.py:143
 msgid "Bắt đầu xử lý."
+msgstr ""
+
+#: apps/nexus/routes.py:176
+msgid "Bắt đầu điều khiển"
+msgstr ""
+
+#: server/templates/dev_privacy.html:19
+msgid "Bằng chứng — không bao giờ xoá"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:54
+msgid "BỊ CHẶN"
 msgstr ""
 
 #: apps/taoanh/jobs.py:164 apps/thumbnail/jobs.py:165
@@ -262,8 +480,24 @@ msgstr ""
 msgid "Bỏ chọn"
 msgstr ""
 
+#: server/templates/dev_logs.html:44 server/templates/dev_tools.html:21
+msgid "Bỏ lọc"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:50
 msgid "Bộ nhận diện"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:23
+msgid "Bộ đo"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:14
+msgid "Bộ đo chất lượng đầu ra"
+msgstr ""
+
+#: platform_core/public_api/governance.py:121
+msgid "Bộ đếm của từng tiến trình theo phút, để cộng lại khi đọc."
 msgstr ""
 
 #: apps/mediatools/jobs.py:37
@@ -274,20 +508,71 @@ msgstr ""
 msgid "CHI PHÍ ƯỚC TÍNH"
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:54
+msgid "CHƯA DUYỆT"
+msgstr ""
+
+#: apps/qualitylab/calibration.py:49
+msgid "Calibration case id rỗng hoặc trùng."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:46
+msgid "Calibration case phải là object."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:56
+msgid "Calibration degradation không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:54
+msgid "Calibration media_kind không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:59
+msgid "Calibration slice rỗng hoặc quá dài."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:41
+msgid "Calibration suite phải có từ 1 đến 500 case."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:33
+msgid "Calibration suite phải dùng schema_version=1."
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:92
+#: apps/qualitylab/services/upscale.py:99
+#: apps/qualitylab/services/upscale_video.py:151
+#: apps/qualitylab/services/upscale_video.py:164
+msgid "Candidate/reference giải mã được"
+msgstr ""
+
 #: apps/agent/routes/legacy_runs.py:39
 msgid "Canvas bundle chưa được build."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:41
+msgid "Cao (px)"
 msgstr ""
 
 #: apps/prompt_ai_ommi/services/builtin_catalog.py:50
 msgid "Catalog tích hợp Prompt AI không hợp lệ."
 msgstr ""
 
+#: apps/thumbnail/routes.py:260
+msgid "Chi phí dự kiến"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:41
 msgid "Chi phí theo phút nguồn + số output"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:59
+#: apps/taovideo/templates/taovideo.html:66
 msgid "Chi phí trước khi chạy"
+msgstr ""
+
+#: platform_core/public_api/governance.py:124
+msgid "Chi phí ƯỚC TÍNH để tính biên lợi nhuận. Không phải sổ sách."
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:54
@@ -296,6 +581,15 @@ msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:73
 msgid "Chi phí:"
+msgstr ""
+
+#: server/templates/dev_usage.html:86
+msgid "Chi tiêu theo lời gọi"
+msgstr ""
+
+#: server/templates/dev_notifications.html:14
+#: server/templates/nexus_nhat_ky.html:34
+msgid "Chi tiết"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:18
@@ -307,6 +601,14 @@ msgstr ""
 msgid "Chi tiết lượt"
 msgstr ""
 
+#: apps/qualitylab/services/media.py:81 apps/qualitylab/services/media.py:138
+msgid "Chiều cao"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:80 apps/qualitylab/services/media.py:137
+msgid "Chiều rộng"
+msgstr ""
+
 #: server/templates/nap_don.html:14
 msgid "Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được."
 msgstr ""
@@ -315,20 +617,62 @@ msgstr ""
 msgid "Chuyển phong cách"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Chuyển động"
+msgstr ""
+
+#: server/templates/dev_settings.html:7
+msgid "Chuỗi bí mật chỉ hiện một lần, lúc tạo. Máy chủ giữ dấu vân tay một chiều nên không ai lấy lại được — kể cả quản trị viên."
+msgstr ""
+
+#: server/templates/dev_privacy.html:13
+msgid "Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở đâu cả, nên không có gì để xuất."
 msgstr ""
 
 #: server/routes/register.py:133
 msgid "Chào bạn,"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Chân thực"
+msgstr ""
+
+#: server/templates/dev_keys.html:8
+msgid "Chép và cất ngay bây giờ. Tải lại trang là mất, và không ai lấy lại được (máy chủ chỉ giữ dấu vân tay một chiều của nó)."
+msgstr ""
+
+#: platform_core/public_api/policy.py:255
+msgid "Chính sách phải có tên."
+msgstr ""
+
+#: server/templates/dev_privacy.html:55
+msgid "Chính sách riêng tư"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:92
 msgid "Chưa báo giá"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:140
+#: apps/qualitylab/services/upscale.py:143
+#: apps/qualitylab/services/upscale.py:160
+#: apps/qualitylab/services/upscale_video.py:213
+#: apps/qualitylab/services/upscale_video.py:215
+#: apps/qualitylab/services/upscale_video.py:218
+#: apps/qualitylab/services/upscale_video.py:221
+#: apps/qualitylab/services/upscale_video.py:228
+#: apps/qualitylab/services/upscale_video.py:231
+msgid "Chưa calibrated"
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:119
+#: apps/qualitylab/services/upscale.py:115
+#: apps/qualitylab/services/upscale.py:118
+msgid "Chưa calibrated — chỉ chẩn đoán"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:71
+msgid "Chưa calibrated; model gốc nhắm 1080p HDTV ở khoảng 3H"
 msgstr ""
 
 #: apps/prompt_ai_ommi/routes/handoff.py:113
@@ -343,7 +687,8 @@ msgstr ""
 msgid "Chưa chọn video"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:298 apps/taoclipngan/routes.py:230
+#: apps/autosubvideo/services/source_drafts.py:89
+#: apps/taoclipngan/routes.py:283
 #: apps/taoclipngan/templates/taoclipngan.html:98
 msgid "Chưa chọn video."
 msgstr ""
@@ -353,7 +698,7 @@ msgstr ""
 msgid "Chưa có"
 msgstr ""
 
-#: apps/taovideo/jobs.py:213
+#: apps/taovideo/jobs.py:212
 msgid "Chưa có API key BytePlus (thêm ở /admin → APIKEYS)."
 msgstr ""
 
@@ -373,6 +718,15 @@ msgstr ""
 msgid "Chưa có app phù hợp."
 msgstr ""
 
+#: apps/qualitylab/services/upscale_video.py:135
+msgid "Chưa có baseline theo GPU/model/resolution"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:130
+#: apps/qualitylab/services/upscale_video.py:137
+msgid "Chưa có baseline theo model/slice"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:73
 msgid "Chưa có clip"
 msgstr ""
@@ -385,8 +739,17 @@ msgstr ""
 msgid "Chưa có dự án"
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:64
+msgid "Chưa có evaluation."
+msgstr ""
+
 #: server/templates/nap.html:50
 msgid "Chưa có gói nạp nào. Admin thêm gói ở trang quản trị."
+msgstr ""
+
+#: server/templates/nexus_nhat_ky.html:26
+#: server/templates/nexus_trang_chinh.html:86
+msgid "Chưa có hoạt động nào."
 msgstr ""
 
 #: server/templates/home.html:49
@@ -397,12 +760,44 @@ msgstr ""
 msgid "Chưa có hội thoại."
 msgstr ""
 
+#: server/templates/dev_jobs.html:6
+msgid "Chưa có job nào tạo qua API."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:105
 msgid "Chưa có job. Chọn video để bắt đầu."
 msgstr ""
 
+#: server/templates/dev_keys.html:17
+msgid "Chưa có khóa nào."
+msgstr ""
+
+#: server/templates/dev_overview.html:39
+msgid "Chưa có khóa nào. Ba bước để gọi được lần đầu:"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:71
+msgid "Chưa có lần giao nào."
+msgstr ""
+
+#: server/templates/dev_logs.html:53
+msgid "Chưa có lời gọi API nào. Nhật ký bắt đầu từ request đầu tiên."
+msgstr ""
+
+#: server/templates/dev_usage.html:114
+msgid "Chưa có lời gọi nào khớp."
+msgstr ""
+
+#: server/templates/nexus_trang_chinh.html:20
+msgid "Chưa có máy nào được ghép vào tài khoản này."
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:38
 msgid "Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên."
+msgstr ""
+
+#: server/templates/dev_projects.html:31
+msgid "Chưa có project nào. Tạo khóa đầu tiên sẽ tự sinh project “Default”."
 msgstr ""
 
 #: apps/agent/templates/_agent_progress.html:17
@@ -418,7 +813,11 @@ msgstr ""
 msgid "Chưa có thumbnail"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:52
+#: server/templates/dev_notifications.html:6
+msgid "Chưa có thông báo nào. Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:57
 msgid "Chưa có tài sản đã lưu. File bạn dùng trong job đầu tiên sẽ xuất hiện tại đây."
 msgstr ""
 
@@ -426,7 +825,7 @@ msgstr ""
 msgid "Chưa có video nào. Tạo cái đầu tiên ở trên."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:73
+#: apps/taovideo/templates/taovideo.html:81
 msgid "Chưa có video phù hợp."
 msgstr ""
 
@@ -442,8 +841,16 @@ msgstr ""
 msgid "Chưa có ảnh"
 msgstr ""
 
+#: apps/taovideo/quotes.py:27
+msgid "Chưa cấu hình khóa ký báo giá."
+msgstr ""
+
 #: server/templates/home.html:44
 msgid "Chưa dùng được"
+msgstr ""
+
+#: platform_core/upload_sessions.py:219
+msgid "Chưa giữ credit nên không thể lưu file."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:96
@@ -452,6 +859,10 @@ msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:45
 msgid "Chưa lấy được model (sidecar chưa sẵn sàng?)."
+msgstr ""
+
+#: server/templates/status_api.html:33
+msgid "Chưa mở năng lực nào ra API công khai."
 msgstr ""
 
 #: apps/thumbnail/jobs.py:179
@@ -479,11 +890,32 @@ msgstr ""
 msgid "Chưa thấy file trên kho lưu trữ."
 msgstr ""
 
+#: server/templates/dev_webhooks.html:25
+msgid "Chưa đăng ký điểm nhận nào."
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio_admin.html:15
 msgid "Chưa đăng nhập"
 msgstr ""
 
+#: server/templates/dev_usage.html:52
+msgid "Chưa đặt ngân sách nào."
+msgstr ""
+
+#: server/templates/dev_tools.html:35
+msgid "Chạy kiểu"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:10
+msgid "Chạy kiểu:"
+msgstr ""
+
+#: server/templates/dev_playground.html:47
+msgid "Chạy thật"
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:53
+#: apps/upscalevideo/templates/upscalevideo.html:92
 msgid "Chất lượng"
 msgstr ""
 
@@ -500,6 +932,10 @@ msgstr ""
 msgid "Chất lượng, thương hiệu và package xuất bản"
 msgstr ""
 
+#: server/templates/dev_usage.html:76
+msgid "Chặn lời gọi khi vượt (ngân sách cứng)"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:89
 #: apps/taoanh/templates/image.html:19
 msgid "Chế độ"
@@ -510,8 +946,16 @@ msgstr ""
 msgid "Chế độ Tạo ảnh AI"
 msgstr ""
 
+#: server/templates/dev_playground.html:59
+msgid "Chế độ chạy khác"
+msgstr ""
+
 #: apps/taoanh/jobs.py:209
 msgid "Chế độ chỉnh sửa cần ảnh nguồn."
+msgstr ""
+
+#: platform_core/public_api/governance.py:96
+msgid "Chế độ giá nào đang có hiệu lực lúc một khoản tiền được tính."
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:14
@@ -538,8 +982,16 @@ msgstr ""
 msgid "Chỉ admin được xem vận hành."
 msgstr ""
 
+#: server/templates/dev_keys.html:119
+msgid "Chỉ cho phép gọi từ IP/CIDR (để trống = mọi nơi)"
+msgstr ""
+
 #: apps/taoanh/templates/image.html:24
 msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:74
+msgid "Chỉ một quy tắc, và nó là quy tắc giữ tiền:"
 msgstr ""
 
 #: apps/chataistudio/features.py:53
@@ -559,16 +1011,28 @@ msgstr ""
 msgid "Chỉ nhận ảnh, video hoặc audio."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:272
+#: server/templates/dev_privacy.html:6
+msgid "Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, workflow…) có vòng đời riêng của app."
+msgstr ""
+
+#: server/templates/dev_playground.html:25
+msgid "Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu ngoài chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn phải dán khóa mình đang giữ."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:314
 msgid "Chỉ quản trị viên được xem telemetry."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:632
+#: apps/autosubvideo/routes.py:655
 msgid "Chỉ retry render đã lỗi hoặc đã hủy."
 msgstr ""
 
-#: server/routes/jobs.py:291
+#: server/routes/jobs.py:298
 msgid "Chỉ thử lại job đã lỗi hoặc đã hủy."
+msgstr ""
+
+#: server/templates/nexus_ma_ghep.html:31
+msgid "Chỉ đưa mã cho người mà CHÍNH BẠN tìm đến. Không bao giờ đưa cho người gọi điện đến bạn, dù họ nói họ là ai."
 msgstr ""
 
 #: apps/agent/routes/_shared.py:197
@@ -599,7 +1063,7 @@ msgstr ""
 msgid "Chọn file"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:51
+#: apps/taovideo/templates/taovideo.html:56
 msgid "Chọn lại tài sản từ các job trước. Tổng tài sản cũ và file mới tối đa 4."
 msgstr ""
 
@@ -645,7 +1109,7 @@ msgstr ""
 msgid "Chọn video từ máy"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:166
+#: apps/taoclipngan/routes.py:183
 msgid "Chọn video để tính chi phí."
 msgstr ""
 
@@ -653,10 +1117,11 @@ msgstr ""
 msgid "Chọn video ở Studio để bắt đầu."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:437
+#: apps/autosubvideo/routes.py:456
 msgid "Chọn ít nhất một track đang hiện và có cue."
 msgstr ""
 
+#: apps/taoanh/templates/image.html:36
 #: apps/thumbnail/templates/thumbnail_fragment.html:47
 msgid "Chọn ảnh thứ"
 msgstr ""
@@ -678,11 +1143,19 @@ msgstr ""
 msgid "Chống rung"
 msgstr ""
 
+#: platform_core/public_api/governance.py:130
+msgid "Chống tính tiền hai lần trong cửa sổ thử lại."
+msgstr ""
+
+#: server/templates/dev_quickstart.html:19
+msgid "Chờ kết quả bằng"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:42
 msgid "Chụp phiên bản"
 msgstr ""
 
-#: apps/thumbnail/routes.py:238
+#: apps/thumbnail/routes.py:250
 msgid "Chủ đề"
 msgstr ""
 
@@ -690,7 +1163,15 @@ msgstr ""
 msgid "Chủ đề video"
 msgstr ""
 
-#: apps/taoclipngan/features.py:13
+#: platform_core/public_api/governance.py:103
+msgid "Chứng từ thanh toán: khách trả bao nhiêu, lúc nào, qua cổng nào. Đây là phía đối ứng của sổ credit — mất nó thì không đối soát được tiền thật với credit đã cấp."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:214
+msgid "Chữ ký vote không hợp lệ."
+msgstr ""
+
+#: apps/taoclipngan/features.py:15
 msgid "Cinematic"
 msgstr ""
 
@@ -702,7 +1183,20 @@ msgstr ""
 msgid "Codec đầu ra"
 msgstr ""
 
-#: apps/taoclipngan/features.py:11
+#: apps/qualitylab/registry.py:123
+msgid "Contract A/V, paired frame, temporal và job performance."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:153
+#: apps/qualitylab/services/upscale_video.py:162
+msgid "Contract video"
+msgstr ""
+
+#: apps/qualitylab/registry.py:111
+msgid "Contract đầu ra Upscale; perceptual/temporal mở ở H31.3."
+msgstr ""
+
+#: apps/taoclipngan/features.py:13
 msgid "Creator Clean"
 msgstr ""
 
@@ -726,12 +1220,24 @@ msgstr ""
 msgid "Credit đã tính"
 msgstr ""
 
-#: platform_core/credit.py:269
+#: platform_core/credit.py:349
 msgid "Credit đã được hoàn lại."
 msgstr ""
 
 #: server/templates/nap_khong_thay.html:23
 msgid "Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này."
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:95
+msgid "Cue chồng nhau"
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:91
+msgid "Cue có duration sai"
+msgstr ""
+
+#: server/routes/developer.py:136
+msgid "Cài đặt & bảo mật"
 msgstr ""
 
 #: apps/agent/templates/agent_run.html:14
@@ -742,7 +1248,7 @@ msgstr ""
 msgid "Các gói credit"
 msgstr ""
 
-#: server/templates/job_detail.html:9
+#: server/templates/job_detail.html:10
 msgid "Các lần chạy liên quan"
 msgstr ""
 
@@ -759,18 +1265,33 @@ msgstr ""
 msgid "Cách chia dòng"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:24
+#: apps/taoclipngan/routes.py:23
 msgid "Cân bằng"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:103
+#: apps/upscalevideo/routes.py:119
 #, python-brace-format
 msgid "Còn khoảng {minutes} phút"
 msgstr ""
 
-#: apps/chataistudio/routes.py:351
+#: apps/chataistudio/routes.py:354
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "Có lỗi xảy ra."
+msgstr ""
+
+#: server/templates/dev_quickstart.html:14
+msgid "Có tệp đầu vào thì tải lên trước:"
+msgstr ""
+
+#: server/templates/dev_jobs.html:10 server/templates/dev_logs.html:25
+#: server/templates/dev_logs.html:60 server/templates/dev_playground.html:29
+#: server/templates/dev_pricing.html:13 server/templates/dev_tools.html:34
+#: server/templates/dev_usage.html:88 server/templates/dev_usage.html:118
+msgid "Công cụ"
+msgstr ""
+
+#: server/routes/developer.py:127 server/templates/dev_overview.html:51
+msgid "Công cụ & model"
 msgstr ""
 
 #: server/templates/home.html:5
@@ -785,13 +1306,45 @@ msgstr ""
 msgid "Công cụ handoff chưa khả dụng."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68
+#: server/templates/dev_tools.html:59
+msgid "Công cụ nhận"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:88
+msgid "Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong job."
+msgstr ""
+
+#: platform_core/public_api/pricing.py:165
+msgid "Công cụ này đã có phiên bản trùng nhãn."
+msgstr ""
+
+#: server/templates/dev_pricing.html:44
+msgid "Công thức app tính"
+msgstr ""
+
+#: server/templates/dev_usage.html:135
+msgid "Cùng dữ liệu có ở"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:76
 #: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Cũ nhất"
 msgstr ""
 
+#: server/templates/dev_notifications.html:29
+msgid "Cảnh báo về tiền và về khóa còn được gửi qua email; những cái còn lại chỉ hiện ở đây, để hộp thư của bạn không thành nơi bị bỏ qua."
+msgstr ""
+
+#: platform_core/public_api/governance.py:115
+msgid "Cảnh báo đã đọc rồi thì hết giá trị."
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/storyboard.py:229
 msgid "Cảnh chưa đủ mô tả để sinh ảnh."
+msgstr ""
+
+#: apps/nexus/routes.py:175
+msgid "Cấp vé phiên"
 msgstr ""
 
 #: apps/taovideo/templates/taovideo.html:12 server/templates/home.html:21
@@ -804,7 +1357,7 @@ msgstr ""
 msgid "Cấu hình gửi đi"
 msgstr ""
 
-#: server/templates/_header.html:41 server/templates/home.html:31
+#: server/templates/_header.html:42 server/templates/home.html:31
 msgid "Cấu hình hệ thống"
 msgstr ""
 
@@ -832,7 +1385,11 @@ msgstr ""
 msgid "Cần thiết lập:"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:516
+#: apps/qualitylab/services/subtitle.py:127
+msgid "Cần transcript chuẩn"
+msgstr ""
+
+#: apps/autosubvideo/routes.py:539
 msgid "Cần transcript nguồn trước khi phân vai."
 msgstr ""
 
@@ -840,18 +1397,38 @@ msgstr ""
 msgid "Cần tài khoản người dùng trong CSDL để sử dụng app."
 msgstr ""
 
-#: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:120
-#: apps/autosubvideo/routes.py:674 apps/taoclipngan/routes.py:179
-#: apps/upscalevideo/routes.py:184
+#: apps/agent/routes/_shared.py:94 apps/autosubvideo/routes.py:124
+#: apps/autosubvideo/routes.py:697 apps/taoclipngan/routes.py:203
+#: apps/upscalevideo/routes.py:203
 msgid "Cần tài khoản người dùng."
 msgstr ""
 
-#: apps/chataistudio/routes.py:199 apps/taoclipngan/routes.py:221
+#: apps/qualitylab/routes.py:109
+msgid "Cần tài khoản quản trị CSDL để tạo evaluation job."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:108
+msgid "Cần ít nhất hai cặp frame đồng bộ."
+msgstr ""
+
+#: apps/chataistudio/routes.py:199 apps/taoclipngan/routes.py:272
 msgid "Cần đăng nhập bằng tài khoản người dùng."
 msgstr ""
 
 #: apps/chataistudio/routes.py:144
 msgid "Cần đăng nhập."
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:148
+msgid "Cần ảnh LR đầu vào"
+msgstr ""
+
+#: server/templates/status_api.html:8
+msgid "Cập nhật lúc"
+msgstr ""
+
+#: apps/nexus/routes.py:178
+msgid "Cắt phiên"
 msgstr ""
 
 #: server/templates/nap_don.html:50
@@ -866,6 +1443,14 @@ msgstr ""
 msgid "Cộng đồng sẽ mở khi có không gian thảo luận thật"
 msgstr ""
 
+#: platform_core/public_api/pricing.py:176
+msgid "Cửa sổ hiệu lực phải kết thúc sau khi bắt đầu."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:106
+msgid "Danh mục sự kiện"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
 #: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Danh sách"
@@ -873,6 +1458,42 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:18
 msgid "Danh sách dự án"
+msgstr ""
+
+#: server/templates/dev_jobs.html:26
+msgid "Danh sách đầy đủ và chi tiết từng job:"
+msgstr ""
+
+#: apps/qualitylab/materializer.py:57
+msgid "Dataset intake chưa có sample."
+msgstr ""
+
+#: apps/qualitylab/materializer.py:54
+msgid "Dataset intake phải dùng schema v1 cho Upscale."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:57
+msgid "Dataset manifest phải dùng schema_version=1."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:59
+msgid "Dataset này không thuộc pack Upscale."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:62
+msgid "Dataset phải có từ 1 đến 500 sample."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:89
+msgid "Dataset split chưa được hỗ trợ."
+msgstr ""
+
+#: apps/qualitylab/registry.py:105
+msgid "Decode, stream, kích thước, duration, FPS và audio."
+msgstr ""
+
+#: server/templates/dev_keys.html:94
+msgid "Default"
 msgstr ""
 
 #: apps/demo/manifest.py:37
@@ -883,6 +1504,18 @@ msgstr ""
 msgid "Duyệt sẽ giữ chỗ"
 msgstr ""
 
+#: server/templates/dev_playground.html:18
+msgid "Dán khóa API vào ô bên trên trước đã."
+msgstr ""
+
+#: platform_core/public_api/governance.py:112
+msgid "Dòng thời gian một job. Dòng nội bộ chỉ giữ 30 ngày."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:32
+msgid "Dùng cho Upscale paired ảnh/video. Candidate ở ô File cần đo phía trên."
+msgstr ""
+
 #: apps/taoanh/templates/image.html:19
 msgid "Dùng cho chuyển phong cách"
 msgstr ""
@@ -891,23 +1524,39 @@ msgstr ""
 msgid "Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy."
 msgstr ""
 
+#: server/templates/dev_tool_detail.html:130
+msgid "Dùng lại Idempotency-Key"
+msgstr ""
+
+#: server/templates/dev_keys.html:24
+msgid "Dùng lần cuối"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:37
+msgid "Dùng snapshot thật để tính processing time/throughput; peak VRAM chưa có sẽ là UNKNOWN."
+msgstr ""
+
 #: server/templates/register.html:17
 msgid "Dùng ít nhất 8 ký tự và không dùng lại mật khẩu ở dịch vụ khác."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:66
+#: apps/taovideo/templates/taovideo.html:74
 msgid "Dạng danh sách"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:66
+#: apps/taovideo/templates/taovideo.html:74
 msgid "Dạng lưới"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:14
+msgid "Dấu vân tay hợp đồng:"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:116
 msgid "Dễ đọc, chia theo từng cảnh."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:26
+#: apps/taoclipngan/routes.py:25
 msgid "Dọc 9:16"
 msgstr ""
 
@@ -915,12 +1564,32 @@ msgstr ""
 msgid "Dừng"
 msgstr ""
 
+#: server/routes/developer.py:137
+msgid "Dữ liệu & lưu trữ"
+msgstr ""
+
+#: server/templates/dev_settings.html:16
+msgid "Dữ liệu của bạn"
+msgstr ""
+
+#: apps/qualitylab/datasets.py:83
+msgid "Dữ liệu production thiếu consent hoặc retention."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:74
 msgid "Dữ liệu thật"
 msgstr ""
 
+#: platform_core/public_api/governance.py:155
+msgid "Dự án của các editor có trạng thái. Vòng đời do app quản."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:24
 msgid "Dự án mới"
+msgstr ""
+
+#: platform_core/public_api/governance.py:146
+msgid "Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) chứ không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại RESTRICT, và xoá được thì bằng chứng mất theo."
 msgstr ""
 
 #: apps/upscalevideo/jobs.py:63
@@ -931,16 +1600,44 @@ msgstr ""
 msgid "Engine không tạo output ảnh."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:301
+#: apps/upscalevideo/jobs.py:312
 msgid "Engine treo (>5' không có frame mới). Thử lại."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:217
+#: apps/upscalevideo/jobs.py:229
 msgid "Engine upscale chưa sẵn sàng (thiếu vendor/engine)."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:303
+#: apps/upscalevideo/jobs.py:314
 msgid "Engine upscale thất bại (xem log)."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:60
+msgid "Evaluation gần đây"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:19
+msgid "Evaluation mới"
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:77
+msgid "Evaluator artifact lệch bytes hoặc SHA-256."
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:61
+msgid "Evaluator artifact phải là object."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:65
+msgid "Evaluator chưa sẵn sàng"
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:51
+msgid "Evaluator hoặc package version không khớp registry."
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:56
+msgid "Evaluator manifest không có artifact."
 msgstr ""
 
 #: apps/mediatools/jobs.py:130
@@ -951,7 +1648,27 @@ msgstr ""
 msgid "FFmpeg không tách được frame từ video."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:359
+#: apps/qualitylab/services/upscale_video.py:56
+msgid "FFmpeg/libvmaf không sẵn sàng."
+msgstr ""
+
+#: apps/qualitylab/services/media.py:107
+msgid "FFprobe hoạt động"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:43
+msgid "FPS"
+msgstr ""
+
+#: platform_core/upload_sessions.py:158
+msgid "File chưa upload xong."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:28
+msgid "File cần đo"
+msgstr ""
+
+#: apps/upscalevideo/routes.py:401
 msgid "File local rỗng hoặc tổng >90MB."
 msgstr ""
 
@@ -967,6 +1684,10 @@ msgstr ""
 msgid "File rỗng."
 msgstr ""
 
+#: apps/qualitylab/jobs.py:105
+msgid "File subtitle vượt 4 MB."
+msgstr ""
+
 #: platform_core/image_input.py:44
 msgid "File tham chiếu không phải ảnh hợp lệ."
 msgstr ""
@@ -979,7 +1700,7 @@ msgstr ""
 msgid "File video rỗng (0 byte)."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:233
+#: apps/taoclipngan/routes.py:286
 msgid "File video rỗng."
 msgstr ""
 
@@ -992,9 +1713,33 @@ msgstr ""
 msgid "File ảnh không hợp lệ."
 msgstr ""
 
-#: apps/thumbnail/templates/thumbnail.html:34
+#: apps/qualitylab/services/upscale_video.py:229
+msgid "Flicker độ sáng dư"
+msgstr ""
+
+#: apps/thumbnail/routes.py:264 apps/thumbnail/templates/thumbnail.html:34
 #: apps/thumbnail/templates/thumbnail_fragment.html:18
 msgid "Font thương hiệu"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:19
+msgid "Foundation chưa calibrated; không dùng kết quả này làm release gate."
+msgstr ""
+
+#: apps/qualitylab/registry.py:51
+msgid "Frame-paired/temporal/performance proxy; chưa human-calibrated."
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:112
+msgid "Full-reference"
+msgstr ""
+
+#: apps/qualitylab/registry.py:58
+msgid "Full-reference diagnostic; implementation/model pinned by FFmpeg hash."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:208
+msgid "Full-reference theo frame"
 msgstr ""
 
 #: apps/upscalevideo/jobs.py:46
@@ -1021,33 +1766,102 @@ msgstr ""
 msgid "Gemini không trả ảnh nào (chỉ có văn bản)."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:545
+#: apps/autosubvideo/routes.py:568
 msgid "Gemini translation chưa cấu hình API key."
+msgstr ""
+
+#: server/templates/dev_tools.html:59 server/templates/status_api.html:18
+msgid "Ghi chú"
 msgstr ""
 
 #: apps/kichban/templates/script.html:10
 msgid "Ghi chú nghiên cứu"
 msgstr ""
 
+#: platform_core/public_api/governance.py:179
+msgid "Ghi nhận tài nguyên nào đã dùng ở cảnh nào, để tra ngược."
+msgstr ""
+
 #: apps/mediatools/manifest.py:59
 msgid "Ghép 2–12 ảnh thành một contact sheet ngang, dọc hoặc dạng lưới."
+msgstr ""
+
+#: apps/nexus/routes.py:173
+msgid "Ghép máy"
+msgstr ""
+
+#: apps/nexus/manifest.py:26
+msgid "Ghép máy tính của bạn vào tài khoản, rồi điều khiển nó từ xa. Mọi phiên đều được ghi lại và bạn xem được ai đã vào máy nào."
+msgstr ""
+
+#: server/templates/nexus_trang_chinh.html:79
+msgid "Ghép một máy mới"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:129
+msgid "Giao trùng là có thể (worker nhặt lại, hoặc bạn bấm Gửi lại). Khử trùng theo"
+msgstr ""
+
+#: server/routes/developer.py:129
+msgid "Giá & mô phỏng"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:36
+msgid "Giá phụ thuộc toàn bộ input, nên báo giá là nơi duy nhất nói giá. Credit được giữ lúc tạo job và quyết toán đúng một lần khi job kết thúc."
+msgstr ""
+
+#: platform_core/public_api/pricing.py:170
+msgid "Giá sàn không được lớn hơn giá trần."
+msgstr ""
+
+#: server/templates/dev_pricing.html:5
+msgid "Giá ở đây được tính bằng ĐÚNG công thức mà báo giá thật dùng, rồi áp cùng một sàn/trần/làm tròn của phiên bản giá đang có hiệu lực. Nếu con số ở đây khác con số bạn nhận khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý."
 msgstr ""
 
 #: server/templates/demo.html:23
 msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:30
+#: apps/taoclipngan/routes.py:29
 msgid "Giáo dục"
 msgstr ""
 
-#: apps/thumbnail/templates/thumbnail.html:36
+#: apps/qualitylab/registry.py:28
+msgid "Giải mã và đọc contract ảnh; không phải metric cảm nhận."
+msgstr ""
+
+#: apps/thumbnail/routes.py:266 apps/thumbnail/templates/thumbnail.html:36
 #: apps/thumbnail/templates/thumbnail_fragment.html:20
 msgid "Giọng thương hiệu"
 msgstr ""
 
 #: apps/kichban/templates/script.html:10
 msgid "Giọng văn"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:45
+#: server/templates/dev_tool_detail.html:113
+msgid "Giới hạn"
+msgstr ""
+
+#: server/templates/dev_settings.html:10
+msgid "Giới hạn khóa theo IP/CIDR và đặt hạn dùng khi giao cho bên thứ ba."
+msgstr ""
+
+#: server/templates/dev_keys.html:135
+msgid "Giới hạn theo công cụ (tùy chọn)"
+msgstr ""
+
+#: server/templates/dev_overview.html:30 server/templates/dev_usage.html:10
+msgid "Giới hạn:"
+msgstr ""
+
+#: server/templates/dev_privacy.html:32
+msgid "Giữ bao lâu"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:69
+msgid "Giữ chỗ rồi quyết toán đúng một lần. Job hỏng hoặc bị hủy thì hoàn đủ."
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:37
@@ -1062,8 +1876,28 @@ msgstr ""
 msgid "Google Sheets, tên cột, Meta App, TikTok, chống spam, thông báo."
 msgstr ""
 
-#: platform_core/jobs.py:216
+#: server/templates/nexus_trang_chinh.html:84
+msgid "Gần đây"
+msgstr ""
+
+#: platform_core/jobs.py:221
 msgid "Gặp gián đoạn tạm thời, hệ thống sẽ tự thử lại."
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:26
+msgid "Gọi thế nào"
+msgstr ""
+
+#: server/templates/dev_docs.html:25
+msgid "Gọi thử"
+msgstr ""
+
+#: server/templates/dev_overview.html:45
+msgid "Gọi thử theo hướng dẫn"
+msgstr ""
+
+#: platform_core/public_api/governance.py:109
+msgid "Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:39
@@ -1078,19 +1912,60 @@ msgstr ""
 msgid "Gửi liên kết đặt lại"
 msgstr ""
 
+#: server/templates/dev_webhooks.html:94
+msgid "Gửi lại"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:101
+msgid "Gửi lại dùng ĐÚNG event id và payload cũ: bên nhận khử trùng theo id nên không xử lý hai lần, và job cùng credit không hề bị chạm."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:45
+msgid "Gửi thử"
+msgstr ""
+
+#: apps/qualitylab/registry.py:86
+msgid "H31.4: model align theo ngôn ngữ và token diarization riêng."
+msgstr ""
+
+#: apps/qualitylab/registry.py:91
+msgid "H31.4: pin model tiếng Việt + checksum trước khi bật."
+msgstr ""
+
+#: apps/qualitylab/registry.py:96
+msgid "H31.5: chỉ subset custom-input sau benchmark tài nguyên."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:33
+msgid "HR reference (ảnh/video)"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:127
+msgid "Header chữ ký có thể chứa NHIỀU chữ ký cách nhau bằng dấu phẩy trong lúc đổi secret; chấp nhận nếu KHỚP MỘT trong số đó."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:140
+msgid "Hiệu năng job nguồn"
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:7
 msgid "Hook (15–30 giây đầu)"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:56
-#: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:83
+#: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:100
+#: apps/taovideo/templates/taovideo.html:80
 #: apps/thumbnail/templates/thumbnail.html:66
 #: apps/thumbnail/templates/thumbnail_fragment.html:36
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
-#: server/templates/_job_progress.html:9 server/templates/jobs.html:11
+#: server/templates/_job_progress.html:10 server/templates/jobs.html:11
 #: server/templates/jobs.html:33
 msgid "Hoàn tất"
+msgstr ""
+
+#: platform_core/public_api/status.py:58
+msgid "Hoạt động bình thường."
 msgstr ""
 
 #: server/templates/home.html:48
@@ -1101,6 +1976,14 @@ msgstr ""
 msgid "Hoạt động gần đây"
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:34
+msgid "Hoặc HR storage key"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:36
+msgid "Hoặc LR storage key"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio_admin.html:26
 msgid "Hoặc dùng API key OpenAI"
 msgstr ""
@@ -1109,7 +1992,11 @@ msgstr ""
 msgid "Hoặc mô tả phong cách riêng..."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:30
+#: apps/qualitylab/templates/qualitylab.html:29
+msgid "Hoặc storage key"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:29
 msgid "Hài"
 msgstr ""
 
@@ -1127,6 +2014,16 @@ msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:30
 msgid "Hạ tầng LTT"
+msgstr ""
+
+#: platform_core/public_api/policy.py:381
+#, python-brace-format
+msgid "Hạn mức không được âm: {field}"
+msgstr ""
+
+#: platform_core/public_api/policy.py:378
+#, python-brace-format
+msgid "Hạn mức phải là số nguyên: {field}"
 msgstr ""
 
 #: server/templates/nap_don.html:41
@@ -1150,7 +2047,15 @@ msgstr ""
 msgid "Hội thoại mới"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:77
+#: platform_core/public_api/governance.py:169
+msgid "Hội thoại người dùng."
+msgstr ""
+
+#: server/templates/dev_tools.html:76
+msgid "Hợp đồng đầy đủ của từng công cụ:"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:85
 msgid "Hủy"
 msgstr ""
 
@@ -1166,8 +2071,40 @@ msgstr ""
 msgid "Hủy việc"
 msgstr ""
 
+#: server/templates/dev_privacy.html:27
+msgid "Hữu ích khi còn mới, vô nghĩa khi đã cũ. Worker tự dọn theo lịch."
+msgstr ""
+
+#: server/templates/dev_playground.html:41
+msgid "Input dạng JSON"
+msgstr ""
+
+#: apps/qualitylab/routes.py:60
+msgid "Input rỗng hoặc vượt 90 MB."
+msgstr ""
+
 #: apps/kichban/templates/script.html:10
 msgid "Insight, luận điểm, điều bắt buộc kiểm chứng"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:26
+msgid "JSON evidence"
+msgstr ""
+
+#: server/templates/dev_playground.html:35
+msgid "JSON thô"
+msgstr ""
+
+#: server/routes/developer.py:131
+msgid "Job"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:37
+msgid "Job Upscale nguồn (tùy chọn)"
+msgstr ""
+
+#: server/routes/developer.py:761
+msgid "Job bị hủy — credit đã được hoàn."
 msgstr ""
 
 #: apps/prompt_ai_ommi/routes/resources.py:514
@@ -1179,8 +2116,16 @@ msgstr ""
 msgid "Job chạy nền — trang tự cập nhật khi xong."
 msgstr ""
 
+#: server/templates/dev_overview.html:52
+msgid "Job gần đây"
+msgstr ""
+
 #: apps/kichban/templates/_script_view.html:4
 msgid "Job gốc bất biến; mỗi lần lưu tạo revision mới có kiểm tra xung đột."
+msgstr ""
+
+#: server/routes/developer.py:760
+msgid "Job hỏng — credit đã được hoàn."
 msgstr ""
 
 #: apps/prompt_ai_ommi/routes/resources.py:520
@@ -1188,13 +2133,37 @@ msgstr ""
 msgid "Job không trả về ảnh nào."
 msgstr ""
 
+#: server/routes/developer.py:759
+msgid "Job kết thúc thành công."
+msgstr ""
+
+#: apps/qualitylab/routes.py:142
+msgid "Job nguồn phải là job Upscale đã hoàn tất."
+msgstr ""
+
+#: server/templates/dev_log_detail.html:50
+msgid "Job này chưa ghi sự kiện nào cho khách."
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/resources.py:516
 msgid "Job này không sinh ảnh."
+msgstr ""
+
+#: server/templates/dev_overview.html:21
+msgid "Job qua API (30 ngày):"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:14
+msgid "Job đang ở trạng thái"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:28
 #: apps/thumbnail/templates/thumbnail_fragment.html:14
 msgid "KIẾM TIỀN 2026"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:108
+msgid "Khi nào"
 msgstr ""
 
 #: server/templates/home.html:18
@@ -1206,24 +2175,122 @@ msgstr ""
 msgid "Kho ứng dụng"
 msgstr ""
 
+#: platform_core/nexus/devices.py:133
+msgid "Khoá công khai của thiết bị không hợp lệ."
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/resources.py:294
 msgid "Khoá lưu trữ không hợp lệ."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:520
+#: platform_core/public_api/admin_console.py:427
+msgid "Khoá này đã bị thu hồi rồi."
+msgstr ""
+
+#: platform_core/public_api/admin_console.py:411
+msgid "Khoá đã thu hồi thì không bật lại được."
+msgstr ""
+
+#: platform_core/public_api/admin_console.py:401
+msgid "Khoá đã thu hồi thì không tắt/bật được nữa."
+msgstr ""
+
+#: platform_core/public_api/governance.py:98
+msgid "Khoá đã thu hồi vẫn giữ lại: nó là bằng chứng ai đã tiêu cái gì. Chỉ giữ dấu vân tay một chiều, không giữ bí mật."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:543
 msgid "Khoảng số speaker không hợp lệ."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:324
+msgid "Khoảng thời lượng clip không hợp lệ (5–180 giây)."
+msgstr ""
+
+#: server/templates/developers_base.html:11
+msgid "Khu API"
+msgstr ""
+
+#: server/routes/developer.py:968
+msgid "Khu API của tài khoản này. KHÔNG bao gồm nội dung do từng app lưu (chat, storyboard, workflow…) — mỗi app giữ dữ liệu của nó, và trang này không nói thay được."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:66
 msgid "Khách hàng mục tiêu"
 msgstr ""
 
+#: server/templates/dev_jobs.html:10 server/templates/dev_logs.html:33
+#: server/templates/dev_projects.html:10 server/templates/dev_usage.html:95
+#: server/templates/dev_usage.html:118
+msgid "Khóa"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:156
+#, python-format
+msgid "Khóa %(key)s (%(name)s) hết hạn %(date)s. Tạo khóa mới, chuyển ứng dụng sang, rồi thu hồi khóa cũ."
+msgstr ""
+
+#: server/routes/developer.py:126 server/templates/dev_overview.html:50
+#: server/templates/dev_playground.html:22
+msgid "Khóa API"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:155
+#, python-format
+msgid "Khóa API hết hạn sau %(days)s ngày"
+msgstr ""
+
+#: server/templates/dev_settings.html:11
+msgid "Khóa bị lộ: thu hồi ngay ở mục Khóa API, rồi kiểm mục Job xem có lời gọi lạ không."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:59
 msgid "Khóa câu chuyện và mục tiêu trước khi AI phân cảnh."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:32
+#: server/templates/dev_keys.html:7
+msgid "Khóa mới — chỉ hiện một lần"
+msgstr ""
+
+#: server/templates/dev_docs.html:35
+msgid "Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền."
+msgstr ""
+
+#: server/templates/dev_keys.html:111
+msgid "Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, nên lộ ra cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live chỉ nhìn thấy job live."
+msgstr ""
+
+#: server/templates/dev_docs.html:33
+msgid "Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố."
+msgstr ""
+
+#: server/templates/dev_docs.html:36
+msgid "Khóa test chỉ thấy job test; khóa live chỉ thấy job live. Hỏi chéo trả 404 y hệt job của người khác."
+msgstr ""
+
+#: server/templates/dev_log_detail.html:13
+msgid "Khóa:"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:37
 msgid "Không bắt buộc"
+msgstr ""
+
+#: server/templates/dev_usage.html:78
+msgid "Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%."
+msgstr ""
+
+#: server/templates/dev_keys.html:142
+msgid "Không chọn gì = khóa dùng được mọi công cụ đang mở."
+msgstr ""
+
+#: server/templates/dev_keys.html:131
+#, python-format
+msgid "Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu credit."
+msgstr ""
+
+#: server/templates/dev_playground.html:13
+msgid "Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng một đường đi."
 msgstr ""
 
 #: server/templates/dashboard.html:15
@@ -1243,7 +2310,11 @@ msgstr ""
 msgid "Không có việc nào đang chạy."
 msgstr ""
 
-#: apps/taoclipngan/jobs.py:207
+#: server/templates/dev_tools.html:27
+msgid "Không công cụ nào khớp."
+msgstr ""
+
+#: apps/taoclipngan/jobs.py:213
 msgid "Không dựng được clip nào từ video (thử video khác/tier khác)."
 msgstr ""
 
@@ -1264,15 +2335,23 @@ msgstr ""
 msgid "Không nhận được lời nói trong video."
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:46
+msgid "Không nhập thì WER = UNKNOWN"
+msgstr ""
+
 #: apps/mediatools/jobs.py:209
 msgid "Không phân giải được máy chủ video."
 msgstr ""
 
-#: platform_core/jobs.py:226
+#: server/templates/dev_logs.html:52
+msgid "Không request nào khớp."
+msgstr ""
+
+#: platform_core/jobs.py:231
 msgid "Không thể hoàn tất yêu cầu. Bạn có thể thử lại."
 msgstr ""
 
-#: server/templates/_job_progress.html:21
+#: server/templates/_job_progress.html:22
 msgid "Không thể hoàn tất."
 msgstr ""
 
@@ -1288,6 +2367,10 @@ msgstr ""
 msgid "Không thể xử lý video."
 msgstr ""
 
+#: apps/qualitylab/services/upscale_video.py:95
+msgid "Không trích được frame video để đánh giá."
+msgstr ""
+
 #: apps/autosubvideo/parsers.py:105
 msgid "Không tìm thấy Dialogue nào trong file ASS"
 msgstr ""
@@ -1300,7 +2383,7 @@ msgstr ""
 msgid "Không tìm thấy asset."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:411
+#: apps/taoclipngan/routes.py:520
 msgid "Không tìm thấy clip."
 msgstr ""
 
@@ -1308,22 +2391,31 @@ msgstr ""
 msgid "Không tìm thấy cảnh."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:869
+#: apps/qualitylab/routes.py:184
+msgid "Không tìm thấy evaluation."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:892
 msgid "Không tìm thấy file."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:600 apps/autosubvideo/routes.py:613
-#: apps/autosubvideo/routes.py:630 apps/prompt_ai_ommi/routes/projects.py:222
+#: apps/autosubvideo/routes.py:623 apps/autosubvideo/routes.py:636
+#: apps/autosubvideo/routes.py:653 apps/prompt_ai_ommi/routes/projects.py:274
 #: apps/prompt_ai_ommi/routes/resources.py:512
-#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/taoclipngan/routes.py:317
-#: apps/upscalevideo/routes.py:599 server/routes/jobs.py:186
-#: server/routes/jobs.py:202 server/routes/jobs.py:237
-#: server/routes/jobs.py:244 server/routes/jobs.py:264
-#: server/routes/jobs.py:289 server/routes/jobs.py:321
+#: apps/prompt_ai_ommi/routes/storyboard.py:277 apps/taoclipngan/routes.py:426
+#: apps/upscalevideo/routes.py:758 server/routes/jobs.py:187
+#: server/routes/jobs.py:203 server/routes/jobs.py:244
+#: server/routes/jobs.py:251 server/routes/jobs.py:271
+#: server/routes/jobs.py:296 server/routes/jobs.py:328
+#: server/routes/jobs.py:356
 msgid "Không tìm thấy job."
 msgstr ""
 
-#: apps/prompt_ai_ommi/routes/projects.py:238
+#: server/routes/developer.py:1082
+msgid "Không tìm thấy khóa."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/projects.py:290
 msgid "Không tìm thấy kết quả job."
 msgstr ""
 
@@ -1331,17 +2423,17 @@ msgstr ""
 msgid "Không tìm thấy lượt Agent."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:361
+#: apps/taoclipngan/routes.py:470
 msgid "Không tìm thấy package."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:193 apps/autosubvideo/routes.py:212
-#: apps/autosubvideo/routes.py:227 apps/autosubvideo/routes.py:266
-#: apps/autosubvideo/routes.py:319 apps/autosubvideo/routes.py:339
-#: apps/autosubvideo/routes.py:456 apps/autosubvideo/routes.py:471
-#: apps/autosubvideo/routes.py:504 apps/autosubvideo/routes.py:539
+#: apps/autosubvideo/routes.py:202 apps/autosubvideo/routes.py:243
+#: apps/autosubvideo/routes.py:258 apps/autosubvideo/routes.py:297
+#: apps/autosubvideo/routes.py:336 apps/autosubvideo/routes.py:358
+#: apps/autosubvideo/routes.py:479 apps/autosubvideo/routes.py:494
+#: apps/autosubvideo/routes.py:527 apps/autosubvideo/routes.py:562
 #: apps/prompt_ai_ommi/routes/_shared.py:111
-#: apps/prompt_ai_ommi/routes/_shared.py:113
+#: apps/prompt_ai_ommi/routes/_shared.py:113 server/routes/developer.py:1040
 msgid "Không tìm thấy project."
 msgstr ""
 
@@ -1365,20 +2457,24 @@ msgstr ""
 msgid "Không tìm thấy share."
 msgstr ""
 
-#: apps/agent/routes/workflows.py:96 apps/prompt_ai_ommi/routes/projects.py:139
-#: apps/prompt_ai_ommi/routes/projects.py:142
+#: apps/agent/routes/workflows.py:96 apps/prompt_ai_ommi/routes/projects.py:187
+#: apps/prompt_ai_ommi/routes/projects.py:190
 msgid "Không tìm thấy snapshot."
+msgstr ""
+
+#: platform_core/nexus/sessions.py:96
+msgid "Không tìm thấy thiết bị."
 msgstr ""
 
 #: server/access_middleware.py:75
 msgid "Không tìm thấy trang bạn yêu cầu."
 msgstr ""
 
-#: server/routes/jobs.py:357
+#: server/routes/jobs.py:413
 msgid "Không tìm thấy tệp kết quả."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:693
+#: apps/upscalevideo/routes.py:854
 msgid "Không tìm thấy video nguồn."
 msgstr ""
 
@@ -1386,10 +2482,10 @@ msgstr ""
 msgid "Không tìm thấy video sau khi tải."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:834 apps/taovideo/routes.py:504
-#: apps/taovideo/routes.py:513 apps/upscalevideo/routes.py:618
-#: apps/upscalevideo/routes.py:655 apps/upscalevideo/routes.py:671
-#: apps/upscalevideo/routes.py:719
+#: apps/autosubvideo/routes.py:857 apps/taovideo/routes.py:610
+#: apps/taovideo/routes.py:619 apps/upscalevideo/routes.py:779
+#: apps/upscalevideo/routes.py:816 apps/upscalevideo/routes.py:832
+#: apps/upscalevideo/routes.py:880
 msgid "Không tìm thấy video."
 msgstr ""
 
@@ -1411,20 +2507,24 @@ msgstr ""
 msgid "Không tìm thấy đề xuất."
 msgstr ""
 
-#: apps/chataistudio/routes.py:509 apps/prompt_ai_ommi/routes/resources.py:347
+#: apps/chataistudio/routes.py:518 apps/prompt_ai_ommi/routes/resources.py:347
 #: apps/prompt_ai_ommi/routes/resources.py:366
-#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:233
-#: apps/taoanh/routes.py:241 apps/taoanh/routes.py:259
-#: apps/taoanh/routes.py:267 apps/thumbnail/routes.py:400
-#: apps/thumbnail/routes.py:408
+#: apps/prompt_ai_ommi/routes/resources.py:374 apps/taoanh/routes.py:284
+#: apps/taoanh/routes.py:292 apps/taoanh/routes.py:310
+#: apps/taoanh/routes.py:318 apps/thumbnail/routes.py:421
+#: apps/thumbnail/routes.py:429
 msgid "Không tìm thấy ảnh."
 msgstr ""
 
-#: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:796
-#: apps/chataistudio/routes.py:399 apps/chataistudio/routes.py:423
-#: apps/chataistudio/routes.py:501 apps/chataistudio/routes.py:516
-#: apps/taoclipngan/routes.py:403
+#: apps/agent/routes/_shared.py:334 apps/autosubvideo/routes.py:819
+#: apps/chataistudio/routes.py:407 apps/chataistudio/routes.py:431
+#: apps/chataistudio/routes.py:510 apps/chataistudio/routes.py:525
+#: apps/taoclipngan/routes.py:512
 msgid "Không tìm thấy."
+msgstr ""
+
+#: server/routes/developer.py:389
+msgid "Không tính được giá cho đầu vào này."
 msgstr ""
 
 #: apps/taoanh/templates/image_thumbnail_shell.html:26
@@ -1435,11 +2535,31 @@ msgstr ""
 msgid "Không tải được video công khai; hãy kiểm tra liên kết và quyền truy cập."
 msgstr ""
 
+#: server/templates/dev_quickstart.html:65
+msgid "Không viết mã"
+msgstr ""
+
+#: server/routes/developer.py:431
+msgid "Không xác thực được (401)"
+msgstr ""
+
 #: apps/prompt_ai_ommi/routes/handoff.py:21
 msgid "Không xác định được app nhận handoff."
 msgstr ""
 
-#: apps/upscalevideo/jobs.py:244
+#: apps/qualitylab/jobs.py:144
+msgid "Không xóa được input tạm của Quality Lab."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:44
+msgid "Không được có"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:44
+msgid "Không đặt"
+msgstr ""
+
+#: apps/upscalevideo/jobs.py:256
 msgid "Không đọc được luồng video."
 msgstr ""
 
@@ -1447,7 +2567,11 @@ msgstr ""
 msgid "Không đọc được nội dung PDF."
 msgstr ""
 
-#: apps/chataistudio/routes.py:327
+#: apps/taoclipngan/jobs.py:117
+msgid "Không đọc được thời lượng video nguồn."
+msgstr ""
+
+#: apps/chataistudio/routes.py:330 apps/chataistudio/routes.py:366
 msgid "Không đủ credit để nhận thêm ảnh; phần chữ vẫn được giữ."
 msgstr ""
 
@@ -1455,8 +2579,8 @@ msgstr ""
 msgid "Không đủ credit."
 msgstr ""
 
-#: apps/autosubvideo/manifest.py:37
-msgid "Khắc phụ đề video"
+#: apps/qualitylab/services/subtitle.py:99
+msgid "Khả năng đọc"
 msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:29
@@ -1467,8 +2591,16 @@ msgstr ""
 msgid "Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg."
 msgstr ""
 
+#: server/templates/dev_playground.html:46
+msgid "Kiểm & báo giá"
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:39
 msgid "Kiểm chất lượng với chi phí thấp."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:119
+msgid "Kiểm chữ ký"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
@@ -1479,7 +2611,12 @@ msgstr ""
 msgid "Kiểm tra kết nối rồi thử lại."
 msgstr ""
 
-#: apps/thumbnail/routes.py:241
+#: server/templates/dev_tool_detail.html:44
+#: server/templates/dev_tool_detail.html:78 server/templates/dev_usage.html:28
+msgid "Kiểu"
+msgstr ""
+
+#: apps/thumbnail/routes.py:253
 msgid "Kiểu chữ"
 msgstr ""
 
@@ -1487,12 +2624,20 @@ msgstr ""
 msgid "Kiểu chữ (preset)"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:66
+#: apps/qualitylab/datasets.py:74
+msgid "Kiểu degradation chưa được hỗ trợ."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:74
 #: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Kiểu hiển thị"
 msgstr ""
 
-#: apps/thumbnail/routes.py:243
+#: platform_core/public_api/pricing.py:167
+msgid "Kiểu làm tròn không hợp lệ."
+msgstr ""
+
+#: apps/thumbnail/routes.py:255
 msgid "Kiểu trend"
 msgstr ""
 
@@ -1504,12 +2649,52 @@ msgstr ""
 msgid "Kéo để so sánh trước và sau"
 msgstr ""
 
+#: apps/qualitylab/services/media.py:83
+msgid "Kênh màu"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:101
+msgid "Kích thước candidate khớp HR"
+msgstr ""
+
+#: apps/autosubvideo/services/source_drafts.py:20
+#: platform_core/upload_sessions.py:69
+msgid "Kích thước file không hợp lệ."
+msgstr ""
+
+#: platform_core/upload_sessions.py:161
+msgid "Kích thước file thực tế không khớp khai báo."
+msgstr ""
+
+#: apps/autosubvideo/services/source_drafts.py:24
+#: platform_core/upload_sessions.py:71
+msgid "Kích thước file vượt giới hạn."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:166
+msgid "Kích thước khớp HR"
+msgstr ""
+
 #: platform_core/image_input.py:48
 msgid "Kích thước ảnh tham chiếu không hợp lệ."
 msgstr ""
 
+#: apps/qualitylab/services/subtitle.py:103
+msgid "Ký tự tối đa mỗi dòng"
+msgstr ""
+
 #: apps/agent/templates/agent_run.html:6
 msgid "Kế hoạch Agent"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:61
+#: server/templates/dev_log_detail.html:77 server/templates/dev_logs.html:60
+#: server/templates/dev_tool_detail.html:76
+msgid "Kết quả"
+msgstr ""
+
+#: apps/qualitylab/contracts.py:86
+msgid "Kết quả foundation dùng để chẩn đoán; chưa được hiệu chuẩn với đánh giá mù của con người và không được dùng làm release gate."
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:77
@@ -1520,7 +2705,7 @@ msgstr ""
 msgid "Kết quả thật sẽ xuất hiện ở đây sau job đầu tiên."
 msgstr ""
 
-#: server/templates/_job_progress.html:18
+#: server/templates/_job_progress.html:19
 msgid "Kết quả đã sẵn sàng."
 msgstr ""
 
@@ -1528,11 +2713,15 @@ msgstr ""
 msgid "Kết thúc"
 msgstr ""
 
+#: apps/nexus/routes.py:177
+msgid "Kết thúc phiên"
+msgstr ""
+
 #: apps/agent/templates/_agent_progress.html:13
 msgid "Kết thúc:"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:29
+#: apps/taoclipngan/routes.py:28
 msgid "Kể chuyện"
 msgstr ""
 
@@ -1552,17 +2741,65 @@ msgstr ""
 msgid "Kịch bản hoàn thành sẽ xuất hiện tại đây."
 msgstr ""
 
+#: platform_core/public_api/governance.py:191
+msgid "Kịch bản hình của người dùng: khung sườn của một video."
+msgstr ""
+
+#: server/templates/dev_usage.html:26 server/templates/dev_usage.html:60
+msgid "Kỳ"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:39
+msgid "Kỳ vọng kỹ thuật"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:76 apps/qualitylab/services/media.py:93
+#: apps/qualitylab/services/media.py:109 apps/qualitylab/services/media.py:162
+#: apps/qualitylab/services/subtitle.py:76
+#: apps/qualitylab/services/subtitle.py:88
 #: apps/thumbnail/templates/thumbnail.html:71
 #: apps/thumbnail/templates/thumbnail_fragment.html:38
 msgid "Kỹ thuật"
 msgstr ""
 
-#: apps/taoclipngan/features.py:8
+#: apps/qualitylab/registry.py:32
+msgid "LGPL/GPL theo build cài đặt"
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:81
+msgid "LPIPS thiếu linear weight hoặc AlexNet backbone."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:35
+msgid "LR đầu vào để dựng bicubic baseline"
+msgstr ""
+
+#: apps/nexus/manifest.py:24
+msgid "LTT Nexus — điều khiển máy từ xa"
+msgstr ""
+
+#: apps/taoclipngan/features.py:10
 msgid "LTT Red"
+msgstr ""
+
+#: platform_core/public_api/governance.py:167
+msgid "Link chia sẻ riêng tư tới một workflow: ai cầm link thì xem được."
+msgstr ""
+
+#: server/templates/dev_keys.html:36
+msgid "Live"
+msgstr ""
+
+#: server/templates/dev_keys.html:105
+msgid "Live — gọi nhà cung cấp thật, trừ credit thật"
 msgstr ""
 
 #: server/templates/_platform_footer.html:6
 msgid "Liên hệ"
+msgstr ""
+
+#: platform_core/public_api/governance.py:184
+msgid "Liên kết một tài nguyên vào một bộ sưu tập."
 msgstr ""
 
 #: server/templates/_platform_footer.html:9
@@ -1577,8 +2814,18 @@ msgstr ""
 msgid "Liên kết xác thực không hợp lệ hoặc đã hết hạn."
 msgstr ""
 
-#: server/templates/jobs.html:25
+#: apps/qualitylab/services/upscale_video.py:214
+msgid "Local SSIM trung bình"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:58
+#: server/templates/dev_webhooks.html:108 server/templates/jobs.html:25
 msgid "Loại"
+msgstr ""
+
+#: apps/autosubvideo/services/source_drafts.py:31
+#: platform_core/upload_sessions.py:65
+msgid "Loại file không được hỗ trợ."
 msgstr ""
 
 #: apps/prompt_ai_ommi/routes/handoff.py:47
@@ -1589,16 +2836,27 @@ msgstr ""
 msgid "Loại tài nguyên tham chiếu không hợp lệ."
 msgstr ""
 
-#: apps/taovideo/routes.py:315
+#: apps/taovideo/routes.py:370
 msgid "Loại tài sản đã lưu không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/services/media.py:144
+msgid "Luồng tiếng đúng yêu cầu"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:39
 msgid "Lên ý tưởng"
 msgstr ""
 
-#: server/templates/jobs.html:25
+#: server/templates/dev_jobs.html:11 server/templates/dev_log_detail.html:58
+#: server/templates/dev_logs.html:59 server/templates/dev_notifications.html:14
+#: server/templates/dev_usage.html:118 server/templates/dev_webhooks.html:75
+#: server/templates/jobs.html:25 server/templates/nexus_nhat_ky.html:31
 msgid "Lúc"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:11
+msgid "Lúc:"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:30
@@ -1624,7 +2882,16 @@ msgid "Lưu phiên bản"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:41
+#: server/templates/dev_projects.html:23
 msgid "Lưu trữ"
+msgstr ""
+
+#: platform_core/public_api/governance.py:101
+msgid "Lưu trữ (archive) chứ không xoá — job và bút toán trỏ về nó."
+msgstr ""
+
+#: server/templates/dev_projects.html:21
+msgid "Lưu trữ project này? Mọi khóa của nó bị thu hồi."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
@@ -1632,11 +2899,32 @@ msgstr ""
 msgid "Lưới"
 msgstr ""
 
-#: server/templates/job_detail.html:10
+#: server/templates/dev_privacy.html:10
+msgid "Lấy dữ liệu của bạn"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:200
+msgid "Lấy mẫu"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:198
+msgid "Lấy mẫu frame đồng bộ"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:69
+msgid "Lần giao gần đây"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:93
+#: server/templates/dev_webhooks.html:76
+msgid "Lần thử"
+msgstr ""
+
+#: server/templates/job_detail.html:11
 msgid "Lần thử lại"
 msgstr ""
 
-#: server/templates/job_detail.html:10
+#: server/templates/job_detail.html:11
 msgid "Lần trước"
 msgstr ""
 
@@ -1648,17 +2936,23 @@ msgstr ""
 msgid "Lập kế hoạch và xem giá"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:32 apps/taovideo/templates/taovideo.html:10
+#: apps/taoclipngan/routes.py:31 apps/taovideo/templates/taovideo.html:10
+#: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Lịch sử"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:29
+#: apps/taovideo/templates/taovideo.html:34
 msgid "Lịch sử prompt"
 msgstr ""
 
-#: server/templates/_job_progress.html:23
 #: server/templates/_job_progress.html:24
+#: server/templates/_job_progress.html:25
 msgid "Lịch sử xử lý"
+msgstr ""
+
+#: server/templates/dev_logs.html:42 server/templates/dev_tools.html:19
+#: server/templates/dev_usage.html:110
+msgid "Lọc"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -1673,7 +2967,7 @@ msgstr ""
 msgid "Lọc theo trạng thái"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:67
+#: apps/taovideo/templates/taovideo.html:75
 msgid "Lọc video"
 msgstr ""
 
@@ -1681,28 +2975,66 @@ msgstr ""
 msgid "Lọc việc"
 msgstr ""
 
-#: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:83
+#: apps/taoanh/templates/image.html:29 apps/taoclipngan/routes.py:100
 #: apps/taoclipngan/templates/taoclipngan.html:100
 #: apps/taoclipngan/templates/taoclipngan.html:133
+#: apps/taovideo/templates/taovideo.html:80
+#: apps/taovideo/templates/taovideo.html:98
 #: apps/thumbnail/templates/thumbnail.html:66
 #: apps/thumbnail/templates/thumbnail_fragment.html:36
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
-#: server/templates/_job_progress.html:11 server/templates/jobs.html:12
+#: server/templates/_job_progress.html:12 server/templates/jobs.html:12
 #: server/templates/jobs.html:34
 msgid "Lỗi"
+msgstr ""
+
+#: server/routes/developer.py:430
+msgid "Lỗi của request (4xx)"
+msgstr ""
+
+#: server/routes/developer.py:436
+msgid "Lỗi máy chủ (5xx)"
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:98
 msgid "Lỗi mạng khi tải video"
 msgstr ""
 
-#: platform_core/image_input.py:46
-msgid "MIME ảnh tham chiếu không khớp nội dung file."
+#: server/templates/dev_tool_detail.html:126
+msgid "Lỗi và cách thử lại"
 msgstr ""
 
-#: apps/upscalevideo/templates/upscalevideo.html:67
-msgid "MP4, MOV, MKV, AVI · browser tối đa 90MB khi R2 CORS chưa được bật"
+#: server/templates/dev_logs.html:59
+msgid "Lời gọi"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:84
+msgid "Lời gọi API sẽ bị từ chối khi không đủ credit cho báo giá. Nạp thêm ở /nap."
+msgstr ""
+
+#: server/templates/dev_log_detail.html:110
+msgid "Lời gọi này không tạo job — nên không có timeline job, và đó thường chính là câu trả lời: request bị từ chối trước khi chạm tới hàng đợi."
+msgstr ""
+
+#: server/templates/dev_log_detail.html:71
+msgid "Lời gọi này không động tới credit."
+msgstr ""
+
+#: server/templates/dev_playground.html:12
+msgid "Lời gọi ở đây tiêu credit thật."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:124
+msgid "Lựa chọn A/B không hợp lệ."
+msgstr ""
+
+#: apps/upscalevideo/routes.py:209
+msgid "MIME video không khớp định dạng được hỗ trợ."
+msgstr ""
+
+#: platform_core/image_input.py:46
+msgid "MIME ảnh tham chiếu không khớp nội dung file."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:28
@@ -1713,8 +3045,32 @@ msgstr ""
 msgid "Markdown + JSON trong một gói."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68
+#: apps/qualitylab/registry.py:102
+msgid "Media contract"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:126
+msgid "Media giải mã được"
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/projects.py:48
+msgid "Meta Director đã chọn không còn khả dụng."
+msgstr ""
+
+#: platform_core/public_api/governance.py:186
+msgid "Meta-prompt người dùng viết để sinh ra prompt khác."
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:71
+msgid "Metadata evaluator artifact không hợp lệ."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:76 apps/thumbnail/routes.py:256
 msgid "Model"
+msgstr ""
+
+#: server/templates/dev_settings.html:9
+msgid "Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:35
@@ -1727,27 +3083,84 @@ msgstr ""
 msgid "Màu phụ"
 msgstr ""
 
+#: apps/thumbnail/routes.py:265
+msgid "Màu thương hiệu"
+msgstr ""
+
+#: server/templates/nexus_trang_chinh.html:25
+msgid "Máy"
+msgstr ""
+
 #: apps/mediatools/jobs.py:237
 msgid "Máy chủ chưa cài bộ nhập video mạng xã hội."
+msgstr ""
+
+#: server/templates/dev_playground.html:6
+msgid "Máy chủ này chưa mở công cụ nào ra API, nên chưa có gì để thử."
+msgstr ""
+
+#: server/templates/dev_tools.html:29
+msgid "Máy chủ này chưa mở công cụ nào ra API."
 msgstr ""
 
 #: apps/mediatools/jobs.py:211
 msgid "Máy chủ video không có địa chỉ hợp lệ."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: server/templates/nexus_trang_chinh.html:17
+msgid "Máy của bạn"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Máy tĩnh"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:129
+msgid "Mã"
+msgstr ""
+
+#: server/templates/nexus_ma_ghep.html:44
+msgid "Mã chỉ hiện một lần. Tải lại trang sẽ không xem lại được; hãy tạo mã mới nếu cần."
+msgstr ""
+
+#: server/templates/nexus_ma_ghep.html:36
+msgid "Mã ghép"
+msgstr ""
+
+#: platform_core/nexus/devices.py:135 platform_core/nexus/devices.py:140
+#: platform_core/nexus/devices.py:146 platform_core/nexus/devices.py:154
+msgid "Mã ghép không dùng được."
+msgstr ""
+
+#: server/templates/nexus_ma_ghep.html:2
+msgid "Mã ghép máy"
+msgstr ""
+
+#: platform_core/nexus/devices.py:98
+msgid "Mã ghép phải thuộc về một tài khoản."
 msgstr ""
 
 #: server/templates/_nap_trangthai.html:36
 msgid "Mã giao dịch"
 msgstr ""
 
-#: server/templates/job_detail.html:13
+#: server/templates/nexus_ma_ghep.html:40
+msgid "Mã hết hạn lúc"
+msgstr ""
+
+#: server/templates/job_detail.html:14
 msgid "Mã hỗ trợ"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:548
+#: server/templates/dev_keys.html:21
+msgid "Mã khóa"
+msgstr ""
+
+#: server/templates/dev_keys.html:10
+msgid "Mã khóa công khai:"
+msgstr ""
+
+#: apps/autosubvideo/routes.py:571
 msgid "Mã ngôn ngữ đích không hợp lệ."
 msgstr ""
 
@@ -1759,11 +3172,19 @@ msgstr ""
 msgid "Mã đơn cổng thanh toán gửi về:"
 msgstr ""
 
+#: server/templates/dev_pricing.html:6
+msgid "Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời."
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:46
+msgid "Mô tả"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:64
 msgid "Mô tả bối cảnh, nhân vật, hành động và kết quả mong muốn..."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:28
+#: apps/taovideo/templates/taovideo.html:33
 msgid "Mô tả cảnh, chủ thể, chuyển động máy quay và ánh sáng."
 msgstr ""
 
@@ -1775,11 +3196,11 @@ msgstr ""
 msgid "Mô tả sáng tạo"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:26
+#: apps/taovideo/templates/taovideo.html:31
 msgid "Mô tả video"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:27
+#: apps/taovideo/templates/taovideo.html:32
 msgid "Mô tả video. Gõ @tên để dùng tham chiếu…"
 msgstr ""
 
@@ -1791,6 +3212,14 @@ msgstr ""
 msgid "Mô tả ảnh quá ngắn — tối thiểu 8 ký tự."
 msgstr ""
 
+#: server/templates/dev_keys.html:22 server/templates/dev_keys.html:102
+msgid "Môi trường"
+msgstr ""
+
+#: server/templates/dev_docs.html:32
+msgid "Môi trường test"
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:41
 msgid "Mượt chuyển động 2×"
 msgstr ""
@@ -1798,6 +3227,14 @@ msgstr ""
 #: apps/thumbnail/templates/thumbnail.html:36
 #: apps/thumbnail/templates/thumbnail_fragment.html:20
 msgid "Mạnh mẽ, công nghệ, rõ ràng"
+msgstr ""
+
+#: server/templates/job_detail.html:9
+msgid "Mất kết nối tạm thời. Tiến độ sẽ tự cập nhật khi mạng trở lại."
+msgstr ""
+
+#: platform_core/public_api/governance.py:188
+msgid "Mẩu prompt người dùng lưu để chèn lại nhiều nơi."
 msgstr ""
 
 #: server/templates/home.html:17
@@ -1816,12 +3253,65 @@ msgstr ""
 msgid "Mật khẩu mới"
 msgstr ""
 
-#: apps/autosubvideo/jobs.py:84 apps/autosubvideo/routes.py:350
+#: apps/prompt_ai_ommi/services/composer.py:79
+#: server/templates/dev_tool_detail.html:46
+msgid "Mặc định"
+msgstr ""
+
+#: server/templates/dev_logs.html:27 server/templates/dev_usage.html:90
+msgid "Mọi công cụ"
+msgstr ""
+
+#: server/templates/dev_logs.html:35 server/templates/dev_usage.html:97
+msgid "Mọi khóa"
+msgstr ""
+
+#: server/templates/dev_docs.html:28
+msgid "Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — xem PROTOCOL_V1.md mục 2.1."
+msgstr ""
+
+#: server/templates/dev_tools.html:13
+msgid "Mọi nhóm"
+msgstr ""
+
+#: server/templates/dev_logs.html:19 server/templates/dev_usage.html:105
+msgid "Mọi trạng thái"
+msgstr ""
+
+#: server/templates/dev_docs.html:37
+msgid "Mỗi job và mỗi webhook đều có trường mode để bên nhận phân biệt hai thế giới bằng một endpoint."
+msgstr ""
+
+#: apps/autosubvideo/jobs.py:84 apps/autosubvideo/routes.py:369
 msgid "Mỗi lượt chép lời tối đa 120 phút."
 msgstr ""
 
 #: apps/chataistudio/routes.py:208
 msgid "Mỗi lượt chỉ nhận tối đa 3 tệp."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:120
+msgid "Mỗi request mang ba header:"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:18
+msgid "Mỗi sự kiện có id riêng và được ký; giao trùng là an toàn nếu bên nhận khử trùng theo id đó."
+msgstr ""
+
+#: server/templates/dev_projects.html:5
+msgid "Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng. Lưu trữ một project sẽ thu hồi khóa của nó và không đụng tới job hay sổ credit."
+msgstr ""
+
+#: platform_core/public_api/governance.py:192
+msgid "Một cảnh trong storyboard, kèm prompt và tham số của nó."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/projects.py:57
+msgid "Một khối prompt đã chọn không còn khả dụng."
+msgstr ""
+
+#: platform_core/public_api/governance.py:161
+msgid "Một lần chạy agent: đầu vào, các bước, kết quả."
 msgstr ""
 
 #: apps/taoanh/jobs.py:93 apps/taoanh/jobs.py:207
@@ -1836,11 +3326,19 @@ msgstr ""
 msgid "Một phi hành gia khám phá thành phố tương lai, ánh sáng điện ảnh, chi tiết cao"
 msgstr ""
 
+#: platform_core/public_api/governance.py:190
+msgid "Một phiên bản của prompt, giữ lại để so sánh và quay lui."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:223
+msgid "Một rater chỉ được chấm một lần mỗi case."
+msgstr ""
+
 #: apps/taovideo/jobs.py:112
 msgid "Một video chỉ nhận tối đa 4 tài nguyên tham chiếu."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68
+#: apps/taovideo/templates/taovideo.html:76
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: server/templates/home.html:29
 msgid "Mới nhất"
@@ -1867,8 +3365,9 @@ msgstr ""
 msgid "Mở app"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:15
-#: apps/taovideo/templates/taovideo.html:73
+#: apps/taovideo/templates/taovideo.html:16
+#: apps/taovideo/templates/taovideo.html:81
+#: apps/taovideo/templates/taovideo.html:95
 msgid "Mở bảng tạo video"
 msgstr ""
 
@@ -1876,16 +3375,28 @@ msgstr ""
 msgid "Mở danh sách ứng dụng"
 msgstr ""
 
+#: platform_core/public_api/notifications.py:198
+msgid "Mở khu API"
+msgstr ""
+
 #: server/templates/home.html:31
 msgid "Mở menu tài khoản"
 msgstr ""
 
-#: server/templates/_job_progress.html:19
+#: server/templates/_job_progress.html:20
 msgid "Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:63
+msgid "Mở report"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:19
 msgid "Mở rộng khung hình"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:12
+msgid "Mở timeline kỹ thuật của job"
 msgstr ""
 
 #: server/templates/home.html:27
@@ -1909,7 +3420,7 @@ msgstr ""
 msgid "Mục tiêu/ngân sách không hợp lệ."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:26
+#: apps/taoclipngan/routes.py:25
 msgid "Ngang 16:9"
 msgstr ""
 
@@ -1945,19 +3456,40 @@ msgstr ""
 msgid "Ngân hàng thường báo về trong vòng một phút. Cứ để trang này mở — credit sẽ tự hiện, bạn"
 msgstr ""
 
+#: server/templates/dev_usage.html:20
+msgid "Ngân sách của bạn"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:106
+msgid "Ngân sách cứng: lời gọi mới bị từ chối."
+msgstr ""
+
+#: server/templates/dev_usage.html:21
+msgid "Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. Ngân sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. Nếu máy chủ đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy cái chặt hơn."
+msgstr ""
+
 #: apps/agent/templates/agent.html:16
 msgid "Ngân sách tối đa (credit)"
 msgstr ""
 
 #: apps/kichban/templates/script.html:10
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
-#: apps/taoclipngan/templates/taoclipngan.html:54 apps/thumbnail/routes.py:244
+#: apps/taoclipngan/templates/taoclipngan.html:54 apps/thumbnail/routes.py:257
 #: apps/thumbnail/templates/thumbnail.html:45
 #: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Ngôn ngữ"
 msgstr ""
 
-#: apps/chataistudio/features.py:23 apps/taoclipngan/routes.py:25
+#: server/templates/nexus_ma_ghep.html:28
+msgid "Người nhập mã này sẽ điều khiển được máy tính của bạn và nhìn thấy mọi thứ trên màn hình — kể cả email, ngân hàng và tài liệu đang mở."
+msgstr ""
+
+#: server/templates/dev_usage.html:27
+msgid "Ngưỡng cảnh báo"
+msgstr ""
+
+#: apps/chataistudio/features.py:23 apps/taoclipngan/routes.py:24
+#: apps/upscalevideo/templates/upscalevideo.html:92
 msgid "Nhanh"
 msgstr ""
 
@@ -1969,8 +3501,29 @@ msgstr ""
 msgid "Nhân bản project"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:32
+#: platform_core/public_api/governance.py:177
+msgid "Nhãn người dùng gắn lên một tài nguyên cụ thể."
+msgstr ""
+
+#: server/templates/dev_tools.html:11 server/templates/dev_tools.html:34
+#: server/templates/dev_tools.html:58
+msgid "Nhóm"
+msgstr ""
+
+#: platform_core/public_api/governance.py:182
+msgid "Nhóm tài nguyên người dùng tự gom lại."
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:9
+msgid "Nhóm:"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:31
 msgid "Nhạc thiếu nhi"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:224
+msgid "Nhất quán theo thời gian"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:97
@@ -1979,6 +3532,10 @@ msgstr ""
 
 #: server/templates/demo.html:22
 msgid "Nhập gì cũng được — job sẽ đảo ngược chuỗi này"
+msgstr ""
+
+#: server/templates/nexus_ma_ghep.html:39
+msgid "Nhập mã này vào phần mềm LTT Nexus trên máy cần ghép."
 msgstr ""
 
 #: server/templates/login.html:15
@@ -2007,12 +3564,28 @@ msgid "Nhập video công khai mà bạn có quyền dùng từ TikTok, YouTube 
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:75
-#: apps/taovideo/templates/taovideo.html:72
+#: apps/taovideo/templates/taovideo.html:80
+#: apps/upscalevideo/templates/upscalevideo.html:98
+#: apps/upscalevideo/templates/upscalevideo.html:101
+#: server/templates/nexus_nhat_ky.html:2
 msgid "Nhật ký"
+msgstr ""
+
+#: server/templates/dev_logs.html:9
+#, python-format
+msgid "Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi."
+msgstr ""
+
+#: server/templates/nexus_nhat_ky.html:22
+msgid "Nhật ký này bao gồm cả thao tác của nhân viên LTT, nếu có. Chúng được tô màu để bạn nhìn thấy ngay."
 msgstr ""
 
 #: apps/agent/templates/_agent_progress.html:15
 msgid "Nhật ký quyết định"
+msgstr ""
+
+#: server/routes/developer.py:130
+msgid "Nhật ký request"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:45
@@ -2035,15 +3608,15 @@ msgstr ""
 msgid "Node Text chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP."
 msgstr ""
 
-#: apps/upscalevideo/manifest.py:75
+#: apps/upscalevideo/manifest.py:83
 msgid "Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:72
+#: apps/taovideo/templates/taovideo.html:80
 msgid "Nâng cấp AI"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:77
+#: apps/taovideo/templates/taovideo.html:85
 msgid "Nâng cấp video AI"
 msgstr ""
 
@@ -2051,24 +3624,40 @@ msgstr ""
 msgid "Nâng nét 1080p/2K/4K, chống rung và nội suy FPS. Giữ tỉ lệ, FPS, âm thanh."
 msgstr ""
 
-#: apps/upscalevideo/manifest.py:58
+#: apps/upscalevideo/manifest.py:66
 msgid "Nâng độ nét video lên 1080p, 2K hoặc 4K bằng Real-ESRGAN."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:28
+#: server/templates/dev_tool_detail.html:130
+msgid "Nên làm gì"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:27
 msgid "Nói chuyện/vlog"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: server/templates/status_api.html:18
+msgid "Năng lực"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Năng động"
 msgstr ""
 
-#: server/templates/home.html:31 server/templates/home.html:51
-#: server/templates/nap.html:7
+#: server/templates/dev_privacy.html:32
+msgid "Nơi lưu"
+msgstr ""
+
+#: server/templates/dev_usage.html:16 server/templates/home.html:31
+#: server/templates/home.html:51 server/templates/nap.html:7
 msgid "Nạp credit"
 msgstr ""
 
-#: server/templates/_header.html:44 server/templates/_nap_trangthai.html:43
+#: apps/qualitylab/templates/qualitylab.html:20
+msgid "Nạp file vào Lab hoặc dùng storage key. File nạp trực tiếp sẽ bị xóa ngay sau job."
+msgstr ""
+
+#: server/templates/_header.html:45 server/templates/_nap_trangthai.html:43
 msgid "Nạp thêm"
 msgstr ""
 
@@ -2104,11 +3693,17 @@ msgstr ""
 msgid "Nối 2–12 video theo thứ tự thành một MP4 chuẩn H.264."
 msgstr ""
 
+#: apps/qualitylab/manifest.py:29
+msgid "NỘI BỘ"
+msgstr ""
+
 #: server/routes/dashboard.py:26
 msgid "Nội bộ"
 msgstr ""
 
 #: apps/kichban/templates/_script_view.html:8
+#: apps/qualitylab/services/subtitle.py:117
+#: apps/qualitylab/services/subtitle.py:125
 #: apps/thumbnail/templates/thumbnail.html:26
 #: apps/thumbnail/templates/thumbnail_fragment.html:12
 #: server/templates/demo.html:20
@@ -2119,7 +3714,7 @@ msgstr ""
 msgid "Nội dung / câu chuyện"
 msgstr ""
 
-#: apps/prompt_ai_ommi/jobs.py:54 apps/prompt_ai_ommi/routes/projects.py:199
+#: apps/prompt_ai_ommi/jobs.py:54 apps/prompt_ai_ommi/routes/projects.py:251
 msgid "Nội dung brief tối thiểu 20 ký tự."
 msgstr ""
 
@@ -2127,8 +3722,20 @@ msgstr ""
 msgid "Nội dung caption"
 msgstr ""
 
+#: server/templates/dev_privacy.html:21
+msgid "Nội dung của bạn"
+msgstr ""
+
+#: platform_core/upload_sessions.py:168
+msgid "Nội dung file không khớp định dạng khai báo."
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:38
 msgid "Nội dung hội thoại"
+msgstr ""
+
+#: platform_core/public_api/governance.py:171
+msgid "Nội dung tin nhắn — thứ nhạy cảm nhất trong nhóm này."
 msgstr ""
 
 #: apps/mediatools/jobs.py:334
@@ -2143,8 +3750,16 @@ msgstr ""
 msgid "Operation không hợp lệ."
 msgstr ""
 
+#: apps/qualitylab/manifest.py:30
+msgid "Operator-only; foundation evaluator không tải model lúc chạy."
+msgstr ""
+
 #: apps/kichban/templates/script.html:10
 msgid "Output có cấu trúc"
+msgstr ""
+
+#: apps/qualitylab/materializer.py:108
+msgid "Output dataset đã tồn tại; không được ghi đè."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:31
@@ -2168,7 +3783,32 @@ msgstr ""
 msgid "PNG/JPEG/WebP · tối đa 8 MB · gửi tới Gemini, không công khai"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:309
+#: apps/qualitylab/services/upscale.py:138
+#: apps/qualitylab/services/upscale_video.py:216
+msgid "PSNR delta so với bicubic"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:212
+msgid "PSNR trung bình"
+msgstr ""
+
+#: apps/qualitylab/registry.py:45
+msgid "PSNR/local-SSIM/bicubic/artifact proxy; chưa human-calibrated."
+msgstr ""
+
+#: apps/qualitylab/routes.py:134
+msgid "Pack paired cần HR reference."
+msgstr ""
+
+#: apps/qualitylab/jobs.py:84
+msgid "Pack paired thiếu ảnh HR reference."
+msgstr ""
+
+#: apps/qualitylab/routes.py:104
+msgid "Pack đánh giá không hợp lệ."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:418
 msgid "Package không hợp lệ."
 msgstr ""
 
@@ -2184,6 +3824,39 @@ msgstr ""
 msgid "Package vượt giới hạn 900 KiB."
 msgstr ""
 
+#: apps/qualitylab/registry.py:129
+msgid "Parse cue, timing, overlap, CPS, line và transcript error."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:115
+#, python-format
+msgid "Payload có %(version)s ở trường `type` và một `id` duy nhất cho mỗi sự kiện."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:136
+msgid "Peak VRAM"
+msgstr ""
+
+#: apps/qualitylab/registry.py:34
+msgid "Phase foundation; deploy phải lưu ffprobe -version/configuration."
+msgstr ""
+
+#: server/templates/dev_pricing.html:39
+msgid "Phiên bản giá"
+msgstr ""
+
+#: platform_core/public_api/pricing.py:161
+msgid "Phiên bản giá phải có nhãn."
+msgstr ""
+
+#: platform_core/public_api/pricing.py:159
+msgid "Phiên bản giá phải gắn với một công cụ."
+msgstr ""
+
+#: platform_core/public_api/governance.py:194
+msgid "Phiên bản một cảnh, kèm góp ý của người dùng."
+msgstr ""
+
 #: apps/agent/routes/workspace.py:46
 msgid "Phiên bản trình bày không hợp lệ."
 msgstr ""
@@ -2192,34 +3865,54 @@ msgstr ""
 msgid "Phiên bản đã chụp"
 msgstr ""
 
+#: platform_core/public_api/pricing.py:207
+msgid "Phiên bản đã ngừng thì không phát hành lại."
+msgstr ""
+
 #: apps/chataistudio/routes.py:196
 msgid "Phiên hết hạn — tải lại trang."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:302
+#: apps/taoclipngan/routes.py:411
 msgid "Phiên hết hạn."
 msgstr ""
 
-#: apps/prompt_ai_ommi/routes/_shared.py:78 apps/taoclipngan/routes.py:218
+#: platform_core/nexus/sessions.py:90
+msgid "Phiên phải thuộc về một tài khoản."
+msgstr ""
+
+#: apps/qualitylab/routes.py:101
+msgid "Phiên đã hết hạn — tải lại trang rồi thử lại."
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/_shared.py:78 apps/taoclipngan/routes.py:269
 msgid "Phiên đã hết hạn — tải lại trang."
 msgstr ""
 
 #: apps/agent/routes/_shared.py:122 apps/agent/routes/legacy_runs.py:109
 #: apps/agent/routes/legacy_runs.py:132 apps/agent/routes/legacy_runs.py:146
-#: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:127
-#: apps/autosubvideo/routes.py:240 apps/autosubvideo/routes.py:289
-#: apps/upscalevideo/routes.py:219 apps/upscalevideo/routes.py:237
-#: apps/upscalevideo/routes.py:590 server/routes/jobs.py:255
-#: server/routes/jobs.py:278
+#: apps/agent/routes/workspace.py:93 apps/autosubvideo/routes.py:131
+#: apps/autosubvideo/routes.py:271 apps/autosubvideo/routes.py:318
+#: apps/upscalevideo/routes.py:200 apps/upscalevideo/routes.py:261
+#: apps/upscalevideo/routes.py:279 apps/upscalevideo/routes.py:749
+#: server/routes/jobs.py:262 server/routes/jobs.py:285
 msgid "Phiên đã hết hạn."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34 apps/thumbnail/routes.py:242
+#: platform_core/public_api/governance.py:133
+msgid "Phiên đăng nhập web. Lưu SHA-256 của token, không lưu token."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:39 apps/thumbnail/routes.py:254
 msgid "Phong cách"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:71
 msgid "Phong cách hình ảnh"
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/projects.py:37
+msgid "Phong cách đã chọn không còn khả dụng."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:40
@@ -2235,7 +3928,50 @@ msgstr ""
 msgid "Phân tích video dài và xuất nhiều clip ngắn có reframe, phụ đề."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:29
+#: server/templates/dev_keys.html:23 server/templates/dev_usage.html:26
+#: server/templates/dev_usage.html:65
+msgid "Phạm vi"
+msgstr ""
+
+#: server/templates/dev_keys.html:123
+msgid "Phạm vi (scope)"
+msgstr ""
+
+#: server/templates/dev_tools.html:35
+msgid "Phạm vi cần"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:12
+msgid "Phạm vi cần:"
+msgstr ""
+
+#: platform_core/public_api/policy.py:312
+msgid "Phạm vi gán không hợp lệ."
+msgstr ""
+
+#: platform_core/public_api/policy.py:433
+msgid "Phạm vi kill switch không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:44
+msgid "Phải có"
+msgstr ""
+
+#: platform_core/public_api/admin_console.py:444
+#: platform_core/public_api/policy.py:439
+#, python-brace-format
+msgid "Phải ghi lý do (ít nhất {n} ký tự) cho thao tác này."
+msgstr ""
+
+#: platform_core/public_api/policy.py:436
+msgid "Phải nêu đối tượng cho phạm vi này."
+msgstr ""
+
+#: platform_core/public_api/policy.py:315
+msgid "Phải nêu đối tượng được gán."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:28
 msgid "Phỏng vấn"
 msgstr ""
 
@@ -2243,9 +3979,13 @@ msgstr ""
 msgid "Phổ biến"
 msgstr ""
 
-#: apps/thumbnail/routes.py:240 apps/thumbnail/templates/thumbnail.html:29
+#: apps/thumbnail/routes.py:252 apps/thumbnail/templates/thumbnail.html:29
 #: apps/thumbnail/templates/thumbnail_fragment.html:14
 msgid "Phụ đề"
+msgstr ""
+
+#: server/routes/developer.py:128
+msgid "Playground"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:85
@@ -2256,33 +3996,63 @@ msgstr ""
 msgid "Preset được đưa vào render thật; không thay bằng CSS preview."
 msgstr ""
 
-#: apps/prompt_ai_ommi/routes/projects.py:97
+#: server/routes/developer.py:125 server/templates/dev_keys.html:22
+msgid "Project"
+msgstr ""
+
+#: apps/prompt_ai_ommi/routes/projects.py:145
 msgid "Project không ở trạng thái lưu trữ."
 msgstr ""
 
-#: apps/prompt_ai_ommi/project_schema.py:100
+#: server/templates/dev_projects.html:36
+msgid "Project mới"
+msgstr ""
+
+#: apps/prompt_ai_ommi/project_schema.py:101
 msgid "Project phải là object."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:343 apps/autosubvideo/routes.py:421
-#: apps/autosubvideo/routes.py:508 apps/autosubvideo/routes.py:543
+#: apps/autosubvideo/routes.py:362 apps/autosubvideo/routes.py:440
+#: apps/autosubvideo/routes.py:531 apps/autosubvideo/routes.py:566
+#: apps/autosubvideo/services/source_drafts.py:79
 msgid "Project đã được sửa ở phiên khác."
+msgstr ""
+
+#: server/templates/dev_overview.html:19
+msgid "Project:"
+msgstr ""
+
+#: platform_core/upload_sessions.py:224
+msgid "Promote file không toàn vẹn."
 msgstr ""
 
 #: apps/taoanh/templates/image.html:16
 msgid "Prompt tối đa 4.000 ký tự"
 msgstr ""
 
-#: apps/taovideo/jobs.py:303
+#: apps/taovideo/jobs.py:302
 msgid "Provider không trả URL video."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:510
+#: apps/autosubvideo/routes.py:533
 msgid "Pyannote chưa cấu hình token/model."
+msgstr ""
+
+#: apps/qualitylab/manifest.py:15 apps/qualitylab/manifest.py:20
+msgid "Quality Lab"
+msgstr ""
+
+#: server/templates/nexus_ma_ghep.html:46
+#: server/templates/nexus_nhat_ky.html:57
+msgid "Quay lại danh sách máy"
 msgstr ""
 
 #: server/templates/home.html:64
 msgid "Quay lại kho ứng dụng và mở app đầu tiên."
+msgstr ""
+
+#: platform_core/nexus/sessions.py:92
+msgid "Quyền của phiên không hợp lệ."
 msgstr ""
 
 #: server/templates/_platform_footer.html:10
@@ -2297,24 +4067,32 @@ msgstr ""
 msgid "Quên mật khẩu?"
 msgstr ""
 
-#: server/templates/_header.html:43 server/templates/home.html:31
+#: server/templates/_header.html:44 server/templates/home.html:31
 msgid "Quản trị"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Quảng cáo sản phẩm"
 msgstr ""
 
-#: platform_core/storage.py:311
+#: platform_core/storage.py:366
 msgid "R2 dùng url_for(), không dùng download_token"
 msgstr ""
 
-#: platform_core/storage.py:325
+#: platform_core/storage.py:380
 msgid "R2 thiếu cấu hình LTT_R2_* (endpoint/key/bucket)"
+msgstr ""
+
+#: apps/qualitylab/calibration.py:283
+msgid "Ready chỉ cho phép review threshold; không tự bật release gate."
 msgstr ""
 
 #: apps/mediatools/jobs.py:312
 msgid "Redirect video thiếu Location."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:14
+msgid "Report chưa sẵn sàng."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:121
@@ -2325,19 +4103,98 @@ msgstr ""
 msgid "Round-trip có schema; asset cần upload lại khi import."
 msgstr ""
 
-#: apps/prompt_ai_ommi/project_schema.py:102
+#: apps/qualitylab/services/upscale_video.py:138
+msgid "Runtime Upscale chưa ghi peak VRAM theo job"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:40
+msgid "Rộng (px)"
+msgstr ""
+
+#: server/templates/dev_docs.html:14
+msgid "SDK một file, không phụ thuộc ngoài."
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:74
+#: apps/qualitylab/services/subtitle.py:89
+msgid "SRT đọc được"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:141
+#: apps/qualitylab/services/upscale_video.py:219
+msgid "SSIM delta so với bicubic"
+msgstr ""
+
+#: server/routes/developer.py:434
+msgid "Sai dữ liệu (422)"
+msgstr ""
+
+#: apps/prompt_ai_ommi/project_schema.py:103
 msgid "Sai loại project PROMPT AI OMMI."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:172
+msgid "Sai lệch FPS"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:170
+msgid "Sai lệch thời lượng"
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:49
+msgid "Sai schema evaluator manifest."
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:226
+msgid "Sai số biến thiên frame"
+msgstr ""
+
+#: apps/qualitylab/datasets.py:78
+msgid "Sample chưa có bằng chứng sở hữu/license."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:67
+msgid "Sample dataset phải là object."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:51
+msgid "Sample id chỉ được gồm chữ, số, dấu chấm, gạch ngang hoặc gạch dưới."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:70
+msgid "Sample id rỗng hoặc bị trùng."
+msgstr ""
+
+#: apps/qualitylab/materializer.py:63
+msgid "Sample intake phải là object."
+msgstr ""
+
+#: apps/qualitylab/materializer.py:66
+msgid "Sample thiếu license_evidence_id có thể kiểm toán."
+msgstr ""
+
+#: server/templates/dev_docs.html:38
+msgid "Sandbox không chứng minh được CHẤT LƯỢNG kết quả. Muốn biết đầu ra thật thế nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất."
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:79
 msgid "Sau"
 msgstr ""
 
-#: apps/taovideo/routes.py:172 apps/taovideo/routes.py:174
+#: server/templates/dev_webhooks.html:8
+#, python-format
+msgid "Secret cũ vẫn được ký kèm trong %(hours)s giờ nữa, nên bạn có thời gian đổi bên nhận mà không mất sự kiện nào."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:6
+msgid "Secret mới — chỉ hiện một lần"
+msgstr ""
+
+#: apps/taovideo/routes.py:171 apps/taovideo/routes.py:173
 msgid "Seed phải là số nguyên từ 0 đến 2147483647."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Seed tùy chọn"
 msgstr ""
 
@@ -2353,7 +4210,11 @@ msgstr ""
 msgid "Sinh giọng đọc có điều khiển phong cách bằng Gemini TTS."
 msgstr ""
 
-#: apps/taoanh/manifest.py:69
+#: server/templates/dev_privacy.html:22
+msgid "Sinh lại được"
+msgstr ""
+
+#: apps/taoanh/manifest.py:147
 msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model."
 msgstr ""
 
@@ -2361,11 +4222,19 @@ msgstr ""
 msgid "Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ."
 msgstr ""
 
+#: platform_core/public_api/governance.py:200
+msgid "Sinh từ OpenAPI."
+msgstr ""
+
+#: server/templates/dev_quickstart.html:52
+msgid "Sinh từ chính hợp đồng của công cụ, nên không lệch với thứ máy chủ nhận. Đổi công cụ:"
+msgstr ""
+
 #: apps/taoanh/manifest.py:56
 msgid "Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do."
 msgstr ""
 
-#: apps/taovideo/manifest.py:57
+#: apps/taovideo/manifest.py:42
 msgid "Sinh video Seedance từ mô tả và các tài sản tham chiếu tùy chọn."
 msgstr ""
 
@@ -2381,8 +4250,12 @@ msgstr ""
 msgid "Snapshot project không còn toàn vẹn."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:642
+#: apps/autosubvideo/routes.py:665
 msgid "Snapshot/source của job cũ không còn hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/registry.py:117
+msgid "So candidate với HR và bicubic baseline; chưa release gate."
 msgstr ""
 
 #: apps/taoanh/templates/image.html:31
@@ -2403,15 +4276,27 @@ msgstr ""
 msgid "So sánh output"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:432
+#: apps/qualitylab/services/upscale.py:149
+msgid "So với bicubic"
+msgstr ""
+
+#: apps/qualitylab/routes.py:122
+msgid "Source artifact không tồn tại."
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:53
+msgid "Source hoặc license evaluator không khớp registry."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:451
 msgid "Source video chưa sẵn sàng hoặc không thuộc user."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:514
+#: apps/autosubvideo/routes.py:537
 msgid "Source video chưa sẵn sàng."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:347
+#: apps/autosubvideo/routes.py:366
 msgid "Source video chưa upload hoặc không thuộc user."
 msgstr ""
 
@@ -2424,7 +4309,23 @@ msgstr ""
 msgid "Style chữ"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68
+#: platform_core/public_api/governance.py:181
+msgid "Style người dùng lưu lại để tái dùng giữa các cảnh."
+msgstr ""
+
+#: platform_core/public_api/governance.py:163
+msgid "Sơ đồ các bước tự động do người dùng dựng trên canvas."
+msgstr ""
+
+#: server/templates/developers_base.html:23
+msgid "Sắp có"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:20
+msgid "Sắp ngừng hỗ trợ:"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:76
 msgid "Sắp xếp"
 msgstr ""
 
@@ -2436,28 +4337,81 @@ msgstr ""
 msgid "Sắp xếp:"
 msgstr ""
 
+#: server/templates/dev_pricing.html:35
+msgid "Sẽ tính"
+msgstr ""
+
+#: apps/taovideo/quotes.py:118
+msgid "Số bộ tham chiếu không khớp batch."
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:44
 msgid "Số clip mong muốn"
+msgstr ""
+
+#: server/templates/dev_usage.html:58
+msgid "Số credit"
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:90
+msgid "Số cue"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:68
 msgid "Số cảnh"
 msgstr ""
 
+#: apps/qualitylab/services/subtitle.py:101
+msgid "Số dòng tối đa"
+msgstr ""
+
 #: server/templates/_header.html:32
 msgid "Số dư credit"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:83
+#, python-format
+msgid "Số dư còn %(n)s credit"
 msgstr ""
 
 #: server/templates/_nap_trangthai.html:26
 msgid "Số dư hiện tại"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:343
+#: server/templates/dev_overview.html:11 server/templates/dev_usage.html:6
+msgid "Số dư:"
+msgstr ""
+
+#: apps/upscalevideo/routes.py:385
 msgid "Số file không khớp manifest."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:56
+#: apps/qualitylab/services/upscale_video.py:210
+msgid "Số frame đã lấy mẫu"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:131
+msgid "Số frame đã xử lý"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:131
+msgid "Số luồng hình"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:132
+msgid "Số luồng tiếng"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:61
 msgid "Số lượng/biến thể"
+msgstr ""
+
+#: server/routes/developer.py:1112
+msgid "Số ngày hết hạn phải là một số nguyên."
+msgstr ""
+
+#: server/routes/developer.py:1115
+msgid "Số ngày hết hạn phải lớn hơn 0."
 msgstr ""
 
 #: server/templates/nap.html:59 server/templates/nap_don.html:31
@@ -2468,17 +4422,51 @@ msgstr ""
 msgid "Số từ"
 msgstr ""
 
-#: apps/taoanh/templates/image.html:20
+#: apps/taoanh/templates/image.html:20 apps/thumbnail/routes.py:259
 #: apps/thumbnail/templates/thumbnail.html:46
 #: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Số ảnh"
+msgstr ""
+
+#: platform_core/public_api/governance.py:90
+msgid "Sổ credit là chân lý thanh toán. Một tranh chấp hoàn tiền sáu tháng sau được trả lời từ đây."
+msgstr ""
+
+#: server/templates/dev_privacy.html:25
+msgid "Sổ credit, nhật ký thao tác quản trị, lịch sử giá, khoá đã cấp. Giữ vô thời hạn — một tranh chấp hoàn tiền sáu tháng sau được trả lời từ đây, và một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán."
+msgstr ""
+
+#: server/routes/developer.py:132
+msgid "Sử dụng & credit"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:38
+#: server/templates/dev_log_detail.html:92
+#: server/templates/dev_webhooks.html:29 server/templates/dev_webhooks.html:75
+msgid "Sự kiện"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:105
+msgid "Sự kiện webhook"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:157
+msgid "Target gần 1; chưa calibrated"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:61
 msgid "Telemetry quản trị"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:40
+#: server/templates/dev_keys.html:34 server/templates/dev_usage.html:127
+msgid "Test"
+msgstr ""
+
+#: server/templates/dev_keys.html:109
+msgid "Test — kết quả mẫu, không gọi nhà cung cấp, không trừ credit"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:45 apps/thumbnail/routes.py:261
 msgid "Tham chiếu"
 msgstr ""
 
@@ -2494,6 +4482,14 @@ msgstr ""
 msgid "Thay vùng theo mô tả"
 msgstr ""
 
+#: server/templates/dev_log_detail.html:58
+msgid "Thay đổi"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:63
+msgid "Theo dõi"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:119
 msgid "Theo dõi mọi job và credit ở nguồn chân lý chung."
 msgstr ""
@@ -2502,11 +4498,19 @@ msgstr ""
 msgid "Theo dõi, lọc và mở kết quả từ mọi app."
 msgstr ""
 
+#: platform_core/nexus/sessions.py:98
+msgid "Thiết bị này đã bị thu hồi."
+msgstr ""
+
+#: platform_core/nexus/devices.py:126
+msgid "Thiết bị phải gửi khoá công khai của nó."
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:19
 msgid "Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:55
+#: apps/taovideo/templates/taovideo.html:60
 msgid "Thiết lập"
 msgstr ""
 
@@ -2522,8 +4526,20 @@ msgstr ""
 msgid "Thiết lập nâng cấp video"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:18
+#: apps/taovideo/templates/taovideo.html:20
 msgid "Thiết lập tạo video"
+msgstr ""
+
+#: apps/qualitylab/calibration.py:38
+msgid "Thiếu calibration version hoặc dataset manifest hash."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:117
+msgid "Thiếu dataset_version."
+msgstr ""
+
+#: apps/qualitylab/evaluator_assets.py:74
+msgid "Thiếu evaluator artifact đã khai báo."
 msgstr ""
 
 #: apps/autosubvideo/jobs.py:272
@@ -2538,8 +4554,16 @@ msgstr ""
 msgid "Thiếu project/track/ngôn ngữ cho translation."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:341 apps/autosubvideo/routes.py:419
-#: apps/autosubvideo/routes.py:506 apps/autosubvideo/routes.py:541
+#: server/routes/developer.py:432
+msgid "Thiếu quyền (403)"
+msgstr ""
+
+#: apps/qualitylab/calibration.py:95
+msgid "Thiếu rater id."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:360 apps/autosubvideo/routes.py:438
+#: apps/autosubvideo/routes.py:529 apps/autosubvideo/routes.py:564
 msgid "Thiếu revision hợp lệ."
 msgstr ""
 
@@ -2547,12 +4571,16 @@ msgstr ""
 msgid "Thiếu run_id/user_id cho agent.advance."
 msgstr ""
 
+#: apps/qualitylab/jobs.py:62
+msgid "Thiếu source artifact key."
+msgstr ""
+
 #: apps/autosubvideo/jobs.py:371
 msgid "Thiếu transcript (chưa nạp phụ đề)."
 msgstr ""
 
 #: apps/autosubvideo/jobs.py:368 apps/taoclipngan/jobs.py:74
-#: apps/upscalevideo/jobs.py:194
+#: apps/upscalevideo/jobs.py:206
 msgid "Thiếu video (video_key)."
 msgstr ""
 
@@ -2561,7 +4589,28 @@ msgid "Thiếu văn bản cần đọc."
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:49
+#: server/templates/dev_keys.html:66 server/templates/nexus_trang_chinh.html:68
 msgid "Thu hồi"
+msgstr ""
+
+#: server/templates/dev_settings.html:8
+msgid "Thu hồi có hiệu lực ở request kế tiếp và không đảo ngược được."
+msgstr ""
+
+#: server/templates/dev_keys.html:74
+msgid "Thu hồi không đảo ngược được. Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ."
+msgstr ""
+
+#: apps/nexus/routes.py:174
+msgid "Thu hồi máy"
+msgstr ""
+
+#: apps/nexus/routes.py:86
+msgid "Thu hồi máy này? Mọi phiên đang chạy sẽ bị cắt ngay."
+msgstr ""
+
+#: platform_core/nexus/devices.py:212 platform_core/nexus/sessions.py:164
+msgid "Thu hồi phải ghi rõ ai thu hồi."
 msgstr ""
 
 #: apps/taoanh/templates/_image_mode_nav.html:3
@@ -2569,8 +4618,24 @@ msgstr ""
 msgid "Thumbnail YouTube"
 msgstr ""
 
+#: server/templates/dev_keys.html:88
+msgid "Thuộc project"
+msgstr ""
+
+#: server/routes/developer.py:429
+msgid "Thành công (2xx)"
+msgstr ""
+
 #: server/templates/home.html:31
 msgid "Thành viên"
+msgstr ""
+
+#: server/routes/developer.py:134 server/templates/dev_log_detail.html:38
+msgid "Thông báo"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:133
+msgid "Thông lượng xử lý"
 msgstr ""
 
 #: server/templates/_platform_footer.html:1
@@ -2583,6 +4648,10 @@ msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:35
 msgid "Thư viện nguồn gần đây"
+msgstr ""
+
+#: apps/thumbnail/routes.py:263
+msgid "Thương hiệu"
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:53 server/templates/home.html:36
@@ -2601,18 +4670,56 @@ msgstr ""
 msgid "Thời gian lên lịch phải kèm múi giờ."
 msgstr ""
 
+#: apps/qualitylab/services/upscale_video.py:128
+msgid "Thời gian xử lý Upscale"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
-#: apps/taovideo/templates/taovideo.html:56
+#: apps/qualitylab/services/media.py:129
+#: apps/taovideo/templates/taovideo.html:61
 msgid "Thời lượng"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:42
+msgid "Thời lượng (s)"
 msgstr ""
 
 #: server/templates/_nap_trangthai.html:31
 msgid "Thời điểm"
 msgstr ""
 
+#: platform_core/public_api/policy.py:444
+msgid "Thời điểm hết hiệu lực phải ở tương lai."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:128
+msgid "Thứ tự không được bảo đảm: hai sự kiện của hai job có thể tới ngược thứ tự. Hãy dựa vào trạng thái trong payload, đừng dựa vào thứ tự tới."
+msgstr ""
+
 #: apps/taoanh/templates/image_thumbnail_shell.html:28
-#: server/templates/job_detail.html:5
+#: apps/taovideo/templates/taovideo.html:98
+#: server/templates/dev_tool_detail.html:129 server/templates/job_detail.html:5
 msgid "Thử lại"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:73
+msgid "Thử lại cho đúng"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:21
+msgid "Thử lại:"
+msgstr ""
+
+#: server/templates/dev_pricing.html:10
+msgid "Thử một lời gọi"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:76
+msgid "Timeout mạng là ca nguy hiểm nhất: request có thể đã thành công. Thử lại với ĐÚNG Idempotency-Key cũ thì kết quả xấu nhất là nhận lại câu trả lời đầu tiên, thay vì mua lần thứ hai. Bảng lỗi đầy đủ nằm trong trang từng công cụ."
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:93
+msgid "Timestamp không tăng"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:45
@@ -2623,11 +4730,11 @@ msgstr ""
 msgid "Tin nhắn trống."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:33
+#: apps/taovideo/templates/taovideo.html:38
 msgid "Tinh chỉnh chuyển động, phong cách hoặc seed khi bạn cần kiểm soát sâu hơn."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Tinh tế"
 msgstr ""
 
@@ -2635,7 +4742,7 @@ msgstr ""
 msgid "Tiêu chuẩn"
 msgstr ""
 
-#: apps/kichban/templates/_script_view.html:6 apps/thumbnail/routes.py:239
+#: apps/kichban/templates/_script_view.html:6 apps/thumbnail/routes.py:251
 msgid "Tiêu đề"
 msgstr ""
 
@@ -2667,7 +4774,7 @@ msgstr ""
 msgid "Tiến độ job"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:72
+#: apps/taovideo/templates/taovideo.html:80
 msgid "Tiến độ tạo video"
 msgstr ""
 
@@ -2676,7 +4783,7 @@ msgid "Tiến độ viết kịch bản"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:70
-#: apps/taoclipngan/routes.py:33
+#: apps/taoclipngan/routes.py:32
 msgid "Tiếng Việt"
 msgstr ""
 
@@ -2692,11 +4799,11 @@ msgstr ""
 msgid "Track nguồn không có cue để dịch."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:552
+#: apps/autosubvideo/routes.py:575
 msgid "Track nguồn không có cue."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:440
+#: apps/autosubvideo/routes.py:459
 msgid "Track render không tồn tại."
 msgstr ""
 
@@ -2706,6 +4813,22 @@ msgstr ""
 
 #: server/deps.py:91
 msgid "Trang này chỉ dành cho quản trị viên."
+msgstr ""
+
+#: server/templates/dev_playground.html:10
+msgid "Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó."
+msgstr ""
+
+#: server/templates/dev_privacy.html:53
+msgid "Trang này mô tả kỹ thuật. Cam kết pháp lý nằm ở các trang chính thức, và chúng tôi cố ý KHÔNG chép lại chúng ở đây — hai bản của một lời hứa thì sớm muộn sẽ khác nhau."
+msgstr ""
+
+#: server/templates/status_api.html:40
+msgid "Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:14
+msgid "Trang sẽ tự làm mới."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:82
@@ -2720,12 +4843,29 @@ msgstr ""
 msgid "Transcript JSON phải là array có ít nhất 1 segment"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:244
+#: apps/qualitylab/templates/qualitylab.html:46
+msgid "Transcript chuẩn (AutoSub, tùy chọn)"
+msgstr ""
+
+#: apps/qualitylab/jobs.py:52 apps/qualitylab/routes.py:70
+msgid "Transcript chuẩn vượt 100 KB."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:463
+msgid "Transcript còn lỗi nội dung/timing phải sửa trước khi xuất video."
+msgstr ""
+
+#: apps/autosubvideo/routes.py:275
 msgid "Transcript rỗng hoặc quá lớn (>8MB)."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:82
 msgid "Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn."
+msgstr ""
+
+#: platform_core/public_api/costing.py:311
+#, python-brace-format
+msgid "Trong {hours} giờ gần nhất, chi phí ước tính vượt doanh thu khoảng {shortfall} credit. Con số chi phí là ƯỚC LƯỢNG, dựng từ đơn giá cấu hình — hãy đối chiếu hoá đơn thật trước khi đổi giá."
 msgstr ""
 
 #: apps/chataistudio/manifest.py:18
@@ -2740,10 +4880,49 @@ msgstr ""
 msgid "Trước"
 msgstr ""
 
-#: apps/agent/templates/agent_run.html:10 server/templates/home.html:29
-#: server/templates/home.html:39 server/templates/jobs.html:8
-#: server/templates/jobs.html:25 server/templates/nap.html:59
+#: server/templates/nexus_ma_ghep.html:26
+msgid "Trước khi đưa mã này cho ai"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:78
+msgid "Trường"
+msgstr ""
+
+#: platform_core/public_api/policy.py:369
+#, python-brace-format
+msgid "Trường hạn mức không hợp lệ: {field}"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:86
+msgid "Trường kiểu artifact trả về một id; đổi id lấy đường tải ngắn hạn ở /api/v1/artifacts."
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:72
+msgid "Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị lặng lẽ bỏ đi là cách khách trả tiền cho một job không làm đúng việc."
+msgstr ""
+
+#: apps/agent/templates/agent_run.html:10
+#: apps/qualitylab/templates/qualitylab.html:61
+#: server/templates/dev_jobs.html:11 server/templates/dev_keys.html:23
+#: server/templates/dev_log_detail.html:92 server/templates/dev_logs.html:17
+#: server/templates/dev_usage.html:103 server/templates/dev_usage.html:119
+#: server/templates/dev_webhooks.html:29 server/templates/dev_webhooks.html:76
+#: server/templates/home.html:29 server/templates/home.html:39
+#: server/templates/jobs.html:8 server/templates/jobs.html:25
+#: server/templates/nap.html:59 server/templates/nexus_trang_chinh.html:26
 msgid "Trạng thái"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:174
+msgid "Trạng thái audio được giữ"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:30
+msgid "Trả 201 và một job id."
+msgstr ""
+
+#: platform_core/public_api/governance.py:153
+msgid "Trần chi khách tự đặt. Chỉ QUAN SÁT, không đổi sổ credit."
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:11
@@ -2770,9 +4949,17 @@ msgstr ""
 msgid "Tài khoản, page và tình trạng token."
 msgstr ""
 
+#: server/routes/developer.py:135 server/templates/dev_overview.html:53
+msgid "Tài liệu & SDK"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:10
 #: server/templates/home.html:18
 msgid "Tài nguyên"
+msgstr ""
+
+#: platform_core/public_api/governance.py:173
+msgid "Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI."
 msgstr ""
 
 #: apps/taovideo/jobs.py:103
@@ -2787,11 +4974,11 @@ msgstr ""
 msgid "Tài sản"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:50
+#: apps/taovideo/templates/taovideo.html:55
 msgid "Tài sản đã lưu"
 msgstr ""
 
-#: apps/taovideo/routes.py:311
+#: apps/taovideo/routes.py:366
 msgid "Tài sản đã lưu không hợp lệ hoặc không còn tồn tại."
 msgstr ""
 
@@ -2803,16 +4990,50 @@ msgstr ""
 msgid "Tách frame đều theo thời gian từ video bằng FFmpeg."
 msgstr ""
 
+#: server/templates/dev_keys.html:21 server/templates/dev_projects.html:9
+#: server/templates/dev_quickstart.html:29
+#: server/templates/dev_tool_detail.html:44
+msgid "Tên"
+msgstr ""
+
 #: server/templates/home.html:29
 msgid "Tên A–Z"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:16
+msgid "Tên cũ vẫn dùng được:"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:63
 msgid "Tên dự án"
 msgstr ""
 
+#: apps/qualitylab/evaluator_assets.py:30
+msgid "Tên evaluator artifact không hợp lệ."
+msgstr ""
+
+#: platform_core/upload_sessions.py:62
+msgid "Tên file không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:30
+msgid "Tên file nếu key không có đuôi"
+msgstr ""
+
+#: server/templates/dev_keys.html:83
+msgid "Tên gợi nhớ"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:22
 msgid "Tên hoặc nội dung…"
+msgstr ""
+
+#: platform_core/public_api/governance.py:180
+msgid "Tên nhãn do người dùng tự đặt để sắp xếp tài nguyên."
+msgstr ""
+
+#: server/templates/dev_projects.html:39
+msgid "Tên project"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:33
@@ -2824,7 +5045,7 @@ msgstr ""
 msgid "Tên đăng nhập"
 msgstr ""
 
-#: server/templates/home.html:6
+#: server/templates/dev_tools.html:8 server/templates/home.html:6
 msgid "Tìm công cụ"
 msgstr ""
 
@@ -2849,12 +5070,22 @@ msgstr ""
 msgid "Tìm ứng dụng, công cụ AI, tính năng…"
 msgstr ""
 
-#: server/templates/home.html:19
+#: server/templates/dev_overview.html:5 server/templates/home.html:19
+#: server/templates/status_api.html:18
 msgid "Tình trạng"
 msgstr ""
 
-#: server/templates/_header.html:42 server/templates/home.html:31
+#: server/templates/status_api.html:2 server/templates/status_api.html:3
+#: server/templates/status_api.html:7
+msgid "Tình trạng API"
+msgstr ""
+
+#: server/templates/_header.html:43 server/templates/home.html:31
 msgid "Tình trạng hệ thống"
+msgstr ""
+
+#: server/templates/dev_pricing.html:24
+msgid "Tính thử"
 msgstr ""
 
 #: server/templates/nap_don.html:29
@@ -2869,7 +5100,7 @@ msgstr ""
 msgid "Tùy chọn nâng cao"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:32
+#: apps/taovideo/templates/taovideo.html:37
 msgid "Tùy chọn sáng tạo"
 msgstr ""
 
@@ -2882,7 +5113,10 @@ msgstr ""
 msgid "Tạo Thumbnail YouTube"
 msgstr ""
 
-#: apps/taovideo/manifest.py:44 apps/taovideo/templates/taovideo.html:60
+#: apps/taovideo/manifest.py:29 apps/taovideo/templates/taovideo.html:3
+#: apps/taovideo/templates/taovideo.html:16
+#: apps/taovideo/templates/taovideo.html:17
+#: apps/taovideo/templates/taovideo.html:67
 msgid "Tạo Video Seedance"
 msgstr ""
 
@@ -2899,6 +5133,10 @@ msgstr ""
 msgid "Tạo dự án đầu tiên"
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:47
+msgid "Tạo evaluation job"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:109
 msgid "Tạo frame còn thiếu"
 msgstr ""
@@ -2911,8 +5149,32 @@ msgstr ""
 msgid "Tạo job PROMPT AI OMMI đang tạm khóa."
 msgstr ""
 
+#: server/templates/dev_keys.html:145
+msgid "Tạo khóa"
+msgstr ""
+
+#: server/templates/dev_keys.html:79
+msgid "Tạo khóa mới"
+msgstr ""
+
+#: server/templates/dev_docs.html:40
+msgid "Tạo khóa test ở tab Khóa, chọn Môi trường = Test."
+msgstr ""
+
+#: server/templates/dev_overview.html:43 server/templates/dev_quickstart.html:9
+msgid "Tạo khóa trong project đó"
+msgstr ""
+
+#: server/templates/dev_projects.html:10 server/templates/dev_webhooks.html:30
+msgid "Tạo lúc"
+msgstr ""
+
 #: apps/thumbnail/templates/thumbnail.html:62
 msgid "Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh."
+msgstr ""
+
+#: server/templates/dev_overview.html:41
+msgid "Tạo một project"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:39
@@ -2923,8 +5185,16 @@ msgstr ""
 msgid "Tạo nhánh"
 msgstr ""
 
+#: server/templates/dev_projects.html:42 server/templates/dev_quickstart.html:7
+msgid "Tạo project"
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:51
 msgid "Tạo project để xây brief, tài nguyên tham chiếu, prompt từng cảnh và storyboard có phiên bản."
+msgstr ""
+
+#: platform_core/upload_sessions.py:90
+msgid "Tạo quá nhiều lượt upload. Vui lòng thử lại sau."
 msgstr ""
 
 #: apps/agent/routes/_shared.py:88
@@ -2939,15 +5209,15 @@ msgstr ""
 msgid "Tạo tài khoản"
 msgstr ""
 
-#: apps/taovideo/manifest.py:46
+#: apps/taovideo/manifest.py:31
 msgid "Tạo video Seedance từ mô tả và tài sản tham chiếu. Tính phí theo token thật."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:73
+#: apps/taovideo/templates/taovideo.html:81
 msgid "Tạo video đầu tiên hoặc đổi bộ lọc."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:57
+#: apps/taovideo/templates/taovideo.html:62
 msgid "Tạo âm thanh"
 msgstr ""
 
@@ -2987,8 +5257,12 @@ msgstr ""
 msgid "Tạo ảnh ·"
 msgstr ""
 
+#: server/templates/dev_log_detail.html:31
+msgid "Tạo:"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:80
-#: server/templates/job_detail.html:12
+#: server/templates/job_detail.html:13
 msgid "Tải"
 msgstr ""
 
@@ -3013,14 +5287,27 @@ msgstr ""
 msgid "Tải MD"
 msgstr ""
 
+#: server/templates/dev_docs.html:15
+msgid "Tải OpenAPI (có phiên bản)"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:84
 msgid "Tải ZIP"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:72
+#: server/templates/dev_privacy.html:12
+msgid "Tải dữ liệu (JSON)"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:80
 msgid "Tải video"
 msgstr ""
 
+#: server/templates/dev_privacy.html:11
+msgid "Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), job, bút toán credit, ngân sách, webhook và nhật ký request gần đây."
+msgstr ""
+
+#: apps/upscalevideo/templates/upscalevideo.html:98
 #: apps/upscalevideo/templates/upscalevideo.html:101
 msgid "Tải xuống"
 msgstr ""
@@ -3032,12 +5319,28 @@ msgstr ""
 msgid "Tất cả"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68
+#: server/templates/dev_tool_detail.html:4
+msgid "Tất cả công cụ"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:76
 msgid "Tất cả model"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68
+#: server/templates/dev_log_detail.html:4
+msgid "Tất cả request"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:76
 msgid "Tất cả tỉ lệ"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:56
+msgid "Tắt"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:54
+msgid "Tắt điểm nhận này?"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:37
@@ -3052,11 +5355,11 @@ msgstr ""
 msgid "Tệp không có nội dung văn bản có thể đọc."
 msgstr ""
 
-#: server/templates/job_detail.html:12
+#: server/templates/job_detail.html:13
 msgid "Tệp kết quả"
 msgstr ""
 
-#: server/routes/jobs.py:367
+#: server/routes/jobs.py:423
 msgid "Tệp kết quả không còn tồn tại."
 msgstr ""
 
@@ -3069,8 +5372,8 @@ msgid "Tệp đính kèm rỗng hoặc vượt giới hạn 8 MB."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:69
-#: apps/taoanh/templates/image.html:20 apps/taovideo/templates/taovideo.html:56
-#: apps/taovideo/templates/taovideo.html:68 apps/thumbnail/routes.py:245
+#: apps/taoanh/templates/image.html:20 apps/taovideo/templates/taovideo.html:61
+#: apps/taovideo/templates/taovideo.html:76 apps/thumbnail/routes.py:258
 #: apps/thumbnail/templates/thumbnail.html:44
 #: apps/thumbnail/templates/thumbnail_fragment.html:27
 msgid "Tỉ lệ"
@@ -3078,6 +5381,18 @@ msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:43
 msgid "Tỉ lệ khung"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:153
+msgid "Tỉ lệ năng lượng cạnh"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:139
+msgid "Tốc độ khung hình"
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:105
+msgid "Tốc độ đọc cao nhất"
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:56
@@ -3104,15 +5419,15 @@ msgstr ""
 msgid "Tối đa 3 tệp, mỗi tệp 8 MB"
 msgstr ""
 
-#: apps/taovideo/routes.py:262
+#: apps/taovideo/routes.py:290
 msgid "Tối đa 4 file tham chiếu."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:47
+#: apps/taovideo/templates/taovideo.html:52
 msgid "Tối đa 4 tài sản · ảnh/audio ≤20MB · video ≤60MB."
 msgstr ""
 
-#: apps/taovideo/routes.py:303
+#: apps/taovideo/routes.py:358
 msgid "Tối đa 4 tài sản đã lưu."
 msgstr ""
 
@@ -3120,7 +5435,7 @@ msgstr ""
 msgid "Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:24
+#: apps/taoclipngan/routes.py:23
 msgid "Tốt nhất"
 msgstr ""
 
@@ -3128,8 +5443,21 @@ msgstr ""
 msgid "Tốt nhất ưu tiên chất lượng; Nhanh ưu tiên thời gian xử lý."
 msgstr ""
 
-#: apps/taovideo/routes.py:388
+#: server/routes/developer.py:123 server/routes/developer.py:151
+msgid "Tổng quan"
+msgstr ""
+
+#: server/templates/status_api.html:11
+msgid "Tổng thể"
+msgstr ""
+
+#: apps/taovideo/routes.py:445
 msgid "Tổng tài sản đã lưu và file mới không được vượt quá 4."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:126
+#, python-format
+msgid "Từ chối nếu timestamp lệch quá %(seconds)s giây — đó là thứ chặn phát lại."
 msgstr ""
 
 #: server/templates/jobs.html:15
@@ -3145,19 +5473,23 @@ msgstr ""
 msgid "Từ ý tưởng đến hook, outline, nội dung và metadata trong một workspace."
 msgstr ""
 
+#: server/templates/dev_keys.html:114
+msgid "Tự hết hạn sau (ngày, để trống = không hết hạn)"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:71
 msgid "Tự kiểm tra mỗi 4 giây."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:33
+#: apps/taoclipngan/routes.py:32
 msgid "Tự nhận"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Tự động"
 msgstr ""
 
-#: apps/taoclipngan/features.py:7
+#: apps/taoclipngan/features.py:9
 msgid "Tự động theo thể loại"
 msgstr ""
 
@@ -3177,8 +5509,28 @@ msgstr ""
 msgid "URL, trích dẫn hoặc dữ kiện do bạn cung cấp"
 msgstr ""
 
+#: platform_core/upload_sessions.py:212
+msgid "Upload không thuộc job này."
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:27
 msgid "Upload mới hoặc dùng lại asset của bạn"
+msgstr ""
+
+#: platform_core/upload_sessions.py:262
+msgid "Upload đã gắn vào project khác."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:355 apps/upscalevideo/routes.py:523
+msgid "Upload đã gắn với job không hợp lệ."
+msgstr ""
+
+#: platform_core/upload_sessions.py:215
+msgid "Upload đã được dùng cho job khác."
+msgstr ""
+
+#: platform_core/upload_sessions.py:268
+msgid "Upload đã được dùng cho job."
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:78
@@ -3189,15 +5541,35 @@ msgstr ""
 msgid "Upscale Video"
 msgstr ""
 
+#: apps/qualitylab/registry.py:108
+msgid "Upscale foundation"
+msgstr ""
+
+#: apps/qualitylab/registry.py:114
+msgid "Upscale paired diagnostic"
+msgstr ""
+
+#: apps/qualitylab/registry.py:120
+msgid "Upscale video diagnostic"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:26
+msgid "Upscale/AutoSub foundation trước; model cảm nhận mở ở phase sau."
+msgstr ""
+
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:63
 msgid "VD: Chiến dịch ra mắt sản phẩm mùa hè"
+msgstr ""
+
+#: apps/qualitylab/services/upscale_video.py:61
+msgid "VMAF trả điểm không hữu hạn."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:99
 msgid "Video >90MB cần cấu hình Storage."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:235
+#: apps/taoclipngan/routes.py:288
 msgid "Video >90MB cần upload trực tiếp; lưu trữ hiện chưa sẵn sàng."
 msgstr ""
 
@@ -3205,7 +5577,7 @@ msgstr ""
 msgid "Video URL vượt giới hạn 90 MB."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:227
+#: apps/taoclipngan/routes.py:280
 msgid "Video chưa upload xong hoặc không hợp lệ."
 msgstr ""
 
@@ -3214,7 +5586,7 @@ msgid "Video cần khiến người xem nghĩ hoặc làm gì?"
 msgstr ""
 
 #: apps/autosubvideo/templates/autosubvideo.html:83
-#: apps/taovideo/templates/taovideo.html:66
+#: apps/taovideo/templates/taovideo.html:74
 msgid "Video của tôi"
 msgstr ""
 
@@ -3230,7 +5602,8 @@ msgstr ""
 msgid "Video không tạo được frame hợp lệ."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:301
+#: apps/autosubvideo/routes.py:324
+#: apps/autosubvideo/services/source_drafts.py:92
 msgid "Video local rỗng hoặc quá 90MB."
 msgstr ""
 
@@ -3246,8 +5619,8 @@ msgstr ""
 msgid "Video source không thuộc project owner."
 msgstr ""
 
-#: apps/autosubvideo/routes.py:295
-msgid "Video upload không hợp lệ."
+#: apps/autosubvideo/services/source_drafts.py:27
+msgid "Video trên 90MB cần bật upload trực tiếp R2."
 msgstr ""
 
 #: apps/kichban/jobs.py:214
@@ -3270,6 +5643,11 @@ msgstr ""
 msgid "Viết lại nội dung này rõ ràng và hấp dẫn hơn:"
 msgstr ""
 
+#: server/templates/dev_notifications.html:14
+#: server/templates/nexus_nhat_ky.html:32
+msgid "Việc"
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:33
 #: apps/kichban/templates/script.html:7 apps/taoanh/templates/image.html:11
 #: apps/taoanh/templates/image_thumbnail_shell.html:13
@@ -3283,12 +5661,58 @@ msgstr ""
 msgid "Việc đang chạy"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:26
+#: apps/qualitylab/calibration.py:220
+msgid "Vote không hợp lệ."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:25
 msgid "Vuông 1:1"
+msgstr ""
+
+#: platform_core/nexus/sessions.py:124 platform_core/nexus/sessions.py:129
+#: platform_core/nexus/sessions.py:133
+msgid "Vé phiên không dùng được."
+msgstr ""
+
+#: platform_core/public_api/governance.py:138
+msgid "Vé tải lên chưa dùng. Bytes ở staging bị quét dọn cùng lúc."
+msgstr ""
+
+#: apps/taoclipngan/routes.py:346 apps/upscalevideo/routes.py:517
+#: apps/upscalevideo/routes.py:686
+msgid "Vé upload không hợp lệ hoặc không thuộc tài khoản."
+msgstr ""
+
+#: apps/autosubvideo/services/source_drafts.py:86
+msgid "Vé upload không tồn tại hoặc không thuộc user."
+msgstr ""
+
+#: apps/taovideo/routes.py:500
+msgid "Vé upload tham chiếu không hợp lệ."
+msgstr ""
+
+#: platform_core/upload_sessions.py:156
+msgid "Vé upload đã hết hạn hoặc đã được dùng."
+msgstr ""
+
+#: apps/taoanh/routes.py:243
+msgid "Vé upload ảnh không hợp lệ."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:81
 msgid "Vì sao AI chọn đoạn này?"
+msgstr ""
+
+#: server/templates/dev_privacy.html:33
+msgid "Vì sao giữ"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:29
+msgid "Ví dụ"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:50
+msgid "Ví dụ chạy được"
 msgstr ""
 
 #: apps/kichban/templates/script.html:10
@@ -3308,6 +5732,18 @@ msgstr ""
 msgid "Văn bản tham chiếu vượt giới hạn 32.000 ký tự."
 msgstr ""
 
+#: server/routes/developer.py:435
+msgid "Vượt hạn mức (429)"
+msgstr ""
+
+#: apps/qualitylab/manifest.py:28
+msgid "Vận hành"
+msgstr ""
+
+#: server/templates/dev_privacy.html:20
+msgid "Vận hành — tự hết hạn"
+msgstr ""
+
 #: server/templates/_auth_brand.html:1
 msgid "Về trang chủ LTT AI Studio"
 msgstr ""
@@ -3321,21 +5757,25 @@ msgstr ""
 msgid "Về trang đăng nhập"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:91
+#: apps/upscalevideo/routes.py:107
 #, python-brace-format
 msgid "Vị trí {position} trong hàng đợi"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:207
+#: apps/upscalevideo/routes.py:249
 msgid "Watch Agent token không hợp lệ."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:313
+#: apps/upscalevideo/routes.py:355
 msgid "Watch batch chỉ nhận 1–3 video."
 msgstr ""
 
-#: apps/upscalevideo/routes.py:318
+#: apps/upscalevideo/routes.py:360
 msgid "Watch batch thiếu request id."
+msgstr ""
+
+#: server/routes/developer.py:133
+msgid "Webhook"
 msgstr ""
 
 #: apps/agent/routes/sharing.py:64 apps/agent/routes/sharing.py:77
@@ -3354,13 +5794,17 @@ msgstr ""
 msgid "Xem chẩn đoán chi tiết →"
 msgstr ""
 
+#: server/templates/dev_quickstart.html:12
+msgid "Xem công cụ và model"
+msgstr ""
+
 #: apps/taoanh/templates/image.html:21
 #: apps/thumbnail/templates/thumbnail.html:48
 #: apps/thumbnail/templates/thumbnail_fragment.html:28
 msgid "Xem cấu hình"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:36
+#: apps/taovideo/templates/taovideo.html:41
 msgid "Xem prompt hoàn chỉnh"
 msgstr ""
 
@@ -3370,6 +5814,10 @@ msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:39
 msgid "Xem thử 8 giây"
+msgstr ""
+
+#: server/templates/nexus_trang_chinh.html:102
+msgid "Xem toàn bộ nhật ký"
 msgstr ""
 
 #: apps/upscalevideo/templates/upscalevideo.html:89
@@ -3392,12 +5840,24 @@ msgstr ""
 msgid "Xem đơn"
 msgstr ""
 
+#: server/templates/dev_usage.html:44
+msgid "Xoá"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:26
 msgid "Xoá hội thoại"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:26
 msgid "Xoá hội thoại này?"
+msgstr ""
+
+#: server/templates/dev_usage.html:42
+msgid "Xoá ngân sách này?"
+msgstr ""
+
+#: server/routes/developer.py:433
+msgid "Xung đột (409)"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:13
@@ -3412,7 +5872,11 @@ msgstr ""
 msgid "Xuất metadata cho"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:77
+#: server/templates/dev_settings.html:17
+msgid "Xuất và xoá dữ liệu tích hợp là hạng mục riêng, chưa có ở bước này. Trong lúc chờ, liên hệ hỗ trợ kèm mã khóa công khai."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:85
 msgid "Xác nhận chi phí"
 msgstr ""
 
@@ -3452,48 +5916,299 @@ msgstr ""
 msgid "Yêu cầu liên kết mới"
 msgstr ""
 
-#: platform_core/registry.py:327
+#: server/templates/dev_privacy.html:57
+msgid "Yêu cầu xoá dữ liệu"
+msgstr ""
+
+#: platform_core/registry.py:593
 #, python-brace-format
 msgid "[{slug}] capabilities phải là tuple chuỗi không rỗng"
 msgstr ""
 
-#: platform_core/registry.py:334
+#: platform_core/registry.py:600
 #, python-brace-format
 msgid "[{slug}] catalog_parent không hợp lệ: {value!r}"
 msgstr ""
 
-#: platform_core/registry.py:321
+#: platform_core/registry.py:587
 #, python-brace-format
 msgid "[{slug}] lifecycle không hợp lệ: {value!r}"
 msgstr ""
 
-#: platform_core/registry.py:317
+#: platform_core/registry.py:583
 #, python-brace-format
 msgid "[{slug}] surface không hợp lệ: {value!r}"
+msgstr ""
+
+#: platform_core/registry.py:442
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias không hợp lệ: {value!r}"
+msgstr ""
+
+#: platform_core/registry.py:546
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias model {alias!r} có khoá lạ: {keys}"
+msgstr ""
+
+#: platform_core/registry.py:532
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias model {alias!r} có stability lạ: {value!r}"
+msgstr ""
+
+#: platform_core/registry.py:527
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias model {alias!r} thiếu `id` nội bộ"
+msgstr ""
+
+#: platform_core/registry.py:552
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias model {alias!r} trỏ tới alias không tồn tại: {value!r}"
+msgstr ""
+
+#: platform_core/registry.py:539
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias model {alias!r} đánh dấu deprecated nhưng không nói thay bằng gì"
+msgstr ""
+
+#: platform_core/registry.py:446
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} alias trùng chính public_name"
+msgstr ""
+
+#: platform_core/registry.py:372
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}"
+msgstr ""
+
+#: platform_core/registry.py:431
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} api_contract nhắc tham số không tồn tại: {param!r}"
+msgstr ""
+
+#: platform_core/registry.py:352
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} api_contract phải là dict"
+msgstr ""
+
+#: platform_core/registry.py:462
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} api_contract.output_counts phải là dict"
+msgstr ""
+
+#: platform_core/registry.py:488
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} api_contract.params phải là dict"
+msgstr ""
+
+#: platform_core/registry.py:357
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} có api_contract nhưng api_exposed=False — bỏ hợp đồng hoặc bật cờ, đừng để nửa vời"
+msgstr ""
+
+#: platform_core/registry.py:424
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} enum {param!r} lấy giá trị từ nguồn nội bộ nhưng api_contract không khai `enums` cũng không đưa vào `hidden`"
+msgstr ""
+
+#: platform_core/registry.py:383
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} execution_mode không hợp lệ: {value!r}"
+msgstr ""
+
+#: platform_core/registry.py:387
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} khai execution_mode {value!r} nhưng nền tảng chưa thi hành mode đó"
+msgstr ""
+
+#: platform_core/registry.py:409
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} models/enums phải là dict"
+msgstr ""
+
+#: platform_core/registry.py:467
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} output_counts khai {output!r} nhưng đó không phải đầu ra dạng danh sách"
+msgstr ""
+
+#: platform_core/registry.py:472
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} output_counts trỏ tới tham số không tồn tại: {param!r}"
+msgstr ""
+
+#: platform_core/registry.py:493
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} params mô tả tham số không tồn tại: {param!r}"
+msgstr ""
+
+#: platform_core/registry.py:500
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} params mô tả tham số đang ẩn: {param!r}"
+msgstr ""
+
+#: platform_core/registry.py:509
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} params[{param!r}] có khoá lạ: {keys}"
+msgstr ""
+
+#: platform_core/registry.py:504
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} params[{param!r}] phải là dict"
+msgstr ""
+
+#: platform_core/registry.py:514
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} params[{param!r}] thiếu description"
+msgstr ""
+
+#: platform_core/registry.py:394
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} public_name không hợp lệ: {value!r}"
+msgstr ""
+
+#: platform_core/registry.py:401
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} scope lạ: {scopes}"
+msgstr ""
+
+#: platform_core/registry.py:418
+#, python-brace-format
+msgid "[{slug}] tool {tool!r} tham số {param!r} là model_ref nhưng api_contract thiếu alias `models` — không được để id model/nhà cung cấp thật lọt ra API công khai"
+msgstr ""
+
+#: platform_core/public_api/governance.py:141
+msgid "`params`, `result` và file sinh ra là nội dung của chính khách, hết hạn sau 30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán credit trỏ về nó — bằng chứng và nội dung là hai thứ khác nhau."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:35
 msgid "asset"
 msgstr ""
 
+#: server/routes/developer.py:314
+msgid "báo giá"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:18
+msgid "báo giá rồi chạy."
+msgstr ""
+
+#: server/templates/nexus_nhat_ky.html:46
+msgid "bạn"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:32
+msgid "bắt đầu:"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:17
+msgid "bỏ cuộc:"
+msgstr ""
+
 #: apps/prompt_ai_ommi/services/composer.py:15
 msgid "catalog prompt không hợp lệ"
+msgstr ""
+
+#: server/templates/dev_overview.html:44
+#: server/templates/dev_quickstart.html:10
+msgid "chuỗi bí mật chỉ hiện một lần."
+msgstr ""
+
+#: server/templates/dev_docs.html:16
+msgid "chính tài liệu API đang phục vụ, lưu thành file kèm số phiên bản trong tên — để sáu tháng sau còn biết client nào sinh từ bản nào."
 msgstr ""
 
 #: server/templates/nap_don.html:24
 msgid "chưa trừ tiền"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:171
+#: server/templates/dev_overview.html:23
+msgid "chưa đăng ký"
+msgstr ""
+
+#: server/templates/dev_overview.html:17
+msgid "chưa đặt trần ngày"
+msgstr ""
+
+#: server/routes/developer.py:315
+msgid "chạy job"
+msgstr ""
+
+#: server/templates/dev_docs.html:11
+msgid "chế độ chạy, quy ước, bảng lỗi và khi nào nên thử lại."
+msgstr ""
+
+#: server/templates/dev_playground.html:62
+msgid "chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu này."
+msgstr ""
+
+#: server/templates/dev_keys.html:47
+msgid "chỉ từ:"
+msgstr ""
+
+#: server/templates/dev_overview.html:9
+msgid "chỉ đọc"
+msgstr ""
+
+#: platform_core/public_api/governance.py:114
+#: platform_core/public_api/governance.py:126
+#: platform_core/public_api/governance.py:137
+#: platform_core/public_api/governance.py:140
+#: platform_core/public_api/governance.py:149
+#: platform_core/public_api/governance.py:152
+#: platform_core/public_api/governance.py:154
+#: platform_core/public_api/governance.py:160
+#: platform_core/public_api/governance.py:162
+#: platform_core/public_api/governance.py:164
+#: platform_core/public_api/governance.py:166
+#: platform_core/public_api/governance.py:168
+#: platform_core/public_api/governance.py:170
+#: platform_core/public_api/governance.py:172
+#: platform_core/public_api/governance.py:174
+#: platform_core/public_api/governance.py:176
+#: platform_core/public_api/governance.py:178
+#: platform_core/public_api/governance.py:180
+#: platform_core/public_api/governance.py:181
+#: platform_core/public_api/governance.py:182
+#: platform_core/public_api/governance.py:183
+#: platform_core/public_api/governance.py:185
+#: platform_core/public_api/governance.py:187
+#: platform_core/public_api/governance.py:189
+#: platform_core/public_api/governance.py:191
+#: platform_core/public_api/governance.py:192
+#: platform_core/public_api/governance.py:193
+msgid "chủ tài khoản"
+msgstr ""
+
+#: platform_core/public_api/governance.py:111
+msgid "chủ tài khoản (dòng customer)"
+msgstr ""
+
+#: platform_core/public_api/governance.py:89
+#: platform_core/public_api/governance.py:97
+#: platform_core/public_api/governance.py:100
+#: platform_core/public_api/governance.py:102
+#: platform_core/public_api/governance.py:108
+#: platform_core/public_api/governance.py:145
+msgid "chủ tài khoản + vận hành"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:188
 msgid "clip"
+msgstr ""
+
+#: server/templates/dev_docs.html:18
+msgid "collection + environment, SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt."
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "credit"
 msgstr ""
 
-#: apps/taovideo/routes.py:207
-msgid "credit tạm giữ"
+#: apps/taovideo/routes.py:218
+msgid "credit tối đa"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:119 server/templates/dev_usage.html:14
+msgid "credit/ngày"
 msgstr ""
 
 #: apps/autosubvideo/schemas.py:204
@@ -3508,20 +6223,93 @@ msgstr ""
 msgid "cue id phải duy nhất toàn project"
 msgstr ""
 
+#: apps/qualitylab/services/subtitle.py:48
+msgid "cue không có nội dung"
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:43
+msgid "cue thiếu dòng thời gian"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "còn lại"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:53
+#: server/templates/dev_tool_detail.html:138
+msgid "có"
 msgstr ""
 
 #: server/templates/home.html:63
 msgid "công cụ sẵn sàng"
 msgstr ""
 
+#: server/templates/dev_keys.html:43
+msgid "công cụ:"
+msgstr ""
+
+#: platform_core/public_api/governance.py:199
+msgid "công khai"
+msgstr ""
+
+#: server/routes/developer.py:658 server/templates/dev_usage.html:67
+msgid "cả tài khoản"
+msgstr ""
+
 #: server/templates/home.html:44
 msgid "cần thiết lập"
 msgstr ""
 
+#: server/templates/dev_usage.html:38
+msgid "cứng — chặn"
+msgstr ""
+
+#: server/templates/dev_logs.html:15
+msgid "dán request_id từ phản hồi hoặc ticket"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:21
+msgid "dùng lại Idempotency-Key cũ"
+msgstr ""
+
+#: server/templates/dev_keys.html:11
+msgid "dùng mã này khi cần hỗ trợ; đừng gửi chuỗi bí mật ở trên cho ai."
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:96
 msgid "giây"
+msgstr ""
+
+#: server/templates/dev_docs.html:20
+msgid "gọi bằng cURL, PowerShell, n8n, Make hoặc HTTP thuần — không cần SDK."
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:29
+msgid "gửi kèm báo giá đó và một"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:13
+msgid "hoặc gọi"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:20
+msgid "hoặc webhook, rồi lấy tệp ở"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:31
+msgid "hoặc đăng ký webhook để khỏi hỏi liên tục."
+msgstr ""
+
+#: server/templates/dev_docs.html:9
+msgid "hướng dẫn bắt đầu và tham chiếu từng công cụ."
+msgstr ""
+
+#: server/templates/dev_keys.html:51
+msgid "hết hạn:"
+msgstr ""
+
+#: server/routes/developer.py:374
+msgid "input phải là một object JSON"
 msgstr ""
 
 #: apps/taoanh/templates/image.html:28
@@ -3534,48 +6322,206 @@ msgstr ""
 msgid "job gần đây"
 msgstr ""
 
-#: platform_core/storage.py:146
+#: server/templates/dev_overview.html:32 server/templates/dev_usage.html:12
+msgid "job đang chạy"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:117
+msgid "job đang chạy cùng lúc"
+msgstr ""
+
+#: server/templates/dev_overview.html:31
+#: server/templates/dev_tool_detail.html:116 server/templates/dev_usage.html:11
+msgid "job/phút"
+msgstr ""
+
+#: platform_core/storage.py:178
 msgid "key rỗng"
+msgstr ""
+
+#: server/templates/dev_overview.html:20
+msgid "khóa đang hoạt động:"
+msgstr ""
+
+#: platform_core/public_api/governance.py:129
+#: platform_core/public_api/governance.py:132
+msgid "không ai (nội bộ)"
+msgstr ""
+
+#: platform_core/storage.py:251
+#, python-brace-format
+msgid "không có file staging: {key}"
 msgstr ""
 
 #: server/templates/_nap_trangthai.html:67
 msgid "không cần chuyển lại"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:66
+#: platform_core/public_api/alerting.py:159
+msgid "không tên"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:74
 msgid "kết quả phù hợp"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:47
+#: server/templates/dev_log_detail.html:33
+msgid "kết thúc:"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:64
 msgid "label"
 msgstr ""
 
+#: server/templates/dev_tool_detail.html:33
+msgid "lấy đường tải kết quả."
+msgstr ""
+
+#: server/templates/dev_overview.html:27
+msgid "lần giao thất bại gần đây"
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:93
+#: server/templates/dev_logs.html:8
 msgid "lỗi"
+msgstr ""
+
+#: apps/qualitylab/datasets.py:86
+msgid "media_kind chưa được hỗ trợ."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:64
+msgid "metric_value phải hữu hạn."
+msgstr ""
+
+#: server/templates/dev_keys.html:85
+msgid "máy chủ sản xuất"
+msgstr ""
+
+#: server/templates/dev_docs.html:7
+msgid "mô tả máy đọc được, kèm schema của từng công cụ."
+msgstr ""
+
+#: server/templates/dev_usage.html:39
+msgid "mềm — chỉ báo"
+msgstr ""
+
+#: server/templates/dev_playground.html:61
+msgid "mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → artifact."
+msgstr ""
+
+#: server/templates/dev_overview.html:42 server/templates/dev_quickstart.html:8
+msgid "mỗi tích hợp một project."
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:16
 msgid "một tài khoản ChatGPT riêng"
 msgstr ""
 
+#: server/templates/dev_notifications.html:20
+msgid "mới"
+msgstr ""
+
+#: server/templates/dev_privacy.html:39 server/templates/dev_usage.html:63
+msgid "ngày"
+msgstr ""
+
+#: server/templates/nexus_nhat_ky.html:44
+#: server/templates/nexus_trang_chinh.html:97
+msgid "nhân viên LTT"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:28
+msgid "nhận giá và một báo giá đã ký, sống 15 phút."
+msgstr ""
+
+#: platform_core/public_api/governance.py:197
+msgid "nội bộ"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:37
 msgid "phút"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:170
+#: apps/taoclipngan/routes.py:187
 msgid "phút nguồn"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:14
+msgid "project"
+msgstr ""
+
+#: server/templates/dev_logs.html:7
+msgid "request"
+msgstr ""
+
+#: server/templates/dev_overview.html:30
+#: server/templates/dev_tool_detail.html:115 server/templates/dev_usage.html:10
+msgid "request/phút"
 msgstr ""
 
 #: apps/autosubvideo/schemas.py:274
 msgid "speaker id/tên hiển thị không hợp lệ"
 msgstr ""
 
+#: apps/qualitylab/services/subtitle.py:37
+msgid "subtitle rỗng"
+msgstr ""
+
+#: server/templates/developers_base.html:24
+msgid "sắp có"
+msgstr ""
+
+#: apps/qualitylab/datasets.py:43
+msgid "tag rỗng, trùng hoặc quá dài."
+msgstr ""
+
+#: apps/qualitylab/datasets.py:38
+msgid "tags phải là list tối đa 12 mục."
+msgstr ""
+
+#: server/templates/dev_privacy.html:40
+msgid "theo vòng đời tài khoản"
+msgstr ""
+
+#: server/templates/dev_usage.html:62
+msgid "tháng"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:120
+msgid "thân request tối đa"
+msgstr ""
+
+#: apps/qualitylab/services/subtitle.py:29
+msgid "timestamp không hợp lệ"
+msgstr ""
+
 #: apps/autosubvideo/schemas.py:265
 msgid "track id bị trùng"
 msgstr ""
 
+#: server/templates/dev_projects.html:41
+msgid "trang bán hàng"
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:24
 msgid "trang nạp credit"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:118
+msgid "trần"
+msgstr ""
+
+#: server/templates/dev_usage.html:13
+msgid "trần của máy chủ"
+msgstr ""
+
+#: server/templates/dev_overview.html:15
+msgid "trần ngày"
+msgstr ""
+
+#: server/templates/dev_tools.html:10
+msgid "tìm theo tên, mô tả hoặc tên tham số"
 msgstr ""
 
 #: server/templates/demo.html:47
@@ -3586,8 +6532,45 @@ msgstr ""
 msgid "tạo lúc"
 msgstr ""
 
+#: server/templates/dev_webhooks.html:37
+msgid "tất cả"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "tệp"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:121
+msgid "tệp lớn đi qua /api/v1/uploads."
+msgstr ""
+
+#: server/templates/dev_overview.html:32
+#: server/templates/dev_tool_detail.html:117 server/templates/dev_usage.html:12
+msgid "tối đa"
+msgstr ""
+
+#: server/routes/developer.py:573
+#, python-format
+msgid "tối đa %(n)s ký tự"
+msgstr ""
+
+#: server/templates/status_api.html:29
+msgid "từ"
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:64
+msgid "ví dụ:"
+msgstr ""
+
+#: platform_core/public_api/governance.py:92
+#: platform_core/public_api/governance.py:117
+#: platform_core/public_api/governance.py:120
+#: platform_core/public_api/governance.py:123
+msgid "vận hành"
+msgstr ""
+
+#: platform_core/public_api/governance.py:95
+msgid "vận hành + công khai"
 msgstr ""
 
 #: apps/autosubvideo/schemas.py:189
@@ -3606,12 +6589,12 @@ msgstr ""
 msgid "z_index của track đang hiện bị trùng"
 msgstr ""
 
-#: apps/taovideo/routes.py:204
+#: apps/taovideo/routes.py:215
 #, python-brace-format
-msgid "{quantity} video · dự kiến {estimated} credit; quyết toán theo token thật"
+msgid "{quantity} video · dự kiến {estimated} credit; không thu vượt mức xác nhận"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:68 server/templates/jobs.html:17
+#: apps/taovideo/templates/taovideo.html:76 server/templates/jobs.html:17
 msgid "Áp dụng"
 msgstr ""
 
@@ -3624,14 +6607,23 @@ msgstr ""
 msgid "Đang bảo trì"
 msgstr ""
 
-#: server/templates/_job_progress.html:8 server/templates/jobs.html:10
+#: platform_core/public_api/status.py:60
+msgid "Đang bảo trì theo kế hoạch."
+msgstr ""
+
+#: server/templates/nexus_trang_chinh.html:52
+msgid "Đang bật"
+msgstr ""
+
+#: server/templates/_job_progress.html:9 server/templates/jobs.html:10
 #: server/templates/jobs.html:36
 msgid "Đang chạy"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:84
+#: apps/taoclipngan/routes.py:101 apps/taovideo/templates/taovideo.html:80
 #: apps/upscalevideo/templates/upscalevideo.html:96
-#: server/templates/_job_progress.html:7 server/templates/jobs.html:9
+#: apps/upscalevideo/templates/upscalevideo.html:98
+#: server/templates/_job_progress.html:8 server/templates/jobs.html:9
 #: server/templates/jobs.html:37 server/templates/nap.html:65
 msgid "Đang chờ"
 msgstr ""
@@ -3640,28 +6632,48 @@ msgstr ""
 msgid "Đang chờ bạn xác nhận trên ChatGPT…"
 msgstr ""
 
+#: server/templates/dev_webhooks.html:14
+msgid "Đang chờ giao:"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:70
 msgid "Đang chờ thanh toán…"
 msgstr ""
 
-#: platform_core/job_runner.py:234
+#: platform_core/job_runner.py:298
 msgid "Đang chờ tài nguyên xử lý."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:87
+#: apps/taoclipngan/routes.py:104
 msgid "Đang chờ xử lý"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:90
+#: server/templates/nexus_trang_chinh.html:50
+msgid "Đang có người điều khiển"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:107
 msgid "Đang dựng clip"
+msgstr ""
+
+#: platform_core/public_api/status.py:61
+msgid "Đang gián đoạn."
+msgstr ""
+
+#: server/templates/dev_playground.html:19
+msgid "Đang gọi…"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "Đang gửi…"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:91
+#: apps/taoclipngan/routes.py:108
 msgid "Đang hoàn tất"
+msgstr ""
+
+#: apps/qualitylab/jobs.py:78
+msgid "Đang kiểm tra contract"
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:133
@@ -3680,7 +6692,7 @@ msgstr ""
 msgid "Đang phát triển"
 msgstr ""
 
-#: apps/taoclipngan/routes.py:89
+#: apps/taoclipngan/routes.py:106
 msgid "Đang phân tích video"
 msgstr ""
 
@@ -3689,7 +6701,12 @@ msgstr ""
 msgid "Đang remix từ output đã chọn"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:77
+#: platform_core/public_api/status.py:59
+msgid "Đang trục trặc — lời gọi mới có thể bị từ chối tạm thời."
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:85
+#: apps/taovideo/templates/taovideo.html:97
 msgid "Đang tính chi phí…"
 msgstr ""
 
@@ -3713,14 +6730,23 @@ msgstr ""
 msgid "Đang tải workspace…"
 msgstr ""
 
+#: server/templates/nexus_trang_chinh.html:54
+msgid "Đang tắt"
+msgstr ""
+
+#: apps/qualitylab/jobs.py:114
+msgid "Đang tổng hợp bằng chứng"
+msgstr ""
+
 #: server/templates/_nap_trangthai.html:64
 msgid "Đang xác nhận với ngân hàng…"
 msgstr ""
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:102
-#: apps/taoclipngan/routes.py:84
+#: apps/taoclipngan/routes.py:101 apps/taovideo/templates/taovideo.html:80
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
+#: apps/upscalevideo/templates/upscalevideo.html:98
 msgid "Đang xử lý"
 msgstr ""
 
@@ -3728,11 +6754,19 @@ msgstr ""
 msgid "Đang xử lý."
 msgstr ""
 
+#: apps/qualitylab/jobs.py:74
+msgid "Đang đọc artifact"
+msgstr ""
+
+#: apps/qualitylab/jobs.py:72
+msgid "Đang đọc artifact để đánh giá."
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:61
 msgid "Đang đọc dữ liệu thật…"
 msgstr ""
 
-#: apps/upscalevideo/routes.py:106
+#: apps/upscalevideo/routes.py:122
 msgid "Đang ước tính ETA"
 msgstr ""
 
@@ -3749,7 +6783,12 @@ msgid "Điều hướng marketplace"
 msgstr ""
 
 #: server/templates/_platform_footer.html:11
+#: server/templates/dev_privacy.html:56
 msgid "Điều khoản"
+msgstr ""
+
+#: server/templates/dev_privacy.html:52
+msgid "Điều khoản pháp lý"
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail.html:71
@@ -3757,27 +6796,78 @@ msgstr ""
 msgid "Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng"
 msgstr ""
 
+#: server/templates/dev_webhooks.html:23
+msgid "Điểm nhận"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:187
+#, python-format
+msgid "Điểm nhận %(url)s đã bỏ cuộc sau đủ số lần thử. Job và credit không bị ảnh hưởng; gửi lại từ khu Webhook sau khi sửa xong."
+msgstr ""
+
+#: apps/qualitylab/calibration.py:139
+msgid "Điểm rubric phải nằm trong 1..5."
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:81
 msgid "Điểm xếp hạng nội bộ, không phải dự đoán lượt xem."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Điện ảnh"
+msgstr ""
+
+#: apps/qualitylab/manifest.py:17
+msgid "Đo contract và chất lượng đầu ra bằng bằng chứng có phiên bản."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:15
+msgid "Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate."
+msgstr ""
+
+#: server/templates/dev_notifications.html:10
+msgid "Đánh dấu đã đọc"
+msgstr ""
+
+#: server/templates/dev_tools.html:5
+msgid "Đây là những gì máy chủ này đang mở. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:95
 msgid "Đã chọn"
 msgstr ""
 
+#: platform_core/public_api/policy.py:258
+msgid "Đã có chính sách trùng tên."
+msgstr ""
+
 #: server/templates/register.html:24
 msgid "Đã có tài khoản? Đăng nhập"
 msgstr ""
 
-#: apps/agent/templates/agent_run.html:12
+#: apps/agent/templates/agent_run.html:12 server/templates/dev_usage.html:27
 msgid "Đã dùng"
 msgstr ""
 
-#: apps/autosubvideo/routes.py:360
+#: platform_core/public_api/alerting.py:127
+#, python-format
+msgid "Đã dùng %(percent)s%% hạn mức credit ngày của máy chủ"
+msgstr ""
+
+#: platform_core/public_api/alerting.py:101
+#, python-format
+msgid "Đã dùng %(percent)s%% ngân sách %(period)s"
+msgstr ""
+
+#: server/templates/dev_usage.html:7
+msgid "Đã dùng hôm nay qua API:"
+msgstr ""
+
+#: server/templates/dev_overview.html:12
+msgid "Đã dùng hôm nay:"
+msgstr ""
+
+#: apps/autosubvideo/routes.py:379
 msgid "Đã dùng hết 12 lượt chép lời miễn phí hôm nay."
 msgstr ""
 
@@ -3785,17 +6875,23 @@ msgstr ""
 msgid "Đã dừng phản hồi. Nội dung đã nhận vẫn được lưu."
 msgstr ""
 
+#: platform_core/public_api/governance.py:127
+msgid "Đã gửi callback chưa, và bên nhận trả lời gì."
+msgstr ""
+
 #: platform_core/jobs.py:176
 msgid "Đã hoàn tất."
 msgstr ""
 
-#: apps/taoclipngan/routes.py:85
+#: apps/taoclipngan/routes.py:102
 msgid "Đã huỷ"
 msgstr ""
 
+#: apps/taovideo/templates/taovideo.html:80
 #: apps/upscalevideo/templates/upscalevideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:96
-#: server/templates/_job_progress.html:10 server/templates/jobs.html:13
+#: apps/upscalevideo/templates/upscalevideo.html:98
+#: server/templates/_job_progress.html:11 server/templates/jobs.html:13
 #: server/templates/jobs.html:35
 msgid "Đã hủy"
 msgstr ""
@@ -3828,15 +6924,38 @@ msgstr ""
 msgid "Đã tiếp nhận yêu cầu."
 msgstr ""
 
+#: server/templates/dev_usage.html:119
+msgid "Đã tính"
+msgstr ""
+
+#: apps/qualitylab/jobs.py:129
+msgid "Đã tạo report chất lượng."
+msgstr ""
+
+#: apps/qualitylab/jobs.py:132
+msgid "Đã đánh giá xong"
+msgstr ""
+
 #: apps/chataistudio/templates/chataistudio_admin.html:10
 msgid "Đã đăng nhập"
+msgstr ""
+
+#: platform_core/upload_sessions.py:88
+msgid "Đã đạt giới hạn upload đang chờ."
+msgstr ""
+
+#: platform_core/upload_sessions.py:259
+msgid "Đích project upload không hợp lệ."
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:44
 msgid "Đính kèm tệp"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:16
+#: apps/taovideo/templates/taovideo.html:17
+#: apps/taovideo/templates/taovideo.html:18
+#: apps/taovideo/templates/taovideo.html:21
+#: apps/taovideo/templates/taovideo.html:96
 msgid "Đóng bảng tạo video"
 msgstr ""
 
@@ -3852,7 +6971,7 @@ msgstr ""
 msgid "Đăng bài Facebook + TikTok"
 msgstr ""
 
-#: server/templates/_header.html:54 server/templates/register.html:22
+#: server/templates/_header.html:55 server/templates/register.html:22
 msgid "Đăng ký"
 msgstr ""
 
@@ -3860,7 +6979,15 @@ msgstr ""
 msgid "Đăng ký lại"
 msgstr ""
 
-#: server/templates/_header.html:53 server/templates/login.html:22
+#: server/templates/dev_webhooks.html:65
+msgid "Đăng ký điểm nhận mới bằng POST /api/v1/webhooks — secret chỉ hiện một lần trong phản hồi đó."
+msgstr ""
+
+#: server/templates/dev_tool_detail.html:109
+msgid "Đăng ký ở POST /api/v1/webhooks. Mỗi lần giao có chữ ký; giao trùng là an toàn vì mỗi sự kiện có id riêng."
+msgstr ""
+
+#: server/templates/_header.html:54 server/templates/login.html:22
 msgid "Đăng nhập"
 msgstr ""
 
@@ -3876,7 +7003,7 @@ msgstr ""
 msgid "Đăng nhập để dùng"
 msgstr ""
 
-#: server/templates/_header.html:48 server/templates/home.html:31
+#: server/templates/_header.html:49 server/templates/home.html:31
 msgid "Đăng xuất"
 msgstr ""
 
@@ -3928,6 +7055,18 @@ msgstr ""
 msgid "Đầu ra"
 msgstr ""
 
+#: server/templates/dev_pricing.html:21
+msgid "Đầu vào (JSON)"
+msgstr ""
+
+#: server/templates/dev_docs.html:6
+msgid "Đặc tả OpenAPI"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:11
+msgid "Đặt biến môi trường (bảng bên dưới)."
+msgstr ""
+
 #: server/routes/register.py:206
 msgid "Đặt lại mật khẩu LTT AI Studio"
 msgstr ""
@@ -3938,6 +7077,10 @@ msgstr ""
 
 #: server/templates/reset_password.html:16
 msgid "Đặt mật khẩu mới"
+msgstr ""
+
+#: server/templates/dev_usage.html:80
+msgid "Đặt ngân sách"
 msgstr ""
 
 #: server/templates/jobs.html:16
@@ -3952,8 +7095,20 @@ msgstr ""
 msgid "Đề xuất đã hết hạn hoặc không hợp lệ."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:34
+#: server/templates/dev_quickstart.html:29
+msgid "Để làm gì"
+msgstr ""
+
+#: apps/taovideo/templates/taovideo.html:39
 msgid "Để trống = ngẫu nhiên"
+msgstr ""
+
+#: platform_core/public_api/governance.py:150
+msgid "Địa chỉ nhận callback + secret ký, **đã mã hoá**. Xoá khi khách xoá đăng ký."
+msgstr ""
+
+#: server/templates/dev_projects.html:9
+msgid "Định danh"
 msgstr ""
 
 #: apps/prompt_ai_ommi/services/builtin_catalog.py:63
@@ -3964,6 +7119,10 @@ msgstr ""
 msgid "Định danh nhân vật, địa điểm, đạo cụ và media tham chiếu."
 msgstr ""
 
+#: apps/qualitylab/services/media.py:82
+msgid "Định dạng"
+msgstr ""
+
 #: apps/upscalevideo/templates/upscalevideo.html:29
 msgid "Định dạng &amp; codec"
 msgstr ""
@@ -3972,8 +7131,16 @@ msgstr ""
 msgid "Định dạng export không hỗ trợ."
 msgstr ""
 
+#: apps/qualitylab/routes.py:57
+msgid "Định dạng input chưa được hỗ trợ."
+msgstr ""
+
 #: apps/autosubvideo/templates/autosubvideo.html:61
 msgid "Định dạng ra"
+msgstr ""
+
+#: apps/taoclipngan/routes.py:291
+msgid "Định dạng video không được hỗ trợ."
 msgstr ""
 
 #: apps/agent/routes/library.py:125
@@ -3984,9 +7151,31 @@ msgstr ""
 msgid "Định hướng nội dung"
 msgstr ""
 
+#: server/templates/developers_base.html:39
+msgid "Đọc vẫn chạy; tạo job tạm thời bị từ chối."
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab.html:31
+msgid "Đối chiếu Upscale paired"
+msgstr ""
+
+#: apps/qualitylab/services/upscale.py:95
+#: apps/qualitylab/services/upscale.py:97
+msgid "Đối chiếu cặp"
+msgstr ""
+
 #: apps/kichban/templates/script.html:10
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:66
 msgid "Đối tượng"
+msgstr ""
+
+#: server/templates/dev_keys.html:61
+msgid "Đổi bí mật"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:83
+#, python-brace-format
+msgid "Đổi id lấy đường tải ở GET /api/v1/artifacts/{id}."
 msgstr ""
 
 #: apps/taoclipngan/templates/taoclipngan.html:32
@@ -4001,6 +7190,10 @@ msgstr ""
 msgid "Đổi nền"
 msgstr ""
 
+#: server/templates/dev_webhooks.html:50
+msgid "Đổi secret"
+msgstr ""
+
 #: apps/kichban/templates/script.html:10
 msgid "Độ dài"
 msgstr ""
@@ -4009,17 +7202,57 @@ msgstr ""
 msgid "Độ dài đầu vào"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:56
+#: apps/taovideo/templates/taovideo.html:61
 msgid "Độ phân giải"
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:77
+#: apps/taovideo/templates/taovideo.html:85
 #: apps/upscalevideo/templates/upscalevideo.html:22
 msgid "Độ phân giải đầu ra"
 msgstr ""
 
+#: server/templates/dev_logs.html:61
+msgid "Độ trễ"
+msgstr ""
+
+#: server/templates/dev_tools.html:58
+msgid "Độ ổn định"
+msgstr ""
+
+#: server/templates/dev_quickstart.html:45
+msgid "Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào ảnh chụp màn hình."
+msgstr ""
+
+#: server/templates/dev_webhooks.html:38
+msgid "đang bật"
+msgstr ""
+
+#: server/templates/dev_overview.html:13 server/templates/dev_usage.html:9
+msgid "đang giữ chỗ"
+msgstr ""
+
+#: server/templates/dev_overview.html:28
+msgid "đang khỏe"
+msgstr ""
+
+#: server/templates/dev_overview.html:10
+msgid "đang phục vụ"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:16
+msgid "đang thử lại:"
+msgstr ""
+
+#: server/templates/dev_overview.html:8
+msgid "đang tắt"
+msgstr ""
+
 #: apps/taoclipngan/templates/taoclipngan.html:80
 msgid "điểm"
+msgstr ""
+
+#: server/templates/dev_webhooks.html:15
+msgid "đã giao:"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio.html:40
@@ -4027,12 +7260,28 @@ msgstr ""
 msgid "đã lưu trong lịch sử"
 msgstr ""
 
+#: server/templates/dev_webhooks.html:38
+msgid "đã tắt"
+msgstr ""
+
+#: server/templates/dev_playground.html:64
+msgid "đã đặc tả nhưng chưa operation nào dùng, nên chưa có gì để thử ở đây. Xem PROTOCOL_V1.md mục 1.1."
+msgstr ""
+
 #: server/templates/nap_khong_thay.html:25
 msgid "để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng."
 msgstr ""
 
-#: apps/taovideo/templates/taovideo.html:42
+#: apps/taovideo/templates/taovideo.html:47
 msgid "Ảnh"
+msgstr ""
+
+#: apps/qualitylab/routes.py:130
+msgid "Ảnh HR reference không tồn tại."
+msgstr ""
+
+#: apps/qualitylab/routes.py:132
+msgid "Ảnh LR đầu vào không tồn tại."
 msgstr ""
 
 #: apps/thumbnail/templates/thumbnail_fragment.html:35
@@ -4047,6 +7296,10 @@ msgstr ""
 #: apps/chataistudio/templates/chataistudio.html:40
 #: apps/chataistudio/templates/chataistudio.html:61
 msgid "Ảnh do AI tạo"
+msgstr ""
+
+#: apps/qualitylab/services/media.py:74 apps/qualitylab/services/media.py:79
+msgid "Ảnh giải mã được"
 msgstr ""
 
 #: apps/upscalevideo/jobs.py:57
@@ -4133,6 +7386,10 @@ msgstr ""
 msgid "Ổn định hai pass bằng libvidstab · +20%."
 msgstr ""
 
+#: apps/qualitylab/templates/qualitylab.html:54
+msgid "ỨNG VIÊN"
+msgstr ""
+
 #: server/templates/_platform_footer.html:4
 msgid "Ứng dụng"
 msgstr ""
@@ -4141,8 +7398,28 @@ msgstr ""
 msgid "Ứng dụng của tôi"
 msgstr ""
 
+#: platform_core/upload_sessions.py:59
+msgid "Ứng dụng upload không hợp lệ."
+msgstr ""
+
+#: apps/qualitylab/registry.py:65
+msgid "Ứng viên thương mại; phải provision offline linear weight + torchvision backbone và khóa checksum trước khi bật."
+msgstr ""
+
+#: server/templates/dev_pricing.html:46
+msgid "— bị chặn bởi sàn/trần của phiên bản trên"
+msgstr ""
+
+#: server/templates/dev_log_detail.html:16
+msgid "— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ."
+msgstr ""
+
 #: apps/agent/templates/agent_run.html:5
 msgid "← Mục tiêu mới"
+msgstr ""
+
+#: apps/qualitylab/templates/qualitylab_report.html:11
+msgid "← Quality Lab"
 msgstr ""
 
 #: apps/chataistudio/templates/chataistudio_admin.html:49
@@ -4153,7 +7430,7 @@ msgstr ""
 msgid "← Về Prompt AI"
 msgstr ""
 
-#: server/templates/job_detail.html:14
+#: server/templates/job_detail.html:15
 msgid "← Về danh sách việc"
 msgstr ""
 
@@ -4171,10 +7448,6 @@ msgstr ""
 
 #: server/templates/dashboard.html:22
 msgid "▶️ Điều khiển worker"
-msgstr ""
-
-#: apps/taovideo/templates/taovideo.html:15
-msgid "☰ Tạo video"
 msgstr ""
 
 #: server/templates/demo.html:39

@@ -609,6 +609,29 @@ def _quet_canh_bao() -> None:
         # LTT_OPS_ALERT_EMAIL thì trả 0 và không làm gì.
         ops_alerts.gui(db)
 
+        _don_nexus(db)
+
+
+def _don_nexus(db) -> int:
+    """Dọn mã ghép hết giá trị. Trả số dòng đã xoá.
+
+    Gác sau cờ `LTT_NEXUS`: Nexus mặc định TẮT (Q93 fail-closed), và khi tắt thì
+    bảng của nó có thể còn chưa được migrate. Truy vấn một bảng chưa tồn tại
+    trong vòng bảo trì sẽ ném mỗi lượt và làm log ngập — nên cờ tắt là **không
+    chạm gì cả**, không phải "thử rồi bỏ qua lỗi".
+    """
+    from platform_core import nexus
+
+    if not nexus.enabled():
+        return 0
+    from platform_core.nexus import devices as nexus_devices
+
+    xoa = nexus_devices.don_ma_het_han(db)
+    db.commit()
+    if xoa:
+        log.info("don %d ma ghep nexus het gia tri", xoa)
+    return xoa
+
 
 def _don_noi_dung_job(db) -> int:
     """Cầu nối cho vòng dọn chung: trả số job đã hết hạn nội dung."""

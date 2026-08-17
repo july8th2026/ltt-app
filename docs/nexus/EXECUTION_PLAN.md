@@ -79,7 +79,10 @@ N1  Feasibility engine + mạng (cần D1, D2)
     N1.1 dựng rendezvous/relay trên IP công khai, đo direct vs relay
     N1.2 đo chất lượng phiên tới máy Windows thật
         │
-N3  Sản phẩm endpoint Windows (cần D1)
+N3  Sản phẩm endpoint Windows
+    N3.1 Agent LTT — nửa ĐỘC QUYỀN  ✅ XONG 2026-08-17 (không cần D1/D2)
+    N3.2 Ghép engine AGPL           ⛔ cần D1 (legal review)
+    N3.3 Dịch vụ Windows + updater ký  ⛔ cần chứng thư ký mã
 N4  Mobile (cần quyết định phạm vi)
 N5  Sẵn sàng vận hành
 N6  Thương mại hoá + phát hành
@@ -112,7 +115,32 @@ Nội dung Q93 đề xuất:
 > máy đó. Luồng điều khiển **không bao giờ** đi qua control plane. Mặc định
 > fail-closed: `LTT_NEXUS` tắt, không có thiết bị nào được ghép khi cờ tắt.
 
-### N2.1 — `devices` + enrollment
+### N2.1 — `devices` + enrollment ✅ XONG 2026-08-17
+
+`platform_core/nexus/` (`__init__.py` cờ fail-closed, `tables.py`, `devices.py`)
++ migration `b165aa3584e0` + `tests/test_223_nexus_devices.py` (**18 test**).
+
+Ba thứ đáng ghi lại:
+
+- **Khoá riêng không có chỗ để nằm.** Test chốt bằng *cấu trúc*: bảng thiết bị
+  không được có cột nào tên `private_key`/`secret`/`token`. Thêm một cột như vậy
+  là đỏ ngay, chứ không phải đỏ sau khi CSDL bị đọc trộm.
+- **Ba lý do từ chối mã ghép nói cùng một câu.** Mã sai, hết hạn, đã dùng — nếu
+  ba thông điệp khác nhau thì việc dò mã biết được mình đang tới gần.
+- **`attempts` KHÔNG phải hàng rào chống dò**, và docstring nói thẳng: đổi mã
+  tra theo digest nên mã sai không khớp dòng nào. Chống dò thật nằm ở entropy 40
+  bit + cửa sổ 5 phút + rate-limit ở tầng HTTP (việc của route).
+
+**Migration đầu tiên dùng `a1b2c3d4e5f6` — trùng với `chat_ai_studio`**, tạo
+vòng lặp trong đồ thị revision khiến **mọi** lệnh alembic chết, kể cả `current`.
+Bộ test không bắt được vì test dựng schema bằng `Base.metadata.create_all()` chứ
+không chạy alembic. Đã thêm hai test tĩnh (id duy nhất, đúng một head), đã kiểm
+"có răng". Bài học vào mục 6 làm R10.
+
+Đã kiểm `upgrade → downgrade → upgrade` trên SQLite vứt đi, một head duy nhất.
+**Chưa áp lên production** — cờ `LTT_NEXUS` tắt, bảng chưa dùng.
+
+Nội dung thiết kế gốc giữ lại để đối chiếu:
 
 - Bảng `devices`: `id`, `user_id`, tên máy do khách đặt, fingerprint phần cứng,
   **khoá công khai** của thiết bị, thời điểm ghép, trạng thái, ai thu hồi và
@@ -127,13 +155,54 @@ Nội dung Q93 đề xuất:
 - Ownership check theo đúng tư duy `public_api/principal.py`: 404 cho thiết bị
   của người khác, không bao giờ 403 — nếu không, mọi `device_id` thành oracle.
 
-### N2.2 — Presence
+### N2.2 — Presence ✅ XONG 2026-08-17
+
+**Online được SUY RA, không lưu thành cột.** `dang_online()` tính từ
+`last_seen_at`; không có cột `is_online` nào để đi dọn. Một cột như vậy sẽ nói
+dối đúng lúc tiến trình ghi nó chết — tức là đúng lúc người ta cần nó đúng nhất.
+
+Nên việc dọn duy nhất là **mã ghép hết giá trị**, hai thời hạn khác nhau vì hai
+loại dòng có giá trị khác nhau: mã **đã dùng** là mẩu kiểm toán ("máy này ghép
+lúc nào, từ IP nào") giữ 365 ngày theo Q75; mã **hết hạn không ai dùng** không
+kiểm toán gì, giữ 30 ngày đủ để nhìn ra một chuỗi lần dò.
+
+Nối vào `_quet_canh_bao` trong vòng bảo trì — **sau lease**, không trong vòng
+job. Gác sau cờ `LTT_NEXUS`: cờ tắt là **không chạm gì cả**, không phải "thử rồi
+bỏ qua lỗi" — khi tắt thì bảng có thể còn chưa migrate, và truy vấn một bảng
+chưa tồn tại mỗi lượt sẽ làm log ngập.
+
+### N2.2 — thiết kế gốc
 
 Nhịp tim từ thiết bị, ghi trạng thái online/offline. **Không** dùng bảng `jobs`.
 Vòng dọn presence quá hạn phải nằm sau `SingletonLease` (`platform_core/leases.py`)
 — worker chạy nhiều tiến trình, đây đúng là lỗi H36 đã sửa một lần rồi.
 
-### N2.3 — Session broker
+### N2.3 — Session broker ✅ XONG 2026-08-17
+
+`platform_core/nexus/sessions.py` + bảng `nexus_sessions` + migration
+`d649cfad754f` + **19 test** (`test_224`).
+
+Quyết định quan trọng nhất: **ràng buộc nằm trong CHỮ KÝ hàm, không nằm trong kỷ
+luật người viết.** `cap_ve` nhận **đối tượng thiết bị** và tự so `device.user_id`
+với người xin; không có tham số `device_id`, không có cờ `force`/`as_admin`. Cách
+sai là nhận id rồi dặn nhau "nhớ kiểm chủ trước khi gọi" — dặn nhau thì có ngày
+quên, và ngày quên đó không ai thấy. Có test chốt **chữ ký** chứ không chỉ hành
+vi, vì một test hành vi vẫn xanh được sau khi cửa đã mở.
+
+Bốn thứ khác đáng ghi:
+
+- **Một dòng vừa là vé vừa là bản ghi kiểm toán.** Tách hai chỗ thì có ngày lệch
+  nhau, và lúc cần đối chiếu sau sự cố thì không biết tin cái nào.
+- **`doi_ve` kiểm LẠI thiết bị**, không tin trạng thái lúc cấp. Nếu tin, nút thu
+  hồi thành nút trang trí trong đúng khoảng thời gian nó cần có tác dụng nhất.
+  Có test cho đúng kịch bản "thu hồi giữa lúc cấp và lúc dùng".
+- **Cấp vé ≠ mở phiên.** `dang_mo` chỉ tính vé đã đổi. Lẫn hai thứ thì chỉ báo
+  "đang có người điều khiển" sẽ sáng khi chưa ai vào máy, và người dùng học được
+  cách bỏ qua nó — làm hỏng chính ràng buộc 7.
+- **Băm vé khác không gian với băm mã ghép.** Cùng cách băm thì một digest lấy ở
+  bảng này đem thử được ở bảng kia.
+
+### N2.3 — thiết kế gốc
 
 Server cấp **vé ngắn hạn** cho một phiên cụ thể: ai điều khiển, máy nào, hết hạn
 lúc nào, quyền gì (xem-only hay điều khiển). Đây là chỗ duy nhất uỷ quyền được
@@ -146,11 +215,76 @@ Mỗi phiên ghi một bản ghi bất biến: ai, máy nào, bắt đầu/kết
 kết thúc vì lý do gì. Đây cũng là cách thoả invariant #4 của pack (không có
 backdoor bí mật): **admin không được có đường vào máy khách không để lại dấu**.
 
+### N2.6 — bề mặt cho AGENT ✅ XONG 2026-08-17
+
+`platform_core/nexus/agent_auth.py` + `server/nexus/` + **16 test** (`test_228`).
+
+**Agent không dùng token, agent KÝ.** Ràng buộc 1 nói khoá riêng không rời máy;
+hệ quả kỹ thuật là bearer token bị loại — token chép được, và chép được nghĩa là
+ai đọc được ổ đĩa hay log của máy đó **trở thành** máy đó.
+
+Ed25519 vì không có tham số nào để chọn sai: RSA đòi chọn độ dài/padding/hàm băm,
+ECDSA cần nonce ngẫu nhiên mỗi lần ký mà nonce lặp làm **lộ khoá riêng**. Ed25519
+tất định, một cách dùng duy nhất.
+
+Chuỗi ký gồm **bốn** phần, và mỗi phần có test riêng chứng minh nó load-bearing:
+`method` + `path` (chữ ký của `heartbeat` không dùng lại được ở `redeem`),
+`timestamp` (chữ ký nghe được không dùng được mãi mãi), `sha256(body)` (sửa nội
+dung thì chữ ký hỏng). Đây là loại thiết kế mà thiếu phần nào cũng vẫn "chạy"
+lúc thử và chỉ sai khi có người tấn công — nên nó được chốt bằng test, không
+bằng lời.
+
+Ba việc khác đáng ghi:
+
+- **Rate-limit về đúng chỗ nó thuộc về.** `devices.py` khai rõ nó không tự giới
+  hạn nhịp và đó là việc của route; `server/nexus/` trả nợ câu đó, và dùng lại
+  `public_api.limits` (thêm cửa công khai `allow()`) chứ **không** dựng bộ đếm
+  thứ hai — hai bộ đếm thì không ai trả lời được "khách bị chặn bởi cái nào".
+- **Khoá công khai được kiểm dạng NGAY LÚC GHÉP.** Trước đó các test dùng khoá
+  giả `"ltt_dev_" + "a"*64`: lưu xuống được nhưng **không bao giờ xác thực
+  được** — tức là test xanh trong khi một thiết bị thật sẽ không kết nối nổi.
+  Nay `doi_ma` từ chối ở biên, và test dùng khoá Ed25519 thật.
+- **Đổi vé cần HAI phép kiểm độc lập**: chữ ký nói *ai đang gọi*,
+  `session.device_id` nói *vé này dành cho ai*. Thiếu phép thứ hai thì một thiết
+  bị hợp lệ đổi được vé của thiết bị khác — có test cho đúng kịch bản đó.
+
 ### N2.5 — `apps/nexus`
 
 Danh sách máy, trạng thái online, nút ghép máy mới, nút thu hồi, lịch sử phiên.
 Dùng LTT Carbon Red + hợp đồng bề rộng trang (Q52/Q61). Kiểm bằng trình duyệt
 thật trên URL công khai, không chỉ loopback (`CLAUDE.md` mục 5b).
+
+### N3.1 — agent tham chiếu ✅ XONG 2026-08-17
+
+`nexus_agent/` (thư mục gốc, theo tiền lệ `codex_sidecar/`) + **11 test**
+(`test_229`).
+
+**Tách được ra làm trước vì endpoint là HAI tiến trình.** Chỉ tiến trình B
+(engine) vướng AGPL; tiến trình A — danh tính, enrollment, presence, vé — không
+chạm một dòng nào. Nên nó viết được **trong khi** D1 và D2 còn mở, và đó là lý
+do ranh giới ở `03_OSS_LICENSE.md` §5 đáng giá hơn một dòng trong tài liệu.
+
+Ba điều đáng ghi:
+
+- **Khoá riêng không được là một file.** Một file 32 byte thô làm ràng buộc 1
+  của Q93 thành một câu nói: chép file = nhân bản thiết bị. Dùng **DPAPI** qua
+  `ctypes` (không thêm phụ thuộc — mỗi phụ thuộc trên máy khách là một thứ nữa
+  phải đóng gói, ký và vá khi có CVE), kèm `entropy` riêng nên một tiến trình
+  khác chạy **cùng tài khoản** cũng không mở được. Test đọc file trên đĩa và
+  khẳng định nó khác khoá thật.
+  **Giới hạn được ghi vào docstring:** DPAPI không cứu một máy đã bị chiếm —
+  mục tiêu là chặn **lan sang máy khác**, đúng phạm vi T3.
+- **Đường plaintext ngoài Windows mặc định ĐÓNG.** Phải đặt biến môi trường mới
+  chạy. Một bản build lỡ tay mang đường đó ra production là loại lỗi không ai
+  phát hiện cho tới khi muộn.
+- **Test chạy qua HTTP THẬT** (uvicorn, cổng ngẫu nhiên). Một test gọi thẳng hàm
+  dùng chung `canonical()` cho cả hai bên, nên **không bao giờ** phát hiện được
+  việc agent và server dựng chuỗi ký lệch nhau — mà triệu chứng của lỗi đó phía
+  khách trông y hệt "sai khoá".
+
+Sửa luôn một cái tên nói dối: `agent_auth.sign_for_test` → `sign`. Nó ký **mọi
+request của mọi máy khách**; chữ `test` trong tên sẽ khiến người đọc sau tưởng
+có thể bỏ đi. Có test chốt `nexus_agent/` không gọi hàm nào tên `*_for_test`.
 
 ### Tiêu chí hoàn thành N2
 
@@ -201,6 +335,7 @@ quyết định chặn.
 | R7 | Nexus kéo chậm Public API đang treo | Trung bình | Mục 1 |
 | R8 | Nhánh làm việc: Nexus commit lẫn vào `public-api-v2` | Thấp | Nhánh riêng `nexus-foundation` từ `master` |
 | R9 | **Test chốt được *script có lệnh*, không chốt được *lệnh đã chạy trên máy thật*** | **Cao** | Bài học 2026-08-17: `test_scheduled_backup_tightens_acl` xanh suốt nhiều tháng trong khi `D:\LTTBackups` thực tế mở cho `Authenticated Users`. Mọi hạng mục Nexus có phần "cấu hình trên máy" (cổng relay, chứng thư ký, quyền dịch vụ) phải có **một phép đo trên máy thật**, không chỉ một assertion trên mã nguồn |
+| R10 | **Bộ test xanh trong khi CSDL không nâng cấp nổi** | Trung bình | Test dựng schema bằng `Base.metadata.create_all()`, **không** chạy alembic — nên một migration hỏng vẫn để bộ test xanh. Đã dính ngay ở N2.1: revision id trùng làm mọi lệnh alembic chết. Giảm bằng hai test tĩnh trong `test_223` (id duy nhất, đúng một head) **và** chạy `upgrade → downgrade → upgrade` thật trên CSDL vứt đi cho mỗi migration mới. Test tĩnh không thay được lần chạy thật |
 
 ---
 

@@ -27,6 +27,10 @@ from platform_core.db import Base
 from platform_core.public_api.tables import (  # noqa: F401
     ApiBudget, ApiIdempotencyRecord, ApiNotification, ApiProject,
     ApiRequestLog, DeveloperApiKey, WebhookDelivery, WebhookSubscription)
+# Cùng lý do, cho Nexus (Q93): danh tính thiết bị là domain riêng ở
+# `platform_core/nexus/tables.py`, không phải bảng của control plane.
+from platform_core.nexus.tables import (  # noqa: F401
+    NexusDevice, NexusEnrollment, NexusSession)
 
 
 def _bay_gio() -> datetime:

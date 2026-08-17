@@ -24,7 +24,7 @@ xuống một tầng: **từng tool, từng alias model, từng chế độ ch�
 
 ---
 
-## 1. 14/14 app
+## 1. 15/15 app
 
 Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực bị chặn mà không nói
 được nó sẽ về đâu thì chưa phải một kế hoạch, chỉ là một mục backlog đội lốt.
@@ -44,6 +44,7 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `qualitylab` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | `surface=admin`, chỉ dành cho người vận hành (Q83). |
 | `demo` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | App thử hạ tầng; khách phải nhận 404 chứ không phải một tool tính tiền (Q71). |
 | `socialbot` | INTERNAL_ONLY | — | không có hợp đồng job | Đã đóng băng (Q10/Q78); cần browser và OAuth, chưa có threat model cho tự động hoá credential. |
+| `nexus` | DEFER | — | không có hợp đồng job | Không sinh Job và không có `ToolSpec`: đây là bề mặt **quản lý thiết bị** (ghép máy, thu hồi, nhật ký phiên) chứ không phải một tool tính tiền. Mở nó ra API nghĩa là công bố một hợp đồng về **danh tính thiết bị**, và điều đó phải chờ hạ tầng relay (D2) cùng legal review AGPL — xem `docs/nexus/`. Q93. |
 | `kichban` | RETIRED_NO_EXPOSE | — | ASYNC_JOB nội bộ | App đã nghỉ (Q69); muốn năng lực sinh text thì migrate sang app được hỗ trợ chứ không hồi sinh app cũ. |
 
 ## 2. 21/21 ToolSpec

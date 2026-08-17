@@ -142,6 +142,25 @@ STORES: tuple = (
           "hết hạn sau 30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán "
           "credit trỏ về nó — bằng chứng và nội dung là hai thứ khác nhau."),
           "job_content.purge_expired (worker)"),
+    # ── Nexus: danh tính thiết bị và phiên điều khiển (Q93) ──────────────────
+    #
+    # Vì sao `nexus_sessions` là EVIDENCE chứ không phải OPERATIONAL: sau một sự
+    # cố, câu hỏi duy nhất quan trọng là "ai đã vào máy tôi, lúc nào, từ đâu" —
+    # và không ai hỏi nó trước khi cần. Một nhật ký phiên hết hạn sau 30 ngày sẽ
+    # im lặng đúng lúc nó là thứ duy nhất trả lời được.
+    Store("nexus_devices", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Máy nào đã từng được tin, ghép lúc nào, ai thu hồi. Thu hồi ghi "
+          "`revoked_at` chứ không xoá dòng — xoá là xoá luôn câu trả lời. Chỉ "
+          "giữ khoá CÔNG KHAI, không bao giờ có khoá riêng.")),
+    Store("nexus_sessions", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Ai đã điều khiển máy nào, từ IP nào, bắt đầu và kết thúc lúc nào. "
+          "Chỉ giữ dấu vân tay một chiều của vé, không giữ vé.")),
+    Store("nexus_enrollments", OPERATIONAL, 365, N_("chủ tài khoản + vận hành"),
+          N_("Mã ghép đã dùng là mẩu kiểm toán 'máy này ghép lúc nào, từ IP "
+          "nào'; mã hết hạn không ai dùng thì không kiểm toán gì và rụng sau "
+          "30 ngày. Chỉ giữ digest, không giữ mã."),
+          "devices.don_ma_het_han (worker)"),
+
     Store("users", CONTENT, None, N_("chủ tài khoản + vận hành"),
           N_("Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) "
           "chứ không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại "

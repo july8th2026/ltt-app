@@ -108,6 +108,19 @@ def _hit(bucket: str, limit: int, window_s: float) -> tuple[bool, int]:
         return True, 0
 
 
+def allow(bucket: str, limit: int, *, window_s: float = 60.0) -> tuple[bool, int]:
+    """Cửa công khai của cửa sổ trượt. Trả `(được_phép, giây_thử_lại)`.
+
+    Có mặt vì `_hit` là nội bộ, và Nexus (Q93) cần **cùng một** bộ đếm chứ không
+    phải bộ đếm thứ hai — một hệ có hai bộ đếm nhịp thì không ai trả lời được
+    "khách này đang bị chặn bởi cái nào".
+
+    Đổi lại: người gọi tự chọn tên `bucket`, nên hai chỗ vô tình dùng chung một
+    tên sẽ chia nhau hạn mức. Quy ước: `<mien>:<khoa>`, ví dụ `<mien>:<ip>`.
+    """
+    return _hit(str(bucket), int(limit), float(window_s))
+
+
 def _too_many(detail: str, retry_after: int, code: str = CODE_RATE_LIMITED,
               **extra) -> ApiError:
     return ApiError(429, code, detail, extra={"retry_after": int(retry_after),

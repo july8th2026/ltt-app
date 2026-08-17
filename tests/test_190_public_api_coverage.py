@@ -51,6 +51,10 @@ DISPOSITION = {
     "chataistudio": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),
+    # Device management, not a priced tool: no ToolSpec and no Job. Publishing
+    # it would publish a contract about *device identity*, which has to wait for
+    # the relay decision and the AGPL legal review (Q93, docs/nexus/).
+    "nexus": (DEFER, ()),
 
     "mediatools": (INTERNAL_ONLY, ()),
     "qualitylab": (INTERNAL_ONLY, ()),

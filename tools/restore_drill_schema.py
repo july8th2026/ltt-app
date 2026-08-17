@@ -154,7 +154,18 @@ def main() -> int:
                     # Mat rang buoc nay = MOI tien trinh worker lai cung chay
                     # vong bao tri, tuc gui webhook trung va quet canh bao
                     # trung - dung lop loi ma lease sinh ra de dong.
-                    "uq_singleton_lease_name"):
+                    "uq_singleton_lease_name",
+                    # Nexus (Q93). Mat rang buoc nay = HAI dong thiet bi cung
+                    # mot khoa cong khai, va "thu hoi may nay" tro thanh cau hoi
+                    # khong co cau tra loi: thu hoi dong nao?
+                    "uq_nexus_devices_public_key",
+                    # Mat rang buoc nay = mot ma ghep doi duoc HAI lan, tuc la
+                    # ma nan nhan doc qua dien thoai (T1) van con dung duoc sau
+                    # khi ke lua dao da dung no.
+                    "uq_nexus_enrollments_digest",
+                    # Mat rang buoc nay = mot ve phien dung lai duoc, va "ve
+                    # dung mot lan" chi con la mot cau trong tai lieu.
+                    "uq_nexus_sessions_ticket"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

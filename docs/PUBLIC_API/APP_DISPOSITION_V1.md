@@ -30,6 +30,7 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 | `qualitylab` | **INTERNAL_ONLY** | — | `surface=admin`, operator-only (Q83). |
 | `demo` | **INTERNAL_ONLY** | — | App thử hạ tầng, khách phải nhận 404 (Q71). |
 | `socialbot` | **INTERNAL_ONLY** | — | Đóng băng (Q10/Q78), cần browser + OAuth, không job_types, không giá. Mở cần threat model riêng cho tự động hoá credential. |
+| `nexus` | **DEFER** | — | **Quản lý thiết bị, không phải một tool có giá.** Không có `ToolSpec` và không sinh Job, nên toàn bộ hợp đồng quote/settle không áp được. Public nó nghĩa là công bố một hợp đồng về **danh tính thiết bị** — phải chờ quyết định hạ tầng relay (D2) và legal review ranh giới AGPL. Q93, xem `docs/nexus/`. |
 | `kichban` | **RETIRED_NO_EXPOSE** | — | Retired (Q69). Có ToolSpec `text.generate` với `customer_visible=True` — đó là cờ palette của Agent, **không phải** cờ public. Muốn năng lực sinh text thì migrate sang app được hỗ trợ, không hồi sinh app cũ. |
 
 ## 2. Tool đang public (5/21 ToolSpec)

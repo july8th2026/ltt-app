@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:2f70e61b0779b8de6b668716ce2a139ab139eecb3635517f297e4b4faa7f397c
-Nguồn đã quét : 1137 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:5757c699a9e571eccb3a7022fd55fa89365c1407ca6b09c053fa79e20b35e960
+Nguồn đã quét : 1160 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -41,7 +41,7 @@ Các lớp chính:
 - core/: social publishing legacy/frozen và worker compatibility còn được dùng.
 - frontend/: ba workspace React/Vite; production chỉ phục vụ bundle đã build.
 
-3. DANH MỤC APP (14)
+3. DANH MỤC APP (15)
 [agent] LTT Agent AI
   URL=/agent | surface=customer | lifecycle=development
   enabled=True | public=True | parent=-
@@ -230,6 +230,20 @@ Các lớp chính:
     - apps/mediatools/jobs.py
     - apps/mediatools/manifest.py
     - apps/mediatools/routes.py
+
+[nexus] LTT Nexus — điều khiển máy từ xa
+  URL=/nexus | surface=customer | lifecycle=development
+  enabled=False | public=True | parent=-
+  requires=- | capabilities=Utilities
+  HTTP routes=4 | table_prefix=- | manifest_error=-
+  credit_cost=none
+  job_types=-
+  Agent tools (0):
+    - none
+  File map:
+    - apps/nexus/__init__.py
+    - apps/nexus/manifest.py
+    - apps/nexus/routes.py
 
 [prompt_ai_ommi] Prompt AI
   URL=/prompt-ai-ommi | surface=customer | lifecycle=released
@@ -488,7 +502,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (317)
+4. HTTP ROUTE INVENTORY (321)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -584,6 +598,10 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [kichban] POST   /kichban/r/{job_id}/save → save_version | auth~login | apps/kichban/routes.py:186
 - [kichban] GET    /kichban/r/{job_id}/status → result_status | auth~login | apps/kichban/routes.py:176
 - [mediatools] GET    /mediatools → media_tools | auth~login | apps/mediatools/routes.py:10
+- [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:62
+- [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:96
+- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:183
+- [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:128
 - [platform] GET    / → home | auth~optional | server/routes/dashboard.py:100
 - [platform] GET    /api/audit/status → audit_status | auth~login | server/routes/monitor.py:76
 - [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
@@ -630,7 +648,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /facebook/page → fb_toggle_page | auth~login | server/routes/accounts.py:116
 - [platform] POST   /facebook/system-token → fb_import_system_token | auth~login | server/routes/accounts.py:86
 - [platform] POST   /facebook/test → fb_test | auth~login | server/routes/accounts.py:101
-- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:352
+- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:365
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
@@ -808,14 +826,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
 
-5. DATA MODEL (50 bảng)
-- agent_runs → AgentRun | platform_core/models.py:402
-- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:487
-- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:469
-- agent_workflows → AgentWorkflow | platform_core/models.py:437
+5. DATA MODEL (53 bảng)
+- agent_runs → AgentRun | platform_core/models.py:406
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:491
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:473
+- agent_workflows → AgentWorkflow | platform_core/models.py:441
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:740
-- api_keys → ApiKey | platform_core/models.py:594
+- api_keys → ApiKey | platform_core/models.py:598
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -824,17 +842,20 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_pricing_versions → ApiPricingVersion | platform_core/public_api/tables.py:684
 - api_projects → ApiProject | platform_core/public_api/tables.py:62
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:791
-- app_access → AppAccess | platform_core/models.py:164
-- app_projects → AppProject | platform_core/models.py:197
-- chat_conversations → ChatConversation | platform_core/models.py:737
-- chat_messages → ChatMessage | platform_core/models.py:757
-- credit_entries → CreditEntry | platform_core/models.py:540
-- credit_packages → CreditPackage | platform_core/models.py:670
+- app_access → AppAccess | platform_core/models.py:168
+- app_projects → AppProject | platform_core/models.py:201
+- chat_conversations → ChatConversation | platform_core/models.py:741
+- chat_messages → ChatMessage | platform_core/models.py:761
+- credit_entries → CreditEntry | platform_core/models.py:544
+- credit_packages → CreditPackage | platform_core/models.py:674
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- gpu_leases → GpuLease | platform_core/models.py:778
-- job_events → JobEvent | platform_core/models.py:325
-- jobs → Job | platform_core/models.py:245
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:515
+- gpu_leases → GpuLease | platform_core/models.py:782
+- job_events → JobEvent | platform_core/models.py:329
+- jobs → Job | platform_core/models.py:249
+- nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
+- nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:116
+- nexus_sessions → NexusSession | platform_core/nexus/tables.py:167
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:519
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -849,18 +870,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:694
-- platform_info → PlatformInfo | platform_core/models.py:42
+- payment_orders → PaymentOrder | platform_core/models.py:698
+- platform_info → PlatformInfo | platform_core/models.py:46
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
-- sessions → Session | platform_core/models.py:134
-- singleton_leases → SingletonLease | platform_core/models.py:828
-- upload_sessions → UploadSession | platform_core/models.py:369
-- users → User | platform_core/models.py:69
+- sessions → Session | platform_core/models.py:138
+- singleton_leases → SingletonLease | platform_core/models.py:832
+- upload_sessions → UploadSession | platform_core/models.py:373
+- users → User | platform_core/models.py:73
 
-6. ALEMBIC MIGRATIONS (40)
+6. ALEMBIC MIGRATIONS (42)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -901,6 +922,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - d6e7f8a9b0c1 ← c5d6e7f8a9b0 | them phien ban gia va quan sat chi phi cho khu API (EXT-15) | alembic/versions/20260815_0100_api_pricing_costing.py
 - e7f8a9b0c1d2 ← d6e7f8a9b0c1 | them bang su kien bao mat cho khu API (EXT-16) | alembic/versions/20260815_0200_api_security_events.py
 - f8a9b0c1d2e3 ← e7f8a9b0c1d2 | lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening) | alembic/versions/20260815_1200_singleton_leases.py
+- b165aa3584e0 ← f8a9b0c1d2e3 | nexus: thiet bi va ma ghep (Q93) | alembic/versions/20260817_2100_nexus_devices.py
+- d649cfad754f ← b165aa3584e0 | nexus: ve phien dieu khien (Q93 rang buoc 2 va 6) | alembic/versions/20260817_2200_nexus_sessions.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -917,7 +940,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (106 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (107 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -965,6 +988,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_MODELARK_SECRET_KEY
 - LTT_NEW_ADMIN_PASSWORD
 - LTT_NEXUS
+- LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
 - LTT_OPS_ALERT_EMAIL
 - LTT_PAYOS_
 - LTT_PAYOS_API_KEY
@@ -1025,7 +1049,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (225 file pytest + 3 frontend)
+10. QUALITY GATES (232 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1186,6 +1210,13 @@ Test inventory:
 - tests/test_220_paths_never_run.py
 - tests/test_221_r2_content_deletion.py
 - tests/test_222_ops_alerts.py
+- tests/test_223_nexus_devices.py
+- tests/test_224_nexus_sessions.py
+- tests/test_225_nexus_audit.py
+- tests/test_226_nexus_app.py
+- tests/test_227_nexus_render.py
+- tests/test_228_nexus_agent_api.py
+- tests/test_229_nexus_agent.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
@@ -1277,8 +1308,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1137 file)
-Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:851, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1160 file)
+Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:871, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1291,7 +1322,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (42)
+[alembic] (44)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1334,11 +1365,13 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - alembic/versions/20260815_0100_api_pricing_costing.py
 - alembic/versions/20260815_0200_api_security_events.py
 - alembic/versions/20260815_1200_singleton_leases.py
+- alembic/versions/20260817_2100_nexus_devices.py
+- alembic/versions/20260817_2200_nexus_sessions.py
 
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (225)
+[apps] (228)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1428,6 +1461,9 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - apps/mediatools/jobs.py
 - apps/mediatools/manifest.py
 - apps/mediatools/routes.py
+- apps/nexus/__init__.py
+- apps/nexus/manifest.py
+- apps/nexus/routes.py
 - apps/prompt_ai_ommi/__init__.py
 - apps/prompt_ai_ommi/jobs.py
 - apps/prompt_ai_ommi/manifest.py
@@ -1886,7 +1922,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (92)
+[platform_core] (98)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1924,6 +1960,12 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/mailer.py
 - platform_core/media.py
 - platform_core/models.py
+- platform_core/nexus/__init__.py
+- platform_core/nexus/agent_auth.py
+- platform_core/nexus/audit.py
+- platform_core/nexus/devices.py
+- platform_core/nexus/sessions.py
+- platform_core/nexus/tables.py
 - platform_core/observability.py
 - platform_core/password_hashing.py
 - platform_core/payments/__init__.py
@@ -2003,7 +2045,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (133)
+[server] (138)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2029,6 +2071,8 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - server/auth/turnstile.py
 - server/deps.py
 - server/i18n_middleware.py
+- server/nexus/__init__.py
+- server/nexus/routes.py
 - server/request_body_limit.py
 - server/routes/__init__.py
 - server/routes/accounts.py
@@ -2124,6 +2168,9 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - server/templates/nap.html
 - server/templates/nap_don.html
 - server/templates/nap_khong_thay.html
+- server/templates/nexus_ma_ghep.html
+- server/templates/nexus_nhat_ky.html
+- server/templates/nexus_trang_chinh.html
 - server/templates/oauth_result.html
 - server/templates/oauth_tiktok_disclosure.html
 - server/templates/register.html
@@ -2145,7 +2192,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (242)
+[tests] (249)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2317,6 +2364,13 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_220_paths_never_run.py
 - tests/test_221_r2_content_deletion.py
 - tests/test_222_ops_alerts.py
+- tests/test_223_nexus_devices.py
+- tests/test_224_nexus_sessions.py
+- tests/test_225_nexus_audit.py
+- tests/test_226_nexus_app.py
+- tests/test_227_nexus_render.py
+- tests/test_228_nexus_agent_api.py
+- tests/test_229_nexus_agent.py
 - tests/test_22_antispam_phase2.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
@@ -2482,7 +2536,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1137 file; 10327603 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1160 file; 10503171 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -6016,6 +6070,179 @@ def downgrade() -> None:
     op.drop_index("ix_singleton_leases_heartbeat_at",
                   table_name="singleton_leases")
     op.drop_table("singleton_leases")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260817_2100_nexus_devices.py
+SHA256=fa573fec76c0ea42750aa17a8228110fc7b57d288b2f1500ef042830d44ad895 BYTES=4307 LINES=91
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nexus: thiet bi va ma ghep (Q93)
+
+Hai bang, va ranh gioi giua chung la ranh gioi bao mat:
+
+`nexus_devices` giu KHOA CONG KHAI cua mot may da duoc tin. Khong co khoa rieng
+o day va se khong bao gio co — Q93 rang buoc 1: khoa rieng khong bao gio roi may
+do. He qua thuc te: doc trom ca hai bang nay KHONG cho phep gia mao mot thiet bi
+nao, khac han mot bang chua bearer token.
+
+`nexus_enrollments` giu ma ghep da bam, dung mot lan, han 5 phut. Bam vi khong
+co gi can doc lai ma goc — chi can kiem mot lan. Mot ban dump CSDL roi ra ngoai
+cung khong cho ke cam no ghep duoc may nao.
+
+UNIQUE tren `code_digest` va tren `public_key` la CSDL cuong che, khong de Python
+doc-roi-ghi quyet dinh. Do la bai hoc H36.3: hai tien trinh cung kiem "chua ai
+dung" roi cung ghi.
+
+Chi tien: khong migration nao o day xoa du lieu.
+
+Revision ID: b165aa3584e0
+Revises: f8a9b0c1d2e3
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+# Sinh ngau nhien va doi chieu voi 40 id dang co. Ban dau file nay dung
+# `a1b2c3d4e5f6` — mot id trong hop ly ma TRUNG voi migration chat_ai_studio,
+# tao vong lap trong do thi revision. Test khong bat duoc vi test dung
+# `Base.metadata.create_all()` chu khong chay alembic; chi co chay that moi thay.
+revision = "b165aa3584e0"
+down_revision = "f8a9b0c1d2e3"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "nexus_devices",
+        sa.Column("id", sa.String(length=36), nullable=False),
+        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column("display_name", sa.String(length=120), nullable=False,
+                  server_default=""),
+        sa.Column("public_key", sa.Text(), nullable=False),
+        sa.Column("hardware_fingerprint", sa.String(length=128), nullable=False,
+                  server_default=""),
+        sa.Column("platform", sa.String(length=32), nullable=False,
+                  server_default=""),
+        sa.Column("agent_version", sa.String(length=32), nullable=False,
+                  server_default=""),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("last_seen_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("revoked_by", sa.String(length=64), nullable=False,
+                  server_default=""),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("public_key", name="uq_nexus_devices_public_key"),
+    )
+    op.create_index("ix_nexus_devices_user", "nexus_devices", ["user_id"])
+    op.create_index("ix_nexus_devices_seen", "nexus_devices", ["last_seen_at"])
+
+    op.create_table(
+        "nexus_enrollments",
+        sa.Column("id", sa.String(length=36), nullable=False),
+        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column("code_digest", sa.String(length=64), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("consumed_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("device_id", sa.String(length=36), nullable=True),
+        sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("claimed_ip", sa.String(length=64), nullable=False,
+                  server_default=""),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("code_digest", name="uq_nexus_enrollments_digest"),
+    )
+    op.create_index("ix_nexus_enrollments_user", "nexus_enrollments", ["user_id"])
+    op.create_index("ix_nexus_enrollments_expires", "nexus_enrollments",
+                    ["expires_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_nexus_enrollments_expires", table_name="nexus_enrollments")
+    op.drop_index("ix_nexus_enrollments_user", table_name="nexus_enrollments")
+    op.drop_table("nexus_enrollments")
+    op.drop_index("ix_nexus_devices_seen", table_name="nexus_devices")
+    op.drop_index("ix_nexus_devices_user", table_name="nexus_devices")
+    op.drop_table("nexus_devices")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260817_2200_nexus_sessions.py
+SHA256=2d04abf1d4b77d1146b3bb5df88d09c9503acc810dcacd6e4c4de660d92a03f0 BYTES=3272 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nexus: ve phien dieu khien (Q93 rang buoc 2 va 6)
+
+Mot dong `nexus_sessions` VUA la ve VUA la ban ghi kiem toan. Do la chu y: neu
+ve song o mot cho con nhat ky o cho khac thi se co ngay hai cho lech nhau, va
+luc can doi chieu sau su co thi khong biet tin cai nao.
+
+`ticket_digest` UNIQUE va chi giu digest — ve goc chi ton tai trong dung mot
+phan hoi HTTP. Bam khac khong gian voi ma ghep (domain separation), de mot
+digest lay duoc o bang nay khong dem thu duoc o bang kia.
+
+Khong bao gio xoa, khong bao gio sua lai qua khu: ket thuc phien la GHI THEM
+`ended_at` + `end_reason`. Sau su co, cau hoi duy nhat quan trong la "ai da vao
+may toi, luc nao, tu dau" — va khong ai hoi no truoc khi can.
+
+`ondelete=CASCADE` tren `device_id`: xoa mot thiet bi thi phien cua no di theo.
+Luu y day KHONG phai duong thu hoi — thu hoi ghi `revoked_at` va giu nguyen dong.
+
+Chi tien: khong migration nao o day xoa du lieu.
+
+Revision ID: d649cfad754f
+Revises: b165aa3584e0
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+# Sinh ngau nhien va doi chieu voi 41 id dang co truoc khi ghi (bai hoc R10:
+# mot id TRONG hop ly ma trung se tao vong lap va giet moi lenh alembic).
+revision = "d649cfad754f"
+down_revision = "b165aa3584e0"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "nexus_sessions",
+        sa.Column("id", sa.String(length=36), nullable=False),
+        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column("device_id", sa.String(length=36), nullable=False),
+        sa.Column("ticket_digest", sa.String(length=64), nullable=False),
+        sa.Column("quyen", sa.String(length=16), nullable=False),
+        sa.Column("controller_ip", sa.String(length=64), nullable=False,
+                  server_default=""),
+        sa.Column("issued_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("consumed_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("ended_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("end_reason", sa.String(length=32), nullable=False,
+                  server_default=""),
+        sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("revoked_by", sa.String(length=64), nullable=False,
+                  server_default=""),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["device_id"], ["nexus_devices.id"],
+                                ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("ticket_digest", name="uq_nexus_sessions_ticket"),
+    )
+    op.create_index("ix_nexus_sessions_user", "nexus_sessions", ["user_id"])
+    op.create_index("ix_nexus_sessions_device", "nexus_sessions", ["device_id"])
+    op.create_index("ix_nexus_sessions_issued", "nexus_sessions", ["issued_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_nexus_sessions_issued", table_name="nexus_sessions")
+    op.drop_index("ix_nexus_sessions_device", table_name="nexus_sessions")
+    op.drop_index("ix_nexus_sessions_user", table_name="nexus_sessions")
+    op.drop_table("nexus_sessions")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -15649,6 +15876,278 @@ router = APIRouter(tags=["mediatools"])
 @router.get("")
 def media_tools(_identity: str = Depends(require_login)):
     return RedirectResponse("/agent/canvas", status_code=308)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/nexus/__init__.py
+SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 BYTES=0 LINES=0
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/nexus/manifest.py
+SHA256=d4c75a405af65fc3f3c788d0953d6c7ed92166e777355e55d65125ed86f3f0c6 BYTES=2377 LINES=52
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""LTT Nexus — bề mặt KHÁCH HÀNG (Q93).
+
+App này **không phải** là Nexus. Nó là cái khách nhìn thấy: danh sách máy, nút
+ghép máy mới, nút thu hồi, và nhật ký "ai đã vào máy tôi". Toàn bộ danh tính
+thiết bị, vé phiên và kiểm toán sống ở `platform_core/nexus/` — vì danh tính
+thiết bị thuộc về **tài khoản**, không thuộc app, và app không được cấp phát
+credential toàn hệ thống (`AGENTS.md` 8.4).
+
+Không có `job_types` và không có `credit_cost`: app này không nộp việc gì cho
+worker. Mô hình tiền của Nexus là **thuê bao tháng theo số máy** (Q93/D3), không
+phải credit theo lượt — nên không có gì để tính giá ở đây.
+
+`enabled` đọc từ cờ `LTT_NEXUS` lúc nạp: cờ tắt thì app **không xuất hiện trong
+catalog**. Route còn một lớp chặn nữa; hai lớp vì một lớp là chỗ để quên.
+"""
+from __future__ import annotations
+
+from platform_core import nexus
+from platform_core.i18n import N_
+from platform_core.registry import AppManifest, NavEntry
+
+MANIFEST = AppManifest(
+    slug="nexus",
+    display_name=N_('LTT Nexus — điều khiển máy từ xa'),
+    route_prefix="/nexus",
+    summary=N_('Ghép máy tính của bạn vào tài khoản, rồi điều khiển nó từ xa. '
+               'Mọi phiên đều được ghi lại và bạn xem được ai đã vào máy nào.'),
+    icon="🖥️",
+    accent="#3B5BDB",
+
+    nav=(NavEntry("LTT Nexus", "/nexus", "🖥️", "nexus"),),
+
+    # Không có job: app này chỉ quản lý thiết bị và phiên.
+    job_types=(),
+    requires=(),
+    credit_cost=None,
+
+    # Q73/Q74: hai trục riêng. `lifecycle` trả lời "chín tới đâu",
+    # `capabilities` trả lời "thuộc thể loại nào" — trộn chúng làm bộ lọc
+    # Marketplace khó hiểu.
+    #
+    # `development` chứ không `released`: phần điều khiển thật (engine, relay)
+    # chưa có, nên gắn nhãn "Đã phát hành" là nói quá. Q73 cấm dùng chữ "Đã
+    # hoàn thiện" chính vì loại nhầm lẫn này.
+    surface="customer",
+    lifecycle="development",
+    capabilities=("Utilities",),
+    group=N_("Ứng dụng"),
+
+    # Fail-closed (Q93). Cờ tắt = không có trong catalog, không ai thấy.
+    enabled=nexus.enabled(),
+)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/nexus/routes.py
+SHA256=7c3792e995fcc8884627d0ad0f32880e542157fa06e1235c3a0c15fd7b18ed6d BYTES=8024 LINES=202
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""HTTP của bề mặt khách hàng Nexus. Chỉ lo HTTP — nghiệp vụ ở `platform_core.nexus`.
+
+Router này KHÔNG tự viết prefix `/nexus`; nền tảng gắn từ `MANIFEST.route_prefix`.
+
+## Lớp chặn thứ hai
+
+`MANIFEST.enabled` đã đọc cờ `LTT_NEXUS` lúc nạp, nhưng mọi handler ở đây còn
+gọi `_bat_buoc_bat()` lần nữa. Hai lớp vì chúng hỏng theo hai kiểu khác nhau:
+manifest quyết định app có **hiện trong catalog** không, còn route quyết định
+một URL gõ thẳng có **trả lời** không. Chỉ có lớp đầu thì cờ tắt vẫn để lộ một
+bề mặt cho ai biết đường dẫn.
+
+## Ở đây KHÔNG có đường đổi mã ghép
+
+Đổi mã là việc của **agent trên máy khách**, không phải của trình duyệt — nên nó
+thuộc bề mặt `server/nexus/` (Q93: HTTP cho endpoint/relay), chưa dựng. Đó cũng
+là chỗ phải đặt rate-limit mà `platform_core.nexus.devices` nói rõ nó không tự
+làm. Ghi ra đây vì "route nào chịu trách nhiệm giới hạn nhịp" là loại câu hỏi
+nếu không có câu trả lời viết sẵn thì sẽ không ai trả lời.
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+from apps.nexus.manifest import MANIFEST
+from platform_core import nexus
+from platform_core.i18n import _ as _t
+from platform_core.nexus import audit, devices, sessions
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import user_hien_tai
+
+router = APIRouter(tags=["nexus"])
+
+
+def _bat_buoc_bat() -> None:
+    """Cờ tắt → 404, không phải 403.
+
+    404 vì 403 xác nhận rằng bề mặt này có tồn tại — với một sản phẩm điều khiển
+    máy từ xa thì ngay cả việc đó cũng không nên nói.
+    """
+    if not nexus.enabled():
+        raise HTTPException(status_code=404)
+
+
+def _chu(request: Request):
+    """Người dùng trong CSDL. Admin break-glass (Q29) không có hàng `users`."""
+    user = user_hien_tai(request)
+    if user is None:
+        raise HTTPException(status_code=404)
+    return user
+
+
+def _mo_db():
+    from platform_core.db import get_session
+
+    return get_session()
+
+
+@router.get("", response_class=HTMLResponse)
+def trang_chinh(request: Request, _u: str = Depends(require_login)):
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        user = _chu(request)
+        danh_sach = [
+            {"row": row, "online": devices.dang_online(row),
+             "phien": sessions.dang_mo(db, device_id=row.id)}
+            for row in devices.danh_sach(db, user_id=user.id)
+        ]
+        return templates.TemplateResponse(request, "nexus_trang_chinh.html", {
+            "user": user.email, "nav": MANIFEST.slug, "app": MANIFEST,
+            "csrf_token": issue_csrf_token(request),
+            "thiet_bi": danh_sach,
+            "dong_thoi_gian": audit.dong_thoi_gian(db, user_id=user.id, limit=30),
+            "do_admin_lam": audit.do_admin_lam,
+            "nhan": _nhan_su_kien(),
+            # Câu xác nhận đi từ đây chứ không viết trong template: lồng dấu
+            # ngoặc kép vào `onsubmit="… confirm('…')"` làm vỡ thuộc tính HTML
+            # giữa câu, và bản đầu của template này đã vỡ đúng như vậy.
+            "xac_nhan_thu_hoi": _t(
+                'Thu hồi máy này? Mọi phiên đang chạy sẽ bị cắt ngay.'),
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/ma-ghep", response_class=HTMLResponse)
+def tao_ma(request: Request, csrf_token: str = Form(...),
+           _u: str = Depends(require_login)):
+    """Sinh mã ghép và hiện nó **một lần**.
+
+    Trang này cố ý nói bằng ngôn ngữ hậu quả chứ không phải ngôn ngữ kỹ thuật
+    (Q93 ràng buộc 8): người đọc phải hiểu rằng đưa mã này đi là đưa cả máy.
+    """
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        user = _chu(request)
+        row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        db.commit()
+        return templates.TemplateResponse(request, "nexus_ma_ghep.html", {
+            "user": user.email, "nav": MANIFEST.slug, "app": MANIFEST,
+            "ma": devices.format_code(ma),
+            "het_han_luc": row.expires_at,
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/thu-hoi/{device_id}")
+def thu_hoi(request: Request, device_id: str, csrf_token: str = Form(...),
+            _u: str = Depends(require_login)):
+    """Thu hồi một thiết bị và **cắt luôn mọi phiên đang chạy trên nó**.
+
+    Thu hồi mà để phiên đang chạy tiếp là thu hồi trên giấy: người đang điều
+    khiển vẫn đang điều khiển.
+    """
+    _bat_buoc_bat()
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        user = _chu(request)
+        device = devices.cua_chu(db, user_id=user.id, device_id=device_id)
+        if device is None:
+            # Máy của người khác và máy không tồn tại phải giống hệt nhau
+            # (Q93 ràng buộc 9).
+            raise HTTPException(status_code=404)
+        for phien in sessions.dang_mo(db, device_id=device.id):
+            sessions.thu_hoi_ve(db, phien, by=devices_boi_chu())
+        devices.thu_hoi(db, device, by=devices_boi_chu())
+        db.commit()
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def devices_boi_chu() -> str:
+    """Chính chủ thao tác. Tách thành hàm để không ai gõ nhầm chuỗi ở hai chỗ —
+    `audit.do_admin_lam` phân biệt admin với chủ bằng đúng chuỗi này."""
+    return audit.BOI_CHU
+
+
+def _nhan_su_kien() -> dict:
+    """Tên sự kiện bằng tiếng khách hàng. Một chỗ duy nhất.
+
+    Hai trang cùng hiện dòng thời gian; nếu mỗi trang tự dịch thì có ngày cùng
+    một sự kiện mang hai tên khác nhau, và khách sẽ tưởng đó là hai việc.
+    """
+    return {
+        audit.GHEP: _t('Ghép máy'),
+        audit.THU_HOI_THIET_BI: _t('Thu hồi máy'),
+        audit.CAP_VE: _t('Cấp vé phiên'),
+        audit.BAT_DAU_PHIEN: _t('Bắt đầu điều khiển'),
+        audit.KET_THUC_PHIEN: _t('Kết thúc phiên'),
+        audit.THU_HOI_PHIEN: _t('Cắt phiên'),
+    }
+
+
+@router.get("/nhat-ky", response_class=HTMLResponse)
+def nhat_ky(request: Request, _u: str = Depends(require_login)):
+    """Ai đã vào máy tôi. Đây là bề mặt của **khách**, không phải của admin."""
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        user = _chu(request)
+        return templates.TemplateResponse(request, "nexus_nhat_ky.html", {
+            "user": user.email, "nav": MANIFEST.slug, "app": MANIFEST,
+            "dong_thoi_gian": audit.dong_thoi_gian(db, user_id=user.id, limit=200),
+            "do_admin_lam": audit.do_admin_lam,
+            "nhan": _nhan_su_kien(),
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -105262,7 +105761,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=a7cdb0ebf953891039e271dd48d6b7efbf51588bc0a86697c109de080184b198 BYTES=38713 LINES=887
+SHA256=ae5555ef4ca98b6e0ad662c7364ccf0772150e1bca8e42e1e53b89653e945ed3 BYTES=39500 LINES=910
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -105874,6 +106373,29 @@ def _quet_canh_bao() -> None:
         # Chỉ đọc `api_metric_samples` nên không cần commit; vắng
         # LTT_OPS_ALERT_EMAIL thì trả 0 và không làm gì.
         ops_alerts.gui(db)
+
+        _don_nexus(db)
+
+
+def _don_nexus(db) -> int:
+    """Dọn mã ghép hết giá trị. Trả số dòng đã xoá.
+
+    Gác sau cờ `LTT_NEXUS`: Nexus mặc định TẮT (Q93 fail-closed), và khi tắt thì
+    bảng của nó có thể còn chưa được migrate. Truy vấn một bảng chưa tồn tại
+    trong vòng bảo trì sẽ ném mỗi lượt và làm log ngập — nên cờ tắt là **không
+    chạm gì cả**, không phải "thử rồi bỏ qua lỗi".
+    """
+    from platform_core import nexus
+
+    if not nexus.enabled():
+        return 0
+    from platform_core.nexus import devices as nexus_devices
+
+    xoa = nexus_devices.don_ma_het_han(db)
+    db.commit()
+    if xoa:
+        log.info("don %d ma ghep nexus het gia tri", xoa)
+    return xoa
 
 
 def _don_noi_dung_job(db) -> int:
@@ -107076,7 +107598,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=832b0911831362e59f4f94645aca0b17f4262644c2d2a8584faa1bcf68ea10d6 BYTES=47211 LINES=864
+SHA256=d66708109e9961008f76f260a1aff38aaaaf648f0d5e68bbd073600035db802c BYTES=47474 LINES=868
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -107107,6 +107629,10 @@ from platform_core.db import Base
 from platform_core.public_api.tables import (  # noqa: F401
     ApiBudget, ApiIdempotencyRecord, ApiNotification, ApiProject,
     ApiRequestLog, DeveloperApiKey, WebhookDelivery, WebhookSubscription)
+# Cùng lý do, cho Nexus (Q93): danh tính thiết bị là domain riêng ở
+# `platform_core/nexus/tables.py`, không phải bảng của control plane.
+from platform_core.nexus.tables import (  # noqa: F401
+    NexusDevice, NexusEnrollment, NexusSession)
 
 
 def _bay_gio() -> datetime:
@@ -107942,6 +108468,1156 @@ class SingletonLease(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<SingletonLease {self.name} holder={self.holder}>"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/__init__.py
+SHA256=cbabd55f525183de8f6759b4ca5024bbda810a7f9b091a29d93d965430fb08a3 BYTES=1768 LINES=35
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""LTT Nexus — danh tính thiết bị và uỷ quyền phiên điều khiển từ xa (Q93).
+
+Đây là **platform capability**, không phải một app trong `apps/`: danh tính thiết
+bị thuộc về **tài khoản**, không thuộc app, và app không được cấp phát credential
+toàn hệ thống (`AGENTS.md` 8.4). Tiền lệ đúng là Q92.
+
+Ranh giới của gói này, và nó hẹp có chủ ý:
+
+* **có** — thiết bị là của ai, có được tin không, đang online không, ai được mở
+  phiên vào nó, và việc đó đã được ghi lại chưa;
+* **không** — không bắt màn hình, không truyền dữ liệu, không biết engine nào
+  đang chạy. Luồng điều khiển **không bao giờ** đi qua control plane (Q93 ràng
+  buộc 3), nên không có một dòng nào ở đây chạm tới nó.
+
+Nhờ ranh giới đó, gói này **giống nhau dù engine là RustDesk, MeshCentral hay
+WebRTC tự viết** — và đó là lý do nó được làm trước, trong lúc quyết định hạ
+tầng relay (D2) và legal review AGPL còn đang mở.
+"""
+from __future__ import annotations
+
+#: Cờ bật/tắt toàn bộ Nexus. Mặc định TẮT (Q93 fail-closed): cờ tắt thì không
+#: thiết bị nào ghép được. Một bề mặt cho phép điều khiển máy người khác mà mặc
+#: định mở thì sai lầm đầu tiên là sai lầm cuối cùng.
+FLAG_ENV = "LTT_NEXUS"
+
+
+def enabled(env: dict | None = None) -> bool:
+    """Nexus có đang bật không. Thiếu biến, giá trị lạ → TẮT."""
+    import os
+
+    source = os.environ if env is None else env
+    return str(source.get(FLAG_ENV, "")).strip().lower() in ("1", "true", "yes", "on")
+
+
+__all__ = ["FLAG_ENV", "enabled"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/agent_auth.py
+SHA256=712136dea0f80a1b8d5e4473a4c6b0c5ad926abfe44ac69bc0a0f2c6caa9d874 BYTES=9355 LINES=197
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Agent chứng minh nó giữ khoá riêng, mà không bao giờ gửi khoá riêng đi.
+
+Q93 ràng buộc 1: khoá riêng **không bao giờ rời máy đó**. Hệ quả là agent không
+thể dùng bearer token — một token là thứ chép được, và chép được nghĩa là ai đọc
+được ổ đĩa hoặc log của máy đó đều trở thành máy đó. Thay vào đó mỗi request được
+**ký**.
+
+## Vì sao Ed25519
+
+Không có tham số nào để chọn sai. RSA đòi chọn độ dài khoá, padding và hàm băm —
+ba chỗ để cấu hình sai một cách âm thầm. ECDSA cần nonce ngẫu nhiên cho mỗi lần
+ký, và một nonce lặp lại làm **lộ khoá riêng** (đã hạ nhiều hệ thống thật).
+Ed25519 tất định, khoá 32 byte, chữ ký 64 byte, và API chỉ có một cách dùng.
+
+## Chuỗi được ký, và vì sao gồm đủ bốn phần
+
+    <METHOD>\\n<path>\\n<timestamp>\\n<sha256 hex cua body>
+
+* **method + path** — thiếu chúng thì một chữ ký lấy từ request vô hại
+  (`heartbeat`) đem dùng lại cho request nguy hiểm (`thu hồi`);
+* **timestamp** — thiếu nó thì một chữ ký nghe được là dùng lại được **mãi mãi**;
+* **băm body** — thiếu nó thì nội dung sửa được mà chữ ký vẫn đúng.
+
+Đây là loại thiết kế mà bỏ một phần nào cũng vẫn "chạy" trong lúc thử, và chỉ
+sai khi có người tấn công. Nên bốn phần được viết ra kèm lý do, không phải kèm
+một dòng "ký request".
+
+## Cửa sổ thời gian không thay được chống lặp thật
+
+Cửa sổ ±5 phút chặn được việc dùng lại **sau này**, không chặn được việc dùng lại
+**ngay lập tức**. Chặn hẳn thì cần lưu nonce đã thấy — một bảng nữa, và một việc
+dọn nữa. Với `heartbeat` thì lặp lại vô hại (nó chỉ ghi lại cùng một mốc), nên
+cửa sổ là đủ **cho đúng các đường đang mở**. Đường nào có tác dụng phụ không lặp
+lại được thì **phải** thêm nonce, và chỗ đó ghi rõ ở đây để không ai mở một
+đường như vậy mà tưởng lớp này đã che.
+"""
+from __future__ import annotations
+
+import base64
+import hashlib
+from datetime import datetime, timezone
+
+#: Tiền tố để một chuỗi khoá lạc ra ngoài còn nhận ra được là gì.
+PUBLIC_PREFIX = "ltt_dev_"
+
+#: Ed25519: khoá công khai đúng 32 byte, chữ ký đúng 64 byte. Không có lựa chọn
+#: nào khác, và đó là điểm mạnh chứ không phải hạn chế.
+KEY_BYTES = 32
+SIG_BYTES = 64
+
+#: Lệch đồng hồ cho phép, hai chiều. Máy khách không chạy NTP là chuyện thường,
+#: nên quá chặt sẽ khoá người dùng thật ra ngoài; quá rộng thì kéo dài cửa sổ
+#: dùng lại chữ ký.
+SKEW_S = 300
+
+HEADER_DEVICE = "X-LTT-Device"
+HEADER_TIMESTAMP = "X-LTT-Timestamp"
+HEADER_SIGNATURE = "X-LTT-Signature"
+
+
+class AgentAuthError(Exception):
+    """Khong xac thuc duoc.
+
+    Thong diep o day la CHAN DOAN CHO NGUOI PHAT TRIEN, khong bao gio den tay
+    nguoi dung: `server/nexus/routes.py` bat het va tra ve mot cau chung duy
+    nhat, con `devices.doi_ma` doi no thanh mot `NexusError` da dich. Vi vay
+    chung co y viet bang ASCII chu khong boc `_()` — boc `_()` se ham y rang
+    chung se duoc hien ra, va nguoi doc sau nay se di dich mot thu vo hinh.
+    """
+
+
+def _b64d(value: str) -> bytes:
+    """base64url không đệm, cho phép cả bản có đệm."""
+    raw = str(value or "").strip()
+    padding = "=" * (-len(raw) % 4)
+    return base64.urlsafe_b64decode(raw + padding)
+
+
+def _b64e(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def encode_public_key(raw: bytes) -> str:
+    """32 byte thô → chuỗi để lưu trong `nexus_devices.public_key`."""
+    if len(raw) != KEY_BYTES:
+        raise AgentAuthError("public key must be exactly 32 bytes")
+    return PUBLIC_PREFIX + _b64e(raw)
+
+
+def decode_public_key(stored: str) -> bytes:
+    """Chuỗi đã lưu → 32 byte thô. Ném `AgentAuthError` nếu sai dạng.
+
+    Kiểm ở **biên nhận vào** (lúc ghép máy) chứ không lúc dùng: một khoá sai dạng
+    được lưu xuống nghĩa là thiết bị đó **không bao giờ** xác thực được, và lỗi
+    sẽ hiện ra muộn, ở chỗ khó hiểu, dưới dạng "máy không kết nối được".
+    """
+    value = str(stored or "")
+    if not value.startswith(PUBLIC_PREFIX):
+        raise AgentAuthError("public key is malformed")
+    try:
+        raw = _b64d(value[len(PUBLIC_PREFIX):])
+    except Exception as exc:                                   # noqa: BLE001
+        raise AgentAuthError("public key is malformed") from exc
+    if len(raw) != KEY_BYTES:
+        raise AgentAuthError("public key has the wrong length")
+    return raw
+
+
+def canonical(method: str, path: str, timestamp: str, body: bytes) -> bytes:
+    """Chuỗi được ký. Một chỗ duy nhất, dùng cho cả bên ký và bên kiểm.
+
+    Nếu agent và server tự dựng chuỗi này riêng thì có ngày hai bên lệch một dấu
+    xuống dòng, và mọi chữ ký hợp lệ bị từ chối — một sự cố rất khó đọc.
+    """
+    dau = hashlib.sha256(body or b"").hexdigest()
+    return "\n".join([str(method or "").upper(), str(path or ""),
+                      str(timestamp or ""), dau]).encode("utf-8")
+
+
+def check_timestamp(timestamp: str, *, now: datetime | None = None) -> None:
+    current = now or datetime.now(timezone.utc)
+    try:
+        moc = int(str(timestamp or "").strip())
+    except (TypeError, ValueError) as exc:
+        raise AgentAuthError("timestamp is not an integer") from exc
+    lech = abs(current.timestamp() - moc)
+    if lech > SKEW_S:
+        raise AgentAuthError("timestamp outside the allowed skew")
+
+
+def verify(*, public_key: str, signature: str, method: str, path: str,
+           timestamp: str, body: bytes, now: datetime | None = None) -> None:
+    """Ném `AgentAuthError` nếu không hợp lệ. Trả None nếu hợp lệ.
+
+    Trả None thay vì True: một hàm trả bool sẽ có ngày được gọi mà không ai đọc
+    giá trị trả về, và lúc đó nó im lặng cho qua. Ném thì không bỏ qua được.
+    """
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    check_timestamp(timestamp, now=now)
+
+    raw_key = decode_public_key(public_key)
+    try:
+        sig = _b64d(signature)
+    except Exception as exc:                                   # noqa: BLE001
+        raise AgentAuthError("signature is malformed") from exc
+    if len(sig) != SIG_BYTES:
+        raise AgentAuthError("signature has the wrong length")
+
+    try:
+        ed25519.Ed25519PublicKey.from_public_bytes(raw_key).verify(
+            sig, canonical(method, path, timestamp, body))
+    except InvalidSignature as exc:
+        raise AgentAuthError("signature does not verify") from exc
+
+
+def sign(private_bytes: bytes, *, method: str, path: str,
+         timestamp: str, body: bytes) -> str:
+    """Ký một request. Đây là ĐƯỜNG CHẠY THẬT của agent, không phải tiện ích test.
+
+    Đặt cạnh `verify` chứ không trong agent: bên ký và bên kiểm phải dùng **cùng**
+    hàm `canonical`, và cách chắc chắn nhất để chúng không lệch nhau là ở cùng
+    file. Lệch một dấu xuống dòng thì mọi chữ ký hợp lệ bị từ chối, và triệu
+    chứng phía khách trông y hệt "sai khoá".
+
+    Tên cũ là `sign_for_test`, và đó là một cái tên nói dối: nó ký **mọi request
+    của mọi máy khách**. Đổi tên vì một hàm mang chữ `test` ở đường chạy thật sẽ
+    khiến người đọc sau này tưởng có thể bỏ đi.
+    """
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    key = ed25519.Ed25519PrivateKey.from_private_bytes(private_bytes)
+    return _b64e(key.sign(canonical(method, path, timestamp, body)))
+
+
+def new_keypair_for_test() -> tuple:
+    """`(private_bytes, public_key_da_ma_hoa)`. Chỉ dùng cho test/agent mẫu."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    private = ed25519.Ed25519PrivateKey.generate()
+    raw_priv = private.private_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PrivateFormat.Raw,
+        encryption_algorithm=serialization.NoEncryption())
+    raw_pub = private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw)
+    return raw_priv, encode_public_key(raw_pub)
+
+
+__all__ = ["AgentAuthError", "HEADER_DEVICE", "HEADER_SIGNATURE",
+           "HEADER_TIMESTAMP", "KEY_BYTES", "PUBLIC_PREFIX", "SIG_BYTES",
+           "SKEW_S", "canonical", "check_timestamp", "decode_public_key",
+           "encode_public_key", "new_keypair_for_test", "sign",
+           "verify"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/audit.py
+SHA256=5e68f156eeb36e75dac4e8491631b4e21cab349120e10e883535f073db147add BYTES=6636 LINES=144
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Dòng thời gian mà CHỦ THIẾT BỊ đọc được (Q93 ràng buộc 5 và 6).
+
+Nền tảng đã có `nhat_ky_admin` — nhưng đó là nhật ký để **admin** xem. Q93 đòi
+một thứ khác hẳn: mọi hành động của admin phải để lại bản ghi **chủ thiết bị**
+đọc được. Một nhật ký chỉ người làm hành động mới xem được thì không trả lời
+được câu hỏi duy nhất quan trọng sau sự cố: *"ai đã vào máy tôi, và ai đã đụng
+vào thiết bị của tôi."*
+
+## Không có bảng mới, và đó là chủ ý
+
+Mọi sự kiện dưới đây **suy ra** từ các dòng đã có: `nexus_enrollments` biết máy
+được ghép lúc nào từ IP nào, `nexus_devices` biết ai thu hồi, `nexus_sessions`
+biết vé cấp lúc nào, phiên bắt đầu và kết thúc ra sao.
+
+Thêm một bảng `nexus_audit_events` sẽ tạo **nguồn chân lý thứ hai**: có ngày một
+phiên tồn tại mà không có dòng nhật ký tương ứng (hoặc ngược lại), và lúc cần
+đối chiếu thì không biết tin cái nào. Suy ra thì không lệch được — dữ liệu chỉ
+có một bản.
+
+Đổi lại: đọc chậm hơn (ba truy vấn thay vì một) và không ghi được sự kiện nào
+không tương ứng với một dòng có thật. Cái giá thứ hai chính là tính năng.
+
+## Owner-scoped, luôn luôn
+
+Mọi hàm ở đây nhận `user_id` và lọc theo nó. Không có đường nào lấy dòng thời
+gian của người khác, kể cả cho admin — admin muốn điều tra thì dùng trang quản
+trị, và việc đó sẽ tự xuất hiện trong dòng thời gian của chủ.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+
+from platform_core.nexus.tables import (NexusDevice, NexusEnrollment,
+                                        NexusSession)
+
+# Loại sự kiện. Hằng số vì chúng đi vào giao diện và vào báo cáo — đổi chúng là
+# đổi một hợp đồng, không phải đổi một chuỗi trong code.
+GHEP = "ghep_thiet_bi"
+THU_HOI_THIET_BI = "thu_hoi_thiet_bi"
+CAP_VE = "cap_ve"
+BAT_DAU_PHIEN = "bat_dau_phien"
+KET_THUC_PHIEN = "ket_thuc_phien"
+THU_HOI_PHIEN = "thu_hoi_phien"
+
+#: Ai gây ra sự kiện, khi không phải chính chủ.
+BOI_CHU = "owner"
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def _su_kien(luc, loai, *, device_id="", boi=BOI_CHU, chi_tiet="") -> dict:
+    return {"luc": _aware(luc), "loai": loai, "device_id": str(device_id or ""),
+            "boi": str(boi or BOI_CHU), "chi_tiet": str(chi_tiet or "")}
+
+
+def do_admin_lam(su_kien: dict) -> bool:
+    """Sự kiện này có phải do admin gây ra không.
+
+    Tách thành hàm vì giao diện phải **làm nổi bật** những dòng này: một lần
+    admin đụng vào máy của khách mà trôi lẫn giữa các dòng khác thì coi như
+    không có ai đọc.
+    """
+    return str(su_kien.get("boi", "")).startswith("admin:")
+
+
+def dong_thoi_gian(db, *, user_id: str, device_id: str = "",
+                   limit: int = 200) -> list:
+    """Mọi thứ đã xảy ra với thiết bị của tài khoản này, mới nhất trước.
+
+    `device_id` rỗng = mọi thiết bị. Truyền id của người khác thì không lọt: mọi
+    truy vấn đều kẹp thêm `user_id`.
+    """
+    chu = str(user_id or "").strip()
+    if not chu:
+        return []
+    loc_may = str(device_id or "").strip()
+
+    ra: list = []
+
+    # 1. Ghép máy — từ mã đã dùng.
+    stmt = select(NexusEnrollment).where(
+        NexusEnrollment.user_id == chu,
+        NexusEnrollment.consumed_at.isnot(None))
+    if loc_may:
+        stmt = stmt.where(NexusEnrollment.device_id == loc_may)
+    for row in db.execute(stmt).scalars():
+        ra.append(_su_kien(row.consumed_at, GHEP, device_id=row.device_id or "",
+                           chi_tiet=f"tu IP {row.claimed_ip}"
+                           if row.claimed_ip else ""))
+
+    # 2. Thu hồi thiết bị.
+    stmt = select(NexusDevice).where(NexusDevice.user_id == chu,
+                                     NexusDevice.revoked_at.isnot(None))
+    if loc_may:
+        stmt = stmt.where(NexusDevice.id == loc_may)
+    for row in db.execute(stmt).scalars():
+        ra.append(_su_kien(row.revoked_at, THU_HOI_THIET_BI, device_id=row.id,
+                           boi=row.revoked_by or BOI_CHU))
+
+    # 3. Vòng đời phiên. Một dòng `nexus_sessions` sinh ra tới bốn sự kiện —
+    #    đó là lý do nó được giữ nguyên vẹn thay vì bị cập nhật chồng lên.
+    stmt = select(NexusSession).where(NexusSession.user_id == chu)
+    if loc_may:
+        stmt = stmt.where(NexusSession.device_id == loc_may)
+    for row in db.execute(stmt).scalars():
+        ra.append(_su_kien(row.issued_at, CAP_VE, device_id=row.device_id,
+                           chi_tiet=row.quyen))
+        if row.consumed_at is not None:
+            ra.append(_su_kien(row.consumed_at, BAT_DAU_PHIEN,
+                               device_id=row.device_id,
+                               chi_tiet=f"tu IP {row.controller_ip}"
+                               if row.controller_ip else ""))
+        if row.revoked_at is not None:
+            ra.append(_su_kien(row.revoked_at, THU_HOI_PHIEN,
+                               device_id=row.device_id,
+                               boi=row.revoked_by or BOI_CHU))
+        elif row.ended_at is not None:
+            ra.append(_su_kien(row.ended_at, KET_THUC_PHIEN,
+                               device_id=row.device_id,
+                               chi_tiet=row.end_reason))
+
+    ra.sort(key=lambda item: (item["luc"] is not None, item["luc"]), reverse=True)
+    return ra[:max(1, min(int(limit), 1000))]
+
+
+def admin_da_lam_gi(db, *, user_id: str, limit: int = 200) -> list:
+    """Chỉ những sự kiện do admin gây ra, trong phạm vi tài khoản này.
+
+    Đây là câu trả lời trực tiếp cho *"có ai bên LTT đụng vào máy tôi không"* —
+    và nó phải trả lời được **mà không cần hỏi LTT**.
+    """
+    return [item for item in dong_thoi_gian(db, user_id=user_id, limit=1000)
+            if do_admin_lam(item)][:max(1, min(int(limit), 1000))]
+
+
+__all__ = ["BAT_DAU_PHIEN", "BOI_CHU", "CAP_VE", "GHEP", "KET_THUC_PHIEN",
+           "THU_HOI_PHIEN", "THU_HOI_THIET_BI", "admin_da_lam_gi",
+           "do_admin_lam", "dong_thoi_gian"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/devices.py
+SHA256=e834d9bf97627e32c5577f1ce6f4b44c484ef2c32cdcfef5cb4c3df6919dfeea BYTES=13292 LINES=292
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ghép máy, thu hồi máy, và nhịp tim. Không có gì chạm luồng điều khiển.
+
+Framework-free có chủ ý: các quy tắc ở đây quyết định **một máy có được tin
+không**, và chúng phải kiểm được mà không cần dựng HTTP app.
+
+## Mã ghép: cái gì thật sự chống được dò
+
+`NexusEnrollment.attempts` **không** phải hàng rào chống dò mã, và nói rõ ở đây
+để không ai tưởng thế. Việc đổi mã tra cứu **theo digest**, nên một mã sai không
+khớp dòng nào — không có dòng để tăng bộ đếm. Bộ đếm đó chỉ đếm những lần đổi
+hỏng của một mã **đã tìm thấy** (hết hạn, đã dùng), tức là dấu hiệu ai đó đang
+mò một mã có thật.
+
+Cái thật sự chống dò là ba thứ khác:
+
+1. **Entropy** — 8 ký tự từ bảng 32 ký tự = 40 bit. Trong cửa sổ 5 phút, dò trúng
+   đòi hàng tỉ lần thử.
+2. **Cửa sổ ngắn** — `ENROLL_TTL_S` = 5 phút, và mã chết hẳn khi đã dùng.
+3. **Giới hạn nhịp ở tầng HTTP** — việc của route, không phải của module này.
+   Module này **không** tự giới hạn nhịp; nơi gọi phải làm, và đó là một phần
+   của hợp đồng chứ không phải chi tiết bỏ quên.
+
+Bảng chữ cái bỏ `0/O/1/I/L` không phải để đẹp: mã này được **đọc cho nhau nghe
+và gõ tay**, nên nhầm `0` với `O` là lỗi người dùng chắc chắn xảy ra.
+
+## Vì sao không có hàm nào cấp vé phiên ở đây
+
+Vé phiên (Q93 ràng buộc 2) là miền riêng, sẽ ở `sessions.py`. Trộn nó vào đây sẽ
+làm "máy này của ai" và "ai được vào máy này" thành cùng một câu hỏi — trong khi
+chúng là hai câu, và câu thứ hai mới là chỗ uỷ quyền được quyết định.
+"""
+from __future__ import annotations
+
+import hashlib
+import secrets
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from platform_core.i18n import _ as _t
+from platform_core.nexus.tables import (ENROLL_TTL_S, NexusDevice,
+                                        NexusEnrollment)
+
+#: Bỏ 0/O/1/I/L: mã được đọc miệng và gõ tay.
+ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
+CODE_LEN = 8
+CODE_GROUP = 4
+
+#: Bao lâu không có nhịp tim thì coi là offline. Rộng hơn nhịp gửi vài lần để
+#: một lần mất mạng thoáng qua không làm máy nhấp nháy trong danh sách.
+OFFLINE_AFTER_S = 180
+
+
+class NexusError(Exception):
+    """Không ghép được. Thông điệp an toàn để hiện cho khách."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def digest_code(code: str) -> str:
+    """Băm có domain separation. Không dùng KDF chậm — xem docstring module."""
+    sach = normalize_code(code)
+    return hashlib.sha256(("ltt-nexus-enroll\0" + sach).encode("utf-8")).hexdigest()
+
+
+def normalize_code(code: str) -> str:
+    """Bỏ gạch/khoảng trắng, viết hoa. Người gõ thế nào cũng nhận."""
+    return "".join(ch for ch in str(code or "").upper()
+                   if ch in ALPHABET)
+
+
+def format_code(code: str) -> str:
+    """`ABCD-EFGH` — chia nhóm để đọc và gõ đỡ sai."""
+    sach = normalize_code(code)
+    return "-".join(sach[i:i + CODE_GROUP]
+                    for i in range(0, len(sach), CODE_GROUP))
+
+
+# ── Ghép máy ─────────────────────────────────────────────────────────────────
+
+def tao_ma_ghep(db, *, user_id: str, now: datetime | None = None) -> tuple:
+    """Sinh một mã ghép cho tài khoản. Trả `(row, mã gốc)`.
+
+    Mã gốc **chỉ trả về một lần** — CSDL chỉ giữ digest. Nơi gọi hiện nó cho
+    người dùng rồi quên đi.
+    """
+    chu = str(user_id or "").strip()
+    if not chu:
+        raise NexusError(_t("Mã ghép phải thuộc về một tài khoản."))
+
+    current = now or _now()
+    raw = "".join(secrets.choice(ALPHABET) for _ in range(CODE_LEN))
+    row = NexusEnrollment(
+        id=str(uuid.uuid4()), user_id=chu, code_digest=digest_code(raw),
+        created_at=current, expires_at=current + timedelta(seconds=ENROLL_TTL_S))
+    db.add(row)
+    db.flush()
+    return row, raw
+
+
+def doi_ma(db, *, code: str, public_key: str, display_name: str = "",
+           hardware_fingerprint: str = "", platform: str = "",
+           agent_version: str = "", ip: str = "",
+           now: datetime | None = None) -> NexusDevice:
+    """Đổi mã ghép lấy một thiết bị được tin. Mã chết ngay sau đó.
+
+    Mọi lý do từ chối đều ném **cùng một thông điệp**: mã sai, mã hết hạn và mã
+    đã dùng phải không phân biệt được từ bên ngoài, nếu không thì việc dò mã
+    biết được mình đang tới gần.
+    """
+    from platform_core.nexus import agent_auth
+
+    current = now or _now()
+    sach = normalize_code(code)
+    khoa = str(public_key or "").strip()
+    if not khoa:
+        raise NexusError(_t("Thiết bị phải gửi khoá công khai của nó."))
+    # Kiểm dạng khoá NGAY Ở BIÊN. Lưu một khoá sai dạng nghĩa là thiết bị đó
+    # không bao giờ xác thực được, và lỗi sẽ hiện ra muộn dưới dạng "máy không
+    # kết nối được" — một triệu chứng không dẫn về nguyên nhân này.
+    try:
+        agent_auth.decode_public_key(khoa)
+    except agent_auth.AgentAuthError as exc:
+        raise NexusError(_t("Khoá công khai của thiết bị không hợp lệ.")) from exc
+    if len(sach) != CODE_LEN:
+        raise NexusError(_t("Mã ghép không dùng được."))
+
+    row = db.execute(select(NexusEnrollment).where(
+        NexusEnrollment.code_digest == digest_code(sach))).scalar_one_or_none()
+    if row is None:
+        raise NexusError(_t("Mã ghép không dùng được."))
+
+    if not row.is_open(now=current):
+        # Đếm cả lần hỏng trên một mã CÓ THẬT: đó là dấu hiệu ai đó đang mò.
+        row.attempts = int(row.attempts or 0) + 1
+        db.flush()
+        raise NexusError(_t("Mã ghép không dùng được."))
+
+    trung = db.execute(select(NexusDevice).where(
+        NexusDevice.public_key == khoa)).scalar_one_or_none()
+    if trung is not None:
+        # Cùng khoá công khai = cùng máy đó cài lại. Không tạo dòng thứ hai:
+        # hai dòng cùng khoá làm "thu hồi máy này" thành câu không trả lời được.
+        if trung.user_id != row.user_id:
+            raise NexusError(_t("Mã ghép không dùng được."))
+        trung.revoked_at = None
+        trung.revoked_by = ""
+        trung.display_name = str(display_name or trung.display_name)[:120]
+        trung.agent_version = str(agent_version or "")[:32]
+        device = trung
+    else:
+        device = NexusDevice(
+            id=str(uuid.uuid4()), user_id=row.user_id,
+            display_name=str(display_name or "")[:120], public_key=khoa,
+            hardware_fingerprint=str(hardware_fingerprint or "")[:128],
+            platform=str(platform or "")[:32],
+            agent_version=str(agent_version or "")[:32], created_at=current)
+        db.add(device)
+        db.flush()
+
+    row.consumed_at = current
+    row.device_id = device.id
+    row.claimed_ip = str(ip or "")[:64]
+    db.flush()
+    return device
+
+
+# ── Quyền sở hữu, thu hồi, hiện diện ─────────────────────────────────────────
+
+def cua_chu(db, *, user_id: str, device_id: str) -> NexusDevice | None:
+    """Thiết bị của đúng chủ này, hoặc None.
+
+    Nơi gọi phải biến None thành **404**, không bao giờ 403 — Q93 ràng buộc 9,
+    cùng lý do đã viết trong `public_api/principal.py`: trả 403 biến mỗi
+    `device_id` thành một máy tra cứu.
+    """
+    chu = str(user_id or "").strip()
+    if not chu:
+        return None
+    row = db.get(NexusDevice, str(device_id or ""))
+    if row is None or row.user_id != chu:
+        return None
+    return row
+
+
+def danh_sach(db, *, user_id: str, gom_da_thu_hoi: bool = False) -> list:
+    stmt = select(NexusDevice).where(NexusDevice.user_id == str(user_id or ""))
+    if not gom_da_thu_hoi:
+        stmt = stmt.where(NexusDevice.revoked_at.is_(None))
+    return list(db.execute(stmt.order_by(NexusDevice.created_at.desc())).scalars())
+
+
+def thu_hoi(db, device: NexusDevice, *, by: str,
+            now: datetime | None = None) -> bool:
+    """Thu hồi một thiết bị. Trả False nếu nó đã bị thu hồi rồi.
+
+    `by` bắt buộc và được ghi lại: Q93 ràng buộc 5 đòi mọi hành động của admin
+    để lại dấu **chủ thiết bị đọc được**. Một hàm cho phép thu hồi ẩn danh là
+    một hàm xoá mất câu trả lời đó.
+    """
+    ai = str(by or "").strip()
+    if not ai:
+        raise NexusError(_t("Thu hồi phải ghi rõ ai thu hồi."))
+    if device.revoked_at is not None:
+        return False
+    device.revoked_at = now or _now()
+    device.revoked_by = ai[:64]
+    db.flush()
+    return True
+
+
+def nhip_tim(db, device: NexusDevice, *, now: datetime | None = None) -> bool:
+    """Ghi nhận thiết bị còn sống. Thiết bị đã thu hồi thì KHÔNG được ghi.
+
+    Trả về False khi bị từ chối, để nơi gọi biết mà bảo agent dừng hẳn thay vì
+    tiếp tục gõ cửa mãi.
+    """
+    if device.revoked_at is not None:
+        return False
+    device.last_seen_at = now or _now()
+    db.flush()
+    return True
+
+
+def dang_online(device: NexusDevice, *, now: datetime | None = None) -> bool:
+    """Suy ra từ nhịp tim gần nhất, không lưu cột trạng thái riêng.
+
+    Một cột `is_online` sẽ nói dối ngay khi tiến trình ghi nó chết giữa chừng —
+    và đó chính là lúc người ta cần con số này đúng nhất.
+    """
+    if device.revoked_at is not None:
+        return False
+    moc = _aware(device.last_seen_at)
+    if moc is None:
+        return False
+    return (now or _now()) - moc <= timedelta(seconds=OFFLINE_AFTER_S)
+
+
+# ── Dọn dẹp ──────────────────────────────────────────────────────────────────
+#
+# Hai thời hạn khác nhau vì hai loại dòng có giá trị khác nhau:
+#
+# * mã **đã dùng** là một mẩu kiểm toán — nó trả lời "máy này được ghép lúc nào,
+#   từ IP nào". Giữ theo cùng cửa sổ mà Q75 đặt cho lịch sử của khách;
+# * mã **hết hạn mà không ai dùng** không kiểm toán gì cả. Giữ một tháng đủ để
+#   nhìn ra một chuỗi lần dò, rồi bỏ.
+#
+# Không có "dọn presence": trạng thái online được **suy ra** từ `last_seen_at`
+# chứ không lưu thành cột, nên không có gì để hết hạn. Một cột `is_online` mới
+# là thứ cần người đi dọn — và nó sẽ nói dối đúng lúc tiến trình ghi nó chết.
+
+GIU_MA_DA_DUNG_NGAY = 365
+GIU_MA_HET_HAN_NGAY = 30
+
+
+def don_ma_het_han(db, *, now: datetime | None = None) -> int:
+    """Xoá mã ghép đã hết giá trị. Trả số dòng đã xoá.
+
+    Gọi từ vòng bảo trì đã có lease, **không** gọi trong vòng job: số tiến trình
+    worker mặc định bằng số GPU, nên một việc nền đặt sai chỗ sẽ chạy ở mọi tiến
+    trình. Đó là nguyên nhân gốc của cả ba lỗi P0 mà H36 phải đi sửa.
+    """
+    from sqlalchemy import and_, delete, or_
+
+    current = now or _now()
+    ket = db.execute(delete(NexusEnrollment).where(or_(
+        # Đã dùng: mốc tính từ lúc ghép, vì đó là thời điểm có ý nghĩa kiểm toán.
+        and_(NexusEnrollment.consumed_at.isnot(None),
+             NexusEnrollment.consumed_at
+             < current - timedelta(days=GIU_MA_DA_DUNG_NGAY)),
+        # Không ai dùng: mốc tính từ lúc hết hạn, không phải lúc tạo.
+        and_(NexusEnrollment.consumed_at.is_(None),
+             NexusEnrollment.expires_at
+             < current - timedelta(days=GIU_MA_HET_HAN_NGAY)),
+    )))
+    db.flush()
+    return int(ket.rowcount or 0)
+
+
+__all__ = ["ALPHABET", "CODE_LEN", "GIU_MA_DA_DUNG_NGAY", "GIU_MA_HET_HAN_NGAY",
+           "NexusError", "OFFLINE_AFTER_S", "cua_chu", "dang_online",
+           "danh_sach", "digest_code", "doi_ma", "don_ma_het_han", "format_code",
+           "nhip_tim", "normalize_code", "tao_ma_ghep", "thu_hoi"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/sessions.py
+SHA256=355f434d644ec920f8af86499822d79c9863351b17468602f7834213e6b65217 BYTES=8764 LINES=207
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Vé phiên: chỗ DUY NHẤT quyết định ai được vào máy nào (Q93 ràng buộc 2).
+
+`devices.py` trả lời "máy này của ai". Đây trả lời "ai được mở phiên vào nó" —
+hai câu khác nhau, và câu thứ hai mới là chỗ uỷ quyền xảy ra. Trộn chúng vào một
+module sẽ làm ranh giới ấy mờ đi đúng chỗ nó cần rõ nhất.
+
+## Ràng buộc nằm trong CHỮ KÝ, không nằm trong kỷ luật
+
+Q93 ràng buộc 5: admin **không cấp được vé** cho thiết bị mình không sở hữu.
+Cách sai là viết một hàm `cap_ve(user_id, device_id)` rồi dặn nhau "nhớ kiểm chủ
+sở hữu trước khi gọi". Dặn nhau thì có ngày quên, và ngày quên đó không ai thấy.
+
+Cách ở đây: `cap_ve` nhận **đối tượng thiết bị** và **tự** so `device.user_id`
+với người xin vé. Không có tham số nào cho phép bỏ qua phép so đó, và không có
+cờ `force`. Muốn cấp vé cho máy người khác thì phải sửa hàm này — một thay đổi
+nhìn thấy được trong diff, không phải một lần quên.
+
+## Vì sao dùng một lần
+
+Một vé dùng lại được là một vé bị chép lại được. Vé ở đây chết ngay khi đổi
+thành phiên: `consumed_at` khác NULL là hết. Cửa sổ sống tính bằng **phút** —
+đủ để agent nhận và nối, không đủ để nằm trong một file log rồi bị nhặt lại.
+
+## Vì sao hàng phiên KHÔNG bị xoá
+
+Q93 ràng buộc 6: mỗi phiên là một bản ghi **bất biến**. Sau sự cố, câu hỏi duy
+nhất quan trọng là "ai đã vào máy tôi, lúc nào, từ đâu" — và không ai hỏi nó
+trước khi cần. Kết thúc phiên **ghi thêm** (`ended_at`, `end_reason`), không xoá
+và không sửa lại quá khứ.
+"""
+from __future__ import annotations
+
+import hashlib
+import secrets
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from platform_core.i18n import _ as _t
+from platform_core.nexus.devices import NexusError
+from platform_core.nexus.tables import NexusDevice, NexusSession
+
+#: Vé sống bao lâu. Phút, không phải giờ: nó chỉ cần đủ cho agent nhận và nối.
+TICKET_TTL_S = 120
+
+#: Quyền của một phiên. `xem` không gửi phím/chuột — có thật ở tầng engine hay
+#: không là việc N1 phải **đo**, không phải việc tin.
+QUYEN_XEM = "xem"
+QUYEN_DIEU_KHIEN = "dieu_khien"
+QUYEN_HOP_LE = (QUYEN_XEM, QUYEN_DIEU_KHIEN)
+
+#: Lý do kết thúc. Ghi thành hằng số vì chúng đi vào báo cáo kiểm toán, nên
+#: chúng đổi như một hợp đồng đổi, không như một chuỗi trong code đổi.
+KET_THUC_BINH_THUONG = "binh_thuong"
+KET_THUC_HET_HAN = "het_han"
+KET_THUC_THU_HOI = "thu_hoi"
+KET_THUC_MAT_KET_NOI = "mat_ket_noi"
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def digest_ticket(raw: str) -> str:
+    """Băm có domain separation, khác hẳn không gian của mã ghép.
+
+    Domain separation không phải nghi thức: nếu hai loại bí mật băm cùng cách,
+    một digest lấy được ở bảng này có thể đem thử ở bảng kia.
+    """
+    return hashlib.sha256(
+        ("ltt-nexus-ticket\0" + str(raw or "")).encode("utf-8")).hexdigest()
+
+
+def cap_ve(db, *, user_id: str, device: NexusDevice, quyen: str = QUYEN_DIEU_KHIEN,
+           controller_ip: str = "", now: datetime | None = None) -> tuple:
+    """Cấp vé cho **chủ** của thiết bị. Trả `(row, vé gốc)`.
+
+    Ném `NexusError` khi người xin không phải chủ, khi thiết bị đã bị thu hồi,
+    hoặc khi quyền không hợp lệ. Vé gốc chỉ trả về **một lần**.
+    """
+    xin = str(user_id or "").strip()
+    if not xin:
+        raise NexusError(_t("Phiên phải thuộc về một tài khoản."))
+    if str(quyen) not in QUYEN_HOP_LE:
+        raise NexusError(_t("Quyền của phiên không hợp lệ."))
+
+    # Q93 ràng buộc 5, thi hành ở đây chứ không nhờ nơi gọi nhớ.
+    if device is None or device.user_id != xin:
+        raise NexusError(_t("Không tìm thấy thiết bị."))
+    if device.revoked_at is not None:
+        raise NexusError(_t("Thiết bị này đã bị thu hồi."))
+
+    current = now or _now()
+    raw = secrets.token_urlsafe(32)
+    row = NexusSession(
+        id=str(uuid.uuid4()), user_id=xin, device_id=device.id,
+        ticket_digest=digest_ticket(raw), quyen=str(quyen),
+        controller_ip=str(controller_ip or "")[:64], issued_at=current,
+        expires_at=current + timedelta(seconds=TICKET_TTL_S))
+    db.add(row)
+    db.flush()
+    return row, raw
+
+
+def doi_ve(db, *, ticket: str, now: datetime | None = None) -> NexusSession:
+    """Đổi vé lấy một phiên đang mở. Vé chết ngay sau đó.
+
+    Kiểm **lại** thiết bị ở đây chứ không tin lúc cấp: giữa lúc cấp vé và lúc
+    dùng, chủ máy có thể đã bấm thu hồi — và đó chính là lúc việc thu hồi phải
+    có tác dụng.
+
+    Mọi lý do từ chối nói **cùng một câu**, cùng lý do như mã ghép.
+    """
+    current = now or _now()
+    raw = str(ticket or "").strip()
+    if len(raw) < 16:
+        raise NexusError(_t("Vé phiên không dùng được."))
+
+    row = db.execute(select(NexusSession).where(
+        NexusSession.ticket_digest == digest_ticket(raw))).scalar_one_or_none()
+    if row is None or not row.con_doi_duoc(now=current):
+        raise NexusError(_t("Vé phiên không dùng được."))
+
+    device = db.get(NexusDevice, row.device_id)
+    if device is None or device.revoked_at is not None:
+        raise NexusError(_t("Vé phiên không dùng được."))
+
+    row.consumed_at = current
+    db.flush()
+    return row
+
+
+def ket_thuc(db, session: NexusSession, *, ly_do: str = KET_THUC_BINH_THUONG,
+             now: datetime | None = None) -> bool:
+    """Đóng một phiên. Trả False nếu nó đã đóng rồi.
+
+    Ghi thêm chứ không sửa lại quá khứ: `ended_at` và `end_reason` là hai cột
+    mới được điền, phần còn lại của dòng giữ nguyên như lúc phiên bắt đầu.
+    """
+    if session.ended_at is not None:
+        return False
+    session.ended_at = now or _now()
+    session.end_reason = str(ly_do or KET_THUC_BINH_THUONG)[:32]
+    db.flush()
+    return True
+
+
+def thu_hoi_ve(db, session: NexusSession, *, by: str,
+               now: datetime | None = None) -> bool:
+    """Giết một vé chưa dùng, hoặc cắt một phiên đang chạy.
+
+    `by` bắt buộc, cùng lý do như `devices.thu_hoi`: một hành động không ghi ai
+    làm là một hành động xoá mất câu trả lời sau sự cố.
+    """
+    ai = str(by or "").strip()
+    if not ai:
+        raise NexusError(_t("Thu hồi phải ghi rõ ai thu hồi."))
+    if session.revoked_at is not None:
+        return False
+    current = now or _now()
+    session.revoked_at = current
+    session.revoked_by = ai[:64]
+    if session.ended_at is None:
+        session.ended_at = current
+        session.end_reason = KET_THUC_THU_HOI
+    db.flush()
+    return True
+
+
+def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:
+    """Các phiên đang chạy trên một thiết bị.
+
+    Dùng để hiện chỉ báo "đang có người điều khiển" (Q93 ràng buộc 7) và để cắt
+    hết khi chủ máy bấm thu hồi.
+    """
+    current = now or _now()
+    rows = db.execute(select(NexusSession).where(
+        NexusSession.device_id == str(device_id or ""),
+        NexusSession.consumed_at.isnot(None),
+        NexusSession.ended_at.is_(None))).scalars().all()
+    return [row for row in rows if row.dang_chay(now=current)]
+
+
+def lich_su(db, *, user_id: str, limit: int = 50) -> list:
+    """Nhật ký phiên của một tài khoản, mới nhất trước.
+
+    Đây là thứ trả lời "ai đã vào máy tôi" — nên nó là bề mặt của **khách**,
+    không phải của admin.
+    """
+    return list(db.execute(
+        select(NexusSession)
+        .where(NexusSession.user_id == str(user_id or ""))
+        .order_by(NexusSession.issued_at.desc())
+        .limit(max(1, min(int(limit), 500)))).scalars())
+
+
+__all__ = ["KET_THUC_BINH_THUONG", "KET_THUC_HET_HAN", "KET_THUC_MAT_KET_NOI",
+           "KET_THUC_THU_HOI", "QUYEN_DIEU_KHIEN", "QUYEN_HOP_LE", "QUYEN_XEM",
+           "TICKET_TTL_S", "cap_ve", "dang_mo", "digest_ticket", "doi_ve",
+           "ket_thuc", "lich_su", "thu_hoi_ve"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/tables.py
+SHA256=22b539de5a054b23d702b51170ec36aa3cf26e1dfca50df04b3b58729e4361e7 BYTES=12176 LINES=239
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Bảng của Nexus: thiết bị và mã ghép.
+
+Hai bảng, và ranh giới giữa chúng là ranh giới bảo mật chứ không phải chuyện gọn
+gàng: `nexus_devices` giữ **khoá công khai** của một máy đã được tin, còn
+`nexus_enrollments` giữ **mã ghép dùng một lần** — thứ duy nhất đủ để biến một
+máy lạ thành một máy được tin, và cũng là thứ kẻ lừa đảo sẽ nhắm vào (T1).
+
+## Vì sao chỉ có khoá công khai
+
+Q93 ràng buộc 1: khoá riêng **không bao giờ rời máy đó**. Máy sinh cặp khoá tại
+chỗ, cất bằng cơ chế của hệ điều hành, và chỉ gửi lên phần công khai. Hệ quả:
+**đọc trộm toàn bộ hai bảng này không cho phép giả mạo một thiết bị nào** — khác
+hẳn một bảng chứa bearer token, nơi rò rỉ CSDL là mất tất cả.
+
+Đây cũng là chỗ **không** chép lại mẹo mà một app trong repo đang dùng cho tiến
+trình cục bộ của nó: nhét token vào bảng `sessions` với một nhãn `user_agent`.
+Mẹo đó đủ cho một tiến trình copy file, nhưng không đủ cho danh tính thiết bị —
+không chống được nhân bản token, và không thu hồi được theo từng máy.
+(`platform_core` không được nhắc tên app, kể cả trong chú thích — `AGENTS.md` 8.4.)
+
+## Vì sao mã ghép được băm
+
+Cùng lý do khoá API của khách được băm (Q92): không có gì cần đọc lại mã gốc,
+chỉ cần kiểm một lần. Băm cả mã ghép nghĩa là một bản dump CSDL rơi ra ngoài
+cũng **không** cho kẻ cầm nó ghép được máy nào.
+
+Ở đây dùng SHA-256 có domain separation chứ không dùng KDF chậm: mã ghép sống
+vài phút, dùng một lần, và có trần số lần thử — không có cửa sổ để tấn công
+ngoại tuyến như với mật khẩu người dùng.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from sqlalchemy import (Boolean, DateTime, ForeignKey, Index, Integer, String,
+                        Text, UniqueConstraint)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from platform_core.db import Base
+
+#: Tiền tố khoá công khai, để một chuỗi lạc ra ngoài còn nhận ra được là gì.
+DEVICE_KEY_PREFIX = "ltt_dev"
+
+#: Mã ghép hết hạn sau bao lâu. Ngắn có chủ ý: đây là cửa sổ mà kẻ lừa đảo dùng
+#: để bảo nạn nhân đọc mã qua điện thoại (T1). Năm phút đủ cho người thật cài
+#: xong phần mềm và gõ mã, và đủ ngắn để một cuộc gọi lừa đảo phải vội.
+ENROLL_TTL_S = 300
+
+#: Sai bao nhiêu lần thì mã chết hẳn. Mã ngắn để người gõ được, nên phải có
+#: trần — không thì nó thành thứ dò được.
+ENROLL_MAX_ATTEMPTS = 5
+
+
+def _bay_gio() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class NexusDevice(Base):
+    """Một máy đã được ghép vào một tài khoản.
+
+    `revoked_at` chứ không xoá dòng: sau sự cố, câu hỏi duy nhất quan trọng là
+    "máy nào đã từng được tin, và bị gỡ lúc nào". Xoá dòng là xoá luôn câu trả
+    lời đó.
+    """
+
+    __tablename__ = "nexus_devices"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+    #: Tên do khách đặt. Hiện cho khách, nên không tin là an toàn khi render.
+    display_name: Mapped[str] = mapped_column(String(120), default="",
+                                              nullable=False)
+
+    #: Khoá CÔNG KHAI của thiết bị. Không bao giờ có khoá riêng ở đây.
+    public_key: Mapped[str] = mapped_column(Text, nullable=False)
+
+    #: Dấu vân tay phần cứng do agent khai. Dùng để NHẬN RA một máy cài lại, KHÔNG
+    #: dùng làm danh tính — nó giả được, còn khoá riêng thì không.
+    hardware_fingerprint: Mapped[str] = mapped_column(String(128), default="",
+                                                      nullable=False)
+    platform: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    agent_version: Mapped[str] = mapped_column(String(32), default="",
+                                               nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    #: Nhịp tim gần nhất. NULL = chưa bao giờ kết nối.
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Ai thu hồi: `owner`, `admin:<user_id>`, `system:<lý do>`. Q93 ràng buộc 5
+    #: đòi mọi hành động của admin để lại dấu chủ thiết bị đọc được.
+    revoked_by: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False)
+
+    __table_args__ = (
+        # Một khoá công khai chỉ thuộc về một thiết bị. Nếu hai dòng cùng khoá
+        # thì "thu hồi thiết bị này" trở thành câu hỏi không có câu trả lời.
+        UniqueConstraint("public_key", name="uq_nexus_devices_public_key"),
+        Index("ix_nexus_devices_user", "user_id"),
+        Index("ix_nexus_devices_seen", "last_seen_at"),
+    )
+
+    def is_usable(self, *, now: datetime | None = None) -> bool:
+        return self.revoked_at is None
+
+    def __repr__(self) -> str:      # pragma: no cover - chi de doc khi go roi
+        trang_thai = "revoked" if self.revoked_at else "active"
+        return f"<NexusDevice {self.display_name!r} {trang_thai}>"
+
+
+class NexusEnrollment(Base):
+    """Mã ghép dùng một lần: biến một máy lạ thành một máy được tin.
+
+    Chỉ giữ **digest**, không giữ mã gốc. `consumed_at` khác NULL nghĩa là đã
+    dùng — và một mã đã dùng thì chết vĩnh viễn, kể cả khi chưa hết hạn.
+    """
+
+    __tablename__ = "nexus_enrollments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+    code_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False)
+
+    consumed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Thiết bị đã dùng mã này. Giữ lại để dựng được đường đi từ một máy ngược
+    #: về lúc nó được ghép.
+    device_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: IP của máy đã đổi mã. Ghi để trả lời "máy đó ghép từ đâu" sau sự cố.
+    claimed_ip: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False)
+
+    __table_args__ = (
+        # CSDL cưỡng chế tính duy nhất, không để Python đọc-rồi-ghi quyết định.
+        # Đây đúng là bài học H36.3: hai tiến trình cùng kiểm "chưa ai dùng" rồi
+        # cùng ghi.
+        UniqueConstraint("code_digest", name="uq_nexus_enrollments_digest"),
+        Index("ix_nexus_enrollments_user", "user_id"),
+        Index("ix_nexus_enrollments_expires", "expires_at"),
+    )
+
+    def is_open(self, *, now: datetime | None = None) -> bool:
+        """Còn đổi được không: chưa dùng, chưa hết hạn, chưa quá số lần thử."""
+        current = now or _bay_gio()
+        han = self.expires_at
+        if han is not None and han.tzinfo is None:
+            han = han.replace(tzinfo=timezone.utc)
+        return (self.consumed_at is None
+                and self.attempts < ENROLL_MAX_ATTEMPTS
+                and han is not None and han > current)
+
+
+class NexusSession(Base):
+    """Một phiên điều khiển: vé được cấp, được đổi, rồi kết thúc.
+
+    Dòng này **vừa là vé vừa là bản ghi kiểm toán**, và đó là chủ ý: nếu vé sống
+    ở một chỗ còn nhật ký ở chỗ khác thì sẽ có ngày hai chỗ lệch nhau, và lúc
+    cần đối chiếu sau sự cố thì không biết tin cái nào.
+
+    Không bao giờ xoá, không bao giờ sửa lại quá khứ (Q93 ràng buộc 6). Kết thúc
+    là **ghi thêm** `ended_at` + `end_reason`.
+    """
+
+    __tablename__ = "nexus_sessions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    #: Người điều khiển. Cũng là chủ thiết bị — `sessions.cap_ve` cưỡng chế điều
+    #: đó, nên hai cột này không bao giờ trỏ về hai tài khoản khác nhau.
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    device_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("nexus_devices.id", ondelete="CASCADE"),
+        nullable=False)
+
+    #: Chỉ digest. Vé gốc chỉ tồn tại trong một phản hồi HTTP duy nhất.
+    ticket_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    quyen: Mapped[str] = mapped_column(String(16), nullable=False)
+    controller_ip: Mapped[str] = mapped_column(String(64), default="",
+                                               nullable=False)
+
+    issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False)
+    #: Lúc vé được đổi thành phiên. NULL = vé chưa dùng.
+    consumed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    end_reason: Mapped[str] = mapped_column(String(32), default="",
+                                            nullable=False)
+
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    revoked_by: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("ticket_digest", name="uq_nexus_sessions_ticket"),
+        Index("ix_nexus_sessions_user", "user_id"),
+        Index("ix_nexus_sessions_device", "device_id"),
+        Index("ix_nexus_sessions_issued", "issued_at"),
+    )
+
+    def con_doi_duoc(self, *, now: datetime | None = None) -> bool:
+        """Vé còn đổi được không: chưa dùng, chưa thu hồi, chưa hết hạn."""
+        current = now or _bay_gio()
+        han = self.expires_at
+        if han is not None and han.tzinfo is None:
+            han = han.replace(tzinfo=timezone.utc)
+        return (self.consumed_at is None and self.revoked_at is None
+                and han is not None and han > current)
+
+    def dang_chay(self, *, now: datetime | None = None) -> bool:
+        """Phiên đang mở: đã đổi vé, chưa kết thúc, chưa bị thu hồi."""
+        return (self.consumed_at is not None and self.ended_at is None
+                and self.revoked_at is None)
+
+    def __repr__(self) -> str:      # pragma: no cover - chi de doc khi go roi
+        return f"<NexusSession {self.quyen} device={self.device_id[:8]}>"
+
+
+__all__ = ["DEVICE_KEY_PREFIX", "ENROLL_MAX_ATTEMPTS", "ENROLL_TTL_S",
+           "NexusDevice", "NexusEnrollment", "NexusSession"]
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -112246,7 +113922,7 @@ NO_CODE_RECIPES = (
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=c476df8d1dffb4f56a44d8e7c09997e01d723d9218f48d2c3ff9fe65dd4d5a32 BYTES=14699 LINES=253
+SHA256=b6d52d3d5998b3bb800b6dfdcb77436843af83893c786c1ced2b896a15a46825 BYTES=16246 LINES=272
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -112392,6 +114068,25 @@ STORES: tuple = (
           "hết hạn sau 30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán "
           "credit trỏ về nó — bằng chứng và nội dung là hai thứ khác nhau."),
           "job_content.purge_expired (worker)"),
+    # ── Nexus: danh tính thiết bị và phiên điều khiển (Q93) ──────────────────
+    #
+    # Vì sao `nexus_sessions` là EVIDENCE chứ không phải OPERATIONAL: sau một sự
+    # cố, câu hỏi duy nhất quan trọng là "ai đã vào máy tôi, lúc nào, từ đâu" —
+    # và không ai hỏi nó trước khi cần. Một nhật ký phiên hết hạn sau 30 ngày sẽ
+    # im lặng đúng lúc nó là thứ duy nhất trả lời được.
+    Store("nexus_devices", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Máy nào đã từng được tin, ghép lúc nào, ai thu hồi. Thu hồi ghi "
+          "`revoked_at` chứ không xoá dòng — xoá là xoá luôn câu trả lời. Chỉ "
+          "giữ khoá CÔNG KHAI, không bao giờ có khoá riêng.")),
+    Store("nexus_sessions", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Ai đã điều khiển máy nào, từ IP nào, bắt đầu và kết thúc lúc nào. "
+          "Chỉ giữ dấu vân tay một chiều của vé, không giữ vé.")),
+    Store("nexus_enrollments", OPERATIONAL, 365, N_("chủ tài khoản + vận hành"),
+          N_("Mã ghép đã dùng là mẩu kiểm toán 'máy này ghép lúc nào, từ IP "
+          "nào'; mã hết hạn không ai dùng thì không kiểm toán gì và rụng sau "
+          "30 ngày. Chỉ giữ digest, không giữ mã."),
+          "devices.don_ma_het_han (worker)"),
+
     Store("users", CONTENT, None, N_("chủ tài khoản + vận hành"),
           N_("Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) "
           "chứ không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại "
@@ -113420,7 +115115,7 @@ __all__ = ["DEVKEY_ACTIVE", "DeveloperKeyError", "current_pepper", "digest_secre
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/limits.py
-SHA256=72f9fec4298ddf1723b1fdfc957eb53c5cb30e902c826392d043eae4977fbb28 BYTES=13680 LINES=305
+SHA256=cd151f655bac6ec8fca9cd5f7cabd5a3508bcf0b453cf0cc03b0d0ddfcc4802a BYTES=14403 LINES=318
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rate, quota, concurrency and capacity limits for the Public API.
 
@@ -113530,6 +115225,19 @@ def _hit(bucket: str, limit: int, window_s: float) -> tuple[bool, int]:
             return False, retry
         events.append(now)
         return True, 0
+
+
+def allow(bucket: str, limit: int, *, window_s: float = 60.0) -> tuple[bool, int]:
+    """Cửa công khai của cửa sổ trượt. Trả `(được_phép, giây_thử_lại)`.
+
+    Có mặt vì `_hit` là nội bộ, và Nexus (Q93) cần **cùng một** bộ đếm chứ không
+    phải bộ đếm thứ hai — một hệ có hai bộ đếm nhịp thì không ai trả lời được
+    "khách này đang bị chặn bởi cái nào".
+
+    Đổi lại: người gọi tự chọn tên `bucket`, nên hai chỗ vô tình dùng chung một
+    tên sẽ chia nhau hạn mức. Quy ước: `<mien>:<khoa>`, ví dụ `<mien>:<ip>`.
+    """
+    return _hit(str(bucket), int(limit), float(window_s))
 
 
 def _too_many(detail: str, retry_after: int, code: str = CODE_RATE_LIMITED,
@@ -129736,7 +131444,7 @@ def register_webhook_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/app.py
-SHA256=b808a19cd2ceab2e094a0cf96e831a546ec88d9765b5ebf1b11454674b8afa8b BYTES=22653 LINES=451
+SHA256=d95a49a8608cf0f5467819172926ef74364ac77faef18442905562219e48e022 BYTES=23556 LINES=464
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 FastAPI application factory (P3).
@@ -130046,6 +131754,19 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # mounted unconditionally so a customer can prepare keys before an operator
     # turns the API itself on; the page says plainly when `/api/v1` is off.
     app.include_router(developer_routes.router)
+
+    # ── Nexus: bề mặt cho AGENT trên máy khách (Q93) ─────────────────────────
+    #
+    # Gắn KHÔNG điều kiện, và các route tự trả 404 khi `LTT_NEXUS` tắt. Cố ý làm
+    # vậy chứ không gác ở đây: `registry.mount_all()` đã cho thấy một cờ chỉ được
+    # đọc ở chỗ mount là một cờ **không đóng được URL** — nó chỉ ẩn khỏi catalog.
+    # Đặt phép kiểm trong route nghĩa là chỉ có một chỗ để quên, và có test chốt
+    # rằng chỗ đó không bị quên.
+    #
+    # Không nằm dưới `route_prefix` của app nào: agent không phải trình duyệt, và
+    # một app không mount được path ngoài prefix của nó (`AGENTS.md` 8.4).
+    from server import nexus as nexus_agent_routes
+    app.include_router(nexus_agent_routes.router)
 
     # ── Bảng điều khiển FB/TikTok cũ (H22.10) ────────────────────────────────
     #
@@ -130821,6 +132542,287 @@ class I18nMiddleware(BaseHTTPMiddleware):
         can = "Accept-Language, CF-IPCountry, Cookie"
         MutableHeaders(raw=resp.raw_headers)["vary"] = f"{vary}, {can}" if vary else can
         return resp
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/__init__.py
+SHA256=053a447a9f6128482fdbadef651fd3651cbe9b7ac58250ed2d192b6b9a7fb183 BYTES=915 LINES=20
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Bề mặt HTTP cho AGENT trên máy khách (Q93).
+
+Tách khỏi `apps/nexus/` vì hai bề mặt trả lời hai người khác nhau, và trộn chúng
+sẽ làm mờ đúng chỗ cần rõ:
+
+* `apps/nexus/` — **trình duyệt của khách**. Phiên cookie, CSRF, HTML.
+* ở đây — **agent trên máy**. Không cookie, không CSRF; mỗi request được **ký**
+  bằng khoá riêng không bao giờ rời máy đó (ràng buộc 1).
+
+Đường dẫn `/nexus-agent/*`, cố ý **không** nằm dưới `route_prefix` của app — một
+app không mount được path ngoài prefix của nó (`AGENTS.md` 8.4), và đây đúng là
+lý do Q93 phải là platform capability chứ không phải một app.
+
+Lỗi trả JSON theo cùng tinh thần Q88: máy gọi máy thì không bao giờ nhận HTML.
+"""
+from __future__ import annotations
+
+from server.nexus.routes import router
+
+__all__ = ["router"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/routes.py
+SHA256=7e2dea74fa003d1e6054fdbb8eaffe5fa72e58691cb9a3b2cabd7ab296c50670 BYTES=10030 LINES=249
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ba đường cho agent: ghép máy, nhịp tim, đổi vé phiên.
+
+Mọi đường đều fail-closed sau cờ `LTT_NEXUS`, và mọi đường trả **JSON**.
+
+## Giới hạn nhịp nằm ở đây, không ở domain
+
+`platform_core.nexus.devices` nói rõ nó **không** tự giới hạn nhịp, và rằng đó là
+việc của route. Đây là chỗ trả nợ câu đó. Hai trần khác nhau cho hai loại nguy
+hiểm khác nhau:
+
+* **ghép máy** — mã 8 ký tự từ bảng 32 ký tự (40 bit) sống 5 phút. Entropy đã
+  lớn, nhưng không có trần thì một kẻ tấn công vẫn được thử tuỳ ý, và toán học
+  chỉ cần vài triệu lần thử là chuyện của một buổi chiều. Trần theo **IP**;
+* **nhịp tim** — không nguy hiểm về bảo mật, nhưng một agent hỏng vòng lặp có thể
+  gõ cửa hàng nghìn lần một phút. Trần theo **thiết bị**.
+
+Dùng lại `platform_core.public_api.limits` chứ không viết bộ đếm thứ hai: nó đã
+có sẵn cửa sổ trượt và đã được đo tải ở H35.
+
+## Vì sao mọi lời từ chối đều nói cùng một câu
+
+Giống mã ghép và vé phiên: phân biệt "sai chữ ký" với "thiết bị đã thu hồi" cho
+kẻ dò biết mình đang tới gần. Chỉ có **một** thông điệp cho mọi lý do xác thực
+thất bại, và mã HTTP là `401` cho mọi trường hợp.
+"""
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Header, Request
+from fastapi.responses import JSONResponse
+
+from platform_core import nexus
+from platform_core.nexus import agent_auth, devices, sessions
+
+log = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/nexus-agent", tags=["nexus-agent"])
+
+_NO_STORE = {"Cache-Control": "no-store"}
+
+#: Trần cho việc đổi mã ghép, theo IP. Cố ý thấp: người thật ghép một máy vài
+#: lần một ngày, còn kẻ dò cần hàng nghìn lần mới có cơ hội.
+GHEP_MOI_PHUT = 10
+
+#: Trần nhịp tim theo thiết bị. Nhịp thật là mỗi 60 giây; 20 cho phép thử lại
+#: khi mạng chập chờn mà vẫn chặn một vòng lặp hỏng.
+NHIP_TIM_MOI_PHUT = 20
+
+
+def _loi(status: int, ma: str, thong_diep: str) -> JSONResponse:
+    """Lỗi dạng JSON. Không bao giờ HTML — bên gọi là máy."""
+    return JSONResponse({"error": {"code": ma, "message": thong_diep}},
+                        status_code=status, headers=_NO_STORE)
+
+
+def _tat() -> JSONResponse:
+    """Cờ tắt → 404, cùng lý do như bề mặt khách: 403 xác nhận có tồn tại."""
+    return _loi(404, "not_found", "Not found.")
+
+
+def _ip(request: Request) -> str:
+    """IP thật sau Cloudflare Tunnel.
+
+    Dùng lại đường đã có của nền tảng thay vì đọc `request.client` — sau Tunnel
+    thì `request.client` là địa chỉ của tunnel, nên giới hạn theo nó sẽ gộp mọi
+    người dùng trên thế giới vào một xô.
+    """
+    from server.auth.session import client_ip
+
+    try:
+        return client_ip(request) or ""
+    except Exception:                                          # noqa: BLE001
+        log.exception("khong doc duoc IP that")
+        return ""
+
+
+def _qua_tran(khoa: str, moi_phut: int) -> bool:
+    from platform_core.public_api import limits
+
+    duoc_phep, _thu_lai = limits.allow(khoa, moi_phut, window_s=60)
+    return not duoc_phep
+
+
+def _mo_db():
+    from platform_core.db import get_session
+
+    return get_session()
+
+
+@router.post("/enroll")
+async def enroll(request: Request):
+    """Đổi mã ghép lấy một thiết bị được tin.
+
+    Đường này **không** ký được: agent chưa có danh tính nào để ký bằng. Nó là
+    đúng một cửa vào, và vì vậy nó là đường duy nhất có trần theo IP.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    ip = _ip(request)
+    if _qua_tran(f"nexus-enroll:{ip}", GHEP_MOI_PHUT):
+        return _loi(429, "rate_limited", "Too many attempts. Try again later.")
+
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        # Hep chu khong bat `Exception`: body hong la loi cua NGUOI GOI va tra
+        # 400 la dung. Con mot loi khac o day (vd CSDL, mang) thi phai noi ra
+        # chu khong duoc doi lot thanh "body sai dinh dang".
+        return _loi(400, "invalid_request", "Body must be JSON.")
+    if not isinstance(body, dict):
+        return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = devices.doi_ma(
+            db,
+            code=str(body.get("code") or ""),
+            public_key=str(body.get("public_key") or ""),
+            display_name=str(body.get("display_name") or "")[:120],
+            hardware_fingerprint=str(body.get("hardware_fingerprint") or "")[:128],
+            platform=str(body.get("platform") or "")[:32],
+            agent_version=str(body.get("agent_version") or "")[:32],
+            ip=ip)
+        db.commit()
+        return JSONResponse({"device_id": device.id,
+                             "display_name": device.display_name},
+                            headers=_NO_STORE)
+    except devices.NexusError as exc:
+        db.rollback()
+        # Mot thong diep cho moi ly do. Xem docstring module.
+        return _loi(400, "enroll_failed", str(exc))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+async def _xac_thuc(request: Request, device_id: str, timestamp: str,
+                    signature: str, db):
+    """Thiết bị đã ký request này, hoặc None.
+
+    Trả `None` chứ không ném, để nơi gọi quyết định mã HTTP — và để **một** câu
+    từ chối dùng cho mọi lý do.
+    """
+    if not device_id or not timestamp or not signature:
+        return None
+    row = db.get(devices.NexusDevice, device_id)
+    if row is None or row.revoked_at is not None:
+        return None
+    try:
+        agent_auth.verify(public_key=row.public_key, signature=signature,
+                          method=request.method, path=request.url.path,
+                          timestamp=timestamp, body=await request.body())
+    except agent_auth.AgentAuthError:
+        return None
+    return row
+
+
+@router.post("/heartbeat")
+async def heartbeat(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Tôi còn sống. Trả về việc thiết bị có còn được tin không.
+
+    Trả `revoked` tường minh thay vì chỉ `401`: agent cần biết **dừng hẳn** thay
+    vì thử lại mãi. Điều đó không lộ gì cho kẻ tấn công — nó phải ký được bằng
+    khoá riêng của chính thiết bị mới nhận được câu trả lời này.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+        if _qua_tran(f"nexus-hb:{device.id}", NHIP_TIM_MOI_PHUT):
+            return _loi(429, "rate_limited", "Too many heartbeats.")
+
+        con_dung = devices.nhip_tim(db, device)
+        cho_phien = [{"session_id": s.id, "quyen": s.quyen}
+                     for s in sessions.dang_mo(db, device_id=device.id)]
+        db.commit()
+        return JSONResponse({"ok": con_dung, "revoked": not con_dung,
+                             "sessions": cho_phien}, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/session/redeem")
+async def redeem(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Đổi vé phiên. Chỉ **thiết bị đích** đổi được vé của chính nó.
+
+    Hai phép kiểm độc lập, và cả hai đều cần: chữ ký chứng minh *ai đang gọi*,
+    còn `session.device_id` chứng minh *vé này dành cho ai*. Thiếu phép thứ hai
+    thì một thiết bị hợp lệ đổi được vé của thiết bị khác.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    body_raw = await request.body()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        try:
+            import json
+            body = json.loads(body_raw or b"{}")
+        except (ValueError, UnicodeDecodeError):
+            return _loi(400, "invalid_request", "Body must be JSON.")
+
+        try:
+            phien = sessions.doi_ve(db, ticket=str((body or {}).get("ticket") or ""))
+        except devices.NexusError as exc:
+            db.rollback()
+            return _loi(400, "redeem_failed", str(exc))
+
+        if phien.device_id != device.id:
+            # Ve cua thiet bi khac. Doi ve da tieu no o tren, nen phai huy.
+            db.rollback()
+            return _loi(400, "redeem_failed", "That session ticket cannot be used.")
+
+        db.commit()
+        return JSONResponse({"session_id": phien.id, "quyen": phien.quyen},
+                            headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -142379,6 +144381,240 @@ SHA256=5f71aec9d0aa7e5de57b8e8125f382fbb0d7dcbc90c913f9ba9d0b72b9d11025 BYTES=17
       <a class="btn" href="/nap">{{ _("Về trang nạp credit") }}</a>
       <a class="btn ghost" href="/">{{ _("Trang chủ") }}</a>
     </div>
+  </div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_ma_ghep.html
+SHA256=6d7140378e84f4b32257d9081c625a7db2f8e60a00d0130a20973cb8a1954fc2 BYTES=2571 LINES=49
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Mã ghép máy") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{#
+  `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
+  khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
+  luc render. Day la mau "deferred translation" chuan cua gettext.
+
+  Cac app khac dang viet `{{ app.display_name }}` tran, nen tieu de cua chung
+  van hien tieng Viet tren trang tieng Anh. Do la mot khoang trong platform-wide
+  co tu truoc — sua no la viec rieng, khong nhet vao commit cua Nexus.
+#}
+{% block content %}
+
+  {#
+    Trang nay la cho T1 trong docs/nexus/04_THREAT_MODEL.md song: ke lua dao goi
+    dien cho nan nhan, huong dan cai phan mem, roi bao ho DOC MA NAY qua dien
+    thoai. Moi buoc deu "hop le" nen khong co hang rao ky thuat nao chan duoc.
+
+    Thu duy nhat con lai la CHU. Nen canh bao o day noi bang ngon ngu HAU QUA
+    ("nguoi do se thay man hinh cua ban") chu khong phai ngon ngu ky thuat
+    ("ma xac thuc thiet bi"), va no dat TRUOC ma chu khong phai duoi.
+  #}
+  <div class="card">
+    <div class="card-accent" style="background:#B4530A;"></div>
+    <h2>{{ _("Trước khi đưa mã này cho ai") }}</h2>
+    <p style="font-size:1.05rem;">
+      {{ _("Người nhập mã này sẽ điều khiển được máy tính của bạn và nhìn thấy mọi thứ trên màn hình — kể cả email, ngân hàng và tài liệu đang mở.") }}
+    </p>
+    <p style="font-size:1.05rem;">
+      <strong>{{ _("Chỉ đưa mã cho người mà CHÍNH BẠN tìm đến. Không bao giờ đưa cho người gọi điện đến bạn, dù họ nói họ là ai.") }}</strong>
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Mã ghép") }}</h2>
+    <p style="font-family:monospace;font-size:2rem;letter-spacing:0.15em;margin:0.5rem 0;">{{ ma }}</p>
+    <p class="muted">
+      {{ _("Nhập mã này vào phần mềm LTT Nexus trên máy cần ghép.") }}
+      {{ _("Mã hết hạn lúc") }} {{ het_han_luc.strftime('%H:%M') if het_han_luc else '' }}.
+    </p>
+    <p class="muted">
+      {# Ma chi ton tai trong dung phan hoi nay — CSDL chi giu digest. #}
+      {{ _("Mã chỉ hiện một lần. Tải lại trang sẽ không xem lại được; hãy tạo mã mới nếu cần.") }}
+    </p>
+    <a href="{{ app.route_prefix }}" class="btn btn-secondary">{{ _("Quay lại danh sách máy") }}</a>
+  </div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_nhat_ky.html
+SHA256=1074cb0fd81c4f903642c51055c5ab506b6fc37655a6cadd3e8245d918bab5b5 BYTES=2651 LINES=61
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Nhật ký") }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{#
+  `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
+  khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
+  luc render. Day la mau "deferred translation" chuan cua gettext.
+
+  Cac app khac dang viet `{{ app.display_name }}` tran, nen tieu de cua chung
+  van hien tieng Viet tren trang tieng Anh. Do la mot khoang trong platform-wide
+  co tu truoc — sua no la viec rieng, khong nhet vao commit cua Nexus.
+#}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Ai đã vào máy của bạn") }}</h2>
+    <p class="muted">
+      {# Q93 rang buoc 5: hanh dong cua admin phai de lai dau CHU THIET BI doc
+         duoc. Neu no chi vao nhat_ky_admin thi "khong co backdoor bi mat" chi la
+         mot cau noi, khong phai mot tinh chat kiem duoc. #}
+      {{ _("Nhật ký này bao gồm cả thao tác của nhân viên LTT, nếu có. Chúng được tô màu để bạn nhìn thấy ngay.") }}
+    </p>
+
+    {% if not dong_thoi_gian %}
+      <p class="muted">{{ _("Chưa có hoạt động nào.") }}</p>
+    {% else %}
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">{{ _("Lúc") }}</th>
+            <th style="text-align:left;">{{ _("Việc") }}</th>
+            <th style="text-align:left;">{{ _("Ai") }}</th>
+            <th style="text-align:left;">{{ _("Chi tiết") }}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for su_kien in dong_thoi_gian %}
+          <tr{% if do_admin_lam(su_kien) %} style="background:#3A2415;"{% endif %}>
+            <td>{{ su_kien.luc.strftime('%d/%m/%Y %H:%M') if su_kien.luc else '' }}</td>
+            <td>{{ nhan.get(su_kien.loai, su_kien.loai) }}</td>
+            <td>
+              {% if do_admin_lam(su_kien) %}
+                <strong style="color:#E8833A;">{{ _("nhân viên LTT") }} — {{ su_kien.boi }}</strong>
+              {% else %}
+                {{ _("bạn") }}
+              {% endif %}
+            </td>
+            <td class="muted">{{ su_kien.chi_tiet }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <p style="margin-top:1rem;">
+      <a href="{{ app.route_prefix }}">{{ _("Quay lại danh sách máy") }}</a>
+    </p>
+  </div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_trang_chinh.html
+SHA256=b1344bb7a0aaaa4c0125f1bebbdb3120bbd9be540054c1c87bdad01ff2e4ec1b BYTES=4680 LINES=106
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{#
+  `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
+  khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
+  luc render. Day la mau "deferred translation" chuan cua gettext.
+
+  Cac app khac dang viet `{{ app.display_name }}` tran, nen tieu de cua chung
+  van hien tieng Viet tren trang tieng Anh. Do la mot khoang trong platform-wide
+  co tu truoc — sua no la viec rieng, khong nhet vao commit cua Nexus.
+#}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Máy của bạn") }}</h2>
+
+    {% if not thiet_bi %}
+      <p class="muted">{{ _("Chưa có máy nào được ghép vào tài khoản này.") }}</p>
+    {% else %}
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">{{ _("Máy") }}</th>
+            <th style="text-align:left;">{{ _("Trạng thái") }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for muc in thiet_bi %}
+          <tr>
+            <td>
+              {#
+                Viet dai dong co ly do: `check_i18n` chi nhan `{{ _(` o DAU bieu
+                thuc, nen dang `{{ x or _("...") }}` bi bao la chua dich du that
+                ra da dich. Khong noi long checker — no dang giu ~1.440 chuoi
+                khac, va noi long de tranh mot dong dai la doi rui ro that lay
+                tien nghi.
+              #}
+              <strong>
+                {% if muc.row.display_name %}{{ muc.row.display_name }}
+                {% else %}{{ _("(chưa đặt tên)") }}{% endif %}
+              </strong>
+              {% if muc.row.platform %}<span class="muted"> · {{ muc.row.platform }}</span>{% endif %}
+            </td>
+            <td>
+              {% if muc.phien %}
+                {# Rang buoc 7: dang co nguoi dieu khien thi phai NOI RO. #}
+                <strong style="color:#B4530A;">{{ _("Đang có người điều khiển") }}</strong>
+              {% elif muc.online %}
+                {{ _("Đang bật") }}
+              {% else %}
+                <span class="muted">{{ _("Đang tắt") }}</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              {#
+                Cau xac nhan den tu route (`xac_nhan_thu_hoi`), khong viet o day.
+                Viet truc tiep `onsubmit="... confirm('{{ _("...") }}')"` lam VO
+                HTML: dau ngoac kep cua `_()` dong luon thuoc tinh onsubmit giua
+                cau, phan con lai roi ra ngoai thanh text. Ban dau cua template
+                nay da vo dung nhu vay, va gate i18n la thu bat duoc.
+              #}
+              <form method="post" action="{{ app.route_prefix }}/thu-hoi/{{ muc.row.id }}"
+                    onsubmit="return confirm('{{ xac_nhan_thu_hoi }}');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-secondary">{{ _("Thu hồi") }}</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <form method="post" action="{{ app.route_prefix }}/ma-ghep" style="margin-top:1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn">{{ _("Ghép một máy mới") }}</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Gần đây") }}</h2>
+    {% if not dong_thoi_gian %}
+      <p class="muted">{{ _("Chưa có hoạt động nào.") }}</p>
+    {% else %}
+      <ul>
+      {% for su_kien in dong_thoi_gian %}
+        <li>
+          {{ su_kien.luc.strftime('%d/%m %H:%M') if su_kien.luc else '' }} —
+          {# `nhan` dich ten su kien; thieu nhan thi hien khoa tho hon la bo trong. #}
+          {{ nhan.get(su_kien.loai, su_kien.loai) }}
+          {% if do_admin_lam(su_kien) %}
+            {# Mot lan nhan vien LTT dung vao may khach ma troi lan giua cac dong
+               khac thi coi nhu khong ai doc. #}
+            <strong style="color:#B4530A;">[{{ _("nhân viên LTT") }}: {{ su_kien.boi }}]</strong>
+          {% endif %}
+        </li>
+      {% endfor %}
+      </ul>
+      <a href="{{ app.route_prefix }}/nhat-ky">{{ _("Xem toàn bộ nhật ký") }}</a>
+    {% endif %}
   </div>
 
 {% endblock %}
@@ -172736,7 +174972,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_190_public_api_coverage.py
-SHA256=305f326e3e0bc15c3e07cf2a20defdcfeb065ee88f50879d46a81c260b4473b9 BYTES=5731 LINES=143
+SHA256=15bbc6b73c3cbf8471201a704eaaa298980b52236e9755f5931ed30a7eaaeb5b BYTES=5992 LINES=147
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 14 — every app has a decision, and the code agrees with it.
 
@@ -172791,6 +175027,10 @@ DISPOSITION = {
     "chataistudio": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),
+    # Device management, not a priced tool: no ToolSpec and no Job. Publishing
+    # it would publish a contract about *device identity*, which has to wait for
+    # the relay decision and the AGPL legal review (Q93, docs/nexus/).
+    "nexus": (DEFER, ()),
 
     "mediatools": (INTERNAL_ONLY, ()),
     "qualitylab": (INTERNAL_ONLY, ()),
@@ -188833,6 +191073,2090 @@ def test_duoc_goi_tu_vong_bao_tri_chu_khong_tu_vong_job():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_223_nexus_devices.py
+SHA256=d29c7dbf0d49ee985f5f1c8b253dd2a2845784b97d0939096aa470582a4c0fb4 BYTES=15447 LINES=376
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N2.1 — ghép máy, thu hồi, hiện diện.
+
+Mọi app trước đây cùng một hình dạng: khách bấm nút, job chạy trên máy LTT, trả
+file về. Nexus khác về **loại**: sản phẩm chạy đúng nghĩa là có người đang gõ
+phím trên máy tính của người khác. Một lỗi uỷ quyền ở đây không làm mất một job
+— nó giao cả cái máy.
+
+Vì vậy test ở đây chốt những thứ **không được đúng do may mắn**:
+
+* khoá riêng không bao giờ có mặt trong CSDL (Q93 ràng buộc 1);
+* thiết bị của người khác trả về như không tồn tại (ràng buộc 9);
+* mọi lý do từ chối mã ghép nói **cùng một câu** — mã sai, hết hạn và đã dùng
+  phải không phân biệt được từ ngoài;
+* thu hồi phải ghi **ai thu hồi** (ràng buộc 5).
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+def _khoa() -> str:
+    """Mot khoa cong khai Ed25519 THAT.
+
+    Truoc day cac test nay dung chuoi gia ("ltt_dev_" + "a"*64). Chuoi do luu
+    xuong duoc nhung KHONG bao gio xac thuc duoc — nen test xanh trong khi mot
+    thiet bi that se khong ket noi noi. Tu khi `doi_ma` kiem dang khoa o bien,
+    test phai dung khoa that.
+    """
+    from platform_core.nexus import agent_auth
+
+    _priv, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'nexus.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _user(db, email: str = ""):
+    from platform_core.users import tao_nguoi_dung
+
+    user = tao_nguoi_dung(db, email=email or f"{uuid.uuid4().hex[:8]}@example.com",
+                          password="x" * 24, is_verified=True)
+    db.flush()
+    return user
+
+
+KHOA = _khoa()
+
+
+# ── Cờ fail-closed ───────────────────────────────────────────────────────────
+
+def test_nexus_mac_dinh_TAT(monkeypatch):
+    """Q93: một bề mặt cho phép điều khiển máy người khác mà mặc định mở thì
+    sai lầm đầu tiên là sai lầm cuối cùng."""
+    from platform_core import nexus
+
+    monkeypatch.delenv(nexus.FLAG_ENV, raising=False)
+    assert nexus.enabled() is False
+    monkeypatch.setenv(nexus.FLAG_ENV, "")
+    assert nexus.enabled() is False
+    monkeypatch.setenv(nexus.FLAG_ENV, "co le")     # gia tri la -> TAT
+    assert nexus.enabled() is False
+    monkeypatch.setenv(nexus.FLAG_ENV, "1")
+    assert nexus.enabled() is True
+
+
+# ── Ghép máy ─────────────────────────────────────────────────────────────────
+
+def test_ghep_may_bang_ma_hop_le(db):
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    device = devices.doi_ma(db, code=ma, public_key=KHOA,
+                            display_name="May ban lam viec")
+
+    assert device.user_id == user.id
+    assert device.public_key == KHOA
+    assert device.revoked_at is None
+
+
+def test_khoa_RIENG_khong_bao_gio_nam_trong_CSDL(db):
+    """Ràng buộc 1. Chốt bằng cấu trúc: bảng không có cột nào để chứa nó.
+
+    Nếu ai đó thêm một cột `private_key` hay `secret` vào bảng thiết bị thì test
+    này đỏ — và đó đúng là lúc cần đỏ, chứ không phải sau khi CSDL bị đọc trộm.
+    """
+    from platform_core.nexus.tables import NexusDevice
+
+    ten_cot = {c.name for c in NexusDevice.__table__.columns}
+    cam = {"private_key", "secret", "password", "token", "khoa_rieng"}
+    assert not (ten_cot & cam), f"bang thiet bi khong duoc chua bi mat: {ten_cot & cam}"
+    assert "public_key" in ten_cot
+
+
+def test_ma_da_dung_thi_chet_han(db):
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    devices.doi_ma(db, code=ma, public_key=KHOA)
+
+    with pytest.raises(devices.NexusError):
+        devices.doi_ma(db, code=ma, public_key=_khoa())
+
+
+def test_ma_het_han_thi_khong_dung_duoc(db):
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    sau = row.expires_at + timedelta(seconds=1)
+
+    with pytest.raises(devices.NexusError):
+        devices.doi_ma(db, code=ma, public_key=KHOA, now=sau)
+
+
+def test_moi_ly_do_tu_choi_noi_CUNG_MOT_CAU(db):
+    """Mã sai, mã hết hạn, mã đã dùng — không phân biệt được từ ngoài.
+
+    Nếu ba lý do cho ba thông điệp khác nhau thì việc dò mã biết được mình đang
+    tới gần: "mã này có thật nhưng hết hạn" là một nửa câu trả lời.
+    """
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    _row2, ma2 = devices.tao_ma_ghep(db, user_id=user.id)
+    devices.doi_ma(db, code=ma2, public_key=_khoa())
+
+    loi = []
+    for kwargs in (
+        {"code": "ZZZZZZZZ", "public_key": KHOA},                      # sai
+        {"code": ma, "public_key": KHOA,
+         "now": row.expires_at + timedelta(seconds=1)},                # het han
+        {"code": ma2, "public_key": KHOA},                             # da dung
+    ):
+        with pytest.raises(devices.NexusError) as exc:
+            devices.doi_ma(db, **kwargs)
+        loi.append(str(exc.value))
+
+    assert len(set(loi)) == 1, f"ba ly do lo ra ba thong diep khac nhau: {loi}"
+
+
+def test_cai_lai_cung_mot_may_khong_de_ra_dong_thu_hai(db):
+    """Hai dòng cùng khoá công khai làm 'thu hồi máy này' thành câu không trả
+    lời được."""
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _r1, ma1 = devices.tao_ma_ghep(db, user_id=user.id)
+    d1 = devices.doi_ma(db, code=ma1, public_key=KHOA, display_name="cu")
+
+    _r2, ma2 = devices.tao_ma_ghep(db, user_id=user.id)
+    d2 = devices.doi_ma(db, code=ma2, public_key=KHOA, display_name="moi")
+
+    assert d1.id == d2.id
+    assert d2.display_name == "moi"
+    assert len(devices.danh_sach(db, user_id=user.id)) == 1
+
+
+def test_khoa_cua_may_nguoi_KHAC_thi_tu_choi(db):
+    """Cùng khoá công khai nhưng khác chủ = không được cướp thiết bị."""
+    from platform_core.nexus import devices
+
+    a, b = _user(db), _user(db)
+    _r1, ma1 = devices.tao_ma_ghep(db, user_id=a.id)
+    devices.doi_ma(db, code=ma1, public_key=KHOA)
+
+    _r2, ma2 = devices.tao_ma_ghep(db, user_id=b.id)
+    with pytest.raises(devices.NexusError):
+        devices.doi_ma(db, code=ma2, public_key=KHOA)
+
+
+def test_ma_ghep_khong_luu_dang_thuong(db):
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    assert row.code_digest != devices.normalize_code(ma)
+    assert ma not in row.code_digest
+
+
+def test_ma_nhan_moi_kieu_go(db):
+    """Mã được đọc miệng và gõ tay: gạch nối, khoảng trắng, chữ thường đều nhận."""
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    lam_ban = devices.format_code(ma).lower().replace("-", " - ")
+
+    device = devices.doi_ma(db, code=lam_ban, public_key=KHOA)
+    assert device.user_id == user.id
+
+
+def test_bang_chu_cai_bo_ky_tu_de_nham():
+    from platform_core.nexus import devices
+
+    for ch in "01OIL":
+        assert ch not in devices.ALPHABET, f"{ch} de nham khi doc mieng"
+
+
+# ── Quyền sở hữu ─────────────────────────────────────────────────────────────
+
+def test_thiet_bi_cua_nguoi_khac_nhu_khong_ton_tai(db):
+    """Ràng buộc 9: trả None (nơi gọi biến thành 404), không bao giờ 403.
+
+    403 biến mỗi `device_id` thành một máy tra cứu: rải id, thu id nào trả 403,
+    và đã lập được bản đồ thiết bị của người khác.
+    """
+    from platform_core.nexus import devices
+
+    a, b = _user(db), _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=a.id)
+    device = devices.doi_ma(db, code=ma, public_key=KHOA)
+
+    assert devices.cua_chu(db, user_id=a.id, device_id=device.id) is not None
+    assert devices.cua_chu(db, user_id=b.id, device_id=device.id) is None
+    # Id khong ton tai va id cua nguoi khac cho ra CUNG mot ket qua.
+    assert devices.cua_chu(db, user_id=b.id, device_id=str(uuid.uuid4())) is None
+
+
+# ── Thu hồi ──────────────────────────────────────────────────────────────────
+
+def test_thu_hoi_phai_ghi_ai_thu_hoi(db):
+    """Ràng buộc 5: một hàm cho phép thu hồi ẩn danh là hàm xoá mất câu trả lời
+    'ai đã gỡ máy của tôi'."""
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    device = devices.doi_ma(db, code=ma, public_key=KHOA)
+
+    with pytest.raises(devices.NexusError):
+        devices.thu_hoi(db, device, by="")
+
+    assert devices.thu_hoi(db, device, by="admin:u-1") is True
+    assert device.revoked_by == "admin:u-1"
+    assert device.revoked_at is not None
+    # Thu hoi lan hai khong ghi de nguoi thu hoi dau tien.
+    assert devices.thu_hoi(db, device, by="owner") is False
+    assert device.revoked_by == "admin:u-1"
+
+
+def test_thu_hoi_khong_xoa_dong(db):
+    """Sau sự cố, câu hỏi duy nhất quan trọng là 'máy nào từng được tin'."""
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    device = devices.doi_ma(db, code=ma, public_key=KHOA)
+    devices.thu_hoi(db, device, by="owner")
+
+    assert devices.danh_sach(db, user_id=user.id) == []
+    assert len(devices.danh_sach(db, user_id=user.id, gom_da_thu_hoi=True)) == 1
+
+
+# ── Hiện diện ────────────────────────────────────────────────────────────────
+
+def test_nhip_tim_va_online(db):
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    device = devices.doi_ma(db, code=ma, public_key=KHOA)
+
+    assert devices.dang_online(device) is False        # chua bao gio ket noi
+    assert devices.nhip_tim(db, device) is True
+    assert devices.dang_online(device) is True
+
+    xa = datetime.now(timezone.utc) + timedelta(seconds=devices.OFFLINE_AFTER_S + 1)
+    assert devices.dang_online(device, now=xa) is False
+
+
+def test_thiet_bi_da_thu_hoi_khong_ghi_nhip_tim(db):
+    """Trả False để agent biết mà dừng hẳn, thay vì gõ cửa mãi."""
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    device = devices.doi_ma(db, code=ma, public_key=KHOA)
+    devices.thu_hoi(db, device, by="owner")
+
+    assert devices.nhip_tim(db, device) is False
+    assert devices.dang_online(device) is False
+
+
+# ── Đồ thị migration ─────────────────────────────────────────────────────────
+#
+# Hai test dưới đây không thuộc Nexus, nhưng chúng sinh ra từ Nexus: migration
+# đầu tiên của N2.1 dùng `a1b2c3d4e5f6` — một id TRÔNG hợp lý mà đã bị
+# `20260801_1600_chat_ai_studio.py` dùng rồi. Alembic báo "Cycle is detected"
+# và **mọi** lệnh migration chết, kể cả `current`.
+#
+# Không test nào bắt được, vì test dựng schema bằng `Base.metadata.create_all()`
+# chứ không chạy alembic. Nói cách khác: bộ test có thể xanh trong khi CSDL
+# không nâng cấp nổi — và chỗ phát hiện ra sẽ là giữa một lần deploy.
+
+def _revision_ids() -> dict:
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "alembic" / "versions"
+    found: dict = {}
+    pattern = re.compile(r"^revision(?::\s*str)?\s*=\s*['\"]([^'\"]+)['\"]", re.M)
+    for path in sorted(root.glob("*.py")):
+        for match in pattern.finditer(path.read_text(encoding="utf-8")):
+            found.setdefault(match.group(1), []).append(path.name)
+    return found
+
+
+def test_khong_co_hai_migration_trung_revision_id():
+    trung = {rid: files for rid, files in _revision_ids().items() if len(files) > 1}
+    assert trung == {}, f"revision id bi dung lai: {trung}"
+
+
+def test_do_thi_migration_chi_co_MOT_head():
+    """Hai head nghĩa là hai nhánh schema song song: `upgrade head` sẽ không
+    biết đi đâu, và hai máy chủ có thể chạy hai lược đồ khác nhau."""
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "alembic" / "versions"
+    down = re.compile(r"^down_revision(?::[^=]+)?\s*=\s*(?:['\"]([^'\"]+)['\"]|None)",
+                      re.M)
+    tat_ca = set(_revision_ids())
+    da_bi_tro_toi = set()
+    for path in root.glob("*.py"):
+        for match in down.finditer(path.read_text(encoding="utf-8")):
+            if match.group(1):
+                da_bi_tro_toi.add(match.group(1))
+
+    heads = tat_ca - da_bi_tro_toi
+    assert len(heads) == 1, f"phai co dung mot head, dang co: {sorted(heads)}"
+
+
+def test_khoa_cong_khai_SAI_DANG_bi_tu_choi_ngay_luc_ghep(db):
+    """Kiểm ở biên, không kiểm lúc dùng.
+
+    Một khoá sai dạng lưu xuống được nghĩa là thiết bị đó **không bao giờ** xác
+    thực được — và lỗi sẽ hiện ra muộn, dưới dạng "máy không kết nối được", một
+    triệu chứng không dẫn về nguyên nhân này. Chính các test ở file này từng dùng
+    khoá giả `"ltt_dev_" + "a"*64` và vẫn xanh, nên đây là lớp lỗi có thật.
+    """
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    for xau in ("", "khong-co-tien-to", "ltt_dev_", "ltt_dev_" + "a" * 64,
+                "ltt_dev_khong-phai-base64!!!"):
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        with pytest.raises(devices.NexusError):
+            devices.doi_ma(db, code=ma, public_key=xau)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_224_nexus_sessions.py
+SHA256=4484dbf734107c17a5ae7016dc09156951114a2b78dc09cfcbb5f94e309ec167 BYTES=12920 LINES=342
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N2.2/N2.3 — vé phiên, dọn dẹp, và chỗ uỷ quyền được quyết.
+
+`devices.py` trả lời "máy này của ai". Module vé trả lời "ai được vào máy này" —
+và câu thứ hai mới là chỗ một lỗi biến thành việc người lạ điều khiển máy khách.
+
+Thứ được chốt kỹ nhất ở đây là **ràng buộc nằm trong chữ ký hàm**: `cap_ve` tự
+so chủ sở hữu, không có tham số nào bỏ qua được phép so đó và không có cờ
+`force`. Cách sai — một hàm nhận `device_id` rồi dặn nhau "nhớ kiểm chủ trước
+khi gọi" — sẽ có ngày quên, và ngày quên đó không ai thấy.
+"""
+from __future__ import annotations
+
+import uuid
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+def _khoa() -> str:
+    """Mot khoa cong khai Ed25519 THAT.
+
+    Truoc day cac test nay dung chuoi gia ("ltt_dev_" + "a"*64). Chuoi do luu
+    xuong duoc nhung KHONG bao gio xac thuc duoc — nen test xanh trong khi mot
+    thiet bi that se khong ket noi noi. Tu khi `doi_ma` kiem dang khoa o bien,
+    test phai dung khoa that.
+    """
+    from platform_core.nexus import agent_auth
+
+    _priv, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'nexus2.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _user(db):
+    from platform_core.users import tao_nguoi_dung
+
+    user = tao_nguoi_dung(db, email=f"{uuid.uuid4().hex[:8]}@example.com",
+                          password="x" * 24, is_verified=True)
+    db.flush()
+    return user
+
+
+def _device(db, user, khoa: str = ""):
+    from platform_core.nexus import devices
+
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    return devices.doi_ma(db, code=ma,
+                          public_key=khoa or (_khoa()))
+
+
+# ── Uỷ quyền: ràng buộc nằm trong chữ ký ─────────────────────────────────────
+
+def test_chu_may_cap_duoc_ve(db):
+    from platform_core.nexus import sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+
+    assert row.device_id == device.id
+    assert row.user_id == user.id
+    assert len(ve) >= 16
+    assert row.ticket_digest != ve
+
+
+def test_KHONG_cap_duoc_ve_cho_may_nguoi_khac(db):
+    """Q93 ràng buộc 5. Đây là điều khoản dễ bị 'tiện tay' phá vỡ nhất."""
+    from platform_core.nexus import devices, sessions
+
+    chu, ke_khac = _user(db), _user(db)
+    device = _device(db, chu)
+
+    with pytest.raises(devices.NexusError):
+        sessions.cap_ve(db, user_id=ke_khac.id, device=device)
+
+
+def test_ham_cap_ve_khong_co_duong_bo_qua_kiem_chu(db):
+    """Chốt bằng CHỮ KÝ, không bằng hành vi.
+
+    Nếu ai đó thêm `force=` hay đổi tham số `device` thành `device_id` thì việc
+    kiểm chủ sở hữu không còn nằm trong hàm nữa — và test hành vi ở trên vẫn có
+    thể xanh trong khi cửa đã mở.
+    """
+    import inspect
+
+    from platform_core.nexus import sessions
+
+    sig = inspect.signature(sessions.cap_ve)
+    assert "device" in sig.parameters, "phai nhan doi tuong thiet bi"
+    assert "device_id" not in sig.parameters, (
+        "nhan id nghia la noi goi phai tu kiem chu — do la cho se quen")
+    for cam in ("force", "bo_qua", "skip_owner_check", "as_admin"):
+        assert cam not in sig.parameters, f"khong duoc co duong bo qua: {cam}"
+
+    src = inspect.getsource(sessions.cap_ve)
+    assert "device.user_id != xin" in src, "phep so chu so huu phai nam trong ham"
+
+
+def test_may_da_thu_hoi_thi_khong_cap_ve(db):
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    devices.thu_hoi(db, device, by="owner")
+
+    with pytest.raises(devices.NexusError):
+        sessions.cap_ve(db, user_id=user.id, device=device)
+
+
+def test_quyen_la_thi_tu_choi(db):
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    with pytest.raises(devices.NexusError):
+        sessions.cap_ve(db, user_id=user.id, device=device, quyen="toan_quyen")
+
+
+# ── Vé dùng một lần ──────────────────────────────────────────────────────────
+
+def test_ve_dung_mot_lan(db):
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+
+    phien = sessions.doi_ve(db, ticket=ve)
+    assert phien.consumed_at is not None
+
+    with pytest.raises(devices.NexusError):
+        sessions.doi_ve(db, ticket=ve)
+
+
+def test_ve_het_han_thi_khong_doi_duoc(db):
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+
+    with pytest.raises(devices.NexusError):
+        sessions.doi_ve(db, ticket=ve, now=row.expires_at + timedelta(seconds=1))
+
+
+def test_thu_hoi_may_GIUA_luc_cap_ve_va_luc_dung(db):
+    """Đây là lúc việc thu hồi phải có tác dụng, chứ không phải lúc nào khác.
+
+    Vé đã cấp hợp lệ; chủ máy bấm thu hồi; vé phải chết. Nếu `doi_ve` tin trạng
+    thái lúc cấp thay vì kiểm lại, nút thu hồi trở thành nút trang trí.
+    """
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    devices.thu_hoi(db, device, by="owner")
+
+    with pytest.raises(devices.NexusError):
+        sessions.doi_ve(db, ticket=ve)
+
+
+def test_moi_ly_do_tu_choi_ve_noi_cung_mot_cau(db):
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    _r2, ve2 = sessions.cap_ve(db, user_id=user.id, device=device)
+    sessions.doi_ve(db, ticket=ve2)
+
+    loi = []
+    for kwargs in ({"ticket": "z" * 40},
+                   {"ticket": ve, "now": row.expires_at + timedelta(seconds=1)},
+                   {"ticket": ve2}):
+        with pytest.raises(devices.NexusError) as exc:
+            sessions.doi_ve(db, **kwargs)
+        loi.append(str(exc.value))
+
+    assert len(set(loi)) == 1, f"lo ra ba thong diep khac nhau: {loi}"
+
+
+def test_ma_ghep_va_ve_bam_KHAC_khong_gian(db):
+    """Nếu hai loại bí mật băm cùng cách, một digest lấy ở bảng này đem thử được
+    ở bảng kia."""
+    from platform_core.nexus import devices, sessions
+
+    chung = "ABCD2345"
+    assert devices.digest_code(chung) != sessions.digest_ticket(chung)
+
+
+# ── Bản ghi kiểm toán ────────────────────────────────────────────────────────
+
+def test_ket_thuc_ghi_them_chu_khong_sua_qua_khu(db):
+    from platform_core.nexus import sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device,
+                               controller_ip="203.0.113.7")
+    phien = sessions.doi_ve(db, ticket=ve)
+    cap_luc, ip = phien.issued_at, phien.controller_ip
+
+    assert sessions.ket_thuc(db, phien) is True
+    assert phien.ended_at is not None
+    assert phien.end_reason == sessions.KET_THUC_BINH_THUONG
+    # Phan qua khu giu nguyen.
+    assert phien.issued_at == cap_luc and phien.controller_ip == ip
+    # Dong lan hai khong ghi de ly do lan dau.
+    assert sessions.ket_thuc(db, phien, ly_do=sessions.KET_THUC_THU_HOI) is False
+    assert phien.end_reason == sessions.KET_THUC_BINH_THUONG
+
+
+def test_thu_hoi_ve_cat_phien_dang_chay_va_ghi_ai_lam(db):
+    from platform_core.nexus import devices, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    phien = sessions.doi_ve(db, ticket=ve)
+
+    with pytest.raises(devices.NexusError):
+        sessions.thu_hoi_ve(db, phien, by="")
+
+    assert sessions.thu_hoi_ve(db, phien, by="owner") is True
+    assert phien.revoked_by == "owner"
+    assert phien.end_reason == sessions.KET_THUC_THU_HOI
+    assert phien.dang_chay() is False
+
+
+def test_dang_mo_thay_phien_dang_chay(db):
+    """Dùng để hiện chỉ báo 'đang có người điều khiển' (ràng buộc 7)."""
+    from platform_core.nexus import sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    assert sessions.dang_mo(db, device_id=device.id) == []
+
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    phien = sessions.doi_ve(db, ticket=ve)
+    assert [s.id for s in sessions.dang_mo(db, device_id=device.id)] == [phien.id]
+
+    sessions.ket_thuc(db, phien)
+    assert sessions.dang_mo(db, device_id=device.id) == []
+
+
+def test_ve_chua_dung_KHONG_phai_phien_dang_chay(db):
+    """Cấp vé không phải là mở phiên. Nếu lẫn hai thứ, chỉ báo sẽ sáng lên khi
+    chưa có ai vào máy — và người dùng sẽ học cách bỏ qua nó."""
+    from platform_core.nexus import sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    sessions.cap_ve(db, user_id=user.id, device=device)
+    assert sessions.dang_mo(db, device_id=device.id) == []
+
+
+def test_lich_su_la_be_mat_cua_KHACH(db):
+    from platform_core.nexus import sessions
+
+    a, b = _user(db), _user(db)
+    da = _device(db, a)
+    _row, ve = sessions.cap_ve(db, user_id=a.id, device=da)
+    sessions.doi_ve(db, ticket=ve)
+
+    assert len(sessions.lich_su(db, user_id=a.id)) == 1
+    assert sessions.lich_su(db, user_id=b.id) == []
+
+
+# ── Dọn dẹp (N2.2) ───────────────────────────────────────────────────────────
+
+def test_don_ma_giu_ban_da_dung_lau_hon_ban_khong_ai_dung(db):
+    """Mã đã dùng là một mẩu kiểm toán; mã hết hạn không ai dùng thì không."""
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    now = datetime.now(timezone.utc)
+
+    # Da dung 40 ngay truoc: van phai con (nguong 365).
+    r1, ma1 = devices.tao_ma_ghep(db, user_id=user.id, now=now - timedelta(days=40))
+    devices.doi_ma(db, code=ma1, public_key=_khoa(),
+                   now=now - timedelta(days=40))
+    # Het han 40 ngay truoc, khong ai dung: phai bi xoa (nguong 30).
+    devices.tao_ma_ghep(db, user_id=user.id, now=now - timedelta(days=40))
+
+    assert devices.don_ma_het_han(db, now=now) == 1
+    assert db.get(type(r1), r1.id) is not None
+
+
+def test_don_ma_khong_cham_ma_con_song(db):
+    from platform_core.nexus import devices
+
+    user = _user(db)
+    row, _ma = devices.tao_ma_ghep(db, user_id=user.id)
+    assert devices.don_ma_het_han(db) == 0
+    assert db.get(type(row), row.id) is not None
+
+
+def test_don_nexus_KHONG_chay_khi_co_tat(db, monkeypatch):
+    """Cờ tắt = không chạm gì cả, không phải 'thử rồi bỏ qua lỗi'.
+
+    Khi Nexus tắt, bảng của nó có thể còn chưa được migrate; truy vấn một bảng
+    chưa tồn tại mỗi lượt bảo trì sẽ làm log ngập.
+    """
+    from platform_core import job_runner, nexus
+
+    monkeypatch.delenv(nexus.FLAG_ENV, raising=False)
+    assert job_runner._don_nexus(db) == 0
+
+
+def test_don_nexus_nam_trong_vong_BAO_TRI_chu_khong_trong_vong_job():
+    """Số tiến trình worker mặc định bằng số GPU: một việc nền đặt sai chỗ sẽ
+    chạy ở mọi tiến trình. Đó là nguyên nhân gốc của cả ba lỗi P0 của H36."""
+    import inspect
+
+    from platform_core import job_runner
+
+    assert "_don_nexus(db)" in inspect.getsource(job_runner._quet_canh_bao)
+    assert "_quet_canh_bao()" in inspect.getsource(job_runner._mot_luot_bao_tri)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_225_nexus_audit.py
+SHA256=1c0e8fd67588918925b3378fcf269b6be269ac7e15aedc616f923b08ef791b75 BYTES=8597 LINES=229
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N2.4 — dòng thời gian mà CHỦ THIẾT BỊ đọc được.
+
+Q93 ràng buộc 5 không nói "ghi lại hành động của admin" — nền tảng đã có
+`nhat_ky_admin` làm việc đó. Nó nói hành động của admin phải để lại bản ghi
+**chủ thiết bị đọc được**. Khác biệt ấy là toàn bộ nội dung của file này: một
+nhật ký chỉ người làm hành động mới xem được không trả lời được câu hỏi duy nhất
+quan trọng sau sự cố.
+
+Test nặng nhất ở đây là `test_admin_thu_hoi_thi_CHU_MAY_THAY_DUOC`.
+"""
+from __future__ import annotations
+
+import uuid
+
+import pytest
+
+def _khoa() -> str:
+    """Mot khoa cong khai Ed25519 THAT.
+
+    Truoc day cac test nay dung chuoi gia ("ltt_dev_" + "a"*64). Chuoi do luu
+    xuong duoc nhung KHONG bao gio xac thuc duoc — nen test xanh trong khi mot
+    thiet bi that se khong ket noi noi. Tu khi `doi_ma` kiem dang khoa o bien,
+    test phai dung khoa that.
+    """
+    from platform_core.nexus import agent_auth
+
+    _priv, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'nexus3.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _user(db):
+    from platform_core.users import tao_nguoi_dung
+
+    user = tao_nguoi_dung(db, email=f"{uuid.uuid4().hex[:8]}@example.com",
+                          password="x" * 24, is_verified=True)
+    db.flush()
+    return user
+
+
+def _device(db, user):
+    from platform_core.nexus import devices
+
+    _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+    return devices.doi_ma(db, code=ma,
+                          public_key=_khoa(),
+                          ip="198.51.100.9")
+
+
+# ── Điều khoản 5: admin không đụng vào ai mà không để lại dấu ────────────────
+
+def test_admin_thu_hoi_thi_CHU_MAY_THAY_DUOC(db):
+    """Đây là lời hứa của Q93, và là chỗ dễ 'tiện tay' phá vỡ nhất.
+
+    Nếu hành động của admin chỉ vào `nhat_ky_admin` thì khách không bao giờ biết
+    — và "không có backdoor bí mật" trở thành một câu nói, không phải một tính
+    chất kiểm được.
+    """
+    from platform_core.nexus import audit, devices
+
+    user = _user(db)
+    device = _device(db, user)
+    devices.thu_hoi(db, device, by="admin:nhan-vien-1")
+
+    dong = audit.dong_thoi_gian(db, user_id=user.id)
+    thu_hoi = [d for d in dong if d["loai"] == audit.THU_HOI_THIET_BI]
+    assert len(thu_hoi) == 1
+    assert thu_hoi[0]["boi"] == "admin:nhan-vien-1"
+    assert audit.do_admin_lam(thu_hoi[0]) is True
+
+    chi_admin = audit.admin_da_lam_gi(db, user_id=user.id)
+    assert [d["loai"] for d in chi_admin] == [audit.THU_HOI_THIET_BI]
+
+
+def test_chu_tu_thu_hoi_thi_KHONG_bi_danh_dau_la_admin(db):
+    """Nếu mọi thứ đều là 'admin' thì việc làm nổi bật mất hết ý nghĩa."""
+    from platform_core.nexus import audit, devices
+
+    user = _user(db)
+    device = _device(db, user)
+    devices.thu_hoi(db, device, by="owner")
+
+    assert audit.admin_da_lam_gi(db, user_id=user.id) == []
+
+
+def test_admin_cat_phien_thi_chu_may_cung_thay(db):
+    from platform_core.nexus import audit, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    phien = sessions.doi_ve(db, ticket=ve)
+    sessions.thu_hoi_ve(db, phien, by="admin:nhan-vien-2")
+
+    chi_admin = audit.admin_da_lam_gi(db, user_id=user.id)
+    assert [d["loai"] for d in chi_admin] == [audit.THU_HOI_PHIEN]
+    assert chi_admin[0]["boi"] == "admin:nhan-vien-2"
+
+
+# ── Đầy đủ vòng đời ──────────────────────────────────────────────────────────
+
+def test_mot_vong_doi_day_du_hien_ra_du_su_kien(db):
+    from platform_core.nexus import audit, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    phien = sessions.doi_ve(db, ticket=ve)
+    sessions.ket_thuc(db, phien)
+
+    loai = {d["loai"] for d in audit.dong_thoi_gian(db, user_id=user.id)}
+    assert loai == {audit.GHEP, audit.CAP_VE, audit.BAT_DAU_PHIEN,
+                    audit.KET_THUC_PHIEN}
+
+
+def test_ghep_may_ghi_lai_IP(db):
+    """'Máy đó ghép từ đâu' là câu hỏi đầu tiên khi nghi bị lừa ghép (T1)."""
+    from platform_core.nexus import audit
+
+    user = _user(db)
+    _device(db, user)
+
+    ghep = [d for d in audit.dong_thoi_gian(db, user_id=user.id)
+            if d["loai"] == audit.GHEP]
+    assert len(ghep) == 1
+    assert "198.51.100.9" in ghep[0]["chi_tiet"]
+
+
+def test_moi_nhat_truoc(db):
+    from platform_core.nexus import audit, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    sessions.doi_ve(db, ticket=ve)
+
+    dong = audit.dong_thoi_gian(db, user_id=user.id)
+    thoi_diem = [d["luc"] for d in dong]
+    assert thoi_diem == sorted(thoi_diem, reverse=True)
+
+
+def test_thu_hoi_phien_KHONG_de_ra_hai_dong_ket_thuc(db):
+    """`thu_hoi_ve` cũng đóng phiên. Nếu đếm cả hai thì dòng thời gian nói phiên
+    kết thúc hai lần."""
+    from platform_core.nexus import audit, sessions
+
+    user = _user(db)
+    device = _device(db, user)
+    _row, ve = sessions.cap_ve(db, user_id=user.id, device=device)
+    phien = sessions.doi_ve(db, ticket=ve)
+    sessions.thu_hoi_ve(db, phien, by="owner")
+
+    dong = audit.dong_thoi_gian(db, user_id=user.id)
+    ket = [d for d in dong if d["loai"] in (audit.KET_THUC_PHIEN,
+                                            audit.THU_HOI_PHIEN)]
+    assert [d["loai"] for d in ket] == [audit.THU_HOI_PHIEN]
+
+
+# ── Owner-scoped ─────────────────────────────────────────────────────────────
+
+def test_khong_lay_duoc_dong_thoi_gian_cua_nguoi_khac(db):
+    from platform_core.nexus import audit, sessions
+
+    a, b = _user(db), _user(db)
+    da = _device(db, a)
+    _row, ve = sessions.cap_ve(db, user_id=a.id, device=da)
+    sessions.doi_ve(db, ticket=ve)
+
+    assert audit.dong_thoi_gian(db, user_id=b.id) == []
+    # Biet id may cua nguoi khac cung khong lay duoc gi.
+    assert audit.dong_thoi_gian(db, user_id=b.id, device_id=da.id) == []
+
+
+def test_loc_theo_mot_thiet_bi(db):
+    from platform_core.nexus import audit
+
+    user = _user(db)
+    d1, d2 = _device(db, user), _device(db, user)
+
+    chi_d1 = audit.dong_thoi_gian(db, user_id=user.id, device_id=d1.id)
+    assert {d["device_id"] for d in chi_d1} == {d1.id}
+    assert len(audit.dong_thoi_gian(db, user_id=user.id)) > len(chi_d1)
+    assert d2.id not in {d["device_id"] for d in chi_d1}
+
+
+def test_user_id_rong_khong_tra_ve_gi(db):
+    from platform_core.nexus import audit
+
+    user = _user(db)
+    _device(db, user)
+    assert audit.dong_thoi_gian(db, user_id="") == []
+    assert audit.admin_da_lam_gi(db, user_id="") == []
+
+
+# ── Không có nguồn chân lý thứ hai ───────────────────────────────────────────
+
+def test_khong_co_bang_su_kien_rieng():
+    """Thêm một bảng sự kiện sẽ tạo nguồn chân lý thứ hai: sẽ có ngày một phiên
+    tồn tại mà không có dòng nhật ký (hoặc ngược lại), và lúc đối chiếu thì
+    không biết tin cái nào."""
+    from platform_core.db import Base
+
+    ten_bang = set(Base.metadata.tables)
+    assert "nexus_audit_events" not in ten_bang
+    assert {"nexus_devices", "nexus_enrollments", "nexus_sessions"} <= ten_bang
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_226_nexus_app.py
+SHA256=0c2c37d2d6dced406027d3e03c963eba5159f68cf398fdbcedb41c1cf51d171d BYTES=7337 LINES=172
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N2.5 — bề mặt khách hàng, và cái cờ tắt phải thật sự đóng cửa.
+
+Điều bất ngờ tìm được khi viết app này: `registry.mount_all()` gắn router của
+mọi app **bất kể** `manifest.enabled` — nó chỉ kiểm `router is not None and not
+item.error`. Nên `enabled=False` giấu app khỏi catalog nhưng **không** đóng URL.
+
+Với một app bán công cụ AI thì đó chỉ là chuyện hiển thị. Với một app điều khiển
+máy từ xa thì đó là chênh lệch giữa "chưa bật" và "đang mở cho ai biết đường
+dẫn". Vì vậy lớp chặn ở route là **lớp duy nhất** thật sự đóng cửa, và test nặng
+nhất ở đây chốt rằng **mọi** handler đều có nó.
+"""
+from __future__ import annotations
+
+import inspect
+
+import pytest
+
+
+# ── Cờ tắt phải đóng được cửa ────────────────────────────────────────────────
+
+def test_mount_all_KHONG_nhin_manifest_enabled():
+    """Chốt lại sự thật đã tìm ra, để nếu nền tảng đổi hành vi thì ta biết.
+
+    Nếu một ngày `mount_all` bắt đầu tôn trọng `enabled`, test này đỏ — và đó là
+    lúc nên xem lại có còn cần lớp chặn ở route không (câu trả lời nhiều khả
+    năng vẫn là có, nhưng phải là một quyết định chứ không phải một giả định).
+    """
+    from platform_core import registry
+
+    src = inspect.getsource(registry.mount_all)
+    assert "item.manifest.enabled" not in src, (
+        "mount_all da doi hanh vi — xem lai lop chan o route")
+
+
+def test_MOI_handler_deu_goi_lop_chan():
+    """Quên `_bat_buoc_bat()` ở một handler mới là mở lại cửa mà không ai thấy.
+
+    Chốt bằng cấu trúc chứ không bằng cách gọi thử từng route: một test gọi thử
+    chỉ phủ những route đã biết, còn cái nguy hiểm là route **sẽ được thêm**.
+    """
+    from apps.nexus import routes
+
+    handlers = [obj for ten, obj in vars(routes).items()
+                if inspect.isfunction(obj) and not ten.startswith("_")
+                and obj.__module__ == routes.__name__
+                and ten not in ("devices_boi_chu",)]
+    assert handlers, "khong tim thay handler nao — test nay da mat tac dung"
+
+    thieu = [fn.__name__ for fn in handlers
+             if "_bat_buoc_bat()" not in inspect.getsource(fn)]
+    assert thieu == [], f"handler khong co lop chan cua co: {thieu}"
+
+
+def test_co_tat_thi_manifest_cung_tat(monkeypatch):
+    from platform_core import nexus
+
+    monkeypatch.delenv(nexus.FLAG_ENV, raising=False)
+    assert nexus.enabled() is False
+
+    import importlib
+
+    from apps.nexus import manifest as manifest_mod
+    importlib.reload(manifest_mod)
+    assert manifest_mod.MANIFEST.enabled is False
+
+
+def test_co_bat_thi_manifest_bat(monkeypatch):
+    import importlib
+
+    from platform_core import nexus
+
+    monkeypatch.setenv(nexus.FLAG_ENV, "1")
+    from apps.nexus import manifest as manifest_mod
+    importlib.reload(manifest_mod)
+    try:
+        assert manifest_mod.MANIFEST.enabled is True
+    finally:
+        monkeypatch.delenv(nexus.FLAG_ENV, raising=False)
+        importlib.reload(manifest_mod)
+
+
+def test_lop_chan_tra_404_chu_khong_phai_403():
+    """403 xác nhận bề mặt này có tồn tại. Với sản phẩm điều khiển máy từ xa thì
+    ngay cả việc đó cũng không nên nói."""
+    from apps.nexus import routes
+
+    # Đọc THÂN hàm, không đọc docstring: docstring giải thích *vì sao không dùng
+    # 403*, nên tìm chuỗi "403" trong cả nguồn sẽ bắt nhầm chính lời giải thích.
+    src = inspect.getsource(routes._bat_buoc_bat)
+    than = src.split('"""')[-1]
+
+    assert "status_code=404" in than
+    assert "403" not in than
+
+
+# ── Hợp đồng app ─────────────────────────────────────────────────────────────
+
+def test_khong_co_job_va_khong_co_gia():
+    """Nexus bán theo **thuê bao tháng** (Q93/D3), không theo lượt — nên không
+    có gì để tính giá, và một `credit_cost` thừa sẽ gợi ý sai mô hình tiền."""
+    from apps.nexus.manifest import MANIFEST
+
+    assert MANIFEST.job_types == ()
+    assert MANIFEST.credit_cost is None
+
+
+def test_route_khong_tu_viet_prefix():
+    """Nền tảng gắn prefix từ manifest; route tự viết sẽ tạo hai nguồn sự thật
+    về đường dẫn của app."""
+    from apps.nexus import routes
+
+    for route in routes.router.routes:
+        assert not route.path.startswith("/nexus"), route.path
+
+
+def test_nghiep_vu_KHONG_nam_trong_routes():
+    """`AGENTS.md` 8.1: routes.py chỉ lo HTTP.
+
+    Kiểm bằng cách khác thay vì đếm dòng: mọi quyết định về thiết bị/phiên phải
+    đi qua `platform_core.nexus`, nên trong routes không được có truy vấn thẳng
+    vào bảng.
+    """
+    from apps.nexus import routes
+
+    src = inspect.getsource(routes)
+    for cam in ("NexusDevice", "NexusEnrollment", "NexusSession", "select("):
+        assert cam not in src, f"routes.py dang tu truy van CSDL: {cam}"
+
+
+# ── Ngôn ngữ hậu quả (Q93 ràng buộc 8) ───────────────────────────────────────
+
+@pytest.mark.parametrize("ten", ["nexus_ma_ghep.html", "nexus_trang_chinh.html",
+                                 "nexus_nhat_ky.html"])
+def test_template_ton_tai(ten):
+    from pathlib import Path
+
+    p = Path(__file__).resolve().parent.parent / "server" / "templates" / ten
+    assert p.exists(), f"thieu template {ten}"
+
+
+def test_trang_ma_ghep_canh_bao_bang_HAU_QUA_va_dat_TRUOC_ma():
+    """T1 không đóng được bằng kỹ thuật; chữ là thứ duy nhất còn lại.
+
+    Hai tính chất được chốt: cảnh báo nói về **hậu quả** (nhìn thấy màn hình,
+    điều khiển máy) chứ không phải thuật ngữ, và nó nằm **trên** mã — một cảnh
+    báo đặt dưới mã thì người đã đọc mã xong rồi mới thấy.
+    """
+    from pathlib import Path
+
+    p = (Path(__file__).resolve().parent.parent / "server" / "templates"
+         / "nexus_ma_ghep.html")
+    html = p.read_text(encoding="utf-8")
+
+    assert "điều khiển được máy tính của bạn" in html
+    assert "gọi điện đến bạn" in html, "phai canh bao ve cuoc goi den — do la T1"
+
+    vi_tri_canh_bao = html.index("điều khiển được máy tính của bạn")
+    vi_tri_ma = html.index("{{ ma }}")
+    assert vi_tri_canh_bao < vi_tri_ma, "canh bao phai nam TREN ma"
+
+
+def test_nhat_ky_lam_noi_bat_thao_tac_cua_nhan_vien():
+    """Ràng buộc 5 chỉ có nghĩa nếu khách **nhìn thấy** — một dòng admin trôi
+    lẫn giữa các dòng khác thì coi như không có ai đọc."""
+    from pathlib import Path
+
+    p = (Path(__file__).resolve().parent.parent / "server" / "templates"
+         / "nexus_nhat_ky.html")
+    html = p.read_text(encoding="utf-8")
+
+    assert "do_admin_lam(su_kien)" in html
+    assert "nhân viên LTT" in html
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_227_nexus_render.py
+SHA256=9aa9cd3c8473b9afbc2a197174b1a8b34643bb21f1b98b53befa725f00b99f5f BYTES=8735 LINES=236
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N2.5 — ba trang có RENDER được thật, qua app thật.
+
+`test_226` chốt cấu trúc: cờ, chữ ký, nội dung template. Nhưng một template có
+thể đúng từng chữ mà vẫn nổ khi render — thiếu một biến trong ngữ cảnh, gõ sai
+tên thuộc tính, hay một `{% if %}` không đóng. Không test nào ở `test_226` chạm
+tới Jinja.
+
+Ở đây dựng **app thật** bằng `create_app()`, đăng nhập thật, rồi gọi ba đường.
+Đây không thay được một lần mở trình duyệt (CSS và bố cục vẫn phải xem bằng
+mắt — `CLAUDE.md` mục 5), nhưng nó bắt được đúng lớp lỗi mà mắt người dễ bỏ qua
+và lại xảy ra thường xuyên nhất.
+
+Bản đầu của `nexus_trang_chinh.html` **đã** có một lỗi loại này: lồng dấu ngoặc
+kép vào `onsubmit="… confirm('…')"` làm vỡ thuộc tính HTML giữa câu.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+def _khoa() -> str:
+    """Mot khoa cong khai Ed25519 THAT.
+
+    Truoc day cac test nay dung chuoi gia ("ltt_dev_" + "a"*64). Chuoi do luu
+    xuong duoc nhung KHONG bao gio xac thuc duoc — nen test xanh trong khi mot
+    thiet bi that se khong ket noi noi. Tu khi `doi_ma` kiem dang khoa o bien,
+    test phai dung khoa that.
+    """
+    from platform_core.nexus import agent_auth
+
+    _priv, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+from fastapi.testclient import TestClient
+
+PASSWORD = "mat-khau-test-rat-dai-0123456789"
+
+
+def _csrf(html: str) -> str:
+    found = re.search(r'name="csrf_token"\s+value="([^"]+)"', html)
+    assert found, "khong tim thay csrf_token trong trang"
+    return found.group(1)
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    """App thật với Nexus BẬT."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'render.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "render-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    # Manifest doc co luc nap, nen phai nap lai sau khi dat cờ.
+    import importlib
+
+    import apps.nexus.manifest as manifest_mod
+    importlib.reload(manifest_mod)
+    import apps.nexus.routes as routes_mod
+    importlib.reload(routes_mod)
+    import platform_core.registry as registry_mod
+    registry_mod.discover.cache_clear() if hasattr(
+        registry_mod.discover, "cache_clear") else None
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        dbmod.reset_engine()
+
+
+def _tao_va_dang_nhap(client) -> str:
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    email = "nexus-render@example.com"
+    gen = get_session()
+    db = next(gen)
+    try:
+        tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    page = client.get("/login").text
+    answer = client.post("/login",
+                         data={"username": email, "password": PASSWORD,
+                               "csrf_token": _csrf(page)},
+                         follow_redirects=False)
+    assert answer.status_code == 303, answer.text[:300]
+    return email
+
+
+def test_trang_danh_sach_render_duoc(app_bat):
+    _tao_va_dang_nhap(app_bat)
+    r = app_bat.get("/nexus")
+    assert r.status_code == 200, r.text[:400]
+    assert "Máy của bạn" in r.text
+    assert "Chưa có máy nào" in r.text
+
+
+def test_trang_ma_ghep_render_va_hien_ma(app_bat):
+    _tao_va_dang_nhap(app_bat)
+    trang = app_bat.get("/nexus").text
+    r = app_bat.post("/nexus/ma-ghep", data={"csrf_token": _csrf(trang)},
+                     follow_redirects=False)
+    assert r.status_code == 200, r.text[:400]
+
+    # Ma dang ABCD-EFGH tu bang chu cai da bo 0/O/1/I/L.
+    assert re.search(r"[23456789A-HJKMNP-Z]{4}-[23456789A-HJKMNP-Z]{4}", r.text)
+    # Canh bao hau qua phai co mat, va phai NAM TREN ma.
+    assert "điều khiển được máy tính của bạn" in r.text
+
+
+def test_thuoc_tinh_onsubmit_KHONG_bi_vo(app_bat):
+    """Lỗi thật của bản đầu: `onsubmit="… confirm('{{ _("…") }}')"` đóng thuộc
+    tính giữa câu, và phần còn lại rơi ra ngoài thành text hiển thị."""
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+
+    email = _tao_va_dang_nhap(app_bat)
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        from sqlalchemy import select
+
+        from platform_core.models import User
+        user = db.execute(select(User).where(User.email == email)).scalar_one()
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        devices.doi_ma(db, code=ma, public_key=_khoa(),
+                       display_name="May test")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    html = app_bat.get("/nexus").text
+    assert "May test" in html
+    # Thuoc tinh phai dong dung bang mot dau ngoac kep, khong co manh chu tieng
+    # Viet nao roi ra ngoai thanh text canh the <form>.
+    assert 'onsubmit="return confirm(' in html
+    assert "');\">" in html
+    assert "Mọi phiên đang chạy sẽ bị cắt ngay.\");" not in html
+
+
+def test_trang_nhat_ky_render_duoc(app_bat):
+    _tao_va_dang_nhap(app_bat)
+    r = app_bat.get("/nexus/nhat-ky")
+    assert r.status_code == 200, r.text[:400]
+    assert "Ai đã vào máy của bạn" in r.text
+
+
+def test_thao_tac_cua_admin_HIEN_RA_tren_trang_nhat_ky(app_bat):
+    """Ràng buộc 5 chỉ có nghĩa nếu khách nhìn thấy trên trang thật."""
+    from sqlalchemy import select
+
+    from platform_core.db import get_session
+    from platform_core.models import User
+    from platform_core.nexus import devices
+
+    email = _tao_va_dang_nhap(app_bat)
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = db.execute(select(User).where(User.email == email)).scalar_one()
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        device = devices.doi_ma(db, code=ma, public_key=_khoa())
+        devices.thu_hoi(db, device, by="admin:nhan-vien-9")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    html = app_bat.get("/nexus/nhat-ky").text
+    assert "nhân viên LTT" in html
+    assert "admin:nhan-vien-9" in html
+
+
+# ── Cờ tắt ───────────────────────────────────────────────────────────────────
+
+@pytest.fixture()
+def app_tat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'off.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "render-secret-value")
+    monkeypatch.delenv("LTT_NEXUS", raising=False)
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    import importlib
+
+    import apps.nexus.manifest as manifest_mod
+    importlib.reload(manifest_mod)
+    import apps.nexus.routes as routes_mod
+    importlib.reload(routes_mod)
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        dbmod.reset_engine()
+
+
+def test_co_tat_thi_URL_go_thang_cung_404(app_tat):
+    """`mount_all` gắn router bất kể `manifest.enabled`, nên đây là phép thử
+    thật sự của cờ — không phải phép thử của việc ẩn khỏi catalog."""
+    _tao_va_dang_nhap(app_tat)
+    for duong in ("/nexus", "/nexus/nhat-ky"):
+        r = app_tat.get(duong)
+        assert r.status_code == 404, f"{duong} tra {r.status_code} khi co TAT"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_228_nexus_agent_api.py
+SHA256=81a187c7000ba3f651341105472ae25d0fc33e7ba48c3ed6dcc3835776d8c396 BYTES=13830 LINES=361
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N2.6 — bề mặt cho agent: ký request, không dùng token.
+
+Q93 ràng buộc 1 nói khoá riêng không bao giờ rời máy. Hệ quả kỹ thuật là agent
+**không thể** dùng bearer token: token chép được, và chép được nghĩa là ai đọc
+được ổ đĩa hay log của máy đó đều trở thành máy đó. Nên mỗi request được ký.
+
+Bốn phần của chuỗi được ký đều load-bearing, và test ở đây bỏ từng phần một để
+chứng minh điều đó — vì thiết kế này "vẫn chạy" trong lúc thử dù thiếu phần nào,
+và chỉ sai khi có người tấn công.
+"""
+from __future__ import annotations
+
+import json
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "mat-khau-test-rat-dai-0123456789"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'agent.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "agent-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _user_va_ma():
+    """Tạo user + mã ghép, trả `(user_id, ma)`."""
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email="agent@example.com", password=PASSWORD,
+                              is_verified=True)
+        db.flush()
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        db.commit()
+        return user.id, ma
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _ghep(client):
+    """Ghép một máy thật. Trả `(device_id, private_bytes)`."""
+    from platform_core.nexus import agent_auth
+
+    _user_id, ma = _user_va_ma()
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/enroll",
+                    json={"code": ma, "public_key": pub,
+                          "display_name": "May test", "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def _ky(priv, method: str, path: str, body: bytes, *, moc: str = ""):
+    from platform_core.nexus import agent_auth
+
+    ts = moc or str(int(time.time()))
+    sig = agent_auth.sign(priv, method=method, path=path,
+                          timestamp=ts, body=body)
+    return {agent_auth.HEADER_TIMESTAMP: ts,
+            agent_auth.HEADER_SIGNATURE: sig}
+
+
+# ── Ghép máy ─────────────────────────────────────────────────────────────────
+
+def test_ghep_may_qua_HTTP(app_bat):
+    device_id, _priv = _ghep(app_bat)
+    assert device_id
+
+
+def test_ma_sai_thi_400_va_khong_noi_vi_sao(app_bat):
+    from platform_core.nexus import agent_auth
+
+    _priv, pub = agent_auth.new_keypair_for_test()
+    r = app_bat.post("/nexus-agent/enroll",
+                     json={"code": "ZZZZZZZZ", "public_key": pub})
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "enroll_failed"
+
+
+def test_body_khong_phai_JSON_thi_400_chu_khong_500(app_bat):
+    r = app_bat.post("/nexus-agent/enroll", content=b"khong phai json",
+                     headers={"Content-Type": "application/json"})
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "invalid_request"
+
+
+def test_tran_nhip_ghep_theo_IP(app_bat):
+    """`devices.py` cố ý không tự giới hạn nhịp và nói rằng route phải làm.
+    Đây là chỗ trả nợ câu đó — nếu quên, mã 40 bit trở thành thứ dò được."""
+    from server.nexus import routes as agent_routes
+
+    ma_429 = 0
+    for _ in range(agent_routes.GHEP_MOI_PHUT + 3):
+        r = app_bat.post("/nexus-agent/enroll",
+                         json={"code": "ZZZZZZZZ", "public_key": "x"})
+        if r.status_code == 429:
+            ma_429 += 1
+    assert ma_429 >= 1, "khong co tran nhip cho /enroll"
+
+
+# ── Nhịp tim có ký ───────────────────────────────────────────────────────────
+
+def test_nhip_tim_co_ky_thi_duoc(app_bat):
+    from platform_core.nexus import agent_auth
+
+    device_id, priv = _ghep(app_bat)
+    path = "/nexus-agent/heartbeat"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"] is True
+    assert r.json()["revoked"] is False
+
+
+def test_khong_ky_thi_401(app_bat):
+    device_id, _priv = _ghep(app_bat)
+    from platform_core.nexus import agent_auth
+
+    r = app_bat.post("/nexus-agent/heartbeat", content=b"",
+                     headers={agent_auth.HEADER_DEVICE: device_id})
+    assert r.status_code == 401
+
+
+def test_ky_bang_khoa_KHAC_thi_401(app_bat):
+    """Biết `device_id` không đủ — phải giữ khoá riêng của chính máy đó."""
+    from platform_core.nexus import agent_auth
+
+    device_id, _priv = _ghep(app_bat)
+    khac, _pub = agent_auth.new_keypair_for_test()
+
+    path = "/nexus-agent/heartbeat"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(khac, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 401
+
+
+def test_chu_ky_cua_duong_KHAC_khong_dung_lai_duoc(app_bat):
+    """`path` nằm trong chuỗi ký. Thiếu nó thì một chữ ký lấy từ request vô hại
+    đem dùng cho request nguy hiểm."""
+    from platform_core.nexus import agent_auth
+
+    device_id, priv = _ghep(app_bat)
+    # Ky cho /heartbeat roi dem dung o /session/redeem.
+    headers = {agent_auth.HEADER_DEVICE: device_id,
+               **_ky(priv, "POST", "/nexus-agent/heartbeat", b"")}
+    r = app_bat.post("/nexus-agent/session/redeem", content=b"", headers=headers)
+    assert r.status_code == 401
+
+
+def test_chu_ky_qua_CU_bi_tu_choi(app_bat):
+    """`timestamp` nằm trong chuỗi ký. Thiếu nó thì một chữ ký nghe được là dùng
+    lại được mãi mãi."""
+    from platform_core.nexus import agent_auth
+
+    device_id, priv = _ghep(app_bat)
+    path = "/nexus-agent/heartbeat"
+    cu = str(int(time.time()) - agent_auth.SKEW_S - 60)
+    headers = {agent_auth.HEADER_DEVICE: device_id,
+               **_ky(priv, "POST", path, b"", moc=cu)}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 401
+
+
+def test_doi_BODY_sau_khi_ky_bi_tu_choi(app_bat):
+    """Băm body nằm trong chuỗi ký. Thiếu nó thì nội dung sửa được mà chữ ký vẫn
+    đúng."""
+    from platform_core.nexus import agent_auth
+
+    device_id, priv = _ghep(app_bat)
+    path = "/nexus-agent/session/redeem"
+    body = json.dumps({"ticket": "a" * 40}).encode()
+    headers = {agent_auth.HEADER_DEVICE: device_id,
+               **_ky(priv, "POST", path, body)}
+    r = app_bat.post(path, content=json.dumps({"ticket": "b" * 40}).encode(),
+                     headers=headers)
+    assert r.status_code == 401
+
+
+def test_thiet_bi_da_THU_HOI_thi_nhip_tim_401(app_bat):
+    from platform_core.nexus import agent_auth, devices
+    from platform_core.db import get_session
+
+    device_id, priv = _ghep(app_bat)
+    gen = get_session()
+    db = next(gen)
+    try:
+        row = db.get(devices.NexusDevice, device_id)
+        devices.thu_hoi(db, row, by="owner")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    path = "/nexus-agent/heartbeat"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 401
+
+
+# ── Đổi vé ───────────────────────────────────────────────────────────────────
+
+def test_thiet_bi_dich_doi_duoc_ve_cua_no(app_bat):
+    from platform_core.db import get_session
+    from platform_core.nexus import agent_auth, devices, sessions
+
+    device_id, priv = _ghep(app_bat)
+    gen = get_session()
+    db = next(gen)
+    try:
+        row = db.get(devices.NexusDevice, device_id)
+        _r, ve = sessions.cap_ve(db, user_id=row.user_id, device=row)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    path = "/nexus-agent/session/redeem"
+    body = json.dumps({"ticket": ve}).encode()
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, body)}
+    r = app_bat.post(path, content=body, headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["quyen"] == sessions.QUYEN_DIEU_KHIEN
+
+
+def test_thiet_bi_KHAC_khong_doi_duoc_ve_khong_danh_cho_no(app_bat):
+    """Hai phép kiểm độc lập: chữ ký nói *ai gọi*, `session.device_id` nói *vé
+    này của ai*. Thiếu phép thứ hai thì một thiết bị hợp lệ đổi vé của máy khác."""
+    from platform_core.db import get_session
+    from platform_core.nexus import agent_auth, devices, sessions
+
+    d1, _p1 = _ghep(app_bat)
+
+    # Ghep may thu hai cho CUNG chu.
+    gen = get_session()
+    db = next(gen)
+    try:
+        row1 = db.get(devices.NexusDevice, d1)
+        _r, ma2 = devices.tao_ma_ghep(db, user_id=row1.user_id)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    priv2, pub2 = agent_auth.new_keypair_for_test()
+    r = app_bat.post("/nexus-agent/enroll",
+                     json={"code": ma2, "public_key": pub2})
+    d2 = r.json()["device_id"]
+
+    # Ve danh cho d1, nhung d2 di doi.
+    gen = get_session()
+    db = next(gen)
+    try:
+        row1 = db.get(devices.NexusDevice, d1)
+        _r, ve = sessions.cap_ve(db, user_id=row1.user_id, device=row1)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    path = "/nexus-agent/session/redeem"
+    body = json.dumps({"ticket": ve}).encode()
+    headers = {agent_auth.HEADER_DEVICE: d2, **_ky(priv2, "POST", path, body)}
+    r = app_bat.post(path, content=body, headers=headers)
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "redeem_failed"
+
+
+# ── Fail-closed ──────────────────────────────────────────────────────────────
+
+@pytest.fixture()
+def app_tat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'agentoff.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "agent-secret-value")
+    monkeypatch.delenv("LTT_NEXUS", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        dbmod.reset_engine()
+
+
+def test_co_tat_thi_MOI_duong_agent_tra_404(app_tat):
+    for duong in ("/nexus-agent/enroll", "/nexus-agent/heartbeat",
+                  "/nexus-agent/session/redeem"):
+        r = app_tat.post(duong, json={})
+        assert r.status_code == 404, f"{duong} tra {r.status_code} khi co TAT"
+
+
+def test_moi_handler_agent_deu_kiem_co():
+    """Quên phép kiểm ở một đường mới là mở lại cửa mà không ai thấy."""
+    import inspect
+
+    from server.nexus import routes as agent_routes
+
+    # Loc theo module: `vars()` cua module con chua ca thu duoc import (vd
+    # `Header` cua FastAPI), va bat chung lam handler thi test do vi ly do sai.
+    handlers = [obj for ten, obj in vars(agent_routes).items()
+                if inspect.isfunction(obj) and not ten.startswith("_")
+                and obj.__module__ == agent_routes.__name__]
+    assert handlers
+    thieu = [fn.__name__ for fn in handlers
+             if "nexus.enabled()" not in inspect.getsource(fn)]
+    assert thieu == [], f"duong agent khong kiem co: {thieu}"
+
+
+def test_loi_luon_la_JSON_khong_bao_gio_HTML(app_tat):
+    """Bên gọi là máy. Q88 cùng tinh thần: máy gọi máy không nhận HTML."""
+    r = app_tat.post("/nexus-agent/enroll", json={})
+    assert r.headers["content-type"].startswith("application/json")
+    assert r.headers.get("cache-control") == "no-store"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_229_nexus_agent.py
+SHA256=ae50a386e72fd81166f2fbe6a296fd770e0c1e5e1b1d8a7712b6091d683ba6ed BYTES=12036 LINES=326
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.1 — agent tham chiếu, chạy thật qua HTTP.
+
+Ba file trước (`test_223`–`test_228`) kiểm từng nửa một. File này kiểm **hai nửa
+có gặp nhau không**: agent tự dựng chuỗi ký ở máy khách, server tự dựng lại ở
+control plane, và nếu hai bên lệch **một dấu xuống dòng** thì mọi chữ ký hợp lệ
+đều bị từ chối — một sự cố rất khó đọc từ phía khách, vì nó trông y hệt "sai
+khoá".
+
+Vì vậy ở đây dựng **một máy chủ HTTP thật** (uvicorn, cổng ngẫu nhiên) thay vì
+gọi thẳng hàm. Một test gọi hàm sẽ dùng chung `canonical()` cho cả hai bên và
+vì thế **không bao giờ** phát hiện được lớp lỗi đó.
+
+Kiểm thêm thứ không nhìn thấy được từ phía server: khoá riêng nằm trên đĩa ở
+dạng nào.
+"""
+from __future__ import annotations
+
+import socket
+import sys
+import threading
+import time
+
+import pytest
+
+
+def _cong_trong() -> int:
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+@pytest.fixture()
+def may_chu(tmp_path, monkeypatch):
+    """Control plane thật trên một cổng ngẫu nhiên. Trả `(base_url, tmp)`."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'agent_e2e.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "agent-e2e-secret")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    import uvicorn
+
+    from server.app import create_app
+
+    cong = _cong_trong()
+    config = uvicorn.Config(create_app(), host="127.0.0.1", port=cong,
+                            log_level="error")
+    server = uvicorn.Server(config)
+    luong = threading.Thread(target=server.run, daemon=True)
+    luong.start()
+
+    for _ in range(200):                       # tối đa ~10 giây
+        if getattr(server, "started", False):
+            break
+        time.sleep(0.05)
+    else:
+        pytest.fail("may chu thu khong khoi dong duoc")
+
+    try:
+        yield f"http://127.0.0.1:{cong}", tmp_path
+    finally:
+        server.should_exit = True
+        luong.join(timeout=10)
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _ma_ghep() -> str:
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        user = tao_nguoi_dung(db, email="e2e@example.com", password="x" * 24,
+                              is_verified=True)
+        db.flush()
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        db.commit()
+        return ma
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _agent(base_url: str, thu_muc):
+    from nexus_agent.client import NexusClient
+    from nexus_agent.keystore import Keystore
+
+    return NexusClient(base_url, Keystore(thu_muc / "danh_tinh"))
+
+
+# ── Hai nửa có gặp nhau không ────────────────────────────────────────────────
+
+def test_ghep_roi_nhip_tim_QUA_HTTP_THAT(may_chu, monkeypatch):
+    """Đây là phép thử mà một test gọi-thẳng-hàm không thay được.
+
+    Agent ký ở phía nó, server kiểm ở phía kia, qua một socket thật. Lệch một
+    dấu xuống dòng trong chuỗi ký là test này đỏ.
+    """
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    base_url, tmp = may_chu
+    agent = _agent(base_url, tmp)
+
+    device_id = agent.ghep(_ma_ghep(), ten_may="May E2E", platform=sys.platform)
+    assert device_id
+
+    tra_loi = agent.nhip_tim()
+    assert tra_loi["ok"] is True
+    assert tra_loi["revoked"] is False
+
+
+def test_doi_ve_qua_HTTP_that(may_chu, monkeypatch):
+    from platform_core.db import get_session
+    from platform_core.nexus import devices, sessions
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    base_url, tmp = may_chu
+    agent = _agent(base_url, tmp)
+    device_id = agent.ghep(_ma_ghep())
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        row = db.get(devices.NexusDevice, device_id)
+        _r, ve = sessions.cap_ve(db, user_id=row.user_id, device=row)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    ket = agent.doi_ve(ve)
+    assert ket["quyen"] == sessions.QUYEN_DIEU_KHIEN
+
+
+def test_ma_sai_thi_KHONG_giu_lai_khoa_vua_sinh(may_chu, monkeypatch):
+    """Giữ một khoá mà server không biết chỉ gây nhầm lẫn ở lần chạy sau."""
+    from nexus_agent.client import AgentError
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    base_url, tmp = may_chu
+    agent = _agent(base_url, tmp)
+
+    with pytest.raises(AgentError):
+        agent.ghep("ZZZZZZZZ")
+    assert agent.ks.da_co_khoa() is False
+
+
+# ── Thu hồi: nút của khách phải có tác dụng thật ─────────────────────────────
+
+def test_bi_thu_hoi_thi_agent_DUNG_HAN_va_xoa_danh_tinh(may_chu, monkeypatch):
+    """Một agent tiếp tục gõ cửa sau khi bị thu hồi biến nút 'Thu hồi' của
+    khách thành nút trang trí."""
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    base_url, tmp = may_chu
+    agent = _agent(base_url, tmp)
+    device_id = agent.ghep(_ma_ghep())
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        devices.thu_hoi(db, db.get(devices.NexusDevice, device_id), by="owner")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # `ngu` gia: mot vong lap chi kiem duoc bang cach cho 60 giay la mot vong
+    # lap khong ai kiem.
+    ly_do = agent.chay(so_nhip=5, ngu=lambda _s: None)
+    assert ly_do == "revoked"
+    assert agent.ks.da_co_khoa() is False
+
+
+def test_khong_ket_noi_duoc_thi_LUI_DAN_chu_khong_dung(monkeypatch, tmp_path):
+    """Mất mạng là chuyện thường trên máy khách. Dừng hẳn vì một lần timeout
+    nghĩa là máy biến mất khỏi danh sách cho tới khi có người đăng nhập vào."""
+    from nexus_agent.client import NexusClient
+    from nexus_agent.keystore import Keystore
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    ks = Keystore(tmp_path / "dt")
+    ks.sinh_khoa()
+    ks.luu_device_id("khong-ton-tai")
+
+    agent = NexusClient(f"http://127.0.0.1:{_cong_trong()}", ks)   # khong ai nghe
+    cho = []
+    ly_do = agent.chay(so_nhip=3, ngu=cho.append)
+
+    assert ly_do == "het so nhip"
+    assert cho == sorted(cho), "thoi gian cho phai TANG dan"
+    assert cho[-1] > cho[0], "khong thay lui dan"
+    assert ks.da_co_khoa() is True, "loi mang KHONG duoc xoa danh tinh"
+
+
+# ── Khoá riêng nằm trên đĩa ở dạng nào ───────────────────────────────────────
+
+def test_sinh_khoa_KHONG_tra_ve_khoa_rieng(monkeypatch, tmp_path):
+    """Một giá trị đã trả về là một giá trị có thể bị log."""
+    from nexus_agent.keystore import Keystore
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    ks = Keystore(tmp_path / "dt")
+    tra_ve = ks.sinh_khoa()
+
+    assert tra_ve.startswith("ltt_dev_")
+    assert tra_ve == ks.doc_public()
+    # Khoa rieng doc duoc, nhung phai di lay chu khong duoc dua tan tay.
+    assert len(ks.doc_khoa()) == 32
+
+
+@pytest.mark.skipif(not sys.platform.startswith("win"),
+                    reason="DPAPI chi co tren Windows")
+def test_tren_WINDOWS_khoa_tren_dia_KHONG_phai_ban_tho(tmp_path):
+    """Chép file không được bằng nhân bản máy (Q93 ràng buộc 1, T3).
+
+    Nếu file trên đĩa **là** 32 byte khoá thô thì mọi lời hứa về 'khoá không rời
+    máy' chỉ còn là một câu trong tài liệu.
+    """
+    from nexus_agent.keystore import Keystore
+
+    ks = Keystore(tmp_path / "dt")
+    ks.sinh_khoa()
+    tren_dia = ks.key_path.read_bytes()
+    that = ks.doc_khoa()
+
+    assert len(that) == 32
+    assert tren_dia != that, "khoa dang nam tho tren dia"
+    assert that not in tren_dia, "khoa tho nam LOT BEN TRONG file"
+    assert len(tren_dia) > 32, "DPAPI phai lam file dai them"
+
+
+@pytest.mark.skipif(sys.platform.startswith("win"),
+                    reason="chi kiem duong du phong cua may khong phai Windows")
+def test_ngoai_WINDOWS_duong_plaintext_mac_dinh_DONG(tmp_path, monkeypatch):
+    from nexus_agent.keystore import Keystore, KeystoreError
+
+    monkeypatch.delenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", raising=False)
+    with pytest.raises(KeystoreError):
+        Keystore(tmp_path / "dt").sinh_khoa()
+
+
+def test_xoa_danh_tinh_xoa_CA_BA_file(monkeypatch, tmp_path):
+    """Giữ `device_id` mà mất khoá thì agent gõ cửa mãi bằng một danh tính nó
+    không chứng minh được."""
+    from nexus_agent.keystore import Keystore
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    ks = Keystore(tmp_path / "dt")
+    ks.sinh_khoa()
+    ks.luu_device_id("abc")
+
+    ks.xoa()
+    assert not ks.key_path.exists()
+    assert not ks.public_path.exists()
+    assert not ks.device_id_path.exists()
+
+
+# ── Ranh giới AGPL ───────────────────────────────────────────────────────────
+
+def test_agent_KHONG_import_gi_tu_engine():
+    """Q93 ràng buộc 4 và `03_OSS_LICENSE.md` §5: tiến trình A không được chứa,
+    import hay link mã AGPL.
+
+    Kiểm **câu lệnh import**, không kiểm việc nhắc tên: docstring của package
+    nhắc RustDesk chính là để giải thích ranh giới này, và một test cấm nhắc tên
+    sẽ phạt đúng phần tài liệu làm ranh giới ấy dễ hiểu.
+
+    Ranh giới này bị phá bằng một dòng `import` 'cho tiện', nên đó là thứ được
+    canh.
+    """
+    import ast
+    from pathlib import Path
+
+    CAM = ("rustdesk", "hbbs", "hbbr", "libvnc", "sunshine", "moonlight")
+    goc = Path(__file__).resolve().parent.parent / "nexus_agent"
+    vi_pham = []
+
+    for path in goc.rglob("*.py"):
+        cay = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        for node in ast.walk(cay):
+            ten = []
+            if isinstance(node, ast.Import):
+                ten = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                ten = [node.module or ""]
+            for muc in ten:
+                if any(c in muc.lower() for c in CAM):
+                    vi_pham.append(f"{path.name}: import {muc}")
+
+    assert vi_pham == [], f"agent import mã của engine: {vi_pham}"
+
+
+def test_agent_khong_dung_ham_co_chu_test_trong_ten():
+    """Đường chạy thật không được gọi một hàm tên là `*_for_test`.
+
+    Cái tên đó nói dối người đọc sau này về chỗ nó được dùng — và ở đây nó là
+    hàm **ký mọi request của mọi máy khách**, tức là chỗ ít được phép hiểu nhầm
+    nhất.
+    """
+    from pathlib import Path
+
+    goc = Path(__file__).resolve().parent.parent / "nexus_agent"
+    xau = [f"{p.name}" for p in goc.rglob("*.py")
+           if "_for_test" in p.read_text(encoding="utf-8")]
+    assert xau == [], f"duong chay that goi ham *_for_test: {xau}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_22_antispam_phase2.py
 SHA256=ab2c981ca9ebc65490cfd1dc10dabf7b2ebc7b9c379e232a18f5778fe522c942 BYTES=8934 LINES=231
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -196894,7 +201218,7 @@ def test_all_three_actions_are_reachable_from_the_settings_page(logged_in):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_60_app_registry.py
-SHA256=0c1ce3f3c95b40fa18181cae4560e0b28d7376c2f0569f174a4d3c389eae8a9c BYTES=16678 LINES=376
+SHA256=d15a457d3afd29c3ae42729de8e62a6eca81aca0a8721e99f063770f05e22eea BYTES=17315 LINES=387
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hợp đồng app registry — thứ quyết định chi phí thêm app thứ 10.
 
@@ -197247,7 +201571,18 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     # (AgentRun, platform_core.agent), so substring matching cannot distinguish
     # legitimate core terminology from a hardcoded app slug. Route/app wiring
     # for it is still covered by the same manifest/mount contract tests.
-    slugs = [a.slug for a in discover() if a.slug not in ("demo", "agent")]
+    #
+    # ``nexus`` is the same shape, from Q93: device identity belongs to the
+    # account rather than to an app, so the capability lives in
+    # ``platform_core.nexus`` and ``apps/nexus`` is only the customer-facing
+    # skin over it. The platform names the *capability*, never the app — which
+    # this test cannot tell apart by substring.
+    #
+    # Adding a name here is not free: it blinds this check to that string, so a
+    # genuine hardcoded reference to that app would slip through. It is only
+    # correct when the platform owns the namespace and the app is named after
+    # it, not the other way round.
+    slugs = [a.slug for a in discover() if a.slug not in ("demo", "agent", "nexus")]
     offenders = []
     for path in (ROOT / "platform_core").rglob("*.py"):
         text = path.read_text(encoding="utf-8")
@@ -213940,7 +218275,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/restore_drill_schema.py
-SHA256=1f25ba73433bb4f1e2e82774aacca5f21d0d315aa04bfa92ac862e46ec164d2d BYTES=8582 LINES=181
+SHA256=6498bae870814a71ef88f4a1010b40156d06e412d954ff4a1765b31d844a2173 BYTES=9309 LINES=192
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 restore_drill_schema.py - dien tap khoi phuc tren LUOC DO THAT (H19.8).
@@ -214098,7 +218433,18 @@ def main() -> int:
                     # Mat rang buoc nay = MOI tien trinh worker lai cung chay
                     # vong bao tri, tuc gui webhook trung va quet canh bao
                     # trung - dung lop loi ma lease sinh ra de dong.
-                    "uq_singleton_lease_name"):
+                    "uq_singleton_lease_name",
+                    # Nexus (Q93). Mat rang buoc nay = HAI dong thiet bi cung
+                    # mot khoa cong khai, va "thu hoi may nay" tro thanh cau hoi
+                    # khong co cau tra loi: thu hoi dong nao?
+                    "uq_nexus_devices_public_key",
+                    # Mat rang buoc nay = mot ma ghep doi duoc HAI lan, tuc la
+                    # ma nan nhan doc qua dien thoai (T1) van con dung duoc sau
+                    # khi ke lua dao da dung no.
+                    "uq_nexus_enrollments_digest",
+                    # Mat rang buoc nay = mot ve phien dung lai duoc, va "ve
+                    # dung mot lan" chi con la mot cau trong tai lieu.
+                    "uq_nexus_sessions_ticket"):
             co = _psql(args.pg_bin, args.host, args.port, dst,
                        "SELECT count(*) FROM information_schema.table_constraints "
                        f"WHERE constraint_name='{ten}';", atq=True).strip()

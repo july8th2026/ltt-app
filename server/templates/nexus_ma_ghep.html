@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Mã ghép máy") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{#
+  `_(app.display_name)`: manifest da danh dau ten app bang `N_()` (chi trich,
+  khong dich), nen chuoi CO trong catalog; `_()` o day moi la cho no duoc dich
+  luc render. Day la mau "deferred translation" chuan cua gettext.
+
+  Cac app khac dang viet `{{ app.display_name }}` tran, nen tieu de cua chung
+  van hien tieng Viet tren trang tieng Anh. Do la mot khoang trong platform-wide
+  co tu truoc — sua no la viec rieng, khong nhet vao commit cua Nexus.
+#}
+{% block content %}
+
+  {#
+    Trang nay la cho T1 trong docs/nexus/04_THREAT_MODEL.md song: ke lua dao goi
+    dien cho nan nhan, huong dan cai phan mem, roi bao ho DOC MA NAY qua dien
+    thoai. Moi buoc deu "hop le" nen khong co hang rao ky thuat nao chan duoc.
+
+    Thu duy nhat con lai la CHU. Nen canh bao o day noi bang ngon ngu HAU QUA
+    ("nguoi do se thay man hinh cua ban") chu khong phai ngon ngu ky thuat
+    ("ma xac thuc thiet bi"), va no dat TRUOC ma chu khong phai duoi.
+  #}
+  <div class="card">
+    <div class="card-accent" style="background:#B4530A;"></div>
+    <h2>{{ _("Trước khi đưa mã này cho ai") }}</h2>
+    <p style="font-size:1.05rem;">
+      {{ _("Người nhập mã này sẽ điều khiển được máy tính của bạn và nhìn thấy mọi thứ trên màn hình — kể cả email, ngân hàng và tài liệu đang mở.") }}
+    </p>
+    <p style="font-size:1.05rem;">
+      <strong>{{ _("Chỉ đưa mã cho người mà CHÍNH BẠN tìm đến. Không bao giờ đưa cho người gọi điện đến bạn, dù họ nói họ là ai.") }}</strong>
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Mã ghép") }}</h2>
+    <p style="font-family:monospace;font-size:2rem;letter-spacing:0.15em;margin:0.5rem 0;">{{ ma }}</p>
+    <p class="muted">
+      {{ _("Nhập mã này vào phần mềm LTT Nexus trên máy cần ghép.") }}
+      {{ _("Mã hết hạn lúc") }} {{ het_han_luc.strftime('%H:%M') if het_han_luc else '' }}.
+    </p>
+    <p class="muted">
+      {# Ma chi ton tai trong dung phan hoi nay — CSDL chi giu digest. #}
+      {{ _("Mã chỉ hiện một lần. Tải lại trang sẽ không xem lại được; hãy tạo mã mới nếu cần.") }}
+    </p>
+    <a href="{{ app.route_prefix }}" class="btn btn-secondary">{{ _("Quay lại danh sách máy") }}</a>
+  </div>
+
+{% endblock %}
