@@ -91,7 +91,13 @@ N6  Thương mại hoá + phát hành
 
 Đây là phần tôi đề nghị bắt đầu ngay sau khi có câu trả lời cho mục 1.
 
-### N2.0 — Dòng quyết định Q93 (bắt buộc làm trước code)
+### N2.0 — Dòng quyết định Q93 ✅ XONG 2026-08-17
+
+Đã thêm vào `docs/QUYET_DINH_NEN_TANG.md` (nối sau Q92, không sửa đè dòng nào),
+kèm ba mục mới ở §5 "Còn để mở": D2 (relay), legal review AGPL, và thuê bao
+tháng. Mười ràng buộc của Q93 truy ngược về `04_THREAT_MODEL.md` §4.
+
+Nội dung gốc của đề xuất giữ lại dưới đây để đối chiếu:
 
 `AGENTS.md` mục 2.3 cấm sửa `platform_core/`/`server/` khi thêm app, và yêu cầu
 **dừng lại giải thích** khi buộc phải sửa. Nexus buộc phải sửa (audit mục 4.2).
