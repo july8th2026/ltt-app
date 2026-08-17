@@ -161,9 +161,15 @@ def probe(args) -> int:
                 khoa = f"{d} {r.status_code}"
                 trang_thai[khoa] = trang_thai.get(khoa, 0) + 1
                 if d == "/api/v1/tools" and r.status_code == 200 and not tool_thay:
+                    # Hep va co bao: mot `200` khong phai JSON nghia la co thu
+                    # khac dang tra loi thay khu API (trang loi cua bien, proxy
+                    # chen vao). Nuot im o day se bien no thanh "danh sach tool
+                    # rong" - dung ket luan ma phep do nay sinh ra de kiem.
                     try:
                         body = r.json()
-                    except Exception:                          # noqa: BLE001
+                    except ValueError as exc:
+                        print(f"  CANH BAO: {d} tra 200 nhung khong phai JSON "
+                              f"({exc}). Khong ket luan gi ve danh sach tool.")
                         body = {}
                     muc = body.get("data") or body.get("tools") or []
                     tool_thay = [t.get("name", "?") if isinstance(t, dict) else str(t)

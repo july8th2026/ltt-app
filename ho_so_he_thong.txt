@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9f8d4cd97c85d367657eeb71541577c844063198c0ca253a8b087a62dff0cb1e
+Fingerprint   : sha256:be254e75ea81d94eb83b1e660ddfd6852b6caf4435fc78465d9300dc3ca88eb6
 Nguồn đã quét : 1137 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2481,7 +2481,7 @@ Phân bố extension: .cfg:1, .css:7, .html:77, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1137 file; 10321704 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1137 file; 10322147 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -206105,7 +206105,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/api_prod_canary.py
-SHA256=bcf522a56b1cd937af91bfa2fd2558e21e6654ae002b8994d49fef5c834298c9 BYTES=9801 LINES=258
+SHA256=fd632571d2d0a1f15fb4dba62a2e7df9e90264bc0cc3bc7020a85825db5bde60 BYTES=10244 LINES=264
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Canary chỉ-đọc cho khu API, chạy trên máy chủ THẬT qua Cloudflare (H35.9c).
 
@@ -206270,9 +206270,15 @@ def probe(args) -> int:
                 khoa = f"{d} {r.status_code}"
                 trang_thai[khoa] = trang_thai.get(khoa, 0) + 1
                 if d == "/api/v1/tools" and r.status_code == 200 and not tool_thay:
+                    # Hep va co bao: mot `200` khong phai JSON nghia la co thu
+                    # khac dang tra loi thay khu API (trang loi cua bien, proxy
+                    # chen vao). Nuot im o day se bien no thanh "danh sach tool
+                    # rong" - dung ket luan ma phep do nay sinh ra de kiem.
                     try:
                         body = r.json()
-                    except Exception:                          # noqa: BLE001
+                    except ValueError as exc:
+                        print(f"  CANH BAO: {d} tra 200 nhung khong phai JSON "
+                              f"({exc}). Khong ket luan gi ve danh sach tool.")
                         body = {}
                     muc = body.get("data") or body.get("tools") or []
                     tool_thay = [t.get("name", "?") if isinstance(t, dict) else str(t)
