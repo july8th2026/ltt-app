@@ -163,7 +163,7 @@ thật trên URL công khai, không chỉ loopback (`CLAUDE.md` mục 5b).
 |---|---|---|
 | 01, 02 | ✅ **Xong** → `CURRENT_STATE_AUDIT.md` | Gộp: cùng một lần đọc repo |
 | 03 (OSS/license) | ✅ **Xong** → `03_OSS_LICENSE.md`; phần *hướng đi* đã nâng thành **D1** | Kiểm kê + ranh giới là việc riêng, không được coi là xong chỉ vì D1 đã chọn hướng |
-| 04 (threat model) | Gộp vào N2.0 (Q93) | Trust boundary của Nexus chính là nội dung Q93 |
+| 04 (threat model) | ✅ **Xong** → `04_THREAT_MODEL.md` | Tách riêng chứ không gộp: nó đẻ ra **10 điều khoản** cho Q93, mỗi điều truy ngược được về một mối đe doạ. Gộp vào Q93 sẽ mất phần *vì sao* |
 | 05, 06 | Gộp vào N2.0 + N2.1 | Contract freeze sớm là chống chỉ định — Q49/Q85 đã cho thấy contract tốt lên sau khi có lát cắt dọc đầu tiên |
 | 07, 08 | → N1.1, **sau** N2 | Đảo thứ tự: cần D2 (tiền thuê VPS) và không chặn N2 |
 | 09, 10 | → N1.2, N4 | |
@@ -189,7 +189,7 @@ quyết định chặn.
 | R1 | AGPL lây sang phần độc quyền của LTT | **Cao** | D1 + luật sư trước khi viết code tích hợp engine. **Sắc hơn sau prompt 03:** §13 có điều kiện *"if you modify"* — mà build client mang thương hiệu LTT + trỏ về hạ tầng LTT **chính là** modify. Đường "dùng nguyên bản nên không sao" và đường "có sản phẩm riêng" gần như loại trừ nhau. Sáu câu hỏi cho luật sư ở `03_OSS_LICENSE.md` §7 |
 | R2 | Không có IP công khai → sản phẩm không chạy được ngoài LAN | **Cao** | D2 trước N1 |
 | R3 | Chi phí băng thông relay vượt dự tính | Trung bình | N1.1 phải **đo** tỉ lệ direct vs relay và GB/giờ thật, không ước lượng |
-| R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | Bắt buộc có xác nhận tại máy đích + biểu tượng phiên đang chạy không tắt được + nhật ký bất biến. Ghi vào Q93 |
+| R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | `04_THREAT_MODEL.md` T1. **Không đóng được bằng kỹ thuật** — mọi bước của kẻ lừa đảo đều "hợp lệ", hệ thống làm đúng thứ nó được thiết kế. Giảm bằng: mã ghép sinh **trên máy đích**, hạn rất ngắn, cảnh báo bằng ngôn ngữ hậu quả, chỉ báo phiên không tắt được, và email cho chủ tài khoản **mỗi lần ghép**. Phần còn lại là rủi ro **chấp nhận có ý thức**, phải ghi vào Q93 chứ không để im |
 | R5 | Chứng thư ký mã chưa có lúc cần phát hành | Trung bình | Mua sớm, ngay khi D1 xong |
 | R6 | App Store từ chối app điều khiển từ xa | Trung bình | Đọc guidelines **trước** khi viết mobile, không phải sau |
 | R7 | Nexus kéo chậm Public API đang treo | Trung bình | Mục 1 |
@@ -209,6 +209,7 @@ quyết định chặn.
 | L5 | Thêm N2.0 (Q93) — không có trong pack | `AGENTS.md` bắt buộc: sửa nền tảng thì phải có dòng quyết định công khai. Tiền lệ Q92 |
 | L6 | 2026-08-17: D1/D3 đã chốt, D2 hoãn có chủ ý | Xem mục 2. D3 (thuê bao tháng) **đẻ ra một hạng mục mới ngoài phạm vi pack**: cổng gia hạn định kỳ. Pack không có prompt nào cho nó vì pack giả định entitlement đã có sẵn |
 | L7 | 2026-08-17: bản đầu của file này ghi sai nợ tồn (H36.9–12 thay vì H35.9) | Nguồn là `CLAUDE.md` đã stale. Đã sửa cả hai. Ghi lại đây vì đây đúng là kiểu lỗi mà `QUYET_DINH_NEN_TANG.md` §4 cảnh báo: phần *tóm tắt trạng thái* không được cập nhật trong khi phần *nhật ký* thì có |
+| L8 | **Không** thêm `docs/nexus/` vào `authoritative_docs` của hồ sơ hệ thống | Danh sách đó dành cho nguồn **có thẩm quyền**; `docs/nexus/` hiện là tài liệu lập kế hoạch. Thẩm quyền của Nexus sẽ nằm ở **Q93 trong `QUYET_DINH_NEN_TANG.md`**, file đã có sẵn trong danh sách — nên hồ sơ sẽ tự mang quyết định Nexus ngay khi Q93 được viết, không cần đổi cấu hình |
 
 ---
 
