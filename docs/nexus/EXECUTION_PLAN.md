@@ -162,7 +162,7 @@ thật trên URL công khai, không chỉ loopback (`CLAUDE.md` mục 5b).
 | Prompt pack | Xử lý | Lý do |
 |---|---|---|
 | 01, 02 | ✅ **Xong** → `CURRENT_STATE_AUDIT.md` | Gộp: cùng một lần đọc repo |
-| 03 (OSS/license) | → **D1**, nâng thành quyết định chặn | Pack đặt ở vị trí thứ ba; bằng chứng cho thấy nó chặn mọi thứ sau đó |
+| 03 (OSS/license) | ✅ **Xong** → `03_OSS_LICENSE.md`; phần *hướng đi* đã nâng thành **D1** | Kiểm kê + ranh giới là việc riêng, không được coi là xong chỉ vì D1 đã chọn hướng |
 | 04 (threat model) | Gộp vào N2.0 (Q93) | Trust boundary của Nexus chính là nội dung Q93 |
 | 05, 06 | Gộp vào N2.0 + N2.1 | Contract freeze sớm là chống chỉ định — Q49/Q85 đã cho thấy contract tốt lên sau khi có lát cắt dọc đầu tiên |
 | 07, 08 | → N1.1, **sau** N2 | Đảo thứ tự: cần D2 (tiền thuê VPS) và không chặn N2 |
@@ -186,7 +186,7 @@ quyết định chặn.
 
 | # | Rủi ro | Mức | Giảm bằng |
 |---|---|---|---|
-| R1 | AGPL lây sang phần độc quyền của LTT | **Cao** | D1 + luật sư trước khi viết code tích hợp engine |
+| R1 | AGPL lây sang phần độc quyền của LTT | **Cao** | D1 + luật sư trước khi viết code tích hợp engine. **Sắc hơn sau prompt 03:** §13 có điều kiện *"if you modify"* — mà build client mang thương hiệu LTT + trỏ về hạ tầng LTT **chính là** modify. Đường "dùng nguyên bản nên không sao" và đường "có sản phẩm riêng" gần như loại trừ nhau. Sáu câu hỏi cho luật sư ở `03_OSS_LICENSE.md` §7 |
 | R2 | Không có IP công khai → sản phẩm không chạy được ngoài LAN | **Cao** | D2 trước N1 |
 | R3 | Chi phí băng thông relay vượt dự tính | Trung bình | N1.1 phải **đo** tỉ lệ direct vs relay và GB/giờ thật, không ước lượng |
 | R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | Bắt buộc có xác nhận tại máy đích + biểu tượng phiên đang chạy không tắt được + nhật ký bất biến. Ghi vào Q93 |
