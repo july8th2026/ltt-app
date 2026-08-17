@@ -44,7 +44,7 @@ Chủ sản phẩm đã trả lời ngày **2026-08-17**:
 | # | Câu hỏi | Quyết định | Hệ quả phải mang theo |
 |---|---|---|---|
 | **D1** | Đường giấy phép engine | **Dùng RustDesk AGPL-3.0, giữ ranh giới tiến trình** | Ranh giới phải **thật**, không phải danh nghĩa: engine chạy như tiến trình/dịch vụ riêng, giao tiếp qua IPC/API có hợp đồng rõ, **không** link chung, **không** copy mã AGPL vào module LTT. Bắt buộc kèm `THIRD_PARTY_NOTICES`, ghi exact commit, và track mọi patch (OSS_BOUNDARY_RULES 2/5/6). **Rủi ro R1 vẫn mở** — pack invariant #6 yêu cầu legal review trước phát hành thương mại; đây là quyết định kinh doanh có ý thức, không phải kết luận pháp lý |
-| **D2** | Hạ tầng relay | **Chưa quyết — làm phần không cần relay trước** | N2 chạy ngay; N1/N3 vẫn chặn. Phải chốt trước khi có phiên điều khiển thật đầu tiên |
+| **D2** | Hạ tầng relay | **ĐÃ CHỐT 2026-08-18: VPS trả phí riêng (~5 USD/tháng) → Q94** | Oracle Always Free là $0 thật nhưng trần 50 Mbps và máy để không bị thu hồi; mở cổng tại nhà thì phơi mạng nhà và có thể vướng CGNAT. N1.1 **hết chặn** ngay khi có máy — runbook ở `N1_RELAY_RUNBOOK.md` |
 | **D3** | Mô hình tiền | **Thuê bao tháng theo số máy** | Sổ credit hiện tại **không** phủ được: cần gia hạn định kỳ, ân hạn, và auto-charge — đúng thứ **Q53 đã cố ý hoãn** vì thiếu consent/cap/replay protection. Nghĩa là H-thuê-bao là một hạng mục riêng, có quyết định riêng, **không** được nhét vào Nexus như một chi tiết |
 
 Câu hỏi phụ, chưa cần chốt: **v1 có cần app mobile không?** Nếu có thì thêm
@@ -330,7 +330,7 @@ quyết định chặn.
 | R2 | Không có IP công khai → sản phẩm không chạy được ngoài LAN | **Cao** | D2 trước N1 |
 | R3 | Chi phí băng thông relay vượt dự tính | Trung bình | N1.1 phải **đo** tỉ lệ direct vs relay và GB/giờ thật, không ước lượng |
 | R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | `04_THREAT_MODEL.md` T1. **Không đóng được bằng kỹ thuật** — mọi bước của kẻ lừa đảo đều "hợp lệ", hệ thống làm đúng thứ nó được thiết kế. Giảm bằng: mã ghép sinh **trên máy đích**, hạn rất ngắn, cảnh báo bằng ngôn ngữ hậu quả, chỉ báo phiên không tắt được, và email cho chủ tài khoản **mỗi lần ghép**. Phần còn lại là rủi ro **chấp nhận có ý thức**, phải ghi vào Q93 chứ không để im |
-| R5 | Chứng thư ký mã chưa có lúc cần phát hành | Trung bình | Mua sớm, ngay khi D1 xong |
+| R5 | Chứng thư ký mã chưa có lúc cần phát hành | Trung bình | **Đã quyết hoãn (Q94)**, nên rủi ro đổi hình dạng: không còn là "quên mua" mà là **ràng buộc phát hành** — agent chưa ký thì chỉ chạy nội bộ, không phân phối cho khách dưới bất kỳ hình thức nào. Chưa ký mà đưa cho khách là dạy họ bấm qua cảnh báo bảo mật của Windows, tức rèn đúng phản xạ mà T1 cần |
 | R6 | App Store từ chối app điều khiển từ xa | Trung bình | Đọc guidelines **trước** khi viết mobile, không phải sau |
 | R7 | Nexus kéo chậm Public API đang treo | Trung bình | Mục 1 |
 | R8 | Nhánh làm việc: Nexus commit lẫn vào `public-api-v2` | Thấp | Nhánh riêng `nexus-foundation` từ `master` |
