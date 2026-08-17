@@ -2359,9 +2359,23 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
   - [~] H35.9b **Pepper đã sinh 2026-08-17** — `LTT_API_KEY_PEPPER` (64 ký tự)
     + `_VERSION=1` ghi vào `secrets\app.env`, UTF-8 không BOM, giá trị chưa từng
     hiện ra ở đâu. **Còn lại: cất một bản NGOÀI máy này** — việc của người.
-  - [ ] H35.9c Đo lại tải với PostgreSQL thật qua Cloudflare. **Chặn:** cần bật
-    `LTT_PUBLIC_API=1` (vẫn để `LTT_PUBLIC_API_TOOLS` rỗng thì không tool nào
-    lộ ra) + một khoá thử. Đó là hành động cần quyết định + nâng quyền.
+  - [x] H35.9c **Đo trên máy chủ thật qua Cloudflare — XONG 2026-08-17.**
+    `LTT_PUBLIC_API=1` đã bật (giữ `LTT_PUBLIC_API_TOOLS` **vắng mặt = rỗng**).
+    Công cụ mới `tools/api_prod_canary.py` (prepare/probe/cleanup) theo đúng nếp
+    canary sẵn có: tạo `api-load-canary@lttstudios.com`, cấp khoá **chỉ-đọc**
+    (`tools:read` + `jobs:read` — `jobs:create` thuộc `SPENDING_SCOPES` và không
+    được cấp, nên phép đo **không tiêu được đồng nào**), đo, rồi thu hồi khoá +
+    vô hiệu tài khoản.
+
+    p50 **88–92 ms**, p95 90–116 ms, **không có 429 nào**. §6 đo p50 34,9 ms
+    trong tiến trình không mạng; chênh ~55 ms là TLS + biên Cloudflare + tunnel,
+    và nó gần bằng nhau ở cả đường trả 403 (không chạm CSDL) — nên phần cố định
+    là đường truyền, không phải ứng dụng. PostgreSQL thật **không** làm
+    control-plane chậm thấy được. Chi tiết ở §6 của readiness doc.
+
+    **Bằng chứng đáng giá nhất:** `GET /api/v1/tools` trả `200` với danh sách
+    tool **RỖNG** — fail-closed của Q92 được kiểm bằng một khoá thật trên hệ
+    thống đang chạy, không phải bằng cách đọc lại biến môi trường.
   - [x] H35.9d **Trần 100 MB — ĐÃ CHỨNG MINH trên tunnel thật 2026-08-17.**
     `POST` 101 MB tới `/api/v1/jobs` → **`413 Payload Too Large`, `Server:
     cloudflare`**, ngắt sau 1,1 MB; origin không hề thấy request. Cùng path với
@@ -2381,13 +2395,76 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
     `/api/v1/*` (POST tới đó đi thẳng tới origin). Nếu sau này có luật WAF mở
     rộng sang `/api/v1`, đường máy-gọi-máy sẽ chết — cần kiểm lại mỗi khi đổi
     cấu hình WAF.
-  - [ ] H35.9e Nối `metrics` vào cảnh báo; xoay khoá provider + `capacity.check`
-    thấy pool thật. **Phát hiện 2026-08-17:** `app.env` production **không có
-    `LTT_SENTRY_DSN`**, nên Q21 (bắt lỗi production bằng Sentry) chưa bao giờ
-    có hiệu lực trên máy chủ. Hiện **không có kênh cảnh báo vận hành nào** —
-    phải chốt kênh trước khi nói tới việc nối metrics vào nó.
-- [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
-  ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.
+  - [~] H35.9e **Đường ra đã có 2026-08-17; kênh chưa bật.**
+    `platform_core/public_api/ops_alerts.py` đọc `metrics.aggregate()` — **cộng
+    qua mọi tiến trình**, không phải `snapshot()` trong một tiến trình — và gửi
+    email cho `LTT_OPS_ALERT_EMAIL`, chạy trong vòng bảo trì đã có lease (H36).
+    15 test ở `test_222`, đã kiểm "có răng": hoàn nguyên quy tắc sườn → đỏ 2/15.
+
+    **Kích theo sườn**, và cái giá được ghi rõ trong cả docstring lẫn thân thư:
+    một sự cố kéo dài **chỉ gửi MỘT thư**. Chọn vậy để không phải thêm bảng
+    chống trùng + migration lên CSDL vừa deploy — khoá chống trùng của
+    `alerting.py` bám `user_id`, mà cảnh báo vận hành không có chủ sở hữu.
+
+    **Phát hiện 2026-08-17:** `app.env` production **không có `LTT_SENTRY_DSN`**,
+    nên Q21 (bắt lỗi production bằng Sentry) chưa bao giờ có hiệu lực trên máy
+    chủ này. Chủ sản phẩm chọn cả hai kênh: Sentry cho exception, email cho
+    ngưỡng.
+
+    **Đã bật trên máy chủ 2026-08-17:** Sentry project `ltt-platform` (FastAPI,
+    org `le-thanh-trung`) — `LTT_SENTRY_DSN` đã nạp, `sentry_sdk` 2.66.1 có sẵn
+    trong venv, `server/telemetry.py` đặt `send_default_pii=False` + `scrub_event`
+    đúng điều kiện kèm theo của Q21. `LTT_OPS_ALERT_EMAIL` =
+    `giaitritruyenthongltt@gmail.com`. Ba dịch vụ nạp 40 biến, restart,
+    `/health/ready` = ready.
+
+    **`capacity.check` thấy pool thật — đã kiểm 2026-08-17:** 6 khoá provider
+    trên 5 nhà (`gemini`, `byteplus`, `apiai`, `cheapkeyai`, `plenx`), tất cả
+    `enabled` và khoẻ. Nên nhánh "im lặng vì pool rỗng" của `capacity.py` không
+    áp dụng ở đây.
+
+    **Còn nợ đúng một việc:** *xoay* khoá provider. Đó là hành động của chủ sản
+    phẩm — phải lấy credential mới từ từng nhà cung cấp, và xoay sai thì job của
+    khách chết. Không phải việc agent tự làm.
+- [ ] H35.10 Mở tool video. **Câu "chờ MỘT thay đổi, sửa một chỗ mở được cả ba"
+  ở bản trước là SAI** — điều tra mã thật ngày 2026-08-17 cho thấy là **ba việc
+  con**, và nó chỉ mở được **hai** tool chứ không phải ba. Giữ lại câu sai này
+  để nhớ kiểu lỗi: ước lượng viết lúc chưa đọc `_dam_bao_giu_cho`.
+
+  Chẩn đoán đã nằm sẵn trong `apps/upscalevideo/manifest.py:94-101`: giá phụ
+  thuộc `duration_s` **do người gọi khai**, và worker **nâng giữ chỗ** khi đo
+  được thời lượng thật. Với giao diện thì ổn — có người chọn file họ nhìn thấy.
+  Với máy-gọi-máy thì nó phá lời hứa của một quote đã ký (Q84, sự cố Seedance
+  giữ 29 thu 78).
+
+  Đường đi hiện tại, giống hệt nhau ở `POST /quotes` và `POST /jobs`
+  (`server/api/jobs.py:216` và `:281`):
+
+  ```
+  build_job_params() -> price(tool, params) -> credit_for() -> _cost(params["duration_s"])
+  ```
+
+  - [ ] **H35.10a — đo thời lượng phía máy chủ lúc báo giá.** File đã ở
+    `staging/` từ lúc upload (Q85) và đã qua kiểm magic-byte, nên đo được ngay:
+    R2 thì `storage.try_url_for()` cho ffprobe đọc thẳng URL (không tải cả
+    2 GB về), local thì `storage.open()`. Đặt `params["duration_s"]` bằng số đo
+    **trước** khi tính giá, ở cả hai route. Hai route tự khớp nhau vì
+    `create_job` đã có sẵn phép so `price_changed`. Dùng
+    `platform_core.media.duration_seconds`, **không** viết lại ffprobe.
+    *Rủi ro thấp: không chạm sổ credit.*
+  - [ ] **H35.10b — trần cứng cho việc nâng giữ chỗ của job đến từ API.**
+    H35.10a làm quote **đúng**, không làm nó **không thể sai**:
+    `_dam_bao_giu_cho` vẫn còn đó và vẫn nâng nếu worker tính ra số khác (trim,
+    preview, hay bất kỳ khác biệt nào giữa "thời lượng file" và `eff_dur`).
+    Dựa vào "hai số này chắc bằng nhau" **chính là** kiểu lập luận đã đẻ ra Q84.
+    Muốn Q84 là bảo đảm cấu trúc thì phải có trần ở tầng credit.
+    *Rủi ro CAO: chạm `platform_core/credit.py`. Làm riêng một phiên, gate đầy
+    đủ trước và sau, có đường lùi viết trước.*
+  - [ ] **H35.10c — trần đồng thời GPU cho `video.short_clips`.** Việc thứ ba,
+    **không liên quan thời lượng**: `APP_API_COVERAGE_FINAL.md` ghi *"thêm ràng
+    buộc GPU chưa chốt được trần đồng thời"*. Làm xong a+b thì mở được
+    `video.upscale` và `video.subtitle`; `video.short_clips` **vẫn đóng** cho
+    tới khi có c.
 
 ---
 

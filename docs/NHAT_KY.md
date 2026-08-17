@@ -75,12 +75,104 @@ lấy số liệu. Ghi là chưa đo, không ghi là đã đạt.
    **không có kênh cảnh báo vận hành nào** — nên H35.9e không thể bắt đầu bằng
    "nối metrics vào cảnh báo"; phải chốt kênh trước.
 
+### H35.9e — đường ra cho metrics (làm sau khi chủ sản phẩm chốt kênh)
+
+Chốt: **cả hai** — Sentry cho exception, email cho ngưỡng.
+
+Đã viết `platform_core/public_api/ops_alerts.py`. Ba quyết định đáng ghi:
+
+1. **Đọc `metrics.aggregate()`, không phải `metrics.snapshot()`.** `snapshot()`
+   là bộ đếm trong một tiến trình; số worker mặc định bằng số GPU, nên hai worker
+   mỗi bên nửa ngưỡng sẽ **không bao giờ** chạm ngưỡng và cảnh báo im lặng vĩnh
+   viễn. Đúng lớp lỗi H36 đã đi sửa. Có test riêng chốt việc này.
+2. **Kích theo sườn**, không phải "thấy đúng là gửi". Quét định kỳ mà gửi mỗi
+   lượt sẽ đổ 200 thư giống nhau trong một sự cố, và một hộp thư như vậy bị lọc
+   bỏ nhanh hơn hộp thư trống. Cái giá: **một sự cố kéo dài chỉ gửi MỘT thư** —
+   viết thẳng câu đó vào thân thư để người trực không tưởng im lặng là đã hết.
+3. **Không thêm bảng.** Khoá chống trùng của `alerting.py` bám `user_id`, mà cảnh
+   báo vận hành không có chủ sở hữu. Thay vì dựng bảng riêng + một migration nữa
+   lên CSDL vừa deploy, trạng thái được **suy ra từ chính dữ liệu**: so cửa sổ 1
+   giờ với khoảng lặng 6 giờ, trừ hai lần cộng.
+
+Gửi thư hỏng thì nuốt lỗi **có chủ ý và có test**: một hộp thư chết là chuyện
+của kênh cảnh báo, không phải lý do để việc dọn dữ liệu ngừng chạy.
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_222_ops_alerts.py -q` | **15 passed** |
+| Kiểm "có răng" (hoàn nguyên quy tắc sườn) | **2 failed** đúng chỗ, rồi hoàn tác |
+| `+ test_216 + test_219` | 47 passed |
+| `python tools\gate.py --quick` | **12/12 PASS** |
+
+### Bật khu API + đo trên production (cùng ngày, sau khi chủ sản phẩm chốt)
+
+Chủ sản phẩm đã: cất bản pepper ra ngoài máy (**H35.9b xong**), đăng nhập
+sentry.io, và cho email người trực.
+
+**Sentry.** Tạo project `ltt-platform` (nền tảng FastAPI — nền tảng này chạy
+FastAPI thật, chính xác hơn Python chung) trong org `le-thanh-trung`. DSN được
+trích bằng JS trong trang rồi **chuyển thẳng stdout ra file**, ghi vào `app.env`,
+xoá file tạm — thứ duy nhất vào ngữ cảnh là độ dài và hai phép kiểm dạng. Quy
+tắc mục 3 `AGENTS.md` áp cả khi được cho phép, vì bản ghi hội thoại có thể được
+tóm tắt và đọc lại sau.
+
+**Ba biến vào `app.env`** (`LTT_PUBLIC_API=1`, `LTT_OPS_ALERT_EMAIL`,
+`LTT_SENTRY_DSN`), **cố ý không thêm `LTT_PUBLIC_API_TOOLS`** — vắng mặt = rỗng.
+Rồi `set-service-env.ps1` cho ba dịch vụ + restart: 40 biến, `health/ready`=ready.
+
+**Kết quả bật:** `/api/v1/tools` chuyển từ `404` sang **`401` RFC 9457 kèm
+`request_id`**, qua cả loopback lẫn Cloudflare, và **không bị WAF thách đố** (khác
+`/login`).
+
+### H35.9c — đo trên máy chủ thật, qua Cloudflare
+
+`tools/public_api_load_test.py` tự nói trong docstring rằng nó **không bao giờ**
+trỏ vào production. Nên viết `tools/api_prod_canary.py` (prepare/probe/cleanup)
+theo đúng nếp canary sẵn có của dự án — bốn tài khoản canary cũ đều đã ở trạng
+thái `active=False`, đó là nếp phải theo chứ không phải nghĩ ra cách mới.
+
+Khoá cấp bằng `DEFAULT_SCOPES` = `tools:read` + `jobs:read`. `jobs:create` nằm
+trong `SPENDING_SCOPES` và **không** được cấp, nên phép đo này **không tiêu được
+một đồng nào** — rào chắn của thiết kế, không phải của lời hứa trong tài liệu.
+
+| Đường | p50 | p95 | max | Trạng thái |
+|---|---|---|---|---|
+| `GET /api/v1/tools` | 91,8 ms | 116,2 ms | 389,5 ms | 20× `200` |
+| `GET /api/v1/jobs` | 88,0 ms | 90,7 ms | 125,5 ms | 20× `200` |
+| `GET /api/v1/usage` | 90,0 ms | 114,0 ms | 122,2 ms | 20× `403` |
+
+Không có 429 nào — nhịp giữ dưới trần 120/phút, nên đây là chi phí máy chủ +
+mạng chứ không phải hành vi của bộ giới hạn.
+
+Ba điều đọc ra:
+
+1. **Sàn ~88 ms là mạng.** §6 đo p50 34,9 ms trong tiến trình không mạng. Chênh
+   ~55 ms gần như bằng nhau ở cả ba đường — kể cả đường trả 403 **không chạm
+   CSDL**. Đó là cách phân biệt phần cố định (đường truyền) với phần thay đổi
+   (ứng dụng).
+2. **PostgreSQL thật không làm control-plane chậm thấy được:** `/jobs` (có truy
+   vấn owner-scoped) p95 90,7 ms, `/tools` (gần như không chạm CSDL) p95 116,2 ms.
+3. **`403` ở `/usage` là hệ scope làm đúng việc**, không phải lỗi — khoá không
+   xin `usage:read`. Một phép đo không định trước lại thành bằng chứng cho
+   function-level authorization.
+
+**Và điều đáng giá nhất không nằm trong bảng:** `/api/v1/tools` trả `200` với
+danh sách tool **RỖNG**. Fail-closed của Q92 được kiểm bằng một khoá thật trên hệ
+thống đang chạy, chứ không phải bằng cách đọc lại biến môi trường.
+
+Dọn xong: thu hồi khoá, `api-load-canary@lttstudios.com` → `active=False`, xoá
+file token tạm. Hàng CSDL giữ lại làm bản ghi kiểm toán, giống
+`cleanup_agent_canary` giữ audit row.
+
+**Pool provider:** 6 khoá / 5 nhà, tất cả bật và khoẻ → `capacity.check` nhìn
+thấy pool thật, không rơi vào nhánh "im lặng vì pool rỗng".
+
 ### Còn tồn đọng
 
-- H35.9b: cất một bản pepper **ngoài máy này**.
-- H35.9c: cần bật `LTT_PUBLIC_API=1` (tool vẫn rỗng) + khoá thử → cần quyết định
-  và nâng quyền.
-- H35.9e: chốt kênh cảnh báo (Sentry theo Q21? email qua Resend? cả hai?).
+- **Xoay khoá provider** — việc của chủ sản phẩm: phải lấy credential mới từ
+  từng nhà, xoay sai thì job của khách chết.
+- Trần **100 giây** vẫn cố ý chưa đo (xem trên).
+- Bộ test đầy đủ đang chạy khi ghi mục này.
 - Không xác minh được bản sao secrets sau deploy: `D:\LTTBackups-secrets` nay chỉ
   SYSTEM + Administrators đọc được, phiên không nâng quyền của Claude bị từ chối.
 

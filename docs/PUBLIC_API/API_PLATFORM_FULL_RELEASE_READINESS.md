@@ -144,6 +144,42 @@ không nằm trong con số nào ở trên. Muốn đo chúng thì harness phả
 `run_forever` thật — đó là một khoảng trống của chính harness, không phải một
 kết luận về hiệu năng.
 
+### Đo trên máy chủ THẬT, qua Cloudflare, PostgreSQL thật (2026-08-17) — H35.9c
+
+Harness: `tools/api_prod_canary.py probe`. Khoá canary **chỉ-đọc**
+(`tools:read` + `jobs:read`; `jobs:create` nằm trong `SPENDING_SCOPES` và không
+được cấp, nên phép đo này **không tiêu được một đồng nào**). 20 vòng × 3 đường,
+giữ nhịp dưới trần 120 req/phút.
+
+| Đường | n | p50 | p95 | max | Trạng thái |
+|---|---|---|---|---|---|
+| `GET /api/v1/tools` | 20 | **91,8 ms** | 116,2 ms | 389,5 ms | 20× `200` |
+| `GET /api/v1/jobs` | 20 | **88,0 ms** | 90,7 ms | 125,5 ms | 20× `200` |
+| `GET /api/v1/usage` | 20 | 90,0 ms | 114,0 ms | 122,2 ms | 20× **`403`** |
+
+**Không có 429 nào** — nhịp giữ dưới trần, nên các con số này là chi phí máy chủ
++ mạng, không phải hành vi của bộ giới hạn.
+
+Ba điều đọc ra, và điều thứ ba là quan trọng nhất:
+
+1. **Sàn ~88 ms là mạng, không phải ứng dụng.** §6 đo p50 34,9 ms cho `reads`
+   **trong tiến trình, không mạng**. Chênh lệch ~55 ms là TLS + chặng tới biên
+   Cloudflare + tunnel về máy — và nó gần như bằng nhau ở cả ba đường, kể cả
+   đường trả 403 mà **không** chạm CSDL. Đó chính là cách phân biệt: phần cố
+   định là đường truyền, phần thay đổi mới là ứng dụng.
+2. **PostgreSQL thật không làm control-plane chậm đi thấy được.** `/jobs` (có
+   truy vấn, owner-scoped) p95 90,7 ms, còn `/tools` (gần như không chạm CSDL)
+   p95 116,2 ms. Nói cách khác, biến thiên của mạng lớn hơn chi phí truy vấn.
+3. **`403` ở `/usage` là hệ scope làm đúng việc**, không phải lỗi. Khoá canary
+   không xin `usage:read`, và `ensure_scope` từ chối đúng như `principal.py` mô
+   tả — 403 nêu tên scope còn thiếu, chứ không phải 404 giấu đi. Một phép đo
+   không định trước lại thành bằng chứng cho function-level authorization.
+
+**Và điều đáng giá nhất không nằm trong bảng:** `GET /api/v1/tools` trả `200`
+với danh sách tool **RỖNG**. Đó là fail-closed của Q92 được kiểm bằng **một khoá
+thật trên hệ thống đang chạy**, chứ không phải bằng việc đọc lại biến môi trường.
+Bật `LTT_PUBLIC_API=1` một mình **không** mở tool nào.
+
 Ba điều đọc ra được:
 
 1. **Ngân sách gần như miễn phí.** `budgeted` so `creates` chênh trong khoảng
@@ -213,6 +249,8 @@ Biến môi trường của khu API (đặt trong `secrets/app.env`):
 | `LTT_PUBLIC_API_TOOLS` | danh sách tool được publish | **rỗng = không publish gì** |
 | `LTT_API_KEY_PEPPER` | pepper băm khoá, **ngoài CSDL** | bắt buộc |
 | `LTT_PUBLIC_API_RPM` / `_CREATE_RPM` | trần nhịp đọc / ghi | có mặc định an toàn |
+| `LTT_OPS_ALERT_EMAIL` | người trực nhận cảnh báo ngưỡng vận hành | **rỗng = tắt mềm** |
+| `LTT_SENTRY_DSN` | bắt lỗi production (Q21) | rỗng = tắt |
 
 Mặc định của công tắc tool là **rỗng**, nghĩa là bật `LTT_PUBLIC_API=1` một mình
 **không** mở tool nào. Đây là mặc định đúng, và nó cũng chính là thứ làm vòng
@@ -241,6 +279,20 @@ phải hạng mục đã xong:
    `responses_5xx`, `auth_failure`, `rate_limited`, `kill_switch_refused`,
    `capacity_refused`, `webhook_failed`, và độ trễ `queue_pickup_ms`. Nối chúng
    vào chỗ nào là việc vận hành.
+
+   *Cập nhật 2026-08-17 — đường ra đã có, kênh thì chưa bật.*
+   `platform_core/public_api/ops_alerts.py` đọc **`metrics.aggregate()`** (cộng
+   qua mọi tiến trình, không phải `snapshot()` trong một tiến trình) và gửi email
+   cho `LTT_OPS_ALERT_EMAIL`, chạy trong vòng bảo trì đã có lease. 15 test ở
+   `test_222`, đã kiểm "có răng".
+
+   **Kích theo sườn:** chỉ báo khi ngưỡng vừa chớm vỡ, không báo lại khi vẫn
+   đang vỡ. Đổi lại — và phải nói rõ với người trực — **một sự cố kéo dài chỉ
+   gửi MỘT thư**; im lặng không có nghĩa là đã hết. Chọn vậy để không phải thêm
+   một bảng chống trùng và một migration nữa lên CSDL vừa deploy.
+
+   Còn lại: đặt `LTT_OPS_ALERT_EMAIL` (và `LTT_SENTRY_DSN` cho Q21 — nó **chưa
+   bao giờ được đặt trên máy chủ này**), rồi `set-service-env.ps1` + restart.
 4. **Pepper khoá API** phải được sinh riêng cho production và **sao lưu tách
    khỏi CSDL** — mất pepper là mất toàn bộ khoá của khách.
 

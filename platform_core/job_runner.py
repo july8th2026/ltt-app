@@ -591,7 +591,7 @@ def _quet_canh_bao() -> None:
     condition on every pass is harmless by design — which is what lets this be a
     plain periodic scan instead of an event pipeline.
     """
-    from platform_core.public_api import alerting, notifications
+    from platform_core.public_api import alerting, notifications, ops_alerts
     from platform_core.public_api.config import load_public_api_config
 
     config = load_public_api_config()
@@ -603,6 +603,11 @@ def _quet_canh_bao() -> None:
             log.info("canh bao API: %d thong bao moi", raised)
         if gone:
             log.info("don %d thong bao API het han", gone)
+
+        # Cùng nhịp, khác người nhận: trên là cho khách, đây là cho người trực.
+        # Chỉ đọc `api_metric_samples` nên không cần commit; vắng
+        # LTT_OPS_ALERT_EMAIL thì trả 0 và không làm gì.
+        ops_alerts.gui(db)
 
 
 def _don_noi_dung_job(db) -> int:

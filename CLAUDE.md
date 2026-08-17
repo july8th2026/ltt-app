@@ -189,7 +189,8 @@ nào**.
 | Di trú app từ BOT GEMINI: thumbnail(parity)+taoanh+kichban+taovideo(video async) | ✅ đang (A1+A2 P1) |
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 | Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
-| **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92) — **chưa deploy**, nhánh `public-api-v2` |
+| **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92); **ĐÃ DEPLOY 2026-08-17**, tool chưa mở |
+| **LTT Nexus** (điều khiển máy từ xa) — discovery + kế hoạch | 🔜 `docs/nexus/`; N2 là lát cắt đầu tiên |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
@@ -256,18 +257,15 @@ Ba thứ cần biết trước khi đụng vào worker:
 chạy `test_221` trên một bucket R2 vứt đi — chặn bởi một quyết định hạ tầng,
 không phải bởi code.
 
-Trạng thái và điều kiện còn lại: `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md`
-(kết luận `READY_FOR_CONTROLLED_DEPLOY`). **Chưa deploy.** Nợ thật là **H35.9**,
-năm điều kiện ở §11 của file đó, tất cả đều cần máy chủ thật:
+**ĐÃ DEPLOY 2026-08-17**, và **TẠM DỪNG có chủ ý** để chuyển sang LTT Nexus.
+Đọc `docs/PUBLIC_API/TAM_DUNG_2026-08-17.md` trước khi mở lại — nó ghi mở lại
+thì bắt đầu từ đâu và ba cái bẫy đã dính.
 
-- ✅ **Sao lưu `LTT_API_KEY_PEPPER` tách khỏi CSDL** — phần công cụ xong
-  2026-08-17: `backup.ps1` ghi **hai** zip riêng (`ltt_data_*` và
-  `ltt_secrets_*`, thư mục anh em). Còn lại là việc của người: sinh pepper cho
-  production và cất một bản **ngoài máy này**.
-- ⬜ đo lại tải trên PostgreSQL thật qua Cloudflare;
-- ⬜ xác nhận trần 100 MB / 100 giây trên tunnel thật;
-- ⬜ nối `metrics` vào cảnh báo;
-- ⬜ xoay khoá provider + `capacity.check` thấy pool thật.
+Một câu về trạng thái: **hạ tầng đã sống, cửa hàng chưa mở.** Khu API bật
+(`LTT_PUBLIC_API=1`) nhưng `LTT_PUBLIC_API_TOOLS` **rỗng**, nên
+`GET /api/v1/tools` trả `200` với danh sách rỗng — fail-closed của Q92 làm đúng
+việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool** (bắt đầu bằng
+`image.thumbnail`), **xoay khoá provider**, và **H35.10** (tool video).
 
 ## Không bao giờ commit hay copy đi
 
