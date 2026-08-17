@@ -2356,12 +2356,36 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
     `Administrators` + `SYSTEM`; bản sao ngày `154433` đã tách đúng
     (`ltt_data_*` không còn `app.env`). **13 bản cũ vẫn gói chung** — đã được ACL
     bảo vệ và tự rụng theo hạn giữ 14 bản.
-  - [ ] H35.9b Sinh pepper cho production + cất **một bản ngoài máy này**
-    (việc của người, không phải của code).
-  - [ ] H35.9c Đo lại tải với PostgreSQL thật qua Cloudflare.
-  - [ ] H35.9d Xác nhận trần Cloudflare 100 MB / 100 giây trên tunnel thật.
+  - [~] H35.9b **Pepper đã sinh 2026-08-17** — `LTT_API_KEY_PEPPER` (64 ký tự)
+    + `_VERSION=1` ghi vào `secrets\app.env`, UTF-8 không BOM, giá trị chưa từng
+    hiện ra ở đâu. **Còn lại: cất một bản NGOÀI máy này** — việc của người.
+  - [ ] H35.9c Đo lại tải với PostgreSQL thật qua Cloudflare. **Chặn:** cần bật
+    `LTT_PUBLIC_API=1` (vẫn để `LTT_PUBLIC_API_TOOLS` rỗng thì không tool nào
+    lộ ra) + một khoá thử. Đó là hành động cần quyết định + nâng quyền.
+  - [x] H35.9d **Trần 100 MB — ĐÃ CHỨNG MINH trên tunnel thật 2026-08-17.**
+    `POST` 101 MB tới `/api/v1/jobs` → **`413 Payload Too Large`, `Server:
+    cloudflare`**, ngắt sau 1,1 MB; origin không hề thấy request. Cùng path với
+    95 MB → biên chuyển tiếp, origin trả lời. Vậy biên quyết định bằng
+    `Content-Length` ngay từ đầu, trần nằm giữa 95 và 101 MB — khớp tài liệu
+    Cloudflare và **xác nhận multipart ≤90 MB của Q48 đi lọt**.
+
+    **Trần 100 giây: cố ý KHÔNG chứng minh được.** Production không có endpoint
+    nào treo quá 100 giây — đó chính là ràng buộc bất biến #5, và cũng chính là
+    biện pháp giảm thiểu. Dựng một endpoint treo trên production chỉ để đo là
+    đổi một rủi ro thật lấy một con số. Ghi là *chưa đo, có lý do*, không ghi
+    là đã đạt.
+
+    **Phát hiện kèm theo:** `POST /login` bị Cloudflare trả `403` +
+    `Cf-Mitigated: challenge` (managed challenge) cho client không phải trình
+    duyệt. Đã kiểm: thách đố này **chỉ áp cho `/login`**, không áp cho
+    `/api/v1/*` (POST tới đó đi thẳng tới origin). Nếu sau này có luật WAF mở
+    rộng sang `/api/v1`, đường máy-gọi-máy sẽ chết — cần kiểm lại mỗi khi đổi
+    cấu hình WAF.
   - [ ] H35.9e Nối `metrics` vào cảnh báo; xoay khoá provider + `capacity.check`
-    thấy pool thật.
+    thấy pool thật. **Phát hiện 2026-08-17:** `app.env` production **không có
+    `LTT_SENTRY_DSN`**, nên Q21 (bắt lỗi production bằng Sentry) chưa bao giờ
+    có hiệu lực trên máy chủ. Hiện **không có kênh cảnh báo vận hành nào** —
+    phải chốt kênh trước khi nói tới việc nối metrics vào nó.
 - [ ] H35.10 Mở ba tool video — chờ **một** thay đổi: đo thời lượng phía server
   ngay lúc báo giá từ file đã upload, rồi khoá giá. Sửa một chỗ mở được cả ba.
 

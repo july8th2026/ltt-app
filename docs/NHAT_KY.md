@@ -14,6 +14,78 @@
 
 ---
 
+## 2026-08-17 (chiều) — Deploy `public-api-v2` lên production + H35.9b/d
+
+- **Mục tiêu:** đóng nốt nợ H35.9 theo lựa chọn P1.
+- **Hạng mục:** H35.9b (một nửa), H35.9d (một nửa), deploy.
+- **Trạng thái:** **ĐÃ DEPLOY**, đã xác minh trên URL công khai. Public API vẫn TẮT.
+
+### Đã làm
+
+**Pepper (H35.9b).** Sinh `LTT_API_KEY_PEPPER` (64 ký tự) + `_VERSION=1` vào
+`secrets\app.env` bằng một file `.py` riêng (`AGENTS.md` 5.3 cấm Python inline
+qua PowerShell). Idempotent, UTF-8 không BOM, chỉ in trạng thái chứ không in giá
+trị. **Còn nợ: một bản cất ngoài máy này.**
+
+**Deploy.** `tools\build_release.py` → `dist\ltt-release-1.0.0.zip` (1.916 file,
+91 MB, quét bí mật PASS, SHA-256 `1ccc2752…`). Chủ sản phẩm chạy ba lệnh:
+`update.ps1`, `set-service-env.ps1` cho ba dịch vụ, rồi `backup.ps1
+-IncludeSecrets`. Claude không tự chạy được: cổng phân quyền chặn lệnh nâng
+quyền cho deploy production, và không đi vòng.
+
+### Bằng chứng sau deploy
+
+| Kiểm | Kết quả |
+|---|---|
+| Ba dịch vụ | Running |
+| `/health/ready` loopback | `{"status":"ready","environment":"production","database":"ok"}` |
+| `alembic current` (máy chủ) | `f8a9b0c1d2e3 (head)` |
+| `alembic heads` (cây nguồn) | `f8a9b0c1d2e3 (head)` — **khớp** |
+| Trước deploy DB ở | `b6c7d8e9f0a1` → migration Public API đã áp |
+| `app.previous` | có, đường lùi sẵn sàng |
+| **Trình duyệt trên `https://app.lttstudios.com`** | 7/7 request HTTP 200, **0 console message**, catalog render đủ thẻ app, `ltt.css?v=b545037b` (cache-bust đúng), link `?next=` của Q30 đúng |
+| `/api/v1/*` qua Cloudflare | **404** — fail-closed đúng Q92, deploy KHÔNG mở API |
+
+### H35.9d — trần Cloudflare, đo trên tunnel thật
+
+```
+POST 101 MB -> /api/v1/jobs : HTTP 413 Payload Too Large, Server: cloudflare
+                              ngat sau 1,1 MB, origin khong he thay
+POST  95 MB -> /api/v1/jobs : bien chuyen tiep, origin tra loi (404)
+```
+
+Biên quyết định bằng `Content-Length` ngay từ đầu. **Trần 100 MB xác nhận**, và
+điều đó cũng xác nhận multipart ≤90 MB của Q48 đi lọt.
+
+**Trần 100 giây: chưa đo, có lý do.** Production không có endpoint nào treo quá
+100 giây — đó chính là ràng buộc bất biến #5 và cũng là biện pháp giảm thiểu.
+Dựng một endpoint treo trên production chỉ để lấy một con số là đổi rủi ro thật
+lấy số liệu. Ghi là chưa đo, không ghi là đã đạt.
+
+### Hai phát hiện ngoài dự kiến
+
+1. **`POST /login` bị Cloudflare managed challenge** (`403` +
+   `Cf-Mitigated: challenge`) với client không phải trình duyệt. Đã kiểm riêng:
+   **chỉ `/login`**, không áp cho `/api/v1/*`. Nếu luật WAF sau này mở rộng sang
+   `/api/v1` thì toàn bộ đường máy-gọi-máy chết — phải kiểm lại mỗi lần đổi WAF.
+   (Lần thử trần 100 MB đầu tiên nhắm vào `/login` nên nhận 403 chứ không phải
+   413; phải đổi path mới đo được. Không được lấy 403 đó làm kết luận.)
+2. **`LTT_SENTRY_DSN` không có trong `app.env` production.** Q21 chốt dùng Sentry
+   để bắt lỗi production, nhưng nó chưa bao giờ có hiệu lực trên máy chủ. Hiện
+   **không có kênh cảnh báo vận hành nào** — nên H35.9e không thể bắt đầu bằng
+   "nối metrics vào cảnh báo"; phải chốt kênh trước.
+
+### Còn tồn đọng
+
+- H35.9b: cất một bản pepper **ngoài máy này**.
+- H35.9c: cần bật `LTT_PUBLIC_API=1` (tool vẫn rỗng) + khoá thử → cần quyết định
+  và nâng quyền.
+- H35.9e: chốt kênh cảnh báo (Sentry theo Q21? email qua Resend? cả hai?).
+- Không xác minh được bản sao secrets sau deploy: `D:\LTTBackups-secrets` nay chỉ
+  SYSTEM + Administrators đọc được, phiên không nâng quyền của Claude bị từ chối.
+
+---
+
 ## 2026-08-17 — LTT NEXUS: discovery + H35.9a tách bản sao secrets khỏi CSDL
 
 - **Mục tiêu:** đọc `LTT_NEXUS_CLAUDE_BUILD_PACK_V2_ADAPTIVE` và bắt đầu xây

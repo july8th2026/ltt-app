@@ -201,6 +201,10 @@ một định nghĩa duy nhất về "thứ không được rời khỏi hệ th
 
 **17 migration, một head duy nhất**: `e7f8a9b0c1d2`. Không có nhánh song song.
 
+> *Cập nhật 2026-08-17:* H36 thêm migration sau khi file này được viết, nên head
+> hiện hành là **`f8a9b0c1d2e3`**. Đã deploy lên production cùng ngày; `alembic
+> current` trên máy chủ và `alembic heads` trên cây nguồn khớp nhau. Vẫn một head.
+
 Biến môi trường của khu API (đặt trong `secrets/app.env`):
 
 | Biến | Ý nghĩa | Mặc định |
