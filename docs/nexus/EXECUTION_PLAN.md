@@ -398,3 +398,29 @@ Ba lựa chọn fail-closed:
 Còn nợ, và là **việc của người**: sinh cặp khoá phát hành, ghim phần công khai
 vào `RELEASE_PUBLIC_KEY`, và cất phần riêng **ngoài repo, ngoài máy chủ web,
 ngoài `secrets/app.env`** — nó ký thủ công cho mỗi bản phát hành.
+
+---
+
+## 9. Vòng lặp sản phẩm — đã chạy thật ✅ 2026-08-18
+
+`tests/test_231_nexus_e2e.py`, **6 test**. Máy chủ HTTP thật; phía web đi bằng
+cookie phiên và CSRF thật, phía máy khách đi bằng chính `NexusClient` mà khách
+sẽ chạy.
+
+Sáu file test trước kiểm từng mảnh. Cái chưa ai kiểm là **thứ khách thực sự
+làm**: mở web → bấm "Ghép một máy mới" → đọc mã trên màn hình → gõ vào phần mềm
+trên máy mình → thấy máy hiện ra.
+
+Chỗ nguy hiểm nằm ở chỗ ba mảnh gặp nhau: mã hiện trên HTML dạng `ABCD-EFGH`
+(có gạch nối, để đọc cho nhau nghe), còn `doi_ma` chuẩn hoá trước khi băm. Hai
+bên đúng riêng **không** có nghĩa là chúng khớp. Nếu lệch, khách gõ đúng thứ họ
+nhìn thấy mà vẫn bị từ chối — và không ai đoán ra vì sao.
+
+Bốn tính chất được chốt bằng đường đi thật, không bằng gọi hàm:
+
+- ghép xong **chưa phải** là đang bật — lẫn hai thứ thì danh sách nói máy online
+  trong khi nó chưa từng kết nối;
+- khách bấm **Thu hồi** → agent dừng hẳn ở nhịp kế tiếp **và tự xoá khoá**;
+- **một mã chỉ ghép được một máy** — mã nạn nhân đọc qua điện thoại (T1) phải
+  chết ngay sau lần dùng đầu;
+- tài khoản khác **không thu hồi được** máy của người ta: `404`, không phải 403.
