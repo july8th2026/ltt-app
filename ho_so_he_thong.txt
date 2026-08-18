@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:cb9a0de423c20ab38d4612db1561a73bc6582106c90e41bb73a017b637a8199b
-Nguồn đã quét : 1160 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:352e07d08ffe1ca0ee77c6dffb8c60f12da120c59d7d381ca930fb725ae32674
+Nguồn đã quét : 1161 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1049,7 +1049,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (232 file pytest + 3 frontend)
+10. QUALITY GATES (233 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1218,6 +1218,7 @@ Test inventory:
 - tests/test_228_nexus_agent_api.py
 - tests/test_229_nexus_agent.py
 - tests/test_22_antispam_phase2.py
+- tests/test_230_nexus_updates.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -1308,8 +1309,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1160 file)
-Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:871, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1161 file)
+Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:872, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2192,7 +2193,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (249)
+[tests] (250)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2372,6 +2373,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_228_nexus_agent_api.py
 - tests/test_229_nexus_agent.py
 - tests/test_22_antispam_phase2.py
+- tests/test_230_nexus_updates.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -2536,7 +2538,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1160 file; 10505483 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1161 file; 10516299 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -84295,7 +84297,7 @@ chặn bởi một quyết định về hạ tầng, không phải bởi code.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=7c1d0cdd10190c4e97790b7788e4b5721fd26148d7ac9e412a24416a26db8dc1 BYTES=71010 LINES=224
+SHA256=f1a52f4c6bbd0d1374a0384fbb6fa4b734badfbab90da67230bf6ab628efdfe6 BYTES=73163 LINES=225
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -84326,7 +84328,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q94; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q95; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -84417,7 +84419,8 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q91 | Hồ sơ code đầy đủ dành cho AI/người tiếp quản (thay Q90) | **`ho_so_he_thong.txt` gồm hai lớp: bản đồ kiến trúc sinh tự động và snapshot nguyên văn TOÀN BỘ source text được chọn (backend, app, frontend, worker/sidecar, engine vendored, migration, deploy/setup, tool/test và tài liệu nguồn). Không đặt trần dung lượng. Mỗi block bắt buộc có path, SHA-256 byte gốc, byte/dòng; generator deterministic, UTF-8 không BOM, không chỉnh tay. Cấm đọc/nhúng `data`, `secrets`, log, browser profile, dependency/cache/binary. `--check` vẫn là gate và hồ sơ luôn đứng sau quyết định, code, test.** | AI cần học cả hành vi thực thi chứ không chỉ tên file/route. Nhúng source giải quyết độ sâu; fingerprint, block hash, coverage test và gate chống thiếu/stale. Ranh giới allowlist giữ bí mật/dữ liệu người dùng ngoài artifact dù file không giới hạn dung lượng. |
 | Q92 | Public API cho khách lập trình (`/api/v1`) | **Public API là ADAPTER/POLICY LAYER của nền tảng, KHÔNG phải một app trong `apps/`: domain ở `platform_core/public_api/`, bề mặt HTTP ở `server/api/`, và `server/app.py` chỉ thêm phần mount. Đường dẫn chuẩn là `/api/v1`; code không phụ thuộc host (`api.lttstudios.com` chỉ là chuyện proxy). Principal tính tiền V1 là `User` hiện hữu — không dựng organization/tenant billing. Credential của khách là domain MỚI, tuyệt đối không tái dụng bảng `api_keys` (provider credential). Public API dùng lại nguyên `jobs`/`credit`/`upload_sessions`/`storage`/`api_pool`, không tạo hàng đợi, sổ tiền, provider pool hay storage lifecycle thứ hai. Mặc định FAIL-CLOSED: cờ `LTT_PUBLIC_API` mặc định TẮT, tool chỉ ra API khi được allowlist tường minh; `customer_visible` của ToolSpec không phải cờ public. Lỗi `/api/v1` theo RFC 9457 `application/problem+json`, còn hợp đồng JSON của Q88 giữ nguyên cho `/health` và `/<slug>/api/*`.** | Một app không mount được path ngoài `route_prefix`, không được biết app khác (`AGENTS.md` 8.4) và không được cấp phát credential toàn hệ thống — ép Public API thành app là đi vòng qua hợp đồng chứ không phải tuân nó, nên hợp đồng phải được bổ sung công khai ở đây. Principal = User vì codebase chỉ có `User` và mọi ownership (job, project, upload, ledger) đều bám `users.id`; dựng org billing lúc này là tạo nguồn chân lý thứ hai về tiền. Fail-closed vì Q25 (mặc định mở) là quy tắc cho UI của khách đã đăng nhập, không phải cho bề mặt máy-gọi-máy: một tool internal/retired lọt ra API là mất tiền hoặc lộ năng lực, còn quên bật một tool thì chỉ là thiếu tính năng. |
 | Q93 | LTT Nexus — sản phẩm điều khiển máy từ xa | **Nexus là PLATFORM CAPABILITY, không phải một app trong `apps/`**: domain ở `platform_core/nexus/`, bề mặt HTTP cho endpoint/relay ở `server/nexus/`, còn `apps/nexus/` chỉ là bề mặt khách hàng (danh sách máy, ghép, thu hồi, lịch sử phiên). **Danh tính thiết bị thuộc về TÀI KHOẢN, không thuộc app.** Mười ràng buộc, không cái nào được bỏ khi tiện tay: (1) khoá riêng của thiết bị **không bao giờ rời máy đó** — sinh tại chỗ, cất bằng cơ chế hệ điều hành, chỉ khoá công khai đi lên; (2) uỷ quyền phiên do **server** quyết bằng **vé dùng một lần, hạn tính bằng phút, thu hồi được ngay**, và engine phải kiểm vé chứ không chỉ control plane cấp; (3) **luồng điều khiển KHÔNG BAO GIỜ đi qua control plane** — data plane là hạ tầng tách hẳn có IP công khai; (4) endpoint Windows là **HAI tiến trình**: Agent LTT (độc quyền — danh tính, enrollment, presence, vé, nhật ký, cập nhật) và engine RustDesk (AGPL — bắt màn hình, nhập liệu, truyền), nói chuyện qua **IPC cục bộ có hợp đồng**, không link chung, không chung không gian địa chỉ, không copy mã AGPL sang Agent; (5) admin **không cấp được vé** cho thiết bị mình không sở hữu, và mọi hành động của admin để lại bản ghi **chủ thiết bị đọc được**; (6) mỗi phiên ghi một bản ghi **bất biến** (ai, máy nào, từ đâu, bắt đầu/kết thúc, lý do kết thúc); (7) máy được điều khiển **luôn** hiện chỉ báo không tắt được kèm nút ngắt; (8) ghép thiết bị bằng mã **sinh trên máy đích**, hạn rất ngắn, cảnh báo bằng ngôn ngữ hậu quả, **email cho chủ tài khoản mỗi lần ghép**; (9) thiết bị của người khác trả **404**, không bao giờ 403; (10) cập nhật phải **xác minh chữ ký trước khi thực thi**. Mặc định **FAIL-CLOSED**: cờ `LTT_NEXUS` tắt, cờ tắt thì không thiết bị nào ghép được. Mô hình tiền là **thuê bao tháng theo số máy** (D3) — không dùng sổ credit theo lượt. | **Vì sao không phải app:** app không mount được path ngoài `route_prefix`, không được biết app khác (`AGENTS.md` 8.4), và không được cấp phát credential toàn hệ thống — mà Nexus cần cả ba. Ép nó thành app là **đi vòng qua hợp đồng chứ không tuân nó**, nên hợp đồng phải được bổ sung công khai ở đây, đúng tiền lệ Q92. **Vì sao danh tính ở tài khoản chứ không ở app:** một khách có N máy, và mất một máy thì phải thu hồi **đúng máy đó** — `user_id` không đủ làm danh tính. **Vì sao hai tiến trình:** đây là ranh giới **kép**. Về giấy phép, §13 của AGPL-3.0 chỉ kích khi *sửa* chương trình, mà build client mang thương hiệu LTT trỏ về hạ tầng LTT **chính là sửa** — nên phần độc quyền phải tách khỏi engine bằng tiến trình + IPC (`docs/nexus/03_OSS_LICENSE.md`). Về bảo mật, Agent không bao giờ chạm luồng màn hình còn engine không bao giờ tự quyết uỷ quyền. **Vì sao data plane tách:** hai lý do độc lập cùng chỉ một hướng — ràng buộc bất biến #5, và Cloudflare Tunnel **không chở được** phiên điều khiển (trần 100 giây + hạn chế ToS), trong khi máy chủ hiện tại cố ý không mở cổng. **Vì sao fail-closed:** giống Q92, một bề mặt cho phép điều khiển máy người khác mà mặc định mở thì sai lầm đầu tiên là sai lầm cuối cùng. **Rủi ro chấp nhận có ý thức:** T1 trong `docs/nexus/04_THREAT_MODEL.md` — kẻ lừa đảo dẫn dụ nạn nhân đọc mã ghép qua điện thoại. **Không đóng được bằng kỹ thuật** vì mọi bước đều hợp lệ; ràng buộc (7)(8) là ma sát, không phải rào chắn. Ghi ra đây để sau này không ai tưởng là bỏ sót. **Còn mở:** hạ tầng relay (D2) chưa chốt, và ranh giới AGPL cần **legal review bắt buộc** trước phát hành thương mại (invariant #6 của pack; sáu câu hỏi ở `03_OSS_LICENSE.md` §7). Cả hai đều **không chặn** phần danh tính thiết bị/enrollment/presence/broker, vì phần đó giống nhau với mọi engine truyền. |
-| Q94 | Hạ tầng relay và cổng phát hành của Nexus (chi tiết hoá Q93) | **Data plane chạy trên một VPS TRẢ PHÍ riêng** (~5 USD/tháng), không dùng Cloudflare Tunnel và không dùng free tier. Chạy `rustdesk-server` (hbbs + hbbr) **KHÔNG SỬA ĐỔI** — bản không sửa thì §13 của AGPL-3.0 không kích hoạt, nên việc dựng hạ tầng đo đạc **không** phải chờ legal review; chỉ *client mang thương hiệu LTT* mới cần. **Chứng thư ký mã HOÃN**, và hệ quả là một ràng buộc phát hành cứng: agent chưa ký thì **chỉ chạy nội bộ trên máy của chính chủ sản phẩm**, tuyệt đối không phân phối cho khách dưới bất kỳ hình thức nào. | **Vì sao VPS trả phí thay vì $0:** Oracle Always Free có thật ($0 vĩnh viễn, 10 TB/tháng) nhưng trần 50 Mbps và máy để không có thể bị thu hồi — một hạ tầng mà nhà cung cấp được quyền lấy lại thì không phải nền cho một sản phẩm khách trả tiền. Mở cổng tại nhà thì $0 nhưng phơi mạng nhà và nhiều ISP Việt Nam dùng CGNAT nên có thể bất khả thi. 5 USD/tháng mua lấy việc không phải nghĩ về cả hai. **Vì sao tách hbbs và hbbr trong đầu:** hbbs (điểm hẹn) chỉ làm tín hiệu, vài KB mỗi kết nối; hbbr (relay) mới tốn băng thông và **chỉ chạy khi xuyên NAT thất bại**. Trộn hai thứ khi ước tính chi phí sẽ cho ra một con số sai gấp nhiều lần. **Vì sao 'chưa ký = nội bộ' là ràng buộc chứ không phải lời khuyên:** agent chạy quyền cao trên máy khách, nên bản cài không ký làm Windows hiện cảnh báo mỗi lần. Dạy khách bấm qua cảnh báo bảo mật chính là rèn đúng phản xạ mà kịch bản lừa đảo T1 cần — ta vừa viết cả một threat model quanh T1 thì không được tự tay huấn luyện nạn nhân. Ràng buộc 10 của Q93 và invariant #7 của pack cũng đòi cập nhật xác minh được nguồn. **Còn mở:** legal review ranh giới AGPL vẫn bắt buộc trước khi phân phối client; xem `docs/nexus/03_OSS_LICENSE.md` §7. |
+| Q94 | Hạ tầng relay và cổng phát hành của Nexus (chi tiết hoá Q93) | **Data plane chạy trên một VPS TRẢ PHÍ riêng** (~5 USD/tháng), không dùng Cloudflare Tunnel và không dùng free tier. Chạy `rustdesk-server` (hbbs + hbbr) **KHÔNG SỬA ĐỔI** — bản không sửa thì §13 của AGPL-3.0 không kích hoạt, nên việc dựng hạ tầng đo đạc **không** phải chờ legal review; chỉ *client mang thương hiệu LTT* mới cần. ~~**Chứng thư ký mã HOÃN**, và hệ quả là một ràng buộc phát hành cứng: agent chưa ký thì chỉ chạy nội bộ, tuyệt đối không phân phối cho khách.~~ **ĐÃ THAY bởi Q95 (2026-08-18).** | **Vì sao VPS trả phí thay vì $0:** Oracle Always Free có thật ($0 vĩnh viễn, 10 TB/tháng) nhưng trần 50 Mbps và máy để không có thể bị thu hồi — một hạ tầng mà nhà cung cấp được quyền lấy lại thì không phải nền cho một sản phẩm khách trả tiền. Mở cổng tại nhà thì $0 nhưng phơi mạng nhà và nhiều ISP Việt Nam dùng CGNAT nên có thể bất khả thi. 5 USD/tháng mua lấy việc không phải nghĩ về cả hai. **Vì sao tách hbbs và hbbr trong đầu:** hbbs (điểm hẹn) chỉ làm tín hiệu, vài KB mỗi kết nối; hbbr (relay) mới tốn băng thông và **chỉ chạy khi xuyên NAT thất bại**. Trộn hai thứ khi ước tính chi phí sẽ cho ra một con số sai gấp nhiều lần. **Vì sao 'chưa ký = nội bộ' là ràng buộc chứ không phải lời khuyên:** agent chạy quyền cao trên máy khách, nên bản cài không ký làm Windows hiện cảnh báo mỗi lần. Dạy khách bấm qua cảnh báo bảo mật chính là rèn đúng phản xạ mà kịch bản lừa đảo T1 cần — ta vừa viết cả một threat model quanh T1 thì không được tự tay huấn luyện nạn nhân. Ràng buộc 10 của Q93 và invariant #7 của pack cũng đòi cập nhật xác minh được nguồn. **Còn mở:** legal review ranh giới AGPL vẫn bắt buộc trước khi phân phối client; xem `docs/nexus/03_OSS_LICENSE.md` §7. |
+| Q95 | Phát hành agent khi chưa có chứng thư ký mã (thay ràng buộc phát hành của Q94) | **VẪN phân phối agent cho khách dù chưa ký mã Windows.** Đổi lại, **toàn vẹn bản cập nhật KHÔNG được bỏ**: agent phải xác minh **chữ ký Ed25519 của chính LTT** trên mọi bản cập nhật **trước khi** thực thi, dùng khoá phát hành ghim sẵn trong agent. Khoá riêng phát hành **không bao giờ** nằm trên máy chủ web, không nằm trong repo, và không nằm trong `secrets/app.env`. Trang tải phải **nói trước** cảnh báo SmartScreen mà khách sẽ thấy, kèm **SHA-256** của bản cài để khách đối chiếu. Agent **không đòi quyền admin** khi cài nếu tránh được. | **Vì sao đổi:** chủ sản phẩm chọn phát hành sớm thay vì chờ mua chứng thư; đó là đánh đổi kinh doanh hợp lệ và không vi phạm invariant nào. **Vì sao KHÔNG bỏ theo phần xác minh cập nhật:** ký mã Windows và ký bản cập nhật giải hai bài toán khác nhau — cái đầu để *Windows* tin binary lúc cài, cái sau để *agent* tin bản vá trước khi chạy. Invariant #7 của pack và ràng buộc 10 của Q93 nói về cái sau. Agent chạy quyền cao trên máy khách, nên một updater không xác minh là đường leo thang đặc quyền hoàn hảo: ai chiếm được máy phát hành hoặc chen được vào đường tải là chiếm **mọi máy khách cùng lúc**. Bỏ ký mã Windows mất sự tiện; bỏ xác minh cập nhật mất cả đội máy. **Và nó không tốn tiền** — nền tảng đã dùng Ed25519 cho `agent_auth`, nên ký bản phát hành chỉ là dùng lại thứ đã có. **Rủi ro còn lại, chấp nhận có ý thức:** khách sẽ thấy cảnh báo SmartScreen khi cài; điều đó vừa làm giảm tỉ lệ cài thành công vừa rèn phản xạ bấm-qua-cảnh-báo mà kịch bản lừa đảo T1 tận dụng. Giảm bằng cách nói trước và công bố SHA-256, **không** giảm được hết. Mua chứng thư vẫn là việc nên làm khi có điều kiện. |
 ---
 
 ## 2. Ràng buộc bất biến
@@ -193392,6 +193395,241 @@ class TestCommenterDelay(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_230_nexus_updates.py
+SHA256=bfa6c56cddf28ebf3cc6dc25a99d3047de39131f6f99f17f09144fef948cff47 BYTES=8663 LINES=229
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.3a — agent chỉ chạy bản cập nhật LTT đã ký (Q95).
+
+Q95 bỏ chứng thư ký mã Windows nhưng **không** bỏ toàn vẹn bản cập nhật, vì hai
+thứ đó giải hai bài toán khác nhau. Cái bị bỏ chỉ làm Windows bớt cảnh báo lúc
+cài; cái được giữ là thứ quyết định **ai được chạy mã với quyền cao trên máy
+khách**.
+
+Agent chạy quyền cao. Một updater không xác minh nghĩa là ai chiếm được máy phát
+hành, hoặc chen được vào đường tải, thì chiếm **mọi máy khách cùng lúc**. HTTPS
+không đủ: nó bảo vệ đường truyền, không bảo vệ trước một máy phát hành đã bị
+chiếm.
+
+Ba tấn công được chốt riêng ở đây, vì mỗi cái **vượt qua** được hai cái kia:
+
+* đổi file sau khi ký      → `sha256` bắt;
+* đổi manifest cho khớp    → chữ ký bắt;
+* **phát lại manifest cũ** → cả hai đều **không** bắt, chỉ phiên bản bắt.
+"""
+from __future__ import annotations
+
+import base64
+import json
+
+import pytest
+
+
+def _b64e(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+@pytest.fixture()
+def khoa():
+    """Cặp khoá phát hành. Trả `(ky(manifest) -> str, public_b64)`."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    from nexus_agent.updates import canonical_manifest
+
+    private = ed25519.Ed25519PrivateKey.generate()
+    pub = _b64e(private.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw))
+
+    def ky(manifest: dict) -> str:
+        return _b64e(private.sign(canonical_manifest(manifest)))
+
+    return ky, pub
+
+
+def _manifest(ky, **doi) -> dict:
+    m = {"version": "1.2.0", "sha256": "a" * 64,
+         "url": "https://app.lttstudios.com/dl/agent-1.2.0.exe", "size": 1024}
+    m.update(doi)
+    m["signature"] = ky(m)
+    return m
+
+
+# ── Đường hợp lệ ─────────────────────────────────────────────────────────────
+
+def test_manifest_ky_dung_thi_qua(khoa):
+    from nexus_agent.updates import verify_manifest
+
+    ky, pub = khoa
+    m = _manifest(ky)
+    assert verify_manifest(m, public_key=pub) is m
+
+
+# ── Ba tấn công, mỗi cái vượt được hai cái kia ───────────────────────────────
+
+def test_doi_FILE_sau_khi_ky_bi_sha256_bat(tmp_path, khoa):
+    from nexus_agent.updates import UpdateError, verify_file
+
+    ky, _pub = khoa
+    that = tmp_path / "agent.exe"
+    that.write_bytes(b"ban that")
+
+    import hashlib
+    m = _manifest(ky, sha256=hashlib.sha256(b"ban that").hexdigest(),
+                  size=len(b"ban that"))
+    verify_file(that, m)                       # ban that thi qua
+
+    that.write_bytes(b"ban da bi doi!!")       # ke tan cong doi file
+    with pytest.raises(UpdateError):
+        verify_file(that, m)
+
+
+def test_doi_MANIFEST_cho_khop_file_gia_bi_chu_ky_bat(khoa):
+    """Kẻ tấn công đổi cả file lẫn `sha256` trong manifest cho khớp nhau."""
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    ky, pub = khoa
+    m = _manifest(ky)
+    m["sha256"] = "b" * 64                     # sua sau khi da ky
+
+    with pytest.raises(UpdateError):
+        verify_manifest(m, public_key=pub)
+
+
+def test_PHAT_LAI_manifest_CU_bi_phien_ban_bat(khoa):
+    """Đây là tấn công mà `sha256` và chữ ký đều **không** bắt được.
+
+    Manifest cũ từng hợp lệ thật, nên chữ ký của nó đúng mãi mãi. Phát lại nó
+    đẩy máy khách về một bản có lỗ hổng đã vá — chữ ký đúng, nội dung đúng, mà
+    vẫn là tấn công.
+    """
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    ky, pub = khoa
+    cu = _manifest(ky, version="1.0.0")
+
+    # Khong khai ban dang chay: khong co gi de so, nen qua.
+    assert verify_manifest(cu, public_key=pub)
+
+    # Khai ban dang chay moi hon: phai tu choi.
+    with pytest.raises(UpdateError) as exc:
+        verify_manifest(cu, public_key=pub, phien_ban_dang_chay="1.2.0")
+    assert "ha cap" in str(exc.value)
+
+
+def test_cung_phien_ban_cung_bi_tu_choi(khoa):
+    """Bằng nhau không phải "mới hơn": cho qua nghĩa là mở đường phát lại chính
+    bản đang chạy, và đó là một vòng cập nhật vô hạn."""
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    ky, pub = khoa
+    m = _manifest(ky, version="1.2.0")
+    with pytest.raises(UpdateError):
+        verify_manifest(m, public_key=pub, phien_ban_dang_chay="1.2.0")
+
+
+def test_phien_ban_khong_parse_duoc_thi_TU_CHOI(khoa):
+    """Fail-closed: một chuỗi phiên bản lạ mà được coi là mới hơn sẽ thành đường
+    lách qua phép chặn hạ cấp."""
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    ky, pub = khoa
+    m = _manifest(ky, version="moi-nhat")
+    with pytest.raises(UpdateError):
+        verify_manifest(m, public_key=pub, phien_ban_dang_chay="1.0.0")
+
+
+# ── Fail-closed ──────────────────────────────────────────────────────────────
+
+def test_agent_CHUA_ghim_khoa_thi_tu_choi_moi_ban(khoa):
+    """Mặc định `RELEASE_PUBLIC_KEY` rỗng. Một agent chưa cấu hình khoá thì thà
+    không cập nhật còn hơn cập nhật bừa."""
+    from nexus_agent import updates
+
+    ky, _pub = khoa
+    assert updates.RELEASE_PUBLIC_KEY == "", (
+        "khoa phat hanh khong duoc ghim san trong repo")
+
+    with pytest.raises(updates.UpdateError) as exc:
+        updates.verify_manifest(_manifest(ky))     # khong truyen public_key
+    assert "khoa phat hanh" in str(exc.value)
+
+
+def test_khoa_KHAC_thi_tu_choi(khoa):
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    ky, _pub = khoa
+    khac = _b64e(ed25519.Ed25519PrivateKey.generate().public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw))
+
+    with pytest.raises(UpdateError):
+        verify_manifest(_manifest(ky), public_key=khac)
+
+
+@pytest.mark.parametrize("thieu", ["version", "sha256", "url", "size"])
+def test_thieu_truong_thi_tu_choi_chu_khong_doan(khoa, thieu):
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    ky, pub = khoa
+    m = _manifest(ky)
+    m[thieu] = ""
+    with pytest.raises(UpdateError):
+        verify_manifest(m, public_key=pub)
+
+
+def test_khong_co_chu_ky_thi_tu_choi(khoa):
+    from nexus_agent.updates import UpdateError, verify_manifest
+
+    _ky, pub = khoa
+    m = {"version": "1.2.0", "sha256": "a" * 64, "url": "https://x/y", "size": 1}
+    with pytest.raises(UpdateError):
+        verify_manifest(m, public_key=pub)
+
+
+# ── Chuỗi được ký ────────────────────────────────────────────────────────────
+
+def test_chu_ky_KHONG_phu_chinh_no(khoa):
+    """`signature` phải nằm ngoài phần được ký, nếu không thì không thể tính."""
+    from nexus_agent.updates import canonical_manifest
+
+    ky, _pub = khoa
+    m = _manifest(ky)
+    assert b"signature" not in canonical_manifest(m)
+
+
+def test_thu_tu_khoa_KHONG_lam_doi_chu_ky(khoa):
+    """Hai bên serialize lệch một khoảng trắng là mọi chữ ký hợp lệ bị từ chối,
+    và triệu chứng trông y hệt 'khoá sai'."""
+    from nexus_agent.updates import canonical_manifest, verify_manifest
+
+    ky, pub = khoa
+    m = _manifest(ky)
+    dao = dict(reversed(list(m.items())))
+
+    assert canonical_manifest(m) == canonical_manifest(dao)
+    assert verify_manifest(dao, public_key=pub)
+
+
+def test_file_dung_kich_thuoc_nhung_SAI_noi_dung_bi_bat(tmp_path, khoa):
+    from nexus_agent.updates import UpdateError, verify_file
+
+    ky, _pub = khoa
+    p = tmp_path / "agent.exe"
+    p.write_bytes(b"12345678")
+    import hashlib
+    m = _manifest(ky, sha256=hashlib.sha256(b"12345678").hexdigest(), size=8)
+    verify_file(p, m)
+
+    p.write_bytes(b"87654321")                 # cung 8 byte, khac noi dung
+    with pytest.raises(UpdateError):
+        verify_file(p, m)
 
 @@@LTT_PROFILE_FILE_END@@@
 

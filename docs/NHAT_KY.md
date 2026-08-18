@@ -14,6 +14,82 @@
 
 ---
 
+## 2026-08-18 — Q94/Q95: hạ tầng relay, và phát hành khi chưa ký mã
+
+- **Mục tiêu:** chốt D2 và xử lý câu hỏi "sao RustDesk lại mất phí".
+- **Hạng mục:** Q94, Q95, N3.3a.
+- **Trạng thái:** xong; **chưa deploy**, cờ `LTT_NEXUS` vẫn tắt.
+
+### Một hiểu nhầm tôi gây ra, và đã sửa
+
+Chủ sản phẩm hỏi vì sao RustDesk mất chi phí vận hành trong khi mục tiêu là làm
+miễn phí. **RustDesk không mất tiền** — client và server đều AGPL-3.0, tự host,
+không phí bản quyền. Cái mất tiền là **một máy có IP công khai**. Lượt trước tôi
+nói gộp hai thứ nên câu "chi phí định kỳ" nghe như phí phần mềm.
+
+### Q94 — D2 đã chốt: VPS trả phí
+
+Oracle Always Free là $0 thật và 10 TB/tháng là thừa, nhưng thua ở hai điểm:
+trần 50 Mbps, và **nhà cung cấp được quyền thu hồi máy để không**. Hạ tầng mà
+người khác được quyền lấy lại không phải nền cho sản phẩm khách trả tiền. Mở
+cổng tại nhà thì phơi mạng nhà và nhiều ISP Việt Nam dùng CGNAT.
+
+Ghi kèm một phân biệt hay bị trộn: **hbbs chỉ làm tín hiệu** (vài KB/kết nối),
+**hbbr mới tốn băng thông** và chỉ chạy khi xuyên NAT thất bại. Trộn hai thứ khi
+ước tính cho ra con số sai gấp nhiều lần.
+
+`docs/nexus/N1_RELAY_RUNBOOK.md` viết sẵn để lúc có máy là chạy. Trong đó **UDP
+21116** được tách nói riêng: quên nó thì mọi thứ *vẫn chạy* nhưng **mọi phiên đi
+vòng qua relay**, nên triệu chứng là hoá đơn băng thông chứ không phải lỗi.
+
+**N1.1 không chờ luật sư:** §13 chỉ kích khi *sửa* chương trình, mà ta chạy
+`rustdesk-server` nguyên bản. Cái chờ luật sư là *client mang thương hiệu LTT*.
+
+### Q95 — vẫn phát hành cho khách dù chưa ký mã
+
+Chủ sản phẩm đổi quy tắc của Q94. Đã đánh dấu dòng cũ `ĐÃ THAY` chứ không xoá lý
+do, theo giao thức `AGENTS.md` mục 6.
+
+Tôi **không** bỏ theo phần xác minh cập nhật, và lý do là hai thứ đó khác nhau:
+
+| | Giải quyết gì | Tiền |
+|---|---|---|
+| Chứng thư ký mã | **Windows** tin binary lúc cài | ~$200–400/năm |
+| Ký bản cập nhật | **Agent** tin bản vá trước khi chạy | **$0 — đã có Ed25519** |
+
+Invariant #7 nói về cái thứ hai. Agent chạy quyền cao, nên updater không xác
+minh nghĩa là ai chiếm máy phát hành hoặc chen vào đường tải thì chiếm **mọi máy
+khách cùng lúc**. Bỏ ký mã mất sự tiện; bỏ xác minh cập nhật mất cả đội máy.
+
+### N3.3a — ba tấn công, mỗi cái vượt được hai cái kia
+
+`nexus_agent/updates.py`. Đổi file → `sha256` bắt. Đổi luôn `sha256` cho khớp →
+chữ ký bắt. **Phát lại manifest cũ → cả hai đều không bắt**, chỉ số phiên bản
+bắt — vì manifest cũ *từng hợp lệ thật* nên chữ ký của nó đúng mãi mãi.
+
+Khoá phát hành **ghim trong mã, không tải về**: agent tải khoá tin cậy thì kẻ
+điều khiển đường tải đưa khoá của nó, và cả chuỗi sụp trong một bước.
+`RELEASE_PUBLIC_KEY` để **rỗng** trong repo → agent chưa cấu hình thì từ chối
+mọi bản cập nhật.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest tests/test_230_nexus_updates.py -q` | **16 passed** |
+| `pytest test_229 + test_230 -q` | **26 passed, 1 skipped** |
+| `pytest tests/test_62_khoa_logic.py -q` | 24 passed |
+| `python tools\gate.py --quick` | **12/12 PASS** |
+
+### Còn tồn đọng
+
+- **Việc của người:** mua VPS; sinh cặp khoá phát hành và cất phần riêng ngoài
+  repo/máy chủ/`app.env`.
+- Trang tải phải nói trước cảnh báo SmartScreen + công bố SHA-256 (Q95).
+- Legal review AGPL vẫn bắt buộc trước khi phân phối **client**.
+
+---
+
 ## 2026-08-17 (tối) — LTT Nexus: prompt 03/04, Q93, và N2.1
 
 - **Mục tiêu:** bắt đầu xây Nexus theo đúng quy trình của pack, lần lượt từng

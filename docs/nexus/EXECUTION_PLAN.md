@@ -82,7 +82,8 @@ N1  Feasibility engine + mạng (cần D1, D2)
 N3  Sản phẩm endpoint Windows
     N3.1 Agent LTT — nửa ĐỘC QUYỀN  ✅ XONG 2026-08-17 (không cần D1/D2)
     N3.2 Ghép engine AGPL           ⛔ cần D1 (legal review)
-    N3.3 Dịch vụ Windows + updater ký  ⛔ cần chứng thư ký mã
+    N3.3a Xác minh cập nhật (ký Ed25519 của LTT)  ✅ XONG 2026-08-18 (Q95)
+    N3.3b Dịch vụ Windows + bản cài              ⬜ không còn chặn (Q95)
 N4  Mobile (cần quyết định phạm vi)
 N5  Sẵn sàng vận hành
 N6  Thương mại hoá + phát hành
@@ -330,7 +331,7 @@ quyết định chặn.
 | R2 | Không có IP công khai → sản phẩm không chạy được ngoài LAN | **Cao** | D2 trước N1 |
 | R3 | Chi phí băng thông relay vượt dự tính | Trung bình | N1.1 phải **đo** tỉ lệ direct vs relay và GB/giờ thật, không ước lượng |
 | R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | `04_THREAT_MODEL.md` T1. **Không đóng được bằng kỹ thuật** — mọi bước của kẻ lừa đảo đều "hợp lệ", hệ thống làm đúng thứ nó được thiết kế. Giảm bằng: mã ghép sinh **trên máy đích**, hạn rất ngắn, cảnh báo bằng ngôn ngữ hậu quả, chỉ báo phiên không tắt được, và email cho chủ tài khoản **mỗi lần ghép**. Phần còn lại là rủi ro **chấp nhận có ý thức**, phải ghi vào Q93 chứ không để im |
-| R5 | Chứng thư ký mã chưa có lúc cần phát hành | Trung bình | **Đã quyết hoãn (Q94)**, nên rủi ro đổi hình dạng: không còn là "quên mua" mà là **ràng buộc phát hành** — agent chưa ký thì chỉ chạy nội bộ, không phân phối cho khách dưới bất kỳ hình thức nào. Chưa ký mà đưa cho khách là dạy họ bấm qua cảnh báo bảo mật của Windows, tức rèn đúng phản xạ mà T1 cần |
+| R5 | Phát hành agent chưa ký mã Windows | **Trung bình, CHẤP NHẬN có ý thức (Q95)** | Chủ sản phẩm chọn phát hành sớm. Rủi ro còn lại là thật và **không giảm hết được**: khách thấy cảnh báo SmartScreen, làm giảm tỉ lệ cài xong và rèn phản xạ bấm-qua-cảnh-báo mà T1 tận dụng. Giảm bằng: nói trước trên trang tải, công bố SHA-256, không đòi quyền admin nếu tránh được. **Phần KHÔNG đánh đổi:** toàn vẹn bản cập nhật vẫn bắt buộc — `nexus_agent/updates.py`, 16 test |
 | R6 | App Store từ chối app điều khiển từ xa | Trung bình | Đọc guidelines **trước** khi viết mobile, không phải sau |
 | R7 | Nexus kéo chậm Public API đang treo | Trung bình | Mục 1 |
 | R8 | Nhánh làm việc: Nexus commit lẫn vào `public-api-v2` | Thấp | Nhánh riêng `nexus-foundation` từ `master` |
@@ -361,3 +362,39 @@ chọn P1/P2 ở mục 1.**
 
 Bước kế tiếp đề nghị: chọn mục 1, trả lời D1/D2/D3, rồi mở nhánh
 `nexus-foundation` và bắt đầu N2.0 + N2.1.
+
+---
+
+## 8. N3.3a — xác minh cập nhật (Q95) ✅ XONG 2026-08-18
+
+`nexus_agent/updates.py` + **16 test** (`test_230`).
+
+Q95 bỏ chứng thư ký mã Windows nhưng **không** bỏ thứ này, vì hai cái giải hai
+bài toán khác nhau: chứng thư làm *Windows* tin binary lúc cài; chữ ký phát hành
+làm *agent* tin bản vá trước khi chạy. Invariant #7 và ràng buộc 10 của Q93 nói
+về cái sau, và nó **không tốn tiền** — nền tảng đã dùng Ed25519 cho `agent_auth`.
+
+**Ba tấn công, mỗi cái vượt được hai cái kia** — nên phải có đủ ba lớp:
+
+| Tấn công | Ai bắt |
+|---|---|
+| Đổi file sau khi ký | `sha256` trong manifest |
+| Đổi luôn `sha256` cho khớp | chữ ký phủ cả manifest |
+| **Phát lại manifest CŨ** | **chỉ số phiên bản** — chữ ký và `sha256` đều đúng |
+
+Cái thứ ba là cái dễ quên nhất: manifest cũ **từng hợp lệ thật**, nên chữ ký của
+nó đúng mãi mãi. Phát lại nó đẩy máy khách về bản có lỗ hổng đã vá — chữ ký
+đúng, nội dung đúng, mà vẫn là tấn công.
+
+Ba lựa chọn fail-closed:
+
+- `RELEASE_PUBLIC_KEY` **rỗng trong repo** → agent chưa cấu hình khoá thì **từ
+  chối mọi bản cập nhật**. Thà không cập nhật còn hơn cập nhật bừa.
+- Khoá **ghim trong mã**, không tải về. Agent tải khoá tin cậy thì kẻ điều khiển
+  đường tải đưa khoá của nó, và cả chuỗi tin cậy sụp trong một bước.
+- Phiên bản **không parse được** → coi là *không* mới hơn. Ngược lại thì một
+  chuỗi lạ thành đường lách qua phép chặn hạ cấp.
+
+Còn nợ, và là **việc của người**: sinh cặp khoá phát hành, ghim phần công khai
+vào `RELEASE_PUBLIC_KEY`, và cất phần riêng **ngoài repo, ngoài máy chủ web,
+ngoài `secrets/app.env`** — nó ký thủ công cho mỗi bản phát hành.
