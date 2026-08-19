@@ -14,6 +14,51 @@
 
 ---
 
+## 2026-08-19 — Nexus relay dựng THẬT trên gateway Windows (Q96)
+
+Q94 lập kế hoạch relay trên một **VPS Linux trả phí riêng**. Thực tế đi khác, và
+đi khác một cách hợp lý: chủ sản phẩm **đã có sẵn** một VPS Windows đang làm NAT
+gateway cho mạng Proxmox (`45.76.185.75`). Dùng lại nó → chi phí thêm **bằng 0**,
+đúng mục tiêu "free hết". Ghi thành **Q96** vì nó đổi hai giả định của Q94, không
+phải một chi tiết vặt.
+
+### Đã làm (điều khiển VPS qua RDP)
+
+- Dò máy: Windows Server 2016 Standard **Evaluation**, 1 vCPU / 2 GB RAM,
+  C: 31,3 GB trống; `Get-NetNat` → `PVEGW` NAT `10.50.0.0/16` cho VM Proxmox.
+- Tải `rustdesk-server-windows-x86_64-unsigned.zip` (11.909.626 byte), giải nén
+  `C:\rustdesk\x86_64\`, cài bằng `RustDeskServer.Setup.exe` → dùng **nssm**.
+- Mở firewall: `RustDesk TCP 21115-21119` + `RustDesk UDP 21116`.
+- **Xác minh dịch vụ đúng cách**: `Get-Service *rustdesk*` trả **rỗng** — suýt
+  kết luận nhầm là chưa cài. Dịch vụ tên là `hbbs`/`hbbr` (không chứa chữ
+  "rustdesk"), cả hai **Running / StartMode Auto** → sống lại sau reboot.
+- **Xác minh cổng từ NGOÀI Internet** (không phải netstat tại chỗ): cả 5 cổng
+  TCP 21115-21119 mở. Log hbbs xác nhận `Listening on tcp/udp :21116`.
+- Khoá công khai server: `A1MZFm2igQwZ29CMGYlhmjP7JI3yXzpc0qV17IqFndI=` (không
+  bí mật — client cần nó để không bị đứng giữa).
+
+### Hai rủi ro ghi lại, chưa xử lý
+
+1. **Relay nằm TRÊN chính gateway của mạng VM.** Q94 hình dung máy riêng để cô
+   lập. Lỗ hổng `hbbr` = kẻ tấn công trên cổng vào `10.50.0.0/16`. Đổi lấy tốc
+   độ dựng, có ý thức. Đường sạch hơn: tách sang VM riêng sau.
+2. **Windows Server 2016 EVALUATION còn 118 ngày** → hết hạn thì tự tắt máy mỗi
+   giờ, kéo sập cả NAT gateway. Ngoài phạm vi Nexus nhưng phải xử lý giấy phép.
+
+### Còn nợ (không tự làm được lúc này)
+
+- Phép đo N1.1: tỉ lệ P2P/relay + GB/giờ khi relay + **T10 (relay thấy nội dung
+  màn hình không)** — cần **hai máy client thật ở hai mạng**, chưa có.
+- Đổi mật khẩu VPS (đã lộ trong phiên) + siết RDP 3389.
+
+### Sửa lặt vặt trong tài liệu
+
+- `N1_RELAY_RUNBOOK.md`: thêm §7 (bản ghi thật); sửa §2 — **khoá công khai KHÔNG
+  phải bí mật**, ghi vào tài liệu là đúng, giấu đi là hiểu sai vai trò của nó.
+- Sửa mấy byte hỏng trong runbook do một lần ghi file trước làm nát đường dẫn.
+
+---
+
 ## 2026-08-18 — Q94/Q95: hạ tầng relay, và phát hành khi chưa ký mã
 
 - **Mục tiêu:** chốt D2 và xử lý câu hỏi "sao RustDesk lại mất phí".
