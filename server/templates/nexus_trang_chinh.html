@@ -78,6 +78,12 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn">{{ _("Ghép một máy mới") }}</button>
     </form>
+    <p class="muted" style="margin-top:0.75rem;">
+      {# Phai tai + cai agent TRUOC khi ghep — nen link tai dat ngay canh nut ghep,
+         khong giau trong menu. #}
+      {{ _("Chưa cài phần mềm trên máy cần điều khiển?") }}
+      <a href="{{ app.route_prefix }}/tai">{{ _("Tải phần mềm Nexus cho Windows") }}</a>
+    </p>
   </div>
 
   <div class="card">

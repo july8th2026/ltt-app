@@ -26,7 +26,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from apps.nexus.manifest import MANIFEST
 from platform_core import nexus
 from platform_core.i18n import _ as _t
-from platform_core.nexus import audit, devices, sessions
+from platform_core.nexus import audit, devices, release, sessions
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
@@ -177,6 +177,27 @@ def _nhan_su_kien() -> dict:
         audit.KET_THUC_PHIEN: _t('Kết thúc phiên'),
         audit.THU_HOI_PHIEN: _t('Cắt phiên'),
     }
+
+
+@router.get("/tai", response_class=HTMLResponse)
+def tai(request: Request, _u: str = Depends(require_login)):
+    """Trang tải agent. Công bố SHA-256 và **nói trước** cảnh báo SmartScreen (Q95).
+
+    Vì sao chính LTT phải nói trước cảnh báo: khách sẽ thấy nó dù thế nào (agent
+    chưa ký mã). Nếu người giải thích cảnh báo đó là LTT thì nó là một bước cài
+    bình thường; nếu người giải thích là **kẻ gọi điện lừa đảo** (T1) thì cùng
+    cảnh báo đó thành đòn bẩy. Ai kể trước thì người đó định nghĩa nó.
+
+    `ban` có thể là `None` (chưa phát hành) — template xử lý, không phải lỗi.
+    """
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    _chu(request)
+    ban = release.ban_phat_hanh_hien_tai()
+    return templates.TemplateResponse(request, "nexus_tai.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST, "ban": ban,
+    })
 
 
 @router.get("/nhat-ky", response_class=HTMLResponse)

@@ -109,15 +109,26 @@ positive, không phải mẹo.
 
 ## 5. Việc phải làm khi bắt tay đóng gói
 
-- [ ] Thêm PyInstaller vào **môi trường dựng**, không vào `requirements.txt` của
-      máy chủ — nó là công cụ dev, và một phụ thuộc thừa trên production là một
-      thứ nữa phải vá khi có CVE.
-- [ ] Dựng **one-dir**, không one-file (mục 3), và **không UPX** (mục 4b).
-- [ ] Công bố **SHA-256** của bản cài trên trang tải (Q95 yêu cầu).
-- [ ] Trang tải **nói trước** cảnh báo khách sẽ thấy — để chính LTT là người
-      giải thích, chứ không phải kẻ gọi điện cho họ.
-- [ ] Thử trên **một máy Windows sạch**, không phải máy đã có Python. Loại lỗi
-      của bước này chỉ xuất hiện ở đó.
-- [ ] Ghim `RELEASE_PUBLIC_KEY` trước khi dựng bản đầu tiên — chưa ghim thì
-      agent từ chối mọi bản cập nhật (đúng thiết kế, nhưng sẽ khó hiểu nếu
-      không biết).
+**Công cụ đã dựng 2026-08-19** (test `test_233`, `test_234`, `test_235`):
+
+- [x] **Spec PyInstaller** `nexus_agent/packaging/nexus_agent.spec` — one-dir,
+      không UPX, không kéo GUI/thư viện máy chủ. Bất biến khoá bằng `test_234`.
+- [x] **Script dựng** `tools/build_agent.py` — import PyInstaller *chỉ khi dựng*
+      nên máy chủ và gate không cần có nó; in SHA-256 sau khi nén.
+- [x] **Sinh khoá** `tools/nexus_release_key.py` — từ chối ghi vào repo/secrets/
+      data; không in khoá riêng ra màn hình.
+- [x] **Ký bản phát hành** `tools/nexus_sign_release.py` — dùng lại
+      `canonical_manifest` của `updates.py` (một chỗ serialize duy nhất), tự
+      kiểm bằng `verify_manifest` trước khi ghi.
+- [x] **Trang tải** `/nexus/tai` — công bố SHA-256, **nói trước** cảnh báo
+      SmartScreen bằng ngôn ngữ hậu quả, cảnh báo T1 (đừng đọc mã qua điện
+      thoại). Fail-safe: chưa có bản thì nói thật, không sập.
+
+**Còn lại là việc chạy trên máy thật, không phải code** (xem `N5_VAN_HANH.md` §3):
+
+- [ ] `pip install pyinstaller` trong **môi trường dựng**, không vào
+      `requirements.txt` máy chủ.
+- [ ] Thử `build_agent.py` trên **một máy Windows sạch**, không phải máy đã có
+      Python. Loại lỗi của bước này chỉ xuất hiện ở đó.
+- [ ] Sinh khoá thật + ghim `RELEASE_PUBLIC_KEY` **trước** khi dựng bản đầu —
+      chưa ghim thì agent từ chối mọi bản cập nhật (đúng thiết kế).

@@ -8128,3 +8128,75 @@ msgstr "🧪 Run a test job"
 #~ msgid "MP4, MOV, MKV, AVI · browser tối đa 90MB khi R2 CORS chưa được bật"
 #~ msgstr "MP4, MOV, MKV, AVI · up to 90 MB from the browser until R2 CORS is enabled"
 
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Tải phần mềm"
+msgstr "Download software"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Tải phần mềm Nexus cho máy Windows"
+msgstr "Download Nexus for Windows"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Tải phần mềm Nexus cho Windows"
+msgstr "Download Nexus for Windows"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Chưa có bản phát hành nào. Vui lòng quay lại sau."
+msgstr "No release is available yet. Please check back later."
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Phiên bản"
+msgstr "Version"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Windows sẽ hiện một cảnh báo khi bạn mở file này"
+msgstr "Windows will show a warning when you open this file"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Đây là điều bình thường và chúng tôi báo trước để bạn yên tâm: phần mềm này chưa mua chứng thư ký mã của Windows, nên SmartScreen sẽ hiện bảng"
+msgstr "This is normal and we are telling you in advance so you are not alarmed: this software has not purchased a Windows code-signing certificate, so SmartScreen will show the panel"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Bấm"
+msgstr "Click"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "rồi"
+msgstr "then"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "để tiếp tục."
+msgstr "to continue."
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Chỉ mở file bạn tải TRỰC TIẾP từ trang này. Nếu có ai đó gọi điện bảo bạn tải phần mềm điều khiển máy từ nơi khác, hoặc đọc cho họ nghe một mã ghép qua điện thoại — hãy dừng lại. Không nhân viên thật nào cần điều đó."
+msgstr "Only open a file you downloaded DIRECTLY from this page. If someone calls and tells you to download remote-control software from somewhere else, or to read them a pairing code over the phone - stop. No real staff member ever needs that."
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Tải Nexus"
+msgstr "Download Nexus"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Kiểm tra file đã tải (không bắt buộc, dành cho người rành máy tính)"
+msgstr "Verify the downloaded file (optional, for technically inclined users)"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Sau khi tải, bạn có thể xác nhận file đúng bằng cách so mã SHA-256. Mở PowerShell tại thư mục chứa file và chạy:"
+msgstr "After downloading, you can confirm the file is correct by comparing its SHA-256. Open PowerShell in the folder containing the file and run:"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Kết quả phải khớp đúng chuỗi dưới đây:"
+msgstr "The result must exactly match the string below:"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Nếu mã không khớp, ĐỪNG mở file — hãy xoá và tải lại."
+msgstr "If the hash does not match, do NOT open the file - delete it and download again."
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Về danh sách máy của tôi"
+msgstr "Back to my devices"
+
+#. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
+msgid "Chưa cài phần mềm trên máy cần điều khiển?"
+msgstr "Haven't installed the software on the machine you want to control?"

@@ -14,6 +14,61 @@
 
 ---
 
+## 2026-08-19 (chiều) — N3.3b đóng gói + phát hành, và trang tải
+
+Sáng dựng relay (Q96). Chiều lấp lỗ lớn nhất còn lại trước khi phát hành được
+cho khách: **`updates.py` kiểm manifest nhưng không có gì tạo ra manifest** —
+tức là Q95 "vẫn phát hành cho khách" chưa có đường thực thi. Không có bên ký thì
+không có bản cập nhật hợp lệ nào tồn tại.
+
+### Đã dựng (đều có test)
+
+- `tools/nexus_release_key.py` — sinh cặp khoá phát hành. Từ chối ghi khoá riêng
+  vào repo/secrets/data (Q95). **Không in khoá riêng ra màn hình** — cùng lý do
+  agent không in khoá thiết bị: một giá trị đã in là đã vào lịch sử terminal.
+- `tools/nexus_sign_release.py` — ký manifest. Điểm quan trọng: **dùng lại
+  `canonical_manifest` của chính `updates.py`**, không serialize lại. Docstring
+  của `updates.py` nói thẳng byte được ký phải sinh ở một chỗ duy nhất; cách chắc
+  chắn duy nhất để hai bên không lệch là chỉ có một chỗ. Và nó **tự kiểm bằng
+  `verify_manifest`** trước khi ghi — "ký xong tưởng xong" là lỗi chỉ hiện trên
+  máy khách.
+- `nexus_agent/packaging/nexus_agent.spec` + `tools/build_agent.py` — one-dir,
+  không UPX (giảm Defender xoá file — N3 §4b). Build script import PyInstaller
+  *chỉ khi dựng*, nên máy chủ và gate không cần có nó (nó là công cụ dev).
+- `/nexus/tai` + `platform_core/nexus/release.py` — trang tải công bố SHA-256,
+  **nói trước** cảnh báo SmartScreen bằng ngôn ngữ hậu quả, và cảnh báo T1
+  (đừng đọc mã ghép qua điện thoại). Fail-safe: chưa có bản phát hành thì nói
+  thật, không sập — khác với cờ `LTT_NEXUS` fail-*closed*.
+
+### Test: 4 file mới, tất cả xanh
+
+`test_233` (15) round-trip ký↔kiểm + guard khoá ngoài repo + chống hạ cấp;
+`test_234` (7) bất biến spec one-dir/không-UPX; `test_235` (7) trang tải hiện
+SHA-256 + cảnh báo, fail-safe, 404 khi cờ tắt.
+
+### N5 — runbook vận hành
+
+`docs/nexus/N5_VAN_HANH.md`: năm điều kiện trước khi bật `LTT_NEXUS`, quy trình
+phát hành từng bản (dựng → ký trên máy khác → công bố), giám sát, và ứng phó sự
+cố theo mức (thu hồi thiết bị → tắt cờ → dừng relay → xoay khoá lộ). Ghi rõ bật
+cờ mở phần danh tính, **không** mở luồng điều khiển (chưa có) — nên an toàn để
+chạy thử nội bộ, chưa phải mở bán.
+
+### i18n
+
+18 chuỗi mới của trang tải + link tải trên trang chính đã dịch English tay,
+**không** để msgmerge đoán — hai chuỗi bị nó gắn fuzzy đoán sai ("Tải Nexus",
+"Về danh sách máy") đã sửa lại. Đã biên dịch `.mo`.
+
+### Còn chặn, không phải việc của phiên này
+
+- **Tích hợp engine (N3.2)** — chờ legal review AGPL (D1/R1).
+- **Đo P2P/relay + T10 (N1.1)** — cần hai máy client thật.
+- **Thuê bao tháng (D3)** — hạng mục riêng, sổ credit không phủ.
+- Sinh khoá thật + dựng bản đầu trên máy Windows sạch — việc của người (N5 §3).
+
+---
+
 ## 2026-08-19 — Nexus relay dựng THẬT trên gateway Windows (Q96)
 
 Q94 lập kế hoạch relay trên một **VPS Linux trả phí riêng**. Thực tế đi khác, và

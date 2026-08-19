@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:3ee4ac89ac62ca6110aad05c7b5d0f1d06ab7e7ae96caa47bc74a9d549fb3556
-Nguồn đã quét : 1163 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:b2b32d8adccc7aee1831b0fe63bb3c25d6440c56213a68aadc0213629f872507
+Nguồn đã quét : 1171 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -235,7 +235,7 @@ Các lớp chính:
   URL=/nexus | surface=customer | lifecycle=development
   enabled=False | public=True | parent=-
   requires=- | capabilities=Utilities
-  HTTP routes=4 | table_prefix=- | manifest_error=-
+  HTTP routes=5 | table_prefix=- | manifest_error=-
   credit_cost=none
   job_types=-
   Agent tools (0):
@@ -502,7 +502,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (321)
+4. HTTP ROUTE INVENTORY (322)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -600,7 +600,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [mediatools] GET    /mediatools → media_tools | auth~login | apps/mediatools/routes.py:10
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:62
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:96
-- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:183
+- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:204
+- [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:183
 - [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:128
 - [platform] GET    / → home | auth~optional | server/routes/dashboard.py:100
 - [platform] GET    /api/audit/status → audit_status | auth~login | server/routes/monitor.py:76
@@ -940,7 +941,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (107 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (108 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -989,6 +990,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_NEW_ADMIN_PASSWORD
 - LTT_NEXUS
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
+- LTT_NEXUS_RELEASE_MANIFEST
 - LTT_OPS_ALERT_EMAIL
 - LTT_PAYOS_
 - LTT_PAYOS_API_KEY
@@ -1049,7 +1051,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (235 file pytest + 3 frontend)
+10. QUALITY GATES (238 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1221,6 +1223,9 @@ Test inventory:
 - tests/test_230_nexus_updates.py
 - tests/test_231_nexus_e2e.py
 - tests/test_232_nexus_service.py
+- tests/test_233_nexus_release.py
+- tests/test_234_nexus_packaging.py
+- tests/test_235_nexus_download.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -1311,8 +1316,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1163 file)
-Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:874, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1171 file)
+Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:881, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1925,7 +1930,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (98)
+[platform_core] (99)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1967,6 +1972,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/nexus/agent_auth.py
 - platform_core/nexus/audit.py
 - platform_core/nexus/devices.py
+- platform_core/nexus/release.py
 - platform_core/nexus/sessions.py
 - platform_core/nexus/tables.py
 - platform_core/observability.py
@@ -2048,7 +2054,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (138)
+[server] (139)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2173,6 +2179,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - server/templates/nap_khong_thay.html
 - server/templates/nexus_ma_ghep.html
 - server/templates/nexus_nhat_ky.html
+- server/templates/nexus_tai.html
 - server/templates/nexus_trang_chinh.html
 - server/templates/oauth_result.html
 - server/templates/oauth_tiktok_disclosure.html
@@ -2195,7 +2202,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (252)
+[tests] (255)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2378,6 +2385,9 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_230_nexus_updates.py
 - tests/test_231_nexus_e2e.py
 - tests/test_232_nexus_service.py
+- tests/test_233_nexus_release.py
+- tests/test_234_nexus_packaging.py
+- tests/test_235_nexus_download.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -2449,7 +2459,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (69)
+[tools] (72)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2462,6 +2472,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - tools/autosub_load_benchmark.py
 - tools/bench_public_api_key.py
 - tools/benchmark_upscale_ai_detail.py
+- tools/build_agent.py
 - tools/build_postman.py
 - tools/build_public_api_docs.py
 - tools/build_release.py
@@ -2497,6 +2508,8 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - tools/import_r2_modelark_from_botgemini.py
 - tools/job_retention.py
 - tools/lint_app_contract.py
+- tools/nexus_release_key.py
+- tools/nexus_sign_release.py
 - tools/prepare_agent_canary.py
 - tools/public_api_load_test.py
 - tools/qualitylab_calibration.py
@@ -2542,7 +2555,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1163 file; 10534256 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1171 file; 10573495 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -15950,7 +15963,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/nexus/routes.py
-SHA256=7c3792e995fcc8884627d0ad0f32880e542157fa06e1235c3a0c15fd7b18ed6d BYTES=8024 LINES=202
+SHA256=c89a90ee72dba689afe2bd55db5acca7610e8e489a462bb635c7ca2d283584e7 BYTES=9039 LINES=223
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của bề mặt khách hàng Nexus. Chỉ lo HTTP — nghiệp vụ ở `platform_core.nexus`.
 
@@ -15980,7 +15993,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from apps.nexus.manifest import MANIFEST
 from platform_core import nexus
 from platform_core.i18n import _ as _t
-from platform_core.nexus import audit, devices, sessions
+from platform_core.nexus import audit, devices, release, sessions
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
@@ -16131,6 +16144,27 @@ def _nhan_su_kien() -> dict:
         audit.KET_THUC_PHIEN: _t('Kết thúc phiên'),
         audit.THU_HOI_PHIEN: _t('Cắt phiên'),
     }
+
+
+@router.get("/tai", response_class=HTMLResponse)
+def tai(request: Request, _u: str = Depends(require_login)):
+    """Trang tải agent. Công bố SHA-256 và **nói trước** cảnh báo SmartScreen (Q95).
+
+    Vì sao chính LTT phải nói trước cảnh báo: khách sẽ thấy nó dù thế nào (agent
+    chưa ký mã). Nếu người giải thích cảnh báo đó là LTT thì nó là một bước cài
+    bình thường; nếu người giải thích là **kẻ gọi điện lừa đảo** (T1) thì cùng
+    cảnh báo đó thành đòn bẩy. Ai kể trước thì người đó định nghĩa nó.
+
+    `ban` có thể là `None` (chưa phát hành) — template xử lý, không phải lỗi.
+    """
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    _chu(request)
+    ban = release.ban_phat_hanh_hien_tai()
+    return templates.TemplateResponse(request, "nexus_tai.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST, "ban": ban,
+    })
 
 
 @router.get("/nhat-ky", response_class=HTMLResponse)
@@ -109172,6 +109206,70 @@ __all__ = ["ALPHABET", "CODE_LEN", "GIU_MA_DA_DUNG_NGAY", "GIU_MA_HET_HAN_NGAY",
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/release.py
+SHA256=4ff926f565d635ae8e68c8aca70e163c6a5f179ca35f711d6d15f8d4289e8827 BYTES=2694 LINES=58
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Đọc manifest bản phát hành agent để trang tải hiển thị (Q95).
+
+Trang tải phải công bố **SHA-256** của bản cài để khách đối chiếu, và nói trước
+cảnh báo SmartScreen. Con số SHA-256 đó đến từ manifest mà `tools/nexus_sign_release.py`
+sinh ra và người vận hành đặt vào `data/nexus/release_manifest.json` (dữ liệu vận
+hành, **không** commit — cùng chỗ với các dữ liệu vận hành khác, Q28).
+
+**Đọc để HIỂN THỊ, không để tin.** Bên tin manifest là agent, và nó xác minh chữ
+ký Ed25519 trước khi chạy (`nexus_agent/updates.py`). Trang web chỉ khoe con số
+cho người đọc; nên chỗ này **không** kiểm chữ ký, và cũng vì thế nó không được là
+đường mà một manifest giả lọt vào máy khách — nó không chạm máy khách.
+
+**Fail-safe, không fail-closed:** thiếu file hay file hỏng thì trả `None` để
+trang nói "chưa có bản phát hành", **không** ném 500. Một trang tải sập vì thiếu
+một file dữ liệu là một trang tải tệ hơn một trang nói thật rằng chưa có gì để
+tải. (Khác với cờ `LTT_NEXUS` fail-*closed* — ở đó im lặng là đúng; ở đây rõ
+ràng là đúng.)
+"""
+from __future__ import annotations
+
+import json
+import os
+
+#: Các trường trang tải cần để hiển thị. Thiếu bất kỳ cái nào → coi như chưa có
+#: bản phát hành, vì một dòng nửa vời (có version, thiếu sha256) tệ hơn không có.
+TRUONG_HIEN_THI = ("version", "sha256", "url", "size")
+
+
+def _duong_manifest(env: dict | None = None) -> str:
+    e = os.environ if env is None else env
+    thu_cong = str(e.get("LTT_NEXUS_RELEASE_MANIFEST", "")).strip()
+    if thu_cong:
+        return thu_cong
+    from platform_core.runtime_paths import data_path
+
+    return data_path("nexus", "release_manifest.json")
+
+
+def ban_phat_hanh_hien_tai(env: dict | None = None) -> dict | None:
+    """Manifest bản phát hành hiện tại, hoặc `None` nếu chưa có / không đọc được.
+
+    Không bao giờ ném: mọi lỗi (thiếu file, JSON hỏng, thiếu trường) đều thành
+    `None`. Xem docstring module vì sao fail-safe chứ không fail-closed ở đây.
+    """
+    duong = _duong_manifest(env)
+    try:
+        with open(duong, "r", encoding="utf-8") as f:
+            m = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if not isinstance(m, dict):
+        return None
+    if any(not str(m.get(t) or "").strip() for t in TRUONG_HIEN_THI):
+        return None
+    return m
+
+
+__all__ = ["TRUONG_HIEN_THI", "ban_phat_hanh_hien_tai"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/sessions.py
 SHA256=355f434d644ec920f8af86499822d79c9863351b17468602f7834213e6b65217 BYTES=8764 LINES=207
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -144518,8 +144616,72 @@ SHA256=1074cb0fd81c4f903642c51055c5ab506b6fc37655a6cadd3e8245d918bab5b5 BYTES=26
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_tai.html
+SHA256=a3bd5d0dbaa9cfaea9c809b13f122f552c96ce7ab672f0bec9355fbfd58b1dab BYTES=3166 LINES=58
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Tải phần mềm") }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Tải phần mềm Nexus cho máy Windows") }}</h2>
+
+    {% if not ban %}
+      {# Fail-safe: chua co ban phat hanh thi noi that, khong hien nut tai gay #}
+      <p class="muted">{{ _("Chưa có bản phát hành nào. Vui lòng quay lại sau.") }}</p>
+    {% else %}
+      <p class="muted">
+        {{ _("Phiên bản") }} <strong>{{ ban.version }}</strong> —
+        {{ (ban.size / 1048576) | round(1) }} MB
+      </p>
+
+      {# Q95: NOI TRUOC canh bao SmartScreen, bang ngon ngu hau qua that, de
+         chinh LTT la nguoi giai thich no chu khong phai ke goi dien (T1). #}
+      <div class="card" style="border:1px solid #C99A2E;background:#2A2413;margin:16px 0;">
+        <h3 style="margin-top:0;">⚠️ {{ _("Windows sẽ hiện một cảnh báo khi bạn mở file này") }}</h3>
+        <p>
+          {{ _("Đây là điều bình thường và chúng tôi báo trước để bạn yên tâm: phần mềm này chưa mua chứng thư ký mã của Windows, nên SmartScreen sẽ hiện bảng") }}
+          <em>“Windows protected your PC”</em>.
+          {{ _("Bấm") }} <strong>“More info”</strong> {{ _("rồi") }} <strong>“Run anyway”</strong>
+          {{ _("để tiếp tục.") }}
+        </p>
+        <p style="margin-bottom:0;">
+          {{ _("Chỉ mở file bạn tải TRỰC TIẾP từ trang này. Nếu có ai đó gọi điện bảo bạn tải phần mềm điều khiển máy từ nơi khác, hoặc đọc cho họ nghe một mã ghép qua điện thoại — hãy dừng lại. Không nhân viên thật nào cần điều đó.") }}
+        </p>
+      </div>
+
+      <p>
+        <a class="btn" href="{{ ban.url }}" rel="noopener">
+          ⬇ {{ _("Tải Nexus") }} {{ ban.version }}
+        </a>
+      </p>
+
+      {# SHA-256 de khach doi chieu file da tai la dung file da ky #}
+      <h3>{{ _("Kiểm tra file đã tải (không bắt buộc, dành cho người rành máy tính)") }}</h3>
+      <p class="muted">
+        {{ _("Sau khi tải, bạn có thể xác nhận file đúng bằng cách so mã SHA-256. Mở PowerShell tại thư mục chứa file và chạy:") }}
+      </p>
+      <pre style="overflow-x:auto;padding:12px;background:#1A1A1A;border-radius:6px;"><code>Get-FileHash .\{{ ban.url.split('/')[-1] }} -Algorithm SHA256</code></pre>
+      <p class="muted">{{ _("Kết quả phải khớp đúng chuỗi dưới đây:") }}</p>
+      <pre style="overflow-x:auto;padding:12px;background:#1A1A1A;border-radius:6px;"><code>{{ ban.sha256 }}</code></pre>
+      <p class="muted">
+        {{ _("Nếu mã không khớp, ĐỪNG mở file — hãy xoá và tải lại.") }}
+      </p>
+    {% endif %}
+
+    <p style="margin-top:24px;">
+      <a href="{{ app.route_prefix }}">← {{ _("Về danh sách máy của tôi") }}</a>
+    </p>
+  </div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_trang_chinh.html
-SHA256=b1344bb7a0aaaa4c0125f1bebbdb3120bbd9be540054c1c87bdad01ff2e4ec1b BYTES=4680 LINES=106
+SHA256=00a38cc596cadbc4403856dcb0737a6ef6ea6835e1a009500a5cd39695265893 BYTES=5036 LINES=112
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
@@ -144601,6 +144763,12 @@ SHA256=b1344bb7a0aaaa4c0125f1bebbdb3120bbd9be540054c1c87bdad01ff2e4ec1b BYTES=46
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn">{{ _("Ghép một máy mới") }}</button>
     </form>
+    <p class="muted" style="margin-top:0.75rem;">
+      {# Phai tai + cai agent TRUOC khi ghep — nen link tai dat ngay canh nut ghep,
+         khong giau trong menu. #}
+      {{ _("Chưa cài phần mềm trên máy cần điều khiển?") }}
+      <a href="{{ app.route_prefix }}/tai">{{ _("Tải phần mềm Nexus cho Windows") }}</a>
+    </p>
   </div>
 
   <div class="card">
@@ -194056,6 +194224,463 @@ def test_ngoai_Windows_thi_noi_thang_chu_khong_chay_bua(monkeypatch):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_233_nexus_release.py
+SHA256=2f2e900838d73c36246e854eae37dd7f596ecad6c5e41c37afbe89adff4a541b BYTES=7202 LINES=168
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.3b — bên KÝ bản phát hành, đối chiếu với bên KIỂM đã có.
+
+`nexus_agent/updates.py` kiểm manifest; `tools/nexus_sign_release.py` tạo ra nó.
+Hai file này phải khớp **byte một**, nên phép kiểm nặng nhất ở đây là *round-trip
+thật*: ký bằng công cụ phát hành, rồi đưa cho đúng hàm mà máy khách sẽ chạy. Một
+test gọi lại `json.dumps` của riêng nó sẽ bỏ lọt đúng loại lệch mà cả thiết kế
+này sợ nhất — nên test dùng chính `verify_manifest`, không dựng bản sao.
+"""
+from __future__ import annotations
+
+import base64
+import json
+from pathlib import Path
+
+import pytest
+
+from nexus_agent import updates
+from tools import nexus_release_key as keymod
+from tools import nexus_sign_release as signmod
+
+
+REPO = Path(__file__).resolve().parents[1]
+
+
+def _sinh_khoa(tmp_path: Path) -> tuple[Path, str]:
+    """Sinh cặp khoá trong thư mục tạm (ngoài repo). Trả (file khoá riêng, pub)."""
+    out = tmp_path / "keys" / "nexus_release.key"
+    pub = keymod.sinh(out)
+    return out, pub
+
+
+def _artifact(tmp_path: Path, noi_dung: bytes = b"gia lam agent zip") -> Path:
+    p = tmp_path / "nexus-agent-1.2.0.zip"
+    p.write_bytes(noi_dung)
+    return p
+
+
+# ── Round-trip: ký rồi kiểm bằng chính hàm của máy khách ─────────────────────
+
+def test_ky_xong_thi_verify_manifest_chap_nhan(tmp_path):
+    key, pub = _sinh_khoa(tmp_path)
+    art = _artifact(tmp_path)
+    manifest = signmod.ky(artifact=art, version="1.2.0",
+                          url="https://app.lttstudios.com/nexus/tai/x.zip",
+                          key_path=key)
+    # Ben khach: khoa ghim, phien ban dang chay cu hon -> phai nhan.
+    updates.verify_manifest(manifest, public_key=pub, phien_ban_dang_chay="1.1.0")
+
+
+def test_sha256_va_size_khop_file_that(tmp_path):
+    key, pub = _sinh_khoa(tmp_path)
+    noi_dung = b"x" * 5000
+    art = _artifact(tmp_path, noi_dung)
+    manifest = signmod.ky(artifact=art, version="2.0.0",
+                          url="https://x/y.zip", key_path=key)
+    assert manifest["size"] == 5000
+    # verify_file doc file that va so sha256/size — khong duoc nem.
+    updates.verify_file(art, manifest)
+
+
+# ── Chống giả mạo: đổi một byte sau khi ký thì vỡ ────────────────────────────
+
+def test_doi_mot_byte_trong_artifact_lam_verify_file_tu_choi(tmp_path):
+    key, _ = _sinh_khoa(tmp_path)
+    art = _artifact(tmp_path, b"ban goc")
+    manifest = signmod.ky(artifact=art, version="1.0.0",
+                          url="https://x/y.zip", key_path=key)
+    art.write_bytes(b"ban da bi doi")            # kẻ tấn công tráo file
+    with pytest.raises(updates.UpdateError):
+        updates.verify_file(art, manifest)
+
+
+def test_doi_sha256_trong_manifest_lam_chu_ky_hong(tmp_path):
+    key, pub = _sinh_khoa(tmp_path)
+    art = _artifact(tmp_path)
+    manifest = signmod.ky(artifact=art, version="1.0.0",
+                          url="https://x/y.zip", key_path=key)
+    manifest["sha256"] = "0" * 64             # sửa nội dung đã ký
+    with pytest.raises(updates.UpdateError):
+        updates.verify_manifest(manifest, public_key=pub)
+
+
+def test_khoa_khac_thi_tu_choi(tmp_path):
+    key, _ = _sinh_khoa(tmp_path)
+    art = _artifact(tmp_path)
+    manifest = signmod.ky(artifact=art, version="1.0.0",
+                          url="https://x/y.zip", key_path=key)
+    _, pub_khac = _sinh_khoa(tmp_path / "khac")
+    with pytest.raises(updates.UpdateError):
+        updates.verify_manifest(manifest, public_key=pub_khac)
+
+
+# ── Chống hạ cấp: bản không mới hơn thì bị từ chối ───────────────────────────
+
+def test_phat_lai_ban_cu_bi_chan(tmp_path):
+    key, pub = _sinh_khoa(tmp_path)
+    art = _artifact(tmp_path)
+    manifest = signmod.ky(artifact=art, version="1.0.0",
+                          url="https://x/y.zip", key_path=key)
+    # Chu ky HOP LE that, nhung bang phien ban dang chay -> van chan.
+    with pytest.raises(updates.UpdateError):
+        updates.verify_manifest(manifest, public_key=pub,
+                                phien_ban_dang_chay="1.0.0")
+
+
+def test_version_khong_parse_duoc_bi_tu_choi_ngay_luc_ky(tmp_path):
+    key, _ = _sinh_khoa(tmp_path)
+    art = _artifact(tmp_path)
+    # `ky` du kien tu-kiem; mot version la se lam self-check chan hoac ghi
+    # duoc nhung khong ai cap nhat len. O day ta chi doi no khong crash im.
+    manifest = signmod.ky(artifact=art, version="1.0.0",
+                          url="https://x/y.zip", key_path=key)
+    with pytest.raises(updates.UpdateError):
+        updates.verify_manifest(manifest, public_key=_sinh_khoa(tmp_path/"z")[1])
+
+
+# ── Q95: khoá riêng không được nằm trong repo/secrets/data ───────────────────
+
+@pytest.mark.parametrize("thu_muc", ["", "secrets", "data"])
+def test_tu_choi_ghi_khoa_rieng_vao_repo(thu_muc):
+    dich = REPO / thu_muc / "khoa_thu.key" if thu_muc else REPO / "khoa_thu.key"
+    assert keymod._duong_cam(dich) is not None, \
+        f"phai tu choi ghi khoa vao {dich}"
+
+
+def test_cho_phep_ghi_khoa_ngoai_repo(tmp_path):
+    assert keymod._duong_cam(tmp_path / "ok.key") is None
+
+
+def test_sign_tu_choi_khoa_nam_trong_repo(tmp_path):
+    art = _artifact(tmp_path)
+    with pytest.raises(SystemExit):
+        signmod.ky(artifact=art, version="1.0.0", url="https://x/y.zip",
+                   key_path=REPO / "secrets" / "khong_ton_tai.key")
+
+
+# ── Vệ sinh: keygen không in khoá riêng, không ghi đè ────────────────────────
+
+def test_keygen_khong_ghi_de_khoa_dang_co(tmp_path):
+    out = tmp_path / "k.key"
+    keymod.sinh(out)
+    with pytest.raises(SystemExit):
+        keymod.sinh(out)               # lan hai phai choi, khong am tham thay khoa
+
+
+def test_khoa_rieng_khong_bao_gio_ra_stdout(tmp_path, capsys, monkeypatch):
+    out = tmp_path / "k.key"
+    monkeypatch.setattr("sys.argv", ["prog", "--out", str(out)])
+    keymod.main(["--out", str(out)])
+    thay = capsys.readouterr().out
+    seed_b64 = out.read_text(encoding="ascii").strip()
+    assert seed_b64 not in thay, "khoa RIENG lo ra man hinh"
+    # Nhung khoa CONG thi PHAI in (de dan vao RELEASE_PUBLIC_KEY).
+    assert "RELEASE_PUBLIC_KEY" in thay
+
+
+# ── Bằng chứng: signer KHÔNG serialize lại, dùng lại của updates.py ──────────
+
+def test_signer_dung_canonical_cua_updates_khong_dung_ban_sao():
+    """Nếu có ngày ai đó thêm một `json.dumps` thứ hai vào signer, test này đỏ.
+
+    Không đủ để chứng minh đúng — round-trip ở trên làm việc đó — nhưng nó khoá
+    lại *lý do* round-trip đúng: cả hai bên đi qua đúng một hàm."""
+    import inspect
+    src = inspect.getsource(signmod)
+    assert "canonical_manifest" in src
+    assert "json.dumps" not in src.split("def ky", 1)[1].split("def main", 1)[0], \
+        "signer khong duoc tu serialize phan duoc ky — phai dung canonical_manifest"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_234_nexus_packaging.py
+SHA256=6bd4eb0e0e0540eabd1f3803aa0f4a92a624e46fe5e08a559dac08985219f30a BYTES=3425 LINES=87
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.3b — bản đóng gói agent giữ đúng ba lựa chọn chống Defender.
+
+`N3_DONG_GOI_AGENT.md` §4b: one-dir (không one-file) và không UPX là hai thứ
+làm giảm mạnh việc Defender xoá file, mà không tốn gì. Chúng dễ bị "sửa cho gọn"
+thành one-file có UPX trong một lần dọn spec — nên khoá lại bằng test, vì hậu quả
+(khách báo "phần mềm tự biến mất") chỉ hiện sau khi đã phát hành.
+
+Test đọc **nội dung spec**, không chạy PyInstaller: build thật cần PyInstaller +
+một máy Windows sạch, không có trong CI. Đây đúng là loại bất biến kiểm được
+bằng cấu trúc.
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+REPO = Path(__file__).resolve().parents[1]
+SPEC = REPO / "nexus_agent" / "packaging" / "nexus_agent.spec"
+
+
+@pytest.fixture(scope="module")
+def spec_src() -> str:
+    assert SPEC.exists(), f"thieu spec {SPEC}"
+    return SPEC.read_text(encoding="utf-8")
+
+
+def test_khong_UPX(spec_src):
+    """UPX = dau hieu gan co kinh dien. Moi cho co the UPX phai la False."""
+    assert "upx=True" not in spec_src.replace(" ", "")
+    # Phai co it nhat mot khai bao upx=False tuong minh (EXE va COLLECT).
+    assert spec_src.replace(" ", "").count("upx=False") >= 2
+
+
+def test_one_dir_khong_one_file(spec_src):
+    """one-dir = co COLLECT + EXE dat exclude_binaries=True. one-file thi khong
+    co COLLECT va EXE gom het binary."""
+    assert "COLLECT(" in spec_src, "thieu COLLECT -> co the la one-file"
+    compact = spec_src.replace(" ", "")
+    assert "exclude_binaries=True" in compact, \
+        "EXE phai exclude_binaries=True cho one-dir"
+
+
+def test_khong_keo_GUI_hay_thu_vien_may_chu_vao_agent(spec_src):
+    """Agent khach chi can danh tinh + HTTP + crypto. Keo tkinter/numpy vao la
+    them be mat Defender soi va CVE phai va."""
+    compact = spec_src.replace(" ", "").replace("'", "").replace('"', "")
+    for cam in ("tkinter", "numpy", "pandas"):
+        assert cam in compact.split("excludes=", 1)[1].split("]", 1)[0], \
+            f"{cam} phai nam trong excludes"
+
+
+def test_entry_point_la_main_cua_agent(spec_src):
+    assert "__main__.py" in spec_src
+
+
+def test_console_bat_de_doc_log_luc_chay(spec_src):
+    """Agent chay `run` in log; an console thi loi luc chay bien mat khong dau."""
+    assert "console=True" in spec_src.replace(" ", "")
+
+
+# ── build script không kéo PyInstaller vào lúc import ────────────────────────
+
+def test_build_script_import_duoc_khong_can_pyinstaller():
+    """`tools/build_agent.py` phai import duoc tren may KHONG co PyInstaller —
+    no la cong cu dung, khong phai phu thuoc may chu. Import-time keo PyInstaller
+    vao se lam gate do tren may chu."""
+    import importlib
+    mod = importlib.import_module("tools.build_agent")
+    assert hasattr(mod, "dung")
+
+
+def test_thieu_pyinstaller_thi_bao_ro_chu_khong_stack_trace(monkeypatch):
+    import builtins
+    import tools.build_agent as ba
+
+    that = builtins.__import__
+
+    def gia(name, *a, **k):
+        if name == "PyInstaller":
+            raise ImportError("no module named PyInstaller")
+        return that(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", gia)
+    with pytest.raises(SystemExit) as ei:
+        ba._kiem_pyinstaller()
+    assert "pip install pyinstaller" in str(ei.value)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_235_nexus_download.py
+SHA256=feb4631af5f6fb06112d9bfc30fb709aaab406effa8d481f80cfca837c14ebb8 BYTES=6996 LINES=184
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.3b — trang tải: đọc bản phát hành + nói trước cảnh báo SmartScreen.
+
+Hai tầng test: `release.ban_phat_hanh_hien_tai` (đọc file, fail-safe) và trang
+`/nexus/tai` render thật qua app. Trang tải là chỗ Q95 đặt hai nghĩa vụ cụ thể —
+công bố SHA-256 và nói trước cảnh báo — nên hai thứ đó được chốt bằng test, không
+để trôi vào một lần sửa template sau này.
+"""
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "mat-khau-test-rat-dai-0123456789"
+
+VALID = {
+    "version": "1.2.0",
+    "sha256": "a" * 64,
+    "url": "https://app.lttstudios.com/nexus/tai/nexus-agent-1.2.0.zip",
+    "size": 12345678,
+    "signature": "khong-quan-trong-o-tang-hien-thi",
+}
+
+
+# ── release.ban_phat_hanh_hien_tai — fail-safe ──────────────────────────────
+
+def test_thieu_file_tra_None(tmp_path, monkeypatch):
+    from platform_core.nexus import release
+    monkeypatch.setenv("LTT_NEXUS_RELEASE_MANIFEST",
+                       str(tmp_path / "khong_co.json"))
+    assert release.ban_phat_hanh_hien_tai() is None
+
+
+def test_json_hong_tra_None_khong_nem(tmp_path, monkeypatch):
+    from platform_core.nexus import release
+    p = tmp_path / "m.json"
+    p.write_text("{ khong phai json", encoding="utf-8")
+    monkeypatch.setenv("LTT_NEXUS_RELEASE_MANIFEST", str(p))
+    assert release.ban_phat_hanh_hien_tai() is None
+
+
+def test_thieu_truong_tra_None(tmp_path, monkeypatch):
+    from platform_core.nexus import release
+    p = tmp_path / "m.json"
+    thieu = dict(VALID); thieu.pop("sha256")
+    p.write_text(json.dumps(thieu), encoding="utf-8")
+    monkeypatch.setenv("LTT_NEXUS_RELEASE_MANIFEST", str(p))
+    assert release.ban_phat_hanh_hien_tai() is None
+
+
+def test_hop_le_tra_dict(tmp_path, monkeypatch):
+    from platform_core.nexus import release
+    p = tmp_path / "m.json"
+    p.write_text(json.dumps(VALID), encoding="utf-8")
+    monkeypatch.setenv("LTT_NEXUS_RELEASE_MANIFEST", str(p))
+    m = release.ban_phat_hanh_hien_tai()
+    assert m is not None and m["version"] == "1.2.0"
+
+
+# ── /nexus/tai render thật ──────────────────────────────────────────────────
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'tai.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "tai-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("LTT_NEXUS_RELEASE_MANIFEST", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    import importlib
+    import apps.nexus.manifest as manifest_mod
+    importlib.reload(manifest_mod)
+    import apps.nexus.routes as routes_mod
+    importlib.reload(routes_mod)
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver")
+    client._data_dir = tmp_path / "data"       # de test ghi manifest dung cho
+    try:
+        yield client
+    finally:
+        dbmod.reset_engine()
+
+
+def _csrf(html: str) -> str:
+    found = re.search(r'name="csrf_token"\s+value="([^"]+)"', html)
+    assert found
+    return found.group(1)
+
+
+def _dang_nhap(client) -> None:
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+    gen = get_session(); db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="tai@example.com", password=PASSWORD,
+                       is_verified=True)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    page = client.get("/login").text
+    r = client.post("/login", data={"username": "tai@example.com",
+                    "password": PASSWORD, "csrf_token": _csrf(page)},
+                    follow_redirects=False)
+    assert r.status_code == 303
+
+
+def _ghi_manifest(client) -> None:
+    d = Path(client._data_dir) / "nexus"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "release_manifest.json").write_text(json.dumps(VALID), encoding="utf-8")
+
+
+def test_co_ban_thi_hien_sha256_va_canh_bao_smartscreen(app_bat):
+    _dang_nhap(app_bat)
+    _ghi_manifest(app_bat)
+    r = app_bat.get("/nexus/tai")
+    assert r.status_code == 200, r.text[:400]
+    # Q95: SHA-256 phai co mat de khach doi chieu.
+    assert VALID["sha256"] in r.text
+    # Q95: noi truoc canh bao SmartScreen bang ten no thay.
+    assert "SmartScreen" in r.text or "Windows protected your PC" in r.text
+    # Canh bao T1: dung doc ma ghep qua dien thoai.
+    assert "qua điện thoại" in r.text
+    # Nut tai tro dung URL trong manifest.
+    assert VALID["url"] in r.text
+
+
+def test_chua_co_ban_thi_noi_that_khong_gay(app_bat):
+    _dang_nhap(app_bat)
+    # KHONG ghi manifest -> None
+    r = app_bat.get("/nexus/tai")
+    assert r.status_code == 200, r.text[:400]
+    assert "Chưa có bản phát hành" in r.text
+    # Khong hien nut tai gay khi chua co ban.
+    assert "nexus-agent-1.2.0.zip" not in r.text
+
+
+def test_co_tat_thi_404(tmp_path, monkeypatch):
+    """Cờ LTT_NEXUS tắt → /nexus/tai trả 404, không lộ bề mặt.
+
+    Phải ĐĂNG NHẬP trước: `require_login` chạy trước handler, nên nếu không đăng
+    nhập thì ta chỉ đo được chuyển hướng tới /login, không đo được lớp chặn 404
+    của chính route. 404 (không phải 403) là có chủ ý — xem `_bat_buoc_bat`.
+    """
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'off.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "off-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "0")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    import importlib
+    import apps.nexus.manifest as manifest_mod
+    importlib.reload(manifest_mod)
+    import apps.nexus.routes as routes_mod
+    importlib.reload(routes_mod)
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        _dang_nhap(client)          # login la platform-level, khong phu thuoc co
+        r = client.get("/nexus/tai", follow_redirects=False)
+        assert r.status_code == 404, r.text[:300]
+    finally:
+        dbmod.reset_engine()
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_23_antispam_phase3_4.py
 SHA256=91c253fb5825250bbbc56caab54bf6090a76b58c6e3828c76b17483ff47192d0 BYTES=9278 LINES=242
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -212503,6 +213128,129 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/build_agent.py
+SHA256=d55c6bb02e1bb138e192248912645b3d3b1ac1347adb6f2876bff7fdf313a4d2 BYTES=4120 LINES=117
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Đóng gói agent Nexus thành thư mục cài được cho máy khách (N3.3b).
+
+    python tools/build_agent.py --version 1.2.0
+
+Chạy PyInstaller theo `nexus_agent/packaging/nexus_agent.spec` (one-dir, không
+UPX), nén kết quả thành `dist/nexus-agent-<version>.zip`, rồi in **SHA-256** để
+công bố trên trang tải (Q95 bắt buộc).
+
+**PyInstaller là công cụ DỰNG, không phải phụ thuộc máy chủ** (`N3_DONG_GOI_AGENT.md`
+§5): file này chỉ import nó khi thật sự dựng, nên bộ test và máy chủ không cần
+có nó. Thiếu thì báo một câu rõ ràng kèm cách cài, không stack trace.
+
+Sau khi có zip này, ký nó bằng `tools/nexus_sign_release.py` để sinh manifest —
+hai bước tách nhau vì khoá ký nằm trên **máy khác**, ngoài repo (Q95).
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import shutil
+import subprocess
+import sys
+import zipfile
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+SPEC = REPO / "nexus_agent" / "packaging" / "nexus_agent.spec"
+DIST = REPO / "dist"
+BUILD = REPO / "build"
+
+
+def _kiem_pyinstaller() -> None:
+    try:
+        import PyInstaller                                     # noqa: F401
+    except ImportError:
+        raise SystemExit(
+            "LOI: chua co PyInstaller. Day la cong cu DUNG, khong nam trong\n"
+            "requirements cua may chu. Cai vao moi truong dung:\n"
+            "    pip install pyinstaller\n"
+            "roi chay lai.")
+
+
+def _sha256(p: Path) -> str:
+    dau = hashlib.sha256()
+    with p.open("rb") as f:
+        for khoi in iter(lambda: f.read(1024 * 1024), b""):
+            dau.update(khoi)
+    return dau.hexdigest()
+
+
+def _nen_thu_muc(thu_muc: Path, dich_zip: Path) -> int:
+    """Nén one-dir thành zip. Trả tổng số byte đã ghi (chưa nén)."""
+    tong = 0
+    with zipfile.ZipFile(dich_zip, "w", zipfile.ZIP_DEFLATED) as z:
+        for f in sorted(thu_muc.rglob("*")):
+            if f.is_file():
+                z.write(f, f.relative_to(thu_muc.parent))
+                tong += f.stat().st_size
+    return tong
+
+
+def dung(version: str) -> Path:
+    _kiem_pyinstaller()
+    if not SPEC.exists():
+        raise SystemExit(f"LOI: khong thay spec {SPEC}")
+
+    # Don sach truoc — mot ban dung con sot lai file cu la mot ban khong tin duoc.
+    for d in (BUILD, DIST / "nexus-agent"):
+        if d.exists():
+            shutil.rmtree(d)
+
+    print("PyInstaller dang dung (one-dir, khong UPX)...")
+    r = subprocess.run(
+        [sys.executable, "-m", "PyInstaller", "--clean", "--noconfirm",
+         "--distpath", str(DIST), "--workpath", str(BUILD), str(SPEC)],
+        cwd=REPO)
+    if r.returncode != 0:
+        raise SystemExit(f"LOI: PyInstaller that bai (ma {r.returncode})")
+
+    thu_muc = DIST / "nexus-agent"
+    if not thu_muc.is_dir():
+        raise SystemExit(f"LOI: khong thay ket qua {thu_muc}")
+
+    zip_path = DIST / f"nexus-agent-{version}.zip"
+    if zip_path.exists():
+        zip_path.unlink()
+    _nen_thu_muc(thu_muc, zip_path)
+
+    sha = _sha256(zip_path)
+    size = zip_path.stat().st_size
+    print()
+    print(f"Da dong goi: {zip_path}")
+    print(f"  size   : {size} byte")
+    print(f"  SHA-256: {sha}")
+    print()
+    print("Buoc tiep: ky tren MAY KHAC (khoa ngoai repo):")
+    print(f"  python tools/nexus_sign_release.py --artifact {zip_path.name} \\")
+    print(f"      --version {version} --url https://app.lttstudios.com/nexus/tai/{zip_path.name} \\")
+    print("      --key <duong-dan-khoa-rieng> --out <manifest.json>")
+    return zip_path
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--version", required=True, help="phien ban a.b.c")
+    args = p.parse_args(argv)
+    # Version phai parse duoc, khong thi ban vua dung khong ai cap nhat len.
+    try:
+        tuple(int(x) for x in args.version.split("."))
+    except ValueError:
+        raise SystemExit(f"LOI: version '{args.version}' khong phai dang a.b.c")
+    dung(args.version)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/build_postman.py
 SHA256=87f7a70b7ee09514708f7e2c1e33e25e7cb2af6c5054c9daa2883ee4c15e5e55 BYTES=8210 LINES=195
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -218048,6 +218796,261 @@ def main() -> int:
         print("RESULT: FAIL")
         return 1
     print("RESULT: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/nexus_release_key.py
+SHA256=c502fe48df7e7051e42b5608e3f8699fe55ef1cc7e8211c0b5f800e294d65db1 BYTES=4494 LINES=113
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Sinh cặp khoá phát hành cho agent Nexus — phần còn nợ của Q95.
+
+    python tools/nexus_release_key.py --out C:\\ltt-keys\\nexus_release.key
+
+Sinh **một lần**. Khoá công khai in ra màn hình để dán vào `RELEASE_PUBLIC_KEY`
+trong `nexus_agent/updates.py`; khoá riêng ghi ra file mà **chỉ người vận hành
+giữ**, ngoài repo, ngoài máy chủ web, ngoài `secrets/app.env` (Q95).
+
+Vì sao có guard từ chối ghi vào repo/secrets: nếu khoá riêng phát hành lọt vào
+repo hay lên máy chủ web thì cả thiết kế xác minh cập nhật của N3.3a **sụp trong
+một bước** — ai chiếm được máy chủ web ký được mọi bản cập nhật, tức chiếm mọi
+máy khách. Đây đúng là thứ `updates.py` được viết để chống, nên công cụ sinh
+khoá phải tự chối con đường làm hỏng nó, không chỉ dặn trong tài liệu.
+
+**Khoá riêng KHÔNG BAO GIỜ in ra màn hình.** Một giá trị đã in là một giá trị đã
+vào lịch sử terminal và ảnh chụp — cùng lý do `nexus_agent` không in khoá riêng
+của thiết bị.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import os
+import stat
+import sys
+from pathlib import Path
+
+
+def _b64u(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def _duong_cam(dich: Path) -> str | None:
+    """Trả lý do nếu `dich` là chỗ KHÔNG được đặt khoá riêng, hoặc None nếu được.
+
+    Chặn theo *vị trí thật sau khi resolve*, không theo chuỗi người dùng gõ —
+    `..` và symlink làm một đường trông ngoài repo thật ra nằm trong.
+    """
+    try:
+        dich_that = dich.resolve()
+    except OSError as exc:                                     # noqa: BLE001
+        return f"khong resolve duoc duong dan: {exc}"
+
+    repo = _repo_root()
+    for cam in (repo, repo / "secrets", repo / "data"):
+        try:
+            dich_that.relative_to(cam)
+        except ValueError:
+            continue
+        return (f"tu choi ghi khoa rieng vao '{cam}' — Q95 doi khoa phat hanh "
+                f"nam NGOAI repo/secrets/data. Chon mot thu muc khac.")
+    return None
+
+
+def sinh(out: Path) -> str:
+    """Sinh cặp khoá, ghi khoá riêng ra `out`, trả khoá CÔNG KHAI base64url."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    ly_do = _duong_cam(out)
+    if ly_do:
+        raise SystemExit(f"LOI: {ly_do}")
+    if out.exists():
+        raise SystemExit(
+            f"LOI: '{out}' da ton tai — khong ghi de mot khoa phat hanh. "
+            f"Xoa tay neu chac chan muon thay khoa (se lam moi agent cu tu "
+            f"choi ban cap nhat moi cho toi khi ghim lai khoa cong khai).")
+
+    priv = ed25519.Ed25519PrivateKey.generate()
+    seed = priv.private_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PrivateFormat.Raw,
+        encryption_algorithm=serialization.NoEncryption())
+    pub = priv.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw)
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    # Ghi rieng tu, roi that quyen: tren POSIX chi chu so huu doc duoc. Tren
+    # Windows ACL khac han nen day chi la lop phong ho, khong phai bao dam.
+    out.write_text(_b64u(seed) + "\n", encoding="ascii")
+    try:
+        os.chmod(out, stat.S_IRUSR | stat.S_IWUSR)
+    except OSError:
+        pass
+    return _b64u(pub)
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--out", required=True,
+                   help="noi ghi khoa RIENG (ngoai repo/secrets/data)")
+    args = p.parse_args(argv)
+
+    pub = sinh(Path(args.out))
+    print("Da sinh cap khoa phat hanh.")
+    print(f"  Khoa RIENG  : {args.out}  (giu kin, KHONG commit, KHONG len web)")
+    print( "  Khoa CONG   : dan chuoi duoi day vao RELEASE_PUBLIC_KEY")
+    print( "                trong nexus_agent/updates.py, roi dong goi lai agent:")
+    print()
+    print(f'    RELEASE_PUBLIC_KEY = "{pub}"')
+    print()
+    print("Ghi chu: doi khoa = phai phat hanh agent moi (khoa ghim trong ma,")
+    print("khong tai ve — do la chuoi tin cay dung cach.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/nexus_sign_release.py
+SHA256=50afacbf06e705d0bcda599bf3934f949194e370adb8c346fdca901a8df142ea BYTES=5771 LINES=130
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ký một bản phát hành agent — mặt còn thiếu của `nexus_agent/updates.py`.
+
+    python tools/nexus_sign_release.py ^
+        --artifact dist\\nexus-agent-1.2.0.zip ^
+        --version  1.2.0 ^
+        --url      https://app.lttstudios.com/nexus/tai/nexus-agent-1.2.0.zip ^
+        --key      C:\\ltt-keys\\nexus_release.key ^
+        --out      dist\\nexus-agent-1.2.0.manifest.json
+
+`updates.py` **kiểm** manifest nhưng không có gì **tạo** ra nó. File này trả nợ
+đó, và trả bằng cách **dùng lại `canonical_manifest` của chính `updates.py`** —
+không serialize lại ở đây. Docstring của `updates.py` nói thẳng: byte được ký
+phải sinh ở **một chỗ duy nhất** cho cả bên ký và bên kiểm; hai bản `json.dumps`
+lệch nhau một khoảng trắng thì mọi chữ ký hợp lệ bị từ chối và triệu chứng trông
+y hệt "khoá sai". Cách chắc chắn duy nhất để hai chỗ không lệch là **chỉ có một
+chỗ**.
+
+Ba guard, mỗi cái chặn một cách làm hỏng thật:
+
+1. **Khoá riêng phải ngoài repo/secrets/data** — cùng luật Q95 mà keygen áp.
+   Ký từ một khoá nằm trong repo tức là khoá đã ở sai chỗ rồi.
+2. **Tự kiểm trước khi ghi** — gọi luôn `verify_manifest` với khoá công khai suy
+   từ khoá riêng. Nếu manifest mình vừa ký mà bên kiểm từ chối thì dừng ngay,
+   không xuất một manifest chết ra `dist/`. "Ký xong tưởng là xong" là đúng loại
+   lỗi chỉ hiện trên máy khách.
+3. **`--version` phải parse được `a.b.c`** — vì `updates.py` chặn hạ cấp bằng so
+   sánh phiên bản, và một chuỗi không parse được bị coi là *không* mới hơn. Bắt
+   ở đây để người phát hành biết ngay, thay vì phát ra một bản không ai cập nhật
+   lên được.
+"""
+from __future__ import annotations
+
+import argparse
+import base64
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from nexus_agent.updates import (                              # noqa: E402
+    TRUONG_BAT_BUOC, canonical_manifest, verify_manifest)
+from tools.nexus_release_key import _b64u, _duong_cam          # noqa: E402
+
+
+def _sha256_va_size(p: Path) -> tuple[str, int]:
+    """Đọc theo khối — bản cài có thể hàng trăm MB (cùng lý do `verify_file`)."""
+    dau = hashlib.sha256()
+    size = 0
+    with p.open("rb") as f:
+        for khoi in iter(lambda: f.read(1024 * 1024), b""):
+            dau.update(khoi)
+            size += len(khoi)
+    return dau.hexdigest(), size
+
+
+def _nap_khoa_rieng(key_path: Path):
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+
+    ly_do = _duong_cam(key_path)
+    if ly_do:
+        raise SystemExit(f"LOI: {ly_do}")
+    if not key_path.exists():
+        raise SystemExit(f"LOI: khong thay khoa rieng '{key_path}'. "
+                         f"Sinh bang: python tools/nexus_release_key.py --out ...")
+    raw = key_path.read_text(encoding="ascii").strip()
+    seed = base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4))
+    if len(seed) != 32:
+        raise SystemExit("LOI: khoa rieng khong phai 32 byte Ed25519 — sai file?")
+    return ed25519.Ed25519PrivateKey.from_private_bytes(seed)
+
+
+def ky(*, artifact: Path, version: str, url: str, key_path: Path) -> dict:
+    """Trả về manifest đã ký (dict). Ném `SystemExit` nếu có gì sai."""
+    if not artifact.exists():
+        raise SystemExit(f"LOI: khong thay artifact '{artifact}'")
+
+    priv = _nap_khoa_rieng(key_path)
+    sha256, size = _sha256_va_size(artifact)
+
+    manifest = {"version": str(version).strip(), "sha256": sha256,
+                "url": str(url).strip(), "size": size}
+    thieu = [t for t in TRUONG_BAT_BUOC if not str(manifest.get(t) or "").strip()]
+    if thieu:
+        raise SystemExit(f"LOI: thieu truong {', '.join(thieu)}")
+
+    chu_ky = priv.sign(canonical_manifest(manifest))
+    manifest["signature"] = _b64u(chu_ky)
+
+    # Guard 2: tu kiem bang chinh ham ben khach se chay, voi khoa cong suy ra
+    # tu khoa rieng. Neu no khong round-trip, KHONG xuat file.
+    from cryptography.hazmat.primitives import serialization
+    pub_b64 = _b64u(priv.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw))
+    try:
+        verify_manifest(manifest, public_key=pub_b64)
+    except Exception as exc:                                   # noqa: BLE001
+        raise SystemExit(f"LOI NGHIEM TRONG: manifest vua ky khong tu kiem "
+                         f"duoc ({exc}). Khong xuat file.") from exc
+    return manifest
+
+
+def main(argv=None) -> int:
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--artifact", required=True)
+    p.add_argument("--version", required=True)
+    p.add_argument("--url", required=True)
+    p.add_argument("--key", required=True, help="khoa RIENG (ngoai repo)")
+    p.add_argument("--out", required=True, help="noi ghi manifest.json")
+    args = p.parse_args(argv)
+
+    manifest = ky(artifact=Path(args.artifact), version=args.version,
+                  url=args.url, key_path=Path(args.key))
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                   encoding="utf-8")
+    print(f"Da ky: {out}")
+    print(f"  version : {manifest['version']}")
+    print(f"  sha256  : {manifest['sha256']}")
+    print(f"  size    : {manifest['size']} byte")
+    print("Da tu kiem bang verify_manifest — ben khach se chap nhan.")
     return 0
 
 

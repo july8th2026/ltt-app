@@ -424,3 +424,58 @@ Bốn tính chất được chốt bằng đường đi thật, không bằng g�
 - **một mã chỉ ghép được một máy** — mã nạn nhân đọc qua điện thoại (T1) phải
   chết ngay sau lần dùng đầu;
 - tài khoản khác **không thu hồi được** máy của người ta: `404`, không phải 403.
+
+---
+
+## 10. N1.1 — relay dựng thật ✅ 2026-08-19 (Q96)
+
+Q94 lập kế hoạch VPS Linux trả phí; thực tế dùng lại **VPS Windows đang làm NAT
+gateway Proxmox** (`45.76.185.75`) → chi phí thêm **0 đồng**. `rustdesk-server`
+1.1.16 nguyên bản, dịch vụ `hbbs`/`hbbr` StartMode Auto, 5 cổng mở đã xác minh
+từ ngoài Internet. Chi tiết + hai rủi ro (relay trên chính gateway; Windows Eval
+118 ngày) ở `N1_RELAY_RUNBOOK.md` §7, ghi thành **Q96**.
+
+**Còn nợ:** phép đo tỉ lệ P2P/relay + GB/giờ + T10 (relay thấy nội dung không).
+Cần **hai máy client thật ở hai mạng** — chưa làm được. Đây là *mục đích* của
+N1.1, phần "server có chạy" chỉ là tiền đề.
+
+## 11. N3.3b — đóng gói + phát hành ✅ 2026-08-19 (phần code)
+
+Nửa **vòng đời** (`service.py`) xong 2026-08-18. Nửa **đóng gói + phát hành**
+xong 2026-08-19, và nó lấp một lỗ thật: `updates.py` **kiểm** manifest nhưng
+không có gì **tạo** ra manifest — tức là không có đường phát hành hợp lệ nào.
+
+Bốn công cụ + một trang, tất cả có test (`test_233`–`test_235`):
+
+- `tools/nexus_release_key.py` — sinh cặp khoá, từ chối ghi khoá riêng vào
+  repo/secrets/data (Q95), không in khoá riêng ra màn hình.
+- `tools/nexus_sign_release.py` — ký manifest, **dùng lại `canonical_manifest`
+  của `updates.py`** nên bên ký và bên kiểm không thể lệch byte; tự kiểm bằng
+  `verify_manifest` trước khi ghi ra file.
+- `nexus_agent/packaging/nexus_agent.spec` — one-dir, không UPX, loại GUI/thư
+  viện máy chủ (giảm Defender gắn cờ — `N3_DONG_GOI_AGENT.md` §4b).
+- `tools/build_agent.py` — dựng + nén + in SHA-256; import PyInstaller *chỉ khi
+  dựng* nên máy chủ/gate không cần có nó.
+- `/nexus/tai` — trang tải công bố SHA-256, nói trước cảnh báo SmartScreen, cảnh
+  báo T1; fail-safe khi chưa có bản (`platform_core/nexus/release.py`).
+
+**Còn nợ, là việc trên máy thật không phải code** (`N5_VAN_HANH.md` §3): sinh
+khoá thật + ghim, dựng bản đầu trên máy Windows sạch có PyInstaller.
+
+## 12. N5 — sẵn sàng vận hành → `N5_VAN_HANH.md`
+
+Năm điều kiện phải xanh trước khi bật `LTT_NEXUS`, quy trình phát hành từng bản,
+giám sát, và ứng phó sự cố (thu hồi thiết bị → tắt cờ → dừng relay → xoay khoá
+lộ). Ghi rõ: bật cờ mở phần danh tính/ghép/presence/vé/kiểm toán/trang tải,
+**không** mở luồng điều khiển (chưa tồn tại) — nên bật cờ an toàn để chạy thử
+nội bộ, chưa phải để mở bán.
+
+---
+
+## Ledger — thay đổi bổ sung
+
+| # | Thay đổi | Lý do |
+|---|---|---|
+| L9 | 2026-08-19: N1.1 dựng trên gateway Windows có sẵn thay VPS Linux mua mới | Máy đã có, chi phí thêm 0 đồng, đúng mục tiêu "free". Đánh đổi: relay trên chính gateway + Windows Eval — ghi thành Q96 |
+| L10 | 2026-08-19: dựng **bên ký** bản phát hành (không có trong pack như một task riêng) | Pack giả định có đường phát hành; repo này thì `updates.py` chỉ kiểm, thiếu bên tạo manifest. Không có nó thì Q95 "phát hành cho khách" không thực thi được |
+| L11 | 2026-08-19: nâng N5 thành `N5_VAN_HANH.md` — runbook mở cờ + ứng phó sự cố | Prompt 29–35 của pack là "operational readiness"; gom vào một runbook thay vì bảy file, đúng nguyên tắc số-artifact-tối-thiểu (L3) |

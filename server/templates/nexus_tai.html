@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Tải phần mềm") }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Tải phần mềm Nexus cho máy Windows") }}</h2>
+
+    {% if not ban %}
+      {# Fail-safe: chua co ban phat hanh thi noi that, khong hien nut tai gay #}
+      <p class="muted">{{ _("Chưa có bản phát hành nào. Vui lòng quay lại sau.") }}</p>
+    {% else %}
+      <p class="muted">
+        {{ _("Phiên bản") }} <strong>{{ ban.version }}</strong> —
+        {{ (ban.size / 1048576) | round(1) }} MB
+      </p>
+
+      {# Q95: NOI TRUOC canh bao SmartScreen, bang ngon ngu hau qua that, de
+         chinh LTT la nguoi giai thich no chu khong phai ke goi dien (T1). #}
+      <div class="card" style="border:1px solid #C99A2E;background:#2A2413;margin:16px 0;">
+        <h3 style="margin-top:0;">⚠️ {{ _("Windows sẽ hiện một cảnh báo khi bạn mở file này") }}</h3>
+        <p>
+          {{ _("Đây là điều bình thường và chúng tôi báo trước để bạn yên tâm: phần mềm này chưa mua chứng thư ký mã của Windows, nên SmartScreen sẽ hiện bảng") }}
+          <em>“Windows protected your PC”</em>.
+          {{ _("Bấm") }} <strong>“More info”</strong> {{ _("rồi") }} <strong>“Run anyway”</strong>
+          {{ _("để tiếp tục.") }}
+        </p>
+        <p style="margin-bottom:0;">
+          {{ _("Chỉ mở file bạn tải TRỰC TIẾP từ trang này. Nếu có ai đó gọi điện bảo bạn tải phần mềm điều khiển máy từ nơi khác, hoặc đọc cho họ nghe một mã ghép qua điện thoại — hãy dừng lại. Không nhân viên thật nào cần điều đó.") }}
+        </p>
+      </div>
+
+      <p>
+        <a class="btn" href="{{ ban.url }}" rel="noopener">
+          ⬇ {{ _("Tải Nexus") }} {{ ban.version }}
+        </a>
+      </p>
+
+      {# SHA-256 de khach doi chieu file da tai la dung file da ky #}
+      <h3>{{ _("Kiểm tra file đã tải (không bắt buộc, dành cho người rành máy tính)") }}</h3>
+      <p class="muted">
+        {{ _("Sau khi tải, bạn có thể xác nhận file đúng bằng cách so mã SHA-256. Mở PowerShell tại thư mục chứa file và chạy:") }}
+      </p>
+      <pre style="overflow-x:auto;padding:12px;background:#1A1A1A;border-radius:6px;"><code>Get-FileHash .\{{ ban.url.split('/')[-1] }} -Algorithm SHA256</code></pre>
+      <p class="muted">{{ _("Kết quả phải khớp đúng chuỗi dưới đây:") }}</p>
+      <pre style="overflow-x:auto;padding:12px;background:#1A1A1A;border-radius:6px;"><code>{{ ban.sha256 }}</code></pre>
+      <p class="muted">
+        {{ _("Nếu mã không khớp, ĐỪNG mở file — hãy xoá và tải lại.") }}
+      </p>
+    {% endif %}
+
+    <p style="margin-top:24px;">
+      <a href="{{ app.route_prefix }}">← {{ _("Về danh sách máy của tôi") }}</a>
+    </p>
+  </div>
+
+{% endblock %}
