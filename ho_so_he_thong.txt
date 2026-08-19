@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b33398431ad2f68eb40a22a339135aeea54e784b58ac36b89fce1f7b8ed60414
-Nguồn đã quét : 1162 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:4c92f4d8ef5a1d314ce17fc9356b0f3ff189d47746817dad2588f6c53ccc4838
+Nguồn đã quét : 1163 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1049,7 +1049,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (234 file pytest + 3 frontend)
+10. QUALITY GATES (235 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1220,6 +1220,7 @@ Test inventory:
 - tests/test_22_antispam_phase2.py
 - tests/test_230_nexus_updates.py
 - tests/test_231_nexus_e2e.py
+- tests/test_232_nexus_service.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -1310,8 +1311,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1162 file)
-Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:873, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1163 file)
+Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:874, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2194,7 +2195,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (251)
+[tests] (252)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2376,6 +2377,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_22_antispam_phase2.py
 - tests/test_230_nexus_updates.py
 - tests/test_231_nexus_e2e.py
+- tests/test_232_nexus_service.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -2540,7 +2542,7 @@ Phân bố extension: .cfg:1, .css:7, .html:80, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1162 file; 10525774 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1163 file; 10532107 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -193892,6 +193894,164 @@ def test_may_cua_nguoi_KHAC_khong_thu_hoi_duoc(he_thong, trinh_duyet):
         khac.close()
 
     assert "May cua A" in trinh_duyet.get("/nexus").text
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_232_nexus_service.py
+SHA256=34b2691543999b47113baa5b31aca5ce97843f63deed4543274ee05d2f41b81e BYTES=6333 LINES=152
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.3b — agent tự chạy lại sau khi khởi động máy.
+
+Quyết định: **Scheduled Task theo người dùng**, không phải Windows Service. Lý
+do gắn với Q95 — bản cài chưa ký đã làm Windows cảnh báo rồi; thêm một lời xin
+quyền admin nữa là dựng đúng màn hình mà kịch bản lừa đảo T1 cần khách bấm qua.
+
+Cái được kiểm kỹ nhất ở đây là **trích dẫn đường dẫn**, vì đó là chỗ loại code
+này hỏng và hỏng theo kiểu tệ nhất: máy người viết thường ở `C:\\Python`, máy
+khách ở `C:\\Program Files\\...`, nên lỗi **chỉ xuất hiện trên máy khách** và
+không bao giờ trên máy đã test.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+def _runner(ma: int = 0, ra: str = ""):
+    """Runner giả, ghi lại lệnh đã gọi."""
+    goi = []
+
+    def chay(argv):
+        goi.append(argv)
+        return ma, ra
+
+    chay.goi = goi
+    return chay
+
+
+# ── Trích dẫn đường dẫn ──────────────────────────────────────────────────────
+
+def test_duong_dan_co_DAU_CACH_duoc_boc_ngoac():
+    """`C:\\Program Files\\...` là mặc định trên máy khách, không phải ngoại lệ."""
+    from nexus_agent.service import lenh_chay
+
+    lenh = lenh_chay(r"C:\Program Files\Python313\python.exe",
+                     "https://app.lttstudios.com")
+    assert '"C:\\Program Files\\Python313\\python.exe"' in lenh
+
+
+def test_thu_muc_co_dau_cach_cung_duoc_boc():
+    from nexus_agent.service import lenh_chay
+
+    lenh = lenh_chay("py.exe", "https://x", r"C:\Program Data\LTT Nexus")
+    assert '"C:\\Program Data\\LTT Nexus"' in lenh
+
+
+def test_thu_muc_dat_TRUOC_lenh_con():
+    """`--dir` là tham số của parser gốc. Đặt sau `run` thì argparse từ chối, và
+    triệu chứng là task chạy rồi thoát ngay — trông như 'không chạy'."""
+    from nexus_agent.service import lenh_chay
+
+    lenh = lenh_chay("py.exe", "https://x", r"C:\data")
+    assert lenh.index("--dir") < lenh.index("run")
+
+
+def test_khong_co_thu_muc_thi_khong_them_co_dir():
+    from nexus_agent.service import lenh_chay
+
+    assert "--dir" not in lenh_chay("py.exe", "https://x")
+
+
+# ── Không có chỗ để tiêm lệnh ────────────────────────────────────────────────
+
+def test_tham_so_la_LIST_chu_khong_phai_chuoi():
+    """List thì `subprocess` không đi qua shell, nên một đường dẫn chứa `&` hay
+    `^` không thể biến thành lệnh khác. Đó là khác biệt giữa 'trích dẫn cẩn
+    thận' và 'không có chỗ để tiêm'."""
+    from nexus_agent.service import lenh_tao_task, lenh_xoa_task
+
+    for lenh in (lenh_tao_task("bat cu gi"), lenh_xoa_task()):
+        assert isinstance(lenh, list)
+        assert all(isinstance(x, str) for x in lenh)
+
+
+def test_duong_dan_hiem_van_o_nguyen_mot_tham_so():
+    from nexus_agent.service import lenh_chay, lenh_tao_task
+
+    hiem = r"C:\a & b\c^d\python.exe"
+    argv = lenh_tao_task(lenh_chay(hiem, "https://x"))
+    # Toan bo chuoi chay nam trong DUNG MOT phan tu, sau `/tr`.
+    assert argv[argv.index("/tr") + 1].count(hiem) == 1
+
+
+# ── Không xin quyền admin ────────────────────────────────────────────────────
+
+def test_KHONG_xin_quyen_admin():
+    """Q95: bỏ được UAC là bỏ được một nửa kịch bản T1.
+
+    `/ru SYSTEM` và `/rl HIGHEST` đều kéo theo yêu cầu quyền admin. Thêm một
+    trong hai là biến việc cài từ 'bấm là xong' thành 'bấm qua một hộp thoại
+    cảnh báo nữa'.
+    """
+    from nexus_agent.service import lenh_tao_task
+
+    argv = [x.upper() for x in lenh_tao_task("py.exe")]
+    assert "/RU" not in argv, "dung /ru se doi quyen admin"
+    assert "/RL" not in argv, "dung /rl HIGHEST se doi quyen admin"
+    assert "SYSTEM" not in argv
+
+
+def test_chay_khi_dang_nhap_chu_khong_khi_khoi_dong():
+    """`onstart` cần quyền admin; `onlogon` thì không. Đây là chỗ đánh đổi đã
+    chọn: không vào được máy trước khi đăng nhập."""
+    from nexus_agent.service import lenh_tao_task
+
+    argv = lenh_tao_task("py.exe")
+    assert argv[argv.index("/sc") + 1].lower() == "onlogon"
+
+
+def test_cai_lai_ghi_de_chu_khong_bao_loi():
+    """Không có `/f` thì cài lại trên máy đã có task sẽ hỏi Y/N — mà tiến trình
+    cài không có ai để trả lời."""
+    from nexus_agent.service import lenh_tao_task
+
+    assert "/f" in lenh_tao_task("py.exe")
+
+
+# ── Vòng đời ─────────────────────────────────────────────────────────────────
+
+def test_cai_that_bai_thi_NEM_chu_khong_im_lang():
+    from nexus_agent.service import ServiceError, cai
+
+    with pytest.raises(ServiceError):
+        cai("py.exe", "https://x", runner=_runner(ma=1, ra="Access is denied"))
+
+
+def test_go_mot_thu_KHONG_ton_tai_khong_phai_loi():
+    """Gỡ một thứ vốn không có là kết quả mong muốn. Ném ở đây làm đường gỡ cài
+    đặt dừng giữa chừng và để lại máy ở trạng thái nửa vời."""
+    from nexus_agent.service import go
+
+    assert go(runner=_runner(ma=1, ra="ERROR: The system cannot find the file")) is False
+
+
+def test_da_cai_doc_ma_thoat_chu_khong_doc_van_ban():
+    """Văn bản của `schtasks` đổi theo ngôn ngữ Windows. Một máy chạy Windows
+    tiếng Việt sẽ trả chuỗi khác, nên đọc văn bản là một lỗi chờ ngày xảy ra."""
+    import inspect
+
+    from nexus_agent import service
+
+    src = inspect.getsource(service.da_cai)
+    assert "ma == 0" in src
+    assert "SUCCESS" not in src and "TaskName" not in src
+
+
+def test_ngoai_Windows_thi_noi_thang_chu_khong_chay_bua(monkeypatch):
+    from nexus_agent import service
+
+    monkeypatch.setattr(service.sys, "platform", "linux")
+    with pytest.raises(service.ServiceError):
+        service.cai("py", "https://x")
 
 @@@LTT_PROFILE_FILE_END@@@
 

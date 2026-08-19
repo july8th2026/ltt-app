@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from nexus_agent.client import AgentError, NexusClient      # noqa: E402
 from nexus_agent.keystore import Keystore, KeystoreError    # noqa: E402
+from nexus_agent.service import ServiceError                # noqa: E402
 
 #: Nơi cất danh tính. `%ProgramData%` chứ không `%AppData%`: agent chạy như một
 #: dịch vụ, nên hồ sơ người dùng có thể không được nạp lúc nó khởi động.
@@ -86,6 +87,26 @@ def cmd_forget(args) -> int:
     return 0
 
 
+def cmd_install(args) -> int:
+    """Cai lich tu chay khi dang nhap. KHONG can quyen admin (N3.3b)."""
+    from nexus_agent import service
+
+    service.cai(sys.executable, args.url, thu_muc=args.dir)
+    print(f"da cai lich chay: task '{service.TASK_NAME}' se chay khi ban dang nhap.")
+    print("go bang: python -m nexus_agent uninstall")
+    return 0
+
+
+def cmd_uninstall(args) -> int:
+    from nexus_agent import service
+
+    if service.go():
+        print(f"da go lich chay '{service.TASK_NAME}'.")
+    else:
+        print("khong co lich chay nao de go.")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="nexus_agent",
                                      description=__doc__.splitlines()[0])
@@ -110,12 +131,20 @@ def main(argv=None) -> int:
     p = sub.add_parser("forget", help="xoa danh tinh tren may nay")
     p.set_defaults(func=cmd_forget)
 
+    p = sub.add_parser("install", help="cai lich tu chay khi dang nhap")
+    p.add_argument("--url", required=True)
+    p.set_defaults(func=cmd_install)
+
+    p = sub.add_parser("uninstall", help="go lich tu chay")
+    p.set_defaults(func=cmd_uninstall)
+
     args = parser.parse_args(argv)
     try:
         return args.func(args)
-    except (AgentError, KeystoreError) as exc:
+    except (AgentError, KeystoreError, ServiceError) as exc:
         # Mot cau, khong stack trace: nguoi doc thong bao nay la KHACH dang cai
-        # phan mem, khong phai lap trinh vien.
+        # phan mem, khong phai lap trinh vien. Loi khac (bug that) van noi len
+        # nguyen ven de con go duoc.
         print(f"LOI: {exc}", file=sys.stderr)
         return 1
 
