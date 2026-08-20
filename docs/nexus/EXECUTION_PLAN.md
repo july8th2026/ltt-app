@@ -81,7 +81,7 @@ N1  Feasibility engine + mạng (cần D1, D2)
         │
 N3  Sản phẩm endpoint Windows
     N3.1 Agent LTT — nửa ĐỘC QUYỀN  ✅ XONG 2026-08-17 (không cần D1/D2)
-    N3.2 Ghép engine AGPL           ⛔ cần D1 (legal review)
+    N3.2 Ghép engine AGPL           🔓 GỠ CHẶN 2026-08-20 (Q97: RustDesk nguyên bản)
     N3.3a Xác minh cập nhật (ký Ed25519 của LTT)  ✅ XONG 2026-08-18 (Q95)
     N3.3b Dịch vụ Windows + bản cài              ⬜ không còn chặn (Q95)
 N4  Mobile (cần quyết định phạm vi)
@@ -327,7 +327,7 @@ quyết định chặn.
 
 | # | Rủi ro | Mức | Giảm bằng |
 |---|---|---|---|
-| R1 | AGPL lây sang phần độc quyền của LTT | **Cao** | D1 + luật sư trước khi viết code tích hợp engine. **Sắc hơn sau prompt 03:** §13 có điều kiện *"if you modify"* — mà build client mang thương hiệu LTT + trỏ về hạ tầng LTT **chính là** modify. Đường "dùng nguyên bản nên không sao" và đường "có sản phẩm riêng" gần như loại trừ nhau. Sáu câu hỏi cho luật sư ở `03_OSS_LICENSE.md` §7 |
+| R1 | AGPL lây sang phần độc quyền của LTT | ~~Cao~~ → **THẤP sau Q97** | **Đã chọn đường "dùng nguyên bản" (Q97, 2026-08-20):** không sửa binary RustDesk, thương hiệu chỉ ở Agent/web. §13 không kích khi không *modify*, nên không có nghĩa vụ công bố mã, và không có mã AGPL nào lây được sang Agent (ranh giới tiến trình + không link/copy). Rủi ro còn lại rất nhỏ: kiểm kê phụ thuộc bắc cầu (R1' — `03_OSS_LICENSE.md` §6 #4) trước khi bán. Nếu sau này đổi sang Rổ 2 (sửa client) thì R1 quay lại mức Cao |
 | R2 | Không có IP công khai → sản phẩm không chạy được ngoài LAN | **Cao** | D2 trước N1 |
 | R3 | Chi phí băng thông relay vượt dự tính | Trung bình | N1.1 phải **đo** tỉ lệ direct vs relay và GB/giờ thật, không ước lượng |
 | R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | `04_THREAT_MODEL.md` T1. **Không đóng được bằng kỹ thuật** — mọi bước của kẻ lừa đảo đều "hợp lệ", hệ thống làm đúng thứ nó được thiết kế. Giảm bằng: mã ghép sinh **trên máy đích**, hạn rất ngắn, cảnh báo bằng ngôn ngữ hậu quả, chỉ báo phiên không tắt được, và email cho chủ tài khoản **mỗi lần ghép**. Phần còn lại là rủi ro **chấp nhận có ý thức**, phải ghi vào Q93 chứ không để im |

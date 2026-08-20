@@ -124,15 +124,21 @@ giờ chạm luồng màn hình, tiến trình B không bao giờ tự quyết u
 
 | # | Nghĩa vụ | Nguồn | Trạng thái |
 |---|---|---|---|
-| 1 | `THIRD_PARTY_NOTICES` liệt kê AGPL-3.0 + toàn văn giấy phép | rule 5 | ⬜ |
-| 2 | Quy trình source-offer: công bố mã của bản RustDesk đã sửa | §13 / §§4–6 | ⬜ |
-| 3 | Theo dõi patch: mọi sửa đổi là commit riêng trên fork có ghi nguồn | rule 6 | ⬜ |
-| 4 | Kiểm kê phụ thuộc bắc cầu của RustDesk | rule 1 | ⬜ |
-| 5 | Legal review trước phát hành thương mại | invariant #6 | ⬜ |
+| 1 | `THIRD_PARTY_NOTICES` liệt kê AGPL-3.0 + toàn văn giấy phép | rule 5 | ✅ 2026-08-20 (`/THIRD_PARTY_NOTICES.md`) |
+| 2 | Quy trình source-offer: công bố mã của bản RustDesk đã sửa | §13 / §§4–6 | ✅ **N/A theo Q97** — dùng nguyên bản nên không có bản sửa để công bố; Corresponding Source là repo gốc tại commit đã ghim |
+| 3 | Theo dõi patch: mọi sửa đổi là commit riêng trên fork có ghi nguồn | rule 6 | ✅ **N/A theo Q97** — không sửa nên không có patch |
+| 4 | Kiểm kê phụ thuộc bắc cầu của RustDesk | rule 1 | ⬜ trước phát hành thương mại |
+| 5 | Legal review trước phát hành thương mại | invariant #6 | ⬇️ **HẠ cấp bởi Q97** — không sửa nên không kích §13; review xuống thành bước xác nhận tuỳ chọn, **không chặn** |
+
+**Cập nhật 2026-08-20 (Q97):** chủ sản phẩm chọn **Rổ 1** — dùng RustDesk nguyên
+bản, thương hiệu LTT chỉ ở Agent/web/tray. Vì không *modify*, §13 không kích, nên
+nghĩa vụ #2/#3/#5 tan biến hoặc hạ cấp; chỉ còn #1 (đã làm) và #4 (kiểm kê phụ
+thuộc, trước khi bán). **N3.2 hết bị chặn.**
 
 **Không cái nào chặn N2** (danh tính thiết bị, enrollment, presence, broker) — N2
-không chạm một dòng mã AGPL nào. Chúng chặn **N3** (endpoint Windows) và mọi thứ
-sau đó.
+không chạm một dòng mã AGPL nào. Sau Q97, **N3 cũng không còn bị chặn** bởi giấy
+phép; ranh giới hai tiến trình vẫn giữ vì nó phục vụ cả bảo mật (invariant #4/#5),
+không chỉ giấy phép.
 
 ---
 

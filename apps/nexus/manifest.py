@@ -7,8 +7,11 @@ thiết bị thuộc về **tài khoản**, không thuộc app, và app không �
 credential toàn hệ thống (`AGENTS.md` 8.4).
 
 Không có `job_types` và không có `credit_cost`: app này không nộp việc gì cho
-worker. Mô hình tiền của Nexus là **thuê bao tháng theo số máy** (Q93/D3), không
-phải credit theo lượt — nên không có gì để tính giá ở đây.
+worker. Mô hình tiền của Nexus (Q98) là **trừ credit theo số máy đã ghép, mỗi
+tháng** — không phải credit theo *lượt job*, nên `credit_cost` (giá mỗi lượt
+job) vẫn là `None`. Điểm thu là **quyền mở phiên** (`cap_ve` từ chối khi hết
+credit), không phải một lượt worker. Nạp thêm credit **chỉ trong trình duyệt**
+(PayOS H9); app không xử lý thanh toán.
 
 `enabled` đọc từ cờ `LTT_NEXUS` lúc nạp: cờ tắt thì app **không xuất hiện trong
 catalog**. Route còn một lớp chặn nữa; hai lớp vì một lớp là chỗ để quên.

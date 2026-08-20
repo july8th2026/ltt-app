@@ -14,6 +14,64 @@
 
 ---
 
+## 2026-08-20 — Hai quyết định gỡ chặn: RustDesk nguyên bản (Q97) + credit theo máy (Q98)
+
+Chủ sản phẩm hỏi ba câu, và hai câu đầu đổi bản chất phần còn lại của Nexus.
+
+### Q97 — "RustDesk free mà, sao lại vướng pháp lý?"
+
+Câu hỏi đúng chỗ. Sự thật: "free" (mã nguồn mở) không phải "không nghĩa vụ" —
+AGPL-3.0 là giấy phép free chặt nhất. Nhưng §13 **chỉ kích khi *modify***. Chủ
+sản phẩm muốn cá nhân hoá; tôi tách thành **hai rổ**:
+
+- **Rổ 1** — thương hiệu/giao diện LTT ở Agent + web + tray (mã của ta): cá nhân
+  hoá **không giới hạn**, không dính AGPL.
+- **Rổ 2** — sửa chính binary RustDesk (cửa sổ điều khiển của nó): được sửa,
+  nhưng phải **công bố mã fork** đó.
+
+Chủ sản phẩm chọn **Rổ 1** (không sửa binary). Hệ quả lớn: **§13 không kích →
+legal review không còn là rào chặn phát hành** (xuống thành bước xác nhận tuỳ
+chọn), và **N3.2 hết bị chặn**. Nghĩa vụ còn lại nhẹ: `THIRD_PARTY_NOTICES` (đã
+tạo, trỏ tới mã nguồn công khai của RustDesk tại đúng commit đã ghim). R1 trong
+sổ rủi ro: **Cao → Thấp**.
+
+Cái phải giữ: không copy/link mã AGPL vào Agent; **không** dùng "custom client
+generator" của RustDesk (nó sinh binary đã sửa = Rổ 2).
+
+### Q98 — credit theo máy/tháng, nạp qua trình duyệt (thay D3)
+
+Chủ sản phẩm đổi D3 ("thuê bao tháng") thành: **trừ credit theo số máy đã ghép,
+mỗi tháng**; đăng nhập SSO qua tài khoản LTTSTUDIOSAPP; **nạp credit chỉ trong
+trình duyệt** (PayOS H9), nút nạp trên app mở trình duyệt, app không đụng tiền.
+
+Điều này **gỡ đúng phần khó của D3**: không cần recurring auto-charge (thứ Q53
+cố ý hoãn vì thiếu consent/cap/replay), không dính luật thanh toán app store.
+Điểm thu là **quyền mở phiên** — hết credit thì `cap_ve` từ chối, không phải một
+lượt job. Ba tham số còn để mở (chủ sản phẩm đặt): giá/máy/tháng, chu kỳ, ân hạn.
+
+### Q2 — 2 VM để đo
+
+Trả lời: 2 VM cùng gateway đủ cho **luồng hoạt động** + **T10 (relay thấy màn
+hình không, ép relay rồi bắt gói)**, nhưng **KHÔNG** đại diện cho **tỉ lệ
+P2P/relay** (chung một NAT, thậm chí thấy nhau thẳng trên LAN). Tỉ lệ cần 2 mạng
+thật khác nhau (nhà + 4G). Sẽ dùng VM cho hai cái đầu khi có kết nối.
+
+### Đã ghi / đã tạo
+
+- Q97, Q98 vào `QUYET_DINH_NEN_TANG.md`; cập nhật 2 dòng "còn để mở" (legal
+  review gỡ, thuê bao → credit).
+- `THIRD_PARTY_NOTICES.md` (mới) — đóng nghĩa vụ §§4–6 cho đường Rổ 1.
+- `03_OSS_LICENSE.md` §6/§8, `EXECUTION_PLAN.md` (N3.2 gỡ chặn, R1 hạ),
+  `apps/nexus/manifest.py` (mô hình tiền).
+
+### Bước kế — cần máy thật
+
+N3.2 (ghép engine) giờ mở, nhưng **tích hợp thật cần binary RustDesk + 2 VM** để
+xác minh stock client nhận config/credential thế nào — đúng loại việc R9 cấm làm
+mù trên máy sạch. Chờ kết nối 2 VM (computer-use hiện đang ngắt).
+
+---
+
 ## 2026-08-19 (chiều) — N3.3b đóng gói + phát hành, và trang tải
 
 Sáng dựng relay (Q96). Chiều lấp lỗ lớn nhất còn lại trước khi phát hành được
