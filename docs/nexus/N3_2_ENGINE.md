@@ -157,6 +157,56 @@ nhưng nó làm hỏng lần đo đầu: đã nhờ người dùng kết nối r
 restart, nên lúc bắt gói thì phiên đã chết (lưu lượng 0 KB/6s). Thứ tự đúng:
 **chuẩn bị xong hết → mới nhờ kết nối → bắt gói, không đụng gì thêm.**
 
+### V6 / T10 — relay CÓ đọc được nội dung màn hình không? TRẢ LỜI: KHÔNG (thụ động)
+
+Định làm bằng bắt gói một phiên video thật, nhưng VM 4GB không GPU cứ treo khi
+RustDesk encode phần mềm (lỗi `SwapChain11 Device lost`), và tiến trình chạy qua
+SSH nằm ở session 0 nên không chụp được phiên. **Môi trường không hợp để bắt gói
+video.** Nhưng T10 có câu trả lời **chặt hơn** — đọc từ **mã nguồn tại đúng
+commit đã ghim** (Q96/`03_OSS_LICENSE`), vì "relay đọc được nội dung không" là
+một tính chất **thiết kế**, không phải kết quả một phiên cụ thể.
+
+**Bằng chứng 1 — relay là bộ chuyển byte MÙ, không có khoá.**
+`rustdesk-server@73523b3` `src/relay_server.rs`, hàm `relay()`:
+
+```rust
+res = peer.recv() => { ... limiter.consume(nb); total += nb;
+                       stream.send_raw(bytes.into()).await?; }   // chuyen RAW
+```
+
+Relay chỉ `recv → đếm → send_raw`. Không có nhánh nào giải mã, không giữ khoá
+phiên. `sodiumoxide` duy nhất trong file là để **ký danh tính máy chủ** (khoá
+`A1MZ…`), không phải giải mã.
+
+**Bằng chứng 2 — client mã hoá đầu-cuối mỗi khung.**
+`hbb_common@master` `src/tcp.rs`: `struct Encrypt(pub Key, ...)` dùng
+`secretbox::seal`/`open` (NaCl XSalsa20-Poly1305), nonce theo seqnum. Mỗi khung
+màn hình là ciphertext trên dây.
+
+**Bằng chứng 3 — khoá đối xứng KHÔNG lọt về máy chủ.**
+`rustdesk@6c57829` `src/client.rs:799-805`: controller sinh khoá đối xứng ngẫu
+nhiên rồi **niêm phong bằng khoá CÔNG KHAI của máy đích** (`create_symmetric_key_msg(their_pk_b)`).
+Chỉ khoá riêng của máy đích — *không bao giờ rời máy* (Q93 ràng buộc 1) — mở được.
+
+**Kết luận T10:** một relay **thụ động** (LTT vận hành đúng đắn) **không đọc được
+nội dung màn hình** — nó chỉ thấy ciphertext + số byte + thời điểm. Đây là chứng
+minh từ mã nguồn, mạnh hơn một lần bắt gói (vốn chỉ chứng minh "phiên này, chuỗi
+này không thấy").
+
+### Sắc thái phải nói với khách, KHÔNG được giấu (threat model)
+
+LTT vận hành **cả** điểm hẹn (ký, bảo chứng khoá công khai của máy đích) **và**
+relay. Chứng minh trên chặn relay **thụ động**. Nó **không** tự chặn một
+**MITM chủ động** do chính người vận hành máy chủ: vì controller tin khoá công
+khai của máy đích *do máy chủ bảo chứng* (`sign_pk`, `client.rs:777`), một máy chủ
+độc hại có thể tráo khoá của nó vào giữa rồi giải mã.
+
+Nói thẳng: **LTT không thể lén đọc màn hình khách**, nhưng về lý thuyết **có thể
+dựng MITM chủ động** nếu tự tay tráo khoá — và việc đó để lại dấu (khoá đổi) và
+là một hành vi cố ý, khác hẳn "relay tình cờ thấy". Theo cam kết minh bạch của
+threat model, điều này phải **nói với khách**, không giấu. Giảm nhẹ thật sự cần
+**ghim/đối chiếu khoá máy đích ngoài băng** — ghi vào việc còn để mở.
+
 ### Một phát hiện ngoài kế hoạch — relay đang mở cho cả Internet
 
 Lúc kiểm kết nối trên máy chủ, cổng **21118 và 21119** (hỗ trợ web client) có

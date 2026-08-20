@@ -146,9 +146,20 @@ khoản được báo.
 
 ### T10 — LTT nhìn thấy nội dung màn hình khách
 
-Giảm: mã hoá đầu-cuối giữa hai endpoint; relay chỉ thấy dữ liệu đã mã hoá. Cần
-**xác minh** RustDesk làm điều này thế nào ở phiên bản đang chốt, chứ không suy
-đoán — ghi là việc phải làm ở N1.
+**ĐÃ XÁC MINH TỪ MÃ NGUỒN 2026-08-20** (tại đúng commit đã ghim — chi tiết ở
+`N3_2_ENGINE.md` §V6/T10). Kết quả có hai vế, và vế thứ hai phải nói với khách:
+
+**Relay THỤ ĐỘNG không đọc được màn hình.** Ba bằng chứng khớp nhau: hbbr chỉ
+`recv → send_raw` (không có khoá phiên); client mã hoá mỗi khung bằng NaCl
+`secretbox`; khoá đối xứng được **niêm phong bằng khoá công khai của máy đích**,
+chỉ khoá riêng (không rời máy) mở được. LTT-vận-hành-đúng chỉ thấy ciphertext.
+
+**Nhưng LTT vận hành CẢ điểm hẹn lẫn relay, nên một MITM CHỦ ĐỘNG là khả dĩ về lý
+thuyết:** controller tin khoá công khai của máy đích *do máy chủ bảo chứng*, nên
+một máy chủ độc hại có thể tráo khoá rồi giải mã. Việc này để lại dấu và là hành
+vi cố ý — khác "relay tình cờ thấy" — nhưng theo cam kết minh bạch **phải nói với
+khách**, không giấu. Giảm nhẹ thật cần **ghim/đối chiếu khoá máy đích ngoài băng**
+(việc còn để mở).
 
 ---
 
