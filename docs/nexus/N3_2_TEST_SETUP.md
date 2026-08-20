@@ -62,15 +62,21 @@ Remove-NetFirewallRule -Name sshd -ErrorAction SilentlyContinue
 New-NetFirewallRule -Name sshd -DisplayName "OpenSSH Server (sshd)" `
   -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
 
-# 4. Khoa cong khai cua Claude.
-#    `-Encoding ascii` co chu y: authorized_keys CO BOM thi sshd tu choi khoa
-#    va bao "permission denied" — dung cai bay BOM ma CLAUDE.md muc 1 canh bao.
+# 4. Khoa cong khai cua Claude. HAI cho de sai, ca hai deu da lam gay that:
+#    (a) BOM: file nay CO BOM thi sshd tu choi -> trieu chung la sshd DONG
+#        ket noi ngay voi tai khoan admin (user thuong van bao Permission
+#        denied binh thuong). Dung cai bay BOM ma CLAUDE.md muc 1 canh bao.
+#        Nen ghi bang WriteAllText + UTF8Encoding($false), khong dung `>` hay
+#        Out-File (PowerShell 5.1 ghi UTF-16 co BOM).
+#    (b) TEN NHOM BI DICH: tren Windows tieng Viet "Administrators" co ten
+#        khac -> icacls truot. Dung SID: S-1-5-32-544 = Administrators,
+#        S-1-5-18 = SYSTEM. SID giong nhau tren moi ngon ngu.
 if (-not (Test-Path "C:\ProgramData\ssh")) {
   New-Item -ItemType Directory "C:\ProgramData\ssh" -Force | Out-Null }
 $f = "C:\ProgramData\ssh\administrators_authorized_keys"
 $key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILMYu0kb2vrbAaHMvXMqVmxENs9OeKTbVJjVzZggT4Pg claude-nexus-test"
-Set-Content -Path $f -Value $key -Encoding ascii
-icacls $f /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+[IO.File]::WriteAllText($f, $key + "`n", (New-Object Text.UTF8Encoding($false)))
+icacls $f /inheritance:r /grant "*S-1-5-32-544:F" /grant "*S-1-5-18:F"
 
 # 5. PowerShell lam shell mac dinh (ban zip khong tu tao khoa registry nay)
 if (-not (Test-Path "HKLM:\SOFTWARE\OpenSSH")) {
