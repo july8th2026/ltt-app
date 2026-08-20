@@ -496,16 +496,16 @@ nội bộ, chưa phải để mở bán.
 | 1 | Nền tảng & quyết định (audit, threat model, Q93-Q100) | 10% | **100%** | ✅ |
 | 2 | Nền tảng thiết bị N2 (devices/enroll/presence/broker/audit/app) | 13% | **100%** | ✅ 9 file test |
 | 3 | Hạ tầng relay N1 (dựng + T10) | 7% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
-| 4 | Khả thi engine + primitives (V1-V8 + `engine.py`) | 9% | **75%** | ✅ đo+module; ⬜ wiring |
-| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **10%** | 🔨 mới; config nhúng đã chứng minh (V1) |
+| 4 | Khả thi engine + primitives (V1-V8 + `engine.py` + `engine_runner`) | 9% | **90%** | ✅ đo+module+wiring; còn phần fork |
+| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **15%** | 🔨 spec xong (`N3_2_FORK.md`); build cần repo+máy |
 | 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **5%** | 🎨 mới — xem chi tiết dưới |
-| 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **0%** | ⬜ |
+| 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
 | 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **40%** | ✅ tooling; ⬜ build thật |
-| 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **0%** | ⬜ |
+| 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **85%** | ✅ cơ chế xong (test_238); còn 3 tham số của người (D12) |
 | 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **15%** | ✅ runbook; ⬜ chạy |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 41%.**
+**Tổng có trọng số ≈ 61%** (2026-08-20, sau Phase 1 wiring + Phase 5 billing).
 
 ### Mảng 6 — Cá nhân hóa theo LTT, chi tiết (đây là phần bạn hỏi)
 
@@ -538,7 +538,7 @@ riêng cần chốt trước khi làm P7.
 
 ### Danh sách hạng mục CÒN LẠI — theo thứ tự triển khai
 
-**A. Wiring — biến vé thành kết nối (làm được ngay, không chặn):**
+**A. Wiring — biến vé thành kết nối — ✅ XONG 2026-08-20:**
 1. W1 — cột `engine_id` + `engine_secret` (mã hoá at-rest) vào `NexusSession` + migration
 2. W2 — `sessions.py`: agent báo engine, controller lấy kết nối (kiểm chủ, hết hạn)
 3. W3 — `server/nexus/routes.py`: agent báo lúc redeem; route khách lấy chi tiết
@@ -558,7 +558,7 @@ riêng cần chốt trước khi làm P7.
 11. Sinh khoá phát hành thật + ghim `RELEASE_PUBLIC_KEY`
 12. Bản cài gộp (fork + Agent, một lần nâng quyền — Q99); build+ký trên Windows sạch
 
-**D. Thanh toán (Q98):**
+**D. Thanh toán (Q98) — ✅ CƠ CHẾ XONG 2026-08-20 (còn 3 tham số D12):**
 13. Chốt 3 tham số (giá/máy/tháng, chu kỳ, ân hạn)
 14. Cơ chế trừ credit theo máy/tháng; `cap_ve` từ chối khi hết credit; nút nạp mở trình duyệt
 

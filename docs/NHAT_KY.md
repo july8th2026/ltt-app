@@ -14,6 +14,63 @@
 
 ---
 
+## 2026-08-20 (tối muộn) — Tự triển khai: Phase 1 (wiring) + Phase 5 (billing) + Q100
+
+Chủ sản phẩm cấp full quyền, yêu cầu tự triển khai liên tục không xác nhận từng
+bước. Ghi hợp đồng vận hành ở `BUILD_CHARTER.md` (tự quyết gì / dừng báo gì), rồi
+xây hai Phase trọn vẹn.
+
+### Q100 — đảo sang Rổ 2 (sửa mạnh RustDesk, tuân AGPL bằng công bố mã)
+
+Chủ sản phẩm hỏi rõ về AGPL rồi chọn Rổ 2. Đảo Q97: kích hoạt lại nghĩa vụ công
+bố mã fork, legal review (trước bán), và R1 → CAO. Không cần xin phép RustDesk —
+AGPL cấp sẵn quyền sửa; nghĩa vụ là công bố cho người dùng của LTT. Ghi Q100 +
+cập nhật 03_OSS_LICENSE §9 + THIRD_PARTY_NOTICES + `N3_2_FORK.md` (spec fork).
+
+Cũng tách **mảng cá nhân hóa** thành workstream riêng khi chủ sản phẩm hỏi "nó ở
+đâu" — trước đó tôi nén nó thành hai dòng con, làm mờ đúng lý do chọn Rổ 2.
+
+### Phase 1 — Wiring W1–W5: vé → kết nối RustDesk THẬT
+
+- **W1** ba cột vào `nexus_sessions` (`engine_id`, `engine_secret_enc` mã hoá
+  at-rest bằng secretbox, `engine_reported_at`) + migration `7445f5031805`.
+- **W2** `sessions.bao_engine`/`lay_ket_noi` — mã hoá trước khi chạm ORM, kiểm
+  chủ (404 không phải 403), xoá mật khẩu khi phiên đóng.
+- **W3** endpoint ký `/nexus-agent/session/engine`: agent nhận `session_id` từ
+  nhịp tim (không cần vé gốc), tự chứng thực bằng chữ ký. Kích hoạt phiên + lưu
+  credential. `cho_bao` thêm vào nhịp tim.
+- **W4** `client.py` vòng nhịp tim → mỗi vé mới: `engine_runner` xoay mật khẩu +
+  lấy ID (Q99 admin) → báo. Mỗi phiên bọc riêng, một cái hỏng không dừng vòng.
+- **W5** `apps/nexus`: nút "Điều khiển" → cấp vé → trang phiên poll `/ket-noi`
+  → hiện server/ID/mật khẩu khi máy đích sẵn sàng; nút dừng xoá mật khẩu.
+  **Browser-check trên loopback end-to-end**: cả luồng chạy, không lỗi console.
+
+### Phase 5 — Thuê bao theo máy/tháng (Q98), MIỄN PHÍ mặc định
+
+- `LTT_NEXUS_GIA_MAY_THANG` mặc định **0 = miễn phí, tắt cưỡng chế** (charter:
+  không tự bật thu phí). `credit.tru` debit không để số dư âm.
+- `billing.thu_phi_thang` chạy **sau lease** trong vòng bảo trì (H36), idempotent
+  trong tháng, hết credit thì không trừ + không đẩy hạn.
+- Cưỡng chế ở `cap_ve` — điểm uỷ quyền duy nhất: hết credit → từ chối vé mới,
+  không cắt máy. Nạp trong trình duyệt (nút nạp đã ở thanh trên cùng).
+- `paid_until` vào `nexus_devices` + migration `455d0097906f`.
+
+### Test
+
+Mới: test_237 (8), test_238 (9). Mở rộng: test_228 (+5 W3), test_229 (+2 W4),
+test_236 (+2 runner), test_227 (+4 W5). Mỗi lát cắt: viết → test → gate → commit.
+Tiến độ: ~41% → **~61%**.
+
+### Ranh giới đã chạm — cần tài nguyên NGOÀI repo (charter §4)
+
+Phase 2/3 (fork RustDesk + cá nhân hóa Flutter) cần **repo fork công khai + máy
+build Rust/Flutter/Windows** — không dựng được từ repo nền tảng; đã viết spec đầy
+đủ. Phase 4 build cần Windows sạch. Còn: giá thuê bao (D12), legal review (E16),
+migrate+bật cờ trên PRODUCTION (E14 — máy này đang phục vụ khách thật), sinh khoá
+phát hành thật (C10).
+
+---
+
 ## 2026-08-20 (chiều/tối) — N3.2 đo THẬT trên hai VM, engine module, Q97/98/99
 
 Chuyển từ giấy sang máy thật. Chủ sản phẩm cấp hai VM Windows sau NAT Proxmox
