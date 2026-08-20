@@ -31,30 +31,63 @@ cửa sổ RDP chen vào, và **không có đường nào để phím lọt sang
 
 Mở PowerShell **as Administrator** trên VPS rồi dán nguyên khối:
 
+> ⚠️ **Bản đầu của khối này SAI và đã sửa 2026-08-20.** Nó dùng
+> `Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0`, nhưng **Windows
+> Server 2016 không có OpenSSH dạng Windows Capability** — đường đó chỉ có từ
+> **Server 2019 / Windows 10 1809** trở lên. Trên 2016 nó không cài gì cả, rồi
+> mọi lệnh sau đổ theo vì `sshd` không tồn tại. Khối dưới đây tải thẳng bản
+> OpenSSH **chính thức của Microsoft** nên chạy được trên **mọi** phiên bản.
+
 ```powershell
-# 1. Bat OpenSSH Server (co san trong Windows, khong phai tai them)
-Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+# ===== N3.2: cai OpenSSH Server. Chay AS ADMINISTRATOR. =====
+Set-ExecutionPolicy Bypass -Scope Process -Force
+# Server 2016 mac dinh TLS 1.0/1.1 -> moi tai HTTPS deu chet neu khong bat 1.2
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+"OS: " + (Get-CimInstance Win32_OperatingSystem).Caption
+
+# 1. Tai ban OpenSSH chinh thuc moi nhat (khong ghim phien ban -> khong doan sai)
+$rel = (Invoke-RestMethod 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases')[0]
+$url = ($rel.assets | Where-Object { $_.name -eq 'OpenSSH-Win64.zip' }).browser_download_url
+"Tai $($rel.tag_name): $url"
+Invoke-WebRequest $url -OutFile "$env:TEMP\OpenSSH-Win64.zip" -UseBasicParsing
+
+# 2. Giai nen + dang ky dich vu
+Expand-Archive "$env:TEMP\OpenSSH-Win64.zip" -DestinationPath 'C:\Program Files' -Force
+& 'C:\Program Files\OpenSSH-Win64\install-sshd.ps1'
 Set-Service -Name sshd -StartupType Automatic
 Start-Service sshd
 
-# 2. Mo firewall cho SSH
+# 3. Firewall — xoa luat cu truoc de chay lai duoc nhieu lan
+Remove-NetFirewallRule -Name sshd -ErrorAction SilentlyContinue
 New-NetFirewallRule -Name sshd -DisplayName "OpenSSH Server (sshd)" `
-  -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22
+  -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 | Out-Null
 
-# 3. Cai khoa cong khai cua Claude (KHONG can mat khau sau buoc nay)
-$key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILMYu0kb2vrbAaHMvXMqVmxENs9OeKTbVJjVzZggT4Pg claude-nexus-test"
+# 4. Khoa cong khai cua Claude.
+#    `-Encoding ascii` co chu y: authorized_keys CO BOM thi sshd tu choi khoa
+#    va bao "permission denied" — dung cai bay BOM ma CLAUDE.md muc 1 canh bao.
+if (-not (Test-Path "C:\ProgramData\ssh")) {
+  New-Item -ItemType Directory "C:\ProgramData\ssh" -Force | Out-Null }
 $f = "C:\ProgramData\ssh\administrators_authorized_keys"
-Add-Content -Path $f -Value $key
+$key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILMYu0kb2vrbAaHMvXMqVmxENs9OeKTbVJjVzZggT4Pg claude-nexus-test"
+Set-Content -Path $f -Value $key -Encoding ascii
 icacls $f /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
 
-# 4. PowerShell lam shell mac dinh (de lenh chay dung cu phap)
+# 5. PowerShell lam shell mac dinh (ban zip khong tu tao khoa registry nay)
+if (-not (Test-Path "HKLM:\SOFTWARE\OpenSSH")) {
+  New-Item -Path "HKLM:\SOFTWARE\OpenSSH" -Force | Out-Null }
 New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell `
   -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" `
-  -PropertyType String -Force
+  -PropertyType String -Force | Out-Null
 
 Restart-Service sshd
-"XONG. IP may nay:"; (Invoke-WebRequest -Uri "https://api.ipify.org" -UseBasicParsing).Content
+"===== XONG ====="
+Get-Service sshd | Format-Table Name,Status,StartType -AutoSize
+"IP cong khai: " + (Invoke-WebRequest 'https://api.ipify.org' -UseBasicParsing).Content
 ```
+
+Kỳ vọng thấy `sshd  Running  Automatic` và một địa chỉ IP. Nếu bước 1 chết vì
+GitHub API, tải tay `OpenSSH-Win64.zip` từ
+<https://github.com/PowerShell/Win32-OpenSSH/releases> rồi chạy tiếp từ bước 2.
 
 Khối này chạy trên **cả hai** máy ở §4: VM Proxmox (máy vứt đi) và VPS gateway
 `45.76.185.75` (**không** phải máy vứt đi — xem §6). Tôi không cần mật khẩu.
