@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Điều khiển") }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Điều khiển") }} {{ ten_may }}</h2>
+
+    {# Trang thai CHO: may dich chua bao engine. Poll cho toi khi san sang. #}
+    <div id="cho">
+      <p class="muted">{{ _("Đang chuẩn bị máy đích… Giữ trang này mở.") }}</p>
+      <p class="muted" id="cho-note" style="font-size:.9em;">
+        {{ _("Máy đích phải đang bật và đã cài phần mềm Nexus.") }}</p>
+    </div>
+
+    {# Trang thai SAN SANG: hien cach ket noi. #}
+    <div id="san-sang" style="display:none;">
+      <p>{{ _("Máy đã sẵn sàng. Mở RustDesk trên máy bạn đang ngồi và nhập:") }}</p>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0;">
+        <tr><td style="padding:6px 0;width:120px;" class="muted">{{ _("Máy chủ") }}</td>
+            <td><code id="kn-server"></code></td></tr>
+        <tr><td style="padding:6px 0;" class="muted">{{ _("Mã máy") }}</td>
+            <td><code id="kn-id" style="font-size:1.2em;"></code></td></tr>
+        <tr><td style="padding:6px 0;" class="muted">{{ _("Mật khẩu") }}</td>
+            <td><code id="kn-pw" style="font-size:1.2em;"></code></td></tr>
+      </table>
+      <p class="muted" style="font-size:.9em;">
+        {{ _("Mật khẩu này chỉ dùng cho phiên này và sẽ hết hiệu lực khi bạn kết thúc.") }}</p>
+    </div>
+
+    {# Trang thai DA DONG. #}
+    <div id="da-dong" style="display:none;">
+      <p class="muted">{{ _("Phiên đã kết thúc.") }}</p>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:12px;">
+      <form method="post" action="{{ app.route_prefix }}/phien/{{ session_id }}/ket-thuc">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-secondary">{{ _("Dừng điều khiển") }}</button>
+      </form>
+      <a class="btn btn-secondary" href="{{ app.route_prefix }}">{{ _("Về danh sách máy") }}</a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var sid = {{ session_id | tojson }};
+      var url = {{ app.route_prefix | tojson }} + "/phien/" + sid + "/ket-noi";
+      var cho = document.getElementById("cho");
+      var ok = document.getElementById("san-sang");
+      var dong = document.getElementById("da-dong");
+      var timer = null;
+      function tick() {
+        fetch(url, { headers: { "Accept": "application/json" } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d.san_sang) {
+              document.getElementById("kn-server").textContent = d.server;
+              document.getElementById("kn-id").textContent = d.engine_id;
+              document.getElementById("kn-pw").textContent = d.mat_khau;
+              cho.style.display = "none"; dong.style.display = "none";
+              ok.style.display = "";
+              if (timer) { clearInterval(timer); timer = null; }
+            } else if (d.da_dong) {
+              cho.style.display = "none"; ok.style.display = "none";
+              dong.style.display = "";
+              if (timer) { clearInterval(timer); timer = null; }
+            }
+          })
+          .catch(function () { /* mang chop: cu thu lai o nhip sau */ });
+      }
+      tick();
+      timer = setInterval(tick, 2000);
+    })();
+  </script>
+
+{% endblock %}

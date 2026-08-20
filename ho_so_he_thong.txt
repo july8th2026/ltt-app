@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:977b3e6cf431660798bfc61bd5a3e3257ce4b632e29a7114e44d675e732931fd
-Nguồn đã quét : 1174 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:9c01232b30b5ae79022a224c5ee6092267ef41f919d392ccbe8d328ae0875b7a
+Nguồn đã quét : 1175 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -235,7 +235,7 @@ Các lớp chính:
   URL=/nexus | surface=customer | lifecycle=development
   enabled=False | public=True | parent=-
   requires=- | capabilities=Utilities
-  HTTP routes=5 | table_prefix=- | manifest_error=-
+  HTTP routes=9 | table_prefix=- | manifest_error=-
   credit_cost=none
   job_types=-
   Agent tools (0):
@@ -502,7 +502,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (322)
+4. HTTP ROUTE INVENTORY (326)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -598,11 +598,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [kichban] POST   /kichban/r/{job_id}/save → save_version | auth~login | apps/kichban/routes.py:186
 - [kichban] GET    /kichban/r/{job_id}/status → result_status | auth~login | apps/kichban/routes.py:176
 - [mediatools] GET    /mediatools → media_tools | auth~login | apps/mediatools/routes.py:10
-- [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:62
-- [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:96
-- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:204
-- [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:183
-- [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:128
+- [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:78
+- [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:220
+- [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:112
+- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:348
+- [nexus] GET    /nexus/phien/{session_id} → trang_phien | auth~login | apps/nexus/routes.py:263
+- [nexus] GET    /nexus/phien/{session_id}/ket-noi → ket_noi | auth~login | apps/nexus/routes.py:288
+- [nexus] POST   /nexus/phien/{session_id}/ket-thuc → ket_thuc_phien | auth~login | apps/nexus/routes.py:326
+- [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:199
+- [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:144
 - [platform] GET    / → home | auth~optional | server/routes/dashboard.py:100
 - [platform] GET    /api/audit/status → audit_status | auth~login | server/routes/monitor.py:76
 - [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
@@ -1320,8 +1324,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1174 file)
-Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:884, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1175 file)
+Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:884, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2059,7 +2063,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (139)
+[server] (140)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2182,6 +2186,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - server/templates/nap.html
 - server/templates/nap_don.html
 - server/templates/nap_khong_thay.html
+- server/templates/nexus_dieu_khien.html
 - server/templates/nexus_ma_ghep.html
 - server/templates/nexus_nhat_ky.html
 - server/templates/nexus_tai.html
@@ -2562,7 +2567,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1174 file; 10610929 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1175 file; 10624558 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16024,7 +16029,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/nexus/routes.py
-SHA256=c89a90ee72dba689afe2bd55db5acca7610e8e489a462bb635c7ca2d283584e7 BYTES=9039 LINES=223
+SHA256=cdf4b4ab89f5023c3bd0590d31f293e62e45323f5e031307b0b9e882d79526ee BYTES=14777 LINES=367
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của bề mặt khách hàng Nexus. Chỉ lo HTTP — nghiệp vụ ở `platform_core.nexus`.
 
@@ -16049,12 +16054,17 @@ nếu không có câu trả lời viết sẵn thì sẽ không ai trả lời.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from apps.nexus.manifest import MANIFEST
+import logging
+
 from platform_core import nexus
 from platform_core.i18n import _ as _t
 from platform_core.nexus import audit, devices, release, sessions
+from platform_core.nexus.devices import NexusError
+
+log = logging.getLogger(__name__)
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
@@ -16084,6 +16094,17 @@ def _mo_db():
     from platform_core.db import get_session
 
     return get_session()
+
+
+def _ip(request: Request) -> str:
+    """IP thật của controller (sau Cloudflare Tunnel), để ghi vào phiên."""
+    from server.auth.session import client_ip
+
+    try:
+        return client_ip(request) or ""
+    except Exception:                                          # noqa: BLE001
+        log.exception("khong doc duoc IP controller")
+        return ""
 
 
 @router.get("", response_class=HTMLResponse)
@@ -16226,6 +16247,134 @@ def tai(request: Request, _u: str = Depends(require_login)):
     return templates.TemplateResponse(request, "nexus_tai.html", {
         "nav": MANIFEST.slug, "app": MANIFEST, "ban": ban,
     })
+
+
+@router.post("/dieu-khien/{device_id}")
+def bat_dau_dieu_khien(request: Request, device_id: str,
+                       csrf_token: str = Form(...),
+                       _u: str = Depends(require_login)):
+    """Khách bấm 'Điều khiển' → cấp vé cho máy của CHÍNH mình, mở trang phiên.
+
+    `cap_ve` tự cưỡng chế chủ sở hữu (Q93 ràng buộc 5), nhưng ta kiểm `cua_chu`
+    trước để máy người khác trả 404 giống hệt máy không tồn tại (ràng buộc 9),
+    thay vì để `cap_ve` ném một thông điệp khác.
+    """
+    _bat_buoc_bat()
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        user = _chu(request)
+        device = devices.cua_chu(db, user_id=user.id, device_id=device_id)
+        if device is None:
+            raise HTTPException(status_code=404)
+        row, _ve = sessions.cap_ve(db, user_id=user.id, device=device,
+                                   controller_ip=_ip(request))
+        db.commit()
+        return RedirectResponse(f"{MANIFEST.route_prefix}/phien/{row.id}",
+                                status_code=303)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _phien_cua_chu(db, request: Request, session_id: str):
+    """Phiên nếu là của người đang đăng nhập, hoặc 404. Không bao giờ 403 —
+    một session_id của người khác không được xác nhận là có tồn tại."""
+    user = _chu(request)
+    phien = sessions.lay_phien(db, session_id=session_id)
+    if phien is None or phien.user_id != user.id:
+        raise HTTPException(status_code=404)
+    return phien
+
+
+@router.get("/phien/{session_id}", response_class=HTMLResponse)
+def trang_phien(request: Request, session_id: str,
+                _u: str = Depends(require_login)):
+    """Trang một phiên điều khiển: chờ máy đích sẵn sàng, rồi hiện cách kết nối."""
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        phien = _phien_cua_chu(db, request, session_id)
+        dev = devices.cua_chu(db, user_id=phien.user_id, device_id=phien.device_id)
+        return templates.TemplateResponse(request, "nexus_dieu_khien.html", {
+            "nav": MANIFEST.slug, "app": MANIFEST,
+            "session_id": phien.id,
+            "ten_may": dev.display_name if dev else "",
+            "csrf_token": issue_csrf_token(request),
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.get("/phien/{session_id}/ket-noi")
+def ket_noi(request: Request, session_id: str,
+            _u: str = Depends(require_login)):
+    """JSON cho trang phiên hỏi liên tục: máy đích đã báo engine chưa.
+
+    Chỉ trả mật khẩu khi phiên còn mở VÀ agent đã báo. Trước đó trả
+    `san_sang=false` để trang tiếp tục chờ. Mật khẩu chỉ nằm trong phản hồi này,
+    trang không cất nó — dùng xong hiển thị là thôi.
+    """
+    _bat_buoc_bat()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        phien = _phien_cua_chu(db, request, session_id)
+        try:
+            kn = sessions.lay_ket_noi(db, phien, user_id=phien.user_id)
+        except NexusError:
+            # `lay_ket_noi` ném NexusError cho MỌI trạng thái "chưa sẵn sàng"
+            # (chưa báo, đã đóng, hết hạn) — đó là trạng thái, không phải lỗi, nên
+            # trang cứ hỏi tiếp. Bắt HẸP: một lỗi khác (vd giải mã hỏng) phải nổi
+            # lên chứ không đội lốt "chưa sẵn sàng".
+            dong = phien.ended_at is not None or phien.revoked_at is not None
+            return JSONResponse({"san_sang": False, "da_dong": dong},
+                                headers={"Cache-Control": "no-store"})
+        return JSONResponse({
+            "san_sang": True,
+            "server": "45.76.185.75",
+            "engine_id": kn["engine_id"],
+            "mat_khau": kn["secret"],
+            "quyen": kn["quyen"],
+        }, headers={"Cache-Control": "no-store"})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/phien/{session_id}/ket-thuc")
+def ket_thuc_phien(request: Request, session_id: str,
+                   csrf_token: str = Form(...),
+                   _u: str = Depends(require_login)):
+    """Khách bấm 'Kết thúc' → đóng phiên (xoá mật khẩu ngay, W2)."""
+    _bat_buoc_bat()
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        phien = _phien_cua_chu(db, request, session_id)
+        sessions.ket_thuc(db, phien)
+        db.commit()
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 @router.get("/nhat-ky", response_class=HTMLResponse)
@@ -144727,6 +144876,90 @@ SHA256=5f71aec9d0aa7e5de57b8e8125f382fbb0d7dcbc90c913f9ba9d0b72b9d11025 BYTES=17
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_dieu_khien.html
+SHA256=1aaf5087e05565df707d992ee397242f11408c01244be6648c12d76dc4320b71 BYTES=3603 LINES=78
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Điều khiển") }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block content %}
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Điều khiển") }} {{ ten_may }}</h2>
+
+    {# Trang thai CHO: may dich chua bao engine. Poll cho toi khi san sang. #}
+    <div id="cho">
+      <p class="muted">{{ _("Đang chuẩn bị máy đích… Giữ trang này mở.") }}</p>
+      <p class="muted" id="cho-note" style="font-size:.9em;">
+        {{ _("Máy đích phải đang bật và đã cài phần mềm Nexus.") }}</p>
+    </div>
+
+    {# Trang thai SAN SANG: hien cach ket noi. #}
+    <div id="san-sang" style="display:none;">
+      <p>{{ _("Máy đã sẵn sàng. Mở RustDesk trên máy bạn đang ngồi và nhập:") }}</p>
+      <table style="width:100%;border-collapse:collapse;margin:12px 0;">
+        <tr><td style="padding:6px 0;width:120px;" class="muted">{{ _("Máy chủ") }}</td>
+            <td><code id="kn-server"></code></td></tr>
+        <tr><td style="padding:6px 0;" class="muted">{{ _("Mã máy") }}</td>
+            <td><code id="kn-id" style="font-size:1.2em;"></code></td></tr>
+        <tr><td style="padding:6px 0;" class="muted">{{ _("Mật khẩu") }}</td>
+            <td><code id="kn-pw" style="font-size:1.2em;"></code></td></tr>
+      </table>
+      <p class="muted" style="font-size:.9em;">
+        {{ _("Mật khẩu này chỉ dùng cho phiên này và sẽ hết hiệu lực khi bạn kết thúc.") }}</p>
+    </div>
+
+    {# Trang thai DA DONG. #}
+    <div id="da-dong" style="display:none;">
+      <p class="muted">{{ _("Phiên đã kết thúc.") }}</p>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:12px;">
+      <form method="post" action="{{ app.route_prefix }}/phien/{{ session_id }}/ket-thuc">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-secondary">{{ _("Dừng điều khiển") }}</button>
+      </form>
+      <a class="btn btn-secondary" href="{{ app.route_prefix }}">{{ _("Về danh sách máy") }}</a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var sid = {{ session_id | tojson }};
+      var url = {{ app.route_prefix | tojson }} + "/phien/" + sid + "/ket-noi";
+      var cho = document.getElementById("cho");
+      var ok = document.getElementById("san-sang");
+      var dong = document.getElementById("da-dong");
+      var timer = null;
+      function tick() {
+        fetch(url, { headers: { "Accept": "application/json" } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d.san_sang) {
+              document.getElementById("kn-server").textContent = d.server;
+              document.getElementById("kn-id").textContent = d.engine_id;
+              document.getElementById("kn-pw").textContent = d.mat_khau;
+              cho.style.display = "none"; dong.style.display = "none";
+              ok.style.display = "";
+              if (timer) { clearInterval(timer); timer = null; }
+            } else if (d.da_dong) {
+              cho.style.display = "none"; ok.style.display = "none";
+              dong.style.display = "";
+              if (timer) { clearInterval(timer); timer = null; }
+            }
+          })
+          .catch(function () { /* mang chop: cu thu lai o nhip sau */ });
+      }
+      tick();
+      timer = setInterval(tick, 2000);
+    })();
+  </script>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_ma_ghep.html
 SHA256=6d7140378e84f4b32257d9081c625a7db2f8e60a00d0130a20973cb8a1954fc2 BYTES=2571 LINES=49
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -144914,7 +145147,7 @@ SHA256=a3bd5d0dbaa9cfaea9c809b13f122f552c96ce7ab672f0bec9355fbfd58b1dab BYTES=31
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_trang_chinh.html
-SHA256=00a38cc596cadbc4403856dcb0737a6ef6ea6835e1a009500a5cd39695265893 BYTES=5036 LINES=112
+SHA256=039a3e9604c1de39115961d6f1e32259255e694a62dedfdec636a8bc324a054f BYTES=5657 LINES=122
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
@@ -144973,18 +145206,28 @@ SHA256=00a38cc596cadbc4403856dcb0737a6ef6ea6835e1a009500a5cd39695265893 BYTES=50
               {% endif %}
             </td>
             <td style="text-align:right;">
-              {#
-                Cau xac nhan den tu route (`xac_nhan_thu_hoi`), khong viet o day.
-                Viet truc tiep `onsubmit="... confirm('{{ _("...") }}')"` lam VO
-                HTML: dau ngoac kep cua `_()` dong luon thuoc tinh onsubmit giua
-                cau, phan con lai roi ra ngoai thanh text. Ban dau cua template
-                nay da vo dung nhu vay, va gate i18n la thu bat duoc.
-              #}
-              <form method="post" action="{{ app.route_prefix }}/thu-hoi/{{ muc.row.id }}"
-                    onsubmit="return confirm('{{ xac_nhan_thu_hoi }}');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-secondary">{{ _("Thu hồi") }}</button>
-              </form>
+              <div style="display:inline-flex;gap:8px;">
+                {# Chi cho dieu khien khi may DANG BAT — bam khi may tat chi tao
+                   mot ve khong ai nhan, khach cho vo ich. #}
+                {% if muc.online %}
+                  <form method="post" action="{{ app.route_prefix }}/dieu-khien/{{ muc.row.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn">{{ _("Điều khiển") }}</button>
+                  </form>
+                {% endif %}
+                {#
+                  Cau xac nhan den tu route (`xac_nhan_thu_hoi`), khong viet o day.
+                  Viet truc tiep `onsubmit="... confirm('{{ _("...") }}')"` lam VO
+                  HTML: dau ngoac kep cua `_()` dong luon thuoc tinh onsubmit giua
+                  cau, phan con lai roi ra ngoai thanh text. Ban dau cua template
+                  nay da vo dung nhu vay, va gate i18n la thu bat duoc.
+                #}
+                <form method="post" action="{{ app.route_prefix }}/thu-hoi/{{ muc.row.id }}"
+                      onsubmit="return confirm('{{ xac_nhan_thu_hoi }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-secondary">{{ _("Thu hồi") }}</button>
+                </form>
+              </div>
             </td>
           </tr>
         {% endfor %}
@@ -192627,7 +192870,7 @@ def test_nhat_ky_lam_noi_bat_thao_tac_cua_nhan_vien():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_227_nexus_render.py
-SHA256=9aa9cd3c8473b9afbc2a197174b1a8b34643bb21f1b98b53befa725f00b99f5f BYTES=8735 LINES=236
+SHA256=8ac3cd873b9647b6562e35b2af80e42b3684aaabbcebf5baff1586e178a52b6c BYTES=12402 LINES=342
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus N2.5 — ba trang có RENDER được thật, qua app thật.
 
@@ -192865,6 +193108,112 @@ def test_co_tat_thi_URL_go_thang_cung_404(app_tat):
     for duong in ("/nexus", "/nexus/nhat-ky"):
         r = app_tat.get(duong)
         assert r.status_code == 404, f"{duong} tra {r.status_code} khi co TAT"
+
+
+# ── W5: luồng điều khiển của khách (start → poll → sẵn sàng) ─────────────────
+
+def _may_cua_khach(email: str):
+    """Tạo một máy đã ghép cho user `email`. Trả (user_id, device_id)."""
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+    from platform_core.users import tim_theo_email
+
+    gen = get_session(); db = next(gen)
+    try:
+        user = tim_theo_email(db, email)
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        dev = devices.doi_ma(db, code=ma, public_key=_khoa(), display_name="MayW5")
+        db.commit()
+        return user.id, dev.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _csrf_tu_trang(client, path="/nexus"):
+    return _csrf(client.get(path).text)
+
+
+def test_W5_bat_dau_dieu_khien_tao_phien_va_chuyen_trang(app_bat):
+    email = _tao_va_dang_nhap(app_bat)
+    _uid, did = _may_cua_khach(email)
+    r = app_bat.post(f"/nexus/dieu-khien/{did}",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    assert r.status_code == 303, r.text[:300]
+    assert "/nexus/phien/" in r.headers["location"]
+
+
+def test_W5_may_nguoi_khac_tra_404(app_bat):
+    _tao_va_dang_nhap(app_bat)
+    r = app_bat.post("/nexus/dieu-khien/khong-ton-tai",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    assert r.status_code == 404
+
+
+def test_W5_poll_ket_noi_cho_roi_san_sang(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "w5-token-key-0123456789")
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+
+    email = _tao_va_dang_nhap(app_bat)
+    uid, did = _may_cua_khach(email)
+    r = app_bat.post(f"/nexus/dieu-khien/{did}",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    sid = r.headers["location"].rsplit("/", 1)[-1]
+
+    # Trang phien render duoc.
+    assert app_bat.get(f"/nexus/phien/{sid}").status_code == 200
+
+    # Chua bao engine -> chua san sang.
+    j = app_bat.get(f"/nexus/phien/{sid}/ket-noi").json()
+    assert j["san_sang"] is False
+
+    # Agent bao engine (mo phong).
+    gen = get_session(); db = next(gen)
+    try:
+        phien = sessions.lay_phien(db, session_id=sid)
+        sessions.bao_engine(db, phien, engine_id="288780716", secret="PwW5-Test")
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    # Gio san sang + tra mat khau.
+    j2 = app_bat.get(f"/nexus/phien/{sid}/ket-noi").json()
+    assert j2["san_sang"] is True
+    assert j2["engine_id"] == "288780716"
+    assert j2["mat_khau"] == "PwW5-Test"
+    assert j2["server"] == "45.76.185.75"
+
+
+def test_W5_ket_thuc_dong_phien_va_xoa_mat_khau(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "w5-token-key-0123456789")
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+
+    email = _tao_va_dang_nhap(app_bat)
+    uid, did = _may_cua_khach(email)
+    r = app_bat.post(f"/nexus/dieu-khien/{did}",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    sid = r.headers["location"].rsplit("/", 1)[-1]
+
+    gen = get_session(); db = next(gen)
+    try:
+        sessions.bao_engine(db, sessions.lay_phien(db, session_id=sid),
+                            engine_id="1", secret="pw"); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    app_bat.post(f"/nexus/phien/{sid}/ket-thuc",
+                 data={"csrf_token": _csrf_tu_trang(app_bat)},
+                 follow_redirects=False)
+    j = app_bat.get(f"/nexus/phien/{sid}/ket-noi").json()
+    assert j["san_sang"] is False and j["da_dong"] is True
 
 @@@LTT_PROFILE_FILE_END@@@
 

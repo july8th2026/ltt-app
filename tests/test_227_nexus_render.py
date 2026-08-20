@@ -234,3 +234,109 @@ def test_co_tat_thi_URL_go_thang_cung_404(app_tat):
     for duong in ("/nexus", "/nexus/nhat-ky"):
         r = app_tat.get(duong)
         assert r.status_code == 404, f"{duong} tra {r.status_code} khi co TAT"
+
+
+# ── W5: luồng điều khiển của khách (start → poll → sẵn sàng) ─────────────────
+
+def _may_cua_khach(email: str):
+    """Tạo một máy đã ghép cho user `email`. Trả (user_id, device_id)."""
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+    from platform_core.users import tim_theo_email
+
+    gen = get_session(); db = next(gen)
+    try:
+        user = tim_theo_email(db, email)
+        _row, ma = devices.tao_ma_ghep(db, user_id=user.id)
+        dev = devices.doi_ma(db, code=ma, public_key=_khoa(), display_name="MayW5")
+        db.commit()
+        return user.id, dev.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _csrf_tu_trang(client, path="/nexus"):
+    return _csrf(client.get(path).text)
+
+
+def test_W5_bat_dau_dieu_khien_tao_phien_va_chuyen_trang(app_bat):
+    email = _tao_va_dang_nhap(app_bat)
+    _uid, did = _may_cua_khach(email)
+    r = app_bat.post(f"/nexus/dieu-khien/{did}",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    assert r.status_code == 303, r.text[:300]
+    assert "/nexus/phien/" in r.headers["location"]
+
+
+def test_W5_may_nguoi_khac_tra_404(app_bat):
+    _tao_va_dang_nhap(app_bat)
+    r = app_bat.post("/nexus/dieu-khien/khong-ton-tai",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    assert r.status_code == 404
+
+
+def test_W5_poll_ket_noi_cho_roi_san_sang(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "w5-token-key-0123456789")
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+
+    email = _tao_va_dang_nhap(app_bat)
+    uid, did = _may_cua_khach(email)
+    r = app_bat.post(f"/nexus/dieu-khien/{did}",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    sid = r.headers["location"].rsplit("/", 1)[-1]
+
+    # Trang phien render duoc.
+    assert app_bat.get(f"/nexus/phien/{sid}").status_code == 200
+
+    # Chua bao engine -> chua san sang.
+    j = app_bat.get(f"/nexus/phien/{sid}/ket-noi").json()
+    assert j["san_sang"] is False
+
+    # Agent bao engine (mo phong).
+    gen = get_session(); db = next(gen)
+    try:
+        phien = sessions.lay_phien(db, session_id=sid)
+        sessions.bao_engine(db, phien, engine_id="288780716", secret="PwW5-Test")
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    # Gio san sang + tra mat khau.
+    j2 = app_bat.get(f"/nexus/phien/{sid}/ket-noi").json()
+    assert j2["san_sang"] is True
+    assert j2["engine_id"] == "288780716"
+    assert j2["mat_khau"] == "PwW5-Test"
+    assert j2["server"] == "45.76.185.75"
+
+
+def test_W5_ket_thuc_dong_phien_va_xoa_mat_khau(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "w5-token-key-0123456789")
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+
+    email = _tao_va_dang_nhap(app_bat)
+    uid, did = _may_cua_khach(email)
+    r = app_bat.post(f"/nexus/dieu-khien/{did}",
+                     data={"csrf_token": _csrf_tu_trang(app_bat)},
+                     follow_redirects=False)
+    sid = r.headers["location"].rsplit("/", 1)[-1]
+
+    gen = get_session(); db = next(gen)
+    try:
+        sessions.bao_engine(db, sessions.lay_phien(db, session_id=sid),
+                            engine_id="1", secret="pw"); db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    app_bat.post(f"/nexus/phien/{sid}/ket-thuc",
+                 data={"csrf_token": _csrf_tu_trang(app_bat)},
+                 follow_redirects=False)
+    j = app_bat.get(f"/nexus/phien/{sid}/ket-noi").json()
+    assert j["san_sang"] is False and j["da_dong"] is True

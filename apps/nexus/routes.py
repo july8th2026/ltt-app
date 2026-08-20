@@ -21,12 +21,17 @@ nếu không có câu trả lời viết sẵn thì sẽ không ai trả lời.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from apps.nexus.manifest import MANIFEST
+import logging
+
 from platform_core import nexus
 from platform_core.i18n import _ as _t
 from platform_core.nexus import audit, devices, release, sessions
+from platform_core.nexus.devices import NexusError
+
+log = logging.getLogger(__name__)
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
@@ -56,6 +61,17 @@ def _mo_db():
     from platform_core.db import get_session
 
     return get_session()
+
+
+def _ip(request: Request) -> str:
+    """IP thật của controller (sau Cloudflare Tunnel), để ghi vào phiên."""
+    from server.auth.session import client_ip
+
+    try:
+        return client_ip(request) or ""
+    except Exception:                                          # noqa: BLE001
+        log.exception("khong doc duoc IP controller")
+        return ""
 
 
 @router.get("", response_class=HTMLResponse)
@@ -198,6 +214,134 @@ def tai(request: Request, _u: str = Depends(require_login)):
     return templates.TemplateResponse(request, "nexus_tai.html", {
         "nav": MANIFEST.slug, "app": MANIFEST, "ban": ban,
     })
+
+
+@router.post("/dieu-khien/{device_id}")
+def bat_dau_dieu_khien(request: Request, device_id: str,
+                       csrf_token: str = Form(...),
+                       _u: str = Depends(require_login)):
+    """Khách bấm 'Điều khiển' → cấp vé cho máy của CHÍNH mình, mở trang phiên.
+
+    `cap_ve` tự cưỡng chế chủ sở hữu (Q93 ràng buộc 5), nhưng ta kiểm `cua_chu`
+    trước để máy người khác trả 404 giống hệt máy không tồn tại (ràng buộc 9),
+    thay vì để `cap_ve` ném một thông điệp khác.
+    """
+    _bat_buoc_bat()
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        user = _chu(request)
+        device = devices.cua_chu(db, user_id=user.id, device_id=device_id)
+        if device is None:
+            raise HTTPException(status_code=404)
+        row, _ve = sessions.cap_ve(db, user_id=user.id, device=device,
+                                   controller_ip=_ip(request))
+        db.commit()
+        return RedirectResponse(f"{MANIFEST.route_prefix}/phien/{row.id}",
+                                status_code=303)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _phien_cua_chu(db, request: Request, session_id: str):
+    """Phiên nếu là của người đang đăng nhập, hoặc 404. Không bao giờ 403 —
+    một session_id của người khác không được xác nhận là có tồn tại."""
+    user = _chu(request)
+    phien = sessions.lay_phien(db, session_id=session_id)
+    if phien is None or phien.user_id != user.id:
+        raise HTTPException(status_code=404)
+    return phien
+
+
+@router.get("/phien/{session_id}", response_class=HTMLResponse)
+def trang_phien(request: Request, session_id: str,
+                _u: str = Depends(require_login)):
+    """Trang một phiên điều khiển: chờ máy đích sẵn sàng, rồi hiện cách kết nối."""
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        phien = _phien_cua_chu(db, request, session_id)
+        dev = devices.cua_chu(db, user_id=phien.user_id, device_id=phien.device_id)
+        return templates.TemplateResponse(request, "nexus_dieu_khien.html", {
+            "nav": MANIFEST.slug, "app": MANIFEST,
+            "session_id": phien.id,
+            "ten_may": dev.display_name if dev else "",
+            "csrf_token": issue_csrf_token(request),
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.get("/phien/{session_id}/ket-noi")
+def ket_noi(request: Request, session_id: str,
+            _u: str = Depends(require_login)):
+    """JSON cho trang phiên hỏi liên tục: máy đích đã báo engine chưa.
+
+    Chỉ trả mật khẩu khi phiên còn mở VÀ agent đã báo. Trước đó trả
+    `san_sang=false` để trang tiếp tục chờ. Mật khẩu chỉ nằm trong phản hồi này,
+    trang không cất nó — dùng xong hiển thị là thôi.
+    """
+    _bat_buoc_bat()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        phien = _phien_cua_chu(db, request, session_id)
+        try:
+            kn = sessions.lay_ket_noi(db, phien, user_id=phien.user_id)
+        except NexusError:
+            # `lay_ket_noi` ném NexusError cho MỌI trạng thái "chưa sẵn sàng"
+            # (chưa báo, đã đóng, hết hạn) — đó là trạng thái, không phải lỗi, nên
+            # trang cứ hỏi tiếp. Bắt HẸP: một lỗi khác (vd giải mã hỏng) phải nổi
+            # lên chứ không đội lốt "chưa sẵn sàng".
+            dong = phien.ended_at is not None or phien.revoked_at is not None
+            return JSONResponse({"san_sang": False, "da_dong": dong},
+                                headers={"Cache-Control": "no-store"})
+        return JSONResponse({
+            "san_sang": True,
+            "server": "45.76.185.75",
+            "engine_id": kn["engine_id"],
+            "mat_khau": kn["secret"],
+            "quyen": kn["quyen"],
+        }, headers={"Cache-Control": "no-store"})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/phien/{session_id}/ket-thuc")
+def ket_thuc_phien(request: Request, session_id: str,
+                   csrf_token: str = Form(...),
+                   _u: str = Depends(require_login)):
+    """Khách bấm 'Kết thúc' → đóng phiên (xoá mật khẩu ngay, W2)."""
+    _bat_buoc_bat()
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        phien = _phien_cua_chu(db, request, session_id)
+        sessions.ket_thuc(db, phien)
+        db.commit()
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 @router.get("/nhat-ky", response_class=HTMLResponse)

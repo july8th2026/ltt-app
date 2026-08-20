@@ -8200,3 +8200,43 @@ msgstr "Back to my devices"
 #. Nexus N3.3b: trang tai agent (/nexus/tai) + link tren trang chinh
 msgid "Chưa cài phần mềm trên máy cần điều khiển?"
 msgstr "Haven't installed the software on the machine you want to control?"
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Điều khiển"
+msgstr "Control"
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Đang chuẩn bị máy đích… Giữ trang này mở."
+msgstr "Preparing the target machine… Keep this page open."
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Máy đích phải đang bật và đã cài phần mềm Nexus."
+msgstr "The target machine must be on and have the Nexus software installed."
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Máy đã sẵn sàng. Mở RustDesk trên máy bạn đang ngồi và nhập:"
+msgstr "The machine is ready. Open RustDesk on the machine you are sitting at and enter:"
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Máy chủ"
+msgstr "Server"
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Mã máy"
+msgstr "Machine ID"
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Mật khẩu này chỉ dùng cho phiên này và sẽ hết hiệu lực khi bạn kết thúc."
+msgstr "This password is for this session only and stops working when you end it."
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Phiên đã kết thúc."
+msgstr "The session has ended."
+
+#. Nexus W5: trang dieu khien phien (nexus_dieu_khien.html)
+msgid "Về danh sách máy"
+msgstr "Back to machines"
+
+#. Nexus W5: nut dung phien
+msgid "Dừng điều khiển"
+msgstr "Stop controlling"

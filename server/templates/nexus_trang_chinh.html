@@ -55,18 +55,28 @@
               {% endif %}
             </td>
             <td style="text-align:right;">
-              {#
-                Cau xac nhan den tu route (`xac_nhan_thu_hoi`), khong viet o day.
-                Viet truc tiep `onsubmit="... confirm('{{ _("...") }}')"` lam VO
-                HTML: dau ngoac kep cua `_()` dong luon thuoc tinh onsubmit giua
-                cau, phan con lai roi ra ngoai thanh text. Ban dau cua template
-                nay da vo dung nhu vay, va gate i18n la thu bat duoc.
-              #}
-              <form method="post" action="{{ app.route_prefix }}/thu-hoi/{{ muc.row.id }}"
-                    onsubmit="return confirm('{{ xac_nhan_thu_hoi }}');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-secondary">{{ _("Thu hồi") }}</button>
-              </form>
+              <div style="display:inline-flex;gap:8px;">
+                {# Chi cho dieu khien khi may DANG BAT — bam khi may tat chi tao
+                   mot ve khong ai nhan, khach cho vo ich. #}
+                {% if muc.online %}
+                  <form method="post" action="{{ app.route_prefix }}/dieu-khien/{{ muc.row.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn">{{ _("Điều khiển") }}</button>
+                  </form>
+                {% endif %}
+                {#
+                  Cau xac nhan den tu route (`xac_nhan_thu_hoi`), khong viet o day.
+                  Viet truc tiep `onsubmit="... confirm('{{ _("...") }}')"` lam VO
+                  HTML: dau ngoac kep cua `_()` dong luon thuoc tinh onsubmit giua
+                  cau, phan con lai roi ra ngoai thanh text. Ban dau cua template
+                  nay da vo dung nhu vay, va gate i18n la thu bat duoc.
+                #}
+                <form method="post" action="{{ app.route_prefix }}/thu-hoi/{{ muc.row.id }}"
+                      onsubmit="return confirm('{{ xac_nhan_thu_hoi }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-secondary">{{ _("Thu hồi") }}</button>
+                </form>
+              </div>
             </td>
           </tr>
         {% endfor %}
