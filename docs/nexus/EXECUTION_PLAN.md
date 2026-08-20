@@ -327,7 +327,7 @@ quyết định chặn.
 
 | # | Rủi ro | Mức | Giảm bằng |
 |---|---|---|---|
-| R1 | AGPL lây sang phần độc quyền của LTT | ~~Cao~~ → **THẤP sau Q97** | **Đã chọn đường "dùng nguyên bản" (Q97, 2026-08-20):** không sửa binary RustDesk, thương hiệu chỉ ở Agent/web. §13 không kích khi không *modify*, nên không có nghĩa vụ công bố mã, và không có mã AGPL nào lây được sang Agent (ranh giới tiến trình + không link/copy). Rủi ro còn lại rất nhỏ: kiểm kê phụ thuộc bắc cầu (R1' — `03_OSS_LICENSE.md` §6 #4) trước khi bán. Nếu sau này đổi sang Rổ 2 (sửa client) thì R1 quay lại mức Cao |
+| R1 | AGPL lây sang phần độc quyền của LTT | **CAO lại (Q100, Rổ 2)** | Q97 (Rổ 1) đã hạ R1 xuống Thấp, nhưng **Q100 đảo sang Rổ 2 (sửa client)** nên §13 kích và R1 **trở lại CAO**. Giảm bằng: legal review trước phát hành thương mại (bắt buộc lại), ranh giới tiến trình+IPC cứng, **không copy/link mã AGPL vào Agent** (rule 2/3). Việc đã đo (V1-V8) không phí — nền cấu hình vẫn dùng, Rổ 2 chỉ thêm khả năng sửa client |
 | R2 | Không có IP công khai → sản phẩm không chạy được ngoài LAN | **Cao** | D2 trước N1 |
 | R3 | Chi phí băng thông relay vượt dự tính | Trung bình | N1.1 phải **đo** tỉ lệ direct vs relay và GB/giờ thật, không ước lượng |
 | R4 | Một sản phẩm điều khiển máy từ xa bị lạm dụng để chiếm quyền máy nạn nhân | **Cao** | `04_THREAT_MODEL.md` T1. **Không đóng được bằng kỹ thuật** — mọi bước của kẻ lừa đảo đều "hợp lệ", hệ thống làm đúng thứ nó được thiết kế. Giảm bằng: mã ghép sinh **trên máy đích**, hạn rất ngắn, cảnh báo bằng ngôn ngữ hậu quả, chỉ báo phiên không tắt được, và email cho chủ tài khoản **mỗi lần ghép**. Phần còn lại là rủi ro **chấp nhận có ý thức**, phải ghi vào Q93 chứ không để im |
@@ -479,3 +479,63 @@ nội bộ, chưa phải để mở bán.
 | L9 | 2026-08-19: N1.1 dựng trên gateway Windows có sẵn thay VPS Linux mua mới | Máy đã có, chi phí thêm 0 đồng, đúng mục tiêu "free". Đánh đổi: relay trên chính gateway + Windows Eval — ghi thành Q96 |
 | L10 | 2026-08-19: dựng **bên ký** bản phát hành (không có trong pack như một task riêng) | Pack giả định có đường phát hành; repo này thì `updates.py` chỉ kiểm, thiếu bên tạo manifest. Không có nó thì Q95 "phát hành cho khách" không thực thi được |
 | L11 | 2026-08-19: nâng N5 thành `N5_VAN_HANH.md` — runbook mở cờ + ứng phó sự cố | Prompt 29–35 của pack là "operational readiness"; gom vào một runbook thay vì bảy file, đúng nguyên tắc số-artifact-tối-thiểu (L3) |
+
+---
+
+## 13. BẢN ĐỒ HẠNG MỤC + TIẾN ĐỘ — 2026-08-20 (sau Q100, Rổ 2)
+
+> Cập nhật khi chủ sản phẩm chọn **Rổ 2** (Q100). Rổ 2 **thêm** workstream "fork
+> RustDesk" và **kích hoạt lại** legal review — nên tổng % nhích xuống một chút
+> so với Rổ 1, đúng bản chất "goalpost dịch ra xa hơn".
+
+### Tiến độ theo workstream
+
+| # | Workstream | Trọng số | % xong | Trạng thái |
+|---|---|---|---|---|
+| 1 | Nền tảng & quyết định (audit, threat model, Q93-Q100) | 12% | **100%** | ✅ |
+| 2 | Nền tảng thiết bị N2 (devices/enroll/presence/broker/audit/app) | 14% | **100%** | ✅ 9 file test |
+| 3 | Hạ tầng relay N1 (dựng + T10) | 8% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
+| 4 | Khả thi engine + primitives (V1-V8 + `engine.py`) | 10% | **75%** | ✅ đo+module; ⬜ wiring |
+| 5 | **Fork RustDesk (Rổ 2)** — branding/config nhúng/chỉ báo/patch | 12% | **5%** | 🔨 mới quyết |
+| 6 | Wiring phiên W1-W5 (vé → kết nối thật) | 12% | **0%** | ⬜ |
+| 7 | Đóng gói & phát hành endpoint (tooling + build+sign) | 8% | **40%** | ✅ tooling; ⬜ build thật |
+| 8 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 10% | **0%** | ⬜ |
+| 9 | Sẵn sàng vận hành N5 (runbook + thực thi) | 8% | **15%** | ✅ runbook; ⬜ chạy |
+| 10 | Legal review + thương mại N6 | 6% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
+
+**Tổng có trọng số ≈ 45%.**
+
+### Danh sách hạng mục CÒN LẠI — theo thứ tự triển khai
+
+**A. Wiring — biến vé thành kết nối (làm được ngay, không chặn):**
+1. W1 — cột `engine_id` + `engine_secret` (mã hoá at-rest) vào `NexusSession` + migration
+2. W2 — `sessions.py`: agent báo engine, controller lấy kết nối (kiểm chủ, hết hạn)
+3. W3 — `server/nexus/routes.py`: agent báo lúc redeem; route khách lấy chi tiết
+4. W4 — `client.py`: nhịp tim → `engine.xoay_mat_khau`+`lay_id` → báo (cần Q99 admin)
+5. W5 — `apps/nexus`: nút điều khiển + hiện kết nối; kiểm trình duyệt thật
+
+**B. Fork RustDesk (Rổ 2) — song song với A:**
+6. Fork repo tại commit đã ghim; branding LTT; cấu hình server **nhúng sẵn**
+7. Chỉ báo phiên tuỳ biến (giải V7 luôn); mọi sửa là **patch theo dõi được**
+8. Pipeline build fork + **công bố mã nguồn** (nghĩa vụ AGPL) + source-offer
+9. Cập nhật `THIRD_PARTY_NOTICES` cho fork đã sửa
+
+**C. Phát hành endpoint:**
+10. Sinh khoá phát hành thật + ghim `RELEASE_PUBLIC_KEY`
+11. Bản cài gộp (fork + Agent, một lần nâng quyền — Q99); build+ký trên Windows sạch
+
+**D. Thanh toán (Q98):**
+12. Chốt 3 tham số (giá/máy/tháng, chu kỳ, ân hạn)
+13. Cơ chế trừ credit theo máy/tháng; `cap_ve` từ chối khi hết credit; nút nạp mở trình duyệt
+
+**E. Vận hành & thương mại:**
+14. Migrate bảng Nexus lên prod; bật `LTT_NEXUS` (sau 5 điều kiện N5)
+15. Đo tỉ lệ P2P/relay (cần 2 mạng thật) + **siết relay** (đang mở cho cả Internet)
+16. **Legal review** (trước bán) — 6 câu ở `03_OSS_LICENSE.md` §7
+17. Giá, điều khoản, mở bán
+
+### Đường tới hai cột mốc
+
+- **"Chạy được nội bộ" (điều khiển thật một máy):** cần A (W1-W5) + C10/C11 + migrate.
+  Ước lượng phần lớn nằm ở A.
+- **"Mở bán":** thêm B (fork công bố mã) + D (thanh toán) + E16 (legal) + E15 (siết relay).

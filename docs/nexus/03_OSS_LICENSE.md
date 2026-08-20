@@ -125,12 +125,12 @@ giờ chạm luồng màn hình, tiến trình B không bao giờ tự quyết u
 | # | Nghĩa vụ | Nguồn | Trạng thái |
 |---|---|---|---|
 | 1 | `THIRD_PARTY_NOTICES` liệt kê AGPL-3.0 + toàn văn giấy phép | rule 5 | ✅ 2026-08-20 (`/THIRD_PARTY_NOTICES.md`) |
-| 2 | Quy trình source-offer: công bố mã của bản RustDesk đã sửa | §13 / §§4–6 | ✅ **N/A theo Q97** — dùng nguyên bản nên không có bản sửa để công bố; Corresponding Source là repo gốc tại commit đã ghim |
-| 3 | Theo dõi patch: mọi sửa đổi là commit riêng trên fork có ghi nguồn | rule 6 | ✅ **N/A theo Q97** — không sửa nên không có patch |
+| 2 | Quy trình source-offer: công bố mã của bản RustDesk đã sửa | §13 / §§4–6 | ⬜ **PHẢI LÀM (Q100, Rổ 2)** — fork công khai + Corresponding Source cho người dùng qua mạng |
+| 3 | Theo dõi patch: mọi sửa đổi là commit riêng trên fork có ghi nguồn | rule 6 | ⬜ **PHẢI LÀM (Q100, Rổ 2)** — mỗi sửa đổi một commit có ghi nguồn |
 | 4 | Kiểm kê phụ thuộc bắc cầu của RustDesk | rule 1 | ⬜ trước phát hành thương mại |
-| 5 | Legal review trước phát hành thương mại | invariant #6 | ⬇️ **HẠ cấp bởi Q97** — không sửa nên không kích §13; review xuống thành bước xác nhận tuỳ chọn, **không chặn** |
+| 5 | Legal review trước phát hành thương mại | invariant #6 | ⬜ **BẮT BUỘC lại (Q100)** trước phát hành thương mại; không chặn dev |
 
-**Cập nhật 2026-08-20 (Q97):** chủ sản phẩm chọn **Rổ 1** — dùng RustDesk nguyên
+**Cập nhật 2026-08-20 (Q97 → ĐẢO bởi Q100):** ban đầu chọn **Rổ 1** — dùng RustDesk nguyên
 bản, thương hiệu LTT chỉ ở Agent/web/tray. Vì không *modify*, §13 không kích, nên
 nghĩa vụ #2/#3/#5 tan biến hoặc hạ cấp; chỉ còn #1 (đã làm) và #4 (kiểm kê phụ
 thuộc, trước khi bán). **N3.2 hết bị chặn.**
@@ -182,3 +182,24 @@ bố rộng hơn dự tính.
 Vì vậy thứ tự trong `EXECUTION_PLAN.md` giữ nguyên và nay có thêm một lý do:
 **N2 trước, N3 sau.** N2 không chạm AGPL, nên nó là công việc duy nhất tiến được
 mà không đặt cược vào một câu trả lời pháp lý chưa có.
+
+## 9. ĐẢO SANG RỔ 2 — 2026-08-20 (Q100)
+
+Chủ sản phẩm đổi từ Rổ 1 sang **Rổ 2: sửa mạnh client + tuân AGPL bằng công bố mã**.
+Đảo lại §8 và mục 6:
+
+- Nghĩa vụ **#2 (source-offer)** và **#3 (theo dõi patch)**: từ *N/A* (Q97) →
+  **PHẢI LÀM**. Fork công khai, mỗi sửa đổi là commit riêng có ghi nguồn, công bố
+  Corresponding Source cho người dùng tương tác qua mạng (§13) và nhận binary (§§4-6).
+- Nghĩa vụ **#5 (legal review)**: từ *hạ cấp* → **BẮT BUỘC trước phát hành thương
+  mại** (câu hỏi ở §7). Không chặn dev; chặn bán.
+- **R1 trở lại mức CAO** trong `EXECUTION_PLAN.md`.
+
+**Không cần xin phép RustDesk.** AGPL cấp sẵn quyền sửa; không nộp code cho RustDesk,
+không chờ phê duyệt. Nghĩa vụ là **công bố cho NGƯỜI DÙNG của LTT**, không phải cho
+RustDesk. Đường "mua license thương mại để giữ kín" đã cân và **không chọn** — Rổ 2
+chấp nhận mở mã fork.
+
+**Ranh giới tiến trình giờ quan trọng hơn, không kém đi:** nó là thứ giữ LTT Agent
+(độc quyền) khỏi bị AGPL kéo vào. Rule 3 (không copy mã AGPL vào Agent) và rule 2
+(không link) là bất khả xâm phạm.
