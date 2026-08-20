@@ -83,18 +83,23 @@ def test_duong_dan_hiem_van_o_nguyen_mot_tham_so():
 
 # ── Không xin quyền admin ────────────────────────────────────────────────────
 
-def test_KHONG_xin_quyen_admin():
-    """Q95: bỏ được UAC là bỏ được một nửa kịch bản T1.
+def test_chay_ELEVATED_bang_token_nguoi_dung_Q99():
+    """Q99: điều khiển không giám sát cần admin (V8: `--password` đòi admin).
 
-    `/ru SYSTEM` và `/rl HIGHEST` đều kéo theo yêu cầu quyền admin. Thêm một
-    trong hai là biến việc cài từ 'bấm là xong' thành 'bấm qua một hộp thoại
-    cảnh báo nữa'.
+    Đổi so với N3.3b: task giờ chạy `/rl HIGHEST` — token admin của CHÍNH người
+    dùng, KHÔNG `/ru SYSTEM`. Hai điều được chốt ở đây:
+
+    * `/rl HIGHEST` CÓ mặt → agent chạy đủ quyền để xoay mật khẩu RustDesk. Task
+      Scheduler nâng quyền tự động, không hỏi UAC mỗi lần (chỉ lúc cài).
+    * `/ru SYSTEM` VẮNG → giữ ngữ cảnh DPAPI của người dùng, để khoá thiết bị mã
+      hoá lúc enroll vẫn đọc được lúc chạy. Đổi sang SYSTEM là một lỗi chỉ hiện
+      trên máy thật (khoá không giải mã được).
     """
     from nexus_agent.service import lenh_tao_task
 
     argv = [x.upper() for x in lenh_tao_task("py.exe")]
-    assert "/RU" not in argv, "dung /ru se doi quyen admin"
-    assert "/RL" not in argv, "dung /rl HIGHEST se doi quyen admin"
+    assert "/RL" in argv and "HIGHEST" in argv, "Q99: can /rl HIGHEST de xoay mat khau"
+    assert "/RU" not in argv, "khong dung /ru SYSTEM — giu ngu canh DPAPI nguoi dung"
     assert "SYSTEM" not in argv
 
 

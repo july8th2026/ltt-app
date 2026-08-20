@@ -93,11 +93,15 @@ def cmd_forget(args) -> int:
 
 
 def cmd_install(args) -> int:
-    """Cai lich tu chay khi dang nhap. KHONG can quyen admin (N3.3b)."""
+    """Cai lich tu chay khi dang nhap. CAN quyen admin MOT LAN (Q99): task chay
+    `/rl HIGHEST` de xoay mat khau RustDesk duoc; tao task do doi admin luc cai,
+    nhung sau do chay khong hoi UAC lai."""
     from nexus_agent import service
 
     service.cai(sys.executable, args.url, thu_muc=args.dir)
-    print(f"da cai lich chay: task '{service.TASK_NAME}' se chay khi ban dang nhap.")
+    print(f"da cai lich chay: task '{service.TASK_NAME}' se chay (nang quyen) khi "
+          f"ban dang nhap.")
+    print("neu bao 'Access is denied': chay lai cua so nay bang quyen Administrator.")
     print("go bang: python -m nexus_agent uninstall")
     return 0
 

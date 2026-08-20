@@ -1,21 +1,26 @@
-"""Cho agent tự chạy lại sau khi khởi động máy — bằng Scheduled Task, KHÔNG service.
+"""Cho agent tự chạy lại sau khi khởi động máy — Scheduled Task ĐƯỢC NÂNG QUYỀN (Q99).
 
-Hai đường trên Windows, và chúng đánh đổi ngược nhau:
+Ba lựa chọn trên Windows:
 
-|                     | Cần admin? | Chạy trước khi đăng nhập? |
-|---------------------|------------|---------------------------|
-| Windows Service     | **có**     | có                        |
-| Scheduled Task (user)| **không** | không                     |
+|                          | Admin lúc cài? | UAC mỗi lần chạy? | Trước đăng nhập? | DPAPI |
+|--------------------------|----------------|-------------------|------------------|-------|
+| Task (user, thường)      | không          | không             | không            | user  |
+| **Task `/rl HIGHEST`** ← | **có (1 lần)** | **không**         | không            | user  |
+| Service `/ru SYSTEM`     | có             | không             | có               | SYSTEM|
 
-Chọn **Scheduled Task theo người dùng**, và lý do gắn thẳng với Q95: bản cài
-chưa ký mã đã làm Windows cảnh báo rồi; thêm một lời xin quyền admin nữa là dựng
-đúng màn hình mà kẻ lừa đảo T1 cần khách bấm qua. Bỏ được UAC là bỏ được một nửa
-kịch bản đó.
+**Chọn Task `/rl HIGHEST` (Q99).** N3.3b ban đầu chọn task **không** admin vì Q95/
+T1: đừng dạy khách bấm qua UAC. Nhưng đo trên máy thật (`N3_2_ENGINE.md` §V8):
+xoay mật khẩu phiên RustDesk **đòi admin**. Điều khiển không giám sát bản chất
+cần admin — N3.3b đã lường ("khi cần thì đổi kèm quyền admin"). Q99 chốt.
 
-**Cái giá, và nó có thật:** agent chỉ chạy khi người dùng đã đăng nhập. Máy đang
-ở màn hình khoá thì không điều khiển được. Với v1 — khách tự ghép máy của chính
-mình để dùng — đó là đánh đổi đúng. Khi nào cần vào máy trước lúc đăng nhập thì
-phải đổi sang service, và **đổi kèm quyền admin**, không phải một cờ nhỏ.
+Chi tiết vì sao `/rl HIGHEST` (token admin của người dùng) chứ không `/ru SYSTEM`,
+và vì sao nó **không** phá đánh đổi UAC/T1 của Q95 (chỉ một lần nâng quyền lúc
+cài, không mỗi lần chạy; giữ ngữ cảnh DPAPI để đọc được khoá thiết bị) — ở
+docstring của `lenh_tao_task`.
+
+**Cái giá, có thật:** agent chỉ chạy **sau khi đăng nhập** (`onlogon`). Vào máy
+trước lúc đăng nhập cần `/ru SYSTEM` — và giải bài toán DPAPI đổi ngữ cảnh — để
+dành cho sau.
 
 ## Vì sao `schtasks` chứ không phải một thư viện
 
@@ -64,11 +69,34 @@ def lenh_tao_task(chay: str, *, ten: str = TASK_NAME) -> list:
     List chứ không chuỗi: `subprocess` nhận list thì **không** đi qua shell, nên
     một đường dẫn chứa `&` hay `^` không thể biến thành lệnh khác. Đó là khác
     biệt giữa "trích dẫn cẩn thận" và "không có chỗ để tiêm".
+
+    ## `/rl HIGHEST` — vì sao giờ CÓ (Q99), trong khi N3.3b cố ý KHÔNG
+
+    N3.3b chọn task không-admin để tránh màn hình UAC mà kịch bản lừa đảo T1 lợi
+    dụng. Nhưng đo trên máy thật (N3_2_ENGINE §V8): xoay mật khẩu phiên RustDesk
+    (`--password`) **đòi quyền admin**. Điều khiển không giám sát bản chất cần
+    admin, và N3.3b đã lường: "khi cần thì đổi kèm quyền admin, không phải một cờ
+    nhỏ." Q99 chốt đường đó.
+
+    Chọn `/rl HIGHEST` (chạy bằng token admin của **chính người dùng**) thay vì
+    `/ru SYSTEM`, có chủ ý:
+
+    * **Không hỏi UAC mỗi lần chạy.** Task Scheduler nâng quyền một task HIGHEST
+      tự động; khách chỉ thấy UAC **một lần lúc CÀI** (tạo task HIGHEST cần admin)
+      — đúng bằng lúc cài RustDesk. Q99: né admin *mỗi lần chạy*, không né lúc cài.
+    * **DPAPI khớp.** Khoá thiết bị mã hoá bằng DPAPI theo ngữ cảnh người dùng
+      (`keystore.py`). Chạy `/ru SYSTEM` sẽ đổi ngữ cảnh sang SYSTEM và không đọc
+      nổi khoá đã ghi lúc enroll (dưới người dùng) — một lỗi chỉ hiện trên máy
+      thật. `/rl HIGHEST` giữ ngữ cảnh người dùng nên khoá vẫn đọc được.
+
+    Cái giá (như N3.3b ghi): chỉ chạy **sau khi đăng nhập** (`onlogon`). Vào máy
+    trước lúc đăng nhập cần `/ru SYSTEM` + giải bài toán DPAPI — để dành.
     """
     return ["schtasks", "/create", "/tn", str(ten), "/tr", str(chay),
-            # ONLOGON: chay khi nguoi dung nay dang nhap. Khong /ru SYSTEM va
-            # khong /rl HIGHEST — ca hai deu keo theo yeu cau quyen admin.
             "/sc", "onlogon",
+            # Q99: chay bang token admin cua nguoi dung -> --password chay duoc,
+            # khong hoi UAC moi lan (chi luc cai). Xem docstring.
+            "/rl", "HIGHEST",
             # Ghi de neu da co, de cai lai khong phai go tay truoc.
             "/f"]
 

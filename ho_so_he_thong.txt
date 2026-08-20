@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e83c97e20609a5362915ad4f129b13cfe4e84e7578e47eed5d4c4517c16a683e
+Fingerprint   : sha256:57e1d153106d8f76039d7b3edef20d696c235451ec563cc28d1954a6b2dd304b
 Nguồn đã quét : 1178 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2574,7 +2574,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10639479 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10639980 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -195066,7 +195066,7 @@ def test_may_cua_nguoi_KHAC_khong_thu_hoi_duoc(he_thong, trinh_duyet):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_232_nexus_service.py
-SHA256=34b2691543999b47113baa5b31aca5ce97843f63deed4543274ee05d2f41b81e BYTES=6333 LINES=152
+SHA256=189bbdf1419b1a811c1e25192bf2235cb14faedb45757589cca0aaf0866171c7 BYTES=6834 LINES=157
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus N3.3b — agent tự chạy lại sau khi khởi động máy.
 
@@ -195153,18 +195153,23 @@ def test_duong_dan_hiem_van_o_nguyen_mot_tham_so():
 
 # ── Không xin quyền admin ────────────────────────────────────────────────────
 
-def test_KHONG_xin_quyen_admin():
-    """Q95: bỏ được UAC là bỏ được một nửa kịch bản T1.
+def test_chay_ELEVATED_bang_token_nguoi_dung_Q99():
+    """Q99: điều khiển không giám sát cần admin (V8: `--password` đòi admin).
 
-    `/ru SYSTEM` và `/rl HIGHEST` đều kéo theo yêu cầu quyền admin. Thêm một
-    trong hai là biến việc cài từ 'bấm là xong' thành 'bấm qua một hộp thoại
-    cảnh báo nữa'.
+    Đổi so với N3.3b: task giờ chạy `/rl HIGHEST` — token admin của CHÍNH người
+    dùng, KHÔNG `/ru SYSTEM`. Hai điều được chốt ở đây:
+
+    * `/rl HIGHEST` CÓ mặt → agent chạy đủ quyền để xoay mật khẩu RustDesk. Task
+      Scheduler nâng quyền tự động, không hỏi UAC mỗi lần (chỉ lúc cài).
+    * `/ru SYSTEM` VẮNG → giữ ngữ cảnh DPAPI của người dùng, để khoá thiết bị mã
+      hoá lúc enroll vẫn đọc được lúc chạy. Đổi sang SYSTEM là một lỗi chỉ hiện
+      trên máy thật (khoá không giải mã được).
     """
     from nexus_agent.service import lenh_tao_task
 
     argv = [x.upper() for x in lenh_tao_task("py.exe")]
-    assert "/RU" not in argv, "dung /ru se doi quyen admin"
-    assert "/RL" not in argv, "dung /rl HIGHEST se doi quyen admin"
+    assert "/RL" in argv and "HIGHEST" in argv, "Q99: can /rl HIGHEST de xoay mat khau"
+    assert "/RU" not in argv, "khong dung /ru SYSTEM — giu ngu canh DPAPI nguoi dung"
     assert "SYSTEM" not in argv
 
 
