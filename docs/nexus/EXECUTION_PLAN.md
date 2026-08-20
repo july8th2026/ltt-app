@@ -509,14 +509,14 @@ nội bộ, chưa phải để mở bán.
 | 3 | Hạ tầng relay N1 (dựng + T10) | 7% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
 | 4 | Khả thi engine + primitives (V1-V8 + `engine.py` + `engine_runner`) | 9% | **95%** | ✅ đo+module+wiring; fork build xác nhận primitives |
 | 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **75%** | ✅ **fork build CHẠY** (LTTNexus.exe) + công bố mã + recipe; còn đổi tên exe, release build |
-| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **65%** | 🎨 **P1+P2+P3+P4+P7 XONG+kiểm hình**: branding LTTNexus, theme Carbon Red, logo diamond, chỉ báo phiên non-dismissable, **và P7 login tài khoản LTT trong client** (Rust auth + màn login việt hoá, 3+15+7 test). Còn P6 việt hoá (phần lớn sẵn), P8 telemetry |
+| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **90%** | 🎨 **P1-P4+P6+P7+P8 XONG**: branding, theme Carbon Red, logo, chỉ báo phiên, việt hoá mặc định, **P7 login+billing enforcement** (target từ chối khi hết credit), **P8 nhật ký truy cập** (ràng buộc 6). Còn: P8-END (ended_at), P5 non-action |
 | 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
 | 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **60%** | ✅ tooling + build agent + **build fork LTTNexus**; ⬜ ký + bản gộp fork+agent |
 | 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **85%** | ✅ cơ chế xong (test_238); còn 3 tham số của người (D12) |
 | 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **35%** | ✅ runbook + **E2E LIVE trên Windows** (agent↔control plane, `e2e_live`); ⬜ chạy trên prod |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 77%** (2026-08-21, thêm **P7 login tài khoản LTT trong client XONG** — Model B monetization: Rust auth + platform API + màn login việt hoá, 25 test, kiểm hình).
+**Tổng có trọng số ≈ 80%** (2026-08-21, thêm **P4/P6/P8 + billing enforcement**: target từ chối điều khiển khi hết credit, nhật ký 'ai vào máy tôi', việt hoá mặc định — 42 test).
 
 #### Cột mốc 2026-08-20 (b) — fork LTTNexus BUILD trên Windows thật
 
