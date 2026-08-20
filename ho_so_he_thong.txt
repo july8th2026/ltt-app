@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:5b7a9b30ec08951cb57dd850dc930e203ce271f52789d3264fabcd91a5ea28c2
-Nguồn đã quét : 1171 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:fdac28c153cfdc65d477ce026279cba55f6b14d7f48007f9bf06069d0f7256bc
+Nguồn đã quét : 1172 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1051,7 +1051,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (238 file pytest + 3 frontend)
+10. QUALITY GATES (239 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1226,6 +1226,7 @@ Test inventory:
 - tests/test_233_nexus_release.py
 - tests/test_234_nexus_packaging.py
 - tests/test_235_nexus_download.py
+- tests/test_236_nexus_engine.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -1316,8 +1317,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1171 file)
-Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:881, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1172 file)
+Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:882, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2202,7 +2203,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (255)
+[tests] (256)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2388,6 +2389,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_233_nexus_release.py
 - tests/test_234_nexus_packaging.py
 - tests/test_235_nexus_download.py
+- tests/test_236_nexus_engine.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -2555,7 +2557,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1171 file; 10577090 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1172 file; 10583372 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -194683,6 +194685,168 @@ def test_co_tat_thi_404(tmp_path, monkeypatch):
         assert r.status_code == 404, r.text[:300]
     finally:
         dbmod.reset_engine()
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_236_nexus_engine.py
+SHA256=80c3151577702f7b13ce7e449cf3414813291c5a3dd4b350c6a8e0dc1d2a8a11 BYTES=6282 LINES=156
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus N3.2 — module lái engine RustDesk nguyên bản, kiểm bằng hàm thuần.
+
+Không cần RustDesk cài: mọi thứ dựng lệnh/nội dung là hàm thuần, và phần chạy
+nhận `runner` tiêm vào (cùng khuôn với `service.py`). Cái được chốt kỹ nhất là
+những tính chất mà một phép đo trên máy thật đã dạy — idempotent config, mật
+khẩu là argv chứ không phải chuỗi shell, và lỗi quyền admin nổi lên thành thông
+điệp đọc được chứ không thành 'im lặng không đặt được'.
+"""
+from __future__ import annotations
+
+import pytest
+
+from nexus_agent import engine
+
+
+def _runner(ma=0, ra=""):
+    goi = []
+
+    def chay(argv):
+        goi.append(argv)
+        return ma, ra
+
+    chay.goi = goi
+    return chay
+
+
+# ── noi_dung_config: idempotent, đặt đúng chỗ ────────────────────────────────
+
+def test_config_them_ba_khoa_duoi_options():
+    out = engine.noi_dung_config(["[options]"], "45.76.185.75", "KEY123=")
+    assert "custom-rendezvous-server = '45.76.185.75'" in out
+    assert "relay-server = '45.76.185.75'" in out
+    assert "key = 'KEY123='" in out
+
+
+def test_config_idempotent_khong_nhan_dong():
+    """Agent chạy mỗi lần khởi động; nhân dòng mỗi lần là lỗi âm thầm."""
+    b1 = engine.noi_dung_config(["[options]"], "1.2.3.4", "K=")
+    b2 = engine.noi_dung_config(b1.splitlines(), "1.2.3.4", "K=")
+    assert b1 == b2
+    assert b2.count("custom-rendezvous-server") == 1
+    assert b2.count("relay-server") == 1
+
+
+def test_config_giu_lai_option_khac():
+    goc = ["rendezvous_server = 'rs-ny.rustdesk.com:21116'",
+           "[options]", "av1-test = 'N'", "local-ip-addr = '10.0.0.5'"]
+    out = engine.noi_dung_config(goc, "9.9.9.9", "K=")
+    assert "av1-test = 'N'" in out
+    assert "local-ip-addr = '10.0.0.5'" in out
+    # doi server cu bang server moi
+    assert "9.9.9.9" in out
+
+
+def test_config_tao_options_neu_chua_co():
+    out = engine.noi_dung_config(["some_toplevel = 1"], "1.1.1.1", "K=")
+    assert "[options]" in out
+    # ba khoa phai nam SAU [options]
+    i_opt = out.index("[options]")
+    assert out.index("custom-rendezvous-server", i_opt) > i_opt
+
+
+def test_config_ba_khoa_ngay_sau_options_khong_roi_section_khac():
+    goc = ["[options]", "x = '1'", "[ui_flutter]", "peer-sorting = 'Remote ID'"]
+    out = engine.noi_dung_config(goc, "5.5.5.5", "K=")
+    lines = out.splitlines()
+    i_opt = lines.index("[options]")
+    i_ui = lines.index("[ui_flutter]")
+    i_key = next(i for i, l in enumerate(lines) if l.startswith("key ="))
+    # key phai o GIUA [options] va [ui_flutter], khong roi vao section ui
+    assert i_opt < i_key < i_ui
+
+
+def test_config_thieu_server_hoac_key_thi_nem():
+    with pytest.raises(engine.EngineError):
+        engine.noi_dung_config(["[options]"], "", "K=")
+    with pytest.raises(engine.EngineError):
+        engine.noi_dung_config(["[options]"], "1.2.3.4", "")
+
+
+# ── Mật khẩu: CSPRNG, đủ mạnh, argv-safe ─────────────────────────────────────
+
+def test_mat_khau_du_dai_va_khac_nhau():
+    a = engine.sinh_mat_khau_phien()
+    b = engine.sinh_mat_khau_phien()
+    assert len(a) == 20 and len(b) == 20
+    assert a != b                       # xac suat trung ~ 0
+
+
+def test_mat_khau_bo_ky_tu_de_nham():
+    for _ in range(50):
+        mk = engine.sinh_mat_khau_phien()
+        assert not (set(mk) & set("0O1lI"))
+
+
+def test_mat_khau_qua_ngan_bi_tu_choi():
+    with pytest.raises(engine.EngineError):
+        engine.sinh_mat_khau_phien(8)
+
+
+def test_lenh_password_la_LIST_khong_phai_chuoi():
+    """List → subprocess không qua shell → mật khẩu chứa `&`/`^` không tiêm được."""
+    lenh = engine.lenh_password("rustdesk.exe", "a&b^c'd")
+    assert isinstance(lenh, list)
+    assert lenh[-1] == "a&b^c'd"        # nguyen ven, mot phan tu
+
+
+# ── lay_id: chạy được user thường, lọc token số ──────────────────────────────
+
+def test_lay_id_loc_token_so_giua_log():
+    # V4 cho thay stdout co the co dong log truoc ID
+    r = _runner(0, "set plugin flutter unusable\n288780716\n")
+    assert engine.lay_id("x", runner=r) == "288780716"
+
+
+def test_lay_id_khong_co_so_thi_nem():
+    with pytest.raises(engine.EngineError):
+        engine.lay_id("x", runner=_runner(0, "loi gi do"))
+
+
+# ── dat_mat_khau: lỗi quyền admin nổi lên, không bị nuốt ──────────────────────
+
+def test_dat_mat_khau_thanh_cong_khi_Done():
+    engine.dat_mat_khau("x", "MatKhauDai123", runner=_runner(0, "Done!"))
+
+
+def test_dat_mat_khau_thieu_quyen_admin_nem_ro_rang():
+    """Đây là ranh giới V8: dưới user thường RustDesk trả 'privileges required'.
+    Lỗi đó phải thành thông điệp đọc được, không thành 'đặt xong mà không đặt'."""
+    r = _runner(0, "Installation and administrative privileges required!")
+    with pytest.raises(engine.EngineError) as ei:
+        engine.dat_mat_khau("x", "MatKhauDai123", runner=r)
+    assert "admin" in str(ei.value).lower()
+
+
+def test_xoay_mat_khau_tra_ve_mat_khau_da_dat():
+    r = _runner(0, "Done!")
+    mk = engine.xoay_mat_khau("x", runner=r)
+    assert len(mk) == 20
+    # runner nhan dung mat khau do o vi tri cuoi argv
+    assert r.goi[-1][-1] == mk
+
+
+def test_xoay_mat_khau_khong_ghi_mat_khau_ra_ngoai():
+    """xoay_mat_khau trả mật khẩu để tầng gọi chuyển qua đường vé; module KHÔNG
+    được tự log/ghi đĩa. Chốt bằng cấu trúc: không import logging/open trong body."""
+    import ast
+    import inspect
+    # Chi soi PHAN CODE, bo docstring (docstring co the nhac chu "log" khi giai
+    # thich chinh dieu cam).
+    fn = ast.parse(inspect.getsource(engine.xoay_mat_khau)).body[0]
+    if (fn.body and isinstance(fn.body[0], ast.Expr)
+            and isinstance(fn.body[0].value, ast.Constant)):
+        fn.body = fn.body[1:]          # bo docstring
+    code = ast.unparse(ast.Module(body=fn.body, type_ignores=[]))
+    assert "log" not in code and "open(" not in code and "print(" not in code
 
 @@@LTT_PROFILE_FILE_END@@@
 

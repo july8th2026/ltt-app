@@ -193,6 +193,47 @@ nội dung màn hình** — nó chỉ thấy ciphertext + số byte + thời đi
 minh từ mã nguồn, mạnh hơn một lần bắt gói (vốn chỉ chứng minh "phiên này, chuỗi
 này không thấy").
 
+### V8 — RANH GIỚI QUYỀN (phát hiện khi xây Agent, 2026-08-20)
+
+Đo trên VM106 với một user **thường** (không admin), qua scheduled task:
+
+| Lệnh | User thường | Bằng chứng |
+|---|---|---|
+| `--get-id` | ✅ chạy được | trả `288780716` |
+| `--password` | ❌ **từ chối** | *"Installation and administrative privileges required!"* |
+
+Ghi config service profile (`ServiceProfiles\LocalService`) và dừng dịch vụ
+RustDesk cũng đòi admin. Nên **đọc ID** thì Agent thường làm được, nhưng **đặt/
+xoay mật khẩu và cấu hình** là **thao tác có đặc quyền**.
+
+**Đây xung đột với N3.3b.** N3.3b chọn Scheduled Task **không admin** để tránh
+đúng màn hình UAC mà kịch bản lừa đảo T1 cần khách bấm qua. Nhưng điều khiển
+**không giám sát** (unattended) — cài RustDesk như dịch vụ *và* xoay mật khẩu
+phiên — **bản chất cần admin**. Không có đường vòng: RustDesk đặt mật khẩu không
+giám sát vào hồ sơ dịch vụ, và chỉ tiến trình admin ghi được vào đó.
+
+**N3.3b đã lường trước điều này** — nó viết: "Khi nào cần vào máy trước lúc đăng
+nhập thì đổi sang service, và **đổi kèm quyền admin**, không phải một cờ nhỏ."
+Điều khiển không giám sát đúng là trường hợp đó. Nên câu hỏi không phải "tránh
+admin thế nào" mà "**đặt phần admin ở đâu cho gọn nhất**". Ba đường:
+
+| Đường | Được | Mất |
+|---|---|---|
+| **A. Agent chạy admin** | đơn giản nhất | mọi thứ Agent làm đều đặc quyền; một lỗi trong Agent là lỗi đặc quyền |
+| **B. Trợ lý đặc quyền nhỏ** (service/task SYSTEM) chỉ để xoay mật khẩu; Agent thường gọi tới | Agent giữ bề mặt nhỏ, không admin; chỉ trợ lý ~50 dòng là đặc quyền | thêm một thành phần, thêm một IPC |
+| **C. Mật khẩu cố định đặt một lần lúc cài** | không cần xoay lúc chạy | **mất tính vé-một-lần** — mật khẩu lộ = quyền đứng mãi. Vi phạm tinh thần Q93 ràng buộc 2 |
+
+Đường **C loại** vì nó vứt chính tính chất bảo mật của thiết kế. Giữa **A** và
+**B**: B đúng hơn về nguyên tắc bề-mặt-nhỏ, nhưng A đơn giản hơn cho v1. Đây là
+**quyết định của chủ sản phẩm**, và nó phải công khai vì nó động tới đánh đổi
+UAC/T1 của Q95 — dù đường nào thì cài Nexus-điều-khiển-không-giám-sát cũng sẽ có
+**một** lần nâng quyền admin lúc cài (RustDesk là dịch vụ). Điều N3.3b tránh được
+là admin **mỗi lần chạy**, không phải admin lúc cài.
+
+`nexus_agent/engine.py` xây trung lập với quyết định này: mỗi hàm khai rõ quyền
+nó cần (`lay_id` thường; `dat_mat_khau`/`xoay_mat_khau`/`ghi_cau_hinh` đặc
+quyền), còn "ai chạy nó với quyền gì" để tầng gọi quyết sau khi chốt A/B.
+
 ### Sắc thái phải nói với khách, KHÔNG được giấu (threat model)
 
 LTT vận hành **cả** điểm hẹn (ký, bảo chứng khoá công khai của máy đích) **và**
