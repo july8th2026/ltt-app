@@ -16,6 +16,11 @@
     <div class="card-accent" style="background:{{ app.accent }};"></div>
     <h2>{{ _("Máy của bạn") }}</h2>
 
+    {% if loi %}
+      <p style="padding:10px 14px;border:1px solid #C99A2E;background:#2A2413;border-radius:8px;">
+        {{ loi }}</p>
+    {% endif %}
+
     {% if not thiet_bi %}
       <p class="muted">{{ _("Chưa có máy nào được ghép vào tài khoản này.") }}</p>
     {% else %}

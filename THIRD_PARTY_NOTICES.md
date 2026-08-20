@@ -4,12 +4,16 @@ LTT Nexus distributes and operates third-party software. This file lists that
 software, its license, and where to obtain its Corresponding Source, as required
 by those licenses.
 
-> Decision context: Q97 (`docs/QUYET_DINH_NEN_TANG.md`) — LTT Nexus uses the
-> RustDesk engine **unmodified**. Because the program is not modified, AGPL-3.0
-> §13 imposes no additional network-source obligation; the remaining duty is the
-> §§4–6 conveying obligation, satisfied by this notice plus the source pointers
-> below. If a future decision moves to a **modified** RustDesk client (Q97 "Rổ
-> 2"), this file must be extended with an offer of the modified fork's source.
+> Decision context: **Q100 supersedes Q97 — Rổ 2**. The RustDesk **client** will
+> be a **modified fork** (LTT branding, embedded config, custom session
+> indicator, LTT login flow). Under AGPL-3.0 §13 this triggers the duty to
+> publish the modified fork's Corresponding Source to users who interact with it
+> over a network. The **server** (hbbs/hbbr) stays **unmodified**, so §13 does
+> not apply to it. See the two components below.
+>
+> **Status:** the fork is not built yet (`docs/nexus/N3_2_FORK.md`). Before any
+> client is distributed, the "RustDesk client" entry below MUST be updated to
+> point at LTT's public fork repository and carry a written offer of source.
 
 ---
 
@@ -21,10 +25,14 @@ by those licenses.
 - **Version / commit:** `1.4.9` (2026-07-06), commit
   `6c578292e8ebbbec708b76986ba8c4bc7c509747`.
 - **Source:** https://github.com/rustdesk/rustdesk (pinned at the commit above).
-- **Modifications by LTT:** **none.** The binary is distributed and run as
-  published upstream. LTT supplies server configuration (rendezvous/relay
-  address and public key) from outside the program; it does not alter the
-  program.
+- **Modifications by LTT:** **planned (Rổ 2, Q100).** LTT will publish a modified
+  fork of the client (branding, embedded server config, custom session
+  indicator, LTT login flow). The fork's Corresponding Source will be public and
+  linked here before any client binary is distributed. Until then no modified
+  client is shipped. Every change is tracked as a separate commit on the public
+  fork (OSS_BOUNDARY rule 6). The proprietary **LTT Nexus Agent** is a separate
+  process communicating only over a local IPC/command-line contract and is not a
+  derivative of RustDesk.
 
 ## RustDesk Server — hbbs / hbbr (rendezvous + relay)
 

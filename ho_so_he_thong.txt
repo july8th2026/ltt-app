@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9c01232b30b5ae79022a224c5ee6092267ef41f919d392ccbe8d328ae0875b7a
-Nguồn đã quét : 1175 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:e83c97e20609a5362915ad4f129b13cfe4e84e7578e47eed5d4c4517c16a683e
+Nguồn đã quét : 1178 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -599,14 +599,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [kichban] GET    /kichban/r/{job_id}/status → result_status | auth~login | apps/kichban/routes.py:176
 - [mediatools] GET    /mediatools → media_tools | auth~login | apps/mediatools/routes.py:10
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:78
-- [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:220
-- [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:112
-- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:348
-- [nexus] GET    /nexus/phien/{session_id} → trang_phien | auth~login | apps/nexus/routes.py:263
-- [nexus] GET    /nexus/phien/{session_id}/ket-noi → ket_noi | auth~login | apps/nexus/routes.py:288
-- [nexus] POST   /nexus/phien/{session_id}/ket-thuc → ket_thuc_phien | auth~login | apps/nexus/routes.py:326
-- [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:199
-- [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:144
+- [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:224
+- [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:116
+- [nexus] GET    /nexus/nhat-ky → nhat_ky | auth~login | apps/nexus/routes.py:359
+- [nexus] GET    /nexus/phien/{session_id} → trang_phien | auth~login | apps/nexus/routes.py:274
+- [nexus] GET    /nexus/phien/{session_id}/ket-noi → ket_noi | auth~login | apps/nexus/routes.py:299
+- [nexus] POST   /nexus/phien/{session_id}/ket-thuc → ket_thuc_phien | auth~login | apps/nexus/routes.py:337
+- [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:203
+- [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:148
 - [platform] GET    / → home | auth~optional | server/routes/dashboard.py:100
 - [platform] GET    /api/audit/status → audit_status | auth~login | server/routes/monitor.py:76
 - [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
@@ -838,7 +838,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - agent_workflows → AgentWorkflow | platform_core/models.py:441
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:740
-- api_keys → ApiKey | platform_core/models.py:598
+- api_keys → ApiKey | platform_core/models.py:601
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -849,18 +849,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:791
 - app_access → AppAccess | platform_core/models.py:168
 - app_projects → AppProject | platform_core/models.py:201
-- chat_conversations → ChatConversation | platform_core/models.py:741
-- chat_messages → ChatMessage | platform_core/models.py:761
-- credit_entries → CreditEntry | platform_core/models.py:544
-- credit_packages → CreditPackage | platform_core/models.py:674
+- chat_conversations → ChatConversation | platform_core/models.py:744
+- chat_messages → ChatMessage | platform_core/models.py:764
+- credit_entries → CreditEntry | platform_core/models.py:547
+- credit_packages → CreditPackage | platform_core/models.py:677
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- gpu_leases → GpuLease | platform_core/models.py:782
+- gpu_leases → GpuLease | platform_core/models.py:785
 - job_events → JobEvent | platform_core/models.py:329
 - jobs → Job | platform_core/models.py:249
 - nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
-- nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:116
-- nexus_sessions → NexusSession | platform_core/nexus/tables.py:167
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:519
+- nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:122
+- nexus_sessions → NexusSession | platform_core/nexus/tables.py:173
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:522
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -875,18 +875,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:698
+- payment_orders → PaymentOrder | platform_core/models.py:701
 - platform_info → PlatformInfo | platform_core/models.py:46
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:138
-- singleton_leases → SingletonLease | platform_core/models.py:832
+- singleton_leases → SingletonLease | platform_core/models.py:835
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
 
-6. ALEMBIC MIGRATIONS (43)
+6. ALEMBIC MIGRATIONS (44)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -930,6 +930,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - b165aa3584e0 ← f8a9b0c1d2e3 | nexus: thiet bi va ma ghep (Q93) | alembic/versions/20260817_2100_nexus_devices.py
 - d649cfad754f ← b165aa3584e0 | nexus: ve phien dieu khien (Q93 rang buoc 2 va 6) | alembic/versions/20260817_2200_nexus_sessions.py
 - 7445f5031805 ← d649cfad754f | nexus: cau noi engine vao phien (W1) | alembic/versions/20260820_1600_nexus_session_engine.py
+- 455d0097906f ← 7445f5031805 | nexus: cot paid_until cho thue bao theo may/thang (Q98, Phase 5) | alembic/versions/20260820_1700_nexus_device_paid_until.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -946,7 +947,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (109 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (111 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -995,6 +996,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_NEW_ADMIN_PASSWORD
 - LTT_NEXUS
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
+- LTT_NEXUS_AN_HAN_NGAY
+- LTT_NEXUS_GIA_MAY_THANG
 - LTT_NEXUS_RELEASE_MANIFEST
 - LTT_NEXUS_RUSTDESK_EXE
 - LTT_OPS_ALERT_EMAIL
@@ -1057,7 +1060,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (240 file pytest + 3 frontend)
+10. QUALITY GATES (241 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1234,6 +1237,7 @@ Test inventory:
 - tests/test_235_nexus_download.py
 - tests/test_236_nexus_engine.py
 - tests/test_237_nexus_wiring.py
+- tests/test_238_nexus_billing.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -1324,8 +1328,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1175 file)
-Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:884, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1178 file)
+Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:887, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1338,7 +1342,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (45)
+[alembic] (46)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1384,6 +1388,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - alembic/versions/20260817_2100_nexus_devices.py
 - alembic/versions/20260817_2200_nexus_sessions.py
 - alembic/versions/20260820_1600_nexus_session_engine.py
+- alembic/versions/20260820_1700_nexus_device_paid_until.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1939,7 +1944,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (99)
+[platform_core] (100)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1980,6 +1985,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/nexus/__init__.py
 - platform_core/nexus/agent_auth.py
 - platform_core/nexus/audit.py
+- platform_core/nexus/billing.py
 - platform_core/nexus/devices.py
 - platform_core/nexus/release.py
 - platform_core/nexus/sessions.py
@@ -2212,7 +2218,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (257)
+[tests] (258)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2400,6 +2406,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_235_nexus_download.py
 - tests/test_236_nexus_engine.py
 - tests/test_237_nexus_wiring.py
+- tests/test_238_nexus_billing.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -2567,7 +2574,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1175 file; 10624558 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10639479 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -6325,6 +6332,40 @@ def downgrade() -> None:
     op.drop_column("nexus_sessions", "engine_reported_at")
     op.drop_column("nexus_sessions", "engine_secret_enc")
     op.drop_column("nexus_sessions", "engine_id")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260820_1700_nexus_device_paid_until.py
+SHA256=05173c254fe49273dcc485d6e2473186ebe22795863307a77596a67d4f92622d BYTES=704 LINES=28
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nexus: cot paid_until cho thue bao theo may/thang (Q98, Phase 5)
+
+Them mot cot NULLABLE vao `nexus_devices`: thue bao tra toi luc nao. NULL = chua
+tra thang nao. Migration khong lam vo dong nao (bang co the da co thiet bi).
+
+Chi them, khong xoa du lieu.
+
+Revision ID: 455d0097906f
+Revises: 7445f5031805
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "455d0097906f"
+down_revision = "7445f5031805"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("nexus_devices", sa.Column(
+        "paid_until", sa.DateTime(timezone=True), nullable=True))
+
+
+def downgrade() -> None:
+    op.drop_column("nexus_devices", "paid_until")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -16029,7 +16070,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/nexus/routes.py
-SHA256=cdf4b4ab89f5023c3bd0590d31f293e62e45323f5e031307b0b9e882d79526ee BYTES=14777 LINES=367
+SHA256=22ce3d9412704586c5f1d33bb08dc0a2eef16d95042e345e37438b1228d721bb BYTES=15481 LINES=378
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của bề mặt khách hàng Nexus. Chỉ lo HTTP — nghiệp vụ ở `platform_core.nexus`.
 
@@ -16121,9 +16162,13 @@ def trang_chinh(request: Request, _u: str = Depends(require_login)):
              "phien": sessions.dang_mo(db, device_id=row.id)}
             for row in devices.danh_sach(db, user_id=user.id)
         ]
+        loi = None
+        if request.query_params.get("loi") == "khong_cap_ve":
+            loi = _t("Không mở được phiên điều khiển. Nếu bạn đang bật thu phí, "
+                     "hãy kiểm tra số dư credit ở thanh trên cùng.")
         return templates.TemplateResponse(request, "nexus_trang_chinh.html", {
             "user": user.email, "nav": MANIFEST.slug, "app": MANIFEST,
-            "csrf_token": issue_csrf_token(request),
+            "csrf_token": issue_csrf_token(request), "loi": loi,
             "thiet_bi": danh_sach,
             "dong_thoi_gian": audit.dong_thoi_gian(db, user_id=user.id, limit=30),
             "do_admin_lam": audit.do_admin_lam,
@@ -16270,8 +16315,15 @@ def bat_dau_dieu_khien(request: Request, device_id: str,
         device = devices.cua_chu(db, user_id=user.id, device_id=device_id)
         if device is None:
             raise HTTPException(status_code=404)
-        row, _ve = sessions.cap_ve(db, user_id=user.id, device=device,
-                                   controller_ip=_ip(request))
+        try:
+            row, _ve = sessions.cap_ve(db, user_id=user.id, device=device,
+                                       controller_ip=_ip(request))
+        except NexusError:
+            # Thuê bao hết credit (Q98) hoặc thiết bị vừa bị thu hồi: không cấp vé.
+            # Quay về danh sách với gợi ý nạp; số dư + nút nạp đã ở thanh trên cùng.
+            db.rollback()
+            return RedirectResponse(f"{MANIFEST.route_prefix}?loi=khong_cap_ve",
+                                    status_code=303)
         db.commit()
         return RedirectResponse(f"{MANIFEST.route_prefix}/phien/{row.id}",
                                 status_code=303)
@@ -104165,7 +104217,7 @@ def tong_credits(credits_base: int, bonus_percent: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/credit.py
-SHA256=eeedef207dec60b69639b36d196de1421af9cdfab01459c345ed75297ad99df9 BYTES=15510 LINES=352
+SHA256=caeb1a51b1dfb7c6e7011ad208324933a4a6cf0cc75e50b0247887fc0affeda9 BYTES=16467 LINES=369
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 credit.py — sổ credit (H3). Phần ít code nhất, ít được phép sai nhất.
@@ -104259,6 +104311,23 @@ def nap(db: DbSession, user_id: str, amount: int, note: str = "") -> CreditEntry
     if amount <= 0:
         raise ValueError("so credit nap phai duong")
     return _ghi(db, user_id=user_id, delta=amount, kind=CREDIT_TOPUP, note=note)
+
+
+def tru(db: DbSession, user_id: str, amount: int, *, kind: str,
+        note: str = "") -> bool:
+    """Trừ một khoản phí trực tiếp. Trả **True nếu đủ số dư và đã trừ**, **False
+    nếu không đủ** (không ghi gì, không bao giờ để số dư âm).
+
+    Khác `giu_cho`/`quyet_toan` (dành cho một lượt job có thể hoàn): đây là phí đã
+    xảy ra — thuê bao một tháng đã dùng thì không hoàn. `kind` do nơi gọi truyền
+    (vd `CREDIT_NEXUS_BILL`) để sổ credit vẫn không biết gì về từng miền.
+    """
+    if amount <= 0:
+        raise ValueError("so credit tru phai duong")
+    if so_du(db, user_id) < amount:
+        return False
+    _ghi(db, user_id=user_id, delta=-amount, kind=str(kind)[:16], note=note)
+    return True
 
 
 class NguoiDungKhongTonTai(ValueError):
@@ -106018,7 +106087,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=ae5555ef4ca98b6e0ad662c7364ccf0772150e1bca8e42e1e53b89653e945ed3 BYTES=39500 LINES=910
+SHA256=b9b76c29e44b6f4db79284455ee29ac4c1ac9504bc1c6bfbe877fc09e18c9d79 BYTES=40013 LINES=921
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -106652,6 +106721,17 @@ def _don_nexus(db) -> int:
     db.commit()
     if xoa:
         log.info("don %d ma ghep nexus het gia tri", xoa)
+
+    # Thuê bao theo máy/tháng (Q98). Cũng gác sau cờ + sau lease (đang trong
+    # `_quet_canh_bao`), vì trừ tiền mà chạy ở mọi tiến trình worker là trừ N lần.
+    # Miễn phí (giá 0) thì hàm này không làm gì.
+    from platform_core.nexus import billing
+
+    ket = billing.thu_phi_thang(db)
+    db.commit()
+    if ket.get("tru") or ket.get("thieu_credit"):
+        log.info("nexus thue bao: tru %d may, %d may thieu credit",
+                 ket["tru"], ket["thieu_credit"])
     return xoa
 
 
@@ -107855,7 +107935,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=d66708109e9961008f76f260a1aff38aaaaf648f0d5e68bbd073600035db802c BYTES=47474 LINES=868
+SHA256=d4484c86eeb3679a11ebfb1c4ae4bedd292a6762fe96e8e035641b5abcd476e8 BYTES=47687 LINES=871
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -108373,6 +108453,9 @@ CREDIT_GRANT = "grant"
 CREDIT_HOLD = "hold"
 CREDIT_SETTLE = "settle"
 CREDIT_REFUND = "refund"
+#: Trừ phí thuê bao Nexus theo máy/tháng (Q98). Là bút toán âm trực tiếp, không
+#: qua hold/settle: đây là phí định kỳ, không phải một lượt job.
+CREDIT_NEXUS_BILL = "nexus_bill"
 
 
 class NhatKyAdmin(Base):
@@ -109122,6 +109205,129 @@ __all__ = ["BAT_DAU_PHIEN", "BOI_CHU", "CAP_VE", "GHEP", "KET_THUC_PHIEN",
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/billing.py
+SHA256=eaba092d73357767f137be37c7879efaf19a193cbdb03f42f50b2cd7862936ae BYTES=4990 LINES=117
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Thuê bao Nexus: trừ credit theo số máy đã ghép, mỗi tháng (Q98).
+
+Ba điều Q98 chốt, và một điều cố ý để mở:
+
+* **Trừ CREDIT**, không auto-charge thẻ — nên tránh hẳn thứ Q53 hoãn (consent/
+  cap/replay của recurring card). Khách nạp credit trong trình duyệt (PayOS H9);
+  ở đây chỉ trừ từ số dư đã có.
+* **Theo máy đã ghép, mỗi tháng.** Máy nào còn (chưa thu hồi) thì tính.
+* **Hết credit → không điều khiển được** cho tới khi nạp. Không cắt máy, không
+  xoá gì — chỉ `cap_ve` từ chối (thi hành ở `sessions.cap_ve`).
+
+**Mặc định AN TOÀN: giá = 0 → miễn phí, tắt hẳn cưỡng chế.** Charter §1: không tự
+bật thứ chưa duyệt. Chủ sản phẩm đặt giá (`LTT_NEXUS_GIA_MAY_THANG`) khi muốn thu.
+Giá/chu kỳ/ân hạn là tham số của người (D12) — module này nhận chúng làm cấu hình.
+"""
+from __future__ import annotations
+
+import os
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from platform_core import credit
+from platform_core.models import CREDIT_NEXUS_BILL
+from platform_core.nexus.tables import NexusDevice
+
+#: Một chu kỳ thuê bao. 30 ngày cho đơn giản; đổi chu kỳ là quyết định của người.
+CHU_KY_NGAY = 30
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def gia_may_thang(env: dict | None = None) -> int:
+    """Giá credit mỗi máy mỗi tháng. **0 = miễn phí (mặc định, tắt cưỡng chế).**"""
+    src = os.environ if env is None else env
+    raw = str(src.get("LTT_NEXUS_GIA_MAY_THANG", "")).strip()
+    try:
+        return max(0, int(raw)) if raw else 0
+    except ValueError:
+        return 0
+
+
+def an_han_ngay(env: dict | None = None) -> int:
+    """Số ngày ân hạn sau khi hết thuê bao mà vẫn cho điều khiển. Mặc định 0."""
+    src = os.environ if env is None else env
+    raw = str(src.get("LTT_NEXUS_AN_HAN_NGAY", "")).strip()
+    try:
+        return max(0, int(raw)) if raw else 0
+    except ValueError:
+        return 0
+
+
+def da_thanh_toan(device: NexusDevice, *, now: datetime | None = None,
+                  env: dict | None = None) -> bool:
+    """Máy này có được phép điều khiển không (theo thuê bao)?
+
+    Miễn phí (giá 0) → **luôn True**. Có giá → True khi `paid_until` (cộng ân hạn)
+    còn ở tương lai. Đây là phép kiểm mà `cap_ve` gọi trước khi cấp vé.
+    """
+    if gia_may_thang(env) <= 0:
+        return True
+    han = device.paid_until
+    if han is None:
+        return False
+    if han.tzinfo is None:
+        han = han.replace(tzinfo=timezone.utc)
+    han = han + timedelta(days=an_han_ngay(env))
+    return han > (now or _now())
+
+
+def thu_phi_thang(db, *, now: datetime | None = None,
+                  env: dict | None = None) -> dict:
+    """Một lượt tính phí: mỗi máy còn hiệu lực mà thuê bao đã hết → trừ một tháng.
+
+    Chạy trong vòng bảo trì **sau lease** (H36: vòng job chạy ở mọi tiến trình,
+    nên một lượt trừ tiền không được nằm trong đó — nếu không mỗi máy bị trừ N lần
+    một tháng). Trả thống kê để log.
+
+    Idempotent trong một tháng: chỉ trừ khi `paid_until` đã qua; trừ xong đẩy
+    `paid_until` lên một chu kỳ, nên lượt sau trong cùng tháng không trừ lại.
+
+    Không đủ credit thì **không trừ, không đẩy hạn** — máy thành "chưa thanh toán"
+    và `cap_ve` sẽ từ chối. Không auto-charge, không nợ.
+    """
+    gia = gia_may_thang(env)
+    ket = {"gia": gia, "tru": 0, "thieu_credit": 0, "bo_qua": 0}
+    if gia <= 0:
+        return ket                                # miễn phí: không làm gì
+
+    current = now or _now()
+    rows = db.execute(select(NexusDevice).where(
+        NexusDevice.revoked_at.is_(None))).scalars().all()
+    for dev in rows:
+        han = dev.paid_until
+        if han is not None and han.tzinfo is None:
+            han = han.replace(tzinfo=timezone.utc)
+        if han is not None and han > current:
+            ket["bo_qua"] += 1                    # còn hạn, chưa tới kỳ
+            continue
+        du = credit.tru(db, dev.user_id, gia, kind=CREDIT_NEXUS_BILL,
+                        note=f"nexus thue bao may {dev.id}")
+        if du:
+            # Đẩy hạn từ mốc cũ nếu còn gần, hoặc từ bây giờ nếu đã quá lâu —
+            # tránh dồn nhiều tháng nợ vào một lần trừ.
+            goc = han if (han is not None and han > current - timedelta(days=CHU_KY_NGAY)) else current
+            dev.paid_until = goc + timedelta(days=CHU_KY_NGAY)
+            ket["tru"] += 1
+        else:
+            ket["thieu_credit"] += 1
+    db.flush()
+    return ket
+
+
+__all__ = ["CHU_KY_NGAY", "an_han_ngay", "da_thanh_toan", "gia_may_thang",
+           "thu_phi_thang"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/devices.py
 SHA256=e834d9bf97627e32c5577f1ce6f4b44c484ef2c32cdcfef5cb4c3df6919dfeea BYTES=13292 LINES=292
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -109485,7 +109691,7 @@ __all__ = ["TRUONG_HIEN_THI", "ban_phat_hanh_hien_tai"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/sessions.py
-SHA256=2c3c43be914b0beadef27d06faf72e6a82e50ebd86a339b3342292092900dfae BYTES=13141 LINES=296
+SHA256=e4b2469fe2df6d8946cb84df88134060b8ce76547361737c9f4752ee34a735c6 BYTES=13633 LINES=304
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vé phiên: chỗ DUY NHẤT quyết định ai được vào máy nào (Q93 ràng buộc 2).
 
@@ -109586,6 +109792,14 @@ def cap_ve(db, *, user_id: str, device: NexusDevice, quyen: str = QUYEN_DIEU_KHI
         raise NexusError(_t("Không tìm thấy thiết bị."))
     if device.revoked_at is not None:
         raise NexusError(_t("Thiết bị này đã bị thu hồi."))
+
+    # Cưỡng chế thuê bao (Q98). Miễn phí (giá 0) thì `da_thanh_toan` luôn True,
+    # nên đường này không đổi gì khi chưa bật thu phí. Hết credit → chặn ở ĐÂY,
+    # điểm uỷ quyền duy nhất — không cắt máy, không xoá gì, chỉ không cấp vé mới.
+    from platform_core.nexus import billing
+
+    if not billing.da_thanh_toan(device, now=now):
+        raise NexusError(_t("Cần nạp thêm credit để điều khiển máy này."))
 
     current = now or _now()
     raw = secrets.token_urlsafe(32)
@@ -109787,7 +110001,7 @@ __all__ = ["KET_THUC_BINH_THUONG", "KET_THUC_HET_HAN", "KET_THUC_MAT_KET_NOI",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/tables.py
-SHA256=886942c966ba1572f399adf8f5406ac1bcb52abb56eeda2c28bdf5c754ea328f BYTES=13155 LINES=252
+SHA256=c0795599ad586c946200dc56ad74c21f1a887ed060b398d75c00b26e0b53c9b8 BYTES=13561 LINES=258
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng của Nexus: thiết bị và mã ghép.
 
@@ -109887,6 +110101,12 @@ class NexusDevice(Base):
     #: đòi mọi hành động của admin để lại dấu chủ thiết bị đọc được.
     revoked_by: Mapped[str] = mapped_column(String(64), default="",
                                             nullable=False)
+
+    #: Thuê bao trả tới lúc nào (Q98). NULL = chưa trả tháng nào. Điều khiển chỉ
+    #: được phép khi `paid_until` còn hiệu lực — HOẶC khi giá thuê bao đặt 0 (miễn
+    #: phí, mặc định an toàn). Bút toán trừ ở `platform_core.nexus.billing`.
+    paid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         # Một khoá công khai chỉ thuộc về một thiết bị. Nếu hai dòng cùng khoá
@@ -145147,7 +145367,7 @@ SHA256=a3bd5d0dbaa9cfaea9c809b13f122f552c96ce7ab672f0bec9355fbfd58b1dab BYTES=31
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_trang_chinh.html
-SHA256=039a3e9604c1de39115961d6f1e32259255e694a62dedfdec636a8bc324a054f BYTES=5657 LINES=122
+SHA256=2d20bb9e0155317c05d08ea7238565c630ba39603a388921d9f5d0e34275493a BYTES=5817 LINES=127
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
@@ -145166,6 +145386,11 @@ SHA256=039a3e9604c1de39115961d6f1e32259255e694a62dedfdec636a8bc324a054f BYTES=56
   <div class="card">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
     <h2>{{ _("Máy của bạn") }}</h2>
+
+    {% if loi %}
+      <p style="padding:10px 14px;border:1px solid #C99A2E;background:#2A2413;border-radius:8px;">
+        {{ loi }}</p>
+    {% endif %}
 
     {% if not thiet_bi %}
       <p class="muted">{{ _("Chưa có máy nào được ghép vào tài khoản này.") }}</p>
@@ -195778,6 +196003,154 @@ def test_engine_id_giu_lai_sau_khi_xoa_secret(db):
     sessions.ket_thuc(db, sess)
     assert sess.engine_id == "288780716"
     assert sess.engine_secret_enc == ""
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_238_nexus_billing.py
+SHA256=83f71460fcd044440f84310b984d29f0e91c861bf0f1e941d829593f03289d82 BYTES=5782 LINES=142
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus Phase 5 — thuê bao theo máy/tháng (Q98).
+
+Mặc định an toàn được chốt kỹ nhất: **giá 0 → miễn phí, không cưỡng chế, không
+trừ**. Đây là điều charter đòi (không tự bật thu phí) và cũng là điều dễ vô tình
+làm sai nhất — một `da_thanh_toan` trả False khi giá 0 sẽ chặn mọi người dùng
+trong khi chưa ai định thu tiền.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core import credit
+from platform_core.nexus import billing, sessions
+from platform_core.nexus.devices import NexusError
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'bill.db').as_posix()}")
+    monkeypatch.delenv("LTT_NEXUS_GIA_MAY_THANG", raising=False)
+    monkeypatch.delenv("LTT_NEXUS_AN_HAN_NGAY", raising=False)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        yield s
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+        dbmod.reset_engine()
+
+
+def _khoa():
+    from platform_core.nexus import agent_auth
+    _p, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+
+def _may(db, *, credit_ban_dau=0):
+    from platform_core.users import tao_nguoi_dung
+    from platform_core.nexus import devices
+    u = tao_nguoi_dung(db, email="bill@ex.com", password="mat-khau-dai-123456",
+                       is_verified=True)
+    db.flush()
+    if credit_ban_dau:
+        credit.nap(db, u.id, credit_ban_dau)
+    _r, ma = devices.tao_ma_ghep(db, user_id=u.id)
+    dev = devices.doi_ma(db, code=ma, public_key=_khoa(), display_name="M")
+    db.flush()
+    return u, dev
+
+
+# ── Mặc định miễn phí: giá 0 không chặn ai ──────────────────────────────────
+
+def test_gia_mac_dinh_la_0():
+    assert billing.gia_may_thang(env={}) == 0
+
+
+def test_mien_phi_thi_luon_thanh_toan(db):
+    _u, dev = _may(db)
+    assert billing.da_thanh_toan(dev, env={}) is True     # paid_until None van OK
+    # cap_ve khong bi chan khi mien phi
+    _row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+
+
+def test_mien_phi_thi_thu_phi_khong_lam_gi(db):
+    _u, dev = _may(db, credit_ban_dau=1000)
+    ket = billing.thu_phi_thang(db, env={})
+    assert ket["tru"] == 0
+    assert credit.so_du(db, dev.user_id) == 1000          # khong tru dong nao
+
+
+# ── Có giá: trừ credit, đẩy hạn, cưỡng chế ──────────────────────────────────
+
+def test_co_gia_tru_mot_thang_va_day_han(db, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "100")
+    u, dev = _may(db, credit_ban_dau=250)
+    ket = billing.thu_phi_thang(db)
+    assert ket["tru"] == 1
+    assert credit.so_du(db, u.id) == 150                  # 250 - 100
+    assert dev.paid_until is not None
+    # Chay lai ngay: con han, khong tru lai (idempotent trong thang)
+    ket2 = billing.thu_phi_thang(db)
+    assert ket2["tru"] == 0
+    assert credit.so_du(db, u.id) == 150
+
+
+def test_co_gia_da_thanh_toan_sau_khi_tru(db, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "100")
+    u, dev = _may(db, credit_ban_dau=100)
+    assert billing.da_thanh_toan(dev) is False            # chua tra
+    billing.thu_phi_thang(db)
+    assert billing.da_thanh_toan(dev) is True             # da tra
+
+
+def test_het_credit_thi_khong_tru_va_cap_ve_tu_choi(db, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "100")
+    u, dev = _may(db, credit_ban_dau=50)                  # khong du 100
+    ket = billing.thu_phi_thang(db)
+    assert ket["thieu_credit"] == 1 and ket["tru"] == 0
+    assert credit.so_du(db, u.id) == 50                   # khong tru gi
+    assert dev.paid_until is None                         # khong day han
+    with pytest.raises(NexusError):
+        sessions.cap_ve(db, user_id=dev.user_id, device=dev)   # bi chan
+
+
+def test_nap_them_credit_roi_thu_lai_thi_thanh_toan(db, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "100")
+    u, dev = _may(db, credit_ban_dau=50)
+    billing.thu_phi_thang(db)                             # thieu -> khong tra
+    credit.nap(db, u.id, 100)                             # khach nap them
+    billing.thu_phi_thang(db)
+    assert billing.da_thanh_toan(dev) is True
+    # Gio cap_ve duoc.
+    sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+
+
+# ── credit.tru: không để số dư âm ───────────────────────────────────────────
+
+def test_tru_khong_du_thi_False_va_khong_ghi(db):
+    from platform_core.users import tao_nguoi_dung
+    from platform_core.models import CREDIT_NEXUS_BILL
+    u = tao_nguoi_dung(db, email="t@ex.com", password="mat-khau-dai-123456",
+                       is_verified=True)
+    credit.nap(db, u.id, 30); db.flush()
+    assert credit.tru(db, u.id, 100, kind=CREDIT_NEXUS_BILL) is False
+    assert credit.so_du(db, u.id) == 30                   # nguyen ven
+    assert credit.tru(db, u.id, 20, kind=CREDIT_NEXUS_BILL) is True
+    assert credit.so_du(db, u.id) == 10
+
+
+def test_may_thu_hoi_khong_bi_tinh_phi(db, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "100")
+    from platform_core.nexus import devices
+    u, dev = _may(db, credit_ban_dau=500)
+    devices.thu_hoi(db, dev, by="owner"); db.flush()
+    ket = billing.thu_phi_thang(db)
+    assert ket["tru"] == 0                                # may da thu hoi -> bo qua
+    assert credit.so_du(db, u.id) == 500
 
 @@@LTT_PROFILE_FILE_END@@@
 

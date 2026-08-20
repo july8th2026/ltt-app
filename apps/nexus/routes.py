@@ -88,9 +88,13 @@ def trang_chinh(request: Request, _u: str = Depends(require_login)):
              "phien": sessions.dang_mo(db, device_id=row.id)}
             for row in devices.danh_sach(db, user_id=user.id)
         ]
+        loi = None
+        if request.query_params.get("loi") == "khong_cap_ve":
+            loi = _t("Không mở được phiên điều khiển. Nếu bạn đang bật thu phí, "
+                     "hãy kiểm tra số dư credit ở thanh trên cùng.")
         return templates.TemplateResponse(request, "nexus_trang_chinh.html", {
             "user": user.email, "nav": MANIFEST.slug, "app": MANIFEST,
-            "csrf_token": issue_csrf_token(request),
+            "csrf_token": issue_csrf_token(request), "loi": loi,
             "thiet_bi": danh_sach,
             "dong_thoi_gian": audit.dong_thoi_gian(db, user_id=user.id, limit=30),
             "do_admin_lam": audit.do_admin_lam,
@@ -237,8 +241,15 @@ def bat_dau_dieu_khien(request: Request, device_id: str,
         device = devices.cua_chu(db, user_id=user.id, device_id=device_id)
         if device is None:
             raise HTTPException(status_code=404)
-        row, _ve = sessions.cap_ve(db, user_id=user.id, device=device,
-                                   controller_ip=_ip(request))
+        try:
+            row, _ve = sessions.cap_ve(db, user_id=user.id, device=device,
+                                       controller_ip=_ip(request))
+        except NexusError:
+            # Thuê bao hết credit (Q98) hoặc thiết bị vừa bị thu hồi: không cấp vé.
+            # Quay về danh sách với gợi ý nạp; số dư + nút nạp đã ở thanh trên cùng.
+            db.rollback()
+            return RedirectResponse(f"{MANIFEST.route_prefix}?loi=khong_cap_ve",
+                                    status_code=303)
         db.commit()
         return RedirectResponse(f"{MANIFEST.route_prefix}/phien/{row.id}",
                                 status_code=303)

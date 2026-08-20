@@ -514,6 +514,9 @@ CREDIT_GRANT = "grant"
 CREDIT_HOLD = "hold"
 CREDIT_SETTLE = "settle"
 CREDIT_REFUND = "refund"
+#: Trừ phí thuê bao Nexus theo máy/tháng (Q98). Là bút toán âm trực tiếp, không
+#: qua hold/settle: đây là phí định kỳ, không phải một lượt job.
+CREDIT_NEXUS_BILL = "nexus_bill"
 
 
 class NhatKyAdmin(Base):

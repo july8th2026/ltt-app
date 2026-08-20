@@ -8240,3 +8240,7 @@ msgstr "Back to machines"
 #. Nexus W5: nut dung phien
 msgid "Dừng điều khiển"
 msgstr "Stop controlling"
+
+#. Nexus Phase 5: cap ve bi chan (thu phi)
+msgid "Không mở được phiên điều khiển. Nếu bạn đang bật thu phí, hãy kiểm tra số dư credit ở thanh trên cùng."
+msgstr "Could not open a control session. If billing is on, check your credit balance in the top bar."

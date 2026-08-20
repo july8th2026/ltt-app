@@ -98,6 +98,14 @@ def cap_ve(db, *, user_id: str, device: NexusDevice, quyen: str = QUYEN_DIEU_KHI
     if device.revoked_at is not None:
         raise NexusError(_t("Thiết bị này đã bị thu hồi."))
 
+    # Cưỡng chế thuê bao (Q98). Miễn phí (giá 0) thì `da_thanh_toan` luôn True,
+    # nên đường này không đổi gì khi chưa bật thu phí. Hết credit → chặn ở ĐÂY,
+    # điểm uỷ quyền duy nhất — không cắt máy, không xoá gì, chỉ không cấp vé mới.
+    from platform_core.nexus import billing
+
+    if not billing.da_thanh_toan(device, now=now):
+        raise NexusError(_t("Cần nạp thêm credit để điều khiển máy này."))
+
     current = now or _now()
     raw = secrets.token_urlsafe(32)
     row = NexusSession(

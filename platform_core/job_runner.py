@@ -630,6 +630,17 @@ def _don_nexus(db) -> int:
     db.commit()
     if xoa:
         log.info("don %d ma ghep nexus het gia tri", xoa)
+
+    # Thuê bao theo máy/tháng (Q98). Cũng gác sau cờ + sau lease (đang trong
+    # `_quet_canh_bao`), vì trừ tiền mà chạy ở mọi tiến trình worker là trừ N lần.
+    # Miễn phí (giá 0) thì hàm này không làm gì.
+    from platform_core.nexus import billing
+
+    ket = billing.thu_phi_thang(db)
+    db.commit()
+    if ket.get("tru") or ket.get("thieu_credit"):
+        log.info("nexus thue bao: tru %d may, %d may thieu credit",
+                 ket["tru"], ket["thieu_credit"])
     return xoa
 
 

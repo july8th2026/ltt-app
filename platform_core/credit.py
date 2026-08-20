@@ -92,6 +92,23 @@ def nap(db: DbSession, user_id: str, amount: int, note: str = "") -> CreditEntry
     return _ghi(db, user_id=user_id, delta=amount, kind=CREDIT_TOPUP, note=note)
 
 
+def tru(db: DbSession, user_id: str, amount: int, *, kind: str,
+        note: str = "") -> bool:
+    """Trừ một khoản phí trực tiếp. Trả **True nếu đủ số dư và đã trừ**, **False
+    nếu không đủ** (không ghi gì, không bao giờ để số dư âm).
+
+    Khác `giu_cho`/`quyet_toan` (dành cho một lượt job có thể hoàn): đây là phí đã
+    xảy ra — thuê bao một tháng đã dùng thì không hoàn. `kind` do nơi gọi truyền
+    (vd `CREDIT_NEXUS_BILL`) để sổ credit vẫn không biết gì về từng miền.
+    """
+    if amount <= 0:
+        raise ValueError("so credit tru phai duong")
+    if so_du(db, user_id) < amount:
+        return False
+    _ghi(db, user_id=user_id, delta=-amount, kind=str(kind)[:16], note=note)
+    return True
+
+
 class NguoiDungKhongTonTai(ValueError):
     """Cấp credit cho một user_id không có trong bảng `users`."""
 

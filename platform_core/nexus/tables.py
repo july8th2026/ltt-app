@@ -97,6 +97,12 @@ class NexusDevice(Base):
     revoked_by: Mapped[str] = mapped_column(String(64), default="",
                                             nullable=False)
 
+    #: Thuê bao trả tới lúc nào (Q98). NULL = chưa trả tháng nào. Điều khiển chỉ
+    #: được phép khi `paid_until` còn hiệu lực — HOẶC khi giá thuê bao đặt 0 (miễn
+    #: phí, mặc định an toàn). Bút toán trừ ở `platform_core.nexus.billing`.
+    paid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
     __table_args__ = (
         # Một khoá công khai chỉ thuộc về một thiết bị. Nếu hai dòng cùng khoá
         # thì "thu hồi thiết bị này" trở thành câu hỏi không có câu trả lời.
