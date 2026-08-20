@@ -124,6 +124,39 @@ Lưu ý cho người viết code: ID cất trong config dạng **mã hoá** (`en
 **đừng parse file config** để lấy ID — dùng `--get-id`. Parse `enc_id` là viết
 một thứ sẽ hỏng ở bản RustDesk kế tiếp.
 
+### V4 — ĐÃ TRẢ LỜI, và câu trả lời đổi thiết kế
+
+**Bên điều khiển của RustDesk là ứng dụng GUI (Flutter), KHÔNG có chế độ headless.**
+Bằng chứng: `--help` và `-h` không in trợ giúp mà **mở cửa sổ GUI**; chạy trong
+phiên không có desktop thì nó chết với `Could not create platform view rendering
+surface`. Chỉ `--version` (và `--get-id`, `--password`) chạy được không cần màn hình.
+
+Hệ quả cho Nexus, và nó **không xấu**: bên điều khiển trong sản phẩm là **khách
+ngồi trước màn hình**, nên GUI là đúng chỗ. Cái KHÔNG làm được là để một tiến
+trình tự động đóng vai người điều khiển — nghĩa là mọi kịch bản "server tự mở
+phiên vào máy khách" đều bất khả thi với client nguyên bản. Xét theo Q93 ràng
+buộc 5 (admin không được có đường vào máy khách không để lại dấu) thì đây là
+**giới hạn có lợi**, không phải thiếu sót.
+
+### Hai phát hiện khi dựng phép đo T10
+
+**1. Hai máy cùng LAN nối THẲNG, `force-always-relay` không ngăn được.** Đặt
+`force-always-relay = 'Y'` cả ở peer config lẫn options toàn cục, phiên vẫn đi
+`10.50.0.17:50251 ↔ 10.50.0.16:50265` — trực tiếp qua LAN, không chạm relay.
+
+Cách ép được thật: **chặn đường LAN ở tầng firewall** giữa hai máy. Sau khi chặn,
+kết nối chuyển sang `45.76.185.75:21117` (hbbr = relay) đúng như mong đợi.
+
+Ý nghĩa cho R3 (chi phí băng thông): **máy cùng mạng nội bộ sẽ không tốn băng
+thông relay** — tốt cho chi phí. Nhưng nó cũng nói rằng một phép đo tỉ lệ làm
+trên hai máy cùng LAN sẽ ra "100% direct" **vì lý do sai**, không liên quan gì
+tới chất lượng xuyên NAT.
+
+**2. Khởi động lại dịch vụ RustDesk cắt phiên đang chạy.** Hiển nhiên khi nói ra,
+nhưng nó làm hỏng lần đo đầu: đã nhờ người dùng kết nối rồi mới đi chặn LAN và
+restart, nên lúc bắt gói thì phiên đã chết (lưu lượng 0 KB/6s). Thứ tự đúng:
+**chuẩn bị xong hết → mới nhờ kết nối → bắt gói, không đụng gì thêm.**
+
 ### Một phát hiện ngoài kế hoạch — relay đang mở cho cả Internet
 
 Lúc kiểm kết nối trên máy chủ, cổng **21118 và 21119** (hỗ trợ web client) có
