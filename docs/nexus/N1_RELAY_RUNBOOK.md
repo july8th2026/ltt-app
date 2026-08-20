@@ -161,7 +161,7 @@ là phép đo của mục 4 và vẫn còn nợ.
 
 ### Hai rủi ro phát hiện khi dựng — chưa xử lý
 
-**1. Windows Server 2016 bản EVALUATION, còn 118 ngày.** Hết hạn thì Windows
+**1. Windows Server 2016 bản EVALUATION, hết hạn 15/12/2026.** Hết hạn thì Windows
 **tự tắt máy mỗi giờ**. Máy này đang là NAT gateway cho toàn bộ VM Proxmox, nên
 khi đó **không chỉ Nexus chết mà cả mạng VM chết theo**. Việc này phải xử lý dù
 có Nexus hay không, và nó không phải việc của Nexus.

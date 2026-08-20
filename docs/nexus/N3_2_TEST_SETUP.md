@@ -122,31 +122,55 @@ NAT-nhà thật**, kể cả sau này. Đừng ai lấy VM này đo tỉ lệ r�
 | **GB/giờ khi qua relay** | ✅ đo được (ép relay) |
 | **Tỉ lệ direct / relay thật** | ⬜ **HOÃN có chủ ý** — cần NAT↔NAT thật (máy sau router nhà + điện thoại 4G/CGNAT). Ghi vào R3 là còn nợ |
 
-## 4. Cần bạn dựng — hai máy, cùng một khối lệnh
+## 4. Hạ tầng thật — đã khảo sát qua SSH 2026-08-20
 
-**(a) VM Windows trên Proxmox** — máy đích. Dựng xong, chạy khối PowerShell ở §2
-**as Administrator** trong VM.
+VPS gateway **✅ XONG** (SSH khoá chạy được, không cần mật khẩu). Đã kiểm bằng lệnh:
 
-**(b) VPS gateway `45.76.185.75`** — chạy **cùng khối lệnh §2** trên nó. Hai lý
-do: tôi cần kiểm `hbbs`/`hbbr` bằng lệnh thay vì RDP, và tôi cần **tự thêm port
-forward** cho VM thay vì nhờ bạn mỗi lần.
+| Thứ | Trạng thái |
+|---|---|
+| `hbbs` / `hbbr` | Running / Automatic, nghe đủ 21115–21119 |
+| Khoá công khai relay | `A1MZFm2igQwZ29CMGYlhmjP7JI3yXzpc0qV17IqFndI=` — **khớp Q96** |
+| NAT | `PVEGW` `10.50.0.0/16` |
+| Giấy phép Windows | **hết hạn 15/12/2026** (Q96 rủi ro #2, nay có ngày chính xác) |
 
-**(c) Mở một cổng vào VM.** Trên VPS, forward một cổng công khai vào SSH của VM
-(thay `<IP-VM>` bằng IP `10.50.x.x` của VM):
+**Cấu trúc mạng thật, khác với bản viết đầu của file này:**
+
+```
+Proxmox host ──WireGuard(wg0)── VPS 45.76.185.75 ──► Internet
+ VM 10.50.0.11..18              10.50.255.1/30      (IP cong khai)
+```
+
+Forward vào VM **không** dùng `netsh portproxy` (bảng đó trống) mà dùng **NAT
+static mapping**: đã có 8 luật `3389N → 10.50.0.1N:3389` cho RDP. Thêm luật mới
+**phải theo đúng cơ chế này** — trộn hai kiểu forward là cách chắc chắn để sau
+này không ai biết luật nào đang có tác dụng.
+
+**Xác nhận hệ quả đã ghi ở §3:** VM đi Internet qua WireGuard rồi ra bằng IP của
+VPS, nên nó **thoát ra bằng `45.76.185.75`** — đúng như dự đoán, và vì thế nó
+không bao giờ cho được tỉ lệ NAT-nhà thật.
+
+### Việc còn lại của bạn — đúng MỘT việc
+
+**Tạo một VM Windows trên Proxmox** (IP kế tiếp còn trống là `10.50.0.19`), rồi
+chạy khối PowerShell ở §2 **as Administrator** trong VM. Xong thì cho tôi biết
+IP của nó.
+
+**Không cần** làm gì trên VPS nữa — tôi đã có SSH nên **tự thêm NAT mapping**:
 
 ```powershell
-netsh interface portproxy add v4tov4 listenport=2222 listenaddress=0.0.0.0 `
-  connectport=22 connectaddress=<IP-VM>
-New-NetFirewallRule -Name ssh-vm -DisplayName "SSH to test VM" `
+# Claude tu chay, ghi o day de biet dieu gi da doi tren may
+Add-NetNatStaticMapping -NatName PVEGW -Protocol TCP `
+  -ExternalIPAddress 0.0.0.0 -ExternalPort 2222 `
+  -InternalIPAddress 10.50.0.19 -InternalPort 22
+New-NetFirewallRule -Name ssh-testvm -DisplayName "SSH to Nexus test VM" `
   -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 2222
 ```
 
-Xong ba bước, đưa tôi **IP `10.50.x.x` của VM**. Tôi vào bằng
-`ssh -p 2222 administrator@45.76.185.75` và tự làm tiếp — không cần mật khẩu.
+Sau đó tôi vào VM bằng `ssh -p 2222 administrator@45.76.185.75`.
 
-**Ghi chú bảo mật:** VPS đang mở RDP 3389 ra Internet, rủi ro hơn SSH khoá nhiều.
-Sau khi SSH chạy, nên **giới hạn 3389 theo IP nguồn** hoặc đóng hẳn. Và mật khẩu
-VPS đã lộ trong phiên làm việc trước — vẫn cần đổi.
+**Hai việc bảo mật vẫn còn nợ** (không chặn test, nhưng đừng quên): VPS đang mở
+RDP `3389` ra Internet — rủi ro hơn SSH khoá nhiều, nên **giới hạn theo IP nguồn**
+hoặc đóng; và mật khẩu VPS đã lộ ở phiên trước, **vẫn cần đổi**.
 
 ## 5. Sau khi có IP, tôi làm theo thứ tự
 
@@ -173,8 +197,8 @@ mục tạm.
 đã thêm cho bài test:
 
 ```powershell
-netsh interface portproxy delete v4tov4 listenport=2222 listenaddress=0.0.0.0
-Remove-NetFirewallRule -Name ssh-vm
+Remove-NetNatStaticMapping -NatName PVEGW -StaticMappingID <id>   # xem: Get-NetNatStaticMapping
+Remove-NetFirewallRule -Name ssh-testvm
 # Va go khoa thu khoi C:\ProgramData\sshdministrators_authorized_keys
 ```
 
