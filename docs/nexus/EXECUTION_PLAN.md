@@ -483,6 +483,17 @@ nội bộ, chưa phải để mở bán.
 ---
 ## 13. BẢN ĐỒ HẠNG MỤC + TIẾN ĐỘ — 2026-08-20 (sau Q100, Rổ 2)
 
+> ⚠️ **PIVOT Q101 (cuối 2026-08-20) — đọc trước khi tin bảng dưới.** Chủ sản phẩm
+> chốt **Model B**: sản phẩm = app native (Windows/iOS/Android) + relay LTT như
+> RustDesk, **có unattended**; web `app.lttstudios.com` = **chỉ docs/tài khoản/
+> credit**, KHÔNG web-broker. Hệ quả cho bảng dưới: **mảng 7 (Wiring web W1–W5) +
+> phần `apps/nexus` web-UI = BẰNG CHỨNG kỹ thuật đã chạy, KHÔNG phải sản phẩm** →
+> đóng băng, không tính là tiến độ sản phẩm nữa. **Thêm phạm vi mới chưa có trong
+> bảng:** client iOS + Android (fork cũng build được), và **billing chuyển vào
+> client** (đăng nhập tài khoản LTT trong client + kiểm credit qua LTT API; cưỡng
+> chế ở rendezvous là hardening sau). Bảng % dưới vẫn theo khung Q100 — sẽ tái cân
+> theo Model B ở lần cập nhật kế; hiện giữ để không mất lịch sử.
+
 > Cập nhật khi chủ sản phẩm chọn **Rổ 2** (Q100). **Sửa lần 2 cùng ngày:** tách
 > riêng mảng **"Cá nhân hóa UI/UX + chức năng theo LTT"** — trước đó bị nén thành
 > hai dòng con trong "Fork", mà nó chính là *lý do* chọn Rổ 2 nên phải nổi bật.
@@ -496,16 +507,62 @@ nội bộ, chưa phải để mở bán.
 | 1 | Nền tảng & quyết định (audit, threat model, Q93-Q100) | 10% | **100%** | ✅ |
 | 2 | Nền tảng thiết bị N2 (devices/enroll/presence/broker/audit/app) | 13% | **100%** | ✅ 9 file test |
 | 3 | Hạ tầng relay N1 (dựng + T10) | 7% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
-| 4 | Khả thi engine + primitives (V1-V8 + `engine.py` + `engine_runner`) | 9% | **90%** | ✅ đo+module+wiring; còn phần fork |
-| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **15%** | 🔨 spec xong (`N3_2_FORK.md`); build cần repo+máy |
-| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **5%** | 🎨 mới — xem chi tiết dưới |
+| 4 | Khả thi engine + primitives (V1-V8 + `engine.py` + `engine_runner`) | 9% | **95%** | ✅ đo+module+wiring; fork build xác nhận primitives |
+| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **75%** | ✅ **fork build CHẠY** (LTTNexus.exe) + công bố mã + recipe; còn đổi tên exe, release build |
+| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **35%** | 🎨 **P1+P2+P3 branding XONG+kiểm hình**: tên LTTNexus khắp nơi, theme Carbon Red, exe LTTNexus.exe, logo diamond đỏ, "Powered by LTTNexus". Còn P4 chỉ báo phiên, P6 việt hoá, **P7 login tài khoản LTT trong client** (Model B), P8 telemetry |
 | 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
-| 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **40%** | ✅ tooling; ⬜ build thật |
+| 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **60%** | ✅ tooling + build agent + **build fork LTTNexus**; ⬜ ký + bản gộp fork+agent |
 | 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **85%** | ✅ cơ chế xong (test_238); còn 3 tham số của người (D12) |
-| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **15%** | ✅ runbook; ⬜ chạy |
+| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **35%** | ✅ runbook + **E2E LIVE trên Windows** (agent↔control plane, `e2e_live`); ⬜ chạy trên prod |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 61%** (2026-08-20, sau Phase 1 wiring + Phase 5 billing).
+**Tổng có trọng số ≈ 73%** (2026-08-21, thêm **branding client LTTNexus XONG+kiểm hình**: theme Carbon Red, tên/logo/exe, "Powered by LTTNexus" — 3 ảnh chụp xác nhận).
+
+#### Cột mốc 2026-08-20 (b) — fork LTTNexus BUILD trên Windows thật
+
+Rổ 2 đi từ spec sang **binary chạy được**. Fork công khai tại
+`github.com/giaitritruyenthongltt-spec/LTTnexus` nhánh `ltt-nexus`: RustDesk
+1.4.9 + 5 commit theo dõi được (gộp submodule · config→hạ tầng LTT · APP_NAME→
+LTTNexus · fork notice AGPL · recipe build). Build ra
+`flutter/build/windows/x64/runner/Release/` (rustdesk.exe + librustdesk.dll 30MB).
+
+Xác minh trên binary: `--version`→`1.4.9`; `--get-id`→ID sinh dưới `%APPDATA%\
+LTTNexus`; DLL **nhúng sẵn** server LTT `45.76.185.75` + key LTT + tên `LTTNexus`.
+Nghĩa vụ AGPL Corresponding Source: đã công bố.
+
+Toolchain đã dựng+kiểm trên máy này (Rust · VS BuildTools MSVC 14.44 + Win11 SDK
+· Flutter 3.24.5 · vcpkg@120deac3 + 6 lib static · **libclang 15.0.6**). Hai bẫy
+build đã ghi vào `LTTnexus/BUILD_WINDOWS.md`: libclang phải ~15 (bindgen 0.65 sinh
+struct aom rỗng với libclang mới), và pub-get/cargo-fetch phải trước frb codegen.
+
+Còn lại của Rổ 2: **P2–P8** (cá nhân hóa UI Flutter — mảng 6, chưa bắt đầu), đổi
+tên exe `rustdesk.exe`→thương hiệu, release build có ký. Chạy fork-service để điều
+khiển thật là hành động **chạm production** (biến máy thành điều-khiển-được) — chờ
+quyết định, không tự làm.
+
+#### Cột mốc 2026-08-20 — E2E LIVE trên Windows thật
+
+Chạy trọn luồng khách trên chính máy Windows này, bằng **mã agent thật** (keystore
+DPAPI, HTTP ký Ed25519) nói với control plane staging (cổng 8140, DB test riêng —
+**không chạm prod 8100**). Chỉ **một** mắt xích được stub: subprocess RustDesk —
+mà nó đã đo riêng trên VM106 (V1–V8: ghi config, `--get-id`, xoay mật khẩu, relay).
+
+Sáu bước chạy thật, xanh (`scratchpad/e2e_live.py`):
+1. Agent ký nhịp tim → server đánh dấu máy **online**.
+2. Khách `cap_ve` → cấp vé (qua cổng chủ-sở-hữu + cổng thuê bao).
+3. Nhịp kế mang `cho_bao` → agent xoay mật khẩu engine, **báo `engine_id`+secret** (request ký).
+4. Server **mã hoá at-rest** secret (Fernet).
+5. Khách lấy kết nối → secret + ID **giải mã khớp đúng** thứ agent báo.
+6. Khách kết thúc → mật khẩu một-lần **bị xoá** khỏi dòng (giữ cột audit).
+
+Binary đã dựng: `dist/nexus-agent-0.1.0.zip` (SHA-256
+`dfa8fe4b533bced1928b3c6749a8acd14aacd9f8bf8cfc5297385ebdee4abd14`); `enroll`/
+`status`/keystore DPAPI xác nhận chạy như một exe độc lập trên Windows.
+
+**VM106 chết giữa chừng** (đóng băng dưới tải tải-file — đúng điểm yếu VM 4GB không
+GPU đã thấy trước), nên chưa có một *lần chạy VM liên tục* nối cả hai nửa. Nhưng cả
+hai nửa đã chứng minh trên Windows thật: nửa danh tính/wiring (máy này, live) +
+nửa engine RustDesk (VM106, V1–V8). Nối liên tục chỉ còn chờ một máy đích đủ khoẻ.
 
 ### Mảng 6 — Cá nhân hóa theo LTT, chi tiết (đây là phần bạn hỏi)
 

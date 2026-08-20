@@ -174,6 +174,58 @@ def doi_ma(db, *, code: str, public_key: str, display_name: str = "",
     return device
 
 
+def dang_ky_bang_tai_khoan(db, *, email: str, password: str, public_key: str,
+                           display_name: str = "", hardware_fingerprint: str = "",
+                           platform: str = "", agent_version: str = "",
+                           now: datetime | None = None) -> NexusDevice:
+    """Model B (Q101 / D-P7): client đăng nhập bằng **tài khoản LTT** (email+mật
+    khẩu) rồi tự đăng ký MÁY này dưới tài khoản đó — thay đường mã-ghép-từ-web
+    (`doi_ma`), vì Model B bỏ web-broker: web chỉ còn docs/tài khoản/credit.
+
+    Xác thực qua `users.xac_thuc` (constant-time, không lộ email nào có thật).
+    Cùng khoá công khai = cùng máy cài lại → tái dùng dòng cũ, **không** tạo dòng
+    thứ hai (giống `doi_ma`), để "thu hồi máy này" vẫn là câu trả lời được. Khoá
+    đã thuộc tài khoản KHÁC thì từ chối — không cướp máy giữa các tài khoản.
+    """
+    from platform_core import users
+    from platform_core.nexus import agent_auth
+
+    current = now or _now()
+    khoa = str(public_key or "").strip()
+    if not khoa:
+        raise NexusError(_t("Thiết bị phải gửi khoá công khai của nó."))
+    try:
+        agent_auth.decode_public_key(khoa)
+    except agent_auth.AgentAuthError as exc:
+        raise NexusError(_t("Khoá công khai của thiết bị không hợp lệ.")) from exc
+
+    user = users.xac_thuc(db, email=str(email or ""), password=str(password or ""))
+    if user is None:
+        raise NexusError(_t("Email hoặc mật khẩu không đúng."))
+
+    trung = db.execute(select(NexusDevice).where(
+        NexusDevice.public_key == khoa)).scalar_one_or_none()
+    if trung is not None:
+        if trung.user_id != user.id:
+            raise NexusError(_t("Máy này đã đăng ký ở tài khoản khác."))
+        trung.revoked_at = None
+        trung.revoked_by = ""
+        trung.display_name = str(display_name or trung.display_name)[:120]
+        trung.agent_version = str(agent_version or "")[:32]
+        db.flush()
+        return trung
+
+    device = NexusDevice(
+        id=str(uuid.uuid4()), user_id=user.id,
+        display_name=str(display_name or "")[:120], public_key=khoa,
+        hardware_fingerprint=str(hardware_fingerprint or "")[:128],
+        platform=str(platform or "")[:32],
+        agent_version=str(agent_version or "")[:32], created_at=current)
+    db.add(device)
+    db.flush()
+    return device
+
+
 # ── Quyền sở hữu, thu hồi, hiện diện ─────────────────────────────────────────
 
 def cua_chu(db, *, user_id: str, device_id: str) -> NexusDevice | None:

@@ -24,7 +24,9 @@ from platform_core import credit
 from platform_core.models import CREDIT_NEXUS_BILL
 from platform_core.nexus.tables import NexusDevice
 
-#: Một chu kỳ thuê bao. 30 ngày cho đơn giản; đổi chu kỳ là quyết định của người.
+#: Một chu kỳ thuê bao. 30 ngày. **Giá đã chốt (D12, 2026-08-20): 50 credit/máy/
+#: tháng** — đặt `LTT_NEXUS_GIA_MAY_THANG=50` trong secrets/app.env lúc go-live.
+#: Mặc định code vẫn 0 (an toàn); 50 là cấu hình vận hành, không phải hằng số.
 CHU_KY_NGAY = 30
 
 
