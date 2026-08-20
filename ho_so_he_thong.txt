@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fdac28c153cfdc65d477ce026279cba55f6b14d7f48007f9bf06069d0f7256bc
+Fingerprint   : sha256:af84730265e146aabe8f115b81c6979158422a0a3dc3ab31fafa106aead75128
 Nguồn đã quét : 1172 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2557,7 +2557,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1172 file; 10583372 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1172 file; 10585098 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -84340,7 +84340,7 @@ chặn bởi một quyết định về hạ tầng, không phải bởi code.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=a69377e26ed313c6e70f3c4a44c628b6ef7b542c6d025c73da21f689c62157fb BYTES=78657 LINES=228
+SHA256=8161350f1893b852baf7f322824391d13da8ee9f6eb393d0d29f865060a4445f BYTES=80383 LINES=229
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -84467,6 +84467,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q96 | Nexus relay dựng THẬT — chọn máy nào (thực thi Q94) | **Dùng lại VPS Windows đang làm NAT gateway cho Proxmox** (`45.76.185.75`), không mua máy Linux riêng như Q94 dự tính. Cài `rustdesk-server` 1.1.16 nguyên bản (hbbs+hbbr, dịch vụ `hbbs`/`hbbr` StartMode Auto), mở TCP 21115-21119 + UDP 21116, xác minh 5 cổng mở từ ngoài Internet. Khoá công khai server `A1MZFm2igQwZ29CMGYlhmjP7JI3yXzpc0qV17IqFndI=` (không bí mật, phát cho client). Chi tiết + hai rủi ro ở `docs/nexus/N1_RELAY_RUNBOOK.md` §7. | **Vì sao đổi khỏi Q94:** máy đã có sẵn và đang chạy, nên chi phí thêm = **0** thay vì 5 USD/tháng — đúng mục tiêu 'free hết' của chủ sản phẩm. `rustdesk-server` nguyên bản nên §13 AGPL vẫn không kích hoạt (Q94 giữ nguyên phần này). **Hai cái Q94 giả định mà thực tế KHÁC, chấp nhận có ý thức (2026-08-19):** (1) Q94 hình dung *máy riêng* để cô lập; thực tế relay nằm **trên chính gateway của mạng VM**, nên một lỗ hổng `hbbr` đặt kẻ tấn công trên cổng vào `10.50.0.0/16`. Đổi lấy tốc độ dựng; đường sạch hơn là tách sang VM riêng sau, gateway chỉ forward cổng vào. (2) Máy là **Windows Server 2016 EVALUATION hết hạn 15/12/2026** — hết hạn thì Windows tự tắt máy mỗi giờ, kéo sập cả NAT gateway (không riêng Nexus). Phải xử lý giấy phép, nằm ngoài phạm vi Nexus. **Còn nợ:** đo tỉ lệ P2P/relay và T10 (relay thấy gì) — cần hai máy client thật, chưa làm được. |
 | Q97 | Cá nhân hóa client Nexus — chọn RỔ 1 (làm rõ D1, gỡ chặn N3.2) | **Dùng engine RustDesk NGUYÊN BẢN, không sửa một dòng.** Toàn bộ thương hiệu và trải nghiệm LTT nằm ở **Agent + web + tray** (mã của LTT, Rổ 1); cửa sổ điều khiển của RustDesk giữ nguyên bản (có thể ẩn bớt), **không** nhúng địa chỉ/logo vào binary. Cấu hình server (địa chỉ + khoá) nạp từ NGOÀI, không build vào. | **Vì sao đổi cách hiểu:** Q93 và `03_OSS_LICENSE.md` §4 coi *client mang thương hiệu LTT* là điều kiện, và nó kích §13 AGPL. Chủ sản phẩm chọn **Rổ 1** (2026-08-20): không sửa binary RustDesk. Hệ quả **§13 KHÔNG kích** (chỉ kích khi *modify*), nên **legal review không còn là rào chặn phát hành** — nó xuống thành bước xác nhận tuỳ chọn. **Nghĩa vụ còn lại, nhẹ:** phân phối binary RustDesk là *conveying* (§§4–6) nên phải kèm `THIRD_PARTY_NOTICES` + trỏ tới mã nguồn công khai của RustDesk (đã tạo). **Ràng buộc bất biến vẫn giữ:** không copy/link mã AGPL vào Agent, không dùng 'custom client generator' của RustDesk (nó sinh binary đã sửa = §13). **Đổi lại:** cửa sổ điều khiển mang tên/giao diện RustDesk, không phải LTT — chấp nhận có ý thức để đổi lấy: bắt đầu N3.2 ngay, không chờ luật sư, không nợ công bố mã. Muốn thương hiệu tận trong cửa sổ điều khiển thì đổi sang Rổ 2 sau (sửa fork + công bố mã fork đó), là một quyết định riêng. |
 | Q98 | Mô hình tiền của Nexus — credit theo máy/tháng, nạp qua trình duyệt (thay D3) | **Thay 'thuê bao tháng' của D3 bằng: trừ CREDIT theo số máy đã ghép, mỗi tháng.** Đăng nhập qua tài khoản LTTSTUDIOSAPP (SSO, đã có). Credit liệt kê theo tài khoản (dùng lại sổ credit). **Nạp thêm credit CHỈ trong trình duyệt** (luồng PayOS H9 đã chạy); nút 'nạp credit' trên app/tray **mở trình duyệt**, app KHÔNG xử lý thanh toán. Hết credit → máy ngừng cấp vé điều khiển tới khi nạp (không auto-charge). | **Vì sao đổi khỏi D3:** chủ sản phẩm chốt (2026-08-20) dùng credit thay subscription. **Nó gỡ đúng phần khó D3 để mở:** D3 cần recurring auto-charge — mà Q53 đã **cố ý hoãn** vì thiếu consent/cap/replay. Trừ-credit + nạp-trong-trình-duyệt **không cần** auto-charge, **không** dính luật thanh toán app store (app không đụng tiền), và **dùng lại** PayOS H9 đang chạy. **Vì sao trừ ở tầng vé, không phải lượt job:** Nexus không nộp job cho worker (manifest `credit_cost=None`), nên điểm thu là **quyền mở phiên**: hết credit thì `cap_ve` từ chối. **Còn để mở (tham số, không phải kiến trúc):** giá N credit/máy/tháng; chu kỳ (theo ngày ghép hay lịch tháng); ân hạn khi thiếu credit. Ba số này chủ sản phẩm đặt; đường trừ credit xây sẵn nhận chúng làm cấu hình. |
+| Q99 | Agent Nexus chạy QUYỀN ADMIN cho điều khiển không giám sát (thu hẹp N3.3b) | **Agent chạy với quyền admin** (Windows Service hoặc task SYSTEM, cài bằng MỘT lần nâng quyền), để tự xoay mật khẩu phiên RustDesk. | **Vì sao cần:** đo trên máy thật (N3_2_ENGINE §V8) cho thấy `--password` — thứ dựng lại tính vé-một-lần của Q93 ràng buộc 2 — **đòi quyền admin**; ghi config service profile và dừng dịch vụ RustDesk cũng vậy. **Vì sao đây KHÔNG phá Q95/T1:** N3.3b tránh admin *mỗi lần chạy* (màn hình UAC lặp lại mà T1 lợi dụng), không phải admin *lúc cài*. Điều khiển không giám sát đằng nào cũng cần một lần nâng quyền lúc cài (RustDesk là dịch vụ). Một Service/task-SYSTEM cài một lần thì chạy đặc quyền tự động về sau, **không** hỏi UAC lại — nên số lần khách thấy UAC vẫn là **một**, đúng bằng lúc cài RustDesk. **Đổi lại, chấp nhận có ý thức:** mọi thứ Agent làm giờ đặc quyền, nên một lỗi trong Agent là lỗi đặc quyền — bù lại bằng giữ Agent nhỏ và không mở cổng nghe vào (nó chỉ gọi ra). **Đường B đã cân, không chọn:** trợ lý đặc quyền ~50 dòng + Agent thường giữ bề mặt nhỏ hơn, nhưng thêm một thành phần + IPC; chủ sản phẩm chọn A cho v1 vì đơn giản. Đổi sang B sau là một quyết định riêng, không phá dữ liệu. **Thu hẹp N3.3b:** dòng Scheduled-Task-không-admin của N3.3b nay chỉ áp cho tầng *chỉ-danh-tính* (nếu có); tầng điều khiển không giám sát dùng Q99. |
 ---
 
 ## 2. Ràng buộc bất biến

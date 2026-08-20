@@ -223,10 +223,10 @@ admin thế nào" mà "**đặt phần admin ở đâu cho gọn nhất**". Ba �
 | **B. Trợ lý đặc quyền nhỏ** (service/task SYSTEM) chỉ để xoay mật khẩu; Agent thường gọi tới | Agent giữ bề mặt nhỏ, không admin; chỉ trợ lý ~50 dòng là đặc quyền | thêm một thành phần, thêm một IPC |
 | **C. Mật khẩu cố định đặt một lần lúc cài** | không cần xoay lúc chạy | **mất tính vé-một-lần** — mật khẩu lộ = quyền đứng mãi. Vi phạm tinh thần Q93 ràng buộc 2 |
 
-Đường **C loại** vì nó vứt chính tính chất bảo mật của thiết kế. Giữa **A** và
-**B**: B đúng hơn về nguyên tắc bề-mặt-nhỏ, nhưng A đơn giản hơn cho v1. Đây là
-**quyết định của chủ sản phẩm**, và nó phải công khai vì nó động tới đánh đổi
-UAC/T1 của Q95 — dù đường nào thì cài Nexus-điều-khiển-không-giám-sát cũng sẽ có
+Đường **C loại** vì nó vứt chính tính chất bảo mật của thiết kế. **ĐÃ CHỐT 2026-08-20 → Q99: đường A (Agent chạy admin).** Chủ sản phẩm chọn A
+cho v1 vì đơn giản; B (trợ lý đặc quyền) để dành. Chi tiết + vì sao A không phá
+đánh đổi UAC/T1 của Q95 (một lần nâng quyền lúc cài, không mỗi lần chạy) ở Q99.
+Nguyên văn cân nhắc giữ lại: nó phải công khai vì động tới UAC/T1 của Q95 — dù đường nào thì cài Nexus-điều-khiển-không-giám-sát cũng sẽ có
 **một** lần nâng quyền admin lúc cài (RustDesk là dịch vụ). Điều N3.3b tránh được
 là admin **mỗi lần chạy**, không phải admin lúc cài.
 
@@ -290,3 +290,46 @@ thấy chỉ báo. Một máy không dựng được phiên với chính nó.
 **Không** cài client lên gateway để làm bên điều khiển: gateway đang chạy relay,
 nên nó vừa là bên đo vừa là bên bị đo — phép đo T10 sẽ không dùng được. Cần một
 VM thứ hai, và nó cũng là máy vứt đi.
+
+---
+
+## 7. Wiring còn lại — biến vé thành một kết nối RustDesk thật
+
+Đã có: cấp vé (`cap_ve`), agent đổi vé (`doi_ve`), module lái engine (`engine.py`),
+quyết định admin (Q99). Còn thiếu **cầu nối credential**: máy đích đặt mật khẩu,
+bên điều khiển cần lấy `rustdesk_id` + mật khẩu đó.
+
+Luồng đầy đủ cho v1 (khách điều khiển máy của chính mình):
+
+```
+1. Khách (web) bấm "điều khiển máy B"
+      -> server cap_ve(user, device=B)  -> vé gốc
+2. Agent của B (nhịp tim) thấy có phiên chờ
+      -> engine.xoay_mat_khau()  (Q99: chay admin)  -> mk moi
+      -> engine.lay_id()                             -> rustdesk_id
+      -> bao {rustdesk_id, mk} len server (KY bang khoa cua B)
+3. Server cat {rustdesk_id, mk} vao dong phien (ngan han, mot lan)
+4. Bên điều khiển (web cua khach) lay {rustdesk_id, mk, relay=45.76.185.75, key}
+      -> khach mo RustDesk connect toi rustdesk_id voi mk
+5. Het phien -> agent xoay lai mk -> mk cu chet
+```
+
+**Việc phải xây, theo lát cắt:**
+
+| Lát | Ở đâu | Nội dung |
+|---|---|---|
+| W1 | `tables.py` + migration | Thêm `engine_id` + `engine_secret` (ngắn hạn) vào `NexusSession`; đây là credential một-lần, xoá/vô hiệu khi phiên kết thúc |
+| W2 | `sessions.py` | `bao_engine(session, engine_id, secret)` cho agent báo; `lay_ket_noi(session)` cho controller lấy — **kiểm chủ**, hết hạn thì từ chối |
+| W3 | `server/nexus/routes.py` | Agent báo lúc redeem (đã ký); một route khách lấy chi tiết kết nối |
+| W4 | `client.py` | Vòng nhịp tim: thấy phiên chờ → `engine.xoay_mat_khau` + `lay_id` → báo. **Cần Agent chạy admin (Q99)** |
+| W5 | `apps/nexus` | Nút "điều khiển", hiện `rustdesk_id`+mật khẩu cho khách (hoặc mở RustDesk bằng URI) |
+
+**Điểm nhạy cảm phải cẩn thận khi xây W1/W3:** `engine_secret` là mật khẩu dạng
+văn bản mà controller cần một lần. Nó đi **qua server** — mà T10 đã chỉ ra server
+là điểm MITM khả dĩ. Với v1 chấp nhận (server đằng nào cũng là bên uỷ quyền),
+nhưng phải: **ngắn hạn**, **một lần**, **xoá khi phiên kết thúc**, và **không
+log**. Đường sạch hơn về sau: controller và target trao mật khẩu qua kênh đã mã
+hoá của chính RustDesk, server chỉ môi giới `rustdesk_id`. Ghi để không quên.
+
+**Không rơi:** W4 cần Q99 (Agent admin) đã chốt; W5 phải kiểm bằng trình duyệt
+thật (CLAUDE.md mục 5); mọi lát phải qua `tools/gate.py`.
