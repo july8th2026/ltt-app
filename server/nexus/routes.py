@@ -406,3 +406,53 @@ async def status(
             next(gen)
         except StopIteration:
             pass
+
+
+@router.post("/session-event")
+async def session_event(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Máy đích báo phiên điều khiển vào/ra để ghi nhật ký bất biến (P8, ràng
+    buộc 6). Ký như mọi request thiết bị. `event` = "start" | "end".
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            return _loi(400, "invalid_request", "Body must be JSON.")
+        if not isinstance(body, dict):
+            return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+        event = str(body.get("event") or "")
+        key = str(body.get("session_key") or "")
+        try:
+            if event == "start":
+                sessions.ghi_truy_cap(
+                    db, device, session_key=key,
+                    peer_id=str(body.get("peer_id") or "")[:64],
+                    controller_ip=str(body.get("controller_ip") or "")[:64])
+            elif event == "end":
+                sessions.ket_thuc_truy_cap(db, device, session_key=key)
+            else:
+                return _loi(400, "invalid_request", "Unknown event.")
+        except sessions.NexusError as exc:
+            db.rollback()
+            return _loi(400, "event_failed", str(exc))
+        db.commit()
+        return JSONResponse({"ok": True}, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass

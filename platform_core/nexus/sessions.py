@@ -285,6 +285,52 @@ def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:
     return [row for row in rows if row.dang_chay(now=current)]
 
 
+def ghi_truy_cap(db, device: NexusDevice, *, session_key: str, peer_id: str = "",
+                 controller_ip: str = "", now: datetime | None = None
+                 ) -> NexusSession:
+    """Model B (Q101 / P8, ràng buộc 6): client máy ĐÍCH báo một phiên điều khiển
+    VÀO, để ghi nhật ký **bất biến** "ai đã vào máy tôi".
+
+    Model B bỏ web-broker nên không có vé — bản ghi này do chính máy đích tạo khi
+    có người kết nối. `ticket_digest` rỗng phân biệt nó với dòng vé cũ. Idempotent
+    theo `session_key`: báo lại (mạng chớp) không tạo dòng thứ hai. Bản ghi này
+    nuôi `audit.dong_thoi_gian` — bề mặt "ai đã vào máy tôi" của khách.
+    """
+    current = now or _now()
+    key = str(session_key or "").strip()
+    if not key:
+        raise NexusError(_t("Thiếu mã phiên."))
+    row = db.get(NexusSession, key)
+    if row is not None:
+        return row                                   # đã ghi — idempotent
+    row = NexusSession(
+        id=key, user_id=device.user_id, device_id=device.id,
+        ticket_digest="", quyen=QUYEN_DIEU_KHIEN,
+        controller_ip=str(controller_ip or "")[:64],
+        engine_id=str(peer_id or "")[:64],
+        issued_at=current, consumed_at=current, expires_at=current)
+    db.add(row)
+    db.flush()
+    return row
+
+
+def ket_thuc_truy_cap(db, device: NexusDevice, *, session_key: str,
+                      now: datetime | None = None) -> bool:
+    """Máy đích báo phiên đã kết thúc. **Ghi thêm** `ended_at`, không sửa quá khứ.
+
+    Chỉ đóng phiên của **chính máy này** (khớp `device_id`) — một máy không đóng
+    được nhật ký của máy khác. Trả False nếu không có phiên đó hoặc đã đóng.
+    """
+    current = now or _now()
+    row = db.get(NexusSession, str(session_key or "").strip())
+    if row is None or row.device_id != device.id or row.ended_at is not None:
+        return False
+    row.ended_at = current
+    row.end_reason = KET_THUC_BINH_THUONG
+    db.flush()
+    return True
+
+
 def lich_su(db, *, user_id: str, limit: int = 50) -> list:
     """Nhật ký phiên của một tài khoản, mới nhất trước.
 
@@ -301,4 +347,5 @@ def lich_su(db, *, user_id: str, limit: int = 50) -> list:
 __all__ = ["KET_THUC_BINH_THUONG", "KET_THUC_HET_HAN", "KET_THUC_MAT_KET_NOI",
            "KET_THUC_THU_HOI", "QUYEN_DIEU_KHIEN", "QUYEN_HOP_LE", "QUYEN_XEM",
            "TICKET_TTL_S", "cap_ve", "dang_mo", "digest_ticket", "doi_ve",
-           "ket_thuc", "lich_su", "thu_hoi_ve"]
+           "ghi_truy_cap", "ket_thuc", "ket_thuc_truy_cap", "lich_su",
+           "thu_hoi_ve"]
