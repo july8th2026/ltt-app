@@ -481,29 +481,60 @@ nội bộ, chưa phải để mở bán.
 | L11 | 2026-08-19: nâng N5 thành `N5_VAN_HANH.md` — runbook mở cờ + ứng phó sự cố | Prompt 29–35 của pack là "operational readiness"; gom vào một runbook thay vì bảy file, đúng nguyên tắc số-artifact-tối-thiểu (L3) |
 
 ---
-
 ## 13. BẢN ĐỒ HẠNG MỤC + TIẾN ĐỘ — 2026-08-20 (sau Q100, Rổ 2)
 
-> Cập nhật khi chủ sản phẩm chọn **Rổ 2** (Q100). Rổ 2 **thêm** workstream "fork
-> RustDesk" và **kích hoạt lại** legal review — nên tổng % nhích xuống một chút
-> so với Rổ 1, đúng bản chất "goalpost dịch ra xa hơn".
+> Cập nhật khi chủ sản phẩm chọn **Rổ 2** (Q100). **Sửa lần 2 cùng ngày:** tách
+> riêng mảng **"Cá nhân hóa UI/UX + chức năng theo LTT"** — trước đó bị nén thành
+> hai dòng con trong "Fork", mà nó chính là *lý do* chọn Rổ 2 nên phải nổi bật.
+> Tách ra làm tổng % nhích xuống (~45% → ~41%) — đúng bản chất: cá nhân hóa mạnh
+> là thêm phạm vi, không phải sẵn có.
 
-### Tiến độ theo workstream
+### Tiến độ theo mảng việc
 
 | # | Workstream | Trọng số | % xong | Trạng thái |
 |---|---|---|---|---|
-| 1 | Nền tảng & quyết định (audit, threat model, Q93-Q100) | 12% | **100%** | ✅ |
-| 2 | Nền tảng thiết bị N2 (devices/enroll/presence/broker/audit/app) | 14% | **100%** | ✅ 9 file test |
-| 3 | Hạ tầng relay N1 (dựng + T10) | 8% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
-| 4 | Khả thi engine + primitives (V1-V8 + `engine.py`) | 10% | **75%** | ✅ đo+module; ⬜ wiring |
-| 5 | **Fork RustDesk (Rổ 2)** — branding/config nhúng/chỉ báo/patch | 12% | **5%** | 🔨 mới quyết |
-| 6 | Wiring phiên W1-W5 (vé → kết nối thật) | 12% | **0%** | ⬜ |
-| 7 | Đóng gói & phát hành endpoint (tooling + build+sign) | 8% | **40%** | ✅ tooling; ⬜ build thật |
-| 8 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 10% | **0%** | ⬜ |
-| 9 | Sẵn sàng vận hành N5 (runbook + thực thi) | 8% | **15%** | ✅ runbook; ⬜ chạy |
-| 10 | Legal review + thương mại N6 | 6% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
+| 1 | Nền tảng & quyết định (audit, threat model, Q93-Q100) | 10% | **100%** | ✅ |
+| 2 | Nền tảng thiết bị N2 (devices/enroll/presence/broker/audit/app) | 13% | **100%** | ✅ 9 file test |
+| 3 | Hạ tầng relay N1 (dựng + T10) | 7% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
+| 4 | Khả thi engine + primitives (V1-V8 + `engine.py`) | 9% | **75%** | ✅ đo+module; ⬜ wiring |
+| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **10%** | 🔨 mới; config nhúng đã chứng minh (V1) |
+| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **5%** | 🎨 mới — xem chi tiết dưới |
+| 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **0%** | ⬜ |
+| 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **40%** | ✅ tooling; ⬜ build thật |
+| 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **0%** | ⬜ |
+| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **15%** | ✅ runbook; ⬜ chạy |
+| 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 45%.**
+**Tổng có trọng số ≈ 41%.**
+
+### Mảng 6 — Cá nhân hóa theo LTT, chi tiết (đây là phần bạn hỏi)
+
+Đây là *lý do* của Rổ 2. Client RustDesk là **Flutter**, nên hệ thiết kế web của
+LTT (`ltt.css`, Carbon Red — Q52/Q61) **không dùng lại trực tiếp được** — phải
+tái hiện ngôn ngữ thiết kế (màu/typo/khoảng cách) trong Flutter. Đó là công sức
+thật, không phải đổi vài dòng CSS.
+
+| Mã | Hạng mục | Loại |
+|---|---|---|
+| P1 | Thay thương hiệu: logo, tên "LTT Nexus" thay "RustDesk", màu Carbon Red | giao diện |
+| P2 | Tái hiện hệ thiết kế LTT trong Flutter (token màu/typo/spacing) | giao diện |
+| P3 | Cửa sổ điều khiển + thanh công cụ restyle theo LTT | giao diện |
+| P4 | Chỉ báo phiên tuỳ biến: banner "đang bị điều khiển" + nút ngắt (ràng buộc 7, giải luôn V7) | giao diện + bảo mật |
+| P5 | Gỡ/ẩn tính năng không dùng (address book, marketplace, settings nhạy cảm) | chức năng |
+| P6 | Việt hoá giao diện client | giao diện |
+| P7 | **Tích hợp luồng đăng nhập LTT vào client** — auto-connect qua vé LTT thay vì gõ ID+mật khẩu tay | **chức năng (sâu nhất)** |
+| P8 | Móc audit/telemetry về LTT | chức năng |
+
+**Một quyết định về ĐỘ SÂU còn để mở (ảnh hưởng khối lượng P7):**
+
+- **Nhẹ:** rebrand + gỡ UI, nhưng giữ cơ chế ID+mật khẩu của RustDesk (wiring W1-W5
+  làm cầu). Khách vẫn thấy "ID/mật khẩu" ở đâu đó.
+- **Sâu:** sửa client để **tự kết nối qua vé LTT** — khách chỉ bấm "điều khiển"
+  trong LTT, không bao giờ thấy ID/mật khẩu RustDesk. Sản phẩm liền mạch hơn
+  nhiều, nhưng P7 nặng hơn hẳn.
+
+Chọn Rổ 2 để cá nhân hóa mạnh thì đường **Sâu** mới xứng, nhưng đó là quyết định
+riêng cần chốt trước khi làm P7.
 
 ### Danh sách hạng mục CÒN LẠI — theo thứ tự triển khai
 
@@ -514,28 +545,34 @@ nội bộ, chưa phải để mở bán.
 4. W4 — `client.py`: nhịp tim → `engine.xoay_mat_khau`+`lay_id` → báo (cần Q99 admin)
 5. W5 — `apps/nexus`: nút điều khiển + hiện kết nối; kiểm trình duyệt thật
 
-**B. Fork RustDesk (Rổ 2) — song song với A:**
-6. Fork repo tại commit đã ghim; branding LTT; cấu hình server **nhúng sẵn**
-7. Chỉ báo phiên tuỳ biến (giải V7 luôn); mọi sửa là **patch theo dõi được**
-8. Pipeline build fork + **công bố mã nguồn** (nghĩa vụ AGPL) + source-offer
-9. Cập nhật `THIRD_PARTY_NOTICES` cho fork đã sửa
+**B. Fork RustDesk + tuân AGPL:**
+6. Fork repo tại commit đã ghim; cấu hình server **nhúng sẵn**; mọi sửa là **patch theo dõi được**
+7. Pipeline build fork + **công bố mã nguồn** (nghĩa vụ AGPL) + source-offer; `THIRD_PARTY_NOTICES`
+
+**P. Cá nhân hóa UI/UX + chức năng theo LTT (mảng 6 — song song B):**
+8. P1-P3 branding + hệ thiết kế LTT trong Flutter + restyle cửa sổ điều khiển
+9. P4 chỉ báo phiên tuỳ biến (giải V7); P5 gỡ tính năng thừa; P6 việt hoá
+10. **Chốt độ sâu P7 (nhẹ/sâu)**, rồi tích hợp luồng đăng nhập LTT + P8 telemetry
 
 **C. Phát hành endpoint:**
-10. Sinh khoá phát hành thật + ghim `RELEASE_PUBLIC_KEY`
-11. Bản cài gộp (fork + Agent, một lần nâng quyền — Q99); build+ký trên Windows sạch
+11. Sinh khoá phát hành thật + ghim `RELEASE_PUBLIC_KEY`
+12. Bản cài gộp (fork + Agent, một lần nâng quyền — Q99); build+ký trên Windows sạch
 
 **D. Thanh toán (Q98):**
-12. Chốt 3 tham số (giá/máy/tháng, chu kỳ, ân hạn)
-13. Cơ chế trừ credit theo máy/tháng; `cap_ve` từ chối khi hết credit; nút nạp mở trình duyệt
+13. Chốt 3 tham số (giá/máy/tháng, chu kỳ, ân hạn)
+14. Cơ chế trừ credit theo máy/tháng; `cap_ve` từ chối khi hết credit; nút nạp mở trình duyệt
 
 **E. Vận hành & thương mại:**
-14. Migrate bảng Nexus lên prod; bật `LTT_NEXUS` (sau 5 điều kiện N5)
-15. Đo tỉ lệ P2P/relay (cần 2 mạng thật) + **siết relay** (đang mở cho cả Internet)
-16. **Legal review** (trước bán) — 6 câu ở `03_OSS_LICENSE.md` §7
-17. Giá, điều khoản, mở bán
+15. Migrate bảng Nexus lên prod; bật `LTT_NEXUS` (sau 5 điều kiện N5)
+16. Đo tỉ lệ P2P/relay (cần 2 mạng thật) + **siết relay** (đang mở cho cả Internet)
+17. **Legal review** (trước bán) — 6 câu ở `03_OSS_LICENSE.md` §7
+18. Giá, điều khoản, mở bán
 
 ### Đường tới hai cột mốc
 
-- **"Chạy được nội bộ" (điều khiển thật một máy):** cần A (W1-W5) + C10/C11 + migrate.
-  Ước lượng phần lớn nằm ở A.
-- **"Mở bán":** thêm B (fork công bố mã) + D (thanh toán) + E16 (legal) + E15 (siết relay).
+- **"Chạy được nội bộ" (điều khiển thật một máy):** cần A (W1-W5) + C11/C12 + migrate.
+  Có thể chạy với client **chưa cá nhân hóa** (còn giao diện RustDesk) — mảng 6
+  không chặn cột mốc này, chỉ chặn "sản phẩm mang mặt LTT".
+- **"Mở bán":** thêm B (fork công bố mã) + **mảng 6 (cá nhân hóa)** + D (thanh
+  toán) + E17 (legal) + E16 (siết relay). Cá nhân hóa là điều kiện của *mở bán*,
+  không phải của *chạy thử*.
