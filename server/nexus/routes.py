@@ -47,6 +47,10 @@ GHEP_MOI_PHUT = 10
 #: khi mạng chập chờn mà vẫn chặn một vòng lặp hỏng.
 NHIP_TIM_MOI_PHUT = 20
 
+#: Trần đăng nhập client (Model B, P7) theo IP. Đây là điểm nhận mật khẩu nên
+#: phải chống dò mật khẩu: thấp như ghép máy. `users.xac_thuc` đã constant-time.
+DANG_NHAP_MOI_PHUT = 10
+
 
 def _loi(status: int, ma: str, thong_diep: str) -> JSONResponse:
     """Lỗi dạng JSON. Không bao giờ HTML — bên gọi là máy."""
@@ -308,6 +312,95 @@ async def bao_engine(
         db.commit()
         return JSONResponse({"session_id": phien.id, "ok": True},
                             headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/client-register")
+async def client_register(request: Request):
+    """Model B (Q101 / D-P7): client đăng nhập tài khoản LTT (email+mật khẩu) và
+    đăng ký MÁY này. Thay `/enroll` (mã-ghép-từ-web) — Model B bỏ web-broker.
+
+    **Không** ký được: client chưa có danh tính. Nên trần theo IP như `/enroll`,
+    và vì đây là điểm nhận MẬT KHẨU, phải chống dò mật khẩu. `dang_ky_bang_tai_
+    khoan` gọi `users.xac_thuc` (constant-time, không lộ email nào có thật).
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    ip = _ip(request)
+    if _qua_tran(f"nexus-client-login:{ip}", DANG_NHAP_MOI_PHUT):
+        return _loi(429, "rate_limited", "Too many attempts. Try again later.")
+
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        return _loi(400, "invalid_request", "Body must be JSON.")
+    if not isinstance(body, dict):
+        return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = devices.dang_ky_bang_tai_khoan(
+            db,
+            email=str(body.get("email") or ""),
+            password=str(body.get("password") or ""),
+            public_key=str(body.get("public_key") or ""),
+            display_name=str(body.get("display_name") or "")[:120],
+            hardware_fingerprint=str(body.get("hardware_fingerprint") or "")[:128],
+            platform=str(body.get("platform") or "")[:32],
+            agent_version=str(body.get("agent_version") or "")[:32])
+        db.commit()
+        return JSONResponse({"device_id": device.id,
+                             "display_name": device.display_name},
+                            headers=_NO_STORE)
+    except devices.NexusError as exc:
+        db.rollback()
+        # Một thông điệp cho mọi lý do (sai mật khẩu, email không có, khoá sai).
+        return _loi(400, "register_failed", str(exc))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/status")
+async def status(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Máy hỏi: tài khoản còn được điều khiển không (thuê bao Q98)?
+
+    Ký như mọi request thiết bị. Client gọi định kỳ và **khoá điều khiển** khi
+    `paid=false`. `credit_balance` để hiện; nạp credit thì mở trình duyệt (Q98).
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        from platform_core import credit
+        from platform_core.nexus import billing
+
+        paid_until = getattr(device, "paid_until", None)
+        return JSONResponse({
+            "paid": billing.da_thanh_toan(device),
+            "price_per_month": billing.gia_may_thang(),
+            "credit_balance": credit.so_du(db, device.user_id),
+            "paid_until": paid_until.isoformat() if paid_until else None,
+        }, headers=_NO_STORE)
     finally:
         try:
             next(gen)
