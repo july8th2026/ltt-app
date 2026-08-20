@@ -37,6 +37,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
+from platform_core import secretbox
 from platform_core.i18n import _ as _t
 from platform_core.nexus.devices import NexusError
 from platform_core.nexus.tables import NexusDevice, NexusSession
@@ -148,6 +149,7 @@ def ket_thuc(db, session: NexusSession, *, ly_do: str = KET_THUC_BINH_THUONG,
         return False
     session.ended_at = now or _now()
     session.end_reason = str(ly_do or KET_THUC_BINH_THUONG)[:32]
+    _xoa_engine(session)
     db.flush()
     return True
 
@@ -170,8 +172,68 @@ def thu_hoi_ve(db, session: NexusSession, *, by: str,
     if session.ended_at is None:
         session.ended_at = current
         session.end_reason = KET_THUC_THU_HOI
+    _xoa_engine(session)
     db.flush()
     return True
+
+
+def bao_engine(db, session: NexusSession, *, engine_id: str, secret: str,
+               now: datetime | None = None) -> None:
+    """Agent của máy đích báo chi tiết kết nối RustDesk cho một phiên (W3/W4).
+
+    Chỉ chấp nhận khi vé **đã đổi** (`consumed_at` khác NULL) và phiên **còn mở**:
+    báo engine cho một vé chưa đổi, hoặc một phiên đã kết thúc/thu hồi, là báo
+    cho một thứ không còn tồn tại — từ chối thẳng thay vì lưu một credential mồ côi.
+
+    `secret` (mật khẩu một-lần) được **mã hoá at-rest ngay tại đây** rồi mới chạm
+    tới ORM — không có đường nào để mật khẩu thô đi vào `session` rồi lỡ được ghi
+    log/nhìn thấy. `engine_id` không bí mật nên lưu thẳng.
+    """
+    current = now or _now()
+    if not session.dang_chay(now=current):
+        raise NexusError(_t("Phiên không còn mở."))
+    eid = str(engine_id or "").strip()
+    sec = str(secret or "")
+    if not eid or not sec:
+        raise NexusError(_t("Thiếu thông tin kết nối."))
+
+    session.engine_id = eid[:64]
+    session.engine_secret_enc = secretbox.ma_hoa(sec)
+    session.engine_reported_at = current
+    db.flush()
+
+
+def lay_ket_noi(db, session: NexusSession, *, user_id: str,
+                now: datetime | None = None) -> dict:
+    """Controller (chủ phiên) lấy chi tiết kết nối để mở RustDesk.
+
+    Hai phép kiểm độc lập, cùng tinh thần `cap_ve`: **chủ** (`session.user_id`
+    phải khớp người xin — nếu không, 404 ở tầng route, không phải 403), và phiên
+    **còn mở + đã có agent báo**. Chỉ khi đó mới giải mã mật khẩu và trả về.
+
+    Mật khẩu chỉ tồn tại **trong phản hồi này** — không ghi log, không cache.
+    """
+    if session.user_id != str(user_id or "").strip():
+        raise NexusError(_t("Không tìm thấy phiên."))
+    current = now or _now()
+    if not session.dang_chay(now=current):
+        raise NexusError(_t("Phiên không còn mở."))
+    if session.engine_reported_at is None or not session.engine_secret_enc:
+        raise NexusError(_t("Máy đích chưa sẵn sàng."))
+
+    return {
+        "engine_id": session.engine_id,
+        "secret": secretbox.giai_ma(session.engine_secret_enc),
+        "quyen": session.quyen,
+        "expires_at": session.expires_at,
+    }
+
+
+def _xoa_engine(session: NexusSession) -> None:
+    """Xoá mật khẩu phiên khỏi dòng. Gọi khi phiên kết thúc/thu hồi — mật khẩu
+    một-lần không được sống lâu hơn phiên nó phục vụ. `engine_id` giữ lại (không
+    bí mật, còn giá trị kiểm toán)."""
+    session.engine_secret_enc = ""
 
 
 def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:

@@ -210,6 +210,19 @@ class NexusSession(Base):
     revoked_by: Mapped[str] = mapped_column(String(64), default="",
                                             nullable=False)
 
+    #: Cầu nối tới engine truyền (RustDesk). Agent của máy đích BÁO hai thứ này
+    #: khi đổi vé (W3/W4): `engine_id` là định danh kết nối của RustDesk (số, KHÔNG
+    #: bí mật — như số điện thoại), `engine_secret_enc` là mật khẩu MỘT-LẦN của
+    #: phiên, **mã hoá at-rest** bằng `platform_core.secretbox` (không bao giờ lưu
+    #: thô). Cả hai rỗng cho tới khi agent báo, và bị **xoá** khi phiên kết thúc
+    #: hoặc bị thu hồi (W2) — mật khẩu phiên không được sống lâu hơn phiên.
+    engine_id: Mapped[str] = mapped_column(String(64), default="",
+                                           nullable=False)
+    engine_secret_enc: Mapped[str] = mapped_column(Text, default="",
+                                                   nullable=False)
+    engine_reported_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
     __table_args__ = (
         UniqueConstraint("ticket_digest", name="uq_nexus_sessions_ticket"),
         Index("ix_nexus_sessions_user", "user_id"),

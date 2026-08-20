@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:8868fd7934bb1f05da5318f5d9a938eb1cea42c8c2df3bc4d51aa0910af04240
-Nguồn đã quét : 1172 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:071c0ef0ff0937a16f5630cf84d9a8162975e9c98de1f98b30474c3b38104aa2
+Nguồn đã quét : 1174 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -882,7 +882,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
 
-6. ALEMBIC MIGRATIONS (42)
+6. ALEMBIC MIGRATIONS (43)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -925,6 +925,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - f8a9b0c1d2e3 ← e7f8a9b0c1d2 | lease co ten + khoa chong trung canh bao + mau metrics (runtime hardening) | alembic/versions/20260815_1200_singleton_leases.py
 - b165aa3584e0 ← f8a9b0c1d2e3 | nexus: thiet bi va ma ghep (Q93) | alembic/versions/20260817_2100_nexus_devices.py
 - d649cfad754f ← b165aa3584e0 | nexus: ve phien dieu khien (Q93 rang buoc 2 va 6) | alembic/versions/20260817_2200_nexus_sessions.py
+- 7445f5031805 ← d649cfad754f | nexus: cau noi engine vao phien (W1) | alembic/versions/20260820_1600_nexus_session_engine.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1051,7 +1052,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (239 file pytest + 3 frontend)
+10. QUALITY GATES (240 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1227,6 +1228,7 @@ Test inventory:
 - tests/test_234_nexus_packaging.py
 - tests/test_235_nexus_download.py
 - tests/test_236_nexus_engine.py
+- tests/test_237_nexus_wiring.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -1317,8 +1319,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1172 file)
-Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:882, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1174 file)
+Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:884, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1331,7 +1333,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (44)
+[alembic] (45)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1376,6 +1378,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - alembic/versions/20260815_1200_singleton_leases.py
 - alembic/versions/20260817_2100_nexus_devices.py
 - alembic/versions/20260817_2200_nexus_sessions.py
+- alembic/versions/20260820_1600_nexus_session_engine.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2203,7 +2206,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (256)
+[tests] (257)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2390,6 +2393,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_234_nexus_packaging.py
 - tests/test_235_nexus_download.py
 - tests/test_236_nexus_engine.py
+- tests/test_237_nexus_wiring.py
 - tests/test_23_antispam_phase3_4.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
@@ -2557,7 +2561,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1172 file; 10586901 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1174 file; 10597498 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -6264,6 +6268,57 @@ def downgrade() -> None:
     op.drop_index("ix_nexus_sessions_device", table_name="nexus_sessions")
     op.drop_index("ix_nexus_sessions_user", table_name="nexus_sessions")
     op.drop_table("nexus_sessions")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260820_1600_nexus_session_engine.py
+SHA256=30b6f315f8ba44d765e759cf345cbdea1c6015dba28d71308bd44d70963b6ef2 BYTES=1660 LINES=45
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nexus: cau noi engine vao phien (W1)
+
+Them ba cot vao `nexus_sessions` de agent may dich BAO chi tiet ket noi RustDesk
+khi doi ve, va controller lay ve:
+
+* `engine_id` — dinh danh ket noi RustDesk (so, KHONG bi mat, nhu so dien thoai)
+* `engine_secret_enc` — mat khau MOT-LAN cua phien, **ma hoa at-rest** bang
+  `platform_core.secretbox` (khong bao gio luu tho)
+* `engine_reported_at` — luc agent bao (NULL = chua bao)
+
+Tat ca them dang NULLABLE / co server_default: bang co the da co du lieu (phien
+cu) va migration khong duoc lam vo dong nao. Xoa mat khau khi phien ket thuc la
+viec cua tang nghiep vu (sessions.py), khong phai cua schema.
+
+Chi them, khong xoa du lieu. Downgrade go dung ba cot.
+
+Revision ID: 7445f5031805
+Revises: d649cfad754f
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+# Sinh ngau nhien + doi chieu voi id dang co (bai hoc R10: mot id TRONG hop ly
+# ma trung tao vong lap va giet moi lenh alembic).
+revision = "7445f5031805"
+down_revision = "d649cfad754f"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("nexus_sessions", sa.Column(
+        "engine_id", sa.String(length=64), nullable=False, server_default=""))
+    op.add_column("nexus_sessions", sa.Column(
+        "engine_secret_enc", sa.Text(), nullable=False, server_default=""))
+    op.add_column("nexus_sessions", sa.Column(
+        "engine_reported_at", sa.DateTime(timezone=True), nullable=True))
+
+
+def downgrade() -> None:
+    op.drop_column("nexus_sessions", "engine_reported_at")
+    op.drop_column("nexus_sessions", "engine_secret_enc")
+    op.drop_column("nexus_sessions", "engine_id")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -109280,7 +109335,7 @@ __all__ = ["TRUONG_HIEN_THI", "ban_phat_hanh_hien_tai"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/sessions.py
-SHA256=355f434d644ec920f8af86499822d79c9863351b17468602f7834213e6b65217 BYTES=8764 LINES=207
+SHA256=de9961f95fd09695b5fe73484e1f42e84dad1cee7d05c4af2bb4da148b8b36e9 BYTES=11633 LINES=269
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vé phiên: chỗ DUY NHẤT quyết định ai được vào máy nào (Q93 ràng buộc 2).
 
@@ -109321,6 +109376,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
+from platform_core import secretbox
 from platform_core.i18n import _ as _t
 from platform_core.nexus.devices import NexusError
 from platform_core.nexus.tables import NexusDevice, NexusSession
@@ -109432,6 +109488,7 @@ def ket_thuc(db, session: NexusSession, *, ly_do: str = KET_THUC_BINH_THUONG,
         return False
     session.ended_at = now or _now()
     session.end_reason = str(ly_do or KET_THUC_BINH_THUONG)[:32]
+    _xoa_engine(session)
     db.flush()
     return True
 
@@ -109454,8 +109511,68 @@ def thu_hoi_ve(db, session: NexusSession, *, by: str,
     if session.ended_at is None:
         session.ended_at = current
         session.end_reason = KET_THUC_THU_HOI
+    _xoa_engine(session)
     db.flush()
     return True
+
+
+def bao_engine(db, session: NexusSession, *, engine_id: str, secret: str,
+               now: datetime | None = None) -> None:
+    """Agent của máy đích báo chi tiết kết nối RustDesk cho một phiên (W3/W4).
+
+    Chỉ chấp nhận khi vé **đã đổi** (`consumed_at` khác NULL) và phiên **còn mở**:
+    báo engine cho một vé chưa đổi, hoặc một phiên đã kết thúc/thu hồi, là báo
+    cho một thứ không còn tồn tại — từ chối thẳng thay vì lưu một credential mồ côi.
+
+    `secret` (mật khẩu một-lần) được **mã hoá at-rest ngay tại đây** rồi mới chạm
+    tới ORM — không có đường nào để mật khẩu thô đi vào `session` rồi lỡ được ghi
+    log/nhìn thấy. `engine_id` không bí mật nên lưu thẳng.
+    """
+    current = now or _now()
+    if not session.dang_chay(now=current):
+        raise NexusError(_t("Phiên không còn mở."))
+    eid = str(engine_id or "").strip()
+    sec = str(secret or "")
+    if not eid or not sec:
+        raise NexusError(_t("Thiếu thông tin kết nối."))
+
+    session.engine_id = eid[:64]
+    session.engine_secret_enc = secretbox.ma_hoa(sec)
+    session.engine_reported_at = current
+    db.flush()
+
+
+def lay_ket_noi(db, session: NexusSession, *, user_id: str,
+                now: datetime | None = None) -> dict:
+    """Controller (chủ phiên) lấy chi tiết kết nối để mở RustDesk.
+
+    Hai phép kiểm độc lập, cùng tinh thần `cap_ve`: **chủ** (`session.user_id`
+    phải khớp người xin — nếu không, 404 ở tầng route, không phải 403), và phiên
+    **còn mở + đã có agent báo**. Chỉ khi đó mới giải mã mật khẩu và trả về.
+
+    Mật khẩu chỉ tồn tại **trong phản hồi này** — không ghi log, không cache.
+    """
+    if session.user_id != str(user_id or "").strip():
+        raise NexusError(_t("Không tìm thấy phiên."))
+    current = now or _now()
+    if not session.dang_chay(now=current):
+        raise NexusError(_t("Phiên không còn mở."))
+    if session.engine_reported_at is None or not session.engine_secret_enc:
+        raise NexusError(_t("Máy đích chưa sẵn sàng."))
+
+    return {
+        "engine_id": session.engine_id,
+        "secret": secretbox.giai_ma(session.engine_secret_enc),
+        "quyen": session.quyen,
+        "expires_at": session.expires_at,
+    }
+
+
+def _xoa_engine(session: NexusSession) -> None:
+    """Xoá mật khẩu phiên khỏi dòng. Gọi khi phiên kết thúc/thu hồi — mật khẩu
+    một-lần không được sống lâu hơn phiên nó phục vụ. `engine_id` giữ lại (không
+    bí mật, còn giá trị kiểm toán)."""
+    session.engine_secret_enc = ""
 
 
 def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:
@@ -109493,7 +109610,7 @@ __all__ = ["KET_THUC_BINH_THUONG", "KET_THUC_HET_HAN", "KET_THUC_MAT_KET_NOI",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/tables.py
-SHA256=22b539de5a054b23d702b51170ec36aa3cf26e1dfca50df04b3b58729e4361e7 BYTES=12176 LINES=239
+SHA256=886942c966ba1572f399adf8f5406ac1bcb52abb56eeda2c28bdf5c754ea328f BYTES=13155 LINES=252
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng của Nexus: thiết bị và mã ghép.
 
@@ -109706,6 +109823,19 @@ class NexusSession(Base):
         DateTime(timezone=True), nullable=True)
     revoked_by: Mapped[str] = mapped_column(String(64), default="",
                                             nullable=False)
+
+    #: Cầu nối tới engine truyền (RustDesk). Agent của máy đích BÁO hai thứ này
+    #: khi đổi vé (W3/W4): `engine_id` là định danh kết nối của RustDesk (số, KHÔNG
+    #: bí mật — như số điện thoại), `engine_secret_enc` là mật khẩu MỘT-LẦN của
+    #: phiên, **mã hoá at-rest** bằng `platform_core.secretbox` (không bao giờ lưu
+    #: thô). Cả hai rỗng cho tới khi agent báo, và bị **xoá** khi phiên kết thúc
+    #: hoặc bị thu hồi (W2) — mật khẩu phiên không được sống lâu hơn phiên.
+    engine_id: Mapped[str] = mapped_column(String(64), default="",
+                                           nullable=False)
+    engine_secret_enc: Mapped[str] = mapped_column(Text, default="",
+                                                   nullable=False)
+    engine_reported_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("ticket_digest", name="uq_nexus_sessions_ticket"),
@@ -194849,6 +194979,139 @@ def test_xoay_mat_khau_khong_ghi_mat_khau_ra_ngoai():
         fn.body = fn.body[1:]          # bo docstring
     code = ast.unparse(ast.Module(body=fn.body, type_ignores=[]))
     assert "log" not in code and "open(" not in code and "print(" not in code
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_237_nexus_wiring.py
+SHA256=452c1a9c63fd308c99e3d83c16d3c9fc51066c496f545af0918c467d25082200 BYTES=5089 LINES=127
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus wiring W1/W2 — cầu nối vé → kết nối RustDesk, ở tầng nghiệp vụ.
+
+Đây là chỗ mật khẩu một-lần của phiên sống rất ngắn: agent báo → controller lấy
+một lần → xoá khi phiên kết thúc. Ba tính chất được chốt kỹ vì hỏng chúng là hỏng
+đúng phần bảo mật: mật khẩu **không bao giờ ở dạng thô** trong DB, **thiết bị
+người khác không lấy được**, và nó **biến mất khi phiên đóng**.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core import secretbox
+from platform_core.nexus import sessions
+from platform_core.nexus.devices import NexusError
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'wiring.db').as_posix()}")
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "wiring-test-key-0123456789")
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _khoa_that() -> str:
+    from platform_core.nexus import agent_auth
+    _priv, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+
+def _phien_da_mo(db, *, user="u-owner"):
+    """Tạo một user + device + phiên đã đổi vé (đang mở)."""
+    from platform_core.users import tao_nguoi_dung
+    from platform_core.nexus import devices
+    u = tao_nguoi_dung(db, email=f"{user}@ex.com", password="mat-khau-dai-123456",
+                       is_verified=True)
+    db.commit()
+    row, ma = devices.tao_ma_ghep(db, user_id=u.id)
+    dev = devices.doi_ma(db, code=ma, public_key=_khoa_that(), display_name="M")
+    sess, ve = sessions.cap_ve(db, user_id=u.id, device=dev)
+    sessions.doi_ve(db, ticket=ve)              # -> consumed, dang chay
+    return u, dev, sess
+
+
+# ── Round-trip: agent báo → controller lấy ──────────────────────────────────
+
+def test_bao_roi_lay_lai_dung_mat_khau(db):
+    u, dev, sess = _phien_da_mo(db)
+    sessions.bao_engine(db, sess, engine_id="288780716", secret="MatKhauPhien-Xyz")
+    kn = sessions.lay_ket_noi(db, sess, user_id=u.id)
+    assert kn["engine_id"] == "288780716"
+    assert kn["secret"] == "MatKhauPhien-Xyz"
+    assert kn["quyen"] == sess.quyen
+
+
+def test_mat_khau_KHONG_luu_tho_trong_db(db):
+    u, dev, sess = _phien_da_mo(db)
+    sessions.bao_engine(db, sess, engine_id="1", secret="BiMat-KhongDuocLoRa")
+    # Cot luu phai la ciphertext, khong chua mat khau tho.
+    assert "BiMat-KhongDuocLoRa" not in sess.engine_secret_enc
+    # Va phai giai ma nguoc lai duoc bang secretbox.
+    assert secretbox.giai_ma(sess.engine_secret_enc) == "BiMat-KhongDuocLoRa"
+
+
+# ── Chủ sở hữu: người khác trả lỗi (404 ở route) ────────────────────────────
+
+def test_nguoi_khac_khong_lay_duoc_ket_noi(db):
+    u, dev, sess = _phien_da_mo(db)
+    sessions.bao_engine(db, sess, engine_id="1", secret="pw")
+    with pytest.raises(NexusError):
+        sessions.lay_ket_noi(db, sess, user_id="ke-khac")
+
+
+# ── Vòng đời: xoá khi phiên đóng ────────────────────────────────────────────
+
+def test_ket_thuc_xoa_mat_khau(db):
+    u, dev, sess = _phien_da_mo(db)
+    sessions.bao_engine(db, sess, engine_id="1", secret="pw")
+    sessions.ket_thuc(db, sess)
+    assert sess.engine_secret_enc == ""
+    with pytest.raises(NexusError):
+        sessions.lay_ket_noi(db, sess, user_id=u.id)   # phien dong -> tu choi
+
+
+def test_thu_hoi_xoa_mat_khau(db):
+    u, dev, sess = _phien_da_mo(db)
+    sessions.bao_engine(db, sess, engine_id="1", secret="pw")
+    sessions.thu_hoi_ve(db, sess, by="chu-may")
+    assert sess.engine_secret_enc == ""
+
+
+# ── Không báo cho phiên chưa mở / đã đóng ───────────────────────────────────
+
+def test_khong_bao_duoc_cho_phien_da_ket_thuc(db):
+    u, dev, sess = _phien_da_mo(db)
+    sessions.ket_thuc(db, sess)
+    with pytest.raises(NexusError):
+        sessions.bao_engine(db, sess, engine_id="1", secret="pw")
+
+
+def test_lay_khi_agent_chua_bao_thi_tu_choi(db):
+    u, dev, sess = _phien_da_mo(db)
+    # chua bao engine
+    with pytest.raises(NexusError):
+        sessions.lay_ket_noi(db, sess, user_id=u.id)
+
+
+def test_engine_id_giu_lai_sau_khi_xoa_secret(db):
+    """engine_id không bí mật + có giá trị kiểm toán → giữ; chỉ secret bị xoá."""
+    u, dev, sess = _phien_da_mo(db)
+    sessions.bao_engine(db, sess, engine_id="288780716", secret="pw")
+    sessions.ket_thuc(db, sess)
+    assert sess.engine_id == "288780716"
+    assert sess.engine_secret_enc == ""
 
 @@@LTT_PROFILE_FILE_END@@@
 
