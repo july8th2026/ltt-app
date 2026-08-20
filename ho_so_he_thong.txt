@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:57e1d153106d8f76039d7b3edef20d696c235451ec563cc28d1954a6b2dd304b
+Fingerprint   : sha256:b31206e688e416799e20166e7b8e2af6be980442b2f4d2ba17f419178d9bc8d4
 Nguồn đã quét : 1178 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -947,7 +947,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (111 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (113 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -998,6 +998,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
 - LTT_NEXUS_AN_HAN_NGAY
 - LTT_NEXUS_GIA_MAY_THANG
+- LTT_NEXUS_RELAY_KEY
+- LTT_NEXUS_RELAY_SERVER
 - LTT_NEXUS_RELEASE_MANIFEST
 - LTT_NEXUS_RUSTDESK_EXE
 - LTT_OPS_ALERT_EMAIL
@@ -2574,7 +2576,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10639980 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10641425 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -195686,7 +195688,7 @@ def test_co_tat_thi_404(tmp_path, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_236_nexus_engine.py
-SHA256=c709762436737e1cbc4161cca587ab939d96aea9c4966577a0f47fdf1cbf42fa BYTES=7454 LINES=187
+SHA256=00ee8eb5ee39e2da75e2014d689770714d15b649f7fa56236ba9087dbb72d813 BYTES=8899 LINES=218
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus N3.2 — module lái engine RustDesk nguyên bản, kiểm bằng hàm thuần.
 
@@ -195875,6 +195877,37 @@ def test_runner_duong_exe_doi_bang_env(monkeypatch):
     from nexus_agent import engine_runner
     monkeypatch.setenv("LTT_NEXUS_RUSTDESK_EXE", r"C:\Fork\ltt-nexus.exe")
     assert engine_runner.duong_exe() == r"C:\Fork\ltt-nexus.exe"
+
+
+# ── cau_hinh_server: trỏ RustDesk về hạ tầng LTT (stock, V1) ─────────────────
+
+def test_cau_hinh_server_ghi_config_khong_bom(tmp_path, monkeypatch):
+    from nexus_agent import engine_runner
+    # Gia mot config RustDesk2.toml san co
+    cfg = tmp_path / "RustDesk2.toml"
+    cfg.write_text("rendezvous_server = 'rs-ny.rustdesk.com:21116'\n[options]\nav1-test = 'N'\n",
+                   encoding="utf-8")
+    monkeypatch.setattr(engine_runner, "duong_config", lambda: [str(cfg)])
+    monkeypatch.setattr(engine_runner, "_svc", lambda *a: None)   # khong dung dich vu that
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SERVER", "9.9.9.9")
+    monkeypatch.setenv("LTT_NEXUS_RELAY_KEY", "TESTKEY=")
+
+    n = engine_runner.cau_hinh_server()
+    assert n == 1
+    raw = cfg.read_bytes()
+    assert raw[:3] != b"\xef\xbb\xbf"                # KHONG co BOM
+    txt = raw.decode("utf-8")
+    assert "custom-rendezvous-server = '9.9.9.9'" in txt
+    assert "key = 'TESTKEY='" in txt
+    assert "av1-test = 'N'" in txt                   # giu option cu
+
+
+def test_cau_hinh_khong_co_config_thi_tra_0_khong_nem(tmp_path, monkeypatch):
+    from nexus_agent import engine_runner
+    monkeypatch.setattr(engine_runner, "duong_config",
+                        lambda: [str(tmp_path / "khong_co.toml")])
+    monkeypatch.setattr(engine_runner, "_svc", lambda *a: None)
+    assert engine_runner.cau_hinh_server() == 0
 
 @@@LTT_PROFILE_FILE_END@@@
 

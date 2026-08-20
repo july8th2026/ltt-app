@@ -185,3 +185,34 @@ def test_runner_duong_exe_doi_bang_env(monkeypatch):
     from nexus_agent import engine_runner
     monkeypatch.setenv("LTT_NEXUS_RUSTDESK_EXE", r"C:\Fork\ltt-nexus.exe")
     assert engine_runner.duong_exe() == r"C:\Fork\ltt-nexus.exe"
+
+
+# ── cau_hinh_server: trỏ RustDesk về hạ tầng LTT (stock, V1) ─────────────────
+
+def test_cau_hinh_server_ghi_config_khong_bom(tmp_path, monkeypatch):
+    from nexus_agent import engine_runner
+    # Gia mot config RustDesk2.toml san co
+    cfg = tmp_path / "RustDesk2.toml"
+    cfg.write_text("rendezvous_server = 'rs-ny.rustdesk.com:21116'\n[options]\nav1-test = 'N'\n",
+                   encoding="utf-8")
+    monkeypatch.setattr(engine_runner, "duong_config", lambda: [str(cfg)])
+    monkeypatch.setattr(engine_runner, "_svc", lambda *a: None)   # khong dung dich vu that
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SERVER", "9.9.9.9")
+    monkeypatch.setenv("LTT_NEXUS_RELAY_KEY", "TESTKEY=")
+
+    n = engine_runner.cau_hinh_server()
+    assert n == 1
+    raw = cfg.read_bytes()
+    assert raw[:3] != b"\xef\xbb\xbf"                # KHONG co BOM
+    txt = raw.decode("utf-8")
+    assert "custom-rendezvous-server = '9.9.9.9'" in txt
+    assert "key = 'TESTKEY='" in txt
+    assert "av1-test = 'N'" in txt                   # giu option cu
+
+
+def test_cau_hinh_khong_co_config_thi_tra_0_khong_nem(tmp_path, monkeypatch):
+    from nexus_agent import engine_runner
+    monkeypatch.setattr(engine_runner, "duong_config",
+                        lambda: [str(tmp_path / "khong_co.toml")])
+    monkeypatch.setattr(engine_runner, "_svc", lambda *a: None)
+    assert engine_runner.cau_hinh_server() == 0

@@ -59,7 +59,15 @@ def cmd_run(args) -> int:
     # `run` la che do phuc vu dieu khien -> gan engine that. Lazy: no chi cham
     # RustDesk khi co ve moi, nen may chua cai RustDesk van chay (danh tinh/
     # presence), chi bao loi theo tung phien.
+    from nexus_agent import engine_runner
     from nexus_agent.engine_runner import RustDeskEngine
+
+    # Tro RustDesk ve ha tang LTT (idempotent, khong nem neu chua cai RustDesk).
+    try:
+        engine_runner.cau_hinh_server()
+    except Exception:                                          # noqa: BLE001
+        logging.getLogger("nexus_agent").exception(
+            "cau hinh server that bai (khong dung agent)")
 
     client = NexusClient(args.url, Keystore(args.dir), engine=RustDeskEngine())
     ly_do = client.chay(so_nhip=args.beats)
@@ -106,6 +114,18 @@ def cmd_install(args) -> int:
     return 0
 
 
+def cmd_cau_hinh(args) -> int:
+    """Trỏ RustDesk nguyên bản về hạ tầng LTT. Cần admin (dừng dịch vụ)."""
+    from nexus_agent import engine_runner
+
+    n = engine_runner.cau_hinh_server()
+    if n:
+        print(f"da tro RustDesk ve ha tang LTT ({n} file config).")
+    else:
+        print("chua thay config RustDesk — da cai RustDesk chua?")
+    return 0
+
+
 def cmd_uninstall(args) -> int:
     from nexus_agent import service
 
@@ -143,6 +163,9 @@ def main(argv=None) -> int:
     p = sub.add_parser("install", help="cai lich tu chay khi dang nhap")
     p.add_argument("--url", required=True)
     p.set_defaults(func=cmd_install)
+
+    p = sub.add_parser("cau-hinh", help="tro RustDesk ve ha tang LTT")
+    p.set_defaults(func=cmd_cau_hinh)
 
     p = sub.add_parser("uninstall", help="go lich tu chay")
     p.set_defaults(func=cmd_uninstall)
