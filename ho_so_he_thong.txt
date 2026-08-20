@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:a16c137f79c3d28f5c6ce2424ea0cb997f6f773da0d72cc49748f2b0b7996170
+Fingerprint   : sha256:977b3e6cf431660798bfc61bd5a3e3257ce4b632e29a7114e44d675e732931fd
 Nguồn đã quét : 1174 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -942,7 +942,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (108 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (109 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -992,6 +992,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_NEXUS
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
 - LTT_NEXUS_RELEASE_MANIFEST
+- LTT_NEXUS_RUSTDESK_EXE
 - LTT_OPS_ALERT_EMAIL
 - LTT_PAYOS_
 - LTT_PAYOS_API_KEY
@@ -2561,7 +2562,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1174 file; 10606420 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1174 file; 10610929 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -193345,7 +193346,7 @@ def test_bao_engine_khong_ky_thi_401(app_bat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_229_nexus_agent.py
-SHA256=ae50a386e72fd81166f2fbe6a296fd770e0c1e5e1b1d8a7712b6091d683ba6ed BYTES=12036 LINES=326
+SHA256=d95bfee67c587c6d6f2f7b050d84cce6a2989e815a708fbb0e4d17c74089856b BYTES=15373 LINES=408
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus N3.1 — agent tham chiếu, chạy thật qua HTTP.
 
@@ -193673,6 +193674,88 @@ def test_agent_khong_dung_ham_co_chu_test_trong_ten():
     xau = [f"{p.name}" for p in goc.rglob("*.py")
            if "_for_test" in p.read_text(encoding="utf-8")]
     assert xau == [], f"duong chay that goi ham *_for_test: {xau}"
+
+
+# ── W4: nhịp tim thấy vé mới → chuẩn bị engine → báo lên server ──────────────
+
+class _EngineGia:
+    """Engine giả: trả cố định, đếm số lần được gọi."""
+    def __init__(self, engine_id="288780716", secret="MatKhau-E2E"):
+        self.engine_id, self.secret, self.so_lan = engine_id, secret, 0
+
+    def chuan_bi_phien(self):
+        self.so_lan += 1
+        return self.engine_id, self.secret
+
+
+def test_W4_nhip_tim_chuan_bi_phien_QUA_HTTP(may_chu, monkeypatch):
+    """Luồng đầy đủ: khách cấp vé → agent nhịp tim thấy `cho_bao` → xoay mật khẩu
+    (engine giả) → báo lên server → phiên kích hoạt + controller lấy được mật khẩu."""
+    from nexus_agent.client import NexusClient
+    from nexus_agent.keystore import Keystore
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "e2e-token-key-0123456789")
+    base_url, tmp = may_chu
+
+    engine = _EngineGia()
+    agent = NexusClient(base_url, Keystore(tmp / "danh_tinh_w4"), engine=engine)
+    device_id = agent.ghep(_ma_ghep(), ten_may="May W4")
+
+    # Khách cấp vé cho máy này.
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+        sid, uid = row.id, dev.user_id
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    # Một nhịp tim: agent phải thấy cho_bao và chuẩn bị phiên.
+    agent.chay(so_nhip=1, ngu=lambda *_: None)
+    assert engine.so_lan == 1, "agent phai goi engine dung mot lan cho phien moi"
+
+    # Server: phiên đã kích hoạt + controller lấy được đúng mật khẩu.
+    gen = get_session(); db = next(gen)
+    try:
+        phien = sessions.lay_phien(db, session_id=sid)
+        assert phien.dang_chay()
+        kn = sessions.lay_ket_noi(db, phien, user_id=uid)
+        assert kn["engine_id"] == "288780716"
+        assert kn["secret"] == "MatKhau-E2E"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_W4_khong_co_engine_thi_khong_gay(may_chu, monkeypatch):
+    """Máy chưa gắn engine: agent vẫn chạy nhịp tim, chỉ không chuẩn bị phiên."""
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    base_url, tmp = may_chu
+    from nexus_agent.client import NexusClient
+    from nexus_agent.keystore import Keystore
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+
+    agent = NexusClient(base_url, Keystore(tmp / "dt_noeng"))   # engine=None
+    device_id = agent.ghep(_ma_ghep(), ten_may="May noeng")
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    # Khong nem, tra ly do dung.
+    ly_do = agent.chay(so_nhip=1, ngu=lambda *_: None)
+    assert ly_do == "het so nhip"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -195024,7 +195107,7 @@ def test_co_tat_thi_404(tmp_path, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_236_nexus_engine.py
-SHA256=80c3151577702f7b13ce7e449cf3414813291c5a3dd4b350c6a8e0dc1d2a8a11 BYTES=6282 LINES=156
+SHA256=c709762436737e1cbc4161cca587ab939d96aea9c4966577a0f47fdf1cbf42fa BYTES=7454 LINES=187
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus N3.2 — module lái engine RustDesk nguyên bản, kiểm bằng hàm thuần.
 
@@ -195182,6 +195265,37 @@ def test_xoay_mat_khau_khong_ghi_mat_khau_ra_ngoai():
         fn.body = fn.body[1:]          # bo docstring
     code = ast.unparse(ast.Module(body=fn.body, type_ignores=[]))
     assert "log" not in code and "open(" not in code and "print(" not in code
+
+
+# ── engine_runner: nối engine.py với RustDesk thật (W4) ──────────────────────
+
+def test_runner_chuan_bi_phien_tra_id_va_secret(monkeypatch):
+    """RustDeskEngine gọi --get-id rồi --password, trả (id, secret)."""
+    from nexus_agent import engine_runner
+
+    goi = []
+    def gia(argv):
+        goi.append(argv)
+        if "--get-id" in argv:
+            return 0, "288780716\n"
+        if "--password" in argv:
+            return 0, "Done!"
+        return 1, "?"
+    monkeypatch.setattr(engine_runner, "_runner", gia)
+
+    eng = engine_runner.RustDeskEngine(exe="rustdesk.exe")
+    engine_id, secret = eng.chuan_bi_phien()
+    assert engine_id == "288780716"
+    assert len(secret) == 20                    # mat khau moi, do dai chuan
+    # phai da goi ca get-id lan password
+    assert any("--get-id" in a for a in goi)
+    assert any("--password" in a for a in goi)
+
+
+def test_runner_duong_exe_doi_bang_env(monkeypatch):
+    from nexus_agent import engine_runner
+    monkeypatch.setenv("LTT_NEXUS_RUSTDESK_EXE", r"C:\Fork\ltt-nexus.exe")
+    assert engine_runner.duong_exe() == r"C:\Fork\ltt-nexus.exe"
 
 @@@LTT_PROFILE_FILE_END@@@
 

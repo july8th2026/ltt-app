@@ -324,3 +324,85 @@ def test_agent_khong_dung_ham_co_chu_test_trong_ten():
     xau = [f"{p.name}" for p in goc.rglob("*.py")
            if "_for_test" in p.read_text(encoding="utf-8")]
     assert xau == [], f"duong chay that goi ham *_for_test: {xau}"
+
+
+# ── W4: nhịp tim thấy vé mới → chuẩn bị engine → báo lên server ──────────────
+
+class _EngineGia:
+    """Engine giả: trả cố định, đếm số lần được gọi."""
+    def __init__(self, engine_id="288780716", secret="MatKhau-E2E"):
+        self.engine_id, self.secret, self.so_lan = engine_id, secret, 0
+
+    def chuan_bi_phien(self):
+        self.so_lan += 1
+        return self.engine_id, self.secret
+
+
+def test_W4_nhip_tim_chuan_bi_phien_QUA_HTTP(may_chu, monkeypatch):
+    """Luồng đầy đủ: khách cấp vé → agent nhịp tim thấy `cho_bao` → xoay mật khẩu
+    (engine giả) → báo lên server → phiên kích hoạt + controller lấy được mật khẩu."""
+    from nexus_agent.client import NexusClient
+    from nexus_agent.keystore import Keystore
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    monkeypatch.setenv("LTT_TOKEN_ENCRYPTION_KEY", "e2e-token-key-0123456789")
+    base_url, tmp = may_chu
+
+    engine = _EngineGia()
+    agent = NexusClient(base_url, Keystore(tmp / "danh_tinh_w4"), engine=engine)
+    device_id = agent.ghep(_ma_ghep(), ten_may="May W4")
+
+    # Khách cấp vé cho máy này.
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+        sid, uid = row.id, dev.user_id
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    # Một nhịp tim: agent phải thấy cho_bao và chuẩn bị phiên.
+    agent.chay(so_nhip=1, ngu=lambda *_: None)
+    assert engine.so_lan == 1, "agent phai goi engine dung mot lan cho phien moi"
+
+    # Server: phiên đã kích hoạt + controller lấy được đúng mật khẩu.
+    gen = get_session(); db = next(gen)
+    try:
+        phien = sessions.lay_phien(db, session_id=sid)
+        assert phien.dang_chay()
+        kn = sessions.lay_ket_noi(db, phien, user_id=uid)
+        assert kn["engine_id"] == "288780716"
+        assert kn["secret"] == "MatKhau-E2E"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_W4_khong_co_engine_thi_khong_gay(may_chu, monkeypatch):
+    """Máy chưa gắn engine: agent vẫn chạy nhịp tim, chỉ không chuẩn bị phiên."""
+    monkeypatch.setenv("LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY", "1")
+    base_url, tmp = may_chu
+    from nexus_agent.client import NexusClient
+    from nexus_agent.keystore import Keystore
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+
+    agent = NexusClient(base_url, Keystore(tmp / "dt_noeng"))   # engine=None
+    device_id = agent.ghep(_ma_ghep(), ten_may="May noeng")
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    # Khong nem, tra ly do dung.
+    ly_do = agent.chay(so_nhip=1, ngu=lambda *_: None)
+    assert ly_do == "het so nhip"

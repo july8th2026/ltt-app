@@ -56,7 +56,12 @@ def cmd_enroll(args) -> int:
 def cmd_run(args) -> int:
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(message)s")
-    client = _client(args)
+    # `run` la che do phuc vu dieu khien -> gan engine that. Lazy: no chi cham
+    # RustDesk khi co ve moi, nen may chua cai RustDesk van chay (danh tinh/
+    # presence), chi bao loi theo tung phien.
+    from nexus_agent.engine_runner import RustDeskEngine
+
+    client = NexusClient(args.url, Keystore(args.dir), engine=RustDeskEngine())
     ly_do = client.chay(so_nhip=args.beats)
     print(f"dung: {ly_do}")
     # `revoked` KHONG phai loi: khach da bam thu hoi va he thong lam dung viec.

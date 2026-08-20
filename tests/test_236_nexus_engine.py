@@ -154,3 +154,34 @@ def test_xoay_mat_khau_khong_ghi_mat_khau_ra_ngoai():
         fn.body = fn.body[1:]          # bo docstring
     code = ast.unparse(ast.Module(body=fn.body, type_ignores=[]))
     assert "log" not in code and "open(" not in code and "print(" not in code
+
+
+# ── engine_runner: nối engine.py với RustDesk thật (W4) ──────────────────────
+
+def test_runner_chuan_bi_phien_tra_id_va_secret(monkeypatch):
+    """RustDeskEngine gọi --get-id rồi --password, trả (id, secret)."""
+    from nexus_agent import engine_runner
+
+    goi = []
+    def gia(argv):
+        goi.append(argv)
+        if "--get-id" in argv:
+            return 0, "288780716\n"
+        if "--password" in argv:
+            return 0, "Done!"
+        return 1, "?"
+    monkeypatch.setattr(engine_runner, "_runner", gia)
+
+    eng = engine_runner.RustDeskEngine(exe="rustdesk.exe")
+    engine_id, secret = eng.chuan_bi_phien()
+    assert engine_id == "288780716"
+    assert len(secret) == 20                    # mat khau moi, do dai chuan
+    # phai da goi ca get-id lan password
+    assert any("--get-id" in a for a in goi)
+    assert any("--password" in a for a in goi)
+
+
+def test_runner_duong_exe_doi_bang_env(monkeypatch):
+    from nexus_agent import engine_runner
+    monkeypatch.setenv("LTT_NEXUS_RUSTDESK_EXE", r"C:\Fork\ltt-nexus.exe")
+    assert engine_runner.duong_exe() == r"C:\Fork\ltt-nexus.exe"

@@ -52,9 +52,14 @@ class AgentError(Exception):
 class NexusClient:
     """Một thiết bị nói chuyện với control plane."""
 
-    def __init__(self, base_url: str, keystore: Keystore):
+    def __init__(self, base_url: str, keystore: Keystore, engine=None):
         self.base_url = str(base_url or "").rstrip("/")
         self.ks = keystore
+        #: Bộ chuẩn bị engine cho một phiên. Đối tượng có `chuan_bi_phien() ->
+        #: (engine_id, secret)`: xoay mật khẩu RustDesk + lấy ID (N3.2). `None`
+        #: nghĩa là máy này chưa gắn engine — agent vẫn chạy (danh tính/presence),
+        #: chỉ không phục vụ điều khiển. Tiêm được để test không cần RustDesk.
+        self.engine = engine
 
     # ── HTTP ────────────────────────────────────────────────────────────────
 
@@ -148,6 +153,44 @@ class NexusClient:
             raise AgentError(_thong_diep(data, "doi ve that bai"))
         return data
 
+    def bao_engine(self, session_id: str, engine_id: str, secret: str) -> dict:
+        """Báo chi tiết kết nối cho một phiên (W3). Ký như mọi request khác.
+
+        `secret` là mật khẩu một-lần — nó chỉ đi trong body đã ký của đúng request
+        này, không vào log, không cất xuống đĩa.
+        """
+        path = "/nexus-agent/session/engine"
+        body = json.dumps({"session_id": str(session_id or ""),
+                           "engine_id": str(engine_id or ""),
+                           "secret": str(secret or "")}).encode("utf-8")
+        status, data = self._goi(path, body, self._ky(path, body))
+        if status != 200:
+            raise AgentError(_thong_diep(data, "bao engine that bai"))
+        return data
+
+    def _chuan_bi_cho_bao(self, cho_bao: list) -> None:
+        """Với mỗi vé mới: xoay mật khẩu engine + lấy ID rồi báo lên server.
+
+        Mỗi phiên độc lập: một phiên hỏng (engine lỗi, mạng chớp) **không** được
+        làm hỏng các phiên khác hay cả vòng nhịp tim — nên mỗi cái bọc riêng.
+        """
+        if not cho_bao:
+            return
+        if self.engine is None:
+            log.warning("co %d phien cho dieu khien nhung may nay chua gan engine",
+                        len(cho_bao))
+            return
+        for phien in cho_bao:
+            sid = phien.get("session_id")
+            try:
+                engine_id, secret = self.engine.chuan_bi_phien()
+                self.bao_engine(sid, engine_id, secret)
+                log.info("da chuan bi phien %s", sid)
+            except Exception as exc:                          # noqa: BLE001
+                # Bao gio cung nuot-va-log o day: mot phien loi khong duoc dung
+                # ca vong. Loi that (engine hong) van hien trong log de con go.
+                log.warning("khong chuan bi duoc phien %s: %s", sid, exc)
+
     # ── Vòng chạy ───────────────────────────────────────────────────────────
 
     def chay(self, *, so_nhip: int = 0, ngu=time.sleep) -> str:
@@ -172,6 +215,10 @@ class NexusClient:
             if tra_loi.get("revoked"):
                 self.ks.xoa()
                 return "revoked"
+
+            # Vé mới → chuẩn bị engine (xoay mật khẩu + báo). Làm TRƯỚC khi log
+            # phiên đang mở, vì chuẩn bị xong thì phiên mới chuyển sang "đang mở".
+            self._chuan_bi_cho_bao(tra_loi.get("cho_bao") or [])
 
             for phien in tra_loi.get("sessions") or []:
                 log.info("co phien dang mo: %s (%s)",
