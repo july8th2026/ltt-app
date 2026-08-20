@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:071c0ef0ff0937a16f5630cf84d9a8162975e9c98de1f98b30474c3b38104aa2
+Fingerprint   : sha256:a16c137f79c3d28f5c6ce2424ea0cb997f6f773da0d72cc49748f2b0b7996170
 Nguồn đã quét : 1174 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2561,7 +2561,7 @@ Phân bố extension: .cfg:1, .css:7, .html:81, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1174 file; 10597498 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1174 file; 10606420 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -109335,7 +109335,7 @@ __all__ = ["TRUONG_HIEN_THI", "ban_phat_hanh_hien_tai"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/sessions.py
-SHA256=de9961f95fd09695b5fe73484e1f42e84dad1cee7d05c4af2bb4da148b8b36e9 BYTES=11633 LINES=269
+SHA256=2c3c43be914b0beadef27d06faf72e6a82e50ebd86a339b3342292092900dfae BYTES=13141 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vé phiên: chỗ DUY NHẤT quyết định ai được vào máy nào (Q93 ràng buộc 2).
 
@@ -109529,12 +109529,19 @@ def bao_engine(db, session: NexusSession, *, engine_id: str, secret: str,
     log/nhìn thấy. `engine_id` không bí mật nên lưu thẳng.
     """
     current = now or _now()
-    if not session.dang_chay(now=current):
-        raise NexusError(_t("Phiên không còn mở."))
     eid = str(engine_id or "").strip()
     sec = str(secret or "")
     if not eid or not sec:
         raise NexusError(_t("Thiếu thông tin kết nối."))
+
+    # Báo engine cũng chính là lúc **kích hoạt** phiên: agent chỉ đặt mật khẩu
+    # SAU KHI thấy một vé hợp lệ dành cho nó (Q93 ràng buộc 2 — engine kiểm vé,
+    # không chỉ control plane cấp). Nếu vé còn đổi được thì tiêu nó ngay đây; nếu
+    # đã đổi rồi (agent báo lại) thì chấp nhận; còn lại — đã đóng/hết hạn — từ chối.
+    if session.con_doi_duoc(now=current):
+        session.consumed_at = current
+    if not session.dang_chay(now=current):
+        raise NexusError(_t("Phiên không còn mở."))
 
     session.engine_id = eid[:64]
     session.engine_secret_enc = secretbox.ma_hoa(sec)
@@ -109573,6 +109580,26 @@ def _xoa_engine(session: NexusSession) -> None:
     một-lần không được sống lâu hơn phiên nó phục vụ. `engine_id` giữ lại (không
     bí mật, còn giá trị kiểm toán)."""
     session.engine_secret_enc = ""
+
+
+def cho_kich_hoat(db, *, device_id: str, now: datetime | None = None) -> list:
+    """Vé đã cấp cho một thiết bị mà **chưa đổi** và **còn hạn**.
+
+    Đây là thứ agent cần biết ở mỗi nhịp tim: một phiên khách vừa yêu cầu điều
+    khiển, agent phải đặt mật khẩu engine rồi báo lại (`bao_engine` sẽ kích hoạt).
+    Chỉ trả vé còn đổi được — vé hết hạn/thu hồi không phải việc agent làm gì nữa.
+    """
+    current = now or _now()
+    rows = db.execute(select(NexusSession).where(
+        NexusSession.device_id == str(device_id or ""),
+        NexusSession.consumed_at.is_(None),
+        NexusSession.revoked_at.is_(None))).scalars().all()
+    return [r for r in rows if r.con_doi_duoc(now=current)]
+
+
+def lay_phien(db, *, session_id: str) -> NexusSession | None:
+    """Một phiên theo id, hoặc None. Không kiểm quyền — nơi gọi kiểm."""
+    return db.get(NexusSession, str(session_id or ""))
 
 
 def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:
@@ -132818,7 +132845,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/routes.py
-SHA256=7e2dea74fa003d1e6054fdbb8eaffe5fa72e58691cb9a3b2cabd7ab296c50670 BYTES=10030 LINES=249
+SHA256=dadd8b49c6ce47dc7e09cad7118a715f02edfb2f064b0b4d92b4be4bb5aa4180 BYTES=13085 LINES=315
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba đường cho agent: ghép máy, nhịp tim, đổi vé phiên.
 
@@ -133008,11 +133035,18 @@ async def heartbeat(
             return _loi(429, "rate_limited", "Too many heartbeats.")
 
         con_dung = devices.nhip_tim(db, device)
+        # `sessions` — phiên đã kích hoạt, đang chạy (để agent giữ chỉ báo/hành vi).
+        # `cho_bao` — vé mới, CHƯA kích hoạt: agent phải đặt mật khẩu engine rồi
+        #   gọi /session/engine để kích hoạt. Tách hai danh sách vì agent làm hai
+        #   việc khác nhau với chúng.
         cho_phien = [{"session_id": s.id, "quyen": s.quyen}
                      for s in sessions.dang_mo(db, device_id=device.id)]
+        cho_bao = [{"session_id": s.id, "quyen": s.quyen}
+                   for s in sessions.cho_kich_hoat(db, device_id=device.id)]
         db.commit()
         return JSONResponse({"ok": con_dung, "revoked": not con_dung,
-                             "sessions": cho_phien}, headers=_NO_STORE)
+                             "sessions": cho_phien, "cho_bao": cho_bao},
+                            headers=_NO_STORE)
     finally:
         try:
             next(gen)
@@ -133063,6 +133097,65 @@ async def redeem(
 
         db.commit()
         return JSONResponse({"session_id": phien.id, "quyen": phien.quyen},
+                            headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/session/engine")
+async def bao_engine(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Agent của máy đích báo chi tiết kết nối RustDesk cho một phiên (W3).
+
+    Cùng hai phép kiểm như `redeem`: chữ ký chứng minh *ai gọi*, và
+    `session.device_id == device.id` chứng minh *phiên này của ai*. Không có phép
+    thứ hai thì một thiết bị hợp lệ báo engine cho phiên của thiết bị khác.
+
+    Gọi này vừa **kích hoạt** phiên vừa lưu credential (đã mã hoá) — xem
+    `sessions.bao_engine`. Đây là đường v1 thay cho `redeem`: agent không cần cầm
+    vé gốc, nó nhận `session_id` từ nhịp tim và tự chứng thực bằng chữ ký.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    body_raw = await request.body()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        try:
+            import json
+            body = json.loads(body_raw or b"{}")
+        except (ValueError, UnicodeDecodeError):
+            return _loi(400, "invalid_request", "Body must be JSON.")
+        if not isinstance(body, dict):
+            return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+        phien = sessions.lay_phien(db, session_id=str(body.get("session_id") or ""))
+        # Phiên của thiết bị khác (hoặc không có) → cùng một câu, không phân biệt.
+        if phien is None or phien.device_id != device.id:
+            return _loi(404, "not_found", "Not found.")
+
+        try:
+            sessions.bao_engine(db, phien,
+                                engine_id=str(body.get("engine_id") or ""),
+                                secret=str(body.get("secret") or ""))
+        except devices.NexusError as exc:
+            db.rollback()
+            return _loi(400, "engine_failed", str(exc))
+
+        db.commit()
+        return JSONResponse({"session_id": phien.id, "ok": True},
                             headers=_NO_STORE)
     finally:
         try:
@@ -192775,7 +192868,7 @@ def test_co_tat_thi_URL_go_thang_cung_404(app_tat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_228_nexus_agent_api.py
-SHA256=81a187c7000ba3f651341105472ae25d0fc33e7ba48c3ed6dcc3835776d8c396 BYTES=13830 LINES=361
+SHA256=3dc295118169ded6896dead8a62d82333f3176e8084873ae4c3047c73017d1db BYTES=18189 LINES=471
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus N2.6 — bề mặt cho agent: ký request, không dùng token.
 
@@ -193138,6 +193231,116 @@ def test_loi_luon_la_JSON_khong_bao_gio_HTML(app_tat):
     r = app_tat.post("/nexus-agent/enroll", json={})
     assert r.headers["content-type"].startswith("application/json")
     assert r.headers.get("cache-control") == "no-store"
+
+
+# ── W3: agent báo engine cho một phiên ───────────────────────────────────────
+
+def _tao_phien(device_id: str):
+    """Tạo một vé phiên cho device_id (như khách bấm 'điều khiển'). Trả session_id."""
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+        db.commit()
+        return row.id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_nhip_tim_bao_phien_cho_kich_hoat(app_bat):
+    from platform_core.nexus import agent_auth
+    device_id, priv = _ghep(app_bat)
+    sid = _tao_phien(device_id)
+    path = "/nexus-agent/heartbeat"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    cho_bao = r.json().get("cho_bao") or []
+    assert any(s["session_id"] == sid for s in cho_bao), "phien moi phai o cho_bao"
+
+
+def test_bao_engine_kich_hoat_phien_va_luu_credential(app_bat):
+    from platform_core.nexus import agent_auth
+    device_id, priv = _ghep(app_bat)
+    sid = _tao_phien(device_id)
+
+    body = json.dumps({"session_id": sid, "engine_id": "288780716",
+                       "secret": "MatKhauPhien-Abc"}).encode()
+    path = "/nexus-agent/session/engine"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, body)}
+    r = app_bat.post(path, content=body, headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"] is True
+
+    # Phien gio dang chay + co credential (ma hoa), controller lay duoc.
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        phien = sessions.lay_phien(db, session_id=sid)
+        assert phien.dang_chay()
+        kn = sessions.lay_ket_noi(db, phien, user_id=dev.user_id)
+        assert kn["engine_id"] == "288780716"
+        assert kn["secret"] == "MatKhauPhien-Abc"
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _ghep_khac(client, email: str):
+    """Ghép một máy dưới MỘT user khác (để test quyền). Trả (device_id, priv)."""
+    from platform_core.db import get_session
+    from platform_core.nexus import agent_auth, devices
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session(); db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.flush()
+        _row, ma = devices.tao_ma_ghep(db, user_id=u.id)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/enroll", json={"code": ma, "public_key": pub})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def test_thiet_bi_khac_khong_bao_duoc_cho_phien_nguoi_ta(app_bat):
+    from platform_core.nexus import agent_auth
+    device_a, _priv_a = _ghep(app_bat)
+    sid = _tao_phien(device_a)
+    # Mot thiet bi B khac (user khac)
+    device_b, priv_b = _ghep_khac(app_bat, "other@example.com")
+
+    body = json.dumps({"session_id": sid, "engine_id": "1", "secret": "pw"}).encode()
+    path = "/nexus-agent/session/engine"
+    headers = {agent_auth.HEADER_DEVICE: device_b, **_ky(priv_b, "POST", path, body)}
+    r = app_bat.post(path, content=body, headers=headers)
+    assert r.status_code == 404, r.text      # 404 khong phai 403
+
+
+def test_bao_engine_khong_ky_thi_401(app_bat):
+    device_id, _priv = _ghep(app_bat)
+    sid = _tao_phien(device_id)
+    body = json.dumps({"session_id": sid, "engine_id": "1", "secret": "pw"}).encode()
+    r = app_bat.post("/nexus-agent/session/engine", content=body)
+    assert r.status_code == 401
 
 @@@LTT_PROFILE_FILE_END@@@
 

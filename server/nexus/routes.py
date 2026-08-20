@@ -186,11 +186,18 @@ async def heartbeat(
             return _loi(429, "rate_limited", "Too many heartbeats.")
 
         con_dung = devices.nhip_tim(db, device)
+        # `sessions` — phiên đã kích hoạt, đang chạy (để agent giữ chỉ báo/hành vi).
+        # `cho_bao` — vé mới, CHƯA kích hoạt: agent phải đặt mật khẩu engine rồi
+        #   gọi /session/engine để kích hoạt. Tách hai danh sách vì agent làm hai
+        #   việc khác nhau với chúng.
         cho_phien = [{"session_id": s.id, "quyen": s.quyen}
                      for s in sessions.dang_mo(db, device_id=device.id)]
+        cho_bao = [{"session_id": s.id, "quyen": s.quyen}
+                   for s in sessions.cho_kich_hoat(db, device_id=device.id)]
         db.commit()
         return JSONResponse({"ok": con_dung, "revoked": not con_dung,
-                             "sessions": cho_phien}, headers=_NO_STORE)
+                             "sessions": cho_phien, "cho_bao": cho_bao},
+                            headers=_NO_STORE)
     finally:
         try:
             next(gen)
@@ -241,6 +248,65 @@ async def redeem(
 
         db.commit()
         return JSONResponse({"session_id": phien.id, "quyen": phien.quyen},
+                            headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/session/engine")
+async def bao_engine(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Agent của máy đích báo chi tiết kết nối RustDesk cho một phiên (W3).
+
+    Cùng hai phép kiểm như `redeem`: chữ ký chứng minh *ai gọi*, và
+    `session.device_id == device.id` chứng minh *phiên này của ai*. Không có phép
+    thứ hai thì một thiết bị hợp lệ báo engine cho phiên của thiết bị khác.
+
+    Gọi này vừa **kích hoạt** phiên vừa lưu credential (đã mã hoá) — xem
+    `sessions.bao_engine`. Đây là đường v1 thay cho `redeem`: agent không cần cầm
+    vé gốc, nó nhận `session_id` từ nhịp tim và tự chứng thực bằng chữ ký.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    body_raw = await request.body()
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        try:
+            import json
+            body = json.loads(body_raw or b"{}")
+        except (ValueError, UnicodeDecodeError):
+            return _loi(400, "invalid_request", "Body must be JSON.")
+        if not isinstance(body, dict):
+            return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+        phien = sessions.lay_phien(db, session_id=str(body.get("session_id") or ""))
+        # Phiên của thiết bị khác (hoặc không có) → cùng một câu, không phân biệt.
+        if phien is None or phien.device_id != device.id:
+            return _loi(404, "not_found", "Not found.")
+
+        try:
+            sessions.bao_engine(db, phien,
+                                engine_id=str(body.get("engine_id") or ""),
+                                secret=str(body.get("secret") or ""))
+        except devices.NexusError as exc:
+            db.rollback()
+            return _loi(400, "engine_failed", str(exc))
+
+        db.commit()
+        return JSONResponse({"session_id": phien.id, "ok": True},
                             headers=_NO_STORE)
     finally:
         try:

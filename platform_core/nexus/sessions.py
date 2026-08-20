@@ -190,12 +190,19 @@ def bao_engine(db, session: NexusSession, *, engine_id: str, secret: str,
     log/nhìn thấy. `engine_id` không bí mật nên lưu thẳng.
     """
     current = now or _now()
-    if not session.dang_chay(now=current):
-        raise NexusError(_t("Phiên không còn mở."))
     eid = str(engine_id or "").strip()
     sec = str(secret or "")
     if not eid or not sec:
         raise NexusError(_t("Thiếu thông tin kết nối."))
+
+    # Báo engine cũng chính là lúc **kích hoạt** phiên: agent chỉ đặt mật khẩu
+    # SAU KHI thấy một vé hợp lệ dành cho nó (Q93 ràng buộc 2 — engine kiểm vé,
+    # không chỉ control plane cấp). Nếu vé còn đổi được thì tiêu nó ngay đây; nếu
+    # đã đổi rồi (agent báo lại) thì chấp nhận; còn lại — đã đóng/hết hạn — từ chối.
+    if session.con_doi_duoc(now=current):
+        session.consumed_at = current
+    if not session.dang_chay(now=current):
+        raise NexusError(_t("Phiên không còn mở."))
 
     session.engine_id = eid[:64]
     session.engine_secret_enc = secretbox.ma_hoa(sec)
@@ -234,6 +241,26 @@ def _xoa_engine(session: NexusSession) -> None:
     một-lần không được sống lâu hơn phiên nó phục vụ. `engine_id` giữ lại (không
     bí mật, còn giá trị kiểm toán)."""
     session.engine_secret_enc = ""
+
+
+def cho_kich_hoat(db, *, device_id: str, now: datetime | None = None) -> list:
+    """Vé đã cấp cho một thiết bị mà **chưa đổi** và **còn hạn**.
+
+    Đây là thứ agent cần biết ở mỗi nhịp tim: một phiên khách vừa yêu cầu điều
+    khiển, agent phải đặt mật khẩu engine rồi báo lại (`bao_engine` sẽ kích hoạt).
+    Chỉ trả vé còn đổi được — vé hết hạn/thu hồi không phải việc agent làm gì nữa.
+    """
+    current = now or _now()
+    rows = db.execute(select(NexusSession).where(
+        NexusSession.device_id == str(device_id or ""),
+        NexusSession.consumed_at.is_(None),
+        NexusSession.revoked_at.is_(None))).scalars().all()
+    return [r for r in rows if r.con_doi_duoc(now=current)]
+
+
+def lay_phien(db, *, session_id: str) -> NexusSession | None:
+    """Một phiên theo id, hoặc None. Không kiểm quyền — nơi gọi kiểm."""
+    return db.get(NexusSession, str(session_id or ""))
 
 
 def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:

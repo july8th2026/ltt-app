@@ -359,3 +359,113 @@ def test_loi_luon_la_JSON_khong_bao_gio_HTML(app_tat):
     r = app_tat.post("/nexus-agent/enroll", json={})
     assert r.headers["content-type"].startswith("application/json")
     assert r.headers.get("cache-control") == "no-store"
+
+
+# ── W3: agent báo engine cho một phiên ───────────────────────────────────────
+
+def _tao_phien(device_id: str):
+    """Tạo một vé phiên cho device_id (như khách bấm 'điều khiển'). Trả session_id."""
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        row, _ve = sessions.cap_ve(db, user_id=dev.user_id, device=dev)
+        db.commit()
+        return row.id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_nhip_tim_bao_phien_cho_kich_hoat(app_bat):
+    from platform_core.nexus import agent_auth
+    device_id, priv = _ghep(app_bat)
+    sid = _tao_phien(device_id)
+    path = "/nexus-agent/heartbeat"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    cho_bao = r.json().get("cho_bao") or []
+    assert any(s["session_id"] == sid for s in cho_bao), "phien moi phai o cho_bao"
+
+
+def test_bao_engine_kich_hoat_phien_va_luu_credential(app_bat):
+    from platform_core.nexus import agent_auth
+    device_id, priv = _ghep(app_bat)
+    sid = _tao_phien(device_id)
+
+    body = json.dumps({"session_id": sid, "engine_id": "288780716",
+                       "secret": "MatKhauPhien-Abc"}).encode()
+    path = "/nexus-agent/session/engine"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, body)}
+    r = app_bat.post(path, content=body, headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"] is True
+
+    # Phien gio dang chay + co credential (ma hoa), controller lay duoc.
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.tables import NexusDevice
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(NexusDevice, device_id)
+        phien = sessions.lay_phien(db, session_id=sid)
+        assert phien.dang_chay()
+        kn = sessions.lay_ket_noi(db, phien, user_id=dev.user_id)
+        assert kn["engine_id"] == "288780716"
+        assert kn["secret"] == "MatKhauPhien-Abc"
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _ghep_khac(client, email: str):
+    """Ghép một máy dưới MỘT user khác (để test quyền). Trả (device_id, priv)."""
+    from platform_core.db import get_session
+    from platform_core.nexus import agent_auth, devices
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session(); db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.flush()
+        _row, ma = devices.tao_ma_ghep(db, user_id=u.id)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/enroll", json={"code": ma, "public_key": pub})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def test_thiet_bi_khac_khong_bao_duoc_cho_phien_nguoi_ta(app_bat):
+    from platform_core.nexus import agent_auth
+    device_a, _priv_a = _ghep(app_bat)
+    sid = _tao_phien(device_a)
+    # Mot thiet bi B khac (user khac)
+    device_b, priv_b = _ghep_khac(app_bat, "other@example.com")
+
+    body = json.dumps({"session_id": sid, "engine_id": "1", "secret": "pw"}).encode()
+    path = "/nexus-agent/session/engine"
+    headers = {agent_auth.HEADER_DEVICE: device_b, **_ky(priv_b, "POST", path, body)}
+    r = app_bat.post(path, content=body, headers=headers)
+    assert r.status_code == 404, r.text      # 404 khong phai 403
+
+
+def test_bao_engine_khong_ky_thi_401(app_bat):
+    device_id, _priv = _ghep(app_bat)
+    sid = _tao_phien(device_id)
+    body = json.dumps({"session_id": sid, "engine_id": "1", "secret": "pw"}).encode()
+    r = app_bat.post("/nexus-agent/session/engine", content=body)
+    assert r.status_code == 401
