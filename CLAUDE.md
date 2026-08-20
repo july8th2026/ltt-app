@@ -190,7 +190,7 @@ nào**.
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 | Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92); **ĐÃ DEPLOY 2026-08-17**, tool chưa mở |
-| **LTT Nexus** (điều khiển máy từ xa) — discovery + kế hoạch | 🔜 `docs/nexus/`; N2 là lát cắt đầu tiên |
+| **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ ~63% 2026-08-20; xem `docs/nexus/EXECUTION_PLAN.md` §13 + `BUILD_CHARTER.md` |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập

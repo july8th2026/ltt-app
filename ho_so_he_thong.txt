@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b31206e688e416799e20166e7b8e2af6be980442b2f4d2ba17f419178d9bc8d4
+Fingerprint   : sha256:5a1cb9f499b949ad8ef384acd499de2024253970e15a07caa6a1c40abc480e80
 Nguồn đã quét : 1178 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2576,7 +2576,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10641425 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10641463 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2941,7 +2941,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=a2a642b7994d8531763689c4e28f9c927d35a2a68aa5069ae8d36805277663ee BYTES=16525 LINES=289
+SHA256=1790a94d5869ec21021db3f94093934ebff0374cabbf9631f1acc4bcd55a69e8 BYTES=16563 LINES=289
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3135,7 +3135,7 @@ nào**.
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 | Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92); **ĐÃ DEPLOY 2026-08-17**, tool chưa mở |
-| **LTT Nexus** (điều khiển máy từ xa) — discovery + kế hoạch | 🔜 `docs/nexus/`; N2 là lát cắt đầu tiên |
+| **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ ~63% 2026-08-20; xem `docs/nexus/EXECUTION_PLAN.md` §13 + `BUILD_CHARTER.md` |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
