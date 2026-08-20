@@ -14,6 +14,62 @@
 
 ---
 
+## 2026-08-20 (chiều/tối) — N3.2 đo THẬT trên hai VM, engine module, Q97/98/99
+
+Chuyển từ giấy sang máy thật. Chủ sản phẩm cấp hai VM Windows sau NAT Proxmox
+(VM106 đích, VM105 điều khiển); điều khiển **hoàn toàn qua SSH** qua gateway,
+không RDP, không computer-use — sau khi phiên trước cho thấy RDP+chụp-màn-hình
+làm phím lọt sang máy production.
+
+### Bảy câu V1–V8, trả lời bằng lệnh chạy trên máy thật
+
+- **V1** ✅ RustDesk **nguyên bản** trỏ về server LTT chỉ bằng `RustDesk2.toml`
+  (không sửa binary) — điều kiện sống còn của Rổ 1/Q97, xác minh HAI CHIỀU (máy
+  đích Established tới 21116, hbbs phía server cũng thấy). Hai bẫy: có hai bộ
+  config (bộ **dịch vụ** mới là bộ dùng), và phải dừng dịch vụ trước khi sửa.
+- **V2/V3** ✅ `--password` đặt + xoay mật khẩu không giám sát bằng lệnh.
+- **V4** ✅ bên điều khiển là **GUI, không headless** (`--help` mở cửa sổ Flutter,
+  chết `Could not create platform view` khi không có desktop). Giới hạn có lợi
+  cho Q93 ràng buộc 5.
+- **V5** ✅ ID `288780716` ổn định qua restart; ID cất mã hoá (`enc_id`) → dùng
+  `--get-id`, đừng parse.
+- **T10** ✅ **relay thụ động KHÔNG đọc được màn hình** — chứng minh từ **mã
+  nguồn** tại commit đã ghim (hbbr `recv→send_raw` không khoá; client mã hoá mỗi
+  khung bằng `secretbox`; khoá đối xứng niêm phong bằng khoá công khai máy đích).
+  Chặt hơn bắt gói. **Sắc thái phải nói với khách:** LTT vận hành cả điểm hẹn
+  lẫn relay nên **MITM chủ động khả dĩ** — ghi vào threat model, không giấu.
+- **V8** ✅ (phát hiện khi xây) `--password` **đòi admin**, `--get-id` thì không.
+  Xung đột N3.3b không-admin.
+
+### Code + quyết định
+
+- `nexus_agent/engine.py` + `test_236` (16) — module lái engine nguyên bản, hàm
+  thuần test được, tách rõ thao tác thường (`lay_id`) vs đặc quyền (`dat/xoay
+  mat_khau`). Mật khẩu dùng CSPRNG, không log.
+- **Q97** đã có; **Q98** (credit theo máy); **Q99** (Agent chạy admin — chọn
+  đường A cho V8, thu hẹp N3.3b). Threat model T10 cập nhật từ "chờ kiểm" thành
+  "đã xác minh + sắc thái MITM".
+
+### Chống bypass — hai lần bị chặn, cả hai đúng
+
+Cơ chế an toàn chặn `tscon /dest:console` (giống chiếm phiên) và sửa+restart
+dịch vụ hbbs trên gateway. **Không lách** — đổi sang ép relay phía client + bắt
+gói trên VM vứt đi, và chuyển T10 sang chứng minh từ mã nguồn. Nguyên tắc chỉ
+có giá trị khi không có ngoại lệ, nhất là với một sản phẩm điều khiển-máy-từ-xa.
+
+### Còn lại
+
+Wiring W1–W5 (vé → kết nối RustDesk thật) — feature nhiều file, thiết kế ở
+`N3_2_ENGINE.md` §7. Phần nhạy cảm: `engine_secret` đi qua server (điểm MITM của
+T10) — phải ngắn hạn/một-lần/xoá/không-log. Chưa xây, chốt phiên ở điểm mốc sạch.
+
+### Việc ngoài Nexus còn nợ
+
+Khởi động lại Claude Code để bỏ `nghi/`; thu hồi key `sk-ad7h…`; đổi mật khẩu
+VPS đã lộ; relay đang mở cho cả Internet (thấy 2 IP lạ nối 21118/21119).
+
+---
+
 ## 2026-08-20 — Hai quyết định gỡ chặn: RustDesk nguyên bản (Q97) + credit theo máy (Q98)
 
 Chủ sản phẩm hỏi ba câu, và hai câu đầu đổi bản chất phần còn lại của Nexus.
