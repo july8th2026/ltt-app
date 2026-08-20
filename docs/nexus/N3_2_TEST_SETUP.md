@@ -1,4 +1,4 @@
-# N3.2 — dựng 2 VPS thử nghiệm để đo, và vì sao KHÔNG dùng RDP
+# N3.2 — dựng máy thử nghiệm để đo, và vì sao KHÔNG dùng RDP
 
 > Lập 2026-08-20. Đi kèm `N3_2_ENGINE.md` (bảy câu V1–V7 phải trả lời trên máy thật).
 
@@ -56,33 +56,66 @@ Restart-Service sshd
 "XONG. IP may nay:"; (Invoke-WebRequest -Uri "https://api.ipify.org" -UseBasicParsing).Content
 ```
 
-Xong bước này, đưa tôi **hai địa chỉ IP**. Tôi không cần mật khẩu.
+Khối này chạy trên **cả hai** máy ở §4: VM Proxmox (máy vứt đi) và VPS gateway
+`45.76.185.75` (**không** phải máy vứt đi — xem §6). Tôi không cần mật khẩu.
 
 **Lưu ý về khoá:** đây là khoá **dùng riêng cho thử nghiệm**, cất ở thư mục tạm
-của phiên làm việc, **không** vào repo. Hai VPS này là máy vứt đi nên khoá cũng
-vứt theo; đừng dùng lại nó cho máy thật.
+của phiên làm việc, **không** vào repo. Đừng dùng lại nó cho máy thật.
 
-## 3. Hai VPS này đo được gì — và KHÔNG đo được gì
+## 3. Đã chốt 2026-08-20: máy đích là VM Proxmox, tỉ lệ đo sau
 
-Nói trước để không ai tưởng đã đo xong:
+Chủ sản phẩm chọn: **máy đích = một VM Windows trên Proxmox**, và **hoãn** phép
+đo tỉ lệ direct/relay.
 
-| Số | 2 VPS public IP |
+**Vì sao KHÔNG cài lên máy production:** máy phát triển cũng chính là máy chủ —
+`C:\LTTPlatform` tồn tại, `LTTStudioWeb`/`Worker`/`Codex` và `cloudflared` đều
+đang Running, tức `app.lttstudios.com` đang phục vụ khách thật. Đặt một engine
+điều khiển từ xa **có mật khẩu thường trực** lên đúng cái máy giữ secrets, CSDL
+khách và tunnel — trong lúc bài test còn xoay mật khẩu và ép relay — là dựng ra
+đúng thứ mà `04_THREAT_MODEL.md` T1 cảnh báo. VM cho ta **vị trí mạng và desktop
+thật** mà không đụng vào production.
+
+**Một hệ quả phải ghi lại, kẻo sau này hiểu nhầm:** VM Proxmox đi Internet **qua
+chính VPS gateway** (`10.50.0.0/16` → `45.76.185.75`), mà đó cũng là máy chạy
+relay. Nên VM đó thoát ra bằng IP của VPS — **nó không bao giờ cho được tỉ lệ
+NAT-nhà thật**, kể cả sau này. Đừng ai lấy VM này đo tỉ lệ rồi tưởng đã xong.
+
+### Đo được gì với cấu hình đã chốt
+
+| Số | VM Proxmox + VPS |
 |---|---|
-| **T10 — relay có đọc được nội dung màn hình không** | ✅ đo được (ép relay + bắt gói). **Quan trọng nhất** |
-| **GB/giờ khi qua relay** | ✅ đo chính xác (ép `ALWAYS_USE_RELAY`) |
-| **Độ trễ direct vs relay** | ✅ đo được (direct hơi lạc quan vì không qua NAT) |
-| **V1–V7** (cấu hình/credential/chỉ báo) | ✅ đo được hết |
-| **Tỉ lệ direct / relay THẬT** | ❌ **không đại diện** |
+| **T10 — relay có đọc được nội dung màn hình không** | ✅ đo được — phải **ép relay** nên topology không liên quan. **Quan trọng nhất** |
+| **V1–V7** (cấu hình, mật khẩu, ID, chỉ báo phiên) | ✅ đo được hết — chỉ cần desktop Windows thật |
+| **GB/giờ khi qua relay** | ✅ đo được (ép relay) |
+| **Tỉ lệ direct / relay thật** | ⬜ **HOÃN có chủ ý** — cần NAT↔NAT thật (máy sau router nhà + điện thoại 4G/CGNAT). Ghi vào R3 là còn nợ |
 
-Lý do dòng cuối: VPS có **IP công khai trực tiếp, không sau NAT**, nên xuyên NAT
-luôn thành công → sẽ ra ~100% direct. Khách thật ngồi sau router nhà hoặc CGNAT
-thì hoàn toàn khác. Tỉ lệ đó chỉ đo được bằng **máy sau NAT thật** (một máy mạng
-nhà + một điện thoại phát 4G là cặp rẻ nhất).
+## 4. Cần bạn dựng — hai máy, cùng một khối lệnh
 
-Nghĩa là 2 VPS đóng **3/4 con số của R3 + toàn bộ V1–V7**; còn đúng một con số
-phải chờ hai mạng dân dụng.
+**(a) VM Windows trên Proxmox** — máy đích. Dựng xong, chạy khối PowerShell ở §2
+**as Administrator** trong VM.
 
-## 4. Sau khi có IP, tôi làm theo thứ tự
+**(b) VPS gateway `45.76.185.75`** — chạy **cùng khối lệnh §2** trên nó. Hai lý
+do: tôi cần kiểm `hbbs`/`hbbr` bằng lệnh thay vì RDP, và tôi cần **tự thêm port
+forward** cho VM thay vì nhờ bạn mỗi lần.
+
+**(c) Mở một cổng vào VM.** Trên VPS, forward một cổng công khai vào SSH của VM
+(thay `<IP-VM>` bằng IP `10.50.x.x` của VM):
+
+```powershell
+netsh interface portproxy add v4tov4 listenport=2222 listenaddress=0.0.0.0 `
+  connectport=22 connectaddress=<IP-VM>
+New-NetFirewallRule -Name ssh-vm -DisplayName "SSH to test VM" `
+  -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 2222
+```
+
+Xong ba bước, đưa tôi **IP `10.50.x.x` của VM**. Tôi vào bằng
+`ssh -p 2222 administrator@45.76.185.75` và tự làm tiếp — không cần mật khẩu.
+
+**Ghi chú bảo mật:** VPS đang mở RDP 3389 ra Internet, rủi ro hơn SSH khoá nhiều.
+Sau khi SSH chạy, nên **giới hạn 3389 theo IP nguồn** hoặc đóng hẳn. Và mật khẩu
+VPS đã lộ trong phiên làm việc trước — vẫn cần đổi.
+
+## 5. Sau khi có IP, tôi làm theo thứ tự
 
 1. Kiểm SSH vào được cả hai, ghi lại phiên bản Windows.
 2. Tải RustDesk **nguyên bản** (Q97 — không sửa, không dùng custom client
@@ -97,7 +130,22 @@ phải chờ hai mạng dân dụng.
 7. **V7**: chụp màn hình trên VM, xác nhận chỉ báo phiên đủ mạnh cho ràng buộc 7.
 8. Ghi kết quả vào `N3_2_ENGINE.md` §3 — **thay giả thuyết bằng sự thật đo được**.
 
-## 5. Dọn sau khi xong
+## 6. Dọn sau khi xong — và một thứ TUYỆT ĐỐI không xoá
 
-Hai VPS là máy vứt đi. Khi đo xong: xoá VPS, xoá cặp khoá thử trong thư mục tạm.
+**Xoá được:** VM Windows trên Proxmox (máy vứt đi), và cặp khoá thử trong thư
+mục tạm.
+
+⚠️ **KHÔNG xoá VPS `45.76.185.75`.** Nó là **NAT gateway cho toàn bộ VM Proxmox**
+(Q96) — xoá nó là sập cả mạng VM, không chỉ Nexus. Trên VPS chỉ dọn đúng ba thứ
+đã thêm cho bài test:
+
+```powershell
+netsh interface portproxy delete v4tov4 listenport=2222 listenaddress=0.0.0.0
+Remove-NetFirewallRule -Name ssh-vm
+# Va go khoa thu khoi C:\ProgramData\sshdministrators_authorized_keys
+```
+
+Giữ hay gỡ `sshd` trên VPS là tuỳ bạn — nhưng nếu giữ thì **nên giữ**, vì SSH
+khoá an toàn hơn RDP mật khẩu đang mở ra Internet nhiều.
+
 **Không** để khoá thử này còn hiệu lực ở bất kỳ máy nào sống tiếp.
