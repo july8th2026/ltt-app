@@ -516,7 +516,24 @@ nội bộ, chưa phải để mở bán.
 | 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **35%** | ✅ runbook + **E2E LIVE trên Windows** (agent↔control plane, `e2e_live`); ⬜ chạy trên prod |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 80%** (2026-08-21, thêm **P4/P6/P8 + billing enforcement**: target từ chối điều khiển khi hết credit, nhật ký 'ai vào máy tôi', việt hoá mặc định — 42 test).
+**Tổng có trọng số ≈ 82%** (2026-08-21, thêm **cưỡng chế billing tầng relay**: fork hbbs từ chối môi giới cho máy chưa trả — client sửa không lách được. 48 test).
+
+#### Cột mốc 2026-08-21 (b) — Cưỡng chế billing ở tầng RELAY (răng thật)
+
+Ba phần, xong cả code + build + công bố (chỉ còn deploy lên gateway — việc của
+người vận hành, đã ghi ở `LThbbs/LTT_HBBS_FORK.md`):
+
+* **A (platform):** cột `nexus_devices.rustdesk_id` (migration `5a3a13144782`,
+  round-trip xác minh) + `GET /nexus-agent/relay-check` (bí mật dùng chung,
+  constant-time; chưa cấu hình→404 fail-closed, ID lạ→cho qua, đã đăng ký+chưa
+  trả→chặn). 6 test (`test_243`).
+* **B (client):** `status()` báo kèm RustDesk ID để platform ánh xạ ID→tài khoản.
+* **C (fork hbbs):** fork `rustdesk-server 1.1.16` → `handle_punch_hole_request`
+  hỏi platform trước khi môi giới, trả "hết credit" nếu chưa trả. **Off mặc định
+  + fail-open** (relay không bao giờ tối vì platform chớp). Build `hbbs.exe` 6.6MB
+  (SHA-256 `6621193e…`), công bố nhánh `ltt-hbbs`.
+
+Đây là thứ client bị sửa **không lách được** — quyết định của chủ sản phẩm.
 
 #### Cột mốc 2026-08-20 (b) — fork LTTNexus BUILD trên Windows thật
 
