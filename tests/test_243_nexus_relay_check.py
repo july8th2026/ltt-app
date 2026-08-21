@@ -141,3 +141,45 @@ def test_co_gia_chua_tra_thi_chan(app_bat, monkeypatch):
     assert r.status_code == 200
     assert r.json()["allowed"] is False
     assert r.json()["managed"] is True
+
+
+# ── Thu hồi máy phải CẮT ở relay (lỗ hổng đã đóng 2026-08-21) ────────────────
+
+def test_may_da_thu_hoi_thi_relay_TU_CHOI(app_bat, monkeypatch):
+    """Thu hồi máy mất phải cắt kết nối THẬT, kể cả khi thuê bao còn hạn.
+
+    Lỗ hổng cũ: `tim_theo_rustdesk_id` lọc bỏ máy đã thu hồi, nên relay không
+    thấy máy → tưởng "ID lạ, không do LTT quản" → **cho qua vô điều kiện**. Thu
+    hồi một máy lại GỠ cổng kiểm soát của chính nó thay vì đóng lại.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    did, priv = _register(app_bat)
+    rid = "998877665"
+    _report_id(app_bat, did, priv, rid)
+
+    hdr = {"X-LTT-Relay-Secret": SECRET}
+    truoc = app_bat.get(f"/nexus-agent/relay-check?id={rid}", headers=hdr)
+    assert truoc.status_code == 200, truoc.text
+    assert truoc.json()["allowed"] is True
+    assert truoc.json()["managed"] is True
+
+    # thuê bao còn hạn dài + máy bị thu hồi
+    gen = get_session(); db = next(gen)
+    try:
+        d = db.get(devices.NexusDevice, did)
+        d.paid_until = datetime.now(timezone.utc) + timedelta(days=25)
+        devices.thu_hoi(db, d, by="chu-may")
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    sau = app_bat.get(f"/nexus-agent/relay-check?id={rid}", headers=hdr)
+    assert sau.status_code == 200, sau.text
+    assert sau.json()["allowed"] is False, "may da thu hoi ma relay van cho qua"
+    assert sau.json()["managed"] is True, "phai nhan la may CUA LTT bi tu choi"

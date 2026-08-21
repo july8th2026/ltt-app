@@ -41,6 +41,22 @@ router = APIRouter(prefix="/nexus-agent", tags=["nexus-agent"])
 _NO_STORE = {"Cache-Control": "no-store"}
 
 
+def _thu_phi_ngay(db, device) -> None:
+    """Thử thu phí cho một máy ngay lập tức (kích hoạt tức thì).
+
+    **Nuốt lỗi có chủ ý, nhưng có log:** đây là đường phục vụ khách. Thu phí
+    hỏng thì vòng quét định kỳ vẫn thu lại được, còn để nó ném ở đây thì khách
+    không đăng ký được máy — đánh đổi sai.
+    """
+    try:
+        from platform_core.nexus import billing
+
+        billing.thu_phi_mot_may(db, device)
+    except Exception:                                          # noqa: BLE001
+        log.warning("khong thu phi ngay duoc cho may %s",
+                    getattr(device, "id", "?"), exc_info=True)
+
+
 def _dem(ten: str) -> None:
     """Đếm một sự kiện Nexus cho trang vận hành.
 
@@ -372,6 +388,11 @@ async def client_register(request: Request):
             hardware_fingerprint=str(body.get("hardware_fingerprint") or "")[:128],
             platform=str(body.get("platform") or "")[:32],
             agent_version=str(body.get("agent_version") or "")[:32])
+        db.flush()
+        # Kích hoạt NGAY, không đợi vòng quét 15 phút: khách vừa cài xong mà
+        # `paid_until` còn rỗng thì `da_thanh_toan` trả False và relay chặn —
+        # tức là "trả tiền rồi vẫn không dùng được" ở đúng phút đầu tiên.
+        _thu_phi_ngay(db, device)
         db.commit()
         _dem("nexus:dang_ky_may")
         return JSONResponse({"device_id": device.id,
@@ -418,7 +439,12 @@ async def status(
         if isinstance(body, dict) and body.get("rustdesk_id"):
             devices.dat_rustdesk_id(db, device,
                                     rustdesk_id=str(body.get("rustdesk_id")))
-            db.commit()
+
+        # Máy hỏi trạng thái mỗi phút. Thử thu phí ngay tại đây nghĩa là khách
+        # nạp credit xong thì mở khoá trong vòng một phút, thay vì chờ vòng
+        # quét. Hàm này không làm gì khi miễn phí hoặc còn hạn.
+        _thu_phi_ngay(db, device)
+        db.commit()
 
         from platform_core import credit
         from platform_core.nexus import billing
@@ -568,10 +594,21 @@ async def relay_check(
     gen = _mo_db()
     db = next(gen)
     try:
-        device = devices.tim_theo_rustdesk_id(db, rustdesk_id=str(id or ""))
+        # `gom_da_thu_hoi=True`: relay PHAI thay may da thu hoi thi moi tu
+        # choi duoc no. Khong thay = tuong ID la = cho qua.
+        device = devices.tim_theo_rustdesk_id(
+            db, rustdesk_id=str(id or ""), gom_da_thu_hoi=True)
         if device is None:
             # ID không do LTT quản → không chặn (relay chạy như thường).
             return JSONResponse({"allowed": True, "managed": False},
+                                headers=_NO_STORE)
+        if device.revoked_at is not None:
+            # Máy đã thu hồi thì CẮT, dù thuê bao còn hạn. Trước đây chỗ này chỉ
+            # hỏi `da_thanh_toan`, nên một máy bị mất mà chủ đã thu hồi vẫn được
+            # relay môi giới cho tới khi hết tháng — đúng thứ trang "Máy của
+            # tôi" hứa là cắt được ngay.
+            _dem("nexus:relay_chan_thu_hoi")
+            return JSONResponse({"allowed": False, "managed": True},
                                 headers=_NO_STORE)
         allowed = billing.da_thanh_toan(device)
         _dem("nexus:relay_cho_qua" if allowed else "nexus:relay_chan")

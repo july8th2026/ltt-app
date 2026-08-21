@@ -255,15 +255,25 @@ def dat_rustdesk_id(db, device: NexusDevice, *, rustdesk_id: str) -> bool:
     return True
 
 
-def tim_theo_rustdesk_id(db, *, rustdesk_id: str) -> NexusDevice | None:
+def tim_theo_rustdesk_id(db, *, rustdesk_id: str,
+                         gom_da_thu_hoi: bool = False) -> NexusDevice | None:
     """Tra thiết bị theo ID RustDesk — relay LTT (hbbs) dùng để ánh xạ ID →
-    tài khoản → trạng thái trả phí. Bỏ qua máy đã thu hồi."""
+    tài khoản → quyền được môi giới.
+
+    ⚠️ `gom_da_thu_hoi=True` là **bắt buộc cho relay**. Trước đây hàm này luôn
+    lọc bỏ máy đã thu hồi, nên relay không thấy máy → coi là "ID lạ, không do
+    LTT quản" → **cho qua vô điều kiện**. Tức là thu hồi một máy lại GỠ cổng
+    kiểm soát của chính nó thay vì đóng lại: máy bị mất vẫn kết nối được, đúng
+    thứ trang "Máy của tôi" hứa cắt. Nơi cần quyết định cho/chặn phải NHÌN THẤY
+    máy đã thu hồi mới từ chối được nó.
+    """
     rid = str(rustdesk_id or "").strip()
     if not rid:
         return None
-    return db.execute(select(NexusDevice).where(
-        NexusDevice.rustdesk_id == rid,
-        NexusDevice.revoked_at.is_(None))).scalars().first()
+    dieu_kien = [NexusDevice.rustdesk_id == rid]
+    if not gom_da_thu_hoi:
+        dieu_kien.append(NexusDevice.revoked_at.is_(None))
+    return db.execute(select(NexusDevice).where(*dieu_kien)).scalars().first()
 
 
 def danh_sach(db, *, user_id: str, gom_da_thu_hoi: bool = False) -> list:

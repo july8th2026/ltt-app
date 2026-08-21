@@ -15,6 +15,7 @@ Giá/chu kỳ/ân hạn là tham số của người (D12) — module này nhậ
 """
 from __future__ import annotations
 
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -27,6 +28,8 @@ from platform_core.nexus.tables import NexusDevice
 #: Một chu kỳ thuê bao. 30 ngày. **Giá đã chốt (D12, 2026-08-20): 50 credit/máy/
 #: tháng** — đặt `LTT_NEXUS_GIA_MAY_THANG=50` trong secrets/app.env lúc go-live.
 #: Mặc định code vẫn 0 (an toàn); 50 là cấu hình vận hành, không phải hằng số.
+log = logging.getLogger(__name__)
+
 CHU_KY_NGAY = 30
 
 
@@ -72,6 +75,39 @@ def da_thanh_toan(device: NexusDevice, *, now: datetime | None = None,
     return han > (now or _now())
 
 
+def thu_phi_mot_may(db, device: NexusDevice, *, now: datetime | None = None,
+                    env: dict | None = None) -> bool:
+    """Thu phí cho ĐÚNG MỘT máy nếu nó đã tới kỳ. Trả True nếu máy đang có hạn
+    sau lời gọi này (đã trả sẵn, hoặc vừa trừ được).
+
+    Vì sao cần hàm cho một máy: vòng quét chạy **15 phút một lần**. Nếu chỉ có
+    vòng quét thì khách vừa cài xong, vừa đăng nhập — `paid_until` còn rỗng nên
+    **bị chặn tới 15 phút dù đã có credit**. Ấn tượng đầu tiên của sản phẩm là
+    "trả tiền rồi mà không dùng được". Gọi hàm này ngay lúc đăng ký máy và mỗi
+    lần máy hỏi trạng thái thì việc kích hoạt là **tức thì**.
+
+    Cùng quy tắc với `thu_phi_thang`: miễn phí thì không làm gì; còn hạn thì
+    không trừ lại; thiếu credit thì **không trừ, không đẩy hạn** (không nợ).
+    """
+    gia = gia_may_thang(env)
+    if gia <= 0:
+        return True                               # miễn phí: luôn coi là đủ
+    if device.revoked_at is not None:
+        return False
+    current = now or _now()
+    han = device.paid_until
+    if han is not None and han.tzinfo is None:
+        han = han.replace(tzinfo=timezone.utc)
+    if han is not None and han > current:
+        return True                               # còn hạn, chưa tới kỳ
+    if not credit.tru(db, device.user_id, gia, kind=CREDIT_NEXUS_BILL,
+                      note=f"nexus thue bao may {device.id}"):
+        return False                              # thiếu credit → chưa thanh toán
+    goc = han if (han is not None and han > current - timedelta(days=CHU_KY_NGAY)) else current
+    device.paid_until = goc + timedelta(days=CHU_KY_NGAY)
+    return True
+
+
 def thu_phi_thang(db, *, now: datetime | None = None,
                   env: dict | None = None) -> dict:
     """Một lượt tính phí: mỗi máy còn hiệu lực mà thuê bao đã hết → trừ một tháng.
@@ -101,19 +137,22 @@ def thu_phi_thang(db, *, now: datetime | None = None,
         if han is not None and han > current:
             ket["bo_qua"] += 1                    # còn hạn, chưa tới kỳ
             continue
-        du = credit.tru(db, dev.user_id, gia, kind=CREDIT_NEXUS_BILL,
-                        note=f"nexus thue bao may {dev.id}")
-        if du:
-            # Đẩy hạn từ mốc cũ nếu còn gần, hoặc từ bây giờ nếu đã quá lâu —
-            # tránh dồn nhiều tháng nợ vào một lần trừ.
-            goc = han if (han is not None and han > current - timedelta(days=CHU_KY_NGAY)) else current
-            dev.paid_until = goc + timedelta(days=CHU_KY_NGAY)
-            ket["tru"] += 1
-        else:
-            ket["thieu_credit"] += 1
+        try:
+            truoc = dev.paid_until
+            if thu_phi_mot_may(db, dev, now=current, env=env):
+                # `True` mà hạn không đổi nghĩa là máy đã có hạn từ trước —
+                # nhánh đó đã bị `continue` ở trên, nên ở đây là vừa trừ.
+                ket["tru"] += 1 if dev.paid_until != truoc else 0
+            else:
+                ket["thieu_credit"] += 1
+        except Exception:                          # noqa: BLE001
+            # MỘT máy hỏng không được giết cả lượt thu phí: nếu không, một dòng
+            # dữ liệu lạ làm **cả nền tảng** ngừng thu tiền, âm thầm.
+            ket["loi"] = ket.get("loi", 0) + 1
+            log.warning("khong thu phi duoc may %s", dev.id, exc_info=True)
     db.flush()
     return ket
 
 
 __all__ = ["CHU_KY_NGAY", "an_han_ngay", "da_thanh_toan", "gia_may_thang",
-           "thu_phi_thang"]
+           "thu_phi_mot_may", "thu_phi_thang"]
