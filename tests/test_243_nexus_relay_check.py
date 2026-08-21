@@ -13,7 +13,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-PASSWORD = "mat-khau-relay-that-0123456789"
+PASSWORD = "test-mat-khau-relay-0123456789"
 SECRET = "relay-shared-secret-xyz"
 
 

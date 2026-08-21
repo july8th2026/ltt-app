@@ -12,7 +12,7 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-PASSWORD = "mat-khau-client-that-0123456789"
+PASSWORD = "test-mat-khau-client-0123456789"
 
 
 @pytest.fixture()

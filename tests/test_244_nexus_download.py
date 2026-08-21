@@ -84,10 +84,44 @@ def test_trang_tai_hien_nut_tai_khi_co_url(app_bat, monkeypatch):
         "version": "1.0.0",
         "platforms": {"windows": {"label": "Windows 10/11 (64-bit)",
                                   "available": True,
-                                  "url": "https://dl.lttstudios.com/LTTNexus.zip",
+                                  "url": "/nexus/dl/LTTNexus.zip",
                                   "sha256": "deadbeef", "kind": "zip"}},
     }), encoding="utf-8")
     r = client.get("/tai-xuong")
     assert r.status_code == 200
     assert "Tải xuống" in r.text
     assert "deadbeef" in r.text
+
+
+def test_dl_phuc_vu_file_that(app_bat):
+    """Thả file vào data/nexus_dist/ → /nexus/dl/<tên> trả đúng nội dung + type."""
+    client, tmp_path = app_bat
+    dist = tmp_path / "data" / "nexus_dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    (dist / "LTTNexus-1.0.0-android-arm64.apk").write_bytes(b"PK\x03\x04apkbytes")
+    r = client.get("/nexus/dl/LTTNexus-1.0.0-android-arm64.apk")
+    assert r.status_code == 200, r.text
+    assert r.content == b"PK\x03\x04apkbytes"
+    assert r.headers["content-type"] == "application/vnd.android.package-archive"
+    assert "immutable" in r.headers.get("cache-control", "")
+
+
+def test_dl_khong_co_file_tra_404(app_bat):
+    client, _ = app_bat
+    r = client.get("/nexus/dl/khong-ton-tai.zip")
+    assert r.status_code == 404
+
+
+@pytest.mark.parametrize("bad", [
+    "..%2f..%2fsecrets%2fapp.env",   # path traversal đã encode
+    "a/b.zip",                        # có gạch chéo
+    ".hidden",                        # bắt đầu bằng dấu chấm
+    "con;rm.zip",                     # ký tự lạ
+])
+def test_dl_chan_path_traversal(app_bat, bad):
+    client, tmp_path = app_bat
+    # tạo một file "mồi" ngoài dist để chắc chắn không rò
+    (tmp_path / "data" / "secret.txt").write_text("top-secret", encoding="utf-8")
+    r = client.get(f"/nexus/dl/{bad}")
+    assert r.status_code == 404
+    assert "top-secret" not in r.text

@@ -26,6 +26,10 @@ data/workers.json
 
 # Audit log (may contain PII)
 data/audit_log.jsonl
+# LTT Nexus: ban cai + manifest la DU LIEU VAN HANH (dat tren server,
+# khong nhoi binary vao git; manifest thieu binary = link vo). Deploy rieng.
+data/nexus_dist/
+data/nexus_versions.json
 
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 logs/

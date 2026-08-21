@@ -277,6 +277,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # cho mọi thứ ngoài /static/ chặn cả lớp lỗi này.
         if _HASHED_FRONTEND_ASSET.fullmatch(request.url.path):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif request.url.path.startswith("/nexus/dl/"):
+            # Bản cài LTT Nexus: CÔNG KHAI, giống hệt cho mọi người, có version
+            # trong tên file (đổi bản = đổi URL). An toàn để biên cache immutable
+            # — không dính lớp lỗi rò-cache-per-user ở trên (không auth, không
+            # riêng tư). Đỡ origin phục vụ lại 26MB mỗi lượt tải.
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif request.url.path.startswith(("/static/agent-canvas/",
                                           "/static/autosub-studio/")):
             response.headers["Cache-Control"] = "no-store"

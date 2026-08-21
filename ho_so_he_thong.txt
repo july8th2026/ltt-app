@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:5a1cb9f499b949ad8ef384acd499de2024253970e15a07caa6a1c40abc480e80
-Nguồn đã quét : 1178 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:19315796392fa3b0ffd5613f09a4829f0c7b546868835398624ee0a1da870b46
+Nguồn đã quét : 1187 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -653,7 +653,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /facebook/page → fb_toggle_page | auth~login | server/routes/accounts.py:116
 - [platform] POST   /facebook/system-token → fb_import_system_token | auth~login | server/routes/accounts.py:86
 - [platform] POST   /facebook/test → fb_test | auth~login | server/routes/accounts.py:101
-- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:365
+- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:375
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
@@ -858,8 +858,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - job_events → JobEvent | platform_core/models.py:329
 - jobs → Job | platform_core/models.py:249
 - nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
-- nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:122
-- nexus_sessions → NexusSession | platform_core/nexus/tables.py:173
+- nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:129
+- nexus_sessions → NexusSession | platform_core/nexus/tables.py:180
 - nhat_ky_admin → NhatKyAdmin | platform_core/models.py:522
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
@@ -886,7 +886,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
 
-6. ALEMBIC MIGRATIONS (44)
+6. ALEMBIC MIGRATIONS (45)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -931,6 +931,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - d649cfad754f ← b165aa3584e0 | nexus: ve phien dieu khien (Q93 rang buoc 2 va 6) | alembic/versions/20260817_2200_nexus_sessions.py
 - 7445f5031805 ← d649cfad754f | nexus: cau noi engine vao phien (W1) | alembic/versions/20260820_1600_nexus_session_engine.py
 - 455d0097906f ← 7445f5031805 | nexus: cot paid_until cho thue bao theo may/thang (Q98, Phase 5) | alembic/versions/20260820_1700_nexus_device_paid_until.py
+- 5a3a13144782 ← 455d0097906f | nexus: cot rustdesk_id cho cuong che billing o tang relay (Q101, P-relay) | alembic/versions/20260821_1200_nexus_device_rustdesk_id.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -947,7 +948,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (113 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (114 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -999,6 +1000,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_NEXUS_AN_HAN_NGAY
 - LTT_NEXUS_GIA_MAY_THANG
 - LTT_NEXUS_RELAY_KEY
+- LTT_NEXUS_RELAY_SECRET
 - LTT_NEXUS_RELAY_SERVER
 - LTT_NEXUS_RELEASE_MANIFEST
 - LTT_NEXUS_RUSTDESK_EXE
@@ -1062,7 +1064,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (241 file pytest + 3 frontend)
+10. QUALITY GATES (246 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1241,6 +1243,11 @@ Test inventory:
 - tests/test_237_nexus_wiring.py
 - tests/test_238_nexus_billing.py
 - tests/test_23_antispam_phase3_4.py
+- tests/test_240_nexus_client_login.py
+- tests/test_241_nexus_client_api.py
+- tests/test_242_nexus_session_event.py
+- tests/test_243_nexus_relay_check.py
+- tests/test_244_nexus_download.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -1330,8 +1337,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1178 file)
-Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:887, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1187 file)
+Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:895, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1344,7 +1351,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (46)
+[alembic] (47)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1391,6 +1398,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - alembic/versions/20260817_2200_nexus_sessions.py
 - alembic/versions/20260820_1600_nexus_session_engine.py
 - alembic/versions/20260820_1700_nexus_device_paid_until.py
+- alembic/versions/20260821_1200_nexus_device_rustdesk_id.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1946,7 +1954,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (100)
+[platform_core] (101)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1992,6 +2000,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/nexus/release.py
 - platform_core/nexus/sessions.py
 - platform_core/nexus/tables.py
+- platform_core/nexus/versions.py
 - platform_core/observability.py
 - platform_core/password_hashing.py
 - platform_core/payments/__init__.py
@@ -2071,7 +2080,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (140)
+[server] (142)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2099,6 +2108,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - server/i18n_middleware.py
 - server/nexus/__init__.py
 - server/nexus/routes.py
+- server/nexus_download.py
 - server/request_body_limit.py
 - server/routes/__init__.py
 - server/routes/accounts.py
@@ -2195,6 +2205,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - server/templates/nap_don.html
 - server/templates/nap_khong_thay.html
 - server/templates/nexus_dieu_khien.html
+- server/templates/nexus_download.html
 - server/templates/nexus_ma_ghep.html
 - server/templates/nexus_nhat_ky.html
 - server/templates/nexus_tai.html
@@ -2220,7 +2231,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (258)
+[tests] (263)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2410,6 +2421,11 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_237_nexus_wiring.py
 - tests/test_238_nexus_billing.py
 - tests/test_23_antispam_phase3_4.py
+- tests/test_240_nexus_client_login.py
+- tests/test_241_nexus_client_api.py
+- tests/test_242_nexus_session_event.py
+- tests/test_243_nexus_relay_check.py
+- tests/test_244_nexus_download.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -2576,7 +2592,7 @@ Phân bố extension: .cfg:1, .css:7, .html:82, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1178 file; 10641463 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1187 file; 10700240 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -6368,6 +6384,42 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("nexus_devices", "paid_until")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260821_1200_nexus_device_rustdesk_id.py
+SHA256=390863abe48a863ef1b9800cac049e7a18baddd31f93b7b9cd3d14caa306b2ed BYTES=852 LINES=30
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nexus: cot rustdesk_id cho cuong che billing o tang relay (Q101, P-relay)
+
+Them mot cot NOT NULL (server_default "") vao `nexus_devices`: ID RustDesk cua
+engine tren may, do client bao len. Relay LTT (hbbs da fork) anh xa ID -> tai
+khoan -> trang thai tra phi de tu choi moi gioi ket noi khi chua tra.
+
+Chi them, khong xoa du lieu. server_default "" de dong cu (neu co) hop le.
+
+Revision ID: 5a3a13144782
+Revises: 455d0097906f
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "5a3a13144782"
+down_revision = "455d0097906f"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("nexus_devices", sa.Column(
+        "rustdesk_id", sa.String(length=32), nullable=False,
+        server_default=""))
+
+
+def downgrade() -> None:
+    op.drop_column("nexus_devices", "rustdesk_id")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -84599,7 +84651,7 @@ chặn bởi một quyết định về hạ tầng, không phải bởi code.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=9a96fb5059a0b2c5df73593174ec0b459fd742f232e687364c88eac9ba01509d BYTES=82186 LINES=230
+SHA256=f407c541af48802773ecec9b46e10f8755a1cfe2d7a26c1d2a7d5f4b5b99656e BYTES=84900 LINES=231
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -84728,6 +84780,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q98 | Mô hình tiền của Nexus — credit theo máy/tháng, nạp qua trình duyệt (thay D3) | **Thay 'thuê bao tháng' của D3 bằng: trừ CREDIT theo số máy đã ghép, mỗi tháng.** Đăng nhập qua tài khoản LTTSTUDIOSAPP (SSO, đã có). Credit liệt kê theo tài khoản (dùng lại sổ credit). **Nạp thêm credit CHỈ trong trình duyệt** (luồng PayOS H9 đã chạy); nút 'nạp credit' trên app/tray **mở trình duyệt**, app KHÔNG xử lý thanh toán. Hết credit → máy ngừng cấp vé điều khiển tới khi nạp (không auto-charge). | **Vì sao đổi khỏi D3:** chủ sản phẩm chốt (2026-08-20) dùng credit thay subscription. **Nó gỡ đúng phần khó D3 để mở:** D3 cần recurring auto-charge — mà Q53 đã **cố ý hoãn** vì thiếu consent/cap/replay. Trừ-credit + nạp-trong-trình-duyệt **không cần** auto-charge, **không** dính luật thanh toán app store (app không đụng tiền), và **dùng lại** PayOS H9 đang chạy. **Vì sao trừ ở tầng vé, không phải lượt job:** Nexus không nộp job cho worker (manifest `credit_cost=None`), nên điểm thu là **quyền mở phiên**: hết credit thì `cap_ve` từ chối. **Còn để mở (tham số, không phải kiến trúc):** giá N credit/máy/tháng; chu kỳ (theo ngày ghép hay lịch tháng); ân hạn khi thiếu credit. Ba số này chủ sản phẩm đặt; đường trừ credit xây sẵn nhận chúng làm cấu hình. |
 | Q99 | Agent Nexus chạy QUYỀN ADMIN cho điều khiển không giám sát (thu hẹp N3.3b) | **Agent chạy với quyền admin** (Windows Service hoặc task SYSTEM, cài bằng MỘT lần nâng quyền), để tự xoay mật khẩu phiên RustDesk. | **Vì sao cần:** đo trên máy thật (N3_2_ENGINE §V8) cho thấy `--password` — thứ dựng lại tính vé-một-lần của Q93 ràng buộc 2 — **đòi quyền admin**; ghi config service profile và dừng dịch vụ RustDesk cũng vậy. **Vì sao đây KHÔNG phá Q95/T1:** N3.3b tránh admin *mỗi lần chạy* (màn hình UAC lặp lại mà T1 lợi dụng), không phải admin *lúc cài*. Điều khiển không giám sát đằng nào cũng cần một lần nâng quyền lúc cài (RustDesk là dịch vụ). Một Service/task-SYSTEM cài một lần thì chạy đặc quyền tự động về sau, **không** hỏi UAC lại — nên số lần khách thấy UAC vẫn là **một**, đúng bằng lúc cài RustDesk. **Đổi lại, chấp nhận có ý thức:** mọi thứ Agent làm giờ đặc quyền, nên một lỗi trong Agent là lỗi đặc quyền — bù lại bằng giữ Agent nhỏ và không mở cổng nghe vào (nó chỉ gọi ra). **Đường B đã cân, không chọn:** trợ lý đặc quyền ~50 dòng + Agent thường giữ bề mặt nhỏ hơn, nhưng thêm một thành phần + IPC; chủ sản phẩm chọn A cho v1 vì đơn giản. Đổi sang B sau là một quyết định riêng, không phá dữ liệu. **Thu hẹp N3.3b:** dòng Scheduled-Task-không-admin của N3.3b nay chỉ áp cho tầng *chỉ-danh-tính* (nếu có); tầng điều khiển không giám sát dùng Q99. |
 | Q100 | Cá nhân hóa MẠNH RustDesk — chọn RỔ 2, tuân AGPL (đảo Q97) | **Sửa mạnh client RustDesk và tuân AGPL-3.0 bằng cách CÔNG BỐ mã nguồn bản sửa** — không mua license thương mại, không giữ kín fork. Thương hiệu LTT, cấu hình server nhúng sẵn, chỉ báo phiên tuỳ biến đều đưa vào chính client. | **Vì sao đổi khỏi Q97:** chủ sản phẩm (2026-08-20) chọn cá nhân hóa mạnh, chấp nhận nghĩa vụ mở mã fork. AGPL **cấp sẵn** quyền sửa — **không cần xin phép RustDesk, không nộp code cho ai** — đổi lại phải công bố mã bản sửa cho người dùng, dưới chính AGPL-3.0. **Cái này KÍCH HOẠT LẠI ba thứ Q97 đã hạ:** (1) nghĩa vụ §13/§§4-6 — công bố mã fork + source-offer (03_OSS_LICENSE §6 #2/#3, từ N/A → PHẢI LÀM); (2) **legal review trở lại BẮT BUỘC trước phát hành thương mại** — vì fork mở nguồn (AGPL) mà Agent giữ kín (độc quyền) cần ranh giới tiến trình+IPC đủ chắc để AGPL không lây sang Agent; (3) **R1 (AGPL lây sang phần độc quyền) trở lại mức CAO.** **Việc đã đo KHÔNG phí:** V1-V8 và `engine.py` vẫn dùng — Rổ 2 THÊM khả năng sửa client, không bỏ nền cũ; cấu hình nhúng sẵn thay file config phơi ra, chỉ báo phiên tự dựng (giải V7), branding LTT. **Ràng buộc mang theo (rule 2/5/6 của OSS_BOUNDARY):** ghim đúng commit gốc, mọi sửa đổi là **patch theo dõi được** trên fork công khai, `THIRD_PARTY_NOTICES` + toàn văn AGPL. **KHÔNG copy/link mã AGPL vào Agent** — ranh giới tiến trình vẫn là ranh giới cứng, giờ còn quan trọng hơn vì nó là thứ giữ Agent khỏi bị kéo vào nghĩa vụ mở mã. |
+| Q101 | Nexus KHÔNG dùng web-broker — web chỉ docs/tài khoản/credit; kết nối trong app native (thu hẹp Q93 r.b. 2/3) | **Sản phẩm = app NATIVE: client Windows (fork Q100) + iOS + Android.** Kết nối client↔relay LTT↔client như RustDesk (nhập ID + mật khẩu), **có UNATTENDED** (máy đích chạy dịch vụ, mật khẩu cố định/xoay). **Web `app.lttstudios.com` = CHỈ hướng dẫn/mô tả + đăng nhập tài khoản LTT + nạp credit.** KHÔNG danh sách máy trên web, KHÔNG "bấm điều khiển" trên web, KHÔNG broker vé. Tài khoản LTT + credit sống **trong client**; trạng thái trả phí kiểm qua LTT API (có thể cưỡng chế ở rendezvous LTT sau). | **Vì sao đổi:** chủ sản phẩm làm rõ (2026-08-20) — web chỉ để *hướng dẫn/mô tả*, "không có agent kết nối từ web đến máy tính"; sản phẩm là *phần mềm cài Windows + app iOS + Android*. **Nó thu hẹp Q93:** ràng buộc 2 (vé-một-lần do control plane WEB cấp) và vai trò `apps/nexus` (bề mặt khách trên web) **không còn** theo mô hình web-broker; uỷ quyền chuyển sang **ID+mật khẩu của RustDesk qua relay LTT + đăng nhập tài khoản LTT trong client**. **Cái gì GIỮ nguyên từ Q93:** khoá riêng không rời máy (#1), phiên ghi bất biến (#6), chỉ báo phiên không tắt được (#7), cập nhật xác minh chữ ký (#10), data plane tách khỏi web (#3 — vẫn đúng: màn hình đi qua relay, không qua web), fail-closed. **Việc đã làm KHÔNG phí:** fork build (Q100), relay N1 (Q96), config nhúng, toolchain, và **khái niệm credit/máy/tháng (Q98) vẫn dùng** — chỉ dời điểm thu từ "cấp vé trên web" sang "client + relay". Wiring web W1–W5 + `e2e_live` + `apps/nexus` UI là **bằng chứng kỹ thuật đã chạy**, nhưng **không phải hướng sản phẩm** — đóng băng, không phát triển thêm (không xoá: còn giá trị tham chiếu + có thể tái dùng cho bảng điều khiển tài khoản trên web). **Unattended CẦN** (chủ sản phẩm chốt): client Windows chạy dịch vụ, dùng Q99 (agent/dịch vụ đặc quyền cài một lần) để đặt/xoay mật khẩu — hoặc cơ chế unattended sẵn của fork. **Còn mở (tham số, không phá kiến trúc):** cưỡng chế billing ở đâu — client tự kiểm qua LTT API (đơn giản, MVP) so với cưỡng chế ở **rendezvous LTT** (chắc hơn, nhưng hbbs nguyên bản không có account-gating → cần fork hbbs hoặc policy layer, và hbbs cũng AGPL). Chọn client-side cho v1, rendezvous-side là hardening sau. |
 ---
 
 ## 2. Ràng buộc bất biến
@@ -109208,7 +109261,7 @@ __all__ = ["BAT_DAU_PHIEN", "BOI_CHU", "CAP_VE", "GHEP", "KET_THUC_PHIEN",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/billing.py
-SHA256=eaba092d73357767f137be37c7879efaf19a193cbdb03f42f50b2cd7862936ae BYTES=4990 LINES=117
+SHA256=a998a8d17aff9340c6bd335bcc9fa1ac6314733fd8646aa82b35fee090ba89ab BYTES=5164 LINES=119
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Thuê bao Nexus: trừ credit theo số máy đã ghép, mỗi tháng (Q98).
 
@@ -109236,7 +109289,9 @@ from platform_core import credit
 from platform_core.models import CREDIT_NEXUS_BILL
 from platform_core.nexus.tables import NexusDevice
 
-#: Một chu kỳ thuê bao. 30 ngày cho đơn giản; đổi chu kỳ là quyết định của người.
+#: Một chu kỳ thuê bao. 30 ngày. **Giá đã chốt (D12, 2026-08-20): 50 credit/máy/
+#: tháng** — đặt `LTT_NEXUS_GIA_MAY_THANG=50` trong secrets/app.env lúc go-live.
+#: Mặc định code vẫn 0 (an toàn); 50 là cấu hình vận hành, không phải hằng số.
 CHU_KY_NGAY = 30
 
 
@@ -109331,7 +109386,7 @@ __all__ = ["CHU_KY_NGAY", "an_han_ngay", "da_thanh_toan", "gia_may_thang",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/devices.py
-SHA256=e834d9bf97627e32c5577f1ce6f4b44c484ef2c32cdcfef5cb4c3df6919dfeea BYTES=13292 LINES=292
+SHA256=93e025ae901fb7583a339f7c497f1fdce4cb5260bebebb432601a6f61c506a36 BYTES=16777 LINES=366
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ghép máy, thu hồi máy, và nhịp tim. Không có gì chạm luồng điều khiển.
 
@@ -109509,6 +109564,58 @@ def doi_ma(db, *, code: str, public_key: str, display_name: str = "",
     return device
 
 
+def dang_ky_bang_tai_khoan(db, *, email: str, password: str, public_key: str,
+                           display_name: str = "", hardware_fingerprint: str = "",
+                           platform: str = "", agent_version: str = "",
+                           now: datetime | None = None) -> NexusDevice:
+    """Model B (Q101 / D-P7): client đăng nhập bằng **tài khoản LTT** (email+mật
+    khẩu) rồi tự đăng ký MÁY này dưới tài khoản đó — thay đường mã-ghép-từ-web
+    (`doi_ma`), vì Model B bỏ web-broker: web chỉ còn docs/tài khoản/credit.
+
+    Xác thực qua `users.xac_thuc` (constant-time, không lộ email nào có thật).
+    Cùng khoá công khai = cùng máy cài lại → tái dùng dòng cũ, **không** tạo dòng
+    thứ hai (giống `doi_ma`), để "thu hồi máy này" vẫn là câu trả lời được. Khoá
+    đã thuộc tài khoản KHÁC thì từ chối — không cướp máy giữa các tài khoản.
+    """
+    from platform_core import users
+    from platform_core.nexus import agent_auth
+
+    current = now or _now()
+    khoa = str(public_key or "").strip()
+    if not khoa:
+        raise NexusError(_t("Thiết bị phải gửi khoá công khai của nó."))
+    try:
+        agent_auth.decode_public_key(khoa)
+    except agent_auth.AgentAuthError as exc:
+        raise NexusError(_t("Khoá công khai của thiết bị không hợp lệ.")) from exc
+
+    user = users.xac_thuc(db, email=str(email or ""), password=str(password or ""))
+    if user is None:
+        raise NexusError(_t("Email hoặc mật khẩu không đúng."))
+
+    trung = db.execute(select(NexusDevice).where(
+        NexusDevice.public_key == khoa)).scalar_one_or_none()
+    if trung is not None:
+        if trung.user_id != user.id:
+            raise NexusError(_t("Máy này đã đăng ký ở tài khoản khác."))
+        trung.revoked_at = None
+        trung.revoked_by = ""
+        trung.display_name = str(display_name or trung.display_name)[:120]
+        trung.agent_version = str(agent_version or "")[:32]
+        db.flush()
+        return trung
+
+    device = NexusDevice(
+        id=str(uuid.uuid4()), user_id=user.id,
+        display_name=str(display_name or "")[:120], public_key=khoa,
+        hardware_fingerprint=str(hardware_fingerprint or "")[:128],
+        platform=str(platform or "")[:32],
+        agent_version=str(agent_version or "")[:32], created_at=current)
+    db.add(device)
+    db.flush()
+    return device
+
+
 # ── Quyền sở hữu, thu hồi, hiện diện ─────────────────────────────────────────
 
 def cua_chu(db, *, user_id: str, device_id: str) -> NexusDevice | None:
@@ -109525,6 +109632,28 @@ def cua_chu(db, *, user_id: str, device_id: str) -> NexusDevice | None:
     if row is None or row.user_id != chu:
         return None
     return row
+
+
+def dat_rustdesk_id(db, device: NexusDevice, *, rustdesk_id: str) -> bool:
+    """Ghi ID RustDesk mà client báo lên (Model B / cưỡng chế relay). Chỉ ghi khi
+    đổi, để không đụng DB mỗi nhịp. ID không bí mật nên lưu thẳng."""
+    rid = str(rustdesk_id or "").strip()[:32]
+    if not rid or device.rustdesk_id == rid:
+        return False
+    device.rustdesk_id = rid
+    db.flush()
+    return True
+
+
+def tim_theo_rustdesk_id(db, *, rustdesk_id: str) -> NexusDevice | None:
+    """Tra thiết bị theo ID RustDesk — relay LTT (hbbs) dùng để ánh xạ ID →
+    tài khoản → trạng thái trả phí. Bỏ qua máy đã thu hồi."""
+    rid = str(rustdesk_id or "").strip()
+    if not rid:
+        return None
+    return db.execute(select(NexusDevice).where(
+        NexusDevice.rustdesk_id == rid,
+        NexusDevice.revoked_at.is_(None))).scalars().first()
 
 
 def danh_sach(db, *, user_id: str, gom_da_thu_hoi: bool = False) -> list:
@@ -109693,7 +109822,7 @@ __all__ = ["TRUONG_HIEN_THI", "ban_phat_hanh_hien_tai"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/sessions.py
-SHA256=e4b2469fe2df6d8946cb84df88134060b8ce76547361737c9f4752ee34a735c6 BYTES=13633 LINES=304
+SHA256=668c70de20c9720c2fed74905dab38c99681d8bf685403f78de1afb724b2473c BYTES=15789 LINES=351
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vé phiên: chỗ DUY NHẤT quyết định ai được vào máy nào (Q93 ràng buộc 2).
 
@@ -109982,6 +110111,52 @@ def dang_mo(db, *, device_id: str, now: datetime | None = None) -> list:
     return [row for row in rows if row.dang_chay(now=current)]
 
 
+def ghi_truy_cap(db, device: NexusDevice, *, session_key: str, peer_id: str = "",
+                 controller_ip: str = "", now: datetime | None = None
+                 ) -> NexusSession:
+    """Model B (Q101 / P8, ràng buộc 6): client máy ĐÍCH báo một phiên điều khiển
+    VÀO, để ghi nhật ký **bất biến** "ai đã vào máy tôi".
+
+    Model B bỏ web-broker nên không có vé — bản ghi này do chính máy đích tạo khi
+    có người kết nối. `ticket_digest` rỗng phân biệt nó với dòng vé cũ. Idempotent
+    theo `session_key`: báo lại (mạng chớp) không tạo dòng thứ hai. Bản ghi này
+    nuôi `audit.dong_thoi_gian` — bề mặt "ai đã vào máy tôi" của khách.
+    """
+    current = now or _now()
+    key = str(session_key or "").strip()
+    if not key:
+        raise NexusError(_t("Thiếu mã phiên."))
+    row = db.get(NexusSession, key)
+    if row is not None:
+        return row                                   # đã ghi — idempotent
+    row = NexusSession(
+        id=key, user_id=device.user_id, device_id=device.id,
+        ticket_digest="", quyen=QUYEN_DIEU_KHIEN,
+        controller_ip=str(controller_ip or "")[:64],
+        engine_id=str(peer_id or "")[:64],
+        issued_at=current, consumed_at=current, expires_at=current)
+    db.add(row)
+    db.flush()
+    return row
+
+
+def ket_thuc_truy_cap(db, device: NexusDevice, *, session_key: str,
+                      now: datetime | None = None) -> bool:
+    """Máy đích báo phiên đã kết thúc. **Ghi thêm** `ended_at`, không sửa quá khứ.
+
+    Chỉ đóng phiên của **chính máy này** (khớp `device_id`) — một máy không đóng
+    được nhật ký của máy khác. Trả False nếu không có phiên đó hoặc đã đóng.
+    """
+    current = now or _now()
+    row = db.get(NexusSession, str(session_key or "").strip())
+    if row is None or row.device_id != device.id or row.ended_at is not None:
+        return False
+    row.ended_at = current
+    row.end_reason = KET_THUC_BINH_THUONG
+    db.flush()
+    return True
+
+
 def lich_su(db, *, user_id: str, limit: int = 50) -> list:
     """Nhật ký phiên của một tài khoản, mới nhất trước.
 
@@ -109998,12 +110173,13 @@ def lich_su(db, *, user_id: str, limit: int = 50) -> list:
 __all__ = ["KET_THUC_BINH_THUONG", "KET_THUC_HET_HAN", "KET_THUC_MAT_KET_NOI",
            "KET_THUC_THU_HOI", "QUYEN_DIEU_KHIEN", "QUYEN_HOP_LE", "QUYEN_XEM",
            "TICKET_TTL_S", "cap_ve", "dang_mo", "digest_ticket", "doi_ve",
-           "ket_thuc", "lich_su", "thu_hoi_ve"]
+           "ghi_truy_cap", "ket_thuc", "ket_thuc_truy_cap", "lich_su",
+           "thu_hoi_ve"]
 
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/tables.py
-SHA256=c0795599ad586c946200dc56ad74c21f1a887ed060b398d75c00b26e0b53c9b8 BYTES=13561 LINES=258
+SHA256=9289de3c4df49447c411ea5ff13928edccd9878738c2cace6a3ac80d835ac06d BYTES=14086 LINES=265
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng của Nexus: thiết bị và mã ghép.
 
@@ -110109,6 +110285,13 @@ class NexusDevice(Base):
     #: phí, mặc định an toàn). Bút toán trừ ở `platform_core.nexus.billing`.
     paid_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+
+    #: ID RustDesk của engine trên máy này (vd "224404082"). Model B (Q101): client
+    #: báo lên để relay LTT (hbbs, đã fork) ánh xạ ID → tài khoản → trạng thái trả
+    #: phí, rồi TỪ CHỐI môi giới kết nối khi chưa trả — răng thật của thu phí, không
+    #: dựa vào client tự giác. Không bí mật (ID vốn để chia sẻ).
+    rustdesk_id: Mapped[str] = mapped_column(String(32), default="",
+                                             nullable=False)
 
     __table_args__ = (
         # Một khoá công khai chỉ thuộc về một thiết bị. Nếu hai dòng cùng khoá
@@ -110263,6 +110446,83 @@ class NexusSession(Base):
 
 __all__ = ["DEVICE_KEY_PREFIX", "ENROLL_MAX_ATTEMPTS", "ENROLL_TTL_S",
            "NexusDevice", "NexusEnrollment", "NexusSession"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/versions.py
+SHA256=f5c946dcbb1d14bb6bd6f9f45f51213fa8cf07adc306b3966dd3bb3a189fb4a5 BYTES=2857 LINES=71
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Bản kê phiên bản LTT Nexus — nguồn CHUNG cho trang tải và client tự-update.
+
+Model B (Q101): web là nơi hướng dẫn + tải. Một manifest JSON mô tả bản mới nhất
+cho từng nền tảng (URL tải, SHA-256, chữ ký phát hành). Trang tải render từ nó;
+client tự-update đọc chính nó để biết có bản mới không.
+
+Vận hành cập nhật bằng cách sửa `data/nexus_versions.json` (không cần deploy code).
+Thiếu file → dùng mặc định dưới đây (mọi nền tảng "đang chuẩn bị", trừ khi có URL).
+"""
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+#: Bốn nền tảng mục tiêu (Windows/macOS/iOS/Android). `available=False` → trang
+#: hiện "đang chuẩn bị"; đặt `available` + `url` khi bản nền tảng đó sẵn sàng.
+DEFAULT: dict = {
+    "version": "1.0.0",
+    "notes": "Bản phát hành đầu tiên của LTT Nexus.",
+    "platforms": {
+        "windows": {"label": "Windows 10/11 (64-bit)", "available": False,
+                    "url": "", "sha256": "", "kind": "zip"},
+        "macos": {"label": "macOS", "available": False, "url": "", "sha256": "",
+                  "kind": "dmg"},
+        "ios": {"label": "iOS (iPhone/iPad)", "available": False, "url": "",
+                "kind": "appstore"},
+        "android": {"label": "Android", "available": False, "url": "",
+                    "sha256": "", "kind": "apk"},
+    },
+}
+
+PLATFORM_ORDER = ["windows", "macos", "ios", "android"]
+
+
+def _path() -> Path:
+    data = os.environ.get("LTT_DATA_DIR", "data")
+    return Path(data) / "nexus_versions.json"
+
+
+def manifest() -> dict:
+    """Manifest hiện hành: đọc `data/nexus_versions.json` nếu có, hợp nhất lên
+    mặc định (thiếu khoá nào lấy mặc định). Hỏng file → mặc định, không ném."""
+    base = json.loads(json.dumps(DEFAULT))  # bản sao sâu
+    p = _path()
+    if p.exists():
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return base
+        if isinstance(data, dict):
+            base["version"] = str(data.get("version") or base["version"])
+            base["notes"] = str(data.get("notes") or base["notes"])
+            plats = data.get("platforms")
+            if isinstance(plats, dict):
+                for key, val in plats.items():
+                    if key in base["platforms"] and isinstance(val, dict):
+                        base["platforms"][key].update(val)
+    return base
+
+
+def latest_version() -> str:
+    return str(manifest().get("version") or "")
+
+
+def platform_info(plat: str) -> dict:
+    return manifest().get("platforms", {}).get(str(plat or ""), {})
+
+
+__all__ = ["DEFAULT", "PLATFORM_ORDER", "latest_version", "manifest",
+           "platform_info"]
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -132089,7 +132349,7 @@ def register_webhook_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/app.py
-SHA256=d95a49a8608cf0f5467819172926ef74364ac77faef18442905562219e48e022 BYTES=23556 LINES=464
+SHA256=9f1822e029bbe609929eb19c18b23709e3bbf79e2232fe037179bcfa759969d5 BYTES=24363 LINES=474
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 FastAPI application factory (P3).
@@ -132370,6 +132630,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
         # cho mọi thứ ngoài /static/ chặn cả lớp lỗi này.
         if _HASHED_FRONTEND_ASSET.fullmatch(request.url.path):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif request.url.path.startswith("/nexus/dl/"):
+            # Bản cài LTT Nexus: CÔNG KHAI, giống hệt cho mọi người, có version
+            # trong tên file (đổi bản = đổi URL). An toàn để biên cache immutable
+            # — không dính lớp lỗi rò-cache-per-user ở trên (không auth, không
+            # riêng tư). Đỡ origin phục vụ lại 26MB mỗi lượt tải.
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         elif request.url.path.startswith(("/static/agent-canvas/",
                                           "/static/autosub-studio/")):
             response.headers["Cache-Control"] = "no-store"
@@ -132395,6 +132661,10 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(jobs_routes.router)
     app.include_router(dashboard_routes.router)
     app.include_router(status_routes.router)
+    # Trang tải LTT Nexus (Model B, Q101: web = hướng dẫn/tải) + version.json.
+    # Công khai, không phụ thuộc cờ LTT_NEXUS (tải/hướng dẫn không lộ gì).
+    from server import nexus_download as nexus_download_routes
+    app.include_router(nexus_download_routes.router)
     # Developer portal: session + CSRF surface where API keys are created. It is
     # mounted unconditionally so a customer can prepare keys before an operator
     # turns the API itself on; the page says plainly when `/api/v1` is off.
@@ -133217,7 +133487,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/routes.py
-SHA256=dadd8b49c6ce47dc7e09cad7118a715f02edfb2f064b0b4d92b4be4bb5aa4180 BYTES=13085 LINES=315
+SHA256=88ae8755b9f750eba44fc7099715d37d06e02499a13eee7cc8d7569741bf8105 BYTES=21394 LINES=521
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba đường cho agent: ghép máy, nhịp tim, đổi vé phiên.
 
@@ -133247,6 +133517,7 @@ thất bại, và mã HTTP là `401` cho mọi trường hợp.
 from __future__ import annotations
 
 import logging
+import os
 
 from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
@@ -133267,6 +133538,10 @@ GHEP_MOI_PHUT = 10
 #: Trần nhịp tim theo thiết bị. Nhịp thật là mỗi 60 giây; 20 cho phép thử lại
 #: khi mạng chập chờn mà vẫn chặn một vòng lặp hỏng.
 NHIP_TIM_MOI_PHUT = 20
+
+#: Trần đăng nhập client (Model B, P7) theo IP. Đây là điểm nhận mật khẩu nên
+#: phải chống dò mật khẩu: thấp như ghép máy. `users.xac_thuc` đã constant-time.
+DANG_NHAP_MOI_PHUT = 10
 
 
 def _loi(status: int, ma: str, thong_diep: str) -> JSONResponse:
@@ -133534,6 +133809,295 @@ async def bao_engine(
             next(gen)
         except StopIteration:
             pass
+
+
+@router.post("/client-register")
+async def client_register(request: Request):
+    """Model B (Q101 / D-P7): client đăng nhập tài khoản LTT (email+mật khẩu) và
+    đăng ký MÁY này. Thay `/enroll` (mã-ghép-từ-web) — Model B bỏ web-broker.
+
+    **Không** ký được: client chưa có danh tính. Nên trần theo IP như `/enroll`,
+    và vì đây là điểm nhận MẬT KHẨU, phải chống dò mật khẩu. `dang_ky_bang_tai_
+    khoan` gọi `users.xac_thuc` (constant-time, không lộ email nào có thật).
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    ip = _ip(request)
+    if _qua_tran(f"nexus-client-login:{ip}", DANG_NHAP_MOI_PHUT):
+        return _loi(429, "rate_limited", "Too many attempts. Try again later.")
+
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        return _loi(400, "invalid_request", "Body must be JSON.")
+    if not isinstance(body, dict):
+        return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = devices.dang_ky_bang_tai_khoan(
+            db,
+            email=str(body.get("email") or ""),
+            password=str(body.get("password") or ""),
+            public_key=str(body.get("public_key") or ""),
+            display_name=str(body.get("display_name") or "")[:120],
+            hardware_fingerprint=str(body.get("hardware_fingerprint") or "")[:128],
+            platform=str(body.get("platform") or "")[:32],
+            agent_version=str(body.get("agent_version") or "")[:32])
+        db.commit()
+        return JSONResponse({"device_id": device.id,
+                             "display_name": device.display_name},
+                            headers=_NO_STORE)
+    except devices.NexusError as exc:
+        db.rollback()
+        # Một thông điệp cho mọi lý do (sai mật khẩu, email không có, khoá sai).
+        return _loi(400, "register_failed", str(exc))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/status")
+async def status(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Máy hỏi: tài khoản còn được điều khiển không (thuê bao Q98)?
+
+    Ký như mọi request thiết bị. Client gọi định kỳ và **khoá điều khiển** khi
+    `paid=false`. `credit_balance` để hiện; nạp credit thì mở trình duyệt (Q98).
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        # Client có thể báo kèm RustDesk ID (Model B) để relay ánh xạ ID→tài khoản.
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            body = {}
+        if isinstance(body, dict) and body.get("rustdesk_id"):
+            devices.dat_rustdesk_id(db, device,
+                                    rustdesk_id=str(body.get("rustdesk_id")))
+            db.commit()
+
+        from platform_core import credit
+        from platform_core.nexus import billing
+
+        paid_until = getattr(device, "paid_until", None)
+        return JSONResponse({
+            "paid": billing.da_thanh_toan(device),
+            "price_per_month": billing.gia_may_thang(),
+            "credit_balance": credit.so_du(db, device.user_id),
+            "paid_until": paid_until.isoformat() if paid_until else None,
+        }, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/session-event")
+async def session_event(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Máy đích báo phiên điều khiển vào/ra để ghi nhật ký bất biến (P8, ràng
+    buộc 6). Ký như mọi request thiết bị. `event` = "start" | "end".
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            return _loi(400, "invalid_request", "Body must be JSON.")
+        if not isinstance(body, dict):
+            return _loi(400, "invalid_request", "Body must be a JSON object.")
+
+        event = str(body.get("event") or "")
+        key = str(body.get("session_key") or "")
+        try:
+            if event == "start":
+                sessions.ghi_truy_cap(
+                    db, device, session_key=key,
+                    peer_id=str(body.get("peer_id") or "")[:64],
+                    controller_ip=str(body.get("controller_ip") or "")[:64])
+            elif event == "end":
+                sessions.ket_thuc_truy_cap(db, device, session_key=key)
+            else:
+                return _loi(400, "invalid_request", "Unknown event.")
+        except sessions.NexusError as exc:
+            db.rollback()
+            return _loi(400, "event_failed", str(exc))
+        db.commit()
+        return JSONResponse({"ok": True}, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+#: Header bí mật dùng chung giữa relay LTT (hbbs đã fork) và platform. Đặt trong
+#: secrets/app.env; RỖNG = endpoint tắt (fail-closed: không cấu hình thì không mở).
+HEADER_RELAY_SECRET = "X-LTT-Relay-Secret"
+
+
+def _relay_secret() -> str:
+    return os.environ.get("LTT_NEXUS_RELAY_SECRET", "").strip()
+
+
+@router.get("/relay-check")
+async def relay_check(
+    id: str = "",
+    secret: str = Header(default="", alias=HEADER_RELAY_SECRET),
+):
+    """Relay LTT (hbbs) hỏi: ID RustDesk này có được môi giới kết nối không?
+
+    Xác thực bằng bí mật dùng chung (relay không phải thiết bị, không có khoá ký).
+    **Fail-closed cấu hình:** chưa đặt `LTT_NEXUS_RELAY_SECRET` → 404 (endpoint
+    coi như không tồn tại). **Fail-open dữ liệu:** ID lạ (không do LTT quản) →
+    `allowed=true` — relay phục vụ bình thường; LTT chỉ chặn đúng máy ĐÃ đăng ký
+    mà CHƯA trả. Chống so-sánh-thời-gian cho bí mật.
+    """
+    if not nexus.enabled():
+        return _tat()
+    conf = _relay_secret()
+    if not conf:
+        return _tat()                        # chưa cấu hình → không mở
+    import hmac
+
+    if not hmac.compare_digest(str(secret or ""), conf):
+        return _loi(401, "unauthorized", "Bad relay secret.")
+
+    from platform_core.nexus import billing
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = devices.tim_theo_rustdesk_id(db, rustdesk_id=str(id or ""))
+        if device is None:
+            # ID không do LTT quản → không chặn (relay chạy như thường).
+            return JSONResponse({"allowed": True, "managed": False},
+                                headers=_NO_STORE)
+        allowed = billing.da_thanh_toan(device)
+        return JSONResponse({"allowed": bool(allowed), "managed": True},
+                            headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus_download.py
+SHA256=11f91d97233ca70459164f911cc4a1f67dd1f13913452995786a0a97407e8fc9 BYTES=3482 LINES=82
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trang tải LTT Nexus + bản kê phiên bản (Model B, Q101: web = hướng dẫn/tải).
+
+Công khai (không cần đăng nhập) — ai cũng tải được ứng dụng. `/nexus/version.json`
+là nguồn CHUNG: trang này render từ nó, và client tự-update đọc chính nó.
+
+Bản cài (zip/apk/dmg) được PHỤC VỤ THẲNG qua Tunnel từ `data/nexus_dist/` — thư
+mục vận hành (cập nhật KHÔNG chạm), nên không cần R2 cho mấy file khiêm tốn này
+(APK ~26MB, zip ~31MB — đều dưới trần 100MB của Cloudflare). Manifest trỏ URL
+tương đối `/nexus/dl/<tên-file>`; đổi bản = thả file mới + sửa JSON, không deploy.
+"""
+from __future__ import annotations
+
+import os
+import re
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
+
+from platform_core.nexus import versions
+from server.templating import templates
+
+router = APIRouter(tags=["nexus-download"])
+
+#: Chỉ cho tên file "hiền": chữ/số/dấu chấm/gạch — chặn '/', '\\', '..' tận gốc.
+_SAFE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+#: Kiểu nội dung theo đuôi (để trình duyệt/thiết bị nhận đúng).
+_CONTENT_TYPE = {
+    ".apk": "application/vnd.android.package-archive",
+    ".zip": "application/zip",
+    ".dmg": "application/x-apple-diskimage",
+    ".exe": "application/vnd.microsoft.portable-executable",
+    ".sha256": "text/plain; charset=utf-8",
+}
+
+
+def _dist_dir() -> Path:
+    data = os.environ.get("LTT_DATA_DIR", "data")
+    return Path(data) / "nexus_dist"
+
+
+@router.get("/tai-xuong")
+async def trang_tai(request: Request):
+    """Trang tải: logo + 4 nền tảng (Windows/macOS/iOS/Android) + hướng dẫn."""
+    m = versions.manifest()
+    plats = [{"key": k, **m["platforms"][k]}
+             for k in versions.PLATFORM_ORDER if k in m["platforms"]]
+    return templates.TemplateResponse(
+        request, "nexus_download.html",
+        {"version": m.get("version", ""), "notes": m.get("notes", ""),
+         "platforms": plats})
+
+
+@router.get("/nexus/version.json")
+async def version_json():
+    """Bản kê phiên bản (JSON). Client tự-update GỌI cái này để so phiên bản.
+
+    Cache ngắn ở biên: phải mới đủ để bản cập nhật tới người dùng nhanh, nhưng
+    không cần no-store (nó là dữ liệu công khai, không nhạy cảm).
+    """
+    return JSONResponse(versions.manifest(),
+                        headers={"Cache-Control": "public, max-age=300"})
+
+
+@router.api_route("/nexus/dl/{filename}", methods=["GET", "HEAD"])
+async def tai_file(filename: str):
+    """Phục vụ bản cài từ `data/nexus_dist/`. Tên file có version nên đặt cache
+    dài + immutable (đổi bản = đổi tên = đổi URL). Chặn path traversal chặt."""
+    if not _SAFE_NAME.match(filename):
+        raise HTTPException(status_code=404)
+    root = _dist_dir().resolve()
+    target = (root / filename).resolve()
+    # Phải nằm ĐÚNG trong thư mục dist (chống '..' và symlink thoát ra ngoài).
+    if root not in target.parents or not target.is_file():
+        raise HTTPException(status_code=404)
+    ext = target.suffix.lower()
+    return FileResponse(
+        target,
+        media_type=_CONTENT_TYPE.get(ext, "application/octet-stream"),
+        filename=filename,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -145178,6 +145742,97 @@ SHA256=1aaf5087e05565df707d992ee397242f11408c01244be6648c12d76dc4320b71 BYTES=36
     })();
   </script>
 
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_download.html
+SHA256=07bc955ca6a2550e833ed206c66c0b00ed568f1e0bb98cdfe522af046adc829d BYTES=5407 LINES=85
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base_public.html" %}
+{% block title %}Tải LTT Nexus{% endblock %}
+{% block content %}
+<style>
+  .nx-wrap{max-width:940px;margin:0 auto;padding:8px 4px 40px}
+  .nx-hero{text-align:center;padding:14px 0 28px}
+  .nx-mark{width:64px;height:64px;margin:0 auto 14px;display:block}
+  .nx-hero h1{margin:0 0 6px;font-size:30px;letter-spacing:-.02em}
+  .nx-hero p{margin:0;color:var(--fg-muted,#927f79);font-size:15px}
+  .nx-ver{display:inline-block;margin-top:10px;padding:3px 10px;border-radius:99px;
+    background:var(--brand-soft,#421511);color:#ffd0cc;border:1px solid var(--brand-border,#8f2c24);
+    font-size:12px}
+  .nx-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:8px}
+  @media(max-width:640px){.nx-grid{grid-template-columns:1fr}}
+  .nx-card{border:1px solid var(--line,#40201c);border-radius:14px;padding:18px 18px 16px;
+    background:var(--panel,#151111);display:flex;flex-direction:column;gap:6px}
+  .nx-card .os{display:flex;align-items:center;gap:10px}
+  .nx-card .os svg{width:26px;height:26px;flex:0 0 auto}
+  .nx-card h2{margin:0;font-size:16px}
+  .nx-card .sub{color:var(--fg-muted,#927f79);font-size:12px;min-height:16px}
+  .nx-btn{margin-top:8px;display:inline-flex;align-items:center;justify-content:center;
+    gap:8px;padding:10px 14px;border-radius:9px;background:var(--brand-primary,#ef3731);
+    color:#fff;text-decoration:none;font-weight:600;font-size:14px;border:0}
+  .nx-btn:hover{background:var(--brand-hover,#ff514a)}
+  .nx-btn.soon{background:transparent;color:var(--fg-muted,#927f79);
+    border:1px solid var(--line,#40201c);font-weight:500;cursor:default}
+  .nx-sha{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--fg-muted,#927f79);
+    word-break:break-all;margin-top:6px}
+  .nx-guide{margin-top:26px;border:1px solid var(--line,#40201c);border-radius:14px;
+    padding:18px 20px;background:var(--panel,#151111)}
+  .nx-guide h3{margin:0 0 10px;font-size:15px}
+  .nx-guide ol{margin:0;padding-left:20px;color:var(--fg,#f0e9e6);font-size:13.5px;line-height:1.7}
+  .nx-guide .warn{margin-top:10px;color:#e2ae55;font-size:12.5px}
+</style>
+
+<div class="nx-wrap">
+  <div class="nx-hero">
+    <svg class="nx-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <defs><linearGradient id="ltm" x1="0.15" y1="0.15" x2="0.85" y2="0.85">
+        <stop offset="0" stop-color="#ff514a"/><stop offset="1" stop-color="#b92520"/></linearGradient></defs>
+      <path d="M12 0.8 L23.2 12 L12 23.2 L0.8 12 Z" fill="url(#ltm)"/>
+      <path d="M12 6.4 L17.6 12 L12 17.6 L6.4 12 Z" fill="#0d0a0a" opacity="0.16"/>
+    </svg>
+    <h1>Tải LTT Nexus</h1>
+    <p>Điều khiển máy tính từ xa — an toàn, do LTT vận hành.</p>
+    {% if version %}<span class="nx-ver">Phiên bản {{ version }}</span>{% endif %}
+  </div>
+
+  <div class="nx-grid">
+    {% for p in platforms %}
+    <div class="nx-card">
+      <div class="os">
+        {% if p.key == 'windows' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M3 5.5l7-1v7H3zM11 4.4L21 3v9.5H11zM3 12.5h7v6l-7-1zM11 12.5h10V21l-10-1.4z"/></svg>
+        {% elif p.key == 'macos' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
+        {% elif p.key == 'ios' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
+        {% else %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M6 9h12v8a2 2 0 01-2 2h-1v3h-2v-3h-2v3H9v-3H8a2 2 0 01-2-2zM4 9h1.5v6H4a1 1 0 01-1-1v-4a1 1 0 011-1zm16 0h0a1 1 0 011 1v4a1 1 0 01-1 1h-1.5V9zM8 3l1.2 2M16 3l-1.2 2M6.5 7.5C6.5 5.5 8.8 4 12 4s5.5 1.5 5.5 3.5z"/></svg>
+        {% endif %}
+        <h2>{{ p.label }}</h2>
+      </div>
+      {% if p.available and p.url %}
+        <div class="sub">Sẵn sàng để tải</div>
+        <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
+          {% if p.kind == 'appstore' %}Mở App Store{% else %}Tải xuống{% endif %}
+        </a>
+        {% if p.sha256 %}<div class="nx-sha">SHA-256: {{ p.sha256 }}</div>{% endif %}
+      {% else %}
+        <div class="sub">Đang chuẩn bị — sẽ có sớm</div>
+        <span class="nx-btn soon">Đang chuẩn bị</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="nx-guide">
+    <h3>Cài đặt &amp; an toàn</h3>
+    <ol>
+      <li>Sau khi tải, <b>đối chiếu SHA-256</b> (ghi ở mỗi nền tảng) với file bạn tải — khớp mới chạy.</li>
+      <li>Windows có thể hiện cảnh báo SmartScreen (bản chưa ký): bấm <b>More info → Run anyway</b>, chỉ khi hash đúng.</li>
+      <li>Mở app, <b>đăng nhập tài khoản LTT</b>. Máy sẽ gắn vào tài khoản của bạn.</li>
+      <li>Muốn điều khiển máy khi vắng người: bấm <b>Install</b> trong app (nâng quyền một lần).</li>
+    </ol>
+    <div class="warn">LTT Nexus dựa trên RustDesk (AGPL-3.0); mã nguồn bản sửa được công bố công khai.</div>
+  </div>
+</div>
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -196440,6 +197095,783 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_240_nexus_client_login.py
+SHA256=79997c3205bac9bc12d2367b9f137734b6dc7946715ac437c71d858d238dbb4a BYTES=5506 LINES=153
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus Model B (Q101 / D-P7) — client đăng ký máy bằng TÀI KHOẢN LTT.
+
+Model B bỏ web-broker: máy không còn ghép qua mã-từ-web (`doi_ma`). Thay vào đó
+client native đăng nhập bằng email+mật khẩu LTT rồi tự đăng ký máy dưới tài khoản
+đó. Test ở đây chốt những thứ KHÔNG được đúng do may mắn:
+
+* sai mật khẩu bị từ chối, và **cùng một câu** như email không tồn tại (constant
+  time của `users.xac_thuc` — không lộ email nào có thật);
+* cùng khoá công khai = cùng máy cài lại → **không** tạo dòng thứ hai;
+* khoá đã thuộc tài khoản khác thì từ chối — không cướp máy giữa các tài khoản;
+* thuê bao (Q98): miễn phí → điều khiển được; có giá + chưa trả → bị chặn.
+"""
+from __future__ import annotations
+
+import uuid
+
+import pytest
+
+
+def _khoa() -> str:
+    from platform_core.nexus import agent_auth
+    _priv, pub = agent_auth.new_keypair_for_test()
+    return pub
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'nexus.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _user(db, email: str = "", password: str = "mat-khau-that-0123456789"):
+    from platform_core.users import tao_nguoi_dung
+    user = tao_nguoi_dung(db, email=email or f"{uuid.uuid4().hex[:8]}@example.com",
+                          password=password, is_verified=True)
+    db.flush()
+    return user, password
+
+
+def test_dang_ky_bang_dung_email_mat_khau(db):
+    from platform_core.nexus import devices
+
+    user, pw = _user(db)
+    khoa = _khoa()
+    dev = devices.dang_ky_bang_tai_khoan(
+        db, email=user.email, password=pw, public_key=khoa,
+        display_name="May cua toi", platform="windows")
+    assert dev.user_id == user.id
+    assert dev.public_key == khoa
+    assert dev.display_name == "May cua toi"
+    assert dev.revoked_at is None
+
+
+def test_sai_mat_khau_bi_tu_choi(db):
+    from platform_core.nexus import devices
+    from platform_core.nexus.devices import NexusError
+
+    user, _pw = _user(db)
+    with pytest.raises(NexusError):
+        devices.dang_ky_bang_tai_khoan(
+            db, email=user.email, password="sai-mat-khau", public_key=_khoa())
+
+
+def test_email_khong_ton_tai_bi_tu_choi(db):
+    from platform_core.nexus import devices
+    from platform_core.nexus.devices import NexusError
+
+    with pytest.raises(NexusError):
+        devices.dang_ky_bang_tai_khoan(
+            db, email="khong-co@example.com", password="gi-do-0123456789",
+            public_key=_khoa())
+
+
+def test_khoa_sai_dang_bi_tu_choi(db):
+    from platform_core.nexus import devices
+    from platform_core.nexus.devices import NexusError
+
+    user, pw = _user(db)
+    with pytest.raises(NexusError):
+        devices.dang_ky_bang_tai_khoan(
+            db, email=user.email, password=pw, public_key="khong-phai-khoa")
+
+
+def test_cung_khoa_cung_tai_khoan_tai_dung_khong_tao_dong_thu_hai(db):
+    from sqlalchemy import func, select
+
+    from platform_core.nexus import devices
+    from platform_core.nexus.tables import NexusDevice
+
+    user, pw = _user(db)
+    khoa = _khoa()
+    d1 = devices.dang_ky_bang_tai_khoan(db, email=user.email, password=pw,
+                                        public_key=khoa)
+    d2 = devices.dang_ky_bang_tai_khoan(db, email=user.email, password=pw,
+                                        public_key=khoa, display_name="doi ten")
+    assert d1.id == d2.id
+    assert d2.display_name == "doi ten"
+    n = db.execute(select(func.count()).select_from(NexusDevice)
+                   .where(NexusDevice.public_key == khoa)).scalar_one()
+    assert n == 1
+
+
+def test_khoa_thuoc_tai_khoan_khac_bi_tu_choi(db):
+    from platform_core.nexus import devices
+    from platform_core.nexus.devices import NexusError
+
+    u1, pw1 = _user(db)
+    u2, pw2 = _user(db)
+    khoa = _khoa()
+    devices.dang_ky_bang_tai_khoan(db, email=u1.email, password=pw1,
+                                   public_key=khoa)
+    with pytest.raises(NexusError):
+        devices.dang_ky_bang_tai_khoan(db, email=u2.email, password=pw2,
+                                       public_key=khoa)
+
+
+def test_thue_bao_mien_phi_thi_dieu_khien_duoc(db, monkeypatch):
+    from platform_core.nexus import billing, devices
+
+    monkeypatch.delenv("LTT_NEXUS_GIA_MAY_THANG", raising=False)
+    user, pw = _user(db)
+    dev = devices.dang_ky_bang_tai_khoan(db, email=user.email, password=pw,
+                                         public_key=_khoa())
+    assert billing.da_thanh_toan(dev) is True
+
+
+def test_co_gia_chua_tra_thi_bi_chan(db, monkeypatch):
+    from platform_core.nexus import billing, devices
+
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "50")
+    user, pw = _user(db)
+    dev = devices.dang_ky_bang_tai_khoan(db, email=user.email, password=pw,
+                                         public_key=_khoa())
+    # paid_until còn None -> chưa trả -> chặn
+    assert billing.da_thanh_toan(dev) is False
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_241_nexus_client_api.py
+SHA256=aa46da6554d9669fbb18210f4b34dcda14bff02cfe2cd738d0090d675c157238 BYTES=5911 LINES=164
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus Model B (Q101 / D-P7) — bề mặt HTTP cho client native.
+
+Client đăng nhập bằng tài khoản LTT (email+mật khẩu) qua `/nexus-agent/client-
+register` rồi hỏi trạng thái thuê bao qua `/nexus-agent/status` (có ký). Test ở
+đây chốt: đăng nhập sai không nói vì sao, có trần theo IP (chống dò mật khẩu),
+và `status` phải ký được — không ký thì 401.
+"""
+from __future__ import annotations
+
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "test-mat-khau-client-0123456789"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'client.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "client-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("LTT_NEXUS_GIA_MAY_THANG", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _tao_user(email: str = "client@example.com"):
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.commit()
+        return u.id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _dang_ky(client, email: str = "client@example.com"):
+    """Đăng ký một máy bằng tài khoản. Trả `(device_id, private_bytes)`."""
+    from platform_core.nexus import agent_auth
+
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/client-register",
+                    json={"email": email, "password": PASSWORD,
+                          "public_key": pub, "display_name": "May cua toi",
+                          "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def _ky(priv, method: str, path: str, body: bytes):
+    from platform_core.nexus import agent_auth
+
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv, method=method, path=path, timestamp=ts, body=body)
+    return {agent_auth.HEADER_TIMESTAMP: ts, agent_auth.HEADER_SIGNATURE: sig}
+
+
+# ── Đăng ký bằng tài khoản ───────────────────────────────────────────────────
+
+def test_dang_ky_bang_tai_khoan_qua_HTTP(app_bat):
+    _tao_user()
+    device_id, _priv = _dang_ky(app_bat)
+    assert device_id
+
+
+def test_sai_mat_khau_thi_400_va_khong_noi_vi_sao(app_bat):
+    from platform_core.nexus import agent_auth
+
+    _tao_user()
+    _priv, pub = agent_auth.new_keypair_for_test()
+    r = app_bat.post("/nexus-agent/client-register",
+                     json={"email": "client@example.com", "password": "sai",
+                           "public_key": pub})
+    assert r.status_code == 400
+    assert r.json()["error"]["code"] == "register_failed"
+
+
+def test_tran_dang_nhap_theo_IP(app_bat):
+    """Điểm nhận mật khẩu phải chống dò: quá trần → 429."""
+    from platform_core.nexus import agent_auth
+    from server.nexus import routes
+
+    _priv, pub = agent_auth.new_keypair_for_test()
+    ma_429 = 0
+    for _ in range(routes.DANG_NHAP_MOI_PHUT + 3):
+        r = app_bat.post("/nexus-agent/client-register",
+                         json={"email": "x@example.com", "password": "sai",
+                               "public_key": pub})
+        if r.status_code == 429:
+            ma_429 += 1
+    assert ma_429 >= 1, "khong co tran cho /client-register"
+
+
+def test_tat_co_thi_404(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS", "0")
+    r = app_bat.post("/nexus-agent/client-register",
+                     json={"email": "x@example.com", "password": "y",
+                           "public_key": "z"})
+    assert r.status_code == 404
+
+
+# ── Trạng thái thuê bao (có ký) ──────────────────────────────────────────────
+
+def test_status_co_ky_mien_phi_thi_paid_true(app_bat):
+    from platform_core.nexus import agent_auth
+
+    _tao_user()
+    device_id, priv = _dang_ky(app_bat)
+    path = "/nexus-agent/status"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["paid"] is True          # giá 0 (miễn phí)
+    assert body["price_per_month"] == 0
+    assert "credit_balance" in body
+
+
+def test_status_khong_ky_thi_401(app_bat):
+    _tao_user()
+    _dang_ky(app_bat)
+    r = app_bat.post("/nexus-agent/status", content=b"")
+    assert r.status_code == 401
+
+
+def test_status_co_gia_chua_tra_thi_paid_false(app_bat, monkeypatch):
+    from platform_core.nexus import agent_auth
+
+    _tao_user()
+    device_id, priv = _dang_ky(app_bat)
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "50")
+    path = "/nexus-agent/status"
+    headers = {agent_auth.HEADER_DEVICE: device_id, **_ky(priv, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    assert r.json()["paid"] is False
+    assert r.json()["price_per_month"] == 50
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_242_nexus_session_event.py
+SHA256=44dfff747bc8f45f6f1dac9ec85e36ce6a72d2edb77868f3223cee5581be44ed BYTES=6004 LINES=160
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus Model B (Q101 / P8, ràng buộc 6) — nhật ký "ai đã vào máy tôi".
+
+Model B bỏ web-broker nên phiên điều khiển do chính máy đích báo. Test chốt:
+bản ghi bất biến (end chỉ ghi thêm `ended_at`), idempotent theo session_key,
+một máy không đóng được nhật ký máy khác, và request phải ký.
+"""
+from __future__ import annotations
+
+import json
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "test-mat-khau-audit-0123456789"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'ev.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "ev-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _register(client):
+    from platform_core.db import get_session
+    from platform_core.nexus import agent_auth
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="audit@example.com", password=PASSWORD,
+                           is_verified=True)
+        db.commit()
+        uid = u.id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/client-register",
+                    json={"email": "audit@example.com", "password": PASSWORD,
+                          "public_key": pub, "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv, uid
+
+
+def _post_signed(client, priv, path, payload):
+    from platform_core.nexus import agent_auth
+    body = json.dumps(payload).encode("utf-8")
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv, method="POST", path=path, timestamp=ts, body=body)
+    device_id = payload.get("_device_id", "")
+    headers = {agent_auth.HEADER_DEVICE: device_id,
+               agent_auth.HEADER_TIMESTAMP: ts,
+               agent_auth.HEADER_SIGNATURE: sig,
+               "Content-Type": "application/json"}
+    return client.post(path, content=body, headers=headers)
+
+
+# ── Domain ───────────────────────────────────────────────────────────────────
+
+def test_ghi_va_ket_thuc_truy_cap_domain(app_bat):
+    from platform_core.db import get_session
+    from platform_core.nexus import devices, sessions
+
+    device_id, _priv, _uid = _register(app_bat)
+    gen = get_session()
+    db = next(gen)
+    try:
+        dev = db.get(devices.NexusDevice, device_id)
+        row = sessions.ghi_truy_cap(db, dev, session_key="s1",
+                                    peer_id="293017172", controller_ip="1.2.3.4")
+        assert row.ended_at is None
+        assert row.controller_ip == "1.2.3.4"
+        # idempotent
+        row2 = sessions.ghi_truy_cap(db, dev, session_key="s1")
+        assert row2.id == row.id
+        # kết thúc ghi thêm ended_at
+        assert sessions.ket_thuc_truy_cap(db, dev, session_key="s1") is True
+        assert db.get(sessions.NexusSession, "s1").ended_at is not None
+        # đóng lại lần nữa → False (đã đóng)
+        assert sessions.ket_thuc_truy_cap(db, dev, session_key="s1") is False
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+# ── HTTP có ký ───────────────────────────────────────────────────────────────
+
+def test_session_event_start_end_qua_HTTP(app_bat):
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+
+    device_id, priv, uid = _register(app_bat)
+    path = "/nexus-agent/session-event"
+    r = _post_signed(app_bat, priv, path,
+                     {"_device_id": device_id, "event": "start",
+                      "session_key": "sess-1", "peer_id": "293017172",
+                      "controller_ip": "9.9.9.9"})
+    assert r.status_code == 200, r.text
+
+    # xuất hiện trong lịch sử của tài khoản (ràng buộc 6)
+    gen = get_session(); db = next(gen)
+    try:
+        ls = sessions.lich_su(db, user_id=uid)
+        assert any(s.id == "sess-1" for s in ls)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    r = _post_signed(app_bat, priv, path,
+                     {"_device_id": device_id, "event": "end",
+                      "session_key": "sess-1"})
+    assert r.status_code == 200, r.text
+    gen = get_session(); db = next(gen)
+    try:
+        assert db.get(sessions.NexusSession, "sess-1").ended_at is not None
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_session_event_khong_ky_thi_401(app_bat):
+    device_id, _priv, _uid = _register(app_bat)
+    r = app_bat.post("/nexus-agent/session-event",
+                     json={"event": "start", "session_key": "x"})
+    assert r.status_code == 401
+
+
+def test_su_kien_la_bi_tu_choi(app_bat):
+    device_id, priv, _uid = _register(app_bat)
+    r = _post_signed(app_bat, priv, "/nexus-agent/session-event",
+                     {"_device_id": device_id, "event": "nonsense",
+                      "session_key": "z"})
+    assert r.status_code == 400
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_243_nexus_relay_check.py
+SHA256=21ef4f0abc8360728cf38e3e5ed307bf81c7e51f8b5896abdfc24e6517a2ed6e BYTES=5893 LINES=143
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nexus Model B (Q101 / cưỡng chế relay) — hbbs hỏi platform "ID này trả phí chưa?"
+
+Răng thật của thu phí: relay LTT (hbbs đã fork) hỏi `/nexus-agent/relay-check`
+trước khi môi giới kết nối. Test chốt: chưa cấu hình bí mật → 404 (fail-closed
+cấu hình); sai bí mật → 401; ID lạ → cho qua (fail-open dữ liệu, không do LTT
+quản); ID đã đăng ký + chưa trả (có giá) → chặn.
+"""
+from __future__ import annotations
+
+import json
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "test-mat-khau-relay-0123456789"
+SECRET = "relay-shared-secret-xyz"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'relay.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "relay-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("LTT_NEXUS_GIA_MAY_THANG", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _register(client, email="relay@example.com"):
+    from platform_core.db import get_session
+    from platform_core.nexus import agent_auth
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session(); db = next(gen)
+    try:
+        tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/client-register",
+                    json={"email": email, "password": PASSWORD,
+                          "public_key": pub, "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def _report_id(client, device_id, priv, rid):
+    from platform_core.nexus import agent_auth
+    path = "/nexus-agent/status"
+    body = json.dumps({"rustdesk_id": rid}).encode("utf-8")
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv, method="POST", path=path, timestamp=ts, body=body)
+    return client.post(path, content=body, headers={
+        agent_auth.HEADER_DEVICE: device_id,
+        agent_auth.HEADER_TIMESTAMP: ts,
+        agent_auth.HEADER_SIGNATURE: sig,
+        "Content-Type": "application/json"})
+
+
+# ── Domain ───────────────────────────────────────────────────────────────────
+
+def test_dat_va_tim_theo_rustdesk_id(app_bat):
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+
+    device_id, _priv = _register(app_bat)
+    gen = get_session(); db = next(gen)
+    try:
+        dev = db.get(devices.NexusDevice, device_id)
+        assert devices.dat_rustdesk_id(db, dev, rustdesk_id="224404082") is True
+        assert devices.dat_rustdesk_id(db, dev, rustdesk_id="224404082") is False
+        found = devices.tim_theo_rustdesk_id(db, rustdesk_id="224404082")
+        assert found is not None and found.id == device_id
+        assert devices.tim_theo_rustdesk_id(db, rustdesk_id="000") is None
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+# ── /relay-check ─────────────────────────────────────────────────────────────
+
+def test_chua_cau_hinh_bi_mat_thi_404(app_bat, monkeypatch):
+    monkeypatch.delenv("LTT_NEXUS_RELAY_SECRET", raising=False)
+    r = app_bat.get("/nexus-agent/relay-check", params={"id": "1"})
+    assert r.status_code == 404
+
+
+def test_sai_bi_mat_thi_401(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    r = app_bat.get("/nexus-agent/relay-check", params={"id": "1"},
+                    headers={"X-LTT-Relay-Secret": "sai"})
+    assert r.status_code == 401
+
+
+def test_id_la_thi_cho_qua(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    r = app_bat.get("/nexus-agent/relay-check", params={"id": "999"},
+                    headers={"X-LTT-Relay-Secret": SECRET})
+    assert r.status_code == 200
+    assert r.json() == {"allowed": True, "managed": False}
+
+
+def test_da_dang_ky_mien_phi_thi_cho_qua(app_bat, monkeypatch):
+    device_id, priv = _register(app_bat)
+    assert _report_id(app_bat, device_id, priv, "224404082").status_code == 200
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    r = app_bat.get("/nexus-agent/relay-check", params={"id": "224404082"},
+                    headers={"X-LTT-Relay-Secret": SECRET})
+    assert r.status_code == 200
+    assert r.json()["allowed"] is True
+    assert r.json()["managed"] is True
+
+
+def test_co_gia_chua_tra_thi_chan(app_bat, monkeypatch):
+    device_id, priv = _register(app_bat)
+    assert _report_id(app_bat, device_id, priv, "293017172").status_code == 200
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "50")   # có giá + chưa trả
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    r = app_bat.get("/nexus-agent/relay-check", params={"id": "293017172"},
+                    headers={"X-LTT-Relay-Secret": SECRET})
+    assert r.status_code == 200
+    assert r.json()["allowed"] is False
+    assert r.json()["managed"] is True
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_244_nexus_download.py
+SHA256=f65da8d4a0e5aa8a970dbaf31071a04a1e7aad73f0694a621aa537fcb4ba495e BYTES=4792 LINES=127
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trang tải LTT Nexus + version.json (Model B, Q101: web = hướng dẫn/tải).
+
+Công khai, không phụ thuộc cờ LTT_NEXUS. Test chốt: trang render 4 nền tảng;
+version.json là JSON hợp lệ; và manifest đọc đè từ data/nexus_versions.json.
+"""
+from __future__ import annotations
+
+import json
+
+import pytest
+from fastapi.testclient import TestClient
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'dl.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    (tmp_path / "data").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "dl-secret-value")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client, tmp_path
+    finally:
+        dbmod.reset_engine()
+
+
+def test_manifest_mac_dinh_co_4_nen_tang():
+    from platform_core.nexus import versions
+
+    m = versions.manifest()
+    assert set(m["platforms"]) == {"windows", "macos", "ios", "android"}
+    assert m["version"]
+
+
+def test_manifest_doc_de_tu_data_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path))
+    (tmp_path / "nexus_versions.json").write_text(json.dumps({
+        "version": "9.9.9",
+        "platforms": {"windows": {"available": True, "url": "https://x/y.zip",
+                                  "sha256": "abc"}},
+    }), encoding="utf-8")
+    from platform_core.nexus import versions
+
+    m = versions.manifest()
+    assert m["version"] == "9.9.9"
+    assert m["platforms"]["windows"]["available"] is True
+    assert m["platforms"]["windows"]["url"] == "https://x/y.zip"
+    # nền tảng không khai vẫn giữ mặc định (không mất)
+    assert m["platforms"]["android"]["available"] is False
+
+
+def test_trang_tai_render(app_bat):
+    client, _ = app_bat
+    r = client.get("/tai-xuong")
+    assert r.status_code == 200, r.text
+    body = r.text
+    assert "LTT Nexus" in body
+    assert "Windows" in body and "macOS" in body and "Android" in body
+    assert "Đang chuẩn bị" in body        # mặc định chưa có URL
+
+
+def test_version_json(app_bat):
+    client, _ = app_bat
+    r = client.get("/nexus/version.json")
+    assert r.status_code == 200, r.text
+    j = r.json()
+    assert "version" in j and "platforms" in j
+    assert set(j["platforms"]) == {"windows", "macos", "ios", "android"}
+
+
+def test_trang_tai_hien_nut_tai_khi_co_url(app_bat, monkeypatch):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "1.0.0",
+        "platforms": {"windows": {"label": "Windows 10/11 (64-bit)",
+                                  "available": True,
+                                  "url": "/nexus/dl/LTTNexus.zip",
+                                  "sha256": "deadbeef", "kind": "zip"}},
+    }), encoding="utf-8")
+    r = client.get("/tai-xuong")
+    assert r.status_code == 200
+    assert "Tải xuống" in r.text
+    assert "deadbeef" in r.text
+
+
+def test_dl_phuc_vu_file_that(app_bat):
+    """Thả file vào data/nexus_dist/ → /nexus/dl/<tên> trả đúng nội dung + type."""
+    client, tmp_path = app_bat
+    dist = tmp_path / "data" / "nexus_dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    (dist / "LTTNexus-1.0.0-android-arm64.apk").write_bytes(b"PK\x03\x04apkbytes")
+    r = client.get("/nexus/dl/LTTNexus-1.0.0-android-arm64.apk")
+    assert r.status_code == 200, r.text
+    assert r.content == b"PK\x03\x04apkbytes"
+    assert r.headers["content-type"] == "application/vnd.android.package-archive"
+    assert "immutable" in r.headers.get("cache-control", "")
+
+
+def test_dl_khong_co_file_tra_404(app_bat):
+    client, _ = app_bat
+    r = client.get("/nexus/dl/khong-ton-tai.zip")
+    assert r.status_code == 404
+
+
+@pytest.mark.parametrize("bad", [
+    "..%2f..%2fsecrets%2fapp.env",   # path traversal đã encode
+    "a/b.zip",                        # có gạch chéo
+    ".hidden",                        # bắt đầu bằng dấu chấm
+    "con;rm.zip",                     # ký tự lạ
+])
+def test_dl_chan_path_traversal(app_bat, bad):
+    client, tmp_path = app_bat
+    # tạo một file "mồi" ngoài dist để chắc chắn không rò
+    (tmp_path / "data" / "secret.txt").write_text("top-secret", encoding="utf-8")
+    r = client.get(f"/nexus/dl/{bad}")
+    assert r.status_code == 404
+    assert "top-secret" not in r.text
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_24_antispam_final.py
 SHA256=5ad4ff821212d2a3928f98f0552750e729cfb0a9384c46de3687c546399f3410 BYTES=15944 LINES=427
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -219626,7 +221058,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/i18n_baseline.json
-SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=6820 LINES=166
+SHA256=a56e30a1a150d53220c0ccf36e3840851b5ae9598d0d78520f54ded2c12fae93 BYTES=6723 LINES=164
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "theo_file": {
@@ -219643,7 +221075,7 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "apps/autosubvideo/burn.py": 6,
     "apps/autosubvideo/font_checker.py": 4,
     "apps/autosubvideo/jobs.py": 15,
-    "apps/autosubvideo/manifest.py": 2,
+    "apps/autosubvideo/manifest.py": 1,
     "apps/autosubvideo/parsers.py": 2,
     "apps/autosubvideo/routes.py": 29,
     "apps/autosubvideo/schemas.py": 1,
@@ -219654,9 +221086,8 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "apps/autosubvideo/transcription.py": 9,
     "apps/chataistudio/features.py": 4,
     "apps/chataistudio/manifest.py": 2,
-    "apps/chataistudio/routes.py": 10,
+    "apps/chataistudio/routes.py": 5,
     "apps/chataistudio/sidecar_client.py": 2,
-    "apps/chataistudio/templates/chataistudio.html": 1,
     "apps/chataistudio/templates/chataistudio_admin.html": 10,
     "apps/demo/jobs.py": 2,
     "apps/demo/manifest.py": 4,
@@ -219682,34 +221113,34 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "apps/prompt_ai_ommi/services/retention.py": 1,
     "apps/prompt_ai_ommi/services/storyboard.py": 10,
     "apps/prompt_ai_ommi/templates/prompt_ai_ommi.html": 27,
-    "apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html": 3,
+    "apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html": 2,
     "apps/socialbot/manifest.py": 7,
     "apps/taoanh/jobs.py": 5,
     "apps/taoanh/manifest.py": 3,
     "apps/taoanh/routes.py": 6,
     "apps/taoanh/templates/image.html": 2,
     "apps/taoclipngan/features.py": 3,
-    "apps/taoclipngan/jobs.py": 7,
+    "apps/taoclipngan/jobs.py": 6,
     "apps/taoclipngan/manifest.py": 3,
-    "apps/taoclipngan/routes.py": 28,
-    "apps/taoclipngan/templates/taoclipngan.html": 9,
+    "apps/taoclipngan/routes.py": 7,
+    "apps/taoclipngan/templates/taoclipngan.html": 1,
     "apps/taovideo/assets.py": 6,
     "apps/taovideo/jobs.py": 12,
     "apps/taovideo/manifest.py": 3,
-    "apps/taovideo/routes.py": 19,
-    "apps/taovideo/templates/taovideo.html": 8,
+    "apps/taovideo/routes.py": 17,
+    "apps/taovideo/templates/taovideo.html": 5,
     "apps/thumbnail/jobs.py": 5,
     "apps/thumbnail/manifest.py": 5,
-    "apps/thumbnail/routes.py": 14,
+    "apps/thumbnail/routes.py": 9,
     "apps/thumbnail/templates/thumbnail.html": 5,
     "apps/upscalevideo/autotune.py": 4,
     "apps/upscalevideo/engine.py": 1,
     "apps/upscalevideo/ff.py": 8,
     "apps/upscalevideo/jobs.py": 25,
-    "apps/upscalevideo/manifest.py": 3,
-    "apps/upscalevideo/routes.py": 37,
+    "apps/upscalevideo/manifest.py": 2,
+    "apps/upscalevideo/routes.py": 32,
     "apps/upscalevideo/service.py": 1,
-    "apps/upscalevideo/templates/upscalevideo.html": 18,
+    "apps/upscalevideo/templates/upscalevideo.html": 15,
     "platform_core/agent/budget.py": 16,
     "platform_core/agent/executor.py": 9,
     "platform_core/agent/normalizer.py": 9,
@@ -219728,6 +221159,7 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "platform_core/mailer.py": 2,
     "platform_core/media.py": 10,
     "platform_core/models.py": 2,
+    "platform_core/nexus/versions.py": 1,
     "platform_core/prompt_fragments.py": 3,
     "platform_core/providers.py": 3,
     "platform_core/registry.py": 33,
@@ -219740,7 +221172,6 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "server/request_body_limit.py": 3,
     "server/routes/accounts.py": 6,
     "server/routes/auth.py": 6,
-    "server/routes/dashboard.py": 2,
     "server/routes/manual.py": 14,
     "server/routes/oauth.py": 17,
     "server/routes/register.py": 13,
@@ -219761,7 +221192,6 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "server/services/worker_control.py": 2,
     "server/templates/_doi_ngon_ngu.html": 1,
     "server/templates/_header.html": 1,
-    "server/templates/_job_progress.html": 1,
     "server/templates/accounts.html": 41,
     "server/templates/audit.html": 6,
     "server/templates/base.html": 3,
@@ -219770,7 +221200,6 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "server/templates/error.html": 1,
     "server/templates/forgot_password.html": 5,
     "server/templates/home.html": 2,
-    "server/templates/job_detail.html": 1,
     "server/templates/jobs.html": 3,
     "server/templates/login.html": 3,
     "server/templates/manual_fb.html": 17,
@@ -219779,6 +221208,7 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "server/templates/nap.html": 4,
     "server/templates/nap_don.html": 2,
     "server/templates/nap_khong_thay.html": 1,
+    "server/templates/nexus_download.html": 14,
     "server/templates/oauth_result.html": 3,
     "server/templates/oauth_tiktok_disclosure.html": 14,
     "server/templates/register.html": 3,
@@ -219792,7 +221222,7 @@ SHA256=2f36e2b18fe579e74a9490883e66259cfd2ec324a3cc79017849c44aef21fc31 BYTES=68
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 1500
+  "tong": 1454
 }
 
 @@@LTT_PROFILE_FILE_END@@@

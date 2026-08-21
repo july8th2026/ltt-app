@@ -508,15 +508,33 @@ nội bộ, chưa phải để mở bán.
 | 2 | Nền tảng thiết bị N2 (devices/enroll/presence/broker/audit/app) | 13% | **100%** | ✅ 9 file test |
 | 3 | Hạ tầng relay N1 (dựng + T10) | 7% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
 | 4 | Khả thi engine + primitives (V1-V8 + `engine.py` + `engine_runner`) | 9% | **95%** | ✅ đo+module+wiring; fork build xác nhận primitives |
-| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **75%** | ✅ **fork build CHẠY** (LTTNexus.exe) + công bố mã + recipe; còn đổi tên exe, release build |
+| 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **82%** | ✅ **fork build CHẠY** (LTTNexus.exe **+ APK Android arm64**) + công bố mã + recipe (Win+Android); còn đổi tên/nhãn Android, macOS/iOS, release build |
 | 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **90%** | 🎨 **P1-P4+P6+P7+P8 XONG**: branding, theme Carbon Red, logo, chỉ báo phiên, việt hoá mặc định, **P7 login+billing enforcement** (target từ chối khi hết credit), **P8 nhật ký truy cập** (ràng buộc 6). Còn: P8-END (ended_at), P5 non-action |
 | 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
-| 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **60%** | ✅ tooling + build agent + **build fork LTTNexus**; ⬜ ký + bản gộp fork+agent |
+| 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **72%** | ✅ tooling + build agent + **build fork LTTNexus (Win + APK Android, ký self-signed)** + **endpoint tự phục vụ bản cài** (`/nexus/dl/`, biên-cache immutable, chặn traversal, HEAD+GET, đối chiếu SHA end-to-end); ⬜ ký chính thức, bản gộp fork+agent |
 | 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **85%** | ✅ cơ chế xong (test_238); còn 3 tham số của người (D12) |
 | 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **35%** | ✅ runbook + **E2E LIVE trên Windows** (agent↔control plane, `e2e_live`); ⬜ chạy trên prod |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 85%** (2026-08-21, thêm **trang tải 4 nền tảng** (`/tai-xuong`, kiểm hình) + **tự-update** (client dò `version.json`, banner 'có bản mới'). 53 test).
+**Tổng có trọng số ≈ 87%** (2026-08-21, thêm **trang tải 4 nền tảng** (`/tai-xuong`, kiểm hình) + **tự-update** (client dò `version.json`, banner 'có bản mới') + **APK Android arm64 build xong** + **endpoint tự phục vụ bản cài**. 57 test).
+
+#### Cột mốc 2026-08-21 (c) — APK Android + endpoint tự phục vụ bản cài
+
+* **Build APK Android arm64** trong WSL Ubuntu (fork RustDesk chỉ build Android
+  trên Linux). Vượt 6 bẫy cross-compile (DNS WSL, rustfmt, openssl-android qua
+  vcpkg target-scoped, kcp bindgen `--bindgen` sysroot, license SDK, ký release).
+  Ra `app-release.apk` 26.4 MB, đã ký self-signed → cài ngoài Play Store cho nội
+  bộ. Cấu hình relay/khoá LTT nằm trong `.so` nên APK trỏ đúng relay. Recipe đầy
+  đủ ở fork `BUILD_ANDROID.md`. Nhãn Android còn "RustDesk" (đổi thương hiệu sau).
+* **Endpoint `/nexus/dl/{file}`** (`server/nexus_download.py`) phục vụ bản cài
+  THẲNG qua Tunnel từ `data/nexus_dist/` (dưới trần 100 MB CF) — không cần R2 cho
+  mấy file khiêm tốn. Chặn path-traversal chặt, HEAD+GET, biên-cache immutable
+  (ngoại lệ có chủ đích ở middleware: file CÔNG KHAI, version trong tên, không
+  dính lớp rò-cache-per-user). Kiểm live: SHA tải về khớp bit-đúng.
+* **Manifest live** `data/nexus_versions.json`: Windows + Android `available`,
+  macOS/iOS "đang chuẩn bị". Bản cài + manifest là **dữ liệu vận hành** (gitignore,
+  triển khai vào `data/` trên server), không nhồi binary vào git.
+* Test: `test_244` mở rộng (phục vụ file thật, 404 khi thiếu, chặn traversal).
 
 #### Cột mốc 2026-08-21 (b) — Cưỡng chế billing ở tầng RELAY (răng thật)
 
