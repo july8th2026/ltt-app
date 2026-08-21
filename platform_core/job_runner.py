@@ -16,6 +16,7 @@ chạy handler — một handler chạy 3 phút mà giữ khoá dòng 3 phút s�
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from contextlib import contextmanager
@@ -610,6 +611,48 @@ def _quet_canh_bao() -> None:
         ops_alerts.gui(db)
 
         _don_nexus(db)
+        _tham_relay_nexus()
+
+
+def _tham_relay_nexus() -> bool:
+    """Relay Nexus còn nghe không? Đếm khi im lặng để cảnh báo tự bắn.
+
+    Vì sao cần: nền tảng có thể xanh hoàn toàn trong khi **không ai kết nối được
+    tới máy nào** — relay là một tiến trình khác, trên một máy khác. Trước cái
+    này, cách duy nhất biết relay chết là khách gọi điện.
+
+    Chỉ mở một socket TCP rồi đóng: đủ để biết cổng còn nghe, không cần bí mật,
+    không gửi gì. Đếm `nexus:relay_im_lang` cho ngưỡng ở `ops_alerts.NGUONG`.
+    """
+    import socket
+
+    from platform_core import nexus
+
+    if not nexus.enabled():
+        return True
+    dia_chi = os.environ.get("LTT_NEXUS_RELAY_HOST", "").strip()
+    if not dia_chi:
+        return True                      # chưa khai → không đoán, không báo
+    cong = 21116
+    if ":" in dia_chi:
+        dia_chi, _, cong_raw = dia_chi.rpartition(":")
+        try:
+            cong = int(cong_raw)
+        except ValueError:
+            cong = 21116
+    try:
+        with socket.create_connection((dia_chi, cong), timeout=5):
+            return True
+    except OSError as exc:
+        log.warning("relay nexus im lang tai %s:%s (%s)", dia_chi, cong,
+                    type(exc).__name__)
+        try:
+            from platform_core.public_api import metrics
+
+            metrics.increment("nexus:relay_im_lang")
+        except Exception:                                       # noqa: BLE001
+            log.warning("khong dem duoc nexus:relay_im_lang", exc_info=True)
+        return False
 
 
 def _don_nexus(db) -> int:

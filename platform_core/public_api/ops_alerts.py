@@ -74,6 +74,11 @@ NGUONG = {
     # Từ chối vì thiếu năng lực phía sau (pool, GPU) là mất doanh thu, không phải
     # bảo vệ. Khác hẳn rate limit, nên khác ngưỡng.
     metrics.CAPACITY_REFUSED: 5,
+    # Relay Nexus im lặng: máy khách KHÔNG kết nối tới nhau được, dù nền tảng
+    # vẫn xanh. Đây là kiểu sự cố dễ bị chẩn đoán nhầm thành "lỗi đăng nhập" nên
+    # phải báo sớm. Ngưỡng 2 (không phải 1) để một lần chớp mạng không dựng
+    # người trực dậy; vòng bảo trì thăm định kỳ nên 2 lần liên tiếp là thật.
+    "nexus:relay_im_lang": 2,
     # Webhook chết nghĩa là khách không biết job của họ đã xong.
     metrics.WEBHOOK_FAILED: 10,
 }

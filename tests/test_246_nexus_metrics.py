@@ -163,3 +163,63 @@ def test_tom_tat_hong_thi_tra_loi_chu_khong_nem(app_bat, monkeypatch):
     monkeypatch.setattr(dbmod, "get_session", no)
     tt = status_mod._tom_tat_nexus()
     assert tt is not None and tt.get("loi")
+
+
+# ── Cảnh báo khi relay im lặng ───────────────────────────────────────────────
+
+def test_tham_relay_khong_khai_dia_chi_thi_khong_bao(app_bat, monkeypatch):
+    """Chưa khai địa chỉ relay → không đoán, không báo động giả."""
+    from platform_core.job_runner import _tham_relay_nexus
+
+    monkeypatch.delenv("LTT_NEXUS_RELAY_HOST", raising=False)
+    assert _tham_relay_nexus() is True
+    assert _dem().get("nexus:relay_im_lang", 0) == 0
+
+
+def test_tham_relay_chet_thi_dem_de_canh_bao_bay(app_bat, monkeypatch):
+    """Relay không nghe → đếm, để ngưỡng ở ops_alerts bắn thư cho người trực."""
+    from platform_core.job_runner import _tham_relay_nexus
+
+    # cổng 9 (discard) hiếm khi mở; địa chỉ loopback nên không ra ngoài mạng
+    monkeypatch.setenv("LTT_NEXUS_RELAY_HOST", "127.0.0.1:9")
+    assert _tham_relay_nexus() is False
+    assert _dem().get("nexus:relay_im_lang", 0) >= 1
+
+
+def test_tham_relay_song_thi_khong_dem(app_bat, monkeypatch):
+    import socket
+    import threading
+
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    cong = srv.getsockname()[1]
+    threading.Thread(target=lambda: srv.accept(), daemon=True).start()
+    try:
+        from platform_core.job_runner import _tham_relay_nexus
+
+        monkeypatch.setenv("LTT_NEXUS_RELAY_HOST", f"127.0.0.1:{cong}")
+        assert _tham_relay_nexus() is True
+        assert _dem().get("nexus:relay_im_lang", 0) == 0
+    finally:
+        srv.close()
+
+
+def test_tat_nexus_thi_khong_tham_relay(app_bat, monkeypatch):
+    from platform_core.job_runner import _tham_relay_nexus
+
+    monkeypatch.setenv("LTT_NEXUS", "0")
+    monkeypatch.setenv("LTT_NEXUS_RELAY_HOST", "127.0.0.1:9")
+    assert _tham_relay_nexus() is True
+    assert _dem().get("nexus:relay_im_lang", 0) == 0
+
+
+def test_nguong_canh_bao_relay_da_khai(app_bat):
+    """Đếm mà không có ngưỡng thì không ai được báo — chốt cả hai đi cùng nhau."""
+    from platform_core.public_api import ops_alerts
+
+    assert "nexus:relay_im_lang" in ops_alerts.NGUONG
+    gan = {"counters": {"nexus:relay_im_lang": 5}}
+    truoc = {"counters": {}}
+    ten = [d["ten"] for d in ops_alerts.danh_gia(gan, truoc)]
+    assert "nexus:relay_im_lang" in ten

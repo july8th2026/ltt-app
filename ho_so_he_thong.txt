@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:80d063181dc46af75afba1dc6a6bdb887dab73ea5566f42825b76731252b1412
+Fingerprint   : sha256:3730e76cd71e1138a9ab73c29319b2946e9056ec21746442650c1e42a3403189
 Nguồn đã quét : 1194 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -951,7 +951,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (116 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (117 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1003,6 +1003,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
 - LTT_NEXUS_AN_HAN_NGAY
 - LTT_NEXUS_GIA_MAY_THANG
+- LTT_NEXUS_RELAY_HOST
 - LTT_NEXUS_RELAY_KEY
 - LTT_NEXUS_RELAY_SECRET
 - LTT_NEXUS_RELAY_SERVER
@@ -2608,7 +2609,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1194 file; 10804480 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1194 file; 10810125 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -106259,7 +106260,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=b9b76c29e44b6f4db79284455ee29ac4c1ac9504bc1c6bfbe877fc09e18c9d79 BYTES=40013 LINES=921
+SHA256=a481eb4dfd469c8e2154405e4807e744a201ec7735338b9995e74eb96cd20687 BYTES=42629 LINES=964
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -106279,6 +106280,7 @@ chạy handler — một handler chạy 3 phút mà giữ khoá dòng 3 phút s�
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from contextlib import contextmanager
@@ -106873,6 +106875,48 @@ def _quet_canh_bao() -> None:
         ops_alerts.gui(db)
 
         _don_nexus(db)
+        _tham_relay_nexus()
+
+
+def _tham_relay_nexus() -> bool:
+    """Relay Nexus còn nghe không? Đếm khi im lặng để cảnh báo tự bắn.
+
+    Vì sao cần: nền tảng có thể xanh hoàn toàn trong khi **không ai kết nối được
+    tới máy nào** — relay là một tiến trình khác, trên một máy khác. Trước cái
+    này, cách duy nhất biết relay chết là khách gọi điện.
+
+    Chỉ mở một socket TCP rồi đóng: đủ để biết cổng còn nghe, không cần bí mật,
+    không gửi gì. Đếm `nexus:relay_im_lang` cho ngưỡng ở `ops_alerts.NGUONG`.
+    """
+    import socket
+
+    from platform_core import nexus
+
+    if not nexus.enabled():
+        return True
+    dia_chi = os.environ.get("LTT_NEXUS_RELAY_HOST", "").strip()
+    if not dia_chi:
+        return True                      # chưa khai → không đoán, không báo
+    cong = 21116
+    if ":" in dia_chi:
+        dia_chi, _, cong_raw = dia_chi.rpartition(":")
+        try:
+            cong = int(cong_raw)
+        except ValueError:
+            cong = 21116
+    try:
+        with socket.create_connection((dia_chi, cong), timeout=5):
+            return True
+    except OSError as exc:
+        log.warning("relay nexus im lang tai %s:%s (%s)", dia_chi, cong,
+                    type(exc).__name__)
+        try:
+            from platform_core.public_api import metrics
+
+            metrics.increment("nexus:relay_im_lang")
+        except Exception:                                       # noqa: BLE001
+            log.warning("khong dem duoc nexus:relay_im_lang", exc_info=True)
+        return False
 
 
 def _don_nexus(db) -> int:
@@ -117100,7 +117144,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/ops_alerts.py
-SHA256=bf34d79243ed690ede791cb81b91a41cbd5a7d1f39aff4145943a0fb933f3da9 BYTES=10407 LINES=208
+SHA256=7ec960091eb5d21d684e32134d3a1222218d4edb492f6252e3ab946d72f952e9 BYTES=11062 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngưỡng vận hành: đẩy `metrics` tới người trực, thay vì chờ người trực đọc.
 
@@ -117178,6 +117222,11 @@ NGUONG = {
     # Từ chối vì thiếu năng lực phía sau (pool, GPU) là mất doanh thu, không phải
     # bảo vệ. Khác hẳn rate limit, nên khác ngưỡng.
     metrics.CAPACITY_REFUSED: 5,
+    # Relay Nexus im lặng: máy khách KHÔNG kết nối tới nhau được, dù nền tảng
+    # vẫn xanh. Đây là kiểu sự cố dễ bị chẩn đoán nhầm thành "lỗi đăng nhập" nên
+    # phải báo sớm. Ngưỡng 2 (không phải 1) để một lần chớp mạng không dựng
+    # người trực dậy; vòng bảo trì thăm định kỳ nên 2 lần liên tiếp là thật.
+    "nexus:relay_im_lang": 2,
     # Webhook chết nghĩa là khách không biết job của họ đã xong.
     metrics.WEBHOOK_FAILED: 10,
 }
@@ -199540,7 +199589,7 @@ def test_khong_khai_che_do_structure_vi_model_khong_co_controlnet():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_246_nexus_metrics.py
-SHA256=5a39bf57d29adcf1f7fa16802007de6a818405c176fc40a6f5a9227475162879 BYTES=5924 LINES=165
+SHA256=54b40da67dc2173c4c1b6b61c610775ebd32881a72e6a71445bfe2dd8e1e68d9 BYTES=8298 LINES=225
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Số liệu vận hành Nexus — đếm sự kiện + khối tóm tắt trên trang tình trạng.
 
@@ -199707,6 +199756,66 @@ def test_tom_tat_hong_thi_tra_loi_chu_khong_nem(app_bat, monkeypatch):
     monkeypatch.setattr(dbmod, "get_session", no)
     tt = status_mod._tom_tat_nexus()
     assert tt is not None and tt.get("loi")
+
+
+# ── Cảnh báo khi relay im lặng ───────────────────────────────────────────────
+
+def test_tham_relay_khong_khai_dia_chi_thi_khong_bao(app_bat, monkeypatch):
+    """Chưa khai địa chỉ relay → không đoán, không báo động giả."""
+    from platform_core.job_runner import _tham_relay_nexus
+
+    monkeypatch.delenv("LTT_NEXUS_RELAY_HOST", raising=False)
+    assert _tham_relay_nexus() is True
+    assert _dem().get("nexus:relay_im_lang", 0) == 0
+
+
+def test_tham_relay_chet_thi_dem_de_canh_bao_bay(app_bat, monkeypatch):
+    """Relay không nghe → đếm, để ngưỡng ở ops_alerts bắn thư cho người trực."""
+    from platform_core.job_runner import _tham_relay_nexus
+
+    # cổng 9 (discard) hiếm khi mở; địa chỉ loopback nên không ra ngoài mạng
+    monkeypatch.setenv("LTT_NEXUS_RELAY_HOST", "127.0.0.1:9")
+    assert _tham_relay_nexus() is False
+    assert _dem().get("nexus:relay_im_lang", 0) >= 1
+
+
+def test_tham_relay_song_thi_khong_dem(app_bat, monkeypatch):
+    import socket
+    import threading
+
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    cong = srv.getsockname()[1]
+    threading.Thread(target=lambda: srv.accept(), daemon=True).start()
+    try:
+        from platform_core.job_runner import _tham_relay_nexus
+
+        monkeypatch.setenv("LTT_NEXUS_RELAY_HOST", f"127.0.0.1:{cong}")
+        assert _tham_relay_nexus() is True
+        assert _dem().get("nexus:relay_im_lang", 0) == 0
+    finally:
+        srv.close()
+
+
+def test_tat_nexus_thi_khong_tham_relay(app_bat, monkeypatch):
+    from platform_core.job_runner import _tham_relay_nexus
+
+    monkeypatch.setenv("LTT_NEXUS", "0")
+    monkeypatch.setenv("LTT_NEXUS_RELAY_HOST", "127.0.0.1:9")
+    assert _tham_relay_nexus() is True
+    assert _dem().get("nexus:relay_im_lang", 0) == 0
+
+
+def test_nguong_canh_bao_relay_da_khai(app_bat):
+    """Đếm mà không có ngưỡng thì không ai được báo — chốt cả hai đi cùng nhau."""
+    from platform_core.public_api import ops_alerts
+
+    assert "nexus:relay_im_lang" in ops_alerts.NGUONG
+    gan = {"counters": {"nexus:relay_im_lang": 5}}
+    truoc = {"counters": {}}
+    ten = [d["ten"] for d in ops_alerts.danh_gia(gan, truoc)]
+    assert "nexus:relay_im_lang" in ten
 
 @@@LTT_PROFILE_FILE_END@@@
 
