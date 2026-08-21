@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:3730e76cd71e1138a9ab73c29319b2946e9056ec21746442650c1e42a3403189
-Nguồn đã quét : 1194 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:b85d83d32d9d6ffffecf1ff6b3d1c63ac8f8cab25355388169fde3daa14adf31
+Nguồn đã quét : 1195 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -951,7 +951,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (117 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (116 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -997,7 +997,6 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_MODELARK_ACCESS_KEY
 - LTT_MODELARK_REGION
 - LTT_MODELARK_SECRET_KEY
-- LTT_MODELS
 - LTT_NEW_ADMIN_PASSWORD
 - LTT_NEXUS
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
@@ -1070,7 +1069,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (250 file pytest + 3 frontend)
+10. QUALITY GATES (251 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1258,6 +1257,7 @@ Test inventory:
 - tests/test_245_render_gateway.py
 - tests/test_246_nexus_metrics.py
 - tests/test_247_cham_mu.py
+- tests/test_247_nexus_kich_hoat_tuc_thi.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -1347,8 +1347,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1194 file)
-Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:901, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1195 file)
+Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:902, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2243,7 +2243,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (267)
+[tests] (268)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2442,6 +2442,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_245_render_gateway.py
 - tests/test_246_nexus_metrics.py
 - tests/test_247_cham_mu.py
+- tests/test_247_nexus_kich_hoat_tuc_thi.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -2609,7 +2610,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1194 file; 10810125 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1195 file; 10829488 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -82175,7 +82176,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=733de3fb89f7a1ca22781289af2e7705bbb6eca5ed7e20ae07b6cdb0e7426d20 BYTES=177138 LINES=2587
+SHA256=b2114f4f1e42acdfd89b6650a71f21b9d5819cf2b2b25b0d6895664ae7330fc9 BYTES=177457 LINES=2590
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -84728,12 +84729,15 @@ Ba điều phải biết trước khi đụng vào:
   chứ không phải 250 W. **Bác bỏ bắt được lỗi thật**: `/system_stats` và
   `torch.mem_get_info` mù với tiến trình khác trên WDDM ⇒ `busy.py` đọc VRAM
   bằng `nvidia-smi` (D-013)
-- [~] G3 **ĐANG DỞ**. Xong: tải 30,26 GB về `H:\LTT_MODELS\` (sha256 đủ) · base path
-  thứ hai trong `extra_model_paths.yaml` (cộng thêm, có sao lưu) · venv riêng ·
-  **template `t2i` đã sinh ảnh thật** 2560×1440 trong 48,4 s, VRAM đỉnh 11,7 GB,
-  **368,93 W / trần 370 W** (D-016). **Xác nhận KHÔNG cần text encoder rời.**
-  Còn lại (cần GPU): baseline 5 ca bf16 50 bước · thí nghiệm độ phân giải · bác bỏ
-  bằng tái lập seed
+- [~] G3 **KHÔNG QUA lần 1 — C4 = 7 < 8** (luật §1.4 điều ②, không cho bù trừ).
+  Trung bình 9,25 nhưng bốn dấu chân ngoài dự định trên máy dùng chung, nặng nhất là
+  **lệnh tách khỏi SSH vẫn chạy tiếp khi chủ dự án ngắt** — đã khắc phục cả bốn
+  (`dung_het.ps1`, prefix `ltt_h37/`, trả lại 2 tệp .mp4 chuyển nhầm).
+  **Số đo cấu hình đích:** bf16 2560×1440 50 bước → **92–97 giây/ảnh**, VRAM đỉnh
+  **16,8 GB**, nhiệt **82–83 °C** kèm **SW Thermal Slowdown**, không rò rỉ RAM.
+  **Tái lập byte-identical** đã chứng minh. Thời gian ∝ số token (D-019).
+  Hai lỗi thật đã bắt và sửa: `/history` có bản ghi ≠ job đã xong (D-018) · prefix
+  đụng thư mục dự án video.
 - [ ] G4 Quét cấu hình CHẤT LƯỢNG: precision · base↔dev · số bước 30–90 · sampler.
   Chọn bằng **so mù ≥ 50 cặp có cặp bẫy**; thời gian chỉ là trần khả thi
 - [ ] G5 Edit + reference: `edit` · `subject` · `structure`, **1–2 ảnh tham chiếu**
@@ -109422,7 +109426,7 @@ __all__ = ["BAT_DAU_PHIEN", "BOI_CHU", "CAP_VE", "GHEP", "KET_THUC_PHIEN",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/billing.py
-SHA256=a998a8d17aff9340c6bd335bcc9fa1ac6314733fd8646aa82b35fee090ba89ab BYTES=5164 LINES=119
+SHA256=d386a724b36c525d1234e559d6acc19bf0d4b941c3fed1790ca28a18502c3bcc BYTES=7486 LINES=158
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Thuê bao Nexus: trừ credit theo số máy đã ghép, mỗi tháng (Q98).
 
@@ -109441,6 +109445,7 @@ Giá/chu kỳ/ân hạn là tham số của người (D12) — module này nhậ
 """
 from __future__ import annotations
 
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -109453,6 +109458,8 @@ from platform_core.nexus.tables import NexusDevice
 #: Một chu kỳ thuê bao. 30 ngày. **Giá đã chốt (D12, 2026-08-20): 50 credit/máy/
 #: tháng** — đặt `LTT_NEXUS_GIA_MAY_THANG=50` trong secrets/app.env lúc go-live.
 #: Mặc định code vẫn 0 (an toàn); 50 là cấu hình vận hành, không phải hằng số.
+log = logging.getLogger(__name__)
+
 CHU_KY_NGAY = 30
 
 
@@ -109498,6 +109505,39 @@ def da_thanh_toan(device: NexusDevice, *, now: datetime | None = None,
     return han > (now or _now())
 
 
+def thu_phi_mot_may(db, device: NexusDevice, *, now: datetime | None = None,
+                    env: dict | None = None) -> bool:
+    """Thu phí cho ĐÚNG MỘT máy nếu nó đã tới kỳ. Trả True nếu máy đang có hạn
+    sau lời gọi này (đã trả sẵn, hoặc vừa trừ được).
+
+    Vì sao cần hàm cho một máy: vòng quét chạy **15 phút một lần**. Nếu chỉ có
+    vòng quét thì khách vừa cài xong, vừa đăng nhập — `paid_until` còn rỗng nên
+    **bị chặn tới 15 phút dù đã có credit**. Ấn tượng đầu tiên của sản phẩm là
+    "trả tiền rồi mà không dùng được". Gọi hàm này ngay lúc đăng ký máy và mỗi
+    lần máy hỏi trạng thái thì việc kích hoạt là **tức thì**.
+
+    Cùng quy tắc với `thu_phi_thang`: miễn phí thì không làm gì; còn hạn thì
+    không trừ lại; thiếu credit thì **không trừ, không đẩy hạn** (không nợ).
+    """
+    gia = gia_may_thang(env)
+    if gia <= 0:
+        return True                               # miễn phí: luôn coi là đủ
+    if device.revoked_at is not None:
+        return False
+    current = now or _now()
+    han = device.paid_until
+    if han is not None and han.tzinfo is None:
+        han = han.replace(tzinfo=timezone.utc)
+    if han is not None and han > current:
+        return True                               # còn hạn, chưa tới kỳ
+    if not credit.tru(db, device.user_id, gia, kind=CREDIT_NEXUS_BILL,
+                      note=f"nexus thue bao may {device.id}"):
+        return False                              # thiếu credit → chưa thanh toán
+    goc = han if (han is not None and han > current - timedelta(days=CHU_KY_NGAY)) else current
+    device.paid_until = goc + timedelta(days=CHU_KY_NGAY)
+    return True
+
+
 def thu_phi_thang(db, *, now: datetime | None = None,
                   env: dict | None = None) -> dict:
     """Một lượt tính phí: mỗi máy còn hiệu lực mà thuê bao đã hết → trừ một tháng.
@@ -109527,27 +109567,30 @@ def thu_phi_thang(db, *, now: datetime | None = None,
         if han is not None and han > current:
             ket["bo_qua"] += 1                    # còn hạn, chưa tới kỳ
             continue
-        du = credit.tru(db, dev.user_id, gia, kind=CREDIT_NEXUS_BILL,
-                        note=f"nexus thue bao may {dev.id}")
-        if du:
-            # Đẩy hạn từ mốc cũ nếu còn gần, hoặc từ bây giờ nếu đã quá lâu —
-            # tránh dồn nhiều tháng nợ vào một lần trừ.
-            goc = han if (han is not None and han > current - timedelta(days=CHU_KY_NGAY)) else current
-            dev.paid_until = goc + timedelta(days=CHU_KY_NGAY)
-            ket["tru"] += 1
-        else:
-            ket["thieu_credit"] += 1
+        try:
+            truoc = dev.paid_until
+            if thu_phi_mot_may(db, dev, now=current, env=env):
+                # `True` mà hạn không đổi nghĩa là máy đã có hạn từ trước —
+                # nhánh đó đã bị `continue` ở trên, nên ở đây là vừa trừ.
+                ket["tru"] += 1 if dev.paid_until != truoc else 0
+            else:
+                ket["thieu_credit"] += 1
+        except Exception:                          # noqa: BLE001
+            # MỘT máy hỏng không được giết cả lượt thu phí: nếu không, một dòng
+            # dữ liệu lạ làm **cả nền tảng** ngừng thu tiền, âm thầm.
+            ket["loi"] = ket.get("loi", 0) + 1
+            log.warning("khong thu phi duoc may %s", dev.id, exc_info=True)
     db.flush()
     return ket
 
 
 __all__ = ["CHU_KY_NGAY", "an_han_ngay", "da_thanh_toan", "gia_may_thang",
-           "thu_phi_thang"]
+           "thu_phi_mot_may", "thu_phi_thang"]
 
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/devices.py
-SHA256=93e025ae901fb7583a339f7c497f1fdce4cb5260bebebb432601a6f61c506a36 BYTES=16777 LINES=366
+SHA256=f0be0d3c1888a3b2aed2bd8e114c3908eeed74da8562d59701801196576f41da BYTES=17450 LINES=376
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ghép máy, thu hồi máy, và nhịp tim. Không có gì chạm luồng điều khiển.
 
@@ -109806,15 +109849,25 @@ def dat_rustdesk_id(db, device: NexusDevice, *, rustdesk_id: str) -> bool:
     return True
 
 
-def tim_theo_rustdesk_id(db, *, rustdesk_id: str) -> NexusDevice | None:
+def tim_theo_rustdesk_id(db, *, rustdesk_id: str,
+                         gom_da_thu_hoi: bool = False) -> NexusDevice | None:
     """Tra thiết bị theo ID RustDesk — relay LTT (hbbs) dùng để ánh xạ ID →
-    tài khoản → trạng thái trả phí. Bỏ qua máy đã thu hồi."""
+    tài khoản → quyền được môi giới.
+
+    ⚠️ `gom_da_thu_hoi=True` là **bắt buộc cho relay**. Trước đây hàm này luôn
+    lọc bỏ máy đã thu hồi, nên relay không thấy máy → coi là "ID lạ, không do
+    LTT quản" → **cho qua vô điều kiện**. Tức là thu hồi một máy lại GỠ cổng
+    kiểm soát của chính nó thay vì đóng lại: máy bị mất vẫn kết nối được, đúng
+    thứ trang "Máy của tôi" hứa cắt. Nơi cần quyết định cho/chặn phải NHÌN THẤY
+    máy đã thu hồi mới từ chối được nó.
+    """
     rid = str(rustdesk_id or "").strip()
     if not rid:
         return None
-    return db.execute(select(NexusDevice).where(
-        NexusDevice.rustdesk_id == rid,
-        NexusDevice.revoked_at.is_(None))).scalars().first()
+    dieu_kien = [NexusDevice.rustdesk_id == rid]
+    if not gom_da_thu_hoi:
+        dieu_kien.append(NexusDevice.revoked_at.is_(None))
+    return db.execute(select(NexusDevice).where(*dieu_kien)).scalars().first()
 
 
 def danh_sach(db, *, user_id: str, gom_da_thu_hoi: bool = False) -> list:
@@ -133658,7 +133711,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/routes.py
-SHA256=50d91c3508428fa3a00772bb4857621abaa115aec429dfc3654cb5268f0dd30f BYTES=23928 LINES=584
+SHA256=98972cf2b923438e84a15e17f3247513e2f14ff81c77f8cda7e24cd2d0b9cfbe BYTES=26025 LINES=621
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba đường cho agent: ghép máy, nhịp tim, đổi vé phiên.
 
@@ -133701,6 +133754,22 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/nexus-agent", tags=["nexus-agent"])
 
 _NO_STORE = {"Cache-Control": "no-store"}
+
+
+def _thu_phi_ngay(db, device) -> None:
+    """Thử thu phí cho một máy ngay lập tức (kích hoạt tức thì).
+
+    **Nuốt lỗi có chủ ý, nhưng có log:** đây là đường phục vụ khách. Thu phí
+    hỏng thì vòng quét định kỳ vẫn thu lại được, còn để nó ném ở đây thì khách
+    không đăng ký được máy — đánh đổi sai.
+    """
+    try:
+        from platform_core.nexus import billing
+
+        billing.thu_phi_mot_may(db, device)
+    except Exception:                                          # noqa: BLE001
+        log.warning("khong thu phi ngay duoc cho may %s",
+                    getattr(device, "id", "?"), exc_info=True)
 
 
 def _dem(ten: str) -> None:
@@ -134034,6 +134103,11 @@ async def client_register(request: Request):
             hardware_fingerprint=str(body.get("hardware_fingerprint") or "")[:128],
             platform=str(body.get("platform") or "")[:32],
             agent_version=str(body.get("agent_version") or "")[:32])
+        db.flush()
+        # Kích hoạt NGAY, không đợi vòng quét 15 phút: khách vừa cài xong mà
+        # `paid_until` còn rỗng thì `da_thanh_toan` trả False và relay chặn —
+        # tức là "trả tiền rồi vẫn không dùng được" ở đúng phút đầu tiên.
+        _thu_phi_ngay(db, device)
         db.commit()
         _dem("nexus:dang_ky_may")
         return JSONResponse({"device_id": device.id,
@@ -134080,7 +134154,12 @@ async def status(
         if isinstance(body, dict) and body.get("rustdesk_id"):
             devices.dat_rustdesk_id(db, device,
                                     rustdesk_id=str(body.get("rustdesk_id")))
-            db.commit()
+
+        # Máy hỏi trạng thái mỗi phút. Thử thu phí ngay tại đây nghĩa là khách
+        # nạp credit xong thì mở khoá trong vòng một phút, thay vì chờ vòng
+        # quét. Hàm này không làm gì khi miễn phí hoặc còn hạn.
+        _thu_phi_ngay(db, device)
+        db.commit()
 
         from platform_core import credit
         from platform_core.nexus import billing
@@ -134230,10 +134309,21 @@ async def relay_check(
     gen = _mo_db()
     db = next(gen)
     try:
-        device = devices.tim_theo_rustdesk_id(db, rustdesk_id=str(id or ""))
+        # `gom_da_thu_hoi=True`: relay PHAI thay may da thu hoi thi moi tu
+        # choi duoc no. Khong thay = tuong ID la = cho qua.
+        device = devices.tim_theo_rustdesk_id(
+            db, rustdesk_id=str(id or ""), gom_da_thu_hoi=True)
         if device is None:
             # ID không do LTT quản → không chặn (relay chạy như thường).
             return JSONResponse({"allowed": True, "managed": False},
+                                headers=_NO_STORE)
+        if device.revoked_at is not None:
+            # Máy đã thu hồi thì CẮT, dù thuê bao còn hạn. Trước đây chỗ này chỉ
+            # hỏi `da_thanh_toan`, nên một máy bị mất mà chủ đã thu hồi vẫn được
+            # relay môi giới cho tới khi hết tháng — đúng thứ trang "Máy của
+            # tôi" hứa là cắt được ngay.
+            _dem("nexus:relay_chan_thu_hoi")
+            return JSONResponse({"allowed": False, "managed": True},
                                 headers=_NO_STORE)
         allowed = billing.da_thanh_toan(device)
         _dem("nexus:relay_cho_qua" if allowed else "nexus:relay_chan")
@@ -198199,7 +198289,7 @@ def test_su_kien_la_bi_tu_choi(app_bat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_243_nexus_relay_check.py
-SHA256=21ef4f0abc8360728cf38e3e5ed307bf81c7e51f8b5896abdfc24e6517a2ed6e BYTES=5893 LINES=143
+SHA256=f3efcf0918d83fd493ab8f3fa3eac8f4da5c90656fd6480782ec04fd708ebb90 BYTES=7858 LINES=185
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus Model B (Q101 / cưỡng chế relay) — hbbs hỏi platform "ID này trả phí chưa?"
 
@@ -198344,6 +198434,48 @@ def test_co_gia_chua_tra_thi_chan(app_bat, monkeypatch):
     assert r.status_code == 200
     assert r.json()["allowed"] is False
     assert r.json()["managed"] is True
+
+
+# ── Thu hồi máy phải CẮT ở relay (lỗ hổng đã đóng 2026-08-21) ────────────────
+
+def test_may_da_thu_hoi_thi_relay_TU_CHOI(app_bat, monkeypatch):
+    """Thu hồi máy mất phải cắt kết nối THẬT, kể cả khi thuê bao còn hạn.
+
+    Lỗ hổng cũ: `tim_theo_rustdesk_id` lọc bỏ máy đã thu hồi, nên relay không
+    thấy máy → tưởng "ID lạ, không do LTT quản" → **cho qua vô điều kiện**. Thu
+    hồi một máy lại GỠ cổng kiểm soát của chính nó thay vì đóng lại.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    did, priv = _register(app_bat)
+    rid = "998877665"
+    _report_id(app_bat, did, priv, rid)
+
+    hdr = {"X-LTT-Relay-Secret": SECRET}
+    truoc = app_bat.get(f"/nexus-agent/relay-check?id={rid}", headers=hdr)
+    assert truoc.status_code == 200, truoc.text
+    assert truoc.json()["allowed"] is True
+    assert truoc.json()["managed"] is True
+
+    # thuê bao còn hạn dài + máy bị thu hồi
+    gen = get_session(); db = next(gen)
+    try:
+        d = db.get(devices.NexusDevice, did)
+        d.paid_until = datetime.now(timezone.utc) + timedelta(days=25)
+        devices.thu_hoi(db, d, by="chu-may")
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    sau = app_bat.get(f"/nexus-agent/relay-check?id={rid}", headers=hdr)
+    assert sau.status_code == 200, sau.text
+    assert sau.json()["allowed"] is False, "may da thu hoi ma relay van cho qua"
+    assert sau.json()["managed"] is True, "phai nhan la may CUA LTT bi tu choi"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -198691,7 +198823,7 @@ def test_khong_thu_hoi_duoc_may_nguoi_khac(app_bat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_245_render_gateway.py
-SHA256=84b6538aca8fe3fbf877465f33f61f368716496ec7e45ee71ee40abf646325fb BYTES=38943 LINES=892
+SHA256=4875809dce25f423fc8c4bc905f4cfec50589c253b88983c4b25de164b7fd694 BYTES=42627 LINES=958
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_245 — cổng render (H37/G6).
@@ -198744,12 +198876,20 @@ class FakeTransport:
         self.prompt_body: dict | None = None
         self.view_bytes = PNG
         self.fail_history_times = 0
+        #: True = queue xong thi coi nhu chay xong ngay (mo phong lượt chạy thật).
+        self.tu_hoan_thanh = True
 
     def request(self, method, path, *, json=None, params=None, timeout=30.0):
         self.calls.append((method, path, json))
         if path == "/prompt" and method == "POST":
             body = self.prompt_body or {"prompt_id": (json or {}).get("prompt_id"),
                                         "number": 1, "node_errors": {}}
+            # ComfyUI that: ban ghi `/history` xuat hien SAU khi prompt chay xong.
+            # Gieo san history trong test = "job nay da chay o kiep truoc".
+            if self.tu_hoan_thanh:
+                pid = (json or {}).get("prompt_id")
+                if pid:
+                    self.history.setdefault(pid, _ok_history())
             return self.prompt_status, _b(body)
         if path == "/prompt" and method == "GET":
             return 200, _b({"exec_info": {"queue_remaining":
@@ -199146,6 +199286,7 @@ def test_oom_lan_dau_thu_lai_thanh_cong(tmp_path, clock):
 def test_het_gio_thi_huy_DUNG_prompt_cua_minh(tmp_path, clock):
     """Không được gọi /interrupt trống — nó sẽ giết lượt video của dự án khác."""
     t, f = FakeTransport(), FakeFetcher()
+    t.tu_hoan_thanh = False          # prompt khong bao gio xong -> phai het gio
     job = _runner(t, f, tmp_path, clock, timeout_s=10.0).run(_req())
     assert job.status == J.FAILED and job.error_code == E_TIMEOUT
     huy = [body for m, p, body in t.calls if p == "/interrupt"]
@@ -199156,6 +199297,7 @@ def test_job_dai_6_phut_khong_bi_het_gio_nham(tmp_path, clock):
     """D-010: một ảnh ở cấu hình chất lượng mất 2,5–6 phút. Trần theo giây của bản
     kế hoạch đầu là sai."""
     t, f = FakeTransport(), FakeFetcher()
+    t.tu_hoan_thanh = False          # ta tu quyet dinh luc nao job xong
     pid = CF.prompt_id_for("j1")
     goc = t.request
     dem = {"n": 0}
@@ -199203,8 +199345,8 @@ def test_template_khong_ton_tai_bao_loi_workflow(tmp_path, clock):
 
 
 def test_chay_lai_cung_job_id_khong_ve_lan_hai(tmp_path, clock):
+    """Không gieo sẵn history: đây là job MỚI. Lần một xếp hàng, lần hai không."""
     t, f = FakeTransport(), FakeFetcher()
-    t.history[CF.prompt_id_for("j1")] = _ok_history()
     r = _runner(t, f, tmp_path, clock)
     r.run(_req())
     r.run(_req())
@@ -199300,7 +199442,6 @@ def test_thieu_ve_put_bi_tu_choi(tmp_path, clock):
 
 def test_gui_lai_cung_job_id_tra_ve_job_cu(tmp_path, clock):
     t, f = FakeTransport(), FakeFetcher()
-    t.history[CF.prompt_id_for("j1")] = _ok_history()
     c, app = _app(t, f, tmp_path, clock)
     assert c.post("/v1/images/generations", json=_body()).status_code == 202
     _cho_xong(app)
@@ -199356,9 +199497,20 @@ _DEPLOY = __import__("pathlib").Path(__file__).resolve().parents[1] / "render_ga
 _PS1 = sorted(_DEPLOY.glob("*.ps1"))
 
 
-def test_co_du_ba_script_deploy():
+def test_co_du_bon_script_deploy():
     assert {p.name for p in _PS1} == {
-        "deploy.ps1", "cai_dat_dich_vu.ps1", "kiem_tra.ps1"}
+        "deploy.ps1", "cai_dat_dich_vu.ps1", "kiem_tra.ps1", "dung_het.ps1"}
+
+
+def test_cong_tat_khan_cap_KHONG_dung_ComfyUI():
+    """⛔ ComfyUI dùng chung với dự án video. Một công tắc khẩn cấp giết nhầm việc
+    của người khác thì tệ hơn không có."""
+    text = (_DEPLOY / "dung_het.ps1").read_text(encoding="ascii").lower()
+    assert "ltt_h37/" in text, "phai nhan dien viec cua H37 theo filename_prefix"
+    # Không được xoá cả hàng đợi, và không được dừng tiến trình ComfyUI.
+    assert "clear" not in text or "queue_remaining" in text
+    for cam in ("stop-service", "nssm stop", "main.py"):
+        assert cam not in text, f"dung_het.ps1 khong duoc dung toi {cam!r}"
 
 
 @pytest.mark.parametrize("duong", _PS1, ids=lambda p: p.name)
@@ -199585,6 +199737,52 @@ def test_khong_khai_che_do_structure_vi_model_khong_co_controlnet():
     thứ model không làm được. G5 sẽ thử đạt nó bằng `edit` + lời nhắc giữ bố cục;
     không đạt thì **ghi rõ là không bán được**, không che bằng UI."""
     assert "structure" not in C.nap_catalog()["hidream-o1"].modes
+
+
+# ───────── "có bản ghi" ≠ "job của ta đã xong" (sự cố thật 21/08) ────────────
+#
+# ⛔ Đo thật trên máy B: một prompt **đang CHỜ trong hàng đợi, chưa chạy** vẫn trả
+#    về `/history` với `status_str: "success"` — vì `prompt_id` sinh từ `job_id`
+#    nên nó **lặp lại** giữa các lần chạy. Bản đầu của runner đọc mỗi bản ghi đó,
+#    tuyên bố "xong" sau 0,6 giây, **rồi vẫn xếp hàng lại** — vừa trả kết quả cũ
+#    vừa đốt thêm ~100 giây GPU cho không. Lượt đó đã chạy thật và tốn thật.
+
+def test_da_xong_doi_HAI_dieu_kien_khong_phai_mot():
+    t = FakeTransport()
+    pid = "p1"
+    t.history[pid] = _ok_history()
+    t.queue_pending = [pid]                       # van dang CHO
+    c = CF.ComfyClient(t)
+    assert c.history(pid) is not None, "co ban ghi"
+    assert not c.da_xong(pid), "nhung CHUA xong — no con trong hang doi"
+    t.queue_pending = []
+    assert c.da_xong(pid), "roi hang doi thi moi tinh la xong"
+
+
+def test_da_xong_false_khi_ban_ghi_bao_loi():
+    t = FakeTransport()
+    t.history["p1"] = {"status": {"status_str": "error", "messages": []}, "outputs": {}}
+    assert not CF.ComfyClient(t).da_xong("p1")
+
+
+def test_runner_KHONG_xep_hang_lai_job_da_chay_xong(tmp_path, clock):
+    """Idempotency xuyên tiến trình: cổng khởi động lại rồi nhận lại cùng `job_id`
+    thì phải lấy kết quả cũ từ `/history`, **không** vẽ lần hai."""
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = _ok_history()   # da chay tu "kiep truoc"
+    job = _runner(t, f, tmp_path, clock).run(_req())
+    assert job.status == J.COMPLETED and job.image_keys == ["u/1.png"]
+    # Khong co lan POST /prompt nao ca.
+    assert not [1 for m, p, _ in t.calls if m == "POST" and p == "/prompt"], \
+        "da xep hang lai mot job da xong — dot GPU cho khong"
+    assert len(f.puts) == 1
+
+
+def test_prefix_khong_dung_thu_muc_output_cua_du_an_video():
+    """`E:/AI/ComfyUI/output/ltt/` đã có sẵn kết quả của dự án video
+    (TEST1..TEST5*.mp4). Dùng chung là trộn ảnh của ta vào kết quả của họ."""
+    prefix = C.nap_catalog()["hidream-o1"].defaults["prefix"]
+    assert prefix.startswith("ltt_h37/"), f"prefix {prefix!r} se ghi vao thu muc cua ho"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -200023,6 +200221,242 @@ def test_khong_co_cap_bay_thi_van_tinh_duoc_nhung_khong_co_san_nhieu():
 def test_so_cap_toi_thieu_dung_bang_50():
     """Con số này là hợp đồng với §1.5 — đổi nó phải đổi cả tài liệu."""
     assert SO_CAP_TOI_THIEU == 50
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_247_nexus_kich_hoat_tuc_thi.py
+SHA256=ac95117d89e5f2456f267c7fac8253dfd2cef52b1250911720fd5f4dc7bca24f BYTES=8303 LINES=230
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Kích hoạt thuê bao TỨC THÌ — không bắt khách chờ vòng quét.
+
+Vì sao có file này: vòng thu phí chạy **15 phút một lần**
+(`job_runner.ALERT_SCAN_INTERVAL_S`). Máy vừa đăng ký có `paid_until` rỗng nên
+`da_thanh_toan()` trả False và relay chặn — nghĩa là khách **đã có credit** vẫn
+không kết nối được trong tối đa 15 phút đầu, đúng lúc họ thử sản phẩm lần đầu.
+
+Test ở đây chốt ba điều: đăng ký là thu phí ngay, hỏi trạng thái cũng thu phí
+ngay (nạp credit xong mở khoá trong vòng một phút), và một máy hỏng không được
+giết cả lượt thu phí của những máy khác.
+"""
+from __future__ import annotations
+
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "test-mat-khau-kichhoat-0123456789"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'kh.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "kh-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "50")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _tao_user(email: str = "k@example.com", credit_ban_dau: int = 0):
+    from platform_core import credit as credit_mod
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session(); db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.commit()
+        if credit_ban_dau:
+            credit_mod.cap_tay(db, u.id, credit_ban_dau, by="test", note="nap ban dau")
+            db.commit()
+        return u.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _dang_ky(client, email: str = "k@example.com"):
+    from platform_core.nexus import agent_auth
+
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/client-register",
+                    json={"email": email, "password": PASSWORD,
+                          "public_key": pub, "display_name": "May",
+                          "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def _status(client, device_id, priv, body: bytes = b""):
+    from platform_core.nexus import agent_auth
+
+    path = "/nexus-agent/status"
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv, method="POST", path=path, timestamp=ts, body=body)
+    return client.post(path, content=body, headers={
+        agent_auth.HEADER_DEVICE: device_id, agent_auth.HEADER_TIMESTAMP: ts,
+        agent_auth.HEADER_SIGNATURE: sig, "Content-Type": "application/json"})
+
+
+def _may(device_id):
+    from platform_core.db import get_session
+    from platform_core.nexus.devices import NexusDevice
+
+    gen = get_session(); db = next(gen)
+    try:
+        d = db.get(NexusDevice, device_id)
+        return (d.paid_until, d.user_id)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+# ── Kích hoạt ngay lúc đăng ký ───────────────────────────────────────────────
+
+def test_dang_ky_co_credit_thi_dung_duoc_NGAY(app_bat):
+    """Khách có credit: cài xong là dùng được, không chờ vòng quét 15 phút."""
+    _tao_user(credit_ban_dau=500)
+    did, priv = _dang_ky(app_bat)
+    han, _ = _may(did)
+    assert han is not None, "dang ky xong ma chua co han -> khach bi chan 15 phut"
+    r = _status(app_bat, did, priv)
+    assert r.json()["paid"] is True
+
+
+def test_dang_ky_khong_co_credit_thi_chua_thanh_toan(app_bat):
+    """Không đủ credit → không trừ, không đẩy hạn, không nợ."""
+    _tao_user(credit_ban_dau=0)
+    did, priv = _dang_ky(app_bat)
+    han, _ = _may(did)
+    assert han is None
+    assert _status(app_bat, did, priv).json()["paid"] is False
+
+
+def test_dang_ky_tru_dung_mot_lan(app_bat):
+    from platform_core import credit as credit_mod
+    from platform_core.db import get_session
+
+    uid = _tao_user(credit_ban_dau=500)
+    did, priv = _dang_ky(app_bat)
+    gen = get_session(); db = next(gen)
+    try:
+        assert credit_mod.so_du(db, uid) == 450
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    # hỏi trạng thái nhiều lần KHÔNG được trừ thêm (còn hạn)
+    for _ in range(3):
+        _status(app_bat, did, priv)
+    gen = get_session(); db = next(gen)
+    try:
+        assert credit_mod.so_du(db, uid) == 450, "bi tru nhieu lan trong mot ky"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+# ── Nạp credit xong mở khoá ngay ở lần hỏi trạng thái kế tiếp ────────────────
+
+def test_nap_credit_xong_thi_status_mo_khoa_ngay(app_bat):
+    """Đây là đường khách thoát khỏi trạng thái bị chặn — phải nhanh, không chờ."""
+    from platform_core import credit as credit_mod
+    from platform_core.db import get_session
+
+    uid = _tao_user(credit_ban_dau=0)
+    did, priv = _dang_ky(app_bat)
+    assert _status(app_bat, did, priv).json()["paid"] is False
+
+    gen = get_session(); db = next(gen)
+    try:
+        credit_mod.cap_tay(db, uid, 100, by="test", note="khach nap")
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    assert _status(app_bat, did, priv).json()["paid"] is True, \
+        "nap credit roi ma van bi chan -> khach phai cho vong quet"
+
+
+# ── Vòng quét: một máy hỏng không giết cả lượt ───────────────────────────────
+
+def test_mot_may_hong_khong_giet_ca_luot_thu_phi(app_bat, monkeypatch):
+    """Một dòng dữ liệu lạ không được làm CẢ nền tảng ngừng thu tiền."""
+    from platform_core.db import get_session
+    from platform_core.nexus import billing
+
+    _tao_user("a@example.com", credit_ban_dau=500)
+    _tao_user("b@example.com", credit_ban_dau=500)
+    did_a, _ = _dang_ky(app_bat, "a@example.com")
+    did_b, _ = _dang_ky(app_bat, "b@example.com")
+
+    # ép cả hai về "tới kỳ"
+    from platform_core.nexus.devices import NexusDevice
+    gen = get_session(); db = next(gen)
+    try:
+        for d in (db.get(NexusDevice, did_a), db.get(NexusDevice, did_b)):
+            d.paid_until = None
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    that_bai = {"n": 0}
+    goc = billing.thu_phi_mot_may
+
+    def hong_may_dau(db_, dev, **kw):
+        if dev.id == did_a and that_bai["n"] == 0:
+            that_bai["n"] += 1
+            raise RuntimeError("dong du lieu la")
+        return goc(db_, dev, **kw)
+
+    monkeypatch.setattr(billing, "thu_phi_mot_may", hong_may_dau)
+    gen = get_session(); db = next(gen)
+    try:
+        ket = billing.thu_phi_thang(db)
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    assert ket.get("loi", 0) >= 1, "khong ghi nhan may hong"
+    assert ket["tru"] >= 1, "mot may hong da giet ca luot thu phi"
+
+
+def test_mien_phi_thi_khong_dung_toi_credit(app_bat, monkeypatch):
+    from platform_core import credit as credit_mod
+    from platform_core.db import get_session
+
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "0")
+    uid = _tao_user(credit_ban_dau=100)
+    did, priv = _dang_ky(app_bat)
+    gen = get_session(); db = next(gen)
+    try:
+        assert credit_mod.so_du(db, uid) == 100
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    assert _status(app_bat, did, priv).json()["paid"] is True
 
 @@@LTT_PROFILE_FILE_END@@@
 
