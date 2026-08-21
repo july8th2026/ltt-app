@@ -513,10 +513,31 @@ nội bộ, chưa phải để mở bán.
 | 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
 | 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **72%** | ✅ tooling + build agent + **build fork LTTNexus (Win + APK Android, ký self-signed)** + **endpoint tự phục vụ bản cài** (`/nexus/dl/`, biên-cache immutable, chặn traversal, HEAD+GET, đối chiếu SHA end-to-end); ⬜ ký chính thức, bản gộp fork+agent |
 | 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **85%** | ✅ cơ chế xong (test_238); còn 3 tham số của người (D12) |
-| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **35%** | ✅ runbook + **E2E LIVE trên Windows** (agent↔control plane, `e2e_live`); ⬜ chạy trên prod |
+| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **70%** | ✅ runbook + E2E LIVE + **ĐÃ DEPLOY PROD 2026-08-21** (LTT_NEXUS=1, billing 50, migration f8a9b0c1d2e3→head, xác minh public URL: tải APK byte-đúng qua CF, `/nexus-agent/*` 401 đòi auth, relay-check secret nạp); ⬜ hbbs trên Vultr relay |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 87%** (2026-08-21, thêm **trang tải 4 nền tảng** (`/tai-xuong`, kiểm hình) + **tự-update** (client dò `version.json`, banner 'có bản mới') + **APK Android arm64 build xong** + **endpoint tự phục vụ bản cài**. 57 test).
+**Tổng có trọng số ≈ 90%** (2026-08-21, **ĐÃ DEPLOY LÊN PRODUCTION**: Windows +
+Android tải được thật qua `app.lttstudios.com/tai-xuong`, billing 50 bật, Nexus
+client API sống. 57 test).
+
+#### Cột mốc 2026-08-21 (d) — DEPLOY PRODUCTION (Windows + Android + billing)
+
+Go-live qua `golive-nexus.ps1` (bấm UAC): thêm `LTT_NEXUS=1`,
+`LTT_NEXUS_GIA_MAY_THANG=50`, sinh `LTT_NEXUS_RELAY_SECRET` (ghi
+`secrets/nexus_relay_config.txt` cho Vultr), rồi `setup\2-cai-dat.ps1`.
+
+* **Migration prod**: `f8a9b0c1d2e3 → 5a3a13144782` (5 bước nexus) chạy trơn —
+  de-risk trước bằng cách sinh đúng SQL PostgreSQL offline (không CREATEDB được
+  trên prod nên không test scratch được; SQL review sạch).
+* **Xác minh trên URL CÔNG KHAI** (qua Cloudflare, không chỉ loopback):
+  `/health/ready` 200; `/tai-xuong` hiện Windows+Android "Tải xuống";
+  **tải APK 26.420.220 byte, SHA khớp bit-đúng** qua CF (cf-cache MISS→immutable);
+  `/nexus-agent/relay-check` 401 (secret đã nạp), `/status` 401 (đòi chữ ký) ⇒
+  `LTT_NEXUS` sống.
+* **Còn lại cho răng-thật billing**: deploy hbbs fork lên Vultr relay
+  45.76.185.75 + 2 biến (`LTT_NEXUS_RELAY_CHECK_URL`, `LTT_NEXUS_RELAY_SECRET`
+  trùng platform). Hiện billing cưỡng chế **client-side** (may_control) — hoạt
+  động, nhưng client vá có thể lách; relay-side là lớp không lách được.
 
 #### Cột mốc 2026-08-21 (c) — APK Android + endpoint tự phục vụ bản cài
 
