@@ -512,13 +512,34 @@ nội bộ, chưa phải để mở bán.
 | 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **90%** | 🎨 **P1-P4+P6+P7+P8 XONG**: branding, theme Carbon Red, logo, chỉ báo phiên, việt hoá mặc định, **P7 login+billing enforcement** (target từ chối khi hết credit), **P8 nhật ký truy cập** (ràng buộc 6). Còn: P8-END (ended_at), P5 non-action |
 | 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
 | 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **72%** | ✅ tooling + build agent + **build fork LTTNexus (Win + APK Android, ký self-signed)** + **endpoint tự phục vụ bản cài** (`/nexus/dl/`, biên-cache immutable, chặn traversal, HEAD+GET, đối chiếu SHA end-to-end); ⬜ ký chính thức, bản gộp fork+agent |
-| 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **85%** | ✅ cơ chế xong (test_238); còn 3 tham số của người (D12) |
+| 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **95%** | ✅ cơ chế xong (test_238) + **giá 50 bật trên prod** + **cưỡng chế relay-side LIVE** (hbbs fork hỏi platform trước khi môi giới, client vá không lách); còn test chặn thật với máy chưa trả |
 | 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **70%** | ✅ runbook + E2E LIVE + **ĐÃ DEPLOY PROD 2026-08-21** (LTT_NEXUS=1, billing 50, migration f8a9b0c1d2e3→head, xác minh public URL: tải APK byte-đúng qua CF, `/nexus-agent/*` 401 đòi auth, relay-check secret nạp); ⬜ hbbs trên Vultr relay |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 90%** (2026-08-21, **ĐÃ DEPLOY LÊN PRODUCTION**: Windows +
-Android tải được thật qua `app.lttstudios.com/tai-xuong`, billing 50 bật, Nexus
-client API sống. 57 test).
+**Tổng có trọng số ≈ 92%** (2026-08-21, **ĐÃ DEPLOY PRODUCTION + RELAY BILLING
+TEETH LIVE**: Windows + Android tải thật, billing 50 bật, relay hbbs fork cưỡng
+chế ở tầng rendezvous. 57 test).
+
+#### Cột mốc 2026-08-21 (e) — Relay-side billing teeth LIVE
+
+Deploy hbbs fork lên relay thật (Windows Server 2016 `WIN-3H1FFF7LTV9` @
+45.76.185.75, service nssm `hbbs`, exe ở `C:\Program Files\RustDeskServer\bin\`).
+Qua SSH (`administrator`, password auth) + `deploy-relay-finish.ps1`:
+`nssm set hbbs AppEnvironmentExtra` 2 biến (`LTT_NEXUS_RELAY_CHECK_URL` →
+`/nexus-agent/relay-check`, `LTT_NEXUS_RELAY_SECRET`), backup + thay `hbbs.exe`,
+restart, **auto-rollback nếu không lên**. Giữ nguyên `id_ed25519`+db (client không
+rớt pubkey `A1MZFm2…`).
+
+* **Self-test PASS**: relay gọi `/nexus-agent/relay-check?id=deploytest` với secret
+  → `HTTP 200 {"allowed":true,"managed":false}` — chứng minh relay thông platform,
+  secret khớp, logic fail-open đúng (id lạ cho qua). Máy đã đăng ký mà chưa trả →
+  platform trả `allowed:false` → relay từ chối môi giới. **Client vá không lách
+  được** (răng ở tầng relay, không phải client).
+* **Bẫy đã gặp+giải**: (1) đoán sai đường dẫn (`\bin\` mới đúng) → `Stop-Service`
+  chạy nhưng `Copy-Item` fail → hbbs DỪNG → khôi phục ngay bằng `net start hbbs`;
+  (2) relay là **Windows** không phải Linux (Q96 dựng trên gateway Windows sẵn có)
+  → dùng `hbbs.exe` Windows fork, không phải musl Linux đã lỡ build; (3) user =
+  `administrator` password auth, không phải key.
 
 #### Cột mốc 2026-08-21 (d) — DEPLOY PRODUCTION (Windows + Android + billing)
 
