@@ -509,16 +509,50 @@ nội bộ, chưa phải để mở bán.
 | 3 | Hạ tầng relay N1 (dựng + T10) | 7% | **85%** | ✅ dựng+T10; ⬜ tỉ lệ P2P |
 | 4 | Khả thi engine + primitives (V1-V8 + `engine.py` + `engine_runner`) | 9% | **95%** | ✅ đo+module+wiring; fork build xác nhận primitives |
 | 5 | Fork RustDesk + tuân AGPL (fork/patch/build/công bố mã) | 8% | **82%** | ✅ **fork build CHẠY** (LTTNexus.exe **+ APK Android arm64**) + công bố mã + recipe (Win+Android); còn đổi tên/nhãn Android, macOS/iOS, release build |
-| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **90%** | 🎨 **P1-P4+P6+P7+P8 XONG**: branding, theme Carbon Red, logo, chỉ báo phiên, việt hoá mặc định, **P7 login+billing enforcement** (target từ chối khi hết credit), **P8 nhật ký truy cập** (ràng buộc 6). Còn: P8-END (ended_at), P5 non-action |
+| 6 | **Cá nhân hóa UI/UX + chức năng theo LTT** (client Flutter) | 13% | **93%** | 🎨 **P1-P4+P6+P7+P8 XONG**: branding, theme Carbon Red, logo, chỉ báo phiên, việt hoá mặc định, **P7 login+billing enforcement** (target từ chối khi hết credit), **P8 nhật ký truy cập** (ràng buộc 6). Còn: P8-END (ended_at), P5 non-action |
 | 7 | Wiring phiên W1-W5 (vé → kết nối thật) | 11% | **100%** | ✅ XONG 2026-08-20 (test 223/227/228/229/236/237) |
 | 8 | Đóng gói & phát hành endpoint (tooling + build+sign) | 6% | **72%** | ✅ tooling + build agent + **build fork LTTNexus (Win + APK Android, ký self-signed)** + **endpoint tự phục vụ bản cài** (`/nexus/dl/`, biên-cache immutable, chặn traversal, HEAD+GET, đối chiếu SHA end-to-end); ⬜ ký chính thức, bản gộp fork+agent |
 | 9 | Thanh toán Q98 (credit/máy/tháng + nạp qua trình duyệt) | 9% | **95%** | ✅ cơ chế xong (test_238) + **giá 50 bật trên prod** + **cưỡng chế relay-side LIVE** (hbbs fork hỏi platform trước khi môi giới, client vá không lách); còn test chặn thật với máy chưa trả |
-| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **70%** | ✅ runbook + E2E LIVE + **ĐÃ DEPLOY PROD 2026-08-21** (LTT_NEXUS=1, billing 50, migration f8a9b0c1d2e3→head, xác minh public URL: tải APK byte-đúng qua CF, `/nexus-agent/*` 401 đòi auth, relay-check secret nạp); ⬜ hbbs trên Vultr relay |
+| 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **80%** | ✅ runbook + E2E LIVE + **ĐÃ DEPLOY PROD 2026-08-21** (LTT_NEXUS=1, billing 50, migration f8a9b0c1d2e3→head, xác minh public URL: tải APK byte-đúng qua CF, `/nexus-agent/*` 401 đòi auth, relay-check secret nạp); ⬜ hbbs trên Vultr relay |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
 **Tổng có trọng số ≈ 92%** (2026-08-21, **ĐÃ DEPLOY PRODUCTION + RELAY BILLING
 TEETH LIVE**: Windows + Android tải thật, billing 50 bật, relay hbbs fork cưỡng
 chế ở tầng rendezvous. 57 test).
+
+#### Cột mốc 2026-08-21 (f) — Lấp khoảng cách MVP (audit 5,5 → 6,3)
+
+Rà soát chất lượng 11 hạng mục (`nexus-mvp-audit`) tìm ra ba lỗ hổng khiến Nexus
+**chưa bán được**, và đợt này lấp hết phần **tự làm được bằng code**:
+
+* **Người dùng tự quản lý máy** — trang `/may-cua-toi` (`server/routes/nexus_devices.py`):
+  xem (online, đã/chưa trả phí, thấy lần cuối), **đổi tên**, **thu hồi**. Trước đó
+  mất laptop là không cắt được quyền truy cập ngoài đổi mật khẩu tài khoản.
+  `test_245` chứng minh thu hồi **cắt thật**: request đã ký của chính máy đó sau
+  đó bị 401. Có test cách ly chéo tài khoản + CSRF. Menu chỉ hiện khi `LTT_NEXUS`
+  bật (global template `nexus_bat()`).
+* **Vận hành hết mù** — bộ đếm Nexus (`nexus:dang_ky_may`, `nexus:relay_cho_qua`,
+  `nexus:relay_chan`) + khối tóm tắt trên `/status` (máy, đang bật, phiên, chưa
+  trả phí, bộ đếm 24h). Hai chỗ **cố tình không ném**: đếm hỏng thì log chứ không
+  chặn khách; tóm tắt hỏng thì trả dict lỗi để trang tình trạng vẫn mở được —
+  đúng lúc người vận hành cần nó nhất. `test_246` chốt cả hai.
+* **Runbook** `N6_RUNBOOK_SU_CO.md` — ba tình huống thật (502, relay chết, "tôi
+  đã trả mà vẫn bị chặn") theo lối *dấu hiệu → kiểm → xử lý → xác minh*, kiểm
+  bằng URL công khai chứ không tin log script.
+* **Lưới an toàn cho client** (P0 của audit): 4 → **21 test**. 10 Rust
+  (canonical ràng buộc cả body lẫn timestamp, base64 khứ hồi, so sánh phiên bản),
+  7 Dart (tách `locSapXepMay` khỏi widget nên test được không cần FFI), 4 hbbs
+  (tách `ltt_quyet_dinh` khỏi lệnh gọi mạng — đúng dòng quyết định chặn tiền,
+  fail-open khi không hiểu câu trả lời).
+* **Android đúng thương hiệu**: `applicationId` → `com.lttstudios.nexus`, nhãn →
+  "LTT Nexus", panel "Máy của tôi" cho mobile. Giữ nguyên namespace Kotlin
+  `com.carriez.flutter_hbb` — đổi là vỡ JNI.
+* **Kỷ luật phát hành**: `LTT_VERSION` 1.1.0 + `CHANGELOG.md` ghi rõ bốn bước bắt
+  buộc mỗi lần phát hành (đặt ra sau khi 1.0.0 bị ghi đè tại chỗ).
+
+Gate 12/12, 260 test Nexus. Hai rào chắn còn lại **không sửa được bằng code**:
+production vẫn **0 máy / 0 phiên** (cần người chạy thật), và relay đơn điểm chết
+trên **Windows Server 2016 Eval hết hạn 15/12/2026**.
 
 #### Cột mốc 2026-08-21 (e) — Relay-side billing teeth LIVE
 
