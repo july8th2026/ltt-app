@@ -162,3 +162,47 @@ def test_status_co_gia_chua_tra_thi_paid_false(app_bat, monkeypatch):
     assert r.status_code == 200, r.text
     assert r.json()["paid"] is False
     assert r.json()["price_per_month"] == 50
+
+
+# ── Onboarding 1-chạm: "Máy của tôi" (có ký) ─────────────────────────────────
+
+def test_my_devices_liet_ke_may_cung_tai_khoan(app_bat):
+    from platform_core.nexus import agent_auth
+
+    _tao_user()
+    d1, priv1 = _dang_ky(app_bat)          # máy 1
+    d2, _priv2 = _dang_ky(app_bat)         # máy 2 CÙNG tài khoản
+    path = "/nexus-agent/my-devices"
+    headers = {agent_auth.HEADER_DEVICE: d1, **_ky(priv1, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    ds = r.json()["devices"]
+    ids = {x["device_id"] for x in ds}
+    assert d1 in ids and d2 in ids         # thấy cả 2 máy
+    me = next(x for x in ds if x["device_id"] == d1)
+    assert me["is_self"] is True
+    for x in ds:
+        assert {"rustdesk_id", "name", "online", "paid"} <= set(x)
+
+
+def test_my_devices_khong_ky_thi_401(app_bat):
+    _tao_user()
+    _dang_ky(app_bat)
+    r = app_bat.post("/nexus-agent/my-devices", content=b"")
+    assert r.status_code == 401
+
+
+def test_my_devices_khong_lo_may_tai_khoan_khac(app_bat):
+    """Bảo mật: chỉ trả máy của TÀI KHOẢN gọi, không lộ chéo."""
+    from platform_core.nexus import agent_auth
+
+    _tao_user("a@example.com")
+    _tao_user("b@example.com")
+    da, priva = _dang_ky(app_bat, "a@example.com")
+    db_id, _privb = _dang_ky(app_bat, "b@example.com")
+    path = "/nexus-agent/my-devices"
+    headers = {agent_auth.HEADER_DEVICE: da, **_ky(priva, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    ids = {x["device_id"] for x in r.json()["devices"]}
+    assert da in ids and db_id not in ids  # chỉ máy của mình

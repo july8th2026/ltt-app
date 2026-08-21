@@ -419,6 +419,50 @@ async def status(
             pass
 
 
+@router.post("/my-devices")
+async def my_devices(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Onboarding 1-chạm (Model B): máy hỏi tài khoản này có những máy nào.
+
+    Ký như mọi request thiết bị. Trả danh sách máy CÙNG TÀI KHOẢN với máy gọi —
+    `rustdesk_id` (để kết nối thẳng), tên, online, đã trả phí. Client hiện panel
+    "Máy của tôi" sau đăng nhập → bấm là điền ID + kết nối, khỏi nhập tay.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        from platform_core.nexus import billing
+
+        ds = devices.danh_sach(db, user_id=device.user_id)
+        out = []
+        for d in ds:
+            out.append({
+                "device_id": d.id,
+                "rustdesk_id": d.rustdesk_id or "",
+                "name": d.display_name or "",
+                "online": devices.dang_online(d),
+                "paid": billing.da_thanh_toan(d),
+                "is_self": d.id == device.id,
+            })
+        return JSONResponse({"devices": out}, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 @router.post("/session-event")
 async def session_event(
     request: Request,
