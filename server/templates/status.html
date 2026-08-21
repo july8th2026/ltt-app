@@ -31,4 +31,30 @@
              style="width:auto;"> Kiểm tra cả Google Sheet (chậm hơn)
     </label>
   </form>
+
+  {% if nexus %}
+    <div class="appcard" style="margin:14px 0">
+      <h3 style="margin:0 0 8px">LTT Nexus</h3>
+      {% if nexus.loi %}
+        <p class="dim" style="margin:0">Khong doc duoc so lieu: {{ nexus.loi }}</p>
+      {% endif %}
+      {% if nexus.may is defined %}
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div><b style="font-size:20px">{{ nexus.may }}</b><div class="dim" style="font-size:12px">may da ghep</div></div>
+        <div><b style="font-size:20px">{{ nexus.online }}</b><div class="dim" style="font-size:12px">dang bat</div></div>
+        <div><b style="font-size:20px">{{ nexus.phien }}</b><div class="dim" style="font-size:12px">phien</div></div>
+        <div><b style="font-size:20px">{{ nexus.thu_hoi }}</b><div class="dim" style="font-size:12px">da thu hoi</div></div>
+        {% if nexus.gia_thang > 0 %}
+        <div><b style="font-size:20px;color:{{ "#c2453f" if nexus.chua_tra else "inherit" }}">{{ nexus.chua_tra }}</b><div class="dim" style="font-size:12px">chua tra phi</div></div>
+        <div><b style="font-size:20px">{{ nexus.gia_thang }}</b><div class="dim" style="font-size:12px">credit/may/thang</div></div>
+        {% endif %}
+      </div>
+      {% if nexus.dem_24h %}
+        <p class="dim" style="margin:10px 0 0;font-size:12.5px">24h:
+        {% for k, v in nexus.dem_24h.items() %}<code>{{ k }}={{ v }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+      {% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+
 {% endblock %}

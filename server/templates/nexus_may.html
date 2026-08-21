@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Máy của tôi") }} — LTT Nexus{% endblock %}
+{% block content %}
+
+  <div class="pagehead">
+    <div>
+      <h1 style="margin:0 0 4px">{{ _("Máy của tôi") }}</h1>
+      <p class="dim" style="margin:0">
+        {{ _("Các máy đã gắn vào tài khoản LTT của bạn. Mất máy thì thu hồi ngay để cắt quyền truy cập.") }}
+      </p>
+    </div>
+    {% if so_du is not none %}
+      <div class="cbadge badge b-ok">{{ so_du }} credit</div>
+    {% endif %}
+  </div>
+
+  {% if request.query_params.get('ok') == 'thu-hoi' %}
+    <div class="alert">{{ _("Đã thu hồi máy. Máy đó không còn kết nối được nữa.") }}</div>
+  {% elif request.query_params.get('ok') == 'doi-ten' %}
+    <div class="alert">{{ _("Đã đổi tên máy.") }}</div>
+  {% elif request.query_params.get('loi') == 'khong-thay' %}
+    <div class="alert alert-warn">{{ _("Không tìm thấy máy đó trong tài khoản của bạn.") }}</div>
+  {% elif request.query_params.get('loi') == 'csrf' %}
+    <div class="alert alert-warn">{{ _("Phiên làm việc đã hết hạn. Hãy thử lại.") }}</div>
+  {% endif %}
+
+  {% if not co_user_csdl %}
+    <div class="alert alert-warn">{{ _("Tài khoản này không quản lý máy được.") }}</div>
+  {% elif not may %}
+    <div class="appcard" style="text-align:center;padding:28px 20px">
+      <h3 style="margin:0 0 6px">{{ _("Chưa có máy nào") }}</h3>
+      <p class="dim" style="margin:0 0 14px">
+        {{ _("Tải LTT Nexus về máy, đăng nhập bằng chính tài khoản này, máy sẽ hiện ở đây.") }}
+      </p>
+      <a class="btn" href="/tai-xuong">{{ _("Tải LTT Nexus") }}</a>
+    </div>
+  {% else %}
+    {% if gia_thang > 0 %}
+      <p class="dim" style="margin:0 0 10px">
+        {{ _("Thuê bao") }}: <b>{{ gia_thang }}</b> {{ _("credit mỗi máy mỗi tháng") }}.
+      </p>
+    {% endif %}
+
+    {% for m in may %}
+      <div class="appcard" style="margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="dot" style="background:{{ '#25a55f' if m.online else '#9a8c84' }}"></span>
+              {% if m.ten %}<b>{{ m.ten }}</b>
+              {% else %}<b>{{ _("(chưa đặt tên)") }}</b>{% endif %}
+              {% if m.online %}
+                <span class="badge b-ok">{{ _("đang bật") }}</span>
+              {% else %}
+                <span class="badge">{{ _("tắt") }}</span>
+              {% endif %}
+              {% if gia_thang > 0 %}
+                {% if m.da_tra %}
+                  <span class="badge b-ok">{{ _("đã trả phí") }}</span>
+                {% else %}
+                  <span class="badge b-err">{{ _("chưa trả phí") }}</span>
+                {% endif %}
+              {% endif %}
+            </div>
+            <p class="dim" style="margin:6px 0 0;font-size:12.5px">
+              {% if m.rustdesk_id %}ID: <code>{{ m.rustdesk_id }}</code> · {% endif %}
+              {% if m.platform %}{{ m.platform }} · {% endif %}
+              {% if m.last_seen_at %}{{ _("thấy lần cuối") }}: {{ m.last_seen_at.strftime('%d/%m/%Y %H:%M') }}{% else %}{{ _("chưa từng kết nối") }}{% endif %}
+            </p>
+          </div>
+
+          <div class="actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <form method="post" action="/may-cua-toi/{{ m.id }}/doi-ten"
+                  style="display:flex;gap:6px;align-items:center">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="text" name="ten" value="{{ m.ten }}" maxlength="120"
+                     aria-label="{{ _('Tên máy') }}" style="width:150px">
+              <button class="btn ghost sm" type="submit">{{ _("Đổi tên") }}</button>
+            </form>
+            <form method="post" action="/may-cua-toi/{{ m.id }}/thu-hoi"
+                  onsubmit="return confirm('{{ _("Thu hồi máy này? Máy đó sẽ không kết nối được nữa.") }}')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn ghost sm" type="submit">{{ _("Thu hồi") }}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+{% endblock %}

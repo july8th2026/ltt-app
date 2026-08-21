@@ -40,6 +40,22 @@ router = APIRouter(prefix="/nexus-agent", tags=["nexus-agent"])
 
 _NO_STORE = {"Cache-Control": "no-store"}
 
+
+def _dem(ten: str) -> None:
+    """Đếm một sự kiện Nexus cho trang vận hành.
+
+    Nuốt lỗi CÓ CHỦ Ý: số liệu hỏng không được làm hỏng đường phục vụ khách —
+    một máy không kết nối được vì bộ đếm là đánh đổi sai.
+    """
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment(ten)
+    except Exception:                                        # noqa: BLE001
+        # Không ném: số liệu hỏng không được chặn khách. Nhưng phải LOG — lỗi
+        # biến mất lặng lẽ là lỗi khó tìm nhất (bánh cóc `check_silent_except`).
+        log.warning("khong dem duoc %s", ten, exc_info=True)
+
 #: Trần cho việc đổi mã ghép, theo IP. Cố ý thấp: người thật ghép một máy vài
 #: lần một ngày, còn kẻ dò cần hàng nghìn lần mới có cơ hội.
 GHEP_MOI_PHUT = 10
@@ -130,6 +146,7 @@ async def enroll(request: Request):
             agent_version=str(body.get("agent_version") or "")[:32],
             ip=ip)
         db.commit()
+        _dem("nexus:dang_ky_may")
         return JSONResponse({"device_id": device.id,
                              "display_name": device.display_name},
                             headers=_NO_STORE)
@@ -356,6 +373,7 @@ async def client_register(request: Request):
             platform=str(body.get("platform") or "")[:32],
             agent_version=str(body.get("agent_version") or "")[:32])
         db.commit()
+        _dem("nexus:dang_ky_may")
         return JSONResponse({"device_id": device.id,
                              "display_name": device.display_name},
                             headers=_NO_STORE)
@@ -556,6 +574,7 @@ async def relay_check(
             return JSONResponse({"allowed": True, "managed": False},
                                 headers=_NO_STORE)
         allowed = billing.da_thanh_toan(device)
+        _dem("nexus:relay_cho_qua" if allowed else "nexus:relay_chan")
         return JSONResponse({"allowed": bool(allowed), "managed": True},
                             headers=_NO_STORE)
     finally:

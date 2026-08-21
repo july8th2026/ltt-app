@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:19315796392fa3b0ffd5613f09a4829f0c7b546868835398624ee0a1da870b46
-Nguồn đã quét : 1187 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:80d063181dc46af75afba1dc6a6bdb887dab73ea5566f42825b76731252b1412
+Nguồn đã quét : 1194 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -502,7 +502,7 @@ Các lớp chính:
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
-4. HTTP ROUTE INVENTORY (326)
+4. HTTP ROUTE INVENTORY (329)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -653,7 +653,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /facebook/page → fb_toggle_page | auth~login | server/routes/accounts.py:116
 - [platform] POST   /facebook/system-token → fb_import_system_token | auth~login | server/routes/accounts.py:86
 - [platform] POST   /facebook/test → fb_test | auth~login | server/routes/accounts.py:101
-- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:375
+- [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:380
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
@@ -673,6 +673,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /manual/tiktok → manual_tt_page | auth~login | server/routes/manual.py:193
 - [platform] POST   /manual/tiktok/prepare → manual_tt_prepare | auth~login | server/routes/manual.py:199
 - [platform] POST   /manual/tiktok/publish → manual_tt_publish | auth~login | server/routes/manual.py:301
+- [platform] GET    /may-cua-toi → trang_may | auth~login | server/routes/nexus_devices.py:48
+- [platform] POST   /may-cua-toi/{device_id}/doi-ten → doi_ten | auth~login | server/routes/nexus_devices.py:86
+- [platform] POST   /may-cua-toi/{device_id}/thu-hoi → thu_hoi_may | auth~login | server/routes/nexus_devices.py:109
 - [platform] GET    /monitor → monitor_page | auth~login | server/routes/monitor.py:23
 - [platform] POST   /monitor/reset-metrics → monitor_reset | auth~login | server/routes/monitor.py:32
 - [platform] GET    /nap → trang_nap | auth~login | server/routes/billing.py:24
@@ -948,7 +951,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (114 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (116 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -994,6 +997,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_MODELARK_ACCESS_KEY
 - LTT_MODELARK_REGION
 - LTT_MODELARK_SECRET_KEY
+- LTT_MODELS
 - LTT_NEW_ADMIN_PASSWORD
 - LTT_NEXUS
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
@@ -1039,6 +1043,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_R2_BUCKET
 - LTT_R2_ENDPOINT
 - LTT_R2_SECRET_ACCESS_KEY
+- LTT_RENDER_TOKEN
 - LTT_SECRETS_DIR
 - LTT_SENTRY_DSN
 - LTT_SENTRY_TRACES_SAMPLE_RATE
@@ -1064,7 +1069,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (246 file pytest + 3 frontend)
+10. QUALITY GATES (250 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1248,6 +1253,10 @@ Test inventory:
 - tests/test_242_nexus_session_event.py
 - tests/test_243_nexus_relay_check.py
 - tests/test_244_nexus_download.py
+- tests/test_245_nexus_may_cua_toi.py
+- tests/test_245_render_gateway.py
+- tests/test_246_nexus_metrics.py
+- tests/test_247_cham_mu.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -1337,8 +1346,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1187 file)
-Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:895, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1194 file)
+Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:901, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2080,7 +2089,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (142)
+[server] (144)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2120,6 +2129,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - server/routes/jobs.py
 - server/routes/manual.py
 - server/routes/monitor.py
+- server/routes/nexus_devices.py
 - server/routes/ngon_ngu.py
 - server/routes/oauth.py
 - server/routes/register.py
@@ -2207,6 +2217,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - server/templates/nexus_dieu_khien.html
 - server/templates/nexus_download.html
 - server/templates/nexus_ma_ghep.html
+- server/templates/nexus_may.html
 - server/templates/nexus_nhat_ky.html
 - server/templates/nexus_tai.html
 - server/templates/nexus_trang_chinh.html
@@ -2231,7 +2242,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (263)
+[tests] (267)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2426,6 +2437,10 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_242_nexus_session_event.py
 - tests/test_243_nexus_relay_check.py
 - tests/test_244_nexus_download.py
+- tests/test_245_nexus_may_cua_toi.py
+- tests/test_245_render_gateway.py
+- tests/test_246_nexus_metrics.py
+- tests/test_247_cham_mu.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -2496,7 +2511,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (72)
+[tools] (73)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2514,6 +2529,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - tools/build_public_api_docs.py
 - tools/build_release.py
 - tools/build_system_profile.py
+- tools/cham_mu.py
 - tools/check_api_compat.py
 - tools/check_i18n.py
 - tools/check_multiproc.py
@@ -2592,7 +2608,7 @@ Phân bố extension: .cfg:1, .css:7, .html:83, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1187 file; 10700240 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1194 file; 10804480 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2957,7 +2973,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=1790a94d5869ec21021db3f94093934ebff0374cabbf9631f1acc4bcd55a69e8 BYTES=16563 LINES=289
+SHA256=e6ecb03cbbd223ace6d7095b1198ba935d6798542afd224ee6626d2e15b5b2c7 BYTES=18156 LINES=310
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3153,6 +3169,7 @@ nào**.
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92); **ĐÃ DEPLOY 2026-08-17**, tool chưa mở |
 | **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ ~63% 2026-08-20; xem `docs/nexus/EXECUTION_PLAN.md` §13 + `BUILD_CHARTER.md` |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
+| **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_local`, không phải app | 🔨 G0 xong 2026-08-21 (H37, Q102); 13 phase, xem `docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -3227,6 +3244,26 @@ Một câu về trạng thái: **hạ tầng đã sống, cửa hàng chưa mở
 `GET /api/v1/tools` trả `200` với danh sách rỗng — fail-closed của Q92 làm đúng
 việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool** (bắt đầu bằng
 `image.thumbnail`), **xoay khoá provider**, và **H35.10** (tool video).
+
+**H37 (bắt đầu 2026-08-21, Q102)** — model tạo ảnh chạy trên **máy B**
+(`MAY-B` 192.168.2.66, RTX 3090 24 GB, RAM 192 GB). Nó là **một provider**
+(`ltt_local`), **không phải một app**: thêm một dòng vào `platform_core/providers.py`
++ adapter dùng chung `platform_core/image_gen/`. Kế hoạch 13 phase và cổng chấm
+điểm ≥ 9/10 ở `docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md`.
+
+Bốn thứ phải biết trước khi đụng vào:
+
+- **Máy B KHÔNG giữ bí mật nào của nền tảng.** Không mật khẩu CSDL, không khoá R2,
+  không `LTT_TOKEN_ENCRYPTION_KEY`. Ảnh vào bằng presigned GET, ra bằng presigned PUT.
+- ⚠️ **ComfyUI trên máy B KHÔNG có xác thực.** Nó chỉ được nghe `127.0.0.1`, vĩnh
+  viễn. Chỉ cổng render (:8199, bearer token) nghe LAN, tường lửa chỉ mở cho
+  192.168.2.17. **Không bao giờ** đưa ra Cloudflare.
+- **Máy B chạy VIDEO cùng lúc** (dự án riêng `E:\LTT AI`, dùng chung đúng ComfyUI
+  đó). Một lượt video từng chạy 72,5 phút và ăn 98,7 % VRAM. Job ảnh **không xếp
+  hàng sau video** — bận thì cascade sang Gemini.
+- **Bận ≠ hỏng.** Khi B bận, tuyệt đối **không** gọi `api_pool.danh_dau_loi()` cho
+  key `ltt_local`: cooldown rồi `disable` sau 5 lần, và một tối chạy video sẽ tự
+  tắt vĩnh viễn model nhà.
 
 ## Không bao giờ commit hay copy đi
 
@@ -82137,7 +82174,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=ed4adfd35fed18ed7d1893a38200df535f3b1c6b2872c51229f5df0ed7772299 BYTES=171307 LINES=2508
+SHA256=733de3fb89f7a1ca22781289af2e7705bbb6eca5ed7e20ae07b6cdb0e7426d20 BYTES=177138 LINES=2587
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -84648,10 +84685,89 @@ tiến trình chạy nó"**, trong khi số tiến trình worker mặc định b
 §4b rồi §4c). Việc duy nhất còn nợ là chạy `test_221` trên một bucket R2 vứt đi —
 chặn bởi một quyết định về hạ tầng, không phải bởi code.
 
+---
+
+## H37 — Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)
+
+**Chốt 2026-08-21 · quyết định nền Q102 · trạng thái: G0 ✅ 9,5/10 · G2 ✅ 10/10.**
+
+⭐ **Chủ dự án chốt: CHẤT LƯỢNG là tiêu chí duy nhất, không đánh về số lượng**
+(D-010). Cấu hình đích là cấu hình đẹp nhất chạy được; thời gian mỗi ảnh chỉ là
+ràng buộc khả thi, không phải tiêu chí chọn. Model đích: **HiDream-O1-Image**
+(MIT, ~8B, chính là Qwen3-VL-8B cải biên) — D-009.
+
+Mục tiêu: có một model tạo ảnh chạy trên máy nhà (từ prompt hoặc từ ảnh tham
+chiếu), đóng gói thành **API nội bộ**, để mọi app cần ảnh gọi tới **y như đang gọi
+API bên ngoài**. Không phải một app mới — là một **provider** (Q102).
+
+Tài liệu chi tiết ở `docs/ANH_NOI_BO/`:
+
+| File | Nội dung |
+|---|---|
+| `KE_HOACH_H37.md` | kiến trúc, hiện trạng đo thật hai máy, model, rủi ro |
+| `PHAN_TICH_BUILD_PACK.md` | chấm bộ `flux2_klein9b_claude_build_pack` — giữ 7 bước, thu hẹp 12, bỏ 1 |
+| `CHIA_GPU_VOI_VIDEO.md` | chia một card 3090 giữa việc video và việc ảnh |
+| `KE_HOACH_THI_HANH.md` | **13 phase G0–G12, mỗi phase có cổng chấm điểm ≥ 9/10** |
+| `DECISIONS.md` · `CHAM_DIEM.md` | sổ quyết định và sổ chấm điểm, ghi liên tục |
+
+Ba điều phải biết trước khi đụng vào:
+
+- **Máy B không giữ bí mật nào của nền tảng.** Không mật khẩu CSDL, không khoá R2,
+  không khoá mã hoá. Ảnh vào bằng presigned GET, ảnh ra bằng presigned PUT.
+- **ComfyUI trên máy B không có xác thực.** Nó chỉ được nghe `127.0.0.1`, vĩnh
+  viễn. Chỉ cổng render (:8199, bearer token) nghe LAN, tường lửa chỉ mở cho
+  192.168.2.17. Không bao giờ đưa ra Cloudflare.
+- **Máy B chạy video cùng lúc.** Một lượt video từng chạy 72,5 phút và ăn 98,7 %
+  VRAM. Job ảnh **không xếp hàng sau video** — bận thì cascade sang Gemini.
+
+- [x] G0 Khung làm việc: Q102, H37, `DECISIONS.md`, `CHAM_DIEM.md`, `bench/` — **9,5/10**
+- [x] G1 Đo phần cứng — **10/10**. **PCIe Gen 3 x16, 11,93 GB/s** (đổi model chỉ
+  ~1,4 s) · E: là SATA 476 MB/s còn NVMe 849 GB trống ⇒ model ảnh về H: (D-014) ·
+  fp8 tensor core **KHÔNG có** (CC 8.6) — nay là số đo · trần công suất **370 W**
+  chứ không phải 250 W. **Bác bỏ bắt được lỗi thật**: `/system_stats` và
+  `torch.mem_get_info` mù với tiến trình khác trên WDDM ⇒ `busy.py` đọc VRAM
+  bằng `nvidia-smi` (D-013)
+- [~] G3 **ĐANG DỞ**. Xong: tải 30,26 GB về `H:\LTT_MODELS\` (sha256 đủ) · base path
+  thứ hai trong `extra_model_paths.yaml` (cộng thêm, có sao lưu) · venv riêng ·
+  **template `t2i` đã sinh ảnh thật** 2560×1440 trong 48,4 s, VRAM đỉnh 11,7 GB,
+  **368,93 W / trần 370 W** (D-016). **Xác nhận KHÔNG cần text encoder rời.**
+  Còn lại (cần GPU): baseline 5 ca bf16 50 bước · thí nghiệm độ phân giải · bác bỏ
+  bằng tái lập seed
+- [ ] G4 Quét cấu hình CHẤT LƯỢNG: precision · base↔dev · số bước 30–90 · sampler.
+  Chọn bằng **so mù ≥ 50 cặp có cặp bẫy**; thời gian chỉ là trần khả thi
+- [ ] G5 Edit + reference: `edit` · `subject` · `structure`, **1–2 ảnh tham chiếu**
+- [ ] G5b Chuỗi nâng chất: SeedVR2/upscale · VLM tự loại · nhiều seed. Nhánh nào
+  không chứng minh được tác dụng thì **bỏ hẳn**
+- [ ] **G6b ĐỐI CHỨNG TRẦN ⛔ — cổng quyết định.** So mù với **Gemini 3 Pro Image**
+  (thứ đang bán) + **Klein 9B** (trần trọng số mở, chỉ để đo) + GPT Image 2 nếu có
+  key. Thua ở mọi loại ⇒ **DỪNG, không mở bán**
+- [x] G6 Cổng render `render_gateway/` + `test_245` — **9,55/10**, 53 test xanh trên
+  máy A không cần GPU. Mọi hợp đồng đọc từ mã ComfyUI kèm số dòng. Phát hiện quan
+  trọng: `progress`/`executing` chỉ gửi tới client đã gửi prompt ⇒ **bỏ websocket**,
+  ETA việc lạ suy từ trung vị thời lượng (D-012). Template `t2i` còn là **DRAFT**,
+  G3 phải xác minh bằng cách chạy thật
+- [ ] G7 Deploy sang B: venv riêng, 2 service NSSM, tường lửa, ghim commit ComfyUI
+  — **phần máy A đã xong**: `render_gateway/deploy/{deploy,cai_dat_dich_vu,kiem_tra}.ps1`
+  (thuần ASCII, không BOM, so hash hai bên, token sinh trên B). Còn lại phải chạy
+  thật lên máy B + khởi động lại máy đó + gọi thử từ một máy thứ ba trong LAN
+- [ ] G8 Nối nền tảng: provider `ltt_local` + `platform_core/image_gen/` + `test_246`.
+  **KHÔNG cascade ngầm** — khách tự chọn đám mây
+- [ ] G9 Độ bền: 100 ảnh 4 MP · **nhiệt và tiết lưu** · tranh chấp với video
+- [ ] G10 Mở cho khách — gate.py toàn xanh + kiểm trên URL công khai thật; giao diện
+  **đường 2** (khách luôn biết ảnh do model nào sinh)
+- [ ] G11 Giám sát chất lượng thường trực (lấy mẫu hằng tháng, chấm mù lại)
+- [ ] G12 *(tuỳ chọn)* Gộp đường Gemini của `taoanh`/`thumbnail` vào adapter chung
+
+**H38 (đề xuất, làm sau H37):** hợp nhất cơ chế kiểm VRAM + RAM cho toàn hệ. Phần
+đo đã có sẵn (`GET /api/v1/metrics` của Nexus trả cùng một khuôn trên cả hai máy,
+GPU neo bằng UUID); phần thiếu là sổ "ai đang giữ" và một bảng ngưỡng duy nhất.
+Luật quan trọng nhất của H38: **mọi ngưỡng tài nguyên phải là lượng tuyệt đối (GB),
+không phải tỉ lệ** — chi tiết và lý do ở `CHIA_GPU_VOI_VIDEO.md` §10.
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=f407c541af48802773ecec9b46e10f8755a1cfe2d7a26c1d2a7d5f4b5b99656e BYTES=84900 LINES=231
+SHA256=e09e3bcc684a1fd05dd94bab030aa311eef3074c2a71e96eebb66498edb2e94e BYTES=88308 LINES=232
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -84682,7 +84798,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q95; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q102; Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -84781,6 +84897,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q99 | Agent Nexus chạy QUYỀN ADMIN cho điều khiển không giám sát (thu hẹp N3.3b) | **Agent chạy với quyền admin** (Windows Service hoặc task SYSTEM, cài bằng MỘT lần nâng quyền), để tự xoay mật khẩu phiên RustDesk. | **Vì sao cần:** đo trên máy thật (N3_2_ENGINE §V8) cho thấy `--password` — thứ dựng lại tính vé-một-lần của Q93 ràng buộc 2 — **đòi quyền admin**; ghi config service profile và dừng dịch vụ RustDesk cũng vậy. **Vì sao đây KHÔNG phá Q95/T1:** N3.3b tránh admin *mỗi lần chạy* (màn hình UAC lặp lại mà T1 lợi dụng), không phải admin *lúc cài*. Điều khiển không giám sát đằng nào cũng cần một lần nâng quyền lúc cài (RustDesk là dịch vụ). Một Service/task-SYSTEM cài một lần thì chạy đặc quyền tự động về sau, **không** hỏi UAC lại — nên số lần khách thấy UAC vẫn là **một**, đúng bằng lúc cài RustDesk. **Đổi lại, chấp nhận có ý thức:** mọi thứ Agent làm giờ đặc quyền, nên một lỗi trong Agent là lỗi đặc quyền — bù lại bằng giữ Agent nhỏ và không mở cổng nghe vào (nó chỉ gọi ra). **Đường B đã cân, không chọn:** trợ lý đặc quyền ~50 dòng + Agent thường giữ bề mặt nhỏ hơn, nhưng thêm một thành phần + IPC; chủ sản phẩm chọn A cho v1 vì đơn giản. Đổi sang B sau là một quyết định riêng, không phá dữ liệu. **Thu hẹp N3.3b:** dòng Scheduled-Task-không-admin của N3.3b nay chỉ áp cho tầng *chỉ-danh-tính* (nếu có); tầng điều khiển không giám sát dùng Q99. |
 | Q100 | Cá nhân hóa MẠNH RustDesk — chọn RỔ 2, tuân AGPL (đảo Q97) | **Sửa mạnh client RustDesk và tuân AGPL-3.0 bằng cách CÔNG BỐ mã nguồn bản sửa** — không mua license thương mại, không giữ kín fork. Thương hiệu LTT, cấu hình server nhúng sẵn, chỉ báo phiên tuỳ biến đều đưa vào chính client. | **Vì sao đổi khỏi Q97:** chủ sản phẩm (2026-08-20) chọn cá nhân hóa mạnh, chấp nhận nghĩa vụ mở mã fork. AGPL **cấp sẵn** quyền sửa — **không cần xin phép RustDesk, không nộp code cho ai** — đổi lại phải công bố mã bản sửa cho người dùng, dưới chính AGPL-3.0. **Cái này KÍCH HOẠT LẠI ba thứ Q97 đã hạ:** (1) nghĩa vụ §13/§§4-6 — công bố mã fork + source-offer (03_OSS_LICENSE §6 #2/#3, từ N/A → PHẢI LÀM); (2) **legal review trở lại BẮT BUỘC trước phát hành thương mại** — vì fork mở nguồn (AGPL) mà Agent giữ kín (độc quyền) cần ranh giới tiến trình+IPC đủ chắc để AGPL không lây sang Agent; (3) **R1 (AGPL lây sang phần độc quyền) trở lại mức CAO.** **Việc đã đo KHÔNG phí:** V1-V8 và `engine.py` vẫn dùng — Rổ 2 THÊM khả năng sửa client, không bỏ nền cũ; cấu hình nhúng sẵn thay file config phơi ra, chỉ báo phiên tự dựng (giải V7), branding LTT. **Ràng buộc mang theo (rule 2/5/6 của OSS_BOUNDARY):** ghim đúng commit gốc, mọi sửa đổi là **patch theo dõi được** trên fork công khai, `THIRD_PARTY_NOTICES` + toàn văn AGPL. **KHÔNG copy/link mã AGPL vào Agent** — ranh giới tiến trình vẫn là ranh giới cứng, giờ còn quan trọng hơn vì nó là thứ giữ Agent khỏi bị kéo vào nghĩa vụ mở mã. |
 | Q101 | Nexus KHÔNG dùng web-broker — web chỉ docs/tài khoản/credit; kết nối trong app native (thu hẹp Q93 r.b. 2/3) | **Sản phẩm = app NATIVE: client Windows (fork Q100) + iOS + Android.** Kết nối client↔relay LTT↔client như RustDesk (nhập ID + mật khẩu), **có UNATTENDED** (máy đích chạy dịch vụ, mật khẩu cố định/xoay). **Web `app.lttstudios.com` = CHỈ hướng dẫn/mô tả + đăng nhập tài khoản LTT + nạp credit.** KHÔNG danh sách máy trên web, KHÔNG "bấm điều khiển" trên web, KHÔNG broker vé. Tài khoản LTT + credit sống **trong client**; trạng thái trả phí kiểm qua LTT API (có thể cưỡng chế ở rendezvous LTT sau). | **Vì sao đổi:** chủ sản phẩm làm rõ (2026-08-20) — web chỉ để *hướng dẫn/mô tả*, "không có agent kết nối từ web đến máy tính"; sản phẩm là *phần mềm cài Windows + app iOS + Android*. **Nó thu hẹp Q93:** ràng buộc 2 (vé-một-lần do control plane WEB cấp) và vai trò `apps/nexus` (bề mặt khách trên web) **không còn** theo mô hình web-broker; uỷ quyền chuyển sang **ID+mật khẩu của RustDesk qua relay LTT + đăng nhập tài khoản LTT trong client**. **Cái gì GIỮ nguyên từ Q93:** khoá riêng không rời máy (#1), phiên ghi bất biến (#6), chỉ báo phiên không tắt được (#7), cập nhật xác minh chữ ký (#10), data plane tách khỏi web (#3 — vẫn đúng: màn hình đi qua relay, không qua web), fail-closed. **Việc đã làm KHÔNG phí:** fork build (Q100), relay N1 (Q96), config nhúng, toolchain, và **khái niệm credit/máy/tháng (Q98) vẫn dùng** — chỉ dời điểm thu từ "cấp vé trên web" sang "client + relay". Wiring web W1–W5 + `e2e_live` + `apps/nexus` UI là **bằng chứng kỹ thuật đã chạy**, nhưng **không phải hướng sản phẩm** — đóng băng, không phát triển thêm (không xoá: còn giá trị tham chiếu + có thể tái dùng cho bảng điều khiển tài khoản trên web). **Unattended CẦN** (chủ sản phẩm chốt): client Windows chạy dịch vụ, dùng Q99 (agent/dịch vụ đặc quyền cài một lần) để đặt/xoay mật khẩu — hoặc cơ chế unattended sẵn của fork. **Còn mở (tham số, không phá kiến trúc):** cưỡng chế billing ở đâu — client tự kiểm qua LTT API (đơn giản, MVP) so với cưỡng chế ở **rendezvous LTT** (chắc hơn, nhưng hbbs nguyên bản không có account-gating → cần fork hbbs hoặc policy layer, và hbbs cũng AGPL). Chọn client-side cho v1, rendezvous-side là hardening sau. |
+| Q102 | Model tạo ảnh chạy máy nhà (RTX 3090 ở máy B) đặt ở đâu trong kiến trúc | **Là một PROVIDER, không phải một app, không phải một hệ thống riêng.** Máy B = nhà cung cấp API: nhận prompt, trả ảnh. **Mã nguồn viết ở máy A, trong repo này** (`render_gateway/`, cùng khuôn `codex_sidecar/`); model và dữ liệu nằm ở máy B (`E:\AI\`). **Máy B KHÔNG giữ bí mật nào của nền tảng** — không mật khẩu CSDL, không khoá R2, không `LTT_TOKEN_ENCRYPTION_KEY`; ảnh vào bằng presigned GET, ảnh ra bằng presigned PUT. **ComfyUI KHÔNG BAO GIỜ nghe ngoài `127.0.0.1`**; chỉ cổng render (:8199, bearer token) nghe LAN và tường lửa chỉ mở cho 192.168.2.17. **Không dựng hàng đợi/sổ tiền/kho ảnh thứ hai** — dùng nguyên `jobs`/`credit`/`storage` của nền tảng. Token cổng render cất trong APIKEYS như một key thường (provider `ltt_local`, category `image`). **Tranh chấp GPU với việc video trên cùng máy B giải bằng ETA + cascade, KHÔNG bằng hàng đợi FIFO chung.** | **Vì sao provider chứ không phải app:** `platform_core/providers.py` đã chừa sẵn cửa này — docstring của nó viết *"Thêm loại API mới về sau = thêm MỘT dòng ở REGISTRY (+ tuỳ 1 adapter gọi HTTP), KHÔNG sửa app"*. Nhờ vậy được miễn phí: allocator/telemetry/cooldown/**cascade đa-provider** của H8, và việc cho một app dùng model nhà chỉ là sửa một dòng `providers:` trong manifest. **Vì sao không chạy trên máy A:** card 3090 ở máy B; máy A chỉ có 2× 16 GB VRAM **và đang phục vụ khách trả tiền** trên 32 GB RAM. **Vì sao không đem worker nền tảng sang B:** phải bê khoá bí mật sang máy thứ hai + mở cổng 5432 ra LAN + nuôi đích deploy thứ hai, đổi lại gần như không được gì vì storage đã là R2. **Hệ quả kiến trúc quan trọng nhất — 3090 là cách để RẺ ĐI, không phải chỗ dựa để CHẠY ĐƯỢC:** khi GPU nhà bận (một lượt video từng chạy 72,5 phút và ăn 98,7 % VRAM) thì job ảnh **rơi về Gemini** thay vì xếp hàng; nhờ đó "máy B chết" và "ComfyUI chạy tay" tụt từ *sự cố* xuống *tốn thêm tiền*. Luật quyết định là **`eta_s ≤ NGƯỠNG_CHỜ` thì chờ, lớn hơn thì cascade** — tham số này tự thích nghi khi lượt video nhanh dần, không phải sửa mã. **Cạm bẫy đã ghi để không tái phạm:** khi B bận **không được** `api_pool.danh_dau_loi()` cho key `ltt_local` — bận không phải hỏng; đánh dấu lỗi sẽ cooldown rồi `disable` sau 5 lần, và một tối chạy video sẽ tự tắt vĩnh viễn model nhà. **Món nợ nhận có ý thức:** adapter ảnh dùng chung (`platform_core/image_gen/`) đúng ra phải có từ H5; vì không có nên `taoanh` và `thumbnail` mỗi nơi tự viết lại lời gọi Gemini. H37 thêm adapter nhưng **giai đoạn đầu chỉ phục vụ `ltt_local`**, không đụng đường Gemini đang phục vụ khách; gộp lại là G12, làm sau. **Giấy phép model là cổng chặn**, không phải lời khuyên: chưa xác minh được quyền bán ảnh thì không tải, không đo, không xây tiếp. Chi tiết: `docs/ANH_NOI_BO/`. |
 ---
 
 ## 2. Ràng buộc bất biến
@@ -132349,7 +132466,7 @@ def register_webhook_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/app.py
-SHA256=9f1822e029bbe609929eb19c18b23709e3bbf79e2232fe037179bcfa759969d5 BYTES=24363 LINES=474
+SHA256=c8536a4e014f23c36c3e0add3ed65268eff4947011f607fbf6c48d78cd64c6a0 BYTES=25144 LINES=479
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 FastAPI application factory (P3).
@@ -132665,6 +132782,11 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # Công khai, không phụ thuộc cờ LTT_NEXUS (tải/hướng dẫn không lộ gì).
     from server import nexus_download as nexus_download_routes
     app.include_router(nexus_download_routes.router)
+
+    # Trang "Máy của tôi": người dùng tự xem/đổi tên/THU HỒI máy của mình. Route
+    # tự trả 404 khi cờ `LTT_NEXUS` tắt (fail-closed như route agent).
+    from server.routes import nexus_devices as nexus_devices_routes
+    app.include_router(nexus_devices_routes.router)
     # Developer portal: session + CSRF surface where API keys are created. It is
     # mounted unconditionally so a customer can prepare keys before an operator
     # turns the API itself on; the page says plainly when `/api/v1` is off.
@@ -133487,7 +133609,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/routes.py
-SHA256=88ae8755b9f750eba44fc7099715d37d06e02499a13eee7cc8d7569741bf8105 BYTES=21394 LINES=521
+SHA256=50d91c3508428fa3a00772bb4857621abaa115aec429dfc3654cb5268f0dd30f BYTES=23928 LINES=584
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba đường cho agent: ghép máy, nhịp tim, đổi vé phiên.
 
@@ -133530,6 +133652,22 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/nexus-agent", tags=["nexus-agent"])
 
 _NO_STORE = {"Cache-Control": "no-store"}
+
+
+def _dem(ten: str) -> None:
+    """Đếm một sự kiện Nexus cho trang vận hành.
+
+    Nuốt lỗi CÓ CHỦ Ý: số liệu hỏng không được làm hỏng đường phục vụ khách —
+    một máy không kết nối được vì bộ đếm là đánh đổi sai.
+    """
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment(ten)
+    except Exception:                                        # noqa: BLE001
+        # Không ném: số liệu hỏng không được chặn khách. Nhưng phải LOG — lỗi
+        # biến mất lặng lẽ là lỗi khó tìm nhất (bánh cóc `check_silent_except`).
+        log.warning("khong dem duoc %s", ten, exc_info=True)
 
 #: Trần cho việc đổi mã ghép, theo IP. Cố ý thấp: người thật ghép một máy vài
 #: lần một ngày, còn kẻ dò cần hàng nghìn lần mới có cơ hội.
@@ -133621,6 +133759,7 @@ async def enroll(request: Request):
             agent_version=str(body.get("agent_version") or "")[:32],
             ip=ip)
         db.commit()
+        _dem("nexus:dang_ky_may")
         return JSONResponse({"device_id": device.id,
                              "display_name": device.display_name},
                             headers=_NO_STORE)
@@ -133847,6 +133986,7 @@ async def client_register(request: Request):
             platform=str(body.get("platform") or "")[:32],
             agent_version=str(body.get("agent_version") or "")[:32])
         db.commit()
+        _dem("nexus:dang_ky_may")
         return JSONResponse({"device_id": device.id,
                              "display_name": device.display_name},
                             headers=_NO_STORE)
@@ -133903,6 +134043,50 @@ async def status(
             "credit_balance": credit.so_du(db, device.user_id),
             "paid_until": paid_until.isoformat() if paid_until else None,
         }, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/my-devices")
+async def my_devices(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Onboarding 1-chạm (Model B): máy hỏi tài khoản này có những máy nào.
+
+    Ký như mọi request thiết bị. Trả danh sách máy CÙNG TÀI KHOẢN với máy gọi —
+    `rustdesk_id` (để kết nối thẳng), tên, online, đã trả phí. Client hiện panel
+    "Máy của tôi" sau đăng nhập → bấm là điền ID + kết nối, khỏi nhập tay.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        from platform_core.nexus import billing
+
+        ds = devices.danh_sach(db, user_id=device.user_id)
+        out = []
+        for d in ds:
+            out.append({
+                "device_id": d.id,
+                "rustdesk_id": d.rustdesk_id or "",
+                "name": d.display_name or "",
+                "online": devices.dang_online(d),
+                "paid": billing.da_thanh_toan(d),
+                "is_self": d.id == device.id,
+            })
+        return JSONResponse({"devices": out}, headers=_NO_STORE)
     finally:
         try:
             next(gen)
@@ -134003,6 +134187,7 @@ async def relay_check(
             return JSONResponse({"allowed": True, "managed": False},
                                 headers=_NO_STORE)
         allowed = billing.da_thanh_toan(device)
+        _dem("nexus:relay_cho_qua" if allowed else "nexus:relay_chan")
         return JSONResponse({"allowed": bool(allowed), "managed": True},
                             headers=_NO_STORE)
     finally:
@@ -137072,6 +137257,144 @@ def audit_status(request: Request, user: str = Depends(require_login)):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/nexus_devices.py
+SHA256=9656eda176e6c273bf5cc8e27f4e4ea21ee8096d6d33c8805b29d9f3b0d91b03 BYTES=5369 LINES=132
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trang "Máy của tôi" — người dùng tự quản lý máy LTT Nexus của mình.
+
+Model B (Q101) bỏ web-broker: web KHÔNG điều khiển máy, nhưng người dùng **phải**
+xem và cắt được quyền truy cập máy của chính mình. Mất laptop mà không thu hồi
+được thì tài khoản coi như thủng — đây là lỗ hổng vận hành, không phải tiện nghi.
+
+Trang này chỉ làm ba việc: **xem** (máy, online, thuê bao), **đổi tên**, và
+**thu hồi**. Không cấp vé, không mở phiên — đúng ranh giới Model B.
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+from platform_core import nexus
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import user_hien_tai
+from server.templating import templates
+
+router = APIRouter(tags=["nexus-devices"])
+
+#: Trang tự ẩn khi Nexus tắt (Q93 fail-closed) — 404 y như route agent.
+_TAT = HTMLResponse(status_code=404, content="Not found")
+
+
+def _lay_danh_sach(db, user_id: str) -> list[dict]:
+    """Máy của một tài khoản, kèm trạng thái hiển thị. Trả dict (không phải ORM)
+    để template không chạm session đã đóng."""
+    from platform_core.nexus import billing, devices
+
+    ra = []
+    for d in devices.danh_sach(db, user_id=user_id):
+        ra.append({
+            "id": d.id,
+            "ten": d.display_name or "",   # rỗng → template dịch nhãn thay
+            "rustdesk_id": d.rustdesk_id or "",
+            "online": devices.dang_online(d),
+            "da_tra": billing.da_thanh_toan(d),
+            "paid_until": d.paid_until,
+            "last_seen_at": d.last_seen_at,
+            "platform": getattr(d, "platform", "") or "",
+        })
+    return ra
+
+
+@router.get("/may-cua-toi", response_class=HTMLResponse)
+def trang_may(request: Request, user: str = Depends(require_login)):
+    """Danh sách máy đã gắn vào tài khoản."""
+    if not nexus.enabled():
+        return _TAT
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.nexus import billing
+
+    u = user_hien_tai(request)
+    may, so_du = [], None
+    gen = get_session(); db = next(gen)
+    try:
+        if u is not None:
+            may = _lay_danh_sach(db, u.id)
+            so_du = credit.so_du(db, u.id)
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return templates.TemplateResponse(request, "nexus_may.html", {
+        "user": user, "nav": "may", "may": may, "so_du": so_du,
+        "gia_thang": billing.gia_may_thang(),
+        "co_user_csdl": u is not None,
+        "csrf_token": issue_csrf_token(request),
+    })
+
+
+def _may_cua_minh(db, request: Request, device_id: str):
+    """Máy đó có thuộc người đang đăng nhập không. None = không (đừng nói vì sao
+    — không lộ máy người khác có tồn tại hay không)."""
+    from platform_core.nexus import devices
+
+    u = user_hien_tai(request)
+    if u is None:
+        return None
+    return devices.cua_chu(db, user_id=u.id, device_id=device_id)
+
+
+@router.post("/may-cua-toi/{device_id}/doi-ten")
+def doi_ten(request: Request, device_id: str, ten: str = Form(""),
+            csrf_token: str = Form(""), user: str = Depends(require_login)):
+    """Đổi tên hiển thị của máy (chỉ ảnh hưởng cách người dùng nhận ra nó)."""
+    if not nexus.enabled():
+        return _TAT
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/may-cua-toi?loi=csrf", status_code=303)
+    from platform_core.db import get_session
+
+    gen = get_session(); db = next(gen)
+    try:
+        d = _may_cua_minh(db, request, device_id)
+        if d is None:
+            return RedirectResponse("/may-cua-toi?loi=khong-thay", status_code=303)
+        d.display_name = (ten or "").strip()[:120]
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return RedirectResponse("/may-cua-toi?ok=doi-ten", status_code=303)
+
+
+@router.post("/may-cua-toi/{device_id}/thu-hoi")
+def thu_hoi_may(request: Request, device_id: str, csrf_token: str = Form(""),
+                user: str = Depends(require_login)):
+    """Thu hồi máy: khoá đăng ký đó lại (máy mất/bán đi thì cắt ngay).
+
+    Thu hồi **không xoá** lịch sử — nhật ký truy cập cũ phải còn để đối chiếu.
+    """
+    if not nexus.enabled():
+        return _TAT
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/may-cua-toi?loi=csrf", status_code=303)
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+
+    gen = get_session(); db = next(gen)
+    try:
+        d = _may_cua_minh(db, request, device_id)
+        if d is None:
+            return RedirectResponse("/may-cua-toi?loi=khong-thay", status_code=303)
+        devices.thu_hoi(db, d, by=str(user))
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    return RedirectResponse("/may-cua-toi?ok=thu-hoi", status_code=303)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/ngon_ngu.py
 SHA256=6e20caa96d208474225919e3feff577da795fb4d053b2767caaa9a0472f26093 BYTES=2775 LINES=61
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -138055,7 +138378,7 @@ def sheet_stop(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/status.py
-SHA256=945cbd2ed61ef078fecb293dcdc388d14b05523bd40316395e94c8cf09837eac BYTES=2979 LINES=79
+SHA256=2efb52a63594eaf701fb8b4c9ffca99a39d81b4a75cea34853359acbfa766812 BYTES=5278 LINES=133
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 /status — the doctor health report, in the browser (PB-2).
@@ -138135,7 +138458,61 @@ def status_page(
         "sections": report.sections,
         "blockers": [s for s in report.sections if s["status"] == doctor.BLOCK],
         "checked_sheet": want_sheet,
+        "nexus": _tom_tat_nexus(),
     })
+
+
+def _tom_tat_nexus() -> dict | None:
+    """Số liệu vận hành Nexus cho trang tình trạng, hoặc None khi Nexus tắt.
+
+    Vì sao cần: trước cái này, người vận hành **không có cách nào** biết có bao
+    nhiêu máy đã ghép, bao nhiêu đang bật, hay có ai bị relay chặn vì hết credit —
+    tức là bán một dịch vụ mà không nhìn thấy nó chạy.
+    """
+    from platform_core import nexus
+
+    if not nexus.enabled():
+        return None
+    from platform_core.db import get_session
+    from platform_core.nexus import billing, devices
+
+    ra = {"gia_thang": billing.gia_may_thang(), "loi": None}
+    gen = None
+    try:
+        gen = get_session()
+        db = next(gen)
+        ds = db.query(devices.NexusDevice).all()
+        ra["may"] = len(ds)
+        ra["online"] = sum(1 for d in ds if devices.dang_online(d))
+        ra["thu_hoi"] = sum(1 for d in ds if d.revoked_at is not None)
+        ra["chua_tra"] = sum(
+            1 for d in ds
+            if d.revoked_at is None and not billing.da_thanh_toan(d))
+        from platform_core.nexus.tables import NexusSession
+
+        ra["phien"] = db.query(NexusSession).count()
+        # Bộ đếm 24h (đăng ký, relay cho qua / chặn).
+        try:
+            from platform_core.public_api import metrics
+
+            tong = metrics.aggregate(db, hours=24)
+            dem = tong.get("counters", tong) if isinstance(tong, dict) else {}
+            ra["dem_24h"] = {k: v for k, v in dem.items()
+                             if str(k).startswith("nexus:")}
+        except Exception as exc:                                # noqa: BLE001
+            ra["dem_24h"] = {}
+            ra["loi"] = f"khong doc duoc bo dem: {type(exc).__name__}"
+    except Exception as exc:                                    # noqa: BLE001
+        # Trang tình trạng phải mở được ngay cả khi phần Nexus hỏng — nó là thứ
+        # người vận hành cần NHẤT lúc có sự cố.
+        return {"loi": f"{type(exc).__name__}: {exc}"}
+    finally:
+        if gen is not None:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    return ra
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -142352,7 +142729,7 @@ SHA256=eea299f9a8a485befdfa5dcb3e95fa401dc0c0696e926d9d4237271a84d58a91 BYTES=11
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/_header.html
-SHA256=f927ed0765a609ece8b030d034482fd78d12ca80ce022ceac356550c314be4cc BYTES=3746 LINES=77
+SHA256=07d7f68de5518b8a6dc66f19e18b4ebd555806e892444ae9d5f41a3308e9ca4a BYTES=3874 LINES=78
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <header class="hdr">
   <a class="hdr-logo" href="/"><span class="mark">LTT</span> LTT AI Studio</a>
@@ -142395,6 +142772,7 @@ SHA256=f927ed0765a609ece8b030d034482fd78d12ca80ce022ceac356550c314be4cc BYTES=37
             <span class="badge b-grey"><span class="dot"></span>{{ _acc.role }}</span></div>
           <a href="/jobs"><span class="ic">📋</span> {{ _("Việc của tôi") }}</a>
           <a href="/developers"><span class="ic">🔌</span> {{ _("API cho lập trình viên") }}</a>
+          {% if nexus_bat() %}<a href="/may-cua-toi"><span class="ic">🖥️</span> {{ _("Máy của tôi") }}</a>{% endif %}
           {% if is_admin(request) %}<a href="/settings"><span class="ic">🔧</span> {{ _("Cấu hình hệ thống") }}</a>
           <a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
           <a href="/admin/apikeys"><span class="ic">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
@@ -145892,6 +146270,103 @@ SHA256=6d7140378e84f4b32257d9081c625a7db2f8e60a00d0130a20973cb8a1954fc2 BYTES=25
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_may.html
+SHA256=683aeb10c966bae10111c4aeaff08e5f6cce589e35444f155dd0efda2d925f1e BYTES=4547 LINES=91
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Máy của tôi") }} — LTT Nexus{% endblock %}
+{% block content %}
+
+  <div class="pagehead">
+    <div>
+      <h1 style="margin:0 0 4px">{{ _("Máy của tôi") }}</h1>
+      <p class="dim" style="margin:0">
+        {{ _("Các máy đã gắn vào tài khoản LTT của bạn. Mất máy thì thu hồi ngay để cắt quyền truy cập.") }}
+      </p>
+    </div>
+    {% if so_du is not none %}
+      <div class="cbadge badge b-ok">{{ so_du }} credit</div>
+    {% endif %}
+  </div>
+
+  {% if request.query_params.get('ok') == 'thu-hoi' %}
+    <div class="alert">{{ _("Đã thu hồi máy. Máy đó không còn kết nối được nữa.") }}</div>
+  {% elif request.query_params.get('ok') == 'doi-ten' %}
+    <div class="alert">{{ _("Đã đổi tên máy.") }}</div>
+  {% elif request.query_params.get('loi') == 'khong-thay' %}
+    <div class="alert alert-warn">{{ _("Không tìm thấy máy đó trong tài khoản của bạn.") }}</div>
+  {% elif request.query_params.get('loi') == 'csrf' %}
+    <div class="alert alert-warn">{{ _("Phiên làm việc đã hết hạn. Hãy thử lại.") }}</div>
+  {% endif %}
+
+  {% if not co_user_csdl %}
+    <div class="alert alert-warn">{{ _("Tài khoản này không quản lý máy được.") }}</div>
+  {% elif not may %}
+    <div class="appcard" style="text-align:center;padding:28px 20px">
+      <h3 style="margin:0 0 6px">{{ _("Chưa có máy nào") }}</h3>
+      <p class="dim" style="margin:0 0 14px">
+        {{ _("Tải LTT Nexus về máy, đăng nhập bằng chính tài khoản này, máy sẽ hiện ở đây.") }}
+      </p>
+      <a class="btn" href="/tai-xuong">{{ _("Tải LTT Nexus") }}</a>
+    </div>
+  {% else %}
+    {% if gia_thang > 0 %}
+      <p class="dim" style="margin:0 0 10px">
+        {{ _("Thuê bao") }}: <b>{{ gia_thang }}</b> {{ _("credit mỗi máy mỗi tháng") }}.
+      </p>
+    {% endif %}
+
+    {% for m in may %}
+      <div class="appcard" style="margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="dot" style="background:{{ '#25a55f' if m.online else '#9a8c84' }}"></span>
+              {% if m.ten %}<b>{{ m.ten }}</b>
+              {% else %}<b>{{ _("(chưa đặt tên)") }}</b>{% endif %}
+              {% if m.online %}
+                <span class="badge b-ok">{{ _("đang bật") }}</span>
+              {% else %}
+                <span class="badge">{{ _("tắt") }}</span>
+              {% endif %}
+              {% if gia_thang > 0 %}
+                {% if m.da_tra %}
+                  <span class="badge b-ok">{{ _("đã trả phí") }}</span>
+                {% else %}
+                  <span class="badge b-err">{{ _("chưa trả phí") }}</span>
+                {% endif %}
+              {% endif %}
+            </div>
+            <p class="dim" style="margin:6px 0 0;font-size:12.5px">
+              {% if m.rustdesk_id %}ID: <code>{{ m.rustdesk_id }}</code> · {% endif %}
+              {% if m.platform %}{{ m.platform }} · {% endif %}
+              {% if m.last_seen_at %}{{ _("thấy lần cuối") }}: {{ m.last_seen_at.strftime('%d/%m/%Y %H:%M') }}{% else %}{{ _("chưa từng kết nối") }}{% endif %}
+            </p>
+          </div>
+
+          <div class="actions" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <form method="post" action="/may-cua-toi/{{ m.id }}/doi-ten"
+                  style="display:flex;gap:6px;align-items:center">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <input type="text" name="ten" value="{{ m.ten }}" maxlength="120"
+                     aria-label="{{ _('Tên máy') }}" style="width:150px">
+              <button class="btn ghost sm" type="submit">{{ _("Đổi tên") }}</button>
+            </form>
+            <form method="post" action="/may-cua-toi/{{ m.id }}/thu-hoi"
+                  onsubmit="return confirm('{{ _("Thu hồi máy này? Máy đó sẽ không kết nối được nữa.") }}')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn ghost sm" type="submit">{{ _("Thu hồi") }}</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_nhat_ky.html
 SHA256=1074cb0fd81c4f903642c51055c5ab506b6fc37655a6cadd3e8245d918bab5b5 BYTES=2651 LINES=61
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -146767,7 +147242,7 @@ SHA256=413bc6b8b185b051c509388226ac85549d1d68ae0608ea121e3a2d8fdba7cf13 BYTES=97
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/status.html
-SHA256=c3f6b7a65c027232c98317247665577359b897f3812bf68c651ad09e7ee5b4a2 BYTES=1466 LINES=34
+SHA256=5053110fffc66bec036d3fc529caa35972f29e579009cc3f50c6d1728cf41c5b BYTES=2988 LINES=60
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}Tình trạng hệ thống — LTT AI Studio{% endblock %}
@@ -146802,6 +147277,32 @@ SHA256=c3f6b7a65c027232c98317247665577359b897f3812bf68c651ad09e7ee5b4a2 BYTES=14
              style="width:auto;"> Kiểm tra cả Google Sheet (chậm hơn)
     </label>
   </form>
+
+  {% if nexus %}
+    <div class="appcard" style="margin:14px 0">
+      <h3 style="margin:0 0 8px">LTT Nexus</h3>
+      {% if nexus.loi %}
+        <p class="dim" style="margin:0">Khong doc duoc so lieu: {{ nexus.loi }}</p>
+      {% endif %}
+      {% if nexus.may is defined %}
+      <div style="display:flex;gap:18px;flex-wrap:wrap">
+        <div><b style="font-size:20px">{{ nexus.may }}</b><div class="dim" style="font-size:12px">may da ghep</div></div>
+        <div><b style="font-size:20px">{{ nexus.online }}</b><div class="dim" style="font-size:12px">dang bat</div></div>
+        <div><b style="font-size:20px">{{ nexus.phien }}</b><div class="dim" style="font-size:12px">phien</div></div>
+        <div><b style="font-size:20px">{{ nexus.thu_hoi }}</b><div class="dim" style="font-size:12px">da thu hoi</div></div>
+        {% if nexus.gia_thang > 0 %}
+        <div><b style="font-size:20px;color:{{ "#c2453f" if nexus.chua_tra else "inherit" }}">{{ nexus.chua_tra }}</b><div class="dim" style="font-size:12px">chua tra phi</div></div>
+        <div><b style="font-size:20px">{{ nexus.gia_thang }}</b><div class="dim" style="font-size:12px">credit/may/thang</div></div>
+        {% endif %}
+      </div>
+      {% if nexus.dem_24h %}
+        <p class="dim" style="margin:10px 0 0;font-size:12.5px">24h:
+        {% for k, v in nexus.dem_24h.items() %}<code>{{ k }}={{ v }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+      {% endif %}
+      {% endif %}
+    </div>
+  {% endif %}
+
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -146983,7 +147484,7 @@ SHA256=8d53d64a8c34a0357803c5c08e9b6964cca1920a3d7ae690f50ed7362c570229 BYTES=43
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templating.py
-SHA256=13c4328e0fbc295a0df181ec10aff5932e283ea1a307e4b0933dffdf5445c483 BYTES=15228 LINES=375
+SHA256=08307ce10ff4c588a48c56d09a071445bcf1e7629c2a58611719bf992863813b BYTES=15666 LINES=389
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 templating.py — the single Jinja2 environment for the whole app.
@@ -147229,6 +147730,20 @@ def _is_admin(request=None):
 
 
 templates.env.globals["active_app"] = _active_app
+
+
+def _nexus_bat() -> bool:
+    """Cờ LTT Nexus có bật không — menu "Máy của tôi" chỉ hiện khi bật.
+
+    Đọc cờ mỗi lần render (không cache) vì cờ đổi bằng biến môi trường
+    lúc chạy; cache lại thì bật/tắt phải khởi động lại mới thấy.
+    """
+    from platform_core import nexus
+
+    return nexus.enabled()
+
+
+templates.env.globals["nexus_bat"] = _nexus_bat
 templates.env.globals["is_admin"] = _is_admin
 
 
@@ -197255,7 +197770,7 @@ def test_co_gia_chua_tra_thi_bi_chan(db, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_241_nexus_client_api.py
-SHA256=aa46da6554d9669fbb18210f4b34dcda14bff02cfe2cd738d0090d675c157238 BYTES=5911 LINES=164
+SHA256=70d4e12797d8b7a3b8ffd221b97e16d387aa0800a7f4d1e1dcf1a0e2143f58bb BYTES=7707 LINES=208
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nexus Model B (Q101 / D-P7) — bề mặt HTTP cho client native.
 
@@ -197421,6 +197936,50 @@ def test_status_co_gia_chua_tra_thi_paid_false(app_bat, monkeypatch):
     assert r.status_code == 200, r.text
     assert r.json()["paid"] is False
     assert r.json()["price_per_month"] == 50
+
+
+# ── Onboarding 1-chạm: "Máy của tôi" (có ký) ─────────────────────────────────
+
+def test_my_devices_liet_ke_may_cung_tai_khoan(app_bat):
+    from platform_core.nexus import agent_auth
+
+    _tao_user()
+    d1, priv1 = _dang_ky(app_bat)          # máy 1
+    d2, _priv2 = _dang_ky(app_bat)         # máy 2 CÙNG tài khoản
+    path = "/nexus-agent/my-devices"
+    headers = {agent_auth.HEADER_DEVICE: d1, **_ky(priv1, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    ds = r.json()["devices"]
+    ids = {x["device_id"] for x in ds}
+    assert d1 in ids and d2 in ids         # thấy cả 2 máy
+    me = next(x for x in ds if x["device_id"] == d1)
+    assert me["is_self"] is True
+    for x in ds:
+        assert {"rustdesk_id", "name", "online", "paid"} <= set(x)
+
+
+def test_my_devices_khong_ky_thi_401(app_bat):
+    _tao_user()
+    _dang_ky(app_bat)
+    r = app_bat.post("/nexus-agent/my-devices", content=b"")
+    assert r.status_code == 401
+
+
+def test_my_devices_khong_lo_may_tai_khoan_khac(app_bat):
+    """Bảo mật: chỉ trả máy của TÀI KHOẢN gọi, không lộ chéo."""
+    from platform_core.nexus import agent_auth
+
+    _tao_user("a@example.com")
+    _tao_user("b@example.com")
+    da, priva = _dang_ky(app_bat, "a@example.com")
+    db_id, _privb = _dang_ky(app_bat, "b@example.com")
+    path = "/nexus-agent/my-devices"
+    headers = {agent_auth.HEADER_DEVICE: da, **_ky(priva, "POST", path, b"")}
+    r = app_bat.post(path, content=b"", headers=headers)
+    assert r.status_code == 200, r.text
+    ids = {x["device_id"] for x in r.json()["devices"]}
+    assert da in ids and db_id not in ids  # chỉ máy của mình
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -197869,6 +198428,1492 @@ def test_dl_chan_path_traversal(app_bat, bad):
     r = client.get(f"/nexus/dl/{bad}")
     assert r.status_code == 404
     assert "top-secret" not in r.text
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_245_nexus_may_cua_toi.py
+SHA256=b0e0476d199bde431862fbd165feceb5528e0e3beb8844470b6d1c5b59703a7c BYTES=8106 LINES=204
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trang "Máy của tôi" — người dùng tự xem/đổi tên/thu hồi máy Nexus của mình.
+
+Model B (Q101): web KHÔNG điều khiển máy, nhưng phải cắt được quyền truy cập khi
+mất máy. Test chốt ba điều: chỉ thấy máy CỦA MÌNH, thu hồi có tác dụng thật, và
+mọi hành động đổi trạng thái đều đòi CSRF.
+"""
+from __future__ import annotations
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "test-mat-khau-may-0123456789"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'may.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "may-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("LTT_NEXUS_GIA_MAY_THANG", raising=False)
+
+    from platform_core.public_api import limits
+    limits.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        dbmod.reset_engine()
+
+
+def _tao_user(email: str):
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session(); db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.commit()
+        return u.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _dang_nhap(client, email: str):
+    import re
+
+    client.post("/logout", follow_redirects=False)
+    tok = re.search(r'name="csrf_token" value="([^"]+)"',
+                    client.get("/login").text).group(1)
+    r = client.post("/login", data={"username": email, "password": PASSWORD,
+                                    "csrf_token": tok},
+                    follow_redirects=False)
+    assert r.status_code in (302, 303), r.text
+
+
+def _dang_ky_may(client, email: str, ten: str = "May A"):
+    from platform_core.nexus import agent_auth
+
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/client-register",
+                    json={"email": email, "password": PASSWORD,
+                          "public_key": pub, "display_name": ten,
+                          "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def _csrf(html: str) -> str:
+    import re
+    m = re.search(r'name="csrf_token"\s+value="([^"]+)"', html)
+    assert m, "khong thay csrf token trong trang"
+    return m.group(1)
+
+
+# ── Xem ──────────────────────────────────────────────────────────────────────
+
+def test_trang_hien_may_cua_minh(app_bat):
+    _tao_user("a@example.com")
+    _dang_ky_may(app_bat, "a@example.com", "May lam viec")
+    _dang_nhap(app_bat, "a@example.com")
+    r = app_bat.get("/may-cua-toi")
+    assert r.status_code == 200, r.text
+    assert "May lam viec" in r.text
+
+
+def test_chua_co_may_thi_moi_tai_xuong(app_bat):
+    _tao_user("a@example.com")
+    _dang_nhap(app_bat, "a@example.com")
+    r = app_bat.get("/may-cua-toi")
+    assert r.status_code == 200
+    assert "/tai-xuong" in r.text          # trạng thái rỗng dẫn đi tải app
+
+
+def test_khong_thay_may_cua_tai_khoan_khac(app_bat):
+    """Bảo mật: máy người khác không được lộ."""
+    _tao_user("a@example.com")
+    _tao_user("b@example.com")
+    _dang_ky_may(app_bat, "b@example.com", "May cua B")
+    _dang_nhap(app_bat, "a@example.com")
+    r = app_bat.get("/may-cua-toi")
+    assert r.status_code == 200
+    assert "May cua B" not in r.text
+
+
+def test_chua_dang_nhap_thi_ve_login(app_bat):
+    r = app_bat.get("/may-cua-toi", follow_redirects=False)
+    assert r.status_code in (302, 303)
+    assert "/login" in r.headers.get("location", "")
+
+
+def test_tat_co_thi_404(app_bat, monkeypatch):
+    _tao_user("a@example.com")
+    _dang_nhap(app_bat, "a@example.com")
+    monkeypatch.setenv("LTT_NEXUS", "0")
+    r = app_bat.get("/may-cua-toi")
+    assert r.status_code == 404
+
+
+# ── Đổi tên ──────────────────────────────────────────────────────────────────
+
+def test_doi_ten_may(app_bat):
+    _tao_user("a@example.com")
+    did, _ = _dang_ky_may(app_bat, "a@example.com", "Ten cu")
+    _dang_nhap(app_bat, "a@example.com")
+    token = _csrf(app_bat.get("/may-cua-toi").text)
+    r = app_bat.post(f"/may-cua-toi/{did}/doi-ten",
+                     data={"ten": "Ten moi", "csrf_token": token},
+                     follow_redirects=False)
+    assert r.status_code == 303
+    assert "Ten moi" in app_bat.get("/may-cua-toi").text
+
+
+def test_doi_ten_khong_csrf_thi_khong_doi(app_bat):
+    _tao_user("a@example.com")
+    did, _ = _dang_ky_may(app_bat, "a@example.com", "Ten cu")
+    _dang_nhap(app_bat, "a@example.com")
+    r = app_bat.post(f"/may-cua-toi/{did}/doi-ten",
+                     data={"ten": "Bi doi", "csrf_token": "sai"},
+                     follow_redirects=False)
+    assert r.status_code == 303
+    assert "loi=csrf" in r.headers.get("location", "")
+    assert "Bi doi" not in app_bat.get("/may-cua-toi").text
+
+
+# ── Thu hồi ──────────────────────────────────────────────────────────────────
+
+def test_thu_hoi_may_thi_may_do_het_dung_duoc(app_bat):
+    """Thu hồi phải cắt thật: request đã ký của máy đó bị từ chối sau đó."""
+    import time
+
+    from platform_core.nexus import agent_auth
+
+    _tao_user("a@example.com")
+    did, priv = _dang_ky_may(app_bat, "a@example.com", "May mat")
+
+    # trước khi thu hồi: máy dùng được
+    path = "/nexus-agent/status"
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv, method="POST", path=path, timestamp=ts, body=b"")
+    truoc = app_bat.post(path, content=b"", headers={
+        agent_auth.HEADER_DEVICE: did, agent_auth.HEADER_TIMESTAMP: ts,
+        agent_auth.HEADER_SIGNATURE: sig})
+    assert truoc.status_code == 200, truoc.text
+
+    _dang_nhap(app_bat, "a@example.com")
+    token = _csrf(app_bat.get("/may-cua-toi").text)
+    r = app_bat.post(f"/may-cua-toi/{did}/thu-hoi",
+                     data={"csrf_token": token}, follow_redirects=False)
+    assert r.status_code == 303
+    assert "ok=thu-hoi" in r.headers.get("location", "")
+
+    # sau khi thu hồi: chính máy đó không còn được chấp nhận
+    ts2 = str(int(time.time()))
+    sig2 = agent_auth.sign(priv, method="POST", path=path, timestamp=ts2, body=b"")
+    sau = app_bat.post(path, content=b"", headers={
+        agent_auth.HEADER_DEVICE: did, agent_auth.HEADER_TIMESTAMP: ts2,
+        agent_auth.HEADER_SIGNATURE: sig2})
+    assert sau.status_code == 401, "thu hoi ma may van dung duoc"
+
+
+def test_khong_thu_hoi_duoc_may_nguoi_khac(app_bat):
+    _tao_user("a@example.com")
+    _tao_user("b@example.com")
+    did_b, _ = _dang_ky_may(app_bat, "b@example.com", "May cua B")
+    _dang_nhap(app_bat, "a@example.com")
+    token = _csrf(app_bat.get("/may-cua-toi").text)
+    r = app_bat.post(f"/may-cua-toi/{did_b}/thu-hoi",
+                     data={"csrf_token": token}, follow_redirects=False)
+    assert r.status_code == 303
+    assert "loi=khong-thay" in r.headers.get("location", "")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_245_render_gateway.py
+SHA256=84b6538aca8fe3fbf877465f33f61f368716496ec7e45ee71ee40abf646325fb BYTES=38943 LINES=892
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_245 — cổng render (H37/G6).
+
+⭐ Toàn bộ chạy trên MÁY A, **không cần ComfyUI, không cần GPU**. Đó là yêu cầu của
+   G6: máy B đang bận việc khác, và một phase không được chặn vì thế.
+
+Mỗi test dưới đây neo vào một sự thật đọc từ mã nguồn ComfyUI 0.30.0 (commit ghim
+`6f7cd7f`) hoặc một cạm bẫy đã ghi trong `docs/ANH_NOI_BO/DECISIONS.md`.
+"""
+from __future__ import annotations
+
+import json
+import time
+
+import pytest
+
+from render_gateway import busy as B
+from render_gateway import catalog as C
+from render_gateway import comfy as CF
+from render_gateway import jobs as J
+from render_gateway import storage_io as S
+from render_gateway import workflows as W
+from render_gateway.config import Config
+from render_gateway.runner import (E_COMFY_REJECT, E_OOM, E_REF, E_TIMEOUT,
+                                   E_WORKFLOW, RenderRequest, Runner)
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
+
+
+# ───────────────────────── giả lập ──────────────────────────────────────────
+class FakeTransport:
+    """ComfyUI giả. Kịch bản đặt bằng thuộc tính, không bằng monkeypatch."""
+
+    def __init__(self):
+        self.queue_running: list[str] = []
+        self.queue_pending: list[str] = []
+        self.history: dict[str, dict] = {}
+        self.object_info = {
+            "CheckpointLoaderSimple": {}, "CLIPTextEncode": {},
+            "EmptyHiDreamO1LatentImage": {}, "KSampler": {},
+            "VAEDecode": {}, "SaveImage": {}, "LoadImage": {},
+        }
+        self.stats = {"system": {"ram_total": 206_000_000_000,
+                                 "ram_free": 120_000_000_000},
+                      "devices": [{"vram_total": 25_769_148_416,
+                                   "vram_free": 25_000_000_000}]}
+        self.calls: list[tuple[str, str, object]] = []
+        self.prompt_status = 200
+        self.prompt_body: dict | None = None
+        self.view_bytes = PNG
+        self.fail_history_times = 0
+
+    def request(self, method, path, *, json=None, params=None, timeout=30.0):
+        self.calls.append((method, path, json))
+        if path == "/prompt" and method == "POST":
+            body = self.prompt_body or {"prompt_id": (json or {}).get("prompt_id"),
+                                        "number": 1, "node_errors": {}}
+            return self.prompt_status, _b(body)
+        if path == "/prompt" and method == "GET":
+            return 200, _b({"exec_info": {"queue_remaining":
+                                          len(self.queue_running) + len(self.queue_pending)}})
+        if path == "/queue":
+            return 200, _b({
+                "queue_running": [[1, p, {}, {}, []] for p in self.queue_running],
+                "queue_pending": [[2, p, {}, {}, []] for p in self.queue_pending]})
+        if path.startswith("/history/"):
+            if self.fail_history_times > 0:
+                self.fail_history_times -= 1
+                return 599, b"mang loi"
+            pid = path.rsplit("/", 1)[1]
+            muc = self.history.get(pid)
+            return 200, _b({pid: muc} if muc else {})
+        if path == "/view":
+            return 200, self.view_bytes
+        if path == "/object_info":
+            return 200, _b(self.object_info)
+        if path == "/system_stats":
+            return 200, _b(self.stats)
+        if path in ("/interrupt", "/free"):
+            return 200, b""
+        return 404, b"khong co duong nay"
+
+
+class FakeFetcher:
+    def __init__(self):
+        self.gets: dict[str, tuple[int, bytes]] = {}
+        self.puts: list[tuple[str, bytes, str]] = []
+        self.put_status = 200
+
+    def get(self, url, *, timeout):
+        return self.gets.get(url, (404, b""))
+
+    def put(self, url, *, data, content_type, timeout):
+        self.puts.append((url, data, content_type))
+        return self.put_status, b""
+
+
+def _b(obj) -> bytes:
+    return json.dumps(obj).encode("utf-8")
+
+
+def _ok_history(images=1, node="7"):
+    return {"status": {"status_str": "success", "completed": True, "messages": []},
+            "outputs": {node: {"images": [
+                {"filename": f"a{i}.png", "subfolder": "", "type": "output"}
+                for i in range(images)]}}}
+
+
+@pytest.fixture
+def clock():
+    """Đồng hồ giả — test không được ngủ thật."""
+    box = {"t": 1000.0}
+
+    def now() -> float:
+        return box["t"]
+
+    now.tick = lambda d: box.__setitem__("t", box["t"] + d)   # type: ignore[attr-defined]
+    return now
+
+
+# ───────────────────────── workflows ────────────────────────────────────────
+def test_the_con_thieu_va_thay():
+    mau = {"1": {"class_type": "K", "inputs": {"seed": "@seed", "text": "@prompt"}}}
+    assert W.the_con_thieu(mau, {"seed": 1}) == ["prompt"]
+    ra = W.thay(mau, {"seed": 7, "prompt": "xin chao"})
+    assert ra["1"]["inputs"] == {"seed": 7, "text": "xin chao"}
+    # Bản gốc không bị đụng — nếu bị, job thứ hai sẽ thừa hưởng giá trị của job đầu.
+    assert mau["1"]["inputs"]["seed"] == "@seed"
+
+
+def test_thieu_the_la_loi_chan_khong_phai_canh_bao():
+    """Workflow còn nguyên `@seed` sẽ hỏng GIỮA CHỪNG sau khi đã nạp model."""
+    with pytest.raises(W.WorkflowError):
+        W.thay({"1": {"class_type": "K", "inputs": {"seed": "@seed"}}}, {})
+
+
+def test_prompt_cua_khach_chua_a_khong_bi_thay_nham():
+    mau = {"1": {"class_type": "K", "inputs": {"text": "@prompt"}}}
+    ra = W.thay(mau, {"prompt": "email @tencongty va gia @@dat"})
+    assert ra["1"]["inputs"]["text"] == "email @tencongty va gia @@dat"
+
+
+def test_kiem_node_bat_thieu_node_truoc_khi_gui():
+    """'Thứ gì CPU trả lời được thì không hỏi GPU' — cong_gpu.py, dự án video máy B."""
+    mau = {"1": {"class_type": "NodeLa", "inputs": {}}}
+    with pytest.raises(W.WorkflowError) as e:
+        W.kiem_node(mau, {"KSampler"})
+    assert "NodeLa" in str(e.value)
+
+
+def test_template_that_trong_repo_nap_duoc_va_khai_du_the():
+    """Template kèm theo phải nạp được và mọi thẻ phải có mặc định trong catalog."""
+    cat = C.nap_catalog()
+    spec = cat["hidream-o1"]
+    mau = W.nap(spec.modes["t2i"].template)
+    gia_tri = dict(spec.defaults)
+    gia_tri.update({"prompt": "x", "negative": ""})
+    assert W.the_con_thieu(mau, gia_tri) == []
+
+
+def test_catalog_khong_lo_ten_file_template_ra_ngoai():
+    spec = C.nap_catalog()["hidream-o1"]
+    assert "template" not in json.dumps(spec.public())
+
+
+def test_catalog_gioi_han_2_anh_tham_chieu():
+    """`ref_max_size()` thu nhỏ mỗi ảnh theo số lượng: 3 ảnh còn 1/2, 5 ảnh còn 1/4."""
+    assert C.nap_catalog()["hidream-o1"].max_refs == 2
+
+
+def test_catalog_mac_dinh_la_bucket_4mp_khong_phai_1920():
+    """D-010: sinh ở bucket đã huấn luyện rồi thu nhỏ, không sinh thẳng 1920×1080."""
+    d = C.nap_catalog()["hidream-o1"].defaults
+    assert (d["width"], d["height"]) == (2560, 1440)
+    assert d["width"] * d["height"] > 3_000_000
+
+
+# ───────────────────────── comfy client ─────────────────────────────────────
+def test_prompt_id_on_dinh_theo_job_id():
+    """Nền của idempotency: gửi lại cùng job thì ComfyUI thấy cùng prompt_id, và
+    sau khi cổng khởi động lại ta vẫn tra được `/history` cũ."""
+    assert CF.prompt_id_for("job-1") == CF.prompt_id_for("job-1")
+    assert CF.prompt_id_for("job-1") != CF.prompt_id_for("job-2")
+
+
+def test_queue_prompt_gui_kem_prompt_id_cua_ta():
+    t = FakeTransport()
+    c = CF.ComfyClient(t)
+    c.queue_prompt({"1": {}}, prompt_id="pid-x")
+    method, path, body = t.calls[-1]
+    assert (method, path) == ("POST", "/prompt")
+    assert body["prompt_id"] == "pid-x" and body["client_id"] == c.client_id
+
+
+def test_node_errors_la_loi_cua_ta_khong_phai_may_chu_chet():
+    t = FakeTransport()
+    t.prompt_body = {"prompt_id": "p", "node_errors": {"3": "thieu ckpt"}}
+    with pytest.raises(CF.ComfyRejected):
+        CF.ComfyClient(t).queue_prompt({"1": {}}, prompt_id="p")
+
+
+def test_interrupt_bat_buoc_co_prompt_id():
+    """Gọi /interrupt trống sẽ giết lượt đang chạy — có thể là lượt video 70 phút."""
+    with pytest.raises(ValueError):
+        CF.ComfyClient(FakeTransport()).interrupt("")
+
+
+def test_images_of_bo_qua_anh_xem_truoc_temp():
+    t = FakeTransport()
+    t.history["p"] = {"status": {"status_str": "success"}, "outputs": {"7": {"images": [
+        {"filename": "preview.png", "subfolder": "", "type": "temp"},
+        {"filename": "that.png", "subfolder": "", "type": "output"}]}}}
+    anh = CF.ComfyClient(t).images_of("p")
+    assert [a.filename for a in anh] == ["that.png"]
+
+
+def test_queue_prompt_ids_doc_dung_vi_tri_1_cua_mang():
+    t = FakeTransport()
+    t.queue_running = ["a"]
+    t.queue_pending = ["b", "c"]
+    assert CF.ComfyClient(t).queue_prompt_ids() == (["a"], ["b", "c"])
+
+
+# ───────────────────────── busy / eta ───────────────────────────────────────
+def _watcher(t, clock, *, vram_mb=0, **kw):
+    """BusyWatcher với nguồn VRAM giả.
+
+    ⛔ Phải tiêm `doc_vram_mb`: mặc định của nó gọi `nvidia-smi` THẬT, và máy A có
+    nvidia-smi — test sẽ đọc GPU của máy đang chạy test, tức là không tất định.
+    """
+    return B.BusyWatcher(comfy=CF.ComfyClient(t), now=clock,
+                         doc_vram_mb=lambda: vram_mb, **kw)
+
+def test_viec_la_trong_hang_doi_lam_may_ban(clock):
+    t = FakeTransport()
+    t.queue_running = ["video-1"]
+    w = _watcher(t, clock)
+    st = w.observe(cua_ta=set())
+    assert st.busy and st.foreign_running == 1
+
+
+def test_viec_cua_chinh_ta_khong_lam_may_ban(clock):
+    t = FakeTransport()
+    t.queue_running = ["cua-ta"]
+    w = _watcher(t, clock)
+    assert not w.observe(cua_ta={"cua-ta"}).busy
+
+
+def test_eta_chua_co_lich_su_thi_tra_None_chu_khong_doan(clock):
+    """'Không biết' phải khác 'sắp xong'. Bên gọi coi None là LÂU."""
+    t = FakeTransport()
+    t.queue_running = ["video-1"]
+    w = _watcher(t, clock)
+    assert w.observe(set()).eta_s is None
+
+
+def test_eta_hoc_tu_thoi_luong_that_cua_viec_la(clock):
+    t = FakeTransport()
+    w = _watcher(t, clock)
+    # Lượt lạ thứ nhất: chạy 100 giây rồi xong.
+    t.queue_running = ["v1"]
+    w.observe(set())
+    clock.tick(100)
+    t.queue_running = []
+    w.observe(set())
+    # Lượt lạ thứ hai vừa bắt đầu ⇒ ETA ≈ trung vị 100 giây.
+    t.queue_running = ["v2"]
+    st = w.observe(set())
+    assert st.eta_s == pytest.approx(100, abs=1)
+    clock.tick(60)
+    assert w.observe(set()).eta_s == pytest.approx(40, abs=1)
+
+
+def test_eta_khong_bao_gio_am(clock):
+    t = FakeTransport()
+    w = _watcher(t, clock)
+    t.queue_running = ["v1"]
+    w.observe(set())
+    clock.tick(10)
+    t.queue_running = []
+    w.observe(set())
+    t.queue_running = ["v2"]
+    w.observe(set())
+    clock.tick(10_000)
+    assert w.observe(set()).eta_s == 0.0
+
+
+def test_ram_thap_lam_may_ban_theo_nguong_TUYET_DOI(clock):
+    """48 GB là LƯỢNG, không phải tỉ lệ — nâng RAM không được làm đổi ý nghĩa.
+
+    Số này rút từ sự cố thật của dự án video máy B: còn ~23 GB thì VRAM bị đẩy lên
+    98 %; còn ~4 GB thì Windows sập (19/08).
+    """
+    t = FakeTransport()
+    t.stats["system"]["ram_free"] = 20 * 1024 ** 3
+    w = _watcher(t, clock, ram_trong_toi_thieu_gb=48.0)
+    st = w.observe(set())
+    assert st.busy and "RAM" in st.reason
+
+
+def test_doc_chiem_lam_may_ban_va_tu_het_han(clock):
+    t = FakeTransport()
+    w = _watcher(t, clock)
+    w.doc_chiem(bat=True, ly_do="benchmark video", het_han_s=60)
+    assert w.observe(set()).busy
+    clock.tick(61)
+    assert not w.observe(set()).busy       # tự tắt, không ai phải nhớ
+
+
+def test_comfy_chet_thi_coi_la_ban_chu_khong_nhan_viec(clock):
+    class Chet(FakeTransport):
+        def request(self, *a, **kw):
+            return 599, b"connection refused"
+
+    w = B.BusyWatcher(comfy=CF.ComfyClient(Chet()), now=clock,
+                      doc_vram_mb=lambda: 0)
+    assert w.observe(set()).busy
+
+
+# ───────────────────────── job store ────────────────────────────────────────
+def test_idempotency_cung_job_id_khong_tao_job_thu_hai(clock):
+    st = J.JobStore(now=clock)
+    a, moi_a = st.create_or_get("j1", "p1")
+    b, moi_b = st.create_or_get("j1", "p1")
+    assert moi_a and not moi_b and a is b
+
+
+def test_trang_thai_da_chot_khong_bi_ghi_de(clock):
+    st = J.JobStore(now=clock)
+    st.create_or_get("j1", "p1")
+    st.set_status("j1", J.COMPLETED)
+    st.set_status("j1", J.GENERATING)
+    assert st.get("j1").status == J.COMPLETED
+
+
+def test_active_prompt_ids_chi_ke_job_chua_xong(clock):
+    st = J.JobStore(now=clock)
+    st.create_or_get("j1", "p1")
+    st.create_or_get("j2", "p2")
+    st.set_status("j2", J.COMPLETED)
+    assert st.active_prompt_ids() == {"p1"}
+
+
+# ───────────────────────── storage io ───────────────────────────────────────
+def test_file_txt_doi_ten_thanh_png_bi_chan(tmp_path):
+    f = FakeFetcher()
+    f.gets["u"] = (200, b"khong phai anh dau")
+    with pytest.raises(S.StorageIOError):
+        S.tai_refs(f, [S.RefSpec("u")], job_id="j", input_dir=tmp_path)
+
+
+def test_anh_qua_lon_bi_chan(tmp_path):
+    f = FakeFetcher()
+    f.gets["u"] = (200, PNG + b"0" * (9 * 1024 * 1024))
+    with pytest.raises(S.StorageIOError):
+        S.tai_refs(f, [S.RefSpec("u")], job_id="j", input_dir=tmp_path)
+
+
+def test_ref_luu_vao_input_dir_va_tra_ve_TEN_khong_phai_duong_dan(tmp_path):
+    """Node LoadImage nhận tên tương đối trong `input`; đưa đường dẫn tuyệt đối
+    vào là nó không tìm thấy."""
+    f = FakeFetcher()
+    f.gets["u"] = (200, PNG)
+    ten = S.tai_refs(f, [S.RefSpec("u")], job_id="job/1", input_dir=tmp_path)
+    assert len(ten) == 1 and "/" not in ten[0] and "\\" not in ten[0]
+    assert (tmp_path / ten[0]).read_bytes() == PNG
+
+
+def test_put_gui_dung_content_type_da_ky():
+    """Sai Content-Type so với lúc ký vé thì R2 trả 403 — storage.py đã ghi."""
+    f = FakeFetcher()
+    S.day_ket_qua(f, [PNG], ["https://r2/put"], content_type="image/webp")
+    assert f.puts[0][2] == "image/webp"
+
+
+def test_khong_co_ve_put_la_loi_ro_rang():
+    with pytest.raises(S.StorageIOError):
+        S.day_ket_qua(FakeFetcher(), [PNG], [])
+
+
+# ───────────────────────── runner ───────────────────────────────────────────
+def _runner(t: FakeTransport, f: FakeFetcher, tmp_path, clock, **kw) -> Runner:
+    return Runner(CF.ComfyClient(t), J.JobStore(now=clock), f,
+                  input_dir=tmp_path, timeout_s=kw.pop("timeout_s", 600.0),
+                  poll_s=1.0, now=clock, sleep=lambda d: clock.tick(d), **kw)
+
+
+def _req(**kw) -> RenderRequest:
+    base = dict(job_id="j1", template="hidream_o1_t2i.json",
+                values={"ckpt": "x.safetensors", "width": 2560, "height": 1440,
+                        "batch": 1, "steps": 50, "cfg": 5.0, "sampler": "euler",
+                        "scheduler": "normal", "seed": 1, "prefix": "p",
+                        "prompt": "xin chao", "negative": ""},
+                put_urls=["https://r2/put1"], image_keys=["u/1.png"])
+    base.update(kw)
+    return RenderRequest(**base)
+
+
+def test_duong_thanh_cong(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = _ok_history()
+    job = _runner(t, f, tmp_path, clock).run(_req())
+    assert job.status == J.COMPLETED and job.image_keys == ["u/1.png"]
+    assert len(f.puts) == 1
+
+
+def test_co_muc_lich_su_KHONG_co_nghia_la_thanh_cong(tmp_path, clock):
+    """Cạm bẫy Gate 0: phán quyết phải ĐỌC `status_str`, không chỉ thấy có bản ghi."""
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = {
+        "status": {"status_str": "error", "completed": False,
+                   "messages": ["node 5 no lo"]},
+        "outputs": {}}
+    job = _runner(t, f, tmp_path, clock).run(_req())
+    assert job.status == J.FAILED and job.error_code == E_COMFY_REJECT
+
+
+def test_oom_thi_nha_vram_va_thu_lai_DUNG_MOT_lan(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    pid = CF.prompt_id_for("j1")
+    t.history[pid] = {"status": {"status_str": "error", "completed": False,
+                                 "messages": ["CUDA error: out of memory"]},
+                      "outputs": {}}
+    job = _runner(t, f, tmp_path, clock).run(_req())
+    assert job.status == J.FAILED and job.error_code == E_OOM
+    assert sum(1 for m, p, _ in t.calls if p == "/free") == 1
+    assert sum(1 for m, p, _ in t.calls if m == "POST" and p == "/prompt") == 2
+
+
+def test_oom_lan_dau_thu_lai_thanh_cong(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    pid = CF.prompt_id_for("j1")
+    t.history[pid] = {"status": {"status_str": "error", "completed": False,
+                                 "messages": ["out of memory"]}, "outputs": {}}
+
+    goc = t.request
+    trang_thai = {"lan": 0}
+
+    def request(method, path, **kw):
+        if method == "POST" and path == "/prompt":
+            trang_thai["lan"] += 1
+            if trang_thai["lan"] == 2:
+                t.history[pid] = _ok_history()
+        return goc(method, path, **kw)
+
+    t.request = request                                    # type: ignore[assignment]
+    job = _runner(t, f, tmp_path, clock).run(_req())
+    assert job.status == J.COMPLETED
+
+
+def test_het_gio_thi_huy_DUNG_prompt_cua_minh(tmp_path, clock):
+    """Không được gọi /interrupt trống — nó sẽ giết lượt video của dự án khác."""
+    t, f = FakeTransport(), FakeFetcher()
+    job = _runner(t, f, tmp_path, clock, timeout_s=10.0).run(_req())
+    assert job.status == J.FAILED and job.error_code == E_TIMEOUT
+    huy = [body for m, p, body in t.calls if p == "/interrupt"]
+    assert huy and huy[0]["prompt_id"] == CF.prompt_id_for("j1")
+
+
+def test_job_dai_6_phut_khong_bi_het_gio_nham(tmp_path, clock):
+    """D-010: một ảnh ở cấu hình chất lượng mất 2,5–6 phút. Trần theo giây của bản
+    kế hoạch đầu là sai."""
+    t, f = FakeTransport(), FakeFetcher()
+    pid = CF.prompt_id_for("j1")
+    goc = t.request
+    dem = {"n": 0}
+
+    def request(method, path, **kw):
+        if path.startswith("/history/"):
+            dem["n"] += 1
+            if dem["n"] > 360:                    # ~360 giây rồi mới xong
+                t.history[pid] = _ok_history()
+        return goc(method, path, **kw)
+
+    t.request = request                                    # type: ignore[assignment]
+    job = _runner(t, f, tmp_path, clock, timeout_s=900.0).run(_req())
+    assert job.status == J.COMPLETED
+
+
+def test_mot_cu_vap_mang_khong_phai_may_chu_chet(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    t.fail_history_times = 2
+    t.history[CF.prompt_id_for("j1")] = _ok_history()
+    assert _runner(t, f, tmp_path, clock).run(_req()).status == J.COMPLETED
+
+
+def test_anh_tham_chieu_hong_bao_dung_ma_loi(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    f.gets["bad"] = (200, b"day khong phai anh")
+    job = _runner(t, f, tmp_path, clock).run(
+        _req(refs=[S.RefSpec("bad")], ref_slots=["ref1"]))
+    assert job.status == J.FAILED and job.error_code == E_REF
+
+
+def test_thanh_cong_nhung_khong_co_anh_la_that_bai(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = {
+        "status": {"status_str": "success", "completed": True, "messages": []},
+        "outputs": {}}
+    job = _runner(t, f, tmp_path, clock).run(_req())
+    assert job.status == J.FAILED
+
+
+def test_template_khong_ton_tai_bao_loi_workflow(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    job = _runner(t, f, tmp_path, clock).run(_req(template="khong_co.json"))
+    assert job.status == J.FAILED and job.error_code == E_WORKFLOW
+
+
+def test_chay_lai_cung_job_id_khong_ve_lan_hai(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = _ok_history()
+    r = _runner(t, f, tmp_path, clock)
+    r.run(_req())
+    r.run(_req())
+    assert sum(1 for m, p, _ in t.calls if m == "POST" and p == "/prompt") == 1
+
+
+# ───────────────────────── API ──────────────────────────────────────────────
+def _app(t: FakeTransport, f: FakeFetcher, tmp_path, clock, token=""):
+    from fastapi.testclient import TestClient
+
+    from render_gateway.api import create_app
+    cfg = Config(comfy_url="http://x", comfy_input_dir=tmp_path, host="127.0.0.1",
+                 port=8199, token=token, max_concurrent=1, job_timeout_s=600.0,
+                 vram_ban_mb=4096, ram_trong_toi_thieu_gb=48.0, work_dir=tmp_path)
+    # Tiêm nguồn VRAM giả: mặc định gọi `nvidia-smi` THẬT, và máy chạy test có
+    # GPU — không tiêm thì test phụ thuộc vào việc máy đang bận hay rảnh.
+    app = create_app(cfg, CF.ComfyClient(t), now=clock,
+                     sleep=lambda d: clock.tick(d), fetcher=f,
+                     doc_vram_mb=lambda: 0)
+    return TestClient(app), app
+
+
+def _body(**kw):
+    b = {"job_id": "j1", "model": "hidream-o1", "mode": "t2i",
+         "prompt": "xin chao", "put_urls": ["https://r2/p1"], "image_keys": ["u/1.png"]}
+    b.update(kw)
+    return b
+
+
+def _cho_xong(app, job_id="j1", lan=200):
+    for _ in range(lan):
+        job = app.state.store.get(job_id)
+        if job and job.status in J.KET_THUC:
+            return job
+        time.sleep(0.01)
+    return app.state.store.get(job_id)
+
+
+def test_health_tra_du_thong_tin_van_hanh(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    d = c.get("/health").json()
+    assert d["comfy_alive"] and "busy" in d and "ram_free_gb" in d
+    assert "hidream-o1" in d["models"]
+
+
+def test_models_dung_khuon_data_de_providers_live_doc_duoc(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    d = c.get("/v1/models").json()
+    assert isinstance(d.get("data"), list) and d["data"][0]["id"] == "hidream-o1"
+
+
+def test_sai_token_bi_chan(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock, token="bimat")
+    assert c.get("/health").status_code == 401
+    assert c.get("/health", headers={"Authorization": "Bearer bimat"}).status_code == 200
+
+
+def test_ban_tra_429_va_KHONG_phai_ma_loi_5xx(tmp_path, clock):
+    """⛔ Cạm bẫy D-005: máy A phải phân biệt BẬN với HỎNG. Hiểu nhầm thành lỗi thì
+    `api_pool` cooldown rồi `disable` key sau 5 lần — một tối chạy video sẽ tự tắt
+    vĩnh viễn model nhà."""
+    t, f = FakeTransport(), FakeFetcher()
+    t.queue_running = ["video-dang-chay"]
+    c, _ = _app(t, f, tmp_path, clock)
+    r = c.post("/v1/images/generations", json=_body())
+    assert r.status_code == 429
+    assert r.json()["error"]["code"] == "busy"
+    assert r.status_code < 500
+
+
+def test_model_la_bi_tu_choi_400(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    assert c.post("/v1/images/generations", json=_body(model="khong-co")).status_code == 400
+
+
+def test_qua_nhieu_anh_tham_chieu_bi_tu_choi(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    r = c.post("/v1/images/generations",
+               json=_body(refs=[{"url": "a"}, {"url": "b"}, {"url": "c"}]))
+    assert r.status_code == 400
+
+
+def test_thieu_ve_put_bi_tu_choi(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    assert c.post("/v1/images/generations", json=_body(put_urls=[])).status_code == 400
+
+
+def test_gui_lai_cung_job_id_tra_ve_job_cu(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = _ok_history()
+    c, app = _app(t, f, tmp_path, clock)
+    assert c.post("/v1/images/generations", json=_body()).status_code == 202
+    _cho_xong(app)
+    r2 = c.post("/v1/images/generations", json=_body())
+    assert r2.status_code == 200 and r2.json()["job_id"] == "j1"
+    assert sum(1 for m, p, _ in t.calls if m == "POST" and p == "/prompt") == 1
+
+
+def test_job_chay_het_va_tra_ket_qua(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    t.history[CF.prompt_id_for("j1")] = _ok_history()
+    c, app = _app(t, f, tmp_path, clock)
+    c.post("/v1/images/generations", json=_body())
+    job = _cho_xong(app)
+    assert job.status == J.COMPLETED
+    assert c.get("/v1/jobs/j1").json()["image_keys"] == ["u/1.png"]
+
+
+def test_huy_job_goi_interrupt_dung_prompt_id(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, app = _app(t, f, tmp_path, clock)
+    app.state.store.create_or_get("j9", CF.prompt_id_for("j9"))
+    r = c.post("/v1/jobs/j9/cancel")
+    assert r.json()["status"] == J.CANCELLED
+    huy = [b for m, p, b in t.calls if p == "/interrupt"]
+    assert huy and huy[0]["prompt_id"] == CF.prompt_id_for("j9")
+
+
+def test_doc_chiem_bat_thi_tu_choi_viec_moi(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    c.post("/v1/exclusive", json={"on": True, "reason": "benchmark video", "ttl_s": 60})
+    r = c.post("/v1/images/generations", json=_body())
+    assert r.status_code == 429 and "doc chiem" in r.json()["error"]["message"]
+
+
+def test_job_khong_ton_tai_tra_404(tmp_path, clock):
+    t, f = FakeTransport(), FakeFetcher()
+    c, _ = _app(t, f, tmp_path, clock)
+    assert c.get("/v1/jobs/khong-co").status_code == 404
+
+
+# ───────────────────────── script deploy (G7) ───────────────────────────────
+#
+# Ba test dưới đây sinh ra từ MỘT LẦN HỎNG THẬT trong phiên viết chúng: tôi viết
+# ba tệp `.ps1` có ký tự ⛔/⭐ và chỉ phát hiện khi tự kiểm byte. `tests/test_61`
+# chỉ canh `setup/*.ps1`, nên `render_gateway/deploy/` lọt lưới.
+#
+# Đây đúng tinh thần `cong_gpu.py` của dự án video máy B: *"Mỗi câu hỏi phải trỏ
+# về MỘT SỰ CỐ THẬT."*
+
+_DEPLOY = __import__("pathlib").Path(__file__).resolve().parents[1] / "render_gateway" / "deploy"
+_PS1 = sorted(_DEPLOY.glob("*.ps1"))
+
+
+def test_co_du_ba_script_deploy():
+    assert {p.name for p in _PS1} == {
+        "deploy.ps1", "cai_dat_dich_vu.ps1", "kiem_tra.ps1"}
+
+
+@pytest.mark.parametrize("duong", _PS1, ids=lambda p: p.name)
+def test_ps1_thuan_ascii(duong):
+    """Quy tắc 2 của CLAUDE.md: PowerShell 5.1 đọc `.ps1` không BOM theo bảng mã
+    ANSI. Một ký tự ngoài ASCII làm hỏng cả câu lệnh và báo lỗi ở dòng khác."""
+    raw = duong.read_bytes()
+    xau = [i for i, b in enumerate(raw) if b >= 128]
+    assert not xau, f"{duong.name} co byte ngoai ASCII o vi tri {xau[:5]}"
+
+
+@pytest.mark.parametrize("duong", _PS1, ids=lambda p: p.name)
+def test_ps1_khong_bom(duong):
+    assert duong.read_bytes()[:3] != b"\xef\xbb\xbf", f"{duong.name} co BOM"
+
+
+def _chi_ma(duong) -> str:
+    """Bỏ dòng chú thích trước khi soi.
+
+    Lần chạy đầu, test này **báo đỏ vì chính dòng chú thích đang cảnh báo về lỗi
+    đó** — `deploy.ps1` có câu "KHONG dung Out-File/Set-Content -Encoding utf8".
+    Một phép kiểm bắt oan sẽ bị người ta học cách bỏ qua, và khi đó nó tệ hơn
+    không có (`QUY_TAC.md` §6 của dự án video máy B).
+    """
+    return "\n".join(d for d in duong.read_text(encoding="ascii").splitlines()
+                     if not d.lstrip().startswith("#")).lower()
+
+
+@pytest.mark.parametrize("duong", _PS1, ids=lambda p: p.name)
+def test_ps1_khong_ghi_file_bang_duong_chen_bom(duong):
+    """Quy tắc 1: `Out-File -Encoding utf8` và `Set-Content -Encoding utf8` chèn
+    BOM ở PowerShell 5.1. BOM trong config làm `json.load()` vỡ — lỗi này **đã
+    thực sự làm sập production** ở dự án này."""
+    text = _chi_ma(duong)
+    for xau in ("out-file -encoding utf8", "set-content -encoding utf8"):
+        assert xau not in text, f"{duong.name} dung {xau!r} — se chen BOM"
+
+
+@pytest.mark.parametrize("duong", _PS1, ids=lambda p: p.name)
+def test_ps1_ghi_cau_hinh_bang_duong_khong_BOM(duong):
+    """Ngược lại: tệp nào có ghi cấu hình thì phải ghi bằng `WriteAllText` +
+    `UTF8Encoding($false)`. Cấm cách sai mà không chỉ cách đúng thì lần sau vẫn sai."""
+    ma = _chi_ma(duong)
+    if "writealltext" not in ma:
+        pytest.skip(f"{duong.name} khong ghi tep cau hinh")
+    assert "utf8encoding($false)" in ma.replace(" ", ""), \
+        f"{duong.name} ghi tep ma khong ep UTF8Encoding($false)"
+
+
+def test_cai_dat_dich_vu_giu_comfyui_o_loopback():
+    """Q102: ComfyUI không có xác thực, nên nó chỉ được nghe 127.0.0.1 — vĩnh viễn.
+    Một lần đổi thành `--listen 0.0.0.0` là mở cửa cho chạy mã tuỳ ý trên máy B."""
+    text = (_DEPLOY / "cai_dat_dich_vu.ps1").read_text(encoding="ascii")
+    assert "--listen 127.0.0.1" in text
+    assert "--listen 0.0.0.0" not in text
+
+
+def test_tuong_lua_gioi_han_theo_dia_chi_khong_mo_toang():
+    text = (_DEPLOY / "cai_dat_dich_vu.ps1").read_text(encoding="ascii")
+    assert "-RemoteAddress $MayA" in text
+    assert "192.168.2.17" in text
+
+
+def test_kiem_tra_doc_token_bang_split_khong_dem_ky_tu():
+    """Lỗi thật đã mắc: `Substring(18)` trong khi "LTT_RENDER_TOKEN=" dài 17 — token
+    mất ký tự đầu, và lỗi chỉ lộ ra thành "401 sai token" ở máy A rất lâu sau."""
+    text = (_DEPLOY / "kiem_tra.ps1").read_text(encoding="ascii")
+    assert "Split('=', 2)[1]" in text
+    assert "Substring(18)" not in text
+    assert len("LTT_RENDER_TOKEN=") == 17
+
+
+# ───────────── VRAM: nguồn nào nói thật (đo trên máy B 2026-08-21) ──────────
+#
+# ⛔ SỰ CỐ THẬT, bắt được ở bước BÁC BỎ của G1. Một tiến trình khác giữ 8 GB VRAM
+#    trên máy B, ba nguồn trả lời "còn trống bao nhiêu":
+#
+#        nvidia-smi              15.308 MiB   <- ĐÚNG
+#        ComfyUI /system_stats   23.165 MiB   <- MÙ
+#        torch mem_get_info      23.217 MiB   <- MÙ
+#
+#    Trên Windows/WDDM hai nguồn sau chỉ thấy tiến trình của CHÍNH MÌNH. Bản đầu
+#    của `busy.py` đọc `/system_stats`, nên chốt "VRAM đang bị giữ bởi tiến trình
+#    khác" KHÔNG BAO GIỜ BẮN — và một lượt torch chạy ngoài ComfyUI (máy B có sẵn
+#    `E:\AI\tools\vlm_worker.py` và nhiều script kiểu đó) sẽ đi lọt.
+
+def test_vram_doc_tu_nvidia_smi_chu_khong_tu_system_stats(clock):
+    """ComfyUI báo card rảnh trắng, nhưng nvidia-smi thấy 20 GB đang bị giữ.
+    Cổng phải tin nvidia-smi và báo BẬN."""
+    t = FakeTransport()
+    t.stats["devices"][0]["vram_free"] = 25_000_000_000     # /system_stats: rảnh
+    w = _watcher(t, clock, vram_mb=20_000)                  # nvidia-smi: 20 GB dang dung
+    st = w.observe(cua_ta=set())
+    assert st.busy and "VRAM" in st.reason
+    assert st.vram_used_mb == 20_000
+
+
+def test_vram_dung_thap_thi_khong_coi_la_ban(clock):
+    t = FakeTransport()
+    w = _watcher(t, clock, vram_mb=600)      # nen desktop cua Windows, khong phai job
+    assert not w.observe(cua_ta=set()).busy
+
+
+def test_khong_hoi_duoc_nvidia_smi_thi_khong_ne(clock):
+    """Không đọc được VRAM là chuyện có thể xảy ra (driver treo). Nó không được
+    làm cổng render chết, cũng không được biến thành 'bận' giả."""
+    t = FakeTransport()
+    w = B.BusyWatcher(comfy=CF.ComfyClient(t), now=clock, doc_vram_mb=lambda: None)
+    st = w.observe(cua_ta=set())
+    assert not st.busy and st.vram_used_mb == 0
+
+
+def test_ham_doc_smi_that_khong_nem_khi_may_khong_co_nvidia_smi(monkeypatch):
+    """Máy phát triển không có GPU vẫn phải import và chạy được — trả None, không nổ."""
+    monkeypatch.setattr(B.shutil, "which", lambda _: None)
+    assert B.vram_dung_mb_qua_smi() is None
+
+
+def test_ham_doc_smi_lay_gia_tri_LON_NHAT_khi_nhieu_gpu(monkeypatch):
+    """Máy A có hai card. 'Còn chỗ không' phải trả lời theo card bận nhất."""
+    class R:
+        returncode = 0
+        stdout = "512\n8192\n"
+
+    monkeypatch.setattr(B.shutil, "which", lambda _: "nvidia-smi")
+    monkeypatch.setattr(B.subprocess, "run", lambda *a, **k: R())
+    assert B.vram_dung_mb_qua_smi() == 8192
+
+
+def test_ham_doc_smi_co_tran_thoi_gian():
+    """nvidia-smi treo được (driver lỗi, card kẹt). Vòng dò không được đứng chờ
+    vô hạn — cùng trần với `platform_core/gpu.py` của nền tảng."""
+    assert B.NVIDIA_SMI_TIMEOUT_S == 8
+
+
+def test_deploy_dung_gach_cheo_xuoi_cho_duong_dich_scp():
+    """⛔ SỰ CỐ THẬT 2026-08-21, và nó **im lặng**.
+
+    Chép `E:\AI\ltt_render\scripts\tai_model.py` sang máy B: `scp` trả về **0**
+    (báo thành công) nhưng **không có tệp nào được tạo**, và cũng không có tệp lạc ở
+    đâu cả. Thủ phạm là chuỗi `\t` trong `\tai_model.py` — shell mặc định của
+    OpenSSH trên máy B là `cmd.exe` và nó diễn giải dấu gạch ngược.
+
+    Cùng lệnh đó với `gpu_check.py` thì chạy tốt, nên lỗi này **ẩn theo tên tệp**:
+    chỉ hiện với những tên bắt đầu bằng `t`, `n`, `b`, `r`… Đúng loại lỗi mà một
+    lần thử tay sẽ kết luận nhầm là "đường deploy chạy được".
+    """
+    text = (_DEPLOY / "deploy.ps1").read_text(encoding="ascii")
+    # So khớp theo NGỮ NGHĨA của dòng, không theo chuỗi thoát ký tự — chính chỗ
+    # này đã làm test đỏ oan một lần vì đếm nhầm số dấu gạch ngược.
+    doi = [d for d in text.splitlines()
+           if "-replace" in d and "'/'" in d and ("$dichScp" in d or "$dichHash" in d)]
+    assert len(doi) == 2, \
+        f"deploy.ps1 phai doi CA HAI duong dich scp sang gach cheo xuoi, thay {len(doi)}"
+    # Và không được còn dòng scp nào nhét thẳng đường dẫn Windows vào đích.
+    for dong in text.splitlines():
+        if "scp -i" in dong and "MayB}:" in dong:
+            assert "$dichScp" in dong or "$dichHash" in dong, \
+                f"dong scp con dung duong dan gach nguoc: {dong.strip()}"
+
+
+# ───────────── template ảnh tham chiếu (G5) ─────────────────────────────────
+@pytest.mark.parametrize("che_do", ["t2i", "edit", "subject"])
+def test_moi_che_do_nap_duoc_va_du_the(che_do):
+    """Mọi thẻ trong template phải có giá trị từ `defaults` + tham số chạy.
+    Một `@seed` sót lại sẽ được ComfyUI nhận rồi hỏng GIỮA CHỪNG, sau khi đã tiêu
+    trọn thời gian nạp model."""
+    spec = C.nap_catalog()["hidream-o1"]
+    mau = W.nap(spec.modes[che_do].template)
+    gia_tri = dict(spec.defaults)
+    gia_tri.update({"prompt": "x", "negative": ""})
+    for slot in spec.modes[che_do].ref_slots:
+        gia_tri[slot] = "anh.png"
+    assert W.the_con_thieu(mau, gia_tri) == []
+
+
+def test_upscale_method_phai_la_gia_tri_ComfyUI_chap_nhan():
+    """`upscale_methods` của ComfyUI = nearest-exact · bilinear · area · bicubic ·
+    bislerp. **Không có `lanczos`** — tôi suýt dùng nó, và ComfyUI sẽ trả 400."""
+    hop_le = {"nearest-exact", "bilinear", "area", "bicubic", "bislerp"}
+    assert C.nap_catalog()["hidream-o1"].defaults["upscale"] in hop_le
+
+
+def test_anh_tham_chieu_can_theo_muc_4MP_va_khop_patch_32():
+    """Model huấn luyện ~4 MP và patchify theo bước 32 (`PATCH_SIZE = 32`)."""
+    spec = C.nap_catalog()["hidream-o1"]
+    assert spec.defaults["ref_mp"] == 4.0
+    for che_do in ("edit", "subject"):
+        mau = W.nap(spec.modes[che_do].template)
+        thang = [n for n in mau.values()
+                 if n.get("class_type") == "ImageScaleToTotalPixels"]
+        assert thang, f"{che_do} phai co ImageScaleToTotalPixels chan anh ref"
+        for n in thang:
+            assert n["inputs"]["resolution_steps"] == 32
+
+
+def test_reference_images_noi_vao_CA_positive_lan_negative():
+    """`HiDreamO1ReferenceImages` trả (positive, negative) — phải nối cả hai. Bỏ
+    negative là bỏ một nửa điều kiện, và lỗi đó không làm workflow đỏ, chỉ làm ảnh
+    xấu đi một cách khó truy."""
+    spec = C.nap_catalog()["hidream-o1"]
+    for che_do in ("edit", "subject"):
+        mau = W.nap(spec.modes[che_do].template)
+        ref = [k for k, n in mau.items()
+               if n.get("class_type") == "HiDreamO1ReferenceImages"]
+        assert len(ref) == 1
+        sampler = [n for n in mau.values() if n.get("class_type") == "KSampler"][0]
+        assert sampler["inputs"]["positive"] == [ref[0], 0]
+        assert sampler["inputs"]["negative"] == [ref[0], 1]
+
+
+def test_so_slot_ref_khop_so_LoadImage_trong_template():
+    spec = C.nap_catalog()["hidream-o1"]
+    for che_do, m in spec.modes.items():
+        mau = W.nap(m.template)
+        so_load = sum(1 for n in mau.values() if n.get("class_type") == "LoadImage")
+        assert so_load == len(m.ref_slots), \
+            f"{che_do}: {so_load} LoadImage nhung khai {len(m.ref_slots)} ref_slots"
+
+
+def test_khong_khai_che_do_structure_vi_model_khong_co_controlnet():
+    """HiDream-O1 **không hỗ trợ ControlNet** (đã grep `comfy/ldm/hidream_o1/*.py`:
+    không có dòng nào). Khai một chế độ `structure` dựa trên ControlNet là hứa một
+    thứ model không làm được. G5 sẽ thử đạt nó bằng `edit` + lời nhắc giữ bố cục;
+    không đạt thì **ghi rõ là không bán được**, không che bằng UI."""
+    assert "structure" not in C.nap_catalog()["hidream-o1"].modes
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_246_nexus_metrics.py
+SHA256=5a39bf57d29adcf1f7fa16802007de6a818405c176fc40a6f5a9227475162879 BYTES=5924 LINES=165
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Số liệu vận hành Nexus — đếm sự kiện + khối tóm tắt trên trang tình trạng.
+
+Vì sao cần: trước cái này người vận hành không có cách nào biết có bao nhiêu máy
+đã ghép, bao nhiêu đang bật, hay có ai bị relay chặn vì hết credit — tức là bán
+một dịch vụ mà không nhìn thấy nó chạy. Test chốt: bộ đếm có tăng, và khối tóm
+tắt không bao giờ làm vỡ trang tình trạng.
+"""
+from __future__ import annotations
+
+import pytest
+from fastapi.testclient import TestClient
+
+PASSWORD = "test-mat-khau-metric-0123456789"
+SECRET = "test-relay-secret-metric-xyz"
+
+
+@pytest.fixture()
+def app_bat(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'met.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "met-secret-value")
+    monkeypatch.setenv("LTT_NEXUS", "1")
+    monkeypatch.setenv("LTT_NEXUS_RELAY_SECRET", SECRET)
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    monkeypatch.delenv("LTT_NEXUS_GIA_MAY_THANG", raising=False)
+
+    from platform_core.public_api import limits, metrics
+    limits.reset()
+    metrics.reset()
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver")
+    try:
+        yield client
+    finally:
+        limits.reset()
+        metrics.reset()
+        dbmod.reset_engine()
+
+
+def _tao_user(email: str = "m@example.com"):
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+
+    gen = get_session(); db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email=email, password=PASSWORD, is_verified=True)
+        db.commit()
+        return u.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def _dang_ky(client, email: str = "m@example.com"):
+    from platform_core.nexus import agent_auth
+
+    priv, pub = agent_auth.new_keypair_for_test()
+    r = client.post("/nexus-agent/client-register",
+                    json={"email": email, "password": PASSWORD,
+                          "public_key": pub, "display_name": "May",
+                          "platform": "windows"})
+    assert r.status_code == 200, r.text
+    return r.json()["device_id"], priv
+
+
+def _dem() -> dict:
+    from platform_core.public_api import metrics
+    snap = metrics.snapshot()
+    return snap.get("counters", snap) if isinstance(snap, dict) else {}
+
+
+# ── Bộ đếm ───────────────────────────────────────────────────────────────────
+
+def test_dang_ky_may_thi_tang_bo_dem(app_bat):
+    _tao_user()
+    _dang_ky(app_bat)
+    assert _dem().get("nexus:dang_ky_may", 0) >= 1
+
+
+def test_relay_cho_qua_va_bi_chan_duoc_dem_rieng(app_bat, monkeypatch):
+    """Con số quan trọng nhất của billing: bao nhiêu lượt bị chặn vì chưa trả."""
+    import time
+
+    from platform_core.nexus import agent_auth
+
+    _tao_user()
+    did, priv = _dang_ky(app_bat)
+
+    # gắn rustdesk_id cho máy (qua /status có ký)
+    path = "/nexus-agent/status"
+    body = b'{"rustdesk_id":"123456789"}'
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv, method="POST", path=path, timestamp=ts, body=body)
+    r = app_bat.post(path, content=body, headers={
+        agent_auth.HEADER_DEVICE: did, agent_auth.HEADER_TIMESTAMP: ts,
+        agent_auth.HEADER_SIGNATURE: sig,
+        "Content-Type": "application/json"})
+    assert r.status_code == 200, r.text
+
+    hdr = {"X-LTT-Relay-Secret": SECRET}
+    # miễn phí → cho qua
+    r1 = app_bat.get("/nexus-agent/relay-check?id=123456789", headers=hdr)
+    assert r1.status_code == 200 and r1.json()["allowed"] is True
+    assert _dem().get("nexus:relay_cho_qua", 0) >= 1
+
+    # có giá mà chưa trả → chặn
+    monkeypatch.setenv("LTT_NEXUS_GIA_MAY_THANG", "50")
+    r2 = app_bat.get("/nexus-agent/relay-check?id=123456789", headers=hdr)
+    assert r2.status_code == 200 and r2.json()["allowed"] is False
+    assert _dem().get("nexus:relay_chan", 0) >= 1
+
+
+def test_bo_dem_hong_khong_lam_hong_duong_phuc_vu(app_bat, monkeypatch):
+    """Số liệu là thứ yếu: nó hỏng thì khách vẫn phải đăng ký được."""
+    from platform_core.public_api import metrics
+
+    def no(*a, **k):
+        raise RuntimeError("metrics down")
+
+    monkeypatch.setattr(metrics, "increment", no)
+    _tao_user()
+    _dang_ky(app_bat)          # không được ném
+
+
+# ── Khối tóm tắt trên trang tình trạng ───────────────────────────────────────
+
+def test_tom_tat_nexus_dem_dung_so_may(app_bat):
+    from server.routes.status import _tom_tat_nexus
+
+    _tao_user()
+    _dang_ky(app_bat)
+    tt = _tom_tat_nexus()
+    assert tt is not None
+    assert tt["may"] == 1
+    assert tt["thu_hoi"] == 0
+    assert "phien" in tt
+
+
+def test_tom_tat_none_khi_nexus_tat(app_bat, monkeypatch):
+    from server.routes.status import _tom_tat_nexus
+
+    monkeypatch.setenv("LTT_NEXUS", "0")
+    assert _tom_tat_nexus() is None
+
+
+def test_tom_tat_hong_thi_tra_loi_chu_khong_nem(app_bat, monkeypatch):
+    """Trang tình trạng phải mở được ngay cả khi phần Nexus hỏng."""
+    import platform_core.db as dbmod
+    from server.routes import status as status_mod
+
+    def no(*a, **k):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(dbmod, "get_session", no)
+    tt = status_mod._tom_tat_nexus()
+    assert tt is not None and tt.get("loi")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_247_cham_mu.py
+SHA256=c0d5819688885e516d505efe9ea93766dfab6b8586dacad12ea8897071202eb6 BYTES=8220 LINES=201
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_247 — bộ so mù của H37 (`tools/cham_mu.py`).
+
+Bộ này quyết định model nào được chọn, nên nó phải đúng trước khi có một tấm ảnh
+nào được sinh ra. Mỗi test dưới đây chốt một luật ở
+`docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md` §1.5.
+"""
+from __future__ import annotations
+
+import json
+import random
+
+import pytest
+
+from tools.cham_mu import (SO_CAP_TOI_THIEU, TEN_ANH, TEN_KHOA, TEN_PHIEU, Cap,
+                           ghi_lo, tao_lo, tinh, wilson)
+
+
+def _caps(n_that: int, n_bay: int = 0) -> list[Cap]:
+    caps = [Cap(f"c{i}", "l.png", "r.png", "A", "B", False) for i in range(n_that)]
+    caps += [Cap(f"b{i}", "l.png", "r.png", "A", "A", True) for i in range(n_bay)]
+    return caps
+
+
+def _phieu(caps, *, a_thang=0, b_thang=0, hoa=0, bay_quyet=0, bay_trai=None):
+    """Dựng phiếu theo số lượng mong muốn. `bay_trai` mặc định chia đều."""
+    ra: dict[str, str] = {}
+    that = [c for c in caps if not c.la_bay]
+    i = 0
+    for _ in range(a_thang):
+        ra[that[i].ma] = "trai" if that[i].nguon_trai == "A" else "phai"
+        i += 1
+    for _ in range(b_thang):
+        ra[that[i].ma] = "trai" if that[i].nguon_trai == "B" else "phai"
+        i += 1
+    for _ in range(hoa):
+        ra[that[i].ma] = "hoa"
+        i += 1
+    bay = [c for c in caps if c.la_bay]
+    if bay_trai is None:
+        bay_trai = bay_quyet // 2
+    for j, c in enumerate(bay):
+        if j < bay_quyet:
+            ra[c.ma] = "trai" if j < bay_trai else "phai"
+        else:
+            ra[c.ma] = "hoa"
+    return ra
+
+
+# ───────────────────────── dựng lô ──────────────────────────────────────────
+def test_lo_co_du_cap_that_va_cap_bay():
+    caps = tao_lo([f"a{i}.png" for i in range(20)],
+                  [f"b{i}.png" for i in range(20)],
+                  ty_le_bay=0.1, rng=random.Random(1))
+    assert sum(1 for c in caps if not c.la_bay) == 20
+    assert sum(1 for c in caps if c.la_bay) == 2
+
+
+def test_cap_bay_ghep_hai_anh_CUNG_nguon():
+    caps = tao_lo([f"a{i}.png" for i in range(10)], [f"b{i}.png" for i in range(10)],
+                  ty_le_bay=0.4, rng=random.Random(2))
+    bay = [c for c in caps if c.la_bay]
+    assert bay and all(c.nguon_trai == c.nguon_phai for c in bay)
+    # Và hai ảnh phải KHÁC nhau — ghép một ảnh với chính nó thì người chấm nhìn ra ngay.
+    assert all(c.trai != c.phai for c in bay)
+
+
+def test_trai_phai_duoc_xao_khong_ben_nao_co_dinh():
+    caps = tao_lo([f"a{i}.png" for i in range(60)], [f"b{i}.png" for i in range(60)],
+                  ty_le_bay=0.0, rng=random.Random(3))
+    a_ben_trai = sum(1 for c in caps if c.nguon_trai == "A")
+    assert 15 < a_ben_trai < 45      # không phải lúc nào A cũng nằm một phía
+
+
+def test_ghi_lo_doi_ten_anh_va_KHONG_de_lo_nguon(tmp_path):
+    """Một chữ 'hidream' sót trong tên tệp là đủ huỷ tính mù của cả lô."""
+    src_a, src_b = tmp_path / "hidream_o1", tmp_path / "gemini_3_pro"
+    for d in (src_a, src_b):
+        d.mkdir()
+        for i in range(3):
+            (d / f"{d.name}_{i}.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    caps = tao_lo([str(p) for p in sorted(src_a.iterdir())],
+                  [str(p) for p in sorted(src_b.iterdir())],
+                  ty_le_bay=0.0, rng=random.Random(4))
+    lo = tmp_path / "lo1"
+    ghi_lo(caps, lo, nhan_a="hidream_o1", nhan_b="gemini_3_pro")
+
+    ten = [p.name for p in (lo / TEN_ANH).iterdir()]
+    assert ten and all("hidream" not in t and "gemini" not in t for t in ten)
+    # Phiếu cũng không được lộ nhãn.
+    assert "hidream" not in (lo / TEN_PHIEU).read_text(encoding="utf-8")
+    # Nhãn chỉ nằm trong tệp khoá, và tệp khoá có cảnh báo.
+    khoa = json.loads((lo / TEN_KHOA).read_text(encoding="utf-8"))
+    assert khoa["nhan"]["A"] == "hidream_o1"
+
+
+def test_ghi_lo_ghi_utf8_khong_bom(tmp_path):
+    """Quy tắc 1 của CLAUDE.md — BOM đã từng làm sập production dự án này."""
+    src = tmp_path / "s"
+    src.mkdir()
+    for i in range(2):
+        (src / f"x{i}.png").write_bytes(b"\x89PNG")
+    caps = tao_lo([str(src / "x0.png")], [str(src / "x1.png")],
+                  ty_le_bay=0.0, rng=random.Random(5))
+    lo = tmp_path / "lo"
+    ghi_lo(caps, lo, nhan_a="A", nhan_b="B")
+    assert not (lo / TEN_PHIEU).read_bytes().startswith(b"\xef\xbb\xbf")
+
+
+# ───────────────────────── thống kê ─────────────────────────────────────────
+def test_wilson_khong_bao_gio_ra_ngoai_0_1():
+    for k, n in ((0, 1), (1, 1), (0, 10), (10, 10), (3, 7)):
+        lo, hi = wilson(k, n)
+        assert 0.0 <= lo <= hi <= 1.0
+
+
+def test_thieu_mau_thi_KHONG_KET_LUAN_du_chenh_lech_lon():
+    """30 cặp với 70/30 nhìn rất 'rõ ràng' — nhưng luật nói chưa đủ."""
+    caps = _caps(30)
+    kq = tinh(caps, _phieu(caps, a_thang=21, b_thang=9))
+    assert kq.ket_luan == "chua phan biet duoc"
+    assert any("cap that" in l for l in kq.ly_do)
+
+
+def test_du_mau_va_chenh_lech_ro_thi_ket_luan_duoc():
+    caps = _caps(60, n_bay=6)
+    kq = tinh(caps, _phieu(caps, a_thang=42, b_thang=18, bay_quyet=2))
+    assert kq.ket_luan == "A thang"
+    assert kq.khoang_tin_thap > 0.5
+
+
+def test_du_mau_nhung_sat_nhau_thi_chua_phan_biet_duoc():
+    caps = _caps(60, n_bay=6)
+    kq = tinh(caps, _phieu(caps, a_thang=32, b_thang=28, bay_quyet=2))
+    assert kq.ket_luan == "chua phan biet duoc"
+    assert any("khoang tin cay" in l for l in kq.ly_do)
+
+
+def test_san_nhieu_cao_hon_quyet_doan_that_thi_ket_qua_vo_nghia():
+    """⭐ Luật quan trọng nhất của tệp này.
+
+    Người chấm quyết đoán trên 100 % cặp bẫy (hai ảnh cùng model, khác seed) nhưng
+    trên cặp thật lại hoà quá nửa ⇒ khác biệt giữa hai model NHỎ HƠN khác biệt giữa
+    hai lần chạy cùng một model. Mọi con số thắng-thua khi đó là vô nghĩa.
+    """
+    caps = _caps(60, n_bay=10)
+    kq = tinh(caps, _phieu(caps, a_thang=20, b_thang=5, hoa=35, bay_quyet=10))
+    assert kq.san_nhieu == 1.0 and kq.quyet_doan_that < 1.0
+    assert kq.ket_luan == "chua phan biet duoc"
+    assert any("san nhieu" in l for l in kq.ly_do)
+
+
+def test_bat_lech_vi_tri_khi_nguoi_cham_luon_chon_mot_ben():
+    caps = _caps(60, n_bay=10)
+    kq = tinh(caps, _phieu(caps, a_thang=40, b_thang=20,
+                           bay_quyet=10, bay_trai=10))
+    assert kq.lech_vi_tri == 1.0
+    assert any("LECH VI TRI" in l for l in kq.ly_do)
+
+
+def test_hoa_tinh_nua_diem_cho_moi_ben():
+    caps = _caps(60)
+    kq = tinh(caps, _phieu(caps, a_thang=20, b_thang=20, hoa=20))
+    assert kq.diem_a == pytest.approx(0.5)
+    assert kq.ket_luan == "chua phan biet duoc"
+
+
+def test_cap_chua_cham_bi_bo_qua_khong_tinh_la_hoa():
+    """Bỏ trống ≠ hoà. Tính nhầm là làm loãng kết quả một cách im lặng."""
+    caps = _caps(60)
+    p = _phieu(caps, a_thang=55, b_thang=5)
+    for c in caps[:10]:
+        p.pop(c.ma, None)
+    kq = tinh(caps, p)
+    assert kq.n_that == 50
+
+
+def test_lua_chon_la_bi_bo_qua():
+    caps = _caps(60)
+    p = _phieu(caps, a_thang=55, b_thang=5)
+    p[caps[0].ma] = "khong-biet"
+    assert tinh(caps, p).n_that == 59
+
+
+def test_nguon_duoc_doc_theo_PHIA_da_xao_khong_theo_gia_dinh():
+    """Sau khi xáo trái/phải, "chọn trái" có thể là chọn B. Đọc sai chỗ này là đảo
+    ngược toàn bộ kết luận mà không ai nhận ra."""
+    caps = [Cap("c1", "l.png", "r.png", "B", "A", False)]
+    kq = tinh(caps, {"c1": "trai"})
+    assert kq.thang_b == 1 and kq.thang_a == 0
+
+
+def test_khong_co_cap_bay_thi_van_tinh_duoc_nhung_khong_co_san_nhieu():
+    caps = _caps(60)
+    kq = tinh(caps, _phieu(caps, a_thang=45, b_thang=15))
+    assert kq.n_bay == 0 and kq.san_nhieu == 0.0 and kq.ket_luan == "A thang"
+
+
+def test_so_cap_toi_thieu_dung_bang_50():
+    """Con số này là hợp đồng với §1.5 — đổi nó phải đổi cả tài liệu."""
+    assert SO_CAP_TOI_THIEU == 50
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -216947,6 +218992,305 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/cham_mu.py
+SHA256=42d17ff2317585f64085ae8238f804b2a32ddb14f7554b2900ca258abc169ec3 BYTES=12801 LINES=293
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+cham_mu.py — bộ so mù cho H37: dựng lô so sánh, thu phiếu, tính kết quả.
+
+    py tools/cham_mu.py tao  --a <thu_muc_A> --b <thu_muc_B> --ra <thu_muc_lo>
+    py tools/cham_mu.py tinh --lo <thu_muc_lo>
+
+⭐ VÌ SAO CÓ TỆP NÀY: từ D-010, **chất lượng là tiêu chí chọn duy nhất**. Khi một
+   con số quyết định mọi thứ thì cách tạo ra con số đó phải chặt hơn mọi thứ khác.
+   Luật đầy đủ ở `docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md` §1.5; tệp này **thi hành**
+   chúng chứ không để chúng nằm trên giấy.
+
+Bốn luật được cưỡng chế bằng mã, không bằng trí nhớ:
+
+ ① **Mù.** Ảnh chép sang tên mã ngẫu nhiên. Bảng đối chiếu ghi ra một tệp riêng tên
+    `KHONG_MO_TRUOC_KHI_CHAM.json` — mở nó trước khi chấm là tự huỷ lô.
+ ② **So từng cặp**, không chấm điểm tuyệt đối. "Ảnh này 7/10" không lặp lại được
+    giữa hai ngày; "A hay B hay hoà" thì có.
+ ③ **Cặp bẫy A-đấu-A.** Không phải để bắt lỗi người chấm — để **đo sàn nhiễu**.
+    Xem §"sàn nhiễu" dưới.
+ ④ **Đủ mẫu mới được kết luận.** Thiếu mẫu thì kết quả hợp lệ là
+    **"chưa phân biệt được"**, không phải một con số nghe cho oai.
+
+── SÀN NHIỄU: vì sao cặp bẫy quan trọng hơn vẻ ngoài ────────────────────────────
+Cặp bẫy ghép hai ảnh **cùng một nguồn, khác seed**. Không có khác biệt thật nào để
+tìm. Nhưng người chấm vẫn sẽ chọn — vì hai ảnh khác nhau thật, chỉ là khác do ngẫu
+nhiên chứ không do model.
+
+Tỉ lệ người chấm **dám chọn** trên cặp bẫy chính là **sàn nhiễu** `f`: mức độ quyết
+đoán khi không có gì để quyết. Nếu trên cặp thật họ cũng chỉ quyết đoán ngang mức
+đó (`d <= f`) thì **khác biệt giữa hai model nhỏ hơn khác biệt giữa hai lần chạy
+cùng một model** — và lúc đó mọi con số thắng-thua đều vô nghĩa.
+
+Đây là lý do không dùng cặp bẫy làm phép đậu/rớt: nó là **thước đo**, không phải
+cái bẫy.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import random
+import shutil
+import sys
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Optional, Sequence
+
+TEN_KHOA = "KHONG_MO_TRUOC_KHI_CHAM.json"
+TEN_PHIEU = "phieu.json"
+TEN_ANH = "anh"
+
+#: Dưới ngưỡng này thì không kết luận. Với 30 cặp, một chênh lệch 60/40 nằm trọn
+#: trong khoảng nhiễu — nhìn thì "rõ ràng" mà thật ra không nói lên gì.
+SO_CAP_TOI_THIEU = 50
+
+#: Tỉ lệ cặp bẫy mặc định. Quá ít thì sàn nhiễu đo không chuẩn; quá nhiều thì tốn
+#: thời gian của người chấm vào những cặp không mang thông tin so sánh.
+TY_LE_BAY = 0.10
+
+CHON_HOP_LE = ("trai", "phai", "hoa")
+
+
+# ─────────────────────────── dựng lô ────────────────────────────────────────
+@dataclass
+class Cap:
+    ma: str
+    trai: str            # tên tệp ảnh đã đổi tên mã
+    phai: str
+    nguon_trai: str      # "A" | "B"  — CHỈ có trong tệp khoá
+    nguon_phai: str
+    la_bay: bool
+
+
+@dataclass
+class KetQua:
+    n_that: int
+    thang_a: int
+    thang_b: int
+    hoa: int
+    diem_a: float                 # (thắng + 0,5×hoà) / n — thang 0..1
+    khoang_tin_thap: float
+    khoang_tin_cao: float
+    n_bay: int
+    san_nhieu: float              # f — tỉ lệ dám chọn trên cặp bẫy
+    quyet_doan_that: float        # d — tỉ lệ dám chọn trên cặp thật
+    lech_vi_tri: float            # tỉ lệ chọn "trái" trên cặp bẫy; 0,5 là không lệch
+    ket_luan: str
+    ly_do: list[str] = field(default_factory=list)
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+
+def tao_lo(anh_a: Sequence[str], anh_b: Sequence[str], *,
+           ty_le_bay: float = TY_LE_BAY,
+           rng: Optional[random.Random] = None) -> list[Cap]:
+    """Ghép cặp A↔B, chèn cặp bẫy A↔A và B↔B, rồi xáo trộn trái/phải.
+
+    Ảnh vào là **đường dẫn**; ảnh ra trong `Cap` vẫn là đường dẫn — việc chép và
+    đổi tên do `ghi_lo` làm, để hàm này thuần và test được không cần đĩa.
+    """
+    r = rng or random.Random()
+    if not anh_a or not anh_b:
+        raise ValueError("ca hai ben deu phai co it nhat mot anh")
+    n = min(len(anh_a), len(anh_b))
+    caps: list[Cap] = []
+    for i in range(n):
+        caps.append(Cap("", anh_a[i], anh_b[i], "A", "B", False))
+
+    # Cặp bẫy: ghép hai ảnh KHÁC NHAU của CÙNG một nguồn. Cần ít nhất 2 ảnh mỗi bên.
+    so_bay = int(round(n * max(0.0, ty_le_bay)))
+    for i in range(so_bay):
+        ben, kho = ("A", anh_a) if i % 2 == 0 else ("B", anh_b)
+        if len(kho) < 2:
+            continue
+        x, y = r.sample(list(kho), 2)
+        caps.append(Cap("", x, y, ben, ben, True))
+
+    r.shuffle(caps)
+    for i, c in enumerate(caps):
+        c.ma = f"c{i + 1:03d}"
+        if r.random() < 0.5:            # xáo trái/phải để không có phía nào cố định
+            c.trai, c.phai = c.phai, c.trai
+            c.nguon_trai, c.nguon_phai = c.nguon_phai, c.nguon_trai
+    return caps
+
+
+def ghi_lo(caps: Sequence[Cap], thu_muc: Path, *, nhan_a: str, nhan_b: str) -> None:
+    """Chép ảnh sang tên mã, ghi phiếu trống và tệp khoá.
+
+    ⛔ Tên tệp ảnh sau khi chép **không được mang bất kỳ dấu vết nào** của nguồn:
+    không tên model, không profile, không độ phân giải. Một chữ "hidream" sót lại
+    trong tên tệp là đủ để huỷ tính mù của cả lô.
+    """
+    thu_muc.mkdir(parents=True, exist_ok=True)
+    (thu_muc / TEN_ANH).mkdir(exist_ok=True)
+    phieu = []
+    for c in caps:
+        for phia in ("trai", "phai"):
+            goc = Path(getattr(c, phia))
+            dich_ten = f"{c.ma}_{phia}{goc.suffix.lower() or '.png'}"
+            shutil.copyfile(goc, thu_muc / TEN_ANH / dich_ten)
+            setattr(c, phia, dich_ten)
+        phieu.append({"ma": c.ma, "chon": "", "ghi_chu": ""})
+
+    _ghi_json(thu_muc / TEN_PHIEU, {
+        "_huong_dan": [
+            "Voi moi ma: mo anh <ma>_trai va <ma>_phai trong thu muc 'anh'.",
+            "Dien 'chon' = trai | phai | hoa. Khong doan — thay khong khac thi ghi hoa.",
+            "KHONG mo tep " + TEN_KHOA + " truoc khi cham xong.",
+        ],
+        "so_cap": len(caps),
+        "phieu": phieu,
+    })
+    _ghi_json(thu_muc / TEN_KHOA, {
+        "_canh_bao": "Mo tep nay truoc khi cham xong la tu huy lo. Khong co cach nao kiem chung nguoc lai.",
+        "nhan": {"A": nhan_a, "B": nhan_b},
+        "cap": [asdict(c) for c in caps],
+    })
+
+
+# ─────────────────────────── tính kết quả ───────────────────────────────────
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Khoảng tin cậy Wilson cho tỉ lệ. Dùng Wilson chứ không dùng công thức chuẩn
+    vì với n nhỏ (đúng tình huống của ta) công thức chuẩn cho khoảng vượt [0,1] và
+    hẹp giả tạo — nó sẽ nói "khác biệt có ý nghĩa" khi thật ra không."""
+    if n <= 0:
+        return 0.0, 1.0
+    p = k / n
+    d = 1 + z * z / n
+    tam = (p + z * z / (2 * n)) / d
+    nua = (z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))) / d
+    return max(0.0, tam - nua), min(1.0, tam + nua)
+
+
+def tinh(caps: Sequence[Cap], phieu: dict[str, str]) -> KetQua:
+    """`phieu`: ma → "trai" | "phai" | "hoa". Cặp chưa chấm thì bỏ qua."""
+    thang_a = thang_b = hoa = 0
+    n_bay = bay_quyet = bay_trai = 0
+    that_quyet = 0
+    for c in caps:
+        chon = (phieu.get(c.ma) or "").strip().lower()
+        if chon not in CHON_HOP_LE:
+            continue
+        if c.la_bay:
+            n_bay += 1
+            if chon != "hoa":
+                bay_quyet += 1
+                if chon == "trai":
+                    bay_trai += 1
+            continue
+        if chon == "hoa":
+            hoa += 1
+            continue
+        that_quyet += 1
+        nguon = c.nguon_trai if chon == "trai" else c.nguon_phai
+        if nguon == "A":
+            thang_a += 1
+        else:
+            thang_b += 1
+
+    n_that = thang_a + thang_b + hoa
+    diem = (thang_a + 0.5 * hoa) / n_that if n_that else 0.0
+    # Quy về đếm nguyên để Wilson dùng được: hoà tính nửa điểm cho mỗi bên.
+    thap, cao = wilson(int(round(thang_a + 0.5 * hoa)), n_that) if n_that else (0.0, 1.0)
+
+    f = bay_quyet / n_bay if n_bay else 0.0
+    d = that_quyet / n_that if n_that else 0.0
+    lech = bay_trai / bay_quyet if bay_quyet else 0.5
+
+    ly_do: list[str] = []
+    ket = ""
+    if n_that < SO_CAP_TOI_THIEU:
+        ket = "chua phan biet duoc"
+        ly_do.append(f"moi co {n_that} cap that, can >= {SO_CAP_TOI_THIEU}")
+    if n_bay and d <= f:
+        ket = "chua phan biet duoc"
+        # ASCII thuan trong thong diep: chung duoc IN RA CONSOLE Windows, noi
+        # stdout mac dinh la cp1252 va mot dau gach dai se thanh dau hoi den.
+        ly_do.append(
+            f"quyet doan tren cap that ({d:.0%}) khong hon san nhieu ({f:.0%}) - "
+            "khac biet giua hai model nho hon khac biet giua hai lan chay cung model")
+    if not ket:
+        if thap <= 0.5 <= cao:
+            ket = "chua phan biet duoc"
+            ly_do.append(
+                f"khoang tin cay diem A [{thap:.0%}, {cao:.0%}] van chua 50%")
+        elif diem > 0.5:
+            ket = "A thang"
+        else:
+            ket = "B thang"
+    if bay_quyet >= 4 and not 0.3 <= lech <= 0.7:
+        ly_do.append(
+            f"NGHI LECH VI TRI: tren cap bay, {lech:.0%} chon ben trai - "
+            "nguoi cham co the dang uu tien mot phia, khong phai mot anh")
+    return KetQua(n_that, thang_a, thang_b, hoa, diem, thap, cao,
+                  n_bay, f, d, lech, ket, ly_do)
+
+
+# ─────────────────────────── CLI ────────────────────────────────────────────
+def _ghi_json(duong: Path, obj) -> None:
+    # UTF-8 KHONG BOM — quy tac 1 cua CLAUDE.md. Loi BOM da tung lam sap production.
+    duong.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _anh_trong(thu_muc: Path) -> list[str]:
+    duoi = {".png", ".jpg", ".jpeg", ".webp"}
+    return [str(p) for p in sorted(thu_muc.iterdir())
+            if p.is_file() and p.suffix.lower() in duoi]
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    ap = argparse.ArgumentParser(description="So mu cho H37")
+    sub = ap.add_subparsers(dest="lenh", required=True)
+
+    t = sub.add_parser("tao", help="dung mot lo so mu")
+    t.add_argument("--a", required=True, type=Path)
+    t.add_argument("--b", required=True, type=Path)
+    t.add_argument("--ra", required=True, type=Path)
+    t.add_argument("--nhan-a", default="A")
+    t.add_argument("--nhan-b", default="B")
+    t.add_argument("--bay", type=float, default=TY_LE_BAY)
+    t.add_argument("--seed", type=int, default=None)
+
+    c = sub.add_parser("tinh", help="tinh ket qua tu phieu da cham")
+    c.add_argument("--lo", required=True, type=Path)
+
+    a = ap.parse_args(argv)
+
+    if a.lenh == "tao":
+        caps = tao_lo(_anh_trong(a.a), _anh_trong(a.b), ty_le_bay=a.bay,
+                      rng=random.Random(a.seed))
+        ghi_lo(caps, a.ra, nhan_a=a.nhan_a, nhan_b=a.nhan_b)
+        that = sum(1 for x in caps if not x.la_bay)
+        print(f"Da dung {len(caps)} cap ({that} that, {len(caps) - that} bay) tai {a.ra}")
+        if that < SO_CAP_TOI_THIEU:
+            print(f"CANH BAO: chi co {that} cap that. Duoi {SO_CAP_TOI_THIEU} thi "
+                  "ket qua chi duoc ghi la 'chua phan biet duoc'.")
+        return 0
+
+    khoa = json.loads((a.lo / TEN_KHOA).read_text(encoding="utf-8"))
+    caps = [Cap(**x) for x in khoa["cap"]]
+    phieu_raw = json.loads((a.lo / TEN_PHIEU).read_text(encoding="utf-8"))
+    phieu = {x["ma"]: x.get("chon", "") for x in phieu_raw["phieu"]}
+    kq = tinh(caps, phieu)
+    nhan = khoa.get("nhan", {})
+    print(json.dumps({"A": nhan.get("A"), "B": nhan.get("B"), **kq.as_dict()},
+                     ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

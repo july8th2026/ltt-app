@@ -242,6 +242,20 @@ def _is_admin(request=None):
 
 
 templates.env.globals["active_app"] = _active_app
+
+
+def _nexus_bat() -> bool:
+    """Cờ LTT Nexus có bật không — menu "Máy của tôi" chỉ hiện khi bật.
+
+    Đọc cờ mỗi lần render (không cache) vì cờ đổi bằng biến môi trường
+    lúc chạy; cache lại thì bật/tắt phải khởi động lại mới thấy.
+    """
+    from platform_core import nexus
+
+    return nexus.enabled()
+
+
+templates.env.globals["nexus_bat"] = _nexus_bat
 templates.env.globals["is_admin"] = _is_admin
 
 

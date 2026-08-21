@@ -8244,3 +8244,64 @@ msgstr "Stop controlling"
 #. Nexus Phase 5: cap ve bi chan (thu phi)
 msgid "Không mở được phiên điều khiển. Nếu bạn đang bật thu phí, hãy kiểm tra số dư credit ở thanh trên cùng."
 msgstr "Could not open a control session. If billing is on, check your credit balance in the top bar."
+
+# Trang "May cua toi" (LTT Nexus)
+msgid "Máy của tôi"
+msgstr "My devices"
+
+msgid "Các máy đã gắn vào tài khoản LTT của bạn. Mất máy thì thu hồi ngay để cắt quyền truy cập."
+msgstr "Machines linked to your LTT account. Lost one? Revoke it to cut off access."
+
+msgid "Đổi tên"
+msgstr "Rename"
+
+msgid "Tên máy"
+msgstr "Machine name"
+
+msgid "tắt"
+msgstr "offline"
+
+msgid "đã trả phí"
+msgstr "paid"
+
+msgid "chưa trả phí"
+msgstr "unpaid"
+
+msgid "Chưa có máy nào"
+msgstr "No machines yet"
+
+msgid "Tải LTT Nexus về máy, đăng nhập bằng chính tài khoản này, máy sẽ hiện ở đây."
+msgstr "Install LTT Nexus, sign in with this same account, and the machine appears here."
+
+msgid "Tải LTT Nexus"
+msgstr "Get LTT Nexus"
+
+msgid "Thuê bao"
+msgstr "Subscription"
+
+msgid "credit mỗi máy mỗi tháng"
+msgstr "credits per machine per month"
+
+msgid "thấy lần cuối"
+msgstr "last seen"
+
+msgid "chưa từng kết nối"
+msgstr "never connected"
+
+msgid "Đã thu hồi máy. Máy đó không còn kết nối được nữa."
+msgstr "Machine revoked. It can no longer connect."
+
+msgid "Đã đổi tên máy."
+msgstr "Machine renamed."
+
+msgid "Không tìm thấy máy đó trong tài khoản của bạn."
+msgstr "That machine is not in your account."
+
+msgid "Phiên làm việc đã hết hạn. Hãy thử lại."
+msgstr "Your session expired. Please try again."
+
+msgid "Tài khoản này không quản lý máy được."
+msgstr "This account cannot manage machines."
+
+msgid "Thu hồi máy này? Máy đó sẽ không kết nối được nữa."
+msgstr "Revoke this machine? It will no longer be able to connect."
