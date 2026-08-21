@@ -302,6 +302,10 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     app.include_router(jobs_routes.router)
     app.include_router(dashboard_routes.router)
     app.include_router(status_routes.router)
+    # Trang tải LTT Nexus (Model B, Q101: web = hướng dẫn/tải) + version.json.
+    # Công khai, không phụ thuộc cờ LTT_NEXUS (tải/hướng dẫn không lộ gì).
+    from server import nexus_download as nexus_download_routes
+    app.include_router(nexus_download_routes.router)
     # Developer portal: session + CSRF surface where API keys are created. It is
     # mounted unconditionally so a customer can prepare keys before an operator
     # turns the API itself on; the page says plainly when `/api/v1` is off.
