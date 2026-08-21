@@ -516,7 +516,7 @@ nội bộ, chưa phải để mở bán.
 | 10 | Sẵn sàng vận hành N5 (runbook + thực thi) | 7% | **35%** | ✅ runbook + **E2E LIVE trên Windows** (agent↔control plane, `e2e_live`); ⬜ chạy trên prod |
 | 11 | Legal review + thương mại N6 | 7% | **0%** | ⬜ (chặn *bán*, không chặn dev) |
 
-**Tổng có trọng số ≈ 82%** (2026-08-21, thêm **cưỡng chế billing tầng relay**: fork hbbs từ chối môi giới cho máy chưa trả — client sửa không lách được. 48 test).
+**Tổng có trọng số ≈ 85%** (2026-08-21, thêm **trang tải 4 nền tảng** (`/tai-xuong`, kiểm hình) + **tự-update** (client dò `version.json`, banner 'có bản mới'). 53 test).
 
 #### Cột mốc 2026-08-21 (b) — Cưỡng chế billing ở tầng RELAY (răng thật)
 
