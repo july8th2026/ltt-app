@@ -26,6 +26,7 @@ thất bại, và mã HTTP là `401` cho mọi trường hợp.
 from __future__ import annotations
 
 import logging
+import os
 
 from fastapi import APIRouter, Header, Request
 from fastapi.responses import JSONResponse
@@ -391,6 +392,16 @@ async def status(
         if device is None:
             return _loi(401, "unauthorized", "Invalid or missing signature.")
 
+        # Client có thể báo kèm RustDesk ID (Model B) để relay ánh xạ ID→tài khoản.
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            body = {}
+        if isinstance(body, dict) and body.get("rustdesk_id"):
+            devices.dat_rustdesk_id(db, device,
+                                    rustdesk_id=str(body.get("rustdesk_id")))
+            db.commit()
+
         from platform_core import credit
         from platform_core.nexus import billing
 
@@ -451,6 +462,58 @@ async def session_event(
             return _loi(400, "event_failed", str(exc))
         db.commit()
         return JSONResponse({"ok": True}, headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+#: Header bí mật dùng chung giữa relay LTT (hbbs đã fork) và platform. Đặt trong
+#: secrets/app.env; RỖNG = endpoint tắt (fail-closed: không cấu hình thì không mở).
+HEADER_RELAY_SECRET = "X-LTT-Relay-Secret"
+
+
+def _relay_secret() -> str:
+    return os.environ.get("LTT_NEXUS_RELAY_SECRET", "").strip()
+
+
+@router.get("/relay-check")
+async def relay_check(
+    id: str = "",
+    secret: str = Header(default="", alias=HEADER_RELAY_SECRET),
+):
+    """Relay LTT (hbbs) hỏi: ID RustDesk này có được môi giới kết nối không?
+
+    Xác thực bằng bí mật dùng chung (relay không phải thiết bị, không có khoá ký).
+    **Fail-closed cấu hình:** chưa đặt `LTT_NEXUS_RELAY_SECRET` → 404 (endpoint
+    coi như không tồn tại). **Fail-open dữ liệu:** ID lạ (không do LTT quản) →
+    `allowed=true` — relay phục vụ bình thường; LTT chỉ chặn đúng máy ĐÃ đăng ký
+    mà CHƯA trả. Chống so-sánh-thời-gian cho bí mật.
+    """
+    if not nexus.enabled():
+        return _tat()
+    conf = _relay_secret()
+    if not conf:
+        return _tat()                        # chưa cấu hình → không mở
+    import hmac
+
+    if not hmac.compare_digest(str(secret or ""), conf):
+        return _loi(401, "unauthorized", "Bad relay secret.")
+
+    from platform_core.nexus import billing
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = devices.tim_theo_rustdesk_id(db, rustdesk_id=str(id or ""))
+        if device is None:
+            # ID không do LTT quản → không chặn (relay chạy như thường).
+            return JSONResponse({"allowed": True, "managed": False},
+                                headers=_NO_STORE)
+        allowed = billing.da_thanh_toan(device)
+        return JSONResponse({"allowed": bool(allowed), "managed": True},
+                            headers=_NO_STORE)
     finally:
         try:
             next(gen)

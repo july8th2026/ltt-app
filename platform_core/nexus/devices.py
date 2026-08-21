@@ -244,6 +244,28 @@ def cua_chu(db, *, user_id: str, device_id: str) -> NexusDevice | None:
     return row
 
 
+def dat_rustdesk_id(db, device: NexusDevice, *, rustdesk_id: str) -> bool:
+    """Ghi ID RustDesk mà client báo lên (Model B / cưỡng chế relay). Chỉ ghi khi
+    đổi, để không đụng DB mỗi nhịp. ID không bí mật nên lưu thẳng."""
+    rid = str(rustdesk_id or "").strip()[:32]
+    if not rid or device.rustdesk_id == rid:
+        return False
+    device.rustdesk_id = rid
+    db.flush()
+    return True
+
+
+def tim_theo_rustdesk_id(db, *, rustdesk_id: str) -> NexusDevice | None:
+    """Tra thiết bị theo ID RustDesk — relay LTT (hbbs) dùng để ánh xạ ID →
+    tài khoản → trạng thái trả phí. Bỏ qua máy đã thu hồi."""
+    rid = str(rustdesk_id or "").strip()
+    if not rid:
+        return None
+    return db.execute(select(NexusDevice).where(
+        NexusDevice.rustdesk_id == rid,
+        NexusDevice.revoked_at.is_(None))).scalars().first()
+
+
 def danh_sach(db, *, user_id: str, gom_da_thu_hoi: bool = False) -> list:
     stmt = select(NexusDevice).where(NexusDevice.user_id == str(user_id or ""))
     if not gom_da_thu_hoi:

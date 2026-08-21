@@ -103,6 +103,13 @@ class NexusDevice(Base):
     paid_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
 
+    #: ID RustDesk của engine trên máy này (vd "224404082"). Model B (Q101): client
+    #: báo lên để relay LTT (hbbs, đã fork) ánh xạ ID → tài khoản → trạng thái trả
+    #: phí, rồi TỪ CHỐI môi giới kết nối khi chưa trả — răng thật của thu phí, không
+    #: dựa vào client tự giác. Không bí mật (ID vốn để chia sẻ).
+    rustdesk_id: Mapped[str] = mapped_column(String(32), default="",
+                                             nullable=False)
+
     __table_args__ = (
         # Một khoá công khai chỉ thuộc về một thiết bị. Nếu hai dòng cùng khoá
         # thì "thu hồi thiết bị này" trở thành câu hỏi không có câu trả lời.
