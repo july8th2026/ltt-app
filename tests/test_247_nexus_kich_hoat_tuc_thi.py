@@ -228,3 +228,58 @@ def test_mien_phi_thi_khong_dung_toi_credit(app_bat, monkeypatch):
         try: next(gen)
         except StopIteration: pass
     assert _status(app_bat, did, priv).json()["paid"] is True
+
+
+# ── Máy đang chạy phải hiện ONLINE ───────────────────────────────────────────
+
+def test_status_ghi_nhip_tim_nen_may_hien_online(app_bat):
+    """Client Model B chỉ gọi `/status`, không gọi `/heartbeat`.
+
+    Trước khi sửa, `last_seen_at` không bao giờ được ghi nên `dang_online()`
+    luôn False — **mọi máy hiện "tắt" ngay cả khi đang chạy**, cả trong app lẫn
+    trên trang "Máy của tôi". Chỉ báo online thành vô dụng.
+    """
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+    from platform_core.nexus.devices import NexusDevice
+
+    _tao_user(credit_ban_dau=500)
+    did, priv = _dang_ky(app_bat)
+
+    gen = get_session(); db = next(gen)
+    try:
+        assert db.get(NexusDevice, did).last_seen_at is None
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    assert _status(app_bat, did, priv).status_code == 200
+
+    gen = get_session(); db = next(gen)
+    try:
+        d = db.get(NexusDevice, did)
+        assert d.last_seen_at is not None, "/status khong ghi nhip tim"
+        assert devices.dang_online(d) is True, "may vua bao cao ma van hien tat"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_my_devices_bao_online_cho_may_vua_hoi(app_bat):
+    """Đường mà app thật đọc để vẽ chấm xanh."""
+    from platform_core.nexus import agent_auth
+
+    _tao_user(credit_ban_dau=500)
+    d1, priv1 = _dang_ky(app_bat)
+    d2, priv2 = _dang_ky(app_bat)
+    _status(app_bat, d2, priv2)          # chỉ máy 2 báo cáo
+
+    path = "/nexus-agent/my-devices"
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv1, method="POST", path=path, timestamp=ts, body=b"")
+    r = app_bat.post(path, content=b"", headers={
+        agent_auth.HEADER_DEVICE: d1, agent_auth.HEADER_TIMESTAMP: ts,
+        agent_auth.HEADER_SIGNATURE: sig})
+    assert r.status_code == 200, r.text
+    theo_id = {x["device_id"]: x for x in r.json()["devices"]}
+    assert theo_id[d2]["online"] is True

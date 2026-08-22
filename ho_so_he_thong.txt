@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:f82d8bf1f09e633c17be305101747a29142cd6ace276caa7fcd9de19d6f12831
+Fingerprint   : sha256:817aa4d165b744e9a64228c3c1c9d9f8f6f7e6323d19dee87b7ad9c7380197ee
 Nguồn đã quét : 1197 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2613,7 +2613,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1197 file; 10870865 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1197 file; 10875464 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -133738,7 +133738,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus/routes.py
-SHA256=98972cf2b923438e84a15e17f3247513e2f14ff81c77f8cda7e24cd2d0b9cfbe BYTES=26025 LINES=621
+SHA256=38354371e7475867b9efdefaf7dc53dc94a5bed900235223ed1258f3cb4bb18b BYTES=26451 LINES=627
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba đường cho agent: ghép máy, nhịp tim, đổi vé phiên.
 
@@ -134181,6 +134181,12 @@ async def status(
         if isinstance(body, dict) and body.get("rustdesk_id"):
             devices.dat_rustdesk_id(db, device,
                                     rustdesk_id=str(body.get("rustdesk_id")))
+
+        # Client Model B gọi đường này mỗi 60 giây và KHÔNG bao giờ gọi
+        # `/heartbeat` (đó là đường của agent cũ). Nếu không ghi nhịp ở đây thì
+        # `last_seen_at` mãi mãi rỗng → `dang_online()` luôn trả False → mọi máy
+        # hiện "tắt" ngay cả khi đang chạy, trên cả app lẫn trang "Máy của tôi".
+        devices.nhip_tim(db, device)
 
         # Máy hỏi trạng thái mỗi phút. Thử thu phí ngay tại đây nghĩa là khách
         # nạp credit xong thì mở khoá trong vòng một phút, thay vì chờ vòng
@@ -198982,7 +198988,7 @@ def test_khong_thu_hoi_duoc_may_nguoi_khac(app_bat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_245_render_gateway.py
-SHA256=8c07f89d582922771f888adae8aa0f37d2b756c3f3572e9d1b839231fdc5cf25 BYTES=53462 LINES=1167
+SHA256=7270b973a4eb098bbd45ed65364dbc15f76736966d4314e103f75bd233741de4 BYTES=54658 LINES=1186
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_245 — cổng render (H37/G6).
@@ -200152,6 +200158,25 @@ def test_thang_do_CHAY_O_TIEN_CANH_va_dung_khi_cham_nguong():
     # Bậc đầu phải nhỏ. Một "thang" bắt đầu từ 4 MP thì không phải thang.
     assert "0.4" in ma
 
+
+def test_lo_dai_GHI_KET_QUA_SAU_MOI_ANH_khong_doi_cuoi_lo():
+    """⛔ SỰ CỐ THẬT 22/08 (D-025): máy B tự khởi động lại để cài cập nhật Windows
+    giữa một lô 30 ảnh, ở ảnh 21. **Toàn bộ số đo của 20 ảnh đã chạy bị mất** — vì
+    `chay_baseline.py` chỉ ghi tệp JSON ở cuối lô. Ảnh thì còn trên đĩa; thời
+    gian/VRAM/nhiệt thì không.
+
+    Máy B là máy để bàn có Active Hours 07:00–01:00. Nó **sẽ** khởi động lại nữa.
+    Nên "ghi ở cuối" không phải là một lựa chọn thiết kế, nó là một lỗi chờ xảy ra.
+    """
+    src = (_DEPLOY / "chay_baseline.py").read_text(encoding="utf-8")
+    assert "def ghi_ket_qua()" in src
+    # Phải gọi trong vòng lặp, không chỉ ở cuối hàm. Đếm là cách rẻ nhất để chốt.
+    assert src.count("ghi_ket_qua()") >= 4, (
+        "phai ghi: khung rong + sau moi anh + hai duong bo qua som + cuoi lo")
+    # Và không được còn đường ghi thẳng nào lách qua nó.
+    assert "tep.write_text" not in src.replace(
+        "        tep.write_text(json.dumps(ket_qua, ensure_ascii=False, indent=2),", "")
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_246_nexus_metrics.py
@@ -200656,7 +200681,7 @@ def test_lenh_tao_sinh_luon_man_cham(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_247_nexus_kich_hoat_tuc_thi.py
-SHA256=ac95117d89e5f2456f267c7fac8253dfd2cef52b1250911720fd5f4dc7bca24f BYTES=8303 LINES=230
+SHA256=6f9c24df5102a1d1c84deaa57fd715f6927eb022fcafd46ddd7139abbdd8ab38 BYTES=10452 LINES=285
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Kích hoạt thuê bao TỨC THÌ — không bắt khách chờ vòng quét.
 
@@ -200888,6 +200913,61 @@ def test_mien_phi_thi_khong_dung_toi_credit(app_bat, monkeypatch):
         try: next(gen)
         except StopIteration: pass
     assert _status(app_bat, did, priv).json()["paid"] is True
+
+
+# ── Máy đang chạy phải hiện ONLINE ───────────────────────────────────────────
+
+def test_status_ghi_nhip_tim_nen_may_hien_online(app_bat):
+    """Client Model B chỉ gọi `/status`, không gọi `/heartbeat`.
+
+    Trước khi sửa, `last_seen_at` không bao giờ được ghi nên `dang_online()`
+    luôn False — **mọi máy hiện "tắt" ngay cả khi đang chạy**, cả trong app lẫn
+    trên trang "Máy của tôi". Chỉ báo online thành vô dụng.
+    """
+    from platform_core.db import get_session
+    from platform_core.nexus import devices
+    from platform_core.nexus.devices import NexusDevice
+
+    _tao_user(credit_ban_dau=500)
+    did, priv = _dang_ky(app_bat)
+
+    gen = get_session(); db = next(gen)
+    try:
+        assert db.get(NexusDevice, did).last_seen_at is None
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    assert _status(app_bat, did, priv).status_code == 200
+
+    gen = get_session(); db = next(gen)
+    try:
+        d = db.get(NexusDevice, did)
+        assert d.last_seen_at is not None, "/status khong ghi nhip tim"
+        assert devices.dang_online(d) is True, "may vua bao cao ma van hien tat"
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_my_devices_bao_online_cho_may_vua_hoi(app_bat):
+    """Đường mà app thật đọc để vẽ chấm xanh."""
+    from platform_core.nexus import agent_auth
+
+    _tao_user(credit_ban_dau=500)
+    d1, priv1 = _dang_ky(app_bat)
+    d2, priv2 = _dang_ky(app_bat)
+    _status(app_bat, d2, priv2)          # chỉ máy 2 báo cáo
+
+    path = "/nexus-agent/my-devices"
+    ts = str(int(time.time()))
+    sig = agent_auth.sign(priv1, method="POST", path=path, timestamp=ts, body=b"")
+    r = app_bat.post(path, content=b"", headers={
+        agent_auth.HEADER_DEVICE: d1, agent_auth.HEADER_TIMESTAMP: ts,
+        agent_auth.HEADER_SIGNATURE: sig})
+    assert r.status_code == 200, r.text
+    theo_id = {x["device_id"]: x for x in r.json()["devices"]}
+    assert theo_id[d2]["online"] is True
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -220080,7 +220160,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cham_mu.py
-SHA256=e7d212886061042ef6dbe4f4bba56a5a8aa8a1ca4484f403500e257515382022 BYTES=21770 LINES=470
+SHA256=81f626005bd6d99c1f3e152773f9fff7ac504c1a9192e4824a608f4447d239d3 BYTES=22598 LINES=487
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 cham_mu.py — bộ so mù cho H37: dựng lô so sánh, thu phiếu, tính kết quả.
@@ -220300,6 +220380,8 @@ figcaption{padding:6px;color:#8f8f8f;font:600 13px ui-monospace,monospace}
 kbd{background:#3a3a3a;border:1px solid #555;border-radius:4px;padding:1px 5px;
   font:12px ui-monospace,monospace}
 .mach{padding:8px 16px;background:#3a2f1c;color:#e0c98a;font-size:13px}
+#canhbao{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#5a1f1f;
+  color:#ffd7d7;padding:10px 16px;font:600 13px/1.4 system-ui,sans-serif;text-align:center}
 </style></head><body>
 <div class="mach">Phim tat: <kbd>1</kbd> trai &nbsp; <kbd>2</kbd> hoa &nbsp; <kbd>3</kbd> phai
  &nbsp;|&nbsp; <kbd>Z</kbd> phong to &nbsp; trong luc phong: <kbd>Space</kbd> bat qua bat lai
@@ -220323,10 +220405,24 @@ kbd{background:#3a3a3a;border:1px solid #555;border-radius:4px;padding:1px 5px;
   <p>Bam <b>Tai phieu ve</b>, roi chep <code>phieu.json</code> vao thu muc lo, ghi de.</p>
   <p>Sau do tren may A chay:<br><code id="lenh"></code></p></div>
 <div id="zoom"><img id="zL"><img id="zR"></div><div id="nhan"></div>
+<div id="canhbao" hidden>KHONG LUU DUOC PHIEU tren may nay (trinh duyet chan localStorage voi file://). Dung tai lai trang, va bam "Tai phieu ve" truoc khi dong.</div>
 <script>
 const CAP = __CAP__, KHOA = "cham_mu_" + __LO__;
 const $ = s => document.querySelector(s);
-let i = 0, phieu = JSON.parse(localStorage.getItem(KHOA) || "{}");
+// ⛔ `file://` co the lam localStorage NEM (Chrome chan tuy cau hinh). Khong boc
+// thi ca trang chet trang o dong dau tien - va nguoi cham khong hieu vi sao.
+// Boc lai, va NOI RA khi khong luu duoc, thay vi im lang lam mat phieu.
+let luuDuoc = true;
+function doc() {
+  try { return JSON.parse(localStorage.getItem(KHOA) || "{}"); }
+  catch (e) { luuDuoc = false; return {}; }
+}
+function luu(d) {
+  try { localStorage.setItem(KHOA, JSON.stringify(d)); }
+  catch (e) { luuDuoc = false; bao(); }
+}
+function bao() { if (!luuDuoc) $("#canhbao").hidden = false; }
+let i = 0, phieu = doc();
 let zPhia = "trai";
 
 function ve(){
@@ -220344,7 +220440,7 @@ function ve(){
 function chon(v){
   const c = CAP[i];
   phieu[c.ma] = {chon: v, ghi_chu: $("#ghi").value};
-  localStorage.setItem(KHOA, JSON.stringify(phieu));
+  luu(phieu);
   if (i < CAP.length - 1) i++;
   ve(); ketthuc();
 }
@@ -220397,6 +220493,7 @@ addEventListener("keydown", e => {
 });
 // Tai lai trang giua chung (lo cham 33 cap thi chuyen nay se xay ra) phai quay
 // dung cho dang do, khong bat cham lai tu cap 1 - cham lai la het mu.
+bao();
 const chuaCham = CAP.findIndex(c => !(phieu[c.ma] || {}).chon);
 i = chuaCham < 0 ? 0 : chuaCham;
 ve(); ketthuc();

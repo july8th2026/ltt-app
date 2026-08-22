@@ -440,6 +440,12 @@ async def status(
             devices.dat_rustdesk_id(db, device,
                                     rustdesk_id=str(body.get("rustdesk_id")))
 
+        # Client Model B gọi đường này mỗi 60 giây và KHÔNG bao giờ gọi
+        # `/heartbeat` (đó là đường của agent cũ). Nếu không ghi nhịp ở đây thì
+        # `last_seen_at` mãi mãi rỗng → `dang_online()` luôn trả False → mọi máy
+        # hiện "tắt" ngay cả khi đang chạy, trên cả app lẫn trang "Máy của tôi".
+        devices.nhip_tim(db, device)
+
         # Máy hỏi trạng thái mỗi phút. Thử thu phí ngay tại đây nghĩa là khách
         # nạp credit xong thì mở khoá trong vòng một phút, thay vì chờ vòng
         # quét. Hàm này không làm gì khi miễn phí hoặc còn hạn.
