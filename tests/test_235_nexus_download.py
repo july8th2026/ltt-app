@@ -125,7 +125,14 @@ def _ghi_manifest(client) -> None:
     (d / "release_manifest.json").write_text(json.dumps(VALID), encoding="utf-8")
 
 
-def test_co_ban_thi_hien_sha256_va_canh_bao_smartscreen(app_bat):
+# Hai test dưới đo trang `/nexus/tai` của bảng điều khiển web-broker. Từ khi
+# `/nexus` đổi thành trang giới thiệu (Q101/A7), bề mặt đó nằm sau cờ
+# `LTT_NEXUS_WEB_BROKER` và mặc định TẮT — nên phải bật cờ mới đo được. Giữ lại
+# thay vì xoá: cờ còn thì hành vi sau cờ vẫn phải đúng.
+
+
+def test_co_ban_thi_hien_sha256_va_canh_bao_smartscreen(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_WEB_BROKER", "1")
     _dang_nhap(app_bat)
     _ghi_manifest(app_bat)
     r = app_bat.get("/nexus/tai")
@@ -140,7 +147,8 @@ def test_co_ban_thi_hien_sha256_va_canh_bao_smartscreen(app_bat):
     assert VALID["url"] in r.text
 
 
-def test_chua_co_ban_thi_noi_that_khong_gay(app_bat):
+def test_chua_co_ban_thi_noi_that_khong_gay(app_bat, monkeypatch):
+    monkeypatch.setenv("LTT_NEXUS_WEB_BROKER", "1")
     _dang_nhap(app_bat)
     # KHONG ghi manifest -> None
     r = app_bat.get("/nexus/tai")

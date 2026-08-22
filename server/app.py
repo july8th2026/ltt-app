@@ -317,6 +317,11 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # tự trả 404 khi cờ `LTT_NEXUS` tắt (fail-closed như route agent).
     from server.routes import nexus_devices as nexus_devices_routes
     app.include_router(nexus_devices_routes.router)
+
+    # Đổi vé một-lần của ứng dụng lấy phiên trình duyệt (B3): bấm "Nạp credit"
+    # trong app không phải gõ mật khẩu lần thứ hai. Cũng tự 404 khi cờ tắt.
+    from server.routes import nexus_sso as nexus_sso_routes
+    app.include_router(nexus_sso_routes.router)
     # Developer portal: session + CSRF surface where API keys are created. It is
     # mounted unconditionally so a customer can prepare keys before an operator
     # turns the API itself on; the page says plainly when `/api/v1` is off.

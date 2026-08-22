@@ -221,3 +221,43 @@ def test_setup_url_doc_de_tu_data_file(app_bat):
     win = j["platforms"]["windows"]
     assert win["setup_url"].endswith("-setup.exe")
     assert len(win["setup_sha256"]) == 64
+
+
+def test_trang_tai_moi_file_cai_TRUOC_ban_zip(app_bat):
+    """Có file cài một-file thì trang phải mời cái đó trước, zip là lối phụ.
+
+    Vì sao chốt bằng test: bản zip bắt người dùng tự giải nén đúng chỗ, và nó
+    **không tự cập nhật sạch được** (không ghi đè nổi exe đang chạy, không biết
+    thư mục cài ở đâu) — đó chính là lý do đường tự-cập-nhật tải `setup_url`.
+    Để hai nút ngang nhau, hoặc chỉ có zip, là đẩy việc chọn sai sang người dùng.
+    """
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "1.4.0",
+        "platforms": {"windows": {
+            "label": "Windows 10/11 (64-bit)", "available": True, "kind": "zip",
+            "url": "/nexus/dl/LTTNexus-1.4.0-win-x64.zip", "sha256": "c" * 64,
+            "setup_url": "/nexus/dl/LTTNexus-1.4.0-win-x64-setup.exe",
+            "setup_sha256": "d" * 64}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert "LTTNexus-1.4.0-win-x64-setup.exe" in html, "khong moi file cai"
+    assert "d" * 64 in html, "thieu SHA-256 cua file cai"
+    # Zip vẫn còn, nhưng là lối phụ.
+    assert "LTTNexus-1.4.0-win-x64.zip" in html
+    assert html.index("-setup.exe") < html.index("win-x64.zip"), \
+        "zip dang duoc moi truoc file cai"
+
+
+def test_khong_co_setup_url_thi_van_moi_zip_nhu_cu(app_bat):
+    """Nền tảng chưa có file cài (Android/macOS) không được rơi vào trang trống."""
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "1.4.0",
+        "platforms": {"android": {
+            "label": "Android (arm64)", "available": True, "kind": "apk",
+            "url": "/nexus/dl/LTTNexus-1.4.0-android.apk", "sha256": "e" * 64}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert "LTTNexus-1.4.0-android.apk" in html
+    assert "Tải xuống" in html

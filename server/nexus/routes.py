@@ -513,6 +513,57 @@ async def my_devices(
             pass
 
 
+@router.post("/web-login")
+async def web_login(
+    request: Request,
+    device_id: str = Header(default="", alias=agent_auth.HEADER_DEVICE),
+    timestamp: str = Header(default="", alias=agent_auth.HEADER_TIMESTAMP),
+    signature: str = Header(default="", alias=agent_auth.HEADER_SIGNATURE),
+):
+    """Vé đăng nhập một-lần để mở trình duyệt mà không phải gõ mật khẩu lại (B3).
+
+    Trước đó, bấm **Nạp credit** trong ứng dụng mở `/nap` rồi bắt đăng nhập lại —
+    cùng một tài khoản mà phải nhập mật khẩu hai lần, và người dùng đọc việc đó
+    là "app và web là hai hệ khác nhau".
+
+    Thiết bị đã chứng minh danh tính bằng chữ ký Ed25519, nên nó có quyền xin một
+    vé cho **chủ của chính nó**. Vé sống 90 giây, dùng một lần
+    (`platform_core.nexus.sso`).
+
+    Cố ý **không** trả URL tuyệt đối: client tự ghép với `base_url` nó đang dùng.
+    Máy chủ đoán tên miền công khai là một cách sai lặng lẽ khi chạy sau Tunnel,
+    sau proxy, hay trên máy dev.
+    """
+    if not nexus.enabled():
+        return _tat()
+
+    gen = _mo_db()
+    db = next(gen)
+    try:
+        device = await _xac_thuc(request, device_id, timestamp, signature, db)
+        if device is None:
+            return _loi(401, "unauthorized", "Invalid or missing signature.")
+
+        from platform_core.models import User
+        from platform_core.nexus import sso
+
+        user = db.get(User, device.user_id)
+        if user is None or not user.is_active:
+            return _loi(403, "forbidden", "Account unavailable.")
+
+        ma = sso.tao_ve(db, user, ip=_ip(request))
+        db.commit()
+        return JSONResponse(
+            {"path": "/nexus-sso", "ticket": ma,
+             "expires_in": int(sso.VE_TTL.total_seconds())},
+            headers=_NO_STORE)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 @router.post("/session-event")
 async def session_event(
     request: Request,

@@ -24,6 +24,9 @@
   .nx-btn:hover{background:var(--brand-hover,#ff514a)}
   .nx-btn.soon{background:transparent;color:var(--fg-muted,#927f79);
     border:1px solid var(--line,#40201c);font-weight:500;cursor:default}
+  .nx-alt{display:inline-block;margin-top:8px;font-size:12.5px;color:var(--fg-muted,#927f79);
+    text-decoration:underline}
+  .nx-alt:hover{color:var(--fg,#f0e9e6)}
   .nx-sha{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--fg-muted,#927f79);
     word-break:break-all;margin-top:6px}
   .nx-guide{margin-top:26px;border:1px solid var(--line,#40201c);border-radius:14px;
@@ -70,12 +73,21 @@
             {{ _("Cài lên iPhone") }}
           </a>
           <div class="nx-sha" style="color:#e2ae55">{{ _("Mở trang này bằng Safari — trình duyệt khác sẽ không cài được.") }}</div>
+        {% elif p.setup_url %}
+          {# Co file cai MOT-FILE thi moi cai do TRUOC. Ban zip bat nguoi dung tu
+             giai nen dung cho, va do cung la thu khong tu cap nhat sach duoc —
+             de nguoi dung tu chon giua hai thu ma khong noi ro khac nhau cho nao
+             la day viec cho ho. #}
+          <a class="nx-btn" href="{{ p.setup_url }}" download>{{ _("Tải file cài") }}</a>
+          <div class="nx-sha">SHA-256: {{ p.setup_sha256 }}</div>
+          <a class="nx-alt" href="{{ p.url }}" download>{{ _("Hoặc tải bản zip chạy-không-cài") }}</a>
+          {% if p.sha256 %}<div class="nx-sha">SHA-256 (zip): {{ p.sha256 }}</div>{% endif %}
         {% else %}
           <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
-            {% if p.kind == 'appstore' %}Mở App Store{% else %}Tải xuống{% endif %}
+            {% if p.kind == 'appstore' %}{{ _("Mở App Store") }}{% else %}{{ _("Tải xuống") }}{% endif %}
           </a>
+          {% if p.sha256 %}<div class="nx-sha">SHA-256: {{ p.sha256 }}</div>{% endif %}
         {% endif %}
-        {% if p.sha256 %}<div class="nx-sha">SHA-256: {{ p.sha256 }}</div>{% endif %}
       {% else %}
         <div class="sub">Đang chuẩn bị — sẽ có sớm</div>
         <span class="nx-btn soon">Đang chuẩn bị</span>

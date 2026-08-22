@@ -1,0 +1,172 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("LTT Nexus — điều khiển máy tính từ xa") }}{% endblock %}
+{% block content %}
+<style>
+  .ng-wrap{max-width:960px;margin:0 auto;padding:8px 4px 48px}
+  .ng-hero{text-align:center;padding:18px 0 30px}
+  .ng-mark{width:64px;height:64px;margin:0 auto 14px;display:block}
+  .ng-hero h1{margin:0 0 10px;font-size:32px;letter-spacing:-.02em}
+  .ng-hero p{margin:0 auto;max-width:560px;color:var(--fg-muted,#927f79);font-size:15.5px;line-height:1.65}
+  .ng-cta{margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .ng-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:9px;
+    background:var(--brand-primary,#ef3731);color:#fff;text-decoration:none;font-weight:600;font-size:14.5px}
+  .ng-btn:hover{background:var(--brand-hover,#ff514a)}
+  .ng-btn.ghost{background:transparent;color:var(--fg,#f0e9e6);border:1px solid var(--line,#40201c);font-weight:500}
+  .ng-sec{margin-top:34px}
+  .ng-sec > h2{margin:0 0 14px;font-size:18px;letter-spacing:-.01em}
+  .ng-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  @media(max-width:760px){.ng-grid{grid-template-columns:1fr}}
+  .ng-card{border:1px solid var(--line,#40201c);border-radius:14px;padding:16px 18px;
+    background:var(--panel,#151111)}
+  .ng-card h3{margin:0 0 6px;font-size:15px}
+  .ng-card p{margin:0;color:var(--fg-muted,#927f79);font-size:13.5px;line-height:1.65}
+  .ng-os{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  @media(max-width:760px){.ng-os{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .ng-os a,.ng-os span{display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:16px 8px;border:1px solid var(--line,#40201c);border-radius:12px;
+    background:var(--panel,#151111);text-decoration:none;color:var(--fg,#f0e9e6);font-size:13.5px}
+  .ng-os a:hover{border-color:var(--brand-border,#8f2c24);background:var(--brand-soft,#421511)}
+  .ng-os svg{width:26px;height:26px}
+  /* Nen tang TAI DUOC va nen tang CHUA CO phai phan biet duoc khi nhin luot,
+     khong chi khac chu. Truoc day ca hai deu la chu xam nho nhu nhau. */
+  .ng-os .st{font-size:11.5px;padding:3px 10px;border-radius:99px;
+    border:1px solid var(--brand-border,#8f2c24);color:#ffd0cc;
+    background:var(--brand-soft,#421511);font-weight:600}
+  .ng-os span{opacity:.6;cursor:default}
+  .ng-os span .st{border-color:var(--line,#40201c);background:transparent;
+    color:var(--fg-muted,#927f79);font-weight:400}
+  .ng-steps{counter-reset:s;margin:0;padding:0;list-style:none;display:grid;gap:10px}
+  .ng-steps li{position:relative;padding-left:34px;font-size:14px;line-height:1.7;color:var(--fg,#f0e9e6)}
+  .ng-steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;
+    width:22px;height:22px;border-radius:50%;background:var(--brand-soft,#421511);color:#ffd0cc;
+    border:1px solid var(--brand-border,#8f2c24);display:flex;align-items:center;
+    justify-content:center;font-size:12px;font-weight:600}
+  .ng-gia{border:1px solid var(--brand-border,#8f2c24);border-radius:14px;padding:18px 20px;
+    background:var(--brand-soft,#421511)}
+  .ng-gia .so{font-size:26px;font-weight:700;letter-spacing:-.02em}
+  .ng-gia .so small{font-size:14px;font-weight:400;color:var(--fg-muted,#c9a49f)}
+  .ng-gia p{margin:8px 0 0;font-size:13.5px;line-height:1.65;color:#f2d9d6}
+  .ng-gia a{color:#ffd0cc}
+  .ng-faq{display:grid;gap:8px}
+  .ng-faq details{border:1px solid var(--line,#40201c);border-radius:11px;
+    background:var(--panel,#151111);padding:12px 16px}
+  .ng-faq summary{cursor:pointer;font-size:14.5px;font-weight:600}
+  .ng-faq p{margin:10px 0 0;color:var(--fg-muted,#927f79);font-size:13.5px;line-height:1.7}
+  .ng-faq a{color:var(--brand-primary,#ef3731)}
+</style>
+
+<div class="ng-wrap">
+  <div class="ng-hero">
+    <svg class="ng-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <defs><linearGradient id="ngm" x1="0.15" y1="0.15" x2="0.85" y2="0.85">
+        <stop offset="0" stop-color="#ff514a"/><stop offset="1" stop-color="#b92520"/></linearGradient></defs>
+      <path d="M12 0.8 L23.2 12 L12 23.2 L0.8 12 Z" fill="url(#ngm)"/>
+      <path d="M12 6.4 L17.6 12 L12 17.6 L6.4 12 Z" fill="#0d0a0a" opacity="0.16"/>
+    </svg>
+    <h1>LTT Nexus</h1>
+    <p>{{ _("Điều khiển máy tính của bạn từ bất kỳ đâu — từ máy khác, từ điện thoại. Cài ứng dụng, đăng nhập cùng một tài khoản LTT, máy hiện ra là bấm vào dùng.") }}</p>
+    <div class="ng-cta">
+      <a class="ng-btn" href="/tai-xuong">{{ _("Tải ứng dụng") }}</a>
+      <a class="ng-btn ghost" href="/may-cua-toi">{{ _("Máy của tôi") }}</a>
+    </div>
+  </div>
+
+  <div class="ng-sec">
+    <h2>{{ _("Vì sao dùng LTT Nexus") }}</h2>
+    <div class="ng-grid">
+      <div class="ng-card">
+        <h3>{{ _("Không cần cấu hình mạng") }}</h3>
+        <p>{{ _("Không mở cổng, không cần IP tĩnh, không VPN. Máy tự kết nối ra relay của LTT, kể cả sau router nhà hay 4G.") }}</p>
+      </div>
+      <div class="ng-card">
+        <h3>{{ _("Một tài khoản, mọi máy") }}</h3>
+        <p>{{ _("Đăng nhập cùng tài khoản LTT trên các máy, danh sách máy hiện ngay trong ứng dụng kèm chỉ báo máy nào đang bật.") }}</p>
+      </div>
+      <div class="ng-card">
+        <h3>{{ _("Bạn biết ai đã vào máy mình") }}</h3>
+        <p>{{ _("Mọi phiên điều khiển đều được ghi lại. Máy nào không còn dùng thì thu hồi, thu hồi xong là máy đó mất quyền ngay.") }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ng-sec">
+    <h2>{{ _("Tải cho máy của bạn") }}</h2>
+    <div class="ng-os">
+      {% for p in platforms %}
+        {% if p.available %}
+        <a href="/tai-xuong">
+          {% if p.key == 'windows' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M3 5.5l7-1v7H3zM11 4.4L21 3v9.5H11zM3 12.5h7v6l-7-1zM11 12.5h10V21l-10-1.4z"/></svg>
+          {% elif p.key == 'android' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M6 9h12v8a2 2 0 01-2 2h-1v3h-2v-3h-2v3H9v-3H8a2 2 0 01-2-2zM4 9h1.5v6H4a1 1 0 01-1-1v-4a1 1 0 011-1zm16 0h0a1 1 0 011 1v4a1 1 0 01-1 1h-1.5V9zM8 3l1.2 2M16 3l-1.2 2M6.5 7.5C6.5 5.5 8.8 4 12 4s5.5 1.5 5.5 3.5z"/></svg>
+          {% else %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
+          {% endif %}
+          {{ p.label }}
+          <span class="st">{{ _("Tải về") }}</span>
+        </a>
+        {% else %}
+        <span>
+          {% if p.key == 'macos' %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
+          {% else %}<svg viewBox="0 0 24 24" fill="#ef3731"><path d="M16 3c0 1.4-1.2 3-2.7 3 0-1.5 1.3-3 2.7-3zM19 17c-.6 1.4-1.6 3-3 3-1 0-1.4-.6-2.6-.6s-1.7.6-2.6.6c-1.5 0-2.6-1.7-3.2-3.1C5.4 14 5 10.5 7 8.6c.9-.9 2-1 2.8-1 1 0 1.7.6 2.5.6.7 0 1.4-.7 2.7-.7.8 0 2 .2 2.9 1.4-2.5 1.4-2.1 5 .6 6.1z"/></svg>
+          {% endif %}
+          {{ p.label }}
+          <span class="st">{{ _("Đang chuẩn bị") }}</span>
+        </span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="ng-sec">
+    <h2>{{ _("Dùng thế nào") }}</h2>
+    <ol class="ng-steps">
+      <li>{{ _("<b>Cài trên máy muốn điều khiển từ xa</b> — tải bản đúng hệ điều hành ở trên rồi chạy file cài.")|safe }}</li>
+      <li>{{ _("<b>Đăng nhập tài khoản LTT ngay trong ứng dụng</b> — dùng đúng email và mật khẩu bạn đăng nhập trang này.")|safe }}</li>
+      <li>{{ _("<b>Cài trên máy (hoặc điện thoại) bạn ngồi</b> và đăng nhập cùng tài khoản đó.")|safe }}</li>
+      <li>{{ _("<b>Bấm vào máy trong danh sách</b> — không cần gõ ID, không cần dán mật khẩu một lần.")|safe }}</li>
+    </ol>
+  </div>
+
+  <div class="ng-sec">
+    <h2>{{ _("Giá") }}</h2>
+    <div class="ng-gia">
+      {% if gia > 0 %}
+      <div class="so">{{ gia }} credit <small>{{ _("/ máy / tháng") }}</small></div>
+      <p>{{ _("Tính theo <b>số máy bạn ghép vào tài khoản</b>, không tính theo số phiên hay số phút điều khiển. Máy nào thu hồi thì tháng sau không thu nữa.")|safe }}
+         <a href="/nap">{{ _("Nạp credit") }}</a></p>
+      {% else %}
+      <div class="so">{{ _("Miễn phí") }} <small>{{ _("trong giai đoạn thử nghiệm") }}</small></div>
+      <p>{{ _("Hiện chưa thu credit cho máy ghép. Khi bắt đầu thu, mức giá sẽ hiện ở đây và trong ứng dụng trước khi trừ.") }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="ng-sec">
+    <h2>{{ _("Câu hỏi thường gặp") }}</h2>
+    <div class="ng-faq">
+      <details>
+        <summary>{{ _("Máy ở nhà, sau router — có dùng được không?") }}</summary>
+        <p>{{ _("Được. Máy chủ động kết nối ra relay của LTT nên không cần mở cổng hay IP tĩnh. Chỉ cần máy có Internet và ứng dụng đang chạy.") }}</p>
+      </details>
+      <details>
+        <summary>{{ _("Tài khoản trong ứng dụng có phải tài khoản trang web không?") }}</summary>
+        <p>{{ _("Cùng một tài khoản. Bạn đăng nhập trong ứng dụng bằng đúng email và mật khẩu của app.lttstudios.com; credit cũng là cùng một ví.") }}</p>
+      </details>
+      <details>
+        <summary>{{ _("Làm sao biết ai đã điều khiển máy tôi?") }}</summary>
+        <p>{{ _("Mỗi phiên đều được ghi lại kèm thời gian.") }} <a href="/may-cua-toi">{{ _("Xem ở trang Máy của tôi") }}</a></p>
+      </details>
+      <details>
+        <summary>{{ _("Tôi bán máy hoặc mất máy thì sao?") }}</summary>
+        <p>{{ _("Vào <b>Máy của tôi</b> bấm <b>Thu hồi</b>. Máy đó mất quyền kết nối ngay, kể cả khi ứng dụng vẫn còn cài trên đó.")|safe }}</p>
+      </details>
+      <details>
+        <summary>{{ _("Ứng dụng có tự cập nhật không?") }}</summary>
+        <p>{{ _("Có. Khi có bản mới, ứng dụng hiện thông báo; bấm một lần là nó tự tải, đối chiếu mã kiểm tra SHA-256 rồi cài đè.") }}</p>
+      </details>
+      <details>
+        <summary>{{ _("iPhone / iPad thì sao?") }}</summary>
+        <p>{{ _("Bản iOS đang chuẩn bị.") }} <a href="/tai-xuong">{{ _("Trang tải ứng dụng") }}</a> {{ _("sẽ hiện nút tải ngay khi sẵn sàng.") }}</p>
+      </details>
+    </div>
+  </div>
+</div>
+{% endblock %}

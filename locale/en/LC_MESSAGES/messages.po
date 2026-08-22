@@ -6142,7 +6142,7 @@ msgstr ""
 
 #: apps/qualitylab/manifest.py:28
 msgid "Vận hành"
-msgstr ""
+msgstr "Operations"
 
 #: server/templates/dev_privacy.html:20
 msgid "Vận hành — tự hết hạn"
@@ -8311,3 +8311,129 @@ msgstr "Install on iPhone"
 
 msgid "Mở trang này bằng Safari — trình duyệt khác sẽ không cài được."
 msgstr "Open this page in Safari — other browsers cannot install it."
+
+msgid "LTT Nexus — điều khiển máy tính từ xa"
+msgstr "LTT Nexus — remote control for your computers"
+
+msgid "Điều khiển máy tính của bạn từ bất kỳ đâu — từ máy khác, từ điện thoại. Cài ứng dụng, đăng nhập cùng một tài khoản LTT, máy hiện ra là bấm vào dùng."
+msgstr "Reach your computer from anywhere — from another machine or from your phone. Install the app, sign in with the same LTT account, and your machines are one click away."
+
+msgid "Tải ứng dụng"
+msgstr "Download the app"
+
+msgid "Vì sao dùng LTT Nexus"
+msgstr "Why LTT Nexus"
+
+msgid "Không cần cấu hình mạng"
+msgstr "No network setup"
+
+msgid "Không mở cổng, không cần IP tĩnh, không VPN. Máy tự kết nối ra relay của LTT, kể cả sau router nhà hay 4G."
+msgstr "No port forwarding, no static IP, no VPN. Each machine dials out to the LTT relay, even behind a home router or on mobile data."
+
+msgid "Một tài khoản, mọi máy"
+msgstr "One account, every machine"
+
+msgid "Đăng nhập cùng tài khoản LTT trên các máy, danh sách máy hiện ngay trong ứng dụng kèm chỉ báo máy nào đang bật."
+msgstr "Sign in with the same LTT account on each machine and the list appears right inside the app, showing which ones are online."
+
+msgid "Bạn biết ai đã vào máy mình"
+msgstr "You can see who connected"
+
+msgid "Mọi phiên điều khiển đều được ghi lại. Máy nào không còn dùng thì thu hồi, thu hồi xong là máy đó mất quyền ngay."
+msgstr "Every session is recorded. Revoke a machine you no longer use and it loses access immediately."
+
+msgid "Tải cho máy của bạn"
+msgstr "Download for your platform"
+
+msgid "Tải về"
+msgstr "Download"
+
+msgid "Đang chuẩn bị"
+msgstr "Coming soon"
+
+msgid "Dùng thế nào"
+msgstr "How it works"
+
+msgid "<b>Cài trên máy muốn điều khiển từ xa</b> — tải bản đúng hệ điều hành ở trên rồi chạy file cài."
+msgstr "<b>Install it on the machine you want to reach</b> — pick the build for its operating system above and run the installer."
+
+msgid "<b>Đăng nhập tài khoản LTT ngay trong ứng dụng</b> — dùng đúng email và mật khẩu bạn đăng nhập trang này."
+msgstr "<b>Sign in to your LTT account inside the app</b> — the same email and password you use on this site."
+
+msgid "<b>Cài trên máy (hoặc điện thoại) bạn ngồi</b> và đăng nhập cùng tài khoản đó."
+msgstr "<b>Install it on the machine or phone you are sitting at</b> and sign in with that same account."
+
+msgid "<b>Bấm vào máy trong danh sách</b> — không cần gõ ID, không cần dán mật khẩu một lần."
+msgstr "<b>Click a machine in the list</b> — no ID to type, no one-time password to paste."
+
+msgid "Giá"
+msgstr "Pricing"
+
+msgid "/ máy / tháng"
+msgstr "/ machine / month"
+
+msgid "Tính theo <b>số máy bạn ghép vào tài khoản</b>, không tính theo số phiên hay số phút điều khiển. Máy nào thu hồi thì tháng sau không thu nữa."
+msgstr "Billed by <b>how many machines are linked to your account</b>, not by sessions or minutes. Revoke a machine and it stops being billed the following month."
+
+msgid "Miễn phí"
+msgstr "Free"
+
+msgid "trong giai đoạn thử nghiệm"
+msgstr "while in testing"
+
+msgid "Hiện chưa thu credit cho máy ghép. Khi bắt đầu thu, mức giá sẽ hiện ở đây và trong ứng dụng trước khi trừ."
+msgstr "Linked machines are not billed yet. When billing starts, the price will appear here and in the app before anything is charged."
+
+msgid "Câu hỏi thường gặp"
+msgstr "Common questions"
+
+msgid "Máy ở nhà, sau router — có dùng được không?"
+msgstr "Will it work on a home machine behind a router?"
+
+msgid "Được. Máy chủ động kết nối ra relay của LTT nên không cần mở cổng hay IP tĩnh. Chỉ cần máy có Internet và ứng dụng đang chạy."
+msgstr "Yes. The machine dials out to the LTT relay, so there is nothing to forward and no static IP needed — it only needs Internet access and the app running."
+
+msgid "Tài khoản trong ứng dụng có phải tài khoản trang web không?"
+msgstr "Is the account in the app the same as on the website?"
+
+msgid "Cùng một tài khoản. Bạn đăng nhập trong ứng dụng bằng đúng email và mật khẩu của app.lttstudios.com; credit cũng là cùng một ví."
+msgstr "The same account. You sign in to the app with your app.lttstudios.com email and password, and it draws on the same credit balance."
+
+msgid "Làm sao biết ai đã điều khiển máy tôi?"
+msgstr "How do I see who controlled my machine?"
+
+msgid "Mỗi phiên đều được ghi lại kèm thời gian."
+msgstr "Every session is recorded with its timestamp."
+
+msgid "Xem ở trang Máy của tôi"
+msgstr "See it on My devices"
+
+msgid "Tôi bán máy hoặc mất máy thì sao?"
+msgstr "What if I sell or lose a machine?"
+
+msgid "Vào <b>Máy của tôi</b> bấm <b>Thu hồi</b>. Máy đó mất quyền kết nối ngay, kể cả khi ứng dụng vẫn còn cài trên đó."
+msgstr "Open <b>My devices</b> and press <b>Revoke</b>. That machine loses the right to connect immediately, even with the app still installed on it."
+
+msgid "Ứng dụng có tự cập nhật không?"
+msgstr "Does the app update itself?"
+
+msgid "Có. Khi có bản mới, ứng dụng hiện thông báo; bấm một lần là nó tự tải, đối chiếu mã kiểm tra SHA-256 rồi cài đè."
+msgstr "Yes. When a new build is out the app tells you; one click and it downloads, checks the SHA-256, and installs over itself."
+
+msgid "iPhone / iPad thì sao?"
+msgstr "What about iPhone and iPad?"
+
+msgid "Bản iOS đang chuẩn bị."
+msgstr "The iOS build is on the way."
+
+msgid "Trang tải ứng dụng"
+msgstr "The download page"
+
+msgid "sẽ hiện nút tải ngay khi sẵn sàng."
+msgstr "will show a download button as soon as it is ready."
+
+msgid "Tải file cài"
+msgstr "Download the installer"
+
+msgid "Hoặc tải bản zip chạy-không-cài"
+msgstr "Or get the portable zip"

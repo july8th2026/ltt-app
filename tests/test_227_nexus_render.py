@@ -52,6 +52,10 @@ def app_bat(tmp_path, monkeypatch):
     monkeypatch.setenv("LTT_ENV", "development")
     monkeypatch.setenv("LTT_SESSION_SECRET", "render-secret-value")
     monkeypatch.setenv("LTT_NEXUS", "1")
+    # Bảng điều khiển web-broker nằm sau cờ này từ Q101/A7 (mặc định TẮT —
+    # `/nexus` nay là trang giới thiệu). Test dưới đo chính bề mặt đó nên
+    # phải bật; cờ còn thì hành vi sau cờ vẫn phải đúng.
+    monkeypatch.setenv("LTT_NEXUS_WEB_BROKER", "1")
     monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
 
     import platform_core.db as dbmod

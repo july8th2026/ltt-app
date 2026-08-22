@@ -44,6 +44,39 @@ def _lay_danh_sach(db, user_id: str) -> list[dict]:
     return ra
 
 
+def _lay_nhat_ky(db, user_id: str, may: list[dict], limit: int = 30) -> list[dict]:
+    """Nhật ký "ai đã vào máy nào, lúc nào" của chính tài khoản này.
+
+    Danh sách máy trả lời *"tôi có những máy nào"*; nó KHÔNG trả lời *"đã có ai
+    vào máy tôi chưa"* — mà đó mới là câu người dùng cần khi nghi ngờ. Dữ liệu đã
+    nằm sẵn ở `nexus_sessions` từ P8, chỉ thiếu chỗ xem.
+
+    Chỉ lấy phiên **đã thực sự kết nối** (`consumed_at`): vé cấp ra rồi bỏ đó
+    không phải một lần truy cập, đưa vào chỉ làm nhật ký nhiễu và gây hoảng.
+    """
+    from platform_core.nexus import sessions
+
+    ten_may = {m["id"]: (m["ten"] or m["rustdesk_id"] or "") for m in may}
+    ra = []
+    for row in sessions.lich_su(db, user_id=user_id, limit=limit * 3):
+        if row.consumed_at is None:
+            continue
+        keo_dai = None
+        if row.ended_at is not None:
+            giay = int((row.ended_at - row.consumed_at).total_seconds())
+            keo_dai = max(0, giay)
+        ra.append({
+            "may": ten_may.get(row.device_id) or "",
+            "luc": row.consumed_at,
+            "ip": row.controller_ip or "",
+            "keo_dai_giay": keo_dai,
+            "dang_mo": row.ended_at is None,
+        })
+        if len(ra) >= limit:
+            break
+    return ra
+
+
 @router.get("/may-cua-toi", response_class=HTMLResponse)
 def trang_may(request: Request, user: str = Depends(require_login)):
     """Danh sách máy đã gắn vào tài khoản."""
@@ -54,17 +87,19 @@ def trang_may(request: Request, user: str = Depends(require_login)):
     from platform_core.nexus import billing
 
     u = user_hien_tai(request)
-    may, so_du = [], None
+    may, so_du, nhat_ky = [], None, []
     gen = get_session(); db = next(gen)
     try:
         if u is not None:
             may = _lay_danh_sach(db, u.id)
             so_du = credit.so_du(db, u.id)
+            nhat_ky = _lay_nhat_ky(db, u.id, may)
     finally:
         try: next(gen)
         except StopIteration: pass
     return templates.TemplateResponse(request, "nexus_may.html", {
         "user": user, "nav": "may", "may": may, "so_du": so_du,
+        "nhat_ky": nhat_ky,
         "gia_thang": billing.gia_may_thang(),
         "co_user_csdl": u is not None,
         "csrf_token": issue_csrf_token(request),

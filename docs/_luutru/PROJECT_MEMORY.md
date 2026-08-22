@@ -1538,3 +1538,77 @@ Copy this template to the top of the change log for every material session:
   2.
   3.
 ```
+
+---
+
+## 2026-08-21 — H37 khởi động (model tạo ảnh nội bộ, máy B RTX 3090)
+
+- **Scope:** dựng model tạo ảnh chạy máy nhà thành **một provider nội bộ** (Q102),
+  không phải một app. Kế hoạch 13 phase, mỗi phase có cổng chấm điểm ≥ 9/10.
+- **Behavior changed:** chưa có gì trong `platform_core/` hay `apps/`. Mã mới nằm
+  gọn trong `render_gateway/` (chạy trên máy B), `tools/cham_mu.py`, `bench/`.
+- **Tests run:**
+  - `python -m pytest tests/test_245_render_gateway.py -q` → **74 passed, 1 skipped**
+  - `python -m pytest tests/test_247_cham_mu.py -q` → **17 passed**
+  - `python tools\gate.py --quick` → **PASS 12/12**
+- **Decisions:** Q102 (nền tảng) · D-001…D-016 (thi hành). D-003 → D-008 → D-009
+  (model đích đổi hai lần, cả hai do bằng chứng). D-004 và D-005 bị D-010 sửa đổi.
+- **Security/data impact:** máy B **không giữ bí mật nào** của nền tảng. ComfyUI vẫn
+  chỉ nghe `127.0.0.1`. Chưa mở cổng nào ra LAN — G7 chưa chạy.
+- **Known issues:**
+  - G3 dở: baseline + thí nghiệm độ phân giải chưa chạy (máy B có việc trên GPU).
+  - Template `edit`/`subject`/`structure` chưa viết.
+  - `extra_model_paths.yaml` trên máy B: đã **thêm** khối `ltt_h37` (có sao lưu), và
+    **BOM của tệp gốc bị lệnh ghi của tôi xoá** — ngoài dự định, đã xác minh vẫn đọc đúng.
+- **Rollback:** xoá `render_gateway/`, `bench/`, `docs/ANH_NOI_BO/`, `tools/cham_mu.py`,
+  hai tệp test; gỡ Q102 + mục H37. Trên máy B: khôi phục `extra_model_paths.yaml` từ
+  `.truoc_h37_20260821.bak`, xoá `H:\LTT_MODELS\` và `E:\AI\ltt_render\`.
+- **Next actions:**
+  1. Chờ GPU máy B rảnh → chạy nốt G3 (baseline bf16 + thí nghiệm độ phân giải).
+  2. G4 quét cấu hình chất lượng, **có thêm trục trần công suất 370 W ↔ 250 W**.
+  3. G6b đối chứng mù với Gemini 3 Pro Image — **cổng chặn trước khi nối nền tảng**.
+
+---
+
+## 2026-08-22 — Nexus: vòng sửa lỗi sau khi chạy thật hai máy (đóng hết mục A+B)
+
+- **Scope:** chủ sản phẩm chạy app trên hai máy cùng một tài khoản và báo 6 vấn đề;
+  danh sách việc đầy đủ ở `docs/nexus/N7_DANH_SACH_VIEC.md`. Vòng này đóng **toàn bộ
+  mục A (7 lỗi) và mục B (4 việc thiếu)**.
+- **Behavior changed**
+  - **Máy luôn hiện "tắt"** — client Model B chỉ gọi `/status`, không bao giờ gọi
+    `/heartbeat`, nên `last_seen_at` mãi rỗng. `/status` nay ghi nhịp tim (`test_247`).
+  - **`/nexus`** không còn là bảng điều khiển web-broker: nay là **trang giới thiệu
+    công khai** (`server/templates/nexus_gioi_thieu.html`). Tám route cũ nằm sau cờ
+    `LTT_NEXUS_WEB_BROKER`, **mặc định TẮT** → 404 kể cả gõ thẳng URL (`test_248`).
+  - **`/may-cua-toi`** có bảng **Nhật ký truy cập**: ai vào máy nào, lúc nào, từ IP nào,
+    kéo dài bao lâu (`test_245`, 13 test).
+  - **SSO app ↔ web (B3):** `POST /nexus-agent/web-login` phát **vé một-lần** (là một
+    hàng `sessions` sống 90 giây); app mở `/nexus-sso?ma=…&next=…`. Nút *Nạp credit*
+    trong app không còn bắt gõ mật khẩu lần hai (`test_250`, 12 test). **Không thêm
+    bảng, không migration.**
+  - **Client 1.2.0 → 1.4.0:** tự cập nhật thật (tải → đối chiếu SHA-256 → cài im lặng),
+    mục Giới thiệu mang đúng thương hiệu LTT, bỏ tab tài khoản thứ hai của RustDesk,
+    bỏ câu xui dựng máy chủ riêng, dọn nốt chữ `rustdesk.com` ở bản mobile.
+- **Tests run:** `tools\gate.py` (14 bước) · `test_245` 13 · `test_248` 10 · `test_250` 12
+  · Rust unit test cho `ma_hoa_url`.
+- **Bằng chứng chạy thật:** từ bản 1.2.0 đang chạy, bấm *Cập nhật ngay* → exe trong
+  `C:\Program Files\LTTNexus` thay lúc 16:52:37, app tự bật lại lúc 16:52:41, mục Giới
+  thiệu hiện 1.3.0. **Không có cửa sổ UAC.**
+- **Ba cái bẫy đã dính, ghi lại để khỏi dính lần nữa**
+  1. Phép đổi thương hiệu trong `src/lang.rs` thay **mọi** chữ "RustDesk", nên dòng ghi
+     công AGPL biến thành *"Dựa trên LTTNexus 1.4.9"* — xoá đúng cái tên giấy phép bắt
+     giữ. Nay có `GIU_TEN_GOC` loại trừ các khoá ghi công.
+  2. Cổng cờ đặt trong **thân hàm** thì `Depends(require_login)` chạy trước → route đã
+     đóng vẫn trả 303 về `/login`, tức vẫn xác nhận bề mặt đó tồn tại. Cổng phải là
+     `Depends` và đứng **trước** `require_login` trong chữ ký.
+  3. `phat-hanh-windows.ps1` đọc bản kê bằng `Get-Content -Raw` — PowerShell 5.1 đọc
+     theo ANSI nên chữ có dấu trong `notes` sẽ nát ở lần phát hành **kế tiếp**, mà nát
+     im lặng. Nay đọc bằng `[IO.File]::ReadAllText(..., UTF8Encoding(false))`.
+- **Security/data impact:** vé SSO đi qua thanh địa chỉ nên có bốn hàng rào, mỗi cái một
+  test: sống 90 giây · dùng một lần (đổi xong xoá vé, cấp phiên mới) · từ chối cookie
+  phiên thường · `next` qua `safe_next` (chặn open-redirect).
+- **Known issues:** trang giới thiệu chưa có ảnh chụp sản phẩm; trang tài khoản trên web
+  chưa hiện máy + thuê bao; macOS `.dmg` chưa build; iOS chờ Apple Developer.
+- **Next actions:** C1 dời relay khỏi Windows Server 2016 Eval (hết hạn 15/12/2026) ·
+  C2 relay thứ hai · C3 đặt `LTT_NEXUS_RELAY_HOST` · C4 đổi mật khẩu relay + đóng RDP.

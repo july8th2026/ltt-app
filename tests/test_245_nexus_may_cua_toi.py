@@ -202,3 +202,82 @@ def test_khong_thu_hoi_duoc_may_nguoi_khac(app_bat):
                      data={"csrf_token": token}, follow_redirects=False)
     assert r.status_code == 303
     assert "loi=khong-thay" in r.headers.get("location", "")
+
+
+# ── Nhật ký truy cập (B2) ────────────────────────────────────────────────────
+#
+# Danh sách máy trả lời "tôi có máy nào", KHÔNG trả lời "đã có ai vào máy tôi
+# chưa" — mà đó mới là câu người dùng cần khi nghi ngờ. Dữ liệu có sẵn ở
+# `nexus_sessions` từ P8; test này chốt rằng nó thật sự hiện ra và không rò sang
+# tài khoản khác.
+
+def _ghi_mot_phien(device_id: str, *, khoa: str, ip: str,
+                   phut_truoc: int = 0, dong: bool = True):
+    import datetime
+
+    from platform_core.db import get_session
+    from platform_core.nexus import sessions
+    from platform_core.nexus.devices import NexusDevice
+
+    luc = (datetime.datetime.now(datetime.timezone.utc)
+           - datetime.timedelta(minutes=phut_truoc))
+    gen = get_session(); db = next(gen)
+    try:
+        d = db.get(NexusDevice, device_id)
+        sessions.ghi_truy_cap(db, d, session_key=khoa, controller_ip=ip, now=luc)
+        if dong:
+            sessions.ket_thuc_truy_cap(
+                db, d, session_key=khoa,
+                now=luc + datetime.timedelta(minutes=5))
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+
+def test_nhat_ky_hien_phien_da_ket_noi(app_bat):
+    _tao_user("nk@example.com")
+    did, _ = _dang_ky_may(app_bat, "nk@example.com", "May NK")
+    _ghi_mot_phien(did, khoa="phien-1", ip="203.0.113.9", phut_truoc=30)
+
+    _dang_nhap(app_bat, "nk@example.com")
+    html = app_bat.get("/may-cua-toi").text
+    assert "203.0.113.9" in html, "khong thay IP ben dieu khien trong nhat ky"
+    assert "May NK" in html
+    assert "5" in html          # keo dai 5 phut
+
+
+def test_nhat_ky_khong_ro_sang_tai_khoan_khac(app_bat):
+    """Nhật ký là dữ liệu riêng: A không được thấy phiên của B."""
+    _tao_user("a@example.com")
+    _tao_user("b@example.com")
+    _dang_ky_may(app_bat, "a@example.com", "May cua A")
+    did_b, _ = _dang_ky_may(app_bat, "b@example.com", "May cua B")
+    _ghi_mot_phien(did_b, khoa="phien-b", ip="198.51.100.7")
+
+    _dang_nhap(app_bat, "a@example.com")
+    html = app_bat.get("/may-cua-toi").text
+    assert "198.51.100.7" not in html
+    assert "May cua B" not in html
+
+
+def test_nhat_ky_con_lai_sau_khi_thu_hoi_may(app_bat):
+    """Thu hồi cắt quyền, KHÔNG được xoá bằng chứng đã có ai vào máy."""
+    _tao_user("tr@example.com")
+    did, _ = _dang_ky_may(app_bat, "tr@example.com", "May TR")
+    _ghi_mot_phien(did, khoa="phien-tr", ip="192.0.2.44")
+
+    _dang_nhap(app_bat, "tr@example.com")
+    tok = _csrf(app_bat.get("/may-cua-toi").text)
+    r = app_bat.post(f"/may-cua-toi/{did}/thu-hoi", data={"csrf_token": tok},
+                     follow_redirects=False)
+    assert r.status_code == 303
+    assert "192.0.2.44" in app_bat.get("/may-cua-toi").text
+
+
+def test_chua_co_phien_thi_noi_ro_chua_co(app_bat):
+    _tao_user("tr0@example.com")
+    _dang_ky_may(app_bat, "tr0@example.com", "May moi")
+    _dang_nhap(app_bat, "tr0@example.com")
+    html = app_bat.get("/may-cua-toi").text
+    assert "Chưa có phiên điều khiển nào" in html

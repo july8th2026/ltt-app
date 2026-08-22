@@ -88,4 +88,46 @@
     {% endfor %}
   {% endif %}
 
+  {% if co_user_csdl %}
+    <h2 style="margin:26px 0 4px;font-size:17px">{{ _("Nhật ký truy cập") }}</h2>
+    <p class="dim" style="margin:0 0 10px;font-size:12.5px">
+      {{ _("Ai đã điều khiển máy của bạn, lúc nào. Bản ghi này không sửa được và không mất khi thu hồi máy.") }}
+    </p>
+    {% if not nhat_ky %}
+      <div class="appcard" style="padding:18px 20px">
+        <p class="dim" style="margin:0">{{ _("Chưa có phiên điều khiển nào.") }}</p>
+      </div>
+    {% else %}
+      <div class="appcard" style="padding:0;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="text-align:left">
+              <th style="padding:10px 14px">{{ _("Lúc") }}</th>
+              <th style="padding:10px 14px">{{ _("Máy") }}</th>
+              <th style="padding:10px 14px">{{ _("Từ IP") }}</th>
+              <th style="padding:10px 14px">{{ _("Kéo dài") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in nhat_ky %}
+            <tr style="border-top:1px solid var(--line,#40201c)">
+              <td style="padding:9px 14px;white-space:nowrap">{{ d.luc.strftime('%d/%m/%Y %H:%M') }}</td>
+              <td style="padding:9px 14px">
+                {% if d.may %}{{ d.may }}{% else %}<span class="dim">{{ _("(máy đã xoá)") }}</span>{% endif %}
+              </td>
+              <td style="padding:9px 14px"><code>{% if d.ip %}{{ d.ip }}{% else %}—{% endif %}</code></td>
+              <td style="padding:9px 14px;white-space:nowrap">
+                {% if d.dang_mo %}<span class="badge b-ok">{{ _("đang mở") }}</span>
+                {% elif d.keo_dai_giay is none %}—
+                {% elif d.keo_dai_giay < 60 %}{{ d.keo_dai_giay }} {{ _("giây") }}
+                {% else %}{{ (d.keo_dai_giay // 60) }} {{ _("phút") }}{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  {% endif %}
+
 {% endblock %}

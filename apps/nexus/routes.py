@@ -25,6 +25,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from apps.nexus.manifest import MANIFEST
 import logging
+import os
 
 from platform_core import nexus
 from platform_core.i18n import _ as _t
@@ -47,6 +48,55 @@ def _bat_buoc_bat() -> None:
     """
     if not nexus.enabled():
         raise HTTPException(status_code=404)
+
+
+def _web_broker_bat() -> bool:
+    """Bảng điều khiển web cũ (mã ghép + điều khiển trong trình duyệt) còn mở không.
+
+    Q101 chọn **Model B**: sản phẩm thật là app native + relay LTT; web chỉ còn
+    giới thiệu / tài khoản / credit. Luồng web-broker ở file này đã ĐÓNG BĂNG,
+    nên mặc định **TẮT** — gõ thẳng URL cũng không mở.
+
+    Không xoá hẳn, mà đặt sau cờ, theo đúng tiền lệ `LTT_SOCIALBOT_ROUTES`
+    (H22.10): xoá lặng lẽ một bề mặt đang chạy là cách làm mất thứ có người còn
+    dùng mà không ai kịp nói. Đặt `LTT_NEXUS_WEB_BROKER=1` trong `secrets/app.env`
+    để lấy lại.
+    """
+    raw = str(os.environ.get("LTT_NEXUS_WEB_BROKER", "0")).strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _bat_buoc_web_broker() -> None:
+    """404 khi luồng web-broker đã đóng. Xem `_web_broker_bat()`.
+
+    Đặt làm `Depends` và đặt **trước** `Depends(require_login)` trong chữ ký:
+    FastAPI giải dependency theo thứ tự tham số, nên nếu để sau thì route đã đóng
+    vẫn trả 303 về `/login` — tức vẫn xác nhận bề mặt đó tồn tại, đúng thứ
+    `_bat_buoc_bat()` cố tránh khi chọn 404 thay vì 403.
+    """
+    _bat_buoc_bat()
+    if not _web_broker_bat():
+        raise HTTPException(status_code=404)
+
+
+def _trang_gioi_thieu(request: Request):
+    """Trang GIỚI THIỆU công khai — đây mới là thứ `/nexus` nên là (Q101).
+
+    Công khai (không `require_login`) vì nó là cửa hàng, không phải bảng điều
+    khiển: người chưa có tài khoản cũng phải đọc được sản phẩm là gì và tải ở đâu.
+    """
+    from platform_core.nexus import billing, versions
+    from server.templating import templates
+
+    _bat_buoc_bat()
+    m = versions.manifest()
+    plats = [{"key": k, **m["platforms"][k]}
+             for k in versions.PLATFORM_ORDER if k in m["platforms"]]
+    return templates.TemplateResponse(request, "nexus_gioi_thieu.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST,
+        "platforms": plats, "version": m.get("version", ""),
+        "gia": billing.gia_may_thang(),
+    })
 
 
 def _chu(request: Request):
@@ -75,10 +125,20 @@ def _ip(request: Request) -> str:
 
 
 @router.get("", response_class=HTMLResponse)
-def trang_chinh(request: Request, _u: str = Depends(require_login)):
+def trang_chinh(request: Request):
+    """Cửa vào `/nexus`.
+
+    Mặc định là trang giới thiệu công khai. Chỉ khi `LTT_NEXUS_WEB_BROKER=1`
+    mới rơi xuống bảng điều khiển web cũ — và khi đó mới bắt đăng nhập
+    (`require_login` gọi tay chứ không đặt ở `Depends`, vì trang giới thiệu
+    không được đòi đăng nhập).
+    """
     from server.templating import templates
 
     _bat_buoc_bat()
+    if not _web_broker_bat():
+        return _trang_gioi_thieu(request)
+    require_login(request)
     gen = _mo_db()
     db = next(gen)
     try:
@@ -114,6 +174,7 @@ def trang_chinh(request: Request, _u: str = Depends(require_login)):
 
 @router.post("/ma-ghep", response_class=HTMLResponse)
 def tao_ma(request: Request, csrf_token: str = Form(...),
+           _g: None = Depends(_bat_buoc_web_broker),
            _u: str = Depends(require_login)):
     """Sinh mã ghép và hiện nó **một lần**.
 
@@ -146,7 +207,8 @@ def tao_ma(request: Request, csrf_token: str = Form(...),
 
 @router.post("/thu-hoi/{device_id}")
 def thu_hoi(request: Request, device_id: str, csrf_token: str = Form(...),
-            _u: str = Depends(require_login)):
+            _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """Thu hồi một thiết bị và **cắt luôn mọi phiên đang chạy trên nó**.
 
     Thu hồi mà để phiên đang chạy tiếp là thu hồi trên giấy: người đang điều
@@ -200,7 +262,8 @@ def _nhan_su_kien() -> dict:
 
 
 @router.get("/tai", response_class=HTMLResponse)
-def tai(request: Request, _u: str = Depends(require_login)):
+def tai(request: Request, _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """Trang tải agent. Công bố SHA-256 và **nói trước** cảnh báo SmartScreen (Q95).
 
     Vì sao chính LTT phải nói trước cảnh báo: khách sẽ thấy nó dù thế nào (agent
@@ -223,7 +286,8 @@ def tai(request: Request, _u: str = Depends(require_login)):
 @router.post("/dieu-khien/{device_id}")
 def bat_dau_dieu_khien(request: Request, device_id: str,
                        csrf_token: str = Form(...),
-                       _u: str = Depends(require_login)):
+                       _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """Khách bấm 'Điều khiển' → cấp vé cho máy của CHÍNH mình, mở trang phiên.
 
     `cap_ve` tự cưỡng chế chủ sở hữu (Q93 ràng buộc 5), nhưng ta kiểm `cua_chu`
@@ -272,7 +336,8 @@ def _phien_cua_chu(db, request: Request, session_id: str):
 
 @router.get("/phien/{session_id}", response_class=HTMLResponse)
 def trang_phien(request: Request, session_id: str,
-                _u: str = Depends(require_login)):
+                _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """Trang một phiên điều khiển: chờ máy đích sẵn sàng, rồi hiện cách kết nối."""
     from server.templating import templates
 
@@ -297,7 +362,8 @@ def trang_phien(request: Request, session_id: str,
 
 @router.get("/phien/{session_id}/ket-noi")
 def ket_noi(request: Request, session_id: str,
-            _u: str = Depends(require_login)):
+            _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """JSON cho trang phiên hỏi liên tục: máy đích đã báo engine chưa.
 
     Chỉ trả mật khẩu khi phiên còn mở VÀ agent đã báo. Trước đó trả
@@ -336,7 +402,8 @@ def ket_noi(request: Request, session_id: str,
 @router.post("/phien/{session_id}/ket-thuc")
 def ket_thuc_phien(request: Request, session_id: str,
                    csrf_token: str = Form(...),
-                   _u: str = Depends(require_login)):
+                   _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """Khách bấm 'Kết thúc' → đóng phiên (xoá mật khẩu ngay, W2)."""
     _bat_buoc_bat()
     if not verify_csrf_token(request, csrf_token):
@@ -356,7 +423,8 @@ def ket_thuc_phien(request: Request, session_id: str,
 
 
 @router.get("/nhat-ky", response_class=HTMLResponse)
-def nhat_ky(request: Request, _u: str = Depends(require_login)):
+def nhat_ky(request: Request, _g: None = Depends(_bat_buoc_web_broker),
+           _u: str = Depends(require_login)):
     """Ai đã vào máy tôi. Đây là bề mặt của **khách**, không phải của admin."""
     from server.templating import templates
 

@@ -58,6 +58,38 @@ def _bo_qua(f: pathlib.Path) -> bool:
     return any(rel.startswith(b) for b in BO_QUA_FILE)
 
 
+_CHU_ASCII = re.compile(r"[A-Za-z]")
+
+
+def _khong_phai_cau(gia_tri: str, node: ast.AST, cha: dict) -> bool:
+    """Chuỗi này không thể là câu hiện cho người dùng — đừng đếm.
+
+    Hai dạng, cả hai đều đã gặp thật và cả hai đều làm bánh cóc kêu sai:
+
+    1. **Bảng ký tự.** Một chuỗi không có dấu cách và không có chữ cái ASCII nào
+       thì không phải câu — nó là danh sách ký tự (`_DAU_VIET` trong
+       `platform_core/image_gen/prompt_dich.py` là toàn bộ bộ dấu tiếng Việt).
+       Mọi câu thật đều có dấu cách, và gần như mọi từ tiếng Việt đều còn chữ
+       ASCII (`Tắt` có `T`, `ảnh` có `nh`).
+
+    2. **`notes=` của `Provider`.** Đó là ghi chú cho lập trình viên đọc mã, KHÔNG
+       render ở đâu — đã kiểm: không có chỗ nào đọc `.notes` trong `server/`,
+       `platform_core/` hay `apps/`. Bọc nó vào `N_()` thì sai theo hướng ngược
+       lại: một chuỗi không hiện ra lại bị trích cho người dịch.
+
+    Đây là thu hẹp phạm vi ĐẾM, không phải nới bánh cóc: hai dạng trên không bao
+    giờ là chuỗi giao diện, nên đếm chúng chỉ tạo áp lực bọc bừa.
+    """
+    if not gia_tri.strip():
+        return True
+    if not re.search(r"\s", gia_tri) and not _CHU_ASCII.search(gia_tri):
+        return True
+    p = cha.get(id(node))
+    if isinstance(p, ast.keyword) and p.arg == "notes":
+        return True
+    return False
+
+
 def _da_boc(node: ast.AST, cha: dict) -> bool:
     """Chuỗi này có nằm trong lời gọi `_()` / `_n()` không?"""
     p = cha.get(id(node))
@@ -93,6 +125,8 @@ def dem_python(f: pathlib.Path) -> int:
     for n in ast.walk(cay):
         if isinstance(n, ast.Constant) and isinstance(n.value, str):
             if n.value in ds or not VN.search(n.value):
+                continue
+            if _khong_phai_cau(n.value, n, cha):
                 continue
             if not _da_boc(n, cha):
                 n_thieu += 1

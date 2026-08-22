@@ -190,8 +190,10 @@ nào**.
 | **Rà soát hệ điều hành** — bố cục mã nguồn + tầng nghiệp vụ | ✅ 9/12 xong 2026-08-06 (H22) |
 | Hồ sơ hệ thống tự sinh (`ho_so_he_thong.txt`) | ✅ xong 2026-08-12 (H34, Q91) |
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92); **ĐÃ DEPLOY 2026-08-17**, tool chưa mở |
-| **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ ~63% 2026-08-20; xem `docs/nexus/EXECUTION_PLAN.md` §13 + `BUILD_CHARTER.md` |
+| **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ LIVE; Windows + Android chạy thật, thu credit thật. Vòng sửa lỗi 2026-08-22 đóng hết mục A+B của `docs/nexus/N7_DANH_SACH_VIEC.md`. Còn hạ tầng C1–C4, macOS, iOS |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
+| **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_image`, không phải app | 🔨 giai đoạn A xong 2026-08-22 (H37, Q102); cổng render đã là dịch vụ trên B; bán ra `/api/v1` qua app `anhnoibo` + tool `image.ltt` — **chưa mở cho khách** (4 cổng còn khoá, D-034). Xem `docs/ANH_NOI_BO/` |
+| **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 📋 logic đã khoá 2026-08-22 (H39, Q103+Q104); chưa viết code. Sau khi nới đĩa 217→600 GB + RAM 44→64 GB: **10–14 máy, ~2–2,5 tr đ/tháng**. Upload nhà **~150 Mbps** là trần dùng chung. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -266,6 +268,47 @@ Một câu về trạng thái: **hạ tầng đã sống, cửa hàng chưa mở
 `GET /api/v1/tools` trả `200` với danh sách rỗng — fail-closed của Q92 làm đúng
 việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool** (bắt đầu bằng
 `image.thumbnail`), **xoay khoá provider**, và **H35.10** (tool video).
+
+**H37 (bắt đầu 2026-08-21, Q102)** — model tạo ảnh chạy trên **máy B**
+(`MAY-B` 192.168.2.66, RTX 3090 24 GB, RAM 192 GB). Nó là **một provider**
+(`ltt_image`), **không phải một app**: thêm một dòng vào `platform_core/providers.py`
++ adapter dùng chung `platform_core/image_gen/`. Kế hoạch 13 phase và cổng chấm
+điểm ≥ 9/10 ở `docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md`.
+
+Sáu thứ phải biết trước khi đụng vào:
+
+- 🔴 **MÁY B TỰ KHỞI ĐỘNG LẠI ĐỂ CẬP NHẬT WINDOWS, và nó giết việc đang chạy.**
+  Active Hours là **07:00 → 01:00**; hết khung đó Windows được phép khởi động lại
+  bất cứ lúc nào. Đã xảy ra 22/08 lúc **01:29** (sự kiện `1074`, `MoUsoCoreWorker`,
+  *Service pack (Planned)*), cuốn theo một lô đang chạy dở ở ảnh 21/30.
+  ⇒ **Việc dài phải kết thúc trước 01:00**, hoặc tạm hoãn cập nhật trong lúc chạy.
+  *(Tôi đã chẩn đoán nhầm lần này thành "cạn VRAM" — xem D-025 để biết vì sao nhầm.)*
+- ⚠️ **VRAM ở cấu hình đích chạm 23,9 / 24,6 GB = 97,5 %** và **ở lì đó giữa các
+  job** (ComfyUI giữ model thường trú). Đây **không** phải nguyên nhân vụ 22/08,
+  nhưng nó là biên **quá mỏng** cho một máy để bàn dùng chung với dự án video.
+  Nên **khởi động ComfyUI với `--reserve-vram 3`**.
+- 🔴 **CHƯA ĐO THÌ KHÔNG CHẠY.** `render_gateway/ngan_sach.py` từ chối mọi cấu hình
+  vượt `TOKEN_DA_DO_TOI_DA` (4.096 token) **trước khi chạm GPU**. Chế độ `edit` và
+  `subject` ở `ref_mp=4.0` **đang bị chặn có chủ ý** (7.506 và 11.412 token). Muốn
+  mở thì **đo theo bậc, có người canh** (1 ảnh @ 0,4 MP → đo VRAM → tăng dần) rồi
+  ghi số vào `DECISIONS.md`. **Đừng hạ `ref_mp` cho lọt chốt** — đó chỉ là chọn một
+  con số khác cũng chưa ai đo.
+- **Máy B KHÔNG giữ bí mật nào của nền tảng.** Không mật khẩu CSDL, không khoá R2,
+  không `LTT_TOKEN_ENCRYPTION_KEY`. Ảnh vào bằng presigned GET, ra bằng presigned PUT.
+- ⚠️ **ComfyUI trên máy B KHÔNG có xác thực.** Nó chỉ được nghe `127.0.0.1`, vĩnh
+  viễn. Chỉ cổng render (:8199, bearer token) nghe LAN, tường lửa chỉ mở cho
+  192.168.2.17. **Không bao giờ** đưa ra Cloudflare.
+- 🔴 **MÁY B CÓ BA HỘ DÙNG CHUNG GPU, không phải hai** *(đo 22/08 22:27)*:
+  ① **video** — `E:\LTT AI`, dùng chung đúng ComfyUI đó; một lượt từng chạy 72,5
+  phút và ăn 98,7 % VRAM. ② **LLM** — `H:\LTT_LLM`, dịch vụ `LTTLlamaSwap` +
+  `LTTLlmGateway` (cổng 8280/8299); `llama-server.exe` nạp một model 27B giữ
+  **15,9 GB** và **ngồi im ở đó**, GPU 0 % tải, tự nhả sau `ttl: 1800`. ③ ta.
+  Job ảnh **không xếp hàng sau ai cả** — bận thì cascade sang Gemini.
+  ⚠️ Hộ ② **không phải tiến trình python**, và điều đó từng làm chốt dò bận của
+  cổng render báo *rảnh* trong khi card chỉ còn 4,6 GB — xem D-037.
+- **Bận ≠ hỏng.** Khi B bận, tuyệt đối **không** gọi `api_pool.danh_dau_loi()` cho
+  key `ltt_image`: cooldown rồi `disable` sau 5 lần, và một tối chạy video sẽ tự
+  tắt vĩnh viễn model nhà.
 
 ## Không bao giờ commit hay copy đi
 

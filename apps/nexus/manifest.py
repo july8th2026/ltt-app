@@ -26,8 +26,9 @@ MANIFEST = AppManifest(
     slug="nexus",
     display_name=N_('LTT Nexus — điều khiển máy từ xa'),
     route_prefix="/nexus",
-    summary=N_('Ghép máy tính của bạn vào tài khoản, rồi điều khiển nó từ xa. '
-               'Mọi phiên đều được ghi lại và bạn xem được ai đã vào máy nào.'),
+    summary=N_('Điều khiển máy tính của bạn từ xa — không mở cổng, không cần '
+               'IP tĩnh. Cài ứng dụng, đăng nhập cùng tài khoản, máy hiện ra là '
+               'bấm vào dùng.'),
     icon="🖥️",
     accent="#3B5BDB",
 
@@ -46,7 +47,10 @@ MANIFEST = AppManifest(
     # chưa có, nên gắn nhãn "Đã phát hành" là nói quá. Q73 cấm dùng chữ "Đã
     # hoàn thiện" chính vì loại nhầm lẫn này.
     surface="customer",
-    lifecycle="development",
+    # `released`: từ Q101/Model B, thứ khách thật sự dùng là app native + relay
+    # LTT — cả hai đã chạy trên production và đã thu credit. Trang `/nexus` này
+    # là cửa giới thiệu của nó, không còn là bản demo web-broker chưa có engine.
+    lifecycle="released",
     capabilities=("Utilities",),
     group=N_("Ứng dụng"),
 

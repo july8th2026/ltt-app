@@ -184,17 +184,22 @@ def _bam_sid(sid: str) -> str:
     return hashlib.sha256(sid.encode("utf-8")).hexdigest()
 
 
-def tao_phien(db: DbSession, user: User, *, user_agent: str = "", ip: str = "") -> str:
+def tao_phien(db: DbSession, user: User, *, user_agent: str = "", ip: str = "",
+              ttl: Optional[timedelta] = None) -> str:
     """Tạo một phiên, trả về session_id (token THÔ) để đặt vào cookie.
 
     Token là 32 byte ngẫu nhiên mã hoá urlsafe — không đoán được, không mang
     thông tin gì về user. CSDL chỉ lưu HASH của token (xem `_bam_sid`), không
     lưu token thô.
+
+    `ttl` để rút ngắn tuổi thọ cho những phiên **không phải** cookie trình duyệt
+    — cụ thể là vé SSO của ứng dụng Nexus, thứ đi qua thanh địa chỉ nên phải chết
+    nhanh (xem `platform_core.nexus.sso`). Bỏ trống → `SESSION_TTL` như cũ.
     """
     sid = secrets.token_urlsafe(32)
     db.add(SessionRow(
         id=_bam_sid(sid), user_id=user.id,
-        expires_at=_bay_gio() + SESSION_TTL,
+        expires_at=_bay_gio() + (ttl or SESSION_TTL),
         user_agent=(user_agent or "")[:255], ip=(ip or "")[:45],
     ))
     user.last_login_at = _bay_gio()
