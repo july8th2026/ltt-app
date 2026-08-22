@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:817aa4d165b744e9a64228c3c1c9d9f8f6f7e6323d19dee87b7ad9c7380197ee
-Nguồn đã quét : 1197 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:c53f95c69750d21679e337f74d069a0d5966e5f9226d8386adc8c8afe7206e70
+Nguồn đã quét : 1200 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -951,7 +951,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (116 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (119 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1058,6 +1058,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_TEMP_VIDEO_DIR
 - LTT_TEST_DATABASE_URL
 - LTT_TEST_R2_BUCKET
+- LTT_TEXT_
+- LTT_TEXT_0
+- LTT_TEXT_1
 - LTT_TOKEN_ENCRYPTION_KEY
 - LTT_TOKEN_ENCRYPTION_KEY_FILE
 - LTT_TRIAL_CREDIT
@@ -1069,7 +1072,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (252 file pytest + 3 frontend)
+10. QUALITY GATES (253 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1259,6 +1262,7 @@ Test inventory:
 - tests/test_247_cham_mu.py
 - tests/test_247_nexus_kich_hoat_tuc_thi.py
 - tests/test_248_do_bo_cuc.py
+- tests/test_249_prompt_dich.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -1348,8 +1352,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1197 file)
-Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:904, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1200 file)
+Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:907, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1965,7 +1969,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (101)
+[platform_core] (103)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1991,6 +1995,8 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - platform_core/gpu.py
 - platform_core/gpu_lease.py
 - platform_core/i18n.py
+- platform_core/image_gen/__init__.py
+- platform_core/image_gen/prompt_dich.py
 - platform_core/image_input.py
 - platform_core/job_content.py
 - platform_core/job_events.py
@@ -2244,7 +2250,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (269)
+[tests] (270)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2445,6 +2451,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_247_cham_mu.py
 - tests/test_247_nexus_kich_hoat_tuc_thi.py
 - tests/test_248_do_bo_cuc.py
+- tests/test_249_prompt_dich.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -2613,7 +2620,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1197 file; 10875464 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1200 file; 10894382 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -105566,6 +105573,220 @@ def bat_buoc_du_ban_dich() -> bool:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/image_gen/__init__.py
+SHA256=4324b7315577ab034422c128bb25cabe3ebbeb2d341c521c0625d4c9994f067d BYTES=372 LINES=9
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+image_gen — năng lực SINH ẢNH dùng chung cho mọi app.
+
+⭐ Vì sao ở `platform_core` chứ không trong app: đây là năng lực nền tảng như
+   `storage`/`api_pool`. App chỉ khai model muốn dùng, không tự dựng đường gọi.
+
+Hiện có:
+  · `prompt_dich` — dịch prompt sang tiếng Anh trước khi gửi model ảnh (D-027).
+"""
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/image_gen/prompt_dich.py
+SHA256=9d058f7287f38fec6fc605a6e46d159c3b585bafac2d5c9e15ffad10699ecfb7 BYTES=9038 LINES=193
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+prompt_dich.py — dịch prompt sang tiếng Anh TRƯỚC khi gửi cho model sinh ảnh.
+
+⭐ VÌ SAO CÓ TỆP NÀY — SỐ ĐO, KHÔNG PHẢI PHỎNG ĐOÁN (D-027, 22/08/2026):
+
+   HiDream-O1 chạy trên máy B **gần như không hiểu prompt tiếng Việt**. Cùng model,
+   **cùng seed**, cùng số bước — chỉ khác ngôn ngữ của prompt:
+
+   | seed | prompt tiếng Việt | prompt tiếng Anh |
+   |---|---|---|
+   | 105 | *"con mèo tam thể ngủ trên bậu cửa sổ"* → **người phụ nữ trên giường** | **đúng con mèo tam thể ngủ cuộn tròn** |
+   | 109 | *"bốn người bạn quanh bàn cà phê"* → **một** người | **đúng bốn người, thấy rõ cả bốn mặt** |
+   | 110 | *"tám người xếp hai hàng cầm cúp"* → **một** người | **đúng cả đội hai hàng, cầm cúp** |
+   | 112 | *"táo đỏ TRONG bát TRÊN tờ báo"* → người cầm hộp quà | **đúng cả hai quan hệ vị trí** |
+
+   Ba trên ba, rồi bốn trên bốn. Bộ mã hoá văn bản của model bắt được "hơi hướng
+   Việt Nam" từ ký tự có dấu rồi **vứt bỏ phần ngữ nghĩa**. Model **không yếu** —
+   đường vào yếu.
+
+⛔ HAI ĐIỀU TỆP NÀY LÀM KHÁC HẲN `apps/taovideo/translate.py`:
+
+   ① **GIỮ NGUYÊN chuỗi trong ngoặc kép.** Với prompt ảnh, `"CƠM TẤM SƯỜN BÌ"`
+      không phải câu cần dịch — nó là **chữ sẽ được vẽ vào ảnh**. Dịch nó đi là
+      biển hiệu ra tiếng Anh, tức là giao sai hàng. Bản video không có ràng buộc
+      này nên không xử lý.
+   ② **CẢNH BÁO khi chuỗi cần vẽ có dấu tiếng Việt.** Đo thật: biển hiệu ra
+      `CỜM TẤM` / `CỜM TÀM`, poster ra `KUIG MÂN`, `HỐM NAY`, bìa sách ra
+      `NHỮNG NHUGẨN THỜ ẤU`. Cùng biển hiệu đó **viết không dấu** (`COM TAM SUON
+      BI`) thì ra **đúng từng chữ**. Ranh giới nằm chính xác ở **dấu**, không ở
+      tiếng Việt nói chung. Dịch prompt **không cứu được** điều này — chữ cần vẽ
+      vẫn phải là chữ khách yêu cầu.
+
+⛔ DỊCH HỎNG THÌ HỎNG JOB, KHÔNG GỬI BẢN TIẾNG VIỆT. Gửi nguyên bản tiếng Việt
+   không phải "phương án dự phòng" — nó là **giao một tấm ảnh sai mà khách vẫn trả
+   tiền**. Đúng tinh thần D-010 (chất lượng là tiêu chí duy nhất) và nguyên tắc
+   không đánh tráo sản phẩm sau lưng khách.
+"""
+from __future__ import annotations
+
+import logging
+import re
+import unicodedata
+from dataclasses import dataclass, field
+from typing import Callable, Optional
+
+log = logging.getLogger(__name__)
+
+#: Ngôn ngữ mà model ảnh hiểu. Không phải lựa chọn thẩm mỹ — là số đo (D-027).
+NGON_NGU_MODEL = "English"
+
+#: Ký tự chỉ có trong tiếng Việt (không có trong ASCII lẫn tiếng Anh). Dùng để
+#: đoán "có cần dịch không" mà không phải gọi LLM.
+_DAU_VIET = "ăâđêôơưĂÂĐÊÔƠƯáàảãạấầẩẫậắằẳẵặéèẻẽẹếềểễệíìỉĩịóòỏõọốồổỗộớờởỡợúùủũụứừửữựýỳỷỹỵ"
+
+#: Chuỗi trong ngoặc kép = chữ cần VẼ VÀO ẢNH. Bắt cả " ” “ ' và « ».
+_NGOAC = re.compile(r'["“”«»\']([^"“”«»\']{1,120})["“”«»\']')
+
+#: Thẻ giữ chỗ đặt vào chỗ chuỗi đã tách. Chọn dạng LLM không có lý do gì đụng vào.
+_THE = "@@LTT_TEXT_{}@@"
+
+
+class DichThatBai(Exception):
+    """Không dịch được. Bên gọi phải HỎNG JOB, đừng gửi bản gốc."""
+
+
+@dataclass(frozen=True)
+class KetQua:
+    prompt_goc: str
+    prompt_model: str
+    da_dich: bool
+    #: Các chuỗi được giữ nguyên vì chúng là chữ sẽ vẽ vào ảnh.
+    chuoi_giu_nguyen: tuple = ()
+    #: Cảnh báo hiện cho người dùng — KHÔNG chặn job, chỉ nói trước.
+    canh_bao: tuple = ()
+
+    def as_dict(self) -> dict:
+        return {"prompt_model": self.prompt_model, "da_dich": self.da_dich,
+                "chuoi_giu_nguyen": list(self.chuoi_giu_nguyen),
+                "canh_bao": list(self.canh_bao)}
+
+
+def co_dau_tieng_viet(s: str) -> bool:
+    """Chuỗi có ký tự riêng của tiếng Việt không.
+
+    ⛔ Dùng `unicodedata.normalize("NFC")` trước khi so: cùng một chữ "ế" có thể
+    được gõ ở dạng tổ hợp (e + ˆ + ´) và khi đó phép so ký tự thô sẽ trượt.
+    """
+    return any(c in _DAU_VIET for c in unicodedata.normalize("NFC", s or ""))
+
+
+def can_dich(prompt: str) -> bool:
+    """Có cần gọi LLM không. Prompt đã là tiếng Anh thì bỏ qua — đỡ một lượt gọi,
+    đỡ một khoản credit, và đỡ một chỗ hỏng được."""
+    con_lai = _NGOAC.sub(" ", prompt or "")     # bỏ chữ-cần-vẽ ra khỏi phép đoán
+    return co_dau_tieng_viet(con_lai)
+
+
+def tach_chuoi_can_ve(prompt: str) -> tuple:
+    """Thay chuỗi trong ngoặc kép bằng thẻ giữ chỗ.
+
+    Trả `(prompt_co_the, danh_sach_chuoi)`. Chính chỗ này giữ cho biển hiệu
+    `"CƠM TẤM SƯỜN BÌ"` không bị dịch thành `"BROKEN RICE WITH PORK"`.
+    """
+    chuoi = []
+
+    def _thay(m):
+        chuoi.append(m.group(1))
+        return f'"{_THE.format(len(chuoi) - 1)}"'
+
+    return _NGOAC.sub(_thay, prompt or ""), tuple(chuoi)
+
+
+def ghep_chuoi_can_ve(prompt: str, chuoi) -> str:
+    """Đặt lại các chuỗi vào chỗ thẻ giữ chỗ.
+
+    ⛔ Thẻ nào KHÔNG còn trong bản dịch thì chuỗi đó **mất** — LLM đã nuốt nó.
+    Ta không im lặng bỏ qua: nối lại vào cuối còn hơn giao một ảnh thiếu chữ mà
+    không ai biết.
+    """
+    ra = prompt
+    thieu = []
+    for i, s in enumerate(chuoi):
+        the = _THE.format(i)
+        if the in ra:
+            ra = ra.replace(the, s)
+        else:
+            thieu.append(s)
+    if thieu:
+        log.warning("ban dich lam mat %d chuoi can ve — noi lai vao cuoi", len(thieu))
+        ra = ra.rstrip() + ", text: " + ", ".join(f'"{s}"' for s in thieu)
+    return ra
+
+
+def _canh_bao_chu_co_dau(chuoi) -> tuple:
+    """Cảnh báo cho chuỗi cần vẽ có dấu tiếng Việt — model không dựng đúng dấu."""
+    xau = [s for s in chuoi if co_dau_tieng_viet(s)]
+    if not xau:
+        return ()
+    return (
+        "Chữ cần vẽ vào ảnh có dấu tiếng Việt (" +
+        ", ".join(f'"{s}"' for s in xau[:3]) +
+        "). Model dựng chữ Latin không dấu rất chính xác nhưng SAI DẤU tiếng Việt "
+        "(đo thật: 'CƠM TẤM' ra 'CỜM TÀM'). Cân nhắc bỏ dấu, hoặc để phần chữ ghép "
+        "sau bằng phông chữ thật.",
+    )
+
+
+def dich_prompt_anh(prompt: str, *, goi_llm: Optional[Callable] = None) -> KetQua:
+    """Chuẩn bị prompt cho model ảnh: dịch phần mô tả, giữ nguyên phần chữ-cần-vẽ.
+
+    `goi_llm(text) -> str` được tiêm vào để test không cần mạng. Bên gọi thật
+    truyền hàm gọi Gemini (category `chat`) qua `api_pool`.
+    """
+    goc = (prompt or "").strip()
+    if not goc:
+        raise DichThatBai("prompt rong")
+
+    co_the, chuoi = tach_chuoi_can_ve(goc)
+    canh_bao = _canh_bao_chu_co_dau(chuoi)
+
+    if not can_dich(goc):
+        # Đã là tiếng Anh (hoặc chỉ còn chữ-cần-vẽ là tiếng Việt) — không gọi LLM.
+        return KetQua(goc, goc, False, chuoi, canh_bao)
+
+    if goi_llm is None:
+        raise DichThatBai("can dich nhung khong co duong goi LLM")
+
+    try:
+        ban_dich = (goi_llm(co_the) or "").strip()
+    except Exception as e:                                        # noqa: BLE001
+        raise DichThatBai(f"goi LLM that bai: {e}") from e
+
+    if not ban_dich:
+        raise DichThatBai("LLM tra ve rong")
+    if co_dau_tieng_viet(_NGOAC.sub(" ", ban_dich)):
+        # Dịch mà phần mô tả vẫn còn tiếng Việt nghĩa là nó chưa dịch. Gửi đi là
+        # rơi đúng vào lỗi mà tệp này sinh ra để tránh.
+        raise DichThatBai("ban dich van con tieng Viet o phan mo ta")
+
+    return KetQua(goc, ghep_chuoi_can_ve(ban_dich, chuoi), True, chuoi, canh_bao)
+
+
+#: Lời nhắc hệ thống cho LLM. Tách ra hằng số để test đọc được và để đổi một chỗ.
+LOI_NHAC = (
+    f"Translate the following image-generation prompt to {NGON_NGU_MODEL}. "
+    "Return ONLY the translation - no quotes around the whole answer, no notes. "
+    "Keep every @@LTT_TEXT_n@@ placeholder EXACTLY as it appears, including the "
+    "surrounding quotation marks - they mark literal text that must be rendered "
+    "inside the image and must not be translated. "
+    "Keep camera, lighting and composition terms precise. "
+    "Keep culturally specific subjects as they are (pho, com tam, ao dai, "
+    "terraced rice fields) rather than replacing them with generic equivalents."
+)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/image_input.py
 SHA256=68e1feb7b3cc73502b19e3f9b1b4aa5b4422f15d5ba6a57c6afd24a4e18f2000 BYTES=2478 LINES=49
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -110683,7 +110904,7 @@ __all__ = ["DEVICE_KEY_PREFIX", "ENROLL_MAX_ATTEMPTS", "ENROLL_TTL_S",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/versions.py
-SHA256=70f90d34fb16b06b1a717deb6997417798713781ba551f646ede7f28b6b17169 BYTES=3616 LINES=79
+SHA256=f832da9e4f20b559be8f0533dd2511053d3fbe579611d052d10cf97d0a90a268 BYTES=4097 LINES=85
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bản kê phiên bản LTT Nexus — nguồn CHUNG cho trang tải và client tự-update.
 
@@ -110711,8 +110932,14 @@ DEFAULT: dict = {
     "version": "1.0.0",
     "notes": "Bản phát hành đầu tiên của LTT Nexus.",
     "platforms": {
+        # `setup_url`/`setup_sha256` là file cài MỘT-FILE (tự giải nén), dùng cho
+        # **tự cập nhật**: client tải nó, kiểm hash, rồi chạy `--silent-install`.
+        # `url` (zip) vẫn giữ cho người muốn bản chạy-không-cài. Thiếu `setup_url`
+        # thì client **không** rơi về zip — chạy zip thẳng không được, đoán bừa
+        # là hỏng ngầm.
         "windows": {"label": "Windows 10/11 (64-bit)", "available": False,
-                    "url": "", "sha256": "", "kind": "zip"},
+                    "url": "", "sha256": "", "kind": "zip",
+                    "setup_url": "", "setup_sha256": ""},
         "macos": {"label": "macOS", "available": False, "url": "", "sha256": "",
                   "kind": "dmg"},
         # `signed=True` chỉ đặt khi IPA đã ký Ad Hoc/Enterprise — lúc đó trang
@@ -198588,7 +198815,7 @@ def test_may_da_thu_hoi_thi_relay_TU_CHOI(app_bat, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_244_nexus_download.py
-SHA256=27e0757be9ac6a8e4b87543354044c72ee6fc2b29c4030e1592b4b04d35d714b BYTES=7391 LINES=184
+SHA256=a557bd60eab146d2957d8fc31a5bee400d89e4bc82f32b3ece94eb6f73247b5a BYTES=9196 LINES=223
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Trang tải LTT Nexus + version.json (Model B, Q101: web = hướng dẫn/tải).
 
@@ -198774,6 +199001,45 @@ def test_trang_KHONG_hien_nut_cai_khi_chua_ky(app_bat):
     html = client.get("/tai-xuong").text
     assert "itms-services://" not in html
     assert "Tải xuống" in html                 # van tai file ve duoc
+
+
+# ── File cài một-file cho tự cập nhật ────────────────────────────────────────
+
+def test_manifest_co_truong_setup_cho_tu_cap_nhat(app_bat):
+    """Client đọc `setup_url`/`setup_sha256`; thiếu là không tự cập nhật được."""
+    from platform_core.nexus import versions
+
+    win = versions.manifest()["platforms"]["windows"]
+    assert "setup_url" in win and "setup_sha256" in win
+
+
+def test_dl_phuc_vu_file_exe_dung_content_type(app_bat):
+    """File cài tải bằng client, không phải trình duyệt — nhưng content-type sai
+    làm Cloudflare/proxy xử lý lạ, nên vẫn phải đúng."""
+    client, tmp_path = app_bat
+    dist = tmp_path / "data" / "nexus_dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    (dist / "LTTNexus-1.2.0-win-x64-setup.exe").write_bytes(b"MZ" + b"\x00" * 64)
+    r = client.get("/nexus/dl/LTTNexus-1.2.0-win-x64-setup.exe")
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/vnd.microsoft.portable-executable"
+    assert r.content.startswith(b"MZ")
+
+
+def test_setup_url_doc_de_tu_data_file(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "1.2.0",
+        "platforms": {"windows": {
+            "available": True, "kind": "zip",
+            "url": "/nexus/dl/LTTNexus-1.2.0-win-x64.zip", "sha256": "a" * 64,
+            "setup_url": "/nexus/dl/LTTNexus-1.2.0-win-x64-setup.exe",
+            "setup_sha256": "b" * 64}},
+    }), encoding="utf-8")
+    j = client.get("/nexus/version.json").json()
+    win = j["platforms"]["windows"]
+    assert win["setup_url"].endswith("-setup.exe")
+    assert len(win["setup_sha256"]) == 64
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -201078,6 +201344,156 @@ def test_tuong_quan_khong_bao_gio_vuot_khoang(tmp_path):
     x = np.random.default_rng(0).random((64, 64))
     y = -x
     assert -1.0 <= tuong_quan(x, y) <= 1.0
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_249_prompt_dich.py
+SHA256=c3de01571d1c1e5d77cc691179c92ddcb5c5bbcd8bdb6015fd03d150b93cd77a BYTES=7222 LINES=144
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_249 — dịch prompt trước khi gửi model ảnh (`platform_core/image_gen/prompt_dich.py`).
+
+Mỗi test dưới đây neo vào một số đo thật của **D-027**, không vào một ý kiến.
+Bối cảnh: HiDream-O1 trên máy B cho ra ảnh **không liên quan đến prompt** khi
+prompt viết bằng tiếng Việt; cùng seed, bản tiếng Anh thì đúng.
+"""
+from __future__ import annotations
+
+import unicodedata
+
+import pytest
+
+from platform_core.image_gen import prompt_dich as P
+
+
+# ───────────────────── nhận biết có cần dịch không ──────────────────────────
+def test_prompt_tieng_viet_thi_can_dich():
+    assert P.can_dich("Con mèo tam thể nằm ngủ trên bậu cửa sổ")
+
+
+def test_prompt_tieng_anh_thi_KHONG_goi_LLM():
+    """Không gọi LLM khi không cần: đỡ một lượt gọi, đỡ credit, đỡ một chỗ hỏng."""
+    goc = "A calico cat sleeping on a windowsill, afternoon light"
+    kq = P.dich_prompt_anh(goc, goi_llm=None)      # goi_llm=None van phai chay duoc
+    assert kq.prompt_model == goc and not kq.da_dich
+
+
+def test_chi_co_CHU_CAN_VE_la_tieng_viet_thi_khong_can_dich():
+    """⛔ Ca dễ sai: phần mô tả đã là tiếng Anh, chỉ chuỗi cần vẽ là tiếng Việt.
+    Dịch lúc này là vô ích và còn rủi ro làm hỏng chuỗi cần vẽ."""
+    assert not P.can_dich('A shop sign reading "CƠM TẤM SƯỜN BÌ" on yellow')
+
+
+def test_nhan_dien_dau_tieng_viet_ca_khi_go_dang_to_hop():
+    """Cùng chữ "ế" gõ dạng tổ hợp (e + dấu) phải nhận ra được, không thì phép so
+    ký tự thô sẽ trượt và prompt đi thẳng sang model."""
+    dung_san = unicodedata.normalize("NFC", "ế")
+    to_hop = unicodedata.normalize("NFD", "ế")     # e + dau mu + dau sac
+    assert dung_san != to_hop and len(to_hop) > len(dung_san), (
+        "test nay RONG neu hai dang trung nhau")
+    assert P.co_dau_tieng_viet(dung_san)
+    assert P.co_dau_tieng_viet(to_hop), "phai chuan hoa NFC truoc khi so"
+
+
+# ───────── chuỗi cần vẽ: điểm khác cốt lõi so với bản dịch của video ────────
+def test_chuoi_trong_ngoac_KHONG_bi_dich(monkeypatch):
+    """⛔ Đây là lý do tệp này tồn tại riêng. `"CƠM TẤM SƯỜN BÌ"` là **chữ sẽ vẽ
+    vào ảnh**, không phải câu cần dịch. Dịch nó đi là giao sai hàng."""
+    goc = 'Biển hiệu quán ăn với dòng chữ lớn "CƠM TẤM SƯỜN BÌ" màu đỏ trên nền vàng'
+    thay = {}
+
+    def gia_llm(text):
+        thay["gui"] = text
+        # LLM tra ve ban dich CO GIU the giu cho.
+        return 'A restaurant signboard with large red text "@@LTT_TEXT_0@@" on yellow'
+
+    kq = P.dich_prompt_anh(goc, goi_llm=gia_llm)
+    # Cai gui cho LLM khong duoc chua chuoi can ve.
+    assert "CƠM TẤM SƯỜN BÌ" not in thay["gui"]
+    assert "@@LTT_TEXT_0@@" in thay["gui"]
+    # Ket qua thi PHAI chua lai nguyen van.
+    assert '"CƠM TẤM SƯỜN BÌ"' in kq.prompt_model
+    assert kq.chuoi_giu_nguyen == ("CƠM TẤM SƯỜN BÌ",)
+
+
+def test_LLM_nuot_mat_the_thi_KHONG_im_lang_bo_qua():
+    """Nếu bản dịch làm mất thẻ giữ chỗ thì chữ cần vẽ biến mất. Giao một ảnh
+    thiếu chữ mà không ai biết là kiểu hỏng tệ nhất — phải nối lại."""
+    goc = 'Poster ghi "GIẢM 50%" ở giữa'
+    kq = P.dich_prompt_anh(goc, goi_llm=lambda t: "A poster in the centre")
+    assert "GIẢM 50%" in kq.prompt_model
+
+
+def test_nhieu_chuoi_can_ve_giu_dung_thu_tu():
+    goc = 'Poster ghi "GIẢM 50% HÔM NAY" ở giữa, phía dưới là "Áp dụng đến 30/09"'
+    kq = P.dich_prompt_anh(
+        goc, goi_llm=lambda t: 'A poster with "@@LTT_TEXT_0@@" above "@@LTT_TEXT_1@@"')
+    assert kq.chuoi_giu_nguyen == ("GIẢM 50% HÔM NAY", "Áp dụng đến 30/09")
+    assert kq.prompt_model.index("GIẢM 50%") < kq.prompt_model.index("Áp dụng")
+
+
+# ───────────────────────── cảnh báo dấu tiếng Việt ──────────────────────────
+def test_canh_bao_khi_chu_can_ve_co_dau():
+    """Đo thật: `CƠM TẤM` ra `CỜM TÀM`, `HÔM NAY` ra `HỐM NAY`. Nhưng cùng biển
+    hiệu viết KHÔNG DẤU (`COM TAM SUON BI`) thì ra đúng từng chữ. Người dùng phải
+    được biết trước, chứ không phải phát hiện sau khi trả tiền."""
+    kq = P.dich_prompt_anh('A sign reading "CƠM TẤM SƯỜN BÌ"', goi_llm=None)
+    assert kq.canh_bao and "dấu" in kq.canh_bao[0]
+
+
+def test_chu_khong_dau_thi_KHONG_canh_bao():
+    """Cảnh báo bắn oan sẽ bị người ta học cách bỏ qua."""
+    kq = P.dich_prompt_anh('A sign reading "COM TAM SUON BI"', goi_llm=None)
+    assert kq.canh_bao == ()
+
+
+# ─────────────────── hỏng thì hỏng job, đừng gửi bản gốc ────────────────────
+def test_LLM_hong_thi_NEM_chu_khong_gui_ban_tieng_viet():
+    """⛔ Gửi bản tiếng Việt không phải phương án dự phòng — nó là giao một tấm
+    ảnh sai mà khách vẫn trả tiền."""
+    def hong(_):
+        raise RuntimeError("het quota")
+
+    with pytest.raises(P.DichThatBai):
+        P.dich_prompt_anh("Con mèo ngủ trên bậu cửa sổ", goi_llm=hong)
+
+
+def test_LLM_tra_ve_rong_thi_NEM():
+    with pytest.raises(P.DichThatBai):
+        P.dich_prompt_anh("Con mèo ngủ trên bậu cửa sổ", goi_llm=lambda t: "   ")
+
+
+def test_LLM_khong_dich_gi_ca_thi_NEM():
+    """LLM đôi khi trả lại nguyên văn. Gửi đi là rơi đúng vào lỗi mà tệp này sinh
+    ra để tránh — nên phải bắt."""
+    with pytest.raises(P.DichThatBai):
+        P.dich_prompt_anh("Con mèo tam thể ngủ trên bậu cửa sổ",
+                          goi_llm=lambda t: "Con mèo tam thể ngủ trên bậu cửa sổ")
+
+
+def test_can_dich_nhung_khong_co_duong_goi_LLM_thi_NEM():
+    with pytest.raises(P.DichThatBai):
+        P.dich_prompt_anh("Con mèo ngủ trên bậu cửa sổ", goi_llm=None)
+
+
+def test_prompt_rong_thi_NEM():
+    with pytest.raises(P.DichThatBai):
+        P.dich_prompt_anh("   ", goi_llm=None)
+
+
+# ───────────────────────────── lời nhắc hệ thống ────────────────────────────
+def test_loi_nhac_dan_LLM_giu_the_va_giu_chu_de_ban_dia():
+    """Hai điều lời nhắc bắt buộc phải nói, vì thiếu cái nào cũng hỏng theo một
+    kiểu riêng: mất thẻ giữ chỗ (mất chữ cần vẽ), và "phở" bị dịch thành "noodle
+    soup" (mất đúng chủ đề khách cần)."""
+    assert "@@LTT_TEXT_n@@" in P.LOI_NHAC
+    assert "pho" in P.LOI_NHAC and "com tam" in P.LOI_NHAC
+
+
+def test_ket_qua_xuat_ra_duoc_dict_de_ghi_vao_job():
+    kq = P.dich_prompt_anh("A cat on a windowsill", goi_llm=None)
+    d = kq.as_dict()
+    assert set(d) == {"prompt_model", "da_dich", "chuoi_giu_nguyen", "canh_bao"}
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -24,8 +24,14 @@ DEFAULT: dict = {
     "version": "1.0.0",
     "notes": "Bản phát hành đầu tiên của LTT Nexus.",
     "platforms": {
+        # `setup_url`/`setup_sha256` là file cài MỘT-FILE (tự giải nén), dùng cho
+        # **tự cập nhật**: client tải nó, kiểm hash, rồi chạy `--silent-install`.
+        # `url` (zip) vẫn giữ cho người muốn bản chạy-không-cài. Thiếu `setup_url`
+        # thì client **không** rơi về zip — chạy zip thẳng không được, đoán bừa
+        # là hỏng ngầm.
         "windows": {"label": "Windows 10/11 (64-bit)", "available": False,
-                    "url": "", "sha256": "", "kind": "zip"},
+                    "url": "", "sha256": "", "kind": "zip",
+                    "setup_url": "", "setup_sha256": ""},
         "macos": {"label": "macOS", "available": False, "url": "", "sha256": "",
                   "kind": "dmg"},
         # `signed=True` chỉ đặt khi IPA đã ký Ad Hoc/Enterprise — lúc đó trang

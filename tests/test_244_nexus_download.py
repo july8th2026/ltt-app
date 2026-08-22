@@ -182,3 +182,42 @@ def test_trang_KHONG_hien_nut_cai_khi_chua_ky(app_bat):
     html = client.get("/tai-xuong").text
     assert "itms-services://" not in html
     assert "Tải xuống" in html                 # van tai file ve duoc
+
+
+# ── File cài một-file cho tự cập nhật ────────────────────────────────────────
+
+def test_manifest_co_truong_setup_cho_tu_cap_nhat(app_bat):
+    """Client đọc `setup_url`/`setup_sha256`; thiếu là không tự cập nhật được."""
+    from platform_core.nexus import versions
+
+    win = versions.manifest()["platforms"]["windows"]
+    assert "setup_url" in win and "setup_sha256" in win
+
+
+def test_dl_phuc_vu_file_exe_dung_content_type(app_bat):
+    """File cài tải bằng client, không phải trình duyệt — nhưng content-type sai
+    làm Cloudflare/proxy xử lý lạ, nên vẫn phải đúng."""
+    client, tmp_path = app_bat
+    dist = tmp_path / "data" / "nexus_dist"
+    dist.mkdir(parents=True, exist_ok=True)
+    (dist / "LTTNexus-1.2.0-win-x64-setup.exe").write_bytes(b"MZ" + b"\x00" * 64)
+    r = client.get("/nexus/dl/LTTNexus-1.2.0-win-x64-setup.exe")
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"] == "application/vnd.microsoft.portable-executable"
+    assert r.content.startswith(b"MZ")
+
+
+def test_setup_url_doc_de_tu_data_file(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "1.2.0",
+        "platforms": {"windows": {
+            "available": True, "kind": "zip",
+            "url": "/nexus/dl/LTTNexus-1.2.0-win-x64.zip", "sha256": "a" * 64,
+            "setup_url": "/nexus/dl/LTTNexus-1.2.0-win-x64-setup.exe",
+            "setup_sha256": "b" * 64}},
+    }), encoding="utf-8")
+    j = client.get("/nexus/version.json").json()
+    win = j["platforms"]["windows"]
+    assert win["setup_url"].endswith("-setup.exe")
+    assert len(win["setup_sha256"]) == 64
