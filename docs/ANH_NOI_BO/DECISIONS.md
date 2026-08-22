@@ -1895,3 +1895,38 @@ thước JPEG từ khung SOF. Phép kiểm *"đã có ảnh chưa"* nay dò **m�
 **Bằng chứng:** `tests/test_255_doi_chung_gemini.py` (18). Bản giả trong test nay
 mặc định là **JPEG 1376×768** — đúng thứ nhà cung cấp trả thật, không phải thứ tôi
 đoán.
+
+
+---
+
+## D-040 — Đã deploy lên production và nghiệm thu; fail-closed giữ nguyên
+
+**Date:** 2026-08-22 23:5x · commit `58c0b15` + `157ec2a` · `alembic c1f4a2b70e51`
+
+Máy chủ chưa phục vụ khách nên chủ dự án cho deploy dù cây mã đang có ba luồng việc
+của ba phiên. Nghiệm thu, **kiểm trên URL công khai chứ không chỉ loopback** (quy
+tắc 5b):
+
+| Kiểm | Kết quả |
+|---|---|
+| 3 dịch vụ | Running · `deploy exit rc=0` |
+| `/health/ready` loopback **và** `https://app.lttstudios.com` | `200 {"status":"ready","database":"ok"}` |
+| App đã deploy | **18**, không app nào lỗi; `anhnoibo` nạp với tool `image.ltt` |
+| `alembic` | `5a3a13144782` → **`c1f4a2b70e51`**, tạo **5 bảng** của dự án VPS — đúng như đã báo trước |
+| `LTT_RENDER_BASE_URL` | bản chạy đọc được `http://192.168.2.66:8199` |
+| `hidream-o1.is_active` | **False** — cổng chất lượng vẫn khoá |
+| `LTT_PUBLIC_API_TOOLS` | **rỗng** ⇒ catalog công khai **rỗng**, `/api/v1/tools` trả **401** |
+| Giao diện công khai | 9 thẻ app, **0 lỗi console, 0 request hỏng**, CSS đã cache-bust `?v=b545037b` |
+| `/anhnoibo` | **404 sạch** (đúng: app chưa có UI, và `catalog_parent` giữ nó khỏi header) |
+| Cổng render từ máy A | TCP 8199 mở + **401**; ComfyUI 8188 **đóng** với LAN |
+
+⭐ **Điểm đáng ghi nhất: thêm một tool `api_exposed=True` vào production KHÔNG mở
+thêm gì cho khách.** Đó là Q92 làm đúng việc, và nay đã kiểm trên máy thật chứ không
+chỉ trong test.
+
+### Việc còn lại duy nhất không chặn bởi GPU
+
+**Chưa có khoá `ltt_image` trong APIKEYS** (`0` khoá; phiên kia đã thêm `ltt_llm`).
+Không có nó thì `apps/anhnoibo/http_cong.py` không lấy được bearer token. Token nằm
+trên máy B ở `C:\ProgramData\LTTRender\gateway.env`. **Chủ dự án tự thêm** — token
+là bí mật, không đi qua phiên trò chuyện.

@@ -174,7 +174,8 @@ số đó không phải việc viết mã:
 
 | # | Việc | Chặn bởi |
 |---|---|---|
-| D1 | `LTT_RENDER_BASE_URL` trên máy A + khoá `ltt_image` trong admin | thao tác vận hành |
+| D1a | `LTT_RENDER_BASE_URL` trên máy A | ✅ **xong 2026-08-22** — đã deploy, bản chạy đọc được `http://192.168.2.66:8199` |
+| D1b | **Khoá `ltt_image` trong admin** | ⏳ **việc còn lại duy nhất không chặn bởi GPU.** Token nằm ở máy B: `C:\ProgramData\LTTRender\gateway.env`, dòng `LTT_RENDER_TOKEN=` (43 ký tự). Thêm ở `/admin` → APIKEYS, provider `ltt_image`, category `image`. Chủ dự án tự làm — token là bí mật, không đi qua phiên trò chuyện |
 | D2 | `hidream-o1` `is_active=True` | cổng chất lượng C1 (so mù với Gemini 3 Pro Image) |
 | D3 | Chốt giá thật thay giá tạm 5/ảnh ×3 | cần số đo từ lượt dùng thật |
 | D4 | Thêm `image.ltt` vào `LTT_PUBLIC_API_TOOLS` + điền một dòng ở mục 4 của `APP_API_COVERAGE_FINAL.md` | D1–D3 và một lượt chạy thật từ ngoài vào |
