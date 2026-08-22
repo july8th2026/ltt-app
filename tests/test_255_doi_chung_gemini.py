@@ -31,10 +31,27 @@ class _Resp:
         return self._than
 
 
-def _anh_gemini(rong=2560, cao=1440):
+def _jpeg(rong: int, cao: int) -> bytes:
+    """JPEG toi thieu: SOI + APP0 + mot khung SOF0 mang kich thuoc.
+
+    Viet bang HEX chu khong bang escape: nhung tep test nay doi khi duoc sinh ra
+    bang script, va mot tang thoat chuoi nua bien chung thanh byte that - luc do
+    ca tep khong parse duoc. Da dinh dung loi nay hai lan trong mot phien.
+    """
+    import struct
+    sof = (bytes.fromhex("ffc0") + struct.pack(">HBHHB", 17, 8, cao, rong, 3)
+           + bytes(9))
+    app0 = bytes.fromhex("ffe0") + struct.pack(">H", 16) + b"JFIF" + bytes(10)
+    return bytes.fromhex("ffd8") + app0 + sof
+
+
+def _anh_gemini(rong=1376, cao=768, kieu="jpg"):
+    """⚠️ Mặc định là **JPEG 1376×768** vì đó là thứ Gemini trả THẬT (đo 22/08).
+    Mặc định cũ là PNG 2560×1440 — một giả định, và nó đã sai."""
     import base64
+    d = _jpeg(rong, cao) if kieu == "jpg" else _png(rong, cao)
     return {"candidates": [{"content": {"parts": [
-        {"inlineData": {"data": base64.b64encode(_png(rong, cao)).decode()}}]}}]}
+        {"inlineData": {"data": base64.b64encode(d).decode()}}]}}]}
 
 
 def _goi(ket_qua):
@@ -101,14 +118,57 @@ def test_doi_thu_la_model_DANG_BAN(tmp_path):
 # ═══════════ ③ ghi lại kích thước thật ══════════════════════════════════════
 def test_ghi_KICH_THUOC_that_cua_tung_anh(tmp_path):
     """Ảnh to hơn trông "nét hơn" bất kể model. Không ghi số thì bước dựng lô so mù
-    không biết phải chuẩn hoá cái gì."""
+    không biết phải chuẩn hoá cái gì.
+
+    Chốt này **đã đền công ngay hôm đầu**: nó lộ ra Gemini trả 1376×768 trong khi
+    phía ta chạy 2560×1440 — lệch 1,86 lần chiều dài, và lệch **về phía có lợi cho
+    ta**. So mù mà bỏ qua thì kết luận "model nhà đẹp hơn" là do độ phân giải."""
     http = _goi(_anh_gemini(1024, 576))
     kq = G.chay(tmp_path, that=True, prompts=G.doc_prompt()[:2], goi=http,
                 lay_key=lambda: "k")
     assert all(a["rong"] == 1024 and a["cao"] == 576 for a in kq["anh"])
 
 
-def test_ban_ke_CANH_BAO_ve_chuan_hoa_kich_thuoc(tmp_path):
+# ═══════════ nhận dạng theo BYTE THẬT, không theo giả định ══════════════════
+def test_JPEG_duoc_dat_dung_duoi_va_doc_duoc_kich_thuoc(tmp_path):
+    """⛔ SỰ CỐ THẬT 22/08 23:30: bản đầu giả định Gemini trả PNG, đặt đuôi `.png`
+    cho 30 tệp JPEG, và cái chốt đọc kích thước **không chạy một lần nào** — nó chỉ
+    in "không rõ kích thước" 30 lần."""
+    http = _goi(_anh_gemini(1376, 768, "jpg"))
+    kq = G.chay(tmp_path, that=True, prompts=G.doc_prompt()[:1], goi=http,
+                lay_key=lambda: "k")
+    assert kq["anh"][0]["tep"].endswith(".jpg")
+    assert kq["anh"][0]["dinh_dang"] == "jpg"
+    assert (kq["anh"][0]["rong"], kq["anh"][0]["cao"]) == (1376, 768)
+    assert list(tmp_path.glob("*.png")) == []
+
+
+def test_PNG_van_nhan_dung(tmp_path):
+    http = _goi(_anh_gemini(800, 600, "png"))
+    kq = G.chay(tmp_path, that=True, prompts=G.doc_prompt()[:1], goi=http,
+                lay_key=lambda: "k")
+    assert kq["anh"][0]["dinh_dang"] == "png"
+    assert (kq["anh"][0]["rong"], kq["anh"][0]["cao"]) == (800, 600)
+
+
+def test_nhan_dang_doc_duoc_ca_hai_dinh_dang():
+    assert G.nhan_dang(_jpeg(1376, 768)) == ("jpg", (1376, 768))
+    assert G.nhan_dang(_png(2560, 1440)) == ("png", (2560, 1440))
+    assert G.nhan_dang(b"khong phai anh gi ca") == ("bin", None)
+
+
+def test_ban_ke_NEU_TEN_ca_hai_bien_gay_nhieu(tmp_path):
+    """Bản kê phải tự nói ra cả kích thước lẫn định dạng. Gemini trả JPEG (nén mất
+    mát), phía ta trả PNG — khác định dạng cũng là một biến gây nhiễu."""
+    http = _goi(_anh_gemini())
+    G.chay(tmp_path, that=True, prompts=G.doc_prompt()[:1], goi=http,
+           lay_key=lambda: "k")
+    d = json.loads((tmp_path / "ban_ke.json").read_text(encoding="utf-8"))
+    assert d["dinh_dang"] == ["jpg"] and d["kich_co"] == ["1376x768"]
+    assert "DINH DANG" in d["_doc"] and "KICH THUOC" in d["_doc"]
+
+
+def test_ban_ke_CANH_BAO_ve_chuan_hoa(tmp_path):
     """Bản kê là thứ người sau đọc. Nó phải tự nói ra cái bẫy."""
     http = _goi(_anh_gemini())
     G.chay(tmp_path, that=True, prompts=G.doc_prompt()[:1], goi=http,
@@ -125,9 +185,12 @@ def test_doc_duoc_kich_thuoc_PNG_that():
 
 # ═══════════ ④ chạy lại được, không sinh trùng ══════════════════════════════
 def test_anh_DA_CO_thi_khong_goi_lai(tmp_path):
-    """Một lượt hỏng giữa chừng không được bắt trả tiền lại cho phần đã xong."""
+    """Một lượt hỏng giữa chừng không được bắt trả tiền lại cho phần đã xong.
+
+    Kiểm theo **mọi đuôi**: ảnh đã có là `.jpg`, mà chỉ dò `.png` thì lần chạy sau
+    tưởng chưa có và **trả tiền lại một lần nữa**."""
     p = G.doc_prompt()[:3]
-    (tmp_path / f"{p[0]['id']}.png").write_bytes(_png(64, 64))
+    (tmp_path / f"{p[0]['id']}.jpg").write_bytes(_jpeg(64, 64))
     http = _goi(_anh_gemini())
     G.chay(tmp_path, that=True, prompts=p, goi=http, lay_key=lambda: "k")
     assert len(http.goi) == 2, "da goi lai anh da co"

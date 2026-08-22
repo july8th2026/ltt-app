@@ -1852,3 +1852,46 @@ model. Đó là câu quyết định việc mở bán, nên đừng nhầm hai c
 
 **Chi phí:** ~3,90 USD cho 30 ảnh (ước tính, in ra trước khi gọi). Chưa chạy thật —
 chờ chủ dự án đồng ý vì đây là tiêu tiền.
+
+
+---
+
+## D-039 — Nửa Gemini đã có 30 ảnh, và nó lộ ra một thiên lệch **có lợi cho ta**
+
+**Date:** 2026-08-22 23:30 · 30/30 ảnh, 0 hỏng, ~3,90 USD
+
+### Số thật, và vì sao nó quan trọng
+
+| | Gemini 3 Pro Image | Phía ta (G3) |
+|---|---|---|
+| Kích thước | **1376 × 768** | **2560 × 1440** |
+| Định dạng | **JPEG** (nén mất mát) | **PNG** (không mất mát) |
+
+Chênh **1,86 lần chiều dài**, và nó lệch **về phía có lợi cho ta**: ảnh to hơn,
+không nén mất mát, thì trông nét hơn **bất kể model nào vẽ**. Nếu dựng lô so mù từ
+hai bộ này y nguyên, kết luận *"model nhà đẹp hơn"* sẽ **đúng về mặt số liệu và sai
+về mặt sự thật** — ta đo độ phân giải chứ không đo model.
+
+⇒ **Chuẩn hoá là bắt buộc trước khi dựng lô**: hạ cả hai về cùng cạnh dài và cùng
+định dạng. Đã ghi vào `bench/G6b_gemini/ban_ke.json` để bước sau không phải nhớ.
+
+### Lỗi tôi mắc, và vì sao nó suýt không ai thấy
+
+Bản đầu **giả định Gemini trả PNG**: đặt đuôi `.png` cho cả 30 tệp và đọc kích
+thước bằng `kich_thuoc_png`. Gemini trả **JPEG**. Hai hậu quả:
+
+1. 30 tệp mang đuôi sai — công cụ nào tin vào đuôi sẽ hỏng.
+2. **Cái chốt "ghi kích thước để bước sau biết mà chuẩn hoá" không chạy một lần
+   nào.** Nó chỉ in *"không rõ kích thước"* 30 lần.
+
+Nó lộ ra **chỉ vì dòng in có in kích thước**. Nếu tôi in "xong" thay vì in số đo
+được, lô này đã trông như thành công hoàn hảo, và cái thiên lệch 1,86 lần đã đi
+thẳng vào kết luận cuối. **Bài học chung: in thứ ĐO ĐƯỢC, đừng in thứ mình mong.**
+
+Đã sửa: `nhan_dang()` đọc **byte thật** (PNG/JPEG/WebP), đặt đuôi theo đó, đọc kích
+thước JPEG từ khung SOF. Phép kiểm *"đã có ảnh chưa"* nay dò **mọi đuôi** — dò một
+đuôi là lần chạy sau tưởng chưa có rồi **trả tiền lại một lần nữa**.
+
+**Bằng chứng:** `tests/test_255_doi_chung_gemini.py` (18). Bản giả trong test nay
+mặc định là **JPEG 1376×768** — đúng thứ nhà cung cấp trả thật, không phải thứ tôi
+đoán.

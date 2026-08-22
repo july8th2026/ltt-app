@@ -1,0 +1,257 @@
+{
+  "model": "gemini-3-pro-image",
+  "ti_le": "16:9",
+  "bo_prompt": "prompts_30_en.json",
+  "so_thanh_cong": 30,
+  "so_hong": 0,
+  "anh": [
+    {
+      "id": "p01",
+      "tep": "p01.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 782466,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p02",
+      "tep": "p02.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 901854,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p03",
+      "tep": "p03.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 511372,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p04",
+      "tep": "p04.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 845009,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p05",
+      "tep": "p05.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 911934,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p06",
+      "tep": "p06.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 1151407,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p07",
+      "tep": "p07.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 871526,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p08",
+      "tep": "p08.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 674671,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p09",
+      "tep": "p09.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 872784,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p10",
+      "tep": "p10.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 965453,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p11",
+      "tep": "p11.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 847634,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p12",
+      "tep": "p12.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 752033,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p13",
+      "tep": "p13.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 361738,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p14",
+      "tep": "p14.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 973900,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p15",
+      "tep": "p15.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 750623,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p16",
+      "tep": "p16.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 875529,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p17",
+      "tep": "p17.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 563028,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p18",
+      "tep": "p18.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 986347,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p19",
+      "tep": "p19.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 914226,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p20",
+      "tep": "p20.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 680640,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p21",
+      "tep": "p21.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 730631,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p22",
+      "tep": "p22.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 739763,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p23",
+      "tep": "p23.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 897364,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p24",
+      "tep": "p24.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 731671,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p25",
+      "tep": "p25.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 970854,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p26",
+      "tep": "p26.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 905297,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p27",
+      "tep": "p27.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 897607,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p28",
+      "tep": "p28.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 698205,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p29",
+      "tep": "p29.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 880998,
+      "rong": 1376,
+      "cao": 768
+    },
+    {
+      "id": "p30",
+      "tep": "p30.jpg",
+      "dinh_dang": "jpg",
+      "bytes": 951381,
+      "rong": 1376,
+      "cao": 768
+    }
+  ],
+  "hong": [],
+  "_doc": "Nua doi chung Gemini cho G6b. Cung van ban tieng Anh voi phia ta. HAI BIEN GAY NHIEU phai CHUAN HOA truoc khi dung lo so mu, neu khong thi dang do 'anh nao to hon / it artifact hon' chu khong phai 'model nao dep hon': (1) KICH THUOC - Gemini 1376x768, phia ta 2560x1440, lech 1,86 lan chieu dai VA lech VE PHIA CO LOI CHO TA; (2) DINH DANG - Gemini tra JPEG (nen mat mat), phia ta tra PNG. Chuan hoa = ha ca hai ve cung canh dai va cung dinh dang.",
+  "dinh_dang": [
+    "jpg"
+  ],
+  "kich_co": [
+    "1376x768"
+  ]
+}

@@ -70,17 +70,74 @@ class LoiDoiChung(Exception):
 
 
 def kich_thuoc_png(du_lieu: bytes) -> Optional[tuple[int, int]]:
-    """(rộng, cao) từ header PNG. `None` nếu không phải PNG.
-
-    Đọc thẳng 24 byte đầu thay vì kéo Pillow vào: tệp này chạy trong môi trường
-    vận hành, và một phụ thuộc thêm là một lý do nữa để nó không chạy được.
-    """
+    """(rộng, cao) từ header PNG. `None` nếu không phải PNG."""
     if len(du_lieu) < 24 or du_lieu[:8] != b"\x89PNG\r\n\x1a\n":
         return None
     if du_lieu[12:16] != b"IHDR":
         return None
     rong, cao = struct.unpack(">II", du_lieu[16:24])
     return int(rong), int(cao)
+
+
+def kich_thuoc_jpeg(du_lieu: bytes) -> Optional[tuple[int, int]]:
+    """(rộng, cao) từ khung SOF của JPEG. `None` nếu đọc không ra."""
+    if len(du_lieu) < 4 or du_lieu[:2] != b"\xff\xd8":
+        return None
+    i = 2
+    n = len(du_lieu)
+    while i + 9 < n:
+        if du_lieu[i] != 0xFF:
+            i += 1
+            continue
+        ma = du_lieu[i + 1]
+        if ma in (0xD8, 0xD9) or 0xD0 <= ma <= 0xD7 or ma == 0x01:
+            i += 2
+            continue
+        dai = int.from_bytes(du_lieu[i + 2:i + 4], "big")
+        # SOF0..SOF15, trừ DHT(C4), JPG(C8), DAC(CC) — chúng không mang kích thước.
+        if 0xC0 <= ma <= 0xCF and ma not in (0xC4, 0xC8, 0xCC):
+            cao = int.from_bytes(du_lieu[i + 5:i + 7], "big")
+            rong = int.from_bytes(du_lieu[i + 7:i + 9], "big")
+            return rong, cao
+        if dai <= 0:
+            return None
+        i += 2 + dai
+    return None
+
+
+def nhan_dang(du_lieu: bytes) -> tuple[str, Optional[tuple[int, int]]]:
+    """(đuôi tệp, (rộng, cao)) suy từ **byte thật**, không từ giả định.
+
+    ⛔ SỰ CỐ THẬT 22/08 23:30, và nó **suýt im lặng**: bản đầu của tệp này giả định
+    Gemini trả PNG, đặt đuôi `.png` cho mọi ảnh, rồi đọc kích thước bằng
+    `kich_thuoc_png`. Gemini trả **JPEG**. Kết quả: 30 tệp mang đuôi sai, và cái
+    chốt "ghi kích thước để bước sau biết mà chuẩn hoá" **không chạy một lần nào**
+    — nó chỉ in "không rõ kích thước" 30 lần.
+
+    Nó lộ ra vì dòng in có kích thước; nếu tôi chỉ in "xong" thì lô này đã trông
+    như thành công. Đó là lý do bước nào cũng nên in **thứ đo được**, không phải
+    thứ mình mong.
+
+    ⚠️ Và một hệ quả về **phương pháp**, không chỉ về tệp: Gemini trả JPEG (có
+    nén mất mát), phía ta trả PNG. Khi so mù, khác định dạng nén là một biến gây
+    nhiễu — ghi vào bản kê để bước dựng lô quyết định, đừng để nó chìm.
+    """
+    if du_lieu[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png", kich_thuoc_png(du_lieu)
+    if du_lieu[:2] == b"\xff\xd8":
+        return "jpg", kich_thuoc_jpeg(du_lieu)
+    if du_lieu[:4] == b"RIFF" and du_lieu[8:12] == b"WEBP":
+        return "webp", None
+    return "bin", None
+
+
+#: Đuôi tệp ảnh có thể gặp. Dùng cho phép kiểm "đã có chưa" — kiểm theo một đuôi
+#: duy nhất là lần chạy sau tưởng chưa có rồi **trả tiền lại một lần nữa**.
+DUOI_ANH = ("png", "jpg", "jpeg", "webp", "bin")
+
+
+def _da_co_anh(thu_muc: pathlib.Path, ma: str) -> bool:
+    return any((thu_muc / f"{ma}.{d}").exists() for d in DUOI_ANH)
 
 
 def doc_prompt(duong: pathlib.Path = BO_PROMPT) -> list[dict]:
@@ -151,7 +208,9 @@ def chay(ra: pathlib.Path, *, that: bool, prompts: list[dict],
     ra.mkdir(parents=True, exist_ok=True)
     can_lam, da_co = [], []
     for m in prompts:
-        (da_co if (ra / f"{m['id']}.png").exists() else can_lam).append(m)
+        # Kiểm theo **mọi đuôi**, không chỉ một: định dạng do nhà cung cấp quyết,
+        # và đoán sai đuôi thì lần chạy sau tưởng chưa có rồi trả tiền lại lần nữa.
+        (da_co if _da_co_anh(ra, m["id"]) else can_lam).append(m)
 
     print(f"bo prompt : {len(prompts)} muc")
     print(f"da co     : {len(da_co)}  (bo qua, khong goi lai)")
@@ -175,24 +234,31 @@ def chay(ra: pathlib.Path, *, that: bool, prompts: list[dict],
             print(f"  [{i}/{len(can_lam)}] {m['id']}  HONG: {e}")
             hong.append({"id": m["id"], "loi": str(e)[:200]})
             continue
-        tep = ra / f"{m['id']}.png"
+        duoi, kt = nhan_dang(anh)
+        tep = ra / f"{m['id']}.{duoi}"
         tep.write_bytes(anh)
-        kt = kich_thuoc_png(anh)
-        print(f"  [{i}/{len(can_lam)}] {m['id']}  {len(anh):>8,} B  "
-              f"{(f'{kt[0]}x{kt[1]}' if kt else 'khong ro kich thuoc')}")
+        print(f"  [{i}/{len(can_lam)}] {m['id']}  {len(anh):>8,} B  {duoi.upper():4} "
+              f"{(f'{kt[0]}x{kt[1]}' if kt else 'KHONG DOC DUOC KICH THUOC')}")
         ghi.append({"id": m["id"], "cat": m.get("cat", ""), "tep": tep.name,
-                    "bytes": len(anh),
+                    "dinh_dang": duoi, "bytes": len(anh),
                     "rong": kt[0] if kt else None, "cao": kt[1] if kt else None})
         time.sleep(0.5)
 
+    dinh_dang = sorted({a["dinh_dang"] for a in ghi})
+    kich_co = sorted({(a["rong"], a["cao"]) for a in ghi if a["rong"]})
     ban_ke = {
         "model": MODEL, "ti_le": TI_LE, "bo_prompt": BO_PROMPT.name,
         "so_thanh_cong": len(ghi), "so_hong": len(hong),
+        "dinh_dang": dinh_dang,
+        "kich_co": [f"{r}x{c}" for r, c in kich_co],
         "anh": ghi, "hong": hong,
         "_doc": ("Nua doi chung Gemini cho G6b. Cung van ban tieng Anh voi phia ta. "
-                 "KICH THUOC co the khac phia ta - phai chuan hoa truoc khi dung lo "
-                 "so mu, neu khong thi dang do 'anh nao to hon' chu khong phai "
-                 "'model nao dep hon'."),
+                 "HAI BIEN GAY NHIEU phai CHUAN HOA truoc khi dung lo so mu, neu "
+                 "khong thi dang do 'anh nao to hon / it artifact hon' chu khong "
+                 "phai 'model nao dep hon': (1) KICH THUOC - Gemini 1376x768, phia "
+                 "ta 2560x1440, lech 1,86 lan chieu dai VA lech VE PHIA CO LOI CHO "
+                 "TA; (2) DINH DANG - Gemini tra JPEG (nen mat mat), phia ta tra "
+                 "PNG. Chuan hoa = ha ca hai ve cung canh dai va cung dinh dang."),
     }
     (ra / "ban_ke.json").write_text(
         json.dumps(ban_ke, ensure_ascii=False, indent=2), encoding="utf-8")
