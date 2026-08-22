@@ -1930,3 +1930,38 @@ chỉ trong test.
 Không có nó thì `apps/anhnoibo/http_cong.py` không lấy được bearer token. Token nằm
 trên máy B ở `C:\ProgramData\LTTRender\gateway.env`. **Chủ dự án tự thêm** — token
 là bí mật, không đi qua phiên trò chuyện.
+
+
+---
+
+## D-041 — Bộ so mù **không mù**: ba dấu vết nguồn, tìm ra khi dựng bước chuẩn hoá
+
+**Date:** 2026-08-23 · `tools/chuan_hoa_anh.py` · `tests/test_259_chuan_hoa_anh.py` (18)
+
+Bước chuẩn hoá sinh ra chỉ để giải bài toán **công bằng** (Gemini 1376×768 so với
+2560×1440 của ta). Làm xong thì lộ ra một thứ nặng hơn: **lô so mù trước đó không
+thật sự mù.** Ba dấu vết, mỗi cái đủ để người chấm biết bên nào là bên nào:
+
+| # | Dấu vết | Vì sao chết người |
+|---|---|---|
+| ① | **Đuôi tệp** | `cham_mu.ghi_lo` chép nguyên si nên giữ đuôi gốc. Một bên toàn `.jpg`, bên kia toàn `.png` ⇒ **nhìn tên tệp là biết**, không cần mở ảnh |
+| ② | **Lệch 6 pixel chiều cao** | Gemini khai "16:9" nhưng trả tỉ lệ **1,7917**, ta **1,7778**. Khớp riêng cạnh dài cho ra 1376×768 so với 1376×**774** — nhỏ, nhưng **y hệt trên mọi cặp** |
+| ③ | **Phóng to một bên** | Bẫy tôi **tự sa vào rồi mới thấy**: cạnh dài chung đo *trước* khi cắt ⇒ Gemini bị cắt còn 1365 rồi phóng lên 1376. Phóng 0,8 % làm ảnh mềm đi, và **chỉ một bên** bị |
+
+⭐ Điểm chung của cả ba: **không cái nào nhìn thấy được từ ảnh**. Chúng nằm ở
+siêu dữ liệu và ở hình học, và một lô dính chúng vẫn **trông hoàn toàn bình thường**
+— rồi cho ra một con số nghe rất thuyết phục.
+
+**Đã sửa:** mọi ảnh ra **một khung duy nhất `1365×768`, một định dạng duy nhất PNG**.
+Cắt **giữa** (chủ thể luôn ở giữa), **không bao giờ phóng to**, **không xoay** ảnh
+dọc. Và `ghi_lo` nay **từ chối** lô có hai đuôi khác nhau — bánh cóc ở đầu kia,
+phòng khi ai đó quên chạy chuẩn hoá.
+
+⚠️ **Thứ vẫn không chữa được:** ảnh Gemini đã qua JPEG một lần **ở nguồn**. Hạ kích
+thước làm nhiễu nén mờ đi chứ không xoá. Giới hạn này nghiêng về phía **bất lợi cho
+Gemini** — nếu kết quả cuối sát nhau thì phải nói ra khi kết luận.
+
+⭐ **Và một sự thật về SẢN PHẨM, phải tách khỏi câu hỏi về MODEL:** thứ Gemini *giao
+cho khách* là 1376×768 JPEG, thứ ta giao là 2560×1440 PNG. Đó là lợi thế thật của
+ta — nhưng nó là lợi thế **sản phẩm**, không phải bằng chứng model vẽ đẹp hơn. Bản
+kê giữ cả số trước lẫn số sau để không ai lẫn hai câu.

@@ -132,7 +132,24 @@ def ghi_lo(caps: Sequence[Cap], thu_muc: Path, *, nhan_a: str, nhan_b: str) -> N
     ⛔ Tên tệp ảnh sau khi chép **không được mang bất kỳ dấu vết nào** của nguồn:
     không tên model, không profile, không độ phân giải. Một chữ "hidream" sót lại
     trong tên tệp là đủ để huỷ tính mù của cả lô.
+
+    ⛔ VÀ **ĐUÔI TỆP CŨNG LÀ MỘT DẤU VẾT.** Hàm này chép nguyên si nên đuôi gốc đi
+    theo. Nếu một bên toàn `.jpg` còn bên kia toàn `.png` thì người chấm chỉ cần
+    nhìn tên tệp là biết nguồn — không cần mở ảnh.
+
+    Đây không phải rủi ro lý thuyết: đo 22/08, Gemini trả **JPEG** còn phía ta trả
+    **PNG**. Nên hàm này nay **từ chối** lô có hai đuôi khác nhau, thay vì lặng lẽ
+    tạo ra một lô trông có vẻ mù. Chạy `tools/chuan_hoa_anh.py` trước — nó cũng
+    đồng thời xử luôn chuyện hai bên khác kích thước.
     """
+    duoi = {Path(getattr(c, phia)).suffix.lower()
+            for c in caps for phia in ("trai", "phai")}
+    if len(duoi) > 1:
+        raise ValueError(
+            "Lo co nhieu duoi tep khac nhau ({}): duoi tep la mot dau vet nguon, "
+            "nen lo nay KHONG mu. Chay tools/chuan_hoa_anh.py truoc.".format(
+                ", ".join(sorted(duoi))))
+
     thu_muc.mkdir(parents=True, exist_ok=True)
     (thu_muc / TEN_ANH).mkdir(exist_ok=True)
     phieu = []
