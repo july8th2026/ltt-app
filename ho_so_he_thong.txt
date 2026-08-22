@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b85d83d32d9d6ffffecf1ff6b3d1c63ac8f8cab25355388169fde3daa14adf31
-Nguồn đã quét : 1195 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:f82d8bf1f09e633c17be305101747a29142cd6ace276caa7fcd9de19d6f12831
+Nguồn đã quét : 1197 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1069,7 +1069,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (251 file pytest + 3 frontend)
+10. QUALITY GATES (252 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1258,6 +1258,7 @@ Test inventory:
 - tests/test_246_nexus_metrics.py
 - tests/test_247_cham_mu.py
 - tests/test_247_nexus_kich_hoat_tuc_thi.py
+- tests/test_248_do_bo_cuc.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -1347,8 +1348,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1195 file)
-Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:902, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1197 file)
+Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19, .mjs:3, .ps1:17, .py:904, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2243,7 +2244,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 
-[tests] (268)
+[tests] (269)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2443,6 +2444,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_246_nexus_metrics.py
 - tests/test_247_cham_mu.py
 - tests/test_247_nexus_kich_hoat_tuc_thi.py
+- tests/test_248_do_bo_cuc.py
 - tests/test_24_antispam_final.py
 - tests/test_25_antispam_integration.py
 - tests/test_26_phase5_sprints.py
@@ -2513,7 +2515,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (73)
+[tools] (74)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2553,6 +2555,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - tools/demo_v2/README.md
 - tools/demo_v2/VOICE_TEXT_FOR_ELEVENLABS.md
 - tools/demo_v2/scene_config.py
+- tools/do_bo_cuc.py
 - tools/doctor.py
 - tools/gate.py
 - tools/h26_queue_soak.py
@@ -2610,7 +2613,7 @@ Phân bố extension: .cfg:1, .css:7, .html:84, .ini:1, .js:9, .json:41, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1195 file; 10829488 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1197 file; 10870865 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2975,7 +2978,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=e6ecb03cbbd223ace6d7095b1198ba935d6798542afd224ee6626d2e15b5b2c7 BYTES=18156 LINES=310
+SHA256=4e2b39234c6e11a89d02b0d0191dd16a9346fdcfe233b263a6137331ebd8d35c BYTES=19669 LINES=326
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3253,8 +3256,24 @@ việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool**
 + adapter dùng chung `platform_core/image_gen/`. Kế hoạch 13 phase và cổng chấm
 điểm ≥ 9/10 ở `docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md`.
 
-Bốn thứ phải biết trước khi đụng vào:
+Sáu thứ phải biết trước khi đụng vào:
 
+- 🔴 **MÁY B TỰ KHỞI ĐỘNG LẠI ĐỂ CẬP NHẬT WINDOWS, và nó giết việc đang chạy.**
+  Active Hours là **07:00 → 01:00**; hết khung đó Windows được phép khởi động lại
+  bất cứ lúc nào. Đã xảy ra 22/08 lúc **01:29** (sự kiện `1074`, `MoUsoCoreWorker`,
+  *Service pack (Planned)*), cuốn theo một lô đang chạy dở ở ảnh 21/30.
+  ⇒ **Việc dài phải kết thúc trước 01:00**, hoặc tạm hoãn cập nhật trong lúc chạy.
+  *(Tôi đã chẩn đoán nhầm lần này thành "cạn VRAM" — xem D-025 để biết vì sao nhầm.)*
+- ⚠️ **VRAM ở cấu hình đích chạm 23,9 / 24,6 GB = 97,5 %** và **ở lì đó giữa các
+  job** (ComfyUI giữ model thường trú). Đây **không** phải nguyên nhân vụ 22/08,
+  nhưng nó là biên **quá mỏng** cho một máy để bàn dùng chung với dự án video.
+  Nên **khởi động ComfyUI với `--reserve-vram 3`**.
+- 🔴 **CHƯA ĐO THÌ KHÔNG CHẠY.** `render_gateway/ngan_sach.py` từ chối mọi cấu hình
+  vượt `TOKEN_DA_DO_TOI_DA` (4.096 token) **trước khi chạm GPU**. Chế độ `edit` và
+  `subject` ở `ref_mp=4.0` **đang bị chặn có chủ ý** (7.506 và 11.412 token). Muốn
+  mở thì **đo theo bậc, có người canh** (1 ảnh @ 0,4 MP → đo VRAM → tăng dần) rồi
+  ghi số vào `DECISIONS.md`. **Đừng hạ `ref_mp` cho lọt chốt** — đó chỉ là chọn một
+  con số khác cũng chưa ai đo.
 - **Máy B KHÔNG giữ bí mật nào của nền tảng.** Không mật khẩu CSDL, không khoá R2,
   không `LTT_TOKEN_ENCRYPTION_KEY`. Ảnh vào bằng presigned GET, ra bằng presigned PUT.
 - ⚠️ **ComfyUI trên máy B KHÔNG có xác thực.** Nó chỉ được nghe `127.0.0.1`, vĩnh
@@ -110664,7 +110683,7 @@ __all__ = ["DEVICE_KEY_PREFIX", "ENROLL_MAX_ATTEMPTS", "ENROLL_TTL_S",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/nexus/versions.py
-SHA256=f5c946dcbb1d14bb6bd6f9f45f51213fa8cf07adc306b3966dd3bb3a189fb4a5 BYTES=2857 LINES=71
+SHA256=70f90d34fb16b06b1a717deb6997417798713781ba551f646ede7f28b6b17169 BYTES=3616 LINES=79
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bản kê phiên bản LTT Nexus — nguồn CHUNG cho trang tải và client tự-update.
 
@@ -110683,6 +110702,11 @@ from pathlib import Path
 
 #: Bốn nền tảng mục tiêu (Windows/macOS/iOS/Android). `available=False` → trang
 #: hiện "đang chuẩn bị"; đặt `available` + `url` khi bản nền tảng đó sẵn sàng.
+#:
+#: `note` (tuỳ chọn) thay dòng "Sẵn sàng để tải". Cần cho iOS: file `.ipa` chưa
+#: ký **không cài được bằng Safari** — iOS chỉ cho cài thẳng từ web khi có chữ
+#: ký phân phối + manifest `itms-services`. Nói rõ ngay trên nút, đừng để người
+#: dùng tải về rồi mới phát hiện không mở được.
 DEFAULT: dict = {
     "version": "1.0.0",
     "notes": "Bản phát hành đầu tiên của LTT Nexus.",
@@ -110691,8 +110715,11 @@ DEFAULT: dict = {
                     "url": "", "sha256": "", "kind": "zip"},
         "macos": {"label": "macOS", "available": False, "url": "", "sha256": "",
                   "kind": "dmg"},
+        # `signed=True` chỉ đặt khi IPA đã ký Ad Hoc/Enterprise — lúc đó trang
+        # hiện nút "Cài lên iPhone" (itms-services) và Safari cài thẳng được.
+        # Ký bằng Apple ID miễn phí (hồ sơ development) KHÔNG tính: iOS từ chối.
         "ios": {"label": "iOS (iPhone/iPad)", "available": False, "url": "",
-                "kind": "appstore"},
+                "sha256": "", "kind": "ipa", "note": "", "signed": False},
         "android": {"label": "Android", "available": False, "url": "",
                     "sha256": "", "kind": "apk"},
     },
@@ -134338,7 +134365,7 @@ async def relay_check(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/nexus_download.py
-SHA256=11f91d97233ca70459164f911cc4a1f67dd1f13913452995786a0a97407e8fc9 BYTES=3482 LINES=82
+SHA256=7613363ddaa87b4314d49367188c78b2c96dd9f9e78ec782d85bdfda57c9a165 BYTES=6152 LINES=144
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Trang tải LTT Nexus + bản kê phiên bản (Model B, Q101: web = hướng dẫn/tải).
 
@@ -134355,9 +134382,10 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 
 from platform_core.nexus import versions
 from server.templating import templates
@@ -134375,6 +134403,11 @@ _CONTENT_TYPE = {
     ".exe": "application/vnd.microsoft.portable-executable",
     ".sha256": "text/plain; charset=utf-8",
 }
+
+
+#: Định danh gói iOS — phải TRÙNG với `CFBundleIdentifier` trong IPA, không thì
+#: iOS tải về rồi từ chối cài mà không nói vì sao.
+IOS_BUNDLE_ID = "com.lttstudios.nexus"
 
 
 def _dist_dir() -> Path:
@@ -134403,6 +134436,62 @@ async def version_json():
     """
     return JSONResponse(versions.manifest(),
                         headers={"Cache-Control": "public, max-age=300"})
+
+
+@router.get("/nexus/ios-manifest.plist")
+async def ios_manifest(request: Request):
+    """Manifest cho cài-thẳng-từ-Safari (`itms-services`).
+
+    iOS **không** cho cài file `.ipa` tải bằng Safari. Cách duy nhất cài từ web
+    là giao thức `itms-services://`: Safari đọc file plist này, lấy URL của IPA
+    trong đó rồi cài. Ba điều kiện của Apple, thiếu một là hỏng lặng lẽ:
+
+    1. IPA phải **đã ký** bằng hồ sơ **Ad Hoc hoặc Enterprise** — hồ sơ
+       *development* (Apple ID miễn phí) **không dùng được**;
+    2. plist và IPA phải qua **HTTPS** hợp lệ (ta có sẵn, qua Cloudflare);
+    3. link phải mở trong **Safari** — Chrome hay trình duyệt trong app im lặng
+       không làm gì.
+
+    404 khi manifest chưa khai `signed: true`: chưa có chữ ký phân phối thì đưa
+    ra link `itms-services` chỉ tạo một nút bấm vào không có chuyện gì xảy ra.
+    """
+    m = versions.manifest()
+    ios = m.get("platforms", {}).get("ios", {})
+    if not ios.get("signed") or not ios.get("url"):
+        raise HTTPException(status_code=404)
+
+    goc = str(request.base_url).rstrip("/")
+    url_ipa = ios["url"]
+    if url_ipa.startswith("/"):
+        url_ipa = goc + url_ipa
+    plist = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>items</key>
+  <array>
+    <dict>
+      <key>assets</key>
+      <array>
+        <dict>
+          <key>kind</key><string>software-package</string>
+          <key>url</key><string>{escape(url_ipa)}</string>
+        </dict>
+      </array>
+      <key>metadata</key>
+      <dict>
+        <key>bundle-identifier</key><string>{escape(str(ios.get("bundle_id") or IOS_BUNDLE_ID))}</string>
+        <key>bundle-version</key><string>{escape(str(m.get("version") or "1.0.0"))}</string>
+        <key>kind</key><string>software</string>
+        <key>title</key><string>{escape(str(ios.get("title") or "LTT Nexus"))}</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>
+"""
+    return Response(content=plist, media_type="application/xml",
+                    headers={"Cache-Control": "no-store"})
 
 
 @router.api_route("/nexus/dl/{filename}", methods=["GET", "HEAD"])
@@ -146264,7 +146353,7 @@ SHA256=1aaf5087e05565df707d992ee397242f11408c01244be6648c12d76dc4320b71 BYTES=36
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/nexus_download.html
-SHA256=07bc955ca6a2550e833ed206c66c0b00ed568f1e0bb98cdfe522af046adc829d BYTES=5407 LINES=85
+SHA256=942b8aca549d18ebf068e63ac08562c455b20a1b590372e6efd6c4113a257134 BYTES=6225 LINES=98
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base_public.html" %}
 {% block title %}Tải LTT Nexus{% endblock %}
@@ -146326,10 +146415,23 @@ SHA256=07bc955ca6a2550e833ed206c66c0b00ed568f1e0bb98cdfe522af046adc829d BYTES=54
         <h2>{{ p.label }}</h2>
       </div>
       {% if p.available and p.url %}
-        <div class="sub">Sẵn sàng để tải</div>
-        <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
-          {% if p.kind == 'appstore' %}Mở App Store{% else %}Tải xuống{% endif %}
-        </a>
+        {% if p.note %}
+          <div class="sub">{{ p.note }}</div>
+        {% else %}
+          <div class="sub">Sẵn sàng để tải</div>
+        {% endif %}
+        {% if p.key == 'ios' and p.signed %}
+          {# Ky Ad Hoc/Enterprise roi thi Safari cai thang duoc qua itms-services.
+             Chua ky thi KHONG hien nut nay: bam vao se khong co gi xay ra. #}
+          <a class="nx-btn" href="itms-services://?action=download-manifest&amp;url={{ request.base_url|string|trim('/') }}/nexus/ios-manifest.plist">
+            {{ _("Cài lên iPhone") }}
+          </a>
+          <div class="nx-sha" style="color:#e2ae55">{{ _("Mở trang này bằng Safari — trình duyệt khác sẽ không cài được.") }}</div>
+        {% else %}
+          <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
+            {% if p.kind == 'appstore' %}Mở App Store{% else %}Tải xuống{% endif %}
+          </a>
+        {% endif %}
         {% if p.sha256 %}<div class="nx-sha">SHA-256: {{ p.sha256 }}</div>{% endif %}
       {% else %}
         <div class="sub">Đang chuẩn bị — sẽ có sớm</div>
@@ -198480,7 +198582,7 @@ def test_may_da_thu_hoi_thi_relay_TU_CHOI(app_bat, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_244_nexus_download.py
-SHA256=f65da8d4a0e5aa8a970dbaf31071a04a1e7aad73f0694a621aa537fcb4ba495e BYTES=4792 LINES=127
+SHA256=27e0757be9ac6a8e4b87543354044c72ee6fc2b29c4030e1592b4b04d35d714b BYTES=7391 LINES=184
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Trang tải LTT Nexus + version.json (Model B, Q101: web = hướng dẫn/tải).
 
@@ -198609,6 +198711,63 @@ def test_dl_chan_path_traversal(app_bat, bad):
     r = client.get(f"/nexus/dl/{bad}")
     assert r.status_code == 404
     assert "top-secret" not in r.text
+
+
+# ── Cài thẳng từ Safari (itms-services) — chỉ khi IPA đã ký ──────────────────
+
+def test_manifest_ios_404_khi_chua_ky(app_bat):
+    """Chưa có chữ ký phân phối thì KHÔNG được đưa ra link itms-services.
+
+    Bấm vào một link như vậy sẽ không có chuyện gì xảy ra — người dùng tưởng
+    app hỏng. Thà không hiện nút còn hơn hiện một nút chết.
+    """
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "platforms": {"ios": {"available": True, "url": "/nexus/dl/a.ipa",
+                              "signed": False}},
+    }), encoding="utf-8")
+    assert client.get("/nexus/ios-manifest.plist").status_code == 404
+
+
+def test_manifest_ios_khi_da_ky(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "2.0.0",
+        "platforms": {"ios": {"available": True, "signed": True,
+                              "url": "/nexus/dl/LTTNexus-2.0.0-ios.ipa"}},
+    }), encoding="utf-8")
+    r = client.get("/nexus/ios-manifest.plist")
+    assert r.status_code == 200, r.text
+    body = r.text
+    # iOS doi URL TUYET DOI + https, khong nhan duong dan tuong doi
+    assert "https://testserver/nexus/dl/LTTNexus-2.0.0-ios.ipa" in body
+    assert "com.lttstudios.nexus" in body       # phai trung CFBundleIdentifier
+    assert "<key>kind</key><string>software</string>" in body
+    assert "2.0.0" in body
+    assert r.headers["content-type"].startswith("application/xml")
+
+
+def test_trang_hien_nut_cai_iphone_khi_da_ky(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "platforms": {"ios": {"label": "iOS", "available": True, "signed": True,
+                              "url": "/nexus/dl/x.ipa"}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert "itms-services://" in html
+    assert "Cài lên iPhone" in html
+    assert "Safari" in html                    # nhac dung Safari
+
+
+def test_trang_KHONG_hien_nut_cai_khi_chua_ky(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "platforms": {"ios": {"label": "iOS", "available": True, "signed": False,
+                              "url": "/nexus/dl/x.ipa"}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert "itms-services://" not in html
+    assert "Tải xuống" in html                 # van tai file ve duoc
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -198823,7 +198982,7 @@ def test_khong_thu_hoi_duoc_may_nguoi_khac(app_bat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_245_render_gateway.py
-SHA256=4875809dce25f423fc8c4bc905f4cfec50589c253b88983c4b25de164b7fd694 BYTES=42627 LINES=958
+SHA256=8c07f89d582922771f888adae8aa0f37d2b756c3f3572e9d1b839231fdc5cf25 BYTES=53462 LINES=1167
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_245 — cổng render (H37/G6).
@@ -198838,6 +198997,7 @@ from __future__ import annotations
 
 import json
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -198845,11 +199005,12 @@ from render_gateway import busy as B
 from render_gateway import catalog as C
 from render_gateway import comfy as CF
 from render_gateway import jobs as J
+from render_gateway import ngan_sach as NS
 from render_gateway import storage_io as S
 from render_gateway import workflows as W
 from render_gateway.config import Config
-from render_gateway.runner import (E_COMFY_REJECT, E_OOM, E_REF, E_TIMEOUT,
-                                   E_WORKFLOW, RenderRequest, Runner)
+from render_gateway.runner import (E_COMFY_REJECT, E_NGOAI_VUNG, E_OOM, E_REF,
+                                   E_TIMEOUT, E_WORKFLOW, RenderRequest, Runner)
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 
@@ -198866,6 +199027,7 @@ class FakeTransport:
             "CheckpointLoaderSimple": {}, "CLIPTextEncode": {},
             "EmptyHiDreamO1LatentImage": {}, "KSampler": {},
             "VAEDecode": {}, "SaveImage": {}, "LoadImage": {},
+            "ImageScaleToTotalPixels": {}, "HiDreamO1ReferenceImages": {},
         }
         self.stats = {"system": {"ram_total": 206_000_000_000,
                                  "ram_free": 120_000_000_000},
@@ -199057,14 +199219,16 @@ def test_queue_prompt_ids_doc_dung_vi_tri_1_cua_mang():
 
 
 # ───────────────────────── busy / eta ───────────────────────────────────────
-def _watcher(t, clock, *, vram_mb=0, **kw):
-    """BusyWatcher với nguồn VRAM giả.
+def _watcher(t, clock, *, vram_mb=0, so_py=1, **kw):
+    """BusyWatcher với nguồn GPU giả.
 
-    ⛔ Phải tiêm `doc_vram_mb`: mặc định của nó gọi `nvidia-smi` THẬT, và máy A có
-    nvidia-smi — test sẽ đọc GPU của máy đang chạy test, tức là không tất định.
+    ⛔ Phải tiêm cả hai: mặc định chúng gọi `nvidia-smi` THẬT, và máy A có
+    nvidia-smi — không tiêm thì test đọc GPU của máy đang chạy test.
+    `so_py=1` = chỉ có ComfyUI trên card, không ai khác.
     """
     return B.BusyWatcher(comfy=CF.ComfyClient(t), now=clock,
-                         doc_vram_mb=lambda: vram_mb, **kw)
+                         doc_vram_mb=lambda: vram_mb,
+                         dem_python_gpu=lambda: so_py, **kw)
 
 def test_viec_la_trong_hang_doi_lam_may_ban(clock):
     t = FakeTransport()
@@ -199148,7 +199312,7 @@ def test_comfy_chet_thi_coi_la_ban_chu_khong_nhan_viec(clock):
             return 599, b"connection refused"
 
     w = B.BusyWatcher(comfy=CF.ComfyClient(Chet()), now=clock,
-                      doc_vram_mb=lambda: 0)
+                      doc_vram_mb=lambda: 0, dem_python_gpu=lambda: 1)
     assert w.observe(set()).busy
 
 
@@ -199360,7 +199524,7 @@ def _app(t: FakeTransport, f: FakeFetcher, tmp_path, clock, token=""):
     from render_gateway.api import create_app
     cfg = Config(comfy_url="http://x", comfy_input_dir=tmp_path, host="127.0.0.1",
                  port=8199, token=token, max_concurrent=1, job_timeout_s=600.0,
-                 vram_ban_mb=4096, ram_trong_toi_thieu_gb=48.0, work_dir=tmp_path)
+                 ram_trong_toi_thieu_gb=48.0, work_dir=tmp_path)
     # Tiêm nguồn VRAM giả: mặc định gọi `nvidia-smi` THẬT, và máy chạy test có
     # GPU — không tiêm thì test phụ thuộc vào việc máy đang bận hay rảnh.
     app = create_app(cfg, CF.ComfyClient(t), now=clock,
@@ -199497,9 +199661,40 @@ _DEPLOY = __import__("pathlib").Path(__file__).resolve().parents[1] / "render_ga
 _PS1 = sorted(_DEPLOY.glob("*.ps1"))
 
 
-def test_co_du_bon_script_deploy():
+def test_thu_muc_deploy_dung_bo_script_da_biet():
+    """Danh sách ĐÓNG, không phải danh sách tối thiểu. Thêm một script vào
+    `deploy/` mà không khai ở đây là gate đỏ — vì mỗi script trong đó đều chạm vào
+    máy B, và một script lạ lọt vào là thứ không ai rà lại."""
     assert {p.name for p in _PS1} == {
-        "deploy.ps1", "cai_dat_dich_vu.ps1", "kiem_tra.ps1", "dung_het.ps1"}
+        "deploy.ps1", "cai_dat_dich_vu.ps1", "kiem_tra.ps1", "dung_het.ps1",
+        "chuoi_h37.ps1", "thang_do_tham_chieu.ps1", "start_comfy_h37.ps1"}
+
+
+def test_chuoi_viec_phai_cho_HAI_dieu_kien_truoc_khi_chay():
+    """⛔ Hàng đợi RỖNG không có nghĩa là lô trước đã xong: giữa hai ảnh có một khe
+    vài giây `queue_remaining = 0` trong lúc `chay_baseline` tải ảnh về. Lấy mẫu
+    trúng khe đó là chuỗi chen vào chạy SONG SONG — trên card đã ở 97 % VRAM thì đó
+    là đường thẳng tới OOM."""
+    text = (_DEPLOY / "chuoi_h37.ps1").read_text(encoding="ascii").lower()
+    assert "queue_remaining" in text
+    assert "chay_baseline" in text, "phai kiem ca tien trinh, khong chi hang doi"
+
+
+def test_chuoi_viec_tu_ghi_log_khong_nho_vo_chuyen_huong():
+    """Chuỗi được phóng bằng `Win32_Process.Create` để sống sót khi phiên SSH đóng.
+    `CreateProcess` KHÔNG có shell, nên `*> tep.log` trên dòng lệnh chỉ là một tham
+    số văn bản — không ai chuyển hướng gì cả. Đã dính thật 22/08: vỏ chạy tốt, log
+    không bao giờ xuất hiện."""
+    text = (_DEPLOY / "chuoi_h37.ps1").read_text(encoding="ascii")
+    assert "Start-Transcript" in text
+
+
+def test_cong_tat_khan_cap_giet_ca_VO_CHUOI():
+    """Giết lượt đang chạy mà để vỏ chuỗi sống thì vỏ phóng ngay lượt kế tiếp, và
+    'dừng hết' hoá ra chỉ là 'chuyển việc'."""
+    text = (_DEPLOY / "dung_het.ps1").read_text(encoding="ascii").lower()
+    assert "chuoi_h37" in text
+    assert "powershell.exe" in text
 
 
 def test_cong_tat_khan_cap_KHONG_dung_ComfyUI():
@@ -199598,27 +199793,76 @@ def test_kiem_tra_doc_token_bang_split_khong_dem_ky_tu():
 #    `E:\AI\tools\vlm_worker.py` và nhiều script kiểu đó) sẽ đi lọt.
 
 def test_vram_doc_tu_nvidia_smi_chu_khong_tu_system_stats(clock):
-    """ComfyUI báo card rảnh trắng, nhưng nvidia-smi thấy 20 GB đang bị giữ.
-    Cổng phải tin nvidia-smi và báo BẬN."""
+    """Con số VRAM báo ra phải là của nvidia-smi, KHÔNG phải của `/system_stats`.
+
+    Ở đây ComfyUI khai card rảnh trắng (25 GB trống) còn nvidia-smi thấy 20 GB đang
+    bị giữ. `/health` phải hiện 20 GB — đó là sự thật mà người vận hành cần thấy."""
     t = FakeTransport()
     t.stats["devices"][0]["vram_free"] = 25_000_000_000     # /system_stats: rảnh
     w = _watcher(t, clock, vram_mb=20_000)                  # nvidia-smi: 20 GB dang dung
-    st = w.observe(cua_ta=set())
-    assert st.busy and "VRAM" in st.reason
-    assert st.vram_used_mb == 20_000
+    assert w.observe(cua_ta=set()).vram_used_mb == 20_000
 
 
-def test_vram_dung_thap_thi_khong_coi_la_ban(clock):
+# ───────── VRAM cao KHÔNG còn là dấu hiệu bận (đo trên máy B 2026-08-22) ─────
+#
+# ⛔ SỰ CỐ THẬT THỨ HAI, cùng một chốt. Lô 30 ảnh liên tiếp cho thấy VRAM đỉnh
+#    **23.967 / 24.576 MB (97,5 %)** và **ở lì đó giữa các job** vì ComfyUI giữ
+#    model thường trú; cùng cấu hình khi chỉ chạy 3 ảnh thì đỉnh có 16,8 GB.
+#    ⇒ ngưỡng "VRAM > 4 GB ⇒ có kẻ khác" sẽ báo bận VĨNH VIỄN sau lô đầu tiên.
+#    Cái phân biệt được là SỐ TIẾN TRÌNH python đang tính trên card.
+
+def test_vram_gan_day_nhung_chi_co_comfyui_thi_KHONG_ban(clock):
+    """Đúng cảnh sau một lô ảnh: VRAM 23,9 GB nhưng chỉ ComfyUI trên card."""
     t = FakeTransport()
-    w = _watcher(t, clock, vram_mb=600)      # nen desktop cua Windows, khong phai job
+    w = _watcher(t, clock, vram_mb=23_900, so_py=1)
+    st = w.observe(cua_ta=set())
+    assert not st.busy
+    assert st.vram_used_mb == 23_900          # vẫn báo ra, chỉ không kết luận bận
+
+
+def test_hai_tien_trinh_python_tren_gpu_thi_ban(clock):
+    """Việc chạy NGOÀI ComfyUI (script torch của dự án video) — hàng đợi không
+    thấy, VRAM không phân biệt được, nhưng danh sách tiến trình thì thấy."""
+    t = FakeTransport()
+    w = _watcher(t, clock, vram_mb=600, so_py=2)
+    st = w.observe(cua_ta=set())
+    assert st.busy and "tien trinh khac" in st.reason
+
+
+def test_khong_dem_duoc_tien_trinh_thi_khong_doan_bua(clock):
+    t = FakeTransport()
+    w = _watcher(t, clock, vram_mb=23_900, so_py=None)
     assert not w.observe(cua_ta=set()).busy
+
+
+def test_dem_python_gpu_that_doc_dung_process_name(monkeypatch):
+    """Đo thật trên máy B: 26 PID compute, `used_memory` là `[N/A]` cho MỌI PID
+    (WDDM), nhưng `process_name` thì có. Đúng 1 dòng python = ComfyUI."""
+    ra = ("6736, python.exe\n"
+          "1234, dwm.exe\n"
+          "5678, chrome.exe\n")
+    monkeypatch.setattr(B.shutil, "which", lambda _: "nvidia-smi")
+    monkeypatch.setattr(B.subprocess, "run",
+                        lambda *a, **k: SimpleNamespace(returncode=0, stdout=ra, stderr=""))
+    assert B.so_python_tinh_tren_gpu() == 1
+
+    ra2 = ra + "9012, python.exe\n"
+    monkeypatch.setattr(B.subprocess, "run",
+                        lambda *a, **k: SimpleNamespace(returncode=0, stdout=ra2, stderr=""))
+    assert B.so_python_tinh_tren_gpu() == 2
+
+
+def test_dem_python_gpu_may_khong_co_smi_thi_tra_None(monkeypatch):
+    monkeypatch.setattr(B.shutil, "which", lambda _: None)
+    assert B.so_python_tinh_tren_gpu() is None
 
 
 def test_khong_hoi_duoc_nvidia_smi_thi_khong_ne(clock):
     """Không đọc được VRAM là chuyện có thể xảy ra (driver treo). Nó không được
     làm cổng render chết, cũng không được biến thành 'bận' giả."""
     t = FakeTransport()
-    w = B.BusyWatcher(comfy=CF.ComfyClient(t), now=clock, doc_vram_mb=lambda: None)
+    w = B.BusyWatcher(comfy=CF.ComfyClient(t), now=clock,
+                      doc_vram_mb=lambda: None, dem_python_gpu=lambda: None)
     st = w.observe(cua_ta=set())
     assert not st.busy and st.vram_used_mb == 0
 
@@ -199783,6 +200027,130 @@ def test_prefix_khong_dung_thu_muc_output_cua_du_an_video():
     (TEST1..TEST5*.mp4). Dùng chung là trộn ảnh của ta vào kết quả của họ."""
     prefix = C.nap_catalog()["hidream-o1"].defaults["prefix"]
     assert prefix.startswith("ltt_h37/"), f"prefix {prefix!r} se ghi vao thu muc cua ho"
+
+
+# ═══════════ ngân sách token: chốt sinh ra từ vụ máy B sập (D-024) ═══════════
+#
+# ⛔ SỰ CỐ THẬT 22/08/2026. Cấu hình đang chạy chiếm 23,9/24,6 GB VRAM (97,5 %) và
+#    Ở LÌ mức đó giữa các job. Lượt kế trong hàng là `subject` với HAI ảnh tham
+#    chiếu 4 MP — một cấu hình CHƯA TỪNG ĐƯỢC ĐO. Máy khởi động lại đột ngột, không
+#    một dòng OOM nào trong log (cạn VRAM ở tầng driver, không phải tầng torch).
+#
+#    Nguyên tắc rút ra: **chưa đo thì không chạy.**
+
+def test_khung_dich_2560x1440_van_qua():
+    """Cấu hình đích phải qua — chốt này không được chặn việc bình thường."""
+    u = NS.kiem(2560, 1440)
+    assert u.tong == 3600 and u.token_tham_chieu == 0
+
+
+def test_bucket_lon_nhat_da_do_van_qua():
+    assert NS.kiem(2048, 2048).tong == 4096
+
+
+def test_HAI_anh_tham_chieu_4MP_BI_CHAN():
+    """Đúng cấu hình đã xếp hàng chờ chạy khi máy sập. Nó phải bị chặn."""
+    with pytest.raises(NS.NgoaiVungDaDo) as e:
+        NS.kiem(2560, 1440, ref_mp=4.0, so_ref=2)
+    t = str(e.value)
+    assert "11412" in t and "4096" in t and "D-024" in t, (
+        "loi phai noi ra con so that va loi di tiep")
+
+
+def test_MOT_anh_tham_chieu_4MP_CUNG_BI_CHAN():
+    """Chế độ `edit` một ảnh cũng chưa ai đo. Chưa đo thì chưa chạy."""
+    with pytest.raises(NS.NgoaiVungDaDo):
+        NS.kiem(2560, 1440, ref_mp=4.0, so_ref=1)
+
+
+def test_anh_tham_chieu_NHO_thi_qua_duoc():
+    """Đường đi tiếp phải TỒN TẠI: bậc đầu tiên (1 ảnh @ 0,4 MP) phải lọt, không thì
+    chốt này biến thành 'không bao giờ đo được' và người sau sẽ gỡ nó ra."""
+    u = NS.kiem(2560, 1440, ref_mp=0.4, so_ref=1)
+    assert 0 < u.token_tham_chieu < 500
+
+
+def test_token_lam_tron_LEN_khong_lam_tron_xuong():
+    """Một hàng ô vá lẻ vẫn tốn cả hàng. Làm tròn xuống là ước lượng THẤP hơn thật
+    — đúng hướng nguy hiểm."""
+    assert NS.token_khung(33, 33) == 4          # 2x2 chu khong phai 1
+
+
+def test_runner_TU_CHOI_truoc_khi_cham_GPU(tmp_path):
+    """Chốt phải chặn TRƯỚC khi có prompt nào được xếp hàng — nếu nó chỉ chặn sau
+    thì GPU đã bị tiêu rồi."""
+    t = FakeTransport()
+    store = J.JobStore(now=time.monotonic)
+    r = Runner(CF.ComfyClient(t), store, FakeFetcher(), input_dir=tmp_path,
+               sleep=lambda _: None)
+    spec = C.nap_catalog()["hidream-o1"]
+    gia_tri = dict(spec.defaults)
+    gia_tri.update({"prompt": "x", "negative": "", "ref1": "a.png"})
+    job = r.run(RenderRequest(job_id="j-qua-to", template=spec.modes["edit"].template,
+                              values=gia_tri, ref_slots=["ref1"]))
+    assert job.status == J.FAILED and job.error_code == E_NGOAI_VUNG
+    assert not [c for c in t.calls if c[1] == "/prompt" and c[0] == "POST"], \
+        "KHONG duoc gui prompt nao khi cau hinh ngoai vung da do"
+
+
+def test_tran_la_so_DA_DO_chu_khong_phai_so_tinh_ra():
+    """Nếu ai đó nâng trần thì phải kèm số đo. Test này neo giá trị hiện tại để
+    việc nâng nó là một thay đổi CÓ CHỦ Ý, hiện ra trong diff."""
+    assert NS.TOKEN_DA_DO_TOI_DA == 4096
+
+
+def test_MOI_duong_goi_ComfyUI_deu_co_chot_ngan_sach():
+    """⛔ Bản đầu của chốt chỉ nằm trong `Runner`, và tôi đã viết trong bình luận
+    rằng "mọi đường vào job đều đi qua runner". **Sai.** `chay_baseline.py` — đúng
+    cái đường đã làm sập máy B hôm 22/08 — gọi thẳng `ComfyClient.queue_prompt`.
+
+    Test này đếm các tệp gọi `queue_prompt` và đòi mỗi tệp đó phải gọi
+    `ngan_sach`. Thêm một đường vào ComfyUI mới mà quên chốt thì gate đỏ ngay,
+    thay vì lộ ra bằng một lần máy sập nữa.
+    """
+    goc = _DEPLOY.parent.parent          # thu muc repo
+    goi_thang, co_chot = [], []
+    for p in sorted(goc.rglob("*.py")):
+        if "__pycache__" in p.parts or p.name.startswith("test_"):
+            continue
+        try:
+            t = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if ".queue_prompt(" not in t:
+            continue
+        goi_thang.append(p.name)
+        if "ngan_sach" in t or "NS.kiem" in t:
+            co_chot.append(p.name)
+
+    assert goi_thang, "khong tim thay duong nao goi queue_prompt - test nay hong roi"
+    thieu = sorted(set(goi_thang) - set(co_chot))
+    assert not thieu, (
+        f"nhung tep nay xep hang prompt ma KHONG qua ngan_sach: {thieu}. "
+        "Moi duong vao ComfyUI phai co chot - xem D-024.")
+
+
+def test_thang_do_CHAY_O_TIEN_CANH_va_dung_khi_cham_nguong():
+    """⛔ Thang đo là thứ chạy Ở VÙNG CHƯA AI ĐO. Nó là script duy nhất được phép
+    vượt trần — nên nó phải là script AN TOÀN NHẤT, không phải script tự do nhất.
+
+    Ba điều bắt buộc, mỗi điều đến từ một sai lầm đã xảy ra thật:
+      · KHÔNG `Win32_Process.Create` — lệnh tách khỏi phiên là thứ đã lấy mất quyền
+        dừng của chủ dự án (G3, C4 = 7).
+      · Có ngưỡng VRAM và **thoát** khi chạm — không "chạy tiếp xem sao" (D-024).
+      · Phải gỡ `--tran-token` ra tường minh cho từng bậc.
+    """
+    duong = _DEPLOY / "thang_do_tham_chieu.ps1"
+    # ⚠️ Quét MÃ, không quét chú thích — chính tệp này có câu cảnh báo "Khong
+    #    Win32_Process.Create", và lần chạy đầu test đã báo đỏ vì đúng câu đó.
+    #    Cùng cái bẫy đã sửa một lần ở `_chi_ma`; ở đây dùng lại nó.
+    ma = _chi_ma(duong)
+    assert "win32_process" not in ma, "thang do KHONG duoc tach khoi phien"
+    assert "start-process" not in ma
+    assert "--tran-token" in ma, "moi bac phai go tran ra tuong minh"
+    assert "vramdungmb" in ma and "exit 0" in ma, "phai co nguong va loi thoat"
+    # Bậc đầu phải nhỏ. Một "thang" bắt đầu từ 4 MP thì không phải thang.
+    assert "0.4" in ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -200018,7 +200386,7 @@ def test_nguong_canh_bao_relay_da_khai(app_bat):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_247_cham_mu.py
-SHA256=c0d5819688885e516d505efe9ea93766dfab6b8586dacad12ea8897071202eb6 BYTES=8220 LINES=201
+SHA256=738a0191d779010f0f5b93e0236dcbd4824ebb7fa5659ccb28bae6715faf14ef BYTES=10960 LINES=264
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_247 — bộ so mù của H37 (`tools/cham_mu.py`).
@@ -200034,8 +200402,9 @@ import random
 
 import pytest
 
-from tools.cham_mu import (SO_CAP_TOI_THIEU, TEN_ANH, TEN_KHOA, TEN_PHIEU, Cap,
-                           ghi_lo, tao_lo, tinh, wilson)
+from tools.cham_mu import (SO_CAP_TOI_THIEU, TEN_ANH, TEN_KHOA, TEN_MAN,
+                           TEN_PHIEU, Cap, ghi_lo, ghi_man, main, tao_lo, tinh,
+                           wilson)
 
 
 def _caps(n_that: int, n_bay: int = 0) -> list[Cap]:
@@ -200221,6 +200590,68 @@ def test_khong_co_cap_bay_thi_van_tinh_duoc_nhung_khong_co_san_nhieu():
 def test_so_cap_toi_thieu_dung_bang_50():
     """Con số này là hợp đồng với §1.5 — đổi nó phải đổi cả tài liệu."""
     assert SO_CAP_TOI_THIEU == 50
+
+
+# ─────────────── màn chấm: nó không được làm hỏng tính mù ───────────────────
+def _lo_that(tmp_path, n=3):
+    """Lô thật có ảnh trên đĩa, để `ghi_lo` chép được."""
+    a, b = tmp_path / "A", tmp_path / "B"
+    for d in (a, b):
+        d.mkdir()
+        for i in range(n):
+            (d / f"p{i}.png").write_bytes(b"\x89PNG" + bytes([i]))
+    caps = tao_lo(_ds(a), _ds(b), ty_le_bay=0.5, rng=random.Random(7))
+    lo = tmp_path / "lo"
+    ghi_lo(caps, lo, nhan_a="s30", nhan_b="s90")
+    ghi_man(caps, lo)
+    return lo, caps
+
+
+def _ds(d):
+    return [str(p) for p in sorted(d.iterdir())]
+
+
+def test_man_cham_KHONG_lo_nguon_trong_ma_nguon_trang(tmp_path):
+    """Cạm bẫy chí mạng: nhúng cả `Cap` vào HTML thì "Xem mã nguồn trang" hiện
+    thẳng `nguon_trai: "A"`. Người chấm không cần cố ý gian lận — chỉ cần bấm
+    nhầm Ctrl+U một lần là cả lô mất giá trị."""
+    lo, caps = _lo_that(tmp_path)
+    html = (lo / TEN_MAN).read_text(encoding="utf-8")
+    assert "nguon_trai" not in html and "nguon_phai" not in html
+    assert "la_bay" not in html
+    # Nhãn nguồn cũng không được có mặt.
+    assert "s30" not in html and "s90" not in html
+    # Nhưng mã cặp và tên tệp đã mã hoá thì phải có, không thì màn trống trơn.
+    for c in caps:
+        assert c.ma in html and c.trai in html and c.phai in html
+
+
+def test_man_cham_nhung_du_lieu_chu_khong_fetch(tmp_path):
+    """Màn chạy bằng `file://`. `fetch()` một tệp cạnh nó sẽ bị CORS chặn và màn
+    sẽ trắng — lỗi chỉ lộ ra trên máy người chấm, không lộ ra ở test nào khác."""
+    lo, _ = _lo_that(tmp_path)
+    html = (lo / TEN_MAN).read_text(encoding="utf-8")
+    assert "fetch(" not in html
+    assert "const CAP = [" in html
+
+
+def test_man_cham_khong_con_the_thay_the_nao_sot_lai(tmp_path):
+    lo, _ = _lo_that(tmp_path)
+    html = (lo / TEN_MAN).read_text(encoding="utf-8")
+    assert "__CAP__" not in html and "__LO__" not in html
+
+
+def test_lenh_tao_sinh_luon_man_cham(tmp_path):
+    """`tao` phải sinh màn. Nếu phải nhớ chạy thêm một lệnh nữa thì sẽ có lần quên,
+    và lần đó người chấm quay về mở File Explorer — tức là hết mù."""
+    a, b = tmp_path / "A", tmp_path / "B"
+    for d in (a, b):
+        d.mkdir()
+        for i in range(3):
+            (d / f"p{i}.png").write_bytes(b"\x89PNG" + bytes([i]))
+    lo = tmp_path / "lo"
+    assert main(["tao", "--a", str(a), "--b", str(b), "--ra", str(lo)]) == 0
+    assert (lo / TEN_MAN).exists()
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -200457,6 +200888,116 @@ def test_mien_phi_thi_khong_dung_toi_credit(app_bat, monkeypatch):
         try: next(gen)
         except StopIteration: pass
     assert _status(app_bat, did, priv).json()["paid"] is True
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_248_do_bo_cuc.py
+SHA256=fc36dad919502120a325b192fc52547052e1b781c004f3a93591e7bc136031f9 BYTES=4308 LINES=104
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_248 — thước đo giữ bố cục (`tools/do_bo_cuc.py`).
+
+Thước này sẽ được dùng để trả lời **một câu hỏi có hậu quả**: chế độ `structure`
+có bán được không (D-017). Nên bản thân nó phải đúng trước, và "đúng" ở đây nghĩa
+là: nó phải **phân biệt được** hai ảnh cùng bố cục với hai ảnh khác bố cục — và
+phải **im lặng** khi không đủ căn cứ.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pytest
+from PIL import Image, ImageDraw
+
+from tools.do_bo_cuc import do_mot, do_san, phan_dinh, tuong_quan
+
+
+def _ve(duong, hinh, *, mau_nen=(30, 30, 30), mau_hinh=(230, 230, 230)):
+    im = Image.new("RGB", (640, 360), mau_nen)
+    g = ImageDraw.Draw(im)
+    for h in hinh:
+        g.rectangle(h, fill=mau_hinh)
+    im.save(duong)
+    return duong
+
+
+# Bố cục A: một khối trái, một khối phải trên.  Bố cục B: đảo hẳn vị trí.
+BO_CUC_A = [(40, 40, 240, 300), (380, 30, 600, 150)]
+BO_CUC_B = [(400, 60, 600, 320), (40, 200, 260, 330)]
+
+
+def test_cung_bo_cuc_khac_mau_van_tuong_quan_cao(tmp_path):
+    """Đây chính là ca của chế độ `structure`: lệnh sửa ĐƯỢC PHÉP đổi màu, chất
+    liệu, phong cách. Thước phải bỏ qua những thứ đó và chỉ nhìn bố cục."""
+    a = _ve(tmp_path / "a.png", BO_CUC_A)
+    b = _ve(tmp_path / "b.png", BO_CUC_A, mau_nen=(200, 40, 40), mau_hinh=(10, 60, 120))
+    assert do_mot(a, b) > 0.9
+
+
+def test_khac_bo_cuc_thi_tuong_quan_thap(tmp_path):
+    a = _ve(tmp_path / "a.png", BO_CUC_A)
+    b = _ve(tmp_path / "b.png", BO_CUC_B)
+    assert do_mot(a, b) < 0.3
+
+
+def test_anh_phang_li_khong_lam_no_chia_cho_khong(tmp_path):
+    """Ảnh một màu không có cạnh nào. Không được ném ZeroDivisionError hay trả NaN
+    — một NaN lọt vào bảng kết quả sẽ âm thầm phá mọi phép so sau đó."""
+    a = _ve(tmp_path / "a.png", [])
+    b = _ve(tmp_path / "b.png", BO_CUC_A)
+    d = do_mot(a, b)
+    assert d == 0.0 and not np.isnan(d)
+
+
+def test_tuong_quan_voi_chinh_no_la_mot(tmp_path):
+    a = _ve(tmp_path / "a.png", BO_CUC_A)
+    assert do_mot(a, a) == pytest.approx(1.0, abs=1e-9)
+
+
+# ───────────────── sàn nhiễu: phần quan trọng hơn con số ────────────────────
+def test_khong_co_san_thi_KHONG_duoc_ket_luan():
+    """Luật cốt lõi: một con số tương quan đứng một mình không nói lên gì. Thước
+    phải từ chối phán, chứ không phán bừa rồi để người đọc tự đoán."""
+    ket, chi_tiet = phan_dinh(0.95, [])
+    assert ket == "khong co san de so"
+    assert "vo nghia" in chi_tiet["canh_bao"]
+
+
+def test_vuot_ca_san_cao_nhat_moi_goi_la_giu_bo_cuc():
+    assert phan_dinh(0.80, [0.1, 0.3, 0.5])[0] == "co giu bo cuc"
+
+
+def test_tren_trung_binh_nhung_duoi_dinh_san_thi_KHONG_ket_luan(tmp_path):
+    """Vượt trung bình của sàn mà chưa vượt cái cao nhất thì vẫn có thể chỉ là một
+    ảnh lạ tình cờ giống bố cục. Ở khoảng đó, câu trả lời đúng là 'chưa biết'."""
+    assert phan_dinh(0.40, [0.1, 0.3, 0.55])[0] == "khong ket luan duoc"
+
+
+def test_duoi_trung_binh_san_la_KHONG_giu():
+    assert phan_dinh(0.15, [0.1, 0.3, 0.5])[0] == "KHONG giu bo cuc"
+
+
+def test_san_do_dung_so_anh_da_cho(tmp_path):
+    a = _ve(tmp_path / "a.png", BO_CUC_A)
+    la = [_ve(tmp_path / f"l{i}.png", BO_CUC_B) for i in range(3)]
+    san = do_san(a, la)
+    assert len(san) == 3
+
+
+def test_ca_that_cua_G5_san_phai_thap_hon_ca_cung_bo_cuc(tmp_path):
+    """Dựng đúng tình huống G5 sẽ gặp và kiểm cả chuỗi: một ảnh gốc, một ảnh 'đã
+    sửa nhưng giữ bố cục', và ba ảnh lạ làm sàn."""
+    goc = _ve(tmp_path / "goc.png", BO_CUC_A)
+    sua = _ve(tmp_path / "sua.png", BO_CUC_A, mau_nen=(90, 20, 20))
+    la = [_ve(tmp_path / f"l{i}.png", BO_CUC_B, mau_nen=(10 * i, 40, 60))
+          for i in range(3)]
+    ket, _ = phan_dinh(do_mot(goc, sua), do_san(goc, la))
+    assert ket == "co giu bo cuc"
+
+
+def test_tuong_quan_khong_bao_gio_vuot_khoang(tmp_path):
+    x = np.random.default_rng(0).random((64, 64))
+    y = -x
+    assert -1.0 <= tuong_quan(x, y) <= 1.0
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -219539,7 +220080,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cham_mu.py
-SHA256=42d17ff2317585f64085ae8238f804b2a32ddb14f7554b2900ca258abc169ec3 BYTES=12801 LINES=293
+SHA256=e7d212886061042ef6dbe4f4bba56a5a8aa8a1ca4484f403500e257515382022 BYTES=21770 LINES=470
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 cham_mu.py — bộ so mù cho H37: dựng lô so sánh, thu phiếu, tính kết quả.
@@ -219591,6 +220132,7 @@ from typing import Optional, Sequence
 TEN_KHOA = "KHONG_MO_TRUOC_KHI_CHAM.json"
 TEN_PHIEU = "phieu.json"
 TEN_ANH = "anh"
+TEN_MAN = "cham.html"
 
 #: Dưới ngưỡng này thì không kết luận. Với 30 cặp, một chênh lệch 60/40 nằm trọn
 #: trong khoảng nhiễu — nhìn thì "rõ ràng" mà thật ra không nói lên gì.
@@ -219700,6 +220242,180 @@ def ghi_lo(caps: Sequence[Cap], thu_muc: Path, *, nhan_a: str, nhan_b: str) -> N
         "nhan": {"A": nhan_a, "B": nhan_b},
         "cap": [asdict(c) for c in caps],
     })
+
+
+# ─────────────────────────── màn chấm ───────────────────────────────────────
+#
+# ⭐ VÌ SAO CẦN MÀN RIÊNG, KHÔNG MỞ TỆP BẰNG FILE EXPLORER:
+#    ① Ảnh 2560×1440. Nhìn hai ảnh cỡ đó cạnh nhau trong trình xem ảnh của Windows
+#       là không so được — và **so nhấp nháy** (bật qua bật lại tại đúng cùng vị
+#       trí, cùng mức phóng) là cách duy nhất thấy được khác biệt nhỏ. Cái đó
+#       trình xem ảnh không làm được.
+#    ② Luật mù ở §1.5: người chấm **không được thấy đường dẫn gốc**. Mở bằng File
+#       Explorer là thấy tên thư mục, mà tên thư mục nói ra nguồn.
+#    ③ Chấm 33 cặp mà mất phiếu giữa chừng thì phải chấm lại từ đầu — và lần hai
+#       không còn mù nữa. Nên màn tự lưu vào `localStorage` sau mỗi lượt.
+#
+# ⛔ Màn này chạy bằng `file://`, KHÔNG có máy chủ. Nên dữ liệu cặp phải **nhúng
+#    thẳng vào HTML**: `fetch()` một tệp JSON cạnh nó sẽ bị CORS chặn.
+
+_MAN_HTML = """<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cham mu</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+/* Nen xam trung tinh: nen sang hay toi deu lam lech cam nhan tuong phan, va
+   lech deu hai anh thi khong sao - nhung nguoi cham se doc sai do bao hoa. */
+body{margin:0;background:#2b2b2b;color:#ddd;font:14px/1.5 system-ui,Segoe UI,sans-serif}
+header{display:flex;gap:16px;align-items:center;padding:10px 16px;background:#222;
+  position:sticky;top:0;z-index:5;border-bottom:1px solid #3a3a3a}
+#ma{font:600 16px ui-monospace,Consolas,monospace;letter-spacing:1px}
+#tien{flex:1;color:#9a9a9a}
+button{background:#3a3a3a;color:#eee;border:1px solid #4d4d4d;border-radius:6px;
+  padding:8px 14px;font:inherit;cursor:pointer}
+button:hover{background:#464646}
+button.chon{background:#2f5d3f;border-color:#3d7a52}
+#khung{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+figure{margin:0;text-align:center}
+figure img{width:100%;height:auto;max-height:74vh;object-fit:contain;
+  background:#1c1c1c;border:1px solid #3a3a3a;border-radius:4px;cursor:zoom-in}
+figcaption{padding:6px;color:#8f8f8f;font:600 13px ui-monospace,monospace}
+#dieu{display:flex;gap:10px;justify-content:center;padding:6px 10px 16px;flex-wrap:wrap}
+#ghi{width:min(560px,90vw);background:#1c1c1c;color:#ddd;border:1px solid #3a3a3a;
+  border-radius:6px;padding:8px;margin:0 auto;display:block}
+#zoom{position:fixed;inset:0;background:#1c1c1c;display:none;z-index:9;
+  overflow:auto;cursor:zoom-out}
+/* HAI anh XEP CHONG, khong doi src: doi src voi PNG 2560x1440 (~5 MB) se chop
+   trang trong luc tai - dung luc mat can lien tuc nhat. Xep chong thi ca hai da
+   nam san trong bo nho, bat/tat la tuc thi va tuyet doi cung vi tri. */
+#zoom img{display:block;image-rendering:auto;grid-area:1/1}
+#zoom{display:none;place-items:start}
+#zoom.mo{display:grid}
+#zoom img.an{visibility:hidden}
+#nhan{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:10;
+  background:#000a;padding:6px 14px;border-radius:20px;font:600 13px monospace;display:none}
+#xong{padding:40px;text-align:center;display:none}
+kbd{background:#3a3a3a;border:1px solid #555;border-radius:4px;padding:1px 5px;
+  font:12px ui-monospace,monospace}
+.mach{padding:8px 16px;background:#3a2f1c;color:#e0c98a;font-size:13px}
+</style></head><body>
+<div class="mach">Phim tat: <kbd>1</kbd> trai &nbsp; <kbd>2</kbd> hoa &nbsp; <kbd>3</kbd> phai
+ &nbsp;|&nbsp; <kbd>Z</kbd> phong to &nbsp; trong luc phong: <kbd>Space</kbd> bat qua bat lai
+ (SO NHAP NHAY - cach duy nhat thay khac biet nho) &nbsp;|&nbsp;
+ <kbd>&larr;</kbd> <kbd>&rarr;</kbd> doi cap</div>
+<header><span id="ma"></span><span id="tien"></span>
+  <button id="luu">Tai phieu ve</button></header>
+<div id="than">
+  <div id="khung">
+    <figure><img id="imgL" alt="trai"><figcaption>TRAI</figcaption></figure>
+    <figure><img id="imgR" alt="phai"><figcaption>PHAI</figcaption></figure>
+  </div>
+  <div id="dieu">
+    <button data-c="trai">1 &nbsp;Trai tot hon</button>
+    <button data-c="hoa">2 &nbsp;Hoa / khong thay khac</button>
+    <button data-c="phai">3 &nbsp;Phai tot hon</button>
+  </div>
+  <textarea id="ghi" rows="2" placeholder="Ghi chu (khong bat buoc)"></textarea>
+</div>
+<div id="xong"><h2>Da cham xong</h2>
+  <p>Bam <b>Tai phieu ve</b>, roi chep <code>phieu.json</code> vao thu muc lo, ghi de.</p>
+  <p>Sau do tren may A chay:<br><code id="lenh"></code></p></div>
+<div id="zoom"><img id="zL"><img id="zR"></div><div id="nhan"></div>
+<script>
+const CAP = __CAP__, KHOA = "cham_mu_" + __LO__;
+const $ = s => document.querySelector(s);
+let i = 0, phieu = JSON.parse(localStorage.getItem(KHOA) || "{}");
+let zPhia = "trai";
+
+function ve(){
+  const c = CAP[i];
+  $("#ma").textContent = c.ma;
+  const xong = CAP.filter(x => phieu[x.ma] && phieu[x.ma].chon).length;
+  $("#tien").textContent = `cap ${i+1}/${CAP.length} - da cham ${xong}`;
+  $("#imgL").src = $("#zL").src = "anh/" + c.trai;
+  $("#imgR").src = $("#zR").src = "anh/" + c.phai;
+  const p = phieu[c.ma] || {};
+  $("#ghi").value = p.ghi_chu || "";
+  document.querySelectorAll("#dieu button").forEach(b =>
+    b.classList.toggle("chon", b.dataset.c === p.chon));
+}
+function chon(v){
+  const c = CAP[i];
+  phieu[c.ma] = {chon: v, ghi_chu: $("#ghi").value};
+  localStorage.setItem(KHOA, JSON.stringify(phieu));
+  if (i < CAP.length - 1) i++;
+  ve(); ketthuc();
+}
+function ketthuc(){
+  if (CAP.some(c => !(phieu[c.ma] || {}).chon)) return;
+  $("#than").style.display = "none"; $("#xong").style.display = "block";
+  $("#lenh").textContent = "py tools/cham_mu.py tinh --lo <thu_muc_lo>";
+}
+function moZoom(phia){
+  // Ca hai anh da nam san trong DOM tu luc ve() - chi bat/tat, khong tai lai.
+  zPhia = phia;
+  $("#zoom").classList.add("mo");
+  $("#zL").classList.toggle("an", phia !== "trai");
+  $("#zR").classList.toggle("an", phia !== "phai");
+  $("#nhan").style.display = "block"; $("#nhan").textContent = phia.toUpperCase();
+}
+function dongZoom(){
+  $("#zoom").classList.remove("mo"); $("#nhan").style.display = "none";
+}
+function doiZoom(){
+  // Khong dung toi scrollTop/scrollLeft: hai anh chung mot o luoi nen vi tri cuon
+  // von da la MOT. Day moi la "cung vi tri" that, khong phai chep lai toa do.
+  moZoom(zPhia === "trai" ? "phai" : "trai");
+}
+$("#imgL").onclick = () => moZoom("trai");
+$("#imgR").onclick = () => moZoom("phai");
+$("#zoom").onclick = dongZoom;
+document.querySelectorAll("#dieu button").forEach(b => b.onclick = () => chon(b.dataset.c));
+$("#luu").onclick = () => {
+  const ra = {so_cap: CAP.length,
+              phieu: CAP.map(c => ({ma: c.ma, chon: (phieu[c.ma]||{}).chon || "",
+                                    ghi_chu: (phieu[c.ma]||{}).ghi_chu || ""}))};
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(ra, null, 2)],
+                                        {type: "application/json"}));
+  a.download = "phieu.json"; a.click();
+};
+addEventListener("keydown", e => {
+  if (e.target.tagName === "TEXTAREA" && e.key !== "Escape") return;
+  const mo = $("#zoom").classList.contains("mo");
+  if (mo && (e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight")){
+    e.preventDefault(); doiZoom(); return; }
+  if (e.key === "Escape"){ dongZoom(); return; }
+  if (e.key === "1") chon("trai");
+  else if (e.key === "2") chon("hoa");
+  else if (e.key === "3") chon("phai");
+  else if (e.key.toLowerCase() === "z") moZoom("trai");
+  else if (e.key === "ArrowLeft" && i > 0){ i--; ve(); }
+  else if (e.key === "ArrowRight" && i < CAP.length - 1){ i++; ve(); }
+});
+// Tai lai trang giua chung (lo cham 33 cap thi chuyen nay se xay ra) phai quay
+// dung cho dang do, khong bat cham lai tu cap 1 - cham lai la het mu.
+const chuaCham = CAP.findIndex(c => !(phieu[c.ma] || {}).chon);
+i = chuaCham < 0 ? 0 : chuaCham;
+ve(); ketthuc();
+</script></body></html>
+"""
+
+
+def ghi_man(caps: Sequence[Cap], thu_muc: Path) -> None:
+    """Sinh màn chấm cạnh lô.
+
+    ⛔ Chỉ ghi ra `ma`, `trai`, `phai` — **tuyệt đối không** `nguon_trai`,
+    `nguon_phai`, `la_bay`. Ba trường đó nằm trong tệp khoá, và nhúng chúng vào
+    HTML là để nguồn lộ ra ngay trong "Xem mã nguồn trang". Test chốt điều này.
+    """
+    cap_cong_khai = [{"ma": c.ma, "trai": c.trai, "phai": c.phai} for c in caps]
+    html = (_MAN_HTML
+            .replace("__CAP__", json.dumps(cap_cong_khai, ensure_ascii=False))
+            .replace("__LO__", json.dumps(thu_muc.name)))
+    (thu_muc / TEN_MAN).write_text(html, encoding="utf-8")
 
 
 # ─────────────────────────── tính kết quả ───────────────────────────────────
@@ -219814,8 +220530,10 @@ def main(argv: Optional[list[str]] = None) -> int:
         caps = tao_lo(_anh_trong(a.a), _anh_trong(a.b), ty_le_bay=a.bay,
                       rng=random.Random(a.seed))
         ghi_lo(caps, a.ra, nhan_a=a.nhan_a, nhan_b=a.nhan_b)
+        ghi_man(caps, a.ra)
         that = sum(1 for x in caps if not x.la_bay)
         print(f"Da dung {len(caps)} cap ({that} that, {len(caps) - that} bay) tai {a.ra}")
+        print(f"Mo de cham: {(a.ra / TEN_MAN).resolve()}")
         if that < SO_CAP_TOI_THIEU:
             print(f"CANH BAO: chi co {that} cap that. Duoi {SO_CAP_TOI_THIEU} thi "
                   "ket qua chi duoc ghi la 'chua phan biet duoc'.")
@@ -223224,6 +223942,156 @@ if __name__ == "__main__":
     for s in SCENES:
         marker = "⭐" if s.critical else "  "
         print(f"  {marker} [{s.id}] {s.duration_s:5.1f}s — {s.title}")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_bo_cuc.py
+SHA256=eebffa6f6207ccec841b26ecddfe02bada29a7f2ceb657ce08da1df421027fb3 BYTES=6166 LINES=144
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+do_bo_cuc.py — đo KHÁCH QUAN mức giữ bố cục giữa ảnh gốc và ảnh đã sửa. (H37/G5)
+
+    py tools/do_bo_cuc.py --goc <anh_goc> --ra <anh_ket_qua> [--nen <thu_muc_anh_la>]
+
+⭐ VÌ SAO CÓ TỆP NÀY: chế độ `structure` (giữ bố cục/tư thế) **không có đường đi
+   chính thức** — HiDream-O1 không hỗ trợ ControlNet (D-017). Cách duy nhất còn lại
+   là dùng chế độ `edit` kèm lời nhắc "giữ nguyên bố cục". Câu hỏi "nó có giữ được
+   không" mà chỉ hỏi cảm nhận thì mỗi ngày trả lời một kiểu.
+
+⛔ NHƯNG CON SỐ TƯƠNG QUAN MỘT MÌNH LÀ VÔ NGHĨA. "Tương quan cạnh 0,42" cao hay
+   thấp? Không ai biết, kể cả người viết ra nó. Nên tệp này **luôn đo kèm sàn**:
+   tương quan giữa ảnh gốc và những ảnh **không liên quan gì**. Chỉ khi kết quả
+   vượt hẳn sàn đó thì mới nói được là "có giữ bố cục".
+
+   Đây đúng cùng một nguyên tắc với **cặp bẫy** của `cham_mu.py`: đo mức nhiễu
+   trước, rồi mới đọc tín hiệu.
+
+⛔ VÀ NÓ KHÔNG THAY THẾ MẮT NGƯỜI. Thước này chỉ trả lời **một** câu: "bố cục có
+   giữ nguyên không". Nó **không** biết ảnh có đẹp không, có đúng yêu cầu không,
+   chữ có sai chính tả không. Quyết định cuối vẫn là so mù của chủ dự án (D-010).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import statistics
+import sys
+from pathlib import Path
+from typing import Optional, Sequence
+
+import numpy as np
+from PIL import Image
+
+#: Cạnh dài khi thu nhỏ để so. Đủ nhỏ để bỏ qua chi tiết bề mặt (thứ mà lệnh sửa
+#: ĐƯỢC PHÉP đổi: chất liệu, phong cách, màu), đủ lớn để giữ bố cục lớn.
+CANH_SO = 384
+
+DUOI_ANH = (".png", ".jpg", ".jpeg", ".webp")
+
+
+def _xam(duong: Path, canh: int = CANH_SO) -> np.ndarray:
+    """Nạp ảnh, ép về khung vuông `canh`×`canh`, thang xám, [0,1].
+
+    ⛔ Ép về khung VUÔNG chứ không giữ tỉ lệ: nếu ảnh kết quả khác tỉ lệ với ảnh
+    gốc thì giữ tỉ lệ sẽ làm hai lưới lệch nhau và tương quan tụt vì lý do hình
+    học, không phải vì bố cục đổi. Ép vuông thì cả hai chịu cùng một biến dạng.
+    """
+    im = Image.open(duong).convert("L").resize((canh, canh), Image.LANCZOS)
+    return np.asarray(im, dtype=np.float64) / 255.0
+
+
+def _canh(a: np.ndarray) -> np.ndarray:
+    """Biên độ gradient (Sobel). So CẠNH chứ không so điểm ảnh: đổi phong cách hay
+    đổi màu làm điểm ảnh khác hẳn trong khi bố cục y nguyên — mà bố cục mới là thứ
+    ta hỏi."""
+    kx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.float64)
+    gx = _chap(a, kx)
+    gy = _chap(a, kx.T)
+    return np.sqrt(gx * gx + gy * gy)
+
+
+def _chap(a: np.ndarray, k: np.ndarray) -> np.ndarray:
+    """Chập 3×3, viền lặp. Tự viết để không kéo scipy vào chỉ vì một phép chập."""
+    p = np.pad(a, 1, mode="edge")
+    ra = np.zeros_like(a)
+    for i in range(3):
+        for j in range(3):
+            ra += k[i, j] * p[i:i + a.shape[0], j:j + a.shape[1]]
+    return ra
+
+
+def tuong_quan(x: np.ndarray, y: np.ndarray) -> float:
+    """Tương quan Pearson của hai bản đồ cạnh, kẹp về [-1, 1]."""
+    a, b = x.ravel(), y.ravel()
+    a = a - a.mean()
+    b = b - b.mean()
+    mau = float(np.sqrt((a * a).sum() * (b * b).sum()))
+    if mau == 0.0:                       # ảnh phẳng lì — không có cạnh nào để so
+        return 0.0
+    return float(np.clip(float((a * b).sum()) / mau, -1.0, 1.0))
+
+
+def do_mot(goc: Path, ra: Path) -> float:
+    return tuong_quan(_canh(_xam(goc)), _canh(_xam(ra)))
+
+
+def do_san(goc: Path, anh_la: Sequence[Path]) -> list[float]:
+    """Sàn: ảnh gốc so với những ảnh KHÔNG liên quan. Đây là mức tương quan đến từ
+    "hai ảnh đều là ảnh" chứ không từ "cùng bố cục"."""
+    cg = _canh(_xam(goc))
+    return [tuong_quan(cg, _canh(_xam(p))) for p in anh_la]
+
+
+def phan_dinh(diem: float, san: Sequence[float]) -> tuple[str, dict]:
+    """So điểm với sàn. Ngưỡng là **max của sàn**, không phải trung bình.
+
+    Dùng max vì câu hỏi là "có chắc chắn hơn ngẫu nhiên không". Vượt trung bình
+    của sàn thì vẫn có thể chỉ là một ảnh lạ xui xẻo giống bố cục — vượt cả cái
+    cao nhất trong sàn mới đáng nói.
+    """
+    if not san:
+        return "khong co san de so", {"canh_bao": "chua do san - con so mot minh vo nghia"}
+    cao = max(san)
+    tb = statistics.mean(san)
+    if diem > cao:
+        ket = "co giu bo cuc"
+    elif diem > tb:
+        ket = "khong ket luan duoc"
+    else:
+        ket = "KHONG giu bo cuc"
+    return ket, {"san_trung_binh": round(tb, 3), "san_cao_nhat": round(cao, 3),
+                 "so_anh_san": len(san)}
+
+
+def _anh_trong(d: Path) -> list[Path]:
+    return [p for p in sorted(d.iterdir())
+            if p.is_file() and p.suffix.lower() in DUOI_ANH]
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    ap = argparse.ArgumentParser(description="Do muc giu bo cuc (H37/G5)")
+    ap.add_argument("--goc", required=True, type=Path, help="anh tham chieu")
+    ap.add_argument("--ra", required=True, type=Path, help="anh ket qua, hoac thu muc")
+    ap.add_argument("--nen", type=Path, default=None,
+                    help="thu muc anh KHONG lien quan, de do san nhieu")
+    a = ap.parse_args(argv)
+
+    anh_la = [p for p in _anh_trong(a.nen)] if a.nen else []
+    san = do_san(a.goc, anh_la)
+
+    muc = _anh_trong(a.ra) if a.ra.is_dir() else [a.ra]
+    ket = []
+    for p in muc:
+        d = do_mot(a.goc, p)
+        kl, chi_tiet = phan_dinh(d, san)
+        ket.append({"anh": p.name, "tuong_quan_canh": round(d, 3),
+                    "ket_luan": kl, **chi_tiet})
+    print(json.dumps({"goc": a.goc.name, "ket": ket}, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

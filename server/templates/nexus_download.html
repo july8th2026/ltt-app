@@ -58,10 +58,23 @@
         <h2>{{ p.label }}</h2>
       </div>
       {% if p.available and p.url %}
-        <div class="sub">Sẵn sàng để tải</div>
-        <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
-          {% if p.kind == 'appstore' %}Mở App Store{% else %}Tải xuống{% endif %}
-        </a>
+        {% if p.note %}
+          <div class="sub">{{ p.note }}</div>
+        {% else %}
+          <div class="sub">Sẵn sàng để tải</div>
+        {% endif %}
+        {% if p.key == 'ios' and p.signed %}
+          {# Ky Ad Hoc/Enterprise roi thi Safari cai thang duoc qua itms-services.
+             Chua ky thi KHONG hien nut nay: bam vao se khong co gi xay ra. #}
+          <a class="nx-btn" href="itms-services://?action=download-manifest&amp;url={{ request.base_url|string|trim('/') }}/nexus/ios-manifest.plist">
+            {{ _("Cài lên iPhone") }}
+          </a>
+          <div class="nx-sha" style="color:#e2ae55">{{ _("Mở trang này bằng Safari — trình duyệt khác sẽ không cài được.") }}</div>
+        {% else %}
+          <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
+            {% if p.kind == 'appstore' %}Mở App Store{% else %}Tải xuống{% endif %}
+          </a>
+        {% endif %}
         {% if p.sha256 %}<div class="nx-sha">SHA-256: {{ p.sha256 }}</div>{% endif %}
       {% else %}
         <div class="sub">Đang chuẩn bị — sẽ có sớm</div>

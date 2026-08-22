@@ -15,6 +15,11 @@ from pathlib import Path
 
 #: Bốn nền tảng mục tiêu (Windows/macOS/iOS/Android). `available=False` → trang
 #: hiện "đang chuẩn bị"; đặt `available` + `url` khi bản nền tảng đó sẵn sàng.
+#:
+#: `note` (tuỳ chọn) thay dòng "Sẵn sàng để tải". Cần cho iOS: file `.ipa` chưa
+#: ký **không cài được bằng Safari** — iOS chỉ cho cài thẳng từ web khi có chữ
+#: ký phân phối + manifest `itms-services`. Nói rõ ngay trên nút, đừng để người
+#: dùng tải về rồi mới phát hiện không mở được.
 DEFAULT: dict = {
     "version": "1.0.0",
     "notes": "Bản phát hành đầu tiên của LTT Nexus.",
@@ -23,8 +28,11 @@ DEFAULT: dict = {
                     "url": "", "sha256": "", "kind": "zip"},
         "macos": {"label": "macOS", "available": False, "url": "", "sha256": "",
                   "kind": "dmg"},
+        # `signed=True` chỉ đặt khi IPA đã ký Ad Hoc/Enterprise — lúc đó trang
+        # hiện nút "Cài lên iPhone" (itms-services) và Safari cài thẳng được.
+        # Ký bằng Apple ID miễn phí (hồ sơ development) KHÔNG tính: iOS từ chối.
         "ios": {"label": "iOS (iPhone/iPad)", "available": False, "url": "",
-                "kind": "appstore"},
+                "sha256": "", "kind": "ipa", "note": "", "signed": False},
         "android": {"label": "Android", "available": False, "url": "",
                     "sha256": "", "kind": "apk"},
     },

@@ -8305,3 +8305,9 @@ msgstr "This account cannot manage machines."
 
 msgid "Thu hồi máy này? Máy đó sẽ không kết nối được nữa."
 msgstr "Revoke this machine? It will no longer be able to connect."
+
+msgid "Cài lên iPhone"
+msgstr "Install on iPhone"
+
+msgid "Mở trang này bằng Safari — trình duyệt khác sẽ không cài được."
+msgstr "Open this page in Safari — other browsers cannot install it."

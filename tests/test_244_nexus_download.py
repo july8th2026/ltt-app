@@ -125,3 +125,60 @@ def test_dl_chan_path_traversal(app_bat, bad):
     r = client.get(f"/nexus/dl/{bad}")
     assert r.status_code == 404
     assert "top-secret" not in r.text
+
+
+# ── Cài thẳng từ Safari (itms-services) — chỉ khi IPA đã ký ──────────────────
+
+def test_manifest_ios_404_khi_chua_ky(app_bat):
+    """Chưa có chữ ký phân phối thì KHÔNG được đưa ra link itms-services.
+
+    Bấm vào một link như vậy sẽ không có chuyện gì xảy ra — người dùng tưởng
+    app hỏng. Thà không hiện nút còn hơn hiện một nút chết.
+    """
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "platforms": {"ios": {"available": True, "url": "/nexus/dl/a.ipa",
+                              "signed": False}},
+    }), encoding="utf-8")
+    assert client.get("/nexus/ios-manifest.plist").status_code == 404
+
+
+def test_manifest_ios_khi_da_ky(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "2.0.0",
+        "platforms": {"ios": {"available": True, "signed": True,
+                              "url": "/nexus/dl/LTTNexus-2.0.0-ios.ipa"}},
+    }), encoding="utf-8")
+    r = client.get("/nexus/ios-manifest.plist")
+    assert r.status_code == 200, r.text
+    body = r.text
+    # iOS doi URL TUYET DOI + https, khong nhan duong dan tuong doi
+    assert "https://testserver/nexus/dl/LTTNexus-2.0.0-ios.ipa" in body
+    assert "com.lttstudios.nexus" in body       # phai trung CFBundleIdentifier
+    assert "<key>kind</key><string>software</string>" in body
+    assert "2.0.0" in body
+    assert r.headers["content-type"].startswith("application/xml")
+
+
+def test_trang_hien_nut_cai_iphone_khi_da_ky(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "platforms": {"ios": {"label": "iOS", "available": True, "signed": True,
+                              "url": "/nexus/dl/x.ipa"}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert "itms-services://" in html
+    assert "Cài lên iPhone" in html
+    assert "Safari" in html                    # nhac dung Safari
+
+
+def test_trang_KHONG_hien_nut_cai_khi_chua_ky(app_bat):
+    client, tmp_path = app_bat
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "platforms": {"ios": {"label": "iOS", "available": True, "signed": False,
+                              "url": "/nexus/dl/x.ipa"}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert "itms-services://" not in html
+    assert "Tải xuống" in html                 # van tai file ve duoc

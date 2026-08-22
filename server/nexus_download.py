@@ -13,9 +13,10 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 
 from platform_core.nexus import versions
 from server.templating import templates
@@ -33,6 +34,11 @@ _CONTENT_TYPE = {
     ".exe": "application/vnd.microsoft.portable-executable",
     ".sha256": "text/plain; charset=utf-8",
 }
+
+
+#: Định danh gói iOS — phải TRÙNG với `CFBundleIdentifier` trong IPA, không thì
+#: iOS tải về rồi từ chối cài mà không nói vì sao.
+IOS_BUNDLE_ID = "com.lttstudios.nexus"
 
 
 def _dist_dir() -> Path:
@@ -61,6 +67,62 @@ async def version_json():
     """
     return JSONResponse(versions.manifest(),
                         headers={"Cache-Control": "public, max-age=300"})
+
+
+@router.get("/nexus/ios-manifest.plist")
+async def ios_manifest(request: Request):
+    """Manifest cho cài-thẳng-từ-Safari (`itms-services`).
+
+    iOS **không** cho cài file `.ipa` tải bằng Safari. Cách duy nhất cài từ web
+    là giao thức `itms-services://`: Safari đọc file plist này, lấy URL của IPA
+    trong đó rồi cài. Ba điều kiện của Apple, thiếu một là hỏng lặng lẽ:
+
+    1. IPA phải **đã ký** bằng hồ sơ **Ad Hoc hoặc Enterprise** — hồ sơ
+       *development* (Apple ID miễn phí) **không dùng được**;
+    2. plist và IPA phải qua **HTTPS** hợp lệ (ta có sẵn, qua Cloudflare);
+    3. link phải mở trong **Safari** — Chrome hay trình duyệt trong app im lặng
+       không làm gì.
+
+    404 khi manifest chưa khai `signed: true`: chưa có chữ ký phân phối thì đưa
+    ra link `itms-services` chỉ tạo một nút bấm vào không có chuyện gì xảy ra.
+    """
+    m = versions.manifest()
+    ios = m.get("platforms", {}).get("ios", {})
+    if not ios.get("signed") or not ios.get("url"):
+        raise HTTPException(status_code=404)
+
+    goc = str(request.base_url).rstrip("/")
+    url_ipa = ios["url"]
+    if url_ipa.startswith("/"):
+        url_ipa = goc + url_ipa
+    plist = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>items</key>
+  <array>
+    <dict>
+      <key>assets</key>
+      <array>
+        <dict>
+          <key>kind</key><string>software-package</string>
+          <key>url</key><string>{escape(url_ipa)}</string>
+        </dict>
+      </array>
+      <key>metadata</key>
+      <dict>
+        <key>bundle-identifier</key><string>{escape(str(ios.get("bundle_id") or IOS_BUNDLE_ID))}</string>
+        <key>bundle-version</key><string>{escape(str(m.get("version") or "1.0.0"))}</string>
+        <key>kind</key><string>software</string>
+        <key>title</key><string>{escape(str(ios.get("title") or "LTT Nexus"))}</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>
+"""
+    return Response(content=plist, media_type="application/xml",
+                    headers={"Cache-Control": "no-store"})
 
 
 @router.api_route("/nexus/dl/{filename}", methods=["GET", "HEAD"])
