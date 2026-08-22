@@ -1,0 +1,135 @@
+{
+  "_doc": [
+    "BANG GIA VON — mot cho duy nhat cho toan bo ma nguon. Doc bang platform_core/gia_von.py.",
+    "",
+    "DON VI: milli-credit (mcredit) = 1/1000 credit = 0,1 dong. TOAN BO LA SO NGUYEN.",
+    "  Ly do o platform_core/llm/gia_token.py: dau phay dong trong duong tien la cach",
+    "  chac chan nhat de hai lan cong ra hai ket qua.",
+    "",
+    "TEN TRUONG lay dung theo LiteLLM model_prices_and_context_window.json (MIT) —",
+    "  output_cost_per_image, input_cost_per_token, cache_read_input_token_cost, mode —",
+    "  de ngay nao muon nap thang bang cua ho cho model moi thi khong phai viet lop dich.",
+    "  Khac ho o hau to _mcredit (ho dung USD float) va o don vi token: mcredit cho 1 TRIEU",
+    "  token, vi mcredit cho MOT token se nho hon 1 va khong con la so nguyen.",
+    "",
+    "DAY LA GIA VON — thu TA TRA cho nha cung cap. KHONG phai gia ban.",
+    "  Gia ban nam o credit_cost cua tung app. Hai so do khac nhau va phai khac nhau.",
+    "",
+    "CHUA_TRA la MIEN TRU CO HAN, khong phai cho de quen. Moi muc phai co ly_do + chu + han_ra_lai; qua han la test do. Mot mien tru khong het han chinh la cach ma CREDIT_PER_IMAGE = 5 song duoc 22 ngay."
+  ],
+  "phien_ban": "gia-von-2026-08-23",
+  "ty_gia_vnd_usd": 26300,
+  "vnd_moi_credit": 100,
+  "_quy_doi": "1 USD = 26.300d = 263 credit = 263.000 mcredit",
+  "model": {
+    "gemini-2.5-flash-image": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 10257,
+      "nguon": "https://developers.googleblog.com/introducing-gemini-2-5-flash-image/",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "1.290 token/anh @ $30/1M = $0,039/anh"
+    },
+    "gemini-3.1-flash-lite-image": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 8837,
+      "nguon": "https://www.aifreeapi.com/en/posts/gemini-flash-image-generation-pricing",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "$0,0336/anh 1K"
+    },
+    "gemini-3.1-flash-image": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 17621,
+      "nguon": "https://www.aifreeapi.com/en/posts/gemini-flash-image-generation-pricing",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "1.120 token/anh @ 1K = $0,067/anh. 2K = $0,101, 4K = $0,151 — CHUA mo hinh hoa theo do phan giai"
+    },
+    "gemini-3.1-flash-image-preview": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 17621,
+      "nguon": "https://www.aifreeapi.com/en/posts/gemini-flash-image-generation-pricing",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "cung gia ban khong-preview"
+    },
+    "gemini-3-pro-image": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 35242,
+      "nguon": "https://www.aifreeapi.com/en/posts/gemini-image-generation-api-pricing",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "1.120 token/anh @ $120/1M = $0,134/anh 1K-2K. 4K = $0,24 — CHUA mo hinh hoa theo do phan giai"
+    },
+    "gemini-3-pro-image-preview": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 35242,
+      "nguon": "https://www.aifreeapi.com/en/posts/gemini-image-generation-api-pricing",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "cung gia ban khong-preview"
+    },
+    "gemini-2.5-flash": {
+      "mode": "chat",
+      "input_cost_per_1m_token_mcredit": 78900,
+      "output_cost_per_1m_token_mcredit": 657500,
+      "cache_read_input_1m_token_mcredit": 7890,
+      "nguon": "https://ai.google.dev/gemini-api/docs/pricing",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": "$0,30 / $2,50 / $0,03 moi 1M token. Day la model dich prompt cua H37."
+    },
+    "hidream-o1": {
+      "mode": "image_generation",
+      "output_cost_per_image_mcredit": 1050,
+      "chi_phi_tham_chieu_mcredit": 2070,
+      "nguon": "do that tren may B 2026-08-22 + platform_core/llm/gia_token.py",
+      "ngay_tra": "2026-08-23",
+      "ghi_chu": [
+        "MODEL NHA — khong tra tien nha cung cap, nhung CHIEM GPU.",
+        "t2i 50 buoc = 96 giay: dien 28,7d (358,65 W do boi H38 @ 3.000d/kWh)",
+        "                     + khau hao 76,1d (RTX 3090 ~25 trieu / 3 nam / 8h ngay)",
+        "                     = 104,8d = 1,05 credit",
+        "co anh tham chieu = 190 giay => 207,4d = 2,07 credit",
+        "GIA DINH co the sai: gia dien, so gio dung moi ngay, doi GPU.",
+        "Doi gia dinh thi doi so — nhung bac do lon (re hon Gemini Pro ~34 lan) khong dao duoc."
+      ]
+    }
+  },
+  "khai_o_noi_khac": {
+    "qwen38-api": {
+      "o_dau": "platform_core/llm/gia_token.py",
+      "ly_do": "H38 so huu mang LLM va da co bang gia rieng, chat che hon. Chep sang day la tao cho tinh tien thu hai."
+    },
+    "qwen38-vision": {
+      "o_dau": "platform_core/llm/gia_token.py",
+      "ly_do": "nhu tren"
+    }
+  },
+  "chua_tra": {
+    "seedance-2.0": {
+      "ly_do": "Gia video tinh THEO GIAY va THEO DO PHAN GIAI - mot don vi khac han, chua co truong trong luoc do nay. So da tra duoc 23/08: BytePlus 1080p = $7,7/1M token, 1 giay = 48.600 token => ~$0,37/giay.",
+      "chu": "phien lam video",
+      "han_ra_lai": "2026-10-01"
+    },
+    "seedance-2.0-fast": {
+      "ly_do": "nhu seedance-2.0; chua tra rieng",
+      "chu": "phien lam video",
+      "han_ra_lai": "2026-10-01"
+    },
+    "seedance-2.0-mini": {
+      "ly_do": "nhu seedance-2.0; chua tra rieng",
+      "chu": "phien lam video",
+      "han_ra_lai": "2026-10-01"
+    },
+    "seedance-2.0-pro": {
+      "ly_do": "nhu seedance-2.0; chua tra rieng",
+      "chu": "phien lam video",
+      "han_ra_lai": "2026-10-01"
+    },
+    "kling-3.0": {
+      "ly_do": "Model video cua Kuaishou, chua tra. Cung van de don vi theo giay.",
+      "chu": "phien lam video",
+      "han_ra_lai": "2026-10-01"
+    },
+    "gemini-2.5-flash-preview-tts": {
+      "ly_do": "TTS tinh theo KY TU, khong theo token hay anh - can mot truong don vi khac. Chua app nao ban no ra khach.",
+      "chu": "chua co",
+      "han_ra_lai": "2026-12-01"
+    }
+  }
+}
