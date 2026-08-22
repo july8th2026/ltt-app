@@ -1,0 +1,29 @@
+{
+  "_doc": "G5 che do SUBJECT (2 anh tham chieu). Cau hoi: nhan vat/vat the co GIU DUOC danh tinh khi dat vao canh moi khong.",
+  "prompts": [
+    {
+      "id": "s1",
+      "cat": "nguoi+vat",
+      "seed": 201,
+      "ref1": "ltt_h37_ref_a.png",
+      "ref2": "ltt_h37_ref_b.png",
+      "text": "Nguoi phu nu trong anh 1 dang be con meo trong anh 2, ngoi trong quan ca phe sang den, anh sang tu nhien"
+    },
+    {
+      "id": "s2",
+      "cat": "nguoi+vat",
+      "seed": 202,
+      "ref1": "ltt_h37_ref_a.png",
+      "ref2": "ltt_h37_ref_c.png",
+      "text": "Nguoi phu nu trong anh 1 dang doc quyen sach trong anh 2 tai mot hieu sach, anh sang am"
+    },
+    {
+      "id": "s3",
+      "cat": "vat+vat",
+      "seed": 203,
+      "ref1": "ltt_h37_ref_b.png",
+      "ref2": "ltt_h37_ref_c.png",
+      "text": "Con meo trong anh 1 nam cuon tron canh chong sach trong anh 2, tren mot ban go, anh sang chieu"
+    }
+  ]
+}

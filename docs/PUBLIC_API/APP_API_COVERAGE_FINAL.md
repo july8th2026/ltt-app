@@ -15,8 +15,9 @@ và hai câu hỏi này kéo về hai phía ngược nhau:
 dòng ở đây thì test đỏ; ghi ở đây một thứ không còn tồn tại cũng đỏ; và mỗi
 operation đang mở phải **chạy thật từ ngoài vào** mới được coi là đã nghiệm thu.
 
-Cơ sở: `platform_core.registry.discover()`, ngày 2026-08-15 —
-**14 app, 21 ToolSpec, 4 alias model, 5 operation đang mở**.
+Cơ sở: `platform_core.registry.discover()`, ngày 2026-08-22 —
+**15 app, 22 ToolSpec, 4 alias model, 5 operation đang mở**.
+*(`apps/vps` chưa được phân loại và chưa từng commit — xem ghi chú ở mục 1.)*
 
 Phân loại ở mức *app* còn có một bánh cóc thứ hai độc lập ở
 [`APP_DISPOSITION_V1.md`](APP_DISPOSITION_V1.md) + `tests/test_190`. File này đi
@@ -24,7 +25,7 @@ xuống một tầng: **từng tool, từng alias model, từng chế độ ch�
 
 ---
 
-## 1. 15/15 app
+## 1. 17/17 app
 
 Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực bị chặn mà không nói
 được nó sẽ về đâu thì chưa phải một kế hoạch, chỉ là một mục backlog đội lốt.
@@ -32,7 +33,9 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | App | Disposition | Nhà mới | Chế độ chạy | Lý do |
 |---|---|---|---|---|
 | `thumbnail` | EXPOSE_V1 | — | ASYNC_JOB | Giá phẳng theo số ảnh, chốt được trước khi chạy. Đã nghiệm thu E2E. |
+| `anhnoibo` | EXPOSE_V1 | — | ASYNC_JOB | Bán model ảnh **nội bộ** trên máy B (H37/Q102). Giá chốt trước khi chạy nên hợp đồng job áp được: theo số ảnh, nhân 3 khi có ảnh tham chiếu vì đo thật là gấp ~3,3 lần thời gian máy. **Chưa nghiệm thu E2E** và chưa có trong công tắc người vận hành. |
 | `taoanh` | EXPOSE_V1 | — | ASYNC_JOB | Giá theo alias model công khai; một ảnh tham chiếu đi qua upload. |
+| `ltt_llm` | EXPOSE_V1 | — | ASYNC_JOB **và** SYNC | Bán model **ngôn ngữ nội bộ** trên máy B (H38/Q102), anh em với `anhnoibo`. Khác mọi app trên ở một điểm: **giá phụ thuộc số token RA, chỉ biết sau khi sinh xong**. Nên `credit_cost` là **trần ước cao** và nền tảng quyết toán theo số thật — `credit.quyet_toan` vốn không bao giờ thu quá phần đã giữ, nên lời hứa của quote (Q84) vẫn nguyên: khách **không bao giờ trả nhiều hơn** số đã báo. Đã nghiệm thu E2E trên phần cứng thật 22/08 (19/19), nhưng **chưa có trong công tắc người vận hành**. |
 | `upscalevideo` | EXPOSE_V1 | — | ASYNC_JOB | Giá phẳng theo preset; đường GPU thật, có hàng đợi và trần đồng thời. |
 | `prompt_ai_ommi` | EXPOSE_V1 | — | ASYNC_JOB | Giá theo `scene_count`; kết quả là dữ liệu nên trả thẳng trong `result`. |
 | `taovideo` | MIGRATE_CAPABILITY_THEN_EXPOSE | `upscalevideo` (đã có hợp đồng video ổn định) | ASYNC_JOB | Tập giá trị hợp lệ của `resolution/duration/aspect_ratio` đổi theo model, publish hợp nhất sẽ để khách trả tiền cho tổ hợp provider từ chối. |
@@ -47,7 +50,7 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `nexus` | DEFER | — | không có hợp đồng job | Không sinh Job và không có `ToolSpec`: đây là bề mặt **quản lý thiết bị** (ghép máy, thu hồi, nhật ký phiên) chứ không phải một tool tính tiền. Mở nó ra API nghĩa là công bố một hợp đồng về **danh tính thiết bị**, và điều đó phải chờ hạ tầng relay (D2) cùng legal review AGPL — xem `docs/nexus/`. Q93. |
 | `kichban` | RETIRED_NO_EXPOSE | — | ASYNC_JOB nội bộ | App đã nghỉ (Q69); muốn năng lực sinh text thì migrate sang app được hỗ trợ chứ không hồi sinh app cũ. |
 
-## 2. 21/21 ToolSpec
+## 2. 22/22 ToolSpec
 
 `customer_visible=True` **không** làm một tool public — đó là cờ palette của
 Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều đó.
@@ -55,9 +58,11 @@ Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều �
 | Tool | App | Trạng thái | Lý do |
 |---|---|---|---|
 | `image.thumbnail` | thumbnail | **EXPOSE_V1** | Giá phẳng 5/ảnh, chốt trước khi chạy; `model` bị ẩn vì giá không theo model. |
+| `image.ltt` | anhnoibo | **EXPOSE_V1 — chưa mở** | Model nhà, không tốn tiền provider nhưng chiếm GPU nên giá tính theo **thời gian máy**. `image_keys` ẩn vì tầng API chỉ giải được một tệp cho một tham số; `model` ẩn vì mới có một model và giá không theo model. Vắng ở mục 4 là **đúng**: nó chưa chạy thật từ ngoài vào bao giờ. |
 | `image.generate` | taoanh | **EXPOSE_V1** | Bốn alias model có giá riêng; `image_keys` ẩn vì mảng chưa được hỗ trợ. |
 | `image.upscale` | upscalevideo | **EXPOSE_V1** | Giá phẳng 2/4 theo preset; ảnh vào qua upload đã kiểm magic-byte. |
 | `text.prompt_package` | prompt_ai_ommi | **EXPOSE_V1** | Giá theo `scene_count`; `operation/model/resources` ẩn vì là đường định tuyến nội bộ. |
+| `text.chat` | ltt_llm | **EXPOSE_V1 — chưa mở** | Hai alias `ltt_llm` / `ltt_llm_vision` cùng giá, khác ở chỗ bản vision nạp thêm bộ chiếu ảnh. Không ẩn tham số nào: hợp đồng đúng bằng hình dạng OpenAI mà khách đã biết. Alias **cố ý trùng tên với id nội bộ** — ta không hứa gì về model nền, nên đổi nó sau này không phá mã khách. Vắng ở mục 4 là **đúng**: chưa có lượt nào đi từ ngoài vào qua `/api/v1`. |
 | `story.storyboard` | prompt_ai_ommi | **EXPOSE_V1** | Cùng hợp đồng, khác đầu ra; tách làm hai operation logic thay vì một cờ. |
 | `image.batch_generate` | taoanh | ĐÓNG | Trùng năng lực với `image.generate` vì tham số `count` đã làm được việc đó. |
 | `video.generate` | taovideo | ĐÓNG | Tập tuỳ chọn hợp lệ đổi theo model, chưa publish được một hợp đồng đúng. |
@@ -76,7 +81,7 @@ Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều �
 | `media.merge_video` | mediatools | ĐÓNG | Mảnh ghép FFmpeg nội bộ mà các app khác gọi, không có hợp đồng riêng. |
 | `video.social_import` | mediatools | ĐÓNG | Nhận URL từ người gọi nên publish là mở thẳng một đường SSRF. |
 
-## 3. 4/4 alias model
+## 3. 6/6 alias model
 
 Alias tồn tại để **đổi nhà cung cấp không thành breaking change**. Có test quét
 mọi surface khách đọc được: id thật của vendor lọt ra một chỗ là tích hợp bắt
@@ -85,6 +90,8 @@ mọi surface khách đọc được: id thật của vendor lọt ra một ch�
 | Alias | Tool | Đằng sau | Trạng thái | Lý do |
 |---|---|---|---|---|
 | `standard` | `image.generate` | `gemini-2.5-flash-image` | công khai | Điểm khởi đầu cân bằng giữa chất lượng và giá. |
+| `ltt_llm` | `text.chat` | `qwen38-api` | công khai | Model ngôn ngữ **chạy tại nhà** (máy B). Alias cố ý khác id nội bộ: ngày đổi GGUF bên dưới, mã của khách không phải sửa. |
+| `ltt_llm_vision` | `text.chat` | `qwen38-vision` | công khai | Cùng model, nạp thêm bộ chiếu ảnh (+1,1 GB VRAM đo thật). |
 | `standard-lite` | `image.generate` | `gemini-3.1-flash-lite-image` | công khai | Cùng giá với `standard`, đổi chi tiết lấy tốc độ. |
 | `enhanced` | `image.generate` | `gemini-3.1-flash-image` | công khai | Bám prompt và chi tiết tốt hơn `standard`, giá cao hơn. |
 | `pro` | `image.generate` | `gemini-3-pro-image` | công khai | Độ trung thực cao nhất, dùng khi kết quả chính là sản phẩm giao. |
@@ -164,6 +171,12 @@ thể, nó kiểm:
 - mọi alias model publish ra đều thuộc về một tool đang publish.
 
 ## 7. Việc đã ghi nợ, có chủ
+
+| Việc | Chặn cái gì | Sửa ở đâu |
+|---|---|---|
+| Phân loại `apps/vps` | `test_190` + `test_212` (cả hai đỏ vì nó) | App **đang được xây dở ở một dự án/phiên khác** nên cố ý chưa commit (chủ dự án xác nhận 22/08). Nó khai **không ToolSpec nào** và `app_may_be_public()` trả `False` ⇒ **không lọt ra API được**. Phân loại nó là việc của phiên đang làm `vps`, làm khi app đó commit. Tới lúc đó, hai test này còn đỏ đúng một test mỗi tệp — **đã biết, không phải hồi quy**. |
+| Nghiệm thu E2E `image.ltt` + chốt giá | mở `image.ltt` cho khách | Chạy thật một job qua `/api/v1` khi model qua cổng chất lượng, rồi điền một dòng ở mục 4 và thay giá tạm bằng số đo thật. |
+
 
 | Việc | Chặn cái gì | Sửa ở đâu |
 |---|---|---|

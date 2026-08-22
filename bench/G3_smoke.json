@@ -1,0 +1,63 @@
+{
+  "ca": "smoke",
+  "ngay": "2026-08-21T14:18:58+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_fp8_scaled.safetensors",
+    "height": 1440,
+    "prefix": "ltt/hidream_o1",
+    "sampler": "euler",
+    "scheduler": "normal",
+    "seed": 0,
+    "steps": 20,
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 124.8,
+  "runs": [
+    {
+      "prompt_id": "b605e327-c075-58e4-ab34-0c773e8d26f5",
+      "ok": true,
+      "giay": 48.4,
+      "do_duoc": {
+        "so_mau": 46,
+        "vram_dinh_mb": 11742,
+        "vram_trung_vi_mb": 10487,
+        "nhiet_dinh_c": 77,
+        "nhiet_trung_vi_c": 71,
+        "power_dinh_w": 368.93,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4476700
+      ],
+      "anh": [
+        "smoke_p01_0.png"
+      ],
+      "id": "p01",
+      "cat": "portrait",
+      "seed": 101,
+      "prompt": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật"
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 1,
+    "so_thanh_cong": 1,
+    "giay_trung_vi": 48.4,
+    "giay_min": 48.4,
+    "giay_max": 48.4,
+    "vram_dinh_mb": 11742,
+    "nhiet_dinh_c": 77,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004"
+    ]
+  },
+  "ram_trong_sau_gb": 114.0
+}

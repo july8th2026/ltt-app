@@ -17,6 +17,10 @@ EXPECTED = {
     "media.merge_image", "media.merge_video",
     "audio.generate", "video.social_import", "image.upscale",
     "text.prompt_package", "story.storyboard",
+    # Model anh NOI BO (H37/Q102). No vao bang nay vi `discover_tools()` lay MOI
+    # ToolSpec job-based — khong phai vi ai do quyet dinh mo no cho Agent. Ba cong
+    # fail-closed cua Q92 va cong `is_active` cua H37 khong bi anh huong.
+    "image.ltt",
 }
 
 

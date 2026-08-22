@@ -288,6 +288,16 @@
         "jobs:create"
       ]
     },
+    "image.ltt": {
+      "aliases": [],
+      "contract_hash": "93dbcde993e11c2b",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
     "image.thumbnail": {
       "aliases": [],
       "contract_hash": "f1894755c0b48b16",

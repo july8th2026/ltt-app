@@ -1,0 +1,40 @@
+{
+  "_doc": "G5-EDIT bang TIENG ANH (D-027). Moi lenh kiem MOT loai sua, va cai can do la: no co sua DUNG CHO va GIU NGUYEN phan khong duoc dung khong. ref1 = anh tham chieu trong thu muc input cua ComfyUI.",
+  "prompts": [
+    {
+      "id": "ed1",
+      "cat": "doi-nen",
+      "seed": 501,
+      "ref1": "ref_nguoi.png",
+      "text": "Keep the woman exactly as she is - same face, same hair, same clothing, same pose. Replace only the background with a Hoi An old town street at night with red lanterns."
+    },
+    {
+      "id": "ed2",
+      "cat": "doi-trang-phuc",
+      "seed": 502,
+      "ref1": "ref_nguoi.png",
+      "text": "Keep the woman's face, hair and pose exactly the same. Change only her shirt to a red Vietnamese ao dai."
+    },
+    {
+      "id": "ed3",
+      "cat": "doi-anh-sang",
+      "seed": 503,
+      "ref1": "ref_meo.png",
+      "text": "Keep the cat exactly as it is - same pose, same fur pattern, same position. Change the lighting to cool blue moonlight at night."
+    },
+    {
+      "id": "ed4",
+      "cat": "xoa-vat",
+      "seed": 504,
+      "ref1": "ref_vat.png",
+      "text": "Remove the eyeglasses completely. Keep the books, the teacup, the table and the camera angle exactly the same."
+    },
+    {
+      "id": "ed5",
+      "cat": "them-vat",
+      "seed": 505,
+      "ref1": "ref_vat.png",
+      "text": "Add a small potted plant behind the books. Keep everything else exactly the same."
+    }
+  ]
+}

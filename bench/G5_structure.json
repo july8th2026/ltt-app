@@ -1,0 +1,33 @@
+{
+  "_doc": "G5 che do STRUCTURE thu bang template EDIT + loi nhac giu bo cuc (D-017). HiDream-O1 KHONG co ControlNet. Neu khong giu duoc bo cuc thi phai GHI RO la khong ban duoc che do nay, khong che bang giao dien.",
+  "prompts": [
+    {
+      "id": "t1",
+      "cat": "doi-phong-cach",
+      "seed": 301,
+      "ref1": "ltt_h37_ref_a.png",
+      "text": "Giu nguyen chinh xac bo cuc, tu the, goc may va vi tri dau; chi doi phong cach thanh tranh son dau"
+    },
+    {
+      "id": "t2",
+      "cat": "doi-chat-lieu",
+      "seed": 302,
+      "ref1": "ltt_h37_ref_c.png",
+      "text": "Giu nguyen chinh xac vi tri tung vat the va goc nhin tu tren xuong; chi doi chat lieu mat ban thanh da cam thach trang"
+    },
+    {
+      "id": "t3",
+      "cat": "doi-trang-phuc",
+      "seed": 303,
+      "ref1": "ltt_h37_ref_a.png",
+      "text": "Giu nguyen tu the, bo cuc va goc may; doi trang phuc thanh ao dai do"
+    },
+    {
+      "id": "t4",
+      "cat": "doi-phong-cach",
+      "seed": 304,
+      "ref1": "ltt_h37_ref_b.png",
+      "text": "Giu nguyen tu the con meo, vi tri bau cua so va bo cuc khung hinh; ve lai theo phong cach hoat hinh 2D"
+    }
+  ]
+}

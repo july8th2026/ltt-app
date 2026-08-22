@@ -13,8 +13,11 @@ Tách 3 ID cho model (bài học ModelArk/VideoModelInfo):
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from typing import Optional
+
+from platform_core.i18n import N_
 
 from platform_core.models import (APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE,
                                   APIKEY_CAT_MODEL, APIKEY_CAT_VIDEO)
@@ -129,6 +132,122 @@ REGISTRY: dict[str, Provider] = {
             }),
         ),
         notes="Video async: POST /contents/generations/tasks -> poll GET .../{id}. endpoint_id theo tài khoản.",
+    ),
+    # ── H37: model ảnh NỘI BỘ chạy trên máy B (Q102) ──────────────────────────
+    #
+    # ⭐ Nó là MỘT PROVIDER, không phải một app. Toàn bộ phần thêm vào nền tảng cho
+    #    H37 là mục này + adapter `platform_core/image_gen/`.
+    #
+    # ⛔ `base_url` LẤY TỪ MÔI TRƯỜNG, không viết cứng địa chỉ LAN vào mã nguồn:
+    #    thư mục này vừa là mã nguồn vừa là BỘ CÀI được chép sang máy khác, và một
+    #    IP nội bộ viết cứng sẽ đi theo sang máy không có nó. Chưa đặt biến ⇒ rỗng
+    #    ⇒ adapter từ chối chạy (fail-closed, đúng tinh thần Q92).
+    #
+    # ⛔ MODEL ĐỂ `is_active=False`. Nó chỉ được bật ở G10 sau khi qua cổng G6b (so
+    #    mù với Gemini 3 Pro Image). Khai một model chưa qua cổng chất lượng là mở
+    #    bán trước khi biết nó có đáng bán không.
+    #
+    # ⚠️ 429 CỦA CỔNG NÀY LÀ "BẬN", KHÔNG PHẢI LỖI. Máy B dùng chung GPU với dự án
+    #    video. Xem `platform_core/image_gen/cong_render.py` — gọi
+    #    `api_pool.danh_dau_loi()` cho key này khi gặp 429 sẽ tự tắt model nhà sau
+    #    5 lần hàng xóm bận.
+    "ltt_image": Provider(
+        id="ltt_image", display_name=N_("LTT Studios — máy nhà (RTX 3090)"),
+        auth_style=AUTH_BEARER,
+        base_url=(os.environ.get("LTT_RENDER_BASE_URL") or "").rstrip("/"),
+        categories=(APIKEY_CAT_IMAGE,), async_poll=True,
+        models=(
+            ModelInfo(
+                "hidream-o1", (APIKEY_CAT_IMAGE,),
+                display_name=N_("LTT nội bộ (HiDream-O1)"),
+                is_active=False,          # mở ở G10, sau cổng G6b
+                capabilities={
+                    # CHỈ khai thứ ĐÃ ĐO THẬT. `edit`/`subject` đã đo xong 22/08
+                    # (D-032): VRAM đỉnh 19,8–20,0 GB, giữ được nhân dạng. Trước đó
+                    # chúng KHÔNG được khai vì chưa đo — đó là thứ tự đúng.
+                    "modes": ["t2i", "edit", "subject"],
+                    "buckets": [[2560, 1440], [2048, 2048], [1920, 1080]],
+                    "steps": {"min": 30, "max": 90, "default": 30},
+                    "license": "MIT",
+                    # Số đo 22/08, bf16, `--reserve-vram 3`, lô 10 ảnh liên tiếp.
+                    "do_duoc": {"giay_moi_anh_s30": 57.8, "giay_moi_anh_s90": 168.4,
+                                "vram_dinh_mb": 17946,
+                                # Chế độ tham chiếu ĐẮT GẤP 3,3 LẦN, cùng số bước.
+                                "giay_moi_anh_tham_chieu_s30": 190.0,
+                                "vram_dinh_tham_chieu_mb": 20047},
+                    "max_refs": 2,
+                    # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
+                    "canh_bao": [N_("prompt phải là tiếng Anh — nền tảng tự dịch"),
+                                 N_("chữ tiếng Việt CÓ DẤU vẽ trong ảnh bị sai dấu")],
+                },
+            ),
+        ),
+        list_models_path="/v1/models",
+        notes=("Cổng render trên máy B (:8199, bearer token). Máy B KHÔNG giữ bí mật "
+               "nào của nền tảng: ảnh vào bằng presigned GET, ra bằng presigned PUT. "
+               "429 = BẬN, không phải lỗi."),
+    ),
+    # ── Model ngôn ngữ chạy tại nhà, máy B (H38) ──────────────────────────────
+    # Anh em với `ltt_image` ở trên: cùng máy B, cùng nguyên tắc Q102 (máy B KHÔNG
+    # giữ bí mật nào của nền tảng), nhưng **cổng khác** (8299, không phải 8199) và
+    # **đồng bộ** chứ không async_poll.
+    "ltt_llm": Provider(
+        id="ltt_llm", display_name=N_("LTT Studios — model ngôn ngữ tại nhà"),
+        auth_style=AUTH_BEARER,
+        base_url=(os.environ.get("LTT_LLM_BASE_URL") or "").rstrip("/"),
+        categories=(APIKEY_CAT_CHAT,), async_poll=False,
+        models=(
+            ModelInfo(
+                "qwen38-api", (APIKEY_CAT_CHAT,),
+                display_name=N_("LTT LLM (coding · chat · agent)"),
+                # ✅ MỞ. Khác `ltt_image` (còn False): hạng mục này đã qua cổng
+                #    nghiệm thu 19/19 trên phần cứng thật ngày 22/08 — sinh thật,
+                #    tool calling, prefix cache, và trọng tài VRAM.
+                is_active=True,
+                capabilities={
+                    # CHỈ khai thứ ĐÃ ĐO THẬT trên máy B (SO_DO_P2_P6.md).
+                    "context_window": 65_536,
+                    "vision": False,
+                    "tool_calling": True,
+                    "license": "Apache-2.0",
+                    "do_duoc": {
+                        "decode_tok_s": 68.1,        # trung vị 3 lượt, MTP n-max 2
+                        "decode_khong_mtp_tok_s": 40.0,
+                        "prefill_tok_s": 1100,       # 1.050–1.190 ở 4 kích cỡ
+                        "vram_dinh_mb": 20_339,
+                        "nap_model_s": 18,
+                    },
+                    # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
+                    "canh_bao": [
+                        N_("máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi"),
+                        N_("cửa sổ 64K là trần Cloudflare, không phải trần model: prompt lấp đầy tốn ~62 giây prefill"),
+                    ],
+                },
+            ),
+            ModelInfo(
+                "qwen38-vision", (APIKEY_CAT_CHAT,),
+                display_name=N_("LTT LLM — đọc ảnh"),
+                is_active=True,
+                capabilities={
+                    "context_window": 65_536,
+                    "vision": True,
+                    "tool_calling": True,
+                    "license": "Apache-2.0",
+                    "do_duoc": {"decode_tok_s": 58.5, "vram_dinh_mb": 21_451},
+                    "canh_bao": [
+                        N_("nạp thêm bộ chiếu ảnh nên tốn hơn ~1,1 GB VRAM so với bản không ảnh"),
+                    ],
+                },
+            ),
+            # `qwen38-ops` (200K) CÓ trong llama-swap nhưng KHÔNG khai ở đây:
+            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ Cloudflare cắt ở 100
+            # giây. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
+        ),
+        list_models_path="/v1/models",
+        notes=("Cổng VLM trên máy B (:8299, bearer token), tương thích OpenAI. "
+               "Máy B KHÔNG giữ bí mật nào của nền tảng. "
+               "429 = BẬN, không phải lỗi — đánh dấu lỗi cho key ở đây sẽ tự tắt "
+               "model nhà sau 5 lần (D-005). Gọi qua platform_core/llm/dieu_phoi.py."),
     ),
     "plenx": Provider(
         id="plenx", display_name="PLENX (Seedance/Kling video)",

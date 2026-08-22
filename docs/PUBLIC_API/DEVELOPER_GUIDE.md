@@ -358,6 +358,26 @@ Output: `image_keys` (artifact[]), `prompt` (string)
 
 Contract hash: `f6fd70a8e5a91489`
 
+### `image.ltt`
+
+Generate images with LTT Studios' own model. Supports text-to-image, instruction editing of a reference image, and keeping the same subject across a new scene.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `prompt` — string, **required**, max length 4000, What to draw. Written in any language - the platform translates it to English before the model sees it, because this model only understands English and Chinese. Text you want DRAWN INSIDE the image must be in double quotes; it is kept exactly as written.
+- `mode` — string, one of `t2i`, `edit`, `subject`, default t2i, t2i = from text only. edit = change one reference image while keeping the rest. subject = keep the same person or object across a new scene. Both need image_key, and both cost three times more because they take about three times as long.
+- `count` — integer, min 1, max 4, default 1, How many images to return, 1 to 4.
+- `image_key` — string, Reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. Required for edit and subject; ignored for t2i.
+- `negative_prompt` — string, max length 1000, What to avoid. Optional.
+
+Output: `image_keys` (artifact[]), `prompt` (string)
+
+Contract hash: `93dbcde993e11c2b`
+
 ### `image.thumbnail`
 
 Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.

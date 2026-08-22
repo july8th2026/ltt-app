@@ -1,0 +1,157 @@
+"""
+App `anhnoibo` — bán model tạo ảnh **nội bộ** (H37, Q102).
+
+⭐ VÌ SAO LÀ MỘT APP MỚI, KHÔNG SỬA `taoanh`/`thumbnail`:
+
+   Model nội bộ là **một provider** (`ltt_image`), không phải một app — điều đó
+   không đổi. Nhưng **bán** nó ra `/api/v1` thì cần một `ToolSpec`, mà ToolSpec chỉ
+   khai được trong manifest của một app. Thêm nó vào `taoanh`/`thumbnail` là đụng
+   vào app đang phục vụ khách; thêm một thư mục vào `apps/` thì không đụng ai.
+
+   Đúng hợp đồng app: **không sửa `platform_core/` hay `server/`** cho việc này.
+
+⛔ BA CỔNG ĐỘC LẬP trước khi khách ngoài gọi được (Q92 fail-closed):
+     ① `api_exposed=True` ở đây
+     ② `LTT_PUBLIC_API` bật
+     ③ tên tool có trong `LTT_PUBLIC_API_TOOLS`
+   Quên một cái là tool không ra. Đó là chủ ý.
+
+⚠️ Và một cổng thứ tư của riêng H37: `ModelInfo("hidream-o1").is_active` vẫn
+   **False** cho tới khi qua cổng chất lượng G6b. Chưa qua thì tool này gọi sẽ hỏng
+   ở tầng provider — cố ý, không phải thiếu sót.
+"""
+from __future__ import annotations
+
+from platform_core.i18n import N_
+from platform_core.registry import AppManifest, ToolSpec
+
+#: ⚠️ GIÁ TẠM — CHƯA CHỐT. Model nội bộ không tốn tiền API, nhưng **chiếm GPU**:
+#: đo thật 22/08 là 96 giây/ảnh (t2i, 50 bước) và ~190 giây khi có ảnh tham chiếu.
+#: Máy B còn chia GPU với dự án video. Nên giá phải phản ánh **thời gian máy**, không
+#: phải chi phí API. Con số dưới đây đặt bằng thumbnail (Gemini) để có chỗ bắt đầu;
+#: chốt lại sau khi có số liệu dùng thật. Xem `docs/ANH_NOI_BO/`.
+CREDIT_MOI_ANH = 5
+
+#: Ảnh tham chiếu đắt hơn hẳn — đo được **gấp 3,3 lần** thời gian ở cùng số bước.
+HE_SO_THAM_CHIEU = 3
+
+
+def _gia(params: dict) -> int:
+    try:
+        so = int(params.get("count", 1))
+    except (TypeError, ValueError):
+        so = 1
+    so = max(1, min(so, 4))
+    che_do = str(params.get("mode") or "t2i")
+    he_so = HE_SO_THAM_CHIEU if che_do in ("edit", "subject") else 1
+    return so * CREDIT_MOI_ANH * he_so
+
+
+MANIFEST = AppManifest(
+    slug="anhnoibo",
+    display_name=N_('Ảnh nội bộ (máy nhà)'),
+    route_prefix="/anhnoibo",
+    summary=N_('Tạo ảnh bằng model chạy trên máy của LTT Studios. Sinh ảnh từ mô '
+               'tả, sửa ảnh theo lệnh, giữ nhân vật nhất quán qua nhiều ảnh.'),
+    icon="🏠",
+    accent="#0F766E",
+
+    # ⛔ KHÔNG có thẻ catalog và KHÔNG có mục nav riêng — app này **chưa có giao
+    #    diện**: không `routes.py`, không bundle React. Thiếu khai báo này thì
+    #    `/anhnoibo` thành một link 404 trong header của **mọi người đã đăng nhập**
+    #    (`visible_on_surface` trả `authenticated or public`, nên `public=False`
+    #    một mình KHÔNG đủ), còn `nav=()` thì bị `nav_entries()` tự sinh lại.
+    #
+    #    `catalog_parent` là cơ chế hợp đồng đã có sẵn cho đúng việc này: *"app con
+    #    vẫn giữ route/job/history riêng nhưng không tạo card/nav độc lập… hai
+    #    executor cùng nằm dưới một sản phẩm customer-facing"*. Đó chính xác là
+    #    quan hệ ở đây: model nhà là một executor ảnh nữa dưới sản phẩm tạo ảnh.
+    #
+    #    Nó **không** chặn đường API: `app_may_be_public()` chỉ đọc `enabled` +
+    #    `lifecycle` + `surface`. Bằng chứng sống: `thumbnail` cũng khai
+    #    `catalog_parent="taoanh"` và vẫn đang publish `image.thumbnail`.
+    catalog_parent="taoanh",
+
+    job_types=("anhnoibo.generate",),
+    # Worker chỉ gọi HTTP sang máy B — không cần GPU trên máy chạy worker.
+    requires=("api",),
+    credit_cost=_gia,
+
+    tools=(ToolSpec(
+        name="image.ltt",
+        job_type="anhnoibo.generate",
+        description=N_('Tạo ảnh bằng model nội bộ của LTT Studios.'),
+        params_schema={
+            "prompt": {"type": "string", "required": True, "max_length": 4000},
+            "mode": {"type": "enum", "values": ["t2i", "edit", "subject"],
+                     "default": "t2i"},
+            "count": {"type": "int", "min": 1, "max": 4, "default": 1},
+            # ⚠️ HAI THAM SỐ, MỘT VIỆC — và đó không phải thừa.
+            #    `image_key` (một ảnh) là thứ khách API dùng được: tầng public API
+            #    giải **một** phiên tải lên cho **một** tham số
+            #    (`invocation.promote_media`, `sessions: dict`), nên kiểu `image[]`
+            #    qua API hôm nay là một hợp đồng không thực hiện được.
+            #    `image_keys` (tối đa 2) là đường của giao diện web, khai `hidden`.
+            #    `taoanh` đã phải làm đúng như vậy — đây là giới hạn của nền tảng,
+            #    không phải của model. Model nhận tới 10 ảnh.
+            "image_key": {"type": "image", "required": False},
+            "image_keys": {"type": "image[]", "required": False},
+            # Khai `model_ref` dù hôm nay chỉ có MỘT model: đây là cách bộ chọn
+            # model của giao diện và của admin nhìn thấy nó. `default` bắt buộc vì
+            # tham số này `hidden` — tham số ẩn mà không có mặc định thì tầng API
+            # bỏ trống, và handler tự chọn một thứ khác (đã có tiền lệ: tool
+            # storyboard chạy — và tính tiền — sai nhánh vì đúng lỗi này).
+            "model": {"type": "model_ref", "category": "image",
+                      "providers": ["ltt_image"], "default": "hidream-o1"},
+            "negative_prompt": {"type": "string", "max_length": 1000},
+        },
+        returns={"image_keys": "image[]", "prompt": "text"},
+
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": (
+                "Generate images with LTT Studios' own model. Supports "
+                "text-to-image, instruction editing of a reference image, and "
+                "keeping the same subject across a new scene."),
+            # `model`: hien chi co mot model, va gia tinh theo che do chu khong
+            # theo model. Mo ra khi nao ham gia tinh theo tung model.
+            # `image_keys`: xem chu thich o params_schema.
+            "hidden": ("model", "image_keys"),
+            "output_counts": {"image_keys": "count"},
+            "params": {
+                "prompt": {
+                    "description": (
+                        "What to draw. Written in any language - the platform "
+                        "translates it to English before the model sees it, "
+                        "because this model only understands English and "
+                        "Chinese. Text you want DRAWN INSIDE the image must be "
+                        "in double quotes; it is kept exactly as written."),
+                    "example": 'A calico cat sleeping on a windowsill, afternoon light',
+                },
+                "mode": {
+                    "description": (
+                        "t2i = from text only. edit = change one reference image "
+                        "while keeping the rest. subject = keep the same person "
+                        "or object across a new scene. Both need image_key, "
+                        "and both cost three times more because they take "
+                        "about three times as long."),
+                    "example": "t2i",
+                },
+                "count": {"description": "How many images to return, 1 to 4.",
+                          "example": 1},
+                "image_key": {
+                    "description": (
+                        "Reference image, given as the id of an upload you "
+                        "confirmed or of an artifact from an earlier job. "
+                        "Required for edit and subject; ignored for t2i."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "negative_prompt": {
+                    "description": "What to avoid. Optional.",
+                    "example": "",
+                },
+            },
+        },
+    ),),
+)

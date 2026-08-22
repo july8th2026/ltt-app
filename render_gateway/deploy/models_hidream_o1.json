@@ -1,0 +1,33 @@
+{
+  "_doc": "Ban khai model cua H37. Tai lai tu dau bang MOT lenh: tai_model.py.",
+  "_vi_sao_o_H": "E: la SSD SATA (476 MB/s), H: la NVMe (nhanh ~6x doc theo thong so) va con 849 GB trong. Nap mot checkpoint 16,4 GB: ~33s tu E: so voi ~5-7s tu H:. Xem DECISIONS.md D-014.",
+  "_giay_phep": "HiDream-O1-Image: MIT. Duoc dung thuong mai. Xem docs/ANH_NOI_BO/LICENSE_NOTES.md 6b.",
+  "goc": "H:/LTT_MODELS",
+  "files": [
+    {
+      "repo": "Comfy-Org/HiDream-O1-Image",
+      "file": "checkpoints/hidream_o1_image_fp8_scaled.safetensors",
+      "thu_muc": "checkpoints",
+      "gb_mong_doi": 8.07,
+      "vai": "base fp8 - tai TRUOC de xac minh template nhanh nhat",
+      "uu_tien": 1
+    },
+    {
+      "repo": "Comfy-Org/HiDream-O1-Image",
+      "file": "checkpoints/hidream_o1_image_bf16.safetensors",
+      "thu_muc": "checkpoints",
+      "gb_mong_doi": 16.4,
+      "vai": "base bf16 - CAU HINH DICH cua san pham (D-010: chat luong tren het)",
+      "uu_tien": 2
+    },
+    {
+      "repo": "Comfy-Org/HiDream-O1-Image",
+      "file": "checkpoints/hidream_o1_image_dev_fp8_scaled.safetensors",
+      "thu_muc": "checkpoints",
+      "gb_mong_doi": 8.07,
+      "vai": "dev (distilled, 28 buoc, CFG 1.0) - do de biet bo lo gi",
+      "uu_tien": 3
+    }
+  ],
+  "_khong_can_text_encoder": "HiDream-O1 co text encoder TOKENIZER-ONLY: backbone Qwen3-VL chay ben trong diffusion_model.* moi buoc (comfy/text_encoders/hidream_o1.py). Trang tai lieu ComfyUI liet ke gemma4_e4b_it_fp8_scaled.safetensors 9 GB - SAI voi model nay. Neu G3 phat hien VAN can, phai ghi lai va sua D-009."
+}

@@ -363,11 +363,81 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     slugs = [a.slug for a in discover() if a.slug not in ("demo", "agent", "nexus")]
     offenders = []
     for path in (ROOT / "platform_core").rglob("*.py"):
-        text = path.read_text(encoding="utf-8")
+        text = _ma_thuc_thi(path.read_text(encoding="utf-8"))
         for slug in slugs:
             if slug in text:
                 offenders.append(f"{path.name}: {slug!r}")
     assert offenders == [], f"tên app bị viết cứng: {offenders}"
+
+
+def _ma_thuc_thi(nguon: str) -> str:
+    """Bỏ chú thích và docstring, giữ nguyên phần còn lại.
+
+    Vì sao lọc chứ không so nguyên văn: cái test này chốt *"nền tảng không đi vòng
+    qua registry"*, và đi vòng là một hành vi của **mã chạy được**. Một dòng
+    docstring trỏ tới `apps/<tên>/...` để người đọc biết chỗ tham chiếu **không đi
+    vòng cái gì cả** — nó chỉ là tài liệu.
+
+    Đây **không phải** một miễn trừ theo tên app. Miễn trừ theo tên thì làm mù hẳn
+    phép kiểm với chuỗi đó ở mọi nơi; cách này vẫn bắt slug trong lệnh, trong điều
+    kiện, và trong **chuỗi ký tự thường** — xem hai test ngay dưới.
+    """
+    import ast
+    import io as _io
+    import tokenize
+
+    # Vi tri cua tung docstring (module/class/ham) — chi nhung cai do la "prose".
+    vi_tri = set()
+    try:
+        cay = ast.parse(nguon)
+    except SyntaxError:
+        return nguon
+    for node in ast.walk(cay):
+        if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                                 ast.AsyncFunctionDef)):
+            continue
+        than = getattr(node, "body", None)
+        if (than and isinstance(than[0], ast.Expr)
+                and isinstance(than[0].value, ast.Constant)
+                and isinstance(than[0].value.value, str)):
+            vi_tri.add((than[0].value.lineno, than[0].value.col_offset))
+
+    ra = []
+    for tok in tokenize.generate_tokens(_io.StringIO(nguon).readline):
+        if tok.type == tokenize.COMMENT:
+            continue
+        if tok.type == tokenize.STRING and tok.start in vi_tri:
+            continue
+        ra.append(tok.string)
+    return chr(10).join(ra)
+
+
+def _nguon(*dong: str) -> str:
+    """Ghép các dòng nguồn. Dùng `chr(10)` chứ không viết escape xuống dòng —
+    những tệp này đôi khi được sinh ra bằng script, và một tầng thoát chuỗi nữa
+    là dấu xuống dòng biến thành ký tự thật, làm cả tệp không parse được."""
+    return chr(10).join(dong) + chr(10)
+
+
+def test_bo_quet_van_bat_slug_trong_MA_CHAY_DUOC():
+    """Bánh cóc cho chính bộ lọc trên. Nếu nó nới tay quá thì phép kiểm ở trên
+    thành vô dụng mà vẫn xanh."""
+    ma = _ma_thuc_thi(_nguon('x = 1',
+                             'if slug == "taovideo":',
+                             '    pass'))
+    assert "taovideo" in ma
+
+
+def test_bo_quet_KHONG_bat_slug_trong_docstring_hay_chu_thich():
+    ma = _ma_thuc_thi(_nguon('"""Xem apps/taovideo/translate.py."""',
+                             '# cung nhu apps/kichban/jobs.py',
+                             'x = 1'))
+    assert "taovideo" not in ma and "kichban" not in ma
+
+
+def test_bo_quet_van_bat_slug_trong_CHUOI_THUONG():
+    """Chuỗi thường KHÁC docstring: `TEN = "taovideo"` đúng là đi vòng registry."""
+    assert "taovideo" in _ma_thuc_thi(_nguon('TEN = "taovideo"'))
 
 
 # ── app demo phải luôn chạy được ───────────────────────────────────────────

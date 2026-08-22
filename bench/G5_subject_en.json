@@ -1,0 +1,33 @@
+{
+  "_doc": "G5-SUBJECT / NHAT QUAN NHAN VAT. Cung MOT anh tham chieu, bon boi canh khac han nhau. Cau hoi: co con la CUNG MOT NGUOI khong. Day la thu quyet dinh xem model co ban duoc cho viec lam noi dung nhieu ky khong.",
+  "prompts": [
+    {
+      "id": "sb1",
+      "cat": "nhat-quan",
+      "seed": 601,
+      "ref1": "ref_nguoi.png",
+      "text": "The same woman from the reference image, now sitting in a coffee shop holding a cup, warm afternoon light, half body shot"
+    },
+    {
+      "id": "sb2",
+      "cat": "nhat-quan",
+      "seed": 602,
+      "ref1": "ref_nguoi.png",
+      "text": "The same woman from the reference image, now standing outdoors in a park, wearing a denim jacket, full body, overcast daylight"
+    },
+    {
+      "id": "sb3",
+      "cat": "nhat-quan",
+      "seed": 603,
+      "ref1": "ref_nguoi.png",
+      "text": "The same woman from the reference image, now in a modern office, wearing a blazer, speaking and gesturing, professional lighting"
+    },
+    {
+      "id": "sb4",
+      "cat": "nhat-quan",
+      "seed": 604,
+      "ref1": "ref_nguoi.png",
+      "text": "The same woman from the reference image, close-up portrait, laughing, studio lighting on a plain grey background"
+    }
+  ]
+}

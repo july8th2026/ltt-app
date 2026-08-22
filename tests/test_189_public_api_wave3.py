@@ -51,9 +51,17 @@ def _config():
 def test_the_two_logical_operations_are_published():
     names = [tool.name for tool in build_catalog(_config())]
     assert "text.prompt_package" in names and "story.storyboard" in names
-    snapshot = {"tools": [tool.to_public_dict()
-                          for tool in build_catalog(_config())]}
-    assert snapshot == json.loads(GOLDEN.read_text(encoding="utf-8"))
+    # Compare against the golden entries **for wave 3's five tools**, not the
+    # whole file. The two were the same set until 2026-08-22, when `image.ltt`
+    # was added to the frozen inventory. What this test is actually asserting is
+    # that wave 3's contracts have not drifted — asserting "and nothing else
+    # exists" was an accident of the two sets coinciding, and it would fail every
+    # time a later wave freezes a contract of its own.
+    snapshot = {tool.name: tool.to_public_dict() for tool in build_catalog(_config())}
+    golden = {entry["name"]: entry
+              for entry in json.loads(GOLDEN.read_text(encoding="utf-8"))["tools"]}
+    assert sorted(snapshot) == sorted(PUBLISHED)
+    assert snapshot == {name: golden[name] for name in snapshot}
 
 
 def test_the_internal_routing_switch_is_not_a_public_parameter():

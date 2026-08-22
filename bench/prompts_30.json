@@ -1,0 +1,54 @@
+{
+  "_doc": "Bo prompt CO DINH cua H37. Dung chung cho G3 (thi nghiem do phan giai), G4 (quet cau hinh) va G6b (doi chung voi Gemini/Klein 9B). KHONG doi noi dung giua cac phase — doi la moi so do truoc do thanh vo nghia.",
+  "_luat": [
+    "Seed co dinh theo prompt, khong sinh ngau nhien: cung prompt + cung seed phai ra cung anh.",
+    "Prompt viet nhu khach that viet, khong toi uu cho model nao.",
+    "Moi hang muc >= 2 prompt de mot ca la khong keo lech ket luan.",
+    "Chu trong anh la hang muc RIENG va quan trong: day la cho Gemini dang manh."
+  ],
+  "version": 1,
+  "prompts": [
+    { "id": "p01", "cat": "portrait", "seed": 101, "text": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật" },
+    { "id": "p02", "cat": "portrait", "seed": 102, "text": "Chân dung cận mặt một người đàn ông lớn tuổi, da nhiều nếp nhăn, ánh sáng bên hông tương phản mạnh, đen trắng" },
+    { "id": "p03", "cat": "portrait", "seed": 103, "text": "Ảnh chân dung nghề nghiệp cho hồ sơ công ty, áo sơ mi trắng, nền xám trơn, ánh sáng studio đều" },
+
+    { "id": "p04", "cat": "photoreal", "seed": 104, "text": "Bát phở bò tái nghi ngút khói trên bàn gỗ, hành lá và ớt tươi bên cạnh, ánh sáng tự nhiên buổi sáng" },
+    { "id": "p05", "cat": "photoreal", "seed": 105, "text": "Con mèo tam thể nằm ngủ trên bậu cửa sổ, nắng chiều xuyên qua rèm, lông thấy rõ từng sợi" },
+    { "id": "p06", "cat": "photoreal", "seed": 106, "text": "Đường phố Hà Nội sau cơn mưa, mặt đường phản chiếu đèn, xe máy đi qua tạo vệt sáng" },
+
+    { "id": "p07", "cat": "cinematic", "seed": 107, "text": "Cảnh điện ảnh: một người đứng cuối hành lang dài tối, đèn neon xanh hắt từ hai bên, khói mỏng, tỉ lệ rộng" },
+    { "id": "p08", "cat": "cinematic", "seed": 108, "text": "Cảnh hoàng hôn trên ruộng bậc thang, ngược sáng, bóng người gánh lúa in trên nền trời cam" },
+
+    { "id": "p09", "cat": "multi-person", "seed": 109, "text": "Bốn người bạn ngồi quanh bàn cà phê vỉa hè, đang cười nói, ai cũng thấy rõ mặt, ảnh chụp tự nhiên" },
+    { "id": "p10", "cat": "multi-person", "seed": 110, "text": "Đội bóng chuyền nữ chụp ảnh tập thể sau trận đấu, tám người xếp hai hàng, cầm cúp" },
+
+    { "id": "p11", "cat": "object-placement", "seed": 111, "text": "Ba quyển sách xếp chồng bên trái, một tách trà bên phải, một chiếc kính đặt trên quyển trên cùng, bàn gỗ, nhìn từ trên xuống 45 độ" },
+    { "id": "p12", "cat": "object-placement", "seed": 112, "text": "Một quả táo đỏ ĐẶT TRONG một chiếc bát thuỷ tinh trong suốt, chiếc bát đặt TRÊN một tờ báo đang mở" },
+
+    { "id": "p13", "cat": "product", "seed": 113, "text": "Ảnh sản phẩm chai serum dưỡng da thuỷ tinh trong, nền trắng sạch, phản chiếu nhẹ dưới đáy, ánh sáng studio mềm" },
+    { "id": "p14", "cat": "product", "seed": 114, "text": "Tai nghe không dây màu đen đặt cạnh hộp sạc mở nắp, nền bê tông xám, ánh sáng hắt chéo" },
+    { "id": "p15", "cat": "product", "seed": 115, "text": "Ly cà phê sữa đá trong cốc nhựa mang đi, nhãn dán trơn không chữ, nền quán cà phê mờ" },
+
+    { "id": "p16", "cat": "text-vi", "seed": 116, "text": "Biển hiệu quán ăn với dòng chữ lớn \"CƠM TẤM SƯỜN BÌ\" màu đỏ trên nền vàng, chữ rõ nét, đúng dấu tiếng Việt" },
+    { "id": "p17", "cat": "text-vi", "seed": 117, "text": "Poster khuyến mãi với dòng chữ \"GIẢM 50% HÔM NAY\" ở giữa, phía dưới là \"Áp dụng đến 30/09\", bố cục gọn gàng" },
+    { "id": "p18", "cat": "text-vi", "seed": 118, "text": "Bìa sách màu xanh đậm, tựa đề \"NHỮNG NGÀY THƠ ẤU\" chữ trắng ở giữa, tên tác giả nhỏ hơn phía dưới" },
+
+    { "id": "p19", "cat": "text-en", "seed": 119, "text": "A wooden shop sign reading \"OPEN 24 HOURS\" in clean sans-serif letters, warm bulb lighting" },
+    { "id": "p20", "cat": "text-en", "seed": 120, "text": "A whiteboard with the handwritten words \"Ship it on Friday\" and a small arrow drawn underneath" },
+
+    { "id": "p21", "cat": "thumbnail", "seed": 121, "text": "Thumbnail YouTube: một người đàn ông mặt biểu cảm ngạc nhiên bên trái, bên phải là chữ lớn \"BẤT NGỜ!\" màu vàng viền đen, nền đỏ gradient, tương phản cao" },
+    { "id": "p22", "cat": "thumbnail", "seed": 122, "text": "Thumbnail YouTube về công nghệ: card đồ hoạ đặt chéo giữa khung, tia sáng xanh, chữ \"RTX 3090\" góc trên trái, nền tối" },
+    { "id": "p23", "cat": "thumbnail", "seed": 123, "text": "Thumbnail nấu ăn: đĩa thức ăn hấp dẫn chiếm nửa phải, nửa trái là mặt người đầu bếp đang cười, mũi tên đỏ chỉ vào đĩa" },
+
+    { "id": "p24", "cat": "architecture", "seed": 124, "text": "Nội thất phòng khách tối giản, ánh sáng tự nhiên từ cửa sổ lớn, sofa xám, sàn gỗ sáng, đường nét thẳng" },
+    { "id": "p25", "cat": "architecture", "seed": 125, "text": "Mặt tiền một toà nhà văn phòng kính hiện đại nhìn từ dưới lên, trời xanh có mây, đường nét dọc thẳng không méo" },
+
+    { "id": "p26", "cat": "anime", "seed": 126, "text": "Nhân vật nữ phong cách anime, tóc xanh dài, đồng phục học sinh, đứng trước cổng trường, nền vẽ chi tiết" },
+    { "id": "p27", "cat": "anime", "seed": 127, "text": "Cảnh anime phong cách phim hoạt hình Nhật: thị trấn nhỏ lúc hoàng hôn, mây nhiều tầng, màu ấm" },
+
+    { "id": "p28", "cat": "fantasy", "seed": 128, "text": "Rồng đá khổng lồ ngủ trên đỉnh núi phủ tuyết, sương mù dưới chân, ánh trăng lạnh" },
+    { "id": "p29", "cat": "fantasy", "seed": 129, "text": "Thư viện cổ vô tận, kệ sách cao vút, cầu thang xoắn, bụi lơ lửng trong tia sáng" },
+
+    { "id": "p30", "cat": "hard-composition", "seed": 130, "text": "Một người cầm tấm biển bằng cả hai tay, trên biển ghi \"LTT STUDIOS\", đứng giữa quảng trường đông người, chữ trên biển phải đọc được rõ" }
+  ]
+}

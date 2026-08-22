@@ -1,0 +1,178 @@
+{
+  "ca": "G3_baseline_v2",
+  "ngay": "2026-08-21T16:24:31+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt_h37/hidream_o1",
+    "ref_mp": 4.0,
+    "sampler": "euler",
+    "scheduler": "normal",
+    "seed": 0,
+    "steps": 50,
+    "upscale": "area",
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 107.3,
+  "runs": [
+    {
+      "prompt_id": "7af0efd7-d6c0-5308-89f9-318c17b3fa28",
+      "ok": true,
+      "giay": 1.8,
+      "do_duoc": {
+        "so_mau": 2,
+        "vram_dinh_mb": 15581,
+        "vram_trung_vi_mb": 15581,
+        "nhiet_dinh_c": 40,
+        "nhiet_trung_vi_c": 40,
+        "power_dinh_w": 19.58,
+        "throttle_quan_sat": [
+          "0x0000000000000001"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4146795
+      ],
+      "anh": [
+        "G3_baseline_v2_p01_0.png"
+      ],
+      "id": "p01",
+      "cat": "portrait",
+      "seed": 101,
+      "prompt": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật"
+    },
+    {
+      "prompt_id": "d439afe6-851c-5452-b2c0-48f630a22594",
+      "ok": true,
+      "giay": 1.8,
+      "do_duoc": {
+        "so_mau": 2,
+        "vram_dinh_mb": 15581,
+        "vram_trung_vi_mb": 15581,
+        "nhiet_dinh_c": 40,
+        "nhiet_trung_vi_c": 40,
+        "power_dinh_w": 19.37,
+        "throttle_quan_sat": [
+          "0x0000000000000001"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4501530
+      ],
+      "anh": [
+        "G3_baseline_v2_p02_0.png"
+      ],
+      "id": "p02",
+      "cat": "portrait",
+      "seed": 102,
+      "prompt": "Chân dung cận mặt một người đàn ông lớn tuổi, da nhiều nếp nhăn, ánh sáng bên hông tương phản mạnh, đen trắng"
+    },
+    {
+      "prompt_id": "b4404fc6-f96a-541b-9b0b-8573d5aae225",
+      "ok": true,
+      "giay": 1.8,
+      "do_duoc": {
+        "so_mau": 2,
+        "vram_dinh_mb": 15581,
+        "vram_trung_vi_mb": 15581,
+        "nhiet_dinh_c": 40,
+        "nhiet_trung_vi_c": 40,
+        "power_dinh_w": 19.02,
+        "throttle_quan_sat": [
+          "0x0000000000000001"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4676174
+      ],
+      "anh": [
+        "G3_baseline_v2_p03_0.png"
+      ],
+      "id": "p03",
+      "cat": "portrait",
+      "seed": 103,
+      "prompt": "Ảnh chân dung nghề nghiệp cho hồ sơ công ty, áo sơ mi trắng, nền xám trơn, ánh sáng studio đều"
+    },
+    {
+      "prompt_id": "eaa11a10-8901-5fe2-b888-deae32829ec6",
+      "ok": true,
+      "giay": 92.3,
+      "do_duoc": {
+        "so_mau": 87,
+        "vram_dinh_mb": 16829,
+        "vram_trung_vi_mb": 16701,
+        "nhiet_dinh_c": 82,
+        "nhiet_trung_vi_c": 75,
+        "power_dinh_w": 369.62,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4431337
+      ],
+      "anh": [
+        "G3_baseline_v2_p04_0.png"
+      ],
+      "id": "p04",
+      "cat": "photoreal",
+      "seed": 104,
+      "prompt": "Bát phở bò tái nghi ngút khói trên bàn gỗ, hành lá và ớt tươi bên cạnh, ánh sáng tự nhiên buổi sáng"
+    },
+    {
+      "prompt_id": "cda974d0-2628-5e9b-a963-0af735dd872d",
+      "ok": true,
+      "giay": 93.5,
+      "do_duoc": {
+        "so_mau": 89,
+        "vram_dinh_mb": 16765,
+        "vram_trung_vi_mb": 16765,
+        "nhiet_dinh_c": 83,
+        "nhiet_trung_vi_c": 83,
+        "power_dinh_w": 369.97,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000020",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        3998219
+      ],
+      "anh": [
+        "G3_baseline_v2_p05_0.png"
+      ],
+      "id": "p05",
+      "cat": "photoreal",
+      "seed": 105,
+      "prompt": "Con mèo tam thể nằm ngủ trên bậu cửa sổ, nắng chiều xuyên qua rèm, lông thấy rõ từng sợi"
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 5,
+    "so_thanh_cong": 5,
+    "giay_trung_vi": 1.8,
+    "giay_min": 1.8,
+    "giay_max": 93.5,
+    "vram_dinh_mb": 16829,
+    "nhiet_dinh_c": 83,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004",
+      "0x0000000000000020",
+      "0x0000000000000024"
+    ]
+  },
+  "ram_trong_sau_gb": 107.1
+}

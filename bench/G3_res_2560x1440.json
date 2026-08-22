@@ -1,0 +1,63 @@
+{
+  "ca": "G3_res_2560x1440",
+  "ngay": "2026-08-21T16:17:42+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt_h37/hidream_o1",
+    "ref_mp": 4.0,
+    "sampler": "euler",
+    "scheduler": "normal",
+    "seed": 0,
+    "steps": 50,
+    "upscale": "area",
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 107.3,
+  "runs": [
+    {
+      "prompt_id": "eab46f8c-e0c0-59c6-b7b4-a2b59a3d0afd",
+      "ok": true,
+      "giay": 1.8,
+      "do_duoc": {
+        "so_mau": 2,
+        "vram_dinh_mb": 15631,
+        "vram_trung_vi_mb": 15631,
+        "nhiet_dinh_c": 61,
+        "nhiet_trung_vi_c": 60,
+        "power_dinh_w": 76.35,
+        "throttle_quan_sat": [
+          "0x0000000000000001"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4146793
+      ],
+      "anh": [
+        "G3_res_2560x1440_p01_0.png"
+      ],
+      "id": "p01",
+      "cat": "portrait",
+      "seed": 101,
+      "prompt": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật"
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 1,
+    "so_thanh_cong": 1,
+    "giay_trung_vi": 1.8,
+    "giay_min": 1.8,
+    "giay_max": 1.8,
+    "vram_dinh_mb": 15631,
+    "nhiet_dinh_c": 61,
+    "throttle": [
+      "0x0000000000000001"
+    ]
+  },
+  "ram_trong_sau_gb": 107.3
+}

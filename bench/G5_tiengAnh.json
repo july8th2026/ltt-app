@@ -1,0 +1,41 @@
+{
+  "_doc": "PHEP THU NGON NGU (D-0xx): dich DUNG 5 prompt tieng Viet DA HONG sang tieng Anh, giu nguyen moi yeu cau va giu NGUYEN SEED. Neu ban tieng Anh bam prompt tot hon han thi loi nam o BO MA HOA VAN BAN voi tieng Viet, KHONG phai o nang luc cua model. e06 la doi chung: cung mot bien hieu nhung viet khong dau.",
+  "prompts": [
+    {
+      "id": "e01",
+      "cat": "photoreal",
+      "seed": 105,
+      "text": "A calico cat sleeping curled up on a windowsill, afternoon sunlight filtering through sheer curtains, individual fur strands clearly visible, photorealistic"
+    },
+    {
+      "id": "e02",
+      "cat": "multi-person",
+      "seed": 109,
+      "text": "Four friends sitting around a sidewalk cafe table, laughing and talking, all four faces clearly visible, natural candid photograph"
+    },
+    {
+      "id": "e03",
+      "cat": "multi-person",
+      "seed": 110,
+      "text": "A women's volleyball team posing for a group photo after a match, eight players standing in two rows, holding a trophy"
+    },
+    {
+      "id": "e04",
+      "cat": "object-placement",
+      "seed": 111,
+      "text": "Three books stacked on the left, a teacup on the right, a pair of eyeglasses resting on top of the highest book, wooden table, 45 degree overhead view"
+    },
+    {
+      "id": "e05",
+      "cat": "object-placement",
+      "seed": 112,
+      "text": "A red apple INSIDE a clear glass bowl, and the bowl is placed ON TOP OF an open newspaper"
+    },
+    {
+      "id": "e06",
+      "cat": "text-latin",
+      "seed": 116,
+      "text": "A restaurant signboard with large red letters reading \"COM TAM SUON BI\" on a yellow background, crisp clean lettering, straight on view"
+    }
+  ]
+}

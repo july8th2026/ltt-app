@@ -4,7 +4,7 @@
 app; bản này là *kết quả* sau khi đã xây kernel và chạy 3 wave thật).
 
 Nguồn: `platform_core.registry.discover()` + code app thật, ngày 2026-08-13 —
-**14 app, 21 ToolSpec, 17 job_type**.
+**15 app, 22 ToolSpec, 18 job_type** *(chưa tính `vps` — xem ghi chú cuối mục 1)*.
 
 **Không tài liệu nào tự chứng minh được.** Bảng dưới đây được máy kiểm bằng
 `tests/test_190_public_api_coverage.py`: thêm một app mà chưa quyết định thì
@@ -13,11 +13,12 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 
 ---
 
-## 1. Bảng chốt (14/14 app)
+## 1. Bảng chốt (15/15 app)
 
 | App | Disposition | Đang public | Lý do |
 |---|---|---|---|
 | `thumbnail` | **EXPOSE_V1** | `image.thumbnail` | Giá phẳng theo số ảnh, chốt trước khi chạy. Đã E2E qua worker (wave 1). |
+| `anhnoibo` | **EXPOSE_V1** | `image.ltt` | Model ảnh **nội bộ** trên máy B (H37/Q102). Giá chốt trước khi chạy: theo số ảnh, nhân 3 khi có ảnh tham chiếu. ⚠️ *EXPOSE_V1 ở đây nghĩa là **được phép** publish, chưa phải **đang** publish* — công tắc `LTT_PUBLIC_API_TOOLS` vẫn chưa có tên nó, và model vẫn `is_active=False` tới khi qua cổng chất lượng. Chưa E2E. |
 | `taoanh` | **EXPOSE_V1** | `image.generate` | Giá theo model qua alias công khai; 1 ảnh tham chiếu qua upload (wave 1). |
 | `upscalevideo` | **EXPOSE_V1** | `image.upscale` | Giá phẳng 2/4 theo preset; đường GPU thật (wave 2). |
 | `prompt_ai_ommi` | **EXPOSE_V1** | `text.prompt_package`, `story.storyboard` | Giá theo `scene_count`; kết quả là dữ liệu, trả qua `result` (wave 3). |
@@ -33,7 +34,16 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 | `nexus` | **DEFER** | — | **Quản lý thiết bị, không phải một tool có giá.** Không có `ToolSpec` và không sinh Job, nên toàn bộ hợp đồng quote/settle không áp được. Public nó nghĩa là công bố một hợp đồng về **danh tính thiết bị** — phải chờ quyết định hạ tầng relay (D2) và legal review ranh giới AGPL. Q93, xem `docs/nexus/`. |
 | `kichban` | **RETIRED_NO_EXPOSE** | — | Retired (Q69). Có ToolSpec `text.generate` với `customer_visible=True` — đó là cờ palette của Agent, **không phải** cờ public. Muốn năng lực sinh text thì migrate sang app được hỗ trợ, không hồi sinh app cũ. |
 
-## 2. Tool đang public (5/21 ToolSpec)
+> ⚠️ **`apps/vps` chưa có trong bảng này — CÓ CHỦ ĐÍCH, không phải bỏ sót.**
+> App đó **đang được xây dở ở một dự án/phiên khác** nên cố ý chưa commit (chủ
+> dự án xác nhận 22/08). Hệ quả: `test_190` và `test_212` mỗi tệp đỏ **đúng một
+> test** cho tới khi app đó xong và được phân loại. **Đã biết, không phải hồi
+> quy** — đừng đi tìm nguyên nhân trong H37.
+>
+> Không có rủi ro lọt ra API: nó khai **không ToolSpec nào** và
+> `app_may_be_public()` trả `False`.
+
+## 2. Tool đang public (5/22 ToolSpec)
 
 | Tool | App | Giá | Ghi chú hợp đồng |
 |---|---|---|---|

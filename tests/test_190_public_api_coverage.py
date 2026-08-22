@@ -39,6 +39,12 @@ DISPOSITION = {
     "taoanh": (EXPOSE_V1, ("image.generate",)),
     "upscalevideo": (EXPOSE_V1, ("image.upscale",)),
     "prompt_ai_ommi": (EXPOSE_V1, ("text.prompt_package", "story.storyboard")),
+    # The in-house image model (H37/Q102). EXPOSE_V1 means the contract is
+    # published-shaped, not that customers can call it: the operator switch
+    # `LTT_PUBLIC_API_TOOLS` still omits it, and the model itself is
+    # `is_active=False` until the quality gate. Those are the gates; this entry
+    # only records that the tool is *allowed* to be published.
+    "anhnoibo": (EXPOSE_V1, ("image.ltt",)),
 
     # Priced from a caller-declared duration, with a run-time hold top-up: one
     # root cause, three tools (waves 2 and 3).

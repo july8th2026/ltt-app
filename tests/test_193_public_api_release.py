@@ -57,9 +57,14 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
                        json.loads(GOLDEN.read_text(encoding="utf-8"))["tools"])
     exposed = sorted(tool.name for item in discover() if not item.error
                      for tool in item.manifest.tools if tool.api_exposed)
-    assert published == exposed == ["image.generate", "image.thumbnail",
-                                    "image.upscale", "story.storyboard",
-                                    "text.prompt_package"]
+    # `image.ltt` (H37/Q102) joined the frozen inventory on 2026-08-22. Being in
+    # this list means its **contract** is published-shaped and can no longer
+    # change silently — it does NOT mean a customer can call it: the operator
+    # switch `LTT_PUBLIC_API_TOOLS` still omits it, and the model behind it is
+    # `is_active=False` until the quality gate. Those two remain the gates.
+    assert published == exposed == ["image.generate", "image.ltt",
+                                    "image.thumbnail", "image.upscale",
+                                    "story.storyboard", "text.prompt_package"]
 
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in

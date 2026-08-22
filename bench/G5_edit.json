@@ -1,0 +1,40 @@
+{
+  "_doc": "G5 che do EDIT (1 anh tham chieu). Moi lenh kiem MOT loai sua khac nhau: doi nen, them chu, doi anh sang, xoa vat the, thay vat the. Seed co dinh.",
+  "prompts": [
+    {
+      "id": "e1",
+      "cat": "doi-nen",
+      "seed": 101,
+      "ref1": "ltt_h37_ref_a.png",
+      "text": "Doi nen thanh pho co Hoi An ve dem voi den long do treo, giu nguyen khuon mat, toc va anh sang tren mat cua nguoi trong anh"
+    },
+    {
+      "id": "e2",
+      "cat": "them-chu",
+      "seed": 102,
+      "ref1": "ltt_h37_ref_a.png",
+      "text": "Them dong chu 'LTT STUDIOS' mau vang o goc duoi ben phai, chu sach net, khong che mat nguoi"
+    },
+    {
+      "id": "e3",
+      "cat": "doi-anh-sang",
+      "seed": 103,
+      "ref1": "ltt_h37_ref_b.png",
+      "text": "Doi thanh canh ban dem: anh trang xanh lanh thay cho nang chieu, giu nguyen con meo va tu the nam"
+    },
+    {
+      "id": "e4",
+      "cat": "xoa-vat",
+      "seed": 104,
+      "ref1": "ltt_h37_ref_c.png",
+      "text": "Xoa chiec kinh di, giu nguyen chong sach, tach tra, mat ban va goc nhin"
+    },
+    {
+      "id": "e5",
+      "cat": "thay-vat",
+      "seed": 105,
+      "ref1": "ltt_h37_ref_c.png",
+      "text": "Doi tach tra thanh mot ly ca phe sua da co da vien, giu nguyen vi tri va moi thu con lai"
+    }
+  ]
+}

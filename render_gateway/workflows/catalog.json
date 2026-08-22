@@ -1,0 +1,102 @@
+{
+  "_doc": "Model va che do ma cong render phuc vu. Them model = them mot muc + mot file workflow, KHONG sua ma. Xem catalog.py.",
+  "_trang_thai": "t2i DA XAC MINH bang anh that (D-016). edit va subject DA XAC MINH bang anh that 22/08 (D-032): giu duoc khuon mat/trang phuc/tu the khi doi nen, va giu duoc CA HAI chu the khi dung 2 anh tham chieu.",
+  "_khong_co_structure": "HiDream-O1 KHONG ho tro ControlNet (da grep comfy/ldm/hidream_o1/*.py: khong co dong nao). Che do 'structure' (giu bo cuc/tu the) vi vay KHONG co template rieng. G5 phai thu bang che do 'edit' voi loi nhac giu bo cuc; neu khong dat thi GHI RO la khong ban duoc che do do, khong che bang UI.",
+  "models": [
+    {
+      "id": "hidream-o1",
+      "label": "HiDream-O1 (may nha)",
+      "license": "MIT",
+      "modes": {
+        "t2i": {
+          "template": "hidream_o1_t2i.json",
+          "ref_slots": []
+        },
+        "edit": {
+          "template": "hidream_o1_edit.json",
+          "ref_slots": [
+            "ref1"
+          ]
+        },
+        "subject": {
+          "template": "hidream_o1_subject.json",
+          "ref_slots": [
+            "ref1",
+            "ref2"
+          ]
+        }
+      },
+      "defaults": {
+        "ckpt": "hidream_o1_image_bf16.safetensors",
+        "width": 2560,
+        "height": 1440,
+        "batch": 1,
+        "steps": 50,
+        "cfg": 5.0,
+        "sampler": "uni_pc",
+        "scheduler": "normal",
+        "seed": 0,
+        "prefix": "ltt_h37/hidream_o1",
+        "upscale": "area",
+        "ref_mp": 4.0,
+        "shift": 3.0,
+        "seam_start": 0.8,
+        "seam_pattern": "single_shift",
+        "seam_passes": "2",
+        "seam_strength": 1.0
+      },
+      "_upscale": "Chi duoc dung mot trong: nearest-exact, bilinear, area, bicubic, bislerp. KHONG co lanczos - da kiem trong ma nguon. 'area' la dung cho viec THU NHO (anh tham chieu thuong lon hon 4 MP).",
+      "_ref_mp": "4.0 = dung muc ~4 megapixel ma model duoc huan luyen. resolution_steps=32 trong template de khop PATCH_SIZE=32 cua model.",
+      "buckets": [
+        [
+          2560,
+          1440
+        ],
+        [
+          1440,
+          2560
+        ],
+        [
+          2048,
+          2048
+        ],
+        [
+          2304,
+          1728
+        ],
+        [
+          1728,
+          2304
+        ],
+        [
+          2496,
+          1664
+        ],
+        [
+          1664,
+          2496
+        ],
+        [
+          3104,
+          1312
+        ],
+        [
+          1312,
+          3104
+        ],
+        [
+          2304,
+          1792
+        ],
+        [
+          1792,
+          2304
+        ]
+      ],
+      "max_refs": 2
+    }
+  ],
+  "_prefix": "filename_prefix PHAI bat dau bang 'ltt_h37/'. Thu muc E:/AI/ComfyUI/output/ltt/ DA CO SAN cua du an video (TEST1..TEST5*.mp4) - dung chung la tron anh cua ta vao ket qua cua ho.",
+  "_ngan_sach": "Tran token DA DO = 7506 (G5, 22/08): edit 1 anh @4MP va subject 2 anh @2MP deu 7506 token, VRAM dinh 19,8-20,0 GB voi --reserve-vram 3. Che do tham chieu DA MO. Xem D-032.",
+  "_thong_so": "Theo tai lieu chinh thuc cho ban FULL: 50 buoc, CFG 5.0, shift 3.0, sampler uni_pc. Truoc 22/08 ta dung euler va KHONG dat shift - do la sai lech so voi khuyen nghi, phat hien khi doc tai lieu chu khong khi chay GPU. HiDreamO1PatchSeamSmoothing khu vet noi luoi o va (kien truc nay khong co VAE nen vet noi la co that). Xem KE_HOACH_TU_TAI_LIEU.md."
+}

@@ -1,0 +1,21 @@
+{
+  "_doc": "G5-SUBJECT hai anh tham chieu: nguoi tu anh 1 + vat tu anh 2, xem giu duoc ca hai khong.",
+  "prompts": [
+    {
+      "id": "hb1",
+      "cat": "nguoi+vat",
+      "seed": 701,
+      "ref1": "ref_nguoi.png",
+      "ref2": "ref_meo.png",
+      "text": "The woman from the first image holding the cat from the second image, sitting in a bright cafe, natural light"
+    },
+    {
+      "id": "hb2",
+      "cat": "nguoi+vat",
+      "seed": 702,
+      "ref1": "ref_nguoi.png",
+      "ref2": "ref_vat.png",
+      "text": "The woman from the first image reading one of the books from the second image at a wooden table, warm light"
+    }
+  ]
+}

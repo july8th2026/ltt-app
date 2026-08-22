@@ -1,0 +1,179 @@
+{
+  "_doc": "G1 - do phan cung may B. Moi so o day la DO THAT ngay 2026-08-21, khong phai suy dien. Luat cua bench/README.md: moi so kem dieu kien do.",
+  "phase": "G1",
+  "ngay": "2026-08-21",
+  "may": "MAY-B / 192.168.2.66",
+  "dieu_kien_do": {
+    "gpu_nghi": true,
+    "comfyui_queue_remaining": 0,
+    "ram_trong_gb": 108.9,
+    "ghi_chu": "vmware-vmx dang giu 43,8 GB RAM va mot VM chay tren H:. Khong anh huong phep do PCIe/GPU, nhung co anh huong phep do dia H:."
+  },
+  "pcie": {
+    "_nguon": "E:/AI/tools/pcie_check.py - do TRONG LUC TAI, khong doc trang thai nghi",
+    "gen_luc_nghi": 1,
+    "gen_luc_tai": 3,
+    "width": 16,
+    "bang_thong_do_duoc_gb_s": 11.93,
+    "da_truyen_gb": 143.9,
+    "thoi_gian_s": 12.1,
+    "ket_luan": "PCIe Gen 3 x16 - truong hop TOT NHAT trong bang du kien cua CHIA_GPU_VOI_VIDEO.md 6",
+    "he_qua": {
+      "doi_model_bf16_16_4gb_giay": 1.4,
+      "doi_model_fp8_8_1gb_giay": 0.7,
+      "ghi_chu": "Doi model giua viec video va viec anh gan nhu mien phi. Blocker 'PCIe x4' cua G1 da go."
+    }
+  },
+  "dia": {
+    "_canh_bao": "So DOC trong phep do ghi-roi-doc bi nhiem cache RAM (2,5-3,3 GB/s la toc do RAM, khong phai dia). So GHI moi la that.",
+    "disk_0": {
+      "ten": "Samsung SSD 860 EVO 1TB",
+      "loai": "SSD SATA",
+      "phan_vung": [
+        "E:"
+      ],
+      "ghi_mb_s": 373,
+      "doc_tuan_tu_mb_s": 476,
+      "_doc_do_the_nao": "doc 8 GB dau cua wan2.1_vace_14B_fp16.safetensors (32,3 GB) - qua lon de cache het, nen con so nay dang tin"
+    },
+    "disk_1": {
+      "ten": "Samsung SSD 970 EVO Plus 2TB",
+      "loai": "SSD NVMe",
+      "phan_vung": [
+        "C:",
+        "H:"
+      ],
+      "ghi_mb_s": 1070,
+      "trong_gb": 849,
+      "_doc_do_the_nao": "khong do duoc doc sach: file lon duy nhat tren H: la vmdk dang bi VM khoa"
+    },
+    "phat_hien": "KHO MODEL DANG NAM TREN O CHAM. E: la SATA (476 MB/s) trong khi NVMe 2TB con trong 849 GB. Ghi nhanh hon 2,9 lan; doc theo thong so nha san xuat nhanh hon khoang 6 lan.",
+    "he_qua_uoc_tinh": {
+      "nap_model_16_4gb_tu_E_giay": 33,
+      "nap_model_16_4gb_tu_H_giay": "5-7",
+      "ghi_chu": "Chi la chi phi NAP NGUOI. ComfyUI ghim model trong RAM (--cache-ram 24 64, may co 192 GB) nen moi model chi tra gia mot lan moi lan khoi dong may. NHUNG G4 se nap di nap lai nhieu lan khi quet cau hinh, nen no van dang ke."
+    }
+  },
+  "gpu_check": {
+    "_nguon": "render_gateway/diagnostics/gpu_check.py chay bang E:/AI/venv (venv cua ComfyUI, vi no can torch)",
+    "exit_code": 0,
+    "python": "3.12.10",
+    "os": "Windows-11-10.0.26200-SP0",
+    "torch": "2.13.0+cu130",
+    "cuda_runtime": "13.0",
+    "cuda_available": true,
+    "gpu": {
+      "ten": "NVIDIA GeForce RTX 3090",
+      "vram_mb": 24575,
+      "compute_capability": "8.6",
+      "so_sm": 82
+    },
+    "bf16_ho_tro": true,
+    "fp8_tensor_core": false,
+    "_fp8": "DA XAC MINH BANG DO, khong con la suy luan: CC 8.6 < 8.9 nen KHONG co tensor core fp8. fp8 tren may nay de VUA VRAM, khong de nhanh hon (D-004).",
+    "phep_tinh_that": {
+      "matmul_bf16_2048x2048": "chay",
+      "lech_max_so_voi_cpu": 0.877,
+      "huu_han": true,
+      "_y_nghia": "0,877 la sai so bf16 binh thuong. Muc dich cua phep nay khong phai do do chinh xac ma bat truong hop driver/runtime lech den muc ket qua thanh rac."
+    },
+    "vram_cap_phat_va_tra_ve": {
+      "trong_truoc_mb": 23217,
+      "trong_khi_giu_mb": 21169,
+      "trong_sau_mb": 23217,
+      "tra_ve_du": true
+    }
+  },
+  "moc_goc_nexus": {
+    "_doc": "Chup luc GPU nghi, de G4/G9 co cai ma so sanh. Khuon nay la khuon do dung chung cua ca hai may (CHIA_GPU_VOI_VIDEO.md 10).",
+    "A": {
+      "ten": "DESKTOP-H9AGFUQ",
+      "ram_mb": {
+        "tong": 32617,
+        "dung": 10817
+      },
+      "cpu_pct": 5.9,
+      "cores": 10,
+      "gpus": [
+        {
+          "ten": "RTX 5060 Ti",
+          "uuid": "GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df",
+          "cc": "12.0",
+          "vram_mb": 16311,
+          "vram_dung_mb": 259,
+          "nhiet_c": 35,
+          "power_w": 8.4,
+          "power_limit_w": 180.0
+        },
+        {
+          "ten": "RTX 5060 Ti",
+          "uuid": "GPU-6df3a5c5-5cee-2c0f-abbe-dc66aad68e02",
+          "cc": "12.0",
+          "vram_mb": 16311,
+          "vram_dung_mb": 944,
+          "nhiet_c": 34,
+          "power_w": 11.1,
+          "power_limit_w": 180.0
+        }
+      ]
+    },
+    "B": {
+      "ten": "MAY-B",
+      "ram_mb": {
+        "tong": 196488,
+        "dung": 84960
+      },
+      "cpu_pct": 13.5,
+      "cores": 24,
+      "gpus": [
+        {
+          "ten": "RTX 3090",
+          "uuid": "GPU-26623278-4fa5-82db-4306-237651b03e78",
+          "cc": "8.6",
+          "vram_mb": 24576,
+          "vram_dung_mb": 853,
+          "nhiet_c": 38,
+          "power_w": 19.7,
+          "power_limit_w": 370.0,
+          "throttle": []
+        }
+      ]
+    }
+  },
+  "nhiet_va_cong_suat": {
+    "power_limit_w": 370.0,
+    "_quan_trong": "Tran cong suat dang la 370 W (mac dinh cua card), KHONG phai 250 W. Hai tac vu LTTAI_GPU_PowerLimit va LTT_GPU_PowerLimit_250W deu dang Disabled.",
+    "_he_qua": "Nhat ky su co 19/08 cua du an video ghi 'tran 250 W / dinh 249 W / nhiet 71 C'. So do KHONG con ap dung: o 370 W card se nong hon. G9 phai do lai nhiet va throttle_reasons duoi tai lien tuc 3 phut moi anh, va CHUA duoc dung so 71 C lam moc.",
+    "nhiet_luc_nghi_c": 38,
+    "throttle_luc_nghi": []
+  },
+  "blocker_G1": {
+    "pcie_x4_hoac_thap_hon": "KHONG - Gen 3 x16",
+    "phep_tensor_that_khong_chay": "KHONG - chay va cho ket qua huu han, lech 0,877"
+  },
+  "phat_hien_lon_nhat": {
+    "ten": "Tren Windows/WDDM, ComfyUI /system_stats va torch.cuda.mem_get_info() MU voi tien trinh khac",
+    "_tim_ra_the_nao": "Buoc BAC BO cua G1: chay gpu_check.py hai lan, mot lan khi mot tien trinh khac dang giu VRAM. Lan dau BAO DO va tuong nhu gpu_check sai; dieu tra tiep moi ra thu that.",
+    "phep_do": {
+      "dieu_kien": "mot tien trinh torch khac giu 8 GB tren card",
+      "nvidia_smi_vram_trong_mib": 15308,
+      "comfyui_system_stats_vram_trong_mib": 23165,
+      "torch_mem_get_info_vram_trong_mib": 23217,
+      "ket_luan": "Hai nguon sau chi thay tien trinh CUA CHINH MINH."
+    },
+    "loi_that_no_gay_ra": "Ban dau cua render_gateway/busy.py doc /system_stats de tra loi 'VRAM co dang bi tien trinh khac giu khong'. Chot do KHONG BAO GIO BAN. Mot luot torch chay NGOAI ComfyUI (may B co san E:/AI/tools/vlm_worker.py va nhieu script kieu do) se di lot va gay OOM giua job cua khach.",
+    "da_sua": "busy.py nay doc VRAM bang nvidia-smi (ham vram_dung_mb_qua_smi, tran 8 giay, cung tran voi platform_core/gpu.py). RAM van lay tu /system_stats vi con so RAM khong bi gioi han theo tien trinh.",
+    "xac_minh_lai": {
+      "dieu_kien": "lap lai voi 8 GB bi giu",
+      "torch_tien_trinh_nay_trong_mb": 23217,
+      "nvidia_smi_dang_dung_mb": 9359,
+      "ket_qua": "ban sua THAY dung"
+    },
+    "bai_hoc_chung": "platform_core/gpu.py cua nen tang da chon hoi nvidia-smi thay vi dung thu vien. Truoc day do la mot lua chon khong co giai thich; nay co so do giai thich vi sao no dung."
+  },
+  "lap_lai_phep_do": {
+    "pcie_lan_1_gb_s": 11.93,
+    "pcie_lan_2_gb_s": 11.94,
+    "_y_nghia": "Lech 0,08% giua hai lan - so PCIe on dinh, khong phai do may luc do ranh hay ban."
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "ca": "G3_baseline_bf16",
+  "ngay": "2026-08-21T16:08:33+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt/hidream_o1",
+    "sampler": "euler",
+    "scheduler": "normal",
+    "seed": 0,
+    "steps": 50,
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 123.9,
+  "runs": [
+    {
+      "prompt_id": "6ae28669-623b-5eea-a4c3-ea71b6083b07",
+      "ok": true,
+      "giay": 0.9,
+      "do_duoc": {
+        "so_mau": 1,
+        "vram_dinh_mb": 655,
+        "vram_trung_vi_mb": 655,
+        "nhiet_dinh_c": 36,
+        "nhiet_trung_vi_c": 36,
+        "power_dinh_w": 20.45,
+        "throttle_quan_sat": [
+          "0x0000000000000001"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4146793
+      ],
+      "anh": [
+        "G3_baseline_bf16_p01_0.png"
+      ],
+      "id": "p01",
+      "cat": "portrait",
+      "seed": 101,
+      "prompt": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật"
+    },
+    {
+      "prompt_id": "b3a01f74-6f16-58fb-9341-cd846ccfe263",
+      "ok": true,
+      "giay": 0.6,
+      "do_duoc": {
+        "so_mau": 1,
+        "vram_dinh_mb": 3759,
+        "vram_trung_vi_mb": 3759,
+        "nhiet_dinh_c": 39,
+        "nhiet_trung_vi_c": 39,
+        "power_dinh_w": 46.9,
+        "throttle_quan_sat": [
+          "0x0000000000000001"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4501528
+      ],
+      "anh": [
+        "G3_baseline_bf16_p02_0.png"
+      ],
+      "id": "p02",
+      "cat": "portrait",
+      "seed": 102,
+      "prompt": "Chân dung cận mặt một người đàn ông lớn tuổi, da nhiều nếp nhăn, ánh sáng bên hông tương phản mạnh, đen trắng"
+    },
+    {
+      "prompt_id": "fbd4a0cf-aec7-5f31-91a3-d743bd7a41ce",
+      "ok": true,
+      "giay": 0.6,
+      "do_duoc": {
+        "so_mau": 1,
+        "vram_dinh_mb": 11663,
+        "vram_trung_vi_mb": 11663,
+        "nhiet_dinh_c": 47,
+        "nhiet_trung_vi_c": 47,
+        "power_dinh_w": 206.79,
+        "throttle_quan_sat": []
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4676172
+      ],
+      "anh": [
+        "G3_baseline_bf16_p03_0.png"
+      ],
+      "id": "p03",
+      "cat": "portrait",
+      "seed": 103,
+      "prompt": "Ảnh chân dung nghề nghiệp cho hồ sơ công ty, áo sơ mi trắng, nền xám trơn, ánh sáng studio đều"
+    },
+    {
+      "prompt_id": "86e1242f-f963-5686-9bed-bc251708f4f3",
+      "ok": true,
+      "giay": 0.6,
+      "do_duoc": {
+        "so_mau": 1,
+        "vram_dinh_mb": 16943,
+        "vram_trung_vi_mb": 16943,
+        "nhiet_dinh_c": 48,
+        "nhiet_trung_vi_c": 48,
+        "power_dinh_w": 211.5,
+        "throttle_quan_sat": []
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4431335
+      ],
+      "anh": [
+        "G3_baseline_bf16_p04_0.png"
+      ],
+      "id": "p04",
+      "cat": "photoreal",
+      "seed": 104,
+      "prompt": "Bát phở bò tái nghi ngút khói trên bàn gỗ, hành lá và ớt tươi bên cạnh, ánh sáng tự nhiên buổi sáng"
+    },
+    {
+      "prompt_id": "db962f8f-f11f-5253-a4a7-7a833cbea450",
+      "ok": true,
+      "giay": 0.6,
+      "do_duoc": {
+        "so_mau": 1,
+        "vram_dinh_mb": 17199,
+        "vram_trung_vi_mb": 17199,
+        "nhiet_dinh_c": 58,
+        "nhiet_trung_vi_c": 58,
+        "power_dinh_w": 368.07,
+        "throttle_quan_sat": [
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        3998217
+      ],
+      "anh": [
+        "G3_baseline_bf16_p05_0.png"
+      ],
+      "id": "p05",
+      "cat": "photoreal",
+      "seed": 105,
+      "prompt": "Con mèo tam thể nằm ngủ trên bậu cửa sổ, nắng chiều xuyên qua rèm, lông thấy rõ từng sợi"
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 5,
+    "so_thanh_cong": 5,
+    "giay_trung_vi": 0.6,
+    "giay_min": 0.6,
+    "giay_max": 0.9,
+    "vram_dinh_mb": 17199,
+    "nhiet_dinh_c": 58,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004"
+    ]
+  },
+  "ram_trong_sau_gb": 107.4
+}

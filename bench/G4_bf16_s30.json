@@ -1,0 +1,126 @@
+{
+  "ca": "G4_bf16_s30",
+  "ngay": "2026-08-21T16:41:07+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt_h37/hidream_o1",
+    "ref_mp": 4.0,
+    "sampler": "euler",
+    "scheduler": "normal",
+    "seed": 0,
+    "steps": 30,
+    "upscale": "area",
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 106.9,
+  "runs": [
+    {
+      "prompt_id": "918de60c-7e77-586e-b296-a28199418b59",
+      "ok": true,
+      "giay": 57.0,
+      "do_duoc": {
+        "so_mau": 54,
+        "vram_dinh_mb": 16749,
+        "vram_trung_vi_mb": 16749,
+        "nhiet_dinh_c": 75,
+        "nhiet_trung_vi_c": 67,
+        "power_dinh_w": 370.13,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4085281
+      ],
+      "anh": [
+        "G4_bf16_s30_p01_0.png"
+      ],
+      "id": "p01",
+      "cat": "portrait",
+      "seed": 101,
+      "prompt": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật"
+    },
+    {
+      "prompt_id": "3061a8bc-1ec9-59b4-bb3b-0a87a7b71925",
+      "ok": true,
+      "giay": 58.7,
+      "do_duoc": {
+        "so_mau": 55,
+        "vram_dinh_mb": 16784,
+        "vram_trung_vi_mb": 16717,
+        "nhiet_dinh_c": 82,
+        "nhiet_trung_vi_c": 79,
+        "power_dinh_w": 369.67,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        3995284
+      ],
+      "anh": [
+        "G4_bf16_s30_p13_0.png"
+      ],
+      "id": "p13",
+      "cat": "product",
+      "seed": 113,
+      "prompt": "Ảnh sản phẩm chai serum dưỡng da thuỷ tinh trong, nền trắng sạch, phản chiếu nhẹ dưới đáy, ánh sáng studio mềm"
+    },
+    {
+      "prompt_id": "a6e848dc-0cd4-591c-9b2e-c6333c55b637",
+      "ok": true,
+      "giay": 58.4,
+      "do_duoc": {
+        "so_mau": 55,
+        "vram_dinh_mb": 16752,
+        "vram_trung_vi_mb": 16752,
+        "nhiet_dinh_c": 83,
+        "nhiet_trung_vi_c": 83,
+        "power_dinh_w": 369.27,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000020",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4661448
+      ],
+      "anh": [
+        "G4_bf16_s30_p16_0.png"
+      ],
+      "id": "p16",
+      "cat": "text-vi",
+      "seed": 116,
+      "prompt": "Biển hiệu quán ăn với dòng chữ lớn \"CƠM TẤM SƯỜN BÌ\" màu đỏ trên nền vàng, chữ rõ nét, đúng dấu tiếng Việt"
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 3,
+    "so_thanh_cong": 3,
+    "giay_trung_vi": 58.4,
+    "giay_min": 57.0,
+    "giay_max": 58.7,
+    "vram_dinh_mb": 16784,
+    "nhiet_dinh_c": 83,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004",
+      "0x0000000000000020",
+      "0x0000000000000024"
+    ]
+  },
+  "ram_trong_sau_gb": 106.7
+}
