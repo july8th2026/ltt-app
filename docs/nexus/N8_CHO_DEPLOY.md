@@ -107,6 +107,30 @@ ai biết. Script nay có `throw` chặn.
 
 ---
 
+## ⚠️ Đợt deploy thứ hai còn nợ — macOS Intel
+
+2026-08-22 một phiên khác đã deploy. Phần Nexus lên đủ và đã xác minh trên URL
+công khai (`/nexus` 200 công khai, `/nexus/tai` 404, máy hiện `online=True`).
+
+**Nhưng bản `versions.py` đang chạy vẫn là bản CŨ**, chưa có khoá `macos_intel`.
+`manifest()` chỉ hợp nhất các khoá có trong `DEFAULT`:
+
+```python
+for key, val in plats.items():
+    if key in base["platforms"] and isinstance(val, dict):
+        base["platforms"][key].update(val)
+```
+
+Nên `macos_intel` trong `data/nexus_versions.json` bị **bỏ qua lặng lẽ** — file
+`.dmg` Intel đã nằm trên máy chủ và tải được bằng URL thẳng, nhưng **không hiện
+trên trang tải và client Intel không thấy bản cập nhật**.
+
+Bản Apple Silicon thì đã sống bình thường.
+
+⇒ Lần deploy tới sẽ mở luôn macOS Intel, không cần làm gì thêm.
+
+---
+
 ## Còn nợ sau khi deploy
 
 * **macOS**: đọc kết quả `ltt-macos.yml`. Mã `#[cfg(target_os = "macos")]` **chưa

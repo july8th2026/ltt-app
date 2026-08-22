@@ -32,13 +32,22 @@ DEFAULT: dict = {
         "windows": {"label": "Windows 10/11 (64-bit)", "available": False,
                     "url": "", "sha256": "", "kind": "zip",
                     "setup_url": "", "setup_sha256": ""},
-        # macOS cung co `setup_url`, va o day no tro chinh file `.dmg`: duong tu
-        # cap nhat ban macOS gan `.dmg`, `ditto` goi `.app` de len ban cu roi mo
-        # lai (`nexus_client::tai_va_cai_ban_moi`). Khac Windows o cho `url` va
-        # `setup_url` co the tro CUNG mot file — macOS khong co khai niem "ban
-        # chay-khong-cai" tach roi.
-        "macos": {"label": "macOS", "available": False, "url": "", "sha256": "",
+        # macOS co HAI ban, moi kien truc mot file, va chung KHONG thay the nhau
+        # duoc. Vi vay chung la hai KHOA nen tang rieng chu khong phai hai bien
+        # the nhet trong mot o: khoa nen tang la don vi ma ca trang tai lan client
+        # tu-cap-nhat deu doc, nen tach o day thi hai duong do tu dung, khong phai
+        # sua rieng tung duong.
+        #
+        # `setup_url` tro chinh file `.dmg`: ban macOS cua
+        # `nexus_client::tai_va_cai_ban_moi` gan `.dmg`, `ditto` goi `.app` de len
+        # ban cu roi mo lai. Khac Windows o cho `url` va `setup_url` tro CUNG mot
+        # file — macOS khong co khai niem "ban chay-khong-cai" tach roi.
+        "macos": {"label": "macOS — Apple Silicon (M1/M2/M3…)",
+                  "available": False, "url": "", "sha256": "",
                   "kind": "dmg", "setup_url": "", "setup_sha256": ""},
+        "macos_intel": {"label": "macOS — Intel", "available": False,
+                        "url": "", "sha256": "", "kind": "dmg",
+                        "setup_url": "", "setup_sha256": ""},
         # `signed=True` chỉ đặt khi IPA đã ký Ad Hoc/Enterprise — lúc đó trang
         # hiện nút "Cài lên iPhone" (itms-services) và Safari cài thẳng được.
         # Ký bằng Apple ID miễn phí (hồ sơ development) KHÔNG tính: iOS từ chối.
@@ -49,7 +58,7 @@ DEFAULT: dict = {
     },
 }
 
-PLATFORM_ORDER = ["windows", "macos", "ios", "android"]
+PLATFORM_ORDER = ["windows", "macos", "macos_intel", "ios", "android"]
 
 
 def _path() -> Path:

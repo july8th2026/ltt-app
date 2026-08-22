@@ -34,12 +34,21 @@ def app_bat(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
-def test_manifest_mac_dinh_co_4_nen_tang():
+#: macOS là HAI khoá, không phải một: bản Apple Silicon và bản Intel là hai file
+#: `.dmg` **không thay thế nhau được**. Tách ở tầng khoá nền tảng thì cả trang tải
+#: lẫn client tự-cập-nhật cùng chọn đúng mà không phải viết luật riêng ở hai nơi.
+NEN_TANG = {"windows", "macos", "macos_intel", "ios", "android"}
+
+
+def test_manifest_mac_dinh_co_du_nen_tang():
     from platform_core.nexus import versions
 
     m = versions.manifest()
-    assert set(m["platforms"]) == {"windows", "macos", "ios", "android"}
+    assert set(m["platforms"]) == NEN_TANG
     assert m["version"]
+    # Thứ tự hiển thị phải phủ đúng các khoá — thiếu một khoá thì nền tảng đó có
+    # file mà không bao giờ hiện ra trang tải, và hỏng lặng lẽ.
+    assert set(versions.PLATFORM_ORDER) == NEN_TANG
 
 
 def test_manifest_doc_de_tu_data_file(tmp_path, monkeypatch):
@@ -75,7 +84,7 @@ def test_version_json(app_bat):
     assert r.status_code == 200, r.text
     j = r.json()
     assert "version" in j and "platforms" in j
-    assert set(j["platforms"]) == {"windows", "macos", "ios", "android"}
+    assert set(j["platforms"]) == NEN_TANG
 
 
 def test_trang_tai_hien_nut_tai_khi_co_url(app_bat, monkeypatch):
