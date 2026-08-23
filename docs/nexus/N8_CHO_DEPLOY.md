@@ -27,22 +27,28 @@ tràn ngang, không vùng chạm nào dưới 24px.
 
 ---
 
-## 🔴 Việc gấp nhất: Android và iOS còn ở 1.1.0
+## Phiên bản đang phát hành
 
 ```
-windows      1.4.0      macos  1.4.0      macos_intel  1.4.0
-android    → 1.1.0      ios  → 1.1.0
+windows  1.4.0    macos  1.4.0    macos_intel  1.4.0    android  1.4.0
+ios    → 1.1.0
 ```
 
-Nghĩa là **người dùng Android/iOS chưa nhận bất kỳ bản vá nào của 1.2.0–1.4.0**:
-vẫn còn tab "Đã tìm thấy" bày máy ngoài tài khoản, vẫn tự khai ID ra mạng LAN,
-mục Giới thiệu vẫn mang thương hiệu RustDesk, chưa có SSO.
+**Android đã lên 1.4.0** (23/08, build trong WSL — xem `BUILD_ANDROID.md`). Kho
+trong WSL từng đứng ở **1.1.0 suốt nhiều ngày mà không ai biết**, vì APK cũ vẫn
+chạy bình thường; nên trước khi phát hành phải `git reset --hard origin/ltt-nexus`
+rồi **chứng minh** APK chứa mã mới, đừng tin "build xong là đúng bản":
 
-* **Android** — build được ngay trên máy này qua WSL (xem `BUILD_ANDROID.md`;
-  NDK r28c, Rust 1.75, cargo-ndk 3.1.2). Rồi phát hành APK 1.4.0.
-* **iOS** — build được bằng workflow `ltt-ios.yml`, nhưng file `.ipa` chưa ký nên
-  chỉ cài qua SideStore/Sideloadly. Ký Ad Hoc cần tài khoản Apple Developer
-  99 USD/năm (dùng chung cho cả macOS).
+```bash
+strings -a .../librustdesk.so | grep -c ltt_tab_tip_lan   # nhãn tab 1.4.0
+unzip -p app-release.apk lib/arm64-v8a/libapp.so | strings | grep -c nexusClientWebLoginUrl
+```
+
+**iOS còn ở 1.1.0** — tức người dùng iOS vẫn có tab "Đã tìm thấy" bày máy ngoài
+tài khoản, vẫn tự khai ID ra mạng LAN, mục Giới thiệu vẫn mang thương hiệu
+RustDesk. Build được bằng workflow `ltt-ios.yml`; file `.ipa` chưa ký nên chỉ cài
+qua SideStore/Sideloadly. Ký Ad Hoc cần tài khoản Apple Developer 99 USD/năm
+(dùng chung cho cả macOS).
 
 ---
 
@@ -69,11 +75,13 @@ trong bản kê vẫn viết cứng `-setup.exe`, nên 1.4.0 phát hành với b
 
 ## Còn nợ
 
-* **🔴 Android/iOS 1.4.0** — xem mục trên.
-* **210 mục `#, fuzzy`** trong `locale/en/LC_MESSAGES/messages.po`. gettext bỏ qua
-  mục fuzzy nên chúng hiện tiếng Việt; nhưng nội dung có thể **sai hẳn** — đã tìm
-  thấy một mục dịch `"đang bật"` thành `"Maintenance"`. Ai gỡ cờ fuzzy hàng loạt
-  sẽ đẩy bản dịch sai lên production.
+* **🔴 iOS 1.4.0** — xem mục trên.
+* **163 mục `#, fuzzy`** còn lại trong `locale/en/LC_MESSAGES/messages.po`. Đã rà
+  và sửa **47 mục dịch sai** (23/08), trong đó ba mục nói ngược sự thật:
+  `"Bắt buộc"→"Optional"`, `"đang khỏe"→"Pending"`, `"đang tắt"→"Finishing"`.
+  163 mục còn lại chưa thấy dấu hiệu gán nhầm — kiểm bằng
+  `python tools\check_fuzzy_dich.py`. **Đừng chạy `msgattrib --clear-fuzzy` cho cả
+  tệp**: nó bật nguyên các bản đoán bừa của Babel lên production.
 * **Ảnh chụp sản phẩm** cho trang giới thiệu. Hero đang dùng **khung app mô phỏng
   bằng HTML/CSS** — cố ý, vì ảnh chụp thật chứa ID máy và mật khẩu một lần. Muốn
   dùng ảnh thật thì phải che hai thứ đó trước.
