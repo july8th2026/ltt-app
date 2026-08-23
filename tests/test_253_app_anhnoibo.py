@@ -228,9 +228,12 @@ def test_khong_giu_phien_CSDL_qua_mot_luot_goi_mang():
 
     from apps.anhnoibo import http_cong
     ma = inspect.getsource(http_cong.goi_http)
-    vi_tri_dong = ma.index("_voi_db(lay)")
+    vi_tri_dong = ma.index("_voi_db(")
     vi_tri_goi = ma.index("httpx.request")
     assert vi_tri_dong < vi_tri_goi, "phai dong phien CSDL TRUOC khi goi mang"
+    # Và lời gọi mạng KHÔNG được nằm bên trong hàm chạy dưới phiên CSDL.
+    than_lay = ma[ma.index("def lay("):ma.index("da_hong: list")]
+    assert "httpx" not in than_lay, "goi mang ben trong phien CSDL"
 
 
 def test_429_KHONG_bi_danh_dau_loi():

@@ -52,6 +52,12 @@ def _steps(quick: bool) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # Banh coc: khong cho THEM so tep test bi trung. Do 23/08/2026: 24 so dang
+        # trung, co so mang BA tep. Nguyen nhan la nhieu phien lam viec song song,
+        # moi phien chon so tiep theo theo thu no nhin thay luc bat dau. Buoc nay
+        # KHONG don qua khu (doi ten tep test cua phien khac la dung vao viec dang
+        # do cua ho) — no chan tuong lai.
+        Step("trung so test", [sys.executable, "tools/check_so_test.py"], ROOT),
         # H24: banh coc chong THEM chuoi chua boc _(). Con ~2.310 chuoi chua dich;
         # cam tuyet doi thi chan moi viec khac, nen chi cam TANG. Khong co buoc
         # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh

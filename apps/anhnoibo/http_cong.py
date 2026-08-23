@@ -43,19 +43,44 @@ def goi_http(base_url: str) -> Callable:
         from platform_core import api_keys, api_pool
         from platform_core.models import APIKEY_CAT_IMAGE
 
-        def lay(db):
-            key = api_pool.lay_key(db, PROVIDER, category=APIKEY_CAT_IMAGE)
-            return key.id, api_keys.lay_credential(db, key)
+        def lay(db, bo_qua):
+            # ⭐ Thử lần lượt các khoá, KHÔNG bao giờ quay lại khoá vừa hỏng.
+            #    Hôm nay cổng render chỉ có một khoá, nên vòng này chạy đúng một
+            #    lượt. Nó có mặt vì ngày thêm khoá thứ hai thì không ai phải nhớ
+            #    quay lại sửa chỗ này — và vì khoá **đầu tiên** cũng hỏng được.
+            for key in api_pool.thu_lan_luot(db, provider=PROVIDER,
+                                             category=APIKEY_CAT_IMAGE,
+                                             so_lan=1 + len(bo_qua)):
+                if key.id in bo_qua:
+                    continue
+                return key.id, api_keys.lay_credential(db, key)
+            return None, None
 
-        key_id, cred = _voi_db(lay)
-
-        try:
-            r = httpx.request(method, f"{base}{path}",
-                              headers={"Authorization": f"Bearer {cred}"},
-                              json=json, timeout=timeout)
-        except Exception as e:
-            _ghi(key_id, None, str(e)[:300])
-            raise
+        da_hong: list[str] = []
+        while True:
+            key_id, cred = _voi_db(lambda db: lay(db, da_hong))
+            if key_id is None:
+                from platform_core.api_pool import ThieuKeyError
+                raise ThieuKeyError(
+                    "het khoa kha dung cho cong render (da thu "
+                    f"{len(da_hong)} khoa)")
+            try:
+                r = httpx.request(method, f"{base}{path}",
+                                  headers={"Authorization": f"Bearer {cred}"},
+                                  json=json, timeout=timeout)
+            except Exception as e:
+                _ghi(key_id, None, str(e)[:300])
+                # Lỗi mạng: máy B có thể đang khởi động lại. Đổi khoá không chữa
+                # được chuyện đó, nên ném ra thay vì thử lại một cách vô ích.
+                raise
+            # ⛔ 401/403 = khoá này sai, khoá khác có thể đúng ⇒ ĐÁNG thử lại.
+            #    Mọi mã khác — kể cả 429 — thì đổi khoá không giúp gì: 429 nghĩa là
+            #    MÁY bận, không phải khoá bận.
+            if r.status_code in (401, 403) and key_id not in da_hong:
+                _ghi(key_id, r.status_code, "cong render tu choi khoa nay")
+                da_hong.append(key_id)
+                continue
+            break
 
         try:
             than = r.json()

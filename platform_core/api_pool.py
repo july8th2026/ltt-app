@@ -100,17 +100,24 @@ def _ung_vien(db: DbSession, now: datetime, *, providers: Optional[Sequence[str]
 
 def chon_key(db: DbSession, *, category: Optional[str] = None,
              model: Optional[str] = None,
-             thu_tu_provider: Optional[Sequence[str]] = None) -> ApiKey:
+             thu_tu_provider: Optional[Sequence[str]] = None,
+             loai_tru: Optional[Sequence[str]] = None) -> ApiKey:
     """Chọn một API key khả dụng cho `category` (tuỳ `model`), CASCADE nhiều provider.
 
     `thu_tu_provider`: thứ tự ưu tiên provider (vd ["gemini","apiai"]); None = xét
     mọi provider. Xếp: provider theo thứ tự cho trước → `priority` cao → `health`
     cao → ít tải nhất (cửa sổ) → ít dùng nhất. Raise `ThieuKeyError` nếu cạn.
+
+    `loai_tru`: id các key **đã thử và hỏng trong chính lượt gọi này**. Xem
+    `thu_lan_luot()` để biết vì sao cần.
     """
     order = [(p or "").strip().lower() for p in (thu_tu_provider or []) if p]
+    bo_qua = {str(x) for x in (loai_tru or [])}
     now = _bay_gio()
     ung_vien = _ung_vien(db, now, providers=(order or None),
                          category=category, model=model)
+    if bo_qua:
+        ung_vien = [k for k in ung_vien if k.id not in bo_qua]
     if not ung_vien:
         raise ThieuKeyError(
             f"khong co API key kha dung: providers={order or 'moi'} "
@@ -136,11 +143,58 @@ def chon_key(db: DbSession, *, category: Optional[str] = None,
 
 
 def lay_key(db: DbSession, provider: str, *, category: Optional[str] = None,
-            model: Optional[str] = None) -> ApiKey:
+            model: Optional[str] = None,
+            loai_tru: Optional[Sequence[str]] = None) -> ApiKey:
     """Chọn key cho MỘT provider cụ thể (tương thích Pha 1). Nội bộ gọi `chon_key`
     với thứ tự provider = [provider], nên rpm/tpm/telemetry áp dụng như nhau."""
     provider = (provider or "").strip().lower()
-    return chon_key(db, category=category, model=model, thu_tu_provider=[provider])
+    return chon_key(db, category=category, model=model,
+                    thu_tu_provider=[provider], loai_tru=loai_tru)
+
+
+def thu_lan_luot(db: DbSession, *, provider: Optional[str] = None,
+                 category: Optional[str] = None, model: Optional[str] = None,
+                 so_lan: int = 3):
+    """Sinh lần lượt các key khả dụng, **không bao giờ trả lại key đã thử**.
+
+        for key in api_pool.thu_lan_luot(db, provider="gemini", category="image"):
+            try:
+                return goi_nha_cung_cap(key)
+            except LoiCoTheThuLai as e:
+                api_pool.danh_dau_loi(db, key, http_status=e.status)
+        raise RuntimeError("het key")
+
+    ⛔ VÌ SAO CẦN — KHOẢNG TRỐNG THẬT SO VỚI LiteLLM Router.
+
+       Hôm nay **không có chuỗi thử lại nào**. `apps/taoanh/jobs.py` lấy key **một
+       lần** trước vòng lặp ảnh; key đó cạn hạn mức ở ảnh thứ hai thì **cả job
+       hỏng**, dù tài khoản còn ba key Gemini khác đang rảnh. Khách mất một job vì
+       hết quota của *một tài khoản*, không phải vì hết quota.
+
+       LiteLLM Router loại deployment vừa hỏng khỏi **các bước sau của cùng một
+       request**, và loại trừ **tích luỹ** qua từng bước — nên nó không bao giờ
+       quay lại thứ vừa chết.
+
+    ⭐ RANH GIỚI PHẢI GIỮ (D-042): đây là dự phòng ở tầng **TÀI KHOẢN**, không phải
+       tầng **sản phẩm**. Khách gọi `gemini-3-pro-image` thì vẫn nhận đúng model
+       đó — ta chỉ đổi **khoá nào** của Gemini phục vụ lượt gọi. Đừng dùng hàm này
+       để nhảy sang một model khác: đó là đánh tráo sản phẩm.
+
+    ⚠️ Bên gọi **phải** gọi `danh_dau_loi()` khi một key hỏng. Không gọi thì key đó
+       vẫn `active`, và lượt sau lại chọn đúng nó — vòng lặp này chỉ tránh lặp
+       *trong một lượt*, nó không thay việc ghi nhận sức khoẻ.
+    """
+    da_thu: list[str] = []
+    for _ in range(max(1, int(so_lan))):
+        try:
+            key = (lay_key(db, provider, category=category, model=model,
+                           loai_tru=da_thu)
+                   if provider else
+                   chon_key(db, category=category, model=model, loai_tru=da_thu))
+        except ThieuKeyError:
+            return          # het key kha dung -> dung, khong nem
+        da_thu.append(key.id)
+        yield key
 
 
 def danh_dau_thanh_cong(db: DbSession, key: ApiKey, *, tokens: int = 0) -> None:
