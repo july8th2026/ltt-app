@@ -200,7 +200,7 @@ def handle(params: dict, ctx=None) -> dict:
         raise RuntimeError("Chưa có API key Gemini (thêm ở /admin → APIKEYS, "
                            "hoặc đặt GEMINI_API_KEY cho dev).")
 
-    from apps.thumbnail.manifest import CREDIT_PER_IMAGE
+    from apps.thumbnail.manifest import unit_credit
     from platform_core.storage import get_storage
     storage = get_storage()
     prompt = build_prompt(topic, title=title, subtitle=subtitle, phong_cach=phong_cach,
@@ -270,7 +270,10 @@ def handle(params: dict, ctx=None) -> dict:
     # dùng, hoàn lại phần giữ dư (giữ count ảnh nhưng chỉ tạo được len(keys)).
     return {"image_keys": keys, "scores": scores, "count": len(keys), "prompt": prompt,
             "aspect_ratio": aspect_ratio,
-            "credit_cost": len(keys) * CREDIT_PER_IMAGE,
+            # ⛔ Phải dùng ĐÚNG hàm giá của manifest. Giữ chỗ theo bảng giá mà
+            #    quyết toán theo một hằng số khác là thu sai — và sai lặng lẽ,
+            #    vì cả hai số đều "trông hợp lý".
+            "credit_cost": len(keys) * unit_credit(model),
             "errors": errors[:3],
             # App nay tinh gia PHANG bat ke model, nen day la cho duy nhat biet
             # model that su da dung. Thieu no thi bang bien loi nhuan se thay

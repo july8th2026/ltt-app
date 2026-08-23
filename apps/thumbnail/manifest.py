@@ -16,20 +16,45 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-# Số credit cho MỖI ảnh. Tạm cố định; khi cần chính xác theo token thật thì đọc
-# `usageMetadata` Gemini trả về rồi quyết toán ở worker (mẫu: cost.py bên BOT
-# GEMINI có markup + quy đổi VND). Gemini 2.5 Flash Image ~1290 token/ảnh.
+# ⛔ GIÁ THEO TỪNG MODEL, không phải một giá phẳng. Sửa 2026-08-23.
+#
+#    Bản trước tính `count * 5` **bất kể model**, nên một ảnh vẽ bằng model đắt
+#    nhất vẫn thu 5 credit. Đo được: giá vốn bậc `pro` là 35,2 credit ⇒ app này
+#    lỗ **3.024đ mỗi ảnh**, nặng hơn cả `taoanh` (1.924đ) đúng vì giá phẳng.
+#
+#    Nguyên tắc chủ dự án chốt (D-042): **dùng model nào trả tiền model đó.**
+#    Đây là app cuối cùng vi phạm nó.
+#
+#    Bảng giá giữ đúng con số của `apps/taoanh` — cùng model thì cùng giá, dù bán
+#    qua tool nào. Hai bảng lệch nhau là khách tự tìm ra tool rẻ hơn cho cùng
+#    một model, và đó là một lỗ hổng doanh thu chứ không phải một tính năng.
+MODEL_CREDIT_PER_IMAGE = {
+    "gemini-2.5-flash-image": 5,
+    "gemini-3.1-flash-lite-image": 5,
+    "gemini-3.1-flash-image": 8,
+    "gemini-3.1-flash-image-preview": 8,
+    # Bậc `pro` đã đóng ở `providers.py`; giữ giá để job CŨ tra lại vẫn ra đúng số.
+    "gemini-3-pro-image": 16,
+    "gemini-3-pro-image-preview": 16,
+}
+
+#: Đơn giá model mặc định (`jobs._MODEL`). Cũng là giá khi không biết model —
+#: đường API ẩn tham số `model` nên nó luôn rơi vào nhánh này.
 CREDIT_PER_IMAGE = 5
 
 
+def unit_credit(model: str) -> int:
+    return MODEL_CREDIT_PER_IMAGE.get(str(model or ""), CREDIT_PER_IMAGE)
+
+
 def _cost(params: dict) -> int:
-    """Giá credit = số ảnh × CREDIT_PER_IMAGE. LÀ HÀM (giá phụ thuộc tham số)."""
+    """Giá credit = số ảnh × đơn giá CỦA MODEL ĐÓ. LÀ HÀM (giá phụ thuộc tham số)."""
     try:
         count = int(params.get("count", 1))
     except (TypeError, ValueError):
         count = 1
     count = max(1, min(count, 4))
-    return count * CREDIT_PER_IMAGE
+    return count * unit_credit(params.get("model"))
 
 
 MANIFEST = AppManifest(
@@ -71,13 +96,25 @@ MANIFEST = AppManifest(
             "description": ("Generate one to four YouTube thumbnail images from "
                             "a topic, with optional title text, style and "
                             "language."),
-            # `model` is hidden on purpose. This tool prices every image at
-            # CREDIT_PER_IMAGE regardless of model, so letting an API caller
-            # pick the most expensive model would sell a 16-credit-tier render
-            # for 5 credits and quietly hand the platform the difference (Q84
-            # variance). The UI has the same flat price, so hiding the choice
-            # keeps API and UI charging identically. Expose it the day the cost
-            # function prices per model, as the image-generation tool does.
+            # `model` stays hidden — but the ORIGINAL REASON EXPIRED on
+            # 2026-08-23, so here is the current one.
+            #
+            # The old reason: this tool charged a flat CREDIT_PER_IMAGE whatever
+            # the model, so an API caller picking the priciest model would buy a
+            # 16-credit render for 5. That comment ended with "expose it the day
+            # the cost function prices per model" — that day has come, and the
+            # flat price is gone.
+            #
+            # It stays hidden anyway, for a different and smaller reason:
+            # exposing it means publishing an ALIAS BLOCK (`standard`,
+            # `enhanced`, ...) the way `image.generate` does, because a public
+            # contract must never carry raw vendor model ids. That is a product
+            # decision about what this tool sells, not a pricing fix, so it is
+            # not smuggled in with one.
+            #
+            # Charging is now identical on both paths: the API path omits
+            # `model`, so `unit_credit(None)` returns the default tier — the
+            # exact model `jobs._MODEL` actually calls.
             "hidden": ("model",),
             # `count` decides how many images come back, so test mode returns
             # that many canned files instead of always one (EXT-12).
