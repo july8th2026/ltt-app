@@ -2075,3 +2075,74 @@ không phải python nên phép đếm tiến trình trả về 1. Nghĩa là ng
 động lại bình thường, cổng render đã nhận job và hết VRAM giữa chừng.
 
 ⇒ **Không phải một cảnh hiếm.** Nó là cảnh **mặc định** của máy B sau mỗi lần bật máy.
+
+
+---
+
+## D-044 — Nexus `exec` GIẾT CẢ CÂY TIẾN TRÌNH CON khi hết `timeout_s`
+
+**Date:** 2026-08-23 · phát hiện khi lô B1 đầu tiên chết giữa chừng
+
+### Triệu chứng, và vì sao nó đánh lừa
+
+Lô B1 khởi động lúc 17:34:20, log dừng ngay sau `[1/3] p01 ...`, tệp kết quả có
+**0 bản ghi**, `stderr` **rỗng 0 byte**.
+
+Nhưng lịch sử ComfyUI cho thấy ảnh đó **vẽ xong bình thường**: `status=success`,
+111 giây. Vậy không phải GPU hỏng, không phải OOM, không phải prompt sai.
+
+`stderr` rỗng + không traceback = **bị giết từ bên ngoài**, không phải tự vỡ. Và
+thời điểm chết khớp **đúng mốc +120 giây** — bằng `timeout_s` tôi truyền cho lời
+gọi `exec`.
+
+### Nguyên nhân
+
+Nexus `exec` chạy lệnh trong một **Job object**, và khi hết `timeout_s` nó đóng job
+— kéo theo **mọi tiến trình con**. `Start-Process` tạo con trong cùng job đó, nên
+`-WindowStyle Hidden` và chuyển hướng log **không cứu được**.
+
+⚠️ Điều này mâu thuẫn với thứ tôi ghi ngày 22/08: *"Nexus exec hết giờ KHÔNG giết
+tiến trình từ xa"* — lúc đó ba lô chạy chồng lên nhau nên tôi kết luận như vậy. Cả
+hai quan sát đều thật; cách hoà giải đúng là **exec giết cây con của CHÍNH nó**,
+còn ba lô kia sống vì chúng được bật từ ba lời gọi exec khác nhau và mỗi cái chết
+theo mốc riêng — tôi thấy chúng chồng nhau **trong cửa sổ trước khi từng cái hết
+giờ**.
+
+### Cách đúng: Scheduled Task
+
+Task chạy dưới Task Scheduler, **không thuộc cây tiến trình của exec**.
+
+```
+schtasks /create /tn LTT_H37_lo /tr "cmd /c <bat>" /sc once /st 23:59          /ru SYSTEM /rl HIGHEST /f
+schtasks /run /tn LTT_H37_lo
+```
+
+⛔ **`/ru SYSTEM` là bắt buộc.** Nexus exec chạy dưới SYSTEM, và `schtasks` không
+suy được tài khoản từ ngữ cảnh đó — nó báo *"No mapping between account names and
+security IDs was done"*, một thông báo không hề nói tới nguyên nhân thật.
+
+### Và một cái lợi ngoài dự tính
+
+Lô chạy lại **không mất gì**: `prompt_id` sinh **tất định** từ mã job, nên
+`chay_mot` hỏi `da_xong(pid)` trước khi xếp hàng và **dùng lại ảnh của lần bị
+giết** — p01 chỉ tốn **0,5 giây** thay vì 110. Thiết kế đó có từ D-018 vì một lý do
+khác, và hôm nay nó trả công lần thứ hai.
+
+### Phép đếm "đang chạy chồng" đã sai HAI lần
+
+| Cách đếm | Sai thế nào |
+|---|---|
+| `CommandLine` chứa `chay_baseline` | trả **NULL** với một số tiến trình ⇒ báo **0** trong khi lô đang chạy thật |
+| đường dẫn `venv\python.exe` | bắt nhầm **chính dịch vụ cổng render** — cùng venv |
+| ✅ **trạng thái Scheduled Task** | task **là** lô đo, không nhầm với thứ gì khác |
+
+Chốt chống-chạy-chồng mà báo sai còn tệ hơn không có: nó cho phép hai tiến trình
+cùng nạp model lên một card, đúng thứ nó sinh ra để chặn.
+
+### Số đo bản mẫu mới (uni_pc + shift 3,0 + seam smoothing)
+
+| | 2560×1440, 50 bước |
+|---|---|
+| Thời gian | **~110 giây/ảnh** *(ước cũ 96 giây — hơi lạc quan)* |
+| VRAM đỉnh | **17.649 MB** |
+| Nhiệt đỉnh | 74 °C |
