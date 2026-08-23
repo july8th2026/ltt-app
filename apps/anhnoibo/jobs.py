@@ -144,5 +144,12 @@ def handle(params: dict, ctx=None) -> dict:
     except dieu_phoi.DieuPhoiError as e:
         raise LoiTaoAnh(str(e)) from e
 
+    from platform_core.public_api import costing
+
     return {"image_keys": list(kq.image_keys), "prompt": kq.prompt_da_gui,
-            "da_dich": kq.da_dich, "canh_bao": list(kq.canh_bao)}
+            "da_dich": kq.da_dich, "canh_bao": list(kq.canh_bao),
+            # Model nhà cũng có giá vốn — điện + khấu hao GPU, đo thật trên máy B.
+            # `tham_chieu` đắt gấp đôi, nên phải báo cả nó chứ không chỉ số ảnh.
+            costing.KHOA_GOI_PROVIDER: [
+                {"model": "hidream-o1", "count": len(kq.image_keys),
+                 "tham_chieu": che_do in ("edit", "subject")}]}

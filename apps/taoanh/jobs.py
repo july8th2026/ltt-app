@@ -11,6 +11,7 @@ Hợp đồng handler: idempotent theo job (khoá lưu theo job_id) · báo ti�
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core.public_api import costing
 import base64
 import io
 import os
@@ -237,4 +238,9 @@ def handle(params: dict, ctx=None) -> dict:
     return {"image_keys": keys, "count": len(keys), "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "edit_mode": edit_mode,
-            "credit_cost": len(keys) * unit_credit(model), "errors": errors[:3]}
+            "credit_cost": len(keys) * unit_credit(model), "errors": errors[:3],
+            # Bang chung chi phi: bao SO ANH THAT DA TAO, khong phai `count` khach
+            # xin. Mot luot hong o anh thu ba thi ta chi tra tien hai anh — bao
+            # theo yeu cau la tu thoi phong chi phi cua chinh minh.
+            # Khong lo ra khach: tang API chi tra nhung truong `returns` da khai.
+            costing.KHOA_GOI_PROVIDER: [{"model": model, "count": len(keys)}]}

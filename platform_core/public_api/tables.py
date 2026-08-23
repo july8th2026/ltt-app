@@ -678,7 +678,18 @@ PRICE_STATUSES = (PRICE_DRAFT, PRICE_SCHEDULED, PRICE_ACTIVE, PRICE_RETIRED)
 COST_DURATION_MS = "duration_ms"
 COST_BYTES = "bytes"
 COST_TOKENS = "tokens"
-COST_KINDS = (COST_DURATION_MS, COST_BYTES, COST_TOKENS)
+#: Mot luot goi nha cung cap, tinh THEO DON VI BAN CUA HO (mot anh, mot lan goi).
+#:
+#: Khac han ba loai tren o CHO DAT GIA. Duration/bytes/tokens co gia la mot con so
+#: hop dong nam NGOAI he thong, do nguoi van hanh nhap. Loai nay thi gia da BIET:
+#: no nam o `platform_core/gia_von.json`, tra tu bang gia cong bo cua nha cung cap.
+#:
+#: Them loai nay vi voi mot job anh, KHOAN CHI LON NHAT la mot luot goi API tinh
+#: theo anh - khong phai token, khong phai giay, khong phai byte. Truoc 23/08/2026
+#: no khong co cho de ghi, va do la ly do mot khoan lo 45-57% chay 22 ngay ma bang
+#: bien loi nhuan khong he thay.
+COST_PROVIDER_CALL = "provider_call"
+COST_KINDS = (COST_DURATION_MS, COST_BYTES, COST_TOKENS, COST_PROVIDER_CALL)
 
 
 class ApiPricingVersion(Base):

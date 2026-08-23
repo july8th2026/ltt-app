@@ -15,6 +15,7 @@ Khoá API chỉ ở phía máy chủ, KHÔNG BAO GIỜ xuống trình duyệt.
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core.public_api import costing
 import base64
 import io
 import os
@@ -270,4 +271,8 @@ def handle(params: dict, ctx=None) -> dict:
     return {"image_keys": keys, "scores": scores, "count": len(keys), "prompt": prompt,
             "aspect_ratio": aspect_ratio,
             "credit_cost": len(keys) * CREDIT_PER_IMAGE,
-            "errors": errors[:3]}
+            "errors": errors[:3],
+            # App nay tinh gia PHANG bat ke model, nen day la cho duy nhat biet
+            # model that su da dung. Thieu no thi bang bien loi nhuan se thay
+            # doanh thu ma khong thay khoan chi lon nhat.
+            costing.KHOA_GOI_PROVIDER: [{"model": model, "count": len(keys)}]}
