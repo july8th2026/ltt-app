@@ -20,6 +20,8 @@ Ba nguyên tắc bắt buộc ở đây:
 """
 from __future__ import annotations
 
+import json
+from urllib.parse import quote_plus
 import logging
 
 from markupsafe import escape
@@ -348,6 +350,7 @@ class ApiKeysConsole(BaseView):
                 f'<td class="tnum muted" style="font-size:12px">{_rpm}{cap}/min<br>{k.total_tokens} tok</td>'
                 f'<td><div class="rowactions">'
                 f'<a class="btn ghost sm" href="/admin/api-key-test?id={escape(k.id)}">Test</a>'
+                f'<a class="btn ghost sm" href="/admin/api-key-sua?id={escape(k.id)}">Sửa</a>'
                 f'{refresh}{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
         if not shown:
             rows = ('<tr><td colspan="9" class="muted" style="padding:26px;text-align:center">'
@@ -624,7 +627,14 @@ class NhatKyAdminView(ModelView, model=NhatKyAdmin):
 
 class ApiKeyAdmin(ModelView, model=ApiKey):
     name = "API key"
-    name_plural = "APIKEYS"
+    # ⛔ KHÔNG đặt lại là "APIKEYS". `ApiKeysConsole` đã mang tên đó, và **hai mục
+    #    menu cùng tên** là lý do chủ dự án ngày 23/08 vào nhầm trang này rồi báo
+    #    *"Provider đâu có ltt_image"* — trang này có `can_create = False` nên nó
+    #    không có nút tạo và không có dropdown provider nào cả.
+    #
+    #    Đây là bảng dữ liệu thô để tra cứu và xoá. Chỗ làm việc là
+    #    `/admin/apikeys`.
+    name_plural = "APIKEYS (bảng thô)"
     # sqladmin tự đặt identity = slugify(ApiKey) = "api-key" → URL /admin/api-key/...
     icon = "fa-solid fa-key"
     # TUYỆT ĐỐI không hiện credential_enc (secret). Chỉ preview 4 số cuối (H8).
@@ -699,6 +709,8 @@ class AddApiKeyView(BaseView):
         opts = "".join(
             f'<option value="{escape(p.id)}">{escape(p.display_name)} '
             f'[{escape(p.auth_style)}]</option>' for p in providers.list_all())
+        # Bản đồ provider -> category nó phục vụ, cho đoạn script tick sẵn bên dưới.
+        cat_map = json.dumps({p.id: list(p.categories or ()) for p in providers.list_all()})
         _catlbl = {APIKEY_CAT_MODEL: "🧭 Điều khiển model", APIKEY_CAT_CHAT: "💬 Chat",
                    APIKEY_CAT_IMAGE: "🖼️ Ảnh", APIKEY_CAT_VIDEO: "🎬 Video"}
         cat_boxes = "".join(
@@ -712,7 +724,7 @@ class AddApiKeyView(BaseView):
 {msg}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(token)}">
-  <div class="field"><label>Provider</label><select class="inp" name="provider" required>{opts}</select></div>
+  <div class="field"><label>Provider</label><select class="inp" name="provider" id="prov" required>{opts}</select></div>
   <div class="field"><label>Tên gợi nhớ</label><input class="inp" name="name" placeholder="gemini-chinh"></div>
   <div class="field"><label>Credential (khoá THÔ — sẽ mã hoá)</label>
     <input class="inp" name="credential" type="password" required autocomplete="off" placeholder="AIza••••••"></div>
@@ -727,8 +739,181 @@ class AddApiKeyView(BaseView):
 </form></div></div>
 <style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;align-items:center;
 padding:7px 11px;border:1px solid var(--line2);border-radius:8px;font-size:12.5px;cursor:pointer;color:var(--muted)}}
-.catpick input{{accent-color:var(--accent)}}</style>"""
+.catpick input{{accent-color:var(--accent)}}.catpick label.mo{{opacity:.35}}</style>
+<script>
+// Tick san category ma provider PHUC VU, va lam mo nhung cai no khong phuc vu.
+// Su co 23/08: khoa ltt_image duoc tao voi category `model_control`. Hop le ve
+// mat danh sach nen form nhan, nhung provider do chi phuc vu `image` — nen
+// api_pool khong bao gio cap phat no, va loi bao ra la "khong co API key kha
+// dung", tuc la mot cau noi ve mot thu KHAC voi nguyen nhan that.
+const PHUC_VU = {cat_map};
+function apDung() {{
+  const p = document.getElementById('prov').value;
+  const ok = PHUC_VU[p] || [];
+  document.querySelectorAll('.catpick input[name=categories]').forEach(function (o) {{
+    const duoc = ok.length === 0 || ok.indexOf(o.value) >= 0;
+    o.checked = duoc && ok.length > 0;
+    o.disabled = !duoc;
+    o.parentElement.classList.toggle('mo', !duoc);
+  }});
+}}
+document.getElementById('prov').addEventListener('change', apDung);
+apDung();
+</script>"""
         return HTMLResponse(_admin_shell("Thêm API key", "apikeys", body), status_code=status)
+
+
+class SuaApiKeyView(BaseView):
+    """Sửa một API key — **giữ nguyên id và toàn bộ lịch sử**.
+
+    ⛔ VÌ SAO TRANG NÀY TỒN TẠI (sự cố 2026-08-23).
+
+       Trước đây không có đường sửa nào. `ApiKeyAdmin` (sqladmin) cho sửa đúng
+       năm trường an toàn — `name`, `base_url`, `default_model`, `priority`,
+       `enabled` — và **không** cho sửa `categories`, cũng **không** cho xoay
+       credential. Chú thích trong mã ghi thẳng cách chữa: *"đổi credential = tạo
+       key mới rồi xoá key cũ"*.
+
+       Cái giá của cách đó chỉ lộ ra khi cần dùng: khoá mang `total_requests`,
+       `total_success`, `health_score`, `last_used_at`, và một **id mà nhật ký
+       vận hành đang tham chiếu**. Tạo lại là **mất hết** — chỉ vì tick nhầm một
+       ô, hoặc vì một credential bị lộ cần xoay.
+
+       Ngày 23/08 chuyện đó xảy ra thật: khoá `ltt_image` vào với category
+       `model_control`, và cách duy nhất để chữa qua giao diện là xoá đi tạo lại.
+
+    ⭐ Credential để **trống** thì giữ nguyên. Đó là mặc định an toàn: sửa một ô
+       category không được phép vô tình xoá mất khoá.
+    """
+
+    name = "Sửa API key"
+    icon = "fa-solid fa-pen"
+
+    def is_visible(self, request: Request) -> bool:  # noqa: D401
+        return False          # vao tu nut tren console, khong lam ban menu trai
+
+    @expose("/api-key-sua", methods=["GET", "POST"])
+    async def sua(self, request: Request):
+        from platform_core import api_keys, providers
+        from platform_core.models import (APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE,
+                                          APIKEY_CAT_MODEL, APIKEY_CAT_VIDEO)
+        from server.auth.csrf import issue_csrf_token, verify_csrf_token
+
+        key_id = request.query_params.get("id", "")
+        msg, status = "", 200
+
+        if request.method == "POST":
+            form = await request.form()
+            key_id = form.get("id", "")
+            if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+                msg = '<p style="color:#b91c1c;">CSRF khong hop le - tai lai trang.</p>'
+                status = 400
+            else:
+                gen = get_session()
+                db = next(gen)
+                try:
+                    key = api_keys.lay_key_theo_id(db, key_id)
+                    if key is None:
+                        return HTMLResponse("Khong thay key.", status_code=404)
+                    api_keys.cap_nhat_categories(db, key, form.getlist("categories"))
+                    key.name = (form.get("name") or key.provider).strip()
+                    key.base_url = (form.get("base_url") or "").strip()
+                    key.default_model = (form.get("default_model") or "").strip()
+                    key.priority = int(form.get("priority") or 100)
+                    api_keys.cap_nhat_supported_models(db, key, [
+                        m.strip()
+                        for m in (form.get("supported_models") or "").split(",")
+                        if m.strip()])
+                    xoay = (form.get("credential") or "").strip()
+                    if xoay:
+                        api_keys.dat_credential(db, key, xoay)
+                    db.commit()
+                    them = " - credential DA XOAY." if xoay else "."
+                    msg = ('<p style="color:#1a7f37;">Da luu. Id va lich su giu '
+                           'nguyen' + them + '</p>')
+                except Exception as e:                        # noqa: BLE001
+                    db.rollback()
+                    msg = f'<p style="color:#b91c1c;">Loi: {escape(str(e))}</p>'
+                    status = 400
+                finally:
+                    try:
+                        next(gen)
+                    except StopIteration:
+                        pass
+
+        gen = get_session()
+        db = next(gen)
+        try:
+            key = api_keys.lay_key_theo_id(db, key_id)
+            if key is None:
+                return HTMLResponse("Khong thay key.", status_code=404)
+            prov = providers.get(key.provider)
+            phuc_vu = list(getattr(prov, "categories", ()) or [])
+            dang_co = list(key.categories or [])
+            nhan = {APIKEY_CAT_MODEL: "Dieu khien model", APIKEY_CAT_CHAT: "Chat",
+                    APIKEY_CAT_IMAGE: "Anh", APIKEY_CAT_VIDEO: "Video"}
+            o = []
+            for c in (APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE,
+                      APIKEY_CAT_VIDEO):
+                duoc = (not phuc_vu) or (c in phuc_vu)
+                o.append(
+                    '<label class="{}"><input type="checkbox" name="categories" '
+                    'value="{}"{}{}> {}</label>'.format(
+                        "" if duoc else "mo", c,
+                        " checked" if c in dang_co else "",
+                        "" if duoc else " disabled", nhan[c]))
+            boxes = "".join(o)
+            goi_y = ""
+            if phuc_vu:
+                goi_y = ('<p class="dim">Provider <b>{}</b> chi phuc vu: <b>{}</b>. '
+                         'Cac o khac bi khoa.</p>').format(
+                             escape(key.provider), escape(", ".join(phuc_vu)))
+            token = issue_csrf_token(request)
+            body = _sua_key_html(key, boxes, goi_y, token, msg)
+            return HTMLResponse(_admin_shell("Sua API key", "apikeys", body),
+                                status_code=status)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+
+def _sua_key_html(key, boxes: str, goi_y: str, token: str, msg: str) -> str:
+    """Thân trang sửa key. Tách ra để hàm view không thành một khối chuỗi dài."""
+    lich_su = "{}/{} luot thanh cong, health {}".format(
+        key.total_success, key.total_requests, key.health_score)
+    return """<div class="adm-content" style="max-width:640px">
+<div class="pagehead"><div><h1>Sua API key</h1>
+<p>Id va lich su <b>giu nguyen</b>: {lich_su}.</p></div>
+<div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
+{msg}
+<div class="ui-card"><form method="post">
+  <input type="hidden" name="csrf_token" value="{token}">
+  <input type="hidden" name="id" value="{kid}">
+  <div class="field"><label>Provider</label><input class="inp" value="{prov}" disabled></div>
+  <div class="field"><label>Ten goi nho</label><input class="inp" name="name" value="{ten}"></div>
+  <div class="field"><label>Credential moi (<b>de trong = giu nguyen</b>, dang ...{pv})</label>
+    <input class="inp" name="credential" type="password" autocomplete="off"
+           placeholder="de trong neu khong xoay"></div>
+  <div class="field"><label>Loai (nang luc)</label><div class="catpick">{boxes}</div>{goi_y}</div>
+  <div class="field"><label>base_url</label><input class="inp" name="base_url" value="{base}"></div>
+  <div class="field"><label>supported_models (phay phan cach)</label>
+    <input class="inp mono" name="supported_models" value="{sup}"></div>
+  <div class="field"><label>default_model</label><input class="inp mono" name="default_model" value="{dm}"></div>
+  <div class="field"><label>priority</label><input class="inp tnum" name="priority" type="number" value="{pri}"></div>
+  <button class="btn" type="submit">Luu</button>
+</form></div></div>
+<style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;
+align-items:center;padding:7px 11px;border:1px solid var(--line2);border-radius:8px;
+font-size:12.5px;cursor:pointer;color:var(--muted)}}.catpick input{{accent-color:var(--accent)}}
+.catpick label.mo{{opacity:.35}}</style>""".format(
+        lich_su=escape(lich_su), msg=msg, token=escape(token), kid=escape(key.id),
+        prov=escape(key.provider), ten=escape(key.name or ""),
+        pv=escape(key.key_preview or ""), boxes=boxes, goi_y=goi_y,
+        base=escape(key.base_url or ""),
+        sup=escape(", ".join(key.supported_models or [])),
+        dm=escape(key.default_model or ""), pri=int(key.priority))
 
 
 class ApiKeyActionView(BaseView):
@@ -787,6 +972,13 @@ class ApiKeyActionView(BaseView):
             elif op == "reset":
                 key.status = APIKEY_ACTIVE; key.cooldown_until = None
                 key.error_count = 0; key.auth_error_count = 0
+                # ⭐ Đặt lại CẢ `health_score`. Thiếu dòng này thì "Reset" chỉ xoá
+                #    bộ đếm lỗi, còn điểm sức khoẻ vẫn thấp — và `chon_key` xếp
+                #    hạng theo `health_score`, nên khoá đã hồi phục vẫn bị đẩy
+                #    xuống cuối mãi mãi. Người vận hành bấm Reset, thấy trạng thái
+                #    về `active`, và tưởng đã xong.
+                key.health_score = 100
+                key.last_error = ""
             elif op == "refresh":
                 # Làm mới model sống từ provider -> ghi supported_models (H8 Pha 2).
                 from platform_core import providers, providers_live
@@ -794,8 +986,17 @@ class ApiKeyActionView(BaseView):
                 try:
                     models = providers_live.lay_models_song(prov, api_keys.lay_credential(db, key))
                     api_keys.cap_nhat_supported_models(db, key, models)
-                except providers_live.ProviderLiveError:
-                    pass      # không làm mới được thì giữ nguyên, không làm sập trang
+                except providers_live.ProviderLiveError as e:
+                    # ⛔ TRƯỚC ĐÂY LÀ `pass`. Người vận hành bấm nút, trang tải
+                    #    lại, và **không có gì cho biết nó đã hỏng** — họ kết luận
+                    #    provider không có model nào. Không làm sập trang là đúng;
+                    #    nuốt luôn lý do thì không.
+                    db.rollback()
+                    _log.warning("refresh models that bai cho key %s (%s): %s",
+                                key.id[:8], key.provider, e)
+                    return RedirectResponse(
+                        "/admin/apikeys?loi=" + quote_plus(f"Lam moi model that bai: {e}"),
+                        status_code=303)
             db.commit()
         finally:
             try: next(gen)
@@ -1168,6 +1369,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
     admin.add_view(NhatKyAdminView)
     admin.add_view(ApiKeyAdmin)
     admin.add_view(AddApiKeyView)
+    admin.add_view(SuaApiKeyView)
     admin.add_view(ApiKeyActionView)
     admin.add_view(ModelsView)
     admin.add_view(AppAccessAdmin)
