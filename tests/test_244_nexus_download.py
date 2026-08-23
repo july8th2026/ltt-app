@@ -270,3 +270,24 @@ def test_khong_co_setup_url_thi_van_moi_zip_nhu_cu(app_bat):
     html = client.get("/tai-xuong").text
     assert "LTTNexus-1.4.0-android.apk" in html
     assert "Tải xuống" in html
+
+
+def test_khong_moi_hai_link_tro_cung_mot_file(app_bat):
+    """macOS dùng CÙNG một `.dmg` cho `url` lẫn `setup_url`.
+
+    Trang từng hiện cả nút "Tải file cài" lẫn dòng "Hoặc tải bản zip
+    chạy-không-cài" trỏ đúng file đó. Hai lựa chọn nhìn như khác nhau mà thực ra
+    là một — người đọc sẽ dừng lại cân nhắc một quyết định không tồn tại.
+    """
+    client, tmp_path = app_bat
+    mot_file = "/nexus/dl/LTTNexus-1.4.0-macos-aarch64.dmg"
+    (tmp_path / "data" / "nexus_versions.json").write_text(json.dumps({
+        "version": "1.4.0",
+        "platforms": {"macos": {
+            "label": "macOS — Apple Silicon", "available": True, "kind": "dmg",
+            "url": mot_file, "sha256": "f" * 64,
+            "setup_url": mot_file, "setup_sha256": "f" * 64}},
+    }), encoding="utf-8")
+    html = client.get("/tai-xuong").text
+    assert html.count(mot_file) == 1, "moi cung mot file hai lan"
+    assert "chạy-không-cài" not in html

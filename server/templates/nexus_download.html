@@ -80,8 +80,14 @@
              la day viec cho ho. #}
           <a class="nx-btn" href="{{ p.setup_url }}" download>{{ _("Tải file cài") }}</a>
           <div class="nx-sha">SHA-256: {{ p.setup_sha256 }}</div>
-          <a class="nx-alt" href="{{ p.url }}" download>{{ _("Hoặc tải bản zip chạy-không-cài") }}</a>
-          {% if p.sha256 %}<div class="nx-sha">SHA-256 (zip): {{ p.sha256 }}</div>{% endif %}
+          {# Chi moi ban ZIP khi no THAT SU la mot file khac. macOS dung cung mot
+             `.dmg` cho ca hai (khong co khai niem "chay-khong-cai" tach roi), nen
+             hien them mot link tro dung file vua moi la noi vo nghia — nguoi doc
+             se tuong do la hai lua chon khac nhau. #}
+          {% if p.url and p.url != p.setup_url %}
+            <a class="nx-alt" href="{{ p.url }}" download>{{ _("Hoặc tải bản zip chạy-không-cài") }}</a>
+            {% if p.sha256 %}<div class="nx-sha">SHA-256 (zip): {{ p.sha256 }}</div>{% endif %}
+          {% endif %}
         {% else %}
           <a class="nx-btn" href="{{ p.url }}"{% if p.kind != 'appstore' %} download{% endif %}>
             {% if p.kind == 'appstore' %}{{ _("Mở App Store") }}{% else %}{{ _("Tải xuống") }}{% endif %}
