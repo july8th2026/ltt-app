@@ -7722,9 +7722,8 @@ msgid ""
 msgstr ""
 
 #: server/templates/dev_webhooks.html:38
-#, fuzzy
 msgid "đang bật"
-msgstr "Maintenance"
+msgstr "online"
 
 #: server/templates/dev_overview.html:13 server/templates/dev_usage.html:9
 #, fuzzy
@@ -8437,3 +8436,168 @@ msgstr "Download the installer"
 
 msgid "Hoặc tải bản zip chạy-không-cài"
 msgstr "Or get the portable zip"
+
+msgid "Gọi model ngôn ngữ — trả lời ngay trong request"
+msgstr "Call the language model — answered in the request"
+
+msgid "Đây là cửa MỘT bước, khác cửa job ba bước ở trên: không báo giá, không hàng đợi, không hỏi kết quả. Câu trả lời và hoá đơn về cùng lúc."
+msgstr "This is a ONE-step door, unlike the three-step job door above: no quote, no queue, no polling. The answer and the bill arrive together."
+
+msgid "Tương thích SDK OpenAI: chỉ cần trỏ base_url vào /api/v1. Một chỗ duy nhất phải thêm là header Idempotency-Key — SDK của OpenAI không tự gửi nó, và ví dụ dưới đây đã có sẵn."
+msgstr "OpenAI SDK compatible: point base_url at /api/v1 and you are done, with one exception. You must add an Idempotency-Key header yourself — the OpenAI SDK does not send one — and the examples below already do."
+
+msgid "Cửa chat khác cửa job ở đâu"
+msgstr "How the chat door differs from the job door"
+
+msgid "Sáu chỗ. Viết ra đây thay vì để bạn tự vấp:"
+msgstr "Six of them, written down here rather than left for you to trip over:"
+
+msgid "Bảy bước trên là cho việc dài — ảnh, video. Riêng model ngôn ngữ có cửa MỘT bước: bỏ qua bước 5, 6, 7 và gọi thẳng"
+msgstr "The seven steps above are for long work — images, video. The language model has a ONE-step door: skip steps 5, 6 and 7 and call"
+
+msgid "Ví dụ ở cuối trang."
+msgstr "Examples at the bottom of this page."
+
+msgid "Điều khiển máy từ xa"
+msgstr "Remote control"
+
+msgid "Máy của bạn, ở bất kỳ đâu bạn đang ngồi"
+msgstr "Your machines, from wherever you are sitting"
+
+msgid "Cài ứng dụng lên máy cần điều khiển, đăng nhập cùng một tài khoản LTT, rồi bấm vào nó từ máy khác hoặc từ điện thoại. Không mở cổng, không cần IP tĩnh."
+msgstr "Install the app on the machine you want to reach, sign in with the same LTT account, then click it from another computer or from your phone. No port forwarding, no static IP."
+
+msgid "Không mở cổng, không VPN"
+msgstr "No port forwarding, no VPN"
+
+msgid "Mọi phiên đều được ghi lại"
+msgstr "Every session is recorded"
+
+msgid "Mã nguồn mở, AGPL-3.0"
+msgstr "Open source, AGPL-3.0"
+
+msgid "bản cài sẵn sàng"
+msgstr "builds ready to install"
+
+msgid "cổng phải mở trên router"
+msgstr "ports to open on your router"
+
+msgid "phiên điều khiển được ghi nhật ký"
+msgstr "of sessions are logged"
+
+msgid "Vì sao dùng"
+msgstr "Why use it"
+
+msgid "Ba thứ khiến nó khác"
+msgstr "Three things that set it apart"
+
+msgid "Không phải danh sách tính năng — đây là ba việc bạn sẽ đụng tới ngay ngày đầu."
+msgstr "Not a feature list — these are the three things you will meet on day one."
+
+msgid "Không mở cổng, không cần IP tĩnh, không VPN. Máy tự kết nối ra relay của LTT, kể cả khi nằm sau router nhà hay đang dùng 4G."
+msgstr "No port forwarding, no static IP, no VPN. Each machine dials out to the LTT relay, even behind a home router or on mobile data."
+
+msgid "Đăng nhập cùng tài khoản LTT trên từng máy. Danh sách hiện ngay trong ứng dụng kèm chỉ báo máy nào đang bật — không phải gõ ID, không phải dán mật khẩu."
+msgstr "Sign in with the same LTT account on each machine. The list appears right inside the app showing which ones are online — no ID to type, no password to paste."
+
+msgid "Mọi phiên điều khiển đều được ghi lại kèm thời gian và địa chỉ bên điều khiển. Máy không còn dùng thì thu hồi, và thu hồi là mất quyền ngay."
+msgstr "Every session is recorded with its time and the controlling address. Revoke a machine you no longer use and it loses access immediately."
+
+msgid "Chọn máy của bạn"
+msgstr "Pick your platform"
+
+msgid "Cài lên máy cần điều khiển từ xa, rồi cài lên máy hoặc điện thoại bạn đang ngồi."
+msgstr "Install it on the machine you want to reach, then on the computer or phone you are sitting at."
+
+msgid "Bốn bước, một lần duy nhất"
+msgstr "Four steps, once"
+
+msgid "Cài lên máy cần điều khiển"
+msgstr "Install it on the machine you want to reach"
+
+msgid "Tải bản đúng hệ điều hành rồi chạy file cài. Không cần gỡ bản cũ."
+msgstr "Download the build for its operating system and run the installer. No need to uninstall an older version first."
+
+msgid "Đăng nhập ngay trong ứng dụng"
+msgstr "Sign in inside the app"
+
+msgid "Dùng đúng email và mật khẩu bạn đăng nhập trang này — cùng một tài khoản, cùng một ví credit."
+msgstr "The same email and password you use on this site — one account, one credit balance."
+
+msgid "Cài lên máy bạn đang ngồi"
+msgstr "Install it where you are sitting"
+
+msgid "Máy tính khác, hoặc điện thoại. Đăng nhập cùng tài khoản đó."
+msgstr "Another computer, or your phone. Sign in with that same account."
+
+msgid "Bấm vào máy trong danh sách"
+msgstr "Click a machine in the list"
+
+msgid "Không cần gõ ID, không cần dán mật khẩu một lần."
+msgstr "No ID to type, no one-time password to paste."
+
+msgid "An toàn & riêng tư"
+msgstr "Security & privacy"
+
+msgid "Ai thấy được gì"
+msgstr "Who can see what"
+
+msgid "Đây là phần mềm nhìn thấy màn hình của bạn, nên nó nợ bạn câu trả lời rõ ràng."
+msgstr "This is software that sees your screen, so it owes you a straight answer."
+
+msgid "Khoá riêng không rời máy"
+msgstr "The private key never leaves the machine"
+
+msgid "Mỗi máy tự sinh khoá của nó và ký từng yêu cầu. Khoá đó không bao giờ được gửi lên máy chủ."
+msgstr "Each machine generates its own key and signs every request with it. That key is never sent to the server."
+
+msgid "Màn hình không đi qua trình duyệt"
+msgstr "Your screen does not go through a browser"
+
+msgid "Hình ảnh đi thẳng giữa hai ứng dụng qua relay của LTT. Trang web này chỉ lo tài khoản, credit và hướng dẫn."
+msgstr "The picture travels directly between the two apps over the LTT relay. This website only handles accounts, credit and documentation."
+
+msgid "Nhật ký không sửa được"
+msgstr "The log cannot be edited"
+
+msgid "Mỗi phiên ghi lại thời điểm và địa chỉ bên điều khiển. Thu hồi máy cắt quyền ngay nhưng không xoá nhật ký cũ."
+msgstr "Each session records when it happened and where it came from. Revoking a machine cuts its access at once but never erases the old entries."
+
+msgid "Mã nguồn mở"
+msgstr "Open source"
+
+msgid "LTT Nexus dựa trên RustDesk theo giấy phép AGPL-3.0; bản sửa của chúng tôi được công bố công khai."
+msgstr "LTT Nexus is based on RustDesk under the AGPL-3.0 licence; our modified source is published openly."
+
+msgid "Tính theo máy, không tính theo giờ"
+msgstr "Billed per machine, not per hour"
+
+msgid "Tính theo số máy bạn ghép vào tài khoản — không theo số phiên, không theo số phút điều khiển. Máy nào thu hồi thì tháng sau không thu nữa."
+msgstr "Billed by how many machines are linked to your account — not by sessions, not by minutes. Revoke one and it stops being billed the following month."
+
+msgid "Hiện chưa thu credit cho máy ghép. Khi bắt đầu thu, mức giá sẽ hiện ở đây và trong ứng dụng trước khi trừ đồng nào."
+msgstr "Linked machines are not billed yet. When billing starts, the price will appear here and in the app before anything is charged."
+
+msgid "Những điều hay được hỏi"
+msgstr "Things people ask"
+
+msgid "Mỗi phiên đều được ghi lại kèm thời gian và địa chỉ bên điều khiển. Xem ở trang Máy của tôi."
+msgstr "Every session is recorded with its time and the controlling address. See them on the My devices page."
+
+msgid "Vào Máy của tôi rồi bấm Thu hồi. Máy đó mất quyền kết nối ngay, kể cả khi ứng dụng vẫn còn cài trên đó."
+msgstr "Open My devices and press Revoke. That machine loses the right to connect immediately, even with the app still installed on it."
+
+msgid "Có, trên Windows và macOS: bấm một lần là nó tự tải, đối chiếu mã kiểm tra SHA-256 rồi cài đè. Android và iOS phải xác nhận ở màn hình cài đặt của hệ điều hành — đó là giới hạn của hai hệ đó."
+msgstr "Yes, on Windows and macOS: one click and it downloads, checks the SHA-256, and installs over itself. Android and iOS require you to confirm in the system installer — that is a limit of those platforms."
+
+msgid "Bản iOS cài được qua SideStore hoặc Sideloadly. Apple không cho cài thẳng file .ipa chưa ký từ Safari — đó là giới hạn của iOS, không phải của ứng dụng."
+msgstr "The iOS build installs through SideStore or Sideloadly. Apple does not allow an unsigned .ipa to be installed straight from Safari — that is a limit of iOS, not of the app."
+
+msgid "Cài mất chưa tới hai phút"
+msgstr "Installing takes under two minutes"
+
+msgid "Tải bản cho máy bạn, đăng nhập, và máy sẽ hiện ra ở mọi thiết bị khác của bạn."
+msgstr "Download the build for your machine, sign in, and it appears on every other device you own."
+
+msgid "Máy của bạn, ở bất kỳ đâu"
+msgstr "Your machines, wherever you are"

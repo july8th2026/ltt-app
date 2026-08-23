@@ -131,6 +131,29 @@ Bản Apple Silicon thì đã sống bình thường.
 
 ---
 
+## Trang `/nexus` đã dựng lại — CHỜ DEPLOY
+
+Chủ sản phẩm đánh giá bản đầu "thô sơ, chưa có bố cục". Đã dựng lại: 5 khối → 9
+khối, thêm **khung app mô phỏng** ở hero (HTML/CSS, KHÔNG phải ảnh chụp — màn
+hình app thật có ID máy và mật khẩu một lần), thêm **dải số liệu** và khối **An
+toàn & riêng tư**, thêm lời mời hành động cuối trang, và chuyển sang dùng lớp có
+sẵn của `ltt.css` (`.btn`, `.badge`, `.chip`, `.eyebrow`) thay vì tự chế.
+
+Sửa kèm, đều là lỗi thật:
+
+* Lưới 5 nền tảng để lại một thẻ **mồ côi** ở hàng dưới → `auto-fit`/`minmax`.
+* Trên màn 390px lưới rơi xuống **một cột** → hạ ngưỡng 176px → 150px.
+* Link nội bộ không qua `u()` → mỗi cú bấm tốn thêm một **302**.
+* Nhãn iOS nằm trong **dữ liệu** bản kê nên không dịch được → đổi sang nhãn trung
+  tính `iOS — SideStore / Sideloadly` (đã sửa thẳng trên máy chủ, đang sống).
+* `.po` có một mục **`#, fuzzy` dịch SAI**: `"đang bật"` → `"Maintenance"`.
+  gettext bỏ qua mục fuzzy nên nó chỉ hiện tiếng Việt, nhưng ai gỡ cờ fuzzy thì
+  trang sẽ hiện "Maintenance". **Còn 210 mục fuzzy khác chưa rà.**
+
+⇒ Trang mới chỉ hiện ra sau lần deploy tới. Nhãn iOS thì đã đổi rồi (dữ liệu).
+
+---
+
 ## Còn nợ sau khi deploy
 
 * **macOS**: đọc kết quả `ltt-macos.yml`. Mã `#[cfg(target_os = "macos")]` **chưa

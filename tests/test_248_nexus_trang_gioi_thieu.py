@@ -141,3 +141,45 @@ def test_tat_nexus_thi_ca_trang_gioi_thieu_cung_404(tmp_path, monkeypatch):
     finally:
         limits.reset()
         dbmod.reset_engine()
+
+
+# ── Bản tiếng Anh phải thật sự là tiếng Anh ─────────────────────────────────
+#
+# Trang này là cửa hàng, và nó có hai bản ngôn ngữ. Một chuỗi quên bọc `_()` hay
+# quên thêm vào `.po` KHÔNG làm trang vỡ — nó chỉ hiện tiếng Việt giữa một trang
+# tiếng Anh, và không ai báo lỗi. Đã dính đúng vậy hai lần: nhãn nhóm ở header
+# (`{{ group }}` thay vì `{{ _(group) }}`), và nhãn iOS nằm trong DỮ LIỆU bản kê
+# nên không đi qua gettext được.
+
+def test_ban_tieng_anh_khong_ro_tieng_viet(app_mac_dinh):
+    html = app_mac_dinh.get("/en/nexus", follow_redirects=True).text
+    for viet in ("Tải ứng dụng", "Máy của bạn", "Câu hỏi thường gặp",
+                 "Ai thấy được gì", "Chọn máy của bạn"):
+        assert viet not in html, f"con tieng Viet tren ban /en: {viet!r}"
+
+
+def test_ban_tieng_anh_dich_dung_cac_moc_chinh(app_mac_dinh):
+    html = app_mac_dinh.get("/en/nexus", follow_redirects=True).text
+    for eng in ("Your machines", "Pick your platform", "Who can see what",
+                "Things people ask", "Download the app"):
+        assert eng in html, f"thieu ban dich: {eng!r}"
+
+
+def test_link_noi_bo_mang_tien_to_ngon_ngu(app_mac_dinh):
+    """Link viết thẳng vẫn tới đúng nơi, nhưng tốn thêm một cú 302 cho mỗi cú bấm."""
+    html = app_mac_dinh.get("/en/nexus", follow_redirects=True).text
+    assert 'href="/en/tai-xuong"' in html
+    assert 'href="/tai-xuong"' not in html
+
+
+def test_co_khoi_an_toan_va_loi_moi_cuoi_trang(app_mac_dinh):
+    """Hai khối này trả lời hai câu người đọc mang theo tới cuối trang.
+
+    Khối an toàn trả lời "ai nhìn thấy màn hình tôi" — nỗi lo số một với phần mềm
+    điều khiển từ xa, và bản trang đầu tiên không hề nhắc tới. Khối cuối trả lời
+    "giờ tôi làm gì" — bản đầu kết thúc ở FAQ rồi hết.
+    """
+    html = app_mac_dinh.get("/nexus").text
+    assert "Khoá riêng không rời máy" in html
+    assert "Màn hình không đi qua trình duyệt" in html
+    assert "Cài mất chưa tới hai phút" in html

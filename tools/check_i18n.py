@@ -139,6 +139,12 @@ _JINJA_DICH = re.compile(r"\{\{-?\s*_[nt]?\(|\{%-?\s*trans")
 def dem_template(f: pathlib.Path) -> int:
     t = f.read_text(encoding="utf-8")
     t = re.sub(r"\{#.*?#\}", "", t, flags=re.S)          # chú thích jinja
+    # Chú thích HTML và CSS/JS: KHÔNG bao giờ render ra cho người dùng, nên đếm
+    # chúng chỉ tạo áp lực viết chú thích không dấu — tức là làm mã khó đọc hơn
+    # để làm vừa lòng một phép đo. Cố ý chỉ bỏ CHÚ THÍCH: chuỗi trong
+    # `content:"…"` của CSS thì có hiện ra, và nó vẫn được đếm.
+    t = re.sub(r"<!--.*?-->", "", t, flags=re.S)
+    t = re.sub(r"/\*.*?\*/", "", t, flags=re.S)
     n_thieu = 0
     for dong in t.splitlines():
         if not VN.search(dong):
