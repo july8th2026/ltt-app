@@ -1,170 +1,101 @@
-# ⏸️ Nexus: xong code, CHỜ DEPLOY — 2026-08-22
+# LTT Nexus — trạng thái sau đợt deploy 2026-08-23
 
-**Đọc file này trước khi chạy `deploy-self.ps1`.**
-
-Phần Nexus đã xong và đã commit. Nó **không** được deploy vì một lý do nằm ngoài
-nó: thư mục làm việc đang chứa ba dự án khác đang dở, và công cụ deploy không
-tách được.
+Trước đây file này tên là "chờ deploy". **Đã deploy xong** lúc 13:22 và 14:50
+ngày 23/08 (`deploy exit rc=0`). Giữ tên file để link cũ không gãy, nhưng nội
+dung nay là **trạng thái thật**, không phải hàng đợi.
 
 ---
 
-## Đang chờ gì
+## Đang sống trên production
 
-| Hạng mục | Trạng thái |
+Xác minh trên **URL công khai** (không phải loopback — Cloudflare có cache và CSP
+biên riêng, quy tắc 5b của `CLAUDE.md`):
+
+| Kiểm | Kết quả |
 |---|---|
-| Nền tảng | commit `51dbb87` — 26 file, đã chốt |
-| Client | 6 commit, đã đẩy `github.com/giaitritruyenthongltt-spec/LTTnexus` nhánh `ltt-nexus` (`d8b7f2de`) |
-| Bản Windows 1.4.0 | đã build + đóng gói `dist/LTTNexus-1.4.0-win-x64-install.exe`, **chưa phát hành** |
-| Bản macOS | workflow `ltt-macos.yml` đã chạy lần đầu trên GitHub Actions |
-| Deploy | ⏸️ **treo có chủ ý** |
+| `/nexus` | **200 khi chưa đăng nhập** — trang giới thiệu 9 khối |
+| `/en/nexus` | 200, **không rò một chữ tiếng Việt nào** |
+| `/nexus/tai`, `/nexus/nhat-ky` | **404** — luồng web-broker đã đóng sau cờ `LTT_NEXUS_WEB_BROKER` |
+| `/tai-xuong` | **5 nền tảng**, Windows mời file cài trước, zip là lối phụ |
+| `/may-cua-toi` | 303 login; có bảng **Nhật ký truy cập** |
+| `/nexus-sso?ma=x` | 303 — vé bịa bị từ chối |
+| Máy đang chạy | **`online=True`** — lỗi "máy luôn hiện tắt" đã chết, đo bằng dữ liệu thật |
+
+Bố cục đo trên bản đang chạy (1440px): mọi khối bắt đầu ở **x=146**, kết thúc
+**1278** — kể cả hàng nền tảng vốn thụt vào 70px. 5 thẻ × 217px, một hàng, không
+tràn ngang, không vùng chạm nào dưới 24px.
 
 ---
 
-## Vì sao treo — hai điều công cụ deploy làm mà không ai chọn được
+## 🔴 Việc gấp nhất: Android và iOS còn ở 1.1.0
 
-`setup/2-cai-dat.ps1` làm đúng hai việc, và cả hai đều là "tất cả hoặc không":
-
-```powershell
-robocopy $src $appDir /E ...        # chép TOÀN BỘ thư mục làm việc
-& $venvPy -m alembic upgrade head   # nâng CSDL lên đầu mới nhất
+```
+windows      1.4.0      macos  1.4.0      macos_intel  1.4.0
+android    → 1.1.0      ios  → 1.1.0
 ```
 
-Không có khái niệm "chỉ lấy phần của tôi". Lúc chốt file này, cây mã đang có:
+Nghĩa là **người dùng Android/iOS chưa nhận bất kỳ bản vá nào của 1.2.0–1.4.0**:
+vẫn còn tab "Đã tìm thấy" bày máy ngoài tài khoản, vẫn tự khai ID ra mạng LAN,
+mục Giới thiệu vẫn mang thương hiệu RustDesk, chưa có SSO.
 
-| Đang dở | Của |
-|---|---|
-| `apps/vps`, `llm_gateway`, `docs/VPS`, `server/templates/vps.html` | app bán máy chủ ảo (Q103, Q104) |
-| `apps/ltt_llm`, `platform_core/llm` | cổng LLM |
-| `apps/anhnoibo`, `render_gateway`, `platform_core/image_gen`, `docs/ANH_NOI_BO` | H37 model ảnh nội bộ |
-| `alembic/versions/20260822_1900_vps_tables.py` | **migration chưa áp dụng** |
-
-Migration đó có `down_revision = "5a3a13144782"` — **đúng đầu CSDL production hiện
-tại**. Deploy bây giờ = tạo bảng của app VPS trên CSDL thật, cộng đẩy cả ba dự án
-dở lên production.
-
-Chủ sản phẩm chốt: **chờ hai phiên kia xong, deploy một lần tất cả.**
+* **Android** — build được ngay trên máy này qua WSL (xem `BUILD_ANDROID.md`;
+  NDK r28c, Rust 1.75, cargo-ndk 3.1.2). Rồi phát hành APK 1.4.0.
+* **iOS** — build được bằng workflow `ltt-ios.yml`, nhưng file `.ipa` chưa ký nên
+  chỉ cài qua SideStore/Sideloadly. Ký Ad Hoc cần tài khoản Apple Developer
+  99 USD/năm (dùng chung cho cả macOS).
 
 ---
 
-## Điều kiện để mở khoá deploy
+## Hai cái bẫy đã trả giá, đừng dẫm lại
 
-1. Ba dự án trên đã commit và tự nhận là xong.
-2. `python tools\gate.py` **xanh trên cây chung**. Lúc chốt file này nó đỏ ở
-   `apps/ltt_llm/manifest.py` (một chuỗi chưa bọc `_()`) — **không phải** phần Nexus.
-3. Chỉ còn **một** lượt gate chạy. Đã có lúc ba lượt chạy song song từ ba phiên
-   khác nhau; chúng dùng chung một CSDL test PostgreSQL và làm `test_214` đỏ giả.
-   Kiểm bằng:
-   ```powershell
-   Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
-     Where-Object { $_.CommandLine -like '*gate.py*' }
-   ```
-4. Ai đó đã xem lại migration VPS và đồng ý cho nó chạy trên CSDL thật.
-
----
-
-## Deploy rồi thì làm gì
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\deploy-self.ps1
-```
-
-Xong thì kiểm trên **URL công khai**, không chỉ loopback `127.0.0.1:8100` — Cloudflare
-có cache và CSP biên riêng (quy tắc 5b của `CLAUDE.md`):
-
-| Kiểm | Mong đợi |
-|---|---|
-| `https://app.lttstudios.com/nexus` | trang giới thiệu, **mở được khi chưa đăng nhập** |
-| `https://app.lttstudios.com/nexus/tai` | **404** (route web-broker đã đóng) |
-| `https://app.lttstudios.com/tai-xuong` | nút **Tải file cài** đứng trước, zip là lối phụ |
-| `/may-cua-toi` | có bảng **Nhật ký truy cập** |
-| Máy đang chạy | **chấm xanh** — đây là phép thử sửa lỗi máy-luôn-hiện-tắt |
-
-Chấm xanh chỉ đúng **sau** khi client gọi `/status` một lần (mỗi 60 giây).
-
----
-
-## Phát hành client 1.4.0 — sau khi deploy
-
-Sau, chứ không trước: 1.4.0 gọi `/nexus-agent/web-login` cho SSO. Đường đó có
-rơi mềm (mở trang đăng nhập tay) nên phát hành trước cũng không vỡ, nhưng tính
-năng sẽ im lặng không hoạt động.
-
-```powershell
-powershell -ExecutionPolicy Bypass -File D:\LTTnexus\phat-hanh-windows.ps1 -Version 1.4.0
-```
-
-⚠️ **Tên file phải kết thúc bằng `install.exe`.** Bộ đóng gói của RustDesk quyết
-định hành vi theo tên file:
+**1. Tên file cài quyết định hành vi.** Bộ đóng gói của RustDesk:
 
 ```rust
 let click_setup = args.is_empty() && arg_exe.ends_with("install.exe");
 if click_setup { args = vec!["--install"]; }
 ```
 
-Bản 1.2.0/1.3.0 đã phát hành nhầm với tên `-setup.exe` → bấm đúp chỉ chạy một bản
-tạm trong `%LOCALAPPDATA%`, **không cài gì**, mà vẫn mở lên bình thường nên không
-ai biết. Script nay có `throw` chặn.
+Bản 1.2.0/1.3.0 phát hành nhầm tên `-setup.exe` → bấm đúp **chỉ chạy một bản tạm**
+trong `%LOCALAPPDATA%`, không cài gì, mà vẫn mở lên bình thường nên không ai biết.
+
+**2. Chốt chặn phải kiểm KẾT QUẢ, không kiểm biến vừa gán.** Bản vá đầu cho lỗi
+trên viết `if (-not $setup.EndsWith("install.exe"))` ngay sau dòng gán `$setup`
+kết thúc bằng đúng chuỗi đó — một câu hỏi không bao giờ sai được. Trong khi đó URL
+trong bản kê vẫn viết cứng `-setup.exe`, nên 1.4.0 phát hành với bản kê trỏ vào
+**file 404**. Nay URL dẫn xuất từ tên file, và chốt chặn đọc lại bản kê từ đĩa rồi
+đối chiếu với file có thật.
 
 ---
 
-## ⚠️ Đợt deploy thứ hai còn nợ — macOS Intel
+## Còn nợ
 
-2026-08-22 một phiên khác đã deploy. Phần Nexus lên đủ và đã xác minh trên URL
-công khai (`/nexus` 200 công khai, `/nexus/tai` 404, máy hiện `online=True`).
-
-**Nhưng bản `versions.py` đang chạy vẫn là bản CŨ**, chưa có khoá `macos_intel`.
-`manifest()` chỉ hợp nhất các khoá có trong `DEFAULT`:
-
-```python
-for key, val in plats.items():
-    if key in base["platforms"] and isinstance(val, dict):
-        base["platforms"][key].update(val)
-```
-
-Nên `macos_intel` trong `data/nexus_versions.json` bị **bỏ qua lặng lẽ** — file
-`.dmg` Intel đã nằm trên máy chủ và tải được bằng URL thẳng, nhưng **không hiện
-trên trang tải và client Intel không thấy bản cập nhật**.
-
-Bản Apple Silicon thì đã sống bình thường.
-
-⇒ Lần deploy tới sẽ mở luôn macOS Intel, không cần làm gì thêm.
+* **🔴 Android/iOS 1.4.0** — xem mục trên.
+* **210 mục `#, fuzzy`** trong `locale/en/LC_MESSAGES/messages.po`. gettext bỏ qua
+  mục fuzzy nên chúng hiện tiếng Việt; nhưng nội dung có thể **sai hẳn** — đã tìm
+  thấy một mục dịch `"đang bật"` thành `"Maintenance"`. Ai gỡ cờ fuzzy hàng loạt
+  sẽ đẩy bản dịch sai lên production.
+* **Ảnh chụp sản phẩm** cho trang giới thiệu. Hero đang dùng **khung app mô phỏng
+  bằng HTML/CSS** — cố ý, vì ảnh chụp thật chứa ID máy và mật khẩu một lần. Muốn
+  dùng ảnh thật thì phải che hai thứ đó trước.
+* **Hạ tầng C1–C4** (`N7_DANH_SACH_VIEC.md`): relay còn trên **Windows Server 2016
+  Eval hết hạn 15/12/2026** (hết hạn → máy tự tắt mỗi giờ), chưa có relay thứ hai,
+  `LTT_NEXUS_RELAY_HOST` chưa đặt nên cảnh báo relay im lặng chưa chạy, và mật khẩu
+  relay cần đổi.
 
 ---
 
-## Trang `/nexus` đã dựng lại — CHỜ DEPLOY
+## Deploy trên máy này cần gì
 
-Chủ sản phẩm đánh giá bản đầu "thô sơ, chưa có bố cục". Đã dựng lại: 5 khối → 9
-khối, thêm **khung app mô phỏng** ở hero (HTML/CSS, KHÔNG phải ảnh chụp — màn
-hình app thật có ID máy và mật khẩu một lần), thêm **dải số liệu** và khối **An
-toàn & riêng tư**, thêm lời mời hành động cuối trang, và chuyển sang dùng lớp có
-sẵn của `ltt.css` (`.btn`, `.badge`, `.chip`, `.eyebrow`) thay vì tự chế.
+`deploy-self.ps1` **cần quyền Administrator** (nó `Stop-Service`/`Start-Service`
+ba dịch vụ nssm). Shell của Claude không nằm trên phiên desktop tương tác nên
+`Start-Process -Verb RunAs` **không dựng nổi hộp thoại UAC** (đã đo: `consent.exe`
+= 0, màn hình không có gì), và `schtasks /rl HIGHEST` thì chính nó cũng cần admin.
 
-Sửa kèm, đều là lỗi thật:
+Cách chạy được: dùng lối tắt đã bật cờ RunAs ở
+`C:\Users\Thang Tuong\Downloads\DEPLOY LTT (Run as admin).lnk` — bấm đúp rồi bấm
+**Yes** ở UAC. Dán lệnh vào một cửa sổ PowerShell thường sẽ chết ở dòng kiểm quyền
+của `2-cai-dat.ps1` (dòng 39) — nhưng chết **an toàn**, trước khi dừng dịch vụ nào.
 
-* Lưới 5 nền tảng để lại một thẻ **mồ côi** ở hàng dưới → `auto-fit`/`minmax`.
-* Trên màn 390px lưới rơi xuống **một cột** → hạ ngưỡng 176px → 150px.
-* Link nội bộ không qua `u()` → mỗi cú bấm tốn thêm một **302**.
-* Nhãn iOS nằm trong **dữ liệu** bản kê nên không dịch được → đổi sang nhãn trung
-  tính `iOS — SideStore / Sideloadly` (đã sửa thẳng trên máy chủ, đang sống).
-* `.po` có một mục **`#, fuzzy` dịch SAI**: `"đang bật"` → `"Maintenance"`.
-  gettext bỏ qua mục fuzzy nên nó chỉ hiện tiếng Việt, nhưng ai gỡ cờ fuzzy thì
-  trang sẽ hiện "Maintenance". **Còn 210 mục fuzzy khác chưa rà.**
-
-⇒ Trang mới chỉ hiện ra sau lần deploy tới. Nhãn iOS thì đã đổi rồi (dữ liệu).
-
----
-
-## Còn nợ sau khi deploy
-
-* **macOS**: đọc kết quả `ltt-macos.yml`. Mã `#[cfg(target_os = "macos")]` **chưa
-  từng được biên dịch** — máy phát triển là Windows, không có SDK macOS. CI là chỗ
-  đầu tiên nó được kiểm. Xong thì ghép `.dmg` vào bản kê (`setup_url` +
-  `setup_sha256`) để bật tự cập nhật cho macOS.
-* **Android**: chưa soi bằng mắt bản 1.4.0. Máy này chạy emulator được — kiểm ba
-  thứ: tab LAN đã biến mất chưa, mục Giới thiệu có đúng số phiên bản LTT không,
-  nút *Cập nhật* có mở thẳng file `.apk` không.
-* **iOS**: chờ tài khoản Apple Developer (99 USD/năm, dùng chung cho cả macOS).
-* **Ảnh chụp sản phẩm** cho trang giới thiệu — phần chữ đã đủ, chưa có ảnh.
-* **Hạ tầng C1–C4** (`N7_DANH_SACH_VIEC.md`): relay còn trên Windows Server 2016
-  Eval **hết hạn 15/12/2026**, chưa có relay thứ hai, `LTT_NEXUS_RELAY_HOST` chưa
-  đặt nên cảnh báo relay im lặng chưa chạy, và mật khẩu relay cần đổi.
+⚠️ `2-cai-dat.ps1` chép **toàn bộ cây làm việc** và chạy `alembic upgrade head`.
+Máy này thường có nhiều phiên Claude làm song song — kiểm `git status` và
+`alembic/versions/` trước mỗi lần deploy.
