@@ -164,6 +164,8 @@ def main() -> int:
     ap.add_argument("--model", default="hidream-o1")
     ap.add_argument("--mode", default="t2i")
     ap.add_argument("--ckpt", default=None, help="ghi de ten checkpoint")
+    ap.add_argument("--lam-lai", dest="lam_lai", action="store_true",
+                    help="chay lai TU DAU, bo qua ket qua da co cua lo cung ten")
     ap.add_argument("--width", type=int, default=None)
     ap.add_argument("--height", type=int, default=None)
     ap.add_argument("--steps", type=int, default=None)
@@ -241,9 +243,45 @@ def main() -> int:
         tep.write_text(json.dumps(ket_qua, ensure_ascii=False, indent=2),
                        encoding="utf-8")
 
+    # ⭐ TIEP TUC LO DANG DO. Ghi-sau-moi-anh (o tren) da cuu duoc SO DO khi may
+    #    khoi dong lai giua chung — nhung chay lai van lam lai TU ANH 1, tuc la
+    #    tra tien GPU hai lan cho phan da xong. Lo 30 anh chet o anh 21 thi 20 anh
+    #    kia phai chay lai het.
+    #
+    #    Nay: doc lai tep ket qua, giu nhung prompt DA XONG (`ok`), va bo qua
+    #    chung. Mot lan khoi dong lai gio chi mat DUNG mot anh dang chay.
+    #
+    #    ⛔ Chi giu `ok=True`. Anh hong phai chay lai — giu no lai la dong bang
+    #       mot that bai thanh mot ket qua.
+    xong_roi: set = set()
+    if tep.exists() and not a.lam_lai:
+        try:
+            cu = json.loads(tep.read_text(encoding="utf-8"))
+            # `null` va `[]` deu la JSON HOP LE nhung khong phai dict — `.get()`
+            # se no va lam sap ca phien do ngay o buoc dau. Bat boi test_266.
+            if not isinstance(cu, dict):
+                raise ValueError("checkpoint khong phai mot doi tuong JSON")
+            if cu.get("cau_hinh") == ket_qua["cau_hinh"] and cu.get("mode") == a.mode:
+                giu = [r for r in (cu.get("runs") or []) if r.get("ok")]
+                if giu:
+                    ket_qua["runs"] = giu
+                    ket_qua["tiep_tuc_tu"] = cu.get("ngay")
+                    xong_roi = {r.get("id") for r in giu}
+                    print(f"   tiep tuc: bo qua {len(xong_roi)} anh da xong "
+                          f"(dung --lam-lai de chay lai tu dau)", flush=True)
+            else:
+                # ⛔ Cau hinh khac thi so do CU KHONG so duoc voi so do MOI. Ghi de
+                #    la tron hai lo lam mot, va khong ai biet dong nao thuoc lo nao.
+                print("   cau hinh khac lan truoc -> chay lai tu dau", flush=True)
+        except (OSError, ValueError) as e:
+            print(f"   khong doc duoc checkpoint cu ({e}) -> chay lai tu dau",
+                  flush=True)
+
     ghi_ket_qua()          # ghi ngay khung rong, de biet lo nay DA BAT DAU
 
     for i, pr in enumerate(prompts, 1):
+        if pr["id"] in xong_roi:
+            continue
         gia_tri = dict(chung)
         gia_tri["prompt"] = pr["text"]
         gia_tri["negative"] = ""
