@@ -481,9 +481,8 @@ msgid "BẬT"
 msgstr ""
 
 #: server/templates/dev_tool_detail.html:45
-#, fuzzy
 msgid "Bắt buộc"
-msgstr "Optional"
+msgstr "Required"
 
 #: apps/taoclipngan/templates/taoclipngan.html:82
 #: server/templates/dev_overview.html:37
@@ -507,9 +506,8 @@ msgid "Bắt đầu một ý tưởng mới"
 msgstr "Start a new idea"
 
 #: server/routes/developer.py:124
-#, fuzzy
 msgid "Bắt đầu nhanh"
-msgstr "Start"
+msgstr "Quick start"
 
 #: platform_core/jobs.py:143
 msgid "Bắt đầu xử lý."
@@ -670,9 +668,8 @@ msgid "Chiều cao"
 msgstr ""
 
 #: apps/qualitylab/services/media.py:80 apps/qualitylab/services/media.py:137
-#, fuzzy
 msgid "Chiều rộng"
-msgstr "Motion"
+msgstr "Width"
 
 #: server/templates/nap_don.html:14
 msgid "Chuyển khoản đúng số tiền — credit cộng tự động khi nhận được."
@@ -719,9 +716,8 @@ msgid "Chính sách phải có tên."
 msgstr ""
 
 #: server/templates/dev_privacy.html:55
-#, fuzzy
 msgid "Chính sách riêng tư"
-msgstr "Privacy"
+msgstr "Privacy policy"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:92
 msgid "Chưa báo giá"
@@ -2060,9 +2056,8 @@ msgid ""
 msgstr ""
 
 #: server/templates/dev_webhooks.html:45
-#, fuzzy
 msgid "Gửi thử"
-msgstr "Send"
+msgstr "Send a test"
 
 #: apps/qualitylab/registry.py:86
 msgid "H31.4: model align theo ngôn ngữ và token diarization riêng."
@@ -2305,9 +2300,8 @@ msgid "Job qua API (30 ngày):"
 msgstr ""
 
 #: apps/qualitylab/templates/qualitylab_report.html:14
-#, fuzzy
 msgid "Job đang ở trạng thái"
-msgstr "Status"
+msgstr "Job status"
 
 #: apps/thumbnail/templates/thumbnail.html:28
 #: apps/thumbnail/templates/thumbnail_fragment.html:14
@@ -2778,9 +2772,8 @@ msgstr ""
 "FFmpeg."
 
 #: server/templates/dev_playground.html:46
-#, fuzzy
 msgid "Kiểm & báo giá"
-msgstr "Quote"
+msgstr "Validate & quote"
 
 #: apps/upscalevideo/templates/upscalevideo.html:39
 msgid "Kiểm chất lượng với chi phí thấp."
@@ -2947,9 +2940,8 @@ msgid "Kỳ"
 msgstr ""
 
 #: apps/qualitylab/templates/qualitylab.html:39
-#, fuzzy
 msgid "Kỳ vọng kỹ thuật"
-msgstr "Technical"
+msgstr "Technical expectations"
 
 #: apps/qualitylab/services/media.py:76 apps/qualitylab/services/media.py:93
 #: apps/qualitylab/services/media.py:109 apps/qualitylab/services/media.py:162
@@ -3105,9 +3097,8 @@ msgid "Lấy dữ liệu của bạn"
 msgstr "Your credits"
 
 #: apps/qualitylab/services/upscale_video.py:200
-#, fuzzy
 msgid "Lấy mẫu"
-msgstr "Templates"
+msgstr "Sampling"
 
 #: apps/qualitylab/services/upscale_video.py:198
 msgid "Lấy mẫu frame đồng bộ"
@@ -3119,9 +3110,8 @@ msgid "Lần giao gần đây"
 msgstr "recent jobs"
 
 #: server/templates/dev_log_detail.html:93 server/templates/dev_webhooks.html:76
-#, fuzzy
 msgid "Lần thử"
-msgstr "Retry"
+msgstr "Attempt"
 
 #: server/templates/job_detail.html:11
 msgid "Lần thử lại"
@@ -3205,14 +3195,12 @@ msgid "Lỗi mạng khi tải video"
 msgstr "Network error while uploading the video"
 
 #: server/templates/dev_tool_detail.html:126
-#, fuzzy
 msgid "Lỗi và cách thử lại"
-msgstr "Retry"
+msgstr "Errors and retries"
 
 #: server/templates/dev_logs.html:59
-#, fuzzy
 msgid "Lời gọi"
-msgstr "Time"
+msgstr "Calls"
 
 #: platform_core/public_api/alerting.py:84
 msgid "Lời gọi API sẽ bị từ chối khi không đủ credit cho báo giá. Nạp thêm ở /nap."
@@ -3437,9 +3425,8 @@ msgid "Mô tả ảnh quá ngắn — tối thiểu 8 ký tự."
 msgstr "The image prompt is too short — 8 characters minimum."
 
 #: server/templates/dev_keys.html:22 server/templates/dev_keys.html:102
-#, fuzzy
 msgid "Môi trường"
-msgstr "Audience"
+msgstr "Environment"
 
 #: server/templates/dev_docs.html:32
 msgid "Môi trường test"
@@ -3503,14 +3490,12 @@ msgid ""
 msgstr ""
 
 #: server/templates/dev_tools.html:13
-#, fuzzy
 msgid "Mọi nhóm"
-msgstr "Newest"
+msgstr "All groups"
 
 #: server/templates/dev_logs.html:19 server/templates/dev_usage.html:105
-#, fuzzy
 msgid "Mọi trạng thái"
-msgstr "Status"
+msgstr "All statuses"
 
 #: server/templates/dev_docs.html:37
 msgid ""
@@ -3913,9 +3898,8 @@ msgid "Năng động"
 msgstr "Dynamic"
 
 #: server/templates/dev_privacy.html:32
-#, fuzzy
 msgid "Nơi lưu"
-msgstr "Saving…"
+msgstr "Where it is stored"
 
 #: server/templates/dev_usage.html:16 server/templates/home.html:31
 #: server/templates/home.html:51 server/templates/nap.html:7
@@ -3973,9 +3957,8 @@ msgid "Nối 2–12 video theo thứ tự thành một MP4 chuẩn H.264."
 msgstr "Joins 2–12 videos in order into a single standard H.264 MP4."
 
 #: apps/qualitylab/manifest.py:29
-#, fuzzy
 msgid "NỘI BỘ"
-msgstr "Internal"
+msgstr "INTERNAL"
 
 #: server/routes/dashboard.py:26
 msgid "Nội bộ"
@@ -4631,9 +4614,8 @@ msgid "Sơ đồ các bước tự động do người dùng dựng trên canvas
 msgstr ""
 
 #: server/templates/developers_base.html:23
-#, fuzzy
 msgid "Sắp có"
-msgstr "Sort"
+msgstr "Coming soon"
 
 #: server/templates/dev_tool_detail.html:20
 msgid "Sắp ngừng hỗ trợ:"
@@ -4652,9 +4634,8 @@ msgid "Sắp xếp:"
 msgstr "Sort by:"
 
 #: server/templates/dev_pricing.html:35
-#, fuzzy
 msgid "Sẽ tính"
-msgstr "charged"
+msgstr "Will be charged"
 
 #: apps/taovideo/quotes.py:118
 #, fuzzy
@@ -4680,9 +4661,8 @@ msgid "Số cảnh"
 msgstr "Number of scenes"
 
 #: apps/qualitylab/services/subtitle.py:101
-#, fuzzy
 msgid "Số dòng tối đa"
-msgstr "Maximum"
+msgstr "Maximum lines"
 
 #: server/templates/_header.html:32
 msgid "Số dư credit"
@@ -5014,9 +4994,8 @@ msgid "Thời lượng"
 msgstr "Duration"
 
 #: apps/qualitylab/templates/qualitylab.html:42
-#, fuzzy
 msgid "Thời lượng (s)"
-msgstr "Duration"
+msgstr "Duration (s)"
 
 #: server/templates/_nap_trangthai.html:31
 msgid "Thời điểm"
@@ -5389,9 +5368,8 @@ msgid "Tên file nếu key không có đuôi"
 msgstr ""
 
 #: server/templates/dev_keys.html:83
-#, fuzzy
 msgid "Tên gợi nhớ"
-msgstr "Username"
+msgstr "Label"
 
 #: apps/chataistudio/templates/chataistudio.html:22
 msgid "Tên hoặc nội dung…"
@@ -5447,18 +5425,16 @@ msgstr "Status"
 
 #: server/templates/status_api.html:2 server/templates/status_api.html:3
 #: server/templates/status_api.html:7
-#, fuzzy
 msgid "Tình trạng API"
-msgstr "Status"
+msgstr "API status"
 
 #: server/templates/_header.html:43 server/templates/home.html:31
 msgid "Tình trạng hệ thống"
 msgstr "System status"
 
 #: server/templates/dev_pricing.html:24
-#, fuzzy
 msgid "Tính thử"
-msgstr "charged"
+msgstr "Estimate"
 
 #: server/templates/nap_don.html:29
 msgid "Tóm tắt thanh toán"
@@ -5840,9 +5816,8 @@ msgid "Tổng quan"
 msgstr "General images"
 
 #: server/templates/status_api.html:11
-#, fuzzy
 msgid "Tổng thể"
-msgstr "Status"
+msgstr "Overall"
 
 #: apps/taovideo/routes.py:445
 msgid "Tổng tài sản đã lưu và file mới không được vượt quá 4."
@@ -6511,9 +6486,8 @@ msgid "asset"
 msgstr "asset"
 
 #: server/routes/developer.py:314
-#, fuzzy
 msgid "báo giá"
-msgstr "Quote"
+msgstr "quote"
 
 #: server/templates/dev_quickstart.html:18
 #, fuzzy
@@ -6525,9 +6499,8 @@ msgid "bạn"
 msgstr "you"
 
 #: server/templates/dev_log_detail.html:32
-#, fuzzy
 msgid "bắt đầu:"
-msgstr "Start"
+msgstr "started:"
 
 #: server/templates/dev_webhooks.html:17
 msgid "bỏ cuộc:"
@@ -6579,9 +6552,8 @@ msgid "chỉ từ:"
 msgstr ""
 
 #: server/templates/dev_overview.html:9
-#, fuzzy
 msgid "chỉ đọc"
-msgstr "Topic"
+msgstr "read-only"
 
 #: platform_core/public_api/governance.py:114
 #: platform_core/public_api/governance.py:126
@@ -6749,9 +6721,8 @@ msgid "hướng dẫn bắt đầu và tham chiếu từng công cụ."
 msgstr ""
 
 #: server/templates/dev_keys.html:51
-#, fuzzy
 msgid "hết hạn:"
-msgstr "Expires"
+msgstr "expires:"
 
 #: server/routes/developer.py:374
 #, fuzzy
@@ -6768,9 +6739,8 @@ msgid "job gần đây"
 msgstr "recent jobs"
 
 #: server/templates/dev_overview.html:32 server/templates/dev_usage.html:12
-#, fuzzy
 msgid "job đang chạy"
-msgstr "Running"
+msgstr "jobs running"
 
 #: server/templates/dev_tool_detail.html:117
 #, fuzzy
@@ -6815,9 +6785,8 @@ msgid "kết quả phù hợp"
 msgstr "matching results"
 
 #: server/templates/dev_log_detail.html:33
-#, fuzzy
 msgid "kết thúc:"
-msgstr "End:"
+msgstr "ended:"
 
 #: apps/taoclipngan/routes.py:64
 msgid "label"
@@ -6887,9 +6856,8 @@ msgid "nhận giá và một báo giá đã ký, sống 15 phút."
 msgstr ""
 
 #: platform_core/public_api/governance.py:197
-#, fuzzy
 msgid "nội bộ"
-msgstr "Internal"
+msgstr "internal"
 
 #: apps/taoclipngan/templates/taoclipngan.html:37
 msgid "phút"
@@ -6923,9 +6891,8 @@ msgid "subtitle rỗng"
 msgstr "The file is empty."
 
 #: server/templates/developers_base.html:24
-#, fuzzy
 msgid "sắp có"
-msgstr "Sort"
+msgstr "coming soon"
 
 #: apps/qualitylab/datasets.py:43
 msgid "tag rỗng, trùng hoặc quá dài."
@@ -6992,9 +6959,8 @@ msgid "tạo lúc"
 msgstr "created at"
 
 #: server/templates/dev_webhooks.html:37
-#, fuzzy
 msgid "tất cả"
-msgstr "All"
+msgstr "all"
 
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "tệp"
@@ -7006,9 +6972,8 @@ msgstr ""
 
 #: server/templates/dev_overview.html:32 server/templates/dev_tool_detail.html:117
 #: server/templates/dev_usage.html:12
-#, fuzzy
 msgid "tối đa"
-msgstr "Maximum"
+msgstr "max"
 
 #: server/routes/developer.py:573
 #, fuzzy, python-format
@@ -7071,9 +7036,8 @@ msgid "Đang bảo trì"
 msgstr "Maintenance"
 
 #: platform_core/public_api/status.py:60
-#, fuzzy
 msgid "Đang bảo trì theo kế hoạch."
-msgstr "Maintenance"
+msgstr "Planned maintenance in progress."
 
 #: server/templates/nexus_trang_chinh.html:52
 msgid "Đang bật"
@@ -7097,9 +7061,8 @@ msgid "Đang chờ bạn xác nhận trên ChatGPT…"
 msgstr "Waiting for you to confirm in ChatGPT…"
 
 #: server/templates/dev_webhooks.html:14
-#, fuzzy
 msgid "Đang chờ giao:"
-msgstr "Pending"
+msgstr "Awaiting delivery:"
 
 #: server/templates/_nap_trangthai.html:70
 msgid "Đang chờ thanh toán…"
@@ -7126,9 +7089,8 @@ msgid "Đang gián đoạn."
 msgstr ""
 
 #: server/templates/dev_playground.html:19
-#, fuzzy
 msgid "Đang gọi…"
-msgstr "Sending…"
+msgstr "Calling…"
 
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "Đang gửi…"
@@ -7253,9 +7215,8 @@ msgid "Điều khoản"
 msgstr "Terms"
 
 #: server/templates/dev_privacy.html:52
-#, fuzzy
 msgid "Điều khoản pháp lý"
-msgstr "Terms"
+msgstr "Legal terms"
 
 #: apps/thumbnail/templates/thumbnail.html:71
 #: apps/thumbnail/templates/thumbnail_fragment.html:38
@@ -7338,9 +7299,8 @@ msgid "Đã dùng hôm nay qua API:"
 msgstr ""
 
 #: server/templates/dev_overview.html:12
-#, fuzzy
 msgid "Đã dùng hôm nay:"
-msgstr "Used"
+msgstr "Used today:"
 
 #: apps/autosubvideo/routes.py:379
 msgid "Đã dùng hết 12 lượt chép lời miễn phí hôm nay."
@@ -7400,9 +7360,8 @@ msgid "Đã tiếp nhận yêu cầu."
 msgstr "Request received."
 
 #: server/templates/dev_usage.html:119
-#, fuzzy
 msgid "Đã tính"
-msgstr "charged"
+msgstr "Charged"
 
 #: apps/qualitylab/jobs.py:129
 msgid "Đã tạo report chất lượng."
@@ -7601,9 +7560,8 @@ msgid "Địa chỉ nhận callback + secret ký, **đã mã hoá**. Xoá khi kh
 msgstr ""
 
 #: server/templates/dev_projects.html:9
-#, fuzzy
 msgid "Định danh"
-msgstr "Fast"
+msgstr "Identifier"
 
 #: apps/prompt_ai_ommi/services/builtin_catalog.py:63
 msgid "Định danh catalog Prompt AI vượt 36 ký tự."
@@ -7726,14 +7684,12 @@ msgid "đang bật"
 msgstr "online"
 
 #: server/templates/dev_overview.html:13 server/templates/dev_usage.html:9
-#, fuzzy
 msgid "đang giữ chỗ"
-msgstr "Pending"
+msgstr "on hold"
 
 #: server/templates/dev_overview.html:28
-#, fuzzy
 msgid "đang khỏe"
-msgstr "Pending"
+msgstr "healthy"
 
 #: server/templates/dev_overview.html:10
 #, fuzzy
@@ -7741,14 +7697,12 @@ msgid "đang phục vụ"
 msgstr "Analyzing video"
 
 #: server/templates/dev_webhooks.html:16
-#, fuzzy
 msgid "đang thử lại:"
-msgstr "Retry"
+msgstr "retrying:"
 
 #: server/templates/dev_overview.html:8
-#, fuzzy
 msgid "đang tắt"
-msgstr "Finishing"
+msgstr "down"
 
 #: apps/taoclipngan/templates/taoclipngan.html:80
 msgid "điểm"
@@ -7908,9 +7862,8 @@ msgid "Ổn định hai pass bằng libvidstab · +20%."
 msgstr "Two-pass stabilisation with libvidstab · +20%."
 
 #: apps/qualitylab/templates/qualitylab.html:54
-#, fuzzy
 msgid "ỨNG VIÊN"
-msgstr "Member"
+msgstr "CANDIDATE"
 
 #: server/templates/_platform_footer.html:4
 msgid "Ứng dụng"
