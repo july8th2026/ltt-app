@@ -2029,3 +2029,49 @@ sửa mã cho một việc không đổi.
 2. ⛔ **`apps/thumbnail` tính giá PHẲNG bất kể model** — app duy nhất vi phạm
    nguyên tắc *một model một giá*, và cũng là app lỗ nặng nhất. Đây là việc còn
    lại rõ ràng nhất của đợt 0.
+
+
+---
+
+## D-043 — G7 đóng: máy B khởi động lại, mọi thứ tự lên đúng
+
+**Date:** 2026-08-23 16:17 · khởi động lại lúc 16:01, nghiệm thu sau 16 phút
+
+Đây là **việc còn nợ cuối cùng của G7** — *"thử khởi động lại máy B để chắc dịch vụ
+tự lên"*. Nó nợ lâu vì phép thử này **cắt hai dự án khác**, nên phải chờ chủ dự án
+chọn giờ. Chủ dự án khởi động lại 23/08.
+
+| Kiểm | Kết quả |
+|---|---|
+| `LTTRenderGateway` | **Running**, `StartMode = Auto` |
+| `LTTComfyUI` | **Running**, `Auto` — ⭐ nay đã là **dịch vụ**, không còn phải bật tay |
+| `LTTLlamaSwap` · `LTTLlmGateway` | **Running**, `Auto` |
+| Cổng 8188 · 8199 · 8280 · 8299 | cả bốn đều có tiến trình nghe |
+| ComfyUI | `queue_remaining = 0`, `comfy_alive: true` |
+| Windows Update | **không** còn chờ khởi động lại |
+| Từ máy A: TCP 8199 | **mở** · `/health` không token trả **401** |
+| Từ máy A: TCP 8188 | **đóng** — ComfyUI vẫn không lộ ra LAN |
+
+⭐ **`LTTComfyUI` nay là một dịch vụ.** Trước đây nó là tiến trình chạy tay, và đó
+là rủi ro lớn nhất của phép thử này: máy lên mà ComfyUI không lên thì cổng render
+sống nhưng vô dụng. Ai đó ở phiên video/LLM đã dựng nó thành dịch vụ — ghi lại vì
+`render_gateway/deploy/cai_dat_dich_vu.ps1` vẫn có cờ `-BoQuaComfy` mà tôi thêm để
+**không** biến ComfyUI của dự án video thành dịch vụ. Cờ đó nay không còn cần cho
+mục đích ban đầu, nhưng **giữ nguyên**: nó vẫn đúng để bộ cài của ta không giành
+quyền quản một dịch vụ của dự án khác.
+
+### Và chốt dò bận đã đền công lần thứ hai
+
+16 phút sau khi máy lên, GPU đã bị giữ **19.976 MiB, tải 0 %** — dự án LLM nạp model
+lại ngay. `/health` trả:
+
+```
+busy: true
+reason: "tien trinh khac dang giu 18211 MB VRAM, chi con 6364 MB dung duoc (can 20500)"
+```
+
+Bản `busy.py` **trước** D-037 sẽ báo **rảnh** ở đúng cảnh này — `llama-server.exe`
+không phải python nên phép đếm tiến trình trả về 1. Nghĩa là ngay sau một lần khởi
+động lại bình thường, cổng render đã nhận job và hết VRAM giữa chừng.
+
+⇒ **Không phải một cảnh hiếm.** Nó là cảnh **mặc định** của máy B sau mỗi lần bật máy.
