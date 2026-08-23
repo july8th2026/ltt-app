@@ -19,6 +19,9 @@ MODEL_CREDIT_PER_IMAGE = {
     "gemini-3.1-flash-lite-image": 5,
     "gemini-3.1-flash-image": 8,
     "gemini-3.1-flash-image-preview": 8,
+    # ⛔ Bậc `pro` ĐÓNG 2026-08-23: gia von 35,2 credit, ban 16 => lo 1.924d/anh.
+    #    Giữ hai dòng giá này vì job CŨ trong lịch sử vẫn tra giá qua đây; xoá đi
+    #    thì một trang lịch sử sẽ hiện giá 5 credit cho việc đã tính 16.
     "gemini-3-pro-image": 16,
     "gemini-3-pro-image-preview": 16,
 }
@@ -97,12 +100,6 @@ MANIFEST = AppManifest(
                     "id": "gemini-3.1-flash-image",
                     "description": ("Better prompt adherence and fine detail "
                                     "than standard."),
-                    "stability": "stable",
-                },
-                "pro": {
-                    "id": "gemini-3-pro-image",
-                    "description": ("Highest fidelity; use when the result is "
-                                    "the deliverable."),
                     "stability": "stable",
                 },
             },

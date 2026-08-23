@@ -27,7 +27,6 @@
             "type": "string",
             "enum": [
               "enhanced",
-              "pro",
               "standard",
               "standard-lite"
             ],
@@ -81,7 +80,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "f6fd70a8e5a91489"
+      "contract_hash": "d8d957479035c7c8"
     },
     {
       "name": "image.ltt",
@@ -426,6 +425,102 @@
         "jobs:create"
       ],
       "contract_hash": "9c7cfd84114e0c1b"
+    },
+    {
+      "name": "text.chat",
+      "capability": "text",
+      "description": "Generate text from a conversation. Handles coding, chat, agentic tool use, summarisation and image reading. OpenAI-compatible message format.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "object",
+            "description": "Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.",
+            "examples": [
+              [
+                {
+                  "role": "user",
+                  "content": "Explain HTTP 429."
+                }
+              ]
+            ]
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "ltt_llm",
+              "ltt_llm_vision"
+            ],
+            "default": "ltt_llm",
+            "description": "`ltt_llm` for text (64K context). `ltt_llm_vision` also reads images.",
+            "examples": [
+              "ltt_llm"
+            ]
+          },
+          "max_tokens": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16384,
+            "default": 4096,
+            "description": "Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.",
+            "examples": [
+              1024
+            ]
+          },
+          "temperature": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 2.0,
+            "description": "Sampling temperature.",
+            "examples": [
+              0.7
+            ]
+          },
+          "tools": {
+            "type": "object",
+            "description": "Function definitions, OpenAI format. The model may answer with `tool_calls`.",
+            "examples": [
+              []
+            ]
+          },
+          "reasoning_effort": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "xhigh"
+            ],
+            "default": "medium",
+            "description": "How much the model thinks before answering. Deeper costs more output tokens.",
+            "examples": [
+              "medium"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "messages"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "tool_calls": {
+            "type": "object"
+          },
+          "usage": {
+            "type": "object"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "f6ff632ee8371fa9"
     },
     {
       "name": "text.prompt_package",

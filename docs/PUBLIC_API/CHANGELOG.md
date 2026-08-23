@@ -29,6 +29,81 @@ Toàn bộ bề mặt `v1` được xây trong Public API V2 + Extension Pack v�
 cho khách bên ngoài**, nên không có mục BREAKING nào ở đây: chưa có tích hợp nào
 để phá. Danh sách dưới đây là những gì `v1` **hứa** kể từ khi đóng băng.
 
+### ADDED — 2026-08-23 · cửa đồng bộ `POST /api/v1/chat/completions`
+
+**Cái gì đổi.** Bề mặt có thêm một route và một **chế độ thi hành thứ ba**,
+`SYNC_BILLED` (Q106): trả lời ngay trong request, **có thu tiền**, **bắt buộc
+`Idempotency-Key`**, **không có quote**, không đẩy vào hàng đợi, trần 90 giây.
+`GET /api/v1/capabilities` nay liệt kê thêm khu vực `chat`.
+
+**Có phá vỡ tương thích không.** **Không.** Client không hỏi tới thì không thấy.
+Route đứng sau đúng ba cổng của Q92 như mọi thứ khác — `LTT_PUBLIC_API_TOOLS`
+chưa có `text.chat` thì gọi vào vẫn bị từ chối.
+
+**Phải làm gì.** Không ai phải làm gì. Ai muốn dùng thì trỏ `base_url` của SDK
+OpenAI vào `/api/v1` và thêm header `Idempotency-Key` cho **từng lượt gọi** —
+SDK của OpenAI **không tự gửi** nó. Chi tiết ở `DEVELOPER_GUIDE.md` §1b.
+
+---
+
+### FIXED — 2026-08-23 · `text.chat` khai `messages` là mảng, không phải object
+
+**Cái gì đổi.** `contract_hash` của `text.chat` đổi từ `f6ff632ee8371fa9` sang
+`32d617ca0c0130d2`. Trong lược đồ công khai, `messages` và `tools` đổi kiểu từ
+`object` sang `array`, và `tool_calls` ở đầu ra cũng vậy.
+
+**Có phá vỡ tương thích không.** Nhãn hình thức là BREAKING vì `contract_hash`
+đổi, nhưng thực chất đây là **sửa một thứ chưa từng dùng được**. Cửa job của
+`text.chat` **từ chối mọi input hợp lệ** kể từ lúc dựng — kể cả đúng ví dụ mà
+trang tài liệu in ra:
+
+    POST /api/v1/jobs  {"tool": "text.chat", "input": {"messages": [...]}}
+    -> 400 invalid_request: messages must be an object.
+
+**Vì sao.** Bảng kiểu của `ToolSpec` không có cách nào nói *"một mảng JSON"*:
+chỉ có `json`, và `json` phơi ra công khai là `object`, rồi bộ kiểm đòi một
+`dict`. `messages` là một **list**. Đã thêm kiểu `json[]` vào bảng, **không** nới
+lỏng `object` cho nhận cả list — nới lỏng sẽ làm yếu bộ kiểm của **mọi** tool
+khác để chiều một tool.
+
+**Phải làm gì.** Không ai phải làm gì: `LTT_PUBLIC_API_TOOLS` trên production vẫn
+rỗng, nên chưa từng có khách gọi được `text.chat`. Lỗi này lọt qua vì không có
+test nào đối chiếu **ví dụ đã công bố** với **bộ kiểm thật**; nay `test_199` và
+`test_256` làm đúng việc đó.
+
+---
+
+### BREAKING — 2026-08-23 · alias model `pro` của `image.generate` bị gỡ
+
+**Cái gì đổi.** `image.generate` không còn nhận `model: "pro"`. Ba alias còn lại
+(`standard`, `standard-lite`, `enhanced`) không đổi.
+
+**Có phá vỡ tương thích không.** Về hình thức **có** — `contract_hash` của
+`image.generate` đổi từ `f6fd70a8e5a91489` sang `d8d957479035c7c8`. Trên thực tế
+**không có tích hợp nào hỏng**: `LTT_PUBLIC_API_TOOLS` trên production vẫn rỗng,
+nên chưa từng có khách gọi được `image.generate`. Ghi nhãn BREAKING vì hình thức
+mới là thứ bánh cóc đo được, và hạ nhãn cho vừa hoàn cảnh là cách một lần sau
+người ta hạ nhãn cho một thứ **có** khách.
+
+**Phải làm gì.** Không ai phải làm gì hôm nay. Khi mở `image.generate` cho khách,
+tài liệu sẽ chỉ liệt kê ba alias.
+
+**Vì sao gỡ — lý do kinh tế, không phải kỹ thuật.** Đo 23/08/2026: giá vốn
+`gemini-3-pro-image` là **$0,134/ảnh = 35,2 credit**, trong khi nền tảng bán
+**16 credit** ở `taoanh` và **5 credit** ở `thumbnail` (app đó tính giá phẳng bất
+kể model). Lỗ **1.924đ** và **3.024đ** mỗi ảnh, và lỗ lớn dần theo doanh số.
+
+Chủ dự án chốt: **giữ giá các bậc rẻ như chi phí thu hút khách, đóng đúng bậc lỗ
+nặng nhất.** Ba bậc còn lại vẫn dưới giá vốn và điều đó nay được **khai tường
+minh** trong `tests/test_261_khong_ban_duoi_gia_von.py`, kèm hạn rà lại 15/09.
+
+Model bị đặt `is_active=False` trong `platform_core/providers.py` nên nó biến khỏi
+**cả** bộ chọn model của giao diện web — đó mới là chỗ lỗ thật sự chạy, vì đường
+API của `thumbnail` đã ẩn tham số `model` từ trước.
+
+⭐ Mở lại được: ngày nào giá bán ≥ giá vốn thì bật lại `is_active`.
+`tests/test_261` kiểm hộ điều kiện đó.
+
 ### ADDED — 2026-08-15 (EXT-17)
 
 - `CONTRACT_BASELINE.json` + bước gate `hop dong API`. Từ nay mọi thay đổi hợp

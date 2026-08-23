@@ -94,13 +94,20 @@ mọi surface khách đọc được: id thật của vendor lọt ra một ch�
 | `ltt_llm_vision` | `text.chat` | `qwen38-vision` | công khai | Cùng model, nạp thêm bộ chiếu ảnh (+1,1 GB VRAM đo thật). |
 | `standard-lite` | `image.generate` | `gemini-3.1-flash-lite-image` | công khai | Cùng giá với `standard`, đổi chi tiết lấy tốc độ. |
 | `enhanced` | `image.generate` | `gemini-3.1-flash-image` | công khai | Bám prompt và chi tiết tốt hơn `standard`, giá cao hơn. |
-| `pro` | `image.generate` | `gemini-3-pro-image` | công khai | Độ trung thực cao nhất, dùng khi kết quả chính là sản phẩm giao. |
 
 Bốn tool còn lại **không** publish model: `image.thumbnail` ẩn `model` vì giá
 không theo model, `image.upscale` chạy engine tại chỗ, và hai tool dữ liệu ẩn
 `model` cùng `resources` vì đó là đường định tuyến nội bộ. Quy tắc chốt từ
 wave 1 vẫn nguyên: **chỉ publish lựa chọn model ở nơi giá đi theo nó** — bắt
 khách chọn một thứ không đổi giá và không đổi hợp đồng là bắt họ đoán.
+
+> ⛔ **Alias `pro` ĐÓNG 2026-08-23 — lý do kinh tế, không phải kỹ thuật.**
+> Giá vốn `gemini-3-pro-image` là **35,2 credit** (`platform_core/gia_von.json`);
+> nền tảng bán **16** ở `taoanh` và **5** ở `thumbnail` ⇒ lỗ **1.924đ** và
+> **3.024đ** mỗi ảnh. Chủ dự án chốt: giữ giá các bậc rẻ như chi phí thu hút
+> khách, **đóng đúng bậc lỗ nặng nhất**. Model đặt `is_active=False` nên nó biến
+> khỏi **cả** bộ chọn của giao diện web — đó mới là chỗ lỗ thật sự chạy.
+> Xem `CHANGELOG.md` (BREAKING 2026-08-23) và `tests/test_261`.
 
 ## 4. Nghiệm thu từng operation
 

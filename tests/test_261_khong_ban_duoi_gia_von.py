@@ -39,18 +39,14 @@ from platform_core.registry import discover
 #:
 #: ⛔ Danh sách này **không phải chỗ để làm cho test xanh**. Mỗi dòng ở đây là một
 #:    khoản lỗ trên mỗi đơn hàng, và nó lớn dần theo doanh số.
-#: ⏳ 12 mục dưới đây là **khoản lỗ đang chạy thật**, khai ra ngày 23/08/2026.
+#: ⏳ Các mục dưới đây là **khoản lỗ đang chạy thật**, khai ra ngày 23/08/2026.
+#:    Bậc `pro` đã được ĐÓNG cùng ngày (chủ dự án chốt) nên nó không còn ở đây —
+#:    đóng một bậc là cách xử lý dứt điểm hơn miễn trừ, và danh sách này ngắn đi
+#:    chính là dấu hiệu việc đó đã làm thật.
 #:    Chúng ở đây để khoản lỗ **được ghi nhận** thay vì vô hình — không phải để
 #:    test xanh. Hạn 15/09: quá ngày đó mà chưa chốt giá thì test đỏ trở lại.
 LO_CO_CHU_DICH: dict[str, dict] = {
     "taoanh/image.batch_generate/gemini-2.5-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "taoanh/image.batch_generate/gemini-3-pro-image": {
         "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
                  "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
                  "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
@@ -78,13 +74,6 @@ LO_CO_CHU_DICH: dict[str, dict] = {
         "chu": "chu du an",
         "han_ra_lai": "2026-09-15",
     },
-    "taoanh/image.generate/gemini-3-pro-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
     "taoanh/image.generate/gemini-3.1-flash-image": {
         "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
                  "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
@@ -100,13 +89,6 @@ LO_CO_CHU_DICH: dict[str, dict] = {
         "han_ra_lai": "2026-09-15",
     },
     "thumbnail/image.thumbnail/gemini-2.5-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "thumbnail/image.thumbnail/gemini-3-pro-image": {
         "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
                  "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
                  "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",

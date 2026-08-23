@@ -439,5 +439,9 @@ def test_the_repository_publishes_a_model_for_every_alias_it_advertises():
     models = {model.name for model in build_models(catalog)}
     for tool in catalog:
         assert set(tool.model_names()) <= models, tool.name
-    # The one tool that publishes aliases today.
-    assert {"standard", "standard-lite", "enhanced", "pro"} <= models
+    # `image.generate` publishes these three. `pro` was closed on 2026-08-23 for a
+    # commercial reason, not a technical one: its provider cost is 35.2 credits an
+    # image while the platform charged 16 (taoanh) and 5 (thumbnail, flat price
+    # regardless of model). See CHANGELOG.md and tests/test_261.
+    assert {"standard", "standard-lite", "enhanced"} <= models
+    assert "pro" not in models, "bac pro da dong — xem CHANGELOG 2026-08-23"

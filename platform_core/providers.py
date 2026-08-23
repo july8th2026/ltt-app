@@ -75,8 +75,15 @@ REGISTRY: dict[str, Provider] = {
                       display_name="Gemini 3.1 Flash Lite"),
             ModelInfo("gemini-3.1-flash-image", (APIKEY_CAT_IMAGE,),
                       display_name="Gemini 3.1 Flash"),
+            # ⛔ ĐÓNG 2026-08-23 — LÝ DO KINH TẾ, KHÔNG PHẢI KỸ THUẬT.
+            #    Giá vốn $0,134/ảnh = 35,2 credit (`platform_core/gia_von.json`).
+            #    Nền tảng bán 16 credit ở `taoanh` và **5 credit** ở `thumbnail`
+            #    (app đó tính giá phẳng bất kể model) ⇒ lỗ 1.924đ và 3.024đ mỗi ảnh.
+            #    Chủ dự án chốt: giữ giá các bậc rẻ như chi phí thu hút khách, nhưng
+            #    **đóng đúng bậc lỗ nặng nhất**.
+            #    Mở lại khi giá bán ≥ giá vốn — `tests/test_261` sẽ kiểm hộ.
             ModelInfo("gemini-3-pro-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3 Pro"),
+                      display_name="Gemini 3 Pro", is_active=False),
             # Alias bất hoạt: job/draft cũ vẫn gọi đúng model ổn định, nhưng UI
             # không tiếp tục tạo dữ liệu mới với tên preview đã lỗi thời.
             ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,),
