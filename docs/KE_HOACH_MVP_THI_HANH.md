@@ -253,38 +253,39 @@ Giá vốn **1,05 credit**. Ở bất kỳ giá bán nào ≥ giá hoà vốn Ge
 
 ---
 
-# ĐỢT 2 — ĐỊNH TUYẾN
+# ~~ĐỢT 2 — ĐỊNH TUYẾN~~ ⛔ ĐÃ GỠ 2026-08-23
 
-**📖 THEO TÀI LIỆU.** Nguồn: LiteLLM Router.
+**Chủ dự án bác, và bác đúng.** Xem **D-042**.
 
-### Lấy gì
+Tôi đề xuất định tuyến theo giá vốn sau khi đọc `cost-based-routing` của LiteLLM.
+Nó giải một bài toán khác: ở đó nhiều **deployment** phục vụ **cùng một model
+logic**, nên chọn cái rẻ nhất là trong suốt với khách.
 
-**① Tên và ngữ nghĩa chiến lược.** LiteLLM có `simple-shuffle`, `least-busy`,
-`usage-based-routing`, `latency-based-routing`, **`cost-based-routing`**.
-Ta cần đúng cái cuối: *chọn deployment rẻ nhất trong số những cái còn khoẻ và còn
-định mức*. `api_pool.chon_key` **đã có** phần "còn khoẻ và còn định mức" — chỉ
-thiếu tiêu chí **giá vốn**.
+Ở LTTSTUDIOSAPP thì `gemini-3-pro-image` và `hidream-o1` là **hai mặt hàng khác
+nhau**. Khách gọi cái nào thì dùng cái đó. Hệ thống thấy model nhà rẻ hơn 34 lần
+rồi lặng lẽ vẽ bằng nó là **đánh tráo sản phẩm** — đúng thứ D-010 cấm, và tôi đã
+đề xuất nó **ngay sau khi tự viết ra D-010**.
 
-**② Ba khoảng trống thật, so với LiteLLM:**
+**Hình dạng đúng đã có sẵn, không phải xây thêm:** mỗi loại tạo ảnh là **một tool
+riêng** (`image.ltt`), có **trang tài liệu riêng** (`/developers/tools`), và khách
+**tự chọn khoá gọi được tool nào** (`allowed_tools`).
 
-| # | LiteLLM làm | Ta làm | Hệ quả |
-|---|---|---|---|
-| a | Hỏng có-thể-thử-lại ⇒ **loại deployment đó khỏi chuỗi thử lại**, tích luỹ qua từng bước | ta **không có chuỗi thử lại nào** | một khoá hỏng ⇒ job hỏng, dù còn khoá khác |
-| b | `401`/`404` ⇒ **cooldown ngay lập tức**, không cần đếm | ta đếm tới **5** rồi mới disable | 4 request đầu vẫn ném vào một khoá đã chết |
-| c | Model không có trong bảng giá ⇒ coi như **$1** | ta không có khái niệm giá vốn khi chọn khoá | không định tuyến theo giá được |
+Quy trình thì **vốn đã đồng nhất**: `apps/anhnoibo/http_cong.py` lấy token qua
+`api_pool.lay_key(db, "ltt_image", ...)` — cùng bộ máy APIKEYS mà Gemini đi.
 
-### Các bước
+### Thứ **giữ lại** từ đợt này, vì nó đúng vì lý do khác
 
-1. `chon_key(..., uu_tien="gia_von")` — sắp xếp thêm theo `gia_von` khi được yêu cầu.
-   *Không* đổi mặc định: đổi hành vi mặc định của thứ đang chạy thật là rủi ro thừa.
-2. Thêm **chuỗi thử lại có loại trừ tích luỹ** (khoảng trống **a**) — đây là thứ
-   đáng giá nhất trong cả đợt: nó biến "một khoá hỏng = một job hỏng" thành "thử
-   khoá tiếp theo".
-3. `401/403` ⇒ cooldown **ngay** *(khoảng trống **b**)*, giữ nguyên ngưỡng disable 5.
-4. `apps/taoanh` khai `providers: ["ltt_image", "gemini"]`.
-5. ⛔ Khách **luôn thấy** model nào đã vẽ (D-010).
+Hai khoảng trống so với LiteLLM Router **không** liên quan tới định tuyến sản phẩm.
+Chúng là **độ bền của một tài khoản**, và vẫn đáng làm:
 
----
+| # | Khoảng trống | Vì sao vẫn đúng |
+|---|---|---|
+| a | ta **không có chuỗi thử lại nào** | một khoá Gemini cạn hạn mức ⇒ job hỏng, **dù còn khoá Gemini khác**. Đây là dự phòng ở tầng *tài khoản*, không phải tầng *sản phẩm* — khách vẫn nhận đúng model họ gọi |
+| b | `401/403` đếm tới 5 mới disable | 4 request đầu vẫn ném vào một khoá đã chết. LiteLLM cooldown ngay |
+
+⛔ Khoảng trống **c** (định tuyến theo giá vốn) **bỏ hẳn**.
+
+⇒ Hai việc trên chuyển thành **Đợt 5 — độ bền chuỗi khoá**, xếp sau quan sát.
 
 # ĐỢT 3 — QUAN SÁT
 
@@ -315,6 +316,25 @@ Claude song song trên một repo.
 
 ---
 
+# ĐỢT 5 — ĐỘ BỀN CHUỖI KHOÁ *(tách ra từ Đợt 2 đã gỡ)*
+
+**📖 THEO TÀI LIỆU.** Nguồn: LiteLLM Router — nhưng **chỉ phần độ bền**, không phần
+định tuyến sản phẩm.
+
+⭐ Ranh giới phải giữ cho rõ: đây là dự phòng ở tầng **tài khoản**, không phải tầng
+**sản phẩm**. Khách gọi `gemini-3-pro-image` thì vẫn nhận `gemini-3-pro-image` —
+ta chỉ đổi **khoá nào của Gemini** phục vụ lượt gọi đó. Khách không thấy gì khác.
+
+| # | Việc | Vì sao |
+|---|---|---|
+| 5.1 | **Chuỗi thử lại có loại trừ tích luỹ** trong `api_pool` | hôm nay một khoá cạn hạn mức ⇒ job hỏng, **dù còn khoá khác của cùng nhà cung cấp**. LiteLLM loại khoá vừa hỏng khỏi các bước sau của cùng một request |
+| 5.2 | `401/403` ⇒ **cooldown ngay**, giữ nguyên ngưỡng disable 5 | hôm nay 4 request đầu vẫn ném vào một khoá đã chết |
+
+⛔ **Không** thêm tiêu chí giá vốn vào `chon_key`. Đó là phần đã gỡ, và gỡ vì lý do
+sản phẩm chứ không phải vì khó làm.
+
+---
+
 ## Thứ tự bắt buộc, và vì sao
 
 ```
@@ -331,8 +351,11 @@ Claude song song trên một repo.
 
 - **0.2 phải sau 0.1**: bánh cóc cần bảng giá vốn để so.
 - **0.3 phải sau 0.2**: đổi giá mà chưa có bánh cóc thì lần sau lại lệch.
-- **2.x phải sau 1.4**: định tuyến theo giá vốn mà chưa biết chất lượng là **tối
-  ưu hoá cho cái rẻ nhất bất kể nó vẽ có được không** — đúng thứ D-010 cấm.
+- **Đợt 5 độc lập** với mọi đợt khác: nó chỉ đụng `api_pool`, không đụng giá và
+  không đụng model nào.
+
+⛔ **Đợt 2 cũ đã gỡ.** Lý do ghi ở D-042: mỗi model là **một mặt hàng**, và mặt
+hàng không thay thế nhau sau lưng khách.
 
 ## Ba chỗ yếu nhất của kế hoạch này
 

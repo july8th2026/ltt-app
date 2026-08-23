@@ -1965,3 +1965,67 @@ Gemini** — nếu kết quả cuối sát nhau thì phải nói ra khi kết lu
 cho khách* là 1376×768 JPEG, thứ ta giao là 2560×1440 PNG. Đó là lợi thế thật của
 ta — nhưng nó là lợi thế **sản phẩm**, không phải bằng chứng model vẽ đẹp hơn. Bản
 kê giữ cả số trước lẫn số sau để không ai lẫn hai câu.
+
+
+---
+
+## D-042 — Mỗi model là MỘT MẶT HÀNG, có cổng gọi riêng. Không định tuyến, không dự phòng.
+
+**Date:** 2026-08-23 · chủ dự án chốt · **huỷ Đợt 2 của `KE_HOACH_MVP_THI_HANH.md`**
+
+### Tôi đã hiểu sai, và hiểu sai ở chỗ quan trọng
+
+Chủ dự án nói *"đồng nhất quy trình"*. Tôi đọc thành *"gộp thành một đường phục
+vụ"* rồi đề xuất định tuyến theo giá vốn — **trái với chính D-010 mà tôi viết**.
+
+Hai chuyện khác hẳn nhau:
+
+| | |
+|---|---|
+| **Quy trình** — đồng nhất | mọi model đi qua **cùng** bộ máy APIKEYS: khoá mã hoá Fernet, cấp phát qua `api_pool`, telemetry rpm/tpm, phân loại lỗi bốn nhánh |
+| **Sản phẩm** — riêng biệt | `gemini-3-pro-image` và `hidream-o1` là **hai mặt hàng**. Khách gọi cái nào thì dùng cái đó |
+
+### Vì sao định tuyến theo giá vốn là sai ở đây
+
+Tôi lấy `cost-based-routing` từ LiteLLM mà không để ý nó giải một bài toán khác:
+ở đó nhiều **deployment** phục vụ **cùng một model logic**, nên đổi qua lại là
+trong suốt và đúng. Ở đây hai model là **hai sản phẩm khác nhau** — khách gọi
+Gemini Pro mà hệ thống lặng lẽ vẽ bằng model nhà vì nó rẻ hơn 34 lần thì đó là
+**đánh tráo sản phẩm**, đúng thứ D-010 cấm.
+
+⇒ **Đợt 2 bị gỡ khỏi kế hoạch, không sửa cho mềm đi.**
+
+⚠️ Cascade của `api_pool` **vẫn đúng** cho việc nó sinh ra: nhiều **khoá của cùng
+một nhà cung cấp** khi một khoá cạn hạn mức. Đó là dự phòng ở tầng *tài khoản*,
+không phải ở tầng *sản phẩm*. Đừng gộp hai thứ.
+
+### Hình dạng đúng — và nó đã có sẵn
+
+Mỗi loại tạo ảnh là **một tool riêng**, và nền tảng đã có đủ ba mảnh:
+
+| Mảnh | Ở đâu |
+|---|---|
+| Tool riêng cho model nhà | `image.ltt` (`apps/anhnoibo`) |
+| Trang tài liệu riêng từng hạng mục | `/developers/tools` — "Công cụ & model" |
+| Khách tự chọn khoá gọi được tool nào | `allowed_tools` trên khoá lập trình viên |
+
+Và quy trình **đã đồng nhất từ đầu**, có chủ ý: `apps/anhnoibo/http_cong.py` lấy
+bearer token của cổng render qua `api_pool.lay_key(db, "ltt_image", ...)` — cùng
+đường Gemini đi. `ltt_image` **không có đường tắt nào**.
+
+### Ranh giới để số lượng tool không nổ ra
+
+**Một tool cho một họ hậu trường**, không phải một tool cho một phiên bản model.
+`image.ltt` mai sau chứa được `hidream-o1` lẫn `hidream-o2` như hai lựa chọn
+`model`, mỗi cái một giá. Tách thành hai tool chỉ vì đổi phiên bản là bắt khách
+sửa mã cho một việc không đổi.
+
+### Điều này KHÔNG giải bài toán giá
+
+Định tuyến không phải cách chữa lỗ, và giờ thì rõ vì sao: **mỗi model phải mang
+đúng giá của nó**. Còn lại hai việc, độc lập với hình dạng tool:
+
+1. Ba bậc Gemini vẫn dưới giá vốn — 9 miễn trừ có hạn **15/09**.
+2. ⛔ **`apps/thumbnail` tính giá PHẲNG bất kể model** — app duy nhất vi phạm
+   nguyên tắc *một model một giá*, và cũng là app lỗ nặng nhất. Đây là việc còn
+   lại rõ ràng nhất của đợt 0.
