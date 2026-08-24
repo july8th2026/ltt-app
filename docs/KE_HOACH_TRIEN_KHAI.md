@@ -2813,15 +2813,74 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       Ba lỗi tìm được vẫn có giá trị: **card mạng thứ hai của template** (job nay gỡ
       mọi `netN` thừa), **`vga: serial0`**, và **sàn đĩa của template**.
 
-- [ ] **G5 (mới) — khách tự cài Windows.**
-      ① `os_images` mang **volid ISO** thay cho VMID template · ② `jobs.py` **tạo máy
-      trống + gắn ISO** thay cho `clone` · ③ **DHCP trên VM router** cấp địa chỉ theo
-      MAC — bắt buộc, vì trình cài đặt Windows không đọc được cloud-init nên không
-      còn đường nào khác để máy có mạng mà khách không phải tự gõ · ④ trang **hướng
-      dẫn cài đặt** cho từng phiên bản · ⑤ chuyển kho ISO sang `vmdata`.
-      *Xong khi:* khách bấm mua → mở console → cài xong Windows bằng tài khoản của
-      chính họ → **RDP vào được từ Internet qua IP riêng**, nền tảng không hề biết
-      mật khẩu.
+- [x] **G5 (mới) — khách tự cài Windows.** ✅ **XONG 2026-08-24, đo thật đầu-tới-cuối.**
+
+      ① `os_images` mang **volid ISO** (`LTT_VPS_ISO_<ID>`) · ② `jobs.py` **tạo máy
+      trống + gắn ISO** · ③ **DHCP theo MAC** trên VM router (`dnsmasq`,
+      `services/router.py`) · ④ trang **hướng dẫn cài đặt** `/vps/<id>/cai-dat` ·
+      ⑤ ISO — xem mục "chưa xong" ở cuối.
+
+      **Chuỗi đã chạy thật, một lần, không sửa tay:** job tạo máy **17 giây** →
+      máy boot **thẳng vào trình cài đặt Windows Server 2022** (không kẹt ở "Press
+      any key") → console trong trình duyệt mở được, không lỗi JS → DHCP cấp
+      **đúng** địa chỉ đã đặt chỗ (`DISCOVER → OFFER 10.51.0.99 → REQUEST → ACK`)
+      → máy khách ra Internet được, tải 1 MB trọn vẹn ở 1,2 MB/s → job xoá **24
+      giây**, trả sạch cả ba thứ (chỗ DHCP, dòng `vps_ip`, IP bên Vultr).
+
+      ⚠️ `/reserved-ips` của Vultr **trễ vài chục giây** sau `DELETE`. Kiểm ngay
+      sau khi xoá sẽ thấy IP còn đó và tưởng rò tiền — kiểm lại sau một phút.
+
+      **Năm lỗi tìm được, tất cả chỉ lộ ra khi chạy thật:**
+
+      1. 🔴 **Console chưa từng chạy được lần nào.** Cột `vps_console_ve.pve_ve`
+         là `String(255)`; vé `vncproxy` thật dài hơn thế, nên Postgres từ chối
+         INSERT và trang trả **500 cho mọi máy**. `test_282` xanh vì nó chạy trên
+         **SQLite, thứ không cưỡng chế độ dài `VARCHAR`**. Migration
+         `5b9e2c47a103`; nay có test chốt kiểu cột, không chốt bằng một chuỗi mẫu.
+      2. 🔴 **VM router chưa từng có tường lửa** — `nft` chưa được cài. Việc chặn
+         khách sang LAN nhà chỉ là **hệ quả phụ của bảng định tuyến 100**, và nó
+         mất hiệu lực ngay khi `wg-quick@wg0` hỏng lúc khởi động: không có
+         `ip rule` ⇒ gói của khách dùng bảng chính ⇒ `192.168.2.0/24 dev eth0` ⇒
+         **máy khách nằm thẳng trong LAN nhà, cùng mạng với máy A và Proxmox**.
+         Nay có lớp chặn thật (`tools/vps_gateway/cai-dat-router.sh`), và bộ đếm
+         `nft` đo được **22 gói bị chặn** trong lượt thử — chặn thật, không phải
+         may nhờ định tuyến. `mang.py` trước đây **khẳng định** luật này tồn tại.
+      3. 🔴 **Trang bán mặc định chọn một vùng đã bị xoá.** Bộ chọn "Vùng đặt máy"
+         viết cứng ba lựa chọn của mô hình chia cổng cũ, mặc định `port`. Khách
+         bấm "Thuê máy này" là gặp `khong co cong vao nao dang mo o vung 'port'`.
+         Nay dựng từ CSDL (`provisioning.vung_dang_mo`); một vùng thì không hiện
+         bộ chọn nữa.
+      4. **`vps_gateway` rỗng** — chưa ai khai cổng vào, nên app từ chối mọi lượt
+         mua. Thêm `tools/vps_them_cong_vao.py` (chạy lại được, có `--xem`).
+      5. **"Còn trống: 44.5 GB RAM · GB đĩa"** — template gọi `suc_chua.dia_gb_con`,
+         thuộc tính **không tồn tại**, và Jinja in thuộc tính không tồn tại thành
+         **chuỗi rỗng** thay vì báo lỗi. Nay có test đọc template và đối chiếu
+         từng `<biến>.<thuộc tính>` với lớp thật.
+
+      **Thêm một nút mà chỉ việc chạy thật mới cho thấy là bắt buộc:** đĩa cài nằm
+      lại trong máy sau khi cài xong, nên mỗi lần khởi động lại hiện *"Press any
+      key to boot from CD"* — **bấm nhầm một phím là vào lại trình cài đặt từ
+      đầu**. `dieu_khien.go_dia_cai` + nút "Tôi đã cài xong". Không tự động được:
+      máy khách không có guest agent (agent là thiết bị virtio), nên nền tảng
+      **không có cách nào biết** khách đã cài xong hay chưa, và đoán theo thời
+      gian là rút đĩa giữa lúc họ đang cài.
+
+      *Bằng chứng:* `tests/test_286_vps_dhcp_router.py` (29) + phần bổ sung ở
+      `test_280` (4) và `test_252` (3). Toàn bộ VPS **166 xanh**, `gate --quick`
+      **PASS**.
+
+      ⚠️ **Còn nợ của G5 — ⑤ kho ISO, và nó KHÔNG làm được như đã viết.** Kế hoạch
+      cũ ghi "chuyển kho ISO sang `vmdata`", nhưng `vmdata` là **lvmthin** và
+      lvmthin **chỉ chứa được `images`/`rootdir`, không chứa ISO**. `local` (kho
+      `dir` duy nhất) còn **2,2 GiB / 26,1 GiB**, đủ cho ba ISO đang có nhưng
+      **không đủ thêm Windows 11**. Muốn thêm thì phải cắt một LV mỏng từ pool,
+      `mkfs.ext4`, mount, rồi khai thành kho `dir` — không phải đổi một dòng cấu
+      hình. Ba ISO hiện dùng được: Server 2022 (phục vụ cả bản Core lẫn bản có
+      giao diện — khách chọn trong trình cài đặt) và Windows 10.
+
+      ⚠️ **Tài khoản thử `vps-thu@lttstudios.com` đang sống trong CSDL thật** — tạo
+      để kiểm giao diện bằng trình duyệt (không mượn tài khoản khách nào). **Phải
+      xoá trước G10.**
 
 - [x] **G5b — dọn sạch template + danh tính phần cứng riêng cho từng máy.**
       ✅ **XONG 2026-08-24.**

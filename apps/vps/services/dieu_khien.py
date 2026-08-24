@@ -123,3 +123,28 @@ def treo(db: DbSession, may: VpsInstance, client: ProxmoxClient, *,
             provisioning.ghi_su_kien(db, may.id, "treo_khong_tat_duoc",
                                      boi=boi, loi=str(exc)[:200])
     billing.treo(db, may, ly_do)
+
+
+def go_dia_cai(db, may, client, *, boi: str = "khach") -> None:
+    """Gỡ đĩa cài ra khỏi máy và cho nó khởi động thẳng vào đĩa cứng.
+
+    ## Vì sao đây là một nút, không phải một bước tự động
+
+    Nền tảng **không biết** khách đã cài xong Windows hay chưa: máy khách không
+    có guest agent (agent là thiết bị virtio, và virtio treo trên cụm này), nên
+    không có cách nào hỏi bên trong. Đoán theo thời gian là đoán sai với người
+    cài chậm, và đoán sai theo hướng **rút đĩa giữa lúc họ đang cài**.
+
+    ## Vì sao vẫn cần gỡ, thay vì kệ nó
+
+    Đĩa cài nằm nguyên đó thì mỗi lần khởi động máy lại hiện *"Press any key to
+    boot from CD"*. Không bấm thì sau vài giây nó bỏ qua — nhưng **bấm nhầm một
+    phím trong lúc đó là vào lại trình cài đặt từ đầu**, và với người vừa cài
+    xong thì đó là một cú suýt mất cả buổi.
+
+    Chạy lại được: gỡ hai lần không lỗi.
+    """
+    kiem_dieu_khien_duoc(may)
+    client.dat_cau_hinh(may.vmid, delete="ide0", boot="order=sata0")
+    provisioning.ghi_su_kien(db, may.id, "go_dia_cai", boi=boi, vmid=may.vmid)
+    db.commit()

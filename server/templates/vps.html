@@ -53,7 +53,7 @@
             {% else %}<span class="muted">{{ _("đang chuẩn bị") }}</span>{% endif %}
           </td>
           <td>
-            {{ m.may.trang_thai }}
+            {{ _(m.trang_thai_nhan) }}
             {% if m.may.ly_do %}<br><span class="muted">{{ m.may.ly_do }}</span>{% endif %}
           </td>
           <td>
@@ -104,18 +104,25 @@
           <div class="field" style="margin:0;">
             <label for="os-{{ g.plan.id }}">{{ _("Hệ điều hành") }}</label>
             <select id="os-{{ g.plan.id }}" name="os_id">
-              {% for o in g.os %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+              {% for o in g.os %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
             </select>
           </div>
+          {# Bộ chọn vùng dựng từ CSDL. Viết cứng danh sách ở đây đã một lần
+             để lại lựa chọn "dùng cổng chung" sau khi mô hình đó bị bỏ, và mặc
+             định của form trỏ vào chính lựa chọn đã chết. #}
+          {% if vung|length > 1 %}
           <div class="field" style="margin:0;">
             <label for="vung-{{ g.plan.id }}">{{ _("Vùng đặt máy") }}</label>
             <select id="vung-{{ g.plan.id }}" name="vung">
-              <option value="port">{{ _("Việt Nam — nhanh nhất, dùng cổng chung") }}</option>
-              <option value="vn">{{ _("Việt Nam — có địa chỉ riêng") }}</option>
-              <option value="sgp">{{ _("Singapore — địa chỉ nước ngoài, chậm hơn") }}</option>
+              {% for ma, nhan in vung %}<option value="{{ ma }}">{{ _(nhan) }}</option>{% endfor %}
             </select>
-            <span class="hint">{{ _("Nếu bạn ở Việt Nam và chỉ cần máy chạy nhanh, hãy chọn Việt Nam. Singapore chỉ hợp khi bạn cần một địa chỉ nước ngoài — đường truyền sẽ trễ hơn rõ rệt.") }}</span>
           </div>
+          {% elif vung %}
+          {# Một vùng duy nhất thì bộ chọn chỉ là một ô bắt bấm mà không cho
+             chọn gì. Nói thẳng nó ở đâu, và gửi giá trị bằng trường ẩn. #}
+          <input type="hidden" name="vung" value="{{ vung[0][0] }}">
+          <span class="hint">{{ _("Địa chỉ IP của máy đặt tại %(noi)s.", noi=vung[0][1]) }}</span>
+          {% endif %}
           <button type="submit" style="background:{{ app.accent }};">{{ _("Thuê máy này") }}</button>
         </div>
       </form>
@@ -126,8 +133,11 @@
 
   {% if suc_chua %}
   <p class="muted" style="font-size:.9em;">
+    {# `dia_gb_con_that`, KHÔNG phải `dia_gb_con` — thuộc tính sau không tồn tại,
+       và Jinja in thuộc tính không tồn tại thành CHUỖI RỖNG thay vì báo lỗi. Câu
+       này từng hiện ra trước mặt khách là "44.5 GB RAM · GB đĩa". #}
     {{ _("Còn trống") }}: {{ (suc_chua.ram_mb_con / 1024) | round(1) }} GB RAM
-    · {{ suc_chua.dia_gb_con }} GB {{ _("đĩa") }}
+    · {{ suc_chua.dia_gb_con_that }} GB {{ _("đĩa") }}
   </p>
   {% endif %}
 

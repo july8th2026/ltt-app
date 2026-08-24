@@ -26,7 +26,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import os_images
+from apps.vps import nhan, os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
@@ -103,6 +103,7 @@ def _may_cua_toi(db, user_id: str) -> list:
         x = ip_rieng.get(m.id)
         ket_qua.append({
             "may": m,
+            "trang_thai_nhan": nhan.trang_thai(m.trang_thai),
             "plan": lay_plan(m.plan_id),
             "os": os_images.lay_os(m.os_id),
             "dia_chi": x.dia_chi if x is not None else "",
@@ -136,6 +137,8 @@ def trang_chinh(request: Request,
         "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "goi": goi,
+        # Dựng từ CSDL, không viết cứng: xem `provisioning.vung_dang_mo`.
+        "vung": provisioning.vung_dang_mo(db),
         "may_cua_toi": _may_cua_toi(db, user_id),
         "suc_chua": suc_chua,
         "loi_ha_tang": loi_ha_tang,
@@ -148,7 +151,10 @@ def tao_may(request: Request,
             csrf_token: str = Form(...),
             plan_id: str = Form(...),
             os_id: str = Form(...),
-            vung: str = Form("port"),
+            # KHÔNG có mặc định viết cứng. Mặc định cũ là `"port"` — một vùng
+            # đã bị bỏ — nên mọi lần gửi thiếu trường này đều hỏng, và hỏng bằng
+            # một câu lỗi nội bộ hiện ra trước mặt khách.
+            vung: str = Form(...),
             dia_them_gb: int = Form(0),
             _g: None = Depends(_cong_co),
             _u: str = Depends(require_login),
@@ -267,6 +273,38 @@ def khoi_dong_lai_may(instance_id: str, request: Request,
     return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.khoi_dong_lai)
 
 
+@router.post("/{instance_id}/go-dia-cai")
+def go_dia_cai(instance_id: str, request: Request, csrf_token: str = Form(...),
+               _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+               db=Depends(get_db)):
+    """Khách bấm khi đã cài xong Windows. Xem `dieu_khien.go_dia_cai`."""
+    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.go_dia_cai)
+
+
+@router.get("/{instance_id}/cai-dat", response_class=HTMLResponse)
+def huong_dan_cai_dat(instance_id: str, request: Request,
+                      _g: None = Depends(_cong_co),
+                      _u: str = Depends(require_login), db=Depends(get_db)):
+    """Hướng dẫn khách tự cài Windows trên máy của họ.
+
+    Trang riêng chứ không nhét vào trang máy: khách đọc nó **song song với
+    console** ở tab khác, và trang máy thì đã dài.
+    """
+    may = _may_cua_khach(db, request, instance_id)
+    ip = db.execute(
+        select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
+    img = os_images.lay_os(may.os_id)
+    return templates.TemplateResponse(request, "vps_cai_dat.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST,
+        "may": may,
+        "os": img,
+        "plan": lay_plan(may.plan_id),
+        "dia_chi": ip.dia_chi if ip is not None else "",
+        "cong": img.cong_quen if img is not None else 3389,
+        "csrf_token": issue_csrf_token(request),
+    })
+
+
 @router.post("/{instance_id}/cai-lai")
 def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
                 xac_nhan: str = Form(""), os_id: str = Form(""),
@@ -335,6 +373,7 @@ def trang_chi_tiet(instance_id: str, request: Request,
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "plan": lay_plan(may.plan_id),
         "os": os_images.lay_os(may.os_id),
         "dia_chi": ip.dia_chi if ip is not None else "",

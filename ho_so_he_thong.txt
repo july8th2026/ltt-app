@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ae89d332614c3cf56378542887f4d409eff370c805467dc028631a9cd58ed416
-Nguồn đã quét : 1326 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:9b8034fb50ea35f537245d4f73f4c38361440487a92967d7f71e6f030f6f9e7c
+Nguồn đã quét : 1334 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -542,7 +542,7 @@ Các lớp chính:
   URL=/vps | surface=customer | lifecycle=development
   enabled=False | public=False | parent=-
   requires=api | capabilities=Utilities
-  HTTP routes=9 | table_prefix=vps | manifest_error=-
+  HTTP routes=11 | table_prefix=vps | manifest_error=-
   credit_cost=apps.vps.cost.credit_cost
   job_types=vps.provision, vps.rebuild, vps.destroy
   Agent tools (0):
@@ -552,6 +552,7 @@ Các lớp chính:
     - apps/vps/cost.py
     - apps/vps/jobs.py
     - apps/vps/manifest.py
+    - apps/vps/nhan.py
     - apps/vps/os_images.py
     - apps/vps/routes.py
     - apps/vps/services/__init__.py
@@ -564,10 +565,12 @@ Các lớp chính:
     - apps/vps/services/mang.py
     - apps/vps/services/provisioning.py
     - apps/vps/services/proxmox.py
+    - apps/vps/services/router.py
+    - apps/vps/services/ssh_lenh.py
     - apps/vps/services/vultr.py
     - apps/vps/tables.py
 
-4. HTTP ROUTE INVENTORY (341)
+4. HTTP ROUTE INVENTORY (343)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -685,26 +688,26 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:681
 - [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:706
 - [platform] GET    /developers/cli → developer_cli | auth~unspecified | server/routes/developer.py:874
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:905
+- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:908
 - [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:627
 - [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:286
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:1062
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:1101
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:1114
+- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:1065
+- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:1104
+- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:1117
 - [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:447
 - [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:480
 - [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:722
 - [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:732
-- [platform] GET    /developers/openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer.py:914
+- [platform] GET    /developers/openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer.py:917
 - [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:409
 - [platform] GET    /developers/pricing → developer_pricing | auth~unspecified | server/routes/developer.py:351
-- [platform] GET    /developers/privacy → developer_privacy | auth~unspecified | server/routes/developer.py:956
-- [platform] GET    /developers/privacy/export → developer_privacy_export | auth~unspecified | server/routes/developer.py:976
+- [platform] GET    /developers/privacy → developer_privacy | auth~unspecified | server/routes/developer.py:959
+- [platform] GET    /developers/privacy/export → developer_privacy_export | auth~unspecified | server/routes/developer.py:979
 - [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:279
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:1158
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:1174
+- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:1161
+- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:1177
 - [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:292
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:1056
+- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:1059
 - [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:511
 - [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:546
 - [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:634
@@ -901,15 +904,17 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] GET    /upscalevideo/watch/status → watch_status | auth~unspecified | apps/upscalevideo/routes.py:293
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
-- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:116
-- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:147
-- [vps] GET    /vps/{instance_id} → trang_chi_tiet | auth~login | apps/vps/routes.py:326
-- [vps] POST   /vps/{instance_id}/bat → bat_may | auth~login | apps/vps/routes.py:249
-- [vps] POST   /vps/{instance_id}/cai-lai → cai_lai_may | auth~login | apps/vps/routes.py:271
-- [vps] GET    /vps/{instance_id}/console → trang_console | auth~login | apps/vps/routes.py:353
-- [vps] POST   /vps/{instance_id}/khoi-dong-lai → khoi_dong_lai_may | auth~login | apps/vps/routes.py:263
-- [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:256
-- [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:303
+- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:117
+- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:150
+- [vps] GET    /vps/{instance_id} → trang_chi_tiet | auth~login | apps/vps/routes.py:364
+- [vps] POST   /vps/{instance_id}/bat → bat_may | auth~login | apps/vps/routes.py:255
+- [vps] GET    /vps/{instance_id}/cai-dat → huong_dan_cai_dat | auth~login | apps/vps/routes.py:285
+- [vps] POST   /vps/{instance_id}/cai-lai → cai_lai_may | auth~login | apps/vps/routes.py:309
+- [vps] GET    /vps/{instance_id}/console → trang_console | auth~login | apps/vps/routes.py:392
+- [vps] POST   /vps/{instance_id}/go-dia-cai → go_dia_cai | auth~login | apps/vps/routes.py:277
+- [vps] POST   /vps/{instance_id}/khoi-dong-lai → khoi_dong_lai_may | auth~login | apps/vps/routes.py:269
+- [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:262
+- [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:341
 
 5. DATA MODEL (58 bảng)
 - agent_runs → AgentRun | platform_core/models.py:406
@@ -966,12 +971,12 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:219
-- vps_event → VpsEvent | apps/vps/tables.py:265
+- vps_event → VpsEvent | apps/vps/tables.py:270
 - vps_gateway → VpsGateway | apps/vps/tables.py:68
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (52)
+6. ALEMBIC MIGRATIONS (53)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -1024,6 +1029,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 9c3b18e5f27a ← 6f2a91d47c30 | vps: id cua cong vao ben nha cung cap (H39/G2) | alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
 - 3e8d5a91c7b2 ← 9c3b18e5f27a | vps: bang ve mot-lan cho console (H39/G3b) | alembic/versions/20260824_2100_vps_console_ve.py
 - 7a41f6d29e83 ← 3e8d5a91c7b2 | vps: ve console giu them cong VNC va ve cua Proxmox (H39/G3b) | alembic/versions/20260824_2200_vps_console_ve_cong.py
+- 5b9e2c47a103 ← 7a41f6d29e83 | vps_console_ve.pve_ve: varchar(255) -> TEXT | alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1040,7 +1046,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (151 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (154 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1183,6 +1189,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_VPS_PROXMOX_TOKEN_ID
 - LTT_VPS_PROXMOX_TOKEN_SECRET
 - LTT_VPS_PROXMOX_URL
+- LTT_VPS_ROUTER_HOST
+- LTT_VPS_ROUTER_SSH_KEY
+- LTT_VPS_ROUTER_USER
 - LTT_VPS_TEMPLATE_
 - LTT_VPS_TEMPLATE_KHONG_CO
 - LTT_VPS_TEMPLATE_WIN10
@@ -1193,7 +1202,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (299 file pytest + 3 frontend)
+10. QUALITY GATES (300 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1434,6 +1443,7 @@ Test inventory:
 - tests/test_283_cam_cli.py
 - tests/test_284_gui_cam_cli.py
 - tests/test_285_vps_dinh_danh.py
+- tests/test_286_vps_dhcp_router.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -1519,8 +1529,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1326 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1019, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1334 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1025, .sh:2, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1533,7 +1543,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 [README.md] (1)
 - README.md
 
-[alembic] (54)
+[alembic] (55)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1588,11 +1598,12 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
 - alembic/versions/20260824_2100_vps_console_ve.py
 - alembic/versions/20260824_2200_vps_console_ve_cong.py
+- alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
 
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (256)
+[apps] (259)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1835,6 +1846,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - apps/vps/cost.py
 - apps/vps/jobs.py
 - apps/vps/manifest.py
+- apps/vps/nhan.py
 - apps/vps/os_images.py
 - apps/vps/routes.py
 - apps/vps/services/__init__.py
@@ -1847,6 +1859,8 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - apps/vps/services/mang.py
 - apps/vps/services/provisioning.py
 - apps/vps/services/proxmox.py
+- apps/vps/services/router.py
+- apps/vps/services/ssh_lenh.py
 - apps/vps/services/vultr.py
 - apps/vps/tables.py
 
@@ -2313,7 +2327,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (153)
+[server] (154)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2462,6 +2476,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - server/templates/status_api.html
 - server/templates/verify_result.html
 - server/templates/vps.html
+- server/templates/vps_cai_dat.html
 - server/templates/vps_chi_tiet.html
 - server/templates/vps_console.html
 - server/templates/workers.html
@@ -2478,7 +2493,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (316)
+[tests] (317)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2730,6 +2745,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - tests/test_283_cam_cli.py
 - tests/test_284_gui_cam_cli.py
 - tests/test_285_vps_dinh_danh.py
+- tests/test_286_vps_dhcp_router.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -2796,7 +2812,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (93)
+[tools] (95)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2890,6 +2906,8 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - tools/upscale_option_matrix.py
 - tools/vps_doctor.py
 - tools/vps_gateway/cai-dat-cong-vao.sh
+- tools/vps_gateway/cai-dat-router.sh
+- tools/vps_them_cong_vao.py
 
 [utils] (8)
 - utils/__init__.py
@@ -2913,7 +2931,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1326 file; 12355022 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1334 file; 12420422 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7251,6 +7269,48 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_column("vps_console_ve", "pve_ve")
     op.drop_column("vps_console_ve", "cong")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
+SHA256=929c2fdee4c716c92c56040ac6a5b7e7a9e544335406eb8ee3b67f4b0e91857b BYTES=1255 LINES=36
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""vps_console_ve.pve_ve: varchar(255) -> TEXT
+
+Ve `vncproxy` cua Proxmox la mot chung chi CO CHU KY va dai hon 255 ky tu. Voi
+tran do dai, Postgres tu choi ca cau INSERT va **console tra 500 cho moi may** --
+tinh nang khong chay duoc lan nao.
+
+Vi sao bo test khong bat: test dung SQLite, ma SQLite **khong cuong che do dai
+VARCHAR**. Cung mot cau lenh chay sach o test va no o production. Chi mo trinh
+duyet moi thay (quy tac 5 cua CLAUDE.md) -- va da thay dung nhu vay 24/08.
+
+Revision ID: 5b9e2c47a103
+Revises: 7a41f6d29e83
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "5b9e2c47a103"
+down_revision = "7a41f6d29e83"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.alter_column("vps_console_ve", "pve_ve",
+                    existing_type=sa.String(length=255),
+                    type_=sa.Text(),
+                    existing_nullable=False)
+
+
+def downgrade() -> None:
+    # Thu hep lai se CAT CUT ve dang luu. Ve song nhieu nhat 60 giay nen viec do
+    # vo hai trong thuc te, nhung phai noi ra thay vi de nguoi doc doan.
+    op.alter_column("vps_console_ve", "pve_ve",
+                    existing_type=sa.Text(),
+                    type_=sa.String(length=255),
+                    existing_nullable=False)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -34709,7 +34769,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=9173294e6be7cbb6e2569b7ac92d9f4dcdaec03eba81ae04fe9075cfcc2eb0eb BYTES=29801 LINES=607
+SHA256=98c12470b97f276d835549c51c38b23ca81dafab86f368d8421d754c0f0769cc BYTES=31453 LINES=639
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34740,6 +34800,7 @@ import time
 from apps.vps import os_images
 from apps.vps.cost import dia_tong_gb, lay_plan
 from apps.vps.services import dinh_danh, mang, provisioning
+from apps.vps.services import router as bo_dinh_tuyen
 from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
 from apps.vps.tables import VpsGateway, VpsInstance
 
@@ -34918,6 +34979,18 @@ def _tao_may(params: dict, ctx=None) -> dict:
         if not iso and can_dia > img.disk_gb_toi_thieu:
             # Proxmox chỉ nới ra, không thu vào — an toàn khi chạy lại.
             client.nong_dia(may.vmid, _dia_goc(client, may.vmid), f"{can_dia}G")
+
+        # 4b) Đặt chỗ DHCP trên VM router — TRƯỚC khi bật máy.
+        #
+        # Máy khách tự cài Windows, và trình cài đặt Windows không đọc cloud-init.
+        # DHCP là đường DUY NHẤT để máy có mạng mà khách không phải tự gõ địa chỉ.
+        #
+        # Hỏng ở đây thì job **hỏng hẳn**, không đi tiếp: giao cho khách một máy
+        # bật được nhưng không có mạng là giao một cái vỏ, và họ sẽ mất buổi chiều
+        # dò trong Windows một lỗi nằm ở router.
+        _bao(ctx, 75, "dang dat cho dia chi")
+        bo_dinh_tuyen.client_tu_moi_truong().dat_cho(
+            dinh_danh.mac(may.id), ip_noi_bo, ten=f"vps-{may.id[:8]}")
 
         # 5) Bật máy.
         _bao(ctx, 85, "dang khoi dong")
@@ -35287,6 +35360,9 @@ def _xoa_may(params: dict, ctx=None) -> dict:
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)
 
+        _bao(ctx, 78, "dang go cho dia chi")
+        _go_cho_dhcp(may)
+
         _bao(ctx, 80, "dang tra dia chi cong khai")
         _tra_ip_cong_khai(db, may)
         _nha_tai_nguyen(db, may)
@@ -35298,6 +35374,22 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         return {"instance_id": may.id, "vmid": may.vmid}
     finally:
         gen.close()
+
+
+def _go_cho_dhcp(may: VpsInstance) -> None:
+    """Gỡ đặt chỗ DHCP của một máy sắp bị xoá.
+
+    Router không trả lời thì **không chặn việc xoá máy** — máy đã đi rồi, giữ nó
+    lại vì một tệp cấu hình không sửa được là chọn cái tệ hơn.
+
+    Chỗ thừa cũng không kẹt máy sau: `dat_cho` xoá dòng cũ theo **cả MAC lẫn địa
+    chỉ**, nên máy tiếp theo nhận đúng địa chỉ này vẫn đăng ký được.
+    """
+    try:
+        bo_dinh_tuyen.client_tu_moi_truong().go_cho(dinh_danh.mac(may.id))
+    except bo_dinh_tuyen.RouterError as exc:
+        # Bắt HẸP: lỗi lập trình phải nổ lên trên.
+        log.warning("VPS: khong go duoc cho DHCP cua may %s: %s", may.id, exc)
 
 
 def _nha_tai_nguyen(db, may: VpsInstance) -> None:
@@ -35391,8 +35483,54 @@ MANIFEST = AppManifest(
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/nhan.py
+SHA256=441c3482a8555281bfc55caac3851d40f9e176fba077d43cf59ee2a60dfc3bad BYTES=1790 LINES=40
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nhãn người đọc cho các mã trạng thái của máy.
+
+## Vì sao có file riêng thay vì viết thẳng trong template
+
+`trang_thai` là **mã trong CSDL** — `dang_chay`, `bi_treo`, `da_xoa`. Hiện nguyên
+mã đó ra trang là bắt khách đọc thứ được viết cho máy đọc; và một khách nhìn thấy
+`bi_treo` không biết máy còn dữ liệu hay đã mất, không biết phải làm gì tiếp.
+
+Đặt ở đây, không trong template, vì **hai trang cùng hiện trạng thái này**
+(`vps.html` và `vps_chi_tiet.html`). Hai bản sao của cùng một bảng nhãn thì lần
+sửa sau chỉ sửa một bản, và trang còn lại nói một câu khác về cùng một máy.
+
+Nhãn khai bằng `N_()` — **đánh dấu để trích, không dịch ngay**. Gọi `_()` ở đây
+sẽ đóng băng ngôn ngữ theo lần nạp module đầu tiên, tức mọi người dùng đều thấy
+ngôn ngữ của người vào trước nhất. Dịch thật xảy ra lúc hiển thị, trong template.
+"""
+from __future__ import annotations
+
+from platform_core.i18n import N_
+
+#: Mã trong CSDL → câu người đọc.
+TRANG_THAI = {
+    "dang_tao": N_("Đang tạo"),
+    "dang_chay": N_("Đang chạy"),
+    "da_tat": N_("Đã tắt"),
+    "bi_treo": N_("Bị tạm dừng"),
+    "loi": N_("Lỗi"),
+    "da_xoa": N_("Đã xoá"),
+}
+
+
+def trang_thai(ma: str) -> str:
+    """Nhãn cho một mã trạng thái.
+
+    Mã lạ thì **trả về chính nó**, không trả chuỗi rỗng: một ô trống trên trang
+    làm khách tưởng máy không có trạng thái, còn một mã lạ hiện ra ít nhất cho
+    ta thứ để tra khi họ chụp màn hình gửi tới.
+    """
+    ma = str(ma or "").strip()
+    return TRANG_THAI.get(ma, ma)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/os_images.py
-SHA256=1c6287b9b35ffd3607b097058b8ea00d1f9f80fe81da2e0762cb9bfef2f7aa77 BYTES=7557 LINES=164
+SHA256=b77d9898578da0ac9781d7d6fc8e9d2587d5799cdb0a22242d57f8f806aae931 BYTES=7659 LINES=166
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Catalog hệ điều hành: **đĩa cài đặt**, và ràng buộc tối thiểu của từng bản.
 
@@ -35431,6 +35569,8 @@ nghĩa là dựng lại cụm là sửa code. Đọc từ `LTT_VPS_ISO_<ID>` —
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
+
 import os
 from dataclasses import dataclass
 
@@ -35462,7 +35602,7 @@ class OsImage:
 
 OS_IMAGES: tuple[OsImage, ...] = (
     OsImage(
-        id="debian-12", ten="Debian 12 (noi bo)", ho="linux",
+        id="debian-12", ten=N_("Debian 12 (nội bộ)"), ho="linux",
         ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
         khach_thay=False,
         ghi_chu="Ban NOI BO de chung minh duong ong, khong ban (V9). Day la anh "
@@ -35483,10 +35623,10 @@ OS_IMAGES: tuple[OsImage, ...] = (
         id="winsrv2022-core", ten="Windows Server 2022 (Core)", ho="windows",
         ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
-        ghi_chu="Khong co giao dien do hoa. Nhe nhat trong cac ban Windows.",
+        ghi_chu=N_("Không có giao diện đồ hoạ. Nhẹ nhất trong các bản Windows."),
     ),
     OsImage(
-        id="winsrv2022-gui", ten="Windows Server 2022 (co giao dien)", ho="windows",
+        id="winsrv2022-gui", ten=N_("Windows Server 2022 (có giao diện)"), ho="windows",
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
     ),
@@ -35500,11 +35640,11 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="win11", ten="Windows 11", ho="windows",
-        # Microsoft: 4 GB RAM va 64 GB dia la SAN, khong phai khuyen nghi.
+        # Microsoft: 4 GB RAM và 64 GB đĩa là SÀN, không phải khuyến nghị.
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
         khach_thay=True, can_uefi_tpm=True,
-        ghi_chu="Trinh cai dat dung o 'This PC can't run Windows 11' neu thieu "
-                "UEFI/OVMF + vTPM + Secure Boot.",
+        ghi_chu=N_("Trình cài đặt dừng ở 'This PC can't run Windows 11' nếu "
+                   "thiếu UEFI/OVMF + vTPM + Secure Boot."),
     ),
 )
 
@@ -35562,7 +35702,7 @@ def dia_cai_dat(os_id: str, env: dict | None = None) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/routes.py
-SHA256=0571db5d2c125680c39857632751272f7498463d83dce2fd0e4910b600735189 BYTES=22247 LINES=497
+SHA256=4b2a924c99aa26fa1d63b17d68df7f6598222a78e815e03744bc4270ad55228e BYTES=24228 LINES=536
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của app VPS. CHỈ lo HTTP — mọi quy tắc ở `apps/vps/services/`.
 
@@ -35592,7 +35732,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import os_images
+from apps.vps import nhan, os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
@@ -35669,6 +35809,7 @@ def _may_cua_toi(db, user_id: str) -> list:
         x = ip_rieng.get(m.id)
         ket_qua.append({
             "may": m,
+            "trang_thai_nhan": nhan.trang_thai(m.trang_thai),
             "plan": lay_plan(m.plan_id),
             "os": os_images.lay_os(m.os_id),
             "dia_chi": x.dia_chi if x is not None else "",
@@ -35702,6 +35843,8 @@ def trang_chinh(request: Request,
         "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "goi": goi,
+        # Dựng từ CSDL, không viết cứng: xem `provisioning.vung_dang_mo`.
+        "vung": provisioning.vung_dang_mo(db),
         "may_cua_toi": _may_cua_toi(db, user_id),
         "suc_chua": suc_chua,
         "loi_ha_tang": loi_ha_tang,
@@ -35714,7 +35857,10 @@ def tao_may(request: Request,
             csrf_token: str = Form(...),
             plan_id: str = Form(...),
             os_id: str = Form(...),
-            vung: str = Form("port"),
+            # KHÔNG có mặc định viết cứng. Mặc định cũ là `"port"` — một vùng
+            # đã bị bỏ — nên mọi lần gửi thiếu trường này đều hỏng, và hỏng bằng
+            # một câu lỗi nội bộ hiện ra trước mặt khách.
+            vung: str = Form(...),
             dia_them_gb: int = Form(0),
             _g: None = Depends(_cong_co),
             _u: str = Depends(require_login),
@@ -35833,6 +35979,38 @@ def khoi_dong_lai_may(instance_id: str, request: Request,
     return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.khoi_dong_lai)
 
 
+@router.post("/{instance_id}/go-dia-cai")
+def go_dia_cai(instance_id: str, request: Request, csrf_token: str = Form(...),
+               _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+               db=Depends(get_db)):
+    """Khách bấm khi đã cài xong Windows. Xem `dieu_khien.go_dia_cai`."""
+    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.go_dia_cai)
+
+
+@router.get("/{instance_id}/cai-dat", response_class=HTMLResponse)
+def huong_dan_cai_dat(instance_id: str, request: Request,
+                      _g: None = Depends(_cong_co),
+                      _u: str = Depends(require_login), db=Depends(get_db)):
+    """Hướng dẫn khách tự cài Windows trên máy của họ.
+
+    Trang riêng chứ không nhét vào trang máy: khách đọc nó **song song với
+    console** ở tab khác, và trang máy thì đã dài.
+    """
+    may = _may_cua_khach(db, request, instance_id)
+    ip = db.execute(
+        select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
+    img = os_images.lay_os(may.os_id)
+    return templates.TemplateResponse(request, "vps_cai_dat.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST,
+        "may": may,
+        "os": img,
+        "plan": lay_plan(may.plan_id),
+        "dia_chi": ip.dia_chi if ip is not None else "",
+        "cong": img.cong_quen if img is not None else 3389,
+        "csrf_token": issue_csrf_token(request),
+    })
+
+
 @router.post("/{instance_id}/cai-lai")
 def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
                 xac_nhan: str = Form(""), os_id: str = Form(""),
@@ -35901,6 +36079,7 @@ def trang_chi_tiet(instance_id: str, request: Request,
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "plan": lay_plan(may.plan_id),
         "os": os_images.lay_os(may.os_id),
         "dia_chi": ip.dia_chi if ip is not None else "",
@@ -36663,7 +36842,7 @@ def dia_chi_websocket_proxmox(config, vmid: int, ve_proxmox: dict) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/dieu_khien.py
-SHA256=e2538ac065ebabce56bec47f3f3e802a7d035690df4f39a8b0cdb9d2ef497578 BYTES=6382 LINES=125
+SHA256=61e7d0a320387131c86f4c038774fe954e50b67fe47f2b0c67536d9886f64862 BYTES=7671 LINES=150
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Điều khiển máy đang chạy: bật, tắt, khởi động lại — và ai được phép làm.
 
@@ -36790,6 +36969,31 @@ def treo(db: DbSession, may: VpsInstance, client: ProxmoxClient, *,
             provisioning.ghi_su_kien(db, may.id, "treo_khong_tat_duoc",
                                      boi=boi, loi=str(exc)[:200])
     billing.treo(db, may, ly_do)
+
+
+def go_dia_cai(db, may, client, *, boi: str = "khach") -> None:
+    """Gỡ đĩa cài ra khỏi máy và cho nó khởi động thẳng vào đĩa cứng.
+
+    ## Vì sao đây là một nút, không phải một bước tự động
+
+    Nền tảng **không biết** khách đã cài xong Windows hay chưa: máy khách không
+    có guest agent (agent là thiết bị virtio, và virtio treo trên cụm này), nên
+    không có cách nào hỏi bên trong. Đoán theo thời gian là đoán sai với người
+    cài chậm, và đoán sai theo hướng **rút đĩa giữa lúc họ đang cài**.
+
+    ## Vì sao vẫn cần gỡ, thay vì kệ nó
+
+    Đĩa cài nằm nguyên đó thì mỗi lần khởi động máy lại hiện *"Press any key to
+    boot from CD"*. Không bấm thì sau vài giây nó bỏ qua — nhưng **bấm nhầm một
+    phím trong lúc đó là vào lại trình cài đặt từ đầu**, và với người vừa cài
+    xong thì đó là một cú suýt mất cả buổi.
+
+    Chạy lại được: gỡ hai lần không lỗi.
+    """
+    kiem_dieu_khien_duoc(may)
+    client.dat_cau_hinh(may.vmid, delete="ide0", boot="order=sata0")
+    provisioning.ghi_su_kien(db, may.id, "go_dia_cai", boi=boi, vmid=may.vmid)
+    db.commit()
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -37307,7 +37511,7 @@ def cau_hinh_qemu(mang: MangKhach, *, co_cloud_init: bool = True,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/provisioning.py
-SHA256=f8e13340c73b8f6608d5e7879877f1b0a7590f77cb038ed799da0729dc8ecfd5 BYTES=12253 LINES=271
+SHA256=58d486deaaadead6cce815479dddb11a9a786b2861234d5c952924ce7bd26c22 BYTES=13426 LINES=298
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Cấp phát: chọn cổng vào, cấp VMID, cấp cổng NAT, cấp IP.
 
@@ -37331,6 +37535,8 @@ từ chối cho tới khi rollback. `begin_nested()` giới hạn thiệt hại 
 đó, nên vòng lặp chạy tiếp được mà không mất những gì đã làm trước.
 """
 from __future__ import annotations
+
+from platform_core.i18n import N_
 
 import logging
 from typing import Iterable
@@ -37433,6 +37639,31 @@ def suc_chua_hien_tai(db: DbSession, trang_thai_node: dict, kho: list,
 
 
 # ── chọn cổng vào ────────────────────────────────────────────────────────────
+
+#: Nhãn người đọc cho từng vùng. Thiếu nhãn thì hiện mã vùng — xấu nhưng đúng,
+#: còn hơn giấu một vùng đang mở khỏi trang bán.
+NHAN_VUNG = {
+    "sgp": "Singapore",
+    "vn": N_("Việt Nam"),
+}
+
+
+def vung_dang_mo(db: DbSession) -> list[tuple[str, str]]:
+    """Các vùng **thật sự có cổng vào đang nhận máy**, dạng `[(mã, nhãn)]`.
+
+    Trang bán phải dựng bộ chọn vùng từ đây, không được viết cứng danh sách.
+
+    Đã trả giá cho việc viết cứng: sau khi bỏ mô hình chia cổng, trang vẫn còn
+    ba lựa chọn cũ và **mặc định là `port`** — một vùng không còn tồn tại. Khách
+    bấm "Thuê máy này" thì gặp `khong co cong vao nao dang mo o vung 'port'`,
+    một câu không nói được gì với họ. Bộ test không thấy vì nó gọi thẳng hàm với
+    vùng đúng.
+    """
+    ma = sorted({str(g.vung) for g in db.execute(
+        select(VpsGateway).where(VpsGateway.dang_nhan_may_moi.is_(True))
+    ).scalars() if str(g.vung or "").strip()})
+    return [(x, NHAN_VUNG.get(x, x)) for x in ma]
+
 
 def chon_gateway(db: DbSession, vung: str) -> VpsGateway:
     """Cổng vào đang nhận máy mới ở một vùng. Không có → lỗi rõ ràng.
@@ -37909,6 +38140,252 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/router.py
+SHA256=3c6d3570c5815e6182a03a3c10f03d45408046f3fbe979367711f94117b54b45 BYTES=6175 LINES=129
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""VM router (`10.51.0.1`): đặt chỗ DHCP theo MAC cho từng máy khách.
+
+## Vì sao phải có DHCP, khi trước đây không cần
+
+Mô hình cũ nhân bản một template có sẵn ổ cloud-init, nên nền tảng tiêm thẳng
+`ip=10.51.0.50/24,gw=10.51.0.1` vào máy. Từ 2026-08-24 khách **tự cài Windows**,
+và trình cài đặt Windows không đọc cloud-init. Không còn đường nào khác để máy có
+mạng mà khách không phải tự gõ địa chỉ — nên router phải cấp.
+
+Cấp **theo MAC**, không phải cấp bừa trong một dải: nền tảng đã ghi
+`vps_instance.ip_noi_bo` vào CSDL và mở NAT 1:1 tới đúng địa chỉ đó. Nếu DHCP
+phát một địa chỉ khác thì gói từ Internet vẫn tới `10.51.0.50` trong khi máy
+đang mang `10.51.0.73`, và triệu chứng là **máy chạy tốt nhưng không ai vào
+được** — không lỗi nào được ghi ra ở bất cứ đâu.
+
+Chỗ neo cho phép làm việc này là MAC ổn định: nó suy ra từ `instance_id` và
+không đổi qua các lần chạy lại job. Xem `services/dinh_danh.py`.
+
+## Vì sao ghi tệp rồi SIGHUP, không phải sinh lại cấu hình
+
+`dhcp-hostsfile` được dnsmasq đọc lại khi nhận SIGHUP, **không** cần khởi động
+lại. Khởi động lại dnsmasq giữa lúc một khách đang gia hạn thuê bao là cách để
+máy họ rớt mạng vì một khách khác vừa được tạo.
+
+## Cấp phát nằm ở CSDL, không nằm ở đây
+
+`dhcp-range=...,static` nghĩa là dnsmasq **chỉ** cấp cho MAC đã khai; máy lạ cắm
+vào bridge không nhận được gì. Router không tự chọn địa chỉ bao giờ — chọn địa
+chỉ là việc của `provisioning.cap_ip_noi_bo`, và hai nơi cùng chọn là hai máy
+cùng một địa chỉ.
+"""
+from __future__ import annotations
+
+import os
+
+from apps.vps.services.ssh_lenh import (DichDen, SshLenhError, bash_tu_xa,
+                                        kiem_dia_chi, kiem_mac)
+
+#: Tệp dnsmasq đọc lại mỗi lần nhận SIGHUP.
+TEP_DAT_CHO = "/etc/ltt-vps/dhcp-hosts"
+
+
+class RouterError(SshLenhError):
+    """VM router không nhận lệnh, hoặc trả lỗi."""
+
+
+def doc_cau_hinh(env: dict | None = None) -> DichDen:
+    src = os.environ if env is None else env
+    user = str(src.get("LTT_VPS_ROUTER_USER", "ltt")).strip() or "ltt"
+    return DichDen(
+        host=str(src.get("LTT_VPS_ROUTER_HOST", "")).strip(),
+        user=user,
+        khoa=str(src.get("LTT_VPS_ROUTER_SSH_KEY", "")).strip(),
+        nhan="VM router",
+        # KHÔNG chạy cả kịch bản bằng `sudo`. Tài khoản `ltt` ghi được
+        # `dhcp-hosts` vì thư mục thuộc về nó (`cai-dat-router.sh` chown), nên
+        # thứ duy nhất cần quyền root là **một lệnh**: nạp lại dnsmasq. Cho cả
+        # đoạn bash chạy bằng root chỉ để tiện là mở rộng thiệt hại của mọi lỗi
+        # trong đoạn đó, không đổi lại được gì.
+        tien_to="",
+    ).verify("LTT_VPS_ROUTER_HOST")
+
+
+class RouterClient:
+    """`chay` cho phép tiêm hàm giả lúc test — nhận `list[str]`, trả `str`."""
+
+    def __init__(self, dich: DichDen, *, chay=None):
+        self.dich = dich
+        self._chay = chay
+
+    def _bash(self, kich_ban: str) -> str:
+        try:
+            return bash_tu_xa(self.dich, kich_ban, chay=self._chay)
+        except SshLenhError as exc:
+            raise RouterError(str(exc)) from exc
+
+    def con_song(self) -> bool:
+        return self._bash("echo song").strip().endswith("song")
+
+    def danh_sach_dat_cho(self) -> dict[str, str]:
+        """Đọc `{MAC: IP}` từ router. Đây là **sự thật ngoài CSDL**.
+
+        Đối chiếu nó với `vps_instance.ip_noi_bo` là cách duy nhất phát hiện lệch
+        — mà lệch ở đây nghĩa là máy khách chạy tốt nhưng không ai vào được.
+        """
+        ra = self._bash(f"cat {TEP_DAT_CHO} 2>/dev/null || true")
+        ket_qua: dict[str, str] = {}
+        for dong in ra.splitlines():
+            phan = dong.strip().split(",")
+            if len(phan) >= 2 and phan[0]:
+                ket_qua[phan[0].strip().lower()] = phan[1].strip()
+        return ket_qua
+
+    def dat_cho(self, mac: str, ip_noi_bo: str, ten: str = "") -> None:
+        """Buộc một MAC vào một địa chỉ. Chạy lại được.
+
+        Xoá dòng cũ **theo cả MAC lẫn địa chỉ** trước khi ghi dòng mới: bỏ sót vế
+        địa chỉ thì một máy đã xoá còn giữ chỗ, và máy mới nhận đúng địa chỉ đó
+        sẽ không bao giờ được cấp — dnsmasq gặp hai dòng cùng địa chỉ thì giữ
+        dòng đầu.
+        """
+        mac = kiem_mac(mac, loi=RouterError)
+        ip = kiem_dia_chi(ip_noi_bo, loi=RouterError)
+        ten = "".join(c for c in str(ten or "") if c.isalnum() or c in "-")[:60]
+        dong = f"{mac},{ip}" + (f",{ten}" if ten else "")
+        self._bash(
+            "set -e; "
+            f"touch {TEP_DAT_CHO}; "
+            f"grep -v -e '^{mac},' -e ',{ip},' -e ',{ip}$' {TEP_DAT_CHO} "
+            f"  > {TEP_DAT_CHO}.moi || true; "
+            f"echo '{dong}' >> {TEP_DAT_CHO}.moi; "
+            f"mv {TEP_DAT_CHO}.moi {TEP_DAT_CHO}; "
+            # SIGHUP chứ không `restart`: khởi động lại giữa lúc một khách đang
+            # gia hạn là cách làm rớt mạng máy họ vì một khách khác vừa được tạo.
+            "sudo -n systemctl reload dnsmasq")
+
+    def go_cho(self, mac: str) -> None:
+        """Gỡ chỗ. Chạy lại được, và không kêu nếu đã gỡ rồi."""
+        mac = kiem_mac(mac, loi=RouterError)
+        self._bash(
+            f"if [ -f {TEP_DAT_CHO} ]; then "
+            f"  grep -v '^{mac},' {TEP_DAT_CHO} > {TEP_DAT_CHO}.moi || true; "
+            f"  mv {TEP_DAT_CHO}.moi {TEP_DAT_CHO}; "
+            f"  sudo -n systemctl reload dnsmasq; "
+            f"fi; true")
+
+
+def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> RouterClient:
+    return RouterClient(doc_cau_hinh(env), chay=chay)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/ssh_lenh.py
+SHA256=90325006968a2fd9be051b645f76b8aa2de3ea70150299eed819a9a6665165e4 BYTES=4633 LINES=105
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Chạy lệnh trên một máy Linux của hạ tầng qua SSH bằng khoá.
+
+Tách ra khỏi `gateway.py` vì nay có **hai** máy phải điều khiển, và chúng khác
+nhau về vai trò chứ không khác nhau về cách nói chuyện:
+
+* **cổng vào** (Vultr, ngoài Internet) — giữ IP công khai và NAT 1:1;
+* **VM router** (`10.51.0.1`, trong nhà) — cấp DHCP theo MAC và chặn khách sang
+  LAN nhà.
+
+Chép tầng vận chuyển sang máy thứ hai nghĩa là chép cả bốn luật dưới đây, và
+lần sửa sau sẽ chỉ sửa một bản. Ba trong bốn luật là thứ đã trả giá rồi.
+
+## Bốn luật ở đây, và cái giá của việc quên từng cái
+
+1. **`BatchMode=yes`** — thà hỏng ngay còn hơn treo chờ nhập mật khẩu trong một
+   worker không có ai ngồi trước màn hình.
+2. **Có `timeout`** — máy chết thì `subprocess.run` chờ vô hạn, và cái treo đó
+   giữ luôn một tiến trình worker.
+3. **`shlex.quote` một lần, ở đây** — dữ liệu của khách (địa chỉ IP, MAC) đi vào
+   một shell TỪ XA. Ghép chuỗi trần qua hai lớp shell là chỗ AGENTS §5.3 nói rõ
+   cái giá.
+4. **Không dùng dấu huyền trong kịch bản bash truyền đi** — trong heredoc không
+   nháy, dấu huyền là thay-thế-lệnh. Đã làm hỏng `cai-dat-router.sh` một lần:
+   một dòng chú thích biến thành `bind-interfaces: command not found`.
+"""
+from __future__ import annotations
+
+import os
+import shlex
+import subprocess
+from dataclasses import dataclass
+
+TIMEOUT_GIAY = 60
+
+
+class SshLenhError(RuntimeError):
+    """Không chạy được lệnh trên máy từ xa, hoặc máy đó trả mã lỗi."""
+
+
+@dataclass(frozen=True)
+class DichDen:
+    host: str
+    user: str = "root"
+    khoa: str = ""
+    #: Tên hiển thị trong thông báo lỗi — "cong vao" hay "VM router".
+    nhan: str = "may"
+    #: Tiền tố chạy lệnh, vd `sudo -n `. Rỗng nếu đăng nhập thẳng bằng root.
+    tien_to: str = ""
+
+    def verify(self, khoa_env: str = "") -> "DichDen":
+        if not self.host:
+            raise SshLenhError(f"{self.nhan}: thieu host"
+                               + (f" ({khoa_env})" if khoa_env else ""))
+        if not self.khoa:
+            raise SshLenhError(f"{self.nhan}: thieu duong dan khoa SSH")
+        if not os.path.exists(self.khoa):
+            raise SshLenhError(f"{self.nhan}: khong thay file khoa SSH: {self.khoa}")
+        return self
+
+
+def chay_ssh(dich: DichDen, lenh: list[str], *,
+             timeout: int = TIMEOUT_GIAY) -> str:
+    ssh = ["ssh", "-i", dich.khoa, "-o", "BatchMode=yes",
+           "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=accept-new",
+           "-o", "ConnectTimeout=10",
+           f"{dich.user}@{dich.host}", " ".join(lenh)]
+    try:
+        r = subprocess.run(ssh, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        raise SshLenhError(
+            f"{dich.nhan} {dich.host} khong tra loi trong {timeout}s") from exc
+    if r.returncode != 0:
+        raise SshLenhError(f"{dich.nhan} tra ma {r.returncode}: "
+                           f"{(r.stderr or r.stdout).strip()[:300]}")
+    return r.stdout
+
+
+def bash_tu_xa(dich: DichDen, kich_ban: str, *, chay=None,
+               timeout: int = TIMEOUT_GIAY) -> str:
+    """Chạy một đoạn bash. `chay` cho phép tiêm hàm giả lúc test."""
+    goi = chay or (lambda lenh: chay_ssh(dich, lenh, timeout=timeout))
+    return goi([f"{dich.tien_to}bash", "-c", shlex.quote(kich_ban)])
+
+
+def kiem_dia_chi(gt: str, *, loi=SshLenhError) -> str:
+    """Chặn mọi thứ không phải IPv4 **trước khi** nó chạm shell từ xa."""
+    phan = str(gt or "").split(".")
+    if len(phan) != 4 or not all(p.isdigit() and 0 <= int(p) <= 255 for p in phan):
+        raise loi(f"khong phai dia chi IPv4: {gt!r}")
+    return str(gt)
+
+
+def kiem_mac(gt: str, *, loi=SshLenhError) -> str:
+    """Chuẩn hoá MAC về `aa:bb:cc:dd:ee:ff` và từ chối mọi thứ khác.
+
+    Không nới sang dấu `-` hay không dấu: dnsmasq chỉ đọc dạng hai chấm, và một
+    MAC sai dạng lọt vào `dhcp-hosts` làm dnsmasq **bỏ qua cả tệp** — máy khách
+    không nhận được địa chỉ nào và không có lỗi nào chỉ vào đây.
+    """
+    x = str(gt or "").strip().lower()
+    phan = x.split(":")
+    if len(phan) != 6 or not all(
+            len(p) == 2 and all(c in "0123456789abcdef" for c in p) for p in phan):
+        raise loi(f"khong phai dia chi MAC: {gt!r}")
+    return x
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/vultr.py
 SHA256=d449367856a6a6670f5182c0c96217eddd9bdab9dcdf90ea8dfafbcdab60c9c1 BYTES=9780 LINES=205
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -38121,7 +38598,7 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/tables.py
-SHA256=85f0c443c8066d63aa86f9e1a7d1e1de5443422d688c24cd0e6afb6d9b149fde BYTES=16516 LINES=288
+SHA256=908b28c78025c4602202fcb50030924ce113a13fbd2eab01d903157921efcac0 BYTES=16988 LINES=293
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
@@ -38380,7 +38857,12 @@ class VpsConsoleVe(Base):
     #: Dòng này bị **xoá ngay khi tiêu vé**, nên vé Proxmox nằm trong CSDL nhiều
     #: nhất là %(giay)s giây.
     cong: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    pve_ve: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    #: Vé `vncproxy` của Proxmox. **`Text`, không phải `String(255)`.**
+    #: Vé thật là một chứng chỉ có chữ ký và dài hơn 255 ký tự — đặt trần độ dài
+    #: thì Postgres từ chối cả câu INSERT và console trả **500** cho mọi máy.
+    #: SQLite không cưỡng chế độ dài `VARCHAR`, nên bộ test đi qua sạch sẽ trong
+    #: khi trang thật hỏng hoàn toàn; chỉ mở trình duyệt mới thấy (quy tắc 5).
+    pve_ve: Mapped[str] = mapped_column(Text, default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False, index=True)
     da_dung_luc: Mapped[datetime | None] = mapped_column(
@@ -88228,7 +88710,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=ef032e1a7971024295dc3242e4420a08ea5e3119542ba3b87aca7e2bc7ad6d67 BYTES=204027 LINES=2942
+SHA256=90e5a8b779e53dcc50411e5227dbeb354ea53bb83a20b9ab4e6ae9252f9975e0 BYTES=208589 LINES=3001
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -91045,15 +91527,74 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       Ba lỗi tìm được vẫn có giá trị: **card mạng thứ hai của template** (job nay gỡ
       mọi `netN` thừa), **`vga: serial0`**, và **sàn đĩa của template**.
 
-- [ ] **G5 (mới) — khách tự cài Windows.**
-      ① `os_images` mang **volid ISO** thay cho VMID template · ② `jobs.py` **tạo máy
-      trống + gắn ISO** thay cho `clone` · ③ **DHCP trên VM router** cấp địa chỉ theo
-      MAC — bắt buộc, vì trình cài đặt Windows không đọc được cloud-init nên không
-      còn đường nào khác để máy có mạng mà khách không phải tự gõ · ④ trang **hướng
-      dẫn cài đặt** cho từng phiên bản · ⑤ chuyển kho ISO sang `vmdata`.
-      *Xong khi:* khách bấm mua → mở console → cài xong Windows bằng tài khoản của
-      chính họ → **RDP vào được từ Internet qua IP riêng**, nền tảng không hề biết
-      mật khẩu.
+- [x] **G5 (mới) — khách tự cài Windows.** ✅ **XONG 2026-08-24, đo thật đầu-tới-cuối.**
+
+      ① `os_images` mang **volid ISO** (`LTT_VPS_ISO_<ID>`) · ② `jobs.py` **tạo máy
+      trống + gắn ISO** · ③ **DHCP theo MAC** trên VM router (`dnsmasq`,
+      `services/router.py`) · ④ trang **hướng dẫn cài đặt** `/vps/<id>/cai-dat` ·
+      ⑤ ISO — xem mục "chưa xong" ở cuối.
+
+      **Chuỗi đã chạy thật, một lần, không sửa tay:** job tạo máy **17 giây** →
+      máy boot **thẳng vào trình cài đặt Windows Server 2022** (không kẹt ở "Press
+      any key") → console trong trình duyệt mở được, không lỗi JS → DHCP cấp
+      **đúng** địa chỉ đã đặt chỗ (`DISCOVER → OFFER 10.51.0.99 → REQUEST → ACK`)
+      → máy khách ra Internet được, tải 1 MB trọn vẹn ở 1,2 MB/s → job xoá **24
+      giây**, trả sạch cả ba thứ (chỗ DHCP, dòng `vps_ip`, IP bên Vultr).
+
+      ⚠️ `/reserved-ips` của Vultr **trễ vài chục giây** sau `DELETE`. Kiểm ngay
+      sau khi xoá sẽ thấy IP còn đó và tưởng rò tiền — kiểm lại sau một phút.
+
+      **Năm lỗi tìm được, tất cả chỉ lộ ra khi chạy thật:**
+
+      1. 🔴 **Console chưa từng chạy được lần nào.** Cột `vps_console_ve.pve_ve`
+         là `String(255)`; vé `vncproxy` thật dài hơn thế, nên Postgres từ chối
+         INSERT và trang trả **500 cho mọi máy**. `test_282` xanh vì nó chạy trên
+         **SQLite, thứ không cưỡng chế độ dài `VARCHAR`**. Migration
+         `5b9e2c47a103`; nay có test chốt kiểu cột, không chốt bằng một chuỗi mẫu.
+      2. 🔴 **VM router chưa từng có tường lửa** — `nft` chưa được cài. Việc chặn
+         khách sang LAN nhà chỉ là **hệ quả phụ của bảng định tuyến 100**, và nó
+         mất hiệu lực ngay khi `wg-quick@wg0` hỏng lúc khởi động: không có
+         `ip rule` ⇒ gói của khách dùng bảng chính ⇒ `192.168.2.0/24 dev eth0` ⇒
+         **máy khách nằm thẳng trong LAN nhà, cùng mạng với máy A và Proxmox**.
+         Nay có lớp chặn thật (`tools/vps_gateway/cai-dat-router.sh`), và bộ đếm
+         `nft` đo được **22 gói bị chặn** trong lượt thử — chặn thật, không phải
+         may nhờ định tuyến. `mang.py` trước đây **khẳng định** luật này tồn tại.
+      3. 🔴 **Trang bán mặc định chọn một vùng đã bị xoá.** Bộ chọn "Vùng đặt máy"
+         viết cứng ba lựa chọn của mô hình chia cổng cũ, mặc định `port`. Khách
+         bấm "Thuê máy này" là gặp `khong co cong vao nao dang mo o vung 'port'`.
+         Nay dựng từ CSDL (`provisioning.vung_dang_mo`); một vùng thì không hiện
+         bộ chọn nữa.
+      4. **`vps_gateway` rỗng** — chưa ai khai cổng vào, nên app từ chối mọi lượt
+         mua. Thêm `tools/vps_them_cong_vao.py` (chạy lại được, có `--xem`).
+      5. **"Còn trống: 44.5 GB RAM · GB đĩa"** — template gọi `suc_chua.dia_gb_con`,
+         thuộc tính **không tồn tại**, và Jinja in thuộc tính không tồn tại thành
+         **chuỗi rỗng** thay vì báo lỗi. Nay có test đọc template và đối chiếu
+         từng `<biến>.<thuộc tính>` với lớp thật.
+
+      **Thêm một nút mà chỉ việc chạy thật mới cho thấy là bắt buộc:** đĩa cài nằm
+      lại trong máy sau khi cài xong, nên mỗi lần khởi động lại hiện *"Press any
+      key to boot from CD"* — **bấm nhầm một phím là vào lại trình cài đặt từ
+      đầu**. `dieu_khien.go_dia_cai` + nút "Tôi đã cài xong". Không tự động được:
+      máy khách không có guest agent (agent là thiết bị virtio), nên nền tảng
+      **không có cách nào biết** khách đã cài xong hay chưa, và đoán theo thời
+      gian là rút đĩa giữa lúc họ đang cài.
+
+      *Bằng chứng:* `tests/test_286_vps_dhcp_router.py` (29) + phần bổ sung ở
+      `test_280` (4) và `test_252` (3). Toàn bộ VPS **166 xanh**, `gate --quick`
+      **PASS**.
+
+      ⚠️ **Còn nợ của G5 — ⑤ kho ISO, và nó KHÔNG làm được như đã viết.** Kế hoạch
+      cũ ghi "chuyển kho ISO sang `vmdata`", nhưng `vmdata` là **lvmthin** và
+      lvmthin **chỉ chứa được `images`/`rootdir`, không chứa ISO**. `local` (kho
+      `dir` duy nhất) còn **2,2 GiB / 26,1 GiB**, đủ cho ba ISO đang có nhưng
+      **không đủ thêm Windows 11**. Muốn thêm thì phải cắt một LV mỏng từ pool,
+      `mkfs.ext4`, mount, rồi khai thành kho `dir` — không phải đổi một dòng cấu
+      hình. Ba ISO hiện dùng được: Server 2022 (phục vụ cả bản Core lẫn bản có
+      giao diện — khách chọn trong trình cài đặt) và Windows 10.
+
+      ⚠️ **Tài khoản thử `vps-thu@lttstudios.com` đang sống trong CSDL thật** — tạo
+      để kiểm giao diện bằng trình duyệt (không mượn tài khoản khách nào). **Phải
+      xoá trước G10.**
 
 - [x] **G5b — dọn sạch template + danh tính phần cứng riêng cho từng máy.**
       ✅ **XONG 2026-08-24.**
@@ -124357,7 +124898,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=4b6a572c801fa9533b7a9d7e8457ae64ef2ea55674df3bcea813aefd4cec168e BYTES=24273 LINES=552
+SHA256=b2344f7ea1c7a9f92e7aa15034547908f9c3ad8031c6047092d107b02b507a1e BYTES=27631 LINES=628
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -124864,6 +125405,82 @@ def claude_code_settings(base_url: str) -> str:
             "ANTHROPIC_DEFAULT_HAIKU_MODEL": CLI_MODEL,
         }
     })
+
+
+def vscode_claude_settings(base_url: str) -> str:
+    """Settings the **Claude Code VS Code extension** needs — not the same as the CLI.
+
+    Measured on a clean VM, 2026-08-24: after configuring the CLI correctly, the
+    extension still showed a **Sign In** screen. It does **not** pick up
+    `ANTHROPIC_BASE_URL` from the OS the way the CLI does — a known regression
+    since extension v2.0.0 (anthropics/claude-code issues #9010, #38430).
+
+    The extension ships two settings of its own to work around it. Both names
+    were read from the installed extension's ``package.json``, not from a blog
+    post: an article we checked used ``claude-code.*`` and the real prefix is
+    ``claudeCode.*``.
+
+    ``claudeCode.environmentVariables`` is declared ``scope: "machine"``, so it
+    only takes effect in **User** settings. Put it in a workspace
+    ``.vscode/settings.json`` and nothing happens, with no error.
+    """
+    return (
+        "{\n"
+        '  "claudeCode.disableLoginPrompt": true,\n'
+        '  "claudeCode.environmentVariables": [\n'
+        '    {"name": "ANTHROPIC_BASE_URL", "value": "' + base_url + '/api"},\n'
+        f'    {{"name": "ANTHROPIC_MODEL", "value": "{CLI_MODEL}"}},\n'
+        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}}\n'
+        "  ]\n"
+        "}"
+    )
+
+
+def vscode_codex_config(base_url: str) -> str:
+    """Config the **Codex VS Code extension** needs — root level, no profile.
+
+    The extension has no provider settings at all (checked in its
+    ``package.json``); it drives the Codex CLI and therefore reads
+    ``~/.codex/config.toml``. But it has no way to pass ``--profile``.
+
+    And a profile cannot be selected from the file either. Codex 0.145 rejects it
+    outright::
+
+        Error: legacy `profile = "ltt"` config is no longer supported;
+               use `--profile ltt` with `ltt.config.toml` instead
+
+    So for the extension the provider has to sit at the **root** of
+    ``config.toml``. The trade-off is real and must be stated: this makes LTT the
+    **default** for ``codex`` on the command line too, whereas the profile form
+    leaves the customer's default untouched.
+    """
+    return (
+        f'# Root level - REPLACES your default model for `codex` too.\n'
+        f'# Use the profile form instead if you only want the CLI.\n'
+        f'model = "{CLI_MODEL}"\n'
+        f'model_provider = "ltt"\n'
+        f'model_reasoning_effort = "low"\n'
+        f'model_context_window = 65536\n'
+        f'\n'
+        f'[model_providers.ltt]\n'
+        f'name = "LTT Studios"\n'
+        f'base_url = "{base_url}/api/v1"\n'
+        f'env_key = "{ENV_API_KEY}"\n'
+        f'wire_api = "responses"\n'
+        f'stream_idle_timeout_ms = 600000\n'
+    )
+
+
+#: Cai bay lon nhat cua phan tien ich, viet ra de khach khoi tu phat hien.
+VSCODE_BAY = (
+    "The extensions do NOT read OS environment variables the way the CLIs do. "
+    "Configuring the CLI is not enough - see the two blocks above.",
+    "Restart VS Code completely after any change. `setx` only affects NEW "
+    "processes, and on Windows an already-running Explorer hands the old "
+    "environment to everything you launch from the Start menu.",
+    "Put the Claude settings in USER settings.json, not a workspace one: the "
+    "setting is scope:machine and is silently ignored elsewhere.",
+)
 
 
 def claude_desktop_steps(base_url: str) -> tuple:
@@ -146983,7 +147600,7 @@ def _user_hien_tai(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=7154d9737a52ff1124064e151f5a61fb757c4a26f49f2523be5f206e002ce938 BYTES=55272 LINES=1186
+SHA256=ff4ad38a0bf922c8a1c53755d5926bb1b45e169722ccc3c71d9f98e0f6ffcc4a BYTES=54242 LINES=1189
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -147883,6 +148500,9 @@ def developer_cli(request: Request, user=Depends(require_account),
         claude_env=examples.claude_code_env(goc),
         claude_settings=examples.claude_code_settings(goc),
         desktop=examples.claude_desktop_steps(goc),
+        vscode_claude=examples.vscode_claude_settings(goc),
+        vscode_codex=examples.vscode_codex_config(goc),
+        vscode_bay=examples.VSCODE_BAY,
         bay=examples.CLI_BAY,
         model=examples.CLI_MODEL,
         env_key=examples.ENV_API_KEY)
@@ -155661,7 +156281,7 @@ SHA256=3e6b9072a493e0b418b3f06ec156788ba2332435e26b398f836e1053cafeab59 BYTES=29
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/dev_cli.html
-SHA256=683d375744bfea3d3eabcf4ba24dda725384f3852a9f2371e386cb33414eb670 BYTES=3073 LINES=64
+SHA256=435763baa8e4a4e743016ccdf909066246fdd8dc055eed82ecf593975fb41620 BYTES=4335 LINES=82
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "developers_base.html" %}
 {% block section %}
@@ -155704,6 +156324,24 @@ SHA256=683d375744bfea3d3eabcf4ba24dda725384f3852a9f2371e386cb33414eb670 BYTES=30
   <pre style="overflow-x:auto;"><code>{{ claude_env }}</code></pre>
   <p class="muted">{{ _("Hoặc bền hơn, trong") }} <code>~/.claude/settings.json</code>:</p>
   <pre style="overflow-x:auto;"><code>{{ claude_settings }}</code></pre>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Tiện ích VS Code — cấu hình RIÊNG, không dùng chung với CLI") }}</h2>
+  <p class="muted">{{ _("Cấu hình xong cho CLI là CHƯA đủ. Đo thật trên máy sạch 24/08: tiện ích Claude Code vẫn hiện màn hình đăng nhập, vì nó không đọc biến môi trường của hệ điều hành như CLI.") }}</p>
+
+  <h3>1. Claude Code — <code>settings.json</code> {{ _("cấp NGƯỜI DÙNG") }}</h3>
+  <p class="muted">{{ _("Ctrl+Shift+P → Preferences: Open User Settings (JSON). Đặt ở workspace thì KHÔNG có tác dụng và cũng không báo lỗi.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ vscode_claude }}</code></pre>
+  <p class="muted">{{ _("Khoá vẫn đặt ở biến môi trường") }} <code>ANTHROPIC_AUTH_TOKEN</code>{{ _(", không đặt vào tệp này.") }}</p>
+
+  <h3>2. Codex — <code>~/.codex/config.toml</code></h3>
+  <p class="muted">{{ _("Tiện ích Codex không có cách truyền --profile, nên cấu hình phải nằm ở GỐC tệp. Đánh đổi: nó thay luôn mặc định của lệnh codex.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ vscode_codex }}</code></pre>
+
+  <ul class="muted" style="margin-top:12px;">
+    {% for b in vscode_bay %}<li>{{ b }}</li>{% endfor %}
+  </ul>
 </div>
 
 <div class="card">
@@ -160102,7 +160740,7 @@ SHA256=25f5e96cf67ec4f1a9ed2b35573e7edf8ef3d986a9c347da6235c9e03e950481 BYTES=80
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps.html
-SHA256=e68d78e3f7814b16535fbcdb0f8ecd3970d62f91fef188c7ea3fd34435200c2f BYTES=7151 LINES=134
+SHA256=d5f45eaef16079aa88a30e6ea6a0eeb147eab545acc264bcaa8853e00c7252ce BYTES=7729 LINES=144
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
@@ -160159,7 +160797,7 @@ SHA256=e68d78e3f7814b16535fbcdb0f8ecd3970d62f91fef188c7ea3fd34435200c2f BYTES=71
             {% else %}<span class="muted">{{ _("đang chuẩn bị") }}</span>{% endif %}
           </td>
           <td>
-            {{ m.may.trang_thai }}
+            {{ _(m.trang_thai_nhan) }}
             {% if m.may.ly_do %}<br><span class="muted">{{ m.may.ly_do }}</span>{% endif %}
           </td>
           <td>
@@ -160210,18 +160848,25 @@ SHA256=e68d78e3f7814b16535fbcdb0f8ecd3970d62f91fef188c7ea3fd34435200c2f BYTES=71
           <div class="field" style="margin:0;">
             <label for="os-{{ g.plan.id }}">{{ _("Hệ điều hành") }}</label>
             <select id="os-{{ g.plan.id }}" name="os_id">
-              {% for o in g.os %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+              {% for o in g.os %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
             </select>
           </div>
+          {# Bộ chọn vùng dựng từ CSDL. Viết cứng danh sách ở đây đã một lần
+             để lại lựa chọn "dùng cổng chung" sau khi mô hình đó bị bỏ, và mặc
+             định của form trỏ vào chính lựa chọn đã chết. #}
+          {% if vung|length > 1 %}
           <div class="field" style="margin:0;">
             <label for="vung-{{ g.plan.id }}">{{ _("Vùng đặt máy") }}</label>
             <select id="vung-{{ g.plan.id }}" name="vung">
-              <option value="port">{{ _("Việt Nam — nhanh nhất, dùng cổng chung") }}</option>
-              <option value="vn">{{ _("Việt Nam — có địa chỉ riêng") }}</option>
-              <option value="sgp">{{ _("Singapore — địa chỉ nước ngoài, chậm hơn") }}</option>
+              {% for ma, nhan in vung %}<option value="{{ ma }}">{{ _(nhan) }}</option>{% endfor %}
             </select>
-            <span class="hint">{{ _("Nếu bạn ở Việt Nam và chỉ cần máy chạy nhanh, hãy chọn Việt Nam. Singapore chỉ hợp khi bạn cần một địa chỉ nước ngoài — đường truyền sẽ trễ hơn rõ rệt.") }}</span>
           </div>
+          {% elif vung %}
+          {# Một vùng duy nhất thì bộ chọn chỉ là một ô bắt bấm mà không cho
+             chọn gì. Nói thẳng nó ở đâu, và gửi giá trị bằng trường ẩn. #}
+          <input type="hidden" name="vung" value="{{ vung[0][0] }}">
+          <span class="hint">{{ _("Địa chỉ IP của máy đặt tại %(noi)s.", noi=vung[0][1]) }}</span>
+          {% endif %}
           <button type="submit" style="background:{{ app.accent }};">{{ _("Thuê máy này") }}</button>
         </div>
       </form>
@@ -160232,8 +160877,11 @@ SHA256=e68d78e3f7814b16535fbcdb0f8ecd3970d62f91fef188c7ea3fd34435200c2f BYTES=71
 
   {% if suc_chua %}
   <p class="muted" style="font-size:.9em;">
+    {# `dia_gb_con_that`, KHÔNG phải `dia_gb_con` — thuộc tính sau không tồn tại,
+       và Jinja in thuộc tính không tồn tại thành CHUỖI RỖNG thay vì báo lỗi. Câu
+       này từng hiện ra trước mặt khách là "44.5 GB RAM · GB đĩa". #}
     {{ _("Còn trống") }}: {{ (suc_chua.ram_mb_con / 1024) | round(1) }} GB RAM
-    · {{ suc_chua.dia_gb_con }} GB {{ _("đĩa") }}
+    · {{ suc_chua.dia_gb_con_that }} GB {{ _("đĩa") }}
   </p>
   {% endif %}
 
@@ -160241,8 +160889,130 @@ SHA256=e68d78e3f7814b16535fbcdb0f8ecd3970d62f91fef188c7ea3fd34435200c2f BYTES=71
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps_cai_dat.html
+SHA256=9719a2a1ef6708a5fcfe5e052e73a658294bb8fe31ef8058ccc7694f0a679e1a BYTES=6085 LINES=116
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Cài Windows") }} — {{ may.id[:8] }} — {{ app.display_name }}{% endblock %}
+{% block topbar_title %}<strong>💿 {{ _("Cài Windows") }} — {{ may.id[:8] }}</strong>{% endblock %}
+{% block content %}
+
+  <p style="margin:0 0 12px;">
+    <a href="{{ app.route_prefix }}/{{ may.id }}">&larr; {{ _("Về trang máy") }}</a>
+  </p>
+
+  {# Vì sao trang này tồn tại, nói thẳng ở dòng đầu: khách mua VPS ở nơi khác
+     quen với việc nhận sẵn mật khẩu, nên nếu không giải thích thì họ sẽ đi tìm
+     một mật khẩu không tồn tại và kết luận là dịch vụ hỏng. #}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <p style="margin:0;">
+      {{ _("Máy của bạn là một máy trống đã gắn sẵn đĩa cài Windows. Bạn tự chạy trình cài đặt và tự đặt tài khoản của mình — chúng tôi không biết mật khẩu của bạn và không đặt lại được nó.") }}
+    </p>
+    <p class="muted" style="margin:8px 0 0;">
+      {{ _("Cài xong mất khoảng 15–25 phút, phần lớn là ngồi chờ.") }}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Trước khi bắt đầu") }}</h2>
+    <table class="tbl" style="width:100%;">
+      <tr>
+        <th style="width:200px;">{{ _("Hệ điều hành") }}</th>
+        <td>{{ _(os.ten) if os else may.os_id }}</td>
+      </tr>
+      <tr>
+        <th>{{ _("Đĩa của máy") }}</th>
+        <td>{{ plan.disk_gb if plan else "" }} GB</td>
+      </tr>
+      <tr>
+        <th>{{ _("Địa chỉ để vào sau khi cài") }}</th>
+        <td>
+          {% if dia_chi %}<code>{{ dia_chi }}:{{ cong }}</code>
+          {% else %}<span class="muted">{{ _("đang chuẩn bị…") }}</span>{% endif %}
+        </td>
+      </tr>
+    </table>
+    <p style="margin:12px 0 0;">
+      <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/console" target="_blank"
+         style="background:{{ app.accent }};">{{ _("Mở console ở tab mới") }}</a>
+    </p>
+    <p class="muted" style="margin:8px 0 0;">
+      {{ _("Mở console ở tab khác rồi để trang này bên cạnh mà làm theo.") }}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Các bước") }}</h2>
+    <ol style="line-height:1.7;">
+      <li>{{ _("Mở console. Máy đã sẵn ở màn hình đầu tiên của trình cài đặt Windows — bạn không phải bấm gì để vào đó.") }}</li>
+      <li>{{ _("Chọn ngôn ngữ, bàn phím → Next → Install now.") }}</li>
+      {% if os and os.id.startswith("winsrv") %}
+      <li>
+        {{ _("Chọn phiên bản:") }}
+        <ul>
+          <li><strong>Desktop Experience</strong> — {{ _("có giao diện đồ hoạ như Windows thường.") }}</li>
+          <li><strong>{{ _("bản không ghi gì thêm") }}</strong> — {{ _("chỉ có dòng lệnh, nhẹ hơn nhiều.") }}</li>
+        </ul>
+        <span class="muted">{{ _("Chọn nhầm thì phải cài lại, nên đọc kỹ dòng này.") }}</span>
+      </li>
+      {% endif %}
+      <li>{{ _("Chấp nhận điều khoản → chọn Custom: Install Windows only (advanced).") }}</li>
+      <li>
+        {{ _("Chọn ổ đĩa duy nhất trong danh sách (Drive 0) → Next.") }}
+        <br>
+        <span class="muted">{{ _("Bạn KHÔNG cần nạp thêm driver nào. Máy dùng ổ SATA và card mạng e1000, Windows nhận sẵn cả hai.") }}</span>
+      </li>
+      <li>
+        {{ _("Chờ cài. Máy sẽ tự khởi động lại vài lần.") }}
+        <br>
+        {# Đây là chỗ dễ mất công nhất, và nó không tự hiện ra — phải nói trước. #}
+        <strong>{{ _("Khi thấy dòng “Press any key to boot from CD or DVD…”, đừng bấm gì cả.") }}</strong>
+        <span class="muted">{{ _("Bấm vào đó là quay lại đầu trình cài đặt. Không bấm thì sau vài giây máy tự đi tiếp.") }}</span>
+      </li>
+      <li>{{ _("Đặt mật khẩu cho tài khoản Administrator. Đây là mật khẩu của riêng bạn — hãy lưu lại ngay, chúng tôi không giữ bản nào và không đặt lại được.") }}</li>
+      <li>
+        {{ _("Bật Remote Desktop để vào máy từ nhà. Mở PowerShell trong máy và dán:") }}
+        <pre style="white-space:pre-wrap;"><code>Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'</code></pre>
+        <span class="muted">{{ _("Remote Desktop mặc định TẮT trong Windows. Không bật thì bạn chỉ vào được bằng console.") }}</span>
+      </li>
+      <li>
+        {{ _("Quay lại trang này và bấm nút bên dưới để gỡ đĩa cài ra.") }}
+      </li>
+      <li>
+        {% if dia_chi %}
+        {{ _("Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới") }}
+        <code>{{ dia_chi }}</code>.
+        {% else %}
+        {{ _("Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới địa chỉ của máy.") }}
+        {% endif %}
+      </li>
+    </ol>
+  </div>
+
+  {# Nút gỡ đĩa: xem `dieu_khien.go_dia_cai` để biết vì sao đây là một nút do
+     khách bấm chứ không phải một bước tự động. #}
+  <div class="card">
+    <h2>{{ _("Đã cài xong") }}</h2>
+    <p style="margin:0 0 10px;">
+      {{ _("Gỡ đĩa cài ra khỏi máy, và cho máy khởi động thẳng vào Windows. Bấm nút này SAU KHI đã cài xong.") }}
+    </p>
+    <p class="muted" style="margin:0 0 10px;">
+      {{ _("Cần cài lại sau này thì dùng nút “Cài lại máy” ở trang máy — nó gắn đĩa cài trở lại.") }}
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/go-dia-cai">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit">{{ _("Tôi đã cài xong — gỡ đĩa cài") }}</button>
+    </form>
+  </div>
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps_chi_tiet.html
-SHA256=b9646bffd1eaadeea1bfdfea9f3165c83453ac7794f641531b566c8b469d2cd0 BYTES=7536 LINES=143
+SHA256=fbe8dca7d1ed3c2ef1c9266da6628ed246e6423f912f3ca92a267c145a1f3e27 BYTES=8299 LINES=154
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ may.ten or may.id[:8] }} — {{ app.display_name }}{% endblock %}
@@ -160274,14 +161044,14 @@ SHA256=b9646bffd1eaadeea1bfdfea9f3165c83453ac7794f641531b566c8b469d2cd0 BYTES=75
         </td>
       </tr>
       <tr><th>{{ _("Trạng thái") }}</th>
-        <td>{{ may.trang_thai }}
+        <td>{{ _(trang_thai_nhan) }}
           {% if may.ly_do %}<br><span class="muted">{{ may.ly_do }}</span>{% endif %}</td></tr>
       <tr><th>{{ _("Cấu hình") }}</th>
         <td>{% if plan %}{{ _(plan.ten) }} — {{ plan.vcpu }} vCPU ·
           {{ (plan.ram_mb / 1024) | round | int }} GB RAM · {{ plan.disk_gb }} GB
           {% else %}{{ may.plan_id }}{% endif %}</td></tr>
       <tr><th>{{ _("Hệ điều hành") }}</th>
-        <td>{{ os.ten if os else may.os_id }}</td></tr>
+        <td>{{ _(os.ten) if os else may.os_id }}</td></tr>
       <tr><th>{{ _("Trả tới") }}</th>
         <td>
           {% if may.paid_until %}{{ may.paid_until.strftime('%d/%m/%Y') }}
@@ -160315,6 +161085,17 @@ SHA256=b9646bffd1eaadeea1bfdfea9f3165c83453ac7794f641531b566c8b469d2cd0 BYTES=75
         </form>
         {% endfor %}
       </div>
+      {# Hướng dẫn cài đặt đứng TRƯỚC console: khách vừa mua xong thì việc đầu
+         tiên của họ là cài Windows, và bấm thẳng vào console mà không đọc gì là
+         cách để họ ngồi trước một trình cài đặt tiếng Anh mà không biết bước sau
+         là gì. #}
+      <p style="margin:12px 0 0;">
+        <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/cai-dat"
+           style="background:{{ app.accent }};">{{ _("Hướng dẫn cài Windows") }}</a>
+        <span class="muted" style="margin-left:8px;">
+          {{ _("Máy giao cho bạn là máy trống có đĩa cài — bạn tự đặt tài khoản và mật khẩu của mình.") }}
+        </span>
+      </p>
       <p style="margin:12px 0 0;">
         <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Mở console") }}</a>
         <span class="muted" style="margin-left:8px;">
@@ -160367,7 +161148,7 @@ SHA256=b9646bffd1eaadeea1bfdfea9f3165c83453ac7794f641531b566c8b469d2cd0 BYTES=75
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <select name="os_id" class="inp">
         <option value="">{{ _("Giữ nguyên hệ điều hành") }}</option>
-        {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+        {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
       </select>
       <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
       <button class="btn" type="submit">{{ _("Cài lại") }}</button>
@@ -218634,7 +219415,7 @@ def test_bang_gia_noi_ro_reasoning_va_cache():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_252_vps_giao_dien.py
-SHA256=0bba1f8bc4dbafbe94a28ccb287c96ba0aa4b7c3631d69fd24316505c279e61f BYTES=15315 LINES=380
+SHA256=23302e60dc7075330880c2da752e59fef47a8b8277e2d6331449260febf3c1f8 BYTES=17665 LINES=431
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bề mặt HTTP của app VPS: cái cờ phải thật sự đóng cửa, và trang phải nói thật.
 
@@ -219016,6 +219797,57 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
             next(gen)
         except StopIteration:
             pass
+
+
+# ── Thuộc tính template phải CÓ THẬT ────────────────────────────────────────
+#
+# Jinja in một thuộc tính không tồn tại thành **chuỗi rỗng**, không báo lỗi. Nên
+# lỗi loại này không hiện ra dưới dạng lỗi mà dưới dạng một câu cụt trên trang —
+# và nó sống tới khi có người đọc kỹ. Đã dính thật 24/08: template gọi
+# `suc_chua.dia_gb_con` (không có) nên khách thấy "44.5 GB RAM · GB đĩa".
+#
+# Test này không render trang; nó đọc template như văn bản và đối chiếu từng
+# `<biến>.<thuộc tính>` với lớp thật. Rẻ, và bắt được cả những nhánh mà một lần
+# render không đi qua.
+
+import re as _re
+from pathlib import Path as _Path
+
+
+def _thuoc_tinh_trong(tep: str, bien: str) -> set[str]:
+    van_ban = _Path("server/templates") / tep
+    return set(_re.findall(rf"\b{bien}\.([a-zA-Z_][a-zA-Z0-9_]*)",
+                           van_ban.read_text(encoding="utf-8")))
+
+
+def test_moi_thuoc_tinh_suc_chua_trong_template_deu_co_that():
+    from apps.vps.services.capacity import SucChua
+
+    dung = _thuoc_tinh_trong("vps.html", "suc_chua")
+    thieu = sorted(x for x in dung if not hasattr(SucChua, x))
+    assert not thieu, f"vps.html goi thuoc tinh khong co tren SucChua: {thieu}"
+    assert dung, "test nay chi co nghia khi template that su dung suc_chua"
+
+
+def test_moi_thuoc_tinh_may_trong_template_deu_co_that():
+    from apps.vps.tables import VpsInstance
+
+    for tep in ("vps_chi_tiet.html", "vps_console.html"):
+        dung = _thuoc_tinh_trong(tep, "may")
+        thieu = sorted(x for x in dung if not hasattr(VpsInstance, x))
+        assert not thieu, f"{tep} goi thuoc tinh khong co tren VpsInstance: {thieu}"
+
+
+def test_moi_thuoc_tinh_plan_va_os_trong_template_deu_co_that():
+    from apps.vps.cost import Plan
+    from apps.vps.os_images import OsImage
+
+    for tep in ("vps.html", "vps_chi_tiet.html"):
+        for bien, lop in (("plan", Plan), ("os", OsImage)):
+            dung = _thuoc_tinh_trong(tep, bien)
+            thieu = sorted(x for x in dung
+                           if not hasattr(lop, x) and x not in lop.__annotations__)
+            assert not thieu, f"{tep}: {bien}.{thieu} khong co tren {lop.__name__}"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -227566,7 +228398,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_280_vps_vong_doi.py
-SHA256=133fe6b6988da5482537e5bf296c8fe7c702efce9ff9590b0d9afffdcf5eca2b BYTES=9710 LINES=244
+SHA256=8d79fd34f5fef8c7d9f29abcdb3236aa16ceb2efc85c1e0b9aa4d70ff9588c98 BYTES=11912 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39/G3 — vòng đời máy: bật, tắt, khởi động lại, cài lại, xoá.
 
@@ -227812,6 +228644,58 @@ def test_template_chi_co_mot_card_thi_khong_xoa_gi():
             return {"net0": "e1000,bridge=vmbr1", "sata0": "x"}
 
     assert jobs._go_card_thua(_C(), 200) == {}
+
+
+# ── 7. Gỡ đĩa cài sau khi khách tự cài xong ─────────────────────────────────
+
+class _ClientDia(_ClientGia):
+    def __init__(self, hong: bool = False):
+        super().__init__(hong)
+        self.cau_hinh: dict = {}
+
+    def dat_cau_hinh(self, vmid, **kw):
+        if self.hong:
+            raise ProxmoxError("Proxmox tra 500", status=500)
+        self.da_goi.append(("dat_cau_hinh", int(vmid)))
+        self.cau_hinh = kw
+
+
+def test_go_dia_cai_thao_ide0_VA_doi_thu_tu_boot():
+    """Thiếu vế nào cũng hỏng, và hỏng theo hai kiểu khác nhau:
+
+    * chỉ `delete=ide0` mà giữ `boot=order=ide0;sata0` → máy còn nhớ một thiết bị
+      không còn tồn tại, và BIOS mất thêm thời gian mỗi lần khởi động;
+    * chỉ đổi `boot` mà giữ đĩa → vẫn hiện "Press any key to boot from CD", tức
+      là chưa giải quyết đúng thứ nút này sinh ra để giải quyết.
+    """
+    c, m, db = _ClientDia(), _May(), _DbGia()
+    dieu_khien.go_dia_cai(db, m, c, boi="khach")
+    assert c.cau_hinh == {"delete": "ide0", "boot": "order=sata0"}
+    assert db.da_commit == 1
+
+
+def test_go_dia_cai_chay_lai_duoc():
+    """Khách bấm hai lần là chuyện thường. Lần hai không được thành lỗi."""
+    c, m, db = _ClientDia(), _May(), _DbGia()
+    for _ in range(2):
+        dieu_khien.go_dia_cai(db, m, c, boi="khach")
+    assert c.cau_hinh == {"delete": "ide0", "boot": "order=sata0"}
+
+
+def test_may_bi_treo_thi_khong_go_dia_duoc():
+    """Cùng cổng quyền với bật/tắt: máy đang nợ tiền thì khách không đụng vào."""
+    c = _ClientDia()
+    with pytest.raises(dieu_khien.KhongDuocPhepError):
+        dieu_khien.go_dia_cai(_DbGia(), _May(trang_thai="bi_treo"), c, boi="khach")
+    assert c.da_goi == []
+
+
+def test_may_dang_tao_thi_khong_go_dia_duoc():
+    """Gỡ đĩa giữa lúc job đang dựng máy là rút nền dưới chân nó."""
+    c = _ClientDia()
+    with pytest.raises(dieu_khien.KhongDuocPhepError):
+        dieu_khien.go_dia_cai(_DbGia(), _May(trang_thai="dang_tao"), c, boi="khach")
+    assert c.da_goi == []
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -228834,6 +229718,248 @@ def test_os_id_la_ra_thi_khong_nhan_template(monkeypatch):
     from apps.vps import jobs
     monkeypatch.setenv("LTT_VPS_TEMPLATE_KHONG_CO", "9100")
     assert jobs._template_noi_bo("khong-co") == 0
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_286_vps_dhcp_router.py
+SHA256=299b994db9f9d8b376fafa96823b4e55e11d16a5e25f7aadb03839c60c40142f BYTES=9580 LINES=236
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H39/G5 — đặt chỗ DHCP trên VM router, và cột vé console.
+
+Hai nhóm test không liên quan nhau về chủ đề nhưng chung một bài học: **thứ bộ
+test không cưỡng chế thì production sẽ cưỡng chế**.
+
+* DHCP: một MAC sai dạng lọt vào `dhcp-hosts` làm dnsmasq bỏ qua **cả tệp**, và
+  triệu chứng là mọi máy khách mất mạng — không lỗi nào chỉ vào nguyên nhân.
+* Vé console: cột `pve_ve` từng là `String(255)`. Vé thật của Proxmox dài hơn
+  thế, nên Postgres từ chối INSERT và console trả **500 cho mọi máy**. SQLite
+  không cưỡng chế độ dài `VARCHAR` nên `test_282` đi qua sạch sẽ trong khi tính
+  năng chưa chạy được lần nào.
+"""
+from __future__ import annotations
+
+import pytest
+from sqlalchemy import String, Text
+
+from apps.vps.services import router
+from apps.vps.services.ssh_lenh import DichDen, SshLenhError
+
+
+class _Ghi:
+    """Thay SSH: giữ lại kịch bản bash đã sinh, không chạy gì."""
+
+    def __init__(self, tra: str = ""):
+        self.lenh: list[list[str]] = []
+        self.tra = tra
+
+    def __call__(self, lenh):
+        self.lenh.append(lenh)
+        return self.tra
+
+    @property
+    def kich_ban(self) -> str:
+        """Kịch bản bash **đã gỡ lớp `shlex.quote`**.
+
+        Không gỡ thì mọi assert phải viết theo dạng `'"'"'"'` của shell, và
+        test trở thành thứ kiểm cách bọc chuỗi chứ không kiểm việc cần kiểm.
+        """
+        import shlex
+
+        if not self.lenh:
+            return ""
+        return shlex.split(self.lenh[-1][2])[0]
+
+
+def _client(tra: str = ""):
+    ghi = _Ghi(tra)
+    return router.RouterClient(
+        DichDen(host="h", user="ltt", khoa="k", nhan="VM router"), chay=ghi), ghi
+
+
+# ── 1. Chặn dữ liệu bẩn TRƯỚC khi nó chạm shell từ xa ───────────────────────
+
+@pytest.mark.parametrize("mac", [
+    "", "bc-24-11-c9-5f-ad", "bc:24:11:c9:5f", "zz:24:11:c9:5f:ad",
+    "bc:24:11:c9:5f:ad:00", "bc:24:11:c9:5f:a",
+    "bc:24:11:c9:5f:ad; rm -rf /", "$(whoami)",
+])
+def test_mac_sai_dang_bi_TU_CHOI_chu_khong_di_toi_router(mac):
+    c, ghi = _client()
+    with pytest.raises(router.RouterError):
+        c.dat_cho(mac, "10.51.0.50")
+    assert ghi.lenh == [], "khong duoc goi router"
+
+
+@pytest.mark.parametrize("ip", ["", "10.51.0", "10.51.0.999", "10.51.0.1;reboot",
+                                "not-an-ip", "10.51.0.1/24"])
+def test_dia_chi_sai_dang_bi_TU_CHOI(ip):
+    c, ghi = _client()
+    with pytest.raises(router.RouterError):
+        c.dat_cho("bc:24:11:c9:5f:ad", ip)
+    assert ghi.lenh == []
+
+
+def test_ten_may_bi_loc_ky_tu_la():
+    """Tên đi thẳng vào một dòng cấu hình. Dấu phẩy trong tên tách sai cột và
+    dnsmasq đọc phần sau như một trường khác."""
+    c, ghi = _client()
+    c.dat_cho("bc:24:11:c9:5f:ad", "10.51.0.50", ten="vps-abc,1.2.3.4;rm -rf /")
+    assert "rm -rf" not in ghi.kich_ban
+    assert "bc:24:11:c9:5f:ad,10.51.0.50,vps-abc1234rm-rf" in ghi.kich_ban
+
+
+def test_mac_duoc_chuan_hoa_ve_chu_thuong():
+    """dnsmasq so khớp không phân biệt hoa thường, nhưng `danh_sach_dat_cho` và
+    `go_cho` so chuỗi — lệch hoa thường là gỡ trượt chỗ của chính mình."""
+    c, ghi = _client()
+    c.dat_cho("BC:24:11:C9:5F:AD", "10.51.0.50")
+    assert "bc:24:11:c9:5f:ad,10.51.0.50" in ghi.kich_ban
+
+
+# ── 2. Chạy lại được, và dọn cả hai vế ──────────────────────────────────────
+
+def test_dat_cho_xoa_dong_cu_theo_CA_MAC_LAN_DIA_CHI():
+    """Bỏ sót vế địa chỉ thì một máy đã xoá còn giữ chỗ, và máy mới nhận đúng
+    địa chỉ đó **không bao giờ được cấp** — dnsmasq gặp hai dòng cùng địa chỉ
+    thì giữ dòng đầu. Triệu chứng: máy chạy tốt nhưng không có mạng."""
+    c, ghi = _client()
+    c.dat_cho("bc:24:11:c9:5f:ad", "10.51.0.50")
+    kb = ghi.kich_ban
+    assert "-e '^bc:24:11:c9:5f:ad,'" in kb
+    assert "-e ',10.51.0.50,'" in kb
+    assert "-e ',10.51.0.50$'" in kb
+
+
+def test_dat_cho_ghi_qua_tep_TAM_roi_moi_mv():
+    """Ghi thẳng vào tệp đang được đọc thì một lần mất điện để lại tệp cụt, và
+    dnsmasq đọc tệp cụt là mất chỗ của những khách nằm ở phần bị mất."""
+    c, ghi = _client()
+    c.dat_cho("bc:24:11:c9:5f:ad", "10.51.0.50")
+    assert f"mv {router.TEP_DAT_CHO}.moi {router.TEP_DAT_CHO}" in ghi.kich_ban
+
+
+def test_nap_lai_bang_reload_chu_khong_restart():
+    """`restart` giữa lúc một khách đang gia hạn thuê bao làm máy họ rớt mạng
+    vì một khách KHÁC vừa được tạo."""
+    c, ghi = _client()
+    c.dat_cho("bc:24:11:c9:5f:ad", "10.51.0.50")
+    assert "systemctl reload dnsmasq" in ghi.kich_ban
+    assert "restart dnsmasq" not in ghi.kich_ban
+
+    c2, ghi2 = _client()
+    c2.go_cho("bc:24:11:c9:5f:ad")
+    assert "systemctl reload dnsmasq" in ghi2.kich_ban
+    assert "restart dnsmasq" not in ghi2.kich_ban
+
+
+def test_go_cho_khong_keu_khi_tep_chua_ton_tai():
+    c, ghi = _client()
+    c.go_cho("bc:24:11:c9:5f:ad")
+    assert ghi.kich_ban.rstrip().endswith("true")
+
+
+def test_chi_MOT_lenh_chay_bang_root():
+    """Cho cả đoạn bash chạy `sudo` chỉ để tiện là mở rộng thiệt hại của mọi lỗi
+    trong đoạn đó mà không đổi lại được gì."""
+    c, ghi = _client()
+    c.dat_cho("bc:24:11:c9:5f:ad", "10.51.0.50")
+    assert ghi.lenh[-1][0] == "bash", "kich ban KHONG duoc chay bang sudo"
+    assert ghi.kich_ban.count("sudo -n ") == 1
+
+
+# ── 3. Đọc lại danh sách ────────────────────────────────────────────────────
+
+def test_doc_danh_sach_dat_cho():
+    c, _ = _client("bc:24:11:c9:5f:ad,10.51.0.50,vps-a\n"
+                   "BC:24:11:AA:BB:CC,10.51.0.51\n"
+                   "\n"
+                   "rac-khong-dung-dang\n")
+    assert c.danh_sach_dat_cho() == {"bc:24:11:c9:5f:ad": "10.51.0.50",
+                                     "bc:24:11:aa:bb:cc": "10.51.0.51"}
+
+
+def test_tep_rong_thi_tra_dict_rong_chu_khong_no():
+    c, _ = _client("")
+    assert c.danh_sach_dat_cho() == {}
+
+
+# ── 4. Khai thiếu thì nói rõ thiếu gì ───────────────────────────────────────
+
+def test_thieu_host_thi_bao_dung_TEN_BIEN():
+    with pytest.raises(SshLenhError) as e:
+        router.doc_cau_hinh({})
+    assert "LTT_VPS_ROUTER_HOST" in str(e.value)
+
+
+def test_thieu_khoa_ssh_thi_bao_ro():
+    with pytest.raises(SshLenhError) as e:
+        router.doc_cau_hinh({"LTT_VPS_ROUTER_HOST": "1.2.3.4"})
+    assert "khoa SSH" in str(e.value)
+
+
+# ── 5. Job phải dùng đúng MAC đã ghim vào máy ───────────────────────────────
+
+def test_job_dat_cho_bang_DUNG_MAC_da_ghim_vao_net0():
+    """Hai nơi tính MAC khác nhau thì DHCP giữ chỗ cho một địa chỉ mà card của
+    máy không bao giờ dùng tới — và máy im lặng không có mạng."""
+    import inspect
+
+    from apps.vps import jobs
+
+    nguon = inspect.getsource(jobs._tao_may)
+    assert "dat_cho(" in nguon
+    assert "dinh_danh.mac(may.id)" in nguon
+    assert "mac=dinh_danh.mac(may.id)" in nguon, "net0 phai ghim cung MAC do"
+
+
+def test_go_cho_dung_cung_ham_mac():
+    import inspect
+
+    from apps.vps import jobs
+
+    assert "dinh_danh.mac(may.id)" in inspect.getsource(jobs._go_cho_dhcp)
+
+
+# ── 6. Cột vé console phải KHÔNG có trần độ dài ─────────────────────────────
+
+def test_cot_pve_ve_la_TEXT_khong_phai_varchar_co_tran():
+    """Vé `vncproxy` thật dài hơn 255 ký tự. `String(255)` làm Postgres từ chối
+    INSERT và console trả 500 cho MỌI máy — trong khi SQLite (bộ test) không
+    cưỡng chế độ dài nên `test_282` vẫn xanh. Đã xảy ra thật 24/08."""
+    from apps.vps.tables import VpsConsoleVe
+
+    cot = VpsConsoleVe.__table__.c.pve_ve
+    assert isinstance(cot.type, Text) or (
+        isinstance(cot.type, String) and cot.type.length is None), \
+        f"pve_ve dang la {cot.type!r} — ve that dai hon 255 ky tu"
+
+
+def test_ve_dai_that_van_luu_duoc():
+    """Đo bằng một vé dài cỡ thật, không phải một chuỗi mười ký tự."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    import platform_core.db as dbmod
+    import platform_core.models  # noqa: F401
+    from apps.vps.services import console
+    from apps.vps.tables import VpsInstance
+
+    e = create_engine("sqlite://")
+    dbmod.Base.metadata.create_all(e, tables=[
+        t for t in dbmod.Base.metadata.sorted_tables
+        if t.name in ("vps_console_ve", "vps_instance")])
+    db = sessionmaker(bind=e)()
+    try:
+        m = VpsInstance(user_id="u1", plan_id="vps-nho", os_id="win10",
+                        gateway_id="gw1", trang_thai="dang_chay", vmid=200)
+        db.add(m)
+        db.commit()
+        ve_dai = "PVEVNC:" + "A1b2C3d4" * 80          # 647 ky tu
+        ve = console.cap_ve(db, m, "u1", cong=5901, pve_ve=ve_dai)
+        _, _, ra = console.tieu_ve(db, ve, m.id, "u1")
+        assert ra == ve_dai
+    finally:
+        db.close()
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -246958,7 +248084,7 @@ endlocal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=dd965ada8f344a7d33c7d1d2acf9045e13a95c6c73c5510a2b912e60a899b857 BYTES=24370 LINES=585
+SHA256=41c1919391dc20d0ca97aef393ef9cb48d6458bb32a6770d8740ddbd9d930c68 BYTES=28427 LINES=689
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -247275,6 +248401,99 @@ def go_codex(tt: dict) -> list:
     return ra
 
 
+# ── VS Code: hai tiện ích KHÔNG dùng biến môi trường như CLI ───────────────
+
+def _vscode_settings() -> pathlib.Path:
+    r"""`%APPDATA%\Code\User\settings.json` — thiết lập cấp NGƯỜI DÙNG.
+
+    ⛔ Phải là tệp này, **không** phải `.vscode/settings.json` của một dự án:
+       `claudeCode.environmentVariables` khai `scope: "machine"`, nên VS Code
+       **bỏ qua** nó nếu đặt ở cấp workspace. Đặt nhầm chỗ thì không có lỗi nào —
+       thiết lập chỉ đơn giản là không có tác dụng.
+    """
+    goc = os.environ.get("APPDATA")
+    return (pathlib.Path(goc) if goc else NHA / "AppData" / "Roaming") \
+        / "Code" / "User" / "settings.json"
+
+
+def cam_vscode(goc: str, tt: dict) -> list:
+    """Cấu hình **tiện ích VS Code** — khác hẳn cấu hình cho CLI.
+
+    🔴 VÌ SAO PHẢI CÓ RIÊNG. Đo thật trên VM 24/08: cắm xong cho CLI rồi mở VS
+       Code lên, tiện ích Claude Code **vẫn hiện nút "Sign In"**. Nó KHÔNG dùng
+       `ANTHROPIC_BASE_URL` của hệ điều hành như CLI — đây là lỗi đã biết của
+       tiện ích từ v2.0.0 (`anthropics/claude-code` #9010 và #38430).
+
+       Tiện ích có hai thiết lập riêng để bù, đọc thẳng từ `package.json` của bản
+       đã cài chứ không đoán:
+         · `claudeCode.environmentVariables` — mảng {name, value} truyền cho
+           tiến trình `claude` con;
+         · `claudeCode.disableLoginPrompt` — *"never prompt for login...
+           authentication is handled externally"*.
+
+    ⛔ VÀ MỘT LUẬT KHÔNG NỚI: **khoá vẫn không vào tệp.** Ở đây chỉ đặt hai giá
+       trị KHÔNG bí mật; `ANTHROPIC_AUTH_TOKEN` ở lại biến môi trường, nơi tiến
+       trình con vẫn kế thừa được. `settings.json` là tệp rất nhiều người đồng bộ
+       giữa máy hoặc commit vào kho dotfiles.
+    """
+    ra = []
+    tep = _vscode_settings()
+    if not tep.parent.exists():
+        ra.append("  [--] khong thay VS Code (bo qua)")
+        return ra
+    _sao_luu(tep)
+    nl = chr(10)
+    try:
+        if tep.exists():
+            van, nl = _doc_giu_dong(tep)
+            d = json.loads(van) if van.strip() else {}
+        else:
+            d = {}
+    except ValueError:
+        ra.append("  [!!] " + str(tep) + " khong phai JSON hop le - KHONG dung toi")
+        return ra
+
+    ghi_nho = tt.setdefault("vscode", {}).setdefault("khoa_da_them", {})
+    moi = {
+        "claudeCode.environmentVariables": [
+            {"name": "ANTHROPIC_BASE_URL", "value": goc + "/api"},
+            {"name": "ANTHROPIC_MODEL", "value": MODEL},
+            {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": MODEL},
+        ],
+        "claudeCode.disableLoginPrompt": True,
+    }
+    for ten, gt in moi.items():
+        if ten not in ghi_nho:
+            ghi_nho[ten] = d.get(ten)          # None = von KHONG co
+        d[ten] = gt
+    _ghi_giu_dong(tep, _json_theo_dong(d, nl))
+    ra.append("  [OK] " + str(tep))
+    ra.append("  [!!] Khoa KHONG ghi vao day - no o bien moi truong.")
+    return ra
+
+
+def go_vscode(tt: dict) -> list:
+    ra = []
+    tep = _vscode_settings()
+    ghi_nho = tt.get("vscode", {}).get("khoa_da_them") or {}
+    if not tep.exists() or not ghi_nho:
+        return ra
+    try:
+        van, nl = _doc_giu_dong(tep)
+        d = json.loads(van)
+    except ValueError:
+        ra.append("  [!!] " + str(tep) + " khong doc duoc - khong dung toi")
+        return ra
+    for ten, cu in ghi_nho.items():
+        if cu is None:
+            d.pop(ten, None)
+        else:
+            d[ten] = cu
+    _ghi_giu_dong(tep, _json_theo_dong(d, nl))
+    ra.append("  [OK] da tra " + str(tep) + " ve nhu truoc")
+    return ra
+
+
 # ── Claude Code ─────────────────────────────────────────────────────────────
 
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
@@ -247392,6 +248611,11 @@ def lenh_cam(a) -> int:
     for d in cam_claude(a.goc, tt, a.toan_cuc):
         print(d)
 
+    print("")
+    print("Tien ich VS Code:")
+    for d in cam_vscode(a.goc, tt):
+        print(d)
+
     print("\nKhoa:")
     for ten in (ENV_KHOA_CODEX, ENV_KHOA_CLAUDE):
         print(f"  [{'OK' if _setx(ten, khoa) else '!!'}] {ten}")
@@ -247426,9 +248650,15 @@ def lenh_go(a) -> int:
     print("\nClaude Code:")
     for d in go_claude(tt):
         print(d)
+
+    print("")
+    print("Tien ich VS Code:")
+    for d in go_vscode(tt):
+        print(d)
     tt["da_cam"] = False
     tt.pop("claude", None)
     tt.pop("codex", None)
+    tt.pop("vscode", None)
     _ghi_trang_thai(tt)
     print("\nBan sao luu dau tien van con o cac tep `*.truoc-ltt` - khong tu xoa,")
     print("de ban doi chieu neu can. Xoa tay khi da yen tam.")
@@ -259776,6 +261006,309 @@ systemctl daemon-reload
 systemctl enable ltt-vps-duong.service >/dev/null
 echo "da cai unit ltt-vps-duong.service"
 systemctl is-enabled ltt-vps-duong.service
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/vps_gateway/cai-dat-router.sh
+SHA256=b58cf5fb8673d04df6955ab3f9b103c84e96ab5b3fd58737d4652844913ff1f5 BYTES=6091 LINES=158
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+#!/usr/bin/env bash
+#
+# Cai dat VM router (10.51.0.1) cho app VPS: DHCP theo MAC + tuong lua + MSS clamp.
+#
+# Chay lai duoc. Chay tren chinh VM router:
+#     sudo bash cai-dat-router.sh
+#
+# ---------------------------------------------------------------------------
+# VI SAO CAN DHCP
+#
+# May khach TU CAI Windows. Trinh cai dat Windows khong doc duoc cloud-init, nen
+# khong con duong nao khac de may co mang ma khach khong phai tu go dia chi. DHCP
+# cap theo MAC: MAC suy ra tu instance_id (apps/vps/services/dinh_danh.py) va
+# KHONG doi qua cac lan chay lai job, nen dat cho la ben.
+#
+# 'dhcp-range=...,static' = CHI cap cho MAC da khai. May la khong duoc gi ca.
+#
+# ---------------------------------------------------------------------------
+# VI SAO CAN TUONG LUA (day la phan quan trong hon)
+#
+# Truoc ban nay, viec chan may khach sang LAN nha (192.168.2.0/24) KHONG do
+# tuong lua nao lam ca -- 'nft' chua tung duoc cai. No chi la HE QUA PHU cua
+# bang dinh tuyen 100: bang do khong co tuyen nao cho 192.168.2.0/24 nen goi roi
+# vao 'default dev wg0', ra ham, roi bi thuong nguon vut di.
+#
+# Do la mot bien phap tinh co, va no vo hieu ngay khi:
+#   * 'wg-quick@wg0' hong (thieu khoa, gateway chet luc khoi dong) => khong co
+#     'ip rule' => goi cua khach dung BANG CHINH => '192.168.2.0/24 dev eth0' =>
+#     may khach nam THANG trong LAN nha, cung mang voi may A va Proxmox;
+#   * hoac ai do them mot tuyen vao bang 100.
+#
+# Ca hai deu im lang. Nen tu day co mot lop chan THAT, khong phu thuoc dinh tuyen.
+#
+# MSS clamp: duong di qua WireGuard MTU 1420. Windows BO QUA option 26 cua DHCP,
+# nen khong clamp thi RDP bat tay duoc nhung moi lan truyen goi lon la treo --
+# dung kieu loi khien nguoi ta do mang ca buoi ma khong thay gi.
+set -euo pipefail
+
+MANG_KHACH="10.51.0.0/24"
+CUA_KHACH="10.51.0.1"
+NIC_KHACH="eth1"
+NIC_NHA="eth0"
+THU_MUC="/etc/ltt-vps"
+TEP_MAC="${THU_MUC}/dhcp-hosts"
+
+if [ "$(id -u)" != "0" ]; then echo "Phai chay bang root"; exit 1; fi
+if ! ip -br link show "$NIC_KHACH" >/dev/null 2>&1; then
+  echo "Khong thay $NIC_KHACH -- day co phai VM router khong?"; exit 1
+fi
+
+echo "== 1/5 Cai goi =="
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -y -qq dnsmasq nftables >/dev/null
+
+echo "== 2/5 Cho de khai MAC =="
+mkdir -p "$THU_MUC"
+touch "$TEP_MAC"
+# Nen tang ghi tep nay qua SSH bang tai khoan 'ltt'.
+chown ltt:ltt "$THU_MUC" "$TEP_MAC" 2>/dev/null || true
+chmod 755 "$THU_MUC"; chmod 644 "$TEP_MAC"
+
+echo "== 3/5 dnsmasq =="
+cat > /etc/dnsmasq.d/ltt-vps.conf <<EOF
+# Sinh boi tools/vps_gateway/cai-dat-router.sh -- dung sua tay.
+
+# KHONG lam DNS. May khach nhan thang 1.1.1.1/8.8.8.8. Mot bo giai ten mo tren
+# mang khach la mot bo khuech dai san cho nguoi khac dung -- va ta khong can no.
+port=0
+
+# CHI $NIC_KHACH. Day la dong quan trong nhat trong tep: $NIC_NHA la LAN NHA
+# (192.168.2.0/24) va mot may chu DHCP thu hai tren do se phat dia chi cho may
+# that cua chu nha, danh nhau voi router nha. 'bind-interfaces' bat buoc, vi
+# socket DHCP mac dinh nghe MOI card bat ke 'interface='.
+interface=$NIC_KHACH
+bind-interfaces
+except-interface=$NIC_NHA
+except-interface=wg0
+except-interface=lo
+no-dhcp-interface=$NIC_NHA
+no-dhcp-interface=wg0
+
+# 'static' = chi cap cho MAC da khai trong $TEP_MAC. May la khong duoc gi.
+# O che do nay dia chi dau la DIA CHI MANG (10.51.0.0), khong phai dau mot
+# dai. Viet thanh mot dai nhu che do thuong thi dnsmasq TU CHOI KHOI DONG
+# ('bad dhcp-range'), va 'dnsmasq --test' KHONG bat duoc loi nay.
+dhcp-range=10.51.0.0,static,255.255.255.0,12h
+dhcp-option=option:router,$CUA_KHACH
+dhcp-option=option:dns-server,1.1.1.1,8.8.8.8
+# Windows bo qua option nay; no o day cho khach Linux. Duong bao that la MSS
+# clamp trong nftables ben duoi.
+dhcp-option=option:mtu,1420
+dhcp-authoritative
+dhcp-hostsfile=$TEP_MAC
+log-dhcp
+EOF
+systemctl enable dnsmasq >/dev/null 2>&1 || true
+systemctl restart dnsmasq
+
+echo "== 4/5 Tuong lua =="
+cat > /etc/nftables.conf <<EOF
+#!/usr/sbin/nft -f
+# Sinh boi tools/vps_gateway/cai-dat-router.sh -- dung sua tay.
+#
+# 'delete table' roi 'table' thay vi 'flush ruleset': 'flush ruleset' xoa ca
+# ruleset cua NGUOI KHAC. Tren cong vao Vultr no da tat UFW mot lan roi.
+table inet ltt_rt
+delete table inet ltt_rt
+
+table inet ltt_rt {
+    # Dia chi rieng ma may khach KHONG duoc cham toi. 192.168.2.0/24 la LAN nha:
+    # may A (nen tang), Proxmox :8006, cong render may B.
+    set rieng {
+        type ipv4_addr
+        flags interval
+        elements = { 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16,
+                     169.254.0.0/16, 100.64.0.0/10 }
+    }
+
+    chain forward {
+        type filter hook forward priority filter; policy accept;
+
+        # MSS clamp TRUOC moi luat drop: duong qua WireGuard MTU 1420.
+        tcp flags syn tcp option maxseg size set rt mtu
+
+        # Khach ra Internet: chan het dia chi rieng.
+        #
+        # Khach <-> khach cung nam trong 10.0.0.0/8 nhung KHONG di qua day: hai
+        # may cung $MANG_KHACH noi voi nhau o tang 2 tren bridge, khong qua
+        # router. Nen luat nay khong cat lien lac giua hai may cua cung mot khach.
+        iifname "$NIC_KHACH" ip daddr @rieng counter drop
+
+        # Chieu nguoc: khong ai tu LAN nha lot vao mang khach ngoai duong ham.
+        iifname "$NIC_NHA" oifname "$NIC_KHACH" counter drop
+    }
+
+    chain input {
+        type filter hook input priority filter; policy accept;
+
+        # Tu mang khach, router chi tra loi DHCP va ping. SSH cua router
+        # (10.51.0.1:22) khong phai viec cua khach.
+        iifname "$NIC_KHACH" udp dport { 67, 68 } accept
+        iifname "$NIC_KHACH" icmp type { echo-request, echo-reply } accept
+        iifname "$NIC_KHACH" ct state established,related accept
+        iifname "$NIC_KHACH" counter drop
+    }
+}
+EOF
+nft -f /etc/nftables.conf
+systemctl enable nftables >/dev/null 2>&1 || true
+
+echo "== 5/5 Kiem =="
+echo "-- dnsmasq: $(systemctl is-active dnsmasq)"
+echo "-- nftables: $(systemctl is-enabled nftables 2>/dev/null)"
+nft list chain inet ltt_rt forward | sed 's/^/   /'
+echo
+echo "So MAC da khai: $(grep -c . "$TEP_MAC" || echo 0)"
+echo "XONG."
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/vps_them_cong_vao.py
+SHA256=acbbdda37b17aa733dd5eb393a06b3c44def2f9c8fe5e4af3ff25330ba486f91 BYTES=5020 LINES=133
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Khai mot cong vao (gateway) vao CSDL — viec bat buoc truoc khi ban duoc may.
+
+Khong co dong `vps_gateway` nao thi app tu choi tao may, va tu choi la DUNG: mot
+VM chay tren dia ma khong ai vao duoc thi khong phai san pham. Nhung tu choi do
+hien ra la mot loi kho hieu neu khong biet phai khai o dau -- nen co tep nay.
+
+Chay lai duoc: khai lai cung `--ten` thi CAP NHAT dong cu chu khong tao dong hai.
+
+    python tools\vps_them_cong_vao.py --xem
+    python tools\vps_them_cong_vao.py --ten sgp-1 --ip 45.32.114.249 \
+        --vung sgp --bridge vmbr1 --subnet 10.51.0.0/24 --gw-noi-bo 10.51.0.1
+
+`--nha-cung-cap-id` la id cua chinh cong vao ben Vultr. Thieu no thi moi lan gan
+Reserved IP phai tra theo nhan, va doi ten tren bang dieu khien la app khong tim
+thay nua. Khong khai thi tep nay TU TRA -- xem `--tim-id`.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import pathlib
+import sys
+import warnings
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+warnings.filterwarnings("ignore")
+
+
+def _nap_env() -> None:
+    for tep in (r"C:\LTTPlatform\secrets\app.env",
+                str(pathlib.Path(__file__).resolve().parents[1] / "secrets" / "app.env")):
+        p = pathlib.Path(tep)
+        if not p.exists():
+            continue
+        for d in p.read_text(encoding="utf-8-sig").splitlines():
+            if "=" in d and not d.strip().startswith("#"):
+                k, v = d.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--xem", action="store_true", help="chi liet ke, khong sua")
+    ap.add_argument("--ten")
+    ap.add_argument("--vung", default="sgp")
+    ap.add_argument("--ip", help="IP cong khai cua chinh cong vao")
+    ap.add_argument("--ten-mien", default="")
+    ap.add_argument("--bridge", default="vmbr1")
+    ap.add_argument("--subnet", default="10.51.0.0/24")
+    ap.add_argument("--gw-noi-bo", default="10.51.0.1")
+    ap.add_argument("--dns", default="1.1.1.1 8.8.8.8")
+    ap.add_argument("--mtu", type=int, default=1420)
+    ap.add_argument("--octet-dau", type=int, default=50)
+    ap.add_argument("--octet-cuoi", type=int, default=200)
+    ap.add_argument("--nha-cung-cap-id", default="")
+    ap.add_argument("--tim-id", action="store_true",
+                    help="tra id ben Vultr theo --ten roi dien vao")
+    ap.add_argument("--khong-ban-ip-rieng", action="store_true")
+    args = ap.parse_args()
+
+    _nap_env()
+    from sqlalchemy import select
+
+    from apps.vps.services import mang
+    from apps.vps.tables import VpsGateway
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        if args.xem or not args.ten:
+            dong = list(db.execute(select(VpsGateway)).scalars())
+            if not dong:
+                print("CHUA CO CONG VAO NAO — app se tu choi tao may.")
+                return 1
+            for g in dong:
+                print(f"  {g.ten:<10} {g.ip_cong_khai:<16} {g.bridge} "
+                      f"{g.subnet_cidr} gw={g.subnet_gw} mtu={g.mtu} "
+                      f"octet {g.octet_dau}-{g.octet_cuoi} "
+                      f"({mang.so_dia_chi(g)} dia chi) "
+                      f"nha_cung_cap_id={g.nha_cung_cap_id or '(trong)'} "
+                      f"{'nhan may moi' if g.dang_nhan_may_moi else 'DANG RUT'}")
+            return 0
+
+        if not args.ip:
+            print("thieu --ip"); return 2
+
+        ncc_id = args.nha_cung_cap_id
+        if args.tim_id and not ncc_id:
+            from apps.vps.services import vultr
+            ncc_id = str(vultr.client_tu_moi_truong()
+                         .instance_theo_nhan(args.ten)["id"])
+            print(f"  tim thay id ben Vultr: {ncc_id}")
+
+        g = db.execute(select(VpsGateway)
+                       .where(VpsGateway.ten == args.ten)).scalars().first()
+        moi = g is None
+        if moi:
+            g = VpsGateway(ten=args.ten)
+            db.add(g)
+        g.vung = args.vung
+        g.ip_cong_khai = args.ip
+        g.ten_mien = args.ten_mien
+        g.wg_endpoint = f"{args.ip}:51820"
+        g.bridge = args.bridge
+        g.subnet_cidr = args.subnet
+        g.subnet_gw = args.gw_noi_bo
+        g.dns = args.dns
+        g.mtu = args.mtu
+        g.octet_dau = args.octet_dau
+        g.octet_cuoi = args.octet_cuoi
+        g.cho_phep_ip_rieng = not args.khong_ban_ip_rieng
+        if ncc_id:
+            g.nha_cung_cap_id = ncc_id
+
+        # Kiem TRUOC khi commit: mot cong vao khai sai chi lo ra luc mot khach
+        # bam mua, va luc do loi hien ra tren mat ho.
+        mang.mang_cho_may(g, _dia_chi_thu(g))
+        db.commit()
+        print(("DA THEM " if moi else "DA CAP NHAT ") + g.ten +
+              f"  ({mang.so_dia_chi(g)} dia chi cap duoc)")
+        return 0
+    finally:
+        gen.close()
+
+
+def _dia_chi_thu(g) -> str:
+    from apps.vps.services import mang
+    return next(iter(mang.dai_dia_chi(g)))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

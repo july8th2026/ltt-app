@@ -21,6 +21,8 @@ từ chối cho tới khi rollback. `begin_nested()` giới hạn thiệt hại 
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
+
 import logging
 from typing import Iterable
 
@@ -122,6 +124,31 @@ def suc_chua_hien_tai(db: DbSession, trang_thai_node: dict, kho: list,
 
 
 # ── chọn cổng vào ────────────────────────────────────────────────────────────
+
+#: Nhãn người đọc cho từng vùng. Thiếu nhãn thì hiện mã vùng — xấu nhưng đúng,
+#: còn hơn giấu một vùng đang mở khỏi trang bán.
+NHAN_VUNG = {
+    "sgp": "Singapore",
+    "vn": N_("Việt Nam"),
+}
+
+
+def vung_dang_mo(db: DbSession) -> list[tuple[str, str]]:
+    """Các vùng **thật sự có cổng vào đang nhận máy**, dạng `[(mã, nhãn)]`.
+
+    Trang bán phải dựng bộ chọn vùng từ đây, không được viết cứng danh sách.
+
+    Đã trả giá cho việc viết cứng: sau khi bỏ mô hình chia cổng, trang vẫn còn
+    ba lựa chọn cũ và **mặc định là `port`** — một vùng không còn tồn tại. Khách
+    bấm "Thuê máy này" thì gặp `khong co cong vao nao dang mo o vung 'port'`,
+    một câu không nói được gì với họ. Bộ test không thấy vì nó gọi thẳng hàm với
+    vùng đúng.
+    """
+    ma = sorted({str(g.vung) for g in db.execute(
+        select(VpsGateway).where(VpsGateway.dang_nhan_may_moi.is_(True))
+    ).scalars() if str(g.vung or "").strip()})
+    return [(x, NHAN_VUNG.get(x, x)) for x in ma]
+
 
 def chon_gateway(db: DbSession, vung: str) -> VpsGateway:
     """Cổng vào đang nhận máy mới ở một vùng. Không có → lỗi rõ ràng.

@@ -255,7 +255,12 @@ class VpsConsoleVe(Base):
     #: Dòng này bị **xoá ngay khi tiêu vé**, nên vé Proxmox nằm trong CSDL nhiều
     #: nhất là %(giay)s giây.
     cong: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    pve_ve: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    #: Vé `vncproxy` của Proxmox. **`Text`, không phải `String(255)`.**
+    #: Vé thật là một chứng chỉ có chữ ký và dài hơn 255 ký tự — đặt trần độ dài
+    #: thì Postgres từ chối cả câu INSERT và console trả **500** cho mọi máy.
+    #: SQLite không cưỡng chế độ dài `VARCHAR`, nên bộ test đi qua sạch sẽ trong
+    #: khi trang thật hỏng hoàn toàn; chỉ mở trình duyệt mới thấy (quy tắc 5).
+    pve_ve: Mapped[str] = mapped_column(Text, default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False, index=True)
     da_dung_luc: Mapped[datetime | None] = mapped_column(

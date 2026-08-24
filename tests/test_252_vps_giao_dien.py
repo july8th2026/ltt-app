@@ -378,3 +378,54 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
             next(gen)
         except StopIteration:
             pass
+
+
+# ── Thuộc tính template phải CÓ THẬT ────────────────────────────────────────
+#
+# Jinja in một thuộc tính không tồn tại thành **chuỗi rỗng**, không báo lỗi. Nên
+# lỗi loại này không hiện ra dưới dạng lỗi mà dưới dạng một câu cụt trên trang —
+# và nó sống tới khi có người đọc kỹ. Đã dính thật 24/08: template gọi
+# `suc_chua.dia_gb_con` (không có) nên khách thấy "44.5 GB RAM · GB đĩa".
+#
+# Test này không render trang; nó đọc template như văn bản và đối chiếu từng
+# `<biến>.<thuộc tính>` với lớp thật. Rẻ, và bắt được cả những nhánh mà một lần
+# render không đi qua.
+
+import re as _re
+from pathlib import Path as _Path
+
+
+def _thuoc_tinh_trong(tep: str, bien: str) -> set[str]:
+    van_ban = _Path("server/templates") / tep
+    return set(_re.findall(rf"\b{bien}\.([a-zA-Z_][a-zA-Z0-9_]*)",
+                           van_ban.read_text(encoding="utf-8")))
+
+
+def test_moi_thuoc_tinh_suc_chua_trong_template_deu_co_that():
+    from apps.vps.services.capacity import SucChua
+
+    dung = _thuoc_tinh_trong("vps.html", "suc_chua")
+    thieu = sorted(x for x in dung if not hasattr(SucChua, x))
+    assert not thieu, f"vps.html goi thuoc tinh khong co tren SucChua: {thieu}"
+    assert dung, "test nay chi co nghia khi template that su dung suc_chua"
+
+
+def test_moi_thuoc_tinh_may_trong_template_deu_co_that():
+    from apps.vps.tables import VpsInstance
+
+    for tep in ("vps_chi_tiet.html", "vps_console.html"):
+        dung = _thuoc_tinh_trong(tep, "may")
+        thieu = sorted(x for x in dung if not hasattr(VpsInstance, x))
+        assert not thieu, f"{tep} goi thuoc tinh khong co tren VpsInstance: {thieu}"
+
+
+def test_moi_thuoc_tinh_plan_va_os_trong_template_deu_co_that():
+    from apps.vps.cost import Plan
+    from apps.vps.os_images import OsImage
+
+    for tep in ("vps.html", "vps_chi_tiet.html"):
+        for bien, lop in (("plan", Plan), ("os", OsImage)):
+            dung = _thuoc_tinh_trong(tep, bien)
+            thieu = sorted(x for x in dung
+                           if not hasattr(lop, x) and x not in lop.__annotations__)
+            assert not thieu, f"{tep}: {bien}.{thieu} khong co tren {lop.__name__}"

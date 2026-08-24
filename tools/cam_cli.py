@@ -313,6 +313,99 @@ def go_codex(tt: dict) -> list:
     return ra
 
 
+# ── VS Code: hai tiện ích KHÔNG dùng biến môi trường như CLI ───────────────
+
+def _vscode_settings() -> pathlib.Path:
+    r"""`%APPDATA%\Code\User\settings.json` — thiết lập cấp NGƯỜI DÙNG.
+
+    ⛔ Phải là tệp này, **không** phải `.vscode/settings.json` của một dự án:
+       `claudeCode.environmentVariables` khai `scope: "machine"`, nên VS Code
+       **bỏ qua** nó nếu đặt ở cấp workspace. Đặt nhầm chỗ thì không có lỗi nào —
+       thiết lập chỉ đơn giản là không có tác dụng.
+    """
+    goc = os.environ.get("APPDATA")
+    return (pathlib.Path(goc) if goc else NHA / "AppData" / "Roaming") \
+        / "Code" / "User" / "settings.json"
+
+
+def cam_vscode(goc: str, tt: dict) -> list:
+    """Cấu hình **tiện ích VS Code** — khác hẳn cấu hình cho CLI.
+
+    🔴 VÌ SAO PHẢI CÓ RIÊNG. Đo thật trên VM 24/08: cắm xong cho CLI rồi mở VS
+       Code lên, tiện ích Claude Code **vẫn hiện nút "Sign In"**. Nó KHÔNG dùng
+       `ANTHROPIC_BASE_URL` của hệ điều hành như CLI — đây là lỗi đã biết của
+       tiện ích từ v2.0.0 (`anthropics/claude-code` #9010 và #38430).
+
+       Tiện ích có hai thiết lập riêng để bù, đọc thẳng từ `package.json` của bản
+       đã cài chứ không đoán:
+         · `claudeCode.environmentVariables` — mảng {name, value} truyền cho
+           tiến trình `claude` con;
+         · `claudeCode.disableLoginPrompt` — *"never prompt for login...
+           authentication is handled externally"*.
+
+    ⛔ VÀ MỘT LUẬT KHÔNG NỚI: **khoá vẫn không vào tệp.** Ở đây chỉ đặt hai giá
+       trị KHÔNG bí mật; `ANTHROPIC_AUTH_TOKEN` ở lại biến môi trường, nơi tiến
+       trình con vẫn kế thừa được. `settings.json` là tệp rất nhiều người đồng bộ
+       giữa máy hoặc commit vào kho dotfiles.
+    """
+    ra = []
+    tep = _vscode_settings()
+    if not tep.parent.exists():
+        ra.append("  [--] khong thay VS Code (bo qua)")
+        return ra
+    _sao_luu(tep)
+    nl = chr(10)
+    try:
+        if tep.exists():
+            van, nl = _doc_giu_dong(tep)
+            d = json.loads(van) if van.strip() else {}
+        else:
+            d = {}
+    except ValueError:
+        ra.append("  [!!] " + str(tep) + " khong phai JSON hop le - KHONG dung toi")
+        return ra
+
+    ghi_nho = tt.setdefault("vscode", {}).setdefault("khoa_da_them", {})
+    moi = {
+        "claudeCode.environmentVariables": [
+            {"name": "ANTHROPIC_BASE_URL", "value": goc + "/api"},
+            {"name": "ANTHROPIC_MODEL", "value": MODEL},
+            {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": MODEL},
+        ],
+        "claudeCode.disableLoginPrompt": True,
+    }
+    for ten, gt in moi.items():
+        if ten not in ghi_nho:
+            ghi_nho[ten] = d.get(ten)          # None = von KHONG co
+        d[ten] = gt
+    _ghi_giu_dong(tep, _json_theo_dong(d, nl))
+    ra.append("  [OK] " + str(tep))
+    ra.append("  [!!] Khoa KHONG ghi vao day - no o bien moi truong.")
+    return ra
+
+
+def go_vscode(tt: dict) -> list:
+    ra = []
+    tep = _vscode_settings()
+    ghi_nho = tt.get("vscode", {}).get("khoa_da_them") or {}
+    if not tep.exists() or not ghi_nho:
+        return ra
+    try:
+        van, nl = _doc_giu_dong(tep)
+        d = json.loads(van)
+    except ValueError:
+        ra.append("  [!!] " + str(tep) + " khong doc duoc - khong dung toi")
+        return ra
+    for ten, cu in ghi_nho.items():
+        if cu is None:
+            d.pop(ten, None)
+        else:
+            d[ten] = cu
+    _ghi_giu_dong(tep, _json_theo_dong(d, nl))
+    ra.append("  [OK] da tra " + str(tep) + " ve nhu truoc")
+    return ra
+
+
 # ── Claude Code ─────────────────────────────────────────────────────────────
 
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
@@ -430,6 +523,11 @@ def lenh_cam(a) -> int:
     for d in cam_claude(a.goc, tt, a.toan_cuc):
         print(d)
 
+    print("")
+    print("Tien ich VS Code:")
+    for d in cam_vscode(a.goc, tt):
+        print(d)
+
     print("\nKhoa:")
     for ten in (ENV_KHOA_CODEX, ENV_KHOA_CLAUDE):
         print(f"  [{'OK' if _setx(ten, khoa) else '!!'}] {ten}")
@@ -464,9 +562,15 @@ def lenh_go(a) -> int:
     print("\nClaude Code:")
     for d in go_claude(tt):
         print(d)
+
+    print("")
+    print("Tien ich VS Code:")
+    for d in go_vscode(tt):
+        print(d)
     tt["da_cam"] = False
     tt.pop("claude", None)
     tt.pop("codex", None)
+    tt.pop("vscode", None)
     _ghi_trang_thai(tt)
     print("\nBan sao luu dau tien van con o cac tep `*.truoc-ltt` - khong tu xoa,")
     print("de ban doi chieu neu can. Xoa tay khi da yen tam.")

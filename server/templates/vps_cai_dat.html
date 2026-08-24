@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Cài Windows") }} — {{ may.id[:8] }} — {{ app.display_name }}{% endblock %}
+{% block topbar_title %}<strong>💿 {{ _("Cài Windows") }} — {{ may.id[:8] }}</strong>{% endblock %}
+{% block content %}
+
+  <p style="margin:0 0 12px;">
+    <a href="{{ app.route_prefix }}/{{ may.id }}">&larr; {{ _("Về trang máy") }}</a>
+  </p>
+
+  {# Vì sao trang này tồn tại, nói thẳng ở dòng đầu: khách mua VPS ở nơi khác
+     quen với việc nhận sẵn mật khẩu, nên nếu không giải thích thì họ sẽ đi tìm
+     một mật khẩu không tồn tại và kết luận là dịch vụ hỏng. #}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <p style="margin:0;">
+      {{ _("Máy của bạn là một máy trống đã gắn sẵn đĩa cài Windows. Bạn tự chạy trình cài đặt và tự đặt tài khoản của mình — chúng tôi không biết mật khẩu của bạn và không đặt lại được nó.") }}
+    </p>
+    <p class="muted" style="margin:8px 0 0;">
+      {{ _("Cài xong mất khoảng 15–25 phút, phần lớn là ngồi chờ.") }}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Trước khi bắt đầu") }}</h2>
+    <table class="tbl" style="width:100%;">
+      <tr>
+        <th style="width:200px;">{{ _("Hệ điều hành") }}</th>
+        <td>{{ _(os.ten) if os else may.os_id }}</td>
+      </tr>
+      <tr>
+        <th>{{ _("Đĩa của máy") }}</th>
+        <td>{{ plan.disk_gb if plan else "" }} GB</td>
+      </tr>
+      <tr>
+        <th>{{ _("Địa chỉ để vào sau khi cài") }}</th>
+        <td>
+          {% if dia_chi %}<code>{{ dia_chi }}:{{ cong }}</code>
+          {% else %}<span class="muted">{{ _("đang chuẩn bị…") }}</span>{% endif %}
+        </td>
+      </tr>
+    </table>
+    <p style="margin:12px 0 0;">
+      <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/console" target="_blank"
+         style="background:{{ app.accent }};">{{ _("Mở console ở tab mới") }}</a>
+    </p>
+    <p class="muted" style="margin:8px 0 0;">
+      {{ _("Mở console ở tab khác rồi để trang này bên cạnh mà làm theo.") }}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>{{ _("Các bước") }}</h2>
+    <ol style="line-height:1.7;">
+      <li>{{ _("Mở console. Máy đã sẵn ở màn hình đầu tiên của trình cài đặt Windows — bạn không phải bấm gì để vào đó.") }}</li>
+      <li>{{ _("Chọn ngôn ngữ, bàn phím → Next → Install now.") }}</li>
+      {% if os and os.id.startswith("winsrv") %}
+      <li>
+        {{ _("Chọn phiên bản:") }}
+        <ul>
+          <li><strong>Desktop Experience</strong> — {{ _("có giao diện đồ hoạ như Windows thường.") }}</li>
+          <li><strong>{{ _("bản không ghi gì thêm") }}</strong> — {{ _("chỉ có dòng lệnh, nhẹ hơn nhiều.") }}</li>
+        </ul>
+        <span class="muted">{{ _("Chọn nhầm thì phải cài lại, nên đọc kỹ dòng này.") }}</span>
+      </li>
+      {% endif %}
+      <li>{{ _("Chấp nhận điều khoản → chọn Custom: Install Windows only (advanced).") }}</li>
+      <li>
+        {{ _("Chọn ổ đĩa duy nhất trong danh sách (Drive 0) → Next.") }}
+        <br>
+        <span class="muted">{{ _("Bạn KHÔNG cần nạp thêm driver nào. Máy dùng ổ SATA và card mạng e1000, Windows nhận sẵn cả hai.") }}</span>
+      </li>
+      <li>
+        {{ _("Chờ cài. Máy sẽ tự khởi động lại vài lần.") }}
+        <br>
+        {# Đây là chỗ dễ mất công nhất, và nó không tự hiện ra — phải nói trước. #}
+        <strong>{{ _("Khi thấy dòng “Press any key to boot from CD or DVD…”, đừng bấm gì cả.") }}</strong>
+        <span class="muted">{{ _("Bấm vào đó là quay lại đầu trình cài đặt. Không bấm thì sau vài giây máy tự đi tiếp.") }}</span>
+      </li>
+      <li>{{ _("Đặt mật khẩu cho tài khoản Administrator. Đây là mật khẩu của riêng bạn — hãy lưu lại ngay, chúng tôi không giữ bản nào và không đặt lại được.") }}</li>
+      <li>
+        {{ _("Bật Remote Desktop để vào máy từ nhà. Mở PowerShell trong máy và dán:") }}
+        <pre style="white-space:pre-wrap;"><code>Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'</code></pre>
+        <span class="muted">{{ _("Remote Desktop mặc định TẮT trong Windows. Không bật thì bạn chỉ vào được bằng console.") }}</span>
+      </li>
+      <li>
+        {{ _("Quay lại trang này và bấm nút bên dưới để gỡ đĩa cài ra.") }}
+      </li>
+      <li>
+        {% if dia_chi %}
+        {{ _("Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới") }}
+        <code>{{ dia_chi }}</code>.
+        {% else %}
+        {{ _("Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới địa chỉ của máy.") }}
+        {% endif %}
+      </li>
+    </ol>
+  </div>
+
+  {# Nút gỡ đĩa: xem `dieu_khien.go_dia_cai` để biết vì sao đây là một nút do
+     khách bấm chứ không phải một bước tự động. #}
+  <div class="card">
+    <h2>{{ _("Đã cài xong") }}</h2>
+    <p style="margin:0 0 10px;">
+      {{ _("Gỡ đĩa cài ra khỏi máy, và cho máy khởi động thẳng vào Windows. Bấm nút này SAU KHI đã cài xong.") }}
+    </p>
+    <p class="muted" style="margin:0 0 10px;">
+      {{ _("Cần cài lại sau này thì dùng nút “Cài lại máy” ở trang máy — nó gắn đĩa cài trở lại.") }}
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/go-dia-cai">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit">{{ _("Tôi đã cài xong — gỡ đĩa cài") }}</button>
+    </form>
+  </div>
+
+{% endblock %}

@@ -35,6 +35,8 @@ nghĩa là dựng lại cụm là sửa code. Đọc từ `LTT_VPS_ISO_<ID>` —
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
+
 import os
 from dataclasses import dataclass
 
@@ -66,7 +68,7 @@ class OsImage:
 
 OS_IMAGES: tuple[OsImage, ...] = (
     OsImage(
-        id="debian-12", ten="Debian 12 (noi bo)", ho="linux",
+        id="debian-12", ten=N_("Debian 12 (nội bộ)"), ho="linux",
         ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
         khach_thay=False,
         ghi_chu="Ban NOI BO de chung minh duong ong, khong ban (V9). Day la anh "
@@ -87,10 +89,10 @@ OS_IMAGES: tuple[OsImage, ...] = (
         id="winsrv2022-core", ten="Windows Server 2022 (Core)", ho="windows",
         ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
-        ghi_chu="Khong co giao dien do hoa. Nhe nhat trong cac ban Windows.",
+        ghi_chu=N_("Không có giao diện đồ hoạ. Nhẹ nhất trong các bản Windows."),
     ),
     OsImage(
-        id="winsrv2022-gui", ten="Windows Server 2022 (co giao dien)", ho="windows",
+        id="winsrv2022-gui", ten=N_("Windows Server 2022 (có giao diện)"), ho="windows",
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
     ),
@@ -104,11 +106,11 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="win11", ten="Windows 11", ho="windows",
-        # Microsoft: 4 GB RAM va 64 GB dia la SAN, khong phai khuyen nghi.
+        # Microsoft: 4 GB RAM và 64 GB đĩa là SÀN, không phải khuyến nghị.
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
         khach_thay=True, can_uefi_tpm=True,
-        ghi_chu="Trinh cai dat dung o 'This PC can't run Windows 11' neu thieu "
-                "UEFI/OVMF + vTPM + Secure Boot.",
+        ghi_chu=N_("Trình cài đặt dừng ở 'This PC can't run Windows 11' nếu "
+                   "thiếu UEFI/OVMF + vTPM + Secure Boot."),
     ),
 )
 

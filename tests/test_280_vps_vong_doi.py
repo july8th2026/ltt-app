@@ -242,3 +242,55 @@ def test_template_chi_co_mot_card_thi_khong_xoa_gi():
             return {"net0": "e1000,bridge=vmbr1", "sata0": "x"}
 
     assert jobs._go_card_thua(_C(), 200) == {}
+
+
+# ── 7. Gỡ đĩa cài sau khi khách tự cài xong ─────────────────────────────────
+
+class _ClientDia(_ClientGia):
+    def __init__(self, hong: bool = False):
+        super().__init__(hong)
+        self.cau_hinh: dict = {}
+
+    def dat_cau_hinh(self, vmid, **kw):
+        if self.hong:
+            raise ProxmoxError("Proxmox tra 500", status=500)
+        self.da_goi.append(("dat_cau_hinh", int(vmid)))
+        self.cau_hinh = kw
+
+
+def test_go_dia_cai_thao_ide0_VA_doi_thu_tu_boot():
+    """Thiếu vế nào cũng hỏng, và hỏng theo hai kiểu khác nhau:
+
+    * chỉ `delete=ide0` mà giữ `boot=order=ide0;sata0` → máy còn nhớ một thiết bị
+      không còn tồn tại, và BIOS mất thêm thời gian mỗi lần khởi động;
+    * chỉ đổi `boot` mà giữ đĩa → vẫn hiện "Press any key to boot from CD", tức
+      là chưa giải quyết đúng thứ nút này sinh ra để giải quyết.
+    """
+    c, m, db = _ClientDia(), _May(), _DbGia()
+    dieu_khien.go_dia_cai(db, m, c, boi="khach")
+    assert c.cau_hinh == {"delete": "ide0", "boot": "order=sata0"}
+    assert db.da_commit == 1
+
+
+def test_go_dia_cai_chay_lai_duoc():
+    """Khách bấm hai lần là chuyện thường. Lần hai không được thành lỗi."""
+    c, m, db = _ClientDia(), _May(), _DbGia()
+    for _ in range(2):
+        dieu_khien.go_dia_cai(db, m, c, boi="khach")
+    assert c.cau_hinh == {"delete": "ide0", "boot": "order=sata0"}
+
+
+def test_may_bi_treo_thi_khong_go_dia_duoc():
+    """Cùng cổng quyền với bật/tắt: máy đang nợ tiền thì khách không đụng vào."""
+    c = _ClientDia()
+    with pytest.raises(dieu_khien.KhongDuocPhepError):
+        dieu_khien.go_dia_cai(_DbGia(), _May(trang_thai="bi_treo"), c, boi="khach")
+    assert c.da_goi == []
+
+
+def test_may_dang_tao_thi_khong_go_dia_duoc():
+    """Gỡ đĩa giữa lúc job đang dựng máy là rút nền dưới chân nó."""
+    c = _ClientDia()
+    with pytest.raises(dieu_khien.KhongDuocPhepError):
+        dieu_khien.go_dia_cai(_DbGia(), _May(trang_thai="dang_tao"), c, boi="khach")
+    assert c.da_goi == []

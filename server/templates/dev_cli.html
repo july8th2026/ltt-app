@@ -42,6 +42,24 @@
 </div>
 
 <div class="card">
+  <h2 style="margin-top:0;">{{ _("Tiện ích VS Code — cấu hình RIÊNG, không dùng chung với CLI") }}</h2>
+  <p class="muted">{{ _("Cấu hình xong cho CLI là CHƯA đủ. Đo thật trên máy sạch 24/08: tiện ích Claude Code vẫn hiện màn hình đăng nhập, vì nó không đọc biến môi trường của hệ điều hành như CLI.") }}</p>
+
+  <h3>1. Claude Code — <code>settings.json</code> {{ _("cấp NGƯỜI DÙNG") }}</h3>
+  <p class="muted">{{ _("Ctrl+Shift+P → Preferences: Open User Settings (JSON). Đặt ở workspace thì KHÔNG có tác dụng và cũng không báo lỗi.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ vscode_claude }}</code></pre>
+  <p class="muted">{{ _("Khoá vẫn đặt ở biến môi trường") }} <code>ANTHROPIC_AUTH_TOKEN</code>{{ _(", không đặt vào tệp này.") }}</p>
+
+  <h3>2. Codex — <code>~/.codex/config.toml</code></h3>
+  <p class="muted">{{ _("Tiện ích Codex không có cách truyền --profile, nên cấu hình phải nằm ở GỐC tệp. Đánh đổi: nó thay luôn mặc định của lệnh codex.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ vscode_codex }}</code></pre>
+
+  <ul class="muted" style="margin-top:12px;">
+    {% for b in vscode_bay %}<li>{{ b }}</li>{% endfor %}
+  </ul>
+</div>
+
+<div class="card">
   <h2 style="margin-top:0;">Claude Desktop</h2>
   <p>{{ _("Ứng dụng máy tính KHÔNG đọc biến môi trường — nó có cửa sổ cấu hình riêng.") }}</p>
   <table class="table">

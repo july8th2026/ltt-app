@@ -28,14 +28,14 @@
         </td>
       </tr>
       <tr><th>{{ _("Trạng thái") }}</th>
-        <td>{{ may.trang_thai }}
+        <td>{{ _(trang_thai_nhan) }}
           {% if may.ly_do %}<br><span class="muted">{{ may.ly_do }}</span>{% endif %}</td></tr>
       <tr><th>{{ _("Cấu hình") }}</th>
         <td>{% if plan %}{{ _(plan.ten) }} — {{ plan.vcpu }} vCPU ·
           {{ (plan.ram_mb / 1024) | round | int }} GB RAM · {{ plan.disk_gb }} GB
           {% else %}{{ may.plan_id }}{% endif %}</td></tr>
       <tr><th>{{ _("Hệ điều hành") }}</th>
-        <td>{{ os.ten if os else may.os_id }}</td></tr>
+        <td>{{ _(os.ten) if os else may.os_id }}</td></tr>
       <tr><th>{{ _("Trả tới") }}</th>
         <td>
           {% if may.paid_until %}{{ may.paid_until.strftime('%d/%m/%Y') }}
@@ -69,6 +69,17 @@
         </form>
         {% endfor %}
       </div>
+      {# Hướng dẫn cài đặt đứng TRƯỚC console: khách vừa mua xong thì việc đầu
+         tiên của họ là cài Windows, và bấm thẳng vào console mà không đọc gì là
+         cách để họ ngồi trước một trình cài đặt tiếng Anh mà không biết bước sau
+         là gì. #}
+      <p style="margin:12px 0 0;">
+        <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/cai-dat"
+           style="background:{{ app.accent }};">{{ _("Hướng dẫn cài Windows") }}</a>
+        <span class="muted" style="margin-left:8px;">
+          {{ _("Máy giao cho bạn là máy trống có đĩa cài — bạn tự đặt tài khoản và mật khẩu của mình.") }}
+        </span>
+      </p>
       <p style="margin:12px 0 0;">
         <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Mở console") }}</a>
         <span class="muted" style="margin-left:8px;">
@@ -121,7 +132,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <select name="os_id" class="inp">
         <option value="">{{ _("Giữ nguyên hệ điều hành") }}</option>
-        {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+        {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
       </select>
       <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
       <button class="btn" type="submit">{{ _("Cài lại") }}</button>

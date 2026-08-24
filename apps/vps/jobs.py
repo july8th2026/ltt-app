@@ -27,6 +27,7 @@ import time
 from apps.vps import os_images
 from apps.vps.cost import dia_tong_gb, lay_plan
 from apps.vps.services import dinh_danh, mang, provisioning
+from apps.vps.services import router as bo_dinh_tuyen
 from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
 from apps.vps.tables import VpsGateway, VpsInstance
 
@@ -205,6 +206,18 @@ def _tao_may(params: dict, ctx=None) -> dict:
         if not iso and can_dia > img.disk_gb_toi_thieu:
             # Proxmox chỉ nới ra, không thu vào — an toàn khi chạy lại.
             client.nong_dia(may.vmid, _dia_goc(client, may.vmid), f"{can_dia}G")
+
+        # 4b) Đặt chỗ DHCP trên VM router — TRƯỚC khi bật máy.
+        #
+        # Máy khách tự cài Windows, và trình cài đặt Windows không đọc cloud-init.
+        # DHCP là đường DUY NHẤT để máy có mạng mà khách không phải tự gõ địa chỉ.
+        #
+        # Hỏng ở đây thì job **hỏng hẳn**, không đi tiếp: giao cho khách một máy
+        # bật được nhưng không có mạng là giao một cái vỏ, và họ sẽ mất buổi chiều
+        # dò trong Windows một lỗi nằm ở router.
+        _bao(ctx, 75, "dang dat cho dia chi")
+        bo_dinh_tuyen.client_tu_moi_truong().dat_cho(
+            dinh_danh.mac(may.id), ip_noi_bo, ten=f"vps-{may.id[:8]}")
 
         # 5) Bật máy.
         _bao(ctx, 85, "dang khoi dong")
@@ -574,6 +587,9 @@ def _xoa_may(params: dict, ctx=None) -> dict:
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)
 
+        _bao(ctx, 78, "dang go cho dia chi")
+        _go_cho_dhcp(may)
+
         _bao(ctx, 80, "dang tra dia chi cong khai")
         _tra_ip_cong_khai(db, may)
         _nha_tai_nguyen(db, may)
@@ -585,6 +601,22 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         return {"instance_id": may.id, "vmid": may.vmid}
     finally:
         gen.close()
+
+
+def _go_cho_dhcp(may: VpsInstance) -> None:
+    """Gỡ đặt chỗ DHCP của một máy sắp bị xoá.
+
+    Router không trả lời thì **không chặn việc xoá máy** — máy đã đi rồi, giữ nó
+    lại vì một tệp cấu hình không sửa được là chọn cái tệ hơn.
+
+    Chỗ thừa cũng không kẹt máy sau: `dat_cho` xoá dòng cũ theo **cả MAC lẫn địa
+    chỉ**, nên máy tiếp theo nhận đúng địa chỉ này vẫn đăng ký được.
+    """
+    try:
+        bo_dinh_tuyen.client_tu_moi_truong().go_cho(dinh_danh.mac(may.id))
+    except bo_dinh_tuyen.RouterError as exc:
+        # Bắt HẸP: lỗi lập trình phải nổ lên trên.
+        log.warning("VPS: khong go duoc cho DHCP cua may %s: %s", may.id, exc)
 
 
 def _nha_tai_nguyen(db, may: VpsInstance) -> None:

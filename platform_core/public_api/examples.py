@@ -505,6 +505,82 @@ def claude_code_settings(base_url: str) -> str:
     })
 
 
+def vscode_claude_settings(base_url: str) -> str:
+    """Settings the **Claude Code VS Code extension** needs — not the same as the CLI.
+
+    Measured on a clean VM, 2026-08-24: after configuring the CLI correctly, the
+    extension still showed a **Sign In** screen. It does **not** pick up
+    `ANTHROPIC_BASE_URL` from the OS the way the CLI does — a known regression
+    since extension v2.0.0 (anthropics/claude-code issues #9010, #38430).
+
+    The extension ships two settings of its own to work around it. Both names
+    were read from the installed extension's ``package.json``, not from a blog
+    post: an article we checked used ``claude-code.*`` and the real prefix is
+    ``claudeCode.*``.
+
+    ``claudeCode.environmentVariables`` is declared ``scope: "machine"``, so it
+    only takes effect in **User** settings. Put it in a workspace
+    ``.vscode/settings.json`` and nothing happens, with no error.
+    """
+    return (
+        "{\n"
+        '  "claudeCode.disableLoginPrompt": true,\n'
+        '  "claudeCode.environmentVariables": [\n'
+        '    {"name": "ANTHROPIC_BASE_URL", "value": "' + base_url + '/api"},\n'
+        f'    {{"name": "ANTHROPIC_MODEL", "value": "{CLI_MODEL}"}},\n'
+        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}}\n'
+        "  ]\n"
+        "}"
+    )
+
+
+def vscode_codex_config(base_url: str) -> str:
+    """Config the **Codex VS Code extension** needs — root level, no profile.
+
+    The extension has no provider settings at all (checked in its
+    ``package.json``); it drives the Codex CLI and therefore reads
+    ``~/.codex/config.toml``. But it has no way to pass ``--profile``.
+
+    And a profile cannot be selected from the file either. Codex 0.145 rejects it
+    outright::
+
+        Error: legacy `profile = "ltt"` config is no longer supported;
+               use `--profile ltt` with `ltt.config.toml` instead
+
+    So for the extension the provider has to sit at the **root** of
+    ``config.toml``. The trade-off is real and must be stated: this makes LTT the
+    **default** for ``codex`` on the command line too, whereas the profile form
+    leaves the customer's default untouched.
+    """
+    return (
+        f'# Root level - REPLACES your default model for `codex` too.\n'
+        f'# Use the profile form instead if you only want the CLI.\n'
+        f'model = "{CLI_MODEL}"\n'
+        f'model_provider = "ltt"\n'
+        f'model_reasoning_effort = "low"\n'
+        f'model_context_window = 65536\n'
+        f'\n'
+        f'[model_providers.ltt]\n'
+        f'name = "LTT Studios"\n'
+        f'base_url = "{base_url}/api/v1"\n'
+        f'env_key = "{ENV_API_KEY}"\n'
+        f'wire_api = "responses"\n'
+        f'stream_idle_timeout_ms = 600000\n'
+    )
+
+
+#: Cai bay lon nhat cua phan tien ich, viet ra de khach khoi tu phat hien.
+VSCODE_BAY = (
+    "The extensions do NOT read OS environment variables the way the CLIs do. "
+    "Configuring the CLI is not enough - see the two blocks above.",
+    "Restart VS Code completely after any change. `setx` only affects NEW "
+    "processes, and on Windows an already-running Explorer hands the old "
+    "environment to everything you launch from the Start menu.",
+    "Put the Claude settings in USER settings.json, not a workspace one: the "
+    "setting is scope:machine and is silently ignored elsewhere.",
+)
+
+
 def claude_desktop_steps(base_url: str) -> tuple:
     """Claude Desktop does NOT read ANTHROPIC_BASE_URL. It has its own form."""
     return (
