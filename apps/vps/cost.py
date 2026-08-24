@@ -1,0 +1,146 @@
+"""Bảng giá VPS và quy đổi sang credit (Q103 V6, Q104 V11).
+
+Giá **neo vào đối thủ Việt Nam**, không neo vào Vultr (V5). Vultr chỉ còn để đối
+chiếu: gói 2 vCPU/4 GB của họ là $20 ≈ 520.000đ, còn AZDIGI bán 1 vCPU/1 GB từ
+79.000đ **kèm RAID-10, backup tuần và SLA 99,9%** — thứ hạ tầng của ta không có.
+Vì thế giá ở đây phải rẻ hơn họ rõ rệt, và trang bán phải nói thật về SLA.
+
+## Vì sao cấu hình đĩa lớn hơn cảm giác
+
+Catalog chỉ có Windows (V9). Yêu cầu tối thiểu của Microsoft là **32 GB đĩa**
+(Windows 11 là **64 GB**), nên không có gói nào dưới 40 GB. Bản nháp đầu từng ghi
+25 GB cho gói rẻ nhất — con số đó **không cài nổi Windows**, và nó là loại lỗi
+chỉ lộ ra khi khách đã trả tiền.
+
+## `credit_cost` trả 0 — cố ý, không phải quên
+
+Nền tảng tính tiền theo **lượt job**. VPS thì không: điểm thu là **máy còn sống
+hay không**, thu mỗi 30 ngày, đúng khuôn Q98 (`NexusDevice.paid_until`). Một lượt
+`vps.provision` tự nó không đáng giá gì — tiền đã thu ở chỗ khác. Trả 0 chứ không
+để `None` vì hợp đồng app (`tools/lint_app_contract.py`) bắt buộc app có khai
+`job_types` thì phải có `credit_cost`; `None` sẽ thành "app chưa thu phí", sai
+hẳn về nghĩa.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from platform_core.billing_math import credits_base_tu_vnd
+from platform_core.i18n import N_
+
+#: Đĩa bán thêm: bán theo lô 10 GB.
+DIA_THEM_MOI_LO_GB = 10
+GIA_MOI_LO_DIA_VND = 25_000
+
+#: Một chu kỳ thuê bao. 30 ngày, giống Nexus (Q98) — cùng khuôn, cùng cách nghĩ.
+CHU_KY_NGAY = 30
+
+
+@dataclass(frozen=True)
+class Plan:
+    """Một gói bán. Bất biến: đổi giá là thêm gói mới, không sửa gói đang bán.
+
+    `os_toi_thieu` ghi bản Windows **thấp nhất** mà gói này chạy nổi — dùng để
+    trang bán không mời khách chọn một tổ hợp không boot được (vd Windows 11 trên
+    40 GB đĩa). Đây là ràng buộc của Microsoft, không phải lựa chọn của ta.
+    """
+
+    id: str
+    ten: str
+    vcpu: int
+    #: RAM là tài nguyên CỨNG — giữ chỗ thật, không dùng chung (V14).
+    ram_mb: int
+    #: Đĩa là **HẠN MỨC**, không phải chỗ đã giữ (V14). Kho là LVM-thin nên máy
+    #: chỉ chiếm phần nó ghi thật; khách khai 60 GB có thể chỉ đang dùng 12 GB.
+    #: Giữ chỗ cứng cho từng máy là lãng phí 3/4 kho và làm sản phẩm không bán
+    #: được. Đổi lại: phải có phanh — xem `services/capacity.py`.
+    disk_gb: int
+    gia_thang_vnd: int
+    os_toi_thieu: str
+    mo_ta: str
+
+    @property
+    def credit_thang(self) -> int:
+        """Giá quy ra credit. Một chỗ duy nhất, dùng toán của nền tảng (Q31)."""
+        return credits_base_tu_vnd(self.gia_thang_vnd)
+
+
+PLANS: tuple[Plan, ...] = (
+    Plan(
+        id="vps-nho",
+        ten=N_("VPS Nhỏ"),
+        vcpu=1,
+        ram_mb=2048,
+        disk_gb=40,
+        gia_thang_vnd=149_000,
+        os_toi_thieu="winsrv2022-core",
+        mo_ta=N_("Chạy được Windows Server 2022 bản Core (không giao diện đồ hoạ). "
+                 "Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc script nền."),
+    ),
+    Plan(
+        id="vps-vua",
+        ten=N_("VPS Vừa"),
+        vcpu=2,
+        ram_mb=4096,
+        disk_gb=60,
+        gia_thang_vnd=179_000,
+        os_toi_thieu="winsrv2022-gui",
+        mo_ta=N_("Windows Server 2022 có giao diện, hoặc Windows 10. "
+                 "Đây là gói phần lớn người dùng nên chọn."),
+    ),
+    Plan(
+        id="vps-lon",
+        ten=N_("VPS Lớn"),
+        vcpu=4,
+        ram_mb=8192,
+        disk_gb=80,
+        gia_thang_vnd=329_000,
+        os_toi_thieu="win11",
+        mo_ta=N_("Đủ đĩa cho Windows 11 (Microsoft yêu cầu tối thiểu 64 GB). "
+                 "Hợp khi bạn chạy phần mềm nặng hoặc nhiều việc cùng lúc."),
+    ),
+)
+
+_THEO_ID = {p.id: p for p in PLANS}
+
+
+def lay_plan(plan_id: str) -> Plan | None:
+    """Tra một gói theo id. Trả None nếu không có — người gọi tự quyết cách báo."""
+    return _THEO_ID.get(str(plan_id or "").strip())
+
+
+def gia_thang_vnd(plan_id: str, dia_them_gb: int = 0) -> int:
+    """Tiền một chu kỳ, đã cộng đĩa mua thêm. Đơn vị VNĐ.
+
+    `dia_them_gb` phải là bội của 10 — bán theo lô để không phải quản lý những
+    con số lẻ mà chính ta cũng không cấp phát được gọn trên LVM/ZFS.
+    """
+    plan = lay_plan(plan_id)
+    if plan is None:
+        raise ValueError(f"khong co goi {plan_id!r}")
+    them = int(dia_them_gb or 0)
+    if them < 0:
+        raise ValueError("dia_them_gb am")
+    if them % DIA_THEM_MOI_LO_GB:
+        raise ValueError(
+            f"dia_them_gb phai la boi cua {DIA_THEM_MOI_LO_GB}")
+    so_lo = them // DIA_THEM_MOI_LO_GB
+    return plan.gia_thang_vnd + so_lo * GIA_MOI_LO_DIA_VND
+
+
+def credit_thang(plan_id: str, dia_them_gb: int = 0) -> int:
+    """Tiền một chu kỳ, quy ra credit. Đây là con số thực sự bị trừ khỏi số dư."""
+    return credits_base_tu_vnd(gia_thang_vnd(plan_id, dia_them_gb))
+
+
+def dia_tong_gb(plan_id: str, dia_them_gb: int = 0) -> int:
+    """Tổng đĩa cấp cho một máy = đĩa của gói + đĩa mua thêm."""
+    plan = lay_plan(plan_id)
+    if plan is None:
+        raise ValueError(f"khong co goi {plan_id!r}")
+    return plan.disk_gb + int(dia_them_gb or 0)
+
+
+def credit_cost(params: dict) -> int:
+    """Giá credit của một LƯỢT JOB. Luôn 0 — xem docstring đầu file."""
+    return 0

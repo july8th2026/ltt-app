@@ -45,6 +45,42 @@ export interface Quote {
   balance: number;
 }
 
+export interface ChatMessage {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | Array<Record<string, unknown>>;
+}
+
+export interface ChatCompletion {
+  object: "chat.completion";
+  model: string;
+  choices: Array<{
+    index: number;
+    message: { role: string; content: string; tool_calls?: unknown[] };
+    finish_reason: string;
+  }>;
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+  /** Everything OpenAI has no field for. The money lives here, not in `usage`:
+   *  adding our own keys to `usage` would break clients that parse it strictly. */
+  x_ltt: {
+    /** What was ACTUALLY billed, not what was held. Usually well below it. */
+    credit_charged: number;
+    credit_held: number;
+    usage_measured: boolean;
+    cached_prompt_tokens: number;
+    duration_seconds: number;
+    test_mode: boolean;
+  };
+}
+
+export interface ChatOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  tools?: unknown[];
+  reasoningEffort?: string;
+  idempotencyKey?: string;
+}
+
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
 
 export interface Job {
@@ -267,6 +303,54 @@ export class LttClient {
       retry: true,
     });
   }
+
+  /**
+   * A chat completion, answered in this request. Chargeable.
+   *
+   * Unlike `createJob` there is no quote: the price depends on the tokens the
+   * model produces, which do not exist until it has run. Credit is held at a
+   * ceiling before the model starts and settled from the measured usage, so
+   * `x_ltt.credit_charged` is the real bill and is usually well below the hold.
+   *
+   * That missing quote is why the Idempotency-Key matters more here than
+   * anywhere else on the surface: it is the only thing standing between a
+   * network timeout and paying twice for the same generation. It is generated
+   * once, here, and reused for every retry of *this* call.
+   *
+   * A call that cannot finish inside the server's synchronous budget is refused
+   * with 400 rather than cut off mid-answer; send that work to `createJob`.
+   */
+  // @covers POST /chat/completions
+  chat(messages: ChatMessage[], options: ChatOptions = {}) {
+    const key = options.idempotencyKey ?? crypto.randomUUID().replace(/-/g, "");
+    const body: Record<string, unknown> = {
+      model: options.model ?? "ltt_llm",
+      messages,
+      max_tokens: options.maxTokens ?? 1024,
+    };
+    if (options.temperature !== undefined) body.temperature = options.temperature;
+    if (options.tools?.length) body.tools = options.tools;
+    if (options.reasoningEffort) body.reasoning_effort = options.reasoningEffort;
+    return this.request<ChatCompletion>("POST", "/chat/completions", {
+      body,
+      headers: { "Idempotency-Key": key },
+      // Safe precisely because the key is fixed for the whole loop.
+      retry: true,
+    });
+  }
+
+  // @covers-not POST /messages — an SSE stream in the Anthropic Messages shape,
+  //   served for Claude Code and Claude Desktop rather than for this SDK. Those
+  //   clients speak the protocol natively; wrapping it here would mean
+  //   re-implementing their parsers badly. Point ANTHROPIC_BASE_URL at the /api
+  //   parent of that route instead.
+  // @covers-not POST /responses — the same, in the OpenAI Responses shape, for
+  //   the Codex CLI and its VS Code extension. Set base_url to this route's
+  //   parent and wire_api = "responses".
+  //
+  //   Neither takes an Idempotency-Key (Q107): no CLI sends one, so the money is
+  //   protected by settling from the tokens actually produced instead. A stream
+  //   you abandon halfway bills for what it generated, not for the ceiling.
 
   // @covers POST /jobs/{job_id}/cancel
   cancelJob(jobId: string) {

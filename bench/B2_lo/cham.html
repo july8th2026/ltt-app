@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cham mu</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+/* Nen xam trung tinh: nen sang hay toi deu lam lech cam nhan tuong phan, va
+   lech deu hai anh thi khong sao - nhung nguoi cham se doc sai do bao hoa. */
+body{margin:0;background:#2b2b2b;color:#ddd;font:14px/1.5 system-ui,Segoe UI,sans-serif}
+header{display:flex;gap:16px;align-items:center;padding:10px 16px;background:#222;
+  position:sticky;top:0;z-index:5;border-bottom:1px solid #3a3a3a}
+#ma{font:600 16px ui-monospace,Consolas,monospace;letter-spacing:1px}
+#tien{flex:1;color:#9a9a9a}
+button{background:#3a3a3a;color:#eee;border:1px solid #4d4d4d;border-radius:6px;
+  padding:8px 14px;font:inherit;cursor:pointer}
+button:hover{background:#464646}
+button.chon{background:#2f5d3f;border-color:#3d7a52}
+#khung{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+figure{margin:0;text-align:center}
+figure img{width:100%;height:auto;max-height:74vh;object-fit:contain;
+  background:#1c1c1c;border:1px solid #3a3a3a;border-radius:4px;cursor:zoom-in}
+figcaption{padding:6px;color:#8f8f8f;font:600 13px ui-monospace,monospace}
+#dieu{display:flex;gap:10px;justify-content:center;padding:6px 10px 16px;flex-wrap:wrap}
+#ghi{width:min(560px,90vw);background:#1c1c1c;color:#ddd;border:1px solid #3a3a3a;
+  border-radius:6px;padding:8px;margin:0 auto;display:block}
+#zoom{position:fixed;inset:0;background:#1c1c1c;display:none;z-index:9;
+  overflow:auto;cursor:zoom-out}
+/* HAI anh XEP CHONG, khong doi src: doi src voi PNG 2560x1440 (~5 MB) se chop
+   trang trong luc tai - dung luc mat can lien tuc nhat. Xep chong thi ca hai da
+   nam san trong bo nho, bat/tat la tuc thi va tuyet doi cung vi tri. */
+#zoom img{display:block;image-rendering:auto;grid-area:1/1}
+#zoom{display:none;place-items:start}
+#zoom.mo{display:grid}
+#zoom img.an{visibility:hidden}
+#nhan{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:10;
+  background:#000a;padding:6px 14px;border-radius:20px;font:600 13px monospace;display:none}
+#xong{padding:40px;text-align:center;display:none}
+kbd{background:#3a3a3a;border:1px solid #555;border-radius:4px;padding:1px 5px;
+  font:12px ui-monospace,monospace}
+.mach{padding:8px 16px;background:#3a2f1c;color:#e0c98a;font-size:13px}
+#canhbao{position:fixed;left:0;right:0;bottom:0;z-index:20;background:#5a1f1f;
+  color:#ffd7d7;padding:10px 16px;font:600 13px/1.4 system-ui,sans-serif;text-align:center}
+</style></head><body>
+<div class="mach">Phim tat: <kbd>1</kbd> trai &nbsp; <kbd>2</kbd> hoa &nbsp; <kbd>3</kbd> phai
+ &nbsp;|&nbsp; <kbd>Z</kbd> phong to &nbsp; trong luc phong: <kbd>Space</kbd> bat qua bat lai
+ (SO NHAP NHAY - cach duy nhat thay khac biet nho) &nbsp;|&nbsp;
+ <kbd>&larr;</kbd> <kbd>&rarr;</kbd> doi cap</div>
+<header><span id="ma"></span><span id="tien"></span>
+  <button id="luu">Tai phieu ve</button></header>
+<div id="than">
+  <div id="khung">
+    <figure><img id="imgL" alt="trai"><figcaption>TRAI</figcaption></figure>
+    <figure><img id="imgR" alt="phai"><figcaption>PHAI</figcaption></figure>
+  </div>
+  <div id="dieu">
+    <button data-c="trai">1 &nbsp;Trai tot hon</button>
+    <button data-c="hoa">2 &nbsp;Hoa / khong thay khac</button>
+    <button data-c="phai">3 &nbsp;Phai tot hon</button>
+  </div>
+  <textarea id="ghi" rows="2" placeholder="Ghi chu (khong bat buoc)"></textarea>
+</div>
+<div id="xong"><h2>Da cham xong</h2>
+  <p>Bam <b>Tai phieu ve</b>, roi chep <code>phieu.json</code> vao thu muc lo, ghi de.</p>
+  <p>Sau do tren may A chay:<br><code id="lenh"></code></p></div>
+<div id="zoom"><img id="zL"><img id="zR"></div><div id="nhan"></div>
+<div id="canhbao" hidden>KHONG LUU DUOC PHIEU tren may nay (trinh duyet chan localStorage voi file://). Dung tai lai trang, va bam "Tai phieu ve" truoc khi dong.</div>
+<script>
+const CAP = [{"ma": "c001", "trai": "c001_trai.png", "phai": "c001_phai.png"}, {"ma": "c002", "trai": "c002_trai.png", "phai": "c002_phai.png"}, {"ma": "c003", "trai": "c003_trai.png", "phai": "c003_phai.png"}, {"ma": "c004", "trai": "c004_trai.png", "phai": "c004_phai.png"}, {"ma": "c005", "trai": "c005_trai.png", "phai": "c005_phai.png"}, {"ma": "c006", "trai": "c006_trai.png", "phai": "c006_phai.png"}, {"ma": "c007", "trai": "c007_trai.png", "phai": "c007_phai.png"}, {"ma": "c008", "trai": "c008_trai.png", "phai": "c008_phai.png"}, {"ma": "c009", "trai": "c009_trai.png", "phai": "c009_phai.png"}, {"ma": "c010", "trai": "c010_trai.png", "phai": "c010_phai.png"}, {"ma": "c011", "trai": "c011_trai.png", "phai": "c011_phai.png"}, {"ma": "c012", "trai": "c012_trai.png", "phai": "c012_phai.png"}, {"ma": "c013", "trai": "c013_trai.png", "phai": "c013_phai.png"}, {"ma": "c014", "trai": "c014_trai.png", "phai": "c014_phai.png"}, {"ma": "c015", "trai": "c015_trai.png", "phai": "c015_phai.png"}, {"ma": "c016", "trai": "c016_trai.png", "phai": "c016_phai.png"}, {"ma": "c017", "trai": "c017_trai.png", "phai": "c017_phai.png"}, {"ma": "c018", "trai": "c018_trai.png", "phai": "c018_phai.png"}, {"ma": "c019", "trai": "c019_trai.png", "phai": "c019_phai.png"}, {"ma": "c020", "trai": "c020_trai.png", "phai": "c020_phai.png"}, {"ma": "c021", "trai": "c021_trai.png", "phai": "c021_phai.png"}, {"ma": "c022", "trai": "c022_trai.png", "phai": "c022_phai.png"}, {"ma": "c023", "trai": "c023_trai.png", "phai": "c023_phai.png"}, {"ma": "c024", "trai": "c024_trai.png", "phai": "c024_phai.png"}, {"ma": "c025", "trai": "c025_trai.png", "phai": "c025_phai.png"}, {"ma": "c026", "trai": "c026_trai.png", "phai": "c026_phai.png"}, {"ma": "c027", "trai": "c027_trai.png", "phai": "c027_phai.png"}, {"ma": "c028", "trai": "c028_trai.png", "phai": "c028_phai.png"}, {"ma": "c029", "trai": "c029_trai.png", "phai": "c029_phai.png"}, {"ma": "c030", "trai": "c030_trai.png", "phai": "c030_phai.png"}, {"ma": "c031", "trai": "c031_trai.png", "phai": "c031_phai.png"}, {"ma": "c032", "trai": "c032_trai.png", "phai": "c032_phai.png"}, {"ma": "c033", "trai": "c033_trai.png", "phai": "c033_phai.png"}], KHOA = "cham_mu_" + "B2_lo";
+const $ = s => document.querySelector(s);
+// ⛔ `file://` co the lam localStorage NEM (Chrome chan tuy cau hinh). Khong boc
+// thi ca trang chet trang o dong dau tien - va nguoi cham khong hieu vi sao.
+// Boc lai, va NOI RA khi khong luu duoc, thay vi im lang lam mat phieu.
+let luuDuoc = true;
+function doc() {
+  try { return JSON.parse(localStorage.getItem(KHOA) || "{}"); }
+  catch (e) { luuDuoc = false; return {}; }
+}
+function luu(d) {
+  try { localStorage.setItem(KHOA, JSON.stringify(d)); }
+  catch (e) { luuDuoc = false; bao(); }
+}
+function bao() { if (!luuDuoc) $("#canhbao").hidden = false; }
+let i = 0, phieu = doc();
+let zPhia = "trai";
+
+function ve(){
+  const c = CAP[i];
+  $("#ma").textContent = c.ma;
+  const xong = CAP.filter(x => phieu[x.ma] && phieu[x.ma].chon).length;
+  $("#tien").textContent = `cap ${i+1}/${CAP.length} - da cham ${xong}`;
+  $("#imgL").src = $("#zL").src = "anh/" + c.trai;
+  $("#imgR").src = $("#zR").src = "anh/" + c.phai;
+  const p = phieu[c.ma] || {};
+  $("#ghi").value = p.ghi_chu || "";
+  document.querySelectorAll("#dieu button").forEach(b =>
+    b.classList.toggle("chon", b.dataset.c === p.chon));
+}
+function chon(v){
+  const c = CAP[i];
+  phieu[c.ma] = {chon: v, ghi_chu: $("#ghi").value};
+  luu(phieu);
+  if (i < CAP.length - 1) i++;
+  ve(); ketthuc();
+}
+function ketthuc(){
+  if (CAP.some(c => !(phieu[c.ma] || {}).chon)) return;
+  $("#than").style.display = "none"; $("#xong").style.display = "block";
+  $("#lenh").textContent = "py tools/cham_mu.py tinh --lo <thu_muc_lo>";
+}
+function moZoom(phia){
+  // Ca hai anh da nam san trong DOM tu luc ve() - chi bat/tat, khong tai lai.
+  zPhia = phia;
+  $("#zoom").classList.add("mo");
+  $("#zL").classList.toggle("an", phia !== "trai");
+  $("#zR").classList.toggle("an", phia !== "phai");
+  $("#nhan").style.display = "block"; $("#nhan").textContent = phia.toUpperCase();
+}
+function dongZoom(){
+  $("#zoom").classList.remove("mo"); $("#nhan").style.display = "none";
+}
+function doiZoom(){
+  // Khong dung toi scrollTop/scrollLeft: hai anh chung mot o luoi nen vi tri cuon
+  // von da la MOT. Day moi la "cung vi tri" that, khong phai chep lai toa do.
+  moZoom(zPhia === "trai" ? "phai" : "trai");
+}
+$("#imgL").onclick = () => moZoom("trai");
+$("#imgR").onclick = () => moZoom("phai");
+$("#zoom").onclick = dongZoom;
+document.querySelectorAll("#dieu button").forEach(b => b.onclick = () => chon(b.dataset.c));
+$("#luu").onclick = () => {
+  const ra = {so_cap: CAP.length,
+              phieu: CAP.map(c => ({ma: c.ma, chon: (phieu[c.ma]||{}).chon || "",
+                                    ghi_chu: (phieu[c.ma]||{}).ghi_chu || ""}))};
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(ra, null, 2)],
+                                        {type: "application/json"}));
+  a.download = "phieu.json"; a.click();
+};
+addEventListener("keydown", e => {
+  if (e.target.tagName === "TEXTAREA" && e.key !== "Escape") return;
+  const mo = $("#zoom").classList.contains("mo");
+  if (mo && (e.key === " " || e.key === "ArrowLeft" || e.key === "ArrowRight")){
+    e.preventDefault(); doiZoom(); return; }
+  if (e.key === "Escape"){ dongZoom(); return; }
+  if (e.key === "1") chon("trai");
+  else if (e.key === "2") chon("hoa");
+  else if (e.key === "3") chon("phai");
+  else if (e.key.toLowerCase() === "z") moZoom("trai");
+  else if (e.key === "ArrowLeft" && i > 0){ i--; ve(); }
+  else if (e.key === "ArrowRight" && i < CAP.length - 1){ i++; ve(); }
+});
+// Tai lai trang giua chung (lo cham 33 cap thi chuyen nay se xay ra) phai quay
+// dung cho dang do, khong bat cham lai tu cap 1 - cham lai la het mu.
+bao();
+const chuaCham = CAP.findIndex(c => !(phieu[c.ma] || {}).chon);
+i = chuaCham < 0 ? 0 : chuaCham;
+ve(); ketthuc();
+</script></body></html>

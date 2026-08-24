@@ -167,7 +167,19 @@ REGISTRY: dict[str, Provider] = {
             ModelInfo(
                 "hidream-o1", (APIKEY_CAT_IMAGE,),
                 display_name=N_("LTT nội bộ (HiDream-O1)"),
-                is_active=False,          # mở ở G10, sau cổng G6b
+                # 🔓 MỞ 24/08 (G10). Cổng G6b đã chấm và **model nhà thua rõ**
+                #    (D-045: Gemini 24 – nhà 4). Mở **không phải** vì nó đẹp hơn.
+                #
+                #    D-042 + D-046 đã đổi bài toán: không còn định tuyến, mỗi model
+                #    là **một mặt hàng có cổng gọi riêng**. Khách gọi `image.ltt` là
+                #    biết trước mình mua HiDream chạy trên máy nhà — rẻ hơn, và
+                #    không bị chính sách nội dung của một hãng khác chi phối.
+                #
+                # ⛔ ĐỪNG ĐỊNH VỊ NÓ LÀ "ĐẸP HƠN", và đừng đưa việc **có chữ** sang
+                #    nó — chữ tiếng Việt là ngoài phạm vi (D-048), việc đó là của
+                #    `image.thumbnail` chạy Gemini. Ba chỗ nhà ngang bằng:
+                #    anime/fantasy/kiến trúc.
+                is_active=True,
                 capabilities={
                     # CHỈ khai thứ ĐÃ ĐO THẬT. `edit`/`subject` đã đo xong 22/08
                     # (D-032): VRAM đỉnh 19,8–20,0 GB, giữ được nhân dạng. Trước đó

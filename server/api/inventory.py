@@ -13,7 +13,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from platform_core.public_api.protocol import ASYNC_JOB, SYNC
+from platform_core.public_api.protocol import (ASYNC_JOB, STREAM, SYNC,
+                                              SYNC_BILLED)
 
 API_V1_PREFIX = "/api/v1"
 
@@ -67,6 +68,28 @@ API_V1_ROUTES: tuple = (
              "Read one job", authenticated=True),
     ApiRoute("POST", f"{API_V1_PREFIX}/jobs/{{job_id}}/cancel",
              "Cancel a job", authenticated=True),
+    # The second chargeable operation, and the only SYNC_BILLED one (Q106): it
+    # bills like /jobs but answers in the request. It carries no quote because
+    # the price depends on tokens that do not exist until the model has run, so
+    # the Idempotency-Key is the only thing standing between a network retry and
+    # paying twice — `check_mode_rules` refuses the declaration without it.
+    ApiRoute("POST", f"{API_V1_PREFIX}/chat/completions",
+             "Chat completion, answered in the request", authenticated=True,
+             execution_mode=SYNC_BILLED),
+    # The streaming pair (Q107). They exist because every CLI worth serving
+    # requires streaming and each speaks exactly one protocol: Claude Code and
+    # Claude Desktop speak Anthropic Messages, Codex speaks OpenAI Responses.
+    #
+    # Neither carries an Idempotency-Key — no CLI sends one — so what protects
+    # the money is settling from the tokens actually produced rather than from
+    # the hold. `check_mode_rules` refuses a STREAM contract that does not
+    # declare exactly that.
+    ApiRoute("POST", f"{API_V1_PREFIX}/messages",
+             "Chat completion as an Anthropic Messages stream",
+             authenticated=True, execution_mode=STREAM),
+    ApiRoute("POST", f"{API_V1_PREFIX}/responses",
+             "Chat completion as an OpenAI Responses stream",
+             authenticated=True, execution_mode=STREAM),
     ApiRoute("POST", f"{API_V1_PREFIX}/uploads",
              "Create an upload ticket", authenticated=True),
     ApiRoute("POST", f"{API_V1_PREFIX}/uploads/{{upload_id}}/content",

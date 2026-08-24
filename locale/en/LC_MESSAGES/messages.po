@@ -8554,3 +8554,135 @@ msgstr "Download the build for your machine, sign in, and it appears on every ot
 
 msgid "Máy của bạn, ở bất kỳ đâu"
 msgstr "Your machines, wherever you are"
+
+msgid "Giá API model ngôn ngữ"
+msgstr "Language model API pricing"
+
+msgid "Tính theo token, trả theo lượng dùng thật. Không thuê bao, không phí tối thiểu hằng tháng."
+msgstr "Charged per token, for what you actually use. No subscription, no monthly minimum."
+
+msgid "phiên bản giá"
+msgstr "price list version"
+
+msgid "Loại token"
+msgstr "Token type"
+
+msgid "credit / 1 triệu token"
+msgstr "credits / 1M tokens"
+
+msgid "tương đương"
+msgstr "equals"
+
+msgid "Token vào"
+msgstr "Input tokens"
+
+msgid "câu hỏi, ngữ cảnh, định nghĩa tool"
+msgstr "your question, the context, tool definitions"
+
+msgid "đ"
+msgstr "đ"
+
+msgid "Token vào lấy lại từ cache"
+msgstr "Input tokens served from cache"
+
+msgid "Token ra"
+msgstr "Output tokens"
+
+msgid "câu trả lời, kể cả phần suy nghĩ"
+msgstr "the answer, including any reasoning"
+
+msgid "Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit. Nên một lượt rất nhỏ trả nhiều hơn giá niêm yết — xem ví dụ đầu bảng dưới."
+msgstr "Every call rounds UP to a whole credit, minimum 1 credit. So a very small call pays more than the list price - see the first example below."
+
+msgid "Ba ví dụ chi phí thật"
+msgstr "Three real cost examples"
+
+msgid "Tính bằng đúng hàm ra hoá đơn, không phải bằng một phép nhân riêng."
+msgstr "Computed by the same function that produces your bill, not by a separate multiplication."
+
+msgid "Lượt gọi"
+msgstr "Call"
+
+msgid "token vào"
+msgstr "input tokens"
+
+msgid "token ra"
+msgstr "output tokens"
+
+msgid "tiền"
+msgstr "cost"
+
+msgid "Giá API tạo ảnh"
+msgstr "Image API pricing"
+
+msgid "Model ảnh chạy trên máy của chúng tôi. Tính theo ảnh, và chỉ tính những ảnh thật sự sinh ra được."
+msgstr "The image model runs on our own hardware. Charged per image, and only for images actually produced."
+
+msgid "Loại ảnh"
+msgstr "Image type"
+
+msgid "credit / ảnh"
+msgstr "credits / image"
+
+msgid "Ảnh từ mô tả"
+msgstr "Image from a description"
+
+msgid "Ảnh có ảnh tham chiếu"
+msgstr "Image with a reference image"
+
+msgid "Ảnh tham chiếu đắt gấp %(n)d lần vì máy vẽ lâu hơn khoảng 3,3 lần ở cùng số bước. Tối đa %(m)d ảnh một lượt."
+msgstr "Reference images cost %(n)d times more because the machine takes about 3.3 times as long at the same step count. Up to %(m)d images per call."
+
+msgid "Xin 4 ảnh mà chỉ ra 2 thì trả tiền 2"
+msgstr "Ask for 4 images, get 2, pay for 2"
+
+msgid "Hệ thống giữ trước một mức trần theo số ảnh bạn xin, rồi hoàn lại phần chênh khi lượt vẽ xong. Lượt không sinh được ảnh nào được hoàn đủ."
+msgstr "We hold a ceiling based on the number of images you ask for, then refund the difference once the run finishes. A run that produces no image is refunded in full."
+
+msgid "Ba điều nên biết trước khi dùng"
+msgstr "Three things worth knowing first"
+
+msgid "Trả cho thứ đã sinh ra, không trả cho thứ đã xin"
+msgstr "You pay for what was produced, not for what you asked for"
+
+msgid "Xin max_tokens 8.000 mà model chỉ trả lời 200 token thì bạn trả cho 200. Hệ thống giữ trước một mức trần rồi hoàn lại phần chênh ngay khi lượt gọi xong."
+msgstr "Ask for max_tokens 8,000 and the model answers in 200 tokens, and you pay for 200. We hold a ceiling first, then refund the difference as soon as the call finishes."
+
+msgid "Ngắt giữa chừng vẫn tính phần đã sinh"
+msgstr "Cutting a stream short still charges what was generated"
+
+msgid "Với luồng streaming, nếu bạn đóng kết nối giữa chừng thì phần chữ đã sinh ra vẫn tính tiền — GPU đã chạy rồi. Gọi lại là một lượt sinh mới, và tính tiền mới."
+msgstr "With streaming, closing the connection mid-answer still charges for the text already generated - the GPU has already done that work. Calling again is a new generation, and a new charge."
+
+msgid "Không đo được thì không thu"
+msgstr "No measurement, no charge"
+
+msgid "Nếu hệ thống không đọc được số token đã dùng, lượt đó được hoàn đủ và tính 0 đồng. Thu tiền mà không có bằng chứng thì tệ hơn mất một ít tiền."
+msgstr "If we cannot read how many tokens were used, that call is refunded in full and costs nothing. Charging without evidence is worse than losing a little money."
+
+msgid "tạo khoá API"
+msgstr "create an API key"
+
+msgid "cắm vào Codex hoặc Claude"
+msgstr "plug it into Codex or Claude"
+
+msgid "Khoá dùng được ngay với thư viện OpenAI, Codex CLI, Claude Code và Claude Desktop — không cần thư viện riêng."
+msgstr "The key works right away with the OpenAI library, Codex CLI, Claude Code and Claude Desktop - no special library needed."
+
+msgid "Một câu hỏi ngắn"
+msgstr "A short question"
+
+msgid "Một lượt viết mã"
+msgstr "A coding turn"
+
+msgid "Một lượt agent có nhiều tool"
+msgstr "An agent turn with several tools"
+
+msgid "Một ảnh từ mô tả"
+msgstr "One image from a description"
+
+msgid "Bốn ảnh từ mô tả"
+msgstr "Four images from a description"
+
+msgid "Một ảnh có ảnh tham chiếu"
+msgstr "One image with a reference image"

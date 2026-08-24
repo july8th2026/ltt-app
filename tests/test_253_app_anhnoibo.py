@@ -174,8 +174,10 @@ def test_anh_tham_chieu_cua_NGUOI_KHAC_bi_TU_CHOI():
 
 def test_anh_tham_chieu_cua_CHINH_MINH_qua_duoc_vong_kiem_quyen():
     """Không được chặn nhầm: một artifact của app khác, cùng người dùng, là hợp lệ."""
-    from apps.anhnoibo import jobs
-    jobs._kiem_chu_so_huu("taoanh/u1/j3/0.png", "u1")
+    # Quy tắc này đã chuyển từ `jobs.py` sang `features.py` (H37/L6): nó là
+    # nghiệp vụ, và nghiệp vụ nằm trong một cánh cửa thì cửa thứ hai phải chép.
+    from apps.anhnoibo import features
+    features._kiem_chu_so_huu("taoanh/u1/j3/0.png", "u1")
 
 
 def test_khong_biet_chu_so_huu_thi_TU_CHOI_chu_khong_cho_qua():

@@ -1,0 +1,274 @@
+{
+  "_canh_bao": "Mo tep nay truoc khi cham xong la tu huy lo. Khong co cach nao kiem chung nguoc lai.",
+  "nhan": {
+    "A": "s50",
+    "B": "s36"
+  },
+  "cap": [
+    {
+      "ma": "c001",
+      "trai": "c001_trai.png",
+      "phai": "c001_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c002",
+      "trai": "c002_trai.png",
+      "phai": "c002_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c003",
+      "trai": "c003_trai.png",
+      "phai": "c003_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c004",
+      "trai": "c004_trai.png",
+      "phai": "c004_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c005",
+      "trai": "c005_trai.png",
+      "phai": "c005_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c006",
+      "trai": "c006_trai.png",
+      "phai": "c006_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c007",
+      "trai": "c007_trai.png",
+      "phai": "c007_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c008",
+      "trai": "c008_trai.png",
+      "phai": "c008_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c009",
+      "trai": "c009_trai.png",
+      "phai": "c009_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c010",
+      "trai": "c010_trai.png",
+      "phai": "c010_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c011",
+      "trai": "c011_trai.png",
+      "phai": "c011_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c012",
+      "trai": "c012_trai.png",
+      "phai": "c012_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c013",
+      "trai": "c013_trai.png",
+      "phai": "c013_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c014",
+      "trai": "c014_trai.png",
+      "phai": "c014_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c015",
+      "trai": "c015_trai.png",
+      "phai": "c015_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c016",
+      "trai": "c016_trai.png",
+      "phai": "c016_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c017",
+      "trai": "c017_trai.png",
+      "phai": "c017_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c018",
+      "trai": "c018_trai.png",
+      "phai": "c018_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c019",
+      "trai": "c019_trai.png",
+      "phai": "c019_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c020",
+      "trai": "c020_trai.png",
+      "phai": "c020_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c021",
+      "trai": "c021_trai.png",
+      "phai": "c021_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c022",
+      "trai": "c022_trai.png",
+      "phai": "c022_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "B",
+      "la_bay": true
+    },
+    {
+      "ma": "c023",
+      "trai": "c023_trai.png",
+      "phai": "c023_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "A",
+      "la_bay": true
+    },
+    {
+      "ma": "c024",
+      "trai": "c024_trai.png",
+      "phai": "c024_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c025",
+      "trai": "c025_trai.png",
+      "phai": "c025_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "A",
+      "la_bay": true
+    },
+    {
+      "ma": "c026",
+      "trai": "c026_trai.png",
+      "phai": "c026_phai.png",
+      "nguon_trai": "A",
+      "nguon_phai": "B",
+      "la_bay": false
+    },
+    {
+      "ma": "c027",
+      "trai": "c027_trai.png",
+      "phai": "c027_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c028",
+      "trai": "c028_trai.png",
+      "phai": "c028_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c029",
+      "trai": "c029_trai.png",
+      "phai": "c029_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c030",
+      "trai": "c030_trai.png",
+      "phai": "c030_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c031",
+      "trai": "c031_trai.png",
+      "phai": "c031_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c032",
+      "trai": "c032_trai.png",
+      "phai": "c032_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    },
+    {
+      "ma": "c033",
+      "trai": "c033_trai.png",
+      "phai": "c033_phai.png",
+      "nguon_trai": "B",
+      "nguon_phai": "A",
+      "la_bay": false
+    }
+  ],
+  "_doi_nhan_24_08": "Nhan goc la 'A'/'B' chung chung nen KHONG gop duoc voi lo khac. Doi thanh s50/s36 sau khi da cham xong, va sau khi KIEM BANG BAM SHA-256: 30/30 anh nhan A khop bit-doi-bit voi bench/B2b_chuan/B2b_s50_seed2, 30/30 anh nhan B khop voi B2b_s36_seed2, 0 anh khong tra duoc nguon. Chi doi TEN NHAN - anh xa cap->nguon khong dong mot bit."
+}

@@ -31,6 +31,8 @@ from platform_core.public_api import protocol
 from platform_core.public_api.config import PublicApiConfig, load_public_api_config
 from platform_core.public_api.principal import Principal
 from server.api.auth import install_database_resolver, require_principal
+from server.api.chat import register_chat_routes
+from server.api.streaming import register_streaming_routes
 from server.api.errors import install_api_error_handlers
 from server.api.guard import PublicApiGuardMiddleware
 from server.api.inventory import API_V1_PREFIX, API_V1_ROUTES, capability_areas
@@ -155,6 +157,8 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
         )
 
     register_tool_routes(api, config, PUBLIC_API_TAG)
+    register_chat_routes(api, config, PUBLIC_API_TAG)
+    register_streaming_routes(api, config, PUBLIC_API_TAG)
     register_job_routes(api, config, PUBLIC_API_TAG)
     register_upload_routes(api, config, PUBLIC_API_TAG)
     register_webhook_routes(api, config, PUBLIC_API_TAG)

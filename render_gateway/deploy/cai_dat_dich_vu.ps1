@@ -105,7 +105,18 @@ if (-not (Get-Service LTTComfyUI -ErrorAction SilentlyContinue)) {
 #    `C:\Users\lengo\...\Python312\python.exe` moi la ComfyUI THAT (giu model + VRAM).
 #    Chi giet tien trinh cha thi dich vu bao "Stopped" trong khi ComfyUI that
 #    VAN SONG VA VAN OM VRAM. Do that 22/08: PID 8564 (3,8 MB) -> PID 13912 (2.265 MB).
-& $nssm set LTTComfyUI AppKillProcessTree 1                                    | Out-Null
+#
+# !! KHONG DAT `AppKillProcessTree` O DAY. nssm tren may B la **2.24 (2014-08-31)**,
+#    va tham so do CHUA TON TAI trong ban 2.24 - no duoc them o cac ban sau, va o
+#    do no dung de TAT hanh vi mac dinh chu khong phai de bat.
+#
+#    Ban 2.24 VON DA giet ca cay tien trinh khi dung dich vu. Dat tham so nay lam
+#    nssm in mot trang loi "Invalid parameter" giua chung script, va nguoi doc
+#    tuong dich vu cai hong. Da xay ra that 23/08.
+#
+#    KHONG TIN, HAY DO: sau `nssm stop LTTComfyUI`, kiem
+#    `nvidia-smi --query-gpu=memory.used --format=csv`. Con vai GB nghia la
+#    ComfyUI that con song, va luc do moi phai tim cach khac.
 & $nssm set LTTComfyUI AppStdout "$Goc\logs\comfy.log"                         | Out-Null
 & $nssm set LTTComfyUI AppStderr "$Goc\logs\comfy_err.log"                     | Out-Null
 & $nssm set LTTComfyUI AppRotateFiles 1                                        | Out-Null
@@ -113,7 +124,14 @@ if (-not (Get-Service LTTComfyUI -ErrorAction SilentlyContinue)) {
 & $nssm set LTTComfyUI Start SERVICE_AUTO_START                                | Out-Null
 # Tran so lan khoi dong lai: khong de roi vao vong lap khoi dong vo han.
 # Sau 3 lan chet trong 90 giay thi dung han va de nguoi doc log.
-& $nssm set LTTComfyUI AppThrottle 90000                                       | Out-Null
+# !! KHONG DAT AppThrottle LON HON THOI GIAN CHO CUA SCM (~30 giay).
+#    Ban dau la 90000, va hau qua la MOI LAN `net stop` + `net start` DEU THAT BAI:
+#    SCM cho ~30s, NSSM van dang giu throttle 90s, SCM tuyen bo "could not be
+#    started" roi gui STOP -> dich vu CHET HAN. Da xay ra that voi LTTLlmGateway
+#    luc 00:12 ngay 23/08, va trieu chung danh lua nguoi doc: log ung dung ghi
+#    "Uvicorn running" ngay truoc do, nen no trong het nhu loi cua ma nguon moi.
+#    5000 van chan duoc vong lap crash ma khong dung vao tran cho cua SCM.
+& $nssm set LTTComfyUI AppThrottle 5000                                        | Out-Null
 & $nssm set LTTComfyUI AppExit Default Restart                                 | Out-Null
 & $nssm set LTTComfyUI AppRestartDelay 15000                                   | Out-Null
 Dat "LTTComfyUI da cau hinh (chi nghe 127.0.0.1)"
@@ -158,7 +176,14 @@ Dat ("da nap " + $bien.Count + " bien moi truong vao dich vu")
 & $nssm set LTTRenderGateway AppRotateFiles 1                                  | Out-Null
 & $nssm set LTTRenderGateway AppRotateBytes 20000000                           | Out-Null
 & $nssm set LTTRenderGateway Start SERVICE_AUTO_START                          | Out-Null
-& $nssm set LTTRenderGateway AppThrottle 90000                                 | Out-Null
+# !! KHONG DAT AppThrottle LON HON THOI GIAN CHO CUA SCM (~30 giay).
+#    Ban dau la 90000, va hau qua la MOI LAN `net stop` + `net start` DEU THAT BAI:
+#    SCM cho ~30s, NSSM van dang giu throttle 90s, SCM tuyen bo "could not be
+#    started" roi gui STOP -> dich vu CHET HAN. Da xay ra that voi LTTLlmGateway
+#    luc 00:12 ngay 23/08, va trieu chung danh lua nguoi doc: log ung dung ghi
+#    "Uvicorn running" ngay truoc do, nen no trong het nhu loi cua ma nguon moi.
+#    5000 van chan duoc vong lap crash ma khong dung vao tran cho cua SCM.
+& $nssm set LTTRenderGateway AppThrottle 5000                                  | Out-Null
 & $nssm set LTTRenderGateway AppExit Default Restart                           | Out-Null
 & $nssm set LTTRenderGateway AppRestartDelay 15000                             | Out-Null
 if ($BoQuaComfy) {

@@ -78,6 +78,43 @@
       }
     },
     {
+      "name": "POST /chat/completions",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "OpenAI-compatible chat completion. Chargeable and answered in the same request (execution mode SYNC_BILLED). Requires an Idempotency-Key header. Credit is held at a ceiling before the model runs and settled from measured tokens.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "chat",
+            "completions"
+          ],
+          "raw": "{{base_url}}/chat/completions"
+        }
+      }
+    },
+    {
       "name": "GET /credits/balance",
       "request": {
         "description": "The account's credit balance, from the credit ledger.",
@@ -261,6 +298,42 @@
       }
     },
     {
+      "name": "POST /messages",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Anthropic Messages API over SSE, for Claude Code and Claude Desktop. Point ANTHROPIC_BASE_URL at the /api parent of this route. Requires \"stream\": true. Credit is held at a ceiling and settled from the tokens actually produced.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "messages"
+          ],
+          "raw": "{{base_url}}/messages"
+        }
+      }
+    },
+    {
       "name": "GET /models",
       "request": {
         "description": "Returns the public model aliases, what they can do, how stable they are and which tools accept them. Prices come from POST /quotes, which prices a whole call rather than a model.",
@@ -340,6 +413,42 @@
             "quotes"
           ],
           "raw": "{{base_url}}/quotes"
+        }
+      }
+    },
+    {
+      "name": "POST /responses",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "OpenAI Responses API over SSE, for the Codex CLI and its VS Code extension. Set base_url to this route's parent and wire_api = \"responses\". Requires \"stream\": true.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "responses"
+          ],
+          "raw": "{{base_url}}/responses"
         }
       }
     },

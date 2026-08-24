@@ -30,6 +30,7 @@ from typing import Any, Callable, Optional
 
 from . import jobs as J
 from . import ngan_sach as NS
+from . import theo_doi_luot
 from .comfy import ComfyClient, ComfyError, ComfyRejected, prompt_id_for
 from .storage_io import HttpFetcher, RefSpec, StorageIOError, day_ket_qua, tai_refs
 from .workflows import WorkflowError, kiem_node, nap, thay
@@ -74,7 +75,13 @@ class Runner:
                  poll_s: float = 2.0,
                  sleep: Callable[[float], None] = time.sleep,
                  now: Callable[[], float] = time.monotonic,
-                 workflow_dir: Optional[Path] = None):
+                 workflow_dir: Optional[Path] = None,
+                 doc_vram_mb: Optional[Callable[[], Optional[int]]] = None,
+                 doc_ram_gb: Optional[Callable[[], Optional[float]]] = None):
+        # Hai nguồn đo tiêm được: test không được phụ thuộc vào card của máy đang
+        # chạy test, và cũng không được chờ `nvidia-smi` thật.
+        self.doc_vram_mb = doc_vram_mb
+        self.doc_ram_gb = doc_ram_gb
         self.comfy = comfy
         self.store = store
         self.fetcher = fetcher
@@ -86,6 +93,29 @@ class Runner:
         self.workflow_dir = workflow_dir
 
     # ── công khai ────────────────────────────────────────────────────────────
+    def _doc_vram(self) -> Optional[int]:
+        """VRAM đang dùng, `nvidia-smi`. Tiêm được để test không cần GPU."""
+        if self.doc_vram_mb is not None:
+            return self.doc_vram_mb()
+        from .busy import vram_dung_mb_qua_smi
+        return vram_dung_mb_qua_smi()
+
+    def _doc_ram_gb(self) -> Optional[float]:
+        """RAM còn trống, lấy từ ComfyUI `/system_stats`.
+
+        ⭐ Cùng nguồn với `BusyWatcher._tai_nguyen`, và cùng lý do: con số RAM ở
+           đó **không** bị giới hạn theo tiến trình nên nó đúng, khác hẳn con số
+           VRAM của cùng endpoint (mù với tiến trình khác trên Windows/WDDM).
+        """
+        if self.doc_ram_gb is not None:
+            return self.doc_ram_gb()
+        try:
+            st = self.comfy.system_stats()
+            gia_tri = (st.get("system") or {}).get("ram_free")
+            return float(gia_tri) / (1024 ** 3) if gia_tri else None
+        except Exception:                                       # noqa: BLE001
+            return None
+
     def run(self, req: RenderRequest) -> J.Job:
         """Chạy một job tới khi xong. Không bao giờ ném — mọi lỗi thành trạng thái."""
         pid = prompt_id_for(req.job_id)
@@ -175,7 +205,24 @@ class Runner:
                 return self.store.fail(req.job_id, E_COMFY_DOWN, str(e)) or job
 
             self.store.set_status(req.job_id, J.GENERATING)
-            ket, thong_diep = self._cho(job.prompt_id)
+
+            # ── LẤY MẪU TRONG LÚC CHẠY, không chỉ chờ kết quả ───────────────
+            # Trước đây đường này **không lấy mẫu nào**, trong khi
+            # `deploy/chay_baseline.py` lấy ~198 mẫu mỗi job. Tức là bộ đo canh
+            # cẩn thận còn thứ khách dùng chạy mù — và đó đúng là chỗ tệ nhất để
+            # mù, vì "model chỉ thường trú một phần" **vẫn cho ra ảnh đúng**, chỉ
+            # chậm 3–10 lần, và mọi chốt sống/chết vẫn xanh (P6, D-051).
+            with theo_doi_luot.NguoiTheoDoi(
+                    doc_vram=self._doc_vram,
+                    doc_ram_trong_gb=self._doc_ram_gb) as td:
+                ket, thong_diep = self._cho(job.prompt_id)
+
+            tt = td.tom_tat()
+            if tt.so_mau:
+                self.store.set_status(req.job_id, J.GENERATING,
+                                      do_duoc=tt.as_dict())
+            for cb in tt.canh_bao:
+                log.warning("job %s: %s", req.job_id, cb)
 
             if ket == "success":
                 break

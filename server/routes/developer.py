@@ -132,6 +132,7 @@ SECTIONS = (
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
     ("webhooks", "/developers/webhooks", N_("Webhook")),
     ("notifications", "/developers/notifications", N_("Thông báo")),
+    ("cli", "/developers/cli", N_("Cắm vào Codex / Claude")),
     ("docs", "/developers/docs", N_("Tài liệu & SDK")),
     ("settings", "/developers/settings", N_("Cài đặt & bảo mật")),
     ("privacy", "/developers/privacy", N_("Dữ liệu & lưu trữ")),
@@ -318,6 +319,10 @@ def developer_quickstart(request: Request, tool: str = "",
             ("PowerShell", examples.powershell_snippet(chosen)),
             ("HTTP", examples.raw_http_snippet(chosen)),
         ]
+    # Cửa chat chỉ hiện khi tool đứng sau nó THẬT SỰ đang mở. Dạy một lời gọi
+    # mà tài khoản này chưa gọi được là dạy người ta gặp 403 — fail-closed của
+    # Q92 phải nhìn thấy được ở tài liệu, không chỉ ở máy chủ.
+    co_chat = any(item.name == "text.chat" for item in catalog)
     return _render(
         request, db, user, "quickstart", "dev_quickstart.html",
         env_vars=examples.ENV_VARS, shells=examples.SHELL_EXPORTS,
@@ -325,6 +330,8 @@ def developer_quickstart(request: Request, tool: str = "",
         tool={"name": chosen.name} if chosen is not None else None,
         tool_names=[item.name for item in catalog],
         snippets=snippets,
+        chat_snippets=examples.chat_snippets() if co_chat else (),
+        chat_khac_biet=examples.CHAT_DIFFERENCES if co_chat else (),
         retry_snippet=RETRY_EXAMPLE)
 
 
@@ -861,6 +868,37 @@ def developer_webhook_resend(request: Request, delivery_id: str,
     except webhook_console.WebhookConsoleError:
         db.rollback()
     return RedirectResponse("/developers/webhooks", status_code=303)
+
+
+@router.get("/cli", response_class=HTMLResponse)
+def developer_cli(request: Request, user=Depends(require_account),
+                  db: Session = Depends(get_db)):
+    """Cấu hình sẵn cho Codex, Claude Code và Claude Desktop.
+
+    ⭐ VÌ SAO TRANG NÀY TỒN TẠI. Thứ chặn một lập trình viên gần như không bao
+       giờ là giao thức — nó là **điền đúng một file cấu hình**. Hai base URL
+       lệch nhau bốn ký tự, một tên model phải khớp chính xác, và một biến môi
+       trường phải đặt ở cấp người dùng chứ không phải trong một cửa sổ terminal.
+       Mỗi thứ đó hỏng lặng lẽ với một triệu chứng vô ích.
+
+    ⛔ Trang này **không** chèn khoá thật vào cấu hình. Khoá chỉ hiện một lần lúc
+       tạo và máy chủ không giữ lại được — cùng luật mà mọi ví dụ khác trong
+       `examples.py` đã theo: *"No snippet ever contains a key."*
+    """
+    from platform_core.public_api import examples
+
+    goc = str(request.base_url).rstrip("/")
+    return _render(
+        request, db, user, "cli", "dev_cli.html",
+        base_url=goc,
+        codex_config=examples.codex_config(goc),
+        codex_profile=examples.codex_profile(),
+        claude_env=examples.claude_code_env(goc),
+        claude_settings=examples.claude_code_settings(goc),
+        desktop=examples.claude_desktop_steps(goc),
+        bay=examples.CLI_BAY,
+        model=examples.CLI_MODEL,
+        env_key=examples.ENV_API_KEY)
 
 
 @router.get("/docs", response_class=HTMLResponse)

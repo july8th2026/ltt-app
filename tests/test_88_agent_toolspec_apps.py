@@ -21,6 +21,22 @@ EXPECTED = {
     # ToolSpec job-based — khong phai vi ai do quyet dinh mo no cho Agent. Ba cong
     # fail-closed cua Q92 va cong `is_active` cua H37 khong bi anh huong.
     "image.ltt",
+    # Model NGON NGU noi bo (H38/Q106). Cung ly do: `discover_tools()` lay MOI
+    # ToolSpec job-based.
+    #
+    # 🔴 NHUNG HE QUA O DAY KHAC, va phai noi ra: `planner.py` goi thang
+    #    `discover_tools()`, KHONG co allowlist rieng. Nen tu luc nay Agent noi
+    #    bo CO THE tu chon `text.chat` — tuc la mot luot chay Agent (von da chay
+    #    tren mot LLM) co the tao them mot job LLM nua va tinh tien khach lan hai.
+    #
+    #    Do khong hien nhien la sai: model nha re hon `text.generate` (Gemini),
+    #    nen Agent chon no co the la lua chon dung. Nhung no la mot HANH VI MOI,
+    #    khong phai mot dong trong bang test.
+    #
+    # ⛔ Neu sau nay muon giu Agent tranh xa tool nay thi CHO SUA la mot allowlist
+    #    o phia Agent, KHONG phai bang nay. Bang nay chi chep lai `discover_tools()`
+    #    tra ve gi; sua no de "chan" Agent la sua cai nhiet ke.
+    "text.chat",
 }
 
 

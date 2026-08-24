@@ -612,6 +612,14 @@ def _quet_canh_bao() -> None:
 
         _don_nexus(db)
         _tham_relay_nexus()
+        _tham_cong_vlm()
+        # Sau `_tham_cong_vlm`, không thay nó: cổng có thể SỐNG mà model vẫn đang
+        # bò trên CPU. Hai câu hỏi khác nhau, hai cảnh báo khác nhau.
+        _tham_gpu_may_b(db)
+        # Cổng ẢNH là một dịch vụ KHÁC, trên cùng máy B. Nó chết thì cổng VLM vẫn
+        # xanh, và ngược lại — nên nó cần phép thăm riêng (H37/L2).
+        _tham_cong_render()
+        _tham_gpu_anh(db)
 
 
 def _tham_relay_nexus() -> bool:
@@ -653,6 +661,231 @@ def _tham_relay_nexus() -> bool:
         except Exception:                                       # noqa: BLE001
             log.warning("khong dem duoc nexus:relay_im_lang", exc_info=True)
         return False
+
+
+def _tham_cong_vlm() -> bool:
+    """Cổng VLM trên máy B còn trả lời không? Đếm khi im lặng để cảnh báo tự bắn.
+
+    Cùng bài toán với `_tham_relay_nexus`, cùng lời giải: nền tảng có thể **xanh
+    hoàn toàn** trong khi model ngôn ngữ nhà không phục vụ được ai — nó là một
+    tiến trình khác, trên một máy khác. Trước cái này, cách duy nhất biết máy B
+    chết là có người thử gọi rồi thấy hỏng.
+
+    ⭐ Thăm `/live`, **không** `/health`: `/live` cố ý không cần bearer và cố ý
+       không nói gì ngoài `{ok, version}`. Một phép thăm dò sống/chết không nên
+       phải mang theo bí mật, và không nên đọc được trạng thái vận hành.
+
+    ⛔ BẬN KHÔNG PHẢI IM LẶNG. Máy B trả 429 khi đang bận với việc ảnh hoặc video —
+       đó là trạng thái **bình thường** của một máy chia GPU, và nó **không** được
+       đếm vào đây. Chỉ đếm khi cổng không trả lời được. Lẫn hai thứ này thì người
+       trực bị đánh thức mỗi tối dự án video chạy, và sẽ ngừng đọc cảnh báo.
+    """
+    goc = (os.environ.get("LTT_LLM_BASE_URL") or "").strip().rstrip("/")
+    if not goc:
+        return True                      # chưa khai → không đoán, không báo
+
+    try:
+        import httpx
+
+        r = httpx.get(f"{goc}/live", timeout=5.0)
+        if 200 <= r.status_code < 300:
+            return True
+        if r.status_code == 429:
+            # ⛔ 429 nghĩa là CÓ AI ĐÓ TRẢ LỜI — tiến trình sống, chỉ đang bận.
+            #    Đếm nó vào đây thì người trực bị đánh thức mỗi tối dự án video
+            #    chạy, và sẽ ngừng đọc cảnh báo. Đó là cách làm hỏng một kênh
+            #    cảnh báo cho tốt. (QT-2: bận ≠ hỏng.)
+            #
+            #    `/live` hôm nay không đi qua trọng tài nên không trả 429; chốt ở
+            #    đây là để một bản sau đổi hành vi cũng không phá kênh cảnh báo.
+            log.info("cong VLM tra 429 (ban) — con song, khong dem")
+            return True
+        # 404 VẪN ĐẾM: tiến trình trả lời nhưng không có `/live` nghĩa là bản
+        # deploy trên máy B đã cũ — đó là một sự cố thật, chỉ khác kiểu.
+        ly_do = f"HTTP {r.status_code}"
+    except Exception as exc:                                    # noqa: BLE001
+        ly_do = type(exc).__name__
+
+    log.warning("cong VLM im lang tai %s (%s)", goc, ly_do)
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment("ltt_llm:cong_im_lang")
+    except Exception:                                           # noqa: BLE001
+        log.warning("khong dem duoc ltt_llm:cong_im_lang", exc_info=True)
+    return False
+
+
+def _tham_cong_render() -> bool:
+    """Cổng ẢNH trên máy B còn trả lời không? (H37/L2)
+
+    ⭐ VÌ SAO KHÔNG DÙNG CHUNG `_tham_cong_vlm`. Máy B chạy **hai dịch vụ khác
+       nhau**: cổng VLM (:8299) và cổng render (:8199). Chúng khởi động riêng,
+       chết riêng, và deploy riêng. Một cái xanh không nói gì về cái kia. Gộp làm
+       một phép thăm là tự tạo ra một điểm mù đúng bằng nửa số dịch vụ.
+
+    ⭐ Thăm `/live`, **không** `/health`: cùng lý do như cổng VLM — phép thăm dò
+       sống/chết không nên phải mang theo bí mật.
+
+    ⛔ BẬN KHÔNG PHẢI HỎNG, và ở đây nó còn dễ nhầm hơn bên VLM: cổng render trả
+       429 mỗi khi dự án video chiếm card, và đó là **trạng thái bình thường
+       hằng đêm** của máy B (D-005). Đếm nó vào đây thì người trực bị đánh thức
+       mỗi tối, và sẽ ngừng đọc cảnh báo.
+    """
+    goc = (os.environ.get("LTT_RENDER_BASE_URL") or "").strip().rstrip("/")
+    if not goc:
+        return True                      # chưa khai → không đoán, không báo
+
+    try:
+        import httpx
+
+        r = httpx.get(f"{goc}/live", timeout=5.0)
+        if 200 <= r.status_code < 300:
+            return True
+        if r.status_code == 429:
+            log.info("cong render tra 429 (ban) — con song, khong dem")
+            return True
+        # 404 VẪN ĐẾM: có người trả lời mà không có `/live` nghĩa là bản trên máy
+        # B đã cũ hơn bản này — một sự cố thật, chỉ khác kiểu.
+        ly_do = f"HTTP {r.status_code}"
+    except Exception as exc:                                    # noqa: BLE001
+        ly_do = type(exc).__name__
+
+    log.warning("cong render im lang tai %s (%s)", goc, ly_do)
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment("ltt_image:cong_im_lang")
+    except Exception:                                           # noqa: BLE001
+        log.warning("khong dem duoc ltt_image:cong_im_lang", exc_info=True)
+    return False
+
+
+def _tham_gpu_anh(db) -> bool:
+    """Model ẢNH có THẬT SỰ nằm trên card không? (H37/L3)
+
+    Cùng bài toán, cùng lời giải, cùng cái máy như `_tham_gpu_may_b` — CUDA hỏng
+    thì hỏng cho **mọi** hộ dùng chung card, không riêng LLM.
+
+    ⚠️ Nhưng triệu chứng bên ảnh khó thấy hơn hẳn: một lượt vẽ vốn đã mất 96 giây,
+       nên "chậm gấp hàng chục lần" trông giống hệt "máy đang bận" — đúng thứ ta
+       đã dạy mọi người coi là bình thường.
+
+    ⛔ KHÔNG đánh dấu lỗi cho khoá ở đây: đây là phép **quan sát**, không phải một
+       lượt gọi thật, và `danh_dau_loi` sẽ tắt khoá model nhà sau 5 lần (D-005).
+    """
+    goc = (os.environ.get("LTT_RENDER_BASE_URL") or "").strip().rstrip("/")
+    if not goc:
+        return True
+
+    try:
+        from platform_core import api_keys, api_pool
+        from platform_core.models import APIKEY_CAT_IMAGE
+
+        key = api_pool.chon_key(db, category=APIKEY_CAT_IMAGE,
+                                thu_tu_provider=["ltt_image"])
+        token = api_keys.lay_credential(db, key)
+    except Exception as exc:                                    # noqa: BLE001
+        log.debug("bo qua tham GPU anh: khong lay duoc khoa (%s)",
+                  type(exc).__name__)
+        return True
+
+    try:
+        import httpx
+
+        r = httpx.get(f"{goc}/health", timeout=8.0,
+                      headers={"Authorization": f"Bearer {token}"})
+        if r.status_code != 200:
+            return True                  # `_tham_cong_render` đã lo phần chết/sống
+        gpu = (r.json() or {}).get("gpu") or {}
+    except Exception as exc:                                    # noqa: BLE001
+        log.info("khong doc duoc /health cong render de kiem GPU: %s",
+                 type(exc).__name__)
+        return True
+
+    if not gpu.get("dang_lo"):
+        return True
+
+    # `dang_lo` chỉ bật khi CHẮC CHẮN: đang vẽ đủ lâu mà VRAM vẫn thấp.
+    log.error("model anh may B dang chay tren CPU, khong phai GPU: %s",
+              gpu.get("ly_do") or f"VRAM {gpu.get('vram_dung_mb')} MB")
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment("ltt_image:tren_cpu")
+    except Exception:                                           # noqa: BLE001
+        log.warning("khong dem duoc ltt_image:tren_cpu", exc_info=True)
+    return False
+
+
+def _tham_gpu_may_b(db) -> bool:
+    """Model trên máy B có THẬT SỰ nằm trên card không, hay đang bò trên CPU?
+
+    🔴 VÌ SAO CẦN MỘT PHÉP THĂM RIÊNG. Ngày 23/08 máy B tắt không sạch, CUDA hỏng
+       cả máy, `llama.cpp` **lặng lẽ rơi về CPU** — và `_tham_cong_vlm` ở trên
+       **vẫn xanh suốt**, vì `/live` trả `{"ok": true}` đúng như nó phải trả. Cổng
+       sống thật; chỉ là thứ đằng sau nó chậm gấp hàng chục lần.
+
+       Triệu chứng là **chậm**, không phải **lỗi**. Đó là loại hỏng mà mọi chốt
+       sống/chết đều bỏ lọt, và nó đã chạy **hơn một giờ** trước khi tình cờ bị
+       phát hiện trong lúc đo một việc khác.
+
+    ⭐ PHẢI ĐỌC `/health`, NÊN PHẢI CÓ KHOÁ — và khoá lấy từ `api_pool`, chỗ duy
+       nhất được phép giữ nó. Không có khoá thì **im lặng bỏ qua**: một cài đặt
+       dev không có máy B, và đoán mò rồi báo động là cách làm hỏng kênh cảnh báo.
+
+    ⛔ KHÔNG đánh dấu lỗi cho khoá ở đây. Đây là phép **quan sát**, không phải một
+       lượt gọi thật; `danh_dau_loi` sẽ tắt khoá model nhà sau 5 lần (D-005).
+    """
+    goc = (os.environ.get("LTT_LLM_BASE_URL") or "").strip().rstrip("/")
+    if not goc:
+        return True
+
+    try:
+        from platform_core import api_keys, api_pool
+        from platform_core.models import APIKEY_CAT_CHAT
+
+        key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                                thu_tu_provider=["ltt_llm"])
+        token = api_keys.lay_credential(db, key)
+    except Exception as exc:                                    # noqa: BLE001
+        # Chưa cấu hình khoá `ltt_llm` → không đoán, không báo động. Nhưng ghi
+        # lại: "im lặng" phải khác "biến mất", nếu không thì ngày khoá bị xoá
+        # nhầm sẽ trông y hệt ngày mọi thứ bình thường.
+        log.debug("bo qua tham GPU may B: khong lay duoc khoa (%s)",
+                  type(exc).__name__)
+        return True
+
+    try:
+        import httpx
+
+        r = httpx.get(f"{goc}/health", timeout=8.0,
+                      headers={"Authorization": f"Bearer {token}"})
+        if r.status_code != 200:
+            return True                  # `_tham_cong_vlm` đã lo phần chết/sống
+        gpu = (r.json() or {}).get("gpu") or {}
+    except Exception as exc:                                    # noqa: BLE001
+        # `_tham_cong_vlm` ngay trên đã lo phần chết/sống và đã đếm nếu cần, nên
+        # ở đây KHÔNG đếm lần hai — nhưng vẫn ghi, để một `/health` hỏng theo
+        # kiểu khác (JSON vỡ, timeout) không trôi qua không dấu vết.
+        log.info("khong doc duoc /health may B de kiem GPU: %s",
+                 type(exc).__name__)
+        return True
+
+    if not gpu.get("dang_lo"):
+        return True
+
+    # `dang_lo` chỉ bật khi CHẮC CHẮN: có model đang nạp mà VRAM lại thấp. Không
+    # đo được thì nó là `None`, và `None` không phải `True`.
+    log.error("model may B dang chay tren CPU, khong phai GPU: %s",
+              gpu.get("ly_do") or f"VRAM {gpu.get('vram_dung_mb')} MB")
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment("ltt_llm:tren_cpu")
+    except Exception:                                           # noqa: BLE001
+        log.warning("khong dem duoc ltt_llm:tren_cpu", exc_info=True)
+    return False
 
 
 def _don_nexus(db) -> int:

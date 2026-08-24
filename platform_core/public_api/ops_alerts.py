@@ -79,6 +79,51 @@ NGUONG = {
     # phải báo sớm. Ngưỡng 2 (không phải 1) để một lần chớp mạng không dựng
     # người trực dậy; vòng bảo trì thăm định kỳ nên 2 lần liên tiếp là thật.
     "nexus:relay_im_lang": 2,
+    # Cổng VLM (máy B) im lặng: model ngôn ngữ nhà **không phục vụ được ai**, dù
+    # nền tảng vẫn xanh. Cùng loại sự cố với relay Nexus — nó nằm trên một máy
+    # khác, một tiến trình khác, và nền tảng không có cách nào tự biết.
+    #
+    # Ngưỡng 2 vì cùng lý do: một lần chớp mạng không nên dựng người trực dậy,
+    # nhưng hai vòng bảo trì liên tiếp im lặng là thật.
+    #
+    # ⚠️ Đây KHÁC "máy B bận". Bận là 429 và là trạng thái bình thường của một máy
+    #    chia GPU với việc ảnh và video — nó **không** được đếm vào đây. Chỉ đếm
+    #    khi cổng **không trả lời**.
+    "ltt_llm:cong_im_lang": 2,
+    # 🔴 MODEL MÁY B ĐANG CHẠY TRÊN CPU, KHÔNG PHẢI GPU.
+    #
+    # Ngưỡng 1 — bắn ngay lần đầu, khác hẳn `cong_im_lang` ở trên. Ba lý do:
+    #
+    #   1. **Không có dương tính giả.** Chốt chỉ bật khi CHẮC CHẮN: có model đang
+    #      nạp mà VRAM lại dưới 5 GB. Không đo được thì nó im, không đoán.
+    #   2. **Không tự khỏi.** Cổng im lặng có thể là một cú chớp mạng; CUDA hỏng
+    #      thì hỏng cho tới khi có người khởi động lại máy.
+    #   3. **Mỗi vòng chờ là tiền và là thời gian của khách.** Sự cố 23/08 chạy
+    #      **hơn một giờ** trước khi tình cờ bị phát hiện, và trong suốt giờ đó
+    #      mọi chốt sống/chết đều xanh.
+    #
+    # ⚠️ Đây KHÁC "cổng im lặng". Cổng vẫn trả `200` bình thường — thứ hỏng nằm
+    #    sau nó, và triệu chứng là **chậm**, không phải **lỗi**.
+    "ltt_llm:tren_cpu": 1,
+    # Cổng ẢNH (máy B) im lặng. Một dịch vụ KHÁC, cổng khác, khởi động riêng —
+    # cổng VLM xanh không nói gì về nó. Ngưỡng 2, cùng lý do như trên.
+    #
+    # ⚠️ Ở đây "bận" còn dễ nhầm hơn: cổng render trả 429 mỗi khi dự án video
+    #    chiếm card, và đó là trạng thái bình thường HẰNG ĐÊM của máy B (D-005).
+    "ltt_image:cong_im_lang": 2,
+    # 🔴 MODEL ẢNH ĐANG CHẠY TRÊN CPU. Ngưỡng 1, cùng ba lý do như `ltt_llm`:
+    # không có dương tính giả, không tự khỏi, và mỗi vòng chờ là tiền của khách.
+    #
+    # ⚠️ Bên ảnh triệu chứng còn khó thấy hơn bên chữ: một lượt vẽ vốn đã mất 96
+    #    giây, nên "chậm gấp hàng chục lần" trông giống hệt "máy đang bận".
+    "ltt_image:tren_cpu": 1,
+    # Khách hết credit. Ngưỡng 3 trong một vòng bảo trì: một lần là chuyện bình
+    # thường (ai cũng có lúc cạn), ba lần liên tiếp nghĩa là có người đang **cố
+    # dùng mà không dùng được** và không biết vì sao.
+    #
+    # ⛔ Đây KHÔNG phải cảnh báo sự cố — hệ thống đang làm đúng. Nó là cảnh báo
+    #    **kinh doanh**, và nó nằm cùng chỗ vì người trực cũng là người bán.
+    metrics.CREDIT_EXHAUSTED: 3,
     # Webhook chết nghĩa là khách không biết job của họ đã xong.
     metrics.WEBHOOK_FAILED: 10,
 }

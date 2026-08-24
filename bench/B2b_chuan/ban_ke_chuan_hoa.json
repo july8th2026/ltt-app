@@ -1,0 +1,677 @@
+{
+  "khung_chung": "2560x1440",
+  "canh_dai_chung": 2560,
+  "truoc": {
+    "B2b_s50_seed2": [
+      {
+        "tep": "B2b_s50_seed2_p01_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p02_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p03_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p04_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p05_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p06_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p07_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p08_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p09_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p10_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p11_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p12_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p13_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p14_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p15_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p16_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p17_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p18_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p19_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p20_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p21_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p22_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p23_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p24_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p25_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p26_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p27_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p28_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p29_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s50_seed2_p30_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      }
+    ],
+    "B2b_s36_seed2": [
+      {
+        "tep": "B2b_s36_seed2_p01_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p02_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p03_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p04_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p05_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p06_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p07_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p08_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p09_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p10_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p11_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p12_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p13_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p14_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p15_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p16_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p17_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p18_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p19_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p20_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p21_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p22_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p23_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p24_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p25_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p26_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p27_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p28_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p29_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2b_s36_seed2_p30_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      }
+    ]
+  },
+  "sau": {
+    "B2b_s50_seed2": [
+      {
+        "tep": "B2b_s50_seed2_p01_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p02_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p03_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p04_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p05_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p06_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p07_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p08_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p09_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p10_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p11_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p12_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p13_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p14_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p15_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p16_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p17_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p18_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p19_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p20_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p21_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p22_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p23_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p24_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p25_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p26_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p27_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p28_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p29_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s50_seed2_p30_0.png",
+        "rong": 2560,
+        "cao": 1440
+      }
+    ],
+    "B2b_s36_seed2": [
+      {
+        "tep": "B2b_s36_seed2_p01_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p02_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p03_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p04_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p05_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p06_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p07_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p08_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p09_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p10_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p11_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p12_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p13_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p14_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p15_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p16_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p17_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p18_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p19_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p20_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p21_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p22_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p23_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p24_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p25_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p26_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p27_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p28_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p29_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2b_s36_seed2_p30_0.png",
+        "rong": 2560,
+        "cao": 1440
+      }
+    ]
+  },
+  "_doc": "Da chuan hoa ve cung canh dai va cung dinh dang PNG. HAI ly do: (1) cong bang - anh to hon trong net hon bat ke model; (2) TINH MU - cham_mu.ghi_lo giu nguyen duoi tep goc, nen mot ben .jpg mot ben .png la nguoi cham nhin ten tep cung doan duoc nguon. KHONG chua duoc: anh Gemini da qua JPEG mot lan o nguon; ha kich thuoc lam nhieu nen mo di chu khong xoa - dieu nay nghieng ve phia BAT LOI cho Gemini, phai noi ro khi ket luan neu ket qua sat nhau. Khac biet NHU-GIAO (Gemini 1376x768 JPEG vs ta 2560x1440 PNG) la mot su that ve SAN PHAM, ghi o 'truoc' - dung lan no vao cau hoi ve MODEL. MOI anh ra deu CUNG MOT KHUNG: Gemini khai 16:9 nhung tra ti le 1,7917 con ta 1,7778, nen khop rieng canh dai van de lai lech 6 pixel chieu cao - nho nhung HE THONG, tuc la mot dau vet nguon."
+}

@@ -94,10 +94,44 @@ def test_the_public_contract_names_no_vendor_and_no_internal_path():
         {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": ",".join(PUBLISHED)})
     document = json.dumps({"tools": [tool.to_public_dict()
                                      for tool in build_catalog(config)]}).lower()
-    for leak in ("gemini", "byteplus", "openai", "flash-image", "pro-image",
+    for leak in ("gemini", "byteplus", "flash-image", "pro-image",
                  "prompts/", "thumbnail/", "taoanh/", "job_type", "app_slug",
                  "api_key"):
         assert leak not in document, leak
+
+
+def test_openai_may_be_NAMED_AS_A_FORMAT_but_never_AS_A_MODEL():
+    """⚠️ `openai` đã ra khỏi danh sách cấm ở trên, và đây là chỗ giải thích.
+
+    Danh sách đó trộn **hai rủi ro khác nhau**:
+
+      ① tên **nhà cung cấp model ta bán lại** (gemini, byteplus, …) — lộ ra thì
+         ngày đổi nhà cung cấp là một thay đổi phá vỡ tích hợp của khách;
+      ② **đường dẫn nội bộ** (prompts/, job_type, app_slug) — lộ ra là hở ruột.
+
+    `openai` vào danh sách khi chưa tool nào tương thích dây OpenAI. Nay `text.chat`
+    **cố ý** tương thích, và cụm *"OpenAI-compatible message format"* là một **lời
+    hứa với khách về giao thức**, không phải tiết lộ thứ gì chạy đằng sau — ta
+    không bán lại OpenAI. Giấu nó đi làm tài liệu tệ hơn mà không bảo vệ gì.
+
+    ⛔ Nhưng miễn trừ cả chuỗi thì mất chốt. Nên đổi lấy một chốt **hẹp hơn và
+       chặt hơn**: `openai` được phép xuất hiện trong **văn xuôi mô tả**, và
+       TUYỆT ĐỐI KHÔNG được là một **model, alias hay enum** — vì đó mới đúng là
+       rủi ro ① mà danh sách kia sinh ra để chặn.
+    """
+    config = load_public_api_config(
+        {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": ",".join(PUBLISHED)})
+    for tool in build_catalog(config):
+        d = tool.to_public_dict()
+        for ten, schema in (d.get("input_schema", {}).get("properties", {})).items():
+            for khoa in ("enum", "default", "examples"):
+                gia_tri = json.dumps(schema.get(khoa, ""), ensure_ascii=False).lower()
+                assert "openai" not in gia_tri, (
+                    f"{d['name']}.{ten}.{khoa} dat ten OpenAI nhu mot model/alias — "
+                    "do la rui ro danh sach cam sinh ra de chan")
+        for khoa in ("models", "model_aliases"):
+            gia_tri = json.dumps(d.get(khoa, ""), ensure_ascii=False).lower()
+            assert "openai" not in gia_tri, f"{d['name']}.{khoa} dat ten OpenAI"
 
 
 def test_model_choice_is_published_only_where_price_follows_it():
@@ -109,12 +143,18 @@ def test_model_choice_is_published_only_where_price_follows_it():
     from apps.taoanh.manifest import unit_credit
 
     image = catalog["image.generate"]
+    # 🔴 `pro` DA BI GO 23/08 — mot thay doi PHA VO hop dong, da ghi o
+    #    `docs/PUBLIC_API/CHANGELOG.md` muc "BREAKING - 2026-08-23".
+    #    Ly do: `gemini-3-pro-image` co gia von 35,2 credit/anh trong khi nen tang
+    #    ban 16 — tuc la ban duoi gia von ~55 %. Dong mot bac la cach xu ly dut
+    #    diem hon la mot muc mien tru trong `test_261`.
     assert set(image.input_schema["properties"]["model"]["enum"]) == {
-        "standard", "standard-lite", "enhanced", "pro"}
+        "standard", "standard-lite", "enhanced"}
     # Each alias resolves to a model the cost function prices differently.
     prices = {alias: unit_credit(image.resolve_model(alias))
               for alias in image.model_aliases}
-    assert prices == {"standard": 5, "standard-lite": 5, "enhanced": 8, "pro": 16}
+    assert prices == {"standard": 5, "standard-lite": 5, "enhanced": 8}
+    assert "pro" not in prices, "bac pro da dong — mo lai phai la mot quyet dinh"
 
     # The thumbnail tool prices every image the same, so it publishes no choice.
     assert "model" not in catalog["image.thumbnail"].input_schema["properties"]
@@ -266,18 +306,20 @@ def test_image_generation_prices_by_model_alias(api):
         api, token, "image.generate",
         {"prompt": "a red bicycle", "model": "standard", "count": 1},
         "wave1-image-cheap01")
+    # `pro` da dong 23/08 (xem CHANGELOG), nen bac dat nhat con lai la `enhanced`.
     dear, _created2 = _quote_and_run(
         api, token, "image.generate",
-        {"prompt": "a red bicycle", "model": "pro", "count": 1},
+        {"prompt": "a red bicycle", "model": "enhanced", "count": 1},
         "wave1-image-dear001")
-    assert cheap["credit"] == 5 and dear["credit"] == 16
+    assert cheap["credit"] == 5 and dear["credit"] == 8
 
     # And the alias reaches the handler as the real model id, never as the alias.
     gen, db = _session()
     try:
         jobs = db.execute(sa.select(Job).order_by(Job.created_at)).scalars().all()
         assert jobs[0].params["model"] == "gemini-2.5-flash-image"
-        assert jobs[1].params["model"] == "gemini-3-pro-image"
+        assert jobs[1].params["model"] != "enhanced", (
+            "alias phai duoc giai thanh id that truoc khi toi handler")
         assert jobs[0].params["owner_id"] == user_id
     finally:
         _close(gen)

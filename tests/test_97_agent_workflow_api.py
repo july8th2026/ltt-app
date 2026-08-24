@@ -115,7 +115,19 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert result.status_code == 200 and result.json()["validation"]["valid"]
     assert result.json()["estimated"] > 0 and result.json()["status"] == "validated"
     palette = a.get("/agent/api/palette").json()
-    assert palette["version"] == 2 and len(palette["tools"]) == 21
+    # ⭐ Chốt "palette phơi ĐÚNG bộ tool discover được", không chốt bằng một con số
+    #    cứng. Con số cứng ở đây từng là 21 và ngày 23/08/2026 nó đỏ vì HAI phiên
+    #    làm việc song song, mỗi phiên thêm một tool (`image.ltt`, `text.chat`).
+    #    Một số đếm mà nhiều phiên cùng tăng thì không phải bánh cóc: nó chỉ đỏ
+    #    lặp lại vì cùng một lý do, và lần nào người sửa cũng chỉ gõ số mới —
+    #    không ai phải nhìn xem tool mới là tool gì.
+    #    Bánh cóc THẬT nằm ở `tests/test_88`: danh sách THEO TÊN, thêm tool mà
+    #    quên khai là đỏ ở đó. Test này lo phần khác — palette và bộ discover
+    #    không được lệch nhau — và đó là bất biến mạnh hơn một con số.
+    from platform_core.agent.tools import discover_tools
+
+    assert palette["version"] == 2
+    assert {tool["name"] for tool in palette["tools"]} == set(discover_tools())
     assert palette["routing"]["mode"] == "platform_auto"
     assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
                for model in palette["models"])

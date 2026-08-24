@@ -33,7 +33,7 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | App | Disposition | Nhà mới | Chế độ chạy | Lý do |
 |---|---|---|---|---|
 | `thumbnail` | EXPOSE_V1 | — | ASYNC_JOB | Giá phẳng theo số ảnh, chốt được trước khi chạy. Đã nghiệm thu E2E. |
-| `anhnoibo` | EXPOSE_V1 | — | ASYNC_JOB | Bán model ảnh **nội bộ** trên máy B (H37/Q102). Giá chốt trước khi chạy nên hợp đồng job áp được: theo số ảnh, nhân 3 khi có ảnh tham chiếu vì đo thật là gấp ~3,3 lần thời gian máy. **Chưa nghiệm thu E2E** và chưa có trong công tắc người vận hành. |
+| `anhnoibo` | EXPOSE_V1 | — | ASYNC_JOB | Bán model ảnh **nội bộ** trên máy B (H37/Q102). Giá chốt trước khi chạy nên hợp đồng job áp được: theo số ảnh, nhân 3 khi có ảnh tham chiếu vì đo thật là gấp ~3,3 lần thời gian máy. **Chưa nghiệm thu E2E** và chưa có trong công tắc người vận hành. Từ H37/L1 (24/08) giá **quyết toán theo số ảnh thật sự sinh ra được**, không theo số đã xin — `credit_cost` do handler báo về, giá ở `apps/anhnoibo/gia.py` (phiên bản `ltt-image-2026-08-24`) và công bố ở `/gia-api`. |
 | `taoanh` | EXPOSE_V1 | — | ASYNC_JOB | Giá theo alias model công khai; một ảnh tham chiếu đi qua upload. |
 | `ltt_llm` | EXPOSE_V1 | — | ASYNC_JOB **và** SYNC | Bán model **ngôn ngữ nội bộ** trên máy B (H38/Q102), anh em với `anhnoibo`. Khác mọi app trên ở một điểm: **giá phụ thuộc số token RA, chỉ biết sau khi sinh xong**. Nên `credit_cost` là **trần ước cao** và nền tảng quyết toán theo số thật — `credit.quyet_toan` vốn không bao giờ thu quá phần đã giữ, nên lời hứa của quote (Q84) vẫn nguyên: khách **không bao giờ trả nhiều hơn** số đã báo. Đã nghiệm thu E2E trên phần cứng thật 22/08 (19/19), nhưng **chưa có trong công tắc người vận hành**. |
 | `upscalevideo` | EXPOSE_V1 | — | ASYNC_JOB | Giá phẳng theo preset; đường GPU thật, có hàng đợi và trần đồng thời. |
@@ -48,6 +48,7 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `demo` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | App thử hạ tầng; khách phải nhận 404 chứ không phải một tool tính tiền (Q71). |
 | `socialbot` | INTERNAL_ONLY | — | không có hợp đồng job | Đã đóng băng (Q10/Q78); cần browser và OAuth, chưa có threat model cho tự động hoá credential. |
 | `nexus` | DEFER | — | không có hợp đồng job | Không sinh Job và không có `ToolSpec`: đây là bề mặt **quản lý thiết bị** (ghép máy, thu hồi, nhật ký phiên) chứ không phải một tool tính tiền. Mở nó ra API nghĩa là công bố một hợp đồng về **danh tính thiết bị**, và điều đó phải chờ hạ tầng relay (D2) cùng legal review AGPL — xem `docs/nexus/`. Q93. |
+| `vps` | DEFER | — | không có hợp đồng job | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần. Quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có ToolSpec), không phải một quyết định sản phẩm — chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
 | `kichban` | RETIRED_NO_EXPOSE | — | ASYNC_JOB nội bộ | App đã nghỉ (Q69); muốn năng lực sinh text thì migrate sang app được hỗ trợ chứ không hồi sinh app cũ. |
 
 ## 2. 22/22 ToolSpec
@@ -58,7 +59,7 @@ Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều �
 | Tool | App | Trạng thái | Lý do |
 |---|---|---|---|
 | `image.thumbnail` | thumbnail | **EXPOSE_V1** | Giá phẳng 5/ảnh, chốt trước khi chạy; `model` bị ẩn vì giá không theo model. |
-| `image.ltt` | anhnoibo | **EXPOSE_V1 — chưa mở** | Model nhà, không tốn tiền provider nhưng chiếm GPU nên giá tính theo **thời gian máy**. `image_keys` ẩn vì tầng API chỉ giải được một tệp cho một tham số; `model` ẩn vì mới có một model và giá không theo model. Vắng ở mục 4 là **đúng**: nó chưa chạy thật từ ngoài vào bao giờ. |
+| `image.ltt` | anhnoibo | **EXPOSE_V1 — MỞ 24/08** | Model nhà, không tốn tiền provider nhưng chiếm GPU nên giá tính theo **thời gian máy**. `image_keys` ẩn vì tầng API chỉ giải được một tệp cho một tham số; `model` ẩn vì mới có một model và giá không theo model. Vắng ở mục 4 là **đúng**: nó chưa chạy thật từ ngoài vào bao giờ. H37/L1–L7 (24/08) đã đóng các chỗ lệch so với khuôn bán model nhà (`docs/KHUON_BAN_MODEL_NHA.md`): quyết toán theo ảnh thật, thăm dò sống/chết + GPU cho cổng render, giá công bố. **Bốn cổng đã mở cùng ngày** (D-053 + G10). Giá **hạ một phần ba**: 5 → 3 credit/ảnh, tham chiếu 15 → 9. ⛔ Mở **không phải** vì nó đẹp hơn — G6b đã chấm và nhà thua rõ (D-045); nó là một mặt hàng riêng, rẻ hơn. Việc có chữ tiếng Việt vẫn đi `image.thumbnail` (D-048). |
 | `image.generate` | taoanh | **EXPOSE_V1** | Bốn alias model có giá riêng; `image_keys` ẩn vì mảng chưa được hỗ trợ. |
 | `image.upscale` | upscalevideo | **EXPOSE_V1** | Giá phẳng 2/4 theo preset; ảnh vào qua upload đã kiểm magic-byte. |
 | `text.prompt_package` | prompt_ai_ommi | **EXPOSE_V1** | Giá theo `scene_count`; `operation/model/resources` ẩn vì là đường định tuyến nội bộ. |

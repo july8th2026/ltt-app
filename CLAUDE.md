@@ -192,8 +192,9 @@ nào**.
 | **Public API `/api/v1`** cho khách lập trình — 5 tool, cổng dev + admin, chế độ thử | ✅ xong 2026-08-15 (H35, Q92); **ĐÃ DEPLOY 2026-08-17**, tool chưa mở |
 | **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ LIVE; Windows + Android chạy thật, thu credit thật. Vòng sửa lỗi 2026-08-22 đóng hết mục A+B của `docs/nexus/N7_DANH_SACH_VIEC.md`. ⏸️ **Một đợt đã commit nhưng CHƯA DEPLOY — đọc `docs/nexus/N8_CHO_DEPLOY.md` trước khi chạy deploy.** Còn hạ tầng C1–C4, macOS, iOS |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
-| **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_image`, không phải app | 🔨 giai đoạn A xong 2026-08-22 (H37, Q102); cổng render đã là dịch vụ trên B; bán ra `/api/v1` qua app `anhnoibo` + tool `image.ltt` — **chưa mở cho khách** (4 cổng còn khoá, D-034). Xem `docs/ANH_NOI_BO/` |
-| **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 📋 logic đã khoá 2026-08-22 (H39, Q103+Q104); chưa viết code. Sau khi nới đĩa 217→600 GB + RAM 44→64 GB: **10–14 máy, ~2–2,5 tr đ/tháng**. Upload nhà **~150 Mbps** là trần dùng chung. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` |
+| **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_image`, không phải app | 🔨 giai đoạn A xong 2026-08-22 (H37, Q102); cổng render đã là dịch vụ trên B; bán ra `/api/v1` qua app `anhnoibo` + tool `image.ltt` — **chưa mở cho khách** (4 cổng còn khoá, D-034). 🔴 **So mù G6b 23/08: Gemini 24 – nhà 4 – hoà 2** (phần có ý nghĩa: **14 – 4**, vì chữ tiếng Việt **ngoài phạm vi** — D-048). Nhà thua vì **giải phẫu, hình học, chất chụp thật**. ⇒ **Đừng định vị nó là "đẹp hơn"; ảnh có chữ thì trả lời Gemini và đó là câu cuối.** ⛔ **Bỏ hẳn đối chứng ngoài** (D-046) — đo từ đây là **HiDream đấu HiDream, một lô một biến**. 🔒 **GIỮ 50 BƯỚC — G4 ĐÓNG 24/08 (D-054), câu cuối.** Lô B2c (seed thứ ba) nâng tổng lên **60 cặp**: 50 bước **33 – 18**, điểm 0,625, KTC [0,507; 0,744] **không chứa 0,5**. 36 bước đã thua **hai lô độc lập** ⇒ không nhận. ⚠️ Nhưng khác biệt **nhỏ hơn khác biệt giữa hai seed** (sàn nhiễu 91% > quyết đoán 85%) — đừng đọc thành "36 bước tệ rõ". Muốn mở lại thì phải là **phép kiểm tương đương**, không phải chạy lại phép cũ. 🔨 **Tiếp quản 24/08 (D-050, D-051):** chấm theo `docs/KHUON_BAN_MODEL_NHA.md` được **18/31**; đã sửa **lỗi tiền đang sống** — xin 4 ảnh, máy B trả 2, khách vẫn bị thu tiền 4 vì handler không báo `credit_cost` (cùng gốc với lỗi H38 đã sửa 23/08). Thêm `/live` + chốt GPU/CPU cho cổng render, giá về `apps/anhnoibo/gia.py` và công bố ở `/gia-api`. 🔓 **24/08 (D-052, D-053): giá hạ một phần ba** (5 → 3 credit/ảnh, tham chiếu 15 → 9), **bốn cổng MỞ trong mã**, **G5 đóng** (trần token 7.506 → 11.412, đo thật 20,1 GB · 239 s). **Máy chấm thay người** (D-052) — đổi lại mỗi phiếu quyết đoán phải viết lý do, `cham_mu.py` từ chối tính nếu thiếu. ⚠️ `render_gateway/deploy/deploy.ps1` có **hai lỗi khiến nó chưa từng deploy thành công lần nào** (đích sai một cấp + `Join-Path` giải ổ đĩa của máy A); đã sửa, nay 29/29 khớp hash. ✅ **G4 + G5 + G9 đều ĐÓNG 24/08.** G9: **100/100 lượt, 0 hỏng**, VRAM dao động 163 MB (0,9 %), nhiệt 69–74 °C, **không trôi gì** qua hơn ba giờ (D-056). ⏳ Còn **hai việc cần chủ sản phẩm**: bật cờ bằng `setup\cong_tac_tool_api.ps1` **rồi mới** deploy — sai thứ tự thì cờ không có tác dụng. ⛔ **D-057 (24/08): DỪNG kế hoạch dùng máy A sinh ảnh.** Không hạ độ chính xác model; `bf16` đỉnh 18.450 MB không vừa card 16.311 MB, và riêng Llama-3.1-8B trong bộ mã hoá đã lấp kín một card. Mở lại cần **phần cứng ≥ 24 GB**, không phải một cách xếp encoder khác. ⇒ Hệ quả: **trọng tài VRAM ở `docs/ANH_NOI_BO/CHIA_GPU_HAI_MODEL.md` nay BẮT BUỘC** — hai model vẫn dùng chung 3090 (18.450 + 19.237 = 37.687 MB / 24.576). **KẾ HOẠCH TIẾP: `docs/KE_HOACH_TIEP_2026-08-24.md`** (một danh sách duy nhất, có thứ tự). Xem D-045…D-057 + `docs/ANH_NOI_BO/` |
+| **LLM NỘI BỘ bán qua API** (H38, Q106+Q107) — Qwen3.8-27B trên máy B, bán qua `/api/v1` | ✅ **ĐANG BÁN 2026-08-24.** Ba cửa: `/jobs` · `/chat/completions` (`SYNC_BILLED`) · `/messages` + `/responses` (`STREAM`, cho Codex/Claude Code/Claude Desktop). Đã đo thật qua Cloudflare: luồng **119 giây không bị 524**, Codex CLI chạy đầu-tới-cuối, tiền khớp từng credit. Còn: phiên thật Claude Code/Desktop, xoay khoá, công cụ tự ghi cấu hình. Xem `docs/VLM_NOI_BO/` |
+| **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 🔨 **P0+P1 xong 2026-08-23** (H39, Q103–Q105): tạo máy thật trong 5 giây, boot 37 giây, mạng riêng đúng. App vẫn **TẮT** (`LTT_VPS` chưa đặt). RAM node nới 44→94 GB ⇒ trần **16/10/6 máy**. 🔴 **Cụm không chạy được virtio** — máy phải `sata0`+`e1000`, `agent:0`, `balloon:0` (xem `MO_HINH_CARD` trong `apps/vps/services/mang.py`). Còn P2–P9. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -277,22 +278,35 @@ việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool**
 
 Sáu thứ phải biết trước khi đụng vào:
 
-- 🔴 **MÁY B TỰ KHỞI ĐỘNG LẠI ĐỂ CẬP NHẬT WINDOWS, và nó giết việc đang chạy.**
-  Active Hours là **07:00 → 01:00**; hết khung đó Windows được phép khởi động lại
-  bất cứ lúc nào. Đã xảy ra 22/08 lúc **01:29** (sự kiện `1074`, `MoUsoCoreWorker`,
-  *Service pack (Planned)*), cuốn theo một lô đang chạy dở ở ảnh 21/30.
-  ⇒ **Việc dài phải kết thúc trước 01:00**, hoặc tạm hoãn cập nhật trong lúc chạy.
-  *(Tôi đã chẩn đoán nhầm lần này thành "cạn VRAM" — xem D-025 để biết vì sao nhầm.)*
-- ⚠️ **VRAM ở cấu hình đích chạm 23,9 / 24,6 GB = 97,5 %** và **ở lì đó giữa các
-  job** (ComfyUI giữ model thường trú). Đây **không** phải nguyên nhân vụ 22/08,
-  nhưng nó là biên **quá mỏng** cho một máy để bàn dùng chung với dự án video.
-  Nên **khởi động ComfyUI với `--reserve-vram 3`**.
+- ⚠️ **Máy B có thể tự khởi động lại để cập nhật Windows** (Active Hours 07:00 →
+  01:00; đã xảy ra 22/08 lúc 01:29, sự kiện `1074`, cuốn theo một lô ở ảnh 21/30).
+  ✅ **KHÔNG còn là hạn chót nữa.** Lô đo nay ghi kết quả **sau mỗi ảnh** và **bỏ qua
+  ảnh đã xong** khi chạy lại, nên một lần khởi động lại chỉ mất **đúng một ảnh đang
+  vẽ** — vài chục giây, không phải cả lô. Bằng chứng: `tests/test_266_tiep_tuc_lo_do.py`.
+  ⇒ **Đừng lên lịch quanh mốc 01:00, và đừng nhắc lại nó như một điều kiêng kỵ.**
+  Cũng **không cần** đổi `AUOptions` — đó là một thiết lập bảo mật, và cái giá của nó
+  (máy tích luỹ bản vá chưa áp) lớn hơn thứ nó cứu.
+  *(Tôi đã chẩn đoán nhầm vụ 22/08 thành "cạn VRAM" — xem D-025 để biết vì sao nhầm.)*
+- ✅ **VRAM: cảnh báo "97,5 %" ĐÃ LỖI THỜI — đừng lên kế hoạch quanh nó (D-056).**
+  Con số 23,9 / 24,6 GB đo **trước** khi ComfyUI chạy với `--reserve-vram 3`. Đo
+  lại 24/08 trên cùng card: t2i 50 bước **18,45 GB** (lô 100 lượt, dao động chỉ
+  163 MB), `edit` 1 ảnh @4 MP **19,83 GB**, `subject` 2 ảnh @4 MP **20,11 GB** —
+  cấu hình **nặng nhất từng đo** nay là 20,1 GB, biên còn **~4,5 GB**.
+  ComfyUI trên B **đã** chạy với `--reserve-vram 3` (`test_245` chốt cờ đó khớp
+  `VRAM_CHUA_LAI_GB`, mất nó lặng lẽ là sập giữa một lô dài).
+  ⚠️ Nhưng **đừng đọc ngược thành "thoải mái"**: 4,5 GB là biên **khi chỉ có ta**.
+  Ba hộ vẫn dùng chung card (D-037) — dự án video từng ăn 98,7 %, `llama-server`
+  giữ 15,9 GB. Chốt bận của cổng render vẫn là thứ giữ hai hộ không đè nhau.
 - 🔴 **CHƯA ĐO THÌ KHÔNG CHẠY.** `render_gateway/ngan_sach.py` từ chối mọi cấu hình
-  vượt `TOKEN_DA_DO_TOI_DA` (4.096 token) **trước khi chạm GPU**. Chế độ `edit` và
-  `subject` ở `ref_mp=4.0` **đang bị chặn có chủ ý** (7.506 và 11.412 token). Muốn
-  mở thì **đo theo bậc, có người canh** (1 ảnh @ 0,4 MP → đo VRAM → tăng dần) rồi
-  ghi số vào `DECISIONS.md`. **Đừng hạ `ref_mp` cho lọt chốt** — đó chỉ là chọn một
-  con số khác cũng chưa ai đo.
+  vượt `TOKEN_DA_DO_TOI_DA` **trước khi chạm GPU**. Trần nay là **11.412** (4.096 →
+  7.506 → 11.412, mỗi lần nâng đều có số đo: D-032, D-053). Cả `edit` và `subject`
+  ở `ref_mp=4.0` **đã đo xong và đã mở**; bậc kế tiếp (2 ảnh @8 MP = 19.224 token)
+  vẫn bị chặn, có test riêng chốt.
+  Muốn mở tiếp thì **đo theo bậc, có người canh** rồi ghi số vào `DECISIONS.md`.
+  **Đừng hạ `ref_mp` cho lọt chốt** — đó chỉ là chọn một con số khác cũng chưa ai đo.
+  ⚠️ Và biết một điều trái trực giác trước khi đọc trần này: **token là proxy rất
+  lỏng cho VRAM** — token gấp 2,1 lần mà VRAM chỉ +1,8 % (D-053). Trần vẫn đúng
+  việc (từ chối cấu hình chưa đo) nhưng **đừng đọc nó như thước đo mức nguy hiểm**.
 - **Máy B KHÔNG giữ bí mật nào của nền tảng.** Không mật khẩu CSDL, không khoá R2,
   không `LTT_TOKEN_ENCRYPTION_KEY`. Ảnh vào bằng presigned GET, ra bằng presigned PUT.
 - ⚠️ **ComfyUI trên máy B KHÔNG có xác thực.** Nó chỉ được nghe `127.0.0.1`, vĩnh

@@ -172,15 +172,51 @@ def test_base_url_KHONG_viet_cung_dia_chi_LAN_vao_ma_nguon():
     assert "LTT_RENDER_BASE_URL" in src
 
 
-def test_model_noi_bo_MAC_DINH_TAT():
-    """⛔ Nó chỉ được bật ở G10, sau khi qua cổng G6b (so mù với Gemini 3 Pro
-    Image). Khai một model chưa qua cổng chất lượng là mở bán trước khi biết nó có
-    đáng bán không."""
+def test_model_noi_bo_DA_MO_va_do_la_mot_QUYET_DINH():
+    """Model nội bộ **đã bật** ngày 24/08 (G10).
+
+    ⚠️ Bản trước của test này khoá cứng `not is_active` với lý do *"chỉ được bật ở
+       G10, sau khi qua cổng G6b"*. Cổng đó **đã chạy** (D-045, chấm mù), chủ sản
+       phẩm đã đọc kết quả và quyết bán, và G10 là chỗ ta đang đứng.
+
+    ⛔ Nhưng lật một biến `True` rồi thôi là **vứt mất một bánh cóc**. Thứ chốt cũ
+       thật sự bảo vệ không phải giá trị `False` — mà là *"một cờ không bao giờ đủ
+       để phục vụ khách"*. Nên test này giữ đúng điều đó, ở dạng còn kiểm được.
+    """
     from platform_core import providers as P
     m = P.get("ltt_image").models[0]
-    assert m.id == "hidream-o1" and not m.is_active
-    # Và vì thế nó KHÔNG được lọt vào danh sách chọn của UI.
-    assert not any(str(x).find("hidream") >= 0 for x in P.model_options("image"))
+    assert m.id == "hidream-o1" and m.is_active, (
+        "mo lai model noi bo phai la mot thay doi CO CHU Y, hien ra trong diff")
+
+
+def test_BAT_is_active_KHONG_du_de_phuc_vu_khach():
+    """🔴 Chốt thật của mục này: **bốn cổng độc lập** (D-034).
+
+    `is_active=True` chỉ nói *model dùng được*. Nó KHÔNG mở bề mặt công khai —
+    `LTT_PUBLIC_API_TOOLS` vẫn phải liệt kê tên tool. Nếu ngày nào đó bật một cờ
+    mà tự nhiên tool ra công khai thì fail-closed đã vỡ, và test này là chỗ biết.
+    """
+    import os
+
+    from platform_core import registry
+    from platform_core.public_api import catalog
+    from platform_core.public_api.config import load_public_api_config
+
+    cu = {k: os.environ.get(k) for k in ("LTT_PUBLIC_API", "LTT_PUBLIC_API_TOOLS")}
+    os.environ["LTT_PUBLIC_API"] = "1"
+    os.environ["LTT_PUBLIC_API_TOOLS"] = ""        # cong tac van hanh: RONG
+    try:
+        ra = catalog.build_catalog(load_public_api_config(), registry.discover())
+    finally:
+        for k, v in cu.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    ten = [getattr(t, "name", None) for t in ra]
+    assert "image.ltt" not in ten, (
+        "is_active=True da tu mo be mat cong khai — fail-closed cua Q92 da vo")
 
 
 def test_capabilities_CHI_khai_thu_DA_DO():

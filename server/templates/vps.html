@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block content %}
+
+  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+
+  {# Ba câu dưới đây KHÔNG phải trang trí. Chúng là điều kiện của Q103/V1+V2+V3:
+     hạ tầng là ảo hoá lồng trên một máy để bàn dùng chung, có thể khởi động lại
+     bất cứ lúc nào, và khách nhận cổng chứ không nhận IP riêng. Khách phải đọc
+     được điều đó TRƯỚC khi trả tiền, không phải sau. #}
+  <div class="alert alert-warn" style="margin:0 0 16px;">
+    <strong>{{ _("Đọc trước khi thuê") }}</strong>
+    <ul style="margin:8px 0 0; padding-left:20px;">
+      <li>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</li>
+      <li>{{ _("Bạn nhận địa chỉ dạng tên-miền:cổng, không phải một địa chỉ IP riêng. Bạn không host được website hay mail server trên máy này.") }}</li>
+      <li>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</li>
+      <li>{{ _("Sao lưu hằng tuần, giữ 1 bản. Dữ liệu quan trọng bạn nên tự sao lưu thêm.") }}</li>
+    </ul>
+  </div>
+
+  {% if loi_ha_tang %}
+    <div class="alert alert-err" style="margin:0 0 16px;">
+      {{ _("Hiện chưa nhận máy mới.") }} <span class="muted">({{ loi_ha_tang }})</span>
+    </div>
+  {% endif %}
+
+  {# ── Máy của tôi ──────────────────────────────────────────────────────── #}
+  {% if may_cua_toi %}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Máy của tôi") }}</h2>
+    <table class="tbl" style="width:100%;">
+      <thead>
+        <tr>
+          <th>{{ _("Cấu hình") }}</th>
+          <th>{{ _("Hệ điều hành") }}</th>
+          <th>{{ _("Địa chỉ") }}</th>
+          <th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Trả tới") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in may_cua_toi %}
+        <tr>
+          <td>{{ _(m.plan.ten) if m.plan else m.may.plan_id }}</td>
+          <td>{{ m.os.ten if m.os else m.may.os_id }}</td>
+          <td>
+            {% if m.dia_chi %}<code>{{ m.dia_chi }}</code>
+            {% else %}<span class="muted">{{ _("đang chuẩn bị") }}</span>{% endif %}
+          </td>
+          <td>
+            {{ m.may.trang_thai }}
+            {% if m.may.ly_do %}<br><span class="muted">{{ m.may.ly_do }}</span>{% endif %}
+          </td>
+          <td>
+            {% if m.may.paid_until %}{{ m.may.paid_until.strftime('%d/%m/%Y') }}
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── Bảng giá ─────────────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Chọn cấu hình") }}</h2>
+
+    {% for g in goi %}
+    <div class="card" style="margin:12px 0;">
+      <h3 style="margin-top:0;">
+        {{ _(g.plan.ten) }}
+        <span class="muted" style="font-weight:400;">
+          — {{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM
+          · {{ _("tối đa") }} {{ g.plan.disk_gb }} GB NVMe
+        </span>
+      </h3>
+      <p class="muted" style="margin-top:0;">{{ _(g.plan.mo_ta) }}</p>
+      <p><strong>{{ "{:,}".format(g.plan.gia_thang_vnd).replace(",", ".") }}đ</strong> / {{ _("30 ngày") }} <span class="muted">({{ g.credit }} credit)</span></p>
+
+      {% if not g.con_cho %}
+        <p class="muted">{{ _("Hiện đã hết chỗ cho cấu hình này.") }}</p>
+      {% elif not g.os %}
+        <p class="muted">{{ _("Chưa có hệ điều hành nào phù hợp với cấu hình này.") }}</p>
+      {% else %}
+      <form method="post" action="{{ app.route_prefix }}/tao" style="max-width:none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="plan_id" value="{{ g.plan.id }}">
+        <div class="row" style="gap:10px; align-items:flex-end;">
+          <div class="field" style="margin:0;">
+            <label for="os-{{ g.plan.id }}">{{ _("Hệ điều hành") }}</label>
+            <select id="os-{{ g.plan.id }}" name="os_id">
+              {% for o in g.os %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label for="vung-{{ g.plan.id }}">{{ _("Vùng đặt máy") }}</label>
+            <select id="vung-{{ g.plan.id }}" name="vung">
+              <option value="port">{{ _("Việt Nam — nhanh nhất, dùng cổng chung") }}</option>
+              <option value="vn">{{ _("Việt Nam — có địa chỉ riêng") }}</option>
+              <option value="sgp">{{ _("Singapore — địa chỉ nước ngoài, chậm hơn") }}</option>
+            </select>
+            <span class="hint">{{ _("Nếu bạn ở Việt Nam và chỉ cần máy chạy nhanh, hãy chọn Việt Nam. Singapore chỉ hợp khi bạn cần một địa chỉ nước ngoài — đường truyền sẽ trễ hơn rõ rệt.") }}</span>
+          </div>
+          <button type="submit" style="background:{{ app.accent }};">{{ _("Thuê máy này") }}</button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if suc_chua %}
+  <p class="muted" style="font-size:.9em;">
+    {{ _("Còn trống") }}: {{ (suc_chua.ram_mb_con / 1024) | round(1) }} GB RAM
+    · {{ suc_chua.dia_gb_con }} GB {{ _("đĩa") }}
+  </p>
+  {% endif %}
+
+{% endblock %}

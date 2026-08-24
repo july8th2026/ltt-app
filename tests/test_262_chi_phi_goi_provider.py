@@ -15,6 +15,8 @@ Không mạng, không GPU, không CSDL thật.
 """
 from __future__ import annotations
 
+import pathlib
+
 import types
 
 import pytest
@@ -134,16 +136,23 @@ def test_ghi_duoc_NGAY_CA_KHI_khong_dat_suat_gia_nao():
 
 
 # ═══════════ ba app gọi provider đều phải báo ═══════════════════════════════
-@pytest.mark.parametrize("mo_dun", ["apps.taoanh.jobs", "apps.thumbnail.jobs",
-                                    "apps.anhnoibo.jobs"])
-def test_moi_app_goi_provider_deu_BAO_LAI(mo_dun):
+@pytest.mark.parametrize("goi", ["taoanh", "thumbnail", "anhnoibo"])
+def test_moi_app_goi_provider_deu_BAO_LAI(goi):
     """Bánh cóc: một app gọi nhà cung cấp mà không báo lại thì bảng biên lợi nhuận
-    thấy doanh thu của nó mà không thấy chi phí — tệ hơn là không thấy gì cả."""
-    import importlib
-    import inspect
+    thấy doanh thu của nó mà không thấy chi phí — tệ hơn là không thấy gì cả.
 
-    ma = inspect.getsource(importlib.import_module(mo_dun))
-    assert "KHOA_GOI_PROVIDER" in ma, f"{mo_dun} khong bao chi phi goi provider"
+    ⭐ Quét **cả gói app**, không riêng `jobs.py`. Chỗ ghi nhận chi phí là quy tắc
+       nghiệp vụ, và `AGENTS.md` mục 8 nói nghiệp vụ ở `features.py`/`services/`
+       chứ không ở handler. `anhnoibo` đã chuyển đúng như vậy (H37/L6), và bản cũ
+       của test này đỏ vì nó grep đúng một tệp — tức là nó chốt **nơi để mã**,
+       không phải **điều cần đúng**.
+    """
+    import importlib
+
+    thu_muc = pathlib.Path(importlib.import_module(f"apps.{goi}").__file__).parent
+    ma = chr(10).join(f.read_text(encoding="utf-8")
+                      for f in sorted(thu_muc.rglob("*.py")))
+    assert "KHOA_GOI_PROVIDER" in ma, f"apps/{goi} khong bao chi phi goi provider"
 
 
 def test_thumbnail_bao_MODEL_THAT_chu_khong_phai_gia_phang():

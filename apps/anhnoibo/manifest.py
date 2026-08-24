@@ -16,35 +16,43 @@ App `anhnoibo` — bán model tạo ảnh **nội bộ** (H37, Q102).
      ③ tên tool có trong `LTT_PUBLIC_API_TOOLS`
    Quên một cái là tool không ra. Đó là chủ ý.
 
-⚠️ Và một cổng thứ tư của riêng H37: `ModelInfo("hidream-o1").is_active` vẫn
-   **False** cho tới khi qua cổng chất lượng G6b. Chưa qua thì tool này gọi sẽ hỏng
-   ở tầng provider — cố ý, không phải thiếu sót.
+⚠️ Và một cổng thứ tư của riêng H37: `ModelInfo("hidream-o1").is_active`.
+   🔓 **MỞ 24/08** cùng ba cổng trên (G10).
+
+   ⛔ Nhưng đọc cho đúng vì sao nó mở: cổng chất lượng G6b **đã chấm và model nhà
+      thua rõ** (D-045). Nó mở vì D-042 + D-046 đã đổi bài toán — không còn định
+      tuyến, mỗi model là **một mặt hàng có cổng gọi riêng**, khách gọi `image.ltt`
+      là biết trước mình mua gì. Nó **không** mở vì ai đó thấy nó đẹp hơn.
+
+      Hệ quả phải giữ: đừng định vị là "đẹp hơn", và **việc có chữ tiếng Việt thì
+      trả lời `image.thumbnail` (Gemini)** — chữ là ngoài phạm vi (D-048).
+
+⛔ GIÁ KHÔNG Ở FILE NÀY. Nó ở `gia.py` — một chỗ duy nhất, có phiên bản, công bố
+   ở `/gia-api`. `credit_cost` dưới đây chỉ là **trần ước cao** để giữ chỗ; giá
+   cuối do `jobs.handle` báo về theo số ảnh **thật sự sinh ra được** (D-050).
 """
 from __future__ import annotations
 
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, ToolSpec
 
-#: ⚠️ GIÁ TẠM — CHƯA CHỐT. Model nội bộ không tốn tiền API, nhưng **chiếm GPU**:
-#: đo thật 22/08 là 96 giây/ảnh (t2i, 50 bước) và ~190 giây khi có ảnh tham chiếu.
-#: Máy B còn chia GPU với dự án video. Nên giá phải phản ánh **thời gian máy**, không
-#: phải chi phí API. Con số dưới đây đặt bằng thumbnail (Gemini) để có chỗ bắt đầu;
-#: chốt lại sau khi có số liệu dùng thật. Xem `docs/ANH_NOI_BO/`.
-CREDIT_MOI_ANH = 5
-
-#: Ảnh tham chiếu đắt hơn hẳn — đo được **gấp 3,3 lần** thời gian ở cùng số bước.
-HE_SO_THAM_CHIEU = 3
+#: ⛔ GIÁ KHÔNG Ở ĐÂY NỮA — nó ở `apps/anhnoibo/gia.py`, một chỗ duy nhất, có
+#:    phiên bản, và có `bang_gia()` để trang công khai đọc. Đừng khai lại con số
+#:    nào ở đây: hai bảng giá lệch nhau thì bảng nào cũng không đáng tin.
+from . import gia
 
 
 def _gia(params: dict) -> int:
+    """TRẦN ƯỚC CAO để giữ chỗ, **không phải giá cuối**.
+
+    Giá cuối do `jobs.handle` báo về qua `credit_cost`, tính theo số ảnh **thật
+    sự sinh ra được**. Phần giữ dư được hoàn ngay khi job xong.
+    """
     try:
         so = int(params.get("count", 1))
     except (TypeError, ValueError):
         so = 1
-    so = max(1, min(so, 4))
-    che_do = str(params.get("mode") or "t2i")
-    he_so = HE_SO_THAM_CHIEU if che_do in ("edit", "subject") else 1
-    return so * CREDIT_MOI_ANH * he_so
+    return gia.uoc_tran(so_anh_xin=so, che_do=str(params.get("mode") or "t2i"))
 
 
 MANIFEST = AppManifest(

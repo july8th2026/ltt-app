@@ -19,6 +19,7 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 |---|---|---|---|
 | `thumbnail` | **EXPOSE_V1** | `image.thumbnail` | Giá phẳng theo số ảnh, chốt trước khi chạy. Đã E2E qua worker (wave 1). |
 | `anhnoibo` | **EXPOSE_V1** | `image.ltt` | Model ảnh **nội bộ** trên máy B (H37/Q102). Giá chốt trước khi chạy: theo số ảnh, nhân 3 khi có ảnh tham chiếu. ⚠️ *EXPOSE_V1 ở đây nghĩa là **được phép** publish, chưa phải **đang** publish* — công tắc `LTT_PUBLIC_API_TOOLS` vẫn chưa có tên nó, và model vẫn `is_active=False` tới khi qua cổng chất lượng. Chưa E2E. |
+| `ltt_llm` | **EXPOSE_V1** | `text.chat` | Model **ngôn ngữ nội bộ** trên máy B (H38/Q106), anh em với `anhnoibo`. Khác ở một điểm: **giá phụ thuộc số token RA, chỉ biết sau khi sinh xong**, nên `credit_cost` là **trần ước cao** và nền tảng quyết toán theo số đo thật. Ngoài cửa job nó còn bán qua hai cửa **không phải job** (`/chat/completions` — `SYNC_BILLED`, Q106; và `/messages` + `/responses` — `STREAM`, Q107); hai cửa đó là **route**, không phải `ToolSpec`, nên chúng đóng băng ở `server/api/inventory.py` chứ không ở bảng này. |
 | `taoanh` | **EXPOSE_V1** | `image.generate` | Giá theo model qua alias công khai; 1 ảnh tham chiếu qua upload (wave 1). |
 | `upscalevideo` | **EXPOSE_V1** | `image.upscale` | Giá phẳng 2/4 theo preset; đường GPU thật (wave 2). |
 | `prompt_ai_ommi` | **EXPOSE_V1** | `text.prompt_package`, `story.storyboard` | Giá theo `scene_count`; kết quả là dữ liệu, trả qua `result` (wave 3). |
@@ -32,6 +33,7 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 | `demo` | **INTERNAL_ONLY** | — | App thử hạ tầng, khách phải nhận 404 (Q71). |
 | `socialbot` | **INTERNAL_ONLY** | — | Đóng băng (Q10/Q78), cần browser + OAuth, không job_types, không giá. Mở cần threat model riêng cho tự động hoá credential. |
 | `nexus` | **DEFER** | — | **Quản lý thiết bị, không phải một tool có giá.** Không có `ToolSpec` và không sinh Job, nên toàn bộ hợp đồng quote/settle không áp được. Public nó nghĩa là công bố một hợp đồng về **danh tính thiết bị** — phải chờ quyết định hạ tầng relay (D2) và legal review ranh giới AGPL. Q93, xem `docs/nexus/`. |
+| `vps` | **DEFER** | — | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần — quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có `ToolSpec`), không phải một quyết định sản phẩm; chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
 | `kichban` | **RETIRED_NO_EXPOSE** | — | Retired (Q69). Có ToolSpec `text.generate` với `customer_visible=True` — đó là cờ palette của Agent, **không phải** cờ public. Muốn năng lực sinh text thì migrate sang app được hỗ trợ, không hồi sinh app cũ. |
 
 > ⚠️ **`apps/vps` chưa có trong bảng này — CÓ CHỦ ĐÍCH, không phải bỏ sót.**

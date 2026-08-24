@@ -1,0 +1,64 @@
+{% extends "developers_base.html" %}
+{% block section %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Cắm model vào công cụ viết mã của bạn") }}</h2>
+  <p>{{ _("Ba công cụ, một khoá. Chép cấu hình bên dưới, đặt khoá, mở lại ứng dụng.") }}</p>
+  <p class="muted">{{ _("Khoá lấy ở") }} <a href="/developers/keys">{{ _("trang Khóa API") }}</a>.
+    {{ _("Nó chỉ hiện một lần lúc tạo, nên trang này không điền hộ được — hãy đặt nó vào biến môi trường") }}
+    <code>{{ env_key }}</code>.</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Hai địa chỉ, và chúng lệch nhau bốn ký tự") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("Công cụ") }}</th><th>{{ _("Địa chỉ bạn khai") }}</th><th>{{ _("Nó tự ghép thêm") }}</th></tr></thead>
+    <tbody>
+      <tr><td>Codex</td><td><code>{{ base_url }}/api/v1</code></td><td><code>/responses</code></td></tr>
+      <tr><td>Claude Code</td><td><code>{{ base_url }}/api</code></td><td><code>/v1/messages</code></td></tr>
+      <tr><td>Claude Desktop</td><td><code>{{ base_url }}/api</code></td><td><code>/v1/messages</code></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Đổi chỗ hai địa chỉ này là nhận 404 mà không có manh mối nào khác.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Codex CLI {{ _("và tiện ích VS Code") }}</h2>
+  <p class="muted">{{ _("Cả hai dùng chung một file cấu hình, nên làm một lần là xong cả hai.") }}</p>
+  <h3>1. <code>~/.codex/config.toml</code></h3>
+  <pre style="overflow-x:auto;"><code>{{ codex_config }}</code></pre>
+  <h3>2. <code>~/.codex/ltt.config.toml</code></h3>
+  <pre style="overflow-x:auto;"><code>{{ codex_profile }}</code></pre>
+  <h3>3. {{ _("Đặt khoá rồi mở lại VS Code") }}</h3>
+  <pre style="overflow-x:auto;"><code>setx {{ env_key }} "&lt;{{ _("khoá của bạn") }}&gt;"</code></pre>
+  <p class="muted">{{ _("Rồi chạy") }} <code>codex --profile ltt</code>.</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Claude Code (CLI)</h2>
+  <pre style="overflow-x:auto;"><code>{{ claude_env }}</code></pre>
+  <p class="muted">{{ _("Hoặc bền hơn, trong") }} <code>~/.claude/settings.json</code>:</p>
+  <pre style="overflow-x:auto;"><code>{{ claude_settings }}</code></pre>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Claude Desktop</h2>
+  <p>{{ _("Ứng dụng máy tính KHÔNG đọc biến môi trường — nó có cửa sổ cấu hình riêng.") }}</p>
+  <table class="table">
+    <tbody>
+      {% for ten, gt in desktop %}
+        <tr><th style="white-space:nowrap;">{{ ten }}</th><td><code>{{ gt }}</code></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bảy chỗ hay vấp") }}</h2>
+  {% for ten, vi_sao in bay %}
+    <h3>{{ ten }}</h3>
+    <p>{{ vi_sao }}</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

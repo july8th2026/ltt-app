@@ -135,6 +135,144 @@ curl -s https://app.lttstudios.com/api/v1/artifacts/$ARTIFACT_ID \
 
 ---
 
+## 1b. Cửa chat — trả lời ngay trong request
+
+Từ 2026-08-23 (Q106) có **hai cửa chạy việc**, và chọn nhầm cửa là nguồn nhầm
+lẫn lớn nhất khi bắt đầu:
+
+| | `POST /api/v1/jobs` | `POST /api/v1/chat/completions` |
+|---|---|---|
+| số bước | 3 (báo giá → nộp → hỏi kết quả) | **1** |
+| báo giá | bắt buộc | **không có** |
+| biết giá trước khi chạy | có | **không** — xem dưới |
+| hàng đợi | có | không |
+| trần thời gian | không | **có** |
+| `Idempotency-Key` | bắt buộc | bắt buộc |
+| hợp với | ảnh, video, việc dài | chat, coding, việc trả lời được ngay |
+
+### Lời gọi đầu tiên
+
+```bash
+curl -X POST "$LTT_BASE_URL/api/v1/chat/completions" \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{"model":"ltt_llm",
+       "messages":[{"role":"user","content":"Viết một câu chào bằng tiếng Việt."}],
+       "max_tokens":300}'
+```
+
+```json
+{
+  "object": "chat.completion",
+  "model": "ltt_llm",
+  "choices": [{"index":0,"message":{"role":"assistant","content":"…"},"finish_reason":"stop"}],
+  "usage": {"prompt_tokens":12,"completion_tokens":18,"total_tokens":30},
+  "x_ltt": {
+    "credit_charged": 1,
+    "credit_held": 4,
+    "usage_measured": true,
+    "cached_prompt_tokens": 0,
+    "duration_seconds": 1.8,
+    "test_mode": false
+  }
+}
+```
+
+`usage` giữ **đúng hình dạng OpenAI** để mã sẵn có của bạn đọc được. Mọi thứ
+riêng của nền tảng nằm trong `x_ltt` — nhét chúng vào `usage` sẽ làm vỡ những
+client parse chặt.
+
+### Dùng SDK của OpenAI
+
+Trỏ `base_url` vào `/api/v1` là xong — **trừ một chỗ**:
+
+```python
+# pip install openai
+import os, uuid
+from openai import OpenAI
+
+client = OpenAI(api_key=os.environ["LTT_API_KEY"],
+                base_url=os.environ["LTT_BASE_URL"].rstrip("/") + "/api/v1")
+
+answer = client.chat.completions.create(
+    model="ltt_llm",
+    messages=[{"role": "user", "content": "Viết một câu chào bằng tiếng Việt."}],
+    max_tokens=300,
+    extra_headers={"Idempotency-Key": uuid.uuid4().hex},   # ← bắt buộc
+)
+print(answer.choices[0].message.content)
+print("đã trả:", answer.model_extra["x_ltt"]["credit_charged"], "credit")
+```
+
+🔴 **Vì sao phải thêm `extra_headers`.** Đây là sự thật **đã đo** với `openai`
+2.30.0, không phải phỏng đoán: SDK của OpenAI **tự sinh** một khoá idempotency
+cho mỗi lượt POST và dùng lại nó qua các lần thử lại của chính nó — nhưng chỉ
+**gửi** khi `_idempotency_header` được đặt, mà với client OpenAI thì nó là
+`None`. Khoá được sinh ra rồi vứt đi. Nên một lượt gọi đúng y tài liệu OpenAI sẽ
+nhận **400** ở đây, và thông báo lỗi nói rõ phải thêm gì.
+
+⛔ **Đừng đưa khoá vào `default_headers` của client.** Nó thành **một** khoá cho
+**mọi** lượt gọi, và hỏng theo hai kiểu — một kiểu ồn ào, một kiểu im lặng:
+
+- câu hỏi khác lần trước → **409** `idempotency_conflict`;
+- câu hỏi **giống hệt** lần trước → bạn nhận lại **câu trả lời cũ**, không có
+  dấu hiệu gì, và không có lượt chạy mới nào.
+
+Khoá thuộc về **một lượt gọi**, không thuộc về client. Sinh nó ngay trước lượt
+gọi, và chỉ dùng lại đúng khoá đó khi bạn thử lại đúng lượt đó.
+
+### Tiền: giữ một TRẦN, thu theo số ĐO
+
+Giá phụ thuộc số token model sinh ra — mà số đó **chưa tồn tại** lúc bạn gọi.
+Nên cửa này không có báo giá, và thay vào đó:
+
+1. nền tảng **giữ một trần** ước cao (giả định không có cache và sinh đủ
+   `max_tokens`) **trước khi** chạm tới model;
+2. chạy;
+3. **thu theo token đã đo**, và hoàn phần chênh.
+
+Vì vậy `x_ltt.credit_charged` thường **thấp hơn nhiều** `x_ltt.credit_held`.
+Số bạn thật sự trả là `credit_charged`.
+
+Ba trường hợp không tốn tiền, và cả ba đều hoàn **đủ** phần đã giữ:
+
+- **model bận** → `503` kèm `Retry-After`;
+- **lỗi phía máy chủ** → `5xx`;
+- **không đo được `usage`** → bạn vẫn nhận câu trả lời, `usage_measured` là
+  `false`, và `credit_charged` là **0**. Thu tiền mà không có bằng chứng thì tệ
+  hơn mất một ít tiền.
+
+Muốn **biết giá trước khi chạy** thì dùng cửa job: `POST /api/v1/quotes`.
+
+### Trần thời gian, và trần `max_tokens` sinh ra từ nó
+
+Lượt gọi phải xong trong ngân sách đồng bộ của máy chủ (nằm **dưới** trần 100
+giây của Cloudflare, có biên). Từ đó suy ra một trần `max_tokens`.
+
+Xin quá trần thì bạn nhận **400 ngay lập tức**, kèm con số cụ thể và lời chỉ
+sang `POST /api/v1/jobs` — thay vì bị cắt giữa chừng bằng một cái `524` không
+phân biệt được "hỏng" với "xong rồi nhưng mất kết nối".
+
+### Chưa có streaming
+
+`"stream": true` bị từ chối bằng **400**. Nhận rồi trả một lượt không-stream sẽ
+làm SDK vỡ ở chỗ khó lần ra hơn nhiều, nên máy chủ nói thẳng.
+
+### Bận là 503, không phải 429
+
+Hai mã này nói hai chuyện khác hẳn, và nhầm chúng dẫn tới xử lý sai:
+
+- **503** — máy không phục vụ được lúc này (model đang bận). Bạn **không** bị
+  thu tiền. `Retry-After` nói khi nào quay lại.
+- **429** — **bạn** đang gọi quá nhanh, hoặc chạm hạn mức của tài khoản.
+
+### Chế độ thử
+
+Khoá ở chế độ test trả về một câu trả lời có hình dạng thật, `x_ltt.test_mode`
+là `true`, **không** gọi model và **không** trừ credit. Dùng nó để chạy CI mà
+không đốt GPU.
+
 ## 2. Xác thực
 
 - Chỉ `Authorization: Bearer <khóa>`. Cookie **không** được chấp nhận, và API
@@ -196,8 +334,12 @@ Mọi lỗi là `application/problem+json` (RFC 9457):
 
 ## 5. Idempotency — điều quan trọng nhất về tiền
 
-`POST /api/v1/jobs` **bắt buộc** header `Idempotency-Key` (8–255 ký tự, nên là
-một UUID mỗi lần gọi logic).
+**Hai** route bắt buộc header `Idempotency-Key` (8–255 ký tự, nên là một UUID
+mỗi lần gọi logic): `POST /api/v1/jobs` và `POST /api/v1/chat/completions`.
+
+Ở cửa job, khoá là hàng rào **thứ hai** — báo giá đã ký sẵn một mức giá. Ở cửa
+chat **không có báo giá**, nên khoá là hàng rào **duy nhất** giữa một lần timeout
+và việc trả tiền hai lần. Và SDK của OpenAI **không tự gửi** nó — xem mục 1b.
 
 - Cùng khóa + cùng nội dung → trả lại **đúng job cũ**, kèm header
   `Idempotency-Replayed: true`, **không** trừ tiền lần hai. Kể cả khi job cũ đã
@@ -215,6 +357,12 @@ cách chắc chắn nhất để bị tính tiền hai lần.
 - Số credit bạn trả **không bao giờ vượt** số đã giữ theo báo giá đã xác nhận.
   Nếu chi phí thực tế của chúng tôi cao hơn, phần chênh là của chúng tôi.
 - Job lỗi hoặc bị hủy → hoàn **toàn bộ** phần đã giữ.
+- **Bạn trả cho thứ nhận được, không phải thứ đã xin.** Với các công cụ trả về
+  nhiều tệp (`count`), số credit tính theo số tệp **thật sự sinh ra được**: xin
+  4 ảnh mà chỉ ra 2 thì trả tiền 2 ảnh, phần chênh hoàn ngay khi job xong. Với
+  `text.chat`, tính theo token đã sinh, không theo `max_tokens`.
+- Giá niêm yết công khai ở `/gia-api`, kèm phiên bản bảng giá. Kết quả job có
+  `phien_ban_gia` để bạn đối chiếu đúng bảng đã sinh ra hoá đơn đó.
 - Xem số dư: `GET /credits/balance`. Xem chi tiết: `GET /usage`.
 
 ## 7. Giới hạn
@@ -350,13 +498,13 @@ Input:
 
 - `prompt` — string, **required**, max length 4000, What to draw. Everything about the image comes from this text.
 - `image_key` — string, Optional reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. The result follows its subject and composition.
-- `model` — string, one of `enhanced`, `pro`, `standard`, `standard-lite`, Quality tier. This is what the price depends on — see the model list for what each alias is for.
+- `model` — string, one of `enhanced`, `standard`, `standard-lite`, Quality tier. This is what the price depends on — see the model list for what each alias is for.
 - `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9, Shape of the output image.
 - `count` — integer, min 1, max 4, default 1, How many images to generate. Each one is charged.
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `f6fd70a8e5a91489`
+Contract hash: `d8d957479035c7c8`
 
 ### `image.ltt`
 
@@ -439,6 +587,27 @@ Output: `storyboard` (object), `master_prompt` (string)
 
 Contract hash: `9c7cfd84114e0c1b`
 
+### `text.chat`
+
+Generate text from a conversation. Handles coding, chat, agentic tool use, summarisation and image reading. OpenAI-compatible message format.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `messages` — array, **required**, Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.
+- `model` — string, one of `ltt_llm`, `ltt_llm_vision`, default ltt_llm, `ltt_llm` for text (64K context). `ltt_llm_vision` also reads images.
+- `max_tokens` — integer, min 1, max 16384, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
+- `temperature` — number, min 0.0, max 2.0, Sampling temperature.
+- `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
+- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens.
+
+Output: `content` (string), `tool_calls` (array), `usage` (object)
+
+Contract hash: `32d617ca0c0130d2`
+
 ### `text.prompt_package`
 
 Turn a story brief into a structured prompt package: one prompt per scene plus a master prompt. Priced by scene count.
@@ -469,7 +638,8 @@ Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: pr
 | Alias | Capability | Stability | Tools | Notes |
 |---|---|---|---|---|
 | `enhanced` | image | stable | `image.generate` | Better prompt adherence and fine detail than standard. |
-| `pro` | image | stable | `image.generate` | Highest fidelity; use when the result is the deliverable. |
+| `ltt_llm` | text | stable | `text.chat` | Text only, 64K context. Coding, chat, agentic tool use, summarisation. |
+| `ltt_llm_vision` | text | stable | `text.chat` | Same model plus image reading. 64K context. Send images as OpenAI image_url parts. |
 | `standard` | image | stable | `image.generate` | Balanced quality and cost. Start here. |
 | `standard-lite` | image | stable | `image.generate` | Same price as standard, tuned for speed over detail. |
 

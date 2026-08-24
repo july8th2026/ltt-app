@@ -104,6 +104,35 @@ STORES: tuple = (
           "Đây là phía đối ứng của sổ credit — mất nó thì không đối soát được "
           "tiền thật với credit đã cấp.")),
 
+    # ── Máy chủ ảo (H39) ─────────────────────────────────────────────────────
+    #
+    # ⚠️ PHÂN LOẠI TẠM, CHỦ H39 PHẢI XÁC NHẬN. Năm bảng này đến từ một hạng mục
+    #    đang xây (`apps/vps`, app còn TẮT vì `LTT_VPS` chưa đặt), nên chưa có
+    #    dòng dữ liệu thật nào. Nhưng bánh cóc `test_211` đòi **mọi** bảng phải
+    #    được xếp loại, và để đỏ thì hai phiên đều tưởng là việc của bên kia.
+    #
+    #    Xếp theo đúng thứ docstring của chính các bảng đó nói, và nghiêng về
+    #    phía **GIỮ** — vì hướng sai của việc này là xoá mất thứ khách sẽ hỏi,
+    #    không phải giữ thừa một bảng chưa có dữ liệu.
+    #
+    # ⛔ Đặt hạn xoá cho `vps_ip` là việc CÓ HỆ QUẢ PHÁP LÝ: lịch sử "IP nào,
+    #    của ai, lúc nào" là thứ duy nhất trả lời được một yêu cầu về lạm dụng.
+    #    Đừng rút ngắn nó vì thấy bảng to.
+    Store("vps_instance", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Máy khách đã thuê: gói, đĩa, hệ điều hành, vmid. Đây là phía đối "
+          "ứng của hoá đơn — mất nó thì không đối soát được khách trả tiền cho "
+          "cái gì.")),
+    Store("vps_ip", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Địa chỉ IP đã cấp cho máy nào, từ lúc nào. Là thứ duy nhất trả lời "
+          "được một yêu cầu về lạm dụng từ bên ngoài.")),
+    Store("vps_port_map", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Cổng NAT đã cấp: cổng ngoài nào dẫn về máy nào. Cùng lý do với "
+          "`vps_ip` — một cổng mở là một đường vào, và phải truy được chủ.")),
+    Store("vps_event", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
+          "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
+          "hỏi của khách thì đến sau ba tháng.")),
+
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
           N_("Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."),
@@ -253,6 +282,10 @@ NOT_CUSTOMER_DATA = frozenset({
     "credit_packages", "gpu_leases",
     # Ai đang giữ vai trò chạy việc nền. Máy + pid, không có gì của khách.
     "singleton_leases",
+    # Node hạ tầng của CHÍNH TA: IP công khai của gateway, bridge, subnet, dải
+    # cổng. Không có `user_id` và không có gì của khách — máy của khách nằm ở
+    # `vps_instance`, và bảng đó đã được xếp loại ở trên.
+    "vps_gateway",
 })
 
 

@@ -167,6 +167,24 @@ def test_the_model_catalog_never_leaks_the_real_model_id_or_a_vendor():
         assert secret not in document, secret
 
 
+#: Cụm được phép: `openai` ở đây là **tên một định dạng dây**, không phải nhà cung
+#: cấp model ta bán lại. `text.chat` cố ý tương thích dây OpenAI — đó là **tính
+#: năng bán cho khách**, và giấu nó đi làm tài liệu tệ hơn mà không bảo vệ gì
+#: (ta không bán lại OpenAI).
+#:
+#: ⛔ Nhưng KHÔNG miễn trừ cả chuỗi. Chỉ bóc đúng những cụm dưới đây rồi mới dò —
+#:    nên `openai` đứng một mình, hay đứng như một model/alias, VẪN đỏ.
+#:    Lý lẽ đầy đủ ở `test_187::test_openai_may_be_NAMED_AS_A_FORMAT_but_never_AS_A_MODEL`.
+CUM_DINH_DANG_DUOC_PHEP = ("openai format", "openai-compatible",
+                           "openai compatible", "openai image_url")
+
+
+def _boc_ten_dinh_dang(text: str) -> str:
+    for cum in CUM_DINH_DANG_DUOC_PHEP:
+        text = text.replace(cum, "<dinh-dang>")
+    return text
+
+
 def test_the_repository_catalog_leaks_no_vendor_name():
     """The same rule, against what this repository actually publishes."""
     everything = ",".join(sorted({
@@ -178,6 +196,7 @@ def test_the_repository_catalog_leaks_no_vendor_name():
         ensure_ascii=False).lower()
     # "stability" is a field name here, so the vendor is spelled the way the
     # company is — a leak detector that trips on its own schema gets deleted.
+    document = _boc_ten_dinh_dang(document)
     for vendor in ("gemini", "openai", "byteplus", "google", "anthropic",
                    "stabilityai", "stability ai", "flash", "realesrgan",
                    "whisper"):

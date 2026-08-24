@@ -2506,3 +2506,300 @@ tiến trình chạy nó"**, trong khi số tiến trình worker mặc định b
 Điểm trung thực: **7,0 → 8,5 → 9,0** sau khi làm H36.9–12 (`AUDIT_API_2026-08-15.md`
 §4b rồi §4c). Việc duy nhất còn nợ là chạy `test_221` trên một bucket R2 vứt đi —
 chặn bởi một quyết định về hạ tầng, không phải bởi code.
+
+---
+
+## H37 — Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)
+
+**Chốt 2026-08-21 · quyết định nền Q102 · trạng thái: G0 ✅ 9,5/10 · G2 ✅ 10/10.**
+
+⭐ **Chủ dự án chốt: CHẤT LƯỢNG là tiêu chí duy nhất, không đánh về số lượng**
+(D-010). Cấu hình đích là cấu hình đẹp nhất chạy được; thời gian mỗi ảnh chỉ là
+ràng buộc khả thi, không phải tiêu chí chọn. Model đích: **HiDream-O1-Image**
+(MIT, ~8B, chính là Qwen3-VL-8B cải biên) — D-009.
+
+Mục tiêu: có một model tạo ảnh chạy trên máy nhà (từ prompt hoặc từ ảnh tham
+chiếu), đóng gói thành **API nội bộ**, để mọi app cần ảnh gọi tới **y như đang gọi
+API bên ngoài**. Không phải một app mới — là một **provider** (Q102).
+
+Tài liệu chi tiết ở `docs/ANH_NOI_BO/`:
+
+| File | Nội dung |
+|---|---|
+| `KE_HOACH_H37.md` | kiến trúc, hiện trạng đo thật hai máy, model, rủi ro |
+| `PHAN_TICH_BUILD_PACK.md` | chấm bộ `flux2_klein9b_claude_build_pack` — giữ 7 bước, thu hẹp 12, bỏ 1 |
+| `CHIA_GPU_VOI_VIDEO.md` | chia một card 3090 giữa việc video và việc ảnh |
+| `KE_HOACH_THI_HANH.md` | **13 phase G0–G12, mỗi phase có cổng chấm điểm ≥ 9/10** |
+| `DECISIONS.md` · `CHAM_DIEM.md` | sổ quyết định và sổ chấm điểm, ghi liên tục |
+
+Ba điều phải biết trước khi đụng vào:
+
+- **Máy B không giữ bí mật nào của nền tảng.** Không mật khẩu CSDL, không khoá R2,
+  không khoá mã hoá. Ảnh vào bằng presigned GET, ảnh ra bằng presigned PUT.
+- **ComfyUI trên máy B không có xác thực.** Nó chỉ được nghe `127.0.0.1`, vĩnh
+  viễn. Chỉ cổng render (:8199, bearer token) nghe LAN, tường lửa chỉ mở cho
+  192.168.2.17. Không bao giờ đưa ra Cloudflare.
+- **Máy B chạy video cùng lúc.** Một lượt video từng chạy 72,5 phút và ăn 98,7 %
+  VRAM. Job ảnh **không xếp hàng sau video** — bận thì cascade sang Gemini.
+
+- [x] G0 Khung làm việc: Q102, H37, `DECISIONS.md`, `CHAM_DIEM.md`, `bench/` — **9,5/10**
+- [x] G1 Đo phần cứng — **10/10**. **PCIe Gen 3 x16, 11,93 GB/s** (đổi model chỉ
+  ~1,4 s) · E: là SATA 476 MB/s còn NVMe 849 GB trống ⇒ model ảnh về H: (D-014) ·
+  fp8 tensor core **KHÔNG có** (CC 8.6) — nay là số đo · trần công suất **370 W**
+  chứ không phải 250 W. **Bác bỏ bắt được lỗi thật**: `/system_stats` và
+  `torch.mem_get_info` mù với tiến trình khác trên WDDM ⇒ `busy.py` đọc VRAM
+  bằng `nvidia-smi` (D-013)
+- [~] G3 **KHÔNG QUA lần 1 — C4 = 7 < 8** (luật §1.4 điều ②, không cho bù trừ).
+  Trung bình 9,25 nhưng bốn dấu chân ngoài dự định trên máy dùng chung, nặng nhất là
+  **lệnh tách khỏi SSH vẫn chạy tiếp khi chủ dự án ngắt** — đã khắc phục cả bốn
+  (`dung_het.ps1`, prefix `ltt_h37/`, trả lại 2 tệp .mp4 chuyển nhầm).
+  **Số đo cấu hình đích:** bf16 2560×1440 50 bước → **92–97 giây/ảnh**, VRAM đỉnh
+  **16,8 GB**, nhiệt **82–83 °C** kèm **SW Thermal Slowdown**, không rò rỉ RAM.
+  **Tái lập byte-identical** đã chứng minh. Thời gian ∝ số token (D-019).
+  Hai lỗi thật đã bắt và sửa: `/history` có bản ghi ≠ job đã xong (D-018) · prefix
+  đụng thư mục dự án video.
+- [ ] G4 Quét cấu hình CHẤT LƯỢNG: precision · base↔dev · số bước 30–90 · sampler.
+  Chọn bằng **so mù ≥ 50 cặp có cặp bẫy**; thời gian chỉ là trần khả thi
+- [ ] G5 Edit + reference: `edit` · `subject` · `structure`, **1–2 ảnh tham chiếu**
+- [ ] G5b Chuỗi nâng chất: SeedVR2/upscale · VLM tự loại · nhiều seed. Nhánh nào
+  không chứng minh được tác dụng thì **bỏ hẳn**
+- [ ] **G6b ĐỐI CHỨNG TRẦN ⛔ — cổng quyết định.** So mù với **Gemini 3 Pro Image**
+  (thứ đang bán) + **Klein 9B** (trần trọng số mở, chỉ để đo) + GPT Image 2 nếu có
+  key. Thua ở mọi loại ⇒ **DỪNG, không mở bán**
+- [x] G6 Cổng render `render_gateway/` + `test_245` — **9,55/10**, 53 test xanh trên
+  máy A không cần GPU. Mọi hợp đồng đọc từ mã ComfyUI kèm số dòng. Phát hiện quan
+  trọng: `progress`/`executing` chỉ gửi tới client đã gửi prompt ⇒ **bỏ websocket**,
+  ETA việc lạ suy từ trung vị thời lượng (D-012). Template `t2i` còn là **DRAFT**,
+  G3 phải xác minh bằng cách chạy thật
+- [ ] G7 Deploy sang B: venv riêng, 2 service NSSM, tường lửa, ghim commit ComfyUI
+  — **phần máy A đã xong**: `render_gateway/deploy/{deploy,cai_dat_dich_vu,kiem_tra}.ps1`
+  (thuần ASCII, không BOM, so hash hai bên, token sinh trên B). Còn lại phải chạy
+  thật lên máy B + khởi động lại máy đó + gọi thử từ một máy thứ ba trong LAN
+- [ ] G8 Nối nền tảng: provider `ltt_image` + `platform_core/image_gen/` + `test_246`.
+  **KHÔNG cascade ngầm** — khách tự chọn đám mây
+- [ ] G9 Độ bền: 100 ảnh 4 MP · **nhiệt và tiết lưu** · tranh chấp với video
+- [ ] G10 Mở cho khách — gate.py toàn xanh + kiểm trên URL công khai thật; giao diện
+  **đường 2** (khách luôn biết ảnh do model nào sinh)
+- [ ] G11 Giám sát chất lượng thường trực (lấy mẫu hằng tháng, chấm mù lại)
+- [ ] G12 *(tuỳ chọn)* Gộp đường Gemini của `taoanh`/`thumbnail` vào adapter chung
+
+**H38 (đề xuất, làm sau H37):** hợp nhất cơ chế kiểm VRAM + RAM cho toàn hệ. Phần
+đo đã có sẵn (`GET /api/v1/metrics` của Nexus trả cùng một khuôn trên cả hai máy,
+GPU neo bằng UUID); phần thiếu là sổ "ai đang giữ" và một bảng ngưỡng duy nhất.
+Luật quan trọng nhất của H38: **mọi ngưỡng tài nguyên phải là lượng tuyệt đối (GB),
+không phải tỉ lệ** — chi tiết và lý do ở `CHIA_GPU_VOI_VIDEO.md` §10.
+
+
+---
+
+## H39 — Bán VPS (máy chủ ảo Windows) trên `app.lttstudios.com`
+
+**Quyết định nền:** Q103 + **Q104** (mở rộng cùng ngày).
+**Phân tích + logic đã khoá (V1–V13):** `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`.
+
+**Trạng thái: CHƯA BẮT ĐẦU VIẾT CODE.** Logic khoá 2026-08-22; P0 chặn bởi hai thứ
+ngoài repo (xem cuối mục).
+
+**Hình dạng hạ tầng (đo thật 2026-08-22):** Proxmox VE 9.2 chạy **lồng trong VMware
+Workstation trên MÁY B** — `H:\PVE-Nested\VMware\PVE-NESTED-VMWARE\`, 32 vCPU ảo,
+RAM 44 GB (**sẽ nới 64**), `PVE-Data.vmdk` 217 GB (**sẽ nới ~600**), NIC bridged nên
+có IP LAN `192.168.2.168`. **Không phải một máy chủ riêng.**
+
+**Bốn con số phải nhớ trước khi đụng vào:**
+
+- **Trần công suất THẬT (đo 2026-08-22): node đang ĐẦY, bán được 0 máy.** 8 máy của
+  chủ nhà cam kết 35,9/43,2 GB RAM và 640/475 GB đĩa (**đã bán chồng 1,49×**). Sau khi
+  nới RAM lên 64 GB còn ~23 GB ⇒ **~5 máy** ở mức 4 GB. Con số "10–14 máy" ở Q104
+  tính khi chưa biết node có sẵn 8 máy — xem mục 0.1 của `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`.
+- **Upload đường nhà ~150 Mbps** (đo thật) — trần dùng chung cho TẤT CẢ khách. Một
+  khách tải file lớn là nghẽn cả cụm ⇒ **giới hạn tốc độ mỗi VM là hạng mục bắt buộc**.
+- **Vultr Singapore = 45 ms từ Hà Nội** ⇒ khách VN chọn IP Singapore chịu **~90 ms khứ
+  hồi thêm**. Trang bán phải giải thích, không để khách chọn nhầm rồi phàn nàn.
+- **V2 chốt là KHÔNG chống việc máy B tự khởi động lại** vì Windows Update. Một đêm là
+  mọi khách mất máy. Trang bán **phải** in "best effort, không cam kết uptime".
+
+### Việc
+
+- [x] **P0a** — ✅ **XONG 2026-08-22.** Token `vpsapp@pve!ltt` (privilege separation,
+      role `PVEAuditor` = chỉ đọc) tạo qua API Proxmox từ trình duyệt đã đăng nhập; bí
+      mật đi thẳng clipboard → `secrets/app.env`, **không lọt vào hội thoại hay log**.
+      `python tools\vps_doctor.py` → RESULT: PASS.
+      **Kho là `vmdata`, kiểu LVM-thin, 475 GB** — không phải 217 GB; `PVE-Data.vmdk`
+      217 GB chỉ là phần đã cấp phát trên `H:`. Nới bằng `pvresize` + `lvextend`,
+      **không** phải `zpool online -e`.
+- [x] **P0b** — ✅ **XONG 2026-08-23.** Chủ sản phẩm chạy `Tắt Proxmox an toàn` /
+      `Bật Proxmox`; tôi sửa `.vmx` ở giữa. Xác minh VM đã tắt trên **hai dấu hiệu độc**
+      **lập** (Proxmox không phản hồi + **không còn `.lck`**) trước khi động vào.
+      Sao lưu `\*.vmx.bak-truoc-noi-ram-96gb` khớp từng ký tự → `memsize` 45056→98304
+      → đối chiếu 108 dòng không đổi, mọi khoá khác giữ nguyên.
+      *Kết quả thật:* `cleanShutdown=TRUE` (lần trước là FALSE); Proxmox lên sau **55**
+      **giây**; **8/8 VM tự khởi động** (đều `onboot=1`); node **94,4 GB**.
+      **Trần bán: 1 → 10 máy** ở gói `vps-vua` (16 nếu toàn gói nhỏ).
+      *Chưa làm:* nới pool `vmdata` — chưa cần, đĩa còn 195 GB trước phanh 80 %.
+- [x] **P0c** — ✅ **XONG 2026-08-22.** `apps/vps/` đầy đủ chứ không phải khung rỗng:
+      `manifest.py` (fail-closed sau cờ `LTT_VPS`), `cost.py` (3 gói + quy đổi credit),
+      `os_images.py` (catalog OS + ràng buộc tối thiểu của Microsoft), `tables.py`
+      (5 bảng, 3 ràng buộc duy nhất làm trọng tài cấp phát), `services/proxmox.py`
+      (driver **tự viết trên `requests`**, KHÔNG dùng `proxmoxer` — lý do ở mục 10.1
+      của tài liệu phân tích), `services/capacity.py` (hai phép kiểm: cam kết + thực
+      dùng, chặn ở 80 %), `services/provisioning.py` (cấp VMID/cổng/IP nguyên tử),
+      `services/billing.py` (thu 30 ngày, treo → xoá +7 ngày), `jobs.py` (3 handler
+      idempotent), `routes.py` + `server/templates/vps.html`, migration
+      `20260822_1900_vps_tables.py`.
+      *Kết quả thật:* **48 test xanh** — `tests/test_251_vps_ha_tang.py` (39) +
+      `tests/test_252_vps_giao_dien.py` (9); `tools/lint_app_contract.py` 0 ERROR;
+      registry nạp được app + bảng + 3 job type.
+      *Hai lỗi thật do test bắt được trong lúc dựng:* (1) `VpsEvent.id` kiểu
+      `BigInteger` **không tự tăng trên SQLite** → mọi INSERT nhật ký chết, tức là
+      tầng nhật ký sẽ không có test nào đi qua được; (2) `_moc_ke_tiep` khi máy trễ
+      **hơn một chu kỳ** trả về một mốc vẫn nằm trong quá khứ → máy vừa thu xong đã
+      hết hạn ngay, và vòng thu sẽ **trừ tiếp mỗi lượt cho tới khi cạn số dư khách**.
+      Cả hai đã sửa và có test chốt.
+- [x] **P1** — ✅ **XONG 2026-08-23** (còn một bước thuộc về chủ sản phẩm, xem cuối mục).
+      Template **Debian 12 `generic` dùng NỘI BỘ** (VMID `9101`, `khach_thay=False`,
+      không bán) + job `vps.provision` + `services/mang.py` + 6 cột mạng trong
+      `vps_gateway` (migration `8b2c5d1e40a7`) + cấp cổng **nguyên tử**
+      (khuôn `IntegrityError` của `gpu_lease.py`). **62 test xanh.**
+
+      Chạy thật trên cụm: **5 giây** từ lệnh tới máy đang chạy; máy boot sau **37 giây**
+      và tự tải gói từ `deb.debian.org`. Bảng `ci-info` trên serial xác nhận
+      `eth0 = 10.50.0.50/24, gw 10.50.0.1` — **đúng địa chỉ suy ra từ cổng NAT đã cấp**
+      (`cong_goc + octet`), tức chuỗi *cấp cổng → suy địa chỉ → tiêm cloud-init* khớp
+      hai đầu.
+
+      🔴 **Luật hạ tầng phát hiện ở bước này: cụm KHÔNG chạy được virtio.** Proxmox
+      nằm lồng trong VMware; guest ghi vào thanh ghi notify của `virtio-pci` thì treo
+      cứng (RCU stall trong `vp_notify`). Máy bán ra phải là **`sata0` + `e1000`,
+      `agent: 0`, `balloon: 0`** — đúng như 8 máy đang chạy của chủ nhà. Ghim trong
+      `MO_HINH_CARD` (`services/mang.py`) kèm test chốt. Kéo theo: ảnh Linux phải là
+      bản **`generic`**, không phải `genericcloud` (bản kia bỏ cả driver AHCI).
+
+      ⏳ *Còn thiếu để đóng hẳn:* DNAT `45.76.185.75:33930 → 10.50.0.50:22` trên
+      gateway Vultr — bước 6 của `Add-GuestToGateway.ps1`. Cần mật khẩu trong file
+      DPAPI mà **chỉ tài khoản `lengo` giải mã được**, nên chủ sản phẩm phải chạy.
+      Sau đó *xong khi:* SSH từ ngoài mạng vào `45.76.185.75:33930`.
+### ⚠️ Đổi kiến trúc 2026-08-24 — P1b và P2–P9 cũ đã bị THAY
+
+Chủ sản phẩm chốt: **mỗi máy một IP công khai riêng, bỏ hẳn `IP:cổng`.** Toàn bộ
+phần chia cổng (`P1b` nạp ánh xạ tĩnh, dải 33930–34080, `cong_goc + octet`) **không
+còn dùng**. Đã dọn khỏi mã nguồn cùng ngày: bỏ hai cột `dnat_dau`/`dnat_cuoi`, bỏ
+`kiem_dai_da_nap`, xoá migration `4d7e91c2a6b8`, xoá
+`tools/vps_gateway/nap-anh-xa-tinh.ps1` và bốn script tương ứng trên máy B.
+
+Điều **không** đổi được, và phải nhắc lại vì nó hay bị hiểu nhầm: **không ai bán IP
+rồi cắm thẳng vào máy ở nhà.** Một IPv4 chỉ sống khi có mạng nào đó quảng bá nó bằng
+BGP; cáp nhà không quảng bá được gì. Nên đường hầm còn nguyên; thứ đổi là *thứ chạy
+bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (Debian thay Windows).
+
+---
+
+## Giai đoạn còn lại của H39 — đánh số lại theo kiến trúc mới
+
+- [x] **G1 — hạ tầng mạng 1-IP-1-VM.** ✅ **XONG 2026-08-24, đo thật.**
+      Gateway Debian 12 trên Vultr `sgp` (`45.32.114.249`, `vhp-1c-1gb-amd`, **$6/tháng**,
+      2.048 GB) + WireGuard `10.51.255.1↔.2` MTU 1420 (RTT 57 ms) + `nftables` NAT 1:1
+      bằng **`map`** + VM router `199` trên máy B (`10.51.0.1/24`, chặn LAN nhà).
+      *Bằng chứng:* SSH thẳng từ máy A vào `45.77.45.29` → vào máy khách; máy khách ra
+      Internet cũng bằng đúng IP đó. Rẻ hơn gateway Windows cũ **$4/tháng**.
+
+- [ ] **G2 — đưa hạ tầng đó vào MÃ NGUỒN.** Hiện mọi thứ chạy bằng script tay.
+      `services/vultr.py` (tạo/gắn/gỡ/xoá Reserved IP, đọc băng thông) · `services/gateway.py`
+      (SSH có khoá, thêm/bớt phần tử `map`, **thu hồi phải nguyên tử với việc xoá máy**)
+      · sửa `services/mang.py`: **bỏ phép tính octet-theo-cổng**, chuyển sang cấp địa chỉ
+      nội bộ trực tiếp · làm địa chỉ Reserved IP **bền qua khởi động lại** gateway.
+      *Xong khi:* tạo + xoá một máy có IP riêng **hoàn toàn từ job**, không script tay,
+      và test đa tiến trình kiểu `test_214` chứng minh hai worker không cấp trùng IP.
+
+- [ ] **G3 — vòng đời máy + console.** Bật/tắt/khởi động lại/cài lại/xoá; xoá thì
+      **thu hồi IP** (nếu không, mỗi máy chết để lại $3/tháng chảy mãi). Console noVNC
+      proxy qua server mình, vé dùng-một-lần; khách **không bao giờ** chạm cổng 8006.
+      *Xong khi:* diễn tập trọn vòng đời trên **URL công khai** (quy tắc 5b).
+
+- [ ] **G4 — tiền.** Chu kỳ 30 ngày theo khuôn Q98 (đã có `billing.py`) + **tiền IP
+      riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
+      *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
+
+- [ ] **G5 — template Windows Server 2022.** Đây mới là **sản phẩm thật** (catalog chỉ
+      bán Windows, V9). Cloudbase-Init đổi `metadata_services` sang **NoCloud** (Proxmox
+      sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai thì cấu hình **im lặng
+      không áp dụng**); gắn ổ Cloud-Init **trước** khi convert; **không bật lại VM sau
+      sysprep**. Nhớ luật của cụm: **`sata0` + `e1000`, `agent: 0`, `balloon: 0`**.
+      *Xong khi:* clone ra máy mới, **RDP vào được bằng IP riêng**, mật khẩu ngẫu nhiên
+      hiện đúng một lần.
+
+- [ ] **G6 — template Windows 10 / 11.** Win11 cần UEFI/OVMF + vTPM + Secure Boot.
+
+- [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
+      khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút
+      treo khẩn cấp · không cho dùng thử ẩn danh.
+      *Xong khi:* diễn tập một máy chạy tải 100 % bị treo, và một máy vượt băng thông
+      bị giảm tốc chứ không làm sập quota của người khác.
+
+- [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
+
+- [ ] **G9 — backup + cổng dự phòng.** Snapshot tuần, giữ 1 bản, đẩy sang ổ khác của
+      máy B (V10). Cổng vào thứ hai để một con VPS ngã không làm chết **mọi** khách.
+      *Xong khi:* khôi phục thật một VM từ backup; chuyển một máy sang cổng dự phòng.
+
+- [ ] **G10 — nghiệm thu và mở bán.** Điều khoản sử dụng, ba dòng cảnh báo bắt buộc,
+      hoá đơn theo luật VN, rồi mới đặt `LTT_VPS=1`.
+
+### 🔴 Một quyết định về giá phải chốt trước G4
+
+**$3/tháng cho mỗi IP ≈ 78.000 đ.** Đối chiếu ba gói đã chốt ở V6:
+
+| Gói | Giá | Còn lại sau tiền IP |
+|---|---|---|
+| Nhỏ | 89k | **11k** ← không sống được |
+| Vừa | 179k | 101k |
+| Lớn | 329k | 251k |
+
+Mỗi máy một IP thì **gói 89k chết**. Ba lối ra, chủ sản phẩm chọn:
+**(a)** bỏ gói 89k, gói vào cửa thành ~179k · **(b)** nâng giá gói Nhỏ lên ~149–169k ·
+**(c)** giữ gói 89k **dùng chung IP theo cổng** như hạng phổ thông (nhưng đúng thứ vừa
+bị bỏ, và làm đôi bề mặt của giao diện + tiền + tài liệu).
+
+Chưa chốt thì G4 và G8 không làm dứt điểm được.
+
+### Việc chủ sản phẩm giao 2026-08-22 (tối) — Q105
+
+| # | Việc | Trạng thái | Chặn ở đâu |
+|---|---|---|---|
+| 1 | **Nới RAM máy ảo Proxmox 44 → 96 GB** | ✅ **XONG 2026-08-23** | `memsize` 45056→98304. Node nhận **94,4 GB**; 8 VM tự lên đủ 8/8 sau 55 giây. Trần bán: **16 / 10 / 6 máy** (nho/vừa/lớn) |
+| 2 | **Giữ `WIN10-LTSC-GOLD` (9001), xoá `WIN10-GOLD-SYSPREP` (9000)** | ✅ **XONG 2026-08-22** | Chủ sản phẩm xác nhận "giữ Win 10 LTSC". Ba lớp kiểm trước khi xoá (đúng tên / đúng là template / không ai linked-clone). `vmdata` 173,6 → **149,1 GB** |
+| 3 | **Đĩa là tài nguyên chia sẻ, không bán ổ cố định** | ✅ **XONG** | — |
+| 4 | **Thêm Windows Server 2016 + 2022** | ✅ **XONG 2026-08-23** | Không dùng nguồn ngoài: trang Evaluation Center có link `go.microsoft.com/fwlink` **không cần biểu mẫu**, resolve thẳng ra CDN Microsoft. Proxmox tự tải bằng `download-url`; **cả hai khớp từng byte** (2022: 5.044.094.976 trong 506 giây; 2016: 6.972.221.440 trong 668 giây). ⚠️ `download-url` đòi **`Sys.Modify`** mà `PVEAdmin` không có — dùng phiên `root@pam` cho việc một lần này, **không** nới quyền token của app. Đã nới `local` 21→27 GiB bằng 5,88 GiB extent vốn trống trong VG `pve` (`lvextend`+`resize2fs`, chạy nóng, không xoá gì) để đủ chỗ |
+
+**Việc 3 đã làm gì** (V14): `disk_gb` của gói thành **hạn mức** thay vì chỗ giữ cứng;
+`SucChua` thêm `dia_gb_dang_dung` (chỗ **thực** đã ghi); `cho_phep_ban` đổi thành ba
+câu hỏi — RAM (cứng) → kho thực dùng < 80 % → bán chồng ≤ **3,0×**. Trang bán thêm câu
+*"dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng"*.
+**55 test xanh** (`test_251` 45 + `test_252` 10), trong đó 4 test mới cho ba cái phanh.
+
+Hiệu quả đo được ngay: trước V14 node bán được **0 máy** (đĩa chặn); sau V14 còn
+**1 máy `vps-nho`** — và giờ thứ chặn là **RAM**, đúng như nó phải thế.
+
+**Cần cấp thêm để làm việc 1, 2, 4:**
+
+- **Token Proxmox có quyền ghi** — role `LTTVps` (đã soạn sẵn lệnh trong tài liệu
+  phân tích mục 8), hoặc tạm thời `PVEVMAdmin` + `Datastore.AllocateSpace`.
+- **`command.run` cho credential Nexus trên máy B** — để dừng/khởi động VMware đúng
+  cách. Không có nó thì chỉ còn `process.kill`, tức **cắt điện** Proxmox — đúng thứ
+  đã để lại `cleanShutdown=FALSE` lần trước.
+- **Một khung giờ bảo trì**: nới RAM làm **cả 8 máy của chủ nhà tắt theo**. Đây là
+  quyết định về thời điểm, không phải về kỹ thuật.
+
+### Còn chặn (ngoài repo)
+
+1. ~~Kiểu kho + loại ổ~~ ✅ **ĐÃ TRẢ LỜI 2026-08-22**: kho `vmdata` là **LVM-thin
+   475 GB**; ổ `H:` là **NVMe** (chủ sản phẩm xác nhận) → bảng giá giữ được chữ NVMe.
+   **Việc mới thay chỗ nó:** node đang đầy — phải nới RAM (P0b) trước khi bán được máy nào.
+2. ~~Dữ liệu cổng đang chạy sẵn~~ ✅ **ĐÃ TÌM THẤY 2026-08-22**: gateway dựng từ
+   12/08 — Vultr **45.76.185.75**, WireGuard UDP 51820, DNAT 33891–33895, thêm máy
+   bằng `Add-GuestToGateway.ps1`. Trần băng thông **~150–160 Mbps** (CPU 1 vCPU của
+   VPS), RTT trong guest **54–56 ms**, tunnel chết thì fail-closed. Chi tiết ở mục
+   4.5 của `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`.
+3. **Pháp lý VN** (đăng ký kinh doanh / hoá đơn) — việc của chủ sản phẩm, ảnh hưởng tới code.
+
+*(Việc kiểm router VNPT forward dải cổng — **hết là vấn đề** từ Q104: đường về nhà là
+WireGuard do phía nhà chủ động gọi ra, không cần mở cổng nào trên router.)*

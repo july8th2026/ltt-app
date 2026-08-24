@@ -548,9 +548,15 @@ def _app(t: FakeTransport, f: FakeFetcher, tmp_path, clock, token=""):
                  ram_trong_toi_thieu_gb=48.0, work_dir=tmp_path)
     # Tiêm nguồn VRAM giả: mặc định gọi `nvidia-smi` THẬT, và máy chạy test có
     # GPU — không tiêm thì test phụ thuộc vào việc máy đang bận hay rảnh.
+    #
+    # ⚠️ VÀ PHẢI TIÊM CẢ `dem_python_gpu`. Thiếu nó thì chốt bận đếm tiến trình
+    #    python THẬT trên card, nên test đỏ khi máy tình cờ có việc khác — ví dụ
+    #    một lượt `gate.py` chạy song song. Đã dính 24/08: hai test đỏ với
+    #    *"co 1 tien trinh khac dang tinh tren GPU"*, và nó **không** phải lỗi của
+    #    mã đang sửa. Một test phụ thuộc trạng thái card là một test nói dối.
     app = create_app(cfg, CF.ComfyClient(t), now=clock,
                      sleep=lambda d: clock.tick(d), fetcher=f,
-                     doc_vram_mb=lambda: 0)
+                     doc_vram_mb=lambda: 0, dem_python_gpu=lambda: 0)
     return TestClient(app), app
 
 
@@ -688,7 +694,12 @@ def test_thu_muc_deploy_dung_bo_script_da_biet():
     máy B, và một script lạ lọt vào là thứ không ai rà lại."""
     assert {p.name for p in _PS1} == {
         "deploy.ps1", "cai_dat_dich_vu.ps1", "kiem_tra.ps1", "dung_het.ps1",
-        "chuoi_h37.ps1", "thang_do_tham_chieu.ps1", "start_comfy_h37.ps1"}
+        "chuoi_h37.ps1", "thang_do_tham_chieu.ps1", "start_comfy_h37.ps1",
+        # Chay mot lo do DAI bang Scheduled Task (D-055). Ly do no ton tai:
+        # OpenSSH tren Windows gom moi tien trinh con vao job object cua PHIEN,
+        # nen `ssh ... python` VA `Start-Process` deu chet theo ket noi. Da mat
+        # mot lo 100 anh o anh 87/100 dung nhu vay.
+        "chay_lo_dai.ps1"}
 
 
 def test_chuoi_viec_phai_cho_HAI_dieu_kien_truoc_khi_chay():
@@ -1148,14 +1159,25 @@ def test_bucket_lon_nhat_da_do_van_qua():
     assert NS.kiem(2048, 2048).tong == 4096
 
 
-def test_HAI_anh_tham_chieu_4MP_BI_CHAN():
-    """Hai ảnh @4 MP = 11.412 token, vẫn **trên** trần đã đo 7.506 (G5 chỉ đo tới
-    hai ảnh @2 MP). Nên nó vẫn phải bị chặn — trần nâng theo số đo, không nâng theo
-    mong muốn."""
+def test_HAI_anh_tham_chieu_4MP_NAY_QUA_vi_DA_DO():
+    """⭐ Trước 24/08 cấu hình này bị chặn (11.412 > trần 7.506). Lô G5g đã đo nó:
+    **VRAM đỉnh 20.114 MB · 239,0 s · 73 °C** — dưới xa ngưỡng dừng 21.000 MB.
+
+    Nó qua vì **có số đo**, không vì ai đó thấy phiền mà gỡ chốt. Xem D-053.
+    """
+    assert NS.kiem(2560, 1440, ref_mp=4.0, so_ref=2).tong == 11412
+
+
+def test_BAC_TIEP_THEO_van_BI_CHAN():
+    """Bánh cóc phải còn răng: bậc kế tiếp chưa ai đo thì vẫn phải bị chặn.
+
+    Nếu không có test này thì việc nâng trần một lần sẽ dạy người sau rằng trần là
+    thứ nâng được khi thấy phiền — mà đó đúng là điều chốt này sinh ra để chặn.
+    """
     with pytest.raises(NS.NgoaiVungDaDo) as e:
-        NS.kiem(2560, 1440, ref_mp=4.0, so_ref=2)
+        NS.kiem(2560, 1440, ref_mp=8.0, so_ref=2)
     t = str(e.value)
-    assert "11412" in t and "7506" in t and "D-024" in t, (
+    assert "19224" in t and "11412" in t and "D-024" in t, (
         "loi phai noi ra con so that va loi di tiep")
 
 
@@ -1189,8 +1211,10 @@ def test_runner_TU_CHOI_truoc_khi_cham_GPU(tmp_path):
                sleep=lambda _: None)
     spec = C.nap_catalog()["hidream-o1"]
     gia_tri = dict(spec.defaults)
-    gia_tri.update({"prompt": "x", "negative": "", "ref1": "a.png", "ref2": "b.png"})
-    # `subject` + 2 anh @4 MP = 11.412 token: VAN ngoai vung da do (tran 7.506).
+    gia_tri.update({"prompt": "x", "negative": "", "ref1": "a.png", "ref2": "b.png",
+                    "ref_mp": 8.0})
+    # `subject` + 2 anh @8 MP = 19.224 token: ngoai vung da do (tran 11.412).
+    # Truoc 24/08 test nay dung 4 MP; bac do da nang no len mot nac (D-053).
     job = r.run(RenderRequest(job_id="j-qua-to", template=spec.modes["subject"].template,
                               values=gia_tri, ref_slots=["ref1", "ref2"]))
     assert job.status == J.FAILED and job.error_code == E_NGOAI_VUNG
@@ -1203,8 +1227,14 @@ def test_tran_la_so_DA_DO_chu_khong_phai_so_tinh_ra():
     việc nâng nó là một thay đổi CÓ CHỦ Ý, hiện ra trong diff.
 
     Lịch sử: 4.096 (G3, chỉ t2i) → **7.506** (G5 22/08, đo chế độ tham chiếu:
-    edit 1 ảnh @4 MP và subject 2 ảnh @2 MP, VRAM đỉnh 19,8–20,0 GB)."""
-    assert NS.TOKEN_DA_DO_TOI_DA == 7506
+    edit 1 ảnh @4 MP và subject 2 ảnh @2 MP, VRAM đỉnh 19,8–20,0 GB)
+    → **11.412** (G5g 24/08: subject 2 ảnh @4 MP, VRAM đỉnh 20,1 GB · 239,0 s).
+
+    ⚠️ Và số đo 24/08 nói thêm một điều: token **không** tỉ lệ với nguy hiểm. Token
+    gấp 2,1 lần mà VRAM chỉ +1,8 % — VRAM ở đây do trọng số model quyết định. Trần
+    này vẫn đúng việc (từ chối cấu hình chưa đo) nhưng đừng đọc nó như thước đo
+    mức nguy hiểm."""
+    assert NS.TOKEN_DA_DO_TOI_DA == 11412
 
 
 def test_MOI_duong_goi_ComfyUI_deu_co_chot_ngan_sach():
@@ -1398,3 +1428,27 @@ def test_deploy_KHONG_dung_Environment_NewLine_khi_ghi_cau_hinh():
         ma = _chi_ma(duong)
         assert "[environment]::newline" not in ma, (
             f"{duong.name}: dung \"`r`n\" tuong minh thay vi [Environment]::NewLine")
+
+
+def test_reserve_vram_KHAI_O_MOT_CHO_va_KHOP_voi_lenh_cai_dich_vu():
+    """⛔ `--reserve-vram 3` là thứ đứng giữa lô đo và một lần sập máy (D-024).
+
+    Nó sống ở HAI chỗ: hằng số `VRAM_CHUA_LAI_GB` (mã đọc để tính ngân sách) và
+    cờ dòng lệnh trong `cai_dat_dich_vu.ps1` (thứ thật sự tới ComfyUI). Hai chỗ
+    lệch nhau thì **mã tính theo một biên mà máy không hề chừa** — và triệu chứng
+    là sập giữa một lô dài, không phải một lỗi đọc được.
+
+    Test này không thay được việc kiểm trên máy B; nó chặn việc **mất cờ lặng lẽ**
+    ở lần sửa script sau. Đo 24/08 trên máy B: cờ có thật trong `AppParameters`.
+    """
+    import pathlib
+    import re
+
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    ps1 = (goc / "render_gateway" / "deploy" / "cai_dat_dich_vu.ps1").read_text(
+        encoding="utf-8", errors="replace")
+    m = re.search(r"--reserve-vram\s+(\d+)", ps1)
+    assert m, "mat co --reserve-vram trong lenh cai dich vu ComfyUI"
+    assert int(m.group(1)) == int(NS.VRAM_CHUA_LAI_GB), (
+        f"lenh cai dat chua lai {m.group(1)} GB nhung ngan_sach.py tinh theo "
+        f"{NS.VRAM_CHUA_LAI_GB} GB")

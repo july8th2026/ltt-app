@@ -1,0 +1,134 @@
+{% extends "base_public.html" %}
+{% block content %}
+
+<div class="card">
+  <h1 style="margin-top:0;">{{ _("Giá API model ngôn ngữ") }}</h1>
+  <p>{{ _("Tính theo token, trả theo lượng dùng thật. Không thuê bao, không phí tối thiểu hằng tháng.") }}</p>
+  <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code></p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bảng giá") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Loại token") }}</th>
+      <th style="text-align:right;">{{ _("credit / 1 triệu token") }}</th>
+      <th style="text-align:right;">{{ _("tương đương") }}</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>{{ _("Token vào") }} <span class="muted">({{ _("câu hỏi, ngữ cảnh, định nghĩa tool") }})</span></td>
+        <td style="text-align:right;"><strong>{{ bang.token_vao }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang.token_vao * 100) }}{{ _("đ") }}</td>
+      </tr>
+      <tr>
+        <td>{{ _("Token vào lấy lại từ cache") }}</td>
+        <td style="text-align:right;"><strong>{{ bang.token_vao_cache }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang.token_vao_cache * 100) }}{{ _("đ") }}</td>
+      </tr>
+      <tr>
+        <td>{{ _("Token ra") }} <span class="muted">({{ _("câu trả lời, kể cả phần suy nghĩ") }})</span></td>
+        <td style="text-align:right;"><strong>{{ bang.token_ra }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang.token_ra * 100) }}{{ _("đ") }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit. Nên một lượt rất nhỏ trả nhiều hơn giá niêm yết — xem ví dụ đầu bảng dưới.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Ba ví dụ chi phí thật") }}</h2>
+  <p class="muted">{{ _("Tính bằng đúng hàm ra hoá đơn, không phải bằng một phép nhân riêng.") }}</p>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Lượt gọi") }}</th>
+      <th style="text-align:right;">{{ _("token vào") }}</th>
+      <th style="text-align:right;">{{ _("token ra") }}</th>
+      <th style="text-align:right;">{{ _("credit") }}</th>
+      <th style="text-align:right;">{{ _("tiền") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for v in vi_du %}
+        <tr>
+          <td>{{ v.ten }}</td>
+          <td style="text-align:right;" class="muted">{{ "{:,}".format(v.vao) }}</td>
+          <td style="text-align:right;" class="muted">{{ "{:,}".format(v.ra) }}</td>
+          <td style="text-align:right;"><strong>{{ v.credit }}</strong></td>
+          <td style="text-align:right;">{{ "{:,}".format(v.dong) }}{{ _("đ") }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h1 style="margin-top:0;">{{ _("Giá API tạo ảnh") }}</h1>
+  <p>{{ _("Model ảnh chạy trên máy của chúng tôi. Tính theo ảnh, và chỉ tính những ảnh thật sự sinh ra được.") }}</p>
+  <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang_anh.phien_ban_gia }}</code></p>
+
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Loại ảnh") }}</th>
+      <th style="text-align:right;">{{ _("credit / ảnh") }}</th>
+      <th style="text-align:right;">{{ _("tương đương") }}</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>{{ _("Ảnh từ mô tả") }} <span class="muted">(t2i)</span></td>
+        <td style="text-align:right;"><strong>{{ bang_anh.anh_thuong }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang_anh.anh_thuong * 100) }}{{ _("đ") }}</td>
+      </tr>
+      <tr>
+        <td>{{ _("Ảnh có ảnh tham chiếu") }} <span class="muted">(edit, subject)</span></td>
+        <td style="text-align:right;"><strong>{{ bang_anh.anh_tham_chieu }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang_anh.anh_tham_chieu * 100) }}{{ _("đ") }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Ảnh tham chiếu đắt gấp %(n)d lần vì máy vẽ lâu hơn khoảng 3,3 lần ở cùng số bước. Tối đa %(m)d ảnh một lượt.", n=bang_anh.he_so_tham_chieu, m=bang_anh.so_anh_toi_da) }}</p>
+
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Lượt gọi") }}</th>
+      <th style="text-align:right;">{{ _("credit") }}</th>
+      <th style="text-align:right;">{{ _("tiền") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for v in vi_du_anh %}
+        <tr>
+          <td>{{ v.ten }}</td>
+          <td style="text-align:right;"><strong>{{ v.credit }}</strong></td>
+          <td style="text-align:right;">{{ "{:,}".format(v.dong) }}{{ _("đ") }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>{{ _("Xin 4 ảnh mà chỉ ra 2 thì trả tiền 2") }}</h3>
+  <p>{{ _("Hệ thống giữ trước một mức trần theo số ảnh bạn xin, rồi hoàn lại phần chênh khi lượt vẽ xong. Lượt không sinh được ảnh nào được hoàn đủ.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Ba điều nên biết trước khi dùng") }}</h2>
+
+  <h3>{{ _("Trả cho thứ đã sinh ra, không trả cho thứ đã xin") }}</h3>
+  <p>{{ _("Xin max_tokens 8.000 mà model chỉ trả lời 200 token thì bạn trả cho 200. Hệ thống giữ trước một mức trần rồi hoàn lại phần chênh ngay khi lượt gọi xong.") }}</p>
+
+  <h3>{{ _("Ngắt giữa chừng vẫn tính phần đã sinh") }}</h3>
+  <p>{{ _("Với luồng streaming, nếu bạn đóng kết nối giữa chừng thì phần chữ đã sinh ra vẫn tính tiền — GPU đã chạy rồi. Gọi lại là một lượt sinh mới, và tính tiền mới.") }}</p>
+
+  <h3>{{ _("Không đo được thì không thu") }}</h3>
+  <p>{{ _("Nếu hệ thống không đọc được số token đã dùng, lượt đó được hoàn đủ và tính 0 đồng. Thu tiền mà không có bằng chứng thì tệ hơn mất một ít tiền.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  <p>
+    <a href="/register">{{ _("Tạo tài khoản") }}</a> →
+    <a href="/developers/keys">{{ _("tạo khoá API") }}</a> →
+    <a href="/developers/cli">{{ _("cắm vào Codex hoặc Claude") }}</a>
+  </p>
+  <p class="muted">{{ _("Khoá dùng được ngay với thư viện OpenAI, Codex CLI, Claude Code và Claude Desktop — không cần thư viện riêng.") }}</p>
+</div>
+
+{% endblock %}

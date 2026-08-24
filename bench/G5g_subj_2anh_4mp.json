@@ -1,0 +1,77 @@
+{
+  "ca": "G5g_subj_2anh_4mp",
+  "ngay": "2026-08-23T20:39:56+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt_h37/hidream_o1",
+    "ref_mp": 4.0,
+    "sampler": "uni_pc",
+    "scheduler": "normal",
+    "seam_passes": "2",
+    "seam_pattern": "single_shift",
+    "seam_start": 0.8,
+    "seam_strength": 1.0,
+    "seed": 0,
+    "shift": 3.0,
+    "steps": 30,
+    "upscale": "area",
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "subject",
+  "ram_trong_truoc_gb": 112.1,
+  "runs": [
+    {
+      "prompt_id": "93b177b2-505a-5d39-95e9-8a4ea1f0022d",
+      "ok": true,
+      "giay": 239.0,
+      "do_duoc": {
+        "so_mau": 225,
+        "vram_dinh_mb": 20114,
+        "vram_trung_vi_mb": 19858,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 70,
+        "power_dinh_w": 369.75,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5107928
+      ],
+      "anh": [
+        "G5g_subj_2anh_4mp_hb1_0.png"
+      ],
+      "id": "hb1",
+      "cat": "nguoi+vat",
+      "seed": 701,
+      "prompt": "The woman from the first image holding the cat from the second image, sitting in a bright cafe, natural light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 7812,
+        "so_anh_tham_chieu": 2,
+        "tong_token": 11412,
+        "tran_da_do": 7506
+      }
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 1,
+    "so_thanh_cong": 1,
+    "giay_trung_vi": 239.0,
+    "giay_min": 239.0,
+    "giay_max": 239.0,
+    "vram_dinh_mb": 20114,
+    "nhiet_dinh_c": 73,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004"
+    ]
+  },
+  "ram_trong_sau_gb": 95.0
+}

@@ -33,10 +33,38 @@ ASYNC_JOB = "ASYNC_JOB"
 #: and does not touch a provider, a GPU or the queue — reads, mostly.
 SYNC = "SYNC"
 
-#: Incremental output over one connection. Reserved and fully specified, but no
-#: operation uses it (D5): the only streaming capability the platform has runs
-#: through a consumer-account sidecar, and reselling that is a different class
-#: of risk from a customer using it themselves.
+#: Answered inside the request, but it **costs money**. Q106, 2026-08-23.
+#:
+#: This mode exists because ``ltt_llm`` produced an operation the first two modes
+#: genuinely could not describe. A chat completion is chargeable and calls a GPU,
+#: so it is not SYNC; it finishes in tens of seconds and the caller wants the
+#: answer in the response, so forcing it into ASYNC_JOB would mean every customer
+#: writes a polling loop before their first "hello" comes back.
+#:
+#: The line we are NOT crossing: this mode still refuses to enqueue. Anything
+#: that cannot finish inside :data:`SYNC_BILLED_MAX_SECONDS` is an async job that
+#: has not admitted it yet — the same sentence SYNC has always carried, with a
+#: bigger number and a price attached.
+SYNC_BILLED = "SYNC_BILLED"
+
+#: Incremental output over one connection. **Opened 2026-08-23 (Q107).**
+#:
+#: It was reserved until then for a reason that no longer covers every case: D5
+#: said the only streaming capability the platform had ran through a
+#: consumer-account sidecar, and reselling that is a different class of risk from
+#: a customer using it themselves. That still holds for ``chataistudio``. It does
+#: **not** hold for ``ltt_llm`` — our own model, our own hardware, nobody's
+#: account in the middle.
+#:
+#: What forced it open: every CLI worth serving requires streaming. Claude Code
+#: aborts a stream that goes silent, Claude Desktop refuses a gateway that
+#: buffers, and Codex times out on an idle stream. A non-streaming door is a door
+#: none of them walk through.
+#:
+#: What it buys beyond compatibility: **streaming escapes the 100-second
+#: ceiling**. Cloudflare's clock measures the wait for the *first byte*, so a
+#: stream that keeps sending has no wall — which is why SYNC_BILLED must cap
+#: ``max_tokens`` and this mode need not.
 STREAM = "STREAM"
 
 #: One request carrying many child operations. Reserved; no operation uses it.
@@ -45,17 +73,17 @@ BATCH = "BATCH"
 #: Declared so the answer is on the record, and enforced by the catalog.
 NOT_PUBLIC = "NOT_PUBLIC"
 
-EXECUTION_MODES = (ASYNC_JOB, SYNC, STREAM, BATCH, NOT_PUBLIC)
+EXECUTION_MODES = (ASYNC_JOB, SYNC, SYNC_BILLED, STREAM, BATCH, NOT_PUBLIC)
 
 #: Modes a *tool* may declare. A tool that is not public simply is not in the
 #: catalog, so ``NOT_PUBLIC`` is a route-level answer, not a tool-level one.
-TOOL_MODES = (ASYNC_JOB, SYNC, STREAM, BATCH)
+TOOL_MODES = (ASYNC_JOB, SYNC, SYNC_BILLED, STREAM, BATCH)
 
 #: Modes with an operation behind them today. The gap between this and
 #: ``EXECUTION_MODES`` is deliberate and tested: a mode may be specified before
 #: anything uses it, but it may not quietly acquire a user without the
 #: certification its rules demand.
-MODES_IN_USE = (ASYNC_JOB, SYNC)
+MODES_IN_USE = (ASYNC_JOB, SYNC, SYNC_BILLED, STREAM)
 
 
 class ProtocolError(Exception):
@@ -73,6 +101,40 @@ SYNC_MAX_SECONDS = 5
 #: an artifact, which is what the async path already produces.
 SYNC_MAX_RESPONSE_BYTES = 1 * 1024 * 1024
 
+#: What a STREAM contract must spell out in ``extra`` before it may exist.
+#:
+#: These are the mode's promises turned into declared data. A promise nobody is
+#: forced to write down is a promise that lives in the route author's head, which
+#: is exactly the failure EXT-02 was written against.
+STREAM_PHAI_KHAI = (
+    #: The SSE event names this operation emits, so a client — and the docs —
+    #: can be written against a list rather than against observation.
+    "event_types",
+    #: Seconds between keep-alives during a silent gap. Without it a long prefill
+    #: reads as a dead connection: Claude Code aborts after 300s of silence and
+    #: Codex's `stream_idle_timeout_ms` defaults to the same.
+    "heartbeat_seconds",
+    #: The event that carries the credit ACTUALLY charged. Not the hold — the
+    #: bill. A caller must be able to read what it paid from the stream itself.
+    "usage_event",
+    #: Whether abandoning the connection stops the work. `False` means a customer
+    #: who hits Ctrl-C keeps paying for tokens nobody will read.
+    "cancel_on_disconnect",
+)
+
+#: A SYNC_BILLED operation must finish inside this budget.
+#:
+#: 🔴 90 IS NOT A ROUND NUMBER, IT IS A CEILING MINUS A MARGIN. Cloudflare cuts a
+#:    request at **100 seconds** whether or not the GPU is still producing text,
+#:    and the caller sees a 524 with no way to tell "it failed" from "it worked
+#:    and you were disconnected". Ten seconds is the margin for TLS, the tunnel,
+#:    queueing behind another request, and the settlement write.
+#:
+#: ⛔ RAISING THIS NUMBER DOES NOT BUY TIME — it only moves where the failure
+#:    happens, from our clean 400 to Cloudflare's opaque 524. The way to serve a
+#:    longer call is ASYNC_JOB, not a bigger constant.
+SYNC_BILLED_MAX_SECONDS = 90
+
 MODE_RULES = {
     ASYNC_JOB: (
         "Chargeable. Requires a signed quote and an Idempotency-Key; holds "
@@ -84,12 +146,22 @@ MODE_RULES = {
         f"not call a provider or the GPU, must finish within "
         f"{SYNC_MAX_SECONDS}s and return at most "
         f"{SYNC_MAX_RESPONSE_BYTES // 1024}KiB."),
+    SYNC_BILLED: (
+        f"Answered in the request, and chargeable. Must require an "
+        f"Idempotency-Key; must hold credit before touching a provider and "
+        f"settle from measured usage exactly once; must not enqueue a job; must "
+        f"finish within {SYNC_BILLED_MAX_SECONDS}s and return at most "
+        f"{SYNC_MAX_RESPONSE_BYTES // 1024}KiB. No quote: the price is not "
+        f"knowable before the work runs, so the hold is a ceiling and the "
+        f"settlement is the truth."),
     STREAM: (
-        "Server-Sent Events over the same authenticated surface. Requires: "
-        "declared event types, a heartbeat, a final usage event carrying the "
-        "credit actually charged, cancel-on-disconnect, and resume that cannot "
-        "charge twice. No operation may declare this mode until those semantics "
-        "have a test."),
+        "Server-Sent Events over the same authenticated surface. Must declare "
+        "its event types, a heartbeat interval, the event carrying the credit "
+        "actually charged, and cancel-on-disconnect. Chargeable streams settle "
+        "from measured usage, never from the hold. No quote: the price is not "
+        "knowable before the work runs. No Idempotency-Key is required (Q107) "
+        "because no CLI sends one and this mode offers no resume; an operation "
+        "that ever adds resume must require the key again."),
     BATCH: (
         "One parent operation with child operations. Requires: a parent id and "
         "child ids, per-item validation before any credit moves, one quote "
@@ -141,6 +213,67 @@ def check_mode_rules(contract: PublicOperationContract) -> None:
         raise ProtocolError(
             f"{contract.name}: a chargeable ASYNC_JOB must require both a "
             f"quote and an Idempotency-Key")
+    if mode == STREAM:
+        # 🔴 BỐN LỜI HỨA CỦA `STREAM` PHẢI ĐƯỢC **KHAI**, KHÔNG PHẢI ĐƯỢC TIN.
+        #
+        #    Đây là cả triết lý của file này: *"the mode is declared, not
+        #    inferred, and the declaration is checked"*. Một chế độ có bốn lời
+        #    hứa mà không chỗ nào bắt khai chúng thì bốn lời hứa đó sống trong
+        #    đầu người viết route — đúng thứ EXT-02 sinh ra để chống.
+        thieu = [ten for ten in STREAM_PHAI_KHAI if ten not in (contract.extra or {})]
+        if thieu:
+            raise ProtocolError(
+                f"{contract.name}: a STREAM operation must declare "
+                f"{', '.join(thieu)} in `extra`; the mode promises these and "
+                f"the promise is only real when it is written down")
+        if contract.requires_quote:
+            # Cùng lý do như SYNC_BILLED: quote là giá ký TRƯỚC khi chạy, mà giá
+            # token không biết trước được.
+            raise ProtocolError(
+                f"{contract.name}: STREAM cannot require a quote — the price "
+                f"depends on output that does not exist yet")
+        if contract.chargeable and not contract.extra.get("settles_from_measured_usage"):
+            # 🔴 CHỖ TIỀN RÒ. Một luồng bị cắt giữa chừng vẫn đã đốt GPU. Không
+            #    khai rằng mình quyết toán theo SỐ ĐÃ ĐO thì mặc định rơi về
+            #    "thu trọn phần đã giữ" — đúng lỗi tiền im lặng đã tìm ra ở cửa
+            #    job hôm 23/08.
+            raise ProtocolError(
+                f"{contract.name}: a chargeable STREAM must declare "
+                f"settles_from_measured_usage — a stream cut short still burned "
+                f"GPU, and charging the held ceiling for it is a silent overcharge")
+        if contract.extra.get("resumable") and not contract.requires_idempotency_key:
+            # Q107 bỏ đòi khoá idempotency vì KHÔNG CLI NÀO GỬI NÓ và ta KHÔNG
+            # tiếp nối luồng. Ngày nào có tiếp nối thì đòi hỏi đó sống lại ngay:
+            # tiếp nối mà không có khoá là mời một lượt bị thu hai lần.
+            raise ProtocolError(
+                f"{contract.name}: a resumable STREAM must require an "
+                f"Idempotency-Key — resume without one bills the same work twice")
+    if mode == SYNC_BILLED:
+        if not contract.chargeable:
+            # A free operation answered in the request is plain SYNC, and SYNC
+            # carries stricter promises (no provider, no GPU, 5s). Letting a free
+            # call sit here would quietly buy it a 90-second budget it never
+            # justified.
+            raise ProtocolError(
+                f"{contract.name}: SYNC_BILLED is for chargeable work; a free "
+                f"in-request operation is SYNC")
+        if not contract.requires_idempotency_key:
+            # 🔴 THE WHOLE REASON THIS MODE IS ALLOWED TO EXIST WITHOUT A QUOTE.
+            #    ASYNC_JOB is safe to retry because the quote pins a price and the
+            #    key pins an identity. Here there is no quote, so the key is the
+            #    only thing standing between a network retry and paying twice for
+            #    the same generation.
+            raise ProtocolError(
+                f"{contract.name}: a chargeable SYNC_BILLED must require an "
+                f"Idempotency-Key — without a quote it is the only thing that "
+                f"stops a retry from buying the work twice")
+        if contract.requires_quote:
+            # Not a style rule. A quote is a signed price agreed BEFORE the work,
+            # and token cost is not knowable before the work. Demanding one would
+            # force us to sign a number we cannot honour.
+            raise ProtocolError(
+                f"{contract.name}: SYNC_BILLED cannot require a quote — the "
+                f"price depends on output that does not exist yet")
     if mode == SYNC and contract.chargeable:
         raise ProtocolError(
             f"{contract.name}: SYNC operations must be free — anything worth "

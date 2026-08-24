@@ -53,11 +53,30 @@ def test_documentation_never_describes_a_parameter_the_api_refuses():
             assert not (documented & hidden), tool.name
 
 
+#: Cụm được phép: `openai` ở đây là **tên một định dạng dây**, không phải nhà cung
+#: cấp model ta bán lại. `text.chat` cố ý tương thích dây OpenAI — đó là **tính
+#: năng bán cho khách**, và giấu nó đi làm tài liệu tệ hơn mà không bảo vệ gì
+#: (ta không bán lại OpenAI).
+#:
+#: ⛔ Nhưng KHÔNG miễn trừ cả chuỗi. Chỉ bóc đúng những cụm dưới đây rồi mới dò —
+#:    nên `openai` đứng một mình, hay đứng như một model/alias, VẪN đỏ.
+#:    Lý lẽ đầy đủ ở `test_187::test_openai_may_be_NAMED_AS_A_FORMAT_but_never_AS_A_MODEL`.
+CUM_DINH_DANG_DUOC_PHEP = ("openai format", "openai-compatible",
+                           "openai compatible", "openai image_url")
+
+
+def _boc_ten_dinh_dang(text: str) -> str:
+    for cum in CUM_DINH_DANG_DUOC_PHEP:
+        text = text.replace(cum, "<dinh-dang>")
+    return text
+
+
 def test_the_public_docs_say_nothing_about_the_vendor():
     text = " ".join(
         str(spec.get("description", "")) + " " + str(spec.get("examples", ""))
         for tool in _live_catalog()
         for spec in tool.input_schema["properties"].values()).lower()
+    text = _boc_ten_dinh_dang(text)
     for vendor in ("gemini", "openai", "byteplus", "anthropic", "realesrgan",
                    "whisper", "prompt library"):
         assert vendor not in text, vendor

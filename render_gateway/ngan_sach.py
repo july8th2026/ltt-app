@@ -36,16 +36,25 @@ PATCH = 32
 #:   edit 1 ảnh @2 MP  → 5.553 token   (G5: **19,8 GB** · 190,6 s)
 #:   edit 1 ảnh @4 MP  → **7.506 token** (G5: **19,8 GB** · 190,1 s)
 #:   subject 2 ảnh @2 MP → **7.506 token** (G5: **20,0 GB** · 210,8 s)
+#:   subject 2 ảnh @4 MP → **11.412 token** (G5g, 24/08: **20,1 GB** · 239,0 s · 73 °C)
 #:
-#: 7.506 là cấu hình lớn nhất **từng chạy xong và có số đo** (G5, 22/08). Trần đã
-#: nâng từ 4.096 lên bằng SỐ ĐO, không bằng suy đoán — xem D-032.
+#: 11.412 là cấu hình lớn nhất **từng chạy xong và có số đo** (G5g, 24/08). Trần
+#: nâng bằng SỐ ĐO, không bằng suy đoán — 4.096 → 7.506 (D-032) → 11.412 (D-053).
 #:
-#: ⭐ Hai điều số đo G5 dạy, đều trái trực giác:
+#: ⭐ Ba điều số đo G5 dạy, đều trái trực giác:
 #:   · Token tham chiếu **KHÔNG nhân thời gian theo attention**: 5.553 và 7.506
 #:     token đều mất ~190 s. Chi phí ảnh tham chiếu là **một lần**, không theo bậc.
 #:   · Nhưng chế độ tham chiếu vẫn **đắt gấp 3,3 lần** ảnh thường cùng số bước
 #:     (190 s so với 57,8 s). Đó là con số phải nói với khách, không phải giấu.
-TOKEN_DA_DO_TOI_DA = 7506
+#:   · 🔴 **VÀ TRẦN NÀY LÀ MỘT PROXY RẤT LỎNG CHO THỨ NÓ ĐỊNH CHẶN.** Đo 24/08:
+#:     token đi từ 5.553 → 11.412 (**gấp 2,1 lần**) mà VRAM chỉ đi từ 19,76 GB →
+#:     20,11 GB (**+1,8 %**). VRAM ở đây do **trọng số model** quyết định, không
+#:     do số token tham chiếu.
+#:
+#:     Nghĩa là: trần token vẫn làm đúng việc của nó — **từ chối cấu hình chưa ai
+#:     đo** — nhưng đừng đọc nó như một thước đo mức nguy hiểm. Một cấu hình vượt
+#:     trần 50 % **không** nguy hiểm hơn 50 %. Muốn biết nguy hiểm thì đo VRAM.
+TOKEN_DA_DO_TOI_DA = 11412
 
 #: Biên VRAM phải chừa cho hệ điều hành + dự án video. `--reserve-vram` của ComfyUI
 #: nhận GB; con số ở đây phải khớp với cờ dùng khi khởi động ComfyUI trên máy B.

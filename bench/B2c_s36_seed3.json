@@ -1,0 +1,1092 @@
+{
+  "ca": "B2c_s36_seed3",
+  "ngay": "2026-08-23T21:57:12+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt_h37/hidream_o1",
+    "ref_mp": 4.0,
+    "sampler": "uni_pc",
+    "scheduler": "normal",
+    "seam_passes": "2",
+    "seam_pattern": "single_shift",
+    "seam_start": 0.8,
+    "seam_strength": 1.0,
+    "seed": 0,
+    "shift": 3.0,
+    "steps": 36,
+    "upscale": "area",
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 94.8,
+  "runs": [
+    {
+      "prompt_id": "1affb593-30a7-57d7-b25a-86a34082f36a",
+      "ok": true,
+      "giay": 80.4,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 71,
+        "nhiet_trung_vi_c": 69,
+        "power_dinh_w": 370.21,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5090678
+      ],
+      "anh": [
+        "B2c_s36_seed3_p01_0.png"
+      ],
+      "id": "p01",
+      "cat": "portrait",
+      "seed": 14101,
+      "prompt": "Chân dung một người phụ nữ Việt Nam khoảng 30 tuổi, ánh sáng cửa sổ buổi sáng, nền mờ, biểu cảm tự nhiên, ảnh chụp thật",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e1480d72-2853-5626-8ad3-4458012e5f55",
+      "ok": true,
+      "giay": 80.4,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 72,
+        "power_dinh_w": 369.89,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5050615
+      ],
+      "anh": [
+        "B2c_s36_seed3_p02_0.png"
+      ],
+      "id": "p02",
+      "cat": "portrait",
+      "seed": 14102,
+      "prompt": "Chân dung cận mặt một người đàn ông lớn tuổi, da nhiều nếp nhăn, ánh sáng bên hông tương phản mạnh, đen trắng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e2df6d1c-b98a-5247-90a7-069d7c938b83",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.56,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5239569
+      ],
+      "anh": [
+        "B2c_s36_seed3_p03_0.png"
+      ],
+      "id": "p03",
+      "cat": "portrait",
+      "seed": 14103,
+      "prompt": "Ảnh chân dung nghề nghiệp cho hồ sơ công ty, áo sơ mi trắng, nền xám trơn, ánh sáng studio đều",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f8e37085-b97e-5975-b6ae-a6d8fe1bab80",
+      "ok": true,
+      "giay": 80.4,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.36,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5237079
+      ],
+      "anh": [
+        "B2c_s36_seed3_p04_0.png"
+      ],
+      "id": "p04",
+      "cat": "photoreal",
+      "seed": 14104,
+      "prompt": "Bát phở bò tái nghi ngút khói trên bàn gỗ, hành lá và ớt tươi bên cạnh, ánh sáng tự nhiên buổi sáng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "60c60771-be2e-57fd-99c1-24e6d22b8914",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.65,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5092453
+      ],
+      "anh": [
+        "B2c_s36_seed3_p05_0.png"
+      ],
+      "id": "p05",
+      "cat": "photoreal",
+      "seed": 14105,
+      "prompt": "Con mèo tam thể nằm ngủ trên bậu cửa sổ, nắng chiều xuyên qua rèm, lông thấy rõ từng sợi",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a206f3ac-bde0-5587-9319-bf90a918c06d",
+      "ok": true,
+      "giay": 80.3,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.33,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6148864
+      ],
+      "anh": [
+        "B2c_s36_seed3_p06_0.png"
+      ],
+      "id": "p06",
+      "cat": "photoreal",
+      "seed": 14106,
+      "prompt": "Đường phố Hà Nội sau cơn mưa, mặt đường phản chiếu đèn, xe máy đi qua tạo vệt sáng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e5a34a4b-e914-5450-950a-f9d5117d4393",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18450,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.8,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5305476
+      ],
+      "anh": [
+        "B2c_s36_seed3_p07_0.png"
+      ],
+      "id": "p07",
+      "cat": "cinematic",
+      "seed": 14107,
+      "prompt": "Cảnh điện ảnh: một người đứng cuối hành lang dài tối, đèn neon xanh hắt từ hai bên, khói mỏng, tỉ lệ rộng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "6b2b9c2c-ca04-5a0e-9a71-fca973318da6",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.09,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5857444
+      ],
+      "anh": [
+        "B2c_s36_seed3_p08_0.png"
+      ],
+      "id": "p08",
+      "cat": "cinematic",
+      "seed": 14108,
+      "prompt": "Cảnh hoàng hôn trên ruộng bậc thang, ngược sáng, bóng người gánh lúa in trên nền trời cam",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0c3ffe47-3162-53d1-9cc3-3889e1455ba4",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.04,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5342346
+      ],
+      "anh": [
+        "B2c_s36_seed3_p09_0.png"
+      ],
+      "id": "p09",
+      "cat": "multi-person",
+      "seed": 14109,
+      "prompt": "Bốn người bạn ngồi quanh bàn cà phê vỉa hè, đang cười nói, ai cũng thấy rõ mặt, ảnh chụp tự nhiên",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "4a754f8d-1838-57a0-bef0-993498cdf2c0",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.05,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5251626
+      ],
+      "anh": [
+        "B2c_s36_seed3_p10_0.png"
+      ],
+      "id": "p10",
+      "cat": "multi-person",
+      "seed": 14110,
+      "prompt": "Đội bóng chuyền nữ chụp ảnh tập thể sau trận đấu, tám người xếp hai hàng, cầm cúp",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "68c0db86-3636-5e00-ae87-02eb51ba259f",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18450,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.02,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5247725
+      ],
+      "anh": [
+        "B2c_s36_seed3_p11_0.png"
+      ],
+      "id": "p11",
+      "cat": "object-placement",
+      "seed": 14111,
+      "prompt": "Ba quyển sách xếp chồng bên trái, một tách trà bên phải, một chiếc kính đặt trên quyển trên cùng, bàn gỗ, nhìn từ trên xuống 45 độ",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a16f9f7c-7392-556e-aa88-6757762cb9b9",
+      "ok": true,
+      "giay": 81.5,
+      "do_duoc": {
+        "so_mau": 77,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.13,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5472361
+      ],
+      "anh": [
+        "B2c_s36_seed3_p12_0.png"
+      ],
+      "id": "p12",
+      "cat": "object-placement",
+      "seed": 14112,
+      "prompt": "Một quả táo đỏ ĐẶT TRONG một chiếc bát thuỷ tinh trong suốt, chiếc bát đặt TRÊN một tờ báo đang mở",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e5aa756a-2b47-5343-926c-0f7144bba7db",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.52,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4969306
+      ],
+      "anh": [
+        "B2c_s36_seed3_p13_0.png"
+      ],
+      "id": "p13",
+      "cat": "product",
+      "seed": 14113,
+      "prompt": "Ảnh sản phẩm chai serum dưỡng da thuỷ tinh trong, nền trắng sạch, phản chiếu nhẹ dưới đáy, ánh sáng studio mềm",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "71c23fb9-d3f8-5536-b1d9-2156dfef17e9",
+      "ok": true,
+      "giay": 80.4,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18450,
+        "vram_trung_vi_mb": 18386,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.74,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4835058
+      ],
+      "anh": [
+        "B2c_s36_seed3_p14_0.png"
+      ],
+      "id": "p14",
+      "cat": "product",
+      "seed": 14114,
+      "prompt": "Tai nghe không dây màu đen đặt cạnh hộp sạc mở nắp, nền bê tông xám, ánh sáng hắt chéo",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "8d8f1f6d-8d16-560f-9a53-5be100a1fb76",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.24,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5218956
+      ],
+      "anh": [
+        "B2c_s36_seed3_p15_0.png"
+      ],
+      "id": "p15",
+      "cat": "product",
+      "seed": 14115,
+      "prompt": "Ly cà phê sữa đá trong cốc nhựa mang đi, nhãn dán trơn không chữ, nền quán cà phê mờ",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e3a243c8-c1ee-5ee1-9f4b-95ff0a4cc454",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18320,
+        "vram_trung_vi_mb": 18320,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.95,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5367198
+      ],
+      "anh": [
+        "B2c_s36_seed3_p16_0.png"
+      ],
+      "id": "p16",
+      "cat": "text-vi",
+      "seed": 14116,
+      "prompt": "Biển hiệu quán ăn với dòng chữ lớn \"CƠM TẤM SƯỜN BÌ\" màu đỏ trên nền vàng, chữ rõ nét, đúng dấu tiếng Việt",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e40ed937-c8e2-5773-8d72-8e7dd56a4e18",
+      "ok": true,
+      "giay": 80.3,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18480,
+        "vram_trung_vi_mb": 18384,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.25,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5400795
+      ],
+      "anh": [
+        "B2c_s36_seed3_p17_0.png"
+      ],
+      "id": "p17",
+      "cat": "text-vi",
+      "seed": 14117,
+      "prompt": "Poster khuyến mãi với dòng chữ \"GIẢM 50% HÔM NAY\" ở giữa, phía dưới là \"Áp dụng đến 30/09\", bố cục gọn gàng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f70a7ffd-facc-59d2-b470-2f9c13a67d37",
+      "ok": true,
+      "giay": 80.3,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18448,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.35,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5155108
+      ],
+      "anh": [
+        "B2c_s36_seed3_p18_0.png"
+      ],
+      "id": "p18",
+      "cat": "text-vi",
+      "seed": 14118,
+      "prompt": "Bìa sách màu xanh đậm, tựa đề \"NHỮNG NGÀY THƠ ẤU\" chữ trắng ở giữa, tên tác giả nhỏ hơn phía dưới",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "1c063c6a-028e-515b-bff8-17291ee911ff",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18416,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.71,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5045553
+      ],
+      "anh": [
+        "B2c_s36_seed3_p19_0.png"
+      ],
+      "id": "p19",
+      "cat": "text-en",
+      "seed": 14119,
+      "prompt": "A wooden shop sign reading \"OPEN 24 HOURS\" in clean sans-serif letters, warm bulb lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "5c52d155-4c83-5b0b-a6f7-d5a759f125f0",
+      "ok": true,
+      "giay": 80.4,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18416,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.69,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4865559
+      ],
+      "anh": [
+        "B2c_s36_seed3_p20_0.png"
+      ],
+      "id": "p20",
+      "cat": "text-en",
+      "seed": 14120,
+      "prompt": "A whiteboard with the handwritten words \"Ship it on Friday\" and a small arrow drawn underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "2983734b-a781-5e27-96a7-c48ed7e30dba",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.01,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5166341
+      ],
+      "anh": [
+        "B2c_s36_seed3_p21_0.png"
+      ],
+      "id": "p21",
+      "cat": "thumbnail",
+      "seed": 14121,
+      "prompt": "Thumbnail YouTube: một người đàn ông mặt biểu cảm ngạc nhiên bên trái, bên phải là chữ lớn \"BẤT NGỜ!\" màu vàng viền đen, nền đỏ gradient, tương phản cao",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "112dc1b4-181d-540e-a27c-05f878693eaa",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.89,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5168609
+      ],
+      "anh": [
+        "B2c_s36_seed3_p22_0.png"
+      ],
+      "id": "p22",
+      "cat": "thumbnail",
+      "seed": 14122,
+      "prompt": "Thumbnail YouTube về công nghệ: card đồ hoạ đặt chéo giữa khung, tia sáng xanh, chữ \"RTX 3090\" góc trên trái, nền tối",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a140ee2f-6f91-56c2-aab7-1bccbf70cdd1",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.15,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5290907
+      ],
+      "anh": [
+        "B2c_s36_seed3_p23_0.png"
+      ],
+      "id": "p23",
+      "cat": "thumbnail",
+      "seed": 14123,
+      "prompt": "Thumbnail nấu ăn: đĩa thức ăn hấp dẫn chiếm nửa phải, nửa trái là mặt người đầu bếp đang cười, mũi tên đỏ chỉ vào đĩa",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a7fae5d7-6054-5f76-bf0e-d4c73b6310f5",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.94,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5435888
+      ],
+      "anh": [
+        "B2c_s36_seed3_p24_0.png"
+      ],
+      "id": "p24",
+      "cat": "architecture",
+      "seed": 14124,
+      "prompt": "Nội thất phòng khách tối giản, ánh sáng tự nhiên từ cửa sổ lớn, sofa xám, sàn gỗ sáng, đường nét thẳng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a04ef4ca-8d4a-55cc-b953-7fab591b87f2",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.99,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5200765
+      ],
+      "anh": [
+        "B2c_s36_seed3_p25_0.png"
+      ],
+      "id": "p25",
+      "cat": "architecture",
+      "seed": 14125,
+      "prompt": "Mặt tiền một toà nhà văn phòng kính hiện đại nhìn từ dưới lên, trời xanh có mây, đường nét dọc thẳng không méo",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "7cbbcc45-e418-552d-983a-f3ac823c5f52",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.3,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5159443
+      ],
+      "anh": [
+        "B2c_s36_seed3_p26_0.png"
+      ],
+      "id": "p26",
+      "cat": "anime",
+      "seed": 14126,
+      "prompt": "Nhân vật nữ phong cách anime, tóc xanh dài, đồng phục học sinh, đứng trước cổng trường, nền vẽ chi tiết",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "98d07264-90ea-520e-9ce7-562140b96eb8",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.84,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5447364
+      ],
+      "anh": [
+        "B2c_s36_seed3_p27_0.png"
+      ],
+      "id": "p27",
+      "cat": "anime",
+      "seed": 14127,
+      "prompt": "Cảnh anime phong cách phim hoạt hình Nhật: thị trấn nhỏ lúc hoàng hôn, mây nhiều tầng, màu ấm",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "4b22bd57-471b-535d-a0e7-13a4c07cdb3b",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.71,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5857656
+      ],
+      "anh": [
+        "B2c_s36_seed3_p28_0.png"
+      ],
+      "id": "p28",
+      "cat": "fantasy",
+      "seed": 14128,
+      "prompt": "Rồng đá khổng lồ ngủ trên đỉnh núi phủ tuyết, sương mù dưới chân, ánh trăng lạnh",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "59f6cfee-d16a-5530-8644-a0b1e08d501d",
+      "ok": true,
+      "giay": 80.1,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18448,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.05,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5306049
+      ],
+      "anh": [
+        "B2c_s36_seed3_p29_0.png"
+      ],
+      "id": "p29",
+      "cat": "fantasy",
+      "seed": 14129,
+      "prompt": "Thư viện cổ vô tận, kệ sách cao vút, cầu thang xoắn, bụi lơ lửng trong tia sáng",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "dfa04cf4-e9fa-567d-a1b9-3f8266708146",
+      "ok": true,
+      "giay": 80.2,
+      "do_duoc": {
+        "so_mau": 76,
+        "vram_dinh_mb": 18482,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.9,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5457387
+      ],
+      "anh": [
+        "B2c_s36_seed3_p30_0.png"
+      ],
+      "id": "p30",
+      "cat": "hard-composition",
+      "seed": 14130,
+      "prompt": "Một người cầm tấm biển bằng cả hai tay, trên biển ghi \"LTT STUDIOS\", đứng giữa quảng trường đông người, chữ trên biển phải đọc được rõ",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    }
+  ],
+  "tom_tat": {
+    "so_chay": 30,
+    "so_thanh_cong": 30,
+    "giay_trung_vi": 80.2,
+    "giay_min": 80.1,
+    "giay_max": 81.5,
+    "vram_dinh_mb": 18482,
+    "nhiet_dinh_c": 74,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004"
+    ]
+  },
+  "ram_trong_sau_gb": 94.6
+}

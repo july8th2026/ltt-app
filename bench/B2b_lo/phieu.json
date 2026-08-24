@@ -1,0 +1,176 @@
+{
+  "_huong_dan": [
+    "Voi moi ma: mo anh <ma>_trai va <ma>_phai trong thu muc 'anh'.",
+    "Dien 'chon' = trai | phai | hoa. Khong doan — thay khong khac thi ghi hoa.",
+    "KHONG mo tep KHONG_MO_TRUOC_KHI_CHAM.json truoc khi cham xong."
+  ],
+  "so_cap": 33,
+  "phieu": [
+    {
+      "ma": "c001",
+      "chon": "trai",
+      "ghi_chu": "ro qua trong ro ben phai meo mo khong ra vat the"
+    },
+    {
+      "ma": "c002",
+      "chon": "phai",
+      "ghi_chu": "dam dong phan giai ro hon, hai tay gio bien dung"
+    },
+    {
+      "ma": "c003",
+      "chon": "phai",
+      "ghi_chu": "duong binh do ruong bac thang nhat quan; trai co vach cat dung"
+    },
+    {
+      "ma": "c004",
+      "chon": "trai",
+      "ghi_chu": "phai: ban tay phai de khong co thanh khoi, cam dua sai"
+    },
+    {
+      "ma": "c005",
+      "chon": "trai",
+      "ghi_chu": "trai: vat lieu va bo tri phong phu hon, khung cua nhat quan"
+    },
+    {
+      "ma": "c006",
+      "chon": "phai",
+      "ghi_chu": "trai: vat trong tay khong ra hinh gi"
+    },
+    {
+      "ma": "c007",
+      "chon": "phai",
+      "ghi_chu": "trai: duong ngang cat tho go o mep phai - moi ghep"
+    },
+    {
+      "ma": "c008",
+      "chon": "phai",
+      "ghi_chu": "[CHU] QUYET BANG CHU: 'NHUNG' dung hoan toan ben phai"
+    },
+    {
+      "ma": "c009",
+      "chon": "phai",
+      "ghi_chu": "trai: chu tren chai bi lon nguoc guong"
+    },
+    {
+      "ma": "c010",
+      "chon": "phai",
+      "ghi_chu": "[CHU] mot phan do chu Han meo ben trai + hau canh nhoe"
+    },
+    {
+      "ma": "c011",
+      "chon": "trai",
+      "ghi_chu": "phai: thanh den la, khoi kim loai la, vet loang tren vo chup tai"
+    },
+    {
+      "ma": "c012",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c013",
+      "chon": "phai",
+      "ghi_chu": "[CHU] QUYET BANG CHU: BAT NGO - phai dung dau mu A, trai sai thanh A-breve"
+    },
+    {
+      "ma": "c014",
+      "chon": "phai",
+      "ghi_chu": "trai: mat bi lam min thanh nhua bong; nen chi la mang mo"
+    },
+    {
+      "ma": "c015",
+      "chon": "phai",
+      "ghi_chu": "trai: mot tay xoe thanh vuot lo lung khong cam gi"
+    },
+    {
+      "ma": "c016",
+      "chon": "trai",
+      "ghi_chu": "phai: mui ten DOI MAU giua net + vet nguech ngoac thua"
+    },
+    {
+      "ma": "c017",
+      "chon": "trai",
+      "ghi_chu": "phai: nhan in 'CHAI SERUM' HAI LAN tren cung mot mat"
+    },
+    {
+      "ma": "c018",
+      "chon": "trai",
+      "ghi_chu": "trai net hon o soi len va lo chan long"
+    },
+    {
+      "ma": "c019",
+      "chon": "trai",
+      "ghi_chu": "phai: cup la khoi nhua trong vo vun"
+    },
+    {
+      "ma": "c020",
+      "chon": "phai",
+      "ghi_chu": "phai: hai dau bep phu dung, lua gas that; trai bep khong lua"
+    },
+    {
+      "ma": "c021",
+      "chon": "phai",
+      "ghi_chu": "trai: ban tay nguoi phia sau chi la mot khoi"
+    },
+    {
+      "ma": "c022",
+      "chon": "phai",
+      "ghi_chu": "[CHU] cap bay - anh trai da xuat hien o c011"
+    },
+    {
+      "ma": "c023",
+      "chon": "trai",
+      "ghi_chu": "phai: ruot hop qua khong ra san pham gi"
+    },
+    {
+      "ma": "c024",
+      "chon": "hoa",
+      "ghi_chu": "moi ben mot loi nho tuong duong"
+    },
+    {
+      "ma": "c025",
+      "chon": "phai",
+      "ghi_chu": "cap bay - anh trai da xuat hien o c013"
+    },
+    {
+      "ma": "c026",
+      "chon": "hoa",
+      "ghi_chu": "ca hai deu dung RTX 3090 va logo YouTube"
+    },
+    {
+      "ma": "c027",
+      "chon": "phai",
+      "ghi_chu": "ngon tay dan nhau ro dot hon, nguoi di bo co ban chan"
+    },
+    {
+      "ma": "c028",
+      "chon": "phai",
+      "ghi_chu": "hai hang den long thu xa dung ti le; trai co du troi lo lung"
+    },
+    {
+      "ma": "c029",
+      "chon": "phai",
+      "ghi_chu": "chi tiet cao hon: hoa van coc, num may anh, soi toc"
+    },
+    {
+      "ma": "c030",
+      "chon": "phai",
+      "ghi_chu": "[CHU] mot phan do chu Han ben phai la chu THAT (moi, bo)"
+    },
+    {
+      "ma": "c031",
+      "chon": "phai",
+      "ghi_chu": "ba khuon mat ro net va tach biet hon"
+    },
+    {
+      "ma": "c032",
+      "chon": "phai",
+      "ghi_chu": "trai: tay trai cuon thanh khoi khong ro ngon"
+    },
+    {
+      "ma": "c033",
+      "chon": "hoa",
+      "ghi_chu": "chenh lech nam trong muc nhieu"
+    }
+  ],
+  "_ghi_chu_chu": "Cac cap co [CHU] la nhung cap quyet chu yeu bang chinh ta/dau tieng Viet. Chu san pham xac nhan HiDream khong ho tro tieng Viet trong anh va KHONG CAN. => ket qua CHINH THUC la ket qua sau khi loai cac cap do."
+}

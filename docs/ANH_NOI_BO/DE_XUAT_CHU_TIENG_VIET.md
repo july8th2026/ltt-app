@@ -1,6 +1,18 @@
 # Đề xuất: xử lý chữ tiếng Việt trong ảnh
 
-**22/08/2026 · cần chủ dự án quyết · chưa động vào mã**
+> ## ⛔ ĐÃ ĐÓNG — KHÔNG LÀM. Chủ sản phẩm quyết 24/08/2026 (**D-048**).
+>
+> *"HiDream không hỗ trợ tiếng Việt trong ảnh, tôi cũng không cần."*
+>
+> **Chữ tiếng Việt trong ảnh nằm NGOÀI PHẠM VI sản phẩm.** Không theo đuổi đường nào
+> trong ba đường dưới đây, không đo lại, và **không tính nó như một tiêu chí chất
+> lượng** khi so mù. Khách cần ảnh có chữ → dùng **Gemini**; đó là câu trả lời cuối
+> cùng, không phải câu trả lời tạm.
+>
+> Giữ tệp này làm hồ sơ: phần đo ở §1 vẫn là số thật và vẫn đúng — chỉ là **không ai
+> mua thứ nó đo**. Đọc D-048 để biết vì sao một phép đo đúng vẫn có thể vô dụng.
+
+**22/08/2026 · ~~cần chủ dự án quyết~~ · đã quyết 24/08: KHÔNG LÀM · chưa động vào mã**
 
 Đây là đề xuất, không phải quyết định đã chốt. Nó mô tả một vấn đề **đã đo được**,
 ba đường đi, và một khuyến nghị kèm cái giá của nó.

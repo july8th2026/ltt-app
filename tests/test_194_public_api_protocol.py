@@ -200,12 +200,20 @@ def test_the_catalog_publishes_the_mode_to_callers(api):
 def test_capabilities_advertises_only_modes_that_work(api):
     body = api.get(f"{API_V1_PREFIX}/capabilities").json()
     assert body["execution_modes"] == list(MODES_IN_USE)
-    assert STREAM not in body["execution_modes"]
+    # STREAM da MO 2026-08-23 (Q107): moi CLI dang phuc vu deu bat buoc streaming,
+    # nen mot cua khong-streaming la cua khong ai di qua.
+    assert STREAM in body["execution_modes"]
+    # BATCH van la dac ta khong nguoi dung — va do la chu y: mot che do duoc phep
+    # viet ra truoc khi co ai dung, nhung khong duoc lang le co nguoi dung.
     assert BATCH not in body["execution_modes"]
 
 
-@pytest.mark.parametrize("mode", [STREAM, BATCH])
+@pytest.mark.parametrize("mode", [BATCH])
 def test_a_manifest_cannot_opt_into_an_unimplemented_mode(mode):
+    """STREAM da roi khoi danh sach nay 2026-08-23 khi Q107 mo no.
+
+    BATCH o lai mot minh, va no van dang gac dung mot cai: khoang cach giua
+    `EXECUTION_MODES` va `MODES_IN_USE` la co chu y."""
     from platform_core.registry import _validate_api_contract
 
     manifest = _manifest(execution_mode=mode)
@@ -527,3 +535,109 @@ def test_a_missing_scope_names_the_scope(api):
     body = denied.json()
     assert body["code"] == E.CODE_MISSING_SCOPE
     assert body["required_scope"] == SCOPE_TOOLS_READ
+
+
+# ── STREAM: bốn lời hứa phải được KHAI, không phải được tin (Q107) ──────────
+#
+# ⭐ Đây là triết lý của `protocol.py` áp cho chế độ mới nhất: *"the mode is
+#    declared, not inferred, and the declaration is checked"*. Một chế độ có bốn
+#    lời hứa mà không chỗ nào bắt khai chúng thì bốn lời hứa đó sống trong đầu
+#    người viết route — đúng thứ EXT-02 sinh ra để chống.
+
+def _stream_extra(**ghi_de):
+    d = {"event_types": ("message_start", "content_block_delta", "message_stop"),
+         "heartbeat_seconds": 15,
+         "usage_event": "message_delta",
+         "cancel_on_disconnect": True,
+         "settles_from_measured_usage": True}
+    d.update(ghi_de)
+    return d
+
+
+def test_stream_khai_du_thi_hop_le():
+    from platform_core.public_api.protocol import STREAM
+
+    c = PublicOperationContract(name="chat.stream", execution_mode=STREAM,
+                                chargeable=True, extra=_stream_extra())
+    assert c.execution_mode == STREAM
+
+
+@pytest.mark.parametrize("thieu", ["event_types", "heartbeat_seconds",
+                                   "usage_event", "cancel_on_disconnect"])
+def test_stream_thieu_mot_loi_hua_thi_BI_CHAN(thieu):
+    from platform_core.public_api.protocol import STREAM
+
+    extra = _stream_extra()
+    extra.pop(thieu)
+    with pytest.raises(ProtocolError) as e:
+        PublicOperationContract(name="chat.stream", execution_mode=STREAM,
+                                chargeable=True, extra=extra)
+    assert thieu in str(e.value)
+
+
+def test_stream_co_thu_tien_phai_khai_QUYET_TOAN_THEO_SO_DO():
+    """🔴 Chỗ tiền rò. Một luồng bị cắt giữa chừng vẫn đã đốt GPU; không khai
+    rằng mình quyết toán theo số ĐÃ ĐO thì mặc định rơi về "thu trọn phần đã
+    giữ" — đúng lỗi tiền im lặng đã tìm ra ở cửa job hôm 23/08."""
+    from platform_core.public_api.protocol import STREAM
+
+    with pytest.raises(ProtocolError) as e:
+        PublicOperationContract(name="chat.stream", execution_mode=STREAM,
+                                chargeable=True,
+                                extra=_stream_extra(settles_from_measured_usage=None))
+    assert "measured" in str(e.value)
+
+
+def test_stream_KHONG_duoc_doi_quote():
+    """Giá token không biết trước được, nên không ký trước được."""
+    from platform_core.public_api.protocol import STREAM
+
+    with pytest.raises(ProtocolError):
+        PublicOperationContract(name="chat.stream", execution_mode=STREAM,
+                                chargeable=True, requires_quote=True,
+                                extra=_stream_extra())
+
+
+def test_stream_KHONG_doi_idempotency_key():
+    """⭐ Q107, và nó là cả lý do chế độ này dùng được.
+
+    Đo thật 23/08: **không CLI nào gửi header đó** — Codex không, Claude Code
+    không, SDK OpenAI tự sinh rồi vứt đi. Đòi nó = tính năng không tồn tại."""
+    from platform_core.public_api.protocol import STREAM
+
+    c = PublicOperationContract(name="chat.stream", execution_mode=STREAM,
+                                chargeable=True, extra=_stream_extra())
+    assert c.requires_idempotency_key is False
+
+
+def test_TIEP_NOI_thi_doi_lai_khoa_ngay():
+    """⛔ Q107 bỏ đòi khoá **vì ta không tiếp nối luồng**. Ngày nào có tiếp nối
+    thì đòi hỏi đó sống lại: tiếp nối mà không có khoá là mời một lượt bị thu
+    hai lần."""
+    from platform_core.public_api.protocol import STREAM
+
+    with pytest.raises(ProtocolError) as e:
+        PublicOperationContract(name="chat.stream", execution_mode=STREAM,
+                                chargeable=True, extra=_stream_extra(resumable=True))
+    assert "resume" in str(e.value)
+
+
+def test_route_STREAM_THAT_co_khai_hop_dong():
+    """⭐ Hợp đồng chỉ có nghĩa khi bộ kiểm chạy trên ĐƯỜNG THẬT.
+
+    Tới 23/08, `PublicOperationContract` chỉ được dựng trong test: một hợp đồng
+    có bộ kiểm mà bộ kiểm không bao giờ chạy lúc phục vụ. `server/api/streaming.py`
+    nay dựng nó **ở cấp module**, nên `check_mode_rules` chạy ngay khi nạp app —
+    một bản sau lỡ bỏ mất một lời hứa của `STREAM` sẽ làm **app không khởi động
+    được**, thay vì lặng lẽ phục vụ sai.
+    """
+    from platform_core.public_api.protocol import STREAM
+    from server.api.streaming import HOP_DONG
+
+    assert HOP_DONG.execution_mode == STREAM
+    assert HOP_DONG.chargeable is True
+    assert HOP_DONG.requires_idempotency_key is False       # Q107
+    assert HOP_DONG.requires_quote is False
+    for loi_hua in ("event_types", "heartbeat_seconds", "usage_event",
+                    "cancel_on_disconnect", "settles_from_measured_usage"):
+        assert HOP_DONG.extra.get(loi_hua), loi_hua

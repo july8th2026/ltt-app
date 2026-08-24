@@ -23,6 +23,7 @@ api.py — hợp đồng HTTP của cổng render.
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from pathlib import Path
@@ -32,7 +33,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import __version__
+from . import __version__, nhuong_card, tren_gpu
 from . import jobs as J
 from .busy import BusyWatcher
 from .catalog import ModelSpec, nap_catalog
@@ -82,6 +83,89 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
     catalog: dict[str, ModelSpec] = nap_catalog(workflow_dir)
     slot = threading.BoundedSemaphore(max(1, cfg.max_concurrent))
 
+    # ⭐ Hộ dùng chung card, khai bằng `LTT_HO_DUNG_CARD` — **một dòng cấu hình
+    #    cho mỗi hộ**, không phải một lần sửa mã. Chủ sản phẩm chốt 24/08 rằng dự
+    #    án video sau này đi theo đúng khuôn LLM/ảnh, nên hộ thứ tư là chuyện
+    #    *khi nào*, không phải *có hay không*. Xem `nhuong_card.py`.
+    ho_dung_card = nhuong_card.doc_ho_tu_env(dict(os.environ))
+    if ho_dung_card:
+        log.info("ho dung chung card: %s",
+                 ", ".join(f"{h.ten}{'' if h.bao_duoc else ' (chi cho duoc)'}"
+                           for h in ho_dung_card))
+
+    def goi_nha(duong: str) -> bool:
+        """Gọi endpoint nhả của một hộ. Hỏng thì trả False, KHÔNG ném.
+
+        Bảo không được có thể chỉ là nó đã nhả sẵn — vòng chờ VRAM trong
+        `xin_card` mới là thứ quyết định.
+        """
+        try:
+            import httpx
+
+            r = httpx.get(duong, timeout=20.0)
+            return 200 <= r.status_code < 300
+        except Exception as exc:                                # noqa: BLE001
+            log.info("goi nha %s khong duoc: %s", duong, type(exc).__name__)
+            return False
+
+    goi_nha_ho = goi_nha
+
+    # Sổ đuổi: nhớ lần đuổi gần nhất để KHÔNG đuổi liên tục.
+    #
+    # 🔴 Không có nó thì hai loại việc xen kẽ sẽ làm **mỗi prompt của khách LLM
+    #    trả 18 giây nạp lại** — không phải chậm, mà là không dùng được. Xem
+    #    `CACH_NHAU_TOI_THIEU_GIAY` trong `nhuong_card.py`.
+    #
+    # ⚠️ Và nó KHÔNG làm chậm việc thường: một lô ảnh liên tiếp thấy VRAM vẫn
+    #    thấp nên đi qua ở nhánh đầu, không đuổi ai, không chạm sổ này.
+    so_duoi = nhuong_card.SoDuoi()
+
+    # ── TRẢ CARD (V3) ───────────────────────────────────────────────────────
+    # Nhả VRAM của ComfyUI sau khi RẢNH một lúc, để hộ khác nạp được mà không
+    # phải chờ ai. Không nhả thì ComfyUI ngồi im mà giữ ~16.600 MB (đo trên máy B
+    # lúc GPU 0–1 % tải), và LLM cần 19.237 MB sẽ nạp đè → card lên 23.860 MB và
+    # **cả hai** cùng chậm.
+    #
+    # ⛔ MẶC ĐỊNH TẮT (`LTT_TRA_CARD_GIAY` không đặt ⇒ 0 ⇒ không chạy).
+    #    Một vòng nền tự nhả bộ nhớ của người khác là thứ phải được BẬT có chủ ý,
+    #    không phải thứ bật sẵn rồi mới phát hiện. Và cài đặt dev không dùng chung
+    #    card với ai thì không có gì để trả.
+    try:
+        _tra_giay = float(os.environ.get("LTT_TRA_CARD_GIAY") or 0)
+    except ValueError:
+        _tra_giay = 0.0
+
+    if _tra_giay > 0:
+        def _free_comfy() -> bool:
+            try:
+                import httpx
+
+                r = httpx.post(f"{cfg.comfy_url.rstrip('/')}/free", timeout=30.0,
+                               json={"unload_models": True, "free_memory": True})
+                return 200 <= r.status_code < 300
+            except Exception as exc:                            # noqa: BLE001
+                log.info("goi ComfyUI /free khong duoc: %s", type(exc).__name__)
+                return False
+
+        tra = nhuong_card.TraCard(
+            ranh_bao_lau_giay=_tra_giay,
+            # ⚠️ Hỏi HÀNG ĐỢI THẬT, không hỏi một cờ nội bộ: một job có thể đang
+            #    chạy trong luồng riêng mà cờ đã bị xoá.
+            co_viec=lambda: bool(store.active_prompt_ids()),
+            goi_free=_free_comfy)
+
+        def _vong_tra_card():
+            while True:
+                time.sleep(min(10.0, max(1.0, _tra_giay / 6)))
+                try:
+                    tra.mot_luot()
+                except Exception:                               # noqa: BLE001
+                    log.exception("vong tra card loi — van chay tiep")
+
+        threading.Thread(target=_vong_tra_card, name="tra-card",
+                         daemon=True).start()
+        log.info("vong tra card: nha VRAM ComfyUI sau %.0fs ranh", _tra_giay)
+
     if fetcher is None:                       # pragma: no cover - đường sản xuất
         from .http import HttpxFetcher
         fetcher = HttpxFetcher()
@@ -97,13 +181,31 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
             raise HTTPException(status_code=401, detail="render gateway: sai token")
 
     # ── sức khoẻ ─────────────────────────────────────────────────────────────
+    @app.get("/live")
+    def live() -> dict:
+        """Sống/chết. **KHÔNG cần khoá**, và cố ý không nói gì thêm.
+
+        Một phép thăm dò sống/chết không nên phải mang theo bí mật, và không nên
+        đọc được trạng thái vận hành (VRAM, hàng đợi, model nào có). Cổng VLM đã
+        làm đúng như vậy; đây là cùng một hợp đồng cho cổng ảnh.
+
+        Vì sao cần: máy A không có cách nào biết cổng ảnh chết. Trước cái này,
+        đường duy nhất là có khách thử vẽ rồi thấy hỏng.
+        """
+        return {"ok": True, "version": __version__}
+
     @app.get("/health")
     def health(_: None = Depends(auth)) -> dict:
         state = watcher.observe(store.active_prompt_ids())
+        # ⭐ Cổng SỐNG mà model vẫn có thể đang bò trên CPU — hai câu hỏi khác
+        #    nhau, nên hai chốt khác nhau. Xem `tren_gpu.py`.
+        gpu = tren_gpu.kiem(giay_dang_chay=store.chay_lau_nhat_s(),
+                            doc_vram=watcher.doc_vram_mb)
         return {
             "version": __version__,
             "comfy_alive": comfy.alive(),
             "models": sorted(catalog),
+            "gpu": gpu.as_dict(),
             **state.as_dict(),
         }
 
@@ -136,15 +238,72 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
         if co is not None:
             return JSONResponse({"job_id": co.job_id, "status": co.status}, status_code=200)
 
+        def ban(thong_diep: str, them: dict, retry_s: Optional[float] = None):
+            """⛔ 429 = BẬN, KHÔNG PHẢI LỖI. Xem docstring đầu file (D-005)."""
+            headers = {"Retry-After": str(int(max(1, retry_s)))} if retry_s else {}
+            return JSONResponse(
+                {"error": {"code": "busy", "message": thong_diep or "dang ban"},
+                 **them},
+                status_code=429, headers=headers)
+
+        # ── THỨ TỰ BA CHỐT DƯỚI ĐÂY LÀ MỘT QUYẾT ĐỊNH, KHÔNG PHẢI TÌNH CỜ ──
+        #
+        # ① giữ SUẤT trước — hai yêu cầu đồng thời không được cùng đi đuổi model;
+        # ② XIN CARD — đuổi hộ bảo-được rồi **xác minh** VRAM đã xuống;
+        # ③ mới hỏi BẬN.
+        #
+        # 🔴 Bản đầu của tôi đặt ② SAU ③, và nó **sai một cách im lặng**: chốt bận
+        #    coi "VRAM còn ít" là bận, nên khi Qwen giữ 19 GB thì cổng trả 429
+        #    ngay — **không bao giờ đi bảo Qwen nhả**. Tức là trọng tài không bao
+        #    giờ chạy, và triệu chứng ("luôn 429") trông y hệt "máy đang bận thật".
+        #
+        #    Test đầu tiên tôi viết cho nó **xanh vì lý do sai**: nó chạy 0,58 giây
+        #    trong khi hạn chờ là 45 giây — bằng chứng `xin_card` chưa hề được gọi.
+        if not slot.acquire(blocking=False):
+            return ban("het suat dong thoi", {})
+
+        # ── XIN CARD (V1–V2) ────────────────────────────────────────────
+        # Gọi nhả rồi nạp luôn là **giả định**; model mới sẽ âm thầm offload sang
+        # RAM chủ trong khi mọi chốt vẫn xanh (P6, D-051). Nên `xin_card` **chờ và
+        # đọc lại VRAM** trước khi cho qua.
+        #
+        # ⚠️ Mọi đường thoát từ đây trở xuống PHẢI `slot.release()`. Thiếu một chỗ
+        #    thì mỗi lượt rò một suất, và sau `max_concurrent` lượt cổng **không
+        #    nhận job nào nữa dù card rảnh** — hỏng lặng lẽ.
+        px = nhuong_card.xin_card(ho_khac=ho_dung_card,
+                                  doc_vram=watcher.doc_vram_mb,
+                                  goi_nha=goi_nha_ho,
+                                  so_duoi=so_duoi)
+        if not px.duoc:
+            slot.release()
+            log.warning("xin card khong duoc: %s", px.ly_do)
+            return ban(px.ly_do, {"xin_card": px.as_dict()}, 30)
+
+        # 🔴 GHI LẠI VIỆC ĐUỔI, KỂ CẢ KHI NÓ THÀNH CÔNG.
+        #
+        #    Bản đầu chỉ log lúc **thất bại**, nên hành động quan trọng nhất của
+        #    trọng tài — lấy card khỏi tay một hộ khác — **không để lại dấu vết
+        #    nào**. Thử thật 24/08: LLM bị đuổi đúng như thiết kế, và trong log
+        #    không có một dòng nào về việc đó.
+        #
+        #    Hệ quả: khi ai đó hỏi *"vì sao phiên LLM của tôi chậm lúc 13:50"* thì
+        #    không có gì chỉ ra được. Một hệ thống đuổi việc của người khác mà
+        #    không ghi lại là một hệ thống không giải thích được chính nó.
+        if px.da_bao_nha:
+            log.info("job %s: da bao %s nha card, cho %.1fs, VRAM con %s MB",
+                     body.job_id, ", ".join(px.da_bao_nha), px.giay_da_cho,
+                     px.vram_mb)
+        elif px.giay_da_cho >= 1.0:
+            # Không đuổi ai mà vẫn phải chờ ⇒ có hộ chỉ-chờ-được vừa nhả. Cũng
+            # đáng ghi: nó là bằng chứng cho việc tranh card mà ta không gây ra.
+            log.info("job %s: khong duoi ai nhung cho %.1fs cho card trong "
+                     "(VRAM con %s MB)", body.job_id, px.giay_da_cho, px.vram_mb)
+
         state = watcher.observe(store.active_prompt_ids())
-        if state.busy or not slot.acquire(blocking=False):
-            # ⛔ 429 = BẬN, KHÔNG PHẢI LỖI. Xem docstring đầu file.
-            noi_dung = {"error": {"code": "busy", "message": state.reason or "dang ban"},
-                        **state.as_dict()}
-            headers = {}
-            if state.eta_s:
-                headers["Retry-After"] = str(int(max(1, state.eta_s)))
-            return JSONResponse(noi_dung, status_code=429, headers=headers)
+        if state.busy:
+            slot.release()
+            return ban(state.reason, {**state.as_dict(), "xin_card": px.as_dict()},
+                       state.eta_s)
 
         gia_tri = dict(spec.defaults)
         gia_tri.update(body.params)

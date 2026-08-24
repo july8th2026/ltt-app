@@ -356,18 +356,81 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     # skin over it. The platform names the *capability*, never the app — which
     # this test cannot tell apart by substring.
     #
+    # ``ltt_llm`` is the third of the same shape, and the most literal: the
+    # platform DECLARES a provider with that exact id in
+    # ``platform_core/providers.py``, and ``apps/ltt_llm`` is the customer-facing
+    # skin that sells it. Every hit this test reports is that provider id — a
+    # metric name (``ltt_llm:cong_im_lang``), a cascade order, an example. None
+    # of them reaches for the app.
+    #
+    # ⚠️ The naming is still backwards, and that is worth saying out loud: the
+    #    image side got this right (provider ``ltt_image`` + app ``anhnoibo``),
+    #    so its provider id is NOT an app slug and this check stays sharp for it.
+    #    Renaming ``apps/ltt_llm`` -> ``apps/chatnoibo`` would remove the
+    #    exemption entirely and make the two house-model apps symmetric. It is
+    #    deliberately NOT done here: that app is live and billing real customers,
+    #    and the slug is baked into persisted ``job_type`` rows. It is a
+    #    migration, not a rename, and it belongs in its own change.
+    #
     # Adding a name here is not free: it blinds this check to that string, so a
     # genuine hardcoded reference to that app would slip through. It is only
     # correct when the platform owns the namespace and the app is named after
     # it, not the other way round.
-    slugs = [a.slug for a in discover() if a.slug not in ("demo", "agent", "nexus")]
+    #
+    # What still covers the real risk: ``test_platform_core_never_imports_apps``
+    # above. Blinding a substring does not let ``platform_core`` import the app.
+    slugs = [a.slug for a in discover()
+             if a.slug not in ("demo", "agent", "nexus", "ltt_llm")]
+
+    # 🔴 TÊN BẢNG KHÔNG PHẢI TÊN APP — và bỏ qua điều đó làm hai bánh cóc đánh nhau.
+    #
+    #    `test_211` **bắt buộc** `platform_core/public_api/governance.py` phải nêu
+    #    tên **mọi** bảng, kể cả bảng riêng của app: không kê được thì không trả lời
+    #    được câu *"các anh giữ gì về tôi"*. Nhưng app nào có `table_prefix` trùng
+    #    slug thì tên bảng của nó chứa slug — và chốt này đỏ.
+    #
+    #    Đã xảy ra thật với `apps/vps` (`table_prefix="vps"` ⇒ `vps_instance`,
+    #    `vps_ip`, …). Hai chốt đều đúng; thứ sai là phép so chuỗi thô.
+    #
+    # ⛔ Cách sai là miễn trừ slug `vps` — nền tảng KHÔNG sở hữu namespace đó, nên
+    #    miễn trừ sẽ làm mù chốt với một tham chiếu app thật. Cách đúng: bóc **tên
+    #    bảng thật** (lấy từ metadata, không phải danh sách gõ tay) ra khỏi văn bản
+    #    trước khi dò. Một chuỗi `"vps"` đứng trơ vẫn bị bắt.
+    from platform_core.db import Base
+    from platform_core.registry import load_app_tables
+    import platform_core.models  # noqa: F401
+    load_app_tables()
+    ten_bang = sorted(Base.metadata.tables, key=len, reverse=True)
+
     offenders = []
     for path in (ROOT / "platform_core").rglob("*.py"):
         text = _ma_thuc_thi(path.read_text(encoding="utf-8"))
+        for bang in ten_bang:
+            text = text.replace(bang, "<bang>")
         for slug in slugs:
             if slug in text:
                 offenders.append(f"{path.name}: {slug!r}")
     assert offenders == [], f"tên app bị viết cứng: {offenders}"
+
+
+def test_boc_ten_bang_KHONG_lam_mu_chot():
+    """Chốt trên bóc tên bảng ra trước khi dò. Đây là chỗ chứng minh nó không
+    bóc quá tay: một slug đứng trơ, hoặc một `apps.<slug>`, vẫn phải bị bắt."""
+    from platform_core.db import Base
+    from platform_core.registry import load_app_tables
+    import platform_core.models  # noqa: F401
+    load_app_tables()
+    ten_bang = sorted(Base.metadata.tables, key=len, reverse=True)
+
+    def con_lai(text):
+        for bang in ten_bang:
+            text = text.replace(bang, "<bang>")
+        return text
+
+    assert "vps" not in con_lai('"vps_instance", "vps_ip"')
+    assert "vps" in con_lai('if app.slug == "vps":'), (
+        "phep boc da an ca tham chieu app that — chot bi lam mu"
+    )
 
 
 def _ma_thuc_thi(nguon: str) -> str:

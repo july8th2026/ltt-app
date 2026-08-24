@@ -618,7 +618,7 @@ chạy trọn mà không để lại dấu chân nào**. Đếm lại từ đầ
 - [ ] 10 ảnh s90 còn thiếu, chạy **có người canh**, không tách khỏi phiên
 - [ ] Chế độ tham chiếu đo **theo bậc** (1 ảnh @ 1 MP → đo → mới lên)
 - [ ] Nhật ký Windows: `Kernel-Power 41` hay `BugCheck` — **không đoán**
-- [ ] Lô so mù 60 cặp, chủ dự án chấm
+- [ ] Lô so mù 60 cặp, **máy chấm** (D-052 thay §1.5.3 ngày 24/08)
 
 **Date:** 2026-08-22
 

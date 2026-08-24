@@ -270,12 +270,12 @@ Xếp theo **thứ tự bắt buộc**, không phải theo độ khó.
 - **giữ giá, đóng bậc `pro`** — chấp nhận lỗ ở bậc rẻ như chi phí thu hút khách,
   nhưng **đóng đúng bậc lỗ nặng nhất**.
 
-### Đợt 1 — MỞ MODEL NHÀ *(cần GPU, cần chủ dự án chấm)*
+### Đợt 1 — MỞ MODEL NHÀ *(cần GPU; **máy chấm** từ D-052, 24/08)*
 
 | # | Việc | Chặn bởi |
 |---|---|---|
 | 1.1 | Thêm khoá `ltt_image` vào APIKEYS | token ở máy B — **chủ dự án tự làm** |
-| 1.2 | Chạy nửa ảnh model nhà cho G6b (~28 ảnh, 1,5 h) | GPU rảnh, xong trước 01:00 |
+| 1.2 | Chạy nửa ảnh model nhà cho G6b (~28 ảnh, 1,5 h) | GPU rảnh *(mốc 01:00 đã bỏ — lô đo nay tiếp tục được sau khởi động lại)* |
 | 1.3 | Chuẩn hoá + dựng lô + **chấm mù** | 1.2 |
 | 1.4 | Cổng quyết định: mở bán / mở hẹp / dừng | 1.3 |
 | 1.5 | `is_active=True`, giá theo §2.4 (giá vốn **1,05 credit**) | 1.4 |

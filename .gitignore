@@ -31,6 +31,17 @@ data/audit_log.jsonl
 data/nexus_dist/
 data/nexus_versions.json
 
+# ─── H37 bench: so do thi COMMIT, anh va trong so thi KHONG ───────────────────
+# Ly do o bench/README.md. So do la bang chung phai giu; anh sinh ra va file model
+# la DU LIEU, nam tren may B va R2.
+bench/**/*.png
+bench/**/*.jpg
+bench/**/*.jpeg
+bench/**/*.webp
+bench/**/*.safetensors
+bench/**/*.gguf
+bench/gallery/
+
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 logs/
 *.log

@@ -41,6 +41,14 @@ KILL_SWITCH_REFUSED = "kill_switch_refused"
 CAPACITY_REFUSED = "capacity_refused"
 IDEMPOTENCY_REPLAY = "idempotency_replay"
 IDEMPOTENCY_CONFLICT = "idempotency_conflict"
+#: Khách hết credit giữa chừng. **Không phải lỗi hệ thống** — hệ thống làm đúng
+#: khi từ chối. Nhưng nó là tín hiệu duy nhất nói rằng một khách đang **muốn
+#: dùng mà không dùng được**, và đó vừa là việc hỗ trợ vừa là việc bán hàng.
+#:
+#: ⛔ Đừng gộp nó vào `RESPONSES_5XX` hay `AUTH_FAILURE`: một khách hết tiền
+#:    không phải một hệ thống hỏng, và trộn hai thứ làm người trực mất khả năng
+#:    phân biệt "cần sửa" với "cần gọi điện".
+CREDIT_EXHAUSTED = "credit_exhausted"
 CREDIT_HELD = "credit_held"
 CREDIT_SETTLED = "credit_settled"
 CREDIT_REFUNDED = "credit_refunded"

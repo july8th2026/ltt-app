@@ -92,7 +92,9 @@
   },
   "execution_modes_in_use": [
     "ASYNC_JOB",
-    "SYNC"
+    "STREAM",
+    "SYNC",
+    "SYNC_BILLED"
   ],
   "headers": [
     "Idempotency-Key",
@@ -221,6 +223,13 @@
       "in_schema": true,
       "sunset_on": ""
     },
+    "POST /api/v1/chat/completions": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC_BILLED",
+      "in_schema": true,
+      "sunset_on": ""
+    },
     "POST /api/v1/jobs": {
       "authenticated": true,
       "deprecated_on": "",
@@ -235,10 +244,24 @@
       "in_schema": true,
       "sunset_on": ""
     },
+    "POST /api/v1/messages": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "STREAM",
+      "in_schema": true,
+      "sunset_on": ""
+    },
     "POST /api/v1/quotes": {
       "authenticated": true,
       "deprecated_on": "",
       "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/responses": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "STREAM",
       "in_schema": true,
       "sunset_on": ""
     },
@@ -275,12 +298,11 @@
   "tools": {
     "image.generate": {
       "aliases": [],
-      "contract_hash": "f6fd70a8e5a91489",
+      "contract_hash": "d8d957479035c7c8",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [
         "enhanced",
-        "pro",
         "standard",
         "standard-lite"
       ],
@@ -324,6 +346,19 @@
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "text.chat": {
+      "aliases": [],
+      "contract_hash": "32d617ca0c0130d2",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [
+        "ltt_llm",
+        "ltt_llm_vision"
+      ],
       "required_scopes": [
         "jobs:create"
       ]

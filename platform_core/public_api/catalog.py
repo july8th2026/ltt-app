@@ -52,6 +52,7 @@ _PUBLIC_TYPES = {
     "bool": "boolean",
     "enum": "string",
     "json": "object",
+    "json[]": "array",
     "image": "string",
     "image[]": "array",
     "video": "string",
@@ -63,6 +64,7 @@ _PUBLIC_TYPES = {
 _PUBLIC_OUTPUT_TYPES = {
     "text": "string",
     "json": "object",
+    "json[]": "array",
     "image": "artifact",
     "image[]": "artifact[]",
     "video": "artifact",

@@ -1,0 +1,677 @@
+{
+  "khung_chung": "2560x1440",
+  "canh_dai_chung": 2560,
+  "truoc": {
+    "G6b_nha": [
+      {
+        "tep": "p01.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p02.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p03.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p04.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p05.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p06.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p07.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p08.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p09.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p10.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p11.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p12.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p13.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p14.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p15.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p16.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p17.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p18.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p19.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p20.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p21.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p22.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p23.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p24.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p25.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p26.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p27.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p28.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p29.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "p30.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      }
+    ],
+    "B2_s36": [
+      {
+        "tep": "B2_s36_p01_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p02_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p03_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p04_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p05_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p06_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p07_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p08_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p09_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p10_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p11_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p12_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p13_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p14_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p15_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p16_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p17_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p18_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p19_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p20_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p21_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p22_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p23_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p24_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p25_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p26_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p27_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p28_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p29_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      },
+      {
+        "tep": "B2_s36_p30_0.png",
+        "rong": 2560,
+        "cao": 1440,
+        "dinh_dang": "png"
+      }
+    ]
+  },
+  "sau": {
+    "G6b_nha": [
+      {
+        "tep": "p01.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p02.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p03.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p04.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p05.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p06.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p07.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p08.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p09.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p10.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p11.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p12.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p13.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p14.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p15.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p16.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p17.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p18.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p19.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p20.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p21.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p22.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p23.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p24.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p25.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p26.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p27.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p28.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p29.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "p30.png",
+        "rong": 2560,
+        "cao": 1440
+      }
+    ],
+    "B2_s36": [
+      {
+        "tep": "B2_s36_p01_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p02_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p03_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p04_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p05_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p06_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p07_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p08_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p09_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p10_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p11_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p12_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p13_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p14_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p15_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p16_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p17_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p18_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p19_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p20_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p21_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p22_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p23_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p24_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p25_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p26_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p27_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p28_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p29_0.png",
+        "rong": 2560,
+        "cao": 1440
+      },
+      {
+        "tep": "B2_s36_p30_0.png",
+        "rong": 2560,
+        "cao": 1440
+      }
+    ]
+  },
+  "_doc": "Da chuan hoa ve cung canh dai va cung dinh dang PNG. HAI ly do: (1) cong bang - anh to hon trong net hon bat ke model; (2) TINH MU - cham_mu.ghi_lo giu nguyen duoi tep goc, nen mot ben .jpg mot ben .png la nguoi cham nhin ten tep cung doan duoc nguon. KHONG chua duoc: anh Gemini da qua JPEG mot lan o nguon; ha kich thuoc lam nhieu nen mo di chu khong xoa - dieu nay nghieng ve phia BAT LOI cho Gemini, phai noi ro khi ket luan neu ket qua sat nhau. Khac biet NHU-GIAO (Gemini 1376x768 JPEG vs ta 2560x1440 PNG) la mot su that ve SAN PHAM, ghi o 'truoc' - dung lan no vao cau hoi ve MODEL. MOI anh ra deu CUNG MOT KHUNG: Gemini khai 16:9 nhung tra ti le 1,7917 con ta 1,7778, nen khop rieng canh dai van de lai lech 6 pixel chieu cao - nho nhung HE THONG, tuc la mot dau vet nguon."
+}

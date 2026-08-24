@@ -111,7 +111,23 @@ class DieuPhoi:
             raise DieuPhoiError(_t("Máy tạo ảnh báo lỗi: {ma} {loi}").format(
                 ma=t.error_code or "?", loi=t.error_message or ""))
 
-        return KetQuaAnh(job_id, tuple(t.image_keys or khoa),
+        # 🔴 KHÔNG ĐƯỢC LẤY `khoa` LÀM PHƯƠNG ÁN DỰ PHÒNG Ở ĐÂY.
+        #
+        #    `khoa` là danh sách khoá lưu trữ **cấp phát trước** khi vẽ — nó tồn
+        #    tại kể cả khi không ảnh nào được tải lên. Trước đây dòng này là
+        #    `t.image_keys or khoa`, nghĩa là cổng trả về rỗng thì ta vẫn khai đủ
+        #    `so_anh` ảnh, tính tiền đủ `so_anh` ảnh, và khách bấm vào thì
+        #    404 từng cái một.
+        #
+        #    Cổng đã hứa điều ngược lại: `runner.py` trả **đúng số ảnh tải lên
+        #    được** (`image_keys[:so]`) và tự `fail` khi không có ảnh nào. Nên
+        #    "thành công mà rỗng" là một mâu thuẫn của cổng, không phải một
+        #    trường hợp cần chữa cháy im lặng.
+        keys = tuple(t.image_keys or ())
+        if not keys:
+            raise DieuPhoiError(_t(
+                "Máy tạo ảnh báo thành công nhưng không trả về ảnh nào."))
+        return KetQuaAnh(job_id, keys,
                          chuan_bi.prompt_model, chuan_bi.da_dich, chuan_bi.canh_bao)
 
     # ── các bước ─────────────────────────────────────────────────────────────

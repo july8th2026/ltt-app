@@ -238,6 +238,55 @@ class LttClient:
             # Safe precisely because the key is fixed for the whole loop.
             retry=True)
 
+    # @covers POST /chat/completions
+    def chat(self, messages: list, *, model: str = "ltt_llm",
+             max_tokens: int = 1024, temperature: float | None = None,
+             tools: list | None = None, reasoning_effort: str = "",
+             idempotency_key: str = "") -> dict:
+        """A chat completion, answered in this request. Chargeable.
+
+        Unlike :meth:`create_job` there is no quote: the price depends on the
+        tokens the model produces, which do not exist until it has run. Credit is
+        held at a ceiling before the model starts and settled from the measured
+        usage, so the number in ``x_ltt.credit_charged`` is the real bill and is
+        usually well below the hold.
+
+        That missing quote is why the Idempotency-Key matters more here than
+        anywhere else on the surface: it is the only thing standing between a
+        network timeout and paying twice for the same generation. Generate it
+        once, here, and reuse it for every retry of *this* call.
+
+        A call that cannot finish inside the server's synchronous budget is
+        refused with 400 rather than cut off mid-answer; send that work to
+        :meth:`create_job` instead.
+        """
+        body: dict = {"model": model, "messages": messages,
+                      "max_tokens": max_tokens}
+        if temperature is not None:
+            body["temperature"] = temperature
+        if tools:
+            body["tools"] = tools
+        if reasoning_effort:
+            body["reasoning_effort"] = reasoning_effort
+        return self._json(
+            "POST", "/chat/completions", body=body,
+            headers={"Idempotency-Key": idempotency_key or uuid.uuid4().hex},
+            # Safe precisely because the key is fixed for the whole loop.
+            retry=True)
+
+    # @covers-not POST /messages — an SSE stream in the Anthropic Messages shape,
+    #   served for Claude Code and Claude Desktop rather than for this SDK. Those
+    #   clients speak the protocol natively; wrapping it here would mean
+    #   re-implementing their parsers badly. Point ANTHROPIC_BASE_URL at the /api
+    #   parent of that route instead.
+    # @covers-not POST /responses — the same, in the OpenAI Responses shape, for
+    #   the Codex CLI and its VS Code extension. Set base_url to this route's
+    #   parent and wire_api = "responses".
+    #
+    #   Neither takes an Idempotency-Key (Q107): no CLI sends one, so the money is
+    #   protected by settling from the tokens actually produced instead. A stream
+    #   you abandon halfway bills for what it generated, not for the ceiling.
+
     # @covers POST /jobs/{job_id}/cancel
     def cancel_job(self, job_id: str) -> dict:
         return self._json("POST", f"/jobs/{urllib.parse.quote(job_id)}/cancel")

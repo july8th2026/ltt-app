@@ -1,0 +1,176 @@
+{
+  "_huong_dan": [
+    "Voi moi ma: mo anh <ma>_trai va <ma>_phai trong thu muc 'anh'.",
+    "Dien 'chon' = trai | phai | hoa. Khong doan — thay khong khac thi ghi hoa.",
+    "KHONG mo tep KHONG_MO_TRUOC_KHI_CHAM.json truoc khi cham xong."
+  ],
+  "so_cap": 33,
+  "phieu": [
+    {
+      "ma": "c001",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c002",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c003",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c004",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c005",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c006",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c007",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c008",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c009",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c010",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c011",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c012",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c013",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c014",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c015",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c016",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c017",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c018",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c019",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c020",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c021",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c022",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c023",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c024",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c025",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c026",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c027",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c028",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c029",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c030",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c031",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c032",
+      "chon": "",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c033",
+      "chon": "",
+      "ghi_chu": ""
+    }
+  ],
+  "_BO": "LO NAY BI BO - xem D-047. Ben 50 buoc dung lai bo anh G6b_nha ma nguoi cham DA XEM, nen lo khong mu. Chay lai thanh B2b tren bo seed2."
+}

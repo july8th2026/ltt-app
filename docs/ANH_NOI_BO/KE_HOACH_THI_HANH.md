@@ -114,8 +114,20 @@ Vì chất lượng nay là tiêu chí chọn duy nhất, cách chấm nó phả
    model/profile/độ phân giải. Lộ nhãn trước khi vote ⇒ **vứt toàn bộ lượt vote đó**.
 2. **So từng cặp, không chấm điểm tuyệt đối.** "Ảnh này 7/10" không lặp lại được
    giữa hai ngày. "A hay B hay hoà" thì lặp lại được.
-3. **Người chấm là chủ dự án, không phải tôi.** Tôi dựng bộ so sánh, xáo trộn, thu
-   phiếu, tính toán. Tôi **không** bỏ phiếu về thẩm mỹ.
+3. ~~**Người chấm là chủ dự án, không phải tôi.** Tôi dựng bộ so sánh, xáo trộn,
+   thu phiếu, tính toán. Tôi **không** bỏ phiếu về thẩm mỹ.~~
+   🔴 **ĐÃ THAY ngày 24/08 bởi D-052.** Chủ sản phẩm quyết: **máy chấm**, không
+   chờ người. Lý do đứng vững: luật cũ biến thời gian ngồi chấm của một người
+   thành **đường găng của cả dự án**, và trên thực tế nó đã bị bỏ qua từ lô G6b
+   (D-045 ghi rõ *"người chấm: Opus 5"*) — tức là luật đang nằm trên giấy trong
+   khi việc thật đi đường khác.
+
+   ⚠️ Nhưng **rủi ro mà luật cũ phòng thì không biến mất**: một mô hình chấm sản
+   phẩm của chính mình có động cơ nói rằng nó tốt. Nên đổi cách chặn thay vì bỏ
+   chặn — xem D-052. Ba thứ giữ nguyên hiệu lực và **quan trọng hơn trước**:
+   mù (§1.5.1), cặp bẫy đo sàn nhiễu (§1.5.4), và đủ mẫu mới kết luận (§1.5.5).
+   Thêm một thứ mới: **mỗi lá phiếu quyết đoán phải viết lý do**, và
+   `tools/cham_mu.py` **từ chối tính** nếu thiếu.
 4. **Cặp bẫy bắt buộc:** trộn vào **10 % cặp A-đấu-A** (cùng model, khác seed).
    *(Làm rõ sau khi viết `tools/cham_mu.py`)* — cặp bẫy **không phải phép đậu/rớt,
    nó là THƯỚC ĐO**. Tỉ lệ người chấm *dám chọn* trên cặp bẫy chính là **sàn nhiễu
@@ -143,6 +155,10 @@ tiếng Việt. Mọi số đo trước đó vẫn đúng, nhưng chúng đo m�
 
 Nguyên nhân gốc: luật §1.5.3 ("người chấm là chủ dự án, không phải tôi") bị dùng
 như cái cớ để **không nhìn ảnh chút nào**. Luật đó chỉ áp cho **chấm thẩm mỹ**.
+
+*(Từ 24/08, §1.5.3 đã bị D-052 thay và **máy chấm cả thẩm mỹ**. Cái cớ đó nay không
+còn tồn tại — nhưng mục 1.5b này thì vẫn nguyên hiệu lực, và còn cần hơn: nó là chốt
+duy nhất phân biệt "đã mở ảnh ra nhìn" với "đoán".)*
 "Ảnh có bám prompt không" là câu hỏi **khách quan** — đếm được, kiểm được, và không
 cần ai bỏ phiếu.
 
@@ -556,6 +572,20 @@ vẫn "tự tin chọn" không? Nếu có thì nó đang chấm ngẫu nhiên.
 ---
 
 ## 8. G6b — ĐỐI CHỨNG TRẦN ⛔ *(cổng quyết định, mới ở bản 2)*
+
+> 🔴 **KẾT QUẢ VÒNG 1 (2026-08-23) — đọc D-045 trước khi làm gì với mục này.**
+> 30 cặp thật đấu Gemini 3 Pro Image: **Gemini 24 – nhà 4 – hoà 2** (điểm nhà 0,167,
+> KTC [0,073 ; 0,336]). Nhà **0 thắng / 16** ở `photoreal` + `portrait` +
+> `multi-person` + `thumbnail` + `text-vi` + `text-en`; chỉ **ngang 1–1** ở `anime`,
+> `fantasy`, `architecture` — mà mỗi loại chỉ có **2 cặp**, tức chưa là bằng chứng.
+> Bẫy nhận đúng 3/3; quyết đoán 0,93 trên cặp thật so với 0,33 trên cặp bẫy.
+>
+> ⛔ **VÀ MỤC NÀY ĐÃ ĐÓNG LẠI — xem D-046.** Chủ sản phẩm quyết **bỏ hẳn đối chứng
+> ngoài**: D-042 đã bỏ định tuyến, nên điểm số so với Gemini không đổi được lựa chọn
+> nào, trong khi mỗi lô tốn tiền API thật. Klein 9B và GPT Image 2 **bỏ**, không phải
+> hoãn. Bảng cổng quyết định bên dưới **không còn được kích hoạt**; giữ lại làm hồ sơ.
+> Việc đo từ đây là **nội bộ, HiDream đấu HiDream, một lô một biến** — D-046 §"Việc đo
+> nội bộ thay vào".
 
 **Mục tiêu:** trả lời **trước khi bỏ công nối vào nền tảng**: model nhà có đủ tốt để
 bán không, và loại yêu cầu nào nên đi đâu.

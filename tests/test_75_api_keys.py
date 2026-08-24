@@ -114,8 +114,15 @@ def test_gemini_image_registry_uses_stable_ids_and_resolves_legacy_aliases():
     from platform_core.models import APIKEY_CAT_IMAGE
     active = {m.id for m in providers.models_for("gemini", APIKEY_CAT_IMAGE)
               if m.is_active}
-    assert {"gemini-3.1-flash-lite-image", "gemini-3.1-flash-image",
-            "gemini-3-pro-image"} <= active
+    assert {"gemini-3.1-flash-lite-image", "gemini-3.1-flash-image"} <= active
+    # ⛔ `gemini-3-pro-image` ĐÓNG từ 2026-08-23 vì LÝ DO KINH TẾ: giá vốn
+    #    $0,134/ảnh = 35,2 credit, mà nền tảng bán 16 credit ở `taoanh` và 5 ở
+    #    `thumbnail`. Xem khối chú thích trong `platform_core/providers.py`.
+    #    Đây KHÔNG phải model bị bỏ — nó vẫn phải phân giải được cho job/draft cũ
+    #    (dòng dưới), chỉ là UI không tạo dữ liệu mới với nó nữa.
+    #    Mở lại thì sửa `is_active=True` ở providers.py VÀ dòng này cùng lúc.
+    assert "gemini-3-pro-image" not in active
+    assert providers.resolve_model_id("gemini-3-pro-image") == "gemini-3-pro-image"
     assert "gemini-3.1-flash-image-preview" not in active
     assert providers.resolve_model_id("gemini-3.1-flash-image-preview") == \
         "gemini-3.1-flash-image"

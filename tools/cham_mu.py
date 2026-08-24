@@ -94,11 +94,15 @@ class KetQua:
 
 def tao_lo(anh_a: Sequence[str], anh_b: Sequence[str], *,
            ty_le_bay: float = TY_LE_BAY,
+           anh_bay: Optional[Sequence[str]] = None,
            rng: Optional[random.Random] = None) -> list[Cap]:
-    """Ghép cặp A↔B, chèn cặp bẫy A↔A và B↔B, rồi xáo trộn trái/phải.
+    """Ghép cặp A↔B, chèn cặp bẫy cùng-nguồn, rồi xáo trộn trái/phải.
 
     Ảnh vào là **đường dẫn**; ảnh ra trong `Cap` vẫn là đường dẫn — việc chép và
     đổi tên do `ghi_lo` làm, để hàm này thuần và test được không cần đĩa.
+
+    `anh_bay`: bộ ảnh **cùng cấu hình với A, khác seed**, xếp cùng thứ tự đề bài.
+    Có nó thì bẫy là *cùng đề bài, cùng cấu hình, khác seed* — xem dưới.
     """
     r = rng or random.Random()
     if not anh_a or not anh_b:
@@ -108,14 +112,37 @@ def tao_lo(anh_a: Sequence[str], anh_b: Sequence[str], *,
     for i in range(n):
         caps.append(Cap("", anh_a[i], anh_b[i], "A", "B", False))
 
-    # Cặp bẫy: ghép hai ảnh KHÁC NHAU của CÙNG một nguồn. Cần ít nhất 2 ảnh mỗi bên.
     so_bay = int(round(n * max(0.0, ty_le_bay)))
-    for i in range(so_bay):
-        ben, kho = ("A", anh_a) if i % 2 == 0 else ("B", anh_b)
-        if len(kho) < 2:
-            continue
-        x, y = r.sample(list(kho), 2)
-        caps.append(Cap("", x, y, ben, ben, True))
+
+    # 🔴 HAI KIỂU BẪY, VÀ CHÚNG ĐO HAI THỨ KHÁC HẲN NHAU.
+    #
+    # ① `anh_bay` có → bẫy là **cùng đề bài, cùng cấu hình, KHÁC SEED**. Đây là
+    #    thứ đầu tệp này mô tả, và là thứ đo đúng sàn nhiễu: hai ảnh *rất giống
+    #    nhau*, khác biệt duy nhất là ngẫu nhiên. Người chấm dám chọn ở đây bao
+    #    nhiêu phần trăm chính là mức quyết đoán khi **không có gì để quyết**.
+    #
+    # ② Không có → rơi về bẫy cũ: hai ảnh **khác đề bài** của cùng một nguồn.
+    #
+    # ⚠️ VÀ KIỂU ② KHÔNG DÙNG ĐƯỢC cho phép so *cùng-đề-bài* như 36-vs-50 bước.
+    #    Hai ảnh khác đề bài thì khác nhau hiển nhiên, nên người chấm gần như
+    #    luôn chọn được một bên ⇒ sàn nhiễu ~100 % ⇒ điều kiện `d <= f` luôn
+    #    đúng ⇒ công cụ luôn trả "chưa phân biệt được", bất kể dữ liệu.
+    #
+    #    Đó **đã xảy ra**: lô B2b đo sàn nhiễu **100 %** trên 3 cặp, và D-049 phải
+    #    ghi rõ là **không dựa vào lý do đó**. Tăng số cặp bẫy kiểu ② không cứu
+    #    được — nó chỉ làm một tín hiệu vô dụng trở nên chính xác hơn.
+    if anh_bay:
+        m = min(n, len(anh_bay))
+        for i in r.sample(range(m), min(so_bay, m)):
+            # Cùng chỉ số = cùng đề bài. Cả hai đều là "A" nên không bên nào thắng.
+            caps.append(Cap("", anh_a[i], anh_bay[i], "A", "A", True))
+    else:
+        for i in range(so_bay):
+            ben, kho = ("A", anh_a) if i % 2 == 0 else ("B", anh_b)
+            if len(kho) < 2:
+                continue
+            x, y = r.sample(list(kho), 2)
+            caps.append(Cap("", x, y, ben, ben, True))
 
     r.shuffle(caps)
     for i, c in enumerate(caps):
@@ -168,6 +195,13 @@ def ghi_lo(caps: Sequence[Cap], thu_muc: Path, *, nhan_a: str, nhan_b: str) -> N
             "KHONG mo tep " + TEN_KHOA + " truoc khi cham xong.",
         ],
         "so_cap": len(caps),
+        "nguoi_cham": "",
+        "may_cham": None,
+        "_ghi_chu_nguoi_cham": [
+            "Dien 'nguoi_cham' = ten nguoi hoac ten model da cham lo nay.",
+            "Dien 'may_cham' = true neu nguoi cham la AI, false neu la nguoi.",
+            "May cham thi MOI phieu quyet doan phai co 'ghi_chu' — xem D-052.",
+        ],
         "phieu": phieu,
     })
     _ghi_json(thu_muc / TEN_KHOA, {
@@ -382,6 +416,53 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return max(0.0, tam - nua), min(1.0, tam + nua)
 
 
+class PhieuKhongHopLe(Exception):
+    """Phiếu không đủ điều kiện để tính. Từ chối tính còn hơn tính ra một số vô nghĩa."""
+
+
+def kiem_phieu_may(phieu_raw: dict) -> None:
+    """Người chấm là MÁY thì mọi phiếu quyết đoán phải có `ghi_chu`. (D-052)
+
+    🔴 VÌ SAO RIÊNG MÁY MỚI PHẢI VIẾT LÝ DO.
+
+       Luật cũ (§1.5.3) nói *"người chấm là chủ dự án, không phải tôi"*, và nó đúng
+       cho cái nó phòng: một mô hình chấm sản phẩm của chính mình có động cơ nói
+       rằng nó tốt. Chủ sản phẩm đã đảo luật đó ngày 24/08 — nay **máy chấm**.
+
+       Nhưng cái rủi ro kia không biến mất chỉ vì luật đổi. Nên đổi cách chặn:
+       thay vì cấm máy bỏ phiếu, **buộc mỗi lá phiếu phải nói ra vì sao**.
+
+       Một câu lý do làm được ba việc mà một lá phiếu trần không làm được:
+
+         ① **Buộc phải NHÌN.** Viết "trái sắc nét hơn ở tóc" đòi hỏi đã mở ảnh.
+            Không viết gì thì không có gì phân biệt "đã nhìn" với "đoán theo thứ
+            tự tệp" — và D-027 đã cho thấy quy trình này từng chạy tám lượt đo mà
+            **không ai nhìn một tấm ảnh nào**.
+         ② **Kiểm được sau.** Chủ sản phẩm đọc lại 10 phiếu ngẫu nhiên và biết
+            ngay phiếu có thật hay không.
+         ③ **Lộ ra thiên lệch có hệ thống.** Mười lý do đều nói về cùng một thứ
+            (vd toàn "màu đậm hơn") nghĩa là đang chấm một chiều, không chấm ảnh.
+
+    ⛔ Hoà thì KHÔNG bắt buộc ghi chú: "hai ảnh như nhau" là một câu trả lời hợp lệ
+       và không có gì để mô tả. Bắt viết lý do cho hoà là dạy người chấm né hoà,
+       mà né hoà chính là thứ làm hỏng sàn nhiễu.
+    """
+    if not phieu_raw.get("may_cham"):
+        return
+    if not str(phieu_raw.get("nguoi_cham") or "").strip():
+        raise PhieuKhongHopLe(
+            "may_cham=true nhung 'nguoi_cham' de trong — phai ghi ten model da cham")
+    thieu = [x.get("ma") for x in phieu_raw.get("phieu") or []
+             if (x.get("chon") or "").strip().lower() in ("trai", "phai")
+             and not str(x.get("ghi_chu") or "").strip()]
+    if thieu:
+        raise PhieuKhongHopLe(
+            "May cham thi moi phieu quyet doan phai co 'ghi_chu' (D-052). "
+            "Thieu o {} cap: {}{}".format(
+                len(thieu), ", ".join(thieu[:8]),
+                " ..." if len(thieu) > 8 else ""))
+
+
 def tinh(caps: Sequence[Cap], phieu: dict[str, str]) -> KetQua:
     """`phieu`: ma → "trai" | "phai" | "hoa". Cặp chưa chấm thì bỏ qua."""
     thang_a = thang_b = hoa = 0
@@ -469,15 +550,22 @@ def main(argv: Optional[list[str]] = None) -> int:
     t.add_argument("--nhan-a", default="A")
     t.add_argument("--nhan-b", default="B")
     t.add_argument("--bay", type=float, default=TY_LE_BAY)
+    t.add_argument("--bay-tu", type=Path, default=None, dest="bay_tu",
+                   help="thu muc anh CUNG CAU HINH VOI --a nhung KHAC SEED. Co no "
+                        "thi bay la 'cung de bai, khac seed' - san nhieu moi co "
+                        "nghia cho phep so cung-de-bai. Xem chu thich o tao_lo.")
     t.add_argument("--seed", type=int, default=None)
 
     c = sub.add_parser("tinh", help="tinh ket qua tu phieu da cham")
-    c.add_argument("--lo", required=True, type=Path)
+    c.add_argument("--lo", required=True, type=Path, action="append",
+                   help="thu muc lo. Dua NHIEU lan de GOP nhieu lo do CUNG MOT "
+                        "cau hoi lai voi nhau - xem chu thich o `main`.")
 
     a = ap.parse_args(argv)
 
     if a.lenh == "tao":
         caps = tao_lo(_anh_trong(a.a), _anh_trong(a.b), ty_le_bay=a.bay,
+                      anh_bay=_anh_trong(a.bay_tu) if a.bay_tu else None,
                       rng=random.Random(a.seed))
         ghi_lo(caps, a.ra, nhan_a=a.nhan_a, nhan_b=a.nhan_b)
         ghi_man(caps, a.ra)
@@ -489,14 +577,44 @@ def main(argv: Optional[list[str]] = None) -> int:
                   "ket qua chi duoc ghi la 'chua phan biet duoc'.")
         return 0
 
-    khoa = json.loads((a.lo / TEN_KHOA).read_text(encoding="utf-8"))
-    caps = [Cap(**x) for x in khoa["cap"]]
-    phieu_raw = json.loads((a.lo / TEN_PHIEU).read_text(encoding="utf-8"))
-    phieu = {x["ma"]: x.get("chon", "") for x in phieu_raw["phieu"]}
+    # ⭐ GOP NHIEU LO. Chot "du mau moi duoc ket luan" (§1.5.5) doi >= 50 cap
+    #    that, nhung mot lo thuong chi 30 - vi bo prompt co 30 de bai. Truoc cai
+    #    nay, cach duy nhat dat nguong la CONG TAY hai lo roi tu chay Wilson.
+    #
+    #    Cong tay la thu se muc: khong ai chay lai duoc, khong ai kiem lai duoc,
+    #    va con so cuoi cung nam trong mot tai lieu chu khong trong mot lenh.
+    #
+    # ⛔ CHI GOP DUOC KHI HAI LO HOI CUNG MOT CAU HOI. Cong cu chan viec gop hai
+    #    lo co nhan khac nhau (vd s50-vs-s36 gop voi nha-vs-Gemini): cong hai
+    #    phep do khac nhau ra mot con so la tao ra mot con so khong tra loi gi.
+    los = list(a.lo)
+    caps, phieu, nhan = [], {}, None
+    for i, thu_muc in enumerate(los):
+        khoa = json.loads((thu_muc / TEN_KHOA).read_text(encoding="utf-8"))
+        n = khoa.get("nhan", {})
+        if nhan is None:
+            nhan = n
+        elif (n.get("A"), n.get("B")) != (nhan.get("A"), nhan.get("B")):
+            print(f"KHONG GOP DUOC: lo {thu_muc.name} co nhan "
+                  f"{n.get('A')}/{n.get('B')}, khac {nhan.get('A')}/{nhan.get('B')}. "
+                  "Gop hai phep do khac nhau ra mot con so khong tra loi gi.")
+            return 2
+        phieu_raw = json.loads((thu_muc / TEN_PHIEU).read_text(encoding="utf-8"))
+        kiem_phieu_may(phieu_raw)
+        # Ma cap trung nhau giua cac lo (deu la c001..) nen phai them tien to,
+        # neu khong lo sau se de len lo truoc va mat lang le mot nua du lieu.
+        for c in khoa["cap"]:
+            c = dict(c)
+            c["ma"] = f"L{i}:{c['ma']}"
+            caps.append(Cap(**c))
+        for x in phieu_raw["phieu"]:
+            phieu[f"L{i}:{x['ma']}"] = x.get("chon", "")
+
     kq = tinh(caps, phieu)
-    nhan = khoa.get("nhan", {})
-    print(json.dumps({"A": nhan.get("A"), "B": nhan.get("B"), **kq.as_dict()},
-                     ensure_ascii=False, indent=2))
+    ra = {"A": nhan.get("A"), "B": nhan.get("B"), **kq.as_dict()}
+    if len(los) > 1:
+        ra["lo_da_gop"] = [t.name for t in los]
+    print(json.dumps(ra, ensure_ascii=False, indent=2))
     return 0
 
 

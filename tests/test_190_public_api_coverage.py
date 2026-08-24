@@ -46,6 +46,23 @@ DISPOSITION = {
     # only records that the tool is *allowed* to be published.
     "anhnoibo": (EXPOSE_V1, ("image.ltt",)),
 
+    # The in-house LANGUAGE model (H38/Q106). Same shape as `anhnoibo` one line
+    # up, and the same warning applies: EXPOSE_V1 records that the tool is
+    # *allowed* to be published, not that anyone can call it. Unlike `anhnoibo`
+    # this one also sells through two non-job doors (`/chat/completions` and
+    # `/messages` + `/responses`) — those are routes, not ToolSpecs, so they are
+    # frozen in `server/api/inventory.py` rather than here.
+    "ltt_llm": (EXPOSE_V1, ("text.chat",)),
+
+    # Selling virtual machines (H39). It declares **no ToolSpec at all**: a VM is
+    # not a priced job with a contract-shaped input, it is a lease. Nothing about
+    # the job contract applies, so it publishes nothing.
+    #
+    # ⚠️ Day la ghi lai TRANG THAI THAT (khong ToolSpec nao), khong phai mot quyet
+    #    dinh ve san pham. Chu cua H39 muon ban no qua `/api/v1` thi phai doi muc
+    #    nay va noi ro hop dong la gi.
+    "vps": (DEFER, ()),
+
     # Priced from a caller-declared duration, with a run-time hold top-up: one
     # root cause, three tools (waves 2 and 3).
     "taovideo": (MIGRATE, ()),

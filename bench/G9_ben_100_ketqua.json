@@ -1,0 +1,3562 @@
+{
+  "ca": "G9_ben_100",
+  "ngay": "2026-08-24T02:45:08+00:00",
+  "cau_hinh": {
+    "batch": 1,
+    "cfg": 5.0,
+    "ckpt": "hidream_o1_image_bf16.safetensors",
+    "height": 1440,
+    "prefix": "ltt_h37/hidream_o1",
+    "ref_mp": 4.0,
+    "sampler": "uni_pc",
+    "scheduler": "normal",
+    "seam_passes": "2",
+    "seam_pattern": "single_shift",
+    "seam_start": 0.8,
+    "seam_strength": 1.0,
+    "seed": 0,
+    "shift": 3.0,
+    "steps": 50,
+    "upscale": "area",
+    "width": 2560
+  },
+  "model": "hidream-o1",
+  "mode": "t2i",
+  "ram_trong_truoc_gb": 93.9,
+  "runs": [
+    {
+      "prompt_id": "e031c4c8-ce02-52be-8871-29322cfd7639",
+      "ok": true,
+      "giay": 108.8,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 72,
+        "nhiet_trung_vi_c": 71,
+        "power_dinh_w": 369.72,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5238637
+      ],
+      "anh": [
+        "G9_ben_100_e001_0.png"
+      ],
+      "id": "e001",
+      "cat": "portrait",
+      "seed": 20101,
+      "prompt": "Portrait of a Vietnamese woman around 30 years old, morning window light, softly blurred background, natural expression, realistic photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "ff3a6395-3a77-5d83-89ce-a78d2d4e2d98",
+      "ok": true,
+      "giay": 108.7,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.1,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5586136
+      ],
+      "anh": [
+        "G9_ben_100_e002_0.png"
+      ],
+      "id": "e002",
+      "cat": "portrait",
+      "seed": 20102,
+      "prompt": "Close-up portrait of an elderly man, heavily wrinkled skin, strong side lighting with high contrast, black and white photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "cc2a13f2-8358-5648-8b4a-cdad310c4831",
+      "ok": true,
+      "giay": 108.8,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.86,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4727932
+      ],
+      "anh": [
+        "G9_ben_100_e003_0.png"
+      ],
+      "id": "e003",
+      "cat": "portrait",
+      "seed": 20103,
+      "prompt": "Professional corporate headshot, white dress shirt, plain grey background, even studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "510503dd-ba2f-5ca8-a475-cf8bc8892343",
+      "ok": true,
+      "giay": 108.8,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.82,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5350069
+      ],
+      "anh": [
+        "G9_ben_100_e004_0.png"
+      ],
+      "id": "e004",
+      "cat": "photoreal",
+      "seed": 20104,
+      "prompt": "A steaming bowl of Vietnamese pho with rare beef slices on a wooden table, spring onions and fresh chilli beside it, natural morning light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0f68b97b-0dd6-519c-972c-6cdcc9f2f4fb",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.75,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5783545
+      ],
+      "anh": [
+        "G9_ben_100_e005_0.png"
+      ],
+      "id": "e005",
+      "cat": "photoreal",
+      "seed": 20105,
+      "prompt": "A calico cat sleeping on a windowsill, afternoon sunlight through the curtains, individual fur strands clearly visible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "79f6a39e-dc85-5ba1-8f49-f0eb1486b45d",
+      "ok": true,
+      "giay": 110.4,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.39,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6189492
+      ],
+      "anh": [
+        "G9_ben_100_e006_0.png"
+      ],
+      "id": "e006",
+      "cat": "photoreal",
+      "seed": 20106,
+      "prompt": "A Hanoi street after rain, the wet road reflecting the lights, a motorbike passing and leaving a light trail",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "ee539f40-fd33-549a-830f-f8a9218df135",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.05,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4818988
+      ],
+      "anh": [
+        "G9_ben_100_e007_0.png"
+      ],
+      "id": "e007",
+      "cat": "cinematic",
+      "seed": 20107,
+      "prompt": "Cinematic shot: a person standing at the end of a long dark corridor, blue neon light from both sides, thin haze, wide aspect ratio",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a9bc36bc-e1dc-511c-bb91-0ca98818f517",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.81,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5675857
+      ],
+      "anh": [
+        "G9_ben_100_e008_0.png"
+      ],
+      "id": "e008",
+      "cat": "cinematic",
+      "seed": 20108,
+      "prompt": "Sunset over terraced rice fields, backlit, the silhouette of a person carrying rice on a shoulder pole against an orange sky",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "87699e6e-063f-5f8c-9d36-3beeb0daafec",
+      "ok": true,
+      "giay": 109.7,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.86,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5583727
+      ],
+      "anh": [
+        "G9_ben_100_e009_0.png"
+      ],
+      "id": "e009",
+      "cat": "multi-person",
+      "seed": 20109,
+      "prompt": "Four friends sitting around a sidewalk cafe table, laughing and talking, every face clearly visible, natural candid photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "b2fe556b-93e9-5382-bb6a-83c317bb7e75",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.72,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5432576
+      ],
+      "anh": [
+        "G9_ben_100_e010_0.png"
+      ],
+      "id": "e010",
+      "cat": "multi-person",
+      "seed": 20110,
+      "prompt": "A women's volleyball team posing for a group photo after a match, eight players in two rows, holding a trophy",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "c94228c0-5341-5d64-bc51-56d5862aae4f",
+      "ok": true,
+      "giay": 108.7,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.98,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5342135
+      ],
+      "anh": [
+        "G9_ben_100_e011_0.png"
+      ],
+      "id": "e011",
+      "cat": "object-placement",
+      "seed": 20111,
+      "prompt": "Three books stacked on the left, a teacup on the right, a pair of eyeglasses resting on top of the highest book, wooden table, 45 degree overhead view",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "daab4bbb-4c6c-5053-94ce-284a921b04d0",
+      "ok": true,
+      "giay": 109.8,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.12,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5268503
+      ],
+      "anh": [
+        "G9_ben_100_e012_0.png"
+      ],
+      "id": "e012",
+      "cat": "object-placement",
+      "seed": 20112,
+      "prompt": "A red apple INSIDE a clear glass bowl, and the bowl is placed ON TOP OF an open newspaper",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0ccead36-510f-577f-8f0a-3828402d3acb",
+      "ok": true,
+      "giay": 110.0,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.87,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4734857
+      ],
+      "anh": [
+        "G9_ben_100_e013_0.png"
+      ],
+      "id": "e013",
+      "cat": "product",
+      "seed": 20113,
+      "prompt": "Product photo of a clear glass skincare serum bottle, clean white background, soft reflection under the base, soft studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "51b1d192-6e2a-54fc-a080-d231109e9b1c",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.73,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5149252
+      ],
+      "anh": [
+        "G9_ben_100_e014_0.png"
+      ],
+      "id": "e014",
+      "cat": "product",
+      "seed": 20114,
+      "prompt": "Black wireless earbuds beside their charging case with the lid open, grey concrete background, raking side light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "af8d2c73-008b-57e5-87ab-4c0d407708a9",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.98,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4972950
+      ],
+      "anh": [
+        "G9_ben_100_e015_0.png"
+      ],
+      "id": "e015",
+      "cat": "product",
+      "seed": 20115,
+      "prompt": "A Vietnamese iced milk coffee in a plastic takeaway cup, blank unlabelled sticker, blurred cafe background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0e09bdc9-c322-52c7-8db5-db46eed01c01",
+      "ok": true,
+      "giay": 108.9,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.95,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5148858
+      ],
+      "anh": [
+        "G9_ben_100_e016_0.png"
+      ],
+      "id": "e016",
+      "cat": "text-vi",
+      "seed": 20116,
+      "prompt": "A restaurant signboard with large red letters reading \"CƠM TẤM SƯỜN BÌ\" on a yellow background, crisp lettering, correct Vietnamese diacritics",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "80b79ef5-7e7d-5d0a-8e46-b889acf1c4d0",
+      "ok": true,
+      "giay": 110.4,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.46,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5008910
+      ],
+      "anh": [
+        "G9_ben_100_e017_0.png"
+      ],
+      "id": "e017",
+      "cat": "text-vi",
+      "seed": 20117,
+      "prompt": "A promotional poster with the words \"GIẢM 50% HÔM NAY\" in the centre and \"Áp dụng đến 30/09\" below it, tidy layout",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "52aa27a8-7f84-5b3e-bf11-861ab100d81c",
+      "ok": true,
+      "giay": 109.1,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.95,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5007810
+      ],
+      "anh": [
+        "G9_ben_100_e018_0.png"
+      ],
+      "id": "e018",
+      "cat": "text-vi",
+      "seed": 20118,
+      "prompt": "A dark blue book cover, the title \"NHỮNG NGÀY THƠ ẤU\" in white letters in the centre, the author name smaller underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0c82185d-66fb-58ff-8a0b-79c386496953",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.74,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5114955
+      ],
+      "anh": [
+        "G9_ben_100_e019_0.png"
+      ],
+      "id": "e019",
+      "cat": "text-en",
+      "seed": 20119,
+      "prompt": "A wooden shop sign reading \"OPEN 24 HOURS\" in clean sans-serif letters, warm bulb lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "c7e3ccd6-2ea6-57d1-9e5a-053e26a2eee0",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.37,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4884900
+      ],
+      "anh": [
+        "G9_ben_100_e020_0.png"
+      ],
+      "id": "e020",
+      "cat": "text-en",
+      "seed": 20120,
+      "prompt": "A whiteboard with the handwritten words \"Ship it on Friday\" and a small arrow drawn underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "4c75ce6b-89a2-5efb-9218-097111837c60",
+      "ok": true,
+      "giay": 110.4,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18384,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.89,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4978406
+      ],
+      "anh": [
+        "G9_ben_100_e021_0.png"
+      ],
+      "id": "e021",
+      "cat": "thumbnail",
+      "seed": 20121,
+      "prompt": "YouTube thumbnail: a man with a surprised expression on the left, large yellow text with black outline reading \"BẤT NGỜ!\" on the right, red gradient background, high contrast",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f4eca20a-c2b8-5c5f-b6b5-7b5a7a9a7012",
+      "ok": true,
+      "giay": 109.9,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18226,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.08,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5292665
+      ],
+      "anh": [
+        "G9_ben_100_e022_0.png"
+      ],
+      "id": "e022",
+      "cat": "thumbnail",
+      "seed": 20122,
+      "prompt": "YouTube tech thumbnail: a graphics card placed diagonally in the centre of the frame, blue light rays, the text \"RTX 3090\" in the top left corner, dark background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "1a2b7092-de01-596c-93df-d654abde1968",
+      "ok": true,
+      "giay": 110.1,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.91,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5648532
+      ],
+      "anh": [
+        "G9_ben_100_e023_0.png"
+      ],
+      "id": "e023",
+      "cat": "thumbnail",
+      "seed": 20123,
+      "prompt": "Cooking thumbnail: an appetising plate of food filling the right half, the smiling face of a chef on the left half, a red arrow pointing at the plate",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "620ad4f5-f876-57d2-8ec9-071fd1a38b3f",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.8,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5227075
+      ],
+      "anh": [
+        "G9_ben_100_e024_0.png"
+      ],
+      "id": "e024",
+      "cat": "architecture",
+      "seed": 20124,
+      "prompt": "Minimalist living room interior, natural light from a large window, grey sofa, light wooden floor, clean straight lines",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a706d6fc-3c45-5cdc-9cbb-dddbfb706ed5",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18290,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.78,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5351774
+      ],
+      "anh": [
+        "G9_ben_100_e025_0.png"
+      ],
+      "id": "e025",
+      "cat": "architecture",
+      "seed": 20125,
+      "prompt": "The facade of a modern glass office building seen from below, blue sky with clouds, perfectly straight vertical lines with no distortion",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "67b683f0-90bc-51aa-ba05-d7f033a0c582",
+      "ok": true,
+      "giay": 109.6,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.7,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6005967
+      ],
+      "anh": [
+        "G9_ben_100_e026_0.png"
+      ],
+      "id": "e026",
+      "cat": "anime",
+      "seed": 20126,
+      "prompt": "Anime style female character, long blue hair, school uniform, standing in front of a school gate, detailed painted background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "9af2594d-c8e6-53ab-973c-75c663777c1d",
+      "ok": true,
+      "giay": 109.9,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.72,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5708889
+      ],
+      "anh": [
+        "G9_ben_100_e027_0.png"
+      ],
+      "id": "e027",
+      "cat": "anime",
+      "seed": 20127,
+      "prompt": "Japanese animated film style scene: a small town at sunset, layered clouds, warm colours",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "bc4c81ff-d72d-5eaf-b1a0-480ac986fd14",
+      "ok": true,
+      "giay": 108.7,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.92,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5897551
+      ],
+      "anh": [
+        "G9_ben_100_e028_0.png"
+      ],
+      "id": "e028",
+      "cat": "fantasy",
+      "seed": 20128,
+      "prompt": "A giant stone dragon sleeping on a snow covered mountain peak, fog below, cold moonlight",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "c809c35f-2125-58c5-87e2-b006812ee9af",
+      "ok": true,
+      "giay": 110.1,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.81,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6020276
+      ],
+      "anh": [
+        "G9_ben_100_e029_0.png"
+      ],
+      "id": "e029",
+      "cat": "fantasy",
+      "seed": 20129,
+      "prompt": "An endless ancient library, towering bookshelves, a spiral staircase, dust motes floating in shafts of light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "ecd3da56-c49b-51e1-b386-57a23e0461c4",
+      "ok": true,
+      "giay": 108.9,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.05,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5370138
+      ],
+      "anh": [
+        "G9_ben_100_e030_0.png"
+      ],
+      "id": "e030",
+      "cat": "hard-composition",
+      "seed": 20130,
+      "prompt": "A person holding a sign with both hands, the sign reads \"LTT STUDIOS\", standing in the middle of a crowded square, the text on the sign must be clearly legible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f8f61055-4706-560f-b54f-f1bf1d03d015",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.41,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5330348
+      ],
+      "anh": [
+        "G9_ben_100_e031_0.png"
+      ],
+      "id": "e031",
+      "cat": "portrait",
+      "seed": 20131,
+      "prompt": "Portrait of a Vietnamese woman around 30 years old, morning window light, softly blurred background, natural expression, realistic photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "7d5fab14-0cba-5756-9508-8270169f9a78",
+      "ok": true,
+      "giay": 109.0,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.52,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5331633
+      ],
+      "anh": [
+        "G9_ben_100_e032_0.png"
+      ],
+      "id": "e032",
+      "cat": "portrait",
+      "seed": 20132,
+      "prompt": "Close-up portrait of an elderly man, heavily wrinkled skin, strong side lighting with high contrast, black and white photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "63d34941-c046-567a-9f0c-c5376f8aa811",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.62,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4851351
+      ],
+      "anh": [
+        "G9_ben_100_e033_0.png"
+      ],
+      "id": "e033",
+      "cat": "portrait",
+      "seed": 20133,
+      "prompt": "Professional corporate headshot, white dress shirt, plain grey background, even studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "014c779e-f626-5f53-bc0b-efc9b85bcc6e",
+      "ok": true,
+      "giay": 109.7,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.02,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5452369
+      ],
+      "anh": [
+        "G9_ben_100_e034_0.png"
+      ],
+      "id": "e034",
+      "cat": "photoreal",
+      "seed": 20134,
+      "prompt": "A steaming bowl of Vietnamese pho with rare beef slices on a wooden table, spring onions and fresh chilli beside it, natural morning light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "83208d22-49a4-545e-97d8-d1e934b7580d",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.57,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5770225
+      ],
+      "anh": [
+        "G9_ben_100_e035_0.png"
+      ],
+      "id": "e035",
+      "cat": "photoreal",
+      "seed": 20135,
+      "prompt": "A calico cat sleeping on a windowsill, afternoon sunlight through the curtains, individual fur strands clearly visible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "893bc0e0-9d70-5b8b-ab91-91160768322b",
+      "ok": true,
+      "giay": 109.9,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.93,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6278915
+      ],
+      "anh": [
+        "G9_ben_100_e036_0.png"
+      ],
+      "id": "e036",
+      "cat": "photoreal",
+      "seed": 20136,
+      "prompt": "A Hanoi street after rain, the wet road reflecting the lights, a motorbike passing and leaving a light trail",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a0f7406a-8b49-5bf2-b8f7-01c6e44d851b",
+      "ok": true,
+      "giay": 109.8,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.8,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4838353
+      ],
+      "anh": [
+        "G9_ben_100_e037_0.png"
+      ],
+      "id": "e037",
+      "cat": "cinematic",
+      "seed": 20137,
+      "prompt": "Cinematic shot: a person standing at the end of a long dark corridor, blue neon light from both sides, thin haze, wide aspect ratio",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "29203888-4537-5823-b5bf-8454066c7ce4",
+      "ok": true,
+      "giay": 110.4,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.02,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5859335
+      ],
+      "anh": [
+        "G9_ben_100_e038_0.png"
+      ],
+      "id": "e038",
+      "cat": "cinematic",
+      "seed": 20138,
+      "prompt": "Sunset over terraced rice fields, backlit, the silhouette of a person carrying rice on a shoulder pole against an orange sky",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0e4f0b90-82a1-50ac-8004-374a22e7cb30",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.63,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5695856
+      ],
+      "anh": [
+        "G9_ben_100_e039_0.png"
+      ],
+      "id": "e039",
+      "cat": "multi-person",
+      "seed": 20139,
+      "prompt": "Four friends sitting around a sidewalk cafe table, laughing and talking, every face clearly visible, natural candid photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e88a91cc-7805-5a89-8a83-cf523f3d6a64",
+      "ok": true,
+      "giay": 108.9,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.14,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5385044
+      ],
+      "anh": [
+        "G9_ben_100_e040_0.png"
+      ],
+      "id": "e040",
+      "cat": "multi-person",
+      "seed": 20140,
+      "prompt": "A women's volleyball team posing for a group photo after a match, eight players in two rows, holding a trophy",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "8d57b849-95f5-5b24-8397-7e07b2caf037",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.68,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5440220
+      ],
+      "anh": [
+        "G9_ben_100_e041_0.png"
+      ],
+      "id": "e041",
+      "cat": "object-placement",
+      "seed": 20141,
+      "prompt": "Three books stacked on the left, a teacup on the right, a pair of eyeglasses resting on top of the highest book, wooden table, 45 degree overhead view",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "fe84d582-fd87-5582-bc56-3f919e10bc6e",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.45,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5200162
+      ],
+      "anh": [
+        "G9_ben_100_e042_0.png"
+      ],
+      "id": "e042",
+      "cat": "object-placement",
+      "seed": 20142,
+      "prompt": "A red apple INSIDE a clear glass bowl, and the bowl is placed ON TOP OF an open newspaper",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "cb092cee-f3b7-5fc8-bd42-144c1dafe61e",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.93,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4845445
+      ],
+      "anh": [
+        "G9_ben_100_e043_0.png"
+      ],
+      "id": "e043",
+      "cat": "product",
+      "seed": 20143,
+      "prompt": "Product photo of a clear glass skincare serum bottle, clean white background, soft reflection under the base, soft studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "02636009-f721-54f8-936c-67cb4d88cd76",
+      "ok": true,
+      "giay": 109.1,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.52,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5114823
+      ],
+      "anh": [
+        "G9_ben_100_e044_0.png"
+      ],
+      "id": "e044",
+      "cat": "product",
+      "seed": 20144,
+      "prompt": "Black wireless earbuds beside their charging case with the lid open, grey concrete background, raking side light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "d65b09cd-da2a-5d03-9abf-3cb1deada7e5",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.89,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5029601
+      ],
+      "anh": [
+        "G9_ben_100_e045_0.png"
+      ],
+      "id": "e045",
+      "cat": "product",
+      "seed": 20145,
+      "prompt": "A Vietnamese iced milk coffee in a plastic takeaway cup, blank unlabelled sticker, blurred cafe background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "1d0171b9-876c-5227-b72e-3cc163f3279e",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.79,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5226618
+      ],
+      "anh": [
+        "G9_ben_100_e046_0.png"
+      ],
+      "id": "e046",
+      "cat": "text-vi",
+      "seed": 20146,
+      "prompt": "A restaurant signboard with large red letters reading \"CƠM TẤM SƯỜN BÌ\" on a yellow background, crisp lettering, correct Vietnamese diacritics",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "c87bbac8-798e-5b91-b55a-8ac90b4e2943",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.38,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4866332
+      ],
+      "anh": [
+        "G9_ben_100_e047_0.png"
+      ],
+      "id": "e047",
+      "cat": "text-vi",
+      "seed": 20147,
+      "prompt": "A promotional poster with the words \"GIẢM 50% HÔM NAY\" in the centre and \"Áp dụng đến 30/09\" below it, tidy layout",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0edcf368-3873-546d-b3e1-72a9cd1d4a81",
+      "ok": true,
+      "giay": 109.8,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18450,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.65,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4959030
+      ],
+      "anh": [
+        "G9_ben_100_e048_0.png"
+      ],
+      "id": "e048",
+      "cat": "text-vi",
+      "seed": 20148,
+      "prompt": "A dark blue book cover, the title \"NHỮNG NGÀY THƠ ẤU\" in white letters in the centre, the author name smaller underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "7ffae22c-4c70-5a71-97ad-6ac90ae0b900",
+      "ok": true,
+      "giay": 110.4,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.83,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5124602
+      ],
+      "anh": [
+        "G9_ben_100_e049_0.png"
+      ],
+      "id": "e049",
+      "cat": "text-en",
+      "seed": 20149,
+      "prompt": "A wooden shop sign reading \"OPEN 24 HOURS\" in clean sans-serif letters, warm bulb lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f97e1cff-57b5-574a-b200-397f81c88f99",
+      "ok": true,
+      "giay": 109.0,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.81,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4964016
+      ],
+      "anh": [
+        "G9_ben_100_e050_0.png"
+      ],
+      "id": "e050",
+      "cat": "text-en",
+      "seed": 20150,
+      "prompt": "A whiteboard with the handwritten words \"Ship it on Friday\" and a small arrow drawn underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "8244c65e-e04d-5664-a7b7-956a3ad90ae7",
+      "ok": true,
+      "giay": 109.6,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.83,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5088435
+      ],
+      "anh": [
+        "G9_ben_100_e051_0.png"
+      ],
+      "id": "e051",
+      "cat": "thumbnail",
+      "seed": 20151,
+      "prompt": "YouTube thumbnail: a man with a surprised expression on the left, large yellow text with black outline reading \"BẤT NGỜ!\" on the right, red gradient background, high contrast",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e8ee634b-7635-5273-8636-227b3efe2c2f",
+      "ok": true,
+      "giay": 110.3,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.77,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5356897
+      ],
+      "anh": [
+        "G9_ben_100_e052_0.png"
+      ],
+      "id": "e052",
+      "cat": "thumbnail",
+      "seed": 20152,
+      "prompt": "YouTube tech thumbnail: a graphics card placed diagonally in the centre of the frame, blue light rays, the text \"RTX 3090\" in the top left corner, dark background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f1ef48c9-6d99-5c31-86ee-088da04be2de",
+      "ok": true,
+      "giay": 109.7,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.85,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5460322
+      ],
+      "anh": [
+        "G9_ben_100_e053_0.png"
+      ],
+      "id": "e053",
+      "cat": "thumbnail",
+      "seed": 20153,
+      "prompt": "Cooking thumbnail: an appetising plate of food filling the right half, the smiling face of a chef on the left half, a red arrow pointing at the plate",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "45ad37bc-8021-5481-9c3d-7b218c4d3897",
+      "ok": true,
+      "giay": 110.1,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.71,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5268290
+      ],
+      "anh": [
+        "G9_ben_100_e054_0.png"
+      ],
+      "id": "e054",
+      "cat": "architecture",
+      "seed": 20154,
+      "prompt": "Minimalist living room interior, natural light from a large window, grey sofa, light wooden floor, clean straight lines",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "2e3c46b2-f577-5ae8-911c-36615935cba9",
+      "ok": true,
+      "giay": 109.8,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.88,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5394371
+      ],
+      "anh": [
+        "G9_ben_100_e055_0.png"
+      ],
+      "id": "e055",
+      "cat": "architecture",
+      "seed": 20155,
+      "prompt": "The facade of a modern glass office building seen from below, blue sky with clouds, perfectly straight vertical lines with no distortion",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "04c8b296-4cec-5f61-aeae-08b98e166042",
+      "ok": true,
+      "giay": 109.9,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18416,
+        "vram_trung_vi_mb": 18354,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.38,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5989629
+      ],
+      "anh": [
+        "G9_ben_100_e056_0.png"
+      ],
+      "id": "e056",
+      "cat": "anime",
+      "seed": 20156,
+      "prompt": "Anime style female character, long blue hair, school uniform, standing in front of a school gate, detailed painted background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "d281c18f-4ef7-50ad-8c1b-2ce23cfe15d6",
+      "ok": true,
+      "giay": 109.8,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.28,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5737498
+      ],
+      "anh": [
+        "G9_ben_100_e057_0.png"
+      ],
+      "id": "e057",
+      "cat": "anime",
+      "seed": 20157,
+      "prompt": "Japanese animated film style scene: a small town at sunset, layered clouds, warm colours",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "af3d0bf4-a7ac-58cc-a363-c4d8ec9b7f88",
+      "ok": true,
+      "giay": 109.3,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.96,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5952766
+      ],
+      "anh": [
+        "G9_ben_100_e058_0.png"
+      ],
+      "id": "e058",
+      "cat": "fantasy",
+      "seed": 20158,
+      "prompt": "A giant stone dragon sleeping on a snow covered mountain peak, fog below, cold moonlight",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "4371a870-57a3-50a1-8c5b-33ea57173b39",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.54,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5989351
+      ],
+      "anh": [
+        "G9_ben_100_e059_0.png"
+      ],
+      "id": "e059",
+      "cat": "fantasy",
+      "seed": 20159,
+      "prompt": "An endless ancient library, towering bookshelves, a spiral staircase, dust motes floating in shafts of light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e981b697-0d30-5918-a2f6-0a83f9428956",
+      "ok": true,
+      "giay": 109.6,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.44,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5346160
+      ],
+      "anh": [
+        "G9_ben_100_e060_0.png"
+      ],
+      "id": "e060",
+      "cat": "hard-composition",
+      "seed": 20160,
+      "prompt": "A person holding a sign with both hands, the sign reads \"LTT STUDIOS\", standing in the middle of a crowded square, the text on the sign must be clearly legible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "db53804a-f929-54f7-9f5b-b173dad804e2",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.67,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5559299
+      ],
+      "anh": [
+        "G9_ben_100_e061_0.png"
+      ],
+      "id": "e061",
+      "cat": "portrait",
+      "seed": 20161,
+      "prompt": "Portrait of a Vietnamese woman around 30 years old, morning window light, softly blurred background, natural expression, realistic photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "7c1cd58f-ef70-56de-a0b1-873706635b3f",
+      "ok": true,
+      "giay": 109.7,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.09,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5400007
+      ],
+      "anh": [
+        "G9_ben_100_e062_0.png"
+      ],
+      "id": "e062",
+      "cat": "portrait",
+      "seed": 20162,
+      "prompt": "Close-up portrait of an elderly man, heavily wrinkled skin, strong side lighting with high contrast, black and white photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "6cdefeb3-9193-5dc5-b979-4733b9cdb31d",
+      "ok": true,
+      "giay": 109.6,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.78,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4844755
+      ],
+      "anh": [
+        "G9_ben_100_e063_0.png"
+      ],
+      "id": "e063",
+      "cat": "portrait",
+      "seed": 20163,
+      "prompt": "Professional corporate headshot, white dress shirt, plain grey background, even studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "b1e911ae-6c24-5f03-af50-950ba4510a88",
+      "ok": true,
+      "giay": 109.3,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 369.89,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5398563
+      ],
+      "anh": [
+        "G9_ben_100_e064_0.png"
+      ],
+      "id": "e064",
+      "cat": "photoreal",
+      "seed": 20164,
+      "prompt": "A steaming bowl of Vietnamese pho with rare beef slices on a wooden table, spring onions and fresh chilli beside it, natural morning light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "c8d486dd-0550-506d-8473-91c29c1bda80",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18384,
+        "vram_trung_vi_mb": 18352,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 74,
+        "power_dinh_w": 370.25,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5665504
+      ],
+      "anh": [
+        "G9_ben_100_e065_0.png"
+      ],
+      "id": "e065",
+      "cat": "photoreal",
+      "seed": 20165,
+      "prompt": "A calico cat sleeping on a windowsill, afternoon sunlight through the curtains, individual fur strands clearly visible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "4037da3d-8460-5bbd-bc9e-ffafeadfda49",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18322,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.99,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6114619
+      ],
+      "anh": [
+        "G9_ben_100_e066_0.png"
+      ],
+      "id": "e066",
+      "cat": "photoreal",
+      "seed": 20166,
+      "prompt": "A Hanoi street after rain, the wet road reflecting the lights, a motorbike passing and leaving a light trail",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "ec99a368-75ee-51c9-ad1b-49f68c48246c",
+      "ok": true,
+      "giay": 109.3,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.77,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4827746
+      ],
+      "anh": [
+        "G9_ben_100_e067_0.png"
+      ],
+      "id": "e067",
+      "cat": "cinematic",
+      "seed": 20167,
+      "prompt": "Cinematic shot: a person standing at the end of a long dark corridor, blue neon light from both sides, thin haze, wide aspect ratio",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "6f9a663a-f31e-552d-a831-ab9a4a3d5bee",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.88,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5860696
+      ],
+      "anh": [
+        "G9_ben_100_e068_0.png"
+      ],
+      "id": "e068",
+      "cat": "cinematic",
+      "seed": 20168,
+      "prompt": "Sunset over terraced rice fields, backlit, the silhouette of a person carrying rice on a shoulder pole against an orange sky",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "a8f4ae76-41d2-58cf-91b1-e6f562821875",
+      "ok": true,
+      "giay": 109.6,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.1,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5540887
+      ],
+      "anh": [
+        "G9_ben_100_e069_0.png"
+      ],
+      "id": "e069",
+      "cat": "multi-person",
+      "seed": 20169,
+      "prompt": "Four friends sitting around a sidewalk cafe table, laughing and talking, every face clearly visible, natural candid photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "ed9a638f-4052-51de-aa4e-2a132b0e4d5f",
+      "ok": true,
+      "giay": 110.2,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18354,
+        "vram_trung_vi_mb": 18290,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.91,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5512205
+      ],
+      "anh": [
+        "G9_ben_100_e070_0.png"
+      ],
+      "id": "e070",
+      "cat": "multi-person",
+      "seed": 20170,
+      "prompt": "A women's volleyball team posing for a group photo after a match, eight players in two rows, holding a trophy",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "1cbff892-b1d6-562e-ab30-b56fda3d27a6",
+      "ok": true,
+      "giay": 109.8,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18389,
+        "vram_trung_vi_mb": 18322,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.74,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5360388
+      ],
+      "anh": [
+        "G9_ben_100_e071_0.png"
+      ],
+      "id": "e071",
+      "cat": "object-placement",
+      "seed": 20171,
+      "prompt": "Three books stacked on the left, a teacup on the right, a pair of eyeglasses resting on top of the highest book, wooden table, 45 degree overhead view",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "17c6d3f2-08fa-5f78-ac9b-414cf0c0808f",
+      "ok": true,
+      "giay": 109.2,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18357,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.74,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5422345
+      ],
+      "anh": [
+        "G9_ben_100_e072_0.png"
+      ],
+      "id": "e072",
+      "cat": "object-placement",
+      "seed": 20172,
+      "prompt": "A red apple INSIDE a clear glass bowl, and the bowl is placed ON TOP OF an open newspaper",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "8cf301cf-b6ae-5015-88a3-963afa6d4e4b",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18389,
+        "vram_trung_vi_mb": 18293,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.39,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4860864
+      ],
+      "anh": [
+        "G9_ben_100_e073_0.png"
+      ],
+      "id": "e073",
+      "cat": "product",
+      "seed": 20173,
+      "prompt": "Product photo of a clear glass skincare serum bottle, clean white background, soft reflection under the base, soft studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f629ea94-22c5-5ec5-8967-27933e7d80a2",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18421,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.84,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5220454
+      ],
+      "anh": [
+        "G9_ben_100_e074_0.png"
+      ],
+      "id": "e074",
+      "cat": "product",
+      "seed": 20174,
+      "prompt": "Black wireless earbuds beside their charging case with the lid open, grey concrete background, raking side light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0b1bb448-de44-5754-a469-9f42c63091d6",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18389,
+        "vram_trung_vi_mb": 18357,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.91,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4953537
+      ],
+      "anh": [
+        "G9_ben_100_e075_0.png"
+      ],
+      "id": "e075",
+      "cat": "product",
+      "seed": 20175,
+      "prompt": "A Vietnamese iced milk coffee in a plastic takeaway cup, blank unlabelled sticker, blurred cafe background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "49b28725-f7c8-5422-9181-86ebc04c8bd8",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18389,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.71,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5441782
+      ],
+      "anh": [
+        "G9_ben_100_e076_0.png"
+      ],
+      "id": "e076",
+      "cat": "text-vi",
+      "seed": 20176,
+      "prompt": "A restaurant signboard with large red letters reading \"CƠM TẤM SƯỜN BÌ\" on a yellow background, crisp lettering, correct Vietnamese diacritics",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "47b0abae-ac98-5d91-a686-aed26e28055f",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18325,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.63,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4788904
+      ],
+      "anh": [
+        "G9_ben_100_e077_0.png"
+      ],
+      "id": "e077",
+      "cat": "text-vi",
+      "seed": 20177,
+      "prompt": "A promotional poster with the words \"GIẢM 50% HÔM NAY\" in the centre and \"Áp dụng đến 30/09\" below it, tidy layout",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "610e8eb9-0726-5ff5-9785-a5b402d68944",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18357,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.68,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4954587
+      ],
+      "anh": [
+        "G9_ben_100_e078_0.png"
+      ],
+      "id": "e078",
+      "cat": "text-vi",
+      "seed": 20178,
+      "prompt": "A dark blue book cover, the title \"NHỮNG NGÀY THƠ ẤU\" in white letters in the centre, the author name smaller underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "5279c28b-c2d9-5a0c-b0ed-43d8ca7e27f8",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18357,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.96,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5030268
+      ],
+      "anh": [
+        "G9_ben_100_e079_0.png"
+      ],
+      "id": "e079",
+      "cat": "text-en",
+      "seed": 20179,
+      "prompt": "A wooden shop sign reading \"OPEN 24 HOURS\" in clean sans-serif letters, warm bulb lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "c19f0bec-60df-5866-90da-6888e436d800",
+      "ok": true,
+      "giay": 110.1,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18386,
+        "vram_trung_vi_mb": 18324,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.93,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4838333
+      ],
+      "anh": [
+        "G9_ben_100_e080_0.png"
+      ],
+      "id": "e080",
+      "cat": "text-en",
+      "seed": 20180,
+      "prompt": "A whiteboard with the handwritten words \"Ship it on Friday\" and a small arrow drawn underneath",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "20edc1b4-366a-51f9-9b44-b794febad1d2",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18418,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.06,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5041929
+      ],
+      "anh": [
+        "G9_ben_100_e081_0.png"
+      ],
+      "id": "e081",
+      "cat": "thumbnail",
+      "seed": 20181,
+      "prompt": "YouTube thumbnail: a man with a surprised expression on the left, large yellow text with black outline reading \"BẤT NGỜ!\" on the right, red gradient background, high contrast",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "e894effa-20bd-5582-adcf-35e1efd60139",
+      "ok": true,
+      "giay": 109.3,
+      "do_duoc": {
+        "so_mau": 102,
+        "vram_dinh_mb": 18421,
+        "vram_trung_vi_mb": 18355,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.04,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5333914
+      ],
+      "anh": [
+        "G9_ben_100_e082_0.png"
+      ],
+      "id": "e082",
+      "cat": "thumbnail",
+      "seed": 20182,
+      "prompt": "YouTube tech thumbnail: a graphics card placed diagonally in the centre of the frame, blue light rays, the text \"RTX 3090\" in the top left corner, dark background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "1ab904b1-bae4-529c-a7d2-908c3f9ad892",
+      "ok": true,
+      "giay": 108.9,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18389,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.58,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5560825
+      ],
+      "anh": [
+        "G9_ben_100_e083_0.png"
+      ],
+      "id": "e083",
+      "cat": "thumbnail",
+      "seed": 20183,
+      "prompt": "Cooking thumbnail: an appetising plate of food filling the right half, the smiling face of a chef on the left half, a red arrow pointing at the plate",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "254972ba-9143-5886-9e43-747ac1f25a49",
+      "ok": true,
+      "giay": 108.8,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18325,
+        "vram_trung_vi_mb": 18293,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.83,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5305268
+      ],
+      "anh": [
+        "G9_ben_100_e084_0.png"
+      ],
+      "id": "e084",
+      "cat": "architecture",
+      "seed": 20184,
+      "prompt": "Minimalist living room interior, natural light from a large window, grey sofa, light wooden floor, clean straight lines",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "218866a9-6c67-59af-8337-52eaf33a790d",
+      "ok": true,
+      "giay": 109.6,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18421,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.55,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5316598
+      ],
+      "anh": [
+        "G9_ben_100_e085_0.png"
+      ],
+      "id": "e085",
+      "cat": "architecture",
+      "seed": 20185,
+      "prompt": "The facade of a modern glass office building seen from below, blue sky with clouds, perfectly straight vertical lines with no distortion",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "9711ad6f-d412-56e1-9d8c-fa506fd03ccf",
+      "ok": true,
+      "giay": 110.1,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18357,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.92,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5934844
+      ],
+      "anh": [
+        "G9_ben_100_e086_0.png"
+      ],
+      "id": "e086",
+      "cat": "anime",
+      "seed": 20186,
+      "prompt": "Anime style female character, long blue hair, school uniform, standing in front of a school gate, detailed painted background",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "60ced1b5-5f72-5a17-ad63-839df47cd49e",
+      "ok": true,
+      "giay": 110.7,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18357,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.94,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5735194
+      ],
+      "anh": [
+        "G9_ben_100_e087_0.png"
+      ],
+      "id": "e087",
+      "cat": "anime",
+      "seed": 20187,
+      "prompt": "Japanese animated film style scene: a small town at sunset, layered clouds, warm colours",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "0af64ca0-ed99-56a5-a982-320a445185be",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18389,
+        "vram_trung_vi_mb": 18325,
+        "nhiet_dinh_c": 74,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.3,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5993748
+      ],
+      "anh": [
+        "G9_ben_100_e088_0.png"
+      ],
+      "id": "e088",
+      "cat": "fantasy",
+      "seed": 20188,
+      "prompt": "A giant stone dragon sleeping on a snow covered mountain peak, fog below, cold moonlight",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "23b39b37-4cb3-53d9-b110-14e6e1fa9c55",
+      "ok": true,
+      "giay": 108.0,
+      "do_duoc": {
+        "so_mau": 101,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 69,
+        "nhiet_trung_vi_c": 66,
+        "power_dinh_w": 369.52,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6070147
+      ],
+      "anh": [
+        "G9_ben_100_e089_0.png"
+      ],
+      "id": "e089",
+      "cat": "fantasy",
+      "seed": 20189,
+      "prompt": "An endless ancient library, towering bookshelves, a spiral staircase, dust motes floating in shafts of light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "dc1b00bf-f870-5785-871d-c6dc38f6a6aa",
+      "ok": true,
+      "giay": 109.5,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18383,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 71,
+        "nhiet_trung_vi_c": 70,
+        "power_dinh_w": 370.04,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5312445
+      ],
+      "anh": [
+        "G9_ben_100_e090_0.png"
+      ],
+      "id": "e090",
+      "cat": "hard-composition",
+      "seed": 20190,
+      "prompt": "A person holding a sign with both hands, the sign reads \"LTT STUDIOS\", standing in the middle of a crowded square, the text on the sign must be clearly legible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "bd466b9f-83b5-5097-8b5e-9c4473a882a7",
+      "ok": true,
+      "giay": 109.0,
+      "do_duoc": {
+        "so_mau": 102,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 72,
+        "nhiet_trung_vi_c": 71,
+        "power_dinh_w": 370.2,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5266085
+      ],
+      "anh": [
+        "G9_ben_100_e091_0.png"
+      ],
+      "id": "e091",
+      "cat": "portrait",
+      "seed": 20191,
+      "prompt": "Portrait of a Vietnamese woman around 30 years old, morning window light, softly blurred background, natural expression, realistic photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "8ed19691-128b-5c0a-ad47-3df6f63451ea",
+      "ok": true,
+      "giay": 110.9,
+      "do_duoc": {
+        "so_mau": 104,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 72,
+        "power_dinh_w": 370.19,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5414351
+      ],
+      "anh": [
+        "G9_ben_100_e092_0.png"
+      ],
+      "id": "e092",
+      "cat": "portrait",
+      "seed": 20192,
+      "prompt": "Close-up portrait of an elderly man, heavily wrinkled skin, strong side lighting with high contrast, black and white photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "f13361c6-8ea9-5ffe-a51b-f24461d24713",
+      "ok": true,
+      "giay": 109.1,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18255,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 72,
+        "power_dinh_w": 370.28,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4865819
+      ],
+      "anh": [
+        "G9_ben_100_e093_0.png"
+      ],
+      "id": "e093",
+      "cat": "portrait",
+      "seed": 20193,
+      "prompt": "Professional corporate headshot, white dress shirt, plain grey background, even studio lighting",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "39bf2d8e-865f-52ab-b562-aafd68f9f417",
+      "ok": true,
+      "giay": 109.2,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18287,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 72,
+        "power_dinh_w": 369.92,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5475834
+      ],
+      "anh": [
+        "G9_ben_100_e094_0.png"
+      ],
+      "id": "e094",
+      "cat": "photoreal",
+      "seed": 20194,
+      "prompt": "A steaming bowl of Vietnamese pho with rare beef slices on a wooden table, spring onions and fresh chilli beside it, natural morning light",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "8b25674a-ceb4-5308-a33e-4cc0e816694f",
+      "ok": true,
+      "giay": 109.1,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 370.02,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5449817
+      ],
+      "anh": [
+        "G9_ben_100_e095_0.png"
+      ],
+      "id": "e095",
+      "cat": "photoreal",
+      "seed": 20195,
+      "prompt": "A calico cat sleeping on a windowsill, afternoon sunlight through the curtains, individual fur strands clearly visible",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "5b9ac3d0-927c-5f79-91af-d9b2aca01a88",
+      "ok": true,
+      "giay": 108.9,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18319,
+        "vram_trung_vi_mb": 18255,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.68,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        6170723
+      ],
+      "anh": [
+        "G9_ben_100_e096_0.png"
+      ],
+      "id": "e096",
+      "cat": "photoreal",
+      "seed": 20196,
+      "prompt": "A Hanoi street after rain, the wet road reflecting the lights, a motorbike passing and leaving a light trail",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "25414356-dc52-5cd0-8eb4-c9dc5d3c33c8",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18319,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.61,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        4801312
+      ],
+      "anh": [
+        "G9_ben_100_e097_0.png"
+      ],
+      "id": "e097",
+      "cat": "cinematic",
+      "seed": 20197,
+      "prompt": "Cinematic shot: a person standing at the end of a long dark corridor, blue neon light from both sides, thin haze, wide aspect ratio",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "018de418-0f68-5af1-ba6f-2fb407b59cdf",
+      "ok": true,
+      "giay": 109.9,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.78,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004",
+          "0x0000000000000024"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5593947
+      ],
+      "anh": [
+        "G9_ben_100_e098_0.png"
+      ],
+      "id": "e098",
+      "cat": "cinematic",
+      "seed": 20198,
+      "prompt": "Sunset over terraced rice fields, backlit, the silhouette of a person carrying rice on a shoulder pole against an orange sky",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "fa1b7d1b-5cc7-54aa-ad6f-0060a1bb861c",
+      "ok": true,
+      "giay": 109.4,
+      "do_duoc": {
+        "so_mau": 103,
+        "vram_dinh_mb": 18351,
+        "vram_trung_vi_mb": 18255,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.6,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5649990
+      ],
+      "anh": [
+        "G9_ben_100_e099_0.png"
+      ],
+      "id": "e099",
+      "cat": "multi-person",
+      "seed": 20199,
+      "prompt": "Four friends sitting around a sidewalk cafe table, laughing and talking, every face clearly visible, natural candid photograph",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    },
+    {
+      "prompt_id": "538f01f1-1b9d-5115-8ca5-2e04a831badc",
+      "ok": true,
+      "giay": 109.7,
+      "do_duoc": {
+        "so_mau": 102,
+        "vram_dinh_mb": 18384,
+        "vram_trung_vi_mb": 18287,
+        "nhiet_dinh_c": 73,
+        "nhiet_trung_vi_c": 73,
+        "power_dinh_w": 369.5,
+        "throttle_quan_sat": [
+          "0x0000000000000001",
+          "0x0000000000000004"
+        ]
+      },
+      "so_anh": 1,
+      "byte_anh": [
+        5470039
+      ],
+      "anh": [
+        "G9_ben_100_e100_0.png"
+      ],
+      "id": "e100",
+      "cat": "multi-person",
+      "seed": 20200,
+      "prompt": "A women's volleyball team posing for a group photo after a match, eight players in two rows, holding a trophy",
+      "token": {
+        "token_khung": 3600,
+        "token_tham_chieu": 0,
+        "so_anh_tham_chieu": 0,
+        "tong_token": 3600,
+        "tran_da_do": 11412
+      }
+    }
+  ],
+  "tiep_tuc_tu": "2026-08-23T22:38:47+00:00",
+  "tom_tat": {
+    "so_chay": 100,
+    "so_thanh_cong": 100,
+    "giay_trung_vi": 109.7,
+    "giay_min": 108.0,
+    "giay_max": 110.9,
+    "vram_dinh_mb": 18450,
+    "nhiet_dinh_c": 74,
+    "throttle": [
+      "0x0000000000000001",
+      "0x0000000000000004",
+      "0x0000000000000024"
+    ]
+  },
+  "ram_trong_sau_gb": 93.6
+}

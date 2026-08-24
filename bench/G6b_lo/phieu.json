@@ -1,0 +1,175 @@
+{
+  "_huong_dan": [
+    "Voi moi ma: mo anh <ma>_trai va <ma>_phai trong thu muc 'anh'.",
+    "Dien 'chon' = trai | phai | hoa. Khong doan — thay khong khac thi ghi hoa.",
+    "KHONG mo tep KHONG_MO_TRUOC_KHI_CHAM.json truoc khi cham xong."
+  ],
+  "so_cap": 33,
+  "phieu": [
+    {
+      "ma": "c001",
+      "chon": "trai",
+      "ghi_chu": "trai gon gang hon, it loi hinh hoc"
+    },
+    {
+      "ma": "c002",
+      "chon": "trai",
+      "ghi_chu": "chenh lech nho"
+    },
+    {
+      "ma": "c003",
+      "chon": "trai",
+      "ghi_chu": "chu 'GIAM' dung; phai ra 'GIAM' sai dau"
+    },
+    {
+      "ma": "c004",
+      "chon": "phai",
+      "ghi_chu": "phai: COM TAM SUON BI + DAC BIET NGON dung; trai chu bia"
+    },
+    {
+      "ma": "c005",
+      "chon": "trai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c006",
+      "chon": "phai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c007",
+      "chon": "trai",
+      "ghi_chu": "nghi cap bay"
+    },
+    {
+      "ma": "c008",
+      "chon": "phai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c009",
+      "chon": "trai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c010",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c011",
+      "chon": "trai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c012",
+      "chon": "phai",
+      "ghi_chu": "phai: NHUNG NGAY THO AU / NGUYEN HONG dung; trai chu bia"
+    },
+    {
+      "ma": "c013",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c014",
+      "chon": "trai",
+      "ghi_chu": "trai: ULYSSES/ODYSSEY/MOBY DICK dung; phai chu bia"
+    },
+    {
+      "ma": "c015",
+      "chon": "phai",
+      "ghi_chu": "phai: chu Nhat tren bang truong dung"
+    },
+    {
+      "ma": "c016",
+      "chon": "trai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c017",
+      "chon": "trai",
+      "ghi_chu": "trai 'BAT NGO' dung; phai 'BAT NGO' sai dau"
+    },
+    {
+      "ma": "c018",
+      "chon": "trai",
+      "ghi_chu": "trai: RTX 3090 / GEFORCE RTX dung; phai ra 'ROUTUBE'"
+    },
+    {
+      "ma": "c019",
+      "chon": "phai",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c020",
+      "chon": "trai",
+      "ghi_chu": "trai: vet lau tren bang + khay but that; phai nhieu trong net mui ten"
+    },
+    {
+      "ma": "c021",
+      "chon": "phai",
+      "ghi_chu": "trai: tai nghe bien thanh khoi vo dinh"
+    },
+    {
+      "ma": "c022",
+      "chon": "phai",
+      "ghi_chu": "phai: tieu de ULTIMATE ROAST CHICKEN RECIPE! dung, cat nen sach"
+    },
+    {
+      "ma": "c023",
+      "chon": "phai",
+      "ghi_chu": "phai: PHO GIA TRUYEN / BIA HOI HA NOI dung ca dau; trai chu bia"
+    },
+    {
+      "ma": "c024",
+      "chon": "hoa",
+      "ghi_chu": "NGHI BAY: hai anh khong cung mot de bai"
+    },
+    {
+      "ma": "c025",
+      "chon": "phai",
+      "ghi_chu": "phai: chat anh kien truc chup that"
+    },
+    {
+      "ma": "c026",
+      "chon": "hoa",
+      "ghi_chu": "NGHI BAY: anh phai trung voi c020_trai, ghep voi de bai khac"
+    },
+    {
+      "ma": "c027",
+      "chon": "phai",
+      "ghi_chu": "chu dung ca hai; phai hon o dam dong, ban tay, chieu sau"
+    },
+    {
+      "ma": "c028",
+      "chon": "trai",
+      "ghi_chu": "phai: chu ao bia, so ao lap, 11 nguoi cung mot khuon mat"
+    },
+    {
+      "ma": "c029",
+      "chon": "trai",
+      "ghi_chu": "phai: hinh hoc ruong bac thang va muc nuoc mau thuan"
+    },
+    {
+      "ma": "c030",
+      "chon": "trai",
+      "ghi_chu": "chenh lech nho; phai treo bien vo ly"
+    },
+    {
+      "ma": "c031",
+      "chon": "trai",
+      "ghi_chu": "phai: thua tai va thua chan truoc"
+    },
+    {
+      "ma": "c032",
+      "chon": "phai",
+      "ghi_chu": "phai: chat phim 35mm, DoF roi dung; trai min sap tung mang"
+    },
+    {
+      "ma": "c033",
+      "chon": "trai",
+      "ghi_chu": "phai: hai canh khac mau, nguon sang mau thuan voi trang, ti le vo"
+    }
+  ]
+}

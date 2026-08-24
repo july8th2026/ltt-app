@@ -143,6 +143,22 @@ def main() -> int:
                     # Mat rang buoc nay = hai cong tat cung pham vi/doi tuong,
                     # nen "tat roi hay chua" khong con mot cau tra loi.
                     "uq_api_kill_subject",
+                    # ── May chu ao (H39) ────────────────────────────────────
+                    # Bon rang buoc nay deu bao ve mot TAI NGUYEN DUY NHAT tren
+                    # ha tang that, nen mat chung khong bao loi ngay - no bao
+                    # loi o cho khac, muon hon, va kho truy hon nhieu:
+                    #
+                    #   vmid trung    -> hai ban ghi tro ve CUNG MOT may that;
+                    #                    xoa may cua khach A la xoa may khach B.
+                    #   IP trung      -> hai may cung dia chi, mang im lang hong.
+                    #   IP hai chu    -> mot dia chi gan cho hai instance.
+                    #   cong NAT trung-> mot cong ngoai dan ve hai may.
+                    "uq_vps_instance_vmid",
+                    "uq_vps_ip_dia_chi",
+                    "uq_vps_ip_instance",
+                    "uq_vps_port_map_cong",
+                    # Ten gateway trung -> cau hinh mang tro nham node.
+                    "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
                     # cong cu, va mot dau gia tren hoa don khong con tro ve
                     # duoc mot dong duy nhat.

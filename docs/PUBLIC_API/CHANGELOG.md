@@ -29,6 +29,80 @@ Toàn bộ bề mặt `v1` được xây trong Public API V2 + Extension Pack v�
 cho khách bên ngoài**, nên không có mục BREAKING nào ở đây: chưa có tích hợp nào
 để phá. Danh sách dưới đây là những gì `v1` **hứa** kể từ khi đóng băng.
 
+### ADDED — 2026-08-24 · `image.ltt` mở cho khách, và giá **giảm một phần ba**
+
+**Cái gì đổi.** Tool `image.ltt` (model ảnh chạy trên máy của chúng tôi) nay có
+trong `LTT_PUBLIC_API_TOOLS` và gọi được. Cùng lúc, giá giảm:
+
+| | Trước | Nay |
+|---|---|---|
+| Ảnh từ mô tả (`t2i`) | 5 credit | **3 credit** |
+| Ảnh có ảnh tham chiếu (`edit`, `subject`) | 15 credit | **9 credit** |
+
+Phiên bản bảng giá: `ltt-image-2026-08-24b`. Giá công bố ở `/gia-api`, và kết quả
+job kèm `phien_ban_gia` để bạn đối chiếu đúng bảng đã sinh ra hoá đơn đó.
+
+**Có phá vỡ tương thích không.** Không. Thêm một tool và **giảm** giá.
+
+**Phải làm gì.** Không phải làm gì. Nhưng hai điều nên biết trước khi dùng:
+
+1. **Bạn trả cho ảnh nhận được, không phải ảnh đã xin.** Xin `count: 4` mà chỉ
+   sinh được 2 thì trả tiền 2 — phần chênh hoàn ngay khi job xong. Trước bản này
+   trường hợp đó **thu trọn phần đã giữ**; đó là một lỗi, và nó đã được sửa.
+2. **`subject` giữ được *ai/cái gì*, không dựng lại được *đang làm gì*.** Model
+   chép cả tư thế của ảnh tham chiếu. Prompt kiểu *"người ở ảnh 1 đang bế con mèo
+   ở ảnh 2"* sẽ ra đúng người và đúng con mèo, nhưng có thể giữ nguyên tư thế cũ.
+
+⚠️ **Nó không phải model đẹp nhất chúng tôi có, và chúng tôi không nói thế.** Nó
+là model **của nhà**: rẻ hơn, chạy trên phần cứng của chúng tôi. Ảnh cần **chữ
+tiếng Việt có dấu** thì dùng `image.thumbnail` — `image.ltt` vẽ sai dấu, và đó là
+giới hạn đã biết chứ không phải lỗi sẽ sửa.
+
+---
+
+### ADDED — 2026-08-23 · hai cửa streaming cho CLI viết mã
+
+**Cái gì đổi.** Bề mặt có thêm **hai route** và chế độ thi hành thứ tư,
+`STREAM` (Q107):
+
+| Route | Giao thức | Client |
+|---|---|---|
+| `POST /api/v1/messages` | Anthropic Messages (SSE) | Claude Code CLI, Claude Desktop |
+| `POST /api/v1/responses` | OpenAI Responses (SSE) | Codex CLI, tiện ích Codex VS Code |
+
+`GET /api/v1/capabilities` nay liệt kê thêm hai khu vực `messages` và `responses`.
+
+**Có phá vỡ tương thích không.** **Không.** Client không hỏi tới thì không thấy,
+và cả hai vẫn đứng sau đúng ba cổng của Q92.
+
+**Phải làm gì.** Trỏ công cụ của bạn vào — **hai địa chỉ khác nhau bốn ký tự**:
+
+```
+Codex          base_url = https://app.lttstudios.com/api/v1   (no ghep them /responses)
+Claude Code    ANTHROPIC_BASE_URL = https://app.lttstudios.com/api   (no ghep them /v1/messages)
+```
+
+Cấu hình sẵn cho cả ba công cụ ở **`/developers/cli`**.
+
+**Ba điều khác cửa `chat/completions`:**
+
+1. **Bắt buộc `"stream": true`.** Muốn một cục JSON thì dùng
+   `POST /api/v1/chat/completions`.
+2. **Không đòi `Idempotency-Key`.** Đo thật: không CLI nào gửi nó — Codex không,
+   Claude Code không, SDK OpenAI tự sinh rồi vứt đi. Đòi nó nghĩa là tính năng
+   không tồn tại.
+3. **Không có trần `max_tokens` theo thời gian.** Trần 4.095 của cửa đồng bộ
+   sinh ra từ giới hạn 100 giây của Cloudflare, mà đồng hồ đó đếm thời gian chờ
+   **byte đầu tiên** — luồng đang chảy thì không bị đếm.
+
+⚠️ **Tính tiền khác, và bạn nên biết trước.** Không có khoá idempotency thì thứ
+giữ tiền là **thu theo token đã thật sự sinh ra**: bỏ luồng giữa chừng thì trả
+đúng phần đã sinh, và **thử lại là sinh mới, tức là trả thêm**. Đó là cách OpenAI
+và Anthropic tính. Hàng rào còn lại là hạn mức chi tiêu ngày và trần ngân sách
+của chính bạn.
+
+---
+
 ### ADDED — 2026-08-23 · cửa đồng bộ `POST /api/v1/chat/completions`
 
 **Cái gì đổi.** Bề mặt có thêm một route và một **chế độ thi hành thứ ba**,

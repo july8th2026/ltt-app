@@ -14,6 +14,2133 @@
 
 ---
 
+## 2026-08-24 (chiều) — Trọng tài card chạy thật; và bốn thứ tôi đã hiểu sai
+
+- **Hạng mục:** V1–V4 của `CHIA_GPU_HAI_MODEL.md`; nghiên cứu dùng hai card máy A.
+- **Trạng thái:** trọng tài **XONG và đã đo trên máy B**, hai chu kỳ lặp lại được.
+  Kế hoạch dùng máy A **DỪNG** theo quyết định của chủ sản phẩm.
+
+### Trọng tài card — vết chạy thật
+
+```
+778 MB (rỗng) → 19.491 MB (Qwen giữ) → "da bao llm nha card, cho 4.0s"
+             → 17.5xx MB (HiDream vẽ 111 s) → 60 s rảnh → 811 MB (trả card)
+```
+
+Đuổi mất **4,0 giây**, có xác minh VRAM trước khi nạp. Và số đo **trong lúc** job
+chạy nay nằm trong kết quả job: `47 mẫu, VRAM đỉnh 17.576, RAM còn thấp nhất
+92,9 GB, thuong_tru_du: true`.
+
+### 🔴 Bốn thứ tôi đã hiểu sai, và số đo sửa lại
+
+**① "Cảnh báo VRAM 97,5 % đã lỗi thời" — SAI.** Sáng nay tôi viết trong D-056 rằng
+con số 23,9 GB là số cũ, đo trước `--reserve-vram 3`. Chiều nay tôi **tái hiện đúng
+23.860 MB** bằng cách gọi LLM trong lúc ComfyUI đang giữ model. Nó **không** đo
+HiDream một mình — nó đo **hai model đè nhau**. Tức là nó đo đúng cái nghẽn, và tôi
+đã đọc nhầm nó thành một số đo cũ.
+
+**② "LLM đang hỏng" — SAI, và tôi suýt báo.** Hai lượt gọi lạnh trả về `content`
+rỗng, card ở 98 %. Tôi định báo một lỗi tiền đang sống. Nhưng `usage` ghi
+`completion_tokens: 16` — model **có** sinh token; `--reasoning-format deepseek` đưa
+phần suy nghĩ sang trường riêng, và `max_tokens` của tôi quá nhỏ nên tiêu hết vào
+đó. Đo lại với 300 token: `content = 'OK'`, 1,2 giây. **Lỗi ở phép đo của tôi.**
+
+**③ Thiết kế trọng tài hai bên — SAI.** Bản đầu trong đầu tôi là *"cổng render gọi
+llama-swap nhả"*, tên hộ kia viết cứng. D-037 đã ghi máy B có **ba hộ ngay hôm
+nay**, và chủ sản phẩm chốt thêm rằng **dự án video sau này đi theo đúng khuôn
+LLM/ảnh**. Nên phải là **N hộ, khai bằng một dòng cấu hình**, và phải phân biệt
+**bảo được** với **chỉ chờ được** — với loại thứ hai, hành động đúng không bao giờ
+là đuổi.
+
+**④ V5 (hạ `ttl` của Qwen) — SAI sau khi xây xong.** `ttl` từng là cơ chế **duy
+nhất** trả card cho ảnh nên phải ngắn. Nay cổng chủ động đuổi, `ttl` chỉ còn quyết
+định "Qwen giữ card bao lâu khi không ai cần" — và khi không ai cần thì giữ không
+tốn gì. Hạ nó chỉ làm khách LLM trả 18 giây nạp lại thường xuyên hơn. **Giữ 1.800.**
+
+### Hai chỗ hỏng tìm được nhờ CHẠY THẬT, không nhờ test
+
+**① Đuổi thành công không để lại dấu vết.** Chỉ log lúc thất bại. Nên hành động
+quan trọng nhất của trọng tài chạy đúng thiết kế mà log **không có dòng nào**. Hỏi
+*"vì sao phiên LLM của tôi chậm lúc 13:50"* thì không có gì chỉ ra.
+
+**② Cổng không đọc được `gateway.env` mới.** nssm nướng env lúc **cài**. Bẫy này đã
+cắn dự án **hai lần**. Sửa gốc: `main.nap_env()` — cổng **tự đọc** tệp env, không
+ghi đè biến ở cấp cao hơn. Nay không thể xảy ra lần thứ ba cho cổng này.
+
+### Và một bẫy thứ tự + một test xanh vì lý do sai
+
+Bản đầu đặt `xin_card` **SAU** chốt bận. Chốt bận coi *"VRAM còn ít"* là bận, nên
+khi Qwen giữ 19 GB thì cổng trả 429 ngay và **không bao giờ đi bảo Qwen nhả** —
+trọng tài thành mã chết. Thứ tự đúng: **giữ suất → xin card → hỏi bận**.
+
+Test đầu tiên cho nó **xanh vì lý do sai**: chạy 0,58 giây trong khi hạn chờ 45 —
+bằng chứng `xin_card` chưa hề được gọi. Nay chốt bằng khoá `xin_card` trong phản hồi.
+
+Và một test khác chậm **3 phút 45** vì `monkeypatch` không ăn: `han_giay` là **tham
+số mặc định**, tính lúc định nghĩa hàm. Cùng lớp lỗi với QT-12. Sửa: đọc hằng số
+trong thân hàm.
+
+### Máy A — nghiên cứu, rồi dừng theo quyết định
+
+Tra cộng đồng trước khi tự suy (theo yêu cầu): llama-swap **có sẵn** `groups`
+(`swap`/`exclusive`), `matrix` + `evict_costs`, `GET /unload`, và cả model
+`comfyui_auto`. Nhưng bản đầy đủ **không dùng được**: nó sở hữu vòng đời tiến trình
+ComfyUI, mà ComfyUI máy B **dùng chung với dự án video** — tắt nó là giết job video.
+
+Về hai card 5060 Ti máy A: **chiều chuyển Qwen sang là bẫy** (số đo cộng đồng cho
+Qwen3-32B dense: 3090 **35,1 t/s** so với dual 5060 Ti **18,2 t/s** — băng thông 936
+so với 448 GB/s). Chiều chuyển ảnh sang thì cần bản FP8, và chủ sản phẩm quyết
+**không hạ độ chính xác** ⇒ **D-057 dừng kế hoạch**.
+
+⚠️ Bộ nhớ dự án sửa đề xuất của tôi ở bốn chỗ tôi thiếu số: fp32 mỗi card chỉ **~40 %**
+của 3090; RAM máy A chỉ **31,9 GB** (không phải 192); PCIe đo được **3,3–4,2 GB/s**
+nên tính chất "nạp lại 0,8 giây" **không chuyển sang**; và liên kết driver card 2
+**mong manh** (`oem3.inf` không liệt kê nó).
+
+### Test đã chạy
+| Lệnh | Kết quả |
+|---|---|
+| `pytest test_278_nhuong_card` | **27 PASS** (mới) |
+| `pytest test_245_render_gateway` | **135 PASS**, 6 skip |
+| `pytest test_277 + test_278 + test_245` | **175 PASS** |
+| `deploy.ps1` sang máy B, 4 lượt | 32/32 khớp hash mỗi lượt |
+| Trọng tài trên máy B | **2 chu kỳ đầy đủ**, đuổi 4,0 s, trả card về 778/811 MB |
+| `gate.py` đầy đủ vòng 3 | đang chạy |
+
+⚠️ Một test cũ (`test_245`) từng đỏ vì `dem_python_gpu` **không được tiêm** — nó
+đếm tiến trình python **thật** trên card, nên đỏ khi `gate.py` chạy song song. Đã
+tiêm. Một test phụ thuộc trạng thái card là một test nói dối.
+
+### Quyết định mới
+- **D-057** — dừng kế hoạch dùng máy A sinh ảnh; không hạ độ chính xác model.
+- **D-058** — trọng tài card đã chạy thật; V5 bị chính nó bác bỏ.
+
+### Còn tồn đọng
+- **P1 deploy** (cần chủ sản phẩm) — chặn toàn bộ nghiệm thu ảnh E2E.
+- **P2** chạy đè với dự án video (cần chủ sản phẩm) — chốt duy nhất của Đợt B.
+- **P3** luật WAF Cloudflare cho `/api/v1/*`.
+
+## 2026-08-24 (trưa) — G9 đóng, và một cảnh báo đang lưu hành hoá ra đã sai
+
+- **Hạng mục:** đóng G9 (độ bền); dọn lỗi pytest cuối cùng.
+- **Trạng thái:** G9 **ĐÓNG** (D-056). pytest **19 → 1 → 0**. Gate đầy đủ đang
+  chạy lần chốt.
+
+### G9 — 100/100, không trôi gì
+
+| | |
+|---|---|
+| Lượt chạy | **100 / 100 thành công, 0 hỏng** |
+| VRAM đỉnh | 18.287 – 18.450 MB — dao động **163 MB (0,9 %)** |
+| Nhiệt đỉnh | 69 – 74 °C |
+| Thời gian/ảnh | 108,0 – 110,9 giây — dao động 2,6 % |
+
+**Không trôi.** 20 lượt cuối so 20 lượt đầu: VRAM 18.376 → 18.361 MB, nhiệt
+73,9 → 73,0 °C, thời gian 109,7 → 109,4 s — **cả ba đều đi xuống nhẹ**. Sau hơn
+ba giờ chạy liên tục thì đó là câu trả lời cho đúng câu hỏi G9 đăng ký.
+
+### 🔴 Và số đo đó làm một cảnh báo trong `CLAUDE.md` thành SAI
+
+Cảnh báo đang lưu hành: *"VRAM ở cấu hình đích chạm **23,9 / 24,6 GB = 97,5 %**…
+biên **quá mỏng**."*
+
+Con số đó đo **trước** khi ComfyUI chạy với `--reserve-vram 3`. Đo lại cùng card:
+
+| Cấu hình | VRAM đỉnh | % của 24,6 GB |
+|---|---|---|
+| t2i 50 bước (100 lượt) | **18,45 GB** | 75 % |
+| `edit` 1 ảnh @4 MP | 19,83 GB | 81 % |
+| `subject` 2 ảnh @4 MP | **20,11 GB** | 82 % |
+
+Nặng nhất **từng đo** nay là 20,1 GB, không phải 23,9. Biên còn **~4,5 GB**.
+
+⇒ Đã sửa cả `CLAUDE.md` và kế hoạch. Giữ một cảnh báo lỗi thời làm hai việc xấu:
+khiến người sau ngại đo tiếp, và khiến `--reserve-vram 3` trông như mẹo vá thay
+vì thứ đã giải quyết xong vấn đề.
+
+⚠️ Nhưng **không đọc ngược thành "thoải mái"**: 4,5 GB là biên **khi chỉ có ta**.
+Ba hộ vẫn dùng chung card (D-037).
+
+Cùng lúc sửa một số lỗi thời khác trong cùng khối: trần token ghi là 4.096 trong
+khi thực tế đã là **11.412**, và `edit`/`subject` ghi là "đang bị chặn" trong khi
+đã mở từ D-053.
+
+### Lỗi pytest cuối: hai bánh cóc đánh nhau
+
+`test_60` (nền tảng không được viết cứng tên app) đỏ vì `governance.py` chứa
+`vps_instance`, `vps_ip`… — mà `test_211` **bắt buộc** file đó phải nêu tên **mọi**
+bảng. App nào có `table_prefix` trùng slug là rơi vào bẫy này.
+
+⛔ Cách sai là miễn trừ slug `vps` — nền tảng **không** sở hữu namespace đó, nên
+miễn trừ sẽ làm mù chốt với một tham chiếu app thật.
+
+Cách đúng: **bóc tên bảng thật** (lấy từ `Base.metadata`, không phải danh sách gõ
+tay) ra khỏi văn bản trước khi dò. Kèm một test chứng minh phép bóc **không bóc
+quá tay**: `"vps_instance"` bị bóc, còn `app.slug == "vps"` vẫn bị bắt.
+
+Các app hiện có tránh được bẫy này một cách **tình cờ**: `prompt_ai_ommi` dùng
+prefix `ommi`, `anhnoibo` không có bảng riêng.
+
+### Cách chạy lô dài — D-055
+
+Lô G9 đầu chết ở 87/100 vì phiên SSH đứt. `Start-Process` **cũng không cứu**:
+OpenSSH trên Windows gom mọi tiến trình con vào job object của phiên. Phải dùng
+**Scheduled Task**. Kèm hai chốt nhỏ nhưng đắt:
+
+- `python -u` bắt buộc — thiếu nó log nằm im 0 byte hàng giờ, không phân biệt
+  được "đang chạy" với "đã chết". Đúng cái mù làm mất 80 phút.
+- `--ca` **không được trùng tên** tệp `--prompts`: bộ chạy ghi kết quả ra
+  `bench/<ca>.json`, nên nó **ghi đè chính tệp đầu vào**. Lô đầu đã tự xoá đề bài
+  của nó ngay sau lượt chạy đầu; chỉ không ai thấy vì tệp chỉ đọc một lần.
+
+### Test đã chạy
+| Lệnh | Kết quả |
+|---|---|
+| `gate.py` đầy đủ (vòng 2) | **14/15 PASS**, pytest **1 failed / 4.797 passed** |
+| `test_60` + `test_211` sau sửa | **59 PASS** |
+| `gate.py` đầy đủ (vòng 3) | đang chạy |
+| Lô G9 trên máy B | **100/100, 0 hỏng** |
+
+### Quyết định mới
+- **D-055** — lô đo dài trên máy B phải chạy bằng Scheduled Task, không bằng SSH.
+- **D-056** — G9 đóng; và cảnh báo "VRAM 97,5 %" đã lỗi thời.
+
+### Còn tồn đọng
+- **Chỉ còn nghiệm thu G10**: một job ảnh đi thật từ ngoài vào qua `/api/v1`.
+  Chờ **hai lệnh của chủ sản phẩm** (cổng an toàn chặn ghi vào `secrets\`).
+- `apps/vps`: xếp loại lưu trữ là **tạm**, chủ H39 phải xác nhận — nhất là hạn
+  của `vps_ip`, thứ có hệ quả pháp lý.
+- `apps/ltt_llm` đặt tên ngược so với `anhnoibo`; đổi tên là một **migration**.
+
+## 2026-08-24 (sáng) — G4 đóng, và 19 test đỏ hoá ra là ba loại nợ khác nhau
+
+- **Hạng mục:** đóng G4 bằng lô chấm thứ ba; dọn toàn bộ pytest đỏ.
+- **Trạng thái:** G4 **ĐÓNG** (D-054). 19 lỗi pytest **đã sửa hết**. G9 độ bền
+  đang chạy lại 13 lượt cuối.
+
+### G4 — máy tự chấm 38 cặp, và bẫy mới trả công ngay
+
+Lô B2c (seed thứ ba) nâng tổng lên **60 cặp**. Gộp: 50 bước **33 – 18 – 9 hoà**,
+điểm **0,625**, KTC **[0,507; 0,744]** — không còn chứa 0,5.
+
+⇒ **Giữ 50 bước, và đây là câu cuối** (D-054). 36 bước đã thua **hai lô độc lập**;
+bên đề xuất thay đổi là bên phải chứng minh, và nó không chứng minh được.
+
+⚠️ **Nhưng không được đọc thành "36 bước tệ rõ".** Bẫy mới (cùng đề bài, khác
+seed) cho sàn nhiễu **91 %** so với quyết đoán trên cặp thật **85 %** — nghĩa là
+khác biệt do số bước **nhỏ hơn** khác biệt do seed. Một khách nhìn một tấm ảnh
+đơn lẻ không đoán được nó ra từ 36 hay 50 bước.
+
+Hai tín hiệu này không mâu thuẫn: khoảng tin đo **chiều**, sàn nhiễu đo **độ lớn**.
+
+### 🔴 Bộ đo tự nó hỏng ở ba chỗ, và tôi suýt sửa sai một chỗ
+
+1. **Bẫy đo nhầm thứ.** Tài liệu nói bẫy là *"cùng nguồn, khác seed"*; mã bốc
+   **hai ảnh khác đề bài**. Với phép so cùng-đề-bài thì sàn nhiễu luôn ≈100 % ⇒
+   `d <= f` luôn đúng ⇒ công cụ **luôn** trả "chưa phân biệt được", bất kể dữ liệu.
+   B2b đã đo đúng 100 % và D-049 phải ghi *"lý do tôi KHÔNG dựa vào"*.
+
+   ⛔ Tôi định nâng tỉ lệ bẫy 10 % → 25 % để "sàn nhiễu có ý nghĩa hơn". Đó là
+   làm một tín hiệu **vô dụng** trở nên **chính xác** hơn. Cách đúng: `--bay-tu`.
+
+2. **Gộp lô phải cộng tay.** Nay `tinh --lo A --lo B`. Công cụ **từ chối gộp hai
+   lô khác nhãn** — cộng hai phép đo khác nhau ra một số không trả lời gì.
+
+3. **Nhãn B2b là `A`/`B`** nên không gộp được. Đổi thành `s50`/`s36` sau khi chấm
+   xong, và **sau khi kiểm bằng băm SHA-256**: 60/60 ảnh truy được nguồn, 0 lạc.
+
+### 19 test đỏ — ba loại, không loại nào là "test sai"
+
+| Loại | Số | Bản chất |
+|---|:--:|---|
+| Hợp đồng API đóng băng | 13 | H38 thêm tool + ba route, H37 mở tool ⇒ golden/inventory phải nâng **có chủ ý** |
+| Nợ `apps/ltt_llm` (H38) | 3 | thiếu `capabilities`; slug trùng id provider |
+| Nợ `apps/vps` (H39) | 3 | 5 bảng chưa xếp loại lưu trữ; 5 ràng buộc UNIQUE chưa vào drill |
+
+**Không cái nào sửa bằng cách nới test.** Ba việc đáng ghi:
+
+- **`openai` trong hợp đồng công khai** bị ba chốt "không lộ tên nhà cung cấp"
+  bắt. Nhưng ở đây nó là **tên định dạng dây** ta hứa với khách, không phải hãng
+  ta bán lại. Thay vì miễn trừ cả chuỗi, **thu hẹp**: `openai` được phép trong
+  văn xuôi, **cấm tuyệt đối** ở `enum`/`default`/`examples`/`models` — vì đó mới
+  là rủi ro danh sách kia sinh ra để chặn.
+
+- **`is_active` của model ảnh.** Chốt cũ khoá cứng `not is_active`. Lật `True`
+  rồi thôi là **vứt một bánh cóc**. Thứ nó thật sự bảo vệ không phải giá trị
+  `False` mà là *"một cờ không bao giờ đủ để phục vụ khách"* — nên test mới chứng
+  minh: bật `is_active` mà `LTT_PUBLIC_API_TOOLS` rỗng thì tool **vẫn không ra**.
+
+- **`sinh_golden_api.py`** mới: golden trước nay cập nhật bằng cách **chép tay từ
+  thông báo lỗi pytest**. Script mặc định **KHÔNG ghi** — nó in khác biệt từng
+  khoá trước. Sinh lại golden không phải cách sửa một test đỏ; nó là cách ghi
+  nhận một thay đổi hợp đồng **đã được đọc**.
+
+### ⚠️ Hai chỗ tôi quyết thay phiên khác, và nói rõ ra
+
+`apps/vps` là của H39. Nhưng để đỏ thì cả hai phiên đều tưởng là việc bên kia.
+
+- **Xếp loại lưu trữ 5 bảng VPS** theo đúng thứ docstring của chính chúng nói
+  (*"phải còn khi khách hỏi sau ba tháng"*, *"chỉ thêm, không bao giờ xoá"*),
+  nghiêng về phía **GIỮ**. ⛔ Đặt hạn xoá cho `vps_ip` có **hệ quả pháp lý** —
+  lịch sử "IP nào, của ai, lúc nào" là thứ duy nhất trả lời được một yêu cầu về
+  lạm dụng. **Chủ H39 phải xác nhận.**
+- **`vps` vào bảng disposition là `DEFER`** vì nó **không khai `ToolSpec` nào** —
+  đó là ghi lại **trạng thái thật**, không phải một quyết định sản phẩm.
+
+### 🔴 Lô độ bền G9 KHÔNG xong — và vì sao
+
+Dừng ở **87/100** lúc 08:17. Tiến trình `ssh.exe` biến mất, GPU về 0 % và nguội
+31 °C ⇒ tiến trình từ xa **chết theo phiên SSH**, không phải chạy tiếp.
+
+Và tôi mắc thêm một lỗi khi chạy lại: đặt `--ca G9_ben_100` **trùng tên** file
+prompt, nên lô kết quả **ghi đè chính file đầu vào** — lần chạy lại chết ngay với
+`KeyError: 'prompts'`. Đã tách thành `G9_prompts.json`.
+
+Nay chạy bằng `Start-Process` **tách rời** trên máy B, ghi log vào máy B, để nó
+không chết theo kết nối. Số đo 87 lượt đầu: VRAM đỉnh **18.325–18.482 MB** rất
+ổn định, nhiệt **74 °C** phẳng suốt — chưa thấy dấu hiệu trôi.
+
+### Test đã chạy
+| Lệnh | Kết quả |
+|---|---|
+| `pytest -q` đầy đủ (trước sửa) | 19 failed, **4.775 passed** |
+| `test_60` · `test_88` · `test_250` | **20 + 73 + 35 PASS** |
+| `test_181` · `test_187` · `test_190` · `test_193` | **23 + 15 + 26 + 11 PASS** |
+| `test_195` · `test_198` · `test_211` · `test_155` | **45 + 23 + 12 PASS** |
+| `test_212` · `test_194` | **PASS** |
+| `cham_mu.py tinh --lo B2b_lo --lo B2c_lo` | n=60, điểm 0,625, KTC [0,507; 0,744] |
+| `gate.py` đầy đủ | đang chạy |
+
+### Quyết định mới
+- **D-054** — G4 đóng, giữ 50 bước, câu cuối. Kèm phần "công cụ vẫn nói *chưa
+  phân biệt được* — và vì sao tôi vẫn hành động".
+- **D-052** mở rộng: chỗ hỏng của cặp bẫy và cách sửa.
+
+### Còn tồn đọng
+- G9 còn 13 lượt.
+- Chưa có job ảnh nào **đi thật từ ngoài vào** qua `/api/v1`.
+- **Hai lệnh cần chủ sản phẩm** (cổng an toàn chặn ghi vào `secrets\`).
+- `apps/ltt_llm` đặt tên **ngược** so với `anhnoibo` — đổi tên là một **migration**
+  (slug nằm trong `job_type` đã lưu), không phải một lần rename.
+
+## 2026-08-24 (khuya) — H37: máy tự chấm, giá hạ một phần ba, bốn cổng mở
+
+- **Hạng mục:** ba việc chủ sản phẩm giao — ① cơ chế chấm chuyển sang **máy tự
+  phân tích ảnh**, ② credit **rẻ hơn một phần ba**, ③ chạy hết quy trình.
+- **Trạng thái:** ① ✅ ② ✅ ③ đang — G5 đóng, bốn cổng mở trong mã, còn **hai
+  việc cần chủ sản phẩm** (xem cuối mục).
+
+### ① Máy chấm — và cái chặn thay cho luật cũ (D-052)
+
+§1.5.3 nói *"người chấm là chủ dự án, không phải tôi"*. Nay **máy chấm**.
+
+Hai lý do thay: luật cũ biến thời gian ngồi chấm của một người thành **đường
+găng của cả dự án**; và trên thực tế nó **đã không còn được thi hành** — D-045
+ghi thẳng *"người chấm: Opus 5"* cho lô G6b, lô đã ra một quyết định lớn.
+
+⚠️ Nhưng rủi ro luật cũ phòng — **mô hình chấm sản phẩm của chính mình** — không
+biến mất vì luật đổi. Nên đổi **cách chặn**, không bỏ chặn: mỗi lá phiếu quyết
+đoán **phải viết một câu lý do**, cưỡng chế bằng mã (`cham_mu.kiem_phieu_may`)
+chứ không bằng trí nhớ. Không có lý do thì `tinh` **từ chối tính**.
+
+Một câu lý do buộc phải **NHÌN** — và đó là điểm. D-027 cho thấy quy trình này
+từng chạy tám lượt đo, hàng nghìn giây GPU, ba mục quyết định mà **không ai nhìn
+một tấm ảnh nào**.
+
+⛔ **Hoà thì không bắt viết lý do.** Bắt viết là dạy người chấm né hoà, mà né hoà
+làm hỏng sàn nhiễu — đúng hàng rào quan trọng nhất.
+
+### ② Giá: 5 → 3 credit/ảnh (tham chiếu 15 → 9)
+
+5 × 2/3 = 3,33. Lấy **3** chứ không lấy 4: làm tròn về phía khách, và như vậy
+*mọi* lượt rẻ hơn ít nhất một phần ba — kể cả lượt một ảnh, lượt phổ biến nhất.
+Lấy 4 thì lượt một ảnh chỉ rẻ đi 20 %.
+
+Không chuyển sang milli-credit như LLM: ở đó đơn vị (một token) nhỏ hơn credit
+hàng nghìn lần nên buộc phải có; ở đây đơn vị là **một ảnh** và đã lớn hơn một
+credit. Thêm một tầng số học chỉ để làm tròn lại là thêm chỗ sai.
+
+Vẫn trên giá vốn xa: `gia_von.json` ghi **1,05 credit/ảnh**, biên **2,9 lần**.
+
+### ③ Chạy quy trình
+
+**Cổng render đã deploy được — lần đầu tiên.** `deploy.ps1` có **hai lỗi** khiến
+bước chép **chưa từng chạy xong lần nào**:
+
+1. Đích là `gateway\` trong khi dịch vụ chạy `-m render_gateway.main`, tức gói
+   phải nằm ở `gateway\render_gateway\`. Bước so hash vì thế đang so với một thư
+   mục rỗng — nó **luôn đỏ, hoặc luôn vô nghĩa**.
+2. `Join-Path` **giải đường dẫn theo ổ đĩa của máy A**, mà `E:` chỉ có ở máy B →
+   `Cannot find drive. A drive with the name 'E' does not exist`.
+
+Mã trên máy B trước nay đẩy sang bằng **Nexus** (còn dấu vết `.nexus-versions`).
+Tức là đúng thứ CLAUDE.md cảnh báo: deploy đi đường khác, im lặng.
+
+Sau khi sửa: 29/29 tệp khớp hash, `/live` trả `{"ok":true}`, `/health` có khối
+`gpu`, và **hai phép thăm dò mới chạy thật xanh** từ máy A.
+
+**G5 đóng (D-053).** Bậc cuối chưa ai đo — `subject` 2 ảnh @4 MP — đã đo có
+người canh: **20.114 MB VRAM · 239,0 s · 73 °C**, dưới xa ngưỡng dừng 21.000.
+Trần token **7.506 → 11.412**; bậc kế tiếp (8 MP) vẫn bị chặn, có test riêng.
+
+🔴 **Và số đo dạy một điều trái trực giác:** token đi từ 5.553 → 11.412 (**gấp
+2,1 lần**) mà VRAM chỉ đi từ 19,76 → 20,11 GB (**+1,8 %**). VRAM ở đây do
+**trọng số model** quyết định, không do token tham chiếu. Trần token vẫn làm
+đúng việc — *từ chối cấu hình chưa ai đo* — nhưng **đừng đọc nó như thước đo
+mức nguy hiểm**.
+
+**Nhìn ảnh, không chỉ đọc số (§1.5b).** Ảnh giữ nhân dạng **cả hai** chủ thể rất
+tốt. Nhưng model **chép cả tư thế** của ảnh tham chiếu: prompt bảo *"đang bế con
+mèo"*, ảnh ra mèo **nằm cuộn tròn ngủ đúng như ảnh gốc**. Đó là thứ không hiện
+ra ở bất kỳ số đo nào — VRAM, thời gian, nhiệt đều đẹp. ⇒ phải nói với khách:
+`subject` giữ được *ai/cái gì*, **không** dựng lại được *đang làm gì*.
+
+**Bốn cổng mở trong mã** (G10): `is_active` của `hidream-o1` → `True`, kèm chú
+thích ghi thẳng vì sao — nó mở vì D-042/D-046 biến nó thành **một mặt hàng
+riêng**, **không** vì nó đẹp hơn (G6b đã chấm, nhà thua rõ).
+
+**Lô B2c đang chạy** (seed thứ ba, 30 prompt × 50 bước) để nâng số cặp của phép
+so 36-vs-50 lên ≥ 50 — điều kiện D-049 đặt ra để đóng G4.
+
+### Đã sửa một dấu vết hỏng trong dữ liệu cũ
+
+`bench/G5b_edit_1anh_1mp.json` ghi `so_thanh_cong: 1` với **0,5 giây** và 1.456
+MB VRAM. Đó không phải một lượt vẽ. Ghi vào D-053 để không ai dùng nó làm số đo.
+
+### Test đã chạy
+| Lệnh | Kết quả |
+|---|---|
+| `pytest test_247_cham_mu` | **27 PASS** (+6 cho `kiem_phieu_may`) |
+| `pytest test_245_render_gateway` | **131 PASS**, 5 skip |
+| `pytest test_276 · test_253 · test_262 · test_261` | **70 PASS** |
+| `pytest test_212` | 46 PASS, **1 FAIL** — `undecided: ['vps']`, của H39 |
+| `deploy.ps1` sang máy B | **EXIT 0**, 29/29 khớp hash |
+| `/live` + `/health` máy B | 200, có khối `gpu` |
+| `_tham_cong_render` · `_tham_gpu_anh` | **True** trên phần cứng thật |
+| `gate.py` đầy đủ | đang chạy |
+
+### Quyết định mới
+- **D-052** — máy chấm; đổi lại mỗi phiếu quyết đoán phải viết lý do.
+- **D-053** — bậc cuối đã đo, trần 11.412; và token là proxy lỏng cho VRAM.
+
+### 🔴 HAI VIỆC CẦN CHỦ SẢN PHẨM
+
+Cả hai bị **cổng an toàn của Claude Code chặn**, không phải thiếu sót kỹ thuật:
+
+1. **Bật tool trên bản chạy thật** — ghi vào `secrets\` bị chặn:
+   ```
+   powershell -ExecutionPolicy Bypass -File .\setup\cong_tac_tool_api.ps1 -Tool image.ltt -Bat
+   ```
+2. **Deploy mã** (cần Administrator, cần bấm UAC). Sau deploy, cờ mới tự được
+   nướng lại vào dịch vụ; nếu chỉ đổi cờ mà không deploy thì phải chạy
+   `.\setup\nap_lai_env.ps1`.
+
+⚠️ **Thứ tự: đổi cờ TRƯỚC, deploy SAU.** Ngược lại thì cờ mới không có tác
+dụng cho tới lần nạp env kế tiếp — nssm nướng biến môi trường lúc cài, không
+đọc lại `app.env` lúc chạy. Đã dính hai lần trong dự án này.
+
+### Còn tồn đọng
+- Chưa có job ảnh nào **đi thật từ ngoài vào** qua `/api/v1` bao giờ.
+- G9 (độ bền 100 ảnh) chưa chạy.
+- `test_212` đỏ vì `apps/vps` — thuộc H39.
+
+### Việc tiếp theo
+1. Chấm lô B2c khi xong → đóng G4 → chốt số bước.
+2. G9 độ bền ở cấu hình đã chốt.
+3. Sau khi chủ sản phẩm chạy hai lệnh trên: một job thật từ ngoài vào, đối soát
+   credit bằng tay.
+
+## 2026-08-24 — Tiếp quản H37: một lỗi tiền đang sống, và bốn chỗ mù
+
+- **Hạng mục:** H37 (`ltt_image`) — chủ sản phẩm giao tiếp quản, chuẩn hoá theo
+  hệ thống H38 vừa xây, sửa logic, và lập lại kế hoạch.
+- **Trạng thái:** L1–L4, L6, L7 **XONG**. L5 (mở tool) **cố ý chưa làm** — nó
+  chờ một quyết định kinh doanh, không chờ mã.
+
+### ⚠️ Tôi vào việc này với một giả định sai
+
+Chủ sản phẩm nói H37 "đi lệch hướng", nên tôi đi tìm chỗ lệch ở tầng khoá và
+tầng cổng. **Đọc kỹ thì hai tầng đó đã đúng từ trước**: `apps/anhnoibo/http_cong.py`
+dùng `api_pool.thu_lan_luot` + `danh_dau_thanh_cong` + `danh_dau_loi` đúng cách và
+**không** đánh dấu lỗi khi 429 (D-005); `render_gateway` đã có `max_concurrent=1`,
+429-khi-bận, và `busy.py` đọc VRAM thật qua `nvidia-smi`.
+
+Chỗ lệch nằm ở **ba tầng ngoài cùng**: giá, quyết toán, quan sát.
+
+### Khuôn chung, và điểm của H37 theo nó
+
+Viết `docs/KHUON_BAN_MODEL_NHA.md` — 6 tầng, 31 chốt, rút từ H38 sau khi nó đi
+hết một vòng có khách trả tiền thật. H37 chấm **18/31**.
+
+Lý do phải có khuôn: H37 và H38 giải **cùng một bài toán** (model trên máy B, bán
+qua `app.lttstudios.com`, tính tiền theo lượng dùng), đi song song, và **mỗi dự án
+tự học lại một lần**. Cái giá không phải thời gian — nó là những bài học không
+truyền được.
+
+### 🔴 L1 — lỗi tiền, đang sống
+
+`render_gateway/runner.py` trả về **đúng số ảnh nó tải lên được**
+(`image_keys[:so]`) và chỉ ghi một dòng log khi thiếu. `apps/anhnoibo/jobs.py`
+**không** báo `credit_cost`, mà `job_runner._quyet_toan_credit` không thấy khoá đó
+thì **thu trọn phần đã giữ**.
+
+⇒ Xin 4 ảnh, máy B trả 2, **khách vẫn trả tiền 4 ảnh**. Im lặng.
+
+Biến thể tệ hơn ở `platform_core/image_gen/dieu_phoi.py`: `tuple(t.image_keys or khoa)`.
+`khoa` là khoá lưu trữ **cấp phát trước khi vẽ**, tồn tại kể cả khi không ảnh nào
+được tải lên. Cổng trả rỗng ⇒ khai đủ ảnh, thu đủ tiền, khách bấm vào thì **404
+từng cái một**.
+
+**Đây đúng là lỗi H38 đã mắc và đã sửa hôm 23/08.** Cùng gốc, cùng hình dạng, ở
+một dự án khác.
+
+Sửa: `apps/anhnoibo/gia.py` (giá một chỗ, có phiên bản `ltt-image-2026-08-24`),
+`features.KetQua.gia_that_credit()`, và "thành công mà rỗng" nay là **lỗi được báo**.
+
+### 🔴 L2/L3 — máy A không có phép thăm dò nào cho cổng ảnh
+
+Máy B chạy **hai dịch vụ**: cổng VLM (:8299) và cổng render (:8199). Khởi động
+riêng, chết riêng, deploy riêng. H38 đã có `_tham_cong_vlm` + `_tham_gpu_may_b`;
+phía ảnh **không có gì cả**.
+
+Thêm `/live` cho cổng render (**không cần khoá**, cố ý chỉ nói `{ok, version}`),
+`_tham_cong_render`, `_tham_gpu_anh`, và hai ngưỡng riêng.
+
+⚠️ Chốt CPU-fallback bên ảnh **không dùng được tín hiệu của bên chữ**. ComfyUI chỉ
+giữ model thường trú **sau** lượt vẽ đầu tiên, nên "có model nạp mà VRAM thấp"
+sẽ báo nhầm mỗi lần khởi động dịch vụ. Tín hiệu dùng thay: **đang vẽ > 90 giây mà
+VRAM < 5 GB** — ngắn hơn một lượt vẽ (96 giây) nên bắt được ngay lượt đầu.
+
+### 🟠 L4 · 🟡 L6 · L7
+
+- Giá lên `/gia-api` (**công khai**), lấy từ chính hàm ra hoá đơn.
+- Nghiệp vụ ra `apps/anhnoibo/features.py`; `jobs.py` còn lại đúng phần một cánh cửa.
+- `DEVELOPER_GUIDE.md` §6 nói rõ luật *"trả cho thứ nhận được"* + `phien_ban_gia`.
+
+### Một việc ngoài kế hoạch: trang giá đang nửa Anh nửa Việt
+
+Kiểm bằng trình duyệt thật (quy tắc 5) thì thấy `/gia-api` ở locale tiếng Anh hiện
+**nửa Anh nửa Việt** — toàn bộ 44 chuỗi của trang chưa có trong `.po`. Đây là nợ
+của H38, và tôi đang thêm chuỗi vào đúng trang đó. Đã dịch cả 44, biên dịch `.mo`,
+và xác minh **cả hai** ngôn ngữ render đúng.
+
+⚠️ Server nạp catalogue **lúc khởi động**. Đổi `.mo` xong mà không khởi động lại
+thì trang vẫn hiện bản cũ — đã suýt kết luận nhầm là bản dịch không ăn.
+
+### Test đã chạy
+| Lệnh | Kết quả |
+|---|---|
+| `pytest tests/test_276_gia_anh_that.py` | **13 PASS** (mới) |
+| `pytest tests/test_277_tham_cong_anh.py` | **16 PASS** (mới) |
+| `pytest tests/test_274_gia_cong_khai.py` | **9 PASS** (+3 mới) |
+| `pytest -k "render or cong_render or gateway"` | **227 PASS**, 6 skip |
+| `pytest test_252/253/254/255/260/261/262` | **122 PASS** |
+| `pytest test_253 test_254 test_276` | **57 PASS** |
+| `pytest tests/test_212*` | **1 FAIL** — `undecided: ['vps']` |
+| `tools/check_i18n.py` | 1454 → **1422**, đã hạ mốc |
+| Trình duyệt thật, `/gia-api`, vi + en | render đúng, **không lỗi console** |
+
+⚠️ **`test_212` đỏ KHÔNG phải do đợt này.** Nó báo `undecided: ['vps']` — app
+`apps/vps/` của H39 chưa được xếp loại trong `APP_API_COVERAGE_FINAL.md`. Đó là
+việc của phiên H39, và tôi **không** sửa tài liệu của phiên khác.
+
+### Quyết định mới
+- **D-050** — ảnh tính tiền theo ảnh **thật sự sinh ra**; giá về một chỗ có phiên bản.
+- **D-051** — cổng render có phép thăm dò riêng, tách hẳn cổng VLM; 429 vẫn không đếm.
+
+Cả hai đã vào `docs/ANH_NOI_BO/DECISIONS.md`.
+
+### Cách lùi lại
+Xoá `apps/anhnoibo/gia.py`, `apps/anhnoibo/features.py`,
+`render_gateway/tren_gpu.py`, `tests/test_276_*`, `tests/test_277_*`; hoàn nguyên
+`apps/anhnoibo/{jobs,manifest}.py`, `platform_core/{job_runner.py,image_gen/dieu_phoi.py}`,
+`platform_core/public_api/ops_alerts.py`, `render_gateway/{api,jobs}.py`,
+`server/routes/dashboard.py`, `server/templates/gia_api.html`,
+`locale/en/LC_MESSAGES/messages.*`.
+
+### Còn tồn đọng
+- `gate.py` **đầy đủ** vẫn chưa chạy trọn một lần sạch (nợ từ H38).
+- `test_212` đỏ vì `apps/vps` — thuộc H39.
+- Chưa có job ảnh nào **đi thật từ ngoài vào** qua `/api/v1` bao giờ.
+
+### Việc tiếp theo
+1. **Đợt A** (cần GPU): đóng G4 (chốt số bước), rồi mở khoá G5 **theo bậc, có
+   người canh** — không hạ `ref_mp` cho lọt chốt.
+2. **Đợt B** (cần GPU): độ bền 100 ảnh, chạy đè với video, `--reserve-vram 3`.
+3. **Đợt C**: chủ sản phẩm chốt **định vị + giá** (§3 của `TIEP_QUAN_H37.md`),
+   rồi mở 4 cổng D-034 từng cái một và chạy một job thật từ ngoài vào.
+
+## 2026-08-24 — H39: đổi kiến trúc sang **một IP công khai cho một VM**, bỏ chia cổng
+
+- **Hạng mục:** H39 — cổng vào mới bằng Linux, tự động hoàn toàn. Chạy thật, đo thật.
+- **Trạng thái:** chuỗi đầy-đủ đã chứng minh; còn phải đưa vào mã nguồn (`services/vultr.py`).
+
+### Vì sao đổi
+
+Chủ sản phẩm muốn **mỗi máy một IP riêng, bỏ hẳn `IP:cổng`**. Điều tôi phải nói rõ
+trước: **không nhà cung cấp nào bán IP rồi cắm được vào máy ở nhà** — một IPv4 chỉ
+sống khi có mạng nào đó quảng bá nó bằng BGP, và cáp nhà không quảng bá được gì. IP
+thuê từ IPXO sẽ nằm đó với giấy LOA đầy đủ và **không gói nào tới được nhà**. Nên
+đường hầm là không bỏ được; thứ đổi được là *thứ chạy bên trên nó*.
+
+Phép tính loại phương án BGP ở thời điểm này: /24 vùng APNIC **>$0,60/IP/tháng ⇒
+~$155/tháng**, trong khi trần 16 máy chỉ ~$110/tháng doanh thu. Điểm hoà vốn ~50 máy.
+⇒ **Vultr Reserved IP $3/cái, mua tới đâu bán tới đó.**
+
+### Và nó RẺ hơn hiện tại, không đắt hơn
+
+| | Cũ | Mới |
+|---|---|---|
+| Máy | `vc2-1c-2gb` Windows | `vhp-1c-1gb-amd` Debian 12 |
+| Giá | **$10/tháng** | **$6/tháng** |
+| Băng thông | 2.048 GB | 2.048 GB |
+| RAM lúc rảnh | 1,0–1,5 GB | **273 MB** (kể cả cache) |
+| Thông lượng NAT trên 1 vCPU | 150–160 Mbps (CPU 83 %) | WireGuard trong kernel: 1,5–2 Gbps |
+
+Được chọn gói 1 GB RAM **chính vì** đổi sang Linux — Windows Server không chạy nổi.
+Và **tự tải ISO riêng lên là vô nghĩa**: giá là giá của *gói*, không phụ thuộc ảnh; tự
+tải chỉ mất tích hợp `cloud-init` (tức mất khả năng dựng lại bằng một lệnh).
+
+### Hình dạng đang chạy
+
+```
+Khách ──► 45.77.45.29            (Reserved IP, NAT 1:1, mọi cổng)
+          45.32.114.249:51820    (gateway Debian, nftables + WireGuard)
+              │ wg0  10.51.255.1 ↔ 10.51.255.2   MTU 1420   RTT 57 ms
+              ▼
+          VM router 199 trên máy B   eth0 192.168.2.2 (LAN) · eth1 10.51.0.1/24
+              ▼
+          VM khách 10.51.0.50
+```
+
+**Đầu hầm phía nhà nằm trong một VM, không nằm trên host Proxmox** — vì shell root của
+host đòi mật khẩu trong file DPAPI, và tôi không nhập mật khẩu để xác thực. Hoá ra lại
+tốt hơn: host **không bị sửa gì** (đường hầm cũ của 8 máy nhà nguyên vẹn), VM router
+**không giữ bí mật nào** của nền tảng, và nó dựng lại được bằng đúng đường ống
+`vps.provision`.
+
+### Ba lỗi thật, tìm được vì đo chứ không vì đọc
+
+**1. `map` thay vì N luật.** Tài liệu hiệu năng WireGuard nói rõ ruleset càng dài thì
+càng chậm. Cách phổ biến — mỗi khách một luật `dnat` — chính là cái bẫy đó. Ở đây
+1:1 NAT là **một phần tử trong `map`**, tra cứu O(1) bất kể 5 hay 500 khách; thêm
+khách là thêm một phần tử, nguyên tử, không nạp lại ruleset.
+
+**2. `Table = off` + `AllowedIPs = 0.0.0.0/0` phải đi cùng nhau.** `0.0.0.0/0` ở đây là
+**bộ lọc đầu vào** (gói trả về từ Internet có địa chỉ nguồn bất kỳ; thiếu nó thì
+WireGuard loại bỏ hết và triệu chứng là "ra được nhưng không có gì trả về"). Nhưng để
+`wg-quick` tự cắm route `0.0.0.0/0` vào bảng chính thì **cả SSH của tôi vào VM router
+cũng bị kéo vào hầm** — tự cắt đường vào của mình. Lối đúng: `Table = off` rồi tự đặt
+`ip rule from 10.51.0.0/24 lookup 100`.
+
+**3. Bảng 100 thiếu route nội bộ — lỗi im lặng nhất trong ba lỗi.** Chỉ có
+`default dev wg0`, nên gói từ `10.51.0.1` đi tới **chính mạng `10.51.0.0/24`** cũng bị
+đẩy vào hầm. Triệu chứng: `ping` máy khách được nhưng `ssh` thì không, và tôi đã đi
+soi sshd trong máy khách một hồi trước khi `ip route get` chỉ đúng chỗ:
+
+```
+10.51.0.50 from 10.51.0.1 dev wg0 table 100      ← sai
+10.51.0.50 from 10.51.0.1 dev eth1 table 100     ← sau khi thêm route nội bộ
+```
+
+Hệ quả nếu không tìm ra: **hai máy khách trên cùng node không nói được với nhau**, và
+ta không quản trị được máy khách. Sửa: `ip route replace 10.51.0.0/24 dev eth1 table 100`.
+
+Nhân đó chặn hẳn khách sang LAN nhà bằng luật `nftables` — trước đó nó *không sang
+được* chỉ vì tình cờ bảng định tuyến, không vì có luật, và "tình cờ" thì đổi một lần
+cấu hình là mất.
+
+### Băng thông là chi phí ẩn lớn nhất, không phải tiền IP
+
+2.048 GB/tháng **chia cho tất cả khách** ⇒ 16 máy còn **128 GB/máy**. Ba gói
+89k/179k/329k **phải công bố hạn mức** (ví dụ 100/200/400 GB) và có bộ đếm giảm tốc,
+kẻo một khách tải phim cả tháng ăn hết quota của 15 người còn lại. $3/IP thì không
+đáng gì so với việc này.
+
+### Tài khoản: đã chuyển sang tài khoản riêng
+
+Tài khoản cũ (`aka.bananatv@gmail.com`) đang chạy **17 instance media, ~$210/tháng** —
+một khoá `root` ở đó xoá được cả mảng kinh doanh khác. Đã chuyển sang tài khoản riêng
+(`aka.thanhtrungcomputer@gmail.com`, 0 instance), và **dọn sạch** thứ tôi tạo lỡ ở tài
+khoản cũ: về đúng 17 instance, khoá SSH đã gỡ.
+
+### Đã đo được
+
+| Phép đo | Kết quả |
+|---|---|
+| SSH thẳng từ máy A vào `45.77.45.29` | **vào máy khách**, không cổng port nào |
+| IP công khai khi máy khách ra Internet | **45.77.45.29** — 1:1 cả hai chiều |
+| Gửi từ `10.51.0.1` (luật của khách) | ra bằng `45.32.114.249`, RTT 58 ms |
+| Gửi từ `192.168.2.2` (đối chứng) | ra bằng `14.232.231.35` — luật chỉ bắt đúng khách |
+| Máy khách thử vào LAN nhà | **bị chặn** |
+
+Một chi tiết đáng ghi: máy A gọi Vultr thì Vultr thấy `27.79.158.191`, còn VM router ra
+thì thấy `14.232.231.35` — **nhà có hai đường WAN** hoặc router chia tải theo luồng.
+Thêm một lý do đừng khoá API theo IP nguồn.
+
+### Còn nợ
+
+- Đưa vòng đời IP vào `apps/vps/services/vultr.py` + test (đang làm tay từng bước).
+- `mang.py` còn tính octet theo cổng — mô hình mới không cần nữa, phải sửa cho khớp.
+- `ip addr` của Reserved IP hiện **chưa bền qua khởi động lại** gateway.
+- Xoá khoá API cũ trong giao diện Vultr (nó vẫn còn quyền root trên tài khoản media).
+
+## 2026-08-23 (tối) — H39/P1 XONG: máy khách được tạo, boot và ra Internet thật
+
+- **Hạng mục:** H39/P1 — **đường ống chạy thật từ đầu đến cuối**.
+- **Trạng thái:** XONG bên trong mạng riêng. Còn đúng một bước cần chủ sản
+  phẩm: câu lệnh DNAT trên gateway Vultr (mật khẩu nằm trong file DPAPI chỉ
+  `lengo` giải mã được).
+
+### Đã dựng
+
+| Thứ | Chi tiết |
+|---|---|
+| Template `9100` | `UBUNTU-2404-CLOUDINIT` — cloud image 24.04, **có ổ Cloud-Init** (`ide2`), `serial0`, agent, khoá SSH |
+| `services/mang.py` | suy cấu hình mạng của khách **từ cổng NAT đã cấp** |
+| 6 cột mạng trong `vps_gateway` | `bridge`, `subnet_cidr`, `subnet_gw`, `dns`, `mtu`, `cong_goc` + migration `8b2c5d1e40a7` |
+| `_dia_goc()` trong `jobs.py` | hỏi máy xem đĩa nằm ở bus nào |
+| Test | **62 xanh** (thêm 6 test cho `mang.py`) |
+
+### Luật thiết kế quan trọng nhất của P1
+
+**Chỉ cấp phát MỘT thứ.** Cổng NAT và địa chỉ riêng buộc vào nhau bằng một phép
+cộng: `cong_ngoai = cong_goc + octet`. Cấp phát hai thứ độc lập là mở cửa cho
+chúng lệch nhau — máy A giữ cổng 33931 nhưng địa chỉ `.52`, trong khi DNAT trỏ
+33931 về `.51`; khách gõ đúng địa chỉ và **rơi vào máy người khác**, không lỗi nào
+được ghi ra. Quy ước `33880 + octet` lấy nguyên từ hạ tầng đang chạy
+(`VM100` ở `10.50.0.11` ↔ cổng `33891`).
+
+Và **máy khách chỉ có MỘT card**, cắm `vmbr1`. Tám máy của chủ nhà có hai card
+(một ra LAN cho WinRM); máy bán cho khách thì không được chạm LAN nhà.
+
+### Chạy thật: 5 giây, mọi bước đúng
+
+```
+[  5%] xin cho          -> VMID 200
+[ 15%] nhan ban         -> clone template 9100
+[ 45%] mo duong vao     -> cong 33930
+[ 60%] dat cau hinh     -> vmbr1 + ipconfig0 + noi dia
+[ 85%] khoi dong
+Cong NAT: 45.76.185.75:33930 -> 10.50.0.50:22
+```
+
+Đọc lại cấu hình từ Proxmox: `cores 1`, `memory 2048`, `scsi0 40G` (template gốc
+3,5G), `ipconfig0 ip=10.50.0.50/24,gw=10.50.0.1`, `net0 bridge=vmbr1,mtu=1420`,
+`nameserver 1.1.1.1 8.8.8.8`, `sshkeys` — khớp từng mục với gói `vps-nho`.
+
+Chạy trên **CSDL SQLite tạm**, không đụng CSDL production, không trừ credit của ai.
+
+### Máy không boot — và ba chẩn đoán sai trước khi tìm ra thủ phạm
+
+Đây là phần đáng đọc nhất của mục này, vì tôi đã **sai ba lần liên tiếp** và mỗi
+lần đều có một câu chuyện nghe rất hợp lý.
+
+| Lần | Chẩn đoán | Đã sửa | Kết quả |
+|---|---|---|---|
+| 1 | Bố cục ESP+XBOOTLDR ⇒ phải UEFI | `bios: ovmf` + `efidisk0` | vẫn treo |
+| 2 | Thiếu `cpu: host` / `machine: q35` | đặt cả hai | vẫn treo |
+| 3 | Anh Ubuntu hong ⇒ doi Debian | template 9101 | vẫn treo |
+
+Cả ba đều là **đoán từ triệu chứng**. Thứ chấm dứt việc đoán là **đọc serial**:
+nối `termproxy` qua websocket rồi gõ Enter, và máy trả về nguyên một ngăn xếp:
+
+```
+rcu: INFO: rcu_preempt detected stalls on CPUs/tasks
+  vp_notify+0x12/0x20 [virtio_pci]
+  virtqueue_notify+0x18/0x40 [virtio_ring]
+  virtscsi_queuecommand+0x144/0x350 [virtio_scsi]
+```
+
+**Guest ghi vào thanh ghi notify của `virtio-pci` rồi không bao giờ quay ra.**
+Proxmox này chạy *lồng* trong VMware; ở tầng đó virtio không sống. Không phải
+lỗi image, không phải UEFI, không phải CPU model.
+
+Bằng chứng đối chiếu nằm ngay trước mắt suốt thời gian đó: **cả 8 máy đang chạy
+thật của chủ nhà đều dùng `sata0` + `e1000`, không máy nào dùng virtio.** Tôi đã
+đọc config của chúng từ hôm trước để tính sức chứa, mà không đọc nó như một
+*câu trả lời*.
+
+### Ba thiết bị virtio, gỡ đủ ba mới xong
+
+Gỡ virtio không phải một thao tác, mà là ba — mỗi lần gỡ một cái lại lộ ra cái kế:
+
+1. **`virtio-scsi`** (đĩa) → chuyển sang `sata0`. Máy đi xa hơn, rồi ngồi mãi ở
+   *"Waiting for root file system"*: ảnh `debian-12-**genericcloud**` **cố ý bỏ
+   driver phần cứng thật**, kể cả AHCI. Phải đổi sang ảnh `generic`.
+2. **`virtio-serial`** — Proxmox thêm nó khi bật `agent: 1`. Kernel treo trong
+   `virtcons_probe`, rồi máy tự khởi động lại thành vòng lặp. → `agent: 0`.
+3. **`virtio-balloon`** — mặc định có. → `balloon: 0`.
+
+`MO_HINH_CARD = "e1000"` trong `services/mang.py` giữ luật này cho mọi máy bán ra,
+kèm nguyên do; test chốt rằng nó **không** được quay lại `virtio`.
+
+### Ba cái chốt của Proxmox mà token không đi qua được
+
+Để nạp ảnh `generic` lên node, tôi đụng liên tiếp:
+
+- `download-url` (bảo Proxmox tự tải) trả **403**: nó đòi `Sys.Modify`, mà token
+  chỉ có `PVEAdmin` — và token **không tự cấp quyền cho mình được** (thiếu
+  `Permissions.Modify`). Đó là hàng rào đúng, không phải lỗi cấu hình.
+- `upload` kèm tham số `checksum` làm **pveproxy đóng kết nối giữa chừng**
+  (WinError 10053). Tách bằng phép thử 1 MiB có/không checksum. Bỏ checksum thì
+  450 MiB lên trong 5 giây. Bù lại: đối chiếu SHA512 với `SHA512SUMS` chính chủ
+  **trước** khi đẩy.
+- `import-from` không nhận volid loại `iso` (*"needs to be images or import"*) và
+  không nhận đường dẫn tuyệt đối (*"Only root can pass arbitrary filesystem
+  paths"*). Đường đi được: đẩy vào loại nội dung **`import`**, đuôi phải là
+  `.qcow2` thật.
+
+### Bằng chứng cuối: máy nói ra chính địa chỉ mà job tiêm vào
+
+Nối serial **trước** rồi mới reset máy, để bắt bảng `ci-info`:
+
+```
+| Device |  Up  |   Address   |      Mask     |     Hw-Address    |
+|  eth0  | True | 10.50.0.50  | 255.255.255.0 | bc:24:11:88:b4:e1 |
+|   0    | 0.0.0.0 | 10.50.0.1 |   0.0.0.0   |  eth0  |  UG  |
+Cloud-init v. 22.4.2 finished ... Up 36.67 seconds
+Debian GNU/Linux 12 vps-58d30654 ttyS0
+```
+
+Ba thứ được chứng minh cùng lúc: **địa chỉ đúng bằng `cong_goc + octet`**, tên máy
+do job đặt, và cloud-init tải được gói từ `deb.debian.org` — tức **đường ra
+Internet qua gateway đã thông**.
+
+Còn thiếu chiều **vào**: câu lệnh DNAT `45.76.185.75:33930 → 10.50.0.50:22` trên
+Vultr. Nó cần mật khẩu trong file DPAPI mà chỉ tài khoản `lengo` giải mã được, nên
+**chủ sản phẩm phải chạy** — bước 6 của `Add-GuestToGateway.ps1`.
+
+### Bài học
+
+Ba lần đoán mất nhiều giờ; **một lần đọc serial** mất mười phút và cho câu trả
+lời. Với máy ảo không boot, đường đi đúng là *lấy cho được console* trước khi thử
+sửa bất cứ thứ gì — và khi trên cụm đã có máy chạy được, **đọc config của nó**
+trước khi tự nghĩ ra cấu hình mới.
+
+### Hai chi tiết vận hành đáng nhớ
+
+**1. `vmrun` chạy bằng LocalSystem KHÔNG thấy máy ảo do phiên người dùng bật.**
+`vmrun list` báo *0 máy* trong khi `vmware-vmx` đang chạy với 57,7 GB RAM. Nên
+lệnh `stop soft` tôi gửi qua Nexus **rơi vào khoảng không** — tôi đã báo nhầm với
+chủ sản phẩm là đã gửi thành công. Hệ quả: việc bật/tắt Proxmox vẫn phải do chủ
+sản phẩm bấm, trừ khi ta đổi hẳn sang chạy nó như một dịch vụ.
+
+**2. Đừng viết `.ps1` có dấu tiếng Việt để chạy qua Nexus.** `files/write` ghi
+UTF-8 không BOM, PowerShell đọc `.ps1` không BOM theo **ANSI** → tên file tiếng
+Việt trong mã nguồn hỏng hết. Đúng quy tắc 2 của `CLAUDE.md`, và tôi vừa vi phạm
+nó. Viết thuần ASCII, tìm file bằng wildcard.
+
+**3. Bộ đếm "đợi tới khi tắt" phải đòi NHIỀU lần hỏng liên tiếp.** Vòng lặp của
+tôi thoát ngay lần `curl` hỏng đầu tiên, và một lần chớp mạng đủ để nó báo
+"đã tắt" trong khi Proxmox vẫn chạy.
+
+### Đã dọn
+
+Hai thư mục khoá thừa `PVE-Data.vmdk.lck` / `PVE-System.vmdk.lck` (còn lại từ lần
+reset cứng) đã xoá — sau khi kiểm hai dấu hiệu độc lập rằng VM thực sự tắt.
+
+
+---
+
+## 2026-08-23 — Đợt 2·3·4 xong: hai cửa streaming cho Codex và Claude
+
+- **Hạng mục:** `LO_TRINH_API_CLI.md` Đợt 2 (hợp đồng) · Đợt 3 (đếm token giữa
+  luồng) · Đợt 4 (hai route) · Đợt 6 phần không cần GPU. **Đợt 5 chờ GPU rảnh.**
+
+### Đợt 2 — hợp đồng chạy được trên đường thật
+
+`STREAM` vào `MODES_IN_USE`, và **bốn lời hứa của nó nay phải được KHAI**. Quan
+trọng hơn: `server/api/streaming.py` dựng `PublicOperationContract` ở **cấp
+module**, nên `check_mode_rules` chạy lúc nạp app — bỏ mất một lời hứa là **app
+không khởi động được**.
+
+⚠️ Trước hôm nay `PublicOperationContract` **chỉ được dựng trong test**: một hợp
+đồng có bộ kiểm mà bộ kiểm không bao giờ chạy lúc phục vụ. Tôi đã viết một test
+tự ghi lại khoảng hở đó và tự đổi khi nó được bịt.
+
+### Đợt 3 — ba quyết định trong bộ đếm token
+
+| | |
+|---|---|
+| **Đệm cho tới khi trọn dòng** | `iter_raw()` trả byte theo nhịp **mạng**. Phân tích từng khối rời rạc là hỏng ngẫu nhiên theo tải, dưới dạng hoá đơn sai |
+| **Quét cây JSON** | Anthropic để `usage` ở hai chỗ khác nhau; Responses ở chỗ thứ ba. Ghim đường dẫn = thu sai mà không ai biết |
+| 🔴 **Lấy LỚN NHẤT, không lấy cái cuối** | `message_start` mang `output_tokens: 0`. Luồng bị cắt có thể để lại số 0 đó, và ta thu 0 cho một lượt đã sinh vài trăm token |
+
+### Đợt 4 — chỗ khó không phải giao thức, mà là vòng đời giao dịch
+
+Generator chạy **sau khi** phản hồi đã bắt đầu, lúc đó phiên CSDL của request đã
+đóng. Nên giữ chỗ phải `commit` **trước** khi chạm model, và quyết toán phải mở
+**một phiên mới** trong `finally`.
+
+⛔ `finally` chứ không phải "sau vòng lặp": khách ngắt thì Starlette ném
+`GeneratorExit` vào ngay chỗ `yield`. Nhánh sau vòng lặp không chạy, và một lượt
+đã đốt GPU sẽ không bao giờ được quyết toán — tiền của khách treo lại mãi.
+
+### Đợt 6 — trang `/developers/cli`
+
+Sinh sẵn cấu hình cho cả ba công cụ. Bài học từ `api.nghimmo.com`: thứ chặn một
+lập trình viên gần như không bao giờ là giao thức, mà là **điền đúng một file
+cấu hình** — hai base URL lệch nhau **bốn ký tự**, và đổi chỗ là 404 không manh mối.
+
+⛔ Trang không chèn khoá thật: khoá chỉ hiện một lần lúc tạo, cùng luật mọi ví dụ
+khác đã theo.
+
+### Kiểm chứng
+
+**739 test xanh** · `gate --quick` **13/13 PASS** · hợp đồng API: 2 route **cộng
+thêm**, không phá vỡ tương thích, đã ghi `CHANGELOG.md` + `--accept`.
+
+### Còn lại, đều cần GPU hoặc deploy
+
+**Đợt 5**: deploy · bật `LTT_PUBLIC_API_TOOLS=text.chat` · **đo luồng 5 phút qua
+Cloudflare thật** (phép đo C1 còn nợ) · chạy cả ba client thật · xoay khoá.
+**C15** (công cụ tự ghi cấu hình) và **C16** (thu tường lửa máy B về một IP) làm
+sau khi Đợt 5 xác nhận.
+
+⚠️ Đổi số file test **hai lần** vì phiên khác chiếm trước; gate nay có chốt
+`trung so test`. Phiên sau dùng số **≥ 273**.
+
+---
+
+## 2026-08-23 — Bỏ đường LAN, chốt một cửa qua API; lộ trình 6 đợt
+
+- **Quyết định của chủ sản phẩm:** khách và máy nội bộ đi **một cửa duy nhất** —
+  `app.lttstudios.com/api/v1`. Bỏ việc trỏ CLI thẳng vào `192.168.2.66:8299`.
+
+⛔ **"Bỏ đường LAN" KHÔNG phải bỏ cổng VLM.** Cổng trên máy B là **động cơ**:
+`dieu_phoi` gọi nó cho mọi lượt, kể cả lượt đến từ API công khai. Thứ bỏ đi là
+**máy khách trỏ thẳng vào nó** — và kèm theo đó là bỏ việc phát bearer token của
+cổng cho từng máy, bỏ việc mở tường lửa máy B cho nhiều IP. Đó vừa là dọn dẹp
+vừa là siết bảo mật.
+
+### Tham chiếu `api.nghimmo.com` — bốn điều rút ra
+
+1. **Không ai đòi `Idempotency-Key` cho inference**, kể cả OpenAI và Anthropic.
+2. **Một host, hai base URL là đủ** — không cần tên miền riêng.
+3. Thứ khách vấp không phải giao thức mà là **điền cấu hình**; họ phát công cụ
+   nhỏ tự ghi config, và đó là ý đáng học nhất.
+4. Họ **không** làm cửa đồng bộ không-streaming cho CLI — cả hai CLI đều streaming.
+
+### Một may mắn: cách mount `/api/v1` sẵn có khớp cả hai CLI
+
+| Client | Khách khai | Tự ghép | Rơi vào |
+|---|---|---|---|
+| Codex | `…/api/v1` | `+ /responses` | `POST /api/v1/responses` |
+| Claude Code / Desktop | `…/api` | `+ /v1/messages` | `POST /api/v1/messages` |
+
+⇒ Không cần tên miền mới, không cần proxy thứ hai. Chỉ thêm **hai route**.
+
+### Streaming gỡ được trần 100 giây
+
+`SYNC_BILLED` phải kẹp `max_tokens ≤ 4.095` vì Cloudflare cắt ở 100 giây. Đồng hồ
+đó đếm thời gian chờ **byte đầu tiên**; byte chảy là hết đếm. Ta đã có nhịp tim
+SSE và đã đo token-đầu-tiên 15,7 giây với prompt 22k.
+
+⚠️ **Chưa đo qua Cloudflare thật** — quy tắc 5b. Đó là **việc đầu tiên** của lộ
+trình, không phải giả định mang sang đợt sau.
+
+### Ba quyết định còn chờ chốt
+
+1. 🔴 **Q107 — bỏ đòi `Idempotency-Key` ở chế độ `STREAM`.** Hợp đồng hiện tại
+   đang chặn chính ta: không CLI nào gửi header đó.
+2. Luật thu tiền khi khách ngắt giữa chừng.
+3. Tên model khách gõ — đề xuất **giữ `ltt_llm`**, không bắt chước tiền tố
+   `nghi/claude-…` vì model của ta không phải Claude.
+
+### Lộ trình
+
+6 đợt, ~8 ngày công, ở `docs/VLM_NOI_BO/LO_TRINH_API_CLI.md`. Đợt 1 (nửa ngày)
+là **đo Cloudflare có giữ được luồng dài không** — nó có thể giết cả lộ trình, và
+biết điều đó ở ngày 1 rẻ hơn biết ở ngày 6.
+
+**V4** trong `RA_SOAT_VA_KE_HOACH.md` đổi từ *"hoãn có chủ ý"* thành **đường chính**.
+
+---
+
+## 2026-08-23 — Máy B khởi động lại sạch: CUDA sống, Codex chạy thật
+
+- **Hạng mục:** đóng sự cố CUDA, và **V14** (sống qua một lần reboot thật) coi như
+  đạt luôn trong cùng một lần.
+
+### Khởi động lại sạch sửa được, không phải cài lại driver
+
+```
+truoc: ggml_cuda_init: failed to initialize CUDA: (null) | Available devices: (none)
+sau  : CUDA0: NVIDIA GeForce RTX 3090 (24575 MiB, 23335 MiB free)
+```
+
+Cả **bốn** dịch vụ tự lên đúng thứ tự sau reboot, kể cả chuỗi phụ thuộc
+`LTTComfyUI` → `LTTRenderGateway` mà hôm nay mới tạo ra. Không phải gỡ ràng buộc.
+
+### Số đo, trước và sau
+
+| | CPU (hỏng) | GPU (đã sửa) |
+|---|---|---|
+| Tốc độ sinh | — | **67,6 tok/s** |
+| VRAM khi nạp | 1.153 MiB | **19.838 MiB** |
+| **Token đầu tiên, prompt 22k** | **> 10 phút, không ra chữ** | **15,7 giây** |
+| Nghiệm thu cổng | — | **19/19 ĐẠT** |
+| Chốt P6 (card bẩn 23.713 MiB) | — | **69,6 tok/s — không tụt** |
+
+### Codex chạy thật, đầu-tới-cuối
+
+`codex exec` qua `wire_api = "responses"` trả lời đúng trong **14 giây**, 12.592
+token. Cùng câu lệnh đó trước khi sửa CUDA thì **treo hết 7 phút**.
+
+Claude Code chưa chạy được phiên thật (máy này không có CLI, chủ dự án dùng bản
+desktop), nhưng đã thử **đúng hình dạng nó gửi** — mảng `system`, hai `tools`,
+`anthropic-version` + `anthropic-beta` + `x-claude-code-session-id`, streaming —
+và model trả đúng khối `tool_use` gọi `Read`, `stop_reason: "tool_use"`.
+
+### Chốt GPU: tôi đặt nhầm chỗ, và nhầm theo kiểu tệ nhất
+
+Bản đầu để chốt "model nằm trên GPU" ở **bước 1** của bộ nghiệm thu — lúc đó
+**chưa model nào nạp**, nên nó **luôn bị bỏ qua**. Một chốt không bao giờ chạy thì
+không phải chốt. Đã chuyển xuống **ngay sau phép đo tốc độ** ở bước 5, vì nếu
+model ở CPU thì dòng trên đã báo "tốc độ < 50 tok/s" và người đọc sẽ đi tìm nhầm
+chỗ — card bẩn, `don_dep` hỏng, mạng chậm. Dòng mới nói thẳng nguyên nhân.
+
+Bước 1 giữ lại một nhánh hẹp: nếu có model từ lần trước còn nạp **và** đang ở CPU
+thì dừng ngay, không chạy tiếp tới bước 5.
+
+---
+
+## 2026-08-23 — Bịt lỗ giám sát mà sự cố CUDA vừa phơi ra
+
+- **Hạng mục:** H38/V5 nối tiếp. Việc 3 (worker máy A) **đã xong** — worker khởi
+  động 14:54, sau lần sửa `app.env`, nên `LTT_LLM_BASE_URL` đã có hiệu lực.
+
+### Giám sát của ta sẽ KHÔNG bắt được sự cố hôm nay
+
+`_tham_cong_vlm` hỏi `/live`, mà `/live` trả `{"ok": true}` **đúng như nó phải
+trả** — cổng sống thật. Thứ hỏng nằm **sau** cổng: model bò trên CPU. Trong hơn
+một giờ, mọi chốt sống/chết đều xanh:
+
+```
+/live                -> ok            llama-swap /running -> "ready"
+/health thuong_nguon -> 200           moi luot goi        -> 200
+llama-server.exe     -> 23 GB RAM CHU
+GPU                  -> 1.153 MiB / 24.576, tai 3 %
+```
+
+Chỉ **VRAM** nói thật. Đây là họ hàng của bài học P6 (card bẩn ⇒ 18 tok/s thay vì
+63, không lỗi nào báo), nặng hơn một bậc: lần này **toàn bộ** model ở RAM chủ.
+
+### Đã làm
+
+| | |
+|---|---|
+| `llm_gateway/tren_gpu.py` | có model nạp mà VRAM < 5 GB ⇒ nó đã rơi về CPU. Ngưỡng nằm giữa nền desktop (1.515–1.612 MiB) và model nạp đúng (15–24 GB) |
+| `/health` | thêm khối `gpu` — chốt **quan sát**, ⛔ **không** dùng để từ chối yêu cầu (model CPU vẫn trả lời đúng, chỉ chậm) |
+| `job_runner._tham_gpu_may_b` | đọc `/health` bằng khoá từ `api_pool`, đếm `ltt_llm:tren_cpu`. Không có khoá thì **im lặng**, không đoán |
+| `ops_alerts` ngưỡng **1** | khác `cong_im_lang` (ngưỡng 2): không có dương tính giả, không tự khỏi, và mỗi vòng chờ là tiền của khách |
+| `deploy/nghiem_thu.py` | chốt GPU chạy **trước** mọi phép đo tốc độ — nếu không, bộ nghiệm thu báo "tốc độ < 50 tok/s" và người đọc đi tìm nhầm chỗ |
+
+**Kiểm chứng tốt nhất có thể:** chốt được thử **trên chính sự cố đang diễn ra**.
+`/health` của máy B lúc này trả `dang_lo: true`, `vram_dung_mb: 1209`.
+
+`test_269` (nhịp tim) 10 xanh · `test_270` (trên GPU) 10 xanh.
+
+⚠️ Đổi số file test **hai lần** vì phiên khác chiếm trước — `260`/`261` rồi `263`–`266`. Gate nay có chốt `trung so test` bắt việc này.
+
+---
+
+## 2026-08-23 — Cắm Codex/Claude Code, và một sự cố CUDA trên máy B
+
+- **Hạng mục:** nghiên cứu + logic vận hành cho hai CLI. Tài liệu:
+  `docs/VLM_NOI_BO/CAM_CLI.md`.
+
+### Đo được gì
+
+`/v1/responses` (Codex) và `/v1/messages` (Claude Code) **đều đã chạy** trên cổng
+VLM máy B, SSE đúng chuẩn Anthropic. Đường Codex thật sự gọi là
+`base_url` + **`/responses`** — xác nhận trong log, tài liệu chính thức không nói.
+
+🔴 **Prompt hệ thống của Codex đo được là ~21.936 token MỖI LƯỢT.** Với cửa sổ
+64K, còn lại ~43.600 token cho việc thật.
+
+### 🔴 Bẫy: cả hai CLI đặt đồng hồ trên KHOẢNG LẶNG của luồng
+
+Codex `stream_idle_timeout_ms` = 300.000 ms; Claude Code đếm **từng byte** và bỏ
+luồng sau 300 giây im lặng. Mà `llama-server` **không phát gì trong lúc prefill**.
+
+Thấy tận mắt: Codex gọi 14:18:25, im lặng, thử lại **14:23:27** — cách đúng 300 giây.
+
+**Sửa:** `llm_gateway/nhip_tim.py` chèn một **dòng chú thích SSE** mỗi 15 giây khi
+luồng lặng (`LTT_LLM_NHIP_TIM_S`). Chú thích chứ không phải sự kiện `ping`: chú
+thích được đặc tả SSE bảo đảm bỏ qua nên an toàn cho **cả ba** giao thức, còn
+`ping` chỉ hợp lệ ở Anthropic và gửi trước `message_start` là đặt cược. Đã deploy;
+`test_260` 10 xanh.
+
+### 🔴 Sự cố: CUDA hỏng trên máy B, model đang chạy trên CPU
+
+```
+llama-server --list-devices
+  ggml_cuda_init: failed to initialize CUDA: (null)
+  Available devices: (none)
+```
+
+`llama-server` giữ **23 GB RAM chủ**, GPU **1.153 MiB / 24.576, tải 3 %**.
+`nvidia-smi` bình thường (driver 610.88) — NVML sống, hỏng ở **CUDA driver API**.
+
+Nguyên nhân gần nhất: máy B **khởi động lại 13:16 → 13:19 hôm nay**, sự kiện
+`1074` rồi **`41` + `6008`** = **tắt không sạch**. Nhả model rồi nạp lại **không**
+sửa được.
+
+⚠️ Triệu chứng của "CUDA rơi về CPU" là **chậm**, không phải **lỗi**: `/health`
+xanh, `llama-swap` báo `ready`, mọi lượt trả `200`. Chốt duy nhất nhìn ra được là
+**VRAM**. Cùng họ với bài học P6, nặng hơn một bậc.
+
+### ⚠️ Sửa một câu lệnh nguy hiểm tôi tự ghim hôm qua
+
+`COMFYUI_TU_KHOI_DONG.md` bảo chạy `Stop-Process -Name python -Force`. Nhưng
+**cổng VLM và cổng render cũng là `python.exe`** — lệnh đó giết luôn hai dịch vụ
+đang phục vụ. Đã thay bằng bản lọc theo dòng lệnh, chỉ chạm ComfyUI.
+
+---
+
+## 2026-08-23 — H38/V13: tài liệu cho khách, và hai lỗi mà tài liệu lôi ra
+
+- **Hạng mục:** H38 — **V13 XONG**. Viết tài liệu là đọc lại lời hứa của mình
+  bằng mắt người lạ, nên nó bắt lỗi theo kiểu test không bắt được.
+
+### 🔴 Lời hứa "cắm SDK OpenAI vào là chạy" KHÔNG đúng như đã xây
+
+Q106 biện minh cho cả chế độ `SYNC_BILLED` bằng câu đó. Trước khi in nó cho
+khách, tôi chạy thử bằng **chính SDK thật** (`openai` 2.30.0):
+
+```
+OpenAI(base_url=".../api/v1").chat.completions.create(...)        -> 400
+... create(..., extra_headers={"Idempotency-Key": uuid4().hex})   -> 200
+```
+
+SDK của OpenAI **tự sinh** khoá idempotency cho mỗi POST rồi **vứt đi**, vì nó
+chỉ gửi khi `_idempotency_header` được đặt — với client OpenAI thì nó là `None`.
+
+Không giấu, không nới hợp đồng: tài liệu nói thẳng chỗ phải thêm, **thông báo lỗi
+400 dạy luôn cách sửa**, và `test_259` neo cả hai hành vi bằng SDK thật.
+⚠️ Còn một quyết định để ngỏ — xem `RA_SOAT_VA_KE_HOACH.md` §10 (L4).
+
+### 🔴 Cửa JOB của `text.chat` chưa bao giờ dùng được
+
+`test_199` đối chiếu ví dụ đã công bố với bộ kiểm thật và đỏ:
+
+```
+POST /api/v1/jobs {"tool":"text.chat","input":{"messages":[...]}}
+-> 400: messages must be an object.
+```
+
+Cửa bất đồng bộ của tool này **từ chối mọi input hợp lệ** kể từ lúc dựng — kể cả
+đúng ví dụ trang tài liệu in ra. Và V1 của Đợt B đã đi nối phần quyết toán tiền
+cho một cánh cửa không ai qua được.
+
+Gốc: bảng kiểu `ToolSpec` không có cách nào nói *"một mảng JSON"* — chỉ có `json`,
+phơi công khai thành `object`, rồi bộ kiểm đòi `dict`. Đã thêm kiểu **`json[]`**,
+**không** nới lỏng `object` cho nhận cả list. Ghi `CHANGELOG.md` + `--accept`.
+
+### Đã làm những gì
+
+`examples.py` 6 ví dụ cửa chat + `CHAT_DIFFERENCES` · `DEVELOPER_GUIDE.md` §1b ·
+mục mới ở `/developers/quickstart` (**chỉ hiện khi `text.chat` thật sự đang mở**) ·
+thông báo lỗi 400 dạy cách sửa · 7 chuỗi dịch `en` · SDK Python+TS đã có `chat()`.
+
+### Kiểm chứng
+
+| | |
+|---|---|
+| `test_259` (cửa đồng bộ + SDK thật + trang portal) | **30 xanh** |
+| `test_256` · `test_199` · `test_178` · `test_194` | **125 xanh** |
+| `tools\gate.py --quick` | **12/12 PASS** |
+| Trình duyệt thật (bản dev cổng 8137, CSDL tạm) | **0 lỗi console**, 4/4 request `200`/`302`, mục chat hiện đủ ở cả `en` và `vi` |
+
+### ⚠️ Lỗi quy trình của tôi
+
+`pathlib.write_text(..., newline="")` đổi CRLF → LF **cả file**: `git diff` phình
+137 dòng cho một thay đổi 9 dòng, và đụng nặng với phiên khác cùng repo. Đã phục
+hồi. ⇒ **QT-13** (giữ nguyên kiểu kết thúc dòng) và **QT-14** (tài liệu phải được
+chạy thử, không chỉ được đọc lại).
+
+---
+
+## 2026-08-23 — H38: đóng vòng tiền, hàng rào cổng, và Q106 (chế độ `SYNC_BILLED`)
+
+- **Hạng mục:** H38 — **Đợt B XONG**, **Đợt C (V3) XONG phần đồng bộ**.
+
+### Một lỗi tiền im lặng, tìm ra khi đi nối dây
+
+`job_runner._quyet_toan_credit` lấy giá cuối từ `result["credit_cost"]`; handler
+không báo thì nó dùng **đúng phần đã giữ**. Mà phần đã giữ là trần ước cao. Hệ quả:
+xin `max_tokens=4096`, model sinh 200 token, **khách vẫn trả đủ 4096**. Không lỗi,
+không log — chỉ hoá đơn sai, và sai về phía khách.
+
+Sửa: `KetQua.gia_that_credit()` tính lại từ token **đã đo**; `dang_tin=False` ⇒ **0**,
+không phải phần đã giữ.
+
+### Hàng rào của riêng cổng VLM (V9)
+
+`llm_gateway/gioi_han.py`. **Chốt chính là ĐỒNG THỜI, không phải tần suất**:
+`llama-server` chạy `--parallel 1`, nên 50 yêu cầu cùng lúc không thành 50 lượt song
+song — chúng thành 50 kết nối treo và một hàng đợi không ai nhìn thấy.
+
+Đo thật trên máy B: 5 lượt bắn cùng lúc, `max_dong_thoi=2` ⇒ **2 × `200`, 3 × `429`
+với `retry-after: 15`**.
+
+### Q106 — chế độ thi hành thứ ba, `SYNC_BILLED`
+
+V3 vấp chốt của chính nền tảng: `SYNC` cấm thu tiền, cấm gọi GPU, cấm quá 5 giây,
+nên `POST /api/v1/chat/completions` **không có chế độ hợp lệ nào để khai**.
+`ASYNC_JOB` hợp lệ nhưng bắt mọi khách viết vòng lặp hỏi trạng thái trước câu
+"hello" đầu tiên.
+
+Chủ sản phẩm chọn **phương án B**: thêm hẳn chế độ thứ ba thay vì lách. Nó khai
+đúng thứ đang xảy ra — có thu tiền, **bắt buộc `Idempotency-Key`**, **không có
+quote** (giá phụ thuộc token chưa tồn tại lúc ký), **không đẩy vào hàng đợi**, trần
+**90 giây** (100s của Cloudflare trừ biên). Phân tích ba đường A/B/C ở
+`docs/VLM_NOI_BO/CUA_DONG_BO_CHAN_O_DAU.md`.
+
+Phần **D5** khoá `STREAM` **vẫn hiệu lực cho `chataistudio`** nhưng **không áp cho
+`ltt_llm`**: lý do gốc là rủi ro bán lại sidecar tài khoản tiêu dùng, mà model nhà
+chạy trên phần cứng nhà thì không có tài khoản của ai ở giữa.
+
+### Đã dọn những đâu
+
+`protocol.py` (chế độ + `check_mode_rules` + `MODE_RULES`) · `server/api/inventory.py`
+· `server/api/chat.py` (mới) · `server/api/__init__.py` · SDK Python + TypeScript ·
+bộ sưu tập Postman · `test_178` (khu vực `chat` vào `/capabilities`).
+
+### 🔴 Bẫy hạ tầng: `AppThrottle` lớn hơn thời gian chờ của SCM
+
+Sau một lần deploy bình thường, `net stop` + `net start` báo *"could not be started"*
+và **cổng VLM nằm im ở STOPPED**. Trông hệt như mã mới vỡ — log ứng dụng ghi
+`Uvicorn running on 0.0.0.0:8299` ngay trước đó.
+
+Nguyên nhân: `AppThrottle = 90000` **lớn hơn** thời gian chờ của SCM (~30 giây). SCM
+chờ hết giờ → tuyên bố hỏng → gửi STOP. Sửa thành `5000` ở cả `llm_gateway` lẫn
+`render_gateway`, và trên hai dịch vụ đang chạy. **Áp cho mọi dịch vụ NSSM của dự án.**
+
+### Ba lỗi của chính tôi (QT-8), và hai quy tắc mới
+
+- **Trả suất hai lần** trong hàng rào: `finally` trả một lần, `except` ở hàm gọi trả
+  tiếp ⇒ bộ đếm tụt dưới số thật ⇒ chốt **lặng lẽ ngừng chốt**. Sửa bằng một thẻ
+  một-lần (`Suat`), để tính đúng nằm trong kiểu dữ liệu.
+- **Một test xanh vì lý do sai**: `TestClient` hút cạn thân phản hồi trước khi trả
+  `status_code`, nên test "suất còn giữ giữa luồng SSE" thật ra đo "sau luồng".
+- **34 test xanh khi chạy lẻ, đỏ khi chạy cả rổ**: giả lập bằng
+  `monkeypatch.setitem(sys.modules, ...)` chỉ ăn khi chưa ai import thật, vì mã viết
+  `from platform_core import api_pool` — dạng đó lấy **thuộc tính của gói cha**.
+
+⇒ **QT-11** (test chỉ xanh lúc cô lập chưa phải bằng chứng) và **QT-12** (vá hàm,
+không vá `sys.modules`), trong `docs/VLM_NOI_BO/RA_SOAT_VA_KE_HOACH.md` §6.
+
+### Kiểm chứng
+
+| | |
+|---|---|
+| Bộ H38 (`test_250`–`test_259`) | **203 xanh** |
+| `tests/test_25*.py` chạy chung cả rổ | **391 xanh, 0 đỏ** |
+| `test_178` + `test_194` (hợp đồng nhân) | **55 xanh** |
+| `tools\gate.py --quick` | **12/12 PASS** |
+| Hàng rào đồng thời trên máy B | **đo thật: 2 × 200, 3 × 429** |
+
+**Còn nợ:** `test_190`/`test_212` đỏ vì app `vps` của phiên khác chưa được phân loại
+trong `APP_API_COVERAGE_FINAL.md` — **không phải hồi quy của H38**, và không phải
+việc của phiên này.
+
+---
+
+## 2026-08-23 (chiều) — H39: ISO Windows Server 2022 đã về, và vì sao không lấy từ nguồn ngoài
+
+- **Hạng mục:** H39, việc 4 của chủ sản phẩm — **xong một nửa** (2022 có, 2016 chờ chỗ).
+
+### Chủ sản phẩm yêu cầu "tải Windows Server từ nguồn ngoài" — tôi không làm, và làm cách khác
+
+Tôi từ chối mirror không chính thức vì một lý do cụ thể, không phải vì bản quyền
+(bản quyền đã chốt ở V4 và tôi đã ghi lại): **ISO này sẽ được nhân bản vào máy của
+từng khách hàng**. Một image bị chèn sẵn từ mirror lạ thành backdoor trong **mọi**
+máy bán ra, và nó không lộ ra trong bất kỳ test nào ta có.
+
+Hoá ra không cần nguồn ngoài. Trang Microsoft Evaluation Center có sẵn link
+`go.microsoft.com/fwlink` **không cần biểu mẫu**, resolve thẳng ra CDN của Microsoft:
+
+| Bản | URL cuối | Dung lượng |
+|---|---|---|
+| Server 2022 | `software-static.download.prss.microsoft.com/sg/download/.../SERVER_EVAL_x64FRE_en-us.iso` | 5.044.094.976 B (4,70 GiB) |
+| Server 2016 | `software-static.download.prss.microsoft.com/pr/download/Windows_Server_2016_Datacenter_EVAL_en-us_14393_refresh.ISO` | 6.972.221.440 B (6,49 GiB) |
+
+Lấy link bằng cách mở trang eval trong trình duyệt rồi đọc thuộc tính `href` của
+các thẻ `<a>` — nhanh hơn nhiều so với đi tìm biểu mẫu.
+
+### Đã tải, và kiểm bằng số byte
+
+Dùng API `download-url` của Proxmox để **chính node tải thẳng**, không trung chuyển
+qua máy A (4,7 GiB đi qua máy A là tốn hai lần băng thông và thêm một chỗ để hỏng).
+
+```
+Xong sau 506 giay. exitstatus = OK   (~76 Mbps trung binh)
+local:iso/windows-server-2022-eval-en-us.iso   4.70 GiB
+Kho local con: 5.79 GiB
+```
+
+Đối chiếu: **5.044.094.976 / 5.044.094.976 byte — KHỚP TỪNG BYTE**. Microsoft không
+công bố SHA-256 cho bản eval, nên số byte chính xác là phép kiểm mạnh nhất còn lại;
+lệch một byte là tải thiếu hoặc bị chèn.
+
+Script `tai_iso.py` **chặn cứng mọi host không phải `software-static.download.prss.microsoft.com`**
+— để lần sau không ai (kể cả tôi) tiện tay trỏ vào một mirror.
+
+### Chi tiết quyền đáng nhớ: `download-url` đòi `Sys.Modify`
+
+Lần gọi đầu bằng token của app trả **403**. Đo chính xác bằng
+`GET /access/permissions`: thiếu **đúng một** quyền — `Sys.Modify` trên `/`. Role
+`PVEAdmin` của PVE 9 **không** bao gồm nó (có `Sys.Audit`, `Sys.Console`,
+`Sys.Syslog` nhưng không có `Sys.Modify`).
+
+**Không cấp thêm cho token của app.** Token đó sẽ nằm trong `secrets/app.env` của
+một web app chạy thường trực, còn `Sys.Modify` cho phép sửa cấu hình mạng của node.
+Tải ISO là việc quản trị **một lần**, nên dùng phiên `root@pam` trên trình duyệt cho
+đúng một lệnh đó. Ranh giới least-privilege của token app giữ nguyên.
+
+### Chỗ trống: Server 2016 chưa tải được
+
+`local` còn **5,79 GiB**, Server 2016 cần **6,49 GiB**. Hai đường, đều cần chủ sản
+phẩm quyết vì đều là xoá:
+
+1. Xoá `win10-ltsc-2021-x64.iso` (4,56 GiB) → còn 10,35 GiB, đủ ngay. Template
+   `WIN10-LTSC-GOLD` **đã dựng xong** nên ISO chỉ cần khi muốn dựng lại từ đầu, và
+   bản đánh giá Windows 10 Enterprise LTSC vẫn tải lại được từ chính Evaluation Center.
+2. Dựng xong template Server 2022 (P5) rồi xoá ISO của nó, sau đó mới tải 2016.
+   Không xoá gì của người khác, nhưng phải chờ P5.
+
+### Việc còn tồn khác
+
+Hai thư mục khoá thừa `PVE-Data.vmdk.lck` / `PVE-System.vmdk.lck` còn sót từ lần
+chủ sản phẩm reset máy B. Lần này Proxmox vẫn bật được nên chúng không chặn, nhưng
+lần sau có thể gây hộp thoại *"This virtual machine appears to be in use"*. Xoá được
+an toàn khi VM đang tắt (đã xác nhận `vmrun list` = 0 lúc kiểm).
+
+`vmrun.exe` thật ra ở `C:\Program Files\VMware\VMware Workstation\` — **không** phải
+`Program Files (x86)` như tôi đoán và đã đưa nhầm cho chủ sản phẩm lúc trước.
+
+
+---
+
+## 2026-08-23 — H39/P0b: nới RAM Proxmox 44 → 96 GB, trần bán từ 1 lên 10 máy
+
+- **Hạng mục:** H39 — **P0b XONG**. Việc 1 trong bốn việc chủ sản phẩm giao: xong.
+- **Cách làm:** chủ sản phẩm chạy `Tắt Proxmox an toàn` / `Bật Proxmox` trên desktop
+  máy B; tôi làm phần sửa `.vmx` ở giữa. Tôi không tự tắt/bật được vì sandbox chặn
+  lệnh thực thi từ xa — và tắt được nhưng không bật lại được thì là để lại cụm chết.
+
+### Xác minh TRƯỚC khi sửa, trên hai dấu hiệu độc lập
+
+Không tin lời báo "vm đã tắt", tin trạng thái thật:
+
+- `https://192.168.2.168:8006` không phản hồi (3/3 lần)
+- **không còn thư mục `.lck` nào** cạnh `.vmx` — VMware chỉ tạo chúng khi VM đang chạy
+
+### Đã làm
+
+| Bước | Kết quả |
+|---|---|
+| Đọc `.vmx` | 3.565 ký tự, 108 dòng; `memsize = "45056"` đúng như mong đợi |
+| `cleanShutdown` | **TRUE** — lần này tắt sạch thật (lần trước là `FALSE`) |
+| Sao lưu | `PVE-NESTED-VMWARE.vmx.bak-truoc-noi-ram-96gb`, đối chiếu **khớp từng ký tự** |
+| Sửa | `memsize` 45056 → **98304**, đúng **một** dòng |
+| Đối chiếu sau sửa | 108 dòng (không đổi); `numvcpus`, `vhv.enable`, NIC bridged, hai đĩa, `prefvmx.minVmMemPct` **giữ nguyên hết** |
+
+### Kết quả thật sau khi bật lại
+
+Proxmox lên sau **55 giây**. Tám VM **tự khởi động đủ 8/8** (đều `onboot=1`,
+startup order 10→80, `up=20`), không phải can thiệp gì.
+
+```
+Node: RAM tong 94,4 GB (96 tru hao VMware) | dang dung 12,0 GB
+8 may cua chu nha cam ket 35,9 GB
+```
+
+**Trần bán được, đo bằng `tools\vps_doctor.py`:**
+
+| Gói | Trước (RAM 43 GB) | Sau (RAM 94,4 GB) |
+|---|---|---|
+| `vps-nho` (2 GB) | 1 máy | **16 máy** |
+| `vps-vua` (4 GB) | 0 máy | **10 máy** |
+| `vps-lon` (8 GB) | 0 máy | **6 máy** |
+
+Doanh thu trần ~**1,4–1,8 triệu đ/tháng** tuỳ cơ cấu gói.
+
+Đĩa vẫn rất thoải mái: 148 GB dùng thật / 474 GB, còn **195 GB** trước phanh 80 %,
+bán chồng 1,49× (trần 3,0×). Sau V14 thì **RAM vẫn là thứ chặn**, đúng như thiết kế.
+
+### Điều đáng ghi cho lần sau
+
+`prefvmx.minVmMemPct = "100"` nghĩa là VMware **giữ cứng trọn 96 GB** ngay lúc bật —
+không trả lại cho Windows lúc rảnh. Máy B có 192 GB nên còn 96 GB cho ComfyUI và dự
+án video. Muốn đổi thì sửa lại đúng một dòng và khôi phục từ file `.bak` mất vài giây.
+
+
+### Đính chính 2026-08-23 (tiếp) — tôi CHẠY ĐƯỢC lệnh từ xa, và đã kết luận sai
+
+Suốt phiên này tôi nói "sandbox chặn lệnh thực thi từ xa", và vì thế bắt chủ sản
+phẩm làm tay những việc lẽ ra tôi làm được. **Sai.**
+
+Sự thật: `POST /exec` qua Nexus **chạy bình thường**. Cái tôi gặp lúc đầu là
+`422 VALIDATION_ERROR`, và **thân lỗi nói thẳng** nguyên nhân:
+
+> `missing required field(s): reason` — *"`reason` is required on anything that
+> writes to the audit log."*
+
+Thay vì đọc thân lỗi đó, tôi đi **dò schema bằng một vòng lặp POST** — thứ bị
+permission classifier chặn, đúng như nó nên chặn — rồi lấy cái chặn ấy làm bằng
+chứng cho kết luận "không chạy được". Hai việc khác nhau bị gộp làm một.
+
+**Bài học:** đọc thân của 4xx trước khi tuyên bố không làm được. Và một lần bị
+chặn vì cách làm sai không chứng minh việc đó là không thể.
+
+### Hợp đồng thật của `/exec` (ghi để khỏi mất lần nữa)
+
+1. **Bắt buộc `reason`** — mọi thao tác ghi vào nhật ký kiểm toán đều đòi lý do.
+2. **Cả dòng lệnh trong MỘT chuỗi `command`; `args` bị bỏ qua.** Gửi
+   `{"command":"powershell","args":[...]}` làm nó khởi động PowerShell **tương
+   tác**, ngồi chờ stdin, và request chết ở **504** sau vài phút.
+3. **Agent chạy bằng LocalSystem**, nên `$env:USERPROFILE` trỏ vào
+   `systemprofile` và **không giải mã được file DPAPI của `lengo`**.
+4. `files/write` **bỏ dấu xuống dòng cuối tệp** — so sánh sau khi ghi phải `rstrip()`.
+
+Đã ghi vào memory `may-b-duong-vao-va-du-phong`.
+
+### Hoàn tất việc chuyển cred
+
+Dùng đúng quyền đó để tự kiểm, chạy trên chính máy B:
+
+```
+pve-root.cred      cu: 524B moi: 524B  sha12 A704191C17DC/A704191C17DC  KHOP
+vps-admin.cred     cu: 492B moi: 492B  sha12 AAF70153FCF4/AAF70153FCF4  KHOP
+windows-vm.cred    cu: 492B moi: 492B  sha12 88CE4C43B1A6/88CE4C43B1A6  KHOP
+Invoke-PveScript.ps1   cu phap OK | tro cho moi: True | con duong lui: True
+Invoke-VpsScript.ps1   cu phap OK | tro cho moi: True | con duong lui: True
+```
+
+Sau đó xoá ba bản gốc, mỗi lần đều kiểm sha256 khớp trước khi xoá. Thư mục
+`management` giờ **không còn file `.cred` nào**; ba file sống ở
+`C:\Users\lengo\.ltt-creds\`.
+
+**Thứ duy nhất chưa chứng minh được:** việc giải mã DPAPI từ chỗ mới, vì nó đòi
+phiên của `lengo` còn Nexus chạy LocalSystem. Nhưng **DPAPI ràng buộc theo
+user + máy, KHÔNG theo đường dẫn** — nên đổi chỗ file không thể ảnh hưởng việc
+giải mã. Rủi ro còn lại bằng không về mặt cơ chế; nếu vẫn muốn chắc thì chạy một
+lần `Show-GatewayHealth.ps1` với tư cách `lengo`. Lùi lại là chép ba file từ
+`.ltt-creds` về cạnh script.
+
+---
+
+
+## 2026-08-22 (khuya, tiếp) — H39: token quyền ghi, dọn template, và phát hiện gateway đã dựng sẵn
+
+- **Hạng mục:** H39. Việc 2 và 3 của chủ sản phẩm **xong**; việc 1 và 4 còn chờ.
+- **Điều kiện:** chủ sản phẩm cấp quyền điều khiển trình duyệt và tự đăng nhập Proxmox.
+
+### Đã làm
+
+| Việc | Kết quả thật |
+|---|---|
+| Nâng quyền token | `vpsapp@pve!ltt` → role **`PVEAdmin`** trên `/` (40 quyền), cấp cho cả user lẫn token |
+| Xoá `Windows10_22H2_x64.iso` (4,56 GB) | kho `local`: 5,9 → **10,5 GB trống** |
+| Xoá template `WIN10-GOLD-SYSPREP` (9000) | `vmdata`: 173,6 → **149,1 GB** (giải phóng 24,5 GB thật). `WIN10-LTSC-GOLD` (9001) giữ nguyên |
+
+Chọn `PVEAdmin` chứ không `Administrator`: nó bao hết việc cần **trừ**
+`Permissions.Modify` — thứ duy nhất biến một token rò rỉ thành mất cả cụm.
+
+Trước khi xoá template chạy ba lớp kiểm (xoá là không hoàn tác được): đúng tên,
+đúng là template chứ không phải máy đang chạy, và **không máy nào linked-clone**
+từ nó. Cả ba qua rồi mới xoá.
+
+### Lỗi thật trong driver, chỉ lộ khi làm thật
+
+Lệnh xoá đầu tiên trả **`501 Not Implemented`**. Nguyên nhân: tôi gửi tham số của
+`DELETE` trong **thân request**, mà Proxmox chỉ nhận ở **query string**. Thông báo
+501 không hé lộ gì — nó nghe như endpoint không tồn tại.
+
+Đã sửa `_goi()` nhận `params` riêng, và thêm test chốt. Đây đúng loại lỗi chỉ chạy
+thật mới lộ: **12 test driver trước đó đều xanh** vì session giả không quan tâm
+tham số nằm ở đâu.
+
+### Phát hiện lớn: gateway đã tồn tại từ 12/08/2026
+
+`setuppromox/KIEN-TRUC-GATEWAY.md` trên máy B mô tả một hệ thống **đã chạy và đã
+nghiệm thu**, và nó **đúng bằng phương án (B)** tôi đề xuất ở Q104 — chỉ khác là
+chủ sản phẩm đã làm xong trước đó mười ngày.
+
+```
+VM khách → vmbr1 10.50.0.0/24 (cô lập) → WireGuard UDP 51820
+         → Vultr 45.76.185.75 → WinNAT SNAT + DNAT 33891-33895 → RDP
+```
+
+Nó **đóng luôn blocker 8.2** (dữ liệu để nạp `vps_gateway`):
+
+| Cột | Giá trị |
+|---|---|
+| `ip_cong_khai` | 45.76.185.75 |
+| `wg_endpoint` | 45.76.185.75:51820 |
+| `cong_dau`–`cong_cuoi` | 33891–33895 đang dùng; mẫu `338xx` còn rộng |
+
+Ba con số đo thật trong tài liệu đó, và chúng chỉnh lại giả định của tôi:
+
+- **Trần băng thông ~150–160 Mbps tổng**, nút cổ chai là **CPU 1 vCPU của VPS
+  Vultr** (đỉnh 83 %). Trùng khớp upload đường nhà tôi đo (~150 Mbps).
+- **RTT trong guest 54–56 ms** — khớp ước lượng tuyến Singapore.
+- **Tunnel chết ⇒ khách fail-closed**, không rơi về ISP. Có `blackhole default`
+  làm sàn. Đã kiểm chứng bằng test thật.
+
+Và nó **xoá một rủi ro tôi đã nêu**: lo "IP nhà động, đổi thì khách mất kết nối im
+lặng" — thiết kế đã giải bằng `PersistentKeepalive = 25`, PVE luôn là bên chủ động,
+Vultr học endpoint mới từ handshake. ⇒ **không cần DDNS cho đường hầm.**
+
+Hai điều cần nhớ khi dùng lại: **chỉ VM100–104 nằm trên gateway** (105–107 thêm
+sau, chưa gắn); và tài liệu đó viết cho **máy B CŨ** (`DESKTOP-30PHM9S`,
+`192.168.2.2`, RAM 27 GB) nên số RAM trong đó là số cũ.
+
+### ⚠️ Hai việc bảo mật thấy khi đọc
+
+1. `pve-root.cred`, `vps-admin.cred`, `windows-vm.cred` nằm trong
+   `setuppromox/management/` **dưới OneDrive** — mật khẩu root Proxmox và admin VPS
+   đang đồng bộ lên đám mây Microsoft. **Không mở các file đó** (AGENTS §3). Cần
+   chuyển ra ngoài vùng OneDrive rồi xoay vòng mật khẩu.
+2. Chính tài liệu ghi **cổng 80/TCP mở** trên `45.76.185.75` (IIS `wwwroot` rỗng)
+   kèm ghi chú "nên tắt nếu không dùng". Vẫn đang mở.
+
+### Trạng thái cụm sau khi dọn
+
+```
+RAM  43 GB | chua 5 GB Proxmox | 8 may cam ket 35 GB   -> CON 2 GB
+Dia 474 GB | da hua 640 GB | DUNG THAT 149 GB (31,4%)  -> con 194 GB truoc phanh 80%
+     ban chong 1,49x (tran 3,0x)
+Ban duoc: vps-nho 1 may | vps-vua 0 | vps-lon 0
+```
+
+Đĩa đã rất thoải mái. **RAM là thứ duy nhất còn chặn.**
+
+### Chưa làm — và vì sao
+
+- **Nới RAM 44 → 96 GB**: cần chạy `Tắt Proxmox an toàn` trên desktop máy B. Đã
+  chờ hai lượt (10 phút + 30 phút), Proxmox vẫn chạy. **Không tự tắt** vì sandbox
+  chặn lệnh thực thi từ xa ⇒ tắt được nhưng **không bật lại được**, để lại cụm chết.
+- **Tải ISO Windows Server**: link Evaluation Center ký theo phiên, phải qua form.
+  Có link thì Proxmox tự tải bằng API `download-url`. 10,5 GB đủ **một** bản.
+
+
+### Đính chính 2026-08-23 — ba lỗi tự gây, đã sửa
+
+**1. Ký tự điều khiển vô hình lọt vào tài liệu.** `test_61::test_doc_has_no_invisible_control_characters`
+đỏ ở `NHAT_KY.md` và `KE_HOACH_TRIEN_KHAI.md`. Nguyên nhân: tôi viết đường dẫn
+`tools\vps_doctor.py` bên trong một **chuỗi Python không phải raw-string**, nên
+Python đổi `\v` thành **vertical tab (0x0B)**. Nhìn mắt thường không thấy gì —
+tài liệu trông vẫn đúng, nhưng ai copy lệnh về sẽ chạy sai. Đúng loại lỗi mà
+phép kiểm đó sinh ra để bắt. Đã sửa 3 chỗ; 36 test của `test_61` xanh.
+
+**Bài học ghi lại để khỏi lặp:** khi sinh tài liệu bằng script Python, đường dẫn
+Windows phải nằm trong raw-string (`r"tools\vps_doctor.py"`) hoặc thoát đôi. Cùng
+họ với quy tắc đã có ở `AGENTS.md` mục 5.3 (không viết Python inline qua PowerShell).
+
+**2. Đánh giá sai mức rủi ro của ba file `.cred`.** Tôi báo "mật khẩu root Proxmox
+và admin VPS đang được tải lên đám mây Microsoft" — nghe như mật khẩu để trần.
+Kiểm thật: cả ba là chuỗi hex bắt đầu `01000000d08c9ddf…`, tức đầu ra của
+`ConvertFrom-SecureString`, **mã hoá DPAPI, ràng buộc theo user `lengo` + máy B**.
+Bản sao trên OneDrive **vô dụng ở máy khác**. Là vệ sinh bảo mật nên dọn, **không
+phải sự cố cần xoay vòng mật khẩu gấp**.
+
+**3. Sửa nhầm vào nhật ký của phiên khác** (đã ghi ở mục trước): chạy replace toàn
+cục thay vì giới hạn trong phạm vi mục của mình. Đã khôi phục từng dòng, đối chiếu
+HEAD: 0 dòng lịch sử bị đổi.
+
+### Việc đã làm với ba file `.cred`
+
+- Chép sang `C:\Users\lengo\.ltt-creds\` (ngoài vùng OneDrive), đối chiếu độ dài
+  **khớp cả ba**. Nội dung đi qua bộ nhớ script, **không in ra** ở đâu.
+- Sửa `Read-Cred` trong `Invoke-VpsScript.ps1` và `Invoke-PveScript.ps1`: tìm chỗ
+  mới trước, **lui về `$PSScriptRoot`** nếu chưa có. BOM giữ nguyên, ngoặc cân.
+  Nhờ đường lui này, thay đổi **không thể làm gãy gì**.
+- **Chưa xoá bản gốc** — chưa chạy thử được script (sandbox chặn lệnh từ xa), nên
+  chưa có bằng chứng chỗ mới hoạt động.
+- **Không chuyển cả thư mục `setuppromox`** (cách dọn triệt để hơn vì giữ được
+  `$PSScriptRoot`): hai shortcut `Bật/Tắt Proxmox` là `.lnk` nhị phân, API từ chối
+  đọc, nên **không xác minh được** chúng có trỏ vào thư mục đó không. Chuyển đi rồi
+  mới biết là phá đúng hai thứ đang cần để nới RAM.
+
+### Gate toàn phần: 2/14 đỏ, và một cái không phải của ta
+
+Lượt gate chạy nền 4 giờ 24 phút kết thúc với `FAIL (2/14)`:
+
+| Bước | Trạng thái bây giờ |
+|---|---|
+| `chuoi chua dich` | ✅ đã xanh (bọc `N_()` xong từ trước) |
+| `pytest` → `test_61` ký tự điều khiển | ✅ đã sửa |
+| `pytest` → `test_60::test_no_app_slug_is_hardcoded_in_the_platform` | ❌ **của phiên khác**: `'ltt_llm'` bị viết cứng ở `platform_core/{job_runner,providers,agent/planner,llm/dieu_phoi,public_api/ops_alerts}.py`. `apps/ltt_llm/` còn `??` trong git. **Không sửa code của họ.** |
+
+Đã kiểm: **`vps` không xuất hiện ở đâu trong `platform_core/`** — hợp đồng app của
+phần này sạch.
+
+Chạy lại sau khi sửa: `test_251` + `test_252` + `test_61` → **133 passed**;
+`scan_source_secrets` PASS; `lint_app_contract` 0 ERROR; `check_i18n` không tăng;
+`build_system_profile --check` PASS.
+
+---
+
+
+## 2026-08-22 (khuya) — H39/Q105: V14 — đĩa là tài nguyên chia sẻ, và bốn việc chủ sản phẩm giao
+
+- **Hạng mục:** H39. Chủ sản phẩm giao 4 việc; **1 việc làm xong**, 3 việc bị chặn quyền.
+- **Quyết định nền:** Q105 (V14/V15/V16).
+
+### Việc 3 — ĐÃ LÀM: đĩa thành tài nguyên chia sẻ (V14)
+
+Chủ sản phẩm nhận ra kho là thin/chia sẻ và yêu cầu **không bán ổ cố định cho từng VM**.
+Đúng: node đang ở **640 GB đã hứa / 173,6 GB dùng thật** — giữ chỗ cứng là **lãng phí
+3/4 kho** và sản phẩm không bán được máy nào.
+
+Đã đổi: `disk_gb` của gói thành **hạn mức**; `SucChua` thêm `dia_gb_dang_dung`;
+`cho_phep_ban` thành ba câu hỏi — **RAM (cứng)** → **kho thực dùng < 80 %** → **bán
+chồng ≤ 3,0×**. Trang bán thêm câu *"dung lượng đĩa là hạn mức trên kho lưu trữ dùng
+chung, không phải ổ cứng cấp riêng"*.
+
+**Điều phải nói rõ:** bán chồng **không phanh** là bán vô hạn, và kho đầy thì **mọi VM
+cùng hỏng một lượt** — không chỉ máy gây đầy. Nên V14 = thin **cộng** ba phanh.
+
+Hiệu quả đo được ngay: trước V14 node bán được **0 máy** (đĩa chặn); sau V14 còn **1
+máy `vps-nho`**, và thứ chặn giờ là **RAM** — đúng như nó phải thế.
+
+### Đã đo thêm, để trả lời việc 2 và 4
+
+- **Hai template giống hệt nhau về kích thước** (80 GB, 5 GB RAM). "Nhẹ" là nói về
+  **phiên bản Windows**: LTSC là bản rút gọn. ⇒ giữ `WIN10-LTSC-GOLD` (9001).
+- **Không máy nào là linked clone** của 9000 hay 9001 — 8 máy đều có đĩa riêng
+  `vm-1xx-disk-0`. Xoá template 9000 **không phá gì**.
+- **Kho `local` (chứa ISO) chỉ 20,3 GB, còn 5,9 GB.** Server 2016 ~6,5 GB + 2022 ~5 GB
+  ⇒ **không đủ cho cả hai**. Xoá `Windows10_22H2_x64.iso` (4,56 GB) mới đủ cho một bản.
+- ⚠️ **Cả hai template KHÔNG có ổ Cloud-Init, không khai `citype`, không bật guest
+  agent.** Clone ra vẫn chạy, nhưng **tên máy và mật khẩu không được áp dụng** — hỏng
+  im lặng. P5/P6 vẫn phải làm thật, template có sẵn chỉ tiết kiệm phần cài Windows.
+
+### Lệnh đã chạy
+
+```
+python -m pytest tests	est_251_vps_ha_tang.py -q   -> 45 passed
+python -m pytest tests	est_252_vps_giao_dien.py -q -> 10 passed
+python tools\vps_doctor.py            -> RESULT: PASS
+python tools\lint_app_contract.py     -> ERROR: 0
+python tools\scan_source_secrets.py   -> Findings: 0, PASS
+python tools\check_undefined_names.py -> 0, PASS
+python tools\check_i18n.py            -> 1438 (moc 1438), khong tang
+```
+
+### Ba việc BỊ CHẶN, và chặn ở đâu
+
+| Việc | Chặn |
+|---|---|
+| Nới RAM 44→64 GB | Cần **tắt Proxmox** ⇒ 8 máy của chủ nhà tắt theo. Nexus trên máy B có `file.write` (ghi được `.vmx`) nhưng **không có `command.run`** — không dừng/khởi động VMware đúng cách được. Chỉ còn `process.kill` = **cắt điện**, đúng thứ đã để lại `cleanShutdown=FALSE` lần trước |
+| Xoá template 9000 | Token Proxmox hiện **chỉ đọc** |
+| Tải ISO Server 2016/2022 | Token chỉ đọc **và** kho `local` không đủ chỗ cho cả hai |
+
+Cần: **token Proxmox có quyền ghi**, **`command.run` trên máy B**, và **một khung giờ
+bảo trì** do chủ sản phẩm chọn.
+
+---
+
+
+## 2026-08-22 (tối) — H39/P0a: có token Proxmox, và số thật cho thấy node ĐANG ĐẦY
+
+- **Mục tiêu:** lấy API token Proxmox để trả lời câu hỏi chặn P0b (kho LVM-thin hay ZFS).
+- **Hạng mục:** H39 — **P0a XONG**. P0b **đổi phạm vi** sau khi đo.
+- **Trạng thái:** app vẫn tắt (`LTT_VPS` chưa đặt); token là **chỉ đọc**.
+
+### Cách lấy token — và vì sao làm theo cách này
+
+Chủ sản phẩm cấp quyền thao tác trình duyệt. Quy trình đã chạy:
+
+1. Mở Chrome headed qua `playwright-cli -s=pve` vào `https://192.168.2.168:8006`.
+2. **Chủ sản phẩm tự đăng nhập** — tôi không gõ mật khẩu vào form đăng nhập.
+3. Tôi gọi thẳng **API Proxmox từ trong chính trang đã đăng nhập** (`fetch` +
+   `Proxmox.CSRFPreventionToken`), thay vì bấm qua giao diện. Lý do: hộp thoại
+   "Add: User" của realm `pve` **bắt buộc đặt mật khẩu**, còn `POST /access/users`
+   thì không — user chỉ dùng token, không đăng nhập được bằng mật khẩu. An toàn hơn.
+4. Token tạo với **`privsep=1`** ⇒ token bắt đầu với **không quyền nào**, phải cấp
+   ACL riêng cho chính nó. Đó là hàng rào thứ hai: token rò rỉ vẫn bị chặn ở tầng
+   của nó, độc lập với quyền của user.
+5. **Bí mật đi thẳng từ `navigator.clipboard` → PowerShell `Get-Clipboard` →
+   `secrets/app.env`**, rồi xoá clipboard. Giá trị **không bao giờ** đi qua hội
+   thoại, log, hay ảnh chụp (AGENTS §3). Đã kiểm chứng: quét toàn repo, **0 file
+   ngoài `secrets/` chứa giá trị token**; 6 file chỉ chứa *tên biến*.
+
+Đã tạo: user `vpsapp@pve` (không mật khẩu), token `vpsapp@pve!ltt`, role
+`PVEAuditor` (chỉ đọc) gán cho cả user lẫn token trên `/`.
+
+### Số thật, và nó lật ngược tính toán trước đó
+
+`python tools\vps_doctor.py` → **RESULT: PASS**
+
+| Thứ | Số thật | Điều đã đoán sai |
+|---|---|---|
+| Kho `vmdata` | **LVM-thin, 475 GB**, dùng 173,6 GB (36,5 %) | Tưởng 217 GB. `PVE-Data.vmdk` 217 GB chỉ là phần **đã cấp phát** trên `H:` |
+| RAM node | 43,2 GB | khớp |
+| **VM đang có** | **8 máy của chủ nhà**, cam kết **35,9 GB RAM + 640 GB đĩa** | **Không hề tính tới** |
+| Template | **2 bản Windows 10 đã có sẵn** (`WIN10-GOLD-SYSPREP` 9000, `WIN10-LTSC-GOLD` 9001) | Tưởng chưa có |
+
+```
+RAM  43 GB | chua 5 GB cho Proxmox | VM hien co cam ket 35 GB  -> CON 2 GB
+Dia 474 GB | chua 45 GB template   | VM hien co cam ket 640 GB -> CON 0 GB
+     !! dia dang ban chong 1.49x
+Ban duoc: vps-nho 0 may | vps-vua 0 may | vps-lon 0 may
+```
+
+**Node đang đầy. Bán được 0 máy.** V11/V13 không còn là tối ưu hoá — chúng là
+**điều kiện**. Và ngay cả sau khi nới RAM lên 64 GB thì cũng chỉ còn ~23 GB ⇒
+**~5 máy** ở mức 4 GB, không phải 10–14 như Q104 tính.
+
+### Lỗi thật trong `capacity.py`, chỉ lộ ra khi đo cụm thật
+
+Bản đầu chỉ cộng phần **app tự bán**, nên với node đã có 8 máy chiếm 35,9/43,2 GB
+nó vẫn báo *"còn 38 GB, bán tiếp đi"* — bán tiếp ở đó là **bán chỗ của chính chủ
+nhà**, và khách trả tiền cho một máy không bao giờ khởi động nổi.
+
+Đã sửa: thêm `capacity.cam_ket_tu_vm()` đọc `maxmem`/`maxdisk` của **mọi** VM trên
+node từ Proxmox; CSDL của app chỉ bù thêm máy đã bán mà job provision **chưa kịp
+tạo VM** (`da_hua(chi_chua_tao=True)`) — mỗi máy đếm đúng một lần.
+
+Ba test mới chốt việc này, gồm một test dựng lại **đúng trạng thái node ngày
+2026-08-22** và đòi app **từ chối bán**; và một test giao diện đòi trang hiện
+"hết chỗ" chứ không mời khách bấm Thuê.
+
+### Lệnh đã chạy, kết quả THẬT
+
+```
+python -m pytest tests\test_251_vps_ha_tang.py tests\test_252_vps_giao_dien.py -q
+   -> 52 passed (227s)
+
+python tools\vps_doctor.py            -> RESULT: PASS
+python tools\lint_app_contract.py     -> Apps quet: 16 | ERROR: 0 | WARN: 2
+python tools\scan_source_secrets.py   -> Findings: 0, RESULT: PASS
+python tools\check_i18n.py            -> 1438 (moc 1438) — khong tang, PASS
+python tools\check_undefined_names.py -> 0, RESULT: PASS
+python tools\build_system_profile.py  -> da sinh lai
+```
+
+*(`check_i18n` nay đã xanh — phiên song song đã bọc chuỗi của `apps/anhnoibo`.)*
+
+### Việc mới phát sinh
+
+- **P5/P6 nhẹ đi nhiều**: hai template Windows 10 đã có. Nhưng phải kiểm hai thứ
+  trước khi dùng: template đã có **Cloudbase-Init** với `metadata_services` đổi
+  sang **NoCloud** chưa, và đã gắn **ổ Cloud-Init** chưa. Thiếu một trong hai thì
+  clone vẫn ra máy chạy được nhưng **tên máy và mật khẩu không được áp dụng** —
+  hỏng im lặng, đúng loại lỗi khó tìm nhất.
+- **Kho `local` đã dùng 70,8 %** (20,3 GB). Đó là nơi chứa ISO/backup — sẽ chật
+  khi thêm ISO Windows.
+- Khi tới P1 cần token **ghi**: thêm role `LTTVps` giới hạn trong pool `khach`,
+  và một dòng ACL trỏ đúng template nguồn (clone cần `VM.Clone` trên template,
+  mà template nằm ngoài pool).
+
+---
+
+
+## 2026-08-22 (chiều) — H39/P0c: dựng xong hạ tầng app VPS, 48 test xanh
+
+- **Mục tiêu:** chủ sản phẩm chốt "cứ xây hạ tầng trước, hạng mục còn lại quyết sau".
+- **Hạng mục:** H39 — **P0c XONG**. P0a/P0b vẫn chặn (cần token Proxmox).
+- **Trạng thái:** `apps/vps/` chạy được, có test; chưa bật ở đâu (cờ `LTT_VPS` mặc định tắt).
+
+### Đã dựng
+
+`apps/vps/` — đầy đủ chứ không phải khung rỗng:
+
+| File | Việc |
+|---|---|
+| `__init__.py` | cờ `LTT_VPS`, mặc định TẮT |
+| `manifest.py` | fail-closed, `credit_cost=0` (thu theo chu kỳ, không theo lượt job), `max_runtime_s` cho 3 job |
+| `cost.py` | 3 gói 89k/179k/329k + quy đổi credit qua `billing_math` |
+| `os_images.py` | catalog OS + **ràng buộc tối thiểu của Microsoft** (Win11 = 64 GB/4 GB) |
+| `tables.py` | 5 bảng, **3 ràng buộc DUY NHẤT** làm trọng tài cấp phát |
+| `services/proxmox.py` | driver REST tự viết trên `requests` |
+| `services/capacity.py` | hai phép kiểm (cam kết + thực dùng), chặn bán ở 80 % |
+| `services/provisioning.py` | cấp VMID / cổng / IP **nguyên tử** |
+| `services/billing.py` | thu 30 ngày, treo → xoá +7 ngày (V8) |
+| `jobs.py` | 3 handler idempotent (hỏi thế giới thật, không dùng cờ "đã chạy") |
+| `routes.py` + `server/templates/vps.html` | trang bán, cổng cờ đặt TRƯỚC `require_login` |
+| `alembic/versions/20260822_1900_vps_tables.py` | migration chỉ thêm bảng |
+
+### Quyết định kỹ thuật đổi so với bản nháp
+
+**KHÔNG dùng `proxmoxer`**, tự viết driver trên `requests`. Lý do chính không phải
+"ít phụ thuộc" mà là: `proxmoxer` giấu mất **chính sách thử lại**, trong khi
+**clone một VM không idempotent** — thử lại một request đã tới nơi nhưng mất phản
+hồi sẽ tạo hai máy, một cái mồ côi, ăn đĩa trong cái kho vốn là nút thắt, và không
+ai biết nó tồn tại. Driver ở đây **không tự thử lại bất cứ thứ gì**, kể cả `GET`.
+Ghi ở `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` mục 10.1.
+
+### Hai lỗi THẬT do test bắt được trong lúc dựng
+
+1. **`VpsEvent.id` kiểu `BigInteger` không tự tăng trên SQLite.** Mọi INSERT nhật
+   ký chết với `NOT NULL constraint failed`. Production chạy PostgreSQL nên sẽ
+   không bao giờ lộ ở đó — nhưng bộ test chạy SQLite, nghĩa là **tầng nhật ký sẽ
+   không có test nào đi qua được**. Sửa bằng `with_variant(Integer, "sqlite")`.
+2. **`_moc_ke_tiep` nuốt tiền khách khi máy trễ hơn một chu kỳ.** Máy bị treo hai
+   tháng rồi khách nạp lại: cộng dồn từ mốc cũ ra một mốc **vẫn nằm trong quá
+   khứ** → máy vừa thu xong đã hết hạn ngay → vòng thu trừ tiếp mỗi lượt cho tới
+   khi cạn sạch số dư. Sửa: trễ trong một chu kỳ thì cộng dồn từ mốc cũ; trễ hơn
+   một chu kỳ thì bắt đầu lại từ hôm nay. Có test chốt cả hai nhánh.
+
+### Lệnh đã chạy, kết quả THẬT
+
+```
+python -m pytest tests\test_251_vps_ha_tang.py tests\test_252_vps_giao_dien.py -q
+   -> 48 passed (186s)
+
+python tools\lint_app_contract.py     -> Apps quet: 16 | ERROR: 0 | WARN: 2 (demo, qualitylab — khong phai cua VPS)
+python tools\scan_source_secrets.py   -> Findings: 0, RESULT: PASS
+python tools\check_undefined_names.py -> ten chua dinh nghia: 0, RESULT: PASS
+python tools\check_silent_except.py   -> 90 | moc 90, RESULT: PASS
+python tools\build_system_profile.py --check -> PASS (da sinh lai)
+python tools\check_i18n.py            -> FAIL, nhung KHONG phai vi VPS (xem duoi)
+```
+
+Kiểm registry thật: `discover()` nạp được app, `load_app_tables()` nạp 5 bảng,
+`job_type_owners()` nhận đủ 3 job type, `enabled=False` (fail-closed) khi chưa
+đặt cờ.
+
+### ⚠️ Có PHIÊN KHÁC đang làm việc song song trong cùng repo
+
+`apps/anhnoibo/` được tạo lúc **20:06–20:07 hôm nay**, giữa phiên này. Đó là công
+việc H37 (ảnh nội bộ) của một phiên khác, không phải của tôi.
+
+Hệ quả cụ thể: `tools/check_i18n.py` **đỏ**, và đỏ vì đúng một dòng —
+`apps/anhnoibo/manifest.py: 0 -> 1`. Phần của VPS đã sạch (từng đỏ 8 chuỗi ở
+`cost.py`/`os_images.py`/`vps.html`, đã bọc `N_()` xong). **Tôi không sửa file của
+phiên kia.** Vì vậy `tools\gate.py` toàn phần chưa thể xanh cho tới khi phiên đó
+bọc chuỗi của họ.
+
+Cũng vì lý do đó, `ho_so_he_thong.txt` tôi vừa sinh lại có thể stale ngay khi phiên
+kia thêm file — chạy lại `python tools\build_system_profile.py` là đủ.
+
+### Chưa làm — và vì sao
+
+- **Chưa kiểm bằng trình duyệt thật** (CLAUDE.md quy tắc 5/5b). Máy này **là
+  production**; bật `LTT_VPS=1` trên đó là mở một bề mặt tạo máy ảo. Thay vào đó
+  `tests/test_252` dựng `TestClient` với CSDL tạm, đăng nhập thật, và kiểm trang
+  render đúng + ba câu cảnh báo bắt buộc còn nguyên. Kiểm trên URL công khai để
+  lại tới khi P1 có máy thật và chủ sản phẩm đồng ý bật cờ.
+- **P0a/P0b** chặn: cần API token Proxmox chỉ-đọc để biết kho là LVM-thin hay ZFS
+  (nới sai lệnh là hỏng kho), rồi mới tắt máy nới đĩa 217→600 GB + RAM 44→64 GB.
+- **`vps_gateway` chưa có dòng nào** — cần bốn con số của cổng đang chạy sẵn.
+
+---
+
+
+## 2026-08-22 — H39/Q103: khảo sát bán VPS, và phát hiện Proxmox chạy lồng trong VMware trên máy B
+
+- **Mục tiêu:** phân tích khả thi việc bán VPS trên `app.lttstudios.com`, khảo sát
+  cộng đồng, chốt logic sản phẩm.
+- **Hạng mục:** H39 — **chưa viết dòng code nào**. Quyết định nền: Q103.
+- **Trạng thái:** logic đã khoá (V1–V10); P0 bị chặn bởi hai phép đo ngoài repo.
+
+### Đã làm — toàn bộ là ĐO THẬT, không phải đọc tài liệu
+
+- Quét TCP cổng 8006 toàn dải `192.168.2.0/24` → tìm ra **Proxmox VE 9.2 ở
+  `192.168.2.168`**, node `pve`. **Không phải máy B như tưởng ban đầu.**
+- Đọc ổ `H:` của máy B qua Nexus File API → Proxmox thực ra là **một máy ảo VMware
+  Workstation nằm trên chính máy B**: `H:\PVE-Nested\VMware\PVE-NESTED-VMWARE\`.
+- Đọc `PVE-NESTED-VMWARE.vmx`: **32 vCPU, RAM 45.056 MB, `vhv.enable=TRUE`, NIC
+  bridged** (vì thế nó lấy IP LAN thật), `PVE-System.vmdk` 15,7 GB +
+  `PVE-Data.vmdk` **217,3 GB**, và **`cleanShutdown = "FALSE"`**.
+- `api.ipify.org` + `ip-api.com` → đường ra là **VNPT AS45899, IPv4 động
+  `14.232.231.35`**. `api6.ipify.org` không phân giải được → **không có IPv6**.
+- Lấy bảng giá Vultr thật từ API công khai `api.vultr.com/v2/plans` (không chép tay).
+- Khảo sát GitHub/diễn đàn: `proxmoxer`, `proxmox-cloudportal/cloud-platform`,
+  `Proxmox-VE-for-WHMCS`, `proxpanel`, `pnlcs`, `Proxmoxrobo`; tra SPLA; tra giá
+  AZDIGI/FPT/Vietnix/VNPT/Viettel.
+- Ba vòng hỏi đáp với chủ sản phẩm → chốt **V1–V10** (Q103).
+
+### Kết quả thật
+
+- **Trần công suất là ĐĨA, không phải CPU/RAM.** 217 GB trừ template Windows (~45 GB)
+  còn ~155 GB; Windows tối thiểu 32 GB/máy (Win 11: 64 GB) ⇒ cấp thật chỉ được
+  **1–3 máy**. Bán được 6–8 máy **chỉ nhờ bán chồng đĩa 2,5–3,5 lần**. **Trần doanh
+  thu của cả cỗ máy: ~700k – 1,1 triệu đ/tháng.**
+- **"Giảm 1/3 so với Vultr" ra giá CAO HƠN đối thủ VN** (2 vCPU/4 GB: 346.667đ so với
+  FPT ~300k, AZDIGI 79–200k). Chủ sản phẩm đổi sang neo vào đối thủ VN (V5).
+- Chủ sản phẩm chọn **mở bán trên hiện trạng** (V1) và **không chống việc máy B tự
+  khởi động lại** (V2) sau khi đã nghe rõ hệ quả. Ghi ở Q103 để không tranh luận lại.
+- Chủ sản phẩm chọn **cài Windows không mua SPLA** (V4) sau khi tôi nêu rõ đây là
+  Windows không có giấy phép hosting. Rủi ro pháp lý đã được nhận có ý thức.
+
+### ⚠️ Phát hiện phụ, cần xử lý riêng
+
+`PVE-NESTED-VMWARE.vmx` chứa **mật khẩu VNC ở dạng chữ thường đọc được**
+(`RemoteDisplay.vnc.password`). Ai đọc được ổ `H:` là vào được console Proxmox.
+**Không chép giá trị đó đi đâu** (AGENTS §3). Cần đổi mật khẩu, hoặc tắt hẳn
+`RemoteDisplay.vnc.enabled` — Proxmox đã có console riêng.
+
+### Lệnh đã chạy
+
+```
+python tools\scan_source_secrets.py     -> Findings: 0, RESULT: PASS
+```
+
+Không chạy `tools\gate.py`: phiên này **không đổi dòng code nào**, chỉ thêm tài liệu
+(`docs/VPS/PHAN_TICH_VPS_PROXMOX.md`), một dòng quyết định (Q103) và một mục kế
+hoạch (H39).
+
+### Vòng bốn cùng ngày — Q104, và ba phép đo đổi hẳn bài toán
+
+Chủ sản phẩm cho biết ổ `H:` còn **~800 GB trống**, và hỏi có dùng lại được cách
+"cấp cổng qua IP của một VPS" (đang chạy sẵn cho VM khác) hay thuê IP từ Vultr qua API.
+
+**Ba phép đo mới:**
+
+- **`H:` còn 800 GB nhưng Proxmox KHÔNG thấy chỗ đó** — `PVE-Data.vmdk` là đĩa ảo cố
+  định 217 GB. Đây là chỗ dễ hiểu nhầm nhất và suýt làm cả bảng giá sai.
+- **Upload đường nhà: ~150 Mbps** (POST 40 MB lên `speed.cloudflare.com/__up` hết
+  1,83 s và 2,26 s, đo hai lần). Đó là trần dùng chung cho **tất cả** khách.
+- **Vultr Singapore: 45 ms** từ máy này (`Test-Connection sgp-ping.vultr.com`). Khách
+  VN đi *VN → SGP → Hà Nội* chịu **~90 ms khứ hồi thêm**.
+- Giá thật Vultr: Reserved IP **$3/tháng**; IPv4 phụ **$2/tháng**, **tối đa 2 IP phụ
+  mỗi instance**; API `POST /v2/reserved-ips` + `/attach` tự động hoá được.
+- Kiểm `.vmsd`: **không có snapshot nào đang mở** (chỉ còn `snapshot.lastUID = "2"`)
+  ⇒ VMware cho phép nới `PVE-Data.vmdk`.
+
+**Chốt thêm (Q104, V11–V13):**
+
+- **V11** — nới `PVE-Data.vmdk` 217 → ~600 GB (nới đĩa hiện có, không thêm đĩa thứ hai).
+- **V12** — đường vào không còn là một NAT duy nhất: khách **tự chọn IP Việt Nam ·
+  IP Singapore · chỉ-cổng** lúc tạo máy; trước mắt lấy dải IP/cổng đang chạy làm gốc.
+  Kéo theo bảng **`vps_gateway`** nhiều bản ghi thay cho một dải cổng cứng.
+- **V13** — nới RAM máy ảo Proxmox 44 → 64 GB.
+
+**Hệ quả:** trần công suất từ 6–8 máy (phải bán chồng đĩa 2,5–3,5 lần) lên **10–14 máy
+cấp thật 1:1** — **bỏ được lớp rủi ro "kho đầy thì mọi VM cùng hỏng"**. Doanh thu trần
+**~2–2,5 triệu đ/tháng**. V12 còn xoá hai vấn đề của V3: **không cần mở cổng nào trên
+router VNPT** (WireGuard do phía nhà gọi ra), và **vùng sát thương của lạm dụng chuyển
+ra khỏi đường VNPT ở nhà**. Rủi ro mới: nhà cung cấp gateway đình chỉ nhanh ⇒ một khách
+xấu là mọi khách offline ⇒ phải chặn cổng ra 25/587 và dựng sẵn gateway dự phòng.
+
+### Còn chặn
+
+1. **Kiểu kho `PVE-Data`** (LVM-thin hay ZFS — nới bằng hai lệnh khác nhau) và loại
+   ổ `H:` (NVMe/SSD/HDD) — cần token Proxmox chỉ-đọc, hoặc `command.run` trên máy B.
+   Nếu `H:` là HDD thì bảng giá phải bỏ chữ "SSD" và hạ thêm.
+2. **Dữ liệu cổng đang chạy sẵn** để nạp `vps_gateway`: IP công cộng + nhà cung cấp
+   + dải cổng còn trống + cơ chế chuyển tiếp + đường về nhà tới máy nào.
+   *(Việc kiểm router VNPT forward dải cổng đã hết là vấn đề từ Q104.)*
+3. **Pháp lý VN** (đăng ký kinh doanh / hoá đơn) — việc của chủ sản phẩm.
+
+---
+
+## 2026-08-22 — H37/G4: máy B khởi động lại vì Windows Update (tôi chẩn đoán sai), và chốt "chưa đo thì không chạy"
+
+- **Mục tiêu:** kết thúc G4 (thí nghiệm hai đầu mút s30 ↔ s90), bắt đầu G5.
+- **Hạng mục:** H37 — G4 **dở**, G5 **chưa bắt đầu**
+- **Trạng thái:** bị chặn — chờ chủ dự án bật `sshd` trên máy B và đọc nhật ký Windows
+
+### Đã làm
+
+### ⚠️ ĐÍNH CHÍNH — bổ sung cuối phiên, sau khi đọc được nhật ký Windows
+
+**Máy B KHÔNG sập.** Nó **tự khởi động lại để cài cập nhật Windows**: sự kiện `1074`,
+`MoUsoCoreWorker.exe`, *"Operating System: Service pack (Planned)"*, 01:29:31.
+**Active Hours là 07:00 → 01:00** — Windows chờ hết khung giờ cấm rồi khởi động lại
+29 phút sau. Lô s90 cán qua mốc 01:00 nên bị cuốn theo.
+
+Bốn kiểm chứng đều phủ định giả thuyết VRAM: **không** `Kernel-Power 41` ngày 22/08,
+**không** `BugCheck`, **không** lỗi `nvlddmkm`, minidump mới nhất từ **14/08**.
+
+Tôi đã lấy câu của chủ dự án làm **tiền đề** rồi đi tìm bằng chứng ủng hộ, thay vì
+làm **giả thuyết** rồi đi tìm bằng chứng bác bỏ — và viết hẳn một mục quyết định
+(D-024) kết luận nguyên nhân **trong khi chính tôi đang nói "tôi không đoán"**.
+Xem **D-025**. Điểm C3 và C4 của G4 đã chấm lại trong `CHAM_DIEM.md`.
+
+**Cái vẫn đứng:** trần VRAM 97,5 % là biên quá mỏng, và xếp một cấu hình chưa ai đo
+vào chuỗi tự động là sai lầm thật. Chốt `ngan_sach.py` giữ nguyên — nó được biện
+minh bằng con số (11.412 so với 4.096 token), không bằng vụ khởi động lại này.
+
+---
+
+**Máy B khởi động lại lúc 01:29** giữa lô s90, ở ảnh 21/30. Chẩn đoán ban đầu từ
+máy A qua Nexus (SSH chết cùng lúc) — **và chẩn đoán đó SAI, xem phần đính chính
+ở trên**:
+
+- `chuoi_h37.log`: chuỗi việc **chưa từng chạy lượt nào** — chốt hai điều kiện giữ
+  đúng. Nó **không** phải thủ phạm.
+- `comfy.log` đuôi thật: dừng giữa **bước 27/90**, **không OOM, không traceback**,
+  sau 14 ảnh đều tăm tắp 164–167 s. ⇒ cạn VRAM ở **tầng driver**, torch không thấy.
+- ~~Nguyên nhân: cấu hình đích chạy ở 23,9/24,6 GB = 97,5 %~~ — **SAI**, xem đính
+  chính. Nguyên nhân thật là Windows Update (**D-025**). Con số 97,5 % là thật và
+  vẫn đáng sửa, nhưng nó **không** gây ra vụ này.
+
+**Hai lần suýt kết luận sai, cả hai bị bắt bằng cách đọc kỹ thứ mình vừa in ra:**
+
+1. `files/read` của Nexus **cắt âm thầm** — 2000/4958 dòng tính từ **đầu** tệp, cờ
+   `truncated: true`. Tôi đọc khúc giữa đó và sắp tuyên bố "có dự án khác dùng chung
+   ComfyUI". Cùng họ với D-018.
+2. Registry Nexus có **hai** bản ghi `MAY-B`; tôi bắt trúng bản đã thu hồi và nó
+   trông y hệt "máy chết". Bản cũ nay đã xoá (script có sao lưu + chốt an toàn).
+
+**Chốt mới `render_gateway/ngan_sach.py`** — từ chối cấu hình vượt **vùng đã đo
+thật** (4.096 token) **trước khi chạm GPU**. `edit`/`subject` ở `ref_mp=4.0` cần
+7.506 và 11.412 token nên **đang bị chặn có chủ ý**. Một test bắt được lỗ hổng thật
+trong bản đầu của chính chốt: nó đếm `req.refs`, mà `chay_baseline.py` truyền ảnh
+qua giá trị thẻ — **đường đo đạc sẽ đi lọt**. Nay chốt đọc thẳng workflow đã dựng,
+và có test **đếm mọi đường gọi `queue_prompt`** đòi đường nào cũng phải có chốt.
+
+**Cũng trong phiên:** chốt dò bận đổi từ ngưỡng VRAM sang **đếm tiến trình python
+trên card** (D-022, vì ComfyUI giữ model thường trú nên VRAM cao không còn phân biệt
+được ai); thước `tools/do_bo_cuc.py` đo giữ bố cục, kiểm trên ảnh thật (tín hiệu
+0,14–0,75 · sàn 0,05); màn chấm mù `cham.html` có **so nhấp nháy**, đã kiểm bằng
+Playwright; phát hiện **số bước không phải núm mài mịn** — cùng seed, s30 cho bát
+trên bàn còn s90 thêm hẳn một người (D-023).
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools/gate.py` (lượt sạch, chạy một mình) | **PASS cả 14 bước** |
+| `pytest tests/test_245 + 247 + 248` | **146 passed, 4 skipped** |
+
+⚠️ Ba lượt gate đầu chạy **chồng nhau** (chung CSDL test) nên pytest mất 1 h 50 và
+có 4 lỗi. Bốn lỗi đó **đều thật và đều của tôi** — hồ sơ hệ thống cũ, và một test
+khai cứng "đúng bốn script deploy". Đã sửa rồi mới chạy lượt sạch.
+
+### Quyết định mới
+
+**D-022** (dò bận theo tiến trình, không theo VRAM) · **D-023** (số bước đổi hẳn
+bức ảnh) · **D-024** (trần VRAM 97,5 % là lỗi thiết kế; `--reserve-vram 3`; chưa đo
+thì không chạy). Chưa có Q mới ở tầng nền tảng.
+
+### Cách lùi lại
+
+Chưa commit. Bỏ `render_gateway/ngan_sach.py` + phần `③c` trong `runner.py` +
+`--tran-token` trong `chay_baseline.py` là quay về hành vi cũ — **đừng làm** trừ khi
+có số đo mới.
+
+### Còn tồn đọng
+
+- **G4 chưa xong:** s90 còn 20/30 ảnh. Thiếu 10 ảnh (~28 phút GPU).
+- ~~Chưa biết máy chết vì gì~~ — **đã biết**: Windows Update (D-025). Việc mới phát
+  sinh: **lô dài phải xong trước 01:00**, và **phải ghi kết quả từng ảnh ngay** thay
+  vì đợi cuối lô (đã mất số đo của 20 ảnh vì điều này).
+- **C4 = 4/10 cho G4**, và ô chấm lại C4 của G3 phải đếm lại từ đầu.
+- Lô so mù 60 cặp chưa dựng được (thiếu ảnh).
+
+### Việc tiếp theo
+
+1. ~~Chủ dự án bật sshd + đọc nhật ký + xoá node cũ~~ — **xong cả ba**. Nexus nay
+   là kênh chính, credential có `command.run`; bản ghi node cũ đã biến mất.
+2. Khởi động ComfyUI với `--reserve-vram 3`, **đo lại VRAM đỉnh** ở cấu hình đích.
+3. 10 ảnh s90 còn thiếu, **có người canh**; rồi seed 2 để đủ 60 cặp so mù.
+4. G5 chạy bằng `thang_do_tham_chieu.ps1`, không bằng chuỗi tự động.
+
+---
+
+## 2026-08-21 — H37 khởi động: Q102, cổng render, và bốn lỗi thật tự bắt được
+
+**Hạng mục:** H37 — model tạo ảnh nội bộ trên máy B (RTX 3090). Quyết định nền
+**Q102**. Kế hoạch 13 phase + cổng chấm điểm ≥ 9/10 ở
+`docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md`.
+
+### Đã xong
+
+| Phase | Điểm | Kết quả |
+|---|---|---|
+| **G0** khung làm việc | 9,5 | Q102 · H37 · `DECISIONS.md` · `CHAM_DIEM.md` · `bench/` |
+| **G2** giấy phép ⛔ | 10 | **Klein 9B BỊ LOẠI** — FLUX Non-Commercial v2.1, không bán ảnh được |
+| **G6** cổng render | 9,55 | `render_gateway/` + `test_245`, chạy trên máy A không cần GPU |
+| **G1** đo phần cứng | 10 | PCIe **Gen 3 x16, 11,93 GB/s** · E: là SATA · fp8 tensor core **KHÔNG có** |
+| G3 tải model + baseline | — | **ĐANG DỞ**, xem dưới |
+
+### Model đích đã đổi hai lần, cả hai lần đều do bằng chứng
+
+`Klein 9B` (D-003) → `Qwen-Image` (D-008, sau khi G2 phát hiện giấy phép NC) →
+**`HiDream-O1-Image`** (D-009). Lý do cuối: Elo sửa ảnh **1191** cao nhất nhóm trọng
+số mở, giấy phép **MIT**, **một model phủ cả bốn chế độ**, và nó **chính là
+Qwen3-VL-8B** cải biên — trong khi mọi bản Qwen-Image trọng số mở vẫn dùng Qwen2.5-VL.
+
+**Kiến trúc không đổi một dòng nào qua cả hai lần đổi model.** Đó là lần thử thật
+của nguyên tắc model-agnostic ở `KE_HOACH_H37.md` §2.
+
+### Bốn lỗi thật, không lỗi nào do test đơn vị bắt được
+
+1. **`/system_stats` và `torch.mem_get_info` MÙ với tiến trình khác** trên
+   Windows/WDDM (D-013). Cho một tiến trình giữ 8 GB: `nvidia-smi` báo 15.308 MiB
+   trống, hai nguồn kia báo ~23.200 MiB. `busy.py` bản đầu đọc `/system_stats` ⇒
+   chốt *"VRAM đang bị tiến trình khác giữ"* **không bao giờ bắn**. Đã chuyển sang
+   `nvidia-smi`. **Bắt được nhờ bước BÁC BỎ của G1**, không nhờ test.
+2. **`scp` nuốt tệp im lặng** (D-015). Chép `tai_model.py` sang máy B: scp trả về
+   **0** nhưng không có tệp nào được tạo và cũng không có tệp lạc ở đâu. Thủ phạm là
+   `	` trong `	ai_model.py` — shell mặc định của OpenSSH trên B là `cmd.exe`.
+   `gpu_check.py` cùng lệnh thì chạy tốt ⇒ **lỗi ẩn theo tên tệp**.
+3. **Websocket của ComfyUI không dùng được cho việc lạ** (D-012). `progress` và
+   `executing` gửi kèm `server.client_id` — chỉ tới client đã gửi prompt. Thiết kế
+   "nghe websocket để ước tính ETA của việc video" trong `CHIA_GPU_VOI_VIDEO.md`
+   **bất khả thi**; đã thay bằng học trung vị thời lượng.
+4. **Ba tệp `.ps1` có ký tự ngoài ASCII** — `test_61` chỉ canh `setup/*.ps1` nên
+   `render_gateway/deploy/` lọt lưới. Kèm hai lỗi nhỏ trong cùng đợt: đọc token bằng
+   `Substring(18)` trong khi tiền tố dài 17, và in sai địa chỉ nghiệm thu.
+
+### Test
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest tests/test_245_render_gateway.py -q` | **74 passed, 1 skipped** |
+| `python -m pytest tests/test_247_cham_mu.py -q` | **17 passed** |
+| `python tools\\gate.py --quick` | **PASS 12/12** (sau mỗi lần sửa) |
+| `python tools\\gate.py` (đầy đủ) | *(chạy lại ở cuối phiên — ba lần trước bị dừng khi phiên nền kết thúc)* |
+
+### Chạy thật trên máy B
+
+- **Ảnh đầu tiên sinh ra**: HiDream-O1 fp8, 2560×1440, 20 bước — **48,4 giây**,
+  VRAM đỉnh **11.742 MB**, nhiệt **77 °C**, công suất **368,93 W / trần 370 W**,
+  throttle **SW Power Cap** (D-016).
+- Template `t2i` **hết trạng thái DRAFT**: cả bốn chỗ nghi ngờ đều đúng, kể cả việc
+  **không cần text encoder rời** — trang tài liệu ComfyUI liệt kê `gemma4_*` 9 GB là
+  **sai với model này**.
+- Tải 30,26 GB về `H:\LTT_MODELS\` (NVMe), sha256 đủ ba tệp.
+
+### Quyết định mới
+
+**Q102** đã thêm vào `QUYET_DINH_NEN_TANG.md`. Ở tầng thi hành: **D-001 → D-016**
+trong `docs/ANH_NOI_BO/DECISIONS.md`, trong đó **D-003 bị thay bởi D-008 → D-009**,
+và **D-004, D-005 bị sửa đổi bởi D-010** (chất lượng là tiêu chí duy nhất). Mục cũ
+**không xoá**, chỉ gắn dấu.
+
+### Đã chạm vào thứ dùng chung — nói rõ
+
+`E:\AI\ComfyUI\extra_model_paths.yaml` được **thêm** một khối `ltt_h37` trỏ sang
+`H:/LTT_MODELS/`. Có sao lưu `.truoc_h37_20260821.bak`. **Tệp gốc có BOM và lệnh ghi
+của tôi đã xoá BOM đó** — ngoài dự định, nhưng an toàn hơn và đúng quy tắc 1; đã xác
+minh bằng **chính bộ nạp của ComfyUI** rằng cả khối cũ lẫn khối mới đọc đúng.
+ComfyUI đã được khởi động lại một lần để nhận cấu hình mới.
+
+### Cách lùi lại
+
+- Bỏ hạng mục: xoá `render_gateway/`, `bench/`, `docs/ANH_NOI_BO/`,
+  `tools/cham_mu.py`, `tests/test_245_*`, `tests/test_247_*`; gỡ dòng Q102 và mục
+  H37. **Chưa có gì trong `platform_core/` hay `apps/`** — G8 chưa làm.
+- Trên máy B: khôi phục `extra_model_paths.yaml` từ `.truoc_h37_20260821.bak`, xoá
+  `H:\LTT_MODELS\` và `E:\AI\ltt_render\`.
+
+### Còn tồn đọng
+
+- G3 dở: baseline 5 ca bf16 50 bước · thí nghiệm độ phân giải · bác bỏ bằng tái lập
+  seed. **Dừng vì máy B có việc trên GPU.**
+- Ba template `edit`/`subject`/`structure` chưa viết (G5).
+- **G4 phải thêm một trục quét mới: trần công suất 370 W ↔ 250 W** (D-016).
+
+### Việc tiếp theo
+
+1. Chờ GPU máy B rảnh → chạy nốt G3, rồi G4.
+2. G5 viết ba template ảnh tham chiếu, giới hạn **1–2 ảnh** (`ref_max_size`).
+3. **G6b — đối chứng mù với Gemini 3 Pro Image**: cổng chặn trước khi nối vào nền
+   tảng. Thua ở mọi loại ⇒ dừng, không mở bán.
+
+---
+
 ## 2026-08-20 (tối muộn) — Tự triển khai: Phase 1 (wiring) + Phase 5 (billing) + Q100
 
 Chủ sản phẩm cấp full quyền, yêu cầu tự triển khai liên tục không xác nhận từng

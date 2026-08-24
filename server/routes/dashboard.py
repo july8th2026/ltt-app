@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
 from platform_core.i18n import N_
+from platform_core.i18n import _ as _t
 from server.auth.session import current_identity_optional
 from server.templating import templates
 
@@ -94,6 +95,60 @@ def _workspace_data(visible: list, db_user) -> dict:
         try: next(gen)
         except StopIteration: pass
     return result
+
+
+@router.get("/gia-api", response_class=HTMLResponse)
+def gia_api(request: Request):
+    """Bảng giá API — **CÔNG KHAI, không cần đăng nhập**.
+
+    🔴 VÌ SAO PHẢI CÔNG KHAI. Trang giá đang có (`/developers/pricing`) nằm sau
+       `require_account`: muốn biết giá thì phải đăng ký trước. Đó là thứ tự
+       ngược, và nó chặn đúng người ta cần nhất — người đang **cân nhắc**. Không
+       ai đăng ký một dịch vụ tính tiền để xem nó tính bao nhiêu.
+
+    ⛔ SỐ LẤY TỪ `gia_token.bang_gia()`, KHÔNG GÕ LẠI VÀO TEMPLATE. Đó là chính
+       hàm mà `tinh()` dùng để ra hoá đơn. Gõ lại là tạo ra một bảng giá thứ hai,
+       và ngày hai bảng lệch nhau thì bảng nào cũng không đáng tin — cùng lý do
+       `dev_pricing` đã ghi: *"what matters is what the customer will actually be
+       billed, and that stays true only while one piece of code produces both
+       numbers."*
+    """
+    from platform_core.llm import gia_token
+
+    bang = gia_token.bang_gia()
+    # Ba ví dụ chi phí THẬT, tính bằng đúng hàm ra hoá đơn. Một con số trừu tượng
+    # ("400 credit mỗi triệu token") không nói cho ai biết một lượt chat tốn bao
+    # nhiêu; ba ví dụ thì có.
+    from platform_core.llm.cong_vlm import SuDung
+
+    vi_du = []
+    for ten, vao, ra in (
+            (_t("Một câu hỏi ngắn"), 50, 150),
+            (_t("Một lượt viết mã"), 2_000, 800),
+            (_t("Một lượt agent có nhiều tool"), 22_000, 1_500)):
+        cp = gia_token.tinh(SuDung(token_vao=vao, token_ra=ra, dang_tin=True))
+        vi_du.append({"ten": ten, "vao": vao, "ra": ra,
+                      "credit": cp.tong_credit_lam_tron_len,
+                      "dong": cp.tong_credit_lam_tron_len * 100})
+    # Ảnh model nhà (H37/L4). Trang này trước chỉ nói LLM, nên khách không có
+    # cách nào biết giá ảnh trước khi đăng ký — cùng thứ tự ngược đã nói ở trên.
+    from apps.anhnoibo import gia as gia_anh
+
+    bang_anh = gia_anh.bang_gia()
+    vi_du_anh = [
+        {"ten": _t("Một ảnh từ mô tả"), "so": 1, "che_do": "t2i"},
+        {"ten": _t("Bốn ảnh từ mô tả"), "so": 4, "che_do": "t2i"},
+        {"ten": _t("Một ảnh có ảnh tham chiếu"), "so": 1, "che_do": "edit"},
+    ]
+    for v in vi_du_anh:
+        v["credit"] = gia_anh.tinh(so_anh=v["so"], che_do=v["che_do"])
+        v["dong"] = v["credit"] * 100
+
+    return templates.TemplateResponse(request, "gia_api.html", {
+        "bang": bang, "vi_du": vi_du,
+        "bang_anh": bang_anh, "vi_du_anh": vi_du_anh,
+        "user": _user_hien_tai(request),
+    })
 
 
 @router.get("/", response_class=HTMLResponse)

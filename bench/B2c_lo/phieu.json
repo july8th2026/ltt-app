@@ -1,0 +1,212 @@
+{
+  "_huong_dan": [
+    "Voi moi ma: mo anh <ma>_trai va <ma>_phai trong thu muc 'anh'.",
+    "Dien 'chon' = trai | phai | hoa. Khong doan — thay khong khac thi ghi hoa.",
+    "KHONG mo tep KHONG_MO_TRUOC_KHI_CHAM.json truoc khi cham xong."
+  ],
+  "so_cap": 38,
+  "nguoi_cham": "opus-5",
+  "may_cham": true,
+  "_ghi_chu_nguoi_cham": [
+    "Dien 'nguoi_cham' = ten nguoi hoac ten model da cham lo nay.",
+    "Dien 'may_cham' = true neu nguoi cham la AI, false neu la nguoi.",
+    "May cham thi MOI phieu quyet doan phai co 'ghi_chu' — xem D-052."
+  ],
+  "phieu": [
+    {
+      "ma": "c001",
+      "chon": "trai",
+      "ghi_chu": "Phai: mang hong di dang o vanh coc, khong thanh dau ngon tay."
+    },
+    {
+      "ma": "c002",
+      "chon": "trai",
+      "ghi_chu": "Phai: ban tay phai xoe ngon giua khong khi, khong cam gi; nen nhieu mat meo hon. Bo qua chu (D-048)."
+    },
+    {
+      "ma": "c003",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c004",
+      "chon": "phai",
+      "ghi_chu": "Trai: qua bong lo lung tren long ban tay mo, ngon khong nam."
+    },
+    {
+      "ma": "c005",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c006",
+      "chon": "phai",
+      "ghi_chu": "Phai: ban tay cam coc thanh hinh ro; trai cac ngon nhoe vao than coc."
+    },
+    {
+      "ma": "c007",
+      "chon": "phai",
+      "ghi_chu": "Phai: ban tay tach ngon ro, dot tay co hinh khoi; trai ngon tro dinh vao than may."
+    },
+    {
+      "ma": "c008",
+      "chon": "phai",
+      "ghi_chu": "Phai: ngon tay tach ro tren vien bien; trai ngon ut va ap ut dinh thanh mot khoi."
+    },
+    {
+      "ma": "c009",
+      "chon": "trai",
+      "ghi_chu": "Phai: ban tay thu hai la nam dam lo lung canh mic, khong cam gi."
+    },
+    {
+      "ma": "c010",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c011",
+      "chon": "phai",
+      "ghi_chu": "Phai: tay cam va la nam dam ro khoi; trai ban tay dai bat thuong, cac ngon dinh nhau."
+    },
+    {
+      "ma": "c012",
+      "chon": "trai",
+      "ghi_chu": "Phai: ban tay cam but khong thanh the viet, cay but xuyen qua nam tay."
+    },
+    {
+      "ma": "c013",
+      "chon": "phai",
+      "ghi_chu": "Trai: tay phai la nam dam lo lung giua khong khi, dua chi con mot que."
+    },
+    {
+      "ma": "c014",
+      "chon": "trai",
+      "ghi_chu": "Phai: tay phai cam bon que dua xoe ra."
+    },
+    {
+      "ma": "c015",
+      "chon": "phai",
+      "ghi_chu": "Trai: ban tay nguoi ben trai co ngon tro dai bat thuong."
+    },
+    {
+      "ma": "c016",
+      "chon": "trai",
+      "ghi_chu": "Phai: bong nguoi deo ba lo den ben phai mat phan dau, ba lo hoa thanh mot khoi."
+    },
+    {
+      "ma": "c017",
+      "chon": "phai",
+      "ghi_chu": "Phai: hai ban tay du gan va dot, ngon cai dung vi tri tren nap va quai; trai ngon khong tach."
+    },
+    {
+      "ma": "c018",
+      "chon": "trai",
+      "ghi_chu": "Phai: mang soc doc ben phai nhan tran ra ngoai mep, len mat kinh."
+    },
+    {
+      "ma": "c019",
+      "chon": "phai",
+      "ghi_chu": "Trai: vat trong tay la mot khoi xam vo dinh, khong ra thu gi."
+    },
+    {
+      "ma": "c020",
+      "chon": "phai",
+      "ghi_chu": "Trai: nguoi phia duoi ben trai co ban chan di dang."
+    },
+    {
+      "ma": "c021",
+      "chon": "trai",
+      "ghi_chu": "Phai: gio hoa gan nhu lo lung, khong thay cho tay nam quai."
+    },
+    {
+      "ma": "c022",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c023",
+      "chon": "trai",
+      "ghi_chu": "Phai: mat ca phe phang, khong ra hoa tiet latte art. Cung seed nen day la khac biet ve do chi tiet."
+    },
+    {
+      "ma": "c024",
+      "chon": "trai",
+      "ghi_chu": "Phai: to giay phang, the cam thieu ngon cai o tay phai; trai quyen sach co do day va gay dung khoi."
+    },
+    {
+      "ma": "c025",
+      "chon": "trai",
+      "ghi_chu": "Phai: ban tay nguoi lai xe do ben phai la mot khoi tron, khong ra ngon."
+    },
+    {
+      "ma": "c026",
+      "chon": "trai",
+      "ghi_chu": "Phai: van mang soc tran ra ngoai mep nhan."
+    },
+    {
+      "ma": "c027",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c028",
+      "chon": "hoa",
+      "ghi_chu": ""
+    },
+    {
+      "ma": "c029",
+      "chon": "trai",
+      "ghi_chu": "Phai: nap van kim loai chong len voi rot - vat the khong nhat quan; thia dinh vet vang vo nghia."
+    },
+    {
+      "ma": "c030",
+      "chon": "trai",
+      "ghi_chu": "Phai: ban tay dat tren vai co o giua khong co canh tay noi ve ai."
+    },
+    {
+      "ma": "c031",
+      "chon": "phai",
+      "ghi_chu": "Phai: day xich co mat, co moc, noi ro vao lo treo; trai day thung va dui den chap vao mot moi."
+    },
+    {
+      "ma": "c032",
+      "chon": "trai",
+      "ghi_chu": "Phai: ban tay phai la nam dam rong lo lung tren to."
+    },
+    {
+      "ma": "c033",
+      "chon": "phai",
+      "ghi_chu": "Phai: luoi trong dem tai, khop xoay va giao dien tren man laptop deu phan giai duoc; trai nhoe thanh khoi."
+    },
+    {
+      "ma": "c034",
+      "chon": "phai",
+      "ghi_chu": "Phai: dam dong day hon nhieu ma mat o tam trung van tach bach; trai vai cum nguoi nhoa vao nhau."
+    },
+    {
+      "ma": "c035",
+      "chon": "trai",
+      "ghi_chu": "Phai: khoi long co hai chom nhu tai nam canh chan, khong ra con vat cung khong ra do vat."
+    },
+    {
+      "ma": "c036",
+      "chon": "phai",
+      "ghi_chu": "Phai: hai ban tay deu thay du, mot giu nap mot do day, ngon ro; trai tay tho vao hop cac ngon nhoe."
+    },
+    {
+      "ma": "c037",
+      "chon": "phai",
+      "ghi_chu": "Trai: dam dong o tam sau nhieu mat chay thanh khoi, co mat khong co mat."
+    },
+    {
+      "ma": "c038",
+      "chon": "phai",
+      "ghi_chu": "Phai: ngon tay tach ro va thay ngon cai; trai cac ngon tay phai gop thanh mot khoi."
+    }
+  ],
+  "_ghi_chu_cham": [
+    "Cham theo D-052: may cham, moi phieu quyet doan phai co ly do.",
+    "Chu tieng Viet trong anh la NGOAI PHAM VI (D-048) - khong dung de quyet.",
+    "Khong doan: thay khong khac ro thi ghi hoa."
+  ]
+}

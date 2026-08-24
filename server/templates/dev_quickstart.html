@@ -20,6 +20,11 @@
         {{ _("hoặc webhook, rồi lấy tệp ở") }}
         <code>GET /api/v1/artifacts/{artifact_id}</code>.</li>
   </ol>
+  {% if chat_snippets %}
+    <p class="muted">{{ _("Bảy bước trên là cho việc dài — ảnh, video. Riêng model ngôn ngữ có cửa MỘT bước: bỏ qua bước 5, 6, 7 và gọi thẳng") }}
+      <code>POST /api/v1/chat/completions</code>.
+      <a href="#cua-chat">{{ _("Ví dụ ở cuối trang.") }}</a></p>
+  {% endif %}
 </div>
 
 <div class="card">
@@ -57,6 +62,28 @@
     {% for label, snippet in snippets %}
       <h3>{{ label }}</h3>
       <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if chat_snippets %}
+  <div class="card" id="cua-chat">
+    <h2 style="margin-top:0;">{{ _("Gọi model ngôn ngữ — trả lời ngay trong request") }}
+      — <code>POST /api/v1/chat/completions</code></h2>
+    <p>{{ _("Đây là cửa MỘT bước, khác cửa job ba bước ở trên: không báo giá, không hàng đợi, không hỏi kết quả. Câu trả lời và hoá đơn về cùng lúc.") }}</p>
+    <p class="muted">{{ _("Tương thích SDK OpenAI: chỉ cần trỏ base_url vào /api/v1. Một chỗ duy nhất phải thêm là header Idempotency-Key — SDK của OpenAI không tự gửi nó, và ví dụ dưới đây đã có sẵn.") }}</p>
+    {% for label, snippet in chat_snippets %}
+      <h3>{{ label }}</h3>
+      <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">{{ _("Cửa chat khác cửa job ở đâu") }}</h2>
+    <p class="muted">{{ _("Sáu chỗ. Viết ra đây thay vì để bạn tự vấp:") }}</p>
+    {% for name, how in chat_khac_biet %}
+      <h3>{{ name }}</h3>
+      <p>{{ how }}</p>
     {% endfor %}
   </div>
 {% endif %}

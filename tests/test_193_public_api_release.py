@@ -49,7 +49,18 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # Endpoints: the declared set is what the sub-app serves (checked in
     # test_192); here we freeze the *count* so an accidental addition shows up
     # in a diff rather than in production.
-    assert len(declared_paths()) == 24        # +2: /models, /models/{name}
+    # 24 -> 27 ngay 24/08: H38 them **ba cua khong phai job** cho model ngon ngu
+    # noi bo, va chung la ROUTE chu khong phai ToolSpec nen chi dong bang o day:
+    #
+    #   POST /api/v1/chat/completions   SYNC_BILLED (Q106) - tra loi ngay trong
+    #                                   request, doi `Idempotency-Key`
+    #   POST /api/v1/messages           STREAM (Q107) - Claude Code / Desktop
+    #   POST /api/v1/responses          STREAM (Q107) - Codex CLI
+    #
+    # ⛔ Con so nay la mot BANH COC, khong phai mot bien dem. Nang no phai keo theo
+    #    ba thu: mot muc trong `docs/PUBLIC_API/CHANGELOG.md`, mot dong trong
+    #    `server/api/inventory.py`, va mot cau tra loi cho "khach goi no the nao".
+    assert len(declared_paths()) == 27        # +2 /models*, +3 cua LLM (H38)
     assert all(route.path.startswith(API_V1_PREFIX) for route in API_V1_ROUTES)
 
     # Tools: the published catalog equals the golden contract.
@@ -62,9 +73,13 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # change silently — it does NOT mean a customer can call it: the operator
     # switch `LTT_PUBLIC_API_TOOLS` still omits it, and the model behind it is
     # `is_active=False` until the quality gate. Those two remain the gates.
+    # `text.chat` (H38/Q106) vao danh sach dong bang ngay 24/08. Cung mot canh
+    # bao nhu `image.ltt` o tren: co mat o day nghia la HOP DONG da dong bang,
+    # KHONG phai khach goi duoc — ba cong fail-closed cua Q92 van dung rieng.
     assert published == exposed == ["image.generate", "image.ltt",
                                     "image.thumbnail", "image.upscale",
-                                    "story.storyboard", "text.prompt_package"]
+                                    "story.storyboard", "text.chat",
+                                    "text.prompt_package"]
 
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in

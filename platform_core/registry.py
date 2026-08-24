@@ -42,12 +42,25 @@ from platform_core.i18n import _ as _t
 
 APPS_DIR = pathlib.Path(__file__).resolve().parent.parent / "apps"
 
+# ⭐ `json[]` THÊM 2026-08-23, và nó bịt một lỗ đã làm hỏng một tool thật.
+#
+#    Trước đó bảng này chỉ có `json`, và `json` phơi ra công khai là `object` —
+#    rồi `invocation._validate_value` đòi một `dict`. Nghĩa là **không có cách
+#    nào khai một tham số là MẢNG JSON.**
+#
+#    Hậu quả không hề trừu tượng: `text.chat` khai `messages` là `json`, và
+#    `POST /api/v1/jobs` **từ chối mọi input hợp lệ** của nó — kể cả đúng ví dụ
+#    mà trang tài liệu in ra. Cửa job của tool đó không dùng được kể từ lúc dựng,
+#    và không có lỗi nào báo cho tới khi `test_199` đối chiếu ví dụ với bộ kiểm.
+#
+# ⛔ Đừng "sửa" bằng cách cho `object` nhận cả list: nó nới lỏng bộ kiểm cho MỌI
+#    tool khác để chiều một tool. Thiếu từ vựng thì thêm từ vựng.
 TOOL_PARAM_TYPES = frozenset({
     "string", "int", "number", "bool", "enum", "model_ref",
-    "text", "image", "image[]", "video", "video[]", "audio", "json",
+    "text", "image", "image[]", "video", "video[]", "audio", "json", "json[]",
 })
 TOOL_PORT_TYPES = frozenset({
-    "text", "image", "image[]", "video", "video[]", "audio", "json",
+    "text", "image", "image[]", "video", "video[]", "audio", "json", "json[]",
     "model_ref",
 })
 APP_SURFACES = frozenset({"customer", "admin", "runtime"})

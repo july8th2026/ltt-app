@@ -88,7 +88,20 @@ if (-not $ChiKiem) {
     Buoc "3. Chep tep sang may B"
     foreach ($t in $TepCanDay) {
         $tuong  = $t.FullName.Substring($Nguon.Length).TrimStart('\')
-        $dichTep = Join-Path "$Dich\gateway" $tuong
+        # !! DICH LA $Dich\gateway\render_gateway, KHONG PHAI $Dich\gateway.
+        #    Dich vu chay "-m render_gateway.main" voi AppDirectory = $Dich\gateway
+        #    (xem cai_dat_dich_vu.ps1), nen Python doi mot GOI ten render_gateway
+        #    nam ngay duoi thu muc do. Chep thang vao gateway\ thi import that bai.
+        #    SU CO THAT 24/08/2026: buoc 4 bao THIEU dung 29/29 tep, va no bao
+        #    DUNG - tep that su nam o gateway\render_gateway\, day sang B bang
+        #    duong khac (Nexus, xem thu muc .nexus-versions). Tuc la script nay
+        #    CHUA TUNG deploy thanh cong lan nao, va phep so hash cua no dang so
+        #    voi mot thu muc rong - tuc la no luon do, hoac luon vo nghia.
+        # !! GHEP CHUOI, KHONG DUNG Join-Path. Join-Path GIAI duong dan theo o dia
+        #    CUA MAY A, ma o E: chi ton tai tren may B:
+        #        Join-Path : Cannot find drive. A drive with the name 'E' does not exist.
+        #    Do la ly do thu hai khien buoc 3 chua tung chay xong lan nao.
+        $dichTep = "$Dich\gateway\render_gateway\$tuong"
         $dichThu = Split-Path -Parent $dichTep
         ChayTrenB "if (-not (Test-Path '$dichThu')) { New-Item -ItemType Directory -Path '$dichThu' -Force | Out-Null }"
 
@@ -130,7 +143,7 @@ $dichHash = ("$Dich\scripts\hash_mong_doi.txt") -replace '\\', '/'
 & scp -i $Key -o StrictHostKeyChecking=accept-new -q $tam "${User}@${MayB}:$dichHash"
 
 ChayTrenB @"
-`$goc = '$Dich\gateway'
+`$goc = '$Dich\gateway\render_gateway'
 `$lech = @()
 foreach (`$dong in [IO.File]::ReadAllLines('$Dich\scripts\hash_mong_doi.txt')) {
     if (-not `$dong) { continue }

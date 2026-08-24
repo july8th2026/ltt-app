@@ -11,6 +11,14 @@ from platform_core.agent.tools import discover_tools, resolve_params_schema
 from platform_core.models import APIKEY_CAT_CHAT
 
 PLANNER_MODEL = "gemini-2.5-flash"
+
+#: Thu tu thu provider cho viec lap ke hoach. MODEL NHA DI TRUOC: re hon nhieu,
+#: va prompt khong roi may. May B ban thi `dieu_phoi` tu di tiep sang Gemini.
+PLANNER_PROVIDERS = ("ltt_llm", "gemini")
+
+#: Moi provider co id model rieng. Gui nham ten sang provider kia thi no tu choi,
+#: va ben goi se tuong provider do "dang hong".
+PLANNER_MODEL_THEO_PROVIDER = {"ltt_llm": "ltt_llm", "gemini": PLANNER_MODEL}
 MAX_GOAL_CHARS = 8000
 
 
@@ -35,29 +43,43 @@ def build_prompt(goal: str, *, budget_max_credit: int, input_types: dict | None 
     return "\n".join(lines)
 
 
-def _gemini_call(db: DbSession, prompt: str) -> str:
-    import httpx
-    from platform_core import api_keys, api_pool
-    key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT, model=PLANNER_MODEL,
-                            thu_tu_provider=["gemini"])
-    credential = api_keys.lay_credential(db, key)
+def _goi_model(db: DbSession, prompt: str) -> str:
+    """Gọi model lập kế hoạch qua `platform_core.llm.dieu_phoi`. (H38)
+
+    ⭐ TRƯỚC ĐÂY hàm này tự dựng HTTP tới `generativelanguage.googleapis.com` và
+       ghi cứng `thu_tu_provider=["gemini"]`. Hai hệ quả:
+
+         1. Thêm một provider vào `REGISTRY` **không làm chỗ này dùng nó**;
+         2. Cùng đoạn mã đó bị chép ở `apps/autosubvideo` và `apps/kichban`.
+
+       `dieu_phoi` gom việc dịch giao thức về một chỗ, nên nay đổi nhà cung cấp là
+       đổi **một danh sách**, không phải sửa ba tệp.
+
+    ⭐ MODEL NHÀ ĐI TRƯỚC. Nó rẻ hơn nhiều, và prompt lập kế hoạch **không rời máy**.
+       Máy B bận thì `dieu_phoi` tự đi tiếp sang Gemini — và đó **không** phải
+       "đổi model sau lưng khách" (D-010): việc lập kế hoạch là việc nội bộ, khách
+       không mua "một kế hoạch do model X sinh ra", và thứ tự được **khai ra ở đây**.
+    """
+    from platform_core.llm import dieu_phoi
+
     try:
-        response = httpx.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{PLANNER_MODEL}:generateContent",
-            headers={"x-goog-api-key": credential},
-            json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=60)
-        if response.status_code != 200:
-            api_pool.danh_dau_loi(db, key, http_status=response.status_code)
-            raise PlannerError(f"Planner provider HTTP {response.status_code}.")
-        api_pool.danh_dau_thanh_cong(db, key)
-        for part in (response.json().get("candidates") or [{}])[0].get("content", {}).get("parts", []):
-            if part.get("text"):
-                return part["text"]
+        kq = dieu_phoi.goi(
+            db,
+            messages=[{"role": "user", "content": prompt}],
+            category=APIKEY_CAT_CHAT,
+            thu_tu_provider=PLANNER_PROVIDERS,
+            model_theo_provider=PLANNER_MODEL_THEO_PROVIDER,
+            timeout_s=120.0,
+        )
+    except dieu_phoi.KhongCoProviderNao as exc:
+        # ⛔ Mọi provider đều bận/không cấp được key. KHÔNG phải lỗi provider —
+        #    `dieu_phoi` đã lo việc đánh dấu lỗi cho đúng trường hợp rồi.
+        raise PlannerError(f"Planner: {exc}") from None
+
+    van = (kq.noi_dung or "").strip()
+    if not van:
         raise PlannerError("Planner provider không trả text.")
-    except httpx.HTTPError as exc:
-        raise PlannerError(f"Planner provider connection error: {type(exc).__name__}.") from None
-    finally:
-        credential = ""
+    return van
 
 
 def plan_once(db: DbSession, *, goal: str, budget_max_credit: int,
@@ -65,5 +87,5 @@ def plan_once(db: DbSession, *, goal: str, budget_max_credit: int,
               llm_call: Optional[Callable[[str], object]] = None) -> dict:
     prompt = build_prompt(goal, budget_max_credit=budget_max_credit,
                           input_types=input_types)
-    raw = llm_call(prompt) if llm_call is not None else _gemini_call(db, prompt)
+    raw = llm_call(prompt) if llm_call is not None else _goi_model(db, prompt)
     return normalize_plan(raw, fallback_goal=goal, fallback_budget=budget_max_credit)

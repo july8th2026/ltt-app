@@ -2146,3 +2146,1192 @@ cùng nạp model lên một card, đúng thứ nó sinh ra để chặn.
 | Thời gian | **~110 giây/ảnh** *(ước cũ 96 giây — hơi lạc quan)* |
 | VRAM đỉnh | **17.649 MB** |
 | Nhiệt đỉnh | 74 °C |
+
+
+---
+
+## D-045 — Lô so mù G6b đã chấm: **Gemini 24 – nhà 4 – hoà 2**. Model nhà thua rõ.
+
+**Date:** 2026-08-23 · lô `bench/G6b_lo` · 33 cặp = 30 thật + 3 bẫy · người chấm: Opus 5
+
+### Số
+
+| | |
+|---|---|
+| Cặp thật | **30** |
+| Gemini thắng | **24** |
+| Model nhà thắng | **4** (`c001`, `c002`, `c019`, `c021`) |
+| Hoà | 2 |
+| Điểm của nhà | **0,167** — khoảng tin 95 % **[0,073 ; 0,336]** |
+
+Khoảng tin **nằm trọn dưới 0,5**. Dưới giả thiết hai model ngang nhau, xác suất
+thua 24/28 lượt phân định là **~0,0002**.
+
+### ⚠️ Chốt đã đăng ký trước nói "chưa phân biệt được" — và vì sao vẫn hành động
+
+`cham_mu.py` trả `ket_luan: "chua phan biet duoc"` với lý do *"mới có 30 cặp thật,
+cần >= 50"*. Chốt đó **đúng và giữ nguyên**: nó được đăng ký trước để chặn việc
+tuyên bố **model nhà tốt hơn** trên bằng chứng mỏng.
+
+Nhưng chiều của kết quả là chiều **bất lợi**, và quyết định nó dẫn tới là **giữ cổng
+đóng** — thứ đang đóng sẵn. Không cần n ≥ 50 để **không mở** một cái cổng. Nếu sau
+này muốn tuyên bố ngược lại thì mới phải chạy đủ 50 cặp.
+
+⛔ Đừng đọc `lech_vi_tri: 1.0` trong kết quả: nó tính trên **cặp bẫy** mà tôi chỉ dám
+chọn **1 trong 3**, nên mẫu bằng 1 và con số vô nghĩa. Thiên lệch trái/phải thật thì
+đo bằng phiếu: **17 trái / 12 phải**, trong khi sự thật là 4 nhà / 24 Gemini — vị trí
+không kéo được kết luận.
+
+### Bộ bẫy chứng minh phép chấm không phải tung đồng xu
+
+3 cặp bẫy là **cùng một model ở cả hai bên**. Tôi nhận ra **3/3**.
+
+| | |
+|---|---|
+| Dám chọn trên cặp **thật** | **0,93** (28/30) |
+| Dám chọn trên cặp **bẫy** | **0,33** (1/3) |
+
+Quyết đoán ở nơi có khác biệt, ngập ngừng ở nơi không có — đúng dấu hiệu cần thấy.
+
+*(Tôi đã đoán sai **cơ chế** bẫy: tưởng là ghép hai đề bài khác nhau, thật ra là cùng
+model. Kết luận trùng khớp nhưng lý do thì lệch — ghi lại để không tự tin nhầm lần sau.)*
+
+### Thua vì cái gì
+
+| Nguyên nhân | Số cặp |
+|---|---|
+| **Chữ** — sai chính tả, mất dấu tiếng Việt, chữ bịa | **10** ⛔ *xem dưới* |
+| **Chất ảnh thuần** — giải phẫu, hình học, chất chụp thật | **14** |
+
+> 🔴 **SỬA LẠI 24/08 (D-048).** Tôi đã ghi 10 lượt "thua vì chữ" như **một điểm yếu
+> của model nhà**. Sai. Chủ sản phẩm xác nhận **chữ tiếng Việt trong ảnh nằm ngoài
+> phạm vi** — HiDream không hỗ trợ và sản phẩm không cần. ⇒ 10 lượt đó đo **một tiêu
+> chí không ai mua**, nên phải **loại khỏi phép so**, không phải trừ điểm.
+>
+> Con số có ý nghĩa là **14 – 4**: model nhà thua vì **giải phẫu, hình học và chất
+> chụp thật**, không phải vì không viết được tiếng Việt. Kết luận không đổi; lý do thì đổi.
+
+Bỏ hẳn yếu tố chữ ra thì vẫn **14 – 4**. ⇒ Đây **không** phải "chỉ yếu khoản chữ".
+
+Bốn kiểu hỏng lặp lại của model nhà:
+
+1. **Chữ thành ký tự vô nghĩa.** `GIÂM` thay `GIẢM`, `NHÙNG NGÃY THÔ ÀU` thay
+   `NHỮNG NGÀY THƠ ẤU`, `ROUTUBE` thay `GEFORCE RTX`, `MARROMIGATION` thay biển phố
+   Hà Nội. Gemini viết đúng cả **dấu tiếng Việt** lẫn **chữ Nhật**.
+2. **Sập nhận dạng khi đông người.** Ảnh đội bóng 11 người: gần như **cùng một khuôn
+   mặt**, số áo lặp lại (8 bốn lần), chữ áo bịa.
+3. **Thừa bộ phận.** Con mèo có **ba tai** và **ba chân trước**.
+4. **Vật thể mất hình.** Tai nghe biến thành khối vô định *(riêng cặp này Gemini mắc,
+   và đó là một trong 4 lượt nhà thắng)*.
+
+Bốn lượt nhà thắng đều là **bố cục đơn giản, ít chữ, ít người**.
+
+### ⭐ Bảng định tuyến theo LOẠI — đầu ra mà §8 kế hoạch yêu cầu
+
+Kế hoạch nói rõ đầu ra của G6b **là một bảng định tuyến, không phải một điểm số**.
+Prompt bộ 30 có sẵn trường `cat`, nên bảng dựng được ngay:
+
+| Loại | nhà | Gemini | hoà | Đọc ra sao |
+|---|:--:|:--:|:--:|---|
+| `anime` | 1 | 1 | 0 | **ngang** |
+| `architecture` | 1 | 1 | 0 | **ngang** |
+| `fantasy` | 1 | 1 | 0 | **ngang** |
+| `product` | 1 | 2 | 0 | Gemini |
+| `cinematic` | 0 | 1 | 1 | Gemini |
+| `hard-composition` | 0 | 1 | 0 | Gemini |
+| `multi-person` | 0 | 2 | 0 | Gemini |
+| `object-placement` | 0 | 2 | 0 | Gemini |
+| `portrait` | 0 | 2 | 1 | Gemini |
+| `photoreal` | 0 | 3 | 0 | Gemini |
+| `text-en` | 0 | 2 | 0 | Gemini |
+| `text-vi` | 0 | 3 | 0 | Gemini |
+| `thumbnail` | 0 | 3 | 0 | Gemini |
+
+Câu chuyện mạch lạc hơn con số thô 24 – 4:
+
+> Model nhà **giữ được ngang ngửa ở việc VẼ** (anime, fantasy, kiến trúc — nơi không
+> có sự thật nào để vi phạm), và **vỡ ở việc GIẢ LÀM ẢNH CHỤP hoặc VIẾT CHỮ**
+> (photoreal, chân dung, đông người, thumbnail, text-vi/text-en: **0 thắng / 16**).
+
+⛔ Nhưng **mỗi loại chỉ có 2–3 cặp**. Ba ô "ngang" là **1–1 trên n = 2** — đó là mức
+tung đồng xu, **không phải bằng chứng**. Không được định tuyến sản phẩm trên nó.
+
+Đối chiếu cổng quyết định §8: nhà **không "thắng rõ"** ở loại nào cả. Nhánh gần nhất
+là *"thua ở đa số"*, và nhánh *"mở bán hẹp"* chỉ mở được nếu ba ô "ngang" kia đứng
+vững khi đo dày hơn.
+
+### Hệ quả cho kế hoạch bán hàng
+
+1. ⛔ **Không** định vị `image.ltt` là "chất lượng ngang hoặc hơn". Nó không phải.
+2. ⛔ **Không** đưa việc có chữ (thumbnail, poster, biển hiệu) sang model nhà.
+   *(Vẫn đúng, nhưng từ D-048 đây là một **giới hạn đã chấp nhận**, không phải một
+   khiếm khuyết chờ sửa. Khách hỏi ảnh có chữ → trả lời **Gemini**, và đó là câu trả
+   lời cuối cùng.)*
+3. ✅ Giá trị thật của nó là **giá vốn** (không phí API, chỉ tiền điện) và **quyền tự
+   chủ** — không phải chất lượng. Trang tài liệu phải nói đúng như vậy.
+4. ✅ D-042 cứu ta ở đây: **mỗi model là một mặt hàng có cổng gọi riêng, không định
+   tuyến, không dự phòng**. Khách gọi `image.ltt` là chọn có ý thức. Nếu trước đây ta
+   làm cascade Gemini→nhà thì kết quả này đã là một lỗi chất lượng âm thầm.
+5. ✅ Cổng vẫn **đóng** (`LTT_PUBLIC_API_TOOLS` chưa có `image.ltt`). Không phải sửa gì
+   để an toàn.
+
+### Việc đo tiếp — thứ tự đổi
+
+Câu hỏi không còn là *"model nhà có đẹp hơn không"* — đã trả lời là **không**.
+
+> 🔴 **Mục này đã bị D-046 thay.** Bảng bên dưới đề xuất một lô **B5 đấu Gemini**;
+> chủ sản phẩm đã quyết **bỏ hẳn đối chứng Gemini** ngay sau khi đọc kết quả này.
+> Lý do đứng vững: D-042 đã bỏ định tuyến, nên một điểm số so với Gemini không đổi
+> được lựa chọn nào, mà mỗi lô vẫn tốn tiền API thật. **Đọc D-046 để biết việc đo
+> tiếp là gì.** Giữ lại đoạn này để thấy đề xuất ban đầu và vì sao nó bị thay.
+
+| Lô | Hỏi gì | Đổi biến gì | Tốn gì |
+|---|---|---|---|
+| ~~B5 — lô làn hẹp~~ ⛔ **bỏ** | ba ô "ngang" có thật không? | 20 prompt dồn vào 3 loại đó, giữ 50 bước | GPU ~37 phút + Gemini ~2,6 USD |
+| ⭐ **B2 — 36 bước** *(nay là ưu tiên 1)* | cắt 28 % giờ GPU có mất chất không? | **số bước** — nhà 36 vs nhà 50, cùng prompt cùng seed | GPU ~40 phút, **0 đồng tiền API** |
+| B3 — giữ nhân vật | | | hạ — đã biết nó sập khi đông người |
+| B4 — tay/mặt/vải | | | hạ — cùng lý do |
+| ~~G6b lên 50 cặp~~ | chỉ cần nếu muốn **tuyên bố** ngược lại D-045 | | ⛔ bỏ theo D-046 |
+
+⛔ **Luật một-lô-một-biến vẫn giữ.** Đổi hai biến cùng lúc thì khi thua sẽ không biết
+vì thứ nào, và phải chạy lại cả hai — mất nhiều hơn cửa sổ GPU vừa tiết kiệm.
+
+### Giới hạn của phép đo này — nói trước khi ai hỏi
+
+- **Chỉ chấm chất ảnh, KHÔNG chấm bám đề bài.** Phiếu không mang văn bản prompt, và
+  không thể thêm vào: cặp bẫy sẽ lộ ngay nếu hai bên hiện cùng một prompt. Lỗi chữ
+  vẫn tính vì **nhìn thấy được trong ảnh**, còn *"có vẽ đúng thứ được yêu cầu không"*
+  thì lô này **không đo**.
+- **Một người chấm.** Nên có chủ sản phẩm chấm lại ~10 cặp ngẫu nhiên để đối chứng.
+- Ảnh đã chuẩn hoá theo D-039 (cùng cạnh dài 1365, cùng PNG), nên **không** phải ta
+  đang đo độ phân giải.
+
+**Bằng chứng:** `bench/G6b_lo/phieu.json` (33 phiếu có ghi chú),
+`bench/G6b_lo/KHONG_MO_TRUOC_KHI_CHAM.json`, kết quả `cham_mu.py tinh`.
+Ánh xạ nhãn mù về model thật kiểm bằng **băm SHA-256** đối chiếu
+`bench/G6b_chuan/`: `A → G6b_nha` (34 ảnh), `B → G6b_gemini` (32 ảnh), không lẫn.
+
+
+---
+
+## D-046 — BỎ đối chứng Gemini. Từ đây chỉ đo **HiDream đấu HiDream**.
+
+**Date:** 2026-08-23 · chủ sản phẩm quyết · thay phần "ba đối thủ" của §8 kế hoạch
+
+### Quyết định
+
+Ngừng sinh ảnh Gemini để chấm điểm. Mọi lô đo tiếp theo là **nội bộ**: cùng model,
+đổi **một** tham số, so mù bằng chính `tools/cham_mu.py`.
+
+⛔ Không chạy **B5** (20 cặp dồn vào ba loại "ngang" đấu Gemini) như D-045 đề xuất.
+⛔ Klein 9B và GPT Image 2: **bỏ hẳn** khỏi kế hoạch, không phải "hoãn".
+
+### Vì sao đúng
+
+**Đối chứng ngoài chỉ có giá trị nếu nó đổi được một lựa chọn.** Ở bản 2 của kế
+hoạch, §8 sinh ra để trả lời *"loại yêu cầu nào nên đi model nào"* — một **bảng định
+tuyến**. Nhưng **D-042 đã bỏ định tuyến**: mỗi model là một mặt hàng có cổng gọi
+riêng, khách gọi `image.ltt` là nhận HiDream, không có nhánh nào rẽ sang Gemini.
+
+Không còn lựa chọn để đổi ⇒ điểm số so với Gemini không mua được gì, trong khi mỗi
+lô tốn **tiền API thật** (~3,90 USD cho 30 ảnh, D-039). Đó là trả tiền cho một con số
+để trưng bày.
+
+### Thứ KHÔNG bị bỏ theo
+
+D-045 **vẫn đứng**, và nó là lý do chính đáng duy nhất mà đối chứng ngoài từng có:
+nó chặn ta **quảng cáo sai** ("đẹp hơn Gemini") và chặn ta **đẩy việc có chữ** sang
+model nhà. Kết luận đó **đã đủ bằng chứng**, và giữ nó **không cần thêm cặp nào**.
+
+⇒ Nếu sau này ai muốn tuyên bố ngược lại D-045, **lúc đó** mới phải trả tiền chạy
+đủ 50 cặp. Bằng chứng cho một tuyên bố mới là chi phí của người tuyên bố.
+
+### Việc đo nội bộ thay vào
+
+`cham_mu.py` không cần hai model — nó so **hai bộ ảnh bất kỳ**. Dùng nó cho:
+
+| Lô | Đổi biến gì | Câu hỏi | Tốn |
+|---|---|---|---|
+| **B2** *(đang chạy)* | **36 bước** vs 50 bước | cắt 28 % giờ GPU có mất chất không? | ~40 phút GPU |
+| B6 | sampler / shift | cấu hình hiện tại có phải tốt nhất không? | GPU |
+| B7 | độ phân giải | 1920×1080 có đủ bán không, hay phải 2560×1440? | GPU |
+
+⭐ **Lợi thế của đo nội bộ:** bộ 50 bước (`G6b_nha`, 30/30 ảnh, 110,1 giây/ảnh trung
+bình) **đã có sẵn** và là mốc so chung cho mọi lô sau. Mỗi lô mới chỉ phải sinh **một**
+bộ 30 ảnh, không phải hai.
+
+⛔ **Vẫn giữ luật một-lô-một-biến.** Đổi hai thứ cùng lúc thì khi kết quả xấu sẽ
+không biết tại thứ nào, và phải chạy lại cả hai — mất nhiều hơn cửa sổ GPU vừa tiết
+kiệm.
+
+⛔ **Vẫn giữ nguyên bộ so mù**: đổi tên mã, xáo trộn, cặp bẫy, không mở tệp khoá
+trước khi chấm xong. Nội bộ đấu nội bộ **dễ tự lừa hơn**, không phải khó hơn — người
+chấm biết mình muốn cấu hình mới thắng.
+
+
+---
+
+## D-047 — Lô so mù HỎNG vì tôi đã xem một bên rồi. Bộ ảnh dùng lại là một dấu vết nguồn.
+
+**Date:** 2026-08-23 · lô `bench/B2_lo` bỏ · chạy lại thành `B2b` trên bộ seed2
+
+### Chuyện gì xảy ra
+
+Dựng lô B2 để trả lời *"36 bước có mất chất so với 50 bước không"*. Bên 50 bước lấy
+lại nguyên **30 ảnh `G6b_nha`** — bộ đã có sẵn, khỏi tốn 55 phút GPU. Nghe rất hợp lý.
+
+Chấm tới cặp thứ 6 thì tôi đọc trên bìa sách dòng **"NHÙNG NGÃY THÔ ÀU"** — **đúng
+nguyên văn chuỗi tôi đã tự tay gõ vào phiếu lô G6b vài giờ trước**. Cặp `c003` cũng
+vậy: đó chính là cặp chân dung diptych tôi đã chấm ở `c024` lô trước.
+
+⇒ **Lô không mù.** Tôi nhận ra được bên nào là bên nào, ở ít nhất 2/6 cặp đã chấm.
+
+### Vì sao đây là lỗi nặng chứ không phải phiền toái nhỏ
+
+Chiều của thiên lệch là **chiều tiện cho ta**:
+
+- Bên tôi nhận ra là bên vừa **thua Gemini 24 – 4** (D-045).
+- Nhận ra nó ⇒ dễ vô thức chấm thấp đi.
+- Chấm thấp bên 50 bước ⇒ kết luận *"36 bước cũng tốt như 50"*.
+- Mà 36 bước là phương án **rẻ hơn 28 %** — đúng thứ ta đang muốn nghe.
+
+Một thiên lệch đẩy về phía câu trả lời mình mong là loại **không được phép cho qua**,
+kể cả khi nó nhỏ. Nếu tôi cứ chấm nốt rồi ghi chú *"có thể hơi thiên lệch"* thì con số
+cuối vẫn sẽ được ai đó trích dẫn mà không kèm ghi chú.
+
+### Luật mới
+
+⛔ **Không bên nào của một lô so mù được dùng lại bộ ảnh mà người chấm ĐÃ TỪNG XEM**,
+kể cả khi tên tệp, kích thước và định dạng đều đã chuẩn hoá đúng.
+
+D-041 đã liệt kê ba dấu vết nguồn: **tên tệp, kích thước, định dạng**. Nay thêm cái
+thứ tư, và nó là cái duy nhất **không nằm trong tệp**:
+
+> **Trí nhớ của người chấm.** Không công cụ nào dò được nó, không phép kiểm nào bắt
+> được nó, và nó không để lại dấu gì trong lô để ai đó soi lại mà phát hiện.
+
+⇒ Mỗi lô so mù phải sinh **cả hai bên mới**. Tiết kiệm một cửa sổ GPU bằng cách dùng
+lại bộ cũ là **đổi 55 phút lấy một kết quả không dùng được** — và tệ hơn: một kết quả
+*trông như* dùng được.
+
+### Cái bẫy đã đổi tính chất ở lô nội bộ — ghi để không suy luận nhầm lần nữa
+
+Ở lô G6b (nhà đấu Gemini) tôi đoán được cặp bẫy bằng **nội dung**: hai ảnh tả hai cảnh
+khác hẳn nhau thì chắc chắn là bẫy. Tôi mang nguyên phản xạ đó sang lô B2 và **sai
+ngay hai cặp đầu**.
+
+Lý do: **cùng seed nhưng khác số bước thì `uni_pc` đi một quỹ đạo khử nhiễu khác ngay
+từ bước 1** — ra một ảnh **khác hẳn**, không phải "cùng ảnh, mịn hơn". Nên ở lô nội bộ,
+cặp thật và cặp bẫy trông **giống nhau như đúc**.
+
+⭐ Đó thật ra là **tin tốt**: lô nội bộ mù chặt hơn lô đối chứng ngoài. Chỉ cần đừng
+mang phản xạ cũ sang.
+
+### Chạy lại thế nào
+
+| | |
+|---|---|
+| Bộ prompt | `prompts_30_seed2.json` — **cùng 30 đề bài, seed khác** (101 → 7101) |
+| Vì sao đủ | seed khác ⇒ ảnh khác hẳn ⇒ tôi chưa từng thấy ảnh nào trong đó |
+| Vì sao **không** đổi luôn đề bài | đổi đề bài là đổi **hai** biến; bộ 30 đề này đã được cân theo `_luat` của `bench/prompts_30.json` |
+| Sinh | `B2b_s50_seed2` + `B2b_s36_seed2`, mỗi bộ 30 ảnh |
+| Tốn | ~95 phút GPU, **0 đồng tiền API** |
+
+⛔ Lô `bench/B2_lo` **bỏ**, không chấm nốt. Phiếu 6 cặp đã chấm **không** được đưa vào
+bất cứ phép tính nào.
+
+
+---
+
+## D-048 — Chữ tiếng Việt trong ảnh là **NGOÀI PHẠM VI**. Ngừng chấm điểm nó.
+
+**Date:** 2026-08-24 · chủ sản phẩm quyết
+
+### Quyết định
+
+> *"HiDream không hỗ trợ tiếng Việt trong ảnh, tôi cũng không cần, và bạn vẫn đang
+> cố gỡ vướng mắc đó."*
+
+⇒ **Không** tính chính tả/dấu tiếng Việt như một tiêu chí chất lượng của model nhà.
+⇒ **Không** bỏ công cải thiện nó (đóng luôn hướng ở `DE_XUAT_CHU_TIENG_VIET.md`).
+
+### Vì sao tôi đã sai, và sai ở đâu
+
+Tôi đã để nó chi phối **cả hai** lô so mù:
+
+| Lô | Ảnh hưởng |
+|---|---|
+| **G6b** (D-045) | tôi ghi *"10/24 lượt thắng của Gemini là do chữ"* như **một điểm yếu của model nhà** |
+| **B2b** (D-049) | 4/31 cặp tôi quyết chủ yếu bằng dấu tiếng Việt, cả 4 đều nghiêng về một bên |
+
+Cách ghi đúng của D-045 phải là: **10 lượt đó đo một tiêu chí không ai mua.** Phần có
+ý nghĩa là **14 – 4** — vẫn thua, nhưng thua vì **giải phẫu, hình học và chất chụp
+thật**, không phải vì không viết được tiếng Việt.
+
+⭐ Bài học chung, đáng hơn con số: **một phép đo chỉ có giá trị nếu thứ nó đo là thứ
+khách trả tiền.** Tôi đã đo một năng lực có thật, đo đúng, và báo cáo trung thực —
+mà vẫn sai, vì năng lực đó không nằm trong sản phẩm. Trước khi dựng lô sau, hỏi
+trước: *"nếu bên A thắng bên B ở tiêu chí này, ta sẽ đổi việc gì?"* Không trả lời
+được thì đừng đo.
+
+### Thứ KHÔNG đổi
+
+Lời khuyên *"đừng đưa việc có chữ sang model nhà"* **vẫn giữ** — nhưng nay nó là một
+**giới hạn đã biết và chấp nhận**, không phải một khiếm khuyết chờ sửa. Nếu sau này
+có khách hỏi tool sinh ảnh có chữ, câu trả lời là **Gemini**, và đó là câu trả lời
+cuối cùng, không phải câu trả lời tạm.
+
+---
+
+## D-049 — B2b: **50 bước dẫn 18 – 8 nhưng chưa đủ bằng chứng.** Giữ 50 bước.
+
+**Date:** 2026-08-24 · lô `bench/B2b_lo` · 33 cặp = 30 thật + 3 bẫy · HiDream đấu HiDream
+
+### Câu hỏi
+
+Cắt 50 → 36 bước tiết kiệm **27 %** giờ GPU. Có mất chất không?
+
+### Số đo thời gian — chắc chắn, đo trên HAI bộ prompt độc lập
+
+| | 50 bước | 36 bước | Chênh |
+|---|---|---|---|
+| Bộ 1 | 110,1 giây/ảnh | 81,1 giây/ảnh | −26,3 % |
+| Bộ 2 (seed2) | 109,7 giây/ảnh | 80,4 giây/ảnh | −26,7 % |
+| VRAM đỉnh | 17.649 MB | 17.717 MB | **không đổi** |
+
+Cả hai lô **30/30 ảnh, 0 hỏng**. Số bước **không** ảnh hưởng VRAM — chỉ ảnh hưởng thời gian.
+
+### Kết quả chấm mù
+
+| | 50 bước | 36 bước | hoà | Điểm 50 bước | KTC 95 % |
+|---|:--:|:--:|:--:|---|---|
+| Cả 30 cặp thật | **18** | 8 | 4 | 0,667 | **[0,488 ; 0,808]** |
+| Bỏ 4 cặp quyết-bằng-chữ (D-048) | **16** | 6 | 4 | 0,615 | [0,425 ; 0,776] |
+
+**Khoảng tin chứa 0,5 ở cả hai cách tính** ⇒ chưa phân biệt được.
+
+### ⇒ GIỮ 50 BƯỚC
+
+Không cắt xuống 36 dựa trên lô này. **Bên đề xuất thay đổi là bên phải chứng minh**,
+và 36 bước chưa chứng minh được. Hướng của số liệu còn đang **chống lại** nó.
+
+⭐ Đáng ghi: đây là **câu trả lời bất tiện**. 36 bước rẻ hơn 27 %, và tôi là người
+vừa mất công chạy lô để kiểm nó. Việc kết quả đi ngược hướng tiện là một dấu hiệu
+tốt về phép đo — nhất là sau D-047, nơi tôi đã suýt chấm một lô có thiên lệch nghiêng
+đúng về phía rẻ.
+
+### ⛔ Một lý do trong kết quả mà tôi KHÔNG dựa vào
+
+`cham_mu.py` nêu hai lý do. Lý do 2 — *"quyết đoán trên cặp thật (87 %) không hơn sàn
+nhiễu (100 %)"* — **không dùng được ở lô này**, vì sàn nhiễu tính trên đúng **3 cặp
+bẫy**, và cả ba tình cờ ghép hai đề bài chênh nhau rõ về độ khó (tai nghe lỗi đấu áp
+phích tốt). Dám chọn ở đó là **đúng**, không phải đoán bừa.
+
+⇒ Với `n_bay = 3`, `san_nhieu` **không phải một ước lượng**, nó là một trong bốn giá
+trị rời rạc {0; 0,33; 0,67; 1}. Nên coi nó là bằng chứng là đọc quá tay một con số.
+*(Việc cần làm nếu muốn dùng chốt này thật: nâng tỉ lệ bẫy, hoặc bỏ hẳn lý do 2 khi
+`n_bay < 10`. Chưa sửa — ghi lại để người sau biết.)*
+
+Lý do đứng vững là lý do 1: **n = 30 < 50**.
+
+### Muốn kết luận dứt điểm thì cần gì
+
+20 cặp nữa (40 ảnh, ~63 phút GPU, **0 đồng tiền API**) là đủ chạm mốc 50. Với cỡ hiệu
+ứng hiện tại (0,62–0,67) thì n = 50 nhiều khả năng **đủ để chốt rằng 50 bước thật sự
+tốt hơn** — tức là đóng vĩnh viễn câu hỏi này thay vì để nó quay lại mỗi lần ai đó
+nhìn hoá đơn điện.
+
+⏸️ **Chưa chạy**: chủ sản phẩm đã lấy lại GPU cho dự án khác *(đã nhả model khỏi VRAM
+lúc 16.208 MB → 1.328 MB)*. Chạy khi card rảnh.
+
+
+---
+
+## D-050 — Ảnh tính tiền theo **ảnh thật sự sinh ra**, không theo số đã xin.
+
+**Date:** 2026-08-24 · H37/L1 · cùng gốc với lỗi H38 đã sửa 23/08
+
+### Quyết định
+
+Handler `anhnoibo.generate` **phải** báo `credit_cost` về nền tảng, tính từ số ảnh
+**đã tải lên được**. Giá chuyển hết sang `apps/anhnoibo/gia.py` — một chỗ duy nhất,
+có phiên bản (`ltt-image-2026-08-24`), có `bang_gia()`, và công bố ở `/gia-api`.
+
+Và `platform_core/image_gen/dieu_phoi.py` **không được** lấy khoá cấp phát trước
+làm phương án dự phòng khi cổng trả về rỗng. "Thành công mà không có ảnh nào" nay
+là một **lỗi được báo**.
+
+### Vì sao
+
+`render_gateway/runner.py` trả về đúng số ảnh nó tải lên được (`image_keys[:so]`)
+và chỉ ghi **một dòng log** khi thiếu. Nên *"xin 4, nhận 2"* là một kết cục có
+thật, không phải giả thuyết.
+
+Không báo `credit_cost` thì `job_runner._quyet_toan_credit` **thu trọn phần đã
+giữ**. Khách trả tiền 4 ảnh cho 2 ảnh. Không log, không sự kiện, không ai biết.
+
+Biến thể `t.image_keys or khoa` còn tệ hơn: `khoa` là khoá lưu trữ **cấp phát
+trước khi vẽ**, nên nó tồn tại kể cả khi không ảnh nào được tải lên. Cổng trả rỗng
+⇒ ta khai đủ `so_anh` ảnh, thu tiền đủ `so_anh` ảnh, và khách bấm vào thì **404
+từng cái một**.
+
+### ⚠️ Đây là lỗi H38 đã mắc, ở một dự án khác
+
+H38 mắc đúng lỗi này ở cửa job và sửa hôm 23/08. H37 chạy song song và **học lại
+từ đầu** — đó chính là cái giá của việc không có khuôn chung, và là lý do
+`docs/KHUON_BAN_MODEL_NHA.md` ra đời.
+
+Chốt 3.4 và 4.4 của khuôn nói đúng chỗ này. H37 chấm 18/31 khi nhận việc.
+
+### Không làm gì
+
+⛔ **Không** hạ `tinh()` xuống tối thiểu 1 credit khi không ra ảnh nào. Tối
+thiểu-1-credit là luật của một lượt **có sản phẩm**; lượt không ra gì đi đường
+`credit.hoan`, thu **0**.
+
+⛔ **Không** để `uoc_tran()` thấp hơn `tinh()` ở bất kỳ cặp nào. Giữ thiếu ⇒ khách
+tiêu quá số dư. `test_276` quét toàn bộ chứ không lấy mẫu.
+
+**Bằng chứng:** `tests/test_276_gia_anh_that.py` (13), `tests/test_274_gia_cong_khai.py` (+3).
+
+---
+
+## D-051 — Cổng render có phép thăm dò riêng, tách hẳn cổng VLM.
+
+**Date:** 2026-08-24 · H37/L2 + L3
+
+### Quyết định
+
+Thêm `/live` (**không cần khoá**) cho cổng render, và hai phép thăm dò trên máy A:
+`_tham_cong_render` (sống/chết) và `_tham_gpu_anh` (GPU-hay-CPU). Hai metric riêng
+với hai ngưỡng riêng: `ltt_image:cong_im_lang` = 2, `ltt_image:tren_cpu` = 1.
+
+### Vì sao không dùng chung phép thăm của cổng VLM
+
+Máy B chạy **hai dịch vụ khác nhau** — cổng VLM (:8299) và cổng render (:8199).
+Chúng khởi động riêng, chết riêng, deploy riêng. Một cái xanh không nói gì về cái
+kia. Gộp làm một phép thăm là tự tạo ra một điểm mù đúng bằng **nửa số dịch vụ**.
+
+Trước cái này, máy A **không có phép thăm dò nào** cho cổng ảnh. Cổng chết lúc 2
+giờ sáng thì đường duy nhất để biết là có khách thử vẽ rồi thấy hỏng.
+
+### Chốt CPU-fallback bên ảnh khác bên chữ ở một điểm
+
+Bên LLM, tín hiệu chắc chắn là *"có model đang nạp mà VRAM thấp"*. Bên ảnh **không
+dùng được tín hiệu đó**: ComfyUI chỉ giữ model thường trú **sau** lượt vẽ đầu tiên,
+nên cổng vừa khởi động mà VRAM thấp là **bình thường**.
+
+Tín hiệu dùng thay: **đang vẽ đủ lâu mà VRAM vẫn thấp** — > 90 giây và < 5.000 MB.
+90 giây dài hơn toàn bộ phần chuẩn bị đo được, và ngắn hơn một lượt vẽ (96 giây)
+nên sự cố bị bắt **ngay trong lượt đầu tiên**.
+
+⚠️ Triệu chứng bên ảnh khó thấy hơn hẳn bên chữ: một lượt vẽ vốn đã mất 96 giây,
+nên "chậm gấp hàng chục lần" trông giống hệt "máy đang bận" — đúng thứ ta đã dạy
+mọi người coi là bình thường.
+
+### ⛔ 429 vẫn KHÔNG được đếm
+
+Cổng render trả 429 mỗi khi dự án video chiếm card — trạng thái **bình thường hằng
+đêm** của máy B (D-005). Đếm nó vào cảnh báo thì người trực bị đánh thức mỗi tối và
+sẽ ngừng đọc cảnh báo. Đó là cách làm hỏng một kênh cảnh báo cho tốt.
+
+**Bằng chứng:** `tests/test_277_tham_cong_anh.py` (16).
+
+
+---
+
+## D-052 — **Máy chấm**, không chờ người. §1.5.3 bị thay; đổi lại phải viết lý do từng phiếu.
+
+**Date:** 2026-08-24 · chủ sản phẩm quyết · **thay §1.5.3** của `KE_HOACH_THI_HANH.md`
+
+### Quyết định
+
+Việc chấm mù chất lượng ảnh — kể cả **thẩm mỹ** — do **Opus 5 tự làm**: tự mở ảnh,
+tự đối chiếu prompt, tự bỏ phiếu. Không chờ chủ sản phẩm ngồi chấm.
+
+Đổi lại, `tools/cham_mu.py` **từ chối tính kết quả** nếu người chấm là máy mà có
+lá phiếu quyết đoán nào không kèm `ghi_chu`.
+
+### Luật cũ nói gì, và vì sao nó bị thay
+
+§1.5.3 (bản 2 của kế hoạch): *"Người chấm là chủ dự án, không phải tôi. Tôi dựng bộ
+so sánh, xáo trộn, thu phiếu, tính toán. Tôi **không** bỏ phiếu về thẩm mỹ."*
+
+Hai lý do thay:
+
+1. **Nó biến thời gian ngồi chấm của một người thành đường găng của cả dự án.**
+   Kế hoạch tự ghi điều đó: *"thời gian bạn chấm ảnh là đường găng thật"*. Một lô
+   60 cặp là một buổi của chủ sản phẩm, và mỗi vòng sửa-đo-lại cần một buổi nữa.
+2. **Trên thực tế nó đã không còn được thi hành.** D-045 ghi thẳng
+   *"người chấm: Opus 5"* cho lô G6b — lô đã ra một quyết định lớn. Một luật nằm
+   trên giấy trong khi việc thật đi đường khác thì tệ hơn không có luật: nó tạo
+   cảm giác đang được bảo vệ.
+
+### ⚠️ Rủi ro mà luật cũ phòng **không biến mất**
+
+Luật cũ đúng cho cái nó phòng: **một mô hình chấm sản phẩm của chính mình có động
+cơ nói rằng nó tốt**. Bỏ luật mà không thay gì vào chỗ nó là mở đúng cái cửa đó.
+
+Nên đổi **cách chặn**, không bỏ chặn. Ba hàng rào cũ giữ nguyên và nay **quan trọng
+hơn trước**:
+
+| Hàng rào | Vì sao nó chặn được đúng thiên lệch này |
+|---|---|
+| **Mù** (§1.5.1) | không biết ảnh nào của ai thì không thiên vị được ảnh của mình |
+| **Cặp bẫy đo sàn nhiễu** (§1.5.4) | đo **mức quyết đoán khi không có gì để quyết** — nếu trên cặp thật cũng chỉ quyết đoán ngang mức ấy thì mọi con số thắng-thua vô nghĩa, dù ai chấm |
+| **Đủ mẫu mới kết luận** (§1.5.5) | chặn việc tuyên bố mạnh trên bằng chứng mỏng |
+
+Và thêm một hàng rào mới, riêng cho máy:
+
+### 🔴 Máy chấm thì **mỗi phiếu quyết đoán phải viết một câu lý do**
+
+Cưỡng chế bằng mã (`cham_mu.kiem_phieu_may`), không bằng trí nhớ. Ba việc mà một
+câu lý do làm được còn một lá phiếu trần thì không:
+
+1. **Buộc phải NHÌN.** Viết *"trái sắc nét hơn ở tóc"* đòi hỏi đã mở ảnh. Không
+   viết gì thì **không có gì phân biệt "đã nhìn" với "đoán theo thứ tự tệp"** — mà
+   D-027 đã cho thấy quy trình này từng chạy **tám lượt đo, hàng nghìn giây GPU,
+   ba mục quyết định** mà không ai nhìn một tấm ảnh nào.
+2. **Kiểm được sau.** Chủ sản phẩm đọc lại 10 phiếu ngẫu nhiên là biết ngay phiếu
+   có thật hay không. Không đọc được lý do thì chỉ còn cách tin.
+3. **Lộ thiên lệch có hệ thống.** Mười lý do đều nói về cùng một thứ (vd toàn
+   *"màu đậm hơn"*) nghĩa là đang chấm **một chiều**, không chấm ảnh.
+
+⛔ **Hoà thì KHÔNG bắt viết lý do.** *"Hai ảnh như nhau"* là câu trả lời hợp lệ và
+không có gì để mô tả. Bắt viết lý do cho hoà là **dạy người chấm né hoà** — mà né
+hoà chính là thứ làm hỏng sàn nhiễu, tức là làm hỏng chính hàng rào quan trọng nhất.
+
+### Cái gì KHÔNG đổi
+
+- **§1.5b vẫn nguyên hiệu lực và còn cần hơn.** "Ảnh có bám prompt không" vẫn phải
+  soi trước khi báo bất kỳ số đo nào. Từ nay nó là chốt **duy nhất** phân biệt "đã
+  mở ảnh ra nhìn" với "đoán".
+- **D-047 vẫn nguyên hiệu lực:** đã trót thấy một bên trước khi chấm thì **huỷ lô**.
+  Với máy thì rủi ro này **cao hơn người**, vì ngữ cảnh dài giữ lại mọi thứ đã đọc
+  trong phiên. Dựng lô xong mà trong cùng phiên đã xem ảnh của một bên thì lô đó
+  **không mù nữa**, dù tên tệp có được mã hoá.
+- Chủ sản phẩm vẫn **được** chấm lại một mẫu ngẫu nhiên để đối chứng. Đó là quyền,
+  không phải nghĩa vụ, và không chặn tiến độ.
+
+### 🔴 Và một chỗ hỏng của chính bộ đo, phải sửa cùng lúc
+
+Cặp bẫy được cho là *"cùng nguồn, khác seed"* — đầu `cham_mu.py` viết đúng như
+vậy. Nhưng **mã làm việc khác**: nó bốc ngẫu nhiên **hai ảnh khác đề bài** của
+cùng một nguồn.
+
+Với phép so **cùng-đề-bài** (36 vs 50 bước) thì kiểu bẫy đó **vô dụng**: hai ảnh
+khác đề bài thì khác nhau hiển nhiên, nên người chấm gần như luôn chọn được một
+bên ⇒ sàn nhiễu ≈ 100 % ⇒ điều kiện `d <= f` **luôn đúng** ⇒ công cụ **luôn** trả
+*"chưa phân biệt được"*, bất kể dữ liệu nói gì.
+
+Đó không phải giả thuyết: lô B2b đo sàn nhiễu **100 %**, và D-049 đã phải ghi rõ
+là *"một lý do trong kết quả mà tôi KHÔNG dựa vào"*.
+
+⛔ **Tăng số cặp bẫy không cứu được.** Nó chỉ làm một tín hiệu vô dụng trở nên
+chính xác hơn. Tôi đã suýt làm đúng việc đó — định nâng tỉ lệ bẫy từ 10 % lên
+25 % để "sàn nhiễu có ý nghĩa hơn".
+
+**Sửa:** `tao_lo(..., anh_bay=...)` + cờ `--bay-tu`. Truyền vào một bộ ảnh **cùng
+cấu hình với A, khác seed**, và bẫy thành *cùng đề bài, cùng cấu hình, khác seed*
+— đúng thứ tài liệu vẫn nói. Hai ảnh ấy rất giống nhau, khác biệt duy nhất là
+ngẫu nhiên, nên tỉ lệ dám chọn ở đó **thật sự là** mức quyết đoán khi không có gì
+để quyết.
+
+Không truyền thì giữ nguyên hành vi cũ — các lô cũ và các phép so khác-đề-bài
+vẫn dùng được.
+
+**Bằng chứng:** `tests/test_247_cham_mu.py` (+6 cho `kiem_phieu_may`, +3 cho bẫy).
+
+
+---
+
+## D-053 — Bậc cuối đã đo: `subject` 2 ảnh @4 MP **an toàn**. Trần lên 11.412.
+
+**Date:** 2026-08-24 · lô `G5g_subj_2anh_4mp` · chạy có người canh, GPU rảnh trước khi bắt đầu
+
+### Số đo
+
+| | |
+|---|---|
+| Cấu hình | `subject`, 2 ảnh tham chiếu @ **4 MP**, 2560×1440, 30 bước |
+| Token | **11.412** (trần cũ 7.506) |
+| VRAM đỉnh | **20.114 MB** — ngưỡng dừng của thang đo là 21.000 |
+| Thời gian | **239,0 s** |
+| Nhiệt đỉnh | 73 °C |
+
+Trần `TOKEN_DA_DO_TOI_DA` nâng **7.506 → 11.412**. Bậc kế tiếp (2 ảnh @ 8 MP =
+19.224 token) **vẫn bị chặn**, và có test riêng chốt điều đó — bánh cóc phải còn răng.
+
+### 🔴 Điều số đo này dạy, và nó trái với thứ tôi đã tin
+
+Xếp năm bậc cạnh nhau:
+
+| Bậc | Token | VRAM đỉnh |
+|---|---|---|
+| edit 1 ảnh @2 MP | 5.553 | 19.762 MB |
+| edit 1 ảnh @4 MP | 7.506 | 19.826 MB |
+| subject 2 ảnh @1 MP | 5.554 | 19.858 MB |
+| subject 2 ảnh @2 MP | 7.506 | 20.047 MB |
+| **subject 2 ảnh @4 MP** | **11.412** | **20.114 MB** |
+
+Token đi từ 5.553 → 11.412 (**gấp 2,1 lần**). VRAM đi từ 19,76 → 20,11 GB (**+1,8 %**).
+
+**VRAM ở đây do trọng số model quyết định, không do số token tham chiếu.** Nên trần
+token là một **proxy rất lỏng** cho thứ nó định chặn.
+
+Điều đó **không** làm chốt vô dụng — nó vẫn làm đúng một việc quan trọng: *từ chối
+cấu hình chưa ai đo*. Nhưng đừng đọc nó như thước đo mức nguy hiểm: một cấu hình
+vượt trần 50 % **không** nguy hiểm hơn 50 %. Muốn biết nguy hiểm thì phải đo VRAM.
+
+⚠️ Và đây là lý do **không** được đổi chốt sang "cứ dưới X GB VRAM thì cho chạy":
+VRAM chỉ đo được **sau khi** đã chạy. Chốt phải chặn **trước khi** chạm GPU.
+
+### Ảnh đã nhìn (§1.5b), không chỉ đọc số
+
+Prompt `hb1`: *"The woman from the first image holding the cat from the second image,
+sitting in a bright cafe, natural light"*.
+
+| Kiểm | Kết quả |
+|---|---|
+| Bám prompt | phụ nữ ✅ · mèo ✅ · quán sáng ✅ · ánh sáng tự nhiên ✅ |
+| Giữ nhân dạng người | ✅ **tốt** — cùng khuôn mặt, áo phông xanh navy, bông tai ngọc trai, cả cái cốc hoa văn |
+| Giữ nhân dạng vật | ✅ **tốt** — đúng bộ lông tam thể, đúng chân trắng |
+| Giải phẫu / tay | ✅ không thấy lỗi |
+| **Quan hệ "đang bế"** | 🔴 **BỊ BỎ** — mèo nằm trên bàn, không được bế |
+
+### 🟠 Giới hạn thật của chế độ `subject`, phát hiện khi nhìn ảnh
+
+Model **chép cả tư thế** của ảnh tham chiếu, không chỉ chép nhân dạng. Con mèo trong
+ảnh ra nằm cuộn tròn ngủ **đúng như** ảnh tham chiếu, thay vì được bế như prompt yêu
+cầu.
+
+Đây là thứ **không** hiện ra trong bất kỳ số đo nào — VRAM, thời gian, nhiệt đều đẹp.
+Nó chỉ hiện ra khi mở ảnh ra nhìn cạnh prompt. Đúng là loại lỗi §1.5b sinh ra để bắt.
+
+⇒ **Phải nói với khách**, không được để họ tự phát hiện: `subject` giữ được *ai/cái
+gì*, nhưng **không** dựng lại được *đang làm gì*. Muốn đổi tư thế thì dùng `t2i` và
+tả kỹ, hoặc chấp nhận tư thế của ảnh gốc.
+
+⚠️ Lô này **một prompt**, nên đây là **một quan sát**, không phải một tỉ lệ. Đừng ghi
+nó vào bảng như thể đã đo trên n cặp.
+
+### Một dấu vết hỏng trong dữ liệu cũ, ghi ra để không ai đọc nhầm
+
+`bench/G5b_edit_1anh_1mp.json` ghi `so_thanh_cong: 1` với **0,5 giây** và **1.456 MB**
+VRAM. Đó không phải một lượt vẽ — 0,5 giây là không thể. Lượt đó hỏng nhưng được
+đếm là thành công. **Đừng dùng bậc 1 MP của `edit` làm số đo.**
+
+
+---
+
+## D-054 — G4 ĐÓNG: **giữ 50 bước**, và lần này là câu trả lời cuối, không phải "chưa đủ bằng chứng".
+
+**Date:** 2026-08-24 · lô `bench/B2c_lo` (seed thứ ba) gộp với `bench/B2b_lo` · **máy chấm** (D-052)
+
+### Câu hỏi, và vì sao phải chạy thêm một lô
+
+D-049 chốt *"giữ 50 bước"* nhưng ghi rõ lý do là **chưa đủ mẫu**: 30 cặp, khoảng tin
+chứa 0,5. §1.5.5 đòi **≥ 50 cặp** để phân biệt hai cấu hình gần nhau.
+
+Lô B2c dựng bộ prompt seed thứ ba (14101…), chạy cả hai cấu hình, nâng tổng lên 60.
+
+### Số
+
+| | 50 bước | 36 bước | hoà | n | Điểm 50 bước | KTC 95 % |
+|---|:--:|:--:|:--:|:--:|---|---|
+| B2b (seed 2) | 18 | 8 | 4 | 30 | 0,667 | [0,488 ; 0,808] |
+| **B2c (seed 3)** | **15** | **10** | **5** | **30** | **0,583** | [0,423 ; 0,754] |
+| **Gộp** | **33** | **18** | **9** | **60** | **0,625** | **[0,507 ; 0,744]** |
+
+**Khoảng tin của lô gộp KHÔNG còn chứa 0,5.** Điều kiện mẫu của §1.5.5 đã đạt.
+
+Thời gian: **80,2 giây/ảnh** ở 36 bước so với **108,9 giây** ở 50 — nhanh hơn **26,4 %**,
+khớp hai lô trước. VRAM đỉnh 18.482 so với 18.450 MB — **số bước không đổi VRAM**.
+
+### ⇒ GIỮ 50 BƯỚC. Và đây là câu cuối.
+
+**Bên đề xuất thay đổi là bên phải chứng minh.** 36 bước đã có **hai lô độc lập**
+và thua cả hai (69 % và 60 % số cặp phân định nghiêng về 50). Nó không được nhận.
+
+⚠️ Muốn quay lại chuyện này thì câu hỏi phải đổi: không phải *"36 có tốt hơn không"*
+mà *"36 có **không tệ hơn** không"* — một **phép kiểm tương đương**, cần n lớn hơn
+nhiều. Đừng chạy lại đúng phép đo cũ để mong ra số khác.
+
+### 🔴 Công cụ vẫn nói "chưa phân biệt được" — và vì sao tôi vẫn hành động
+
+`cham_mu.py` trả `ket_luan: "chua phan biet duoc"` với **một** lý do còn lại:
+*"quyết đoán trên cặp thật (85 %) không hơn sàn nhiễu (91 %)"*.
+
+Lý do đó **đúng, và nó đo một thứ khác** với khoảng tin:
+
+- **Khoảng tin** đo **chiều**: 50 bước thắng nhiều hơn thua, đều đặn qua hai bộ seed.
+- **Sàn nhiễu** đo **độ lớn**: đưa tôi hai ảnh **cùng cấu hình khác seed**, tôi vẫn
+  dám chọn 91 % số lần. Đưa hai ảnh 36-vs-50, tôi dám chọn 85 %. Tức là khác biệt
+  do **số bước** không làm hai ảnh dễ phân biệt hơn khác biệt do **seed**.
+
+Hai điều này **không mâu thuẫn**: đó là một thiên lệch **nhỏ nhưng đều**.
+
+Và quyết định nó dẫn tới là **giữ nguyên mặc định** — thứ đang chạy sẵn. Không cần
+vượt chốt để **không** đổi một thứ. (Cùng hình dạng với D-045: chốt đăng ký trước
+nói "chưa phân biệt được", nhưng chiều bất lợi dẫn tới hành động "giữ cổng đóng".)
+
+⛔ **Không được đọc ngược lại thành "36 bước tệ rõ".** Nó không tệ rõ. Một khách
+nhìn một tấm ảnh đơn lẻ **không** đoán được nó ra từ 36 hay 50 bước, đúng như họ
+không đoán được hai seed.
+
+### Ba thứ lô này sửa được so với B2b
+
+1. **Bẫy nay đo được thật.** B2b có 3 cặp bẫy kiểu cũ (hai ảnh **khác đề bài**) và
+   cho sàn nhiễu **100 %** — một con số vô dụng, D-049 đã phải bỏ. B2c dùng bẫy
+   **cùng đề bài, cùng cấu hình, khác seed** (`--bay-tu`), 8 cặp, sàn nhiễu **87,5 %**.
+   Đó là con số **dùng được**, và nó chính là thứ đang chặn kết luận mạnh hơn.
+2. **Mọi lá phiếu quyết đoán có lý do viết ra** (D-052). B2b thì không — nó có
+   trước luật đó. Nên phiếu B2b **không đối chiếu lại được**, và đó là một giới hạn
+   thật của phần gộp.
+3. **Gộp lô nay là một lệnh, không phải phép cộng tay.** `cham_mu.py tinh --lo A --lo B`.
+   Trước đó cách duy nhất đạt ngưỡng 50 cặp là cộng tay rồi tự chạy Wilson — thứ
+   không ai chạy lại được và không ai kiểm lại được.
+
+### Chốt kỹ thuật của phép gộp
+
+⛔ Công cụ **từ chối gộp hai lô có nhãn khác nhau**: cộng hai phép đo khác nhau ra
+một con số là tạo ra một con số không trả lời gì.
+
+Nhãn của B2b vốn là `A`/`B` chung chung nên không gộp được. Đã đổi thành `s50`/`s36`
+**sau khi chấm xong**, và **sau khi kiểm bằng băm SHA-256**: 30/30 ảnh nhãn A khớp
+bit-đối-bit với `bench/B2b_chuan/B2b_s50_seed2`, 30/30 nhãn B khớp `B2b_s36_seed2`,
+**0 ảnh không truy được nguồn**. Chỉ đổi **tên nhãn**; ánh xạ cặp→nguồn không đổi
+một bit.
+
+### Kiểm thiên lệch vị trí
+
+`cham_mu` cảnh báo *"trên cặp bẫy, 30 % chọn bên trái"*. Đó là **mẫu 10 cặp phân
+định** — quá nhỏ. Trên toàn bộ 38 phiếu của B2c: **16 trái / 16 phải / 6 hoà**;
+riêng 30 cặp thật: **14 trái / 11 phải / 5 hoà**. Không có dấu hiệu ưu tiên một phía.
+
+**Bằng chứng:** `bench/B2c_lo/phieu.json` (38 phiếu, mỗi phiếu quyết đoán có lý do),
+`bench/B2c_lo/KHONG_MO_TRUOC_KHI_CHAM.json`, `bench/B2c_s50_seed3.json`,
+`bench/B2c_s36_seed3.json`, lệnh `cham_mu.py tinh --lo bench/B2b_lo --lo bench/B2c_lo`.
+
+
+---
+
+## D-055 — Lô đo dài trên máy B phải chạy bằng **Scheduled Task**, không bằng SSH.
+
+**Date:** 2026-08-24 · rút ra từ lô G9 chết ở ảnh 87/100
+
+### Chuyện gì xảy ra
+
+Lô độ bền 100 ảnh chạy qua `ssh … python chay_baseline.py`, sống được **87 lượt
+(≈2,6 giờ)**, rồi dừng. Dấu hiệu lúc phát hiện:
+
+- tiến trình `ssh.exe` trên máy A: **không còn cái nào**
+- GPU máy B: **0 % tải, 31 °C** — đã nguội hẳn
+- log dừng giữa dòng `[87/100] e087 (anime) ...`
+
+Tức là tiến trình từ xa **chết theo phiên SSH**, không phải chạy tiếp.
+
+### 🔴 Và `Start-Process` KHÔNG cứu được
+
+Thử lại bằng `ssh … powershell Start-Process -WindowStyle Hidden` — tưởng là tách
+rời. **Không.** Kiểm sau đó: không có tiến trình `chay_baseline` nào, hai tệp log
+đều 0 byte.
+
+Lý do: **OpenSSH trên Windows gom mọi tiến trình con vào job object của phiên.**
+Phiên đứt là cả cây chết theo, kể cả tiến trình đã `Start-Process`. Đây đúng là
+điều đã ghi cho Nexus (*"exec giết cả cây tiến trình con khi hết timeout — dùng
+Scheduled Task"*), chỉ khác đường vào.
+
+### Quyết định
+
+Mọi lượt chạy **dài hơn một lượt gọi** trên máy B đi qua **Scheduled Task**:
+
+```
+schtasks /Create /TN <ten> /TR "cmd /c <duong_dan.cmd>" /SC ONCE /ST 23:59 /RU SYSTEM /RL HIGHEST /F
+schtasks /Run    /TN <ten>
+```
+
+Task Scheduler khởi tiến trình **ngoài** job object của phiên SSH, nên nó sống
+qua việc đóng kết nối.
+
+⭐ **`python -u` là bắt buộc trong tệp `.cmd`.** Không có nó thì stdout bị đệm,
+tệp log nằm im **0 byte hàng giờ**, và không có cách nào phân biệt *"đang chạy"*
+với *"đã chết"* — đúng cái mù đã làm mất 80 phút ở lần này.
+
+### ⛔ Một lỗi thứ hai, của tôi, đáng ghi riêng
+
+Lần chạy lại chết ngay với `KeyError: 'prompts'`. Nguyên nhân: tôi đặt
+`--ca G9_ben_100` **trùng tên** với tệp `--prompts G9_ben_100.json`. Bộ chạy ghi
+kết quả ra `bench/<ca>.json` — tức là nó **ghi đè chính tệp đầu vào**.
+
+Lô đầu tiên vì thế đã tự xoá đề bài của nó ngay sau lượt chạy đầu; chỉ không ai
+thấy vì tệp chỉ được đọc **một lần lúc khởi động**.
+
+⇒ **Tên `--ca` không bao giờ được trùng tên tệp `--prompts`.** Các lô trước làm
+đúng một cách tình cờ (`--ca B2c_s50_seed3` với `--prompts prompts_30_seed3.json`).
+
+### Số đo 87 lượt đầu vẫn dùng được
+
+| | |
+|---|---|
+| VRAM đỉnh | **18.325 – 18.482 MB**, không trôi qua 87 lượt |
+| Nhiệt | **74 °C** phẳng suốt |
+| Thời gian/ảnh | 108,8 – 110,3 giây, lệch < 1,5 % |
+
+Không có dấu hiệu trôi nhiệt hay rò VRAM. Đó là kết quả **có ý nghĩa**, chỉ là
+chưa đủ 100 lượt như kế hoạch G9 đăng ký.
+
+
+---
+
+## D-056 — G9 ĐÓNG: 100/100 lượt, **không trôi gì**. Và cảnh báo "VRAM 97,5 %" đã lỗi thời.
+
+**Date:** 2026-08-24 · lô `bench/G9_ben_100.json` · 100 lượt t2i liên tiếp, 50 bước, 2560×1440
+
+### Số
+
+| | |
+|---|---|
+| Lượt chạy | **100 / 100 thành công, 0 hỏng** |
+| VRAM đỉnh | **18.287 – 18.450 MB** — dao động **163 MB (0,9 %)** |
+| Nhiệt đỉnh | **69 – 74 °C** |
+| Thời gian/ảnh | **108,0 – 110,9 giây** — dao động 2,9 s (2,6 %) |
+
+**Không có trôi.** So 20 lượt đầu với 20 lượt cuối:
+
+| | 20 đầu | 20 cuối | Chiều |
+|---|---|---|---|
+| VRAM | 18.376 MB | 18.361 MB | **giảm** |
+| Nhiệt | 73,9 °C | 73,0 °C | **giảm** |
+| Thời gian | 109,7 s | 109,4 s | **giảm** |
+
+Ba đại lượng đều đi xuống nhẹ, tức là **không rò VRAM và không trôi nhiệt** qua
+hơn ba giờ chạy liên tục. Đó là câu hỏi G9 đăng ký, và đây là câu trả lời.
+
+### 🔴 Và số đo này làm một cảnh báo đang lưu hành trở nên SAI
+
+`CLAUDE.md` (và `KE_HOACH_THI_HANH.md`) cảnh báo:
+
+> *"VRAM ở cấu hình đích chạm **23,9 / 24,6 GB = 97,5 %** và **ở lì đó giữa các
+> job**… biên **quá mỏng**."*
+
+Con số đó đo **trước** khi ComfyUI chạy với `--reserve-vram 3`. Số đo hiện tại,
+trên cùng phần cứng:
+
+| Cấu hình | VRAM đỉnh | % của 24,6 GB |
+|---|---|---|
+| t2i 50 bước (G9, 100 lượt) | **18,45 GB** | **75 %** |
+| `edit` 1 ảnh @4 MP (G5) | 19,83 GB | 81 % |
+| `subject` 2 ảnh @4 MP (G5g, D-053) | **20,11 GB** | **82 %** |
+
+Cấu hình **nặng nhất từng đo** nay là **20,1 GB**, không phải 23,9 GB. Biên còn
+lại **~4,5 GB**, không phải 0,7 GB.
+
+⇒ **Đừng lên kế hoạch quanh con số 97,5 % nữa.** Nó là số đo thật của một cấu
+hình đã không còn chạy, và giữ nó lại làm hai việc xấu: khiến người sau ngại đo
+tiếp, và khiến `--reserve-vram 3` trông như một mẹo vá thay vì thứ đã giải quyết
+xong vấn đề.
+
+⚠️ **Nhưng đừng đọc ngược thành "thoải mái".** Ba hộ vẫn dùng chung card (D-037):
+dự án video từng ăn 98,7 % VRAM, và `llama-server` giữ **15,9 GB** khi có người
+gọi LLM. 4,5 GB biên là biên **khi chỉ có ta**. Chốt bận của cổng render vẫn là
+thứ giữ cho hai hộ không đè nhau, và nó không thay được bằng một con số.
+
+### Cách chạy lô này — xem D-055
+
+Lô đầu chết ở ảnh 87/100 vì phiên SSH đứt. Lô hoàn thành nhờ **Scheduled Task**
+trên máy B, và nhờ bộ chạy **tự bỏ qua 88 ảnh đã xong** khi chạy lại — đúng thứ
+`tests/test_266_tiep_tuc_lo_do.py` chốt.
+
+**Bằng chứng:** `bench/G9_ben_100_ketqua.json` (100 lượt, mỗi lượt có VRAM/nhiệt/
+throttle riêng).
+
+
+---
+
+## D-057 — **DỪNG** kế hoạch dùng máy A để sinh ảnh. Không hạ độ chính xác model.
+
+**Date:** 2026-08-24 · chủ sản phẩm quyết · thay [`DUNG_HAI_CARD_MAY_A.md`](DUNG_HAI_CARD_MAY_A.md) §3
+
+### Quyết định
+
+**Không tải bản model thấp hơn** (FP8, GGUF Q8…Q2). Và nếu không có bản thấp hơn
+thì **ngừng kế hoạch dùng máy A để phục vụ sinh ảnh**.
+
+Sinh ảnh **ở lại máy B**, trên 3090, `bf16`, như đang chạy.
+
+### Vì sao đây cũng là quyết định đúng về số học, không chỉ về nguyên tắc
+
+Bỏ FP8 đi thì phép cộng không còn đường nào lách:
+
+| | bf16, không hạ độ chính xác |
+|---|---|
+| HiDream đỉnh (đo 100 lượt) | **18.450 MB** |
+| Một card 5060 Ti | **16.311 MB** |
+| Thiếu | **2.139 MB** |
+
+Và pha nặng nhất **không phải** UNet — là **bộ mã hoá văn bản**. HiDream dùng
+**bốn** bộ: CLIP-L, CLIP-G, T5-XXL, và **Llama-3.1-8B**. Ở `bf16`:
+
+| | ~bf16 |
+|---|---|
+| Llama-3.1-8B | ~16 GB |
+| T5-XXL | ~9,5 GB |
+| CLIP-G | ~1,4 GB |
+| CLIP-L | ~0,25 GB |
+
+**Llama-3.1-8B một mình đã lấp kín một card 16 GB.** Nên `QuadrupleCLIPLoaderMultiGPU`
+(đặt encoder sang card khác — **không** phải hạ độ chính xác, nên vẫn hợp quyết định
+này) cũng **không đủ**: nó lấp card #1 bằng encoder, và card #1 hết là làn song song.
+
+⇒ Với hai card 16 GB và không hạ độ chính xác, HiDream `bf16` **không có cấu hình
+nào chạy được mà không đánh đổi**. Đường lùi duy nhất còn lại là **offload sang RAM
+hệ thống**, và máy A chỉ có **31,9 GB RAM** — trong đó phải chừa cho **máy chủ web
+đang phục vụ khách thật**. Đó không phải một biên, đó là một lời mời sự cố.
+
+### ⛔ Ba hệ quả, phải đọc cùng nhau
+
+**① Trọng tài VRAM ở [`CHIA_GPU_HAI_MODEL.md`](CHIA_GPU_HAI_MODEL.md) NAY LÀ VIỆC
+BẮT BUỘC, không còn là một trong hai lựa chọn.**
+
+Trước quyết định này có hai đường: dựng trọng tài, **hoặc** tách hai model ra hai
+máy. Đường thứ hai vừa đóng. Nên hai model **vẫn dùng chung một card 3090**, và
+phép cộng vẫn là 18.450 + 19.237 = **37.687 MB trên 24.576 MB**.
+
+**② GPU máy A KHÔNG bị bỏ.** Nó vẫn phục vụ `taoclipngan` (whisper + YOLO) và
+`upscalevideo`. Và card thứ hai vẫn **đang nằm không** — nên phần việc H23 (giữ chỗ
+GPU nguyên tử, sửa 4 chỗ chỉ thấy `cuda:0`) vẫn còn giá trị nguyên vẹn, chỉ là cho
+**app khác**, không cho ảnh.
+
+**③ Không đóng cửa vĩnh viễn — nhưng mở lại cần PHẦN CỨNG, không cần cấu hình.**
+Thứ mở lại được kế hoạch này là **một card ≥ 24 GB trên máy A**, không phải một
+tinh chỉnh nào. Đừng quay lại đề tài này bằng cách thử một cách xếp encoder khác.
+
+### Cái đã đo và vẫn dùng được
+
+Tài liệu `DUNG_HAI_CARD_MAY_A.md` giữ lại, **không xoá**: nó ghi vì sao chiều
+"chuyển Qwen sang máy A" là bẫy (3090 nhanh gấp ~2 lần vì băng thông 936 so với
+448 GB/s), và số liệu phần cứng máy A đã kiểm. Cả hai vẫn đúng và vẫn cần khi có
+người đề xuất lại.
+
+
+---
+
+## D-058 — Trọng tài card đã chạy thật. Và V5 (*hạ `ttl` của Qwen*) **bị chính nó bác bỏ**.
+
+**Date:** 2026-08-24 · thi hành V1–V4 của [`CHIA_GPU_HAI_MODEL.md`](CHIA_GPU_HAI_MODEL.md) · xác minh trên máy B
+
+### Đã xong, và đã đo trên phần cứng thật
+
+`render_gateway/nhuong_card.py` + nối vào `api.py`. Hai chu kỳ đầy đủ, lặp lại được:
+
+| Thời điểm | VRAM | Việc |
+|---|---|---|
+| 13:56:59 | 778 MB | card rỗng |
+| 13:57:20 | **19.491 MB** | Qwen nạp, giữ card |
+| 13:57:24 | 778 MB | ⇐ **`da bao llm nha card, cho 4.0s`** |
+| 13:57:30 → 13:59:18 | 15.626 → 17.5xx MB | HiDream vẽ, ổn định |
+| 14:00:21 | **811 MB** | ⇐ **`da nha VRAM cua ComfyUI sau 60s ranh`** |
+
+**Đuổi mất 4,0 giây** và có xác minh VRAM trước khi nạp. Trả card đúng 60 giây sau
+khi rảnh. Cả hai lượt thử cho cùng một hình dạng.
+
+Và số đo **trong lúc** job chạy nay nằm trong kết quả job:
+
+```json
+"do_duoc": {"so_mau": 47, "giay": 111.1, "vram_dinh_mb": 17576,
+            "vram_trung_vi_mb": 17483, "ram_trong_thap_nhat_gb": 92.9,
+            "thuong_tru_du": true, "canh_bao": []}
+```
+
+### 🔴 V5 SAI, và chính việc xây xong cho thấy vì sao
+
+Kế hoạch viết: *"hạ `ttl` của Qwen 1.800 → ~600 giây để nó bớt ngồi không mà giữ
+card"*. **Không làm nữa, và giữ 1.800.**
+
+Lý do: `ttl` từng là **cơ chế duy nhất** trả card cho ảnh — nên nó phải ngắn. Nay
+cổng render **chủ động đuổi** khi cần card (đo được 4,0 giây). Cho nên `ttl` chỉ
+còn quyết định một chuyện: *"Qwen giữ card bao lâu khi KHÔNG ai cần"*.
+
+Và khi không ai cần thì giữ card **không tốn gì**. Hạ `ttl` chỉ đổi được một thứ:
+khách LLM trả **18 giây nạp lại** thường xuyên hơn, để đổi lấy một card rỗng mà
+không ai xin.
+
+⛔ Cũng đừng viện lý do "để dành cho dự án video": ta **không** làm trọng tài hộ
+video. Video lấy card bằng cách bắt đầu chạy, và job của ta khi đó nhận 429 —
+`ttl` của Qwen không giúp gì trong đường đó.
+
+⇒ **Một cơ chế tốt hơn làm một cơ chế cũ thành vô nghĩa. Đừng làm cả hai.**
+
+### Hai chỗ hỏng tìm được **nhờ chạy thật**, không nhờ test
+
+**① Đuổi thành công không để lại dấu vết.** Bản đầu chỉ log khi **thất bại**. Nên
+hành động quan trọng nhất của trọng tài — lấy card khỏi tay hộ khác — chạy đúng
+thiết kế mà log **không có một dòng nào**. Hỏi *"vì sao phiên LLM của tôi chậm lúc
+13:50"* thì không có gì chỉ ra.
+
+Đã sửa. Nay có:
+`job trongtai-465785: da bao llm nha card, cho 4.0s, VRAM con 778 MB`
+
+**② Cổng không đọc được `gateway.env` mới.** `cai_dat_dich_vu.ps1` nướng env vào
+`AppEnvironmentExtra` **lúc cài**, nên sửa `gateway.env` rồi khởi động lại thì
+**không ăn gì** — không lỗi nào báo, chỉ là cờ mới vô tác dụng.
+
+Cái bẫy đó đã cắn dự án này **hai lần** (cổng VLM máy B; `LTT_PUBLIC_API_TOOLS`
+trên máy A — nên mới có `setup/nap_lai_env.ps1`). Sửa gốc: `main.nap_env()` để cổng
+**tự đọc** tệp env lúc khởi động, và **không ghi đè** biến đã có ở cấp cao hơn.
+Nay nó không thể xảy ra lần thứ ba cho cổng này.
+
+### Thiết kế: **N hộ**, không phải hai
+
+Bản đầu trong đầu tôi là *"cổng render gọi llama-swap nhả"* — bắt tay hai bên, tên
+hộ kia viết cứng. **Sai**, và D-037 đã nói vì sao: máy B có **ba hộ ngay hôm nay**.
+Chủ sản phẩm chốt thêm 24/08 rằng **dự án video sau này đi theo đúng khuôn LLM/ảnh**,
+nên hộ thứ tư là chuyện *khi nào*.
+
+Nên: khai bằng `LTT_HO_DUNG_CARD`, **một dòng cho mỗi hộ**. Và phân biệt hai loại
+— thứ này không được trộn:
+
+| Loại | Ví dụ | Hành động đúng |
+|---|---|---|
+| **bảo được** (`duong_nha` có) | `llm=http://127.0.0.1:8280/unload` | đuổi |
+| **chỉ chờ được** (`duong_nha` rỗng) | `video=` | **báo bận và lùi**, không bao giờ đuổi |
+
+Đang chạy trên máy B: `LTT_HO_DUNG_CARD=llm=http://127.0.0.1:8280/unload;video=`
+và `LTT_TRA_CARD_GIAY=60`.
+
+### Ba chốt không được nới về sau
+
+1. **Không đọc được VRAM ⇒ TỪ CHỐI.** Đây là chỗ **duy nhất** trong dự án mà
+   "không biết" xử như "không được" — ngược với `tren_gpu.kiem`. Lý do khác nhau:
+   ở đó ta **quan sát** và cảnh báo sai làm chết kênh cảnh báo; ở đây ta **sắp
+   tiêu GPU và tiêu tiền của khách**.
+2. **Xin không được ⇒ 429, không bao giờ 5xx** (D-005).
+3. **Mọi đường thoát phải `slot.release()`.** Thiếu một chỗ thì mỗi lượt rò một
+   suất, và sau `max_concurrent` lượt cổng **không nhận job nào nữa dù card rảnh**
+   — triệu chứng ("luôn 429") giống hệt "máy đang bận thật".
+
+⚠️ Và một cái bẫy về **thứ tự** đã dính: bản đầu đặt `xin_card` **SAU** chốt bận.
+Chốt bận coi *"VRAM còn ít"* là bận, nên khi Qwen giữ 19 GB thì cổng trả 429 ngay
+và **không bao giờ đi bảo Qwen nhả** — trọng tài thành mã chết. Test đầu tiên cho
+nó **xanh vì lý do sai**: chạy 0,58 giây trong khi hạn chờ là 45.
+
+**Bằng chứng:** `tests/test_278_nhuong_card.py` (27), log cổng render trên máy B
+13:56–14:00, hai lượt thử `logs/thu_trongtai.ps1`.
+
+
+---
+
+## D-059 — Chi phí đổi model, đo thật. Và vì sao hai model dùng **hai cơ chế khác nhau** — cố ý.
+
+**Date:** 2026-08-24 · trả lời câu hỏi của chủ sản phẩm về cơ chế nhả/giữ model · đo trên máy B
+
+### Số đo, không phải ước lượng
+
+| Việc | Thời gian | Ghi chú |
+|---|---|---|
+| **Qwen nạp LẠNH** (RAM → VRAM, 19,4 GB) | **17,1 s** · 23,0 s | hai lượt đo, hai ngày |
+| **Qwen lượt ẤM** (đã thường trú) | **0,99 – 1,48 s** | 5 lượt |
+| **Qwen nhả** | 0,7 s | |
+| **HiDream nhả** | 0,2 s | |
+| **HiDream nạp lại** (15,6 GB) | **0,8 s** | ≈ 20 GB/s = tốc độ RAM, không phải đĩa |
+| **Đuổi + xác minh VRAM** (trọng tài) | **4,0 – 6,6 s** | gồm cả chờ VRAM thật sự tụt |
+| **Từ chối chiều ngược** | **0,3 s** | không tốn GPU |
+
+⭐ **Con số quyết định mọi thứ: 17–23 giây so với 0,8 giây. Chênh nhau ~22 lần.**
+
+### Vì sao "dùng xong nhả luôn" là SAI với Qwen
+
+Một phiên code là **hàng trăm lượt gọi**. Đặt cạnh nhau:
+
+| | nhả sau mỗi lượt | giữ thường trú (đang chạy) |
+|---|---|---|
+| 100 lượt code | 100 × (20 + 1,2) = **2.120 s** | 20 + 100 × 1,2 = **140 s** |
+
+**Chậm hơn 15 lần**, để đổi lấy một card rỗng mà **không ai đang xin**. Card rỗng
+chỉ có giá trị khi có người cần nó — mà lúc đó trọng tài đã tự đuổi được rồi.
+
+⇒ Trả lời thẳng câu hỏi *"dùng qwen để code thì ra vào RAM–VRAM liên tục à?"*:
+**Không.** Qwen nạp **một lần**, rồi ở lì trong VRAM. Chỉ ra khỏi card khi **có job
+ảnh thật sự cần**. Không có job ảnh thì nó không ra vào lần nào.
+
+### Vì sao HiDream thì ngược lại — và đó không phải mâu thuẫn
+
+HiDream **có** nhả sau 60 giây rảnh (`LTT_TRA_CARD_GIAY`). Cùng một dự án, hai
+chính sách ngược nhau, và đó là chủ ý: **nạp lại nó tốn 0,8 giây**. Ở mức đó thì
+"nhả" gần như miễn phí, còn card rỗng thì có ích thật — nó là thứ để Qwen quay lại
+mà không phải đợi ai.
+
+⛔ **Đừng "thống nhất cho gọn".** Chính sách đối xứng trên hai model lệch nhau 22
+lần là chính sách sai ở ít nhất một đầu:
+- đối xứng theo kiểu *giữ cả hai* ⇒ 24,2 GB, hai model đè nhau, đúng sự cố đã đo;
+- đối xứng theo kiểu *nhả cả hai* ⇒ mỗi lượt code trả 20 giây.
+
+### Trường hợp xấu duy nhất, và ta đổi nó thành cái gì
+
+Xấu = **hai bên xen kẽ liên tục** (job ảnh chen vào giữa phiên code). Không cơ chế
+nào làm nó rẻ được: card 24 GB không chứa nổi 19,4 + 17,3 GB, nên **phải có một
+bên chờ**. Câu hỏi thật không phải *"làm sao khỏi chờ"* mà **"cho bên nào chờ"**.
+
+`CACH_NHAU_TOI_THIEU_GIAY = 300` chọn giúp: sau một lần đuổi, trọng tài **không
+đuổi tiếp trong 5 phút**. Job ảnh đến trong khoảng đó nhận **429 và xếp lại hàng**.
+
+Nó biến *"LLM bị giật liên tục"* thành *"job ảnh xếp hàng"*. Đổi đúng chiều, vì:
+
+| | job ảnh | lượt LLM |
+|---|---|---|
+| ai đang đợi | hàng đợi job, **không ai ngồi nhìn** | **khách đang ngồi chờ gõ tiếp** |
+| lùi lại có mất gì | không, thử lại là xong | có, phiên code đứt mạch |
+
+Và nó **chốt trần** cho phía LLM: nhiều nhất **một lần nạp lại mỗi 300 giây**, tức
+tối đa ~20/300 = **6,7 %** hao. Không có cooldown thì con số đó không có trần.
+
+### 🔴 Lỗ chiều ngược — tìm được nhờ ĐO, và test không thấy
+
+Trọng tài chỉ chặn **một chiều**: ảnh xin card thì đuổi được LLM. Chiều kia bỏ ngỏ.
+Đo thật lúc nạp Qwen **giữa lúc HiDream đang vẽ**: **24.213 MB / 98,5 %** — đúng
+cái nghẽn ta tưởng đã đóng.
+
+Gốc ở `llm_gateway/trong_tai.py`: nó **đếm tiến trình python** trên card, mà
+*ComfyUI ngồi không* và *ComfyUI đang vẽ* đều là **đúng 1 tiến trình python**. Chú
+thích cũ viết thẳng ra điều đó: *"n == 1 (chi ComfyUI thuong tru) deu la RANH"* —
+đúng khi ComfyUI chỉ thường trú, sai từ lúc nó bắt đầu vẽ.
+
+Sửa: thêm `TAI_GPU_DANG_TINH = 50`. Có python trên card **và** tải GPU ≥ 50 % ⇒ bận.
+
+**Bằng chứng sau khi sửa** (`logs/do_ck4.ps1`, 14:45:25):
+```
+dang ve: VRAM 17.312 MB, tai 100%
+goi LLM  -> HTTP 429 sau 0,3 s | VRAM 17.312 MB   (truoc: 24.213 MB)
+ly do: "co tien trinh python tren card va tai GPU 100% (>= 50%)
+        - dang ve, nap model bay gio se de len nhau"
+```
+
+⚠️ **Vì sao test không bắt được:** test tiêm `dem_python_gpu` trả về một con số. Với
+mọi giá trị nó đều đúng như đặc tả — **đặc tả mới là chỗ sai**. Một đại lượng không
+phân biệt được hai trạng thái thì không test nào cứu được.
+
+### Một chỗ hỏng phụ, cùng lớp với D-058
+
+`llm_gateway/deploy/deploy.ps1` **chết ở bước 0** mỗi lần chạy: OpenSSH in
+`** WARNING: connection is not using a post-quantum key exchange...` ra **stderr**,
+và `$ErrorActionPreference = "Stop"` biến mọi dòng stderr của `.exe` thành
+`NativeCommandError` gây tử vong. Script chưa từng deploy thành công lần nào, và nó
+chỉ cách một bản cập nhật OpenSSH.
+
+Sửa: hạ `ErrorActionPreference` **quanh đúng lời gọi ssh**, chốt bằng
+`$LASTEXITCODE` — đó mới là thứ nói ssh thành công hay không — và lọc dòng cảnh báo
+khỏi giá trị trả về. Cùng họ với `deploy.ps1` của cổng render (D-052): **script
+deploy cũng là mã chạy thật, và cũng phải được chạy thật ít nhất một lần.**
+
+### Chốt lại: cơ chế nào
+
+> **Model đắt nạp thì GIỮ, và bị đuổi khi có người cần. Model rẻ nạp thì NHẢ sau
+> khi rảnh.** Ranh giới đo bằng giây, không đoán bằng cảm giác.
+
+Dự án video sau này vào theo đúng khuôn này. Nó cần đo **một số duy nhất** — thời
+gian nạp lại — rồi tra bảng trên. Nếu nó **không tự nhả được** thì khai
+`video=` (đường nhả rỗng): trọng tài **báo bận và lùi**, không bao giờ đuổi.
+
+**Bằng chứng:** `tests/test_278_nhuong_card.py` (32 test, có 5 test chiều ngược),
+`logs/do_ck2.ps1` + `logs/do_ck4.ps1` trên máy B 14:43–14:45.

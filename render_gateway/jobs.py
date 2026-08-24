@@ -43,6 +43,11 @@ class Job:
     updated_at: float = 0.0
     #: Số bước đã chạy / tổng, nếu biết. Chỉ có cho job của chính ta.
     progress: Optional[tuple[int, int]] = None
+    #: Số đo VRAM + RAM lấy TRONG LÚC job chạy. `None` = chưa đo.
+    #: ⭐ Đây là thứ phân biệt "job chậm vì máy bận" với "job chậm vì model chỉ
+    #:    thường trú một phần" — hai chuyện khác hẳn nhau mà kết quả cuối trông
+    #:    giống nhau. Xem `theo_doi_luot.py`.
+    do_duoc: Optional[dict] = None
 
     def as_dict(self) -> dict:
         ra = {
@@ -56,6 +61,8 @@ class Job:
             ra["error"] = {"code": self.error_code, "message": self.error_message}
         if self.progress:
             ra["progress"] = {"value": self.progress[0], "max": self.progress[1]}
+        if self.do_duoc:
+            ra["do_duoc"] = self.do_duoc
         return ra
 
 
@@ -111,6 +118,18 @@ class JobStore:
         khỏi việc lạ trong hàng đợi ComfyUI (`busy.observe`)."""
         with self._lock:
             return {j.prompt_id for j in self._jobs.values() if j.status not in KET_THUC}
+
+    def chay_lau_nhat_s(self) -> Optional[float]:
+        """Job chưa kết thúc **cũ nhất** đã nhận được bao lâu. `None` = không có.
+
+        Dùng cho chốt "đang vẽ mà VRAM thấp" (`tren_gpu.kiem`). Lấy job cũ nhất
+        chứ không phải mới nhất: một job vừa nộp xong luôn "mới", nên lấy mới
+        nhất sẽ làm chốt không bao giờ chín khi có luồng việc đều.
+        """
+        with self._lock:
+            moc = [j.created_at for j in self._jobs.values()
+                   if j.status not in KET_THUC and j.created_at]
+        return (self._now() - min(moc)) if moc else None
 
     def don_dep(self, giu_giay: float = 86400.0) -> int:
         """Bỏ job đã chốt và đã cũ. Trả số job đã bỏ."""

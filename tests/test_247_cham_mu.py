@@ -262,3 +262,123 @@ def test_lenh_tao_sinh_luon_man_cham(tmp_path):
     lo = tmp_path / "lo"
     assert main(["tao", "--a", str(a), "--b", str(b), "--ra", str(lo)]) == 0
     assert (lo / TEN_MAN).exists()
+
+
+# ═══════════ D-052: máy chấm thì mỗi phiếu quyết đoán phải nói ra vì sao ═════
+#
+# Luật cũ (§1.5.3) cấm tôi bỏ phiếu thẩm mỹ. Chủ sản phẩm đảo luật đó ngày
+# 24/08 — nay máy chấm. Rủi ro "mô hình chấm sản phẩm của chính mình" **không
+# biến mất** vì luật đổi, nên đổi cách chặn: buộc mỗi lá phiếu phải viết lý do.
+#
+# Một câu lý do buộc phải NHÌN. Không có nó thì không gì phân biệt "đã mở ảnh"
+# với "đoán theo thứ tự tệp" — và D-027 cho thấy quy trình này từng chạy tám
+# lượt đo mà không ai nhìn một tấm ảnh nào.
+
+import pytest
+
+from tools import cham_mu as CM
+
+
+def _phieu_may(**kw):
+    goc = {"may_cham": True, "nguoi_cham": "opus-5",
+           "phieu": [{"ma": "c001", "chon": "trai", "ghi_chu": "toc net hon"}]}
+    goc.update(kw)
+    return goc
+
+
+def test_nguoi_cham_thi_KHONG_bat_ghi_chu():
+    """Luật này chỉ áp cho máy. Người chấm đã có mặt và có trách nhiệm."""
+    CM.kiem_phieu_may({"may_cham": False,
+                       "phieu": [{"ma": "c001", "chon": "trai", "ghi_chu": ""}]})
+
+
+def test_lo_cu_khong_khai_gi_van_tinh_duoc():
+    """Các lô đã chấm trước D-052 không có trường này. Đừng làm hỏng chúng."""
+    CM.kiem_phieu_may({"phieu": [{"ma": "c001", "chon": "trai"}]})
+
+
+def test_may_cham_ma_thieu_ghi_chu_thi_TU_CHOI_TINH():
+    """🔴 Chốt chính. Từ chối tính còn hơn tính ra một con số không ai kiểm được."""
+    with pytest.raises(CM.PhieuKhongHopLe) as e:
+        CM.kiem_phieu_may(_phieu_may(phieu=[{"ma": "c001", "chon": "trai", "ghi_chu": ""},
+                                        {"ma": "c002", "chon": "phai", "ghi_chu": " "}]))
+    assert "c001" in str(e.value) and "c002" in str(e.value)
+
+
+def test_hoa_KHONG_bat_buoc_ghi_chu():
+    """⛔ Bắt viết lý do cho hoà là dạy người chấm né hoà.
+
+    Mà né hoà chính là thứ làm hỏng sàn nhiễu: cặp bẫy đo *mức quyết đoán khi
+    không có gì để quyết*. Ép quyết đoán thì phép đo đó mất nghĩa.
+    """
+    CM.kiem_phieu_may(_phieu_may(phieu=[{"ma": "c001", "chon": "hoa", "ghi_chu": ""}]))
+
+
+def test_may_cham_ma_khong_ghi_TEN_thi_tu_choi():
+    """Không biết model nào chấm thì không đối chiếu được hai lô chấm khác nhau."""
+    with pytest.raises(CM.PhieuKhongHopLe):
+        CM.kiem_phieu_may(_phieu_may(nguoi_cham="  "))
+
+
+def test_lo_moi_dung_ra_co_san_cho_khai_nguoi_cham(tmp_path):
+    """Trường phải có sẵn trong phiếu trống, nếu không sẽ không ai điền."""
+    import json
+
+    a = tmp_path / "a"; b = tmp_path / "b"
+    for d in (a, b):
+        d.mkdir()
+        for i in range(3):
+            (d / f"{i}.png").write_bytes(b"x")
+    caps = CM.tao_lo(sorted(str(x) for x in a.glob("*.png")),
+                     sorted(str(x) for x in b.glob("*.png")),
+                     ty_le_bay=0.0)
+    CM.ghi_lo(caps, tmp_path / "lo", nhan_a="A", nhan_b="B")
+    p = json.loads((tmp_path / "lo" / CM.TEN_PHIEU).read_text(encoding="utf-8"))
+    assert "nguoi_cham" in p and "may_cham" in p
+    assert all("ghi_chu" in x for x in p["phieu"])
+
+
+# ═══════════ Bẫy CÙNG ĐỀ BÀI, KHÁC SEED ══════════════════════════════════════
+#
+# 🔴 Bẫy cũ ghép hai ảnh **khác đề bài** của cùng một nguồn. Với phép so
+#    *cùng-đề-bài* (36 vs 50 bước) nó vô dụng: hai ảnh khác đề bài thì khác nhau
+#    hiển nhiên, nên người chấm gần như luôn chọn được một bên ⇒ sàn nhiễu ~100 %
+#    ⇒ `d <= f` luôn đúng ⇒ công cụ luôn trả "chưa phân biệt được", bất kể dữ liệu.
+#
+#    Đã xảy ra thật: B2b đo sàn nhiễu **100 %** và D-049 phải ghi rõ là không dựa
+#    vào lý do đó. Tăng số cặp bẫy kiểu cũ không cứu được — chỉ làm một tín hiệu
+#    vô dụng trở nên chính xác hơn.
+
+def test_bay_cung_de_bai_thi_HAI_BEN_deu_la_A():
+    """Bẫy đúng nghĩa: cùng đề bài, cùng cấu hình, khác seed. Không bên nào thắng."""
+    a = [f"s50/p{i:02d}.png" for i in range(1, 11)]
+    b = [f"s36/p{i:02d}.png" for i in range(1, 11)]
+    bay = [f"seed2/p{i:02d}.png" for i in range(1, 11)]
+    caps = CM.tao_lo(a, b, ty_le_bay=0.3, anh_bay=bay,
+                     rng=__import__("random").Random(7))
+    cb = [c for c in caps if c.la_bay]
+    assert cb, "phai co cap bay"
+    for c in cb:
+        assert c.nguon_trai == c.nguon_phai == "A"
+
+
+def test_bay_cung_de_bai_ghep_DUNG_CHI_SO():
+    """Lệch chỉ số là quay về bẫy cũ mà không ai biết — nên phải chốt."""
+    a = [f"s50/p{i:02d}.png" for i in range(1, 11)]
+    b = [f"s36/p{i:02d}.png" for i in range(1, 11)]
+    bay = [f"seed2/p{i:02d}.png" for i in range(1, 11)]
+    caps = CM.tao_lo(a, b, ty_le_bay=0.3, anh_bay=bay,
+                     rng=__import__("random").Random(11))
+    for c in (x for x in caps if x.la_bay):
+        # sau khi xao trai/phai, mot ben la s50 va ben kia la seed2, CUNG so hieu
+        so = {t.split("/")[-1] for t in (c.trai, c.phai)}
+        assert len(so) == 1, f"bay ghep hai de bai khac nhau: {c.trai} vs {c.phai}"
+
+
+def test_khong_truyen_anh_bay_thi_giu_hanh_vi_cu():
+    """Các lô cũ và các phép so khác-đề-bài vẫn dùng được kiểu bẫy cũ."""
+    a = [f"s50/p{i:02d}.png" for i in range(1, 11)]
+    b = [f"s36/p{i:02d}.png" for i in range(1, 11)]
+    caps = CM.tao_lo(a, b, ty_le_bay=0.2, rng=__import__("random").Random(3))
+    cb = [c for c in caps if c.la_bay]
+    assert cb and all(c.nguon_trai == c.nguon_phai for c in cb)

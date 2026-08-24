@@ -435,7 +435,7 @@
         "type": "object",
         "properties": {
           "messages": {
-            "type": "object",
+            "type": "array",
             "description": "Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.",
             "examples": [
               [
@@ -478,7 +478,7 @@
             ]
           },
           "tools": {
-            "type": "object",
+            "type": "array",
             "description": "Function definitions, OpenAI format. The model may answer with `tool_calls`.",
             "examples": [
               []
@@ -510,7 +510,7 @@
             "type": "string"
           },
           "tool_calls": {
-            "type": "object"
+            "type": "array"
           },
           "usage": {
             "type": "object"
@@ -520,7 +520,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "f6ff632ee8371fa9"
+      "contract_hash": "32d617ca0c0130d2"
     },
     {
       "name": "text.prompt_package",
