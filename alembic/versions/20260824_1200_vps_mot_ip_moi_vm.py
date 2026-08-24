@@ -14,7 +14,7 @@ may bi xoa ta KHONG BIET phai tra IP nao ve cho nha cung cap, va moi may chet
 de lai $3/thang chay mai.
 
 Revision ID: 6f2a91d47c30
-Revises: 8b2c5d1e40a7
+Revises: 4d7e91c2a6b8
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "6f2a91d47c30"
-down_revision = "8b2c5d1e40a7"
+down_revision = "4d7e91c2a6b8"
 branch_labels = None
 depends_on = None
 
@@ -33,7 +33,10 @@ def upgrade() -> None:
                                server_default="10"))
         b.add_column(sa.Column("octet_cuoi", sa.Integer(), nullable=False,
                                server_default="250"))
-        for ten in ("cong_dau", "cong_cuoi", "cong_goc"):
+        # `dnat_*` la cua mo hinh chia cong, them o `4d7e91c2a6b8` va bo o day.
+        # Giu revision do lai vi no DA CHAY tren CSDL that — xem file cua no.
+        for ten in ("cong_dau", "cong_cuoi", "cong_goc",
+                    "dnat_dau", "dnat_cuoi"):
             b.drop_column(ten)
 
     with op.batch_alter_table("vps_ip") as b:
@@ -77,5 +80,8 @@ def downgrade() -> None:
                                server_default="0"))
         b.add_column(sa.Column("cong_dau", sa.Integer(), nullable=False,
                                server_default="0"))
+        for ten in ("dnat_dau", "dnat_cuoi"):
+            b.add_column(sa.Column(ten, sa.Integer(), nullable=False,
+                                   server_default="0"))
         b.drop_column("octet_cuoi")
         b.drop_column("octet_dau")

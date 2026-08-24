@@ -317,7 +317,10 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
         db.add(VpsGateway(ten="cong-chinh", vung="port",
                           ip_cong_khai="203.0.113.10",
                           ten_mien="vps.example.com",
-                          cong_dau=31000, cong_cuoi=31100))
+                          bridge="vmbr1", subnet_cidr="10.51.0.0/24",
+                          subnet_gw="10.51.0.1", dns="1.1.1.1", mtu=1420,
+                          octet_dau=10, octet_cuoi=100,
+                          cho_phep_ip_rieng=True))
         db.commit()
     finally:
         try:

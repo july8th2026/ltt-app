@@ -27,10 +27,16 @@ chúng **chặn** phần còn lại — nên chúng ở trên cùng.
 | # | Việc | Vì sao nó chặn |
 |---|---|---|
 | **P1** | **Deploy.** Cần Administrator + bấm UAC. Cờ `image.ltt` đã bật, deploy sẽ nướng lại env. | Không deploy thì toàn bộ H37 hôm nay **chưa tới khách**: mã sửa lỗi tiền, hai phép thăm dò, giá mới, `/gia-api` — đều chỉ nằm ở thư mục nguồn. |
-| **P2** | **Chạy đè với dự án video một lượt** để xác minh cổng render báo *bận* chứ không báo *hỏng* | Chốt duy nhất của Đợt B chưa đóng. **Không** đóng được bằng lô đo của riêng ta — cần dự án video chạy thật cùng lúc. |
 | **P3** | **Luật WAF Cloudflare** cho `/api/v1/*`: bỏ kiểm bot | Đã đo 24/08: `User-Agent` mặc định của `urllib` bị CF trả **403** trước khi tới máy chủ. Khách dùng thư viện chuẩn sẽ dính. |
 
 ⛔ **P1 phải xong trước mọi việc ở mục 2.**
+
+⛔ **Chạy đè với dự án video: BỎ khỏi quy trình** (chủ sản phẩm quyết 24/08).
+Dự án video sẽ được xây lại theo đúng khuôn khoá-logic của LLM/ảnh, nên một
+phép đo trên bản video **hiện tại** đo một thứ sắp không còn tồn tại. Chốt đó
+quay lại cùng lúc với bản video mới, không sớm hơn.
+⇒ **Đừng thêm nó lại vào danh sách này.** Nếu thấy Đợt B của H37 thiếu một chốt
+thì đó là **cố ý**, không phải sót.
 
 ---
 
@@ -181,8 +187,6 @@ sự cố.
 V1..V4 trọng tài VRAM  ✅ XONG (D-058)
         ↓
 P1 deploy (chủ sản phẩm)  →  A1..A4 nghiệm thu ảnh thật
-        ↓
-P2 (chủ sản phẩm) đóng Đợt B của H37
         ↓
 G5..G6 (GPU máy A)  ·  L1..L5 (H38)
 ```

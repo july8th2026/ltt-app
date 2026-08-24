@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d14fde39944fbf7c62def8f9328a844324b81b848f98eae5a9e9add155337e84
-Nguồn đã quét : 1298 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:7ed8decf17278db4187da0cec4b08b88711995c86421e4901325a22a208754ed
+Nguồn đã quét : 1302 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -557,9 +557,11 @@ Các lớp chính:
     - apps/vps/services/__init__.py
     - apps/vps/services/billing.py
     - apps/vps/services/capacity.py
+    - apps/vps/services/gateway.py
     - apps/vps/services/mang.py
     - apps/vps/services/provisioning.py
     - apps/vps/services/proxmox.py
+    - apps/vps/services/vultr.py
     - apps/vps/tables.py
 
 4. HTTP ROUTE INVENTORY (334)
@@ -896,10 +898,10 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] GET    /upscalevideo/watch/status → watch_status | auth~unspecified | apps/upscalevideo/routes.py:293
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
-- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:118
-- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:149
+- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:113
+- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:144
 
-5. DATA MODEL (58 bảng)
+5. DATA MODEL (57 bảng)
 - agent_runs → AgentRun | platform_core/models.py:406
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:491
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:473
@@ -953,13 +955,12 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - singleton_leases → SingletonLease | platform_core/models.py:835
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
-- vps_event → VpsEvent | apps/vps/tables.py:224
-- vps_gateway → VpsGateway | apps/vps/tables.py:67
-- vps_instance → VpsInstance | apps/vps/tables.py:152
-- vps_ip → VpsIp | apps/vps/tables.py:126
-- vps_port_map → VpsPortMap | apps/vps/tables.py:201
+- vps_event → VpsEvent | apps/vps/tables.py:213
+- vps_gateway → VpsGateway | apps/vps/tables.py:66
+- vps_instance → VpsInstance | apps/vps/tables.py:157
+- vps_ip → VpsIp | apps/vps/tables.py:125
 
-6. ALEMBIC MIGRATIONS (47)
+6. ALEMBIC MIGRATIONS (49)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -1007,6 +1008,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 5a3a13144782 ← 455d0097906f | nexus: cot rustdesk_id cho cuong che billing o tang relay (Q101, P-relay) | alembic/versions/20260821_1200_nexus_device_rustdesk_id.py
 - c1f4a2b70e51 ← 5a3a13144782 | vps: nam bang cho app ban may chu ao (Q103, Q104) | alembic/versions/20260822_1900_vps_tables.py
 - 8b2c5d1e40a7 ← c1f4a2b70e51 | vps: cot mo ta MANG RIENG ma mot cong vao phuc vu (H39 P1) | alembic/versions/20260823_1000_vps_gateway_mang.py
+- 4d7e91c2a6b8 ← 8b2c5d1e40a7 | vps: dai cong DA NAP SAN DNAT tren gateway (H39, mo hinh CHIA CONG) | alembic/versions/20260823_1800_vps_dnat_da_nap.py
+- 6f2a91d47c30 ← 4d7e91c2a6b8 | vps: doi tu chia cong sang MOT IP CONG KHAI cho MOT VM (H39/G2) | alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1023,7 +1026,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (141 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (147 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1153,6 +1156,10 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_UPSCALE_BROWSER_VIDEO
 - LTT_UPSCALE_WATCH_TOKEN
 - LTT_VPS
+- LTT_VPS_GATEWAY_HOST
+- LTT_VPS_GATEWAY_NFT_TABLE
+- LTT_VPS_GATEWAY_SSH_KEY
+- LTT_VPS_GATEWAY_USER
 - LTT_VPS_PROXMOX_CA
 - LTT_VPS_PROXMOX_NODE
 - LTT_VPS_PROXMOX_TOKEN_ID
@@ -1161,6 +1168,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_VPS_TEMPLATE_
 - LTT_VPS_TEMPLATE_WIN11
 - LTT_VPS_TEMPLATE_WINSRV2022_GUI
+- LTT_VPS_VUNG
+- LTT_VULTR_API_KEY
 - LTT_WHISPERX_PYTHON
 - LTT_WHISPERX_TIMEOUT_SECONDS
 - LTT_WORKER_POOLS
@@ -1485,8 +1494,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1298 file)
-Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:997, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1302 file)
+Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1001, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1499,7 +1508,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (49)
+[alembic] (51)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1549,11 +1558,13 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - alembic/versions/20260821_1200_nexus_device_rustdesk_id.py
 - alembic/versions/20260822_1900_vps_tables.py
 - alembic/versions/20260823_1000_vps_gateway_mang.py
+- alembic/versions/20260823_1800_vps_dnat_da_nap.py
+- alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
 
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (251)
+[apps] (253)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1801,9 +1812,11 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - apps/vps/services/__init__.py
 - apps/vps/services/billing.py
 - apps/vps/services/capacity.py
+- apps/vps/services/gateway.py
 - apps/vps/services/mang.py
 - apps/vps/services/provisioning.py
 - apps/vps/services/proxmox.py
+- apps/vps/services/vultr.py
 - apps/vps/tables.py
 
 [babel.cfg] (1)
@@ -2851,7 +2864,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1298 file; 11978996 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1302 file; 12013730 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -6928,6 +6941,142 @@ def upgrade() -> None:
 def downgrade() -> None:
     for ten in ("cong_goc", "mtu") + tuple(t[0] for t in COT):
         op.drop_column("vps_gateway", ten)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260823_1800_vps_dnat_da_nap.py
+SHA256=8e589380db71fa5827d47c8faa17871e27027a099f7cc562111c3f82b4633593 BYTES=1212 LINES=37
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""vps: dai cong DA NAP SAN DNAT tren gateway (H39, mo hinh CHIA CONG)
+
+⚠️ REVISION NAY DA BI THAY THE, nhung KHONG DUOC XOA FILE.
+
+Mo hinh chia cong bi bo ngay 2026-08-24 (moi may mot IP cong khai rieng), va hai
+cot duoi day khong con y nghia. Revision ke tiep `6f2a91d47c30` xoa chung.
+
+Ly do phai giu file nay: no DA CHAY tren CSDL that (`alembic_version` cua
+production tung o dung day). Xoa file cua mot revision da ap dung thi
+`alembic upgrade head` chet ngay voi "Can't locate revision identified by
+'4d7e91c2a6b8'" — va no chan CA CUM deploy, khong rieng app VPS. Lich su
+migration la thu chi duoc them vao, khong duoc viet lai.
+
+Revision ID: 4d7e91c2a6b8
+Revises: 8b2c5d1e40a7
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "4d7e91c2a6b8"
+down_revision = "8b2c5d1e40a7"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    for ten in ("dnat_dau", "dnat_cuoi"):
+        op.add_column("vps_gateway",
+                      sa.Column(ten, sa.Integer(), nullable=False,
+                                server_default="0"))
+
+
+def downgrade() -> None:
+    for ten in ("dnat_cuoi", "dnat_dau"):
+        op.drop_column("vps_gateway", ten)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
+SHA256=44a3e3af2e31baa6493f3cdd8f8f7c367b6777890ff29b6cf69919423d53d610 BYTES=3834 LINES=87
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""vps: doi tu chia cong sang MOT IP CONG KHAI cho MOT VM (H39/G2)
+
+Mo hinh cu buoc cong NAT va dia chi rieng vao nhau bang mot phep cong
+(`cong_ngoai = cong_goc + octet`) de chi phai cap phat MOT thu. Tu 2026-08-24
+moi may co mot IP cong khai rieng va khong con chia cong, nen:
+
+  * thu khan hiem can cap phat la DIA CHI TRONG MANG RIENG, khong phai cong;
+  * trong tai cap phat chuyen sang rang buoc duy nhat tren
+    `vps_instance(gateway_id, ip_noi_bo)`;
+  * `vps_port_map` khong con ly do ton tai.
+
+`vps_ip.vultr_id` la cot quan trong nhat trong migration nay: thieu no thi khi
+may bi xoa ta KHONG BIET phai tra IP nao ve cho nha cung cap, va moi may chet
+de lai $3/thang chay mai.
+
+Revision ID: 6f2a91d47c30
+Revises: 4d7e91c2a6b8
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "6f2a91d47c30"
+down_revision = "4d7e91c2a6b8"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    with op.batch_alter_table("vps_gateway") as b:
+        b.add_column(sa.Column("octet_dau", sa.Integer(), nullable=False,
+                               server_default="10"))
+        b.add_column(sa.Column("octet_cuoi", sa.Integer(), nullable=False,
+                               server_default="250"))
+        # `dnat_*` la cua mo hinh chia cong, them o `4d7e91c2a6b8` va bo o day.
+        # Giu revision do lai vi no DA CHAY tren CSDL that — xem file cua no.
+        for ten in ("cong_dau", "cong_cuoi", "cong_goc",
+                    "dnat_dau", "dnat_cuoi"):
+            b.drop_column(ten)
+
+    with op.batch_alter_table("vps_ip") as b:
+        b.add_column(sa.Column("vultr_id", sa.String(64), nullable=False,
+                               server_default=""))
+        b.add_column(sa.Column("nhan", sa.String(64), nullable=False,
+                               server_default=""))
+
+    with op.batch_alter_table("vps_instance") as b:
+        b.add_column(sa.Column("ip_noi_bo", sa.String(64), nullable=True))
+        b.create_unique_constraint("uq_vps_instance_ip",
+                                   ["gateway_id", "ip_noi_bo"])
+
+    op.drop_table("vps_port_map")
+
+
+def downgrade() -> None:
+    op.create_table(
+        "vps_port_map",
+        sa.Column("id", sa.String(36), primary_key=True),
+        sa.Column("instance_id", sa.String(36), nullable=False, index=True),
+        sa.Column("gateway_id", sa.String(36), nullable=False, index=True),
+        sa.Column("cong_ngoai", sa.Integer(), nullable=False),
+        sa.Column("cong_trong", sa.Integer(), nullable=False),
+        sa.Column("giao_thuc", sa.String(8), nullable=False, server_default="tcp"),
+        sa.Column("nhan", sa.String(32), nullable=False, server_default=""),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.UniqueConstraint("gateway_id", "cong_ngoai", "giao_thuc",
+                            name="uq_vps_port_map_cong"),
+    )
+    with op.batch_alter_table("vps_instance") as b:
+        b.drop_constraint("uq_vps_instance_ip", type_="unique")
+        b.drop_column("ip_noi_bo")
+    with op.batch_alter_table("vps_ip") as b:
+        b.drop_column("nhan")
+        b.drop_column("vultr_id")
+    with op.batch_alter_table("vps_gateway") as b:
+        b.add_column(sa.Column("cong_goc", sa.Integer(), nullable=False,
+                               server_default="0"))
+        b.add_column(sa.Column("cong_cuoi", sa.Integer(), nullable=False,
+                               server_default="0"))
+        b.add_column(sa.Column("cong_dau", sa.Integer(), nullable=False,
+                               server_default="0"))
+        for ten in ("dnat_dau", "dnat_cuoi"):
+            b.add_column(sa.Column(ten, sa.Integer(), nullable=False,
+                                   server_default="0"))
+        b.drop_column("octet_cuoi")
+        b.drop_column("octet_dau")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -34199,7 +34348,7 @@ __all__ = ["FLAG_ENV", "enabled"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/cost.py
-SHA256=410b777a8f915800a19fc6232d4501cda36921533e88200bf343f5693a0595d9 BYTES=5849 LINES=146
+SHA256=e7ea90c1a2b95b6117a36e2d52e819d92767efc2f70127bb8508dbea4a04150a BYTES=5850 LINES=146
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng giá VPS và quy đổi sang credit (Q103 V6, Q104 V11).
 
@@ -34275,7 +34424,7 @@ PLANS: tuple[Plan, ...] = (
         vcpu=1,
         ram_mb=2048,
         disk_gb=40,
-        gia_thang_vnd=89_000,
+        gia_thang_vnd=149_000,
         os_toi_thieu="winsrv2022-core",
         mo_ta=N_("Chạy được Windows Server 2022 bản Core (không giao diện đồ hoạ). "
                  "Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc script nền."),
@@ -34351,7 +34500,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=96c872f976c2a60c33e03bcd02ab03651d44a8c1b7bfc3a9f756c13df29b7a78 BYTES=13913 LINES=322
+SHA256=09093b63ba89df05734b3ed684c6ecb3c1af2d7a9702b134a2af7d8de97ab8c5 BYTES=14403 LINES=332
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34489,22 +34638,19 @@ def _tao_may(params: dict, ctx=None) -> dict:
                                 ten=f"vps-{may.id[:8]}", full=False)
             _cho_tac_vu(client, upid, ctx, moc=35)
 
-        # 3) Cổng NAT — cấp TRƯỚC khi cấu hình, vì địa chỉ riêng của máy được
-        #    SUY RA từ cổng (`services/mang.py`). Cấp phát một thứ, dùng cho hai.
-        _bao(ctx, 45, "dang mo duong vao")
-        cong = _cong_hien_co(db, may.id, gateway.id)
-        if cong is None:
-            cong = provisioning.cap_cong(db, may, gateway,
-                                         cong_trong=img.cong_trong,
-                                         nhan="rdp" if img.ho == "windows" else "ssh")
-            db.commit()
+        # 3) Địa chỉ trong mạng riêng — cấp TRƯỚC khi cấu hình, vì cloud-init
+        #    tiêm nó vào máy ở bước sau. Nguyên tử qua ràng buộc duy nhất
+        #    `(gateway_id, ip_noi_bo)`; chạy lại thì trả về đúng địa chỉ cũ.
+        _bao(ctx, 45, "dang cap dia chi")
+        ip_noi_bo = provisioning.cap_ip_noi_bo(db, may, gateway)
+        db.commit()
 
         # 4) Cấu hình theo gói + cắm vào mạng riêng, rồi nới đĩa nếu cần.
         _bao(ctx, 60, "dang dat cau hinh")
         cau_hinh = {"cores": plan.vcpu, "memory": plan.ram_mb,
                     "name": f"vps-{may.id[:8]}"}
         cau_hinh.update(mang.cau_hinh_qemu(
-            mang.mang_cho_may(gateway, cong.cong_ngoai)))
+            mang.mang_cho_may(gateway, ip_noi_bo)))
         client.dat_cau_hinh(may.vmid, **cau_hinh)
 
         can_dia = dia_tong_gb(may.plan_id, may.dia_them_gb)
@@ -34519,15 +34665,19 @@ def _tao_may(params: dict, ctx=None) -> dict:
         may.trang_thai = "dang_chay"
         may.ly_do = ""
         provisioning.ghi_su_kien(db, may.id, "tao_xong", boi="he_thong",
-                                 vmid=may.vmid, cong_ngoai=cong.cong_ngoai)
+                                 vmid=may.vmid, ip_noi_bo=ip_noi_bo)
         db.commit()
         _bao(ctx, 100, "xong")
 
-        dia_chi = gateway.ten_mien or gateway.ip_cong_khai
+        # Địa chỉ khách gõ vào là IP CÔNG KHAI RIÊNG của máy, cấp ở bước sau
+        # (G2/`services/vultr.py`). Chừng nào chưa có thì trả rỗng — thà không
+        # có địa chỉ còn hơn đưa địa chỉ của cổng vào, vì khách sẽ thử gõ nó và
+        # rơi vào máy người khác.
         return {
             "instance_id": may.id,
             "vmid": may.vmid,
-            "dia_chi": f"{dia_chi}:{cong.cong_ngoai}",
+            "ip_noi_bo": ip_noi_bo,
+            "dia_chi": _ip_cong_khai(db, may.id),
             "he_dieu_hanh": img.ten,
         }
     except Exception as exc:
@@ -34570,14 +34720,15 @@ def _dia_goc(client, vmid: int) -> str:
     raise VpsJobError(f"khong tim thay dia he dieu hanh cua VM {vmid}")
 
 
-def _cong_hien_co(db, instance_id: str, gateway_id: str):
+def _ip_cong_khai(db, instance_id: str) -> str:
+    """IP công khai riêng của máy, hoặc rỗng nếu chưa cấp."""
     from sqlalchemy import select
 
-    from apps.vps.tables import VpsPortMap
-    return db.execute(
-        select(VpsPortMap).where(VpsPortMap.instance_id == instance_id,
-                                 VpsPortMap.gateway_id == gateway_id)
+    from apps.vps.tables import VpsIp
+    ip = db.execute(
+        select(VpsIp).where(VpsIp.instance_id == instance_id)
     ).scalars().first()
+    return str(ip.dia_chi) if ip is not None else ""
 
 
 def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
@@ -34666,12 +34817,20 @@ def _xoa_may(params: dict, ctx=None) -> dict:
 
 
 def _nha_tai_nguyen(db, may: VpsInstance) -> None:
-    """Trả cổng và IP về kho. Không làm bước này thì kho cạn dần một cách im lặng."""
-    from sqlalchemy import delete, select
+    """Trả địa chỉ riêng và IP công khai về kho.
 
-    from apps.vps.tables import VpsIp, VpsPortMap
+    Không làm bước này thì kho cạn dần một cách im lặng — và với IP công khai
+    thì tệ hơn: mỗi máy chết để lại **$3/tháng chảy mãi** ở nhà cung cấp.
 
-    db.execute(delete(VpsPortMap).where(VpsPortMap.instance_id == may.id))
+    Chỉ nhả trong CSDL. Việc trả IP về cho Vultr và gỡ luật NAT trên gateway do
+    `services/vultr.py` + `services/gateway.py` làm, và phải chạy TRƯỚC khi tới
+    đây — xem `_xoa_may`.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsIp
+
+    may.ip_noi_bo = None
     for ip in db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars():
         ip.instance_id = None
     db.flush()
@@ -34749,7 +34908,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/os_images.py
-SHA256=f272ada65660066f506382fb723fd0a545d4c4dd735a18d2fc6f50913ac57417 BYTES=6076 LINES=143
+SHA256=de584ab396568fca1d04f7f3a142f767a18bb7251814dfab44a8eb4bb8721fb1 BYTES=6226 LINES=144
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Catalog hệ điều hành, và ràng buộc tối thiểu của từng bản.
 
@@ -34796,8 +34955,9 @@ class OsImage:
     ho: str
     ram_mb_toi_thieu: int
     disk_gb_toi_thieu: int
-    #: Cổng khách nối tới bên trong máy.
-    cong_trong: int
+    #: Cổng khách thường dùng để vào — chỉ để **hiển thị hướng dẫn**, không còn
+    #: dùng để cấu hình gì. NAT 1:1 mở toàn bộ cổng của IP riêng cho máy đó.
+    cong_quen: int
     #: Hiện trong catalog bán không. False = template kỹ thuật, khách không thấy.
     khach_thay: bool
     ghi_chu: str = ""
@@ -34806,7 +34966,7 @@ class OsImage:
 OS_IMAGES: tuple[OsImage, ...] = (
     OsImage(
         id="debian-12", ten="Debian 12 (noi bo)", ho="linux",
-        ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_trong=22,
+        ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
         khach_thay=False,
         ghi_chu="Template NOI BO de chung minh duong ong, khong ban (V9). "
                 "PHAI la ban `generic`, KHONG phai `genericcloud`: genericcloud "
@@ -34815,7 +34975,7 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="ubuntu-24-04", ten="Ubuntu 24.04 LTS", ho="linux",
-        ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_trong=22,
+        ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
         khach_thay=False,
         ghi_chu="Template NOI BO, KHONG dung nua. No chet vi virtio: cum nay "
                 "chay long trong VMware va guest ghi vao thanh ghi notify cua "
@@ -34823,24 +34983,24 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="winsrv2022-core", ten="Windows Server 2022 (Core)", ho="windows",
-        ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_trong=3389,
+        ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
         ghi_chu="Khong co giao dien do hoa. Nhe nhat trong cac ban Windows.",
     ),
     OsImage(
         id="winsrv2022-gui", ten="Windows Server 2022 (co giao dien)", ho="windows",
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_trong=3389,
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
     ),
     OsImage(
         id="win10", ten="Windows 10", ho="windows",
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_trong=3389,
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
     ),
     OsImage(
         id="win11", ten="Windows 11", ho="windows",
         # Microsoft: 4 GB RAM va 64 GB dia la SAN, khong phai khuyen nghi.
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_trong=3389,
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
         khach_thay=True,
         ghi_chu="Can UEFI/OVMF + vTPM + Secure Boot trong cau hinh VM.",
     ),
@@ -34898,7 +35058,7 @@ def khoa_moi_truong(os_id: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/routes.py
-SHA256=e55d973e26c9ab16fbb126d24a6a284501beb40c48cd509f599e7fb2c1c0d06c BYTES=8438 LINES=218
+SHA256=2cfbbc5d22ca5c6fb0efa7e50a2e02d96694c4c2c37dfffce029116ff18fb543 BYTES=8428 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của app VPS. CHỈ lo HTTP — mọi quy tắc ở `apps/vps/services/`.
 
@@ -34933,7 +35093,7 @@ from apps.vps.manifest import MANIFEST
 from apps.vps.services import billing, capacity, provisioning
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
                                        client_tu_moi_truong)
-from apps.vps.tables import VpsInstance, VpsPortMap
+from apps.vps.tables import VpsInstance, VpsIp
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -34989,28 +35149,23 @@ def _may_cua_toi(db, user_id: str) -> list:
     if not may:
         return []
 
-    cong = {}
-    for c in db.execute(
-        select(VpsPortMap).where(
-            VpsPortMap.instance_id.in_([m.id for m in may]))
+    # Địa chỉ khách gõ vào LÀ IP công khai riêng của máy — từ 2026-08-24 không
+    # còn `IP:cổng`. Chưa cấp xong thì để trống, đừng hiện địa chỉ của cổng vào:
+    # khách sẽ thử gõ nó và rơi vào máy người khác.
+    ip_rieng = {}
+    for x in db.execute(
+        select(VpsIp).where(VpsIp.instance_id.in_([m.id for m in may]))
     ).scalars():
-        cong.setdefault(c.instance_id, c)
-
-    from apps.vps.tables import VpsGateway
-    gateways = {g.id: g for g in db.execute(select(VpsGateway)).scalars()}
+        ip_rieng.setdefault(x.instance_id, x)
 
     ket_qua = []
     for m in may:
-        c = cong.get(m.id)
-        g = gateways.get(m.gateway_id)
-        dia_chi = ""
-        if c is not None and g is not None:
-            dia_chi = f"{g.ten_mien or g.ip_cong_khai}:{c.cong_ngoai}"
+        x = ip_rieng.get(m.id)
         ket_qua.append({
             "may": m,
             "plan": lay_plan(m.plan_id),
             "os": os_images.lay_os(m.os_id),
-            "dia_chi": dia_chi,
+            "dia_chi": x.dia_chi if x is not None else "",
             "con_han": billing.con_han(m),
         })
     return ket_qua
@@ -35563,41 +35718,237 @@ def kho_lon_nhat(kho: list) -> dict:
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/mang.py
-SHA256=a1f3997479fc68d86347d9b4675b54756ee3294764581df8ce77ffa0b0736ac6 BYTES=6172 LINES=137
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/gateway.py
+SHA256=fc4b54f1c5d7d37fdab22a68fdaa48f726d46bc0ac68f7cc43ad0217f4c5141a BYTES=9707 LINES=193
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""Mạng của một máy khách: suy địa chỉ riêng từ cổng NAT đã cấp.
+"""Điều khiển cổng vào Linux: mở và đóng đường NAT 1:1 cho một máy khách.
 
-## Vì sao chỉ cấp phát MỘT thứ
+## Vì sao SSH chứ không phải một API
 
-Một máy cần hai con số: **cổng NAT công khai** và **địa chỉ trong mạng riêng**.
-Cấp phát hai thứ độc lập là mở cửa cho chúng lệch nhau — máy A giữ cổng 33931
-nhưng địa chỉ 10.50.0.52, trong khi DNAT trên gateway lại trỏ 33931 về
-10.50.0.51. Khách gõ đúng địa chỉ và rơi vào máy người khác. Không có lỗi nào
-được ghi ra, và nó chỉ lộ khi ai đó nhìn thấy dữ liệu của người lạ.
+Cổng vào là một máy Debian trần. Dựng thêm một dịch vụ HTTP trên đó chỉ để nhận hai
+lệnh `nft` là thêm một thứ phải vá, phải xoay khoá, và phải canh. SSH bằng **khoá**
+thì đã có sẵn, đã được xác thực, và không mở thêm cổng nào ra Internet.
 
-Nên ở đây **chỉ cổng được cấp phát** (đã nguyên tử sẵn, qua ràng buộc duy nhất
-trong `vps_port_map`), còn địa chỉ **suy ra** bằng một phép cộng:
+Khoá riêng nằm ở `secrets/`, **không phải mật khẩu**. Đây là điểm khác quan trọng so
+với cổng vào Windows cũ: cái đó mở bằng file DPAPI buộc vào **một con người**, nên
+worker không tự chạy được và mọi thao tác đều phải chờ người bấm.
 
-    octet      = cong_ngoai - gateway.cong_goc
-    dia_chi    = <ba octet đầu của subnet>.<octet>
+## Vì sao dùng `map` của nftables chứ không phải mỗi khách một luật
 
-Quy ước này không phải tôi nghĩ ra — nó lấy nguyên từ hạ tầng đang chạy:
-`VM100` ở `10.50.0.11` ứng với cổng `33891`, tức `cong_goc = 33880`.
+Tài liệu hiệu năng WireGuard/nftables nói rõ: **ruleset càng dài thì mọi kết nối
+càng chậm**, vì gói phải đi qua từng luật. Cách phổ biến — thêm một luật `dnat` cho
+mỗi khách — làm chính điều đó. Ở đây một khách là **một phần tử trong `map`**, tra
+cứu O(1) bất kể 5 hay 500 khách, và thêm/bớt là thao tác nguyên tử không nạp lại
+ruleset.
+
+## Bền qua khởi động lại
+
+`nft add element` chỉ sống trong bộ nhớ, và `ip addr add` cũng vậy. Nếu chỉ làm hai
+việc đó thì **gateway khởi động lại là toàn bộ khách mất đường vào**, im lặng, và
+triệu chứng sẽ là "sáng nay không ai vào được máy nữa". Nên mỗi lần đổi, ta ghi lại
+`/etc/ltt-vps/duong.conf` và một unit systemd phát lại nó lúc khởi động — xem
+`tools/vps_gateway/cai-dat-cong-vao.sh`.
+"""
+from __future__ import annotations
+
+import os
+import shlex
+import subprocess
+from dataclasses import dataclass
+
+#: Nơi cổng vào ghi danh sách đường đang mở, để phát lại sau khi khởi động lại.
+TEP_TRANG_THAI = "/etc/ltt-vps/duong.conf"
+TIMEOUT_GIAY = 60
+
+
+class GatewayError(RuntimeError):
+    """Không chạy được lệnh trên cổng vào, hoặc cổng vào trả lỗi."""
+
+
+@dataclass(frozen=True)
+class GatewayConfig:
+    host: str
+    user: str = "root"
+    khoa: str = ""
+    #: Tên bảng nftables trên cổng vào. Hai map `vao` / `ra` nằm trong bảng này.
+    bang: str = "ltt"
+
+    def verify(self) -> "GatewayConfig":
+        if not self.host:
+            raise GatewayError("thieu LTT_VPS_GATEWAY_HOST trong secrets/app.env")
+        if not self.khoa:
+            raise GatewayError("thieu LTT_VPS_GATEWAY_SSH_KEY trong secrets/app.env")
+        if not os.path.exists(self.khoa):
+            raise GatewayError(f"khong thay file khoa SSH: {self.khoa}")
+        return self
+
+
+def doc_cau_hinh(env: dict | None = None) -> GatewayConfig:
+    src = os.environ if env is None else env
+    return GatewayConfig(
+        host=str(src.get("LTT_VPS_GATEWAY_HOST", "")).strip(),
+        user=str(src.get("LTT_VPS_GATEWAY_USER", "root")).strip() or "root",
+        khoa=str(src.get("LTT_VPS_GATEWAY_SSH_KEY", "")).strip(),
+        bang=str(src.get("LTT_VPS_GATEWAY_NFT_TABLE", "ltt")).strip() or "ltt",
+    ).verify()
+
+
+class GatewayClient:
+    """`chay` cho phép tiêm hàm giả lúc test — nhận `list[str]`, trả `str`."""
+
+    def __init__(self, config: GatewayConfig, *, chay=None):
+        self.config = config
+        self._chay = chay or self._chay_that
+
+    # ── tầng vận chuyển ──────────────────────────────────────────────────────
+
+    def _chay_that(self, lenh: list[str]) -> str:
+        # `BatchMode=yes`: thà hỏng ngay còn hơn treo chờ nhập mật khẩu trong một
+        # worker không có ai ngồi trước màn hình.
+        ssh = ["ssh", "-i", self.config.khoa, "-o", "BatchMode=yes",
+               "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=accept-new",
+               "-o", "ConnectTimeout=10",
+               f"{self.config.user}@{self.config.host}", " ".join(lenh)]
+        try:
+            r = subprocess.run(ssh, capture_output=True, text=True,
+                               timeout=TIMEOUT_GIAY)
+        except subprocess.TimeoutExpired as exc:
+            raise GatewayError(
+                f"cong vao {self.config.host} khong tra loi trong {TIMEOUT_GIAY}s"
+            ) from exc
+        if r.returncode != 0:
+            raise GatewayError(
+                f"cong vao tra ma {r.returncode}: "
+                f"{(r.stderr or r.stdout).strip()[:300]}")
+        return r.stdout
+
+    def _bash(self, kich_ban: str) -> str:
+        """Chạy một đoạn bash trên cổng vào.
+
+        Truyền **một chuỗi đã bọc `shlex.quote`** chứ không ghép chuỗi trần: đây
+        là chỗ dữ liệu của khách (địa chỉ IP) đi vào một shell từ xa, và AGENTS
+        §5.3 đã ghi cái giá của việc ghép chuỗi qua nhiều lớp shell.
+        """
+        return self._chay(["bash", "-c", shlex.quote(kich_ban)])
+
+    # ── đọc ──────────────────────────────────────────────────────────────────
+
+    def con_song(self) -> bool:
+        return self._bash("echo song").strip().endswith("song")
+
+    def danh_sach_duong(self) -> dict:
+        """Đọc map `vao` trên cổng vào: `{IP công khai: IP nội bộ}`.
+
+        Đây là **sự thật ngoài CSDL**. Đối chiếu nó với `vps_ip` là cách duy nhất
+        phát hiện lệch — mà lệch ở đây nghĩa là khách gõ đúng địa chỉ và rơi vào
+        máy người khác.
+        """
+        ra = self._bash(f"nft -j list map ip {self.config.bang} vao")
+        import json
+        try:
+            doc = json.loads(ra)
+        except Exception as exc:
+            raise GatewayError(f"nft tra ve khong phai JSON: {ra[:200]}") from exc
+        ket_qua: dict[str, str] = {}
+        for muc in doc.get("nftables", []):
+            phan_tu = (muc.get("map") or {}).get("elem") or []
+            for cap in phan_tu:
+                if isinstance(cap, list) and len(cap) == 2:
+                    ket_qua[str(cap[0])] = str(cap[1])
+        return ket_qua
+
+    # ── mở và đóng đường ─────────────────────────────────────────────────────
+
+    def mo_duong(self, ip_cong_khai: str, ip_noi_bo: str) -> None:
+        """Cho một IP công khai trỏ toàn bộ cổng vào một máy. Chạy lại được.
+
+        Ba việc, và **thiếu việc nào cũng hỏng im lặng**:
+          1. `ip addr add` — không có thì cổng vào không trả lời ARP cho IP đó và
+             gói không bao giờ tới nơi;
+          2. `map vao` — chiều vào;
+          3. `map ra` — chiều ra; thiếu thì máy khách ra Internet bằng IP của
+             cổng vào chứ không bằng IP của chính nó, và mọi dịch vụ đối chiếu
+             địa chỉ (mail, API có allowlist) sẽ thấy sai địa chỉ.
+        """
+        _kiem_dia_chi(ip_cong_khai)
+        _kiem_dia_chi(ip_noi_bo)
+        b = self.config.bang
+        self._bash(
+            "set -e; "
+            "WAN=$(ip -o -4 route show default | awk '{print $5; exit}'); "
+            f"ip addr replace {ip_cong_khai}/32 dev $WAN; "
+            # `delete` trước `add`: `nft add element` báo lỗi nếu khoá đã tồn tại
+            # với giá trị khác, và ta muốn thao tác này chạy lại được.
+            f"nft delete element ip {b} vao {{ {ip_cong_khai} }} 2>/dev/null || true; "
+            f"nft delete element ip {b} ra  {{ {ip_noi_bo} }} 2>/dev/null || true; "
+            f"nft add element ip {b} vao {{ {ip_cong_khai} : {ip_noi_bo} }}; "
+            f"nft add element ip {b} ra  {{ {ip_noi_bo} : {ip_cong_khai} }}; "
+            f"mkdir -p $(dirname {TEP_TRANG_THAI}); "
+            f"touch {TEP_TRANG_THAI}; "
+            f"grep -v '^{ip_cong_khai} ' {TEP_TRANG_THAI} > {TEP_TRANG_THAI}.moi || true; "
+            f"echo '{ip_cong_khai} {ip_noi_bo}' >> {TEP_TRANG_THAI}.moi; "
+            f"mv {TEP_TRANG_THAI}.moi {TEP_TRANG_THAI}")
+
+    def dong_duong(self, ip_cong_khai: str, ip_noi_bo: str) -> None:
+        """Gỡ đường. Chạy lại được, và không kêu nếu đã gỡ rồi."""
+        _kiem_dia_chi(ip_cong_khai)
+        _kiem_dia_chi(ip_noi_bo)
+        b = self.config.bang
+        self._bash(
+            "WAN=$(ip -o -4 route show default | awk '{print $5; exit}'); "
+            f"nft delete element ip {b} vao {{ {ip_cong_khai} }} 2>/dev/null || true; "
+            f"nft delete element ip {b} ra  {{ {ip_noi_bo} }} 2>/dev/null || true; "
+            f"ip addr del {ip_cong_khai}/32 dev $WAN 2>/dev/null || true; "
+            f"if [ -f {TEP_TRANG_THAI} ]; then "
+            f"  grep -v '^{ip_cong_khai} ' {TEP_TRANG_THAI} > {TEP_TRANG_THAI}.moi || true; "
+            f"  mv {TEP_TRANG_THAI}.moi {TEP_TRANG_THAI}; "
+            f"fi; true")
+
+
+def _kiem_dia_chi(gt: str) -> None:
+    """Chặn mọi thứ không phải IPv4 trước khi nó chạm tới shell của cổng vào."""
+    phan = str(gt or "").split(".")
+    if len(phan) != 4 or not all(p.isdigit() and 0 <= int(p) <= 255 for p in phan):
+        raise GatewayError(f"khong phai dia chi IPv4: {gt!r}")
+
+
+def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> GatewayClient:
+    return GatewayClient(doc_cau_hinh(env), chay=chay)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/mang.py
+SHA256=3666cd244fb6323905428f5c5ab131e60c344b3f77bb9211bdda9ad258b6ec79 BYTES=7015 LINES=155
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Mạng của một máy khách: địa chỉ riêng, card, và cấu hình tiêm vào QEMU.
+
+## Từ 2026-08-24: mỗi máy một IP công khai riêng
+
+Mô hình cũ chia một IP công khai thành nhiều cổng, và buộc cổng với địa chỉ riêng
+bằng **một phép cộng** (`cong_ngoai = cong_goc + octet`) để chỉ phải cấp phát một
+thứ. Nay mỗi máy có IP công khai của riêng nó, nên **địa chỉ trong mạng riêng là thứ
+duy nhất cần cấp phát**, và phép cộng đó mất lý do tồn tại.
+
+Trọng tài cấp phát chuyển sang ràng buộc duy nhất `(gateway_id, ip_noi_bo)` trên
+`vps_instance` — cùng khuôn `IntegrityError` của `gpu_lease.py`. Điều phải giữ
+nguyên từ mô hình cũ: **chỉ một nơi quyết định địa chỉ**. Hai nơi cùng quyết là mở
+cửa cho hai máy nhận cùng một địa chỉ, và triệu chứng của lỗi đó là khách gõ đúng
+địa chỉ rồi rơi vào máy người lạ — không lỗi nào được ghi ra.
 
 ## Vì sao máy khách CHỈ có một card, và cắm vào bridge cô lập
 
 Tám máy sẵn có của chủ nhà mang hai card: một ra LAN nhà (để quản trị bằng WinRM)
-và một vào `vmbr1` (để ra Internet). Máy **bán cho khách** thì khác: nó **không
-được** chạm vào LAN nhà. Ta quản trị nó qua API/console của Proxmox, không qua
-WinRM, nên card LAN chỉ là một đường để khách dò sang mạng nội bộ.
+và một vào bridge riêng. Máy **bán cho khách** thì khác: nó **không được** chạm vào
+LAN nhà. Ta quản trị nó qua API/console của Proxmox, không qua WinRM, nên card LAN
+chỉ là một đường để khách dò sang mạng nội bộ.
 
-Một card, cắm `vmbr1`, `bridge-ports none` — khách ra Internet qua đường hầm và
-không có đường nào tới `192.168.2.0/24`.
+Một card, cắm bridge cô lập (`bridge-ports none`). Đường ra Internet đi qua VM router
+rồi qua đường hầm; và VM router có luật `nftables` chặn hẳn khách sang `192.168.2.0/24`.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterator
 
 from apps.vps.tables import VpsGateway
 
@@ -35624,17 +35975,16 @@ class CauHinhMangError(ValueError):
 class MangKhach:
     """Mọi thứ cần để cấu hình mạng cho một máy khách."""
 
-    octet: int
-    dia_chi: str            # 10.50.0.52
-    cidr: str               # 10.50.0.52/24
-    gateway: str            # 10.50.0.1
+    dia_chi: str            # 10.51.0.50
+    cidr: str               # 10.51.0.50/24
+    gateway: str            # 10.51.0.1
     dns: str                # "1.1.1.1 8.8.8.8"
     bridge: str             # vmbr1
     mtu: int                # 1420
 
 
-def _tien_to_va_mask(subnet_cidr: str) -> tuple[str, int]:
-    """`10.50.0.0/24` → `("10.50.0", 24)`. Chỉ nhận /24 — xem docstring hàm dưới."""
+def _tien_to(subnet_cidr: str) -> str:
+    """`10.51.0.0/24` → `10.51.0`. Chỉ nhận /24 — xem chú thích dưới."""
     phan = str(subnet_cidr or "").strip().split("/")
     if len(phan) != 2:
         raise CauHinhMangError(f"subnet_cidr sai dang: {subnet_cidr!r}")
@@ -35646,38 +35996,60 @@ def _tien_to_va_mask(subnet_cidr: str) -> tuple[str, int]:
     if len(so) != 4:
         raise CauHinhMangError(f"subnet_cidr sai dang: {subnet_cidr!r}")
     if mask != 24:
-        # Cố ý hẹp: hạ tầng đang chạy là /24, và phép suy octet → địa chỉ chỉ
+        # Cố ý hẹp: hạ tầng đang chạy là /24, và phép ghép `tiền tố + octet` chỉ
         # đúng với /24. Nhận /16 rồi tính sai một octet là cấp trùng địa chỉ.
         # Muốn mở rộng thì viết hẳn phép tính cho mask đó, đừng để nó "gần đúng".
         raise CauHinhMangError(
             f"chi ho tro /24, nhan duoc /{mask} — xem chu thich trong mang.py")
-    return ".".join(so[:3]), mask
+    return ".".join(so[:3])
 
 
-def mang_cho_may(gateway: VpsGateway, cong_ngoai: int) -> MangKhach:
-    """Suy toàn bộ cấu hình mạng của một máy từ cổng NAT đã cấp cho nó."""
-    if not gateway.cong_goc:
-        raise CauHinhMangError(
-            f"cong vao {gateway.ten!r} khong khai cong_goc — khong co mang rieng")
+def _kiem_khai_bao(gateway: VpsGateway) -> None:
     for ten, gt in (("bridge", gateway.bridge),
                     ("subnet_cidr", gateway.subnet_cidr),
                     ("subnet_gw", gateway.subnet_gw)):
         if not str(gt or "").strip():
             raise CauHinhMangError(f"cong vao {gateway.ten!r} thieu {ten}")
 
-    octet = int(cong_ngoai) - int(gateway.cong_goc)
-    if not 2 <= octet <= 254:
-        raise CauHinhMangError(
-            f"cong {cong_ngoai} suy ra octet {octet}, ngoai khoang 2-254 — "
-            f"kiem lai cong_dau/cong_cuoi so voi cong_goc")
 
-    tien_to, _ = _tien_to_va_mask(gateway.subnet_cidr)
-    dia_chi = f"{tien_to}.{octet}"
+def dai_dia_chi(gateway: VpsGateway) -> Iterator[str]:
+    """Các địa chỉ ứng viên trong mạng riêng của cổng vào, theo thứ tự.
+
+    Bỏ qua chính địa chỉ của cổng: `10.51.0.1` là VM router, không phải chỗ trống.
+    """
+    _kiem_khai_bao(gateway)
+    tien_to = _tien_to(gateway.subnet_cidr)
+    dau = max(2, int(gateway.octet_dau or 2))
+    cuoi = min(254, int(gateway.octet_cuoi or 254))
+    if dau > cuoi:
+        raise CauHinhMangError(
+            f"cong vao {gateway.ten!r} co octet_dau {dau} > octet_cuoi {cuoi}")
+    cua_router = str(gateway.subnet_gw).strip()
+    for octet in range(dau, cuoi + 1):
+        dia_chi = f"{tien_to}.{octet}"
+        if dia_chi != cua_router:
+            yield dia_chi
+
+
+def so_dia_chi(gateway: VpsGateway) -> int:
+    """Tổng số địa chỉ cấp được — dùng để đo sức chứa của một cổng vào."""
+    return sum(1 for _ in dai_dia_chi(gateway))
+
+
+def mang_cho_may(gateway: VpsGateway, ip_noi_bo: str) -> MangKhach:
+    """Dựng cấu hình mạng cho một máy đã được cấp địa chỉ."""
+    _kiem_khai_bao(gateway)
+    dia_chi = str(ip_noi_bo or "").strip()
+    if not dia_chi:
+        raise CauHinhMangError("may chua duoc cap dia chi trong mang rieng")
+    tien_to = _tien_to(gateway.subnet_cidr)
+    if not dia_chi.startswith(tien_to + "."):
+        raise CauHinhMangError(
+            f"dia chi {dia_chi!r} khong thuoc mang {gateway.subnet_cidr!r}")
     if dia_chi == str(gateway.subnet_gw).strip():
-        raise CauHinhMangError(f"octet {octet} trung dia chi gateway")
+        raise CauHinhMangError(f"dia chi {dia_chi!r} trung dia chi cong vao")
 
     return MangKhach(
-        octet=octet,
         dia_chi=dia_chi,
         cidr=f"{dia_chi}/24",
         gateway=str(gateway.subnet_gw).strip(),
@@ -35707,7 +36079,7 @@ def cau_hinh_qemu(mang: MangKhach) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/provisioning.py
-SHA256=50c477846b3e02153a8971e32d8790c94c6c0e2e74d97412dd3d74dbe433cbba BYTES=11230 LINES=253
+SHA256=50f0da481da2bdd5807e9dbf853f30a2ca42b0477eed169fdca7074f1fb9242f BYTES=11454 LINES=259
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Cấp phát: chọn cổng vào, cấp VMID, cấp cổng NAT, cấp IP.
 
@@ -35740,9 +36112,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DbSession
 
 from apps.vps.cost import dia_tong_gb, lay_plan
-from apps.vps.services import capacity
+from apps.vps.services import capacity, mang
 from apps.vps.tables import (VpsEvent, VpsGateway, VpsInstance, VpsIp,
-                             VpsPortMap)
+                             )
 
 log = logging.getLogger(__name__)
 
@@ -35756,7 +36128,6 @@ VMID_DAU = 200
 VMID_CUOI = 9999
 
 #: Cổng trong máy khách. RDP là mặc định vì catalog toàn Windows (V9).
-CONG_RDP = 3389
 CONG_SSH = 22
 
 
@@ -35838,8 +36209,8 @@ def suc_chua_hien_tai(db: DbSession, trang_thai_node: dict, kho: list,
 def chon_gateway(db: DbSession, vung: str) -> VpsGateway:
     """Cổng vào đang nhận máy mới ở một vùng. Không có → lỗi rõ ràng.
 
-    Chọn cái **còn nhiều cổng trống nhất** để các cổng đầy đều nhau, thay vì nhồi
-    một cái tới cạn rồi mới sang cái sau.
+    Chọn cái **còn nhiều địa chỉ trống nhất** để các cổng đầy đều nhau, thay vì
+    nhồi một cái tới cạn rồi mới sang cái sau.
     """
     ung_vien = list(db.execute(
         select(VpsGateway)
@@ -35850,10 +36221,11 @@ def chon_gateway(db: DbSession, vung: str) -> VpsGateway:
 
     def con_trong(g: VpsGateway) -> int:
         da_dung = db.execute(
-            select(func.count()).select_from(VpsPortMap)
-            .where(VpsPortMap.gateway_id == g.id)
+            select(func.count()).select_from(VpsInstance)
+            .where(VpsInstance.gateway_id == g.id,
+                   VpsInstance.ip_noi_bo.is_not(None))
         ).scalar_one()
-        return (g.cong_cuoi - g.cong_dau + 1) - int(da_dung)
+        return mang.so_dia_chi(g) - int(da_dung)
 
     return max(ung_vien, key=con_trong)
 
@@ -35896,29 +36268,35 @@ def cap_vmid(db: DbSession, instance: VpsInstance, *, goi_y: int = 0) -> int:
     raise HetChoError(f"het VMID trong dai {VMID_DAU}-{VMID_CUOI}")
 
 
-def cap_cong(db: DbSession, instance: VpsInstance, gateway: VpsGateway, *,
-             cong_trong: int = CONG_RDP, nhan: str = "rdp",
-             giao_thuc: str = "tcp") -> VpsPortMap:
-    """Cấp một cổng NAT trên cổng vào. Nguyên tử theo đúng luật đầu file."""
-    da_dung = {int(c) for c in db.execute(
-        select(VpsPortMap.cong_ngoai).where(
-            VpsPortMap.gateway_id == gateway.id,
-            VpsPortMap.giao_thuc == giao_thuc)
+def cap_ip_noi_bo(db: DbSession, instance: VpsInstance,
+                  gateway: VpsGateway) -> str:
+    """Cấp cho máy một địa chỉ trong mạng riêng. Nguyên tử theo luật đầu file.
+
+    Khác `cap_vmid`: ở đây không INSERT bản ghi mới mà **UPDATE chính máy**, nên
+    trọng tài là ràng buộc duy nhất `(gateway_id, ip_noi_bo)` trên `vps_instance`.
+    Cứ ghi, `IntegrityError` nghĩa là worker khác vừa giành trước địa chỉ đó.
+    """
+    if instance.ip_noi_bo:
+        return str(instance.ip_noi_bo)
+
+    da_dung = {str(x) for x in db.execute(
+        select(VpsInstance.ip_noi_bo).where(
+            VpsInstance.gateway_id == gateway.id,
+            VpsInstance.ip_noi_bo.is_not(None))
     ).scalars()}
 
-    for cong in range(int(gateway.cong_dau), int(gateway.cong_cuoi) + 1):
-        if cong in da_dung:
+    for dia_chi in mang.dai_dia_chi(gateway):
+        if dia_chi in da_dung:
             continue
-        ban_ghi = VpsPortMap(
-            instance_id=instance.id, gateway_id=gateway.id,
-            cong_ngoai=cong, cong_trong=int(cong_trong),
-            giao_thuc=giao_thuc, nhan=nhan)
-        if _thu_ghi(db, ban_ghi):
-            return ban_ghi
-        da_dung.add(cong)
+        instance.ip_noi_bo = dia_chi
+        instance.gateway_id = gateway.id
+        if _thu_ghi(db, instance):
+            return dia_chi
+        instance.ip_noi_bo = None
+        da_dung.add(dia_chi)
     raise HetChoError(
-        f"het cong tren gateway {gateway.ten!r} "
-        f"(dai {gateway.cong_dau}-{gateway.cong_cuoi})")
+        f"het dia chi tren cong vao {gateway.ten!r} "
+        f"(dai octet {gateway.octet_dau}-{gateway.octet_cuoi})")
 
 
 def cap_ip(db: DbSession, instance: VpsInstance, gateway: VpsGateway) -> VpsIp:
@@ -36278,20 +36656,228 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/vultr.py
+SHA256=9f83ea8329d64d7109c852719626b27761e36f02f895cbfb7162973eacaf336e BYTES=9588 LINES=203
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Driver Vultr — chỉ đủ để mua, gắn, gỡ và trả lại **IP công khai**.
+
+## Vì sao viết tay chứ không dùng thư viện
+
+Cùng lý do đã ghi ở `proxmox.py`: bề mặt ta cần là **năm endpoint**, còn thư viện
+mang theo mọi endpoint của cả nền tảng — kể cả những cái xoá được máy chủ. Ở đây
+điều đó không trừu tượng: tài khoản Vultr của chủ sản phẩm từng chạy **17 instance
+phục vụ mảng kinh doanh khác**, và một lệnh `DELETE /instances` sai chỗ là xoá chúng.
+
+Nên driver này **không có bất kỳ phương thức nào đụng tới instance**. Nó đọc được
+danh sách instance (để tìm gateway theo nhãn) và đọc băng thông — hết. Muốn xoá một
+máy chủ thì phải viết thêm mã, và lúc đó người viết sẽ phải nghĩ.
+
+## Hàng rào thứ hai: chỉ xoá IP mang nhãn của ta
+
+`xoa_ip` đọc lại IP trước khi xoá và **từ chối** nếu nhãn không bắt đầu bằng
+`TIEN_TO_NHAN`. Một id truyền nhầm — từ log, từ chỗ khác, từ một bản ghi cũ — sẽ
+dừng ở đó thay vì xoá một IP đang phục vụ ai đó.
+
+## Thử lại
+
+Không thử lại gì cả, kể cả GET. `POST /reserved-ips` **không idempotent**: thử lại
+một lần là mua thừa một IP, $3/tháng chảy mãi mà không ai biết. Người gọi biết thao
+tác nào lặp được, driver thì không.
+"""
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass
+from typing import Any
+
+API = "https://api.vultr.com/v2"
+TIMEOUT_MAC_DINH = (10, 90)
+
+#: Mọi IP do app tạo đều mang nhãn bắt đầu bằng chuỗi này. Xem docstring đầu file.
+TIEN_TO_NHAN = "ltt-vps-"
+
+
+class VultrError(RuntimeError):
+    """Vultr từ chối, hoặc không nói được chuyện gì."""
+
+    def __init__(self, thong_diep: str, *, status: int | None = None,
+                 duong_dan: str = ""):
+        super().__init__(thong_diep)
+        self.status = status
+        self.duong_dan = duong_dan
+
+
+@dataclass(frozen=True)
+class VultrConfig:
+    api_key: str
+    vung: str = "sgp"
+
+    def verify(self) -> "VultrConfig":
+        if not self.api_key:
+            raise VultrError(
+                "thieu LTT_VULTR_API_KEY trong secrets/app.env — app se khong "
+                "mua duoc IP cho khach")
+        return self
+
+
+def doc_cau_hinh(env: dict | None = None) -> VultrConfig:
+    src = os.environ if env is None else env
+    return VultrConfig(
+        api_key=str(src.get("LTT_VULTR_API_KEY", "")).strip(),
+        vung=str(src.get("LTT_VPS_VUNG", "sgp")).strip() or "sgp",
+    ).verify()
+
+
+class VultrClient:
+    """Client mỏng. `session` cho phép tiêm đối tượng giả lúc test — chỉ cần có
+    `.request(method, url, **kwargs)` trả về thứ có `.status_code` và `.json()`."""
+
+    def __init__(self, config: VultrConfig, *, session: Any = None,
+                 timeout: Any = TIMEOUT_MAC_DINH):
+        self.config = config
+        self.timeout = timeout
+        if session is None:
+            import requests          # nhập lười: test tiêm session giả
+            session = requests.Session()
+        self._session = session
+
+    # ── tầng vận chuyển ──────────────────────────────────────────────────────
+
+    def _goi(self, method: str, duong_dan: str, *, body: dict | None = None) -> Any:
+        try:
+            r = self._session.request(
+                method, f"{API}{duong_dan}",
+                headers={"Authorization": f"Bearer {self.config.api_key}",
+                         "Content-Type": "application/json"},
+                data=json.dumps(body).encode() if body is not None else None,
+                timeout=self.timeout,
+            )
+        except Exception as exc:      # lỗi mạng, DNS, TLS, timeout
+            raise VultrError(f"{type(exc).__name__}: {exc}",
+                             duong_dan=duong_dan) from exc
+
+        status = getattr(r, "status_code", 0)
+        if status == 401:
+            # Đã mất một lần để biết: ngay sau khi tạo khoá, Vultr trả 401
+            # "Unauthorized IP address" vì ACL chưa lan truyền, chứ không phải
+            # khoá sai. Nói ra ở đây để lần sau không ai đi đổi khoá vô ích.
+            raise VultrError(
+                "Vultr tu choi (401) — khoa sai, HOAC danh sach IP nguon chua "
+                "cho phep may nay, HOAC khoa vua tao chua lan truyen (doi vai giay)",
+                status=401, duong_dan=duong_dan)
+        if status >= 400:
+            # Thân lỗi của Vultr là JSON, nhưng khi nó trả HTML (lỗi tầng biên,
+            # trang bảo trì) thì `.json()` ném. Ta vẫn phải báo được mã lỗi, nên
+            # lấy chuỗi thô làm phương án lui — KHÔNG nuốt lỗi, chỉ đổi nguồn
+            # thông tin, và mã trạng thái luôn được ném lên ở dòng dưới.
+            than = getattr(r, "text", "") or ""
+            if than.lstrip().startswith("{"):
+                chi_tiet = str((r.json() or {}).get("error", ""))[:200]
+            else:
+                chi_tiet = than.strip()[:200]
+            raise VultrError(f"Vultr tra {status} {chi_tiet}".strip(),
+                             status=status, duong_dan=duong_dan)
+        if status == 204 or not getattr(r, "text", "1"):
+            return {}
+        try:
+            return r.json()
+        except Exception as exc:
+            raise VultrError("Vultr tra ve khong phai JSON", status=status,
+                             duong_dan=duong_dan) from exc
+
+    # ── đọc ──────────────────────────────────────────────────────────────────
+
+    def tai_khoan(self) -> dict:
+        """Dùng để kiểm khoá còn sống và xem còn bao nhiêu tiền."""
+        return (self._goi("GET", "/account") or {}).get("account") or {}
+
+    def danh_sach_ip(self) -> list:
+        return (self._goi("GET", "/reserved-ips") or {}).get("reserved_ips") or []
+
+    def doc_ip(self, ip_id: str) -> dict:
+        return (self._goi("GET", f"/reserved-ips/{ip_id}") or {}).get("reserved_ip") or {}
+
+    def instance_theo_nhan(self, nhan: str) -> dict:
+        """Tìm instance theo nhãn. **Chỉ đọc** — driver này không xoá instance."""
+        for i in (self._goi("GET", "/instances") or {}).get("instances") or []:
+            if i.get("label") == nhan:
+                return i
+        raise VultrError(f"khong thay instance nao mang nhan {nhan!r}")
+
+    def bang_thong(self, instance_id: str) -> dict:
+        """Băng thông theo ngày của một instance, đơn vị byte.
+
+        Đây là tài nguyên khan hiếm nhất của mô hình này: hạn mức của gateway
+        chia cho **tất cả** khách. Xem `docs/VPS/GIAO_DIEN.md`.
+        """
+        bw = (self._goi("GET", f"/instances/{instance_id}/bandwidth")
+              or {}).get("bandwidth") or {}
+        ra = sum(int(v.get("outgoing_bytes", 0)) for v in bw.values())
+        vao = sum(int(v.get("incoming_bytes", 0)) for v in bw.values())
+        return {"ra_byte": ra, "vao_byte": vao, "tong_byte": ra + vao,
+                "theo_ngay": bw}
+
+    # ── vòng đời một IP ──────────────────────────────────────────────────────
+
+    def tao_ip(self, nhan_ngan: str) -> dict:
+        """Mua một IP mới. **KHÔNG idempotent** — đừng bọc trong vòng thử lại.
+
+        Trả `{"id", "dia_chi", "nhan"}`.
+        """
+        nhan = f"{TIEN_TO_NHAN}{nhan_ngan}"
+        kq = self._goi("POST", "/reserved-ips", body={
+            "region": self.config.vung, "ip_type": "v4", "label": nhan,
+        }) or {}
+        ip = kq.get("reserved_ip") or {}
+        if not ip.get("id") or not ip.get("subnet"):
+            raise VultrError(f"Vultr tra ve IP thieu id/subnet: {ip!r}")
+        return {"id": ip["id"], "dia_chi": ip["subnet"], "nhan": nhan}
+
+    def gan_ip(self, ip_id: str, instance_id: str) -> None:
+        self._goi("POST", f"/reserved-ips/{ip_id}/attach",
+                  body={"instance_id": instance_id})
+
+    def go_ip(self, ip_id: str) -> None:
+        self._goi("POST", f"/reserved-ips/{ip_id}/detach")
+
+    def xoa_ip(self, ip_id: str) -> None:
+        """Trả IP về cho nhà cung cấp — tức **ngừng tính tiền**.
+
+        Đọc lại nhãn trước khi xoá: một id truyền nhầm sẽ dừng ở đây thay vì xoá
+        một IP đang phục vụ ai đó.
+
+        ⚠️ Vultr giữ IP đã xoá **24 giờ** trước khi trả về kho chung, nên đừng
+        trông chờ mua lại được đúng địa chỉ đó ngay.
+        """
+        ip = self.doc_ip(ip_id)
+        nhan = str(ip.get("label") or "")
+        if not nhan.startswith(TIEN_TO_NHAN):
+            raise VultrError(
+                f"tu choi xoa IP {ip.get('subnet') or ip_id}: nhan {nhan!r} khong "
+                f"bat dau bang {TIEN_TO_NHAN!r} — no khong phai cua app nay")
+        self._goi("DELETE", f"/reserved-ips/{ip_id}")
+
+
+def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
+                         ) -> VultrClient:
+    return VultrClient(doc_cau_hinh(env), session=session)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/tables.py
-SHA256=2f86a6b742f8ec86342ab5fc45cbf239f7e4b2a9459a18acc565bfffbab9ebd2 BYTES=13635 LINES=247
+SHA256=47db61eb0db0a7a6a1072059b9ca3178694d4671daf827d012bb8fa0f622195f BYTES=13494 LINES=236
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
-Năm bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
+Bốn bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
 
 * `vps_gateway`   — **cổng vào**. Q104/V12 chốt khách tự chọn vùng (VN / Singapore
   / chỉ-cổng), nên đây là **nhiều bản ghi** chứ không phải một dải cổng cứng trong
   code. Thêm một vùng = thêm một dòng, không sửa code.
-* `vps_ip`        — IP công cộng cấp riêng cho một máy. Tách khỏi `vps_gateway` vì
-  một cổng có nhiều IP, và IP là thứ **bán thêm được**.
-* `vps_port_map`  — cổng NAT của một máy. Tách khỏi `vps_instance` vì một máy có
-  thể có nhiều cổng (RDP + SSH + về sau là chuỗi cổng của V12).
+* `vps_ip`        — IP công khai riêng của một máy, kèm `vultr_id` để trả về được
+  cho nhà cung cấp khi máy bị xoá. Tách khỏi `vps_instance` vì IP có vòng đời
+  riêng: nó tồn tại ở nhà cung cấp trước khi gắn và sau khi gỡ.
 * `vps_instance`  — chính cái máy khách thuê, và **`paid_until`** của nó.
 * `vps_event`     — nhật ký vòng đời. Không phải log gỡ lỗi: đây là thứ trả lời
   "vì sao máy tôi bị tắt" khi khách hỏi, nên nó phải sống lâu hơn log ứng dụng.
@@ -36365,20 +36951,22 @@ class VpsGateway(Base):
     #: Tên miền ổn định trỏ tới cổng. Đổi nhà cung cấp mà khách không phải đổi gì.
     ten_mien: Mapped[str] = mapped_column(String(190), default="", nullable=False)
     wg_endpoint: Mapped[str] = mapped_column(String(190), default="", nullable=False)
-    #: Dải cổng NAT được phép cấp. Đóng ở hai đầu, kiểm ở tầng nghiệp vụ.
-    cong_dau: Mapped[int] = mapped_column(Integer, nullable=False)
-    cong_cuoi: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: Dải octet được phép cấp cho máy khách trong `subnet_cidr`. Đóng ở hai
+    #: đầu. Thay cho dải cổng của mô hình cũ: từ 2026-08-24 **mỗi máy một IP
+    #: công khai riêng**, không chia cổng nữa, nên thứ khan hiếm cần cấp phát
+    #: là *địa chỉ trong mạng riêng*, không phải cổng.
+    octet_dau: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
+    octet_cuoi: Mapped[int] = mapped_column(Integer, default=250, nullable=False)
 
     # ── Mạng riêng mà cổng vào này phục vụ ───────────────────────────────────
     #
     # Sáu cột dưới đây mô tả **trọn** mạng của một cổng vào, để thêm cổng thứ hai
     # là thêm một dòng chứ không phải sửa code (V12).
     #
-    # `cong_goc` là chỗ đáng chú ý nhất: cổng NAT và địa chỉ riêng của máy được
-    # buộc vào nhau bằng **một** phép cộng — `cong_ngoai = cong_goc + octet`.
-    # Nhờ vậy chỉ cần cấp phát **một** thứ (cổng, đã nguyên tử sẵn) là suy ra
-    # được địa chỉ; không có cửa cho "IP của máy này, cổng của máy kia" lệch nhau.
-    # Quy ước này lấy từ hạ tầng đã chạy: VM100 ở `10.50.0.11` ứng với `33891`.
+    # Địa chỉ riêng nay được **cấp phát trực tiếp** (ràng buộc duy nhất trên
+    # `vps_instance.ip_noi_bo`), không còn suy ra từ cổng. Mô hình cũ buộc hai
+    # thứ vào nhau bằng một phép cộng để khỏi cấp phát hai lần; mô hình mới chỉ
+    # có một thứ để cấp, nên phép cộng đó không còn lý do tồn tại.
     #: Bridge của Proxmox mà máy khách cắm vào (mạng cô lập, `bridge-ports none`).
     bridge: Mapped[str] = mapped_column(String(32), default="", nullable=False)
     #: Mạng riêng, dạng CIDR — vd `10.50.0.0/24`.
@@ -36391,8 +36979,6 @@ class VpsGateway(Base):
     #: để mặc định 1500 thì gói lớn rơi im lặng, và triệu chứng là "web nào cũng
     #: vào được trừ vài trang", loại lỗi mất hàng giờ mới lần ra.
     mtu: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    #: `cong_ngoai = cong_goc + octet`. 0 = cổng vào này không có mạng riêng.
-    cong_goc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     #: Cổng này có bán được IP riêng không (phụ thuộc nhà cung cấp cho mua thêm IP).
     cho_phep_ip_rieng: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     #: False = còn tồn tại nhưng không cấp máy mới nữa (đang rút, hoặc dự phòng).
@@ -36418,6 +37004,12 @@ class VpsIp(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     gateway_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     dia_chi: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: Id của IP bên nhà cung cấp (Vultr `reserved-ips`). Thiếu nó thì khi máy
+    #: bị xoá ta **không biết phải trả IP nào về**, và mỗi máy chết để lại
+    #: $3/tháng chảy mãi.
+    vultr_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    #: Nhãn đặt bên nhà cung cấp — để đối chiếu khi cần dọn bằng tay.
+    nhan: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     instance_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     #: Giá bán thêm mỗi chu kỳ, VNĐ. 0 = IP đi kèm gói, không thu thêm.
     gia_thang_vnd: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -36452,6 +37044,8 @@ class VpsInstance(Base):
 
     gateway_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     vmid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Địa chỉ trong mạng riêng, vd `10.51.0.50`. NULL = chưa cấp.
+    ip_noi_bo: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     trang_thai: Mapped[str] = mapped_column(
         String(16), default="dang_tao", nullable=False, index=True)
@@ -36474,33 +37068,15 @@ class VpsInstance(Base):
         # Hai job song song không được cấp trùng VMID. NULL (chưa cấp) không
         # tính vào UNIQUE nên nhiều máy `dang_tao` cùng lúc là hợp lệ.
         UniqueConstraint("vmid", name="uq_vps_instance_vmid"),
+        # Và ĐÂY là trọng tài của việc cấp địa chỉ riêng: cứ INSERT/UPDATE,
+        # `IntegrityError` nghĩa là worker khác vừa giành trước. Không có nó thì
+        # hai máy cùng nhận `10.51.0.50` và khách gõ đúng địa chỉ lại rơi vào
+        # máy người lạ — hỏng im lặng, không lỗi nào được ghi ra.
+        UniqueConstraint("gateway_id", "ip_noi_bo", name="uq_vps_instance_ip"),
         # Trang "máy của tôi" luôn lọc theo (chủ) + (chưa xoá).
         Index("ix_vps_instance_user_trangthai", "user_id", "trang_thai"),
         # Vòng thu phí quét theo hạn thanh toán.
         Index("ix_vps_instance_paid_until", "paid_until"),
-    )
-
-
-class VpsPortMap(Base):
-    """Một cổng NAT đã cấp: `gateway.ip:cong_ngoai` → `máy:cong_trong`."""
-
-    __tablename__ = "vps_port_map"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    instance_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    gateway_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    cong_ngoai: Mapped[int] = mapped_column(Integer, nullable=False)
-    cong_trong: Mapped[int] = mapped_column(Integer, nullable=False)
-    giao_thuc: Mapped[str] = mapped_column(String(8), default="tcp", nullable=False)
-    nhan: Mapped[str] = mapped_column(String(32), default="", nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_now, nullable=False)
-
-    __table_args__ = (
-        # ĐÂY là thứ làm cho cấp cổng an toàn khi nhiều worker chạy song song:
-        # cứ INSERT, IntegrityError nghĩa là người khác vừa giành trước.
-        UniqueConstraint("gateway_id", "cong_ngoai", "giao_thuc",
-                         name="uq_vps_port_map_cong"),
     )
 
 
@@ -86345,7 +86921,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=261cd3898e0e2c582ea87185c5002b937ffd7722d97763d3ff0f36f9d429bf38 BYTES=192594 LINES=2775
+SHA256=80e7f47b81a323badca9f3460e81ad8010b85fe727a5dbaad5ec6e6fcf24fdc8 BYTES=193706 LINES=2805
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -89027,58 +89603,88 @@ có IP LAN `192.168.2.168`. **Không phải một máy chủ riêng.**
       gateway Vultr — bước 6 của `Add-GuestToGateway.ps1`. Cần mật khẩu trong file
       DPAPI mà **chỉ tài khoản `lengo` giải mã được**, nên chủ sản phẩm phải chạy.
       Sau đó *xong khi:* SSH từ ngoài mạng vào `45.76.185.75:33930`.
-- [x] **P1b** — ✅ **cách làm đã chốt 2026-08-23, chờ chủ sản phẩm chạy một lệnh.**
-      Vấn đề: job cấp cổng và ghi `vps_port_map`, nhưng **không có gì lập trình DNAT
-      trên gateway** ⇒ máy tạo xong khách vẫn không vào được. Cái chặn không phải code
-      mà là bí mật: `Invoke-VpsScript.ps1` mở gateway bằng file `.cred` **DPAPI buộc
-      vào tài khoản `lengo` trên máy B**, còn worker chạy ở máy A bằng tài khoản khác.
+### ⚠️ Đổi kiến trúc 2026-08-24 — P1b và P2–P9 cũ đã bị THAY
 
-      **Lời giải: không đưa chìa khoá cho worker, mà bỏ luôn cái khoá.** Địa chỉ riêng
-      là hàm thuần của cổng (`IP = 10.50.0.(cổng − 33880)`), nên DNAT cũng là hàm thuần
-      — nạp **một lần** toàn dải 33930–34080 rồi thôi. Từ đó *cấp cổng trong CSDL
-      **chính là** mở cửa*; worker không bao giờ chạm gateway, không mật khẩu, không
-      khoá SSH, không dịch vụ phụ trên Vultr.
+Chủ sản phẩm chốt: **mỗi máy một IP công khai riêng, bỏ hẳn `IP:cổng`.** Toàn bộ
+phần chia cổng (`P1b` nạp ánh xạ tĩnh, dải 33930–34080, `cong_goc + octet`) **không
+còn dùng**. Đã dọn khỏi mã nguồn cùng ngày: bỏ hai cột `dnat_dau`/`dnat_cuoi`, bỏ
+`kiem_dai_da_nap`, xoá migration `4d7e91c2a6b8`, xoá
+`tools/vps_gateway/nap-anh-xa-tinh.ps1` và bốn script tương ứng trên máy B.
 
-      Nó còn **an toàn hơn** lập trình động: cách động có khoảng thời gian CSDL và
-      gateway lệch nhau (đã cấp cổng, DNAT chưa kịp hoặc đã hỏng), và lệch kiểu đó là
-      khách gõ đúng cổng rồi **rơi vào máy người khác**. Ánh xạ tĩnh không có khoảng đó.
+Điều **không** đổi được, và phải nhắc lại vì nó hay bị hiểu nhầm: **không ai bán IP
+rồi cắm thẳng vào máy ở nhà.** Một IPv4 chỉ sống khi có mạng nào đó quảng bá nó bằng
+BGP; cáp nhà không quảng bá được gì. Nên đường hầm còn nguyên; thứ đổi là *thứ chạy
+bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (Debian thay Windows).
 
-      Đã làm: `tools/vps_gateway/nap-anh-xa-tinh.ps1` (chỉ thêm không bao giờ xoá;
-      dừng lại nếu gặp ánh xạ trỏ khác chỗ; không chạm dải 33891–33898 của nhà; chạy
-      lại được; một luật tường lửa cho cả khoảng; nạp từng đợt 20 để đo sức WinNAT).
-      Hai cột `dnat_dau`/`dnat_cuoi` + `mang.kiem_dai_da_nap()` + migration
-      `4d7e91c2a6b8` chốt bất biến **dải bán ⊆ dải đã nạp**, fail-closed khi chưa khai.
-      **65 test xanh.**
+---
 
-      ⚠️ Bất biến phải giữ khi làm P2: **cổng chỉ được trả về kho sau khi VM đã thực sự
-      bị huỷ.** Trả sớm ⇒ máy mới nhận cùng cổng ⇒ cùng địa chỉ ⇒ hai máy tranh một chỗ.
+## Giai đoạn còn lại của H39 — đánh số lại theo kiến trúc mới
 
-      *Xong khi:* chủ sản phẩm chạy script (một lần), rồi SSH từ Internet vào
-      `45.76.185.75:33930` tới máy do app tạo.
-- [ ] **P2** — vòng đời bật/tắt/khởi động lại/rebuild/xoá + console noVNC (proxy
-      WebSocket qua server mình, vé `vncproxy` dùng-một-lần; khách **không bao giờ**
-      chạm cổng 8006). *Xong khi:* test tự động + kiểm trên **URL công khai** (quy tắc 5b).
-- [ ] **P3** — tiền: 3 gói (89k/179k/329k), trừ credit chu kỳ 30 ngày **sau lease**
-      (khuôn Q98), treo ngay → xoá sau 7 ngày (V8), `capacity.py` đo đĩa/RAM + **chặn
-      bán ở 80 %**. *Xong khi:* test đa tiến trình giống `test_214`; diễn tập một máy
-      đi hết vòng hết-hạn → treo → xoá.
-- [ ] **P4** — chống lạm dụng: `cpulimit`, **giới hạn tốc độ mạng mỗi VM**, **chặn cổng
-      ra 25/587**, cảnh báo CPU 100 % kéo dài, nút treo khẩn cấp, **không cho dùng thử
-      ẩn danh**. *Xong khi:* diễn tập treo một máy chạy tải 100 %.
-- [ ] **P5** — template **Windows Server 2022**: Cloudbase-Init đổi `metadata_services`
-      sang **NoCloud** (Proxmox sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai
-      thì cấu hình **im lặng không áp dụng**); VirtIO + guest agent **trước** sysprep;
-      **không bật lại VM sau sysprep**; gắn ổ Cloud-Init trước khi convert. Kèm cách
-      kích hoạt (KMS nội bộ hoặc tiêm key). *Xong khi:* clone ra máy mới, **RDP vào
-      được**, mật khẩu ngẫu nhiên hiện đúng một lần.
-- [ ] **P6** — template **Windows 10/11** (UEFI/OVMF + vTPM + Secure Boot).
-- [ ] **P7** — **cổng thứ hai** (vùng còn lại theo V12) + chọn vùng trên giao diện +
-      gateway dự phòng để đổi trong vài phút khi cổng chính bị đình chỉ.
-      *Xong khi:* tạo được máy ở cả hai vùng từ trang web mà không sửa code.
-- [ ] **P8** — backup snapshot tuần, giữ 1 bản, **đẩy sang ổ khác của máy B** (V10).
-      *Xong khi:* **khôi phục thật một VM từ backup**.
-- [ ] **P9** — trang bán + ba dòng cảnh báo bắt buộc + câu giải thích chọn vùng VN/SGP
-      + điều khoản sử dụng.
+- [x] **G1 — hạ tầng mạng 1-IP-1-VM.** ✅ **XONG 2026-08-24, đo thật.**
+      Gateway Debian 12 trên Vultr `sgp` (`45.32.114.249`, `vhp-1c-1gb-amd`, **$6/tháng**,
+      2.048 GB) + WireGuard `10.51.255.1↔.2` MTU 1420 (RTT 57 ms) + `nftables` NAT 1:1
+      bằng **`map`** + VM router `199` trên máy B (`10.51.0.1/24`, chặn LAN nhà).
+      *Bằng chứng:* SSH thẳng từ máy A vào `45.77.45.29` → vào máy khách; máy khách ra
+      Internet cũng bằng đúng IP đó. Rẻ hơn gateway Windows cũ **$4/tháng**.
+
+- [ ] **G2 — đưa hạ tầng đó vào MÃ NGUỒN.** Hiện mọi thứ chạy bằng script tay.
+      `services/vultr.py` (tạo/gắn/gỡ/xoá Reserved IP, đọc băng thông) · `services/gateway.py`
+      (SSH có khoá, thêm/bớt phần tử `map`, **thu hồi phải nguyên tử với việc xoá máy**)
+      · sửa `services/mang.py`: **bỏ phép tính octet-theo-cổng**, chuyển sang cấp địa chỉ
+      nội bộ trực tiếp · làm địa chỉ Reserved IP **bền qua khởi động lại** gateway.
+      *Xong khi:* tạo + xoá một máy có IP riêng **hoàn toàn từ job**, không script tay,
+      và test đa tiến trình kiểu `test_214` chứng minh hai worker không cấp trùng IP.
+
+- [ ] **G3 — vòng đời máy + console.** Bật/tắt/khởi động lại/cài lại/xoá; xoá thì
+      **thu hồi IP** (nếu không, mỗi máy chết để lại $3/tháng chảy mãi). Console noVNC
+      proxy qua server mình, vé dùng-một-lần; khách **không bao giờ** chạm cổng 8006.
+      *Xong khi:* diễn tập trọn vòng đời trên **URL công khai** (quy tắc 5b).
+
+- [ ] **G4 — tiền.** Chu kỳ 30 ngày theo khuôn Q98 (đã có `billing.py`) + **tiền IP
+      riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
+      *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
+
+- [ ] **G5 — template Windows Server 2022.** Đây mới là **sản phẩm thật** (catalog chỉ
+      bán Windows, V9). Cloudbase-Init đổi `metadata_services` sang **NoCloud** (Proxmox
+      sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai thì cấu hình **im lặng
+      không áp dụng**); gắn ổ Cloud-Init **trước** khi convert; **không bật lại VM sau
+      sysprep**. Nhớ luật của cụm: **`sata0` + `e1000`, `agent: 0`, `balloon: 0`**.
+      *Xong khi:* clone ra máy mới, **RDP vào được bằng IP riêng**, mật khẩu ngẫu nhiên
+      hiện đúng một lần.
+
+- [ ] **G6 — template Windows 10 / 11.** Win11 cần UEFI/OVMF + vTPM + Secure Boot.
+
+- [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
+      khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút
+      treo khẩn cấp · không cho dùng thử ẩn danh.
+      *Xong khi:* diễn tập một máy chạy tải 100 % bị treo, và một máy vượt băng thông
+      bị giảm tốc chứ không làm sập quota của người khác.
+
+- [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
+
+- [ ] **G9 — backup + cổng dự phòng.** Snapshot tuần, giữ 1 bản, đẩy sang ổ khác của
+      máy B (V10). Cổng vào thứ hai để một con VPS ngã không làm chết **mọi** khách.
+      *Xong khi:* khôi phục thật một VM từ backup; chuyển một máy sang cổng dự phòng.
+
+- [ ] **G10 — nghiệm thu và mở bán.** Điều khoản sử dụng, ba dòng cảnh báo bắt buộc,
+      hoá đơn theo luật VN, rồi mới đặt `LTT_VPS=1`.
+
+### 🔴 Một quyết định về giá phải chốt trước G4
+
+**$3/tháng cho mỗi IP ≈ 78.000 đ.** Đối chiếu ba gói đã chốt ở V6:
+
+| Gói | Giá | Còn lại sau tiền IP |
+|---|---|---|
+| Nhỏ | 89k | **11k** ← không sống được |
+| Vừa | 179k | 101k |
+| Lớn | 329k | 251k |
+
+Mỗi máy một IP thì **gói 89k chết**. Ba lối ra, chủ sản phẩm chọn:
+**(a)** bỏ gói 89k, gói vào cửa thành ~179k · **(b)** nâng giá gói Nhỏ lên ~149–169k ·
+**(c)** giữ gói 89k **dùng chung IP theo cổng** như hạng phổ thông (nhưng đúng thứ vừa
+bị bỏ, và làm đôi bề mặt của giao diện + tiền + tài liệu).
+
+Chưa chốt thì G4 và G8 không làm dứt điểm được.
 
 ### Việc chủ sản phẩm giao 2026-08-22 (tối) — Q105
 
@@ -215153,7 +215759,7 @@ def test_dich_hong_thi_lop_tren_nem_DichThatBai_kem_loi_di_tiep(moi_truong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_251_vps_ha_tang.py
-SHA256=385360ddd49d1b1301bf1fee9fb99381b2f92e12e3a0022f93d79318523dcfc6 BYTES=29212 LINES=702
+SHA256=2f169b34af6079c145f455093a590d859b5e3f14771bdc89e9028cb230d7b788 BYTES=30007 LINES=721
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hạ tầng app VPS (H39 P0, Q103 + Q104).
 
@@ -215204,12 +215810,15 @@ def db(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
-def _gateway(db, *, cong_dau=31000, cong_cuoi=31002, vung="port",
-             ip_rieng=False, ten="cong-vn"):
+def _gateway(db, *, octet_dau=10, octet_cuoi=12, vung="sgp",
+             ip_rieng=True, ten="cong-vn"):
     from apps.vps.tables import VpsGateway
     g = VpsGateway(ten=ten, vung=vung, ip_cong_khai="203.0.113.10",
-                   ten_mien="vps.example.com", cong_dau=cong_dau,
-                   cong_cuoi=cong_cuoi, cho_phep_ip_rieng=ip_rieng)
+                   ten_mien="vps.example.com",
+                   bridge="vmbr1", subnet_cidr="10.51.0.0/24",
+                   subnet_gw="10.51.0.1", dns="1.1.1.1", mtu=1420,
+                   octet_dau=octet_dau, octet_cuoi=octet_cuoi,
+                   cho_phep_ip_rieng=ip_rieng)
     db.add(g)
     db.flush()
     return g
@@ -215258,7 +215867,7 @@ def test_manifest_khong_thu_theo_luot_job():
 
 def test_moi_bang_deu_mang_tien_to_vps():
     import apps.vps.tables as t
-    for cls in (t.VpsGateway, t.VpsInstance, t.VpsIp, t.VpsPortMap, t.VpsEvent):
+    for cls in (t.VpsGateway, t.VpsInstance, t.VpsIp, t.VpsEvent):
         assert cls.__tablename__.startswith("vps_")
 
 
@@ -215271,9 +215880,22 @@ def test_khong_goi_nao_duoi_nguong_dia_cua_windows():
 
 
 def test_gia_quy_ra_credit_theo_ti_gia_nen_tang():
-    assert cost.credit_thang("vps-nho") == 890        # 89.000d / 100
+    assert cost.credit_thang("vps-nho") == 1490       # 149.000d / 100
     assert cost.credit_thang("vps-vua") == 1790
     assert cost.credit_thang("vps-lon") == 3290
+
+
+def test_goi_re_nhat_phai_tra_noi_tien_IP_rieng():
+    """Mỗi máy nay kèm MỘT IP công khai riêng, giá vốn $3/tháng ≈ 78.000đ.
+
+    Gói 89k cũ chỉ còn 11k sau tiền IP — không sống được. Test này là cái chốt
+    để không ai hạ giá gói vào cửa xuống dưới mức trả nổi cái IP mà quên mất
+    điều đó (V6 chốt 89k khi mô hình còn CHIA CỔNG, không còn đúng nữa).
+    """
+    GIA_VON_IP_VND = 78_000
+    re_nhat = min(p.gia_thang_vnd for p in cost.PLANS)
+    assert re_nhat >= GIA_VON_IP_VND * 1.8, (
+        f"goi re nhat {re_nhat}d khong du bien tren gia von IP {GIA_VON_IP_VND}d")
 
 
 def test_dia_mua_them_cong_dung_va_chi_nhan_boi_cua_10():
@@ -215581,49 +216203,49 @@ def test_loi_mang_thanh_ProxmoxError_chu_khong_thoat_ra_ngoai():
         c.phien_ban()
 
 
-# ── 5b. Mạng riêng của khách (P1) ────────────────────────────────────────────
+# ── 5b. Mạng riêng của khách ────────────────────────────────────────────────
 
 def _gw_mang(**doi):
-    """Cổng vào giống hạ tầng thật: 10.50.0.0/24, cổng gốc 33880."""
+    """Cổng vào giống hạ tầng thật đang chạy: 10.51.0.0/24, router ở .1."""
     from apps.vps.tables import VpsGateway
-    tham = dict(ten="cong-vn", vung="port", ip_cong_khai="45.76.185.75",
-                ten_mien="", cong_dau=33930, cong_cuoi=34080,
-                bridge="vmbr1", subnet_cidr="10.50.0.0/24",
-                subnet_gw="10.50.0.1", dns="1.1.1.1 8.8.8.8",
-                mtu=1420, cong_goc=33880)
+    tham = dict(ten="cong-sgp", vung="sgp", ip_cong_khai="45.32.114.249",
+                ten_mien="", bridge="vmbr1", subnet_cidr="10.51.0.0/24",
+                subnet_gw="10.51.0.1", dns="1.1.1.1 8.8.8.8",
+                mtu=1420, octet_dau=10, octet_cuoi=250)
     tham.update(doi)
     return VpsGateway(**tham)
 
 
-def test_dia_chi_suy_ra_TU_CONG_dung_quy_uoc_ha_tang_that():
-    """VM100 thật nằm ở 10.50.0.11 với cổng 33891 — phép suy phải khớp điều đó."""
+def test_dai_dia_chi_bo_qua_dia_chi_cua_router():
+    """10.51.0.1 là VM router, không phải chỗ trống — cấp nó là mất cả mạng."""
     from apps.vps.services import mang
-    m = mang.mang_cho_may(_gw_mang(cong_dau=33891, cong_cuoi=33891), 33891)
-    assert (m.octet, m.dia_chi) == (11, "10.50.0.11")
+    ds = list(mang.dai_dia_chi(_gw_mang(octet_dau=1, octet_cuoi=4)))
+    assert ds == ["10.51.0.2", "10.51.0.3", "10.51.0.4"]
+    assert "10.51.0.1" not in ds
 
-    m = mang.mang_cho_may(_gw_mang(), 33930)
-    assert (m.octet, m.dia_chi, m.cidr) == (50, "10.50.0.50", "10.50.0.50/24")
-    assert m.gateway == "10.50.0.1" and m.mtu == 1420
+
+def test_so_dia_chi_dung_de_do_suc_chua():
+    from apps.vps.services import mang
+    assert mang.so_dia_chi(_gw_mang(octet_dau=10, octet_cuoi=19)) == 10
 
 
 def test_cau_hinh_qemu_cam_MOT_card_vao_bridge_co_lap():
     """Máy khách không được có card ra LAN nhà — chỉ một đường, qua vmbr1."""
     from apps.vps.services import mang
-    c = mang.cau_hinh_qemu(mang.mang_cho_may(_gw_mang(), 33930))
+    c = mang.cau_hinh_qemu(mang.mang_cho_may(_gw_mang(), "10.51.0.50"))
     assert c["net0"] == f"{mang.MO_HINH_CARD},bridge=vmbr1,firewall=0,mtu=1420"
     assert mang.MO_HINH_CARD != "virtio", (
         "virtio treo tren cum long trong VMware — xem chu thich MO_HINH_CARD")
-    assert c["ipconfig0"] == "ip=10.50.0.50/24,gw=10.50.0.1"
+    assert c["ipconfig0"] == "ip=10.51.0.50/24,gw=10.51.0.1"
     assert c["nameserver"] == "1.1.1.1 8.8.8.8"
     assert "net1" not in c, "khach chi duoc mot card"
-
 
 
 def test_MTU_phai_duoc_ghim_vao_cau_hinh():
     """1420 là số ĐO THẬT qua đường hầm. Để mặc định 1500 thì gói lớn rơi im lặng,
     triệu chứng là 'web nào cũng vào được trừ vài trang' — mất hàng giờ mới lần ra."""
     from apps.vps.services import mang
-    c = mang.cau_hinh_qemu(mang.mang_cho_may(_gw_mang(), 33930))
+    c = mang.cau_hinh_qemu(mang.mang_cho_may(_gw_mang(), "10.51.0.50"))
     assert "mtu=1420" in c["net0"]
 
 
@@ -215631,66 +216253,69 @@ def test_cong_vao_khai_thieu_thi_TU_CHOI_chu_khong_doan():
     from apps.vps.services import mang
     for thieu in ("bridge", "subnet_cidr", "subnet_gw"):
         with pytest.raises(mang.CauHinhMangError) as e:
-            mang.mang_cho_may(_gw_mang(**{thieu: ""}), 33930)
+            mang.mang_cho_may(_gw_mang(**{thieu: ""}), "10.51.0.50")
         assert thieu in str(e.value)
-    with pytest.raises(mang.CauHinhMangError):
-        mang.mang_cho_may(_gw_mang(cong_goc=0), 33930)
 
 
-def test_octet_ngoai_khoang_hoac_trung_gateway_thi_TU_CHOI():
-    """Cổng lệch so với cổng gốc thì octet vô nghĩa — bắt ngay, đừng cấp bừa."""
+def test_dia_chi_ngoai_mang_hoac_trung_router_thi_TU_CHOI():
     from apps.vps.services import mang
     with pytest.raises(mang.CauHinhMangError) as e:
-        mang.mang_cho_may(_gw_mang(), 33881)      # octet 1
-    assert "octet" in str(e.value)
+        mang.mang_cho_may(_gw_mang(), "10.99.0.50")
+    assert "khong thuoc mang" in str(e.value)
+    with pytest.raises(mang.CauHinhMangError) as e:
+        mang.mang_cho_may(_gw_mang(), "10.51.0.1")
+    assert "cong vao" in str(e.value)
     with pytest.raises(mang.CauHinhMangError):
-        mang.mang_cho_may(_gw_mang(), 34200)      # octet 320
-    with pytest.raises(mang.CauHinhMangError) as e:
-        mang.mang_cho_may(_gw_mang(), 33881 + 0)  # se la octet 1
-    with pytest.raises(mang.CauHinhMangError) as e:
-        mang.mang_cho_may(_gw_mang(subnet_gw="10.50.0.50"), 33930)
-    assert "gateway" in str(e.value)
+        mang.mang_cho_may(_gw_mang(), "")
 
 
 def test_chi_nhan_mask_24_chu_khong_doan_gan_dung():
     """Nhận /16 rồi tính sai một octet là cấp TRÙNG địa chỉ cho hai khách."""
     from apps.vps.services import mang
     with pytest.raises(mang.CauHinhMangError) as e:
-        mang.mang_cho_may(_gw_mang(subnet_cidr="10.50.0.0/16"), 33930)
+        mang.mang_cho_may(_gw_mang(subnet_cidr="10.51.0.0/16"), "10.51.0.50")
     assert "/24" in str(e.value)
 
 
 # ── 6. Cấp phát nguyên tử ────────────────────────────────────────────────────
 
-def test_hai_may_khong_bao_gio_nhan_cung_mot_cong(db):
+def test_hai_may_khong_bao_gio_nhan_cung_mot_dia_chi(db):
     from apps.vps.services import provisioning
-    g = _gateway(db, cong_dau=31000, cong_cuoi=31001)
+    g = _gateway(db, octet_dau=10, octet_cuoi=11)
     m1, m2 = _may(db, g), _may(db, g)
-    c1 = provisioning.cap_cong(db, m1, g)
-    c2 = provisioning.cap_cong(db, m2, g)
-    assert {c1.cong_ngoai, c2.cong_ngoai} == {31000, 31001}
+    a1 = provisioning.cap_ip_noi_bo(db, m1, g)
+    a2 = provisioning.cap_ip_noi_bo(db, m2, g)
+    assert {a1, a2} == {"10.51.0.10", "10.51.0.11"}
 
 
-def test_het_cong_thi_bao_loi_ro_rang_chu_khong_ghi_de(db):
+def test_het_dia_chi_thi_bao_loi_ro_rang_chu_khong_ghi_de(db):
     from apps.vps.services import provisioning
-    g = _gateway(db, cong_dau=31000, cong_cuoi=31000)
-    provisioning.cap_cong(db, _may(db, g), g)
+    g = _gateway(db, octet_dau=10, octet_cuoi=10)
+    provisioning.cap_ip_noi_bo(db, _may(db, g), g)
     with pytest.raises(provisioning.HetChoError) as e:
-        provisioning.cap_cong(db, _may(db, g), g)
-    assert "het cong" in str(e.value)
+        provisioning.cap_ip_noi_bo(db, _may(db, g), g)
+    assert "het dia chi" in str(e.value)
 
 
-def test_cong_da_cap_van_giu_duoc_sau_khi_mot_lan_dung_do(db):
+def test_cap_lai_cho_cung_mot_may_tra_ve_dung_dia_chi_cu(db):
+    """Job chạy lại không được cấp thêm địa chỉ thứ hai cho cùng một máy."""
+    from apps.vps.services import provisioning
+    g = _gateway(db)
+    m = _may(db, g)
+    a1 = provisioning.cap_ip_noi_bo(db, m, g)
+    db.commit()
+    assert provisioning.cap_ip_noi_bo(db, m, g) == a1
+
+
+def test_dia_chi_da_cap_van_giu_duoc_sau_khi_mot_lan_dung_do(db):
     """Sau một `IntegrityError`, transaction phải còn dùng được (savepoint)."""
     from apps.vps.services import provisioning
-    g = _gateway(db, cong_dau=31000, cong_cuoi=31005)
-    m1 = _may(db, g)
-    provisioning.cap_cong(db, m1, g)
+    g = _gateway(db, octet_dau=10, octet_cuoi=15)
+    provisioning.cap_ip_noi_bo(db, _may(db, g), g)
     db.commit()
-    m2 = _may(db, g)
-    c2 = provisioning.cap_cong(db, m2, g)
+    a2 = provisioning.cap_ip_noi_bo(db, _may(db, g), g)
     db.commit()
-    assert c2.cong_ngoai == 31001
+    assert a2 == "10.51.0.11"
 
 
 def test_vmid_khong_trung_va_ton_trong_goi_y(db):
@@ -216246,7 +216871,7 @@ def test_bang_gia_noi_ro_reasoning_va_cache():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_252_vps_giao_dien.py
-SHA256=45f231c0c7fda09146446ecf3db506b0cff5d8ce44c72518e1a7bac90f6c3af7 BYTES=13891 LINES=359
+SHA256=056e3f41668b4e93db6924916d1e6ec38ee276a13ba36d49d56b3ca76a28134d BYTES=14082 LINES=362
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bề mặt HTTP của app VPS: cái cờ phải thật sự đóng cửa, và trang phải nói thật.
 
@@ -216567,7 +217192,10 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
         db.add(VpsGateway(ten="cong-chinh", vung="port",
                           ip_cong_khai="203.0.113.10",
                           ten_mien="vps.example.com",
-                          cong_dau=31000, cong_cuoi=31100))
+                          bridge="vmbr1", subnet_cidr="10.51.0.0/24",
+                          subnet_gw="10.51.0.1", dns="1.1.1.1", mtu=1420,
+                          octet_dau=10, octet_cuoi=100,
+                          cho_phep_ip_rieng=True))
         db.commit()
     finally:
         try:
@@ -224027,7 +224655,7 @@ def test_cong_im_lang_MOT_lan_thi_CHUA_ban(monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_278_nhuong_card.py
-SHA256=30f5407e0ad9f127dc302ade530f6b41f9aa514f2c062004799b3daf833f7443 BYTES=16787 LINES=430
+SHA256=b6c46c056f7d0811f6d62d87a44ec4992a14cb3c8a7b3b765d86221de1a2ce42 BYTES=23525 LINES=576
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_278 — xin card trước khi vẽ, trả card sau khi vẽ. (V1–V4)
@@ -224110,9 +224738,24 @@ def test_KHONG_doc_duoc_VRAM_thi_TU_CHOI():
 
 # ── Hai loại hộ ─────────────────────────────────────────────────────────────
 
-def test_ho_BAO_DUOC_thi_duoc_bao_nha():
+def test_card_da_trong_thi_KHONG_duoi_ai():
+    """⭐ Nhánh của trường hợp THƯỜNG, và nó phải nằm trước mọi thứ khác.
+
+    Một lô 30 ảnh liên tiếp không được đuổi ai lần nào — nếu không thì mỗi ảnh
+    lại bảo hộ khác nhả một lần, và với LLM thì mỗi lần là 18 giây của khách.
+    """
     llm = NC.HoDung("llm", "http://127.0.0.1:8280/unload")
     px, da_goi = _xin([1_300], ho=(llm,))
+    assert px.duoc
+    assert da_goi == [], "card trong roi ma van di duoi nguoi khac"
+    assert px.da_bao_nha == ()
+
+
+def test_ho_BAO_DUOC_thi_duoc_bao_nha():
+    """Card đang bị giữ ⇒ mới đuổi."""
+    llm = NC.HoDung("llm", "http://127.0.0.1:8280/unload")
+    px, da_goi = _xin([19_000, 19_000, 1_300], ho=(llm,))
+    assert px.duoc
     assert da_goi == ["http://127.0.0.1:8280/unload"]
     assert px.da_bao_nha == ("llm",)
 
@@ -224123,7 +224766,7 @@ def test_ho_CHI_CHO_DUOC_thi_KHONG_bi_bao_nha():
     Đuổi nó là phá việc của người khác. Hành động đúng là **báo bận và lùi lại**.
     """
     video = NC.HoDung("video")           # duong_nha rong
-    px, da_goi = _xin([1_300], ho=(video,))
+    px, da_goi = _xin([19_000, 19_000, 1_300], ho=(video,))
     assert da_goi == [], "KHONG duoc goi gi cho ho chi-cho-duoc"
     assert px.da_bao_nha == ()
 
@@ -224137,9 +224780,9 @@ def test_ly_do_het_gio_NEU_TEN_ho_chi_cho_duoc():
 
 def test_bao_nha_HONG_thi_van_cho_VRAM():
     """Bảo không được có thể chỉ là nó đã nhả sẵn. Vòng chờ mới là thứ quyết định."""
-    con = [1_300]
+    con = [19_000, 1_300, 1_300]
     px = NC.xin_card(ho_khac=(NC.HoDung("llm", "http://x/unload"),),
-                     doc_vram=lambda: con[0],
+                     doc_vram=lambda: con.pop(0) if len(con) > 1 else con[0],
                      goi_nha=lambda d: False)
     assert px.duoc, "bao nha hong khong duoc tu dong thanh tu choi"
 
@@ -224459,6 +225102,137 @@ def test_duoi_THANH_CONG_cung_phai_de_lai_dau_vet():
     sau = ma[i_that_bai:i_that_bai + 1800]
     assert "px.da_bao_nha" in sau, "khong ghi lai viec duoi khi THANH CONG"
     assert "da bao" in sau and "nha card" in sau
+
+
+# ═══════════ Chống dao động: bảo vệ khách LLM ════════════════════════════════
+#
+# 🔴 TRƯỜNG HỢP DUY NHẤT CƠ CHẾ NÀY CÓ THỂ TỆ, và nó là câu hỏi chủ sản phẩm đặt
+#    ra: nếu hai loại việc **xen kẽ** nhau thì mỗi prompt của khách LLM trả 18
+#    giây nạp lại. Đó không phải chậm — đó là không dùng được.
+#
+#    Chốt này biến "dao động của LLM" thành "job ảnh xếp hàng", và đó là đánh đổi
+#    ĐÚNG: job ảnh **bất đồng bộ** (có hàng đợi), lượt LLM **đồng bộ** (khách
+#    đang nhìn con trỏ).
+
+def test_vua_duoi_thi_KHONG_duoi_tiep_ngay():
+    llm = NC.HoDung("llm", "http://x/unload")
+    dh = _DongHo()
+    so = NC.SoDuoi(cach_nhau_giay=300.0, now=dh.now)
+    con = [19_000, 1_300, 1_300]
+
+    px1 = NC.xin_card(ho_khac=(llm,),
+                      doc_vram=lambda: con.pop(0) if len(con) > 1 else con[0],
+                      goi_nha=lambda d: True, so_duoi=so,
+                      now=dh.now, ngu=dh.ngu)
+    assert px1.duoc and px1.da_bao_nha == ("llm",)
+
+    # LLM nap lai (khach vua go mot prompt) -> card lai bi giu
+    dh.t += 30
+    px2 = NC.xin_card(ho_khac=(llm,), doc_vram=lambda: 19_000,
+                      goi_nha=lambda d: True, so_duoi=so,
+                      now=dh.now, ngu=dh.ngu)
+    assert not px2.duoc, "duoi lien tuc — khach LLM se tra 18s moi luot"
+    assert "18s" in px2.ly_do and "cho them" in px2.ly_do
+    assert px2.da_bao_nha == (), "KHONG duoc goi nha trong thoi gian cho"
+
+
+def test_qua_khoang_cach_thi_duoi_lai_duoc():
+    llm = NC.HoDung("llm", "http://x/unload")
+    dh = _DongHo()
+    so = NC.SoDuoi(cach_nhau_giay=300.0, now=dh.now)
+    so.ghi()
+    dh.t += 301
+    con = [19_000, 1_300, 1_300]
+    px = NC.xin_card(ho_khac=(llm,),
+                     doc_vram=lambda: con.pop(0) if len(con) > 1 else con[0],
+                     goi_nha=lambda d: True, so_duoi=so,
+                     now=dh.now, ngu=dh.ngu)
+    assert px.duoc and px.da_bao_nha == ("llm",)
+
+
+def test_LO_ANH_LIEN_TIEP_khong_cham_chot_chong_dao_dong():
+    """⭐ Chốt quan trọng nhất của mục này: nó **không** làm chậm việc thường.
+
+    Nếu LLM không nạp lại thì VRAM vẫn thấp, và `xin_card` đi qua ở nhánh đầu —
+    không đuổi ai, không chạm sổ đuổi. Một lô 30 ảnh vì thế chạy trọn.
+    """
+    llm = NC.HoDung("llm", "http://x/unload")
+    dh = _DongHo()
+    so = NC.SoDuoi(cach_nhau_giay=300.0, now=dh.now)
+    so.ghi()                              # vua duoi xong
+    for i in range(30):
+        dh.t += 111                       # moi anh 111 giay
+        px = NC.xin_card(ho_khac=(llm,), doc_vram=lambda: 1_300,
+                         goi_nha=lambda d: True, so_duoi=so,
+                         now=dh.now, ngu=dh.ngu)
+        assert px.duoc, f"anh thu {i} bi chan du card trong"
+        assert px.da_bao_nha == ()
+
+
+def test_KHONG_truyen_so_duoi_thi_khong_chan_gi():
+    """Cài đặt không khai sổ đuổi vẫn phải chạy — chỉ là không có chống dao động."""
+    llm = NC.HoDung("llm", "http://x/unload")
+    con = [19_000, 1_300, 1_300]
+    px = NC.xin_card(ho_khac=(llm,),
+                     doc_vram=lambda: con.pop(0) if len(con) > 1 else con[0],
+                     goi_nha=lambda d: True)
+    assert px.duoc
+
+
+def test_khoang_cach_du_dai_de_bao_ve_khach_LLM():
+    """18 giây nạp lại chia cho khoảng cách phải ra một tỉ lệ chịu được."""
+    assert NC.CACH_NHAU_TOI_THIEU_GIAY >= 120, (
+        "khoang cach qua ngan — khach LLM van tra 18s qua thuong xuyen")
+
+
+# ═══════════ Chiều ngược: LLM không được nạp đè lên lúc ĐANG VẼ ═════════════
+#
+# 🔴 Trọng tài của cổng render bảo vệ phía ẢNH khỏi LLM. Nhưng chiều ngược lại
+#    từng hở: trọng tài của cổng LLM coi *"1 tiến trình python = chỉ ComfyUI
+#    thường trú = RẢNH"* — mà ComfyUI **đang vẽ** cũng đúng 1 tiến trình python.
+#
+#    Đo thật 24/08: nạp Qwen trong lúc HiDream đang vẽ ⇒ card lên
+#    **24.213 MB / 24.576 = 98,5 %**, và cả hai cùng chậm.
+
+def _tt(*, so_python, tai, ram=100.0, **kw):
+    from llm_gateway.trong_tai import TrongTai
+    return TrongTai(ram_trong_toi_thieu_gb=8.0,
+                    dem_python_gpu=lambda: so_python,
+                    ram_trong_gb=lambda: ram,
+                    tai_gpu=lambda: tai, **kw)
+
+
+def test_ComfyUI_THUONG_TRU_thi_van_RANH():
+    """Giữ bộ nhớ mà không tính ⇒ LLM nạp được. Đây là trường hợp thường."""
+    px = _tt(so_python=1, tai=0).phan_xu()
+    assert not px.ban
+
+
+def test_ComfyUI_DANG_VE_thi_BAN():
+    """🔴 Chốt chính. Cùng số tiến trình, khác mức tải ⇒ khác kết luận."""
+    px = _tt(so_python=1, tai=100).phan_xu()
+    assert px.ban and "tai GPU" in px.ly_do and "de len nhau" in px.ly_do
+
+
+def test_llama_server_dang_tra_loi_KHONG_tu_chan_chinh_minh():
+    """`llama-server.exe` không phải python — nên tải cao mà không có python là
+    tải của CHÍNH TA, và `gioi_han` mới là chỗ chặn đồng thời."""
+    px = _tt(so_python=0, tai=100).phan_xu()
+    assert not px.ban
+
+
+def test_khong_doc_duoc_tai_thi_giu_hanh_vi_cu():
+    """Không hỏi được mức tải ⇒ rơi về phép đếm cũ, không đoán bừa."""
+    from llm_gateway.trong_tai import TrongTai
+    px = TrongTai(ram_trong_toi_thieu_gb=8.0, dem_python_gpu=lambda: 1,
+                  ram_trong_gb=lambda: 100.0, tai_gpu=lambda: None).phan_xu()
+    assert not px.ban
+
+
+def test_hai_tien_trinh_python_van_BAN_du_tai_thap():
+    """Chốt cũ không bị nới: 2 python là có việc khác, bất kể tải."""
+    px = _tt(so_python=2, tai=0).phan_xu()
+    assert px.ban and "tien trinh python" in px.ly_do
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -161,15 +161,19 @@ def _tao_may(params: dict, ctx=None) -> dict:
         may.trang_thai = "dang_chay"
         may.ly_do = ""
         provisioning.ghi_su_kien(db, may.id, "tao_xong", boi="he_thong",
-                                 vmid=may.vmid, cong_ngoai=cong.cong_ngoai)
+                                 vmid=may.vmid, ip_noi_bo=ip_noi_bo)
         db.commit()
         _bao(ctx, 100, "xong")
 
-        dia_chi = gateway.ten_mien or gateway.ip_cong_khai
+        # Địa chỉ khách gõ vào là IP CÔNG KHAI RIÊNG của máy, cấp ở bước sau
+        # (G2/`services/vultr.py`). Chừng nào chưa có thì trả rỗng — thà không
+        # có địa chỉ còn hơn đưa địa chỉ của cổng vào, vì khách sẽ thử gõ nó và
+        # rơi vào máy người khác.
         return {
             "instance_id": may.id,
             "vmid": may.vmid,
-            "dia_chi": f"{dia_chi}:{cong.cong_ngoai}",
+            "ip_noi_bo": ip_noi_bo,
+            "dia_chi": _ip_cong_khai(db, may.id),
             "he_dieu_hanh": img.ten,
         }
     except Exception as exc:
@@ -210,6 +214,17 @@ def _dia_goc(client, vmid: int) -> str:
         if gt and "media=cdrom" not in gt:
             return bus
     raise VpsJobError(f"khong tim thay dia he dieu hanh cua VM {vmid}")
+
+
+def _ip_cong_khai(db, instance_id: str) -> str:
+    """IP công khai riêng của máy, hoặc rỗng nếu chưa cấp."""
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsIp
+    ip = db.execute(
+        select(VpsIp).where(VpsIp.instance_id == instance_id)
+    ).scalars().first()
+    return str(ip.dia_chi) if ip is not None else ""
 
 
 def _danh_dau_loi(db, instance_id, exc: Exception) -> None:

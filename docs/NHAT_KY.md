@@ -117,7 +117,8 @@ tiêm. Một test phụ thuộc trạng thái card là một test nói dối.
 
 ### Còn tồn đọng
 - **P1 deploy** (cần chủ sản phẩm) — chặn toàn bộ nghiệm thu ảnh E2E.
-- **P2** chạy đè với dự án video (cần chủ sản phẩm) — chốt duy nhất của Đợt B.
+- ⛔ *(chạy đè với dự án video: **bỏ** khỏi quy trình 24/08 theo quyết định của
+  chủ sản phẩm — video sẽ xây lại theo khuôn khoá-logic, đo bản cũ là vô nghĩa)*
 - **P3** luật WAF Cloudflare cho `/api/v1/*`.
 
 ## 2026-08-24 (trưa) — G9 đóng, và một cảnh báo đang lưu hành hoá ra đã sai
