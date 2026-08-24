@@ -16,6 +16,7 @@ vậy là dừng cả nền tảng — im lặng, không ai được báo.
 from __future__ import annotations
 
 import apps.vps as vps_app
+from apps.vps import bao_tri
 from apps.vps.cost import credit_cost
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry
@@ -44,6 +45,13 @@ MANIFEST = AppManifest(
         "vps.rebuild": 1800,
         "vps.destroy": 600,
     },
+
+    # Việc nền định kỳ: thu tiền, treo máy hết tiền, xoá máy quá hạn ân hạn.
+    # Nền tảng gọi nó DƯỚI lease `bao_tri`, nên nó chạy đúng một lần trên toàn
+    # cụm dù có bao nhiêu tiến trình worker. Xem `bao_tri.py` để biết vì sao đây
+    # là hợp đồng chứ không phải vòng lặp tự dựng.
+    bao_tri=bao_tri.chay,
+    bao_tri_moi_giay=3600,
 
     table_prefix="vps",
 

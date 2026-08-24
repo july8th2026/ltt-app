@@ -39,6 +39,9 @@ from apps.vps.services.ssh_lenh import (DichDen, SshLenhError, bash_tu_xa,
 #: Tệp dnsmasq đọc lại mỗi lần nhận SIGHUP.
 TEP_DAT_CHO = "/etc/ltt-vps/dhcp-hosts"
 
+#: Card của mạng khách trên VM router. `dhcp_release` cần biết nó.
+NIC_KHACH = "eth1"
+
 
 class RouterError(SshLenhError):
     """VM router không nhận lệnh, hoặc trả lỗi."""
@@ -59,6 +62,20 @@ def doc_cau_hinh(env: dict | None = None) -> DichDen:
         # trong đoạn đó, không đổi lại được gì.
         tien_to="",
     ).verify("LTT_VPS_ROUTER_HOST")
+
+
+# ── Băng thông ──────────────────────────────────────────────────────────────
+#
+# Ba `set` trên router (xem `tools/vps_gateway/cai-dat-router.sh`):
+#   `bw_len`    — đếm chiều lên  (khách → Internet), khớp bằng `ip saddr`
+#   `bw_xuong`  — đếm chiều xuống (Internet → khách), khớp bằng `ip daddr`
+#   `giam_toc`  — địa chỉ đang bị hãm tốc
+#
+# `counter` khai trong `set` nghĩa là **mỗi phần tử có bộ đếm riêng**. Nhờ đó đo
+# được từng khách mà không cần một luật cho mỗi người — đúng lý do đã chọn `map`
+# cho NAT bên cổng vào: ruleset dài làm chậm **mọi** kết nối.
+
+SET_LEN, SET_XUONG, SET_GIAM_TOC = "bw_len", "bw_xuong", "giam_toc"
 
 
 class RouterClient:
@@ -114,15 +131,132 @@ class RouterClient:
             # gia hạn là cách làm rớt mạng máy họ vì một khách khác vừa được tạo.
             "sudo -n systemctl reload dnsmasq")
 
-    def go_cho(self, mac: str) -> None:
-        """Gỡ chỗ. Chạy lại được, và không kêu nếu đã gỡ rồi."""
+    def go_cho(self, mac: str, ip_noi_bo: str = "") -> None:
+        """Gỡ chỗ **và trả lại lease**. Chạy lại được, không kêu nếu đã gỡ rồi.
+
+        ## Vì sao phải trả lease, không chỉ xoá dòng đặt chỗ
+
+        Xoá dòng trong `dhcp-hosts` chỉ nói "đừng cấp cho MAC này nữa". Nó
+        **không** đụng tới lease đang sống. Địa chỉ đó vẫn bị dnsmasq coi là đã
+        cấp cho tới khi lease hết hạn — và địa chỉ riêng thì được **cấp lại ngay**
+        cho khách tiếp theo.
+
+        Hậu quả đo được: máy mới xin DHCP và nhận `no address available`. Máy lên
+        bình thường, chỉ là **không có mạng**, và không lỗi nào chỉ vào nguyên
+        nhân. Đã dính thật 24/08 khi hai máy thử lần lượt nhận `10.51.0.99`.
+
+        `ip_noi_bo` rỗng thì bỏ qua phần trả lease — người gọi không biết địa
+        chỉ thì chỉ còn cách chờ lease hết hạn (một giờ, xem `cai-dat-router.sh`).
+        """
         mac = kiem_mac(mac, loi=RouterError)
+        tra_lease = ""
+        if str(ip_noi_bo or "").strip():
+            ip = kiem_dia_chi(ip_noi_bo, loi=RouterError)
+            # `|| true`: máy chưa từng xin lease thì lệnh này báo lỗi, và đó
+            # không phải chuyện đáng chặn việc xoá máy.
+            tra_lease = (f"  sudo -n dhcp_release {NIC_KHACH} {ip} {mac} "
+                         f"2>/dev/null || true; ")
         self._bash(
             f"if [ -f {TEP_DAT_CHO} ]; then "
             f"  grep -v '^{mac},' {TEP_DAT_CHO} > {TEP_DAT_CHO}.moi || true; "
             f"  mv {TEP_DAT_CHO}.moi {TEP_DAT_CHO}; "
+            f"{tra_lease}"
             f"  sudo -n systemctl reload dnsmasq; "
             f"fi; true")
+
+    def _them_phan_tu(self, ten_set: str, ip: str) -> None:
+        ip = kiem_dia_chi(ip, loi=RouterError)
+        self._bash(
+            f"sudo -n nft add element inet ltt_rt {ten_set} {{ {ip} }} 2>/dev/null "
+            f"|| true")
+
+
+
+    def _bot_phan_tu(self, ten_set: str, ip: str) -> None:
+        ip = kiem_dia_chi(ip, loi=RouterError)
+        self._bash(
+            f"sudo -n nft delete element inet ltt_rt {ten_set} {{ {ip} }} "
+            f"2>/dev/null || true")
+
+
+
+    def theo_doi_bang_thong(self, ip_noi_bo: str) -> None:
+        """Bắt đầu đếm cho một máy. Chạy lại được.
+
+        Máy **không** nằm trong hai set này thì gói của nó không khớp luật đếm nào —
+        và nó dùng bao nhiêu cũng không ai biết. Im lặng, nên phải gọi cùng lúc với
+        lúc cấp địa chỉ chứ không phải "khi nào nhớ ra".
+        """
+        self._them_phan_tu(SET_LEN, ip_noi_bo)
+        self._them_phan_tu(SET_XUONG, ip_noi_bo)
+
+
+
+    def thoi_theo_doi(self, ip_noi_bo: str) -> None:
+        """Ngừng đếm và bỏ hãm tốc. Gọi khi xoá máy — địa chỉ sẽ được cấp lại cho
+        khách khác, và bộ đếm cũ dính sang người mới là một hoá đơn sai."""
+        for s in (SET_LEN, SET_XUONG, SET_GIAM_TOC):
+            self._bot_phan_tu(s, ip_noi_bo)
+
+
+
+    def doc_bang_thong(self) -> dict[str, tuple[int, int]]:
+        """`{IP: (byte_lên, byte_xuống)}` — số **tích luỹ từ lúc nạp ruleset**.
+
+        Đọc thẳng con số này như "đã dùng bao nhiêu tháng này" là **sai**: nó về 0
+        mỗi lần router khởi động lại. Người gọi phải cộng phần chênh lệch so với mốc
+        lần đọc trước — xem `apps/vps/bang_thong.py`.
+        """
+        import json
+
+        ra: dict[str, list[int]] = {}
+        for i, ten in enumerate((SET_LEN, SET_XUONG)):
+            tho = self._bash(
+                f"sudo -n nft -j list set inet ltt_rt {ten} 2>/dev/null || echo '{{}}'")
+            try:
+                doc = json.loads(tho or "{}")
+            except json.JSONDecodeError as exc:
+                raise RouterError(f"nft tra ve khong phai JSON ({exc}): "
+                                  f"{(tho or '')[:200]}") from exc
+            for muc in doc.get("nftables", []):
+                for e in (muc.get("set") or {}).get("elem") or []:
+                    pt = e.get("elem") if isinstance(e, dict) else None
+                    if not isinstance(pt, dict):
+                        continue
+                    ip = str(pt.get("val") or "")
+                    byte = int((pt.get("counter") or {}).get("bytes") or 0)
+                    ra.setdefault(ip, [0, 0])[i] = byte
+        return {ip: (v[0], v[1]) for ip, v in ra.items()}
+
+
+
+    def dat_giam_toc(self, ip_noi_bo: str, bat: bool) -> None:
+        """Bật/tắt hãm tốc cho một máy. Chạy lại được.
+
+        Hãm chứ không cắt: trang bán hứa *"vượt hạn mức thì bị giảm tốc, không bị
+        tính thêm tiền"*. Cắt hẳn biến một lời hứa thành một lời nói dối.
+        """
+        if bat:
+            self._them_phan_tu(SET_GIAM_TOC, ip_noi_bo)
+        else:
+            self._bot_phan_tu(SET_GIAM_TOC, ip_noi_bo)
+
+
+
+    def danh_sach_giam_toc(self) -> set[str]:
+        import json
+
+        tho = self._bash(f"sudo -n nft -j list set inet ltt_rt {SET_GIAM_TOC} "
+                         f"2>/dev/null || echo '{{}}'")
+        try:
+            doc = json.loads(tho or "{}")
+        except json.JSONDecodeError:
+            return set()
+        ra = set()
+        for muc in doc.get("nftables", []):
+            for e in (muc.get("set") or {}).get("elem") or []:
+                ra.add(str(e.get("elem", {}).get("val") if isinstance(e, dict) else e))
+        return {x for x in ra if x and x != "None"}
 
 
 def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> RouterClient:

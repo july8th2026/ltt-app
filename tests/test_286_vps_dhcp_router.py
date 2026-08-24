@@ -234,3 +234,49 @@ def test_ve_dai_that_van_luu_duoc():
         assert ra == ve_dai
     finally:
         db.close()
+
+
+# ── 7. Kịch bản cài router: không được có dấu huyền ─────────────────────────
+
+def test_kich_ban_router_KHONG_chua_dau_huyen():
+    """`cai-dat-router.sh` sinh hai tệp cấu hình bằng heredoc **không nháy** —
+    phải thế, vì nó cần thay `$NIC_KHACH`, `$TOC_GIAM`… Nhưng trong heredoc không
+    nháy, **dấu huyền là thay-thế-lệnh**: một chú thích có `` `static` `` biến
+    thành `static: command not found`, và dòng chú thích bị mất chữ.
+
+    Đã dính **ba lần** trong một ngày, mỗi lần mất vài phút chẩn đoán nhầm sang
+    dnsmasq và nftables. Nên nay nó là một phép kiểm, không phải một điều cần nhớ.
+    """
+    from pathlib import Path
+
+    tep = Path("tools/vps_gateway/cai-dat-router.sh")
+    noi_dung = tep.read_text(encoding="utf-8")
+    assert "`" not in noi_dung, (
+        "dau huyen trong heredoc khong nhay = thay-the-lenh; dung dau nhay don")
+
+
+def test_kich_ban_router_xuong_dong_kieu_LF():
+    """Tep nay viet tren Windows va chay tren Debian. Mot ky tu CR sot lai
+    lam 'set -o pipefail' thanh 'pipefail<CR>' va bash bao *invalid option
+    name* -- mot cau khong chi vao nguyen nhan nao ca. Da dinh that.
+
+    Chi kiem moi nguy THAT: ky tu ke khung trong chu thich thi vo hai tren
+    Debian, va mot phep kiem 'phai thuan ASCII' o day se do vi ly do khong
+    ai quan tam -- loai test roi se bi xoa trong buc boi thay vi duoc sua.
+    """
+    from pathlib import Path
+
+    CR = bytes([13])
+    tho = Path('tools/vps_gateway/cai-dat-router.sh').read_bytes()
+    assert CR not in tho, 'phai la LF, khong phai CRLF'
+
+
+def test_kich_ban_router_co_du_BA_luat_bat_buoc():
+    """Ba luật này là ba lớp bảo vệ khác nhau; thiếu bất kỳ lớp nào cũng hỏng
+    lặng lẽ, và không lớp nào thay được lớp kia."""
+    from pathlib import Path
+
+    n = Path("tools/vps_gateway/cai-dat-router.sh").read_text(encoding="utf-8")
+    assert "ip daddr @rieng" in n, "thieu chan LAN nha"
+    assert "tcp dport { 25, 465, 587 }" in n, "thieu chan thu ra"
+    assert "maxseg size set rt mtu" in n, "thieu MSS clamp cho duong ham 1420"

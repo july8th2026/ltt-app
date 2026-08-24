@@ -203,6 +203,31 @@ class AppManifest:
     # tên app. Rỗng = app không có mục kiểm tra riêng.
     blocker_titles: tuple = ()
 
+    # ── Việc nền định kỳ của app ─────────────────────────────────────────────
+    #
+    # `bao_tri` là một callable không tham số mà nền tảng gọi mỗi
+    # `bao_tri_moi_giay` giây, TRONG vòng bảo trì của worker — tức **dưới lease**
+    # `bao_tri`. Nhờ đó nó chạy đúng một lần trên toàn cụm dù có bao nhiêu tiến
+    # trình worker.
+    #
+    # Vì sao phải nằm trong hợp đồng, thay vì app tự dựng vòng lặp riêng:
+    # số tiến trình worker mặc định bằng số GPU (H36). Một app tự chạy vòng thu
+    # tiền sẽ **trừ tiền khách N lần mỗi chu kỳ**, và không lỗi nào được ghi ra —
+    # sổ credit vẫn cân, chỉ là khách bị trừ nhiều lần. Đúng lớp lỗi mà
+    # `platform_core/leases.py` sinh ra để chặn.
+    #
+    # Trước 2026-08-24 hợp đồng KHÔNG có chỗ này, và hậu quả có thật: app `vps`
+    # viết xong `billing.thu_phi_dinh_ky` kèm test, nhưng **không nơi nào gọi nó**
+    # — máy hết hạn không bị treo, không bị xoá, IP không được trả. Một chính sách
+    # có hàm mà không ai chạy đọc lên như một lời hứa (EXT-19).
+    #
+    # Hàm này KHÔNG được ném. Nền tảng bắt và ghi log, nhưng một app ném mỗi lượt
+    # là một dòng log rác mỗi giờ, và nó che những lỗi thật.
+    bao_tri: Optional[Callable[[], None]] = None
+    #: Giãn cách giữa hai lượt `bao_tri`. Mặc định một giờ — đủ dày cho chu kỳ
+    #: tính bằng ngày, đủ thưa để không thành tải nền.
+    bao_tri_moi_giay: int = 3600
+
     # Ghi chú nội bộ, hiện trên trang chủ cho admin.
     notes: str = ""
 
@@ -784,6 +809,21 @@ def job_type_owners(apps: Optional[list] = None) -> dict:
         for jt in item.manifest.job_types:
             out[jt] = item.manifest.slug
     return out
+
+
+def viec_bao_tri(apps: Optional[list] = None) -> list[tuple[str, Callable, int]]:
+    """`[(slug, hàm, giãn_cách_giây)]` của các app có khai việc nền định kỳ.
+
+    Chỉ lấy app **đang bật**: một app tắt cờ mà việc nền vẫn chạy là app đã tắt
+    một nửa — và nửa còn chạy là nửa động vào tiền và dữ liệu của khách.
+    """
+    apps = discover() if apps is None else apps
+    ra = []
+    for item in apps:
+        m = item.manifest
+        if m.bao_tri is not None and m.enabled:
+            ra.append((m.slug, m.bao_tri, max(60, int(m.bao_tri_moi_giay or 0))))
+    return ra
 
 
 def credit_for(job_type: str, params: dict, apps: Optional[list] = None) -> int:

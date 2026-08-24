@@ -59,6 +59,13 @@ class Plan:
     #: Giữ chỗ cứng cho từng máy là lãng phí 3/4 kho và làm sản phẩm không bán
     #: được. Đổi lại: phải có phanh — xem `services/capacity.py`.
     disk_gb: int
+    #: Hạn mức băng thông mỗi chu kỳ, tính bằng GB. Vượt thì **hãm tốc**, không
+    #: cắt và không tính thêm tiền — đúng như trang bán viết. 0 = không hãm.
+    #:
+    #: Tổng đã hứa vượt 2 TB của cổng vào Vultr là **có chủ ý** (bán chồng, cùng
+    #: khuôn với đĩa thin ở V14), nhưng nó là rủi ro cần nhìn thấy chứ không phải
+    #: mẹo — xem `bang_thong.tong_da_hua_gb`.
+    bang_thong_gb: int
     gia_thang_vnd: int
     mo_ta: str
 
@@ -75,6 +82,7 @@ PLANS: tuple[Plan, ...] = (
         vcpu=1,
         ram_mb=2048,
         disk_gb=40,
+        bang_thong_gb=300,
         gia_thang_vnd=149_000,
         mo_ta=N_("Chạy được Windows Server 2016 hoặc 2022 bản Core (không có giao "
                  "diện đồ hoạ). Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc "
@@ -86,6 +94,7 @@ PLANS: tuple[Plan, ...] = (
         vcpu=2,
         ram_mb=4096,
         disk_gb=60,
+        bang_thong_gb=600,
         gia_thang_vnd=179_000,
         mo_ta=N_("Chạy được mọi bản trong danh mục: Server 2016 và 2022 có giao "
                  "diện, hoặc Windows 10 LTSC. Đây là gói phần lớn người dùng nên "
@@ -97,6 +106,7 @@ PLANS: tuple[Plan, ...] = (
         vcpu=4,
         ram_mb=8192,
         disk_gb=80,
+        bang_thong_gb=1000,
         gia_thang_vnd=329_000,
         # Gói này KHÔNG mở thêm bản Windows nào — mọi bản trong danh mục đã chạy
         # được ở gói Vừa. Nó bán CPU, RAM và đĩa, và mô tả phải nói đúng thế;

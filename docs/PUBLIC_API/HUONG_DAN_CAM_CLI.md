@@ -18,7 +18,7 @@ máy B (GPU) và một VM Windows 10 sạch. Chỗ nào chưa đo thì nói rõ 
 | **Claude Code CLI** | biến môi trường | ✅ máy A **và máy B** |
 | **Tiện ích Codex (VS Code)** | `~/.codex/config.toml` — **chỉ dạng GỐC** | ✅ VM, trả lời `144` |
 | **Tiện ích Claude Code (VS Code)** | `settings.json` **cấp người dùng** | ✅ VM, trả lời `7 x 9 = 63` |
-| **Claude Desktop** | LevelDB nội bộ — **chỉ cấu hình tay** | ⏳ chưa |
+| **Claude Desktop** | **chính sách registry** (`HKCU\SOFTWARE\Policies\Claude`) | ⏳ đang tải bản cài trên VM để thử |
 
 ⛔ **"Cấu hình xong cho CLI" KHÔNG có nghĩa là tiện ích chạy được.** Hai tiện ích
 VS Code đi đường xác thực khác hẳn CLI. Đây là chỗ mất nhiều thời gian nhất khi
@@ -140,20 +140,40 @@ Tiện ích **không đọc biến môi trường** như CLI (lỗi đã biết 
 tiến trình con của tiện ích vẫn kế thừa được. `settings.json` là tệp rất nhiều
 người đồng bộ giữa máy hoặc commit vào kho dotfiles.
 
-### 2.5 Claude Desktop — chỉ cấu hình tay
+### 2.5 Claude Desktop — **chính sách registry** (Windows)
 
-`Help → Troubleshooting → Enable Developer Mode`, rồi
-`Developer → Configure Third-Party Inference…`
+⭐ **Tự động hoá được**, khác với điều tài liệu này viết ở bản trước. Thiết lập
+*chạy* của ứng dụng nằm trong LevelDB của Electron và không sửa tay được — nhưng
+phần **suy luận bên thứ ba** đọc từ **chính sách hệ điều hành**: `.mobileconfig`
+trên macOS, **registry** trên Windows. Đó là đường dành cho triển khai doanh
+nghiệp và nó ổn định.
+
+Lưu thành tệp `.reg` rồi bấm đúp:
+```
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\SOFTWARE\Policies\Claude]
+"inferenceProvider"="gateway"
+"inferenceGatewayBaseUrl"="https://app.lttstudios.com/api"
+"inferenceGatewayApiKey"="<khoa ltt_sk_... cua ban>"
+"inferenceGatewayAuthScheme"="bearer"
+"inferenceModels"="[{\"name\": \"ltt_llm\"}]"
+"modelDiscoveryEnabled"="false"
+```
+
+Hoặc để công cụ làm: `LTTStudios-CamCLI.exe cam --khoa ...` đã bao gồm bước này.
+
+**Bốn chốt của tài liệu chính thức, đừng đoán lại:**
 
 | | |
 |---|---|
-| Gateway base URL | `https://app.lttstudios.com/api` |
-| Gateway auth scheme | `Bearer` |
-| Gateway API key | khoá `ltt_sk_…` của bạn |
-| inferenceModels | `ltt_llm` |
+| `inferenceGatewayBaseUrl` | là **gốc**, ứng dụng tự ghép `/v1/messages`. Kèm sẵn `/v1` là thành `/v1/v1/messages` ⇒ 404 không manh mối |
+| HTTPS | **bắt buộc** (trừ loopback) |
+| Khởi động lại | cấu hình đọc **một lần lúc khởi động** ⇒ phải **thoát hẳn**, không phải chỉ đóng cửa sổ |
+| `HKLM` đè `HKCU` | máy đã có chính sách ở `HKEY_LOCAL_MACHINE` thì ứng dụng **bỏ qua hoàn toàn** bản người dùng — cắm sẽ **vô tác dụng và không báo lỗi** |
 
-⛔ Không tự động hoá được: ứng dụng cất cấu hình trong LevelDB của Electron, sửa
-tay là hỏng lặng lẽ ở lần cập nhật sau.
+Vẫn điền tay được nếu muốn: `Help → Troubleshooting → Enable Developer Mode`, rồi
+`Developer → Configure Third-Party Inference…`
 
 ---
 

@@ -60,7 +60,19 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">Claude Desktop</h2>
+  <h2 style="margin-top:0;">Claude Desktop — {{ _("cách nhanh: chính sách registry") }}</h2>
+  <p class="muted">{{ _("Trên Windows, phần suy luận bên thứ ba đọc từ CHÍNH SÁCH hệ điều hành chứ không phải từ tệp cấu hình của ứng dụng. Lưu đoạn dưới thành một tệp .reg rồi bấm đúp — nhanh hơn và không gõ nhầm.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ desktop_reg }}</code></pre>
+  <ul class="muted">
+    <li>{{ _("Địa chỉ là GỐC, không kèm /v1 — ứng dụng tự ghép /v1/messages.") }}</li>
+    <li>{{ _("Bắt buộc HTTPS.") }}</li>
+    <li>{{ _("Phải THOÁT HẲN ứng dụng rồi mở lại: cấu hình chỉ đọc một lần lúc khởi động.") }}</li>
+    <li>{{ _("Nếu máy đã có chính sách ở HKEY_LOCAL_MACHINE thì ứng dụng bỏ qua hoàn toàn bản HKEY_CURRENT_USER — hỏi quản trị viên.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">Claude Desktop — {{ _("hoặc điền tay trong ứng dụng") }}</h2>
   <p>{{ _("Ứng dụng máy tính KHÔNG đọc biến môi trường — nó có cửa sổ cấu hình riêng.") }}</p>
   <table class="table">
     <tbody>

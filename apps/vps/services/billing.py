@@ -95,6 +95,7 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
         # Giá 0 = miễn phí (máy nội bộ, hoặc bảng giá chưa đặt). Vẫn đẩy hạn để
         # vòng quét không hỏi lại máy này mỗi phút.
         may.paid_until = _moc_ke_tiep(may, thoi_diem)
+        _dat_lai_bang_thong(may)
         return 0
 
     so_du = credit.so_du(db, may.user_id)
@@ -106,9 +107,20 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
                note=f"VPS {may.plan_id} — {CHU_KY_NGAY} ngay")
     may.paid_until = _moc_ke_tiep(may, thoi_diem)
     may.xoa_sau = None
+    _dat_lai_bang_thong(may)
     ghi_su_kien(db, may.id, "thu_phi", boi="he_thong",
                 credit=gia, den=may.paid_until.isoformat())
     return gia
+
+
+def _dat_lai_bang_thong(may: VpsInstance) -> None:
+    """Chu kỳ mới, hạn mức mới: bộ đếm băng thông của chu kỳ về 0.
+
+    KHÔNG đụng tới router ở đây. Cờ `bi_giam_toc` để nguyên; lượt đồng bộ kế
+    tiếp thấy số đã dùng dưới trần và tự bỏ hãm — nhờ vậy `billing` không phải
+    biết router là gì, và một router không trả lời không chặn được việc thu tiền.
+    """
+    may.bang_thong_byte = 0
 
 
 def _moc_ke_tiep(may: VpsInstance, now: datetime) -> datetime:
@@ -177,20 +189,32 @@ def den_han_xoa(db: DbSession, *, now: datetime | None = None) -> list:
     ]
 
 
-def thu_phi_dinh_ky(db: DbSession, *, now: datetime | None = None) -> dict:
+def thu_phi_dinh_ky(db: DbSession, *, now: datetime | None = None,
+                    khi_treo=None) -> dict:
     """Một lượt thu phí cho mọi máy tới kỳ. **Phải chạy dưới một lease.**
 
     Trả về đếm số máy đã thu / đã treo, để người gọi ghi log một dòng có nghĩa
     thay vì im lặng.
+
+    ## `khi_treo` — vì sao mặc định KHÔNG đủ
+
+    Mặc định gọi `treo()` ở file này, và nó **chỉ ghi sổ**: đổi trạng thái, đặt
+    hạn xoá. Máy vẫn **chạy tiếp trên Proxmox**. Nghĩa là một khách hết tiền vẫn
+    dùng máy bình thường suốt 7 ngày ân hạn, và RAM vẫn bị giữ.
+
+    Không gọi thẳng `services/dieu_khien.treo` (bản có tắt máy) vì `dieu_khien`
+    đã import file này — vòng import. Nên người gọi tiêm vào: xem `bao_tri.py`,
+    nơi có sẵn client Proxmox.
     """
     thoi_diem = now or _now()
+    dat_treo = khi_treo or (lambda may, ly_do: treo(db, may, ly_do, now=thoi_diem))
     da_thu = da_treo = 0
     for may in den_han_thu(db, now=thoi_diem):
         try:
             thu_mot_chu_ky(db, may, now=thoi_diem)
             da_thu += 1
         except ThieuCreditError as exc:
-            treo(db, may, str(exc), now=thoi_diem)
+            dat_treo(may, str(exc))
             da_treo += 1
         db.commit()
     return {"da_thu": da_thu, "da_treo": da_treo}

@@ -50,8 +50,30 @@ def _nap(nha: pathlib.Path):
 
 
 @pytest.fixture()
-def cc(tmp_path):
-    return _nap(tmp_path)
+def cc(tmp_path, monkeypatch):
+    """Nạp `cam_cli` cô lập — **và chặn mọi đường ra ngoài thư mục tạm**.
+
+    🔴 `lenh_cam` không chỉ ghi tệp: nó gọi `setx` và **ghi chính sách registry**
+       cho Claude Desktop. Một test gọi `lenh_cam` mà không chặn hai đường đó sẽ
+       **cấu hình thật máy đang chạy test** — đổi biến môi trường của lập trình
+       viên và trỏ Claude Desktop của họ vào một endpoint.
+
+    ⚠️ Lần đầu thêm `cam_desktop`, fixture này chưa chặn registry. Máy chạy test
+       thoát nạn vì `reg add` tình cờ không ăn, **không phải vì test an toàn** —
+       đúng loại "xanh vì lý do sai" mà dự án này đã dính nhiều lần.
+    """
+    mod = _nap(tmp_path)
+    ghi = {}
+    monkeypatch.setattr(mod, "_setx", lambda *a: True)
+    monkeypatch.setattr(mod, "_xoa_env", lambda *a: True)
+    monkeypatch.setattr(mod, "_doc_env_nguoi_dung", lambda t: None)
+    monkeypatch.setattr(mod, "_reg_ghi",
+                        lambda k, t, v: (ghi.__setitem__((k, t), v), True)[1])
+    monkeypatch.setattr(mod, "_reg_xoa",
+                        lambda k, t: (ghi.pop((k, t), None), True)[1])
+    monkeypatch.setattr(mod, "_reg_doc", lambda k, t: ghi.get((k, t)))
+    mod._registry_gia = ghi          # test doc duoc da ghi gi
+    return mod
 
 
 # ── Trung tâm: cắm rồi gỡ phải bằng từng byte ───────────────────────────────
@@ -441,3 +463,67 @@ def test_che_do_vscode_va_profile_deu_go_sach(cc, tmp_path):
         cc.cam_codex("https://x", tt, cho_vscode=vscode)
         cc.go_codex(tt)
         assert cfg.read_bytes() == goc, f"che do vscode={vscode} khong go sach"
+
+
+# ── Claude Desktop: chính sách registry ────────────────────────────────────
+
+def test_desktop_ghi_dung_sau_khoa_chinh_sach(cc):
+    """Tên khoá lấy từ **tài liệu chính thức**, không đoán."""
+    tt = {}
+    cc.cam_desktop("https://app.lttstudios.com", "ltt_sk_" + "z" * 60, tt)
+    g = cc._registry_gia
+    k = cc.REG_DESKTOP_HKCU
+    assert g[(k, "inferenceProvider")] == "gateway"
+    assert g[(k, "inferenceGatewayAuthScheme")] == "bearer"
+    assert g[(k, "inferenceModels")] == '[{"name": "ltt_llm"}]'
+    assert g[(k, "modelDiscoveryEnabled")] == "false"
+
+
+def test_desktop_base_url_KHONG_kem_v1_va_phai_https(cc):
+    """Tài liệu chốt hai điều, và cả hai đều hỏng lặng lẽ nếu sai.
+
+    ⛔ `inferenceGatewayBaseUrl` là **gốc**, ứng dụng tự ghép `/v1/messages`.
+       Kèm sẵn `/v1` là thành `/v1/v1/messages` ⇒ 404 không manh mối.
+    ⛔ Và nó **bắt buộc HTTPS** (trừ loopback).
+    """
+    tt = {}
+    cc.cam_desktop("https://app.lttstudios.com", "ltt_sk_x", tt)
+    u = cc._registry_gia[(cc.REG_DESKTOP_HKCU, "inferenceGatewayBaseUrl")]
+    assert u == "https://app.lttstudios.com/api"
+    assert u.startswith("https://"), "tai lieu bat buoc HTTPS"
+    assert not u.rstrip("/").endswith("/v1"), (
+        "base_url KHONG duoc kem /v1 - ung dung tu ghep /v1/messages")
+
+
+def test_desktop_go_ra_tra_ve_gia_tri_cu(cc):
+    """Khách **đã có** chính sách riêng ⇒ `go` trả lại, không xoá."""
+    k = cc.REG_DESKTOP_HKCU
+    cc._registry_gia[(k, "inferenceGatewayBaseUrl")] = "https://cua-khach.local"
+    tt = {}
+    cc.cam_desktop("https://app.lttstudios.com", "ltt_sk_x", tt)
+    assert cc._registry_gia[(k, "inferenceGatewayBaseUrl")] == "https://app.lttstudios.com/api"
+    cc.go_desktop(tt)
+    assert cc._registry_gia[(k, "inferenceGatewayBaseUrl")] == "https://cua-khach.local", (
+        "khach co chinh sach rieng tu truoc; go phai tra ve, khong phai xoa")
+    assert (k, "inferenceProvider") not in cc._registry_gia, (
+        "khoa von KHONG co thi go phai xoa han")
+
+
+def test_desktop_DUNG_LAI_khi_may_da_co_chinh_sach_HKLM(cc):
+    """⛔ Có `HKLM` thì ứng dụng **bỏ qua hoàn toàn** `HKCU`.
+
+    Cắm vào `HKCU` khi đó là **vô tác dụng và không báo lỗi** — kiểu hỏng tệ
+    nhất. Công cụ phải dừng lại và nói ra, chứ không phải ghi rồi báo `[OK]`.
+    """
+    cc._registry_gia[(cc.REG_DESKTOP_HKLM, "inferenceProvider")] = "anthropic"
+    tt = {}
+    ra = cc.cam_desktop("https://app.lttstudios.com", "ltt_sk_x", tt)
+    assert any("HKLM" in d for d in ra)
+    assert (cc.REG_DESKTOP_HKCU, "inferenceProvider") not in cc._registry_gia, (
+        "da ghi vao HKCU du no se bi bo qua - do la bao thanh cong gia")
+
+
+def test_desktop_KHONG_in_khoa_ra_man_hinh(cc):
+    khoa = "ltt_sk_" + "q" * 60
+    ra = cc.cam_desktop("https://app.lttstudios.com", khoa, {})
+    assert not any(khoa in d for d in ra), "khoa bi in ra man hinh"

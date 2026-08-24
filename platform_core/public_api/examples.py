@@ -581,6 +581,42 @@ VSCODE_BAY = (
 )
 
 
+def claude_desktop_registry(base_url: str) -> str:
+    """Claude Desktop trên Windows: **chính sách registry**, không phải điền tay.
+
+    Đây là đường dành cho triển khai doanh nghiệp và nó ổn định — khác với thiết
+    lập chạy của ứng dụng, thứ nằm trong LevelDB của Electron và không sửa tay
+    được. Trước khi tìm ra điều này, phần Claude Desktop bị coi là "chỉ cấu hình
+    tay".
+
+    ⚠️ `inferenceGatewayBaseUrl` là **gốc**, ứng dụng tự ghép `/v1/messages`;
+       kèm sẵn `/v1` là thành `/v1/v1/messages`. Và nó **bắt buộc HTTPS**.
+
+    ⛔ Nếu máy đã có chính sách ở `HKEY_LOCAL_MACHINE` thì ứng dụng **bỏ qua hoàn
+       toàn** bản `HKEY_CURRENT_USER` — đặt ở đây sẽ vô tác dụng mà không báo lỗi.
+    """
+    return (
+        "Windows Registry Editor Version 5.00
+"
+        "
+"
+        "[HKEY_CURRENT_USER\SOFTWARE\Policies\Claude]
+"
+        '"inferenceProvider"="gateway"
+'
+        '"inferenceGatewayBaseUrl"="' + base_url + '/api"
+'
+        '"inferenceGatewayApiKey"="<khoa ltt_sk_... cua ban>"
+'
+        '"inferenceGatewayAuthScheme"="bearer"
+'
+        f'"inferenceModels"="[{{\\"name\\": \\"{CLI_MODEL}\\"}}]"
+'
+        '"modelDiscoveryEnabled"="false"
+'
+    )
+
+
 def claude_desktop_steps(base_url: str) -> tuple:
     """Claude Desktop does NOT read ANTHROPIC_BASE_URL. It has its own form."""
     return (

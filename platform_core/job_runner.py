@@ -1050,6 +1050,38 @@ def _ghi_metrics() -> None:
 LEASE_RETRY_S = 20.0
 
 
+def _bao_tri_cac_app(moc: dict) -> None:
+    """Gọi `manifest.bao_tri` của từng app khi tới hạn.
+
+    Mỗi app có mốc riêng trong `moc`, nên app khai một giờ và app khai một ngày
+    không kéo nhau.
+
+    Bắt lỗi **theo từng app**: một app ném không được phép chặn app còn lại, và
+    càng không được chặn phần bảo trì của nền tảng chạy sau nó. Đây là một trong
+    số ít chỗ `except Exception` là đúng — người gọi là vòng lặp gốc, không có ai
+    ở trên để xử lý, và im lặng bỏ qua thì hỏng sẽ không bao giờ lộ ra.
+    """
+    from platform_core import registry
+
+    try:
+        viec = registry.viec_bao_tri()
+    except Exception:                            # noqa: BLE001
+        log.exception("khong doc duoc danh sach viec bao tri cua app")
+        return
+
+    for slug, ham, moi_giay in viec:
+        khoa = f"app:{slug}"
+        if time.monotonic() < moc.get(khoa, 0.0):
+            continue
+        # Đặt mốc TRƯỚC khi chạy: hàm ném thì lượt sau vẫn phải chờ đủ giãn cách,
+        # không quay lại ngay và ném lại mỗi vòng poll.
+        moc[khoa] = time.monotonic() + moi_giay
+        try:
+            ham()
+        except Exception:                        # noqa: BLE001
+            log.exception("viec bao tri cua app %s that bai", slug)
+
+
 def _mot_luot_bao_tri(moc: dict) -> None:
     """Chạy những việc nền đã đến hạn. `moc` giữ mốc thời gian giữa các lượt."""
     if time.monotonic() >= moc["event_purge"]:
@@ -1088,6 +1120,13 @@ def _mot_luot_bao_tri(moc: dict) -> None:
     if time.monotonic() >= moc["metrics"]:
         _ghi_metrics()
         moc["metrics"] = time.monotonic() + METRICS_LOG_INTERVAL_S
+
+    # Việc nền của từng app (hợp đồng: `AppManifest.bao_tri`). Nằm ở đây chứ
+    # không để app tự dựng vòng lặp: cả khối `_mot_luot_bao_tri` chạy dưới lease
+    # `bao_tri`, nên việc của app tự động chạy **đúng một lần trên toàn cụm** dù
+    # có bao nhiêu tiến trình worker. App tự chạy vòng thu tiền sẽ trừ khách N
+    # lần mỗi chu kỳ — xem chú thích ở `registry.AppManifest.bao_tri`.
+    _bao_tri_cac_app(moc)
 
     if time.monotonic() >= moc["alert"]:
         _quet_canh_bao()

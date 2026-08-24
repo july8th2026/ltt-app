@@ -899,6 +899,7 @@ def developer_cli(request: Request, user=Depends(require_account),
         vscode_claude=examples.vscode_claude_settings(goc),
         vscode_codex=examples.vscode_codex_config(goc),
         vscode_bay=examples.VSCODE_BAY,
+        desktop_reg=examples.claude_desktop_registry(goc),
         bay=examples.CLI_BAY,
         model=examples.CLI_MODEL,
         env_key=examples.ENV_API_KEY)

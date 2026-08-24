@@ -358,6 +358,120 @@ def go_codex(tt: dict) -> list:
     return ra
 
 
+# ── Claude Desktop: chính sách registry, không phải tệp cấu hình ───────────
+
+#: Khoá chính sách cấp NGƯỜI DÙNG. Bản `HKLM` cần quyền quản trị và **đè** bản
+#: này — nếu máy đã có `HKLM\SOFTWARE\Policies\Claude` thì ứng dụng **bỏ qua
+#: hoàn toàn** `HKCU`, nên `xem` phải kiểm cả hai.
+REG_DESKTOP_HKCU = r"HKCU\SOFTWARE\Policies\Claude"
+REG_DESKTOP_HKLM = r"HKLM\SOFTWARE\Policies\Claude"
+
+#: Đúng tên khoá theo tài liệu chính thức của Anthropic. Mọi giá trị là `REG_SZ`,
+#: kể cả số và mảng — mảng phải là **chuỗi JSON**.
+_DESKTOP_KHOA = ("inferenceProvider", "inferenceGatewayBaseUrl",
+                 "inferenceGatewayApiKey", "inferenceGatewayAuthScheme",
+                 "inferenceModels", "modelDiscoveryEnabled")
+
+
+def _reg_ghi(khoa: str, ten: str, gt: str) -> bool:
+    try:
+        r = subprocess.run(["reg", "add", khoa, "/v", ten, "/t", "REG_SZ",
+                            "/d", gt, "/f"],
+                           capture_output=True, text=True, timeout=30)
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _reg_xoa(khoa: str, ten: str) -> bool:
+    try:
+        r = subprocess.run(["reg", "delete", khoa, "/v", ten, "/f"],
+                           capture_output=True, text=True, timeout=30)
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _reg_doc(khoa: str, ten: str) -> str | None:
+    try:
+        r = subprocess.run(["reg", "query", khoa, "/v", ten],
+                           capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            return None
+        for dong in r.stdout.splitlines():
+            if ten.lower() in dong.lower() and "REG_SZ" in dong:
+                return dong.split("REG_SZ", 1)[1].strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return None
+
+
+def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
+    r"""Cấu hình **Claude Desktop** qua chính sách registry.
+
+    * VÌ SAO KHÔNG PHẢI MỘT TỆP CẤU HÌNH. Claude Desktop cất thiết lập chạy
+      trong LevelDB của Electron — sửa tay là hỏng lặng lẽ ở lần cập nhật sau.
+      Nhưng phần **suy luận bên thứ ba** thì đọc từ **chính sách hệ điều hành**:
+      `.mobileconfig` trên macOS, **registry** trên Windows. Đó là đường dành cho
+      triển khai doanh nghiệp, và nó ổn định.
+
+    ⭐ NÊN Ô "Gateway API key" TRONG ỨNG DỤNG **KHÔNG PHẢI** LÀ ĐƯỜNG DUY NHẤT.
+      Trước khi tìm ra điều này, phần Claude Desktop bị coi là "chỉ cấu hình tay".
+
+    ⚠️ HAI CHỐT CỦA TÀI LIỆU CHÍNH THỨC, ĐỪNG ĐOÁN LẠI:
+      · `inferenceGatewayBaseUrl` **bắt buộc HTTPS** (trừ loopback);
+      · cấu hình chỉ đọc **một lần lúc khởi động** ⇒ phải **thoát hẳn** ứng dụng
+        rồi mở lại, không phải chỉ đóng cửa sổ.
+
+    ⛔ VÀ MỘT CẢNH BÁO VỀ THỨ TỰ: nếu máy đã có chính sách ở `HKLM` (do quản trị
+      viên đặt) thì ứng dụng **bỏ qua hoàn toàn** `HKCU` — cắm bằng công cụ này
+      sẽ **không có tác dụng gì** và cũng không báo lỗi. `xem` kiểm cả hai.
+    """
+    ra = []
+    if _reg_doc(REG_DESKTOP_HKLM, "inferenceProvider"):
+        ra.append("  [!!] May DA CO chinh sach o HKLM - ung dung se BO QUA HKCU.")
+        ra.append("       Phai nho quan tri vien sua o do; cam o day vo tac dung.")
+        return ra
+
+    gia_tri = {
+        "inferenceProvider": "gateway",
+        # Chi goc, KHONG kem `/v1` - ung dung tu ghep `/v1/messages`.
+        "inferenceGatewayBaseUrl": goc + "/api",
+        "inferenceGatewayApiKey": khoa,
+        "inferenceGatewayAuthScheme": "bearer",
+        "inferenceModels": '[{"name": "' + MODEL + '"}]',
+        # Tat tu do model: danh sach cua ta chi co mot ten, va mot lan do sai se
+        # lam ung dung hien nhung model no khong goi duoc.
+        "modelDiscoveryEnabled": "false",
+    }
+    ghi_nho = tt.setdefault("desktop", {}).setdefault("khoa_da_them", {})
+    for ten, gt in gia_tri.items():
+        if ten not in ghi_nho:
+            ghi_nho[ten] = _reg_doc(REG_DESKTOP_HKCU, ten)   # None = von khong co
+        ok = _reg_ghi(REG_DESKTOP_HKCU, ten, gt)
+        if ten == "inferenceGatewayApiKey":
+            ra.append(f"  [{'OK' if ok else '!!'}] {ten} (da dat, khong in ra)")
+        else:
+            ra.append(f"  [{'OK' if ok else '!!'}] {ten} = {gt}")
+    ra.append("  [!!] Phai THOAT HAN Claude Desktop roi mo lai - cau hinh chi")
+    ra.append("       duoc doc MOT LAN luc khoi dong.")
+    return ra
+
+
+def go_desktop(tt: dict) -> list:
+    ra = []
+    ghi_nho = tt.get("desktop", {}).get("khoa_da_them") or {}
+    if not ghi_nho:
+        return ra
+    for ten, cu in ghi_nho.items():
+        if cu is None:
+            ra.append(f"  [{'OK' if _reg_xoa(REG_DESKTOP_HKCU, ten) else '--'}] bo {ten}")
+        else:
+            ra.append(f"  [{'OK' if _reg_ghi(REG_DESKTOP_HKCU, ten, cu) else '!!'}] "
+                      f"tra {ten} ve gia tri cu")
+    return ra
+
+
 # ── VS Code: hai tiện ích KHÔNG dùng biến môi trường như CLI ───────────────
 
 def _vscode_settings() -> pathlib.Path:
@@ -579,6 +693,11 @@ def lenh_cam(a) -> int:
     for d in cam_vscode(a.goc, tt):
         print(d)
 
+    print("")
+    print("Claude Desktop:")
+    for d in cam_desktop(a.goc, khoa, tt):
+        print(d)
+
     print("\nKhoa:")
     for ten in (ENV_KHOA_CODEX, ENV_KHOA_CLAUDE):
         print(f"  [{'OK' if _setx(ten, khoa) else '!!'}] {ten}")
@@ -625,10 +744,16 @@ def lenh_go(a) -> int:
     print("Tien ich VS Code:")
     for d in go_vscode(tt):
         print(d)
+
+    print("")
+    print("Claude Desktop:")
+    for d in go_desktop(tt):
+        print(d)
     tt["da_cam"] = False
     tt.pop("claude", None)
     tt.pop("codex", None)
     tt.pop("vscode", None)
+    tt.pop("desktop", None)
     _ghi_trang_thai(tt)
     print("\nBan sao luu dau tien van con o cac tep `*.truoc-ltt` - khong tu xoa,")
     print("de ban doi chieu neu can. Xoa tay khi da yen tam.")
@@ -680,6 +805,16 @@ def lenh_xem(a) -> int:
     print(f"    che do Codex          : {che_do}"
           + ("   (tien ich VS Code CAN che do `vscode`)"
              if che_do == "profile" else ""))
+
+    print("")
+    print("  Claude Desktop (chinh sach registry):")
+    if _reg_doc(REG_DESKTOP_HKLM, "inferenceProvider"):
+        print("    !! CO chinh sach o HKLM - ung dung BO QUA HKCU cua ta")
+    print(f"    inferenceProvider     : {_reg_doc(REG_DESKTOP_HKCU, 'inferenceProvider') or '-'}")
+    print(f"    inferenceGatewayBaseUrl: {_reg_doc(REG_DESKTOP_HKCU, 'inferenceGatewayBaseUrl') or '-'}")
+    _k = _reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayApiKey")
+    print(f"    inferenceGatewayApiKey : {'(da dat, ' + str(len(_k)) + ' ky tu)' if _k else '-'}")
+    print(f"    inferenceModels        : {_reg_doc(REG_DESKTOP_HKCU, 'inferenceModels') or '-'}")
 
     print("\n  Bien moi truong cap nguoi dung:")
     for ten in CLAUDE_ENV:

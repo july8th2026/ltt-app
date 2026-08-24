@@ -216,8 +216,12 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # bật được nhưng không có mạng là giao một cái vỏ, và họ sẽ mất buổi chiều
         # dò trong Windows một lỗi nằm ở router.
         _bao(ctx, 75, "dang dat cho dia chi")
-        bo_dinh_tuyen.client_tu_moi_truong().dat_cho(
-            dinh_danh.mac(may.id), ip_noi_bo, ten=f"vps-{may.id[:8]}")
+        rt = bo_dinh_tuyen.client_tu_moi_truong()
+        rt.dat_cho(dinh_danh.mac(may.id), ip_noi_bo, ten=f"vps-{may.id[:8]}")
+        # Bật đếm băng thông cùng lúc với lúc cấp địa chỉ, không phải "khi nào
+        # nhớ ra": máy không nằm trong hai set đếm thì gói của nó không khớp luật
+        # đếm nào, và nó dùng bao nhiêu cũng không ai biết — im lặng.
+        rt.theo_doi_bang_thong(ip_noi_bo)
 
         # 5) Bật máy.
         _bao(ctx, 85, "dang khoi dong")
@@ -604,7 +608,7 @@ def _xoa_may(params: dict, ctx=None) -> dict:
 
 
 def _go_cho_dhcp(may: VpsInstance) -> None:
-    """Gỡ đặt chỗ DHCP của một máy sắp bị xoá.
+    """Gỡ đặt chỗ DHCP **và phép đo băng thông** của một máy sắp bị xoá.
 
     Router không trả lời thì **không chặn việc xoá máy** — máy đã đi rồi, giữ nó
     lại vì một tệp cấu hình không sửa được là chọn cái tệ hơn.
@@ -613,7 +617,13 @@ def _go_cho_dhcp(may: VpsInstance) -> None:
     chỉ**, nên máy tiếp theo nhận đúng địa chỉ này vẫn đăng ký được.
     """
     try:
-        bo_dinh_tuyen.client_tu_moi_truong().go_cho(dinh_danh.mac(may.id))
+        rt = bo_dinh_tuyen.client_tu_moi_truong()
+        rt.go_cho(dinh_danh.mac(may.id), may.ip_noi_bo or "")
+        if may.ip_noi_bo:
+            # Gỡ khỏi cả ba set. Địa chỉ này sẽ được cấp lại cho khách khác, và
+            # một bộ đếm cũ dính sang người mới là một hoá đơn sai; một cờ hãm
+            # tốc sót lại thì khách mới nhận máy chậm mà không ai hiểu vì sao.
+            rt.thoi_theo_doi(may.ip_noi_bo)
     except bo_dinh_tuyen.RouterError as exc:
         # Bắt HẸP: lỗi lập trình phải nổ lên trên.
         log.warning("VPS: khong go duoc cho DHCP cua may %s: %s", may.id, exc)

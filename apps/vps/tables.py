@@ -195,6 +195,24 @@ class VpsInstance(Base):
     xoa_sau: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
 
+    # ── Băng thông ───────────────────────────────────────────────────────────
+    #
+    # `bang_thong_byte` là số đã dùng **trong chu kỳ hiện tại**; nó về 0 mỗi lần
+    # thu một chu kỳ mới. Hai cột `moc_*` giữ lần đọc bộ đếm gần nhất trên router
+    # để tính phần chênh lệch — bộ đếm của `nft` về 0 khi router khởi động lại,
+    # nên lấy hiệu mà không xử lý việc đó sẽ cho ra số ÂM, và số âm cộng vào tổng
+    # là **hoàn lại băng thông** cho khách. Xem `apps/vps/bang_thong.py`.
+    bang_thong_byte: Mapped[int] = mapped_column(
+        BigInteger, default=0, nullable=False)
+    bang_thong_moc_len: Mapped[int] = mapped_column(
+        BigInteger, default=0, nullable=False)
+    bang_thong_moc_xuong: Mapped[int] = mapped_column(
+        BigInteger, default=0, nullable=False)
+    #: Đang bị hãm tốc vì vượt hạn mức. Lưu ở đây (không chỉ trên router) để
+    #: trang của khách nói được lý do máy chậm, thay vì để họ tự đoán.
+    bi_giam_toc: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
