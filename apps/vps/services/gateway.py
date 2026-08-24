@@ -28,6 +28,7 @@ triệu chứng sẽ là "sáng nay không ai vào được máy nữa". Nên m�
 """
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import subprocess
@@ -121,11 +122,11 @@ class GatewayClient:
         máy người khác.
         """
         ra = self._bash(f"nft -j list map ip {self.config.bang} vao")
-        import json
         try:
             doc = json.loads(ra)
-        except Exception as exc:
-            raise GatewayError(f"nft tra ve khong phai JSON: {ra[:200]}") from exc
+        except json.JSONDecodeError as exc:
+            raise GatewayError(
+                f"nft tra ve khong phai JSON ({exc}): {ra[:200]}") from exc
         ket_qua: dict[str, str] = {}
         for muc in doc.get("nftables", []):
             phan_tu = (muc.get("map") or {}).get("elem") or []

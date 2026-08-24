@@ -121,9 +121,11 @@ class VultrClient:
             return {}
         try:
             return r.json()
-        except Exception as exc:
-            raise VultrError("Vultr tra ve khong phai JSON", status=status,
-                             duong_dan=duong_dan) from exc
+        except ValueError as exc:
+            # Bắt HẸP: `JSONDecodeError` của cả stdlib lẫn requests đều là
+            # `ValueError`. `except Exception` ở đây sẽ nuốt cả lỗi lập trình.
+            raise VultrError(f"Vultr tra ve khong phai JSON: {exc}",
+                             status=status, duong_dan=duong_dan) from exc
 
     # ── đọc ──────────────────────────────────────────────────────────────────
 

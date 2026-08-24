@@ -117,12 +117,30 @@ submit → worker → poll → lấy artifact/result → usage → webhook. Nh�
 lần nghiệm thu đầy đủ **không tốn credit, không cần provider, không cần GPU** —
 kể cả với operation chạy GPU.
 
+⭐ **`image.ltt` là dòng DUY NHẤT ở bảng này được nghiệm thu bằng TIỀN THẬT**, 24/08 sau khi deploy. Cố ý: model nhà chạy trên máy B, và test-mode (EXT-12) trả kết quả giả nên **không** chạm tới GPU — tức nó chứng minh được đường ống HTTP nhưng **không** chứng minh được job thật vẽ ra ảnh thật và thu đúng tiền.
+
+Số đo, ba lượt liên tiếp qua `https://app.lttstudios.com/api/v1` (`tools/nghiem_thu_anh_e2e.py`):
+
+```
+GET  /tools            -> 200, thay ['image.ltt']
+POST /quotes           -> 200, credit = 3
+POST /jobs             -> 202, chay 120 giay tren may B
+GET  /jobs/{id}        -> succeeded, credit {held: 3, charged: 3}
+GET  /artifacts/{id}/content -> 200, 5.519.918 byte, dung chu ky PNG
+so du 30 -> 27 -> 24 -> 21   (moi luot dung 3)
+```
+
+⚠️ Bước tải ảnh về (`/artifacts/{id}/content`) **ban đầu bị bỏ sót** khỏi script nghiệm thu. `status == "succeeded"` chỉ nói worker chạy xong — nó **không** nói ảnh lấy về được. Khoá trỏ sai, URL hết hạn, hoặc quyền đọc sai đều cho ra đúng một job xanh với `outputs` trông đẹp. Khách trả tiền để **lấy được ảnh**, nên phép nghiệm thu phải kiểm đúng thứ đó.
+
+🔑 Khoá nghiệm thu đã **thu hồi** ngay sau đó (A4) — nó tiêu được tiền thật.
+
 | Operation | Chế độ | Schema + mô tả từng tham số | Scope | Quote trước khi tính tiền | Idempotency | Upload | Artifact | Usage | Webhook | Playground | Sandbox | Admin |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `image.thumbnail` | ASYNC_JOB | ✅ | `jobs:create` | ✅ | ✅ | — | ✅ ảnh | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `image.generate` | ASYNC_JOB | ✅ | `jobs:create` | ✅ | ✅ | ✅ ảnh tham chiếu | ✅ ảnh | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `image.upscale` | ASYNC_JOB | ✅ | `jobs:create` | ✅ | ✅ | ✅ bắt buộc | ✅ ảnh | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `text.prompt_package` | ASYNC_JOB | ✅ | `jobs:create` | ✅ | ✅ | — | — dữ liệu | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `image.ltt` | ASYNC_JOB | ✅ | `jobs:create` | ✅ | ✅ | — | ✅ ảnh | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `story.storyboard` | ASYNC_JOB | ✅ | `jobs:create` | ✅ | ✅ | — | — dữ liệu | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 Các cột không đánh theo tài liệu mà theo **kết quả chạy**: `test_212` gọi thật

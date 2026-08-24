@@ -158,10 +158,15 @@ def _tao_may(params: dict, ctx=None) -> dict:
         _bao(ctx, 85, "dang khoi dong")
         client.bat(may.vmid)
 
+        # 6) IP công khai riêng. Mỗi máy một IP — xem `docs/VPS/GIAO_DIEN.md`.
+        _bao(ctx, 92, "dang cap dia chi cong khai")
+        ip_cong_khai = _cap_ip_cong_khai(db, may, gateway, ip_noi_bo)
+
         may.trang_thai = "dang_chay"
         may.ly_do = ""
         provisioning.ghi_su_kien(db, may.id, "tao_xong", boi="he_thong",
-                                 vmid=may.vmid, ip_noi_bo=ip_noi_bo)
+                                 vmid=may.vmid, ip_noi_bo=ip_noi_bo,
+                                 ip_cong_khai=ip_cong_khai)
         db.commit()
         _bao(ctx, 100, "xong")
 
@@ -173,7 +178,7 @@ def _tao_may(params: dict, ctx=None) -> dict:
             "instance_id": may.id,
             "vmid": may.vmid,
             "ip_noi_bo": ip_noi_bo,
-            "dia_chi": _ip_cong_khai(db, may.id),
+            "dia_chi": ip_cong_khai,
             "he_dieu_hanh": img.ten,
         }
     except Exception as exc:
@@ -214,6 +219,83 @@ def _dia_goc(client, vmid: int) -> str:
         if gt and "media=cdrom" not in gt:
             return bus
     raise VpsJobError(f"khong tim thay dia he dieu hanh cua VM {vmid}")
+
+
+def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
+    """Mua một IP công khai, gắn vào cổng vào, rồi mở đường 1:1 tới máy.
+
+    **Thứ tự ở đây là thứ tự chống rò tiền, không phải thứ tự cho gọn.**
+
+    Ghi vào CSDL NGAY sau khi mua, TRƯỚC khi gắn: nếu tiến trình chết giữa
+    chừng, ta vẫn còn `vultr_id` để trả IP về. Làm ngược lại — gắn xong mới ghi —
+    thì một lần chết là một IP mồ côi, **$3/tháng chảy mãi mà không ai biết nó
+    của máy nào**. Cùng loại lỗi với H38 và với lỗi tiền của model nhà: thế giới
+    thật đã đổi mà sổ sách chưa ghi.
+
+    Chạy lại được: đã có bản ghi thì dùng lại, chỉ mở lại đường (thao tác mở
+    đường tự nó cũng chạy lại được).
+    """
+    from sqlalchemy import select
+
+    from apps.vps.services import gateway as cong_vao
+    from apps.vps.services import vultr as nha_cung_cap
+    from apps.vps.tables import VpsIp
+
+    if not gateway.cho_phep_ip_rieng:
+        return ""
+
+    cu = db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
+    if cu is None:
+        khach = nha_cung_cap.client_tu_moi_truong()
+        ip = khach.tao_ip(may.id[:8])
+        cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
+                   vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
+        db.add(cu)
+        db.commit()                     # ← ghi TRƯỚC khi gắn. Xem docstring.
+        khach.gan_ip(ip["id"], _id_cong_vao(gateway, khach))
+
+    cong_vao.client_tu_moi_truong().mo_duong(cu.dia_chi, ip_noi_bo)
+    return str(cu.dia_chi)
+
+
+def _id_cong_vao(gateway, khach) -> str:
+    """Id của cổng vào bên nhà cung cấp. Khai sẵn thì dùng, chưa thì tra theo nhãn."""
+    if gateway.nha_cung_cap_id:
+        return str(gateway.nha_cung_cap_id)
+    return str(khach.instance_theo_nhan(gateway.ten)["id"])
+
+
+def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
+    """Đóng đường rồi trả IP về cho nhà cung cấp — tức **ngừng tính tiền**.
+
+    Ngược thứ tự với lúc cấp: đóng đường trước (để không còn ai đi qua), rồi mới
+    gỡ và xoá. Lỗi ở bất kỳ bước nào cũng **không** được chặn việc xoá máy —
+    nhưng phải ghi lại, vì một IP không trả về là tiền chảy mãi.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.services import gateway as cong_vao
+    from apps.vps.services import vultr as nha_cung_cap
+    from apps.vps.tables import VpsIp
+
+    for ip in db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars():
+        try:
+            if may.ip_noi_bo:
+                cong_vao.client_tu_moi_truong().dong_duong(ip.dia_chi, may.ip_noi_bo)
+            khach = nha_cung_cap.client_tu_moi_truong()
+            if ip.vultr_id:
+                khach.go_ip(ip.vultr_id)
+                khach.xoa_ip(ip.vultr_id)
+        except (nha_cung_cap.VultrError, cong_vao.GatewayError) as exc:
+            # Bắt HẸP, không `except Exception`: lỗi lập trình phải nổ lên trên.
+            # Còn nhà cung cấp từ chối hay cổng vào không trả lời thì KHÔNG được
+            # chặn việc xoá máy — nhưng phải ghi lại, vì một IP không trả về là
+            # tiền chảy mãi.
+            log.warning("VPS: khong tra duoc IP %s cua may %s: %s",
+                        ip.dia_chi, may.id, exc)
+            provisioning.ghi_su_kien(
+                db, may.id, "ip_chua_tra_duoc", boi="he_thong",
+                dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
 
 
 def _ip_cong_khai(db, instance_id: str) -> str:
@@ -301,6 +383,8 @@ def _xoa_may(params: dict, ctx=None) -> dict:
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)
 
+        _bao(ctx, 80, "dang tra dia chi cong khai")
+        _tra_ip_cong_khai(db, may)
         _nha_tai_nguyen(db, may)
         may.trang_thai = "da_xoa"
         provisioning.ghi_su_kien(db, may.id, "da_xoa",

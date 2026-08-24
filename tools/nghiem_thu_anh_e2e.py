@@ -1,12 +1,12 @@
 """
-nghiem_thu_anh_e2e.py — nghiệm thu `image.ltt` **từ ngoài vào**, qua Cloudflare. (H37/G10, C4)
+nghiem_thu_anh_e2e.py - nghiệm thu `image.ltt` **từ ngoài vào**, qua Cloudflare. (H37/G10, C4)
 
     python tools\\nghiem_thu_anh_e2e.py chuan_bi --token-file C:\\tmp\\anh_tok.txt
     python tools\\nghiem_thu_anh_e2e.py chay     --token-file C:\\tmp\\anh_tok.txt
     python tools\\nghiem_thu_anh_e2e.py don
 
-⭐ VÌ SAO KHÔNG DÙNG `api_prod_canary.py`. Khoá của canary cố ý **không** có
-   `jobs:create` — nó là canary chỉ-đọc, và docstring của nó nói rõ rằng cho
+* VÌ SAO KHÔNG DÙNG `api_prod_canary.py`. Khoá của canary cố ý **không** có
+   `jobs:create` - nó là canary chỉ-đọc, và docstring của nó nói rõ rằng cho
    đường tạo job chạy trên production "chỉ để lấy số" là tiêu tiền thật cho một
    phép đo không đòi.
 
@@ -15,17 +15,17 @@ nghiem_thu_anh_e2e.py — nghiệm thu `image.ltt` **từ ngoài vào**, qua Clo
    xanh vẫn để lọt lỗi `VARCHAR(36)` tới đúng lượt gọi thật đầu tiên, vì SQLite
    không ép độ dài mà PostgreSQL thì ép.
 
-⛔ NÊN KHOÁ NÀY TIÊU ĐƯỢC TIỀN, và đó là chủ ý. Ba hàng rào bù lại:
+!! NÊN KHOÁ NÀY TIÊU ĐƯỢC TIỀN, và đó là chủ ý. Ba hàng rào bù lại:
 
      ① tài khoản RIÊNG (`EMAIL` dưới đây), không phải admin;
-     ② nạp đúng `CREDIT` credit — đủ vài lượt, không đủ để một vòng lặp hỏng
+     ② nạp đúng `CREDIT` credit - đủ vài lượt, không đủ để một vòng lặp hỏng
         tiêu hết tiền thật;
      ③ `allowed_tools` chỉ có `image.ltt`. Khoá này không gọi được gì khác.
 
    Và `don` thu hồi khoá. Chạy nó khi xong.
 
-⚠️ ĐI QUA ĐỊA CHỈ CÔNG KHAI, không loopback. Loopback bỏ qua Cloudflare, mà
-   Cloudflare là nơi lỗi 403-vì-User-Agent và 524-vì-timeout xuất hiện — hai thứ
+!!️ ĐI QUA ĐỊA CHỈ CÔNG KHAI, không loopback. Loopback bỏ qua Cloudflare, mà
+   Cloudflare là nơi lỗi 403-vì-User-Agent và 524-vì-timeout xuất hiện - hai thứ
    đã dính thật ở H38.
 """
 from __future__ import annotations
@@ -36,6 +36,21 @@ import pathlib
 import secrets
 import sys
 import time
+
+# !! Console Windows mac dinh la cp1252. Mot ky tu ngoai ASCII trong `print`
+#    lam script CHET - va o day no chet SAU khi da tieu tien that va job da
+#    chay xong, tuc mat dung phan doi soat la ly do cua ca script. Da dinh
+#    24/08. Ep UTF-8 mot lan o day re hon viec canh tung dong print.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    # Bat HEP, khong `except Exception: pass`. Hai truong hop that su xay ra:
+    # `reconfigure` thieu tren Python cu (AttributeError), va stdout da bi thay
+    # boi mot doi tuong khong doi duoc ma hoa (ValueError). Bat rong hon la nuot
+    # ca nhung loi ta chua tung nghi toi - va banh coc `check_silent_except`
+    # dem dung dieu do, `# noqa` khong lam no im.
+    pass
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(GOC))
@@ -53,7 +68,7 @@ def _nap_env() -> None:
 
     tep = pathlib.Path(r"C:\LTTPlatform\secrets\app.env")
     if not tep.exists():
-        raise SystemExit(f"khong thay {tep} — day khong phai may chu?")
+        raise SystemExit(f"khong thay {tep} - day khong phai may chu?")
     for dong in tep.read_text(encoding="utf-8-sig").splitlines():
         dong = dong.strip()
         if dong and not dong.startswith("#") and "=" in dong:
@@ -156,7 +171,12 @@ def chay(a) -> int:
     truoc = (r.json() or {}).get("balance")
     print(f"     balance = {truoc}")
 
-    than = {"tool": TOOL, "params": {"prompt": a.prompt, "count": 1, "mode": "t2i"}}
+    # !! Ten truong la `input`, KHONG phai `params` - va quote tra ve `quote`
+    #    (mot token da ky), KHONG phai `id`. Ban dau toi doan hai ten nay tu
+    #    ten bien noi bo cua handler; hop dong cong khai o `server/api/jobs.py`
+    #    moi la nguon. Doan sai o day tra ve HTTP 400 rat ro rang, nhung neu
+    #    doan sai o mot truong KHONG bat buoc thi no im lang.
+    than = {"tool": TOOL, "input": {"prompt": a.prompt, "count": 1, "mode": "t2i"}}
 
     print("== 3. Bao gia")
     r = ra("POST /quotes", kh.post("/quotes", json=than))
@@ -164,11 +184,15 @@ def chay(a) -> int:
         print(f"     {r.text[:400]}")
         return 1
     quote = r.json()
-    print(f"     credit bao gia = {quote.get('credit')}  quote_id = {quote.get('id')}")
+    ve = quote.get("quote")
+    if not ve:
+        print(f"     DUNG: /quotes khong tra ve truong `quote`: {r.text[:300]}")
+        return 1
+    print(f"     credit bao gia = {quote.get('credit')}  (quote dai {len(ve)} ky tu)")
 
     print("== 4. Nop job")
     idem = "nt-anh-" + secrets.token_hex(8)
-    r = ra("POST /jobs", kh.post("/jobs", json={**than, "quote_id": quote.get("id")},
+    r = ra("POST /jobs", kh.post("/jobs", json={**than, "quote": ve},
                                  headers={"Idempotency-Key": idem}))
     if r.status_code not in (200, 201, 202):
         print(f"     {r.text[:400]}")
@@ -194,6 +218,34 @@ def chay(a) -> int:
     print(f"     status cuoi = {(cuoi or {}).get('status')}")
     print(json.dumps(cuoi, ensure_ascii=False, indent=2)[:1400])
 
+    # !! BUOC NAY LA PHAN CON LAI CUA A1, VA BAN DAU TOI DA BO SOT NO.
+    #    `status == "succeeded"` chi noi worker chay xong. No KHONG noi anh co
+    #    that su lay ve duoc: khoa co the tro toi mot doi tuong khong ton tai,
+    #    presigned URL co the het han, hoac quyen doc co the sai. Ca ba deu cho
+    #    ra dung mot job xanh voi mot `outputs` trong rong dep de.
+    #    Khach tra tien de LAY DUOC ANH, khong phai de job doi mau.
+    print("== 5b. Tai anh ve THAT")
+    outs = (cuoi or {}).get("outputs") or []
+    if not outs:
+        print("     DUNG: job succeeded nhung KHONG co output nao.")
+        return 1
+    for o in outs:
+        aid = o.get("id")
+        r = kh.get(f"/artifacts/{aid}")
+        if r.status_code != 200:
+            print(f"     HONG: GET /artifacts/{aid} -> {r.status_code}: {r.text[:200]}")
+            return 1
+        r = kh.get(f"/artifacts/{aid}/content")
+        n = len(r.content or b"")
+        # PNG bat dau bang PNG; JPEG bang ÿØ. Kiem tra vai byte dau
+        # re hon nhieu so voi viec tin vao Content-Type do may chu tu khai.
+        dau = (r.content or b"")[:4]
+        la_anh = dau[:4] == bytes([0x89, 0x50, 0x4E, 0x47]) or dau[:2] == bytes([0xFF, 0xD8])
+        print(f"     {aid[:8]}... -> HTTP {r.status_code}, {n} byte, la anh: {la_anh}")
+        if r.status_code != 200 or n < 1024 or not la_anh:
+            print("     HONG: noi dung khong phai mot tam anh dung nghia.")
+            return 1
+
     print("== 6. So du sau, va doi soat")
     r = ra("GET /credits/balance", kh.get("/credits/balance"))
     sau = (r.json() or {}).get("balance")
@@ -201,7 +253,7 @@ def chay(a) -> int:
     print(f"     bao gia luc dau: {quote.get('credit')}")
     tinh = ((cuoi or {}).get("credit") or {})
     print(f"     job.credit: {json.dumps(tinh, ensure_ascii=False)}")
-    print("     ⇒ 'charged' phai bang so credit THAT SU tru, va <= bao gia.")
+    print("     => 'charged' phai bang so credit THAT SU tru, va <= bao gia.")
     return 0 if (cuoi or {}).get("status") == "succeeded" else 1
 
 
@@ -215,15 +267,28 @@ def don(a) -> int:
     try:
         user = _tim(db)
         if user is None:
-            print("khong co tai khoan nghiem thu — khong co gi de don")
+            print("khong co tai khoan nghiem thu - khong co gi de don")
             return 0
         rows = db.execute(sa.select(DeveloperApiKey).where(
             DeveloperApiKey.user_id == user.id,
             DeveloperApiKey.revoked_at.is_(None))).scalars().all()
         for row in rows:
-            devkeys.revoke(db, row.key_id)
+            # `revoke` nhan chinh HANG (DeveloperApiKey), khong phai `key_id`.
+            # Truyen chuoi vao thi no chet ngay o `key.revoked_at` - to va som,
+            # va do la may man: mot lenh THU HOI that bai IM LANG se de mot khoa
+            # TIEU DUOC TIEN THAT nam lai, trong khi bao cao van ghi "da don".
+            devkeys.revoke(db, row)
         db.commit()
-        print(f"da thu hoi {len(rows)} khoa")
+        # Doc lai tu CSDL de chac chan, thay vi tin vao gia tri tra ve. Day la
+        # buoc cuoi cua mot quy trinh tieu tien that; "da goi ham" khong bang
+        # "da kiem lai va dung la khong con khoa nao song".
+        con = db.execute(sa.select(sa.func.count()).select_from(DeveloperApiKey).where(
+            DeveloperApiKey.user_id == user.id,
+            DeveloperApiKey.revoked_at.is_(None))).scalar_one()
+        print(f"da thu hoi {len(rows)} khoa; con song: {con}")
+        if con:
+            print("HONG: van con khoa chua thu hoi.")
+            return 1
         return 0
     finally:
         _dong(gen)

@@ -81,6 +81,10 @@ class VpsGateway(Base):
     #: Tên miền ổn định trỏ tới cổng. Đổi nhà cung cấp mà khách không phải đổi gì.
     ten_mien: Mapped[str] = mapped_column(String(190), default="", nullable=False)
     wg_endpoint: Mapped[str] = mapped_column(String(190), default="", nullable=False)
+    #: Id của chính cổng vào bên nhà cung cấp (Vultr `instances`). Cần nó để gắn
+    #: Reserved IP. Tra theo nhãn mỗi lần là một vòng gọi API thừa và một chỗ để
+    #: sai: đổi tên trên bảng điều khiển là app không tìm thấy nữa.
+    nha_cung_cap_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     #: Dải octet được phép cấp cho máy khách trong `subnet_cidr`. Đóng ở hai
     #: đầu. Thay cho dải cổng của mô hình cũ: từ 2026-08-24 **mỗi máy một IP
     #: công khai riêng**, không chia cổng nữa, nên thứ khan hiếm cần cấp phát

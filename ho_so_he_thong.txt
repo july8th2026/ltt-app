@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7ed8decf17278db4187da0cec4b08b88711995c86421e4901325a22a208754ed
-Nguồn đã quét : 1302 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:c28b14f10e46d245a214d993d5dd86bb6689e85e60f3cf9aa50925c35cfbf139
+Nguồn đã quét : 1305 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -955,12 +955,12 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - singleton_leases → SingletonLease | platform_core/models.py:835
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
-- vps_event → VpsEvent | apps/vps/tables.py:213
+- vps_event → VpsEvent | apps/vps/tables.py:217
 - vps_gateway → VpsGateway | apps/vps/tables.py:66
-- vps_instance → VpsInstance | apps/vps/tables.py:157
-- vps_ip → VpsIp | apps/vps/tables.py:125
+- vps_instance → VpsInstance | apps/vps/tables.py:161
+- vps_ip → VpsIp | apps/vps/tables.py:129
 
-6. ALEMBIC MIGRATIONS (49)
+6. ALEMBIC MIGRATIONS (50)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -1010,6 +1010,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 8b2c5d1e40a7 ← c1f4a2b70e51 | vps: cot mo ta MANG RIENG ma mot cong vao phuc vu (H39 P1) | alembic/versions/20260823_1000_vps_gateway_mang.py
 - 4d7e91c2a6b8 ← 8b2c5d1e40a7 | vps: dai cong DA NAP SAN DNAT tren gateway (H39, mo hinh CHIA CONG) | alembic/versions/20260823_1800_vps_dnat_da_nap.py
 - 6f2a91d47c30 ← 4d7e91c2a6b8 | vps: doi tu chia cong sang MOT IP CONG KHAI cho MOT VM (H39/G2) | alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
+- 9c3b18e5f27a ← 6f2a91d47c30 | vps: id cua cong vao ben nha cung cap (H39/G2) | alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1175,7 +1176,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (292 file pytest + 3 frontend)
+10. QUALITY GATES (293 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1408,6 +1409,7 @@ Test inventory:
 - tests/test_276_gia_anh_that.py
 - tests/test_277_tham_cong_anh.py
 - tests/test_278_nhuong_card.py
+- tests/test_279_vps_ip_cong_khai.py
 - tests/test_27_phase5_wiring.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
@@ -1494,8 +1496,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1302 file)
-Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1001, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1305 file)
+Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1003, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1508,7 +1510,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (51)
+[alembic] (52)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1560,6 +1562,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - alembic/versions/20260823_1000_vps_gateway_mang.py
 - alembic/versions/20260823_1800_vps_dnat_da_nap.py
 - alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
+- alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2445,7 +2448,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (309)
+[tests] (310)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2689,6 +2692,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_276_gia_anh_that.py
 - tests/test_277_tham_cong_anh.py
 - tests/test_278_nhuong_card.py
+- tests/test_279_vps_ip_cong_khai.py
 - tests/test_27_phase5_wiring.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
@@ -2756,7 +2760,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (84)
+[tools] (85)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2841,6 +2845,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - tools/upscale_gpu_smoke.py
 - tools/upscale_option_matrix.py
 - tools/vps_doctor.py
+- tools/vps_gateway/cai-dat-cong-vao.sh
 
 [utils] (8)
 - utils/__init__.py
@@ -2864,7 +2869,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1302 file; 12013730 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1305 file; 12034258 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7077,6 +7082,41 @@ def downgrade() -> None:
                                    server_default="0"))
         b.drop_column("octet_cuoi")
         b.drop_column("octet_dau")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
+SHA256=2759f12190fdc686a8c33ecef28f1721db4038d335fe1f6506924ef2d51692db BYTES=792 LINES=29
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""vps: id cua cong vao ben nha cung cap (H39/G2)
+
+Muon gan mot Reserved IP vao cong vao thi phai biet id cua no ben Vultr. Tim
+theo NHAN moi lan la mot vong goi API thua va mot cho de sai: doi ten cong vao
+tren bang dieu khien la app khong tim thay nua, va no hong dung luc khach dang
+cho may.
+
+Revision ID: 9c3b18e5f27a
+Revises: 6f2a91d47c30
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "9c3b18e5f27a"
+down_revision = "6f2a91d47c30"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("vps_gateway",
+                  sa.Column("nha_cung_cap_id", sa.String(64), nullable=False,
+                            server_default=""))
+
+
+def downgrade() -> None:
+    op.drop_column("vps_gateway", "nha_cung_cap_id")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -34500,7 +34540,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=09093b63ba89df05734b3ed684c6ecb3c1af2d7a9702b134a2af7d8de97ab8c5 BYTES=14403 LINES=332
+SHA256=98f43e6709ae62b00eee0a1d5abe02d5ffbfb544a6803b9225dcab8e138ffc19 BYTES=18504 LINES=416
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34662,10 +34702,15 @@ def _tao_may(params: dict, ctx=None) -> dict:
         _bao(ctx, 85, "dang khoi dong")
         client.bat(may.vmid)
 
+        # 6) IP công khai riêng. Mỗi máy một IP — xem `docs/VPS/GIAO_DIEN.md`.
+        _bao(ctx, 92, "dang cap dia chi cong khai")
+        ip_cong_khai = _cap_ip_cong_khai(db, may, gateway, ip_noi_bo)
+
         may.trang_thai = "dang_chay"
         may.ly_do = ""
         provisioning.ghi_su_kien(db, may.id, "tao_xong", boi="he_thong",
-                                 vmid=may.vmid, ip_noi_bo=ip_noi_bo)
+                                 vmid=may.vmid, ip_noi_bo=ip_noi_bo,
+                                 ip_cong_khai=ip_cong_khai)
         db.commit()
         _bao(ctx, 100, "xong")
 
@@ -34677,7 +34722,7 @@ def _tao_may(params: dict, ctx=None) -> dict:
             "instance_id": may.id,
             "vmid": may.vmid,
             "ip_noi_bo": ip_noi_bo,
-            "dia_chi": _ip_cong_khai(db, may.id),
+            "dia_chi": ip_cong_khai,
             "he_dieu_hanh": img.ten,
         }
     except Exception as exc:
@@ -34718,6 +34763,83 @@ def _dia_goc(client, vmid: int) -> str:
         if gt and "media=cdrom" not in gt:
             return bus
     raise VpsJobError(f"khong tim thay dia he dieu hanh cua VM {vmid}")
+
+
+def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
+    """Mua một IP công khai, gắn vào cổng vào, rồi mở đường 1:1 tới máy.
+
+    **Thứ tự ở đây là thứ tự chống rò tiền, không phải thứ tự cho gọn.**
+
+    Ghi vào CSDL NGAY sau khi mua, TRƯỚC khi gắn: nếu tiến trình chết giữa
+    chừng, ta vẫn còn `vultr_id` để trả IP về. Làm ngược lại — gắn xong mới ghi —
+    thì một lần chết là một IP mồ côi, **$3/tháng chảy mãi mà không ai biết nó
+    của máy nào**. Cùng loại lỗi với H38 và với lỗi tiền của model nhà: thế giới
+    thật đã đổi mà sổ sách chưa ghi.
+
+    Chạy lại được: đã có bản ghi thì dùng lại, chỉ mở lại đường (thao tác mở
+    đường tự nó cũng chạy lại được).
+    """
+    from sqlalchemy import select
+
+    from apps.vps.services import gateway as cong_vao
+    from apps.vps.services import vultr as nha_cung_cap
+    from apps.vps.tables import VpsIp
+
+    if not gateway.cho_phep_ip_rieng:
+        return ""
+
+    cu = db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
+    if cu is None:
+        khach = nha_cung_cap.client_tu_moi_truong()
+        ip = khach.tao_ip(may.id[:8])
+        cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
+                   vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
+        db.add(cu)
+        db.commit()                     # ← ghi TRƯỚC khi gắn. Xem docstring.
+        khach.gan_ip(ip["id"], _id_cong_vao(gateway, khach))
+
+    cong_vao.client_tu_moi_truong().mo_duong(cu.dia_chi, ip_noi_bo)
+    return str(cu.dia_chi)
+
+
+def _id_cong_vao(gateway, khach) -> str:
+    """Id của cổng vào bên nhà cung cấp. Khai sẵn thì dùng, chưa thì tra theo nhãn."""
+    if gateway.nha_cung_cap_id:
+        return str(gateway.nha_cung_cap_id)
+    return str(khach.instance_theo_nhan(gateway.ten)["id"])
+
+
+def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
+    """Đóng đường rồi trả IP về cho nhà cung cấp — tức **ngừng tính tiền**.
+
+    Ngược thứ tự với lúc cấp: đóng đường trước (để không còn ai đi qua), rồi mới
+    gỡ và xoá. Lỗi ở bất kỳ bước nào cũng **không** được chặn việc xoá máy —
+    nhưng phải ghi lại, vì một IP không trả về là tiền chảy mãi.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.services import gateway as cong_vao
+    from apps.vps.services import vultr as nha_cung_cap
+    from apps.vps.tables import VpsIp
+
+    for ip in db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars():
+        try:
+            if may.ip_noi_bo:
+                cong_vao.client_tu_moi_truong().dong_duong(ip.dia_chi, may.ip_noi_bo)
+            khach = nha_cung_cap.client_tu_moi_truong()
+            if ip.vultr_id:
+                khach.go_ip(ip.vultr_id)
+                khach.xoa_ip(ip.vultr_id)
+        except (nha_cung_cap.VultrError, cong_vao.GatewayError) as exc:
+            # Bắt HẸP, không `except Exception`: lỗi lập trình phải nổ lên trên.
+            # Còn nhà cung cấp từ chối hay cổng vào không trả lời thì KHÔNG được
+            # chặn việc xoá máy — nhưng phải ghi lại, vì một IP không trả về là
+            # tiền chảy mãi.
+            log.warning("VPS: khong tra duoc IP %s cua may %s: %s",
+                        ip.dia_chi, may.id, exc)
+            provisioning.ghi_su_kien(
+                db, may.id, "ip_chua_tra_duoc", boi="he_thong",
+                dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
 
 
 def _ip_cong_khai(db, instance_id: str) -> str:
@@ -34805,6 +34927,8 @@ def _xoa_may(params: dict, ctx=None) -> dict:
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)
 
+        _bao(ctx, 80, "dang tra dia chi cong khai")
+        _tra_ip_cong_khai(db, may)
         _nha_tai_nguyen(db, may)
         may.trang_thai = "da_xoa"
         provisioning.ghi_su_kien(db, may.id, "da_xoa",
@@ -35719,7 +35843,7 @@ def kho_lon_nhat(kho: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/gateway.py
-SHA256=fc4b54f1c5d7d37fdab22a68fdaa48f726d46bc0ac68f7cc43ad0217f4c5141a BYTES=9707 LINES=193
+SHA256=13672c4af896170f58d0c271164c538c105c0b9b51d77e2d66fb3b38d9a808ce BYTES=9735 LINES=194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Điều khiển cổng vào Linux: mở và đóng đường NAT 1:1 cho một máy khách.
 
@@ -35751,6 +35875,7 @@ triệu chứng sẽ là "sáng nay không ai vào được máy nữa". Nên m�
 """
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import subprocess
@@ -35844,11 +35969,11 @@ class GatewayClient:
         máy người khác.
         """
         ra = self._bash(f"nft -j list map ip {self.config.bang} vao")
-        import json
         try:
             doc = json.loads(ra)
-        except Exception as exc:
-            raise GatewayError(f"nft tra ve khong phai JSON: {ra[:200]}") from exc
+        except json.JSONDecodeError as exc:
+            raise GatewayError(
+                f"nft tra ve khong phai JSON ({exc}): {ra[:200]}") from exc
         ket_qua: dict[str, str] = {}
         for muc in doc.get("nftables", []):
             phan_tu = (muc.get("map") or {}).get("elem") or []
@@ -36657,7 +36782,7 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/vultr.py
-SHA256=9f83ea8329d64d7109c852719626b27761e36f02f895cbfb7162973eacaf336e BYTES=9588 LINES=203
+SHA256=d449367856a6a6670f5182c0c96217eddd9bdab9dcdf90ea8dfafbcdab60c9c1 BYTES=9780 LINES=205
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Driver Vultr — chỉ đủ để mua, gắn, gỡ và trả lại **IP công khai**.
 
@@ -36782,9 +36907,11 @@ class VultrClient:
             return {}
         try:
             return r.json()
-        except Exception as exc:
-            raise VultrError("Vultr tra ve khong phai JSON", status=status,
-                             duong_dan=duong_dan) from exc
+        except ValueError as exc:
+            # Bắt HẸP: `JSONDecodeError` của cả stdlib lẫn requests đều là
+            # `ValueError`. `except Exception` ở đây sẽ nuốt cả lỗi lập trình.
+            raise VultrError(f"Vultr tra ve khong phai JSON: {exc}",
+                             status=status, duong_dan=duong_dan) from exc
 
     # ── đọc ──────────────────────────────────────────────────────────────────
 
@@ -36866,7 +36993,7 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/tables.py
-SHA256=47db61eb0db0a7a6a1072059b9ca3178694d4671daf827d012bb8fa0f622195f BYTES=13494 LINES=236
+SHA256=438d50a0477e0668af2af76de7cc4f6768dd0a3e704596e78b94d49cdc417c12 BYTES=13871 LINES=240
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
@@ -36951,6 +37078,10 @@ class VpsGateway(Base):
     #: Tên miền ổn định trỏ tới cổng. Đổi nhà cung cấp mà khách không phải đổi gì.
     ten_mien: Mapped[str] = mapped_column(String(190), default="", nullable=False)
     wg_endpoint: Mapped[str] = mapped_column(String(190), default="", nullable=False)
+    #: Id của chính cổng vào bên nhà cung cấp (Vultr `instances`). Cần nó để gắn
+    #: Reserved IP. Tra theo nhãn mỗi lần là một vòng gọi API thừa và một chỗ để
+    #: sai: đổi tên trên bảng điều khiển là app không tìm thấy nữa.
+    nha_cung_cap_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     #: Dải octet được phép cấp cho máy khách trong `subnet_cidr`. Đóng ở hai
     #: đầu. Thay cho dải cổng của mô hình cũ: từ 2026-08-24 **mỗi máy một IP
     #: công khai riêng**, không chia cổng nữa, nên thứ khan hiếm cần cấp phát
@@ -225236,6 +225367,224 @@ def test_hai_tien_trinh_python_van_BAN_du_tai_thap():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_279_vps_ip_cong_khai.py
+SHA256=56506d49d265f1239d8ced2a23d335f56d13a5fd59708e1bcd52873f289d1efd BYTES=9109 LINES=212
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H39/G2 — driver Vultr và driver cổng vào.
+
+Hai driver này cầm hai thứ nguy hiểm nhất của app VPS: **tiền chảy hàng tháng**
+(mỗi IP $3) và **đường vào của khách** (nftables trên cổng vào). Nên test ở đây
+không kiểm "hàm chạy được không" mà kiểm đúng bốn thứ có thể làm hỏng thật:
+
+1. Không đụng tới instance của người khác — tài khoản Vultr từng chạy 17 máy
+   phục vụ mảng kinh doanh khác của chủ sản phẩm.
+2. Không xoá IP không phải của app.
+3. Mở/đóng đường phải **chạy lại được**, vì job có thể chạy lại bất cứ lúc nào.
+4. Địa chỉ đi vào shell của cổng vào phải được kiểm trước.
+"""
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from apps.vps.services import gateway as gw
+from apps.vps.services import vultr as vt
+
+
+# ── giả lập tầng vận chuyển ──────────────────────────────────────────────────
+
+class _PhanHoi:
+    def __init__(self, status: int, body):
+        self.status_code = status
+        self._body = body
+        self.text = body if isinstance(body, str) else json.dumps(body)
+
+    def json(self):
+        if isinstance(self._body, str):
+            raise ValueError("khong phai JSON")
+        return self._body
+
+
+class _Session:
+    """Session giả: trả phản hồi theo (method, path) và ghi lại mọi lượt gọi."""
+
+    def __init__(self, bang: dict):
+        self.bang = bang
+        self.da_goi: list[tuple[str, str, dict | None]] = []
+
+    def request(self, method, url, **kw):
+        duong_dan = url.replace(vt.API, "")
+        than = json.loads(kw["data"]) if kw.get("data") else None
+        self.da_goi.append((method, duong_dan, than))
+        kq = self.bang.get((method, duong_dan))
+        if kq is None:
+            return _PhanHoi(404, {"error": f"khong khai {method} {duong_dan}"})
+        return _PhanHoi(*kq) if isinstance(kq, tuple) else _PhanHoi(200, kq)
+
+
+def _client(bang):
+    s = _Session(bang)
+    return vt.VultrClient(vt.VultrConfig(api_key="x", vung="sgp"), session=s), s
+
+
+# ── 1. Vultr: vòng đời một IP ────────────────────────────────────────────────
+
+def test_tao_ip_luon_gan_tien_to_nhan_cua_app():
+    """Nhãn là thứ duy nhất phân biệt IP của app với IP của việc khác trên cùng
+    tài khoản. Thiếu tiền tố thì `xoa_ip` sau này sẽ từ chối chính nó."""
+    c, s = _client({("POST", "/reserved-ips"):
+                    {"reserved_ip": {"id": "abc", "subnet": "45.77.45.29"}}})
+    ip = c.tao_ip("may-123")
+    assert ip == {"id": "abc", "dia_chi": "45.77.45.29",
+                  "nhan": "ltt-vps-may-123"}
+    assert s.da_goi[0][2]["label"].startswith(vt.TIEN_TO_NHAN)
+    assert s.da_goi[0][2]["region"] == "sgp"
+
+
+def test_tao_ip_thieu_id_hoac_dia_chi_thi_NEM_chu_khong_tra_ve_rong():
+    """Trả về một IP rỗng nghĩa là app ghi bản ghi trống rồi mất dấu $3/tháng."""
+    c, _ = _client({("POST", "/reserved-ips"): {"reserved_ip": {"id": "abc"}}})
+    with pytest.raises(vt.VultrError) as e:
+        c.tao_ip("may-123")
+    assert "thieu id/subnet" in str(e.value)
+
+
+def test_xoa_ip_TU_CHOI_khi_nhan_khong_phai_cua_app():
+    """Hàng rào chính: một id truyền nhầm không được phép xoá IP của người khác."""
+    c, s = _client({("GET", "/reserved-ips/xyz"):
+                    {"reserved_ip": {"id": "xyz", "subnet": "1.2.3.4",
+                                     "label": "may-chu-mail"}}})
+    with pytest.raises(vt.VultrError) as e:
+        c.xoa_ip("xyz")
+    assert "tu choi xoa" in str(e.value)
+    assert not any(m == "DELETE" for m, _, _ in s.da_goi), "khong duoc goi DELETE"
+
+
+def test_xoa_ip_cho_phep_khi_dung_nhan_cua_app():
+    c, s = _client({
+        ("GET", "/reserved-ips/xyz"):
+            {"reserved_ip": {"id": "xyz", "subnet": "1.2.3.4",
+                             "label": "ltt-vps-may-1"}},
+        ("DELETE", "/reserved-ips/xyz"): (204, ""),
+    })
+    c.xoa_ip("xyz")
+    assert ("DELETE", "/reserved-ips/xyz", None) in s.da_goi
+
+
+def test_driver_KHONG_co_phuong_thuc_nao_xoa_duoc_instance():
+    """Tài khoản này từng chạy 17 instance của mảng kinh doanh khác. Một hàm
+    `xoa_instance` nằm sẵn ở đây là một tai nạn chờ xảy ra."""
+    ten = [t for t in dir(vt.VultrClient) if not t.startswith("_")]
+    assert not [t for t in ten if "instance" in t and
+                any(x in t for x in ("xoa", "delete", "huy", "dung"))], ten
+
+
+# ── 2. Vultr: thông báo lỗi phải nói được điều đã mất công mới biết ──────────
+
+def test_401_noi_ro_ba_kha_nang_chu_khong_chi_bao_sai_khoa():
+    """Ngay sau khi tạo khoá, Vultr trả 401 vì ACL chưa lan truyền — không phải
+    khoá sai. Đã mất một lần để biết; thông báo phải chở theo điều đó."""
+    c, _ = _client({("GET", "/account"): (401, {"error": "Unauthorized IP"})})
+    with pytest.raises(vt.VultrError) as e:
+        c.tai_khoan()
+    assert "lan truyen" in str(e.value)
+
+
+def test_than_loi_khong_phai_JSON_van_bao_duoc_ma_trang_thai():
+    """Khi Vultr trả HTML (lỗi tầng biên) thì vẫn phải nhìn thấy mã lỗi."""
+    c, _ = _client({("GET", "/account"): (503, "<html>maintenance</html>")})
+    with pytest.raises(vt.VultrError) as e:
+        c.tai_khoan()
+    assert e.value.status == 503
+
+
+def test_thieu_khoa_thi_noi_ro_phai_dat_o_dau():
+    with pytest.raises(vt.VultrError) as e:
+        vt.doc_cau_hinh({})
+    assert "secrets/app.env" in str(e.value)
+
+
+# ── 3. Cổng vào: mở và đóng đường ────────────────────────────────────────────
+
+def _gw():
+    ghi: list[str] = []
+
+    def chay(lenh):
+        ghi.append(" ".join(lenh))
+        return "song\n"
+
+    c = gw.GatewayClient(
+        gw.GatewayConfig(host="1.2.3.4", user="root", khoa="/tmp/k"), chay=chay)
+    return c, ghi
+
+
+def test_mo_duong_lam_du_BA_viec():
+    """Thiếu việc nào cũng hỏng im lặng — xem docstring của `mo_duong`."""
+    c, ghi = _gw()
+    c.mo_duong("45.77.45.29", "10.51.0.50")
+    lenh = ghi[0]
+    assert "ip addr replace 45.77.45.29/32" in lenh, "thieu dia chi tren card"
+    assert "vao { 45.77.45.29 : 10.51.0.50 }" in lenh, "thieu chieu vao"
+    assert "ra  { 10.51.0.50 : 45.77.45.29 }" in lenh, "thieu chieu ra"
+
+
+def test_mo_duong_xoa_truoc_khi_them_de_CHAY_LAI_DUOC():
+    """Job có thể chạy lại bất cứ lúc nào; `nft add element` báo lỗi nếu khoá đã
+    tồn tại với giá trị khác."""
+    c, ghi = _gw()
+    c.mo_duong("45.77.45.29", "10.51.0.50")
+    assert ghi[0].index("delete element") < ghi[0].index("add element")
+
+
+def test_mo_duong_ghi_lai_de_BEN_QUA_KHOI_DONG_LAI():
+    """`nft add element` và `ip addr add` chỉ sống trong bộ nhớ. Không ghi lại
+    thì cổng vào khởi động lại là TOÀN BỘ khách mất đường vào, im lặng."""
+    c, ghi = _gw()
+    c.mo_duong("45.77.45.29", "10.51.0.50")
+    assert gw.TEP_TRANG_THAI in ghi[0]
+
+
+def test_dong_duong_khong_keu_khi_da_go_roi():
+    """Xoá máy có thể chạy lại; lần thứ hai không được làm job chết."""
+    c, ghi = _gw()
+    c.dong_duong("45.77.45.29", "10.51.0.50")
+    assert ghi[0].count("|| true") >= 2
+
+
+def test_dia_chi_khong_hop_le_bi_chan_TRUOC_khi_cham_shell():
+    """Đây là chỗ dữ liệu đi vào một shell từ xa. Kiểm ở đây, không kiểm ở đó."""
+    c, ghi = _gw()
+    for xau in ("; rm -rf /", "10.51.0", "10.51.0.999", "", "$(id)"):
+        with pytest.raises(gw.GatewayError):
+            c.mo_duong(xau, "10.51.0.50")
+        with pytest.raises(gw.GatewayError):
+            c.mo_duong("45.77.45.29", xau)
+    assert ghi == [], "khong duoc chay gi khi dia chi sai"
+
+
+def test_danh_sach_duong_doc_duoc_map_tren_cong_vao():
+    """Đối chiếu bản đồ thật với `vps_ip` là cách duy nhất phát hiện lệch — mà
+    lệch ở đây nghĩa là khách gõ đúng địa chỉ và rơi vào máy người khác."""
+    doc = {"nftables": [{"map": {"name": "vao", "elem": [
+        ["45.77.45.29", "10.51.0.50"], ["45.77.45.31", "10.51.0.51"]]}}]}
+
+    c = gw.GatewayClient(gw.GatewayConfig(host="h", khoa="/tmp/k"),
+                         chay=lambda lenh: json.dumps(doc))
+    assert c.danh_sach_duong() == {"45.77.45.29": "10.51.0.50",
+                                   "45.77.45.31": "10.51.0.51"}
+
+
+def test_thieu_khai_bao_cong_vao_thi_noi_ro_thieu_gi():
+    for thieu, chu in (({"host": ""}, "HOST"), ({"khoa": ""}, "SSH_KEY")):
+        tham = {"host": "1.2.3.4", "khoa": __file__}
+        tham.update(thieu)
+        with pytest.raises(gw.GatewayError) as e:
+            gw.GatewayConfig(**tham).verify()
+        assert chu in str(e.value)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_27_phase5_wiring.py
 SHA256=1001cd827db67a407f48da84ab6dd0e7f7bb8d773aac908942224ea38a8a9138 BYTES=10538 LINES=259
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -250312,17 +250661,17 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/nghiem_thu_anh_e2e.py
-SHA256=118257e54b68665e92bb348c8659feed86dce4af657a43c04d6157c386acd046 BYTES=9501 LINES=254
+SHA256=5dd36a2ebf642c0387c00459cc43defc490a26991df32e07882359dd2db3c85f BYTES=13121 LINES=319
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
-nghiem_thu_anh_e2e.py — nghiệm thu `image.ltt` **từ ngoài vào**, qua Cloudflare. (H37/G10, C4)
+nghiem_thu_anh_e2e.py - nghiệm thu `image.ltt` **từ ngoài vào**, qua Cloudflare. (H37/G10, C4)
 
     python tools\\nghiem_thu_anh_e2e.py chuan_bi --token-file C:\\tmp\\anh_tok.txt
     python tools\\nghiem_thu_anh_e2e.py chay     --token-file C:\\tmp\\anh_tok.txt
     python tools\\nghiem_thu_anh_e2e.py don
 
-⭐ VÌ SAO KHÔNG DÙNG `api_prod_canary.py`. Khoá của canary cố ý **không** có
-   `jobs:create` — nó là canary chỉ-đọc, và docstring của nó nói rõ rằng cho
+* VÌ SAO KHÔNG DÙNG `api_prod_canary.py`. Khoá của canary cố ý **không** có
+   `jobs:create` - nó là canary chỉ-đọc, và docstring của nó nói rõ rằng cho
    đường tạo job chạy trên production "chỉ để lấy số" là tiêu tiền thật cho một
    phép đo không đòi.
 
@@ -250331,17 +250680,17 @@ nghiem_thu_anh_e2e.py — nghiệm thu `image.ltt` **từ ngoài vào**, qua Clo
    xanh vẫn để lọt lỗi `VARCHAR(36)` tới đúng lượt gọi thật đầu tiên, vì SQLite
    không ép độ dài mà PostgreSQL thì ép.
 
-⛔ NÊN KHOÁ NÀY TIÊU ĐƯỢC TIỀN, và đó là chủ ý. Ba hàng rào bù lại:
+!! NÊN KHOÁ NÀY TIÊU ĐƯỢC TIỀN, và đó là chủ ý. Ba hàng rào bù lại:
 
      ① tài khoản RIÊNG (`EMAIL` dưới đây), không phải admin;
-     ② nạp đúng `CREDIT` credit — đủ vài lượt, không đủ để một vòng lặp hỏng
+     ② nạp đúng `CREDIT` credit - đủ vài lượt, không đủ để một vòng lặp hỏng
         tiêu hết tiền thật;
      ③ `allowed_tools` chỉ có `image.ltt`. Khoá này không gọi được gì khác.
 
    Và `don` thu hồi khoá. Chạy nó khi xong.
 
-⚠️ ĐI QUA ĐỊA CHỈ CÔNG KHAI, không loopback. Loopback bỏ qua Cloudflare, mà
-   Cloudflare là nơi lỗi 403-vì-User-Agent và 524-vì-timeout xuất hiện — hai thứ
+!!️ ĐI QUA ĐỊA CHỈ CÔNG KHAI, không loopback. Loopback bỏ qua Cloudflare, mà
+   Cloudflare là nơi lỗi 403-vì-User-Agent và 524-vì-timeout xuất hiện - hai thứ
    đã dính thật ở H38.
 """
 from __future__ import annotations
@@ -250352,6 +250701,21 @@ import pathlib
 import secrets
 import sys
 import time
+
+# !! Console Windows mac dinh la cp1252. Mot ky tu ngoai ASCII trong `print`
+#    lam script CHET - va o day no chet SAU khi da tieu tien that va job da
+#    chay xong, tuc mat dung phan doi soat la ly do cua ca script. Da dinh
+#    24/08. Ep UTF-8 mot lan o day re hon viec canh tung dong print.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    # Bat HEP, khong `except Exception: pass`. Hai truong hop that su xay ra:
+    # `reconfigure` thieu tren Python cu (AttributeError), va stdout da bi thay
+    # boi mot doi tuong khong doi duoc ma hoa (ValueError). Bat rong hon la nuot
+    # ca nhung loi ta chua tung nghi toi - va banh coc `check_silent_except`
+    # dem dung dieu do, `# noqa` khong lam no im.
+    pass
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(GOC))
@@ -250369,7 +250733,7 @@ def _nap_env() -> None:
 
     tep = pathlib.Path(r"C:\LTTPlatform\secrets\app.env")
     if not tep.exists():
-        raise SystemExit(f"khong thay {tep} — day khong phai may chu?")
+        raise SystemExit(f"khong thay {tep} - day khong phai may chu?")
     for dong in tep.read_text(encoding="utf-8-sig").splitlines():
         dong = dong.strip()
         if dong and not dong.startswith("#") and "=" in dong:
@@ -250472,7 +250836,12 @@ def chay(a) -> int:
     truoc = (r.json() or {}).get("balance")
     print(f"     balance = {truoc}")
 
-    than = {"tool": TOOL, "params": {"prompt": a.prompt, "count": 1, "mode": "t2i"}}
+    # !! Ten truong la `input`, KHONG phai `params` - va quote tra ve `quote`
+    #    (mot token da ky), KHONG phai `id`. Ban dau toi doan hai ten nay tu
+    #    ten bien noi bo cua handler; hop dong cong khai o `server/api/jobs.py`
+    #    moi la nguon. Doan sai o day tra ve HTTP 400 rat ro rang, nhung neu
+    #    doan sai o mot truong KHONG bat buoc thi no im lang.
+    than = {"tool": TOOL, "input": {"prompt": a.prompt, "count": 1, "mode": "t2i"}}
 
     print("== 3. Bao gia")
     r = ra("POST /quotes", kh.post("/quotes", json=than))
@@ -250480,11 +250849,15 @@ def chay(a) -> int:
         print(f"     {r.text[:400]}")
         return 1
     quote = r.json()
-    print(f"     credit bao gia = {quote.get('credit')}  quote_id = {quote.get('id')}")
+    ve = quote.get("quote")
+    if not ve:
+        print(f"     DUNG: /quotes khong tra ve truong `quote`: {r.text[:300]}")
+        return 1
+    print(f"     credit bao gia = {quote.get('credit')}  (quote dai {len(ve)} ky tu)")
 
     print("== 4. Nop job")
     idem = "nt-anh-" + secrets.token_hex(8)
-    r = ra("POST /jobs", kh.post("/jobs", json={**than, "quote_id": quote.get("id")},
+    r = ra("POST /jobs", kh.post("/jobs", json={**than, "quote": ve},
                                  headers={"Idempotency-Key": idem}))
     if r.status_code not in (200, 201, 202):
         print(f"     {r.text[:400]}")
@@ -250510,6 +250883,34 @@ def chay(a) -> int:
     print(f"     status cuoi = {(cuoi or {}).get('status')}")
     print(json.dumps(cuoi, ensure_ascii=False, indent=2)[:1400])
 
+    # !! BUOC NAY LA PHAN CON LAI CUA A1, VA BAN DAU TOI DA BO SOT NO.
+    #    `status == "succeeded"` chi noi worker chay xong. No KHONG noi anh co
+    #    that su lay ve duoc: khoa co the tro toi mot doi tuong khong ton tai,
+    #    presigned URL co the het han, hoac quyen doc co the sai. Ca ba deu cho
+    #    ra dung mot job xanh voi mot `outputs` trong rong dep de.
+    #    Khach tra tien de LAY DUOC ANH, khong phai de job doi mau.
+    print("== 5b. Tai anh ve THAT")
+    outs = (cuoi or {}).get("outputs") or []
+    if not outs:
+        print("     DUNG: job succeeded nhung KHONG co output nao.")
+        return 1
+    for o in outs:
+        aid = o.get("id")
+        r = kh.get(f"/artifacts/{aid}")
+        if r.status_code != 200:
+            print(f"     HONG: GET /artifacts/{aid} -> {r.status_code}: {r.text[:200]}")
+            return 1
+        r = kh.get(f"/artifacts/{aid}/content")
+        n = len(r.content or b"")
+        # PNG bat dau bang PNG; JPEG bang ÿØ. Kiem tra vai byte dau
+        # re hon nhieu so voi viec tin vao Content-Type do may chu tu khai.
+        dau = (r.content or b"")[:4]
+        la_anh = dau[:4] == bytes([0x89, 0x50, 0x4E, 0x47]) or dau[:2] == bytes([0xFF, 0xD8])
+        print(f"     {aid[:8]}... -> HTTP {r.status_code}, {n} byte, la anh: {la_anh}")
+        if r.status_code != 200 or n < 1024 or not la_anh:
+            print("     HONG: noi dung khong phai mot tam anh dung nghia.")
+            return 1
+
     print("== 6. So du sau, va doi soat")
     r = ra("GET /credits/balance", kh.get("/credits/balance"))
     sau = (r.json() or {}).get("balance")
@@ -250517,7 +250918,7 @@ def chay(a) -> int:
     print(f"     bao gia luc dau: {quote.get('credit')}")
     tinh = ((cuoi or {}).get("credit") or {})
     print(f"     job.credit: {json.dumps(tinh, ensure_ascii=False)}")
-    print("     ⇒ 'charged' phai bang so credit THAT SU tru, va <= bao gia.")
+    print("     => 'charged' phai bang so credit THAT SU tru, va <= bao gia.")
     return 0 if (cuoi or {}).get("status") == "succeeded" else 1
 
 
@@ -250531,15 +250932,28 @@ def don(a) -> int:
     try:
         user = _tim(db)
         if user is None:
-            print("khong co tai khoan nghiem thu — khong co gi de don")
+            print("khong co tai khoan nghiem thu - khong co gi de don")
             return 0
         rows = db.execute(sa.select(DeveloperApiKey).where(
             DeveloperApiKey.user_id == user.id,
             DeveloperApiKey.revoked_at.is_(None))).scalars().all()
         for row in rows:
-            devkeys.revoke(db, row.key_id)
+            # `revoke` nhan chinh HANG (DeveloperApiKey), khong phai `key_id`.
+            # Truyen chuoi vao thi no chet ngay o `key.revoked_at` - to va som,
+            # va do la may man: mot lenh THU HOI that bai IM LANG se de mot khoa
+            # TIEU DUOC TIEN THAT nam lai, trong khi bao cao van ghi "da don".
+            devkeys.revoke(db, row)
         db.commit()
-        print(f"da thu hoi {len(rows)} khoa")
+        # Doc lai tu CSDL de chac chan, thay vi tin vao gia tri tra ve. Day la
+        # buoc cuoi cua mot quy trinh tieu tien that; "da goi ham" khong bang
+        # "da kiem lai va dung la khong con khoa nao song".
+        con = db.execute(sa.select(sa.func.count()).select_from(DeveloperApiKey).where(
+            DeveloperApiKey.user_id == user.id,
+            DeveloperApiKey.revoked_at.is_(None))).scalar_one()
+        print(f"da thu hoi {len(rows)} khoa; con song: {con}")
+        if con:
+            print("HONG: van con khoa chua thu hoi.")
+            return 1
         return 0
     finally:
         _dong(gen)
@@ -253941,6 +254355,86 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/vps_gateway/cai-dat-cong-vao.sh
+SHA256=9c4aef54f39b9dfbb00756ca3fda39af57b95c51d1946da724f490518fdb7ff0 BYTES=2309 LINES=74
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+#!/bin/bash
+# Cai dat phan BEN QUA KHOI DONG LAI cho cong vao Linux (H39/G2).
+#
+# Vi sao can: `nft add element` va `ip addr add` chi song trong bo nho. Neu chi
+# lam hai viec do thi cong vao khoi dong lai la TOAN BO khach mat duong vao, im
+# lang, va trieu chung se la "sang nay khong ai vao duoc may nua" - khong log
+# nao bao, khong canh bao nao keu.
+#
+# Script nay dat mot unit systemd doc lai /etc/ltt-vps/duong.conf va phat lai
+# tung dong sau khi mang va nftables da san sang.
+#
+# Chay tren CHINH cong vao:  bash cai-dat-cong-vao.sh
+set -euo pipefail
+
+TEP=/etc/ltt-vps/duong.conf
+AP_DUNG=/usr/local/sbin/ltt-vps-ap-dung
+
+mkdir -p "$(dirname "$TEP")"
+touch "$TEP"
+chmod 600 "$TEP"
+
+cat > "$AP_DUNG" <<'EOF'
+#!/bin/bash
+# Phat lai cac duong NAT 1:1 sau khi khoi dong lai. Chay lai duoc.
+set -uo pipefail
+TEP=/etc/ltt-vps/duong.conf
+BANG=ltt
+[ -s "$TEP" ] || { echo "khong co duong nao de phat lai"; exit 0; }
+
+WAN=$(ip -o -4 route show default | awk '{print $5; exit}')
+[ -n "$WAN" ] || { echo "khong tim thay card WAN"; exit 1; }
+
+# Cho nftables nap xong ruleset goc truoc khi them phan tu vao map.
+for _ in $(seq 1 30); do
+    nft list map ip "$BANG" vao >/dev/null 2>&1 && break
+    sleep 1
+done
+
+so=0
+while read -r cong noi; do
+    [ -n "${cong:-}" ] && [ -n "${noi:-}" ] || continue
+    case "$cong" in \#*) continue ;; esac
+    ip addr replace "$cong/32" dev "$WAN"
+    nft delete element ip "$BANG" vao "{ $cong }" 2>/dev/null || true
+    nft delete element ip "$BANG" ra  "{ $noi }"  2>/dev/null || true
+    nft add element ip "$BANG" vao "{ $cong : $noi }"
+    nft add element ip "$BANG" ra  "{ $noi : $cong }"
+    so=$((so + 1))
+done < "$TEP"
+echo "da phat lai $so duong"
+EOF
+chmod 755 "$AP_DUNG"
+
+cat > /etc/systemd/system/ltt-vps-duong.service <<'EOF'
+[Unit]
+Description=LTT VPS - phat lai cac duong NAT 1:1 sau khi khoi dong lai
+# Phai chay SAU nftables (ruleset goc + hai map) va sau khi mang co dia chi.
+After=network-online.target nftables.service
+Wants=network-online.target
+Requires=nftables.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/ltt-vps-ap-dung
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable ltt-vps-duong.service >/dev/null
+echo "da cai unit ltt-vps-duong.service"
+systemctl is-enabled ltt-vps-duong.service
 
 @@@LTT_PROFILE_FILE_END@@@
 
