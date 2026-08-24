@@ -162,11 +162,41 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # ⛔ KHONG tu ghep chuoi o day: `credit_entries.job_id` la VARCHAR(36) va
     #    PostgreSQL ep do dai trong khi SQLite thi khong. Xem `thanh_toan.ma_luot`.
     request_id = thanh_toan.ma_luot("st")
-    xin_ra = _max_tokens(than)
+    vao_uoc = features.uoc_token_vao(tin)
+    xin_ra = _max_tokens(than, vao_uoc)
+
+    # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN. Thiếu dòng này là lỗi thật, tìm
+    #    ra 24/08 khi cắm Claude Code lần đầu (H38/L2).
+    #
+    #    `_max_tokens()` kẹp về `MAX_TOKENS_TRAN`, nhưng kết quả chỉ dùng cho
+    #    phần **giữ tiền**. Thân `gui` vẫn mang con số thô của khách. Nên ta kẹp
+    #    cái mình **thu tiền** mà không kẹp cái mình **gửi đi**, và máy B trả 413.
+    #
+    #    Claude Code gửi `max_tokens: 32000` mặc định — con số khách gần như
+    #    không có cách nào đổi. Nên trước khi sửa, Claude Code **hoàn toàn không
+    #    dùng được**, và triệu chứng là một 503 "thử lại sau" cho một thứ thử lại
+    #    bao nhiêu lần cũng hỏng.
+    #
+    # ⭐ VÌ SAO KẸP CHỨ KHÔNG TỪ CHỐI, khác hẳn `chat.py`. `max_tokens` là một
+    #    **trần**, không phải một lượng đặt hàng: kẹp nó xuống chỉ giới hạn câu
+    #    trả lời có thể dài tới đâu, và tiền vẫn tính theo token **thật sự sinh
+    #    ra** nên khách không trả thêm đồng nào. Còn `chat.py` từ chối là đúng ở
+    #    đó, vì lý do của nó là **thời gian** (trần 100 giây của Cloudflare) —
+    #    kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
+    #
+    # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc
+    #    `max_output_tokens`, hai cửa kia đọc `max_tokens`. Ghi nhầm tên là thêm
+    #    một trường lạ mà thượng nguồn bỏ qua — tức lại gửi đi con số thô.
+    for _ten in ("max_tokens", "max_output_tokens"):
+        if _ten in gui:
+            gui[_ten] = xin_ra
+            break
+    else:
+        gui["max_tokens"] = xin_ra
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=features.uoc_token_vao(tin), max_tokens=xin_ra)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
         # Không đủ tiền thì không đốt GPU. Chốt trước, không phải sau.
         #
@@ -321,14 +351,20 @@ def _tin_nhan(than: dict) -> list:
     return ra
 
 
-def _max_tokens(than: dict) -> int:
-    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, MAX_TOKENS_TRAN
+def _max_tokens(than: dict, token_vao_uoc: int = 0) -> int:
+    """Trần token ra cho lượt này, đã kẹp theo **chỗ còn lại trong ngữ cảnh**.
 
+    ⚠️ `token_vao_uoc` mặc định 0 chỉ để không phá lời gọi cũ; đường thật luôn
+       truyền số vào. Vào và ra chia nhau cùng một cửa sổ 65.536.
+    """
+    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, tran_theo_ngu_canh
+
+    tran = tran_theo_ngu_canh(token_vao_uoc)
     for ten in ("max_tokens", "max_output_tokens"):
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):
-            return max(1, min(int(gt), MAX_TOKENS_TRAN))
-    return MAX_TOKENS_MAC_DINH
+            return max(1, min(int(gt), tran))
+    return min(MAX_TOKENS_MAC_DINH, tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:

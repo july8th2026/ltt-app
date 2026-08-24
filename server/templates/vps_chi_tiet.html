@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ may.ten or may.id[:8] }} — {{ app.display_name }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block content %}
+
+  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+
+  <p style="margin:0 0 12px;">
+    <a href="{{ app.route_prefix }}">&larr; {{ _("Máy của tôi") }}</a>
+  </p>
+
+  {# ── 1. Tổng quan ──────────────────────────────────────────────────────
+     Thứ tự bốn khối trên trang này theo thứ tự người ta THỰC SỰ cần: địa chỉ để
+     vào máy trước, rồi mới tới điều khiển, nhật ký, và cuối cùng là hai nút
+     không hoàn tác được. #}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Tổng quan") }}</h2>
+    <table class="tbl" style="width:100%;">
+      <tr>
+        <th style="width:180px;">{{ _("Địa chỉ") }}</th>
+        <td>
+          {% if dia_chi %}<code>{{ dia_chi }}</code>
+            <span class="muted">
+              {{ _("— vào bằng %(cong)s") % {"cong": os.cong_quen if os else 3389} }}
+            </span>
+          {% else %}<span class="muted">{{ _("đang chuẩn bị…") }}</span>{% endif %}
+        </td>
+      </tr>
+      <tr><th>{{ _("Trạng thái") }}</th>
+        <td>{{ may.trang_thai }}
+          {% if may.ly_do %}<br><span class="muted">{{ may.ly_do }}</span>{% endif %}</td></tr>
+      <tr><th>{{ _("Cấu hình") }}</th>
+        <td>{% if plan %}{{ _(plan.ten) }} — {{ plan.vcpu }} vCPU ·
+          {{ (plan.ram_mb / 1024) | round | int }} GB RAM · {{ plan.disk_gb }} GB
+          {% else %}{{ may.plan_id }}{% endif %}</td></tr>
+      <tr><th>{{ _("Hệ điều hành") }}</th>
+        <td>{{ os.ten if os else may.os_id }}</td></tr>
+      <tr><th>{{ _("Trả tới") }}</th>
+        <td>
+          {% if may.paid_until %}{{ may.paid_until.strftime('%d/%m/%Y') }}
+            {% if con_ngay is not none and con_ngay <= 3 %}
+              <span class="alert-err" style="padding:1px 6px;border-radius:4px;">
+                {{ _("còn %(n)s ngày") % {"n": con_ngay} }}</span>
+            {% endif %}
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td></tr>
+    </table>
+  </div>
+
+  {# ── 2. Điều khiển ─────────────────────────────────────────────────────
+     Ba nút này chạy THẲNG, không qua hàng đợi — chúng là một lệnh gọi API.
+     Xem docstring của `apps/vps/services/dieu_khien.py`. #}
+  <div class="card">
+    <h2>{{ _("Điều khiển") }}</h2>
+    {% if may.trang_thai == "bi_treo" %}
+      <div class="alert alert-warn" style="margin:0;">
+        {{ _("Máy đang bị treo do hết hạn thanh toán. Nạp credit và gia hạn để dùng lại.") }}
+      </div>
+    {% elif may.trang_thai == "dang_tao" %}
+      <p class="muted" style="margin:0;">{{ _("Máy đang được tạo. Tải lại trang sau vài phút.") }}</p>
+    {% else %}
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        {% for hanh_dong, nhan in [("bat", _("Bật")), ("tat", _("Tắt")),
+                                   ("khoi-dong-lai", _("Khởi động lại"))] %}
+        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/{{ hanh_dong }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn" type="submit">{{ nhan }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      <p class="muted" style="margin:8px 0 0;">
+        {{ _("Tắt máy dùng lệnh tắt mềm — hệ điều hành có thời gian dọn dẹp. Máy đã tắt vẫn tính phí vì nó vẫn giữ chỗ và giữ dữ liệu.") }}
+      </p>
+    {% endif %}
+  </div>
+
+  {# ── 3. Nhật ký vòng đời ───────────────────────────────────────────────
+     Đây là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau ba tháng. #}
+  <div class="card">
+    <h2>{{ _("Nhật ký") }}</h2>
+    {% if su_kien %}
+    <table class="tbl" style="width:100%;">
+      <thead><tr>
+        <th style="width:160px;">{{ _("Thời điểm") }}</th>
+        <th style="width:180px;">{{ _("Việc") }}</th>
+        <th>{{ _("Chi tiết") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for e in su_kien %}
+        <tr>
+          <td>{{ e.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ e.loai }}</td>
+          <td class="muted">{{ e.chi_tiet or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted" style="margin:0;">{{ _("Chưa có gì.") }}</p>{% endif %}
+  </div>
+
+  {# ── 4. Nguy hiểm ──────────────────────────────────────────────────────
+     Hai nút không hoàn tác được. Đòi gõ ĐÚNG tên máy, khuôn của GitHub — lý do
+     giống hệt: chúng phải khó bấm nhầm hơn một cú click. #}
+  {% if may.trang_thai != "da_xoa" %}
+  <div class="card" style="border-color:#c33;">
+    <h2 style="color:#c33;">{{ _("Nguy hiểm") }}</h2>
+
+    <h3 style="margin:12px 0 4px;">{{ _("Cài lại máy") }}</h3>
+    <p class="muted" style="margin:0 0 8px;">
+      {{ _("Xoá sạch đĩa và cài lại từ đầu. Địa chỉ IP được giữ nguyên. KHÔNG hoàn tác được.") }}
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/cai-lai"
+          style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <select name="os_id" class="inp">
+        <option value="">{{ _("Giữ nguyên hệ điều hành") }}</option>
+        {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+      </select>
+      <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
+      <button class="btn" type="submit">{{ _("Cài lại") }}</button>
+    </form>
+
+    <h3 style="margin:20px 0 4px;">{{ _("Xoá máy") }}</h3>
+    <p class="muted" style="margin:0 0 8px;">
+      {{ _("Xoá vĩnh viễn máy và trả địa chỉ IP về. KHÔNG hoàn tác được và không hoàn tiền chu kỳ đang dùng.") }}
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/xoa"
+          style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
+      <button class="btn" type="submit" style="background:#c33;">{{ _("Xoá vĩnh viễn") }}</button>
+    </form>
+  </div>
+  {% endif %}
+
+{% endblock %}

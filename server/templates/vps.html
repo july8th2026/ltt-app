@@ -5,16 +5,18 @@
 
   {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
 
-  {# Ba câu dưới đây KHÔNG phải trang trí. Chúng là điều kiện của Q103/V1+V2+V3:
-     hạ tầng là ảo hoá lồng trên một máy để bàn dùng chung, có thể khởi động lại
-     bất cứ lúc nào, và khách nhận cổng chứ không nhận IP riêng. Khách phải đọc
-     được điều đó TRƯỚC khi trả tiền, không phải sau. #}
+  {# Bốn câu dưới đây KHÔNG phải trang trí — chúng là điều kiện của Q103 và là
+     những con số ĐO THẬT. Khách phải đọc được TRƯỚC khi trả tiền, không phải sau.
+     Câu về IP đã đổi ngày 24/08: từ khi mỗi máy có một IP công khai riêng, câu
+     cũ ("bạn nhận cổng, không nhận IP") trở thành SAI — và một dòng cảnh báo sai
+     còn tệ hơn không có, vì khách tin nó. #}
   <div class="alert alert-warn" style="margin:0 0 16px;">
     <strong>{{ _("Đọc trước khi thuê") }}</strong>
     <ul style="margin:8px 0 0; padding-left:20px;">
       <li>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</li>
-      <li>{{ _("Bạn nhận địa chỉ dạng tên-miền:cổng, không phải một địa chỉ IP riêng. Bạn không host được website hay mail server trên máy này.") }}</li>
+      <li>{{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy chủ đặt tại Việt Nam, đường vào đi qua Singapore.") }}</li>
       <li>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</li>
+      <li>{{ _("Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không bị tính thêm tiền.") }}</li>
       <li>{{ _("Sao lưu hằng tuần, giữ 1 bản. Dữ liệu quan trọng bạn nên tự sao lưu thêm.") }}</li>
     </ul>
   </div>
@@ -38,6 +40,7 @@
           <th>{{ _("Địa chỉ") }}</th>
           <th>{{ _("Trạng thái") }}</th>
           <th>{{ _("Trả tới") }}</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -55,8 +58,16 @@
           </td>
           <td>
             {% if m.may.paid_until %}{{ m.may.paid_until.strftime('%d/%m/%Y') }}
+              {# Cảnh báo SỚM, không phải sau khi mất máy: hết hạn là treo ngay
+                 và xoá sau 7 ngày (V8). Khách mất máy vì không biết sắp hết hạn
+                 là lỗi của giao diện, không phải của họ. #}
+              {% if m.con_ngay is not none and m.con_ngay <= 3 %}
+                <br><span class="alert-err" style="padding:1px 6px;border-radius:4px;">
+                  {{ _("còn %(n)s ngày") % {"n": m.con_ngay} }}</span>
+              {% endif %}
             {% else %}<span class="muted">—</span>{% endif %}
           </td>
+          <td><a class="btn btn-sm" href="{{ app.route_prefix }}/{{ m.may.id }}">{{ _("Quản lý") }}</a></td>
         </tr>
         {% endfor %}
       </tbody>

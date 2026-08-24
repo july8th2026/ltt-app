@@ -2702,18 +2702,55 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       *Bằng chứng:* SSH thẳng từ máy A vào `45.77.45.29` → vào máy khách; máy khách ra
       Internet cũng bằng đúng IP đó. Rẻ hơn gateway Windows cũ **$4/tháng**.
 
-- [ ] **G2 — đưa hạ tầng đó vào MÃ NGUỒN.** Hiện mọi thứ chạy bằng script tay.
-      `services/vultr.py` (tạo/gắn/gỡ/xoá Reserved IP, đọc băng thông) · `services/gateway.py`
-      (SSH có khoá, thêm/bớt phần tử `map`, **thu hồi phải nguyên tử với việc xoá máy**)
-      · sửa `services/mang.py`: **bỏ phép tính octet-theo-cổng**, chuyển sang cấp địa chỉ
-      nội bộ trực tiếp · làm địa chỉ Reserved IP **bền qua khởi động lại** gateway.
-      *Xong khi:* tạo + xoá một máy có IP riêng **hoàn toàn từ job**, không script tay,
-      và test đa tiến trình kiểu `test_214` chứng minh hai worker không cấp trùng IP.
+- [x] **G2 — đưa hạ tầng vào MÃ NGUỒN.** ✅ **XONG 2026-08-24** (còn một việc, xem cuối).
+      `services/vultr.py` + `services/gateway.py` + `mang.py` viết lại (bỏ octet-theo-cổng)
+      + vòng đời IP trong `jobs.py` + `tools/vps_gateway/cai-dat-cong-vao.sh`.
+      **81 test xanh** (`test_279` 16 test mới cho hai driver).
 
-- [ ] **G3 — vòng đời máy + console.** Bật/tắt/khởi động lại/cài lại/xoá; xoá thì
-      **thu hồi IP** (nếu không, mỗi máy chết để lại $3/tháng chảy mãi). Console noVNC
-      proxy qua server mình, vé dùng-một-lần; khách **không bao giờ** chạm cổng 8006.
-      *Xong khi:* diễn tập trọn vòng đời trên **URL công khai** (quy tắc 5b).
+      *Đã chứng minh trên hạ tầng thật:* job tạo máy trong **26 giây** (clone + cấp địa chỉ
+      riêng + mua IP + gắn + mở đường), vào được **từ Internet** bằng IP riêng, ra Internet
+      cũng bằng đúng IP đó; job xoá trả IP về Vultr và gỡ đường sạch; cổng vào khởi động
+      lại thì **tự hồi hoàn toàn sau 53 giây**.
+
+      **Bốn lỗi thật tìm được khi chạy, không lỗi nào test bắt được:**
+      ① `cap_vmid` chỉ hỏi CSDL nên job **chiếm máy có sẵn trên Proxmox** mà CSDL không
+      biết — tức giao máy người này cho người khác. Nay hỏi cả máy chủ, có test chốt.
+      ② `_xoa_may` gọi `DELETE` ngay sau lệnh tắt (tác vụ nền) ⇒ Proxmox trả **500**.
+      ③ Trả IP về mà chỉ gỡ liên kết, không xoá bản ghi ⇒ Vultr **cấp lại chính địa chỉ
+      vừa trả** và máy tiếp theo của khách **không tạo được**.
+      ④ Mua IP xong mà ghi sổ hỏng thì IP nằm lại — **$3/tháng chảy mãi**. Nay trả về ngay.
+
+      ⏳ *Còn nợ:* test đa tiến trình kiểu `test_214` chứng minh hai worker không cấp trùng
+      địa chỉ. Ràng buộc duy nhất `(gateway_id, ip_noi_bo)` đã là trọng tài và đường
+      `IntegrityError` có test, nhưng **chưa chạy thật hai tiến trình** — cần một CSDL
+      PostgreSQL vứt đi mà vai `ltt_app` không tạo được (thiếu `CREATEDB`).
+
+- [x] **G3 — vòng đời máy.** ✅ **XONG 2026-08-24.** `services/dieu_khien.py` +
+      6 route + trang chi tiết máy + `tests/test_280_vps_vong_doi.py` (12 test).
+      Bật/tắt/khởi động lại chạy **thẳng** (một lệnh gọi API, ~200 ms — nhét vào hàng
+      đợi là bắt khách chờ một vòng worker); cài lại/xoá đi **qua job** (mất vài phút,
+      Cloudflare cắt ở 100 giây).
+
+      Ba luật của tầng này đều là **luật tiền**, không phải luật kỹ thuật: máy bị treo
+      vì nợ thì khách **không tự bật lại được** (nếu bật được thì "treo" chỉ là một cái
+      nút); máy đang tạo dở thì không ai đụng vào; **mọi thao tác kể cả thất bại đều ghi
+      nhật ký vòng đời** — đó là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau
+      ba tháng, lúc log ứng dụng đã xoay vòng mất.
+
+      Hai lỗi sửa nhân tiện: đường **cài lại** dính đúng cái bẫy `DELETE` chạy đua với
+      lệnh tắt như đường xoá; và `dieu_khien.treo` ban đầu tự ghi sổ, tức **chỗ thứ hai**
+      quyết định cùng một việc với `billing.treo` — cái này đặt `xoa_sau`, cái kia quên,
+      và máy của khách nằm lại vĩnh viễn hoặc bị xoá sớm bảy ngày. Nay uỷ quyền hết.
+
+      Cũng sửa một **dòng cảnh báo đã thành SAI** trên trang bán: *"bạn nhận cổng, không
+      nhận IP riêng"* — từ 24/08 thì ngược lại. Một cảnh báo sai còn tệ hơn không có, vì
+      khách tin nó. Test cũ chốt đúng câu sai đó, đã cập nhật.
+
+- [ ] **G3b — console noVNC.** Proxy WebSocket qua server mình, vé dùng-một-lần; khách
+      **không bao giờ** chạm cổng 8006 của Proxmox. Đây là **đường cứu hộ** (khách tự
+      chặn mất RDP của chính mình), không phải đường vào chính — nên nó xếp sau G5.
+      ⏳ *Cần chủ sản phẩm đồng ý một việc:* nhúng thư viện **noVNC** vào
+      `server/static/vps/` — tức tải một gói JS từ kho nguồn mở về repo.
 
 - [ ] **G4 — tiền.** Chu kỳ 30 ngày theo khuôn Q98 (đã có `billing.py`) + **tiền IP
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).

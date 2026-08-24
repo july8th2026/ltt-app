@@ -61,7 +61,6 @@
     "apps/taoclipngan/jobs.py": 6,
     "apps/taoclipngan/manifest.py": 2,
     "apps/taoclipngan/routes.py": 7,
-    "apps/taoclipngan/templates/taoclipngan.html": 1,
     "apps/taovideo/assets.py": 6,
     "apps/taovideo/jobs.py": 12,
     "apps/taovideo/manifest.py": 2,
@@ -158,5 +157,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 1422
+  "tong": 1421
 }

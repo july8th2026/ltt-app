@@ -256,10 +256,39 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
     if cu is None:
         khach = nha_cung_cap.client_tu_moi_truong()
         ip = khach.tao_ip(may.id[:8])
-        cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
-                   vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
-        db.add(cu)
-        db.commit()                     # ← ghi TRƯỚC khi gắn. Xem docstring.
+        try:
+            # Vultr **cấp lại chính địa chỉ vừa trả** (nó giữ 24 giờ rồi đưa lại
+            # cho cùng tài khoản) — đã thấy thật 24/08. Nên phải hỏi xem địa chỉ
+            # này đã có dòng nào chưa, thay vì INSERT thẳng rồi chết vì ràng buộc
+            # duy nhất. Chết ở đây nghĩa là **tiền đã tiêu mà sổ sách không có**.
+            trung = db.execute(select(VpsIp).where(
+                VpsIp.gateway_id == gateway.id,
+                VpsIp.dia_chi == ip["dia_chi"])).scalars().first()
+            if trung is not None and trung.instance_id:
+                raise VpsJobError(
+                    f"Vultr cap dia chi {ip['dia_chi']} nhung so sach ghi no dang "
+                    f"thuoc may {trung.instance_id} — dung lai, khong ghi de")
+            if trung is not None:
+                trung.vultr_id, trung.nhan = ip["id"], ip["nhan"]
+                trung.instance_id = may.id
+                cu = trung
+            else:
+                cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
+                           vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
+                db.add(cu)
+            db.commit()                 # ← ghi TRƯỚC khi gắn. Xem docstring.
+        except Exception:
+            # Ghi sổ hỏng thì TRẢ IP VỀ NGAY. Không làm bước này là mỗi lần lỗi
+            # để lại $3/tháng chảy mãi, và không ai biết nó của máy nào.
+            db.rollback()
+            try:
+                khach.xoa_ip(ip["id"])
+                log.warning("VPS: da tra lai IP %s vi khong ghi duoc so sach",
+                            ip["dia_chi"])
+            except nha_cung_cap.VultrError as loi_tra:
+                log.error("VPS: RO TIEN — mua IP %s (%s) nhung khong ghi so va "
+                          "khong tra lai duoc: %s", ip["dia_chi"], ip["id"], loi_tra)
+            raise
         khach.gan_ip(ip["id"], _id_cong_vao(gateway, khach))
 
     cong_vao.client_tu_moi_truong().mo_duong(cu.dia_chi, ip_noi_bo)
@@ -294,6 +323,12 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             if ip.vultr_id:
                 khach.go_ip(ip.vultr_id)
                 khach.xoa_ip(ip.vultr_id)
+            # XOÁ hẳn bản ghi, không chỉ gỡ liên kết: IP đã không còn ở nhà cung
+            # cấp nữa, nên giữ dòng đó lại là nói dối rằng ta vẫn có nó. Và nó
+            # gây hại thật — Vultr **cấp lại chính địa chỉ vừa trả** (đã thấy
+            # 24/08), và bản ghi cũ làm INSERT mới chết vì ràng buộc duy nhất
+            # `(gateway_id, dia_chi)`, tức máy TIẾP THEO của khách không tạo được.
+            db.delete(ip)
         except (nha_cung_cap.VultrError, cong_vao.GatewayError) as exc:
             # Bắt HẸP, không `except Exception`: lỗi lập trình phải nổ lên trên.
             # Còn nhà cung cấp từ chối hay cổng vào không trả lời thì KHÔNG được
@@ -301,6 +336,10 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             # tiền chảy mãi.
             log.warning("VPS: khong tra duoc IP %s cua may %s: %s",
                         ip.dia_chi, may.id, exc)
+            # Giữ bản ghi lại (gỡ liên kết thôi) để con người còn dọn được —
+            # đây là trường hợp DUY NHẤT một dòng `vps_ip` được phép sống sót
+            # sau khi máy bị xoá.
+            ip.instance_id = None
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
@@ -336,10 +375,11 @@ def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
 # ── vps.rebuild ─────────────────────────────────────────────────────────────
 
 def _dung_lai(params: dict, ctx=None) -> dict:
-    """Cài lại từ đầu: xoá VM cũ, giữ nguyên bản ghi, cổng và IP đã cấp.
+    """Cài lại từ đầu: xoá VM cũ, giữ nguyên bản ghi và **IP công khai đã cấp**.
 
-    Giữ cổng là cố ý — khách đã lưu địa chỉ đó, đã cấu hình client. Đổi cổng khi
-    cài lại là bắt khách đi tìm địa chỉ mới mà không có lý do gì.
+    Giữ IP là cố ý — khách đã lưu địa chỉ đó, đã trỏ tên miền vào đó, đã cấu hình
+    client. Đổi IP khi cài lại là bắt khách đi tìm địa chỉ mới mà không có lý do
+    gì, và với Vultr thì còn tốn thêm tiền cho một IP mới.
     """
     db, gen = _mo_db()
     try:
@@ -351,9 +391,13 @@ def _dung_lai(params: dict, ctx=None) -> dict:
         _bao(ctx, 10, "dang tat may cu")
         if _vm_da_ton_tai(client, may.vmid):
             try:
-                client.tat_cung(may.vmid)
+                # Cùng cái bẫy đã dính ở đường xoá: `tat_cung` là tác vụ NỀN,
+                # gọi `xoa` ngay sau đó thì Proxmox trả 500 và không nói vì sao.
+                _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=20)
             except ProxmoxError:
                 pass                      # máy đã tắt sẵn — không phải lỗi
+            except VpsJobError:
+                pass                      # tắt không xong thì vẫn thử xoá
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=30)
 
@@ -384,9 +428,15 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         if may.vmid and _vm_da_ton_tai(client, may.vmid):
             _bao(ctx, 20, "dang tat may")
             try:
-                client.tat_cung(may.vmid)
+                # PHẢI chờ tác vụ tắt xong. `tat_cung` là tác vụ NỀN: gọi `xoa`
+                # ngay sau đó thì Proxmox trả **500** vì máy còn đang chạy hoặc
+                # còn khoá. Đã dính thật 24/08 — và triệu chứng chỉ là "500",
+                # không nói gì về nguyên nhân.
+                _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=40)
             except ProxmoxError:
                 pass          # máy đã tắt sẵn — không phải lỗi, vẫn xoá tiếp
+            except VpsJobError:
+                pass          # tắt không xong thì vẫn thử xoá; `purge` cưỡng chế
             _bao(ctx, 50, "dang xoa dia")
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)

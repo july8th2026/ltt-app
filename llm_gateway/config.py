@@ -115,7 +115,7 @@ class Config:
             token=(os.environ.get("LTT_LLM_TOKEN") or "").strip(),
             models_mo=_danh_sach("LTT_LLM_MODELS"),
             max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 200_000),
-            max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 16_384),
+            max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 32_768),
             max_images=_int("LTT_LLM_MAX_IMAGES", 4),
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),
             upstream_timeout_s=_float("LTT_LLM_UPSTREAM_TIMEOUT_S", 600.0),

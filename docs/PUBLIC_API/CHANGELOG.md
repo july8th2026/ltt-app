@@ -23,6 +23,36 @@ lần ghi lại đó hiện ra trong diff.
 
 ---
 
+## 2026-08-24
+
+**ADDED — `text.chat`: trần `max_tokens` 16.384 → 32.768.**
+
+*Có phá vỡ tương thích không:* **không.** Đây là **nới rộng**. Mọi giá trị hợp lệ
+trước đây vẫn hợp lệ; chỉ có thêm giá trị mới được chấp nhận.
+
+*Phải làm gì:* không phải làm gì. Nếu bạn đang tự kẹp `max_tokens` xuống 16.384
+để tránh lỗi thì nay bỏ được.
+
+*Vì sao đổi:* **Claude Code gửi `max_tokens: 32000` mặc định**, và người dùng gần
+như không có cách nào đổi con số đó. Với trần cũ, Claude Code **hoàn toàn không
+cắm được** — phát hiện 24/08 khi cắm thật lần đầu (H38/L2).
+
+*Vì sao an toàn:* `llama.cpp` cấp KV cache cho **toàn bộ** cửa sổ `-c 65536` ngay
+lúc nạp model, nên VRAM **không đổi** dù trần token ra là 16K hay 32K. Số đo 19,4
+GB vốn đã là số của một cửa sổ 64K đầy.
+
+⚠️ **Vào và ra vẫn chia nhau cùng cửa sổ 65.536.** Nên trần thật của một lượt là
+`min(32.768, 65.536 − token_vào − 2.048)`. Một lượt có 50.000 token vào chỉ còn
+~13.400 token ra, và nền tảng **tự kẹp** thay vì từ chối — `max_tokens` là một
+**trần**, không phải một lượng đặt hàng, và tiền vẫn tính theo token **thật sự
+sinh ra**.
+
+⛔ Trần của `POST /api/v1/chat/completions` **không** đổi và vẫn **từ chối** thay
+vì kẹp. Lý do của nó khác hẳn: trần 100 giây của Cloudflare cho một lượt gọi đồng
+bộ. Kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
+
+---
+
 ## v1 — chưa phát hành ra ngoài
 
 Toàn bộ bề mặt `v1` được xây trong Public API V2 + Extension Pack và **chưa mở

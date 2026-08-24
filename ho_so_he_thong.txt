@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:048f1eff8608e0bfebbdbda064e2a986397bcb48d1f0023ba418e6ee81a1e145
-Nguồn đã quét : 1307 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:e88a3d0f68bc4e15f6be48fde91ae627f45fa8b5ff302be518ba7f440ffecabf
+Nguồn đã quét : 1310 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -542,7 +542,7 @@ Các lớp chính:
   URL=/vps | surface=customer | lifecycle=development
   enabled=False | public=False | parent=-
   requires=api | capabilities=Utilities
-  HTTP routes=2 | table_prefix=vps | manifest_error=-
+  HTTP routes=8 | table_prefix=vps | manifest_error=-
   credit_cost=apps.vps.cost.credit_cost
   job_types=vps.provision, vps.rebuild, vps.destroy
   Agent tools (0):
@@ -557,6 +557,7 @@ Các lớp chính:
     - apps/vps/services/__init__.py
     - apps/vps/services/billing.py
     - apps/vps/services/capacity.py
+    - apps/vps/services/dieu_khien.py
     - apps/vps/services/gateway.py
     - apps/vps/services/mang.py
     - apps/vps/services/provisioning.py
@@ -564,7 +565,7 @@ Các lớp chính:
     - apps/vps/services/vultr.py
     - apps/vps/tables.py
 
-4. HTTP ROUTE INVENTORY (334)
+4. HTTP ROUTE INVENTORY (340)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -898,8 +899,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] GET    /upscalevideo/watch/status → watch_status | auth~unspecified | apps/upscalevideo/routes.py:293
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
-- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:113
-- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:144
+- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:114
+- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:145
+- [vps] GET    /vps/{instance_id} → trang_chi_tiet | auth~login | apps/vps/routes.py:324
+- [vps] POST   /vps/{instance_id}/bat → bat_may | auth~login | apps/vps/routes.py:247
+- [vps] POST   /vps/{instance_id}/cai-lai → cai_lai_may | auth~login | apps/vps/routes.py:269
+- [vps] POST   /vps/{instance_id}/khoi-dong-lai → khoi_dong_lai_may | auth~login | apps/vps/routes.py:261
+- [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:254
+- [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:301
 
 5. DATA MODEL (57 bảng)
 - agent_runs → AgentRun | platform_core/models.py:406
@@ -1176,7 +1183,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (294 file pytest + 3 frontend)
+10. QUALITY GATES (295 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1412,6 +1419,7 @@ Test inventory:
 - tests/test_279_vps_ip_cong_khai.py
 - tests/test_27_phase5_wiring.py
 - tests/test_280_vi_du_qua_cloudflare.py
+- tests/test_280_vps_vong_doi.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -1497,8 +1505,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1307 file)
-Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1005, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1310 file)
+Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1007, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1568,7 +1576,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (253)
+[apps] (254)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1816,6 +1824,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - apps/vps/services/__init__.py
 - apps/vps/services/billing.py
 - apps/vps/services/capacity.py
+- apps/vps/services/dieu_khien.py
 - apps/vps/services/gateway.py
 - apps/vps/services/mang.py
 - apps/vps/services/provisioning.py
@@ -2286,7 +2295,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (151)
+[server] (152)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2435,6 +2444,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - server/templates/status_api.html
 - server/templates/verify_result.html
 - server/templates/vps.html
+- server/templates/vps_chi_tiet.html
 - server/templates/workers.html
 - server/templating.py
 - server/usage_rate_limit.py
@@ -2449,7 +2459,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (311)
+[tests] (312)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2696,6 +2706,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_279_vps_ip_cong_khai.py
 - tests/test_27_phase5_wiring.py
 - tests/test_280_vi_du_qua_cloudflare.py
+- tests/test_280_vps_vong_doi.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -2872,7 +2883,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1307 file; 12049676 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1310 file; 12094136 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17292,7 +17303,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=492ccb1af410e75d71b93b15e9a3deaeb2792d6267ad9099bc4ad04c4b4691e2 BYTES=9557 LINES=189
+SHA256=aca1768033e0815646c08a132459c7b3d4aa403998622b195b4d996e60cc2ca2 BYTES=11738 LINES=224
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -17339,9 +17350,44 @@ from platform_core.registry import AppManifest, ToolSpec
 #: Trần token ra mặc định khi khách không khai `max_tokens`. Giữ chỗ theo số này.
 MAX_TOKENS_MAC_DINH = 4096
 
+#: Cửa sổ ngữ cảnh của `qwen38-api`, khớp `-c 65536` trong `llama-swap.yaml`.
+#: **Vào và ra dùng chung con số này**, nên nó là ràng buộc thật, không phải
+#: `MAX_TOKENS_TRAN`.
+CUA_SO_NGU_CANH = 65_536
+
+#: Chừa chỗ cho khuôn chat, định nghĩa tool và sai số của phép ước token vào.
+#: `uoc_token_vao` là ƯỚC, không phải phép đếm thật — nên phải có biên.
+LE_NGU_CANH = 2_048
+
 #: Trần cứng của app. Cổng VLM còn một trần riêng của nó (`LTT_LLM_MAX_*`);
 #: cái nào chặt hơn thì cái đó thắng — đúng tinh thần "hai chốt độc lập".
-MAX_TOKENS_TRAN = 16_384
+#:
+#: ⭐ NÂNG 16.384 → 32.768 ngày 24/08 (chủ sản phẩm quyết), và điều làm nó AN
+#:    TOÀN chứ không phải "chắc là được": `llama.cpp` cấp KV cache cho **toàn bộ**
+#:    `-c 65536` ngay lúc nạp model. Nên VRAM **không đổi** dù trần token ra là
+#:    16K hay 32K — chiều duy nhất có thể nguy hiểm thì không hề động tới.
+#:    Đây KHÔNG phải một ngoại lệ của luật "chưa đo thì không chạy" (D-032): số
+#:    đo VRAM 19,4 GB đã là số của một cửa sổ 64K đầy.
+#:
+#: ⛔ VÀ VÌ SAO PHẢI LÀ ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định,
+#:    và khách gần như **không có cách nào đổi**. Trần 16.384 khiến Claude Code
+#:    hoàn toàn không dùng được — phát hiện 24/08 khi cắm thật (H38/L2).
+MAX_TOKENS_TRAN = 32_768
+
+
+def tran_theo_ngu_canh(token_vao_uoc: int) -> int:
+    """Trần token ra **thật sự dùng được** cho một lượt, biết ngữ cảnh còn bao nhiêu.
+
+    🔴 VÌ SAO KHÔNG DÙNG THẲNG `MAX_TOKENS_TRAN`. Vào và ra chia nhau **cùng một**
+       cửa sổ 65.536. Một lượt có 50.000 token vào mà xin 32.768 token ra thì
+       tổng vượt cửa sổ, và thứ hỏng ở đó **không phải một lỗi sạch** — model
+       cắt bớt ngữ cảnh hoặc thượng nguồn từ chối, cả hai đều khó truy.
+
+    ⛔ Trả về ít nhất 1: một lượt không còn chỗ để trả lời thì phải hỏng ở chốt
+       token VÀO với thông điệp đúng, chứ không phải biến thành `max_tokens=0`.
+    """
+    con_lai = CUA_SO_NGU_CANH - int(token_vao_uoc or 0) - LE_NGU_CANH
+    return max(1, min(MAX_TOKENS_TRAN, con_lai))
 
 
 def _cost(params: dict) -> int:
@@ -34543,7 +34589,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=67c52165f5d8f71b75ddeb1de5bea88094e04cb2849583daef5f64102bd6ae1c BYTES=19047 LINES=424
+SHA256=6f5ee313dd9536e88834e7842df8a63faa56275f861a5497f2dce48b52ac62d1 BYTES=22514 LINES=474
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34803,10 +34849,39 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
     if cu is None:
         khach = nha_cung_cap.client_tu_moi_truong()
         ip = khach.tao_ip(may.id[:8])
-        cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
-                   vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
-        db.add(cu)
-        db.commit()                     # ← ghi TRƯỚC khi gắn. Xem docstring.
+        try:
+            # Vultr **cấp lại chính địa chỉ vừa trả** (nó giữ 24 giờ rồi đưa lại
+            # cho cùng tài khoản) — đã thấy thật 24/08. Nên phải hỏi xem địa chỉ
+            # này đã có dòng nào chưa, thay vì INSERT thẳng rồi chết vì ràng buộc
+            # duy nhất. Chết ở đây nghĩa là **tiền đã tiêu mà sổ sách không có**.
+            trung = db.execute(select(VpsIp).where(
+                VpsIp.gateway_id == gateway.id,
+                VpsIp.dia_chi == ip["dia_chi"])).scalars().first()
+            if trung is not None and trung.instance_id:
+                raise VpsJobError(
+                    f"Vultr cap dia chi {ip['dia_chi']} nhung so sach ghi no dang "
+                    f"thuoc may {trung.instance_id} — dung lai, khong ghi de")
+            if trung is not None:
+                trung.vultr_id, trung.nhan = ip["id"], ip["nhan"]
+                trung.instance_id = may.id
+                cu = trung
+            else:
+                cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
+                           vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
+                db.add(cu)
+            db.commit()                 # ← ghi TRƯỚC khi gắn. Xem docstring.
+        except Exception:
+            # Ghi sổ hỏng thì TRẢ IP VỀ NGAY. Không làm bước này là mỗi lần lỗi
+            # để lại $3/tháng chảy mãi, và không ai biết nó của máy nào.
+            db.rollback()
+            try:
+                khach.xoa_ip(ip["id"])
+                log.warning("VPS: da tra lai IP %s vi khong ghi duoc so sach",
+                            ip["dia_chi"])
+            except nha_cung_cap.VultrError as loi_tra:
+                log.error("VPS: RO TIEN — mua IP %s (%s) nhung khong ghi so va "
+                          "khong tra lai duoc: %s", ip["dia_chi"], ip["id"], loi_tra)
+            raise
         khach.gan_ip(ip["id"], _id_cong_vao(gateway, khach))
 
     cong_vao.client_tu_moi_truong().mo_duong(cu.dia_chi, ip_noi_bo)
@@ -34841,6 +34916,12 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             if ip.vultr_id:
                 khach.go_ip(ip.vultr_id)
                 khach.xoa_ip(ip.vultr_id)
+            # XOÁ hẳn bản ghi, không chỉ gỡ liên kết: IP đã không còn ở nhà cung
+            # cấp nữa, nên giữ dòng đó lại là nói dối rằng ta vẫn có nó. Và nó
+            # gây hại thật — Vultr **cấp lại chính địa chỉ vừa trả** (đã thấy
+            # 24/08), và bản ghi cũ làm INSERT mới chết vì ràng buộc duy nhất
+            # `(gateway_id, dia_chi)`, tức máy TIẾP THEO của khách không tạo được.
+            db.delete(ip)
         except (nha_cung_cap.VultrError, cong_vao.GatewayError) as exc:
             # Bắt HẸP, không `except Exception`: lỗi lập trình phải nổ lên trên.
             # Còn nhà cung cấp từ chối hay cổng vào không trả lời thì KHÔNG được
@@ -34848,6 +34929,10 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             # tiền chảy mãi.
             log.warning("VPS: khong tra duoc IP %s cua may %s: %s",
                         ip.dia_chi, may.id, exc)
+            # Giữ bản ghi lại (gỡ liên kết thôi) để con người còn dọn được —
+            # đây là trường hợp DUY NHẤT một dòng `vps_ip` được phép sống sót
+            # sau khi máy bị xoá.
+            ip.instance_id = None
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
@@ -34883,10 +34968,11 @@ def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
 # ── vps.rebuild ─────────────────────────────────────────────────────────────
 
 def _dung_lai(params: dict, ctx=None) -> dict:
-    """Cài lại từ đầu: xoá VM cũ, giữ nguyên bản ghi, cổng và IP đã cấp.
+    """Cài lại từ đầu: xoá VM cũ, giữ nguyên bản ghi và **IP công khai đã cấp**.
 
-    Giữ cổng là cố ý — khách đã lưu địa chỉ đó, đã cấu hình client. Đổi cổng khi
-    cài lại là bắt khách đi tìm địa chỉ mới mà không có lý do gì.
+    Giữ IP là cố ý — khách đã lưu địa chỉ đó, đã trỏ tên miền vào đó, đã cấu hình
+    client. Đổi IP khi cài lại là bắt khách đi tìm địa chỉ mới mà không có lý do
+    gì, và với Vultr thì còn tốn thêm tiền cho một IP mới.
     """
     db, gen = _mo_db()
     try:
@@ -34898,9 +34984,13 @@ def _dung_lai(params: dict, ctx=None) -> dict:
         _bao(ctx, 10, "dang tat may cu")
         if _vm_da_ton_tai(client, may.vmid):
             try:
-                client.tat_cung(may.vmid)
+                # Cùng cái bẫy đã dính ở đường xoá: `tat_cung` là tác vụ NỀN,
+                # gọi `xoa` ngay sau đó thì Proxmox trả 500 và không nói vì sao.
+                _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=20)
             except ProxmoxError:
                 pass                      # máy đã tắt sẵn — không phải lỗi
+            except VpsJobError:
+                pass                      # tắt không xong thì vẫn thử xoá
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=30)
 
@@ -34931,9 +35021,15 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         if may.vmid and _vm_da_ton_tai(client, may.vmid):
             _bao(ctx, 20, "dang tat may")
             try:
-                client.tat_cung(may.vmid)
+                # PHẢI chờ tác vụ tắt xong. `tat_cung` là tác vụ NỀN: gọi `xoa`
+                # ngay sau đó thì Proxmox trả **500** vì máy còn đang chạy hoặc
+                # còn khoá. Đã dính thật 24/08 — và triệu chứng chỉ là "500",
+                # không nói gì về nguyên nhân.
+                _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=40)
             except ProxmoxError:
                 pass          # máy đã tắt sẵn — không phải lỗi, vẫn xoá tiếp
+            except VpsJobError:
+                pass          # tắt không xong thì vẫn thử xoá; `purge` cưỡng chế
             _bao(ctx, 50, "dang xoa dia")
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)
@@ -35193,7 +35289,7 @@ def khoa_moi_truong(os_id: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/routes.py
-SHA256=2cfbbc5d22ca5c6fb0efa7e50a2e02d96694c4c2c37dfffce029116ff18fb543 BYTES=8428 LINES=213
+SHA256=d4e7081fd3f5b29e6013d78d71031be7b58d832016dca65224d9965025a0c474 BYTES=15223 LINES=352
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của app VPS. CHỈ lo HTTP — mọi quy tắc ở `apps/vps/services/`.
 
@@ -35225,10 +35321,10 @@ import apps.vps as vps_app
 from apps.vps import os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
-from apps.vps.services import billing, capacity, provisioning
+from apps.vps.services import (billing, capacity, dieu_khien, provisioning)
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
                                        client_tu_moi_truong)
-from apps.vps.tables import VpsInstance, VpsIp
+from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -35302,6 +35398,7 @@ def _may_cua_toi(db, user_id: str) -> list:
             "os": os_images.lay_os(m.os_id),
             "dia_chi": x.dia_chi if x is not None else "",
             "con_han": billing.con_han(m),
+            "con_ngay": billing.con_bao_nhieu_ngay(m),
         })
     return ket_qua
 
@@ -35402,6 +35499,144 @@ def tao_may(request: Request,
     return RedirectResponse(MANIFEST.route_prefix, status_code=303)
 
 
+# ── vòng đời một máy ─────────────────────────────────────────────────────────
+
+def _may_cua_khach(db, request: Request, instance_id: str) -> VpsInstance:
+    """Lấy máy VÀ kiểm nó thuộc về người đang đăng nhập.
+
+    404 chứ không 403 khi máy của người khác: 403 xác nhận id đó có thật, và
+    một danh sách id có thật là thứ đầu tiên người ta dò.
+    """
+    may = db.get(VpsInstance, str(instance_id or ""))
+    if may is None or str(may.user_id) != _chu(request):
+        raise HTTPException(status_code=404)
+    return may
+
+
+def _thao_tac(request: Request, csrf_token: str, instance_id: str, db, ham):
+    """Khuôn chung của bật/tắt/khởi động lại: CSRF → chủ sở hữu → gọi → về trang.
+
+    Ba thao tác này chạy THẲNG, không qua hàng đợi — xem docstring của
+    `services/dieu_khien.py`.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    try:
+        client = client_tu_moi_truong()
+    except ChuaCauHinh:
+        return _ve_trang(_t("Hệ thống đang bận, thử lại sau."))
+    try:
+        ham(db, may, client, boi=_chu(request))
+    except dieu_khien.KhongDuocPhepError as exc:
+        return _ve_trang(str(exc))
+    except ProxmoxError as exc:
+        log.warning("VPS: thao tac tren may %s that bai: %s", may.id, exc)
+        return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
+    return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
+
+
+@router.post("/{instance_id}/bat")
+def bat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+            _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+            db=Depends(get_db)):
+    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.bat)
+
+
+@router.post("/{instance_id}/tat")
+def tat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+            _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+            db=Depends(get_db)):
+    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.tat)
+
+
+@router.post("/{instance_id}/khoi-dong-lai")
+def khoi_dong_lai_may(instance_id: str, request: Request,
+                      csrf_token: str = Form(...),
+                      _g: None = Depends(_cong_co),
+                      _u: str = Depends(require_login), db=Depends(get_db)):
+    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.khoi_dong_lai)
+
+
+@router.post("/{instance_id}/cai-lai")
+def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                xac_nhan: str = Form(""), os_id: str = Form(""),
+                _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                db=Depends(get_db)):
+    """Cài lại từ đầu. **Mất sạch dữ liệu**, nên đòi gõ đúng tên máy để xác nhận.
+
+    Khuôn của GitHub, và lý do giống hệt: nút này không hoàn tác được, nên nó
+    phải khó bấm nhầm hơn một cú click.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    if str(xac_nhan).strip() != (may.ten or may.id[:8]):
+        return _ve_trang(_t("Gõ đúng tên máy để xác nhận cài lại."))
+    if may.trang_thai in ("dang_tao", "da_xoa"):
+        return _ve_trang(_t("Máy đang bận hoặc đã bị xoá."))
+
+    if os_id and not os_images.hop_le(may.plan_id, os_id, may.dia_them_gb)[0]:
+        return _ve_trang(os_images.hop_le(may.plan_id, os_id, may.dia_them_gb)[1])
+
+    may.trang_thai = "dang_tao"
+    provisioning.ghi_su_kien(db, may.id, "xin_cai_lai", boi=_chu(request),
+                             os_id=os_id or may.os_id)
+    from platform_core import jobs as job_queue
+    job_queue.submit(db, user_id=_chu(request), app_slug=MANIFEST.slug,
+                     job_type="vps.rebuild",
+                     params={"instance_id": may.id, "os_id": os_id or ""})
+    db.commit()
+    return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
+
+
+@router.post("/{instance_id}/xoa")
+def xoa_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+            xac_nhan: str = Form(""),
+            _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+            db=Depends(get_db)):
+    """Xoá vĩnh viễn. Không hoàn tác được — cũng đòi gõ đúng tên máy."""
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    if str(xac_nhan).strip() != (may.ten or may.id[:8]):
+        return _ve_trang(_t("Gõ đúng tên máy để xác nhận xoá."))
+    if may.trang_thai == "da_xoa":
+        return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+
+    provisioning.ghi_su_kien(db, may.id, "xin_xoa", boi=_chu(request))
+    from platform_core import jobs as job_queue
+    job_queue.submit(db, user_id=_chu(request), app_slug=MANIFEST.slug,
+                     job_type="vps.destroy",
+                     params={"instance_id": may.id, "boi": _chu(request)})
+    db.commit()
+    return RedirectResponse(MANIFEST.route_prefix, status_code=303)
+
+
+@router.get("/{instance_id}", response_class=HTMLResponse)
+def trang_chi_tiet(instance_id: str, request: Request,
+                   _g: None = Depends(_cong_co),
+                   _u: str = Depends(require_login), db=Depends(get_db)):
+    may = _may_cua_khach(db, request, instance_id)
+    ip = db.execute(
+        select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
+    su_kien = db.execute(
+        select(VpsEvent).where(VpsEvent.instance_id == may.id)
+        .order_by(VpsEvent.created_at.desc()).limit(20)).scalars().all()
+    return templates.TemplateResponse(request, "vps_chi_tiet.html", {
+        "may": may,
+        "plan": lay_plan(may.plan_id),
+        "os": os_images.lay_os(may.os_id),
+        "dia_chi": ip.dia_chi if ip is not None else "",
+        "con_han": billing.con_han(may),
+        "con_ngay": billing.con_bao_nhieu_ngay(may),
+        "su_kien": su_kien,
+        "os_ban_duoc": os_images.os_ban_duoc(),
+        "csrf_token": issue_csrf_token(request),
+        "loi": request.query_params.get("loi", ""),
+    })
+
+
 def _ve_trang(loi: str) -> RedirectResponse:
     """Về trang chính kèm một câu giải thích. Không dựng lại cả trang ở nhánh lỗi
     — nhánh lỗi dựng trang là chỗ hai đường code lệch nhau theo thời gian."""
@@ -35424,7 +35659,7 @@ rõ rệt — nói chuyện với Proxmox, xếp chỗ, cấp cổng, vòng đ�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/billing.py
-SHA256=e6c72bcdd0f4f281ada0d8319b16ecce1d092d1256aa7b24c4c82abfcfa35877 BYTES=7781 LINES=179
+SHA256=5f702e23971ce2789cbd3efd8cf2f8bfbcbf2e59f5914126a14384fb985c64e7 BYTES=8521 LINES=196
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Thu tiền VPS: trừ credit theo chu kỳ 30 ngày, treo rồi xoá khi hết tiền.
 
@@ -35489,6 +35724,23 @@ def con_han(may: VpsInstance, *, now: datetime | None = None) -> bool:
     """Máy này đã trả tiền tới hiện tại chưa."""
     han = _aware(may.paid_until)
     return han is not None and han > (now or _now())
+
+
+def con_bao_nhieu_ngay(may: VpsInstance, *, now: datetime | None = None):
+    """Còn mấy ngày nữa hết hạn. `None` = chưa thu chu kỳ nào.
+
+    Tách khỏi `con_han` (trả `bool`) vì giao diện cần **con số** để cảnh báo sớm:
+    hết hạn là treo ngay và xoá sau 7 ngày (V8), nên khách phải thấy nó đang tới
+    gần chứ không phải biết khi đã mất máy.
+
+    Làm tròn XUỐNG, và không bao giờ trả số âm — quá hạn thì là 0, vì "còn −2
+    ngày" không nói được gì cho người đọc.
+    """
+    han = _aware(may.paid_until)
+    if han is None:
+        return None
+    con = (han - (now or _now())).total_seconds() / 86400
+    return max(0, int(con))
 
 
 def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
@@ -35850,6 +36102,137 @@ def kho_lon_nhat(kho: list) -> dict:
                 if "images" in str(k.get("content", ""))
                 and int(k.get("total") or 0) > 0]
     return max(ung_vien, key=lambda k: int(k.get("total") or 0), default={})
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/dieu_khien.py
+SHA256=e2538ac065ebabce56bec47f3f3e802a7d035690df4f39a8b0cdb9d2ef497578 BYTES=6382 LINES=125
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Điều khiển máy đang chạy: bật, tắt, khởi động lại — và ai được phép làm.
+
+## Vì sao ba thao tác này KHÔNG đi qua hàng đợi job
+
+Chúng là **một lệnh gọi API** rồi trả về ngay; Proxmox chạy phần việc thật ở nền và
+trả một mã tác vụ. Nhét chúng vào hàng đợi là bắt khách chờ một vòng worker để làm
+việc mất 200 mili-giây, và thêm một chỗ để job kẹt.
+
+Ngược lại, `cai_lai` và `xoa` **phải** đi qua job: chúng xoá đĩa rồi dựng lại, mất
+vài phút tới hơn mười, mà Cloudflare cắt request ở 100 giây.
+
+## Ba luật của tầng này, và cả ba đều là luật TIỀN chứ không phải luật kỹ thuật
+
+1. **Máy bị treo vì nợ thì khách không được tự bật lại.** Không có luật này thì
+   "treo" chỉ là một nút tắt mà khách bật lên được — tức là không treo gì cả.
+2. **Máy đang tạo dở thì không được đụng vào.** Bật/tắt giữa lúc job đang clone là
+   cách chắc chắn nhất để có một máy hỏng nửa chừng mà không ai biết vì sao.
+3. **Mọi thao tác đều ghi nhật ký vòng đời.** Đây là thứ trả lời câu "vì sao máy
+   tôi bị tắt" khi khách hỏi sau ba tháng — log ứng dụng thì đã xoay vòng mất rồi.
+"""
+from __future__ import annotations
+
+from sqlalchemy.orm import Session as DbSession
+
+from apps.vps.services import billing, provisioning
+from apps.vps.services.proxmox import ProxmoxClient, ProxmoxError
+from apps.vps.tables import VpsInstance
+
+#: Trạng thái mà khách được phép ra lệnh bật/tắt/khởi động lại.
+TRANG_THAI_DIEU_KHIEN_DUOC = ("dang_chay", "da_tat", "loi")
+
+
+class KhongDuocPhepError(RuntimeError):
+    """Thao tác không hợp lệ với trạng thái hiện tại của máy."""
+
+
+def kiem_dieu_khien_duoc(may: VpsInstance) -> None:
+    """Ném `KhongDuocPhepError` kèm câu giải thích **viết cho khách đọc**."""
+    tt = str(may.trang_thai or "")
+    if tt == "da_xoa":
+        raise KhongDuocPhepError("May nay da bi xoa.")
+    if tt == "bi_treo":
+        # Luật 1. Câu này khách sẽ đọc, nên nó phải nói được phải làm gì.
+        raise KhongDuocPhepError(
+            "May dang bi treo do het han thanh toan. Nap credit va gia han de "
+            "dung lai.")
+    if tt == "dang_tao":
+        raise KhongDuocPhepError("May dang duoc tao. Doi vai phut roi thu lai.")
+    if tt not in TRANG_THAI_DIEU_KHIEN_DUOC:
+        raise KhongDuocPhepError(f"Khong dieu khien duoc may o trang thai {tt!r}.")
+    if not may.vmid:
+        raise KhongDuocPhepError("May chua duoc tao xong tren may chu.")
+
+
+def _lam(db: DbSession, may: VpsInstance, client: ProxmoxClient, *,
+         boi: str, ten_thao_tac: str, goi, trang_thai_moi: str) -> str:
+    kiem_dieu_khien_duoc(may)
+    try:
+        upid = goi(int(may.vmid))
+    except ProxmoxError as exc:
+        # Ghi cả lần THẤT BẠI: khách hỏi "sao bấm mãi không được" thì phải có
+        # thứ để đọc, chứ không chỉ có những lần thành công.
+        provisioning.ghi_su_kien(db, may.id, f"{ten_thao_tac}_that_bai", boi=boi,
+                                 loi=str(exc)[:200])
+        db.commit()
+        raise
+    may.trang_thai = trang_thai_moi
+    may.ly_do = ""
+    provisioning.ghi_su_kien(db, may.id, ten_thao_tac, boi=boi, upid=str(upid)[:190])
+    db.commit()
+    return str(upid)
+
+
+def bat(db: DbSession, may: VpsInstance, client: ProxmoxClient, *, boi: str) -> str:
+    return _lam(db, may, client, boi=boi, ten_thao_tac="bat",
+                goi=client.bat, trang_thai_moi="dang_chay")
+
+
+def tat(db: DbSession, may: VpsInstance, client: ProxmoxClient, *, boi: str,
+        cung: bool = False) -> str:
+    """Tắt máy. `cung=True` là rút điện — chỉ dùng khi tắt mềm không ăn thua.
+
+    Mặc định tắt **mềm**: Windows cần dọn dẹp trước khi tắt, và rút điện giữa
+    lúc nó đang ghi đĩa là cách làm hỏng hệ tệp của khách.
+    """
+    return _lam(db, may, client, boi=boi, ten_thao_tac="tat_cung" if cung else "tat",
+                goi=client.tat_cung if cung else client.tat_mem,
+                trang_thai_moi="da_tat")
+
+
+def khoi_dong_lai(db: DbSession, may: VpsInstance, client: ProxmoxClient, *,
+                  boi: str) -> str:
+    """Khởi động lại = tắt mềm rồi bật.
+
+    Proxmox có endpoint `reboot` riêng, nhưng nó **chờ guest tự tắt** và treo vô
+    hạn nếu Windows đang hiện hộp thoại "có muốn lưu không". Ở đây ta tắt mềm rồi
+    để khách tự bật lại — chậm hơn một thao tác, nhưng không bao giờ treo.
+    """
+    return tat(db, may, client, boi=boi)
+
+
+def treo(db: DbSession, may: VpsInstance, client: ProxmoxClient, *,
+         boi: str = "he_thong", ly_do: str = "Het han thanh toan") -> None:
+    """Treo máy vì nợ hoặc vì lạm dụng: **tắt cứng**, rồi để `billing` ghi sổ.
+
+    Phần CSDL (trạng thái, lý do, và mốc `xoa_sau` của V8) do `billing.treo` làm
+    — nó đã có từ trước và nó là **một chỗ duy nhất** quyết định điều đó. Viết
+    lại phần ghi sổ ở đây là dựng chỗ thứ hai, và hai chỗ thì sớm muộn lệch nhau:
+    cái này đặt `xoa_sau`, cái kia quên, và máy của khách nằm lại vĩnh viễn hoặc
+    bị xoá sớm bảy ngày.
+
+    Khác `tat`: đây không phải thao tác của khách nên không hỏi
+    `kiem_dieu_khien_duoc`, và nó tắt **cứng** — khách đã hết hạn thanh toán thì
+    việc chờ Windows dọn dẹp không còn là ưu tiên, mà một máy "đang tắt mềm" mãi
+    không xong là một máy vẫn đang tiêu tài nguyên của người khác.
+    """
+    if may.vmid:
+        try:
+            client.tat_cung(int(may.vmid))
+        except ProxmoxError as exc:
+            # Không chặn việc treo: treo là quyết định về TIỀN, không phụ thuộc
+            # việc Proxmox có tắt được máy hay không. Nhưng phải ghi lại.
+            provisioning.ghi_su_kien(db, may.id, "treo_khong_tat_duoc",
+                                     boi=boi, loi=str(exc)[:200])
+    billing.treo(db, may, ly_do)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -87075,7 +87458,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=80e7f47b81a323badca9f3460e81ad8010b85fe727a5dbaad5ec6e6fcf24fdc8 BYTES=193706 LINES=2805
+SHA256=9a6747519c6fac6b0857f8bc839d4b04d15b72c4b5fb13342c10efa91dea09a4 BYTES=196669 LINES=2842
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -89781,18 +90164,55 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       *Bằng chứng:* SSH thẳng từ máy A vào `45.77.45.29` → vào máy khách; máy khách ra
       Internet cũng bằng đúng IP đó. Rẻ hơn gateway Windows cũ **$4/tháng**.
 
-- [ ] **G2 — đưa hạ tầng đó vào MÃ NGUỒN.** Hiện mọi thứ chạy bằng script tay.
-      `services/vultr.py` (tạo/gắn/gỡ/xoá Reserved IP, đọc băng thông) · `services/gateway.py`
-      (SSH có khoá, thêm/bớt phần tử `map`, **thu hồi phải nguyên tử với việc xoá máy**)
-      · sửa `services/mang.py`: **bỏ phép tính octet-theo-cổng**, chuyển sang cấp địa chỉ
-      nội bộ trực tiếp · làm địa chỉ Reserved IP **bền qua khởi động lại** gateway.
-      *Xong khi:* tạo + xoá một máy có IP riêng **hoàn toàn từ job**, không script tay,
-      và test đa tiến trình kiểu `test_214` chứng minh hai worker không cấp trùng IP.
+- [x] **G2 — đưa hạ tầng vào MÃ NGUỒN.** ✅ **XONG 2026-08-24** (còn một việc, xem cuối).
+      `services/vultr.py` + `services/gateway.py` + `mang.py` viết lại (bỏ octet-theo-cổng)
+      + vòng đời IP trong `jobs.py` + `tools/vps_gateway/cai-dat-cong-vao.sh`.
+      **81 test xanh** (`test_279` 16 test mới cho hai driver).
 
-- [ ] **G3 — vòng đời máy + console.** Bật/tắt/khởi động lại/cài lại/xoá; xoá thì
-      **thu hồi IP** (nếu không, mỗi máy chết để lại $3/tháng chảy mãi). Console noVNC
-      proxy qua server mình, vé dùng-một-lần; khách **không bao giờ** chạm cổng 8006.
-      *Xong khi:* diễn tập trọn vòng đời trên **URL công khai** (quy tắc 5b).
+      *Đã chứng minh trên hạ tầng thật:* job tạo máy trong **26 giây** (clone + cấp địa chỉ
+      riêng + mua IP + gắn + mở đường), vào được **từ Internet** bằng IP riêng, ra Internet
+      cũng bằng đúng IP đó; job xoá trả IP về Vultr và gỡ đường sạch; cổng vào khởi động
+      lại thì **tự hồi hoàn toàn sau 53 giây**.
+
+      **Bốn lỗi thật tìm được khi chạy, không lỗi nào test bắt được:**
+      ① `cap_vmid` chỉ hỏi CSDL nên job **chiếm máy có sẵn trên Proxmox** mà CSDL không
+      biết — tức giao máy người này cho người khác. Nay hỏi cả máy chủ, có test chốt.
+      ② `_xoa_may` gọi `DELETE` ngay sau lệnh tắt (tác vụ nền) ⇒ Proxmox trả **500**.
+      ③ Trả IP về mà chỉ gỡ liên kết, không xoá bản ghi ⇒ Vultr **cấp lại chính địa chỉ
+      vừa trả** và máy tiếp theo của khách **không tạo được**.
+      ④ Mua IP xong mà ghi sổ hỏng thì IP nằm lại — **$3/tháng chảy mãi**. Nay trả về ngay.
+
+      ⏳ *Còn nợ:* test đa tiến trình kiểu `test_214` chứng minh hai worker không cấp trùng
+      địa chỉ. Ràng buộc duy nhất `(gateway_id, ip_noi_bo)` đã là trọng tài và đường
+      `IntegrityError` có test, nhưng **chưa chạy thật hai tiến trình** — cần một CSDL
+      PostgreSQL vứt đi mà vai `ltt_app` không tạo được (thiếu `CREATEDB`).
+
+- [x] **G3 — vòng đời máy.** ✅ **XONG 2026-08-24.** `services/dieu_khien.py` +
+      6 route + trang chi tiết máy + `tests/test_280_vps_vong_doi.py` (12 test).
+      Bật/tắt/khởi động lại chạy **thẳng** (một lệnh gọi API, ~200 ms — nhét vào hàng
+      đợi là bắt khách chờ một vòng worker); cài lại/xoá đi **qua job** (mất vài phút,
+      Cloudflare cắt ở 100 giây).
+
+      Ba luật của tầng này đều là **luật tiền**, không phải luật kỹ thuật: máy bị treo
+      vì nợ thì khách **không tự bật lại được** (nếu bật được thì "treo" chỉ là một cái
+      nút); máy đang tạo dở thì không ai đụng vào; **mọi thao tác kể cả thất bại đều ghi
+      nhật ký vòng đời** — đó là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau
+      ba tháng, lúc log ứng dụng đã xoay vòng mất.
+
+      Hai lỗi sửa nhân tiện: đường **cài lại** dính đúng cái bẫy `DELETE` chạy đua với
+      lệnh tắt như đường xoá; và `dieu_khien.treo` ban đầu tự ghi sổ, tức **chỗ thứ hai**
+      quyết định cùng một việc với `billing.treo` — cái này đặt `xoa_sau`, cái kia quên,
+      và máy của khách nằm lại vĩnh viễn hoặc bị xoá sớm bảy ngày. Nay uỷ quyền hết.
+
+      Cũng sửa một **dòng cảnh báo đã thành SAI** trên trang bán: *"bạn nhận cổng, không
+      nhận IP riêng"* — từ 24/08 thì ngược lại. Một cảnh báo sai còn tệ hơn không có, vì
+      khách tin nó. Test cũ chốt đúng câu sai đó, đã cập nhật.
+
+- [ ] **G3b — console noVNC.** Proxy WebSocket qua server mình, vé dùng-một-lần; khách
+      **không bao giờ** chạm cổng 8006 của Proxmox. Đây là **đường cứu hộ** (khách tự
+      chặn mất RDP của chính mình), không phải đường vào chính — nên nó xếp sau G5.
+      ⏳ *Cần chủ sản phẩm đồng ý một việc:* nhúng thư viện **noVNC** vào
+      `server/static/vps/` — tức tải một gói JS từ kho nguồn mở về repo.
 
 - [ ] **G4 — tiền.** Chu kỳ 30 ngày theo khuôn Q98 (đã có `billing.py`) + **tiền IP
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
@@ -141815,7 +142235,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=84dd6e1c5c1384373813d4979aa51d8f62f67c69cf6e762559a91f1d8cfa2e18 BYTES=17342 LINES=365
+SHA256=25d5adbc8aff52e3c24da4cc380f32b5ae9099ec7693a23bd1264288df0f02fe BYTES=19598 LINES=401
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -141981,11 +142401,41 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # ⛔ KHONG tu ghep chuoi o day: `credit_entries.job_id` la VARCHAR(36) va
     #    PostgreSQL ep do dai trong khi SQLite thi khong. Xem `thanh_toan.ma_luot`.
     request_id = thanh_toan.ma_luot("st")
-    xin_ra = _max_tokens(than)
+    vao_uoc = features.uoc_token_vao(tin)
+    xin_ra = _max_tokens(than, vao_uoc)
+
+    # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN. Thiếu dòng này là lỗi thật, tìm
+    #    ra 24/08 khi cắm Claude Code lần đầu (H38/L2).
+    #
+    #    `_max_tokens()` kẹp về `MAX_TOKENS_TRAN`, nhưng kết quả chỉ dùng cho
+    #    phần **giữ tiền**. Thân `gui` vẫn mang con số thô của khách. Nên ta kẹp
+    #    cái mình **thu tiền** mà không kẹp cái mình **gửi đi**, và máy B trả 413.
+    #
+    #    Claude Code gửi `max_tokens: 32000` mặc định — con số khách gần như
+    #    không có cách nào đổi. Nên trước khi sửa, Claude Code **hoàn toàn không
+    #    dùng được**, và triệu chứng là một 503 "thử lại sau" cho một thứ thử lại
+    #    bao nhiêu lần cũng hỏng.
+    #
+    # ⭐ VÌ SAO KẸP CHỨ KHÔNG TỪ CHỐI, khác hẳn `chat.py`. `max_tokens` là một
+    #    **trần**, không phải một lượng đặt hàng: kẹp nó xuống chỉ giới hạn câu
+    #    trả lời có thể dài tới đâu, và tiền vẫn tính theo token **thật sự sinh
+    #    ra** nên khách không trả thêm đồng nào. Còn `chat.py` từ chối là đúng ở
+    #    đó, vì lý do của nó là **thời gian** (trần 100 giây của Cloudflare) —
+    #    kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
+    #
+    # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc
+    #    `max_output_tokens`, hai cửa kia đọc `max_tokens`. Ghi nhầm tên là thêm
+    #    một trường lạ mà thượng nguồn bỏ qua — tức lại gửi đi con số thô.
+    for _ten in ("max_tokens", "max_output_tokens"):
+        if _ten in gui:
+            gui[_ten] = xin_ra
+            break
+    else:
+        gui["max_tokens"] = xin_ra
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=features.uoc_token_vao(tin), max_tokens=xin_ra)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
         # Không đủ tiền thì không đốt GPU. Chốt trước, không phải sau.
         #
@@ -142140,14 +142590,20 @@ def _tin_nhan(than: dict) -> list:
     return ra
 
 
-def _max_tokens(than: dict) -> int:
-    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, MAX_TOKENS_TRAN
+def _max_tokens(than: dict, token_vao_uoc: int = 0) -> int:
+    """Trần token ra cho lượt này, đã kẹp theo **chỗ còn lại trong ngữ cảnh**.
 
+    ⚠️ `token_vao_uoc` mặc định 0 chỉ để không phá lời gọi cũ; đường thật luôn
+       truyền số vào. Vào và ra chia nhau cùng một cửa sổ 65.536.
+    """
+    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, tran_theo_ngu_canh
+
+    tran = tran_theo_ngu_canh(token_vao_uoc)
     for ten in ("max_tokens", "max_output_tokens"):
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):
-            return max(1, min(int(gt), MAX_TOKENS_TRAN))
-    return MAX_TOKENS_MAC_DINH
+            return max(1, min(int(gt), tran))
+    return min(MAX_TOKENS_MAC_DINH, tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:
@@ -158776,7 +159232,7 @@ SHA256=25f5e96cf67ec4f1a9ed2b35573e7edf8ef3d986a9c347da6235c9e03e950481 BYTES=80
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps.html
-SHA256=515f492e5b665e2d12bed9dbe8702aa5253039879bcc95ac19f81a6ae7eaaf2d BYTES=6279 LINES=123
+SHA256=e68d78e3f7814b16535fbcdb0f8ecd3970d62f91fef188c7ea3fd34435200c2f BYTES=7151 LINES=134
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
@@ -158785,16 +159241,18 @@ SHA256=515f492e5b665e2d12bed9dbe8702aa5253039879bcc95ac19f81a6ae7eaaf2d BYTES=62
 
   {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
 
-  {# Ba câu dưới đây KHÔNG phải trang trí. Chúng là điều kiện của Q103/V1+V2+V3:
-     hạ tầng là ảo hoá lồng trên một máy để bàn dùng chung, có thể khởi động lại
-     bất cứ lúc nào, và khách nhận cổng chứ không nhận IP riêng. Khách phải đọc
-     được điều đó TRƯỚC khi trả tiền, không phải sau. #}
+  {# Bốn câu dưới đây KHÔNG phải trang trí — chúng là điều kiện của Q103 và là
+     những con số ĐO THẬT. Khách phải đọc được TRƯỚC khi trả tiền, không phải sau.
+     Câu về IP đã đổi ngày 24/08: từ khi mỗi máy có một IP công khai riêng, câu
+     cũ ("bạn nhận cổng, không nhận IP") trở thành SAI — và một dòng cảnh báo sai
+     còn tệ hơn không có, vì khách tin nó. #}
   <div class="alert alert-warn" style="margin:0 0 16px;">
     <strong>{{ _("Đọc trước khi thuê") }}</strong>
     <ul style="margin:8px 0 0; padding-left:20px;">
       <li>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</li>
-      <li>{{ _("Bạn nhận địa chỉ dạng tên-miền:cổng, không phải một địa chỉ IP riêng. Bạn không host được website hay mail server trên máy này.") }}</li>
+      <li>{{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy chủ đặt tại Việt Nam, đường vào đi qua Singapore.") }}</li>
       <li>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</li>
+      <li>{{ _("Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không bị tính thêm tiền.") }}</li>
       <li>{{ _("Sao lưu hằng tuần, giữ 1 bản. Dữ liệu quan trọng bạn nên tự sao lưu thêm.") }}</li>
     </ul>
   </div>
@@ -158818,6 +159276,7 @@ SHA256=515f492e5b665e2d12bed9dbe8702aa5253039879bcc95ac19f81a6ae7eaaf2d BYTES=62
           <th>{{ _("Địa chỉ") }}</th>
           <th>{{ _("Trạng thái") }}</th>
           <th>{{ _("Trả tới") }}</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -158835,8 +159294,16 @@ SHA256=515f492e5b665e2d12bed9dbe8702aa5253039879bcc95ac19f81a6ae7eaaf2d BYTES=62
           </td>
           <td>
             {% if m.may.paid_until %}{{ m.may.paid_until.strftime('%d/%m/%Y') }}
+              {# Cảnh báo SỚM, không phải sau khi mất máy: hết hạn là treo ngay
+                 và xoá sau 7 ngày (V8). Khách mất máy vì không biết sắp hết hạn
+                 là lỗi của giao diện, không phải của họ. #}
+              {% if m.con_ngay is not none and m.con_ngay <= 3 %}
+                <br><span class="alert-err" style="padding:1px 6px;border-radius:4px;">
+                  {{ _("còn %(n)s ngày") % {"n": m.con_ngay} }}</span>
+              {% endif %}
             {% else %}<span class="muted">—</span>{% endif %}
           </td>
+          <td><a class="btn btn-sm" href="{{ app.route_prefix }}/{{ m.may.id }}">{{ _("Quản lý") }}</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -158898,6 +159365,149 @@ SHA256=515f492e5b665e2d12bed9dbe8702aa5253039879bcc95ac19f81a6ae7eaaf2d BYTES=62
     {{ _("Còn trống") }}: {{ (suc_chua.ram_mb_con / 1024) | round(1) }} GB RAM
     · {{ suc_chua.dia_gb_con }} GB {{ _("đĩa") }}
   </p>
+  {% endif %}
+
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps_chi_tiet.html
+SHA256=8ef1814aa1db55b93cf67da3ff3ae8202b2107249fd9cc10e873e28ebb2d8d67 BYTES=7196 LINES=137
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ may.ten or may.id[:8] }} — {{ app.display_name }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block content %}
+
+  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+
+  <p style="margin:0 0 12px;">
+    <a href="{{ app.route_prefix }}">&larr; {{ _("Máy của tôi") }}</a>
+  </p>
+
+  {# ── 1. Tổng quan ──────────────────────────────────────────────────────
+     Thứ tự bốn khối trên trang này theo thứ tự người ta THỰC SỰ cần: địa chỉ để
+     vào máy trước, rồi mới tới điều khiển, nhật ký, và cuối cùng là hai nút
+     không hoàn tác được. #}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2>{{ _("Tổng quan") }}</h2>
+    <table class="tbl" style="width:100%;">
+      <tr>
+        <th style="width:180px;">{{ _("Địa chỉ") }}</th>
+        <td>
+          {% if dia_chi %}<code>{{ dia_chi }}</code>
+            <span class="muted">
+              {{ _("— vào bằng %(cong)s") % {"cong": os.cong_quen if os else 3389} }}
+            </span>
+          {% else %}<span class="muted">{{ _("đang chuẩn bị…") }}</span>{% endif %}
+        </td>
+      </tr>
+      <tr><th>{{ _("Trạng thái") }}</th>
+        <td>{{ may.trang_thai }}
+          {% if may.ly_do %}<br><span class="muted">{{ may.ly_do }}</span>{% endif %}</td></tr>
+      <tr><th>{{ _("Cấu hình") }}</th>
+        <td>{% if plan %}{{ _(plan.ten) }} — {{ plan.vcpu }} vCPU ·
+          {{ (plan.ram_mb / 1024) | round | int }} GB RAM · {{ plan.disk_gb }} GB
+          {% else %}{{ may.plan_id }}{% endif %}</td></tr>
+      <tr><th>{{ _("Hệ điều hành") }}</th>
+        <td>{{ os.ten if os else may.os_id }}</td></tr>
+      <tr><th>{{ _("Trả tới") }}</th>
+        <td>
+          {% if may.paid_until %}{{ may.paid_until.strftime('%d/%m/%Y') }}
+            {% if con_ngay is not none and con_ngay <= 3 %}
+              <span class="alert-err" style="padding:1px 6px;border-radius:4px;">
+                {{ _("còn %(n)s ngày") % {"n": con_ngay} }}</span>
+            {% endif %}
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td></tr>
+    </table>
+  </div>
+
+  {# ── 2. Điều khiển ─────────────────────────────────────────────────────
+     Ba nút này chạy THẲNG, không qua hàng đợi — chúng là một lệnh gọi API.
+     Xem docstring của `apps/vps/services/dieu_khien.py`. #}
+  <div class="card">
+    <h2>{{ _("Điều khiển") }}</h2>
+    {% if may.trang_thai == "bi_treo" %}
+      <div class="alert alert-warn" style="margin:0;">
+        {{ _("Máy đang bị treo do hết hạn thanh toán. Nạp credit và gia hạn để dùng lại.") }}
+      </div>
+    {% elif may.trang_thai == "dang_tao" %}
+      <p class="muted" style="margin:0;">{{ _("Máy đang được tạo. Tải lại trang sau vài phút.") }}</p>
+    {% else %}
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        {% for hanh_dong, nhan in [("bat", _("Bật")), ("tat", _("Tắt")),
+                                   ("khoi-dong-lai", _("Khởi động lại"))] %}
+        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/{{ hanh_dong }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn" type="submit">{{ nhan }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      <p class="muted" style="margin:8px 0 0;">
+        {{ _("Tắt máy dùng lệnh tắt mềm — hệ điều hành có thời gian dọn dẹp. Máy đã tắt vẫn tính phí vì nó vẫn giữ chỗ và giữ dữ liệu.") }}
+      </p>
+    {% endif %}
+  </div>
+
+  {# ── 3. Nhật ký vòng đời ───────────────────────────────────────────────
+     Đây là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau ba tháng. #}
+  <div class="card">
+    <h2>{{ _("Nhật ký") }}</h2>
+    {% if su_kien %}
+    <table class="tbl" style="width:100%;">
+      <thead><tr>
+        <th style="width:160px;">{{ _("Thời điểm") }}</th>
+        <th style="width:180px;">{{ _("Việc") }}</th>
+        <th>{{ _("Chi tiết") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for e in su_kien %}
+        <tr>
+          <td>{{ e.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ e.loai }}</td>
+          <td class="muted">{{ e.chi_tiet or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted" style="margin:0;">{{ _("Chưa có gì.") }}</p>{% endif %}
+  </div>
+
+  {# ── 4. Nguy hiểm ──────────────────────────────────────────────────────
+     Hai nút không hoàn tác được. Đòi gõ ĐÚNG tên máy, khuôn của GitHub — lý do
+     giống hệt: chúng phải khó bấm nhầm hơn một cú click. #}
+  {% if may.trang_thai != "da_xoa" %}
+  <div class="card" style="border-color:#c33;">
+    <h2 style="color:#c33;">{{ _("Nguy hiểm") }}</h2>
+
+    <h3 style="margin:12px 0 4px;">{{ _("Cài lại máy") }}</h3>
+    <p class="muted" style="margin:0 0 8px;">
+      {{ _("Xoá sạch đĩa và cài lại từ đầu. Địa chỉ IP được giữ nguyên. KHÔNG hoàn tác được.") }}
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/cai-lai"
+          style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <select name="os_id" class="inp">
+        <option value="">{{ _("Giữ nguyên hệ điều hành") }}</option>
+        {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ o.ten }}</option>{% endfor %}
+      </select>
+      <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
+      <button class="btn" type="submit">{{ _("Cài lại") }}</button>
+    </form>
+
+    <h3 style="margin:20px 0 4px;">{{ _("Xoá máy") }}</h3>
+    <p class="muted" style="margin:0 0 8px;">
+      {{ _("Xoá vĩnh viễn máy và trả địa chỉ IP về. KHÔNG hoàn tác được và không hoàn tiền chu kỳ đang dùng.") }}
+    </p>
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/xoa"
+          style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
+      <button class="btn" type="submit" style="background:#c33;">{{ _("Xoá vĩnh viễn") }}</button>
+    </form>
+  </div>
   {% endif %}
 
 {% endblock %}
@@ -217045,7 +217655,7 @@ def test_bang_gia_noi_ro_reasoning_va_cache():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_252_vps_giao_dien.py
-SHA256=056e3f41668b4e93db6924916d1e6ec38ee276a13ba36d49d56b3ca76a28134d BYTES=14082 LINES=362
+SHA256=99b6bc03a2afd32f649b18fb301dcac963de3f079fd3590339f522d550df0992 BYTES=14609 LINES=369
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bề mặt HTTP của app VPS: cái cờ phải thật sự đóng cửa, và trang phải nói thật.
 
@@ -217193,9 +217803,16 @@ def test_co_bat_thi_trang_mo_va_NOI_THAT_ve_han_che(moi_truong, monkeypatch):
         r = client.get("/vps")
         assert r.status_code == 200
 
-        # Ba câu này là điều kiện của Q103 (V1/V2/V3), không phải trang trí.
+        # Bốn câu này là điều kiện của Q103, không phải trang trí. Câu về IP
+        # đã ĐỔI ngày 24/08: từ khi mỗi máy có một IP công khai riêng, câu cũ
+        # ("bạn nhận cổng, không nhận IP") thành SAI — và một dòng cảnh báo sai
+        # còn tệ hơn không có, vì khách tin nó.
         assert "best effort" in r.text
-        assert "không phải một địa chỉ IP riêng" in r.text
+        assert "địa chỉ IP riêng" in r.text
+        assert "Băng thông có hạn mức" in r.text, (
+            "phai cong bo han muc bang thong: 2.048 GB/thang chia cho TAT CA "
+            "khach, mot nguoi tai phim ca thang an het quota cua 15 nguoi kia")
+        assert "hạn mức trên kho lưu trữ dùng chung" in r.text
         assert "Sao lưu hằng tuần" in r.text
 
         # Bảng giá phải khớp `cost.py`, không phải một con số gõ tay trong template.
@@ -225411,7 +226028,7 @@ def test_hai_tien_trinh_python_van_BAN_du_tai_thap():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_279_vps_ip_cong_khai.py
-SHA256=56506d49d265f1239d8ced2a23d335f56d13a5fd59708e1bcd52873f289d1efd BYTES=9109 LINES=212
+SHA256=f20b0986ffe0bfd9006ae1c9feb2c55d80f331aa36c64666c8a4ae4cfb267bfc BYTES=11238 LINES=277
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39/G2 — driver Vultr và driver cổng vào.
 
@@ -225625,6 +226242,71 @@ def test_thieu_khai_bao_cong_vao_thi_noi_ro_thieu_gi():
         with pytest.raises(gw.GatewayError) as e:
             gw.GatewayConfig(**tham).verify()
         assert chu in str(e.value)
+
+
+# ── 4. Chống rò tiền: mua IP xong mà ghi sổ hỏng ─────────────────────────────
+
+def test_xoa_ip_duoc_goi_khi_ghi_so_that_bai(monkeypatch):
+    """Mua IP xong mà `INSERT` chết thì PHẢI trả IP về ngay.
+
+    Đây là kịch bản đã xảy ra thật 24/08: Vultr cấp lại chính địa chỉ vừa trả
+    (nó giữ 24 giờ rồi đưa lại cho cùng tài khoản), bản ghi cũ còn trong CSDL
+    nên ràng buộc duy nhất `(gateway_id, dia_chi)` bắn — và IP đã mua thì nằm
+    lại đó, **$3/tháng chảy mãi mà không ai biết nó của máy nào**.
+    """
+    from apps.vps import jobs
+
+    da_xoa = []
+
+    class _Khach:
+        VultrError = vt.VultrError
+
+        def tao_ip(self, nhan):
+            return {"id": "ip-1", "dia_chi": "1.2.3.4", "nhan": "ltt-vps-x"}
+
+        def xoa_ip(self, ip_id):
+            da_xoa.append(ip_id)
+
+        def gan_ip(self, *a):
+            raise AssertionError("khong duoc gan khi ghi so da hong")
+
+    class _KetQua:
+        def scalars(self):
+            return self
+
+        def first(self):
+            return None
+
+    class _Db:
+        """Lượt `execute` ĐẦU (tìm bản ghi của máy) phải chạy được — nếu không
+        thì hàm chưa kịp mua IP và test chẳng chứng minh gì. Lượt SAU mới hỏng,
+        đúng chỗ đã hỏng thật ngày 24/08."""
+
+        def __init__(self):
+            self.lan = 0
+
+        def execute(self, *a, **k):
+            self.lan += 1
+            if self.lan == 1:
+                return _KetQua()
+            raise RuntimeError("CSDL hong giua chung")
+
+        def rollback(self):
+            pass
+
+    class _Gw:
+        cho_phep_ip_rieng = True
+        id = "gw-1"
+        ten = "cong"
+
+    monkeypatch.setattr(vt, "client_tu_moi_truong", lambda *a, **k: _Khach())
+
+    class _May:
+        id = "0123456789abcdef"
+
+    with pytest.raises(RuntimeError):
+        jobs._cap_ip_cong_khai(_Db(), _May(), _Gw(), "10.51.0.60")
+    assert da_xoa == ["ip-1"], "IP da mua phai duoc tra ve khi ghi so hong"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -225982,6 +226664,222 @@ def _lay_duoc(ham) -> bool:
         return True
     except (OSError, TypeError):
         return False
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_280_vps_vong_doi.py
+SHA256=9fc12de6f2727279943fc156dc3ea2b4e4f9f412f5f22415ca9286395e9701e2 BYTES=8500 LINES=210
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H39/G3 — vòng đời máy: bật, tắt, khởi động lại, cài lại, xoá.
+
+Phần lớn test ở đây kiểm **luật tiền**, không kiểm kỹ thuật:
+
+* máy bị treo vì nợ mà khách tự bật lại được thì "treo" chỉ là một cái nút, tức
+  là không treo gì cả — và khách dùng miễn phí cho tới khi ai đó để ý;
+* máy của người này mà người kia điều khiển được thì không cần nói thêm;
+* hai nút không hoàn tác được mà bấm nhầm được thì sớm muộn có người mất dữ liệu.
+"""
+from __future__ import annotations
+
+import pytest
+
+from apps.vps.services import dieu_khien
+from apps.vps.services.proxmox import ProxmoxError
+
+
+class _ClientGia:
+    """Proxmox giả: ghi lại lệnh đã gọi, hoặc hỏng theo yêu cầu."""
+
+    def __init__(self, hong: bool = False):
+        self.hong = hong
+        self.da_goi: list[tuple[str, int]] = []
+
+    def _ghi(self, ten, vmid):
+        if self.hong:
+            raise ProxmoxError("Proxmox tra 500", status=500)
+        self.da_goi.append((ten, int(vmid)))
+        return f"UPID:pve:{ten}"
+
+    def bat(self, vmid):
+        return self._ghi("bat", vmid)
+
+    def tat_mem(self, vmid):
+        return self._ghi("tat_mem", vmid)
+
+    def tat_cung(self, vmid):
+        return self._ghi("tat_cung", vmid)
+
+
+class _DbGia:
+    """Đủ để `ghi_su_kien` và `commit` chạy mà không cần CSDL thật."""
+
+    def __init__(self):
+        self.su_kien: list[str] = []
+        self.da_commit = 0
+
+    def add(self, x):
+        pass
+
+    def flush(self):
+        pass
+
+    def commit(self):
+        self.da_commit += 1
+
+
+class _May:
+    def __init__(self, trang_thai="dang_chay", vmid=200):
+        self.id = "may-1"
+        self.trang_thai = trang_thai
+        self.vmid = vmid
+        self.ly_do = ""
+        self.paid_until = None
+        self.xoa_sau = None
+
+
+@pytest.fixture(autouse=True)
+def _bat_su_kien(monkeypatch):
+    """Chặn `ghi_su_kien` để không cần CSDL — nhưng vẫn ghi lại nó ĐƯỢC GỌI."""
+    from apps.vps.services import provisioning
+    ghi: list[str] = []
+
+    def gia(db, instance_id, loai, **kw):
+        ghi.append(loai)
+
+    monkeypatch.setattr(provisioning, "ghi_su_kien", gia)
+    monkeypatch.setattr(dieu_khien.provisioning, "ghi_su_kien", gia)
+    return ghi
+
+
+# ── 1. Luật tiền: máy bị treo thì khách KHÔNG tự bật lại ────────────────────
+
+def test_may_bi_treo_thi_khach_KHONG_tu_bat_lai_duoc():
+    """Nếu bật lại được thì 'treo' chỉ là một cái nút — tức không treo gì cả."""
+    c = _ClientGia()
+    with pytest.raises(dieu_khien.KhongDuocPhepError) as e:
+        dieu_khien.bat(_DbGia(), _May(trang_thai="bi_treo"), c, boi="khach")
+    assert "treo" in str(e.value).lower()
+    assert c.da_goi == [], "khong duoc goi Proxmox"
+
+
+def test_loi_treo_noi_ro_phai_lam_gi_de_dung_lai():
+    """Câu này khách đọc, nên nó phải chỉ được đường ra chứ không chỉ báo lỗi."""
+    with pytest.raises(dieu_khien.KhongDuocPhepError) as e:
+        dieu_khien.kiem_dieu_khien_duoc(_May(trang_thai="bi_treo"))
+    assert "credit" in str(e.value).lower()
+
+
+def test_may_dang_tao_thi_khong_ai_duoc_dung_vao():
+    """Bật/tắt giữa lúc job đang clone là cách chắc chắn để có máy hỏng nửa chừng."""
+    c = _ClientGia()
+    for tt in ("dang_tao", "da_xoa"):
+        with pytest.raises(dieu_khien.KhongDuocPhepError):
+            dieu_khien.tat(_DbGia(), _May(trang_thai=tt), c, boi="khach")
+    assert c.da_goi == []
+
+
+def test_may_chua_co_vmid_thi_tu_choi():
+    with pytest.raises(dieu_khien.KhongDuocPhepError):
+        dieu_khien.bat(_DbGia(), _May(vmid=None), _ClientGia(), boi="khach")
+
+
+# ── 2. Ba thao tác thường ───────────────────────────────────────────────────
+
+def test_bat_va_tat_goi_dung_lenh_va_doi_trang_thai():
+    c, m, db = _ClientGia(), _May(trang_thai="da_tat"), _DbGia()
+    dieu_khien.bat(db, m, c, boi="khach")
+    assert c.da_goi == [("bat", 200)] and m.trang_thai == "dang_chay"
+
+    dieu_khien.tat(db, m, c, boi="khach")
+    assert c.da_goi[-1] == ("tat_mem", 200) and m.trang_thai == "da_tat"
+
+
+def test_tat_MAC_DINH_la_tat_mem_chu_khong_rut_dien():
+    """Rút điện giữa lúc Windows đang ghi đĩa là cách làm hỏng hệ tệp của khách."""
+    c = _ClientGia()
+    dieu_khien.tat(_DbGia(), _May(), c, boi="khach")
+    assert c.da_goi == [("tat_mem", 200)]
+    c2 = _ClientGia()
+    dieu_khien.tat(_DbGia(), _May(), c2, boi="khach", cung=True)
+    assert c2.da_goi == [("tat_cung", 200)]
+
+
+def test_khoi_dong_lai_KHONG_dung_endpoint_reboot_cua_proxmox():
+    """`reboot` của Proxmox chờ guest tự tắt và treo vô hạn nếu Windows đang hiện
+    hộp thoại "có muốn lưu không". Ta tắt mềm, khách tự bật lại."""
+    c = _ClientGia()
+    dieu_khien.khoi_dong_lai(_DbGia(), _May(), c, boi="khach")
+    assert c.da_goi == [("tat_mem", 200)]
+
+
+# ── 3. Thất bại cũng phải để lại dấu ────────────────────────────────────────
+
+def test_thao_tac_that_bai_van_duoc_ghi_nhat_ky(_bat_su_kien):
+    """Khách hỏi "sao bấm mãi không được" thì phải có thứ để đọc."""
+    m = _May()
+    with pytest.raises(ProxmoxError):
+        dieu_khien.bat(_DbGia(), m, _ClientGia(hong=True), boi="khach")
+    assert any("that_bai" in x for x in _bat_su_kien)
+    assert m.trang_thai == "dang_chay", "khong duoc doi trang thai khi lenh hong"
+
+
+# ── 4. Treo: uỷ quyền phần ghi sổ cho `billing` ─────────────────────────────
+
+def test_treo_UY_QUYEN_cho_billing_chu_khong_tu_ghi_so(monkeypatch):
+    """Hai chỗ cùng quyết một việc thì sớm muộn lệch nhau: chỗ này đặt `xoa_sau`,
+    chỗ kia quên, và máy của khách nằm lại vĩnh viễn hoặc bị xoá sớm bảy ngày."""
+    from apps.vps.services import billing
+    da_goi = []
+    monkeypatch.setattr(billing, "treo",
+                        lambda db, may, ly_do: da_goi.append(ly_do))
+    monkeypatch.setattr(dieu_khien.billing, "treo",
+                        lambda db, may, ly_do: da_goi.append(ly_do))
+    c = _ClientGia()
+    dieu_khien.treo(_DbGia(), _May(), c, ly_do="No tien")
+    assert c.da_goi == [("tat_cung", 200)], "treo phai tat CUNG"
+    assert da_goi == ["No tien"], "phan ghi so phai do billing lam"
+
+
+def test_treo_van_ghi_so_ke_ca_khi_proxmox_khong_tat_duoc(monkeypatch):
+    """Treo là quyết định về TIỀN. Proxmox hỏng không được phép cứu máy khỏi bị treo."""
+    from apps.vps.services import billing
+    da_goi = []
+    monkeypatch.setattr(dieu_khien.billing, "treo",
+                        lambda db, may, ly_do: da_goi.append(ly_do))
+    dieu_khien.treo(_DbGia(), _May(), _ClientGia(hong=True), ly_do="No tien")
+    assert da_goi == ["No tien"]
+
+
+# ── 5. Đếm ngày còn hạn ─────────────────────────────────────────────────────
+
+def test_con_bao_nhieu_ngay_khong_bao_gio_tra_so_am():
+    """"Còn −2 ngày" không nói được gì cho người đọc."""
+    from datetime import datetime, timedelta, timezone
+
+    from apps.vps.services import billing
+
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    m = _May()
+    m.paid_until = now - timedelta(days=5)
+    assert billing.con_bao_nhieu_ngay(m, now=now) == 0
+    m.paid_until = now + timedelta(days=3, hours=12)
+    assert billing.con_bao_nhieu_ngay(m, now=now) == 3
+    m.paid_until = None
+    assert billing.con_bao_nhieu_ngay(m, now=now) is None
+
+
+def test_con_han_va_con_bao_nhieu_ngay_la_HAI_thu_khac_nhau():
+    """`con_han` trả `bool`. Dùng nó cho cảnh báo "còn N ngày" thì `True <= 3`
+    luôn đúng trong Python, và cảnh báo hiện cho MỌI máy — đã suýt dính 24/08."""
+    from datetime import datetime, timedelta, timezone
+
+    from apps.vps.services import billing
+
+    now = datetime(2026, 8, 24, tzinfo=timezone.utc)
+    m = _May()
+    m.paid_until = now + timedelta(days=20)
+    assert billing.con_han(m, now=now) is True
+    assert billing.con_bao_nhieu_ngay(m, now=now) == 20
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -244908,7 +245806,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_i18n.py
-SHA256=b94589473c76ba612712a8885f6904898dbd2e23fe7e50732b2be48cf429cbbb BYTES=8527 LINES=206
+SHA256=a49c5d1cf847e149e20dc3702326584a94dbf66a79a1feb8a2857a8c2762f2ba BYTES=9034 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 check_i18n.py — bánh cóc chống thêm chuỗi chưa dịch (H24).
@@ -245045,7 +245943,14 @@ def dem_python(f: pathlib.Path) -> int:
     return n_thieu
 
 
-_JINJA_DICH = re.compile(r"\{\{-?\s*_[nt]?\(|\{%-?\s*trans")
+# Chu thich cua `dem_template` noi ro y dinh: "Dong co goi ham dich thi coi
+# nhu da xu ly". Nen nhan loi goi dich o BAT KY dau tren dong, khong chi sau
+# `{{` hay `{% trans`. Hai truong hop that da lam banh cong bao DO cho mot
+# template LAM DUNG (`vps_chi_tiet.html`, 24/08): loi goi dich nam trong mot
+# the `{% for %}`, va the do vat qua HAI DONG nen dong sau khong con `{%`.
+# Bao do cho mot template dung thi nguoi sau se "sua" bang cach boc them mot
+# lop `_()` nua hoac be template cho vua long mot phep do.
+_JINJA_DICH = re.compile(r"_[nt]?\(|\{%-?\s*trans")
 
 
 def dem_template(f: pathlib.Path) -> int:
@@ -249719,7 +250624,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/i18n_baseline.json
-SHA256=e336587b19be9318dec1fe4c2a5fa60aad9a1256a17b5f46d5019830f9b57bce BYTES=6644 LINES=162
+SHA256=47518206e86c4cfa0b1822a26732ad9e3a25c2f8e7ee557318438cf52b919fe7 BYTES=6589 LINES=161
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "theo_file": {
@@ -249784,7 +250689,6 @@ SHA256=e336587b19be9318dec1fe4c2a5fa60aad9a1256a17b5f46d5019830f9b57bce BYTES=66
     "apps/taoclipngan/jobs.py": 6,
     "apps/taoclipngan/manifest.py": 2,
     "apps/taoclipngan/routes.py": 7,
-    "apps/taoclipngan/templates/taoclipngan.html": 1,
     "apps/taovideo/assets.py": 6,
     "apps/taovideo/jobs.py": 12,
     "apps/taovideo/manifest.py": 2,
@@ -249881,7 +250785,7 @@ SHA256=e336587b19be9318dec1fe4c2a5fa60aad9a1256a17b5f46d5019830f9b57bce BYTES=66
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 1422
+  "tong": 1421
 }
 
 @@@LTT_PROFILE_FILE_END@@@

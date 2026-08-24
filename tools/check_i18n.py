@@ -133,7 +133,14 @@ def dem_python(f: pathlib.Path) -> int:
     return n_thieu
 
 
-_JINJA_DICH = re.compile(r"\{\{-?\s*_[nt]?\(|\{%-?\s*trans")
+# Chu thich cua `dem_template` noi ro y dinh: "Dong co goi ham dich thi coi
+# nhu da xu ly". Nen nhan loi goi dich o BAT KY dau tren dong, khong chi sau
+# `{{` hay `{% trans`. Hai truong hop that da lam banh cong bao DO cho mot
+# template LAM DUNG (`vps_chi_tiet.html`, 24/08): loi goi dich nam trong mot
+# the `{% for %}`, va the do vat qua HAI DONG nen dong sau khong con `{%`.
+# Bao do cho mot template dung thi nguoi sau se "sua" bang cach boc them mot
+# lop `_()` nua hoac be template cho vua long mot phep do.
+_JINJA_DICH = re.compile(r"_[nt]?\(|\{%-?\s*trans")
 
 
 def dem_template(f: pathlib.Path) -> int:

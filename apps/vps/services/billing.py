@@ -63,6 +63,23 @@ def con_han(may: VpsInstance, *, now: datetime | None = None) -> bool:
     return han is not None and han > (now or _now())
 
 
+def con_bao_nhieu_ngay(may: VpsInstance, *, now: datetime | None = None):
+    """Còn mấy ngày nữa hết hạn. `None` = chưa thu chu kỳ nào.
+
+    Tách khỏi `con_han` (trả `bool`) vì giao diện cần **con số** để cảnh báo sớm:
+    hết hạn là treo ngay và xoá sau 7 ngày (V8), nên khách phải thấy nó đang tới
+    gần chứ không phải biết khi đã mất máy.
+
+    Làm tròn XUỐNG, và không bao giờ trả số âm — quá hạn thì là 0, vì "còn −2
+    ngày" không nói được gì cho người đọc.
+    """
+    han = _aware(may.paid_until)
+    if han is None:
+        return None
+    con = (han - (now or _now())).total_seconds() / 86400
+    return max(0, int(con))
+
+
 def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
                    now: datetime | None = None) -> int:
     """Trừ credit cho MỘT chu kỳ và đẩy `paid_until` lên. Trả số credit đã trừ.

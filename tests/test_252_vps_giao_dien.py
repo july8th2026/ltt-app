@@ -144,9 +144,16 @@ def test_co_bat_thi_trang_mo_va_NOI_THAT_ve_han_che(moi_truong, monkeypatch):
         r = client.get("/vps")
         assert r.status_code == 200
 
-        # Ba câu này là điều kiện của Q103 (V1/V2/V3), không phải trang trí.
+        # Bốn câu này là điều kiện của Q103, không phải trang trí. Câu về IP
+        # đã ĐỔI ngày 24/08: từ khi mỗi máy có một IP công khai riêng, câu cũ
+        # ("bạn nhận cổng, không nhận IP") thành SAI — và một dòng cảnh báo sai
+        # còn tệ hơn không có, vì khách tin nó.
         assert "best effort" in r.text
-        assert "không phải một địa chỉ IP riêng" in r.text
+        assert "địa chỉ IP riêng" in r.text
+        assert "Băng thông có hạn mức" in r.text, (
+            "phai cong bo han muc bang thong: 2.048 GB/thang chia cho TAT CA "
+            "khach, mot nguoi tai phim ca thang an het quota cua 15 nguoi kia")
+        assert "hạn mức trên kho lưu trữ dùng chung" in r.text
         assert "Sao lưu hằng tuần" in r.text
 
         # Bảng giá phải khớp `cost.py`, không phải một con số gõ tay trong template.

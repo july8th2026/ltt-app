@@ -210,3 +210,68 @@ def test_thieu_khai_bao_cong_vao_thi_noi_ro_thieu_gi():
         with pytest.raises(gw.GatewayError) as e:
             gw.GatewayConfig(**tham).verify()
         assert chu in str(e.value)
+
+
+# ── 4. Chống rò tiền: mua IP xong mà ghi sổ hỏng ─────────────────────────────
+
+def test_xoa_ip_duoc_goi_khi_ghi_so_that_bai(monkeypatch):
+    """Mua IP xong mà `INSERT` chết thì PHẢI trả IP về ngay.
+
+    Đây là kịch bản đã xảy ra thật 24/08: Vultr cấp lại chính địa chỉ vừa trả
+    (nó giữ 24 giờ rồi đưa lại cho cùng tài khoản), bản ghi cũ còn trong CSDL
+    nên ràng buộc duy nhất `(gateway_id, dia_chi)` bắn — và IP đã mua thì nằm
+    lại đó, **$3/tháng chảy mãi mà không ai biết nó của máy nào**.
+    """
+    from apps.vps import jobs
+
+    da_xoa = []
+
+    class _Khach:
+        VultrError = vt.VultrError
+
+        def tao_ip(self, nhan):
+            return {"id": "ip-1", "dia_chi": "1.2.3.4", "nhan": "ltt-vps-x"}
+
+        def xoa_ip(self, ip_id):
+            da_xoa.append(ip_id)
+
+        def gan_ip(self, *a):
+            raise AssertionError("khong duoc gan khi ghi so da hong")
+
+    class _KetQua:
+        def scalars(self):
+            return self
+
+        def first(self):
+            return None
+
+    class _Db:
+        """Lượt `execute` ĐẦU (tìm bản ghi của máy) phải chạy được — nếu không
+        thì hàm chưa kịp mua IP và test chẳng chứng minh gì. Lượt SAU mới hỏng,
+        đúng chỗ đã hỏng thật ngày 24/08."""
+
+        def __init__(self):
+            self.lan = 0
+
+        def execute(self, *a, **k):
+            self.lan += 1
+            if self.lan == 1:
+                return _KetQua()
+            raise RuntimeError("CSDL hong giua chung")
+
+        def rollback(self):
+            pass
+
+    class _Gw:
+        cho_phep_ip_rieng = True
+        id = "gw-1"
+        ten = "cong"
+
+    monkeypatch.setattr(vt, "client_tu_moi_truong", lambda *a, **k: _Khach())
+
+    class _May:
+        id = "0123456789abcdef"
+
+    with pytest.raises(RuntimeError):
+        jobs._cap_ip_cong_khai(_Db(), _May(), _Gw(), "10.51.0.60")
+    assert da_xoa == ["ip-1"], "IP da mua phai duoc tra ve khi ghi so hong"
