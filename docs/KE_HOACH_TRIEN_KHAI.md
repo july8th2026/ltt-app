@@ -2922,8 +2922,28 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       trùng ở cả bốn mục, gọi lại cho kết quả y hệt, và một chốt cấm dùng nguồn ngẫu
       nhiên. Toàn bộ VPS: **130 xanh**, `gate --quick` **PASS**.
 
-- [ ] **G6 — Windows 11 cần UEFI/OVMF + vTPM + Secure Boot** trong cấu hình máy.
-      Không còn là việc "dựng template" nữa, chỉ là một biến thể cấu hình khi tạo máy.
+- [~] **G6 — Windows 11.** ⛔ **HUỶ 2026-08-24 — chủ sản phẩm chốt không bán.**
+      Danh mục dừng ở **Server 2016, Server 2022, Windows 10 LTSC**.
+
+      Việc đã làm theo quyết định này (không chỉ là gạch một dòng kế hoạch):
+      bỏ bản `win11` và trường `can_uefi_tpm` khỏi `os_images.py`; **gỡ nhánh
+      `ovmf` + `efidisk0` + `tpmstate0`** khỏi `jobs._cau_hinh_may_trong` — nhánh
+      chỉ một bản đi qua là nhánh không lần chạy nào thử tới; **thêm Server 2016**
+      (bản Core và bản có giao diện, dùng chung một ISO đã có sẵn trên node); gọi
+      đúng tên **Windows 10 LTSC 2021** thay vì "Windows 10", vì đĩa cài là bản
+      LTSC và nó **không có Microsoft Store** — khách mua nhầm kỳ vọng là một lần
+      hoàn tiền.
+
+      Dọn kèm: **bỏ trường `Plan.os_toi_thieu`**. Nó khai tay "gói này chạy bản
+      nào" trong khi việc đó đã do `os_images.hop_le()` tính từ số thật —
+      **không nơi nào đọc nó**, và nó đã kịp lệch: trỏ vào `win11`.
+
+      ⚠️ **Một hệ quả về giá cần chủ sản phẩm xem lại.** Gói `vps-lon` (329.000đ)
+      trước đây được biện minh bằng "đủ đĩa cho Windows 11 (cần 64 GB)". Bỏ
+      Windows 11 thì **gói Lớn không còn mở thêm bản Windows nào** — mọi bản
+      trong danh mục đã chạy ở gói Vừa (179.000đ). Nó vẫn bán gấp đôi CPU và RAM,
+      và mô tả đã sửa cho đúng như vậy, nhưng **khoảng cách giá 179k → 329k nay
+      chỉ đổi lấy CPU/RAM/đĩa**, không đổi lấy khả năng mới.
 
 - [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
       khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút

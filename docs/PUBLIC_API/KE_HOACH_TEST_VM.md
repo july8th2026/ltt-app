@@ -91,7 +91,7 @@ máy A). Điều khiển qua RDP thì được, nhưng nó chỉ thêm một l�
 | **T6** | `claude.exe` của **tiện ích VS Code trên VM** | ✅ trả lời `72` (9×8), 39,6 s — cấu hình công cụ ghi ra **dùng được thật** |
 | **T8** | Gỡ ra | ✅ `config.toml` **bằng từng byte**; `settings.json` **nội dung giống hệt**; **mọi** biến môi trường bị dọn |
 | **T9** | Gỡ cài | ✅ thư mục hết, lối tắt hết, **cấu hình khách không bị đụng** |
-| **T7** | Bấm tay trong VS Code | ⛔ **cần người** — xem §1 |
+| **T7** | Chat thật trong VS Code | ✅ **ĐẠT 24/08** — Codex trả `144`, Claude Code trả `7 x 9 = 63`, số dư 1041 → **1034** |
 
 ---
 
@@ -132,6 +132,52 @@ Nó bảo *"Kiem lai: python tools\cam_cli.py kiem"* — nhưng khách cài `.ex
 **không có mã nguồn**. Một hướng dẫn sai còn tệ hơn không có, vì khách sẽ đi tìm
 thứ không tồn tại rồi tưởng mình cài hỏng. Nay nó in
 `LTTStudios-CamCLI.exe kiem`.
+
+---
+
+## 4b. ✅ T7 — hai tiện ích VS Code **chạy được**, và ba điều kiện phải đúng cả ba
+
+Điều khiển VM qua RDP, gõ trực tiếp vào bảng chat của từng tiện ích:
+
+| Tiện ích | Câu hỏi | Trả lời |
+|---|---|---|
+| **Codex** | `12 x 12 = ?` | **144** |
+| **Claude Code** | `7 x 9 = ?` | **7 x 9 = 63** *(kèm "Thought for 1s")* |
+
+⭐ **Bằng chứng nó đi qua API của ta, không phải nhà khác:** số dư credit
+**1041 → 1034**. Không có tiền bị trừ thì không có gì chứng minh cả.
+
+### Ba điều kiện, thiếu một là hỏng
+
+| | Điều kiện | Vì sao |
+|---|---|---|
+| ① | Codex khai ở **GỐC** `config.toml` (`cam --vscode`) | tiện ích **không có cách truyền `--profile`**, và Codex 0.145 từ chối thẳng `profile = "..."` trong tệp |
+| ② | `claudeCode.disableLoginPrompt: true` ở `settings.json` **cấp người dùng** | tiện ích Claude Code **không đọc biến môi trường** như CLI (lỗi đã biết từ v2.0.0). Thiết lập khai `scope: "machine"` nên đặt ở workspace là vô hiệu, **không báo lỗi** |
+| ③ | Phiên Windows có **môi trường mới** | xem dưới — đây là cái khó nhất |
+
+### 🔴 Cái bẫy môi trường: ba lần tôi tưởng đã sửa mà chưa
+
+Đây là chỗ tốn nhiều thời gian nhất, và nó **không có triệu chứng nào** ngoài một
+dòng `Missing environment variable: LTT_API_KEY`.
+
+| Đã thử | Kết quả |
+|---|---|
+| `setx` rồi **mở lại VS Code** | ❌ vẫn thiếu |
+| Thêm **khởi động lại explorer** | ❌ vẫn thiếu |
+| **Đăng xuất rồi đăng nhập lại** | ✅ `$env:LTT_API_KEY.Length` = **83** |
+
+⭐ **Vì sao khởi động lại explorer không đủ:** tôi giết explorer rồi khởi động nó
+**từ một `cmd` do explorer CŨ sinh ra** — nên explorer mới **kế thừa đúng môi
+trường cũ**. Một vòng luẩn quẩn không nhìn thấy được.
+
+⚠️ Khách thật chạy công cụ **trong phiên của họ** nên `setx` phát được thông báo
+`WM_SETTINGCHANGE` tới explorer và thường chỉ cần mở lại VS Code. Tôi dính vì cắm
+qua **SSH (session 0)**. Nhưng đã dính một lần thì phải nói ra — nên lời nhắc của
+công cụ nay có thêm câu *"nếu vẫn báo thiếu biến thì đăng xuất rồi đăng nhập lại"*.
+
+⛔ **Và đừng đọc `Missing environment variable` thành "cấu hình sai".** Nó là
+bằng chứng ngược lại: Codex **đã đọc được** `config.toml` của ta và đã đi tới
+bước tra `env_key`. Cấu hình đúng; chỉ môi trường thiếu.
 
 ---
 

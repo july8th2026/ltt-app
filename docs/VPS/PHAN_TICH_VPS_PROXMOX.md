@@ -131,10 +131,17 @@ Yêu cầu tối thiểu của Microsoft, không thương lượng được:
 
 | OS | RAM tối thiểu | Đĩa tối thiểu | Thực tế cần |
 |---|---|---|---|
-| Windows Server 2022 Core (không giao diện) | 512 MB | 32 GB | **2 GB / 40 GB** |
-| Windows Server 2022 Desktop Experience | 2 GB | 32 GB | **4 GB / 50 GB** |
-| Windows 10 | 2 GB | 32 GB | **4 GB / 50 GB** |
-| Windows 11 | **4 GB** | **64 GB** + TPM 2.0 + Secure Boot | **4 GB / 70 GB** |
+| Windows Server 2016 / 2022 **Core** (không giao diện) | 512 MB | 32 GB | **2 GB / 40 GB** |
+| Windows Server 2016 / 2022 **Desktop Experience** | 2 GB | 32 GB | **4 GB / 50 GB** |
+| Windows 10 LTSC 2021 | 2 GB | 32 GB | **4 GB / 50 GB** |
+
+> ⛔ **Windows 11 KHÔNG bán — chốt 2026-08-24.** Nó đòi UEFI/OVMF + vTPM 2.0 +
+> Secure Boot, tức một **nhánh cấu hình máy riêng** mà không bản nào khác đi qua.
+> Một nhánh chỉ phục vụ một thứ là nhánh không lần chạy nào thử tới, và nó hỏng
+> lặng lẽ. Nhánh đó đã gỡ khỏi `jobs.py`; danh mục dừng ở **Server 2016, Server
+> 2022, Windows 10 LTSC**. Muốn mở lại thì dựng lại nhánh theo mục 11 rồi mới
+> thêm mục vào `os_images.py` — thêm mục trước sẽ tạo ra máy BIOS thường và
+> khách ngồi nhìn *"This PC can't run Windows 11"*.
 
 Ghép lại:
 
@@ -384,9 +391,9 @@ của Microsoft là 32 GB, thực tế cần 40 GB). Đây là điều chỉnh b
 
 | Gói | vCPU | RAM | Đĩa | Chạy được OS nào | Giá/tháng | Credit |
 |---|---|---|---|---|---|---|
-| `vps-nho` | 1 | 2 GB | **40 GB** | Windows Server 2022 **Core** (không giao diện) | **89.000đ** | 890 |
-| `vps-vua` | 2 | 4 GB | **60 GB** | Server 2022 có giao diện · Windows 10 | **179.000đ** | 1.790 |
-| `vps-lon` | 4 | 8 GB | **80 GB** | Windows 11 · Server 2022 có giao diện | **329.000đ** | 3.290 |
+| `vps-nho` | 1 | 2 GB | **40 GB** | Server 2016 / 2022 **Core** (không giao diện) | **149.000đ** | 1.490 |
+| `vps-vua` | 2 | 4 GB | **60 GB** | **mọi bản trong danh mục** | **179.000đ** | 1.790 |
+| `vps-lon` | 4 | 8 GB | **80 GB** | mọi bản — bán CPU/RAM, không mở thêm bản nào | **329.000đ** | 3.290 |
 | *Đĩa thêm* | | | +10 GB | | **+25.000đ** | +250 |
 
 Quy đổi **1 credit = 100đ** (Q31). Trần doanh thu nếu bán hết ~6–8 máy: **700k –
@@ -413,11 +420,15 @@ một lần → clone → tiêm cấu hình lúc boot đầu**, bằng **Cloudba
 3. **Không được khởi động lại VM sau khi chạy sysprep** — bật lên là hỏng template.
 4. Gắn ổ Cloud-Init **trước khi** convert sang template.
 
-Thêm hai thứ riêng của Windows 11: **UEFI/OVMF + vTPM (`tpmstate`) + Secure Boot**.
-Proxmox làm được, nhưng phải khai trong cấu hình VM ngay từ template.
-
-Mật khẩu Administrator sinh ngẫu nhiên mỗi máy, **hiện đúng một lần** (giống mật
-khẩu admin của `setup/2-cai-dat.ps1`).
+> ⚠️ **Cả mục 6.1 này đã LỖI THỜI từ 2026-08-24** — mô hình template bị bỏ, khách
+> **tự cài Windows** qua console và **tự đặt mật khẩu của chính họ**. Nền tảng
+> không dựng template, không sysprep, không sinh mật khẩu, và **không biết mật
+> khẩu của khách**. Giữ lại mục này vì nó ghi bốn cái bẫy của Cloudbase-Init, thứ
+> sẽ cần lại nếu có ngày quay về mô hình dựng sẵn. Đường đang chạy: `os_images.py`
+> + `jobs._cau_hinh_may_trong` + trang `/vps/<id>/cai-dat`.
+>
+> Phần Windows 11 (UEFI/OVMF + vTPM + Secure Boot) cũng bỏ theo — xem hộp ⛔ ở
+> mục 4.
 
 ### 6.2 Kích hoạt Windows — hệ quả thi hành của V4
 

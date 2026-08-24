@@ -4,8 +4,9 @@ Bộ test này bám vào những chỗ mà sai sẽ **hỏng im lặng** — t�
 làm test nào khác đỏ và không làm log nào đỏ, chỉ làm khách mất máy:
 
 * **Fail-closed.** Cờ tắt mà app vẫn hiện là mở một bề mặt tạo máy ảo cho người lạ.
-* **Cấu hình × hệ điều hành.** Windows 11 trên 40 GB đĩa **không boot**. Nếu không
-  chặn trước khi thu tiền thì khách phát hiện sau khi đã trả và đã chờ clone xong.
+* **Cấu hình × hệ điều hành.** Bản Windows có giao diện trên gói 2 GB RAM **không
+  cài nổi**. Nếu không chặn trước khi thu tiền thì khách phát hiện sau khi đã trả
+  và đang nhìn một thông báo lỗi của trình cài đặt.
 * **Cấp phát nguyên tử.** Hai job song song nhận cùng một cổng NAT thì máy sau ghi
   đè NAT của máy trước, và khách đầu tiên mất kết nối mà **không có lỗi nào**.
 * **Xếp chỗ fail-closed.** Không đọc được dung lượng kho thì phải NGỪNG bán, không
@@ -146,20 +147,43 @@ def test_dia_mua_them_cong_dung_va_chi_nhan_boi_cua_10():
 
 # ── 3. Hệ điều hành × cấu hình ───────────────────────────────────────────────
 
-def test_win11_bi_tu_choi_tren_goi_thieu_dia():
-    """Microsoft đòi 64 GB đĩa. `vps-vua` đủ RAM nhưng chỉ 60 GB → phải chặn.
+def test_KHONG_ban_windows_11():
+    """Chốt 2026-08-24: danh mục dừng ở Server 2016/2022 và Windows 10 LTSC.
 
-    Dùng `vps-vua` chứ không `vps-nho`: `vps-nho` thiếu cả RAM, nên nó bị chặn ở
-    phép kiểm RAM và không chứng minh được phép kiểm đĩa có chạy hay không.
+    Windows 11 đòi UEFI/OVMF + vTPM + Secure Boot, tức một nhánh cấu hình máy
+    **riêng** mà không bản nào khác đi qua — nhánh chỉ một thứ dùng là nhánh
+    không lần chạy nào thử tới, và nó hỏng lặng lẽ. Nhánh đó đã gỡ khỏi
+    `jobs.py`, nên thêm lại `win11` vào catalog mà quên dựng lại nhánh sẽ tạo ra
+    máy BIOS thường, và khách ngồi nhìn "This PC can't run Windows 11".
     """
-    duoc, ly_do = os_images.hop_le("vps-vua", "win11")
+    assert os_images.lay_os("win11") is None
+    assert "win11" not in {o.id for o in os_images.OS_IMAGES}
+
+
+def test_phep_kiem_DIA_that_su_chay(monkeypatch):
+    """`vps-nho` thiếu cả RAM lẫn đĩa, nên nó không chứng minh được phép kiểm đĩa
+    có chạy hay không. Dựng một bản giả chỉ vượt ngưỡng ĐĨA để tách hai phép kiểm.
+    """
+    from apps.vps.os_images import OsImage
+
+    to = OsImage(id="thu-dia-to", ten="Ban gia dia to", ho="windows",
+                 ram_mb_toi_thieu=2048, disk_gb_toi_thieu=200,
+                 cong_quen=3389, khach_thay=False)
+    monkeypatch.setitem(os_images._THEO_ID, to.id, to)
+    duoc, ly_do = os_images.hop_le("vps-vua", to.id)          # 4 GB RAM, 60 GB
     assert duoc is False
-    assert "64" in ly_do and "dia" in ly_do
+    assert "200" in ly_do and "dia" in ly_do
+    # Mua thêm đĩa thì qua — chứng minh `dia_them_gb` thật sự vào phép tính.
+    assert os_images.hop_le("vps-vua", to.id, 140)[0] is True
 
 
-def test_win11_duoc_khi_mua_them_dia():
-    assert os_images.hop_le("vps-vua", "win11")[0] is False       # 60 GB
-    assert os_images.hop_le("vps-vua", "win11", 10)[0] is True    # 70 GB
+def test_moi_ban_ban_cho_khach_deu_chay_duoc_o_it_nhat_MOT_goi():
+    """Một bản không gói nào chạy nổi thì nó chỉ là một dòng chết trong catalog —
+    hiện ra ở đâu đó rồi bị từ chối ở đúng lúc khách bấm mua."""
+    from apps.vps.cost import PLANS
+
+    for img in os_images.os_ban_duoc():
+        assert any(os_images.hop_le(p.id, img.id)[0] for p in PLANS),             f"{img.id} khong goi nao chay duoc"
 
 
 def test_goi_nho_khong_chay_ban_co_giao_dien():
@@ -177,9 +201,11 @@ def test_ubuntu_khong_nam_trong_catalog_ban():
 
 def test_ten_bien_dia_cai_dat_doc_duoc_tu_ma_os():
     assert os_images.khoa_moi_truong("winsrv2022-gui") ==         "LTT_VPS_ISO_WINSRV2022_GUI"
-    assert os_images.dia_cai_dat("win11", {}) == ""
+    assert os_images.khoa_moi_truong("winsrv2016-core") == "LTT_VPS_ISO_WINSRV2016_CORE"
+    assert os_images.dia_cai_dat("winsrv2016-gui", {}) == ""
     assert os_images.dia_cai_dat(
-        "win11", {"LTT_VPS_ISO_WIN11": "local:iso/win11.iso"}) == "local:iso/win11.iso"
+        "winsrv2016-gui",
+        {"LTT_VPS_ISO_WINSRV2016_GUI": "local:iso/x.iso"}) == "local:iso/x.iso"
 
 
 def test_chua_khai_dia_cai_dat_thi_KHONG_doan_bua():
@@ -188,11 +214,29 @@ def test_chua_khai_dia_cai_dat_thi_KHONG_doan_bua():
     assert os_images.dia_cai_dat("winsrv2022-gui", {}) == ""
 
 
-def test_win11_duoc_danh_dau_can_UEFI_va_TPM():
-    """Thieu thi trinh cai dat dung o "This PC can't run Windows 11" — va khach
-    ngoi nhin no, khong phai ta."""
-    assert os_images.lay_os("win11").can_uefi_tpm is True
-    assert os_images.lay_os("winsrv2022-gui").can_uefi_tpm is False
+def test_may_khach_chi_co_MOT_duong_BIOS():
+    """Không còn nhánh `ovmf` + `efidisk0` + `tpmstate0`. Nhánh đó chỉ phục vụ
+    Windows 11; giữ lại một nhánh không bản nào đi qua là nuôi mã không ai thử."""
+    from apps.vps import cost, jobs
+
+    ch = jobs._cau_hinh_may_trong(
+        type("M", (), {"id": "550e8400-e29b-41d4-a716-000000000001",
+                       "plan_id": "vps-vua", "dia_them_gb": 0})(),
+        cost.lay_plan("vps-vua"), os_images.lay_os("winsrv2016-gui"),
+        "local:iso/x.iso")
+    assert ch["bios"] == "seabios"
+    assert "efidisk0" not in ch and "tpmstate0" not in ch
+
+
+def test_hai_ban_cua_cung_mot_doi_Server_dung_CHUNG_mot_dia_cai(monkeypatch):
+    """Core và bản có giao diện là **một màn hình trong trình cài đặt**, không
+    phải hai bộ cài. Tách thành hai mục trong catalog chỉ vì sàn RAM khác nhau."""
+    monkeypatch.setenv("LTT_VPS_ISO_WINSRV2016_CORE", "local:iso/2016.iso")
+    monkeypatch.setenv("LTT_VPS_ISO_WINSRV2016_GUI", "local:iso/2016.iso")
+    assert (os_images.dia_cai_dat("winsrv2016-core")
+            == os_images.dia_cai_dat("winsrv2016-gui") != "")
+    assert (os_images.lay_os("winsrv2016-core").ram_mb_toi_thieu
+            < os_images.lay_os("winsrv2016-gui").ram_mb_toi_thieu)
 
 
 # ── 4. Xếp chỗ ───────────────────────────────────────────────────────────────

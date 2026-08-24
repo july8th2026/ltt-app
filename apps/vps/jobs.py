@@ -439,14 +439,17 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
       cần đĩa driver virtio** khi cài Windows: Windows nhận sẵn cả hai.
     * **`vga: std`** — máy phải có màn hình đồ hoạ, vì console LÀ đường cài đặt.
     * **thứ tự boot `ide0` rồi `sata0`** — lần đầu boot vào đĩa cài; cài xong,
-      không bấm phím nào thì nó tự bỏ qua CD và boot vào đĩa cứng.
+      không bấm phím nào thì nó tự bỏ qua CD và boot vào đĩa cứng. Khách bấm
+      "Tôi đã cài xong" thì `dieu_khien.go_dia_cai` tháo hẳn `ide0` ra.
     """
     cau_hinh = {
         "name": f"vps-{may.id[:8]}",
         "cores": plan.vcpu,
         "memory": plan.ram_mb,
-        "ostype": "win11" if img.can_uefi_tpm else (
-            "win10" if img.ho == "windows" else "l26"),
+        # `win10` là ostype Proxmox khuyên dùng cho **cả** Server 2016/2019/2022
+        # lẫn Windows 10 — nó chỉ chỉnh vài mặc định của QEMU, không phải một
+        # tuyên bố về phiên bản.
+        "ostype": "win10" if img.ho == "windows" else "l26",
         "scsihw": "virtio-scsi-single",
         # `serial=` KHÔNG thừa: QEMU đặt số hiệu ổ theo *chỉ số ổ*, nên mọi
         # máy dùng `sata0` báo về cùng một chuỗi. Xem `services/dinh_danh.py`.
@@ -462,17 +465,14 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
         # Không guest agent, không balloon: cả hai là thiết bị virtio.
         "agent": 0,
         "balloon": 0,
+        # MỘT đường BIOS cho mọi bản đang bán. Trước 24/08 ở đây có nhánh thứ
+        # hai (`ovmf` + `efidisk0` + `tpmstate0`) cho Windows 11 — nhánh mà
+        # **không bản nào khác đi qua**, tức không lần chạy nào thử tới nó.
+        # Windows 11 không còn trong danh mục (xem `os_images.py`), nên nhánh đó
+        # đã gỡ thay vì để nằm lại mục dần.
+        "bios": "seabios",
+        "machine": "pc-q35-11.0",
     }
-    if img.can_uefi_tpm:
-        # Windows 11 từ chối cài nếu thiếu. `pre-enrolled-keys=1` để Secure Boot
-        # tin chuỗi ký của Microsoft — ngược với ảnh Linux, vốn cần =0.
-        cau_hinh["bios"] = "ovmf"
-        cau_hinh["machine"] = "q35"
-        cau_hinh["efidisk0"] = f"{KHO_DIA}:0,efitype=4m,pre-enrolled-keys=1"
-        cau_hinh["tpmstate0"] = f"{KHO_DIA}:0,version=v2.0"
-    else:
-        cau_hinh["bios"] = "seabios"
-        cau_hinh["machine"] = "pc-q35-11.0"
     return cau_hinh
 
 

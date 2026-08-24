@@ -14,10 +14,19 @@ trình cài đặt qua console và **tự đặt tài khoản, mật khẩu củ
 
 ## Vì sao ràng buộc tối thiểu nằm trong dữ liệu chứ không trong đầu người bán
 
-Yêu cầu của Microsoft là con số cứng: **Windows 11 cần 64 GB đĩa và 4 GB RAM**,
-Server 2022 cần 32 GB. Một tổ hợp (gói × OS) không đạt ngưỡng thì máy **không cài
-được** — và nó chỉ lộ ra sau khi khách đã trả tiền và đang nhìn một thông báo lỗi
-của trình cài đặt. Kiểm ở đây là kiểm trước khi thu tiền.
+Yêu cầu của Microsoft là con số cứng: **Server 2016 và 2022 đều cần 32 GB đĩa**;
+bản Core sống được với 2 GB RAM, bản có giao diện cần 4 GB. Một tổ hợp (gói × OS)
+không đạt ngưỡng thì máy **không cài được** — và nó chỉ lộ ra sau khi khách đã trả
+tiền và đang nhìn một thông báo lỗi của trình cài đặt. Kiểm ở đây là kiểm trước khi
+thu tiền.
+
+## Phạm vi: KHÔNG bán Windows 11 (chốt 2026-08-24)
+
+Danh mục dừng ở **Server 2016, Server 2022 và Windows 10 LTSC**. Windows 11 đòi
+UEFI/OVMF + vTPM + Secure Boot, tức một nhánh cấu hình máy **riêng** mà không bản
+nào khác đi qua — nhánh chỉ một thứ dùng là nhánh không ai thử, và nó hỏng lặng lẽ.
+Nhánh đó đã được gỡ khỏi `jobs.py`; muốn mở lại thì đọc `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`
+mục 11 để dựng lại, đừng đoán.
 
 ## `khach_thay`
 
@@ -60,9 +69,6 @@ class OsImage:
     cong_quen: int
     #: Hiện trong catalog bán không. False = bản kỹ thuật, khách không thấy.
     khach_thay: bool
-    #: Máy cài bản này có cần UEFI + vTPM + Secure Boot không. Windows 11 thì có,
-    #: và thiếu nó thì trình cài đặt dừng ở "This PC can't run Windows 11".
-    can_uefi_tpm: bool = False
     ghi_chu: str = ""
 
 
@@ -85,6 +91,21 @@ OS_IMAGES: tuple[OsImage, ...] = (
                 "chay long trong VMware va guest ghi vao thanh ghi notify cua "
                 "virtio-pci thi khong bao gio quay ra. Dung `debian-12`.",
     ),
+    # Một ISO Server phục vụ CẢ HAI bản Core và có giao diện: chọn bản nào là một
+    # màn hình trong trình cài đặt, không phải hai bộ cài khác nhau. Tách thành hai
+    # mục ở đây vì **sàn RAM khác nhau** (2 GB với Core, 4 GB với giao diện) — và
+    # đó là thứ quyết định gói nào bán được bản nào.
+    OsImage(
+        id="winsrv2016-core", ten="Windows Server 2016 (Core)", ho="windows",
+        ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
+        khach_thay=True,
+        ghi_chu=N_("Bản cũ hơn 2022. Chọn nó khi phần mềm của bạn cần đúng đời này."),
+    ),
+    OsImage(
+        id="winsrv2016-gui", ten=N_("Windows Server 2016 (có giao diện)"), ho="windows",
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
+        khach_thay=True,
+    ),
     OsImage(
         id="winsrv2022-core", ten="Windows Server 2022 (Core)", ho="windows",
         ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
@@ -97,20 +118,15 @@ OS_IMAGES: tuple[OsImage, ...] = (
         khach_thay=True,
     ),
     OsImage(
-        id="win10", ten="Windows 10", ho="windows",
+        # LTSC, không phải bản Home/Pro thường: đĩa cài trên node là
+        # `win10-ltsc-2021-x64.iso`. Ghi đúng tên để khách không mua nhầm kỳ vọng
+        # về Microsoft Store hay các ứng dụng đi kèm — LTSC không có chúng.
+        id="win10", ten="Windows 10 LTSC 2021", ho="windows",
         # 32 GB là yêu cầu của Microsoft. Trước 24/08 số này là 80 vì máy nhân
         # bản từ template 80 GB và Proxmox không thu đĩa được; khách tự cài thì
         # ràng buộc đó biến mất.
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
-    ),
-    OsImage(
-        id="win11", ten="Windows 11", ho="windows",
-        # Microsoft: 4 GB RAM và 64 GB đĩa là SÀN, không phải khuyến nghị.
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
-        khach_thay=True, can_uefi_tpm=True,
-        ghi_chu=N_("Trình cài đặt dừng ở 'This PC can't run Windows 11' nếu "
-                   "thiếu UEFI/OVMF + vTPM + Secure Boot."),
     ),
 )
 

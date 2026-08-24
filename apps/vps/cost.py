@@ -8,7 +8,7 @@ Vì thế giá ở đây phải rẻ hơn họ rõ rệt, và trang bán phải 
 ## Vì sao cấu hình đĩa lớn hơn cảm giác
 
 Catalog chỉ có Windows (V9). Yêu cầu tối thiểu của Microsoft là **32 GB đĩa**
-(Windows 11 là **64 GB**), nên không có gói nào dưới 40 GB. Bản nháp đầu từng ghi
+(Server 2016 và 2022 đều là **32 GB**), nên không có gói nào dưới 40 GB. Bản nháp đầu từng ghi
 25 GB cho gói rẻ nhất — con số đó **không cài nổi Windows**, và nó là loại lỗi
 chỉ lộ ra khi khách đã trả tiền.
 
@@ -40,9 +40,13 @@ CHU_KY_NGAY = 30
 class Plan:
     """Một gói bán. Bất biến: đổi giá là thêm gói mới, không sửa gói đang bán.
 
-    `os_toi_thieu` ghi bản Windows **thấp nhất** mà gói này chạy nổi — dùng để
-    trang bán không mời khách chọn một tổ hợp không boot được (vd Windows 11 trên
-    40 GB đĩa). Đây là ràng buộc của Microsoft, không phải lựa chọn của ta.
+    Việc "gói này chạy được bản nào" **không** khai ở đây. Nó suy ra từ số thật
+    trong `os_images.hop_le()`: so `plan.ram_mb` với `img.ram_mb_toi_thieu`, và
+    đĩa với `img.disk_gb_toi_thieu`.
+
+    Trước 24/08 ở đây còn một trường `os_toi_thieu` khai tay điều đó. **Không nơi
+    nào đọc nó** — nó là nguồn chân lý thứ hai cho một câu hỏi đã có nguồn thứ
+    nhất, và nó đã kịp lệch: nó trỏ vào `win11`, một bản không còn trong danh mục.
     """
 
     id: str
@@ -56,7 +60,6 @@ class Plan:
     #: được. Đổi lại: phải có phanh — xem `services/capacity.py`.
     disk_gb: int
     gia_thang_vnd: int
-    os_toi_thieu: str
     mo_ta: str
 
     @property
@@ -73,9 +76,9 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=2048,
         disk_gb=40,
         gia_thang_vnd=149_000,
-        os_toi_thieu="winsrv2022-core",
-        mo_ta=N_("Chạy được Windows Server 2022 bản Core (không giao diện đồ hoạ). "
-                 "Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc script nền."),
+        mo_ta=N_("Chạy được Windows Server 2016 hoặc 2022 bản Core (không có giao "
+                 "diện đồ hoạ). Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc "
+                 "script nền."),
     ),
     Plan(
         id="vps-vua",
@@ -84,9 +87,9 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=4096,
         disk_gb=60,
         gia_thang_vnd=179_000,
-        os_toi_thieu="winsrv2022-gui",
-        mo_ta=N_("Windows Server 2022 có giao diện, hoặc Windows 10. "
-                 "Đây là gói phần lớn người dùng nên chọn."),
+        mo_ta=N_("Chạy được mọi bản trong danh mục: Server 2016 và 2022 có giao "
+                 "diện, hoặc Windows 10 LTSC. Đây là gói phần lớn người dùng nên "
+                 "chọn."),
     ),
     Plan(
         id="vps-lon",
@@ -95,9 +98,12 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=8192,
         disk_gb=80,
         gia_thang_vnd=329_000,
-        os_toi_thieu="win11",
-        mo_ta=N_("Đủ đĩa cho Windows 11 (Microsoft yêu cầu tối thiểu 64 GB). "
-                 "Hợp khi bạn chạy phần mềm nặng hoặc nhiều việc cùng lúc."),
+        # Gói này KHÔNG mở thêm bản Windows nào — mọi bản trong danh mục đã chạy
+        # được ở gói Vừa. Nó bán CPU, RAM và đĩa, và mô tả phải nói đúng thế;
+        # câu cũ ("đủ đĩa cho Windows 11") nay vừa sai vừa mời một thứ không bán.
+        mo_ta=N_("Gấp đôi CPU và RAM của gói Vừa, đĩa 80 GB. Hợp khi bạn chạy "
+                 "phần mềm nặng hoặc nhiều việc cùng lúc — không phải để cài "
+                 "thêm bản Windows nào khác."),
     ),
 )
 

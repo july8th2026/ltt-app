@@ -245,7 +245,14 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
 
 def test_to_hop_khong_boot_duoc_bi_tu_choi_TRUOC_khi_thu_tien(moi_truong,
                                                               monkeypatch):
-    """Windows 11 trên gói 60 GB không boot. Không được thu tiền rồi mới biết."""
+    """Bản có giao diện trên gói 2 GB RAM không cài nổi. Không được thu tiền rồi
+    mới biết.
+
+    Trước 24/08 test này dùng Windows 11 trên gói 60 GB. Bỏ Windows 11 khỏi danh
+    mục làm nó vẫn ĐỎ-hoá-xanh nhầm chỗ: lỗi trả về thành "khong co he dieu hanh
+    'win11'" — vẫn là một lời từ chối, nhưng từ chối vì **mã OS không tồn tại**,
+    không phải vì phép kiểm cấu hình. Nó sẽ xanh kể cả khi `hop_le()` bị gỡ hẳn.
+    Nên nay dùng một tổ hợp CÓ THẬT nhưng không đủ RAM."""
     monkeypatch.setenv("LTT_VPS", "1")
     _gia_lap_proxmox(monkeypatch)
     user_id = _tao_khach(moi_truong)
@@ -256,10 +263,10 @@ def test_to_hop_khong_boot_duoc_bi_tu_choi_TRUOC_khi_thu_tien(moi_truong,
         page = client.get("/vps")
         token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
         r = client.post("/vps/tao", data={
-            "csrf_token": token, "plan_id": "vps-vua", "os_id": "win11",
-            "vung": "port", "dia_them_gb": 0})
+            "csrf_token": token, "plan_id": "vps-nho",
+            "os_id": "winsrv2022-gui", "vung": "sgp", "dia_them_gb": 0})
         assert r.status_code == 303
-        assert "64" in r.headers["location"]
+        assert "RAM" in r.headers["location"]
     finally:
         client.close()
 

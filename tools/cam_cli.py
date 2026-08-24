@@ -270,7 +270,30 @@ def _codex_profile() -> str:
             f'model_context_window = 65536\n')
 
 
-def cam_codex(goc: str, tt: dict) -> list:
+def _codex_config_goc(goc: str) -> str:
+    """Dang GOC — dat `model`/`model_provider` ngay trong `config.toml`.
+
+    * VI SAO PHAI CO DANG THU HAI. Tien ich Codex cua VS Code KHONG co cach truyen
+      `--profile`, va Codex 0.145 tu choi thang `profile = "ltt"` trong tep:
+
+          Error: legacy `profile = "ltt"` config is no longer supported;
+                 use `--profile ltt` with `ltt.config.toml` instead
+
+      Nen muon tien ich dung duoc thi cau hinh phai nam o GOC.
+
+    ! DANH DOI PHAI NOI RO: dang nay thay LUON mac dinh cua lenh `codex`. Dang
+      profile giu nguyen mac dinh cua khach nhung chi CLI dung duoc. Khong co
+      cach nao duoc ca hai - do la gioi han cua Codex, khong phai cua ta.
+    """
+    return (f'model = "{MODEL}"\n'
+            f'model_provider = "ltt"\n'
+            f'model_reasoning_effort = "low"\n'
+            f'model_reasoning_summary = "none"\n'
+            f'model_context_window = 65536\n'
+            f'\n' + _codex_config(goc))
+
+
+def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     ra = []
     thu_muc = NHA / ".codex"
     thu_muc.mkdir(parents=True, exist_ok=True)
@@ -278,7 +301,8 @@ def cam_codex(goc: str, tt: dict) -> list:
     cfg = thu_muc / "config.toml"
     _sao_luu(cfg)
     van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
-    _ghi_giu_dong(cfg, _chen_khoi(van, _codex_config(goc), crlf))
+    noi_dung = _codex_config_goc(goc) if cho_vscode else _codex_config(goc)
+    _ghi_giu_dong(cfg, _chen_khoi(van, noi_dung, crlf))
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
 
     prof = thu_muc / "ltt.config.toml"
@@ -373,6 +397,12 @@ def cam_vscode(goc: str, tt: dict) -> list:
             {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": MODEL},
         ],
         "claudeCode.disableLoginPrompt": True,
+        # * `useTerminal` la duong DA CHUNG MINH CHAY DUOC (T6 tren VM: claude.exe
+        #   cua chinh tien ich nay tra loi dung qua API cua ta). Bang chat cua
+        #   tien ich di mot duong xac thuc khac va van doi dang nhap; con terminal
+        #   thi chay dung `claude` CLI, thu doc bien moi truong nhu binh thuong.
+        #   Chinh tien ich cung goi y dieu nay: "Prefer the terminal experience?"
+        "claudeCode.useTerminal": True,
     }
     for ten, gt in moi.items():
         if ten not in ghi_nho:
@@ -517,7 +547,7 @@ def lenh_cam(a) -> int:
     tt["goc"] = a.goc
     print(f"Cam vao {a.goc}\n")
     print("Codex:")
-    for d in cam_codex(a.goc, tt):
+    for d in cam_codex(a.goc, tt, getattr(a, 'vscode', False)):
         print(d)
     print("\nClaude Code:")
     for d in cam_claude(a.goc, tt, a.toan_cuc):
@@ -539,6 +569,13 @@ def lenh_cam(a) -> int:
     print("!! PHAI MO LAI VS CODE / TERMINAL. `setx` chi anh huong tien trinh MOI;")
     print("   cua so dang mo van dung gia tri cu, va do la cho hay lam nguoi ta")
     print("   tuong cong cu nay hong.")
+    print("")
+    print("!! NEU DUNG TIEN ICH VS CODE MA VAN BAO THIEU BIEN: DANG XUAT ROI")
+    print("   DANG NHAP LAI Windows. Do la cach DUY NHAT chac chan.")
+    print("   Do that 24/08 tren VM: mo lai VS Code KHONG du, va khoi dong lai")
+    print("   explorer cung KHONG du - explorer moi ke thua moi truong CU tu")
+    print("   tien trinh da sinh ra no. Sau khi dang nhap lai thi ca hai tien ich")
+    print("   deu chay (Codex tra loi 144, Claude Code tra loi 63).")
     print(f"\nCodex:       codex --profile ltt")
     print(f"Claude Code: claude   (model {MODEL})")
     # ⚠️ Lời nhắc phải **đúng với cách khách đang chạy**. Bản đóng gói in ra
@@ -669,6 +706,10 @@ def main(argv=None) -> int:
     c = sub.add_parser("cam", help="ghi cau hinh")
     c.add_argument("--khoa", default="")
     c.add_argument("--goc", default=GOC_MAC_DINH)
+    c.add_argument("--vscode", action="store_true",
+                   help="cau hinh cho TIEN ICH VS Code: Codex ghi o goc config.toml "
+                        "(thay luon mac dinh cua lenh codex), Claude Code chay "
+                        "trong terminal")
     c.add_argument("--toan-cuc", action="store_true", dest="toan_cuc",
                    help="ghi ca ~/.claude/settings.json (TOAN CUC cho moi phien "
                         "Claude Code tren may nay)")

@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9b8034fb50ea35f537245d4f73f4c38361440487a92967d7f71e6f030f6f9e7c
+Fingerprint   : sha256:ed388921b377d938f19679fd697ad9b1e36813f88d4ef270d27bf8f7055422ef
 Nguồn đã quét : 1334 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -1046,7 +1046,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (154 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (155 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1181,7 +1181,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_VPS_GATEWAY_SSH_KEY
 - LTT_VPS_GATEWAY_USER
 - LTT_VPS_ISO_
-- LTT_VPS_ISO_WIN11
+- LTT_VPS_ISO_WINSRV2016_CORE
+- LTT_VPS_ISO_WINSRV2016_GUI
 - LTT_VPS_ISO_WINSRV2022_GUI
 - LTT_VPS_KHO_DIA
 - LTT_VPS_PROXMOX_CA
@@ -2931,7 +2932,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1334 file; 12420422 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1334 file; 12429263 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -34617,7 +34618,7 @@ __all__ = ["FLAG_ENV", "enabled"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/cost.py
-SHA256=e7ea90c1a2b95b6117a36e2d52e819d92767efc2f70127bb8508dbea4a04150a BYTES=5850 LINES=146
+SHA256=58ffb90b228df44ba32e01536eb269a0d60aad3cea12b53e50b606d096d3897b BYTES=6463 LINES=152
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng giá VPS và quy đổi sang credit (Q103 V6, Q104 V11).
 
@@ -34629,7 +34630,7 @@ Vì thế giá ở đây phải rẻ hơn họ rõ rệt, và trang bán phải 
 ## Vì sao cấu hình đĩa lớn hơn cảm giác
 
 Catalog chỉ có Windows (V9). Yêu cầu tối thiểu của Microsoft là **32 GB đĩa**
-(Windows 11 là **64 GB**), nên không có gói nào dưới 40 GB. Bản nháp đầu từng ghi
+(Server 2016 và 2022 đều là **32 GB**), nên không có gói nào dưới 40 GB. Bản nháp đầu từng ghi
 25 GB cho gói rẻ nhất — con số đó **không cài nổi Windows**, và nó là loại lỗi
 chỉ lộ ra khi khách đã trả tiền.
 
@@ -34661,9 +34662,13 @@ CHU_KY_NGAY = 30
 class Plan:
     """Một gói bán. Bất biến: đổi giá là thêm gói mới, không sửa gói đang bán.
 
-    `os_toi_thieu` ghi bản Windows **thấp nhất** mà gói này chạy nổi — dùng để
-    trang bán không mời khách chọn một tổ hợp không boot được (vd Windows 11 trên
-    40 GB đĩa). Đây là ràng buộc của Microsoft, không phải lựa chọn của ta.
+    Việc "gói này chạy được bản nào" **không** khai ở đây. Nó suy ra từ số thật
+    trong `os_images.hop_le()`: so `plan.ram_mb` với `img.ram_mb_toi_thieu`, và
+    đĩa với `img.disk_gb_toi_thieu`.
+
+    Trước 24/08 ở đây còn một trường `os_toi_thieu` khai tay điều đó. **Không nơi
+    nào đọc nó** — nó là nguồn chân lý thứ hai cho một câu hỏi đã có nguồn thứ
+    nhất, và nó đã kịp lệch: nó trỏ vào `win11`, một bản không còn trong danh mục.
     """
 
     id: str
@@ -34677,7 +34682,6 @@ class Plan:
     #: được. Đổi lại: phải có phanh — xem `services/capacity.py`.
     disk_gb: int
     gia_thang_vnd: int
-    os_toi_thieu: str
     mo_ta: str
 
     @property
@@ -34694,9 +34698,9 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=2048,
         disk_gb=40,
         gia_thang_vnd=149_000,
-        os_toi_thieu="winsrv2022-core",
-        mo_ta=N_("Chạy được Windows Server 2022 bản Core (không giao diện đồ hoạ). "
-                 "Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc script nền."),
+        mo_ta=N_("Chạy được Windows Server 2016 hoặc 2022 bản Core (không có giao "
+                 "diện đồ hoạ). Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc "
+                 "script nền."),
     ),
     Plan(
         id="vps-vua",
@@ -34705,9 +34709,9 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=4096,
         disk_gb=60,
         gia_thang_vnd=179_000,
-        os_toi_thieu="winsrv2022-gui",
-        mo_ta=N_("Windows Server 2022 có giao diện, hoặc Windows 10. "
-                 "Đây là gói phần lớn người dùng nên chọn."),
+        mo_ta=N_("Chạy được mọi bản trong danh mục: Server 2016 và 2022 có giao "
+                 "diện, hoặc Windows 10 LTSC. Đây là gói phần lớn người dùng nên "
+                 "chọn."),
     ),
     Plan(
         id="vps-lon",
@@ -34716,9 +34720,12 @@ PLANS: tuple[Plan, ...] = (
         ram_mb=8192,
         disk_gb=80,
         gia_thang_vnd=329_000,
-        os_toi_thieu="win11",
-        mo_ta=N_("Đủ đĩa cho Windows 11 (Microsoft yêu cầu tối thiểu 64 GB). "
-                 "Hợp khi bạn chạy phần mềm nặng hoặc nhiều việc cùng lúc."),
+        # Gói này KHÔNG mở thêm bản Windows nào — mọi bản trong danh mục đã chạy
+        # được ở gói Vừa. Nó bán CPU, RAM và đĩa, và mô tả phải nói đúng thế;
+        # câu cũ ("đủ đĩa cho Windows 11") nay vừa sai vừa mời một thứ không bán.
+        mo_ta=N_("Gấp đôi CPU và RAM của gói Vừa, đĩa 80 GB. Hợp khi bạn chạy "
+                 "phần mềm nặng hoặc nhiều việc cùng lúc — không phải để cài "
+                 "thêm bản Windows nào khác."),
     ),
 )
 
@@ -34769,7 +34776,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=98c12470b97f276d835549c51c38b23ca81dafab86f368d8421d754c0f0769cc BYTES=31453 LINES=639
+SHA256=b22c45ad3945b9a547719574fde6936e5c0d329b79e5b868cd08cd834d9916f1 BYTES=31705 LINES=639
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -35212,14 +35219,17 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
       cần đĩa driver virtio** khi cài Windows: Windows nhận sẵn cả hai.
     * **`vga: std`** — máy phải có màn hình đồ hoạ, vì console LÀ đường cài đặt.
     * **thứ tự boot `ide0` rồi `sata0`** — lần đầu boot vào đĩa cài; cài xong,
-      không bấm phím nào thì nó tự bỏ qua CD và boot vào đĩa cứng.
+      không bấm phím nào thì nó tự bỏ qua CD và boot vào đĩa cứng. Khách bấm
+      "Tôi đã cài xong" thì `dieu_khien.go_dia_cai` tháo hẳn `ide0` ra.
     """
     cau_hinh = {
         "name": f"vps-{may.id[:8]}",
         "cores": plan.vcpu,
         "memory": plan.ram_mb,
-        "ostype": "win11" if img.can_uefi_tpm else (
-            "win10" if img.ho == "windows" else "l26"),
+        # `win10` là ostype Proxmox khuyên dùng cho **cả** Server 2016/2019/2022
+        # lẫn Windows 10 — nó chỉ chỉnh vài mặc định của QEMU, không phải một
+        # tuyên bố về phiên bản.
+        "ostype": "win10" if img.ho == "windows" else "l26",
         "scsihw": "virtio-scsi-single",
         # `serial=` KHÔNG thừa: QEMU đặt số hiệu ổ theo *chỉ số ổ*, nên mọi
         # máy dùng `sata0` báo về cùng một chuỗi. Xem `services/dinh_danh.py`.
@@ -35235,17 +35245,14 @@ def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
         # Không guest agent, không balloon: cả hai là thiết bị virtio.
         "agent": 0,
         "balloon": 0,
+        # MỘT đường BIOS cho mọi bản đang bán. Trước 24/08 ở đây có nhánh thứ
+        # hai (`ovmf` + `efidisk0` + `tpmstate0`) cho Windows 11 — nhánh mà
+        # **không bản nào khác đi qua**, tức không lần chạy nào thử tới nó.
+        # Windows 11 không còn trong danh mục (xem `os_images.py`), nên nhánh đó
+        # đã gỡ thay vì để nằm lại mục dần.
+        "bios": "seabios",
+        "machine": "pc-q35-11.0",
     }
-    if img.can_uefi_tpm:
-        # Windows 11 từ chối cài nếu thiếu. `pre-enrolled-keys=1` để Secure Boot
-        # tin chuỗi ký của Microsoft — ngược với ảnh Linux, vốn cần =0.
-        cau_hinh["bios"] = "ovmf"
-        cau_hinh["machine"] = "q35"
-        cau_hinh["efidisk0"] = f"{KHO_DIA}:0,efitype=4m,pre-enrolled-keys=1"
-        cau_hinh["tpmstate0"] = f"{KHO_DIA}:0,version=v2.0"
-    else:
-        cau_hinh["bios"] = "seabios"
-        cau_hinh["machine"] = "pc-q35-11.0"
     return cau_hinh
 
 
@@ -35530,7 +35537,7 @@ def trang_thai(ma: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/os_images.py
-SHA256=b77d9898578da0ac9781d7d6fc8e9d2587d5799cdb0a22242d57f8f806aae931 BYTES=7659 LINES=166
+SHA256=07caa583f0d340301c38ab67f10764ffedc92eead86eeb7594c50f82d673bd9b BYTES=8754 LINES=182
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Catalog hệ điều hành: **đĩa cài đặt**, và ràng buộc tối thiểu của từng bản.
 
@@ -35548,10 +35555,19 @@ trình cài đặt qua console và **tự đặt tài khoản, mật khẩu củ
 
 ## Vì sao ràng buộc tối thiểu nằm trong dữ liệu chứ không trong đầu người bán
 
-Yêu cầu của Microsoft là con số cứng: **Windows 11 cần 64 GB đĩa và 4 GB RAM**,
-Server 2022 cần 32 GB. Một tổ hợp (gói × OS) không đạt ngưỡng thì máy **không cài
-được** — và nó chỉ lộ ra sau khi khách đã trả tiền và đang nhìn một thông báo lỗi
-của trình cài đặt. Kiểm ở đây là kiểm trước khi thu tiền.
+Yêu cầu của Microsoft là con số cứng: **Server 2016 và 2022 đều cần 32 GB đĩa**;
+bản Core sống được với 2 GB RAM, bản có giao diện cần 4 GB. Một tổ hợp (gói × OS)
+không đạt ngưỡng thì máy **không cài được** — và nó chỉ lộ ra sau khi khách đã trả
+tiền và đang nhìn một thông báo lỗi của trình cài đặt. Kiểm ở đây là kiểm trước khi
+thu tiền.
+
+## Phạm vi: KHÔNG bán Windows 11 (chốt 2026-08-24)
+
+Danh mục dừng ở **Server 2016, Server 2022 và Windows 10 LTSC**. Windows 11 đòi
+UEFI/OVMF + vTPM + Secure Boot, tức một nhánh cấu hình máy **riêng** mà không bản
+nào khác đi qua — nhánh chỉ một thứ dùng là nhánh không ai thử, và nó hỏng lặng lẽ.
+Nhánh đó đã được gỡ khỏi `jobs.py`; muốn mở lại thì đọc `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`
+mục 11 để dựng lại, đừng đoán.
 
 ## `khach_thay`
 
@@ -35594,9 +35610,6 @@ class OsImage:
     cong_quen: int
     #: Hiện trong catalog bán không. False = bản kỹ thuật, khách không thấy.
     khach_thay: bool
-    #: Máy cài bản này có cần UEFI + vTPM + Secure Boot không. Windows 11 thì có,
-    #: và thiếu nó thì trình cài đặt dừng ở "This PC can't run Windows 11".
-    can_uefi_tpm: bool = False
     ghi_chu: str = ""
 
 
@@ -35619,6 +35632,21 @@ OS_IMAGES: tuple[OsImage, ...] = (
                 "chay long trong VMware va guest ghi vao thanh ghi notify cua "
                 "virtio-pci thi khong bao gio quay ra. Dung `debian-12`.",
     ),
+    # Một ISO Server phục vụ CẢ HAI bản Core và có giao diện: chọn bản nào là một
+    # màn hình trong trình cài đặt, không phải hai bộ cài khác nhau. Tách thành hai
+    # mục ở đây vì **sàn RAM khác nhau** (2 GB với Core, 4 GB với giao diện) — và
+    # đó là thứ quyết định gói nào bán được bản nào.
+    OsImage(
+        id="winsrv2016-core", ten="Windows Server 2016 (Core)", ho="windows",
+        ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
+        khach_thay=True,
+        ghi_chu=N_("Bản cũ hơn 2022. Chọn nó khi phần mềm của bạn cần đúng đời này."),
+    ),
+    OsImage(
+        id="winsrv2016-gui", ten=N_("Windows Server 2016 (có giao diện)"), ho="windows",
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
+        khach_thay=True,
+    ),
     OsImage(
         id="winsrv2022-core", ten="Windows Server 2022 (Core)", ho="windows",
         ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
@@ -35631,20 +35659,15 @@ OS_IMAGES: tuple[OsImage, ...] = (
         khach_thay=True,
     ),
     OsImage(
-        id="win10", ten="Windows 10", ho="windows",
+        # LTSC, không phải bản Home/Pro thường: đĩa cài trên node là
+        # `win10-ltsc-2021-x64.iso`. Ghi đúng tên để khách không mua nhầm kỳ vọng
+        # về Microsoft Store hay các ứng dụng đi kèm — LTSC không có chúng.
+        id="win10", ten="Windows 10 LTSC 2021", ho="windows",
         # 32 GB là yêu cầu của Microsoft. Trước 24/08 số này là 80 vì máy nhân
         # bản từ template 80 GB và Proxmox không thu đĩa được; khách tự cài thì
         # ràng buộc đó biến mất.
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
-    ),
-    OsImage(
-        id="win11", ten="Windows 11", ho="windows",
-        # Microsoft: 4 GB RAM và 64 GB đĩa là SÀN, không phải khuyến nghị.
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
-        khach_thay=True, can_uefi_tpm=True,
-        ghi_chu=N_("Trình cài đặt dừng ở 'This PC can't run Windows 11' nếu "
-                   "thiếu UEFI/OVMF + vTPM + Secure Boot."),
     ),
 )
 
@@ -88710,7 +88733,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=90e5a8b779e53dcc50411e5227dbeb354ea53bb83a20b9ab4e6ae9252f9975e0 BYTES=208589 LINES=3001
+SHA256=c449693d86b6c3857bef9dbeb905ee877db44019f1a5e1f015a26768fad7d463 BYTES=210113 LINES=3021
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -91636,8 +91659,28 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       trùng ở cả bốn mục, gọi lại cho kết quả y hệt, và một chốt cấm dùng nguồn ngẫu
       nhiên. Toàn bộ VPS: **130 xanh**, `gate --quick` **PASS**.
 
-- [ ] **G6 — Windows 11 cần UEFI/OVMF + vTPM + Secure Boot** trong cấu hình máy.
-      Không còn là việc "dựng template" nữa, chỉ là một biến thể cấu hình khi tạo máy.
+- [~] **G6 — Windows 11.** ⛔ **HUỶ 2026-08-24 — chủ sản phẩm chốt không bán.**
+      Danh mục dừng ở **Server 2016, Server 2022, Windows 10 LTSC**.
+
+      Việc đã làm theo quyết định này (không chỉ là gạch một dòng kế hoạch):
+      bỏ bản `win11` và trường `can_uefi_tpm` khỏi `os_images.py`; **gỡ nhánh
+      `ovmf` + `efidisk0` + `tpmstate0`** khỏi `jobs._cau_hinh_may_trong` — nhánh
+      chỉ một bản đi qua là nhánh không lần chạy nào thử tới; **thêm Server 2016**
+      (bản Core và bản có giao diện, dùng chung một ISO đã có sẵn trên node); gọi
+      đúng tên **Windows 10 LTSC 2021** thay vì "Windows 10", vì đĩa cài là bản
+      LTSC và nó **không có Microsoft Store** — khách mua nhầm kỳ vọng là một lần
+      hoàn tiền.
+
+      Dọn kèm: **bỏ trường `Plan.os_toi_thieu`**. Nó khai tay "gói này chạy bản
+      nào" trong khi việc đó đã do `os_images.hop_le()` tính từ số thật —
+      **không nơi nào đọc nó**, và nó đã kịp lệch: trỏ vào `win11`.
+
+      ⚠️ **Một hệ quả về giá cần chủ sản phẩm xem lại.** Gói `vps-lon` (329.000đ)
+      trước đây được biện minh bằng "đủ đĩa cho Windows 11 (cần 64 GB)". Bỏ
+      Windows 11 thì **gói Lớn không còn mở thêm bản Windows nào** — mọi bản
+      trong danh mục đã chạy ở gói Vừa (179.000đ). Nó vẫn bán gấp đôi CPU và RAM,
+      và mô tả đã sửa cho đúng như vậy, nhưng **khoảng cách giá 179k → 329k nay
+      chỉ đổi lấy CPU/RAM/đĩa**, không đổi lấy khả năng mới.
 
 - [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
       khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút
@@ -218275,7 +218318,7 @@ def test_dich_hong_thi_lop_tren_nem_DichThatBai_kem_loi_di_tiep(moi_truong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_251_vps_ha_tang.py
-SHA256=905fe306ef8c807d92a0e18d241f6753148f02ed5754898287fb647fda9326bd BYTES=31284 LINES=749
+SHA256=96ae2d65d495308eea8ef8635d116c085949339682ba14ec777eb3bf262f30e5 BYTES=33841 LINES=793
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hạ tầng app VPS (H39 P0, Q103 + Q104).
 
@@ -218283,8 +218326,9 @@ Bộ test này bám vào những chỗ mà sai sẽ **hỏng im lặng** — t�
 làm test nào khác đỏ và không làm log nào đỏ, chỉ làm khách mất máy:
 
 * **Fail-closed.** Cờ tắt mà app vẫn hiện là mở một bề mặt tạo máy ảo cho người lạ.
-* **Cấu hình × hệ điều hành.** Windows 11 trên 40 GB đĩa **không boot**. Nếu không
-  chặn trước khi thu tiền thì khách phát hiện sau khi đã trả và đã chờ clone xong.
+* **Cấu hình × hệ điều hành.** Bản Windows có giao diện trên gói 2 GB RAM **không
+  cài nổi**. Nếu không chặn trước khi thu tiền thì khách phát hiện sau khi đã trả
+  và đang nhìn một thông báo lỗi của trình cài đặt.
 * **Cấp phát nguyên tử.** Hai job song song nhận cùng một cổng NAT thì máy sau ghi
   đè NAT của máy trước, và khách đầu tiên mất kết nối mà **không có lỗi nào**.
 * **Xếp chỗ fail-closed.** Không đọc được dung lượng kho thì phải NGỪNG bán, không
@@ -218425,20 +218469,43 @@ def test_dia_mua_them_cong_dung_va_chi_nhan_boi_cua_10():
 
 # ── 3. Hệ điều hành × cấu hình ───────────────────────────────────────────────
 
-def test_win11_bi_tu_choi_tren_goi_thieu_dia():
-    """Microsoft đòi 64 GB đĩa. `vps-vua` đủ RAM nhưng chỉ 60 GB → phải chặn.
+def test_KHONG_ban_windows_11():
+    """Chốt 2026-08-24: danh mục dừng ở Server 2016/2022 và Windows 10 LTSC.
 
-    Dùng `vps-vua` chứ không `vps-nho`: `vps-nho` thiếu cả RAM, nên nó bị chặn ở
-    phép kiểm RAM và không chứng minh được phép kiểm đĩa có chạy hay không.
+    Windows 11 đòi UEFI/OVMF + vTPM + Secure Boot, tức một nhánh cấu hình máy
+    **riêng** mà không bản nào khác đi qua — nhánh chỉ một thứ dùng là nhánh
+    không lần chạy nào thử tới, và nó hỏng lặng lẽ. Nhánh đó đã gỡ khỏi
+    `jobs.py`, nên thêm lại `win11` vào catalog mà quên dựng lại nhánh sẽ tạo ra
+    máy BIOS thường, và khách ngồi nhìn "This PC can't run Windows 11".
     """
-    duoc, ly_do = os_images.hop_le("vps-vua", "win11")
+    assert os_images.lay_os("win11") is None
+    assert "win11" not in {o.id for o in os_images.OS_IMAGES}
+
+
+def test_phep_kiem_DIA_that_su_chay(monkeypatch):
+    """`vps-nho` thiếu cả RAM lẫn đĩa, nên nó không chứng minh được phép kiểm đĩa
+    có chạy hay không. Dựng một bản giả chỉ vượt ngưỡng ĐĨA để tách hai phép kiểm.
+    """
+    from apps.vps.os_images import OsImage
+
+    to = OsImage(id="thu-dia-to", ten="Ban gia dia to", ho="windows",
+                 ram_mb_toi_thieu=2048, disk_gb_toi_thieu=200,
+                 cong_quen=3389, khach_thay=False)
+    monkeypatch.setitem(os_images._THEO_ID, to.id, to)
+    duoc, ly_do = os_images.hop_le("vps-vua", to.id)          # 4 GB RAM, 60 GB
     assert duoc is False
-    assert "64" in ly_do and "dia" in ly_do
+    assert "200" in ly_do and "dia" in ly_do
+    # Mua thêm đĩa thì qua — chứng minh `dia_them_gb` thật sự vào phép tính.
+    assert os_images.hop_le("vps-vua", to.id, 140)[0] is True
 
 
-def test_win11_duoc_khi_mua_them_dia():
-    assert os_images.hop_le("vps-vua", "win11")[0] is False       # 60 GB
-    assert os_images.hop_le("vps-vua", "win11", 10)[0] is True    # 70 GB
+def test_moi_ban_ban_cho_khach_deu_chay_duoc_o_it_nhat_MOT_goi():
+    """Một bản không gói nào chạy nổi thì nó chỉ là một dòng chết trong catalog —
+    hiện ra ở đâu đó rồi bị từ chối ở đúng lúc khách bấm mua."""
+    from apps.vps.cost import PLANS
+
+    for img in os_images.os_ban_duoc():
+        assert any(os_images.hop_le(p.id, img.id)[0] for p in PLANS),             f"{img.id} khong goi nao chay duoc"
 
 
 def test_goi_nho_khong_chay_ban_co_giao_dien():
@@ -218456,9 +218523,11 @@ def test_ubuntu_khong_nam_trong_catalog_ban():
 
 def test_ten_bien_dia_cai_dat_doc_duoc_tu_ma_os():
     assert os_images.khoa_moi_truong("winsrv2022-gui") ==         "LTT_VPS_ISO_WINSRV2022_GUI"
-    assert os_images.dia_cai_dat("win11", {}) == ""
+    assert os_images.khoa_moi_truong("winsrv2016-core") == "LTT_VPS_ISO_WINSRV2016_CORE"
+    assert os_images.dia_cai_dat("winsrv2016-gui", {}) == ""
     assert os_images.dia_cai_dat(
-        "win11", {"LTT_VPS_ISO_WIN11": "local:iso/win11.iso"}) == "local:iso/win11.iso"
+        "winsrv2016-gui",
+        {"LTT_VPS_ISO_WINSRV2016_GUI": "local:iso/x.iso"}) == "local:iso/x.iso"
 
 
 def test_chua_khai_dia_cai_dat_thi_KHONG_doan_bua():
@@ -218467,11 +218536,29 @@ def test_chua_khai_dia_cai_dat_thi_KHONG_doan_bua():
     assert os_images.dia_cai_dat("winsrv2022-gui", {}) == ""
 
 
-def test_win11_duoc_danh_dau_can_UEFI_va_TPM():
-    """Thieu thi trinh cai dat dung o "This PC can't run Windows 11" — va khach
-    ngoi nhin no, khong phai ta."""
-    assert os_images.lay_os("win11").can_uefi_tpm is True
-    assert os_images.lay_os("winsrv2022-gui").can_uefi_tpm is False
+def test_may_khach_chi_co_MOT_duong_BIOS():
+    """Không còn nhánh `ovmf` + `efidisk0` + `tpmstate0`. Nhánh đó chỉ phục vụ
+    Windows 11; giữ lại một nhánh không bản nào đi qua là nuôi mã không ai thử."""
+    from apps.vps import cost, jobs
+
+    ch = jobs._cau_hinh_may_trong(
+        type("M", (), {"id": "550e8400-e29b-41d4-a716-000000000001",
+                       "plan_id": "vps-vua", "dia_them_gb": 0})(),
+        cost.lay_plan("vps-vua"), os_images.lay_os("winsrv2016-gui"),
+        "local:iso/x.iso")
+    assert ch["bios"] == "seabios"
+    assert "efidisk0" not in ch and "tpmstate0" not in ch
+
+
+def test_hai_ban_cua_cung_mot_doi_Server_dung_CHUNG_mot_dia_cai(monkeypatch):
+    """Core và bản có giao diện là **một màn hình trong trình cài đặt**, không
+    phải hai bộ cài. Tách thành hai mục trong catalog chỉ vì sàn RAM khác nhau."""
+    monkeypatch.setenv("LTT_VPS_ISO_WINSRV2016_CORE", "local:iso/2016.iso")
+    monkeypatch.setenv("LTT_VPS_ISO_WINSRV2016_GUI", "local:iso/2016.iso")
+    assert (os_images.dia_cai_dat("winsrv2016-core")
+            == os_images.dia_cai_dat("winsrv2016-gui") != "")
+    assert (os_images.lay_os("winsrv2016-core").ram_mb_toi_thieu
+            < os_images.lay_os("winsrv2016-gui").ram_mb_toi_thieu)
 
 
 # ── 4. Xếp chỗ ───────────────────────────────────────────────────────────────
@@ -219415,7 +219502,7 @@ def test_bang_gia_noi_ro_reasoning_va_cache():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_252_vps_giao_dien.py
-SHA256=23302e60dc7075330880c2da752e59fef47a8b8277e2d6331449260febf3c1f8 BYTES=17665 LINES=431
+SHA256=5e5bd0034796df42d6d20f301fafa2f972612fded755f75e3a06e6b1e6af4fc1 BYTES=18175 LINES=438
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bề mặt HTTP của app VPS: cái cờ phải thật sự đóng cửa, và trang phải nói thật.
 
@@ -219664,7 +219751,14 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
 
 def test_to_hop_khong_boot_duoc_bi_tu_choi_TRUOC_khi_thu_tien(moi_truong,
                                                               monkeypatch):
-    """Windows 11 trên gói 60 GB không boot. Không được thu tiền rồi mới biết."""
+    """Bản có giao diện trên gói 2 GB RAM không cài nổi. Không được thu tiền rồi
+    mới biết.
+
+    Trước 24/08 test này dùng Windows 11 trên gói 60 GB. Bỏ Windows 11 khỏi danh
+    mục làm nó vẫn ĐỎ-hoá-xanh nhầm chỗ: lỗi trả về thành "khong co he dieu hanh
+    'win11'" — vẫn là một lời từ chối, nhưng từ chối vì **mã OS không tồn tại**,
+    không phải vì phép kiểm cấu hình. Nó sẽ xanh kể cả khi `hop_le()` bị gỡ hẳn.
+    Nên nay dùng một tổ hợp CÓ THẬT nhưng không đủ RAM."""
     monkeypatch.setenv("LTT_VPS", "1")
     _gia_lap_proxmox(monkeypatch)
     user_id = _tao_khach(moi_truong)
@@ -219675,10 +219769,10 @@ def test_to_hop_khong_boot_duoc_bi_tu_choi_TRUOC_khi_thu_tien(moi_truong,
         page = client.get("/vps")
         token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
         r = client.post("/vps/tao", data={
-            "csrf_token": token, "plan_id": "vps-vua", "os_id": "win11",
-            "vung": "port", "dia_them_gb": 0})
+            "csrf_token": token, "plan_id": "vps-nho",
+            "os_id": "winsrv2022-gui", "vung": "sgp", "dia_them_gb": 0})
         assert r.status_code == 303
-        assert "64" in r.headers["location"]
+        assert "RAM" in r.headers["location"]
     finally:
         client.close()
 
@@ -248084,7 +248178,7 @@ endlocal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=41c1919391dc20d0ca97aef393ef9cb48d6458bb32a6770d8740ddbd9d930c68 BYTES=28427 LINES=689
+SHA256=9e373937dd1441fb96b87cdc3b538b83dcb1324743a158bdd150481e85c4b38c BYTES=30717 LINES=730
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -248358,7 +248452,30 @@ def _codex_profile() -> str:
             f'model_context_window = 65536\n')
 
 
-def cam_codex(goc: str, tt: dict) -> list:
+def _codex_config_goc(goc: str) -> str:
+    """Dang GOC — dat `model`/`model_provider` ngay trong `config.toml`.
+
+    * VI SAO PHAI CO DANG THU HAI. Tien ich Codex cua VS Code KHONG co cach truyen
+      `--profile`, va Codex 0.145 tu choi thang `profile = "ltt"` trong tep:
+
+          Error: legacy `profile = "ltt"` config is no longer supported;
+                 use `--profile ltt` with `ltt.config.toml` instead
+
+      Nen muon tien ich dung duoc thi cau hinh phai nam o GOC.
+
+    ! DANH DOI PHAI NOI RO: dang nay thay LUON mac dinh cua lenh `codex`. Dang
+      profile giu nguyen mac dinh cua khach nhung chi CLI dung duoc. Khong co
+      cach nao duoc ca hai - do la gioi han cua Codex, khong phai cua ta.
+    """
+    return (f'model = "{MODEL}"\n'
+            f'model_provider = "ltt"\n'
+            f'model_reasoning_effort = "low"\n'
+            f'model_reasoning_summary = "none"\n'
+            f'model_context_window = 65536\n'
+            f'\n' + _codex_config(goc))
+
+
+def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     ra = []
     thu_muc = NHA / ".codex"
     thu_muc.mkdir(parents=True, exist_ok=True)
@@ -248366,7 +248483,8 @@ def cam_codex(goc: str, tt: dict) -> list:
     cfg = thu_muc / "config.toml"
     _sao_luu(cfg)
     van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
-    _ghi_giu_dong(cfg, _chen_khoi(van, _codex_config(goc), crlf))
+    noi_dung = _codex_config_goc(goc) if cho_vscode else _codex_config(goc)
+    _ghi_giu_dong(cfg, _chen_khoi(van, noi_dung, crlf))
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
 
     prof = thu_muc / "ltt.config.toml"
@@ -248461,6 +248579,12 @@ def cam_vscode(goc: str, tt: dict) -> list:
             {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": MODEL},
         ],
         "claudeCode.disableLoginPrompt": True,
+        # * `useTerminal` la duong DA CHUNG MINH CHAY DUOC (T6 tren VM: claude.exe
+        #   cua chinh tien ich nay tra loi dung qua API cua ta). Bang chat cua
+        #   tien ich di mot duong xac thuc khac va van doi dang nhap; con terminal
+        #   thi chay dung `claude` CLI, thu doc bien moi truong nhu binh thuong.
+        #   Chinh tien ich cung goi y dieu nay: "Prefer the terminal experience?"
+        "claudeCode.useTerminal": True,
     }
     for ten, gt in moi.items():
         if ten not in ghi_nho:
@@ -248605,7 +248729,7 @@ def lenh_cam(a) -> int:
     tt["goc"] = a.goc
     print(f"Cam vao {a.goc}\n")
     print("Codex:")
-    for d in cam_codex(a.goc, tt):
+    for d in cam_codex(a.goc, tt, getattr(a, 'vscode', False)):
         print(d)
     print("\nClaude Code:")
     for d in cam_claude(a.goc, tt, a.toan_cuc):
@@ -248627,6 +248751,13 @@ def lenh_cam(a) -> int:
     print("!! PHAI MO LAI VS CODE / TERMINAL. `setx` chi anh huong tien trinh MOI;")
     print("   cua so dang mo van dung gia tri cu, va do la cho hay lam nguoi ta")
     print("   tuong cong cu nay hong.")
+    print("")
+    print("!! NEU DUNG TIEN ICH VS CODE MA VAN BAO THIEU BIEN: DANG XUAT ROI")
+    print("   DANG NHAP LAI Windows. Do la cach DUY NHAT chac chan.")
+    print("   Do that 24/08 tren VM: mo lai VS Code KHONG du, va khoi dong lai")
+    print("   explorer cung KHONG du - explorer moi ke thua moi truong CU tu")
+    print("   tien trinh da sinh ra no. Sau khi dang nhap lai thi ca hai tien ich")
+    print("   deu chay (Codex tra loi 144, Claude Code tra loi 63).")
     print(f"\nCodex:       codex --profile ltt")
     print(f"Claude Code: claude   (model {MODEL})")
     # ⚠️ Lời nhắc phải **đúng với cách khách đang chạy**. Bản đóng gói in ra
@@ -248757,6 +248888,10 @@ def main(argv=None) -> int:
     c = sub.add_parser("cam", help="ghi cau hinh")
     c.add_argument("--khoa", default="")
     c.add_argument("--goc", default=GOC_MAC_DINH)
+    c.add_argument("--vscode", action="store_true",
+                   help="cau hinh cho TIEN ICH VS Code: Codex ghi o goc config.toml "
+                        "(thay luon mac dinh cua lenh codex), Claude Code chay "
+                        "trong terminal")
     c.add_argument("--toan-cuc", action="store_true", dest="toan_cuc",
                    help="ghi ca ~/.claude/settings.json (TOAN CUC cho moi phien "
                         "Claude Code tren may nay)")
