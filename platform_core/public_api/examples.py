@@ -93,7 +93,12 @@ def python_snippet(tool) -> str:
 
 BASE = os.environ["{ENV_BASE_URL}"].rstrip("/") + "/api/v1"
 HEAD = {{"Authorization": "Bearer " + os.environ["{ENV_API_KEY}"],
-        "Content-Type": "application/json"}}
+        "Content-Type": "application/json",
+        # BAT BUOC. Cloudflare tra 403 cho User-Agent mac dinh cua urllib
+        # TRUOC khi request toi duoc may chu. Do 24/08: urllib mac dinh -> 403;
+        # requests / openai / anthropic / curl / Go / node-fetch deu -> 401,
+        # tuc chi rieng urllib bi chan. Dat bat cu ten nao cung qua.
+        "User-Agent": "my-app/1.0"}}
 
 
 def call(method, path, body=None, extra=None):

@@ -27,7 +27,39 @@ chúng **chặn** phần còn lại — nên chúng ở trên cùng.
 | # | Việc | Vì sao nó chặn |
 |---|---|---|
 | ~~**P1**~~ | ✅ **XONG 15:10 ngày 24/08** — `EXITCODE=0`, `status=ready environment=production`. | — |
-| **P3** | **Luật WAF Cloudflare** cho `/api/v1/*`: bỏ kiểm bot | Đã đo 24/08: `User-Agent` mặc định của `urllib` bị CF trả **403** trước khi tới máy chủ. Khách dùng thư viện chuẩn sẽ dính. |
+| **P3** | Luật WAF Cloudflare cho `/api/v1/*` — **hạ xuống "nên có", không còn chặn** | Đo lại kỹ 24/08: **chỉ `urllib` mặc định** bị 403. `requests`, `openai`, `anthropic`, `curl`, `Go-http-client`, `node-fetch`, PowerShell 5.1/7 **đều lọt** (401 của ta). Nguyên nhân thật là **ví dụ của chính ta** — đã sửa, xem dưới. |
+
+### 🔴 Tôi đã viết P3 nặng hơn sự thật, và số đo lật lại
+
+Bản trước ghi *"khách dùng thư viện chuẩn sẽ dính"*. **Sai.** Đo từng `User-Agent`
+vào `GET /api/v1/tools` (401 = ứng dụng ta trả lời, tức đã qua Cloudflare):
+
+```
+urllib mac dinh                     403   <== CLOUDFLARE CHAN
+python-requests / openai / anthropic 401
+curl / Go-http-client / node-fetch   401
+PowerShell 5.1 / PowerShell 7        401
+trinh duyet                          401
+```
+
+**Chỉ một cái bị chặn.** Nên luật WAF không phải là thứ đang chặn khách.
+
+⛔ **Nhưng có một lỗi thật, và nó nặng hơn P3:** `examples.python_snippet()` —
+ví dụ Python hiện trên cổng dev cho **mọi tool** — dùng `urllib` mà **không đặt
+`User-Agent`**. Khách chép ví dụ của **chính ta** thì nhận 403 ngay dòng đầu, và
+403 đó **không phải của ta** nên không có `request_id`, không tra được gì.
+
+⭐ Điều làm nó thành một **lớp lỗi**: `python_chat_snippet()` **đã** đặt
+`User-Agent`, kèm chú thích giải thích đúng lý do. Có người đã gặp, đã hiểu, đã
+sửa — **ở đúng một chỗ**. Không có gì bắt chỗ thứ hai phải theo.
+
+⚠️ Và vì sao test cũ không thấy: test hợp đồng kiểm ví dụ **cú pháp có đúng** và
+**có khớp schema** — cả hai đều xanh, vì ví dụ hoàn toàn hợp lệ. Thứ sai nằm ở
+tầng khác: nó hợp lệ nhưng **không đi qua được biên**. Loopback không có
+Cloudflare. Đây chính là **quy tắc 5b** của dự án, ở dạng test.
+
+✅ Đã sửa + chốt bằng `tests/test_280_vi_du_qua_cloudflare.py` (3 test), có kiểm
+ngược: tái hiện bản lỗi thì test **đỏ** đúng như mong đợi.
 
 ⛔ **P1 phải xong trước mọi việc ở mục 2.**
 
