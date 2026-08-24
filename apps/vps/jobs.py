@@ -124,7 +124,15 @@ def _tao_may(params: dict, ctx=None) -> dict:
                 goi_y = client.vmid_ke_tiep()
             except ProxmoxError:
                 goi_y = 0
-            provisioning.cap_vmid(db, may, goi_y=goi_y)
+            # Đưa CẢ danh sách VM đang có trên máy chủ vào: xem docstring của
+            # `cap_vmid`. Không có nó thì job chiếm máy mà CSDL không biết.
+            try:
+                da_co = {int(v.get("vmid", 0)) for v in client.danh_sach_vm()}
+            except ProxmoxError:
+                # Không đọc được thì DỪNG, đừng cấp bừa: cấp trúng máy người
+                # khác tệ hơn nhiều so với việc khách phải thử lại.
+                raise
+            provisioning.cap_vmid(db, may, goi_y=goi_y, da_co_tren_may_chu=da_co)
             db.commit()
 
         # 2) Clone — bước KHÔNG idempotent, nên hỏi thế giới thật trước.

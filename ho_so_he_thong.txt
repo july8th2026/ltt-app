@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ee6595383f245c0a49d11b6b155e087d7e6a030b55cd5572ce52713a8443a348
-Nguồn đã quét : 1306 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:048f1eff8608e0bfebbdbda064e2a986397bcb48d1f0023ba418e6ee81a1e145
+Nguồn đã quét : 1307 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1497,8 +1497,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1306 file)
-Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1004, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1307 file)
+Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1005, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2762,7 +2762,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (85)
+[tools] (86)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2822,6 +2822,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - tools/nexus_release_key.py
 - tools/nexus_sign_release.py
 - tools/nghiem_thu_anh_e2e.py
+- tools/nghiem_thu_chat_l1.py
 - tools/prepare_agent_canary.py
 - tools/public_api_load_test.py
 - tools/qualitylab_calibration.py
@@ -2871,7 +2872,7 @@ Phân bố extension: .cfg:1, .css:7, .html:88, .ini:1, .js:9, .json:42, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1306 file; 12037754 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1307 file; 12049676 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -34542,7 +34543,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=98f43e6709ae62b00eee0a1d5abe02d5ffbfb544a6803b9225dcab8e138ffc19 BYTES=18504 LINES=416
+SHA256=67c52165f5d8f71b75ddeb1de5bea88094e04cb2849583daef5f64102bd6ae1c BYTES=19047 LINES=424
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34670,7 +34671,15 @@ def _tao_may(params: dict, ctx=None) -> dict:
                 goi_y = client.vmid_ke_tiep()
             except ProxmoxError:
                 goi_y = 0
-            provisioning.cap_vmid(db, may, goi_y=goi_y)
+            # Đưa CẢ danh sách VM đang có trên máy chủ vào: xem docstring của
+            # `cap_vmid`. Không có nó thì job chiếm máy mà CSDL không biết.
+            try:
+                da_co = {int(v.get("vmid", 0)) for v in client.danh_sach_vm()}
+            except ProxmoxError:
+                # Không đọc được thì DỪNG, đừng cấp bừa: cấp trúng máy người
+                # khác tệ hơn nhiều so với việc khách phải thử lại.
+                raise
+            provisioning.cap_vmid(db, may, goi_y=goi_y, da_co_tren_may_chu=da_co)
             db.commit()
 
         # 2) Clone — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
@@ -36206,7 +36215,7 @@ def cau_hinh_qemu(mang: MangKhach) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/provisioning.py
-SHA256=50f0da481da2bdd5807e9dbf853f30a2ca42b0477eed169fdca7074f1fb9242f BYTES=11454 LINES=259
+SHA256=f8e13340c73b8f6608d5e7879877f1b0a7590f77cb038ed799da0729dc8ecfd5 BYTES=12253 LINES=271
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Cấp phát: chọn cổng vào, cấp VMID, cấp cổng NAT, cấp IP.
 
@@ -36370,15 +36379,27 @@ def _thu_ghi(db: DbSession, doi_tuong) -> bool:
         return False
 
 
-def cap_vmid(db: DbSession, instance: VpsInstance, *, goi_y: int = 0) -> int:
+def cap_vmid(db: DbSession, instance: VpsInstance, *, goi_y: int = 0,
+             da_co_tren_may_chu: Iterable[int] = ()) -> int:
     """Cấp VMID cho một máy. `goi_y` là số Proxmox đề nghị (`/cluster/nextid`).
 
     Số của Proxmox chỉ là gợi ý: hai job hỏi cùng lúc nhận cùng một số. Trọng tài
     là ràng buộc duy nhất trên `vps_instance.vmid`.
+
+    **`da_co_tren_may_chu` không phải tối ưu hoá — nó là hàng rào an toàn.** Hỏi
+    một mình CSDL là chưa đủ: máy nào tồn tại trên Proxmox mà CSDL không biết
+    (dựng bằng tay, CSDL khôi phục từ backup, hai môi trường dùng chung cụm) sẽ
+    được cấp lại số của nó — và `jobs.py` thấy VM đã tồn tại nên **bỏ qua bước
+    nhân bản rồi cấu hình lại chính máy đó**, tức giao máy của người này cho
+    người khác. Không lỗi nào được ghi ra.
+
+    Đã dính thật ngày 24/08 khi chạy thử với CSDL rỗng: job chiếm đúng VM 200
+    đang chạy và đổi tên nó.
     """
     dang_dung = {int(v) for v in db.execute(
         select(VpsInstance.vmid).where(VpsInstance.vmid.is_not(None))
     ).scalars()}
+    dang_dung |= {int(v) for v in da_co_tren_may_chu}
 
     bat_dau = max(VMID_DAU, int(goi_y or 0))
     for vmid in _dai_so(bat_dau, VMID_DAU, VMID_CUOI):
@@ -215897,7 +215918,7 @@ def test_dich_hong_thi_lop_tren_nem_DichThatBai_kem_loi_di_tiep(moi_truong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_251_vps_ha_tang.py
-SHA256=2f169b34af6079c145f455093a590d859b5e3f14771bdc89e9028cb230d7b788 BYTES=30007 LINES=721
+SHA256=6aabe24dafffea65db38b9a37a8a0aff69c38a009254e215f3768d1178506f71 BYTES=30688 LINES=736
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hạ tầng app VPS (H39 P0, Q103 + Q104).
 
@@ -216454,6 +216475,21 @@ def test_dia_chi_da_cap_van_giu_duoc_sau_khi_mot_lan_dung_do(db):
     a2 = provisioning.cap_ip_noi_bo(db, _may(db, g), g)
     db.commit()
     assert a2 == "10.51.0.11"
+
+
+def test_vmid_TRANH_may_da_co_tren_may_chu(db):
+    """Máy tồn tại trên Proxmox mà CSDL không biết thì KHÔNG được cấp lại số đó.
+
+    Nếu cấp lại, `jobs.py` thấy VM đã tồn tại nên bỏ qua bước nhân bản rồi cấu
+    hình lại chính máy đó — tức **giao máy của người này cho người khác**, không
+    một lỗi nào được ghi ra. Đã dính thật 24/08 với CSDL rỗng.
+    """
+    from apps.vps.services import provisioning
+    g = _gateway(db)
+    m = _may(db, g)
+    vmid = provisioning.cap_vmid(db, m, da_co_tren_may_chu={200, 201, 202})
+    assert vmid not in (200, 201, 202)
+    assert vmid == 203
 
 
 def test_vmid_khong_trung_va_ton_trong_goi_y(db):
@@ -251076,6 +251112,275 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     if a.lenh != "chay":
         _nap_env()
+    return {"chuan_bi": chuan_bi, "chay": chay, "don": don}[a.lenh](a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/nghiem_thu_chat_l1.py
+SHA256=13d7935045dd64be4b7e87c39ff59f03c45802080b6ea365c0700206e2280048 BYTES=9899 LINES=263
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nghiem_thu_chat_l1.py - di het luong KHACH THAT cho `text.chat`. (H38/L1)
+
+    python tools\\nghiem_thu_chat_l1.py chuan_bi --token-file C:\\tmp\\chat_tok.txt
+    python tools\\nghiem_thu_chat_l1.py chay     --token-file C:\\tmp\\chat_tok.txt
+    python tools\\nghiem_thu_chat_l1.py don
+
+* VI SAO CAN TEP NAY DU DA CO 739 TEST XANH.
+  L1 hoi mot cau ma khong test nao hoi duoc: *mot khach tra tien, dung mot khoa
+  moi tao, co goi duoc khong va co bi thu dung tien khong.* H38 tung co 739 test
+  xanh va van de lot loi VARCHAR(36) toi dung luot goi that dau tien, vi SQLite
+  khong ep do dai ma PostgreSQL thi ep.
+
+* BA CUA, VA CHUNG THU TIEN THEO HAI LUAT KHAC NHAU:
+    /chat/completions  SYNC_BILLED - doi Idempotency-Key, tran max_tokens
+    /messages          STREAM      - khong doi, thu theo token DA SINH RA
+    /responses         STREAM      - nhu tren, cho Codex
+
+  Tep nay di ca ba, vi mot cua xanh khong noi gi ve hai cua kia.
+
+!! DUNG TAI KHOAN TEST, KHONG DUNG ADMIN. Admin co san credit, san quyen, san
+   hieu biet - no di qua duoc ca nhung cho mot khach that bi chan.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import pathlib
+import secrets
+import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(GOC))
+
+BASE = "https://app.lttstudios.com"
+EMAIL = "autosub-test@lttstudios.com"     # tai khoan TEST co san, khong phai admin
+NAP_THEM = 200                             # credit nap them de chay nghiem thu
+TOOL = "text.chat"
+MODEL = "ltt_llm"
+# !! BAT BUOC. urllib mac dinh bi Cloudflare tra 403 TRUOC khi cham may chu.
+UA = "ltt-nghiem-thu-l1/1.0"
+
+
+def _nap_env() -> None:
+    tep = pathlib.Path(r"C:\LTTPlatform\secrets\app.env")
+    if not tep.exists():
+        return
+    for dong in tep.read_text(encoding="utf-8-sig").splitlines():
+        dong = dong.strip()
+        if dong and not dong.startswith("#") and "=" in dong:
+            k, v = dong.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+
+def _phien():
+    _nap_env()
+    from platform_core.db import get_session
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _dong(gen) -> None:
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _tim(db):
+    import sqlalchemy as sa
+    from platform_core.models import User
+    return db.execute(sa.select(User).where(User.email == EMAIL)).scalar_one_or_none()
+
+
+def _goi(duong, than, tok, *, phuong="POST", them=None):
+    import urllib.error
+    import urllib.request
+    du = json.dumps(than).encode() if than is not None else None
+    dau = {"Authorization": "Bearer " + tok, "Content-Type": "application/json",
+           "User-Agent": UA}
+    dau.update(them or {})
+    rq = urllib.request.Request(BASE + "/api/v1" + duong, data=du, method=phuong,
+                                headers=dau)
+    try:
+        with urllib.request.urlopen(rq, timeout=300) as r:
+            return r.status, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+
+
+def _text(b):
+    return b.decode("utf-8", "replace")
+
+
+def chuan_bi(a) -> int:
+    from platform_core import credit
+    from platform_core.public_api import keys as devkeys
+    gen, db = _phien()
+    try:
+        u = _tim(db)
+        if u is None:
+            print("KHONG co tai khoan " + EMAIL + ". Dung tai khoan test co san.")
+            return 1
+        truoc = credit.so_du(db, u.id)
+        credit.nap(db, u.id, NAP_THEM,
+                   note="nghiem thu L1 text.chat " + secrets.token_hex(4))
+        db.commit()
+        sau = credit.so_du(db, u.id)
+        print("tai khoan " + EMAIL + " (role=" + u.role + ")")
+        print("credit: {0} -> {1}".format(truoc, sau))
+
+        # !! Ten ham la `issue`, va no tra ve (key, token) THEO THU TU DO. Doi cho
+        #    hai gia tri nay thi token bi ghi ra tep duoi dang mot doi tuong ORM -
+        #    khong loi nao bao, chi la tep token vo dung o buoc sau.
+        key, tok = devkeys.issue(
+            db, user_id=u.id, name="nghiem thu L1 chat",
+            scopes=("tools:read", "credits:read", "jobs:create", "jobs:read"),
+            allowed_tools=(TOOL,))
+        db.commit()
+        print("key_id=" + str(key.key_id))
+        print("scopes=" + str(key.scopes))
+        print("allowed_tools=" + str(key.allowed_tools))
+        pathlib.Path(a.token_file).write_text(tok, encoding="utf-8")
+        print("token da ghi vao " + a.token_file + " (KHONG in ra man hinh)")
+        return 0
+    finally:
+        _dong(gen)
+
+
+def chay(a) -> int:
+    tok = pathlib.Path(a.token_file).read_text(encoding="utf-8").strip()
+
+    def sd():
+        m, b = _goi("/credits/balance", None, tok, phuong="GET")
+        if m != 200:
+            return None
+        return (json.loads(b) or {}).get("balance")
+
+    print("== 1. Tool co trong catalog chua")
+    m, b = _goi("/tools", None, tok, phuong="GET")
+    ten = []
+    if m == 200:
+        # !! Khoa la `items`, KHONG phai `tools`. Toi doan nham mot lan 24/08 va
+        #    nhan mot danh sach RONG - trieu chung giong het "tool chua duoc mo",
+        #    tuc mot loi doc sai gia dang thanh mot loi cau hinh. Doc hop dong
+        #    (`server/api/`), dung doan tu ten endpoint.
+        ten = [t.get("name") for t in (json.loads(b) or {}).get("items", [])]
+    print("   GET /tools -> {0}, thay {1}".format(m, ten))
+    if TOOL not in ten:
+        print("   DUNG: " + TOOL + " chua ra catalog.")
+        return 1
+
+    d0 = sd()
+    print("== 2. So du truoc: {0}".format(d0))
+
+    print("== 3. /chat/completions  (SYNC_BILLED - doi Idempotency-Key)")
+    than = {"model": MODEL, "max_tokens": 300,
+            "messages": [{"role": "user", "content": "Tra loi dung hai chu: xin chao"}]}
+    m, b = _goi("/chat/completions", than, tok,
+                them={"Idempotency-Key": "l1-" + secrets.token_hex(8)})
+    print("   -> HTTP {0}".format(m))
+    if m != 200:
+        print("   " + _text(b)[:400])
+        return 1
+    kq = json.loads(b)
+    noi = ((kq.get("choices") or [{}])[0].get("message") or {}).get("content", "")
+    print("   noi dung: " + repr(noi[:80]))
+    print("   usage: " + json.dumps(kq.get("usage") or {}, ensure_ascii=False))
+    d1 = sd()
+    print("   so du {0} -> {1}  (thu {2})".format(d0, d1, (d0 or 0) - (d1 or 0)))
+    # !! Mot luot tra ve noi dung RONG ma van thu tien la mot loi TIEN dang song.
+    #    Da tung suyt bao nham dieu nay 24/08 vi max_tokens qua nho cho mot model
+    #    co phan suy nghi rieng - nen kiem ca `usage`, dung chi kiem chuoi rong.
+    if not noi.strip():
+        print("   HONG: noi dung RONG. usage=" + json.dumps(kq.get("usage") or {}))
+        return 1
+
+    print("== 4. /messages  (STREAM - KHONG doi Idempotency-Key)")
+    than = {"model": MODEL, "max_tokens": 300, "stream": True,
+            "messages": [{"role": "user", "content": "Tra loi dung mot tu: OK"}]}
+    m, b = _goi("/messages", than, tok)
+    txt = _text(b)
+    print("   -> HTTP {0}, {1} byte".format(m, len(b)))
+    if m != 200:
+        print("   " + txt[:400])
+        return 1
+    co_su_kien = ("event:" in txt) or ("data:" in txt)
+    co_usage = "usage" in txt
+    print("   co su kien SSE: {0} | co usage de quyet toan: {1}".format(
+        co_su_kien, co_usage))
+    d2 = sd()
+    print("   so du {0} -> {1}  (thu {2})".format(d1, d2, (d1 or 0) - (d2 or 0)))
+    if not co_su_kien:
+        print("   HONG: khong phai mot luong SSE.")
+        return 1
+
+    print("== 5. /responses  (STREAM - cho Codex)")
+    than = {"model": MODEL, "max_output_tokens": 300, "stream": True,
+            "input": "Tra loi dung mot tu: OK"}
+    m, b = _goi("/responses", than, tok)
+    txt = _text(b)
+    print("   -> HTTP {0}, {1} byte, co su kien: {2}".format(
+        m, len(b), "data:" in txt))
+    if m != 200:
+        print("   " + txt[:400])
+        return 1
+    d3 = sd()
+    print("   so du {0} -> {1}  (thu {2})".format(d2, d3, (d2 or 0) - (d3 or 0)))
+
+    print("== 6. Chot")
+    print("   tong thu ca ba cua: {0} credit".format((d0 or 0) - (d3 or 0)))
+    print("   => moi cua phai thu > 0 va khop voi usage bao cao.")
+    return 0
+
+
+def don(a) -> int:
+    import sqlalchemy as sa
+    from platform_core.public_api import keys as devkeys
+    from platform_core.public_api.tables import DeveloperApiKey
+    gen, db = _phien()
+    try:
+        u = _tim(db)
+        if u is None:
+            print("khong co tai khoan - khong co gi de don")
+            return 0
+        rows = db.execute(sa.select(DeveloperApiKey).where(
+            DeveloperApiKey.user_id == u.id,
+            DeveloperApiKey.name == "nghiem thu L1 chat",
+            DeveloperApiKey.revoked_at.is_(None))).scalars().all()
+        for row in rows:
+            devkeys.revoke(db, row)
+        db.commit()
+        # Doc lai tu CSDL thay vi tin vao gia tri tra ve: mot lenh thu hoi that
+        # bai IM LANG se de mot khoa TIEU DUOC TIEN THAT nam lai.
+        con = db.execute(sa.select(sa.func.count()).select_from(DeveloperApiKey).where(
+            DeveloperApiKey.user_id == u.id,
+            DeveloperApiKey.name == "nghiem thu L1 chat",
+            DeveloperApiKey.revoked_at.is_(None))).scalar_one()
+        print("da thu hoi {0} khoa; con song: {1}".format(len(rows), con))
+        return 1 if con else 0
+    finally:
+        _dong(gen)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Nghiem thu text.chat tu ngoai vao (L1)")
+    sub = ap.add_subparsers(dest="lenh", required=True)
+    for ten in ("chuan_bi", "chay"):
+        s = sub.add_parser(ten)
+        s.add_argument("--token-file", required=True)
+    sub.add_parser("don")
+    a = ap.parse_args(argv)
     return {"chuan_bi": chuan_bi, "chay": chay, "don": don}[a.lenh](a)
 
 

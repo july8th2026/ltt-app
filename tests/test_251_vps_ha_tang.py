@@ -555,6 +555,21 @@ def test_dia_chi_da_cap_van_giu_duoc_sau_khi_mot_lan_dung_do(db):
     assert a2 == "10.51.0.11"
 
 
+def test_vmid_TRANH_may_da_co_tren_may_chu(db):
+    """Máy tồn tại trên Proxmox mà CSDL không biết thì KHÔNG được cấp lại số đó.
+
+    Nếu cấp lại, `jobs.py` thấy VM đã tồn tại nên bỏ qua bước nhân bản rồi cấu
+    hình lại chính máy đó — tức **giao máy của người này cho người khác**, không
+    một lỗi nào được ghi ra. Đã dính thật 24/08 với CSDL rỗng.
+    """
+    from apps.vps.services import provisioning
+    g = _gateway(db)
+    m = _may(db, g)
+    vmid = provisioning.cap_vmid(db, m, da_co_tren_may_chu={200, 201, 202})
+    assert vmid not in (200, 201, 202)
+    assert vmid == 203
+
+
 def test_vmid_khong_trung_va_ton_trong_goi_y(db):
     from apps.vps.services import provisioning
     g = _gateway(db)

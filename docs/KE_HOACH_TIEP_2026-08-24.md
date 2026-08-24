@@ -202,7 +202,8 @@ sự cố.
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| **L1** | Đi hết luồng bằng **một tài khoản mới toanh**: trang giá → đăng ký → nạp credit → tạo khoá → gọi lần đầu | ⛔ **không** được làm bằng tài khoản admin — admin có sẵn credit, sẵn quyền, sẵn hiểu biết |
+| **L1a** | ✅ **XONG 24/08** — nửa API, bằng tài khoản test `autosub-test` (`role=user`, **không** phải admin) | Cả **ba cửa** đều 200 và thu tiền thật, xem dưới |
+| **L1b** | ⛔ **KHÔNG tự động hoá được** — nửa GUI (đăng ký → xác thực email → đăng nhập → tạo khoá trên trang) | Trang `/login` nằm sau **thử thách bot của Cloudflare**. Playwright nhận `403 "Performing security verification"`. **Không vượt CAPTCHA** ⇒ đây vốn dĩ là việc của người thật |
 | **L2** | Phiên thật **Claude Code CLI** + **Claude Desktop** có gọi tool | máy này không có hai công cụ đó |
 | **L3** | **Điều khoản sử dụng** cho API | chủ sản phẩm quyết nội dung; tôi soạn nháp |
 | **L4** | Thu tường lửa máy B về **một** IP | thiết lập bảo mật |
@@ -285,6 +286,47 @@ ngắn), in ra số dư còn lại. "Đã ghi tệp" và "cắm được rồi" 
 
 ⚠️ **C15 không chặn gì và không ai đang chờ nó.** Nó là thứ biến "khách đọc hết
 tài liệu thì cắm được" thành "khách cắm được". Làm sau L1.
+
+---
+
+### ✅ L1a — ba cửa chat, tiền thật, 24/08
+
+Tài khoản `autosub-test@lttstudios.com` (`role=user`), khoá mới tạo, `allowed_tools=['text.chat']`:
+
+```
+GET  /tools              -> 200, thay ['text.chat']
+POST /chat/completions   -> 200  SYNC_BILLED  noi dung 'Xin chao'
+                                 usage {prompt 19, completion 48, total 67}   thu 1
+POST /messages           -> 200  STREAM  7.015 byte SSE, co `usage`           thu 1
+POST /responses          -> 200  STREAM  9.025 byte SSE (Codex)               thu 1
+so du 459 -> 458 -> 457 -> 456
+```
+
+Mỗi lượt thu **1 credit** — khớp luật đã công bố ở `/gia-api`: *làm tròn LÊN
+credit nguyên, tối thiểu 1*. 67 token thì dưới một credit, nên trả sàn.
+
+Khoá đã thu hồi (`con song: 0`).
+
+### ⛔ L1b không phải việc bỏ quên — nó không tự động hoá được
+
+`/developers/cli` chuyển đúng về `/login?next=...` (cổng đăng nhập làm đúng
+việc), nhưng Cloudflare trả **403 + Turnstile** cho trình duyệt tự động. Vượt
+CAPTCHA là việc **không được làm**, nên nửa GUI cần **người thật bấm**.
+
+⇒ Ghi rõ ở đây để phiên sau không đi tìm cách tự động hoá nó lần nữa. Việc cần
+người: đăng ký một tài khoản mới → xác thực email → đăng nhập → `/developers/keys`
+tạo khoá → `/developers/cli` chép cấu hình.
+
+### 🔴 Hai lỗi trong script nghiệm thu, cùng một gốc với lỗi hôm nay
+
+| | Lỗi | Gốc |
+|---|---|---|
+| ① | Đọc `resp["tools"]` trong khi hợp đồng trả `resp["items"]` | **đoán hình dạng phản hồi từ tên endpoint** thay vì đọc `server/api/`. Triệu chứng là một danh sách **rỗng** — giống hệt *"tool chưa được mở"*, tức một lỗi đọc sai **giả trang** thành một lỗi cấu hình. Tôi đã đi kiểm cờ, nssm và catalog trước khi nhìn lại chính mình |
+| ② | `devkeys.create(...)` — hàm tên là `issue`, và trả `(key, token)` theo thứ tự đó | đảo hai giá trị thì token ghi ra tệp là một đối tượng ORM: **không lỗi nào báo**, chỉ là tệp token vô dụng ở bước sau |
+
+⚠️ Lỗi ① là **lần thứ hai trong ngày** tôi đoán tên trường thay vì đọc hợp đồng
+(lần đầu: `params`/`id` thay vì `input`/`quote`). Cả hai lần đều mất thời gian đi
+tìm ở chỗ khác trước khi nhìn lại mã của mình.
 
 ---
 

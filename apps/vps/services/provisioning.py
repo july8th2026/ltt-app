@@ -160,15 +160,27 @@ def _thu_ghi(db: DbSession, doi_tuong) -> bool:
         return False
 
 
-def cap_vmid(db: DbSession, instance: VpsInstance, *, goi_y: int = 0) -> int:
+def cap_vmid(db: DbSession, instance: VpsInstance, *, goi_y: int = 0,
+             da_co_tren_may_chu: Iterable[int] = ()) -> int:
     """Cấp VMID cho một máy. `goi_y` là số Proxmox đề nghị (`/cluster/nextid`).
 
     Số của Proxmox chỉ là gợi ý: hai job hỏi cùng lúc nhận cùng một số. Trọng tài
     là ràng buộc duy nhất trên `vps_instance.vmid`.
+
+    **`da_co_tren_may_chu` không phải tối ưu hoá — nó là hàng rào an toàn.** Hỏi
+    một mình CSDL là chưa đủ: máy nào tồn tại trên Proxmox mà CSDL không biết
+    (dựng bằng tay, CSDL khôi phục từ backup, hai môi trường dùng chung cụm) sẽ
+    được cấp lại số của nó — và `jobs.py` thấy VM đã tồn tại nên **bỏ qua bước
+    nhân bản rồi cấu hình lại chính máy đó**, tức giao máy của người này cho
+    người khác. Không lỗi nào được ghi ra.
+
+    Đã dính thật ngày 24/08 khi chạy thử với CSDL rỗng: job chiếm đúng VM 200
+    đang chạy và đổi tên nó.
     """
     dang_dung = {int(v) for v in db.execute(
         select(VpsInstance.vmid).where(VpsInstance.vmid.is_not(None))
     ).scalars()}
+    dang_dung |= {int(v) for v in da_co_tren_may_chu}
 
     bat_dau = max(VMID_DAU, int(goi_y or 0))
     for vmid in _dai_so(bat_dau, VMID_DAU, VMID_CUOI):

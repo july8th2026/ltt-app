@@ -571,6 +571,78 @@ Xoá `apps/anhnoibo/gia.py`, `apps/anhnoibo/features.py`,
 3. **Đợt C**: chủ sản phẩm chốt **định vị + giá** (§3 của `TIEP_QUAN_H37.md`),
    rồi mở 4 cổng D-034 từng cái một và chạy một job thật từ ngoài vào.
 
+## 2026-08-24 (chiều) — H39/G2: hạ tầng vào mã nguồn, và UFW suýt hạ cả sản phẩm
+
+- **Hạng mục:** H39/G2 — driver Vultr + driver cổng vào + vòng đời IP trong job.
+- **Trạng thái:** code xong, **80 test xanh**, và đã chứng minh sống sót qua khởi động lại.
+
+### Đã dựng
+
+| Thứ | Chi tiết |
+|---|---|
+| `services/vultr.py` | mua/gắn/gỡ/trả IP + đọc băng thông. **Không một phương thức nào đụng tới instance** — tài khoản từng chạy 17 máy của mảng kinh doanh khác |
+| `services/gateway.py` | SSH bằng khoá, thêm/bớt phần tử `nftables map`, ghi trạng thái để phát lại |
+| `jobs.py` | bước 6 mua IP, và `_tra_ip_cong_khai` khi xoá máy |
+| `tools/vps_gateway/cai-dat-cong-vao.sh` | unit systemd phát lại đường sau khởi động lại |
+| `tests/test_279_vps_ip_cong_khai.py` | 15 test cho hai driver |
+
+### Thứ tự chống rò tiền
+
+`_cap_ip_cong_khai` ghi `vultr_id` vào CSDL **ngay sau khi mua, TRƯỚC khi gắn**. Làm
+ngược lại — gắn xong mới ghi — thì một lần tiến trình chết là một IP mồ côi, **$3/tháng
+chảy mãi mà không ai biết nó của máy nào**. Cùng gốc với lỗi tiền của H38 và của model
+nhà: **thế giới thật đã đổi mà sổ sách chưa ghi**.
+
+### UFW — lỗi suýt hạ cả sản phẩm ở lần khởi động lại đầu tiên
+
+Sau khi khởi động lại cổng vào để thử tính bền, đường hầm **chết và không tự hồi sau 7
+phút**. Chuỗi chẩn đoán:
+
+1. `wg0` lành, có khoá, đang nghe 51820 — nhưng `latest-handshake = 0`.
+2. Khoá hai đầu khớp hoàn hảo.
+3. `tcpdump` trên cổng vào: gói bắt tay **có tới**, 148 byte, đúng cổng. Không có gói ra.
+4. Gỡ hẳn bảng `nftables` của ta — vẫn không bắt tay. Không phải nó.
+5. `dmesg` in ra `[UFW BLOCK]`.
+
+**Ảnh Debian của Vultr bật sẵn UFW, và nó chặn UDP 51820.** Nó im lặng suốt trước đó
+chỉ vì `/etc/nftables.conf` của tôi mở đầu bằng `flush ruleset` — câu đó **xoá luôn luật
+của UFW**. Khởi động lại thì UFW nạp lại sau và giành phần thắng.
+
+Hai tường lửa cùng quản một máy là nguồn lỗi im lặng điển hình: thứ tự nạp quyết định
+ai thắng, và thứ tự nạp thì đổi theo mỗi lần khởi động. Sửa dứt điểm:
+
+- `nftables.conf` **bỏ `flush ruleset`**, đổi sang khuôn `delete table` + `table` — chỉ
+  đụng tới bảng của ta;
+- UFW làm tường lửa đầu vào (nó là của bản phân phối, nó sống sót qua khởi động lại
+  đúng cách): mở `22/tcp` + `51820/udp`;
+- `DEFAULT_FORWARD_POLICY="ACCEPT"` — **UFW mặc định CHẶN chuyển tiếp**, mà máy khách
+  đi `wg0 → enp1s0` chính là chuyển tiếp. Không sửa dòng này thì khách bị chặn y hệt,
+  và triệu chứng sẽ là "máy tạo xong nhưng không ra được Internet".
+
+### Đo thật: khởi động lại cổng vào mất 53 giây
+
+Sau khi sửa, khởi động lại lần nữa và bấm giờ:
+
+```
++32s  cổng vào nhận SSH lại
++43s  đường hầm thông lại
++53s  KHÁCH VÀO ĐƯỢC MÁY qua IP riêng
+```
+
+Tự hồi hoàn toàn, không ai chạm tay. Đây là **thời gian khách mất kết nối mỗi lần cổng
+vào khởi động lại** — Vultr có thể khởi động lại máy bất cứ lúc nào, nên con số này
+thuộc về cam kết dịch vụ, không phải chuyện kỹ thuật vặt.
+
+### Ba cái bẫy nhỏ đã mất thời gian
+
+- **`pathlib.write_text` trên Windows ghi CRLF.** Script `.sh` gửi sang Linux thành
+  `pipefail` → *"invalid option name"*, báo ở dòng khác hẳn chỗ sai. Phải
+  `newline="
+"`.
+- **Backtick trong `echo "..."`** bị bash hiểu là thay-thế-lệnh.
+- **`termproxy` của node Proxmox không phải shell sẵn quyền** — nó là màn hình đăng
+  nhập, vẫn đòi mật khẩu root. Không thay được đường DPAPI.
+
 ## 2026-08-24 — H39: đổi kiến trúc sang **một IP công khai cho một VM**, bỏ chia cổng
 
 - **Hạng mục:** H39 — cổng vào mới bằng Linux, tự động hoàn toàn. Chạy thật, đo thật.
