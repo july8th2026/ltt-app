@@ -369,3 +369,75 @@ def test_khong_cat_dong_trang_cuoi_cua_khach(cc, tmp_path):
     cc.cam_codex("https://app.lttstudios.com", tt)
     cc.go_codex(tt)
     assert cfg.read_bytes() == goc
+
+
+# ── Bốn lỗi tìm ra khi soát lại logic (24/08) ──────────────────────────────
+
+def test_chay_cam_HAI_LAN_roi_go_van_xoa_sach(cc, tmp_path):
+    """🔴 Lỗi thật: chạy `cam` hai lần rồi `go` để lại rác **vĩnh viễn**.
+
+    `ta_tao_ltt_config` từng được tính lại ở **mỗi** lần `cam`. Lần hai, tệp đã
+    tồn tại (do chính ta tạo lần một), nên nó ghi `False` — và `go` không xoá
+    nữa. Không có triệu chứng nào; chỉ là một tệp lạ nằm lại trong `~/.codex`.
+
+    ⭐ Cùng luật với `_sao_luu`: **bản đầu tiên mới là sự thật.**
+    """
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    cc.cam_codex("https://app.lttstudios.com", tt)      # lan hai
+    prof = tmp_path / ".codex" / "ltt.config.toml"
+    assert prof.exists()
+    assert tt["codex"]["ta_tao_ltt_config"] is True, (
+        "lan chay thu hai da ghi de ket luan cua lan dau")
+    cc.go_codex(tt)
+    assert not prof.exists(), "go de lai rac sau khi cam hai lan"
+
+
+def test_ltt_config_CUA_KHACH_duoc_tra_ve_nguyen_van(cc, tmp_path):
+    """🔴 Lỗi mất dữ liệu: ta **ghi đè** `ltt.config.toml` của khách.
+
+    Bản trước chỉ "không xoá" tệp có sẵn — nhưng nội dung thì đã bị ta ghi đè
+    mất từ lúc `cam`. "Không xoá" và "trả về nguyên trạng" là hai việc khác nhau.
+    """
+    prof = tmp_path / ".codex" / "ltt.config.toml"
+    prof.parent.mkdir(parents=True)
+    goc = b"# cau hinh rieng cua khach\nmodel = \"cua-toi\"\n"
+    prof.write_bytes(goc)
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    assert prof.read_bytes() != goc, "cam phai ghi cau hinh cua ta vao"
+
+    cc.go_codex(tt)
+    assert prof.read_bytes() == goc, (
+        "go KHONG tra lai noi dung cu cua khach. 'Khong xoa' chua phai la "
+        "'tra ve nguyen trang'.")
+
+
+def test_ghi_nho_che_do_vscode(cc, tmp_path):
+    """`xem` phải nói được đang ở chế độ nào — đó là câu hỏi khách sẽ hỏi."""
+    tt = {}
+    cc.cam_codex("https://x", tt, cho_vscode=True)
+    assert tt["codex"]["che_do"] == "vscode"
+    van = (tmp_path / ".codex" / "config.toml").read_text(encoding="utf-8")
+    assert 'model_provider = "ltt"' in van, "che do vscode phai khai o GOC"
+
+    tt2 = {}
+    cc.cam_codex("https://x", tt2)
+    assert tt2["codex"]["che_do"] == "profile"
+    van2 = (tmp_path / ".codex" / "config.toml").read_text(encoding="utf-8")
+    assert 'model_provider = "ltt"' not in van2, (
+        "che do profile KHONG duoc dat model_provider o goc - lam vay la thay "
+        "mac dinh cua khach ma ho khong yeu cau")
+
+
+def test_che_do_vscode_va_profile_deu_go_sach(cc, tmp_path):
+    for vscode in (True, False):
+        cfg = tmp_path / ".codex" / "config.toml"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_bytes(b'model = "cua-khach"\n')
+        goc = cfg.read_bytes()
+        tt = {}
+        cc.cam_codex("https://x", tt, cho_vscode=vscode)
+        cc.go_codex(tt)
+        assert cfg.read_bytes() == goc, f"che do vscode={vscode} khong go sach"

@@ -301,13 +301,27 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     cfg = thu_muc / "config.toml"
     _sao_luu(cfg)
     van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
+    tt.setdefault("codex", {})["che_do"] = "vscode" if cho_vscode else "profile"
     noi_dung = _codex_config_goc(goc) if cho_vscode else _codex_config(goc)
     _ghi_giu_dong(cfg, _chen_khoi(van, noi_dung, crlf))
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
 
     prof = thu_muc / "ltt.config.toml"
-    # Ghi nho ta CO TAO tep nay hay khong - `go` chi xoa tep DO TA TAO.
-    tt.setdefault("codex", {})["ta_tao_ltt_config"] = not prof.exists()
+    ghi = tt.setdefault("codex", {})
+    # 🔴 GIU LAN XAC DINH DAU TIEN, dung tinh lai moi lan chay.
+    #
+    #    Ban dau dong nay la `ghi["ta_tao_ltt_config"] = not prof.exists()`, tinh
+    #    lai o MOI lan `cam`. Lan hai, tep DA TON TAI (do chinh ta tao lan mot),
+    #    nen no ghi False - va `go` khong xoa nua. Chay `cam` hai lan roi `go` la
+    #    de lai rac vinh vien, khong bao gi.
+    #
+    #    Cung luat voi `_sao_luu`: **ban dau tien moi la su that**.
+    if "ta_tao_ltt_config" not in ghi:
+        ghi["ta_tao_ltt_config"] = not prof.exists()
+    # ⛔ Va neu tep DA CO TU TRUOC thi phai sao luu, vi ta sap ghi de len no.
+    #    Truoc day ta ghi de thang mot tep cua khach ma khong luu gi ca - `go`
+    #    chi "khong xoa" chu khong tra lai duoc noi dung.
+    _sao_luu(prof)
     prof.write_text(_codex_profile(), encoding="utf-8", newline="\n")
     ra.append(f"  [OK] {prof}")
     return ra
@@ -333,7 +347,14 @@ def go_codex(tt: dict) -> list:
             prof.unlink()
             ra.append(f"  [OK] da xoa {prof} (ta tao no)")
         else:
-            ra.append(f"  [!!] GIU {prof} - no da co TRUOC khi chay cong cu nay")
+            # Tep co TU TRUOC va ta da ghi de len no ⇒ tra lai tu ban sao luu.
+            # "Khong xoa" chua phai la tra ve nguyen trang.
+            bs = prof.with_suffix(prof.suffix + ".truoc-ltt")
+            if bs.exists():
+                prof.write_bytes(bs.read_bytes())
+                ra.append(f"  [OK] da tra {prof} ve ban truoc khi cam")
+            else:
+                ra.append(f"  [!!] GIU {prof} - co tu truoc, khong co ban sao luu")
     return ra
 
 
@@ -522,14 +543,14 @@ def go_claude(tt: dict) -> list:
 # ── Lenh ────────────────────────────────────────────────────────────────────
 
 def _cach_goi(lenh: str) -> str:
-    """Câu lệnh **đúng với cách khách đang chạy công cụ**.
+    r"""Câu lệnh **đúng với cách khách đang chạy công cụ**.
 
     Khách cài `.exe` không có `tools\cam_cli.py`; khách chạy mã nguồn thì không
     có `.exe` trong PATH. In sai câu lệnh là gửi họ đi tìm một thứ không tồn tại.
     """
     if getattr(sys, "frozen", False) or getattr(sys, "_MEIPASS", None)             or "__compiled__" in globals():
         return f"{pathlib.Path(sys.executable).name} {lenh}"
-    return f"python tools\cam_cli.py {lenh}"
+    return rf"python tools\cam_cli.py {lenh}"
 
 
 def lenh_cam(a) -> int:
@@ -637,6 +658,29 @@ def lenh_xem(a) -> int:
     else:
         print("  claude settings.json  : khong co")
 
+    # 🔴 PHAN NAY LA THU HAY HONG NHAT, nen `xem` phai noi ve no.
+    #    Truoc day `xem` khong he nhac toi tien ich VS Code - dung phan kho hieu
+    #    nhat thi khong bao cao gi.
+    sv = _vscode_settings()
+    print("")
+    print("  Tien ich VS Code:")
+    if not sv.exists():
+        print("    settings.json         : khong co (chua cai VS Code?)")
+    else:
+        try:
+            dv = json.loads(_doc_giu_dong(sv)[0] or "{}")
+        except ValueError:
+            dv = {}
+        bv = {x.get("name"): x.get("value")
+              for x in (dv.get("claudeCode.environmentVariables") or [])}
+        print(f"    disableLoginPrompt    : {dv.get('claudeCode.disableLoginPrompt', '-')}")
+        print(f"    useTerminal           : {dv.get('claudeCode.useTerminal', '-')}")
+        print(f"    BASE_URL cho tien ich : {bv.get('ANTHROPIC_BASE_URL') or '-'}")
+    che_do = (tt.get("codex") or {}).get("che_do") or "-"
+    print(f"    che do Codex          : {che_do}"
+          + ("   (tien ich VS Code CAN che do `vscode`)"
+             if che_do == "profile" else ""))
+
     print("\n  Bien moi truong cap nguoi dung:")
     for ten in CLAUDE_ENV:
         print(f"    {ten:32} = {_doc_env_nguoi_dung(ten) or '-'}")
@@ -644,6 +688,29 @@ def lenh_xem(a) -> int:
         gt = _doc_env_nguoi_dung(ten)
         # KHONG in khoa. Chi noi co hay khong va dai bao nhieu.
         print(f"    {ten:32} = {'(da dat, ' + str(len(gt)) + ' ky tu)' if gt else '-'}")
+
+    # ⭐ CHOT CHAN DOAN QUAN TRONG NHAT, va no khong hien nhien.
+    #
+    #    Bang tren doc REGISTRY - tuc "da dat chua". Nhung thu quyet dinh la
+    #    TIEN TRINH CO NHIN THAY KHONG, va hai cai do co the khac nhau: `setx`
+    #    ghi vao registry ngay, con mot phien Windows dang chay thi van mang moi
+    #    truong CU cho toi khi dang nhap lai.
+    #
+    #    Do that 24/08 tren VM: registry co du ca nam bien, ma VS Code van bao
+    #    `Missing environment variable`. Khong co dong nay thi khach nhin bang
+    #    tren, thay "da dat", va khong hieu vi sao van hong.
+    print("")
+    print("  Tien trinh HIEN TAI co nhin thay khong:")
+    for ten in (ENV_KHOA_CODEX, "ANTHROPIC_BASE_URL"):
+        trong_tt = os.environ.get(ten)
+        trong_reg = _doc_env_nguoi_dung(ten)
+        if trong_reg and not trong_tt:
+            print(f"    {ten:32} REGISTRY co, TIEN TRINH KHONG"
+                  f"  <== dang xuat roi dang nhap lai")
+        elif trong_tt:
+            print(f"    {ten:32} co")
+        else:
+            print(f"    {ten:32} chua dat")
     return 0
 
 

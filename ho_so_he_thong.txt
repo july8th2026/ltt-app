@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ed388921b377d938f19679fd697ad9b1e36813f88d4ef270d27bf8f7055422ef
+Fingerprint   : sha256:74f3ed62c55b48b9b38648077745743e622003cc441ae37c692ea5d15c81b1b6
 Nguồn đã quét : 1334 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2932,7 +2932,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1334 file; 12429263 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1334 file; 12435706 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -229065,7 +229065,7 @@ def test_thieu_port_hoac_ticket_thi_NEM_chu_khong_ghep_bua():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_283_cam_cli.py
-SHA256=550b2bb84ccb8a3746bda9658b6dd47a4d0608554fb904ffe9b10432f0e6dfbd BYTES=16159 LINES=371
+SHA256=1377272b67ec09e0676d8b6f24ac6d2de6e910252859ce73bebb08cd4baeafb1 BYTES=19344 LINES=443
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/cam_cli.py` — cắm vào rồi **gỡ ra phải trả đúng nguyên trạng**.
 
@@ -229438,6 +229438,78 @@ def test_khong_cat_dong_trang_cuoi_cua_khach(cc, tmp_path):
     cc.cam_codex("https://app.lttstudios.com", tt)
     cc.go_codex(tt)
     assert cfg.read_bytes() == goc
+
+
+# ── Bốn lỗi tìm ra khi soát lại logic (24/08) ──────────────────────────────
+
+def test_chay_cam_HAI_LAN_roi_go_van_xoa_sach(cc, tmp_path):
+    """🔴 Lỗi thật: chạy `cam` hai lần rồi `go` để lại rác **vĩnh viễn**.
+
+    `ta_tao_ltt_config` từng được tính lại ở **mỗi** lần `cam`. Lần hai, tệp đã
+    tồn tại (do chính ta tạo lần một), nên nó ghi `False` — và `go` không xoá
+    nữa. Không có triệu chứng nào; chỉ là một tệp lạ nằm lại trong `~/.codex`.
+
+    ⭐ Cùng luật với `_sao_luu`: **bản đầu tiên mới là sự thật.**
+    """
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    cc.cam_codex("https://app.lttstudios.com", tt)      # lan hai
+    prof = tmp_path / ".codex" / "ltt.config.toml"
+    assert prof.exists()
+    assert tt["codex"]["ta_tao_ltt_config"] is True, (
+        "lan chay thu hai da ghi de ket luan cua lan dau")
+    cc.go_codex(tt)
+    assert not prof.exists(), "go de lai rac sau khi cam hai lan"
+
+
+def test_ltt_config_CUA_KHACH_duoc_tra_ve_nguyen_van(cc, tmp_path):
+    """🔴 Lỗi mất dữ liệu: ta **ghi đè** `ltt.config.toml` của khách.
+
+    Bản trước chỉ "không xoá" tệp có sẵn — nhưng nội dung thì đã bị ta ghi đè
+    mất từ lúc `cam`. "Không xoá" và "trả về nguyên trạng" là hai việc khác nhau.
+    """
+    prof = tmp_path / ".codex" / "ltt.config.toml"
+    prof.parent.mkdir(parents=True)
+    goc = b"# cau hinh rieng cua khach\nmodel = \"cua-toi\"\n"
+    prof.write_bytes(goc)
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    assert prof.read_bytes() != goc, "cam phai ghi cau hinh cua ta vao"
+
+    cc.go_codex(tt)
+    assert prof.read_bytes() == goc, (
+        "go KHONG tra lai noi dung cu cua khach. 'Khong xoa' chua phai la "
+        "'tra ve nguyen trang'.")
+
+
+def test_ghi_nho_che_do_vscode(cc, tmp_path):
+    """`xem` phải nói được đang ở chế độ nào — đó là câu hỏi khách sẽ hỏi."""
+    tt = {}
+    cc.cam_codex("https://x", tt, cho_vscode=True)
+    assert tt["codex"]["che_do"] == "vscode"
+    van = (tmp_path / ".codex" / "config.toml").read_text(encoding="utf-8")
+    assert 'model_provider = "ltt"' in van, "che do vscode phai khai o GOC"
+
+    tt2 = {}
+    cc.cam_codex("https://x", tt2)
+    assert tt2["codex"]["che_do"] == "profile"
+    van2 = (tmp_path / ".codex" / "config.toml").read_text(encoding="utf-8")
+    assert 'model_provider = "ltt"' not in van2, (
+        "che do profile KHONG duoc dat model_provider o goc - lam vay la thay "
+        "mac dinh cua khach ma ho khong yeu cau")
+
+
+def test_che_do_vscode_va_profile_deu_go_sach(cc, tmp_path):
+    for vscode in (True, False):
+        cfg = tmp_path / ".codex" / "config.toml"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_bytes(b'model = "cua-khach"\n')
+        goc = cfg.read_bytes()
+        tt = {}
+        cc.cam_codex("https://x", tt, cho_vscode=vscode)
+        cc.go_codex(tt)
+        assert cfg.read_bytes() == goc, f"che do vscode={vscode} khong go sach"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -248178,7 +248250,7 @@ endlocal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=9e373937dd1441fb96b87cdc3b538b83dcb1324743a158bdd150481e85c4b38c BYTES=30717 LINES=730
+SHA256=108ec3f52c35b6078f4bf69cb9923c18a208a6bfb622678e48fcfbc1869e396d BYTES=33975 LINES=797
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -248483,13 +248555,27 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     cfg = thu_muc / "config.toml"
     _sao_luu(cfg)
     van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
+    tt.setdefault("codex", {})["che_do"] = "vscode" if cho_vscode else "profile"
     noi_dung = _codex_config_goc(goc) if cho_vscode else _codex_config(goc)
     _ghi_giu_dong(cfg, _chen_khoi(van, noi_dung, crlf))
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
 
     prof = thu_muc / "ltt.config.toml"
-    # Ghi nho ta CO TAO tep nay hay khong - `go` chi xoa tep DO TA TAO.
-    tt.setdefault("codex", {})["ta_tao_ltt_config"] = not prof.exists()
+    ghi = tt.setdefault("codex", {})
+    # 🔴 GIU LAN XAC DINH DAU TIEN, dung tinh lai moi lan chay.
+    #
+    #    Ban dau dong nay la `ghi["ta_tao_ltt_config"] = not prof.exists()`, tinh
+    #    lai o MOI lan `cam`. Lan hai, tep DA TON TAI (do chinh ta tao lan mot),
+    #    nen no ghi False - va `go` khong xoa nua. Chay `cam` hai lan roi `go` la
+    #    de lai rac vinh vien, khong bao gi.
+    #
+    #    Cung luat voi `_sao_luu`: **ban dau tien moi la su that**.
+    if "ta_tao_ltt_config" not in ghi:
+        ghi["ta_tao_ltt_config"] = not prof.exists()
+    # ⛔ Va neu tep DA CO TU TRUOC thi phai sao luu, vi ta sap ghi de len no.
+    #    Truoc day ta ghi de thang mot tep cua khach ma khong luu gi ca - `go`
+    #    chi "khong xoa" chu khong tra lai duoc noi dung.
+    _sao_luu(prof)
     prof.write_text(_codex_profile(), encoding="utf-8", newline="\n")
     ra.append(f"  [OK] {prof}")
     return ra
@@ -248515,7 +248601,14 @@ def go_codex(tt: dict) -> list:
             prof.unlink()
             ra.append(f"  [OK] da xoa {prof} (ta tao no)")
         else:
-            ra.append(f"  [!!] GIU {prof} - no da co TRUOC khi chay cong cu nay")
+            # Tep co TU TRUOC va ta da ghi de len no ⇒ tra lai tu ban sao luu.
+            # "Khong xoa" chua phai la tra ve nguyen trang.
+            bs = prof.with_suffix(prof.suffix + ".truoc-ltt")
+            if bs.exists():
+                prof.write_bytes(bs.read_bytes())
+                ra.append(f"  [OK] da tra {prof} ve ban truoc khi cam")
+            else:
+                ra.append(f"  [!!] GIU {prof} - co tu truoc, khong co ban sao luu")
     return ra
 
 
@@ -248704,14 +248797,14 @@ def go_claude(tt: dict) -> list:
 # ── Lenh ────────────────────────────────────────────────────────────────────
 
 def _cach_goi(lenh: str) -> str:
-    """Câu lệnh **đúng với cách khách đang chạy công cụ**.
+    r"""Câu lệnh **đúng với cách khách đang chạy công cụ**.
 
     Khách cài `.exe` không có `tools\cam_cli.py`; khách chạy mã nguồn thì không
     có `.exe` trong PATH. In sai câu lệnh là gửi họ đi tìm một thứ không tồn tại.
     """
     if getattr(sys, "frozen", False) or getattr(sys, "_MEIPASS", None)             or "__compiled__" in globals():
         return f"{pathlib.Path(sys.executable).name} {lenh}"
-    return f"python tools\cam_cli.py {lenh}"
+    return rf"python tools\cam_cli.py {lenh}"
 
 
 def lenh_cam(a) -> int:
@@ -248819,6 +248912,29 @@ def lenh_xem(a) -> int:
     else:
         print("  claude settings.json  : khong co")
 
+    # 🔴 PHAN NAY LA THU HAY HONG NHAT, nen `xem` phai noi ve no.
+    #    Truoc day `xem` khong he nhac toi tien ich VS Code - dung phan kho hieu
+    #    nhat thi khong bao cao gi.
+    sv = _vscode_settings()
+    print("")
+    print("  Tien ich VS Code:")
+    if not sv.exists():
+        print("    settings.json         : khong co (chua cai VS Code?)")
+    else:
+        try:
+            dv = json.loads(_doc_giu_dong(sv)[0] or "{}")
+        except ValueError:
+            dv = {}
+        bv = {x.get("name"): x.get("value")
+              for x in (dv.get("claudeCode.environmentVariables") or [])}
+        print(f"    disableLoginPrompt    : {dv.get('claudeCode.disableLoginPrompt', '-')}")
+        print(f"    useTerminal           : {dv.get('claudeCode.useTerminal', '-')}")
+        print(f"    BASE_URL cho tien ich : {bv.get('ANTHROPIC_BASE_URL') or '-'}")
+    che_do = (tt.get("codex") or {}).get("che_do") or "-"
+    print(f"    che do Codex          : {che_do}"
+          + ("   (tien ich VS Code CAN che do `vscode`)"
+             if che_do == "profile" else ""))
+
     print("\n  Bien moi truong cap nguoi dung:")
     for ten in CLAUDE_ENV:
         print(f"    {ten:32} = {_doc_env_nguoi_dung(ten) or '-'}")
@@ -248826,6 +248942,29 @@ def lenh_xem(a) -> int:
         gt = _doc_env_nguoi_dung(ten)
         # KHONG in khoa. Chi noi co hay khong va dai bao nhieu.
         print(f"    {ten:32} = {'(da dat, ' + str(len(gt)) + ' ky tu)' if gt else '-'}")
+
+    # ⭐ CHOT CHAN DOAN QUAN TRONG NHAT, va no khong hien nhien.
+    #
+    #    Bang tren doc REGISTRY - tuc "da dat chua". Nhung thu quyet dinh la
+    #    TIEN TRINH CO NHIN THAY KHONG, va hai cai do co the khac nhau: `setx`
+    #    ghi vao registry ngay, con mot phien Windows dang chay thi van mang moi
+    #    truong CU cho toi khi dang nhap lai.
+    #
+    #    Do that 24/08 tren VM: registry co du ca nam bien, ma VS Code van bao
+    #    `Missing environment variable`. Khong co dong nay thi khach nhin bang
+    #    tren, thay "da dat", va khong hieu vi sao van hong.
+    print("")
+    print("  Tien trinh HIEN TAI co nhin thay khong:")
+    for ten in (ENV_KHOA_CODEX, "ANTHROPIC_BASE_URL"):
+        trong_tt = os.environ.get(ten)
+        trong_reg = _doc_env_nguoi_dung(ten)
+        if trong_reg and not trong_tt:
+            print(f"    {ten:32} REGISTRY co, TIEN TRINH KHONG"
+                  f"  <== dang xuat roi dang nhap lai")
+        elif trong_tt:
+            print(f"    {ten:32} co")
+        else:
+            print(f"    {ten:32} chua dat")
     return 0
 
 
