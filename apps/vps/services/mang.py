@@ -137,19 +137,38 @@ def mang_cho_may(gateway: VpsGateway, ip_noi_bo: str) -> MangKhach:
     )
 
 
-def cau_hinh_qemu(mang: MangKhach) -> dict:
-    """Tham số `qm set` để cắm máy vào mạng riêng và tiêm IP qua cloud-init.
+def cau_hinh_qemu(mang: MangKhach, *, co_cloud_init: bool = True,
+                  mac: str = "") -> dict:
+    """Tham số `qm set` để cắm máy vào mạng riêng.
 
-    `net0` **thay** card của template chứ không thêm card thứ hai: máy khách chỉ
-    được có một đường ra, và nó không đi qua LAN nhà.
+    `net0` là card **duy nhất**: máy khách chỉ được có một đường ra, và nó không
+    đi qua LAN nhà.
+
+    `co_cloud_init=False` cho máy **khách tự cài** (Windows): máy đó không có ổ
+    cloud-init, nên tiêm `ipconfig0` vào là vô nghĩa — Proxmox nhận tham số
+    nhưng **không có gì đọc nó**, và ta sẽ tưởng đã cấu hình mạng trong khi máy
+    thì không có địa chỉ nào. Máy đó nhận địa chỉ từ **DHCP theo MAC** trên VM
+    router; xem `services/gateway.py`.
+
+    ## `mac` không phải tuỳ chọn trang trí
+
+    Hàm này **ghi đè** `net0`, và job tạo máy chạy lại được. Không truyền `mac`
+    thì mỗi lần chạy lại Proxmox sinh một MAC mới, kéo theo hai hỏng hóc lặng lẽ:
+    máy mất chỗ neo DHCP nên đổi địa chỉ trong mạng riêng, và Windows đã cài xong
+    thấy một card "mới" nên đặt hồ sơ mạng về *Public* — **tường lửa chặn RDP**,
+    khách mất đường vào máy của chính họ và không đọc được lý do ở đâu cả.
+
+    MAC ổn định suy ra từ `instance_id`; xem `services/dinh_danh.py`.
     """
-    net = f"{MO_HINH_CARD},bridge={mang.bridge},firewall=0"
+    net = f"{MO_HINH_CARD}"
+    if str(mac or "").strip():
+        net += f"={str(mac).strip().upper()}"
+    net += f",bridge={mang.bridge},firewall=0"
     if mang.mtu:
         net += f",mtu={mang.mtu}"
-    cau_hinh = {
-        "net0": net,
-        "ipconfig0": f"ip={mang.cidr},gw={mang.gateway}",
-    }
-    if mang.dns:
-        cau_hinh["nameserver"] = mang.dns
+    cau_hinh = {"net0": net}
+    if co_cloud_init:
+        cau_hinh["ipconfig0"] = f"ip={mang.cidr},gw={mang.gateway}"
+        if mang.dns:
+            cau_hinh["nameserver"] = mang.dns
     return cau_hinh

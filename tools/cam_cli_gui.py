@@ -170,9 +170,27 @@ def tu_kiem() -> int:
     return 0
 
 
+#: Lenh dong lenh ban dong goi nhan duoc, chuyen thang xuong loi.
+#:
+#: ⭐ VÌ SAO BẢN `.exe` PHẢI CHẠY ĐƯỢC TỪ DÒNG LỆNH, không chỉ mở cửa sổ.
+#:
+#:    ① **Thử được bản thật.** Không có đường này thì phép nghiệm thu chỉ chạy
+#:       được trên mã nguồn, còn thứ khách thật sự cài thì không ai đo. Đó đúng
+#:       là khoảng cách đã sinh ra mọi lỗi khó nhất trong dự án này.
+#:    ② **Khách triển khai hàng loạt.** Một công ty cắm cho 20 máy không ngồi
+#:       bấm 20 lần; họ chạy một dòng lệnh.
+#:
+#: ⛔ Nhưng **không** phát minh giao diện dòng lệnh thứ hai: chuyển thẳng cho
+#:    `cam_cli.main()`, để chỉ có **một** định nghĩa về các lệnh.
+LENH_DONG_LENH = ("xem", "cam", "go", "kiem")
+
+
 def main(argv=None) -> int:
-    if "--tu-kiem" in (argv if argv is not None else sys.argv[1:]):
+    tham = list(argv if argv is not None else sys.argv[1:])
+    if "--tu-kiem" in tham:
         return tu_kiem()
+    if tham and tham[0] in LENH_DONG_LENH:
+        return _nap_loi().main(tham)
     try:
         import webview
     except ImportError:

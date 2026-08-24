@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:670f92f3af87c1dd2d0c043250dbec6979156868307a31e004808d279900f887
-Nguồn đã quét : 1324 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:ae89d332614c3cf56378542887f4d409eff370c805467dc028631a9cd58ed416
+Nguồn đã quét : 1326 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -559,6 +559,7 @@ Các lớp chính:
     - apps/vps/services/capacity.py
     - apps/vps/services/console.py
     - apps/vps/services/dieu_khien.py
+    - apps/vps/services/dinh_danh.py
     - apps/vps/services/gateway.py
     - apps/vps/services/mang.py
     - apps/vps/services/provisioning.py
@@ -1039,7 +1040,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (147 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (151 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1173,14 +1174,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_VPS_GATEWAY_NFT_TABLE
 - LTT_VPS_GATEWAY_SSH_KEY
 - LTT_VPS_GATEWAY_USER
+- LTT_VPS_ISO_
+- LTT_VPS_ISO_WIN11
+- LTT_VPS_ISO_WINSRV2022_GUI
+- LTT_VPS_KHO_DIA
 - LTT_VPS_PROXMOX_CA
 - LTT_VPS_PROXMOX_NODE
 - LTT_VPS_PROXMOX_TOKEN_ID
 - LTT_VPS_PROXMOX_TOKEN_SECRET
 - LTT_VPS_PROXMOX_URL
 - LTT_VPS_TEMPLATE_
-- LTT_VPS_TEMPLATE_WIN11
-- LTT_VPS_TEMPLATE_WINSRV2022_GUI
+- LTT_VPS_TEMPLATE_KHONG_CO
+- LTT_VPS_TEMPLATE_WIN10
 - LTT_VPS_VUNG
 - LTT_VULTR_API_KEY
 - LTT_WHISPERX_PYTHON
@@ -1188,7 +1193,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (298 file pytest + 3 frontend)
+10. QUALITY GATES (299 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1428,6 +1433,7 @@ Test inventory:
 - tests/test_282_vps_console.py
 - tests/test_283_cam_cli.py
 - tests/test_284_gui_cam_cli.py
+- tests/test_285_vps_dinh_danh.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -1513,8 +1519,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1324 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1017, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1326 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1019, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1586,7 +1592,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (255)
+[apps] (256)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1836,6 +1842,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - apps/vps/services/capacity.py
 - apps/vps/services/console.py
 - apps/vps/services/dieu_khien.py
+- apps/vps/services/dinh_danh.py
 - apps/vps/services/gateway.py
 - apps/vps/services/mang.py
 - apps/vps/services/provisioning.py
@@ -2471,7 +2478,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (315)
+[tests] (316)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2722,6 +2729,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - tests/test_282_vps_console.py
 - tests/test_283_cam_cli.py
 - tests/test_284_gui_cam_cli.py
+- tests/test_285_vps_dinh_danh.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -2905,7 +2913,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1324 file; 12319378 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1326 file; 12355022 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -34701,7 +34709,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=f1f4f2eaebc255c2ef03cb08843b0014d3123b70d0c4c98a5febe29cbd64456b BYTES=24695 LINES=509
+SHA256=9173294e6be7cbb6e2569b7ac92d9f4dcdaec03eba81ae04fe9075cfcc2eb0eb BYTES=29801 LINES=607
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34726,15 +34734,23 @@ một job treo — hai thứ đó nhìn giống nhau trong log nhưng cần hai 
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 from apps.vps import os_images
 from apps.vps.cost import dia_tong_gb, lay_plan
-from apps.vps.services import mang, provisioning
+from apps.vps.services import dinh_danh, mang, provisioning
 from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
 from apps.vps.tables import VpsGateway, VpsInstance
 
 log = logging.getLogger(__name__)
+
+#: Kho lưu trữ đặt đĩa của máy khách. Đọc từ môi trường để dựng lại cụm không
+#: phải sửa code — cùng lý do với `LTT_VPS_ISO_*`.
+#:
+#: Mặc định `vmdata`: kho LVM-thin 475 GB của cụm hiện tại. Đặt sai tên thì
+#: Proxmox từ chối tạo máy ngay, không hỏng lặng lẽ.
+KHO_DIA = os.environ.get("LTT_VPS_KHO_DIA", "vmdata")
 
 #: Chờ tối đa cho một tác vụ nền của Proxmox (clone, xoá). Ngắn hơn trần của
 #: manifest để job tự báo lỗi thay vì bị nền tảng cắt như một job treo.
@@ -34810,10 +34826,18 @@ def _tao_may(params: dict, ctx=None) -> dict:
         if img is None:
             raise VpsJobError(f"he dieu hanh {may.os_id!r} khong co trong catalog")
 
-        template = os_images.template_vmid(may.os_id)
-        if not template:
+        # Từ 2026-08-24: **khách tự cài**. Máy sinh ra là máy trống + đĩa cài
+        # đặt, khách tự chạy trình cài qua console và tự đặt tài khoản/mật khẩu
+        # của chính họ — nền tảng không bao giờ biết mật khẩu của ai.
+        #
+        # Đường `template` chỉ còn cho bản Linux NỘI BỘ (`khach_thay=False`):
+        # nó lên trong ~40 giây nên dùng để tách "lỗi đường ống" khỏi "lỗi trong
+        # lúc cài Windows". Không bán bằng đường đó.
+        iso = os_images.dia_cai_dat(may.os_id)
+        template = 0 if iso else _template_noi_bo(may.os_id)
+        if not iso and not template:
             raise VpsJobError(
-                f"chua khai template cho {img.ten}: dat bien "
+                f"chua khai dia cai dat cho {img.ten}: dat bien "
                 f"{os_images.khoa_moi_truong(may.os_id)} trong secrets/app.env")
 
         gateway = db.get(VpsGateway, may.gateway_id)
@@ -34840,11 +34864,16 @@ def _tao_may(params: dict, ctx=None) -> dict:
             provisioning.cap_vmid(db, may, goi_y=goi_y, da_co_tren_may_chu=da_co)
             db.commit()
 
-        # 2) Clone — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
-        _bao(ctx, 15, "dang nhan ban he dieu hanh")
+        # 2) Dựng máy — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
+        _bao(ctx, 15, "dang chuan bi may")
         if not _vm_da_ton_tai(client, may.vmid):
-            upid = client.clone(template, may.vmid,
-                                ten=f"vps-{may.id[:8]}", full=False)
+            if iso:
+                upid = client.tao_may(
+                    may.vmid,
+                    **_cau_hinh_may_trong(may, plan, img, iso))
+            else:
+                upid = client.clone(template, may.vmid,
+                                    ten=f"vps-{may.id[:8]}", full=False)
             _cho_tac_vu(client, upid, ctx, moc=35)
 
         # 3) Địa chỉ trong mạng riêng — cấp TRƯỚC khi cấu hình, vì cloud-init
@@ -34871,7 +34900,8 @@ def _tao_may(params: dict, ctx=None) -> dict:
                     # thấy (quy tắc 5 của CLAUDE.md).
                     "vga": "std"}
         cau_hinh.update(mang.cau_hinh_qemu(
-            mang.mang_cho_may(gateway, ip_noi_bo)))
+            mang.mang_cho_may(gateway, ip_noi_bo), co_cloud_init=not iso,
+            mac=dinh_danh.mac(may.id)))
         # GỠ mọi card thừa của template. `cau_hinh_qemu` chỉ đặt `net0`; template
         # nào có sẵn `net1` thì máy khách thừa hưởng nó — và nếu card đó cắm
         # `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**, đúng thứ
@@ -34882,8 +34912,10 @@ def _tao_may(params: dict, ctx=None) -> dict:
         cau_hinh.update(_go_card_thua(client, may.vmid))
         client.dat_cau_hinh(may.vmid, **cau_hinh)
 
+        # Đường ISO đã tạo đĩa đúng cỡ ngay từ đầu; chỉ đường nhân bản mới cần
+        # nới, vì đĩa của template luôn nhỏ hơn gói.
         can_dia = dia_tong_gb(may.plan_id, may.dia_them_gb)
-        if can_dia > img.disk_gb_toi_thieu:
+        if not iso and can_dia > img.disk_gb_toi_thieu:
             # Proxmox chỉ nới ra, không thu vào — an toàn khi chạy lại.
             client.nong_dia(may.vmid, _dia_goc(client, may.vmid), f"{can_dia}G")
 
@@ -35068,6 +35100,80 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
+
+
+def _template_noi_bo(os_id: str) -> int:
+    """VMID template cho bản Linux **nội bộ**. 0 = không có.
+
+    ## Hàng rào, không phải tuỳ chọn
+
+    Mô hình template đã bị bỏ ngày 2026-08-24: máy bán cho khách luôn là máy
+    trống + đĩa cài, khách tự đặt tài khoản và mật khẩu của chính họ.
+
+    Đường này chỉ còn sống cho bản có `khach_thay=False` — bản Linux nội bộ lên
+    trong ~40 giây, dùng để tách "lỗi đường ống" khỏi "lỗi trong lúc cài Windows".
+
+    **Nếu ai đó sau này đặt `LTT_VPS_TEMPLATE_WIN10` thì hàm này TỪ CHỐI**, thay
+    vì lặng lẽ quay lại mô hình cũ. Không có hàng rào đó thì một biến môi trường
+    gõ nhầm là mọi khách nhận chung một mật khẩu — và không lỗi nào được ghi ra.
+    """
+    import os as _os
+
+    img = os_images.lay_os(os_id)
+    if img is None or img.khach_thay:
+        return 0
+    khoa = "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
+    try:
+        return int(str(_os.environ.get(khoa, "")).strip() or 0)
+    except ValueError:
+        return 0
+
+
+def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
+    """Cấu hình một máy TRỐNG có gắn đĩa cài đặt, để khách tự cài.
+
+    Ba lựa chọn ở đây đều là **luật của cụm này**, không phải sở thích:
+
+    * **`sata0` + `e1000`** — cụm chạy lồng trong VMware và virtio treo cứng ở
+      đó (xem `MO_HINH_CARD` trong `mang.py`). Đây cũng là lý do khách **không
+      cần đĩa driver virtio** khi cài Windows: Windows nhận sẵn cả hai.
+    * **`vga: std`** — máy phải có màn hình đồ hoạ, vì console LÀ đường cài đặt.
+    * **thứ tự boot `ide0` rồi `sata0`** — lần đầu boot vào đĩa cài; cài xong,
+      không bấm phím nào thì nó tự bỏ qua CD và boot vào đĩa cứng.
+    """
+    cau_hinh = {
+        "name": f"vps-{may.id[:8]}",
+        "cores": plan.vcpu,
+        "memory": plan.ram_mb,
+        "ostype": "win11" if img.can_uefi_tpm else (
+            "win10" if img.ho == "windows" else "l26"),
+        "scsihw": "virtio-scsi-single",
+        # `serial=` KHÔNG thừa: QEMU đặt số hiệu ổ theo *chỉ số ổ*, nên mọi
+        # máy dùng `sata0` báo về cùng một chuỗi. Xem `services/dinh_danh.py`.
+        "sata0": f"{KHO_DIA}:{dia_tong_gb(may.plan_id, may.dia_them_gb)},"
+                 f"discard=on,ssd=1,serial={dinh_danh.so_hieu_dia(may.id)}",
+        "ide0": f"{iso},media=cdrom",
+        "boot": "order=ide0;sata0",
+        "vga": "std",
+        # UUID đặt tường minh để nó sống sót qua lần CÀI LẠI — Proxmox chỉ sinh
+        # UUID lúc tạo máy, nên cài lại cho ra một UUID khác, và với phần mềm
+        # trong máy khách thì đó là "một máy khác".
+        "smbios1": dinh_danh.smbios1(may.id),
+        # Không guest agent, không balloon: cả hai là thiết bị virtio.
+        "agent": 0,
+        "balloon": 0,
+    }
+    if img.can_uefi_tpm:
+        # Windows 11 từ chối cài nếu thiếu. `pre-enrolled-keys=1` để Secure Boot
+        # tin chuỗi ký của Microsoft — ngược với ảnh Linux, vốn cần =0.
+        cau_hinh["bios"] = "ovmf"
+        cau_hinh["machine"] = "q35"
+        cau_hinh["efidisk0"] = f"{KHO_DIA}:0,efitype=4m,pre-enrolled-keys=1"
+        cau_hinh["tpmstate0"] = f"{KHO_DIA}:0,version=v2.0"
+    else:
+        cau_hinh["bios"] = "seabios"
+        cau_hinh["machine"] = "pc-q35-11.0"
+    return cau_hinh
 
 
 def _go_card_thua(client, vmid: int) -> dict:
@@ -35286,34 +35392,42 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/os_images.py
-SHA256=9e22c03df06c14699d53ebaf87aa0ea1b6e658b112aad81ba30921fde9e2446f BYTES=7436 LINES=160
+SHA256=1c6287b9b35ffd3607b097058b8ea00d1f9f80fe81da2e0762cb9bfef2f7aa77 BYTES=7557 LINES=164
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""Catalog hệ điều hành, và ràng buộc tối thiểu của từng bản.
+"""Catalog hệ điều hành: **đĩa cài đặt**, và ràng buộc tối thiểu của từng bản.
+
+## Khách tự cài, nền tảng không dựng sẵn
+
+Từ 2026-08-24 mỗi máy bán ra là một **máy trống + đĩa cài Windows**; khách tự chạy
+trình cài đặt qua console và **tự đặt tài khoản, mật khẩu của chính họ**.
+
+Điều đó đổi ba thứ ở file này:
+
+* mỗi bản OS trỏ tới một **file ISO** (`LTT_VPS_ISO_<ID>`), không phải một template;
+* `disk_gb_toi_thieu` quay về đúng **yêu cầu của Microsoft**, vì không còn thừa
+  hưởng đĩa của template nào;
+* nền tảng **không bao giờ biết mật khẩu của khách** — không giữ thì không làm lộ.
 
 ## Vì sao ràng buộc tối thiểu nằm trong dữ liệu chứ không trong đầu người bán
 
 Yêu cầu của Microsoft là con số cứng: **Windows 11 cần 64 GB đĩa và 4 GB RAM**,
-Server 2022 cần 32 GB. Một tổ hợp (gói × OS) không đạt ngưỡng thì máy **không boot**
-— và nó chỉ lộ ra sau khi khách đã trả tiền, đã chờ mười phút clone, và đang nhìn
-một màn hình đen. Kiểm ở đây là kiểm trước khi thu tiền.
+Server 2022 cần 32 GB. Một tổ hợp (gói × OS) không đạt ngưỡng thì máy **không cài
+được** — và nó chỉ lộ ra sau khi khách đã trả tiền và đang nhìn một thông báo lỗi
+của trình cài đặt. Kiểm ở đây là kiểm trước khi thu tiền.
 
 ## `khach_thay`
 
-Linux **không nằm trong catalog bán** (V9: chỉ Windows). Nó có mặt ở đây vì lý do
-kỹ thuật thuần tuý: dựng chuỗi *web → job → clone → cấp cổng → khách vào được* bằng
-`cloud-init` mất ~40 giây mỗi lượt và tất định; bằng Windows + sysprep mất 10–20
-phút và có bốn cái bẫy đã biết. Chứng minh đường ống bằng Linux rồi mới cắm Windows
-vào tách được "lỗi đường ống" khỏi "lỗi template Windows".
+Bản Linux nội bộ **không nằm trong catalog bán** (V9: chỉ Windows). Nó ở đây vì lý
+do kỹ thuật thuần tuý: dựng chuỗi *web → job → máy → cấp IP → khách vào được* bằng
+`cloud-init` mất ~40 giây mỗi lượt và tất định; bằng Windows thì mất 20–40 phút vì
+có một con người ngồi bấm. Giữ một đường nhanh để tách "lỗi đường ống" khỏi "lỗi
+trong lúc cài Windows".
 
-Và nó đã trả công ngay: chính template nội bộ này phát hiện ra **virtio không chạy
-trên cụm** — một lỗi của *hạ tầng*, không của app, mà template Windows (vốn dùng
-`sata0` sẵn) sẽ không bao giờ để lộ ra.
+## Đường dẫn ISO đọc từ môi trường
 
-## VMID của template đọc từ môi trường
-
-Template là thứ **của một cụm cụ thể**, không phải của mã nguồn. Ghim số vào code
-nghĩa là dựng lại cụm là sửa code. Đọc từ `LTT_VPS_TEMPLATE_<ID>` — vd
-`LTT_VPS_TEMPLATE_WINSRV2022_GUI=9002`.
+ISO là thứ **của một cụm cụ thể**, không phải của mã nguồn. Ghim tên file vào code
+nghĩa là dựng lại cụm là sửa code. Đọc từ `LTT_VPS_ISO_<ID>` — vd
+`LTT_VPS_ISO_WINSRV2022_GUI=local:iso/windows-server-2022-eval-en-us.iso`.
 """
 from __future__ import annotations
 
@@ -35332,23 +35446,17 @@ class OsImage:
     #: `windows` hoặc `linux` — quyết định dùng Cloudbase-Init hay cloud-init.
     ho: str
     ram_mb_toi_thieu: int
-    #: Sàn đĩa THẬT SỰ, tính cả kích thước đĩa của template.
-    #:
-    #: Không phải chỉ là yêu cầu của Microsoft. **Proxmox chỉ nới đĩa ra, không
-    #: bao giờ thu vào**, nên đĩa của template là sàn cứng: clone từ một template
-    #: 80 GB thì máy nhỏ nhất cũng là 80 GB. Khai 32 GB (số của Microsoft) trong
-    #: khi template là 80 GB thì khách đặt gói 40 GB **qua được cửa kiểm**, rồi
-    #: chiếm 80 GB của kho chung mà chỉ trả tiền 40 — và `capacity.py` đếm theo
-    #: số của gói nên sức chứa tính sai luôn.
-    #:
-    #: `tools/vps_doctor.py` đối chiếu số này với đĩa THẬT của template và kêu
-    #: khi hai bên lệch.
+    #: Yêu cầu đĩa của chính hệ điều hành. Khách tự cài nên không còn thừa hưởng
+    #: đĩa của template nào — số này là số của Microsoft, không hơn.
     disk_gb_toi_thieu: int
     #: Cổng khách thường dùng để vào — chỉ để **hiển thị hướng dẫn**, không còn
     #: dùng để cấu hình gì. NAT 1:1 mở toàn bộ cổng của IP riêng cho máy đó.
     cong_quen: int
-    #: Hiện trong catalog bán không. False = template kỹ thuật, khách không thấy.
+    #: Hiện trong catalog bán không. False = bản kỹ thuật, khách không thấy.
     khach_thay: bool
+    #: Máy cài bản này có cần UEFI + vTPM + Secure Boot không. Windows 11 thì có,
+    #: và thiếu nó thì trình cài đặt dừng ở "This PC can't run Windows 11".
+    can_uefi_tpm: bool = False
     ghi_chu: str = ""
 
 
@@ -35357,10 +35465,11 @@ OS_IMAGES: tuple[OsImage, ...] = (
         id="debian-12", ten="Debian 12 (noi bo)", ho="linux",
         ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
         khach_thay=False,
-        ghi_chu="Template NOI BO de chung minh duong ong, khong ban (V9). "
-                "PHAI la ban `generic`, KHONG phai `genericcloud`: genericcloud "
-                "co y bo driver phan cung that (ke ca AHCI), ma dia cua ta la "
-                "sata0 vi virtio treo tren cum nay — xem NHAT_KY 2026-08-23.",
+        ghi_chu="Ban NOI BO de chung minh duong ong, khong ban (V9). Day la anh "
+                "cloud co san cloud-init nen may len trong ~40 giay, khac han "
+                "Windows phai co nguoi ngoi cai. PHAI la ban `generic`, KHONG "
+                "phai `genericcloud`: genericcloud co y bo driver phan cung that "
+                "(ke ca AHCI), ma dia cua ta la sata0 vi virtio treo tren cum nay.",
     ),
     OsImage(
         id="ubuntu-24-04", ten="Ubuntu 24.04 LTS", ho="linux",
@@ -35383,20 +35492,19 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="win10", ten="Windows 10", ho="windows",
-        # 80 GB là đĩa THẬT của template `WIN10-LTSC-GOLD` (9001), không phải
-        # yêu cầu 32 GB của Microsoft — xem chú thích của `disk_gb_toi_thieu`.
-        # Hệ quả bán hàng: với template hiện tại, **Windows 10 chỉ bán được ở
-        # gói Lớn**. Muốn bán ở gói nhỏ hơn thì phải dựng lại template với đĩa
-        # nhỏ hơn, không thể thu đĩa của template hiện có.
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=80, cong_quen=3389,
+        # 32 GB là yêu cầu của Microsoft. Trước 24/08 số này là 80 vì máy nhân
+        # bản từ template 80 GB và Proxmox không thu đĩa được; khách tự cài thì
+        # ràng buộc đó biến mất.
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
     ),
     OsImage(
         id="win11", ten="Windows 11", ho="windows",
         # Microsoft: 4 GB RAM va 64 GB dia la SAN, khong phai khuyen nghi.
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
-        khach_thay=True,
-        ghi_chu="Can UEFI/OVMF + vTPM + Secure Boot trong cau hinh VM.",
+        khach_thay=True, can_uefi_tpm=True,
+        ghi_chu="Trinh cai dat dung o 'This PC can't run Windows 11' neu thieu "
+                "UEFI/OVMF + vTPM + Secure Boot.",
     ),
 )
 
@@ -35434,20 +35542,22 @@ def hop_le(plan_id: str, os_id: str, dia_them_gb: int = 0) -> tuple[bool, str]:
     return True, ""
 
 
-def template_vmid(os_id: str, env: dict | None = None) -> int:
-    """VMID của template cho một bản OS. 0 = chưa khai trong môi trường."""
-    src = os.environ if env is None else env
-    khoa = "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
-    try:
-        return int(str(src.get(khoa, "")).strip() or 0)
-    except ValueError:
-        return 0
-
-
 def khoa_moi_truong(os_id: str) -> str:
     """Tên biến môi trường cần đặt cho một bản OS — để thông báo lỗi nói được
     chính xác phải làm gì, thay vì bắt người đọc đi tra tài liệu."""
-    return "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
+    return "LTT_VPS_ISO_" + str(os_id or "").upper().replace("-", "_")
+
+
+def dia_cai_dat(os_id: str, env: dict | None = None) -> str:
+    """Volid của đĩa cài đặt, vd `local:iso/windows-server-2022-eval.iso`.
+
+    Chuỗi rỗng = chưa khai trong môi trường. **Fail-closed**: chưa khai thì job
+    từ chối tạo máy, thay vì tạo một máy trống không boot được rồi để khách nhìn
+    màn hình đen mà không hiểu vì sao.
+    """
+    src = os.environ if env is None else env
+    return str(src.get(khoa_moi_truong(os_id), "")).strip()
+
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -36683,6 +36793,139 @@ def treo(db: DbSession, may: VpsInstance, client: ProxmoxClient, *,
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/dinh_danh.py
+SHA256=4259658fb91585a7b6f5c8e39bcd2800b1d1d02de45bdb54fda64132f08e1a53 BYTES=5738 LINES=127
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Danh tính phần cứng của một máy khách: MAC, UUID, số hiệu đĩa.
+
+## Vì sao có file này: hai máy khách KHÔNG được giống hệt nhau
+
+Một cụm ảo hoá mặc định phát ra những máy giống nhau đến mức khó tin. Proxmox
+có sinh MAC và UUID ngẫu nhiên cho mỗi máy, nhưng **số hiệu đĩa thì không**:
+QEMU đặt nó theo *chỉ số ổ*, nên mọi máy dùng `sata0` đều báo cùng một chuỗi
+`QM00005`. Số hiệu hệ thống trong SMBIOS cũng bỏ trống ở mọi máy.
+
+Đó là một lỗi thật, không phải chuyện làm đẹp:
+
+* **Sao lưu và phần mềm cấp phép** nhận diện máy bằng bộ ba (UUID, số hiệu đĩa,
+  MAC). Hai máy trùng bộ ba đó thì bản sao lưu của người này đè lên người kia,
+  và giấy phép của người này bị tính là cài lại trên máy người kia.
+* **Máy này bị chặn thì máy kia chịu chung.** Khi hai khách không phân biệt được
+  với nhau ở tầng phần cứng, hành vi của một người dán vào người còn lại. Người
+  trả tiền tử tế mất dịch vụ vì hàng xóm, và họ không có cách nào tự chứng minh.
+
+## Vì sao SUY RA từ `instance_id`, không phải bốc ngẫu nhiên
+
+Job tạo máy **chạy lại được** — mất mạng giữa chừng, worker chết, khách bấm hai
+lần. Bốc ngẫu nhiên thì mỗi lần chạy lại là một MAC khác, và:
+
+* DHCP theo MAC trên VM router mất chỗ neo — máy đổi địa chỉ trong mạng riêng;
+* Windows đã cài xong thấy card mạng "mới", đặt lại hồ sơ mạng về *Public*, và
+  **tường lửa chặn RDP** — khách mất đường vào máy của chính họ.
+
+Suy ra từ `instance_id` cho ta cả hai: khác nhau giữa các máy, và **không đổi**
+qua mọi lần chạy lại. Cùng khuôn với `_bam` trong `console.py`.
+
+## Một ranh giới cố ý
+
+Ta giữ nguyên OUI `BC:24:11` — OUI đã đăng ký của Proxmox. Máy này **là** máy ảo
+và ta không giả nó thành máy Dell hay HP: chuỗi SMBIOS của nhà sản xuất để
+nguyên. Việc ở đây là *phân biệt máy khách này với máy khách kia*, không phải
+làm cho máy ảo trông như máy vật lý.
+"""
+from __future__ import annotations
+
+import hashlib
+from dataclasses import dataclass
+
+#: OUI của Proxmox. Xem chú thích cuối docstring module: cố ý không giả OUI của
+#: một hãng phần cứng thật.
+OUI = "BC:24:11"
+
+
+@dataclass(frozen=True)
+class DanhTinh:
+    mac: str            # BC:24:11:3A:A6:95
+    uuid: str           # 8-4-4-4-12
+    so_hieu_dia: str    # <= 20 ký tự, chữ và số
+    so_hieu_may: str
+
+
+def _bit(instance_id: str, muc: str, so_byte: int) -> bytes:
+    """Byte suy ra từ (máy, mục). Mỗi mục một chuỗi riêng nên đổi một mục không
+    kéo theo mục khác."""
+    goc = f"ltt-vps/{muc}/{str(instance_id or '')}".encode("utf-8")
+    return hashlib.sha256(goc).digest()[:so_byte]
+
+
+def mac(instance_id: str) -> str:
+    """MAC ổn định cho một máy. Giữ OUI Proxmox, suy ra 3 octet cuối.
+
+    Không gian 3 octet = 16,7 triệu. Với vài nghìn máy, xác suất trùng theo
+    nghịch lý ngày sinh vẫn dưới một phần triệu — và dù có trùng thì hai máy
+    cũng phải nằm cùng một bridge mới va nhau.
+    """
+    b = _bit(instance_id, "mac", 3)
+    return OUI + ":" + ":".join(f"{x:02X}" for x in b)
+
+
+def uuid_smbios(instance_id: str) -> str:
+    """UUID hệ thống. Đặt tường minh để nó **sống sót qua lần cài lại**.
+
+    Proxmox sinh UUID lúc tạo máy; cài lại máy (xoá rồi dựng lại cùng
+    `instance_id`) sẽ cho UUID khác, và với khách thì đó là "một máy khác".
+    """
+    b = _bit(instance_id, "uuid", 16)
+    # Ép về UUID phiên bản 4, biến thể RFC 4122 — để công cụ trong máy khách
+    # đọc nó như một UUID hợp lệ chứ không phải 16 byte tuỳ tiện.
+    x = bytearray(b)
+    x[6] = (x[6] & 0x0F) | 0x40
+    x[8] = (x[8] & 0x3F) | 0x80
+    h = x.hex()
+    return f"{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:]}"
+
+
+def _chu_so(instance_id: str, muc: str, do_dai: int) -> str:
+    bang = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ"     # bỏ I và O
+    b = _bit(instance_id, muc, do_dai)
+    return "".join(bang[x % len(bang)] for x in b)
+
+
+def so_hieu_dia(instance_id: str) -> str:
+    """Số hiệu ổ cứng ảo. QEMU mặc định đặt theo chỉ số ổ nên **mọi máy trùng
+    nhau**; đây là chỗ khác biệt bị bỏ sót dễ nhất.
+
+    Giới hạn 20 ký tự là của chuẩn ATA; dài hơn bị cắt cụt lặng lẽ.
+    """
+    return "LTT" + _chu_so(instance_id, "dia", 13)
+
+
+def so_hieu_may(instance_id: str) -> str:
+    return "LTT-" + _chu_so(instance_id, "may", 10)
+
+
+def danh_tinh(instance_id: str) -> DanhTinh:
+    if not str(instance_id or "").strip():
+        raise ValueError("instance_id rong: khong suy ra duoc danh tinh")
+    return DanhTinh(mac=mac(instance_id), uuid=uuid_smbios(instance_id),
+                    so_hieu_dia=so_hieu_dia(instance_id),
+                    so_hieu_may=so_hieu_may(instance_id))
+
+
+def smbios1(instance_id: str) -> str:
+    """Giá trị `smbios1` cho `qm set`.
+
+    Chỉ đặt `uuid` và `serial`. **Không** đặt `manufacturer`/`product`: giả nhà
+    sản xuất là việc khác với việc phân biệt hai máy khách, và ta không làm.
+    """
+    import base64
+
+    dt = danh_tinh(instance_id)
+    ma = base64.b64encode(dt.so_hieu_may.encode("ascii")).decode("ascii")
+    return f"uuid={dt.uuid},serial={ma},base64=1"
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/gateway.py
 SHA256=13672c4af896170f58d0c271164c538c105c0b9b51d77e2d66fb3b38d9a808ce BYTES=9735 LINES=194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -36884,7 +37127,7 @@ def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> GatewayClient
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/mang.py
-SHA256=3666cd244fb6323905428f5c5ab131e60c344b3f77bb9211bdda9ad258b6ec79 BYTES=7015 LINES=155
+SHA256=9bca3d7a565c00f046bc3a8947074271592ccf8aa3b00220a479f2a051862c6d BYTES=8200 LINES=174
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Mạng của một máy khách: địa chỉ riêng, card, và cấu hình tiêm vào QEMU.
 
@@ -37025,21 +37268,40 @@ def mang_cho_may(gateway: VpsGateway, ip_noi_bo: str) -> MangKhach:
     )
 
 
-def cau_hinh_qemu(mang: MangKhach) -> dict:
-    """Tham số `qm set` để cắm máy vào mạng riêng và tiêm IP qua cloud-init.
+def cau_hinh_qemu(mang: MangKhach, *, co_cloud_init: bool = True,
+                  mac: str = "") -> dict:
+    """Tham số `qm set` để cắm máy vào mạng riêng.
 
-    `net0` **thay** card của template chứ không thêm card thứ hai: máy khách chỉ
-    được có một đường ra, và nó không đi qua LAN nhà.
+    `net0` là card **duy nhất**: máy khách chỉ được có một đường ra, và nó không
+    đi qua LAN nhà.
+
+    `co_cloud_init=False` cho máy **khách tự cài** (Windows): máy đó không có ổ
+    cloud-init, nên tiêm `ipconfig0` vào là vô nghĩa — Proxmox nhận tham số
+    nhưng **không có gì đọc nó**, và ta sẽ tưởng đã cấu hình mạng trong khi máy
+    thì không có địa chỉ nào. Máy đó nhận địa chỉ từ **DHCP theo MAC** trên VM
+    router; xem `services/gateway.py`.
+
+    ## `mac` không phải tuỳ chọn trang trí
+
+    Hàm này **ghi đè** `net0`, và job tạo máy chạy lại được. Không truyền `mac`
+    thì mỗi lần chạy lại Proxmox sinh một MAC mới, kéo theo hai hỏng hóc lặng lẽ:
+    máy mất chỗ neo DHCP nên đổi địa chỉ trong mạng riêng, và Windows đã cài xong
+    thấy một card "mới" nên đặt hồ sơ mạng về *Public* — **tường lửa chặn RDP**,
+    khách mất đường vào máy của chính họ và không đọc được lý do ở đâu cả.
+
+    MAC ổn định suy ra từ `instance_id`; xem `services/dinh_danh.py`.
     """
-    net = f"{MO_HINH_CARD},bridge={mang.bridge},firewall=0"
+    net = f"{MO_HINH_CARD}"
+    if str(mac or "").strip():
+        net += f"={str(mac).strip().upper()}"
+    net += f",bridge={mang.bridge},firewall=0"
     if mang.mtu:
         net += f",mtu={mang.mtu}"
-    cau_hinh = {
-        "net0": net,
-        "ipconfig0": f"ip={mang.cidr},gw={mang.gateway}",
-    }
-    if mang.dns:
-        cau_hinh["nameserver"] = mang.dns
+    cau_hinh = {"net0": net}
+    if co_cloud_init:
+        cau_hinh["ipconfig0"] = f"ip={mang.cidr},gw={mang.gateway}"
+        if mang.dns:
+            cau_hinh["nameserver"] = mang.dns
     return cau_hinh
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -37322,7 +37584,7 @@ def ghi_su_kien(db: DbSession, instance_id: str, loai: str, *,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/proxmox.py
-SHA256=eb67772ada6038b29ff47bd06eaf351f781db49556dd5e4841b869f18f1bcd03 BYTES=14349 LINES=307
+SHA256=10e9cda0c48bbabbf7e70c3b9038b6d52b8c9eb47548828684484f30c833caa9 BYTES=15066 LINES=320
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Driver nói chuyện với Proxmox VE. Đây là chỗ DUY NHẤT biết Proxmox tồn tại.
 
@@ -37573,6 +37835,19 @@ class ProxmoxClient:
         return str(self._goi(
             "POST", f"/nodes/{self.config.node}/qemu/{int(vmid_nguon)}/clone",
             data=data))
+
+    def tao_may(self, vmid: int, **cau_hinh) -> str:
+        """Tạo một máy TRỐNG với cấu hình cho trước. Trả UPID.
+
+        Dùng cho mô hình **khách tự cài**: máy sinh ra không có hệ điều hành,
+        chỉ có đĩa trắng và một đĩa cài đặt gắn sẵn.
+
+        **KHÔNG idempotent.** Gọi lại khi VMID đã tồn tại thì Proxmox trả lỗi —
+        và đó là hành vi đúng: người gọi phải hỏi thế giới thật trước, y như với
+        `clone`. Xem `_vm_da_ton_tai` trong `jobs.py`.
+        """
+        return str(self._goi("POST", f"/nodes/{self.config.node}/qemu",
+                             data={"vmid": int(vmid), **cau_hinh}))
 
     def dat_cau_hinh(self, vmid: int, **cau_hinh) -> Any:
         """Đặt cấu hình VM (`cores`, `memory`, `net0`, `ipconfig0`, `ciuser`…)."""
@@ -87953,7 +88228,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=6f4c827811fd34a86d09e036ce60a6423ab93dadb26060eacdb86b3125e722a1 BYTES=201557 LINES=2912
+SHA256=ef032e1a7971024295dc3242e4420a08ea5e3119542ba3b87aca7e2bc7ad6d67 BYTES=204027 LINES=2942
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -90733,65 +91008,95 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
       *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
 
-- [~] **G5a — Windows CHẠY ĐƯỢC qua đường ống.** 🔨 **Đo thật 2026-08-24.**
-      Nhân bản template `WIN10-LTSC-GOLD` (9001) **qua job**: 15 giây; Windows boot
-      thẳng tới desktop, **tự đăng nhập, không hỏi OOBE** (template có sẵn answer
-      file); và **RDP vào được từ Internet qua IP riêng, 128 ms**.
+### ⚠️ Đổi hướng 2026-08-24 (tối) — BỎ TEMPLATE, khách tự cài Windows
 
-      Nhưng ba việc còn phải làm TAY, và chúng chính là phần G5b:
-      ① đặt địa chỉ tĩnh trong Windows · ② bật Remote Desktop · ③ đặt mật khẩu riêng
-      cho từng khách. Cả ba là việc của **Cloudbase-Init**.
+Chủ sản phẩm chốt: **không nhân bản từ template nữa.** Mỗi máy bán ra là một máy
+trống + đĩa cài Windows; khách tự chạy trình cài đặt qua console và **tự đặt tài
+khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản Windows**.
 
-      **Ba lỗi tìm được, không lỗi nào test bắt được:**
+**Ba thứ nó gỡ được, và đều là những thứ khó nhất còn lại:**
 
-      🔴 **Đĩa template là SÀN CỨNG.** `os_images` khai `win10` cần 32 GB (số của
-      Microsoft) nhưng template thật là **80 GB**, mà **Proxmox chỉ nới ra, không thu
-      vào**. Khách đặt gói Nhỏ 40 GB **qua được cửa kiểm**, rồi chiếm 80 GB của kho
-      chung trong khi chỉ trả tiền 40 — và `capacity.py` đếm theo số của gói nên sức
-      chứa tính sai luôn. Đã sửa sàn về 80 và thêm phép đối chiếu vào `vps_doctor.py`.
-      *Hệ quả bán hàng:* với template hiện tại **Windows 10 chỉ bán được ở gói Lớn**,
-      hoặc gói Vừa mua thêm ≥20 GB đĩa.
+1. **Nền tảng không bao giờ biết mật khẩu của khách.** Đây là thay đổi lớn nhất, và
+   nó là về trách nhiệm chứ không phải kỹ thuật: không giữ thì không làm lộ được.
+   Toàn bộ Cloudbase-Init (cùng cái bẫy NoCloud-vs-ConfigDrive) biến mất.
+2. **Hết việc nuôi template.** Không sysprep, không dựng lại mỗi lần Microsoft vá,
+   không `autounattend.xml` cho từng phiên bản. Thêm một phiên bản Windows = **thêm
+   một file ISO**, không phải thêm một quy trình.
+3. **Hết ràng buộc đĩa của template.** Sàn đĩa quay về đúng yêu cầu của Microsoft
+   (Server 2022: 32 GB, Win11: 64 GB) thay vì 80 GB của ảnh Win10 có sẵn.
 
-      🔴 **Máy khách thừa hưởng card mạng thứ hai của template.** `cau_hinh_qemu` chỉ
-      đặt `net0`; `WIN10-LTSC-GOLD` có sẵn `net1`, và máy thử hiện ra **hai** card
-      trong Windows. Ở đây `net1` may là `vmbr1`; template nào có `net1` cắm `vmbr0`
-      thì **máy bán cho khách có một chân trong LAN nhà** — đúng thứ `mang.py` nói
-      tuyệt đối không được. Job nay gỡ mọi `netN` thừa, có test chốt.
+**Ba cái giá phải trả, nói trước:**
 
-      🔴 **`vga: serial0` ⇒ máy không có màn hình đồ hoạ** (đã sửa ở G3b).
+1. **Console thành đường chính, không còn là đường cứu hộ.** Nó phải chắc. Và ghi
+   chú ở G3b về việc phím Shift bị gõ sai **phải được kiểm bằng một người thật** —
+   khách sẽ gõ mật khẩu có `!`, `@` vào trình cài đặt.
+2. **Mất lợi thế nhân bản liên kết.** `clone(full=False)` chia sẻ ảnh nền nên gần
+   như không tốn chỗ; máy tự cài thì **mỗi máy ghi trọn ~15–20 GB thật**. Kho thin
+   475 GB chia cho 16 máy còn ~29 GB/máy — vẫn đủ, nhưng ba cái phanh của
+   `capacity.py` từ nay là thật sự cần chứ không phải phòng xa.
+3. **Chỗ chứa ISO.** `local` chỉ 27 GiB và đã có ~11 GiB ISO. Thêm Win10/11 là hết
+   chỗ ⇒ phải bật loại nội dung `iso` cho kho `vmdata` (475 GB).
 
-- [ ] **G5b — template Windows dùng được để BÁN.** 🔴 **CHẶN: cần chủ sản phẩm.**
+---
 
-      Đã chuẩn bị sẵn: `scratchpad/chuan_bi_windows.ps1` (bật RDP + bật NLA, tải và
-      cài Cloudbase-Init 1.1.6, đổi `metadata_services` sang **NoCloud** — Proxmox
-      sinh NoCloud còn Cloudbase mặc định đọc ConfigDrive, sai thì cấu hình **im lặng
-      không áp dụng** và máy lên với tên + mật khẩu CỦA TEMPLATE). Máy dựng-template
-      `VMID 210` đã tạo từ 9001, một card, `vga: std`.
+- [x] **G5a — đã đo, và kết quả vẫn dùng được.** Chuỗi *job → máy Windows → RDP từ
+      Internet qua IP riêng* đã chứng minh chạy (128 ms). Phần "nhân bản template"
+      bị thay, nhưng phần mạng, IP riêng, NAT 1:1 và console thì giữ nguyên.
+      Ba lỗi tìm được vẫn có giá trị: **card mạng thứ hai của template** (job nay gỡ
+      mọi `netN` thừa), **`vga: serial0`**, và **sàn đĩa của template**.
 
-      **Vì sao chặn:** template chỉ tự đăng nhập ở **lần boot đầu tiên sau sysprep**
-      (OOBE). Từ lần thứ hai nó hỏi mật khẩu quản trị của template — thứ chỉ chủ sản
-      phẩm có. Tôi không xử lý mật khẩu, và không dùng mẹo phá mật khẩu Windows trên
-      máy của người khác.
+- [ ] **G5 (mới) — khách tự cài Windows.**
+      ① `os_images` mang **volid ISO** thay cho VMID template · ② `jobs.py` **tạo máy
+      trống + gắn ISO** thay cho `clone` · ③ **DHCP trên VM router** cấp địa chỉ theo
+      MAC — bắt buộc, vì trình cài đặt Windows không đọc được cloud-init nên không
+      còn đường nào khác để máy có mạng mà khách không phải tự gõ · ④ trang **hướng
+      dẫn cài đặt** cho từng phiên bản · ⑤ chuyển kho ISO sang `vmdata`.
+      *Xong khi:* khách bấm mua → mở console → cài xong Windows bằng tài khoản của
+      chính họ → **RDP vào được từ Internet qua IP riêng**, nền tảng không hề biết
+      mật khẩu.
 
-      Hai lối ra, chủ sản phẩm chọn:
-      **(a)** tự đăng nhập vào VM 210 (console Proxmox) và chạy script — hai dòng;
-      **(b)** bỏ hẳn đường này, dựng template Windows Server 2022 **từ ISO** với
-      `autounattend.xml` do ta viết (**G5c**) — lúc đó mật khẩu do ta đặt từ đầu, và
-      đĩa đặt được **40 GB** để bán được cả ba gói. Chậm hơn nhưng sạch hơn, và gỡ
-      luôn phụ thuộc vào một bí mật mà nền tảng không nên giữ.
+- [x] **G5b — dọn sạch template + danh tính phần cứng riêng cho từng máy.**
+      ✅ **XONG 2026-08-24.**
 
-      *Xong khi:* khách bấm mua → máy lên → **RDP bằng mật khẩu ngẫu nhiên hiện đúng
-      một lần**, không ai gõ lệnh tay.
+      **Dọn template.** `os_images.template_vmid` xoá hẳn; `vps_doctor` đối chiếu
+      **volid ISO** thay vì đĩa template; `LTT_VPS_TEMPLATE_WIN10` gỡ khỏi
+      `app.env`. Đường nhân bản còn sống **chỉ** cho bản `khach_thay=False` (Linux
+      nội bộ, lên trong ~40 giây — thứ tách "lỗi đường ống" khỏi "lỗi lúc cài
+      Windows"), và `_template_noi_bo` **từ chối** mọi bản bán cho khách kể cả khi
+      biến môi trường được đặt. Hàng rào, không phải quy ước: thiếu nó thì một biến
+      gõ nhầm đưa mọi khách về chung một mật khẩu, và không lỗi nào được ghi ra.
 
-- [ ] **G5c — template Windows Server 2022.** (catalog chỉ
-      bán Windows, V9). Cloudbase-Init đổi `metadata_services` sang **NoCloud** (Proxmox
-      sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai thì cấu hình **im lặng
-      không áp dụng**); gắn ổ Cloud-Init **trước** khi convert; **không bật lại VM sau
-      sysprep**. Nhớ luật của cụm: **`sata0` + `e1000`, `agent: 0`, `balloon: 0`**.
-      *Xong khi:* clone ra máy mới, **RDP vào được bằng IP riêng**, mật khẩu ngẫu nhiên
-      hiện đúng một lần.
+      **Danh tính phần cứng** — `apps/vps/services/dinh_danh.py`. Cụm mặc định phát
+      ra những máy giống nhau hơn ta tưởng: Proxmox có sinh MAC và UUID riêng, nhưng
+      **QEMU đặt số hiệu ổ theo chỉ số ổ**, nên mọi máy dùng `sata0` báo về cùng một
+      chuỗi, và số hiệu SMBIOS bỏ trống ở mọi máy. Nay bốn thứ suy ra từ
+      `instance_id`: **MAC · UUID · số hiệu đĩa · số hiệu máy**.
 
-- [ ] **G6 — template Windows 10 / 11.** Win11 cần UEFI/OVMF + vTPM + Secure Boot.
+      **Suy ra, không bốc ngẫu nhiên** — và đây mới là lý do thật sự phải làm ngay:
+      job tạo máy **chạy lại được**, còn bước 4 của nó **ghi đè `net0`**. Trước thay
+      đổi này, mỗi lần chạy lại là một MAC mới ⇒ máy mất chỗ neo DHCP (thứ G5 sắp
+      dựa vào), và **Windows đã cài xong thấy card "mới" nên đặt hồ sơ mạng về
+      *Public* — tường lửa chặn RDP**. Khách mất đường vào máy của chính họ và không
+      đọc được lý do ở đâu cả. Đó là một lỗi đang sống, không phải việc làm đẹp.
+
+      Cái được thứ hai: hai khách không còn trùng danh tính phần cứng, nên bản sao
+      lưu và phần mềm cấp phép của người này không lẫn sang người kia, và **một máy
+      bị chặn thì máy kia không chịu chung**.
+
+      ⛔ **Ranh giới cố ý — đọc trước khi ai đó "mở rộng" file này.** `smbios1` chỉ
+      đặt `uuid` và `serial`; **không** đặt `manufacturer`/`product`/`family`, và MAC
+      giữ nguyên OUI `BC:24:11` của Proxmox. Việc ở đây là *phân biệt máy khách này
+      với máy khách kia*. Làm máy ảo **giả dạng máy vật lý**, hay dựng bộ tham số
+      nhằm qua mặt hệ thống dò lạm dụng của một nền tảng nào đó, là việc khác — và
+      ta không làm. Test chốt điều này: `test_smbios1_dat_uuid_va_serial_nhung_
+      KHONG_gia_nha_san_xuat`.
+
+      *Bằng chứng:* `tests/test_285_vps_dinh_danh.py` — 19 test, gồm 500 máy không
+      trùng ở cả bốn mục, gọi lại cho kết quả y hệt, và một chốt cấm dùng nguồn ngẫu
+      nhiên. Toàn bộ VPS: **130 xanh**, `gate --quick` **PASS**.
+
+- [ ] **G6 — Windows 11 cần UEFI/OVMF + vTPM + Secure Boot** trong cấu hình máy.
+      Không còn là việc "dựng template" nữa, chỉ là một biến thể cấu hình khi tạo máy.
 
 - [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
       khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút
@@ -217189,7 +217494,7 @@ def test_dich_hong_thi_lop_tren_nem_DichThatBai_kem_loi_di_tiep(moi_truong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_251_vps_ha_tang.py
-SHA256=6aabe24dafffea65db38b9a37a8a0aff69c38a009254e215f3768d1178506f71 BYTES=30688 LINES=736
+SHA256=905fe306ef8c807d92a0e18d241f6753148f02ed5754898287fb647fda9326bd BYTES=31284 LINES=749
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hạ tầng app VPS (H39 P0, Q103 + Q104).
 
@@ -217368,11 +217673,24 @@ def test_ubuntu_khong_nam_trong_catalog_ban():
     assert os_images.lay_os("ubuntu-24-04") is not None
 
 
-def test_ten_bien_template_doc_duoc_tu_ma_os():
-    assert os_images.khoa_moi_truong("winsrv2022-gui") == \
-        "LTT_VPS_TEMPLATE_WINSRV2022_GUI"
-    assert os_images.template_vmid("win11", {}) == 0
-    assert os_images.template_vmid("win11", {"LTT_VPS_TEMPLATE_WIN11": "9004"}) == 9004
+def test_ten_bien_dia_cai_dat_doc_duoc_tu_ma_os():
+    assert os_images.khoa_moi_truong("winsrv2022-gui") ==         "LTT_VPS_ISO_WINSRV2022_GUI"
+    assert os_images.dia_cai_dat("win11", {}) == ""
+    assert os_images.dia_cai_dat(
+        "win11", {"LTT_VPS_ISO_WIN11": "local:iso/win11.iso"}) == "local:iso/win11.iso"
+
+
+def test_chua_khai_dia_cai_dat_thi_KHONG_doan_bua():
+    """Fail-closed: chua khai thi job tu choi tao may, thay vi tao mot may trong
+    khong boot duoc roi de khach nhin man hinh den ma khong hieu vi sao."""
+    assert os_images.dia_cai_dat("winsrv2022-gui", {}) == ""
+
+
+def test_win11_duoc_danh_dau_can_UEFI_va_TPM():
+    """Thieu thi trinh cai dat dung o "This PC can't run Windows 11" — va khach
+    ngoi nhin no, khong phai ta."""
+    assert os_images.lay_os("win11").can_uefi_tpm is True
+    assert os_images.lay_os("winsrv2022-gui").can_uefi_tpm is False
 
 
 # ── 4. Xếp chỗ ───────────────────────────────────────────────────────────────
@@ -227769,7 +228087,7 @@ def test_thieu_port_hoac_ticket_thi_NEM_chu_khong_ghep_bua():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_283_cam_cli.py
-SHA256=24958a3242afd507b7631ab95be86ef3df27126d14470cd8a2a43fb9a36c2d2b BYTES=10046 LINES=241
+SHA256=550b2bb84ccb8a3746bda9658b6dd47a4d0608554fb904ffe9b10432f0e6dfbd BYTES=16159 LINES=371
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/cam_cli.py` — cắm vào rồi **gỡ ra phải trả đúng nguyên trạng**.
 
@@ -228013,6 +228331,136 @@ def test_sao_luu_giu_ban_DAU_TIEN_khong_ghi_de(cc, tmp_path):
     bs = cfg.with_suffix(cfg.suffix + ".truoc-ltt")
     assert bs.read_text(encoding="utf-8") == CONFIG_CUA_KHACH
 
+
+# ── Hai lỗi mà chỉ VM thật tìm ra (P4/T8, 24/08) ───────────────────────────
+
+CONFIG_CRLF = CONFIG_CUA_KHACH.replace("\n", "\r\n")
+
+
+def test_giu_nguyen_CRLF_cua_tep_khach(cc, tmp_path):
+    """🔴 Lỗi thật: cắm rồi gỡ đổi **cả tệp** từ CRLF sang LF.
+
+    `Set-Content` của PowerShell — thứ phần lớn người dùng Windows và mọi script
+    cài đặt dùng — ghi CRLF. Ta đọc rồi ghi lại bằng `newline="\n"` là **viết
+    lại từng dòng** của tệp.
+
+    ⚠️ Mọi test phía trên **không thấy**, vì chính chúng ghi fixture bằng
+       `newline="\n"` — tức chúng đo một thế giới chỉ có LF. Test này viết
+       fixture bằng CRLF, đúng như máy khách thật.
+    """
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_bytes(CONFIG_CRLF.encode())
+    goc = cfg.read_bytes()
+    assert b"\r\n" in goc
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    sau_cam = cfg.read_bytes()
+    assert b"\r\n" in sau_cam, "cam da lam mat CRLF"
+    assert b"\n" not in sau_cam.replace(b"\r\n", b""), "cam tron lan CRLF va LF"
+
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == goc, (
+        "go ra khong tra ve bang tung byte voi mot tep CRLF. Khach mo `git diff` "
+        "len se thay TOAN BO tep thay doi.")
+
+
+def test_settings_json_CRLF_cung_duoc_giu(cc, tmp_path, monkeypatch):
+    """`settings.json` giữ **kiểu xuống dòng** và **nội dung**, nhưng KHÔNG hứa
+    bằng-từng-byte — và đây là một giới hạn thật, nói thẳng chứ không giấu.
+
+    ⭐ VÌ SAO KHÁC `config.toml`. TOML của khách có **chú thích** và **thứ tự
+       khoá** mà một vòng parse-rồi-ghi-lại sẽ xoá sạch — nên ở đó ta làm **phẫu
+       thuật văn bản** trên một khối có dấu mốc, và giữ được từng byte.
+
+       JSON **không có chú thích**. Ta phải parse để biết khoá nào của khách,
+       khoá nào của ta — không có cách nào khác làm đúng việc *"trả về giá trị
+       cũ"*. Cái giá là tệp được định dạng lại (thụt lề, dòng cuối).
+
+    ⇒ Lời hứa ở đây là: **không mất dữ liệu, và không đổi CRLF ↔ LF.** Đừng viết
+      test đòi bằng-từng-byte cho JSON rồi nới lỏng code để nó xanh — như vậy là
+      hứa một điều ta không giữ được.
+    """
+    monkeypatch.setattr(cc, "_setx", lambda *a: True)
+    monkeypatch.setattr(cc, "_xoa_env", lambda *a: True)
+    sj = tmp_path / ".claude" / "settings.json"
+    sj.parent.mkdir(parents=True)
+    goc_doi_tuong = {"env": {"CUA_KHACH": "x"}, "permissions": {"allow": ["Read"]}}
+    sj.write_bytes((json.dumps(goc_doi_tuong, indent=2) + "\n")
+                   .replace("\n", "\r\n").encode())
+
+    tt = {}
+    cc.cam_claude("https://app.lttstudios.com", tt, toan_cuc=True)
+    b = sj.read_bytes()
+    assert b"\r\n" in b, "cam da lam mat CRLF cua settings.json"
+    assert b"\n" not in b.replace(b"\r\n", b""), "tron lan CRLF va LF"
+
+    cc.go_claude(tt)
+    sau = sj.read_bytes()
+    assert b"\r\n" in sau and b"\n" not in sau.replace(b"\r\n", b""), (
+        "go ra da doi kieu xuong dong cua settings.json")
+    assert json.loads(sau.decode()) == goc_doi_tuong, (
+        "noi dung khong tro ve nhu cu")
+
+
+def test_go_XOA_CA_khoa_cua_Codex(cc, monkeypatch):
+    """🔴 Lỗi tiền: `go` để lại **một khoá API còn sống** trong môi trường.
+
+    `LTT_API_KEY` bị bỏ sót vì nó "thuộc về Codex" còn hàm dọn tên là
+    `go_claude`. Công cụ vẫn in "da go" và mọi dòng đều `[OK]`.
+
+    ⚠️ Các test khác vá `_xoa_env` thành hàm giả trả `True` — tức chúng đo *ta
+       có gọi hàm không*, chứ không đo *biến nào được gọi*. Test này ghi lại
+       **tên** từng biến đã yêu cầu xoá.
+    """
+    da_xoa = []
+    monkeypatch.setattr(cc, "_xoa_env", lambda ten: da_xoa.append(ten) or True)
+    cc.go_claude({})
+    assert cc.ENV_KHOA_CODEX in da_xoa, (
+        f"`go` khong xoa {cc.ENV_KHOA_CODEX} - mot khoa API tieu duoc tien nam "
+        f"lai trong moi truong cua khach. Da xoa: {da_xoa}")
+    assert cc.ENV_KHOA_CLAUDE in da_xoa
+
+
+def test_tep_co_XUONG_DONG_LAN_LON_van_tra_ve_bang_tung_byte(cc, tmp_path):
+    """🔴 Ca đã lọt qua **hai** lần sửa trước, và chỉ VM thật bắt được.
+
+    Tệp thật trên máy khách không nhất quán: nội dung LF (từ một here-string
+    hoặc một tệp chép từ Linux) nhưng dòng cuối CRLF (do `Set-Content` thêm).
+
+    Bản sửa thứ nhất hỏi *"tệp này có CRLF không?"* — thấy **một** CRLF ở cuối
+    là ép **cả tệp** thành CRLF: 147 byte phình thành 154.
+
+    ⭐ Cách duy nhất đúng là **không hỏi câu đó**: đọc thô, mổ đúng khối, ghi thô.
+       Phần ngoài khối không bị đụng tới thì không có gì để hỏng — kể cả khi nó
+       lẫn lộn, kể cả khi nó kỳ quặc.
+    """
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    # LF ben trong, CRLF o dong cuoi - dung hinh dang tep tren VM105.
+    cfg.write_bytes(b'# cua toi\nmodel = "x"\n\n# het\r\n')
+    goc = cfg.read_bytes()
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == goc, (
+        f"tep xuong dong lan lon khong tro ve nguyen trang.\n"
+        f"goc  = {goc!r}\nsau  = {cfg.read_bytes()!r}")
+
+
+def test_khong_cat_dong_trang_cuoi_cua_khach(cc, tmp_path):
+    """`go` chỉ được cắt phần **ta thêm**, không cắt dòng trắng của khách."""
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_bytes(b'model = "x"\n\n\n')      # ba xuong dong, co chu y
+    goc = cfg.read_bytes()
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == goc
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_284_gui_cam_cli.py
@@ -228185,6 +228633,207 @@ def test_bat_thuan_ascii_khong_BOM():
     assert b[:3] != b"\xef\xbb\xbf"
     xau = [(i, hex(c)) for i, c in enumerate(b) if c > 127]
     assert not xau, f"ky tu ngoai ASCII trong .bat: {xau[:3]}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_285_vps_dinh_danh.py
+SHA256=844f40ce21b6ba452f8a6a1c1ba55a218753c4ac78dab4102b8fe2eb39c54a25 BYTES=7928 LINES=195
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H39 — danh tính phần cứng của máy khách: khác nhau, và KHÔNG đổi.
+
+Hai tính chất ở đây kéo về hai phía ngược nhau, và cả hai đều là lỗi thật nếu
+mất:
+
+* **khác nhau giữa các máy** — máy trùng danh tính thì bản sao lưu, giấy phép và
+  mọi thứ nhận diện theo phần cứng lẫn lộn giữa hai khách, và một máy bị chặn thì
+  máy kia chịu chung mà không tự gỡ được;
+* **không đổi qua các lần chạy lại** — job tạo máy chạy lại được; MAC đổi giữa
+  chừng thì Windows đã cài xong thấy card "mới", đặt hồ sơ mạng về *Public*, và
+  tường lửa chặn RDP. Khách mất đường vào máy của chính họ.
+
+Test ở đây kiểm cả hai, vì sửa một tính chất rất dễ làm hỏng tính chất kia.
+"""
+from __future__ import annotations
+
+import re
+import uuid as _uuid
+
+import pytest
+
+from apps.vps.services import dinh_danh, mang
+from apps.vps.tables import VpsGateway
+
+MAU = [f"550e8400-e29b-41d4-a716-{i:012d}" for i in range(500)]
+
+
+# ── 1. Khác nhau ────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("lay,ten", [
+    (dinh_danh.mac, "MAC"),
+    (dinh_danh.uuid_smbios, "UUID"),
+    (dinh_danh.so_hieu_dia, "so hieu dia"),
+    (dinh_danh.so_hieu_may, "so hieu may"),
+])
+def test_500_may_khong_trung_nhau(lay, ten):
+    gia_tri = [lay(x) for x in MAU]
+    assert len(set(gia_tri)) == len(MAU), f"{ten} bi trung"
+
+
+def test_bon_muc_doc_lap_nhau():
+    """Mỗi mục băm từ một chuỗi riêng. Nếu chúng dùng chung một nguồn byte thì
+    đổi cách sinh một mục sẽ lặng lẽ kéo mục khác đổi theo."""
+    m = MAU[0]
+    b = {dinh_danh.mac(m), dinh_danh.uuid_smbios(m),
+         dinh_danh.so_hieu_dia(m), dinh_danh.so_hieu_may(m)}
+    assert len(b) == 4
+
+
+# ── 2. Không đổi ────────────────────────────────────────────────────────────
+
+def test_goi_lai_cho_ket_qua_Y_HET():
+    """Đây là tính chất khiến ta SUY RA thay vì bốc ngẫu nhiên."""
+    for _ in range(3):
+        assert dinh_danh.danh_tinh(MAU[7]) == dinh_danh.danh_tinh(MAU[7])
+
+
+def test_khong_dung_ngau_nhien_that(monkeypatch):
+    """Chốt cứng: nếu ai đó thay bằng `secrets`/`random` thì test này đỏ."""
+    import random
+    import secrets
+
+    def cam(*a, **kw):
+        raise AssertionError("danh tinh khong duoc dung nguon ngau nhien")
+
+    for mod, ten in ((random, "randbytes"), (random, "random"),
+                     (secrets, "token_bytes"), (secrets, "token_hex")):
+        if hasattr(mod, ten):
+            monkeypatch.setattr(mod, ten, cam)
+    dinh_danh.danh_tinh(MAU[3])
+
+
+# ── 3. Đúng khuôn để Proxmox và máy khách nhận ──────────────────────────────
+
+def test_mac_dung_khuon_va_giu_OUI_proxmox():
+    """Giữ OUI của Proxmox là **cố ý**: máy này là máy ảo, ta không giả nó thành
+    máy của một hãng phần cứng nào."""
+    for x in MAU[:50]:
+        m = dinh_danh.mac(x)
+        assert re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", m), m
+        assert m.startswith(dinh_danh.OUI + ":")
+
+
+def test_mac_la_unicast_khong_phai_multicast():
+    """Bit thấp nhất của octet đầu bật = địa chỉ multicast; card mang địa chỉ đó
+    thì gói tin không tới nơi. `BC` chẵn nên an toàn — nhưng chốt lại phòng khi
+    ai đó đổi `OUI`."""
+    dau = int(dinh_danh.OUI.split(":")[0], 16)
+    assert dau & 1 == 0
+
+
+def test_uuid_hop_le_va_dung_phien_ban_4():
+    for x in MAU[:50]:
+        u = _uuid.UUID(dinh_danh.uuid_smbios(x))
+        assert u.version == 4 and u.variant == _uuid.RFC_4122
+
+
+def test_so_hieu_dia_khong_vuot_gioi_han_ATA():
+    """Dài quá 20 ký tự bị cắt cụt LẶNG LẼ — và cắt cụt là con đường về lại chỗ
+    trùng nhau."""
+    for x in MAU[:50]:
+        s = dinh_danh.so_hieu_dia(x)
+        assert 0 < len(s) <= 20 and re.fullmatch(r"[0-9A-Z]+", s), s
+
+
+def test_smbios1_dat_uuid_va_serial_nhung_KHONG_gia_nha_san_xuat():
+    s = dinh_danh.smbios1(MAU[0])
+    assert s.startswith("uuid=") and "serial=" in s and s.endswith("base64=1")
+    for cam in ("manufacturer=", "product=", "family=", "sku="):
+        assert cam not in s, f"khong gia {cam}"
+
+
+def test_instance_id_rong_thi_NEM_chu_khong_tra_bua():
+    """Trả về một danh tính mặc định thì mọi máy lỗi sẽ dùng CHUNG danh tính đó."""
+    for xau in ("", "   ", None):
+        with pytest.raises(ValueError):
+            dinh_danh.danh_tinh(xau)
+
+
+# ── 4. MAC phải thực sự tới được `net0` ─────────────────────────────────────
+
+def _gw():
+    return VpsGateway(ten="gw", bridge="vmbr1", subnet_cidr="10.51.0.0/24",
+                      subnet_gw="10.51.0.1", dns="1.1.1.1", mtu=1420)
+
+
+def test_mac_duoc_ghim_vao_net0():
+    m = mang.mang_cho_may(_gw(), "10.51.0.50")
+    net = mang.cau_hinh_qemu(m, co_cloud_init=False,
+                             mac="bc:24:11:aa:bb:cc")["net0"]
+    assert net.startswith(f"{mang.MO_HINH_CARD}=BC:24:11:AA:BB:CC,")
+    assert "bridge=vmbr1" in net and "mtu=1420" in net
+
+
+def test_khong_truyen_mac_thi_van_chay_duoc():
+    """Đường nội bộ (Linux, nhân bản) không cần MAC ghim."""
+    m = mang.mang_cho_may(_gw(), "10.51.0.50")
+    assert mang.cau_hinh_qemu(m, co_cloud_init=False)["net0"].startswith(
+        f"{mang.MO_HINH_CARD},")
+
+
+def test_job_tao_may_THAT_SU_ghim_ba_thu_vao_cau_hinh():
+    """Test đơn vị ở trên không chứng minh job có GỌI chúng không. Đây mới là
+    chỗ từng để lọt: hàm đúng, nhưng không ai gọi."""
+    from apps.vps import cost, jobs, os_images
+
+    class _May:
+        id = "550e8400-e29b-41d4-a716-000000000042"
+        plan_id = "vps-nho"
+        dia_them_gb = 0
+
+    may = _May()
+    plan = cost.lay_plan("vps-nho")
+    img = os_images.lay_os("winsrv2022-core")
+    ch = jobs._cau_hinh_may_trong(may, plan, img, "vmdata:iso/x.iso")
+
+    assert dinh_danh.so_hieu_dia(may.id) in ch["sata0"]
+    assert ch["smbios1"] == dinh_danh.smbios1(may.id)
+    assert dinh_danh.uuid_smbios(may.id) in ch["smbios1"]
+
+
+# ── 5. Mô hình template đã bỏ — và không được lặng lẽ quay lại ──────────────
+
+def test_khong_con_ham_template_vmid():
+    assert not hasattr(os_module(), "template_vmid"), (
+        "mo hinh template da bo 2026-08-24")
+
+
+def os_module():
+    from apps.vps import os_images
+    return os_images
+
+
+def test_duong_template_TU_CHOI_moi_ban_ban_cho_khach(monkeypatch):
+    """Hàng rào thật, không phải quy ước: đặt biến môi trường template cho một
+    bản khách thấy thì hàm phải trả 0.
+
+    Không có hàng rào này thì một biến gõ nhầm đưa mọi khách về chung một mật
+    khẩu của template — và không lỗi nào được ghi ra."""
+    from apps.vps import jobs, os_images
+
+    for img in os_images.OS_IMAGES:
+        khoa = "LTT_VPS_TEMPLATE_" + img.id.upper().replace("-", "_")
+        monkeypatch.setenv(khoa, "9100")
+        got = jobs._template_noi_bo(img.id)
+        if img.khach_thay:
+            assert got == 0, f"{img.id} ban cho khach ma van nhan template"
+        else:
+            assert got == 9100, f"{img.id} noi bo van phai dung duoc"
+
+
+def test_os_id_la_ra_thi_khong_nhan_template(monkeypatch):
+    from apps.vps import jobs
+    monkeypatch.setenv("LTT_VPS_TEMPLATE_KHONG_CO", "9100")
+    assert jobs._template_noi_bo("khong-co") == 0
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -246309,7 +246958,7 @@ endlocal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=b800369c3928b334bd9d54a0a1d7bfd83c116c019660693f1186be749e102833 BYTES=18893 LINES=484
+SHA256=dd965ada8f344a7d33c7d1d2acf9045e13a95c6c73c5510a2b912e60a899b857 BYTES=24370 LINES=585
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -246436,25 +247085,93 @@ def _sao_luu(tep: pathlib.Path) -> pathlib.Path | None:
     return bs
 
 
-def _chen_khoi(van: str, noi_dung: str) -> str:
-    """Chen (hoac thay) khoi co dau moc, giu nguyen phan ngoai khoi."""
-    khoi = MOC_MO + "\n" + noi_dung.rstrip("\n") + "\n" + MOC_DONG
+def _doc_giu_dong(tep: pathlib.Path) -> tuple:
+    """Đọc tệp **thô**, trả về `(văn_bản_nguyên_xi, kiểu_xuống_dòng_để_ta_dùng)`.
+
+    🔴 HAI LỖI LIÊN TIẾP Ở ĐÂY, VÀ CẢ HAI ĐỀU CHỈ VM THẬT TÌM RA (P4/T8, 24/08).
+
+    **① Bản đầu ghi lại bằng `newline="\\n"`.** `Set-Content` của PowerShell —
+       thứ mà mọi script cài đặt trên Windows dùng — ghi **CRLF**. Nên ta lặng
+       lẽ đổi **cả tệp** từ CRLF sang LF; `go` không trả về bằng từng byte nữa,
+       và khách mở `git diff` lên thấy **toàn bộ tệp** thay đổi.
+
+    **② Bản sửa thứ nhất chuẩn hoá theo "tệp có CRLF không".** Sai nốt, vì tệp
+       thật **lẫn lộn**: nội dung LF, dòng cuối CRLF (đúng tệp trên VM). Thấy một
+       CRLF là ép cả tệp thành CRLF ⇒ 147 byte phình thành **154**.
+
+    ⭐ NÊN CÁCH ĐÚNG LÀ **KHÔNG CHUẨN HOÁ GÌ CẢ.** Đọc thô, mổ đúng khối có dấu
+       mốc, ghi thô. Phần ngoài khối không bị đụng tới thì không có gì để hỏng —
+       kể cả khi nó lẫn lộn, kể cả khi nó kỳ quặc.
+
+       Kiểu xuống dòng trả về chỉ để dựng **khối của ta**, không để áp lên tệp.
+
+    ⚠️ Test đơn vị không thấy cả hai lỗi, vì chúng ghi fixture bằng
+       `newline="\\n"` — tức đo một thế giới chỉ có LF và luôn nhất quán.
+    """
+    van = tep.read_bytes().decode("utf-8")
+    crlf = van.count("\r\n")
+    lf = van.count("\n") - crlf
+    return van, ("\r\n" if crlf > lf else "\n")
+
+
+def _ghi_giu_dong(tep: pathlib.Path, van: str, _dong_moi=None) -> None:
+    """Ghi **nguyên xi**. Không chuẩn hoá — xem `_doc_giu_dong`."""
+    tep.write_bytes(van.encode("utf-8"))
+
+
+def _json_theo_dong(d: dict, nl: str) -> str:
+    """Sinh JSON với **đúng kiểu xuống dòng** của tệp gốc.
+
+    ⭐ Khác `config.toml` ở một điểm quyết định: TOML ta chỉ **mổ một khối** nên
+       phần ngoài giữ nguyên từng byte và không cần biết gì về xuống dòng. JSON
+       thì ta **sinh lại toàn bộ nội dung**, nên xuống dòng là thứ ta phải tự
+       đặt lại cho đúng — nếu không, mọi `settings.json` CRLF sẽ lặng lẽ thành LF.
+    """
+    van = json.dumps(d, ensure_ascii=False, indent=2) + chr(10)
+    return van.replace(chr(10), nl) if nl != chr(10) else van
+
+
+def _chen_khoi(van: str, noi_dung: str, nl: str = "\n") -> str:
+    """Chèn (hoặc thay) khối có dấu mốc. **Phần ngoài khối không bị đụng tới.**
+
+    `nl` là kiểu xuống dòng dùng **bên trong khối của ta** — lấy từ tệp để khối
+    trông hoà vào phần còn lại, chứ **không** áp lên phần của khách.
+    """
+    than = nl.join(noi_dung.replace("\r\n", "\n").rstrip("\n").split("\n"))
+    khoi = MOC_MO + nl + than + nl + MOC_DONG
     if MOC_MO in van and MOC_DONG in van:
         dau = van.index(MOC_MO)
         cuoi = van.index(MOC_DONG) + len(MOC_DONG)
         return van[:dau] + khoi + van[cuoi:]
-    if van and not van.endswith("\n"):
-        van += "\n"
-    return van + ("\n" if van else "") + khoi + "\n"
+    # Nối vào cuối, cách một dòng trắng. Nếu tệp chưa kết thúc bằng xuống dòng
+    # thì thêm một cái — nhưng KHÔNG đụng gì tới phần đã có.
+    duoi = "" if (not van or van.endswith(("\n", "\r"))) else nl
+    return van + duoi + nl + khoi + nl
 
 
 def _go_khoi(van: str) -> tuple[str, bool]:
+    """Cắt đúng khối của ta, kể cả các dòng trắng ta đã thêm quanh nó.
+
+    ⛔ **Không** `rstrip`/`lstrip` cả tệp. Bản đầu làm vậy và nó cắt luôn dòng
+       trắng **của khách** ở cuối tệp — một thay đổi khách không yêu cầu, và
+       không có gì báo.
+    """
     if MOC_MO not in van or MOC_DONG not in van:
         return van, False
     dau = van.index(MOC_MO)
     cuoi = van.index(MOC_DONG) + len(MOC_DONG)
-    ra = van[:dau].rstrip("\n") + "\n" + van[cuoi:].lstrip("\n")
-    return ra.rstrip("\n") + "\n" if ra.strip() else "", True
+    truoc, sau = van[:dau], van[cuoi:]
+    # Gỡ đúng phần ngăn cách mà `_chen_khoi` đã thêm: một xuống dòng ngay sau
+    # khối, và một dòng trắng ngay trước nó.
+    for nl in ("\r\n", "\n"):
+        if sau.startswith(nl):
+            sau = sau[len(nl):]
+            break
+    for nl in ("\r\n", "\n"):
+        if truoc.endswith(nl + nl):
+            truoc = truoc[:-len(nl)]
+            break
+    return truoc + sau, True
 
 
 def _setx(ten: str, gt: str) -> bool:
@@ -246522,9 +247239,8 @@ def cam_codex(goc: str, tt: dict) -> list:
 
     cfg = thu_muc / "config.toml"
     _sao_luu(cfg)
-    van = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
-    cfg.write_text(_chen_khoi(van, _codex_config(goc)), encoding="utf-8",
-                   newline="\n")
+    van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
+    _ghi_giu_dong(cfg, _chen_khoi(van, _codex_config(goc), crlf))
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
 
     prof = thu_muc / "ltt.config.toml"
@@ -246539,9 +247255,12 @@ def go_codex(tt: dict) -> list:
     ra = []
     cfg = NHA / ".codex" / "config.toml"
     if cfg.exists():
-        van, thay = _go_khoi(cfg.read_text(encoding="utf-8"))
+        # Kiểu xuống dòng lấy từ **chính tệp đang có**, không lấy từ tệp trạng
+        # thái: tệp trạng thái có thể mất, còn tệp thì luôn ở đó.
+        van_goc, crlf = _doc_giu_dong(cfg)
+        van, thay = _go_khoi(van_goc)
         if thay:
-            cfg.write_text(van, encoding="utf-8", newline="\n")
+            _ghi_giu_dong(cfg, van, crlf)
             ra.append(f"  [OK] da go khoi cua ta khoi {cfg}")
         else:
             ra.append(f"  [--] {cfg} khong co khoi cua ta")
@@ -246577,8 +247296,13 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     tep = NHA / ".claude" / "settings.json"
     tep.parent.mkdir(parents=True, exist_ok=True)
     _sao_luu(tep)
+    crlf = chr(10)          # tep chua co -> mac dinh LF
     try:
-        d = json.loads(tep.read_text(encoding="utf-8")) if tep.exists() else {}
+        if tep.exists():
+            van_s, crlf = _doc_giu_dong(tep)
+            d = json.loads(van_s)
+        else:
+            d = {}
     except ValueError:
         print(f"  [!!] {tep} khong phai JSON hop le - KHONG dung toi.")
         return ra
@@ -246589,8 +247313,7 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
         if ten not in ghi_nho:
             ghi_nho[ten] = env.get(ten)      # None = khoa nay von KHONG co
         env[ten] = gt
-    tep.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n",
-                   encoding="utf-8", newline="\n")
+    _ghi_giu_dong(tep, _json_theo_dong(d, crlf))
     ra.append(f"  [OK] {tep}")
     ra.append("  [!!] settings.json la TOAN CUC: moi phien Claude Code tren may")
     ra.append("       nay se di qua LTT Studios cho toi khi ban chay `go`.")
@@ -246599,7 +247322,17 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
 
 def go_claude(tt: dict) -> list:
     ra = []
-    for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE,):
+    # 🔴 `ENV_KHOA_CODEX` PHẢI CÓ TRONG DANH SÁCH NÀY.
+    #
+    #    Ban đầu nó bị bỏ sót vì nó "thuộc về Codex" còn hàm này tên là
+    #    `go_claude`. Hậu quả: `go` để lại một **khoá API còn sống** trong
+    #    môi trường của khách, trong khi vẫn in ra "da go" và mọi dòng đều
+    #    `[OK]`. Không có triệu chứng nào cả.
+    #
+    # ⚠️ Không test đơn vị nào thấy, vì chúng đều vá `_xoa_env` thành một hàm
+    #    giả trả `True` — tức chúng đo *ta có gọi hàm không*, chứ không đo
+    #    *biến có biến mất không*. Phép thử T8 trên VM thật bắt được ngay.
+    for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE, ENV_KHOA_CODEX):
         ra.append(f"  [{'OK' if _xoa_env(ten) else '--'}] bo bien moi truong {ten}")
 
     tep = NHA / ".claude" / "settings.json"
@@ -246607,7 +247340,8 @@ def go_claude(tt: dict) -> list:
     if not tep.exists() or not ghi_nho:
         return ra
     try:
-        d = json.loads(tep.read_text(encoding="utf-8"))
+        van_s, crlf_g = _doc_giu_dong(tep)
+        d = json.loads(van_s)
     except ValueError:
         ra.append(f"  [!!] {tep} khong doc duoc - khong dung toi")
         return ra
@@ -246619,13 +247353,23 @@ def go_claude(tt: dict) -> list:
             env[ten] = cu                    # von co -> tra ve gia tri cu
     if not env:
         d.pop("env", None)
-    tep.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n",
-                   encoding="utf-8", newline="\n")
+    _ghi_giu_dong(tep, _json_theo_dong(d, crlf_g))
     ra.append(f"  [OK] da tra {tep} ve nhu truoc")
     return ra
 
 
 # ── Lenh ────────────────────────────────────────────────────────────────────
+
+def _cach_goi(lenh: str) -> str:
+    """Câu lệnh **đúng với cách khách đang chạy công cụ**.
+
+    Khách cài `.exe` không có `tools\cam_cli.py`; khách chạy mã nguồn thì không
+    có `.exe` trong PATH. In sai câu lệnh là gửi họ đi tìm một thứ không tồn tại.
+    """
+    if getattr(sys, "frozen", False) or getattr(sys, "_MEIPASS", None)             or "__compiled__" in globals():
+        return f"{pathlib.Path(sys.executable).name} {lenh}"
+    return f"python tools\cam_cli.py {lenh}"
+
 
 def lenh_cam(a) -> int:
     khoa = (a.khoa or os.environ.get(ENV_KHOA_CODEX) or "").strip()
@@ -246661,8 +247405,14 @@ def lenh_cam(a) -> int:
     print("   tuong cong cu nay hong.")
     print(f"\nCodex:       codex --profile ltt")
     print(f"Claude Code: claude   (model {MODEL})")
-    print("\nKiem lai:    python tools\\cam_cli.py kiem")
-    print("Go ra:       python tools\\cam_cli.py go")
+    # ⚠️ Lời nhắc phải **đúng với cách khách đang chạy**. Bản đóng gói in ra
+    #    "python tools\cam_cli.py kiem" là chỉ vào một tệp khách KHÔNG CÓ — họ
+    #    cài `.exe`, không có mã nguồn. Một hướng dẫn sai thì tệ hơn không có,
+    #    vì khách sẽ đi tìm thứ không tồn tại rồi tưởng mình cài hỏng.
+    #    Phát hiện 24/08 khi chạy bản đã cài trên VM (P4/T5).
+    print("")
+    for nhan, lenh in (("Kiem lai", "kiem"), ("Go ra", "go")):
+        print(f"{nhan + ':':13}{_cach_goi(lenh)}")
     return 0
 
 
@@ -246799,7 +247549,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli_gui.py
-SHA256=10e26c3ff142a1862b67bbe91e015a1059db54871dab902eaa764c3768aebe19 BYTES=8537 LINES=206
+SHA256=50e03c9f82f2d8a1ee37526bb7ac4bbd93dd2915fa3d8395ef7bcf0453010df6 BYTES=9484 LINES=224
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli_gui.py - vo GUI cho `cam_cli`. (C15-GUI / U2)
 
@@ -246973,9 +247723,27 @@ def tu_kiem() -> int:
     return 0
 
 
+#: Lenh dong lenh ban dong goi nhan duoc, chuyen thang xuong loi.
+#:
+#: ⭐ VÌ SAO BẢN `.exe` PHẢI CHẠY ĐƯỢC TỪ DÒNG LỆNH, không chỉ mở cửa sổ.
+#:
+#:    ① **Thử được bản thật.** Không có đường này thì phép nghiệm thu chỉ chạy
+#:       được trên mã nguồn, còn thứ khách thật sự cài thì không ai đo. Đó đúng
+#:       là khoảng cách đã sinh ra mọi lỗi khó nhất trong dự án này.
+#:    ② **Khách triển khai hàng loạt.** Một công ty cắm cho 20 máy không ngồi
+#:       bấm 20 lần; họ chạy một dòng lệnh.
+#:
+#: ⛔ Nhưng **không** phát minh giao diện dòng lệnh thứ hai: chuyển thẳng cho
+#:    `cam_cli.main()`, để chỉ có **một** định nghĩa về các lệnh.
+LENH_DONG_LENH = ("xem", "cam", "go", "kiem")
+
+
 def main(argv=None) -> int:
-    if "--tu-kiem" in (argv if argv is not None else sys.argv[1:]):
+    tham = list(argv if argv is not None else sys.argv[1:])
+    if "--tu-kiem" in tham:
         return tu_kiem()
+    if tham and tham[0] in LENH_DONG_LENH:
+        return _nap_loi().main(tham)
     try:
         import webview
     except ImportError:
@@ -258725,7 +259493,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/vps_doctor.py
-SHA256=7ae202708b114121581b5dc19470a0435bd108f5758c893344091ad64b8a4b48 BYTES=9193 LINES=216
+SHA256=54949a88d2d49faa6070f958c8a3f7f87fdf6dc48916db2e0e706e2c0504a71d BYTES=8439 LINES=201
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Kiem duong noi toi Proxmox va in ra nhung so ma H39 dang can (P0a).
 
@@ -258898,43 +259666,28 @@ def main() -> int:
                     break
             print(f"  Neu ban toan {pid:<8} -> {n} may")
 
-    # ── Doi chieu san dia KHAI BAO voi dia THAT cua template ────────────────
+    # ── Dia cai dat: da khai chua ───────────────────────────────────────────
     #
-    # Proxmox chi noi dia ra, KHONG BAO GIO thu vao. Nen dia cua template la san
-    # cung: khai thap hon no thi khach dat mot goi nho VAN QUA CUA KIEM, roi
-    # chiem cho nhieu hon phan da tra tien — va `capacity.py` dem theo so cua
-    # goi nen suc chua tinh sai luon. Doi chieu o day de lech bi bat, thay vi de
-    # khach phat hien.
+    # Fail-closed: chua khai thi job tu choi tao may. Kiem o day de biet TRUOC
+    # khi mot khach bam mua, thay vi de ho gap loi.
     print()
-    print("== San dia: khai bao vs template that ==")
+    print("== Dia cai dat cua tung he dieu hanh ==")
     from apps.vps import os_images
     for img in os_images.OS_IMAGES:
-        vmid = os_images.template_vmid(img.id)
-        if not vmid:
-            print(f"  {img.id:<18} chua khai {os_images.khoa_moi_truong(img.id)}")
+        if not img.khach_thay:
             continue
-        try:
-            cfg = client._goi("GET", f"/nodes/{client.config.node}/qemu/{vmid}/config") or {}
-        except Exception as exc:                      # noqa: BLE001
-            print(f"  {img.id:<18} khong doc duoc template {vmid}: {str(exc)[:50]}")
+        volid = os_images.dia_cai_dat(img.id)
+        if not volid:
+            print(f"  {img.id:<18} CHUA KHAI {os_images.khoa_moi_truong(img.id)}")
             loi += 1
             continue
-        dia_that = 0
-        for k, v in cfg.items():
-            if not k.startswith(("sata", "scsi", "virtio", "ide")):
-                continue
-            if "media=cdrom" in str(v) or "size=" not in str(v):
-                continue
-            co = str(v).split("size=")[1].split(",")[0]
-            if co.endswith("G"):
-                dia_that = max(dia_that, int(float(co[:-1])))
-            elif co.endswith("M"):
-                dia_that = max(dia_that, 1)
-        dau = "OK " if img.disk_gb_toi_thieu >= dia_that else "LECH"
-        if dau == "LECH":
+        co = any(str(x.get("volid", "")) == volid
+                 for x in (client._goi(
+                     "GET", f"/nodes/{client.config.node}/storage/"
+                            f"{volid.split(':')[0]}/content") or []))
+        print(f"  {img.id:<18} {volid}  {'OK' if co else 'KHONG THAY TREN NODE'}")
+        if not co:
             loi += 1
-        print(f"  {img.id:<18} khai {img.disk_gb_toi_thieu:>3} GB · "
-              f"template {vmid} that {dia_that:>3} GB  {dau}")
 
     print()
     print("RESULT:", "PASS" if loi == 0 else f"CO {loi} MUC CAN XEM")

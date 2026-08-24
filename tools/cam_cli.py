@@ -123,25 +123,93 @@ def _sao_luu(tep: pathlib.Path) -> pathlib.Path | None:
     return bs
 
 
-def _chen_khoi(van: str, noi_dung: str) -> str:
-    """Chen (hoac thay) khoi co dau moc, giu nguyen phan ngoai khoi."""
-    khoi = MOC_MO + "\n" + noi_dung.rstrip("\n") + "\n" + MOC_DONG
+def _doc_giu_dong(tep: pathlib.Path) -> tuple:
+    """Đọc tệp **thô**, trả về `(văn_bản_nguyên_xi, kiểu_xuống_dòng_để_ta_dùng)`.
+
+    🔴 HAI LỖI LIÊN TIẾP Ở ĐÂY, VÀ CẢ HAI ĐỀU CHỈ VM THẬT TÌM RA (P4/T8, 24/08).
+
+    **① Bản đầu ghi lại bằng `newline="\\n"`.** `Set-Content` của PowerShell —
+       thứ mà mọi script cài đặt trên Windows dùng — ghi **CRLF**. Nên ta lặng
+       lẽ đổi **cả tệp** từ CRLF sang LF; `go` không trả về bằng từng byte nữa,
+       và khách mở `git diff` lên thấy **toàn bộ tệp** thay đổi.
+
+    **② Bản sửa thứ nhất chuẩn hoá theo "tệp có CRLF không".** Sai nốt, vì tệp
+       thật **lẫn lộn**: nội dung LF, dòng cuối CRLF (đúng tệp trên VM). Thấy một
+       CRLF là ép cả tệp thành CRLF ⇒ 147 byte phình thành **154**.
+
+    ⭐ NÊN CÁCH ĐÚNG LÀ **KHÔNG CHUẨN HOÁ GÌ CẢ.** Đọc thô, mổ đúng khối có dấu
+       mốc, ghi thô. Phần ngoài khối không bị đụng tới thì không có gì để hỏng —
+       kể cả khi nó lẫn lộn, kể cả khi nó kỳ quặc.
+
+       Kiểu xuống dòng trả về chỉ để dựng **khối của ta**, không để áp lên tệp.
+
+    ⚠️ Test đơn vị không thấy cả hai lỗi, vì chúng ghi fixture bằng
+       `newline="\\n"` — tức đo một thế giới chỉ có LF và luôn nhất quán.
+    """
+    van = tep.read_bytes().decode("utf-8")
+    crlf = van.count("\r\n")
+    lf = van.count("\n") - crlf
+    return van, ("\r\n" if crlf > lf else "\n")
+
+
+def _ghi_giu_dong(tep: pathlib.Path, van: str, _dong_moi=None) -> None:
+    """Ghi **nguyên xi**. Không chuẩn hoá — xem `_doc_giu_dong`."""
+    tep.write_bytes(van.encode("utf-8"))
+
+
+def _json_theo_dong(d: dict, nl: str) -> str:
+    """Sinh JSON với **đúng kiểu xuống dòng** của tệp gốc.
+
+    ⭐ Khác `config.toml` ở một điểm quyết định: TOML ta chỉ **mổ một khối** nên
+       phần ngoài giữ nguyên từng byte và không cần biết gì về xuống dòng. JSON
+       thì ta **sinh lại toàn bộ nội dung**, nên xuống dòng là thứ ta phải tự
+       đặt lại cho đúng — nếu không, mọi `settings.json` CRLF sẽ lặng lẽ thành LF.
+    """
+    van = json.dumps(d, ensure_ascii=False, indent=2) + chr(10)
+    return van.replace(chr(10), nl) if nl != chr(10) else van
+
+
+def _chen_khoi(van: str, noi_dung: str, nl: str = "\n") -> str:
+    """Chèn (hoặc thay) khối có dấu mốc. **Phần ngoài khối không bị đụng tới.**
+
+    `nl` là kiểu xuống dòng dùng **bên trong khối của ta** — lấy từ tệp để khối
+    trông hoà vào phần còn lại, chứ **không** áp lên phần của khách.
+    """
+    than = nl.join(noi_dung.replace("\r\n", "\n").rstrip("\n").split("\n"))
+    khoi = MOC_MO + nl + than + nl + MOC_DONG
     if MOC_MO in van and MOC_DONG in van:
         dau = van.index(MOC_MO)
         cuoi = van.index(MOC_DONG) + len(MOC_DONG)
         return van[:dau] + khoi + van[cuoi:]
-    if van and not van.endswith("\n"):
-        van += "\n"
-    return van + ("\n" if van else "") + khoi + "\n"
+    # Nối vào cuối, cách một dòng trắng. Nếu tệp chưa kết thúc bằng xuống dòng
+    # thì thêm một cái — nhưng KHÔNG đụng gì tới phần đã có.
+    duoi = "" if (not van or van.endswith(("\n", "\r"))) else nl
+    return van + duoi + nl + khoi + nl
 
 
 def _go_khoi(van: str) -> tuple[str, bool]:
+    """Cắt đúng khối của ta, kể cả các dòng trắng ta đã thêm quanh nó.
+
+    ⛔ **Không** `rstrip`/`lstrip` cả tệp. Bản đầu làm vậy và nó cắt luôn dòng
+       trắng **của khách** ở cuối tệp — một thay đổi khách không yêu cầu, và
+       không có gì báo.
+    """
     if MOC_MO not in van or MOC_DONG not in van:
         return van, False
     dau = van.index(MOC_MO)
     cuoi = van.index(MOC_DONG) + len(MOC_DONG)
-    ra = van[:dau].rstrip("\n") + "\n" + van[cuoi:].lstrip("\n")
-    return ra.rstrip("\n") + "\n" if ra.strip() else "", True
+    truoc, sau = van[:dau], van[cuoi:]
+    # Gỡ đúng phần ngăn cách mà `_chen_khoi` đã thêm: một xuống dòng ngay sau
+    # khối, và một dòng trắng ngay trước nó.
+    for nl in ("\r\n", "\n"):
+        if sau.startswith(nl):
+            sau = sau[len(nl):]
+            break
+    for nl in ("\r\n", "\n"):
+        if truoc.endswith(nl + nl):
+            truoc = truoc[:-len(nl)]
+            break
+    return truoc + sau, True
 
 
 def _setx(ten: str, gt: str) -> bool:
@@ -209,9 +277,8 @@ def cam_codex(goc: str, tt: dict) -> list:
 
     cfg = thu_muc / "config.toml"
     _sao_luu(cfg)
-    van = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
-    cfg.write_text(_chen_khoi(van, _codex_config(goc)), encoding="utf-8",
-                   newline="\n")
+    van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
+    _ghi_giu_dong(cfg, _chen_khoi(van, _codex_config(goc), crlf))
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
 
     prof = thu_muc / "ltt.config.toml"
@@ -226,9 +293,12 @@ def go_codex(tt: dict) -> list:
     ra = []
     cfg = NHA / ".codex" / "config.toml"
     if cfg.exists():
-        van, thay = _go_khoi(cfg.read_text(encoding="utf-8"))
+        # Kiểu xuống dòng lấy từ **chính tệp đang có**, không lấy từ tệp trạng
+        # thái: tệp trạng thái có thể mất, còn tệp thì luôn ở đó.
+        van_goc, crlf = _doc_giu_dong(cfg)
+        van, thay = _go_khoi(van_goc)
         if thay:
-            cfg.write_text(van, encoding="utf-8", newline="\n")
+            _ghi_giu_dong(cfg, van, crlf)
             ra.append(f"  [OK] da go khoi cua ta khoi {cfg}")
         else:
             ra.append(f"  [--] {cfg} khong co khoi cua ta")
@@ -264,8 +334,13 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     tep = NHA / ".claude" / "settings.json"
     tep.parent.mkdir(parents=True, exist_ok=True)
     _sao_luu(tep)
+    crlf = chr(10)          # tep chua co -> mac dinh LF
     try:
-        d = json.loads(tep.read_text(encoding="utf-8")) if tep.exists() else {}
+        if tep.exists():
+            van_s, crlf = _doc_giu_dong(tep)
+            d = json.loads(van_s)
+        else:
+            d = {}
     except ValueError:
         print(f"  [!!] {tep} khong phai JSON hop le - KHONG dung toi.")
         return ra
@@ -276,8 +351,7 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
         if ten not in ghi_nho:
             ghi_nho[ten] = env.get(ten)      # None = khoa nay von KHONG co
         env[ten] = gt
-    tep.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n",
-                   encoding="utf-8", newline="\n")
+    _ghi_giu_dong(tep, _json_theo_dong(d, crlf))
     ra.append(f"  [OK] {tep}")
     ra.append("  [!!] settings.json la TOAN CUC: moi phien Claude Code tren may")
     ra.append("       nay se di qua LTT Studios cho toi khi ban chay `go`.")
@@ -286,7 +360,17 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
 
 def go_claude(tt: dict) -> list:
     ra = []
-    for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE,):
+    # 🔴 `ENV_KHOA_CODEX` PHẢI CÓ TRONG DANH SÁCH NÀY.
+    #
+    #    Ban đầu nó bị bỏ sót vì nó "thuộc về Codex" còn hàm này tên là
+    #    `go_claude`. Hậu quả: `go` để lại một **khoá API còn sống** trong
+    #    môi trường của khách, trong khi vẫn in ra "da go" và mọi dòng đều
+    #    `[OK]`. Không có triệu chứng nào cả.
+    #
+    # ⚠️ Không test đơn vị nào thấy, vì chúng đều vá `_xoa_env` thành một hàm
+    #    giả trả `True` — tức chúng đo *ta có gọi hàm không*, chứ không đo
+    #    *biến có biến mất không*. Phép thử T8 trên VM thật bắt được ngay.
+    for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE, ENV_KHOA_CODEX):
         ra.append(f"  [{'OK' if _xoa_env(ten) else '--'}] bo bien moi truong {ten}")
 
     tep = NHA / ".claude" / "settings.json"
@@ -294,7 +378,8 @@ def go_claude(tt: dict) -> list:
     if not tep.exists() or not ghi_nho:
         return ra
     try:
-        d = json.loads(tep.read_text(encoding="utf-8"))
+        van_s, crlf_g = _doc_giu_dong(tep)
+        d = json.loads(van_s)
     except ValueError:
         ra.append(f"  [!!] {tep} khong doc duoc - khong dung toi")
         return ra
@@ -306,13 +391,23 @@ def go_claude(tt: dict) -> list:
             env[ten] = cu                    # von co -> tra ve gia tri cu
     if not env:
         d.pop("env", None)
-    tep.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n",
-                   encoding="utf-8", newline="\n")
+    _ghi_giu_dong(tep, _json_theo_dong(d, crlf_g))
     ra.append(f"  [OK] da tra {tep} ve nhu truoc")
     return ra
 
 
 # ── Lenh ────────────────────────────────────────────────────────────────────
+
+def _cach_goi(lenh: str) -> str:
+    """Câu lệnh **đúng với cách khách đang chạy công cụ**.
+
+    Khách cài `.exe` không có `tools\cam_cli.py`; khách chạy mã nguồn thì không
+    có `.exe` trong PATH. In sai câu lệnh là gửi họ đi tìm một thứ không tồn tại.
+    """
+    if getattr(sys, "frozen", False) or getattr(sys, "_MEIPASS", None)             or "__compiled__" in globals():
+        return f"{pathlib.Path(sys.executable).name} {lenh}"
+    return f"python tools\cam_cli.py {lenh}"
+
 
 def lenh_cam(a) -> int:
     khoa = (a.khoa or os.environ.get(ENV_KHOA_CODEX) or "").strip()
@@ -348,8 +443,14 @@ def lenh_cam(a) -> int:
     print("   tuong cong cu nay hong.")
     print(f"\nCodex:       codex --profile ltt")
     print(f"Claude Code: claude   (model {MODEL})")
-    print("\nKiem lai:    python tools\\cam_cli.py kiem")
-    print("Go ra:       python tools\\cam_cli.py go")
+    # ⚠️ Lời nhắc phải **đúng với cách khách đang chạy**. Bản đóng gói in ra
+    #    "python tools\cam_cli.py kiem" là chỉ vào một tệp khách KHÔNG CÓ — họ
+    #    cài `.exe`, không có mã nguồn. Một hướng dẫn sai thì tệ hơn không có,
+    #    vì khách sẽ đi tìm thứ không tồn tại rồi tưởng mình cài hỏng.
+    #    Phát hiện 24/08 khi chạy bản đã cài trên VM (P4/T5).
+    print("")
+    for nhan, lenh in (("Kiem lai", "kiem"), ("Go ra", "go")):
+        print(f"{nhan + ':':13}{_cach_goi(lenh)}")
     return 0
 
 

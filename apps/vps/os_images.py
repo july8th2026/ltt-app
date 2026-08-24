@@ -56,11 +56,11 @@ class OsImage:
     #: Cổng khách thường dùng để vào — chỉ để **hiển thị hướng dẫn**, không còn
     #: dùng để cấu hình gì. NAT 1:1 mở toàn bộ cổng của IP riêng cho máy đó.
     cong_quen: int
+    #: Hiện trong catalog bán không. False = bản kỹ thuật, khách không thấy.
+    khach_thay: bool
     #: Máy cài bản này có cần UEFI + vTPM + Secure Boot không. Windows 11 thì có,
     #: và thiếu nó thì trình cài đặt dừng ở "This PC can't run Windows 11".
     can_uefi_tpm: bool = False
-    #: Hiện trong catalog bán không. False = template kỹ thuật, khách không thấy.
-    khach_thay: bool
     ghi_chu: str = ""
 
 
@@ -69,10 +69,11 @@ OS_IMAGES: tuple[OsImage, ...] = (
         id="debian-12", ten="Debian 12 (noi bo)", ho="linux",
         ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
         khach_thay=False,
-        ghi_chu="Template NOI BO de chung minh duong ong, khong ban (V9). "
-                "PHAI la ban `generic`, KHONG phai `genericcloud`: genericcloud "
-                "co y bo driver phan cung that (ke ca AHCI), ma dia cua ta la "
-                "sata0 vi virtio treo tren cum nay — xem NHAT_KY 2026-08-23.",
+        ghi_chu="Ban NOI BO de chung minh duong ong, khong ban (V9). Day la anh "
+                "cloud co san cloud-init nen may len trong ~40 giay, khac han "
+                "Windows phai co nguoi ngoi cai. PHAI la ban `generic`, KHONG "
+                "phai `genericcloud`: genericcloud co y bo driver phan cung that "
+                "(ke ca AHCI), ma dia cua ta la sata0 vi virtio treo tren cum nay.",
     ),
     OsImage(
         id="ubuntu-24-04", ten="Ubuntu 24.04 LTS", ho="linux",
@@ -95,20 +96,19 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="win10", ten="Windows 10", ho="windows",
-        # 80 GB là đĩa THẬT của template `WIN10-LTSC-GOLD` (9001), không phải
-        # yêu cầu 32 GB của Microsoft — xem chú thích của `disk_gb_toi_thieu`.
-        # Hệ quả bán hàng: với template hiện tại, **Windows 10 chỉ bán được ở
-        # gói Lớn**. Muốn bán ở gói nhỏ hơn thì phải dựng lại template với đĩa
-        # nhỏ hơn, không thể thu đĩa của template hiện có.
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=80, cong_quen=3389,
+        # 32 GB là yêu cầu của Microsoft. Trước 24/08 số này là 80 vì máy nhân
+        # bản từ template 80 GB và Proxmox không thu đĩa được; khách tự cài thì
+        # ràng buộc đó biến mất.
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,
     ),
     OsImage(
         id="win11", ten="Windows 11", ho="windows",
         # Microsoft: 4 GB RAM va 64 GB dia la SAN, khong phai khuyen nghi.
         ram_mb_toi_thieu=4096, disk_gb_toi_thieu=64, cong_quen=3389,
-        khach_thay=True,
-        ghi_chu="Can UEFI/OVMF + vTPM + Secure Boot trong cau hinh VM.",
+        khach_thay=True, can_uefi_tpm=True,
+        ghi_chu="Trinh cai dat dung o 'This PC can't run Windows 11' neu thieu "
+                "UEFI/OVMF + vTPM + Secure Boot.",
     ),
 )
 
@@ -162,7 +162,3 @@ def dia_cai_dat(os_id: str, env: dict | None = None) -> str:
     src = os.environ if env is None else env
     return str(src.get(khoa_moi_truong(os_id), "")).strip()
 
-
-def template_vmid(os_id: str, env: dict | None = None) -> int:
-    """Giữ lại cho `vps_doctor` cũ. Mô hình template đã bỏ 2026-08-24."""
-    return 0

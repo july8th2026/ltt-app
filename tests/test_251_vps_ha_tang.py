@@ -175,11 +175,24 @@ def test_ubuntu_khong_nam_trong_catalog_ban():
     assert os_images.lay_os("ubuntu-24-04") is not None
 
 
-def test_ten_bien_template_doc_duoc_tu_ma_os():
-    assert os_images.khoa_moi_truong("winsrv2022-gui") == \
-        "LTT_VPS_TEMPLATE_WINSRV2022_GUI"
-    assert os_images.template_vmid("win11", {}) == 0
-    assert os_images.template_vmid("win11", {"LTT_VPS_TEMPLATE_WIN11": "9004"}) == 9004
+def test_ten_bien_dia_cai_dat_doc_duoc_tu_ma_os():
+    assert os_images.khoa_moi_truong("winsrv2022-gui") ==         "LTT_VPS_ISO_WINSRV2022_GUI"
+    assert os_images.dia_cai_dat("win11", {}) == ""
+    assert os_images.dia_cai_dat(
+        "win11", {"LTT_VPS_ISO_WIN11": "local:iso/win11.iso"}) == "local:iso/win11.iso"
+
+
+def test_chua_khai_dia_cai_dat_thi_KHONG_doan_bua():
+    """Fail-closed: chua khai thi job tu choi tao may, thay vi tao mot may trong
+    khong boot duoc roi de khach nhin man hinh den ma khong hieu vi sao."""
+    assert os_images.dia_cai_dat("winsrv2022-gui", {}) == ""
+
+
+def test_win11_duoc_danh_dau_can_UEFI_va_TPM():
+    """Thieu thi trinh cai dat dung o "This PC can't run Windows 11" — va khach
+    ngoi nhin no, khong phai ta."""
+    assert os_images.lay_os("win11").can_uefi_tpm is True
+    assert os_images.lay_os("winsrv2022-gui").can_uefi_tpm is False
 
 
 # ── 4. Xếp chỗ ───────────────────────────────────────────────────────────────

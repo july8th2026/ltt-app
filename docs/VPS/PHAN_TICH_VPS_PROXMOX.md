@@ -516,11 +516,22 @@ từ chối tạo máy kèm lý do, chứ không chạy nửa vời.
 | `LTT_VPS_PROXMOX_TOKEN_SECRET` | ✅ | bí mật của token. **Không bao giờ vào git** |
 | `LTT_VPS_PROXMOX_NODE` | — | mặc định `pve` |
 | `LTT_VPS_PROXMOX_CA` | — | đường dẫn CA để ghim TLS. Thiếu thì bỏ qua xác minh **và ghi cảnh báo một lần** (đường gọi là LAN nội bộ) |
-| `LTT_VPS_TEMPLATE_UBUNTU_24_04` | P1 | VMID template Ubuntu (nội bộ, không bán) |
-| `LTT_VPS_TEMPLATE_WINSRV2022_CORE` | P5 | VMID template Windows Server Core |
-| `LTT_VPS_TEMPLATE_WINSRV2022_GUI` | P5 | VMID template Windows Server có giao diện |
-| `LTT_VPS_TEMPLATE_WIN10` | P6 | VMID template Windows 10 |
-| `LTT_VPS_TEMPLATE_WIN11` | P6 | VMID template Windows 11 |
+| `LTT_VPS_ISO_WINSRV2022_CORE` | P5 | volid đĩa cài, vd `vmdata:iso/winsrv2022.iso` |
+| `LTT_VPS_ISO_WINSRV2022_GUI` | P5 | volid đĩa cài |
+| `LTT_VPS_ISO_WIN10` | P6 | volid đĩa cài |
+| `LTT_VPS_ISO_WIN11` | P6 | volid đĩa cài (máy dựng kèm UEFI + vTPM) |
+| `LTT_VPS_KHO_DIA` | — | kho chứa đĩa máy khách, mặc định `vmdata` |
+| `LTT_VPS_TEMPLATE_UBUNTU_24_04` | — | **nội bộ, không bán.** VMID template Linux để thử đường ống trong ~40 giây |
+
+> **Mô hình template đã bỏ ngày 2026-08-24.** Máy bán cho khách là **máy trống +
+> đĩa cài**: khách tự cài Windows và tự đặt tài khoản của chính họ, nên nền tảng
+> không bao giờ biết mật khẩu của khách và không phải bảo trì template nào.
+>
+> Đường nhân bản còn sống cho **bản `khach_thay=False`** và chỉ bản đó —
+> `_template_noi_bo` trong `jobs.py` **từ chối** mọi bản bán cho khách kể cả khi
+> biến môi trường tương ứng được đặt. Đó là hàng rào, không phải quy ước: thiếu
+> nó thì một biến gõ nhầm đưa mọi khách về chung một mật khẩu, lặng lẽ.
+> Test chốt: `tests/test_285_vps_dinh_danh.py`.
 
 Token Proxmox phải **bật privilege separation** và chỉ cấp quyền trên đường dẫn hẹp
 nhất (`/pool/khach`, role `PVEVMUser`). Đừng dùng `root@pam`.

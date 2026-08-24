@@ -248,6 +248,19 @@ class ProxmoxClient:
             "POST", f"/nodes/{self.config.node}/qemu/{int(vmid_nguon)}/clone",
             data=data))
 
+    def tao_may(self, vmid: int, **cau_hinh) -> str:
+        """Tạo một máy TRỐNG với cấu hình cho trước. Trả UPID.
+
+        Dùng cho mô hình **khách tự cài**: máy sinh ra không có hệ điều hành,
+        chỉ có đĩa trắng và một đĩa cài đặt gắn sẵn.
+
+        **KHÔNG idempotent.** Gọi lại khi VMID đã tồn tại thì Proxmox trả lỗi —
+        và đó là hành vi đúng: người gọi phải hỏi thế giới thật trước, y như với
+        `clone`. Xem `_vm_da_ton_tai` trong `jobs.py`.
+        """
+        return str(self._goi("POST", f"/nodes/{self.config.node}/qemu",
+                             data={"vmid": int(vmid), **cau_hinh}))
+
     def dat_cau_hinh(self, vmid: int, **cau_hinh) -> Any:
         """Đặt cấu hình VM (`cores`, `memory`, `net0`, `ipconfig0`, `ciuser`…)."""
         return self._goi("POST",

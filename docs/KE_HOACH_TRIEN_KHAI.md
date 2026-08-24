@@ -2823,6 +2823,46 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       chính họ → **RDP vào được từ Internet qua IP riêng**, nền tảng không hề biết
       mật khẩu.
 
+- [x] **G5b — dọn sạch template + danh tính phần cứng riêng cho từng máy.**
+      ✅ **XONG 2026-08-24.**
+
+      **Dọn template.** `os_images.template_vmid` xoá hẳn; `vps_doctor` đối chiếu
+      **volid ISO** thay vì đĩa template; `LTT_VPS_TEMPLATE_WIN10` gỡ khỏi
+      `app.env`. Đường nhân bản còn sống **chỉ** cho bản `khach_thay=False` (Linux
+      nội bộ, lên trong ~40 giây — thứ tách "lỗi đường ống" khỏi "lỗi lúc cài
+      Windows"), và `_template_noi_bo` **từ chối** mọi bản bán cho khách kể cả khi
+      biến môi trường được đặt. Hàng rào, không phải quy ước: thiếu nó thì một biến
+      gõ nhầm đưa mọi khách về chung một mật khẩu, và không lỗi nào được ghi ra.
+
+      **Danh tính phần cứng** — `apps/vps/services/dinh_danh.py`. Cụm mặc định phát
+      ra những máy giống nhau hơn ta tưởng: Proxmox có sinh MAC và UUID riêng, nhưng
+      **QEMU đặt số hiệu ổ theo chỉ số ổ**, nên mọi máy dùng `sata0` báo về cùng một
+      chuỗi, và số hiệu SMBIOS bỏ trống ở mọi máy. Nay bốn thứ suy ra từ
+      `instance_id`: **MAC · UUID · số hiệu đĩa · số hiệu máy**.
+
+      **Suy ra, không bốc ngẫu nhiên** — và đây mới là lý do thật sự phải làm ngay:
+      job tạo máy **chạy lại được**, còn bước 4 của nó **ghi đè `net0`**. Trước thay
+      đổi này, mỗi lần chạy lại là một MAC mới ⇒ máy mất chỗ neo DHCP (thứ G5 sắp
+      dựa vào), và **Windows đã cài xong thấy card "mới" nên đặt hồ sơ mạng về
+      *Public* — tường lửa chặn RDP**. Khách mất đường vào máy của chính họ và không
+      đọc được lý do ở đâu cả. Đó là một lỗi đang sống, không phải việc làm đẹp.
+
+      Cái được thứ hai: hai khách không còn trùng danh tính phần cứng, nên bản sao
+      lưu và phần mềm cấp phép của người này không lẫn sang người kia, và **một máy
+      bị chặn thì máy kia không chịu chung**.
+
+      ⛔ **Ranh giới cố ý — đọc trước khi ai đó "mở rộng" file này.** `smbios1` chỉ
+      đặt `uuid` và `serial`; **không** đặt `manufacturer`/`product`/`family`, và MAC
+      giữ nguyên OUI `BC:24:11` của Proxmox. Việc ở đây là *phân biệt máy khách này
+      với máy khách kia*. Làm máy ảo **giả dạng máy vật lý**, hay dựng bộ tham số
+      nhằm qua mặt hệ thống dò lạm dụng của một nền tảng nào đó, là việc khác — và
+      ta không làm. Test chốt điều này: `test_smbios1_dat_uuid_va_serial_nhung_
+      KHONG_gia_nha_san_xuat`.
+
+      *Bằng chứng:* `tests/test_285_vps_dinh_danh.py` — 19 test, gồm 500 máy không
+      trùng ở cả bốn mục, gọi lại cho kết quả y hệt, và một chốt cấm dùng nguồn ngẫu
+      nhiên. Toàn bộ VPS: **130 xanh**, `gate --quick` **PASS**.
+
 - [ ] **G6 — Windows 11 cần UEFI/OVMF + vTPM + Secure Boot** trong cấu hình máy.
       Không còn là việc "dựng template" nữa, chỉ là một biến thể cấu hình khi tạo máy.
 

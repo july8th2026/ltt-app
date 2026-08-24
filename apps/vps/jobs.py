@@ -21,15 +21,23 @@ một job treo — hai thứ đó nhìn giống nhau trong log nhưng cần hai 
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 from apps.vps import os_images
 from apps.vps.cost import dia_tong_gb, lay_plan
-from apps.vps.services import mang, provisioning
+from apps.vps.services import dinh_danh, mang, provisioning
 from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
 from apps.vps.tables import VpsGateway, VpsInstance
 
 log = logging.getLogger(__name__)
+
+#: Kho lưu trữ đặt đĩa của máy khách. Đọc từ môi trường để dựng lại cụm không
+#: phải sửa code — cùng lý do với `LTT_VPS_ISO_*`.
+#:
+#: Mặc định `vmdata`: kho LVM-thin 475 GB của cụm hiện tại. Đặt sai tên thì
+#: Proxmox từ chối tạo máy ngay, không hỏng lặng lẽ.
+KHO_DIA = os.environ.get("LTT_VPS_KHO_DIA", "vmdata")
 
 #: Chờ tối đa cho một tác vụ nền của Proxmox (clone, xoá). Ngắn hơn trần của
 #: manifest để job tự báo lỗi thay vì bị nền tảng cắt như một job treo.
@@ -105,10 +113,18 @@ def _tao_may(params: dict, ctx=None) -> dict:
         if img is None:
             raise VpsJobError(f"he dieu hanh {may.os_id!r} khong co trong catalog")
 
-        template = os_images.template_vmid(may.os_id)
-        if not template:
+        # Từ 2026-08-24: **khách tự cài**. Máy sinh ra là máy trống + đĩa cài
+        # đặt, khách tự chạy trình cài qua console và tự đặt tài khoản/mật khẩu
+        # của chính họ — nền tảng không bao giờ biết mật khẩu của ai.
+        #
+        # Đường `template` chỉ còn cho bản Linux NỘI BỘ (`khach_thay=False`):
+        # nó lên trong ~40 giây nên dùng để tách "lỗi đường ống" khỏi "lỗi trong
+        # lúc cài Windows". Không bán bằng đường đó.
+        iso = os_images.dia_cai_dat(may.os_id)
+        template = 0 if iso else _template_noi_bo(may.os_id)
+        if not iso and not template:
             raise VpsJobError(
-                f"chua khai template cho {img.ten}: dat bien "
+                f"chua khai dia cai dat cho {img.ten}: dat bien "
                 f"{os_images.khoa_moi_truong(may.os_id)} trong secrets/app.env")
 
         gateway = db.get(VpsGateway, may.gateway_id)
@@ -135,11 +151,16 @@ def _tao_may(params: dict, ctx=None) -> dict:
             provisioning.cap_vmid(db, may, goi_y=goi_y, da_co_tren_may_chu=da_co)
             db.commit()
 
-        # 2) Clone — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
-        _bao(ctx, 15, "dang nhan ban he dieu hanh")
+        # 2) Dựng máy — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
+        _bao(ctx, 15, "dang chuan bi may")
         if not _vm_da_ton_tai(client, may.vmid):
-            upid = client.clone(template, may.vmid,
-                                ten=f"vps-{may.id[:8]}", full=False)
+            if iso:
+                upid = client.tao_may(
+                    may.vmid,
+                    **_cau_hinh_may_trong(may, plan, img, iso))
+            else:
+                upid = client.clone(template, may.vmid,
+                                    ten=f"vps-{may.id[:8]}", full=False)
             _cho_tac_vu(client, upid, ctx, moc=35)
 
         # 3) Địa chỉ trong mạng riêng — cấp TRƯỚC khi cấu hình, vì cloud-init
@@ -166,7 +187,8 @@ def _tao_may(params: dict, ctx=None) -> dict:
                     # thấy (quy tắc 5 của CLAUDE.md).
                     "vga": "std"}
         cau_hinh.update(mang.cau_hinh_qemu(
-            mang.mang_cho_may(gateway, ip_noi_bo)))
+            mang.mang_cho_may(gateway, ip_noi_bo), co_cloud_init=not iso,
+            mac=dinh_danh.mac(may.id)))
         # GỠ mọi card thừa của template. `cau_hinh_qemu` chỉ đặt `net0`; template
         # nào có sẵn `net1` thì máy khách thừa hưởng nó — và nếu card đó cắm
         # `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**, đúng thứ
@@ -177,8 +199,10 @@ def _tao_may(params: dict, ctx=None) -> dict:
         cau_hinh.update(_go_card_thua(client, may.vmid))
         client.dat_cau_hinh(may.vmid, **cau_hinh)
 
+        # Đường ISO đã tạo đĩa đúng cỡ ngay từ đầu; chỉ đường nhân bản mới cần
+        # nới, vì đĩa của template luôn nhỏ hơn gói.
         can_dia = dia_tong_gb(may.plan_id, may.dia_them_gb)
-        if can_dia > img.disk_gb_toi_thieu:
+        if not iso and can_dia > img.disk_gb_toi_thieu:
             # Proxmox chỉ nới ra, không thu vào — an toàn khi chạy lại.
             client.nong_dia(may.vmid, _dia_goc(client, may.vmid), f"{can_dia}G")
 
@@ -363,6 +387,80 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
+
+
+def _template_noi_bo(os_id: str) -> int:
+    """VMID template cho bản Linux **nội bộ**. 0 = không có.
+
+    ## Hàng rào, không phải tuỳ chọn
+
+    Mô hình template đã bị bỏ ngày 2026-08-24: máy bán cho khách luôn là máy
+    trống + đĩa cài, khách tự đặt tài khoản và mật khẩu của chính họ.
+
+    Đường này chỉ còn sống cho bản có `khach_thay=False` — bản Linux nội bộ lên
+    trong ~40 giây, dùng để tách "lỗi đường ống" khỏi "lỗi trong lúc cài Windows".
+
+    **Nếu ai đó sau này đặt `LTT_VPS_TEMPLATE_WIN10` thì hàm này TỪ CHỐI**, thay
+    vì lặng lẽ quay lại mô hình cũ. Không có hàng rào đó thì một biến môi trường
+    gõ nhầm là mọi khách nhận chung một mật khẩu — và không lỗi nào được ghi ra.
+    """
+    import os as _os
+
+    img = os_images.lay_os(os_id)
+    if img is None or img.khach_thay:
+        return 0
+    khoa = "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
+    try:
+        return int(str(_os.environ.get(khoa, "")).strip() or 0)
+    except ValueError:
+        return 0
+
+
+def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
+    """Cấu hình một máy TRỐNG có gắn đĩa cài đặt, để khách tự cài.
+
+    Ba lựa chọn ở đây đều là **luật của cụm này**, không phải sở thích:
+
+    * **`sata0` + `e1000`** — cụm chạy lồng trong VMware và virtio treo cứng ở
+      đó (xem `MO_HINH_CARD` trong `mang.py`). Đây cũng là lý do khách **không
+      cần đĩa driver virtio** khi cài Windows: Windows nhận sẵn cả hai.
+    * **`vga: std`** — máy phải có màn hình đồ hoạ, vì console LÀ đường cài đặt.
+    * **thứ tự boot `ide0` rồi `sata0`** — lần đầu boot vào đĩa cài; cài xong,
+      không bấm phím nào thì nó tự bỏ qua CD và boot vào đĩa cứng.
+    """
+    cau_hinh = {
+        "name": f"vps-{may.id[:8]}",
+        "cores": plan.vcpu,
+        "memory": plan.ram_mb,
+        "ostype": "win11" if img.can_uefi_tpm else (
+            "win10" if img.ho == "windows" else "l26"),
+        "scsihw": "virtio-scsi-single",
+        # `serial=` KHÔNG thừa: QEMU đặt số hiệu ổ theo *chỉ số ổ*, nên mọi
+        # máy dùng `sata0` báo về cùng một chuỗi. Xem `services/dinh_danh.py`.
+        "sata0": f"{KHO_DIA}:{dia_tong_gb(may.plan_id, may.dia_them_gb)},"
+                 f"discard=on,ssd=1,serial={dinh_danh.so_hieu_dia(may.id)}",
+        "ide0": f"{iso},media=cdrom",
+        "boot": "order=ide0;sata0",
+        "vga": "std",
+        # UUID đặt tường minh để nó sống sót qua lần CÀI LẠI — Proxmox chỉ sinh
+        # UUID lúc tạo máy, nên cài lại cho ra một UUID khác, và với phần mềm
+        # trong máy khách thì đó là "một máy khác".
+        "smbios1": dinh_danh.smbios1(may.id),
+        # Không guest agent, không balloon: cả hai là thiết bị virtio.
+        "agent": 0,
+        "balloon": 0,
+    }
+    if img.can_uefi_tpm:
+        # Windows 11 từ chối cài nếu thiếu. `pre-enrolled-keys=1` để Secure Boot
+        # tin chuỗi ký của Microsoft — ngược với ảnh Linux, vốn cần =0.
+        cau_hinh["bios"] = "ovmf"
+        cau_hinh["machine"] = "q35"
+        cau_hinh["efidisk0"] = f"{KHO_DIA}:0,efitype=4m,pre-enrolled-keys=1"
+        cau_hinh["tpmstate0"] = f"{KHO_DIA}:0,version=v2.0"
+    else:
+        cau_hinh["bios"] = "seabios"
+        cau_hinh["machine"] = "pc-q35-11.0"
+    return cau_hinh
 
 
 def _go_card_thua(client, vmid: int) -> dict:

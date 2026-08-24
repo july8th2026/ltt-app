@@ -169,43 +169,28 @@ def main() -> int:
                     break
             print(f"  Neu ban toan {pid:<8} -> {n} may")
 
-    # ── Doi chieu san dia KHAI BAO voi dia THAT cua template ────────────────
+    # ── Dia cai dat: da khai chua ───────────────────────────────────────────
     #
-    # Proxmox chi noi dia ra, KHONG BAO GIO thu vao. Nen dia cua template la san
-    # cung: khai thap hon no thi khach dat mot goi nho VAN QUA CUA KIEM, roi
-    # chiem cho nhieu hon phan da tra tien — va `capacity.py` dem theo so cua
-    # goi nen suc chua tinh sai luon. Doi chieu o day de lech bi bat, thay vi de
-    # khach phat hien.
+    # Fail-closed: chua khai thi job tu choi tao may. Kiem o day de biet TRUOC
+    # khi mot khach bam mua, thay vi de ho gap loi.
     print()
-    print("== San dia: khai bao vs template that ==")
+    print("== Dia cai dat cua tung he dieu hanh ==")
     from apps.vps import os_images
     for img in os_images.OS_IMAGES:
-        vmid = os_images.template_vmid(img.id)
-        if not vmid:
-            print(f"  {img.id:<18} chua khai {os_images.khoa_moi_truong(img.id)}")
+        if not img.khach_thay:
             continue
-        try:
-            cfg = client._goi("GET", f"/nodes/{client.config.node}/qemu/{vmid}/config") or {}
-        except Exception as exc:                      # noqa: BLE001
-            print(f"  {img.id:<18} khong doc duoc template {vmid}: {str(exc)[:50]}")
+        volid = os_images.dia_cai_dat(img.id)
+        if not volid:
+            print(f"  {img.id:<18} CHUA KHAI {os_images.khoa_moi_truong(img.id)}")
             loi += 1
             continue
-        dia_that = 0
-        for k, v in cfg.items():
-            if not k.startswith(("sata", "scsi", "virtio", "ide")):
-                continue
-            if "media=cdrom" in str(v) or "size=" not in str(v):
-                continue
-            co = str(v).split("size=")[1].split(",")[0]
-            if co.endswith("G"):
-                dia_that = max(dia_that, int(float(co[:-1])))
-            elif co.endswith("M"):
-                dia_that = max(dia_that, 1)
-        dau = "OK " if img.disk_gb_toi_thieu >= dia_that else "LECH"
-        if dau == "LECH":
+        co = any(str(x.get("volid", "")) == volid
+                 for x in (client._goi(
+                     "GET", f"/nodes/{client.config.node}/storage/"
+                            f"{volid.split(':')[0]}/content") or []))
+        print(f"  {img.id:<18} {volid}  {'OK' if co else 'KHONG THAY TREN NODE'}")
+        if not co:
             loi += 1
-        print(f"  {img.id:<18} khai {img.disk_gb_toi_thieu:>3} GB · "
-              f"template {vmid} that {dia_that:>3} GB  {dau}")
 
     print()
     print("RESULT:", "PASS" if loi == 0 else f"CO {loi} MUC CAN XEM")
