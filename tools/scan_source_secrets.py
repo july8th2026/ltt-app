@@ -174,9 +174,28 @@ def _is_excluded_dir(name: str) -> bool:
     return name in EXCLUDED_DIR_NAMES or name.startswith(EXCLUDED_DIR_PREFIXES)
 
 
+def _duoi_thu_vien_nhung(relative: Path) -> bool:
+    """`server/static/**/vendor/**` — thu vien ben thu ba nhung nguyen ban.
+
+    HEP CO Y. Loai tru ca `server/static/` thi de hon nhung sai: do la cho rat
+    de co nguoi vo tinh de lo mot khoa trong mot tep JS cau hinh, va mot bo quet
+    bi noi rong la mot bo quet da tat.
+
+    Vi sao khong sua thang file vendor: no la ma nguyen ban cua ben thu ba. Sua
+    no la tao mot ban re nhanh im lang, va lan cap nhat thu vien sau se ghi de
+    mat — roi gate lai do ma khong ai nho vi sao. (noVNC v1.7.0 nhung 24/08:
+    `vendor/pako/lib/zlib/trees.js` co bang hang so cua thuat toan nen, 32 ky tu
+    hex vi no la DU LIEU chu khong phai vi no la khoa.)
+    """
+    phan = relative.as_posix()
+    return phan.startswith("server/static/") and "/vendor/" in phan
+
+
 def _is_excluded_file(root: Path, path: Path) -> bool:
     relative = path.relative_to(root)
     if path.name in EXCLUDED_FILE_NAMES:
+        return True
+    if _duoi_thu_vien_nhung(relative):
         return True
     if any(_is_excluded_dir(part) for part in relative.parts[:-1]):
         return True

@@ -84,6 +84,7 @@
   "dist",
   "logs",
   "node_modules",
+  "novnc",
   "secrets",
   "test-results",
   "tmp",
