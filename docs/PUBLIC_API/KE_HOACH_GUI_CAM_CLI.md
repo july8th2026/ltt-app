@@ -347,8 +347,29 @@ xong**, vì mục tiêu đặt ra là "nhìn chuyên nghiệp" và đó đúng l
 | **P2** | Chốt bộ dựng theo số đo P1 | lý do viết ra, không phải "nghe an toàn hơn" |
 | **P3** | Installer Inno Setup: cài, lối tắt, **gỡ cài sạch** | gỡ cài xong không còn tệp nào ngoài cấu hình khách đã tạo |
 | **P4** | Thử trên **VM Windows sạch** (Proxmox máy B) | máy không Python/không node ⇒ **vẫn chạy** |
-| **P5** | Ký số | ⏳ **chờ chủ sản phẩm quyết** |
+| ~~**P5**~~ | ~~Ký số~~ | ⛔ **KHÔNG LÀM — chủ sản phẩm quyết 24/08.** Chấp nhận SmartScreen hỏi ở lần mở đầu. Xem dưới |
 | **P6** | Nộp báo cáo dương-tính-giả cho hãng diệt virus nếu còn | dùng quy trình cộng đồng đã có |
+
+### ⛔ Không mua chứng chỉ — quyết định 24/08, và hệ quả phải làm cho đúng
+
+Chủ sản phẩm chốt: **không mua chứng chỉ ký số, chấp nhận khách bấm xác nhận**
+khi mở tệp. Đây là một đánh đổi hợp lý ở giai đoạn này — chứng chỉ EV đắt, và
+chứng chỉ OV thì vẫn phải tích danh tiếng nên vài trăm lượt tải đầu **cũng bị**
+chặn. Tức tiền bỏ ra chưa chắc mua được thứ định mua.
+
+⚠️ **Nhưng đã chấp nhận thì phải làm cho tử tế**, đừng để khách tự đoán:
+
+1. **Nói trước, ở trang tải về.** Ảnh chụp đúng màn hình SmartScreen sẽ hiện,
+   kèm câu *"bấm More info → Run anyway"*. Một cảnh báo **đã được báo trước**
+   là một bước cài đặt; một cảnh báo **bất ngờ** là một lý do đóng trình duyệt.
+2. **Công bố mã băm SHA-256** của tệp cài đặt cạnh đường tải. Không có chữ ký
+   thì băm là thứ **duy nhất** còn lại để khách kiểm tệp đúng là của ta.
+3. **P1 và P6 nay QUAN TRỌNG HƠN, không phải kém đi.** Không có chữ ký để
+   giảm báo động giả, nên chọn đúng bộ dựng (P1) và nộp báo cáo dương-tính-giả
+   (P6) là hàng phòng thủ **duy nhất** còn lại.
+
+⛔ Và **tuyệt đối không** bảo khách *"tắt diệt virus đi rồi cài"*. Đó là dạy
+khách một thói quen nguy hiểm để tiện cho ta.
 
 ⚠️ **P4 là chốt thật của cả phần đóng gói**, không phải P3. Một installer chạy
 được trên máy **đã có Python** không chứng minh gì — cả mục đích của việc đóng

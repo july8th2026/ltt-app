@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>LTT Studios · Cắm công cụ viết mã</title>
+<!-- ltt.css la BAN SAO sinh tu server/static/ltt.css bang tools/dong_goi_gui.py.
+     Dung sua truc tiep: gate co chot `--kiem` so bam hai ban. -->
+<link rel="stylesheet" href="ltt.css">
+<style>
+/* Chi cac quy tac RIENG cua cua so nay. Moi mau deu lay tu token cua ltt.css -
+   khong mot ma mau nao duoc viet cung o day, neu khong doi thuong hieu se bo sot
+   dung cai cua so nay. */
+body{margin:0;background:var(--surface-canvas);color:var(--fg);font-family:var(--font);
+     font-size:13.5px;line-height:1.55}
+.wrap{max-width:660px;margin:0 auto;padding:22px 20px 32px}
+.top{display:flex;align-items:center;gap:11px;margin-bottom:20px}
+.logo{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--brand-primary);
+      color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.02em}
+.top h1{margin:0;font-size:15.5px;font-weight:650;letter-spacing:-.01em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+      padding:16px 17px;margin-bottom:13px}
+.trangthai{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px}
+.cham{width:9px;height:9px;border-radius:50%;flex:none}
+.cham.on{background:var(--ok);box-shadow:0 0 0 3px var(--ok-bg)}
+.cham.off{background:var(--grey);box-shadow:0 0 0 3px var(--grey-bg)}
+label.lbl{display:block;font-size:11.5px;font-weight:600;color:var(--muted);
+          margin:0 0 6px;letter-spacing:.02em}
+.inp{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--fg);
+     border-radius:var(--radius-sm);padding:9px 11px;font-family:var(--mono);font-size:12.5px}
+.inp:focus{outline:2px solid var(--focus-ring);outline-offset:1px;border-color:var(--line2)}
+.hang{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+.tick{display:flex;gap:9px;align-items:flex-start;margin-top:13px;
+      padding:10px 12px;border:1px solid var(--warn-line);background:var(--warn-bg);
+      border-radius:var(--radius-sm)}
+.tick input{margin:2px 0 0;accent-color:var(--brand-primary);flex:none}
+.tick .canh{color:var(--warn);font-size:11.5px;margin-top:3px}
+.dsach{list-style:none;margin:0;padding:0}
+.dsach li{display:flex;align-items:center;gap:10px;padding:8px 0;
+          border-bottom:1px solid var(--line);font-size:12.5px}
+.dsach li:last-child{border-bottom:0}
+.dsach .ten{flex:1;font-weight:550}
+.dsach .noi{color:var(--dim);font-family:var(--mono);font-size:11px}
+#nhatky{background:var(--surface-canvas);border:1px solid var(--line);
+        border-radius:var(--radius-sm);padding:11px 12px;margin-top:12px;
+        font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;
+        max-height:210px;overflow:auto;color:var(--muted)}
+#nhatky:empty{display:none}
+.lam{color:var(--dim);font-size:11.5px;margin-top:9px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.hd{margin:0 0 9px;font-size:12px;font-weight:650;color:var(--muted);
+    letter-spacing:.06em;text-transform:uppercase}
+.cp{display:flex;gap:8px;align-items:center;margin:5px 0;font-size:12px}
+.cp code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;
+         padding:2px 7px;font-family:var(--mono);font-size:11.5px;color:var(--fg)}
+.cp .k{color:var(--dim);width:120px;flex:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="logo">LTT</div>
+    <h1>Cắm công cụ viết mã vào LTT Studios</h1>
+  </div>
+
+  <div class="card">
+    <div class="trangthai"><span id="cham" class="cham off"></span><span id="tt">Đang đọc…</span></div>
+  </div>
+
+  <div class="card">
+    <label class="lbl" for="khoa">Khoá API</label>
+    <input id="khoa" class="inp" type="password" placeholder="ltt_sk_…" spellcheck="false" autocomplete="off">
+    <p class="lam">Khoá chỉ hiện <b>một lần</b> lúc tạo.
+      <a href="#" id="mokhoa">Lấy khoá ở trang Khoá API ↗</a></p>
+
+    <label class="tick">
+      <input type="checkbox" id="toancuc">
+      <span>
+        Áp cho <b>mọi</b> phiên Claude Code trên máy này
+        <div class="canh">⚠ Kể cả gói Anthropic thật của bạn. Bỏ tích thì chỉ đặt biến môi trường.</div>
+      </span>
+    </label>
+
+    <div class="hang">
+      <button class="btn" id="bcam">Cắm vào</button>
+      <button class="btn ghost" id="bkiem">Kiểm thật</button>
+      <button class="btn danger" id="bgo">Gỡ ra</button>
+    </div>
+    <div id="nhatky"></div>
+  </div>
+
+  <div class="card">
+    <p class="hd">Công cụ được cắm</p>
+    <ul class="dsach">
+      <li><span class="ten">Codex</span><span class="noi">~/.codex/config.toml</span></li>
+      <li><span class="ten">Claude Code</span><span class="noi">biến môi trường</span></li>
+      <li><span class="ten">Tiện ích VS Code</span><span class="noi">dùng chung cấu hình trên</span></li>
+    </ul>
+    <p class="lam">Sau khi cắm phải <b>mở lại VS Code</b> — biến môi trường chỉ
+      áp cho tiến trình mới.</p>
+  </div>
+
+  <div class="card">
+    <p class="hd">Claude Desktop · cấu hình tay</p>
+    <p class="lam" style="margin-top:0">Ứng dụng này không đọc tệp cấu hình nào —
+      phải điền trong app: <span class="mono">Developer → Configure Third-Party Inference</span>.</p>
+    <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code></div>
+    <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code></div>
+    <div class="cp"><span class="k">inferenceModels</span><code>ltt_llm</code></div>
+    <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const api = () => (window.pywebview && window.pywebview.api) || null;
+
+function ve(kq) {
+  // Hien nguyen van tung dong loi tra ve. KHONG tom tat: khi mot buoc that bai,
+  // dong `[!!]` cua no la thu duy nhat noi duoc that bai o dau.
+  $("nhatky").textContent = (kq.dong || []).join("\n");
+}
+
+function datTrangThai(dangCam) {
+  $("cham").className = "cham " + (dangCam ? "on" : "off");
+  $("tt").textContent = dangCam ? "Đang cắm vào LTT Studios" : "Chưa cắm";
+}
+
+async function lamMoi() {
+  const a = api(); if (!a) return;
+  const kq = await a.xem();
+  ve(kq);
+  datTrangThai((kq.dong || []).some((d) => d.includes("DA CAM")));
+}
+
+function khoaNut(khoa) {
+  for (const id of ["bcam", "bkiem", "bgo"]) $(id).disabled = khoa;
+}
+
+async function chay(ten, fn) {
+  khoaNut(true);
+  $("nhatky").textContent = ten + "…";
+  try { ve(await fn()); } finally { khoaNut(false); }
+  // Doc lai trang thai TU HE THONG thay vi suy tu "lenh da chay xong". Mot lenh
+  // tra ma 0 khong co nghia moi buoc ben trong deu thanh cong.
+  const a = api();
+  if (a) {
+    const kq = await a.xem();
+    datTrangThai((kq.dong || []).some((d) => d.includes("DA CAM")));
+  }
+}
+
+window.addEventListener("pywebviewready", lamMoi);
+
+$("bcam").onclick = () => {
+  const k = $("khoa").value.trim();
+  if (!k) { $("nhatky").textContent = "Chưa dán khoá."; return; }
+  chay("Đang cắm", () => api().cam(k, $("toancuc").checked));
+};
+$("bkiem").onclick = () => chay("Đang gọi thật một lượt", () => api().kiem());
+$("bgo").onclick = () => chay("Đang gỡ", () => api().go());
+$("mokhoa").onclick = (e) => {
+  e.preventDefault();
+  // Mo bang trinh duyet HE THONG, khong dieu huong cua so nay: cua so nay co
+  // cau noi `pywebview.api`, va no chi duoc tro toi trang cua CHINH TA.
+  window.open("https://app.lttstudios.com/developers/keys", "_blank");
+};
+</script>
+</body>
+</html>

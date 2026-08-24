@@ -3,11 +3,17 @@ REM cam_cli.bat - vo boc de bam dup, khong phai noi chua logic.
 REM
 REM !! MOI THU O DAY PHAI LA ASCII THUAN va khong BOM. `.bat` doc theo bang ma
 REM    ANSI cua he thong; mot dau tieng Viet lam hong ca cau lenh va bao loi o
-REM    mot dong khac (cung ho voi quy tac 2 cua CLAUDE.md cho .ps1).
+REM    mot dong khac (cung ho voi quy tac 2 cua CLAUDE.md cho .ps1). Co test
+REM    chot dieu nay (test_284).
 REM
 REM !! KHONG viet lai logic o day. Toan bo nam trong cam_cli.py vi Python test
-REM    duoc con .bat thi khong. Tep nay chi lam DUNG hai viec: tim python, va
-REM    giu cua so mo de nguoi dung doc duoc ket qua.
+REM    duoc con .bat thi khong. Tep nay chi lam DUNG ba viec: tim python, thu mo
+REM    GUI, va NEU KHONG MO DUOC thi lui ve menu dong lenh.
+REM
+REM *  DUONG LUI LA BAT BUOC (U5), khong phai tien nghi. GUI can `pywebview` -
+REM    mot `pip install`. Khong co no thi cong cu VAN PHAI DUNG DUOC, vi dong
+REM    lenh la thu da chay duoc va da co 12 test. Mot cong cu chet vi thieu mot
+REM    thu vien giao dien la mot cong cu tu bien minh thanh khong dung duoc.
 
 setlocal
 cd /d "%~dp0"
@@ -29,11 +35,17 @@ if not defined PY (
     exit /b 1
 )
 
-if "%~1"=="" goto :menu
+REM Tham so tren dong lenh thi di thang, khong qua menu.
+if not "%~1"=="" (
+    %PY% cam_cli.py %*
+    echo.
+    pause
+    exit /b %ERRORLEVEL%
+)
 
-%PY% cam_cli.py %*
-echo.
-pause
+REM Thu mo GUI truoc. `cam_cli_gui.py` tra ve 2 khi khong co pywebview.
+%PY% cam_cli_gui.py
+if "%ERRORLEVEL%"=="2" goto :menu
 exit /b %ERRORLEVEL%
 
 :menu
@@ -41,6 +53,9 @@ echo.
 echo   ============================================================
 echo    LTT Studios - cam Codex / Claude Code vao API cua ban
 echo   ============================================================
+echo.
+echo    (Giao dien do hoa can `pip install pywebview`.
+echo     Khong co cung khong sao - dung menu nay la du.)
 echo.
 echo    1. Xem dang cam gi          (khong doi gi ca)
 echo    2. Cam vao                  (can khoa ltt_sk_...)

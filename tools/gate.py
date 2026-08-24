@@ -79,6 +79,11 @@ def _steps(quick: bool) -> list[Step]:
              [sys.executable, "tools/check_sdk_contract.py"], ROOT),
         # …và collection Postman phải được SINH lại, không sửa tay: một bản sao
         # thứ hai của hợp đồng luôn là bản trôi dạt.
+        # Ban sao `ltt.css` canh GUI khong duoc troi khoi ban goc: mot ban
+        # sao tinh khong co gi nhac no cap nhat thi no se khong cap nhat,
+        # va cong cu se trong GAN GIONG nen tang - kieu sai kho chiu nhat.
+        Step("tai san GUI", [sys.executable, "tools/dong_goi_gui.py", "--kiem"],
+             ROOT),
         Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
              ROOT),
     ]
