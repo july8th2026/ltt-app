@@ -32,8 +32,33 @@ import importlib.util
 import pathlib
 import sys
 
-GOC = pathlib.Path(__file__).resolve().parents[1]
-THU_MUC_GUI = pathlib.Path(__file__).resolve().parent / "gui"
+def _thu_muc_goc() -> pathlib.Path:
+    """Thư mục chứa tài sản, đúng ở **cả hai** chế độ chạy.
+
+    🔴 ĐÂY LÀ MỘT CÁI BẪY THẬT, không phải phòng xa. Khi đóng gói bằng
+       PyInstaller, `__file__` **không còn** trỏ tới `tools/`: mã chạy từ trong
+       gói và tài sản nằm ở `sys._MEIPASS`. Nên đường dẫn tính từ `__file__` sẽ
+       trỏ vào chỗ không có gì.
+
+    ⛔ Và hỏng theo kiểu tệ nhất: `.exe` **dựng thành công**, **chạy được**, cửa
+       sổ **mở ra** — rồi **trắng trơn**. Không lỗi nào, không log nào. Cùng lớp
+       với luật *"đừng neo đường dẫn bằng `Path(__file__).parents[n]`"* trong
+       CLAUDE.md: nó hỏng lặng lẽ, trang vẫn trả 200, chỉ là vỏ trống.
+    """
+    tam = getattr(sys, "_MEIPASS", None)          # PyInstaller
+    if tam:
+        return pathlib.Path(tam)
+    # !! Nuitka KHONG dat `sys.frozen` - no dat `__compiled__` o cap module. Ban
+    #    dau toi kiem `sys.frozen` va ban Nuitka bao "dong bang: False"; no van
+    #    tim thay tai san, nhung DO MAY: `__file__` tinh co tro dung vao .dist.
+    #    Mot phep do noi sai ma van ra ket qua dung la thu de tin nham nhat.
+    if "__compiled__" in globals() or getattr(sys, "frozen", False):
+        return pathlib.Path(sys.executable).resolve().parent
+    return pathlib.Path(__file__).resolve().parent
+
+
+THU_MUC_GOC = _thu_muc_goc()
+THU_MUC_GUI = THU_MUC_GOC / "gui"
 
 
 def _nap_loi():
@@ -44,7 +69,7 @@ def _nap_loi():
     except ImportError:
         pass
     spec = importlib.util.spec_from_file_location(
-        "cam_cli", pathlib.Path(__file__).resolve().parent / "cam_cli.py")
+        "cam_cli", THU_MUC_GOC / "cam_cli.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -102,7 +127,52 @@ class Cau:
 HAM_CHO_PHEP = ("xem", "cam", "go", "kiem")
 
 
+def tu_kiem() -> int:
+    """Bản đóng gói **tự chứng minh** nó tìm được tài sản của mình.
+
+    🔴 VÌ SAO CẦN. `.exe` dựng xong, Defender báo sạch, kích thước đúng — **và
+       vẫn có thể mở ra một cửa sổ trắng** nếu `index.html` không đi theo gói
+       hoặc đường dẫn tính sai ở chế độ đóng băng.
+
+       Ba dấu hiệu quen thuộc (dựng OK / quét sạch / chạy được) **không cái nào**
+       chạm tới câu hỏi thật: *tài sản có ở đó không?* Và một cửa sổ trắng thì
+       không có log để mà đọc.
+
+    ⇒ Chạy `LTTStudios-CamCLI.exe --tu-kiem` sau khi đóng gói. Nó không mở cửa
+      sổ, chỉ in ra đường dẫn thật rồi trả mã 0/1 — dùng được trong kịch bản
+      dựng, không cần ai ngồi nhìn.
+    """
+    print(f"che do dong bang : {bool(getattr(sys, 'frozen', False)) or bool(getattr(sys, '_MEIPASS', None))}")
+    print(f"thu muc goc      : {THU_MUC_GOC}")
+    thieu = []
+    for ten in ("gui/index.html", "gui/ltt.css", "cam_cli.py"):
+        d = THU_MUC_GOC / ten
+        print(f"  {'[OK]' if d.exists() else '[THIEU]'} {ten}")
+        if not d.exists():
+            thieu.append(ten)
+    try:
+        loi = _nap_loi()
+        print(f"  [OK] nap duoc loi (GOC_MAC_DINH={loi.GOC_MAC_DINH})")
+    except Exception as exc:                                  # noqa: BLE001
+        print(f"  [THIEU] khong nap duoc cam_cli: {exc}")
+        thieu.append("cam_cli")
+    try:
+        import webview                                        # noqa: F401
+        print("  [OK] co pywebview")
+    except ImportError:
+        print("  [!!] khong co pywebview - se lui ve dong lenh")
+    if thieu:
+        print("")
+        print(f"THIEU: {thieu}. Ban dong goi nay se mo ra mot CUA SO TRANG.")
+        return 1
+    print("")
+    print("Du tai san.")
+    return 0
+
+
 def main(argv=None) -> int:
+    if "--tu-kiem" in (argv if argv is not None else sys.argv[1:]):
+        return tu_kiem()
     try:
         import webview
     except ImportError:

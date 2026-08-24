@@ -2776,49 +2776,55 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
       *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
 
-- [~] **G5a — Windows CHẠY ĐƯỢC qua đường ống.** 🔨 **Đo thật 2026-08-24.**
-      Nhân bản template `WIN10-LTSC-GOLD` (9001) **qua job**: 15 giây; Windows boot
-      thẳng tới desktop, **tự đăng nhập, không hỏi OOBE** (template có sẵn answer
-      file); và **RDP vào được từ Internet qua IP riêng, 128 ms**.
+### ⚠️ Đổi hướng 2026-08-24 (tối) — BỎ TEMPLATE, khách tự cài Windows
 
-      Nhưng ba việc còn phải làm TAY, và chúng chính là phần G5b:
-      ① đặt địa chỉ tĩnh trong Windows · ② bật Remote Desktop · ③ đặt mật khẩu riêng
-      cho từng khách. Cả ba là việc của **Cloudbase-Init**.
+Chủ sản phẩm chốt: **không nhân bản từ template nữa.** Mỗi máy bán ra là một máy
+trống + đĩa cài Windows; khách tự chạy trình cài đặt qua console và **tự đặt tài
+khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản Windows**.
 
-      **Ba lỗi tìm được, không lỗi nào test bắt được:**
+**Ba thứ nó gỡ được, và đều là những thứ khó nhất còn lại:**
 
-      🔴 **Đĩa template là SÀN CỨNG.** `os_images` khai `win10` cần 32 GB (số của
-      Microsoft) nhưng template thật là **80 GB**, mà **Proxmox chỉ nới ra, không thu
-      vào**. Khách đặt gói Nhỏ 40 GB **qua được cửa kiểm**, rồi chiếm 80 GB của kho
-      chung trong khi chỉ trả tiền 40 — và `capacity.py` đếm theo số của gói nên sức
-      chứa tính sai luôn. Đã sửa sàn về 80 và thêm phép đối chiếu vào `vps_doctor.py`.
-      *Hệ quả bán hàng:* với template hiện tại **Windows 10 chỉ bán được ở gói Lớn**,
-      hoặc gói Vừa mua thêm ≥20 GB đĩa.
+1. **Nền tảng không bao giờ biết mật khẩu của khách.** Đây là thay đổi lớn nhất, và
+   nó là về trách nhiệm chứ không phải kỹ thuật: không giữ thì không làm lộ được.
+   Toàn bộ Cloudbase-Init (cùng cái bẫy NoCloud-vs-ConfigDrive) biến mất.
+2. **Hết việc nuôi template.** Không sysprep, không dựng lại mỗi lần Microsoft vá,
+   không `autounattend.xml` cho từng phiên bản. Thêm một phiên bản Windows = **thêm
+   một file ISO**, không phải thêm một quy trình.
+3. **Hết ràng buộc đĩa của template.** Sàn đĩa quay về đúng yêu cầu của Microsoft
+   (Server 2022: 32 GB, Win11: 64 GB) thay vì 80 GB của ảnh Win10 có sẵn.
 
-      🔴 **Máy khách thừa hưởng card mạng thứ hai của template.** `cau_hinh_qemu` chỉ
-      đặt `net0`; `WIN10-LTSC-GOLD` có sẵn `net1`, và máy thử hiện ra **hai** card
-      trong Windows. Ở đây `net1` may là `vmbr1`; template nào có `net1` cắm `vmbr0`
-      thì **máy bán cho khách có một chân trong LAN nhà** — đúng thứ `mang.py` nói
-      tuyệt đối không được. Job nay gỡ mọi `netN` thừa, có test chốt.
+**Ba cái giá phải trả, nói trước:**
 
-      🔴 **`vga: serial0` ⇒ máy không có màn hình đồ hoạ** (đã sửa ở G3b).
+1. **Console thành đường chính, không còn là đường cứu hộ.** Nó phải chắc. Và ghi
+   chú ở G3b về việc phím Shift bị gõ sai **phải được kiểm bằng một người thật** —
+   khách sẽ gõ mật khẩu có `!`, `@` vào trình cài đặt.
+2. **Mất lợi thế nhân bản liên kết.** `clone(full=False)` chia sẻ ảnh nền nên gần
+   như không tốn chỗ; máy tự cài thì **mỗi máy ghi trọn ~15–20 GB thật**. Kho thin
+   475 GB chia cho 16 máy còn ~29 GB/máy — vẫn đủ, nhưng ba cái phanh của
+   `capacity.py` từ nay là thật sự cần chứ không phải phòng xa.
+3. **Chỗ chứa ISO.** `local` chỉ 27 GiB và đã có ~11 GiB ISO. Thêm Win10/11 là hết
+   chỗ ⇒ phải bật loại nội dung `iso` cho kho `vmdata` (475 GB).
 
-- [ ] **G5b — template Windows dùng được để BÁN.** Cần Cloudbase-Init trong template:
-      đổi `metadata_services` sang **NoCloud** (Proxmox sinh NoCloud, Cloudbase mặc
-      định đọc ConfigDrive — sai thì cấu hình **im lặng không áp dụng**), bật sẵn RDP,
-      rồi sysprep. Cân nhắc dựng template mới **đĩa 40 GB** để bán được cả ba gói.
-      *Xong khi:* khách bấm mua → máy lên → **RDP bằng mật khẩu ngẫu nhiên hiện đúng
-      một lần**, không ai gõ lệnh tay.
+---
 
-- [ ] **G5c — template Windows Server 2022.** (catalog chỉ
-      bán Windows, V9). Cloudbase-Init đổi `metadata_services` sang **NoCloud** (Proxmox
-      sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai thì cấu hình **im lặng
-      không áp dụng**); gắn ổ Cloud-Init **trước** khi convert; **không bật lại VM sau
-      sysprep**. Nhớ luật của cụm: **`sata0` + `e1000`, `agent: 0`, `balloon: 0`**.
-      *Xong khi:* clone ra máy mới, **RDP vào được bằng IP riêng**, mật khẩu ngẫu nhiên
-      hiện đúng một lần.
+- [x] **G5a — đã đo, và kết quả vẫn dùng được.** Chuỗi *job → máy Windows → RDP từ
+      Internet qua IP riêng* đã chứng minh chạy (128 ms). Phần "nhân bản template"
+      bị thay, nhưng phần mạng, IP riêng, NAT 1:1 và console thì giữ nguyên.
+      Ba lỗi tìm được vẫn có giá trị: **card mạng thứ hai của template** (job nay gỡ
+      mọi `netN` thừa), **`vga: serial0`**, và **sàn đĩa của template**.
 
-- [ ] **G6 — template Windows 10 / 11.** Win11 cần UEFI/OVMF + vTPM + Secure Boot.
+- [ ] **G5 (mới) — khách tự cài Windows.**
+      ① `os_images` mang **volid ISO** thay cho VMID template · ② `jobs.py` **tạo máy
+      trống + gắn ISO** thay cho `clone` · ③ **DHCP trên VM router** cấp địa chỉ theo
+      MAC — bắt buộc, vì trình cài đặt Windows không đọc được cloud-init nên không
+      còn đường nào khác để máy có mạng mà khách không phải tự gõ · ④ trang **hướng
+      dẫn cài đặt** cho từng phiên bản · ⑤ chuyển kho ISO sang `vmdata`.
+      *Xong khi:* khách bấm mua → mở console → cài xong Windows bằng tài khoản của
+      chính họ → **RDP vào được từ Internet qua IP riêng**, nền tảng không hề biết
+      mật khẩu.
+
+- [ ] **G6 — Windows 11 cần UEFI/OVMF + vTPM + Secure Boot** trong cấu hình máy.
+      Không còn là việc "dựng template" nữa, chỉ là một biến thể cấu hình khi tạo máy.
 
 - [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
       khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút

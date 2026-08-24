@@ -1,29 +1,37 @@
-"""Catalog hệ điều hành, và ràng buộc tối thiểu của từng bản.
+"""Catalog hệ điều hành: **đĩa cài đặt**, và ràng buộc tối thiểu của từng bản.
+
+## Khách tự cài, nền tảng không dựng sẵn
+
+Từ 2026-08-24 mỗi máy bán ra là một **máy trống + đĩa cài Windows**; khách tự chạy
+trình cài đặt qua console và **tự đặt tài khoản, mật khẩu của chính họ**.
+
+Điều đó đổi ba thứ ở file này:
+
+* mỗi bản OS trỏ tới một **file ISO** (`LTT_VPS_ISO_<ID>`), không phải một template;
+* `disk_gb_toi_thieu` quay về đúng **yêu cầu của Microsoft**, vì không còn thừa
+  hưởng đĩa của template nào;
+* nền tảng **không bao giờ biết mật khẩu của khách** — không giữ thì không làm lộ.
 
 ## Vì sao ràng buộc tối thiểu nằm trong dữ liệu chứ không trong đầu người bán
 
 Yêu cầu của Microsoft là con số cứng: **Windows 11 cần 64 GB đĩa và 4 GB RAM**,
-Server 2022 cần 32 GB. Một tổ hợp (gói × OS) không đạt ngưỡng thì máy **không boot**
-— và nó chỉ lộ ra sau khi khách đã trả tiền, đã chờ mười phút clone, và đang nhìn
-một màn hình đen. Kiểm ở đây là kiểm trước khi thu tiền.
+Server 2022 cần 32 GB. Một tổ hợp (gói × OS) không đạt ngưỡng thì máy **không cài
+được** — và nó chỉ lộ ra sau khi khách đã trả tiền và đang nhìn một thông báo lỗi
+của trình cài đặt. Kiểm ở đây là kiểm trước khi thu tiền.
 
 ## `khach_thay`
 
-Linux **không nằm trong catalog bán** (V9: chỉ Windows). Nó có mặt ở đây vì lý do
-kỹ thuật thuần tuý: dựng chuỗi *web → job → clone → cấp cổng → khách vào được* bằng
-`cloud-init` mất ~40 giây mỗi lượt và tất định; bằng Windows + sysprep mất 10–20
-phút và có bốn cái bẫy đã biết. Chứng minh đường ống bằng Linux rồi mới cắm Windows
-vào tách được "lỗi đường ống" khỏi "lỗi template Windows".
+Bản Linux nội bộ **không nằm trong catalog bán** (V9: chỉ Windows). Nó ở đây vì lý
+do kỹ thuật thuần tuý: dựng chuỗi *web → job → máy → cấp IP → khách vào được* bằng
+`cloud-init` mất ~40 giây mỗi lượt và tất định; bằng Windows thì mất 20–40 phút vì
+có một con người ngồi bấm. Giữ một đường nhanh để tách "lỗi đường ống" khỏi "lỗi
+trong lúc cài Windows".
 
-Và nó đã trả công ngay: chính template nội bộ này phát hiện ra **virtio không chạy
-trên cụm** — một lỗi của *hạ tầng*, không của app, mà template Windows (vốn dùng
-`sata0` sẵn) sẽ không bao giờ để lộ ra.
+## Đường dẫn ISO đọc từ môi trường
 
-## VMID của template đọc từ môi trường
-
-Template là thứ **của một cụm cụ thể**, không phải của mã nguồn. Ghim số vào code
-nghĩa là dựng lại cụm là sửa code. Đọc từ `LTT_VPS_TEMPLATE_<ID>` — vd
-`LTT_VPS_TEMPLATE_WINSRV2022_GUI=9002`.
+ISO là thứ **của một cụm cụ thể**, không phải của mã nguồn. Ghim tên file vào code
+nghĩa là dựng lại cụm là sửa code. Đọc từ `LTT_VPS_ISO_<ID>` — vd
+`LTT_VPS_ISO_WINSRV2022_GUI=local:iso/windows-server-2022-eval-en-us.iso`.
 """
 from __future__ import annotations
 
@@ -42,21 +50,15 @@ class OsImage:
     #: `windows` hoặc `linux` — quyết định dùng Cloudbase-Init hay cloud-init.
     ho: str
     ram_mb_toi_thieu: int
-    #: Sàn đĩa THẬT SỰ, tính cả kích thước đĩa của template.
-    #:
-    #: Không phải chỉ là yêu cầu của Microsoft. **Proxmox chỉ nới đĩa ra, không
-    #: bao giờ thu vào**, nên đĩa của template là sàn cứng: clone từ một template
-    #: 80 GB thì máy nhỏ nhất cũng là 80 GB. Khai 32 GB (số của Microsoft) trong
-    #: khi template là 80 GB thì khách đặt gói 40 GB **qua được cửa kiểm**, rồi
-    #: chiếm 80 GB của kho chung mà chỉ trả tiền 40 — và `capacity.py` đếm theo
-    #: số của gói nên sức chứa tính sai luôn.
-    #:
-    #: `tools/vps_doctor.py` đối chiếu số này với đĩa THẬT của template và kêu
-    #: khi hai bên lệch.
+    #: Yêu cầu đĩa của chính hệ điều hành. Khách tự cài nên không còn thừa hưởng
+    #: đĩa của template nào — số này là số của Microsoft, không hơn.
     disk_gb_toi_thieu: int
     #: Cổng khách thường dùng để vào — chỉ để **hiển thị hướng dẫn**, không còn
     #: dùng để cấu hình gì. NAT 1:1 mở toàn bộ cổng của IP riêng cho máy đó.
     cong_quen: int
+    #: Máy cài bản này có cần UEFI + vTPM + Secure Boot không. Windows 11 thì có,
+    #: và thiếu nó thì trình cài đặt dừng ở "This PC can't run Windows 11".
+    can_uefi_tpm: bool = False
     #: Hiện trong catalog bán không. False = template kỹ thuật, khách không thấy.
     khach_thay: bool
     ghi_chu: str = ""
@@ -144,17 +146,23 @@ def hop_le(plan_id: str, os_id: str, dia_them_gb: int = 0) -> tuple[bool, str]:
     return True, ""
 
 
-def template_vmid(os_id: str, env: dict | None = None) -> int:
-    """VMID của template cho một bản OS. 0 = chưa khai trong môi trường."""
-    src = os.environ if env is None else env
-    khoa = "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
-    try:
-        return int(str(src.get(khoa, "")).strip() or 0)
-    except ValueError:
-        return 0
-
-
 def khoa_moi_truong(os_id: str) -> str:
     """Tên biến môi trường cần đặt cho một bản OS — để thông báo lỗi nói được
     chính xác phải làm gì, thay vì bắt người đọc đi tra tài liệu."""
-    return "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
+    return "LTT_VPS_ISO_" + str(os_id or "").upper().replace("-", "_")
+
+
+def dia_cai_dat(os_id: str, env: dict | None = None) -> str:
+    """Volid của đĩa cài đặt, vd `local:iso/windows-server-2022-eval.iso`.
+
+    Chuỗi rỗng = chưa khai trong môi trường. **Fail-closed**: chưa khai thì job
+    từ chối tạo máy, thay vì tạo một máy trống không boot được rồi để khách nhìn
+    màn hình đen mà không hiểu vì sao.
+    """
+    src = os.environ if env is None else env
+    return str(src.get(khoa_moi_truong(os_id), "")).strip()
+
+
+def template_vmid(os_id: str, env: dict | None = None) -> int:
+    """Giữ lại cho `vps_doctor` cũ. Mô hình template đã bỏ 2026-08-24."""
+    return 0

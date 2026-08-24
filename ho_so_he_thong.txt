@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:577d6ddbecc95c1c0a35827eef1d438341060899ceef41a1721924ba22e310d9
-Nguồn đã quét : 1323 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:670f92f3af87c1dd2d0c043250dbec6979156868307a31e004808d279900f887
+Nguồn đã quét : 1324 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1513,8 +1513,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1323 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1016, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1324 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1017, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2788,7 +2788,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (92)
+[tools] (93)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2838,6 +2838,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - tools/do_bo_cuc.py
 - tools/doctor.py
 - tools/doi_chung_gemini.py
+- tools/dong_goi_exe.py
 - tools/dong_goi_gui.py
 - tools/gate.py
 - tools/gui/index.html
@@ -2904,7 +2905,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:91, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1323 file; 12305176 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1324 file; 12319378 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -87952,7 +87953,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=6d7f51740a9d2614bee4e2b66c3ea29ded0c90ebeddf2ff0396839da93d2b845 BYTES=200495 LINES=2896
+SHA256=6f4c827811fd34a86d09e036ce60a6423ab93dadb26060eacdb86b3125e722a1 BYTES=201557 LINES=2912
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -90759,10 +90760,26 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
 
       🔴 **`vga: serial0` ⇒ máy không có màn hình đồ hoạ** (đã sửa ở G3b).
 
-- [ ] **G5b — template Windows dùng được để BÁN.** Cần Cloudbase-Init trong template:
-      đổi `metadata_services` sang **NoCloud** (Proxmox sinh NoCloud, Cloudbase mặc
-      định đọc ConfigDrive — sai thì cấu hình **im lặng không áp dụng**), bật sẵn RDP,
-      rồi sysprep. Cân nhắc dựng template mới **đĩa 40 GB** để bán được cả ba gói.
+- [ ] **G5b — template Windows dùng được để BÁN.** 🔴 **CHẶN: cần chủ sản phẩm.**
+
+      Đã chuẩn bị sẵn: `scratchpad/chuan_bi_windows.ps1` (bật RDP + bật NLA, tải và
+      cài Cloudbase-Init 1.1.6, đổi `metadata_services` sang **NoCloud** — Proxmox
+      sinh NoCloud còn Cloudbase mặc định đọc ConfigDrive, sai thì cấu hình **im lặng
+      không áp dụng** và máy lên với tên + mật khẩu CỦA TEMPLATE). Máy dựng-template
+      `VMID 210` đã tạo từ 9001, một card, `vga: std`.
+
+      **Vì sao chặn:** template chỉ tự đăng nhập ở **lần boot đầu tiên sau sysprep**
+      (OOBE). Từ lần thứ hai nó hỏi mật khẩu quản trị của template — thứ chỉ chủ sản
+      phẩm có. Tôi không xử lý mật khẩu, và không dùng mẹo phá mật khẩu Windows trên
+      máy của người khác.
+
+      Hai lối ra, chủ sản phẩm chọn:
+      **(a)** tự đăng nhập vào VM 210 (console Proxmox) và chạy script — hai dòng;
+      **(b)** bỏ hẳn đường này, dựng template Windows Server 2022 **từ ISO** với
+      `autounattend.xml` do ta viết (**G5c**) — lúc đó mật khẩu do ta đặt từ đầu, và
+      đĩa đặt được **40 GB** để bán được cả ba gói. Chậm hơn nhưng sạch hơn, và gỡ
+      luôn phụ thuộc vào một bí mật mà nền tảng không nên giữ.
+
       *Xong khi:* khách bấm mua → máy lên → **RDP bằng mật khẩu ngẫu nhiên hiện đúng
       một lần**, không ai gõ lệnh tay.
 
@@ -246782,7 +246799,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli_gui.py
-SHA256=8413afdb56fe155715382cfcc0f919915400d5319985078372a5cd7fe23ebece BYTES=5144 LINES=136
+SHA256=10e26c3ff142a1862b67bbe91e015a1059db54871dab902eaa764c3768aebe19 BYTES=8537 LINES=206
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli_gui.py - vo GUI cho `cam_cli`. (C15-GUI / U2)
 
@@ -246818,8 +246835,33 @@ import importlib.util
 import pathlib
 import sys
 
-GOC = pathlib.Path(__file__).resolve().parents[1]
-THU_MUC_GUI = pathlib.Path(__file__).resolve().parent / "gui"
+def _thu_muc_goc() -> pathlib.Path:
+    """Thư mục chứa tài sản, đúng ở **cả hai** chế độ chạy.
+
+    🔴 ĐÂY LÀ MỘT CÁI BẪY THẬT, không phải phòng xa. Khi đóng gói bằng
+       PyInstaller, `__file__` **không còn** trỏ tới `tools/`: mã chạy từ trong
+       gói và tài sản nằm ở `sys._MEIPASS`. Nên đường dẫn tính từ `__file__` sẽ
+       trỏ vào chỗ không có gì.
+
+    ⛔ Và hỏng theo kiểu tệ nhất: `.exe` **dựng thành công**, **chạy được**, cửa
+       sổ **mở ra** — rồi **trắng trơn**. Không lỗi nào, không log nào. Cùng lớp
+       với luật *"đừng neo đường dẫn bằng `Path(__file__).parents[n]`"* trong
+       CLAUDE.md: nó hỏng lặng lẽ, trang vẫn trả 200, chỉ là vỏ trống.
+    """
+    tam = getattr(sys, "_MEIPASS", None)          # PyInstaller
+    if tam:
+        return pathlib.Path(tam)
+    # !! Nuitka KHONG dat `sys.frozen` - no dat `__compiled__` o cap module. Ban
+    #    dau toi kiem `sys.frozen` va ban Nuitka bao "dong bang: False"; no van
+    #    tim thay tai san, nhung DO MAY: `__file__` tinh co tro dung vao .dist.
+    #    Mot phep do noi sai ma van ra ket qua dung la thu de tin nham nhat.
+    if "__compiled__" in globals() or getattr(sys, "frozen", False):
+        return pathlib.Path(sys.executable).resolve().parent
+    return pathlib.Path(__file__).resolve().parent
+
+
+THU_MUC_GOC = _thu_muc_goc()
+THU_MUC_GUI = THU_MUC_GOC / "gui"
 
 
 def _nap_loi():
@@ -246830,7 +246872,7 @@ def _nap_loi():
     except ImportError:
         pass
     spec = importlib.util.spec_from_file_location(
-        "cam_cli", pathlib.Path(__file__).resolve().parent / "cam_cli.py")
+        "cam_cli", THU_MUC_GOC / "cam_cli.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -246888,7 +246930,52 @@ class Cau:
 HAM_CHO_PHEP = ("xem", "cam", "go", "kiem")
 
 
+def tu_kiem() -> int:
+    """Bản đóng gói **tự chứng minh** nó tìm được tài sản của mình.
+
+    🔴 VÌ SAO CẦN. `.exe` dựng xong, Defender báo sạch, kích thước đúng — **và
+       vẫn có thể mở ra một cửa sổ trắng** nếu `index.html` không đi theo gói
+       hoặc đường dẫn tính sai ở chế độ đóng băng.
+
+       Ba dấu hiệu quen thuộc (dựng OK / quét sạch / chạy được) **không cái nào**
+       chạm tới câu hỏi thật: *tài sản có ở đó không?* Và một cửa sổ trắng thì
+       không có log để mà đọc.
+
+    ⇒ Chạy `LTTStudios-CamCLI.exe --tu-kiem` sau khi đóng gói. Nó không mở cửa
+      sổ, chỉ in ra đường dẫn thật rồi trả mã 0/1 — dùng được trong kịch bản
+      dựng, không cần ai ngồi nhìn.
+    """
+    print(f"che do dong bang : {bool(getattr(sys, 'frozen', False)) or bool(getattr(sys, '_MEIPASS', None))}")
+    print(f"thu muc goc      : {THU_MUC_GOC}")
+    thieu = []
+    for ten in ("gui/index.html", "gui/ltt.css", "cam_cli.py"):
+        d = THU_MUC_GOC / ten
+        print(f"  {'[OK]' if d.exists() else '[THIEU]'} {ten}")
+        if not d.exists():
+            thieu.append(ten)
+    try:
+        loi = _nap_loi()
+        print(f"  [OK] nap duoc loi (GOC_MAC_DINH={loi.GOC_MAC_DINH})")
+    except Exception as exc:                                  # noqa: BLE001
+        print(f"  [THIEU] khong nap duoc cam_cli: {exc}")
+        thieu.append("cam_cli")
+    try:
+        import webview                                        # noqa: F401
+        print("  [OK] co pywebview")
+    except ImportError:
+        print("  [!!] khong co pywebview - se lui ve dong lenh")
+    if thieu:
+        print("")
+        print(f"THIEU: {thieu}. Ban dong goi nay se mo ra mot CUA SO TRANG.")
+        return 1
+    print("")
+    print("Du tai san.")
+    return 0
+
+
 def main(argv=None) -> int:
+    if "--tu-kiem" in (argv if argv is not None else sys.argv[1:]):
+        return tu_kiem()
     try:
         import webview
     except ImportError:
@@ -252191,6 +252278,224 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/dong_goi_exe.py
+SHA256=8c14682bc86e79b0c13f8afe3367fcef18bb0ce5bf5b4d52002a974cbad6b47c BYTES=8355 LINES=212
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""dong_goi_exe.py - dung ban .exe cua GUI, va DO xem no co bi bao virus khong.
+
+    python tools\\dong_goi_exe.py pyinstaller
+    python tools\\dong_goi_exe.py nuitka
+    python tools\\dong_goi_exe.py ca-hai --quet
+
+* VI SAO KHONG DUNG `--onefile`, DU DICH LA "MOT TEP".
+
+  Ca PyInstaller lan Nuitka o che do onefile deu TU GIAI NEN hang chuc DLL vao
+  `AppData\\Local\\Temp` moi lan chay. Cong dong noi thang vi sao dieu do te:
+  *"Malware does this constantly to hide its true payload."*
+
+  Voi dung cong cu nay thi ho so hanh vi cang giong thu dang nghi: no GHI TEP
+  CAU HINH trong thu muc nha va GIU MOT KHOA API. Ket qua thuc te: khach tai ve,
+  bam vao, va thay canh bao virus - nguoc han voi muc tieu "nhin chuyen nghiep".
+
+  => Dung che do THU MUC, roi boc bang mot installer. Khach van tai ve DUNG MOT
+     TEP .exe, nhung do la TRINH CAI DAT: AV it bao hon, khoi dong nhanh hon, va
+     co loi tat + trinh go cai - thu mot .exe tran khong co.
+
+! VA VI SAO CO `--quet`. Du an nay co luat: CHUA DO THI KHONG CHAY. "Nuitka nghe
+  an toan hon" khong phai mot so do. `MpCmdRun.exe` cua Windows Defender chay
+  CUC BO, khong phai tai tep len dau ca, va Defender dung la thu quyet dinh voi
+  da so nguoi dung Windows.
+
+  Neu ca hai deu sach thi CHON PYINSTALLER - dung nhanh hon la loi ich THAT moi
+  ngay, con "it bao gia hon ve ly thuyet" thi khong.
+"""
+from __future__ import annotations
+
+import argparse
+import pathlib
+import shutil
+import subprocess
+import sys
+import time
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+TOOLS = GOC / "tools"
+#: Dat duoi `build/` co chu y: ten do DA nam trong EXCLUDED_DIR_NAMES
+#: cua `scan_source_secrets.py` va da trong .gitignore. Them mot ngoai le
+#: moi cho bo quet la noi rong no; doi mot duong dan thi re hon nhieu.
+RA = GOC / "build" / "exe"
+TEN = "LTTStudios-CamCLI"
+
+DEFENDER = pathlib.Path(r"C:\Program Files\Windows Defender\MpCmdRun.exe")
+
+
+def _chay(lenh, cwd=None) -> tuple[int, str]:
+    """Chay mot lenh dung. **In ra khi that bai** - dung nuot.
+
+    !! Ban dau ham nay bat het output roi chi tra ve ma thoat. Ket qua: mot lan
+       dung hong in ra dung mot dong `ma=1` va KHONG GI KHAC - toi phai chay lai
+       bang tay moi biet vi sao. Do la dung loai loi `check_silent_except.py`
+       ton tai de chan, chi khac la no o trong mot script cong cu nen khong bi
+       banh coc nao bat.
+    """
+    t = time.monotonic()
+    r = subprocess.run(lenh, cwd=cwd, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    giay = f"{time.monotonic() - t:.0f}s"
+    if r.returncode != 0:
+        print(f"   --- lenh that bai (ma {r.returncode}) ---")
+        for dong in ((r.stdout or "") + (r.stderr or "")).splitlines()[-25:]:
+            print(f"   {dong}")
+        print("   --- het ---")
+    return r.returncode, giay
+
+
+def _kich_thuoc(thu_muc: pathlib.Path) -> str:
+    if not thu_muc.exists():
+        return "-"
+    n = sum(p.stat().st_size for p in thu_muc.rglob("*") if p.is_file())
+    return f"{n / 1_048_576:.1f} MB"
+
+
+def dung_pyinstaller() -> pathlib.Path | None:
+    dich = RA / "pyinstaller"
+    if dich.exists():
+        shutil.rmtree(dich, ignore_errors=True)
+    print("== PyInstaller (che do THU MUC, khong onefile) ==")
+    ma, giay = _chay([
+        sys.executable, "-m", "PyInstaller",
+        "--noconfirm", "--clean",
+        "--name", TEN,
+        "--windowed",                       # khong hien cua so console
+        "--distpath", str(dich),
+        "--workpath", str(RA / "_work_pyi"),
+        "--specpath", str(RA / "_spec"),
+        # `tools/gui/` phai di theo: index.html + ltt.css. Thieu no thi .exe chay
+        # duoc nhung cua so trang - hong theo kieu kho doan nhat.
+        "--add-data", f"{TOOLS / 'gui'}{';'}gui",
+        "--add-data", f"{TOOLS / 'cam_cli.py'}{';'}.",
+        str(TOOLS / "cam_cli_gui.py"),
+    ], cwd=GOC)
+    print(f"   ma={ma}  {giay}  kich thuoc={_kich_thuoc(dich)}")
+    return (dich / TEN / f"{TEN}.exe") if ma == 0 else None
+
+
+def dung_nuitka() -> pathlib.Path | None:
+    dich = RA / "nuitka"
+    if dich.exists():
+        shutil.rmtree(dich, ignore_errors=True)
+    dich.mkdir(parents=True, exist_ok=True)
+    print("== Nuitka (standalone, khong onefile) ==")
+    ma, giay = _chay([
+        sys.executable, "-m", "nuitka",
+        "--standalone",
+        "--assume-yes-for-downloads",
+        "--windows-console-mode=disable",
+        f"--output-dir={dich}",
+        f"--output-filename={TEN}.exe",
+        f"--include-data-dir={TOOLS / 'gui'}=gui",
+        f"--include-data-files={TOOLS / 'cam_cli.py'}=cam_cli.py",
+        str(TOOLS / "cam_cli_gui.py"),
+    ], cwd=GOC)
+    print(f"   ma={ma}  {giay}  kich thuoc={_kich_thuoc(dich)}")
+    thu = list(dich.glob("*.dist"))
+    return (thu[0] / f"{TEN}.exe") if (ma == 0 and thu) else None
+
+
+ISCC = pathlib.Path(r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe")
+
+
+def dung_installer() -> pathlib.Path | None:
+    """Boc ban THU MUC thanh MOT tep .exe cai dat.
+
+    * Day la cach cho khach "mot tep" ma khong dinh cai gia cua onefile. Xem chu
+      thich dau tep, va `tools/installer/cam_cli.iss`.
+    """
+    print("== Installer (Inno Setup) ==")
+    if not ISCC.exists():
+        print("   ISCC.exe khong co. Cai Inno Setup 6 tu jrsoftware.org.")
+        return None
+    nguon = RA / "pyinstaller" / TEN
+    if not nguon.exists():
+        print("   Chua co ban PyInstaller. Chay truoc:")
+        print(r"     python tools\dong_goi_exe.py pyinstaller")
+        return None
+    ma, giay = _chay([str(ISCC), str(TOOLS / "installer" / "cam_cli.iss")], cwd=GOC)
+    ra = sorted((RA / "installer").glob(f"{TEN}-Setup-*.exe")) if ma == 0 else []
+    if ra:
+        print(f"   ma={ma}  {giay}  {ra[-1].name}  "
+              f"{ra[-1].stat().st_size / 1_048_576:.1f} MB")
+        # ! KHONG KY SO (quyet dinh 24/08). Bam SHA-256 la thu DUY NHAT con lai
+        #   de khach kiem tep dung la cua ta - nen phai in ra, va phai dang canh
+        #   duong tai ve.
+        import hashlib
+        bam = hashlib.sha256(ra[-1].read_bytes()).hexdigest()
+        print(f"   SHA256 = {bam}")
+        print("   ^ dang bam nay CANH DUONG TAI VE. Khong ky so thi day la thu")
+        print("     duy nhat khach dung de kiem tep dung la cua ta.")
+        return ra[-1]
+    print(f"   ma={ma}  {giay}  THAT BAI")
+    return None
+
+
+def quet(duong: pathlib.Path | None, nhan: str) -> None:
+    """Quet bang Windows Defender - CUC BO, khong tai tep len dau ca."""
+    if duong is None or not duong.exists():
+        print(f"   {nhan:14} khong co tep de quet")
+        return
+    if not DEFENDER.exists():
+        print(f"   {nhan:14} khong thay MpCmdRun.exe")
+        return
+    r = subprocess.run([str(DEFENDER), "-Scan", "-ScanType", "3",
+                        "-File", str(duong.parent), "-DisableRemediation"],
+                       capture_output=True, text=True, encoding="utf-8",
+                       errors="replace")
+    ra = (r.stdout or "") + (r.stderr or "")
+    sach = "found no threats" in ra.lower() or r.returncode == 0
+    print(f"   {nhan:14} {'SACH' if sach else 'BI BAO'}  (ma {r.returncode})")
+    if not sach:
+        for d in ra.splitlines():
+            if "Threat" in d or "found" in d.lower():
+                print(f"      {d.strip()}")
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description="Dung .exe cho GUI cam_cli")
+    ap.add_argument("bo", choices=["pyinstaller", "nuitka", "ca-hai", "installer"])
+    ap.add_argument("--quet", action="store_true",
+                    help="quet bang Windows Defender sau khi dung")
+    a = ap.parse_args(argv)
+
+    RA.mkdir(parents=True, exist_ok=True)
+    kq = {}
+    if a.bo in ("pyinstaller", "ca-hai"):
+        kq["pyinstaller"] = dung_pyinstaller()
+    if a.bo in ("nuitka", "ca-hai"):
+        kq["nuitka"] = dung_nuitka()
+    if a.bo == "installer":
+        kq["installer"] = dung_installer()
+
+    if a.quet:
+        print("\n== Quet Windows Defender (cuc bo) ==")
+        for ten, duong in kq.items():
+            quet(duong, ten)
+
+    print("\n== Ket qua ==")
+    for ten, duong in kq.items():
+        print(f"   {ten:14} {duong if duong else 'DUNG THAT BAI'}")
+    return 0 if all(kq.values()) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/dong_goi_gui.py
 SHA256=37e67e96e553966bc2707b7aa9a210db7ab9cf2fbe399bfb12d7662ab03a0fbe BYTES=3267 LINES=96
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -252472,7 +252777,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/index.html
-SHA256=54e203b5d969d8a6d794900193bb5412fb22e3e623b1beed765f3d68adcf7595 BYTES=7734 LINES=173
+SHA256=63a7762e7a0dcb3bb10df583f1e99ac542fcff720d29909deffeccc8a9878e9c BYTES=9126 LINES=199
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <!DOCTYPE html>
 <html lang="vi">
@@ -252530,6 +252835,12 @@ a:hover{text-decoration:underline}
 .cp code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;
          padding:2px 7px;font-family:var(--mono);font-size:11.5px;color:var(--fg)}
 .cp .k{color:var(--dim);width:120px;flex:none}
+.cp code{flex:1}
+.chep{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+      border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;flex:none;
+      transition:color var(--motion-fast),border-color var(--motion-fast)}
+.chep:hover{color:var(--fg);border-color:var(--line2)}
+.chep.xong{color:var(--ok);border-color:var(--ok-line)}
 </style>
 </head>
 <body>
@@ -252581,9 +252892,9 @@ a:hover{text-decoration:underline}
     <p class="hd">Claude Desktop · cấu hình tay</p>
     <p class="lam" style="margin-top:0">Ứng dụng này không đọc tệp cấu hình nào —
       phải điền trong app: <span class="mono">Developer → Configure Third-Party Inference</span>.</p>
-    <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code></div>
-    <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code></div>
-    <div class="cp"><span class="k">inferenceModels</span><code>ltt_llm</code></div>
+    <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code><button class="chep" data-chep="https://app.lttstudios.com/api">chép</button></div>
+    <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code><button class="chep" data-chep="Bearer">chép</button></div>
+    <div class="cp"><span class="k">inferenceModels</span><code>ltt_llm</code><button class="chep" data-chep="ltt_llm">chép</button></div>
     <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
   </div>
 
@@ -252638,6 +252949,26 @@ $("bcam").onclick = () => {
 };
 $("bkiem").onclick = () => chay("Đang gọi thật một lượt", () => api().kiem());
 $("bgo").onclick = () => chay("Đang gỡ", () => api().go());
+// Chep bang API cua trinh duyet, KHONG them mot ham thu nam vao cau noi.
+// Moi ham them vao cau noi la mot ham ma trong cua so goi duoc - va viec nay
+// khong can Python lam gi ca.
+for (const b of document.querySelectorAll(".chep")) {
+  b.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(b.dataset.chep);
+      const cu = b.textContent;
+      b.textContent = "đã chép"; b.classList.add("xong");
+      setTimeout(() => { b.textContent = cu; b.classList.remove("xong"); }, 1400);
+    } catch {
+      // Khong chep duoc thi BOI DEN gia tri de khach tu Ctrl+C, thay vi bao mot
+      // loi ma ho khong lam gi duoc voi no.
+      const el = b.previousElementSibling;
+      const r = document.createRange(); r.selectNodeContents(el);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+  };
+}
+
 $("mokhoa").onclick = (e) => {
   e.preventDefault();
   // Mo bang trinh duyet HE THONG, khong dieu huong cua so nay: cua so nay co

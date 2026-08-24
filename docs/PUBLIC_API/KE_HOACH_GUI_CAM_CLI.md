@@ -341,6 +341,77 @@ xong**, vì mục tiêu đặt ra là "nhìn chuyên nghiệp" và đó đúng l
 
 ### Bảng việc đóng gói
 
+### ✅ P1 + P2 — số đo thật, 24/08, và nó **lật kỳ vọng**
+
+Dựng cả hai ở chế độ thư mục, quét bằng **Windows Defender cục bộ**
+(`MpCmdRun.exe`) — không tải tệp lên đâu cả, và Defender đúng là thứ quyết định
+với đa số người dùng Windows.
+
+| | PyInstaller 6.11.1 | Nuitka 4.1.3 |
+|---|---|---|
+| Kích thước phát hành | **66,9 MB** (116 tệp) | 69,8 MB (43 tệp) |
+| Thời gian dựng | **32 s** | **355 s** |
+| Windows Defender | **SẠCH** | **SẠCH** |
+| `--tu-kiem` sau đóng gói | ✅ | ✅ |
+
+⇒ **P2 chốt: PyInstaller.** Đúng theo luật đã viết ra **trước khi đo**: *"nếu số
+đo cho thấy cả hai đều sạch thì chọn PyInstaller, vì dựng nhanh hơn là một lợi
+ích thật mỗi ngày, còn 'ít báo giả hơn về lý thuyết' thì không."*
+
+Kích thước gần như bằng nhau (66,9 so với 69,8 MB), nên lợi thế duy nhất còn lại
+của Nuitka là giả thuyết về AV — mà phép đo vừa bác bỏ. Đổi lại là **11 lần**
+thời gian dựng.
+
+⚠️ **Số đo này là của Defender, không phải của mọi máy quét.** Nó trả lời đúng
+câu hỏi quan trọng nhất (đa số khách dùng Defender) và **không** trả lời câu
+"mọi diệt virus đều sạch". Nếu sau này có khách báo bị chặn thì đó là lúc dùng P6,
+không phải lúc kết luận phép đo này sai.
+
+### 🔴 Một cái bẫy đã dính, ghi lại vì nó **không có log để đọc**
+
+Bản đóng gói đầu tiên dựng xong, Defender sạch, kích thước đúng — và **sẽ mở ra
+một cửa sổ trắng**. `THU_MUC_GUI` tính từ `__file__`, thứ **đổi nghĩa** khi đóng
+băng: PyInstaller đặt tài sản ở `sys._MEIPASS`, còn Nuitka đặt cạnh `sys.executable`.
+
+Ba dấu hiệu quen thuộc — *dựng OK*, *quét sạch*, *chạy được* — **không cái nào**
+chạm tới câu hỏi thật: **tài sản có ở đó không?**
+
+⇒ Đã thêm `--tu-kiem`: bản đóng gói **tự chứng minh** nó tìm được tài sản, in ra
+đường dẫn thật rồi trả mã 0/1. Không cần ai ngồi nhìn cửa sổ.
+
+⚠️ Và một phép dò **nói sai mà vẫn ra kết quả đúng** thì còn nguy hơn: bản Nuitka
+báo `che do dong bang: False` nhưng vẫn tìm thấy tài sản — **do may**, vì
+`__file__` tình cờ trỏ đúng vào `.dist`. Nuitka không đặt `sys.frozen`, nó đặt
+`__compiled__`. Đã sửa.
+
+### ✅ P3 — installer, và **gỡ cài mới là chốt thật**
+
+```
+LTTStudios-CamCLI-Setup-1.0.0.exe    24,7 MB   (nen tu 66,9 MB)
+SHA256 b76b5d7c2a17e47669a5fd2a081f962c98e7eb3ba0fe7857c36686a32dd02224
+```
+
+| Bước | Kết quả |
+|---|---|
+| Defender quét installer | **SẠCH** |
+| Cài im lặng | mã 0, vào `%LOCALAPPDATA%\Programs\` — **không cần admin** |
+| `--tu-kiem` bản đã cài | ✅ đủ tài sản |
+| Lối tắt Start Menu + gỡ cài | ✅ cả hai |
+| **Gỡ cài** | thư mục **hết**, lối tắt **hết** |
+| `~/.codex`, `~/.claude` sau khi gỡ | ⭐ **KHÔNG bị đụng tới** |
+
+⭐ **`PrivilegesRequired=lowest` là quyết định, không phải mặc định.** Công cụ này
+ghi vào `~/.codex`, `~/.claude` và biến môi trường **cấp người dùng**. Cài bằng
+quyền admin rồi chạy bằng tài khoản khác là ghi vào **đúng thư mục nhà sai** — và
+hỏng lặng lẽ.
+
+⛔ **Gỡ cài KHÔNG được đụng vào cấu hình của khách.** `~/.codex/config.toml` là
+thứ **khách đã tạo** qua công cụ, và gỡ một ứng dụng **không được** âm thầm sửa
+cấu hình của ứng dụng khác. Muốn gỡ ra thì bấm **"Gỡ ra"** trong công cụ *trước*
+khi gỡ cài — đó là đường đã có test chốt trả về **bằng từng byte**.
+
+---
+
 | # | Việc | Đạt khi |
 |---|---|---|
 | **P1** | Dựng **cả hai** (PyInstaller onedir + Nuitka standalone), nộp VirusTotal | có **số** so sánh, ghi vào tài liệu |

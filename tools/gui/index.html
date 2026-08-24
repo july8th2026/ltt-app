@@ -54,6 +54,12 @@ a:hover{text-decoration:underline}
 .cp code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;
          padding:2px 7px;font-family:var(--mono);font-size:11.5px;color:var(--fg)}
 .cp .k{color:var(--dim);width:120px;flex:none}
+.cp code{flex:1}
+.chep{background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+      border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;flex:none;
+      transition:color var(--motion-fast),border-color var(--motion-fast)}
+.chep:hover{color:var(--fg);border-color:var(--line2)}
+.chep.xong{color:var(--ok);border-color:var(--ok-line)}
 </style>
 </head>
 <body>
@@ -105,9 +111,9 @@ a:hover{text-decoration:underline}
     <p class="hd">Claude Desktop · cấu hình tay</p>
     <p class="lam" style="margin-top:0">Ứng dụng này không đọc tệp cấu hình nào —
       phải điền trong app: <span class="mono">Developer → Configure Third-Party Inference</span>.</p>
-    <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code></div>
-    <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code></div>
-    <div class="cp"><span class="k">inferenceModels</span><code>ltt_llm</code></div>
+    <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code><button class="chep" data-chep="https://app.lttstudios.com/api">chép</button></div>
+    <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code><button class="chep" data-chep="Bearer">chép</button></div>
+    <div class="cp"><span class="k">inferenceModels</span><code>ltt_llm</code><button class="chep" data-chep="ltt_llm">chép</button></div>
     <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
   </div>
 
@@ -162,6 +168,26 @@ $("bcam").onclick = () => {
 };
 $("bkiem").onclick = () => chay("Đang gọi thật một lượt", () => api().kiem());
 $("bgo").onclick = () => chay("Đang gỡ", () => api().go());
+// Chep bang API cua trinh duyet, KHONG them mot ham thu nam vao cau noi.
+// Moi ham them vao cau noi la mot ham ma trong cua so goi duoc - va viec nay
+// khong can Python lam gi ca.
+for (const b of document.querySelectorAll(".chep")) {
+  b.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(b.dataset.chep);
+      const cu = b.textContent;
+      b.textContent = "đã chép"; b.classList.add("xong");
+      setTimeout(() => { b.textContent = cu; b.classList.remove("xong"); }, 1400);
+    } catch {
+      // Khong chep duoc thi BOI DEN gia tri de khach tu Ctrl+C, thay vi bao mot
+      // loi ma ho khong lam gi duoc voi no.
+      const el = b.previousElementSibling;
+      const r = document.createRange(); r.selectNodeContents(el);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+  };
+}
+
 $("mokhoa").onclick = (e) => {
   e.preventDefault();
   // Mo bang trinh duyet HE THONG, khong dieu huong cua so nay: cua so nay co
