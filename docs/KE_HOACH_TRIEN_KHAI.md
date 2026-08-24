@@ -2776,7 +2776,41 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
       *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
 
-- [ ] **G5 — template Windows Server 2022.** Đây mới là **sản phẩm thật** (catalog chỉ
+- [~] **G5a — Windows CHẠY ĐƯỢC qua đường ống.** 🔨 **Đo thật 2026-08-24.**
+      Nhân bản template `WIN10-LTSC-GOLD` (9001) **qua job**: 15 giây; Windows boot
+      thẳng tới desktop, **tự đăng nhập, không hỏi OOBE** (template có sẵn answer
+      file); và **RDP vào được từ Internet qua IP riêng, 128 ms**.
+
+      Nhưng ba việc còn phải làm TAY, và chúng chính là phần G5b:
+      ① đặt địa chỉ tĩnh trong Windows · ② bật Remote Desktop · ③ đặt mật khẩu riêng
+      cho từng khách. Cả ba là việc của **Cloudbase-Init**.
+
+      **Ba lỗi tìm được, không lỗi nào test bắt được:**
+
+      🔴 **Đĩa template là SÀN CỨNG.** `os_images` khai `win10` cần 32 GB (số của
+      Microsoft) nhưng template thật là **80 GB**, mà **Proxmox chỉ nới ra, không thu
+      vào**. Khách đặt gói Nhỏ 40 GB **qua được cửa kiểm**, rồi chiếm 80 GB của kho
+      chung trong khi chỉ trả tiền 40 — và `capacity.py` đếm theo số của gói nên sức
+      chứa tính sai luôn. Đã sửa sàn về 80 và thêm phép đối chiếu vào `vps_doctor.py`.
+      *Hệ quả bán hàng:* với template hiện tại **Windows 10 chỉ bán được ở gói Lớn**,
+      hoặc gói Vừa mua thêm ≥20 GB đĩa.
+
+      🔴 **Máy khách thừa hưởng card mạng thứ hai của template.** `cau_hinh_qemu` chỉ
+      đặt `net0`; `WIN10-LTSC-GOLD` có sẵn `net1`, và máy thử hiện ra **hai** card
+      trong Windows. Ở đây `net1` may là `vmbr1`; template nào có `net1` cắm `vmbr0`
+      thì **máy bán cho khách có một chân trong LAN nhà** — đúng thứ `mang.py` nói
+      tuyệt đối không được. Job nay gỡ mọi `netN` thừa, có test chốt.
+
+      🔴 **`vga: serial0` ⇒ máy không có màn hình đồ hoạ** (đã sửa ở G3b).
+
+- [ ] **G5b — template Windows dùng được để BÁN.** Cần Cloudbase-Init trong template:
+      đổi `metadata_services` sang **NoCloud** (Proxmox sinh NoCloud, Cloudbase mặc
+      định đọc ConfigDrive — sai thì cấu hình **im lặng không áp dụng**), bật sẵn RDP,
+      rồi sysprep. Cân nhắc dựng template mới **đĩa 40 GB** để bán được cả ba gói.
+      *Xong khi:* khách bấm mua → máy lên → **RDP bằng mật khẩu ngẫu nhiên hiện đúng
+      một lần**, không ai gõ lệnh tay.
+
+- [ ] **G5c — template Windows Server 2022.** (catalog chỉ
       bán Windows, V9). Cloudbase-Init đổi `metadata_services` sang **NoCloud** (Proxmox
       sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai thì cấu hình **im lặng
       không áp dụng**); gắn ổ Cloud-Init **trước** khi convert; **không bật lại VM sau

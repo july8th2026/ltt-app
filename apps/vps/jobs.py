@@ -167,6 +167,14 @@ def _tao_may(params: dict, ctx=None) -> dict:
                     "vga": "std"}
         cau_hinh.update(mang.cau_hinh_qemu(
             mang.mang_cho_may(gateway, ip_noi_bo)))
+        # GỠ mọi card thừa của template. `cau_hinh_qemu` chỉ đặt `net0`; template
+        # nào có sẵn `net1` thì máy khách thừa hưởng nó — và nếu card đó cắm
+        # `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**, đúng thứ
+        # `mang.py` nói tuyệt đối không được có.
+        #
+        # Không lý thuyết: template `WIN10-LTSC-GOLD` có `net1`, và máy thử ngày
+        # 24/08 hiện ra hai card ("Ethernet" và "Ethernet 2") trong Windows.
+        cau_hinh.update(_go_card_thua(client, may.vmid))
         client.dat_cau_hinh(may.vmid, **cau_hinh)
 
         can_dia = dia_tong_gb(may.plan_id, may.dia_them_gb)
@@ -355,6 +363,21 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
+
+
+def _go_card_thua(client, vmid: int) -> dict:
+    """Tham số `qm set` để xoá `net1`, `net2`… của template. Chỉ giữ `net0`.
+
+    Trả một dict `{"delete": "net1,net2"}` để gộp chung vào một lần gọi cấu
+    hình — Proxmox nhận `delete` là danh sách tên khoá ngăn bằng dấu phẩy.
+    """
+    try:
+        cfg = client._goi("GET", f"/nodes/{client.config.node}/qemu/{int(vmid)}/config") or {}
+    except ProxmoxError:
+        return {}
+    thua = sorted(k for k in cfg
+                  if k.startswith("net") and k != "net0" and k[3:].isdigit())
+    return {"delete": ",".join(thua)} if thua else {}
 
 
 def _ip_cong_khai(db, instance_id: str) -> str:

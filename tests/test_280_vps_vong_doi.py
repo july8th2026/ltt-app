@@ -208,3 +208,37 @@ def test_con_han_va_con_bao_nhieu_ngay_la_HAI_thu_khac_nhau():
     m.paid_until = now + timedelta(days=20)
     assert billing.con_han(m, now=now) is True
     assert billing.con_bao_nhieu_ngay(m, now=now) == 20
+
+
+# ── 6. Máy khách chỉ được có MỘT card ───────────────────────────────────────
+
+def test_go_het_card_thua_cua_template():
+    """Template có sẵn `net1` thì máy khách thừa hưởng nó. Nếu card đó cắm
+    `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**.
+
+    Không lý thuyết: `WIN10-LTSC-GOLD` có `net1`, và máy thử 24/08 hiện ra hai
+    card trong Windows ("Ethernet" và "Ethernet 2")."""
+    from apps.vps import jobs
+
+    class _C:
+        class config:
+            node = "pve"
+
+        def _goi(self, method, duong_dan, **kw):
+            return {"net0": "e1000,bridge=vmbr1", "net1": "e1000,bridge=vmbr0",
+                    "net3": "e1000,bridge=vmbr0", "sata0": "x", "name": "y"}
+
+    assert jobs._go_card_thua(_C(), 200) == {"delete": "net1,net3"}
+
+
+def test_template_chi_co_mot_card_thi_khong_xoa_gi():
+    from apps.vps import jobs
+
+    class _C:
+        class config:
+            node = "pve"
+
+        def _goi(self, method, duong_dan, **kw):
+            return {"net0": "e1000,bridge=vmbr1", "sata0": "x"}
+
+    assert jobs._go_card_thua(_C(), 200) == {}

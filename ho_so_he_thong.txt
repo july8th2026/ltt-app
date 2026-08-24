@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9d117b7257db7d95a8dd64418eb885fe0ef169141b454de61a3995f85e73a809
+Fingerprint   : sha256:fab48f81ce75f54f770303589ea0a48a930359f0a8db5f1863477b67207ab7f6
 Nguồn đã quét : 1318 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2898,7 +2898,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1318 file; 12161551 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1318 file; 12166452 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -34694,7 +34694,7 @@ def credit_cost(params: dict) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/jobs.py
-SHA256=5b640581bed6e1cf3d86210c21769ed8c542d3b70cf59d585b96399e766cd1ce BYTES=23464 LINES=486
+SHA256=f1f4f2eaebc255c2ef03cb08843b0014d3123b70d0c4c98a5febe29cbd64456b BYTES=24695 LINES=509
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Handler chạy trong worker: tạo, dựng lại, và xoá máy ảo.
 
@@ -34865,6 +34865,14 @@ def _tao_may(params: dict, ctx=None) -> dict:
                     "vga": "std"}
         cau_hinh.update(mang.cau_hinh_qemu(
             mang.mang_cho_may(gateway, ip_noi_bo)))
+        # GỠ mọi card thừa của template. `cau_hinh_qemu` chỉ đặt `net0`; template
+        # nào có sẵn `net1` thì máy khách thừa hưởng nó — và nếu card đó cắm
+        # `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**, đúng thứ
+        # `mang.py` nói tuyệt đối không được có.
+        #
+        # Không lý thuyết: template `WIN10-LTSC-GOLD` có `net1`, và máy thử ngày
+        # 24/08 hiện ra hai card ("Ethernet" và "Ethernet 2") trong Windows.
+        cau_hinh.update(_go_card_thua(client, may.vmid))
         client.dat_cau_hinh(may.vmid, **cau_hinh)
 
         can_dia = dia_tong_gb(may.plan_id, may.dia_them_gb)
@@ -35053,6 +35061,21 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
+
+
+def _go_card_thua(client, vmid: int) -> dict:
+    """Tham số `qm set` để xoá `net1`, `net2`… của template. Chỉ giữ `net0`.
+
+    Trả một dict `{"delete": "net1,net2"}` để gộp chung vào một lần gọi cấu
+    hình — Proxmox nhận `delete` là danh sách tên khoá ngăn bằng dấu phẩy.
+    """
+    try:
+        cfg = client._goi("GET", f"/nodes/{client.config.node}/qemu/{int(vmid)}/config") or {}
+    except ProxmoxError:
+        return {}
+    thua = sorted(k for k in cfg
+                  if k.startswith("net") and k != "net0" and k[3:].isdigit())
+    return {"delete": ",".join(thua)} if thua else {}
 
 
 def _ip_cong_khai(db, instance_id: str) -> str:
@@ -87923,7 +87946,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=870ced7d5cbdbd5dd7e69aa36bfc2bb20ce2a5464f77652d5e505b753b6c09d4 BYTES=198035 LINES=2862
+SHA256=6d7f51740a9d2614bee4e2b66c3ea29ded0c90ebeddf2ff0396839da93d2b845 BYTES=200495 LINES=2896
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -90703,7 +90726,41 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
       *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
 
-- [ ] **G5 — template Windows Server 2022.** Đây mới là **sản phẩm thật** (catalog chỉ
+- [~] **G5a — Windows CHẠY ĐƯỢC qua đường ống.** 🔨 **Đo thật 2026-08-24.**
+      Nhân bản template `WIN10-LTSC-GOLD` (9001) **qua job**: 15 giây; Windows boot
+      thẳng tới desktop, **tự đăng nhập, không hỏi OOBE** (template có sẵn answer
+      file); và **RDP vào được từ Internet qua IP riêng, 128 ms**.
+
+      Nhưng ba việc còn phải làm TAY, và chúng chính là phần G5b:
+      ① đặt địa chỉ tĩnh trong Windows · ② bật Remote Desktop · ③ đặt mật khẩu riêng
+      cho từng khách. Cả ba là việc của **Cloudbase-Init**.
+
+      **Ba lỗi tìm được, không lỗi nào test bắt được:**
+
+      🔴 **Đĩa template là SÀN CỨNG.** `os_images` khai `win10` cần 32 GB (số của
+      Microsoft) nhưng template thật là **80 GB**, mà **Proxmox chỉ nới ra, không thu
+      vào**. Khách đặt gói Nhỏ 40 GB **qua được cửa kiểm**, rồi chiếm 80 GB của kho
+      chung trong khi chỉ trả tiền 40 — và `capacity.py` đếm theo số của gói nên sức
+      chứa tính sai luôn. Đã sửa sàn về 80 và thêm phép đối chiếu vào `vps_doctor.py`.
+      *Hệ quả bán hàng:* với template hiện tại **Windows 10 chỉ bán được ở gói Lớn**,
+      hoặc gói Vừa mua thêm ≥20 GB đĩa.
+
+      🔴 **Máy khách thừa hưởng card mạng thứ hai của template.** `cau_hinh_qemu` chỉ
+      đặt `net0`; `WIN10-LTSC-GOLD` có sẵn `net1`, và máy thử hiện ra **hai** card
+      trong Windows. Ở đây `net1` may là `vmbr1`; template nào có `net1` cắm `vmbr0`
+      thì **máy bán cho khách có một chân trong LAN nhà** — đúng thứ `mang.py` nói
+      tuyệt đối không được. Job nay gỡ mọi `netN` thừa, có test chốt.
+
+      🔴 **`vga: serial0` ⇒ máy không có màn hình đồ hoạ** (đã sửa ở G3b).
+
+- [ ] **G5b — template Windows dùng được để BÁN.** Cần Cloudbase-Init trong template:
+      đổi `metadata_services` sang **NoCloud** (Proxmox sinh NoCloud, Cloudbase mặc
+      định đọc ConfigDrive — sai thì cấu hình **im lặng không áp dụng**), bật sẵn RDP,
+      rồi sysprep. Cân nhắc dựng template mới **đĩa 40 GB** để bán được cả ba gói.
+      *Xong khi:* khách bấm mua → máy lên → **RDP bằng mật khẩu ngẫu nhiên hiện đúng
+      một lần**, không ai gõ lệnh tay.
+
+- [ ] **G5c — template Windows Server 2022.** (catalog chỉ
       bán Windows, V9). Cloudbase-Init đổi `metadata_services` sang **NoCloud** (Proxmox
       sinh NoCloud, Cloudbase mặc định đọc ConfigDrive — sai thì cấu hình **im lặng
       không áp dụng**); gắn ổ Cloud-Init **trước** khi convert; **không bật lại VM sau
@@ -227168,7 +227225,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_280_vps_vong_doi.py
-SHA256=9fc12de6f2727279943fc156dc3ea2b4e4f9f412f5f22415ca9286395e9701e2 BYTES=8500 LINES=210
+SHA256=133fe6b6988da5482537e5bf296c8fe7c702efce9ff9590b0d9afffdcf5eca2b BYTES=9710 LINES=244
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39/G3 — vòng đời máy: bật, tắt, khởi động lại, cài lại, xoá.
 
@@ -227380,6 +227437,40 @@ def test_con_han_va_con_bao_nhieu_ngay_la_HAI_thu_khac_nhau():
     m.paid_until = now + timedelta(days=20)
     assert billing.con_han(m, now=now) is True
     assert billing.con_bao_nhieu_ngay(m, now=now) == 20
+
+
+# ── 6. Máy khách chỉ được có MỘT card ───────────────────────────────────────
+
+def test_go_het_card_thua_cua_template():
+    """Template có sẵn `net1` thì máy khách thừa hưởng nó. Nếu card đó cắm
+    `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**.
+
+    Không lý thuyết: `WIN10-LTSC-GOLD` có `net1`, và máy thử 24/08 hiện ra hai
+    card trong Windows ("Ethernet" và "Ethernet 2")."""
+    from apps.vps import jobs
+
+    class _C:
+        class config:
+            node = "pve"
+
+        def _goi(self, method, duong_dan, **kw):
+            return {"net0": "e1000,bridge=vmbr1", "net1": "e1000,bridge=vmbr0",
+                    "net3": "e1000,bridge=vmbr0", "sata0": "x", "name": "y"}
+
+    assert jobs._go_card_thua(_C(), 200) == {"delete": "net1,net3"}
+
+
+def test_template_chi_co_mot_card_thi_khong_xoa_gi():
+    from apps.vps import jobs
+
+    class _C:
+        class config:
+            node = "pve"
+
+        def _goi(self, method, duong_dan, **kw):
+            return {"net0": "e1000,bridge=vmbr1", "sata0": "x"}
+
+    assert jobs._go_card_thua(_C(), 200) == {}
 
 @@@LTT_PROFILE_FILE_END@@@
 
