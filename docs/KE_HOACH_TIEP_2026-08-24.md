@@ -26,7 +26,7 @@ chúng **chặn** phần còn lại — nên chúng ở trên cùng.
 
 | # | Việc | Vì sao nó chặn |
 |---|---|---|
-| **P1** | **Deploy.** Cần Administrator + bấm UAC. Cờ `image.ltt` đã bật, deploy sẽ nướng lại env. | Không deploy thì toàn bộ H37 hôm nay **chưa tới khách**: mã sửa lỗi tiền, hai phép thăm dò, giá mới, `/gia-api` — đều chỉ nằm ở thư mục nguồn. |
+| ~~**P1**~~ | ✅ **XONG 15:10 ngày 24/08** — `EXITCODE=0`, `status=ready environment=production`. | — |
 | **P3** | **Luật WAF Cloudflare** cho `/api/v1/*`: bỏ kiểm bot | Đã đo 24/08: `User-Agent` mặc định của `urllib` bị CF trả **403** trước khi tới máy chủ. Khách dùng thư viện chuẩn sẽ dính. |
 
 ⛔ **P1 phải xong trước mọi việc ở mục 2.**
@@ -40,20 +40,43 @@ thì đó là **cố ý**, không phải sót.
 
 ---
 
-## 2. Đóng H37 — nghiệm thu thật
+## 2. ✅ H37 ĐÃ ĐÓNG — nghiệm thu bằng tiền thật, 24/08
 
-| # | Việc | Đạt khi | Ai |
-|---|---|---|---|
-| **A1** | Chạy `tools/nghiem_thu_anh_e2e.py chuan_bi` rồi `chay` — **một job ảnh thật đi từ ngoài vào** qua `https://app.lttstudios.com/api/v1` | job `succeeded`, có `image_keys` tải về được, và **credit trừ khớp từng đơn vị** với `credit_cost` | tôi |
-| **A2** | Đối soát tay: báo giá → giữ chỗ → quyết toán → hoàn | `charged` ≤ báo giá, và bằng số ảnh **thật sự** nhận | tôi |
-| **A3** | Điền một dòng vào mục 4 của `APP_API_COVERAGE_FINAL.md` | có bằng chứng E2E, không còn "chưa nghiệm thu" | tôi |
-| **A4** | Thu hồi khoá nghiệm thu (`... don`) | khoá tiêu tiền không nằm lại | tôi |
+| # | Việc | Kết quả |
+|---|---|---|
+| **A1** | Job ảnh thật từ ngoài vào qua `https://app.lttstudios.com/api/v1` | ✅ 3 lượt, mỗi lượt `succeeded` sau ~120 giây |
+| **A2** | Đối soát tay: báo giá → giữ chỗ → quyết toán | ✅ báo giá 3 = `held` 3 = `charged` 3 = số dư trừ 3. Số dư `30 → 27 → 24 → 21` |
+| **A3** | Điền bằng chứng vào mục 4 của `APP_API_COVERAGE_FINAL.md` | ✅ đã điền, kèm số đo |
+| **A4** | Thu hồi khoá nghiệm thu | ✅ `da thu hoi 1 khoa; con song: 0` (đọc lại CSDL để chắc) |
 
-⚠️ **A1 không thay được bằng test.** H38 có 739 test xanh và vẫn để lọt lỗi
-`VARCHAR(36)` tới đúng lượt gọi thật đầu tiên — SQLite không ép độ dài, PostgreSQL
-ép. Đường ảnh **chưa từng** chạy thật từ ngoài vào bao giờ.
+```
+GET  /tools                  -> 200, thay ['image.ltt']
+POST /quotes                 -> 200, credit = 3
+POST /jobs                   -> 202
+GET  /jobs/{id}              -> succeeded, credit {held: 3, charged: 3}
+GET  /artifacts/{id}/content -> 200, 5.519.918 byte, dung chu ky PNG
+```
 
----
+### 🔴 Trước khi deploy, `image.ltt` **chưa hề mở** dù file nói là mở
+
+`secrets/app.env` ghi `LTT_PUBLIC_API_TOOLS=text.chat,image.ltt`, nhưng nssm nướng
+vào **cả hai** dịch vụ chỉ có `text.chat`. Đúng cái bẫy nssm đã cắn dự án hai lần
+(D-058). Không có lỗi nào báo — chỉ là `GET /tools` trả về một danh sách thiếu.
+
+⇒ **Sửa app.env rồi khởi động lại là chưa đủ.** Phải `nap_lai_env.ps1` hoặc deploy.
+
+### 🔴 Bốn lỗi trong chính script nghiệm thu — ba chỉ lộ khi chạy thật
+
+| | Lỗi | Vì sao test không thấy |
+|---|---|---|
+| ① | Gửi `params`/`id` trong khi hợp đồng là `input`/`quote` | tôi đoán tên trường từ **tên biến nội bộ** của handler, không đọc hợp đồng công khai. Trả 400 rất rõ — may, vì đoán sai ở một trường **không bắt buộc** thì im lặng |
+| ② | **Thiếu hẳn bước tải ảnh về** | `succeeded` chỉ nói worker chạy xong. Khoá trỏ sai, presigned hết hạn, quyền đọc sai — cả ba cho ra **đúng một job xanh** với `outputs` trông đẹp. Khách trả tiền để **lấy được ảnh** |
+| ③ | `print` ký tự ngoài ASCII ⇒ chết trên console cp1252 | chết **sau** khi đã tiêu tiền và job đã chạy, tức mất đúng phần đối soát là lý do của cả script |
+| ④ | `don` gọi `revoke(db, key_id)` thay vì `revoke(db, row)` | một lệnh **thu hồi thất bại** để lại một khoá **tiêu được tiền thật**, trong khi báo cáo vẫn ghi "đã dọn" |
+
+⚠️ Lỗi ② là cùng họ với lỗi nó đi kiểm: **tin vào một cờ trạng thái thay vì kiểm
+thứ khách thật sự nhận.** Một phép nghiệm thu có cùng điểm mù với thứ nó nghiệm thu
+thì không nghiệm thu được gì.
 
 ## 3. 🔴 Trọng tài VRAM — nay là việc BẮT BUỘC
 
@@ -152,6 +175,84 @@ sự cố.
 | **L3** | **Điều khoản sử dụng** cho API | chủ sản phẩm quyết nội dung; tôi soạn nháp |
 | **L4** | Thu tường lửa máy B về **một** IP | thiết lập bảo mật |
 | **L5** | Xoay khoá provider | đã có quy trình, chưa chạy định kỳ |
+
+---
+
+## 5b. ⭐ Công cụ tự cắm CLI (C15) — việc đáng làm nhất còn lại
+
+**Trạng thái hôm nay:** trang `/developers/cli` **đã có** (C14 xong). Nó sinh sẵn
+`config.toml`, `settings.json`, biến môi trường cho Codex + Claude Code + Claude
+Desktop, và nói rõ hai base URL lệch nhau bốn ký tự.
+
+**Vẫn còn thiếu:** thứ *ghi hộ* cấu hình. `api.nghimmo.com` phát `ClaudeKeyTool`
+và `CodexKeyTool` — và bài học rút ra ở `LO_TRINH_API_CLI.md` §1 vẫn đúng: **thứ
+khách vấp không phải giao thức, mà là điền cấu hình.**
+
+### ⛔ Nhưng chép nguyên cách làm của họ là sai ở bốn chỗ
+
+**① Đóng gói `.exe` là phần đắt nhất, và nó KHÔNG phải phần có giá trị.**
+Một `.exe` nhỏ, không ký số, ghi vào thư mục cấu hình của người dùng — đó **đúng
+mô tả hành vi của malware**. Hệ quả thật: SmartScreen chặn, diệt virus báo động
+giả, và phải nuôi ba bản dựng (Windows/macOS/Linux). Chứng chỉ ký số thì tốn tiền
+hằng năm.
+
+Mà phần lõi chỉ là **vài chục dòng ghi tệp**. Trả một chứng chỉ ký số để giao vài
+chục dòng là sai tỉ lệ.
+
+⇒ **Phát một tệp `.py` duy nhất.** Ai cài được Codex hay Claude Code thì đã có
+terminal. Không ký số, không diệt virus, không đa bản dựng — và **khách đọc được
+nó trước khi chạy**, điều đó quan trọng vì nó đang ghi vào cấu hình của họ.
+⛔ **Không** dạy kiểu `curl ... | python`. Đó là dạy khách chạy mã không đọc.
+
+**② Rủi ro thật không phải "ghi tệp" mà là "phá tệp đang có".**
+`~/.codex/config.toml` và `~/.claude/settings.json` là **của khách**, không phải
+của ta. Ghi đè là xoá cấu hình họ đang dùng — và hỏng theo kiểu tệ nhất: **nó vẫn
+chạy**, chỉ là thiết lập riêng của họ biến mất.
+
+⇒ Bắt buộc: **hợp nhất chứ không ghi đè**, **sao lưu trước**, và **chạy hai lần
+bằng chạy một lần**.
+
+**③ `ANTHROPIC_BASE_URL` trong `settings.json` là TOÀN CỤC — và trang của ta đang
+gọi nó là "bền hơn" mà không nói điều đó.**
+Đặt nó ở đó thì **mọi** phiên Claude Code của khách đi qua ta, kể cả việc họ làm
+với tài khoản Anthropic thật. Codex có `--profile ltt` nên phạm vi gọn; Claude Code
+**không có** thứ tương đương.
+
+⇒ Với Claude Code, mặc định phải là **đoạn lệnh đặt biến môi trường cho một phiên**;
+chỉ ghi `settings.json` khi khách nói rõ (`--toan-cuc`). Và sửa lại chữ trên trang
+`/developers/cli`: "bền hơn" phải kèm "và áp cho **tất cả** dự án".
+
+**④ Khoá không được nằm trong tệp.**
+Luật đã có trong mã: *"No snippet ever contains a key."* Nhưng
+`claude_code_settings()` hiện bảo khách đặt `ANTHROPIC_AUTH_TOKEN` **vào
+`settings.json`** — một tệp văn bản thường mà nhiều người đồng bộ hoặc commit vào
+kho dotfiles. Codex đã làm đúng (`env_key = "LTT_API_KEY"`, chỉ **tham chiếu** biến).
+
+⇒ Công cụ đặt biến môi trường (`setx` trên Windows), **không** ghi khoá vào tệp
+nào. Và sửa `claude_code_settings()` cho khớp luật của chính nó.
+
+### ⭐ Và phần mọi người bỏ qua: công cụ phải TỰ KIỂM
+
+Một công cụ ghi xong tệp rồi báo "đã cấu hình" có **đúng điểm mù** với script
+nghiệm thu ảnh của tôi hôm nay: nó tin vào việc mình vừa làm, thay vì kiểm thứ
+khách thật sự nhận.
+
+⇒ Bước cuối bắt buộc: **gọi thật một lượt** (`GET /api/v1/tools` rồi một lượt chat
+ngắn), in ra số dư còn lại. "Đã ghi tệp" và "cắm được rồi" là hai câu khác nhau.
+
+### Bảng việc
+
+| # | Việc | Đạt khi |
+|---|---|---|
+| **C15a** | `tools/cam_cli.py` — một tệp, không phụ thuộc ngoài chuẩn | chạy trên Python 3.9+ sạch |
+| **C15b** | Hợp nhất + sao lưu + chạy lại không đổi kết quả | có cấu hình cũ ⇒ giữ nguyên, chỉ thêm khối của ta |
+| **C15c** | Khoá **chỉ** vào biến môi trường | không tệp nào chứa khoá sau khi chạy |
+| **C15d** | Tự kiểm bằng một lượt gọi thật | in `tools` thấy được + số dư |
+| **C15e** | Sửa `claude_code_settings()` + chữ "bền hơn" trên `/developers/cli` | khớp luật *no snippet contains a key* |
+| **C15f** | Cho tải từ `/developers/cli` | một nút, kèm hướng dẫn đọc trước khi chạy |
+
+⚠️ **C15 không chặn gì và không ai đang chờ nó.** Nó là thứ biến "khách đọc hết
+tài liệu thì cắm được" thành "khách cắm được". Làm sau L1.
 
 ---
 
