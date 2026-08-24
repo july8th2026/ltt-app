@@ -15,6 +15,11 @@ chứa một dòng nghiệp vụ nào.
 > **Không** dựng máy chủ HTTP cục bộ — đó là lớp lỗ hổng đã có CVE thật, và công
 > cụ này vừa **giữ khoá API** vừa **ghi tệp cấu hình**, tức đúng hai thứ đáng để
 > tấn công.
+>
+> **Đóng gói: Nuitka/PyInstaller ở chế độ THƯ MỤC, rồi bọc bằng một installer.**
+> Khách vẫn tải về **đúng một tệp `.exe`** — nhưng đó là **trình cài đặt**, không
+> phải một khối tự-giải-nén. Xem §9: `--onefile` là bản *tệ nhất* cho đúng mục
+> tiêu "nhìn chuyên nghiệp".
 
 ---
 
@@ -225,7 +230,7 @@ Khách có thể **không có gì**. Mọi phép thử trước U8 chỉ chứng
 
 | Không làm | Vì sao |
 |---|---|
-| Đóng gói `.exe` | Chủ sản phẩm chốt 24/08: `.bat` trước. Và một `.exe` nhỏ không ký số ghi vào thư mục cấu hình đúng là mô tả hành vi malware |
+| `.exe` kiểu **onefile** (tự giải nén) | §9. Không phải "chưa làm" mà là **làm sai cách**. Chủ sản phẩm đã chốt là **có** đóng gói `.exe` |
 | Máy chủ HTTP cục bộ | §2. Đã có CVE thật cho đúng hình dạng này |
 | Tự động hoá Claude Desktop | LevelDB của Electron. Sửa tay là hỏng lặng lẽ ở lần app cập nhật |
 | Thêm hàm vào cầu nối "cho tiện" | Mỗi hàm là một hàm mã JS gọi được |
@@ -243,3 +248,108 @@ Khách có thể **không có gì**. Mọi phép thử trước U8 chỉ chứng
 | `ltt.css` đổi mà bản sao không đổi | **cao nếu không có U1** | U1 đưa vào gate |
 | Khách bật "toàn cục" rồi quên | trung bình | `go` trả về **đúng nguyên trạng** (đã có test bằng-từng-byte) |
 | GUI ngốn thời gian mà khách vẫn dùng dòng lệnh | thật | U8 trả lời — nếu VM sạch cho thấy dòng lệnh là đủ thì **dừng ở đó** |
+
+---
+
+## 9. 🔴 Đóng gói `.exe` — và vì sao "một tệp" **không** nên là `--onefile`
+
+Chủ sản phẩm chốt 24/08: đích là **một `.exe`**, để *"nhìn chuyên nghiệp"*. Tôi
+đã nêu lo ngại và chủ sản phẩm đã quyết — nên phần này là **cách làm cho đúng**,
+không phải bàn lùi.
+
+Nhưng có một chỗ **phải nói rõ, vì nó quyết định thành bại**: cách hiển nhiên
+nhất để có "một tệp" lại là cách **phá hỏng đúng mục tiêu đó**.
+
+### Vì sao `--onefile` tự đánh bại mục tiêu
+
+Cả PyInstaller lẫn Nuitka đều có chế độ onefile, và **cả hai đều tự giải nén**:
+
+> *"A one-file executable contains a massive, heavily compressed binary payload.
+> When executed, it extracts dozens of DLLs and files into the user's local
+> AppData/Local/Temp directory simultaneously. **Malware does this constantly to
+> hide its true payload.**"*
+
+Hệ quả với đúng công cụ này — nó **ghi tệp cấu hình** và **giữ khoá API**, tức
+hồ sơ hành vi vốn đã giống thứ đáng nghi:
+
+| | |
+|---|---|
+| Diệt virus | báo động giả **cao hơn hẳn** onedir |
+| Khởi động | chậm mỗi lần chạy vì phải giải nén lại |
+| SmartScreen | *"Windows protected your PC"* ngay lần đầu |
+
+⇒ Khách tải về một tệp, bấm vào, và thấy **cảnh báo virus**. Đó là điều ngược
+hẳn với *"nhìn chuyên nghiệp"*.
+
+### ⭐ Cách vẫn cho khách **đúng một tệp**, mà không dính
+
+**Bọc thư mục bằng một installer.** Khách tải về **một `.exe`** — và đó là
+**trình cài đặt**:
+
+```
+LTTStudios-CamCLI-Setup.exe      <- MOT tep khach tai ve
+   |
+   +-- cai vao Program Files, tao loi tat, tao trinh go cai
+   +-- ben trong la mot THU MUC (khong tu giai nen luc chay)
+```
+
+Được cả ba thứ mà onefile mất: **AV ít báo hơn**, **khởi động nhanh**, và **có
+lối tắt + trình gỡ cài** — thứ mà một `.exe` trần **không** có, và chính là thứ
+làm người ta thấy một phần mềm là "thật".
+
+### Chọn bộ dựng: **đo, đừng đoán**
+
+| | PyInstaller | Nuitka |
+|---|---|---|
+| Cách làm | gói interpreter + mã | **biên dịch sang C** rồi ra máy thật |
+| AV | hay bị báo hơn | *"produces actual compiled code that looks much more like a normal application to AV heuristics"* |
+| Dựng | nhanh | chậm hơn, cấu hình phức tạp hơn |
+
+Nuitka **có vẻ** tốt hơn. Nhưng dự án này có luật: **chưa đo thì không chạy**.
+
+⇒ **P1 dựng cả hai** ở chế độ thư mục, nộp cả hai lên VirusTotal, so số máy quét
+báo. Rẻ, một buổi, và nó thay một cuộc tranh luận bằng một con số.
+
+⛔ Và **đừng chọn Nuitka chỉ vì nó "nghe an toàn hơn"** — nếu số đo cho thấy cả
+hai đều sạch thì chọn PyInstaller, vì dựng nhanh hơn là một lợi ích **thật** mỗi
+ngày, còn "ít báo giả hơn về lý thuyết" thì không.
+
+### 🔴 Ký số — đây mới là thứ quyết định "chuyên nghiệp"
+
+Một GUI đẹp không cứu được lần chạy đầu tiên. Không ký số thì Windows hiện:
+
+> **Windows protected your PC** — *Microsoft Defender SmartScreen prevented an
+> unrecognised app from starting.*
+
+Khách phải bấm *"More info → Run anyway"* — tức bấm qua một cảnh báo bảo mật để
+dùng công cụ của một công ty bán hàng cho họ. **Đó là ấn tượng đầu tiên.**
+
+> *"Code signing doesn't make false positives impossible, but it dramatically
+> reduces them, especially with Windows Defender and SmartScreen."*
+
+⚠️ **Hai điều phải biết trước khi mua chứng chỉ:**
+
+1. **Chứng chỉ OV thường vẫn phải "tích danh tiếng"** — vài trăm lượt tải đầu
+   vẫn có thể bị SmartScreen chặn. Chỉ **EV** mới được tin ngay, và nó đắt hơn.
+2. **Từ 2023 khoá riêng bắt buộc nằm trong thiết bị phần cứng (HSM/token)**. Tức
+   **không ký được trong CI** theo cách thông thường — phải có dịch vụ ký đám mây
+   hoặc một máy cắm token. Đây là **việc vận hành**, không phải một dòng lệnh.
+
+⇒ **Cần chủ sản phẩm quyết**: có mua chứng chỉ không, OV hay EV. Chưa quyết thì
+vẫn làm được P1–P4 và phát bản chưa ký kèm hướng dẫn — nhưng **đừng gọi nó là
+xong**, vì mục tiêu đặt ra là "nhìn chuyên nghiệp" và đó đúng là phần chưa đạt.
+
+### Bảng việc đóng gói
+
+| # | Việc | Đạt khi |
+|---|---|---|
+| **P1** | Dựng **cả hai** (PyInstaller onedir + Nuitka standalone), nộp VirusTotal | có **số** so sánh, ghi vào tài liệu |
+| **P2** | Chốt bộ dựng theo số đo P1 | lý do viết ra, không phải "nghe an toàn hơn" |
+| **P3** | Installer Inno Setup: cài, lối tắt, **gỡ cài sạch** | gỡ cài xong không còn tệp nào ngoài cấu hình khách đã tạo |
+| **P4** | Thử trên **VM Windows sạch** (Proxmox máy B) | máy không Python/không node ⇒ **vẫn chạy** |
+| **P5** | Ký số | ⏳ **chờ chủ sản phẩm quyết** |
+| **P6** | Nộp báo cáo dương-tính-giả cho hãng diệt virus nếu còn | dùng quy trình cộng đồng đã có |
+
+⚠️ **P4 là chốt thật của cả phần đóng gói**, không phải P3. Một installer chạy
+được trên máy **đã có Python** không chứng minh gì — cả mục đích của việc đóng
+gói là để khách **không cần** Python.
