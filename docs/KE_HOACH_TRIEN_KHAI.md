@@ -2772,9 +2772,79 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       cũng làm vậy. Nó chỉ mở được **đúng một cổng của đúng phiên đó**, trên một máy
       chủ mà khách không biết địa chỉ, và dòng vé bị **xoá khỏi CSDL ngay khi tiêu**.
 
-- [ ] **G4 — tiền.** Chu kỳ 30 ngày theo khuôn Q98 (đã có `billing.py`) + **tiền IP
-      riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
-      *Xong khi:* diễn tập một máy đi hết vòng hết-hạn → treo → xoá → IP được trả về.
+- [x] **G4 — tiền.** ✅ **XONG 2026-08-24, diễn tập thật đầu-tới-cuối.**
+
+      🔴 **Lỗi tìm được, và nó là lỗi nghiêm trọng nhất của cả H39:**
+      `billing.thu_phi_dinh_ky` đã viết xong kèm test từ 23/08 nhưng **không nơi
+      nào gọi nó**. Máy hết hạn không bị treo, không bị xoá, IP `$3/tháng` không
+      được trả. Mở bán trong tình trạng đó là cho dùng miễn phí vô hạn trong khi
+      vẫn trả tiền IP mãi mãi.
+
+      Nguyên nhân gốc **không phải quên**: hợp đồng app không có chỗ khai việc
+      định kỳ. Nên theo đúng quy tắc của dự án, chỗ đó được **bổ sung vào hợp
+      đồng** thay vì đi vòng — `AppManifest.bao_tri` + `bao_tri_moi_giay`, nền
+      tảng gọi trong `_mot_luot_bao_tri`, tức **dưới lease** `bao_tri`. Nhờ vậy
+      nó chạy đúng một lần trên toàn cụm dù có bao nhiêu tiến trình worker (H36).
+      App tự dựng vòng lặp riêng sẽ **trừ tiền khách N lần mỗi chu kỳ**, và sổ
+      credit vẫn cân nên không lỗi nào lộ ra.
+
+      🔴 **Lỗi thứ hai:** `billing.treo` **chỉ ghi sổ** — máy vẫn chạy trên
+      Proxmox suốt 7 ngày ân hạn. "Treo" chỉ là một cái nhãn: khách hết tiền dùng
+      tiếp bình thường, và RAM vẫn bị giữ. Nay vòng bảo trì tiêm
+      `dieu_khien.treo` (có tắt máy) vào `thu_phi_dinh_ky`.
+
+      **Xoá đi qua HÀNG ĐỢI**, không xoá tại chỗ: xoá gọi ra Vultr và chờ tác vụ
+      Proxmox, nên làm thẳng trong vòng bảo trì nghĩa là một Vultr chậm **giữ
+      lease bảo trì của cả nền tảng**. `dedupe_key=vps-destroy-<id>` chặn nộp
+      trùng (vòng chạy mỗi giờ); job hỏng hẳn thì lượt sau nộp lại.
+
+      **Diễn tập thật, không giả lập gì:** nạp 1.490 credit → tạo máy thật →
+      đến kỳ: **thu đúng 1.490, số dư về 0** → đến kỳ lần hai, hết tiền: **treo
+      VÀ máy `stopped` trên Proxmox** → quá hạn ân hạn: **nộp một job xoá**, chạy
+      lại **không nộp trùng** → chạy job: VM biến mất, dòng `vps_ip` biến mất,
+      chỗ DHCP biến mất, **IP trả về Vultr**. `KET LUAN: DAT`.
+
+      *Bằng chứng:* `tests/test_287_vps_bao_tri.py` (13 test).
+
+- [x] **G7 — chống lạm dụng + hạn mức băng thông.** ✅ **XONG 2026-08-24, đo thật.**
+
+      **Chặn thư ra** — `tcp dport { 25, 465, 587 } reject` trên router. Chặn cả
+      ba chứ không riêng 25: ba cổng này là ba *đường gửi*, không phải ba mức độ
+      tin cậy. Một máy khách gửi thư rác là IP của **ta** vào danh sách đen và
+      Vultr khoá cả tài khoản — tức mọi khách mất máy cùng lúc vì một người.
+      *Đo thật:* cả ba cổng chặn, 443 vẫn mở.
+
+      **Đo băng thông từng máy** — `set` của nftables khai `counter`, tức **mỗi
+      phần tử một bộ đếm riêng**. Đo được từng khách mà không cần một luật cho
+      mỗi người; ruleset dài làm chậm **mọi** kết nối (cùng lý do đã chọn `map`
+      cho NAT). *Đo thật:* tải 150 MB → đọc ra 145 MB.
+
+      **Hãm tốc khi vượt** — `limit rate over 1 mbytes/second drop`, **không cắt
+      hẳn**: trang bán hứa *"giảm tốc, không bị tính thêm tiền"*, và cắt biến lời
+      hứa đó thành lời nói dối. *Đo thật:* **6,76 MB/s → 1,05 MB/s**, máy vẫn
+      dùng được.
+
+      Hạn mức mỗi chu kỳ: Nhỏ **300 GB** · Vừa **600 GB** · Lớn **1.000 GB**.
+      ⚠️ Bán chồng có chủ ý: bán hết 16 máy Nhỏ là hứa 4,8 TB trên cổng vào chỉ
+      có **2 TB**. Cùng khuôn với đĩa thin (V14), nhưng nó **là** rủi ro —
+      `bang_thong.tong_da_hua_gb()` có để nhìn con số đó thay vì phát hiện nó
+      trên hoá đơn Vultr.
+
+      🔴 **Lỗi thứ ba, chỉ lộ ra khi chạy hai máy thử trên CÙNG một địa chỉ:**
+      xoá máy để lại **lease DHCP** sống tới 12 tiếng. Khách tiếp theo nhận đúng
+      địa chỉ đó bị `no address available` — máy lên bình thường nhưng **không có
+      mạng**, và không lỗi nào chỉ vào nguyên nhân. Nay `go_cho` gọi
+      `dhcp_release`, và thời hạn lease hạ **12h → 1h** làm lưới đỡ nếu lệnh đó
+      thất bại. *Đo thật:* trả lease xong, máy nhận `DHCPACK` ngay.
+
+      🔴 **Lỗi thứ tư:** chạy lại `cai-dat-router.sh` là `delete table` rồi dựng
+      lại — **cả ba set rỗng**. Máy đang sống mất phép đo, và máy đang bị hãm
+      **hết bị hãm** trong khi CSDL vẫn ghi là có. Nay mỗi lượt bảo trì đối chiếu
+      với **sự thật trên router** (`danh_sach_giam_toc`, `doc_bang_thong`) và ghi
+      lại những gì thiếu — cùng nguyên tắc với `gateway.danh_sach_duong`.
+
+      *Bằng chứng:* `tests/test_288_vps_bang_thong.py` (24 test), migration
+      `8c1f4a67b209`.
 
 ### ⚠️ Đổi hướng 2026-08-24 (tối) — BỎ TEMPLATE, khách tự cài Windows
 
@@ -2945,11 +3015,9 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       và mô tả đã sửa cho đúng như vậy, nhưng **khoảng cách giá 179k → 329k nay
       chỉ đổi lấy CPU/RAM/đĩa**, không đổi lấy khả năng mới.
 
-- [ ] **G7 — chống lạm dụng + hạn mức băng thông.** `nftables` quota mỗi IP + giảm tốc
-      khi vượt · chặn cổng ra `25/587` · `cpulimit` · cảnh báo CPU 100 % kéo dài · nút
-      treo khẩn cấp · không cho dùng thử ẩn danh.
-      *Xong khi:* diễn tập một máy chạy tải 100 % bị treo, và một máy vượt băng thông
-      bị giảm tốc chứ không làm sập quota của người khác.
+- [ ] **G7b — phần còn lại của chống lạm dụng.** `cpulimit` · cảnh báo CPU 100 %
+      kéo dài · nút treo khẩn cấp cho admin · không cho dùng thử ẩn danh.
+      Phần băng thông và chặn thư ra đã xong ở G7 bên trên.
 
 - [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
 

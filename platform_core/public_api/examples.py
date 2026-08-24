@@ -582,39 +582,41 @@ VSCODE_BAY = (
 
 
 def claude_desktop_registry(base_url: str) -> str:
-    """Claude Desktop trên Windows: **chính sách registry**, không phải điền tay.
+    r"""Claude Desktop on Windows: an OS **policy**, not an app config file.
 
-    Đây là đường dành cho triển khai doanh nghiệp và nó ổn định — khác với thiết
-    lập chạy của ứng dụng, thứ nằm trong LevelDB của Electron và không sửa tay
-    được. Trước khi tìm ra điều này, phần Claude Desktop bị coi là "chỉ cấu hình
-    tay".
+    The app's runtime settings live in Electron's LevelDB and cannot be edited by
+    hand. But the **third-party inference** section is read from OS-managed
+    policy - a .mobileconfig on macOS, the **registry** on Windows. That is the
+    enterprise deployment path and it is stable.
 
-    ⚠️ `inferenceGatewayBaseUrl` là **gốc**, ứng dụng tự ghép `/v1/messages`;
-       kèm sẵn `/v1` là thành `/v1/v1/messages`. Và nó **bắt buộc HTTPS**.
+    Until we found this, the Claude Desktop section of our own guide said "manual
+    entry only", which was wrong.
 
-    ⛔ Nếu máy đã có chính sách ở `HKEY_LOCAL_MACHINE` thì ứng dụng **bỏ qua hoàn
-       toàn** bản `HKEY_CURRENT_USER` — đặt ở đây sẽ vô tác dụng mà không báo lỗi.
+    Four rules from the official reference. Each of them fails **silently**:
+
+    * `inferenceGatewayBaseUrl` is the **origin**; the app appends
+      `/v1/messages` itself. Shipping `/v1` in the value yields
+      `/v1/v1/messages` and a 404 with no other clue.
+    * HTTPS is **required** (loopback excepted).
+    * Config is read **once at launch**, so the app must be fully quit, not just
+      closed to the tray.
+    * A policy under `HKEY_LOCAL_MACHINE` makes the app ignore the
+      `HKEY_CURRENT_USER` one **entirely**.
     """
-    return (
-        "Windows Registry Editor Version 5.00
-"
-        "
-"
-        "[HKEY_CURRENT_USER\SOFTWARE\Policies\Claude]
-"
-        '"inferenceProvider"="gateway"
-'
-        '"inferenceGatewayBaseUrl"="' + base_url + '/api"
-'
-        '"inferenceGatewayApiKey"="<khoa ltt_sk_... cua ban>"
-'
-        '"inferenceGatewayAuthScheme"="bearer"
-'
-        f'"inferenceModels"="[{{\\"name\\": \\"{CLI_MODEL}\\"}}]"
-'
-        '"modelDiscoveryEnabled"="false"
-'
-    )
+    khoa = r"[HKEY_CURRENT_USER\SOFTWARE\Policies\Claude]"
+    mo = '[{\\"name\\": \\"' + CLI_MODEL + '\\"}]'
+    dong = [
+        "Windows Registry Editor Version 5.00",
+        "",
+        khoa,
+        '"inferenceProvider"="gateway"',
+        '"inferenceGatewayBaseUrl"="' + base_url + '/api"',
+        '"inferenceGatewayApiKey"="<your ltt_sk_... key>"',
+        '"inferenceGatewayAuthScheme"="bearer"',
+        '"inferenceModels"="' + mo + '"',
+        '"modelDiscoveryEnabled"="false"',
+    ]
+    return "\n".join(dong) + "\n"
 
 
 def claude_desktop_steps(base_url: str) -> tuple:

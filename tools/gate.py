@@ -44,6 +44,12 @@ def _npm() -> str | None:
 
 def _steps(quick: bool) -> list[Step]:
     steps: list[Step] = [
+        # 🔴 DAT DAU TIEN co chu y: mot tep khong bien dich duoc thi moi
+        #    phep do phia sau deu vo nghia. Da tung commit mot tep vo cu
+        #    phap ma gate bao PASS 14/14 - cac chot khac deu BO QUA tep
+        #    khong parse duoc (chung dem xu huong), va `--quick` bo pytest.
+        Step("bien dich duoc", [sys.executable, "tools/check_bien_dich.py"],
+             ROOT),
         Step("secret scan", [sys.executable, "tools/scan_source_secrets.py"], ROOT),
         Step("app contract lint", [sys.executable, "tools/lint_app_contract.py"], ROOT),
         # Re nhung bat duoc thu test khong bat: mot route khong co test ma thieu

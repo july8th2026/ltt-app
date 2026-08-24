@@ -118,16 +118,24 @@ def test_tong_da_hua_doi_chieu_duoc_voi_tran_cong_vao():
 # ── 4. Vòng bảo trì: đo, hãm, và bỏ hãm ─────────────────────────────────────
 
 class _RouterGia:
-    def __init__(self, so_lieu=None, hong=False):
+    def __init__(self, so_lieu=None, hong=False, dang_ham=()):
         self.so_lieu = so_lieu or {}
         self.hong = hong
+        self.dang_ham = set(dang_ham)
         self.da_dat: list[tuple[str, bool]] = []
+        self.da_bat_do: list[str] = []
 
     def doc_bang_thong(self):
         if self.hong:
             from apps.vps.services.ssh_lenh import SshLenhError
             raise SshLenhError("router khong tra loi")
         return self.so_lieu
+
+    def danh_sach_giam_toc(self):
+        return set(self.dang_ham)
+
+    def theo_doi_bang_thong(self, ip):
+        self.da_bat_do.append(ip)
 
     def dat_giam_toc(self, ip, bat):
         self.da_dat.append((ip, bat))
@@ -200,7 +208,7 @@ def test_da_ham_ma_xuong_duoi_tran_thi_BO_HAM(monkeypatch, _khong_ghi_su_kien):
     """Chu kỳ mới đặt lại bộ đếm về 0 → phải bỏ hãm. Không bỏ thì khách trả tiền
     xong vẫn dùng máy chậm, và họ sẽ không tự đoán ra vì sao."""
     m = _May(da_dung=0, giam_toc=True)
-    rt = _RouterGia({"10.51.0.50": (0, 0)})
+    rt = _RouterGia({"10.51.0.50": (0, 0)}, dang_ham={"10.51.0.50"})
     doi, _ = _chay(monkeypatch, [m], rt)
     assert doi == 1 and rt.da_dat == [("10.51.0.50", False)]
     assert m.bi_giam_toc is False
@@ -215,12 +223,28 @@ def test_router_khong_tra_loi_thi_BO_LUOT_chu_khong_no(monkeypatch,
     assert doi == 0 and m.bang_thong_byte == 0
 
 
-def test_may_khong_co_so_lieu_thi_giu_nguyen(monkeypatch, _khong_ghi_su_kien):
-    """Máy vừa tạo, hoặc router vừa nạp lại ruleset: chưa có phần tử nào. Không
-    được coi đó là 'đã dùng 0' rồi đặt lại mốc thành số khác."""
+def test_may_khong_co_so_lieu_thi_GHI_LAI_va_giu_nguyen_tong(monkeypatch,
+                                                             _khong_ghi_su_kien):
+    """Chạy lại `cai-dat-router.sh` là `delete table` rồi dựng lại — **cả ba set
+    rỗng**. Máy đang sống mất phép đo, và nếu không ghi lại thì nó dùng bao nhiêu
+    cũng không ai biết, vĩnh viễn và im lặng.
+
+    Đã xảy ra thật 24/08 giữa lúc diễn tập G7."""
     m = _May(da_dung=42 * GB)
-    _chay(monkeypatch, [m], _RouterGia({}))
-    assert m.bang_thong_byte == 42 * GB
+    rt = _RouterGia({})
+    _chay(monkeypatch, [m], rt)
+    assert rt.da_bat_do == ["10.51.0.50"], "phai ghi lai may vao set dem"
+    assert m.bang_thong_byte == 42 * GB, "khong duoc coi 'khong co so lieu' la 0"
+
+
+def test_router_MAT_co_ham_thi_dat_lai(monkeypatch, _khong_ghi_su_kien):
+    """CSDL nói đang hãm, router thì không — tình huống sau một lần dựng lại
+    ruleset. Tin cột trong CSDL thì máy vượt trần chạy full tốc mãi mãi."""
+    m = _May(da_dung=400 * GB, giam_toc=True)
+    rt = _RouterGia({"10.51.0.50": (0, 0)}, dang_ham=set())
+    doi, _ = _chay(monkeypatch, [m], rt)
+    assert rt.da_dat == [("10.51.0.50", True)], "phai ham lai tren router"
+    assert doi == 1
 
 
 # ── 5. Chu kỳ mới đặt lại bộ đếm ────────────────────────────────────────────

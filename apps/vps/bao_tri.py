@@ -100,8 +100,19 @@ def _dong_bo_bang_thong(db) -> int:
 
     Trả về số máy vừa **đổi** trạng thái hãm tốc — chỉ số đó đáng ghi log.
 
-    Chạy TRƯỚC vòng thu tiền: thu một chu kỳ mới sẽ đặt lại `bang_thong_byte` về
-    0, và đặt lại trước khi kịp cộng phần cuối chu kỳ là bỏ mất phần đó.
+    Chạy TRƯỚC vòng thu tiền: thu một chu kỳ mới đặt lại `bang_thong_byte` về 0,
+    và đặt lại trước khi kịp cộng phần cuối chu kỳ là bỏ mất phần đó.
+
+    ## Đối chiếu với router, không tin cột trong CSDL
+
+    Ba `set` của nftables sống **trong bộ nhớ**. Router khởi động lại, hoặc ai đó
+    chạy lại `cai-dat-router.sh` (nó `delete table` rồi dựng lại), là cả ba rỗng:
+    máy đang sống mất phép đo, và máy đang bị hãm **hết bị hãm** trong khi CSDL
+    vẫn ghi là có.
+
+    Nên mỗi lượt: đọc **sự thật trên router**, ghi lại những gì thiếu. Cùng
+    nguyên tắc với `gateway.danh_sach_duong` — thứ duy nhất phát hiện được lệch
+    là đọc lại phía kia, không phải tin phía mình.
     """
     from sqlalchemy import select
 
@@ -112,6 +123,7 @@ def _dong_bo_bang_thong(db) -> int:
     try:
         rt = bo_dinh_tuyen.client_tu_moi_truong()
         so_lieu = rt.doc_bang_thong()
+        dang_ham = rt.danh_sach_giam_toc()
     except bo_dinh_tuyen.SshLenhError as exc:
         # Bắt HẸP. Router không trả lời thì bỏ lượt đo này; bộ đếm trên router
         # vẫn chạy tiếp, nên lượt sau cộng bù đủ — không mất gì.
@@ -124,7 +136,19 @@ def _dong_bo_bang_thong(db) -> int:
             VpsInstance.trang_thai.in_(("dang_chay", "da_tat", "bi_treo")),
             VpsInstance.ip_noi_bo.is_not(None))
     ).scalars():
-        len_byte, xuong_byte = so_lieu.get(str(may.ip_noi_bo), (0, 0))
+        ip = str(may.ip_noi_bo)
+
+        if ip not in so_lieu:
+            # Máy sống mà router không đếm: set vừa bị dựng lại. Ghi lại rồi
+            # sang máy kế — lượt sau đã có số. Bỏ qua bước này thì máy đó **dùng
+            # bao nhiêu cũng không ai biết**, vĩnh viễn và im lặng.
+            try:
+                rt.theo_doi_bang_thong(ip)
+            except bo_dinh_tuyen.SshLenhError as exc:
+                log.warning("VPS bao tri: khong bat duoc do cho %s: %s", may.id, exc)
+            continue
+
+        len_byte, xuong_byte = so_lieu[ip]
         tong, moc_len = bang_thong.cong_don(
             may.bang_thong_byte or 0, may.bang_thong_moc_len or 0, len_byte)
         tong, moc_xuong = bang_thong.cong_don(
@@ -134,18 +158,21 @@ def _dong_bo_bang_thong(db) -> int:
         may.bang_thong_moc_xuong = moc_xuong
 
         can_ham = bang_thong.vuot_han_muc(may)
-        if bool(may.bi_giam_toc) != can_ham:
+        # So với TRẠNG THÁI THẬT trên router, không với cột trong CSDL: sau một
+        # lần dựng lại ruleset, cột nói "đang hãm" mà router thì không.
+        if (ip in dang_ham) != can_ham:
             try:
-                rt.dat_giam_toc(str(may.ip_noi_bo), can_ham)
+                rt.dat_giam_toc(ip, can_ham)
             except bo_dinh_tuyen.SshLenhError as exc:
                 log.warning("VPS bao tri: khong dat duoc giam toc cho %s: %s",
                             may.id, exc)
                 continue
+            doi += 1
+        if bool(may.bi_giam_toc) != can_ham:
             may.bi_giam_toc = can_ham
             billing.ghi_su_kien(
                 db, may.id, "giam_toc_bat" if can_ham else "giam_toc_tat",
                 boi="he_thong", da_dung=bang_thong.doc_duoc(tong))
-            doi += 1
     db.commit()
     return doi
 
