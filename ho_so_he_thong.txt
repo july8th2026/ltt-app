@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:3f340982f465c0367b45c6b6077a26b856f5ea1b3804618fc095a78a82818755
-Nguồn đã quét : 1315 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:9d117b7257db7d95a8dd64418eb885fe0ef169141b454de61a3995f85e73a809
+Nguồn đã quét : 1318 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1188,7 +1188,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (296 file pytest + 3 frontend)
+10. QUALITY GATES (297 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1426,6 +1426,7 @@ Test inventory:
 - tests/test_280_vps_vong_doi.py
 - tests/test_281_vi_du_qua_cloudflare.py
 - tests/test_282_vps_console.py
+- tests/test_283_cam_cli.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -1511,8 +1512,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1315 file)
-Phân bố extension: .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1011, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1318 file)
+Phân bố extension: .bat:1, .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1013, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2469,7 +2470,7 @@ Phân bố extension: .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19,
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (313)
+[tests] (314)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2718,6 +2719,7 @@ Phân bố extension: .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_280_vps_vong_doi.py
 - tests/test_281_vi_du_qua_cloudflare.py
 - tests/test_282_vps_console.py
+- tests/test_283_cam_cli.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -2784,7 +2786,7 @@ Phân bố extension: .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (86)
+[tools] (88)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2803,6 +2805,8 @@ Phân bố extension: .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19,
 - tools/build_public_api_docs.py
 - tools/build_release.py
 - tools/build_system_profile.py
+- tools/cam_cli.bat
+- tools/cam_cli.py
 - tools/cham_mu.py
 - tools/check_api_compat.py
 - tools/check_fuzzy_dich.py
@@ -2894,7 +2898,7 @@ Phân bố extension: .cfg:1, .css:7, .html:90, .ini:1, .js:9, .json:42, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1315 file; 12127815 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1318 file; 12161551 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -35252,7 +35256,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/os_images.py
-SHA256=de584ab396568fca1d04f7f3a142f767a18bb7251814dfab44a8eb4bb8721fb1 BYTES=6226 LINES=144
+SHA256=9e22c03df06c14699d53ebaf87aa0ea1b6e658b112aad81ba30921fde9e2446f BYTES=7436 LINES=160
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Catalog hệ điều hành, và ràng buộc tối thiểu của từng bản.
 
@@ -35298,6 +35302,17 @@ class OsImage:
     #: `windows` hoặc `linux` — quyết định dùng Cloudbase-Init hay cloud-init.
     ho: str
     ram_mb_toi_thieu: int
+    #: Sàn đĩa THẬT SỰ, tính cả kích thước đĩa của template.
+    #:
+    #: Không phải chỉ là yêu cầu của Microsoft. **Proxmox chỉ nới đĩa ra, không
+    #: bao giờ thu vào**, nên đĩa của template là sàn cứng: clone từ một template
+    #: 80 GB thì máy nhỏ nhất cũng là 80 GB. Khai 32 GB (số của Microsoft) trong
+    #: khi template là 80 GB thì khách đặt gói 40 GB **qua được cửa kiểm**, rồi
+    #: chiếm 80 GB của kho chung mà chỉ trả tiền 40 — và `capacity.py` đếm theo
+    #: số của gói nên sức chứa tính sai luôn.
+    #:
+    #: `tools/vps_doctor.py` đối chiếu số này với đĩa THẬT của template và kêu
+    #: khi hai bên lệch.
     disk_gb_toi_thieu: int
     #: Cổng khách thường dùng để vào — chỉ để **hiển thị hướng dẫn**, không còn
     #: dùng để cấu hình gì. NAT 1:1 mở toàn bộ cổng của IP riêng cho máy đó.
@@ -35338,7 +35353,12 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="win10", ten="Windows 10", ho="windows",
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
+        # 80 GB là đĩa THẬT của template `WIN10-LTSC-GOLD` (9001), không phải
+        # yêu cầu 32 GB của Microsoft — xem chú thích của `disk_gb_toi_thieu`.
+        # Hệ quả bán hàng: với template hiện tại, **Windows 10 chỉ bán được ở
+        # gói Lớn**. Muốn bán ở gói nhỏ hơn thì phải dựng lại template với đĩa
+        # nhỏ hơn, không thể thu đĩa của template hiện có.
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=80, cong_quen=3389,
         khach_thay=True,
     ),
     OsImage(
@@ -227634,6 +227654,253 @@ def test_thieu_port_hoac_ticket_thi_NEM_chu_khong_ghep_bua():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_283_cam_cli.py
+SHA256=24958a3242afd507b7631ab95be86ef3df27126d14470cd8a2a43fb9a36c2d2b BYTES=10046 LINES=241
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""`tools/cam_cli.py` — cắm vào rồi **gỡ ra phải trả đúng nguyên trạng**.
+
+🔴 VÌ SAO CHỖ NGUY HIỂM LÀ ĐƯỜNG **GỠ**, KHÔNG PHẢI ĐƯỜNG CẮM.
+
+   Cắm sai thì thấy ngay: gọi một lượt là biết. **Gỡ sai thì im lặng** — khách
+   chạy `go`, công cụ in "đã gỡ", và thứ mất đi là **cấu hình riêng của họ**
+   chứ không phải của ta. Không có triệu chứng nào cho tới lần sau họ mở Codex
+   và thấy profile của mình biến mất.
+
+⭐ NÊN PHÉP THỬ TRUNG TÂM Ở ĐÂY LÀ **BẰNG TỪNG BYTE**: cắm rồi gỡ thì tệp phải
+   trở lại **y hệt** bản đầu. Không phải "trông giống", không phải "parse ra
+   bằng nhau" — mà là cùng byte, vì chú thích, thứ tự khoá và dòng trắng đều là
+   thứ khách sẽ mất nếu ta đọc-ra-rồi-ghi-lại.
+
+⛔ VÀ MỘT CA RIÊNG PHẢI CÓ TEST: khách **đã có sẵn** `[model_providers.ltt]`
+   hoặc `ltt.config.toml` từ trước. `go` **không được** xoá nó. "Xoá những gì
+   trông giống của ta" và "xoá đúng những gì ta đã thêm" là hai việc khác nhau,
+   và chỉ cái thứ hai là đúng.
+
+⚠️ Test ở đây **không** đụng tới thư mục nhà thật và **không** gọi `setx`:
+   `cam_cli` đặt `ANTHROPIC_BASE_URL` ở cấp người dùng, mà biến đó **toàn cục** —
+   một test làm thật sẽ chuyển hướng mọi phiên Claude Code trên máy đang chạy nó.
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import pathlib
+import sys
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+
+
+def _nap(nha: pathlib.Path):
+    """Nạp `cam_cli` với `NHA` trỏ vào một thư mục tạm.
+
+    Nạp lại module cho **mỗi** test thay vì `monkeypatch` một biến toàn cục:
+    `TEP_TRANG_THAI` được tính từ `NHA` **lúc nạp module**, nên vá `NHA` sau đó
+    sẽ để lại `TEP_TRANG_THAI` trỏ vào thư mục nhà thật. Cùng lớp lỗi với QT-12.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "cam_cli_test", GOC / "tools" / "cam_cli.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.NHA = nha
+    mod.TEP_TRANG_THAI = nha / ".ltt" / "cam_cli_trang_thai.json"
+    return mod
+
+
+@pytest.fixture()
+def cc(tmp_path):
+    return _nap(tmp_path)
+
+
+# ── Trung tâm: cắm rồi gỡ phải bằng từng byte ───────────────────────────────
+
+CONFIG_CUA_KHACH = """\
+# Cau hinh rieng cua toi, dung xoa.
+model = "gpt-5.6-sol"
+
+[model_providers.cua_toi]
+name = "Cua toi"
+base_url = "https://vi-du.local/v1"
+
+# mot dong chu thich o cuoi
+"""
+
+
+def test_cam_roi_go_tra_ve_DUNG_TUNG_BYTE(cc, tmp_path):
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(CONFIG_CUA_KHACH, encoding="utf-8", newline="\n")
+    goc_byte = cfg.read_bytes()
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    assert cfg.read_bytes() != goc_byte, "cam ma khong doi gi thi cam cai gi?"
+
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == goc_byte, (
+        "go ra KHONG tra ve nguyen trang. Chu thich, thu tu khoa va dong trang "
+        "deu la thu khach se mat neu ta doc-ra-roi-ghi-lai.")
+
+
+def test_cam_giu_nguyen_phan_cua_khach(cc, tmp_path):
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(CONFIG_CUA_KHACH, encoding="utf-8", newline="\n")
+
+    cc.cam_codex("https://app.lttstudios.com", {})
+    van = cfg.read_text(encoding="utf-8")
+    # Ghi de la hong theo kieu te nhat: NO VAN CHAY, chi la do nghe rieng cua
+    # khach bien mat.
+    assert "[model_providers.cua_toi]" in van
+    assert 'model = "gpt-5.6-sol"' in van
+    assert "# Cau hinh rieng cua toi, dung xoa." in van
+    assert "[model_providers.ltt]" in van
+
+
+def test_chay_hai_lan_bang_chay_mot_lan(cc, tmp_path):
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(CONFIG_CUA_KHACH, encoding="utf-8", newline="\n")
+
+    cc.cam_codex("https://app.lttstudios.com", {})
+    mot = cfg.read_bytes()
+    cc.cam_codex("https://app.lttstudios.com", {})
+    assert cfg.read_bytes() == mot, "chay lai phai khong doi gi them"
+    assert cfg.read_text(encoding="utf-8").count(cc.MOC_MO) == 1
+
+
+def test_cam_vao_tep_CHUA_TON_TAI(cc, tmp_path):
+    cfg = tmp_path / ".codex" / "config.toml"
+    assert not cfg.exists()
+    cc.cam_codex("https://app.lttstudios.com", {})
+    assert "[model_providers.ltt]" in cfg.read_text(encoding="utf-8")
+
+
+# ── Ca riêng: khách đã có sẵn thứ trùng tên ────────────────────────────────
+
+def test_go_KHONG_xoa_ltt_config_ma_khach_da_co_tu_truoc(cc, tmp_path):
+    """Đây là ca dễ làm sai nhất, và làm sai thì **mất dữ liệu của khách**."""
+    prof = tmp_path / ".codex" / "ltt.config.toml"
+    prof.parent.mkdir(parents=True)
+    prof.write_text("# cua khach, khong phai cua ta\n", encoding="utf-8")
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    assert tt["codex"]["ta_tao_ltt_config"] is False
+
+    cc.go_codex(tt)
+    assert prof.exists(), (
+        "go ra da xoa mot tep khach CO TU TRUOC. 'Xoa nhung gi trong giong cua "
+        "ta' va 'xoa dung nhung gi ta da them' la hai viec khac nhau.")
+
+
+def test_go_CO_xoa_ltt_config_khi_chinh_ta_tao_no(cc, tmp_path):
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    prof = tmp_path / ".codex" / "ltt.config.toml"
+    assert prof.exists() and tt["codex"]["ta_tao_ltt_config"] is True
+    cc.go_codex(tt)
+    assert not prof.exists()
+
+
+# ── settings.json: khôi phục giá trị cũ, không chỉ xoá ─────────────────────
+
+def test_settings_json_tra_lai_GIA_TRI_CU_chu_khong_xoa(cc, tmp_path, monkeypatch):
+    monkeypatch.setattr(cc, "_setx", lambda *a: True)
+    sj = tmp_path / ".claude" / "settings.json"
+    sj.parent.mkdir(parents=True)
+    sj.write_text(json.dumps({
+        "env": {"ANTHROPIC_BASE_URL": "https://api.anthropic.com",
+                "CUA_KHACH": "giu nguyen"},
+        "permissions": {"allow": ["Read"]}}), encoding="utf-8")
+
+    tt = {}
+    cc.cam_claude("https://app.lttstudios.com", tt, toan_cuc=True)
+    d = json.loads(sj.read_text(encoding="utf-8"))
+    assert d["env"]["ANTHROPIC_BASE_URL"] == "https://app.lttstudios.com/api"
+
+    monkeypatch.setattr(cc, "_xoa_env", lambda *a: True)
+    cc.go_claude(tt)
+    d = json.loads(sj.read_text(encoding="utf-8"))
+    assert d["env"]["ANTHROPIC_BASE_URL"] == "https://api.anthropic.com", (
+        "khach DA CO base_url rieng truoc khi cam; go ra phai tra ve gia tri do, "
+        "khong phai xoa khoa di")
+    assert d["env"]["CUA_KHACH"] == "giu nguyen"
+    assert d["permissions"] == {"allow": ["Read"]}
+
+
+def test_settings_json_XOA_HAN_khoa_von_khong_co(cc, tmp_path, monkeypatch):
+    monkeypatch.setattr(cc, "_setx", lambda *a: True)
+    monkeypatch.setattr(cc, "_xoa_env", lambda *a: True)
+    sj = tmp_path / ".claude" / "settings.json"
+    sj.parent.mkdir(parents=True)
+    sj.write_text(json.dumps({"permissions": {"allow": ["Read"]}}), encoding="utf-8")
+
+    tt = {}
+    cc.cam_claude("https://app.lttstudios.com", tt, toan_cuc=True)
+    cc.go_claude(tt)
+    d = json.loads(sj.read_text(encoding="utf-8"))
+    assert "ANTHROPIC_BASE_URL" not in (d.get("env") or {})
+    assert d["permissions"] == {"allow": ["Read"]}
+
+
+def test_mac_dinh_KHONG_dung_toi_settings_json(cc, tmp_path, monkeypatch):
+    """`ANTHROPIC_BASE_URL` trong `settings.json` là **toàn cục**.
+
+    Mặc định phải là biến môi trường; ghi `settings.json` chỉ khi khách nói rõ.
+    """
+    monkeypatch.setattr(cc, "_setx", lambda *a: True)
+    sj = tmp_path / ".claude" / "settings.json"
+    cc.cam_claude("https://app.lttstudios.com", {}, toan_cuc=False)
+    assert not sj.exists()
+
+
+# ── Khoá không được nằm trong tệp nào ──────────────────────────────────────
+
+def test_KHONG_tep_nao_chua_khoa_sau_khi_cam(cc, tmp_path, monkeypatch):
+    """Luật đã có trong mã: *"No snippet ever contains a key."*"""
+    monkeypatch.setattr(cc, "_setx", lambda *a: True)
+    khoa = "ltt_sk_" + "z" * 60
+
+    a = type("A", (), {"khoa": khoa, "goc": "https://app.lttstudios.com",
+                       "toan_cuc": True})()
+    assert cc.lenh_cam(a) == 0
+
+    dinh = []
+    for tep in tmp_path.rglob("*"):
+        if tep.is_file() and khoa in tep.read_text(encoding="utf-8", errors="replace"):
+            dinh.append(str(tep.relative_to(tmp_path)))
+    assert not dinh, (
+        f"khoa nam trong tep: {dinh}. settings.json va config.toml la tep van "
+        f"ban thuong ma nhieu nguoi dong bo hoac commit vao kho dotfiles.")
+
+
+def test_tu_choi_chuoi_khong_phai_khoa(cc):
+    a = type("A", (), {"khoa": "sk-openai-nham-chuoi", "goc": "x",
+                       "toan_cuc": False})()
+    assert cc.lenh_cam(a) == 1
+
+
+# ── Sao lưu giữ bản ĐẦU TIÊN ───────────────────────────────────────────────
+
+def test_sao_luu_giu_ban_DAU_TIEN_khong_ghi_de(cc, tmp_path):
+    """Bản sao lưu phải là bản **trước khi ta đụng vào**.
+
+    Ghi đè nó ở lần chạy thứ hai bằng một bản "đã có cấu hình của ta" là làm mất
+    đúng thứ ta định bảo vệ.
+    """
+    cfg = tmp_path / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    cfg.write_text(CONFIG_CUA_KHACH, encoding="utf-8", newline="\n")
+
+    cc.cam_codex("https://app.lttstudios.com", {})
+    cc.cam_codex("https://app.lttstudios.com", {})
+    bs = cfg.with_suffix(cfg.suffix + ".truoc-ltt")
+    assert bs.read_text(encoding="utf-8") == CONFIG_CUA_KHACH
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_28_tiktok_parity.py
 SHA256=863d9c09e214b171f419e45e02a120f9232db5f2d20a1521df1a3b02260a3075 BYTES=19195 LINES=471
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -245663,6 +245930,572 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.bat
+SHA256=e3c8d8133c6bd4822c1e14442cc401b98b5c6293420b94a08b51b6eced97bdb4 BYTES=1890 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+@echo off
+REM cam_cli.bat - vo boc de bam dup, khong phai noi chua logic.
+REM
+REM !! MOI THU O DAY PHAI LA ASCII THUAN va khong BOM. `.bat` doc theo bang ma
+REM    ANSI cua he thong; mot dau tieng Viet lam hong ca cau lenh va bao loi o
+REM    mot dong khac (cung ho voi quy tac 2 cua CLAUDE.md cho .ps1).
+REM
+REM !! KHONG viet lai logic o day. Toan bo nam trong cam_cli.py vi Python test
+REM    duoc con .bat thi khong. Tep nay chi lam DUNG hai viec: tim python, va
+REM    giu cua so mo de nguoi dung doc duoc ket qua.
+
+setlocal
+cd /d "%~dp0"
+
+set PY=
+for %%P in (py.exe python.exe) do (
+    if not defined PY (
+        where %%P >nul 2>nul && set PY=%%P
+    )
+)
+
+if not defined PY (
+    echo.
+    echo Khong tim thay Python tren may nay.
+    echo Cai tai https://www.python.org/downloads/ roi chay lai tep nay.
+    echo Nho tich "Add python.exe to PATH" luc cai.
+    echo.
+    pause
+    exit /b 1
+)
+
+if "%~1"=="" goto :menu
+
+%PY% cam_cli.py %*
+echo.
+pause
+exit /b %ERRORLEVEL%
+
+:menu
+echo.
+echo   ============================================================
+echo    LTT Studios - cam Codex / Claude Code vao API cua ban
+echo   ============================================================
+echo.
+echo    1. Xem dang cam gi          (khong doi gi ca)
+echo    2. Cam vao                  (can khoa ltt_sk_...)
+echo    3. Kiem bang mot luot goi that
+echo    4. Go ra, tra ve nguyen trang
+echo.
+set /p CHON="   Chon 1-4 (Enter de thoat): "
+
+if "%CHON%"=="1" ( %PY% cam_cli.py xem & goto :xong )
+if "%CHON%"=="3" ( %PY% cam_cli.py kiem & goto :xong )
+if "%CHON%"=="4" ( %PY% cam_cli.py go & goto :xong )
+if "%CHON%"=="2" goto :cam
+goto :xong
+
+:cam
+echo.
+echo   Lay khoa o: https://app.lttstudios.com/developers/keys
+echo   Khoa chi hien MOT LAN luc tao.
+echo.
+set /p KHOA="   Dan khoa ltt_sk_... vao day: "
+if "%KHOA%"=="" goto :xong
+%PY% cam_cli.py cam --khoa %KHOA%
+
+:xong
+echo.
+pause
+endlocal
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
+SHA256=b800369c3928b334bd9d54a0a1d7bfd83c116c019660693f1186be749e102833 BYTES=18893 LINES=484
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
+
+    python tools\\cam_cli.py xem
+    python tools\\cam_cli.py cam  --khoa ltt_sk_...
+    python tools\\cam_cli.py kiem
+    python tools\\cam_cli.py go
+
+Hoac bam dup `cam_cli.bat` o cung thu muc.
+
+================================================================================
+* VI SAO CONG CU NAY TON TAI
+
+  Bai hoc tu `api.nghimmo.com` (xem docs/VLM_NOI_BO/LO_TRINH_API_CLI.md muc 1):
+  thu chan mot lap trinh vien KHONG phai giao thuc, ma la DIEN DUNG MOT FILE
+  CAU HINH. Hai base URL lech nhau bon ky tu, mot ten model phai khop chinh xac,
+  mot bien moi truong phai dat o cap NGUOI DUNG chu khong phai trong mot cua so
+  terminal. Moi thu do hong lang le voi mot trieu chung vo ich.
+
+* VI SAO KHONG DONG GOI THANH .EXE
+
+  Mot .exe nho, khong ky so, ghi vao thu muc cau hinh cua nguoi dung - do DUNG
+  la mo ta hanh vi cua malware. SmartScreen chan, diet virus bao dong gia, va
+  phai nuoi ba ban dung. Ma phan loi chi la vai chuc dong ghi tep.
+
+  Mot tep .py doc duoc thi KHACH DOC DUOC TRUOC KHI CHAY - dieu do quan trong
+  vi no dang ghi vao cau hinh cua ho.
+
+================================================================================
+!! BON CHOT, VA MOI CHOT DEU TRA GIA MOT LAN O DAU DO
+
+1. HOP NHAT, KHONG GHI DE. `~/.codex/config.toml` la CUA KHACH. Ghi de la xoa
+   thiet lap ho dang dung - va hong theo kieu te nhat: NO VAN CHAY, chi la do
+   nghe rieng cua ho bien mat.
+
+   Cach lam: chen mot khoi co DAU MOC hai dau. Phan ngoai khoi giu nguyen tung
+   byte, ke ca chu thich va thu tu - thu ma "doc ra roi ghi lai" luon lam mat.
+
+2. GO RA PHAI TRA VE DUNG NGUYEN TRANG. Khong phai "xoa nhung gi trong giong
+   cua ta" - ma la xoa DUNG NHUNG GI TA DA THEM. Neu khach DA CO san mot muc
+   `[model_providers.ltt]` truoc khi chay cong cu nay, `go` KHONG duoc dung toi.
+   Vi vay co tep trang thai ghi lai "cai nay ta tao" so voi "cai nay von da co".
+
+3. KHOA CHI VAO BIEN MOI TRUONG, KHONG VAO TEP NAO. Luat da co trong ma nguon:
+   *"No snippet ever contains a key."* `settings.json` la tep van ban thuong ma
+   nhieu nguoi dong bo hoac commit vao kho dotfiles.
+
+4. TU KIEM BANG MOT LUOT GOI THAT. Mot cong cu ghi xong tep roi bao "da cau
+   hinh" co dung diem mu voi mot job bao `succeeded` ma khach khong tai duoc
+   anh: no tin vao viec minh vua lam, thay vi kiem thu khach that su nhan duoc.
+
+================================================================================
+!! MOT CANH BAO PHAI NOI TO, VI NO KHONG HIEN NHIEN
+
+   `ANTHROPIC_BASE_URL` la TOAN CUC. Dat no la chuyen huong MOI phien Claude
+   Code tren may, ke ca goi Anthropic that cua khach. Codex thi khong bi: no co
+   `--profile ltt`, nen mac dinh cua khach van nguyen.
+
+   Vi the: mac dinh cong cu nay chi dat BIEN MOI TRUONG (go ra de). Chi khi
+   khach noi ro `--toan-cuc` no moi ghi `~/.claude/settings.json`.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
+
+GOC_MAC_DINH = "https://app.lttstudios.com"
+MODEL = "ltt_llm"
+ENV_KHOA_CODEX = "LTT_API_KEY"
+ENV_KHOA_CLAUDE = "ANTHROPIC_AUTH_TOKEN"
+
+#: Dau moc hai dau. Moi thu giua chung la cua ta; moi thu ngoai chung la cua
+#: khach va KHONG duoc dung toi.
+MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
+MOC_DONG = "# <<< LTT Studios <<<"
+
+NHA = pathlib.Path.home()
+TEP_TRANG_THAI = NHA / ".ltt" / "cam_cli_trang_thai.json"
+
+
+# ── Tien ich ────────────────────────────────────────────────────────────────
+
+def _doc_trang_thai() -> dict:
+    if not TEP_TRANG_THAI.exists():
+        return {}
+    try:
+        return json.loads(TEP_TRANG_THAI.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # Tep trang thai hong thi coi nhu chua cam. `go` se van don duoc bang
+        # dau moc; chi mat thong tin "tep nay ta tao hay von co".
+        return {}
+
+
+def _ghi_trang_thai(tt: dict) -> None:
+    TEP_TRANG_THAI.parent.mkdir(parents=True, exist_ok=True)
+    TEP_TRANG_THAI.write_text(json.dumps(tt, ensure_ascii=False, indent=1),
+                              encoding="utf-8", newline="\n")
+
+
+def _sao_luu(tep: pathlib.Path) -> pathlib.Path | None:
+    """Sao luu mot lan, giu ban DAU TIEN.
+
+    !! KHONG ghi de ban sao luu o lan chay thu hai. Ban dau tien la ban truoc
+       khi ta dung vao - do moi la thu can de quay ve. Ghi de no bang mot ban
+       "da co cau hinh cua ta" la lam mat dung thu ta dinh bao ve.
+    """
+    if not tep.exists():
+        return None
+    bs = tep.with_suffix(tep.suffix + ".truoc-ltt")
+    if not bs.exists():
+        bs.write_bytes(tep.read_bytes())
+    return bs
+
+
+def _chen_khoi(van: str, noi_dung: str) -> str:
+    """Chen (hoac thay) khoi co dau moc, giu nguyen phan ngoai khoi."""
+    khoi = MOC_MO + "\n" + noi_dung.rstrip("\n") + "\n" + MOC_DONG
+    if MOC_MO in van and MOC_DONG in van:
+        dau = van.index(MOC_MO)
+        cuoi = van.index(MOC_DONG) + len(MOC_DONG)
+        return van[:dau] + khoi + van[cuoi:]
+    if van and not van.endswith("\n"):
+        van += "\n"
+    return van + ("\n" if van else "") + khoi + "\n"
+
+
+def _go_khoi(van: str) -> tuple[str, bool]:
+    if MOC_MO not in van or MOC_DONG not in van:
+        return van, False
+    dau = van.index(MOC_MO)
+    cuoi = van.index(MOC_DONG) + len(MOC_DONG)
+    ra = van[:dau].rstrip("\n") + "\n" + van[cuoi:].lstrip("\n")
+    return ra.rstrip("\n") + "\n" if ra.strip() else "", True
+
+
+def _setx(ten: str, gt: str) -> bool:
+    """Dat bien moi truong o cap NGUOI DUNG.
+
+    !! `setx` chi anh huong tien trinh MOI. VS Code / terminal dang mo se KHONG
+       thay - phai mo lai. Day la cho hay lam nguoi ta tuong cong cu hong.
+    """
+    try:
+        r = subprocess.run(["setx", ten, gt], capture_output=True, text=True,
+                           timeout=30)
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _xoa_env(ten: str) -> bool:
+    """Xoa bien moi truong cap nguoi dung. `setx TEN ""` de lai mot bien RONG,
+    khong xoa han - nen phai dung `reg delete`."""
+    try:
+        r = subprocess.run(["reg", "delete", "HKCU\\Environment", "/F", "/V", ten],
+                           capture_output=True, text=True, timeout=30)
+        return r.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def _doc_env_nguoi_dung(ten: str) -> str | None:
+    try:
+        r = subprocess.run(["reg", "query", "HKCU\\Environment", "/V", ten],
+                           capture_output=True, text=True, timeout=30)
+        if r.returncode != 0:
+            return None
+        for dong in r.stdout.splitlines():
+            if ten.lower() in dong.lower() and "REG_" in dong:
+                return dong.split("REG_", 1)[1].split(None, 1)[-1].strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return None
+
+
+# ── Codex ───────────────────────────────────────────────────────────────────
+
+def _codex_config(goc: str) -> str:
+    return (f'[model_providers.ltt]\n'
+            f'name = "LTT Studios"\n'
+            f'base_url = "{goc}/api/v1"\n'
+            f'env_key = "{ENV_KHOA_CODEX}"\n'
+            f'wire_api = "responses"\n'
+            f'stream_idle_timeout_ms = 600000\n')
+
+
+def _codex_profile() -> str:
+    return (f'model = "{MODEL}"\n'
+            f'model_provider = "ltt"\n'
+            f'model_reasoning_effort = "low"\n'
+            f'model_reasoning_summary = "none"\n'
+            f'model_context_window = 65536\n')
+
+
+def cam_codex(goc: str, tt: dict) -> list:
+    ra = []
+    thu_muc = NHA / ".codex"
+    thu_muc.mkdir(parents=True, exist_ok=True)
+
+    cfg = thu_muc / "config.toml"
+    _sao_luu(cfg)
+    van = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
+    cfg.write_text(_chen_khoi(van, _codex_config(goc)), encoding="utf-8",
+                   newline="\n")
+    ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
+
+    prof = thu_muc / "ltt.config.toml"
+    # Ghi nho ta CO TAO tep nay hay khong - `go` chi xoa tep DO TA TAO.
+    tt.setdefault("codex", {})["ta_tao_ltt_config"] = not prof.exists()
+    prof.write_text(_codex_profile(), encoding="utf-8", newline="\n")
+    ra.append(f"  [OK] {prof}")
+    return ra
+
+
+def go_codex(tt: dict) -> list:
+    ra = []
+    cfg = NHA / ".codex" / "config.toml"
+    if cfg.exists():
+        van, thay = _go_khoi(cfg.read_text(encoding="utf-8"))
+        if thay:
+            cfg.write_text(van, encoding="utf-8", newline="\n")
+            ra.append(f"  [OK] da go khoi cua ta khoi {cfg}")
+        else:
+            ra.append(f"  [--] {cfg} khong co khoi cua ta")
+
+    prof = NHA / ".codex" / "ltt.config.toml"
+    if prof.exists():
+        if tt.get("codex", {}).get("ta_tao_ltt_config"):
+            prof.unlink()
+            ra.append(f"  [OK] da xoa {prof} (ta tao no)")
+        else:
+            ra.append(f"  [!!] GIU {prof} - no da co TRUOC khi chay cong cu nay")
+    return ra
+
+
+# ── Claude Code ─────────────────────────────────────────────────────────────
+
+CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
+              "ANTHROPIC_DEFAULT_HAIKU_MODEL")
+
+
+def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
+    ra = []
+    gia_tri = {"ANTHROPIC_BASE_URL": f"{goc}/api",
+               "ANTHROPIC_MODEL": MODEL,
+               "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL}
+    for ten, gt in gia_tri.items():
+        ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
+
+    if not toan_cuc:
+        ra.append("  [--] KHONG ghi settings.json (mac dinh). Dung --toan-cuc neu muon.")
+        return ra
+
+    tep = NHA / ".claude" / "settings.json"
+    tep.parent.mkdir(parents=True, exist_ok=True)
+    _sao_luu(tep)
+    try:
+        d = json.loads(tep.read_text(encoding="utf-8")) if tep.exists() else {}
+    except ValueError:
+        print(f"  [!!] {tep} khong phai JSON hop le - KHONG dung toi.")
+        return ra
+    env = d.setdefault("env", {})
+    # Ghi nho DUNG NHUNG KHOA TA THEM, va gia tri cu neu khoa da ton tai.
+    ghi_nho = tt.setdefault("claude", {}).setdefault("khoa_da_them", {})
+    for ten, gt in gia_tri.items():
+        if ten not in ghi_nho:
+            ghi_nho[ten] = env.get(ten)      # None = khoa nay von KHONG co
+        env[ten] = gt
+    tep.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n",
+                   encoding="utf-8", newline="\n")
+    ra.append(f"  [OK] {tep}")
+    ra.append("  [!!] settings.json la TOAN CUC: moi phien Claude Code tren may")
+    ra.append("       nay se di qua LTT Studios cho toi khi ban chay `go`.")
+    return ra
+
+
+def go_claude(tt: dict) -> list:
+    ra = []
+    for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE,):
+        ra.append(f"  [{'OK' if _xoa_env(ten) else '--'}] bo bien moi truong {ten}")
+
+    tep = NHA / ".claude" / "settings.json"
+    ghi_nho = tt.get("claude", {}).get("khoa_da_them") or {}
+    if not tep.exists() or not ghi_nho:
+        return ra
+    try:
+        d = json.loads(tep.read_text(encoding="utf-8"))
+    except ValueError:
+        ra.append(f"  [!!] {tep} khong doc duoc - khong dung toi")
+        return ra
+    env = d.get("env") or {}
+    for ten, cu in ghi_nho.items():
+        if cu is None:
+            env.pop(ten, None)               # von khong co -> xoa han
+        else:
+            env[ten] = cu                    # von co -> tra ve gia tri cu
+    if not env:
+        d.pop("env", None)
+    tep.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n",
+                   encoding="utf-8", newline="\n")
+    ra.append(f"  [OK] da tra {tep} ve nhu truoc")
+    return ra
+
+
+# ── Lenh ────────────────────────────────────────────────────────────────────
+
+def lenh_cam(a) -> int:
+    khoa = (a.khoa or os.environ.get(ENV_KHOA_CODEX) or "").strip()
+    if not khoa:
+        print("Thieu khoa. Dung --khoa ltt_sk_... hoac dat san "
+              f"{ENV_KHOA_CODEX} trong moi truong.")
+        print("Lay khoa o https://app.lttstudios.com/developers/keys")
+        return 1
+    if not khoa.startswith("ltt_sk_"):
+        print("Khoa phai bat dau bang `ltt_sk_`. Ban dan nham chuoi khac?")
+        return 1
+
+    tt = _doc_trang_thai()
+    tt["goc"] = a.goc
+    print(f"Cam vao {a.goc}\n")
+    print("Codex:")
+    for d in cam_codex(a.goc, tt):
+        print(d)
+    print("\nClaude Code:")
+    for d in cam_claude(a.goc, tt, a.toan_cuc):
+        print(d)
+
+    print("\nKhoa:")
+    for ten in (ENV_KHOA_CODEX, ENV_KHOA_CLAUDE):
+        print(f"  [{'OK' if _setx(ten, khoa) else '!!'}] {ten}")
+    # !! KHONG ghi khoa vao tep trang thai. Tep do khong phai cho bi mat.
+    tt["da_cam"] = True
+    _ghi_trang_thai(tt)
+
+    print("\n" + "=" * 70)
+    print("!! PHAI MO LAI VS CODE / TERMINAL. `setx` chi anh huong tien trinh MOI;")
+    print("   cua so dang mo van dung gia tri cu, va do la cho hay lam nguoi ta")
+    print("   tuong cong cu nay hong.")
+    print(f"\nCodex:       codex --profile ltt")
+    print(f"Claude Code: claude   (model {MODEL})")
+    print("\nKiem lai:    python tools\\cam_cli.py kiem")
+    print("Go ra:       python tools\\cam_cli.py go")
+    return 0
+
+
+def lenh_go(a) -> int:
+    tt = _doc_trang_thai()
+    if not tt.get("da_cam"):
+        print("Tep trang thai khong ghi nhan lan cam nao. Van thu don theo dau moc.\n")
+    print("Codex:")
+    for d in go_codex(tt):
+        print(d)
+    print("\nClaude Code:")
+    for d in go_claude(tt):
+        print(d)
+    tt["da_cam"] = False
+    tt.pop("claude", None)
+    tt.pop("codex", None)
+    _ghi_trang_thai(tt)
+    print("\nBan sao luu dau tien van con o cac tep `*.truoc-ltt` - khong tu xoa,")
+    print("de ban doi chieu neu can. Xoa tay khi da yen tam.")
+    print("\n!! Mo lai VS Code / terminal de bien moi truong cu bien mat.")
+    return 0
+
+
+def lenh_xem(a) -> int:
+    tt = _doc_trang_thai()
+    print(f"Trang thai: {'DA CAM' if tt.get('da_cam') else 'chua cam'}"
+          f"   goc={tt.get('goc') or '-'}\n")
+
+    cfg = NHA / ".codex" / "config.toml"
+    co = cfg.exists() and MOC_MO in cfg.read_text(encoding="utf-8")
+    print(f"  codex config.toml     : {'co khoi cua ta' if co else 'khong'}")
+    print(f"  codex ltt.config.toml : "
+          f"{'co' if (NHA / '.codex' / 'ltt.config.toml').exists() else 'khong'}")
+
+    sj = NHA / ".claude" / "settings.json"
+    if sj.exists():
+        try:
+            env = (json.loads(sj.read_text(encoding="utf-8")).get("env") or {})
+        except ValueError:
+            env = {}
+        print(f"  claude settings.json  : ANTHROPIC_BASE_URL="
+              f"{env.get('ANTHROPIC_BASE_URL') or '-'}")
+    else:
+        print("  claude settings.json  : khong co")
+
+    print("\n  Bien moi truong cap nguoi dung:")
+    for ten in CLAUDE_ENV:
+        print(f"    {ten:32} = {_doc_env_nguoi_dung(ten) or '-'}")
+    for ten in (ENV_KHOA_CODEX, ENV_KHOA_CLAUDE):
+        gt = _doc_env_nguoi_dung(ten)
+        # KHONG in khoa. Chi noi co hay khong va dai bao nhieu.
+        print(f"    {ten:32} = {'(da dat, ' + str(len(gt)) + ' ky tu)' if gt else '-'}")
+    return 0
+
+
+def lenh_kiem(a) -> int:
+    """Goi THAT mot luot. 'Da ghi tep' va 'cam duoc roi' la hai cau khac nhau."""
+    khoa = (a.khoa or os.environ.get(ENV_KHOA_CODEX)
+            or _doc_env_nguoi_dung(ENV_KHOA_CODEX) or "").strip()
+    if not khoa:
+        print(f"Khong tim thay khoa. Chay `cam` truoc, hoac dung --khoa.")
+        return 1
+    goc = a.goc or _doc_trang_thai().get("goc") or GOC_MAC_DINH
+
+    def goi(duong, than=None, phuong="GET"):
+        du = json.dumps(than).encode() if than is not None else None
+        rq = urllib.request.Request(
+            goc + "/api/v1" + duong, data=du, method=phuong,
+            headers={"Authorization": "Bearer " + khoa,
+                     "Content-Type": "application/json",
+                     # BAT BUOC: Cloudflare tra 403 cho User-Agent mac dinh cua
+                     # urllib TRUOC khi request toi duoc may chu.
+                     "User-Agent": "ltt-cam-cli/1.0"})
+        try:
+            with urllib.request.urlopen(rq, timeout=180) as r:
+                return r.status, r.read()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read()
+        except OSError as e:
+            return 0, str(e).encode()
+
+    print(f"Kiem qua {goc}\n")
+    m, b = goi("/tools")
+    ten = [t.get("name") for t in (json.loads(b).get("items") or [])] if m == 200 else []
+    print(f"  GET  /tools            -> {m}  {ten}")
+    if m != 200:
+        print(f"       {b[:300].decode('utf-8', 'replace')}")
+        return 1
+
+    m, b = goi("/credits/balance")
+    du = (json.loads(b) or {}).get("balance") if m == 200 else "?"
+    print(f"  GET  /credits/balance  -> {m}  so du {du}")
+
+    m, b = goi("/messages", {"model": MODEL, "max_tokens": 200, "stream": True,
+                             "messages": [{"role": "user",
+                                           "content": "Tra loi mot tu: OK"}]},
+               phuong="POST")
+    print(f"  POST /messages         -> {m}  {len(b)} byte SSE")
+    if m != 200:
+        print(f"       {b[:300].decode('utf-8', 'replace')}")
+        return 1
+    print("\nCam duoc. Mo lai VS Code roi dung binh thuong.")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(
+        prog="cam_cli",
+        description="Cam Codex / Claude Code vao API cua LTT Studios")
+    sub = ap.add_subparsers(dest="lenh", required=True)
+
+    c = sub.add_parser("cam", help="ghi cau hinh")
+    c.add_argument("--khoa", default="")
+    c.add_argument("--goc", default=GOC_MAC_DINH)
+    c.add_argument("--toan-cuc", action="store_true", dest="toan_cuc",
+                   help="ghi ca ~/.claude/settings.json (TOAN CUC cho moi phien "
+                        "Claude Code tren may nay)")
+
+    sub.add_parser("go", help="go ra, tra ve nguyen trang")
+    sub.add_parser("xem", help="xem dang cam gi")
+
+    k = sub.add_parser("kiem", help="goi that mot luot de chac chan")
+    k.add_argument("--khoa", default="")
+    k.add_argument("--goc", default="")
+
+    a = ap.parse_args(argv)
+    return {"cam": lenh_cam, "go": lenh_go,
+            "xem": lenh_xem, "kiem": lenh_kiem}[a.lenh](a)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cham_mu.py
 SHA256=339b6f70ae094420f9de36051e278b4efd9f03d65df4d514bc0a0e7923e875b1 BYTES=30440 LINES=622
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -255253,7 +256086,7 @@ def _app_version() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/system_profile_config.json
-SHA256=096134366a4db72ae45d0e010cf48a45b35b3535ca623e978026f565113586d7 BYTES=1481 LINES=93
+SHA256=8d4c49b1f8f179e2574c6710822d967e8a54659e2c26531b771d6799b820a337 BYTES=1388 LINES=93
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
  "schema": 2,
@@ -256259,7 +257092,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/vps_doctor.py
-SHA256=7b672094e7b80a91fb78df40c2b140d7a410f294ca5a1079f1ac2ed728fcffe8 BYTES=7403 LINES=178
+SHA256=7ae202708b114121581b5dc19470a0435bd108f5758c893344091ad64b8a4b48 BYTES=9193 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Kiem duong noi toi Proxmox va in ra nhung so ma H39 dang can (P0a).
 
@@ -256432,8 +257265,46 @@ def main() -> int:
                     break
             print(f"  Neu ban toan {pid:<8} -> {n} may")
 
+    # ── Doi chieu san dia KHAI BAO voi dia THAT cua template ────────────────
+    #
+    # Proxmox chi noi dia ra, KHONG BAO GIO thu vao. Nen dia cua template la san
+    # cung: khai thap hon no thi khach dat mot goi nho VAN QUA CUA KIEM, roi
+    # chiem cho nhieu hon phan da tra tien — va `capacity.py` dem theo so cua
+    # goi nen suc chua tinh sai luon. Doi chieu o day de lech bi bat, thay vi de
+    # khach phat hien.
     print()
-    print("RESULT:", "PASS" if loi == 0 else f"THIEU QUYEN ({loi} muc)")
+    print("== San dia: khai bao vs template that ==")
+    from apps.vps import os_images
+    for img in os_images.OS_IMAGES:
+        vmid = os_images.template_vmid(img.id)
+        if not vmid:
+            print(f"  {img.id:<18} chua khai {os_images.khoa_moi_truong(img.id)}")
+            continue
+        try:
+            cfg = client._goi("GET", f"/nodes/{client.config.node}/qemu/{vmid}/config") or {}
+        except Exception as exc:                      # noqa: BLE001
+            print(f"  {img.id:<18} khong doc duoc template {vmid}: {str(exc)[:50]}")
+            loi += 1
+            continue
+        dia_that = 0
+        for k, v in cfg.items():
+            if not k.startswith(("sata", "scsi", "virtio", "ide")):
+                continue
+            if "media=cdrom" in str(v) or "size=" not in str(v):
+                continue
+            co = str(v).split("size=")[1].split(",")[0]
+            if co.endswith("G"):
+                dia_that = max(dia_that, int(float(co[:-1])))
+            elif co.endswith("M"):
+                dia_that = max(dia_that, 1)
+        dau = "OK " if img.disk_gb_toi_thieu >= dia_that else "LECH"
+        if dau == "LECH":
+            loi += 1
+        print(f"  {img.id:<18} khai {img.disk_gb_toi_thieu:>3} GB · "
+              f"template {vmid} that {dia_that:>3} GB  {dau}")
+
+    print()
+    print("RESULT:", "PASS" if loi == 0 else f"CO {loi} MUC CAN XEM")
     return 0 if loi == 0 else 1
 
 

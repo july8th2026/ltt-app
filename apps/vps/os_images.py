@@ -42,6 +42,17 @@ class OsImage:
     #: `windows` hoặc `linux` — quyết định dùng Cloudbase-Init hay cloud-init.
     ho: str
     ram_mb_toi_thieu: int
+    #: Sàn đĩa THẬT SỰ, tính cả kích thước đĩa của template.
+    #:
+    #: Không phải chỉ là yêu cầu của Microsoft. **Proxmox chỉ nới đĩa ra, không
+    #: bao giờ thu vào**, nên đĩa của template là sàn cứng: clone từ một template
+    #: 80 GB thì máy nhỏ nhất cũng là 80 GB. Khai 32 GB (số của Microsoft) trong
+    #: khi template là 80 GB thì khách đặt gói 40 GB **qua được cửa kiểm**, rồi
+    #: chiếm 80 GB của kho chung mà chỉ trả tiền 40 — và `capacity.py` đếm theo
+    #: số của gói nên sức chứa tính sai luôn.
+    #:
+    #: `tools/vps_doctor.py` đối chiếu số này với đĩa THẬT của template và kêu
+    #: khi hai bên lệch.
     disk_gb_toi_thieu: int
     #: Cổng khách thường dùng để vào — chỉ để **hiển thị hướng dẫn**, không còn
     #: dùng để cấu hình gì. NAT 1:1 mở toàn bộ cổng của IP riêng cho máy đó.
@@ -82,7 +93,12 @@ OS_IMAGES: tuple[OsImage, ...] = (
     ),
     OsImage(
         id="win10", ten="Windows 10", ho="windows",
-        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=32, cong_quen=3389,
+        # 80 GB là đĩa THẬT của template `WIN10-LTSC-GOLD` (9001), không phải
+        # yêu cầu 32 GB của Microsoft — xem chú thích của `disk_gb_toi_thieu`.
+        # Hệ quả bán hàng: với template hiện tại, **Windows 10 chỉ bán được ở
+        # gói Lớn**. Muốn bán ở gói nhỏ hơn thì phải dựng lại template với đĩa
+        # nhỏ hơn, không thể thu đĩa của template hiện có.
+        ram_mb_toi_thieu=4096, disk_gb_toi_thieu=80, cong_quen=3389,
         khach_thay=True,
     ),
     OsImage(
