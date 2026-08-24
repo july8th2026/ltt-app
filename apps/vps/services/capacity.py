@@ -87,6 +87,12 @@ class SucChua:
     ram_mb_da_hua: int = 0
     dia_gb_da_hua: int = 0
     dia_gb_dang_dung: int = 0
+    #: Số luồng CPU thật của node, và tổng vCPU đã cam kết cho MỌI máy trên nó.
+    #: Trước 24/08 hai con số này không được đo — `cho_phep_ban` gác RAM và đĩa
+    #: nhưng **không gác CPU chút nào**, nên mức bán chồng CPU là một hệ quả tình
+    #: cờ chứ không phải một lựa chọn.
+    cpu_tong: int = 0
+    vcpu_da_hua: int = 0
 
     @property
     def ram_mb_ban_duoc(self) -> int:
@@ -108,6 +114,13 @@ class SucChua:
         return max(0, tran - self.dia_gb_dang_dung)
 
     @property
+    def ty_le_ban_chong_cpu(self) -> float:
+        """Đã cam kết gấp mấy lần số luồng thật. 0 = chưa đo được."""
+        if self.cpu_tong <= 0:
+            return 0.0
+        return self.vcpu_da_hua / self.cpu_tong
+
+    @property
     def ty_le_ban_chong(self) -> float:
         """Đã hứa gấp mấy lần kho. > 1 là bình thường với thin; > 3 là liều."""
         if self.dia_gb_ban_duoc <= 0:
@@ -121,6 +134,20 @@ class KetQuaKiem:
 
     cho_phep: bool
     ly_do: str = ""
+
+
+#: Trần bán chồng vCPU. Bán chồng CPU là **bình thường** với VPS — phần lớn máy
+#: nhàn phần lớn thời gian — nhưng "bình thường" khác "vô hạn", và nó phải là một
+#: con số đã chọn chứ không phải một hệ quả tình cờ.
+#:
+#: Node đo được 24/08: **32 luồng**, mà riêng 8 máy của chủ nhà đã cam kết **41
+#: vCPU** — node đã ở 1,28× trước khi bán cho ai một máy nào. Bán hết 16 máy Nhỏ
+#: đưa nó lên ~1,8×.
+#:
+#: 3,0× cùng con số với trần bán chồng đĩa (V14), và lý do giống nhau: qua mức đó
+#: thì cái mất là **độ trễ** — máy vẫn chạy, chỉ giật, và khách không chứng minh
+#: được điều gì.
+TRAN_BAN_CHONG_CPU = 3.0
 
 
 def cho_phep_ban(suc_chua: SucChua, plan_id: str, dia_them_gb: int = 0
@@ -158,6 +185,17 @@ def cho_phep_ban(suc_chua: SucChua, plan_id: str, dia_them_gb: int = 0
             False,
             f"ban chong dia se len {ty_le_moi:.2f}x, tran la "
             f"{TRAN_BAN_CHONG:.1f}x")
+    # 4) Bán chồng CPU. Không đo được `cpu_tong` thì **bỏ qua** phép kiểm này,
+    #    không chặn: CPU khác RAM và đĩa ở chỗ thiếu nó máy vẫn chạy (chỉ chậm),
+    #    nên "không đọc được" ở đây không đáng để dừng bán hàng.
+    if suc_chua.cpu_tong > 0:
+        ty_le_cpu = (suc_chua.vcpu_da_hua + plan.vcpu) / suc_chua.cpu_tong
+        if ty_le_cpu > TRAN_BAN_CHONG_CPU:
+            return KetQuaKiem(
+                False,
+                f"ban chong CPU se len {ty_le_cpu:.2f}x ({suc_chua.vcpu_da_hua}"
+                f"+{plan.vcpu} vCPU tren {suc_chua.cpu_tong} luong), tran la "
+                f"{TRAN_BAN_CHONG_CPU:.1f}x")
     return KetQuaKiem(True)
 
 
@@ -181,8 +219,10 @@ def kho_qua_tai(da_dung_bytes: int, tong_bytes: int,
     return KetQuaKiem(True)
 
 
-def cam_ket_tu_vm(vms: list) -> tuple[int, int]:
-    """RAM (MB) và đĩa (GB) đã CAM KẾT cho **mọi** VM trên node. Trả `(ram, dia)`.
+def cam_ket_tu_vm(vms: list) -> tuple[int, int, int]:
+    """RAM (MB), đĩa (GB) và vCPU đã CAM KẾT cho **mọi** VM trên node.
+
+    Trả `(ram, dia, vcpu)`.
 
     ## Vì sao phải đếm cả VM không thuộc app này
 
@@ -201,13 +241,14 @@ def cam_ket_tu_vm(vms: list) -> tuple[int, int]:
 
     Template không tính — nó không chạy, và đĩa của nó đã trừ ở `DIA_TEMPLATE_GB`.
     """
-    ram = dia = 0
+    ram = dia = vcpu = 0
     for v in vms or []:
         if int(v.get("template") or 0):
             continue
         ram += int(v.get("maxmem") or 0)
         dia += int(v.get("maxdisk") or 0)
-    return ram // (1024 * 1024), dia // (1024 ** 3)
+        vcpu += int(v.get("cpus") or 0)
+    return ram // (1024 * 1024), dia // (1024 ** 3), vcpu
 
 
 def suc_chua_tu_proxmox(trang_thai_node: dict, kho: list, *,

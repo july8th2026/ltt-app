@@ -3021,9 +3021,47 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
 
 - [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
 
-- [ ] **G9 — backup + cổng dự phòng.** Snapshot tuần, giữ 1 bản, đẩy sang ổ khác của
-      máy B (V10). Cổng vào thứ hai để một con VPS ngã không làm chết **mọi** khách.
-      *Xong khi:* khôi phục thật một VM từ backup; chuyển một máy sang cổng dự phòng.
+- [x] **G9a — ảnh chụp hằng tuần + khôi phục.** ✅ **XONG 2026-08-24, đo thật.**
+
+      🔴 **Trang bán đã hứa "sao lưu hằng tuần, giữ 1 bản" từ trước khi có mã nào
+      làm việc đó** — và chính `cost.py` trong cùng repo lại viết rằng đối thủ có
+      *"backup tuần và SLA 99,9% — thứ hạ tầng của ta không có"*. Hai file nói
+      ngược nhau, và file nói sai là file khách đọc.
+
+      **Ảnh chụp, không phải `vzdump`** — và đó là kết luận sau khi thử, không
+      phải lựa chọn cho tiện: `vzdump` ghi ra kho kiểu `dir`, mà kho `dir` duy
+      nhất trên node còn **2,2 GiB**. Ảnh chụp LVM-thin tạo trong vài giây và gần
+      như không tốn chỗ lúc tạo.
+
+      **Trang bán đã sửa cho đúng thứ khách nhận:** *"Ảnh chụp hằng tuần, giữ 1
+      bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm
+      hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn."*
+      Ảnh chụp nằm cùng pool với đĩa gốc; pool hỏng là mất cả hai.
+
+      **Nút "Khôi phục về ảnh chụp"** đứng **trước** "Cài lại máy" trong khối Nguy
+      hiểm: khách vào khối đó vì máy hỏng, và quay về ảnh chụp giữ được dữ liệu
+      còn cài lại thì mất sạch. Đưa lựa chọn ít thiệt hại hơn lên trước là việc
+      của người thiết kế, không phải của người đang hoảng.
+
+      ⚠️ **Phép đo dạy được một điều, và nó đến từ một lần THẤT BẠI:** lần diễn
+      tập đầu, tệp ghi *ba giây trước* khi chụp **không có** trong ảnh — nó còn
+      nằm trong bộ đệm của guest. Chạy lại kèm `sync` thì tệp còn nguyên. Ảnh chụp
+      giữ **những gì đã xuống đĩa**, không phải "mọi thứ tại thời điểm chụp" — máy
+      khách không có guest agent để xả bộ đệm (agent là thiết bị virtio, và virtio
+      treo trên cụm này). Đừng mô tả tính năng này là "khôi phục về đúng phút đó".
+
+      *Diễn tập thật:* ghi tệp → `sync` → chụp → ghi đè tệp và tạo tệp mới →
+      khôi phục → **tệp cũ nguyên vẹn, tệp mới biến mất**. `KET LUAN: DAT`.
+
+      *Bằng chứng:* `tests/test_289_vps_sao_luu.py` (22 test), migration
+      `a4d70e93f158`.
+
+- [ ] **G9b — cổng vào thứ hai.** Hiện **một con VPS Vultr ngã là MỌI khách mất
+      đường vào cùng lúc**. Mã đã sẵn sàng cho nhiều cổng (`vps_gateway` là một
+      bảng, `chon_gateway` chọn cổng còn nhiều chỗ nhất, `tools/vps_them_cong_vao.py`
+      khai thêm một dòng là xong) — thứ còn thiếu là **quyết định mua thêm một VPS
+      $6/tháng**, và đó là việc của chủ sản phẩm.
+      *Xong khi:* chuyển được một máy đang chạy sang cổng dự phòng.
 
 - [ ] **G10 — nghiệm thu và mở bán.** Điều khoản sử dụng, ba dòng cảnh báo bắt buộc,
       hoá đơn theo luật VN, rồi mới đặt `LTT_VPS=1`.

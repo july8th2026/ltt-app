@@ -36,6 +36,31 @@
           {% else %}{{ may.plan_id }}{% endif %}</td></tr>
       <tr><th>{{ _("Hệ điều hành") }}</th>
         <td>{{ _(os.ten) if os else may.os_id }}</td></tr>
+      <tr>
+        <th>{{ _("Băng thông chu kỳ này") }}</th>
+        <td>
+          {{ bang_thong.da_dung }}
+          {% if bang_thong.han_muc_gb %}
+            <span class="muted">/ {{ bang_thong.han_muc_gb }} GB</span>
+            <div style="height:6px;background:rgba(128,128,128,.25);border-radius:3px;margin-top:6px;max-width:280px;">
+              <div style="height:6px;border-radius:3px;width:{{ [bang_thong.phan_tram, 100] | min }}%;
+                          background:{{ '#c92a2a' if bang_thong.phan_tram >= 100 else app.accent }};"></div>
+            </div>
+            {% if bang_thong.bi_giam_toc %}
+              <p class="muted" style="margin:6px 0 0;">
+                {{ _("Máy đang bị giảm tốc vì đã vượt hạn mức. Không bị tính thêm tiền — tốc độ trở lại bình thường khi sang chu kỳ mới.") }}
+              </p>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>{{ _("Ảnh chụp gần nhất") }}</th>
+        <td>
+          {% if sao_luu_luc %}{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}
+          {% else %}<span class="muted">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</span>{% endif %}
+        </td>
+      </tr>
       <tr><th>{{ _("Trả tới") }}</th>
         <td>
           {% if may.paid_until %}{{ may.paid_until.strftime('%d/%m/%Y') }}
@@ -117,11 +142,33 @@
   </div>
 
   {# ── 4. Nguy hiểm ──────────────────────────────────────────────────────
-     Hai nút không hoàn tác được. Đòi gõ ĐÚNG tên máy, khuôn của GitHub — lý do
+     Ba nút không hoàn tác được. Đòi gõ ĐÚNG tên máy, khuôn của GitHub — lý do
      giống hệt: chúng phải khó bấm nhầm hơn một cú click. #}
   {% if may.trang_thai != "da_xoa" %}
   <div class="card" style="border-color:#c33;">
     <h2 style="color:#c33;">{{ _("Nguy hiểm") }}</h2>
+
+    {# Khôi phục đứng TRƯỚC "Cài lại": khách vào khối này vì máy hỏng, và quay
+       về ảnh chụp giữ được dữ liệu còn cài lại thì mất sạch. Đưa lựa chọn ít
+       thiệt hại hơn lên trước là việc của người thiết kế, không phải của người
+       đang hoảng. #}
+    <h3 style="margin:12px 0 4px;">{{ _("Khôi phục về ảnh chụp") }}</h3>
+    <p class="muted" style="margin:0 0 8px;">
+      {% if sao_luu_luc %}
+        {{ _("Quay máy về bản chụp ngày %(ngay)s. Mọi thay đổi sau thời điểm đó sẽ mất. Máy sẽ tắt.") % {"ngay": sao_luu_luc.strftime('%d/%m/%Y %H:%M')} }}
+      {% else %}
+        {{ _("Máy này chưa có ảnh chụp nào. Bản đầu tiên được chụp trong vòng một tuần kể từ khi tạo máy.") }}
+      {% endif %}
+    </p>
+    {% if sao_luu_luc %}
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/khoi-phuc"
+          style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="text" name="xac_nhan" style="max-width:220px;"
+             placeholder="{{ _('Gõ %(ten)s để xác nhận') % {'ten': may.ten or may.id[:8]} }}">
+      <button type="submit" style="background:#c33;">{{ _("Khôi phục") }}</button>
+    </form>
+    {% endif %}
 
     <h3 style="margin:12px 0 4px;">{{ _("Cài lại máy") }}</h3>
     <p class="muted" style="margin:0 0 8px;">

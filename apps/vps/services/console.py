@@ -131,3 +131,24 @@ def dia_chi_websocket_proxmox(config, vmid: int, ve_proxmox: dict) -> str:
     goc = str(config.base_url).rstrip("/").replace("https://", "wss://", 1)
     return (f"{goc}/api2/json/nodes/{config.node}/qemu/{int(vmid)}/vncwebsocket"
             f"?port={cong}&vncticket={quote(str(ticket), safe='')}")
+
+
+def don_ve_het_han(db: DbSession) -> int:
+    """Xoá vé đã hết hạn. Trả số dòng đã xoá. Chạy trong vòng bảo trì của app.
+
+    ## Vì sao cần, khi vé đã bị xoá lúc tiêu
+
+    `tieu_ve` xoá vé **đã dùng**. `_don_ve_cu` chỉ cắt bớt khi một máy vượt
+    `GIU_TOI_DA_MOI_MAY` vé. Không cái nào dọn **vé cấp ra rồi không ai dùng** —
+    khách mở trang console rồi đóng tab, hoặc máy bị xoá trong lúc vé còn sống.
+    Những vé đó nằm lại vĩnh viễn.
+
+    Mỗi dòng giữ `user_id` và một vé của Proxmox. Nó nhỏ, nhưng "nhỏ và vĩnh
+    viễn" vẫn là dữ liệu của khách nằm lại không có lý do — và chính sách lưu
+    trữ ở `governance.py` nói rằng bảng này được dọn.
+    """
+    from sqlalchemy import delete
+
+    han = _now() - timedelta(seconds=HAN_VE_GIAY)
+    kq = db.execute(delete(VpsConsoleVe).where(VpsConsoleVe.created_at <= han))
+    return int(kq.rowcount or 0)

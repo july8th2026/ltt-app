@@ -56,6 +56,10 @@ class _DbGia:
 
     def execute(self, *a, **kw):
         class _Kq:
+            """Đóng vai kết quả của SQLAlchemy cho cả `select` lẫn `delete`."""
+
+            rowcount = 0
+
             def __init__(self, x):
                 self._x = x
 
@@ -75,6 +79,9 @@ class _DbGia:
 
     def commit(self):
         self.da_commit += 1
+
+    def delete(self, x):
+        pass
 
 
 NOW = datetime(2026, 8, 24, tzinfo=timezone.utc)
@@ -116,7 +123,7 @@ def test_thu_duoc_thi_khong_treo_va_khong_xoa(monkeypatch):
     monkeypatch.setattr(bao_tri, "_client_hoac_none", lambda: _ClientGia())
     kq = bao_tri.mot_luot(_DbGia(), now=NOW)
     assert kq == {"da_thu": 1, "da_treo": 0, "da_nop_xoa": 0,
-                  "da_doi_giam_toc": 0}
+                  "da_doi_giam_toc": 0, "da_chup": 0, "da_don_ve": 0}
 
 
 def test_thieu_credit_thi_TREO_chu_khong_bo_qua(monkeypatch):
@@ -188,7 +195,13 @@ def test_job_xoa_dung_dedupe_key_theo_MAY(monkeypatch):
             ghi.update(kw)
             return object()
 
-    monkeypatch.setitem(__import__("sys").modules, "platform_core.jobs", _Q)
+    # Vá **thuộc tính trên gói**, không phải `sys.modules`: `from platform_core
+    # import jobs` đọc thuộc tính khi gói đã nạp, nên vá `sys.modules` chỉ ăn khi
+    # test này chạy MỘT MÌNH — và xanh-khi-chạy-riêng, đỏ-khi-chạy-cả-bộ là loại
+    # test tệ hơn không có.
+    import platform_core
+
+    monkeypatch.setattr(platform_core, "jobs", _Q, raising=False)
     bao_tri._nop_job_xoa(_DbGia(), _May(id="may-9", user_id="u7"))
     assert ghi["dedupe_key"] == "vps-destroy-may-9"
     assert ghi["job_type"] == "vps.destroy"

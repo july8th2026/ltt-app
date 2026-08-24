@@ -195,10 +195,27 @@ def test_every_purge_claim_names_a_function_that_exists_and_runs():
     so every `purged_by` claim is checked against the worker's own sweep.
     """
     import platform_core.job_runner as runner
+    from platform_core import registry
 
     sweep = inspect.getsource(runner._don_du_lieu_het_han)
     other_sweeps = (inspect.getsource(runner.run_forever)
                     + inspect.getsource(runner))
+
+    # Từ 2026-08-24 hợp đồng app có `AppManifest.bao_tri`, và nền tảng gọi nó
+    # trong cùng vòng bảo trì (dưới cùng một lease). Nên một app dọn bảng của
+    # chính nó là một lời khai HỢP LỆ — nhưng vẫn phải kiểm, không phải tin.
+    # Không mở rộng phép kiểm ở đây thì một app dọn dữ liệu đúng cách sẽ bị báo
+    # đỏ, và cách sửa dễ nhất khi đó là **xoá lời khai** — tức mất đúng thứ luật
+    # này sinh ra để giữ.
+    # Duyệt MỌI app, không qua `registry.viec_bao_tri()` — hàm đó lọc theo cờ
+    # bật/tắt (fail-closed lúc chạy, đúng như nó phải thế). Nhưng chính sách lưu
+    # trữ là một văn bản **tĩnh**: nó phải kiểm được như nhau dù app đang bật hay
+    # tắt. Dùng hàm lọc ở đây thì test xanh trên máy có `LTT_VPS=1` và đỏ trên
+    # máy không có — loại hỏng tệ hơn cả việc không kiểm.
+    for item in registry.discover():
+        ham = item.manifest.bao_tri
+        if ham is not None:
+            other_sweeps += inspect.getsource(inspect.getmodule(ham))
 
     for store in governance.STORES:
         if not store.purged_by:

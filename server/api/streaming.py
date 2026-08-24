@@ -28,7 +28,7 @@ import logging
 from typing import Iterator, Optional
 
 from fastapi import Body, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from platform_core.public_api import limits, metrics, policy, sandbox
@@ -45,6 +45,7 @@ from server.deps import get_db
 log = logging.getLogger("server.api.streaming")
 
 _SSE = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+_NO_STORE = {"Cache-Control": "no-store"}
 TOOL_CHAT = "text.chat"
 
 #: 🔴 NGÂN SÁCH MỞ LUỒNG — 75 giây, và con số này có lý do.
@@ -114,6 +115,129 @@ def register_streaming_routes(api, config, tag: str) -> None:
         return _cua("/v1/responses", body or {}, principal, db, config)
 
 
+def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
+             principal: Principal, db: Session, config) -> JSONResponse:
+    """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
+    Anthropic Messages.
+
+    ⭐ DUNG LAI TOAN BO DUONG TINH TIEN da co (`giu_cho_luot` -> goi ->
+       `quyet_toan_hoac_hoan`). Khong dung mot so tien thu hai o day: mot he
+       thong hai cho tinh tien la mot he thong se lech, va lech ve tien thi khong
+       ai phat hien cho toi khi khach doi soat.
+
+    ⚠️ TRAN THOI GIAN. Khong stream nghia la khong co byte nao chay cho toi khi
+       xong, nen dong ho 100 giay cua Cloudflare **co hieu luc** o day - khac han
+       duong streaming. Vi vay `max_tokens` bi kep theo tran cua duong dong bo,
+       cung con so ma `/chat/completions` dung, va vi cung mot ly do.
+    """
+    from apps.ltt_llm import features
+    from platform_core import credit
+    from platform_core.llm import thanh_toan
+    from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
+                                            VuotNganSachError)
+    from server.api.chat import _tran_max_tokens
+
+    if sandbox.is_test(principal.mode):
+        return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
+
+    tran = min(_max_tokens(than, features.uoc_token_vao(tin)), _tran_max_tokens())
+    request_id = thanh_toan.ma_luot("ms")
+    vao_uoc = features.uoc_token_vao(tin)
+    try:
+        da_giu = thanh_toan.giu_cho_luot(
+            db, user_id=principal.user_id, request_id=request_id,
+            token_vao_uoc=vao_uoc, max_tokens=tran)
+    except credit.ThieuCreditError as e:
+        raise insufficient_credit(str(e)) from None
+    db.commit()
+
+    try:
+        kq = CongVlm().chat(model=features.ALIAS_SANG_ID[ten],
+                            messages=tin, max_tokens=tran)
+    except BanError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
+        raise service_unavailable(f"The model is busy right now: {e}",
+                                  retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
+    except (VuotNganSachError, CongVlmError) as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
+        raise service_unavailable("The model could not serve this request.") from None
+
+    # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
+    # tu boc token roi truyen so le: chinh no biet cach xu khi KHONG DO DUOC
+    # (hoan du va ghi canh bao), va do la luat tien cua ca he thong.
+    thanh_toan.quyet_toan_hoac_hoan(
+        db, user_id=principal.user_id, request_id=request_id,
+        su_dung=kq.su_dung)
+    db.commit()
+    metrics.increment("chat:mot_cuc")
+    return JSONResponse(_dang_anthropic(kq, ten, request_id),
+                        status_code=200, headers=_NO_STORE)
+
+
+#: Ánh xạ lý do dừng: **kiểu OpenAI → kiểu Anthropic**.
+#:
+#: 🔴 KHÔNG ĐƯỢC TRUYỀN THẲNG. Máy B nói giao thức OpenAI nên trả `stop` /
+#:    `length` / `tool_calls`; hợp đồng Anthropic Messages khai một tập **khác
+#:    hẳn**: `end_turn`, `max_tokens`, `stop_sequence`, `tool_use`, `pause_turn`,
+#:    `refusal`.
+#:
+#: ⛔ Bản đầu của tôi viết `kq.finish_reason or "end_turn"` — tức đưa thẳng chữ
+#:    `stop` của OpenAI vào một trường mà client Anthropic đọc theo bảng trên.
+#:    Client không vỡ ngay: nó chỉ **không nhận ra** giá trị, rồi xử lý sai ở chỗ
+#:    quan trọng nhất — `length` (bị cắt vì hết token) trông y hệt một câu trả
+#:    lời hoàn chỉnh, nên client sẽ không biết mà xin tiếp.
+LY_DO_DUNG = {
+    "stop": "end_turn",
+    "length": "max_tokens",
+    "tool_calls": "tool_use",
+    "content_filter": "refusal",
+}
+
+
+def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
+    """Bọc kết quả thành hình dạng `message` của Anthropic Messages API.
+
+    Trường bắt buộc, theo tài liệu chính thức: `id`, `type`, `role`, `model`,
+    `content`, `stop_reason`, `stop_sequence`, `usage`.
+
+    ⛔ `model` trả về là **alias của khách** (`ltt_llm`), không phải id nội bộ của
+       máy B. Khách không bao giờ được nhìn thấy `qwen38-*` — `test_212` chốt.
+
+    ⚠️ `stop_details` phải **có mặt và bằng `null`** khi không phải từ chối. Tài
+       liệu nói nó chỉ được điền khi `stop_reason == "refusal"`, nhưng client đọc
+       nó vô điều kiện; thiếu khoá và có khoá `null` là hai chuyện khác nhau với
+       một bộ giải mã chặt.
+    """
+    ly_do = LY_DO_DUNG.get(kq.finish_reason or "", "end_turn")
+    return {
+        "id": "msg_" + request_id,
+        "type": "message",
+        "role": "assistant",
+        "model": ten,
+        "content": [{"type": "text", "text": kq.noi_dung}],
+        "stop_reason": ly_do,
+        "stop_sequence": None,
+        "stop_details": None,
+        "usage": {"input_tokens": kq.su_dung.token_vao,
+                  "output_tokens": kq.su_dung.token_ra},
+    }
+
+
+def _thu_mot_cuc(ten: str) -> dict:
+    """Che do thu: dung hinh dang, khong cham GPU, khong cham so tien."""
+    return {
+        "id": "msg_sandbox", "type": "message", "role": "assistant",
+        "model": ten,
+        "content": [{"type": "text", "text": "sandbox: khong goi model that"}],
+        "stop_reason": "end_turn", "stop_sequence": None, "stop_details": None,
+        "usage": {"input_tokens": 0, "output_tokens": 0},
+    }
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from apps.ltt_llm import features
@@ -124,12 +248,6 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     require_tool(build_catalog(config), TOOL_CHAT, principal)
 
-    if not than.get("stream"):
-        # Nhận rồi trả một cục là nói dối client: nó đang chờ `text/event-stream`
-        # và sẽ vỡ ở chỗ khó lần hơn nhiều.
-        raise invalid_request(
-            'This endpoint streams: send "stream": true. For a single '
-            "non-streaming answer use POST /api/v1/chat/completions.")
 
     ten = str(than.get("model") or "")
     if ten not in features.ALIAS_SANG_ID:
@@ -146,6 +264,25 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
     gui = dict(than)
     gui["model"] = features.ALIAS_SANG_ID[ten]
+
+
+    # 🔴 KHONG STREAM CUNG PHAI PHUC VU DUOC, va day la mot lo hong THAT.
+    #
+    #    Ban dau route nay tu choi thang moi request khong co `stream: true`, voi
+    #    ly do "nhan roi tra mot cuc la noi doi client". Ly do do dung cho mot
+    #    client DA XIN streaming - nhung sai voi hop dong Anthropic Messages,
+    #    thu ma **cho phep ca hai**.
+    #
+    # ⛔ HAU QUA DO DUOC 24/08: Claude Desktop **tham do model** bang mot request
+    #    KHONG streaming toi `/v1/messages`. Ta tra 400, ung dung ket luan
+    #    *"Gateway rejected model ltt_llm"* va **CHAN LUON o chat** - khong phai
+    #    mot canh bao trang tri, ma la mot cua dong.
+    #
+    #    Tuc mot dong `if` giu cho hop dong "sach" da lam ca mot ung dung khach
+    #    khong dung duoc, va trieu chung ma khach nhin thay ("model khong kha
+    #    dung") **khong he chi ve phia nguyen nhan**.
+    if not than.get("stream"):
+        return _mot_cuc(duong, than, tin, ten, principal, db, config)
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)

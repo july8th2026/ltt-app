@@ -125,9 +125,6 @@ STORES: tuple = (
     Store("vps_ip", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
           N_("Địa chỉ IP đã cấp cho máy nào, từ lúc nào. Là thứ duy nhất trả lời "
           "được một yêu cầu về lạm dụng từ bên ngoài.")),
-    Store("vps_port_map", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
-          N_("Cổng NAT đã cấp: cổng ngoài nào dẫn về máy nào. Cùng lý do với "
-          "`vps_ip` — một cổng mở là một đường vào, và phải truy được chủ.")),
     Store("vps_event", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
           N_("Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
           "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
@@ -161,6 +158,14 @@ STORES: tuple = (
     Store("sessions", OPERATIONAL, 30, N_("không ai (nội bộ)"),
           N_("Phiên đăng nhập web. Lưu SHA-256 của token, không lưu token."),
           "auth sweeper"),
+    # Vé sống 60 giây, và bị XOÁ ngay khi tiêu — không phải đánh dấu đã dùng.
+    # Vẫn khai ở đây vì nó có `user_id`: một bảng "gần như luôn rỗng" vẫn là một
+    # bảng có dữ liệu của khách, và ngoại lệ không viết ra là ngoại lệ không ai
+    # rà lại.
+    Store("vps_console_ve", OPERATIONAL, 1, N_("không ai (nội bộ)"),
+          N_("Vé mở console máy ảo. Lưu SHA-256 của vé, không lưu vé. Hết hạn "
+          "sau 60 giây và bị xoá ngay khi dùng."),
+          "console.don_ve_het_han (bao_tri cua app)"),
 
     # ── Content: the customer's own material ─────────────────────────────────
     Store("upload_sessions", CONTENT, 7, N_("chủ tài khoản"),

@@ -165,7 +165,13 @@ def test_co_bat_thi_trang_mo_va_NOI_THAT_ve_han_che(moi_truong, monkeypatch):
             "phai cong bo han muc bang thong: 2.048 GB/thang chia cho TAT CA "
             "khach, mot nguoi tai phim ca thang an het quota cua 15 nguoi kia")
         assert "hạn mức trên kho lưu trữ dùng chung" in r.text
-        assert "Sao lưu hằng tuần" in r.text
+        # 24/08: câu này cũng ĐỔI. Bản cũ hứa "sao lưu", nhưng thứ hạ tầng làm
+        # được là **ảnh chụp**, và nó nằm trên cùng kho với đĩa gốc — pool hỏng
+        # là mất cả hai. Hứa "sao lưu" rồi giao một ảnh chụp là loại lời hứa
+        # người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu.
+        assert "Ảnh chụp hằng tuần" in r.text
+        assert "KHÔNG thay thế bản sao lưu" in r.text, (
+            "phai noi ro anh chup khong phai ban sao luu")
 
         # Bảng giá phải khớp `cost.py`, không phải một con số gõ tay trong template.
         from apps.vps.cost import PLANS

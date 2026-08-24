@@ -26,7 +26,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import nhan, os_images
+from apps.vps import bang_thong, nhan, os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
@@ -104,6 +104,13 @@ def _may_cua_toi(db, user_id: str) -> list:
         ket_qua.append({
             "may": m,
             "trang_thai_nhan": nhan.trang_thai(m.trang_thai),
+            "bang_thong": {
+                "da_dung": bang_thong.doc_duoc(m.bang_thong_byte),
+                "han_muc_gb": (lay_plan(m.plan_id).bang_thong_gb
+                               if lay_plan(m.plan_id) else 0),
+                "phan_tram": bang_thong.phan_tram(m),
+                "bi_giam_toc": bool(m.bi_giam_toc),
+            },
             "plan": lay_plan(m.plan_id),
             "os": os_images.lay_os(m.os_id),
             "dia_chi": x.dia_chi if x is not None else "",
@@ -337,6 +344,55 @@ def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
 
+@router.post("/{instance_id}/khoi-phuc")
+def khoi_phuc_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                  xac_nhan: str = Form(""),
+                  _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                  db=Depends(get_db)):
+    """Quay máy về ảnh chụp gần nhất. **Mất mọi thay đổi sau thời điểm chụp.**
+
+    Đòi gõ đúng tên máy, cùng khuôn với "Cài lại": cả hai đều không hoàn tác
+    được, và cả hai đều nằm cạnh những nút vô hại.
+
+    Chạy THẲNG chứ không qua hàng đợi — `rollback` của Proxmox trên LVM-thin là
+    một thao tác siêu dữ liệu, xong trong vài giây. Đẩy nó vào hàng đợi chỉ thêm
+    một tầng để hỏng mà không nhanh hơn.
+    """
+    from apps.vps.services import sao_luu
+
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    if str(xac_nhan).strip() != (may.ten or may.id[:8]):
+        return _ve_trang(_t("Gõ đúng tên máy để xác nhận khôi phục."))
+    try:
+        dieu_khien.kiem_dieu_khien_duoc(may)
+    except dieu_khien.KhongDuocPhepError as exc:
+        return _ve_trang(str(exc))
+
+    try:
+        client = client_tu_moi_truong()
+        ten_anh = sao_luu.anh_moi_nhat(client, may.vmid)
+        if not ten_anh:
+            return _ve_trang(_t("Máy này chưa có ảnh chụp nào."))
+        # Máy PHẢI tắt trước khi quay lại ảnh: Proxmox từ chối rollback một máy
+        # đang chạy nếu ảnh không kèm RAM — và ảnh của ta cố ý không kèm RAM.
+        try:
+            client.tat_cung(may.vmid)
+        except ProxmoxError:
+            pass                                 # đã tắt sẵn — không phải lỗi
+        client.khoi_phuc_anh(may.vmid, ten_anh)
+    except ProxmoxError as exc:
+        log.warning("VPS: khoi phuc may %s that bai: %s", may.id, exc)
+        return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
+
+    may.trang_thai = "da_tat"
+    provisioning.ghi_su_kien(db, may.id, "khoi_phuc", boi=_chu(request),
+                             anh=ten_anh)
+    db.commit()
+    return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
+
+
 @router.post("/{instance_id}/xoa")
 def xoa_may(instance_id: str, request: Request, csrf_token: str = Form(...),
             xac_nhan: str = Form(""),
@@ -374,6 +430,14 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
+        "sao_luu_luc": may.sao_luu_luc,
+        "bang_thong": {
+            "da_dung": bang_thong.doc_duoc(may.bang_thong_byte),
+            "han_muc_gb": (lay_plan(may.plan_id).bang_thong_gb
+                           if lay_plan(may.plan_id) else 0),
+            "phan_tram": bang_thong.phan_tram(may),
+            "bi_giam_toc": bool(may.bi_giam_toc),
+        },
         "plan": lay_plan(may.plan_id),
         "os": os_images.lay_os(may.os_id),
         "dia_chi": ip.dia_chi if ip is not None else "",

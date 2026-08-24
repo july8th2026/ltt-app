@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:bea4eb6e74d74fec03772817d623d6bfc1813097eb7b14f27de0f1c6244180c5
-Nguồn đã quét : 1340 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:410e3d3053c09e936ca7702d087d1a653ab8d573c209bb4a8a0c98fd6bc4d087
+Nguồn đã quét : 1344 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -542,7 +542,7 @@ Các lớp chính:
   URL=/vps | surface=customer | lifecycle=development
   enabled=False | public=False | parent=-
   requires=api | capabilities=Utilities
-  HTTP routes=11 | table_prefix=vps | manifest_error=-
+  HTTP routes=12 | table_prefix=vps | manifest_error=-
   credit_cost=apps.vps.cost.credit_cost
   job_types=vps.provision, vps.rebuild, vps.destroy
   Agent tools (0):
@@ -568,11 +568,12 @@ Các lớp chính:
     - apps/vps/services/provisioning.py
     - apps/vps/services/proxmox.py
     - apps/vps/services/router.py
+    - apps/vps/services/sao_luu.py
     - apps/vps/services/ssh_lenh.py
     - apps/vps/services/vultr.py
     - apps/vps/tables.py
 
-4. HTTP ROUTE INVENTORY (343)
+4. HTTP ROUTE INVENTORY (344)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -906,17 +907,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [upscalevideo] GET    /upscalevideo/watch/status → watch_status | auth~unspecified | apps/upscalevideo/routes.py:293
 - [upscalevideo] POST   /upscalevideo/watch/token → watch_token | auth~login | apps/upscalevideo/routes.py:257
 - [upscalevideo] POST   /upscalevideo/watch/upload-url → watch_upload_url | auth~unspecified | apps/upscalevideo/routes.py:326
-- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:117
-- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:150
-- [vps] GET    /vps/{instance_id} → trang_chi_tiet | auth~login | apps/vps/routes.py:364
-- [vps] POST   /vps/{instance_id}/bat → bat_may | auth~login | apps/vps/routes.py:255
-- [vps] GET    /vps/{instance_id}/cai-dat → huong_dan_cai_dat | auth~login | apps/vps/routes.py:285
-- [vps] POST   /vps/{instance_id}/cai-lai → cai_lai_may | auth~login | apps/vps/routes.py:309
-- [vps] GET    /vps/{instance_id}/console → trang_console | auth~login | apps/vps/routes.py:392
-- [vps] POST   /vps/{instance_id}/go-dia-cai → go_dia_cai | auth~login | apps/vps/routes.py:277
-- [vps] POST   /vps/{instance_id}/khoi-dong-lai → khoi_dong_lai_may | auth~login | apps/vps/routes.py:269
-- [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:262
-- [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:341
+- [vps] GET    /vps → trang_chinh | auth~login | apps/vps/routes.py:124
+- [vps] POST   /vps/tao → tao_may | auth~login | apps/vps/routes.py:157
+- [vps] GET    /vps/{instance_id} → trang_chi_tiet | auth~login | apps/vps/routes.py:420
+- [vps] POST   /vps/{instance_id}/bat → bat_may | auth~login | apps/vps/routes.py:262
+- [vps] GET    /vps/{instance_id}/cai-dat → huong_dan_cai_dat | auth~login | apps/vps/routes.py:292
+- [vps] POST   /vps/{instance_id}/cai-lai → cai_lai_may | auth~login | apps/vps/routes.py:316
+- [vps] GET    /vps/{instance_id}/console → trang_console | auth~login | apps/vps/routes.py:456
+- [vps] POST   /vps/{instance_id}/go-dia-cai → go_dia_cai | auth~login | apps/vps/routes.py:284
+- [vps] POST   /vps/{instance_id}/khoi-dong-lai → khoi_dong_lai_may | auth~login | apps/vps/routes.py:276
+- [vps] POST   /vps/{instance_id}/khoi-phuc → khoi_phuc_may | auth~login | apps/vps/routes.py:348
+- [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:269
+- [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:397
 
 5. DATA MODEL (58 bảng)
 - agent_runs → AgentRun | platform_core/models.py:406
@@ -972,13 +974,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - singleton_leases → SingletonLease | platform_core/models.py:835
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
-- vps_console_ve → VpsConsoleVe | apps/vps/tables.py:237
-- vps_event → VpsEvent | apps/vps/tables.py:288
+- vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
+- vps_event → VpsEvent | apps/vps/tables.py:292
 - vps_gateway → VpsGateway | apps/vps/tables.py:68
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (54)
+6. ALEMBIC MIGRATIONS (55)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -1033,6 +1035,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 7a41f6d29e83 ← 3e8d5a91c7b2 | vps: ve console giu them cong VNC va ve cua Proxmox (H39/G3b) | alembic/versions/20260824_2200_vps_console_ve_cong.py
 - 5b9e2c47a103 ← 7a41f6d29e83 | vps_console_ve.pve_ve: varchar(255) -> TEXT | alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
 - 8c1f4a67b209 ← 5b9e2c47a103 | vps_instance: bon cot do bang thong (H39/G7) | alembic/versions/20260824_2400_vps_bang_thong.py
+- a4d70e93f158 ← 8c1f4a67b209 | vps_instance.sao_luu_luc — lan chup anh gan nhat (H39/G9) | alembic/versions/20260824_2500_vps_sao_luu.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1206,7 +1209,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (302 file pytest + 3 frontend)
+10. QUALITY GATES (304 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1446,10 +1449,12 @@ Test inventory:
 - tests/test_282_vps_console.py
 - tests/test_283_cam_cli.py
 - tests/test_284_gui_cam_cli.py
+- tests/test_285_messages_khong_stream.py
 - tests/test_285_vps_dinh_danh.py
 - tests/test_286_vps_dhcp_router.py
 - tests/test_287_vps_bao_tri.py
 - tests/test_288_vps_bang_thong.py
+- tests/test_289_vps_sao_luu.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -1535,8 +1540,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1340 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1031, .sh:2, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1344 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1035, .sh:2, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1549,7 +1554,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 [README.md] (1)
 - README.md
 
-[alembic] (56)
+[alembic] (57)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1606,11 +1611,12 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - alembic/versions/20260824_2200_vps_console_ve_cong.py
 - alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
 - alembic/versions/20260824_2400_vps_bang_thong.py
+- alembic/versions/20260824_2500_vps_sao_luu.py
 
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (261)
+[apps] (262)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1869,6 +1875,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - apps/vps/services/provisioning.py
 - apps/vps/services/proxmox.py
 - apps/vps/services/router.py
+- apps/vps/services/sao_luu.py
 - apps/vps/services/ssh_lenh.py
 - apps/vps/services/vultr.py
 - apps/vps/tables.py
@@ -2502,7 +2509,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (319)
+[tests] (321)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2753,10 +2760,12 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - tests/test_282_vps_console.py
 - tests/test_283_cam_cli.py
 - tests/test_284_gui_cam_cli.py
+- tests/test_285_messages_khong_stream.py
 - tests/test_285_vps_dinh_danh.py
 - tests/test_286_vps_dhcp_router.py
 - tests/test_287_vps_bao_tri.py
 - tests/test_288_vps_bang_thong.py
+- tests/test_289_vps_sao_luu.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -2943,7 +2952,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1340 file; 12517832 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1344 file; 12568607 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3308,7 +3317,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=88a86bdc9a6b19588beac079cc94a40320055cc1f7ed04d6d2da392f6b5b46d1 BYTES=25900 LINES=346
+SHA256=efa19f406b1697cc0ee0bb269467813523fac56568d7c67ff7622eca5a681011 BYTES=26973 LINES=346
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3506,7 +3515,7 @@ nào**.
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 | **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_image`, không phải app | 🔨 giai đoạn A xong 2026-08-22 (H37, Q102); cổng render đã là dịch vụ trên B; bán ra `/api/v1` qua app `anhnoibo` + tool `image.ltt` — **chưa mở cho khách** (4 cổng còn khoá, D-034). 🔴 **So mù G6b 23/08: Gemini 24 – nhà 4 – hoà 2** (phần có ý nghĩa: **14 – 4**, vì chữ tiếng Việt **ngoài phạm vi** — D-048). Nhà thua vì **giải phẫu, hình học, chất chụp thật**. ⇒ **Đừng định vị nó là "đẹp hơn"; ảnh có chữ thì trả lời Gemini và đó là câu cuối.** ⛔ **Bỏ hẳn đối chứng ngoài** (D-046) — đo từ đây là **HiDream đấu HiDream, một lô một biến**. 🔒 **GIỮ 50 BƯỚC — G4 ĐÓNG 24/08 (D-054), câu cuối.** Lô B2c (seed thứ ba) nâng tổng lên **60 cặp**: 50 bước **33 – 18**, điểm 0,625, KTC [0,507; 0,744] **không chứa 0,5**. 36 bước đã thua **hai lô độc lập** ⇒ không nhận. ⚠️ Nhưng khác biệt **nhỏ hơn khác biệt giữa hai seed** (sàn nhiễu 91% > quyết đoán 85%) — đừng đọc thành "36 bước tệ rõ". Muốn mở lại thì phải là **phép kiểm tương đương**, không phải chạy lại phép cũ. 🔨 **Tiếp quản 24/08 (D-050, D-051):** chấm theo `docs/KHUON_BAN_MODEL_NHA.md` được **18/31**; đã sửa **lỗi tiền đang sống** — xin 4 ảnh, máy B trả 2, khách vẫn bị thu tiền 4 vì handler không báo `credit_cost` (cùng gốc với lỗi H38 đã sửa 23/08). Thêm `/live` + chốt GPU/CPU cho cổng render, giá về `apps/anhnoibo/gia.py` và công bố ở `/gia-api`. 🔓 **24/08 (D-052, D-053): giá hạ một phần ba** (5 → 3 credit/ảnh, tham chiếu 15 → 9), **bốn cổng MỞ trong mã**, **G5 đóng** (trần token 7.506 → 11.412, đo thật 20,1 GB · 239 s). **Máy chấm thay người** (D-052) — đổi lại mỗi phiếu quyết đoán phải viết lý do, `cham_mu.py` từ chối tính nếu thiếu. ⚠️ `render_gateway/deploy/deploy.ps1` có **hai lỗi khiến nó chưa từng deploy thành công lần nào** (đích sai một cấp + `Join-Path` giải ổ đĩa của máy A); đã sửa, nay 29/29 khớp hash. ✅ **G4 + G5 + G9 đều ĐÓNG 24/08.** G9: **100/100 lượt, 0 hỏng**, VRAM dao động 163 MB (0,9 %), nhiệt 69–74 °C, **không trôi gì** qua hơn ba giờ (D-056). ⏳ Còn **hai việc cần chủ sản phẩm**: bật cờ bằng `setup\cong_tac_tool_api.ps1` **rồi mới** deploy — sai thứ tự thì cờ không có tác dụng. ⛔ **D-057 (24/08): DỪNG kế hoạch dùng máy A sinh ảnh.** Không hạ độ chính xác model; `bf16` đỉnh 18.450 MB không vừa card 16.311 MB, và riêng Llama-3.1-8B trong bộ mã hoá đã lấp kín một card. Mở lại cần **phần cứng ≥ 24 GB**, không phải một cách xếp encoder khác. ⇒ Hệ quả: **trọng tài VRAM ở `docs/ANH_NOI_BO/CHIA_GPU_HAI_MODEL.md` nay BẮT BUỘC** — hai model vẫn dùng chung 3090 (18.450 + 19.237 = 37.687 MB / 24.576). **KẾ HOẠCH TIẾP: `docs/KE_HOACH_TIEP_2026-08-24.md`** (một danh sách duy nhất, có thứ tự). Xem D-045…D-057 + `docs/ANH_NOI_BO/` |
 | **LLM NỘI BỘ bán qua API** (H38, Q106+Q107) — Qwen3.8-27B trên máy B, bán qua `/api/v1` | ✅ **ĐANG BÁN 2026-08-24.** Ba cửa: `/jobs` · `/chat/completions` (`SYNC_BILLED`) · `/messages` + `/responses` (`STREAM`, cho Codex/Claude Code/Claude Desktop). Đã đo thật qua Cloudflare: luồng **119 giây không bị 524**, Codex CLI chạy đầu-tới-cuối, tiền khớp từng credit. Còn: phiên thật Claude Code/Desktop, xoay khoá, công cụ tự ghi cấu hình. Xem `docs/VLM_NOI_BO/` |
-| **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 🔨 **P0+P1 xong 2026-08-23** (H39, Q103–Q105): tạo máy thật trong 5 giây, boot 37 giây, mạng riêng đúng. App vẫn **TẮT** (`LTT_VPS` chưa đặt). RAM node nới 44→94 GB ⇒ trần **16/10/6 máy**. 🔴 **Cụm không chạy được virtio** — máy phải `sata0`+`e1000`, `agent:0`, `balloon:0` (xem `MO_HINH_CARD` trong `apps/vps/services/mang.py`). Còn P2–P9. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` |
+| **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 🔨 **~88% — G1→G9a xong 2026-08-24** (H39, Q103–Q105). App vẫn **TẮT** (`LTT_VPS` chưa đặt). Chuỗi đã đo thật đầu-tới-cuối: tạo máy **17 giây** → boot thẳng vào trình cài Windows → console trong trình duyệt → DHCP theo MAC → RDP từ Internet qua **IP riêng của từng máy** → thu tiền → treo → xoá → **trả IP về Vultr**. 🔴 **Cụm không chạy được virtio** — máy phải `sata0`+`e1000`, `agent:0`, `balloon:0` (xem `MO_HINH_CARD` trong `apps/vps/services/mang.py`). 🔴 **Khách TỰ CÀI Windows** (chốt 24/08): nền tảng **không bao giờ biết mật khẩu của khách**, không có template, không sysprep. Danh mục dừng ở **Server 2016, Server 2022, Windows 10 LTSC** — **KHÔNG bán Windows 11** (nhánh UEFI/vTPM đã gỡ khỏi `jobs.py`). ⚠️ Hợp đồng app có thêm `AppManifest.bao_tri` — app khai việc định kỳ, nền tảng chạy nó **dưới lease**; app tự dựng vòng lặp sẽ trừ tiền khách N lần mỗi chu kỳ. Còn **G7b** (cpulimit + cảnh báo CPU), **G8** (trang tạo máy hai bước), **G9b** (cổng vào thứ hai — cần mua thêm VPS $6/tháng), **G10** (điều khoản + hoá đơn + mở bán). ⛔ Kho `local` còn **2,2 GiB** ⇒ **không thêm được ISO nào nữa** — phải cắt LV mỏng, `mkfs`, khai kho `dir`; cần shell root trên node. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` và mục G ở `docs/KE_HOACH_TRIEN_KHAI.md` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
 bằng email; đường admin-từ-biến-môi-trường đã vô hiệu ở production (Q29).
@@ -7366,6 +7375,36 @@ def downgrade() -> None:
     for c in ("bi_giam_toc", "bang_thong_moc_xuong", "bang_thong_moc_len",
               "bang_thong_byte"):
         op.drop_column("vps_instance", c)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260824_2500_vps_sao_luu.py
+SHA256=fa2779a18d6e3568f6f4f6836b1b08c8bdfc4ba909a879d1ef64c9bebc967975 BYTES=638 LINES=24
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""vps_instance.sao_luu_luc — lan chup anh gan nhat (H39/G9)
+
+Trang ban da hua "sao luu hang tuan, giu 1 ban" tu truoc khi co ma nao lam viec
+do. Cot nay la lich: vong bao tri chup cho may nao co `sao_luu_luc` cu hon 7 ngay.
+
+Revision ID: a4d70e93f158
+Revises: 8c1f4a67b209
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "a4d70e93f158"
+down_revision = "8c1f4a67b209"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("vps_instance", sa.Column(
+        "sao_luu_luc", sa.DateTime(timezone=True), nullable=True))
+
+
+def downgrade() -> None:
+    op.drop_column("vps_instance", "sao_luu_luc")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -34779,7 +34818,7 @@ def tong_da_hua_gb(may_list) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/bao_tri.py
-SHA256=a7b28e7f50e7d494a42e682355c45bc26b34c76cd3d160ecd9329e5e9b064352 BYTES=10290 LINES=224
+SHA256=4a7cd3ccc0847b81a0ba3af6c2d269e2e2b6f62283ec75508c41d5f058b1a689 BYTES=12697 LINES=281
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Việc nền định kỳ của app VPS: thu tiền, treo máy hết tiền, xoá máy quá hạn.
 
@@ -34795,7 +34834,7 @@ Nguyên nhân gốc không phải quên: **hợp đồng app không có chỗ kh
 Nên chỗ đó đã được thêm vào hợp đồng (`AppManifest.bao_tri`) thay vì đi vòng, và
 file này là thứ nó trỏ tới.
 
-## Bốn việc, theo đúng thứ tự đó
+## Năm việc, theo đúng thứ tự đó
 
 0. **Đo băng thông** — cộng dồn bộ đếm của router vào từng máy, hãm tốc máy vượt
    trần. Chạy **trước** vòng thu: thu một chu kỳ mới đặt lại bộ đếm chu kỳ về 0,
@@ -34805,6 +34844,8 @@ file này là thứ nó trỏ tới.
    mà máy vẫn chạy thì "treo" chỉ là một nhãn: khách dùng miễn phí đủ 7 ngày ân
    hạn, và RAM vẫn bị giữ suốt thời gian đó.
 3. **Xoá** máy đã treo quá 7 ngày (V8) — đẩy vào hàng đợi, không xoá tại chỗ.
+4. **Chụp ảnh tuần**, giữ đúng một bản — xem `services/sao_luu.py` để biết vì sao
+   là ảnh chụp chứ không phải `vzdump`, và vì sao trang bán phải nói đúng điều đó.
 
 ## Vì sao xoá bằng JOB chứ không xoá thẳng ở đây
 
@@ -34960,6 +35001,47 @@ def _dong_bo_bang_thong(db) -> int:
     return doi
 
 
+def _chup_anh_den_han(db, client, *, now=None) -> int:
+    """Chụp ảnh tuần cho máy tới kỳ. Trả số máy vừa chụp.
+
+    Client `None` (chưa cấu hình Proxmox) thì bỏ lượt — không đánh dấu đã chụp,
+    nên lượt sau chụp bù. Đánh dấu mà chưa chụp là ghi vào sổ một bản không tồn
+    tại, và khách chỉ phát hiện lúc cần khôi phục.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.services import sao_luu
+    from apps.vps.tables import VpsInstance
+
+    if client is None:
+        return 0
+
+    da_chup = 0
+    for may in db.execute(
+        select(VpsInstance).where(
+            VpsInstance.trang_thai.in_(("dang_chay", "da_tat", "bi_treo")))
+    ).scalars():
+        if not sao_luu.den_han_chup(may, now=now):
+            continue
+        try:
+            ten = sao_luu.chup_va_don(client, may, now=now)
+        except ProxmoxError as exc:              # bắt HẸP
+            log.warning("VPS bao tri: khong chup duoc anh cho may %s: %s",
+                        may.id, exc)
+            continue
+        may.sao_luu_luc = now or _bay_gio()
+        billing.ghi_su_kien(db, may.id, "sao_luu", boi="he_thong", anh=ten)
+        da_chup += 1
+    if da_chup:
+        db.commit()
+    return da_chup
+
+
+def _bay_gio():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
+
+
 def mot_luot(db, *, now=None) -> dict:
     """Một lượt bảo trì. Tách khỏi `chay()` để test được mà không cần worker."""
     da_doi_giam_toc = _dong_bo_bang_thong(db)
@@ -34973,6 +35055,19 @@ def mot_luot(db, *, now=None) -> dict:
         # chậm — "tôi vừa gia hạn mà máy vẫn ì" là một lá thư hỗ trợ có thật.
         da_doi_giam_toc += _dong_bo_bang_thong(db)
     ket_qua["da_doi_giam_toc"] = da_doi_giam_toc
+    # Chụp ảnh SAU khi thu tiền: máy vừa bị treo vì hết tiền vẫn được chụp (nó
+    # còn 7 ngày ân hạn, và ngừng chụp trong 7 ngày đó là một hình phạt kèm mà
+    # không ai công bố), nhưng máy vừa bị nộp job xoá thì không cần bản nào nữa.
+    ket_qua["da_chup"] = _chup_anh_den_han(db, client, now=now)
+
+    # Dọn vé console hết hạn. Nhỏ, nhưng `governance.py` khai rằng bảng này được
+    # dọn — và một chính sách nêu tên một hàm không ai chạy chỉ là một lời hứa.
+    from apps.vps.services import console
+
+    da_don = console.don_ve_het_han(db)
+    if da_don:
+        db.commit()
+    ket_qua["da_don_ve"] = da_don
 
     da_nop_xoa = 0
     for may in billing.den_han_xoa(db, now=now):
@@ -35000,9 +35095,10 @@ def chay() -> None:
         # Chỉ ghi log khi CÓ việc xảy ra: một dòng "đã thu 0" mỗi giờ là 24 dòng
         # rác mỗi ngày, và nó làm người đọc bỏ qua đúng dòng cần đọc.
         if any(kq.values()):
-            log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s",
+            log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
+                     "chup anh %s, don ve %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
-                     kq["da_doi_giam_toc"])
+                     kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"])
     finally:
         gen.close()
 
@@ -36144,7 +36240,7 @@ def dia_cai_dat(os_id: str, env: dict | None = None) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/routes.py
-SHA256=4b2a924c99aa26fa1d63b17d68df7f6598222a78e815e03744bc4270ad55228e BYTES=24228 LINES=536
+SHA256=9688ee8e5a8eeeb3344666ee01aed3b67009e39ad09e84e152abb37fca6c35d0 BYTES=27373 LINES=600
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """HTTP của app VPS. CHỈ lo HTTP — mọi quy tắc ở `apps/vps/services/`.
 
@@ -36174,7 +36270,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import nhan, os_images
+from apps.vps import bang_thong, nhan, os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
@@ -36252,6 +36348,13 @@ def _may_cua_toi(db, user_id: str) -> list:
         ket_qua.append({
             "may": m,
             "trang_thai_nhan": nhan.trang_thai(m.trang_thai),
+            "bang_thong": {
+                "da_dung": bang_thong.doc_duoc(m.bang_thong_byte),
+                "han_muc_gb": (lay_plan(m.plan_id).bang_thong_gb
+                               if lay_plan(m.plan_id) else 0),
+                "phan_tram": bang_thong.phan_tram(m),
+                "bi_giam_toc": bool(m.bi_giam_toc),
+            },
             "plan": lay_plan(m.plan_id),
             "os": os_images.lay_os(m.os_id),
             "dia_chi": x.dia_chi if x is not None else "",
@@ -36485,6 +36588,55 @@ def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
 
+@router.post("/{instance_id}/khoi-phuc")
+def khoi_phuc_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                  xac_nhan: str = Form(""),
+                  _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                  db=Depends(get_db)):
+    """Quay máy về ảnh chụp gần nhất. **Mất mọi thay đổi sau thời điểm chụp.**
+
+    Đòi gõ đúng tên máy, cùng khuôn với "Cài lại": cả hai đều không hoàn tác
+    được, và cả hai đều nằm cạnh những nút vô hại.
+
+    Chạy THẲNG chứ không qua hàng đợi — `rollback` của Proxmox trên LVM-thin là
+    một thao tác siêu dữ liệu, xong trong vài giây. Đẩy nó vào hàng đợi chỉ thêm
+    một tầng để hỏng mà không nhanh hơn.
+    """
+    from apps.vps.services import sao_luu
+
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    if str(xac_nhan).strip() != (may.ten or may.id[:8]):
+        return _ve_trang(_t("Gõ đúng tên máy để xác nhận khôi phục."))
+    try:
+        dieu_khien.kiem_dieu_khien_duoc(may)
+    except dieu_khien.KhongDuocPhepError as exc:
+        return _ve_trang(str(exc))
+
+    try:
+        client = client_tu_moi_truong()
+        ten_anh = sao_luu.anh_moi_nhat(client, may.vmid)
+        if not ten_anh:
+            return _ve_trang(_t("Máy này chưa có ảnh chụp nào."))
+        # Máy PHẢI tắt trước khi quay lại ảnh: Proxmox từ chối rollback một máy
+        # đang chạy nếu ảnh không kèm RAM — và ảnh của ta cố ý không kèm RAM.
+        try:
+            client.tat_cung(may.vmid)
+        except ProxmoxError:
+            pass                                 # đã tắt sẵn — không phải lỗi
+        client.khoi_phuc_anh(may.vmid, ten_anh)
+    except ProxmoxError as exc:
+        log.warning("VPS: khoi phuc may %s that bai: %s", may.id, exc)
+        return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
+
+    may.trang_thai = "da_tat"
+    provisioning.ghi_su_kien(db, may.id, "khoi_phuc", boi=_chu(request),
+                             anh=ten_anh)
+    db.commit()
+    return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
+
+
 @router.post("/{instance_id}/xoa")
 def xoa_may(instance_id: str, request: Request, csrf_token: str = Form(...),
             xac_nhan: str = Form(""),
@@ -36522,6 +36674,14 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
+        "sao_luu_luc": may.sao_luu_luc,
+        "bang_thong": {
+            "da_dung": bang_thong.doc_duoc(may.bang_thong_byte),
+            "han_muc_gb": (lay_plan(may.plan_id).bang_thong_gb
+                           if lay_plan(may.plan_id) else 0),
+            "phan_tram": bang_thong.phan_tram(may),
+            "bi_giam_toc": bool(may.bi_giam_toc),
+        },
         "plan": lay_plan(may.plan_id),
         "os": os_images.lay_os(may.os_id),
         "dia_chi": ip.dia_chi if ip is not None else "",
@@ -37169,7 +37329,7 @@ def kho_lon_nhat(kho: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/console.py
-SHA256=bdde0f8ab0132d5b1d168705c8b796a175f7d8030c83542eda8a3e36f45ea029 BYTES=5827 LINES=133
+SHA256=57b1f45b9866dcfa6e233d09c50d18043823f19bd9474a351dffe40f2e841be3 BYTES=6842 LINES=154
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Console trong trình duyệt: cấp vé, tiêu vé, và bắc cầu WebSocket tới Proxmox.
 
@@ -37304,6 +37464,27 @@ def dia_chi_websocket_proxmox(config, vmid: int, ve_proxmox: dict) -> str:
     goc = str(config.base_url).rstrip("/").replace("https://", "wss://", 1)
     return (f"{goc}/api2/json/nodes/{config.node}/qemu/{int(vmid)}/vncwebsocket"
             f"?port={cong}&vncticket={quote(str(ticket), safe='')}")
+
+
+def don_ve_het_han(db: DbSession) -> int:
+    """Xoá vé đã hết hạn. Trả số dòng đã xoá. Chạy trong vòng bảo trì của app.
+
+    ## Vì sao cần, khi vé đã bị xoá lúc tiêu
+
+    `tieu_ve` xoá vé **đã dùng**. `_don_ve_cu` chỉ cắt bớt khi một máy vượt
+    `GIU_TOI_DA_MOI_MAY` vé. Không cái nào dọn **vé cấp ra rồi không ai dùng** —
+    khách mở trang console rồi đóng tab, hoặc máy bị xoá trong lúc vé còn sống.
+    Những vé đó nằm lại vĩnh viễn.
+
+    Mỗi dòng giữ `user_id` và một vé của Proxmox. Nó nhỏ, nhưng "nhỏ và vĩnh
+    viễn" vẫn là dữ liệu của khách nằm lại không có lý do — và chính sách lưu
+    trữ ở `governance.py` nói rằng bảng này được dọn.
+    """
+    from sqlalchemy import delete
+
+    han = _now() - timedelta(seconds=HAN_VE_GIAY)
+    kq = db.execute(delete(VpsConsoleVe).where(VpsConsoleVe.created_at <= han))
+    return int(kq.rowcount or 0)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -38281,7 +38462,7 @@ def ghi_su_kien(db: DbSession, instance_id: str, loai: str, *,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/proxmox.py
-SHA256=10e9cda0c48bbabbf7e70c3b9038b6d52b8c9eb47548828684484f30c833caa9 BYTES=15066 LINES=320
+SHA256=bc48942184a42df9ee76486c3ab4dca6f284bb39c7567fb70a4730403570fdbc BYTES=17578 LINES=360
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Driver nói chuyện với Proxmox VE. Đây là chỗ DUY NHẤT biết Proxmox tồn tại.
 
@@ -38593,6 +38774,46 @@ class ProxmoxClient:
             "POST", f"/nodes/{self.config.node}/qemu/{int(vmid)}/vncproxy",
             data={"websocket": 1}) or {}
 
+    # ── Ảnh chụp (snapshot) ──────────────────────────────────────────────────
+    #
+    # Ảnh chụp trên LVM-thin gần như **không tốn chỗ** lúc tạo (chỉ khối nào đổi
+    # về sau mới chiếm), và tạo xong trong vài giây. Đó là lý do nó dùng được cho
+    # mọi máy hằng tuần trong khi `vzdump` thì không — kho `local` chỉ còn 2,2 GiB.
+    #
+    # ⚠️ **Ảnh chụp KHÔNG phải bản sao lưu.** Nó nằm trên **cùng kho** với đĩa
+    # gốc: pool hỏng là mất cả hai. Nó cứu khách khỏi *lỗi của chính họ* (xoá
+    # nhầm, bản vá hỏng), không cứu khỏi hỏng phần cứng. Trang bán phải nói đúng
+    # như vậy — xem `vps.html`.
+    #
+    # Máy khách không có guest agent (agent là thiết bị virtio, và virtio treo
+    # trên cụm này), nên ảnh chụp là **crash-consistent**: giống như rút điện
+    # rồi bật lại. NTFS có nhật ký nên thường lên bình thường, nhưng cơ sở dữ
+    # liệu đang ghi dở thì không có gì bảo đảm.
+
+    def danh_sach_anh(self, vmid: int) -> list:
+        """Ảnh chụp của một máy. Proxmox luôn trả thêm mục giả `current`."""
+        ra = self._goi("GET", f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot")
+        return [x for x in (ra or []) if str(x.get("name")) != "current"]
+
+    def chup_anh(self, vmid: int, ten: str, *, mo_ta: str = "") -> str:
+        """Tạo ảnh chụp. **Không** kèm RAM: `vmstate` ghi cả bộ nhớ ra đĩa, tức
+        thêm vài GB mỗi máy mỗi tuần cho một thứ không ai cần khi khôi phục."""
+        return self._goi(
+            "POST", f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot",
+            data={"snapname": ten, "description": mo_ta, "vmstate": 0})
+
+    def xoa_anh(self, vmid: int, ten: str) -> str:
+        return self._goi(
+            "DELETE",
+            f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot/{ten}")
+
+    def khoi_phuc_anh(self, vmid: int, ten: str) -> str:
+        """Quay máy về một ảnh chụp. **Không hoàn tác được** — mọi thay đổi sau
+        thời điểm chụp mất hết. Người gọi phải bắt khách xác nhận."""
+        return self._goi(
+            "POST",
+            f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot/{ten}/rollback")
+
     def trang_thai_tac_vu(self, upid: str) -> dict:
         """Tác vụ nền (clone, xoá) đã xong chưa. `status`/`exitstatus`."""
         return self._goi(
@@ -38872,6 +39093,164 @@ class RouterClient:
 
 def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> RouterClient:
     return RouterClient(doc_cau_hinh(env), chay=chay)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/sao_luu.py
+SHA256=7aaf034c126a32955eb4cdcbcc3ae435ab44c26402216353fe46da136a613bfc BYTES=6773 LINES=152
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ảnh chụp hằng tuần cho máy khách, giữ đúng một bản.
+
+## Vì sao ảnh chụp chứ không phải `vzdump`
+
+Trang bán hứa "sao lưu hằng tuần, giữ 1 bản" từ trước khi có mã nào làm việc đó.
+Khi đi làm thật thì `vzdump` không chạy được: nó ghi ra một kho kiểu `dir`, và
+kho `dir` duy nhất trên node (`local`) còn **2,2 GiB** — không đủ cho một máy,
+nói gì tới mọi máy mỗi tuần.
+
+Ảnh chụp trên LVM-thin thì ngược lại: tạo trong vài giây, và **gần như không tốn
+chỗ lúc tạo** — chỉ khối nào bị ghi đè về sau mới chiếm. Đó là thứ dùng được cho
+mọi máy hằng tuần với hạ tầng đang có.
+
+## Nhưng phải nói đúng nó là gì
+
+**Ảnh chụp KHÔNG phải bản sao lưu.** Nó nằm trên **cùng kho** với đĩa gốc; pool
+hỏng là mất cả hai. Nó cứu khách khỏi *lỗi của chính họ* — xoá nhầm thư mục, một
+bản vá làm hỏng máy, một phần mềm cài vào rồi không gỡ được — chứ không cứu khỏi
+hỏng phần cứng.
+
+Nên trang bán phải viết đúng như vậy, và nó đã được sửa. Hứa "sao lưu" rồi giao
+một ảnh chụp là loại lời hứa mà người ta chỉ phát hiện sai đúng vào lúc mất dữ
+liệu, tức lúc tệ nhất có thể.
+
+## Crash-consistent, và điều đó có nghĩa gì
+
+Máy khách không có guest agent (agent là thiết bị virtio, mà virtio treo trên cụm
+này — xem `mang.py`). Nên không có ai bảo Windows "xả bộ đệm rồi đứng yên" trước
+khi chụp. Ảnh chụp vì thế giống như **rút điện rồi bật lại**: NTFS có nhật ký nên
+thường lên bình thường, nhưng một cơ sở dữ liệu đang ghi dở thì không có gì bảo
+đảm.
+
+**Đo thật 24/08, và nó rõ hơn mọi lời giải thích:** một tệp được ghi *ba giây
+trước* khi chụp đã **không có** trong ảnh — nó còn nằm trong bộ đệm của guest.
+Chạy lại đúng phép thử đó kèm `sync` thì tệp còn nguyên. Nghĩa là ảnh chụp giữ
+được **những gì đã xuống đĩa**, không phải "mọi thứ tại thời điểm chụp".
+
+Trong thực tế, Windows xả bộ đệm sau vài giây nên khoảng mất là nhỏ. Nhưng đừng
+mô tả tính năng này là "khôi phục về đúng phút đó" — nó không phải vậy, và người
+duy nhất phát hiện ra sự khác biệt sẽ là người đang cần khôi phục.
+
+## Giữ ĐÚNG một bản, và tạo trước khi xoá
+
+Tạo bản mới **rồi** mới xoá bản cũ. Ngược lại thì có một khoảng — dài bằng thời
+gian tạo — mà khách **không có bản nào**, và đó đúng là khoảng mà một sự cố sẽ
+tìm tới.
+"""
+from __future__ import annotations
+
+import logging
+import re
+from datetime import datetime, timedelta, timezone
+
+log = logging.getLogger(__name__)
+
+#: Bao lâu chụp một lần.
+MOI_NGAY = 7
+
+#: Giữ bao nhiêu bản. Một — đúng như trang bán nói.
+GIU = 1
+
+#: Tiền tố tên ảnh. Chỉ ảnh mang tiền tố này mới bị dọn: ảnh do chủ nhà tự tạo
+#: bằng tay trên Proxmox **không phải việc của vòng bảo trì**, và xoá nhầm một
+#: ảnh người khác đang dựa vào là mất dữ liệu của họ.
+TIEN_TO = "ltt"
+
+_TEN = re.compile(rf"^{TIEN_TO}[0-9]{{8}}(_[0-9]{{4}})?$")
+
+
+class SaoLuuError(RuntimeError):
+    """Không chụp hoặc không khôi phục được."""
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def ten_anh(luc: datetime | None = None) -> str:
+    """Tên ảnh cho một thời điểm.
+
+    Proxmox chỉ nhận `[A-Za-z0-9_-]` và tên phải **bắt đầu bằng chữ**, nên không
+    dùng được dạng `2026-08-24`. Kèm giờ-phút để hai lần chụp trong cùng ngày
+    (chụp tay rồi chụp theo lịch) không đụng tên nhau.
+    """
+    luc = luc or _now()
+    return f"{TIEN_TO}{luc.strftime('%Y%m%d_%H%M')}"
+
+
+def cua_ta(ten: str) -> bool:
+    return bool(_TEN.match(str(ten or "")))
+
+
+def den_han_chup(may, *, now: datetime | None = None) -> bool:
+    """Máy này tới kỳ chụp chưa?
+
+    Máy chưa có `vmid` (đang tạo) hoặc đã xoá thì không. Máy **bị treo** thì
+    **có** — nó còn 7 ngày ân hạn trước khi bị xoá, và mất dữ liệu trong 7 ngày
+    đó vì ta ngừng chụp là một cách phạt kèm không ai công bố.
+    """
+    if not getattr(may, "vmid", None):
+        return False
+    if str(getattr(may, "trang_thai", "")) in ("da_xoa", "dang_tao"):
+        return False
+    luc = getattr(may, "sao_luu_luc", None)
+    if luc is None:
+        return True
+    if luc.tzinfo is None:
+        luc = luc.replace(tzinfo=timezone.utc)
+    return luc <= (now or _now()) - timedelta(days=MOI_NGAY)
+
+
+def chup_va_don(client, may, *, now: datetime | None = None) -> str:
+    """Chụp một bản mới rồi xoá bản cũ. Trả tên ảnh vừa tạo.
+
+    Thứ tự **tạo trước, xoá sau** là cố ý: ngược lại thì có một khoảng khách
+    không có bản nào.
+
+    Lỗi lúc dọn bản cũ **không** làm hỏng cả việc: bản mới đã có, và bản cũ thừa
+    chỉ tốn chỗ chứ không mất gì. Lượt sau dọn tiếp.
+    """
+    ten = ten_anh(now)
+    client.chup_anh(may.vmid, ten, mo_ta="LTT VPS - anh chup hang tuan")
+
+    cu = sorted((x.get("name") for x in client.danh_sach_anh(may.vmid)
+                 if cua_ta(x.get("name"))), reverse=True)
+    for thua in cu[GIU:]:
+        if thua == ten:
+            continue
+        try:
+            client.xoa_anh(may.vmid, thua)
+        except Exception as exc:                 # noqa: BLE001
+            # Bắt rộng có chủ ý và CHỈ ở đây: bản mới đã tạo xong, nên không lý
+            # do gì để một lỗi dọn dẹp làm cả lượt bảo trì hỏng.
+            log.warning("VPS: khong xoa duoc anh cu %s cua may %s: %s",
+                        thua, may.id, exc)
+    return ten
+
+
+def anh_moi_nhat(client, vmid: int) -> str:
+    """Tên ảnh mới nhất của ta, hoặc chuỗi rỗng."""
+    cua = sorted((x.get("name") for x in client.danh_sach_anh(vmid)
+                  if cua_ta(x.get("name"))), reverse=True)
+    return cua[0] if cua else ""
+
+
+def doc_duoc(ten: str) -> str:
+    """`ltt20260824_1930` → `24/08/2026 19:30`. Tên máy đọc không phải tên khách đọc."""
+    if not cua_ta(ten):
+        return str(ten or "")
+    lo = ten[len(TIEN_TO):]
+    ngay = f"{lo[6:8]}/{lo[4:6]}/{lo[0:4]}"
+    return f"{ngay} {lo[9:11]}:{lo[11:13]}" if len(lo) >= 13 else ngay
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -39198,7 +39577,7 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/tables.py
-SHA256=cad694f1c479f09edc9dbaa6afecc795748840cbb675f507af8ca152303c2aae BYTES=18294 LINES=311
+SHA256=e6cc326e07d34a69982393bd189af6f5e9243034625ec2183213cf9677ed1441 BYTES=18492 LINES=315
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
@@ -39410,6 +39789,10 @@ class VpsInstance(Base):
         BigInteger, default=0, nullable=False)
     bang_thong_moc_xuong: Mapped[int] = mapped_column(
         BigInteger, default=0, nullable=False)
+    #: Lần chụp ảnh gần nhất. NULL = chưa chụp lần nào (máy vừa tạo).
+    sao_luu_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
     #: Đang bị hãm tốc vì vượt hạn mức. Lưu ở đây (không chỉ trên router) để
     #: trang của khách nói được lý do máy chậm, thay vì để họ tự đoán.
     bi_giam_toc: Mapped[bool] = mapped_column(
@@ -89328,7 +89711,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=cc5f4fa730764322635302bf020be816bc279d2fc5c4dd7232b520904226d434 BYTES=214861 LINES=3089
+SHA256=28f900586223ae6e65dccd39389040c6cb2939f28eb553559ef11d6c04353324 BYTES=217642 LINES=3127
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -92353,9 +92736,47 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
 
 - [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
 
-- [ ] **G9 — backup + cổng dự phòng.** Snapshot tuần, giữ 1 bản, đẩy sang ổ khác của
-      máy B (V10). Cổng vào thứ hai để một con VPS ngã không làm chết **mọi** khách.
-      *Xong khi:* khôi phục thật một VM từ backup; chuyển một máy sang cổng dự phòng.
+- [x] **G9a — ảnh chụp hằng tuần + khôi phục.** ✅ **XONG 2026-08-24, đo thật.**
+
+      🔴 **Trang bán đã hứa "sao lưu hằng tuần, giữ 1 bản" từ trước khi có mã nào
+      làm việc đó** — và chính `cost.py` trong cùng repo lại viết rằng đối thủ có
+      *"backup tuần và SLA 99,9% — thứ hạ tầng của ta không có"*. Hai file nói
+      ngược nhau, và file nói sai là file khách đọc.
+
+      **Ảnh chụp, không phải `vzdump`** — và đó là kết luận sau khi thử, không
+      phải lựa chọn cho tiện: `vzdump` ghi ra kho kiểu `dir`, mà kho `dir` duy
+      nhất trên node còn **2,2 GiB**. Ảnh chụp LVM-thin tạo trong vài giây và gần
+      như không tốn chỗ lúc tạo.
+
+      **Trang bán đã sửa cho đúng thứ khách nhận:** *"Ảnh chụp hằng tuần, giữ 1
+      bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm
+      hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn."*
+      Ảnh chụp nằm cùng pool với đĩa gốc; pool hỏng là mất cả hai.
+
+      **Nút "Khôi phục về ảnh chụp"** đứng **trước** "Cài lại máy" trong khối Nguy
+      hiểm: khách vào khối đó vì máy hỏng, và quay về ảnh chụp giữ được dữ liệu
+      còn cài lại thì mất sạch. Đưa lựa chọn ít thiệt hại hơn lên trước là việc
+      của người thiết kế, không phải của người đang hoảng.
+
+      ⚠️ **Phép đo dạy được một điều, và nó đến từ một lần THẤT BẠI:** lần diễn
+      tập đầu, tệp ghi *ba giây trước* khi chụp **không có** trong ảnh — nó còn
+      nằm trong bộ đệm của guest. Chạy lại kèm `sync` thì tệp còn nguyên. Ảnh chụp
+      giữ **những gì đã xuống đĩa**, không phải "mọi thứ tại thời điểm chụp" — máy
+      khách không có guest agent để xả bộ đệm (agent là thiết bị virtio, và virtio
+      treo trên cụm này). Đừng mô tả tính năng này là "khôi phục về đúng phút đó".
+
+      *Diễn tập thật:* ghi tệp → `sync` → chụp → ghi đè tệp và tạo tệp mới →
+      khôi phục → **tệp cũ nguyên vẹn, tệp mới biến mất**. `KET LUAN: DAT`.
+
+      *Bằng chứng:* `tests/test_289_vps_sao_luu.py` (22 test), migration
+      `a4d70e93f158`.
+
+- [ ] **G9b — cổng vào thứ hai.** Hiện **một con VPS Vultr ngã là MỌI khách mất
+      đường vào cùng lúc**. Mã đã sẵn sàng cho nhiều cổng (`vps_gateway` là một
+      bảng, `chon_gateway` chọn cổng còn nhiều chỗ nhất, `tools/vps_them_cong_vao.py`
+      khai thêm một dòng là xong) — thứ còn thiếu là **quyết định mua thêm một VPS
+      $6/tháng**, và đó là việc của chủ sản phẩm.
+      *Xong khi:* chuyển được một máy đang chạy sang cổng dự phòng.
 
 - [ ] **G10 — nghiệm thu và mở bán.** Điều khoản sử dụng, ba dòng cảnh báo bắt buộc,
       hoá đơn theo luật VN, rồi mới đặt `LTT_VPS=1`.
@@ -126315,7 +126736,7 @@ CLI_BAY = (
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=dbfcee7fbbad0ae236ef6df233139f8a5b45c990468e2850109be81414a0bf19 BYTES=18628 LINES=305
+SHA256=9ae16f9fcf8f77d64bdba4a2abbdd360f6105a720c61db902a309045a19e3241 BYTES=18951 LINES=310
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -126444,9 +126865,6 @@ STORES: tuple = (
     Store("vps_ip", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
           N_("Địa chỉ IP đã cấp cho máy nào, từ lúc nào. Là thứ duy nhất trả lời "
           "được một yêu cầu về lạm dụng từ bên ngoài.")),
-    Store("vps_port_map", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
-          N_("Cổng NAT đã cấp: cổng ngoài nào dẫn về máy nào. Cùng lý do với "
-          "`vps_ip` — một cổng mở là một đường vào, và phải truy được chủ.")),
     Store("vps_event", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
           N_("Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
           "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
@@ -126480,6 +126898,14 @@ STORES: tuple = (
     Store("sessions", OPERATIONAL, 30, N_("không ai (nội bộ)"),
           N_("Phiên đăng nhập web. Lưu SHA-256 của token, không lưu token."),
           "auth sweeper"),
+    # Vé sống 60 giây, và bị XOÁ ngay khi tiêu — không phải đánh dấu đã dùng.
+    # Vẫn khai ở đây vì nó có `user_id`: một bảng "gần như luôn rỗng" vẫn là một
+    # bảng có dữ liệu của khách, và ngoại lệ không viết ra là ngoại lệ không ai
+    # rà lại.
+    Store("vps_console_ve", OPERATIONAL, 1, N_("không ai (nội bộ)"),
+          N_("Vé mở console máy ảo. Lưu SHA-256 của vé, không lưu vé. Hết hạn "
+          "sau 60 giây và bị xoá ngay khi dùng."),
+          "console.don_ve_het_han (bao_tri cua app)"),
 
     # ── Content: the customer's own material ─────────────────────────────────
     Store("upload_sessions", CONTENT, 7, N_("chủ tài khoản"),
@@ -144545,7 +144971,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=25d5adbc8aff52e3c24da4cc380f32b5ae9099ec7693a23bd1264288df0f02fe BYTES=19598 LINES=401
+SHA256=19ef83c30acb2a4492b1b978fc4a8b23cf0bd9217c4fcd66aece911ef9cb1db0 BYTES=26041 LINES=538
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -144577,7 +145003,7 @@ import logging
 from typing import Iterator, Optional
 
 from fastapi import Body, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
 from platform_core.public_api import limits, metrics, policy, sandbox
@@ -144594,6 +145020,7 @@ from server.deps import get_db
 log = logging.getLogger("server.api.streaming")
 
 _SSE = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+_NO_STORE = {"Cache-Control": "no-store"}
 TOOL_CHAT = "text.chat"
 
 #: 🔴 NGÂN SÁCH MỞ LUỒNG — 75 giây, và con số này có lý do.
@@ -144663,6 +145090,129 @@ def register_streaming_routes(api, config, tag: str) -> None:
         return _cua("/v1/responses", body or {}, principal, db, config)
 
 
+def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
+             principal: Principal, db: Session, config) -> JSONResponse:
+    """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
+    Anthropic Messages.
+
+    ⭐ DUNG LAI TOAN BO DUONG TINH TIEN da co (`giu_cho_luot` -> goi ->
+       `quyet_toan_hoac_hoan`). Khong dung mot so tien thu hai o day: mot he
+       thong hai cho tinh tien la mot he thong se lech, va lech ve tien thi khong
+       ai phat hien cho toi khi khach doi soat.
+
+    ⚠️ TRAN THOI GIAN. Khong stream nghia la khong co byte nao chay cho toi khi
+       xong, nen dong ho 100 giay cua Cloudflare **co hieu luc** o day - khac han
+       duong streaming. Vi vay `max_tokens` bi kep theo tran cua duong dong bo,
+       cung con so ma `/chat/completions` dung, va vi cung mot ly do.
+    """
+    from apps.ltt_llm import features
+    from platform_core import credit
+    from platform_core.llm import thanh_toan
+    from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
+                                            VuotNganSachError)
+    from server.api.chat import _tran_max_tokens
+
+    if sandbox.is_test(principal.mode):
+        return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
+
+    tran = min(_max_tokens(than, features.uoc_token_vao(tin)), _tran_max_tokens())
+    request_id = thanh_toan.ma_luot("ms")
+    vao_uoc = features.uoc_token_vao(tin)
+    try:
+        da_giu = thanh_toan.giu_cho_luot(
+            db, user_id=principal.user_id, request_id=request_id,
+            token_vao_uoc=vao_uoc, max_tokens=tran)
+    except credit.ThieuCreditError as e:
+        raise insufficient_credit(str(e)) from None
+    db.commit()
+
+    try:
+        kq = CongVlm().chat(model=features.ALIAS_SANG_ID[ten],
+                            messages=tin, max_tokens=tran)
+    except BanError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
+        raise service_unavailable(f"The model is busy right now: {e}",
+                                  retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
+    except (VuotNganSachError, CongVlmError) as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
+        raise service_unavailable("The model could not serve this request.") from None
+
+    # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
+    # tu boc token roi truyen so le: chinh no biet cach xu khi KHONG DO DUOC
+    # (hoan du va ghi canh bao), va do la luat tien cua ca he thong.
+    thanh_toan.quyet_toan_hoac_hoan(
+        db, user_id=principal.user_id, request_id=request_id,
+        su_dung=kq.su_dung)
+    db.commit()
+    metrics.increment("chat:mot_cuc")
+    return JSONResponse(_dang_anthropic(kq, ten, request_id),
+                        status_code=200, headers=_NO_STORE)
+
+
+#: Ánh xạ lý do dừng: **kiểu OpenAI → kiểu Anthropic**.
+#:
+#: 🔴 KHÔNG ĐƯỢC TRUYỀN THẲNG. Máy B nói giao thức OpenAI nên trả `stop` /
+#:    `length` / `tool_calls`; hợp đồng Anthropic Messages khai một tập **khác
+#:    hẳn**: `end_turn`, `max_tokens`, `stop_sequence`, `tool_use`, `pause_turn`,
+#:    `refusal`.
+#:
+#: ⛔ Bản đầu của tôi viết `kq.finish_reason or "end_turn"` — tức đưa thẳng chữ
+#:    `stop` của OpenAI vào một trường mà client Anthropic đọc theo bảng trên.
+#:    Client không vỡ ngay: nó chỉ **không nhận ra** giá trị, rồi xử lý sai ở chỗ
+#:    quan trọng nhất — `length` (bị cắt vì hết token) trông y hệt một câu trả
+#:    lời hoàn chỉnh, nên client sẽ không biết mà xin tiếp.
+LY_DO_DUNG = {
+    "stop": "end_turn",
+    "length": "max_tokens",
+    "tool_calls": "tool_use",
+    "content_filter": "refusal",
+}
+
+
+def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
+    """Bọc kết quả thành hình dạng `message` của Anthropic Messages API.
+
+    Trường bắt buộc, theo tài liệu chính thức: `id`, `type`, `role`, `model`,
+    `content`, `stop_reason`, `stop_sequence`, `usage`.
+
+    ⛔ `model` trả về là **alias của khách** (`ltt_llm`), không phải id nội bộ của
+       máy B. Khách không bao giờ được nhìn thấy `qwen38-*` — `test_212` chốt.
+
+    ⚠️ `stop_details` phải **có mặt và bằng `null`** khi không phải từ chối. Tài
+       liệu nói nó chỉ được điền khi `stop_reason == "refusal"`, nhưng client đọc
+       nó vô điều kiện; thiếu khoá và có khoá `null` là hai chuyện khác nhau với
+       một bộ giải mã chặt.
+    """
+    ly_do = LY_DO_DUNG.get(kq.finish_reason or "", "end_turn")
+    return {
+        "id": "msg_" + request_id,
+        "type": "message",
+        "role": "assistant",
+        "model": ten,
+        "content": [{"type": "text", "text": kq.noi_dung}],
+        "stop_reason": ly_do,
+        "stop_sequence": None,
+        "stop_details": None,
+        "usage": {"input_tokens": kq.su_dung.token_vao,
+                  "output_tokens": kq.su_dung.token_ra},
+    }
+
+
+def _thu_mot_cuc(ten: str) -> dict:
+    """Che do thu: dung hinh dang, khong cham GPU, khong cham so tien."""
+    return {
+        "id": "msg_sandbox", "type": "message", "role": "assistant",
+        "model": ten,
+        "content": [{"type": "text", "text": "sandbox: khong goi model that"}],
+        "stop_reason": "end_turn", "stop_sequence": None, "stop_details": None,
+        "usage": {"input_tokens": 0, "output_tokens": 0},
+    }
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from apps.ltt_llm import features
@@ -144673,12 +145223,6 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     require_tool(build_catalog(config), TOOL_CHAT, principal)
 
-    if not than.get("stream"):
-        # Nhận rồi trả một cục là nói dối client: nó đang chờ `text/event-stream`
-        # và sẽ vỡ ở chỗ khó lần hơn nhiều.
-        raise invalid_request(
-            'This endpoint streams: send "stream": true. For a single '
-            "non-streaming answer use POST /api/v1/chat/completions.")
 
     ten = str(than.get("model") or "")
     if ten not in features.ALIAS_SANG_ID:
@@ -144695,6 +145239,25 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
     gui = dict(than)
     gui["model"] = features.ALIAS_SANG_ID[ten]
+
+
+    # 🔴 KHONG STREAM CUNG PHAI PHUC VU DUOC, va day la mot lo hong THAT.
+    #
+    #    Ban dau route nay tu choi thang moi request khong co `stream: true`, voi
+    #    ly do "nhan roi tra mot cuc la noi doi client". Ly do do dung cho mot
+    #    client DA XIN streaming - nhung sai voi hop dong Anthropic Messages,
+    #    thu ma **cho phep ca hai**.
+    #
+    # ⛔ HAU QUA DO DUOC 24/08: Claude Desktop **tham do model** bang mot request
+    #    KHONG streaming toi `/v1/messages`. Ta tra 400, ung dung ket luan
+    #    *"Gateway rejected model ltt_llm"* va **CHAN LUON o chat** - khong phai
+    #    mot canh bao trang tri, ma la mot cua dong.
+    #
+    #    Tuc mot dong `if` giu cho hop dong "sach" da lam ca mot ung dung khach
+    #    khong dung duoc, va trieu chung ma khach nhin thay ("model khong kha
+    #    dung") **khong he chi ve phia nguyen nhan**.
+    if not than.get("stream"):
+        return _mot_cuc(duong, than, tin, ten, principal, db, config)
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
@@ -161576,7 +162139,7 @@ SHA256=25f5e96cf67ec4f1a9ed2b35573e7edf8ef3d986a9c347da6235c9e03e950481 BYTES=80
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps.html
-SHA256=d5f45eaef16079aa88a30e6ea6a0eeb147eab545acc264bcaa8853e00c7252ce BYTES=7729 LINES=144
+SHA256=861cdf4113fb8affa40821cbdcd38aa2b6edc7ff95f5a36447360983c1e34365 BYTES=9376 LINES=166
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
@@ -161597,7 +162160,12 @@ SHA256=d5f45eaef16079aa88a30e6ea6a0eeb147eab545acc264bcaa8853e00c7252ce BYTES=77
       <li>{{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy chủ đặt tại Việt Nam, đường vào đi qua Singapore.") }}</li>
       <li>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</li>
       <li>{{ _("Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không bị tính thêm tiền.") }}</li>
-      <li>{{ _("Sao lưu hằng tuần, giữ 1 bản. Dữ liệu quan trọng bạn nên tự sao lưu thêm.") }}</li>
+      {# Nói ĐÚNG thứ khách nhận. Bản trước viết "sao lưu", nhưng thứ hạ
+         tầng này làm được là **ảnh chụp**, và nó nằm trên cùng kho với đĩa
+         gốc — pool hỏng là mất cả hai. Hứa "sao lưu" rồi giao một ảnh chụp
+         là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu,
+         tức lúc tệ nhất có thể. Xem `services/sao_luu.py`. #}
+      <li>{{ _("Ảnh chụp hằng tuần, giữ 1 bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn.") }}</li>
     </ul>
   </div>
 
@@ -161619,6 +162187,7 @@ SHA256=d5f45eaef16079aa88a30e6ea6a0eeb147eab545acc264bcaa8853e00c7252ce BYTES=77
           <th>{{ _("Hệ điều hành") }}</th>
           <th>{{ _("Địa chỉ") }}</th>
           <th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Băng thông") }}</th>
           <th>{{ _("Trả tới") }}</th>
           <th></th>
         </tr>
@@ -161627,7 +162196,7 @@ SHA256=d5f45eaef16079aa88a30e6ea6a0eeb147eab545acc264bcaa8853e00c7252ce BYTES=77
         {% for m in may_cua_toi %}
         <tr>
           <td>{{ _(m.plan.ten) if m.plan else m.may.plan_id }}</td>
-          <td>{{ m.os.ten if m.os else m.may.os_id }}</td>
+          <td>{{ _(m.os.ten) if m.os else m.may.os_id }}</td>
           <td>
             {% if m.dia_chi %}<code>{{ m.dia_chi }}</code>
             {% else %}<span class="muted">{{ _("đang chuẩn bị") }}</span>{% endif %}
@@ -161635,6 +162204,22 @@ SHA256=d5f45eaef16079aa88a30e6ea6a0eeb147eab545acc264bcaa8853e00c7252ce BYTES=77
           <td>
             {{ _(m.trang_thai_nhan) }}
             {% if m.may.ly_do %}<br><span class="muted">{{ m.may.ly_do }}</span>{% endif %}
+          </td>
+          {# Băng thông hiện ở đây chứ không giấu trong trang chi tiết: hạn mức
+             là thứ khách chỉ nhớ tới khi máy đã chậm, và lúc đó thì đã muộn. #}
+          <td style="min-width:130px;">
+            {{ m.bang_thong.da_dung }}
+            {% if m.bang_thong.han_muc_gb %}
+              <span class="muted">/ {{ m.bang_thong.han_muc_gb }} GB</span>
+              <div style="height:4px;background:rgba(128,128,128,.25);border-radius:2px;margin-top:4px;">
+                <div style="height:4px;border-radius:2px;width:{{ [m.bang_thong.phan_tram, 100] | min }}%;
+                            background:{{ '#c92a2a' if m.bang_thong.phan_tram >= 100 else app.accent }};"></div>
+              </div>
+            {% endif %}
+            {% if m.bang_thong.bi_giam_toc %}
+              <br><span class="alert-err" style="padding:1px 6px;border-radius:4px;">
+                {{ _("đang giảm tốc") }}</span>
+            {% endif %}
           </td>
           <td>
             {% if m.may.paid_until %}{{ m.may.paid_until.strftime('%d/%m/%Y') }}
@@ -161848,7 +162433,7 @@ Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'</code></pre>
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps_chi_tiet.html
-SHA256=fbe8dca7d1ed3c2ef1c9266da6628ed246e6423f912f3ca92a267c145a1f3e27 BYTES=8299 LINES=154
+SHA256=82b007ea2c150241f03dcd3c83151074511795ea982814337c2a27509bb2f7c4 BYTES=10988 LINES=201
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ may.ten or may.id[:8] }} — {{ app.display_name }}{% endblock %}
@@ -161888,6 +162473,31 @@ SHA256=fbe8dca7d1ed3c2ef1c9266da6628ed246e6423f912f3ca92a267c145a1f3e27 BYTES=82
           {% else %}{{ may.plan_id }}{% endif %}</td></tr>
       <tr><th>{{ _("Hệ điều hành") }}</th>
         <td>{{ _(os.ten) if os else may.os_id }}</td></tr>
+      <tr>
+        <th>{{ _("Băng thông chu kỳ này") }}</th>
+        <td>
+          {{ bang_thong.da_dung }}
+          {% if bang_thong.han_muc_gb %}
+            <span class="muted">/ {{ bang_thong.han_muc_gb }} GB</span>
+            <div style="height:6px;background:rgba(128,128,128,.25);border-radius:3px;margin-top:6px;max-width:280px;">
+              <div style="height:6px;border-radius:3px;width:{{ [bang_thong.phan_tram, 100] | min }}%;
+                          background:{{ '#c92a2a' if bang_thong.phan_tram >= 100 else app.accent }};"></div>
+            </div>
+            {% if bang_thong.bi_giam_toc %}
+              <p class="muted" style="margin:6px 0 0;">
+                {{ _("Máy đang bị giảm tốc vì đã vượt hạn mức. Không bị tính thêm tiền — tốc độ trở lại bình thường khi sang chu kỳ mới.") }}
+              </p>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <th>{{ _("Ảnh chụp gần nhất") }}</th>
+        <td>
+          {% if sao_luu_luc %}{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}
+          {% else %}<span class="muted">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</span>{% endif %}
+        </td>
+      </tr>
       <tr><th>{{ _("Trả tới") }}</th>
         <td>
           {% if may.paid_until %}{{ may.paid_until.strftime('%d/%m/%Y') }}
@@ -161969,11 +162579,33 @@ SHA256=fbe8dca7d1ed3c2ef1c9266da6628ed246e6423f912f3ca92a267c145a1f3e27 BYTES=82
   </div>
 
   {# ── 4. Nguy hiểm ──────────────────────────────────────────────────────
-     Hai nút không hoàn tác được. Đòi gõ ĐÚNG tên máy, khuôn của GitHub — lý do
+     Ba nút không hoàn tác được. Đòi gõ ĐÚNG tên máy, khuôn của GitHub — lý do
      giống hệt: chúng phải khó bấm nhầm hơn một cú click. #}
   {% if may.trang_thai != "da_xoa" %}
   <div class="card" style="border-color:#c33;">
     <h2 style="color:#c33;">{{ _("Nguy hiểm") }}</h2>
+
+    {# Khôi phục đứng TRƯỚC "Cài lại": khách vào khối này vì máy hỏng, và quay
+       về ảnh chụp giữ được dữ liệu còn cài lại thì mất sạch. Đưa lựa chọn ít
+       thiệt hại hơn lên trước là việc của người thiết kế, không phải của người
+       đang hoảng. #}
+    <h3 style="margin:12px 0 4px;">{{ _("Khôi phục về ảnh chụp") }}</h3>
+    <p class="muted" style="margin:0 0 8px;">
+      {% if sao_luu_luc %}
+        {{ _("Quay máy về bản chụp ngày %(ngay)s. Mọi thay đổi sau thời điểm đó sẽ mất. Máy sẽ tắt.") % {"ngay": sao_luu_luc.strftime('%d/%m/%Y %H:%M')} }}
+      {% else %}
+        {{ _("Máy này chưa có ảnh chụp nào. Bản đầu tiên được chụp trong vòng một tuần kể từ khi tạo máy.") }}
+      {% endif %}
+    </p>
+    {% if sao_luu_luc %}
+    <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/khoi-phuc"
+          style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="text" name="xac_nhan" style="max-width:220px;"
+             placeholder="{{ _('Gõ %(ten)s để xác nhận') % {'ten': may.ten or may.id[:8]} }}">
+      <button type="submit" style="background:#c33;">{{ _("Khôi phục") }}</button>
+    </form>
+    {% endif %}
 
     <h3 style="margin:12px 0 4px;">{{ _("Cài lại máy") }}</h3>
     <p class="muted" style="margin:0 0 8px;">
@@ -203491,7 +204123,7 @@ def test_the_recipes_say_how_to_verify_a_webhook():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_211_data_governance.py
-SHA256=be8834fff4edb642ac2390d97c29459369135ee5d20514c33f573506f1e19c8d BYTES=24724 LINES=626
+SHA256=7c0c20fab7a026f7ae49798f2560d9d547072ac636a008fdf2b6abb1f25693f1 BYTES=25324 LINES=643
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-19 — what we keep about a customer, for how long, and what never goes.
 
@@ -203690,10 +204322,27 @@ def test_every_purge_claim_names_a_function_that_exists_and_runs():
     so every `purged_by` claim is checked against the worker's own sweep.
     """
     import platform_core.job_runner as runner
+    from platform_core import registry
 
     sweep = inspect.getsource(runner._don_du_lieu_het_han)
     other_sweeps = (inspect.getsource(runner.run_forever)
                     + inspect.getsource(runner))
+
+    # Từ 2026-08-24 hợp đồng app có `AppManifest.bao_tri`, và nền tảng gọi nó
+    # trong cùng vòng bảo trì (dưới cùng một lease). Nên một app dọn bảng của
+    # chính nó là một lời khai HỢP LỆ — nhưng vẫn phải kiểm, không phải tin.
+    # Không mở rộng phép kiểm ở đây thì một app dọn dữ liệu đúng cách sẽ bị báo
+    # đỏ, và cách sửa dễ nhất khi đó là **xoá lời khai** — tức mất đúng thứ luật
+    # này sinh ra để giữ.
+    # Duyệt MỌI app, không qua `registry.viec_bao_tri()` — hàm đó lọc theo cờ
+    # bật/tắt (fail-closed lúc chạy, đúng như nó phải thế). Nhưng chính sách lưu
+    # trữ là một văn bản **tĩnh**: nó phải kiểm được như nhau dù app đang bật hay
+    # tắt. Dùng hàm lọc ở đây thì test xanh trên máy có `LTT_VPS=1` và đỏ trên
+    # máy không có — loại hỏng tệ hơn cả việc không kiểm.
+    for item in registry.discover():
+        ham = item.manifest.bao_tri
+        if ham is not None:
+            other_sweeps += inspect.getsource(inspect.getmodule(ham))
 
     for store in governance.STORES:
         if not store.purged_by:
@@ -220295,7 +220944,7 @@ def test_bang_gia_noi_ro_reasoning_va_cache():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_252_vps_giao_dien.py
-SHA256=5e5bd0034796df42d6d20f301fafa2f972612fded755f75e3a06e6b1e6af4fc1 BYTES=18175 LINES=438
+SHA256=24ec1c5ee23f73bae156d4407955fac7edb83f492e1a371313877db3c7d29407 BYTES=18686 LINES=444
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bề mặt HTTP của app VPS: cái cờ phải thật sự đóng cửa, và trang phải nói thật.
 
@@ -220464,7 +221113,13 @@ def test_co_bat_thi_trang_mo_va_NOI_THAT_ve_han_che(moi_truong, monkeypatch):
             "phai cong bo han muc bang thong: 2.048 GB/thang chia cho TAT CA "
             "khach, mot nguoi tai phim ca thang an het quota cua 15 nguoi kia")
         assert "hạn mức trên kho lưu trữ dùng chung" in r.text
-        assert "Sao lưu hằng tuần" in r.text
+        # 24/08: câu này cũng ĐỔI. Bản cũ hứa "sao lưu", nhưng thứ hạ tầng làm
+        # được là **ảnh chụp**, và nó nằm trên cùng kho với đĩa gốc — pool hỏng
+        # là mất cả hai. Hứa "sao lưu" rồi giao một ảnh chụp là loại lời hứa
+        # người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu.
+        assert "Ảnh chụp hằng tuần" in r.text
+        assert "KHÔNG thay thế bản sao lưu" in r.text, (
+            "phai noi ro anh chup khong phai ban sao luu")
 
         # Bảng giá phải khớp `cost.py`, không phải một con số gõ tay trong template.
         from apps.vps.cost import PLANS
@@ -229679,7 +230334,7 @@ def _lay_duoc(ham) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_282_vps_console.py
-SHA256=bbed6cac1fdb9cf108d0c2c31d35f0283bcebbb6c68f272aa7270c2879109c9c BYTES=6674 LINES=173
+SHA256=d6e54066440a20a2ec795c8273f2c8f6489e0b6bb94c3e5bbad8ef6038b0b7e4 BYTES=8379 LINES=212
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39/G3b — vé console và cầu WebSocket.
 
@@ -229854,6 +230509,45 @@ def test_thieu_port_hoac_ticket_thi_NEM_chu_khong_ghep_bua():
     for thieu in ({"ticket": "x"}, {"port": 5900}, {}):
         with pytest.raises(console.VeKhongHopLeError):
             console.dia_chi_websocket_proxmox(_CauHinh(), 200, thieu)
+
+
+# ── 5. Dọn vé hết hạn (chính sách lưu trữ ở governance.py) ──────────────────
+
+def test_don_ve_het_han_xoa_ve_qua_han(db):
+    """`tieu_ve` xoá vé **đã dùng**; `_don_ve_cu` chỉ cắt khi một máy vượt mức.
+    Không cái nào dọn **vé cấp ra rồi không ai dùng** — khách mở trang console
+    rồi đóng tab, hoặc máy bị xoá trong lúc vé còn sống. Những vé đó nằm lại
+    vĩnh viễn, mỗi dòng mang một `user_id` và một vé của Proxmox."""
+    m = _may(db)
+    console.cap_ve(db, m, "u1")
+    cu = db.query(VpsConsoleVe).one()
+    cu.created_at = datetime.now(timezone.utc) - timedelta(
+        seconds=console.HAN_VE_GIAY + 5)
+    db.commit()
+
+    assert console.don_ve_het_han(db) == 1
+    db.commit()
+    assert db.query(VpsConsoleVe).count() == 0
+
+
+def test_don_ve_KHONG_dung_toi_ve_con_song(db):
+    """Dọn nhầm một vé đang trong 60 giây của nó là khách bấm "Mở console" rồi
+    nhận một lỗi không giải thích được."""
+    m = _may(db)
+    console.cap_ve(db, m, "u1")
+    assert console.don_ve_het_han(db) == 0
+    assert db.query(VpsConsoleVe).count() == 1
+
+
+def test_governance_khai_dung_ten_ham_don():
+    """`governance.py` nêu tên một hàm; nếu tên đó lệch thì `test_211` báo đỏ ở
+    một chỗ xa nguyên nhân. Chốt tại đây cho gần."""
+    from platform_core.public_api import governance
+
+    kho = [s for s in governance.STORES if s.table == "vps_console_ve"]
+    assert kho, "vps_console_ve phai duoc xep loai luu tru"
+    assert "don_ve_het_han" in kho[0].purged_by
+    assert hasattr(console, "don_ve_het_han")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -230565,6 +231259,150 @@ def test_bat_thuan_ascii_khong_BOM():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_285_messages_khong_stream.py
+SHA256=3522af588770f347aeebb8d1555ec21494903ba3eaaa87b5c2ec7ae47e065628 BYTES=6003 LINES=138
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""`POST /api/v1/messages` phải phục vụ **cả** request không streaming.
+
+🔴 VÌ SAO TỆP NÀY TỒN TẠI — MỘT CỬA ĐÓNG, TÌM RA 24/08 KHI CẮM CLAUDE DESKTOP.
+
+   Route này từng từ chối thẳng mọi request thiếu `stream: true`, với lý do nghe
+   rất hợp lý: *"nhận rồi trả một cục là nói dối client đang chờ SSE"*.
+
+   Lý do đó đúng cho một client **đã xin** streaming — và sai với hợp đồng
+   Anthropic Messages, thứ **cho phép cả hai**.
+
+⛔ HẬU QUẢ ĐO ĐƯỢC: Claude Desktop **thăm dò model** bằng một request KHÔNG
+   streaming. Ta trả 400, ứng dụng kết luận *"Gateway rejected model ltt_llm"*
+   và **chặn luôn ô chat** — không phải một cảnh báo trang trí, mà là một cửa
+   đóng. Triệu chứng khách nhìn thấy (*"model không khả dụng"*) **không hề chỉ
+   về phía nguyên nhân**.
+
+⭐ BÀI HỌC RỘNG HƠN MỘT LỖI: một dòng `if` giữ cho hợp đồng "sạch" đã làm cả một
+   ứng dụng khách không dùng được. Khi ta **hẹp hơn** hợp đồng ta tuyên bố nói,
+   thứ vỡ không phải phép thử của ta — mà là client của khách.
+"""
+from __future__ import annotations
+
+import importlib
+import pathlib
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture()
+def st():
+    return importlib.import_module("server.api.streaming")
+
+
+class _SuDung:
+    def __init__(self, vao=11, ra=7):
+        self.token_vao, self.token_ra = vao, ra
+
+
+class _Kq:
+    def __init__(self, finish="stop", noi="144"):
+        self.noi_dung = noi
+        self.finish_reason = finish
+        self.su_dung = _SuDung()
+
+
+# ── Hình dạng phản hồi, theo tài liệu chính thức ───────────────────────────
+
+#: Trường bắt buộc của một `message` Anthropic. Thiếu một cái là client tự dựng
+#: một giá trị mặc định — và nó đoán, chứ không báo lỗi.
+TRUONG_BAT_BUOC = ("id", "type", "role", "model", "content",
+                   "stop_reason", "stop_sequence", "usage")
+
+
+def test_du_moi_truong_bat_buoc(st):
+    d = st._dang_anthropic(_Kq(), "ltt_llm", "ms-abc")
+    thieu = [t for t in TRUONG_BAT_BUOC if t not in d]
+    assert not thieu, f"thieu truong bat buoc: {thieu}"
+    assert d["type"] == "message" and d["role"] == "assistant"
+    assert d["content"] == [{"type": "text", "text": "144"}]
+    assert d["usage"] == {"input_tokens": 11, "output_tokens": 7}
+
+
+def test_stop_details_PHAI_CO_MAT_va_bang_None(st):
+    """Tài liệu: `stop_details` chỉ được điền khi `stop_reason == "refusal"`.
+
+    Nhưng client đọc nó **vô điều kiện** — thiếu khoá và có khoá `null` là hai
+    chuyện khác nhau với một bộ giải mã chặt.
+    """
+    d = st._dang_anthropic(_Kq(), "ltt_llm", "ms-abc")
+    assert "stop_details" in d
+    assert d["stop_details"] is None
+
+
+@pytest.mark.parametrize("openai_style,anthropic_style", [
+    ("stop", "end_turn"),
+    ("length", "max_tokens"),
+    ("tool_calls", "tool_use"),
+    ("content_filter", "refusal"),
+    ("", "end_turn"),               # khong biet -> mac dinh an toan
+    (None, "end_turn"),
+])
+def test_anh_xa_ly_do_dung(st, openai_style, anthropic_style):
+    """🔴 Máy B nói giao thức OpenAI; hợp đồng Anthropic khai một tập KHÁC HẲN.
+
+    Bản đầu truyền thẳng `finish_reason`, tức đưa chữ `stop` của OpenAI vào một
+    trường client đọc theo bảng Anthropic. Client **không vỡ ngay** — nó chỉ
+    không nhận ra giá trị, rồi xử lý sai ở chỗ quan trọng nhất: `length` (bị cắt
+    vì hết token) trông y hệt một câu trả lời hoàn chỉnh, nên client không biết
+    mà xin tiếp.
+    """
+    d = st._dang_anthropic(_Kq(finish=openai_style), "ltt_llm", "ms-x")
+    assert d["stop_reason"] == anthropic_style
+
+
+def test_model_tra_ve_la_ALIAS_khong_phai_id_noi_bo(st):
+    """Khách không bao giờ được nhìn thấy `qwen38-*` (cùng luật với test_212)."""
+    d = st._dang_anthropic(_Kq(), "ltt_llm", "ms-x")
+    assert d["model"] == "ltt_llm"
+    assert "qwen" not in str(d).lower()
+
+
+def test_che_do_thu_cung_dung_hinh_dang(st):
+    """Chế độ thử phải trả **đúng hình dạng**, nếu không nó chứng minh sai thứ.
+
+    Một sandbox trả hình dạng khác là một sandbox dạy khách trông đợi sai.
+    """
+    d = st._thu_mot_cuc("ltt_llm")
+    thieu = [t for t in TRUONG_BAT_BUOC if t not in d]
+    assert not thieu, f"che do thu thieu truong: {thieu}"
+    assert "stop_details" in d
+    assert d["usage"] == {"input_tokens": 0, "output_tokens": 0}
+
+
+# ── Route không còn từ chối request không-stream ───────────────────────────
+
+def test_ma_nguon_KHONG_con_tu_choi_request_khong_stream(st):
+    """Chốt bằng mã nguồn: câu từ chối cũ phải biến mất khỏi đường `/messages`.
+
+    Đây là một chốt **thô** có chủ ý — nó không dựng cả app lên, chỉ chắc rằng
+    lối thoát cũ không lặng lẽ quay lại trong một lần sửa sau.
+    """
+    ma = pathlib.Path(st.__file__).read_text(encoding="utf-8")
+    assert "This endpoint streams: send" not in ma, (
+        "cau tu choi cu da quay lai - Claude Desktop se lai bi chan o o chat")
+    assert "_mot_cuc(" in ma
+
+
+def test_khong_stream_van_kep_max_tokens(st):
+    """Không stream ⇒ không byte nào chảy cho tới khi xong ⇒ đồng hồ 100 giây của
+    Cloudflare **có hiệu lực**, khác hẳn đường streaming.
+
+    Nên trần phải là trần của đường **đồng bộ**, không phải trần streaming.
+    """
+    ma = pathlib.Path(st.__file__).read_text(encoding="utf-8")
+    assert "_tran_max_tokens" in ma, (
+        "duong khong-stream phai kep theo tran cua duong dong bo")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_285_vps_dinh_danh.py
 SHA256=844f40ce21b6ba452f8a6a1c1ba55a218753c4ac78dab4102b8fe2eb39c54a25 BYTES=7928 LINES=195
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -231055,7 +231893,7 @@ def test_kich_ban_router_co_du_BA_luat_bat_buoc():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_287_vps_bao_tri.py
-SHA256=5d699837a661f2ce4f39c6908dd7c7af7e15e8ea293bd25f6cfc7b22a7ba7d83 BYTES=11203 LINES=286
+SHA256=f1bc67696eafa5b68b63b012f6312ec91ca666b369124be9498825e6888fb058 BYTES=11731 LINES=299
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39/G4 — việc nền định kỳ: thu tiền, treo, xoá.
 
@@ -231115,6 +231953,10 @@ class _DbGia:
 
     def execute(self, *a, **kw):
         class _Kq:
+            """Đóng vai kết quả của SQLAlchemy cho cả `select` lẫn `delete`."""
+
+            rowcount = 0
+
             def __init__(self, x):
                 self._x = x
 
@@ -231134,6 +231976,9 @@ class _DbGia:
 
     def commit(self):
         self.da_commit += 1
+
+    def delete(self, x):
+        pass
 
 
 NOW = datetime(2026, 8, 24, tzinfo=timezone.utc)
@@ -231175,7 +232020,7 @@ def test_thu_duoc_thi_khong_treo_va_khong_xoa(monkeypatch):
     monkeypatch.setattr(bao_tri, "_client_hoac_none", lambda: _ClientGia())
     kq = bao_tri.mot_luot(_DbGia(), now=NOW)
     assert kq == {"da_thu": 1, "da_treo": 0, "da_nop_xoa": 0,
-                  "da_doi_giam_toc": 0}
+                  "da_doi_giam_toc": 0, "da_chup": 0, "da_don_ve": 0}
 
 
 def test_thieu_credit_thi_TREO_chu_khong_bo_qua(monkeypatch):
@@ -231247,7 +232092,13 @@ def test_job_xoa_dung_dedupe_key_theo_MAY(monkeypatch):
             ghi.update(kw)
             return object()
 
-    monkeypatch.setitem(__import__("sys").modules, "platform_core.jobs", _Q)
+    # Vá **thuộc tính trên gói**, không phải `sys.modules`: `from platform_core
+    # import jobs` đọc thuộc tính khi gói đã nạp, nên vá `sys.modules` chỉ ăn khi
+    # test này chạy MỘT MÌNH — và xanh-khi-chạy-riêng, đỏ-khi-chạy-cả-bộ là loại
+    # test tệ hơn không có.
+    import platform_core
+
+    monkeypatch.setattr(platform_core, "jobs", _Q, raising=False)
     bao_tri._nop_job_xoa(_DbGia(), _May(id="may-9", user_id="u7"))
     assert ghi["dedupe_key"] == "vps-destroy-may-9"
     assert ghi["job_type"] == "vps.destroy"
@@ -231669,6 +232520,254 @@ def test_job_xoa_may_TAT_do_va_bo_ham():
 
     assert "thoi_theo_doi(may.ip_noi_bo)" in inspect.getsource(
         __import__("apps.vps.jobs", fromlist=["x"])._go_cho_dhcp)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_289_vps_sao_luu.py
+SHA256=c9cc16cdef57b6ab016df9d16ab03123acb85b1d18cc862f6014916cc7b2401a BYTES=9784 LINES=242
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H39/G9 — ảnh chụp hằng tuần, giữ đúng một bản, và khôi phục.
+
+Trang bán hứa từ trước khi có mã nào làm: *"sao lưu hằng tuần, giữ 1 bản"*.
+Đi làm thật thì `vzdump` không chạy được — kho `dir` duy nhất trên node còn
+**2,2 GiB**. Thứ hạ tầng này làm được là **ảnh chụp**, và nó nằm trên **cùng kho**
+với đĩa gốc.
+
+Nên bộ test này kiểm cả hai mặt:
+
+* cơ chế đúng — chụp đúng nhịp, giữ đúng một bản, **tạo trước rồi mới xoá**;
+* và **trang bán nói đúng thứ khách nhận** — hứa "sao lưu" rồi giao một ảnh chụp
+  là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from apps.vps.services import sao_luu
+
+NOW = datetime(2026, 8, 24, 19, 30, tzinfo=timezone.utc)
+
+
+class _May:
+    def __init__(self, vmid=200, trang_thai="dang_chay", luc=None):
+        self.id = "may-1"
+        self.vmid = vmid
+        self.trang_thai = trang_thai
+        self.sao_luu_luc = luc
+
+
+class _Client:
+    def __init__(self, anh=(), hong_xoa=False):
+        self.anh = [{"name": x} for x in anh]
+        self.hong_xoa = hong_xoa
+        self.thao_tac: list[tuple[str, str]] = []
+
+    def danh_sach_anh(self, vmid):
+        return list(self.anh)
+
+    def chup_anh(self, vmid, ten, *, mo_ta=""):
+        self.thao_tac.append(("chup", ten))
+        self.anh.append({"name": ten})
+        return "UPID:chup"
+
+    def xoa_anh(self, vmid, ten):
+        if self.hong_xoa:
+            raise RuntimeError("Proxmox tu choi xoa")
+        self.thao_tac.append(("xoa", ten))
+        self.anh = [x for x in self.anh if x["name"] != ten]
+        return "UPID:xoa"
+
+
+# ── 1. Tên ảnh ──────────────────────────────────────────────────────────────
+
+def test_ten_anh_hop_le_voi_proxmox():
+    """Proxmox chỉ nhận `[A-Za-z0-9_-]` và tên phải **bắt đầu bằng chữ**, nên
+    `2026-08-24` không dùng được."""
+    import re
+
+    ten = sao_luu.ten_anh(NOW)
+    assert re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", ten), ten
+    assert ten == "ltt20260824_1930"
+
+
+def test_ten_anh_sap_xep_duoc_theo_THOI_GIAN():
+    """`chup_va_don` chọn bản để giữ bằng cách sắp xếp **chuỗi**. Một định dạng
+    mà thứ tự chuỗi khác thứ tự thời gian sẽ xoá nhầm bản mới, giữ bản cũ."""
+    ten = [sao_luu.ten_anh(NOW + timedelta(days=d)) for d in (0, 5, 40, 400)]
+    assert ten == sorted(ten)
+
+
+def test_chi_nhan_anh_CUA_TA():
+    """Ảnh chủ nhà tự tạo bằng tay trên Proxmox **không phải việc của vòng bảo
+    trì** — xoá nhầm một ảnh người khác đang dựa vào là mất dữ liệu của họ."""
+    assert sao_luu.cua_ta("ltt20260824_1930") is True
+    assert sao_luu.cua_ta("ltt20260824") is True
+    for la in ("truoc-khi-nang-cap", "backup1", "", "ltt", "lttabc", None):
+        assert sao_luu.cua_ta(la) is False, la
+
+
+def test_ten_anh_doc_duoc_cho_khach():
+    assert sao_luu.doc_duoc("ltt20260824_1930") == "24/08/2026 19:30"
+    assert sao_luu.doc_duoc("khong-phai-cua-ta") == "khong-phai-cua-ta"
+
+
+# ── 2. Tới kỳ chụp chưa ─────────────────────────────────────────────────────
+
+def test_may_chua_chup_lan_nao_thi_den_han_ngay():
+    assert sao_luu.den_han_chup(_May(luc=None), now=NOW) is True
+
+
+def test_chup_lai_sau_dung_bay_ngay():
+    assert sao_luu.den_han_chup(
+        _May(luc=NOW - timedelta(days=6, hours=23)), now=NOW) is False
+    assert sao_luu.den_han_chup(
+        _May(luc=NOW - timedelta(days=7)), now=NOW) is True
+
+
+def test_may_dang_tao_hoac_da_xoa_thi_khong_chup():
+    """Chụp giữa lúc job đang dựng máy là chụp một cái vỏ."""
+    for tt in ("dang_tao", "da_xoa"):
+        assert sao_luu.den_han_chup(_May(trang_thai=tt), now=NOW) is False
+
+
+def test_may_chua_co_vmid_thi_khong_chup():
+    assert sao_luu.den_han_chup(_May(vmid=None), now=NOW) is False
+
+
+def test_may_BI_TREO_thi_VAN_chup():
+    """Máy treo còn 7 ngày ân hạn trước khi bị xoá. Ngừng chụp trong 7 ngày đó
+    là một hình phạt kèm mà không ai công bố — và khách trả tiền lại rồi mới
+    phát hiện bản chụp của họ dừng từ tuần trước."""
+    assert sao_luu.den_han_chup(_May(trang_thai="bi_treo"), now=NOW) is True
+
+
+def test_moc_khong_co_mui_gio_van_so_sanh_duoc():
+    """Postgres trả `datetime` có múi giờ, SQLite thì không. So một cái naive với
+    một cái aware là `TypeError` — và nó chỉ nổ trên **một** trong hai engine."""
+    tho = (NOW - timedelta(days=10)).replace(tzinfo=None)
+    assert sao_luu.den_han_chup(_May(luc=tho), now=NOW) is True
+
+
+# ── 3. Chụp và dọn ──────────────────────────────────────────────────────────
+
+def test_TAO_TRUOC_roi_moi_XOA():
+    """Xoá trước thì có một khoảng — dài bằng thời gian tạo — mà khách **không có
+    bản nào**, và đó đúng là khoảng mà một sự cố sẽ tìm tới."""
+    c = _Client(anh=["ltt20260817_1930"])
+    sao_luu.chup_va_don(c, _May(), now=NOW)
+    assert [x[0] for x in c.thao_tac] == ["chup", "xoa"]
+
+
+def test_giu_dung_MOT_ban():
+    c = _Client(anh=["ltt20260803_1930", "ltt20260810_1930", "ltt20260817_1930"])
+    ten = sao_luu.chup_va_don(c, _May(), now=NOW)
+    con = sorted(x["name"] for x in c.anh)
+    assert con == [ten], f"phai chi con ban vua chup, dang con {con}"
+
+
+def test_KHONG_dung_toi_anh_nguoi_khac_tao():
+    c = _Client(anh=["truoc-khi-nang-cap", "ltt20260817_1930"])
+    sao_luu.chup_va_don(c, _May(), now=NOW)
+    assert "truoc-khi-nang-cap" in [x["name"] for x in c.anh]
+
+
+def test_xoa_ban_cu_that_bai_thi_VAN_giu_ban_moi():
+    """Bản mới đã tạo xong, nên một lỗi dọn dẹp không có lý do gì làm hỏng cả
+    lượt bảo trì. Bản cũ thừa chỉ tốn chỗ."""
+    c = _Client(anh=["ltt20260817_1930"], hong_xoa=True)
+    ten = sao_luu.chup_va_don(c, _May(), now=NOW)
+    assert ten in [x["name"] for x in c.anh]
+
+
+def test_anh_moi_nhat_tra_ve_ban_MOI_nhat():
+    c = _Client(anh=["ltt20260803_1930", "ltt20260817_1930", "tay-lam"])
+    assert sao_luu.anh_moi_nhat(c, 200) == "ltt20260817_1930"
+
+
+def test_chua_co_anh_thi_tra_chuoi_rong():
+    assert sao_luu.anh_moi_nhat(_Client(), 200) == ""
+
+
+# ── 4. Không kèm RAM ────────────────────────────────────────────────────────
+
+def test_anh_KHONG_kem_RAM():
+    """`vmstate` ghi cả bộ nhớ ra đĩa — thêm vài GB mỗi máy mỗi tuần cho một thứ
+    không ai cần khi khôi phục. Và nó làm ảnh chụp mất hàng chục giây thay vì
+    vài giây."""
+    import inspect
+
+    from apps.vps.services.proxmox import ProxmoxClient
+
+    assert '"vmstate": 0' in inspect.getsource(ProxmoxClient.chup_anh)
+
+
+# ── 5. Vòng bảo trì gọi nó ──────────────────────────────────────────────────
+
+def test_vong_bao_tri_CO_chup(monkeypatch):
+    from apps.vps import bao_tri
+
+    da = []
+    monkeypatch.setattr(sao_luu, "chup_va_don",
+                        lambda c, m, now=None: da.append(m.id) or "ltt1")
+    monkeypatch.setattr(bao_tri.billing, "ghi_su_kien", lambda *a, **kw: None)
+
+    class _Db:
+        def execute(self, *a, **kw):
+            class _K:
+                def scalars(self_inner):
+                    return iter([_May(luc=None)])
+            return _K()
+
+        def commit(self):
+            pass
+
+    n = bao_tri._chup_anh_den_han(_Db(), _Client(), now=NOW)
+    assert n == 1 and da == ["may-1"]
+
+
+def test_chua_cau_hinh_proxmox_thi_KHONG_danh_dau_da_chup():
+    """Đánh dấu mà chưa chụp là ghi vào sổ một bản không tồn tại — và khách chỉ
+    phát hiện lúc cần khôi phục, tức lúc tệ nhất."""
+    from apps.vps import bao_tri
+
+    assert bao_tri._chup_anh_den_han(None, None, now=NOW) == 0
+
+
+# ── 6. Trang bán phải nói ĐÚNG thứ khách nhận ───────────────────────────────
+
+def test_trang_ban_KHONG_goi_no_la_sao_luu():
+    from pathlib import Path
+
+    t = Path("server/templates/vps.html").read_text(encoding="utf-8")
+    assert "Ảnh chụp hằng tuần" in t
+    assert "KHÔNG thay thế bản sao lưu" in t
+    assert "Sao lưu hằng tuần, giữ 1 bản. Dữ liệu quan trọng" not in t, (
+        "cau cu hua 'sao luu' — thu ha tang lam duoc la anh chup")
+
+
+def test_khoi_phuc_doi_go_dung_ten_may():
+    """Cùng khuôn với "Cài lại": không hoàn tác được, và nó nằm cạnh những nút
+    vô hại."""
+    import inspect
+
+    from apps.vps import routes
+
+    nguon = inspect.getsource(routes.khoi_phuc_may)
+    assert "xac_nhan" in nguon
+    assert "may.ten or may.id[:8]" in nguon
+
+
+def test_khoi_phuc_TAT_MAY_truoc():
+    """Proxmox từ chối `rollback` một máy đang chạy nếu ảnh không kèm RAM — và
+    ảnh của ta cố ý không kèm RAM."""
+    import inspect
+
+    from apps.vps import routes
+
+    nguon = inspect.getsource(routes.khoi_phuc_may)
+    assert nguon.index("tat_cung") < nguon.index("khoi_phuc_anh")
 
 @@@LTT_PROFILE_FILE_END@@@
 

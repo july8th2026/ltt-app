@@ -308,6 +308,46 @@ class ProxmoxClient:
             "POST", f"/nodes/{self.config.node}/qemu/{int(vmid)}/vncproxy",
             data={"websocket": 1}) or {}
 
+    # ── Ảnh chụp (snapshot) ──────────────────────────────────────────────────
+    #
+    # Ảnh chụp trên LVM-thin gần như **không tốn chỗ** lúc tạo (chỉ khối nào đổi
+    # về sau mới chiếm), và tạo xong trong vài giây. Đó là lý do nó dùng được cho
+    # mọi máy hằng tuần trong khi `vzdump` thì không — kho `local` chỉ còn 2,2 GiB.
+    #
+    # ⚠️ **Ảnh chụp KHÔNG phải bản sao lưu.** Nó nằm trên **cùng kho** với đĩa
+    # gốc: pool hỏng là mất cả hai. Nó cứu khách khỏi *lỗi của chính họ* (xoá
+    # nhầm, bản vá hỏng), không cứu khỏi hỏng phần cứng. Trang bán phải nói đúng
+    # như vậy — xem `vps.html`.
+    #
+    # Máy khách không có guest agent (agent là thiết bị virtio, và virtio treo
+    # trên cụm này), nên ảnh chụp là **crash-consistent**: giống như rút điện
+    # rồi bật lại. NTFS có nhật ký nên thường lên bình thường, nhưng cơ sở dữ
+    # liệu đang ghi dở thì không có gì bảo đảm.
+
+    def danh_sach_anh(self, vmid: int) -> list:
+        """Ảnh chụp của một máy. Proxmox luôn trả thêm mục giả `current`."""
+        ra = self._goi("GET", f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot")
+        return [x for x in (ra or []) if str(x.get("name")) != "current"]
+
+    def chup_anh(self, vmid: int, ten: str, *, mo_ta: str = "") -> str:
+        """Tạo ảnh chụp. **Không** kèm RAM: `vmstate` ghi cả bộ nhớ ra đĩa, tức
+        thêm vài GB mỗi máy mỗi tuần cho một thứ không ai cần khi khôi phục."""
+        return self._goi(
+            "POST", f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot",
+            data={"snapname": ten, "description": mo_ta, "vmstate": 0})
+
+    def xoa_anh(self, vmid: int, ten: str) -> str:
+        return self._goi(
+            "DELETE",
+            f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot/{ten}")
+
+    def khoi_phuc_anh(self, vmid: int, ten: str) -> str:
+        """Quay máy về một ảnh chụp. **Không hoàn tác được** — mọi thay đổi sau
+        thời điểm chụp mất hết. Người gọi phải bắt khách xác nhận."""
+        return self._goi(
+            "POST",
+            f"/nodes/{self.config.node}/qemu/{int(vmid)}/snapshot/{ten}/rollback")
+
     def trang_thai_tac_vu(self, upid: str) -> dict:
         """Tác vụ nền (clone, xoá) đã xong chưa. `status`/`exitstatus`."""
         return self._goi(

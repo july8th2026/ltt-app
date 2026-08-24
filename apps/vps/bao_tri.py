@@ -12,7 +12,7 @@ Nguyên nhân gốc không phải quên: **hợp đồng app không có chỗ kh
 Nên chỗ đó đã được thêm vào hợp đồng (`AppManifest.bao_tri`) thay vì đi vòng, và
 file này là thứ nó trỏ tới.
 
-## Bốn việc, theo đúng thứ tự đó
+## Năm việc, theo đúng thứ tự đó
 
 0. **Đo băng thông** — cộng dồn bộ đếm của router vào từng máy, hãm tốc máy vượt
    trần. Chạy **trước** vòng thu: thu một chu kỳ mới đặt lại bộ đếm chu kỳ về 0,
@@ -22,6 +22,8 @@ file này là thứ nó trỏ tới.
    mà máy vẫn chạy thì "treo" chỉ là một nhãn: khách dùng miễn phí đủ 7 ngày ân
    hạn, và RAM vẫn bị giữ suốt thời gian đó.
 3. **Xoá** máy đã treo quá 7 ngày (V8) — đẩy vào hàng đợi, không xoá tại chỗ.
+4. **Chụp ảnh tuần**, giữ đúng một bản — xem `services/sao_luu.py` để biết vì sao
+   là ảnh chụp chứ không phải `vzdump`, và vì sao trang bán phải nói đúng điều đó.
 
 ## Vì sao xoá bằng JOB chứ không xoá thẳng ở đây
 
@@ -177,6 +179,47 @@ def _dong_bo_bang_thong(db) -> int:
     return doi
 
 
+def _chup_anh_den_han(db, client, *, now=None) -> int:
+    """Chụp ảnh tuần cho máy tới kỳ. Trả số máy vừa chụp.
+
+    Client `None` (chưa cấu hình Proxmox) thì bỏ lượt — không đánh dấu đã chụp,
+    nên lượt sau chụp bù. Đánh dấu mà chưa chụp là ghi vào sổ một bản không tồn
+    tại, và khách chỉ phát hiện lúc cần khôi phục.
+    """
+    from sqlalchemy import select
+
+    from apps.vps.services import sao_luu
+    from apps.vps.tables import VpsInstance
+
+    if client is None:
+        return 0
+
+    da_chup = 0
+    for may in db.execute(
+        select(VpsInstance).where(
+            VpsInstance.trang_thai.in_(("dang_chay", "da_tat", "bi_treo")))
+    ).scalars():
+        if not sao_luu.den_han_chup(may, now=now):
+            continue
+        try:
+            ten = sao_luu.chup_va_don(client, may, now=now)
+        except ProxmoxError as exc:              # bắt HẸP
+            log.warning("VPS bao tri: khong chup duoc anh cho may %s: %s",
+                        may.id, exc)
+            continue
+        may.sao_luu_luc = now or _bay_gio()
+        billing.ghi_su_kien(db, may.id, "sao_luu", boi="he_thong", anh=ten)
+        da_chup += 1
+    if da_chup:
+        db.commit()
+    return da_chup
+
+
+def _bay_gio():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
+
+
 def mot_luot(db, *, now=None) -> dict:
     """Một lượt bảo trì. Tách khỏi `chay()` để test được mà không cần worker."""
     da_doi_giam_toc = _dong_bo_bang_thong(db)
@@ -190,6 +233,19 @@ def mot_luot(db, *, now=None) -> dict:
         # chậm — "tôi vừa gia hạn mà máy vẫn ì" là một lá thư hỗ trợ có thật.
         da_doi_giam_toc += _dong_bo_bang_thong(db)
     ket_qua["da_doi_giam_toc"] = da_doi_giam_toc
+    # Chụp ảnh SAU khi thu tiền: máy vừa bị treo vì hết tiền vẫn được chụp (nó
+    # còn 7 ngày ân hạn, và ngừng chụp trong 7 ngày đó là một hình phạt kèm mà
+    # không ai công bố), nhưng máy vừa bị nộp job xoá thì không cần bản nào nữa.
+    ket_qua["da_chup"] = _chup_anh_den_han(db, client, now=now)
+
+    # Dọn vé console hết hạn. Nhỏ, nhưng `governance.py` khai rằng bảng này được
+    # dọn — và một chính sách nêu tên một hàm không ai chạy chỉ là một lời hứa.
+    from apps.vps.services import console
+
+    da_don = console.don_ve_het_han(db)
+    if da_don:
+        db.commit()
+    ket_qua["da_don_ve"] = da_don
 
     da_nop_xoa = 0
     for may in billing.den_han_xoa(db, now=now):
@@ -217,8 +273,9 @@ def chay() -> None:
         # Chỉ ghi log khi CÓ việc xảy ra: một dòng "đã thu 0" mỗi giờ là 24 dòng
         # rác mỗi ngày, và nó làm người đọc bỏ qua đúng dòng cần đọc.
         if any(kq.values()):
-            log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s",
+            log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
+                     "chup anh %s, don ve %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
-                     kq["da_doi_giam_toc"])
+                     kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"])
     finally:
         gen.close()

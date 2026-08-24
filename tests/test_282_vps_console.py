@@ -171,3 +171,42 @@ def test_thieu_port_hoac_ticket_thi_NEM_chu_khong_ghep_bua():
     for thieu in ({"ticket": "x"}, {"port": 5900}, {}):
         with pytest.raises(console.VeKhongHopLeError):
             console.dia_chi_websocket_proxmox(_CauHinh(), 200, thieu)
+
+
+# ── 5. Dọn vé hết hạn (chính sách lưu trữ ở governance.py) ──────────────────
+
+def test_don_ve_het_han_xoa_ve_qua_han(db):
+    """`tieu_ve` xoá vé **đã dùng**; `_don_ve_cu` chỉ cắt khi một máy vượt mức.
+    Không cái nào dọn **vé cấp ra rồi không ai dùng** — khách mở trang console
+    rồi đóng tab, hoặc máy bị xoá trong lúc vé còn sống. Những vé đó nằm lại
+    vĩnh viễn, mỗi dòng mang một `user_id` và một vé của Proxmox."""
+    m = _may(db)
+    console.cap_ve(db, m, "u1")
+    cu = db.query(VpsConsoleVe).one()
+    cu.created_at = datetime.now(timezone.utc) - timedelta(
+        seconds=console.HAN_VE_GIAY + 5)
+    db.commit()
+
+    assert console.don_ve_het_han(db) == 1
+    db.commit()
+    assert db.query(VpsConsoleVe).count() == 0
+
+
+def test_don_ve_KHONG_dung_toi_ve_con_song(db):
+    """Dọn nhầm một vé đang trong 60 giây của nó là khách bấm "Mở console" rồi
+    nhận một lỗi không giải thích được."""
+    m = _may(db)
+    console.cap_ve(db, m, "u1")
+    assert console.don_ve_het_han(db) == 0
+    assert db.query(VpsConsoleVe).count() == 1
+
+
+def test_governance_khai_dung_ten_ham_don():
+    """`governance.py` nêu tên một hàm; nếu tên đó lệch thì `test_211` báo đỏ ở
+    một chỗ xa nguyên nhân. Chốt tại đây cho gần."""
+    from platform_core.public_api import governance
+
+    kho = [s for s in governance.STORES if s.table == "vps_console_ve"]
+    assert kho, "vps_console_ve phai duoc xep loai luu tru"
+    assert "don_ve_het_han" in kho[0].purged_by
+    assert hasattr(console, "don_ve_het_han")

@@ -208,6 +208,10 @@ class VpsInstance(Base):
         BigInteger, default=0, nullable=False)
     bang_thong_moc_xuong: Mapped[int] = mapped_column(
         BigInteger, default=0, nullable=False)
+    #: Lần chụp ảnh gần nhất. NULL = chưa chụp lần nào (máy vừa tạo).
+    sao_luu_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
     #: Đang bị hãm tốc vì vượt hạn mức. Lưu ở đây (không chỉ trên router) để
     #: trang của khách nói được lý do máy chậm, thay vì để họ tự đoán.
     bi_giam_toc: Mapped[bool] = mapped_column(

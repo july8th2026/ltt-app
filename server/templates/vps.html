@@ -17,7 +17,12 @@
       <li>{{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy chủ đặt tại Việt Nam, đường vào đi qua Singapore.") }}</li>
       <li>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</li>
       <li>{{ _("Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không bị tính thêm tiền.") }}</li>
-      <li>{{ _("Sao lưu hằng tuần, giữ 1 bản. Dữ liệu quan trọng bạn nên tự sao lưu thêm.") }}</li>
+      {# Nói ĐÚNG thứ khách nhận. Bản trước viết "sao lưu", nhưng thứ hạ
+         tầng này làm được là **ảnh chụp**, và nó nằm trên cùng kho với đĩa
+         gốc — pool hỏng là mất cả hai. Hứa "sao lưu" rồi giao một ảnh chụp
+         là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu,
+         tức lúc tệ nhất có thể. Xem `services/sao_luu.py`. #}
+      <li>{{ _("Ảnh chụp hằng tuần, giữ 1 bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn.") }}</li>
     </ul>
   </div>
 
@@ -39,6 +44,7 @@
           <th>{{ _("Hệ điều hành") }}</th>
           <th>{{ _("Địa chỉ") }}</th>
           <th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Băng thông") }}</th>
           <th>{{ _("Trả tới") }}</th>
           <th></th>
         </tr>
@@ -47,7 +53,7 @@
         {% for m in may_cua_toi %}
         <tr>
           <td>{{ _(m.plan.ten) if m.plan else m.may.plan_id }}</td>
-          <td>{{ m.os.ten if m.os else m.may.os_id }}</td>
+          <td>{{ _(m.os.ten) if m.os else m.may.os_id }}</td>
           <td>
             {% if m.dia_chi %}<code>{{ m.dia_chi }}</code>
             {% else %}<span class="muted">{{ _("đang chuẩn bị") }}</span>{% endif %}
@@ -55,6 +61,22 @@
           <td>
             {{ _(m.trang_thai_nhan) }}
             {% if m.may.ly_do %}<br><span class="muted">{{ m.may.ly_do }}</span>{% endif %}
+          </td>
+          {# Băng thông hiện ở đây chứ không giấu trong trang chi tiết: hạn mức
+             là thứ khách chỉ nhớ tới khi máy đã chậm, và lúc đó thì đã muộn. #}
+          <td style="min-width:130px;">
+            {{ m.bang_thong.da_dung }}
+            {% if m.bang_thong.han_muc_gb %}
+              <span class="muted">/ {{ m.bang_thong.han_muc_gb }} GB</span>
+              <div style="height:4px;background:rgba(128,128,128,.25);border-radius:2px;margin-top:4px;">
+                <div style="height:4px;border-radius:2px;width:{{ [m.bang_thong.phan_tram, 100] | min }}%;
+                            background:{{ '#c92a2a' if m.bang_thong.phan_tram >= 100 else app.accent }};"></div>
+              </div>
+            {% endif %}
+            {% if m.bang_thong.bi_giam_toc %}
+              <br><span class="alert-err" style="padding:1px 6px;border-radius:4px;">
+                {{ _("đang giảm tốc") }}</span>
+            {% endif %}
           </td>
           <td>
             {% if m.may.paid_until %}{{ m.may.paid_until.strftime('%d/%m/%Y') }}
