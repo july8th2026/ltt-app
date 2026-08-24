@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import (APIRouter, Depends, Form, HTTPException, Request,
+                     WebSocket, WebSocketDisconnect)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
@@ -28,7 +29,8 @@ import apps.vps as vps_app
 from apps.vps import os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
-from apps.vps.services import (billing, capacity, dieu_khien, provisioning)
+from apps.vps.services import (billing, capacity, console, dieu_khien,
+                               provisioning)
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
                                        client_tu_moi_truong)
 from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
@@ -342,6 +344,123 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "csrf_token": issue_csrf_token(request),
         "loi": request.query_params.get("loi", ""),
     })
+
+
+# ── console trong trình duyệt ────────────────────────────────────────────────
+
+@router.get("/{instance_id}/console", response_class=HTMLResponse)
+def trang_console(instance_id: str, request: Request,
+                  _g: None = Depends(_cong_co),
+                  _u: str = Depends(require_login), db=Depends(get_db)):
+    """Trang chứa noVNC. Vé cấp ở đây, tiêu ở bước mở WebSocket.
+
+    Vé đi qua **query string của WebSocket**, không qua cookie: WebSocket không
+    có CSRF, và một cookie tự động gửi kèm nghĩa là bất kỳ trang nào cũng mở
+    được console của khách bằng một dòng JavaScript.
+    """
+    may = _may_cua_khach(db, request, instance_id)
+    try:
+        dieu_khien.kiem_dieu_khien_duoc(may)
+    except dieu_khien.KhongDuocPhepError as exc:
+        return _ve_trang(str(exc))
+    return templates.TemplateResponse(request, "vps_console.html", {
+        "may": may,
+        "ve": console.cap_ve(db, may, _chu(request)),
+        "han_ve_giay": console.HAN_VE_GIAY,
+    })
+
+
+@router.websocket("/{instance_id}/console/ws")
+async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
+    """Bắc cầu byte giữa trình duyệt khách và console của Proxmox.
+
+    Khách **không bao giờ** biết địa chỉ Proxmox và không bao giờ cầm vé của
+    Proxmox — nếu chạm được cổng 8006 thì họ chạm được giao diện quản trị của cả
+    cụm, nơi có mọi máy của mọi khách và nút xoá của từng cái.
+
+    Không dùng `Depends` ở đây: WebSocket của FastAPI không chạy chuỗi phụ thuộc
+    giống HTTP, và trộn hai đường xác thực là cách chắc chắn để một trong hai bị
+    bỏ quên. Tất cả kiểm tra nằm tường minh trong thân hàm.
+    """
+    import asyncio
+    import ssl as ssl_mod
+
+    if not vps_app.enabled():
+        await websocket.close(code=1008)
+        return
+
+    from server.auth.session import user_tu_websocket
+    from platform_core.db import get_session
+
+    user_id = user_tu_websocket(websocket)
+    if not user_id:
+        await websocket.close(code=1008)
+        return
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        may = console.tieu_ve(db, ve, instance_id, user_id)
+        client = client_tu_moi_truong()
+        dia_chi = console.dia_chi_websocket_proxmox(
+            client.config, int(may.vmid), client.ve_console(int(may.vmid)))
+    except (console.VeKhongHopLeError, ProxmoxError, ChuaCauHinh) as exc:
+        log.warning("VPS console: tu choi mo cau: %s", exc)
+        await websocket.close(code=1008)
+        return
+    finally:
+        gen.close()
+
+    import websockets
+
+    ctx = ssl_mod.create_default_context()
+    if not client.config.verify:
+        # Cụm dùng chứng chỉ tự ký. Đây là kết nối TỪ SERVER MÌNH tới Proxmox
+        # trong LAN, không phải kết nối của khách — cùng mức tin cậy với mọi lời
+        # gọi API khác trong `proxmox.py`.
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl_mod.CERT_NONE
+
+    await websocket.accept(subprotocol="binary")
+    try:
+        async with websockets.connect(
+                dia_chi, ssl=ctx, subprotocols=["binary"],
+                additional_headers=client._headers(), open_timeout=20) as pve:
+            # Proxmox đòi dòng `user:ticket` đầu tiên trước mọi byte VNC.
+            await pve.send(f"{client.config.token_id}:"
+                           f"{(client.ve_console(int(may.vmid)) or {}).get('ticket', '')}
+")
+
+            async def khach_toi_pve():
+                while True:
+                    goi = await websocket.receive()
+                    if goi.get("type") == "websocket.disconnect":
+                        return
+                    await pve.send(goi.get("bytes") or goi.get("text") or b"")
+
+            async def pve_toi_khach():
+                async for goi in pve:
+                    if isinstance(goi, bytes):
+                        await websocket.send_bytes(goi)
+                    else:
+                        await websocket.send_text(goi)
+
+            xong, con_lai = await asyncio.wait(
+                {asyncio.create_task(khach_toi_pve()),
+                 asyncio.create_task(pve_toi_khach())},
+                return_when=asyncio.FIRST_COMPLETED)
+            for t in con_lai:
+                t.cancel()
+    except WebSocketDisconnect:
+        pass
+    except Exception as exc:            # noqa: BLE001 - biên của một cầu nối
+        log.warning("VPS console: cau dut giua chung: %s: %s",
+                    type(exc).__name__, exc)
+    finally:
+        try:
+            await websocket.close()
+        except RuntimeError:
+            pass                        # khách đã đóng trước
 
 
 def _ve_trang(loi: str) -> RedirectResponse:

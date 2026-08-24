@@ -58,7 +58,7 @@ sửa — **ở đúng một chỗ**. Không có gì bắt chỗ thứ hai phả
 tầng khác: nó hợp lệ nhưng **không đi qua được biên**. Loopback không có
 Cloudflare. Đây chính là **quy tắc 5b** của dự án, ở dạng test.
 
-✅ Đã sửa + chốt bằng `tests/test_280_vi_du_qua_cloudflare.py` (3 test), có kiểm
+✅ Đã sửa + chốt bằng `tests/test_281_vi_du_qua_cloudflare.py` (3 test), có kiểm
 ngược: tái hiện bản lỗi thì test **đỏ** đúng như mong đợi.
 
 ⛔ **P1 phải xong trước mọi việc ở mục 2.**

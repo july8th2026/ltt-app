@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e88a3d0f68bc4e15f6be48fde91ae627f45fa8b5ff302be518ba7f440ffecabf
-Nguồn đã quét : 1310 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d5e1e16ccaf29d1a820a51f4c719ac29f9afb80244879f4fc986c1c3ec8429a9
+Nguồn đã quét : 1311 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -908,7 +908,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:254
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:301
 
-5. DATA MODEL (57 bảng)
+5. DATA MODEL (58 bảng)
 - agent_runs → AgentRun | platform_core/models.py:406
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:491
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:473
@@ -962,12 +962,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - singleton_leases → SingletonLease | platform_core/models.py:835
 - upload_sessions → UploadSession | platform_core/models.py:373
 - users → User | platform_core/models.py:73
-- vps_event → VpsEvent | apps/vps/tables.py:217
-- vps_gateway → VpsGateway | apps/vps/tables.py:66
-- vps_instance → VpsInstance | apps/vps/tables.py:161
-- vps_ip → VpsIp | apps/vps/tables.py:129
+- vps_console_ve → VpsConsoleVe | apps/vps/tables.py:219
+- vps_event → VpsEvent | apps/vps/tables.py:253
+- vps_gateway → VpsGateway | apps/vps/tables.py:68
+- vps_instance → VpsInstance | apps/vps/tables.py:163
+- vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (50)
+6. ALEMBIC MIGRATIONS (51)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -1018,6 +1019,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 4d7e91c2a6b8 ← 8b2c5d1e40a7 | vps: dai cong DA NAP SAN DNAT tren gateway (H39, mo hinh CHIA CONG) | alembic/versions/20260823_1800_vps_dnat_da_nap.py
 - 6f2a91d47c30 ← 4d7e91c2a6b8 | vps: doi tu chia cong sang MOT IP CONG KHAI cho MOT VM (H39/G2) | alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
 - 9c3b18e5f27a ← 6f2a91d47c30 | vps: id cua cong vao ben nha cung cap (H39/G2) | alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
+- 3e8d5a91c7b2 ← 9c3b18e5f27a | vps: bang ve mot-lan cho console (H39/G3b) | alembic/versions/20260824_2100_vps_console_ve.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1418,8 +1420,8 @@ Test inventory:
 - tests/test_278_nhuong_card.py
 - tests/test_279_vps_ip_cong_khai.py
 - tests/test_27_phase5_wiring.py
-- tests/test_280_vi_du_qua_cloudflare.py
 - tests/test_280_vps_vong_doi.py
+- tests/test_281_vi_du_qua_cloudflare.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -1505,8 +1507,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1310 file)
-Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1007, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1311 file)
+Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1008, .sh:1, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1519,7 +1521,7 @@ Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19,
 [README.md] (1)
 - README.md
 
-[alembic] (52)
+[alembic] (53)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1572,6 +1574,7 @@ Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19,
 - alembic/versions/20260823_1800_vps_dnat_da_nap.py
 - alembic/versions/20260824_1200_vps_mot_ip_moi_vm.py
 - alembic/versions/20260824_1900_vps_gateway_nha_cung_cap.py
+- alembic/versions/20260824_2100_vps_console_ve.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2705,8 +2708,8 @@ Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19,
 - tests/test_278_nhuong_card.py
 - tests/test_279_vps_ip_cong_khai.py
 - tests/test_27_phase5_wiring.py
-- tests/test_280_vi_du_qua_cloudflare.py
 - tests/test_280_vps_vong_doi.py
+- tests/test_281_vi_du_qua_cloudflare.py
 - tests/test_28_tiktok_parity.py
 - tests/test_29_tiktok_preflight.py
 - tests/test_31_audit_readiness.py
@@ -2883,7 +2886,7 @@ Phân bố extension: .cfg:1, .css:7, .html:89, .ini:1, .js:9, .json:42, .md:19,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1310 file; 12094136 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1311 file; 12097449 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7131,6 +7134,54 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("vps_gateway", "nha_cung_cap_id")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260824_2100_vps_console_ve.py
+SHA256=4e956e90a4aa4a1099c778b4fbb3dc8f5031e0de2bf3095bdf6caf2752d73260 BYTES=1501 LINES=42
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""vps: bang ve mot-lan cho console (H39/G3b)
+
+Ve phai nam trong CSDL chu khong phai bo nho: tang web chay NHIEU TIEN TRINH, va
+ve cap o tien trinh A ma WebSocket roi vao tien trinh B thi console khong bao gio
+mo duoc — trieu chung la "luc duoc luc khong".
+
+Luu BAM SHA-256 chu khong luu ve tho, cung ly do `sessions.id` lam vay (P0-5):
+ai doc duoc CSDL thi doc duoc ve, ma ve la quyen xem man hinh may cua khach.
+
+Revision ID: 3e8d5a91c7b2
+Revises: 9c3b18e5f27a
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "3e8d5a91c7b2"
+down_revision = "9c3b18e5f27a"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "vps_console_ve",
+        sa.Column("id", sa.String(64), primary_key=True),
+        sa.Column("instance_id", sa.String(36), nullable=False),
+        sa.Column("user_id", sa.String(36), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("da_dung_luc", sa.DateTime(timezone=True), nullable=True),
+    )
+    op.create_index("ix_vps_console_ve_instance_id", "vps_console_ve",
+                    ["instance_id"])
+    op.create_index("ix_vps_console_ve_created_at", "vps_console_ve",
+                    ["created_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_vps_console_ve_created_at", table_name="vps_console_ve")
+    op.drop_index("ix_vps_console_ve_instance_id", table_name="vps_console_ve")
+    op.drop_table("vps_console_ve")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -37399,11 +37450,11 @@ def client_tu_moi_truong(env: dict | None = None, *, session: Any = None
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/tables.py
-SHA256=438d50a0477e0668af2af76de7cc4f6768dd0a3e704596e78b94d49cdc417c12 BYTES=13871 LINES=240
+SHA256=49e531839689bf4910e8705d3f5ecfbeed0a747ce47de872115c4d9736c55d47 BYTES=15683 LINES=276
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
-Bốn bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
+Năm bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
 
 * `vps_gateway`   — **cổng vào**. Q104/V12 chốt khách tự chọn vùng (VN / Singapore
   / chỉ-cổng), nên đây là **nhiều bản ghi** chứ không phải một dải cổng cứng trong
@@ -37412,6 +37463,8 @@ Bốn bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
   cho nhà cung cấp khi máy bị xoá. Tách khỏi `vps_instance` vì IP có vòng đời
   riêng: nó tồn tại ở nhà cung cấp trước khi gắn và sau khi gỡ.
 * `vps_instance`  — chính cái máy khách thuê, và **`paid_until`** của nó.
+* `vps_console_ve` — vé một-lần để mở console. Bảng chứ không phải bộ nhớ, vì tầng
+  web chạy nhiều tiến trình.
 * `vps_event`     — nhật ký vòng đời. Không phải log gỡ lỗi: đây là thứ trả lời
   "vì sao máy tôi bị tắt" khi khách hỏi, nên nó phải sống lâu hơn log ứng dụng.
 
@@ -37615,6 +37668,40 @@ class VpsInstance(Base):
         # Vòng thu phí quét theo hạn thanh toán.
         Index("ix_vps_instance_paid_until", "paid_until"),
     )
+
+
+class VpsConsoleVe(Base):
+    """Vé một-lần để mở console của một máy qua proxy WebSocket của mình.
+
+    ## Vì sao phải là BẢNG chứ không phải một dict trong bộ nhớ
+
+    Tầng web chạy **nhiều tiến trình**. Vé cấp ở tiến trình A mà WebSocket rơi
+    vào tiến trình B thì console không bao giờ mở được — và triệu chứng là "lúc
+    được lúc không", đúng loại lỗi tốn nhiều ngày nhất để lần ra.
+
+    ## Vì sao lưu BĂM chứ không lưu vé
+
+    Cùng lý do `sessions.id` lưu SHA-256 thay vì token thô (P0-5): ai đọc được
+    CSDL — bản sao lưu, một truy vấn lỡ tay, một lần dump — thì đọc được vé, và
+    vé là quyền xem màn hình máy của khách.
+
+    ## `da_dung_luc` là thứ làm cho nó DÙNG-MỘT-LẦN
+
+    Tiêu vé bằng `UPDATE ... WHERE da_dung_luc IS NULL` rồi đếm số dòng đổi: hai
+    request cùng cầm một vé thì đúng **một** thắng. Kiểm rồi mới ghi (đọc, so,
+    ghi) là để hở một khe giữa ba bước đó.
+    """
+
+    __tablename__ = "vps_console_ve"
+
+    #: SHA-256 hex của vé. KHÔNG phải chính vé.
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    instance_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+    da_dung_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
 
 class VpsEvent(Base):
@@ -226575,98 +226662,6 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_280_vi_du_qua_cloudflare.py
-SHA256=ac9fbb03f7812d6d01fb1e42741d81be20e85e2f2d39696951dd0a6361ec6e57 BYTES=3707 LINES=86
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""Mọi ví dụ mã ta phát ra phải chạy được **qua Cloudflare**, không chỉ ở loopback.
-
-🔴 VÌ SAO TỆP NÀY TỒN TẠI — MỘT LỖI THẬT, TÌM RA 24/08.
-
-   `examples.python_snippet()` sinh ví dụ Python cho **mọi tool** trên cổng nhà
-   phát triển. Nó dùng `urllib` và **không đặt `User-Agent`**. Đo thật hôm đó:
-
-     urllib mac dinh      -> 403   <== Cloudflare chan
-     requests / openai / anthropic / curl / Go / node-fetch / PowerShell -> 401
-
-   Tức khách chép ví dụ của **chính ta** thì nhận 403 trước khi chạm máy chủ, và
-   403 đó **không phải của ta** nên không có `request_id`, không có gì tra được.
-
-⭐ ĐIỀU LÀM NÓ THÀNH MỘT LỚP LỖI CHỨ KHÔNG PHẢI MỘT LỖI:
-   `python_chat_snippet()` **đã** đặt `User-Agent`, kèm chú thích giải thích đúng
-   lý do. Nghĩa là có người đã gặp, đã hiểu, đã sửa — **ở đúng một chỗ**. Không có
-   gì bắt chỗ thứ hai phải theo, nên nó nằm lại đó.
-
-⛔ VÀ VÌ SAO TEST CŨ KHÔNG THẤY: test hợp đồng kiểm ví dụ **cú pháp có đúng không**
-   và **có khớp schema không**. Cả hai đều xanh — ví dụ hoàn toàn hợp lệ. Thứ sai
-   nằm ở tầng khác: nó hợp lệ nhưng **không đi qua được biên**. Loopback không có
-   Cloudflare, nên không phép thử nào trong bộ test chạm tới điều này.
-   Đây chính là quy tắc 5b của dự án, ở dạng test.
-"""
-from __future__ import annotations
-
-import pytest
-
-from platform_core.public_api import examples
-
-
-def _tool_gia():
-    return type("T", (), {
-        "name": "image.ltt",
-        "input_schema": {"properties": {"prompt": {"type": "string"}},
-                         "required": ["prompt"]},
-    })()
-
-
-#: Ví dụ nào dùng `urllib` thì **bắt buộc** đặt `User-Agent`.
-#: Danh sách này cố ý liệt kê từng hàm thay vì quét cả module: thêm một hàm sinh
-#: ví dụ mới mà quên thêm vào đây thì `test_khong_bo_sot_ham_nao` bắt được.
-SINH_VI_DU = {
-    "python_snippet": lambda: examples.python_snippet(_tool_gia()),
-    "python_chat_snippet": examples.python_chat_snippet,
-}
-
-
-@pytest.mark.parametrize("ten", sorted(SINH_VI_DU))
-def test_vi_du_dung_urllib_phai_dat_user_agent(ten):
-    ma = SINH_VI_DU[ten]()
-    if "urllib" not in ma:
-        pytest.skip(f"{ten} khong dung urllib")
-    assert "User-Agent" in ma, (
-        f"{ten}() sinh vi du dung urllib ma khong dat User-Agent. "
-        f"Cloudflare tra 403 cho User-Agent mac dinh cua urllib TRUOC khi request "
-        f"toi duoc may chu, nen khach chep vi du nay se hong ngay dong dau tien.")
-
-
-def test_khong_bo_sot_ham_nao():
-    """Mọi hàm sinh ví dụ dùng `urllib` phải có mặt trong `SINH_VI_DU`.
-
-    Không có chốt này thì tệp test bên trên chỉ bảo vệ được hai hàm đã biết, và
-    hàm thứ ba viết tháng sau sẽ lặp lại đúng lỗi cũ trong im lặng.
-    """
-    import inspect
-    nguon = inspect.getsource(examples)
-    dung_urllib = {
-        ten for ten, ham in vars(examples).items()
-        if callable(ham) and getattr(ham, "__module__", "") == examples.__name__
-        and "urllib" in (inspect.getsource(ham) if _lay_duoc(ham) else "")
-    }
-    thieu = dung_urllib - set(SINH_VI_DU)
-    assert not thieu, (
-        f"Ham sinh vi du dung urllib nhung chua duoc chot: {sorted(thieu)}. "
-        f"Them vao SINH_VI_DU o tep nay.")
-    assert nguon
-
-
-def _lay_duoc(ham) -> bool:
-    import inspect
-    try:
-        inspect.getsource(ham)
-        return True
-    except (OSError, TypeError):
-        return False
-
-@@@LTT_PROFILE_FILE_END@@@
-
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_280_vps_vong_doi.py
 SHA256=9fc12de6f2727279943fc156dc3ea2b4e4f9f412f5f22415ca9286395e9701e2 BYTES=8500 LINES=210
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -226880,6 +226875,98 @@ def test_con_han_va_con_bao_nhieu_ngay_la_HAI_thu_khac_nhau():
     m.paid_until = now + timedelta(days=20)
     assert billing.con_han(m, now=now) is True
     assert billing.con_bao_nhieu_ngay(m, now=now) == 20
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_281_vi_du_qua_cloudflare.py
+SHA256=ac9fbb03f7812d6d01fb1e42741d81be20e85e2f2d39696951dd0a6361ec6e57 BYTES=3707 LINES=86
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Mọi ví dụ mã ta phát ra phải chạy được **qua Cloudflare**, không chỉ ở loopback.
+
+🔴 VÌ SAO TỆP NÀY TỒN TẠI — MỘT LỖI THẬT, TÌM RA 24/08.
+
+   `examples.python_snippet()` sinh ví dụ Python cho **mọi tool** trên cổng nhà
+   phát triển. Nó dùng `urllib` và **không đặt `User-Agent`**. Đo thật hôm đó:
+
+     urllib mac dinh      -> 403   <== Cloudflare chan
+     requests / openai / anthropic / curl / Go / node-fetch / PowerShell -> 401
+
+   Tức khách chép ví dụ của **chính ta** thì nhận 403 trước khi chạm máy chủ, và
+   403 đó **không phải của ta** nên không có `request_id`, không có gì tra được.
+
+⭐ ĐIỀU LÀM NÓ THÀNH MỘT LỚP LỖI CHỨ KHÔNG PHẢI MỘT LỖI:
+   `python_chat_snippet()` **đã** đặt `User-Agent`, kèm chú thích giải thích đúng
+   lý do. Nghĩa là có người đã gặp, đã hiểu, đã sửa — **ở đúng một chỗ**. Không có
+   gì bắt chỗ thứ hai phải theo, nên nó nằm lại đó.
+
+⛔ VÀ VÌ SAO TEST CŨ KHÔNG THẤY: test hợp đồng kiểm ví dụ **cú pháp có đúng không**
+   và **có khớp schema không**. Cả hai đều xanh — ví dụ hoàn toàn hợp lệ. Thứ sai
+   nằm ở tầng khác: nó hợp lệ nhưng **không đi qua được biên**. Loopback không có
+   Cloudflare, nên không phép thử nào trong bộ test chạm tới điều này.
+   Đây chính là quy tắc 5b của dự án, ở dạng test.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core.public_api import examples
+
+
+def _tool_gia():
+    return type("T", (), {
+        "name": "image.ltt",
+        "input_schema": {"properties": {"prompt": {"type": "string"}},
+                         "required": ["prompt"]},
+    })()
+
+
+#: Ví dụ nào dùng `urllib` thì **bắt buộc** đặt `User-Agent`.
+#: Danh sách này cố ý liệt kê từng hàm thay vì quét cả module: thêm một hàm sinh
+#: ví dụ mới mà quên thêm vào đây thì `test_khong_bo_sot_ham_nao` bắt được.
+SINH_VI_DU = {
+    "python_snippet": lambda: examples.python_snippet(_tool_gia()),
+    "python_chat_snippet": examples.python_chat_snippet,
+}
+
+
+@pytest.mark.parametrize("ten", sorted(SINH_VI_DU))
+def test_vi_du_dung_urllib_phai_dat_user_agent(ten):
+    ma = SINH_VI_DU[ten]()
+    if "urllib" not in ma:
+        pytest.skip(f"{ten} khong dung urllib")
+    assert "User-Agent" in ma, (
+        f"{ten}() sinh vi du dung urllib ma khong dat User-Agent. "
+        f"Cloudflare tra 403 cho User-Agent mac dinh cua urllib TRUOC khi request "
+        f"toi duoc may chu, nen khach chep vi du nay se hong ngay dong dau tien.")
+
+
+def test_khong_bo_sot_ham_nao():
+    """Mọi hàm sinh ví dụ dùng `urllib` phải có mặt trong `SINH_VI_DU`.
+
+    Không có chốt này thì tệp test bên trên chỉ bảo vệ được hai hàm đã biết, và
+    hàm thứ ba viết tháng sau sẽ lặp lại đúng lỗi cũ trong im lặng.
+    """
+    import inspect
+    nguon = inspect.getsource(examples)
+    dung_urllib = {
+        ten for ten, ham in vars(examples).items()
+        if callable(ham) and getattr(ham, "__module__", "") == examples.__name__
+        and "urllib" in (inspect.getsource(ham) if _lay_duoc(ham) else "")
+    }
+    thieu = dung_urllib - set(SINH_VI_DU)
+    assert not thieu, (
+        f"Ham sinh vi du dung urllib nhung chua duoc chot: {sorted(thieu)}. "
+        f"Them vao SINH_VI_DU o tep nay.")
+    assert nguon
+
+
+def _lay_duoc(ham) -> bool:
+    import inspect
+    try:
+        inspect.getsource(ham)
+        return True
+    except (OSError, TypeError):
+        return False
 
 @@@LTT_PROFILE_FILE_END@@@
 

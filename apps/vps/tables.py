@@ -1,6 +1,6 @@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
-Bốn bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
+Năm bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
 
 * `vps_gateway`   — **cổng vào**. Q104/V12 chốt khách tự chọn vùng (VN / Singapore
   / chỉ-cổng), nên đây là **nhiều bản ghi** chứ không phải một dải cổng cứng trong
@@ -9,6 +9,8 @@ Bốn bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
   cho nhà cung cấp khi máy bị xoá. Tách khỏi `vps_instance` vì IP có vòng đời
   riêng: nó tồn tại ở nhà cung cấp trước khi gắn và sau khi gỡ.
 * `vps_instance`  — chính cái máy khách thuê, và **`paid_until`** của nó.
+* `vps_console_ve` — vé một-lần để mở console. Bảng chứ không phải bộ nhớ, vì tầng
+  web chạy nhiều tiến trình.
 * `vps_event`     — nhật ký vòng đời. Không phải log gỡ lỗi: đây là thứ trả lời
   "vì sao máy tôi bị tắt" khi khách hỏi, nên nó phải sống lâu hơn log ứng dụng.
 
@@ -212,6 +214,40 @@ class VpsInstance(Base):
         # Vòng thu phí quét theo hạn thanh toán.
         Index("ix_vps_instance_paid_until", "paid_until"),
     )
+
+
+class VpsConsoleVe(Base):
+    """Vé một-lần để mở console của một máy qua proxy WebSocket của mình.
+
+    ## Vì sao phải là BẢNG chứ không phải một dict trong bộ nhớ
+
+    Tầng web chạy **nhiều tiến trình**. Vé cấp ở tiến trình A mà WebSocket rơi
+    vào tiến trình B thì console không bao giờ mở được — và triệu chứng là "lúc
+    được lúc không", đúng loại lỗi tốn nhiều ngày nhất để lần ra.
+
+    ## Vì sao lưu BĂM chứ không lưu vé
+
+    Cùng lý do `sessions.id` lưu SHA-256 thay vì token thô (P0-5): ai đọc được
+    CSDL — bản sao lưu, một truy vấn lỡ tay, một lần dump — thì đọc được vé, và
+    vé là quyền xem màn hình máy của khách.
+
+    ## `da_dung_luc` là thứ làm cho nó DÙNG-MỘT-LẦN
+
+    Tiêu vé bằng `UPDATE ... WHERE da_dung_luc IS NULL` rồi đếm số dòng đổi: hai
+    request cùng cầm một vé thì đúng **một** thắng. Kiểm rồi mới ghi (đọc, so,
+    ghi) là để hở một khe giữa ba bước đó.
+    """
+
+    __tablename__ = "vps_console_ve"
+
+    #: SHA-256 hex của vé. KHÔNG phải chính vé.
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    instance_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+    da_dung_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
 
 
 class VpsEvent(Base):
