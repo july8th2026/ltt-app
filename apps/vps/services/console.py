@@ -52,26 +52,29 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def cap_ve(db: DbSession, may: VpsInstance, user_id: str) -> str:
+def cap_ve(db: DbSession, may: VpsInstance, user_id: str, *,
+           cong: int = 0, pve_ve: str = "") -> str:
     """Cấp một vé mới. Trả **vé thô** — chỉ lần này, CSDL chỉ giữ băm của nó."""
     ve = secrets.token_urlsafe(32)
-    db.add(VpsConsoleVe(id=_bam(ve), instance_id=may.id, user_id=str(user_id)))
+    db.add(VpsConsoleVe(id=_bam(ve), instance_id=may.id, user_id=str(user_id),
+                        cong=int(cong or 0), pve_ve=str(pve_ve or "")))
     _don_ve_cu(db, may.id)
     db.commit()
     return ve
 
 
-def tieu_ve(db: DbSession, ve: str, instance_id: str, user_id: str) -> VpsInstance:
-    """Tiêu vé và trả về máy. Ném `VeKhongHopLeError` nếu bất kỳ lớp nào không qua.
+def tieu_ve(db: DbSession, ve: str, instance_id: str, user_id: str):
+    """Tiêu vé; trả `(máy, cổng, vé_proxmox)`. Ném nếu bất kỳ lớp nào không qua.
 
     **Tiêu bằng một câu `UPDATE ... WHERE da_dung_luc IS NULL`, không phải đọc
     rồi ghi.** Hai request cùng cầm một vé thì đúng một câu UPDATE đổi được dòng;
     kiểm-rồi-ghi để hở một khe giữa hai bước, và khe đó đủ cho cả hai cùng qua.
     """
     han = _now() - timedelta(seconds=HAN_VE_GIAY)
+    ma = _bam(str(ve or ""))
     kq = db.execute(
         update(VpsConsoleVe)
-        .where(VpsConsoleVe.id == _bam(str(ve or "")),
+        .where(VpsConsoleVe.id == ma,
                VpsConsoleVe.instance_id == str(instance_id or ""),
                VpsConsoleVe.user_id == str(user_id or ""),
                VpsConsoleVe.da_dung_luc.is_(None),
@@ -80,6 +83,8 @@ def tieu_ve(db: DbSession, ve: str, instance_id: str, user_id: str) -> VpsInstan
     if kq.rowcount != 1:
         db.rollback()
         raise VeKhongHopLeError("ve khong hop le, da dung, hoac het han")
+    dong = db.get(VpsConsoleVe, ma)
+    cong, pve_ve = int(dong.cong or 0), str(dong.pve_ve or "")
 
     # Lớp 3: trạng thái có thể đã đổi trong lúc vé còn sống.
     may = db.get(VpsInstance, str(instance_id))
@@ -89,8 +94,11 @@ def tieu_ve(db: DbSession, ve: str, instance_id: str, user_id: str) -> VpsInstan
     if not may.vmid:
         db.rollback()
         raise VeKhongHopLeError("may chua duoc tao xong")
+    # XOÁ dòng ngay khi tiêu: nó chứa vé của Proxmox, và vé đó không có lý do gì
+    # nằm lại trong CSDL sau khi đã dùng.
+    db.delete(dong)
     db.commit()
-    return may
+    return may, cong, pve_ve
 
 
 def _don_ve_cu(db: DbSession, instance_id: str) -> None:

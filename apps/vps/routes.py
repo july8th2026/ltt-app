@@ -333,6 +333,7 @@ def trang_chi_tiet(instance_id: str, request: Request,
         select(VpsEvent).where(VpsEvent.instance_id == may.id)
         .order_by(VpsEvent.created_at.desc()).limit(20)).scalars().all()
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
         "plan": lay_plan(may.plan_id),
         "os": os_images.lay_os(may.os_id),
@@ -363,9 +364,27 @@ def trang_console(instance_id: str, request: Request,
         dieu_khien.kiem_dieu_khien_duoc(may)
     except dieu_khien.KhongDuocPhepError as exc:
         return _ve_trang(str(exc))
+
+    # Mở phiên VNC NGAY Ở ĐÂY, không ở bước WebSocket: vé của Proxmox vừa là
+    # query `vncticket` của URL (server dùng) vừa là **mật khẩu VNC** trong bước
+    # bắt tay RFB (trình duyệt dùng). Gọi hai lần là hai phiên khác nhau, và vé
+    # của phiên B không mở được cổng của phiên A.
+    try:
+        ve_pve = client_tu_moi_truong().ve_console(int(may.vmid))
+    except (ProxmoxError, ChuaCauHinh) as exc:
+        log.warning("VPS console: khong mo duoc phien VNC cho %s: %s", may.id, exc)
+        return _ve_trang(_t("Không mở được console lúc này. Thử lại sau ít phút."))
+
     return templates.TemplateResponse(request, "vps_console.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
-        "ve": console.cap_ve(db, may, _chu(request)),
+        "ve": console.cap_ve(db, may, _chu(request),
+                             cong=ve_pve.get("port") or 0,
+                             pve_ve=ve_pve.get("ticket") or ""),
+        # Trình duyệt cần vé này làm mật khẩu VNC. Nó chỉ mở được ĐÚNG cổng của
+        # phiên này, trên một máy chủ mà khách không biết địa chỉ — chính giao
+        # diện Proxmox cũng làm y như vậy với người dùng của nó.
+        "vnc_mat_khau": ve_pve.get("ticket") or "",
         "han_ve_giay": console.HAN_VE_GIAY,
     })
 
@@ -389,10 +408,13 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
         await websocket.close(code=1008)
         return
 
-    from server.auth.session import user_tu_websocket
     from platform_core.db import get_session
 
-    user_id = user_tu_websocket(websocket)
+    # `user_hien_tai` nhận bất cứ thứ gì có `.session`, và Starlette gắn session
+    # cho CẢ WebSocket — nên không cần đường xác thực thứ hai. Hai đường xác
+    # thực là cách chắc chắn để một trong hai bị bỏ quên.
+    u = user_hien_tai(websocket)
+    user_id = str(getattr(u, "id", "") or "")
     if not user_id:
         await websocket.close(code=1008)
         return
@@ -400,10 +422,12 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
     gen = get_session()
     db = next(gen)
     try:
-        may = console.tieu_ve(db, ve, instance_id, user_id)
+        may, cong, pve_ve = console.tieu_ve(db, ve, instance_id, user_id)
         client = client_tu_moi_truong()
+        # Dùng lại ĐÚNG phiên VNC đã mở ở trang console. Gọi `ve_console` lần
+        # nữa ở đây là mở một cổng mới, và vé của cổng B không mở được cổng A.
         dia_chi = console.dia_chi_websocket_proxmox(
-            client.config, int(may.vmid), client.ve_console(int(may.vmid)))
+            client.config, int(may.vmid), {"port": cong, "ticket": pve_ve})
     except (console.VeKhongHopLeError, ProxmoxError, ChuaCauHinh) as exc:
         log.warning("VPS console: tu choi mo cau: %s", exc)
         await websocket.close(code=1008)
@@ -426,10 +450,12 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
         async with websockets.connect(
                 dia_chi, ssl=ctx, subprotocols=["binary"],
                 additional_headers=client._headers(), open_timeout=20) as pve:
-            # Proxmox đòi dòng `user:ticket` đầu tiên trước mọi byte VNC.
-            await pve.send(f"{client.config.token_id}:"
-                           f"{(client.ve_console(int(may.vmid)) or {}).get('ticket', '')}
-")
+            # KHÔNG gửi dòng `user:ticket` nào ở đây. Đó là giao thức của
+            # `termproxy` (xterm.js); `vncproxy` thì vé là **mật khẩu VNC** và
+            # nó đi qua bước bắt tay RFB do trình duyệt thực hiện. Chèn một dòng
+            # chữ vào giữa luồng nhị phân VNC làm Proxmox đóng kết nối ngay và
+            # KHÔNG NÓI GÌ — triệu chứng chỉ là "console trắng". Mất một buổi
+            # 24/08 để tìm ra, và chỉ tìm ra khi mở trình duyệt thật.
 
             async def khach_toi_pve():
                 while True:

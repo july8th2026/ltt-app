@@ -20,13 +20,13 @@
     "apps/autosubvideo/segmenter.py": 1,
     "apps/autosubvideo/style_registry.py": 10,
     "apps/autosubvideo/subtitle_adapter.py": 1,
-    "apps/autosubvideo/templates/autosubvideo.html": 22,
+    "apps/autosubvideo/templates/autosubvideo.html": 17,
     "apps/autosubvideo/transcription.py": 9,
     "apps/chataistudio/features.py": 4,
     "apps/chataistudio/manifest.py": 1,
     "apps/chataistudio/routes.py": 5,
     "apps/chataistudio/sidecar_client.py": 2,
-    "apps/chataistudio/templates/chataistudio_admin.html": 10,
+    "apps/chataistudio/templates/chataistudio_admin.html": 9,
     "apps/demo/jobs.py": 2,
     "apps/demo/manifest.py": 3,
     "apps/demo/routes.py": 3,
@@ -150,12 +150,12 @@
     "server/templates/register_sent.html": 5,
     "server/templates/reset_password.html": 4,
     "server/templates/settings.html": 44,
-    "server/templates/sheet.html": 28,
+    "server/templates/sheet.html": 26,
     "server/templates/status.html": 7,
     "server/templates/verify_result.html": 3,
     "server/templates/workers.html": 12,
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 1421
+  "tong": 1413
 }

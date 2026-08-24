@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Console") }} — {{ may.ten or may.id[:8] }}{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _("Console") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block content %}
+
+  <p style="margin:0 0 12px;">
+    <a href="{{ app.route_prefix }}/{{ may.id }}">&larr; {{ _("Về trang máy") }}</a>
+  </p>
+
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <p class="muted" style="margin:0 0 8px;">
+      {{ _("Console dùng khi bạn không vào được bằng RDP — ví dụ vừa đổi tường lửa hoặc cấu hình mạng trong máy. Nó chậm hơn RDP, đừng dùng để làm việc hằng ngày.") }}
+    </p>
+    <div id="tt" class="muted" style="margin:0 0 8px;">{{ _("Đang kết nối…") }}</div>
+    {# `tabindex` để khung nhận được phím; thiếu nó thì chuột chạy mà bàn phím
+       không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra. #}
+    <div id="khung" tabindex="0"
+         style="width:100%; height:70vh; background:#000; border-radius:6px;
+                overflow:hidden; outline:none;"></div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button class="btn" id="nut-ctrlaltdel" type="button">Ctrl + Alt + Del</button>
+      <button class="btn" id="nut-noi-lai" type="button" style="display:none;">
+        {{ _("Kết nối lại") }}</button>
+    </div>
+  </div>
+
+  {# Vé chỉ sống {{ han_ve_giay }} giây và dùng ĐÚNG MỘT LẦN. Nó nằm trong biến
+     JS chứ không nằm trên thanh địa chỉ: URL đi vào lịch sử trình duyệt, vào
+     ảnh chụp màn hình, và vào log của mọi proxy trên đường. #}
+  <script type="module">
+    import RFB from "{{ url_for('static', path='vps/novnc/core/rfb.js') }}";
+
+    const khung = document.getElementById("khung");
+    const tt = document.getElementById("tt");
+    const nutNoiLai = document.getElementById("nut-noi-lai");
+    const ve = {{ ve | tojson }};
+    const duong = (location.protocol === "https:" ? "wss://" : "ws://")
+      + location.host + "{{ app.route_prefix }}/{{ may.id }}/console/ws?ve="
+      + encodeURIComponent(ve);
+
+    let rfb = null;
+
+    function bao(chu, loi) {
+      tt.textContent = chu;
+      tt.className = loi ? "alert alert-err" : "muted";
+    }
+
+    function noi() {
+      nutNoiLai.style.display = "none";
+      bao({{ _("Đang kết nối…") | tojson }}, false);
+      // Mật khẩu VNC là vé của Proxmox. Nó chỉ mở được ĐÚNG cổng của phiên
+      // này, trên một máy chủ mà khách không biết địa chỉ.
+      rfb = new RFB(khung, duong, {
+        wsProtocols: ["binary"],
+        credentials: { password: {{ vnc_mat_khau | tojson }} },
+      });
+      rfb.scaleViewport = true;
+      // Đừng đổi độ phân giải máy của khách chỉ vì cửa sổ trình duyệt to hay nhỏ.
+      rfb.resizeSession = false;
+      rfb.addEventListener("connect", () => {
+        bao({{ _("Đã kết nối. Bấm vào khung rồi gõ như trên máy thật.") | tojson }}, false);
+        khung.focus();
+      });
+      rfb.addEventListener("disconnect", (e) => {
+        // Vé đã tiêu, nên KHÔNG tự nối lại: lần sau phải xin vé mới, tức tải
+        // lại trang. Tự nối lại bằng vé cũ chỉ tạo một vòng lặp thất bại im lặng.
+        bao(e.detail.clean
+          ? {{ _("Đã ngắt kết nối.") | tojson }}
+          : {{ _("Mất kết nối. Tải lại trang để mở console mới.") | tojson }}, !e.detail.clean);
+        nutNoiLai.style.display = "";
+      });
+      rfb.addEventListener("securityfailure", () => {
+        bao({{ _("Máy chủ từ chối phiên console. Tải lại trang để lấy vé mới.") | tojson }}, true);
+      });
+    }
+
+    document.getElementById("nut-ctrlaltdel")
+      .addEventListener("click", () => rfb && rfb.sendCtrlAltDel());
+    nutNoiLai.addEventListener("click", () => location.reload());
+    noi();
+  </script>
+
+{% endblock %}

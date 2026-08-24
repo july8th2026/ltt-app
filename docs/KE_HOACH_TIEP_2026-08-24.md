@@ -204,7 +204,8 @@ sự cố.
 |---|---|---|
 | **L1a** | ✅ **XONG 24/08** — nửa API, bằng tài khoản test `autosub-test` (`role=user`, **không** phải admin) | Cả **ba cửa** đều 200 và thu tiền thật, xem dưới |
 | **L1b** | ⛔ **KHÔNG tự động hoá được** — nửa GUI (đăng ký → xác thực email → đăng nhập → tạo khoá trên trang) | Trang `/login` nằm sau **thử thách bot của Cloudflare**. Playwright nhận `403 "Performing security verification"`. **Không vượt CAPTCHA** ⇒ đây vốn dĩ là việc của người thật |
-| **L2** | Phiên thật **Claude Code CLI** + **Claude Desktop** có gọi tool | máy này không có hai công cụ đó |
+| **L2a** | ✅ **XONG 24/08** — Codex CLI + Claude Code CLI, trên **hai máy độc lập** | xem dưới |
+| **L2b** | ⛔ **Claude Desktop — chủ sản phẩm từ chối quyền điều khiển máy.** Và kể cả được phép, **ô "Gateway API key" tôi không được tự điền** (luật an toàn: không nhập khoá/token vào bất kỳ ô nào). | Việc của người thật. Tôi làm được mọi bước còn lại, chừa đúng một ô |
 | **L3** | **Điều khoản sử dụng** cho API | chủ sản phẩm quyết nội dung; tôi soạn nháp |
 | **L4** | Thu tường lửa máy B về **một** IP | thiết lập bảo mật |
 | **L5** | Xoay khoá provider | đã có quy trình, chưa chạy định kỳ |
@@ -327,6 +328,49 @@ tạo khoá → `/developers/cli` chép cấu hình.
 ⚠️ Lỗi ① là **lần thứ hai trong ngày** tôi đoán tên trường thay vì đọc hợp đồng
 (lần đầu: `params`/`id` thay vì `input`/`quote`). Cả hai lần đều mất thời gian đi
 tìm ở chỗ khác trước khi nhìn lại mã của mình.
+
+---
+
+### ✅ L2a — hai CLI, hai máy, 24/08
+
+| Công cụ | Máy A (máy chủ nền tảng) | Máy B (GPU, độc lập) |
+|---|---|---|
+| **Codex CLI** | ✅ `2+2` → `4`, 12.306 token | — chưa cài `codex` ở đó |
+| **Claude Code CLI** | ✅ `2+2 = 4` | ✅ `7×6` → **42**, 69,7 s |
+
+Cả hai dùng **đúng cấu hình `/developers/cli` sinh ra**, không sửa gì thêm — nên
+đó cũng là phép thử cho chính tài liệu của ta.
+
+⭐ **Vì sao chạy trên máy B mới có nghĩa:** máy A **là** máy chủ nền tảng. Một
+phép thử chỉ chạy ở đó không loại trừ được giả thuyết *"nó chạy vì đang ở nhà"*.
+Máy B là một máy khác, đi ra internet rồi vòng lại qua Cloudflare — nên nó chứng
+minh cấu hình đứng độc lập.
+
+⛔ **Không cài `codex` lên máy B.** Nó sẽ đo lại đúng thứ máy A đã đo, trong khi
+máy B là máy chạy GPU sản xuất. Cài thêm phần mềm lên đó để lấy một số đo trùng
+là cái giá không đáng.
+
+### 🔴 Ba cái bẫy khi cắm client thật, ghi lại để không dính lần nữa
+
+**① `ANTHROPIC_BASE_URL` đã có sẵn trong môi trường của phiên đang chạy.** Một
+tiến trình con kế thừa nó sẽ trỏ nhầm và ta không hề biết. Phải chạy trong môi
+trường **sạch** — gỡ hết `CLAUDE_*`/`ANTHROPIC_*` rồi đặt lại đúng cái cần.
+
+**② Tuyệt đối không ghi `~/.claude/settings.json`.** Nó **toàn cục**: đặt
+`ANTHROPIC_BASE_URL` ở đó là chuyển hướng **mọi** phiên Claude Code trên máy, kể
+cả phiên đang làm việc. Cách kiểm: băm md5 tệp đó trước và sau mỗi lượt chạy.
+*(Đây đúng là điểm ③ của phần phân tích C15 — nay không còn là lý thuyết.)*
+
+**③ Truyền khoá qua chuỗi `ssh → cmd → powershell` bị nuốt.** Tham số tới nơi là
+`$null`, `ANTHROPIC_AUTH_TOKEN` rỗng, Claude Code **thử lại liên tục** rồi chạm
+rate limit. Triệu chứng là `429 "too many failed authentication attempts"` —
+trông y hệt một vấn đề ở **máy chủ**, trong khi lỗi nằm ở **cách gọi**.
+⇒ Truyền dạng **hex** (chỉ `0-9a-f`, không còn chỗ cho dấu nháy), và **kiểm độ
+dài ở đầu bên kia** trước khi dùng.
+
+⛔ Và **không ghi khoá xuống đĩa máy B** — CLAUDE.md: máy B không giữ bí mật nào
+của nền tảng. Khoá chỉ sống trong biến môi trường của tiến trình, và đã thu hồi
+ngay sau khi đo xong.
 
 ---
 

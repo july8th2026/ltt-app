@@ -152,7 +152,19 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # 4) Cấu hình theo gói + cắm vào mạng riêng, rồi nới đĩa nếu cần.
         _bao(ctx, 60, "dang dat cau hinh")
         cau_hinh = {"cores": plan.vcpu, "memory": plan.ram_mb,
-                    "name": f"vps-{may.id[:8]}"}
+                    "name": f"vps-{may.id[:8]}",
+                    # `vga` PHẢI đặt tường minh. Template nội bộ đặt `vga:
+                    # serial0` để đọc được log khởi động qua cổng nối tiếp —
+                    # nhưng máy nào thừa hưởng nó thì **không có màn hình đồ hoạ
+                    # nào cả**, và console trong trình duyệt mở ra chỉ thấy một
+                    # kết nối bị đóng ngay. Với khách Windows thì console là
+                    # ĐƯỜNG CỨU HỘ khi họ tự chặn mất RDP của chính mình, nên
+                    # mất nó là mất đường về duy nhất.
+                    #
+                    # Chỉ test-bằng-mã không bắt được: job chạy đúng, Proxmox
+                    # nhận lệnh, máy lên bình thường. Phải mở trình duyệt mới
+                    # thấy (quy tắc 5 của CLAUDE.md).
+                    "vga": "std"}
         cau_hinh.update(mang.cau_hinh_qemu(
             mang.mang_cho_may(gateway, ip_noi_bo)))
         client.dat_cau_hinh(may.vmid, **cau_hinh)

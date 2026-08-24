@@ -244,6 +244,18 @@ class VpsConsoleVe(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     instance_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    #: Cổng VNC mà Proxmox vừa mở cho phiên này, và vé của chính Proxmox.
+    #:
+    #: Vé Proxmox phải giữ ở đây vì nó cần cho HAI chỗ: query `vncticket` của
+    #: URL WebSocket (phía server dùng), và **mật khẩu VNC** trong bước bắt tay
+    #: RFB (phía trình duyệt dùng). `vncproxy` khác `termproxy`: nó KHÔNG nhận
+    #: một dòng `user:ticket` mở đầu — chèn dòng đó vào là làm hỏng luồng nhị
+    #: phân VNC và Proxmox đóng kết nối ngay, không nói gì.
+    #:
+    #: Dòng này bị **xoá ngay khi tiêu vé**, nên vé Proxmox nằm trong CSDL nhiều
+    #: nhất là %(giay)s giây.
+    cong: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    pve_ve: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False, index=True)
     da_dung_luc: Mapped[datetime | None] = mapped_column(

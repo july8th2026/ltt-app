@@ -43,8 +43,19 @@ def test_moi_handler_deu_co_cong_co():
     for fn in hs:
         deps = [p.default.dependency for p in inspect.signature(fn).parameters.values()
                 if hasattr(p.default, "dependency")]
-        if _cong_co not in deps:
-            thieu.append(fn.__name__)
+        if _cong_co in deps:
+            continue
+        # Handler WebSocket không dùng được `Depends(_cong_co)`: chuỗi phụ thuộc
+        # của FastAPI cho WebSocket không chạy giống HTTP, và `HTTPException`
+        # ném trong ngữ cảnh đó không thành 404 mà thành một lỗi khác. Chúng
+        # kiểm cờ TƯỜNG MINH trong thân hàm — nên test đo đúng cái đó, thay vì
+        # đo hình thức chữ ký rồi bỏ sót ý định.
+        nguon = inspect.getsource(fn)
+        if inspect.iscoroutinefunction(fn) and "vps_app.enabled()" in nguon:
+            assert "close(code=1008)" in nguon, (
+                f"{fn.__name__}: co kiem co nhung khong dong ket noi")
+            continue
+        thieu.append(fn.__name__)
     assert thieu == [], f"handler khong co cong co: {thieu}"
 
 

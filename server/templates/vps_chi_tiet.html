@@ -69,6 +69,12 @@
         </form>
         {% endfor %}
       </div>
+      <p style="margin:12px 0 0;">
+        <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Mở console") }}</a>
+        <span class="muted" style="margin-left:8px;">
+          {{ _("Dùng khi bạn không vào được bằng RDP — ví dụ vừa đổi tường lửa trong máy.") }}
+        </span>
+      </p>
       <p class="muted" style="margin:8px 0 0;">
         {{ _("Tắt máy dùng lệnh tắt mềm — hệ điều hành có thời gian dọn dẹp. Máy đã tắt vẫn tính phí vì nó vẫn giữ chỗ và giữ dữ liệu.") }}
       </p>

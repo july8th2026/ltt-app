@@ -156,6 +156,11 @@ def dem_template(f: pathlib.Path) -> int:
     for dong in t.splitlines():
         if not VN.search(dong):
             continue
+        # Chú thích JS một dòng cũng không render ra, đúng cùng lý do với
+        # `/* */` ở trên. Chỉ nhận khi `//` đứng ĐẦU dòng (sau khoảng trắng):
+        # cắt `//` ở giữa dòng sẽ ăn mất `https://` và mọi URL trong template.
+        if dong.lstrip().startswith("//"):
+            continue
         # Dòng có gọi hàm dịch thì coi như đã xử lý. Thô, nhưng bánh cóc chỉ cần
         # bắt XU HƯỚNG tăng, không cần chính xác từng chuỗi.
         if _JINJA_DICH.search(dong):

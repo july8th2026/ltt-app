@@ -2746,11 +2746,31 @@ bên trên nó* (NAT 1:1 thay vì ánh xạ cổng) và *gateway là máy gì* (
       nhận IP riêng"* — từ 24/08 thì ngược lại. Một cảnh báo sai còn tệ hơn không có, vì
       khách tin nó. Test cũ chốt đúng câu sai đó, đã cập nhật.
 
-- [ ] **G3b — console noVNC.** Proxy WebSocket qua server mình, vé dùng-một-lần; khách
-      **không bao giờ** chạm cổng 8006 của Proxmox. Đây là **đường cứu hộ** (khách tự
-      chặn mất RDP của chính mình), không phải đường vào chính — nên nó xếp sau G5.
-      ⏳ *Cần chủ sản phẩm đồng ý một việc:* nhúng thư viện **noVNC** vào
-      `server/static/vps/` — tức tải một gói JS từ kho nguồn mở về repo.
+- [x] **G3b — console noVNC.** ✅ **XONG 2026-08-24, đã kiểm bằng trình duyệt thật.**
+      noVNC v1.7.0 nhúng ở `server/static/vps/novnc/` (chỉ `core/` + `vendor/pako`,
+      **570 KiB**, không bê cả kho về) · bảng `vps_console_ve` (vé một-lần, lưu **băm**
+      chứ không lưu vé) · cầu WebSocket trong `routes.py` · `services/console.py` ·
+      `tests/test_282_vps_console.py` (13 test).
+
+      *Bằng chứng:* mở trang console trong Chrome, noVNC vẽ đúng màn hình VGA của máy
+      (`Debian GNU/Linux 12 … login:`), **0 lỗi JavaScript**, canvas 1280×800.
+
+      **Hai lỗi chỉ trình duyệt mới bắt được — test không bao giờ thấy:**
+
+      ① **`vga: serial0` trong template** ⇒ máy **không có màn hình đồ hoạ nào cả**.
+      Job chạy đúng, Proxmox nhận lệnh, máy lên bình thường — chỉ là console mở ra thì
+      thấy kết nối bị đóng. Với khách Windows, console là **đường cứu hộ** khi họ tự
+      chặn mất RDP của chính mình, nên mất nó là mất đường về duy nhất. Nay `jobs.py`
+      đặt `vga: std` tường minh.
+
+      ② **`vncproxy` KHÁC `termproxy`.** Tôi gửi dòng `user:ticket` mở đầu như với
+      xterm.js; với VNC thì vé là **mật khẩu VNC** đi qua bước bắt tay RFB, còn dòng
+      chữ kia làm hỏng luồng nhị phân và Proxmox đóng ngay **không nói gì**. Triệu
+      chứng duy nhất là "console trắng".
+
+      Vé Proxmox có đi tới trình duyệt (làm mật khẩu VNC) — chính giao diện Proxmox
+      cũng làm vậy. Nó chỉ mở được **đúng một cổng của đúng phiên đó**, trên một máy
+      chủ mà khách không biết địa chỉ, và dòng vé bị **xoá khỏi CSDL ngay khi tiêu**.
 
 - [ ] **G4 — tiền.** Chu kỳ 30 ngày theo khuôn Q98 (đã có `billing.py`) + **tiền IP
       riêng** + **hạn mức băng thông**. Treo ngay → xoá sau 7 ngày (V8).
