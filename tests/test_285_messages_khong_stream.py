@@ -33,16 +33,21 @@ def st():
     return importlib.import_module("server.api.streaming")
 
 
-class _SuDung:
-    def __init__(self, vao=11, ra=7):
-        self.token_vao, self.token_ra = vao, ra
-
-
 class _Kq:
+    """Giả lập `apps.ltt_llm.features.KetQua` — **token phẳng**, không có `.su_dung`.
+
+    ⚠️ Bản đầu của test này giả lập `KetQuaChat` của cổng (có `.su_dung`), vì mã
+       lúc đó tự dựng `CongVlm`. Khi mã chuyển sang đường chung `features.chay`,
+       kiểu trả về đổi — và test **đỏ đúng lúc nó phải đỏ**. Giữ nguyên hình dạng
+       thật ở đây; một giả lập lệch kiểu là một test đo nhầm thế giới.
+    """
+
     def __init__(self, finish="stop", noi="144"):
         self.noi_dung = noi
         self.finish_reason = finish
-        self.su_dung = _SuDung()
+        self.token_vao, self.token_ra = 11, 7
+        self.token_vao_cache = 0
+        self.do_duoc = True
 
 
 # ── Hình dạng phản hồi, theo tài liệu chính thức ───────────────────────────

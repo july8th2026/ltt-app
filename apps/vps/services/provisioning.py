@@ -110,10 +110,15 @@ def suc_chua_hien_tai(db: DbSession, trang_thai_node: dict, kho: list,
     nằm ở nguồn thứ hai.
     """
     goc = capacity.suc_chua_tu_proxmox(trang_thai_node, kho)
-    ram_vm, dia_vm = capacity.cam_ket_tu_vm(vms or [])
+    ram_vm, dia_vm, vcpu_vm = capacity.cam_ket_tu_vm(vms or [])
     ram_cho, dia_cho = da_hua(db, chi_chua_tao=True)
     lon = capacity.kho_lon_nhat(kho)
     return capacity.SucChua(
+        cpu_tong=goc.cpu_tong,
+        # Chỉ đếm vCPU của VM ĐANG CÓ trên Proxmox. Máy app đã hứa mà chưa tạo
+        # thì phần vCPU của nó nhỏ (1–4) và sẽ vào ngay ở lượt sau — không đáng
+        # thêm một truy vấn nữa vào đường bán hàng.
+        vcpu_da_hua=vcpu_vm,
         ram_mb_tong=goc.ram_mb_tong,
         dia_gb_tong=goc.dia_gb_tong,
         ram_mb_da_hua=ram_vm + ram_cho,

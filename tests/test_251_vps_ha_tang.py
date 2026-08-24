@@ -316,7 +316,7 @@ def test_dem_ca_VM_KHONG_thuoc_app_nay():
         {"vmid": 9000, "maxmem": 5 * 1024 ** 3, "maxdisk": 80 * 1024 ** 3,
          "template": 1},
     ]
-    ram, dia = capacity.cam_ket_tu_vm(vms)
+    ram, dia, _vcpu = capacity.cam_ket_tu_vm(vms)
     assert ram == 12 * 1024
     assert dia == 160
 
@@ -791,3 +791,61 @@ def test_su_kien_duoc_ghi_lai_de_tra_loi_khach(db):
     db.flush()
     loai = [e.loai for e in db.query(VpsEvent).filter_by(instance_id=m.id)]
     assert "thu_phi" in loai
+
+
+# ── 9. Bán chồng CPU ─────────────────────────────────────────────────────────
+#
+# Trước 24/08 `cho_phep_ban` gác RAM và đĩa nhưng **không gác CPU chút nào**, nên
+# mức bán chồng CPU là một hệ quả tình cờ chứ không phải một lựa chọn. Node đo
+# được: **32 luồng**, mà riêng 8 máy của chủ nhà đã cam kết **41 vCPU** — tức nó
+# đã ở 1,28× trước khi bán cho ai một máy nào.
+
+def _suc_chua_rong(**kw):
+    """Sức chứa dư dả về RAM và đĩa, để chỉ còn CPU là thứ quyết định."""
+    mac_dinh = dict(ram_mb_tong=200_000, dia_gb_tong=2000, dia_gb_dang_dung=10)
+    mac_dinh.update(kw)
+    return capacity.SucChua(**mac_dinh)
+
+
+def test_cam_ket_tu_vm_dem_ca_vCPU():
+    vms = [{"maxmem": 4 * 1024 ** 3, "maxdisk": 40 * 1024 ** 3, "cpus": 2},
+           {"maxmem": 8 * 1024 ** 3, "maxdisk": 80 * 1024 ** 3, "cpus": 6},
+           {"maxmem": 1 * 1024 ** 3, "maxdisk": 10 * 1024 ** 3, "cpus": 4,
+            "template": 1}]
+    _ram, _dia, vcpu = capacity.cam_ket_tu_vm(vms)
+    assert vcpu == 8, "template khong tinh, dung nhu RAM va dia"
+
+
+def test_ty_le_ban_chong_cpu():
+    sc = _suc_chua_rong(cpu_tong=32, vcpu_da_hua=41)
+    assert round(sc.ty_le_ban_chong_cpu, 2) == 1.28
+
+
+def test_chua_do_duoc_cpu_thi_KHONG_chan():
+    """CPU khác RAM và đĩa: thiếu nó máy vẫn chạy, chỉ chậm. Nên "không đọc được"
+    ở đây không đáng để dừng bán hàng — khác hẳn với đĩa, nơi không đọc được thì
+    phải NGỪNG bán."""
+    sc = _suc_chua_rong(cpu_tong=0, vcpu_da_hua=999)
+    assert capacity.cho_phep_ban(sc, "vps-lon").cho_phep is True
+    assert sc.ty_le_ban_chong_cpu == 0.0
+
+
+def test_vuot_tran_ban_chong_cpu_thi_CHAN():
+    tran = capacity.TRAN_BAN_CHONG_CPU
+    sc = _suc_chua_rong(cpu_tong=32, vcpu_da_hua=int(32 * tran))
+    kq = capacity.cho_phep_ban(sc, "vps-lon")
+    assert kq.cho_phep is False
+    assert "CPU" in kq.ly_do and "vCPU" in kq.ly_do, kq.ly_do
+
+
+def test_ngay_duoi_tran_thi_van_ban_duoc():
+    sc = _suc_chua_rong(cpu_tong=32, vcpu_da_hua=90)     # 90+1 = 91/32 = 2.84x
+    assert capacity.cho_phep_ban(sc, "vps-nho").cho_phep is True
+
+
+def test_RAM_van_hoi_TRUOC_cpu():
+    """Thiếu RAM thì máy **không khởi động nổi**; thiếu CPU thì nó chỉ chậm. Lý
+    do từ chối phải nói đúng thứ chặn thật, nếu không người đọc đi sửa nhầm chỗ."""
+    sc = capacity.SucChua(ram_mb_tong=1024, dia_gb_tong=2000,
+                          cpu_tong=1, vcpu_da_hua=500)
+    assert "RAM" in capacity.cho_phep_ban(sc, "vps-lon").ly_do

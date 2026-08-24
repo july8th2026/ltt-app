@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:410e3d3053c09e936ca7702d087d1a653ab8d573c209bb4a8a0c98fd6bc4d087
-Nguồn đã quét : 1344 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:842466a7bb41ed09ba173d5b2ac3a5d3031c1d72c82c2fb130cd29e8214e692b
+Nguồn đã quét : 1345 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1540,8 +1540,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1344 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1035, .sh:2, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1345 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42, .md:19, .mjs:3, .ps1:20, .py:1036, .sh:2, .svg:1, .ts:20, .tsx:28, .txt:57, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2832,7 +2832,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (96)
+[tools] (97)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2929,6 +2929,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - tools/vps_gateway/cai-dat-cong-vao.sh
 - tools/vps_gateway/cai-dat-router.sh
 - tools/vps_them_cong_vao.py
+- tools/vps_treo_khan.py
 
 [utils] (8)
 - utils/__init__.py
@@ -2952,7 +2953,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:92, .ini:1, .js:9, .json:42,
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1344 file; 12568607 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1345 file; 12585900 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -37084,7 +37085,7 @@ def thu_phi_dinh_ky(db: DbSession, *, now: datetime | None = None,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/capacity.py
-SHA256=12c0d33de872596233be0d938b07c696fa46c36c13cb4439a8adee822a2790b7 BYTES=11087 LINES=239
+SHA256=8e4c1d2d6a9d2d81332dd6a7b7200afab42440ce07da594c3bf593bcfff82238 BYTES=13580 LINES=284
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Xếp chỗ: còn bán được máy nào nữa không.
 
@@ -37175,6 +37176,12 @@ class SucChua:
     ram_mb_da_hua: int = 0
     dia_gb_da_hua: int = 0
     dia_gb_dang_dung: int = 0
+    #: Số luồng CPU thật của node, và tổng vCPU đã cam kết cho MỌI máy trên nó.
+    #: Trước 24/08 hai con số này không được đo — `cho_phep_ban` gác RAM và đĩa
+    #: nhưng **không gác CPU chút nào**, nên mức bán chồng CPU là một hệ quả tình
+    #: cờ chứ không phải một lựa chọn.
+    cpu_tong: int = 0
+    vcpu_da_hua: int = 0
 
     @property
     def ram_mb_ban_duoc(self) -> int:
@@ -37196,6 +37203,13 @@ class SucChua:
         return max(0, tran - self.dia_gb_dang_dung)
 
     @property
+    def ty_le_ban_chong_cpu(self) -> float:
+        """Đã cam kết gấp mấy lần số luồng thật. 0 = chưa đo được."""
+        if self.cpu_tong <= 0:
+            return 0.0
+        return self.vcpu_da_hua / self.cpu_tong
+
+    @property
     def ty_le_ban_chong(self) -> float:
         """Đã hứa gấp mấy lần kho. > 1 là bình thường với thin; > 3 là liều."""
         if self.dia_gb_ban_duoc <= 0:
@@ -37209,6 +37223,20 @@ class KetQuaKiem:
 
     cho_phep: bool
     ly_do: str = ""
+
+
+#: Trần bán chồng vCPU. Bán chồng CPU là **bình thường** với VPS — phần lớn máy
+#: nhàn phần lớn thời gian — nhưng "bình thường" khác "vô hạn", và nó phải là một
+#: con số đã chọn chứ không phải một hệ quả tình cờ.
+#:
+#: Node đo được 24/08: **32 luồng**, mà riêng 8 máy của chủ nhà đã cam kết **41
+#: vCPU** — node đã ở 1,28× trước khi bán cho ai một máy nào. Bán hết 16 máy Nhỏ
+#: đưa nó lên ~1,8×.
+#:
+#: 3,0× cùng con số với trần bán chồng đĩa (V14), và lý do giống nhau: qua mức đó
+#: thì cái mất là **độ trễ** — máy vẫn chạy, chỉ giật, và khách không chứng minh
+#: được điều gì.
+TRAN_BAN_CHONG_CPU = 3.0
 
 
 def cho_phep_ban(suc_chua: SucChua, plan_id: str, dia_them_gb: int = 0
@@ -37246,6 +37274,17 @@ def cho_phep_ban(suc_chua: SucChua, plan_id: str, dia_them_gb: int = 0
             False,
             f"ban chong dia se len {ty_le_moi:.2f}x, tran la "
             f"{TRAN_BAN_CHONG:.1f}x")
+    # 4) Bán chồng CPU. Không đo được `cpu_tong` thì **bỏ qua** phép kiểm này,
+    #    không chặn: CPU khác RAM và đĩa ở chỗ thiếu nó máy vẫn chạy (chỉ chậm),
+    #    nên "không đọc được" ở đây không đáng để dừng bán hàng.
+    if suc_chua.cpu_tong > 0:
+        ty_le_cpu = (suc_chua.vcpu_da_hua + plan.vcpu) / suc_chua.cpu_tong
+        if ty_le_cpu > TRAN_BAN_CHONG_CPU:
+            return KetQuaKiem(
+                False,
+                f"ban chong CPU se len {ty_le_cpu:.2f}x ({suc_chua.vcpu_da_hua}"
+                f"+{plan.vcpu} vCPU tren {suc_chua.cpu_tong} luong), tran la "
+                f"{TRAN_BAN_CHONG_CPU:.1f}x")
     return KetQuaKiem(True)
 
 
@@ -37269,8 +37308,10 @@ def kho_qua_tai(da_dung_bytes: int, tong_bytes: int,
     return KetQuaKiem(True)
 
 
-def cam_ket_tu_vm(vms: list) -> tuple[int, int]:
-    """RAM (MB) và đĩa (GB) đã CAM KẾT cho **mọi** VM trên node. Trả `(ram, dia)`.
+def cam_ket_tu_vm(vms: list) -> tuple[int, int, int]:
+    """RAM (MB), đĩa (GB) và vCPU đã CAM KẾT cho **mọi** VM trên node.
+
+    Trả `(ram, dia, vcpu)`.
 
     ## Vì sao phải đếm cả VM không thuộc app này
 
@@ -37289,13 +37330,14 @@ def cam_ket_tu_vm(vms: list) -> tuple[int, int]:
 
     Template không tính — nó không chạy, và đĩa của nó đã trừ ở `DIA_TEMPLATE_GB`.
     """
-    ram = dia = 0
+    ram = dia = vcpu = 0
     for v in vms or []:
         if int(v.get("template") or 0):
             continue
         ram += int(v.get("maxmem") or 0)
         dia += int(v.get("maxdisk") or 0)
-    return ram // (1024 * 1024), dia // (1024 ** 3)
+        vcpu += int(v.get("cpus") or 0)
+    return ram // (1024 * 1024), dia // (1024 ** 3), vcpu
 
 
 def suc_chua_tu_proxmox(trang_thai_node: dict, kho: list, *,
@@ -37306,6 +37348,9 @@ def suc_chua_tu_proxmox(trang_thai_node: dict, kho: list, *,
     đúng với một node đơn, và sai thì sai *về phía nhỏ hơn* — an toàn.
     """
     ram_bytes = int((trang_thai_node.get("memory") or {}).get("total") or 0)
+    # Số LUỒNG, không phải số nhân vật lý: đó là đơn vị Proxmox cấp cho `cores`
+    # của máy ảo, nên so vCPU với nó mới là so cùng đơn vị.
+    cpu_luong = int((trang_thai_node.get("cpuinfo") or {}).get("cpus") or 0)
 
     ung_vien = [k for k in (kho or [])
                 if "images" in str(k.get("content", ""))
@@ -37315,7 +37360,8 @@ def suc_chua_tu_proxmox(trang_thai_node: dict, kho: list, *,
     chon = max(ung_vien, key=lambda k: int(k.get("total") or 0), default=None)
     dia_bytes = int((chon or {}).get("total") or 0)
 
-    return SucChua(ram_mb_tong=ram_bytes // (1024 * 1024),
+    return SucChua(cpu_tong=cpu_luong,
+                   ram_mb_tong=ram_bytes // (1024 * 1024),
                    dia_gb_tong=dia_bytes // (1024 ** 3))
 
 
@@ -38158,7 +38204,7 @@ def cau_hinh_qemu(mang: MangKhach, *, co_cloud_init: bool = True,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/vps/services/provisioning.py
-SHA256=58d486deaaadead6cce815479dddb11a9a786b2861234d5c952924ce7bd26c22 BYTES=13426 LINES=298
+SHA256=7f3a925b074609005a4d29b395d6c86248458178f9784c2ac72339ae863a0873 BYTES=13763 LINES=303
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Cấp phát: chọn cổng vào, cấp VMID, cấp cổng NAT, cấp IP.
 
@@ -38272,10 +38318,15 @@ def suc_chua_hien_tai(db: DbSession, trang_thai_node: dict, kho: list,
     nằm ở nguồn thứ hai.
     """
     goc = capacity.suc_chua_tu_proxmox(trang_thai_node, kho)
-    ram_vm, dia_vm = capacity.cam_ket_tu_vm(vms or [])
+    ram_vm, dia_vm, vcpu_vm = capacity.cam_ket_tu_vm(vms or [])
     ram_cho, dia_cho = da_hua(db, chi_chua_tao=True)
     lon = capacity.kho_lon_nhat(kho)
     return capacity.SucChua(
+        cpu_tong=goc.cpu_tong,
+        # Chỉ đếm vCPU của VM ĐANG CÓ trên Proxmox. Máy app đã hứa mà chưa tạo
+        # thì phần vCPU của nó nhỏ (1–4) và sẽ vào ngay ở lượt sau — không đáng
+        # thêm một truy vấn nữa vào đường bán hàng.
+        vcpu_da_hua=vcpu_vm,
         ram_mb_tong=goc.ram_mb_tong,
         dia_gb_tong=goc.dia_gb_tong,
         ram_mb_da_hua=ram_vm + ram_cho,
@@ -89711,7 +89762,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=28f900586223ae6e65dccd39389040c6cb2939f28eb553559ef11d6c04353324 BYTES=217642 LINES=3127
+SHA256=8f95558773543ca2b6498f4f57bbf00e60875f0b7c714babb2ef20b605efad25 BYTES=220082 LINES=3158
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -92730,9 +92781,40 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       và mô tả đã sửa cho đúng như vậy, nhưng **khoảng cách giá 179k → 329k nay
       chỉ đổi lấy CPU/RAM/đĩa**, không đổi lấy khả năng mới.
 
-- [ ] **G7b — phần còn lại của chống lạm dụng.** `cpulimit` · cảnh báo CPU 100 %
-      kéo dài · nút treo khẩn cấp cho admin · không cho dùng thử ẩn danh.
-      Phần băng thông và chặn thư ra đã xong ở G7 bên trên.
+- [x] **G7b — phần còn lại của chống lạm dụng.** ✅ **XONG 2026-08-24.**
+
+      🔴 **`cho_phep_ban` gác RAM và đĩa nhưng KHÔNG gác CPU chút nào** — nên mức
+      bán chồng CPU là một hệ quả tình cờ chứ không phải một lựa chọn. Node đo
+      được: **32 luồng**, mà riêng 8 máy của chủ nhà đã cam kết **41 vCPU**, tức
+      **1,28× trước khi bán cho ai một máy nào**. Nay `SucChua` mang `cpu_tong` +
+      `vcpu_da_hua`, và có phanh thứ tư ở trần **3,0×** (cùng con số với đĩa).
+      Khác đĩa ở một chỗ có chủ ý: **không đo được CPU thì KHÔNG chặn** — thiếu
+      CPU máy vẫn chạy (chỉ chậm), còn thiếu đĩa thì hỏng cả node.
+
+      **`tools/vps_treo_khan.py`** — treo khẩn cấp khi có báo cáo lạm dụng. Tìm
+      máy theo **instance_id, IP nội bộ, IP công khai, hoặc vmid**, vì thứ người
+      xử lý sự cố cầm trong tay thường là một địa chỉ IP lấy từ báo cáo, không
+      phải một UUID. Làm **ba việc**, theo thứ tự chắc-chắn-trước: hãm tốc →
+      tắt máy → ghi sổ. `--bo-treo` bỏ hãm nhưng **không tự bật máy lại**: quyết
+      định bật lại một máy bị treo vì lạm dụng phải là của một con người.
+
+      Là **công cụ dòng lệnh, không phải nút trong trang admin** — thêm một
+      `ModelView` cho bảng của app vào `server/admin.py` là viết cứng tên app vào
+      nền tảng, đúng thứ hợp đồng app cấm (`test_60` chốt điều đó).
+
+      *Đo thật:* treo một máy đang chạy bằng **IP công khai** của nó → VM
+      `stopped` trên Proxmox, địa chỉ vào set `giam_toc` → `--bo-treo` gỡ hãm,
+      máy vẫn tắt. Và một lỗi chỉ lộ khi chạy thật: console Windows là cp1252 nên
+      công cụ **vỡ ngay ở dòng `print` đầu tiên** với `UnicodeEncodeError` —
+      người đang xử lý sự cố không biết máy đã bị treo hay chưa. Đã vá.
+
+      ⛔ **Cảnh báo "CPU 100 % kéo dài" — CỐ Ý KHÔNG LÀM.** Khách mua 4 vCPU thì
+      dùng hết 4 vCPU **không phải là lạm dụng**, nên cảnh báo đó chủ yếu sinh ra
+      tiếng ồn cho một người dùng nặng hợp lệ. Thứ thật sự bảo vệ hàng xóm là
+      **trần bán chồng** (đã làm) và trọng số CPU bằng nhau giữa các máy (mặc
+      định của Proxmox). Mở lại khi có một sự cố thật chứng minh điều ngược lại.
+
+      *Bằng chứng:* 6 test mới trong `test_251` (66 test).
 
 - [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
 
@@ -144971,7 +145053,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=19ef83c30acb2a4492b1b978fc4a8b23cf0bd9217c4fcd66aece911ef9cb1db0 BYTES=26041 LINES=538
+SHA256=ea10b0251d4ea1db85d6a9ed77591af1bc6431cc41bc931ecafc668b2b6f205b BYTES=27961 LINES=570
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -145036,6 +145118,17 @@ TOOL_CHAT = "text.chat"
 #:    Cloudflare. Nạp từ đĩa lạnh lâu hơn thì giảm nhẹ bằng `ttl` của llama-swap
 #:    (giữ model thường trú), không bằng đồng hồ này.
 MO_LUONG_GIAY = 75.0
+
+
+def _tran_giay() -> int:
+    """Trần thời gian cho đường **không streaming**.
+
+    Dùng lại đúng con số của `/chat/completions`: không stream nghĩa là không
+    byte nào chảy cho tới khi xong, nên đồng hồ 100 giây của Cloudflare có hiệu
+    lực ở cả hai chỗ, và vì cùng một lý do.
+    """
+    from server.api.chat import SYNC_BILLED_MAX_SECONDS
+    return int(SYNC_BILLED_MAX_SECONDS)
 
 #: Hợp đồng của hai route này, **khai ra để bộ kiểm chạy được**.
 #:
@@ -145108,8 +145201,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     from apps.ltt_llm import features
     from platform_core import credit
     from platform_core.llm import thanh_toan
-    from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
-                                            VuotNganSachError)
+    from platform_core.llm.cong_vlm import (BanError, CongVlmError,
+                                            SuDung, VuotNganSachError)
     from server.api.chat import _tran_max_tokens
 
     if sandbox.is_test(principal.mode):
@@ -145127,8 +145220,23 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     db.commit()
 
     try:
-        kq = CongVlm().chat(model=features.ALIAS_SANG_ID[ten],
-                            messages=tin, max_tokens=tran)
+        # 🔴 ĐI ĐƯỜNG CHUNG, ĐỪNG TỰ DỰNG CLIENT.
+        #
+        #    Bản đầu gọi thẳng `CongVlm().chat(...)` và **500 ngay lượt đầu**:
+        #    `CongVlm.__init__` đòi một tham số `goi`, nó không phải constructor
+        #    rỗng. Nhưng lỗi cú pháp đó chỉ là triệu chứng.
+        #
+        # ⛔ Cái sai thật là **đi vòng qua `dieu_phoi`** — thứ mà chính tài liệu
+        #    của nó gọi là *"MỘT đường gọi model ngôn ngữ cho toàn nền tảng"*.
+        #    Đi vòng là mất: chọn khoá theo pool, bỏ qua provider đang bận, ánh
+        #    xạ tên model theo từng provider, và cách đếm token thống nhất.
+        #    Một client dựng tay sẽ **chạy được** trong ca sạch rồi lệch dần ở
+        #    đúng những ca mà `dieu_phoi` sinh ra để xử.
+        #
+        #    `features.chay` là đúng cửa mà `/chat/completions` đã dùng.
+        kq = features.chay(db, {"model": ten, "messages": tin,
+                                "max_tokens": tran},
+                           timeout_s=float(_tran_giay()))
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
@@ -145144,9 +145252,15 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
     # tu boc token roi truyen so le: chinh no biet cach xu khi KHONG DO DUOC
     # (hoan du va ghi canh bao), va do la luat tien cua ca he thong.
+    # ⚠️ `features.chay` tra ve `KetQua` cua app (token phang), khong phai
+    #    `KetQuaChat` cua cong (co `.su_dung`). Boc y het `/chat/completions`,
+    #    ke ca `dang_tin=kq.do_duoc` - do la co bao "co do duoc token khong", va
+    #    `quyet_toan_hoac_hoan` dua vao no de HOAN DU khi khong do duoc.
     thanh_toan.quyet_toan_hoac_hoan(
         db, user_id=principal.user_id, request_id=request_id,
-        su_dung=kq.su_dung)
+        su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                       token_vao_cache=kq.token_vao_cache,
+                       dang_tin=kq.do_duoc))
     db.commit()
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
@@ -145197,8 +145311,8 @@ def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
         "stop_reason": ly_do,
         "stop_sequence": None,
         "stop_details": None,
-        "usage": {"input_tokens": kq.su_dung.token_vao,
-                  "output_tokens": kq.su_dung.token_ra},
+        "usage": {"input_tokens": kq.token_vao,
+                  "output_tokens": kq.token_ra},
     }
 
 
@@ -219760,7 +219874,7 @@ def test_dich_hong_thi_lop_tren_nem_DichThatBai_kem_loi_di_tiep(moi_truong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_251_vps_ha_tang.py
-SHA256=96ae2d65d495308eea8ef8635d116c085949339682ba14ec777eb3bf262f30e5 BYTES=33841 LINES=793
+SHA256=a2fde54de39922fce093457d18f816591dccfa9d8f2d8025ffa945fc1c5ff8f4 BYTES=36607 LINES=851
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hạ tầng app VPS (H39 P0, Q103 + Q104).
 
@@ -220080,7 +220194,7 @@ def test_dem_ca_VM_KHONG_thuoc_app_nay():
         {"vmid": 9000, "maxmem": 5 * 1024 ** 3, "maxdisk": 80 * 1024 ** 3,
          "template": 1},
     ]
-    ram, dia = capacity.cam_ket_tu_vm(vms)
+    ram, dia, _vcpu = capacity.cam_ket_tu_vm(vms)
     assert ram == 12 * 1024
     assert dia == 160
 
@@ -220555,6 +220669,64 @@ def test_su_kien_duoc_ghi_lai_de_tra_loi_khach(db):
     db.flush()
     loai = [e.loai for e in db.query(VpsEvent).filter_by(instance_id=m.id)]
     assert "thu_phi" in loai
+
+
+# ── 9. Bán chồng CPU ─────────────────────────────────────────────────────────
+#
+# Trước 24/08 `cho_phep_ban` gác RAM và đĩa nhưng **không gác CPU chút nào**, nên
+# mức bán chồng CPU là một hệ quả tình cờ chứ không phải một lựa chọn. Node đo
+# được: **32 luồng**, mà riêng 8 máy của chủ nhà đã cam kết **41 vCPU** — tức nó
+# đã ở 1,28× trước khi bán cho ai một máy nào.
+
+def _suc_chua_rong(**kw):
+    """Sức chứa dư dả về RAM và đĩa, để chỉ còn CPU là thứ quyết định."""
+    mac_dinh = dict(ram_mb_tong=200_000, dia_gb_tong=2000, dia_gb_dang_dung=10)
+    mac_dinh.update(kw)
+    return capacity.SucChua(**mac_dinh)
+
+
+def test_cam_ket_tu_vm_dem_ca_vCPU():
+    vms = [{"maxmem": 4 * 1024 ** 3, "maxdisk": 40 * 1024 ** 3, "cpus": 2},
+           {"maxmem": 8 * 1024 ** 3, "maxdisk": 80 * 1024 ** 3, "cpus": 6},
+           {"maxmem": 1 * 1024 ** 3, "maxdisk": 10 * 1024 ** 3, "cpus": 4,
+            "template": 1}]
+    _ram, _dia, vcpu = capacity.cam_ket_tu_vm(vms)
+    assert vcpu == 8, "template khong tinh, dung nhu RAM va dia"
+
+
+def test_ty_le_ban_chong_cpu():
+    sc = _suc_chua_rong(cpu_tong=32, vcpu_da_hua=41)
+    assert round(sc.ty_le_ban_chong_cpu, 2) == 1.28
+
+
+def test_chua_do_duoc_cpu_thi_KHONG_chan():
+    """CPU khác RAM và đĩa: thiếu nó máy vẫn chạy, chỉ chậm. Nên "không đọc được"
+    ở đây không đáng để dừng bán hàng — khác hẳn với đĩa, nơi không đọc được thì
+    phải NGỪNG bán."""
+    sc = _suc_chua_rong(cpu_tong=0, vcpu_da_hua=999)
+    assert capacity.cho_phep_ban(sc, "vps-lon").cho_phep is True
+    assert sc.ty_le_ban_chong_cpu == 0.0
+
+
+def test_vuot_tran_ban_chong_cpu_thi_CHAN():
+    tran = capacity.TRAN_BAN_CHONG_CPU
+    sc = _suc_chua_rong(cpu_tong=32, vcpu_da_hua=int(32 * tran))
+    kq = capacity.cho_phep_ban(sc, "vps-lon")
+    assert kq.cho_phep is False
+    assert "CPU" in kq.ly_do and "vCPU" in kq.ly_do, kq.ly_do
+
+
+def test_ngay_duoi_tran_thi_van_ban_duoc():
+    sc = _suc_chua_rong(cpu_tong=32, vcpu_da_hua=90)     # 90+1 = 91/32 = 2.84x
+    assert capacity.cho_phep_ban(sc, "vps-nho").cho_phep is True
+
+
+def test_RAM_van_hoi_TRUOC_cpu():
+    """Thiếu RAM thì máy **không khởi động nổi**; thiếu CPU thì nó chỉ chậm. Lý
+    do từ chối phải nói đúng thứ chặn thật, nếu không người đọc đi sửa nhầm chỗ."""
+    sc = capacity.SucChua(ram_mb_tong=1024, dia_gb_tong=2000,
+                          cpu_tong=1, vcpu_da_hua=500)
+    assert "RAM" in capacity.cho_phep_ban(sc, "vps-lon").ly_do
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -231260,7 +231432,7 @@ def test_bat_thuan_ascii_khong_BOM():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_285_messages_khong_stream.py
-SHA256=3522af588770f347aeebb8d1555ec21494903ba3eaaa87b5c2ec7ae47e065628 BYTES=6003 LINES=138
+SHA256=bbae9c343fe7fb6b92e7b3dd69b97617b404ac94a5fb23399c4f4ee4c9e8d913 BYTES=6488 LINES=143
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`POST /api/v1/messages` phải phục vụ **cả** request không streaming.
 
@@ -231297,16 +231469,21 @@ def st():
     return importlib.import_module("server.api.streaming")
 
 
-class _SuDung:
-    def __init__(self, vao=11, ra=7):
-        self.token_vao, self.token_ra = vao, ra
-
-
 class _Kq:
+    """Giả lập `apps.ltt_llm.features.KetQua` — **token phẳng**, không có `.su_dung`.
+
+    ⚠️ Bản đầu của test này giả lập `KetQuaChat` của cổng (có `.su_dung`), vì mã
+       lúc đó tự dựng `CongVlm`. Khi mã chuyển sang đường chung `features.chay`,
+       kiểu trả về đổi — và test **đỏ đúng lúc nó phải đỏ**. Giữ nguyên hình dạng
+       thật ở đây; một giả lập lệch kiểu là một test đo nhầm thế giới.
+    """
+
     def __init__(self, finish="stop", noi="144"):
         self.noi_dung = noi
         self.finish_reason = finish
-        self.su_dung = _SuDung()
+        self.token_vao, self.token_ra = 11, 7
+        self.token_vao_cache = 0
+        self.do_duoc = True
 
 
 # ── Hình dạng phản hồi, theo tài liệu chính thức ───────────────────────────
@@ -264513,6 +264690,182 @@ def main() -> int:
 def _dia_chi_thu(g) -> str:
     from apps.vps.services import mang
     return next(iter(mang.dai_dia_chi(g)))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/vps_treo_khan.py
+SHA256=631f09ba4241598657244677350267d629d6dc2c599a3e26499ab46b5a8f6278 BYTES=6852 LINES=170
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Treo khan cap mot may khach — dung khi co bao cao lam dung.
+
+    python tools\\vps_treo_khan.py --xem
+    python tools\\vps_treo_khan.py --may <instance_id|ip|vmid> --ly-do "spam mail"
+    python tools\\vps_treo_khan.py --may <...> --bo-treo
+
+## Vi sao la CONG CU dong lenh, khong phai mot nut trong trang admin
+
+Them mot `ModelView` cho bang cua app vao `server/admin.py` la viet cung ten app
+vao nen tang -- dung thu hop dong app cam. Duong dung la mo rong hop dong (khai
+admin view trong manifest), va do la mot thay doi lon hon thu viec nay dang can.
+
+Nen no o day, cung cho voi `vps_doctor.py` va `vps_them_cong_vao.py`.
+
+## Treo o day lam DU BA viec, khong chi doi mot cot
+
+1. **Tat may** tren Proxmox -- treo ma may van chay thi "treo" chi la mot nhan;
+2. **Ham toc** dia chi tren router -- neu may khong tat duoc (Proxmox khong tra
+   loi) thi it nhat luu luong cua no bi cat xuong con 1 MB/s;
+3. **Ghi so** trang thai + han xoa + su kien -- de con dau vet tra lai duoc.
+
+Thu tu do la co y: viec cang chac chan thanh cong thi lam cang som.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import os
+import pathlib
+import sys
+import warnings
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+warnings.filterwarnings("ignore")
+
+# Console Windows mac dinh la cp1252, va `nhan.trang_thai()` tra tieng Viet co
+# dau. Khong doi ma ra UTF-8 thi cong cu VO NGAY o dong `print` dau tien --
+# `UnicodeEncodeError`, khong in duoc gi, va nguoi dang xu ly su co khong biet
+# may da bi treo hay chua. Cung khuon voi `tools/check_i18n.py`.
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                  errors="replace", line_buffering=True)
+
+
+def _nap_env() -> None:
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    for tep in (r"C:\LTTPlatform\secrets\app.env", str(goc / "secrets" / "app.env")):
+        p = pathlib.Path(tep)
+        if not p.exists():
+            continue
+        for d in p.read_text(encoding="utf-8-sig").splitlines():
+            if "=" in d and not d.strip().startswith("#"):
+                k, v = d.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
+
+def _tim(db, khoa: str):
+    """Tim may theo instance_id, IP noi bo, IP cong khai, hoac vmid.
+
+    Nhan ca bon vi nguoi dung cong cu nay dang xu ly su co, va thu ho cam trong
+    tay co the la bat ky cai nao trong bon -- thuong la mot dia chi IP lay tu
+    bao cao lam dung."""
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInstance, VpsIp
+
+    khoa = str(khoa or "").strip()
+    m = db.get(VpsInstance, khoa)
+    if m is not None:
+        return m
+    if khoa.isdigit():
+        m = db.execute(select(VpsInstance).where(
+            VpsInstance.vmid == int(khoa))).scalars().first()
+        if m is not None:
+            return m
+    m = db.execute(select(VpsInstance).where(
+        VpsInstance.ip_noi_bo == khoa)).scalars().first()
+    if m is not None:
+        return m
+    ip = db.execute(select(VpsIp).where(VpsIp.dia_chi == khoa)).scalars().first()
+    return db.get(VpsInstance, ip.instance_id) if ip is not None else None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--xem", action="store_true", help="liet ke may dang song")
+    ap.add_argument("--may", help="instance_id, IP noi bo, IP cong khai, hoac vmid")
+    ap.add_argument("--ly-do", default="", help="ghi vao nhat ky va hien cho khach")
+    ap.add_argument("--bo-treo", action="store_true", help="bo ham toc, KHONG tu bat may")
+    args = ap.parse_args()
+
+    _nap_env()
+    from sqlalchemy import select
+
+    from apps.vps import nhan
+    from apps.vps.services import billing, dieu_khien, provisioning
+    from apps.vps.services import router as bo_dinh_tuyen
+    from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
+    from apps.vps.tables import VpsInstance, VpsIp
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        if args.xem or not args.may:
+            ip_theo_may = {x.instance_id: x.dia_chi for x in
+                           db.execute(select(VpsIp)).scalars()}
+            dong = list(db.execute(select(VpsInstance).where(
+                VpsInstance.trang_thai != "da_xoa")).scalars())
+            if not dong:
+                print("Khong co may nao dang song.")
+                return 0
+            for m in dong:
+                print(f"  {m.id}  vmid={m.vmid}  {str(m.ip_noi_bo or '-'):<12} "
+                      f"{ip_theo_may.get(m.id, '-'):<16} "
+                      f"{nhan.trang_thai(m.trang_thai):<12} "
+                      f"{'GIAM TOC' if m.bi_giam_toc else ''}")
+            return 0
+
+        may = _tim(db, args.may)
+        if may is None:
+            print(f"Khong tim thay may {args.may!r}")
+            return 2
+
+        if args.bo_treo:
+            # KHONG tu bat may lai: neu no bi treo vi lam dung thi nguoi quyet
+            # dinh bat lai phai la mot con nguoi, khong phai mot lenh don.
+            if may.ip_noi_bo:
+                bo_dinh_tuyen.client_tu_moi_truong().dat_giam_toc(
+                    str(may.ip_noi_bo), False)
+                may.bi_giam_toc = False
+            provisioning.ghi_su_kien(db, may.id, "bo_treo_khan", boi="admin")
+            db.commit()
+            print(f"Da bo ham toc cho {may.id}. May VAN dang tat — bat lai bang tay.")
+            return 0
+
+        ly_do = args.ly_do or "Treo khan cap boi quan tri"
+
+        # 1) Ham toc TRUOC: no gan nhu chac chan thanh cong, va no cat ngay luu
+        #    luong cua may ke ca khi Proxmox khong tra loi o buoc sau.
+        if may.ip_noi_bo:
+            try:
+                bo_dinh_tuyen.client_tu_moi_truong().dat_giam_toc(
+                    str(may.ip_noi_bo), True)
+                may.bi_giam_toc = True
+                print(f"  da ham toc {may.ip_noi_bo}")
+            except bo_dinh_tuyen.SshLenhError as exc:
+                print(f"  KHONG ham toc duoc: {str(exc)[:90]}")
+
+        # 2) Tat may + ghi so. `dieu_khien.treo` van ghi so ke ca khi Proxmox
+        #    khong tat duoc — treo la quyet dinh cua nguoi, khong phai cua Proxmox.
+        try:
+            client = client_tu_moi_truong()
+            dieu_khien.treo(db, may, client, ly_do=ly_do)
+            print(f"  da tat may {may.vmid} va ghi so")
+        except ProxmoxError as exc:
+            billing.treo(db, may, ly_do)
+            print(f"  Proxmox khong tra loi ({str(exc)[:60]}) — VAN da ghi so treo")
+
+        provisioning.ghi_su_kien(db, may.id, "treo_khan", boi="admin", ly_do=ly_do)
+        db.commit()
+        print(f"XONG. {may.id} -> {nhan.trang_thai(may.trang_thai)}; "
+              f"han xoa {may.xoa_sau}")
+        return 0
+    finally:
+        gen.close()
 
 
 if __name__ == "__main__":

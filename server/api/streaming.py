@@ -62,6 +62,17 @@ TOOL_CHAT = "text.chat"
 #:    (giữ model thường trú), không bằng đồng hồ này.
 MO_LUONG_GIAY = 75.0
 
+
+def _tran_giay() -> int:
+    """Trần thời gian cho đường **không streaming**.
+
+    Dùng lại đúng con số của `/chat/completions`: không stream nghĩa là không
+    byte nào chảy cho tới khi xong, nên đồng hồ 100 giây của Cloudflare có hiệu
+    lực ở cả hai chỗ, và vì cùng một lý do.
+    """
+    from server.api.chat import SYNC_BILLED_MAX_SECONDS
+    return int(SYNC_BILLED_MAX_SECONDS)
+
 #: Hợp đồng của hai route này, **khai ra để bộ kiểm chạy được**.
 #:
 #: ⭐ Dựng ở cấp module có chủ ý: `check_mode_rules` chạy ngay lúc nạp app, nên
@@ -133,8 +144,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     from apps.ltt_llm import features
     from platform_core import credit
     from platform_core.llm import thanh_toan
-    from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
-                                            VuotNganSachError)
+    from platform_core.llm.cong_vlm import (BanError, CongVlmError,
+                                            SuDung, VuotNganSachError)
     from server.api.chat import _tran_max_tokens
 
     if sandbox.is_test(principal.mode):
@@ -152,8 +163,23 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     db.commit()
 
     try:
-        kq = CongVlm().chat(model=features.ALIAS_SANG_ID[ten],
-                            messages=tin, max_tokens=tran)
+        # 🔴 ĐI ĐƯỜNG CHUNG, ĐỪNG TỰ DỰNG CLIENT.
+        #
+        #    Bản đầu gọi thẳng `CongVlm().chat(...)` và **500 ngay lượt đầu**:
+        #    `CongVlm.__init__` đòi một tham số `goi`, nó không phải constructor
+        #    rỗng. Nhưng lỗi cú pháp đó chỉ là triệu chứng.
+        #
+        # ⛔ Cái sai thật là **đi vòng qua `dieu_phoi`** — thứ mà chính tài liệu
+        #    của nó gọi là *"MỘT đường gọi model ngôn ngữ cho toàn nền tảng"*.
+        #    Đi vòng là mất: chọn khoá theo pool, bỏ qua provider đang bận, ánh
+        #    xạ tên model theo từng provider, và cách đếm token thống nhất.
+        #    Một client dựng tay sẽ **chạy được** trong ca sạch rồi lệch dần ở
+        #    đúng những ca mà `dieu_phoi` sinh ra để xử.
+        #
+        #    `features.chay` là đúng cửa mà `/chat/completions` đã dùng.
+        kq = features.chay(db, {"model": ten, "messages": tin,
+                                "max_tokens": tran},
+                           timeout_s=float(_tran_giay()))
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
@@ -169,9 +195,15 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
     # tu boc token roi truyen so le: chinh no biet cach xu khi KHONG DO DUOC
     # (hoan du va ghi canh bao), va do la luat tien cua ca he thong.
+    # ⚠️ `features.chay` tra ve `KetQua` cua app (token phang), khong phai
+    #    `KetQuaChat` cua cong (co `.su_dung`). Boc y het `/chat/completions`,
+    #    ke ca `dang_tin=kq.do_duoc` - do la co bao "co do duoc token khong", va
+    #    `quyet_toan_hoac_hoan` dua vao no de HOAN DU khi khong do duoc.
     thanh_toan.quyet_toan_hoac_hoan(
         db, user_id=principal.user_id, request_id=request_id,
-        su_dung=kq.su_dung)
+        su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                       token_vao_cache=kq.token_vao_cache,
+                       dang_tin=kq.do_duoc))
     db.commit()
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
@@ -222,8 +254,8 @@ def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
         "stop_reason": ly_do,
         "stop_sequence": None,
         "stop_details": None,
-        "usage": {"input_tokens": kq.su_dung.token_vao,
-                  "output_tokens": kq.su_dung.token_ra},
+        "usage": {"input_tokens": kq.token_vao,
+                  "output_tokens": kq.token_ra},
     }
 
 

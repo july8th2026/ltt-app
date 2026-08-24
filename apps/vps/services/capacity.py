@@ -259,6 +259,9 @@ def suc_chua_tu_proxmox(trang_thai_node: dict, kho: list, *,
     đúng với một node đơn, và sai thì sai *về phía nhỏ hơn* — an toàn.
     """
     ram_bytes = int((trang_thai_node.get("memory") or {}).get("total") or 0)
+    # Số LUỒNG, không phải số nhân vật lý: đó là đơn vị Proxmox cấp cho `cores`
+    # của máy ảo, nên so vCPU với nó mới là so cùng đơn vị.
+    cpu_luong = int((trang_thai_node.get("cpuinfo") or {}).get("cpus") or 0)
 
     ung_vien = [k for k in (kho or [])
                 if "images" in str(k.get("content", ""))
@@ -268,7 +271,8 @@ def suc_chua_tu_proxmox(trang_thai_node: dict, kho: list, *,
     chon = max(ung_vien, key=lambda k: int(k.get("total") or 0), default=None)
     dia_bytes = int((chon or {}).get("total") or 0)
 
-    return SucChua(ram_mb_tong=ram_bytes // (1024 * 1024),
+    return SucChua(cpu_tong=cpu_luong,
+                   ram_mb_tong=ram_bytes // (1024 * 1024),
                    dia_gb_tong=dia_bytes // (1024 ** 3))
 
 

@@ -3015,9 +3015,40 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       và mô tả đã sửa cho đúng như vậy, nhưng **khoảng cách giá 179k → 329k nay
       chỉ đổi lấy CPU/RAM/đĩa**, không đổi lấy khả năng mới.
 
-- [ ] **G7b — phần còn lại của chống lạm dụng.** `cpulimit` · cảnh báo CPU 100 %
-      kéo dài · nút treo khẩn cấp cho admin · không cho dùng thử ẩn danh.
-      Phần băng thông và chặn thư ra đã xong ở G7 bên trên.
+- [x] **G7b — phần còn lại của chống lạm dụng.** ✅ **XONG 2026-08-24.**
+
+      🔴 **`cho_phep_ban` gác RAM và đĩa nhưng KHÔNG gác CPU chút nào** — nên mức
+      bán chồng CPU là một hệ quả tình cờ chứ không phải một lựa chọn. Node đo
+      được: **32 luồng**, mà riêng 8 máy của chủ nhà đã cam kết **41 vCPU**, tức
+      **1,28× trước khi bán cho ai một máy nào**. Nay `SucChua` mang `cpu_tong` +
+      `vcpu_da_hua`, và có phanh thứ tư ở trần **3,0×** (cùng con số với đĩa).
+      Khác đĩa ở một chỗ có chủ ý: **không đo được CPU thì KHÔNG chặn** — thiếu
+      CPU máy vẫn chạy (chỉ chậm), còn thiếu đĩa thì hỏng cả node.
+
+      **`tools/vps_treo_khan.py`** — treo khẩn cấp khi có báo cáo lạm dụng. Tìm
+      máy theo **instance_id, IP nội bộ, IP công khai, hoặc vmid**, vì thứ người
+      xử lý sự cố cầm trong tay thường là một địa chỉ IP lấy từ báo cáo, không
+      phải một UUID. Làm **ba việc**, theo thứ tự chắc-chắn-trước: hãm tốc →
+      tắt máy → ghi sổ. `--bo-treo` bỏ hãm nhưng **không tự bật máy lại**: quyết
+      định bật lại một máy bị treo vì lạm dụng phải là của một con người.
+
+      Là **công cụ dòng lệnh, không phải nút trong trang admin** — thêm một
+      `ModelView` cho bảng của app vào `server/admin.py` là viết cứng tên app vào
+      nền tảng, đúng thứ hợp đồng app cấm (`test_60` chốt điều đó).
+
+      *Đo thật:* treo một máy đang chạy bằng **IP công khai** của nó → VM
+      `stopped` trên Proxmox, địa chỉ vào set `giam_toc` → `--bo-treo` gỡ hãm,
+      máy vẫn tắt. Và một lỗi chỉ lộ khi chạy thật: console Windows là cp1252 nên
+      công cụ **vỡ ngay ở dòng `print` đầu tiên** với `UnicodeEncodeError` —
+      người đang xử lý sự cố không biết máy đã bị treo hay chưa. Đã vá.
+
+      ⛔ **Cảnh báo "CPU 100 % kéo dài" — CỐ Ý KHÔNG LÀM.** Khách mua 4 vCPU thì
+      dùng hết 4 vCPU **không phải là lạm dụng**, nên cảnh báo đó chủ yếu sinh ra
+      tiếng ồn cho một người dùng nặng hợp lệ. Thứ thật sự bảo vệ hàng xóm là
+      **trần bán chồng** (đã làm) và trọng số CPU bằng nhau giữa các máy (mặc
+      định của Proxmox). Mở lại khi có một sự cố thật chứng minh điều ngược lại.
+
+      *Bằng chứng:* 6 test mới trong `test_251` (66 test).
 
 - [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
 
