@@ -76,9 +76,27 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
     assert "FUZZY\t" in moc, "muc fuzzy phai nam trong moc, khong duoc mien"
 
 
+# ⛔ BA TEST DUOI DAY GHI DE `locale/en/LC_MESSAGES/messages.po` THAT.
+#
+#    Khoi phuc trong `finally` PHAI la `write_bytes`, khong duoc `write_text`.
+#    Do that 26/08: ban dau chung dung `write_text(..., encoding="utf-8")`, va
+#    tren Windows `Path.write_text` dich LF thanh CRLF. Ban "khoi phuc" khac ban
+#    goc **10.465 dong** - nguyen tep, chi doi kieu xuong dong.
+#
+#    Hai hau qua, ca hai am tham:
+#      1. `git status` cua bat ky ai chay pytest bong co mot tep .po sua doi
+#         khong hieu tu dau ra;
+#      2. `tools/gate.py` lay dau van tay cay o CA HAI DAU => in "CAY DA DOI
+#         TRONG LUC CHAY", tuc **mot luot gate 2 gio tu vo hieu hoa chinh no**.
+#
+# ⭐ Chinh tep nay DA lam dung cho tep `.moc` (`read_bytes`/`write_bytes`) o
+#    `test_accept_TU_CHOI_khi_con_muc_moi`. Bai hoc: khi mot tep can byte-exact
+#    thi MOI tep trong cung ham deu can - khong chi tep minh nho toi.
+
 def test_chuoi_MOI_chua_dich_lam_do():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
+    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                             'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
@@ -87,7 +105,7 @@ def test_chuoi_MOI_chua_dich_lam_do():
         assert r.returncode == 1, "them mot chuoi chua dich MOI ma van PASS"
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
-        po.write_text(goc, encoding="utf-8")
+        po.write_bytes(goc_byte)
 
 
 def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
@@ -98,6 +116,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
     """
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
+    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
     mot = next(d.split("\t", 1)[1]
                for d in moc.splitlines() if d.startswith("TRONG\t"))
@@ -115,13 +134,14 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
             "phai TAP HOP")
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
-        po.write_text(goc, encoding="utf-8")
+        po.write_bytes(goc_byte)
 
 
 def test_accept_TU_CHOI_khi_con_muc_moi():
     """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no."""
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
+    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     moc_truoc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
@@ -130,7 +150,7 @@ def test_accept_TU_CHOI_khi_con_muc_moi():
         r = _chay("check_dich_thieu.py", "--accept")
         assert r.returncode == 1, "--accept nang moc len duoc"
     finally:
-        po.write_text(goc, encoding="utf-8")
+        po.write_bytes(goc_byte)
         (GOC / "tools" / "check_dich_thieu.moc").write_bytes(moc_truoc)
 
 

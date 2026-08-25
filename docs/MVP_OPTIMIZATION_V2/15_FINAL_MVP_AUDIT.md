@@ -102,7 +102,8 @@ UI_UX_GATE           : PASS (trang vao)  con 4 trang GJ chua co E3
 ACCESSIBILITY_GATE   : CHUA DO
 OPERABILITY_GATE     : MOT PHAN  quan sat tot; sao luu la lo con lai
 PERFORMANCE_COST_GATE: CHUA DO — khong bia nguong phut cuoi
-FULL_REPO_GATE       : (dien sau khi luot gate day du hoan tat)
+FULL_REPO_GATE       : FAIL (1/23)  — 22/23 buoc PASS, buoc `pytest` do
+                       36 failed / 4054 passed / 26 skipped  (2:00:25)
 
 OPEN_P0 : 0
 OPEN_P1 : 2   (O-01 sao luu — chu san pham de cuoi;  O-02 khoang trong bang chung)
@@ -121,6 +122,73 @@ tiến trình bị giết **vẫn mở**.
 nội bộ và không cần bù (D-07 đóng). Điều đó làm **giảm mức khẩn**, không làm giảm
 mức nghiêm trọng: cửa sổ sẽ mở đúng lúc có khách đầu tiên, và mỗi lần deploy là
 một lần mở nó.
+
+---
+
+## 5-bis. 🔴 Lượt gate đầy đủ — và nó tìm ra hai thứ
+
+Chạy `python tools/gate.py` đầy đủ, **2 giờ 25 giây**:
+
+```
+22/23 buoc PASS  (gom ca `bat bien da tien trinh` 136.8s — buoc chi co o gate day du)
+pytest           36 failed · 4054 passed · 26 skipped
+```
+
+### (a) Một test **làm bẩn cây nguồn**, và nó tự vô hiệu hoá lượt gate
+
+Cuối lượt chạy, gate in:
+
+```
+CAY DA DOI TRONG LUC CHAY (a654577ceaeab401 -> 41743d3758f86da8).
+Ket qua duoi day noi ve cay luc BAT DAU, khong phai cay hien tai.
+```
+
+Thủ phạm: **`tests/test_306_banh_coc_bo_qua_va_dich.py`**. Ba test trong đó ghi
+đè `locale/en/LC_MESSAGES/messages.po` **thật** rồi khôi phục trong `finally`
+bằng `write_text(goc, encoding="utf-8")`. Trên Windows, `Path.write_text` dịch
+LF thành CRLF ⇒ bản "khôi phục" khác bản gốc **10.465 dòng** — nguyên tệp, chỉ
+đổi kiểu xuống dòng.
+
+⛔ Hai hậu quả, cả hai âm thầm:
+1. `git status` của **bất kỳ ai chạy pytest** bỗng có một tệp `.po` sửa đổi
+   không hiểu từ đâu ra;
+2. gate lấy dấu vân tay ở cả hai đầu ⇒ **một lượt gate 2 giờ tự vô hiệu hoá
+   chính nó**.
+
+⭐ Và điều đáng nói nhất: **chính tệp đó đã làm ĐÚNG cho tệp `.moc`**
+(`read_bytes`/`write_bytes`) ở test ngay bên dưới. Bài học: khi một tệp cần
+byte-exact thì **mọi** tệp trong cùng hàm đều cần — không chỉ tệp mình nhớ tới.
+
+**Đã sửa.** Sau khi sửa: `test_306` 10 passed, và `git status` sạch sau khi chạy.
+
+⚠️ Đây cũng là lần thứ **hai** trong một buổi cùng một lớp lỗi CRLF cắn — lần
+đầu là chính tôi khi dựng lại một trạng thái để thử nghiệm. Cả hai lần đều chỉ
+lộ ra vì có người nhìn `git diff`.
+
+### (b) 36 test đỏ — **residue của Q108/Q109 trong bộ test**
+
+Chẩn đoán từ mẫu đã soi (`test_97`, `test_98`, 9 lỗi):
+
+```
+AssertionError: (ValidationIssue(code='tool',
+  message='Tool khong ton tai/khong co quyen: text.script', ...))
+```
+
+`text.script` là tool của **`kichban`**, đã gỡ ở Q109. Các test này dựng workflow
+Agent dùng bảy tool và khẳng định chúng chạy được — bảy tool đó nay không còn đủ.
+
+⇒ **Không phải lỗi do đợt tối ưu này gây ra.** Nhưng nó là một phát hiện mà
+`01_...md` **đã bỏ sót**: tôi kiểm residue theo *import, route, CSDL, tài liệu,
+docstring* — và kết luận `REMOVED_APPS_ACTIVE_REACHABILITY_SOURCE: 0`. Con số đó
+đúng cho **khả năng với tới**, nhưng sai cho **hợp đồng hành vi**: bộ test vẫn
+phụ thuộc vào sự **tồn tại** của các tool đã gỡ.
+
+⭐ **Lớp thứ 16 cho danh sách quét của pack:** *test khẳng định một năng lực đã
+bị gỡ vẫn tồn tại*. Nó không lộ ra bằng `grep` tên app — `text.script` không mang
+chữ "kichban" ở đâu cả. Nó chỉ lộ khi **chạy**.
+
+Đó cũng là lý do `H40` đóng mà thiếu lượt `pytest` đầy đủ là một khoảng trống
+thật, không phải thủ tục: **đây chính là thứ lượt đó lẽ ra phải tìm ra.**
 
 ---
 
